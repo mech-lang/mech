@@ -35,7 +35,7 @@ impl MechFunctionCompiler for ConvertSEnum {
   }
 }
 #[cfg(feature = "enum")]
-inventory::submit! {
+register_descriptor! {
   FunctionDescriptor {
     name: "ConvertSEnum<enum>",
     ptr: ConvertSEnum::new,

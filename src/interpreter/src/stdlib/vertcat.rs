@@ -105,7 +105,7 @@ macro_rules! vertcat_two_args {
       ($type:ty, $type_string:tt) => {
         paste!{ 
           #[cfg(feature = $type_string)]
-          inventory::submit! {
+          register_descriptor! {
             FunctionDescriptor {
             name: concat!(stringify!($fxn), "<", stringify!([<$type:lower>]), stringify!($out), stringify!($e0), stringify!($e1), ">"),
             ptr: $fxn::<$type>::new,
@@ -1925,7 +1925,7 @@ impl NativeFunctionCompiler for MatrixVertCat {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "matrix/vertcat",
     ptr: &MatrixVertCat{},

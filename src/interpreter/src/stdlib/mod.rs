@@ -18,9 +18,9 @@ pub mod access;
 pub mod assign;
 #[cfg(feature = "convert")]
 pub mod convert;
-#[cfg(feature = "matrix")]
+#[cfg(feature = "matrix_horzcat")]
 pub mod horzcat;
-#[cfg(feature = "matrix")]
+#[cfg(feature = "matrix_vertcat")]
 pub mod vertcat;
 
 pub trait LosslessInto<T> {

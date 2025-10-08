@@ -14,10 +14,7 @@ use mech_core::*;
 use mech_core::matrix::{Matrix, ToMatrix};
 use mech_core::kind::Kind;
 use mech_core::{Dictionary, Ref, Value, ValueKind, ValRef, ToValue};
-#[cfg(feature = "io_print")]
-use mech_io::IoPrint;
-#[cfg(feature = "io_println")]
-use mech_io::IoPrintln;
+use mech_core::{MechError, MechErrorKind, hash_str, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 #[cfg(feature = "map")]
 use mech_core::MechMap;
 #[cfg(feature = "record")]
@@ -38,20 +35,18 @@ use mech_core::F32;
 use mech_core::C64;
 #[cfg(feature = "rational")]
 use mech_core::R64;
+#[cfg(feature = "functions")]
+use crate::functions::*;
 #[cfg(feature = "access")]
 use crate::stdlib::access::*;
 #[cfg(feature = "assign")]
 use crate::stdlib::assign::*;
 #[cfg(feature = "convert")]
 use crate::stdlib::convert::*;
-#[cfg(feature = "functions")]
-use crate::functions::*;
 #[cfg(feature = "matrix_horzcat")]
 use crate::stdlib::horzcat::*;
 #[cfg(feature = "matrix_vertcat")]
 use crate::stdlib::vertcat::*;
-use mech_core::{MechError, MechErrorKind, hash_str, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
-
 #[cfg(feature = "combinatorics")]
 use mech_combinatorics::*;
 #[cfg(feature = "matrix")]

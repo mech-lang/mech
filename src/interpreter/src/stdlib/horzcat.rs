@@ -4497,7 +4497,7 @@ impl NativeFunctionCompiler for MatrixHorzCat {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "matrix/horzcat",
     ptr: &MatrixHorzCat{},
