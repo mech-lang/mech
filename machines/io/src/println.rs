@@ -222,7 +222,7 @@ impl NativeFunctionCompiler for IoPrintln {
   }
 }
 
-inventory::submit!{
+register_descriptor!{
   FunctionCompilerDescriptor {
     name: "io/println",
     ptr: &IoPrintln{},
