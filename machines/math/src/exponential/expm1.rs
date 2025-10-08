@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathExpm1 {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/expm1",
     ptr: &MathExpm1{},

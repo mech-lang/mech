@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathSin {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/sin",
     ptr: &MathSin{},

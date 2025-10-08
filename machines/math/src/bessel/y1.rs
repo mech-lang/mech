@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathY1 {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/bessel/y1",
     ptr: &MathY1{},

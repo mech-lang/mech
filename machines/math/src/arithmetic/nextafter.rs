@@ -231,7 +231,7 @@ impl NativeFunctionCompiler for MathNextafter {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/nextafter",
     ptr: &MathNextafter{},

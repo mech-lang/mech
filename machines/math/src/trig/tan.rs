@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathTan {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/tan",
     ptr: &MathTan{},

@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathIlogb {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/ilogb",
     ptr: &MathIlogb{},

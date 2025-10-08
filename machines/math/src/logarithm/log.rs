@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathLog {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/log",
     ptr: &MathLog{},

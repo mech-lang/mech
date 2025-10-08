@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathFloor {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/floor",
     ptr: &MathFloor{},

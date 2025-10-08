@@ -231,7 +231,7 @@ impl NativeFunctionCompiler for MathFmin {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/fmin",
     ptr: &MathFmin{},

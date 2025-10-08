@@ -231,7 +231,7 @@ impl NativeFunctionCompiler for MathHypot {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/hypot",
     ptr: &MathHypot{},

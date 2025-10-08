@@ -231,7 +231,7 @@ impl NativeFunctionCompiler for MathRemainder {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/remainder",
     ptr: &MathRemainder{},

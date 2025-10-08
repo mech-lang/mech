@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathAsin {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/asin",
     ptr: &MathAsin{},

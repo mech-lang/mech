@@ -231,7 +231,7 @@ impl NativeFunctionCompiler for MathFmaximum_num {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/fminimum-num",
     ptr: &MathFminimum_num{},

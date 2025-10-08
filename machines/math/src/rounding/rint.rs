@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathRint {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/rint",
     ptr: &MathRint{},

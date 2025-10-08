@@ -96,7 +96,7 @@ impl NativeFunctionCompiler for AddAssignMath {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/add-assign",
     ptr: &AddAssignMath{},
@@ -179,7 +179,7 @@ impl NativeFunctionCompiler for AddAssignRange {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/add-assign/range",
     ptr: &AddAssignRange{},
@@ -274,7 +274,7 @@ impl NativeFunctionCompiler for AddAssignRangeAll {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/add-assign/range-all",
     ptr: &AddAssignRangeAll{},

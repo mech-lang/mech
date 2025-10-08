@@ -453,7 +453,7 @@ macro_rules! impl_assign_vector_scalar {
 macro_rules! register_op_assign_vv {
   ($op:ident, $type:ty, $size:ty, $size_string:tt) => {
     paste!{
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($op),"<[",stringify!([<$type:lower>]),"]:", $size_string, ">"),
           ptr: $op::<$type,$size<$type>,$size<$type>>::new,

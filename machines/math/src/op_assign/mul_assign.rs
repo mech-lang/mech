@@ -173,7 +173,7 @@ impl NativeFunctionCompiler for MulAssignRange {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/mul-assign/range",
     ptr: &MulAssignRange{},
@@ -270,7 +270,7 @@ impl NativeFunctionCompiler for MulAssignRangeAll {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/mul-assign/range-all",
     ptr: &MulAssignRangeAll{},

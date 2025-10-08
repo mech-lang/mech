@@ -89,7 +89,7 @@ macro_rules! impl_two_arg_fxn {
         return Ok(registers[0])
       }
     }
-    inventory::submit!{
+    register_descriptor!{
       FunctionDescriptor {
         name: stringify!($struct_name),
         ptr: $struct_name::new,
@@ -250,7 +250,7 @@ impl NativeFunctionCompiler for MathAtan2 {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/atan2",
     ptr: &MathAtan2{},

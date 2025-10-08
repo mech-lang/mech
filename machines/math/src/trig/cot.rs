@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathCot {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/cot",
     ptr: &MathCot{},

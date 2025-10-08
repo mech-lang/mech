@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathRoundeven {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/roundeven",
     ptr: &MathRoundeven{},

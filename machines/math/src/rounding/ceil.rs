@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathCeil {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/ceil",
     ptr: &MathCeil{},

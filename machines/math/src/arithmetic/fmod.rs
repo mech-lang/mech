@@ -231,7 +231,7 @@ impl NativeFunctionCompiler for MathFmod {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/fmod",
     ptr: &MathFmod{},

@@ -82,7 +82,7 @@ impl NativeFunctionCompiler for MathAcosh {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/acosh",
     ptr: &MathAcosh{},

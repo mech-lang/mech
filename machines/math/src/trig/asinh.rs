@@ -82,7 +82,7 @@ impl NativeFunctionCompiler for MathAsinh {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/asinh",
     ptr: &MathAsinh{},

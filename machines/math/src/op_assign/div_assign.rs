@@ -98,7 +98,7 @@ impl NativeFunctionCompiler for DivAssignValue {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/div-assign",
     ptr: &DivAssignValue{},
@@ -181,7 +181,7 @@ impl NativeFunctionCompiler for DivAssignRange {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/div-assign/range",
     ptr: &DivAssignRange{},
@@ -275,7 +275,7 @@ impl NativeFunctionCompiler for DivAssignRangeAll {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/div-assign/range-all",
     ptr: &DivAssignRangeAll{},

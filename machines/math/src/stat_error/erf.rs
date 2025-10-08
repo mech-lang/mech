@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathErf {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/erf",
     ptr: &MathErf{},

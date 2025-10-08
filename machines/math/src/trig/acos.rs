@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathAcos {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/acos",
     ptr: &MathAcos{},

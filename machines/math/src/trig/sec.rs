@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathSec {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/sec",
     ptr: &MathSec{},

@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathSqrt {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/sqrt",
     ptr: &MathSqrt{},

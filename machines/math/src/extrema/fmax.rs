@@ -231,7 +231,7 @@ impl NativeFunctionCompiler for MathFmax {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/fmax",
     ptr: &MathFmax{},

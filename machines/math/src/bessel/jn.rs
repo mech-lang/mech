@@ -231,7 +231,7 @@ impl NativeFunctionCompiler for MathJn {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/bessel/jn",
     ptr: &MathJn{},

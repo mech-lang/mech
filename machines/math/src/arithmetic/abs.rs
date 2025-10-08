@@ -130,7 +130,7 @@ impl NativeFunctionCompiler for MathAbs {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/abs",
     ptr: &MathAbs{},

@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathRound {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/round",
     ptr: &MathRound{},

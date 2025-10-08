@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathCbrt {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/cbrt",
     ptr: &MathCbrt{},

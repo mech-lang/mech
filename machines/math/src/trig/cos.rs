@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathCos {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/cos",
     ptr: &MathCos{},

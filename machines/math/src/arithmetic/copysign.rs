@@ -231,7 +231,7 @@ impl NativeFunctionCompiler for MathCopysign {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/copysign",
     ptr: &MathCopysign{},

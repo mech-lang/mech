@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathErfc {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/erfc",
     ptr: &MathErfc{},

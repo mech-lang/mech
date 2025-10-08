@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathAcot {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/acot",
     ptr: &MathAcot{},

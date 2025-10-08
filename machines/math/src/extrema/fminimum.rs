@@ -231,7 +231,7 @@ impl NativeFunctionCompiler for MathFminimum {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/fminimum",
     ptr: &MathFminimum{},

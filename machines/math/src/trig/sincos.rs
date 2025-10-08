@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathSincos {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "math/sincos",
     ptr: &MathSincos{},
