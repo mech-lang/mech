@@ -10,8 +10,10 @@ use std::cell::RefCell;
 use gloo_net::http::Request;
 use wasm_bindgen_futures::spawn_local;
 
+#[cfg(feature = "repl")]
 pub mod repl;
 
+#[cfg(feature = "repl")]
 pub use crate::repl::*;
 
 
@@ -37,7 +39,7 @@ pub fn main() -> Result<(), JsValue> {
   Ok(())
 }
 
-
+#[cfg(feature = "eval")]
 fn run_mech_code(intrp: &mut Interpreter, code: &Vec<(String,MechSourceCode)>) -> MResult<Value> {
   for (file, source) in code {
     match source {
@@ -91,6 +93,7 @@ impl WasmMech {
     self.interpreter = Interpreter::new(0);
   }
 
+  #[cfg(feature = "repl")]
   #[wasm_bindgen]
   pub fn attach_repl(&mut self, repl_id: &str) {
     self.repl_id = Some(repl_id.to_string());
@@ -267,8 +270,10 @@ impl WasmMech {
     };
   }
 
+  #[cfg(feature = "eval")]
   pub fn eval(&mut self, input: &str) -> String {
     if input.chars().nth(0) == Some(':') {
+      #[cfg(feature = "repl")]
       match parse_repl_command(&input.to_string()) {
         Ok((_, repl_command)) => {
           execute_repl_command(repl_command)
@@ -277,12 +282,31 @@ impl WasmMech {
           format!("Unrecognized command: {}", x)
         }
       }
+      #[cfg(not(feature = "repl"))]
+      {
+        "REPL commands not supported. Rebuild with the 'repl' feature.".to_string()
+      }
     } else {
       let cmd = ReplCommand::Code(vec![("repl".to_string(),MechSourceCode::String(input.to_string()))]);
-      execute_repl_command(cmd)
+      CURRENT_MECH.with(|mech_ref| {
+        if let Some(ptr) = *mech_ref.borrow() {
+          unsafe {
+            let mut mech = &mut *ptr;
+            match run_mech_code(&mut mech.interpreter, &code)  {
+              Ok(output) => { 
+                let kind_str = html_escape(&format!("{}",output.kind()));
+                return format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html());
+              },
+              Err(err) => { return format!("{:?}",err); }
+            }
+          }
+        }
+        "Error: No interpreter found.".to_string()
+      })
     }
   }
 
+  #[cfg(feature = "clickable_symbol_listeners")]
   #[wasm_bindgen]
   pub fn add_clickable_event_listeners(&self) {
     let window = web_sys::window().expect("global window does not exists");    
@@ -383,17 +407,21 @@ impl WasmMech {
   
   #[wasm_bindgen]
   pub fn init(&self) {
+    #[cfg(feature = "clickable_symbol_listeners")]
     self.add_clickable_event_listeners();
   }
 
    #[wasm_bindgen]
    pub fn render_values(&mut self) {
+    #[cfg(feature = "codeblock_output_values")]
     self.render_codeblock_output_values();
+    #[cfg(feature = "inline_output_values")]
     self.render_inline_values();
   }
 
   // Write block output each element that needs it, rendering it appropriately
   // based on its data type.
+  #[cfg(feature = "codeblock_output_values")]
   #[wasm_bindgen]
   pub fn render_codeblock_output_values(&mut self) {
     let window = web_sys::window().expect("global window does not exists");    
@@ -475,6 +503,7 @@ impl WasmMech {
     }
   }
 
+  #[cfg(feature = "inline_output_values")]
   #[wasm_bindgen]
   pub fn render_inline_values(&mut self) {
     let window = web_sys::window().expect("global window does not exists");    
@@ -498,6 +527,7 @@ impl WasmMech {
     }
   }
 
+  #[cfg(feature = "run_program")]
   #[wasm_bindgen]
   pub fn run_program(&mut self, src: &str) { 
     // Decompress the string into a Program
@@ -533,6 +563,7 @@ impl WasmMech {
   }
 }
 
+#[cfg(feature = "docs")]
 pub fn load_doc(doc: &str, element_id: String) {
   let doc = doc.to_string();
   spawn_local(async move {
@@ -576,6 +607,7 @@ pub fn load_doc(doc: &str, element_id: String) {
   });
 }
 
+#[cfg(feature = "docs")]
 async fn fetch_docs(doc: &str) -> String {
   // the doc will be formatted as machine/doc
   let parts: Vec<&str> = doc.split('/').collect();
