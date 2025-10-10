@@ -1,6 +1,7 @@
 use std::thread;
 use std::time::{Duration, Instant};
-
+use std::collections::VecDeque;
+use std::io::Write;
 use console::{style, Emoji};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
 use rand::prelude::IndexedRandom;
@@ -25,6 +26,8 @@ static COMMANDS: &[&str] = &[
   "make all-clean",
   "make test",
 ];
+
+static SAND: &[&str] = &["⠁","⠂","⠄","⡀","⡈","⡐","⡠","⣀","⣁","⣂","⣄","⣌","⣔","⣤","⣥","⣦","⣮","⣶","⣷","⣿","⡿","⠿","⢟","⠟","⡛","⠛","⠫","⢋","⠋","⠍","⡉","⠉","⠑","⠡","⢁"," "];
 
 static FISTBUMP: &[&str] = &[
   "   🤜　　　　🤛 ",
@@ -75,11 +78,12 @@ struct BuildProcess {
   name: String,
   build_status: StepStatus,
   indicators: MultiProgress,
-  sub_process_handles: Vec<thread::JoinHandle<()>>,
+  stage_handles: Vec<thread::JoinHandle<()>>,
   start_time: Option<Instant>,
   end_time: Option<Instant>,
-  stages: Vec<BuildStage>,
+  stages: VecDeque<BuildStage>,
   build_progress: ProgressBar,
+  status_bar: ProgressBar,
 }
 
 impl BuildProcess {
@@ -94,21 +98,32 @@ impl BuildProcess {
     build_progress.set_style(progress_style);
     build_progress.set_prefix("[Build]");
 
+    // The status bar will be a spinner and it will also show the elapsed time
+    let status_style = ProgressStyle::with_template(
+      "{spinner:.yellow} {msg} [{elapsed_precise}]"
+    ).unwrap()
+     .tick_strings(SAND);
+    let status_bar = m.add(ProgressBar::new_spinner());
+    status_bar.set_style(status_style);
+    status_bar.enable_steady_tick(Duration::from_millis(100));
+    status_bar.set_message("Building...");
+
     BuildProcess {
       id, name,
-      build_status: StepStatus::NotStarted,
+      build_progress,
+      status_bar,
       indicators: m,
-      sub_process_handles: Vec::new(),
+      build_status: StepStatus::NotStarted,
+      stage_handles: Vec::new(),
       start_time: None,
       end_time: None,
-      stages: Vec::new(),
-      build_progress,
+      stages: VecDeque::new(),
     }
   }
 
   pub fn start(&mut self) {
     self.start_time = Some(Instant::now());
-    self.build_status = StepStatus::Running;
+    self.build_status = StepStatus::  Running;
   }
 
   pub fn finish(&mut self) {
@@ -144,14 +159,16 @@ impl BuildProcess {
     stage.build_progress = self.build_progress.clone();
     stage.indicators = Some(self.indicators.clone());
     // if it's the first stage we'll start it right away
-    if self.stages.is_empty() {
-      stage.start();
+    if self.stage_handles.is_empty() {
+      let join_handle = thread::spawn(move || {
+        stage.start();
+      });
+      self.stage_handles.push(join_handle);
     } else {
       stage.status = StepStatus::Pending;
+      self.stages.push_back(stage);
     }
-    self.stages.insert(self.stages.len(), stage);
     self.build_progress.inc_length(1);   
-
   }
 
 }
@@ -163,7 +180,7 @@ struct BuildStage {
   status: StepStatus,
   start_time: Option<Instant>,
   end_time: Option<Instant>,
-  steps: Vec<BuildStep>,
+  //steps: Vec<BuildStep>,
   header: ProgressBar,
   last: ProgressBar,
   stage_progress: ProgressBar,
@@ -179,7 +196,7 @@ impl BuildStage {
       status: StepStatus::NotStarted,
       start_time: None,
       end_time: None,
-      steps: Vec::new(),
+      //steps: Vec::new(),
       header: ProgressBar::new(0),
       last: ProgressBar::new(0),
       stage_progress: ProgressBar::new(0),
@@ -208,6 +225,7 @@ impl BuildStage {
     self.stage_progress.finish();
   }
 
+  /*
   pub fn add_build_step(&mut self, mut step: BuildStep) {
     self.stage_progress.inc_length(1);
     step.build_progress = self.build_progress.clone();
@@ -218,7 +236,7 @@ impl BuildStage {
       StepStatus::NotStarted => self.start(),
       _ => {}
     }
-  }
+  }*/
 
   fn run_stage(&mut self, num_tasks: u32) {
     let m = self.indicators.clone().unwrap();
@@ -227,27 +245,35 @@ impl BuildStage {
     let mut total_tasks = num_tasks;
     let mut handles = Vec::new();
 
+
+    /*
+      let random_name = PACKAGES.choose(&mut rng).unwrap();
+      let mut step = BuildStep::new(0, random_name.to_string());
+      let mut step = self.add_build_step(step);
+      let handle = self.steps.last_mut().unwrap().run_step();
+      handles.push(handle);
+    */
+
     // initial tasks
     for _ in 0..num_tasks {
       handles.push(self.spawn_package_task(&m, &mut rng));
     }
 
     // dynamically discover new packages
-    /*for _ in 0..3 {
+    for _ in 0..3 {
       thread::sleep(Duration::from_millis(rng.random_range(1000..2000)));
       let new = rng.random_range(1..5);
       total_tasks += new;
       for _ in 0..new {
         handles.push(self.spawn_package_task(&m, &mut rng));
       }
-    }*/
+    }
 
     for h in handles {
       let _ = h.join();
     }
 
     self.header.finish_with_message(format!("{} {}", self.name, style("✓").green()))
-    //self.finish();
   }
 
   fn spawn_package_task(&mut self, m: &MultiProgress, rng: &mut rand::rngs::ThreadRng) -> thread::JoinHandle<()> {
@@ -260,7 +286,7 @@ impl BuildStage {
     .tick_chars(SQUARESPINNER);
         
     let count = rng.random_range(30..80);
-    let pb = m.insert_before(&self.build_progress, ProgressBar::new_spinner());
+    let pb = m.insert_after(&self.header, ProgressBar::new_spinner());
     pb.set_style(spinner_style.clone());
     pb.set_prefix("  ");
     thread::spawn(move || {
@@ -269,7 +295,7 @@ impl BuildStage {
       build_progress.inc_length(1);
       for _ in 0..count {
         let cmd = COMMANDS.choose(&mut rng).unwrap();
-        thread::sleep(Duration::from_millis(rng.random_range(25..200)));
+        thread::sleep(Duration::from_millis(rng.random_range(25..50)));
         pb.set_message(format!("{pkg}: {cmd}"));
         pb.inc(1);
       }
@@ -281,133 +307,53 @@ impl BuildStage {
 
 }
 
-#[derive(Debug)]
-struct BuildStep {
-  id: u64,
-  name: String,
-  start_time: Option<Instant>,
-  end_time: Option<Instant>,
-  status: StepStatus,
-  step_progress: ProgressBar,
-  pub stage_progress: ProgressBar,
-  pub build_progress: ProgressBar,
-  pub indicators: Option<MultiProgress>,
-}
-
-impl BuildStep {
-
-  pub fn new(id: u64, name: String) -> Self {
-    BuildStep {
-      id, name,
-      start_time: None,
-      end_time: None,
-      status: StepStatus::NotStarted,
-      step_progress: ProgressBar::new(0),
-      stage_progress: ProgressBar::new(0),
-      build_progress: ProgressBar::new(0),
-      indicators: None,
-    }
-  }
-
-  pub fn start(&mut self) {
-    self.start_time = Some(Instant::now());
-    self.status = StepStatus::Running;
-  }
-
-  pub fn finish(&mut self) {
-    self.end_time = Some(Instant::now());
-    self.status = StepStatus::Completed;
-    self.step_progress.finish();
-    self.stage_progress.inc(1);
-  }
-
-  pub fn fail(&mut self) {
-    self.end_time = Some(Instant::now());
-    self.status = StepStatus::Failed;
-    self.step_progress.finish();
-  }
-
-}
-
 pub fn main() {
   let mut build = BuildProcess::new(42, "Mech Builder".to_string());
+  let m = build.indicators.clone();
 
   let mut prepare_environment = BuildStage::new(1, "Preparing build environment".to_string());
-  //let mut download_packages = BuildStage::new(2, "Downloading packages".to_string());
-  //let mut build_packages = BuildStage::new(3, "Building packages".to_string());
+  let mut download_packages = BuildStage::new(2, "Downloading packages".to_string());
+  let mut build_packages = BuildStage::new(3, "Building packages".to_string());
+  let mut linking = BuildStage::new(4, "Linking".to_string());
+
 
   build.add_build_stage(prepare_environment);
-  //build.add_build_stage(download_packages);
-  //build.add_build_stage(build_packages);
+  build.add_build_stage(download_packages);
+  build.add_build_stage(build_packages);
+  build.add_build_stage(linking);
 
-
-
-  /*
-  let mut rng = rand::rng();
-  let started = Instant::now();
-
-  let progress_style = ProgressStyle::with_template(
-    "{prefix:.dim} {bar:20.yellow/white.dim.bold} {percent}% ({pos}/{len})"
-  ).unwrap()
-   .progress_chars(PARALLELOGRAMPROGRESS);
-
-  let m = MultiProgress::new();
-
-  println!("{} Linking dependencies...", style("[Compiler]").yellow());
-  let deps = 123;
-  let pb = m.add(ProgressBar::new(deps));
-  pb.set_style(progress_style.clone());
-  pb.set_prefix("[Linking]");
-  for _ in 0..deps {
-    thread::sleep(Duration::from_millis(3));
-    pb.inc(1);
+  for handle in build.stage_handles {
+    let _ = handle.join();
   }
-  pb.finish_and_clear();
 
-  let m1 = m.clone();
-  let m2 = m.clone();
-  run_stage("1❱", 1, "Preparing build environment", &m);
-
-  let deps = 1230;
-  let pb = m.add(ProgressBar::new(deps));
-  pb.set_style(progress_style.clone());
-  pb.set_prefix("[Linking]");
-  for _ in 0..deps {
-    thread::sleep(Duration::from_millis(3));
-    pb.inc(1);
-  }
-  pb.finish();
-
-  // run stages 2 and 3 concurrently
-  let handle1 = thread::spawn(move || {
-      run_stage("2❱", 5, "Downloading packages", &m1);
+  // start the next stage:
+  let mut download_stage = build.stages.pop_front().unwrap();
+  let jh1 = thread::spawn(move || {
+    download_stage.start();
   });
 
-  let handle2 = thread::spawn(move || {
-      run_stage("3❱", 3, "Building packages", &m2);
+  let mut build_stage = build.stages.pop_front().unwrap();
+  let jh2 = thread::spawn(move || {
+    build_stage.start();
   });
+  jh1.join();
+  jh2.join();
 
-  // wait for both concurrent stages to finish
-  let _ = handle1.join();
-  let _ = handle2.join();
+  let mut linking_stage = build.stages.pop_front().unwrap();
+  linking_stage.start();
 
-  // Finalize build
-  run_stage("4❱", 7, "Finalizing build", &m);
 
+  let progress = m.add(ProgressBar::new_spinner());
   let completed_style = ProgressStyle::with_template(
     "{prefix:.yellow} {msg} {spinner}"
   ).unwrap()
     .tick_strings(FISTBUMP);
-  let completed = m.add(ProgressBar::new_spinner());
-  completed.set_style(completed_style);
-
+  progress.set_style(completed_style);
+  progress.set_prefix("[Done]");
   // Run the fistbump animation
   for _ in 0..FISTBUMP.len() - 1 {
     thread::sleep(Duration::from_millis(100));
-    completed.tick();
+    progress.tick();
   }
-  completed.finish();
-
-  println!("Done in {}", HumanDuration(started.elapsed()));*/
+  progress.finish();
 }
-
