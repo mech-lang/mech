@@ -86,7 +86,7 @@ impl BuildProcess {
 
   pub fn new(id: u64, name: String) -> Self {
     let progress_style = ProgressStyle::with_template(
-      "{prefix:.yellow} {bar:20.yellow/white.dim.bold} {percent}% ({pos}/{len})"
+      "{prefix:.yellow} {bar:40.yellow/white.dim.bold} {percent}% ({pos}/{len})"
     ).unwrap()
      .progress_chars(PARALLELOGRAMPROGRESS);
     let m = MultiProgress::new();
@@ -199,7 +199,7 @@ impl BuildStage {
     self.status = StepStatus::Completed;
     self.stage_progress.finish();
     self.build_progress.inc(1);
-    self.header.finish_with_message(format!("{}", style("✓").green()));
+    //self.header.finish()
   }
 
   pub fn fail(&mut self) {
@@ -209,24 +209,19 @@ impl BuildStage {
   }
 
   pub fn add_build_step(&mut self, mut step: BuildStep) {
+    self.stage_progress.inc_length(1);
+    step.build_progress = self.build_progress.clone();
+    step.stage_progress = self.stage_progress.clone();
+    step.indicators = self.indicators.clone();
+    self.steps.push(step);
     match self.status {
       StepStatus::NotStarted => self.start(),
       _ => {}
     }
-    step.build_progress = self.build_progress.clone();
-    step.stage_progress = self.stage_progress.clone();
-    step.indicators = self.indicators.clone();
-    self.stage_progress.inc_length(1);
-    self.steps.push(step);
   }
 
   fn run_stage(&mut self, num_tasks: u32) {
     let m = self.indicators.clone().unwrap();
-
-    let spinner_style = ProgressStyle::with_template(
-      "{prefix:.bold} {spinner:.yellow} {wide_msg}"
-    ).unwrap()
-    .tick_chars(SQUARESPINNER);
 
     let mut rng = rand::rng();
     let mut total_tasks = num_tasks;
@@ -234,28 +229,38 @@ impl BuildStage {
 
     // initial tasks
     for _ in 0..num_tasks {
-      handles.push(self.spawn_package_task(&m, &spinner_style, &mut rng));
+      handles.push(self.spawn_package_task(&m, &mut rng));
     }
 
     // dynamically discover new packages
-    for _ in 0..3 {
+    /*for _ in 0..3 {
       thread::sleep(Duration::from_millis(rng.random_range(1000..2000)));
       let new = rng.random_range(1..5);
       total_tasks += new;
       for _ in 0..new {
-        handles.push(self.spawn_package_task(&m, &spinner_style, &mut rng));
+        handles.push(self.spawn_package_task(&m, &mut rng));
       }
-    }
+    }*/
 
     for h in handles {
       let _ = h.join();
     }
+
+    self.header.finish_with_message(format!("{} {}", self.name, style("✓").green()))
+    //self.finish();
   }
 
-  fn spawn_package_task(&mut self, m: &MultiProgress, spinner_style: &ProgressStyle, rng: &mut rand::rngs::ThreadRng) -> thread::JoinHandle<()> {
+  fn spawn_package_task(&mut self, m: &MultiProgress, rng: &mut rand::rngs::ThreadRng) -> thread::JoinHandle<()> {
+    
     let build_progress = self.build_progress.clone();
+    
+    let spinner_style = ProgressStyle::with_template(
+      "{prefix:.bold} {spinner:.yellow} {wide_msg}"
+    ).unwrap()
+    .tick_chars(SQUARESPINNER);
+        
     let count = rng.random_range(30..80);
-    let pb = m.insert_before(&self.build_progress, ProgressBar::new(count));
+    let pb = m.insert_before(&self.build_progress, ProgressBar::new_spinner());
     pb.set_style(spinner_style.clone());
     pb.set_prefix("  ");
     thread::spawn(move || {
@@ -268,7 +273,9 @@ impl BuildStage {
         pb.set_message(format!("{pkg}: {cmd}"));
         pb.inc(1);
       }
+      pb.set_message(format!("{pkg}: done"));
       pb.finish();
+      build_progress.inc(1);
     })
   }
 
@@ -334,7 +341,7 @@ pub fn main() {
   //build.add_build_stage(build_packages);
 
 
-  loop{}
+
   /*
   let mut rng = rand::rng();
   let started = Instant::now();
