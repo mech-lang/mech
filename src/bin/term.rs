@@ -27,6 +27,8 @@ static COMMANDS: &[&str] = &[
   "make test",
 ];
 
+static EMPTY: &[&str] = &[" "," "];
+
 static SAND: &[&str] = &["⠁","⠂","⠄","⡀","⡈","⡐","⡠","⣀","⣁","⣂","⣄","⣌","⣔","⣤","⣥","⣦","⣮","⣶","⣷","⣿","⡿","⠿","⢟","⠟","⡛","⠛","⠫","⢋","⠋","⠍","⡉","⠉","⠑","⠡","⢁"," "];
 
 static FISTBUMP: &[&str] = &[
@@ -72,7 +74,7 @@ enum StepStatus {
     Failed,
 }
 
-#[derive(Debug)]
+
 struct BuildProcess {
   id: u64,
   name: String,
@@ -146,14 +148,13 @@ impl BuildProcess {
     
     // Apply Header To Section
     let header_style = ProgressStyle::with_template(
-      "{prefix:.yellow} {msg} {spinner}"
+      "{prefix:.yellow} {msg} {spinner:.dim}"
     ).unwrap()
-     .tick_strings(DOTSPINNER);
+     .tick_strings(&EMPTY);
     let header = self.indicators.insert_before(&self.build_progress, ProgressBar::new_spinner());
     header.set_style(header_style);
     header.set_prefix(format!("{}❱", stage.id));
     header.set_message(stage.name.clone());
-    header.enable_steady_tick(Duration::from_millis(100));
 
     stage.header = header.clone(); 
     stage.build_progress = self.build_progress.clone();
@@ -173,7 +174,7 @@ impl BuildProcess {
 
 }
 
-#[derive(Debug)]
+
 struct BuildStage {
   id: u64,
   name: String,
@@ -183,6 +184,7 @@ struct BuildStage {
   //steps: Vec<BuildStep>,
   header: ProgressBar,
   last: ProgressBar,
+  style: ProgressStyle,
   stage_progress: ProgressBar,
   pub build_progress: ProgressBar,
   pub indicators: Option<MultiProgress>,
@@ -191,12 +193,17 @@ struct BuildStage {
 impl BuildStage {
 
   pub fn new(id: u64, name: String) -> Self {  
+    let header_style = ProgressStyle::with_template(
+      "{prefix:.yellow} {msg} {spinner:.dim}"
+    ).unwrap()
+     .tick_strings(&DOTSPINNER);
     BuildStage {
       id, name,
       status: StepStatus::NotStarted,
       start_time: None,
       end_time: None,
       //steps: Vec::new(),
+      style: header_style,
       header: ProgressBar::new(0),
       last: ProgressBar::new(0),
       stage_progress: ProgressBar::new(0),
@@ -208,6 +215,8 @@ impl BuildStage {
   pub fn start(&mut self) {
     self.start_time = Some(Instant::now());
     self.status = StepStatus::Running;
+    self.header.set_style(self.style.clone());
+    self.header.enable_steady_tick(Duration::from_millis(100));
     self.run_stage(3);
   }
 
