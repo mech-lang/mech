@@ -132,12 +132,14 @@ impl BuildProcess {
     self.end_time = Some(Instant::now());
     self.build_status = StepStatus::Completed;
     self.build_progress.finish();
+    self.status_bar.finish_with_message(format!("Build completed in {}", HumanDuration(self.end_time.unwrap() - self.start_time.unwrap())));
   }
 
   pub fn fail(&mut self) {
     self.end_time = Some(Instant::now());
     self.build_status = StepStatus::Failed;
     self.build_progress.finish();
+    self.status_bar.finish_with_message(format!("Build failed after {}", HumanDuration(self.end_time.unwrap() - self.start_time.unwrap())));
   }
 
   pub fn add_build_stage(&mut self, mut stage: BuildStage) {
@@ -148,7 +150,7 @@ impl BuildProcess {
     
     // Apply Header To Section
     let header_style = ProgressStyle::with_template(
-      "{prefix:.yellow} {msg} {spinner:.dim}"
+      "{prefix:.yellow} {msg:.dim} {spinner:.dim}"
     ).unwrap()
      .tick_strings(&EMPTY);
     let header = self.indicators.insert_before(&self.build_progress, ProgressBar::new_spinner());
@@ -325,6 +327,7 @@ pub fn main() {
   let mut build_packages = BuildStage::new(3, "Building packages".to_string());
   let mut linking = BuildStage::new(4, "Linking".to_string());
 
+  let status = build.status_bar.clone();
 
   build.add_build_stage(prepare_environment);
   build.add_build_stage(download_packages);
@@ -351,6 +354,7 @@ pub fn main() {
   let mut linking_stage = build.stages.pop_front().unwrap();
   linking_stage.start();
 
+  status.finish_with_message("All done!");
 
   let progress = m.add(ProgressBar::new_spinner());
   let completed_style = ProgressStyle::with_template(
@@ -366,3 +370,4 @@ pub fn main() {
   }
   progress.finish();
 }
+
