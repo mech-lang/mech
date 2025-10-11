@@ -6,6 +6,7 @@ use console::{style, Emoji};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
 use rand::prelude::IndexedRandom;
 use rand::Rng;
+use std::sync::mpsc;
 
 static PACKAGES: &[&str] = &[
   "fs-events",
@@ -55,6 +56,8 @@ static HEADASPLODE: &[&str] = &[
 ];
 
 static SQUARESPINNER: &str = "◰◰◳◳◲◲◱◱▣";
+
+static PENDINGSQUARESPINNER: &str = "□□";
 
 static PARALLELOGRAMPROGRESS: &str = "▰▱";
 
@@ -164,6 +167,7 @@ impl BuildProcess {
     header.set_message(stage.name.clone());
 
     stage.header = header.clone(); 
+    stage.last_step = header.clone();
     stage.build_progress = self.build_progress.clone();
     stage.indicators = Some(self.indicators.clone());
     // if it's the first stage we'll start it right away
@@ -190,6 +194,7 @@ struct BuildStage {
   end_time: Option<Instant>,
   //steps: Vec<BuildStep>,
   header: ProgressBar,
+  pub last_step: ProgressBar,
   style: ProgressStyle,
   stage_progress: ProgressBar,
   pub build_progress: ProgressBar,
@@ -213,6 +218,7 @@ impl BuildStage {
       start_time: None,
       end_time: None,
       header: ProgressBar::new(0),
+      last_step: ProgressBar::new(0),
       style,
       build_progress: ProgressBar::new(0),
       stage_progress: ProgressBar::new(0),
@@ -247,20 +253,23 @@ impl BuildStage {
 
 pub fn main() -> anyhow::Result<()> {
   let start_time = Instant::now();
+  println!(r#"{} cmontella/ekf v0.2.3 (C:\cmont\Desktop\ekf)"#, style("[mech]").yellow());
   {
     let mut build = BuildProcess::new(42, "Mech Builder".to_string());
     let m = build.indicators.clone();
 
-    let mut prepare_environment = BuildStage::new(1, "Preparing build environment", |stage| {
-      run_stage(&stage, 3);
+    let mut prepare_environment = BuildStage::new(1, "Preparing build environment", |mut stage| {
+      prepare_environment(&mut stage);
     });
 
+    let (tx, rx) = mpsc::channel();
+
     let mut download_packages = BuildStage::new(2, "Downloading packages", |stage| {
-      download_packages(&stage);
+      download_packages(&stage,tx);
     });
 
     let mut build_packages = BuildStage::new(3, "Building packages", |stage| {
-        run_stage(&stage, 8);
+      build_packages(&stage,rx);
     });
 
     let mut linking = BuildStage::new(4, "Linking", |stage| {
@@ -324,7 +333,7 @@ pub fn main() -> anyhow::Result<()> {
 }
 
 fn run_stage(stage: &BuildStage, num_tasks: u32) {
-
+    let build_progress = stage.build_progress.clone();
     let mut rng = rand::rng();
     let mut total_tasks = num_tasks;
     let mut handles = Vec::new();
@@ -347,7 +356,7 @@ fn run_stage(stage: &BuildStage, num_tasks: u32) {
     for h in handles {
       let _ = h.join();
     }
-
+    build_progress.inc(1);
     stage.header.finish_with_message(format!("{} {}", stage.name, style("✓").green()))
   }
 
@@ -376,30 +385,36 @@ fn run_stage(stage: &BuildStage, num_tasks: u32) {
     })
   }
 
-fn download_packages(stage: &BuildStage) {
+fn download_packages(stage: &BuildStage, tx: mpsc::Sender<String>) {
   let m = stage.indicators.as_ref().unwrap().clone();
   let build_progress = stage.build_progress.clone();
+  
   let download_style = ProgressStyle::with_template(
     "{prefix:.yellow} {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}% ({pos}/{len})"
   ).unwrap()
-  .progress_chars(PARALLELOGRAMPROGRESS)
-  .tick_chars(SQUARESPINNER);
+   .progress_chars(PARALLELOGRAMPROGRESS)
+   .tick_chars(SQUARESPINNER);
+
   let mut handles = Vec::new();
-  for i in 0..5 {
+  for pkg in PACKAGES {
+    // Random size per package
+    let rand_size: u64 = rand::thread_rng().gen_range(50..100);
     build_progress.inc_length(1);
-    let pb = m.insert_after(&stage.header, ProgressBar::new(0));
+    let pb = m.insert_after(&stage.header, ProgressBar::new(rand_size));
     pb.set_style(download_style.clone());
     pb.set_prefix("  ");
-    pb.set_message(format!("{:<20}", PACKAGES[i]));
-    pb.set_length(100);
+    pb.set_message(format!("{:<20}", pkg));
+
+    let tx = tx.clone();
 
     let build_progress = stage.build_progress.clone();
     let handle = thread::spawn(move || {
-      for j in 0..=100 {
+      for j in 0..=rand_size {
         pb.set_position(j);
         thread::sleep(Duration::from_millis(20 + rand::thread_rng().gen_range(0..300)));
       }
       pb.finish_and_clear();
+      let _ = tx.send(pkg.clone().to_string());
       build_progress.inc(1);
     });
 
@@ -409,6 +424,87 @@ fn download_packages(stage: &BuildStage) {
   for handle in handles {
     let _ = handle.join();
   }
+  drop(tx);
+  build_progress.inc(1);
+  stage.header.finish_with_message(format!("{} {}", stage.name, style("✓").green()))
+}
 
+fn build_packages(stage: &BuildStage, rx: mpsc::Receiver<String>) {
+  let m = stage.indicators.as_ref().unwrap().clone();
+  let build_progress = stage.build_progress.clone();
+
+  let build_style = ProgressStyle::with_template(
+      "{prefix} {spinner:.yellow} {msg}",
+  )
+  .unwrap()
+  .tick_chars(SQUARESPINNER);
+
+  let mut handles = Vec::new();
+
+  // Read from the channel and spawn build tasks until the channel is closed
+  for pkg in rx {
+    build_progress.inc_length(1);
+    let pb = m.insert_after(&stage.header, ProgressBar::new(0));
+    pb.set_style(build_style.clone());
+    pb.set_prefix("  ");
+    pb.set_message(format!("{:<20}", pkg));
+    pb.enable_steady_tick(Duration::from_millis(100));
+
+    let build_progress = build_progress.clone();
+
+    let handle = thread::spawn(move || {
+      for j in 0..=100 {
+        pb.set_position(j);
+        thread::sleep(Duration::from_millis(30 + rand::thread_rng().gen_range(0..150)));
+      }
+      pb.finish_and_clear();
+      build_progress.inc(1);
+    });
+    handles.push(handle);
+  }
+
+  for handle in handles {
+    let _ = handle.join();
+  }
+  build_progress.inc(1);
+  stage.header.finish_with_message(format!("{} {}", stage.name, style("✓").green()));
+}
+
+fn prepare_environment(stage: &mut BuildStage) {
+  let m = stage.indicators.as_ref().unwrap().clone();
+  let build_progress = stage.build_progress.clone();
+  let download_style = ProgressStyle::with_template(
+    "{prefix:.yellow} {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}%"
+  ).unwrap()
+  .progress_chars(PARALLELOGRAMPROGRESS)
+  .tick_chars(SQUARESPINNER);
+  let pending_download = ProgressStyle::with_template(
+    "{prefix:.yellow} {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}%"
+  ).unwrap()
+  .progress_chars(PARALLELOGRAMPROGRESS)
+  .tick_chars(PENDINGSQUARESPINNER);
+  let mut pbs = Vec::new();
+  for i in 0..5 {
+    build_progress.inc_length(1);
+    let pb = m.insert_after(&stage.last_step, ProgressBar::new(0));
+    stage.last_step = pb.clone();
+    pb.set_style(pending_download.clone());
+    pb.enable_steady_tick(Duration::from_millis(100));
+    pb.set_prefix("  ");
+    pb.set_message(format!("{:<20}", PACKAGES[i]));
+    pb.set_length(100);
+    pbs.push(pb);
+  }
+  
+  for pb in pbs.iter() {
+    pb.set_style(download_style.clone());
+    for j in 0..=100 {
+      pb.set_position(j);
+      thread::sleep(Duration::from_millis(20 + rand::thread_rng().gen_range(0..10)));
+    }
+    pb.finish();
+    build_progress.inc(1);
+  }
+  build_progress.inc(1);
   stage.header.finish_with_message(format!("{} {}", stage.name, style("✓").green()))
 }
