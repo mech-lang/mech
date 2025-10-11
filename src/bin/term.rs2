@@ -29,7 +29,7 @@ static COMMANDS: &[&str] = &[
 
 static EMPTY: &[&str] = &[" "," "];
 
-static SAND: &[&str] = &["⠁","⠂","⠄","⡀","⡈","⡐","⡠","⣀","⣁","⣂","⣄","⣌","⣔","⣤","⣥","⣦","⣮","⣶","⣷","⣿","⡿","⠿","⢟","⠟","⡛","⠛","⠫","⢋","⠋","⠍","⡉","⠉","⠑","⠡","⢁"," "];
+static SAND: &[&str] = &["⠁","⠂","⠄","⡀","⡈","⡐","⡠","⣀","⣁","⣂","⣄","⣌","⣔","⣤","⣥","⣦","⣮","⣶","⣷","⣿","⡿","⠿","⢟","⠟","⡛","⠛","⠫","⢋","⠋","⠍","⡉","⠉","⠑","⠡","⢁","⣿"];
 
 static FISTBUMP: &[&str] = &[
   "   🤜　　　　🤛 ",
@@ -38,12 +38,16 @@ static FISTBUMP: &[&str] = &[
   "   　🤜　　🤛　 ",
   "   　　🤜🤛　　 ",
   "   　🤜💥🤛　　 ",
-  "   🤜　✨　🤛　 ",
-  "   ✌️　　　　✌️ "
+  "    🤜 ✨ 🤛　 ",
+  "   🤜　💭 　🤛　 ",
+  "   ✌️　　　　✌️ ",
+  "   ✌️　　　　✌️ ",
+  "   ✌️　　　　✌️ ",
+  " "
 ];
 
 static DOTSPINNER: &[&str] = &[
-  "∙∙∙","∙∙∙","●∙∙","●∙∙","•●∙","•●∙","∙•●","∙•●","∙∙•","∙∙•","∙∙∙","∙∙∙"," "
+  "∙∙∙","∙∙∙","●∙∙","●∙∙","•●∙","•●∙","∙•●","∙•●","∙∙•","∙∙•","∙∙∙","∙∙∙","∙∙∙","∙∙∙","∙∙∙"," "
 ];
 
 static HEADASPLODE: &[&str] = &[
@@ -108,7 +112,7 @@ impl BuildProcess {
     let status_bar = m.add(ProgressBar::new_spinner());
     status_bar.set_style(status_style);
     status_bar.enable_steady_tick(Duration::from_millis(100));
-    status_bar.set_message("Building...");
+    status_bar.set_message("");
 
     BuildProcess {
       id, name,
@@ -125,7 +129,8 @@ impl BuildProcess {
 
   pub fn start(&mut self) {
     self.start_time = Some(Instant::now());
-    self.build_status = StepStatus::  Running;
+    self.build_status = StepStatus::Running;
+    self.status_bar.set_message("Starting build...");
   }
 
   pub fn finish(&mut self) {
@@ -150,7 +155,7 @@ impl BuildProcess {
     
     // Apply Header To Section
     let header_style = ProgressStyle::with_template(
-      "{prefix:.yellow} {msg:.dim} {spinner:.dim}"
+      "{prefix:.yellow.dim} {msg:.dim} {spinner:.dim}"
     ).unwrap()
      .tick_strings(&EMPTY);
     let header = self.indicators.insert_before(&self.build_progress, ProgressBar::new_spinner());
@@ -185,32 +190,34 @@ struct BuildStage {
   end_time: Option<Instant>,
   //steps: Vec<BuildStep>,
   header: ProgressBar,
-  last: ProgressBar,
   style: ProgressStyle,
   stage_progress: ProgressBar,
   pub build_progress: ProgressBar,
   pub indicators: Option<MultiProgress>,
+  task_fn: Option<Box<dyn FnOnce(&mut BuildStage) + Send + 'static>>,
 }
 
 impl BuildStage {
+  pub fn new<F>(id: u64, name: impl Into<String>, f: F) -> Self
+  where
+      F: FnOnce(&mut BuildStage) + Send + 'static,
+  {
+    let style = ProgressStyle::with_template("{prefix:.yellow} {msg} {spinner:.dim}")
+        .unwrap()
+        .tick_strings(&DOTSPINNER);
 
-  pub fn new(id: u64, name: String) -> Self {  
-    let header_style = ProgressStyle::with_template(
-      "{prefix:.yellow} {msg} {spinner:.dim}"
-    ).unwrap()
-     .tick_strings(&DOTSPINNER);
-    BuildStage {
-      id, name,
+    Self {
+      id,
+      name: name.into(),
       status: StepStatus::NotStarted,
       start_time: None,
       end_time: None,
-      //steps: Vec::new(),
-      style: header_style,
       header: ProgressBar::new(0),
-      last: ProgressBar::new(0),
-      stage_progress: ProgressBar::new(0),
+      style,
       build_progress: ProgressBar::new(0),
+      stage_progress: ProgressBar::new(0),
       indicators: None,
+      task_fn: Some(Box::new(f)),
     }
   }
 
@@ -219,7 +226,7 @@ impl BuildStage {
     self.status = StepStatus::Running;
     self.header.set_style(self.style.clone());
     self.header.enable_steady_tick(Duration::from_millis(100));
-    self.run_stage(3);
+    self.task_fn.take().map(|f| f(self));
   }
 
   pub fn finish(&mut self) {
@@ -236,38 +243,95 @@ impl BuildStage {
     self.stage_progress.finish();
   }
 
-  /*
-  pub fn add_build_step(&mut self, mut step: BuildStep) {
-    self.stage_progress.inc_length(1);
-    step.build_progress = self.build_progress.clone();
-    step.stage_progress = self.stage_progress.clone();
-    step.indicators = self.indicators.clone();
-    self.steps.push(step);
-    match self.status {
-      StepStatus::NotStarted => self.start(),
-      _ => {}
-    }
-  }*/
+}
 
-  fn run_stage(&mut self, num_tasks: u32) {
-    let m = self.indicators.clone().unwrap();
+pub fn main() -> anyhow::Result<()> {
+  let start_time = Instant::now();
+  {
+    let mut build = BuildProcess::new(42, "Mech Builder".to_string());
+    let m = build.indicators.clone();
+
+    let mut prepare_environment = BuildStage::new(1, "Preparing build environment", |stage| {
+      run_stage(&stage, 3);
+    });
+
+    let mut download_packages = BuildStage::new(2, "Downloading packages", |stage| {
+      download_packages(&stage);
+    });
+
+    let mut build_packages = BuildStage::new(3, "Building packages", |stage| {
+        run_stage(&stage, 8);
+    });
+
+    let mut linking = BuildStage::new(4, "Linking", |stage| {
+        run_stage(&stage, 2);
+    });
+
+
+    let status = build.status_bar.clone();
+
+    build.add_build_stage(prepare_environment);
+    build.add_build_stage(download_packages);
+    build.add_build_stage(build_packages);
+    build.add_build_stage(linking);
+    
+    status.set_message("Preparing environment...");
+
+    for handle in build.stage_handles {
+      let _ = handle.join();
+    }
+
+    // start the next stage:
+    status.set_message("Downloading and building packages...");
+    let mut download_stage = build.stages.pop_front().unwrap();
+    let jh1 = thread::spawn(move || {
+      download_stage.start();
+    });
+
+    let mut build_stage = build.stages.pop_front().unwrap();
+    let jh2 = thread::spawn(move || {
+      build_stage.start();
+    });
+    jh1.join();
+    jh2.join();
+
+    // Next stage
+    status.set_message("Linking...");
+    let mut linking_stage = build.stages.pop_front().unwrap();
+    linking_stage.start();
+
+    status.finish_and_clear();
+
+    let progress = m.add(ProgressBar::new_spinner());
+    let completed_style = ProgressStyle::with_template(
+      "{prefix:.yellow} {msg} {spinner}"
+    ).unwrap()
+      .tick_strings(FISTBUMP);
+    progress.set_style(completed_style);
+    progress.set_prefix("[Success]");
+    // Run the fistbump animation
+    for _ in 0..FISTBUMP.len() - 1 {
+      thread::sleep(Duration::from_millis(100));
+      progress.tick();
+    }
+    progress.finish();
+  }
+  let end_time = Instant::now();
+  let duration = end_time.duration_since(start_time);
+  println!("{} Project built in {}", style("✓").green(), HumanDuration(duration));
+
+  Ok(())
+}
+
+fn run_stage(stage: &BuildStage, num_tasks: u32) {
 
     let mut rng = rand::rng();
     let mut total_tasks = num_tasks;
     let mut handles = Vec::new();
 
-
-    /*
-      let random_name = PACKAGES.choose(&mut rng).unwrap();
-      let mut step = BuildStep::new(0, random_name.to_string());
-      let mut step = self.add_build_step(step);
-      let handle = self.steps.last_mut().unwrap().run_step();
-      handles.push(handle);
-    */
-
     // initial tasks
     for _ in 0..num_tasks {
-      handles.push(self.spawn_package_task(&m, &mut rng));
+      handles.push(spawn_package_task(&stage));
     }
 
     // dynamically discover new packages
@@ -276,7 +340,7 @@ impl BuildStage {
       let new = rng.random_range(1..5);
       total_tasks += new;
       for _ in 0..new {
-        handles.push(self.spawn_package_task(&m, &mut rng));
+        handles.push(spawn_package_task(&stage));
       }
     }
 
@@ -284,90 +348,67 @@ impl BuildStage {
       let _ = h.join();
     }
 
-    self.header.finish_with_message(format!("{} {}", self.name, style("✓").green()))
+    stage.header.finish_with_message(format!("{} {}", stage.name, style("✓").green()))
   }
 
-  fn spawn_package_task(&mut self, m: &MultiProgress, rng: &mut rand::rngs::ThreadRng) -> thread::JoinHandle<()> {
-    
-    let build_progress = self.build_progress.clone();
+  fn spawn_package_task(stage: &BuildStage) -> thread::JoinHandle<()> {
+    let m = stage.indicators.as_ref().unwrap().clone();
+    let build_progress = stage.build_progress.clone();
     
     let spinner_style = ProgressStyle::with_template(
       "{prefix:.bold} {spinner:.yellow} {wide_msg}"
     ).unwrap()
     .tick_chars(SQUARESPINNER);
-        
-    let count = rng.random_range(30..80);
-    let pb = m.insert_after(&self.header, ProgressBar::new_spinner());
+            
+    let pb = m.insert_after(&stage.header, ProgressBar::new_spinner());
     pb.set_style(spinner_style.clone());
+    pb.enable_steady_tick(Duration::from_millis(100));
     pb.set_prefix("  ");
     thread::spawn(move || {
       let mut rng = rand::rng();
       let pkg = PACKAGES.choose(&mut rng).unwrap();
+      pb.set_message(format!("{pkg}"));
+      thread::sleep(Duration::from_millis(rng.random_range(25..5000)));
       build_progress.inc_length(1);
-      for _ in 0..count {
-        let cmd = COMMANDS.choose(&mut rng).unwrap();
-        thread::sleep(Duration::from_millis(rng.random_range(25..50)));
-        pb.set_message(format!("{pkg}: {cmd}"));
-        pb.inc(1);
-      }
       pb.set_message(format!("{pkg}: done"));
-      pb.finish();
+      pb.finish_and_clear();
       build_progress.inc(1);
     })
   }
 
-}
+fn download_packages(stage: &BuildStage) {
+  let m = stage.indicators.as_ref().unwrap().clone();
+  let build_progress = stage.build_progress.clone();
+  let download_style = ProgressStyle::with_template(
+    "{prefix:.yellow} {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}% ({pos}/{len})"
+  ).unwrap()
+  .progress_chars(PARALLELOGRAMPROGRESS)
+  .tick_chars(SQUARESPINNER);
+  let mut handles = Vec::new();
+  for i in 0..5 {
+    build_progress.inc_length(1);
+    let pb = m.insert_after(&stage.header, ProgressBar::new(0));
+    pb.set_style(download_style.clone());
+    pb.set_prefix("  ");
+    pb.set_message(format!("{:<20}", PACKAGES[i]));
+    pb.set_length(100);
 
-pub fn main() {
-  let mut build = BuildProcess::new(42, "Mech Builder".to_string());
-  let m = build.indicators.clone();
+    let build_progress = stage.build_progress.clone();
+    let handle = thread::spawn(move || {
+      for j in 0..=100 {
+        pb.set_position(j);
+        thread::sleep(Duration::from_millis(20 + rand::thread_rng().gen_range(0..300)));
+      }
+      pb.finish_and_clear();
+      build_progress.inc(1);
+    });
 
-  let mut prepare_environment = BuildStage::new(1, "Preparing build environment".to_string());
-  let mut download_packages = BuildStage::new(2, "Downloading packages".to_string());
-  let mut build_packages = BuildStage::new(3, "Building packages".to_string());
-  let mut linking = BuildStage::new(4, "Linking".to_string());
+    handles.push(handle);
+  }
 
-  let status = build.status_bar.clone();
-
-  build.add_build_stage(prepare_environment);
-  build.add_build_stage(download_packages);
-  build.add_build_stage(build_packages);
-  build.add_build_stage(linking);
-
-  for handle in build.stage_handles {
+  for handle in handles {
     let _ = handle.join();
   }
 
-  // start the next stage:
-  let mut download_stage = build.stages.pop_front().unwrap();
-  let jh1 = thread::spawn(move || {
-    download_stage.start();
-  });
-
-  let mut build_stage = build.stages.pop_front().unwrap();
-  let jh2 = thread::spawn(move || {
-    build_stage.start();
-  });
-  jh1.join();
-  jh2.join();
-
-  let mut linking_stage = build.stages.pop_front().unwrap();
-  linking_stage.start();
-
-  status.finish_with_message("All done!");
-
-  let progress = m.add(ProgressBar::new_spinner());
-  let completed_style = ProgressStyle::with_template(
-    "{prefix:.yellow} {msg} {spinner}"
-  ).unwrap()
-    .tick_strings(FISTBUMP);
-  progress.set_style(completed_style);
-  progress.set_prefix("[Done]");
-  // Run the fistbump animation
-  for _ in 0..FISTBUMP.len() - 1 {
-    thread::sleep(Duration::from_millis(100));
-    progress.tick();
-  }
-  progress.finish();
+  stage.header.finish_with_message(format!("{} {}", stage.name, style("✓").green()))
 }
-
