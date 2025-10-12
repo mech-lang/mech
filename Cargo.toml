@@ -71,7 +71,7 @@ baselib = ["bool", "string",
       "functions", "formulas",
     ]
 
-compiler = ["anyhow", "console", "indicatif", "tempfile", "mech-core/compiler", "mech-interpreter/compiler", "mech-syntax/compiler"]
+compiler = ["anyhow", "console", "indicatif", "tempfile", "zip", "mech-core/compiler", "mech-interpreter/compiler", "mech-syntax/compiler"]
 program = ["mech-core/program", "mech-interpreter/program", "mech-syntax/program"]
 pretty_print = ["mech-core/pretty_print", "mech-interpreter/pretty_print", "mech-syntax/pretty_print"]
 serde = ["mech-core/serde", "mech-interpreter/serde", "mech-syntax/serde"]
