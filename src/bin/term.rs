@@ -7,6 +7,7 @@ use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
 use rand::prelude::IndexedRandom;
 use rand::Rng;
 use std::sync::{mpsc, Arc, OnceLock, Mutex, atomic::{AtomicBool, Ordering}};
+use std::env;
 
 static ERROR_MESSAGE: OnceLock<Arc<Mutex<Option<String>>>> = OnceLock::new();
 
@@ -333,8 +334,33 @@ impl BuildStage {
 }
 
 pub fn main() -> anyhow::Result<()> {
-  init_cancel_flag();
   let start_time = Instant::now();
+  init_cancel_flag();
+  let mut args: Vec<String> = env::args().collect();
+
+  /*// Mode detection -- if no args, default to current directory
+  if args.len() == 1 {
+    let cwd = env::current_dir()?;
+    println!("[main] No args — defaulting to current directory: {}", cwd.display());
+    return build_from_path(&cwd, None, None, None, None);
+  }
+
+  // Handle drag-and-drop of a single path (file or folder)
+  if args.len() == 2 && !args[1].eq_ignore_ascii_case("build") {
+    let dropped = PathBuf::from(&args[1]);
+    if dropped.exists() {
+      println!(
+          "[main] Detected drag-and-drop: {} ({})",
+          dropped.display(),
+          if dropped.is_dir() { "folder" } else { "file" }
+      );
+      return build_from_path(&dropped, None, None, None, None);
+    }
+  }*/
+
+
+
+  // Start the build!
   println!(r#"{} Building: cmontella/ekf v0.2.3 (C:\cmont\Desktop\ekf)"#, style("[mech v0.2.60]").yellow());
   {
     let mut build = BuildProcess::new(42, "Mech Builder".to_string());
