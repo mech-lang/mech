@@ -115,7 +115,6 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0"
 zip = "5.1"
-nalgebra = "0.34.1"
 "#,
         name = shim_name
     );
