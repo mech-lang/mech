@@ -11,6 +11,7 @@ use std::env;
 use std::path::PathBuf;
 use clap::{arg, command, value_parser, Arg, ArgAction, Command};
 use colored::Colorize;
+use std::path::{Path, MAIN_SEPARATOR};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -18,9 +19,41 @@ static ERROR_MESSAGE: OnceLock<Arc<Mutex<Option<String>>>> = OnceLock::new();
 
 static CANCELLED: OnceLock<Arc<AtomicBool>> = OnceLock::new();
 
+static BUILD_DATA: OnceLock<Arc<Mutex<BuildData>>> = OnceLock::new();
+
+
+#[derive(Debug, Default)]
+pub struct BuildData {
+  pub sources: Vec<String>,
+  // You can add more fields later, e.g.:
+  // pub errors: Vec<String>,
+  // pub stats: HashMap<String, usize>,
+}
+
 fn init_cancel_flag() {
   CANCELLED.set(Arc::new(AtomicBool::new(false))).ok();
   ERROR_MESSAGE.set(Arc::new(Mutex::new(None))).ok();
+  BUILD_DATA.set(Arc::new(Mutex::new(BuildData::default())));
+}
+
+pub fn get_build_data() -> Option<Arc<Mutex<BuildData>>> {
+  BUILD_DATA.get().cloned()
+}
+
+pub fn add_source(path: impl Into<String>) {
+  if let Some(data) = BUILD_DATA.get() {
+    let mut data = data.lock().unwrap();
+    data.sources.push(path.into());
+  } else {
+    eprintln!("BuildData not initialized!");
+  }
+}
+
+pub fn get_sources() -> Vec<String> {
+  BUILD_DATA
+      .get()
+      .map(|data| data.lock().unwrap().sources.clone())
+      .unwrap_or_default()
 }
 
 fn cancel_all(msg: &str) {
@@ -417,6 +450,10 @@ pub fn main() -> anyhow::Result<()> {
     let m = build.indicators.clone();
     let cancelled = Arc::new(AtomicBool::new(false));
 
+    for path in &mech_paths {
+      add_source(path);
+    }
+
     let mut prepare_environment = BuildStage::new(1, "Prepare build environment", |mut stage| {
       prepare_environment(&mut stage);
     });
@@ -684,6 +721,10 @@ fn build_packages(stage: &mut BuildStage, rx: mpsc::Receiver<String>) {
 
 }
 
+// This is a step-bt-step process:
+// 1. Open supplied source files, gather all the files that are contained
+// 2. Start by looking for a .mfg file in the root of the project
+// 3. Parse the .mfg file, get the name of the project and the version of mech we are targeting.
 fn prepare_environment(stage: &mut BuildStage) {
   if is_cancelled() {
     stage.cancel();
@@ -691,6 +732,7 @@ fn prepare_environment(stage: &mut BuildStage) {
   }
   let m = stage.indicators.as_ref().unwrap().clone();
   let build_progress = stage.build_progress.clone();
+
   let download_style = ProgressStyle::with_template(
     "{prefix:.yellow} {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}%"
   ).unwrap()
@@ -701,8 +743,11 @@ fn prepare_environment(stage: &mut BuildStage) {
   ).unwrap()
    .progress_chars(PARALLELOGRAMPROGRESS)
    .tick_chars(PENDINGSQUARESPINNER);
+
   let mut pbs = Vec::new();
-  for msg in PREPARE {
+  for src in get_sources() {
+    let msg = format!("Loading source: {}", short_source_name(&src));
+
     build_progress.inc_length(1);
     let pb = m.insert_after(&stage.last_step, ProgressBar::new(0));
     stage.last_step = pb.clone();
@@ -746,4 +791,12 @@ fn prepare_environment(stage: &mut BuildStage) {
   } else {
     stage.finish();
   }
+}
+
+pub fn short_source_name(path: &str) -> String {
+    Path::new(path)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or(path)
+        .to_string()
 }
