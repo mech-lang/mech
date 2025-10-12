@@ -90,7 +90,6 @@ pub use crate::statements::*;
 pub use crate::expressions::*;
 pub use crate::mechdown::*;
 
-
 pub fn load_stdkinds(kinds: &mut KindTable) {
   #[cfg(feature = "u8")]
   kinds.insert(hash_str("u8"),ValueKind::U8);

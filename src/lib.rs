@@ -44,7 +44,7 @@ use std::{fs,env};
 #[cfg(feature = "wasm")]
 use web_sys::{Crypto, Window, console};
 use rand::rngs::OsRng;
-use rand::RngCore;
+use rand::Rng;
 use notify::{recommended_watcher, Event, RecursiveMode, Result as NResult, Watcher};
 use std::sync::mpsc;
 use std::sync::Arc;
@@ -82,7 +82,7 @@ pub fn print_prompt() {
 // Generate a new id for creating unique owner ids
 #[cfg(not(feature = "wasm"))]
 pub fn generate_uuid() -> u64 {
-  OsRng.next_u64()
+  rand::rng().random()
 }
 
 #[cfg(feature = "wasm")]
