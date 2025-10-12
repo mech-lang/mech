@@ -6,7 +6,36 @@ use console::{style, Emoji};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
 use rand::prelude::IndexedRandom;
 use rand::Rng;
-use std::sync::mpsc;
+use std::sync::{mpsc, Arc, OnceLock, Mutex, atomic::{AtomicBool, Ordering}};
+
+static ERROR_MESSAGE: OnceLock<Arc<Mutex<Option<String>>>> = OnceLock::new();
+
+static CANCELLED: OnceLock<Arc<AtomicBool>> = OnceLock::new();
+
+fn init_cancel_flag() {
+  CANCELLED.set(Arc::new(AtomicBool::new(false))).ok();
+  ERROR_MESSAGE.set(Arc::new(Mutex::new(None))).ok();
+}
+
+fn cancel_all(msg: &str) {
+  if let Some(flag) = CANCELLED.get() {
+    flag.store(true, Ordering::Relaxed);
+  }
+  if let Some(err) = ERROR_MESSAGE.get() {
+    *err.lock().unwrap() = Some(msg.to_string());
+  }
+}
+
+fn is_cancelled() -> bool {
+  CANCELLED.get()
+    .map(|f| f.load(Ordering::Relaxed))
+    .unwrap_or(false)
+}
+
+fn get_error_message() -> Option<String> {
+  ERROR_MESSAGE.get()
+    .and_then(|err| err.lock().unwrap().clone())
+}
 
 static PREPARE: &[&str] = &[
   "Check for required tools",
@@ -58,7 +87,7 @@ static DOTSPINNER: &[&str] = &[
   "∙∙∙","∙∙∙","●∙∙","●∙∙","•●∙","•●∙","∙•●","∙•●","∙∙•","∙∙•","∙∙∙","∙∙∙","∙∙∙","∙∙∙","∙∙∙"," "
 ];
 
-static HEADASPLODE: &[&str] = &[
+static MINDBLOWN: &[&str] = &[
   "🙂","🙂","😐","😐","😮","😮","😦","😦","😧","😧","🤯","🤯","💥","✨","💭","　","　",
 ];
 
@@ -70,6 +99,25 @@ static PENDINGSQUARESPINNER: &str = "□□";
 
 static PARALLELOGRAMPROGRESS: &str = "▰▱";
 
+fn format_duration_short(dur: Duration) -> String {
+  let ms = dur.as_millis();
+  if ms < 1000 {
+    format!("{ms}ms")
+  } else if ms < 60_000 {
+    format!("{:.1}s", ms as f64 / 1000.0)
+  } else if ms < 3_600_000 {
+    let secs = ms / 1000;
+    let mins = secs / 60;
+    let rem = secs % 60;
+    format!("{mins}m{rem}s")
+  } else {
+    let secs = ms / 1000;
+    let hrs = secs / 3600;
+    let mins = (secs % 3600) / 60;
+    format!("{hrs}h{mins}m")
+  }
+}
+
 #[derive(Debug)]
 enum StepStatus {
     NotStarted,
@@ -78,7 +126,6 @@ enum StepStatus {
     Completed,
     Failed,
 }
-
 
 struct BuildProcess {
   id: u64,
@@ -135,17 +182,43 @@ impl BuildProcess {
   }
 
   pub fn finish(&mut self) {
+    self.status_bar.finish_and_clear();
+    let final_state = self.indicators.add(ProgressBar::new_spinner());
     self.end_time = Some(Instant::now());
     self.build_status = StepStatus::Completed;
-    self.build_progress.finish();
-    self.status_bar.finish_with_message(format!("Build completed in {}", HumanDuration(self.end_time.unwrap() - self.start_time.unwrap())));
+    self.build_progress.finish_and_clear();
+    let completed_style = ProgressStyle::with_template(
+      "{prefix:.yellow} {msg} {spinner}"
+    ).unwrap()
+      .tick_strings(FISTBUMP);  
+    final_state.set_style(completed_style);
+    final_state.set_prefix("[Success]");
+    // Run the fistbump animation
+    for _ in 0..FISTBUMP.len() - 1 {
+      thread::sleep(Duration::from_millis(100));
+      final_state.tick();
+    }
+    final_state.finish_with_message("Artifact available at ./build/release/ekf.exe");
   }
 
   pub fn fail(&mut self) {
+    self.status_bar.finish_and_clear();
+    let final_state = self.indicators.add(ProgressBar::new_spinner());
     self.end_time = Some(Instant::now());
     self.build_status = StepStatus::Failed;
-    self.build_progress.finish();
-    self.status_bar.finish_with_message(format!("Build failed after {}", HumanDuration(self.end_time.unwrap() - self.start_time.unwrap())));
+    self.build_progress.finish_and_clear();
+    let failed_style = ProgressStyle::with_template(
+      "{prefix:.yellow} {msg} {spinner}"
+    ).unwrap()
+      .tick_strings(MINDBLOWN);
+    final_state.set_style(failed_style);
+    final_state.set_prefix("[Failure]");
+    // Run the fistbump animation
+    for _ in 0..MINDBLOWN.len() - 1 {
+      thread::sleep(Duration::from_millis(100));
+      final_state.tick();
+    }
+    final_state.finish_with_message(get_error_message().unwrap_or("Unknown error".to_string()));
   }
 
   pub fn add_build_stage(&mut self, mut stage: BuildStage) {
@@ -182,7 +255,6 @@ impl BuildProcess {
   }
 
 }
-
 
 struct BuildStage {
   id: u64,
@@ -232,27 +304,42 @@ impl BuildStage {
   }
 
   pub fn finish(&mut self) {
-    self.end_time = Some(Instant::now());
+    let end_time = Instant::now();
+    self.end_time = Some(end_time);
     self.status = StepStatus::Completed;
     self.build_progress.inc(1);
-    self.header.finish_with_message(format!("{} {}", self.name, style("✓").green()));
+    let elapsed = self.end_time.unwrap().duration_since(self.start_time.unwrap());
+    let formatted_time = format_duration_short(elapsed);
+    self.header.finish_with_message(format!("{} [{}] {}", self.name, formatted_time, style("✓").green()));
   }
 
   pub fn fail(&mut self) {
     self.end_time = Some(Instant::now());
     self.status = StepStatus::Failed;
-    self.build_progress.inc(1);
     self.header.finish_with_message(format!("{} {}", self.name, style("✗").red()));
+  }
+
+  pub fn cancel(&mut self) {
+    self.end_time = Some(Instant::now());
+    self.status = StepStatus::Failed;
+    let cancel_style = ProgressStyle::with_template(
+      "{prefix:.yellow.dim} {msg:.dim}"
+    ).unwrap()
+     .tick_chars(FAILEDSQUARESPINNER);
+    self.header.set_style(cancel_style);
+    self.header.finish_with_message(format!("{} {}", self.name, "✗"));
   }
 
 }
 
 pub fn main() -> anyhow::Result<()> {
+  init_cancel_flag();
   let start_time = Instant::now();
-  println!(r#"{} Building cmontella/ekf v0.2.3 (C:\cmont\Desktop\ekf)"#, style("[mech v0.2.60]").yellow());
+  println!(r#"{} Building: cmontella/ekf v0.2.3 (C:\cmont\Desktop\ekf)"#, style("[mech v0.2.60]").yellow());
   {
     let mut build = BuildProcess::new(42, "Mech Builder".to_string());
     let m = build.indicators.clone();
+    let cancelled = Arc::new(AtomicBool::new(false));
 
     let mut prepare_environment = BuildStage::new(1, "Prepare build environment", |mut stage| {
       prepare_environment(&mut stage);
@@ -272,7 +359,6 @@ pub fn main() -> anyhow::Result<()> {
         run_stage(&mut stage, 2);
     });
 
-
     let status = build.status_bar.clone();
 
     build.add_build_stage(prepare_environment);
@@ -282,7 +368,8 @@ pub fn main() -> anyhow::Result<()> {
     
     status.set_message("Preparing environment...");
 
-    for handle in build.stage_handles {
+    let stage_handles = std::mem::take(&mut build.stage_handles);
+    for handle in stage_handles {
       let _ = handle.join();
     }
 
@@ -305,25 +392,20 @@ pub fn main() -> anyhow::Result<()> {
     let mut packaging_stage = build.stages.pop_front().unwrap();
     packaging_stage.start();
 
-    status.finish_and_clear();
-
-    let progress = m.add(ProgressBar::new_spinner());
-    let completed_style = ProgressStyle::with_template(
-      "{prefix:.yellow} {msg} {spinner}"
-    ).unwrap()
-      .tick_strings(FISTBUMP);
-    progress.set_style(completed_style);
-    progress.set_prefix("[Success]");
-    // Run the fistbump animation
-    for _ in 0..FISTBUMP.len() - 1 {
-      thread::sleep(Duration::from_millis(100));
-      progress.tick();
+    if is_cancelled() {
+      build.fail();
+    } else {
+      build.finish();
     }
-    progress.finish();
   }
   let end_time = Instant::now();
-  let duration = end_time.duration_since(start_time);
-  println!("{} Project built in {}", style("✓").green(), HumanDuration(duration));
+  let elapsed = end_time.duration_since(start_time);
+  let formatted_time = format_duration_short(elapsed);
+  if is_cancelled() {
+    println!("{} Build failed after {}.", style("✗").red(), formatted_time);
+  } else {
+    println!("{} Build succeeded after {}!", style("✓").green(), formatted_time);
+  }
 
   Ok(())
 }
@@ -331,58 +413,68 @@ pub fn main() -> anyhow::Result<()> {
 // SIMULATE THE BUILD PROCESS -------------------------------------------------
 
 fn run_stage(stage: &mut BuildStage, num_tasks: u32) {
-    let build_progress = stage.build_progress.clone();
-    let mut rng = rand::rng();
-    let mut total_tasks = num_tasks;
-    let mut handles = Vec::new();
+  if is_cancelled() {
+    stage.cancel();
+    return;
+  }
 
-    // initial tasks
-    for _ in 0..num_tasks {
+
+  let build_progress = stage.build_progress.clone();
+  let mut rng = rand::rng();
+  let mut total_tasks = num_tasks;
+  let mut handles = Vec::new();
+
+  // initial tasks
+  for _ in 0..num_tasks {
+    handles.push(spawn_package_task(&stage));
+  }
+
+  // dynamically discover new packages
+  for _ in 0..3 {
+    thread::sleep(Duration::from_millis(rng.random_range(1000..2000)));
+    let new = rng.random_range(1..5);
+    total_tasks += new;
+    for _ in 0..new {
       handles.push(spawn_package_task(&stage));
     }
-
-    // dynamically discover new packages
-    for _ in 0..3 {
-      thread::sleep(Duration::from_millis(rng.random_range(1000..2000)));
-      let new = rng.random_range(1..5);
-      total_tasks += new;
-      for _ in 0..new {
-        handles.push(spawn_package_task(&stage));
-      }
-    }
-
-    for h in handles {
-      let _ = h.join();
-    }
-    stage.finish();
   }
 
-  fn spawn_package_task(stage: &BuildStage) -> thread::JoinHandle<()> {
-    let m = stage.indicators.as_ref().unwrap().clone();
-    let build_progress = stage.build_progress.clone();
-    
-    let spinner_style = ProgressStyle::with_template(
-      "{prefix:.bold} {spinner:.yellow} {wide_msg}"
-    ).unwrap()
-    .tick_chars(SQUARESPINNER);
-            
-    let pb = m.insert_after(&stage.header, ProgressBar::new_spinner());
-    pb.set_style(spinner_style.clone());
-    pb.enable_steady_tick(Duration::from_millis(100));
-    pb.set_prefix("  ");
-    thread::spawn(move || {
-      let mut rng = rand::rng();
-      let pkg = PACKAGES.choose(&mut rng).unwrap();
-      pb.set_message(format!("{pkg}"));
-      thread::sleep(Duration::from_millis(rng.random_range(25..5000)));
-      build_progress.inc_length(1);
-      pb.set_message(format!("{pkg}: done"));
-      pb.finish_and_clear();
-      build_progress.inc(1);
-    })
+  for h in handles {
+    let _ = h.join();
   }
+  stage.finish();
+}
+
+fn spawn_package_task(stage: &BuildStage) -> thread::JoinHandle<()> {
+  let m = stage.indicators.as_ref().unwrap().clone();
+  let build_progress = stage.build_progress.clone();
+  
+  let spinner_style = ProgressStyle::with_template(
+    "{prefix:.bold} {spinner:.yellow} {wide_msg}"
+  ).unwrap()
+  .tick_chars(SQUARESPINNER);
+          
+  let pb = m.insert_after(&stage.header, ProgressBar::new_spinner());
+  pb.set_style(spinner_style.clone());
+  pb.enable_steady_tick(Duration::from_millis(100));
+  pb.set_prefix("  ");
+  thread::spawn(move || {
+    let mut rng = rand::rng();
+    let pkg = PACKAGES.choose(&mut rng).unwrap();
+    pb.set_message(format!("{pkg}"));
+    thread::sleep(Duration::from_millis(rng.random_range(25..5000)));
+    build_progress.inc_length(1);
+    pb.set_message(format!("{pkg}: done"));
+    pb.finish_and_clear();
+    build_progress.inc(1);
+  })
+}
 
 fn download_packages(stage: &mut BuildStage, tx: mpsc::Sender<String>) {
+  if is_cancelled() {
+    stage.cancel();
+    return;
+  }
   let m = stage.indicators.as_ref().unwrap().clone();
   let build_progress = stage.build_progress.clone();
   
@@ -391,6 +483,12 @@ fn download_packages(stage: &mut BuildStage, tx: mpsc::Sender<String>) {
   ).unwrap()
    .progress_chars(PARALLELOGRAMPROGRESS)
    .tick_chars(SQUARESPINNER);
+
+  let fail_style = ProgressStyle::with_template(
+    "{prefix} {spinner:.red} {msg}",
+  )
+  .unwrap()
+  .tick_chars(FAILEDSQUARESPINNER);
 
   let mut handles = Vec::new();
   for pkg in PACKAGES {
@@ -403,12 +501,26 @@ fn download_packages(stage: &mut BuildStage, tx: mpsc::Sender<String>) {
     pb.set_message(format!("{:<20}", pkg));
 
     let tx = tx.clone();
+    let failstyle = fail_style.clone();
 
     let build_progress = stage.build_progress.clone();
     let handle = thread::spawn(move || {
       for j in 0..=rand_size {
+        if is_cancelled() {
+          pb.set_style(failstyle.clone());
+          pb.finish();
+          return;
+        }
         pb.set_position(j);
         thread::sleep(Duration::from_millis(20 + rand::thread_rng().gen_range(0..300)));
+        // with 5% probability, fail the download
+        if rand::thread_rng().gen_range(0..5000) < 1 && j > 20 && j < rand_size - 20 {
+          pb.set_style(failstyle.clone());
+          pb.finish_with_message(format!("{:<20} {}", pkg, style("✗").red()));
+          build_progress.inc(1);
+          cancel_all(format!("Failed to download package: {}", pkg).as_str());
+          return;
+        }
       }
       pb.finish_and_clear();
       let _ = tx.send(pkg.clone().to_string());
@@ -422,18 +534,30 @@ fn download_packages(stage: &mut BuildStage, tx: mpsc::Sender<String>) {
     let _ = handle.join();
   }
   drop(tx);
-  stage.finish();
+  if is_cancelled() {
+    stage.fail();
+  } else {
+    stage.finish();
+  }
 }
 
 fn build_packages(stage: &mut BuildStage, rx: mpsc::Receiver<String>) {
+  if is_cancelled() {
+    stage.cancel();
+    return;
+  }
   let m = stage.indicators.as_ref().unwrap().clone();
   let build_progress = stage.build_progress.clone();
 
   let build_style = ProgressStyle::with_template(
       "{prefix} {spinner:.yellow} {msg}",
-  )
-  .unwrap()
-  .tick_chars(SQUARESPINNER);
+  ).unwrap()
+   .tick_chars(SQUARESPINNER);
+
+  let fail_style = ProgressStyle::with_template(
+    "{prefix} {spinner:.red} {msg}",
+  ).unwrap()
+   .tick_chars(FAILEDSQUARESPINNER);
 
   let mut handles = Vec::new();
 
@@ -448,10 +572,23 @@ fn build_packages(stage: &mut BuildStage, rx: mpsc::Receiver<String>) {
 
     let build_progress = build_progress.clone();
 
+    let failstyle = fail_style.clone();
     let handle = thread::spawn(move || {
       for j in 0..=100 {
+        if is_cancelled() {
+          pb.set_style(failstyle.clone());
+          pb.finish();
+          return;
+        }
         pb.set_position(j);
         thread::sleep(Duration::from_millis(30 + rand::thread_rng().gen_range(0..150)));
+        // probability 10% to fail
+        if rand::thread_rng().gen_range(0..5000) < 0 && j > 20 && j < 90 {
+          pb.set_style(failstyle.clone());
+          pb.finish_with_message(format!("{:<20} {}", pkg, style("✗").red()));
+          cancel_all(format!("Failed to build package: {}", pkg).as_str());
+          return;
+        }
       }
       pb.finish_and_clear();
       build_progress.inc(1);
@@ -462,22 +599,32 @@ fn build_packages(stage: &mut BuildStage, rx: mpsc::Receiver<String>) {
   for handle in handles {
     let _ = handle.join();
   }
-  stage.finish();
+
+  if is_cancelled() {
+    stage.fail();
+  } else {
+    stage.finish();
+  }
+
 }
 
 fn prepare_environment(stage: &mut BuildStage) {
+  if is_cancelled() {
+    stage.cancel();
+    return;
+  }
   let m = stage.indicators.as_ref().unwrap().clone();
   let build_progress = stage.build_progress.clone();
   let download_style = ProgressStyle::with_template(
     "{prefix:.yellow} {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}%"
   ).unwrap()
-  .progress_chars(PARALLELOGRAMPROGRESS)
-  .tick_chars(SQUARESPINNER);
+   .progress_chars(PARALLELOGRAMPROGRESS)
+   .tick_chars(SQUARESPINNER);
   let pending_download = ProgressStyle::with_template(
     "{prefix:.yellow} {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}%"
   ).unwrap()
-  .progress_chars(PARALLELOGRAMPROGRESS)
-  .tick_chars(PENDINGSQUARESPINNER);
+   .progress_chars(PARALLELOGRAMPROGRESS)
+   .tick_chars(PENDINGSQUARESPINNER);
   let mut pbs = Vec::new();
   for msg in PREPARE {
     build_progress.inc_length(1);
@@ -491,14 +638,36 @@ fn prepare_environment(stage: &mut BuildStage) {
     pbs.push(pb);
   }
   
+  let fail_style = ProgressStyle::with_template(
+    "{prefix} {spinner:.red} {msg}",
+  ).unwrap()
+   .tick_chars(FAILEDSQUARESPINNER);
+  let failstyle = fail_style.clone();
   for pb in pbs.iter() {
     pb.set_style(download_style.clone());
     for j in 0..=100 {
+      if is_cancelled() {
+        pb.set_style(fail_style.clone());
+        pb.finish();
+        continue;
+      }
       pb.set_position(j);
       thread::sleep(Duration::from_millis(20 + rand::thread_rng().gen_range(0..10)));
+      // with 2% probability, fail the step
+      if rand::thread_rng().gen_range(0..5000) < 1 && j > 20 && j < 90 {
+        pb.set_style(failstyle.clone());
+        pb.finish_with_message(format!("{:<30} {}", pb.message(), style("✗").red()));
+        cancel_all(format!("Failed to prepare: {}", pb.message()).as_str());
+        continue;
+      }
     }
     pb.finish();
     build_progress.inc(1);
   }
-  stage.finish();
+
+  if is_cancelled() {
+    stage.fail();
+  } else {
+    stage.finish();
+  }
 }
