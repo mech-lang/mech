@@ -433,9 +433,17 @@ pub fn main() -> anyhow::Result<()> {
   }
 
   if mech_paths.is_empty() {
-    println!("No input files provided. Use --help for usage information.");
-    return Ok(());
+    // use the current directory
+    args.push(".".to_string());
+    let current_dir = env::current_dir().unwrap();
+    add_source(current_dir.to_str().unwrap());
+    println!("No source files provided, using current directory: {}", current_dir.display());
+  } else {
+    for path in &mech_paths {
+      add_source(path);
+    }
   }
+
 
   let start_message = if mech_paths.len() == 1 {
     format!("{}", mech_paths[0])
@@ -450,12 +458,8 @@ pub fn main() -> anyhow::Result<()> {
     let m = build.indicators.clone();
     let cancelled = Arc::new(AtomicBool::new(false));
 
-    for path in &mech_paths {
-      add_source(path);
-    }
-
-    let mut prepare_environment = BuildStage::new(1, "Prepare build environment", |mut stage| {
-      prepare_environment(&mut stage);
+    let mut prepare_build = BuildStage::new(1, "Prepare build environment", |mut stage| {
+      prepare_build(&mut stage);
     });
 
     let (tx, rx) = mpsc::channel();
@@ -464,11 +468,11 @@ pub fn main() -> anyhow::Result<()> {
       download_packages(&mut stage,tx);
     });
 
-    let mut build_packages = BuildStage::new(3, "Build", |mut stage| {
+    let mut build_packages = BuildStage::new(3, "Build project", |mut stage| {
       build_packages(&mut stage,rx);
     });
 
-    let mut packaging = BuildStage::new(4, "Pack", |mut stage| {
+    let mut packaging = BuildStage::new(4, "Package", |mut stage| {
         run_stage(&mut stage, 2);
     });
 
@@ -521,6 +525,96 @@ pub fn main() -> anyhow::Result<()> {
   }
 
   Ok(())
+}
+
+// This is a step-bt-step process:
+// 0. Create a /build directory where we will put all the build artifacts
+// 1. Open supplied source files, gather all the files that are contained
+//    (File types are just aliases for compiler feature sets)
+//    .mec     (Mech source)
+//    .mpkg    (Mech package file)
+//    .mecb    (Mech binary file)
+//    .mdoc    (Mechdown file)
+//    .mdb     (Mech database file)
+//    .dll     (Dynamic library)
+//    .rlib    (Rust library)
+//    .m file  (MATLAB)
+// 2. Start by looking for a index.mpkg file in the root of the project
+// 3. Parse the .mpkg file, get the name of the project and the version of mech we are targeting.
+// 4. Verify the version of mech is compatible with the current version.
+// 5. Prepare the build evnvironment:
+//    a. Create a /build directory if it doesn't exist
+//    b. Configure the build directory according to the project settings
+//    c. Set up any environment variables that are required
+
+fn prepare_build(stage: &mut BuildStage) {
+  if is_cancelled() {
+    stage.cancel();
+    return;
+  }
+  let m = stage.indicators.as_ref().unwrap().clone();
+  let build_progress = stage.build_progress.clone();
+
+  let download_style = ProgressStyle::with_template(
+    "{prefix:.yellow} {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}%"
+  ).unwrap()
+   .progress_chars(PARALLELOGRAMPROGRESS)
+   .tick_chars(SQUARESPINNER);
+  let pending_download = ProgressStyle::with_template(
+    "{prefix:.yellow} {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}%"
+  ).unwrap()
+   .progress_chars(PARALLELOGRAMPROGRESS)
+   .tick_chars(PENDINGSQUARESPINNER);
+
+  
+
+  let mut pbs = Vec::new();
+  for src in get_sources() {
+    let msg = format!("Loading source: {}", short_source_name(&src));
+
+    build_progress.inc_length(1);
+    let pb = m.insert_after(&stage.last_step, ProgressBar::new(0));
+    stage.last_step = pb.clone();
+    pb.set_style(pending_download.clone());
+    pb.enable_steady_tick(Duration::from_millis(100));
+    pb.set_prefix("  ");
+    pb.set_message(format!("{:<30}", msg));
+    pb.set_length(100);
+    pbs.push(pb);
+  }
+  
+  let fail_style = ProgressStyle::with_template(
+    "{prefix} {spinner:.red} {msg}",
+  ).unwrap()
+   .tick_chars(FAILEDSQUARESPINNER);
+  let failstyle = fail_style.clone();
+  for pb in pbs.iter() {
+    pb.set_style(download_style.clone());
+    for j in 0..=100 {
+      if is_cancelled() {
+        pb.set_style(fail_style.clone());
+        pb.finish();
+        continue;
+      }
+      pb.set_position(j);
+      thread::sleep(Duration::from_millis(20 + rand::thread_rng().gen_range(0..10)));
+      // with 2% probability, fail the step
+      if rand::thread_rng().gen_range(0..5000) < 1 && j > 20 && j < 90 {
+        pb.set_style(failstyle.clone());
+        pb.finish_with_message(format!("{:<30} {}", pb.message(), style("✗").red()));
+        cancel_all(format!("Failed to prepare: {}", pb.message()).as_str());
+        continue;
+      }
+    }
+    pb.finish();
+    build_progress.inc(1);
+  }
+
+  if is_cancelled() {
+    stage.fail();
+  } else {
+    stage.finish();
+  }
 }
 
 // SIMULATE THE BUILD PROCESS -------------------------------------------------
@@ -719,78 +813,6 @@ fn build_packages(stage: &mut BuildStage, rx: mpsc::Receiver<String>) {
     stage.finish();
   }
 
-}
-
-// This is a step-bt-step process:
-// 1. Open supplied source files, gather all the files that are contained
-// 2. Start by looking for a .mfg file in the root of the project
-// 3. Parse the .mfg file, get the name of the project and the version of mech we are targeting.
-fn prepare_environment(stage: &mut BuildStage) {
-  if is_cancelled() {
-    stage.cancel();
-    return;
-  }
-  let m = stage.indicators.as_ref().unwrap().clone();
-  let build_progress = stage.build_progress.clone();
-
-  let download_style = ProgressStyle::with_template(
-    "{prefix:.yellow} {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}%"
-  ).unwrap()
-   .progress_chars(PARALLELOGRAMPROGRESS)
-   .tick_chars(SQUARESPINNER);
-  let pending_download = ProgressStyle::with_template(
-    "{prefix:.yellow} {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}%"
-  ).unwrap()
-   .progress_chars(PARALLELOGRAMPROGRESS)
-   .tick_chars(PENDINGSQUARESPINNER);
-
-  let mut pbs = Vec::new();
-  for src in get_sources() {
-    let msg = format!("Loading source: {}", short_source_name(&src));
-
-    build_progress.inc_length(1);
-    let pb = m.insert_after(&stage.last_step, ProgressBar::new(0));
-    stage.last_step = pb.clone();
-    pb.set_style(pending_download.clone());
-    pb.enable_steady_tick(Duration::from_millis(100));
-    pb.set_prefix("  ");
-    pb.set_message(format!("{:<30}", msg));
-    pb.set_length(100);
-    pbs.push(pb);
-  }
-  
-  let fail_style = ProgressStyle::with_template(
-    "{prefix} {spinner:.red} {msg}",
-  ).unwrap()
-   .tick_chars(FAILEDSQUARESPINNER);
-  let failstyle = fail_style.clone();
-  for pb in pbs.iter() {
-    pb.set_style(download_style.clone());
-    for j in 0..=100 {
-      if is_cancelled() {
-        pb.set_style(fail_style.clone());
-        pb.finish();
-        continue;
-      }
-      pb.set_position(j);
-      thread::sleep(Duration::from_millis(20 + rand::thread_rng().gen_range(0..10)));
-      // with 2% probability, fail the step
-      if rand::thread_rng().gen_range(0..5000) < 1 && j > 20 && j < 90 {
-        pb.set_style(failstyle.clone());
-        pb.finish_with_message(format!("{:<30} {}", pb.message(), style("✗").red()));
-        cancel_all(format!("Failed to prepare: {}", pb.message()).as_str());
-        continue;
-      }
-    }
-    pb.finish();
-    build_progress.inc(1);
-  }
-
-  if is_cancelled() {
-    stage.fail();
-  } else {
-    stage.finish();
-  }
 }
 
 pub fn short_source_name(path: &str) -> String {
