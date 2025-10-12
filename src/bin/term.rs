@@ -8,6 +8,11 @@ use rand::prelude::IndexedRandom;
 use rand::Rng;
 use std::sync::{mpsc, Arc, OnceLock, Mutex, atomic::{AtomicBool, Ordering}};
 use std::env;
+use std::path::PathBuf;
+use clap::{arg, command, value_parser, Arg, ArgAction, Command};
+use colored::Colorize;
+
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 static ERROR_MESSAGE: OnceLock<Arc<Mutex<Option<String>>>> = OnceLock::new();
 
@@ -334,34 +339,79 @@ impl BuildStage {
 }
 
 pub fn main() -> anyhow::Result<()> {
+  let text_logo = r#"
+  ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐  ┌─┐
+  └───┐ ┌───┘ └──────┘ │ │ └┐ │ │ │  │ │
+  ┌─┐ │ │ ┌─┐ ┌──────┐ │ │  └─┘ │ └─┐│ │
+  │ │ │ │ │ │ │ ┌────┘ │ │  ┌─┐ │ ┌─┘│ │
+  │ │ └─┘ │ │ │ └────┐ │ └──┘ │ │ │  │ │
+  └─┘     └─┘ └──────┘ └──────┘ └─┘  └─┘"#.truecolor(246,192,78);
+  let about = format!("{}", text_logo);
+
   let start_time = Instant::now();
   init_cancel_flag();
   let mut args: Vec<String> = env::args().collect();
 
-  /*// Mode detection -- if no args, default to current directory
-  if args.len() == 1 {
-    let cwd = env::current_dir()?;
-    println!("[main] No args — defaulting to current directory: {}", cwd.display());
-    return build_from_path(&cwd, None, None, None, None);
+  let matches = Command::new("Mech")
+    .version(VERSION)
+    .author("Corey Montella corey@mech-lang.org")
+    .about(about)
+    .arg(Arg::new("mech_paths")
+        .help("Source .mec and files")
+        .required(false)
+        .action(ArgAction::Append))
+    .arg(Arg::new("debug")
+        .short('d')
+        .long("debug")
+        .help("Print debug info")
+        .action(ArgAction::SetTrue))
+    .arg(Arg::new("tree")
+        .short('t')
+        .long("tree")
+        .help("Print the syntax tree")
+        .action(ArgAction::SetTrue))
+    .subcommand(Command::new("build")
+      .about("Build Mech program into a binary.")
+      .arg(Arg::new("mech_build_file_paths")
+        .help("Source .mec and .mecb files")
+        .required(false)
+        .action(ArgAction::Append))
+      .arg(Arg::new("release")
+        .short('d')
+        .long("debug")
+        .help("Print debug info")
+        .action(ArgAction::SetTrue))        
+      .arg(Arg::new("output_path")
+        .short('o')
+        .long("out")
+        .help("Destination folder.")
+        .required(false)))            
+    .get_matches();
+
+  let debug_flag = matches.get_flag("debug");
+  let tree_flag = matches.get_flag("tree");
+  let mech_paths: Vec<String> = matches.get_many::<String>("mech_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+
+  if let Some(matches) = matches.subcommand_matches("build") {
+    let build_paths: Vec<String> = matches.get_many::<String>("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+    let release_flag = matches.get_flag("release");
+    let output_path = matches.get_one::<String>("output_path").map(|s| s.to_string()).unwrap_or("./build".to_string());
+    todo!("Build command not yet implemented");
   }
 
-  // Handle drag-and-drop of a single path (file or folder)
-  if args.len() == 2 && !args[1].eq_ignore_ascii_case("build") {
-    let dropped = PathBuf::from(&args[1]);
-    if dropped.exists() {
-      println!(
-          "[main] Detected drag-and-drop: {} ({})",
-          dropped.display(),
-          if dropped.is_dir() { "folder" } else { "file" }
-      );
-      return build_from_path(&dropped, None, None, None, None);
-    }
-  }*/
+  if mech_paths.is_empty() {
+    println!("No input files provided. Use --help for usage information.");
+    return Ok(());
+  }
 
-
+  let start_message = if mech_paths.len() == 1 {
+    format!("{}", mech_paths[0])
+  } else {
+    format!("{} files.", mech_paths.len())
+  };
 
   // Start the build!
-  println!(r#"{} Building: cmontella/ekf v0.2.3 (C:\cmont\Desktop\ekf)"#, style("[mech v0.2.60]").yellow());
+  println!(r#"{} Building: {}"#, style(format!("[mech v{}]",VERSION).yellow()), start_message);
   {
     let mut build = BuildProcess::new(42, "Mech Builder".to_string());
     let m = build.indicators.clone();
