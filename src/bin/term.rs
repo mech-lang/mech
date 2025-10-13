@@ -36,12 +36,22 @@ pub struct BuildData {
   pub paths: Vec<PathBuf>,
   pub packages: Vec<String>,
   pub trees: Arc<Mutex<HashMap<String, Program>>>,
+  pub bytecode: Vec<u8>,
 }
 
 fn init_cancel_flag() {
   CANCELLED.set(Arc::new(AtomicBool::new(false))).ok();
   ERROR_MESSAGE.set(Arc::new(Mutex::new(None))).ok();
   BUILD_DATA.set(Arc::new(Mutex::new(BuildData::default())));
+}
+
+fn set_bytecode(bytes: Vec<u8>) {
+  if let Some(data) = BUILD_DATA.get() {
+    let mut data = data.lock().unwrap();
+    data.bytecode = bytes;
+  } else {
+    panic!("BuildData not initialized!");
+  }
 }
 
 pub fn add_tree(path: impl Into<String>, tree: Program) {
@@ -241,9 +251,14 @@ impl BuildProcess {
     final_state.set_style(completed_style);
     final_state.set_prefix("[Success]");
     // Run the fistbump animation
-    for _ in 0..FISTBUMP.len() - 1 {
-      thread::sleep(Duration::from_millis(100));
-      final_state.tick();
+    if let Some(start_time) = self.start_time {
+      let elapsed = self.end_time.unwrap_or_else(Instant::now).duration_since(start_time);
+      if elapsed > Duration::from_secs(60) {
+        for _ in 0..FISTBUMP.len() - 1 {
+          thread::sleep(Duration::from_millis(100));
+          final_state.tick();
+        }
+      }
     }
     final_state.finish_with_message("Artifact available at ./build/release/ekf.exe");
   }
@@ -475,31 +490,37 @@ pub fn main() -> anyhow::Result<()> {
     let m = build.indicators.clone();
     let cancelled = Arc::new(AtomicBool::new(false));
 
-    let (tx, rx) = mpsc::channel();
+    let (path_tx, path_rx) = mpsc::channel();
+    let (tree_tx, tree_rx) = mpsc::channel();
 
-    let tx2 = tx.clone();
+    let path_tx2 = path_tx.clone();
     let mut prepare_build = BuildStage::new(1, "Prepare build environment", |mut stage| {
-      prepare_build(&mut stage, tx2);
+      prepare_build(&mut stage, path_tx2);
     });
 
     let mut download_packages = BuildStage::new(2, "Download packages", |mut stage| {
-      download_packages(&mut stage,tx);
+      download_packages(&mut stage,path_tx);
     });
 
-    let mut parse_packages = BuildStage::new(3, "Build project", |mut stage| {
-      parse_packages(&mut stage,rx);
+    let mut build_packages = BuildStage::new(3, "Build packages", |mut stage| {
+      parse_packages(&mut stage,path_rx, tree_tx);
     });
 
-    let mut packaging = BuildStage::new(4, "Package", |mut stage| {
-        run_stage(&mut stage, 2);
+    let mut build_project = BuildStage::new(4, "Build project", |mut stage| {
+      build_project(&mut stage, tree_rx);
+    });
+
+    let mut package_artifacts = BuildStage::new(5, "Package artifacts", |mut stage| {
+      
     });
 
     let status = build.status_bar.clone();
 
     build.add_build_stage(prepare_build);
     build.add_build_stage(download_packages);
-    build.add_build_stage(parse_packages);
-    build.add_build_stage(packaging);
+    build.add_build_stage(build_packages);
+    build.add_build_stage(build_project);
+    build.add_build_stage(package_artifacts);
     
     status.set_message("Preparing environment...");
 
@@ -682,7 +703,6 @@ fn prepare_build(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
 fn download_packages(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
   let m = stage.indicators.as_ref().unwrap().clone();
   let build_progress = stage.build_progress.clone();
-  
   /*let mut handles = Vec::new();
   for pkg in PACKAGES {
     // Random size per package
@@ -727,7 +747,7 @@ fn download_packages(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
   drop(tx);*/
 }
 
-fn parse_packages(stage: &mut BuildStage, rx: mpsc::Receiver<Vec<PathBuf>>) {
+fn parse_packages(stage: &mut BuildStage, rx: mpsc::Receiver<Vec<PathBuf>>, tx: mpsc::Sender<Program>) {
   let m = stage.indicators.as_ref().unwrap().clone();
   let build_progress = stage.build_progress.clone();
 
@@ -786,68 +806,68 @@ fn parse_packages(stage: &mut BuildStage, rx: mpsc::Receiver<Vec<PathBuf>>) {
     let _ = handle.join();
   }
 
+  drop(tx);
+
 }
 
-// SIMULATE THE BUILD PROCESS -------------------------------------------------
-
-fn run_stage(stage: &mut BuildStage, num_tasks: u32) {
+fn build_project(stage: &mut BuildStage, rx: mpsc::Receiver<Program>) {
+  let m = stage.indicators.as_ref().unwrap().clone();
   let build_progress = stage.build_progress.clone();
-  let mut rng = rand::rng();
-  let mut total_tasks = num_tasks;
-  let mut handles = Vec::new();
 
-  // initial tasks
-  for _ in 0..num_tasks {
-    handles.push(spawn_package_task(&stage));
-  }
+  //let mut handles = Vec::new();
+  
+  // Read from the channel and spawn build tasks until the channel is closed
+  build_progress.inc_length(1);
+  let pb = m.insert_after(&stage.header, ProgressBar::new_spinner());
+  pb.set_style(build_style());
+  pb.set_message("Building project:...");
+  pb.enable_steady_tick(Duration::from_millis(100));
+  
+  let mut intrp = Interpreter::new(0);
 
-  // dynamically discover new packages
-  for _ in 0..3 {
-    thread::sleep(Duration::from_millis(rng.random_range(1000..2000)));
-    let new = rng.random_range(1..5);
-    total_tasks += new;
-    for _ in 0..new {
-      handles.push(spawn_package_task(&stage));
+  for tree in rx {
+    let result = intrp.interpret(&tree);
+    match result {
+      Ok(_) => {
+        pb.set_message("Build succeeded.");
+      }
+      Err(e) => {
+        pb.set_style(fail_style());
+        pb.finish_with_message(format!("Build failed: {:?} {}", e, style("✗").red()));
+        cancel_all("Build cancelled due to interpreter error.");
+        return;
+      }
     }
   }
 
-  for h in handles {
-    let _ = h.join();
+  match intrp.compile() {
+    Ok(bytecode) => {
+      pb.set_message(format!("Compiled {} bytes.", bytecode.len()));
+      set_bytecode(bytecode);
+    }
+    Err(e) => {
+      pb.set_style(fail_style());
+      pb.finish_with_message(format!("Compilation failed: {:?} {}", e, style("✗").red()));
+      cancel_all(format!("Build cancelled due to compile error: {:?}", e).as_str());
+      return;
+    }
   }
-  stage.finish();
+
+  pb.finish();
+  build_progress.inc(1);
+
 }
 
-fn spawn_package_task(stage: &BuildStage) -> thread::JoinHandle<()> {
-  let m = stage.indicators.as_ref().unwrap().clone();
-  let build_progress = stage.build_progress.clone();
-  
-  let spinner_style = ProgressStyle::with_template(
-    "{prefix:.bold} {spinner:.yellow} {wide_msg}"
-  ).unwrap()
-  .tick_chars(SQUARESPINNER);
-          
-  let pb = m.insert_after(&stage.header, ProgressBar::new_spinner());
-  pb.set_style(spinner_style.clone());
-  pb.enable_steady_tick(Duration::from_millis(100));
-  pb.set_prefix("  ");
-  thread::spawn(move || {
-    let mut rng = rand::rng();
-    let pkg = "Foo-Module";
-    pb.set_message(format!("{pkg}"));
-    thread::sleep(Duration::from_millis(rng.random_range(25..5000)));
-    build_progress.inc_length(1);
-    pb.set_message(format!("{pkg}: done"));
-    pb.finish_and_clear();
-    build_progress.inc(1);
-  })
-}
+
+
+// Helpers
 
 pub fn short_source_name(path: &str) -> String {
-    Path::new(path)
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or(path)
-        .to_string()
+  Path::new(path)
+      .file_name()
+      .and_then(|n| n.to_str())
+      .unwrap_or(path)
+      .to_string()
 }
 
 fn build_style() -> ProgressStyle {
