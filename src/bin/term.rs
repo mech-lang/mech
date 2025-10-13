@@ -111,33 +111,6 @@ fn get_error_message() -> Option<String> {
     .and_then(|err| err.lock().unwrap().clone())
 }
 
-static PREPARE: &[&str] = &[
-  "Check for required tools",
-  "Create temp build directory",
-  "Download base packages",
-  "Set up environment variables",
-];
-
-static PACKAGES: &[&str] = &[
-  "fs-events",
-  "my-awesome-module",
-  "emoji-speaker",
-  "wrap-ansi",
-  "stream-browserify",
-  "acorn-dynamic-import",
-];
-
-static COMMANDS: &[&str] = &[
-  "cmake .",
-  "make",
-  "make clean",
-  "gcc foo.c -o foo",
-  "gcc bar.c -o bar",
-  "./helper.sh rebuild-cache",
-  "make all-clean",
-  "make test",
-];
-
 static EMPTY: &[&str] = &[" "," "];
 
 static SAND: &[&str] = &["⠁","⠂","⠄","⡀","⡈","⡐","⡠","⣀","⣁","⣂","⣄","⣌","⣔","⣤","⣥","⣦","⣮","⣶","⣷","⣿","⡿","⠿","⢟","⠟","⡛","⠛","⠫","⢋","⠋","⠍","⡉","⠉","⠑","⠡","⢁","⣿"];
@@ -859,7 +832,7 @@ fn spawn_package_task(stage: &BuildStage) -> thread::JoinHandle<()> {
   pb.set_prefix("  ");
   thread::spawn(move || {
     let mut rng = rand::rng();
-    let pkg = PACKAGES.choose(&mut rng).unwrap();
+    let pkg = "Foo-Module";
     pb.set_message(format!("{pkg}"));
     thread::sleep(Duration::from_millis(rng.random_range(25..5000)));
     build_progress.inc_length(1);
