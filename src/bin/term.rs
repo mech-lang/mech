@@ -1,18 +1,24 @@
-use std::thread;
-use std::time::{Duration, Instant};
-use std::collections::VecDeque;
-use std::io::Write;
+#![allow(warnings)]
+use std::{
+  thread,
+  time::{Duration, Instant},
+  collections::{VecDeque, HashMap},
+  io::Write,
+  sync::{mpsc, Arc, OnceLock, Mutex, atomic::{AtomicBool, Ordering}},
+  env,
+  path::{Path, PathBuf, MAIN_SEPARATOR},
+  fs,
+};
 use console::{style, Emoji};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
 use rand::prelude::IndexedRandom;
 use rand::Rng;
-use std::sync::{mpsc, Arc, OnceLock, Mutex, atomic::{AtomicBool, Ordering}};
-use std::env;
-use std::path::PathBuf;
 use clap::{arg, command, value_parser, Arg, ArgAction, Command};
 use colored::Colorize;
-use std::path::{Path, MAIN_SEPARATOR};
-use std::fs;
+
+use mech_syntax::*;
+use mech_core::*;
+use mech_interpreter::*;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -27,9 +33,9 @@ static BUILD_DIR: &str = "./build";
 #[derive(Debug, Default)]
 pub struct BuildData {
   pub sources: Vec<String>,
-  // You can add more fields later, e.g.:
-  // pub errors: Vec<String>,
-  // pub stats: HashMap<String, usize>,
+  pub paths: Vec<PathBuf>,
+  pub packages: Vec<String>,
+  pub trees: Arc<Mutex<HashMap<String, Program>>>,
 }
 
 fn init_cancel_flag() {
@@ -38,8 +44,35 @@ fn init_cancel_flag() {
   BUILD_DATA.set(Arc::new(Mutex::new(BuildData::default())));
 }
 
+pub fn add_tree(path: impl Into<String>, tree: Program) {
+  if let Some(data) = BUILD_DATA.get() {
+    let mut data = data.lock().unwrap();
+    data.trees.lock().unwrap().insert(path.into(), tree);
+  } else {
+    panic!("BuildData not initialized!");
+  }
+}
+
+pub fn get_trees() -> Arc<Mutex<HashMap<String, Program>>> {
+  if let Some(data) = BUILD_DATA.get() {
+    let mut data = data.lock().unwrap();
+    data.trees.clone()
+  } else {
+    panic!("BuildData not initialized!");
+  }
+}
+
 pub fn get_build_data() -> Option<Arc<Mutex<BuildData>>> {
   BUILD_DATA.get().cloned()
+}
+
+pub fn add_path(path: impl Into<PathBuf>) {
+  if let Some(data) = BUILD_DATA.get() {
+    let mut data = data.lock().unwrap();
+    data.paths.push(path.into());
+  } else {
+    panic!("BuildData not initialized!");
+  }
 }
 
 pub fn add_source(path: impl Into<String>) {
@@ -47,7 +80,7 @@ pub fn add_source(path: impl Into<String>) {
     let mut data = data.lock().unwrap();
     data.sources.push(path.into());
   } else {
-    eprintln!("BuildData not initialized!");
+    panic!("BuildData not initialized!");
   }
 }
 
@@ -339,9 +372,18 @@ impl BuildStage {
   pub fn start(&mut self) {
     self.start_time = Some(Instant::now());
     self.status = StepStatus::Running;
+    if is_cancelled() {
+      self.cancel();
+      return;
+    }
     self.header.set_style(self.style.clone());
     self.header.enable_steady_tick(Duration::from_millis(100));
     self.task_fn.take().map(|f| f(self));
+    if is_cancelled() {
+      self.fail();
+    } else {
+      self.finish();
+    }
   }
 
   pub fn finish(&mut self) {
@@ -460,11 +502,12 @@ pub fn main() -> anyhow::Result<()> {
     let m = build.indicators.clone();
     let cancelled = Arc::new(AtomicBool::new(false));
 
-    let mut prepare_build = BuildStage::new(1, "Prepare build environment", |mut stage| {
-      prepare_build(&mut stage);
-    });
-
     let (tx, rx) = mpsc::channel();
+
+    let tx2 = tx.clone();
+    let mut prepare_build = BuildStage::new(1, "Prepare build environment", |mut stage| {
+      prepare_build(&mut stage, tx2);
+    });
 
     let mut download_packages = BuildStage::new(2, "Download packages", |mut stage| {
       download_packages(&mut stage,tx);
@@ -549,11 +592,7 @@ pub fn main() -> anyhow::Result<()> {
 //    b. Configure the build directory according to the project settings
 //    c. Set up any environment variables that are required
 
-fn prepare_build(stage: &mut BuildStage) {
-  if is_cancelled() {
-    stage.cancel();
-    return;
-  }
+fn prepare_build(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
   let m = stage.indicators.as_ref().unwrap().clone();
   let build_progress = stage.build_progress.clone();
 
@@ -610,12 +649,11 @@ fn prepare_build(stage: &mut BuildStage) {
   let step = steps.pop_front().unwrap();
   step.set_style(build_style());
   let exts = ["mec", "mpkg", "mecb", "mdoc", "mdb", "dll", "rlib", "m", "md"];
-  let mut source_files: Vec<PathBuf> = Vec::new();
   let sources = get_sources();
   for src in sources {
     let path = Path::new(&src);
     if path.exists() {
-      if let Err(e) = gather_source_files(path, &exts, &mut source_files) {
+      if let Err(e) = gather_source_files(path, &exts) {
         step.finish_with_message(format!("Failed reading {}: {} {}", src, e, style("✗").red()));
         cancel_all("Build cancelled due to IO error.");
         stage.fail();
@@ -628,6 +666,8 @@ fn prepare_build(stage: &mut BuildStage) {
       return;
     }
   }
+  let source_files = get_build_data().unwrap().lock().unwrap().paths.clone();
+  tx.send(source_files.clone());
   step.finish_with_message(format!("Found {} source files. {}", source_files.len(), style("✓").green()));
 
   // Step 2
@@ -656,7 +696,6 @@ fn prepare_build(stage: &mut BuildStage) {
   // Step 4
   let step = steps.pop_front().unwrap();
   step.set_style(build_style());
-  // For now, we just assume it's compatible
   step.finish_with_message(format!("Targeting Mech version {} {}", VERSION, style("✓").green()));
 
   // Step 5 - Configure environment
@@ -664,66 +703,121 @@ fn prepare_build(stage: &mut BuildStage) {
   step.set_style(build_style());
   step.finish_with_message(format!("Configured build environment {}", style("✓").green()));
 
-  if is_cancelled() {
-    stage.fail();
-  } else {
-    stage.finish();
-  }
 
-  /*
-  let mut pbs = Vec::new();
-  for src in get_sources() {
-    let msg = format!("Loading source: {}", short_source_name(&src));
+}
 
-    build_progress.inc_length(1);
-    let pb = m.insert_after(&stage.last_step, ProgressBar::new(0));
-    stage.last_step = pb.clone();
-    pb.set_style(pending_download.clone());
-    pb.enable_steady_tick(Duration::from_millis(100));
-    pb.set_prefix("  ");
-    pb.set_message(format!("{:<30}", msg));
-    pb.set_length(100);
-    pbs.push(pb);
-  }
+fn download_packages(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
+  let m = stage.indicators.as_ref().unwrap().clone();
+  let build_progress = stage.build_progress.clone();
   
-  let fail_style = ProgressStyle::with_template(
-    "{prefix} {spinner:.red} {msg}",
-  ).unwrap()
-   .tick_chars(FAILEDSQUARESPINNER);
-  let failstyle = fail_style.clone();
-  for pb in pbs.iter() {
-    pb.set_style(download_style.clone());
-    for j in 0..=100 {
-      if is_cancelled() {
-        pb.set_style(fail_style.clone());
-        pb.finish();
-        continue;
+  /*let mut handles = Vec::new();
+  for pkg in PACKAGES {
+    // Random size per package
+    build_progress.inc_length(1);
+    let pb = m.insert_after(&stage.header, ProgressBar::new(rand_size));
+    pb.set_style(download_style());
+    pb.set_prefix("  ");
+    pb.set_message(format!("{:<20}", pkg));
+
+    let tx = tx.clone();
+
+    let build_progress = stage.build_progress.clone();
+    let handle = thread::spawn(move || {
+      for j in 0..=rand_size {
+        if is_cancelled() {
+          pb.set_style(fail_style());
+          pb.finish();
+          return;
+        }
+        pb.set_position(j);
+        thread::sleep(Duration::from_millis(20 + rand::thread_rng().gen_range(0..300)));
+        // with 5% probability, fail the download
+        if rand::thread_rng().gen_range(0..5000) < 1 && j > 20 && j < rand_size - 20 {
+          pb.set_style(fail_style());
+          pb.finish_with_message(format!("{:<20} {}", pkg, style("✗").red()));
+          build_progress.inc(1);
+          cancel_all(format!("Failed to download package: {}", pkg).as_str());
+          return;
+        }
       }
-      pb.set_position(j);
-      thread::sleep(Duration::from_millis(20 + rand::thread_rng().gen_range(0..10)));
-      // with 2% probability, fail the step
-      if rand::thread_rng().gen_range(0..5000) < 1 && j > 20 && j < 90 {
-        pb.set_style(failstyle.clone());
-        pb.finish_with_message(format!("{:<30} {}", pb.message(), style("✗").red()));
-        cancel_all(format!("Failed to prepare: {}", pb.message()).as_str());
-        continue;
-      }
-    }
-    pb.finish();
-    build_progress.inc(1);
+      pb.finish_and_clear();
+      let _ = tx.send(pkg.clone().to_string());
+      build_progress.inc(1);
+    });
+
+    handles.push(handle);
   }
-*/
+
+  for handle in handles {
+    let _ = handle.join();
+  }
+  drop(tx);*/
+}
+
+fn parse_packages(stage: &mut BuildStage, rx: mpsc::Receiver<Vec<PathBuf>>) {
+  let m = stage.indicators.as_ref().unwrap().clone();
+  let build_progress = stage.build_progress.clone();
+
+  let mut handles = Vec::new();
+  
+  // Read from the channel and spawn build tasks until the channel is closed
+  for pkgs in rx {
+    build_progress.inc_length(1);
+    let pb = m.insert_after(&stage.header, ProgressBar::new_spinner());
+    pb.set_style(build_style());
+    pb.set_message("Building project:...");
+    pb.enable_steady_tick(Duration::from_millis(100));
+    
+    let build_progress = build_progress.clone();
+    
+    let handle = thread::spawn(move || {
+      for pkg in pkgs {
+        pb.set_message(format!("{:<20}", pkg.display()));
+        if is_cancelled() {
+          pb.set_style(fail_style());
+          pb.finish();
+          return;
+        }
+        // Open the file
+        let content = match fs::read_to_string(&pkg) {
+          Ok(c) => c,
+          Err(e) => {
+            pb.set_style(fail_style());
+            pb.finish_with_message(format!("Failed to read {}: {} {}", pkg.display(), e, style("✗").red()));
+            cancel_all("Build cancelled due to IO error.");
+            return;
+          }
+        };
+        // Parse the file
+        let tree = parser::parse(&content);
+        match tree {
+          Ok(t) => {
+            add_tree(pkg.display().to_string(), t);
+            pb.set_message(format!("{}", pkg.display()));
+          }
+          Err(e) => {
+            pb.set_style(fail_style());
+            pb.finish_with_message(format!("Failed to parse {}: {:?} {}", pkg.display(), e, style("✗").red()));
+            cancel_all("Build cancelled due to parse error.");
+            return;
+          }
+        }
+      }
+      pb.finish();
+      build_progress.inc(1);
+    });
+    handles.push(handle);
+  }
+
+  for handle in handles {
+    let _ = handle.join();
+  }
+
 }
 
 // SIMULATE THE BUILD PROCESS -------------------------------------------------
 
 fn run_stage(stage: &mut BuildStage, num_tasks: u32) {
-  if is_cancelled() {
-    stage.cancel();
-    return;
-  }
-
-
   let build_progress = stage.build_progress.clone();
   let mut rng = rand::rng();
   let mut total_tasks = num_tasks;
@@ -775,144 +869,6 @@ fn spawn_package_task(stage: &BuildStage) -> thread::JoinHandle<()> {
   })
 }
 
-fn download_packages(stage: &mut BuildStage, tx: mpsc::Sender<String>) {
-  if is_cancelled() {
-    stage.cancel();
-    return;
-  }
-  let m = stage.indicators.as_ref().unwrap().clone();
-  let build_progress = stage.build_progress.clone();
-  
-  let download_style = ProgressStyle::with_template(
-    "{prefix:.yellow} {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}% ({pos}/{len})"
-  ).unwrap()
-   .progress_chars(PARALLELOGRAMPROGRESS)
-   .tick_chars(SQUARESPINNER);
-
-  let fail_style = ProgressStyle::with_template(
-    "{prefix} {spinner:.red} {msg}",
-  )
-  .unwrap()
-  .tick_chars(FAILEDSQUARESPINNER);
-
-  let mut handles = Vec::new();
-  for pkg in PACKAGES {
-    // Random size per package
-    let rand_size: u64 = rand::thread_rng().gen_range(50..100);
-    build_progress.inc_length(1);
-    let pb = m.insert_after(&stage.header, ProgressBar::new(rand_size));
-    pb.set_style(download_style.clone());
-    pb.set_prefix("  ");
-    pb.set_message(format!("{:<20}", pkg));
-
-    let tx = tx.clone();
-    let failstyle = fail_style.clone();
-
-    let build_progress = stage.build_progress.clone();
-    let handle = thread::spawn(move || {
-      for j in 0..=rand_size {
-        if is_cancelled() {
-          pb.set_style(failstyle.clone());
-          pb.finish();
-          return;
-        }
-        pb.set_position(j);
-        thread::sleep(Duration::from_millis(20 + rand::thread_rng().gen_range(0..300)));
-        // with 5% probability, fail the download
-        if rand::thread_rng().gen_range(0..5000) < 1 && j > 20 && j < rand_size - 20 {
-          pb.set_style(failstyle.clone());
-          pb.finish_with_message(format!("{:<20} {}", pkg, style("✗").red()));
-          build_progress.inc(1);
-          cancel_all(format!("Failed to download package: {}", pkg).as_str());
-          return;
-        }
-      }
-      pb.finish_and_clear();
-      let _ = tx.send(pkg.clone().to_string());
-      build_progress.inc(1);
-    });
-
-    handles.push(handle);
-  }
-
-  for handle in handles {
-    let _ = handle.join();
-  }
-  drop(tx);
-  if is_cancelled() {
-    stage.fail();
-  } else {
-    stage.finish();
-  }
-}
-
-fn build_packages(stage: &mut BuildStage, rx: mpsc::Receiver<String>) {
-  if is_cancelled() {
-    stage.cancel();
-    return;
-  }
-  let m = stage.indicators.as_ref().unwrap().clone();
-  let build_progress = stage.build_progress.clone();
-
-  let build_style = ProgressStyle::with_template(
-      "{prefix} {spinner:.yellow} {msg}",
-  ).unwrap()
-   .tick_chars(SQUARESPINNER);
-
-  let fail_style = ProgressStyle::with_template(
-    "{prefix} {spinner:.red} {msg}",
-  ).unwrap()
-   .tick_chars(FAILEDSQUARESPINNER);
-
-  let mut handles = Vec::new();
-
-  // Read from the channel and spawn build tasks until the channel is closed
-  for pkg in rx {
-    build_progress.inc_length(1);
-    let pb = m.insert_after(&stage.header, ProgressBar::new(0));
-    pb.set_style(build_style.clone());
-    pb.set_prefix("  ");
-    pb.set_message(format!("{:<20}", pkg));
-    pb.enable_steady_tick(Duration::from_millis(100));
-
-    let build_progress = build_progress.clone();
-
-    let failstyle = fail_style.clone();
-    let handle = thread::spawn(move || {
-      for j in 0..=100 {
-        if is_cancelled() {
-          pb.set_style(failstyle.clone());
-          pb.finish();
-          return;
-        }
-        pb.set_position(j);
-        thread::sleep(Duration::from_millis(30 + rand::thread_rng().gen_range(0..150)));
-        // probability 10% to fail
-        if rand::thread_rng().gen_range(0..5000) < 0 && j > 20 && j < 90 {
-          pb.set_style(failstyle.clone());
-          pb.finish_with_message(format!("{:<20} {}", pkg, style("✗").red()));
-          cancel_all(format!("Failed to build package: {}", pkg).as_str());
-          return;
-        }
-      }
-      pb.finish_and_clear();
-      build_progress.inc(1);
-    });
-    handles.push(handle);
-  }
-
-  for handle in handles {
-    let _ = handle.join();
-  }
-
-  if is_cancelled() {
-    stage.fail();
-  } else {
-    stage.finish();
-  }
-
-}
-
 pub fn short_source_name(path: &str) -> String {
     Path::new(path)
         .file_name()
@@ -921,54 +877,54 @@ pub fn short_source_name(path: &str) -> String {
         .to_string()
 }
 
-  fn build_style() -> ProgressStyle {
-    ProgressStyle::with_template(
-      "   {spinner:.yellow} {msg}",
-    ).unwrap()
-     .tick_chars(SQUARESPINNER)
-  }
+fn build_style() -> ProgressStyle {
+  ProgressStyle::with_template(
+    "   {spinner:.yellow} {msg}",
+  ).unwrap()
+    .tick_chars(SQUARESPINNER)
+}
 
-  fn fail_style() -> ProgressStyle {
-    ProgressStyle::with_template(
-      "   {spinner:.red} {msg}",
-    ).unwrap()
-     .tick_chars(FAILEDSQUARESPINNER)
-  }
+fn fail_style() -> ProgressStyle {
+  ProgressStyle::with_template(
+    "   {spinner:.red} {msg}",
+  ).unwrap()
+    .tick_chars(FAILEDSQUARESPINNER)
+}
 
-  fn pending_style() -> ProgressStyle {
-    ProgressStyle::with_template(
-      "   {spinner:.dim} {msg:.dim}",
-    ).unwrap()
-     .tick_chars(PENDINGSQUARESPINNER)
-  }
+fn pending_style() -> ProgressStyle {
+  ProgressStyle::with_template(
+    "   {spinner:.dim} {msg:.dim}",
+  ).unwrap()
+    .tick_chars(PENDINGSQUARESPINNER)
+}
 
-  fn download_style() -> ProgressStyle {
-    ProgressStyle::with_template(
-      "   {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}%",
-    ).unwrap()
-     .progress_chars(PARALLELOGRAMPROGRESS)
-     .tick_chars(SQUARESPINNER)
-  }
+fn download_style() -> ProgressStyle {
+  ProgressStyle::with_template(
+    "   {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}%",
+  ).unwrap()
+    .progress_chars(PARALLELOGRAMPROGRESS)
+    .tick_chars(SQUARESPINNER)
+}
 
-  fn pending_download_style() -> ProgressStyle {
-    ProgressStyle::with_template(
-      "   {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}%",
-    ).unwrap()
-     .progress_chars(PARALLELOGRAMPROGRESS)
-     .tick_chars(PENDINGSQUARESPINNER)
-  }
+fn pending_download_style() -> ProgressStyle {
+  ProgressStyle::with_template(
+    "   {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}%",
+  ).unwrap()
+    .progress_chars(PARALLELOGRAMPROGRESS)
+    .tick_chars(PENDINGSQUARESPINNER)
+}
 
-fn gather_source_files(path: &Path, exts: &[&str], files: &mut Vec<PathBuf>) -> std::io::Result<()> {
+fn gather_source_files(path: &Path, exts: &[&str]) -> std::io::Result<()> {
   if path.is_file() {
     if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
         if exts.contains(&ext) {
-          files.push(path.to_path_buf());
+          add_path(path.to_path_buf());
         }
     }
   } else if path.is_dir() {
     for entry in fs::read_dir(path)? {
       let entry = entry?;
-      gather_source_files(&entry.path(), exts, files)?;
+      gather_source_files(&entry.path(), exts)?;
     }
   }
   Ok(())
