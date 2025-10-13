@@ -12,6 +12,7 @@ use std::path::PathBuf;
 use clap::{arg, command, value_parser, Arg, ArgAction, Command};
 use colored::Colorize;
 use std::path::{Path, MAIN_SEPARATOR};
+use std::fs;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -21,6 +22,7 @@ static CANCELLED: OnceLock<Arc<AtomicBool>> = OnceLock::new();
 
 static BUILD_DATA: OnceLock<Arc<Mutex<BuildData>>> = OnceLock::new();
 
+static BUILD_DIR: &str = "./build";
 
 #[derive(Debug, Default)]
 pub struct BuildData {
@@ -478,7 +480,7 @@ pub fn main() -> anyhow::Result<()> {
 
     let status = build.status_bar.clone();
 
-    build.add_build_stage(prepare_environment);
+    build.add_build_stage(prepare_build);
     build.add_build_stage(download_packages);
     build.add_build_stage(build_packages);
     build.add_build_stage(packaging);
@@ -555,19 +557,60 @@ fn prepare_build(stage: &mut BuildStage) {
   let m = stage.indicators.as_ref().unwrap().clone();
   let build_progress = stage.build_progress.clone();
 
-  let download_style = ProgressStyle::with_template(
-    "{prefix:.yellow} {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}%"
-  ).unwrap()
-   .progress_chars(PARALLELOGRAMPROGRESS)
-   .tick_chars(SQUARESPINNER);
-  let pending_download = ProgressStyle::with_template(
-    "{prefix:.yellow} {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}%"
-  ).unwrap()
-   .progress_chars(PARALLELOGRAMPROGRESS)
-   .tick_chars(PENDINGSQUARESPINNER);
+  let mut steps = VecDeque::new();
 
-  
+  // 0. Create a /build directory
+  let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
+  stage.last_step = pb.clone();
+  pb.set_style(build_style());
+  pb.set_message("Create build directory.");
+  steps.push_back(pb);
 
+  // 1. Open supplied source files
+  let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
+  stage.last_step = pb.clone();
+  pb.set_style(pending_style());
+  pb.set_message("Gather source files.");
+  steps.push_back(pb);
+
+  // Step 0
+  let step = steps.pop_front().unwrap();
+  let build_path = Path::new(BUILD_DIR);
+  if !build_path.exists() {
+    if let Err(e) = fs::create_dir_all(build_path) {
+      step.finish_with_message(format!("Failed to create build directory: {}. {}",e,style("✗").red()));
+      stage.fail();
+      return;
+    }
+  }
+  step.finish_with_message(format!("Build directory ready. {}", style("✓").green())); 
+
+  // Step 1
+  let step = steps.pop_front().unwrap();
+  step.set_style(build_style());
+  let mut source_files: Vec<PathBuf> = Vec::new();
+  let exts = ["mec", "mpkg", "mecb", "mdoc", "mdb", "dll", "rlib", "m", "md"];
+  if let Ok(entries) = fs::read_dir(".") {
+    for entry in entries.flatten() {
+      let path = entry.path();
+      if path.is_file() {
+        if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+          if exts.contains(&ext) {
+            source_files.push(path);
+          }
+        }
+      }
+    }
+  }
+  step.finish_with_message(format!("Found {} source files. {}", source_files.len(), style("✓").green()));
+
+  if is_cancelled() {
+    stage.fail();
+  } else {
+    stage.finish();
+  }
+
+  /*
   let mut pbs = Vec::new();
   for src in get_sources() {
     let msg = format!("Loading source: {}", short_source_name(&src));
@@ -609,12 +652,7 @@ fn prepare_build(stage: &mut BuildStage) {
     pb.finish();
     build_progress.inc(1);
   }
-
-  if is_cancelled() {
-    stage.fail();
-  } else {
-    stage.finish();
-  }
+*/
 }
 
 // SIMULATE THE BUILD PROCESS -------------------------------------------------
@@ -822,3 +860,40 @@ pub fn short_source_name(path: &str) -> String {
         .unwrap_or(path)
         .to_string()
 }
+
+  fn build_style() -> ProgressStyle {
+    ProgressStyle::with_template(
+      "   {spinner:.yellow} {msg}",
+    ).unwrap()
+     .tick_chars(SQUARESPINNER)
+  }
+
+  fn fail_style() -> ProgressStyle {
+    ProgressStyle::with_template(
+      "   {spinner:.red} {msg}",
+    ).unwrap()
+     .tick_chars(FAILEDSQUARESPINNER)
+  }
+
+  fn pending_style() -> ProgressStyle {
+    ProgressStyle::with_template(
+      "   {spinner:.dim} {msg:.dim}",
+    ).unwrap()
+     .tick_chars(PENDINGSQUARESPINNER)
+  }
+
+  fn download_style() -> ProgressStyle {
+    ProgressStyle::with_template(
+      "   {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}%",
+    ).unwrap()
+     .progress_chars(PARALLELOGRAMPROGRESS)
+     .tick_chars(SQUARESPINNER)
+  }
+
+  fn pending_download_style() -> ProgressStyle {
+    ProgressStyle::with_template(
+      "   {spinner:.yellow} {msg} {bar:20.yellow/white.dim.bold} {percent}%",
+    ).unwrap()
+     .progress_chars(PARALLELOGRAMPROGRESS)
+     .tick_chars(PENDINGSQUARESPINNER)
+  }
