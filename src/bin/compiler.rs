@@ -1,4 +1,4 @@
-// src/main.rs
+#![allow(warnings)]
 use std::{
     env,
     thread,

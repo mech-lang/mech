@@ -1,3 +1,4 @@
+#![allow(warnings)]
 use mech_interpreter::*;
 use mech_core::*;
 use mech_syntax::*;
