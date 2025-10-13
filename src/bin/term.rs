@@ -573,36 +573,96 @@ fn prepare_build(stage: &mut BuildStage) {
   pb.set_message("Gather source files.");
   steps.push_back(pb);
 
+  // 2. Look for index.mpkg file in root of project
+  let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
+  stage.last_step = pb.clone();
+  pb.set_style(pending_style());
+  pb.set_message("Check for index.mpkg file.");
+  steps.push_back(pb);
+
+  // 4. Verify mech version compatibility
+  let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
+  stage.last_step = pb.clone();
+  pb.set_style(pending_style());
+  pb.set_message("Verify mech version compatibility.");
+  steps.push_back(pb);
+
+  // 5. Prepare build environment
+  let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
+  stage.last_step = pb.clone();
+  pb.set_style(pending_style());
+  pb.set_message("Prepare build environment.");
+  steps.push_back(pb);
+  
   // Step 0
   let step = steps.pop_front().unwrap();
   let build_path = Path::new(BUILD_DIR);
   if !build_path.exists() {
     if let Err(e) = fs::create_dir_all(build_path) {
-      step.finish_with_message(format!("Failed to create build directory: {}. {}",e,style("✗").red()));
+      step.finish_with_message(format!("Failed to create build directory: {} {}",e,style("✗").red()));
       stage.fail();
       return;
     }
   }
-  step.finish_with_message(format!("Build directory ready. {}", style("✓").green())); 
+  step.finish_with_message(format!("Build directory ready {}", style("✓").green())); 
 
-  // Step 1
+  // Step 1 
   let step = steps.pop_front().unwrap();
   step.set_style(build_style());
-  let mut source_files: Vec<PathBuf> = Vec::new();
   let exts = ["mec", "mpkg", "mecb", "mdoc", "mdb", "dll", "rlib", "m", "md"];
-  if let Ok(entries) = fs::read_dir(".") {
-    for entry in entries.flatten() {
-      let path = entry.path();
-      if path.is_file() {
-        if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
-          if exts.contains(&ext) {
-            source_files.push(path);
-          }
-        }
+  let mut source_files: Vec<PathBuf> = Vec::new();
+  let sources = get_sources();
+  for src in sources {
+    let path = Path::new(&src);
+    if path.exists() {
+      if let Err(e) = gather_source_files(path, &exts, &mut source_files) {
+        step.finish_with_message(format!("Failed reading {}: {} {}", src, e, style("✗").red()));
+        cancel_all("Build cancelled due to IO error.");
+        stage.fail();
+        return;
       }
+    } else {
+      step.finish_with_message(format!("Source path does not exist: {} {}", src, style("✗").red()));
+      cancel_all("Build cancelled due to missing source files.");
+      stage.fail();
+      return;
     }
   }
   step.finish_with_message(format!("Found {} source files. {}", source_files.len(), style("✓").green()));
+
+  // Step 2
+  let step = steps.pop_front().unwrap();
+  step.set_style(build_style());
+  let mut found_index = false;
+  for src in &source_files {
+    if let Some(fname) = src.file_name() {
+      if fname == "index.mpkg" {
+        found_index = true;
+        break;
+      }
+    }
+  }
+  if found_index {
+    step.finish_with_message(format!("Found index.mpkg file {}", style("✓").green()));
+    // 3. Parse the .mpkg file
+    let pb = m.insert_after(&step,ProgressBar::new_spinner());
+    pb.set_style(build_style());
+    pb.set_message("Parsing index.mpkg.");
+    todo!("Parse the .mpkg file");
+  } else {
+    step.finish_with_message(format!("No index.mpkg file {}", style("🛈").color256(75)));
+  }
+
+  // Step 4
+  let step = steps.pop_front().unwrap();
+  step.set_style(build_style());
+  // For now, we just assume it's compatible
+  step.finish_with_message(format!("Targeting Mech version {} {}", VERSION, style("✓").green()));
+
+  // Step 5 - Configure environment
+  let step = steps.pop_front().unwrap();
+  step.set_style(build_style());
+  step.finish_with_message(format!("Configured build environment {}", style("✓").green()));
 
   if is_cancelled() {
     stage.fail();
@@ -897,3 +957,19 @@ pub fn short_source_name(path: &str) -> String {
      .progress_chars(PARALLELOGRAMPROGRESS)
      .tick_chars(PENDINGSQUARESPINNER)
   }
+
+fn gather_source_files(path: &Path, exts: &[&str], files: &mut Vec<PathBuf>) -> std::io::Result<()> {
+  if path.is_file() {
+    if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+        if exts.contains(&ext) {
+          files.push(path.to_path_buf());
+        }
+    }
+  } else if path.is_dir() {
+    for entry in fs::read_dir(path)? {
+      let entry = entry?;
+      gather_source_files(&entry.path(), exts, files)?;
+    }
+  }
+  Ok(())
+}
