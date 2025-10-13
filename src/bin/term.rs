@@ -513,8 +513,8 @@ pub fn main() -> anyhow::Result<()> {
       download_packages(&mut stage,tx);
     });
 
-    let mut build_packages = BuildStage::new(3, "Build project", |mut stage| {
-      build_packages(&mut stage,rx);
+    let mut parse_packages = BuildStage::new(3, "Build project", |mut stage| {
+      parse_packages(&mut stage,rx);
     });
 
     let mut packaging = BuildStage::new(4, "Package", |mut stage| {
@@ -525,7 +525,7 @@ pub fn main() -> anyhow::Result<()> {
 
     build.add_build_stage(prepare_build);
     build.add_build_stage(download_packages);
-    build.add_build_stage(build_packages);
+    build.add_build_stage(parse_packages);
     build.add_build_stage(packaging);
     
     status.set_message("Preparing environment...");
