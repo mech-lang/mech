@@ -1129,7 +1129,8 @@ fn main() -> Result<()> {
     let result = run_bytecode(&name, &data);
     println!("[shim] result: {:?}", result);
   }
-  println!("[shim] done");
+  println!("[shim] Press Enter to exit...");
+  std::io::stdin().read_line(&mut String::new()).unwrap();
   Ok(())
 }
 "#;
