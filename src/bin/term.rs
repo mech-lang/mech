@@ -1064,9 +1064,9 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0"
 zip = "5.1"
-#
-#mech-core = {{version = "{version}", default-features = false, features = ["base"] }}
-#mech-interpreter = {{version = "{version}", default-features = false, features = ["base"] }}
+
+mech-core = {{version = "{version}", default-features = false, features = ["base"] }}
+mech-interpreter = {{version = "{version}", default-features = false, features = ["base"] }}
 "#,
       name = shim_name,
       version = VERSION
@@ -1079,16 +1079,10 @@ use std::fs::File;
 use std::io::{Read, Seek, SeekFrom, Cursor};
 use zip::read::ZipArchive;
 
-//use mech_core::*;
-//use mech_interpreter::*;
+use mech_core::*;
+use mech_interpreter::*;
 
-fn run_bytecode(name: &str, bytecode: &[u8]) -> anyhow::Result<()> {
-  println!("[shim] would run bytecode for: {}", name);
-  println!("[shim] bytecode size: {} bytes", bytecode.len());
-  Ok(())
-}
-
-/*fn run_bytecode(name: &str, bytecode: &[u8]) -> MResult<Value> {
+fn run_bytecode(name: &str, bytecode: &[u8]) -> MResult<Value> {
   let mut intrp = Interpreter::new(0);
   match ParsedProgram::from_bytes(&bytecode) {
     Ok(prog) => {
@@ -1098,7 +1092,7 @@ fn run_bytecode(name: &str, bytecode: &[u8]) -> anyhow::Result<()> {
         return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("{:?}", e), id: line!(), kind: MechErrorKind::GenericError("Unknown".to_string())});
     }
   }
-}*/
+}
 
 fn main() -> Result<()> {
   println!("[shim] started");
@@ -1125,7 +1119,7 @@ fn main() -> Result<()> {
   let mut zip_buf = vec![0u8; zip_size as usize];
   f.read_exact(&mut zip_buf)?;
   println!("[shim] read zip into mem ({} bytes)", zip_buf.len());
-  /*let mut za = ZipArchive::new(Cursor::new(zip_buf))?;
+  let mut za = ZipArchive::new(Cursor::new(zip_buf))?;
   for i in 0..za.len() {
     let mut entry = za.by_index(i)?;
     let name = entry.name().to_string();
@@ -1134,7 +1128,7 @@ fn main() -> Result<()> {
     entry.read_to_end(&mut data)?;
     let result = run_bytecode(&name, &data);
     println!("[shim] result: {:?}", result);
-  }*/
+  }
   println!("[shim] done");
   Ok(())
 }
