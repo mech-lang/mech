@@ -1422,17 +1422,14 @@ fn find_built_exe(project_dir: &Path, shim_name: &str, target: Option<&str>, rel
 }
 
 fn write_final_exe(built_exe: &Path, zip_bytes: &[u8], out_path: &Path) -> Result<u64> {
-  //println!("  [pack] reading built exe: {}", built_exe.display());
   let mut exe_bytes = Vec::new();
   File::open(built_exe)?.read_to_end(&mut exe_bytes)?;
-  //println!("  [pack] built exe size: {}", exe_bytes.len());
   let mut out = File::create(out_path)?;
   out.write_all(&exe_bytes)?;
   out.write_all(zip_bytes)?;
   let zip_size = zip_bytes.len() as u64;
   out.write_all(&zip_size.to_le_bytes())?;
   out.flush()?;
-  //println!("  [pack] wrote final exe at {} (zip {} bytes)", out_path.display(), zip_size);
   // Return the total size of the output file
   Ok(exe_bytes.len() as u64 + zip_size + 8)
 }
