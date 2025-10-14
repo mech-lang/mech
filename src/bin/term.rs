@@ -46,12 +46,22 @@ pub struct BuildData {
   pub trees: Arc<Mutex<HashMap<String, Program>>>,
   pub bytecode: Vec<u8>,
   pub build_project_dir: Option<PathBuf>,
+  pub temp_dir: Option<TempDir>,
 }
 
 fn init_cancel_flag() {
   CANCELLED.set(Arc::new(AtomicBool::new(false))).ok();
   ERROR_MESSAGE.set(Arc::new(Mutex::new(None))).ok();
   BUILD_DATA.set(Arc::new(Mutex::new(BuildData::default())));
+}
+
+fn save_temp_dir(temp: TempDir) {
+  if let Some(data) = BUILD_DATA.get() {
+    let mut data = data.lock().unwrap();
+    data.temp_dir = Some(temp);
+  } else {
+    panic!("BuildData not initialized!");
+  }
 }
 
 fn set_bytecode(bytes: Vec<u8>) {
@@ -222,6 +232,7 @@ struct BuildProcess {
   stages: VecDeque<BuildStage>,
   build_progress: ProgressBar,
   status_bar: ProgressBar,
+  final_build_location: Option<PathBuf>,
 }
 
 impl BuildProcess {
@@ -256,6 +267,7 @@ impl BuildProcess {
       start_time: None,
       end_time: None,
       stages: VecDeque::new(),
+      final_build_location: None,
     }
   }
 
@@ -287,7 +299,7 @@ impl BuildProcess {
         }
       }
     }
-    final_state.finish_with_message("Artifact available at ./build/release/ekf.exe");
+    final_state.finish_with_message(format!("Artifact available at: {:?}", self.final_build_location.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "N/A".to_string())));
   }
 
   pub fn fail(&mut self) {
@@ -310,11 +322,12 @@ impl BuildProcess {
     final_state.finish_with_message(get_error_message().unwrap_or("Unknown error".to_string()));
   }
 
-  pub fn add_build_stage(&mut self, mut stage: BuildStage) {
+  pub fn add_build_stage(&mut self, mut stage: BuildStage, steps: usize) {
     match self.build_status {
       StepStatus::NotStarted => self.start(),
       _ => {}
     }
+    let stage_id = self.stages.len() as u64 + 1;
     
     // Apply Header To Section
     let header_style = ProgressStyle::with_template(
@@ -323,30 +336,24 @@ impl BuildProcess {
      .tick_strings(&EMPTY);
     let header = self.indicators.insert_before(&self.build_progress, ProgressBar::new_spinner());
     header.set_style(header_style);
-    header.set_prefix(format!("{}❱", stage.id));
+    header.set_prefix(format!("{}❱", stage_id));
     header.set_message(stage.name.clone());
 
+    stage.id = stage_id;
     stage.header = header.clone(); 
     stage.last_step = header.clone();
     stage.build_progress = self.build_progress.clone();
     stage.indicators = Some(self.indicators.clone());
-    // if it's the first stage we'll start it right away
-    if self.stage_handles.is_empty() {
-      let join_handle = thread::spawn(move || {
-        stage.start();
-      });
-      self.stage_handles.push(join_handle);
-    } else {
-      stage.status = StepStatus::Pending;
-      self.stages.push_back(stage);
-    }
-    self.build_progress.inc_length(1);   
+    stage.status = StepStatus::Pending;
+    self.stages.push_back(stage);
+
+    self.build_progress.inc_length(1 + steps as u64);   
   }
 
 }
 
 struct BuildStage {
-  id: u64,
+  pub id: u64,
   name: String,
   status: StepStatus,
   start_time: Option<Instant>,
@@ -361,7 +368,7 @@ struct BuildStage {
 }
 
 impl BuildStage {
-  pub fn new<F>(id: u64, name: impl Into<String>, f: F) -> Self
+  pub fn new<F>(name: impl Into<String>, f: F) -> Self
   where
       F: FnOnce(&mut BuildStage) + Send + 'static,
   {
@@ -370,7 +377,7 @@ impl BuildStage {
         .tick_strings(&DOTSPINNER);
 
     Self {
-      id,
+      id: 0,
       name: name.into(),
       status: StepStatus::NotStarted,
       start_time: None,
@@ -503,7 +510,6 @@ pub fn main() -> anyhow::Result<()> {
     }
   }
 
-
   let start_message = if mech_paths.len() == 1 {
     format!("{}", mech_paths[0])
   } else {
@@ -521,70 +527,72 @@ pub fn main() -> anyhow::Result<()> {
     let (tree_tx, tree_rx) = mpsc::channel();
 
     let path_tx2 = path_tx.clone();
-    let mut prepare_build = BuildStage::new(1, "Prepare build environment", |mut stage| {
+    let mut prepare_build = BuildStage::new("Prepare build environment", |mut stage| {
       prepare_build(&mut stage, path_tx2);
     });
 
-    let mut download_packages = BuildStage::new(2, "Download packages", |mut stage| {
+    let mut download_packages = BuildStage::new("Download packages", |mut stage| {
       download_packages(&mut stage,path_tx);
     });
 
-    let mut build_packages = BuildStage::new(3, "Build packages", |mut stage| {
+    let mut build_packages = BuildStage::new("Build packages", |mut stage| {
       parse_packages(&mut stage,path_rx, tree_tx);
     });
 
-    let mut build_project = BuildStage::new(4, "Build project", |mut stage| {
+    let mut build_project = BuildStage::new("Build project", |mut stage| {
       build_project(&mut stage, tree_rx);
     });
 
-    let mut compile_shim = BuildStage::new(5, "Compile shim", |mut stage| {
+    let mut compile_shim = BuildStage::new("Compile shim", |mut stage| {
       compile_shim(&mut stage);
     });
 
-    let mut package_artifacts = BuildStage::new(6, "Package artifacts", |mut stage| {
+    let mut package_artifacts = BuildStage::new("Package artifacts", |mut stage| {
       package_artifacts(&mut stage);
     });
 
     let status = build.status_bar.clone();
 
-    build.add_build_stage(prepare_build);
-    build.add_build_stage(download_packages);
-    build.add_build_stage(build_packages);
-    build.add_build_stage(build_project);
-    build.add_build_stage(compile_shim);
-    build.add_build_stage(package_artifacts);
+    build.add_build_stage(prepare_build, 5);
+    build.add_build_stage(download_packages, 0);
+    build.add_build_stage(build_packages, 0);
+    build.add_build_stage(build_project, 0);
+    build.add_build_stage(compile_shim, 0);
+    build.add_build_stage(package_artifacts, 3);
     
+    // Stage 1 - Prepare the build environment
     status.set_message("Preparing environment...");
+    let mut prepare_environment_stage = build.stages.pop_front().unwrap();
+    prepare_environment_stage.start();
 
-    let stage_handles = std::mem::take(&mut build.stage_handles);
-    for handle in stage_handles {
-      let _ = handle.join();
-    }
-
-    // start the next stage:
+    // Stage 2 and 3 - Download and build packages
     status.set_message("Downloading and building packages...");
     let mut download_stage = build.stages.pop_front().unwrap();
     let jh1 = thread::spawn(move || {
       download_stage.start();
     });
-
-    let mut build_stage = build.stages.pop_front().unwrap();
+    
+    let mut build_stage_1 = build.stages.pop_front().unwrap();
     let jh2 = thread::spawn(move || {
-      build_stage.start();
+      build_stage_1.start();
     });
     jh1.join();
     jh2.join();
 
-    // Compile the project
+    // Stage 4 - Build the project
+    status.set_message("Building project...");
+    let mut build_stage_2 = build.stages.pop_front().unwrap();
+    build_stage_2.start();
+
+    // Stage 5 - Compile the Rust shim
     status.set_message("Compiling shim...");
     let mut compile_shim_stage = build.stages.pop_front().unwrap();
     compile_shim_stage.start();
 
-    // Next stage
+    // Stage 6 - Package the executable (shim + zipped bytecode)
     status.set_message("Packaging executable...");
     let mut packaging_stage = build.stages.pop_front().unwrap();
     packaging_stage.start();
-
     if is_cancelled() {
       build.fail();
     } else {
@@ -675,6 +683,7 @@ fn prepare_build(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
     }
   }
   step.finish_with_message("Build directory ready"); 
+  build_progress.inc(1);
 
   // Step 1 
   let step = steps.pop_front().unwrap();
@@ -702,6 +711,7 @@ fn prepare_build(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
   let file_count = source_files.len();
   let file_label = if file_count == 1 { "file" } else { "files" };
   step.finish_with_message(format!("Discovered {} source {}.", file_count, file_label));
+  build_progress.inc(1);
 
   // Step 2
   let step = steps.pop_front().unwrap();
@@ -725,17 +735,20 @@ fn prepare_build(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
   } else {
     step.finish_with_message(format!("No index.mpkg file {}", style("🛈").color256(75)));
   }
+  build_progress.inc(1);
 
   // Step 4
   let step = steps.pop_front().unwrap();
   step.set_style(build_style());
   step.finish_with_message(format!("Targeting Mech v{}.", VERSION));
+  build_progress.inc(1);
 
   // Step 5 - Configure environment
   // todo: read the index file and configure the environment accordingly
   let step = steps.pop_front().unwrap();
   step.set_style(build_style());
   step.finish_with_message(format!("Configured build environment"));
+  build_progress.inc(1);
 }
 
 fn download_packages(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
@@ -960,11 +973,13 @@ fn gather_source_files(path: &Path, exts: &[&str]) -> std::io::Result<()> {
 
 fn compile_shim(stage: &mut BuildStage) {
   let m = stage.indicators.as_ref().unwrap().clone();
+
   let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
   stage.last_step = pb.clone();
   pb.set_style(build_style());
   pb.set_message("Create temp directory for shim project.");
   pb.enable_steady_tick(Duration::from_millis(100));
+
   // create temp cargo project
   let temp = match TempDir::new().context("creating tempdir") {
     Ok(t) => {
@@ -991,6 +1006,8 @@ fn compile_shim(stage: &mut BuildStage) {
   };
   pb.finish_with_message(format!("Created temp shim project at {}", project_dir.display()));
 
+  save_temp_dir(temp);
+
   match cargo_build_with_progress(&project_dir, stage) {
     Ok(()) => {
     }
@@ -999,21 +1016,6 @@ fn compile_shim(stage: &mut BuildStage) {
       return;
     }
   }
-  /*let built_exe = match find_built_exe(&project_dir, &shim_name, target.as_deref()) {
-    Ok(p) => {
-      pb.set_message(format!("Found built shim executable at {}", p.display()));
-      p
-    }
-    Err(e) => {
-      pb.set_style(fail_style());
-      pb.finish_with_message(format!("Failed to find built shim executable: {} {}", e, style("✗").red()));
-      cancel_all("Build cancelled due to missing shim executable.");
-      stage.fail();
-      return;
-    }
-  };*/
-  //thread::sleep(Duration::from_millis(1000));
-  //write_final_exe(&built_exe, &zip_bytes, &out_path)?;
   stage.build_progress.inc(1);
 }
 
@@ -1031,10 +1033,9 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0"
 zip = "5.1"
-
-mech-core = {{version = "{version}", default-features = false, features = ["base"] }}
-mech-interpreter = {{version = "{version}", default-features = false, features = ["base"] }}
-
+#
+#mech-core = {{version = "{version}", default-features = false, features = ["base"] }}
+#mech-interpreter = {{version = "{version}", default-features = false, features = ["base"] }}
 "#,
       name = shim_name,
       version = VERSION
@@ -1047,20 +1048,26 @@ use std::fs::File;
 use std::io::{Read, Seek, SeekFrom, Cursor};
 use zip::read::ZipArchive;
 
-use mech_core::*;
-use mech_interpreter::*;
+//use mech_core::*;
+//use mech_interpreter::*;
 
-fn run_bytecode(name: &str, bytecode: &[u8]) -> MResult<Value> {
+fn run_bytecode(name: &str, bytecode: &[u8]) -> anyhow::Result<()> {
+  println!("[shim] would run bytecode for: {}", name);
+  println!("[shim] bytecode size: {} bytes", bytecode.len());
+  Ok(())
+}
+
+/*fn run_bytecode(name: &str, bytecode: &[u8]) -> MResult<Value> {
   let mut intrp = Interpreter::new(0);
   match ParsedProgram::from_bytes(&bytecode) {
     Ok(prog) => {
       intrp.run_program(&prog)
     },
     Err(e) => {
-      return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("{:?}", e), id: line!(), kind: MechErrorKind::GenericError("Unknown".to_string())});
+        return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("{:?}", e), id: line!(), kind: MechErrorKind::GenericError("Unknown".to_string())});
     }
   }
-}
+}*/
 
 fn main() -> Result<()> {
   println!("[shim] started");
@@ -1087,7 +1094,7 @@ fn main() -> Result<()> {
   let mut zip_buf = vec![0u8; zip_size as usize];
   f.read_exact(&mut zip_buf)?;
   println!("[shim] read zip into mem ({} bytes)", zip_buf.len());
-  let mut za = ZipArchive::new(Cursor::new(zip_buf))?;
+  /*let mut za = ZipArchive::new(Cursor::new(zip_buf))?;
   for i in 0..za.len() {
     let mut entry = za.by_index(i)?;
     let name = entry.name().to_string();
@@ -1096,7 +1103,7 @@ fn main() -> Result<()> {
     entry.read_to_end(&mut data)?;
     let result = run_bytecode(&name, &data);
     println!("[shim] result: {:?}", result);
-  }
+  }*/
   println!("[shim] done");
   Ok(())
 }
@@ -1119,7 +1126,7 @@ pub fn cargo_build_with_progress(
   let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
   stage.last_step = pb.clone();
   pb.set_style(build_style());
-  pb.set_message("Running cargo build...");
+  pb.set_message("Running shim build...");
   pb.enable_steady_tick(Duration::from_millis(100));
 
   let mut cmd = ProcessCommand::new("cargo");
@@ -1140,7 +1147,7 @@ pub fn cargo_build_with_progress(
     }
   }*/
 
-  let mut child = match cmd.spawn().context("failed to spawn cargo build") {
+  let mut child = match cmd.spawn().context("failed to spawn shim build") {
     Ok(c) => c,
     Err(e) => {
       pb.set_style(fail_style());
@@ -1176,7 +1183,7 @@ pub fn cargo_build_with_progress(
             build_progress.inc(1);
           }
           "build-finished" => {
-            pb.finish_with_message("Cargo build finished.");
+
           }
           x => {
             //pb.set_message(format!("Cargo: {:?}", x));
@@ -1186,22 +1193,26 @@ pub fn cargo_build_with_progress(
     }
   }
 
-  let output = match child.wait_with_output().context("waiting for cargo") {
-    Ok(o) => o,
+  match child.wait_with_output().context("waiting for cargo") {
+    Ok(output) => {
+      if !output.status.success() {
+        pb.set_style(fail_style());
+        pb.finish_with_message(format!("Shim build failed: {} {} {}", output.status, String::from_utf8_lossy(&output.stderr), style("✗").red()));
+        cancel_all("Build cancelled due to cargo error.");
+        return Err(MechError {file: file!().to_string(), tokens: vec![], msg: "Cargo build failed".to_string(), id: line!(), kind: MechErrorKind::GenericError("Cargo build failed".to_string())});
+      } else {
+        pb.finish_with_message("Shim build finished.");
+      }
+    },
     Err(e) => {
       pb.set_style(fail_style());
-      pb.finish_with_message(format!("Failed to wait for cargo: {} {}", e, style("✗").red()));
-      cancel_all("Build cancelled due to cargo error.");
-      return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Failed to wait for cargo: {}", e), id: line!(), kind: MechErrorKind::GenericError("Cargo build failed".to_string())});
+      pb.finish_with_message(format!("Failed to wait for Cargo: {} {}", e, style("✗").red()));
+      cancel_all("Build cancelled due to Cargo error.");
+      return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Failed to wait for Cargo: {}", e), id: line!(), kind: MechErrorKind::GenericError("Cargo build failed".to_string())});
     }
-  };
-
-  if !output.status.success() {
-    pb.set_style(fail_style());
-    pb.finish_with_message(format!("Cargo build failed: {} {} {}", output.status, String::from_utf8_lossy(&output.stderr), style("✗").red()));
-    cancel_all("Build cancelled due to cargo error.");
-    return Err(MechError {file: file!().to_string(), tokens: vec![], msg: "Cargo build failed".to_string(), id: line!(), kind: MechErrorKind::GenericError("Cargo build failed".to_string())});
   }
+
+
   Ok(())
 }
 
@@ -1210,25 +1221,47 @@ fn package_artifacts(stage: &mut BuildStage) {
   let header = stage.header.clone();
   header.set_message("Packaging artifacts");
   let build_progress = stage.build_progress.clone();
-  
+
+  let mut steps = VecDeque::new();
+
+  // zip bytecode
   let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
   stage.last_step = pb.clone();
-  pb.set_style(build_style());
-  pb.set_message("Packaging artifacts");
-  pb.enable_steady_tick(Duration::from_millis(100));
+  pb.set_style(pending_style());
+  pb.set_message("Compress bytecode.");
+  steps.push_back(pb.clone());
+
+  // read shim
+  let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
+  stage.last_step = pb.clone();
+  pb.set_style(pending_style());
+  pb.set_message("Read shim.");
+  steps.push_back(pb.clone());
+
+  // write final exe
+  let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
+  stage.last_step = pb.clone();
+  pb.set_style(pending_style());
+  pb.set_message("Write final executable.");
+  steps.push_back(pb.clone());
 
   match BUILD_DATA.get() {
     Some(data) => {
-      let mut data = data.lock().unwrap();
-
-      let pairs = vec![
-        ("program".to_string(), data.bytecode.clone()),
-      ];
+      let pairs = {
+        let mut data = data.lock().unwrap();
+        vec![
+          ("program".to_string(), data.bytecode.clone()),
+        ]
+      };
 
       // Create the zip
+      let pb = steps.pop_front().unwrap();
+      pb.set_style(build_style());
+      pb.set_message("Compressing bytecode...");
+      pb.enable_steady_tick(Duration::from_millis(100));
       let zip_bytes = match create_zip_from_pairs(&pairs) {
         Ok(b) => {
-          pb.set_message(format!("Created zip ({} bytes).", b.len()));
+          pb.finish_with_message(format!("Created zip ({} bytes).", b.len()));
           b
         }
         Err(e) => {
@@ -1239,11 +1272,16 @@ fn package_artifacts(stage: &mut BuildStage) {
           return;
         }
       };
+
       // Find the built exe
+      let pb = steps.pop_front().unwrap();
+      pb.set_style(build_style());
+      pb.set_message("Locating built shim executable...");
+      pb.enable_steady_tick(Duration::from_millis(100));
       let build_project_dir = get_build_project_dir();
       let built_exe = match find_built_exe(&build_project_dir, &"mech_shim", None) {
         Ok(p) => {
-          pb.set_message(format!("Found built shim executable at {}", p.display()));
+          pb.finish_with_message(format!("Found built shim executable at {}", p.display()));
           p
         }
         Err(e) => {
@@ -1255,14 +1293,20 @@ fn package_artifacts(stage: &mut BuildStage) {
         }
       };
 
-
-      match write_final_exe(&built_exe, &zip_bytes, Path::new(BUILD_DIR)) {
-        Ok(()) => {
-          pb.finish_with_message(format!("Wrote final executable to {}", Path::new(BUILD_DIR).display()));
+      // Write the final exe
+      let pb = steps.pop_front().unwrap();
+      pb.set_style(build_style());
+      pb.set_message("Writing final executable...");
+      pb.enable_steady_tick(Duration::from_millis(100));
+      let out_path = Path::new(BUILD_DIR).join("final_executable.exe");
+      match write_final_exe(&built_exe, &zip_bytes, &out_path) {
+        Ok(exe_size) => {
+          pb.finish_with_message(format!("Wrote final executable to {} ({} bytes)",out_path.display(), exe_size));
+          set_final_executable_path(out_path);
         }
         Err(e) => {
           pb.set_style(fail_style());
-          pb.finish_with_message(format!("Failed to write final executable: {} {}", e, style("✗").red()));
+          pb.finish_with_message(format!("Failed to write final executable to {}: {} {}", out_path.display(), e, style("✗").red()));
           cancel_all("Build cancelled due to IO error.");
           stage.fail();
           return;
@@ -1318,16 +1362,18 @@ fn create_zip_from_pairs(pairs: &[(String, Vec<u8>)]) -> MResult<Vec<u8>> {
 }
 
 fn find_built_exe(project_dir: &Path, shim_name: &str, target: Option<&str>) -> MResult<PathBuf> {
-  let mut candidate = project_dir.join("target");
+  let mut candidate = project_dir.join("mech_shim").join("target");
   if let Some(t) = target {
     candidate = candidate.join(t);
   }
-  candidate = candidate.join("release").join(shim_name);
+  candidate = candidate.join("debug").join(shim_name);
   #[cfg(windows)]
   {
     let with_exe = candidate.with_extension("exe");
     if with_exe.exists() {
       return Ok(with_exe);
+    } else {
+      return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Built executable not found at {}", with_exe.display()), id: line!(), kind: MechErrorKind::GenericError("Missing executable".to_string())});
     }
   }
   if candidate.exists() {
@@ -1336,7 +1382,7 @@ fn find_built_exe(project_dir: &Path, shim_name: &str, target: Option<&str>) -> 
   Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Built executable not found at {}", candidate.display()), id: line!(), kind: MechErrorKind::GenericError("Missing executable".to_string())})
 }
 
-fn write_final_exe(built_exe: &Path, zip_bytes: &[u8], out_path: &Path) -> Result<()> {
+fn write_final_exe(built_exe: &Path, zip_bytes: &[u8], out_path: &Path) -> Result<u64> {
   //println!("  [pack] reading built exe: {}", built_exe.display());
   let mut exe_bytes = Vec::new();
   File::open(built_exe)?.read_to_end(&mut exe_bytes)?;
@@ -1348,6 +1394,6 @@ fn write_final_exe(built_exe: &Path, zip_bytes: &[u8], out_path: &Path) -> Resul
   out.write_all(&zip_size.to_le_bytes())?;
   out.flush()?;
   //println!("  [pack] wrote final exe at {} (zip {} bytes)", out_path.display(), zip_size);
-  std::thread::sleep(Duration::from_millis(3000));
-  Ok(())
+  // Return the total size of the output file
+  Ok(exe_bytes.len() as u64 + zip_size + 8)
 }
