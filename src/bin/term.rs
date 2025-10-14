@@ -1,13 +1,14 @@
 #![allow(warnings)]
 use std::{
+  env,
   thread,
   time::{Duration, Instant},
-  collections::{VecDeque, HashMap},
-  io::Write,
+  collections::{VecDeque, HashMap, HashSet},
+  io::{stdout, Read, Write, Cursor, BufRead, BufReader},
   sync::{mpsc, Arc, OnceLock, Mutex, atomic::{AtomicBool, Ordering}},
-  env,
+  process::{Command as ProcessCommand, Stdio},
   path::{Path, PathBuf, MAIN_SEPARATOR},
-  fs,
+  fs::{self, File},
 };
 use console::{style, Emoji};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
@@ -15,6 +16,9 @@ use rand::prelude::IndexedRandom;
 use rand::Rng;
 use clap::{arg, command, value_parser, Arg, ArgAction, Command};
 use colored::Colorize;
+use tempfile::TempDir;
+use anyhow::{Context, Result};
+use serde_json::Value;
 
 use mech_syntax::*;
 use mech_core::*;
@@ -510,7 +514,11 @@ pub fn main() -> anyhow::Result<()> {
       build_project(&mut stage, tree_rx);
     });
 
-    let mut package_artifacts = BuildStage::new(5, "Package artifacts", |mut stage| {
+    let mut compile_shim = BuildStage::new(5, "Compile shim", |mut stage| {
+      compile_shim(&mut stage);
+    });
+
+    let mut package_artifacts = BuildStage::new(6, "Package artifacts", |mut stage| {
       
     });
 
@@ -520,6 +528,7 @@ pub fn main() -> anyhow::Result<()> {
     build.add_build_stage(download_packages);
     build.add_build_stage(build_packages);
     build.add_build_stage(build_project);
+    build.add_build_stage(compile_shim);
     build.add_build_stage(package_artifacts);
     
     status.set_message("Preparing environment...");
@@ -543,8 +552,13 @@ pub fn main() -> anyhow::Result<()> {
     jh1.join();
     jh2.join();
 
+    // Compile the project
+    status.set_message("Compiling shim...");
+    let mut compile_shim_stage = build.stages.pop_front().unwrap();
+    compile_shim_stage.start();
+
     // Next stage
-    status.set_message("Packaging...");
+    status.set_message("Packaging executable...");
     let mut packaging_stage = build.stages.pop_front().unwrap();
     packaging_stage.start();
 
@@ -855,10 +869,7 @@ fn build_project(stage: &mut BuildStage, rx: mpsc::Receiver<Program>) {
 
   pb.finish();
   build_progress.inc(1);
-
 }
-
-
 
 // Helpers
 
@@ -920,5 +931,230 @@ fn gather_source_files(path: &Path, exts: &[&str]) -> std::io::Result<()> {
       gather_source_files(&entry.path(), exts)?;
     }
   }
+  Ok(())
+}
+
+fn compile_shim(stage: &mut BuildStage) {
+  let m = stage.indicators.as_ref().unwrap().clone();
+  let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
+  stage.last_step = pb.clone();
+  pb.set_style(build_style());
+  pb.set_message("Create temp directory for shim project.");
+  thread::sleep(Duration::from_millis(1000));
+  // create temp cargo project
+  let temp = match TempDir::new().context("creating tempdir") {
+    Ok(t) => t,
+    Err(e) => {
+      pb.set_style(fail_style());
+      pb.finish_with_message(format!("Failed to create temp dir: {} {}", e, style("✗").red()));
+      cancel_all("Build cancelled due to IO error.");
+      stage.fail();
+      return;
+    }
+  };
+  let project_dir = match write_shim_project(&temp, &"mech_shim") {
+    Ok(p) => p,
+    Err(e) => {
+      pb.set_style(fail_style());
+      pb.finish_with_message(format!("Failed to write shim project: {} {}", e, style("✗").red()));
+      cancel_all("Build cancelled due to IO error.");
+      stage.fail();
+      return;
+    }
+  };
+  pb.set_message(format!("Created temp shim project at {}", project_dir.display()));
+  thread::sleep(Duration::from_millis(1000));
+  match cargo_build_with_progress(&project_dir) {
+    Ok(()) => {
+      pb.set_message("cargo build completed.");
+    }
+    Err(e) => {
+      pb.set_style(fail_style());
+      pb.finish_with_message(format!("cargo build failed: {} {}", e, style("✗").red()));
+      cancel_all("Build cancelled due to cargo error.");
+      stage.fail();
+      return;
+    }
+  }
+  thread::sleep(Duration::from_millis(1000));
+  /*let built_exe = match find_built_exe(&project_dir, &shim_name, target.as_deref()) {
+    Ok(p) => {
+      pb.set_message(format!("Found built shim executable at {}", p.display()));
+      p
+    }
+    Err(e) => {
+      pb.set_style(fail_style());
+      pb.finish_with_message(format!("Failed to find built shim executable: {} {}", e, style("✗").red()));
+      cancel_all("Build cancelled due to missing shim executable.");
+      stage.fail();
+      return;
+    }
+  };*/
+  //thread::sleep(Duration::from_millis(1000));
+  //write_final_exe(&built_exe, &zip_bytes, &out_path)?;
+
+
+
+
+  pb.finish_with_message("Shim compiled successfully.");
+  stage.build_progress.inc(1);
+  loop{}
+}
+
+fn write_shim_project(temp: &TempDir, shim_name: &str) -> Result<PathBuf> {
+    let project_dir = temp.path().join(shim_name);
+    fs::create_dir_all(project_dir.join("src"))?;
+
+    // Cargo.toml
+    let cargo_toml = format!(
+        r#"[package]
+name = "{name}"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+zip = "5.1"
+
+mech-core = {{version = "{version}", default-features = false, features = ["base"] }}
+mech-interpreter = {{version = "{version}", default-features = false, features = ["base"] }}
+
+"#,
+        name = shim_name,
+        version = VERSION
+    );
+    fs::write(project_dir.join("Cargo.toml"), cargo_toml)?;
+
+    // src/main.rs -- shim reads appended ZIP using the footer (last 8 bytes)
+    let main_rs = r#"
+use anyhow::{Result, Context};
+use std::fs::File;
+use std::io::{Read, Seek, SeekFrom, Cursor};
+use zip::read::ZipArchive;
+
+use mech_core::*;
+use mech_interpreter::*;
+
+fn run_bytecode(name: &str, bytecode: &[u8]) -> MResult<Value> {
+  let mut intrp = Interpreter::new(0);
+  match ParsedProgram::from_bytes(&bytecode) {
+    Ok(prog) => {
+      intrp.run_program(&prog)
+    },
+    x => x,
+  }
+}
+
+fn main() -> Result<()> {
+  println!("[shim] started");
+  let exe_path = std::env::current_exe()?;
+  println!("[shim] exe: {}", exe_path.display());
+  let mut f = File::open(&exe_path)?;
+  let metadata = f.metadata().context("metadata")?;
+  let len = metadata.len();
+  if len < 8 {
+    println!("[shim] no footer present");
+    return Ok(());
+  }
+  // read last 8 bytes => zip size
+  f.seek(SeekFrom::End(-8))?;
+  let mut buf = [0u8;8];
+  f.read_exact(&mut buf)?;
+  let zip_size = u64::from_le_bytes(buf);
+  println!("[shim] detected zip size: {}", zip_size);
+  if len < 8 + zip_size {
+    println!("[shim] invalid sizes");
+    return Ok(());
+  }
+  f.seek(SeekFrom::End(-(8 + zip_size as i64)))?;
+  let mut zip_buf = vec![0u8; zip_size as usize];
+  f.read_exact(&mut zip_buf)?;
+  println!("[shim] read zip into mem ({} bytes)", zip_buf.len());
+  let mut za = ZipArchive::new(Cursor::new(zip_buf))?;
+  for i in 0..za.len() {
+    let mut entry = za.by_index(i)?;
+    let name = entry.name().to_string();
+    println!("[shim] entry: {}", name);
+    let mut data = Vec::new();
+    entry.read_to_end(&mut data)?;
+    let result = run_bytecode(&name, &data);
+    println!("[shim] result: {:?}", result);
+  }
+  println!("[shim] done");
+  Ok(())
+}
+"#;
+    fs::write(project_dir.join("src").join("main.rs"), main_rs)?;
+    Ok(project_dir)
+}
+
+pub fn cargo_build_with_progress(
+  project_dir: &Path,
+  //target: Option<&str>,
+  //extra_flags: Option<&str>,
+) -> Result<()> {
+  println!("  [cargo] building shim in: {}", project_dir.display());
+
+  let mut cmd = ProcessCommand::new("cargo");
+  cmd.current_dir(project_dir)
+      .arg("build")
+      .arg("--release")
+      .arg("--message-format=json")
+      .stdout(Stdio::piped())
+      .stderr(Stdio::piped());
+
+  /*if let Some(t) = target {
+    cmd.arg("--target").arg(t);
+  }
+
+  if let Some(flags) = extra_flags {
+    for tok in flags.split_whitespace() {
+      cmd.arg(tok);
+    }
+  }*/
+
+  let mut child = cmd.spawn().context("failed to spawn cargo build")?;
+  let stdout = child.stdout.take().unwrap();
+
+  let reader = std::io::BufReader::new(stdout);
+  let mut compiled_targets = HashSet::new();
+
+  for line in reader.lines() {
+    let line = line?;
+    if line.trim().is_empty() {
+      continue;
+    }
+
+    if let Ok(v) = serde_json::from_str::<Value>(&line) {
+      if let Some(reason) = v["reason"].as_str() {
+        match reason {
+          "compiler-artifact" => {
+            if let Some(name) = v["target"]["name"].as_str() {
+              compiled_targets.insert(name.to_string());
+              //println!("  [cargo] compiled target: {}", name);
+            }
+          }
+          "build-finished" => {
+            //println!("  [cargo] build finished event received");
+          }
+          _ => {}
+        }
+      }
+    }
+  }
+
+  let output = child.wait_with_output().context("waiting for cargo")?;
+
+  if !output.status.success() {
+    eprintln!("[cargo] build failed, stderr:");
+    eprintln!("{}", String::from_utf8_lossy(&output.stderr));
+    anyhow::bail!("cargo build failed");
+  }
+
+  println!(
+    "  [cargo] build finished successfully ({} targets)",
+    compiled_targets.len()
+  );
+
   Ok(())
 }
