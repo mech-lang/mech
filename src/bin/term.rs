@@ -47,12 +47,31 @@ pub struct BuildData {
   pub bytecode: Vec<u8>,
   pub build_project_dir: Option<PathBuf>,
   pub temp_dir: Option<TempDir>,
+  pub final_artifact: Option<PathBuf>,
 }
 
 fn init_cancel_flag() {
   CANCELLED.set(Arc::new(AtomicBool::new(false))).ok();
   ERROR_MESSAGE.set(Arc::new(Mutex::new(None))).ok();
   BUILD_DATA.set(Arc::new(Mutex::new(BuildData::default())));
+}
+
+fn get_final_artifact_path() -> Option<String> {
+  if let Some(data) = BUILD_DATA.get() {
+    let data = data.lock().unwrap();
+    data.final_artifact.as_ref().map(|p| p.to_string_lossy().to_string())
+  } else {
+    None
+  }
+}
+
+fn set_final_artifact_path(path: impl Into<PathBuf>) {
+  if let Some(data) = BUILD_DATA.get() {
+    let mut data = data.lock().unwrap();
+    data.final_artifact = Some(path.into());
+  } else {
+    panic!("BuildData not initialized!");
+  }
 }
 
 fn save_temp_dir(temp: TempDir) {
@@ -299,7 +318,7 @@ impl BuildProcess {
         }
       }
     }
-    final_state.finish_with_message(format!("Artifact available at: {:?}", self.final_build_location.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "N/A".to_string())));
+    final_state.finish_with_message(format!("Artifact available at: {:?}", get_final_artifact_path().unwrap_or_else(|| "Unknown".to_string())));
   }
 
   pub fn fail(&mut self) {
@@ -464,23 +483,33 @@ pub fn main() -> anyhow::Result<()> {
         .long("debug")
         .help("Print debug info")
         .action(ArgAction::SetTrue))
-    .arg(Arg::new("tree")
-        .short('t')
-        .long("tree")
-        .help("Print the syntax tree")
-        .action(ArgAction::SetTrue))
+    .arg(Arg::new("release")
+        .short('r')
+        .long("release")
+        .help("Build in release mode")
+        .action(ArgAction::SetTrue))        
+    .arg(Arg::new("output_path")
+        .short('o')
+        .long("out")
+        .help("Destination folder.")
+        .required(false))       
     .subcommand(Command::new("build")
       .about("Build Mech program into a binary.")
       .arg(Arg::new("mech_build_file_paths")
         .help("Source .mec and .mecb files")
         .required(false)
         .action(ArgAction::Append))
-      .arg(Arg::new("release")
+      .arg(Arg::new("build_debug")
         .short('d')
         .long("debug")
         .help("Print debug info")
         .action(ArgAction::SetTrue))        
-      .arg(Arg::new("output_path")
+      .arg(Arg::new("build_release")
+        .short('r')
+        .long("release")
+        .help("Build in release mode")
+        .action(ArgAction::SetTrue))       
+      .arg(Arg::new("build_output_path")
         .short('o')
         .long("out")
         .help("Destination folder.")
@@ -488,13 +517,15 @@ pub fn main() -> anyhow::Result<()> {
     .get_matches();
 
   let debug_flag = matches.get_flag("debug");
-  let tree_flag = matches.get_flag("tree");
+  let release_flag = matches.get_flag("release");
   let mech_paths: Vec<String> = matches.get_many::<String>("mech_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+  let mut output_path = matches.get_one::<String>("output_path").map(|s| s.to_string()).unwrap_or("./build".to_string());
 
   if let Some(matches) = matches.subcommand_matches("build") {
     let build_paths: Vec<String> = matches.get_many::<String>("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let release_flag = matches.get_flag("release");
-    let output_path = matches.get_one::<String>("output_path").map(|s| s.to_string()).unwrap_or("./build".to_string());
+    let debug_flag = matches.get_flag("build_debug");
+    let release_flag = matches.get_flag("build_release");
+    output_path = matches.get_one::<String>("build_output_path").map(|s| s.to_string()).unwrap_or("./build".to_string());
     todo!("Build command not yet implemented");
   }
 
@@ -543,12 +574,12 @@ pub fn main() -> anyhow::Result<()> {
       build_project(&mut stage, tree_rx);
     });
 
-    let mut compile_shim = BuildStage::new("Compile shim", |mut stage| {
-      compile_shim(&mut stage);
+    let mut compile_shim = BuildStage::new("Compile shim", move |mut stage| {
+      compile_shim(&mut stage, release_flag);
     });
 
-    let mut package_artifacts = BuildStage::new("Package artifacts", |mut stage| {
-      package_artifacts(&mut stage);
+    let mut package_artifacts = BuildStage::new("Package artifacts", move |mut stage| {
+      package_artifacts(&mut stage, release_flag, output_path.to_string());
     });
 
     let status = build.status_bar.clone();
@@ -971,7 +1002,7 @@ fn gather_source_files(path: &Path, exts: &[&str]) -> std::io::Result<()> {
   Ok(())
 }
 
-fn compile_shim(stage: &mut BuildStage) {
+fn compile_shim(stage: &mut BuildStage, release: bool) {
   let m = stage.indicators.as_ref().unwrap().clone();
 
   let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
@@ -1008,7 +1039,7 @@ fn compile_shim(stage: &mut BuildStage) {
 
   save_temp_dir(temp);
 
-  match cargo_build_with_progress(&project_dir, stage) {
+  match cargo_build_with_progress(&project_dir, release, stage) {
     Ok(()) => {
     }
     Err(e) => {
@@ -1116,6 +1147,7 @@ pub fn cargo_build_with_progress(
   project_dir: &Path,
   //target: Option<&str>,
   //extra_flags: Option<&str>,
+  release: bool,
   stage: &mut BuildStage,
 ) -> MResult<()> {
   let m = stage.indicators.as_ref().unwrap().clone();
@@ -1132,10 +1164,13 @@ pub fn cargo_build_with_progress(
   let mut cmd = ProcessCommand::new("cargo");
   cmd.current_dir(project_dir)
       .arg("build")
-      //.arg("--release")
       .arg("--message-format=json")
       .stdout(Stdio::piped())
       .stderr(Stdio::piped());
+
+  if release {
+    cmd.arg("--release");
+  }
 
   /*if let Some(t) = target {
     cmd.arg("--target").arg(t);
@@ -1216,7 +1251,7 @@ pub fn cargo_build_with_progress(
   Ok(())
 }
 
-fn package_artifacts(stage: &mut BuildStage) {
+fn package_artifacts(stage: &mut BuildStage, release: bool, output_path: String) {
   let m = stage.indicators.as_ref().unwrap().clone();
   let header = stage.header.clone();
   header.set_message("Packaging artifacts");
@@ -1279,7 +1314,7 @@ fn package_artifacts(stage: &mut BuildStage) {
       pb.set_message("Locating built shim executable...");
       pb.enable_steady_tick(Duration::from_millis(100));
       let build_project_dir = get_build_project_dir();
-      let built_exe = match find_built_exe(&build_project_dir, &"mech_shim", None) {
+      let built_exe = match find_built_exe(&build_project_dir, &"mech_shim", None, release) {
         Ok(p) => {
           pb.finish_with_message(format!("Found built shim executable at {}", p.display()));
           p
@@ -1302,7 +1337,7 @@ fn package_artifacts(stage: &mut BuildStage) {
       match write_final_exe(&built_exe, &zip_bytes, &out_path) {
         Ok(exe_size) => {
           pb.finish_with_message(format!("Wrote final executable to {} ({} bytes)",out_path.display(), exe_size));
-          set_final_executable_path(out_path);
+          set_final_artifact_path(out_path.clone());
         }
         Err(e) => {
           pb.set_style(fail_style());
@@ -1361,12 +1396,16 @@ fn create_zip_from_pairs(pairs: &[(String, Vec<u8>)]) -> MResult<Vec<u8>> {
   Ok(buf)
 }
 
-fn find_built_exe(project_dir: &Path, shim_name: &str, target: Option<&str>) -> MResult<PathBuf> {
+fn find_built_exe(project_dir: &Path, shim_name: &str, target: Option<&str>, release: bool) -> MResult<PathBuf> {
   let mut candidate = project_dir.join("mech_shim").join("target");
   if let Some(t) = target {
     candidate = candidate.join(t);
   }
-  candidate = candidate.join("debug").join(shim_name);
+
+  let mode = if release { "release" } else { "debug" };
+
+  candidate = candidate.join(mode).join(shim_name);
+
   #[cfg(windows)]
   {
     let with_exe = candidate.with_extension("exe");
