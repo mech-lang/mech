@@ -20,6 +20,10 @@ use tempfile::TempDir;
 use anyhow::{Context, Result};
 use serde_json::Value;
 
+use zip::write::FileOptions;
+use zip::CompressionMethod;
+use zip::ZipWriter;
+
 use mech_syntax::*;
 use mech_core::*;
 use mech_interpreter::*;
@@ -41,6 +45,7 @@ pub struct BuildData {
   pub packages: Vec<String>,
   pub trees: Arc<Mutex<HashMap<String, Program>>>,
   pub bytecode: Vec<u8>,
+  pub build_project_dir: Option<PathBuf>,
 }
 
 fn init_cancel_flag() {
@@ -53,6 +58,24 @@ fn set_bytecode(bytes: Vec<u8>) {
   if let Some(data) = BUILD_DATA.get() {
     let mut data = data.lock().unwrap();
     data.bytecode = bytes;
+  } else {
+    panic!("BuildData not initialized!");
+  }
+}
+
+fn set_build_project_dir(path: impl Into<PathBuf>) {
+  if let Some(data) = BUILD_DATA.get() {
+    let mut data = data.lock().unwrap();
+    data.build_project_dir = Some(path.into());
+  } else {
+    panic!("BuildData not initialized!");
+  }
+}
+
+pub fn get_build_project_dir() -> PathBuf {
+  if let Some(data) = BUILD_DATA.get() {
+    let data = data.lock().unwrap();
+    data.build_project_dir.clone().unwrap().clone()
   } else {
     panic!("BuildData not initialized!");
   }
@@ -519,7 +542,7 @@ pub fn main() -> anyhow::Result<()> {
     });
 
     let mut package_artifacts = BuildStage::new(6, "Package artifacts", |mut stage| {
-      
+      package_artifacts(&mut stage);
     });
 
     let status = build.status_bar.clone();
@@ -713,8 +736,6 @@ fn prepare_build(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
   let step = steps.pop_front().unwrap();
   step.set_style(build_style());
   step.finish_with_message(format!("Configured build environment"));
-
-
 }
 
 fn download_packages(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
@@ -946,7 +967,10 @@ fn compile_shim(stage: &mut BuildStage) {
   pb.enable_steady_tick(Duration::from_millis(100));
   // create temp cargo project
   let temp = match TempDir::new().context("creating tempdir") {
-    Ok(t) => t,
+    Ok(t) => {
+      set_build_project_dir(t.path().to_path_buf());
+      t
+    },
     Err(e) => {
       pb.set_style(fail_style());
       pb.finish_with_message(format!("Failed to create temp dir: {} {}", e, style("✗").red()));
@@ -994,11 +1018,11 @@ fn compile_shim(stage: &mut BuildStage) {
 }
 
 fn write_shim_project(temp: &TempDir, shim_name: &str) -> Result<PathBuf> {
-    let project_dir = temp.path().join(shim_name);
-    fs::create_dir_all(project_dir.join("src"))?;
+  let project_dir = temp.path().join(shim_name);
+  fs::create_dir_all(project_dir.join("src"))?;
 
-    // Cargo.toml
-    let cargo_toml = format!(
+  // Cargo.toml
+  let cargo_toml = format!(
         r#"[package]
 name = "{name}"
 version = "0.1.0"
@@ -1012,13 +1036,12 @@ mech-core = {{version = "{version}", default-features = false, features = ["base
 mech-interpreter = {{version = "{version}", default-features = false, features = ["base"] }}
 
 "#,
-        name = shim_name,
-        version = VERSION
-    );
-    fs::write(project_dir.join("Cargo.toml"), cargo_toml)?;
-
-    // src/main.rs -- shim reads appended ZIP using the footer (last 8 bytes)
-    let main_rs = r#"
+      name = shim_name,
+      version = VERSION
+  );
+  fs::write(project_dir.join("Cargo.toml"), cargo_toml)?;
+  // src/main.rs -- shim reads appended ZIP using the footer (last 8 bytes)
+  let main_rs = r#"
 use anyhow::{Result, Context};
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom, Cursor};
@@ -1078,8 +1101,8 @@ fn main() -> Result<()> {
   Ok(())
 }
 "#;
-    fs::write(project_dir.join("src").join("main.rs"), main_rs)?;
-    Ok(project_dir)
+  fs::write(project_dir.join("src").join("main.rs"), main_rs)?;
+  Ok(project_dir)
 }
 
 pub fn cargo_build_with_progress(
@@ -1130,7 +1153,6 @@ pub fn cargo_build_with_progress(
 
   let reader = std::io::BufReader::new(stdout);
 
-  let mut active_targets = HashSet::new();
   let mut finished_targets = HashSet::new();
 
   for line in reader.lines() {
@@ -1156,12 +1178,6 @@ pub fn cargo_build_with_progress(
           "build-finished" => {
             pb.finish_with_message("Cargo build finished.");
           }
-          "compiler-message" => {
-            if !finished_targets.contains(target_name) && !active_targets.contains(target_name) {
-              active_targets.insert(target_name.to_string());
-              pb.set_message(format!("Started building target: {}", target_name));
-            }
-          }
           x => {
             //pb.set_message(format!("Cargo: {:?}", x));
           }
@@ -1181,16 +1197,157 @@ pub fn cargo_build_with_progress(
   };
 
   if !output.status.success() {
-    //eprintln!("[cargo] build failed, stderr:");
-    //eprintln!("{}", String::from_utf8_lossy(&output.stderr));
-    //anyhow::bail!("cargo build failed");
     pb.set_style(fail_style());
     pb.finish_with_message(format!("Cargo build failed: {} {} {}", output.status, String::from_utf8_lossy(&output.stderr), style("✗").red()));
     cancel_all("Build cancelled due to cargo error.");
     return Err(MechError {file: file!().to_string(), tokens: vec![], msg: "Cargo build failed".to_string(), id: line!(), kind: MechErrorKind::GenericError("Cargo build failed".to_string())});
   }
+  Ok(())
+}
 
+fn package_artifacts(stage: &mut BuildStage) {
+  let m = stage.indicators.as_ref().unwrap().clone();
+  let header = stage.header.clone();
+  header.set_message("Packaging artifacts");
+  let build_progress = stage.build_progress.clone();
   
+  let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
+  stage.last_step = pb.clone();
+  pb.set_style(build_style());
+  pb.set_message("Packaging artifacts");
+  pb.enable_steady_tick(Duration::from_millis(100));
 
+  match BUILD_DATA.get() {
+    Some(data) => {
+      let mut data = data.lock().unwrap();
+
+      let pairs = vec![
+        ("program".to_string(), data.bytecode.clone()),
+      ];
+
+      // Create the zip
+      let zip_bytes = match create_zip_from_pairs(&pairs) {
+        Ok(b) => {
+          pb.set_message(format!("Created zip ({} bytes).", b.len()));
+          b
+        }
+        Err(e) => {
+          pb.set_style(fail_style());
+          pb.finish_with_message(format!("Failed to create zip: {:?} {}", e, style("✗").red()));
+          cancel_all("Build cancelled due to internal error.");
+          stage.fail();
+          return;
+        }
+      };
+      // Find the built exe
+      let build_project_dir = get_build_project_dir();
+      let built_exe = match find_built_exe(&build_project_dir, &"mech_shim", None) {
+        Ok(p) => {
+          pb.set_message(format!("Found built shim executable at {}", p.display()));
+          p
+        }
+        Err(e) => {
+          pb.set_style(fail_style());
+          pb.finish_with_message(format!("Failed to find built shim executable: {:?} {}", e, style("✗").red()));
+          cancel_all("Build cancelled due to missing shim executable.");
+          stage.fail();
+          return;
+        }
+      };
+
+
+      match write_final_exe(&built_exe, &zip_bytes, Path::new(BUILD_DIR)) {
+        Ok(()) => {
+          pb.finish_with_message(format!("Wrote final executable to {}", Path::new(BUILD_DIR).display()));
+        }
+        Err(e) => {
+          pb.set_style(fail_style());
+          pb.finish_with_message(format!("Failed to write final executable: {} {}", e, style("✗").red()));
+          cancel_all("Build cancelled due to IO error.");
+          stage.fail();
+          return;
+        }
+      }
+
+      build_progress.inc(1);
+
+    }
+    _ => {
+      pb.set_style(fail_style());
+      pb.finish_with_message(format!("No build data found. {}", style("✗").red()));
+      cancel_all("Build cancelled due to internal error.");
+      stage.fail();
+      return;
+    }
+  }
+  stage.build_progress.inc(1);
+  stage.finish();
+}
+
+fn create_zip_from_pairs(pairs: &[(String, Vec<u8>)]) -> MResult<Vec<u8>> {
+  let mut buf = Vec::new();
+  {
+    let mut zip = ZipWriter::new(Cursor::new(&mut buf));
+    let options: FileOptions<'_, ()> =
+        FileOptions::default().compression_method(CompressionMethod::Stored);
+    for (name, bytes) in pairs {
+      let entry_name = format!("{}.mecb", name);
+      //println!("  [zip] adding {} ({} bytes)", entry_name, bytes.len());
+      match zip.start_file(&entry_name, options) {
+        Ok(_) => {}
+        Err(e) => {
+          return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Failed to add file to zip: {}", e), id: line!(), kind: MechErrorKind::GenericError("Zip error".to_string())});
+        }
+      }
+      match zip.write_all(bytes) {
+        Ok(_) => {}
+        Err(e) => {
+          return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Failed to write file to zip: {}", e), id: line!(), kind: MechErrorKind::GenericError("Zip error".to_string())});
+        }
+      }
+    }
+    match zip.finish() {
+      Ok(_) => {}
+      Err(e) => {
+        return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Failed to finish zip: {}", e), id: line!(), kind: MechErrorKind::GenericError("Zip error".to_string())});
+      }
+    }
+  }
+  //println!("  [zip] total zip size = {} bytes", buf.len());
+  Ok(buf)
+}
+
+fn find_built_exe(project_dir: &Path, shim_name: &str, target: Option<&str>) -> MResult<PathBuf> {
+  let mut candidate = project_dir.join("target");
+  if let Some(t) = target {
+    candidate = candidate.join(t);
+  }
+  candidate = candidate.join("release").join(shim_name);
+  #[cfg(windows)]
+  {
+    let with_exe = candidate.with_extension("exe");
+    if with_exe.exists() {
+      return Ok(with_exe);
+    }
+  }
+  if candidate.exists() {
+    return Ok(candidate);
+  }
+  Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Built executable not found at {}", candidate.display()), id: line!(), kind: MechErrorKind::GenericError("Missing executable".to_string())})
+}
+
+fn write_final_exe(built_exe: &Path, zip_bytes: &[u8], out_path: &Path) -> Result<()> {
+  //println!("  [pack] reading built exe: {}", built_exe.display());
+  let mut exe_bytes = Vec::new();
+  File::open(built_exe)?.read_to_end(&mut exe_bytes)?;
+  //println!("  [pack] built exe size: {}", exe_bytes.len());
+  let mut out = File::create(out_path)?;
+  out.write_all(&exe_bytes)?;
+  out.write_all(zip_bytes)?;
+  let zip_size = zip_bytes.len() as u64;
+  out.write_all(&zip_size.to_le_bytes())?;
+  out.flush()?;
+  //println!("  [pack] wrote final exe at {} (zip {} bytes)", out_path.display(), zip_size);
+  std::thread::sleep(Duration::from_millis(3000));
   Ok(())
 }
