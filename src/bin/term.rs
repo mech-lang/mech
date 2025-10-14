@@ -651,7 +651,7 @@ fn prepare_build(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
       return;
     }
   }
-  step.finish_with_message(format!("Build directory ready {}", style("✓").green())); 
+  step.finish_with_message("Build directory ready"); 
 
   // Step 1 
   let step = steps.pop_front().unwrap();
@@ -676,7 +676,9 @@ fn prepare_build(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
   }
   let source_files = get_build_data().unwrap().lock().unwrap().paths.clone();
   tx.send(source_files.clone());
-  step.finish_with_message(format!("Found {} source files. {}", source_files.len(), style("✓").green()));
+  let file_count = source_files.len();
+  let file_label = if file_count == 1 { "file" } else { "files" };
+  step.finish_with_message(format!("Discovered {} source {}.", file_count, file_label));
 
   // Step 2
   let step = steps.pop_front().unwrap();
@@ -704,12 +706,13 @@ fn prepare_build(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
   // Step 4
   let step = steps.pop_front().unwrap();
   step.set_style(build_style());
-  step.finish_with_message(format!("Targeting Mech version {} {}", VERSION, style("✓").green()));
+  step.finish_with_message(format!("Targeting Mech v{}.", VERSION));
 
   // Step 5 - Configure environment
+  // todo: read the index file and configure the environment accordingly
   let step = steps.pop_front().unwrap();
   step.set_style(build_style());
-  step.finish_with_message(format!("Configured build environment {}", style("✓").green()));
+  step.finish_with_message(format!("Configured build environment"));
 
 
 }
@@ -940,7 +943,7 @@ fn compile_shim(stage: &mut BuildStage) {
   stage.last_step = pb.clone();
   pb.set_style(build_style());
   pb.set_message("Create temp directory for shim project.");
-  thread::sleep(Duration::from_millis(1000));
+  pb.enable_steady_tick(Duration::from_millis(100));
   // create temp cargo project
   let temp = match TempDir::new().context("creating tempdir") {
     Ok(t) => t,
@@ -962,21 +965,16 @@ fn compile_shim(stage: &mut BuildStage) {
       return;
     }
   };
-  pb.set_message(format!("Created temp shim project at {}", project_dir.display()));
-  thread::sleep(Duration::from_millis(1000));
-  match cargo_build_with_progress(&project_dir) {
+  pb.finish_with_message(format!("Created temp shim project at {}", project_dir.display()));
+
+  match cargo_build_with_progress(&project_dir, stage) {
     Ok(()) => {
-      pb.set_message("cargo build completed.");
     }
     Err(e) => {
-      pb.set_style(fail_style());
-      pb.finish_with_message(format!("cargo build failed: {} {}", e, style("✗").red()));
-      cancel_all("Build cancelled due to cargo error.");
       stage.fail();
       return;
     }
   }
-  thread::sleep(Duration::from_millis(1000));
   /*let built_exe = match find_built_exe(&project_dir, &shim_name, target.as_deref()) {
     Ok(p) => {
       pb.set_message(format!("Found built shim executable at {}", p.display()));
@@ -992,13 +990,7 @@ fn compile_shim(stage: &mut BuildStage) {
   };*/
   //thread::sleep(Duration::from_millis(1000));
   //write_final_exe(&built_exe, &zip_bytes, &out_path)?;
-
-
-
-
-  pb.finish_with_message("Shim compiled successfully.");
   stage.build_progress.inc(1);
-  loop{}
 }
 
 fn write_shim_project(temp: &TempDir, shim_name: &str) -> Result<PathBuf> {
@@ -1041,7 +1033,9 @@ fn run_bytecode(name: &str, bytecode: &[u8]) -> MResult<Value> {
     Ok(prog) => {
       intrp.run_program(&prog)
     },
-    x => x,
+    Err(e) => {
+      return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("{:?}", e), id: line!(), kind: MechErrorKind::GenericError("Unknown".to_string())});
+    }
   }
 }
 
@@ -1092,13 +1086,23 @@ pub fn cargo_build_with_progress(
   project_dir: &Path,
   //target: Option<&str>,
   //extra_flags: Option<&str>,
-) -> Result<()> {
-  println!("  [cargo] building shim in: {}", project_dir.display());
+  stage: &mut BuildStage,
+) -> MResult<()> {
+  let m = stage.indicators.as_ref().unwrap().clone();
+  let build_progress = stage.build_progress.clone();
+  let header = stage.header.clone();
+  header.set_message("Building shim");
+  
+  let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
+  stage.last_step = pb.clone();
+  pb.set_style(build_style());
+  pb.set_message("Running cargo build...");
+  pb.enable_steady_tick(Duration::from_millis(100));
 
   let mut cmd = ProcessCommand::new("cargo");
   cmd.current_dir(project_dir)
       .arg("build")
-      .arg("--release")
+      //.arg("--release")
       .arg("--message-format=json")
       .stdout(Stdio::piped())
       .stderr(Stdio::piped());
@@ -1113,11 +1117,21 @@ pub fn cargo_build_with_progress(
     }
   }*/
 
-  let mut child = cmd.spawn().context("failed to spawn cargo build")?;
+  let mut child = match cmd.spawn().context("failed to spawn cargo build") {
+    Ok(c) => c,
+    Err(e) => {
+      pb.set_style(fail_style());
+      pb.finish_with_message(format!("Failed to start cargo: {} {}", e, style("✗").red()));
+      cancel_all("Build cancelled due to cargo error.");
+      return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Failed to start cargo: {}", e), id: line!(), kind: MechErrorKind::GenericError("Cargo build failed".to_string())});
+    }
+  };
   let stdout = child.stdout.take().unwrap();
 
   let reader = std::io::BufReader::new(stdout);
-  let mut compiled_targets = HashSet::new();
+
+  let mut active_targets = HashSet::new();
+  let mut finished_targets = HashSet::new();
 
   for line in reader.lines() {
     let line = line?;
@@ -1127,34 +1141,56 @@ pub fn cargo_build_with_progress(
 
     if let Ok(v) = serde_json::from_str::<Value>(&line) {
       if let Some(reason) = v["reason"].as_str() {
+        let target_name = v["target"]["name"].as_str().unwrap_or("");
         match reason {
           "compiler-artifact" => {
-            if let Some(name) = v["target"]["name"].as_str() {
-              compiled_targets.insert(name.to_string());
-              //println!("  [cargo] compiled target: {}", name);
-            }
+            let target_name = v["target"]["name"].as_str().unwrap_or("unknown");
+            let version = v["package_id"].as_str().unwrap_or("0.0.0");
+            // get version from package ID, it's after the @ symbol at the end
+            let version = version.split('@').last().unwrap_or("0.0.0");
+            finished_targets.insert(target_name.to_string());
+            pb.set_message(format!("Compiled target: {} v{}", target_name, version));
+            build_progress.inc_length(1);
+            build_progress.inc(1);
           }
           "build-finished" => {
-            //println!("  [cargo] build finished event received");
+            pb.finish_with_message("Cargo build finished.");
           }
-          _ => {}
+          "compiler-message" => {
+            if !finished_targets.contains(target_name) && !active_targets.contains(target_name) {
+              active_targets.insert(target_name.to_string());
+              pb.set_message(format!("Started building target: {}", target_name));
+            }
+          }
+          x => {
+            //pb.set_message(format!("Cargo: {:?}", x));
+          }
         }
       }
     }
   }
 
-  let output = child.wait_with_output().context("waiting for cargo")?;
+  let output = match child.wait_with_output().context("waiting for cargo") {
+    Ok(o) => o,
+    Err(e) => {
+      pb.set_style(fail_style());
+      pb.finish_with_message(format!("Failed to wait for cargo: {} {}", e, style("✗").red()));
+      cancel_all("Build cancelled due to cargo error.");
+      return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Failed to wait for cargo: {}", e), id: line!(), kind: MechErrorKind::GenericError("Cargo build failed".to_string())});
+    }
+  };
 
   if !output.status.success() {
-    eprintln!("[cargo] build failed, stderr:");
-    eprintln!("{}", String::from_utf8_lossy(&output.stderr));
-    anyhow::bail!("cargo build failed");
+    //eprintln!("[cargo] build failed, stderr:");
+    //eprintln!("{}", String::from_utf8_lossy(&output.stderr));
+    //anyhow::bail!("cargo build failed");
+    pb.set_style(fail_style());
+    pb.finish_with_message(format!("Cargo build failed: {} {} {}", output.status, String::from_utf8_lossy(&output.stderr), style("✗").red()));
+    cancel_all("Build cancelled due to cargo error.");
+    return Err(MechError {file: file!().to_string(), tokens: vec![], msg: "Cargo build failed".to_string(), id: line!(), kind: MechErrorKind::GenericError("Cargo build failed".to_string())});
   }
 
-  println!(
-    "  [cargo] build finished successfully ({} targets)",
-    compiled_targets.len()
-  );
+  
 
   Ok(())
 }
