@@ -1157,8 +1157,15 @@ pub fn cargo_build_with_progress(
   pb.enable_steady_tick(Duration::from_millis(100));
 
   let mut cmd = ProcessCommand::new("cargo");
+
+  // get the current working directory for the app
+  let current_dir = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+  // extend path to build dir
+  let build_dir = current_dir.join(BUILD_DIR);
+
   cmd.current_dir(project_dir)
       .arg("build")
+      .env("CARGO_TARGET_DIR", build_dir)
       .arg("--message-format=json")
       .stdout(Stdio::piped())
       .stderr(Stdio::piped());
@@ -1309,7 +1316,11 @@ fn package_artifacts(stage: &mut BuildStage, release: bool, output_path: String)
       pb.set_message("Locating built shim executable...");
       pb.enable_steady_tick(Duration::from_millis(100));
       let build_project_dir = get_build_project_dir();
-      let built_exe = match find_built_exe(&build_project_dir, &"mech_shim", None, release) {
+
+      let current_dir = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+      let build_dir = current_dir.join(BUILD_DIR);
+
+      let built_exe = match find_built_exe(&build_dir, &"mech_shim", None, release) {
         Ok(p) => {
           pb.finish_with_message(format!("Found built shim executable at {}", p.display()));
           p
@@ -1392,7 +1403,7 @@ fn create_zip_from_pairs(pairs: &[(String, Vec<u8>)]) -> MResult<Vec<u8>> {
 }
 
 fn find_built_exe(project_dir: &Path, shim_name: &str, target: Option<&str>, release: bool) -> MResult<PathBuf> {
-  let mut candidate = project_dir.join("mech_shim").join("target");
+  let mut candidate = project_dir.to_path_buf();
   if let Some(t) = target {
     candidate = candidate.join(t);
   }
