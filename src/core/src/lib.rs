@@ -6,6 +6,7 @@
 #![allow(dead_code)]
 #![feature(step_trait)]
 #![feature(box_patterns)]
+#![feature(where_clause_attrs)]
 
 //extern crate core as rust_core;
 extern crate seahash;

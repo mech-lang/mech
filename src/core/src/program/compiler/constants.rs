@@ -99,7 +99,7 @@ impl CompileConst for Value {
   }
 }
 
-#[cfg(feature = "f64")]
+#[cfg(all(feature = "f64", feature = "compiler"))]
 impl CompileConst for F64 {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
@@ -135,6 +135,7 @@ impl CompileConst for i8 {
   }
 }
 
+#[cfg(feature = "compiler")]
 impl CompileConst for usize {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
@@ -678,6 +679,7 @@ macro_rules! impl_const_elem_matrix {
   };
 }
 
+#[cfg(feature = "matrixd")]
 impl<T> ConstElem for DMatrix<T>
 where
   T: ConstElem + std::fmt::Debug + std::clone::Clone + PartialEq + 'static,
@@ -712,6 +714,7 @@ where
   fn align() -> u8 { 8 }
 }
 
+#[cfg(feature = "vectord")]
 impl<T> ConstElem for DVector<T>
 where
   T: ConstElem + std::fmt::Debug + std::clone::Clone + PartialEq + 'static,
@@ -746,6 +749,7 @@ where
   fn align() -> u8 { 8 }
 }
 
+#[cfg(feature = "row_vectord")]
 impl<T> ConstElem for RowDVector<T>
 where
   T: ConstElem + std::fmt::Debug + std::clone::Clone + PartialEq + 'static,
@@ -1050,6 +1054,7 @@ impl ConstElem for ValueKind {
         out.write_u8(22).expect("write value kind");
         out.write_u64::<LittleEndian>(*id).expect("write enum id");
       },
+      #[cfg(feature = "record")]
       ValueKind::Record(fields) => {
         out.write_u8(23).expect("write value kind");
         out.write_u32::<LittleEndian>(fields.len() as u32).expect("write record fields length");
@@ -1067,6 +1072,7 @@ impl ConstElem for ValueKind {
         out.write_u8(25).expect("write value kind");
         out.write_u64::<LittleEndian>(*id).expect("write atom id");
       },
+      #[cfg(feature = "table")]
       ValueKind::Table(fields, row_count) => {
         out.write_u8(26).expect("write value kind");
         out.write_u32::<LittleEndian>(fields.len() as u32).expect("write table fields length");
@@ -1104,6 +1110,7 @@ impl ConstElem for ValueKind {
         out.write_u8(30).expect("write value kind");
         vk.write_le(out);
       },
+      _ => unimplemented!("write_le not implemented for this ValueKind variant"),
     }
   }
   fn from_le(bytes: &[u8]) -> Self {
@@ -1132,7 +1139,7 @@ impl ConstElem for ValueKind {
       18 => ValueKind::Index,
       19 => ValueKind::Empty,
       20 => ValueKind::Any,
-      // Matrix
+      #[cfg(feature = "matrix")]
       21 => {
         let elem_vk = ValueKind::from_le(&bytes[cursor.position() as usize..]);
         cursor.set_position(cursor.position() + 1); // advance past elem_vk tag
@@ -1143,8 +1150,9 @@ impl ConstElem for ValueKind {
         }
         ValueKind::Matrix(Box::new(elem_vk), dims)
       }
+      #[cfg(feature = "enum")]
       22 => ValueKind::Enum(cursor.read_u64::<LittleEndian>().expect("read enum id")),
-      // Table
+      #[cfg(feature = "table")]
       26 => {
         let field_count = cursor.read_u32::<LittleEndian>().expect("read table fields length") as usize;
         let mut fields = Vec::with_capacity(field_count);
@@ -1162,7 +1170,7 @@ impl ConstElem for ValueKind {
         let row_count = cursor.read_u32::<LittleEndian>().expect("read table row count") as usize;
         ValueKind::Table(fields, row_count)
       }
-      // Set
+      #[cfg(feature = "set")]
       29 => {
         let elem_vk = ValueKind::from_le(&bytes[cursor.position() as usize..]);
         cursor.set_position(cursor.position() + 1);

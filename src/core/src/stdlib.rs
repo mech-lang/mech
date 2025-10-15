@@ -249,13 +249,8 @@ macro_rules! impl_binop {
     }
     impl<T> MechFunctionFactory for $struct_name<T> 
     where
-      T: Copy + Debug + Display + Clone + Sync + Send + 'static + 
-      PartialEq + PartialOrd + ConstElem + CompileConst + AsValueKind +
-      Add<Output = T> + AddAssign +
-      Sub<Output = T> + SubAssign +
-      Mul<Output = T> + MulAssign +
-      Div<Output = T> + DivAssign +
-      Zero + One,
+      #[cfg(feature = "compiler")]T: Copy + Debug + Display + Clone + Sync + Send + 'static + PartialEq + PartialOrd + ConstElem + CompileConst + AsValueKind +Add<Output = T> + AddAssign +Sub<Output = T> + SubAssign +Mul<Output = T> + MulAssign +Div<Output = T> + DivAssign +Zero + One,
+      #[cfg(not(feature = "compiler"))] T: Copy + Debug + Display + Clone + Sync + Send + 'static + PartialEq + PartialOrd + AsValueKind +Add<Output = T> + AddAssign +Sub<Output = T> + SubAssign +Mul<Output = T> + MulAssign +Div<Output = T> + DivAssign +Zero + One,
       Ref<$out_type>: ToValue,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
