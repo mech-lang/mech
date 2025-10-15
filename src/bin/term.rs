@@ -56,6 +56,15 @@ fn init_cancel_flag() {
   BUILD_DATA.set(Arc::new(Mutex::new(BuildData::default())));
 }
 
+fn drop_temp_dir() {
+  if let Some(data) = BUILD_DATA.get() {
+    let mut data = data.lock().unwrap();
+    data.temp_dir.take();
+  } else {
+    panic!("BuildData not initialized!");
+  }
+}
+
 fn get_final_artifact_path() -> Option<String> {
   if let Some(data) = BUILD_DATA.get() {
     let data = data.lock().unwrap();
@@ -541,9 +550,9 @@ pub fn main() -> anyhow::Result<()> {
       // Clean the default build directory
       if Path::new(BUILD_DIR).exists() {
         fs::remove_dir_all(BUILD_DIR).with_context(|| format!("Failed to remove build directory: {}", BUILD_DIR))?;
-        println!("Cleaned build directory: {}", BUILD_DIR);
+        println!("{} Cleaned build directory: {}", style("✓").green(), BUILD_DIR);
       } else {
-        println!("No build directory to clean.");
+        println!("{} Build directory does not exist: {}", style("✗").red(), BUILD_DIR);
       }
     } else {
       for path in clean_paths {
@@ -676,6 +685,8 @@ pub fn main() -> anyhow::Result<()> {
     println!("{} Build succeeded after {}!", style("✓").green(), formatted_time);
   }
 
+
+  drop_temp_dir();
   Ok(())
 }
 
