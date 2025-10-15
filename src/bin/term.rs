@@ -492,7 +492,13 @@ pub fn main() -> anyhow::Result<()> {
         .short('o')
         .long("out")
         .help("Destination folder.")
-        .required(false))       
+        .required(false))    
+    .subcommand(Command::new("clean")
+      .about("Clean the build artifacts.")
+      .arg(Arg::new("mech_clean_paths")
+        .help("Source .mec and .mecb files")
+        .required(false)
+        .action(ArgAction::Append)))
     .subcommand(Command::new("build")
       .about("Build Mech program into a binary.")
       .arg(Arg::new("mech_build_file_paths")
@@ -527,6 +533,37 @@ pub fn main() -> anyhow::Result<()> {
     let release_flag = matches.get_flag("build_release");
     output_path = matches.get_one::<String>("build_output_path").map(|s| s.to_string()).unwrap_or("./build".to_string());
     todo!("Build command not yet implemented");
+  }
+
+  if let Some(matches) = matches.subcommand_matches("clean") {
+    let clean_paths: Vec<String> = matches.get_many::<String>("mech_clean_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+    if clean_paths.is_empty() {
+      // Clean the default build directory
+      if Path::new(BUILD_DIR).exists() {
+        fs::remove_dir_all(BUILD_DIR).with_context(|| format!("Failed to remove build directory: {}", BUILD_DIR))?;
+        println!("Cleaned build directory: {}", BUILD_DIR);
+      } else {
+        println!("No build directory to clean.");
+      }
+    } else {
+      for path in clean_paths {
+        let p = Path::new(&path);
+        if p.exists() {
+          if p.is_dir() {
+            fs::remove_dir_all(p).with_context(|| format!("Failed to remove directory: {}", path))?;
+            println!("{} Cleaned directory: {}", style("✓").green(), path);
+          } else if p.is_file() {
+            fs::remove_file(p).with_context(|| format!("Failed to remove file: {}", path))?;
+            println!("{} Cleaned file: {}", style("✓").green(), path);
+          } else {
+            println!("Path is neither file nor directory: {}", path);
+          }
+        } else {
+          println!("{} Path does not exist: {}", style("✗").red(), path);
+        }
+      }
+    }
+    return Ok(());
   }
 
   if mech_paths.is_empty() {
