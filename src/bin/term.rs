@@ -1162,6 +1162,7 @@ fn write_shim_project(temp: &TempDir, shim_name: &str) -> Result<PathBuf> {
 
   let mut features = get_features().iter().map(|f| f.as_string()).collect::<HashSet<String>>();
   features.insert("program".to_string());
+  features.insert("compiler".to_string());
   // convert to ["f1","f2"] format so we can insert into cargo
   let feature_list = features.iter().map(|f| format!(r#""{}""#, f)).collect::<Vec<String>>().join(",");
 
@@ -1191,6 +1192,9 @@ use std::io::{Read, Seek, SeekFrom, Cursor};
 use zip::read::ZipArchive;
 
 use mech_interpreter::*;
+use mech_interpreter::error::{MechError, MechErrorKind};
+use mech_interpreter::value::Value;
+use mech_interpreter::types::MResult;
 
 fn run_bytecode(name: &str, bytecode: &[u8]) -> MResult<Value> {
   let mut intrp = Interpreter::new(0);
