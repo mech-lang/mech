@@ -168,3 +168,5 @@ version = "0.3.60"
 features = [
   'console',
 ]
+
+[workspace]
