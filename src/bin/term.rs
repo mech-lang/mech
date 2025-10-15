@@ -740,7 +740,7 @@ pub fn main() -> anyhow::Result<()> {
   }
 
 
-  //drop_temp_dir();
+  drop_temp_dir();
   Ok(())
 }
 
