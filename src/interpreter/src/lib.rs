@@ -81,6 +81,8 @@ pub mod statements;
 pub mod expressions;
 pub mod mechdown;
 
+pub use mech_core::*;
+
 pub use crate::literals::*;
 pub use crate::interpreter::*;
 pub use crate::structures::*;
