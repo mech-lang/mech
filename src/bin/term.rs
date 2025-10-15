@@ -585,13 +585,26 @@ pub fn main() -> anyhow::Result<()> {
   let mut debug_flag = matches.get_flag("debug");
   let mut release_flag = matches.get_flag("release");
   let mut mech_paths: Vec<String> = matches.get_many::<String>("mech_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-  let mut output_name = matches.get_one::<String>("output_name").map(|s| s.to_string()).unwrap_or("program".to_string());
+  let mut output_name = matches.get_one::<String>("output_name").map(|s| s.to_string()).unwrap_or(
+    mech_paths.get(0)
+      .and_then(|p| Path::new(p).file_stem())
+      .and_then(|s| s.to_str())
+      .unwrap_or("program")
+      .to_string()
+  );
 
   if let Some(matches) = matches.subcommand_matches("build") {
     mech_paths = matches.get_many::<String>("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     debug_flag = matches.get_flag("build_debug");
     release_flag = matches.get_flag("build_release");
-    output_name = matches.get_one::<String>("build_output_name").map(|s| s.to_string()).unwrap_or("program".to_string());
+    // Get the supplied name if any, if not the default name is the first supplied file name without extension
+    output_name = matches.get_one::<String>("build_output_name").map(|s| s.to_string()).unwrap_or(
+      mech_paths.get(0)
+        .and_then(|p| Path::new(p).file_stem())
+        .and_then(|s| s.to_str())
+        .unwrap_or("program")
+        .to_string()
+    );
   }
 
   set_output_name(output_name.clone());
@@ -914,6 +927,7 @@ fn parse_packages(stage: &mut BuildStage, rx: mpsc::Receiver<Vec<PathBuf>>, tx: 
     
     let build_progress = build_progress.clone();
     
+    let tx2 = tx.clone();
     let handle = thread::spawn(move || {
       for pkg in pkgs {
         pb.set_message(format!("{:<20}", pkg.display()));
@@ -936,6 +950,7 @@ fn parse_packages(stage: &mut BuildStage, rx: mpsc::Receiver<Vec<PathBuf>>, tx: 
         let tree = parser::parse(&content);
         match tree {
           Ok(t) => {
+            let _ = tx2.send(t.clone());
             add_tree(pkg.display().to_string(), t);
             pb.set_message(format!("{}", pkg.display()));
           }
@@ -980,7 +995,7 @@ fn build_project(stage: &mut BuildStage, rx: mpsc::Receiver<Program>) {
     let result = intrp.interpret(&tree);
     match result {
       Ok(_) => {
-        pb.set_message("Build succeeded.");
+        pb.set_message(format!("Build succeeded: {:#?}.", tree.pretty_print()));
       }
       Err(e) => {
         pb.set_style(fail_style());
@@ -1155,10 +1170,11 @@ fn run_bytecode(name: &str, bytecode: &[u8]) -> MResult<Value> {
   let mut intrp = Interpreter::new(0);
   match ParsedProgram::from_bytes(&bytecode) {
     Ok(prog) => {
+      println!("{:#?}", prog);
       intrp.run_program(&prog)
     },
     Err(e) => {
-        return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("{:?}", e), id: line!(), kind: MechErrorKind::GenericError("Unknown".to_string())});
+      return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("{:?}", e), id: line!(), kind: MechErrorKind::GenericError("Unknown".to_string())});
     }
   }
 }
@@ -1408,7 +1424,8 @@ fn package_artifacts(stage: &mut BuildStage, release: bool) {
       pb.set_message("Writing final executable...");
       pb.enable_steady_tick(Duration::from_millis(100));
       let output_name = get_output_name().unwrap_or("mech_app".to_string());
-      let out_path = Path::new(BUILD_DIR).join(format!("{}.exe",output_name));
+      let mode = if release { "release" } else { "debug" };
+      let out_path = Path::new(BUILD_DIR).join(mode).join(format!("{}.exe",output_name));
       match write_final_exe(&built_exe, &zip_bytes, &out_path) {
         Ok(exe_size) => {
           pb.finish_with_message(format!("Wrote final executable ({} bytes)", exe_size));
