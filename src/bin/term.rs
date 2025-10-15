@@ -1,4 +1,5 @@
 #![allow(warnings)]
+#![feature(where_clause_attrs)]
 use std::{
   env,
   thread,
@@ -49,12 +50,31 @@ pub struct BuildData {
   pub temp_dir: Option<TempDir>,
   pub final_artifact: Option<PathBuf>,
   pub output_name: Option<String>,
+  pub features: HashSet<FeatureFlag>,
 }
 
 fn init_cancel_flag() {
   CANCELLED.set(Arc::new(AtomicBool::new(false))).ok();
   ERROR_MESSAGE.set(Arc::new(Mutex::new(None))).ok();
   BUILD_DATA.set(Arc::new(Mutex::new(BuildData::default())));
+}
+
+fn set_features(features: HashSet<FeatureFlag>) {
+  if let Some(data) = BUILD_DATA.get() {
+    let mut data = data.lock().unwrap();
+    data.features = features;
+  } else {
+    panic!("BuildData not initialized!");
+  }
+}
+
+fn get_features() -> HashSet<FeatureFlag> {
+  if let Some(data) = BUILD_DATA.get() {
+    let data = data.lock().unwrap();
+    data.features.clone()
+  } else {
+    panic!("BuildData not initialized!");
+  }
 }
 
 fn set_output_name(path: impl Into<String>) {
@@ -720,7 +740,7 @@ pub fn main() -> anyhow::Result<()> {
   }
 
 
-  drop_temp_dir();
+  //drop_temp_dir();
   Ok(())
 }
 
@@ -1008,6 +1028,8 @@ fn build_project(stage: &mut BuildStage, rx: mpsc::Receiver<Program>) {
 
   match intrp.compile() {
     Ok(bytecode) => {
+      let features = intrp.context.unwrap().features;
+      set_features(features);
       pb.set_message(format!("Compiled {} bytes.", bytecode.len()));
       set_bytecode(bytecode);
     }
@@ -1138,6 +1160,11 @@ fn write_shim_project(temp: &TempDir, shim_name: &str) -> Result<PathBuf> {
   let project_dir = temp.path().join(shim_name);
   fs::create_dir_all(project_dir.join("src"))?;
 
+  let mut features = get_features().iter().map(|f| f.as_string()).collect::<HashSet<String>>();
+  features.insert("program".to_string());
+  // convert to ["f1","f2"] format so we can insert into cargo
+  let feature_list = features.iter().map(|f| format!(r#""{}""#, f)).collect::<Vec<String>>().join(",");
+
   // Cargo.toml
   let cargo_toml = format!(
         r#"[package]
@@ -1149,11 +1176,11 @@ edition = "2021"
 anyhow = "1.0"
 zip = "5.1"
 
-mech-core = {{version = "{version}", default-features = false, features = ["base"] }}
-mech-interpreter = {{version = "{version}", default-features = false, features = ["base"] }}
+mech-interpreter = {{version = "{version}", default-features = false, features = [{feature_list}] }}
 "#,
       name = shim_name,
-      version = VERSION
+      version = VERSION,
+      feature_list = feature_list
   );
   fs::write(project_dir.join("Cargo.toml"), cargo_toml)?;
   // src/main.rs -- shim reads appended ZIP using the footer (last 8 bytes)
@@ -1163,7 +1190,6 @@ use std::fs::File;
 use std::io::{Read, Seek, SeekFrom, Cursor};
 use zip::read::ZipArchive;
 
-use mech_core::*;
 use mech_interpreter::*;
 
 fn run_bytecode(name: &str, bytecode: &[u8]) -> MResult<Value> {
