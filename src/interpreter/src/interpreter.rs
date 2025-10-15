@@ -14,6 +14,7 @@ pub struct Interpreter {
   pub state: Ref<ProgramState>,
   registers: Vec<Value>,
   constants: Vec<Value>,
+  pub context: Option<CompileCtx>,
   pub code: Vec<MechSourceCode>,
   pub out: Value,
   pub out_values: Ref<HashMap<u64, Value>>,
@@ -36,6 +37,7 @@ impl Interpreter {
       sub_interpreters: Ref::new(HashMap::new()),
       out_values: Ref::new(HashMap::new()),
       code: Vec::new(),
+      context: None,
     }
   }
 
@@ -269,14 +271,16 @@ impl Interpreter {
   }
 
   #[cfg(feature = "compiler")]
-  pub fn compile(&self) -> MResult<Vec<u8>> {
+  pub fn compile(&mut self) -> MResult<Vec<u8>> {
     let state_brrw = self.state.borrow();
     let mut plan_brrw = state_brrw.plan.borrow_mut();
     let mut ctx = CompileCtx::new();
     for step in plan_brrw.iter() {
       step.compile(&mut ctx)?;
     }
-    ctx.compile()
+    let bytes = ctx.compile()?;
+    self.context = Some(ctx);
+    Ok(bytes)
   }
 
 }
