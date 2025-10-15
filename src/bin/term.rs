@@ -48,12 +48,31 @@ pub struct BuildData {
   pub build_project_dir: Option<PathBuf>,
   pub temp_dir: Option<TempDir>,
   pub final_artifact: Option<PathBuf>,
+  pub output_name: Option<String>,
 }
 
 fn init_cancel_flag() {
   CANCELLED.set(Arc::new(AtomicBool::new(false))).ok();
   ERROR_MESSAGE.set(Arc::new(Mutex::new(None))).ok();
   BUILD_DATA.set(Arc::new(Mutex::new(BuildData::default())));
+}
+
+fn set_output_name(path: impl Into<String>) {
+  if let Some(data) = BUILD_DATA.get() {
+    let mut data = data.lock().unwrap();
+    data.output_name = Some(path.into());
+  } else {
+    panic!("BuildData not initialized!");
+  }
+}
+
+fn get_output_name() -> Option<String> {
+  if let Some(data) = BUILD_DATA.get() {
+    let data = data.lock().unwrap();
+    data.output_name.clone()
+  } else {
+    None
+  }
 }
 
 fn drop_temp_dir() {
@@ -68,7 +87,7 @@ fn drop_temp_dir() {
 fn get_final_artifact_path() -> Option<String> {
   if let Some(data) = BUILD_DATA.get() {
     let data = data.lock().unwrap();
-    data.final_artifact.as_ref().map(|p| p.to_string_lossy().to_string())
+    data.final_artifact.as_ref().map(|p| p.canonicalize().unwrap_or_else(|_| p.clone()).display().to_string())
   } else {
     None
   }
@@ -327,7 +346,8 @@ impl BuildProcess {
         }
       }
     }
-    final_state.finish_with_message(format!("Artifact available at: {:?}", get_final_artifact_path().unwrap_or_else(|| "Unknown".to_string())));
+    let path = get_final_artifact_path().unwrap_or_else(|| "Unknown".to_string());
+    final_state.finish_with_message(format!("Artifact available at: {}", style(path).color256(75)));
   }
 
   pub fn fail(&mut self) {
@@ -497,10 +517,10 @@ pub fn main() -> anyhow::Result<()> {
         .long("release")
         .help("Build in release mode")
         .action(ArgAction::SetTrue))        
-    .arg(Arg::new("output_path")
+    .arg(Arg::new("output_name")
         .short('o')
         .long("out")
-        .help("Destination folder.")
+        .help("Name out output artifact.")
         .required(false))    
     .subcommand(Command::new("clean")
       .about("Clean the build artifacts.")
@@ -524,25 +544,12 @@ pub fn main() -> anyhow::Result<()> {
         .long("release")
         .help("Build in release mode")
         .action(ArgAction::SetTrue))       
-      .arg(Arg::new("build_output_path")
+      .arg(Arg::new("build_output_name")
         .short('o')
         .long("out")
-        .help("Destination folder.")
+        .help("Name of output artifact.")
         .required(false)))            
     .get_matches();
-
-  let debug_flag = matches.get_flag("debug");
-  let release_flag = matches.get_flag("release");
-  let mech_paths: Vec<String> = matches.get_many::<String>("mech_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-  let mut output_path = matches.get_one::<String>("output_path").map(|s| s.to_string()).unwrap_or("./build".to_string());
-
-  if let Some(matches) = matches.subcommand_matches("build") {
-    let build_paths: Vec<String> = matches.get_many::<String>("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let debug_flag = matches.get_flag("build_debug");
-    let release_flag = matches.get_flag("build_release");
-    output_path = matches.get_one::<String>("build_output_path").map(|s| s.to_string()).unwrap_or("./build".to_string());
-    todo!("Build command not yet implemented");
-  }
 
   if let Some(matches) = matches.subcommand_matches("clean") {
     let clean_paths: Vec<String> = matches.get_many::<String>("mech_clean_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
@@ -575,12 +582,26 @@ pub fn main() -> anyhow::Result<()> {
     return Ok(());
   }
 
+  let mut debug_flag = matches.get_flag("debug");
+  let mut release_flag = matches.get_flag("release");
+  let mut mech_paths: Vec<String> = matches.get_many::<String>("mech_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+  let mut output_name = matches.get_one::<String>("output_name").map(|s| s.to_string()).unwrap_or("program".to_string());
+
+  if let Some(matches) = matches.subcommand_matches("build") {
+    mech_paths = matches.get_many::<String>("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+    debug_flag = matches.get_flag("build_debug");
+    release_flag = matches.get_flag("build_release");
+    output_name = matches.get_one::<String>("build_output_name").map(|s| s.to_string()).unwrap_or("program".to_string());
+  }
+
+  set_output_name(output_name.clone());
+
   if mech_paths.is_empty() {
     // use the current directory
     args.push(".".to_string());
     let current_dir = env::current_dir().unwrap();
     add_source(current_dir.to_str().unwrap());
-    println!("No source files provided, using current directory: {}", current_dir.display());
+    println!("{} No source files provided, using current directory: {}", style("✗").red(), current_dir.display());
   } else {
     for path in &mech_paths {
       add_source(path);
@@ -625,7 +646,7 @@ pub fn main() -> anyhow::Result<()> {
     });
 
     let mut package_artifacts = BuildStage::new("Package artifacts", move |mut stage| {
-      package_artifacts(&mut stage, release_flag, output_path.to_string());
+      package_artifacts(&mut stage, release_flag);
     });
 
     let status = build.status_bar.clone();
@@ -634,7 +655,7 @@ pub fn main() -> anyhow::Result<()> {
     build.add_build_stage(download_packages, 0);
     build.add_build_stage(build_packages, 0);
     build.add_build_stage(build_project, 0);
-    build.add_build_stage(compile_shim, 0);
+    build.add_build_stage(compile_shim, 145);
     build.add_build_stage(package_artifacts, 3);
     
     // Stage 1 - Prepare the build environment
@@ -1083,11 +1104,11 @@ fn compile_shim(stage: &mut BuildStage, release: bool) {
       return;
     }
   };
-  pb.finish_with_message(format!("Created temp shim project at {}", project_dir.display()));
+  pb.finish_with_message(format!("Created temp shim project at {}", project_dir.canonicalize().unwrap_or_else(|_| project_dir.clone()).display()));
 
   save_temp_dir(temp);
 
-  match cargo_build_with_progress(&project_dir, release, stage) {
+  match cargo_build(&project_dir, release, stage) {
     Ok(()) => {
     }
     Err(e) => {
@@ -1186,7 +1207,7 @@ fn main() -> Result<()> {
   Ok(project_dir)
 }
 
-pub fn cargo_build_with_progress(
+pub fn cargo_build(
   project_dir: &Path,
   //target: Option<&str>,
   //extra_flags: Option<&str>,
@@ -1264,7 +1285,6 @@ pub fn cargo_build_with_progress(
             let version = version.split('@').last().unwrap_or("0.0.0");
             finished_targets.insert(target_name.to_string());
             pb.set_message(format!("Compiled target: {} v{}", target_name, version));
-            build_progress.inc_length(1);
             build_progress.inc(1);
           }
           "build-finished" => {
@@ -1301,7 +1321,7 @@ pub fn cargo_build_with_progress(
   Ok(())
 }
 
-fn package_artifacts(stage: &mut BuildStage, release: bool, output_path: String) {
+fn package_artifacts(stage: &mut BuildStage, release: bool) {
   let m = stage.indicators.as_ref().unwrap().clone();
   let header = stage.header.clone();
   header.set_message("Packaging artifacts");
@@ -1370,7 +1390,7 @@ fn package_artifacts(stage: &mut BuildStage, release: bool, output_path: String)
 
       let built_exe = match find_built_exe(&build_dir, &"mech_shim", None, release) {
         Ok(p) => {
-          pb.finish_with_message(format!("Found built shim executable at {}", p.display()));
+          pb.finish_with_message(format!("Read built shim executable ({} bytes)", p.metadata().map(|m| m.len()).unwrap_or(0)));
           p
         }
         Err(e) => {
@@ -1387,23 +1407,22 @@ fn package_artifacts(stage: &mut BuildStage, release: bool, output_path: String)
       pb.set_style(build_style());
       pb.set_message("Writing final executable...");
       pb.enable_steady_tick(Duration::from_millis(100));
-      let out_path = Path::new(BUILD_DIR).join("final_executable.exe");
+      let output_name = get_output_name().unwrap_or("mech_app".to_string());
+      let out_path = Path::new(BUILD_DIR).join(format!("{}.exe",output_name));
       match write_final_exe(&built_exe, &zip_bytes, &out_path) {
         Ok(exe_size) => {
-          pb.finish_with_message(format!("Wrote final executable to {} ({} bytes)",out_path.display(), exe_size));
+          pb.finish_with_message(format!("Wrote final executable ({} bytes)", exe_size));
           set_final_artifact_path(out_path.clone());
         }
         Err(e) => {
           pb.set_style(fail_style());
-          pb.finish_with_message(format!("Failed to write final executable to {}: {} {}", out_path.display(), e, style("✗").red()));
+          pb.finish_with_message(format!("Failed to write final executable to {}: {} {}", out_path.canonicalize().unwrap_or_else(|_| out_path.clone()).display(), e, style("✗").red()));
           cancel_all("Build cancelled due to IO error.");
           stage.fail();
           return;
         }
       }
-
       build_progress.inc(1);
-
     }
     _ => {
       pb.set_style(fail_style());
@@ -1425,7 +1444,6 @@ fn create_zip_from_pairs(pairs: &[(String, Vec<u8>)]) -> MResult<Vec<u8>> {
         FileOptions::default().compression_method(CompressionMethod::Stored);
     for (name, bytes) in pairs {
       let entry_name = format!("{}.mecb", name);
-      //println!("  [zip] adding {} ({} bytes)", entry_name, bytes.len());
       match zip.start_file(&entry_name, options) {
         Ok(_) => {}
         Err(e) => {
@@ -1446,7 +1464,6 @@ fn create_zip_from_pairs(pairs: &[(String, Vec<u8>)]) -> MResult<Vec<u8>> {
       }
     }
   }
-  //println!("  [zip] total zip size = {} bytes", buf.len());
   Ok(buf)
 }
 
