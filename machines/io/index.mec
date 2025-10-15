@@ -17,7 +17,7 @@ This machine provides functions for printing output to the console and getting i
 
 matrix/machine = {
   name: "io" 
-  version: "v0.2.60"
+  version: "v0.2.61"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/io"
   license: "Apache-2.0"}
