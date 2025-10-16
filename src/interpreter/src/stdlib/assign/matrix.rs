@@ -99,78 +99,6 @@ macro_rules! impl_set_all_fxn_s {
       }
     }};}
 
-
-#[macro_export]
-macro_rules! impl_set_all_fxn_v {
-  ($struct_name:ident, $op:ident, $ix:ty) => {
-    #[derive(Debug)]
-    pub struct $struct_name<T, MatA, MatB, IxVec> {
-      pub source: Ref<MatB>,
-      pub ixes: Ref<IxVec>,
-      pub sink: Ref<MatA>,
-      pub _marker: PhantomData<T>,
-    }
-    impl<T, R1: 'static, C1: 'static, S1: 'static, R2: 'static, C2: 'static, S2: 'static, IxVec: 'static> MechFunctionFactory for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
-    where
-      Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-      Ref<naMatrix<T, R2, C2, S2>>: ToValue,
-      T: Debug + Clone + Sync + Send + 'static +
-        PartialEq + PartialOrd +
-        CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
-      R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
-      R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug + AsNaKind,
-      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + Debug + AsNaKind,
-    {
-      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-          FunctionArgs::Binary(out, arg1, arg2) => {
-            let source: Ref<naMatrix<T, R2, C2, S2>> = unsafe { arg1.as_unchecked() }.clone();
-            let ixes: Ref<IxVec> = unsafe { arg2.as_unchecked() }.clone();
-            let sink: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
-            Ok(Box::new(Self { sink, source, ixes, _marker: PhantomData::default() }))
-          },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
-        }
-      }
-    }
-    impl<T, R1, C1, S1, R2, C2, S2, IxVec>
-      MechFunctionImpl for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
-    where
-      Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-      T: Debug + Clone + Sync + Send + 'static +
-         PartialEq + PartialOrd,
-      IxVec: AsRef<[$ix]> + Debug,
-      R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
-      R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
-    {
-      fn solve(&self) {
-        unsafe {
-          let sink_ptr = &mut *self.sink.as_mut_ptr();
-          let source_ptr = &*self.source.as_ptr();
-          let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
-          $op!(source_ptr,ix_ptr,sink_ptr);
-        }
-      }
-      fn out(&self) -> Value {self.sink.to_value()}
-      fn to_string(&self) -> String {format!("{:#?}", self)}
-    }
-    #[cfg(feature = "compiler")]
-    impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec> 
-    where
-      T: CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem + AsNaKind,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
-      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
-    {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<{}{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), naMatrix::<T, R2, C2, S2>::as_na_kind(), IxVec::as_na_kind());
-        compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign));
-      }
-    }  
-  };}
-
 // x[1] = 1 ------------------------------------------------------------------
 
 #[macro_export]
@@ -365,51 +293,51 @@ macro_rules! set_1d_range_vec_b {
       }
     }};}
 
-impl_set_all_fxn_s!(Set1DRS,set_1d_range,usize);
-impl_set_all_fxn_s!(Set1DRB,set_1d_range_b,bool);
-impl_set_all_fxn_v!(Set1DRV,set_1d_range_vec,usize);
-impl_set_all_fxn_v!(Set1DRVB,set_1d_range_vec_b,bool);
+impl_set_all_fxn_s!(Assign1DRS,set_1d_range,usize);
+impl_set_all_fxn_s!(Assign1DRB,set_1d_range_b,bool);
+impl_all_fxn_v!(Assign1DRV,set_1d_range_vec,usize);
+impl_all_fxn_v!(Assign1DRVB,set_1d_range_vec_b,bool);
 
 fn impl_assign_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   let arg = (sink, ixes.as_slice(), source);
-                impl_assign_fxn!(impl_set_range_arms, Set1DR, arg, u8,   "u8")
-  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Set1DR, arg, u16,  "u16"))
-  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Set1DR, arg, u32,  "u32"))
-  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Set1DR, arg, u64,  "u64"))
-  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Set1DR, arg, u128, "u128"))
-  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Set1DR, arg, i8,   "i8"))
-  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Set1DR, arg, i16,  "i16"))
-  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Set1DR, arg, i32,  "i32"))
-  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Set1DR, arg, i64,  "i64"))
-  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Set1DR, arg, i128, "i128"))
-  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Set1DR, arg, F32,  "f32"))
-  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Set1DR, arg, F64,  "f64"))
-  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Set1DR, arg, R64,  "rational"))
-  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Set1DR, arg, C64,  "complex"))
-  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Set1DR, arg, bool, "bool"))
-  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Set1DR, arg, String, "string"))
+                impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, u8,   "u8")
+  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Assign1DR, arg, u16,  "u16"))
+  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Assign1DR, arg, u32,  "u32"))
+  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Assign1DR, arg, u64,  "u64"))
+  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Assign1DR, arg, u128, "u128"))
+  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Assign1DR, arg, i8,   "i8"))
+  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Assign1DR, arg, i16,  "i16"))
+  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Assign1DR, arg, i32,  "i32"))
+  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Assign1DR, arg, i64,  "i64"))
+  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Assign1DR, arg, i128, "i128"))
+  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Assign1DR, arg, F32,  "f32"))
+  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Assign1DR, arg, F64,  "f64"))
+  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Assign1DR, arg, R64,  "rational"))
+  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Assign1DR, arg, C64,  "complex"))
+  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Assign1DR, arg, bool, "bool"))
+  .or_else(|_| impl_assign_fxn!(impl_set_range_arms,  Assign1DR, arg, String, "string"))
 
-  .or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, u8,  "u8"))
-  .or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, u16,  "u16"))
-  .or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, u32,  "u32"))
-  .or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, u64,  "u64"))
-  .or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, u128, "u128"))
-  .or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, i8,   "i8"))
-  .or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, i16,  "i16"))
-  .or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, i32,  "i32"))
-  .or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, i64,  "i64"))
-  .or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, i128, "i128"))
-  .or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, F32,  "f32"))
-  .or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, F64,  "f64"))
-  .or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, R64,  "rational"))
-  .or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, C64,  "complex"))
-  .or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, bool, "bool"))
-  .or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, String, "string"))
+  .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, u8,  "u8"))
+  .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, u16,  "u16"))
+  .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, u32,  "u32"))
+  .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, u64,  "u64"))
+  .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, u128, "u128"))
+  .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, i8,   "i8"))
+  .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, i16,  "i16"))
+  .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, i32,  "i32"))
+  .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, i64,  "i64"))
+  .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, i128, "i128"))
+  .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, F32,  "f32"))
+  .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, F64,  "f64"))
+  .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, R64,  "rational"))
+  .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, C64,  "complex"))
+  .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, bool, "bool"))
+  .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, String, "string"))
   .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
 }
 
-pub struct MatrixSetRange {}
-impl NativeFunctionCompiler for MatrixSetRange {
+pub struct MatrixAssignRange {}
+impl NativeFunctionCompiler for MatrixAssignRange {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
@@ -1520,93 +1448,17 @@ macro_rules! impl_assign_range_range_fxn_s {
     }
   };}
 
-#[macro_export]
-macro_rules! impl_assign_range_range_fxn_v {
-  ($struct_name:ident, $op:ident, $ix1:ty, $ix2:ty) => {
-    #[derive(Debug)]
-    pub struct $struct_name<T, MatA, MatB, IxVec1, IxVec2> {
-      pub source: Ref<MatB>,
-      pub ixes: (Ref<IxVec1>,Ref<IxVec2>),
-      pub sink: Ref<MatA>,
-      pub _marker: PhantomData<T>,
-    }
-    impl<T, R1: 'static, C1: 'static, S1: 'static, R2: 'static, C2: 'static, S2: 'static, IxVec1: 'static, IxVec2: 'static> MechFunctionFactory for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec1, IxVec2>
-    where
-      Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-      Ref<naMatrix<T, R2, C2, S2>>: ToValue,
-      T: Debug + Clone + Sync + Send + 'static +
-        PartialEq + PartialOrd +
-        CompileConst + ConstElem + AsValueKind,
-      IxVec1: CompileConst + ConstElem + AsNaKind + Debug + AsRef<[$ix1]>,
-      IxVec2: CompileConst + ConstElem + AsNaKind + Debug + AsRef<[$ix2]>,
-      R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
-      R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug + AsNaKind,
-      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + Debug + AsNaKind,
-    {
-      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-          FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
-            let source: Ref<naMatrix<T, R2, C2, S2>> = unsafe { arg1.as_unchecked() }.clone();
-            let ix1: Ref<IxVec1> = unsafe { arg2.as_unchecked() }.clone();
-            let ix2: Ref<IxVec2> = unsafe { arg3.as_unchecked() }.clone();
-            let sink: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
-            Ok(Box::new(Self { sink, source, ixes: (ix1, ix2), _marker: PhantomData::default() }))
-          },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
-        }
-      }
-    }
-    impl<T, R1, C1, S1, R2, C2, S2, IxVec1, IxVec2>
-      MechFunctionImpl for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec1, IxVec2>
-    where
-      Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-      T: Debug + Clone + Sync + Send + 'static +
-         PartialEq + PartialOrd,
-      IxVec1: AsRef<[$ix1]> + Debug,
-      IxVec2: AsRef<[$ix2]> + Debug,
-      R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
-      R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
-    {
-      fn solve(&self) {
-        unsafe {
-          let sink = &mut *self.sink.as_mut_ptr();
-          let source = &*self.source.as_ptr();
-          let ix1 = (*self.ixes.0.as_ptr()).as_ref();
-          let ix2 = (*self.ixes.1.as_ptr()).as_ref();
-          $op!(sink, ix1, ix2, source);
-        }
-      }
-      fn out(&self) -> Value {self.sink.to_value()}
-      fn to_string(&self) -> String {format!("{:#?}", self)}
-    }
-    #[cfg(feature = "compiler")]
-    impl<T, R1, C1, S1, R2, C2, S2, IxVec1, IxVec2> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec1, IxVec2> 
-    where
-      T: CompileConst + ConstElem + AsValueKind,
-      IxVec1: CompileConst + ConstElem + AsNaKind,
-      IxVec2: CompileConst + ConstElem + AsNaKind,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
-      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
-    {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<{}{}{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), naMatrix::<T, R2, C2, S2>::as_na_kind(), IxVec1::as_na_kind(), IxVec2::as_na_kind());
-        compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );  
-      }
-    }  
-  };}
-
 impl_assign_range_range_fxn_s!(Assign2DRRS,   assign_2d_range_range,     usize, usize);
-impl_assign_range_range_fxn_v!(Assign2DRRV,   assign_2d_range_range_v,   usize, usize);
+impl_range_range_fxn_v!(Assign2DRRV,   assign_2d_range_range_v,   usize, usize);
 
 impl_assign_range_range_fxn_s!(Assign2DRRBB,  assign_2d_range_range_b,   bool,  bool);
-impl_assign_range_range_fxn_v!(Assign2DRRVBB, assign_2d_range_range_vb,  bool,  bool);
+impl_range_range_fxn_v!(Assign2DRRVBB, assign_2d_range_range_vb,  bool,  bool);
 
 impl_assign_range_range_fxn_s!(Assign2DRRBU,  assign_2d_range_range_bu,  bool,  usize);
-impl_assign_range_range_fxn_v!(Assign2DRRVBU, assign_2d_range_range_vbu, bool,  usize);
+impl_range_range_fxn_v!(Assign2DRRVBU, assign_2d_range_range_vbu, bool,  usize);
 
 impl_assign_range_range_fxn_s!(Assign2DRRUB,  assign_2d_range_range_ub,  usize, bool);
-impl_assign_range_range_fxn_v!(Assign2DRRVUB, assign_2d_range_range_vub, usize, bool);
+impl_range_range_fxn_v!(Assign2DRRVUB, assign_2d_range_range_vub, usize, bool);
 
 
 fn impl_assign_range_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -1727,10 +1579,10 @@ macro_rules! assign_2d_all_range_vb {
     }
   };}
 
-impl_set_all_fxn_v!(Set2DARV, assign_2d_all_range_v, usize);
+impl_all_fxn_v!(Set2DARV, assign_2d_all_range_v, usize);
 impl_set_all_fxn_s!(Set2DARS, assign_2d_all_range, usize);
 impl_set_all_fxn_s!(Set2DARB, assign_2d_all_range_b, bool);
-impl_set_all_fxn_v!(Set2DARVB, assign_2d_all_range_vb, bool);
+impl_all_fxn_v!(Set2DARVB, assign_2d_all_range_vb, bool);
 
 macro_rules! matrix_assign_all_range_fxn {
   ($op_fxn_name:tt, $fxn_name:ident) => {
@@ -1854,10 +1706,10 @@ macro_rules! assign_2d_range_all_vb {
   };
 }
 
-impl_set_all_fxn_v!(Set2DRAV,assign_2d_range_all_v,usize);
+impl_all_fxn_v!(Set2DRAV,assign_2d_range_all_v,usize);
 impl_set_all_fxn_s!(Set2DRAS,assign_2d_range_all,usize);
 impl_set_all_fxn_s!(Set2DRAB,assign_2d_range_all_b,bool);
-impl_set_all_fxn_v!(Set2DRAVB,assign_2d_range_all_vb,bool);
+impl_all_fxn_v!(Set2DRAVB,assign_2d_range_all_vb,bool);
 
 macro_rules! matrix_assign_range_all_fxn {
   ($op_fxn_name:tt, $fxn_name:ident) => {
@@ -1904,8 +1756,8 @@ macro_rules! matrix_assign_range_all_fxn {
 
 matrix_assign_range_all_fxn!(impl_assign_range_all_fxn, Set2DRA);
 
-pub struct MatrixSetRangeAll {}
-impl NativeFunctionCompiler for MatrixSetRangeAll {
+pub struct MatrixAssignRangeAll {}
+impl NativeFunctionCompiler for MatrixAssignRangeAll {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});

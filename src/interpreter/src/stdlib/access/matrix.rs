@@ -1329,10 +1329,10 @@ macro_rules! impl_access_range_range_arms {
   }
 }
 
-impl_assign_range_range_fxn_v!(Access2DRRVBB, access_2d_range_range_vbb, bool,  bool);
-impl_assign_range_range_fxn_v!(Access2DRRVBU, access_2d_range_range_vbu, bool,  usize);
-impl_assign_range_range_fxn_v!(Access2DRRVUU, access_2d_range_range_vuu, usize, usize);
-impl_assign_range_range_fxn_v!(Access2DRRVUB, access_2d_range_range_vub, usize, bool);
+impl_range_range_fxn_v!(Access2DRRVBB, access_2d_range_range_vbb, bool,  bool);
+impl_range_range_fxn_v!(Access2DRRVBU, access_2d_range_range_vbu, bool,  usize);
+impl_range_range_fxn_v!(Access2DRRVUU, access_2d_range_range_vuu, usize, usize);
+impl_range_range_fxn_v!(Access2DRRVUB, access_2d_range_range_vub, usize, bool);
 
 fn matrix_access_range_range_fxn(source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   let arg = (source, ixes.as_slice());
@@ -1666,8 +1666,8 @@ macro_rules! impl_access_all_range_arms {
   }
 }
 
-impl_set_all_fxn_v!(Access2DARV,  assign_2d_all_range_v,  usize);
-impl_set_all_fxn_v!(Access2DARVB, assign_2d_all_range_vb, bool);
+impl_all_fxn_v!(Access2DARV,  assign_2d_all_range_v,  usize);
+impl_all_fxn_v!(Access2DARVB, assign_2d_all_range_vb, bool);
 
 fn matrix_access_all_range_fxn(source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   let arg = (source, ixes.as_slice());
