@@ -9,7 +9,6 @@ use std::fs::File;
 use std::path::Path;
 #[cfg(feature = "matrix")]
 use crate::matrix::Matrix;
-use indexmap::IndexMap;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Eq, PartialEq)]

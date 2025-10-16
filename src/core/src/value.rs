@@ -886,7 +886,7 @@ impl Value {
       Value::Set(r) => &*(r as *const Ref<MechSet> as *const Ref<T>),
       #[cfg(feature = "table")]
       Value::Table(r) => &*(r as *const Ref<MechTable> as *const Ref<T>),
-      _ => panic!("Unsupported type for as_unchecked"),
+      x => panic!("Unsupported type for as_unchecked: {:?}.", x),
     }
   }
 
@@ -2252,6 +2252,8 @@ impl ToValue for Ref<String> { fn to_value(&self) -> Value { Value::String(self.
 impl ToValue for Ref<R64> { fn to_value(&self) -> Value { Value::R64(self.clone()) } }
 #[cfg(feature = "complex")]
 impl ToValue for Ref<C64> { fn to_value(&self) -> Value { Value::C64(self.clone()) } }
+
+impl ToValue for Ref<Value> { fn to_value(&self) -> Value { (*self.borrow()).clone() } }
 
 #[cfg(feature = "u8")]
 impl From<u8> for Value {

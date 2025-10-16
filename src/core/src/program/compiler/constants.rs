@@ -879,6 +879,7 @@ where
         4 => Matrix::Vector4(Ref::new(Vector4::from_vec(elements))),
         #[cfg(feature = "vectord")]
         _ => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
+        _ => panic!("No suitable Matrix variant for dimensions {}x{}", rows, cols),
       }
     } else if rows == 1 {
       match cols {
@@ -890,6 +891,7 @@ where
         4 => Matrix::RowVector4(Ref::new(RowVector4::from_vec(elements))),
         #[cfg(feature = "row_vectord")]
         _ => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
+        _ => panic!("No suitable Matrix variant for dimensions {}x{}", rows, cols),
       }
     } else {
       match (rows, cols) {
@@ -907,6 +909,7 @@ where
         (3, 2) => Matrix::Matrix3x2(Ref::new(Matrix3x2::from_row_slice(&elements))),
         #[cfg(feature = "matrixd")]
         _ => Matrix::DMatrix(Ref::new(DMatrix::from_vec(rows, cols, elements))),
+        _ => panic!("No suitable Matrix variant for dimensions {}x{}", rows, cols),
       }
     }
   }

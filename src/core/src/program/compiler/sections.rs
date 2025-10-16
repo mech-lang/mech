@@ -198,25 +198,31 @@ impl ByteCodeHeader {
 pub enum FeatureKind {
   I8=1, I16, I32, I64, I128,
   U8, U16, U32, U64, U128,
+
   F32, F64, C64, R64, Index,
-  String, Bool, Atom,
-  Set, Map, Table, Tuple, Record, Enum,
+  String, Bool, Atom, Set, Map, 
+  
+  Table, Tuple, Record, Enum,
   VariableDefine, VariableAssign, KindDefine,
   KindAnnotation, SubscriptRange, SubscriptFormula,
+  
   RangeInclusive, RangeExclusive,
   DotIndexing, Swizzle, LogicalIndexing,
-  Matrix1, Matrix2, Matrix3, Matrix4,
-  Matrix2x3, Matrix3x2,
-  RowVector2, RowVector3, RowVector4,
-  Vector2, Vector3, Vector4,
-  VectorD, MatrixD, RowVectorD,
+  Matrix1, Matrix2, Matrix3, Matrix4, Matrix2x3, 
+  
+  Matrix3x2, RowVector2, RowVector3, RowVector4,
+  Vector2, Vector3, Vector4, VectorD, MatrixD, RowVectorD,
+  
   HorzCat, VertCat,
   Compiler, PrettyPrint, Serde,
-  MatMul, Transpose, Dot, Cross,
-  Add, Sub, Mul, Div, Exp, Mod, Neg, OpAssign,
-  LT, LTE, GT, GTE, EQ, NEQ,
-  And, Or, Xor, Not,
-  Convert, Assign, Access,
+  MatMul, Transpose, Dot, Cross, Add, 
+  
+  Sub, Mul, Div, Exp, Mod, 
+  Neg, OpAssign, LT, LTE, GT, 
+  
+  GTE, EQ, NEQ, And, Or, 
+  Xor, Not, Convert, Assign, Access,
+  
   Functions, Formulas,
   Custom = 0xFFFF,
 }
