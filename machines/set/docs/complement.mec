@@ -1,0 +1,108 @@
+set/complement
+===============================================================================
+
+%% Complement of a set relative to a universe (stable insertion order)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+C := set/complement(U, A)   # elements in U that are not in A
+```
+Equivalent shorthand forms:
+```mech:disabled
+C := U ∖ A                  # difference equals complement relative to U
+C := A∁                     # complement of A w.r.t. the active universe (if configured)
+C := A'                     # alternate complement shorthand (if configured)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the complement of a set `A` **relative to** a universe set `U`.
+The result contains all elements that are in `U` but **not** in `A`.
+
+This wraps the Mech set engine's complement implementation (using an
+ordered set internally), so the result preserves **stable insertion order**:
+elements appear in the same order they appear in `U`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+Arguments:
+- U : set of T   — the universe/reference set
+- A : set of T   — the set to complement (elements excluded from `U`)
+
+Element type constraints:
+- `T` must be hashable and comparable for equality (`Eq` + `Hash` in Rust).
+- Common scalar kinds: integers, strings, symbols, booleans.
+
+4. Output
+-------------------------------------------------------------------------------
+
+Result:
+- C : set of T containing all elements in `U` that are **not** in `A`,
+      preserving `U`'s order.
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) Basic complement relative to an explicit universe
+
+```mech:ex1
+U := {"a", "b", "c", "d"}
+A := {"b", "d"}
+C := set/complement(U, A)
+# Equivalent:
+# C := U ∖ A
+# If an active universe is configured:
+# C := A∁
+# C := A'
+```
+Result: `C` = {"a", "c"}
+
+(b) Numbers
+
+```mech:ex2
+U := {1, 2, 3, 4, 5}
+A := {2, 5}
+C := set/complement(U, A)
+```
+Result: `C` = {1, 3, 4}
+
+(c) Order follows the universe
+
+```mech:ex3
+U := {"x", "y", "z"}
+A := {"z"}
+C := set/complement(U, A)
+```
+Result: `C` = {"x", "y"}
+
+6. Details
+-------------------------------------------------------------------------------
+
+Set semantics:
+- Inputs are treated as sets (duplicates ignored using hash + equality).
+- Each distinct element appears at most once in the result.
+
+Stable insertion order:
+- Matches ordered-set semantics: iteration reflects first appearance in `U`.
+
+Relationship to difference:
+- `set/complement(U, A)` is equivalent to `U ∖ A` (set difference).
+
+Universe handling:
+- The two-argument form `set/complement(U, A)` is always valid.
+- The shorthands `A∁` and `A'` require that a default universe is defined
+  in the calling context; otherwise they are not resolved.
+
+Performance:
+- Average O(|U| + |A|) time with hashing; memory O(|U|) for the result.
+
+7. Errors
+-------------------------------------------------------------------------------
+
+- Incorrect number of arguments (expects two, unless using a valid shorthand with an active universe).
+- Unsupported element type (not hashable or not comparable for equality).
+- Inconsistent element kinds between `U` and `A`.

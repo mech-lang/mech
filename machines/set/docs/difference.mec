@@ -1,0 +1,93 @@
+set/difference
+===============================================================================
+
+%% Difference of two sets (stable insertion order)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+D := set/difference(A, B)
+D := A ∖ B
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the difference of two sets A and B, returning elements that appear in A
+but not in B.
+
+The implementation wraps a Rust IndexSet difference iterator, so the result
+preserves stable insertion order:
+
+- Elements are returned in the order they appear in A, excluding those also in B.
+
+3. Input
+-------------------------------------------------------------------------------
+
+Arguments:
+- A : set of T   (or array treated as a set; duplicates ignored)
+- B : set of T   (or array treated as a set; duplicates ignored)
+
+Element type constraints:
+- T must be hashable and comparable for equality (Eq + Hash in Rust).
+- Common scalar kinds: integers, strings, symbols, booleans.
+
+4. Output
+-------------------------------------------------------------------------------
+
+Result:
+- D : set of T containing elements in A but not in B, preserving A’s order.
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) Simple difference
+
+```mech:ex1
+A := {"a", "b", "c"}
+B := {"b", "c", "d"}
+D := set/difference(A, B)
+```
+Result: `D` = {"a"}
+
+(b) Numbers
+
+```mech:ex2
+A := {1, 2, 3, 4}
+B := {3, 4, 5}
+D := A ∖ B
+```
+Result: `D` = {1, 2}
+
+(c) Order is preserved from A
+
+```mech:ex3
+A := {"x", "y", "z"}
+B := {"z"}
+D := set/difference(A, B)
+```
+Result: `D` = {"x", "y"}
+
+6. Details
+-------------------------------------------------------------------------------
+
+Set semantics:
+- Inputs are coerced to sets by dropping duplicates.
+- Only distinct elements present in A but not in B are returned.
+
+Stable insertion order:
+- Matches Rust IndexSet behavior: difference elements follow A’s order.
+
+Performance:
+- Average O(\|A\| + \|B\|) time with hashing, memory O(\|A\|) for the result.
+
+Determinism:
+- Output is deterministic across runs and platforms.
+
+7. Errors
+-------------------------------------------------------------------------------
+
+- Incorrect number of arguments (expects two).
+- Unsupported element type (not hashable or not comparable).
+- Inconsistent element kinds between A and B.

@@ -1,0 +1,84 @@
+set/indexset
+===============================================================================
+
+%% Ordered hash set (stable insertion order)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+S := set/indexset([elements])
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+An ordered hash set that stores distinct elements while preserving the order
+in which they were inserted. This wraps Rust's `IndexSet`, providing stable
+iteration order independent of hash values.
+
+The interface is similar to a standard hash set, but with additional features
+such as deterministic ordering and support for indexed operations.
+
+3. Input
+-------------------------------------------------------------------------------
+
+Arguments:
+- elements : array of T (optional), initial values to populate the set.
+
+Element type constraints:
+- T must be hashable and comparable for equality (`Eq` + `Hash` in Rust).
+- Common scalar kinds: integers, strings, symbols, booleans.
+
+4. Output
+-------------------------------------------------------------------------------
+
+Result:
+- S : set of T containing unique elements with stable insertion order.
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) Create an empty set
+
+```mech:ex1
+S := set/indexset()
+// S is {}
+```
+
+(b) Create a set from a list of numbers
+
+```mech:ex2
+S := set/indexset([1, 2, 3, 2])
+// S is {1, 2, 3}
+```
+
+(c) Strings with insertion order preserved
+
+```mech:ex3
+S := set/indexset(["a", "c", "b", "a"])
+// S is {"a", "c", "b"}
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+Properties:
+- Eliminates duplicates automatically.
+- Preserves the order of first insertion.
+- Supports efficient membership testing and iteration.
+
+Stable insertion order:
+- Matches Rust `IndexSet` behavior: iteration reflects insertion sequence.
+
+Performance:
+- Average O(1) insertion and lookup via hashing.
+- Memory usage proportional to number of elements.
+
+Determinism:
+- Output order is consistent across runs and platforms.
+
+7. Errors
+-------------------------------------------------------------------------------
+
+- Unsupported element type (not hashable or not comparable).

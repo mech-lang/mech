@@ -1,0 +1,75 @@
+set/drain
+===============================================================================
+
+%% Drain all elements from a set, yielding them in insertion order
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+D := set/drain(S)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Creates a draining iterator over the set `S`. This yields all elements of `S`
+in their stable insertion order, while also removing them from the set. After
+the drain operation, the set `S` is left empty.
+
+This wraps Rust's `IndexSet::drain` method.
+
+3. Input
+-------------------------------------------------------------------------------
+
+Arguments:
+- S : set of T, the input set to be drained.
+
+Element type constraints:
+- T must be hashable and comparable for equality (Eq + Hash in Rust).
+
+4. Output
+-------------------------------------------------------------------------------
+
+Result:
+- D : set of T containing all elements that were removed from `S`, in insertion order.
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) Drain numbers from a set
+
+```mech:ex1
+S := set/indexset([1, 2, 3])
+D := set/drain(S)
+```
+Result: `D` contains 1, 2, 3. Now `S` is empty.
+
+(b) Drain strings
+
+```mech:ex2
+S := set/indexset(["a", "b", "c"])
+D := set/drain(S)
+```
+Result: `D` contains "a", "b", "c". Now `S` is empty.
+
+6. Details
+-------------------------------------------------------------------------------
+
+Set semantics:
+- Draining yields each element exactly once and removes it from the original set.
+
+Stable insertion order:
+- Matches Rust IndexSet behavior: iteration follows insertion order.
+
+Performance:
+- Linear in the size of the set, O(S).
+
+Determinism:
+- Results are deterministic across runs and platforms.
+
+7. Errors
+-------------------------------------------------------------------------------
+
+- Incorrect number of arguments (expects one).
+- Unsupported element type (not hashable or not comparable).
