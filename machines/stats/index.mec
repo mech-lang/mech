@@ -17,7 +17,7 @@ Statistics related functions.
 
 stats/machine := {
   name: "stats" 
-  version: "v0.2.62"
+  version: "v0.2.63"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/stats"
   license: "Apache-2.0"}
