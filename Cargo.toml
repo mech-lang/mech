@@ -17,6 +17,11 @@ rust-version = "1.88"
 gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
+[[bin]]
+name = "term"
+path = "src/bin/term.rs"
+required-features = ["compiler"]
+
 [features]
 no_std = ["mech-core/no_std", "mech-interpreter/no_std", "mech-syntax/no_std"]
 

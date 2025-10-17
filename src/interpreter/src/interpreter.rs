@@ -14,6 +14,7 @@ pub struct Interpreter {
   pub state: Ref<ProgramState>,
   registers: Vec<Value>,
   constants: Vec<Value>,
+  #[cfg(feature = "compiler")]
   pub context: Option<CompileCtx>,
   pub code: Vec<MechSourceCode>,
   pub out: Value,
@@ -37,6 +38,7 @@ impl Interpreter {
       sub_interpreters: Ref::new(HashMap::new()),
       out_values: Ref::new(HashMap::new()),
       code: Vec::new(),
+      #[cfg(feature = "compiler")]
       context: None,
     }
   }

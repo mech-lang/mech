@@ -1,5 +1,6 @@
 #![allow(warnings)]
 #![feature(where_clause_attrs)]
+
 use std::{
   env,
   thread,
