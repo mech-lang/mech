@@ -124,5 +124,5 @@ bytecode_test!(bytecode_define_table, "x := |x<f64> y<u64>| 1 2 | 3 4 |", Value:
     vec![Value::U64(Ref::new(2_u64)), Value::U64(Ref::new(4_u64))],
   ],
 ))));
-// x := |x<f64> y<bool>| 1 true | 3 false |; y := |x<f64> y<bool>| 1 true | 3 false |; x == y
 bytecode_test!(bytecode_define_table_eq, "x := |x<f64> y<bool>| 1 true | 3 false |; y := |x<f64> y<bool>| 1 true | 3 false |; x == y", Value::Bool(Ref::new(true)));
+bytecode_test!(bytecode_set_union, "x := {1 2 3}; y := {3 4 5}; x ∪ y", Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(F64::new(1.0))),Value::F64(Ref::new(F64::new(2.0))),Value::F64(Ref::new(F64::new(3.0))),Value::F64(Ref::new(F64::new(4.0))),Value::F64(Ref::new(F64::new(5.0)))]))));

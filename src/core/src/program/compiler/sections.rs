@@ -222,7 +222,10 @@ pub enum FeatureKind {
   
   GTE, EQ, NEQ, And, Or, 
   Xor, Not, Convert, Assign, Access,
-  
+
+  Union, Intersection, Difference, Complement, Subset, 
+  Superset, ProperSubset, ProperSuperset, ElementOf, NotElementOf,
+
   Functions, Formulas,
   Custom = 0xFFFF,
 }
@@ -311,6 +314,16 @@ impl FeatureKind {
       FeatureKind::Convert => "convert".to_string(),
       FeatureKind::Assign => "assign".to_string(),
       FeatureKind::Access => "access".to_string(),
+      FeatureKind::Union => "set_union".to_string(),
+      FeatureKind::Intersection => "set_intersection".to_string(),
+      FeatureKind::Difference => "set_difference".to_string(),
+      FeatureKind::Complement => "set_complement".to_string(),
+      FeatureKind::Subset => "set_subset".to_string(),
+      FeatureKind::Superset => "set_superset".to_string(),
+      FeatureKind::ProperSubset => "set_proper_subset".to_string(),
+      FeatureKind::ProperSuperset => "set_proper_superset".to_string(),
+      FeatureKind::ElementOf => "set_element_of".to_string(),
+      FeatureKind::NotElementOf => "set_not_element_of".to_string(),
       FeatureKind::Functions => "functions".to_string(),
       FeatureKind::Formulas => "formulas".to_string(),
       FeatureKind::Custom => "custom".to_string(),

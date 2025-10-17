@@ -432,7 +432,7 @@ pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
 
       // Set
       #[cfg(feature = "set_union")]
-      FormulaOperator::Set(SetOp::Union) => todo!(),
+      FormulaOperator::Set(SetOp::Union) => SetUnion{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "set_intersection")]
       FormulaOperator::Set(SetOp::Intersection) => todo!(),
       #[cfg(feature = "set_difference")]

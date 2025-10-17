@@ -12,6 +12,15 @@ pub struct MechSet {
 
 impl MechSet {
 
+  pub fn new(kind: ValueKind, size: usize) -> MechSet {
+    MechSet{
+      kind,
+      num_elements: size,
+      set: IndexSet::with_capacity(size)
+    }
+  }
+
+
   #[cfg(feature = "pretty_print")]
   pub fn to_html(&self) -> String {
     let mut src = String::new();

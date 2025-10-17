@@ -63,6 +63,8 @@ use mech_compare::*;
 use mech_range::inclusive::RangeInclusive;
 #[cfg(feature = "range_exclusive")]
 use mech_range::exclusive::RangeExclusive;
+#[cfg(feature = "set")]
+use mech_set::*;
 
 #[cfg(feature = "matrix")]
 use na::DMatrix;
