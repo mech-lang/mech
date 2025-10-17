@@ -14,6 +14,7 @@ use std::mem;
 
 #[cfg(feature = "matrix")]
 use nalgebra::DVector;
+
 macro_rules! impl_as_type {
   ($target_type:ty) => {
     paste!{
@@ -1764,7 +1765,7 @@ impl Value {
     }
   }
 
-  #[cfg(feature = "rational")]
+  #[cfg(feature = "r64")]
   pub fn as_r64(&self) -> MResult<Ref<R64>> {
     match self {
       Value::R64(v) => Ok(v.clone()),
@@ -1803,7 +1804,7 @@ impl Value {
     }
   }
 
-  #[cfg(feature = "complex")]
+  #[cfg(feature = "c64")]
   pub fn as_c64(&self) -> MResult<Ref<C64>> {
     match self {
       Value::C64(v) => Ok(v.clone()),
@@ -2420,3 +2421,16 @@ impl_to_usize_for!(i64);
 #[cfg(feature = "i128")]
 impl_to_usize_for!(i128);
 
+#[cfg(feature = "table")]
+impl ToValue for Ref<MechTable> {
+  fn to_value(&self) -> Value {
+    Value::Table(self.clone())
+  }
+}
+
+#[cfg(feature = "set")]
+impl ToValue for Ref<MechSet> {
+  fn to_value(&self) -> Value {
+    Value::Set(self.clone())
+  }
+}

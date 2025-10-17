@@ -147,6 +147,10 @@ impl_variable_define_fxn!(C64);
 impl_variable_define_fxn!(bool);
 #[cfg(feature = "string")]
 impl_variable_define_fxn!(String);
+#[cfg(feature = "table")]
+impl_variable_define_fxn!(MechTable);
+#[cfg(feature = "set")]
+impl_variable_define_fxn!(MechSet);
 
 #[macro_export]
 macro_rules! impl_variable_define_match_arms {
@@ -238,6 +242,13 @@ macro_rules! impl_variable_define_match_arms {
 
 fn impl_var_define_fxn(var: Value, name: Value, mutable: Value, id: u64) -> MResult<Box<dyn MechFunction>> {
   let arg = (var, name, mutable, id);
+  match arg {
+    (Value::Table(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechTable{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
+    (Value::Set(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechSet{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
+    _ => (),
+  }
+
+
                  impl_variable_define_match_arms!(&arg, u8,   "u8")
   .or_else(|_| impl_variable_define_match_arms!(&arg, u16,  "u16"))
   .or_else(|_| impl_variable_define_match_arms!(&arg, u32,  "u32"))
