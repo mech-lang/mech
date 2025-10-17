@@ -1,6 +1,6 @@
 [package]
 name = "mech-interpreter"
-version = "0.2.62"
+version = "0.2.63"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "The Mech language runtime."
 documentation = "http://docs.mech-lang.org"
@@ -253,15 +253,15 @@ math_neg = ["math_ops", "mech-math/neg"]
 math_sqrt = ["math_root", "mech-math/sqrt"]
 
 [dependencies]
-mech-core = { version = "0.2.62", default-features = false }
-mech-math = { version = "0.2.62", default-features = false, optional = true}
-mech-logic = { version = "0.2.62", default-features = false, optional = true }
-mech-range = { version = "0.2.62", default-features = false, optional = true }
-mech-matrix = { version = "0.2.62", default-features = false, optional = true }
-mech-compare = { version = "0.2.62", default-features = false, optional = true }
-mech-stats = { version = "0.2.62", default-features = false, optional = true }
-mech-io = { version = "0.2.62", default-features = false, optional = true }
-mech-combinatorics = { version = "0.2.62", default-features = false, optional = true }
+mech-core = { version = "0.2.63", default-features = false }
+mech-math = { version = "0.2.63", default-features = false, optional = true}
+mech-logic = { version = "0.2.63", default-features = false, optional = true }
+mech-range = { version = "0.2.63", default-features = false, optional = true }
+mech-matrix = { version = "0.2.63", default-features = false, optional = true }
+mech-compare = { version = "0.2.63", default-features = false, optional = true }
+mech-stats = { version = "0.2.63", default-features = false, optional = true }
+mech-io = { version = "0.2.63", default-features = false, optional = true }
+mech-combinatorics = { version = "0.2.63", default-features = false, optional = true }
 
 paste = "1.0.15"
 byteorder = "1.5.0"
