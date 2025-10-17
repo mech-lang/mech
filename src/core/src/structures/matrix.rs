@@ -272,7 +272,7 @@ where T: Hash + nalgebra::Scalar
       Matrix::Matrix3x2(x) => x.borrow().hash(state),
       #[cfg(feature = "matrix2x3")]
       Matrix::Matrix2x3(x) => x.borrow().hash(state),
-      #[cfg(feature = "row_vectord")]
+      #[cfg(feature = "vectord")]
       Matrix::DVector(x) => x.borrow().hash(state),
       #[cfg(feature = "row_vectord")]
       Matrix::RowDVector(x) => x.borrow().hash(state),

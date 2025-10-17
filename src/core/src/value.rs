@@ -142,9 +142,9 @@ impl ValueKind {
       ValueKind::F32 => FeatureKind::F32, 
       #[cfg(feature = "f64")]
       ValueKind::F64 => FeatureKind::F64,
-      #[cfg(feature = "string")]
+      #[cfg(any(feature = "string", feature = "variable_define"))]
       ValueKind::String => FeatureKind::String,
-      #[cfg(feature = "bool")]
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
       ValueKind::Bool => FeatureKind::Bool,
       #[cfg(feature = "table")]
       ValueKind::Table(_,_) => FeatureKind::Table,
@@ -477,9 +477,9 @@ impl_as_value_kind!(u128, ValueKind::U128);
 impl_as_value_kind!(F32, ValueKind::F32);
 #[cfg(feature = "f64")]
 impl_as_value_kind!(F64, ValueKind::F64);
-#[cfg(feature = "bool")]
+#[cfg(any(feature = "bool", feature = "variable_define"))]
 impl_as_value_kind!(bool, ValueKind::Bool);
-#[cfg(feature = "string")]
+#[cfg(any(feature = "string", feature = "variable_define"))]
 impl_as_value_kind!(String, ValueKind::String);
 #[cfg(feature = "rational")]
 impl_as_value_kind!(R64, ValueKind::R64);
@@ -564,9 +564,9 @@ pub enum Value {
   F32(Ref<F32>),
   #[cfg(feature = "f64")]
   F64(Ref<F64>),
-  #[cfg(feature = "string")]
+  #[cfg(any(feature = "string", feature = "variable_define"))]
   String(Ref<String>),
-  #[cfg(feature = "bool")]
+  #[cfg(any(feature = "bool", feature = "variable_define"))]
   Bool(Ref<bool>),
   #[cfg(feature = "atom")]
   Atom(Ref<MechAtom>),
@@ -673,7 +673,7 @@ impl Hash for Value {
       Value::F64(x)  => x.borrow().hash(state),
       #[cfg(feature = "complex")]
       Value::C64(x) => x.borrow().hash(state),
-      #[cfg(feature = "bool")]
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
       Value::Bool(x) => x.borrow().hash(state),
       #[cfg(feature = "atom")]
       Value::Atom(x) => x.borrow().hash(state),
@@ -689,7 +689,7 @@ impl Hash for Value {
       Value::Record(x) => x.borrow().hash(state),
       #[cfg(feature = "enum")]
       Value::Enum(x) => x.borrow().hash(state),
-      #[cfg(feature = "string")]
+      #[cfg(any(feature = "string", feature = "variable_define"))]
       Value::String(x) => x.borrow().hash(state),
       #[cfg(all(feature = "matrix", feature = "bool"))]
       Value::MatrixBool(x) => x.hash(state),
@@ -843,9 +843,9 @@ impl Value {
       Value::F32(r) => &*(r as *const Ref<F32> as *const Ref<T>),
       #[cfg(feature = "f64")]
       Value::F64(r) => &*(r as *const Ref<F64> as *const Ref<T>),
-      #[cfg(feature = "string")]
+      #[cfg(any(feature = "string", feature = "variable_define"))]
       Value::String(r) => &*(r as *const Ref<String> as *const Ref<T>),
-      #[cfg(feature = "bool")]
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
       Value::Bool(r) => &*(r as *const Ref<bool> as *const Ref<T>),
       #[cfg(feature = "rational")]
       Value::R64(r) => &*(r as *const Ref<R64> as *const Ref<T>),
@@ -922,9 +922,9 @@ impl Value {
       Value::F32(v) => v.addr(),
       #[cfg(feature = "f64")]
       Value::F64(v) => v.addr(),
-      #[cfg(feature = "string")]
+      #[cfg(any(feature = "string", feature = "variable_define"))]
       Value::String(v) => v.addr(),
-      #[cfg(feature = "bool")]
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
       Value::Bool(v) => v.addr(),
       #[cfg(feature = "complex")]
       Value::C64(v) => v.addr(),
@@ -1282,7 +1282,7 @@ impl Value {
       Value::F32(x) => 4,
       #[cfg(feature = "f64")]
       Value::F64(x) => 8,
-      #[cfg(feature = "bool")]
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
       Value::Bool(x) => 1,
       #[cfg(feature = "complex")]
       Value::C64(x) => 16,
@@ -1322,7 +1322,7 @@ impl Value {
       Value::MatrixR64(x) => x.size_of(),
       #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixC64(x) => x.size_of(),
-      #[cfg(feature = "string")]
+      #[cfg(any(feature = "string", feature = "variable_define"))]
       Value::String(x) => x.borrow().len(),
       #[cfg(feature = "atom")]
       Value::Atom(x) => 8,
@@ -1374,9 +1374,9 @@ impl Value {
       Value::F32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       #[cfg(feature = "f64")]
       Value::F64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
-      #[cfg(feature = "string")]
+      #[cfg(any(feature = "string", feature = "variable_define"))]
       Value::String(s) => format!("<span class='mech-string'>\"{}\"</span>", s.borrow()),
-      #[cfg(feature = "bool")]
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
       Value::Bool(b) => format!("<span class='mech-boolean'>{}</span>", b.borrow()),
       #[cfg(feature = "complex")]
       Value::C64(c) => c.borrow().to_html(),
@@ -1468,9 +1468,9 @@ impl Value {
       Value::F32(x) => vec![1,1],
       #[cfg(feature = "f64")]
       Value::F64(x) => vec![1,1],
-      #[cfg(feature = "string")]
+      #[cfg(any(feature = "string", feature = "variable_define"))]
       Value::String(x) => vec![1,1],
-      #[cfg(feature = "bool")]
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
       Value::Bool(x) => vec![1,1],
       #[cfg(feature = "atom")]
       Value::Atom(x) => vec![1,1],
@@ -1568,9 +1568,9 @@ impl Value {
       Value::F32(_) => ValueKind::F32,
       #[cfg(feature = "f64")]
       Value::F64(_) => ValueKind::F64,
-      #[cfg(feature = "string")]
+      #[cfg(any(feature = "string", feature = "variable_define"))]
       Value::String(_) => ValueKind::String,
-      #[cfg(feature = "bool")]
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
       Value::Bool(_) => ValueKind::Bool,
       #[cfg(feature = "atom")]
       Value::Atom(x) => ValueKind::Atom((x.borrow().0)),
@@ -1700,9 +1700,9 @@ impl Value {
       Value::F32(_) => true,
       #[cfg(feature = "f64")]
       Value::F64(_) => true,
-      #[cfg(feature = "bool")]
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
       Value::Bool(_) => true,
-      #[cfg(feature = "string")]
+      #[cfg(any(feature = "string", feature = "variable_define"))]
       Value::String(_) => true,
       #[cfg(feature = "atom")]
       Value::Atom(_) => true,
@@ -1711,7 +1711,7 @@ impl Value {
     }
   }
 
-  #[cfg(feature = "bool")]
+  #[cfg(any(feature = "bool", feature = "variable_define"))]
   pub fn as_bool(&self) -> MResult<Ref<bool>> {if let Value::Bool(v) = self { Ok(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_bool() } else { Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}) }}
   
   impl_as_type!(i8);
@@ -1725,10 +1725,9 @@ impl Value {
   impl_as_type!(u64);
   impl_as_type!(u128);
 
-  #[cfg(feature = "string")]
+  #[cfg(any(feature = "string", feature = "variable_define"))]
   pub fn as_string(&self) -> MResult<Ref<String>> {
     match self {
-      #[cfg(feature = "string")]
       Value::String(v) => Ok(v.clone()),
       #[cfg(feature = "u8")]
       Value::U8(v) => Ok(Ref::new(v.borrow().to_string())),
@@ -1754,7 +1753,7 @@ impl Value {
       Value::F32(v) => Ok(Ref::new(format!("{}", v.borrow().0))),
       #[cfg(feature = "f64")]
       Value::F64(v) => Ok(Ref::new(format!("{}", v.borrow().0))),
-      #[cfg(feature = "bool")]
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
       Value::Bool(v) => Ok(Ref::new(format!("{}", v.borrow()))),
       #[cfg(feature = "rational")]
       Value::R64(v) => Ok(Ref::new(v.borrow().to_string())),
@@ -1993,7 +1992,7 @@ impl Value {
         id: line!(),
         kind: MechErrorKind::UnhandledFunctionArgumentKind,
       }),
-      #[cfg(feature = "bool")]
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
       Value::Bool(_) => Err(MechError {
         file: file!().to_string(),
         tokens: vec![],
@@ -2137,7 +2136,7 @@ impl PrettyPrint for Value {
       Value::F32(x)  => {builder.push_record(vec![format!("{}",x.borrow().0)]);},
       #[cfg(feature = "f64")]
       Value::F64(x)  => {builder.push_record(vec![format!("{}",x.borrow().0)]);},
-      #[cfg(feature = "bool")]
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
       Value::Bool(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
       #[cfg(feature = "complex")]
       Value::C64(x) => {builder.push_record(vec![x.borrow().pretty_print()]);},
@@ -2149,7 +2148,7 @@ impl PrettyPrint for Value {
       Value::Set(x)  => {return x.borrow().pretty_print();}
       #[cfg(feature = "map")]
       Value::Map(x)  => {return x.borrow().pretty_print();}
-      #[cfg(feature = "string")]
+      #[cfg(any(feature = "string", feature = "variable_define"))]
       Value::String(x) => {return format!("\"{}\"",x.borrow().clone());},
       #[cfg(feature = "table")]
       Value::Table(x)  => {return x.borrow().pretty_print();},
@@ -2277,9 +2276,9 @@ impl ToValue for Ref<i128>   { fn to_value(&self) -> Value { Value::I128(self.cl
 impl ToValue for Ref<F32>    { fn to_value(&self) -> Value { Value::F32(self.clone())    } }
 #[cfg(feature = "f64")]
 impl ToValue for Ref<F64>    { fn to_value(&self) -> Value { Value::F64(self.clone())    } }
-#[cfg(feature = "bool")]
+#[cfg(any(feature = "bool", feature = "variable_define"))]
 impl ToValue for Ref<bool>   { fn to_value(&self) -> Value { Value::Bool(self.clone())   } }
-#[cfg(feature = "string")]
+#[cfg(any(feature = "string", feature = "variable_define"))]
 impl ToValue for Ref<String> { fn to_value(&self) -> Value { Value::String(self.clone()) } }
 #[cfg(feature = "rational")]
 impl ToValue for Ref<R64> { fn to_value(&self) -> Value { Value::R64(self.clone()) } }
@@ -2358,14 +2357,14 @@ impl From<i128> for Value {
   }
 }
 
-#[cfg(feature = "bool")]
+#[cfg(any(feature = "bool", feature = "variable_define"))]
 impl From<bool> for Value {
   fn from(val: bool) -> Self {
     Value::Bool(Ref::new(val))
   }
 }
 
-#[cfg(feature = "string")]
+#[cfg(any(feature = "string", feature = "variable_define"))]
 impl From<String> for Value {
   fn from(val: String) -> Self {
     Value::String(Ref::new(val))

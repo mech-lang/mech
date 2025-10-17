@@ -176,7 +176,7 @@ impl_compile_const!("i64", i64);
 #[cfg(feature = "i128")]
 impl_compile_const!("i128", i128);
 
-#[cfg(feature = "bool")]
+#[cfg(any(feature = "bool", feature = "variable_define"))]
 impl CompileConst for bool {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
@@ -185,7 +185,7 @@ impl CompileConst for bool {
   }
 }
 
-#[cfg(feature = "string")]
+#[cfg(any(feature = "string", feature = "variable_define"))]
 impl CompileConst for String {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
