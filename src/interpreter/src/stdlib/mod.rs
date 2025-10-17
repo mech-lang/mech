@@ -22,6 +22,8 @@ pub mod convert;
 pub mod horzcat;
 #[cfg(feature = "matrix_vertcat")]
 pub mod vertcat;
+#[cfg(feature = "variable_define")]
+pub mod define;
 
 pub trait LosslessInto<T> {
   fn lossless_into(self) -> T;
