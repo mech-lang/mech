@@ -359,7 +359,7 @@ pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
       return Ok(col[0].clone());
     }
   }
-  #[cfg(feature = "vertcat")]
+  #[cfg(feature = "matrix_vertcat")]
   {
     let new_fxn = MatrixVertCat{}.compile(&col)?;
     new_fxn.solve();
