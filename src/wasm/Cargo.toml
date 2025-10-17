@@ -71,10 +71,10 @@ r64 = ["mech-core/r64", "mech-syntax/r64", "mech-interpreter/r64"]
 # structs
 set = ["mech-core/set", "mech-interpreter/set", "mech-syntax/set"]
 map = ["mech-core/map", "mech-interpreter/map", "mech-syntax/map"]
-table = ["vectord", "record", "mech-core/table", "mech-interpreter/table", "mech-syntax/table"]
+table = ["vectord", "record", "kind_annotation", "mech-core/table", "mech-interpreter/table", "mech-syntax/table"]
 tuple = ["mech-core/tuple", "mech-interpreter/tuple", "mech-syntax/tuple"]
 enum = ["mech-core/enum", "mech-interpreter/enum", "mech-syntax/enum"]
-record = ["tuple", "mech-core/record", "mech-interpreter/record", "mech-syntax/record"]
+record = ["tuple", "kind_annotation", "mech-core/record", "mech-interpreter/record", "mech-syntax/record"]
 atom = ["mech-core/atom", "mech-interpreter/atom", "mech-syntax/atom"]
 
 # matrix

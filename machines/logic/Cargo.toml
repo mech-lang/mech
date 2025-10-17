@@ -118,10 +118,10 @@ r64 = ["rational", "mech-core/r64"]
 # Structs
 set = ["mech-core/set"]
 map = ["mech-core/map"]
-table = ["vectord", "record", "mech-core/table"]
+table = ["vectord", "record", "kind_annotation", "mech-core/table"]
 tuple = ["mech-core/tuple"]
 enum = ["mech-core/enum"]
-record = ["tuple", "mech-core/record"]
+record = ["tuple", "kind_annotation", "mech-core/record"]
 atom = ["mech-core/atom"]
 
 # Matrix

@@ -84,6 +84,7 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
     };
     // If the kinds are different, do a conversion.
     kinds.push(knd.clone());
+    #[cfg(feature = "convert")]
     if knd != val.kind() {
       let fxn = ConvertKind{}.compile(&vec![val.clone(), Value::Kind(knd)]);
       match fxn {
@@ -97,6 +98,12 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
           return Err(MechError{id: line!(), file: file!().to_string(), tokens: vec![], msg: "".to_string(), kind: MechErrorKind::None});
         }
       }
+    } else {
+      data.insert(name_hash, val);
+    }
+    #[cfg(not(feature = "convert"))]
+    if knd != val.kind() {
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::KindMismatch(val.kind(),knd)});
     } else {
       data.insert(name_hash, val);
     }
