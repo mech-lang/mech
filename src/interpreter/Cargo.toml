@@ -128,7 +128,7 @@ record = ["indexmap", "tuple", "mech-core/record", "mech-math/record", "mech-com
 atom = ["mech-core/atom", "mech-math/atom", "mech-compare/atom", "mech-combinatorics/atom", "mech-logic/atom", "mech-matrix/atom", "mech-io/atom", "mech-stats/atom", "mech-range/atom"]
 
 # Matrix
-matrix = ["nalgebra", "mech-core/matrix", "matrix_horzcat", "matrix_vertcat", "mech-math/matrix", "mech-compare/matrix", "mech-combinatorics/matrix", "mech-logic/matrix", "mech-matrix/matrix", "mech-io/matrix", "mech-stats/matrix", "mech-range/matrix"]
+matrix = ["nalgebra", "mech-core/matrix", "mech-math/matrix", "mech-compare/matrix", "mech-combinatorics/matrix", "mech-logic/matrix", "mech-matrix/matrix", "mech-io/matrix", "mech-stats/matrix", "mech-range/matrix"]
 fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "mech-core/fixed_row_vector", "mech-math/fixed_row_vector", "mech-compare/fixed_row_vector", "mech-combinatorics/fixed_row_vector", "mech-logic/fixed_row_vector", "mech-matrix/fixed_row_vector", "mech-io/fixed_row_vector", "mech-stats/fixed_row_vector", "mech-range/fixed_row_vector", "matrix"]
 fixed_vector = ["vector4", "vector3", "vector2", "mech-core/fixed_vector", "mech-math/fixed_vector", "mech-compare/fixed_vector", "mech-combinatorics/fixed_vector", "mech-logic/fixed_vector", "mech-matrix/fixed_vector", "mech-io/fixed_vector", "mech-stats/fixed_vector", "mech-range/fixed_vector", "matrix"]
 fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "mech-core/fixed_matrix", "mech-math/fixed_matrix", "mech-compare/fixed_matrix", "mech-combinatorics/fixed_matrix", "mech-logic/fixed_matrix", "mech-matrix/fixed_matrix", "mech-io/fixed_matrix", "mech-stats/fixed_matrix", "mech-range/fixed_matrix", "matrix"]

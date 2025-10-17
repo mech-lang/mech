@@ -273,11 +273,13 @@ macro_rules! horzcat_four_args {
 
 // HorizontalConcatenateTwoArgs -----------------------------------------------
 
+#[cfg(feature = "matrixd")]
 struct HorizontalConcatenateTwoArgs<T> {
   e0: Box<dyn CopyMat<T>>,
   e1: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
 }
+#[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for HorizontalConcatenateTwoArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -296,6 +298,7 @@ where
     }
   }
 }
+#[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for HorizontalConcatenateTwoArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -308,6 +311,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateTwoArgs\n{:#?}", self.out) }
 }
+#[cfg(feature = "matrixd")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateTwoArgs<T>
 where
@@ -332,16 +336,19 @@ where
     Ok(registers[0])
   }
 }
+#[cfg(feature = "matrixd")]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateTwoArgs);
 
 // HorizontalConcatenateThreeArgs ---------------------------------------------
     
+#[cfg(feature = "matrixd")]
 struct HorizontalConcatenateThreeArgs<T> {
   e0: Box<dyn CopyMat<T>>,
   e1: Box<dyn CopyMat<T>>,
   e2: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
 }
+#[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for HorizontalConcatenateThreeArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -361,7 +368,7 @@ where
     }
   }
 }
-
+#[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for HorizontalConcatenateThreeArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -375,6 +382,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateThreeArgs\n{:#?}", self.out) }
 }
+#[cfg(feature = "matrixd")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateThreeArgs<T> 
 where
@@ -400,10 +408,12 @@ where
     Ok(registers[0])
   }
 }
+#[cfg(feature = "matrixd")]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateThreeArgs);
 
 // HorizontalConcatenateFourArgs ----------------------------------------------
 
+#[cfg(feature = "matrixd")]
 struct HorizontalConcatenateFourArgs<T> {
   e0: Box<dyn CopyMat<T>>,
   e1: Box<dyn CopyMat<T>>,
@@ -411,6 +421,7 @@ struct HorizontalConcatenateFourArgs<T> {
   e3: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
 }
+#[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for HorizontalConcatenateFourArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -431,6 +442,7 @@ where
     }
   }
 }
+#[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for HorizontalConcatenateFourArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -445,6 +457,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateFourArgs\n{:#?}", self.out) }
 }
+#[cfg(feature = "matrixd")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateFourArgs<T>
 where
@@ -495,10 +508,12 @@ where
 
 // HorizontalConcatenateNArgs -------------------------------------------------
 
+#[cfg(feature = "matrixd")]
 struct HorizontalConcatenateNArgs<T> {
   e0: Vec<Box<dyn CopyMat<T>>>,
   out: Ref<DMatrix<T>>,
 }
+#[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for HorizontalConcatenateNArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -520,6 +535,7 @@ where
     }
   }
 }
+#[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for HorizontalConcatenateNArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -534,6 +550,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateNArgs\n{:#?}", self.out) }
 }
+#[cfg(feature = "matrixd")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateNArgs<T>
 where
@@ -611,11 +628,13 @@ register_horizontal_concatenate_fxn!(HorizontalConcatenateRD);
 
 // HorizontalConcatenateRDN ---------------------------------------------------
 
+#[cfg(feature = "row_vectord")]
 struct HorizontalConcatenateRDN<T> {
   scalar: Vec<(Ref<T>,usize)>,
   matrix: Vec<(Box<dyn CopyMat<T>>,usize)>,
   out: Ref<RowDVector<T>>,
 }
+#[cfg(feature = "row_vectord")]
 impl<T> MechFunctionFactory for HorizontalConcatenateRDN<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -644,6 +663,7 @@ where
     }
   }
 }
+#[cfg(feature = "row_vectord")]
 impl<T> MechFunctionImpl for HorizontalConcatenateRDN<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -663,6 +683,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateRDN\n{:#?}", self.out) }
 }
+#[cfg(feature = "row_vectord")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateRDN<T>
 where
@@ -702,6 +723,7 @@ where
     Ok(registers[0])
   }
 }
+#[cfg(feature = "row_vectord")]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateRDN);
 
 // HorizontalConcatenateS1D ---------------------------------------------------
@@ -3969,8 +3991,10 @@ macro_rules! impl_horzcat_arms {
             let emd = get_md(&arguments[0]);
             let es = get_s(&arguments[0]);
             match (emd, erd, es) {
+              #[cfg(feature = "matrixd")]
               (Some(ref e0), None, None) => return Ok(Box::new(HorizontalConcatenateMD { out: e0.clone() })),
               (None, Some(ref e0), None) => return Ok(Box::new(HorizontalConcatenateRD { out: e0.clone() })),
+              #[cfg(feature = "matrixd")]
               (None, None, Some(ref e0)) => return Ok(Box::new(HorizontalConcatenateS1D {arg: e0.clone(), out: Ref::new(DMatrix::from_element(1,1,$default))})),
               x => return Err(MechError{file: file!().to_string(),tokens: vec![],msg: format!("Expected a RowDVector<{}> for horizontal concatenation, found {:?}", stringify!($kind), x),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind}),
             }
@@ -4259,6 +4283,7 @@ macro_rules! impl_horzcat_arms {
             let evd = get_vd(&arguments[0]);
             match (emd, evd) {
               (Some(ref e0), None) => return Ok(Box::new(HorizontalConcatenateMD{out: e0.clone()})),
+              #[cfg(feature = "vectord")]
               (NOne, Some(ref e0)) => return Ok(Box::new(HorizontalConcatenateVD{out: e0.clone()})),
               x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a MatrixD<{}> for horizontal concatenation, found {:?}", stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }

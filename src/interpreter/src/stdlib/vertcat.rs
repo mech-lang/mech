@@ -239,11 +239,13 @@ macro_rules! vertcat_four_args {
   
 // VerticalConcatenateTwoArgs -------------------------------------------------
 
+#[cfg(feature = "matrixd")]
 struct VerticalConcatenateTwoArgs<T> {
   e0: Box<dyn CopyMat<T>>,
   e1: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
 }
+#[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for VerticalConcatenateTwoArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -262,6 +264,7 @@ where
     }
   }
 }
+#[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for VerticalConcatenateTwoArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -274,6 +277,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateTwoArgs\n{:#?}", self.out) }
 }
+#[cfg(feature = "matrixd")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateTwoArgs<T> 
 where
@@ -298,16 +302,19 @@ where
     Ok(registers[0])    
   }
 }
+#[cfg(feature = "matrixd")]
 register_vertical_concatenate_fxn!(VerticalConcatenateTwoArgs);
 
 // VerticalConcatenateThreeArgs -----------------------------------------------
     
+#[cfg(feature = "matrixd")]
 struct VerticalConcatenateThreeArgs<T> {
   e0: Box<dyn CopyMat<T>>,
   e1: Box<dyn CopyMat<T>>,
   e2: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
 }
+#[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for VerticalConcatenateThreeArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -327,6 +334,7 @@ where
     }
   }
 }
+#[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for VerticalConcatenateThreeArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -340,6 +348,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateThreeArgs\n{:#?}", self.out) }
 }
+#[cfg(feature = "matrixd")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateThreeArgs<T> 
 where
@@ -365,10 +374,12 @@ where
     Ok(registers[0])    
   }
 }
+#[cfg(feature = "matrixd")]
 register_vertical_concatenate_fxn!(VerticalConcatenateThreeArgs);
 
 // VerticalConcatenateFourArgs ------------------------------------------------
 
+#[cfg(feature = "matrixd")]
 struct VerticalConcatenateFourArgs<T> {
   e0: Box<dyn CopyMat<T>>,
   e1: Box<dyn CopyMat<T>>,
@@ -376,6 +387,7 @@ struct VerticalConcatenateFourArgs<T> {
   e3: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
 }
+#[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for VerticalConcatenateFourArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -396,6 +408,7 @@ where
     }
   }
 }
+#[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for VerticalConcatenateFourArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -411,6 +424,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateFourArgs\n{:#?}", self.out) }
 }
+#[cfg(feature = "matrixd")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateFourArgs<T> 
 where
@@ -438,14 +452,17 @@ let mut registers = [0, 0, 0, 0, 0];
     Ok(registers[0])
   }
 }
+#[cfg(feature = "matrixd")]
 register_vertical_concatenate_fxn!(VerticalConcatenateFourArgs);
 
 // VerticalConcatenateNArgs ---------------------------------------------------
 
+#[cfg(feature = "matrixd")]
 struct VerticalConcatenateNArgs<T> {
   e0: Vec<Box<dyn CopyMat<T>>>,
   out: Ref<DMatrix<T>>,
 }
+#[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for VerticalConcatenateNArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -467,6 +484,7 @@ where
     }
   }
 }
+#[cfg(feature = "matrixd")]
 impl<T> MechFunctionImpl for VerticalConcatenateNArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -481,6 +499,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateNArgs\n{:#?}", self.out) }
 }
+#[cfg(feature = "matrixd")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateNArgs<T> 
 where
@@ -508,6 +527,7 @@ where
     Ok(registers[0])
   }
 }
+#[cfg(feature = "matrixd")]
 register_vertical_concatenate_fxn!(VerticalConcatenateNArgs);
 
 // VerticalConcatenateVec -----------------------------------------------------
@@ -560,11 +580,13 @@ macro_rules! vertical_concatenate {
 
 // VerticalConcatenateVD2 -----------------------------------------------------
 
+#[cfg(feature = "vectord")]
 struct VerticalConcatenateVD2<T> {
   e0: Box<dyn CopyMat<T>>,
   e1: Box<dyn CopyMat<T>>,
   out: Ref<DVector<T>>,
 }
+#[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateVD2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -583,6 +605,7 @@ where
     }
   }
 }
+#[cfg(feature = "vectord")]
 impl<T> MechFunctionImpl for VerticalConcatenateVD2<T> 
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -595,6 +618,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateVD2\n{:#?}", self.out) }
 }
+#[cfg(feature = "vectord")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateVD2<T> 
 where
@@ -629,16 +653,19 @@ where
     Ok(registers[0])
   }
 }
+#[cfg(feature = "vectord")]
 register_vertical_concatenate_fxn!(VerticalConcatenateVD2);
 
 // VerticalConcatenateVD3 -----------------------------------------------------
 
+#[cfg(feature = "vectord")]
 struct VerticalConcatenateVD3<T> {
   e0: Box<dyn CopyMat<T>>,
   e1: Box<dyn CopyMat<T>>,
   e2: Box<dyn CopyMat<T>>,
   out: Ref<DVector<T>>,
 }
+#[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateVD3<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -658,6 +685,7 @@ where
     }
   }
 }
+#[cfg(feature = "vectord")]
 impl<T> MechFunctionImpl for VerticalConcatenateVD3<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -671,6 +699,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateVD3\n{:#?}", self.out) }
 }
+#[cfg(feature = "vectord")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateVD3<T> 
 where
@@ -696,10 +725,12 @@ where
     Ok(registers[0])
   }
 }
+#[cfg(feature = "vectord")]
 register_vertical_concatenate_fxn!(VerticalConcatenateVD3);
 
 // VerticalConcatenateVD4 -----------------------------------------------------
 
+#[cfg(feature = "vectord")]
 struct VerticalConcatenateVD4<T> {
   e0: Box<dyn CopyMat<T>>,
   e1: Box<dyn CopyMat<T>>,
@@ -707,6 +738,7 @@ struct VerticalConcatenateVD4<T> {
   e3: Box<dyn CopyMat<T>>,
   out: Ref<DVector<T>>,
 }
+#[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateVD4<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -727,6 +759,7 @@ where
     }
   }
 }
+#[cfg(feature = "vectord")]
 impl<T> MechFunctionImpl for VerticalConcatenateVD4<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -741,6 +774,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateVD3\n{:#?}", self.out) }
 }
+#[cfg(feature = "vectord")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateVD4<T> 
 where
@@ -768,15 +802,18 @@ where
     Ok(registers[0])
   }
 }
+#[cfg(feature = "vectord")]
 register_vertical_concatenate_fxn!(VerticalConcatenateVD4);
 
 // VerticalConcatenateVDN -----------------------------------------------------
 
+#[cfg(feature = "vectord")]
 struct VerticalConcatenateVDN<T> {
   scalar: Vec<(Ref<T>,usize)>,
   matrix: Vec<(Box<dyn CopyMat<T>>,usize)>,
   out: Ref<DVector<T>>,
 }
+#[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateVDN<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -805,6 +842,7 @@ where
     }
   }
 }
+#[cfg(feature = "vectord")]
 impl<T> MechFunctionImpl for VerticalConcatenateVDN<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -824,6 +862,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateVDN\n{:#?}", self.out) }
 }
+#[cfg(feature = "vectord")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateVDN<T> 
 where
@@ -970,6 +1009,7 @@ vertical_concatenate!(VerticalConcatenateVD,DVector);
 struct VerticalConcatenateSD<T> {
   out: Ref<DVector<T>>,
 }
+#[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateSD<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1006,6 +1046,7 @@ where
     compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
   }
 }
+#[cfg(feature = "vectord")]
 register_vertical_concatenate_fxn!(VerticalConcatenateSD);
 
 // VerticalConcatenateM1M1 ----------------------------------------------------

@@ -339,32 +339,39 @@ pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
   let mut shape = vec![0, 0];
   let mut col: Vec<Value> = Vec::new();
   let mut kind = ValueKind::Empty;
-  for row in &m.rows {
-    let result = matrix_row(row, p)?;
-    if shape == vec![0,0] {
-      shape = result.shape();
-      kind = result.kind();
-      col.push(result);
-    } else if shape[1] == result.shape()[1] {
-      col.push(result);
-    } else {
-      return Err(MechError{file: file!().to_string(), tokens: row.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![])});
+  #[cfg(feature = "matrix_horzcat")]
+  {
+    for row in &m.rows {
+      let result = matrix_row(row, p)?;
+      if shape == vec![0,0] {
+        shape = result.shape();
+        kind = result.kind();
+        col.push(result);
+      } else if shape[1] == result.shape()[1] {
+        col.push(result);
+      } else {
+        return Err(MechError{file: file!().to_string(), tokens: row.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![])});
+      }
+    }
+    if col.is_empty() {
+      return Ok(Value::MatrixValue(Matrix::from_vec(vec![], 0, 0)));
+    } else if col.len() == 1 {
+      return Ok(col[0].clone());
     }
   }
-  if col.is_empty() {
-    return Ok(Value::MatrixValue(Matrix::from_vec(vec![], 0, 0)));
-  } else if col.len() == 1 {
-    return Ok(col[0].clone());
+  #[cfg(feature = "vertcat")]
+  {
+    let new_fxn = MatrixVertCat{}.compile(&col)?;
+    new_fxn.solve();
+    let out = new_fxn.out();
+    let mut plan_brrw = plan.borrow_mut();
+    plan_brrw.push(new_fxn);
+    return Ok(out);
   }
-  let new_fxn = MatrixVertCat{}.compile(&col)?;
-  new_fxn.solve();
-  let out = new_fxn.out();
-  let mut plan_brrw = plan.borrow_mut();
-  plan_brrw.push(new_fxn);
-  Ok(out)
+  return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix horzcat and/or vertcat feature not enabled".to_string(), id: line!(), kind: MechErrorKind::None});
 }
 
-#[cfg(feature = "matrix")]
+#[cfg(feature = "matrix_horzcat")]
 pub fn matrix_row(r: &MatrixRow, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   let mut row: Vec<Value> = Vec::new();
