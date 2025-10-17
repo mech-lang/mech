@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathFloor {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/floor",
+    ptr: &MathFloor{},
+  }
+}

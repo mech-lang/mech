@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathAcot {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/acot",
+    ptr: &MathAcot{},
+  }
+}

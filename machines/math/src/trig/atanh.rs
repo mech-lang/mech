@@ -81,3 +81,10 @@ impl NativeFunctionCompiler for MathAtanh {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/atanh",
+    ptr: &MathAtanh{},
+  }
+}

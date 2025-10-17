@@ -250,3 +250,10 @@ impl NativeFunctionCompiler for CombinatoricsNChooseK {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "combinatorics/n-choose-k",
+    ptr: &CombinatoricsNChooseK{},
+  }
+}

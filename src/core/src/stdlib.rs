@@ -9,6 +9,21 @@ pub use crate::*;
 // the relevant code will be compiled in any given build.
 
 #[macro_export]
+macro_rules! register_descriptor {
+    ($descriptor:expr) => {
+        #[cfg(not(target_arch = "wasm32"))]
+        inventory::submit!{ $descriptor }
+
+        #[cfg(target_arch = "wasm32")]
+        const _: () = {
+            // no-op pprevents unused warnings
+            let _ = &$descriptor;
+        };
+    };
+}
+
+
+#[macro_export]
 macro_rules! compile_register_brrw {
   ($reg:expr, $ctx:ident) => {
     {
@@ -164,10 +179,30 @@ macro_rules! compile_quadop {
 }
 
 #[macro_export]
+macro_rules! compile_varop {
+  ($name:tt, $out:expr, $args:expr, $ctx:ident, $feature_flag:expr) => {
+    let arg_count = $args.len();
+    let mut registers = vec![0; arg_count + 1];
+    registers[0] = compile_register_brrw!($out, $ctx);
+    for i in 0..arg_count {
+      registers[i + 1] = compile_register_brrw!($args[i], $ctx);
+    }
+    $ctx.features.insert($feature_flag);
+    $ctx.emit_varop(
+      hash_str(&$name),
+      registers[0],
+      (&registers[1..]).to_vec(),
+    );
+    return Ok(registers[0])
+  };
+}
+
+#[macro_export]
 macro_rules! register_fxn_descriptor_inner_logic {
   // single type
   ($struct_name:ident, $type:ty, $type_string:tt) => {
     paste!{
+      #[cfg(not(target_arch = "wasm32"))]
       #[cfg(feature = $type_string)]
       inventory::submit! {
         FunctionDescriptor {
@@ -184,6 +219,7 @@ macro_rules! register_fxn_descriptor_inner {
   // single type
   ($struct_name:ident, $type:ty, $type_string:tt) => {
     paste!{
+      #[cfg(not(target_arch = "wasm32"))]
       #[cfg(feature = $type_string)]
       inventory::submit! {
         FunctionDescriptor {
@@ -213,13 +249,8 @@ macro_rules! impl_binop {
     }
     impl<T> MechFunctionFactory for $struct_name<T> 
     where
-      T: Copy + Debug + Display + Clone + Sync + Send + 'static + 
-      PartialEq + PartialOrd + ConstElem + CompileConst + AsValueKind +
-      Add<Output = T> + AddAssign +
-      Sub<Output = T> + SubAssign +
-      Mul<Output = T> + MulAssign +
-      Div<Output = T> + DivAssign +
-      Zero + One,
+      #[cfg(feature = "compiler")]T: Copy + Debug + Display + Clone + Sync + Send + 'static + PartialEq + PartialOrd + ConstElem + CompileConst + AsValueKind +Add<Output = T> + AddAssign +Sub<Output = T> + SubAssign +Mul<Output = T> + MulAssign +Div<Output = T> + DivAssign +Zero + One,
+      #[cfg(not(feature = "compiler"))] T: Copy + Debug + Display + Clone + Sync + Send + 'static + PartialEq + PartialOrd + AsValueKind +Add<Output = T> + AddAssign +Sub<Output = T> + SubAssign +Mul<Output = T> + MulAssign +Div<Output = T> + DivAssign +Zero + One,
       Ref<$out_type>: ToValue,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -303,6 +334,7 @@ macro_rules! impl_unop {
         compile_unop!(name, self.out, self.arg, ctx, $feature_flag);
       }
     }
+    #[cfg(not(target_arch = "wasm32"))]
     inventory::submit! {
       FunctionDescriptor {
         name: stringify!($struct_name),
@@ -1020,7 +1052,7 @@ macro_rules! impl_urnop_match_arms {
 
 #[macro_export]
 macro_rules! impl_mech_binop_fxn {
-  ($fxn_name:ident, $gen_fxn:tt) => {
+  ($fxn_name:ident, $gen_fxn:tt, $fxn_string:tt) => {
     pub struct $fxn_name {}
     impl NativeFunctionCompiler for $fxn_name {
       fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -1042,12 +1074,19 @@ macro_rules! impl_mech_binop_fxn {
         }
       }
     }
-  }
+    #[cfg(not(target_arch = "wasm32"))]
+    inventory::submit! {
+      FunctionCompilerDescriptor {
+        name: $fxn_string,
+        ptr: &$fxn_name{},
+      }
+    }
+  };
 }
 
 #[macro_export]
 macro_rules! impl_mech_urnop_fxn {
-  ($fxn_name:ident, $gen_fxn:tt) => {
+  ($fxn_name:ident, $gen_fxn:tt, $fxn_string:tt) => {
     pub struct $fxn_name {}
     impl NativeFunctionCompiler for $fxn_name {
       fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -1066,6 +1105,13 @@ macro_rules! impl_mech_urnop_fxn {
         }
       }
     }
+    #[cfg(not(target_arch = "wasm32"))]
+    inventory::submit! {
+      FunctionCompilerDescriptor {
+        name: $fxn_string,
+        ptr: & $fxn_name{},
+      }
+    }
   }
 }
 
@@ -1081,7 +1127,7 @@ where
 macro_rules! register_assign {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<usize>>::new,
@@ -1095,7 +1141,7 @@ macro_rules! register_assign {
 macro_rules! register_assign_s {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<usize>>::new,
@@ -1109,7 +1155,7 @@ macro_rules! register_assign_s {
 macro_rules! register_assign_srr {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<usize>,$row3<usize>>::new,
@@ -1123,7 +1169,7 @@ macro_rules! register_assign_srr {
 macro_rules! register_assign_srr_b {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<bool>,$row3<bool>>::new,
@@ -1137,7 +1183,7 @@ macro_rules! register_assign_srr_b {
 macro_rules! register_assign_srr_bu {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<bool>,$row3<usize>>::new,
@@ -1151,7 +1197,7 @@ macro_rules! register_assign_srr_bu {
 macro_rules! register_assign_srr_ub {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<usize>,$row3<bool>>::new,
@@ -1165,7 +1211,7 @@ macro_rules! register_assign_srr_ub {
 macro_rules! register_assign_srr_b2 {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), stringify!($row4), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<bool>,$row4<bool>>::new,
@@ -1179,7 +1225,7 @@ macro_rules! register_assign_srr_b2 {
 macro_rules! register_assign_srr_bu2 {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), stringify!($row4), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<bool>,$row4<usize>>::new,
@@ -1193,7 +1239,7 @@ macro_rules! register_assign_srr_bu2 {
 macro_rules! register_assign_srr_ub2 {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), stringify!($row4), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<usize>,$row4<bool>>::new,
@@ -1207,7 +1253,7 @@ macro_rules! register_assign_srr_ub2 {
 macro_rules! register_assign_srr2 {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), stringify!($row4), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<usize>,$row4<usize>>::new,
@@ -1221,7 +1267,7 @@ macro_rules! register_assign_srr2 {
 macro_rules! register_assign_s1 {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>>::new,
@@ -1235,7 +1281,7 @@ macro_rules! register_assign_s1 {
 macro_rules! register_assign_s2 {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>>::new,
@@ -1249,7 +1295,7 @@ macro_rules! register_assign_s2 {
 macro_rules! register_assign_b {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<bool>>::new,
@@ -1263,7 +1309,7 @@ macro_rules! register_assign_b {
 macro_rules! register_assign_s_b {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<bool>>::new,
@@ -1460,7 +1506,7 @@ macro_rules! impl_set_range_arms {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, Matrix1, Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "matrix2"))]
+        #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, Matrix2, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
@@ -1593,7 +1639,7 @@ macro_rules! impl_set_range_all_arms {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, Matrix1, Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "matrix2"))]
+        #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix)),Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, Matrix2, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
@@ -1709,7 +1755,7 @@ macro_rules! impl_assign_range_scalar_arms {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, Matrix1, Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "matrix2"))]
+        #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, Matrix2, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
@@ -1825,7 +1871,7 @@ macro_rules! impl_assign_scalar_range_arms {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, Matrix1, Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "matrix2"))]
+        #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, Matrix2, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
@@ -2490,7 +2536,7 @@ macro_rules! impl_assign_all_range_arms {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, Matrix1, Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "matrix2"))]
+        #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::IndexAll, Value::MatrixIndex(Matrix::Vector4(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, Matrix2, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
@@ -2881,7 +2927,7 @@ macro_rules! impl_set_all_range_arms_b {
           register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, Matrix1, Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
         },
-        #[cfg(all(feature = $value_string, feature = "matrix2"))]
+        #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)),[Value::IndexAll, Value::MatrixBool(Matrix::Vector4(ix))], Value::[<$value_kind:camel>](source)) => {
           register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, Matrix2, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
@@ -2957,7 +3003,7 @@ macro_rules! impl_set_all_range_arms_b {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, Matrix1, Matrix1, Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "matrix2"))]
+        #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector2"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [Value::IndexAll, Value::MatrixBool(Matrix::Vector2(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, Matrix2, Matrix2, Vector2);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
@@ -3044,7 +3090,7 @@ macro_rules! impl_set_range_all_arms_b {
           register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, Matrix1, Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
         },
-        #[cfg(all(feature = $value_string, feature = "matrix2"))]
+        #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector2"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)),[Value::MatrixBool(Matrix::Vector2(ix)), Value::IndexAll], Value::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
           register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, Matrix2, Vector2);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
@@ -3120,7 +3166,7 @@ macro_rules! impl_set_range_all_arms_b {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, Matrix1, Matrix1, Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "matrix2"))]
+        #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector2"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [Value::MatrixBool(Matrix::Vector2(ix)), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) if ix.borrow().len() == sink.borrow().nrows() => {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, Matrix2, Matrix2, Vector2);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
@@ -3177,7 +3223,7 @@ macro_rules! impl_set_range_arms_b {
           register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, Matrix1, Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
         },
-        #[cfg(all(feature = $value_string, feature = "matrix2"))]
+        #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)),[Value::MatrixBool(Matrix::Vector4(ix))], Value::[<$value_kind:camel>](source)) => {
           register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, Matrix2, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
@@ -3253,7 +3299,7 @@ macro_rules! impl_set_range_arms_b {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, Matrix1, Matrix1, Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "matrix2"))]
+        #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [Value::MatrixBool(Matrix::Vector4(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, Matrix2, Matrix2, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
@@ -3386,7 +3432,7 @@ macro_rules! impl_assign_range_scalar_arms_b {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, $shape, Matrix1, Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "matrix2"))]
+        #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, $shape, Matrix2, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
@@ -3497,7 +3543,7 @@ macro_rules! impl_assign_scalar_range_arms_b {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, $shape, Matrix1, Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "matrix2"))]
+        #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, $shape, Matrix2, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))

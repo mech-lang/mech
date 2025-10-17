@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathFmax {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/fmax",
+    ptr: &MathFmax{},
+  }
+}

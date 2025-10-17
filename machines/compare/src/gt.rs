@@ -113,4 +113,4 @@ fn impl_gt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunctio
   )
 }
 
-impl_mech_binop_fxn!(CompareGreaterThan,impl_gt_fxn);  
+impl_mech_binop_fxn!(CompareGreaterThan,impl_gt_fxn,"compare/gt");  

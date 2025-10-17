@@ -90,7 +90,69 @@ macro_rules! eq_row_mat_op {
 
 impl_compare_fxns!(EQ);
 
+#[cfg(feature = "table")]
+#[derive(Debug)]
+pub struct TableEq {
+  pub lhs: Ref<MechTable>,
+  pub rhs: Ref<MechTable>,
+  pub out: Ref<bool>,
+}
+impl MechFunctionFactory for TableEq {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Binary(out, arg1, arg2) => {
+        let lhs: Ref<MechTable> = unsafe { arg1.as_unchecked() }.clone();
+        let rhs: Ref<MechTable> = unsafe { arg2.as_unchecked() }.clone();
+        let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(TableEq { lhs, rhs, out }))
+      }
+      _ => Err(MechError {
+        file: file!().to_string(),
+        tokens: vec![],
+        msg: "".to_string(),
+        id: line!(),
+        kind: MechErrorKind::IncorrectNumberOfArguments,
+      }),
+    }
+  }
+}
+#[cfg(feature = "table")]
+impl MechFunctionImpl for TableEq {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let mut out_ptr = self.out.as_mut_ptr();
+    unsafe {
+      *out_ptr = (*lhs_ptr) == (*rhs_ptr);
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "table")]
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for TableEq {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let name = format!("TableEq");
+    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::Table));
+  }
+}
+
 fn impl_eq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  match (&lhs_value, &rhs_value) {
+    #[cfg(all(feature = "table"))]
+    (Value::Table(lhs), Value::Table(rhs)) => {
+      println!("Registering TableEq");
+      register_descriptor! {
+        FunctionDescriptor {
+          name: "TableEq",
+          ptr: TableEq::new,
+        }
+      }
+      return Ok(Box::new(TableEq{lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(false) }));
+    }
+    _ => (),
+  }
   impl_binop_match_arms!(
     EQ,
     register_fxn_descriptor_inner,
@@ -114,4 +176,4 @@ fn impl_eq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunctio
   )
 }
 
-impl_mech_binop_fxn!(CompareEqual,impl_eq_fxn);
+impl_mech_binop_fxn!(CompareEqual,impl_eq_fxn,"compare/eq");

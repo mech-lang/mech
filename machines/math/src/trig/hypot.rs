@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathHypot {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/hypot",
+    ptr: &MathHypot{},
+  }
+}

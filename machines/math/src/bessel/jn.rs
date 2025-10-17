@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathJn {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/bessel/jn",
+    ptr: &MathJn{},
+  }
+}

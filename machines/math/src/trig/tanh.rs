@@ -81,3 +81,10 @@ impl NativeFunctionCompiler for MathTanh {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/tanh",
+    ptr: &MathTanh{},
+  }
+}

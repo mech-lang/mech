@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathLgamma {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/lgamma",
+    ptr: &MathLgamma{},
+  }
+}

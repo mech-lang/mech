@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathCos {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/cos",
+    ptr: &MathCos{},
+  }
+}

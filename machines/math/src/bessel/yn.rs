@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathYn {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/bessel/yn",
+    ptr: &MathYn{},
+  }
+}

@@ -123,4 +123,4 @@ fn impl_mul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
   )
 }
 
-impl_mech_binop_fxn!(MathMul,impl_mul_fxn);
+impl_mech_binop_fxn!(MathMul,impl_mul_fxn,"math/mul");

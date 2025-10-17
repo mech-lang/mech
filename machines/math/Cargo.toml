@@ -1,6 +1,6 @@
 [package]
 name = "mech-math"
-version = "0.2.60"
+version = "0.2.63"
 authors = ["Corey Montella <corey@mech-lang.org>", "Steven McPhillimey <slm526@lehigh.edu>", "Liam Messinger <ljm426@lehigh.edu>", "Natalie Dumler <nad326@lehigh.edu>"]
 description = "Math library for the Mech language"
 documentation = "http://docs.mech-lang.org"
@@ -49,7 +49,7 @@ baselib = ["bool", "string",
       "mech-core/baselib",
     ]
 
-arithmetic_default = ["copysign", "fabs", "fdim", "fmod", "nextafter", "remainder"]
+arithmetic_default = ["copysign", "abs", "fdim", "fmod", "nextafter", "remainder"]
 bessel_default = ["j0", "j1", "jn", "y0", "y1", "yn"]
 exponential_default = ["exponential", "exp2", "exp10", "expm1"]
 extrema_default = ["fmax", "fmaximum", "fmaximum_num", "fmin", "fminimum", "fminimum_num"]
@@ -85,7 +85,7 @@ mul_assign = ["op_assign"]
 div_assign = ["op_assign"]
 
 copysign = ["arithmetic"]
-fabs = ["arithmetic"]
+abs = ["arithmetic"]
 fdim = ["arithmetic"]
 fmod = ["arithmetic"]
 nextafter = ["arithmetic"]
@@ -222,10 +222,10 @@ r64 = ["rational", "mech-core/r64"]
 # Structs
 set = ["mech-core/set"]
 map = ["mech-core/map"]
-table = ["vectord", "record", "mech-core/table"]
+table = ["vectord", "record", "kind_annotation", "mech-core/table"]
 tuple = ["mech-core/tuple"]
 enum = ["mech-core/enum"]
-record = ["tuple", "mech-core/record"]
+record = ["tuple", "kind_annotation", "mech-core/record"]
 atom = ["mech-core/atom"]
 
 # Matrix
@@ -260,7 +260,7 @@ dot_indexing = ["subscript", "mech-core/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle"]
 
 [dependencies]
-mech-core = {version = "0.2.60", default-features = false }
+mech-core = {version = "0.2.63", default-features = false }
 
 libm = {version = "0.2.15", optional = true}
 simba = {version = "0.9.0", optional = true}
@@ -273,3 +273,5 @@ version = "0.2.19"
 default-features = false
 features = ["libm"]
 optional = true
+
+[workspace]

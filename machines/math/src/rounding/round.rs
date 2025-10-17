@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathRound {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/round",
+    ptr: &MathRound{},
+  }
+}

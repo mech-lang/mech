@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathTrunc {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/trunc",
+    ptr: &MathTrunc{},
+  }
+}

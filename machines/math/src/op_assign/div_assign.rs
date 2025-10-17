@@ -98,6 +98,13 @@ impl NativeFunctionCompiler for DivAssignValue {
   }
 }
 
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/div-assign",
+    ptr: &DivAssignValue{},
+  }
+}
+
 // x[1..3] /= 1 ----------------------------------------------------------------
 
 macro_rules! div_assign_1d_range {
@@ -171,6 +178,13 @@ impl NativeFunctionCompiler for DivAssignRange {
         }
       }
     }
+  }
+}
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/div-assign/range",
+    ptr: &DivAssignRange{},
   }
 }
 
@@ -258,5 +272,12 @@ impl NativeFunctionCompiler for DivAssignRangeAll {
         }
       }
     }
+  }
+}
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/div-assign/range-all",
+    ptr: &DivAssignRangeAll{},
   }
 }

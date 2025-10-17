@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathCopysign {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/copysign",
+    ptr: &MathCopysign{},
+  }
+}

@@ -134,4 +134,4 @@ fn impl_not_fxn(arg_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   )
 }
 
-impl_mech_urnop_fxn!(LogicNot,impl_not_fxn);
+impl_mech_urnop_fxn!(LogicNot,impl_not_fxn,"logic/not");

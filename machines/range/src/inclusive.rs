@@ -168,3 +168,10 @@ impl NativeFunctionCompiler for RangeInclusive {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "range/inclusive",
+    ptr: &RangeInclusive{},
+  }
+}

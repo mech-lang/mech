@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathLog1p {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/log1p",
+    ptr: &MathLog1p{},
+  }
+}

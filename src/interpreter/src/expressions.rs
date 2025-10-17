@@ -9,7 +9,7 @@ pub fn expression(expr: &Expression, p: &Interpreter) -> MResult<Value> {
     Expression::Var(v) => var(&v, p),
     #[cfg(feature = "range")]
     Expression::Range(rng) => range(&rng, p),
-    #[cfg(feature = "subscript_slice")]
+    #[cfg(all(feature = "subscript_slice", feature = "access"))]
     Expression::Slice(slc) => slice(&slc, p),
     #[cfg(feature = "formulas")]
     Expression::Formula(fctr) => factor(fctr, p),
@@ -42,7 +42,7 @@ pub fn range(rng: &RangeExpression, p: &Interpreter) -> MResult<Value> {
   Ok(res)
 }
 
-#[cfg(feature = "subscript")]
+#[cfg(all(feature = "subscript_slice", feature = "access"))]
 pub fn slice(slc: &Slice, p: &Interpreter) -> MResult<Value> {
   let symbols = p.symbols();
   let plan = p.plan();
@@ -78,15 +78,15 @@ pub fn subscript_range(sbscrpt: &Subscript, p: &Interpreter) -> MResult<Value> {
     Subscript::Range(rng) => {
       let result = range(rng,p)?;
       match result.as_vecusize() {
-        Some(v) => Ok(v.to_value()),
-        None => Err(MechError{file: file!().to_string(), tokens: rng.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
+        Ok(v) => Ok(v.to_value()),
+        Err(_) => Err(MechError{file: file!().to_string(), tokens: rng.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
       }
     }
     _ => unreachable!()
   }
 }
 
-#[cfg(feature = "subscript")]
+#[cfg(all(feature = "subscript", feature = "access"))]
 pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   match sbscrpt {
@@ -147,6 +147,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
     Subscript::Bracket(subs) => {
       let mut fxn_input = vec![val.clone()];
       match &subs[..] {
+        #[cfg(feature = "subscript_formula")]
         [Subscript::Formula(ix)] => {
           let result = subscript_formula(&subs[0], p)?;
           let shape = result.shape();
@@ -173,7 +174,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
           plan.borrow_mut().push(MatrixAccessAll{}.compile(&fxn_input)?);
         },
         [Subscript::All,Subscript::All] => todo!(),
-        #[cfg(feature = "subscript_range")]
+        #[cfg(feature = "subscript_formula")]
         [Subscript::Formula(ix1),Subscript::Formula(ix2)] => {
           let result = subscript_formula(&subs[0], p)?;
           let shape1 = result.shape();
@@ -431,7 +432,7 @@ pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
 
       // Set
       #[cfg(feature = "set_union")]
-      FormulaOperator::Set(SetOp::Union) => todo!(),
+      FormulaOperator::Set(SetOp::Union) => SetUnion{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "set_intersection")]
       FormulaOperator::Set(SetOp::Intersection) => todo!(),
       #[cfg(feature = "set_difference")]

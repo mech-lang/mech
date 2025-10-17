@@ -88,7 +88,7 @@ impl CompileCtx {
   pub fn emit_quadop(&mut self, fxn_id: u64, dst: Register, a: Register, b: Register, c: Register, d: Register) {
     self.instrs.push(EncodedInstr::QuadOp { fxn_id, dst, a, b, c, d });
   }
-  pub fn emit_vararg(&mut self, fxn_id: u64, dst: Register, args: Vec<Register>) {
+  pub fn emit_varop(&mut self, fxn_id: u64, dst: Register, args: Vec<Register>) {
     self.instrs.push(EncodedInstr::VarArg { fxn_id, dst, args });
   }
   pub fn emit_ret(&mut self, src: Register) {

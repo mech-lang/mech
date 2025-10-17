@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathAcsc {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/acsc",
+    ptr: &MathAcsc{},
+  }
+}

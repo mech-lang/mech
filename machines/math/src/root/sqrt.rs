@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathSqrt {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/sqrt",
+    ptr: &MathSqrt{},
+  }
+}

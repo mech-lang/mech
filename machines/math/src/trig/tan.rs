@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathTan {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/tan",
+    ptr: &MathTan{},
+  }
+}

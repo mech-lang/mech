@@ -49,18 +49,40 @@ pub struct MathAtan {}
 
 impl NativeFunctionCompiler for MathAtan {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
-    }
-    let input = arguments[0].clone();
-    match impl_atan_fxn(input.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (input) {
-          (Value::MutableReference(input)) => {impl_atan_fxn(input.borrow().clone())}
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    if arguments.len() == 1 {
+      let input = arguments[0].clone();
+      match impl_atan_fxn(input.clone()) {
+        Ok(fxn) => Ok(fxn),
+        Err(_) => {
+          match (input) {
+            (Value::MutableReference(input)) => {impl_atan_fxn(input.borrow().clone())}
+            x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          }
         }
       }
+    } else if arguments.len() == 2 {
+      let arg1 = arguments[0].clone();
+      let arg2 = arguments[1].clone();
+      match impl_atan2_fxn(arg1.clone(), arg2.clone()) {
+        Ok(fxn) => Ok(fxn),
+        Err(_) => {
+          match (arg1,arg2) {
+            (Value::MutableReference(arg1),Value::MutableReference(arg2)) => {impl_atan2_fxn(arg1.borrow().clone(),arg2.borrow().clone())}
+            (Value::MutableReference(arg1),arg2) => {impl_atan2_fxn(arg1.borrow().clone(),arg2.clone())}
+            (arg1,Value::MutableReference(arg2)) => {impl_atan2_fxn(arg1.clone(),arg2.borrow().clone())}
+            x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          }
+        }
+      }
+    } else {
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
+  }
+}
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/atan",
+    ptr: &MathAtan{},
   }
 }

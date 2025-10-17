@@ -6,6 +6,7 @@ use crate::CURRENT_MECH;
 
 pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
   match repl_cmd {
+    #[cfg(feature = "clear")]
     ReplCommand::Clear(_) => {
       CURRENT_MECH.with(|mech_ref| {
         if let Some(ptr) = *mech_ref.borrow() {
@@ -17,6 +18,7 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
       });
       "".to_string()
     }
+    #[cfg(feature = "clc")]
     ReplCommand::Clc => {
       CURRENT_MECH.with(|mech_ref| {
         if let Some(ptr) = *mech_ref.borrow() {
@@ -40,6 +42,7 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
         "Error: No interpreter found.".to_string()
       })
     }
+    #[cfg(feature = "code")]
     ReplCommand::Code(code) => {
       CURRENT_MECH.with(|mech_ref| {
         if let Some(ptr) = *mech_ref.borrow() {
@@ -57,6 +60,7 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
         "Error: No interpreter found.".to_string()
       })
     }
+    #[cfg(feature = "step")]
     ReplCommand::Step(count) => {
       CURRENT_MECH.with(|mech_ref| {
         if let Some(ptr) = *mech_ref.borrow() {
@@ -73,6 +77,7 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
         "Error: No interpreter found.".to_string()
       })
     }
+    #[cfg(not(feature = "whos"))]
     ReplCommand::Whos(names) => {
       CURRENT_MECH.with(|mech_ref| {
         if let Some(ptr) = *mech_ref.borrow() {
@@ -84,9 +89,11 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
         "Error: No interpreter found.".to_string()
       })
     }
+    #[cfg(not(feature = "help"))]
     ReplCommand::Help => {
       help_html()
     }
+    #[cfg(feature = "docs")]
     ReplCommand::Docs(doc) => {
       match doc {
         Some(d) => {
@@ -109,6 +116,7 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
 }
 
 // Print out help information in HTML format
+#[cfg(feature = "help")]
 #[wasm_bindgen]
 pub fn help_html() -> String {
   let text_logo = r#"
@@ -141,6 +149,7 @@ pub fn help_html() -> String {
   html
 }
 
+#[cfg(feature = "whos")]
 pub fn whos_html(intrp: &Interpreter, names: Vec<String>) -> String {
   let mut html = String::new();
 

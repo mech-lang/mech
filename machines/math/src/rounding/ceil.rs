@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathCeil {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/ceil",
+    ptr: &MathCeil{},
+  }
+}

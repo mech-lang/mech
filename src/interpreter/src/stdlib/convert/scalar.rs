@@ -35,7 +35,7 @@ impl MechFunctionCompiler for ConvertSEnum {
   }
 }
 #[cfg(feature = "enum")]
-inventory::submit! {
+register_descriptor! {
   FunctionDescriptor {
     name: "ConvertSEnum<enum>",
     ptr: ConvertSEnum::new,
@@ -72,7 +72,7 @@ where T: Debug + Clone + PartialEq + Into<Value> + 'static,
 #[cfg(all(feature = "compiler", feature = "matrix", feature = "table"))]
 impl<T> MechFunctionCompiler for ConvertMat2Table<T> 
 where
-  T: ConstElem + CompileConst,
+  T: ConstElem + CompileConst + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0,0];

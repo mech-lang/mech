@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathSincos {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/sincos",
+    ptr: &MathSincos{},
+  }
+}

@@ -1,0 +1,105 @@
+set/splice
+===============================================================================
+
+%% Splice a range of elements in a set (stable insertion order)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+U := set/splice(A, start, count, items)
+```
+2. Description
+-------------------------------------------------------------------------------
+
+Splices a contiguous range in set A. It removes count elements starting at index
+start, and inserts new elements from items at that position. The result U keeps
+stable insertion order and set semantics (no duplicates). The optional second
+output removed yields the elements that were taken out, in their original order.
+
+This wraps the Rust IndexSet splice iterator.
+
+3. Input
+-------------------------------------------------------------------------------
+
+Arguments:
+- A : set of T, the input set
+- start : integer, zero based index where the splice begins
+- count : integer, number of elements to remove
+- items : array of T or set of T, elements to insert at position start
+
+Element type constraints:
+- T must be hashable and comparable for equality.
+- Common kinds include integers, strings, symbols, and booleans.
+
+4. Output
+-------------------------------------------------------------------------------
+
+Results:
+- U : set of T, the set after splicing
+- removed : array of T, the elements removed by the splice (optional)
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) Replace two elements with three new ones
+```mech:disabled
+A := {"a", "b", "c", "d"}
+U := set/splice(A, 1, 2, {"x", "y", "z"})
+// U is {"a", "x", "y", "z", "d"}
+```
+(b) Also capture removed elements
+```mech:disabled
+A := {"cat", "dog", "eel", "fox"}
+U, R := set/splice(A, 1, 2, {"yak"})
+// U is {"cat", "yak", "fox"}
+// R is {"dog", "eel"}
+```
+(c) Duplicates are ignored; existing items are not re inserted
+```mech:disabled
+A := {1, 2, 3, 4}
+U := set/splice(A, 1, 2, {3, 4, 5})
+// U is {1, 3, 4, 5}
+```
+(d) Insert with zero removals (pure insertion)
+```mech:disabled
+A := {"p", "q"}
+U := set/splice(A, 1, 0, {"r", "s"})
+// U is {"p", "r", "s", "q"}
+```
+(e) Remove without insertion
+```mech:disabled
+A := {"u", "v", "w"}
+U, R := set/splice(A, 0, 2, {})
+// U is {"w"}
+// R is {"u", "v"}
+```
+6. Details
+-------------------------------------------------------------------------------
+
+Indexing and range rules:
+- start must be between 0 and len(A).
+- count may be zero.
+- If start + count exceeds len(A), only elements up to the end are removed.
+
+Set semantics:
+- Each value appears at most once in U.
+- During insertion, values already present in U at other positions are moved to the
+  splice position only if they are within the removed range; otherwise duplicates
+  from items are skipped.
+
+Stable order:
+- Elements before start keep their order.
+- Inserted items appear in their provided order, minus duplicates that already exist.
+- Elements after the removed range shift right as needed.
+
+Performance:
+- Average linear time in the size of A plus the number of inserted items.
+
+7. Errors
+-------------------------------------------------------------------------------
+
+- Incorrect number of arguments (expects four).
+- start is out of bounds or negative.
+- count is negative.
+- Unsupported element type (not hashable or not comparable for equality).

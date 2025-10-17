@@ -172,4 +172,4 @@ fn impl_stats_sum_column_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, 
   )
 }
   
-impl_mech_urnop_fxn!(StatsSumColumn,impl_stats_sum_column_fxn); 
+impl_mech_urnop_fxn!(StatsSumColumn,impl_stats_sum_column_fxn,"stats/sum/column"); 

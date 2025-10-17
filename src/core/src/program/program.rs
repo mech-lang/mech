@@ -10,33 +10,6 @@ use std::path::Path;
 #[cfg(feature = "matrix")]
 use crate::matrix::Matrix;
 
- macro_rules! extract_matrix {
-  ($type_tag:ident, $value_type:ty, $bytes:expr, $data:ident) => {
-    {
-      // first 8 bytes are rows (u32) and cols (u32)
-      if $data.len() < 8 {
-        return Err(MechError {
-          file: file!().to_string(),
-          tokens: vec![],
-          msg: "Matrix const entry must be at least 8 bytes".to_string(),
-          id: line!(),
-          kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string()),
-        });
-      }
-      let rows = u32::from_le_bytes($data[0..4].try_into().unwrap()) as usize;
-      let cols = u32::from_le_bytes($data[4..8].try_into().unwrap()) as usize;
-      let mut elements = Vec::with_capacity(rows * cols);
-      for i in 0..(rows * cols) {
-        let start = 8 + i * $bytes;
-        let end = start + $bytes;
-        let val = <$value_type>::from_le_bytes($data[start..end].try_into().unwrap());
-        elements.push(val);
-      }
-      Value::$type_tag(Matrix::from_vec(elements, rows, cols))
-    }
-  };
-}
-
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ParsedProgram {
@@ -169,40 +142,10 @@ impl ParsedProgram {
         #[cfg(feature = "string")]
         TypeTag::String => {
           if data.len() < 4 {
-            return Err(MechError {
-              file: file!().to_string(),
-              tokens: vec![],
-              msg: "String constant too short".to_string(),
-              id: line!(),
-              kind: MechErrorKind::GenericError("String constant too short".to_string()),
-            });
+            return Err(MechError {file: file!().to_string(),tokens: vec![],msg: "String constant too short".to_string(),id: line!(),kind: MechErrorKind::GenericError("String constant too short".to_string()) });
           }
-
-          let str_len = u32::from_le_bytes(data[0..4].try_into().unwrap()) as usize;
-
-          if 4 + str_len > data.len() {
-            return Err(MechError {
-              file: file!().to_string(),
-              tokens: vec![],
-              msg: "Malformed string constant".to_string(),
-              id: line!(),
-              kind: MechErrorKind::GenericError("Malformed string constant".to_string()),
-            });
-          }
-
-          let str_bytes = &data[4..4 + str_len];
-          match String::from_utf8(str_bytes.to_vec()) {
-            Ok(s) => Value::String(Ref::new(s)),
-            Err(_) => {
-              return Err(MechError {
-                file: file!().to_string(),
-                tokens: vec![],
-                msg: "Invalid UTF-8 in string constant".to_string(),
-                id: line!(),
-                kind: MechErrorKind::GenericError("Invalid UTF-8 in string constant".to_string()),
-              })
-            }
-          }
+          let s = String::from_le(&data);
+          Value::String(Ref::new(s))
         }
         #[cfg(feature = "u8")]
         TypeTag::U8 => {
@@ -323,132 +266,137 @@ impl ParsedProgram {
           if data.len() < 8 {
             return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
           }
-          let rows = u32::from_le_bytes(data[0..4].try_into().unwrap()) as usize;
-          let cols = u32::from_le_bytes(data[4..8].try_into().unwrap()) as usize;
-          let mut elements = Vec::with_capacity(rows * cols);
-          let mut pos = 8;
-          for _ in 0..(rows * cols) {
-            if pos + 4 > data.len() {
-              return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "MatrixString const entry is malformed".to_string(), id: line!(), kind: MechErrorKind::GenericError("MatrixString const entry is malformed".to_string())});
-            }
-            let str_len = u32::from_le_bytes(data[pos..pos+4].try_into().unwrap()) as usize;
-            pos += 4;
-            if pos + str_len > data.len() {
-              return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "MatrixString const entry is malformed".to_string(), id: line!(), kind: MechErrorKind::GenericError("MatrixString const entry is malformed".to_string())});
-            }
-            let str_bytes = &data[pos..pos+str_len];
-            match String::from_utf8(str_bytes.to_vec()) {
-              Ok(s) => elements.push(s),
-              Err(_) => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Invalid UTF-8 in MatrixString constant".to_string(), id: line!(), kind: MechErrorKind::GenericError("Invalid UTF-8 in MatrixString constant".to_string())}),
-            }
-            pos += str_len;
-          }
-          Value::MatrixString(Matrix::from_vec(elements, rows, cols))
+          let matrix = Matrix::<String>::from_le(&data);
+          Value::MatrixString(matrix)
         }
         #[cfg(all(feature = "matrix", feature = "bool"))]
         TypeTag::MatrixBool => {
-          if data.len() < 8 {
+          if data.len() < 1 {
             return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
           }
-          let rows = u32::from_le_bytes(data[0..4].try_into().unwrap()) as usize;
-          let cols = u32::from_le_bytes(data[4..8].try_into().unwrap()) as usize;
-          let mut elements = Vec::with_capacity(rows * cols);
-          for i in 0..(rows * cols) {
-            let start = 8 + i * 1;
-            let end = start + 1;
-            let val = data[start..end].try_into().unwrap();
-            elements.push(u8::from_le_bytes(val) != 0);
-          }
-          Value::MatrixBool(Matrix::from_vec(elements, rows, cols))
+          let matrix = Matrix::<bool>::from_le(&data);
+          Value::MatrixBool(matrix)
         }
         #[cfg(all(feature = "matrix", feature = "u8"))]
         TypeTag::MatrixU8 => {
-          if data.len() < 8 {
+          if data.len() < 1 {
             return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
           }
-          let rows = u32::from_le_bytes(data[0..4].try_into().unwrap()) as usize;
-          let cols = u32::from_le_bytes(data[4..8].try_into().unwrap()) as usize;
-          let mut elements = Vec::with_capacity(rows * cols);
-          for i in 0..(rows * cols) {
-            let start = 8 + i * 1;
-            let end = start + 1;
-            let val = data[start..end].try_into().unwrap();
-            elements.push(u8::from_le_bytes(val));
-          }
-          Value::MatrixU8(Matrix::from_vec(elements, rows, cols))
+          let matrix = Matrix::<u8>::from_le(&data);
+          Value::MatrixU8(matrix)
         }
         #[cfg(all(feature = "matrix", feature = "i8"))]
         TypeTag::MatrixI8 => {
           if data.len() < 8 {
             return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
           }
-          let rows = u32::from_le_bytes(data[0..4].try_into().unwrap()) as usize;
-          let cols = u32::from_le_bytes(data[4..8].try_into().unwrap()) as usize;
-          let mut elements = Vec::with_capacity(rows * cols);
-          for i in 0..(rows * cols) {
-            let start = 8 + i * 1;
-            let end = start + 1;
-            let val = data[start..end].try_into().unwrap();
-            elements.push(i8::from_le_bytes(val));
-          }
-          Value::MatrixI8(Matrix::from_vec(elements, rows, cols))
+          let matrix = Matrix::<i8>::from_le(&data);
+          Value::MatrixI8(matrix)
         }
         #[cfg(all(feature = "matrix", feature = "f32"))]
         TypeTag::MatrixF32 => {
           if data.len() < 8 {
             return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
           }
-          let rows = u32::from_le_bytes(data[0..4].try_into().unwrap()) as usize;
-          let cols = u32::from_le_bytes(data[4..8].try_into().unwrap()) as usize;
-          let mut elements = Vec::with_capacity(rows * cols);
-          for i in 0..(rows * cols) {
-            let start = 8 + i * 4;
-            let end = start + 4;
-            let val = data[start..end].try_into().unwrap();
-            let fval = f32::from_le_bytes(val);
-            elements.push(F32::new(fval));
-          }
-          Value::MatrixF32(Matrix::from_vec(elements, rows, cols))
+          let matrix = Matrix::<F32>::from_le(&data);
+          Value::MatrixF32(matrix)
         }
         #[cfg(all(feature = "matrix", feature = "f64"))]
         TypeTag::MatrixF64 => {
-          // first 8 bytes are rows (u32) and cols (u32)
           if data.len() < 8 {
             return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
           }
-          let rows = u32::from_le_bytes(data[0..4].try_into().unwrap()) as usize;
-          let cols = u32::from_le_bytes(data[4..8].try_into().unwrap()) as usize;
-          let mut elements = Vec::with_capacity(rows * cols);
-          for i in 0..(rows * cols) {
-            let start = 8 + i * 8;
-            let end = start + 8;
-            let val = f64::from_le_bytes(data[start..end].try_into().unwrap());
-            elements.push(F64::new(val));
-          }
-          Value::MatrixF64(Matrix::from_vec(elements, rows, cols))
+          let matrix = Matrix::<F64>::from_le(&data);
+          Value::MatrixF64(matrix)
         }
         #[cfg(all(feature = "matrix", feature = "u16"))]
-        TypeTag::MatrixU16 => {extract_matrix!(MatrixU16, u16, 2, data)},
+        TypeTag::MatrixU16 => {
+          if data.len() < 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
+          }
+          let matrix = Matrix::<u16>::from_le(&data);
+          Value::MatrixU16(matrix)
+        },
         #[cfg(all(feature = "matrix", feature = "u32"))]
-        TypeTag::MatrixU32 => {extract_matrix!(MatrixU32, u32, 4, data)},
+        TypeTag::MatrixU32 => {
+          if data.len() < 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
+          }
+          let matrix = Matrix::<u32>::from_le(&data);
+          Value::MatrixU32(matrix)
+        },
         #[cfg(all(feature = "matrix", feature = "u64"))]
-        TypeTag::MatrixU64 => {extract_matrix!(MatrixU64, u64, 8, data)},
+        TypeTag::MatrixU64 => {
+          if data.len() < 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
+          }
+          let matrix = Matrix::<u64>::from_le(&data);
+          Value::MatrixU64(matrix)
+        },
         #[cfg(all(feature = "matrix", feature = "u128"))]
-        TypeTag::MatrixU128 => {extract_matrix!(MatrixU128, u128, 16, data)},
+        TypeTag::MatrixU128 => {
+          if data.len() < 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
+          }
+          let matrix = Matrix::<u128>::from_le(&data);
+          Value::MatrixU128(matrix)
+        },
         #[cfg(all(feature = "matrix", feature = "i16"))]
-        TypeTag::MatrixI16 => {extract_matrix!(MatrixI16, i16, 2, data)},
+        TypeTag::MatrixI16 => {
+          if data.len() < 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
+          }
+          let matrix = Matrix::<i16>::from_le(&data);
+          Value::MatrixI16(matrix)
+        },
         #[cfg(all(feature = "matrix", feature = "i32"))]
-        TypeTag::MatrixI32 => {extract_matrix!(MatrixI32, i32, 4, data)},
+        TypeTag::MatrixI32 => {
+          if data.len() < 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
+          }
+          let matrix = Matrix::<i32>::from_le(&data);
+          Value::MatrixI32(matrix)
+        },
         #[cfg(all(feature = "matrix", feature = "i64"))]
-        TypeTag::MatrixI64 => {extract_matrix!(MatrixI64, i64, 8, data)},
+        TypeTag::MatrixI64 => {
+          if data.len() < 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
+          }
+          let matrix = Matrix::<i64>::from_le(&data);
+          Value::MatrixI64(matrix)
+        },
         #[cfg(all(feature = "matrix", feature = "i128"))]
-        TypeTag::MatrixI128 => {extract_matrix!(MatrixI128, i128, 16, data)},
+        TypeTag::MatrixI128 => {
+          if data.len() < 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
+          }
+          let matrix = Matrix::<i128>::from_le(&data);
+          Value::MatrixI128(matrix)
+        },
         #[cfg(all(feature = "matrix", feature = "c64"))]
-        TypeTag::MatrixC64 => {extract_matrix!(MatrixC64, C64, 16, data)},
+        TypeTag::MatrixC64 => {
+          if data.len() < 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
+          }
+          let matrix = Matrix::<C64>::from_le(&data);
+          Value::MatrixC64(matrix)
+        },
         #[cfg(all(feature = "matrix", feature = "r64"))]
-        TypeTag::MatrixR64 => {extract_matrix!(MatrixR64, R64, 16, data)},
+        TypeTag::MatrixR64 => {
+          if data.len() < 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
+          }
+          let matrix = Matrix::<R64>::from_le(&data);
+          Value::MatrixR64(matrix)
+        },
         #[cfg(feature = "matrix")]
-        TypeTag::MatrixIndex => {extract_matrix!(MatrixIndex, usize, 8, data)},
+        TypeTag::MatrixIndex => {
+          if data.len() < 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
+          }
+          let matrix = Matrix::<usize>::from_le(&data);
+          Value::MatrixIndex(matrix)
+        },
         TypeTag::Index => {
           if data.len() != 8 {
             return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Index const entry must be 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Index const entry must be 8 bytes".to_string())});
@@ -456,7 +404,22 @@ impl ParsedProgram {
           let value = u64::from_le_bytes(data.try_into().unwrap()) as usize;
           Value::Index(Ref::new(value))
         },
-        // Add more types as needed
+        #[cfg(feature = "set")]
+        TypeTag::Set => {
+          if data.len() < 4 {
+            return Err(MechError {file: file!().to_string(),tokens: vec![],msg: "Set const entry must be at least 4 bytes (num elements)".to_string(),id: line!(),kind: MechErrorKind::GenericError("Set const entry must be at least 4 bytes (num elements)".to_string()),});
+          }
+          let set = MechSet::from_le(&data);
+          Value::Set(Ref::new(set))
+        },
+        #[cfg(feature = "table")]
+        TypeTag::Table => {
+          if data.len() < 8 {
+            return Err(MechError {file: file!().to_string(),tokens: vec![],msg: "Table const entry must be at least 8 bytes (rows + cols)".to_string(),id: line!(),kind: MechErrorKind::GenericError("Table const entry must be at least 8 bytes (rows + cols)".to_string()),});
+          }
+          let table = MechTable::from_le(&data);
+          Value::Table(Ref::new(table))
+        }
         _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Unsupported constant type {:?}", ty.tag), id: line!(), kind: MechErrorKind::GenericError(format!("Unsupported constant type {:?}", ty.tag))}),
       };
       out.push(val);

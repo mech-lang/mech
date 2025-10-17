@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathSin {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/sin",
+    ptr: &MathSin{},
+  }
+}

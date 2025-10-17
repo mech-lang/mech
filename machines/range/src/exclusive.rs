@@ -168,3 +168,10 @@ impl NativeFunctionCompiler for RangeExclusive {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "range/exclusive",
+    ptr: &RangeExclusive{},
+  }
+}

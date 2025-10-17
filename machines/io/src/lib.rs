@@ -71,7 +71,7 @@ pub use self::println::*;
 macro_rules! register_op {
   ($op:ident, $type:ty, $size:ty, $size_string:tt) => {
     paste!{
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($op),"<[",stringify!([<$type:lower>]),"]:", $size_string, ">"),
           ptr: $op::<$type,$size<$type>>::new,

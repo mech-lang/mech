@@ -272,7 +272,7 @@ where T: Hash + nalgebra::Scalar
       Matrix::Matrix3x2(x) => x.borrow().hash(state),
       #[cfg(feature = "matrix2x3")]
       Matrix::Matrix2x3(x) => x.borrow().hash(state),
-      #[cfg(feature = "row_vectord")]
+      #[cfg(feature = "vectord")]
       Matrix::DVector(x) => x.borrow().hash(state),
       #[cfg(feature = "row_vectord")]
       Matrix::RowDVector(x) => x.borrow().hash(state),
@@ -394,7 +394,7 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 
 impl<T> Matrix<T> 
 where
-  T:  CompileConst + ConstElem + Clone + 'static + Debug + PartialEq,
+  T:  CompileConst + ConstElem + Clone + 'static + Debug + PartialEq + AsValueKind,
 {
   pub fn get_copyable_matrix(&self) -> Box<dyn CopyMat<T>> {
     match self {

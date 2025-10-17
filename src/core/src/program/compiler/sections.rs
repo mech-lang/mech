@@ -198,33 +198,153 @@ impl ByteCodeHeader {
 pub enum FeatureKind {
   I8=1, I16, I32, I64, I128,
   U8, U16, U32, U64, U128,
+
   F32, F64, C64, R64, Index,
-  String, Bool, Atom,
-  Set, Map, Table, Tuple, Record, Enum,
+  String, Bool, Atom, Set, Map, 
+  
+  Table, Tuple, Record, Enum,
   VariableDefine, VariableAssign, KindDefine,
   KindAnnotation, SubscriptRange, SubscriptFormula,
+  
   RangeInclusive, RangeExclusive,
   DotIndexing, Swizzle, LogicalIndexing,
-  Matrix1, Matrix2, Matrix3, Matrix4,
-  Matrix2x3, Matrix3x2,
-  RowVector2, RowVector3, RowVector4,
-  Vector2, Vector3, Vector4,
-  VectorD, MatrixD, RowVectorD,
+  Matrix1, Matrix2, Matrix3, Matrix4, Matrix2x3, 
+  
+  Matrix3x2, RowVector2, RowVector3, RowVector4,
+  Vector2, Vector3, Vector4, VectorD, MatrixD, RowVectorD,
+  
   HorzCat, VertCat,
   Compiler, PrettyPrint, Serde,
-  MatMul, Transpose, Dot, Cross,
-  Add, Sub, Mul, Div, Exp, Mod, Neg, OpAssign,
-  LT, LTE, GT, GTE, EQ, NEQ,
-  And, Or, Xor, Not,
-  Convert, Assign, Access,
+  MatMul, Transpose, Dot, Cross, Add, 
+  
+  Sub, Mul, Div, Exp, Mod, 
+  Neg, OpAssign, LT, LTE, GT, 
+  
+  GTE, EQ, NEQ, And, Or, 
+  Xor, Not, Convert, Assign, Access,
+
+  Union, Intersection, Difference, Complement, Subset, 
+  Superset, ProperSubset, ProperSuperset, ElementOf, NotElementOf,
+
   Functions, Formulas,
   Custom = 0xFFFF,
+}
+
+impl FeatureKind {
+
+  pub fn as_string(&self) -> String {
+    match self {
+      FeatureKind::I8 => "i8".to_string(),
+      FeatureKind::I16 => "i16".to_string(),
+      FeatureKind::I32 => "i32".to_string(),
+      FeatureKind::I64 => "i64".to_string(),
+      FeatureKind::I128 => "i128".to_string(),
+      FeatureKind::U8 => "u8".to_string(),
+      FeatureKind::U16 => "u16".to_string(),
+      FeatureKind::U32 => "u32".to_string(),
+      FeatureKind::U64 => "u64".to_string(),
+      FeatureKind::U128 => "u128".to_string(),
+      FeatureKind::F32 => "f32".to_string(),
+      FeatureKind::F64 => "f64".to_string(),
+      FeatureKind::C64 => "c64".to_string(),
+      FeatureKind::R64 => "r64".to_string(),
+      FeatureKind::Index => "index".to_string(),
+      FeatureKind::String => "string".to_string(),
+      FeatureKind::Bool => "bool".to_string(),
+      FeatureKind::Atom => "atom".to_string(),
+      FeatureKind::Set => "set".to_string(),
+      FeatureKind::Map => "map".to_string(),
+      FeatureKind::Table => "table".to_string(),
+      FeatureKind::Tuple => "tuple".to_string(),
+      FeatureKind::Record => "record".to_string(),
+      FeatureKind::Enum => "enum".to_string(),
+      FeatureKind::VariableDefine => "variable_define".to_string(),
+      FeatureKind::VariableAssign => "variable_assign".to_string(),
+      FeatureKind::KindDefine => "kind_define".to_string(),
+      FeatureKind::KindAnnotation => "kind_annotation".to_string(),
+      FeatureKind::SubscriptRange => "subscript_range".to_string(),
+      FeatureKind::SubscriptFormula => "subscript_formula".to_string(),
+      FeatureKind::RangeInclusive => "range_inclusive".to_string(),
+      FeatureKind::RangeExclusive => "range_exclusive".to_string(),
+      FeatureKind::DotIndexing => "dot_indexing".to_string(),
+      FeatureKind::Swizzle => "swizzle".to_string(),
+      FeatureKind::LogicalIndexing => "logical_indexing".to_string(),
+      FeatureKind::Matrix1 => "matrix1".to_string(),
+      FeatureKind::Matrix2 => "matrix2".to_string(),
+      FeatureKind::Matrix3 => "matrix3".to_string(),
+      FeatureKind::Matrix4 => "matrix4".to_string(),
+      FeatureKind::Matrix2x3 => "matrix2x3".to_string(),
+      FeatureKind::Matrix3x2 => "matrix3x2".to_string(),
+      FeatureKind::RowVector2 => "row_vector2".to_string(),
+      FeatureKind::RowVector3 => "row_vector3".to_string(),
+      FeatureKind::RowVector4 => "row_vector4".to_string(),
+      FeatureKind::Vector2 => "vector2".to_string(),
+      FeatureKind::Vector3 => "vector3".to_string(),
+      FeatureKind::Vector4 => "vector4".to_string(),
+      FeatureKind::VectorD => "vectord".to_string(),
+      FeatureKind::MatrixD => "matrixd".to_string(),
+      FeatureKind::RowVectorD => "row_vectord".to_string(),
+      FeatureKind::HorzCat => "matrix_horzcat".to_string(),
+      FeatureKind::VertCat => "matrix_vertcat".to_string(),
+      FeatureKind::Compiler => "compiler".to_string(),
+      FeatureKind::PrettyPrint => "pretty_print".to_string(),
+      FeatureKind::Serde => "serde".to_string(),
+      FeatureKind::MatMul => "matrix_matmul".to_string(),
+      FeatureKind::Transpose => "matrix_transpose".to_string(),
+      FeatureKind::Dot => "matrix_dot".to_string(),
+      FeatureKind::Cross => "matrix_cross".to_string(),
+      FeatureKind::Add => "math_add".to_string(),
+      FeatureKind::Sub => "math_sub".to_string(),
+      FeatureKind::Mul => "math_mul".to_string(),
+      FeatureKind::Div => "math_div".to_string(),
+      FeatureKind::Exp => "math_exp".to_string(),
+      FeatureKind::Mod => "math_mod".to_string(),
+      FeatureKind::Neg => "math_neg".to_string(),
+      FeatureKind::OpAssign => "math_opassign".to_string(),
+      FeatureKind::LT => "compare_lt".to_string(),
+      FeatureKind::LTE => "compare_lte".to_string(),
+      FeatureKind::GT => "compare_gt".to_string(),
+      FeatureKind::GTE => "compare_gte".to_string(),
+      FeatureKind::EQ => "compare_eq".to_string(),
+      FeatureKind::NEQ => "compare_neq".to_string(),
+      FeatureKind::And => "logic_and".to_string(),
+      FeatureKind::Or => "logic_or".to_string(),
+      FeatureKind::Xor => "logic_xor".to_string(),
+      FeatureKind::Not => "logic_not".to_string(),
+      FeatureKind::Convert => "convert".to_string(),
+      FeatureKind::Assign => "assign".to_string(),
+      FeatureKind::Access => "access".to_string(),
+      FeatureKind::Union => "set_union".to_string(),
+      FeatureKind::Intersection => "set_intersection".to_string(),
+      FeatureKind::Difference => "set_difference".to_string(),
+      FeatureKind::Complement => "set_complement".to_string(),
+      FeatureKind::Subset => "set_subset".to_string(),
+      FeatureKind::Superset => "set_superset".to_string(),
+      FeatureKind::ProperSubset => "set_proper_subset".to_string(),
+      FeatureKind::ProperSuperset => "set_proper_superset".to_string(),
+      FeatureKind::ElementOf => "set_element_of".to_string(),
+      FeatureKind::NotElementOf => "set_not_element_of".to_string(),
+      FeatureKind::Functions => "functions".to_string(),
+      FeatureKind::Formulas => "formulas".to_string(),
+      FeatureKind::Custom => "custom".to_string(),
+    }
+  }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum FeatureFlag {
   Builtin(FeatureKind),
   Custom(u64),
+}
+
+impl FeatureFlag {
+
+  pub fn as_string(&self) -> String {
+    match self {
+      FeatureFlag::Builtin(f) => f.as_string(),
+      FeatureFlag::Custom(c) => format!("custom({})", c),
+    }
+  }
 }
 
 impl FeatureFlag {

@@ -78,3 +78,10 @@ impl NativeFunctionCompiler for MathSinh {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/sinh",
+    ptr: &MathSinh{},
+  }
+}

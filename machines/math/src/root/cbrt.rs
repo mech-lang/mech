@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathCbrt {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/cbrt",
+    ptr: &MathCbrt{},
+  }
+}

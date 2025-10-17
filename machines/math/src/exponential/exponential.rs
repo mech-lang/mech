@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathExponential {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/exponential",
+    ptr: &MathExponential{},
+  }
+}

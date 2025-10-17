@@ -173,6 +173,13 @@ impl NativeFunctionCompiler for MulAssignRange {
   }
 }
 
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/mul-assign/range",
+    ptr: &MulAssignRange{},
+  }
+}
+
 // x[1..3,:] *= 1 ------------------------------------------------------------------
 
 macro_rules! mul_assign_2d_vector_all {
@@ -260,5 +267,12 @@ impl NativeFunctionCompiler for MulAssignRangeAll {
         }
       }
     }
+  }
+}
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/mul-assign/range-all",
+    ptr: &MulAssignRangeAll{},
   }
 }

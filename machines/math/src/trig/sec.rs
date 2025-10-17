@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathSec {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/sec",
+    ptr: &MathSec{},
+  }
+}

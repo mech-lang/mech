@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathCot {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/cot",
+    ptr: &MathCot{},
+  }
+}

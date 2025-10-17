@@ -81,3 +81,10 @@ impl NativeFunctionCompiler for MathAcosh {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/acosh",
+    ptr: &MathAcosh{},
+  }
+}

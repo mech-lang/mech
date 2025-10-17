@@ -221,3 +221,10 @@ impl NativeFunctionCompiler for IoPrintln {
     }
   }
 }
+
+register_descriptor!{
+  FunctionCompilerDescriptor {
+    name: "io/println",
+    ptr: &IoPrintln{},
+  }
+}

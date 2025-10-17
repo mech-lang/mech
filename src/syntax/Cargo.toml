@@ -1,6 +1,6 @@
 [package]
 name = "mech-syntax"
-version = "0.2.60"
+version = "0.2.63"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "A toolchain for compiling textual syntax into Mech blocks."
 documentation = "http://docs.mech-lang.org"
@@ -20,7 +20,10 @@ maintenance = { status = "actively-developed" }
 [features]
 no_std = ["mech-core/no_std"]
 
-default = ["stdlib", "pretty_print", "serde", "compiler", "program",
+default = ["baselib", "pretty_print", "serde", "compiler", "program",
+            "u8", "u16", "u32", "u64", "u128", 
+            "i8", "i16", "i32", "i64", "i128", 
+            "f32", "f64", "c64", "r64", 
             "statements_default", "subscript_default",
             "formatter",
             "mech-core/default",
@@ -107,10 +110,10 @@ r64 = ["rational", "mech-core/r64"]
 # Structs
 set = ["mech-core/set"]
 map = ["mech-core/map"]
-table = ["vectord", "record", "mech-core/table"]
+table = ["kind_annotation", "vectord", "record", "mech-core/table"]
 tuple = ["mech-core/tuple"]
 enum = ["mech-core/enum"]
-record = ["tuple", "mech-core/record"]
+record = ["tuple", "kind_annotation", "mech-core/record"]
 atom = ["mech-core/atom"]
 
 # Matrix
@@ -151,7 +154,7 @@ matrix_vertcat = ["matrix"]
 
 
 [dependencies]
-mech-core = {version = "0.2.60", default-features = false}
+mech-core = {version = "0.2.63", default-features = false}
 
 hashbrown = "0.15.5"
 nom = "7.1.3"

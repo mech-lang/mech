@@ -108,4 +108,4 @@ macro_rules! and_row_mat_op {
     )
   }
   
-  impl_mech_binop_fxn!(LogicAnd,impl_and_fxn);
+  impl_mech_binop_fxn!(LogicAnd,impl_and_fxn,"logic/and");

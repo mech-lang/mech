@@ -16,7 +16,7 @@ Functions to compute combinatorial values.
 
 combinatorics/machine := {
   name: "combinatorics" 
-  version: "v0.2.60"
+  version: "v0.2.63"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/combinatorics"
   license: "Apache-2.0"}

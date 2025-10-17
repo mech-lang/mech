@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathFmod {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/fmod",
+    ptr: &MathFmod{},
+  }
+}

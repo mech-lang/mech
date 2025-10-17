@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathNextafter {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/nextafter",
+    ptr: &MathNextafter{},
+  }
+}

@@ -199,7 +199,7 @@ fn impl_fmaximum_fxn(arg1_value: Value, arg2_value: Value) -> Result<Box<dyn Mec
     #[cfg(all(feature = "vectord", feature = "f64"))]
     (Value::MatrixF64(Matrix::DVector(arg1)),Value::MatrixF64(Matrix::DVector(arg2))) => Ok(Box::new(FmaximumVDF64{arg1: arg1.clone(), arg2, out: Ref::new(DVector::from_element(arg1.borrow().nrows(),F64::zero()))})),
     #[cfg(all(feature = "matrixd", feature = "f64"))]
-    (Value::MatrixF64(Matrix::DMatrix(arg1)),Value::MatrixF64(Matrix::DMatrix(arg2))) => {
+    (Value::MatrixF64(Matrix::DMatrix(arg1)),Value::MatrixF64(Matrix::DMatrix(arg2))) if arg1.borrow().nrows() == arg2.borrow().nrows() && arg1.borrow().ncols() == arg2.borrow().ncols() => {
       let rows = arg1.borrow().nrows();
       let cols = arg1.borrow().ncols();
       Ok(Box::new(FmaximumMDF64{arg1, arg2, out: Ref::new(DMatrix::from_element(rows,cols,F64::zero()))}))
@@ -228,5 +228,12 @@ impl NativeFunctionCompiler for MathFmaximum {
         }
       }
     }
+  }
+}
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/fmaximum",
+    ptr: &MathFmaximum{},
   }
 }

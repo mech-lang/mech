@@ -2,6 +2,7 @@
 use crate::*;
 use num_traits::*;
 
+#[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
 
 // Add ------------------------------------------------------------------------
@@ -98,4 +99,4 @@ fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
   )
 }
 
-impl_mech_binop_fxn!(MathAdd,impl_add_fxn);
+impl_mech_binop_fxn!(MathAdd,impl_add_fxn,"math/add");

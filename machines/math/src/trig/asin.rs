@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathAsin {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/asin",
+    ptr: &MathAsin{},
+  }
+}

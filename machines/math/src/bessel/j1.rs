@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathJ1 {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/bessel/j1",
+    ptr: &MathJ1{},
+  }
+}

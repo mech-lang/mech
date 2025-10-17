@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathExpm1 {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/expm1",
+    ptr: &MathExpm1{},
+  }
+}

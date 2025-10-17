@@ -222,3 +222,10 @@ impl NativeFunctionCompiler for IoPrint {
     }
   }
 }
+
+register_descriptor!{
+  FunctionCompilerDescriptor {
+    name: "io/print",
+    ptr: &IoPrint{},
+  }
+}

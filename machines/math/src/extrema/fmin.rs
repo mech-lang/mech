@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathFmin {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/fmin",
+    ptr: &MathFmin{},
+  }
+}

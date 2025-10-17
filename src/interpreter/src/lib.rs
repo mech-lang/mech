@@ -14,10 +14,7 @@ use mech_core::*;
 use mech_core::matrix::{Matrix, ToMatrix};
 use mech_core::kind::Kind;
 use mech_core::{Dictionary, Ref, Value, ValueKind, ValRef, ToValue};
-#[cfg(feature = "io_print")]
-use mech_io::IoPrint;
-#[cfg(feature = "io_println")]
-use mech_io::IoPrintln;
+use mech_core::{MechError, MechErrorKind, hash_str, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 #[cfg(feature = "map")]
 use mech_core::MechMap;
 #[cfg(feature = "record")]
@@ -38,20 +35,18 @@ use mech_core::F32;
 use mech_core::C64;
 #[cfg(feature = "rational")]
 use mech_core::R64;
+#[cfg(feature = "functions")]
+use crate::functions::*;
 #[cfg(feature = "access")]
 use crate::stdlib::access::*;
 #[cfg(feature = "assign")]
 use crate::stdlib::assign::*;
 #[cfg(feature = "convert")]
 use crate::stdlib::convert::*;
-#[cfg(feature = "functions")]
-use crate::functions::*;
 #[cfg(feature = "matrix_horzcat")]
 use crate::stdlib::horzcat::*;
 #[cfg(feature = "matrix_vertcat")]
 use crate::stdlib::vertcat::*;
-use mech_core::{MechError, MechErrorKind, hash_str, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
-
 #[cfg(feature = "combinatorics")]
 use mech_combinatorics::*;
 #[cfg(feature = "matrix")]
@@ -68,6 +63,8 @@ use mech_compare::*;
 use mech_range::inclusive::RangeInclusive;
 #[cfg(feature = "range_exclusive")]
 use mech_range::exclusive::RangeExclusive;
+#[cfg(feature = "set")]
+use mech_set::*;
 
 #[cfg(feature = "matrix")]
 use na::DMatrix;
@@ -86,6 +83,8 @@ pub mod statements;
 pub mod expressions;
 pub mod mechdown;
 
+pub use mech_core::*;
+
 pub use crate::literals::*;
 pub use crate::interpreter::*;
 pub use crate::structures::*;
@@ -94,7 +93,6 @@ pub use crate::functions::*;
 pub use crate::statements::*;
 pub use crate::expressions::*;
 pub use crate::mechdown::*;
-
 
 pub fn load_stdkinds(kinds: &mut KindTable) {
   #[cfg(feature = "u8")]
@@ -134,118 +132,12 @@ pub fn load_stdkinds(kinds: &mut KindTable) {
 #[cfg(feature = "functions")]
 pub fn load_stdlib(fxns: &mut Functions) {
 
-  // Preload combinatorics functions
-  #[cfg(feature = "combinatorics_n_choose_k")]
-  fxns.function_compilers.insert(hash_str("combinatorics/n-choose-k"), Box::new(CombinatoricsNChooseK{}));
-
-  // Preload stats functions
-  #[cfg(feature = "stats_sum")]
-  fxns.function_compilers.insert(hash_str("stats/sum/row"), Box::new(StatsSumRow{}));
-  #[cfg(feature = "stats_sum")]
-  fxns.function_compilers.insert(hash_str("stats/sum/column"), Box::new(StatsSumColumn{}));
-
-  // Preload ops functions
-  #[cfg(feature = "math_add")]
-  fxns.function_compilers.insert(hash_str("math/add"),Box::new(MathAdd{}));
-  #[cfg(feature = "math_sub")]
-  fxns.function_compilers.insert(hash_str("math/sub"),Box::new(MathSub{}));
-  #[cfg(feature = "math_mul")]
-  fxns.function_compilers.insert(hash_str("math/mul"),Box::new(MathMul{}));
-  #[cfg(feature = "math_div")]
-  fxns.function_compilers.insert(hash_str("math/div"),Box::new(MathDiv{}));
-  #[cfg(feature = "math_mod")]
-  fxns.function_compilers.insert(hash_str("math/mod"),Box::new(MathMod{}));
-  #[cfg(feature = "math_exp")]
-  fxns.function_compilers.insert(hash_str("math/exp"),Box::new(MathExp{}));
-  #[cfg(feature = "math_neg")]
-  fxns.function_compilers.insert(hash_str("math/neg"),Box::new(MathNegate{}));
-  #[cfg(feature = "math_sin")]
-  fxns.function_compilers.insert(hash_str("math/sin"),Box::new(MathSin{}));
-  #[cfg(feature = "math_cos")]
-
-  // Preload math functions
-  #[cfg(feature = "math_sqrt")]
-  fxns.function_compilers.insert(hash_str("math/sqrt"),Box::new(MathSqrt{}));
-
-  // Preload trig functions
-  fxns.function_compilers.insert(hash_str("math/cos"),Box::new(MathCos{}));
-  #[cfg(feature = "math_atan2")]
-  fxns.function_compilers.insert(hash_str("math/atan2"),Box::new(MathAtan2{}));
-  #[cfg(feature = "math_atan")]
-  fxns.function_compilers.insert(hash_str("math/atan"),Box::new(MathAtan{}));
-  #[cfg(feature = "math_acos")]
-  fxns.function_compilers.insert(hash_str("math/acos"),Box::new(MathAcos{}));
-  #[cfg(feature = "math_acosh")]
-  fxns.function_compilers.insert(hash_str("math/acosh"),Box::new(MathAcosh{}));
-  #[cfg(feature = "math_acot")]
-  fxns.function_compilers.insert(hash_str("math/acot"),Box::new(MathAcot{}));
-  #[cfg(feature = "math_acsc")]
-  fxns.function_compilers.insert(hash_str("math/acsc"),Box::new(MathAcsc{}));
-  #[cfg(feature = "math_asec")]
-  fxns.function_compilers.insert(hash_str("math/asec"),Box::new(MathAsec{}));
-  #[cfg(feature = "math_asin")]
-  fxns.function_compilers.insert(hash_str("math/asin"),Box::new(MathAsin{}));
-  #[cfg(feature = "math_sinh")]
-  fxns.function_compilers.insert(hash_str("math/sinh"),Box::new(MathSinh{}));
-  #[cfg(feature = "math_cosh")]
-  fxns.function_compilers.insert(hash_str("math/cosh"),Box::new(MathCosh{}));
-  #[cfg(feature = "math_tanh")]
-  fxns.function_compilers.insert(hash_str("math/tanh"),Box::new(MathTanh{}));
-  #[cfg(feature = "math_atanh")]
-  fxns.function_compilers.insert(hash_str("math/atanh"),Box::new(MathAtanh{}));
-  #[cfg(feature = "math_cot")]
-  fxns.function_compilers.insert(hash_str("math/cot"),Box::new(MathCot{}));
-  #[cfg(feature = "math_csc")]
-  fxns.function_compilers.insert(hash_str("math/csc"),Box::new(MathCsc{}));
-  #[cfg(feature = "math_sec")]
-  fxns.function_compilers.insert(hash_str("math/sec"),Box::new(MathSec{}));
-  #[cfg(feature = "math_tan")]
-  fxns.function_compilers.insert(hash_str("math/tan"),Box::new(MathTan{}));
-
-  // Preload io functions
-  #[cfg(feature = "io_print")]
-  fxns.function_compilers.insert(hash_str("io/print"), Box::new(IoPrint{}));
-  #[cfg(feature = "io_println")]
-  fxns.function_compilers.insert(hash_str("io/println"), Box::new(IoPrintln{}));
-
-  // Matrix functions
-  #[cfg(feature = "matrix_horzcat")]
-  fxns.function_compilers.insert(hash_str("matrix/horzcat"), Box::new(MatrixHorzCat{}));
-  #[cfg(feature = "matrix_vertcat")]
-  fxns.function_compilers.insert(hash_str("matrix/vertcat"), Box::new(MatrixVertCat{}));
-  #[cfg(feature = "matrix_transpose")]
-  fxns.function_compilers.insert(hash_str("matrix/transpose"), Box::new(MatrixTranspose{}));
-  #[cfg(feature = "matrix_matmul")]
-  fxns.function_compilers.insert(hash_str("matrix/matmul"), Box::new(MatrixMatMul{}));
-  #[cfg(feature = "matrix_dot")]
-  fxns.function_compilers.insert(hash_str("matrix/dot"), Box::new(MatrixDot{}));
-
-  // Compare functions
-  #[cfg(feature = "compare_eq")]
-  fxns.function_compilers.insert(hash_str("compare/eq"), Box::new(CompareEqual{}));
-  #[cfg(feature = "compare_neq")]
-  fxns.function_compilers.insert(hash_str("compare/neq"), Box::new(CompareNotEqual{}));
-  #[cfg(feature = "compare_lte")]
-  fxns.function_compilers.insert(hash_str("compare/lte"), Box::new(CompareLessThanEqual{}));
-  #[cfg(feature = "compare_gte")]
-  fxns.function_compilers.insert(hash_str("compare/gte"), Box::new(CompareGreaterThanEqual{}));
-  #[cfg(feature = "compare_lt")]
-  fxns.function_compilers.insert(hash_str("compare/lt"), Box::new(CompareLessThan{}));
-  #[cfg(feature = "compare_gt")]
-  fxns.function_compilers.insert(hash_str("compare/gt"), Box::new(CompareGreaterThan{}));
-
-  // Logic functions
-  #[cfg(feature = "logic_and")]
-  fxns.function_compilers.insert(hash_str("logic/and"), Box::new(LogicAnd{}));
-  #[cfg(feature = "logic_or")]
-  fxns.function_compilers.insert(hash_str("logic/or"), Box::new(LogicOr{}));
-  #[cfg(feature = "logic_not")]
-  fxns.function_compilers.insert(hash_str("logic/not"), Box::new(LogicNot{}));
-  #[cfg(feature = "logic_xor")]
-  fxns.function_compilers.insert(hash_str("logic/xor"), Box::new(LogicXor{}));  
-
   for fxn_desc in inventory::iter::<FunctionDescriptor> {
     fxns.insert_function(fxn_desc.clone());
+  }
+
+  for fxn_comp in inventory::iter::<FunctionCompilerDescriptor> {
+    fxns.function_compilers.insert(hash_str(fxn_comp.name), fxn_comp.ptr);
   }
 
 }

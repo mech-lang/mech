@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathRoundeven {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/roundeven",
+    ptr: &MathRoundeven{},
+  }
+}

@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathRemainder {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/remainder",
+    ptr: &MathRemainder{},
+  }
+}

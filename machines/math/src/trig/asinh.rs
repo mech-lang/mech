@@ -81,3 +81,10 @@ impl NativeFunctionCompiler for MathAsinh {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/asinh",
+    ptr: &MathAsinh{},
+  }
+}

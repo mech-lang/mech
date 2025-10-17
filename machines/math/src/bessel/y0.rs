@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathY0 {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/bessel/y0",
+    ptr: &MathY0{},
+  }
+}

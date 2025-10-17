@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathIlogb {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/ilogb",
+    ptr: &MathIlogb{},
+  }
+}

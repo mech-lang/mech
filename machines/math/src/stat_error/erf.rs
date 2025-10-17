@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathErf {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/erf",
+    ptr: &MathErf{},
+  }
+}

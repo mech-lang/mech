@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathAcos {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/acos",
+    ptr: &MathAcos{},
+  }
+}

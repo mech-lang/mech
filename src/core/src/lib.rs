@@ -6,6 +6,7 @@
 #![allow(dead_code)]
 #![feature(step_trait)]
 #![feature(box_patterns)]
+#![feature(where_clause_attrs)]
 
 //extern crate core as rust_core;
 extern crate seahash;
@@ -129,6 +130,9 @@ pub use self::types::*;
 
 #[cfg(feature = "functions")]
 inventory::collect!(FunctionDescriptor);
+
+#[cfg(feature = "functions")]
+inventory::collect!(FunctionCompilerDescriptor);
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]

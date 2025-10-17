@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathFminimum_num {
     }
   }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "math/fminimum-num",
+    ptr: &MathFminimum_num{},
+  }
+}

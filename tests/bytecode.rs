@@ -35,6 +35,7 @@ macro_rules! bytecode_test {
   };
 }
 
+bytecode_test!(bytecode_define_string, "x := \"Hello World!\"", Value::String(Ref::new("Hello World!".to_string())));
 bytecode_test!(bytecode_var_def,"x := 10",Value::F64(Ref::new(F64::new(10.0))));
 bytecode_test!(bytecode_math,"1 + 2",Value::F64(Ref::new(F64::new(3.0))));
 bytecode_test!(bytecode_math_def,"x := 1 + 2; y := x + 4",Value::F64(Ref::new(F64::new(7.0))));
@@ -63,6 +64,7 @@ bytecode_test!(bytecode_logic_not,"!true",Value::Bool(Ref::new(false)));
 bytecode_test!(bytecode_math_cos,"math/cos(0)",Value::F64(Ref::new(F64::new(1.0))));
 bytecode_test!(bytecode_math_sin,"math/sin(0)",Value::F64(Ref::new(F64::new(0.0))));
 bytecode_test!(bytecode_math_atan2,"math/atan2(1, 1)",Value::F64(Ref::new(F64::new(std::f64::consts::FRAC_PI_4))));
+bytecode_test!(bytecode_math_atan22,"math/atan(1, 1)",Value::F64(Ref::new(F64::new(std::f64::consts::FRAC_PI_4))));
 bytecode_test!(bytecode_matrix_matmul_transpose,"[1 2 3] ** [4 5 6]'",Value::MatrixF64(Matrix::from_vec(vec![F64::new(32.0)], 1, 1)));
 bytecode_test!(bytecode_matrix_dot,"matrix/dot([1 2 3],[4 5 6])",Value::F64(Ref::new(F64::new(32.0))));
 bytecode_test!(bytecode_range_inclusive,"1..=4",Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0),F64::new(4.0)], 1, 4)));
@@ -111,3 +113,16 @@ bytecode_test!(bytecode_matrix_index_2d_vbb4, r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[
 bytecode_test!(bytecode_matrix_index_2d_vub, r#"ix := [false, false, true]; x := [1 2 3; 4 5 6; 7 8 9]; x[[1,2,3,3],ix]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(3.0),F64::new(6.0),F64::new(9.0),F64::new(9.0)], 4, 1)));
 bytecode_test!(bytecode_matrix_index_2d_vbu, r#"ix1 := [false, false, true]; ix2 := [1,2,3,3]; x := [1 2 3; 4 5 6; 7 8 9]; x[ix1,ix2]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(7.0),F64::new(8.0),F64::new(9.0),F64::new(9.0)], 1, 4)));
 bytecode_test!(bytecode_math_sqrt,"math/sqrt(9)",Value::F64(Ref::new(F64::new(3.0))));
+bytecode_test!(bytecode_define_set,"x := {1 2 3 4}", Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(F64::new(1.0))), Value::F64(Ref::new(F64::new(2.0))), Value::F64(Ref::new(F64::new(3.0))), Value::F64(Ref::new(F64::new(4.0)))]))));
+bytecode_test!(bytecode_set,"{1 2 3 3 4}", Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(F64::new(1.0))), Value::F64(Ref::new(F64::new(2.0))), Value::F64(Ref::new(F64::new(3.0))), Value::F64(Ref::new(F64::new(4.0)))]))));
+bytecode_test!(bytecode_math_abs,"math/abs(-10)", Value::F64(Ref::new(F64::new(10.0))));
+bytecode_test!(bytecode_define_table, "x := |x<f64> y<u64>| 1 2 | 3 4 |", Value::Table(Ref::new(MechTable::new_table(
+  vec!["x".to_string(), "y".to_string()],
+  vec![ValueKind::F64, ValueKind::U64],
+  vec![
+    vec![Value::F64(Ref::new(F64::new(1.0))), Value::F64(Ref::new(F64::new(3.0)))],
+    vec![Value::U64(Ref::new(2_u64)), Value::U64(Ref::new(4_u64))],
+  ],
+))));
+bytecode_test!(bytecode_define_table_eq, "x := |x<f64> y<bool>| 1 true | 3 false |; y := |x<f64> y<bool>| 1 true | 3 false |; x == y", Value::Bool(Ref::new(true)));
+bytecode_test!(bytecode_set_union, "x := {1 2 3}; y := {3 4 5}; x ∪ y", Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(F64::new(1.0))),Value::F64(Ref::new(F64::new(2.0))),Value::F64(Ref::new(F64::new(3.0))),Value::F64(Ref::new(F64::new(4.0))),Value::F64(Ref::new(F64::new(5.0)))]))));
