@@ -151,6 +151,10 @@ impl_variable_define_fxn!(String);
 impl_variable_define_fxn!(MechTable);
 #[cfg(feature = "set")]
 impl_variable_define_fxn!(MechSet);
+//#[cfg(feature = "tuple")]
+//impl_variable_define_fxn!(MechTuple);
+#[cfg(feature = "record")]
+impl_variable_define_fxn!(MechRecord);
 
 #[macro_export]
 macro_rules! impl_variable_define_match_arms {
@@ -243,8 +247,14 @@ macro_rules! impl_variable_define_match_arms {
 fn impl_var_define_fxn(var: Value, name: Value, mutable: Value, id: u64) -> MResult<Box<dyn MechFunction>> {
   let arg = (var, name, mutable, id);
   match arg {
+    #[cfg(feature = "table")]
     (Value::Table(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechTable{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
+    #[cfg(feature = "set")]
     (Value::Set(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechSet{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
+    //#[cfg(feature = "tuple")]
+    //(Value::Tuple(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechTuple{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
+    #[cfg(feature = "record")]
+    (Value::Record(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechRecord{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
     _ => (),
   }
 

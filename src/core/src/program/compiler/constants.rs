@@ -1331,7 +1331,6 @@ impl CompileConst for MechTable {
   }
 }
 
-
 #[cfg(feature = "set")]
 impl ConstElem for MechSet {
   fn write_le(&self, out: &mut Vec<u8>) {

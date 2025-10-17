@@ -2434,3 +2434,24 @@ impl ToValue for Ref<MechSet> {
     Value::Set(self.clone())
   }
 }
+
+#[cfg(feature = "map")]
+impl ToValue for Ref<MechMap> {
+  fn to_value(&self) -> Value {
+    Value::Map(self.clone())
+  }
+}
+
+#[cfg(feature = "tuple")]
+impl ToValue for Ref<MechTuple> {
+  fn to_value(&self) -> Value {
+    Value::Tuple(self.clone())
+  }
+}
+
+#[cfg(feature = "record")]
+impl ToValue for Ref<MechRecord> {
+  fn to_value(&self) -> Value {
+    Value::Record(self.clone())
+  }
+}
