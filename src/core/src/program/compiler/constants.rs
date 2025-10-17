@@ -377,16 +377,9 @@ impl CompileConst for MechRecord {
 impl CompileConst for MechEnum {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
-
-    // write the enum id
     payload.write_u64::<LittleEndian>(self.id)?;
-
-    // write the number of variants
     payload.write_u32::<LittleEndian>(self.variants.len() as u32)?;
-
-    // write each variant: (variant id, has value, value data)
     for (variant_id, variant_value) in self.variants.iter() {
-      // variant id
       payload.write_u64::<LittleEndian>(*variant_id)?;
       match variant_value {
         Some(v) => {
@@ -421,11 +414,8 @@ impl CompileConst for MechAtom {
 impl CompileConst for MechSet {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
-    // include the kind to match write_le/from_le
     self.kind.write_le(&mut payload);
-    // write the number of elements
     payload.write_u32::<LittleEndian>(self.num_elements as u32)?;
-    // write each element
     for element in &self.set {
       element.write_le(&mut payload);
     }
@@ -433,6 +423,18 @@ impl CompileConst for MechSet {
   }
 }
 
+#[cfg(feature = "tuple")]
+impl CompileConst for MechTuple {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    let mut payload = Vec::<u8>::new();
+    self.value_kind().write_le(&mut payload);
+    payload.write_u32::<LittleEndian>(self.elements.len() as u32)?;
+    for elem in &self.elements {
+      elem.write_le(&mut payload);
+    }
+    ctx.compile_const(&payload, self.value_kind())
+  }
+}
 
 // ConstElem Trait
 // ----------------------------------------------------------------------------
@@ -1372,5 +1374,52 @@ impl ConstElem for MechSet {
     Self { kind, num_elements, set }
   }
   fn value_kind(&self) -> ValueKind { self.kind.clone() }
+  fn align() -> u8 { 8 }
+}
+
+#[cfg(feature = "tuple")]
+impl ConstElem for MechTuple {
+  fn write_le(&self, out: &mut Vec<u8>) {
+    self.value_kind().write_le(out);
+    out.write_u32::<LittleEndian>(self.elements.len() as u32)
+      .expect("write tuple element count");
+    for elem in &self.elements {
+      elem.write_le(out);
+    }
+  }
+  fn from_le(data: &[u8]) -> Self {
+    let mut cursor = Cursor::new(data);
+    // 1) Read ValueKind (tuple kind)
+    let start = cursor.position() as usize;
+    let kind = ValueKind::from_le(&data[start..]);
+    // Determine how many bytes were used for kind
+    let mut kind_buf = Vec::new();
+    kind.write_le(&mut kind_buf);
+    cursor.set_position(start as u64 + kind_buf.len() as u64);
+    // 2) Read element count
+    let num_elements = cursor
+      .read_u32::<LittleEndian>()
+      .expect("read tuple element count") as usize;
+    // 3) Read each element
+    let mut elements: Vec<Box<Value>> = Vec::with_capacity(num_elements);
+    for _ in 0..num_elements {
+      let pos = cursor.position() as usize;
+      let value = Value::from_le(&data[pos..]);
+      // Measure how many bytes were consumed by this value
+      let mut tmp = Vec::new();
+      value.write_le(&mut tmp);
+      cursor.set_position(pos as u64 + tmp.len() as u64);
+      elements.push(Box::new(value));
+    }
+    Self { elements }
+  }
+  fn value_kind(&self) -> ValueKind {
+    ValueKind::Tuple(
+      self.elements
+        .iter()
+        .map(|v| v.value_kind())
+        .collect::<Vec<_>>()
+    )
+  }  
   fn align() -> u8 { 8 }
 }
