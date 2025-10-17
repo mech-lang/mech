@@ -68,8 +68,8 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
           Value::Empty => { dims.push(0); }
           _ => {
             match dim_val.as_usize() {
-              Some(size_val) => dims.push(size_val.clone()),
-              None => { return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
+              Ok(size_val) => dims.push(size_val.clone()),
+              Err(_) => { return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
             }
           }
         }
@@ -91,8 +91,8 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
         Value::Empty => 0,
         _ => {
           match size_val.as_usize() {
-            Some(size_val) => size_val,
-            None => { return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
+            Ok(size_val) => size_val,
+            Err(_) => { return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
           }
         }
       };
@@ -105,8 +105,8 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
         None => Value::Empty,
       };
       match size_val.as_usize() {
-        Some(size_val) => Ok(Kind::Set(Box::new(knda.clone()), Some(size_val))),
-        None => Ok(Kind::Set(Box::new(knda.clone()), None)),
+        Ok(size_val) => Ok(Kind::Set(Box::new(knda.clone()), Some(size_val))),
+        Err(_) => Ok(Kind::Set(Box::new(knda.clone()), None)),
       }
     }
   }
@@ -142,14 +142,14 @@ pub fn number(num: &Number) -> Value {
 #[cfg(feature = "complex")]
 fn complex(num: &C64Node) -> Value {
   let im: f64 = match real(&num.imaginary.number).as_f64() {
-    Some(val) => val.borrow().0,
-    None => 0.0,
+    Ok(val) => val.borrow().0,
+    Err(_) => 0.0,
   };
   match &num.real {
     Some(real_val) => {
       let re: f64 = match real(&real_val).as_f64() {
-        Some(val) => val.borrow().0,
-        None => 0.0,
+        Ok(val) => val.borrow().0,
+        Err(_) => 0.0,
       };      
       Value::C64(Ref::new(C64::new(re, im)))
     },

@@ -78,8 +78,8 @@ pub fn subscript_range(sbscrpt: &Subscript, p: &Interpreter) -> MResult<Value> {
     Subscript::Range(rng) => {
       let result = range(rng,p)?;
       match result.as_vecusize() {
-        Some(v) => Ok(v.to_value()),
-        None => Err(MechError{file: file!().to_string(), tokens: rng.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
+        Ok(v) => Ok(v.to_value()),
+        Err(_) => Err(MechError{file: file!().to_string(), tokens: rng.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
       }
     }
     _ => unreachable!()

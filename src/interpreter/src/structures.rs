@@ -217,8 +217,8 @@ macro_rules! handle_value_kind {
     let mut vals = Vec::new();
     for x in $val.as_vec().iter() {
       match x.$converter() {
-        Some(u) => vals.push(u.to_value()),
-        None => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::WrongTableColumnKind});}
+        Ok(u) => vals.push(u.to_value()),
+        Err(_) => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::WrongTableColumnKind});}
       }
     }
     let id = $field_label.as_u64().unwrap().borrow().clone();

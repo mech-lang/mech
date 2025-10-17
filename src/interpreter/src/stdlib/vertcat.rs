@@ -1467,7 +1467,7 @@ macro_rules! impl_vertcat_arms {
       }});
       if no_refs {
         let mat: Vec<$kind> = arguments.iter().flat_map(|v| v.[<as_vec $kind:lower>]().unwrap()).collect::<Vec<$kind>>();
-        fn to_column_major<T: Clone>(out: &[Value], row_n: usize, col_n: usize, extract_fn: impl Fn(&Value) -> Option<Vec<T>> + Clone) -> Vec<T> {
+        fn to_column_major<T: Clone>(out: &[Value], row_n: usize, col_n: usize, extract_fn: impl Fn(&Value) -> MResult<Vec<T>> + Clone) -> Vec<T> {
           (0..col_n).flat_map(|col| out.iter().map({let value = extract_fn.clone();move |row| value(row).unwrap()[col].clone()})).collect()
         }
         let mat = to_column_major(&arguments, rows, columns, |v| v.[<as_vec $kind:lower>]());
