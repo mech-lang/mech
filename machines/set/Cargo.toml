@@ -1,6 +1,6 @@
 [package]
 name = "mech-set"
-version = "0.2.63"
+version = "0.2.64"
 authors = ["Corey Montella <corey@mech-lang.org>", "Steven McPhillimey <slm526@lehigh.edu>", "Liam Messinger <ljm426@lehigh.edu>", "Natalie Dumler <nad326@lehigh.edu>"]
 description = "Set library for the Mech language"
 documentation = "http://docs.mech-lang.org"
