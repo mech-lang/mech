@@ -221,7 +221,7 @@ mech-core = { path = 'src/core' }
 mech-syntax = { path = 'src/syntax'}
 mech-interpreter = { path = 'src/interpreter'}
 mech-wasm = { path = 'src/wasm'}
-mech-utilities = { path = 'src/utilities' }
+#mech-utilities = { path = 'src/utilities' }
 mech-combinatorics = { path = 'machines/combinatorics' }
 mech-compare = { path = 'machines/compare' }
 mech-matrix = { path = 'machines/matrix' }
