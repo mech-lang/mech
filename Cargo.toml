@@ -205,8 +205,6 @@ members = [
   "src/syntax",
   "src/interpreter",
   "src/wasm",
-  "notebook",
-  "mech-app/src-tauri"
 ]
 
 [build-dependencies]

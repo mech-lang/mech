@@ -24,3 +24,5 @@ winres = "0.1.12"
 [package.metadata.winres]
 OriginalFilename = "MECH.EXE"
 LegalCopyright = "Copyright © 2025" 
+
+[workspace]
