@@ -27,6 +27,7 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program",
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
       "statements_default", "subscript_default",
+      "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "io_default", "stats_default", "combinatorics_default",      
       "run_program", "inline_output_values", "codeblock_output_values", "clickable_symbol_listeners",
       "eval", "repl", "whos", "help", "docs",
       "mech-core/default", "mech-interpreter/default", "mech-syntax/default",
@@ -34,6 +35,7 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program",
 
 base = ["baselib", "pretty_print", "serde", "compiler", "program",
       "statements_default", "subscript_default",
+      "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "io_default", "stats_default", "combinatorics_default",
       "run_program", "inline_output_values", "codeblock_output_values", "clickable_symbol_listeners",
       "eval", "repl", "whos", "help", "docs",
       "mech-core/base", "mech-interpreter/base", "mech-syntax/base",
@@ -85,7 +87,6 @@ symbol_table = ["mech-core/symbol_table", "mech-interpreter/symbol_table", "mech
 access = ["functions", "mech-interpreter/access"] 
 assign = ["functions", "mech-interpreter/assign"] 
 convert = ["functions", "mech-interpreter/convert"]
-
 
 # types
 bool = ["mech-core/bool", "mech-syntax/bool", "mech-interpreter/bool"]
