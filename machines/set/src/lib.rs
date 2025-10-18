@@ -2,7 +2,6 @@
 #![allow(warnings)]
 
 use indexmap::set::IndexSet;
-use mech_core::set::MechSet;
 
 use mech_core::*;
 
