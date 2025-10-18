@@ -123,7 +123,7 @@ impl Interpreter {
       }
     })?
   }
-
+  
   #[cfg(feature = "program")]
   pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
     // Reset the instruction pointer
