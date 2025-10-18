@@ -77,7 +77,7 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
         "Error: No interpreter found.".to_string()
       })
     }
-    #[cfg(not(feature = "whos"))]
+    #[cfg(feature = "whos")]
     ReplCommand::Whos(names) => {
       CURRENT_MECH.with(|mech_ref| {
         if let Some(ptr) = *mech_ref.borrow() {
@@ -89,7 +89,7 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
         "Error: No interpreter found.".to_string()
       })
     }
-    #[cfg(not(feature = "help"))]
+    #[cfg(feature = "help")]
     ReplCommand::Help => {
       help_html()
     }

@@ -1,3 +1,5 @@
+#![allow(warnings)]
+
 use wasm_bindgen::prelude::*;
 use mech_core::*;
 use mech_syntax::*;
@@ -16,7 +18,6 @@ pub mod repl;
 #[cfg(feature = "repl")]
 pub use crate::repl::*;
 
-
 // This monstrosity lets us pass a references to WasmMech to callbacks and such.
 // Using it is unsafe. But we trust that the WasmMech instance will be around
 // for the lifetime of the website.
@@ -29,6 +30,133 @@ macro_rules! log {
   ( $( $t:tt )* ) => {
     web_sys::console::log_1(&format!( $( $t )* ).into());
   }
+}
+
+
+fn new_interpreter(id: u64) -> Interpreter {
+
+  let mut intrp = Interpreter::new(id);
+
+  let fxns_ref = intrp.functions();
+  let mut fxns = fxns_ref.borrow_mut();
+      
+  // Preload combinatorics functions
+  #[cfg(feature = "combinatorics_n_choose_k")]
+  fxns.function_compilers.insert(hash_str("combinatorics/n-choose-k"), &CombinatoricsNChooseK{});
+
+  
+  // Preload stats functions
+  #[cfg(feature = "stats_sum")]
+  fxns.function_compilers.insert(hash_str("stats/sum/row"), &StatsSumRow{});
+  #[cfg(feature = "stats_sum")]
+  fxns.function_compilers.insert(hash_str("stats/sum/column"), &StatsSumColumn{});
+
+  // Preload ops functions
+  #[cfg(feature = "math_add")]
+  fxns.function_compilers.insert(hash_str("math/add"), &MathAdd{});
+  #[cfg(feature = "math_sub")]
+  fxns.function_compilers.insert(hash_str("math/sub"), &MathSub{});
+  #[cfg(feature = "math_mul")]
+  fxns.function_compilers.insert(hash_str("math/mul"), &MathMul{});
+  #[cfg(feature = "math_div")]
+  fxns.function_compilers.insert(hash_str("math/div"), &MathDiv{});
+  #[cfg(feature = "math_mod")]
+  fxns.function_compilers.insert(hash_str("math/mod"), &MathMod{});
+  #[cfg(feature = "math_exp")]
+  fxns.function_compilers.insert(hash_str("math/exp"), &MathExp{});
+  #[cfg(feature = "math_neg")]
+  fxns.function_compilers.insert(hash_str("math/neg"), &MathNegate{});
+  
+  // Preload math functions
+  #[cfg(feature = "math_sqrt")]
+  fxns.function_compilers.insert(hash_str("math/sqrt"), &MathSqrt{});
+  
+  // Preload trig functions
+  #[cfg(feature = "math_sin")]
+  fxns.function_compilers.insert(hash_str("math/sin"), &MathSin{});
+  #[cfg(feature = "math_cos")]
+  fxns.function_compilers.insert(hash_str("math/cos"), &MathCos{});
+  #[cfg(feature = "math_atan2")]
+  fxns.function_compilers.insert(hash_str("math/atan2"), &MathAtan2{});
+  #[cfg(feature = "math_atan")]
+  fxns.function_compilers.insert(hash_str("math/atan"), &MathAtan{});
+  #[cfg(feature = "math_acos")]
+  fxns.function_compilers.insert(hash_str("math/acos"), &MathAcos{});
+  #[cfg(feature = "math_acosh")]
+  fxns.function_compilers.insert(hash_str("math/acosh"), &MathAcosh{});
+  #[cfg(feature = "math_acot")]
+  fxns.function_compilers.insert(hash_str("math/acot"), &MathAcot{});
+  #[cfg(feature = "math_acsc")]
+  fxns.function_compilers.insert(hash_str("math/acsc"), &MathAcsc{});
+  #[cfg(feature = "math_asec")]
+  fxns.function_compilers.insert(hash_str("math/asec"), &MathAsec{});
+  #[cfg(feature = "math_asin")]
+  fxns.function_compilers.insert(hash_str("math/asin"), &MathAsin{});
+  #[cfg(feature = "math_sinh")]
+  fxns.function_compilers.insert(hash_str("math/sinh"), &MathSinh{});
+  #[cfg(feature = "math_cosh")]
+  fxns.function_compilers.insert(hash_str("math/cosh"), &MathCosh{});
+  #[cfg(feature = "math_tanh")]
+  fxns.function_compilers.insert(hash_str("math/tanh"), &MathTanh{});
+  #[cfg(feature = "math_atanh")]
+  fxns.function_compilers.insert(hash_str("math/atanh"), &MathAtanh{});
+  #[cfg(feature = "math_cot")]
+  fxns.function_compilers.insert(hash_str("math/cot"), &MathCot{});
+  #[cfg(feature = "math_csc")]
+  fxns.function_compilers.insert(hash_str("math/csc"), &MathCsc{});
+  #[cfg(feature = "math_sec")]
+  fxns.function_compilers.insert(hash_str("math/sec"), &MathSec{});
+  #[cfg(feature = "math_tan")]
+  fxns.function_compilers.insert(hash_str("math/tan"), &MathTan{});
+
+  // Preload io functions
+  //#[cfg(feature = "io_print")]
+  //fxns.function_compilers.insert(hash_str("io/print"), &IoPrint{});
+  //#[cfg(feature = "io_println")]
+  //fxns.function_compilers.insert(hash_str("io/println"), &IoPrintln{});
+
+  // Matrix functions
+  #[cfg(feature = "matrix_horzcat")]
+  fxns.function_compilers.insert(hash_str("matrix/horzcat"), &MatrixHorzCat{});
+  #[cfg(feature = "matrix_vertcat")]
+  fxns.function_compilers.insert(hash_str("matrix/vertcat"), &MatrixVertCat{});
+  #[cfg(feature = "matrix_transpose")]
+  fxns.function_compilers.insert(hash_str("matrix/transpose"), &MatrixTranspose{});
+  #[cfg(feature = "matrix_matmul")]
+  fxns.function_compilers.insert(hash_str("matrix/matmul"), &MatrixMatMul{});
+  #[cfg(feature = "matrix_dot")]
+  fxns.function_compilers.insert(hash_str("matrix/dot"), &MatrixDot{});
+
+  // Compare functions
+  #[cfg(feature = "compare_eq")]
+  fxns.function_compilers.insert(hash_str("compare/eq"), &CompareEqual{});
+  #[cfg(feature = "compare_neq")]
+  fxns.function_compilers.insert(hash_str("compare/neq"), &CompareNotEqual{});
+  #[cfg(feature = "compare_lte")]
+  fxns.function_compilers.insert(hash_str("compare/lte"), &CompareLessThanEqual{});
+  #[cfg(feature = "compare_gte")]
+  fxns.function_compilers.insert(hash_str("compare/gte"), &CompareGreaterThanEqual{});
+  #[cfg(feature = "compare_lt")]
+  fxns.function_compilers.insert(hash_str("compare/lt"), &CompareLessThan{});
+  #[cfg(feature = "compare_gt")]
+  fxns.function_compilers.insert(hash_str("compare/gt"), &CompareGreaterThan{});
+
+  // Logic functions
+  #[cfg(feature = "logic_and")]
+  fxns.function_compilers.insert(hash_str("logic/and"), &LogicAnd{});
+  #[cfg(feature = "logic_or")]
+  fxns.function_compilers.insert(hash_str("logic/or"), &LogicOr{});
+  #[cfg(feature = "logic_not")]
+  fxns.function_compilers.insert(hash_str("logic/not"), &LogicNot{});
+  #[cfg(feature = "logic_xor")]
+  fxns.function_compilers.insert(hash_str("logic/xor"), &LogicXor{});
+
+  // Set Functions
+  #[cfg(feature = "set_union")]
+  fxns.function_compilers.insert(hash_str("set/union"), &SetUnion{});
+
+  intrp
+
 }
 
 #[wasm_bindgen(start)]
@@ -76,7 +204,7 @@ impl WasmMech {
   #[wasm_bindgen(constructor)]
   pub fn new() -> Self {
     Self { 
-      interpreter: Interpreter::new(0),
+      interpreter: new_interpreter(0),
       repl_history: Vec::new(), 
       repl_history_index: None,
       repl_id: None,
@@ -90,7 +218,7 @@ impl WasmMech {
 
   #[wasm_bindgen]
   pub fn clear(&mut self) {
-    self.interpreter = Interpreter::new(0);
+    self.interpreter = new_interpreter(0);
   }
 
   #[cfg(feature = "repl")]
@@ -287,12 +415,12 @@ impl WasmMech {
         "REPL commands not supported. Rebuild with the 'repl' feature.".to_string()
       }
     } else {
-      let cmd = ReplCommand::Code(vec![("repl".to_string(),MechSourceCode::String(input.to_string()))]);
+      let cmd = vec![("repl".to_string(),MechSourceCode::String(input.to_string()))];
       CURRENT_MECH.with(|mech_ref| {
         if let Some(ptr) = *mech_ref.borrow() {
           unsafe {
             let mut mech = &mut *ptr;
-            match run_mech_code(&mut mech.interpreter, &code)  {
+            match run_mech_code(&mut mech.interpreter, &cmd)  {
               Ok(output) => { 
                 let kind_str = html_escape(&format!("{}",output.kind()));
                 return format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html());
@@ -576,7 +704,7 @@ pub fn load_doc(doc: &str, element_id: String) {
         let mut formatter = Formatter::new();
         formatter.html = true;
         let doc_html = formatter.program(&tree);
-        let mut doc_intrp = Interpreter::new(doc_hash);
+        let mut doc_intrp = new_interpreter(doc_hash);
         let doc_result = doc_intrp.interpret(&tree);
         let output_element = document.get_element_by_id(&element_id).expect("REPL output element not found");
         // Get the second to last element of mech-output. It should be a repl-result from when teh user pressed enter.
@@ -592,6 +720,7 @@ pub fn load_doc(doc: &str, element_id: String) {
                 unsafe {
                   let mut mech = &mut *ptr;
                   mech.interpreter.sub_interpreters.borrow_mut().insert(doc_hash, Box::new(doc_intrp));
+                  #[cfg(feature = "codeblock_output_values")]
                   mech.render_codeblock_output_values();
                 }
               }
