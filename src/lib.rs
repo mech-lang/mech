@@ -235,7 +235,7 @@ fn pretty_print_tree(tree: &Program) -> String {
   format!("{table}")
 }
 
-#[cfg(all(feature = "pretty_print", feature = "variables", feature = "symbol_table"))]
+#[cfg(feature = "whos")]
 pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
   let mut builder = Builder::default();
   builder.push_record(vec!["Name", "Size", "Bytes", "Kind"]);
