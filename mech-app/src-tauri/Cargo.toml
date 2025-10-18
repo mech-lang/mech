@@ -1,6 +1,6 @@
 [package]
 name = "mech-app"
-version = "0.2.63"
+version = "0.2.64"
 description = "Mech is a reactive programming language for building robots, games, and animations."
 authors = ["Corey Montella <corey@mech-lang.org>"]
 documentation = "https://docs.mech-lang.org"
@@ -24,7 +24,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.3.0", features = [] }
 
 [dependencies]
-mech = "0.2.63"
+mech = "0.2.64"
 tauri = { version = "2.6.2", features = [] }
 tauri-plugin-opener = "2.4.0"
 serde = { version = "1.0.219", features = ["derive"] }

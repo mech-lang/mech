@@ -150,7 +150,7 @@ dot_indexing = ["subscript", "mech-core/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle"]
 
 [dependencies]
-mech-core = { path = "../../src/core", version = "0.2.62", default-features = false }
+mech-core = { version = "0.2.64", default-features = false }
 
 paste = "1.0.15"
 inventory = "0.3.21"
