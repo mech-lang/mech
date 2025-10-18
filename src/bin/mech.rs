@@ -112,6 +112,11 @@ async fn main() -> Result<(), MechError> {
         .help("Source .mec and .mecb files")
         .required(false)
         .action(ArgAction::Append))
+      .arg(Arg::new("debug")
+        .short('d')
+        .long("debug")
+        .help("Print debug info")
+        .action(ArgAction::SetTrue))
       .arg(Arg::new("output_path")
         .short('o')
         .long("out")
@@ -196,6 +201,7 @@ async fn main() -> Result<(), MechError> {
   if let Some(matches) = matches.subcommand_matches("build") {
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let output_path = PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
+    let debug_flag = matches.get_flag("debug");
     let mut mechfs = MechFileSystem::new();
 
     for path in mech_paths {
@@ -228,6 +234,11 @@ async fn main() -> Result<(), MechError> {
     let mut f = std::fs::File::create(&output_file)?;
     f.write_all(&bytecode)?;
     f.flush()?;
+
+    // print debug info for the context
+    if debug_flag {
+      println!("{} Bytecode Size: {:#?} bytes", "[Debug]".truecolor(246,192,78), intrp.context);
+    }
 
     println!("{} Mech bytecode written to: {}", "[Output]".truecolor(153,221,85), output_file.display());
 
