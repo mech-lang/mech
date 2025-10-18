@@ -1,6 +1,6 @@
 [package]
 name = "mech"
-version = "0.2.63"
+version = "0.2.64"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Mech is a programming language for building reactive systems like robots, games, and animations."
 documentation = "https://docs.mech-lang.org"
@@ -30,12 +30,12 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program",
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
       "statements_default", "subscript_default",
-      "formatter", "mechfs", "serve", "run", "repl", "build",
+      "formatter", "mechfs", "serve", "run", "repl", "build", "whos",
       "mech-core/default", "mech-interpreter/default", "mech-syntax/default",
       ]
 base = ["baselib", "pretty_print", "serde", "compiler", "program",
       "statements_default", "subscript_default",
-      "formatter", "mechfs", "serve", "run", "repl", "build",
+      "formatter", "mechfs", "serve", "run", "repl", "build","whos",
       "mech-core/base", "mech-interpreter/base", "mech-syntax/base",
       ]
 build = ["compiler"]
@@ -43,6 +43,7 @@ repl = []
 run = ["mechfs"]
 serve = ["mechfs"]
 mechfs = ["formatter"]
+whos = ["pretty_print", "variables", "symbol_table"]
 formatter = ["mech-syntax/formatter"]
 
 statements_default = ["variable_assign","variable_define","kind_define"]
@@ -126,26 +127,26 @@ record = ["tuple", "kind_annotation", "mech-core/record", "mech-interpreter/reco
 atom = ["mech-core/atom", "mech-interpreter/atom", "mech-syntax/atom"]
 
 # Matrix
-matrix = ["mech-core/matrix", "mech-interpreter/matrix", "mech-syntax/matrix", "matrix_horzcat", "matrix_vertcat"]
+matrix = ["mech-core/matrix", "mech-interpreter/matrix", "mech-syntax/matrix"]
 fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "mech-core/fixed_row_vector", "mech-interpreter/fixed_row_vector", "mech-syntax/fixed_row_vector"]
 fixed_vector = ["vector4", "vector3", "vector2", "mech-core/fixed_vector", "mech-interpreter/fixed_vector", "mech-syntax/fixed_vector"]
 fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "mech-core/fixed_matrix", "mech-interpreter/fixed_matrix", "mech-syntax/fixed_matrix"]
 dynamic_matrix = ["matrixd", "vectord", "row_vectord", "mech-core/dynamic_matrix", "mech-interpreter/dynamic_matrix", "mech-syntax/dynamic_matrix"]
-row_vector4 = ["matrix", "mech-core/row_vector4", "mech-interpreter/row_vector4", "mech-syntax/row_vector4"]
-row_vector3 = ["matrix", "mech-core/row_vector3", "mech-interpreter/row_vector3", "mech-syntax/row_vector3"]
-row_vector2 = ["matrix", "mech-core/row_vector2", "mech-interpreter/row_vector2", "mech-syntax/row_vector2"]
-vector4 = ["matrix", "mech-core/vector4", "mech-interpreter/vector4", "mech-syntax/vector4"]
-vector3 = ["matrix", "mech-core/vector3", "mech-interpreter/vector3", "mech-syntax/vector3"]
-vector2 = ["matrix", "mech-core/vector2", "mech-interpreter/vector2", "mech-syntax/vector2"]
-matrix4 = ["matrix", "mech-core/matrix4", "mech-interpreter/matrix4", "mech-syntax/matrix4"]
-matrix3 = ["matrix", "mech-core/matrix3", "mech-interpreter/matrix3", "mech-syntax/matrix3"]
-matrix2 = ["matrix", "mech-core/matrix2", "mech-interpreter/matrix2", "mech-syntax/matrix2"]
-matrix1 = ["matrix", "mech-core/matrix1", "mech-interpreter/matrix1", "mech-syntax/matrix1"]
-matrix2x3 = ["matrix", "mech-core/matrix2x3", "mech-interpreter/matrix2x3", "mech-syntax/matrix2x3"]
-matrix3x2 = ["matrix", "mech-core/matrix3x2", "mech-interpreter/matrix3x2", "mech-syntax/matrix3x2"]
-row_vectord =["matrix",  "mech-core/row_vectord", "mech-interpreter/row_vectord", "mech-syntax/row_vectord"]
-vectord = ["matrix",  "mech-core/vectord", "mech-interpreter/vectord", "mech-syntax/vectord"]
-matrixd = ["matrix",  "mech-core/matrixd", "mech-interpreter/matrixd", "mech-syntax/matrixd"]
+row_vector4 = ["matrix", "matrix_horzcat", "mech-core/row_vector4", "mech-interpreter/row_vector4", "mech-syntax/row_vector4"]
+row_vector3 = ["matrix", "matrix_horzcat", "mech-core/row_vector3", "mech-interpreter/row_vector3", "mech-syntax/row_vector3"]
+row_vector2 = ["matrix", "matrix_horzcat", "mech-core/row_vector2", "mech-interpreter/row_vector2", "mech-syntax/row_vector2"]
+vector4 = ["matrix", "matrix_vertcat", "mech-core/vector4", "mech-interpreter/vector4", "mech-syntax/vector4"]
+vector3 = ["matrix", "matrix_vertcat", "mech-core/vector3", "mech-interpreter/vector3", "mech-syntax/vector3"]
+vector2 = ["matrix", "matrix_vertcat", "mech-core/vector2", "mech-interpreter/vector2", "mech-syntax/vector2"]
+matrix4 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix4", "mech-interpreter/matrix4", "mech-syntax/matrix4"]
+matrix3 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix3", "mech-interpreter/matrix3", "mech-syntax/matrix3"]
+matrix2 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix2", "mech-interpreter/matrix2", "mech-syntax/matrix2"]
+matrix1 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix1", "mech-interpreter/matrix1", "mech-syntax/matrix1"]
+matrix2x3 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix2x3", "mech-interpreter/matrix2x3", "mech-syntax/matrix2x3"]
+matrix3x2 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix3x2", "mech-interpreter/matrix3x2", "mech-syntax/matrix3x2"]
+row_vectord =["matrix", "matrix_horzcat",  "mech-core/row_vectord", "mech-interpreter/row_vectord", "mech-syntax/row_vectord"]
+vectord = ["matrix", "matrix_vertcat",  "mech-core/vectord", "mech-interpreter/vectord", "mech-syntax/vectord"]
+matrixd = ["matrix", "matrix_horzcat", "matrix_vertcat",  "mech-core/matrixd", "mech-interpreter/matrixd", "mech-syntax/matrixd"]
 
 # Subscripts
 subscript = ["mech-core/subscript", "mech-interpreter/subscript", "mech-syntax/subscript"]
@@ -165,9 +166,9 @@ matrix_vertcat = ["matrix"]
 nalgebra = "0.34.0"
 
 [dependencies]
-mech-core        = { version = "0.2.63", default-features = false }
-mech-syntax      = { version = "0.2.63", default-features = false }
-mech-interpreter = { version = "0.2.63", default-features = false }
+mech-core        = { version = "0.2.64", default-features = false }
+mech-syntax      = { version = "0.2.64", default-features = false }
+mech-interpreter = { version = "0.2.64", default-features = false }
 
 sevenz-rust = "0.6.1"
 colored = "3.0.0"
@@ -204,8 +205,6 @@ members = [
   "src/syntax",
   "src/interpreter",
   "src/wasm",
-  "notebook",
-  "mech-app/src-tauri"
 ]
 
 [build-dependencies]
@@ -220,7 +219,7 @@ mech-core = { path = 'src/core' }
 mech-syntax = { path = 'src/syntax'}
 mech-interpreter = { path = 'src/interpreter'}
 mech-wasm = { path = 'src/wasm'}
-mech-utilities = { path = 'src/utilities' }
+#mech-utilities = { path = 'src/utilities' }
 mech-combinatorics = { path = 'machines/combinatorics' }
 mech-compare = { path = 'machines/compare' }
 mech-matrix = { path = 'machines/matrix' }
@@ -232,13 +231,13 @@ mech-logic = { path = 'machines/logic' }
 mech-set = { path = 'machines/set' }
 
 [patch.'https://gitlab.com/mech-lang/core']
-mech-core = { path = 'src/core', version = '0.2.63' }
+mech-core = { path = 'src/core', version = '0.2.64' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
-mech-syntax = { path = 'src/syntax', version = '0.2.63' }
+mech-syntax = { path = 'src/syntax', version = '0.2.64' }
 
 [patch.'https://gitlab.com/mech-lang/interpreter']
-mech-interpreter = { path = 'src/interpreter', version = '0.2.63' }
+mech-interpreter = { path = 'src/interpreter', version = '0.2.64' }
 
 #[patch.'https://gitlab.com/mech-lang/wasm']
 #mech-wasm = { path = 'src/wasm', version = '0.2.44' }

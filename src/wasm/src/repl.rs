@@ -77,7 +77,7 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
         "Error: No interpreter found.".to_string()
       })
     }
-    #[cfg(not(feature = "whos"))]
+    #[cfg(feature = "whos")]
     ReplCommand::Whos(names) => {
       CURRENT_MECH.with(|mech_ref| {
         if let Some(ptr) = *mech_ref.borrow() {
@@ -89,7 +89,7 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
         "Error: No interpreter found.".to_string()
       })
     }
-    #[cfg(not(feature = "help"))]
+    #[cfg(feature = "help")]
     ReplCommand::Help => {
       help_html()
     }
@@ -111,7 +111,7 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
         None => "Enter the name of a doc to load.".to_string(),
       } 
     }
-    _ => todo!("Implement other REPL commands"),
+    x => format!("Command {:?} not implemented for wasm", x),
   }
 }
 
@@ -149,38 +149,42 @@ pub fn help_html() -> String {
   html
 }
 
-#[cfg(feature = "whos")]
+#[cfg(all(feature = "whos"))]
 pub fn whos_html(intrp: &Interpreter, names: Vec<String>) -> String {
   let mut html = String::new();
 
   html.push_str("<table class=\"mech-table\">");
-    html.push_str("<thead class=\"mech-table-header\"><tr>");
-      html.push_str("<th class=\"mech-table-field\">Name</th>");
-      html.push_str("<th class=\"mech-table-field\">Size</th>");
-      html.push_str("<th class=\"mech-table-field\">Bytes</th>");
-      html.push_str("<th class=\"mech-table-field\">Kind</th>");
-    html.push_str("</tr></thead>");
+  html.push_str("<thead class=\"mech-table-header\"><tr>");
+  html.push_str("<th class=\"mech-table-field\">Name</th>");
+  html.push_str("<th class=\"mech-table-field\">Size</th>");
+  html.push_str("<th class=\"mech-table-field\">Bytes</th>");
+  html.push_str("<th class=\"mech-table-field\">Kind</th>");
+  html.push_str("</tr></thead>");
   html.push_str("<tbody class=\"mech-table-body\">");
 
   let state_brrw = intrp.state.borrow();
-  let dictionary_brrw = state_brrw.dictionary.borrow();
+  let symbol_table = state_brrw.symbol_table.borrow();
+  let dictionary = symbol_table.dictionary.borrow();
+
   if !names.is_empty() {
     for target_name in names {
-      for (id, var_name) in dictionary_brrw.iter() {
-        if *var_name == target_name {
-          if let Some(value_rc) = state_brrw.get_symbol(*id) {
-            let value = value_rc.borrow();
-            append_row(&mut html, var_name, &value);
+      // Look up symbol IDs by name
+      for (id, name) in dictionary.iter() {
+        if *name == target_name {
+          if let Some(value_ref) = symbol_table.symbols.get(id) {
+              let value = value_ref.borrow();
+            append_row(&mut html, name, &value);
           }
           break;
         }
       }
     }
   } else {
-    for (id, var_name) in dictionary_brrw.iter() {
-      if let Some(value_rc) = state_brrw.get_symbol(*id) {
-        let value = value_rc.borrow();
-        append_row(&mut html, var_name, &value);
+    // Show all symbols
+    for (id, value_ref) in symbol_table.symbols.iter() {
+      if let Some(name) = dictionary.get(id) {
+        let value = value_ref.borrow();
+        append_row(&mut html, name, &value);
       }
     }
   }

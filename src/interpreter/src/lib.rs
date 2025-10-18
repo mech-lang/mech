@@ -94,6 +94,31 @@ pub use crate::statements::*;
 pub use crate::expressions::*;
 pub use crate::mechdown::*;
 
+#[cfg(feature = "access")]
+pub use crate::stdlib::access::*;
+#[cfg(feature = "assign")]
+pub use crate::stdlib::assign::*;
+#[cfg(feature = "convert")]
+pub use crate::stdlib::convert::*;
+#[cfg(feature = "matrix_horzcat")]
+pub use crate::stdlib::horzcat::*;
+#[cfg(feature = "matrix_vertcat")]
+pub use crate::stdlib::vertcat::*;
+#[cfg(feature = "combinatorics")]
+pub use mech_combinatorics::*;
+#[cfg(feature = "matrix")]
+pub use mech_matrix::*;
+#[cfg(feature = "stats")]
+pub use mech_stats::*;
+#[cfg(feature = "math")]
+pub use mech_math::*;
+#[cfg(feature = "logic")]
+pub use mech_logic::*;
+#[cfg(feature = "compare")]
+pub use mech_compare::*;
+#[cfg(feature = "set")]
+pub use mech_set::*;
+
 pub fn load_stdkinds(kinds: &mut KindTable) {
   #[cfg(feature = "u8")]
   kinds.insert(hash_str("u8"),ValueKind::U8);

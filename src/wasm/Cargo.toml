@@ -1,6 +1,6 @@
 [package]
 name = "mech-wasm"
-version = "0.2.63"
+version = "0.2.64"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "A web assembly wrapper for Mech core and syntax. Allows Mech to be embedded in the browser."
 documentation = "http://docs.mech-lang.org"
@@ -21,9 +21,28 @@ maintenance = { status = "actively-developed" }
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = ["baselib", "compiler", "program", "pretty_print",
-          
-          ]
+
+default = ["baselib", "pretty_print", "serde", "compiler", "program",
+      "u8", "u16", "u32", "u64", "u128", 
+      "i8", "i16", "i32", "i64", "i128", 
+      "f32", "f64", "c64", "r64",
+      "statements_default", "subscript_default",
+      "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "io_default", "stats_default", "combinatorics_default",      
+      "run_program", "inline_output_values", "codeblock_output_values", "clickable_symbol_listeners",
+      "eval", "repl", "whos", "help", "docs",
+      "mech-core/default", "mech-interpreter/default", "mech-syntax/default",
+      ]
+
+base = ["baselib", "pretty_print", "serde", "compiler", "program",
+      "statements_default", "subscript_default",
+      "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "io_default", "stats_default", "combinatorics_default",
+      "run_program", "inline_output_values", "codeblock_output_values", "clickable_symbol_listeners",
+      "eval", "repl", "whos", "help", "docs",
+      "mech-core/base", "mech-interpreter/base", "mech-syntax/base",
+      ]
+
+statements_default = ["variable_assign","variable_define","kind_define"]
+subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
 
 baselib = ["bool", "string", 
       "f64", "c64", "r64",
@@ -44,6 +63,15 @@ compiler = ["mech-core/compiler", "mech-interpreter/compiler", "mech-syntax/comp
 program = ["mech-core/program", "mech-interpreter/program", "mech-syntax/program"]
 pretty_print = ["mech-core/pretty_print", "mech-syntax/pretty_print"]
 serde = ["mech-core/serde", "mech-syntax/serde", "mech-interpreter/serde"]
+run_program = ["program"]
+inline_output_values = []
+codeblock_output_values = []
+docs = []
+clickable_symbol_listeners = []
+eval = []
+repl = []
+whos = []
+help = []
 
 # language features
 statements = ["mech-core/statements", "mech-interpreter/statements", "mech-syntax/statements"]
@@ -60,13 +88,31 @@ access = ["functions", "mech-interpreter/access"]
 assign = ["functions", "mech-interpreter/assign"] 
 convert = ["functions", "mech-interpreter/convert"]
 
-
 # types
 bool = ["mech-core/bool", "mech-syntax/bool", "mech-interpreter/bool"]
 string = ["mech-core/string", "mech-syntax/string", "mech-interpreter/string"]
-f64 = ["mech-core/f64", "mech-syntax/f64", "mech-interpreter/f64"]
-c64 = ["mech-core/c64", "mech-syntax/c64", "mech-interpreter/c64"]
-r64 = ["mech-core/r64", "mech-syntax/r64", "mech-interpreter/r64"]
+
+# Numbers
+numbers = ["mech-core/numbers", "mech-interpreter/numbers", "mech-syntax/numbers"]
+complex = ["f64", "numbers", "mech-core/complex", "mech-interpreter/complex", "mech-syntax/complex"]
+rational = ["i64", "numbers", "mech-core/rational", "mech-interpreter/rational", "mech-syntax/rational"]
+signed_ints = ["numbers", "mech-core/signed_ints", "mech-interpreter/signed_ints", "mech-syntax/signed_ints"]
+unsigned_ints = ["numbers", "mech-core/unsigned_ints", "mech-interpreter/unsigned_ints", "mech-syntax/unsigned_ints"]
+floats = ["numbers", "mech-core/floats", "mech-interpreter/floats", "mech-syntax/floats"]
+u8 = ["unsigned_ints", "mech-core/u8", "mech-interpreter/u8", "mech-syntax/u8"]
+u16 = ["unsigned_ints", "mech-core/u16", "mech-interpreter/u16", "mech-syntax/u16"]
+u32 = ["unsigned_ints", "mech-core/u32", "mech-interpreter/u32", "mech-syntax/u32"]
+u64 = ["unsigned_ints", "mech-core/u64", "mech-interpreter/u64", "mech-syntax/u64"]
+u128 = ["unsigned_ints", "mech-core/u128", "mech-interpreter/u128", "mech-syntax/u128"]
+i8 = ["signed_ints", "mech-core/i8", "mech-interpreter/i8", "mech-syntax/i8"]
+i16 = ["signed_ints", "mech-core/i16", "mech-interpreter/i16", "mech-syntax/i16"]
+i32 = ["signed_ints", "mech-core/i32", "mech-interpreter/i32", "mech-syntax/i32"]
+i64 = ["signed_ints", "mech-core/i64", "mech-interpreter/i64", "mech-syntax/i64"]
+i128 = ["signed_ints", "mech-core/i128", "mech-interpreter/i128", "mech-syntax/i128"]
+f32 = ["floats", "mech-core/f32", "mech-interpreter/f32", "mech-syntax/f32"]
+f64 = ["floats", "mech-core/f64", "mech-interpreter/f64", "mech-syntax/f64"]
+c64 = ["complex", "mech-core/c64", "mech-interpreter/c64", "mech-syntax/c64"]
+r64 = ["rational", "mech-core/r64", "mech-interpreter/r64", "mech-syntax/r64"]
 
 # structs
 set = ["mech-core/set", "mech-interpreter/set", "mech-syntax/set"]
@@ -78,26 +124,126 @@ record = ["tuple", "kind_annotation", "mech-core/record", "mech-interpreter/reco
 atom = ["mech-core/atom", "mech-interpreter/atom", "mech-syntax/atom"]
 
 # matrix
-matrix = ["mech-core/matrix", "mech-interpreter/matrix", "mech-syntax/matrix", "matrix_horzcat", "matrix_vertcat"]
+matrix = ["mech-core/matrix", "mech-interpreter/matrix", "mech-syntax/matrix"]
 fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "mech-core/fixed_row_vector", "mech-interpreter/fixed_row_vector", "mech-syntax/fixed_row_vector"]
 fixed_vector = ["vector4", "vector3", "vector2", "mech-core/fixed_vector", "mech-interpreter/fixed_vector", "mech-syntax/fixed_vector"]
 fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "mech-core/fixed_matrix", "mech-interpreter/fixed_matrix", "mech-syntax/fixed_matrix"]
 dynamic_matrix = ["matrixd", "vectord", "row_vectord", "mech-core/dynamic_matrix", "mech-interpreter/dynamic_matrix", "mech-syntax/dynamic_matrix"]
-row_vector4 = ["matrix", "mech-core/row_vector4", "mech-interpreter/row_vector4", "mech-syntax/row_vector4"]
-row_vector3 = ["matrix", "mech-core/row_vector3", "mech-interpreter/row_vector3", "mech-syntax/row_vector3"]
-row_vector2 = ["matrix", "mech-core/row_vector2", "mech-interpreter/row_vector2", "mech-syntax/row_vector2"]
-vector4 = ["matrix", "mech-core/vector4", "mech-interpreter/vector4", "mech-syntax/vector4"]
-vector3 = ["matrix", "mech-core/vector3", "mech-interpreter/vector3", "mech-syntax/vector3"]
-vector2 = ["matrix", "mech-core/vector2", "mech-interpreter/vector2", "mech-syntax/vector2"]
-matrix4 = ["matrix", "mech-core/matrix4", "mech-interpreter/matrix4", "mech-syntax/matrix4"]
-matrix3 = ["matrix", "mech-core/matrix3", "mech-interpreter/matrix3", "mech-syntax/matrix3"]
-matrix2 = ["matrix", "mech-core/matrix2", "mech-interpreter/matrix2", "mech-syntax/matrix2"]
-matrix1 = ["matrix", "mech-core/matrix1", "mech-interpreter/matrix1", "mech-syntax/matrix1"]
-matrix2x3 = ["matrix", "mech-core/matrix2x3", "mech-interpreter/matrix2x3", "mech-syntax/matrix2x3"]
-matrix3x2 = ["matrix", "mech-core/matrix3x2", "mech-interpreter/matrix3x2", "mech-syntax/matrix3x2"]
-row_vectord =["matrix",  "mech-core/row_vectord", "mech-interpreter/row_vectord", "mech-syntax/row_vectord"]
-vectord = ["matrix",  "mech-core/vectord", "mech-interpreter/vectord", "mech-syntax/vectord"]
-matrixd = ["matrix",  "mech-core/matrixd", "mech-interpreter/matrixd", "mech-syntax/matrixd"]
+row_vector4 = ["matrix", "matrix_horzcat", "mech-core/row_vector4", "mech-interpreter/row_vector4", "mech-syntax/row_vector4"]
+row_vector3 = ["matrix", "matrix_horzcat", "mech-core/row_vector3", "mech-interpreter/row_vector3", "mech-syntax/row_vector3"]
+row_vector2 = ["matrix", "matrix_horzcat", "mech-core/row_vector2", "mech-interpreter/row_vector2", "mech-syntax/row_vector2"]
+vector4 = ["matrix", "matrix_vertcat", "mech-core/vector4", "mech-interpreter/vector4", "mech-syntax/vector4"]
+vector3 = ["matrix", "matrix_vertcat", "mech-core/vector3", "mech-interpreter/vector3", "mech-syntax/vector3"]
+vector2 = ["matrix", "matrix_vertcat", "mech-core/vector2", "mech-interpreter/vector2", "mech-syntax/vector2"]
+matrix4 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix4", "mech-interpreter/matrix4", "mech-syntax/matrix4"]
+matrix3 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix3", "mech-interpreter/matrix3", "mech-syntax/matrix3"]
+matrix2 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix2", "mech-interpreter/matrix2", "mech-syntax/matrix2"]
+matrix1 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix1", "mech-interpreter/matrix1", "mech-syntax/matrix1"]
+matrix2x3 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix2x3", "mech-interpreter/matrix2x3", "mech-syntax/matrix2x3"]
+matrix3x2 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix3x2", "mech-interpreter/matrix3x2", "mech-syntax/matrix3x2"]
+row_vectord =["matrix", "matrix_horzcat",  "mech-core/row_vectord", "mech-interpreter/row_vectord", "mech-syntax/row_vectord"]
+vectord = ["matrix", "matrix_vertcat",  "mech-core/vectord", "mech-interpreter/vectord", "mech-syntax/vectord"]
+matrixd = ["matrix", "matrix_horzcat", "matrix_vertcat",  "mech-core/matrixd", "mech-interpreter/matrixd", "mech-syntax/matrixd"]
+
+# Libs
+# -----------------------------------------------------------------------------
+
+# Stats
+stats_default = ["stats_sum"]
+stats = ["functions", "mech-interpreter/stats"]
+stats_sum = ["stats", "mech-interpreter/stats_sum"]
+
+# Io
+io_default = ["io_print", "io_println", "mech-interpreter/io_default"]
+io = ["functions", "mech-interpreter/io"]
+io_print = ["io", "mech-interpreter/io_print"]
+io_println = ["io", "mech-interpreter/io_println"]
+
+# Matrix
+matrix_default = ["matrix_dot", "matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_transpose", "mech-interpreter/matrix_default"]
+matrix_horzcat = ["matrix", "functions", "mech-interpreter/matrix_horzcat"]
+matrix_vertcat = ["matrix", "functions", "mech-interpreter/matrix_vertcat"]
+matrix_matmul = ["matrix", "mech-interpreter/matrix_matmul"]
+matrix_transpose = ["matrix", "mech-interpreter/matrix_transpose"]
+matrix_dot = ["matrix", "mech-interpreter/matrix_dot"]
+
+# Logic
+logic_default = ["logic_and", "logic_or", "logic_not", "logic_xor", "mech-interpreter/logic_default"]
+logic = ["bool", "mech-interpreter/logic"]
+logic_and = ["logic", "mech-interpreter/logic_and"]
+logic_or = ["logic", "mech-interpreter/logic_or"]
+logic_not = ["logic", "mech-interpreter/logic_not"]
+logic_xor = ["logic", "mech-interpreter/logic_xor"]
+
+# Combinatorics
+combinatorics_default = ["combinatorics_n_choose_k", "mech-interpreter/combinatorics_default"]
+combinatorics = ["functions", "mech-interpreter/combinatorics"]
+combinatorics_n_choose_k = ["combinatorics", "mech-interpreter/combinatorics_n_choose_k"]
+
+# Compare
+compare_default = ["compare_lt", "compare_gt", "compare_lte", "compare_gte", "compare_eq", "compare_neq", "mech-interpreter/compare_default"]
+compare = ["functions", "bool", "mech-interpreter/compare"]
+compare_eq = ["compare", "mech-interpreter/compare_eq"]
+compare_neq = ["compare", "mech-interpreter/compare_neq"]
+compare_lt = ["compare", "mech-interpreter/compare_lt"]
+compare_gt = ["compare", "mech-interpreter/compare_gt"]
+compare_lte = ["compare", "mech-interpreter/compare_lte"]
+compare_gte = ["compare", "mech-interpreter/compare_gte"]
+
+# Range
+range_default = ["range_inclusive", "range_exclusive", "mech-interpreter/range_default"]
+range = ["functions", "formulas", "mech-interpreter/range"]
+range_inclusive = ["range", "mech-interpreter/range_inclusive"]
+range_exclusive = ["range", "mech-interpreter/range_exclusive"]
+
+# Math
+math_default = ["math_ops_default", "math_root_default", "math_ops_assign_default", "math_trig_default", "mech-interpreter/math_default"]
+math = ["mech-interpreter/math", "formulas", "functions"]
+math_ops_default = ["math_add", "math_sub", "math_mul", "math_div", "math_exp", "math_mod", "math_neg"]
+math_root_default = ["math_sqrt", "mech-interpreter/math_root_default"]
+math_ops_assign_default = ["math_add_assign", "math_sub_assign", "math_mul_assign", "math_div_assign"]
+math_trig_default = ["math_acos", "math_acosh", "math_acot", "math_acsc", "math_asec", "math_asin", "math_asinh", "math_atan", "math_atan2", "math_atanh", "math_cos", "math_cosh", "math_cot", "math_csc", "math_sec", "math_sin", "math_sinh", "math_tan", "math_tanh"]
+math_trig = ["math", "mech-interpreter/math_trig"]
+math_root = ["math", "mech-interpreter/math_root"]
+math_ops = ["math", "mech-interpreter/math_ops"]
+math_op_assign = ["math", "mech-interpreter/math_op_assign"]
+math_add_assign = ["math_op_assign", "mech-interpreter/math_add_assign"]
+math_sub_assign = ["math_op_assign", "mech-interpreter/math_sub_assign"]
+math_mul_assign = ["math_op_assign", "mech-interpreter/math_mul_assign"]
+math_div_assign = ["math_op_assign", "mech-interpreter/math_div_assign"]
+math_acos = ["math_trig", "mech-interpreter/math_acos"]
+math_acosh = ["math_trig", "mech-interpreter/math_acosh"]
+math_acot = ["math_trig", "mech-interpreter/math_acot"]
+math_acsc = ["math_trig", "mech-interpreter/math_acsc"]
+math_asec = ["math_trig", "mech-interpreter/math_asec"]
+math_asin = ["math_trig", "mech-interpreter/math_asin"]
+math_asinh = ["math_trig", "mech-interpreter/math_asinh"]
+math_atan = ["math_trig", "mech-interpreter/math_atan"]
+math_atan2 = ["math_trig", "mech-interpreter/math_atan2"]
+math_atanh = ["math_trig", "mech-interpreter/math_atanh"]
+math_cos = ["math_trig", "mech-interpreter/math_cos"]
+math_cosh = ["math_trig", "mech-interpreter/math_cosh"]
+math_cot = ["math_trig", "mech-interpreter/math_cot"]
+math_csc = ["math_trig", "mech-interpreter/math_csc"]
+math_sec = ["math_trig", "mech-interpreter/math_sec"]
+math_sin = ["math_trig", "mech-interpreter/math_sin"]
+math_sinh = ["math_trig", "mech-interpreter/math_sinh"]
+math_tan = ["math_trig", "mech-interpreter/math_tan"]
+math_tanh = ["math_trig", "mech-interpreter/math_tanh"]
+math_add = ["math_ops", "mech-interpreter/math_add"]
+math_sub = ["math_ops", "mech-interpreter/math_sub"]
+math_mul = ["math_ops", "mech-interpreter/math_mul"]
+math_div = ["math_ops", "mech-interpreter/math_div"]
+math_exp = ["math_ops", "mech-interpreter/math_exp"]
+math_mod = ["math_ops", "mech-interpreter/math_mod"]
+math_neg = ["math_ops", "mech-interpreter/math_neg"]
+math_sqrt = ["math_root", "mech-interpreter/math_sqrt"]
+
+# Set
+set_default = ["set_union", "set_intersection", "set_difference", "mech-interpreter/set_default"]
+set_union = ["set", "mech-interpreter/set_union"]
+set_intersection = ["set", "mech-interpreter/set_intersection"]
+set_difference = ["set", "mech-interpreter/set_difference"]
 
 # Subscripts
 subscript = ["mech-core/subscript", "mech-interpreter/subscript", "mech-syntax/subscript"]
@@ -108,14 +254,10 @@ logical_indexing = ["subscript","vectord","bool", "mech-core/logical_indexing", 
 dot_indexing = ["subscript", "mech-core/dot_indexing", "mech-interpreter/dot_indexing", "mech-syntax/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle", "mech-interpreter/swizzle", "mech-syntax/swizzle"]
 
-# Horzcat and Vertcat
-matrix_horzcat = ["matrix"]
-matrix_vertcat = ["matrix"]
-
 [dependencies]
-mech-core = { version = "0.2.63", default-features = false}
-mech-syntax = { version = "0.2.63", default-features = false}
-mech-interpreter = { version = "0.2.63", default-features = false}
+mech-core = { version = "0.2.64", default-features = false}
+mech-syntax = { version = "0.2.64", default-features = false}
+mech-interpreter = { version = "0.2.64", default-features = false}
 
 hashbrown = "0.15.5"
 wasm-bindgen = "0.2.100"

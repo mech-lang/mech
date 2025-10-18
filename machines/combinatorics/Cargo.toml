@@ -1,6 +1,6 @@
 [package]
 name = "mech-combinatorics"
-version = "0.2.63"
+version = "0.2.64"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Combinatorics library for the Mech language"
 documentation = "http://docs.mech-lang.org"
@@ -152,7 +152,7 @@ dot_indexing = ["subscript", "mech-core/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle"]
 
 [dependencies]
-mech-core = {version = "0.2.63", default-features = false}
+mech-core = {version = "0.2.64", default-features = false}
 
 paste = "1.0.15"
 inventory = "0.3.21"

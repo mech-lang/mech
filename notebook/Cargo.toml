@@ -1,6 +1,6 @@
 [package]
 name = "mech-notebook"
-version = "0.2.63"
+version = "0.2.64"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Gui notebook interface for the Mech programming language."
 documentation = "http://docs.mech-lang.org"
@@ -14,7 +14,7 @@ edition = "2021"
 rust-version = "1.88"
 
 [dependencies]
-mech = "0.2.63"
+mech = "0.2.64"
 egui = "0.31.1"
 eframe = "0.31.1"
 
@@ -24,3 +24,5 @@ winres = "0.1.12"
 [package.metadata.winres]
 OriginalFilename = "MECH.EXE"
 LegalCopyright = "Copyright © 2025" 
+
+[workspace]
