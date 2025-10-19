@@ -18,8 +18,8 @@ gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [[bin]]
-name = "term"
-path = "src/bin/term.rs"
+name = "mechc"
+path = "src/bin/mechc.rs"
 required-features = ["compiler"]
 
 [features]
