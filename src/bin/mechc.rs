@@ -822,7 +822,7 @@ fn prepare_build(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
   // Step 1 
   let step = steps.pop_front().unwrap();
   step.set_style(build_style());
-  let exts = ["mec", "mpkg", "mecb", "mdoc", "mdb", "dll", "rlib", "m", "md"];
+  let exts = ["mec", "mpkg", "mecb", "mdoc", "mdb", "dll", "rlib", "m", "md", "🤖"];
   let sources = get_sources();
   for src in sources {
     let path = Path::new(&src);
