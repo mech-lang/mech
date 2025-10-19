@@ -13,8 +13,8 @@ use std::marker::PhantomData;
 
 #[cfg(feature = "union")]
 pub mod union;
-//#[cfg(feature = "complement")]
-//pub mod complement;
+#[cfg(feature = "complement")]
+pub mod complement;
 //#[cfg(feature = "difference")]
 //pub mod difference;
 //#[cfg(feature = "intersection")]
@@ -26,13 +26,13 @@ pub use self::union::*;
 //pub use self::complement::*;
 //#[cfg(feature = "difference")]
 //pub use self::difference::*;
-//#[cfg(feature = "intersection")]
-//pub use self::intersection::*;
+#[cfg(feature = "intersection")]
+pub use self::intersection::*;
 
 //#[cfg(feature = "join")]
 //pub mod join;
-//#[cfg(feature = "powerset")]
-//pub mod powerset;
+#[cfg(feature = "powerset")]
+pub mod powerset;
 //
 //#[cfg(feature = "join")]
 //pub use self::join::*;
@@ -40,8 +40,8 @@ pub use self::union::*;
 //pub use self::op_assign::*;
 //#[cfg(feature = "ops")]
 //pub use self::ops::*;
-//#[cfg(feature = "powerset")]
-//pub use self::powerset::*;
+#[cfg(feature = "powerset")]
+pub use self::powerset::*;
 
 
 // ----------------------------------------------------------------------------

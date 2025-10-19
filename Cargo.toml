@@ -45,11 +45,12 @@ baselib = ["bool", "string",
       "mech-core/baselib"
     ]
 
-set_default = ["union", "intersection", "difference"]
+set_default = ["union", "intersection", "difference", "powerset"]
 set = ["functions"]
 union = ["set"]
 intersection = ["set"]
 difference = ["set"]
+powerset = ["set"]
 
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
