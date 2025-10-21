@@ -69,11 +69,13 @@ Target release date: ???
 -(💭) state machines
 -(💭) automatic differentiation
 -(💭) introspection
+-(💭) higher order functions
 -(🥚) physical units with dimension checking
 -(🥚) file/parameter server
 -(🥚) self-contained binary executables
 -(🥚) time travel debugging
 -(🐣) bytecode interpreter
+-(🐣) build system
 -(🐣) user defined functions
 -(🐣) tests
 -(🐣) profiler
