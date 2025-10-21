@@ -65,7 +65,7 @@ impl MechFunctionImpl for SetSymDifferenceFxn {
 impl MechFunctionCompiler for SetSymDifferenceFxn {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let name = format!("SetSymDifferenceFxn");
-    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::SymmetricDifference) );
+    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Custom(hash_str("set/sym_difference")));
   }
 }
 
@@ -134,7 +134,7 @@ impl NativeFunctionCompiler for SetSymDifference {
 
 register_descriptor! {
   FunctionCompilerDescriptor {
-    name: "set/sym-difference",
+    name: "set/sym_difference",
     ptr: &SetSymDifference{},
   }
 }
