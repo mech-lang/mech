@@ -104,7 +104,7 @@ impl MechFileSystem {
       match self.sources.write() {
         Ok(mut sources) => {
           for f in files {
-            // if the file extension is not .mec, or .🤖, continue
+            // load mech source code
             if f.extension() == Some(OsStr::new("mec")) || f.extension() == Some(OsStr::new("🤖")) {
               match sources.add_source(&f.display().to_string(),src) {
                 Ok(_) => {
@@ -114,6 +114,7 @@ impl MechFileSystem {
                   return Err(e);
                 },
               }
+            // load mech bytecode
             } else if f.extension() == Some(OsStr::new("mecb"))  {
               match sources.add_source(&f.display().to_string(),src) {
                 Ok(_) => {
@@ -123,6 +124,37 @@ impl MechFileSystem {
                   return Err(e);
                 },
               }
+            // load mech docs
+            } else if f.extension() == Some(OsStr::new("mdoc")) {
+              match sources.add_source(&f.display().to_string(),src) {
+                Ok(_) => {
+                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+                },
+                Err(e) => {
+                  return Err(e);
+                },
+              }   
+            // load mech config file
+            } else if f.extension() == Some(OsStr::new("mpkg")) {
+              match sources.add_source(&f.display().to_string(),src) {
+                Ok(_) => {
+                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+                },
+                Err(e) => {
+                  return Err(e);
+                },
+              }              
+            // load matlab file           
+            } else if f.extension() == Some(OsStr::new("m")) {
+              match sources.add_source(&f.display().to_string(),src) {
+                Ok(_) => {
+                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+                },
+                Err(e) => {
+                  return Err(e);
+                },
+              }       
+            // load html/css files                  
             } else if f.extension() == Some(OsStr::new("html")) 
                     || f.extension() == Some(OsStr::new("htm"))
                     || f.extension() == Some(OsStr::new("css")) {
@@ -134,7 +166,42 @@ impl MechFileSystem {
                   return Err(e);
                 },
               }
+            // load markdown files
             } else if f.extension() == Some(OsStr::new("md")) {
+              match sources.add_source(&f.display().to_string(),src) {
+                Ok(_) => {
+                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+                },
+                Err(e) => {
+                  return Err(e);
+                },
+              }
+            // load comma-separated values (csv) files
+            } else if f.extension() == Some(OsStr::new("csv")) {
+              match sources.add_source(&f.display().to_string(),src) {
+                Ok(_) => {
+                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+                },
+                Err(e) => {
+                  return Err(e);
+                },
+              }
+            // load js files
+            } else if f.extension() == Some(OsStr::new("js")) {
+              match sources.add_source(&f.display().to_string(),src) {
+                Ok(_) => {
+                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+                },
+                Err(e) => {
+                  return Err(e);
+                },
+              }
+            // load images
+            } else if f.extension() == Some(OsStr::new("png")) 
+                    || f.extension() == Some(OsStr::new("jpg")) 
+                    || f.extension() == Some(OsStr::new("jpeg")) 
+                    || f.extension() == Some(OsStr::new("gif")) 
+                    || f.extension() == Some(OsStr::new("svg")) {
               match sources.add_source(&f.display().to_string(),src) {
                 Ok(_) => {
                   println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
@@ -555,6 +622,18 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
               let mut buffer = String::new();
               file.read_to_string(&mut buffer);
               Ok(MechSourceCode::Html(buffer))
+            }
+            Err(err) => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+          }
+        }
+        // handle images
+        Some("png") | Some("jpg") | Some("jpeg") | Some("gif") | Some("svg") => {
+          match File::open(path) {
+            Ok(mut file) => {
+              //println!("{} {}", "[Loading]".truecolor(153,221,85), path.display());
+              let mut buffer = Vec::new();
+              file.read_to_end(&mut buffer);
+              Ok(MechSourceCode::Image(buffer))
             }
             Err(err) => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
           }
