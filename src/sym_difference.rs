@@ -3,34 +3,36 @@ use crate::*;
 use indexmap::set::IndexSet;
 use mech_core::set::MechSet;
 
-// Difference ------------------------------------------------------------------------
+// Symmetric Difference ------------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetDifferenceFxn {
+struct SetSymDifferenceFxn {
   lhs: Ref<MechSet>,
   rhs: Ref<MechSet>,
   out: Ref<MechSet>,
 }
-impl MechFunctionFactory for SetDifferenceFxn {
+
+impl MechFunctionFactory for SetSymDifferenceFxn {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
       FunctionArgs::Binary(out, arg1, arg2) => {
         let lhs: Ref<MechSet> = unsafe { arg1.as_unchecked() }.clone();
         let rhs: Ref<MechSet> = unsafe { arg2.as_unchecked() }.clone();
         let out: Ref<MechSet> = unsafe { out.as_unchecked() }.clone();
-        Ok(Box::new(SetDifferenceFxn { lhs, rhs, out }))
+        Ok(Box::new(SetSymDifferenceFxn { lhs, rhs, out }))
       },
       _ => Err(MechError{
-		file: file!().to_string(),
-		tokens: vec![],
-		msg: format!("{} requires 2 arguments, got {:?}",
-		stringify!($struct_name), args),
-		id: line!(),
-		kind: MechErrorKind::IncorrectNumberOfArguments})
+        file: file!().to_string(),
+        tokens: vec![],
+        msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args),
+        id: line!(),
+        kind: MechErrorKind::IncorrectNumberOfArguments
+      })
     }
   }
 }
-impl MechFunctionImpl for SetDifferenceFxn {
+
+impl MechFunctionImpl for SetSymDifferenceFxn {
   fn solve(&self) {
     unsafe {
       // Get mutable reference to the output set
@@ -40,11 +42,11 @@ impl MechFunctionImpl for SetDifferenceFxn {
       let lhs_ptr: &MechSet = &*(self.lhs.as_ptr());
       let rhs_ptr: &MechSet = &*(self.rhs.as_ptr());
 
-      // Clear the output set
+      // Clear the output set first
       out_ptr.set.clear();
 
-      // Compute lhs \ rhs into output
-      out_ptr.set = lhs_ptr.set.difference(&(rhs_ptr.set)).cloned().collect();
+      // Compute (lhs \ rhs) ∪ (rhs \ lhs) into output
+      out_ptr.set = lhs_ptr.set.symmetric_difference(&(rhs_ptr.set)).cloned().collect();
 
       // Update metadata
       out_ptr.num_elements = out_ptr.set.len();
@@ -58,24 +60,26 @@ impl MechFunctionImpl for SetDifferenceFxn {
   fn out(&self) -> Value { Value::Set(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+
 #[cfg(feature = "compiler")]
-impl MechFunctionCompiler for SetDifferenceFxn {
+impl MechFunctionCompiler for SetSymDifferenceFxn {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    let name = format!("SetDifferenceFxn");
-    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::Difference) );
-  }
-}
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetDifferenceFxn",
-    ptr: SetDifferenceFxn::new,
+    let name = format!("SetSymDifferenceFxn");
+    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Custom(hash_str("set/sym_difference")));
   }
 }
 
-fn set_difference_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
+register_descriptor! {
+  FunctionDescriptor {
+    name: "SetSymDifferenceFxn",
+    ptr: SetSymDifferenceFxn::new,
+  }
+}
+
+fn set_sym_difference_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
   match (lhs, rhs) {
     (Value::Set(lhs), Value::Set(rhs)) => {
-      Ok(Box::new(SetDifferenceFxn {
+      Ok(Box::new(SetSymDifferenceFxn {
         lhs: lhs.clone(),
         rhs: rhs.clone(),
         out: Ref::new(MechSet::new(
@@ -87,15 +91,15 @@ fn set_difference_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> 
     x => Err(MechError{
       file: file!().to_string(),
       tokens: vec![],
-      msg: format!("set_difference_fxn cannot handle arguments: {:?}", x),
+      msg: format!("set_sym_difference_fxn cannot handle arguments: {:?}", x),
       id: line!(),
       kind: MechErrorKind::UnhandledFunctionArgumentKind
     }),
   }
 }
 
-pub struct SetDifference {}
-impl NativeFunctionCompiler for SetDifference {
+pub struct SetSymDifference {}
+impl NativeFunctionCompiler for SetSymDifference {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
       return Err(MechError{
@@ -108,13 +112,13 @@ impl NativeFunctionCompiler for SetDifference {
     }
     let lhs = arguments[0].clone();
     let rhs = arguments[1].clone();
-    match set_difference_fxn(lhs.clone(), rhs.clone()) {
+    match set_sym_difference_fxn(lhs.clone(), rhs.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match (lhs, rhs) {
-          (Value::MutableReference(lhs), Value::MutableReference(rhs)) => { set_difference_fxn(lhs.borrow().clone(), rhs.borrow().clone()) },
-          (lhs, Value::MutableReference(rhs)) => { set_difference_fxn(lhs.clone(), rhs.borrow().clone()) },
-          (Value::MutableReference(lhs), rhs) => { set_difference_fxn(lhs.borrow().clone(), rhs.clone()) },
+          (Value::MutableReference(lhs), Value::MutableReference(rhs)) => { set_sym_difference_fxn(lhs.borrow().clone(), rhs.borrow().clone()) },
+          (lhs, Value::MutableReference(rhs)) => { set_sym_difference_fxn(lhs.clone(), rhs.borrow().clone()) },
+          (Value::MutableReference(lhs), rhs) => { set_sym_difference_fxn(lhs.borrow().clone(), rhs.clone()) },
           x => Err(MechError{
             file: file!().to_string(),
             tokens: vec![],
@@ -130,7 +134,7 @@ impl NativeFunctionCompiler for SetDifference {
 
 register_descriptor! {
   FunctionCompilerDescriptor {
-    name: "set/difference",
-    ptr: &SetDifference{},
+    name: "set/sym_difference",
+    ptr: &SetSymDifference{},
   }
 }

@@ -15,47 +15,47 @@ use std::marker::PhantomData;
 pub mod union;
 //#[cfg(feature = "complement")]
 //pub mod complement;
-//#[cfg(feature = "difference")]
-//pub mod difference;
+#[cfg(feature = "difference")]
+pub mod difference;
+#[cfg(feature = "sym_difference")]
+pub mod sym_difference;
 #[cfg(feature = "intersection")]
 pub mod intersection;
-
 #[cfg(feature = "insert")]
 pub mod insert;
-
-
 #[cfg(feature = "subset")]
 pub mod subset;
 #[cfg(feature = "superset")]
 pub mod superset;
 #[cfg(feature = "disjoint")]
 pub mod disjoint;
-
+#[cfg(feature = "powerset")]
+pub mod powerset;
 
 //
 #[cfg(feature = "union")]
 pub use self::union::*;
 //#[cfg(feature = "complement")]
 //pub use self::complement::*;
-//#[cfg(feature = "difference")]
-//pub use self::difference::*;
+#[cfg(feature = "difference")]
+pub use self::difference::*;
+#[cfg(feature = "sym_difference")]
+pub use self::sym_difference::*;
 #[cfg(feature = "intersection")]
 pub use self::intersection::*;
-
 #[cfg(feature = "insert")]
 pub use self::insert::*;
-
 #[cfg(feature = "subset")]
 pub use self::subset::*;
 #[cfg(feature = "superset")]
 pub use self::superset::*;
 #[cfg(feature = "disjoint")]
 pub use self::disjoint::*;
+#[cfg(feature = "powerset")]
+pub use self::powerset::*;
 
 //#[cfg(feature = "join")]
 //pub mod join;
-#[cfg(feature = "powerset")]
-pub mod powerset;
 //
 //#[cfg(feature = "join")]
 //pub use self::join::*;
@@ -63,8 +63,6 @@ pub mod powerset;
 //pub use self::op_assign::*;
 //#[cfg(feature = "ops")]
 //pub use self::ops::*;
-#[cfg(feature = "powerset")]
-pub use self::powerset::*;
 
 
 // ----------------------------------------------------------------------------
