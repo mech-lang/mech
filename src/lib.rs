@@ -13,12 +13,25 @@ use std::marker::PhantomData;
 
 #[cfg(feature = "union")]
 pub mod union;
-#[cfg(feature = "complement")]
-pub mod complement;
+//#[cfg(feature = "complement")]
+//pub mod complement;
 //#[cfg(feature = "difference")]
 //pub mod difference;
-//#[cfg(feature = "intersection")]
-//pub mod intersection;
+#[cfg(feature = "intersection")]
+pub mod intersection;
+
+#[cfg(feature = "insert")]
+pub mod insert;
+
+
+#[cfg(feature = "subset")]
+pub mod subset;
+#[cfg(feature = "superset")]
+pub mod superset;
+#[cfg(feature = "disjoint")]
+pub mod disjoint;
+
+
 //
 #[cfg(feature = "union")]
 pub use self::union::*;
@@ -28,6 +41,16 @@ pub use self::union::*;
 //pub use self::difference::*;
 #[cfg(feature = "intersection")]
 pub use self::intersection::*;
+
+#[cfg(feature = "insert")]
+pub use self::insert::*;
+
+#[cfg(feature = "subset")]
+pub use self::subset::*;
+#[cfg(feature = "superset")]
+pub use self::superset::*;
+#[cfg(feature = "disjoint")]
+pub use self::disjoint::*;
 
 //#[cfg(feature = "join")]
 //pub mod join;
