@@ -45,13 +45,14 @@ baselib = ["bool", "string",
       "mech-core/baselib"
     ]
 
-set_default = ["union", "intersection", "difference", "sym_difference", "insert", "subset", "superset", "disjoint", "powerset"]
+set_default = ["union", "intersection", "difference", "sym_difference", "insert", "remove", "subset", "superset", "disjoint", "powerset"]
 set = ["functions"]
 union = ["set"]
 intersection = ["set"]
 difference = ["set"]
 sym_difference = ["set"]
 insert = ["set"]
+remove = ["set"]
 subset = ["set"]
 superset = ["set"]
 disjoint = ["set"]

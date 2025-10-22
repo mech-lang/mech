@@ -23,6 +23,8 @@ pub mod sym_difference;
 pub mod intersection;
 #[cfg(feature = "insert")]
 pub mod insert;
+#[cfg(feature = "remove")]
+pub mod remove;
 #[cfg(feature = "subset")]
 pub mod subset;
 #[cfg(feature = "superset")]
@@ -45,6 +47,8 @@ pub use self::sym_difference::*;
 pub use self::intersection::*;
 #[cfg(feature = "insert")]
 pub use self::insert::*;
+#[cfg(feature = "remove")]
+pub use self::remove::*;
 #[cfg(feature = "subset")]
 pub use self::subset::*;
 #[cfg(feature = "superset")]
