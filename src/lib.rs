@@ -31,6 +31,8 @@ pub mod subset;
 pub mod superset;
 #[cfg(feature = "disjoint")]
 pub mod disjoint;
+#[cfg(feature = "cartesianproduct")]
+pub mod cartesianproduct;
 #[cfg(feature = "powerset")]
 pub mod powerset;
 
@@ -55,6 +57,8 @@ pub use self::subset::*;
 pub use self::superset::*;
 #[cfg(feature = "disjoint")]
 pub use self::disjoint::*;
+#[cfg(feature = "cartesianproduct")]
+pub use self::cartesianproduct::*;
 #[cfg(feature = "powerset")]
 pub use self::powerset::*;
 

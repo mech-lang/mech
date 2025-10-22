@@ -98,7 +98,7 @@ register_descriptor! {
 fn set_powerset_fxn(input: Value) -> MResult<Box<dyn MechFunction>> {
   match (input) {
     (Value::Set(input)) => {
-      Ok(Box::new(SetPowersetFxn { input: input.clone(), out: Ref::new(MechSet::new(input.borrow().kind.clone(), input.borrow().num_elements)) }))
+      Ok(Box::new(SetPowersetFxn { input: input.clone(), out: Ref::new(MechSet::new(input.borrow().kind.clone(), 2.pow(input.borrow().num_elements))) }))
     },
     x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("set_powerset_fxn cannot handle arguments: {:?}", x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
   }
