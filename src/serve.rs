@@ -139,6 +139,7 @@ impl MechServer {
             if url.starts_with("code/") {
               let url = url.strip_prefix("code/").unwrap();
 
+              // If it's code, serve it
               match sources.get_tree(url) {
                 Some(tree) => {
                   let tree: Program = if let MechSourceCode::Tree(tree) = tree {
@@ -165,6 +166,39 @@ impl MechServer {
                   }
                 }
                 None => {
+                  let mech_html = format!(
+                    "<html><head><title>404 Not Found</title></head>\
+                    <body><h1>404 Not Found</h1>\
+                    <p>The requested URL {} was not found on this server.</p></body></html>",
+                    url
+                  );
+                  return warp::reply::with_status(
+                    warp::reply::with_header(mech_html, "content-type", "text/html"),
+                    warp::http::StatusCode::NOT_FOUND,
+                  )
+                  .into_response();
+                }
+              }
+            // serve images from images folder
+            } else if url.starts_with("images/") {
+              match sources.get_image(url) {
+                Some(MechSourceCode::Image(extension, img_data)) => {
+                  let content_type = match extension.as_str() {
+                    "png" => "image/png",
+                    "jpg" | "jpeg" => "image/jpeg",
+                    "gif" => "image/gif",
+                    "svg" => "image/svg+xml",
+                    _ => "application/octet-stream",
+                  };
+                  let response = warp::reply::with_header(img_data.clone(), "content-type", content_type).into_response();
+                  println!(
+                    "{} Response generated with status: {} and content-type: image/png",
+                    server_badge(),
+                    response.status()
+                  );
+                  return response;
+                }
+                _ => {
                   let mech_html = format!(
                     "<html><head><title>404 Not Found</title></head>\
                     <body><h1>404 Not Found</h1>\

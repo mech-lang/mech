@@ -142,7 +142,7 @@ pub enum MechSourceCode {
   Html(String),
   ByteCode(Vec<u8>),
   Program(Vec<MechSourceCode>),
-  Image(Vec<u8>),
+  Image(String,Vec<u8>),
 }
 
 impl MechSourceCode {
@@ -159,7 +159,9 @@ impl MechSourceCode {
         }
         #[cfg(not(feature = "program"))]
         format!("{:#?}", bc)
-        
+      }
+      MechSourceCode::Image(extension,img) => {
+        format!("Image (.{}) with {} bytes", extension, img.len())
       }
       MechSourceCode::String(s) => s.clone(),
       MechSourceCode::Tree(p) => todo!("Print the tree!"),

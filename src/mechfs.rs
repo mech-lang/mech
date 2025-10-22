@@ -424,6 +424,21 @@ impl MechSources {
       Err(_) => canonical_path.as_path(),
     };
     match read_mech_source_file(&canonical_path) {
+      Ok(MechSourceCode::Image(extension, img_bytes)) => {
+        let file_id = hash_str(&canonical_path.display().to_string());
+
+        self.directory
+          .insert(relative_path.to_path_buf(), canonical_path.clone());
+        self.reverse_lookup
+          .insert(canonical_path.clone(), relative_path.to_path_buf());
+        self.sources.insert(file_id, MechSourceCode::Image(extension.clone(), img_bytes.clone()));
+        self.id_map.insert(file_id, relative_path.to_path_buf());
+
+        let relative_path_str = relative_path.display().to_string();
+        let src_path_hash = hash_str(&relative_path_str);
+
+        Ok(MechSourceCode::Image(extension, img_bytes))
+      } 
       Ok(src) => {
         let (tree_sc, html_sc) = self.to_tree_and_html(&src)?;
         let file_id = hash_str(&canonical_path.display().to_string());
@@ -516,6 +531,24 @@ impl MechSources {
           None => None,
         }
       },
+    }
+  }
+
+  pub fn get_image(&self, src: &str) -> Option<MechSourceCode> {
+    match self.directory.get(Path::new(src)) {
+      Some(path) => {
+        let file_id = hash_str(&path.display().to_string());
+        match self.sources.get(&file_id) {
+          Some(code) => {
+            match code {
+              MechSourceCode::Image(_, _) => Some(code.clone()),
+              _ => None,
+            }
+          },
+          None => None,
+        }
+      },
+      None => None,
     }
   }
 
@@ -633,7 +666,9 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
               //println!("{} {}", "[Loading]".truecolor(153,221,85), path.display());
               let mut buffer = Vec::new();
               file.read_to_end(&mut buffer);
-              Ok(MechSourceCode::Image(buffer))
+              // store extension and bytes
+              let extension = path.extension().and_then(OsStr::to_str).unwrap_or("").to_string();
+              Ok(MechSourceCode::Image(extension, buffer))
             }
             Err(err) => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
           }
