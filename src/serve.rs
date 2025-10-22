@@ -200,20 +200,34 @@ impl MechServer {
             let mech_html = match sources.get_html(url) {
               Some(MechSourceCode::Html(source)) => source,
               _ => {
-                let mech_html = format!(
-                  "<html><head><title>404 Not Found</title></head>\
-                  <body><h1>404 Not Found</h1>\
-                  <p>The requested URL {} was not found on this server.</p></body></html>",
-                  url
-                );
-                return warp::reply::with_status(
-                  warp::reply::with_header(mech_html, "content-type", "text/html"),
-                  warp::http::StatusCode::NOT_FOUND,
-                )
-                .into_response();
+              let mech_html = format!(
+                "<html><head><title>404 Not Found</title></head>\
+                <body><h1>404 Not Found</h1>\
+                <p>The requested URL {} was not found on this server.</p></body></html>",
+                url
+              );
+              let response = warp::reply::with_status(
+                warp::reply::with_header(mech_html.clone(), "content-type", "text/html"),
+                warp::http::StatusCode::NOT_FOUND,
+              )
+              .into_response();
+              println!(
+                "{} Response generated with status: {} and content-type: text/html",
+                server_badge(),
+                response.status()
+              );
+              return response;
               }
             };
-            return warp::reply::with_header(mech_html, "content-type", content_type).into_response();
+
+            let response = warp::reply::with_header(mech_html, "content-type", content_type).into_response();
+            println!(
+              "{} Response generated with status: {} and content-type: {}",
+              server_badge(),
+              response.status(),
+              content_type
+            );
+            return response;
           }
           Err(e) => {
             println!("{} Error writing sources: {}", server_badge(), e);
