@@ -143,6 +143,7 @@ symbol := ampersand
       | asterisk 
       | caret 
       | underscore ;
+identifier-symbol := ¬(equal | underscore) , symbol ;
 ```
 
 (3.2.3.1) Examples
@@ -242,7 +243,7 @@ This allows users to write code in their native language without the need to lea
 (3.5) Identifiers
 
 ```ebnf
-identifier := (alpha | emoji), *(alpha | digit | symbol | emoji) ;
+identifier := (alpha | emoji), *(alpha | digit | identifier-symbol | emoji) ;
 ```
 
 Identifiers start with letters or most UTF-8 encoded emoji characters, and can contain alphanumeric, most emojis, `/`, `*`, `+`, `-`, and `^` characters.
