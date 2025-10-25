@@ -1384,7 +1384,7 @@ Mech programs and scripts can be written entirely without Mechdown, but literate
 
 ```ebnf
 program := ws0, ?title, body, ws0 ;
-body := ws0, +(section, section_elements), ws0 ;
+body := ws0, +(section, section-elements), ws0 ;
 ```
 
 (b) Sections and Section Elements
@@ -1405,6 +1405,7 @@ section-element := +mech-code
       | subtitle 
       | paragraph ;
 section := ul-subtitle, *section-element ;
+section-elements := +(¬ul-subtitle, section-element) ;
 ```
 
 (b) Titles
