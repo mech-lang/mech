@@ -252,7 +252,7 @@ pub fn img(input: ParseString) -> ParseResult<Image> {
   Ok((input, Image{src: merged_src, caption: Some(caption_text)} ))
 }
 
-// paragraph_text := ¬(img_prefix | http_prefix | left_bracket | tilde | asterisk | underscore | grave | define_operator | bar), +text ;
+// paragraph-text := ¬(img-prefix | http-prefix | left-bracket | tilde | asterisk | underscore | grave | define-operator | bar), +text ;
 pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, elements) = match many1(nom_tuple((is_not(alt((footnote_prefix, highlight_sigil, equation_sigil, img_prefix, http_prefix, left_brace, left_bracket, left_angle, right_bracket, tilde, asterisk, underscore, grave, define_operator, bar))),text)))(input) {
     Ok((input, mut text)) => {
@@ -303,7 +303,7 @@ pub fn reference(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Reference(ref_text)))
 }
 
-// paragraph-element := hyperlink | raw-hyperlink | footnote-reference | paragraph-text | strong | highlight | emphasis | inline-code | strikethrough | underline ;
+// paragraph-element := hyperlink | reference | raw-hyperlink | highlight | footnote-reference | inline-mech-code | eval-inline-mech-code | inline-equation | paragraph-text | strong | highlight | emphasis | inline-code | strikethrough | underline ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
   alt((hyperlink, reference, raw_hyperlink, highlight, footnote_reference, inline_mech_code, eval_inline_mech_code, inline_equation, paragraph_text, strong, highlight, emphasis, inline_code, strikethrough, underline))(input)
 }
@@ -787,7 +787,7 @@ pub fn float(input: ParseString) -> ParseResult<(Box<SectionElement>,FloatDirect
   Ok((input, (Box::new(el), direction)))
 }
 
-// sectio-_element := mech-code | list | footnote | citation | abstract | img | equation | markdown-table | float | block-quote | code-block | thematic-break | subtitle | paragraph ;
+// section-element := +mech-code | list | footnote | citation | abstract | img | equation | markdown-table | float | block-quote | code-block | thematic-break | subtitle | paragraph ;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match many1(mech_code)(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),
@@ -836,7 +836,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   Ok((input, section_element))
 }
 
-// section := ul_subtitle, section_element* ;
+// section := ul_subtitle, *section-element ;
 pub fn section(input: ParseString) -> ParseResult<Section> {
   let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
   let (input, subtitle) = ul_subtitle(input)?;
@@ -845,7 +845,7 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
   Ok((input, Section{subtitle: Some(subtitle), elements}))
 }
 
-// section_elements := section_element+ ;
+// section-elements := +section-element ;
 pub fn section_elements(input: ParseString) -> ParseResult<Section> {
   let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
   let (input, elements) = many1(tuple((is_not(ul_subtitle),section_element)))(input)?;

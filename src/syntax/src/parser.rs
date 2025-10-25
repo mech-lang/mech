@@ -337,7 +337,7 @@ pub fn mech_code(input: ParseString) -> ParseResult<(MechCode,Option<Comment>)> 
 }
 
 
-// program := title?, body ;
+// program := ws0, ?title, body, ws0 ;
 pub fn program(input: ParseString) -> ParseResult<Program> {
   let msg = "Expects program body";
   let (input, _) = whitespace0(input)?;
