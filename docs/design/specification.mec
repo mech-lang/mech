@@ -1475,7 +1475,8 @@ paragraph-element := hyperlink
       | eval-inline-mech-code 
       | inline-equation 
       | paragraph-text 
-      | strong | highlight 
+      | strong 
+      | highlight 
       | emphasis 
       | inline-code 
       | strikethrough 
