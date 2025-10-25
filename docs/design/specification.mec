@@ -1241,9 +1241,10 @@ dot-subscript := ".", identifier ;
 dot-subscript-int := ".", integer-literal ;
 ```
 (7.2.1) Examples
-    dot_result_1 := object.field        -- Dot subscript with identifier
-    dot_result_2 := object.42           -- Dot subscript with integer literal
-
+```
+dot_result_1 := object.field        -- Dot subscript with identifier
+dot_result_2 := object.42           -- Dot subscript with integer literal
+```
 (7.3) Swizzle
 
 ```ebnf
@@ -1382,22 +1383,28 @@ Mech programs and scripts can be written entirely without Mechdown, but literate
 (a) Body
 
 ```ebnf
-program := ?title, body ;
-body := +section ;
+program := ws0, ?title, body, ws0 ;
+body := ws0, +(section, section_elements), ws0 ;
 ```
 
 (b) Sections and Section Elements
 
 ```ebnf
 section-element := +mech-code 
-      | unordered-list 
-      | markdown-table
-      | block-quote
-      | code-block
-      | thematic-break
-      | equation
+      | list 
+      | footnote 
+      | citation 
+      | abstract 
+      | img 
+      | equation 
+      | markdown-table 
+      | float 
+      | block-quote 
+      | code-block 
+      | thematic-break 
+      | subtitle 
       | paragraph ;
-section := ?ul-subtitle, +section-element ;
+section := ul-subtitle, *section-element ;
 ```
 
 (b) Titles
@@ -1436,7 +1443,7 @@ alpha-subtitle := *(space|tab)
       , ws0 ;
 ```
 
-There are 4 levels of titles: the document title, section titles, and two levels of sub section titles. 
+There are 6 levels of titles: the document title, section titles, and two levels of sub section titles. 
 
 **Example:**
 
@@ -1458,15 +1465,29 @@ Section titles and the first level of sub-section titles comprise the table of c
 
 ```ebnf
 paragraph := +paragraph-element;
-paragraph-element := hyperlink
-      | raw-hyperlink
-      | paragraph-text
-      | strong
-      | emphasis
-      | inline-code
-      | strikethrough
+paragraph-element := hyperlink 
+      | reference 
+      | raw-hyperlink 
+      | highlight 
+      | footnote-reference 
+      | inline-mech-code 
+      | eval-inline-mech-code 
+      | inline-equation 
+      | paragraph-text 
+      | strong | highlight 
+      | emphasis 
+      | inline-code 
+      | strikethrough 
       | underline ;
-paragraph-exclude := http-prefix | left-bracket | tilde | asterisk | underscore | grave | define-operator | bar ;
+paragraph-exclude := img-prefix 
+      | http-prefix 
+      | left-bracket 
+      | tilde 
+      | asterisk 
+      | underscore 
+      | grave 
+      | define-operator 
+      | bar ;
 paragraph-text := +(¬(paragraph-exclude), text) ;
 ```
 
