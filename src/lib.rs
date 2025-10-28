@@ -43,6 +43,10 @@ pub mod disjoint;
 pub mod cartesianproduct;
 #[cfg(feature = "powerset")]
 pub mod powerset;
+#[cfg(feature = "equals")]
+pub mod equals;
+#[cfg(feature = "size")]
+pub mod size;
 
 //
 #[cfg(feature = "union")]
@@ -77,6 +81,10 @@ pub use self::disjoint::*;
 pub use self::cartesianproduct::*;
 #[cfg(feature = "powerset")]
 pub use self::powerset::*;
+#[cfg(feature = "equals")]
+pub use self::equals::*;
+#[cfg(feature = "size")]
+pub use self::size::*;
 
 //#[cfg(feature = "join")]
 //pub mod join;
