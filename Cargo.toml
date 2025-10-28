@@ -45,10 +45,12 @@ baselib = ["bool", "string",
       "mech-core/baselib"
     ]
 
+membership_default = ["element_of", "not_element_of"]
+relations_default = ["equals", "not_equals", "subset", "superset", "proper_subset", "proper_superset"]
+
 set_default = ["union", "intersection", "difference", "sym_difference", 
-              "insert", "remove", "subset", "superset", "proper_subset", "proper_superset",
-              "element_of", "not_element_of", "disjoint", "cartesianproduct", "powerset",
-              "equals", "not_equals", "size"]
+              "insert", "remove", "disjoint", "cartesianproduct", "powerset", "size",
+              "membership_default", "relations_default"]
 set = ["functions"]
 union = ["set"]
 intersection = ["set"]
@@ -56,18 +58,22 @@ difference = ["set"]
 sym_difference = ["set"]
 insert = ["set"]
 remove = ["set"]
-subset = ["set"]
-proper_subset = ["set"]
-superset = ["set"]
-proper_superset = ["set"]
-element_of = ["set"]
-not_element_of = ["set"]
-equals = ["set"]
-not_equals = ["set"]
-size = ["set"]
 disjoint = ["set"]
 cartesianproduct = ["set"]
 powerset = ["set"]
+size = ["set"]
+membership = ["set"]
+relations = ["set"]
+
+element_of = ["membership"]
+not_element_of = ["membership"]
+
+equals = ["relations"]
+not_equals = ["relations"]
+subset = ["relations"]
+superset = ["relations"]
+proper_subset = ["relations"]
+proper_superset = ["relations"]
 
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
