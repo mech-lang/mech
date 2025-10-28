@@ -571,25 +571,35 @@ pub fn skip_till_eol(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// code_block := grave, <grave>, <grave>, <new_line>, any, <grave{3}, new_line, whitespace*> ;
+// codeblock-sigil := grave, grave, grave | tilde, tilde, tilde ;
+pub fn codeblock_sigil(input: ParseString) -> ParseResult<fn(ParseString) -> ParseResult<Token>> {
+  let (input, sgl_tkn) = alt((grave_codeblock_sigil, tilde_codeblock_sigil))(input)?;
+  let sgl_cmb = match sgl_tkn.kind {
+    TokenKind::GraveCodeBlockSigil => grave_codeblock_sigil,
+    TokenKind::TildeCodeBlockSigil => tilde_codeblock_sigil,
+    _ => unreachable!(),
+  };
+  Ok((input, sgl_cmb))
+}
+
+// grave-codeblock := grave-codeblock-sigil, *(space | tab), +text, *(space | tab), newline, *(¬grave-codeblock-sigil, any), grave-codeblock-sigil, *(space | tab), ws0 ;
+// tilde-codeblock := tilde-codeblock-sigil, *(space | tab), +text, *(space | tab), newline, *(¬tilde-codeblock-sigil, any), tilde-codeblock-sigil, *(space | tab), ws0 ;
+// code-block := grave-codeblock | tilde-codeblock ;
 pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
   let msg1 = "Expects 3 graves to start a code block";
   let msg2 = "Expects new_line";
   let msg3 = "Expects 3 graves followed by new_line to terminate a code block";
-  let (input, (_, r)) = range(nom_tuple((
-    grave,
-    label!(grave, msg1),
-    label!(grave, msg1),
-  )))(input)?;
+  let (input, (end_sgl,r)) = range(codeblock_sigil)(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, code_id) = many0(text)(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, _) = label!(new_line, msg2)(input)?;
   let (input, (text,src_range)) = range(many0(nom_tuple((
-    is_not(nom_tuple((grave, grave, grave))),
+    is_not(end_sgl),
     any,
   ))))(input)?;
-  let (input, _) = nom_tuple((grave, grave, grave))(input)?;
-  let (input, _) = many0(space_tab)(input)?;
-  let (input, _) = new_line(input)?;
+  let (input, _) = end_sgl(input)?;
+  let (input, _) = whitespace0(input)?;
   let block_src: Vec<char> = text.into_iter().flat_map(|(_, s)| s.chars().collect::<Vec<char>>()).collect();
   let code_token = Token::new(TokenKind::CodeBlock, src_range, block_src.clone());
 
