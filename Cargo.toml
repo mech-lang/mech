@@ -48,7 +48,7 @@ baselib = ["bool", "string",
 set_default = ["union", "intersection", "difference", "sym_difference", 
               "insert", "remove", "subset", "superset", "proper_subset", "proper_superset",
               "element_of", "not_element_of", "disjoint", "cartesianproduct", "powerset",
-              "equals", "size"]
+              "equals", "not_equals", "size"]
 set = ["functions"]
 union = ["set"]
 intersection = ["set"]
@@ -57,7 +57,14 @@ sym_difference = ["set"]
 insert = ["set"]
 remove = ["set"]
 subset = ["set"]
+proper_subset = ["set"]
 superset = ["set"]
+proper_superset = ["set"]
+element_of = ["set"]
+not_element_of = ["set"]
+equals = ["set"]
+not_equals = ["set"]
+size = ["set"]
 disjoint = ["set"]
 cartesianproduct = ["set"]
 powerset = ["set"]
