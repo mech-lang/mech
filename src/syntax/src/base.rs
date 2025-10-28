@@ -154,6 +154,8 @@ leaf!(quote_sigil, ">", TokenKind::QuoteSigil);
 leaf!(info_sigil, "!!>", TokenKind::InfoSigil);
 leaf!(strike_sigil, "~~", TokenKind::StrikeSigil);
 leaf!(strong_sigil, "**", TokenKind::StrongSigil);
+leaf!(grave_codeblock_sigil, "```", TokenKind::GraveCodeBlockSigil);
+leaf!(tilde_codeblock_sigil, "~~~", TokenKind::TildeCodeBlockSigil);
 leaf!(underline_sigil, "__", TokenKind::UnderlineSigil);
 
 ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);

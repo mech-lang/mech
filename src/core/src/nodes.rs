@@ -94,7 +94,7 @@ pub enum TokenKind {
   Dash, DefineOperator, Digit, Dollar,
   Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Exclamation, 
   False, FloatLeft, FloatRight, FootnotePrefix,
-  Grave,
+  Grave, GraveCodeBlockSigil,
   HashTag, HighlightSigil, HttpPrefix,
   Identifier, ImgPrefix, InfoSigil, InlineCode, 
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
@@ -104,7 +104,7 @@ pub enum TokenKind {
   QuerySigil, Question, Quote, QuoteSigil,
   RightAngle, RightBrace, RightBracket, RightParenthesis,
   Semicolon, Space, Slash, String, StrikeSigil, StrongSigil,
-  Tab, Text, Tilde, Title, TransitionOperator, True,
+  Tab, Text, Tilde, TildeCodeBlockSigil, Title, TransitionOperator, True,
   UnderlineSigil, Underscore,
 }
 
