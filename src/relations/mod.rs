@@ -11,6 +11,8 @@ pub mod superset;
 pub mod proper_superset;
 #[cfg(feature = "equals")]
 pub mod equals;
+#[cfg(feature = "not_equals")]
+pub mod not_equals;
 
 #[cfg(feature = "subset")]
 pub use self::subset::*;
@@ -22,3 +24,5 @@ pub use self::superset::*;
 pub use self::proper_superset::*;
 #[cfg(feature = "equals")]
 pub use self::equals::*;
+#[cfg(feature = "not_equals")]
+pub use self::not_equals::*;

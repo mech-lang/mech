@@ -45,6 +45,8 @@ pub mod cartesianproduct;
 pub mod powerset;
 #[cfg(feature = "equals")]
 pub mod equals;
+#[cfg(feature = "not_equals")]
+pub mod not_equals;
 #[cfg(feature = "size")]
 pub mod size;
 
@@ -83,6 +85,8 @@ pub use self::cartesianproduct::*;
 pub use self::powerset::*;
 #[cfg(feature = "equals")]
 pub use self::equals::*;
+#[cfg(feature = "not_equals")]
+pub use self::not_equals::*;
 #[cfg(feature = "size")]
 pub use self::size::*;
 
