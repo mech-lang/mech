@@ -395,14 +395,11 @@ pub fn attach_repl(&mut self, repl_id: &str) {
       }
     };
     let hash = url.hash();
-    let decoded: String = match decode_uri_component(hash.trim_start_matches('#')) {
-      Ok(h) => h.into(),
-      Err(_) => {
-        log!("Failed to decode URI component from hash: {}", hash);
-        return;
-      }
+    let decoded: String = match decode_uri_component(hash.trim_start_matches('#')).ok() {
+        Some(h) if h.starts_with(":", 0) => h.into(),
+        _ => return,
     };
-    log!("Hash changed to: {}", decoded);
+
 
     CURRENT_MECH.with(|mech_ref| {
       if let Some(ptr) = *mech_ref.borrow() {
