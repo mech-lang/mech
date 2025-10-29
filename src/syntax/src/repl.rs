@@ -38,6 +38,7 @@ pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand> {
   let (input, _) = tag(":")(input)?;
   let (input, command) = alt((
     step_rpl,
+    code_rpl,
     help_rpl,
     quit_rpl,
     save_rpl,
@@ -60,6 +61,13 @@ fn save_rpl(input: &str) -> IResult<&str, ReplCommand> {
   let (input, _) = space1(input)?;
   let (input, path) = take_while(|c: char| c.is_alphanumeric() || c == '/' || c == '.' || c == '_')(input)?;
   Ok((input, ReplCommand::Save(path.to_string())))
+}
+
+fn code_rpl(input: &str) -> IResult<&str, ReplCommand> {
+  let (input, _) = tag("code")(input)?;
+  let (input, _) = space1(input)?;
+  let (input, code) = take_while(|_| true)(input)?;
+  Ok((input, ReplCommand::Code(vec![("repl".to_string(), MechSourceCode::String(code.to_string()))])))
 }
 
 fn docs_rpl(input: &str) -> IResult<&str, ReplCommand> {
