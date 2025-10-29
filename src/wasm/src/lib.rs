@@ -5,10 +5,10 @@ use mech_core::*;
 use mech_syntax::*;
 use mech_interpreter::*;
 use wasm_bindgen::JsCast;
-use web_sys::{window, HtmlElement, HtmlInputElement, Node, Element};
+use web_sys::{window, HtmlElement, HtmlInputElement, Node, Element, HashChangeEvent, Url};
+use js_sys::decode_uri_component;
 use std::rc::Rc;
 use std::cell::RefCell;
-
 use gloo_net::http::Request;
 use wasm_bindgen_futures::spawn_local;
 
@@ -221,182 +221,236 @@ impl WasmMech {
     self.interpreter = new_interpreter(0);
   }
 
-  #[cfg(feature = "repl")]
-  #[wasm_bindgen]
-  pub fn attach_repl(&mut self, repl_id: &str) {
-    self.repl_id = Some(repl_id.to_string());
-    // Assign self to the CURRENT_MECH thread local variable
-    // so that we can access it from the callbacks. Unsafe.
-    CURRENT_MECH.with(|c| *c.borrow_mut() = Some(self as *mut _));
-    let window = web_sys::window().expect("global window does not exists");    
-    let document = window.document().expect("should have a document");
-    let container = document
-      .get_element_by_id(repl_id)
-      .expect("REPL element not found")
-      .dyn_into::<HtmlElement>()
-      .expect("Element should be HtmlElement");
+#[cfg(feature = "repl")]
+#[wasm_bindgen]
+pub fn attach_repl(&mut self, repl_id: &str) {
+  self.repl_id = Some(repl_id.to_string());
 
-    let create_prompt: Rc<RefCell<Option<Box<dyn Fn()>>>> = Rc::new(RefCell::new(None));
-    let create_prompt_clone = create_prompt.clone();
-    let document_clone = document.clone();
-    let container_clone = container.clone();
-    let mech_output = container.clone();
-    let mech_output_for_event = mech_output.clone();
+  // Assign self to the CURRENT_MECH thread-local variable for callbacks
+  CURRENT_MECH.with(|c| *c.borrow_mut() = Some(self as *mut _));
 
-    let closure = Closure::wrap(Box::new(move |_event: web_sys::MouseEvent| {
-      let window = web_sys::window().unwrap();
-      let selection = window.get_selection().unwrap().unwrap();
+  let window = web_sys::window().expect("global window does not exist");
+  let document = window.document().expect("should have a document");
+  let container = document
+    .get_element_by_id(repl_id)
+    .expect("REPL element not found")
+    .dyn_into::<HtmlElement>()
+    .expect("Element should be HtmlElement");
 
-      // Only focus the input if the selection is collapsed (no text is selected)
-      if selection.is_collapsed() {
-        if let Some(input) = mech_output
-          .owner_document()
-          .unwrap()
-          .get_element_by_id("repl-active-input")
-        {
-          let _ = input
-            .dyn_ref::<web_sys::HtmlElement>()
-            .unwrap()
-            .focus();
-        }
-      }
-    }) as Box<dyn FnMut(_)>);
+  // Rc<RefCell> to store the create_prompt callback
+  let create_prompt: Rc<RefCell<Option<Box<dyn Fn()>>>> = Rc::new(RefCell::new(None));
+  let create_prompt_clone = create_prompt.clone();
+  let document_clone = document.clone();
+  let container_clone = container.clone();
 
-    mech_output_for_event.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref()).unwrap();
-    closure.forget();
+  // Helper to create a new REPL line and input
+  *create_prompt.borrow_mut() = Some(Box::new(move || {
+    let line = document_clone.create_element("div").unwrap();
+    line.set_class_name("repl-line");
 
-    *create_prompt.borrow_mut() = Some(Box::new(move || {
-      let line = document_clone.create_element("div").unwrap();
-      line.set_class_name("repl-line");
+    let prompt = document_clone.create_element("span").unwrap();
+    prompt.set_inner_html("&gt;: ");
+    prompt.set_class_name("repl-prompt");
 
-      let prompt = document_clone.create_element("span").unwrap();
-      prompt.set_inner_html("&gt;: ");
-      prompt.set_class_name("repl-prompt");
+    let input = document_clone.create_element("input")
+      .unwrap()
+      .dyn_into::<HtmlInputElement>()
+      .unwrap();
+    let input_for_closure = input.clone();
+    input.set_class_name("repl-input");
+    input.set_id("repl-active-input");
+    input.set_attribute("autocomplete", "off").unwrap();
+    input.unchecked_ref::<HtmlElement>().set_autofocus(true);
 
-      let input = document_clone.create_element("input")
-                                .unwrap()
-                                .dyn_into::<HtmlInputElement>()
-                                .unwrap();
-      let input_for_closure = input.clone();
-      input.set_class_name("repl-input");
-      input.set_id("repl-active-input");
-      input.set_attribute("autocomplete", "off").unwrap();
-      input.unchecked_ref::<HtmlElement>().set_autofocus(true);
-            
-      line.append_child(&prompt).unwrap();
-      line.append_child(&input).unwrap();
-      container_clone.append_child(&line).unwrap();
-      let _ = input.focus();
-            
-      let document_inner = document_clone.clone();
-      let container_inner = container_clone.clone();
-      let create_prompt_inner = create_prompt_clone.clone();
-      
-      // Handler for keyboard events
-      let closure = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
-        match event.key().as_str() {
-          "Enter" => {
-            let code = input_for_closure.value();
-            
-            // Replace input field with text
-            let input_parent = input_for_closure.parent_node().expect("input should have a parent");
+    line.append_child(&prompt).unwrap();
+    line.append_child(&input).unwrap();
+    container_clone.append_child(&line).unwrap();
+    let _ = input.focus();
 
-            let input_span = document_inner.create_element("span").unwrap();
-            input_span.set_class_name("repl-code");
-            input_span.set_text_content(Some(&code));
+    let document_inner = document_clone.clone();
+    let container_inner = container_clone.clone();
+    let create_prompt_inner = create_prompt_clone.clone();
 
-            // Replace the input element in the DOM
-            input_parent.replace_child(&input_span, &input_for_closure).unwrap();
+    // Keyboard handling for Enter and history
+    let closure = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+      match event.key().as_str() {
+        "Enter" => {
+          let code = input_for_closure.value();
 
-            let _ = input_for_closure.focus();
-            input_for_closure.set_id("repl-active-input");
+          // Replace input field with text
+          let input_parent = input_for_closure.parent_node().expect("input should have a parent");
+          let input_span = document_inner.create_element("span").unwrap();
+          input_span.set_class_name("repl-code");
+          input_span.set_text_content(Some(&code));
+          input_parent.replace_child(&input_span, &input_for_closure).unwrap();
 
-            let result_line = document_inner.create_element("div").unwrap();
-            result_line.set_class_name("repl-result");
-            // SAFELY call back into WasmMech
-            CURRENT_MECH.with(|mech_ref| {
-              if let Some(ptr) = *mech_ref.borrow() {
-                // UNSAFE but valid: we trust that `self` lives
-                unsafe {
-                  let mech = &mut *ptr;
-                  let output = if !code.trim().is_empty() {
-                    mech.repl_history.push(code.clone());
-                    mech.repl_history_index = None;
+          let result_line = document_inner.create_element("div").unwrap();
+          result_line.set_class_name("repl-result");
+
+          CURRENT_MECH.with(|mech_ref| {
+            if let Some(ptr) = *mech_ref.borrow() {
+              unsafe {
+                let mech = &mut *ptr;
+                let output = if !code.trim().is_empty() {
+                  mech.repl_history.push(code.clone());
+                  mech.repl_history_index = None;
                   mech.eval(&code)
                 } else {
                   "".to_string()
+                };
+                result_line.set_inner_html(&output);
+                container_inner.append_child(&result_line).unwrap();
+                mech.init();
+              }
+            }
+          });
+
+          if let Some(cb) = &*create_prompt_inner.borrow() {
+            cb();
+          }
+        }
+        "ArrowUp" => {
+          event.prevent_default();
+          CURRENT_MECH.with(|mech_ref| {
+            if let Some(ptr) = *mech_ref.borrow() {
+              unsafe {
+                let mech = &mut *ptr;
+                if !mech.repl_history.is_empty() {
+                  let new_index = match mech.repl_history_index {
+                    Some(i) if i > 0 => Some(i - 1),
+                    None => Some(mech.repl_history.len().saturating_sub(1)),
+                    Some(0) => Some(0),
+                    _ => None,
                   };
-                  result_line.set_inner_html(&output);
-                  container_inner.append_child(&result_line).unwrap();
-                  mech.init();
+                  if let Some(i) = new_index {
+                    input_for_closure.set_value(&mech.repl_history[i]);
+                    mech.repl_history_index = Some(i);
+                  }
                 }
               }
-            });
+            }
+          });
+        }
+        "ArrowDown" => {
+          event.prevent_default();
+          CURRENT_MECH.with(|mech_ref| {
+            if let Some(ptr) = *mech_ref.borrow() {
+              unsafe {
+                let mech = &mut *ptr;
+                if let Some(i) = mech.repl_history_index {
+                  let new_index = if i + 1 < mech.repl_history.len() {
+                    Some(i + 1)
+                  } else {
+                    None
+                  };
+                  if let Some(i) = new_index {
+                    input_for_closure.set_value(&mech.repl_history[i]);
+                    mech.repl_history_index = Some(i);
+                  } else {
+                    input_for_closure.set_value("");
+                    mech.repl_history_index = None;
+                  }
+                }
+              }
+            }
+          });
+        }
+        _ => (),
+      }
+    }) as Box<dyn FnMut(_)>);
 
-            if let Some(cb) = &*create_prompt_inner.borrow() {
-              cb();
+    input.add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref()).unwrap();
+    closure.forget();
+  }));
+
+  // Initial prompt
+  if let Some(cb) = &*create_prompt.borrow() {
+    cb();
+  }
+
+  // Click handler to focus input if selection is collapsed
+  let mech_output = container.clone();
+  let mech_output_for_event = mech_output.clone();
+  let click_closure = Closure::wrap(Box::new(move |_event: web_sys::MouseEvent| {
+    let window = web_sys::window().unwrap();
+    let selection = window.get_selection().unwrap().unwrap();
+    if selection.is_collapsed() {
+      if let Some(input) = mech_output.owner_document().unwrap().get_element_by_id("repl-active-input") {
+        let _ = input.dyn_ref::<HtmlElement>().unwrap().focus();
+      }
+    }
+  }) as Box<dyn FnMut(_)>);
+  mech_output_for_event.add_event_listener_with_callback("click", click_closure.as_ref().unchecked_ref()).unwrap();
+  click_closure.forget();
+
+  // Hashchange handler: acts like entering the value into the REPL
+  let create_prompt_clone2 = create_prompt.clone();
+  let hashchange_closure = Closure::wrap(Box::new(move |event: HashChangeEvent| {
+    let new_url = event.new_url();
+    let url = match Url::new(&new_url) {
+      Ok(u) => u,
+      Err(_) => {
+        log!("Failed to parse URL from hashchange event {:?}", new_url);
+        return;
+      }
+    };
+    let hash = url.hash();
+    let decoded: String = match decode_uri_component(hash.trim_start_matches('#')) {
+      Ok(h) => h.into(),
+      Err(_) => {
+        log!("Failed to decode URI component from hash: {}", hash);
+        return;
+      }
+    };
+    log!("Hash changed to: {}", decoded);
+
+    CURRENT_MECH.with(|mech_ref| {
+      if let Some(ptr) = *mech_ref.borrow() {
+        unsafe {
+          let mech = &mut *ptr;
+          if let Some(repl_id) = &mech.repl_id {
+            if let Some(doc) = web_sys::window().unwrap().document() {
+              if let Some(container) = doc.get_element_by_id(repl_id) {
+                // DO NOT create prompt before filling input!
+                // Fill input and directly evaluate
+                if let Some(input) = doc.get_element_by_id("repl-active-input") {
+                  // Use existing prompt
+                  let input = input.dyn_into::<HtmlInputElement>().unwrap();
+                  input.set_value(&decoded);  // fill with hash
+
+                  let output = mech.eval(&decoded); // evaluate
+                  let result_line = doc.create_element("div").unwrap();
+                  result_line.set_class_name("repl-result");
+                  result_line.set_inner_html(&output);
+                  container.append_child(&result_line).unwrap();
+
+                  mech.init();
+
+                  // Remove the previous prompt
+                  if let Some(old_input) = doc.get_element_by_id("repl-active-input") {
+                    let old_input_parent = old_input.parent_node().expect("input should have a parent");
+                    let input_span = doc.create_element("span").unwrap();
+                    input_span.set_class_name("repl-code");
+                    input_span.set_text_content(Some(&decoded));
+                    old_input_parent.replace_child(&input_span, &old_input).unwrap();
+                  }
+
+                  // Now create the next prompt
+                  if let Some(cb) = &*create_prompt_clone2.borrow() {
+                    cb();
+                  }
+                }
+              }
             }
           }
-          "ArrowUp" => {
-            event.prevent_default();
-            CURRENT_MECH.with(|mech_ref| {
-              if let Some(ptr) = *mech_ref.borrow() {
-                unsafe {
-                  let mech = &mut *ptr;
-                  if !mech.repl_history.is_empty() {
-                    let new_index = match mech.repl_history_index {
-                      Some(i) if i > 0 => Some(i - 1),
-                      None => Some(mech.repl_history.len().saturating_sub(1)),
-                      Some(0) => Some(0),
-                      _ => None,
-                    };
-
-                    if let Some(i) = new_index {
-                      input_for_closure.set_value(&mech.repl_history[i]);
-                      mech.repl_history_index = Some(i);
-                    }
-                  }
-                }
-              }
-            });
-          }
-          "ArrowDown" => {
-            event.prevent_default(); // prevent cursor jump
-            CURRENT_MECH.with(|mech_ref| {
-              if let Some(ptr) = *mech_ref.borrow() {
-                unsafe {
-                  let mech = &mut *ptr;
-                  if let Some(i) = mech.repl_history_index {
-                    let new_index = if i + 1 < mech.repl_history.len() {
-                      Some(i + 1)
-                    } else {
-                      None
-                    };
-
-                    if let Some(i) = new_index {
-                      input_for_closure.set_value(&mech.repl_history[i]);
-                      mech.repl_history_index = Some(i);
-                    } else {
-                      input_for_closure.set_value("");
-                      mech.repl_history_index = None;
-                    }
-                  }
-                }
-              }
-            });
-          }
-          _ => (),
         }
-      }) as Box<dyn FnMut(_)>);
+      }
+    });
+  }) as Box<dyn FnMut(HashChangeEvent)>);
+  window.add_event_listener_with_callback("hashchange", hashchange_closure.as_ref().unchecked_ref()).unwrap();
+  hashchange_closure.forget();
+}
 
-      input.add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref()).unwrap();
-      closure.forget();
-    }));
-
-    if let Some(cb) = &*create_prompt.borrow() {
-      cb();
-    };
-  }
 
   #[cfg(feature = "eval")]
   pub fn eval(&mut self, input: &str) -> String {
