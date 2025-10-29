@@ -307,4 +307,5 @@ features = [
   'WebSocket',
   'Window',
   'XmlHttpRequest',
+  'Url',
 ]
