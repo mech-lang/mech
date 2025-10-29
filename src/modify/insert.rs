@@ -25,6 +25,21 @@ impl MechFunctionFactory for SetInsertFxn {
     }
   }    
 }
+
+fn match_types(type1: ValueKind, type2: ValueKind) -> (bool, bool)
+{
+  match (type1, type2)
+  {
+    (ValueKind::Set(k1, s1), ValueKind::Set(k2, s2)) => {
+      let (types_match, _) = match_types(*k1,*k2);
+      (types_match, s1==s2)
+    },
+    (ValueKind::Set(_, _), _) => (false, false),
+    (_, ValueKind::Set(_, _)) => (false, false),
+    (k1, k2) => (k1==k2, k1==k2),
+  }
+}
+
 impl MechFunctionImpl for SetInsertFxn {
   fn solve(&self) {
     unsafe {
@@ -38,19 +53,27 @@ impl MechFunctionImpl for SetInsertFxn {
       // Clear the output set first (optional, depending on semantics)
       out_ptr.set.clear();
 
+      let (types_match, sizes_match) = match_types(set_ptr.kind.clone(), elem_ptr.kind().clone());
       // Insert arg2 into arg1
-      if(set_ptr.kind == elem_ptr.kind())
+      if(types_match)
       {
         out_ptr.set = set_ptr.set.clone();
         out_ptr.set.insert(elem_ptr.clone());
+        if(!sizes_match)
+        {
+          out_ptr.kind = match out_ptr.kind.clone()
+          {
+            ValueKind::Set(k1, _) => ValueKind::Set(k1, None),
+            _ => ValueKind::Empty
+          }
+        }
       }
       // Update metadata
       out_ptr.num_elements = out_ptr.set.len();
-      out_ptr.kind = if out_ptr.set.len() > 0 {
-      out_ptr.set.iter().next().unwrap().kind()
-      } else {
-        ValueKind::Empty
-      };
+      if(types_match && sizes_match)
+      {
+        out_ptr.kind = set_ptr.kind.clone();
+      }
     }
   }
   fn out(&self) -> Value { Value::Set(self.out.clone()) }

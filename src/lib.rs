@@ -11,70 +11,27 @@ use paste::paste;
 use std::fmt::{Display, Debug};
 use std::marker::PhantomData;
 
-#[cfg(feature = "union")]
-pub mod union;
-//#[cfg(feature = "complement")]
-//pub mod complement;
-#[cfg(feature = "difference")]
-pub mod difference;
-#[cfg(feature = "sym_difference")]
-pub mod sym_difference;
-#[cfg(feature = "intersection")]
-pub mod intersection;
-#[cfg(feature = "insert")]
-pub mod insert;
-#[cfg(feature = "remove")]
-pub mod remove;
-#[cfg(feature = "relations")]
-pub mod relations;
 #[cfg(feature = "membership")]
 pub mod membership;
-#[cfg(feature = "disjoint")]
-pub mod disjoint;
-#[cfg(feature = "cartesianproduct")]
-pub mod cartesianproduct;
-#[cfg(feature = "powerset")]
-pub mod powerset;
-#[cfg(feature = "size")]
-pub mod size;
-
-//
-#[cfg(feature = "union")]
-pub use self::union::*;
-//#[cfg(feature = "complement")]
-//pub use self::complement::*;
-#[cfg(feature = "difference")]
-pub use self::difference::*;
-#[cfg(feature = "sym_difference")]
-pub use self::sym_difference::*;
-#[cfg(feature = "intersection")]
-pub use self::intersection::*;
-#[cfg(feature = "insert")]
-pub use self::insert::*;
-#[cfg(feature = "remove")]
-pub use self::remove::*;
+#[cfg(feature = "modify")]
+pub mod modify;
+#[cfg(feature = "operations")]
+pub mod operations;
 #[cfg(feature = "relations")]
-pub use self::relations::*;
+pub mod relations;
+#[cfg(feature = "setdata")]
+pub mod setdata;
+
 #[cfg(feature = "membership")]
 pub use self::membership::*;
-#[cfg(feature = "disjoint")]
-pub use self::disjoint::*;
-#[cfg(feature = "cartesianproduct")]
-pub use self::cartesianproduct::*;
-#[cfg(feature = "powerset")]
-pub use self::powerset::*;
-#[cfg(feature = "size")]
-pub use self::size::*;
-
-//#[cfg(feature = "join")]
-//pub mod join;
-//
-//#[cfg(feature = "join")]
-//pub use self::join::*;
-//#[cfg(feature = "op_assign")]
-//pub use self::op_assign::*;
-//#[cfg(feature = "ops")]
-//pub use self::ops::*;
+#[cfg(feature = "modify")]
+pub use self::modify::*;
+#[cfg(feature = "operations")]
+pub use self::operations::*;
+#[cfg(feature = "relations")]
+pub use self::relations::*;
+#[cfg(feature = "setdata")]
+pub use self::setdata::*;
 
 
 // ----------------------------------------------------------------------------
