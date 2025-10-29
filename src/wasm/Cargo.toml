@@ -29,7 +29,7 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program",
       "statements_default", "subscript_default",
       "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "io_default", "stats_default", "combinatorics_default",      
       "run_program", "inline_output_values", "codeblock_output_values", "clickable_symbol_listeners",
-      "eval", "repl", "whos", "help", "docs", "clc", "clear",
+      "eval", "repl", "whos", "help", "docs", "clc", "clear", "code",
       "mech-core/default", "mech-interpreter/default", "mech-syntax/default",
       ]
 
@@ -37,7 +37,7 @@ base = ["baselib", "pretty_print", "serde", "compiler", "program",
       "statements_default", "subscript_default",
       "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "io_default", "stats_default", "combinatorics_default",
       "run_program", "inline_output_values", "codeblock_output_values", "clickable_symbol_listeners",
-      "eval", "repl", "whos", "help", "docs", "clc", "clear",
+      "eval", "repl", "whos", "help", "docs", "clc", "clear", "code",
       "mech-core/base", "mech-interpreter/base", "mech-syntax/base",
       ]
 
@@ -74,6 +74,7 @@ whos = []
 help = []
 clc = []
 clear = []
+code = []
 
 # language features
 statements = ["mech-core/statements", "mech-interpreter/statements", "mech-syntax/statements"]
