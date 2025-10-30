@@ -53,6 +53,9 @@ pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand> {
     docs_rpl,
   ))(input)?;
   let (input, _) = opt(tag("\r\n"))(input)?;
+  if !input.is_empty() {
+    return Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Eof)));
+  }
   Ok((input, command))
 }
 
@@ -64,8 +67,8 @@ fn save_rpl(input: &str) -> IResult<&str, ReplCommand> {
 }
 
 fn code_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = tag("code")(input)?;
-  let (input, _) = space1(input)?;
+  let (input, _) = alt((tag("code"), tag("c")))(input)?;
+  let (input, _) = space0(input)?;
   let (input, code) = take_while(|_| true)(input)?;
   Ok((input, ReplCommand::Code(vec![("repl".to_string(), MechSourceCode::String(code.to_string()))])))
 }
@@ -125,7 +128,7 @@ fn clear_rpl(input: &str) -> IResult<&str, ReplCommand> {
 }
 
 fn clc_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = alt((tag("c"), tag("clc")))(input)?;
+  let (input, _) = tag("clc")(input)?;
   Ok((input, ReplCommand::Clc))
 }
 
