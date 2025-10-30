@@ -287,7 +287,7 @@ pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
 
 // symbol := ampersand | dollar | bar | percent | at | slash | hashtag | equal | backslash | tilde | plus | dash | asterisk | caret | underscore ;
 pub fn symbol(input: ParseString) -> ParseResult<Token> {
-  let (input, symbol) = alt((ampersand, dollar, bar, percent, at, slash, hashtag, equal, backslash, tilde, plus, dash, asterisk, caret, underscore))(input)?;
+  let (input, symbol) = alt((ampersand, grave, dollar, bar, percent, at, slash, hashtag, equal, backslash, tilde, plus, dash, asterisk, caret, underscore))(input)?;
   Ok((input, symbol))
 }
 
