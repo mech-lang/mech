@@ -149,31 +149,22 @@ pub fn help_html() -> String {
   html
 }
 
-#[cfg(all(feature = "whos"))]
+#[cfg(feature = "whos")]
 pub fn whos_html(intrp: &Interpreter, names: Vec<String>) -> String {
-  let mut html = String::new();
-
-  html.push_str("<table class=\"mech-table\">");
-  html.push_str("<thead class=\"mech-table-header\"><tr>");
-  html.push_str("<th class=\"mech-table-field\">Name</th>");
-  html.push_str("<th class=\"mech-table-field\">Size</th>");
-  html.push_str("<th class=\"mech-table-field\">Bytes</th>");
-  html.push_str("<th class=\"mech-table-field\">Kind</th>");
-  html.push_str("</tr></thead>");
-  html.push_str("<tbody class=\"mech-table-body\">");
-
   let state_brrw = intrp.state.borrow();
   let symbol_table = state_brrw.symbol_table.borrow();
   let dictionary = symbol_table.dictionary.borrow();
 
+  // Collect matching symbols into a vector
+  let mut rows = Vec::new();
+
   if !names.is_empty() {
-    for target_name in names {
-      // Look up symbol IDs by name
+    for target_name in &names {
       for (id, name) in dictionary.iter() {
-        if *name == target_name {
+        if *name == *target_name {
           if let Some(value_ref) = symbol_table.symbols.get(id) {
-              let value = value_ref.borrow();
-            append_row(&mut html, name, &value);
+            let value = value_ref.borrow();
+            rows.push((name.clone(), value.clone()));
           }
           break;
         }
@@ -184,13 +175,38 @@ pub fn whos_html(intrp: &Interpreter, names: Vec<String>) -> String {
     for (id, value_ref) in symbol_table.symbols.iter() {
       if let Some(name) = dictionary.get(id) {
         let value = value_ref.borrow();
-        append_row(&mut html, name, &value);
+        rows.push((name.clone(), value.clone()));
       }
     }
   }
-  html.push_str("</tbody></table>");
-  html
+
+  if rows.is_empty() {
+    if names.is_empty() {
+      "No symbols found in the document.".to_string()
+    } else {
+      format!("Symbol(s) {:?} not found in the document.", names)
+    }
+  } else {
+    // Build the table only if there are entries
+    let mut html = String::new();
+    html.push_str("<table class=\"mech-table\">");
+    html.push_str("<thead class=\"mech-table-header\"><tr>");
+    html.push_str("<th class=\"mech-table-field\">Name</th>");
+    html.push_str("<th class=\"mech-table-field\">Size</th>");
+    html.push_str("<th class=\"mech-table-field\">Bytes</th>");
+    html.push_str("<th class=\"mech-table-field\">Kind</th>");
+    html.push_str("</tr></thead>");
+    html.push_str("<tbody class=\"mech-table-body\">");
+
+    for (name, value) in rows {
+      append_row(&mut html, &name, &value);
+    }
+
+    html.push_str("</tbody></table>");
+    html
+  }
 }
+
 
 fn append_row(html: &mut String, name: &str, value: &Value) {
   let name = html_escape(name);
