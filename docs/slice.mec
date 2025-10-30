@@ -46,7 +46,7 @@ Result:
 ```mech:ex1
 A := {"a", "b", "c", "d", "e"}
 S := set/slice(A, 1, 3)
-// S is ["b", "c", "d"]
+-- S is ["b", "c", "d"]
 ```
 
 (b) Slice to end when count exceeds remaining
@@ -54,7 +54,7 @@ S := set/slice(A, 1, 3)
 ```mech:ex2
 A := {10, 20, 30, 40}
 S := set/slice(A, 2, 10)
-// S is [30, 40]
+-- S is [30, 40]
 ```
 
 (c) Empty slice
@@ -62,7 +62,7 @@ S := set/slice(A, 2, 10)
 ```mech:ex3
 A := {"x", "y"}
 S := set/slice(A, 2, 5)
-// S is []
+-- S is []
 ```
 
 6. Details
