@@ -7,7 +7,7 @@ use std::{
   time::{Duration, Instant},
   collections::{VecDeque, HashMap, HashSet},
   io::{stdout, Read, Write, Cursor, BufRead, BufReader},
-  sync::{mpsc, Arc, OnceLock, Mutex, atomic::{AtomicBool, Ordering}},
+  sync::{mpsc, Arc, OnceLock, Mutex, atomic::{AtomicBool, AtomicUsize, Ordering}},
   process::{Command as ProcessCommand, Stdio},
   path::{Path, PathBuf, MAIN_SEPARATOR},
   fs::{self, File},
@@ -772,35 +772,35 @@ fn prepare_build(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
   let mut steps = VecDeque::new();
 
   // 0. Create a /build directory
-  let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
+  let pb = m.insert_after(&stage.last_step, ProgressBar::new_spinner());
   stage.last_step = pb.clone();
   pb.set_style(build_style());
   pb.set_message("Create build directory.");
   steps.push_back(pb);
 
   // 1. Open supplied source files
-  let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
+  let pb = m.insert_after(&stage.last_step, ProgressBar::new_spinner());
   stage.last_step = pb.clone();
   pb.set_style(pending_style());
   pb.set_message("Gather source files.");
   steps.push_back(pb);
 
   // 2. Look for index.mpkg file in root of project
-  let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
+  let pb = m.insert_after(&stage.last_step, ProgressBar::new_spinner());
   stage.last_step = pb.clone();
   pb.set_style(pending_style());
   pb.set_message("Check for index.mpkg file.");
   steps.push_back(pb);
 
   // 4. Verify mech version compatibility
-  let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
+  let pb = m.insert_after(&stage.last_step, ProgressBar::new_spinner());
   stage.last_step = pb.clone();
   pb.set_style(pending_style());
   pb.set_message("Verify mech version compatibility.");
   steps.push_back(pb);
 
   // 5. Prepare build environment
-  let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
+  let pb = m.insert_after(&stage.last_step, ProgressBar::new_spinner());
   stage.last_step = pb.clone();
   pb.set_style(pending_style());
   pb.set_message("Prepare build environment.");
@@ -811,41 +811,73 @@ fn prepare_build(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
   let build_path = Path::new(BUILD_DIR);
   if !build_path.exists() {
     if let Err(e) = fs::create_dir_all(build_path) {
-      step.finish_with_message(format!("Failed to create build directory: {} {}",e,style("✗").red()));
+      step.finish_with_message(format!("Failed to create build directory: {} {}", e, style("✗").red()));
       stage.fail();
       return;
     }
   }
-  step.finish_with_message("Build directory ready"); 
+  step.finish_with_message("Build directory ready");
   build_progress.inc(1);
 
-  // Step 1 
+  // Step 1
   let step = steps.pop_front().unwrap();
   step.set_style(build_style());
+  step.enable_steady_tick(Duration::from_millis(100));
+  step.set_message("Gathering source files...");
+
   let exts = ["mec", "mpkg", "mecb", "mdoc", "mdb", "dll", "rlib", "m", "md", "🤖"];
   let sources = get_sources();
-  for src in sources {
-    let path = Path::new(&src);
-    if path.exists() {
-      if let Err(e) = gather_source_files(path, &exts) {
-        step.finish_with_message(format!("Failed reading {}: {} {}", src, e, style("✗").red()));
-        cancel_all("Build cancelled due to IO error.");
-        stage.fail();
+
+  let step_thread = step.clone();
+  let tx_thread = tx.clone();
+  let build_progress_thread = build_progress.clone();
+  let (src_tx, src_rx) = mpsc::channel();
+
+  let count = Arc::new(AtomicUsize::new(0));
+  let count_clone = count.clone();
+
+  thread::spawn(move || {
+    let mut all_files = Vec::new();
+
+    for src in sources {
+      let path = Path::new(&src);
+      if path.exists() {
+        let mut on_file = |file: &Path| {
+          all_files.push(file.to_path_buf());
+          let n = count_clone.fetch_add(1, Ordering::SeqCst) + 1;
+          if n % 25 == 0 {
+            step_thread.set_message(format!("Discovered {} files...", n));
+          }
+        };
+
+        if let Err(e) = gather_source_files(path, &exts, &mut on_file) {
+          step_thread.finish_with_message(format!(
+            "Failed reading {}: {} {}",
+            src, e, style("✗").red()
+          ));
+          cancel_all("Build cancelled due to IO error.");
+          return;
+        }
+      } else {
+        step_thread.finish_with_message(format!(
+          "Source path does not exist: {} {}",
+          src,
+          style("✗").red()
+        ));
+        cancel_all("Build cancelled due to missing source files.");
         return;
       }
-    } else {
-      step.finish_with_message(format!("Source path does not exist: {} {}", src, style("✗").red()));
-      cancel_all("Build cancelled due to missing source files.");
-      stage.fail();
-      return;
     }
-  }
-  let source_files = get_build_data().unwrap().lock().unwrap().paths.clone();
-  tx.send(source_files.clone());
-  let file_count = source_files.len();
-  let file_label = if file_count == 1 { "file" } else { "files" };
-  step.finish_with_message(format!("Discovered {} source {}.", file_count, file_label));
-  build_progress.inc(1);
+
+    let total = count.load(Ordering::SeqCst);
+    step_thread.finish_with_message(format!("Discovered {} files.", total));
+
+    // send results
+    src_tx.send(all_files).unwrap();
+  });
+
+  // wait for result before continuing
+  let source_files: Vec<PathBuf> = src_rx.recv().unwrap();
 
   // Step 2
   let step = steps.pop_front().unwrap();
@@ -859,10 +891,11 @@ fn prepare_build(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
       }
     }
   }
+
   if found_index {
     step.finish_with_message(format!("Found index.mpkg file {}", style("✓").green()));
     // 3. Parse the .mpkg file
-    let pb = m.insert_after(&step,ProgressBar::new_spinner());
+    let pb = m.insert_after(&step, ProgressBar::new_spinner());
     pb.set_style(build_style());
     pb.set_message("Parsing index.mpkg.");
     todo!("Parse the .mpkg file");
@@ -878,12 +911,12 @@ fn prepare_build(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
   build_progress.inc(1);
 
   // Step 5 - Configure environment
-  // todo: read the index file and configure the environment accordingly
   let step = steps.pop_front().unwrap();
   step.set_style(build_style());
-  step.finish_with_message(format!("Configured build environment"));
+  step.finish_with_message("Configured build environment".to_string());
   build_progress.inc(1);
 }
+
 
 fn download_packages(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
   let m = stage.indicators.as_ref().unwrap().clone();
@@ -1093,17 +1126,21 @@ fn pending_download_style() -> ProgressStyle {
     .tick_chars(PENDINGSQUARESPINNER)
 }
 
-fn gather_source_files(path: &Path, exts: &[&str]) -> std::io::Result<()> {
+fn gather_source_files<F>(path: &Path, exts: &[&str], on_file: &mut F) -> Result<()>
+where
+    F: FnMut(&Path),
+{
   if path.is_file() {
     if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
-        if exts.contains(&ext) {
-          add_path(path.to_path_buf());
-        }
+      if exts.contains(&ext) {
+        add_path(path.to_path_buf());
+        on_file(path);
+      }
     }
   } else if path.is_dir() {
     for entry in fs::read_dir(path)? {
       let entry = entry?;
-      gather_source_files(&entry.path(), exts)?;
+      gather_source_files(&entry.path(), exts, on_file)?;
     }
   }
   Ok(())
