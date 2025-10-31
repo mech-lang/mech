@@ -30,12 +30,12 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program",
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
       "statements_default", "subscript_default",
-      "formatter", "mechfs", "serve", "run", "repl", "build", "whos",
+      "formatter", "mechfs", "serve", "run", "repl", "build", "whos", "async",
       "mech-core/default", "mech-interpreter/default", "mech-syntax/default",
       ]
 base = ["baselib", "pretty_print", "serde", "compiler", "program",
       "statements_default", "subscript_default",
-      "formatter", "mechfs", "serve", "run", "repl", "build","whos",
+      "formatter", "mechfs", "serve", "run", "repl", "build","whos", "async",
       "mech-core/base", "mech-interpreter/base", "mech-syntax/base",
       ]
 build = ["compiler"]
@@ -45,6 +45,7 @@ serve = ["mechfs"]
 mechfs = ["formatter"]
 whos = ["pretty_print", "variables", "symbol_table"]
 formatter = ["mech-syntax/formatter"]
+async = []
 
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
