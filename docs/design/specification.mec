@@ -1692,21 +1692,20 @@ The body of a table is defined using rows of text separated by pipes. Each row c
 **Example:**
 
 ```
-| Left  | Center | Right |
-|:------|-------:|:-----:|
-| One   | Four   | 10    |
-| Two   | Five   | 100   |
-| Three | Six    | 1000  |
+| Align Left  | Align Center | Align Right |
+|:------------|:------------:|------------:|
+| One         | Four         | {1 * 10}    |
+| Two         | Five         | {2 * 20}    |
+| Three       | Six          | {3 * 30}    |
 ```
 
 Renders the following table:
 
-| Left  | Center | Right |
-|:------|:------:|------:|
-| One   | Four   | 10    |
-| Two   | Five   | 100   |
-| Three | Six    | 1000  |
-
+| Align Left  | Align Center | Align Right |
+|:------------|:------------:|0-----------:|
+| One         | Four         | {1 * 10}    |
+| Two         | Five         | {2 * 20}    |
+| Three       | Six          | {3 * 30}    |
 
 (b) Mech Extensions 
 
