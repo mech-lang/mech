@@ -875,7 +875,7 @@ code {
 }
 
 .mech-comment {
-    color: #ef5f90;
+    color: #5c6467;
     font-style: italic;
     padding-top: 20px;
     display: flex; /* align contents horizontally */
@@ -884,7 +884,7 @@ code {
 
 .mech-comment p {
     margin: 0;
-    color: #ef5f90;
+    color: #939a9e;
     display: inline;
 }
 
