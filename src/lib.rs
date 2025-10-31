@@ -181,22 +181,22 @@ pub fn help() -> String {
 }
 
 pub fn save_to_file(mut path: PathBuf, content: &str) -> MResult<()> {
-    // If path is a directory, give it a default file name
-    if path.is_dir() {
-        path.push("output.html");
-    }
+  // If path is a directory, give it a default file name
+  if path.is_dir() {
+      path.push("output.html");
+  }
 
-    println!("{} Saving file to {}", "[Save]".truecolor(153,221,85), path.display());
+  println!("{} Saving file to {}", "[Save]".truecolor(153,221,85), path.display());
 
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
+  if let Some(parent) = path.parent() {
+      fs::create_dir_all(parent)?;
+  }
 
-    let mut file = fs::File::create(&path)?;
-    file.write_all(content.as_bytes())?;
+  let mut file = fs::File::create(&path)?;
+  file.write_all(content.as_bytes())?;
 
-    println!("{} File saved as {}", "[Save]".truecolor(153,221,85), path.display());
-    Ok(())
+  println!("{} File saved as {}", "[Save]".truecolor(153,221,85), path.display());
+  Ok(())
 }
 
 pub fn ls() -> String {
