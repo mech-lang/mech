@@ -877,7 +877,7 @@ window.addEventListener("scroll", () => {{
     let citation_num = match self.citation_map.get(&id) {
       Some(&num) => num,
       None => {
-        return format!("Citation {} not found in citation map.", id);
+        return format!("Citation {} not found in citation map.", node.id.to_string());
       }
     };
     let formatted_citation = if self.html {
