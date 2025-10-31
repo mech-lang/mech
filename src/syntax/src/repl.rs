@@ -38,6 +38,9 @@ pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand> {
   let (input, _) = tag(":")(input)?;
   let (input, command) = alt((
     step_rpl,
+    clear_rpl,
+    clc_rpl,
+    load_rpl,
     code_rpl,
     help_rpl,
     quit_rpl,
@@ -47,9 +50,6 @@ pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand> {
     ls_rpl,
     cd_rpl,
     whos_rpl,
-    clear_rpl,
-    clc_rpl,
-    load_rpl,
     docs_rpl,
   ))(input)?;
   let (input, _) = opt(tag("\r\n"))(input)?;
