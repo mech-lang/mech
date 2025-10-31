@@ -639,7 +639,7 @@ code {
 
 .mech-paragraph a {
     color: #F8D07A;
-    text-decoration: underline;
+    text-decoration: underline dotted;
 }
 
 .mech-paragraph a:hover {
