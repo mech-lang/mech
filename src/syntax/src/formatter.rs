@@ -825,23 +825,61 @@ window.addEventListener("scroll", () => {{
 
   pub fn image(&mut self, node: &Image) -> String {
     self.figure_num += 1;
+
     let src = node.src.to_string();
     let caption_p = match &node.caption {
       Some(caption) => self.paragraph(caption),
       None => "".to_string(),
     };
-    let figure_label = format!("Fig {}.{}",self.h2_num, self.figure_num);
+
+    let figure_label = format!("Fig {}.{}", self.h2_num, self.figure_num);
     let image_id = hash_str(&src);
     let figure_id = hash_str(&figure_label);
+
     if self.html {
-      format!("<figure id=\"{}\" class=\"mech-figure\">
-        <img id=\"{}\" class=\"mech-image\" src=\"{}\" />
-        <figcaption class=\"mech-figure-caption\"><strong class=\"mech-figure-label\">{}</strong> {}</figcaption>
-      </figure>", figure_id, image_id, src, figure_label, caption_p)
+      let style_attr = match &node.style {
+        Some(option_map) if !option_map.elements.is_empty() => {
+          let style_str = option_map
+            .elements
+            .iter()
+            .map(|(k, v)| {
+              let clean_value = v.to_string().trim_matches('"').to_string();
+              format!("{}: {}", k.to_string(), clean_value)
+            })
+            .collect::<Vec<_>>()
+            .join("; ");
+          format!(" style=\"{}\"", style_str)
+        }
+        _ => "".to_string(),
+      };
+      format!(
+"<figure id=\"{}\" class=\"mech-figure\">
+  <img id=\"{}\" class=\"mech-image\" src=\"{}\"{} />
+  <figcaption class=\"mech-figure-caption\">
+    <strong class=\"mech-figure-label\">{}</strong> {}
+  </figcaption>
+</figure>",figure_id, image_id, src, style_attr, figure_label, caption_p)
     } else {
-      format!("![{}]({})",caption_p, src)
+      let style_str = match &node.style {
+        Some(option_map) if !option_map.elements.is_empty() => {
+          let inner = option_map
+            .elements
+            .iter()
+            .map(|(k, v)| {
+              let clean_value = v.to_string().trim_matches('"').to_string();
+              format!("{}: \"{}\"", k.to_string(), clean_value)
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("{{{}}}", inner)
+      }
+      _ => "".to_string(),
+    };
+
+    format!("![{}]({}){}", caption_p, src, style_str)
     }
   }
+
 
   pub fn abstract_el(&mut self, node: &Vec<Paragraph>) -> String {
     let abstract_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();

@@ -240,6 +240,35 @@ pub fn raw_hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Hyperlink((url.clone(), url))))
 }
 
+// option-map := "{", whitespace*, mapping*, whitespace*, "}" ;
+pub fn option_map(input: ParseString) -> ParseResult<OptionMap> {
+  let msg = "Expects right bracket '}' to terminate inline table";
+  let (input, (_, r)) = range(left_brace)(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, elements) = many1(option_mapping)(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = label!(right_brace, msg, r)(input)?;
+  Ok((input, OptionMap{elements}))
+}
+
+// option-mapping :=  whitespace*, expression, whitespace*, ":", whitespace*, expression, comma?, whitespace* ;
+pub fn option_mapping(input: ParseString) -> ParseResult<(Identifier, MechString)> {
+  let msg1 = "Unexpected space before colon ':'";
+  let msg2 = "Expects a value";
+  let msg3 = "Expects whitespace or comma followed by whitespace";
+  let msg4 = "Expects whitespace";
+  let (input, _) = whitespace0(input)?;
+  let (input, key) = identifier(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = colon(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, value) = string(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = opt(comma)(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, (key, value)))
+}
+
 // img := "![", paragraph, "]", "(", +text, ")" ;
 pub fn img(input: ParseString) -> ParseResult<Image> {
   let (input, _) = img_prefix(input)?;
@@ -248,8 +277,9 @@ pub fn img(input: ParseString) -> ParseResult<Image> {
   let (input, _) = left_parenthesis(input)?;
   let (input, src) = many1(tuple((is_not(right_parenthesis),text)))(input)?;
   let (input, _) = right_parenthesis(input)?;
+  let (input, style) = opt(option_map)(input)?;
   let merged_src = Token::merge_tokens(&mut src.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>()).unwrap();
-  Ok((input, Image{src: merged_src, caption: Some(caption_text)} ))
+  Ok((input, Image{src: merged_src, caption: Some(caption_text), style}))
 }
 
 // paragraph-text := ¬(img-prefix | http-prefix | left-bracket | tilde | asterisk | underscore | grave | define-operator | bar), +text ;

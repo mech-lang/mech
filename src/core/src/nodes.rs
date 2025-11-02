@@ -507,9 +507,17 @@ impl SectionElement {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct OptionMap {
+  pub elements: Vec<(Identifier, MechString)>,
+}
+
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Image {
   pub src: Token,
   pub caption: Option<Paragraph>,
+  pub style: Option<OptionMap>,
 }
 
 impl Image {
@@ -1271,6 +1279,12 @@ impl Literal {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct MechString {
   pub text: Token,
+}
+
+impl MechString {
+  pub fn to_string(&self) -> String {
+    self.text.to_string()
+  }
 }
 
 pub type Hyperlink = (Token, Token);
