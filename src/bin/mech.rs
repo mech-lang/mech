@@ -100,6 +100,11 @@ async fn main() -> Result<(), MechError> {
         .long("stylesheet")
         .value_name("STYLESHEET")
         .help("Sets the stylesheet for the HTML output"))
+      .arg(Arg::new("shim")
+        .short('m')
+        .long("shim")
+        .value_name("SHIM")
+        .help("Sets the shim for the HTML output"))        
       .arg(Arg::new("html")
         .short('t')
         .long("html")
@@ -138,6 +143,11 @@ async fn main() -> Result<(), MechError> {
         .long("stylesheet")
         .value_name("STYLESHEET")
         .help("Sets the stylesheet for the HTML output (include/style.css)"))
+      .arg(Arg::new("shim")
+        .short('m')
+        .long("shim")
+        .value_name("SHIM")
+        .help("Sets the shim for the HTML output (include/shim.html)"))
       .arg(Arg::new("wasm")
         .short('w')
         .long("wasm")
@@ -182,9 +192,10 @@ async fn main() -> Result<(), MechError> {
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let stylesheet = matches.get_one::<String>("stylesheet").cloned().unwrap_or("include/style.css".to_string());
     let wasm_pkg = matches.get_one::<String>("wasm").cloned().unwrap_or("src/wasm/pkg".to_string());
-   
+    let shim = matches.get_one::<String>("shim").cloned().unwrap_or("include/shim.html".to_string());
+
     if cfg!(feature = "serve") {
-      let mut server = MechServer::new(full_address, stylesheet.to_string(), wasm_pkg.to_string());
+      let mut server = MechServer::new(full_address, stylesheet.to_string(), shim.to_string(), wasm_pkg.to_string());
       #[cfg(feature = "serve")]
       server.init().await?;
       #[cfg(feature = "serve")]
@@ -252,6 +263,7 @@ async fn main() -> Result<(), MechError> {
   if let Some(matches) = matches.subcommand_matches("format") {
     let html_flag = matches.get_flag("html");
     let stylesheet_url = matches.get_one::<String>("stylesheet").cloned().unwrap_or("https://gitlab.com/mech-lang/mech/-/raw/v0.2-beta/include/style.css?ref_type=heads".to_string());
+    let shim_url = matches.get_one::<String>("shim").cloned().unwrap_or("https://gitlab.com/mech-lang/mech/-/raw/v0.2-beta/include/shim.html?ref_type=heads".to_string());
     let output_path = PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
 
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_format_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
@@ -259,12 +271,17 @@ async fn main() -> Result<(), MechError> {
     
     // open file or url. If it's a local file load it from disk, if it's a url fetch it from internet
     #[cfg(feature = "async")]
-    let stylesheet = load_stylesheet(&stylesheet_url).await;
+    let stylesheet = load_resource(&stylesheet_url).await;
+    #[cfg(feature = "async")]
+    let shim = load_resource(&shim_url).await;
 
     #[cfg(not(feature = "async"))]
-    let stylesheet = load_stylesheet(&stylesheet_url);
+    let stylesheet = load_resource(&stylesheet_url);
+    #[cfg(not(feature = "async"))]
+    let shim = load_resource(&shim_url);
 
     mechfs.set_stylesheet(&stylesheet);
+    mechfs.set_shim(&shim);
     for path in mech_paths {
       mechfs.watch_source(&path)?;
     }
@@ -419,54 +436,54 @@ async fn main() -> Result<(), MechError> {
 }
 
 #[cfg(feature = "async")]
-async fn load_stylesheet(stylesheet_url: &str) -> String {
-  if stylesheet_url.starts_with("http") {
-    match reqwest::get(stylesheet_url).await {
+pub async fn load_resource(resource_path: &str) -> String {
+  if resource_path.starts_with("http") {
+    match reqwest::get(resource_path).await {
       Ok(response) => match response.text().await {
         Ok(text) => text,
         Err(err) => {
-          println!("Error fetching stylesheet text: {:?}", err);
-          todo!()
+          eprintln!("Error fetching resource text: {:?}", err);
+          String::new()
         }
       },
       Err(err) => {
-        println!("Error fetching stylesheet: {:?}", err);
-        todo!()
+        eprintln!("Error fetching resource: {:?}", err);
+        String::new()
       }
     }
   } else {
-    match tokio::fs::read_to_string(stylesheet_url).await {
+    match tokio::fs::read_to_string(resource_path).await {
       Ok(content) => content,
       Err(err) => {
-        println!("Error reading stylesheet file: {:?}", err);
-        todo!()
+        eprintln!("Error reading resource file: {:?}", err);
+        String::new()
       }
     }
   }
 }
 
 #[cfg(not(feature = "async"))]
-fn load_stylesheet(stylesheet_url: &str) -> String {
-  if stylesheet_url.starts_with("http") {
-    match reqwest::blocking::get(stylesheet_url) {
+pub fn load_resource(resource_path: &str) -> String {
+  if resource_path.starts_with("http") {
+    match reqwest::blocking::get(resource_path) {
       Ok(response) => match response.text() {
         Ok(text) => text,
         Err(err) => {
-          println!("Error fetching stylesheet text: {:?}", err);
-          todo!()
+          eprintln!("Error fetching resource text: {:?}", err);
+          String::new()
         }
       },
       Err(err) => {
-        println!("Error fetching stylesheet: {:?}", err);
-        todo!()
+        eprintln!("Error fetching resource: {:?}", err);
+        String::new()
       }
     }
   } else {
-    match std::fs::read_to_string(stylesheet_url) {
+    match std::fs::read_to_string(resource_path) {
       Ok(content) => content,
       Err(err) => {
-        println!("Error reading stylesheet file: {:?}", err);
-        todo!()
+        eprintln!("Error reading resource file: {:?}", err);
+        String::new()
       }
     }
   }

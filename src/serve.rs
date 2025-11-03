@@ -12,6 +12,7 @@ pub struct MechServer {
   badge: ColoredString,
   init: bool,
   stylesheet_path: (String, String),
+  shim_path: (String, String),
   wasm_path: (String, String),
   js_path: (String, String),
   full_address: String,
@@ -22,7 +23,8 @@ pub struct MechServer {
 
 impl MechServer {
 
-  pub fn new(full_address: String, stylesheet_path: String, wasm_pkg: String) -> Self {
+  pub fn new(full_address: String, stylesheet_path: String, shim_path: String, wasm_pkg: String) -> Self {
+    let shim_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/shim.html".to_string();
     let stylesheet_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/style.css".to_string();
     let wasm_backup_url = format!("https://github.com/mech-lang/mech/releases/download/v{}-beta/mech_wasm_bg.wasm.br", VERSION);
     let js_backup_url = format!("https://github.com/mech-lang/mech/releases/download/v{}-beta/mech_wasm.js", VERSION);
@@ -36,6 +38,7 @@ impl MechServer {
       badge: "[Mech Server]".truecolor(34, 204, 187),
       init: false,
       stylesheet_path: (stylesheet_path, stylesheet_backup_url),
+      shim_path: (shim_path, shim_backup_url),
       wasm_path: (wasm_path, wasm_backup_url),
       js_path: (js_path, js_backup_url),
       full_address: full_address,
@@ -49,6 +52,7 @@ impl MechServer {
     let (stylesheet_path, stylesheet_backup_url) = &self.stylesheet_path;
     let (wasm_path, wasm_backup_url) = &self.wasm_path;
     let (js_path, js_backup_url) = &self.js_path;
+    let (shim_path, shim_backup_url) = &self.shim_path;
 
     let stylesheet = self.read_or_download(stylesheet_path, stylesheet_backup_url).await?;
     match String::from_utf8(stylesheet) {
@@ -58,6 +62,18 @@ impl MechServer {
       },
       Err(e) => {
         let msg = format!("Failed to convert stylesheet to string: {}", e);
+        return Err(MechError{file: file!().to_string(), tokens: vec![], msg, id: line!(), kind: MechErrorKind::None});
+      }
+    }
+
+    let shim = self.read_or_download(shim_path, shim_backup_url).await?;
+    match String::from_utf8(shim) {
+      Ok(s) => {
+        println!("{} Loaded shim", self.badge);
+        self.mechfs.set_shim(&s);
+      },
+      Err(e) => {
+        let msg = format!("Failed to convert shim to string: {}", e);
         return Err(MechError{file: file!().to_string(), tokens: vec![], msg, id: line!(), kind: MechErrorKind::None});
       }
     }

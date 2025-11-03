@@ -77,6 +77,18 @@ impl MechFileSystem {
     }
   }
 
+  pub fn set_shim(&mut self, shim: &str) -> MResult<()> {
+    match self.sources.write() {
+      Ok(mut sources) => {
+        sources.set_shim(shim);
+        Ok(())
+      },
+      Err(e) => {
+        Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Could not set shim".to_string(), id: line!(), kind: MechErrorKind::None})
+      },
+    }
+  }
+
   pub fn sources(&self) -> Arc<RwLock<MechSources>> {
     self.sources.clone()
   }
@@ -244,6 +256,7 @@ impl MechFileSystem {
 pub struct MechSources {
   index: u64,
   stylesheet: String,
+  shim: String,
   sources: HashMap<u64,MechSourceCode>,             // u64 is the hash of the relative source 
   trees: HashMap<u64,MechSourceCode>,               // stores the ast for the sources
   errors: HashMap<u64,Vec<MechError>>,              // stores the errors for the sources
@@ -267,6 +280,7 @@ impl MechSources {
     MechSources {
       index: 0,
       stylesheet: "".to_string(),
+      shim: "".to_string(),
       sources: HashMap::new(),
       trees: HashMap::new(),
       html: HashMap::new(),
@@ -309,7 +323,7 @@ impl MechSources {
       MechSourceCode::String(ref source) => match parser::parse(&source) {
         Ok(tree) => {
           let mut formatter = Formatter::new();
-          let mech_html = formatter.format_html(&tree,self.stylesheet.clone());
+          let mech_html = formatter.format_html(&tree,self.stylesheet.clone(),self.shim.clone());
           (MechSourceCode::Tree(tree), 
             MechSourceCode::Html(mech_html))
         }
@@ -337,13 +351,17 @@ impl MechSources {
     self.stylesheet = stylesheet.to_string();
   }
 
+  pub fn set_shim(&mut self, shim: &str) {
+    self.shim = shim.to_string();
+  }
+
   pub fn add_code(&mut self, code: &MechSourceCode) -> MResult<()> {
     
     match code {
       MechSourceCode::String(ref source) => {
         let tree = parser::parse(&source)?;
         let mut formatter = Formatter::new();
-        let mech_html = formatter.format_html(&tree,self.stylesheet.clone());
+        let mech_html = formatter.format_html(&tree,self.stylesheet.clone(),self.shim.clone());
         //let mech_html = Formatter::humanize_html(mech_html);
 
         // Save all this so we don't have to do it later.
@@ -355,7 +373,7 @@ impl MechSources {
       },
       MechSourceCode::Tree(ref tree) => {
         let mut formatter = Formatter::new();
-        let mech_html = formatter.format_html(&tree,self.stylesheet.clone());
+        let mech_html = formatter.format_html(&tree,self.stylesheet.clone(),self.shim.clone());
         //let mech_html = Formatter::humanize_html(mech_html);
 
         // Save all this so we don't have to do it later.
@@ -384,7 +402,7 @@ impl MechSources {
           }
         };
         let mut formatter = Formatter::new();
-        let mech_html = formatter.format_html(&tree, self.stylesheet.clone());
+        let mech_html = formatter.format_html(&tree, self.stylesheet.clone(),self.shim.clone());
         Ok((MechSourceCode::Tree(tree), MechSourceCode::Html(mech_html)))
       }
       MechSourceCode::Program(code_vec) => {
@@ -407,7 +425,7 @@ impl MechSources {
       MechSourceCode::Html(html) => Ok((MechSourceCode::Tree(core::Program {title: None,body: core::Body { sections: vec![] },}),MechSourceCode::Html(html.clone()))),
       MechSourceCode::Tree(t) => {
         let mut formatter = Formatter::new();
-        let mech_html = formatter.format_html(t, self.stylesheet.clone());
+        let mech_html = formatter.format_html(t, self.stylesheet.clone(),self.shim.clone());
         Ok((MechSourceCode::Tree(t.clone()), MechSourceCode::Html(mech_html)))
       }
       _ => Ok((MechSourceCode::Tree(core::Program {title: None,body: core::Body { sections: vec![] },}),MechSourceCode::Html("".to_string()))),
