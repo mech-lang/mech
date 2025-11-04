@@ -126,12 +126,12 @@ body {
 }
 
 .compact .mech-program h1 {
-    width: 700px;
+    width: 100%;
     margin-left: 0px;
 }
 .compact .mech-program h2 {
-    width: 700px;
-    margin-left: -10px;
+    width: 100%;
+    margin-left: 0px;
 }
 .compact .mech-program h3 {
     margin-left: 0px;

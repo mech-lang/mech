@@ -294,6 +294,7 @@ features = [
   'HtmlCollection',
   'HtmlDivElement',
   'HtmlElement',
+  'DomTokenList',
   'HtmlImageElement',
   'HtmlInputElement',
   'HtmlTextAreaElement',

@@ -838,7 +838,9 @@ pub fn load_doc(doc: &str, element_id: String) {
         if len >= 2 {
             let repl_result = children.item(len - 2).expect("Failed to get second-to-last child");
             repl_result.set_attribute("mech-interpreter-id", &format!("{}",doc_hash)).unwrap();
-            repl_result.set_inner_html(&doc_html);
+            let repl_html = repl_result.dyn_ref::<HtmlElement>().expect("Expected an HtmlElement");
+            repl_html.class_list().add_1("compact").unwrap();
+            repl_html.set_inner_html(&doc_html);
             CURRENT_MECH.with(|mech_ref| {
               if let Some(ptr) = *mech_ref.borrow() {
                 unsafe {
