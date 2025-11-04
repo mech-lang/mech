@@ -320,51 +320,119 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           }
         }
         "ArrowUp" => {
-          event.prevent_default();
-          CURRENT_MECH.with(|mech_ref| {
-            if let Some(ptr) = *mech_ref.borrow() {
-              unsafe {
-                let mech = &mut *ptr;
-                if !mech.repl_history.is_empty() {
-                  let new_index = match mech.repl_history_index {
-                    Some(i) if i > 0 => Some(i - 1),
-                    None => Some(mech.repl_history.len().saturating_sub(1)),
-                    Some(0) => Some(0),
-                    _ => None,
-                  };
-                  if let Some(i) = new_index {
-                    input_for_closure.set_text_content(Some(&mech.repl_history[i]));
-                    mech.repl_history_index = Some(i);
+          if event.ctrl_key() {
+            event.prevent_default();
+            CURRENT_MECH.with(|mech_ref| {
+              if let Some(ptr) = *mech_ref.borrow() {
+                unsafe {
+                  let mech = &mut *ptr;
+                  if !mech.repl_history.is_empty() {
+                    let new_index = match mech.repl_history_index {
+                      Some(i) if i > 0 => Some(i - 1),
+                      None => Some(mech.repl_history.len().saturating_sub(1)),
+                      Some(0) => Some(0),
+                      _ => None,
+                    };
+                    if let Some(i) = new_index {
+                      input_for_closure.set_text_content(Some(&mech.repl_history[i]));
+                      mech.repl_history_index = Some(i);
+                    }
                   }
                 }
               }
+            });
+          } else {
+            let selection = web_sys::window().unwrap().get_selection().unwrap().unwrap();
+            let srange = selection.get_range_at(0).unwrap();
+            let caret_pos = srange.start_offset().unwrap() as usize;
+
+            let text = input_for_closure.text_content().unwrap_or_default();
+            let lines: Vec<&str> = text.split('\n').collect();
+            let caret_line = text[..caret_pos].matches('\n').count();
+
+            if caret_line == 0 {
+              event.prevent_default();
+              CURRENT_MECH.with(|mech_ref| {
+                if let Some(ptr) = *mech_ref.borrow() {
+                  unsafe {
+                    let mech = &mut *ptr;
+                    if !mech.repl_history.is_empty() {
+                      let new_index = match mech.repl_history_index {
+                        Some(i) if i > 0 => Some(i - 1),
+                        None => Some(mech.repl_history.len().saturating_sub(1)),
+                        Some(0) => Some(0),
+                        _ => None,
+                      };
+                      if let Some(i) = new_index {
+                        input_for_closure.set_text_content(Some(&mech.repl_history[i]));
+                        mech.repl_history_index = Some(i);
+                      }
+                    }
+                  }
+                }
+              });
             }
-          });
-        }
+          }
+        },
         "ArrowDown" => {
-          event.prevent_default();
-          CURRENT_MECH.with(|mech_ref| {
-            if let Some(ptr) = *mech_ref.borrow() {
-              unsafe {
-                let mech = &mut *ptr;
-                if let Some(i) = mech.repl_history_index {
-                  let new_index = if i + 1 < mech.repl_history.len() {
-                    Some(i + 1)
-                  } else {
-                    None
-                  };
-                  if let Some(i) = new_index {
-                    input_for_closure.set_text_content(Some(&mech.repl_history[i]));
-                    mech.repl_history_index = Some(i);
-                  } else {
-                    input_for_closure.set_text_content(Some(""));
-                    mech.repl_history_index = None;
+          if event.ctrl_key() {
+            event.prevent_default();
+            CURRENT_MECH.with(|mech_ref| {
+              if let Some(ptr) = *mech_ref.borrow() {
+                unsafe {
+                  let mech = &mut *ptr;
+                  if let Some(i) = mech.repl_history_index {
+                    let new_index = if i + 1 < mech.repl_history.len() {
+                      Some(i + 1)
+                    } else {
+                      None
+                    };
+                    if let Some(i) = new_index {
+                      input_for_closure.set_text_content(Some(&mech.repl_history[i]));
+                      mech.repl_history_index = Some(i);
+                    } else {
+                      input_for_closure.set_text_content(Some(""));
+                      mech.repl_history_index = None;
+                    }
                   }
                 }
               }
+            });
+          } else {
+            let selection = web_sys::window().unwrap().get_selection().unwrap().unwrap();
+            let srange = selection.get_range_at(0).unwrap();
+            let caret_pos = srange.start_offset().unwrap() as usize;
+
+            let text = input_for_closure.text_content().unwrap_or_default();
+            let lines: Vec<&str> = text.split('\n').collect();
+            let caret_line = text[..caret_pos].matches('\n').count();
+
+            if caret_line == lines.len() - 1 {
+              event.prevent_default();
+              CURRENT_MECH.with(|mech_ref| {
+                if let Some(ptr) = *mech_ref.borrow() {
+                  unsafe {
+                    let mech = &mut *ptr;
+                    if let Some(i) = mech.repl_history_index {
+                      let new_index = if i + 1 < mech.repl_history.len() {
+                        Some(i + 1)
+                      } else {
+                        None
+                      };
+                      if let Some(i) = new_index {
+                        input_for_closure.set_text_content(Some(&mech.repl_history[i]));
+                        mech.repl_history_index = Some(i);
+                      } else {
+                        input_for_closure.set_text_content(Some(""));
+                        mech.repl_history_index = None;
+                      }
+                    }
+                  }
+                }
+              });
             }
-          });
-        }
+          }
+        },
         _ => (),
       }
     }) as Box<dyn FnMut(_)>);
