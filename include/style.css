@@ -186,6 +186,7 @@ body {
 
 .repl-prompt {
     color: #F3B62D;
+    width: 20px;
 }
 
 .repl-result .mech-output-value {
@@ -208,16 +209,32 @@ body {
 
 .repl-input,
 .repl-code {
-  display: inline-block;       
-  font-family: 'FiraCodeLight', monospace;     
+  display: block;
+  font-family: 'FiraCodeLight', monospace;
   font-size: 1em;
   line-height: 1.2em;
   color: #f2ead9;
   padding: 0;
   margin: 0;
+  padding-left: 25px;
   border: none;
   outline: none;
+  position: relative;
   background: transparent;
+  width: calc(100% - 25px);
+  white-space: pre-wrap;   /* preserve spacing and wrap */
+  word-wrap: break-word;   /* break long words */
+  overflow-wrap: break-word; 
+  resize: none;            /* prevent user resizing */
+}
+
+.repl-code::before, 
+.repl-input::before {
+    content: ">:";
+    color: #F3B62D;
+    margin-left: -25px;
+    position: absolute;
+    pointer-events: none;
 }
 
 .mech-toc h2 {

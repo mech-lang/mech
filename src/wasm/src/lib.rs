@@ -5,7 +5,7 @@ use mech_core::*;
 use mech_syntax::*;
 use mech_interpreter::*;
 use wasm_bindgen::JsCast;
-use web_sys::{window, HtmlElement, HtmlInputElement, Node, Element, HashChangeEvent, Url};
+use web_sys::{window, HtmlElement, HtmlInputElement, Node, Element, HashChangeEvent, HtmlTextAreaElement, Url};
 use js_sys::decode_uri_component;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -248,21 +248,27 @@ pub fn attach_repl(&mut self, repl_id: &str) {
     let line = document_clone.create_element("div").unwrap();
     line.set_class_name("repl-line");
 
-    let prompt = document_clone.create_element("span").unwrap();
-    prompt.set_inner_html("&gt;: ");
-    prompt.set_class_name("repl-prompt");
+    //let prompt = document_clone.create_element("span").unwrap();
+    //prompt.set_inner_html("&gt;: ");
+    //prompt.set_class_name("repl-prompt");
 
-    let input = document_clone.create_element("input")
-      .unwrap()
-      .dyn_into::<HtmlInputElement>()
-      .unwrap();
-    let input_for_closure = input.clone();
+    let document = web_sys::window().unwrap().document().unwrap();
+
+    let input = document
+        .create_element("div")
+        .unwrap()
+        .dyn_into::<HtmlElement>()
+        .unwrap();
     input.set_class_name("repl-input");
     input.set_id("repl-active-input");
+    input.set_attribute("contenteditable", "true").unwrap();
+    input.set_attribute("spellcheck", "false").unwrap();
     input.set_attribute("autocomplete", "off").unwrap();
-    input.unchecked_ref::<HtmlElement>().set_autofocus(true);
+    input.set_autofocus(true);
+    let input_for_closure = input.clone();
 
-    line.append_child(&prompt).unwrap();
+
+    //line.append_child(&prompt).unwrap();
     line.append_child(&input).unwrap();
     container_clone.append_child(&line).unwrap();
     let _ = input.focus();
@@ -275,7 +281,11 @@ pub fn attach_repl(&mut self, repl_id: &str) {
     let closure = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
       match event.key().as_str() {
         "Enter" => {
-          let code = input_for_closure.value();
+          if event.shift_key() {
+            return;
+          }
+          event.prevent_default();
+          let code = input_for_closure.text_content().unwrap_or_default();
 
           // Replace input field with text
           let input_parent = input_for_closure.parent_node().expect("input should have a parent");
@@ -323,7 +333,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
                     _ => None,
                   };
                   if let Some(i) = new_index {
-                    input_for_closure.set_value(&mech.repl_history[i]);
+                    input_for_closure.set_text_content(Some(&mech.repl_history[i]));
                     mech.repl_history_index = Some(i);
                   }
                 }
@@ -344,10 +354,10 @@ pub fn attach_repl(&mut self, repl_id: &str) {
                     None
                   };
                   if let Some(i) = new_index {
-                    input_for_closure.set_value(&mech.repl_history[i]);
+                    input_for_closure.set_text_content(Some(&mech.repl_history[i]));
                     mech.repl_history_index = Some(i);
                   } else {
-                    input_for_closure.set_value("");
+                    input_for_closure.set_text_content(Some(""));
                     mech.repl_history_index = None;
                   }
                 }

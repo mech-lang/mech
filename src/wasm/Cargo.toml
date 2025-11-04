@@ -296,6 +296,7 @@ features = [
   'HtmlElement',
   'HtmlImageElement',
   'HtmlInputElement',
+  'HtmlTextAreaElement',
   'InputEvent',
   'KeyboardEvent',
   'Location',
