@@ -64,9 +64,13 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
         p.out_values.borrow_mut().insert(out_id, out.clone());
       } else {
         let mut sub_interpreters = p.sub_interpreters.borrow_mut();
+
+        let mut new_sub_interpreter =  Interpreter::new(code_id);
+        new_sub_interpreter.set_functions(p.functions().clone());
+
         let mut pp = sub_interpreters
           .entry(code_id)
-          .or_insert(Box::new(Interpreter::new(code_id)))
+          .or_insert(Box::new(new_sub_interpreter))
           .as_mut();
         for (c,_) in code {
           out = mech_code(&c, &pp)?;

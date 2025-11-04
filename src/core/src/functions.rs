@@ -90,6 +90,7 @@ pub trait NativeFunctionCompiler {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>>;
 }
 
+#[derive(Clone)]
 pub struct Functions {
   pub functions: FunctionTable,
   pub function_compilers: FunctionCompilerTable,
