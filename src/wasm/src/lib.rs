@@ -477,8 +477,6 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         Some(h) if h.starts_with(":", 0) => h.into(),
         _ => return,
     };
-
-
     CURRENT_MECH.with(|mech_ref| {
       if let Some(ptr) = *mech_ref.borrow() {
         unsafe {
@@ -486,12 +484,9 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           if let Some(repl_id) = &mech.repl_id {
             if let Some(doc) = web_sys::window().unwrap().document() {
               if let Some(container) = doc.get_element_by_id(repl_id) {
-                // DO NOT create prompt before filling input!
-                // Fill input and directly evaluate
                 if let Some(input) = doc.get_element_by_id("repl-active-input") {
-                  // Use existing prompt
-                  let input = input.dyn_into::<HtmlInputElement>().unwrap();
-                  input.set_value(&decoded);  // fill with hash
+                  let input = input.dyn_into::<web_sys::HtmlElement>().unwrap();
+                  input.set_text_content(Some(&decoded)); // fill with hash
 
                   let output = mech.eval(&decoded); // evaluate
                   let result_line = doc.create_element("div").unwrap();
@@ -501,7 +496,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
 
                   mech.init();
 
-                  // Remove the previous prompt
+                  // Replace previous prompt with a span
                   if let Some(old_input) = doc.get_element_by_id("repl-active-input") {
                     let old_input_parent = old_input.parent_node().expect("input should have a parent");
                     let input_span = doc.create_element("span").unwrap();
@@ -510,7 +505,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
                     old_input_parent.replace_child(&input_span, &old_input).unwrap();
                   }
 
-                  // Now create the next prompt
+                  // Create next prompt
                   if let Some(cb) = &*create_prompt_clone2.borrow() {
                     cb();
                   }
