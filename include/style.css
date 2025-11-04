@@ -212,6 +212,7 @@ body {
   display: block;
   font-family: 'FiraCodeLight', monospace;
   font-size: 1em;
+  min-height: 1.2em;
   line-height: 1.2em;
   color: #f2ead9;
   padding: 0;
