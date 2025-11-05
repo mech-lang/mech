@@ -83,8 +83,7 @@ body {
 }
 
 .mech-toc {
-    width: 250px;
-    min-width: 250px;
+    max-width: 250px;
     position: absolute;
     counter-reset: h2;
     color: #f2ead9;
@@ -104,24 +103,7 @@ body {
 }
 
 #mech-output {
-  background-color: #040608;
-  color: #f2ead9;
-  font-family: 'FiraCodeLight', monospace;
-  font-size: 1rem;
-  position: fixed;
-  top: 0;
-  right: 0;
-  height: 100vh;
-  width: clamp(300px, 30vw, 800px);
-  overflow-y: auto;
-  box-sizing: border-box;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  z-index: 10; 
-  scrollbar-width: none;     /* Firefox */
-  -ms-overflow-style: none;  /* IE 10+ */
+
 }
 
 .compact .mech-program h1 {
