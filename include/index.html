@@ -169,27 +169,60 @@
     let replFull = false;
     let lastSidebarWidth = sidebar.offsetWidth;
 
+    const updateTocMargin = () => {
+      if (!content || !sidebar || !toc) return;
+      const contentRect = content.getBoundingClientRect();
+      const offset = 350 + 250 + 150;
+      const left = contentRect.left + contentRect.width / 2 - offset;
+      if (left < 0) {
+        toc.style.marginLeft = `0px`;
+      } else {
+        toc.style.marginLeft = `${left}px`;
+      }
+    };
+
+
     // Add an observer to monitor sidebar width changes
     const resize_observer = new ResizeObserver(entries => {
       const sidebarWidth = entries[0].contentRect.width;
       console.log('Sidebar width:', sidebarWidth);
-      if (sidebarWidth > window.innerWidth * 0.50) {
+      console.log('Window width:', window.innerWidth);
+      console.log('Content width:', window.innerWidth - sidebarWidth);
+
+      const content_width = window.innerWidth - sidebarWidth;
+
+      if (content_width < 1400) {
         left_pane.classList.add('compact');
+        left_pane.style.marginLeft = `250px`;
       } else {
         left_pane.classList.remove('compact');
+        left_pane.style.marginLeft = `auto`;
       }
 
-      if (sidebarWidth > window.innerWidth * 0.60) {
+      if (content_width < 900) {
+        left_pane.style.marginLeft = `250px`;
         left_pane.classList.add('super');
+        left_pane.style.marginLeft = `auto`;
       } else {
         left_pane.classList.remove('super');
       }
 
-      if (window.innerWidth - sidebarWidth < 1000) {
+      if (window.innerWidth - sidebarWidth < 900) {
         toc.classList.add('hidden');
       } else {
         toc.classList.remove('hidden');
       }
+
+      const remainingSpace = window.innerWidth - sidebarWidth - 250;
+
+
+      if (remainingSpace < 700) {
+        toc.classList.add('fixed');
+      } else {
+        updateTocMargin();
+        toc.classList.remove('fixed');
+      }
+
     });
     resize_observer.observe(sidebar);
 
