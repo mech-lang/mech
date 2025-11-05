@@ -89,27 +89,33 @@ impl Formatter {
     src
   }
 
-pub fn format_html(&mut self, tree: &Program, style: String, shim: String) -> String {
-  self.html = true;
+  pub fn format_html(&mut self, tree: &Program, style: String, shim: String) -> String {
+    self.html = true;
 
-  let toc = tree.table_of_contents();
-  let formatted_src = self.program(tree);
-  self.reset_numbering();
-  let formatted_toc = self.table_of_contents(&toc);
+    let toc = tree.table_of_contents();
+    let formatted_src = self.program(tree);
+    self.reset_numbering();
+    let formatted_toc = self.table_of_contents(&toc);
 
-  #[cfg(feature = "serde")]
-  let encoded_tree = match compress_and_encode(&tree) {
-      Ok(encoded) => encoded,
-      Err(e) => todo!(),
-  };
-  #[cfg(not(feature = "serde"))]
-  let encoded_tree = String::new();
+    let title = match toc.title {
+      Some(title) => title.to_string(),
+      None => "Mech Program".to_string(),
+    };
+    
+    #[cfg(feature = "serde")]
+    let encoded_tree = match compress_and_encode(&tree) {
+        Ok(encoded) => encoded,
+        Err(e) => todo!(),
+    };
+    #[cfg(not(feature = "serde"))]
+    let encoded_tree = String::new();
 
-  shim.replace("{{STYLESHEET}}", &style)
-      .replace("{{TOC}}", &formatted_toc)
-      .replace("{{CONTENT}}", &formatted_src)
-      .replace("{{CODE}}", &encoded_tree)
-}
+    shim.replace("{{STYLESHEET}}", &style)
+        .replace("{{TOC}}", &formatted_toc)
+        .replace("{{CONTENT}}", &formatted_src)
+        .replace("{{CODE}}", &encoded_tree)
+        .replace("{{TITLE}}", &title)
+  }
 
   pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
     self.toc = true;
