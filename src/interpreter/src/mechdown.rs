@@ -48,6 +48,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       }
       return Ok(out)
     },
+    #[cfg(feature = "functions")]
     SectionElement::FencedMechCode((code,config)) => {
       if config.disabled == true {
         return Ok(Value::Empty);
@@ -123,6 +124,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     SectionElement::QuoteBlock(x) => x.hash(&mut hasher),
     SectionElement::ThematicBreak => {return Ok(Value::Empty);}
     SectionElement::List(x) => x.hash(&mut hasher),
+    x => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Feature not enabled {:?}", x), id: line!(), kind: MechErrorKind::None});}
   };
   let hash = hasher.finish();
   Ok(Value::Id(hash))
