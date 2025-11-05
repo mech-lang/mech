@@ -614,10 +614,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
 
             let prompt_line = document.create_element("div").unwrap();
             prompt_line.set_class_name("repl-line");
-            let prompt_span = document.create_element("span").unwrap();
-            prompt_span.set_class_name("repl-prompt");
-            prompt_span.set_inner_html("&gt;: ");
-            prompt_line.append_child(&prompt_span).unwrap();
+
             let input_span = document.create_element("span").unwrap();
             input_span.set_class_name("repl-code");
             input_span.set_inner_html(&symbol_name);
