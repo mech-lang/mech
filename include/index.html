@@ -14,7 +14,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
 
-  <title>Try Mech REPL</title>
+  <title>{{TITLE}}</title>
   <link rel="icon" href="https://gitlab.com/mech-lang/assets/-/raw/main/images/favicon.ico" type="image/x-icon" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
@@ -90,6 +90,8 @@
     }
 
     .sidebar {
+      font-family: 'FiraCodeLight', monospace;
+      font-size: 1rem;
       background-color: #040608;
       color: #f2ead9;
       padding: 1rem;
@@ -142,7 +144,6 @@
 
     }
   </style>
-  <link rel="stylesheet" href="css/style.css" />
 
 </head>
 <body>
@@ -154,13 +155,13 @@
     <div class="resizer" id="resizer">
       <button class="toggle-button" id="toggle-repl">|</button>
     </div>
-    <div class="sidebar mech-repl" id="sidebar"></div>
+    <div class="sidebar mech-repl" id="mech-output"></div>
   </div>
 
   <script>
     const left_pane = document.getElementById('left-pane');
     const resizer = document.getElementById('resizer');
-    const sidebar = document.getElementById('sidebar');
+    const sidebar = document.getElementById('mech-output');
     const toggleButton = document.getElementById('toggle-repl');
     const toc = document.querySelector('.mech-toc');
 
@@ -169,10 +170,10 @@
     let replFull = false;
     let lastSidebarWidth = sidebar.offsetWidth;
 
-    const updateTocMargin = () => {
+    const updateTocMargin = (toc_width) => {
       if (!content || !sidebar || !toc) return;
       const contentRect = content.getBoundingClientRect();
-      const offset = 350 + 250 + 150;
+      const offset = 350 + toc_width + 150;
       const left = contentRect.left + contentRect.width / 2 - offset;
       if (left < 0) {
         toc.style.marginLeft = `0px`;
@@ -189,40 +190,51 @@
       console.log('Window width:', window.innerWidth);
       console.log('Content width:', window.innerWidth - sidebarWidth);
 
+      // count the number of children the TOC has. Zero h2 means zero toc
+      const h2Count = toc.querySelectorAll('h2').length;
+      const empty_toc = h2Count == 0;
+
       const content_width = window.innerWidth - sidebarWidth;
+      const toc_width = toc.offsetWidth + 50;
+      console.log('Content width:', toc_width);
 
       if (content_width < 1400) {
         left_pane.classList.add('compact');
-        left_pane.style.marginLeft = `250px`;
+        if (!empty_toc) {
+          left_pane.style.marginLeft = `${toc_width}px`;
+        }
       } else {
         left_pane.classList.remove('compact');
         left_pane.style.marginLeft = `auto`;
       }
 
       if (content_width < 900) {
-        left_pane.style.marginLeft = `250px`;
         left_pane.classList.add('super');
-        left_pane.style.marginLeft = `auto`;
+        if (!empty_toc) {
+          left_pane.style.marginLeft = `auto`;
+        }
       } else {
         left_pane.classList.remove('super');
       }
 
-      if (window.innerWidth - sidebarWidth < 900) {
-        toc.classList.add('hidden');
-      } else {
-        toc.classList.remove('hidden');
+      if (!empty_toc) {
+        if (window.innerWidth - sidebarWidth < 900) {
+          toc.classList.add('hidden');
+        } else {
+          toc.classList.remove('hidden');
+        }
       }
 
-      const remainingSpace = window.innerWidth - sidebarWidth - 250;
+      const remainingSpace = window.innerWidth - sidebarWidth - toc_width;
 
-
+    if (!empty_toc) {
       if (remainingSpace < 700) {
         toc.classList.add('fixed');
       } else {
-        updateTocMargin();
+        updateTocMargin(toc_width);
         toc.classList.remove('fixed');
       }
-
+    }
     });
     resize_observer.observe(sidebar);
 
@@ -775,14 +787,14 @@
             wasm_core.init();
             wasm_core.render_inline_values();
             wasm_core.render_codeblock_output_values();
-            wasm_core.attach_repl("sidebar");
+            wasm_core.attach_repl("mech-output");
           } else {
             console.error("Defaulting to included program");
             wasm_core.run_program(code);
             wasm_core.init();
             wasm_core.render_inline_values();
             wasm_core.render_codeblock_output_values();
-            wasm_core.attach_repl("sidebar");
+            wasm_core.attach_repl("mech-output");
           }
         }
       };
