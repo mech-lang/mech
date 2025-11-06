@@ -561,48 +561,53 @@ pub fn attach_repl(&mut self, repl_id: &str) {
   #[cfg(feature = "clickable_symbol_listeners")]
   #[wasm_bindgen]
   pub fn add_clickable_event_listeners(&self) {
-    let window = web_sys::window().expect("global window does not exists");    
-		let document = window.document().expect("expecting a document on window");
+    let window = web_sys::window().expect("global window does not exist");
+    let document = window.document().expect("expecting a document on window");
+
     // Set up a click event listener for all elements with the class "mech-clickable"
     let clickable_elements = document.get_elements_by_class_name("mech-clickable");
+
     for i in 0..clickable_elements.length() {
       let element = clickable_elements.get_with_index(i).unwrap();
+
       // Skip if listener already added
       if element.get_attribute("data-click-bound").is_some() {
         continue;
       }
+
       // Mark it as handled
       element.set_attribute("data-click-bound", "true").unwrap();
-      // the element id is formed like this : let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
-      // so we need to parse it to get the id and the interpreter id
+
+      // Parse element id
       let id = element.id();
       let parsed_id: Vec<&str> = id.split(":").collect();
       let element_id = parsed_id[0].parse::<u64>().unwrap();
       let interpreter_id = parsed_id[1].parse::<u64>().unwrap();
+
       let symbols = match interpreter_id {
-        // if the interpreter id is 0, we are in the main interpreter
-        0 => self.interpreter.symbols(), 
-        // if the interpreter id is not 0, we are in a sub interpreter
-        id => {
-          match self.interpreter.sub_interpreters.borrow().get(&id) {
-            Some(sub_interpreter) => sub_interpreter.symbols(),
-            None => {
-              log!("No sub interpreter found for id: {}", id);
-              continue;
-            }
+        0 => self.interpreter.symbols(),
+        id => match self.interpreter.sub_interpreters.borrow().get(&id) {
+          Some(sub_interpreter) => sub_interpreter.symbols(),
+          None => {
+            log!("No sub interpreter found for id: {}", id);
+            continue;
           }
         }
       };
-      let closure = Closure::wrap(Box::new(move || {
+
+      // Create click closure
+      let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
         let window = web_sys::window().unwrap();
         let document = window.document().unwrap();
         let mech_output = document.get_element_by_id("mech-output").unwrap();
-        let last_child = mech_output.last_child().unwrap();
+        let last_child = mech_output.last_child();
+
         let symbols_brrw = symbols.borrow();
 
         match symbols_brrw.get(element_id) {
           Some(output) => {
             let output_brrw = output.borrow();
+
             let kind_str = html_escape(&format!("{}", output_brrw.kind()));
             let result_html = format!(
               "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
@@ -612,29 +617,67 @@ pub fn attach_repl(&mut self, repl_id: &str) {
 
             let symbol_name = symbols_brrw.get_symbol_name_by_id(element_id).unwrap();
 
+            // Add prompt line
             let prompt_line = document.create_element("div").unwrap();
             prompt_line.set_class_name("repl-line");
-
             let input_span = document.create_element("span").unwrap();
             input_span.set_class_name("repl-code");
             input_span.set_inner_html(&symbol_name);
             prompt_line.append_child(&input_span).unwrap();
-            mech_output.insert_before(&prompt_line, Some(&last_child)).unwrap();
+            if let Some(last_child) = last_child.clone() {
+              mech_output.insert_before(&prompt_line, Some(&last_child)).unwrap();
+            } else {
+              mech_output.append_child(&prompt_line).unwrap();
+            }
 
+            // Add result line
             let result_line = document.create_element("div").unwrap();
             result_line.set_class_name("repl-result");
             result_line.set_inner_html(&result_html);
-            mech_output.insert_before(&result_line, Some(&last_child)).unwrap();
+            if let Some(last_child) = last_child {
+              mech_output.insert_before(&result_line, Some(&last_child)).unwrap();
+            } else {
+              mech_output.append_child(&result_line).unwrap();
+            }
 
-            let output = CURRENT_MECH.with(|mech_ref| {
+            // Update REPL history
+            CURRENT_MECH.with(|mech_ref| {
               if let Some(ptr) = *mech_ref.borrow() {
-                unsafe {
-                  (*ptr).repl_history.push(symbol_name.clone());
-                }
-              } else {
-                log!("[no interpreter]");
+                unsafe { (*ptr).repl_history.push(symbol_name.clone()); }
               }
             });
+
+            // If REPL is "closed", show modal at click location
+            let repl_width = mech_output.client_width();
+            if repl_width == 0 {
+              let modal = document.create_element("div").unwrap();
+              modal.set_class_name("mech-modal");
+              modal.set_inner_html(&format!(
+                "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
+                kind_str,
+                output_brrw.to_html()
+              ));
+
+              let x = event.client_x();
+              let y = event.client_y();
+              modal.set_attribute(
+                "style",
+                &format!(
+                  "position:absolute; top:{}px; left:{}px;",
+                  y, x
+                )
+              ).unwrap();
+
+              document.body().unwrap().append_child(&modal).unwrap();
+
+              // Click to close modal
+              let modal_clone = modal.clone();
+              let close_closure = Closure::wrap(Box::new(move |_event: web_sys::Event| {
+                modal_clone.remove();
+              }) as Box<dyn FnMut(_)>);
+              modal.add_event_listener_with_callback("click", close_closure.as_ref().unchecked_ref()).unwrap();
+              close_closure.forget();
+            }
 
           },
           None => {
@@ -642,14 +685,18 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             let result_line = document.create_element("div").unwrap();
             result_line.set_class_name("repl-result");
             result_line.set_inner_html(&error_message);
-            mech_output.insert_before(&result_line, Some(&last_child)).unwrap();
+            if let Some(last_child) = last_child {
+              mech_output.insert_before(&result_line, Some(&last_child)).unwrap();
+            } else {
+              mech_output.append_child(&result_line).unwrap();
+            }
           }
         }
-        mech_output.set_scroll_top(mech_output.scroll_height());
-      }) as Box<dyn Fn()>);
 
-  
-      element.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref());
+        mech_output.set_scroll_top(mech_output.scroll_height());
+      }) as Box<dyn FnMut(_)>);
+
+      element.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref()).unwrap();
       closure.forget();
     }
   }
