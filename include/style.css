@@ -45,28 +45,6 @@ body {
     flex: 1;
     overflow-y: scroll;
     scrollbar-gutter: stable;
-    scrollbar-width: none;       /* Firefox */
-    -ms-overflow-style: none;    /* IE */
-}
-
-@supports not (scrollbar-gutter: stable) {
-  .mech-content {
-    padding-right: 8px; /* typical scrollbar width fallback */
-  }
-}
-
-.mech-content::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-}
-
-.mech-content.focused {
-  scrollbar-width: thin;
-  margin-left: 10px;
-}
-
-.mech-content.focused::-webkit-scrollbar {
-  width: 8px;
 }
 
 .mech-toc.hidden {
