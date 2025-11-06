@@ -186,9 +186,6 @@
     // Add an observer to monitor sidebar width changes
     const resize_observer = new ResizeObserver(entries => {
       const sidebarWidth = entries[0].contentRect.width;
-      console.log('Sidebar width:', sidebarWidth);
-      console.log('Window width:', window.innerWidth);
-      console.log('Content width:', window.innerWidth - sidebarWidth);
 
       // count the number of children the TOC has. Zero h2 means zero toc
       const h2Count = toc.querySelectorAll('h2').length;
@@ -196,7 +193,6 @@
 
       const content_width = window.innerWidth - sidebarWidth;
       const toc_width = toc.offsetWidth + 50;
-      console.log('Content width:', toc_width);
 
       if (content_width < 1400) {
         left_pane.classList.add('compact');
