@@ -336,8 +336,27 @@ async fn main() -> Result<(), MechError> {
 
     // Run the code
     let mut mechfs = MechFileSystem::new();
-    for p in paths {
-      mechfs.watch_source(&p)?;
+    for p in &paths {
+      match mechfs.watch_source(&p) {
+        Ok(_) => {}
+        Err(err) => {
+          // condense paths into one string for parsing
+          let p = paths.join(" ");
+          // at this point abandon trying to watch fikes and instead now treat the input string as Mech code
+          let parse_result = parser::parse(&p.trim());
+          match parse_result {
+            Ok(tree) => { 
+              let r = intrp.interpret(&tree)?;
+              #[cfg(feature = "pretty_print")]
+              println!("{}", r.pretty_print());
+              #[cfg(not(feature = "pretty_print"))]
+              println!("{:#?}", r);
+              return Ok(());
+            },
+            Err(err) => return Err(err),
+          }
+        }
+      }
     }
 
     let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag); 

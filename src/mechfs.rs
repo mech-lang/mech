@@ -242,9 +242,15 @@ impl MechFileSystem {
     }) 
     {
       Ok(mut watcher) => {
-        println!("{} Watching: {}", "[Watch]".truecolor(153,221,85), src_path.display());
-        watcher.watch(&src_path, RecursiveMode::Recursive).unwrap();
-        self.watchers.push(Box::new(watcher));
+        match watcher.watch(&src_path, RecursiveMode::Recursive) {
+          Ok(_) => {
+            println!("{} Watching: {}", "[Watch]".truecolor(153,221,85), src_path.display());
+            self.watchers.push(Box::new(watcher));
+          }
+          Err(err) => {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Error watching path: {}", err), id: line!(), kind: MechErrorKind::None});
+          },
+        }       
       }
       Err(err) => println!("[Watch] Error creating watcher: {}", err),
     }
