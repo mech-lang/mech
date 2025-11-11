@@ -1203,14 +1203,34 @@ li p {
 .mech-block-quote {
     width: 80%;
     background-color: #1d2227; 
-    border-left: 4px solid #F3B62D;; 
-    padding: 40px 30px 40px 30px;
+    border-left: 4px solid #F3B62D;
+    padding: 40px 30px;
     margin: 40px auto;
     color: #f2ead9; 
     border-radius: 3px;
     font-style: italic;
     font-family: 'Georgia', serif;
-    /* optional visual tweaks */
+    position: relative;
+}
+
+.mech-block-quote::before,
+.mech-block-quote::after {
+    color: #F3B62D;
+    font-size: 32pt;
+    font-family: 'Georgia', serif;
+    position: absolute;
+}
+
+.mech-block-quote::before {
+    content: "“";
+    left: 15px;
+    top: 5px;
+}
+
+.mech-block-quote::after {
+    content: "”";
+    right: 15px;
+    bottom: -17px;
 }
 
 .mech-block-quote p {
@@ -1218,6 +1238,7 @@ li p {
     line-height: 1.6;
     font-size: 14pt;
 }
+
 
 .mech-info-block {
     width: 80%;
@@ -1235,7 +1256,7 @@ li p {
 .mech-info-block::before {
     content: "!";
     position: absolute;
-    left: 18px;
+    left: 15px;
     top: 50%;
     transform: translateY(-50%);
     width: 20px;
@@ -1272,7 +1293,7 @@ li p {
 .mech-question-block::before {
     content: "?";
     position: absolute;
-    left: 18px;
+    left: 15px;
     top: 50%;
     transform: translateY(-50%);
     width: 20px;
