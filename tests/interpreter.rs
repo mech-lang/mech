@@ -724,3 +724,6 @@ test_interpreter!(interpret_convert_f64_to_rational_to_string,r#"x<string> := 0.
 
 test_interpreter!(interpret_matrix_power_and_addition,"~μ := [1 2 3]; K := [0.1 0.2 0.3; 0.4 0.5 0.6; 0.7 0.8 0.9]; Ẑ := [0.01; 0.02; 0.03]; μ = μ + (K ** Ẑ)'", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.014), F64::new(2.032), F64::new(3.05)], 1, 3)));
 test_interpreter!(interpret_assign_scalar_no_space, "~z:=10;z=20", Value::F64(Ref::new(F64::new(20.0))));
+
+
+test_interpreter!(interpret_paren_term_whitespace, "fahrenheit := ( 25 * 9 / 5 ) + 32", Value::F64(Ref::new(F64::new(77.0))));
