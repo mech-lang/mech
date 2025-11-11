@@ -424,7 +424,6 @@
     document.querySelectorAll('.mech-program-subtitle.toc').forEach(entry => {
       entry.addEventListener('click', () => {
         scrollLock = true;
-        if (observer) observer.disconnect();
         const id = entry.id;
         const tag = entry.tagName; // H1, H2, H3, etc.
 
