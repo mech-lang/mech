@@ -549,7 +549,7 @@ impl Formatter {
     if self.html {
       format!("<div class=\"mech-info-block\">{}</div>",info_paragraph)
     } else {
-      format!("!!! info\n{}\n",info_paragraph)
+      format!("(!)> {}\n",info_paragraph)
     }
   }
 
@@ -558,7 +558,7 @@ impl Formatter {
     if self.html {
       format!("<div class=\"mech-question-block\">{}</div>",question_paragraph)
     } else {
-      format!("!!! question\n{}\n",question_paragraph)
+      format!("(?)> {}\n",question_paragraph)
     }
   }
 
@@ -582,7 +582,7 @@ impl Formatter {
       SectionElement::MechCode(n) => self.mech_code(n),
       SectionElement::Paragraph(n) => self.paragraph(n),
       SectionElement::Subtitle(n) => self.subtitle(n),
-      SectionElement::Table(n) => self.markdown_table(n),
+      SectionElement::Table(n) => self.mechdown_table(n),
       SectionElement::ThematicBreak => self.thematic_break(),
     }
   }
@@ -618,16 +618,16 @@ impl Formatter {
     }
   }
 
-  pub fn markdown_table(&mut self, node: &MarkdownTable) -> String {
+  pub fn mechdown_table(&mut self, node: &MarkdownTable) -> String {
     if self.html {
-      self.markdown_table_html(node)
+      self.mechdown_table_html(node)
     } else {
-      self.markdown_table_string(node)
+      self.mechdown_table_string(node)
     }
   }
 
 
-  pub fn markdown_table_string(&mut self, node: &MarkdownTable) -> String {
+  pub fn mechdown_table_string(&mut self, node: &MarkdownTable) -> String {
     // Helper to render a row of Paragraphs as `| ... | ... |`
     fn render_row(cells: &[Paragraph], f: &mut impl FnMut(&Paragraph) -> String) -> String {
         let mut row = String::from("|");
@@ -674,7 +674,7 @@ impl Formatter {
 }
 
 
-  pub fn markdown_table_html(&mut self, node: &MarkdownTable) -> String {
+  pub fn mechdown_table_html(&mut self, node: &MarkdownTable) -> String {
     let mut html = String::new();
     html.push_str("<table class=\"mech-table\">");
 

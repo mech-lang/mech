@@ -101,7 +101,7 @@ pub enum TokenKind {
   Newline, Not, Number,
   OutputOperator,
   Percent, Period, Plus,
-  QuerySigil, Question, Quote, QuoteSigil,
+  Question, QuestionSigil, Quote, QuoteSigil,
   RightAngle, RightBrace, RightBracket, RightParenthesis,
   Semicolon, Space, Slash, String, StrikeSigil, StrongSigil,
   Tab, Text, Tilde, TildeCodeBlockSigil, Title, TransitionOperator, True,
