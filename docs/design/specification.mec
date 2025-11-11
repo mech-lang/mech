@@ -19,11 +19,9 @@ This document is for:
 
 (2.1) File Format
 
-Mech source code can be stored in files with either the `.mec` or `.🤖` extension. 
+Mech source code can be stored in files with either the `.mec` extension. 
 
 Source code is ecoded with UTF-8, which allows for Unicode support. This choice has several benefits:
-
-Mech binary bytecode files use the `.mecb` extension. The bytecode format is specified in the [Bytecode Specification](#).
 
 (2.2) Literate Programming and Mechdown
 
@@ -33,7 +31,7 @@ For more information, see the [Mechdown Section](#45036232896389885).
 
 (2.3) Whitespace
 
-Whitespace includes spaces (` `), tabs (`\t`), carriage returns (`\r`) and newlines (`\n`). Although it is generally ignored, whitespace is be significant in several contexts:
+Whitespace includes spaces (` `), tabs (`\\t`), carriage returns (`\\r`) and newlines (`\\n`). Although it is generally ignored, whitespace is be significant in several contexts:
 
 - In lists, whitespace can be used to separate items.
 - In matrix and table definitions, whitespace can deliniate columns and rows.
@@ -98,7 +96,7 @@ enum-separator := ws0, "|", ws0 ;
 | Assign       | `:=` `=` `+=` `-=` `*=` `/=` `^=`                  |
 | Arithmetic   | `+` `-` `*` `/` `÷` `^` `%`                        |
 | Condition    | `!=` `¬=` `≠` `==` `>` `<` `>=` `≤` `≥`            |
-| Matrix       | `**` `·` `⨯` `\` `'`                               |
+| Matrix       | `**` `·` `⨯` `\\` `'`                               |
 | Logic        | `||` `&&` `^^` `⊕` `⊻` `∧` `∨` `¬` `!`            |
 | Set          | `∪` `∩` `∖` `∁` `⊂` `⊃` `⊆` `⊇` `⊊` `⊋` `∈` `∉` |
 | Table        | `⋈` `⟕` `⟖` `⟗` `⋉` `▷`                        |
@@ -340,7 +338,7 @@ kind-tuple := "("
 kind-scalar := identifier ;
 ```
 
-Kinds are used to specify the type of a literal or expression in Mech. Kinds are specified with a syntax structure called a "kirby" e.g. `<string>`, which indicates a String data type; or `<[u64]:3,1>`, which indicates a 3x1 matrix of 32-bit unsigned integeres.
+Kinds are used to specify the type of a literal or expression in Mech. Kinds are specified with a syntax structure called a "kirby" e.g. `&ltstring&gt`, which indicates a String data type; or `<[u64]:3,1>`, which indicates a 3x1 matrix of 32-bit unsigned integeres.
 
 (4.1.1) Kind
 
@@ -470,7 +468,7 @@ Complex numbers can be represented using the `c64` kind, which indicates a 64-bi
 string := quote, *(¬quote, (text | new-line)), quote ;
 ```
 
-Strings are enclosed in double quotes `"` and can contain any character, including whitespace, except for the quote character itself. To include a quote character in a string, it must be escaped with a backslash `\`.
+Strings are enclosed in double quotes `"` and can contain any character, including whitespace, except for the quote character itself. To include a quote character in a string, it must be escaped with a backslash `\\`.
 
 Strings heap-allocate their contents, so they can be of any length. They are encoded in UTF-8, allowing for Unicode characters.
 
@@ -1577,6 +1575,7 @@ Section references are inline references to section titles, and are indicated wi
 This is a paragraph with a footnote reference.[^1] Here is a citation reference.[MECH] Finally, we have a section reference to §10.4.
 
 [^1]: This is the text of the footnote.
+[MECH]: Mech Programming Language. (2024). Retrieved from https://mechlang.org (Mech Official Website)
 ```
 
 This renders as:
@@ -1584,15 +1583,6 @@ This renders as:
 This is a paragraph with a footnote reference.[^1] Here is a citation reference.[MECH] Finally, we have a section reference to §10.4.
 
 [^1]: This is the text of the footnote.
-
-```
-This is a citation reference.[MECH]
-[MECH]: Mech Programming Language. (2024). Retrieved from https://mechlang.org (Mech Official Website)
-```
-
-This renders as:
-
-This is a citation reference. [MECH]
 [MECH]: Mech Programming Language. (2024). Retrieved from https://mechlang.org (Mech Official Website)
 
 (?)> Although the referenec is defined here in the document, it will be rendered at the bottom of the document in the "Works Cited" section. This is in contrast to footnotes, which are rendered where they are defined.
