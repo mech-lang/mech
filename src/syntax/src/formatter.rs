@@ -190,8 +190,10 @@ impl Formatter {
     }
     
     let toc = if self.toc { "toc" } else { "" };
-    let title_id = hash_str(&format!("{}.{}.{}.{}.{}.{}.{}{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num,level,node.to_string(),toc));
-    let link_id  = hash_str(&format!("{}.{}.{}.{}.{}.{}.{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num,level,node.to_string()));
+    let title_id = hash_str(&format!("{}.{}.{}.{}.{}{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num,toc));
+    
+    let link_str = format!("{}.{}.{}.{}.{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num);
+    let link_id  = hash_str(&link_str);
 
     let section = if level == 2 { format!("section=\"{}.{}\"", self.h2_num, self.h3_num) } 
     else if level == 3 { format!("section=\"{}.{}\"", self.h2_num, self.h3_num) }
@@ -302,6 +304,27 @@ impl Formatter {
           format!("!!{}!!", n.to_string())
         }
       },
+      ParagraphElement::SectionReference(n) => {
+        let section_id_str = n.to_string();
+        let parts: Vec<&str> = section_id_str.split('.').collect();
+        let mut nums = vec!["0"; 5]; // up to h6 level
+        for (i, part) in parts.iter().enumerate() {
+          nums[i] = part;
+        }
+        let id_str = format!("{}.{}.{}.{}.{}",nums[0], nums[1], nums[2], nums[3], nums[4]);
+        let id = hash_str(&id_str);
+
+        if self.html {
+          format!(
+            "<span class=\"mech-section-reference\">
+              <a href=\"#{}\" class=\"mech-section-reference-link\">§{}</a>
+            </span>",
+            id, n.to_string()
+          )
+        } else {
+          format!("§{}", n.to_string())
+        }
+      }
       ParagraphElement::Reference(n) => self.reference(n),
       ParagraphElement::InlineEquation(exq) => self.inline_equation(exq),
       ParagraphElement::Text(n) => {
