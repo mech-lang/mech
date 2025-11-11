@@ -253,10 +253,19 @@ math_neg = ["math_ops", "mech-math/neg"]
 math_sqrt = ["math_root", "mech-math/sqrt"]
 
 # Set
-set_default = ["set_union", "set_intersection", "set_difference", "mech-set/set_default"]
+set_default = ["set_union", "set_intersection", "set_difference", "mech-set/set_default",
+               "set_subset", "set_superset", "set_proper_subset", "set_proper_superset", 
+               "set_element_of", "set_not_element_of"]
 set_union = ["set", "mech-set/union"]
 set_intersection = ["set", "mech-set/intersection"]
 set_difference = ["set", "mech-set/difference"]
+set_subset = ["set", "mech-set/subset"]
+set_superset = ["set", "mech-set/superset"]
+set_proper_subset = ["set", "mech-set/proper_subset"]
+set_proper_superset = ["set", "mech-set/proper_superset"]
+set_element_of = ["set", "mech-set/element_of"]
+set_not_element_of = ["set", "mech-set/not_element_of"]
+
 
 [dependencies]
 mech-core = { version = "0.2.64", default-features = false }
