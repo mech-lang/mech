@@ -73,26 +73,26 @@ pub fn alignment_separator(input: ParseString) -> ParseResult<ColumnAlignment> {
   Ok((input, separator))
 }
 
-pub fn markdown_table(input: ParseString) -> ParseResult<MarkdownTable> {
+pub fn mechdown_table(input: ParseString) -> ParseResult<MarkdownTable> {
   let (input, _) = whitespace0(input)?;
-  let (input, table) = alt((markdown_table_with_header, markdown_table_no_header))(input)?;
+  let (input, table) = alt((mechdown_table_with_header, mechdown_table_no_header))(input)?;
   Ok((input, table))
 }
 
-pub fn markdown_table_with_header(input: ParseString) -> ParseResult<MarkdownTable> {
-  let (input, (header,alignment)) = markdown_table_header(input)?;
-  let (input, rows) = many1(markdown_table_row)(input)?;
+pub fn mechdown_table_with_header(input: ParseString) -> ParseResult<MarkdownTable> {
+  let (input, (header,alignment)) = mechdown_table_header(input)?;
+  let (input, rows) = many1(mechdown_table_row)(input)?;
   Ok((input, MarkdownTable{header, rows, alignment}))
 }
 
-pub fn markdown_table_no_header(input: ParseString) -> ParseResult<MarkdownTable> {
-  let (input, rows) = many1(markdown_table_row)(input)?;
+pub fn mechdown_table_no_header(input: ParseString) -> ParseResult<MarkdownTable> {
+  let (input, rows) = many1(mechdown_table_row)(input)?;
   let header = vec![];
   let alignment = vec![];
   Ok((input, MarkdownTable{header, rows, alignment}))
 }
 
-pub fn markdown_table_header(input: ParseString) -> ParseResult<(Vec<Paragraph>,Vec<ColumnAlignment>)> {
+pub fn mechdown_table_header(input: ParseString) -> ParseResult<(Vec<Paragraph>,Vec<ColumnAlignment>)> {
   let (input, _) = whitespace0(input)?;
   let (input, header) = many1(tuple((bar, tuple((many0(space_tab), paragraph)))))(input)?;
   let (input, _) = bar(input)?;
@@ -109,8 +109,8 @@ pub fn empty_paragraph(input: ParseString) -> ParseResult<Paragraph> {
   Ok((input, Paragraph{elements: vec![]}))
 }
 
-// markdown_table_row := +(bar, paragraph), bar, *whitespace ;
-pub fn markdown_table_row(input: ParseString) -> ParseResult<Vec<Paragraph>> {
+// mechdown_table_row := +(bar, paragraph), bar, *whitespace ;
+pub fn mechdown_table_row(input: ParseString) -> ParseResult<Vec<Paragraph>> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = bar(input)?;
   let (input, row) = many1(tuple((alt((tuple((many0(space_tab), paragraph)),tuple((many1(space_tab), empty_paragraph)))),bar)))(input)?;
@@ -711,7 +711,7 @@ pub fn blank_line(input: ParseString) -> ParseResult<Vec<Token>> {
 }
 
 pub fn question_block(input: ParseString) -> ParseResult<SectionElement> {
-    let (input, _) = query_sigil(input)?;
+    let (input, _) = question_sigil(input)?;
     let (input, _) = many0(space_tab)(input)?;
     let (input, first_para) = paragraph(input)?;
 
@@ -827,37 +827,43 @@ pub fn float(input: ParseString) -> ParseResult<(Box<SectionElement>,FloatDirect
   Ok((input, (Box::new(el), direction)))
 }
 
-// section-element := +mech-code | list | footnote | citation | abstract | img | equation | markdown-table | float | block-quote | code-block | thematic-break | subtitle | paragraph ;
+// section-element := +mech-code | question-block | info-block | list | footnote | citation | abstract-element | img | equation | markdown-table | float | quote-block | code-block | thematic-break | subtitle | paragraph ;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match many1(mech_code)(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),
-    _ => match mechdown_list(input.clone()) {
-      Ok((input, lst)) => (input, SectionElement::List(lst)),
-      _ => match footnote(input.clone()) {
-        Ok((input, ftnote)) => (input, SectionElement::Footnote(ftnote)),
-        _ => match citation(input.clone()) {
-          Ok((input, citation)) => (input, SectionElement::Citation(citation)),
-          _ => match abstract_el(input.clone()) {
-            Ok((input, abstrct)) => (input, abstrct),
-            _ => match img(input.clone()) {
-              Ok((input, img)) => (input, SectionElement::Image(img)),
-              _ => match equation(input.clone()) {
-                Ok((input, eqn)) => (input, SectionElement::Equation(eqn)),
-                _ => match markdown_table(input.clone()) {
-                  Ok((input, table)) => (input, SectionElement::Table(table)),
-                  _ => match float(input.clone()) {
-                    Ok((input, flt)) => (input, SectionElement::Float(flt)),
-                    _ => match quote_block(input.clone()) {   
-                      Ok((input, quote)) => (input, quote),
-                      _ => match code_block(input.clone()) {
-                        Ok((input, m)) => (input,m),
-                        _ => match thematic_break(input.clone()) {
-                          Ok((input, _)) => (input, SectionElement::ThematicBreak),
-                          _ => match subtitle(input.clone()) {
-                            Ok((input, subtitle)) => (input, SectionElement::Subtitle(subtitle)),
-                            _ => match paragraph(input) {
-                              Ok((input, p)) => (input, SectionElement::Paragraph(p)),
-                              Err(err) => { return Err(err); }
+    _=> match question_block(input.clone()) {
+      Ok((input, qblock)) => (input, qblock),
+      _ => match info_block(input.clone()) {
+        Ok((input, iblock)) => (input, iblock),
+        _ => match mechdown_list(input.clone()) {
+          Ok((input, lst)) => (input, SectionElement::List(lst)),
+          _ => match footnote(input.clone()) {
+            Ok((input, ftnote)) => (input, SectionElement::Footnote(ftnote)),
+            _ => match citation(input.clone()) {
+              Ok((input, citation)) => (input, SectionElement::Citation(citation)),
+              _ => match abstract_el(input.clone()) {
+                Ok((input, abstrct)) => (input, abstrct),
+                _ => match img(input.clone()) {
+                  Ok((input, img)) => (input, SectionElement::Image(img)),
+                  _ => match equation(input.clone()) {
+                    Ok((input, eqn)) => (input, SectionElement::Equation(eqn)),
+                    _ => match mechdown_table(input.clone()) {
+                      Ok((input, table)) => (input, SectionElement::Table(table)),
+                      _ => match float(input.clone()) {
+                        Ok((input, flt)) => (input, SectionElement::Float(flt)),
+                        _ => match quote_block(input.clone()) {   
+                          Ok((input, quote)) => (input, quote),
+                          _ => match code_block(input.clone()) {
+                            Ok((input, m)) => (input,m),
+                            _ => match thematic_break(input.clone()) {
+                              Ok((input, _)) => (input, SectionElement::ThematicBreak),
+                              _ => match subtitle(input.clone()) {
+                                Ok((input, subtitle)) => (input, SectionElement::Subtitle(subtitle)),
+                                _ => match paragraph(input) {
+                                  Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+                                  Err(err) => { return Err(err); }
+                                }
+                              }
                             }
                           }
                         }
