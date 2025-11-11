@@ -1,6 +1,6 @@
 [package]
 name = "mech-matrix"
-version = "0.2.64"
+version = "0.2.65"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Matrix library for the Mech language"
 documentation = "http://docs.mech-lang.org"
@@ -154,7 +154,7 @@ dot_indexing = ["subscript", "mech-core/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle"]
 
 [dependencies]
-mech-core = {version = "0.2.64", default-features = false}
+mech-core = {version = "0.2.65", default-features = false}
 
 simba = {version = "0.9.0", optional = true}
 paste = "1.0.15"

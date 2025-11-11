@@ -264,9 +264,9 @@ literal := (number | string | atom | boolean | empty), ?kind-annotation ;
 ```
 Mech supports several types of literals, which are used to represent values in the code. Each literal type has its own syntax and semantics. Each literal has an associated "kind", which describes the data type of the literal. Mech supports the following literal types:
 
-- **[Number](#37267966290163346)** - Represents numeric values, including integers, floating-point numbers, and complex numbers.
+- **[Number](#25538158040124283)** - Represents numeric values, including integers, floating-point numbers, and complex numbers.
   - **Real** - Real numbers, including integers and floats.
-    - **[Integer](#37267966290163346)** - Whole numbers, which can be positive, negative, or zero.
+    - **[Integer](#346483031942019815)** - Whole numbers, which can be positive, negative, or zero.
       - **Signed** - Can represent both negative and positive values.
         - `i8` - 8-bit signed integer
         - `i16` - 16-bit signed integer
@@ -282,18 +282,18 @@ Mech supports several types of literals, which are used to represent values in t
       - **Floating-point** - Decimal numbers, which can represent fractions.
         - `f32` - 32-bit floating-point number, can represent integers up to `2^24`.
         - `f64` - 64-bit floating-point number, can represent integers up to `2^53`.
-    - **[Fractional](#42081371828028886)** - Decimal numbers with fractional components.
+    - **[Fractional](#41214582360059684)** - Decimal numbers with fractional components.
       - `f32` - 32-bit floating-point number
       - `f64` - 64-bit floating-point number
       - `r64` - 64-bit rational number, which can be represented as a fraction of two `i64` integers.
-  - **[Complex](#56240170191408726)** - Represent imaginary components of complex numbers.
+  - **[Complex](#43239854015280042)** - Represent imaginary components of complex numbers.
       - `c64` - 64-bit complex number, which can be represented as a pair of `f64` values corresponding to the real and imaginary parts.
-- **[String](#47529497278632120)**
+- **[String](#35096787880505906)**
       - `string` - A sequence of UTF-8 characters representing text.
-- **[Boolean](#48514366102391185)** 
+- **[Boolean](#21679232488966882)** 
       - `bool` - Represents logical truth values.
-- **[Atom](#44296553944821468)** - A symbolic constant, often used for tags or enums.
-- **[Empty](#71073114937685177)**
+- **[Atom](#63154299616713112)** - A symbolic constant, often used for tags or enums.
+- **[Empty](#70084660282633489)**
       - `_` - Represents an empty value, placeholder, or the absence of a value.
 
 (4.1) Kinds
