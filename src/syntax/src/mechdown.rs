@@ -148,7 +148,7 @@ pub fn subtitle(input: ParseString) -> ParseResult<Subtitle> {
   Ok((input, Subtitle{text, level}))
 }
 
-// strong := (asterisk, asterisk), +paragraph_element, (asterisk, asterisk) ;
+// strong := (asterisk, asterisk), +paragraph-element, (asterisk, asterisk) ;
 pub fn strong(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = tuple((asterisk,asterisk))(input)?;
   let (input, text) = paragraph_element(input)?;
@@ -156,7 +156,7 @@ pub fn strong(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Strong(Box::new(text))))
 }
 
-/// emphasis := asterisk, +paragraph_element, asterisk ;
+/// emphasis := asterisk, +paragraph-element, asterisk ;
 pub fn emphasis(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = asterisk(input)?;
   let (input, text) = paragraph_element(input)?;
@@ -164,7 +164,7 @@ pub fn emphasis(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Emphasis(Box::new(text))))
 }
 
-// strikethrough := tilde, +paragraph_element, tilde ;
+// strikethrough := tilde, +paragraph-element, tilde ;
 pub fn strikethrough(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = tilde(input)?;
   let (input, text) = paragraph_element(input)?;
@@ -172,7 +172,7 @@ pub fn strikethrough(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Strikethrough(Box::new(text))))
 }
 
-/// underline := underscore, +paragraph_element, underscore ;
+/// underline := underscore, +paragraph-element, underscore ;
 pub fn underline(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = underscore(input)?;
   let (input, text) = paragraph_element(input)?;
@@ -180,7 +180,7 @@ pub fn underline(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Underline(Box::new(text))))
 }
 
-/// highlight := "!!", +paragraph_element, "!!" ;
+/// highlight := "!!", +paragraph-element, "!!" ;
 pub fn highlight(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = highlight_sigil(input)?;
   let (input, text) = paragraph_element(input)?;
@@ -188,7 +188,7 @@ pub fn highlight(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Highlight(Box::new(text))))
 }
 
-// inline_code := grave, +text, grave ;
+// inline-code := grave, +text, grave ; 
 pub fn inline_code(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = grave(input)?;
   let (input, text) = many0(tuple((is_not(grave),text)))(input)?;
@@ -205,7 +205,7 @@ pub fn inline_code(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::InlineCode(text)))
 }
 
-// inline_code := grave, +text, grave ;
+// inline-equation := equation-sigil, +text, equation-sigil ;
 pub fn inline_equation(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = equation_sigil(input)?;
   let (input, txt) = many0(tuple((is_not(equation_sigil),alt((backslash,text)))))(input)?;
@@ -231,7 +231,7 @@ pub fn hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Hyperlink((text_merged, link_merged))))
 }
 
-// raw-hyperlink := ("https" | "http" |)
+// raw-hyperlink := http-prefix, +text ;
 pub fn raw_hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = peek(http_prefix)(input)?;
   let (input, address) = many1(tuple((is_not(space), text)))(input)?;
@@ -334,7 +334,7 @@ pub fn reference(input: ParseString) -> ParseResult<ParagraphElement> {
 }
 
 // section_ref := "§" , +(alphanumeric | period) ;
-pub fn section_ref(input: ParseString) -> ParseResult<ParagraphElement> {
+pub fn section_reference(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = section_sigil(input)?;
   let (input, mut txt) = many1(alt((alphanumeric, period)))(input)?;
   let section_text = Token::merge_tokens(&mut txt).unwrap();
@@ -343,7 +343,7 @@ pub fn section_ref(input: ParseString) -> ParseResult<ParagraphElement> {
 
 // paragraph-element := hyperlink | reference | section-ref | raw-hyperlink | highlight | footnote-reference | inline-mech-code | eval-inline-mech-code | inline-equation | paragraph-text | strong | highlight | emphasis | inline-code | strikethrough | underline ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
-  alt((hyperlink, reference, section_ref, raw_hyperlink, highlight, footnote_reference, inline_mech_code, eval_inline_mech_code, inline_equation, paragraph_text, strong, highlight, emphasis, inline_code, strikethrough, underline))(input)
+  alt((hyperlink, reference, section_reference, raw_hyperlink, highlight, footnote_reference, inline_mech_code, eval_inline_mech_code, inline_equation, paragraph_text, strong, highlight, emphasis, inline_code, strikethrough, underline))(input)
 }
 
 // paragraph := +paragraph_element ;
