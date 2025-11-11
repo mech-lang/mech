@@ -732,11 +732,13 @@ code {
 .mech-paragraph a {
     color: #F8D07A;
     text-decoration: underline dotted;
+    text-underline-offset: 3px;
 }
 
 .mech-paragraph a:hover {
     color: #f18181;
     text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 .mech-all {
@@ -1243,7 +1245,7 @@ li p {
 .mech-info-block {
     width: 80%;
     background-color: #1d2227;
-    border-left: 3px solid #f18181;
+    border-left: 4px solid #f18181;
     padding: 20px 20px 20px 50px;
     margin: 20px auto;
     color: #f2ead9;
@@ -1280,7 +1282,7 @@ li p {
 .mech-question-block {
     width: 80%;
     background-color: #1d2227;
-    border-left: 3px solid #6ca8ff;
+    border-left: 4px solid #6ca8ff;
     padding: 20px 20px 20px 50px;
     margin: 20px auto;
     color: #f2ead9;
