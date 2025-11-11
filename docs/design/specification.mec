@@ -1400,6 +1400,8 @@ section-element := +mech-code
       | markdown-table 
       | float 
       | block-quote 
+      | block-important
+      | block-question
       | code-block 
       | thematic-break 
       | subtitle 
@@ -1468,6 +1470,7 @@ Section titles and the first level of sub-section titles comprise the table of c
 paragraph := +paragraph-element;
 paragraph-element := hyperlink 
       | reference 
+      | section-reference
       | raw-hyperlink 
       | highlight 
       | footnote-reference 
@@ -1483,6 +1486,7 @@ paragraph-element := hyperlink
       | underline ;
 paragraph-exclude := img-prefix 
       | http-prefix 
+      | section-sigil
       | left-bracket 
       | tilde 
       | asterisk 
@@ -1619,23 +1623,45 @@ $$ c = \pm\sqrt{a^2 + b^2}
 
 Mechdown also supports inline equations, which begin and conclude with a `$$`. They are expressed with LaTeX syntax, like so: `$$c^2 = a^2 + b^2$$`. This is rendered by a third-party library into $$c^2 = a^2 + b^2$$.
 
-(b) Block Quotes
+(b) Callout Blocks
 
 ```ebnf
-block-quote := ">" , ws0, +paragraph ;
+block-quote := ">", ws0, +paragraph ;
+block-important := "(!)>", ws0, +paragraph ;
+block-question := "(?)>", ws0, +paragraph ;
 ```
 
-Block quotes are used to indicate quoted text. They are created using the `>` character followed by a space, and can contain any text until a newline.
+Callouts are used to emphasize a paragraphs, and classifies them into one of three semantic categories:
+
+- Quotes: for quotations, indicated with a `>`.
+- Important: for information critical to the reader, indicated with a `(!)>`
+- Question: for anticipated and frequently asked questions, indicated with a `(?)>`
+
+Multiple paragraphs can be included in the callout block as long as there are no newline characters between them (although a newline is of course required to end a paragraph).
 
 **Example:**
 
 ```
-> This is a block quote.
+> This is a quote block.
+
+(!)> This is an important block.
+
+(?)> This is a question block.
+
+(?)> This is a question block with multiple paragraphs.
+This is the second paragraph.
 ```
 
 When rendered, they look like this:
 
-> This is a block quote.
+> This is a quote block.
+
+(!)> This is an important block.
+
+(?)> This is a question block.
+
+(?)> This is a question block with multiple paragraphs.
+This is the second paragraph.
 
 (b) Tables
 
