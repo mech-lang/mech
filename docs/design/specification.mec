@@ -75,7 +75,7 @@ alphanumeric := alpha | digit ;
 digit-sequence := digit, *((underscore, digit) | digit) ;
 ```
 
-(3.1.4) Whitespace and Separators
+(3.1.3) Whitespace and Separators
 
 ```ebnf
 new-line := (carriage-return, new-line) | new-line-char | carriage-return ;
@@ -169,7 +169,7 @@ grouping-symbol := left-parenthesis
 ( ) < > { } [ ]
 ```
 
-(3.4.5) Text
+(3.2.5) Text
 
 ```ebnf
 escaped-char := backslash,  symbol | punctuation | alpha ;
@@ -661,13 +661,13 @@ See the [indexing section](#41353925203355102) for more details on syntax and se
 
 (5.1.5) Operations
 
-By default, basic operations on matrices are broadcasted, meaning they are applied element-wise across the matrix. For example:
+By default, basic operations on matrices are broadcast, meaning they are applied element-wise across the matrix. For example:
 
   [1 2 3] + [4 5 6] -- Results in `[5 7 9]`
 
 This works as long as both matrices have the same shape. If not, the operation will fail with a type error at compile time.
 
-The exception is if either of the operands are scalar, then the scalar is broadcasted across the matrix. For example:
+The exception is if either of the operands are scalar, then the scalar is broadcast across the matrix. For example:
 
   [1 2 3] + 10 -- Results in `[11 12 13]`
   10 + [1 2 3] -- Results in `[11 12 13]`
