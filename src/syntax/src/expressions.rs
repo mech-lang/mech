@@ -156,7 +156,9 @@ pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
   let msg1 = "Expects expression";
   let msg2 = "Expects right parenthesis ')'";
   let (input, (_, r)) = range(left_parenthesis)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, frmla) = label!(formula, msg1)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = label!(right_parenthesis, msg2, r)(input)?;
   Ok((input, Factor::Parenthetical(Box::new(frmla))))
 }

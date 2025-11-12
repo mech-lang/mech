@@ -48,6 +48,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       }
       return Ok(out)
     },
+    #[cfg(feature = "functions")]
     SectionElement::FencedMechCode((code,config)) => {
       if config.disabled == true {
         return Ok(Value::Empty);
@@ -64,9 +65,13 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
         p.out_values.borrow_mut().insert(out_id, out.clone());
       } else {
         let mut sub_interpreters = p.sub_interpreters.borrow_mut();
+
+        let mut new_sub_interpreter =  Interpreter::new(code_id);
+        new_sub_interpreter.set_functions(p.functions().clone());
+
         let mut pp = sub_interpreters
           .entry(code_id)
-          .or_insert(Box::new(Interpreter::new(code_id)))
+          .or_insert(Box::new(new_sub_interpreter))
           .as_mut();
         for (c,_) in code {
           out = mech_code(&c, &pp)?;
@@ -119,6 +124,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     SectionElement::QuoteBlock(x) => x.hash(&mut hasher),
     SectionElement::ThematicBreak => {return Ok(Value::Empty);}
     SectionElement::List(x) => x.hash(&mut hasher),
+    x => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Feature not enabled {:?}", x), id: line!(), kind: MechErrorKind::None});}
   };
   let hash = hasher.finish();
   Ok(Value::Id(hash))

@@ -89,433 +89,32 @@ impl Formatter {
     src
   }
 
-  pub fn format_html(&mut self, tree: &Program, style: String) -> String {
-
+  pub fn format_html(&mut self, tree: &Program, style: String, shim: String) -> String {
     self.html = true;
+
     let toc = tree.table_of_contents();
     let formatted_src = self.program(tree);
     self.reset_numbering();
     let formatted_toc = self.table_of_contents(&toc);
-    
-    let head = format!(r#"<!DOCTYPE html>
-<html>
-    <head>
-        <link rel="icon" href="https://gitlab.com/mech-lang/assets/-/raw/main/images/favicon.ico" type="image/x-icon" />
-        
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous">
-        <script defer src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
-        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"
-        onload="renderMathInElement(document.body);"></script>
 
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
-        <style>
-          @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
-        </style>
-        <style>
-                  {}
-        </style>
-    </head>
-    <body>
-      <div class="mech-root" mech-interpreter-id=0>"#, style);
+    let title = match toc.title {
+      Some(title) => title.to_string(),
+      None => "Mech Program".to_string(),
+    };
+    
     #[cfg(feature = "serde")]
     let encoded_tree = match compress_and_encode(&tree) {
-      Ok(encoded) => encoded,
-      Err(e) => todo!(),
+        Ok(encoded) => encoded,
+        Err(e) => todo!(),
     };
     #[cfg(not(feature = "serde"))]
-    let encoded_tree = "".to_string();
-    let foot = format!(r#"
-      <div id = "mech-output"></div>
-    </div>
-    <script>
+    let encoded_tree = String::new();
 
-let observer = null;
-let userScrolling = false;
-let scrollTimeout = null;
-let scrollLock = false;
-
-function isFullyVisible(el) {{
-  const rect = el.getBoundingClientRect();
-  return (
-    rect.top >= 0 &&
-    rect.left >= 0 &&
-    rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-    rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-  );
-}}
-
-document.querySelectorAll('.mech-program-subtitle.toc').forEach(entry => {{
-  entry.addEventListener('click', () => {{
-    scrollLock = true;
-    if (observer) observer.disconnect();
-    const id = entry.id;
-    const tag = entry.tagName; // H1, H2, H3, etc.
-
-
-    const headings = document.querySelectorAll(".mech-program-subtitle:not(.toc)");
-    const navItems = document.querySelectorAll(".mech-program-subtitle.toc");
-    const sections = document.querySelectorAll(".mech-program-section.toc");
-    const all_the_headers = Array.from(document.querySelectorAll('[section]'));
-
-    navItems.forEach(item => item.classList.remove("active"));
-    sections.forEach(item => item.classList.remove("active"));
-
-    const section = entry.closest("section");
-
-    if (section) {{
-      if (!isFullyVisible(section)) {{
-        section.scrollIntoView();
-      }}
-      const matchingTocSection = Array.from(sections).find(item => item.id === section.id);
-      if (matchingTocSection) {{
-        matchingTocSection.classList.add("active");
-      }}
-
-      // Now grab the h2, h3, and h4 elements within that section
-      const h3s = Array.from(section.querySelectorAll('h3'));
-      const h4s = Array.from(section.querySelectorAll('h4'));
-
-      if (tag === "H5") {{
-        const closestH4 = h4s.reverse().find(h4 => h4.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
-        const H4Nav = Array.from(navItems).find(item => {{
-            const link = item.querySelector("a[href]");
-            return link && link.getAttribute("href") === `#${{closestH4.id}}`;
-        }});
-        closestH4.classList.add("active");
-      }}
-
-      if (tag === "H4" || tag === "H5") {{
-        const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
-        const H3Nav = Array.from(navItems).find(item => {{
-            const link = item.querySelector("a[href]");
-            return link && link.getAttribute("href") === `#${{closestH3.id}}`;
-        }});
-        closestH3.classList.add("active");
-      }}
-
-      // if tag is h3 then we want to add a "visible" class to all of the headings with the same section
-      if (tag === "H3") {{
-        const h3_id = entry.getAttribute("section");
-        all_the_headers.forEach(item => {{
-          const item_id = item.getAttribute("section");
-          if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {{
-            item.classList.add("visible");
-          }} else {{
-            item.classList.remove("visible");
-          }}
-        }});
-      }}
-
-      const topLevelHeading = section.querySelector("h2");
-      topLevelHeading.classList.add("active");
-
-    }}
-    entry.classList.add("active");
-    currentActiveTag = tag;
-    const link = entry.querySelector('a[href]');
-    if (link) {{
-      window.location.hash = link.getAttribute('href');
-    }}
-  }});
-}});
-
-function createObserver(rootMarginValue,scrolling_down) {{
-  if (observer) observer.disconnect(); // Clean up old observer
-  const headings = document.querySelectorAll(".mech-program-subtitle:not(.toc)");
-  const navItems = document.querySelectorAll(".mech-program-subtitle.toc");
-  const sections = document.querySelectorAll(".mech-program-section.toc");
-  const all_the_headers = Array.from(document.querySelectorAll('[section]'));
-  observer = new IntersectionObserver((entries) => {{
-
-entries
-  .slice() // Create a shallow copy to avoid mutating the original entries array
-  .sort((a, b) => {{
-    // Sort entries based on scroll direction
-    return scrolling_down
-      ? a.boundingClientRect.top - b.boundingClientRect.top // Ascending for scrolling down
-      : b.boundingClientRect.top - a.boundingClientRect.top; // Descending for scrolling up
-  }})
-  .forEach(entry => {{
-    if (entry.isIntersecting) {{
-        const id = entry.target.id;
-        const tag = entry.target.tagName; // H1, H2, H3, etc.
-
-        const activeNav = Array.from(navItems).find(item => {{
-          const link = item.querySelector("a[href]");
-          return link && link.getAttribute("href") === `#${{id}}`;
-        }});
-
-        if (!activeNav) return;
-
-        // Deactivate all TOC items
-        navItems.forEach(item => item.classList.remove("active"));
-        sections.forEach(item => item.classList.remove("active"));
-
-        // Activate the current section's top-level H2
-        const section = entry.target.closest("section");
-        if (section) {{
-          const matchingTocSection = Array.from(sections).find(item => {{
-            const toc_section_id = item.getAttribute("section");
-            const section_id = section.getAttribute("section");
-            if (toc_section_id && section_id) {{
-              return toc_section_id === section_id;
-            }}
-          }});
-          if (matchingTocSection) {{
-            matchingTocSection.classList.add("active");
-            const toc = document.querySelector(".mech-toc");
-
-            if (toc && matchingTocSection) {{
-              const itemOffsetTop = matchingTocSection.offsetTop;
-              const itemHeight = matchingTocSection.offsetHeight;
-              const tocHeight = toc.clientHeight;
-              const scrollTop = toc.scrollTop;
-
-              // Center the item manually if it's out of view
-              const visibleTop = scrollTop;
-              const visibleBottom = scrollTop + tocHeight;
-
-              if (itemOffsetTop < visibleTop || itemOffsetTop + itemHeight > visibleBottom) {{
-                toc.scrollTo({{
-                  top: itemOffsetTop - tocHeight / 2 + itemHeight / 2,
-                  behavior: "smooth"
-                }});
-              }}
-            }}
-          }}
-
-          // Now grab the h3, h4, h5 elements within that section
-          const h3s = Array.from(section.querySelectorAll('h3'));
-          const h4s = Array.from(section.querySelectorAll('h4'));
-          const h5s = Array.from(section.querySelectorAll('h5'));
-
-          if (tag === "H5") {{
-            const closestH4 = h4s.reverse().find(h4 => h4.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
-            const H4Nav = Array.from(navItems).find(item => {{
-                const link = item.querySelector("a[href]");
-                return link && link.getAttribute("href") === `#${{closestH4.id}}`;
-            }});
-            if (H4Nav) {{
-              H4Nav.classList.add("active");
-              const h4_id = H4Nav.getAttribute("section");
-              all_the_headers.forEach(item => {{
-                const item_id = item.getAttribute("section");
-                if (item_id && item_id.startsWith(h4_id) && item.tagName === "H4") {{
-                }} else {{
-                  item.classList.remove("visible");
-                }}
-              }});
-            }}
-          }}
-
-          if (tag === "H4" || tag == "H5") {{
-            const entry_section = entry.target.getAttribute("section");
-            const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
-            const H3Nav = Array.from(navItems).find(item => {{
-              const link = item.querySelector("a[href]");
-              return link && link.getAttribute("href") === `#${{closestH3.id}}`;
-            }});
-            if (H3Nav) {{
-              H3Nav.classList.add("active");
-              const h3_id = H3Nav.getAttribute("section");
-              all_the_headers.forEach(item => {{
-                const item_id = item.getAttribute("section");
-                // Check if the item_id starts with the h3_id and is an H4, if so, add "visible", if not, remove "visible"
-                if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {{
-                  item.classList.add("visible");
-                }} else {{
-                  item.classList.remove("visible");
-                }}
-              }});
-            }}
-          }}
-
-          // if tag is h3 then we want to add a "visible" class to all of the headings with the same section
-          if (tag === "H3") {{
-            const h3_id = entry.target.getAttribute("section");
-            all_the_headers.forEach(item => {{
-              const item_id = item.getAttribute("section");
-              // Check if the item_id starts with the h3_id and is an H4, if so, add "visible", if not, remove "visible"
-              if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {{
-                item.classList.add("visible");
-              }} else {{
-                item.classList.remove("visible");
-              }}
-            }});
-          }}
-
-          const topLevelHeading = section.querySelector("h2");
-          if (topLevelHeading) {{
-            const topLevelNav = Array.from(navItems).find(item => {{
-              const link = item.querySelector("a[href]");
-              return link && link.getAttribute("href") === `#${{topLevelHeading.id}}`;
-            }});
-            if (topLevelNav) {{
-              topLevelNav.classList.add("active");
-            }}
-          }}
-        }}
-        activeNav.classList.add("active");
-        currentActiveTag = tag;
-      }}
-    }});
-  }}, {{
-    root: null,
-    rootMargin: rootMarginValue,
-    threshold: 0
-  }});
-  headings.forEach(heading => observer.observe(heading));
-}}
-
-
-window.addEventListener("DOMContentLoaded", () => {{
-  createObserver("0px 0px 0px 0px");
-
-  function renderEquations(root = document) {{
-    const blockElements = root.querySelectorAll(".mech-equation");
-    blockElements.forEach(el => {{
-      if (!el.getAttribute("data-rendered")) {{
-        const eq = el.getAttribute("equation");
-        if (eq) {{
-          katex.render(eq, el, {{ throwOnError: false }});
-          el.setAttribute("data-rendered", "true");
-        }}
-      }}
-    }});
-
-    const inlineElements = root.querySelectorAll(".mech-inline-equation");
-    inlineElements.forEach(el => {{
-      if (!el.getAttribute("data-rendered")) {{
-        const eq = el.getAttribute("equation");
-        if (eq) {{
-          katex.render(eq, el, {{ throwOnError: false }});
-          el.setAttribute("data-rendered", "true");
-        }}
-      }}
-    }});
-
-    document.querySelectorAll(".mermaid svg").forEach(svg => {{
-      const labels = svg.querySelector(".node-labels");
-      if (labels && svg.lastElementChild !== labels) {{
-        svg.appendChild(labels); // Move labels to end = on top
-      }}
-    }});
-  }}
-
-  renderEquations();
-
-  // Set up a MutationObserver to watch for new elements
-  const observer = new MutationObserver(mutations => {{
-    for (const mutation of mutations) {{
-      for (const node of mutation.addedNodes) {{
-        if (node.nodeType === Node.ELEMENT_NODE) {{
-          renderEquations(node);
-        }}
-      }}
-    }}
-  }});
-
-  observer.observe(document.body, {{
-    childList: true,
-    subtree: true,
-  }});
-}});
-
-
-let lastScrollY = window.scrollY;
-let scrolling_down = true;
-let margin = 10;
-
-function getScrollPercentage() {{
-  const scrollTop = window.scrollY || window.pageYOffset;
-  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-
-  if (docHeight === 0) return 0; // avoid division by zero on short pages
-  return scrollTop / docHeight;
-}}
-
-window.addEventListener("scroll", () => {{
-  if (scrollLock) {{
-    scrollLock = false;
-    return;
-  }}
-  
-  const percent = getScrollPercentage();
-  const currentScrollY = window.scrollY;
-  scrolling_down = currentScrollY > lastScrollY;
-
-  if (currentScrollY !== lastScrollY) {{
-    lastScrollY = currentScrollY;
-  }}
-
-  if (percent < 0.05) {{
-    createObserver("0px 0px -90% 0px", scrolling_down);
-  }} else if (percent < 0.2) {{
-    createObserver("-0% 0px -90% 0px", scrolling_down);
-  }} else if (percent < 0.3) {{
-    createObserver("-10% 0px -80% 0px", scrolling_down);
-  }} else if (percent < 0.4) {{
-    createObserver("-20% 0px -70% 0px", scrolling_down);
-  }} else if (percent < 0.5) {{
-    createObserver("-30% 0px -60% 0px", scrolling_down);
-  }} else if (percent < 0.6) {{
-    createObserver("-40% 0px -50% 0px", scrolling_down);
-  }} else if (percent < 0.7) {{
-    createObserver("-50% 0px -40% 0px", scrolling_down);
-  }} else if (percent < 0.8) {{
-    createObserver("-60% 0px -30% 0px", scrolling_down);
-  }} else if (percent < 0.9) {{
-    createObserver("-70% 0px -20% 0px", scrolling_down);
-  }} else if (percent <= 0.95) {{
-    createObserver("-80% 0px 0% 0px", scrolling_down);
-  }}
-}});
-
-</script>
-    <script type="module">
-
-
-      import init, {{WasmMech}} from '/pkg/mech_wasm.js';
-      let wasm_core;
-      async function run() {{
-        await init();
-        var code = `{}`;
-        wasm_core = new WasmMech();
-        var xhr = new XMLHttpRequest();
-        var codeUrl = `/code${{window.location.pathname}}`;
-        xhr.open('GET', codeUrl, true);
-        xhr.onload = function (e) {{
-          if (xhr.readyState === 4) {{
-            if (xhr.status === 200) {{
-              var src = xhr.responseText;
-              wasm_core.run_program(src);
-              wasm_core.init();
-              wasm_core.render_inline_values();
-              wasm_core.render_codeblock_output_values();
-              wasm_core.attach_repl("mech-output");
-            }} else {{
-              console.error("Defaulting to included program");
-              wasm_core.run_program(code);
-              wasm_core.init();
-              wasm_core.render_inline_values();
-              wasm_core.render_codeblock_output_values();
-              wasm_core.attach_repl("mech-output");
-            }}
-          }}
-        }};
-        xhr.onerror = function (e) {{
-          console.error("I've been waiting for this error. Look me up in formatter.rs");
-          console.error(xhr.statusText);
-        }};
-        xhr.send(null);        
-      }}
-      run();
-    </script>
-  </body>
-</html>"#, encoded_tree);
-    format!("{}{}{}{}", head, formatted_toc, formatted_src, foot)
+    shim.replace("{{STYLESHEET}}", &style)
+        .replace("{{TOC}}", &formatted_toc)
+        .replace("{{CONTENT}}", &formatted_src)
+        .replace("{{CODE}}", &encoded_tree)
+        .replace("{{TITLE}}", &title)
   }
 
   pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
@@ -591,8 +190,10 @@ window.addEventListener("scroll", () => {{
     }
     
     let toc = if self.toc { "toc" } else { "" };
-    let title_id = hash_str(&format!("{}.{}.{}.{}.{}.{}.{}{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num,level,node.to_string(),toc));
-    let link_id  = hash_str(&format!("{}.{}.{}.{}.{}.{}.{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num,level,node.to_string()));
+    let title_id = hash_str(&format!("{}.{}.{}.{}.{}{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num,toc));
+    
+    let link_str = format!("{}.{}.{}.{}.{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num);
+    let link_id  = hash_str(&link_str);
 
     let section = if level == 2 { format!("section=\"{}.{}\"", self.h2_num, self.h3_num) } 
     else if level == 3 { format!("section=\"{}.{}\"", self.h2_num, self.h3_num) }
@@ -703,6 +304,27 @@ window.addEventListener("scroll", () => {{
           format!("!!{}!!", n.to_string())
         }
       },
+      ParagraphElement::SectionReference(n) => {
+        let section_id_str = n.to_string();
+        let parts: Vec<&str> = section_id_str.split('.').collect();
+        let mut nums = vec!["0"; 5]; // up to h6 level
+        for (i, part) in parts.iter().enumerate() {
+          nums[i] = part;
+        }
+        let id_str = format!("{}.{}.{}.{}.{}",nums[0], nums[1], nums[2], nums[3], nums[4]);
+        let id = hash_str(&id_str);
+
+        if self.html {
+          format!(
+            "<span class=\"mech-section-reference\">
+              <a href=\"#{}\" class=\"mech-section-reference-link\">§{}</a>
+            </span>",
+            id, n.to_string()
+          )
+        } else {
+          format!("§{}", n.to_string())
+        }
+      }
       ParagraphElement::Reference(n) => self.reference(n),
       ParagraphElement::InlineEquation(exq) => self.inline_equation(exq),
       ParagraphElement::Text(n) => {
@@ -825,23 +447,61 @@ window.addEventListener("scroll", () => {{
 
   pub fn image(&mut self, node: &Image) -> String {
     self.figure_num += 1;
+
     let src = node.src.to_string();
     let caption_p = match &node.caption {
       Some(caption) => self.paragraph(caption),
       None => "".to_string(),
     };
-    let figure_label = format!("Fig {}.{}",self.h2_num, self.figure_num);
+
+    let figure_label = format!("Fig {}.{}", self.h2_num, self.figure_num);
     let image_id = hash_str(&src);
     let figure_id = hash_str(&figure_label);
+
     if self.html {
-      format!("<figure id=\"{}\" class=\"mech-figure\">
-        <img id=\"{}\" class=\"mech-image\" src=\"{}\" />
-        <figcaption class=\"mech-figure-caption\"><strong class=\"mech-figure-label\">{}</strong> {}</figcaption>
-      </figure>", figure_id, image_id, src, figure_label, caption_p)
+      let style_attr = match &node.style {
+        Some(option_map) if !option_map.elements.is_empty() => {
+          let style_str = option_map
+            .elements
+            .iter()
+            .map(|(k, v)| {
+              let clean_value = v.to_string().trim_matches('"').to_string();
+              format!("{}: {}", k.to_string(), clean_value)
+            })
+            .collect::<Vec<_>>()
+            .join("; ");
+          format!(" style=\"{}\"", style_str)
+        }
+        _ => "".to_string(),
+      };
+      format!(
+"<figure id=\"{}\" class=\"mech-figure\">
+  <img id=\"{}\" class=\"mech-image\" src=\"{}\"{} />
+  <figcaption class=\"mech-figure-caption\">
+    <strong class=\"mech-figure-label\">{}</strong> {}
+  </figcaption>
+</figure>",figure_id, image_id, src, style_attr, figure_label, caption_p)
     } else {
-      format!("![{}]({})",caption_p, src)
+      let style_str = match &node.style {
+        Some(option_map) if !option_map.elements.is_empty() => {
+          let inner = option_map
+            .elements
+            .iter()
+            .map(|(k, v)| {
+              let clean_value = v.to_string().trim_matches('"').to_string();
+              format!("{}: \"{}\"", k.to_string(), clean_value)
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("{{{}}}", inner)
+      }
+      _ => "".to_string(),
+    };
+
+    format!("![{}]({}){}", caption_p, src, style_str)
     }
   }
+
 
   pub fn abstract_el(&mut self, node: &Vec<Paragraph>) -> String {
     let abstract_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
@@ -877,7 +537,7 @@ window.addEventListener("scroll", () => {{
     let citation_num = match self.citation_map.get(&id) {
       Some(&num) => num,
       None => {
-        return format!("Citation {} not found in citation map.", id);
+        return format!("Citation {} not found in citation map.", node.id.to_string());
       }
     };
     let formatted_citation = if self.html {
@@ -912,7 +572,7 @@ window.addEventListener("scroll", () => {{
     if self.html {
       format!("<div class=\"mech-info-block\">{}</div>",info_paragraph)
     } else {
-      format!("!!! info\n{}\n",info_paragraph)
+      format!("(!)> {}\n",info_paragraph)
     }
   }
 
@@ -921,7 +581,7 @@ window.addEventListener("scroll", () => {{
     if self.html {
       format!("<div class=\"mech-question-block\">{}</div>",question_paragraph)
     } else {
-      format!("!!! question\n{}\n",question_paragraph)
+      format!("(?)> {}\n",question_paragraph)
     }
   }
 
@@ -945,7 +605,7 @@ window.addEventListener("scroll", () => {{
       SectionElement::MechCode(n) => self.mech_code(n),
       SectionElement::Paragraph(n) => self.paragraph(n),
       SectionElement::Subtitle(n) => self.subtitle(n),
-      SectionElement::Table(n) => self.markdown_table(n),
+      SectionElement::Table(n) => self.mechdown_table(n),
       SectionElement::ThematicBreak => self.thematic_break(),
     }
   }
@@ -981,16 +641,16 @@ window.addEventListener("scroll", () => {{
     }
   }
 
-  pub fn markdown_table(&mut self, node: &MarkdownTable) -> String {
+  pub fn mechdown_table(&mut self, node: &MarkdownTable) -> String {
     if self.html {
-      self.markdown_table_html(node)
+      self.mechdown_table_html(node)
     } else {
-      self.markdown_table_string(node)
+      self.mechdown_table_string(node)
     }
   }
 
 
-  pub fn markdown_table_string(&mut self, node: &MarkdownTable) -> String {
+  pub fn mechdown_table_string(&mut self, node: &MarkdownTable) -> String {
     // Helper to render a row of Paragraphs as `| ... | ... |`
     fn render_row(cells: &[Paragraph], f: &mut impl FnMut(&Paragraph) -> String) -> String {
         let mut row = String::from("|");
@@ -1037,7 +697,7 @@ window.addEventListener("scroll", () => {{
 }
 
 
-  pub fn markdown_table_html(&mut self, node: &MarkdownTable) -> String {
+  pub fn mechdown_table_html(&mut self, node: &MarkdownTable) -> String {
     let mut html = String::new();
     html.push_str("<table class=\"mech-table\">");
 

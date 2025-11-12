@@ -75,6 +75,11 @@ impl Interpreter {
   }
 
   #[cfg(feature = "functions")]
+  pub fn set_functions(&mut self, functions: FunctionsRef) {
+    self.state.borrow_mut().functions = functions;
+  }
+
+  #[cfg(feature = "functions")]
   pub fn step(&mut self, steps: u64) -> &Value {
     let state_brrw = self.state.borrow();
     let mut plan_brrw = state_brrw.plan.borrow_mut();

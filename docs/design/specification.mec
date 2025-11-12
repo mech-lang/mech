@@ -19,11 +19,9 @@ This document is for:
 
 (2.1) File Format
 
-Mech source code can be stored in files with either the `.mec` or `.🤖` extension. 
+Mech source code can be stored in files with either the `.mec` extension. 
 
 Source code is ecoded with UTF-8, which allows for Unicode support. This choice has several benefits:
-
-Mech binary bytecode files use the `.mecb` extension. The bytecode format is specified in the [Bytecode Specification](#).
 
 (2.2) Literate Programming and Mechdown
 
@@ -33,7 +31,7 @@ For more information, see the [Mechdown Section](#45036232896389885).
 
 (2.3) Whitespace
 
-Whitespace includes spaces (` `), tabs (`\t`), carriage returns (`\r`) and newlines (`\n`). Although it is generally ignored, whitespace is be significant in several contexts:
+Whitespace includes spaces (` `), tabs (`\\t`), carriage returns (`\\r`) and newlines (`\\n`). Although it is generally ignored, whitespace is be significant in several contexts:
 
 - In lists, whitespace can be used to separate items.
 - In matrix and table definitions, whitespace can deliniate columns and rows.
@@ -98,7 +96,7 @@ enum-separator := ws0, "|", ws0 ;
 | Assign       | `:=` `=` `+=` `-=` `*=` `/=` `^=`                  |
 | Arithmetic   | `+` `-` `*` `/` `÷` `^` `%`                        |
 | Condition    | `!=` `¬=` `≠` `==` `>` `<` `>=` `≤` `≥`            |
-| Matrix       | `**` `·` `⨯` `\` `'`                               |
+| Matrix       | `**` `·` `⨯` `\\` `'`                               |
 | Logic        | `||` `&&` `^^` `⊕` `⊻` `∧` `∨` `¬` `!`            |
 | Set          | `∪` `∩` `∖` `∁` `⊂` `⊃` `⊆` `⊇` `⊊` `⊋` `∈` `∉` |
 | Table        | `⋈` `⟕` `⟖` `⟗` `⋉` `▷`                        |
@@ -143,6 +141,7 @@ symbol := ampersand
       | asterisk 
       | caret 
       | underscore ;
+identifier-symbol := ¬(equal | underscore) , symbol ;
 ```
 
 (3.2.3.1) Examples
@@ -242,7 +241,7 @@ This allows users to write code in their native language without the need to lea
 (3.5) Identifiers
 
 ```ebnf
-identifier := (alpha | emoji), *(alpha | digit | symbol | emoji) ;
+identifier := (alpha | emoji), *(alpha | digit | identifier-symbol | emoji) ;
 ```
 
 Identifiers start with letters or most UTF-8 encoded emoji characters, and can contain alphanumeric, most emojis, `/`, `*`, `+`, `-`, and `^` characters.
@@ -265,9 +264,9 @@ literal := (number | string | atom | boolean | empty), ?kind-annotation ;
 ```
 Mech supports several types of literals, which are used to represent values in the code. Each literal type has its own syntax and semantics. Each literal has an associated "kind", which describes the data type of the literal. Mech supports the following literal types:
 
-- **[Number](#37267966290163346)** - Represents numeric values, including integers, floating-point numbers, and complex numbers.
+- **[Number](#25538158040124283)** - Represents numeric values, including integers, floating-point numbers, and complex numbers.
   - **Real** - Real numbers, including integers and floats.
-    - **[Integer](#37267966290163346)** - Whole numbers, which can be positive, negative, or zero.
+    - **[Integer](#346483031942019815)** - Whole numbers, which can be positive, negative, or zero.
       - **Signed** - Can represent both negative and positive values.
         - `i8` - 8-bit signed integer
         - `i16` - 16-bit signed integer
@@ -283,18 +282,18 @@ Mech supports several types of literals, which are used to represent values in t
       - **Floating-point** - Decimal numbers, which can represent fractions.
         - `f32` - 32-bit floating-point number, can represent integers up to `2^24`.
         - `f64` - 64-bit floating-point number, can represent integers up to `2^53`.
-    - **[Fractional](#42081371828028886)** - Decimal numbers with fractional components.
+    - **[Fractional](#41214582360059684)** - Decimal numbers with fractional components.
       - `f32` - 32-bit floating-point number
       - `f64` - 64-bit floating-point number
       - `r64` - 64-bit rational number, which can be represented as a fraction of two `i64` integers.
-  - **[Complex](#56240170191408726)** - Represent imaginary components of complex numbers.
+  - **[Complex](#43239854015280042)** - Represent imaginary components of complex numbers.
       - `c64` - 64-bit complex number, which can be represented as a pair of `f64` values corresponding to the real and imaginary parts.
-- **[String](#47529497278632120)**
+- **[String](#35096787880505906)**
       - `string` - A sequence of UTF-8 characters representing text.
-- **[Boolean](#48514366102391185)** 
+- **[Boolean](#21679232488966882)** 
       - `bool` - Represents logical truth values.
-- **[Atom](#44296553944821468)** - A symbolic constant, often used for tags or enums.
-- **[Empty](#71073114937685177)**
+- **[Atom](#63154299616713112)** - A symbolic constant, often used for tags or enums.
+- **[Empty](#70084660282633489)**
       - `_` - Represents an empty value, placeholder, or the absence of a value.
 
 (4.1) Kinds
@@ -339,7 +338,7 @@ kind-tuple := "("
 kind-scalar := identifier ;
 ```
 
-Kinds are used to specify the type of a literal or expression in Mech. Kinds are specified with a syntax structure called a "kirby" e.g. `<string>`, which indicates a String data type; or `<[u64]:3,1>`, which indicates a 3x1 matrix of 32-bit unsigned integeres.
+Kinds are used to specify the type of a literal or expression in Mech. Kinds are specified with a syntax structure called a "kirby" e.g. `&ltstring&gt`, which indicates a String data type; or `<[u64]:3,1>`, which indicates a 3x1 matrix of 32-bit unsigned integeres.
 
 (4.1.1) Kind
 
@@ -469,7 +468,7 @@ Complex numbers can be represented using the `c64` kind, which indicates a 64-bi
 string := quote, *(¬quote, (text | new-line)), quote ;
 ```
 
-Strings are enclosed in double quotes `"` and can contain any character, including whitespace, except for the quote character itself. To include a quote character in a string, it must be escaped with a backslash `\`.
+Strings are enclosed in double quotes `"` and can contain any character, including whitespace, except for the quote character itself. To include a quote character in a string, it must be escaped with a backslash `\\`.
 
 Strings heap-allocate their contents, so they can be of any length. They are encoded in UTF-8, allowing for Unicode characters.
 
@@ -1240,9 +1239,10 @@ dot-subscript := ".", identifier ;
 dot-subscript-int := ".", integer-literal ;
 ```
 (7.2.1) Examples
-    dot_result_1 := object.field        -- Dot subscript with identifier
-    dot_result_2 := object.42           -- Dot subscript with integer literal
-
+```
+dot_result_1 := object.field        -- Dot subscript with identifier
+dot_result_2 := object.42           -- Dot subscript with integer literal
+```
 (7.3) Swizzle
 
 ```ebnf
@@ -1378,28 +1378,37 @@ Moreover, Mechdown supports tables and other features that are not present in Ma
 
 Mech programs and scripts can be written entirely without Mechdown, but literate programming with Mechdown is idomatic.
 
-(a) Body
+(10.1) Body
 
 ```ebnf
-program := ?title, body ;
-body := +section ;
+program := ws0, ?title, body, ws0 ;
+body := ws0, +(section, section-elements), ws0 ;
 ```
 
-(b) Sections and Section Elements
+(10.2) Sections and Section Elements
 
 ```ebnf
 section-element := +mech-code 
-      | unordered-list 
-      | markdown-table
-      | block-quote
-      | code-block
-      | thematic-break
-      | equation
+      | list 
+      | footnote 
+      | citation 
+      | abstract 
+      | img 
+      | equation 
+      | markdown-table 
+      | float 
+      | block-quote 
+      | block-important
+      | block-question
+      | code-block 
+      | thematic-break 
+      | subtitle 
       | paragraph ;
-section := ?ul-subtitle, +section-element ;
+section := ul-subtitle, *section-element ;
+section-elements := +(¬ul-subtitle, section-element) ;
 ```
 
-(b) Titles
+(10.3) Titles
 
 ```ebnf
 title := +text
@@ -1435,7 +1444,7 @@ alpha-subtitle := *(space|tab)
       , ws0 ;
 ```
 
-There are 4 levels of titles: the document title, section titles, and two levels of sub section titles. 
+There are 6 levels of titles: the document title, section titles, and two levels of sub section titles. 
 
 **Example:**
 
@@ -1453,33 +1462,132 @@ Title
 
 Section titles and the first level of sub-section titles comprise the table of contents, which is generated automatically.
 
-(c) Paragraphs and Paragraph Elements
+(10.4) Paragraphs
 
 ```ebnf
 paragraph := +paragraph-element;
-paragraph-element := hyperlink
-      | raw-hyperlink
-      | paragraph-text
-      | strong
-      | emphasis
-      | inline-code
-      | strikethrough
+paragraph-element := hyperlink 
+      | reference 
+      | section-reference
+      | raw-hyperlink 
+      | highlight 
+      | footnote-reference 
+      | inline-mech-code 
+      | eval-inline-mech-code 
+      | inline-equation 
+      | paragraph-text 
+      | strong 
+      | highlight 
+      | emphasis 
+      | inline-code 
+      | strikethrough 
       | underline ;
-paragraph-exclude := http-prefix | left-bracket | tilde | asterisk | underscore | grave | define-operator | bar ;
+paragraph-exclude := img-prefix 
+      | http-prefix 
+      | section-sigil
+      | left-bracket 
+      | tilde 
+      | asterisk 
+      | underscore 
+      | grave 
+      | define-operator 
+      | bar ;
 paragraph-text := +(¬(paragraph-exclude), text) ;
 ```
 
-Paragraphs are a block element that can contain a number of inline elements including:
+At their base, paragraphs are blocks or raw text that start with a valid paragraph starter and end with a newline character.
 
-- **Strong text:** `**text**`
-- **Emphasis text:** `*text*`
-- **Strikethrough text:** `~text~`
-- **Underlined text:** `_text_`
-- **Inline code:** code 
-- **Hyperlinks:** `[text](url)` also raw links `http://example.com`
-- **Inline Mech:** `{expression}`
+(10.4.1) Paragraph Elements
 
-(b) Lists
+```ebnf
+strong := (asterisk, asterisk), +paragraph-element, (asterisk, asterisk) ;
+emphasis := asterisk, +paragraph-element, asterisk ;
+strikethrough := tilde, +paragraph-element, tilde ;
+underline := underscore, +paragraph-element, underscore ;
+highlight := "!!", +paragraph-element, "!!" ;
+inline-code := grave, +text, grave ;
+inline-equation := equation-sigil, +text, equation-sigil ;
+hyperlink := "[", +text, "]", "(", +text, ")" ;
+raw-hyperlink := http-prefix, +text ;
+eval-inline-mech-cdoe := "{", expression, "}" ;
+inline-mech-cdoe := "{{", expression, "}}" ;
+```
+
+Beyond raw text, paragraphs also can contain various markup which indicates inline elements. Mechdown supports the following inline markup:
+
+```
+- Text Markup
+  - **Bold Text**
+  - *Italic Text*
+  - __Underline Text__
+  - ~~Strikethough Text~~
+  - !!Highlighted Text!!
+- Inline Elements
+  - `Inline code blocks`
+  - {{inline-mech := syntax + "highlighting"}}
+  - $$\pm\sqrt{inline^2 + equation^2}$$
+- Link Elements
+  - [Hyperlinks](#)
+  - Autonumbered inline references [MECH]
+  - Autonumbered footnote references[^1]
+  - Section references §10.4
+```
+
+This renders as
+
+- Text Markup
+  - **Bold Text**
+  - *Italic Text*
+  - __Underline Text__
+  - ~~Strikethough Text~~
+  - !!Highlighted Text!!
+- Inline Elements
+  - `Inline code blocks`
+  - {{inline-mech := syntax + "highlighting"}}
+  - $$\pm\sqrt{inline^2 + equation^2}$$
+- Link Elements
+  - [Hyperlinks](#)
+  - Autonumbered inline references [MECH]
+  - Autonumbered footnote references[^1]
+  - Section references §10.4
+
+(10.4.2) References
+
+```ebnf
+footnote := "[^", +text, "]", ":", ws0, paragraph ;
+footnote-reference := "[^", +text, "]" ;
+citation-reference := "[", +alphanumeric, "]" ;
+citation := "[", (identifier | number), "]", ":", ws0, paragraph, ws0, ?("(", +text, ")") ;
+section-reference := "§" , +(alphanumeric | period) ;
+```
+
+Mechdown supports various references including footnotes, citations, and section references.
+
+Footnotes are used to indicate additional information or references at the bottom of the document. They are referenced inline using a `[^label]` syntax. Footnotes are defined as section elements, and are rendered where they are defined. They are indicated with a `[^label]:` syntax, followed by the footnote text.
+
+Citations are used to reference external sources or documents. They are indicated inline using a `[label]` syntax. Citations are defined as section elements, and are rendered at the bottom of the document, in an auto-generated "Works Cited" section. They are indicated with a `[label]:` syntax, followed by the citation text and optional additional information in parentheses. The label used in reference must match the label used in the citation definition.
+
+Section references are inline references to section titles, and are indicated with a `§` followed by the section number, or a unique section label.
+
+(10.4.2.1) Examples
+
+```
+This is a paragraph with a footnote reference.[^1] Here is a citation reference.[MECH] Finally, we have a section reference to §10.4.
+
+[^1]: This is the text of the footnote.
+[MECH]: Mech Programming Language. (2024). Retrieved from https://mechlang.org (Mech Official Website)
+```
+
+This renders as:
+
+This is a paragraph with a footnote reference.[^1] Here is a citation reference.[MECH] Finally, we have a section reference to §10.4.
+
+[^1]: This is the text of the footnote.
+[MECH]: Mech Programming Language. (2024). Retrieved from https://mechlang.org (Mech Official Website)
+
+(?)> Although the referenec is defined here in the document, it will be rendered at the bottom of the document in the "Works Cited" section. This is in contrast to footnotes, which are rendered where they are defined.
+
+(10.5) Lists
 
 ```ebnf
 unordered-list := +list-item, ?new-line, ws0 ;
@@ -1548,7 +1656,7 @@ Here's a list of some of the features of lists:
     -[x] Two
     -[ ] Three
 
-(b) Thematic Breaks
+(10.6) Thematic Breaks
 
 ```ebnf
 thematic-break := asterisks, asterisks, +asterisks ;
@@ -1567,7 +1675,7 @@ When rendered, they look like this:
 
 ***
 
-(b) Code Blocks
+(10.7) Code Blocks
 
 ```ebnf
 code-block := (grave, grave, grave), new-line, any, (grave, grave, grave), new-line, ws0 ;
@@ -1575,7 +1683,7 @@ code-block := (grave, grave, grave), new-line, any, (grave, grave, grave), new-l
 
 Mechdown supports code blocks, which are enclosed in triple backticks (graves) and can contain any text. Code blocks are useful for including Mech code snippets or other text that should be displayed verbatim.
 
-(b) Equations
+(10.8) Equations
 
 ```ebnf
 equation := (dollar, dollar), +text, new-line;
@@ -1595,25 +1703,47 @@ $$ c = \pm\sqrt{a^2 + b^2}
 
 Mechdown also supports inline equations, which begin and conclude with a `$$`. They are expressed with LaTeX syntax, like so: `$$c^2 = a^2 + b^2$$`. This is rendered by a third-party library into $$c^2 = a^2 + b^2$$.
 
-(b) Block Quotes
+(10.9) Callout Blocks
 
 ```ebnf
-block-quote := ">" , ws0, +paragraph ;
+block-quote := ">", ws0, +paragraph ;
+block-important := "(!)>", ws0, +paragraph ;
+block-question := "(?)>", ws0, +paragraph ;
 ```
 
-Block quotes are used to indicate quoted text. They are created using the `>` character followed by a space, and can contain any text until a newline.
+Callouts are used to emphasize a paragraphs, and classifies them into one of three semantic categories:
+
+- Quotes: for quotations, indicated with a `>`.
+- Important: for information critical to the reader, indicated with a `(!)>`
+- Question: for anticipated and frequently asked questions, indicated with a `(?)>`
+
+Multiple paragraphs can be included in the callout block as long as there are no newline characters between them (although a newline is of course required to end a paragraph).
 
 **Example:**
 
 ```
-> This is a block quote.
+> This is a quote block.
+
+(!)> This is an important block.
+
+(?)> This is a question block.
+
+(?)> This is a question block with multiple paragraphs.
+This is the second paragraph.
 ```
 
 When rendered, they look like this:
 
-> This is a block quote.
+> This is a quote block.
 
-(b) Tables
+(!)> This is an important block.
+
+(?)> This is a question block.
+
+(?)> This is a question block with multiple paragraphs.
+This is the second paragraph.
+
+(10.10) Tables
 
 ```ebnf
 markdown-table := markdown-table-header, *markdown-table-row ;
@@ -1668,23 +1798,22 @@ The body of a table is defined using rows of text separated by pipes. Each row c
 **Example:**
 
 ```
-| Left  | Center | Right |
-|:------|-------:|:-----:|
-| One   | Four   | 10    |
-| Two   | Five   | 100   |
-| Three | Six    | 1000  |
+| Align Left  | Align Center | Align Right |
+|:------------|:------------:|------------:|
+| One         | Four         | {1 * 10}    |
+| Two         | Five         | {2 * 20}    |
+| Three       | Six          | {3 * 30}    |
 ```
 
 Renders the following table:
 
-| Left  | Center | Right |
-|:------|:------:|------:|
-| One   | Four   | 10    |
-| Two   | Five   | 100   |
-| Three | Six    | 1000  |
+| Align Left  | Align Center | Align Right |
+|:------------|:------------:|0-----------:|
+| One         | Four         | {1 * 10}    |
+| Two         | Five         | {2 * 20}    |
+| Three       | Six          | {3 * 30}    |
 
-
-(b) Mech Extensions 
+(10.11) Mech Extensions 
 
 ```ebnf
 mech-code := mech-code-alt, ("\n" | ";" | comment) ;

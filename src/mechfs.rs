@@ -77,6 +77,18 @@ impl MechFileSystem {
     }
   }
 
+  pub fn set_shim(&mut self, shim: &str) -> MResult<()> {
+    match self.sources.write() {
+      Ok(mut sources) => {
+        sources.set_shim(shim);
+        Ok(())
+      },
+      Err(e) => {
+        Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Could not set shim".to_string(), id: line!(), kind: MechErrorKind::None})
+      },
+    }
+  }
+
   pub fn sources(&self) -> Arc<RwLock<MechSources>> {
     self.sources.clone()
   }
@@ -104,7 +116,7 @@ impl MechFileSystem {
       match self.sources.write() {
         Ok(mut sources) => {
           for f in files {
-            // if the file extension is not .mec, or .🤖, continue
+            // load mech source code
             if f.extension() == Some(OsStr::new("mec")) || f.extension() == Some(OsStr::new("🤖")) {
               match sources.add_source(&f.display().to_string(),src) {
                 Ok(_) => {
@@ -114,6 +126,7 @@ impl MechFileSystem {
                   return Err(e);
                 },
               }
+            // load mech bytecode
             } else if f.extension() == Some(OsStr::new("mecb"))  {
               match sources.add_source(&f.display().to_string(),src) {
                 Ok(_) => {
@@ -123,6 +136,37 @@ impl MechFileSystem {
                   return Err(e);
                 },
               }
+            // load mech docs
+            } else if f.extension() == Some(OsStr::new("mdoc")) {
+              match sources.add_source(&f.display().to_string(),src) {
+                Ok(_) => {
+                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+                },
+                Err(e) => {
+                  return Err(e);
+                },
+              }   
+            // load mech config file
+            } else if f.extension() == Some(OsStr::new("mpkg")) {
+              match sources.add_source(&f.display().to_string(),src) {
+                Ok(_) => {
+                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+                },
+                Err(e) => {
+                  return Err(e);
+                },
+              }              
+            // load matlab file           
+            } else if f.extension() == Some(OsStr::new("m")) {
+              match sources.add_source(&f.display().to_string(),src) {
+                Ok(_) => {
+                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+                },
+                Err(e) => {
+                  return Err(e);
+                },
+              }       
+            // load html/css files                  
             } else if f.extension() == Some(OsStr::new("html")) 
                     || f.extension() == Some(OsStr::new("htm"))
                     || f.extension() == Some(OsStr::new("css")) {
@@ -134,7 +178,42 @@ impl MechFileSystem {
                   return Err(e);
                 },
               }
+            // load markdown files
             } else if f.extension() == Some(OsStr::new("md")) {
+              match sources.add_source(&f.display().to_string(),src) {
+                Ok(_) => {
+                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+                },
+                Err(e) => {
+                  return Err(e);
+                },
+              }
+            // load comma-separated values (csv) files
+            } else if f.extension() == Some(OsStr::new("csv")) {
+              match sources.add_source(&f.display().to_string(),src) {
+                Ok(_) => {
+                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+                },
+                Err(e) => {
+                  return Err(e);
+                },
+              }
+            // load js files
+            } else if f.extension() == Some(OsStr::new("js")) {
+              match sources.add_source(&f.display().to_string(),src) {
+                Ok(_) => {
+                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+                },
+                Err(e) => {
+                  return Err(e);
+                },
+              }
+            // load images
+            } else if f.extension() == Some(OsStr::new("png")) 
+                    || f.extension() == Some(OsStr::new("jpg")) 
+                    || f.extension() == Some(OsStr::new("jpeg")) 
+                    || f.extension() == Some(OsStr::new("gif")) 
+                    || f.extension() == Some(OsStr::new("svg")) {
               match sources.add_source(&f.display().to_string(),src) {
                 Ok(_) => {
                   println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
@@ -163,9 +242,15 @@ impl MechFileSystem {
     }) 
     {
       Ok(mut watcher) => {
-        println!("{} Watching: {}", "[Watch]".truecolor(153,221,85), src_path.display());
-        watcher.watch(&src_path, RecursiveMode::Recursive).unwrap();
-        self.watchers.push(Box::new(watcher));
+        match watcher.watch(&src_path, RecursiveMode::Recursive) {
+          Ok(_) => {
+            println!("{} Watching: {}", "[Watch]".truecolor(153,221,85), src_path.display());
+            self.watchers.push(Box::new(watcher));
+          }
+          Err(err) => {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Error watching path: {}", err), id: line!(), kind: MechErrorKind::None});
+          },
+        }       
       }
       Err(err) => println!("[Watch] Error creating watcher: {}", err),
     }
@@ -177,6 +262,7 @@ impl MechFileSystem {
 pub struct MechSources {
   index: u64,
   stylesheet: String,
+  shim: String,
   sources: HashMap<u64,MechSourceCode>,             // u64 is the hash of the relative source 
   trees: HashMap<u64,MechSourceCode>,               // stores the ast for the sources
   errors: HashMap<u64,Vec<MechError>>,              // stores the errors for the sources
@@ -200,6 +286,7 @@ impl MechSources {
     MechSources {
       index: 0,
       stylesheet: "".to_string(),
+      shim: "".to_string(),
       sources: HashMap::new(),
       trees: HashMap::new(),
       html: HashMap::new(),
@@ -242,7 +329,7 @@ impl MechSources {
       MechSourceCode::String(ref source) => match parser::parse(&source) {
         Ok(tree) => {
           let mut formatter = Formatter::new();
-          let mech_html = formatter.format_html(&tree,self.stylesheet.clone());
+          let mech_html = formatter.format_html(&tree,self.stylesheet.clone(),self.shim.clone());
           (MechSourceCode::Tree(tree), 
             MechSourceCode::Html(mech_html))
         }
@@ -270,13 +357,17 @@ impl MechSources {
     self.stylesheet = stylesheet.to_string();
   }
 
+  pub fn set_shim(&mut self, shim: &str) {
+    self.shim = shim.to_string();
+  }
+
   pub fn add_code(&mut self, code: &MechSourceCode) -> MResult<()> {
     
     match code {
       MechSourceCode::String(ref source) => {
         let tree = parser::parse(&source)?;
         let mut formatter = Formatter::new();
-        let mech_html = formatter.format_html(&tree,self.stylesheet.clone());
+        let mech_html = formatter.format_html(&tree,self.stylesheet.clone(),self.shim.clone());
         //let mech_html = Formatter::humanize_html(mech_html);
 
         // Save all this so we don't have to do it later.
@@ -288,7 +379,7 @@ impl MechSources {
       },
       MechSourceCode::Tree(ref tree) => {
         let mut formatter = Formatter::new();
-        let mech_html = formatter.format_html(&tree,self.stylesheet.clone());
+        let mech_html = formatter.format_html(&tree,self.stylesheet.clone(),self.shim.clone());
         //let mech_html = Formatter::humanize_html(mech_html);
 
         // Save all this so we don't have to do it later.
@@ -317,7 +408,7 @@ impl MechSources {
           }
         };
         let mut formatter = Formatter::new();
-        let mech_html = formatter.format_html(&tree, self.stylesheet.clone());
+        let mech_html = formatter.format_html(&tree, self.stylesheet.clone(),self.shim.clone());
         Ok((MechSourceCode::Tree(tree), MechSourceCode::Html(mech_html)))
       }
       MechSourceCode::Program(code_vec) => {
@@ -340,7 +431,7 @@ impl MechSources {
       MechSourceCode::Html(html) => Ok((MechSourceCode::Tree(core::Program {title: None,body: core::Body { sections: vec![] },}),MechSourceCode::Html(html.clone()))),
       MechSourceCode::Tree(t) => {
         let mut formatter = Formatter::new();
-        let mech_html = formatter.format_html(t, self.stylesheet.clone());
+        let mech_html = formatter.format_html(t, self.stylesheet.clone(),self.shim.clone());
         Ok((MechSourceCode::Tree(t.clone()), MechSourceCode::Html(mech_html)))
       }
       _ => Ok((MechSourceCode::Tree(core::Program {title: None,body: core::Body { sections: vec![] },}),MechSourceCode::Html("".to_string()))),
@@ -357,6 +448,21 @@ impl MechSources {
       Err(_) => canonical_path.as_path(),
     };
     match read_mech_source_file(&canonical_path) {
+      Ok(MechSourceCode::Image(extension, img_bytes)) => {
+        let file_id = hash_str(&canonical_path.display().to_string());
+
+        self.directory
+          .insert(relative_path.to_path_buf(), canonical_path.clone());
+        self.reverse_lookup
+          .insert(canonical_path.clone(), relative_path.to_path_buf());
+        self.sources.insert(file_id, MechSourceCode::Image(extension.clone(), img_bytes.clone()));
+        self.id_map.insert(file_id, relative_path.to_path_buf());
+
+        let relative_path_str = relative_path.display().to_string();
+        let src_path_hash = hash_str(&relative_path_str);
+
+        Ok(MechSourceCode::Image(extension, img_bytes))
+      } 
       Ok(src) => {
         let (tree_sc, html_sc) = self.to_tree_and_html(&src)?;
         let file_id = hash_str(&canonical_path.display().to_string());
@@ -449,6 +555,24 @@ impl MechSources {
           None => None,
         }
       },
+    }
+  }
+
+  pub fn get_image(&self, src: &str) -> Option<MechSourceCode> {
+    match self.directory.get(Path::new(src)) {
+      Some(path) => {
+        let file_id = hash_str(&path.display().to_string());
+        match self.sources.get(&file_id) {
+          Some(code) => {
+            match code {
+              MechSourceCode::Image(_, _) => Some(code.clone()),
+              _ => None,
+            }
+          },
+          None => None,
+        }
+      },
+      None => None,
     }
   }
 
@@ -555,6 +679,20 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
               let mut buffer = String::new();
               file.read_to_string(&mut buffer);
               Ok(MechSourceCode::Html(buffer))
+            }
+            Err(err) => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+          }
+        }
+        // handle images
+        Some("png") | Some("jpg") | Some("jpeg") | Some("gif") | Some("svg") => {
+          match File::open(path) {
+            Ok(mut file) => {
+              //println!("{} {}", "[Loading]".truecolor(153,221,85), path.display());
+              let mut buffer = Vec::new();
+              file.read_to_end(&mut buffer);
+              // store extension and bytes
+              let extension = path.extension().and_then(OsStr::to_str).unwrap_or("").to_string();
+              Ok(MechSourceCode::Image(extension, buffer))
             }
             Err(err) => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
           }

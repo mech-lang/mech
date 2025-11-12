@@ -73,26 +73,26 @@ pub fn alignment_separator(input: ParseString) -> ParseResult<ColumnAlignment> {
   Ok((input, separator))
 }
 
-pub fn markdown_table(input: ParseString) -> ParseResult<MarkdownTable> {
+pub fn mechdown_table(input: ParseString) -> ParseResult<MarkdownTable> {
   let (input, _) = whitespace0(input)?;
-  let (input, table) = alt((markdown_table_with_header, markdown_table_no_header))(input)?;
+  let (input, table) = alt((mechdown_table_with_header, mechdown_table_no_header))(input)?;
   Ok((input, table))
 }
 
-pub fn markdown_table_with_header(input: ParseString) -> ParseResult<MarkdownTable> {
-  let (input, (header,alignment)) = markdown_table_header(input)?;
-  let (input, rows) = many1(markdown_table_row)(input)?;
+pub fn mechdown_table_with_header(input: ParseString) -> ParseResult<MarkdownTable> {
+  let (input, (header,alignment)) = mechdown_table_header(input)?;
+  let (input, rows) = many1(mechdown_table_row)(input)?;
   Ok((input, MarkdownTable{header, rows, alignment}))
 }
 
-pub fn markdown_table_no_header(input: ParseString) -> ParseResult<MarkdownTable> {
-  let (input, rows) = many1(markdown_table_row)(input)?;
+pub fn mechdown_table_no_header(input: ParseString) -> ParseResult<MarkdownTable> {
+  let (input, rows) = many1(mechdown_table_row)(input)?;
   let header = vec![];
   let alignment = vec![];
   Ok((input, MarkdownTable{header, rows, alignment}))
 }
 
-pub fn markdown_table_header(input: ParseString) -> ParseResult<(Vec<Paragraph>,Vec<ColumnAlignment>)> {
+pub fn mechdown_table_header(input: ParseString) -> ParseResult<(Vec<Paragraph>,Vec<ColumnAlignment>)> {
   let (input, _) = whitespace0(input)?;
   let (input, header) = many1(tuple((bar, tuple((many0(space_tab), paragraph)))))(input)?;
   let (input, _) = bar(input)?;
@@ -109,8 +109,8 @@ pub fn empty_paragraph(input: ParseString) -> ParseResult<Paragraph> {
   Ok((input, Paragraph{elements: vec![]}))
 }
 
-// markdown_table_row := +(bar, paragraph), bar, *whitespace ;
-pub fn markdown_table_row(input: ParseString) -> ParseResult<Vec<Paragraph>> {
+// mechdown_table_row := +(bar, paragraph), bar, *whitespace ;
+pub fn mechdown_table_row(input: ParseString) -> ParseResult<Vec<Paragraph>> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = bar(input)?;
   let (input, row) = many1(tuple((alt((tuple((many0(space_tab), paragraph)),tuple((many1(space_tab), empty_paragraph)))),bar)))(input)?;
@@ -148,7 +148,7 @@ pub fn subtitle(input: ParseString) -> ParseResult<Subtitle> {
   Ok((input, Subtitle{text, level}))
 }
 
-// strong := (asterisk, asterisk), +paragraph_element, (asterisk, asterisk) ;
+// strong := (asterisk, asterisk), +paragraph-element, (asterisk, asterisk) ;
 pub fn strong(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = tuple((asterisk,asterisk))(input)?;
   let (input, text) = paragraph_element(input)?;
@@ -156,7 +156,7 @@ pub fn strong(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Strong(Box::new(text))))
 }
 
-/// emphasis := asterisk, +paragraph_element, asterisk ;
+/// emphasis := asterisk, +paragraph-element, asterisk ;
 pub fn emphasis(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = asterisk(input)?;
   let (input, text) = paragraph_element(input)?;
@@ -164,7 +164,7 @@ pub fn emphasis(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Emphasis(Box::new(text))))
 }
 
-// strikethrough := tilde, +paragraph_element, tilde ;
+// strikethrough := tilde, +paragraph-element, tilde ;
 pub fn strikethrough(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = tilde(input)?;
   let (input, text) = paragraph_element(input)?;
@@ -172,7 +172,7 @@ pub fn strikethrough(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Strikethrough(Box::new(text))))
 }
 
-/// underline := underscore, +paragraph_element, underscore ;
+/// underline := underscore, +paragraph-element, underscore ;
 pub fn underline(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = underscore(input)?;
   let (input, text) = paragraph_element(input)?;
@@ -180,7 +180,7 @@ pub fn underline(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Underline(Box::new(text))))
 }
 
-/// highlight := "!!", +paragraph_element, "!!" ;
+/// highlight := "!!", +paragraph-element, "!!" ;
 pub fn highlight(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = highlight_sigil(input)?;
   let (input, text) = paragraph_element(input)?;
@@ -188,7 +188,7 @@ pub fn highlight(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Highlight(Box::new(text))))
 }
 
-// inline_code := grave, +text, grave ;
+// inline-code := grave, +text, grave ; 
 pub fn inline_code(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = grave(input)?;
   let (input, text) = many0(tuple((is_not(grave),text)))(input)?;
@@ -205,7 +205,7 @@ pub fn inline_code(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::InlineCode(text)))
 }
 
-// inline_code := grave, +text, grave ;
+// inline-equation := equation-sigil, +text, equation-sigil ;
 pub fn inline_equation(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = equation_sigil(input)?;
   let (input, txt) = many0(tuple((is_not(equation_sigil),alt((backslash,text)))))(input)?;
@@ -231,13 +231,42 @@ pub fn hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Hyperlink((text_merged, link_merged))))
 }
 
-// raw-hyperlink := ("https" | "http" |)
+// raw-hyperlink := http-prefix, +text ;
 pub fn raw_hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = peek(http_prefix)(input)?;
   let (input, address) = many1(tuple((is_not(space), text)))(input)?;
   let mut tokens = address.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>();
   let url = Token::merge_tokens(&mut tokens).unwrap();
   Ok((input, ParagraphElement::Hyperlink((url.clone(), url))))
+}
+
+// option-map := "{", whitespace*, mapping*, whitespace*, "}" ;
+pub fn option_map(input: ParseString) -> ParseResult<OptionMap> {
+  let msg = "Expects right bracket '}' to terminate inline table";
+  let (input, (_, r)) = range(left_brace)(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, elements) = many1(option_mapping)(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = label!(right_brace, msg, r)(input)?;
+  Ok((input, OptionMap{elements}))
+}
+
+// option-mapping :=  whitespace*, expression, whitespace*, ":", whitespace*, expression, comma?, whitespace* ;
+pub fn option_mapping(input: ParseString) -> ParseResult<(Identifier, MechString)> {
+  let msg1 = "Unexpected space before colon ':'";
+  let msg2 = "Expects a value";
+  let msg3 = "Expects whitespace or comma followed by whitespace";
+  let msg4 = "Expects whitespace";
+  let (input, _) = whitespace0(input)?;
+  let (input, key) = identifier(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = colon(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, value) = string(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = opt(comma)(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, (key, value)))
 }
 
 // img := "![", paragraph, "]", "(", +text, ")" ;
@@ -248,13 +277,14 @@ pub fn img(input: ParseString) -> ParseResult<Image> {
   let (input, _) = left_parenthesis(input)?;
   let (input, src) = many1(tuple((is_not(right_parenthesis),text)))(input)?;
   let (input, _) = right_parenthesis(input)?;
+  let (input, style) = opt(option_map)(input)?;
   let merged_src = Token::merge_tokens(&mut src.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>()).unwrap();
-  Ok((input, Image{src: merged_src, caption: Some(caption_text)} ))
+  Ok((input, Image{src: merged_src, caption: Some(caption_text), style}))
 }
 
-// paragraph_text := ¬(img_prefix | http_prefix | left_bracket | tilde | asterisk | underscore | grave | define_operator | bar), +text ;
+// paragraph-text := ¬(img-prefix | http-prefix | left-bracket | tilde | asterisk | underscore | grave | define-operator | bar), +text ;
 pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
-  let (input, elements) = match many1(nom_tuple((is_not(alt((footnote_prefix, highlight_sigil, equation_sigil, img_prefix, http_prefix, left_brace, left_bracket, left_angle, right_bracket, tilde, asterisk, underscore, grave, define_operator, bar))),text)))(input) {
+  let (input, elements) = match many1(nom_tuple((is_not(alt((section_sigil, footnote_prefix, highlight_sigil, equation_sigil, img_prefix, http_prefix, left_brace, left_bracket, left_angle, right_bracket, tilde, asterisk, underscore, grave, define_operator, bar))),text)))(input) {
     Ok((input, mut text)) => {
       let mut text = text.into_iter().map(|(_,tkn)| tkn).collect();
       let mut text = Token::merge_tokens(&mut text).unwrap();
@@ -303,9 +333,17 @@ pub fn reference(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Reference(ref_text)))
 }
 
-// paragraph-element := hyperlink | raw-hyperlink | footnote-reference | paragraph-text | strong | highlight | emphasis | inline-code | strikethrough | underline ;
+// section_ref := "§" , +(alphanumeric | period) ;
+pub fn section_reference(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = section_sigil(input)?;
+  let (input, mut txt) = many1(alt((alphanumeric, period)))(input)?;
+  let section_text = Token::merge_tokens(&mut txt).unwrap();
+  Ok((input, ParagraphElement::SectionReference(section_text)))
+}
+
+// paragraph-element := hyperlink | reference | section-ref | raw-hyperlink | highlight | footnote-reference | inline-mech-code | eval-inline-mech-code | inline-equation | paragraph-text | strong | highlight | emphasis | inline-code | strikethrough | underline ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
-  alt((hyperlink, reference, raw_hyperlink, highlight, footnote_reference, inline_mech_code, eval_inline_mech_code, inline_equation, paragraph_text, strong, highlight, emphasis, inline_code, strikethrough, underline))(input)
+  alt((hyperlink, reference, section_reference, raw_hyperlink, highlight, footnote_reference, inline_mech_code, eval_inline_mech_code, inline_equation, paragraph_text, strong, highlight, emphasis, inline_code, strikethrough, underline))(input)
 }
 
 // paragraph := +paragraph_element ;
@@ -571,25 +609,35 @@ pub fn skip_till_eol(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// code_block := grave, <grave>, <grave>, <new_line>, any, <grave{3}, new_line, whitespace*> ;
+// codeblock-sigil := grave, grave, grave | tilde, tilde, tilde ;
+pub fn codeblock_sigil(input: ParseString) -> ParseResult<fn(ParseString) -> ParseResult<Token>> {
+  let (input, sgl_tkn) = alt((grave_codeblock_sigil, tilde_codeblock_sigil))(input)?;
+  let sgl_cmb = match sgl_tkn.kind {
+    TokenKind::GraveCodeBlockSigil => grave_codeblock_sigil,
+    TokenKind::TildeCodeBlockSigil => tilde_codeblock_sigil,
+    _ => unreachable!(),
+  };
+  Ok((input, sgl_cmb))
+}
+
+// grave-codeblock := grave-codeblock-sigil, *(space | tab), +text, *(space | tab), newline, *(¬grave-codeblock-sigil, any), grave-codeblock-sigil, *(space | tab), ws0 ;
+// tilde-codeblock := tilde-codeblock-sigil, *(space | tab), +text, *(space | tab), newline, *(¬tilde-codeblock-sigil, any), tilde-codeblock-sigil, *(space | tab), ws0 ;
+// code-block := grave-codeblock | tilde-codeblock ;
 pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
   let msg1 = "Expects 3 graves to start a code block";
   let msg2 = "Expects new_line";
   let msg3 = "Expects 3 graves followed by new_line to terminate a code block";
-  let (input, (_, r)) = range(nom_tuple((
-    grave,
-    label!(grave, msg1),
-    label!(grave, msg1),
-  )))(input)?;
+  let (input, (end_sgl,r)) = range(codeblock_sigil)(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, code_id) = many0(text)(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, _) = label!(new_line, msg2)(input)?;
   let (input, (text,src_range)) = range(many0(nom_tuple((
-    is_not(nom_tuple((grave, grave, grave))),
+    is_not(end_sgl),
     any,
   ))))(input)?;
-  let (input, _) = nom_tuple((grave, grave, grave))(input)?;
-  let (input, _) = many0(space_tab)(input)?;
-  let (input, _) = new_line(input)?;
+  let (input, _) = end_sgl(input)?;
+  let (input, _) = whitespace0(input)?;
   let block_src: Vec<char> = text.into_iter().flat_map(|(_, s)| s.chars().collect::<Vec<char>>()).collect();
   let code_token = Token::new(TokenKind::CodeBlock, src_range, block_src.clone());
 
@@ -671,7 +719,7 @@ pub fn blank_line(input: ParseString) -> ParseResult<Vec<Token>> {
 }
 
 pub fn question_block(input: ParseString) -> ParseResult<SectionElement> {
-    let (input, _) = query_sigil(input)?;
+    let (input, _) = question_sigil(input)?;
     let (input, _) = many0(space_tab)(input)?;
     let (input, first_para) = paragraph(input)?;
 
@@ -787,37 +835,43 @@ pub fn float(input: ParseString) -> ParseResult<(Box<SectionElement>,FloatDirect
   Ok((input, (Box::new(el), direction)))
 }
 
-// sectio-_element := mech-code | list | footnote | citation | abstract | img | equation | markdown-table | float | block-quote | code-block | thematic-break | subtitle | paragraph ;
+// section-element := +mech-code | question-block | info-block | list | footnote | citation | abstract-element | img | equation | markdown-table | float | quote-block | code-block | thematic-break | subtitle | paragraph ;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match many1(mech_code)(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),
-    _ => match mechdown_list(input.clone()) {
-      Ok((input, lst)) => (input, SectionElement::List(lst)),
-      _ => match footnote(input.clone()) {
-        Ok((input, ftnote)) => (input, SectionElement::Footnote(ftnote)),
-        _ => match citation(input.clone()) {
-          Ok((input, citation)) => (input, SectionElement::Citation(citation)),
-          _ => match abstract_el(input.clone()) {
-            Ok((input, abstrct)) => (input, abstrct),
-            _ => match img(input.clone()) {
-              Ok((input, img)) => (input, SectionElement::Image(img)),
-              _ => match equation(input.clone()) {
-                Ok((input, eqn)) => (input, SectionElement::Equation(eqn)),
-                _ => match markdown_table(input.clone()) {
-                  Ok((input, table)) => (input, SectionElement::Table(table)),
-                  _ => match float(input.clone()) {
-                    Ok((input, flt)) => (input, SectionElement::Float(flt)),
-                    _ => match quote_block(input.clone()) {   
-                      Ok((input, quote)) => (input, quote),
-                      _ => match code_block(input.clone()) {
-                        Ok((input, m)) => (input,m),
-                        _ => match thematic_break(input.clone()) {
-                          Ok((input, _)) => (input, SectionElement::ThematicBreak),
-                          _ => match subtitle(input.clone()) {
-                            Ok((input, subtitle)) => (input, SectionElement::Subtitle(subtitle)),
-                            _ => match paragraph(input) {
-                              Ok((input, p)) => (input, SectionElement::Paragraph(p)),
-                              Err(err) => { return Err(err); }
+    _=> match question_block(input.clone()) {
+      Ok((input, qblock)) => (input, qblock),
+      _ => match info_block(input.clone()) {
+        Ok((input, iblock)) => (input, iblock),
+        _ => match mechdown_list(input.clone()) {
+          Ok((input, lst)) => (input, SectionElement::List(lst)),
+          _ => match footnote(input.clone()) {
+            Ok((input, ftnote)) => (input, SectionElement::Footnote(ftnote)),
+            _ => match citation(input.clone()) {
+              Ok((input, citation)) => (input, SectionElement::Citation(citation)),
+              _ => match abstract_el(input.clone()) {
+                Ok((input, abstrct)) => (input, abstrct),
+                _ => match img(input.clone()) {
+                  Ok((input, img)) => (input, SectionElement::Image(img)),
+                  _ => match equation(input.clone()) {
+                    Ok((input, eqn)) => (input, SectionElement::Equation(eqn)),
+                    _ => match mechdown_table(input.clone()) {
+                      Ok((input, table)) => (input, SectionElement::Table(table)),
+                      _ => match float(input.clone()) {
+                        Ok((input, flt)) => (input, SectionElement::Float(flt)),
+                        _ => match quote_block(input.clone()) {   
+                          Ok((input, quote)) => (input, quote),
+                          _ => match code_block(input.clone()) {
+                            Ok((input, m)) => (input,m),
+                            _ => match thematic_break(input.clone()) {
+                              Ok((input, _)) => (input, SectionElement::ThematicBreak),
+                              _ => match subtitle(input.clone()) {
+                                Ok((input, subtitle)) => (input, SectionElement::Subtitle(subtitle)),
+                                _ => match paragraph(input) {
+                                  Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+                                  Err(err) => { return Err(err); }
+                                }
+                              }
                             }
                           }
                         }
@@ -836,7 +890,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   Ok((input, section_element))
 }
 
-// section := ul_subtitle, section_element* ;
+// section := ul_subtitle, *section-element ;
 pub fn section(input: ParseString) -> ParseResult<Section> {
   let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
   let (input, subtitle) = ul_subtitle(input)?;
@@ -845,7 +899,7 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
   Ok((input, Section{subtitle: Some(subtitle), elements}))
 }
 
-// section_elements := section_element+ ;
+// section-elements := +section-element ;
 pub fn section_elements(input: ParseString) -> ParseResult<Section> {
   let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
   let (input, elements) = many1(tuple((is_not(ul_subtitle),section_element)))(input)?;

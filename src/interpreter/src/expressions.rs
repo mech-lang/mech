@@ -434,23 +434,23 @@ pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
       #[cfg(feature = "set_union")]
       FormulaOperator::Set(SetOp::Union) => SetUnion{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "set_intersection")]
-      FormulaOperator::Set(SetOp::Intersection) => todo!(),
+      FormulaOperator::Set(SetOp::Intersection) => SetIntersection{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "set_difference")]
-      FormulaOperator::Set(SetOp::Difference) => todo!(),
+      FormulaOperator::Set(SetOp::Difference) => SetDifference{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "set_complement")]
       FormulaOperator::Set(SetOp::Complement) => todo!(),
       #[cfg(feature = "set_subset")]
-      FormulaOperator::Set(SetOp::Subset) => todo!(),
+      FormulaOperator::Set(SetOp::Subset) => SetSubset{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "set_superset")]
-      FormulaOperator::Set(SetOp::Superset) => todo!(),
+      FormulaOperator::Set(SetOp::Superset) => SetSuperset{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "set_proper_subset")]
-      FormulaOperator::Set(SetOp::ProperSubset) => todo!(),
+      FormulaOperator::Set(SetOp::ProperSubset) => SetProperSubset{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "set_proper_superset")]
-      FormulaOperator::Set(SetOp::ProperSuperset) => todo!(),
+      FormulaOperator::Set(SetOp::ProperSuperset) => SetProperSuperset{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "set_element_of")]
-      FormulaOperator::Set(SetOp::ElementOf) => todo!(),
+      FormulaOperator::Set(SetOp::ElementOf) => SetElementOf{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "set_not_element_of")]
-      FormulaOperator::Set(SetOp::NotElementOf) => todo!(),
+      FormulaOperator::Set(SetOp::NotElementOf) => SetNotElementOf{}.compile(&vec![lhs,rhs])?,
       x => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{x:#?}"), id: line!(), kind: MechErrorKind::UnhandledFormulaOperator(x.clone())}),
     };
     new_fxn.solve();

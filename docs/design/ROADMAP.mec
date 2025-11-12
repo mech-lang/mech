@@ -35,7 +35,7 @@ Target release date: ???
 (2.1) Data Specification (v0.2)
 
 -(🥚) language server
--(🥚) enums
+-(🐣) enums
 -(🐣) option types
 -(🐣) sets
 -(🐣) maps
@@ -43,19 +43,18 @@ Target release date: ???
 -(🐣) error system
 -(🐣) records
 -(🐣) tuples
--(🐣) scientific numbers
+-(🐤) scientific numbers
 -(🐤) imaginary numbers
 -(🐤) rational numbers
 -(🐤) tables (dataframe)
 -(🐤) strings
 -(🐤) repl
--(🐤) variable type and size checking
--(🐤) variable type inference
 -(🐤) standard library functions
--(🐤) value semantics
--(🐤) Mutable value semantics
+-(🐤) variable type and size checking
 -(🐤) builtin linear algebra tools
+-(🐤) value semantics
 -(🐤) literate programming
+-(🐤) typxe inference
 -(🐓) bools
 -(🐓) operator broadcasting
 -(🐓) logical indexing
@@ -69,11 +68,13 @@ Target release date: ???
 -(💭) state machines
 -(💭) automatic differentiation
 -(💭) introspection
+-(💭) higher order functions
 -(🥚) physical units with dimension checking
 -(🥚) file/parameter server
 -(🥚) self-contained binary executables
 -(🥚) time travel debugging
 -(🐣) bytecode interpreter
+-(🐣) build system
 -(🐣) user defined functions
 -(🐣) tests
 -(🐣) profiler

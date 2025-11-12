@@ -94,17 +94,17 @@ pub enum TokenKind {
   Dash, DefineOperator, Digit, Dollar,
   Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Exclamation, 
   False, FloatLeft, FloatRight, FootnotePrefix,
-  Grave,
+  Grave, GraveCodeBlockSigil,
   HashTag, HighlightSigil, HttpPrefix,
   Identifier, ImgPrefix, InfoSigil, InlineCode, 
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
   Newline, Not, Number,
   OutputOperator,
   Percent, Period, Plus,
-  QuerySigil, Question, Quote, QuoteSigil,
+  Question, QuestionSigil, Quote, QuoteSigil,
   RightAngle, RightBrace, RightBracket, RightParenthesis,
-  Semicolon, Space, Slash, String, StrikeSigil, StrongSigil,
-  Tab, Text, Tilde, Title, TransitionOperator, True,
+  SectionSigil, Semicolon, Space, Slash, String, StrikeSigil, StrongSigil,
+  Tab, Text, Tilde, TildeCodeBlockSigil, Title, TransitionOperator, True,
   UnderlineSigil, Underscore,
 }
 
@@ -507,9 +507,17 @@ impl SectionElement {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct OptionMap {
+  pub elements: Vec<(Identifier, MechString)>,
+}
+
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Image {
   pub src: Token,
   pub caption: Option<Paragraph>,
+  pub style: Option<OptionMap>,
 }
 
 impl Image {
@@ -1273,6 +1281,12 @@ pub struct MechString {
   pub text: Token,
 }
 
+impl MechString {
+  pub fn to_string(&self) -> String {
+    self.text.to_string()
+  }
+}
+
 pub type Hyperlink = (Token, Token);
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -1287,6 +1301,7 @@ pub enum ParagraphElement {
   InlineMechCode(MechCode),
   InlineEquation(Token),
   Reference(Token),
+  SectionReference(Token),
   Strikethrough(Box<ParagraphElement>),
   Strong(Box<ParagraphElement>),
   Text(Token),
@@ -1308,6 +1323,7 @@ impl ParagraphElement {
       ParagraphElement::InlineMechCode(t) => format!("{:?}", t),
       ParagraphElement::EvalInlineMechCode(t) => format!("{:?}", t),
       ParagraphElement::Reference(t) => t.to_string(),
+      ParagraphElement::SectionReference(t) => t.to_string(),
       ParagraphElement::Strikethrough(t) => t.to_string(),
       ParagraphElement::Strong(t) => t.to_string(),
       ParagraphElement::Text(t) => t.to_string(),

@@ -137,11 +137,12 @@ inventory::collect!(FunctionCompilerDescriptor);
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MechSourceCode {
-    String(String),
-    Tree(Program),
-    Html(String),
-    ByteCode(Vec<u8>),
-    Program(Vec<MechSourceCode>),
+  String(String),
+  Tree(Program),
+  Html(String),
+  ByteCode(Vec<u8>),
+  Program(Vec<MechSourceCode>),
+  Image(String,Vec<u8>),
 }
 
 impl MechSourceCode {
@@ -158,7 +159,9 @@ impl MechSourceCode {
         }
         #[cfg(not(feature = "program"))]
         format!("{:#?}", bc)
-        
+      }
+      MechSourceCode::Image(extension,img) => {
+        format!("Image (.{}) with {} bytes", extension, img.len())
       }
       MechSourceCode::String(s) => s.clone(),
       MechSourceCode::Tree(p) => todo!("Print the tree!"),
@@ -179,30 +182,30 @@ pub struct IndexedString {
 impl IndexedString {
   
   fn new(input: &str) -> Self {
-      let mut data = Vec::new();
-      let mut index_map = Vec::new();
-      let mut current_row = 0;
-      let mut current_col = 0;
-      index_map.push(Vec::new());
-      for c in input.chars() {
-        data.push(c);
-        if c == '\n' {
-          index_map.push(Vec::new());
-          current_row += 1;
-          current_col = 0;
-        } else {
-          index_map[current_row].push(data.len() - 1);
-          current_col += 1;
-        }
+    let mut data = Vec::new();
+    let mut index_map = Vec::new();
+    let mut current_row = 0;
+    let mut current_col = 0;
+    index_map.push(Vec::new());
+    for c in input.chars() {
+      data.push(c);
+      if c == '\n' {
+        index_map.push(Vec::new());
+        current_row += 1;
+        current_col = 0;
+      } else {
+        index_map[current_row].push(data.len() - 1);
+        current_col += 1;
       }
-      let rows = index_map.len();
-      let cols = if rows > 0 { index_map[0].len() } else { 0 };
-      IndexedString {
-          data,
-          index_map,
-          rows,
-          cols,
-      }
+    }
+    let rows = index_map.len();
+    let cols = if rows > 0 { index_map[0].len() } else { 0 };
+    IndexedString {
+      data,
+      index_map,
+      rows,
+      cols,
+    }
   }
 
   fn to_string(&self) -> String {
@@ -261,7 +264,7 @@ pub fn emojify_bytes(bytes: &[u8]) -> String {
   let start = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len() - 1);
   let mut out = String::new();
   for &b in &bytes[start..] {
-      out.push_str(EMOJILIST[b as usize]);
+    out.push_str(EMOJILIST[b as usize]);
   }
   out
 }
@@ -291,18 +294,18 @@ where
 
 pub fn humanize<T>(num: &T) -> String
 where
-    T: Display + Copy + TryInto<u128>,
-    <T as TryInto<u128>>::Error: Debug,
+  T: Display + Copy + TryInto<u128>,
+  <T as TryInto<u128>>::Error: Debug,
 {
-    match (*num).try_into() {
-        Ok(v) => {
-            let bytes = v.to_be_bytes();
-            let first_non_zero = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len() - 1);
-            let trimmed = &bytes[first_non_zero..];
-            humanize_bytes(trimmed)
-        }
-        Err(_) => format!("{}", num),
+  match (*num).try_into() {
+    Ok(v) => {
+      let bytes = v.to_be_bytes();
+      let first_non_zero = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len() - 1);
+      let trimmed = &bytes[first_non_zero..];
+      humanize_bytes(trimmed)
     }
+    Err(_) => format!("{}", num),
+}
 }
 
 pub const WORDLIST: &[&str;256] = &[

@@ -149,12 +149,15 @@ leaf!(float_right, ">>", TokenKind::FloatRight);
 leaf!(http_prefix, "http", TokenKind::HttpPrefix);
 leaf!(highlight_sigil, "!!", TokenKind::HighlightSigil);
 leaf!(img_prefix, "![", TokenKind::ImgPrefix);
-leaf!(query_sigil, "??>", TokenKind::QuerySigil);
+leaf!(question_sigil, "(?)>", TokenKind::QuestionSigil);
 leaf!(quote_sigil, ">", TokenKind::QuoteSigil);
-leaf!(info_sigil, "!!>", TokenKind::InfoSigil);
+leaf!(info_sigil, "(!)>", TokenKind::InfoSigil);
 leaf!(strike_sigil, "~~", TokenKind::StrikeSigil);
 leaf!(strong_sigil, "**", TokenKind::StrongSigil);
+leaf!(grave_codeblock_sigil, "```", TokenKind::GraveCodeBlockSigil);
+leaf!(tilde_codeblock_sigil, "~~~", TokenKind::TildeCodeBlockSigil);
 leaf!(underline_sigil, "__", TokenKind::UnderlineSigil);
+leaf!(section_sigil, "§", TokenKind::SectionSigil);
 
 ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);
 ws0_leaf!(async_transition_operator, "~>", TokenKind::AsyncTransitionOperator);
@@ -285,7 +288,13 @@ pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
 
 // symbol := ampersand | dollar | bar | percent | at | slash | hashtag | equal | backslash | tilde | plus | dash | asterisk | caret | underscore ;
 pub fn symbol(input: ParseString) -> ParseResult<Token> {
-  let (input, symbol) = alt((ampersand, dollar, bar, percent, at, slash, hashtag, equal, backslash, tilde, plus, dash, asterisk, caret, underscore))(input)?;
+  let (input, symbol) = alt((ampersand, grave, dollar, bar, percent, at, slash, hashtag, equal, backslash, tilde, plus, dash, asterisk, caret, underscore))(input)?;
+  Ok((input, symbol))
+}
+
+// identifier-symbol := ampersand | dollar | bar | percent | at | slash | hashtag | backslash | tilde | plus | dash | asterisk | caret ;
+pub fn identifier_symbol(input: ParseString) -> ParseResult<Token> {
+  let (input, symbol) = alt((ampersand, dollar, bar, percent, at, slash, hashtag, backslash, tilde, plus, dash, asterisk, caret))(input)?;
   Ok((input, symbol))
 }
 
@@ -359,9 +368,9 @@ pub fn enum_separator(input: ParseString) -> ParseResult<()> {
 // ----------------------------------------------------------------------------
 // Ref: #40075932908181571
 
-// identifier := (alpha | emoji), (alpha | digit | symbol | emoji)* ;
+// identifier := (alpha | emoji), (alpha | digit | identifier_symbol | emoji)* ;
 pub fn identifier(input: ParseString) -> ParseResult<Identifier> {
-  let (input, (first, mut rest)) = nom_tuple((alt((alpha_token, emoji)), many0(alt((alpha_token, digit_token, symbol, emoji)))))(input)?;
+  let (input, (first, mut rest)) = nom_tuple((alt((alpha_token, emoji)), many0(alt((alpha_token, digit_token, identifier_symbol, emoji)))))(input)?;
   let mut tokens = vec![first];
   tokens.append(&mut rest);
   let mut merged = Token::merge_tokens(&mut tokens).unwrap();

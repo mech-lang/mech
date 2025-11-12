@@ -38,6 +38,10 @@ pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand> {
   let (input, _) = tag(":")(input)?;
   let (input, command) = alt((
     step_rpl,
+    clear_rpl,
+    clc_rpl,
+    load_rpl,
+    code_rpl,
     help_rpl,
     quit_rpl,
     save_rpl,
@@ -46,12 +50,12 @@ pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand> {
     ls_rpl,
     cd_rpl,
     whos_rpl,
-    clear_rpl,
-    clc_rpl,
-    load_rpl,
     docs_rpl,
   ))(input)?;
   let (input, _) = opt(tag("\r\n"))(input)?;
+  if !input.is_empty() {
+    return Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Eof)));
+  }
   Ok((input, command))
 }
 
@@ -60,6 +64,13 @@ fn save_rpl(input: &str) -> IResult<&str, ReplCommand> {
   let (input, _) = space1(input)?;
   let (input, path) = take_while(|c: char| c.is_alphanumeric() || c == '/' || c == '.' || c == '_')(input)?;
   Ok((input, ReplCommand::Save(path.to_string())))
+}
+
+fn code_rpl(input: &str) -> IResult<&str, ReplCommand> {
+  let (input, _) = alt((tag("code"), tag("c")))(input)?;
+  let (input, _) = space0(input)?;
+  let (input, code) = take_while(|_| true)(input)?;
+  Ok((input, ReplCommand::Code(vec![("repl".to_string(), MechSourceCode::String(code.to_string()))])))
 }
 
 fn docs_rpl(input: &str) -> IResult<&str, ReplCommand> {
@@ -117,7 +128,7 @@ fn clear_rpl(input: &str) -> IResult<&str, ReplCommand> {
 }
 
 fn clc_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = alt((tag("c"), tag("clc")))(input)?;
+  let (input, _) = tag("clc")(input)?;
   Ok((input, ReplCommand::Clc))
 }
 

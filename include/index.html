@@ -1,408 +1,805 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <link rel="icon" href="https://gitlab.com/mech-lang/assets/-/raw/main/images/favicon.ico" type="image/x-icon" />
-        
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous">
-        <script defer src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
-        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"
-        onload="renderMathInElement(document.body);"></script>
+<html lang="en">
+<head>
 
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
-        <style>
-          @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
-        </style>
-        <style>
-        
-        </style>
-    </head>
-    <body>
-      <div class="mech-root" mech-interpreter-id="0"></div>
-    <script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        let observer = null;
-        let userScrolling = false;
-        let scrollTimeout = null;
-        let scrollLock = false;
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"
+  onload="renderMathInElement(document.body);"></script>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
 
-        function isFullyVisible(el) {
-        const rect = el.getBoundingClientRect();
-        return (
-            rect.top >= 0 &&
-            rect.left >= 0 &&
-            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-        );
+  <title>{{TITLE}}</title>
+  <link rel="icon" href="https://gitlab.com/mech-lang/assets/-/raw/main/images/favicon.ico" type="image/x-icon" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+  </style>
+  <style>
+    {{STYLESHEET}}
+  </style>
+
+
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      box-sizing: border-box;
+      background-color: #0d1013;
+    }
+
+    *, *::before, *::after {
+      box-sizing: inherit;
+    }
+
+    .container {
+      display: flex;
+      height: 100%;
+      width: 100%;
+    }
+
+    .content {
+      min-width: 0px;
+      width: 0%;  
+      background-color: #0d1013;
+      color: #f2ead9;
+      padding: 0px;
+      margin: 0px;
+      flex-grow: 1;
+      scrollbar-width: none;       
+      -ms-overflow-style: none;
+    }
+
+    .resizer {
+      width: 3px;
+      margin-left:10px;
+      background: #35393d;
+      cursor: col-resize;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .toggle-button {
+      position: absolute;
+      top: 50%;
+      height: 50px;
+      width: 11px;
+      left: -4px;
+      transform: translateY(-50%);
+      background: rgb(246,192,78);
+      border: 2px solid rgb(195, 146, 39);
+      color: #35393d;
+      padding: 2px 6px;
+      cursor: pointer;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 2px;
+      padding: 0px;
+      user-select: none;
+      box-shadow: 0 0px 4px rgba(0, 0, 0, 0.8);
+    }
+
+    .toggle-button:focus {
+      outline: none;
+    }
+
+    .sidebar {
+      font-family: 'FiraCodeLight', monospace;
+      font-size: 1rem;
+      background-color: #040608;
+      color: #f2ead9;
+      padding: 1rem;
+      overflow: auto;
+      height: 100%;
+      flex-shrink: 0;
+      transition: width 0.2s ease;
+      width: clamp(300px, 33%, 100%);
+    }
+
+    .sidebar.hidden {
+      transform: translateX(100%);
+      width: 0 !important;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    body.resizing .sidebar {
+      transition: none !important; 
+    }
+
+    body.resizing {
+      cursor: col-resize;
+      user-select: none;
+    }
+
+    body::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    body::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    body::-webkit-scrollbar-thumb {
+        background: rgba(128, 128, 128, 0.7);
+        border-radius: 10px;
+    }
+
+    body::-webkit-scrollbar-thumb:hover {
+        background: rgba(128, 128, 128, 0.7);
+    }
+
+    body {
+        scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+        scrollbar-width: thin;
+    }
+    .toggle-button.edge-left:hover,
+    .toggle-button.edge-right:hover {
+
+    }
+  </style>
+
+</head>
+<body>
+  <div class="container mech-root" mech-interpreter-id=0>
+    {{TOC}}
+    <div class="content" id="left-pane">
+        {{CONTENT}}
+    </div>
+    <div class="resizer" id="resizer">
+      <button class="toggle-button" id="toggle-repl">|</button>
+    </div>
+    <div class="sidebar mech-repl" id="mech-output"></div>
+  </div>
+
+  <script>
+    const left_pane = document.getElementById('left-pane');
+    const resizer = document.getElementById('resizer');
+    const sidebar = document.getElementById('mech-output');
+    const toggleButton = document.getElementById('toggle-repl');
+    const toc = document.querySelector('.mech-toc');
+
+    let isDragging = false;
+    let replVisible = true;
+    let replFull = false;
+    let lastSidebarWidth = sidebar.offsetWidth;
+
+    const updateTocMargin = (toc_width) => {
+      if (!content || !sidebar || !toc) return;
+      const contentRect = content.getBoundingClientRect();
+      const offset = 350 + toc_width + 150;
+      const left = contentRect.left + contentRect.width / 2 - offset;
+      if (left < 0) {
+        toc.style.marginLeft = `0px`;
+      } else {
+        toc.style.marginLeft = `${left}px`;
+      }
+    };
+
+
+    // Add an observer to monitor sidebar width changes
+    const resize_observer = new ResizeObserver(entries => {
+      const sidebarWidth = entries[0].contentRect.width;
+
+      // count the number of children the TOC has. Zero h2 means zero toc
+      const h2Count = toc.querySelectorAll('h2').length;
+      const empty_toc = h2Count == 0;
+
+      const content_width = window.innerWidth - sidebarWidth;
+      const toc_width = toc.offsetWidth + 50;
+
+      if (content_width < 1400) {
+        left_pane.classList.add('compact');
+        if (!empty_toc) {
+          left_pane.style.marginLeft = `${toc_width}px`;
         }
+      } else {
+        left_pane.classList.remove('compact');
+        left_pane.style.marginLeft = `auto`;
+      }
 
-        document.querySelectorAll('.mech-program-subtitle.toc').forEach(entry => {
-        entry.addEventListener('click', () => {
-            scrollLock = true;
-            if (observer) observer.disconnect();
-            const id = entry.id;
-            const tag = entry.tagName; // H1, H2, H3, etc.
+      if (content_width < 900) {
+        left_pane.classList.add('super');
+        if (!empty_toc) {
+          left_pane.style.marginLeft = `auto`;
+        }
+      } else {
+        left_pane.classList.remove('super');
+      }
+
+      if (!empty_toc) {
+        if (window.innerWidth - sidebarWidth < 900) {
+          toc.classList.add('hidden');
+        } else {
+          toc.classList.remove('hidden');
+        }
+      }
+
+      const remainingSpace = window.innerWidth - sidebarWidth - toc_width;
+
+    if (!empty_toc) {
+      if (remainingSpace < 700) {
+        toc.classList.add('fixed');
+      } else {
+        updateTocMargin(toc_width);
+        toc.classList.remove('fixed');
+      }
+    }
+    });
+    resize_observer.observe(sidebar);
+
+    const content = document.querySelector('.mech-content');
+
+    function focusContent() {
+      content.classList.add('focused');
+    }
+    function blurContent() {
+      content.classList.remove('focused');
+    }
+
+    // focus when clicked, scrolled, or hovered
+    content.addEventListener('mouseenter', focusContent);
+    content.addEventListener('mousemove', focusContent);
+    content.addEventListener('wheel', focusContent);
+    content.addEventListener('focusin', focusContent);
+
+    // blur when user moves outside
+    content.addEventListener('mouseleave', blurContent);
+    content.addEventListener('focusout', blurContent);
+
+    resizer.addEventListener('mousedown', () => {
+      if (!replVisible) return;
+      isDragging = true;
+      document.body.classList.add('resizing');
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+
+      const container = document.querySelector('.container');
+      const containerWidth = container.offsetWidth;
+      const minWidth = 370;
+      const edgeThreshold = 2; // px near screen edges
+
+      const newWidth = containerWidth - e.clientX;
+
+      const nearLeftEdge = e.clientX <= edgeThreshold;
+      const nearRightEdge = e.clientX >= containerWidth - edgeThreshold;
+
+      if (nearLeftEdge) {
+        fullscreen_repl()
+        return;
+      }
+
+      if (nearRightEdge) {
+        fullscreen_content()
+        return;
+      }
+      // Normal drag within range
+      const maxWidth = containerWidth * 0.8;
+      const clampedWidth = Math.min(Math.max(newWidth, minWidth), maxWidth);
+
+      sidebar.style.width = clampedWidth + 'px';
+      lastSidebarWidth = clampedWidth;
+      sidebar.classList.remove('hidden');
+      replVisible = true;
+      replFull = false;
+
+      left_pane.style.display = 'block';
+      resizer.style.marginLeft = '10px';
+      resizer.style.width = '3px';
+      toggleButton.style.left = `-4px`;
+      sidebar.style.width = lastSidebarWidth + 'px';
+      sidebar.style.marginLeft = `0px`;
+    });
+
+    function fullscreen_repl() {
+      replFull = true;
+      replVisible = true;
+      sidebar.style.width = "100%";
+      left_pane.style.display = 'none';
+      resizer.style.marginLeft = '0px';
+      resizer.style.width = '0px';
+      toggleButton.style.left = `-8px`;
+      toggleButton.classList.add('edge-left');
+      toggleButton.classList.remove('edge-right');
+    } 
+
+    function fullscreen_content() {
+      replVisible = false;
+      replFull = false;
+      sidebar.classList.add('hidden');
+      left_pane.style.display = 'block';
+      sidebar.style.width = '0';
+      sidebar.style.marginLeft = `-4px`;
+      toggleButton.classList.add('edge-right');
+      toggleButton.classList.remove('edge-left');
+    }
 
 
-            const headings = document.querySelectorAll(".mech-program-subtitle:not(.toc)");
-            const navItems = document.querySelectorAll(".mech-program-subtitle.toc");
-            const sections = document.querySelectorAll(".mech-program-section.toc");
-            const all_the_headers = Array.from(document.querySelectorAll('[section]'));
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        document.body.classList.remove('resizing');
+      }
+    });
 
-            navItems.forEach(item => item.classList.remove("active"));
-            sections.forEach(item => item.classList.remove("active"));
+    toggleButton.addEventListener('click', () => {
+      if (!replVisible) {
+        replVisible = true;
+        sidebar.classList.remove('hidden');
+        sidebar.style.width = lastSidebarWidth + 'px';
+        sidebar.style.marginLeft = `0px`;
+        toggleButton.innerHTML = '|';
+        toggleButton.style.left = `-4px`;
+        toggleButton.style.width = `11px`;
+        toggleButton.style.textAlign = `center`;
+        toggleButton.classList.remove('edge-left', 'edge-right');
+      }
+    });
 
-            const section = entry.closest("section");
+    toggleButton.addEventListener('dblclick', () => {
+      if (replVisible && !replFull) {
+        fullscreen_content()
+      }
+    });
 
-            if (section) {
-            if (!isFullyVisible(section)) {
-                section.scrollIntoView();
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '`' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+
+        if (replVisible) {
+          fullscreen_content();
+        } else {
+          toggleButton.click();
+        }
+      }
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+
+      function renderEquations(root = document) {
+        const blockElements = root.querySelectorAll(".mech-equation");
+        blockElements.forEach(el => {
+          if (!el.getAttribute("data-rendered")) {
+            const eq = el.getAttribute("equation");
+            if (eq) {
+              katex.render(eq, el, { throwOnError: false });
+              el.setAttribute("data-rendered", "true");
             }
-            const matchingTocSection = Array.from(sections).find(item => item.id === section.id);
-            if (matchingTocSection) {
-                matchingTocSection.classList.add("active");
-            }
-
-            // Now grab the h2, h3, and h4 elements within that section
-            const h3s = Array.from(section.querySelectorAll('h3'));
-            const h4s = Array.from(section.querySelectorAll('h4'));
-
-            if (tag === "H5") {
-                const closestH4 = h4s.reverse().find(h4 => h4.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
-                const H4Nav = Array.from(navItems).find(item => {
-                    const link = item.querySelector("a[href]");
-                    return link && link.getAttribute("href") === `#${closestH4.id}`;
-                });
-                closestH4.classList.add("active");
-            }
-
-            if (tag === "H4" || tag === "H5") {
-                const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
-                const H3Nav = Array.from(navItems).find(item => {
-                    const link = item.querySelector("a[href]");
-                    return link && link.getAttribute("href") === `#${closestH3.id}`;
-                });
-                closestH3.classList.add("active");
-            }
-
-            // if tag is h3 then we want to add a "visible" class to all of the headings with the same section
-            if (tag === "H3") {
-                const h3_id = entry.getAttribute("section");
-                all_the_headers.forEach(item => {
-                const item_id = item.getAttribute("section");
-                if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {
-                    item.classList.add("visible");
-                } else {
-                    item.classList.remove("visible");
-                }
-                });
-            }
-
-            const topLevelHeading = section.querySelector("h2");
-            topLevelHeading.classList.add("active");
-
-            }
-            entry.classList.add("active");
-            currentActiveTag = tag;
-            const link = entry.querySelector('a[href]');
-            if (link) {
-            window.location.hash = link.getAttribute('href');
-            }
+          }
         });
-        });
 
-        function createObserver(rootMarginValue,scrolling_down) {
-        if (observer) observer.disconnect(); // Clean up old observer
+        const inlineElements = root.querySelectorAll(".mech-inline-equation");
+        inlineElements.forEach(el => {
+          if (!el.getAttribute("data-rendered")) {
+            const eq = el.getAttribute("equation");
+            if (eq) {
+              katex.render(eq, el, { throwOnError: false });
+              el.setAttribute("data-rendered", "true");
+            }
+          }
+        });
+      }
+
+      renderEquations();
+
+      // Set up a MutationObserver to watch for new elements
+      const mutationobserver = new MutationObserver(mutations => {
+        for (const mutation of mutations) {
+          for (const node of mutation.addedNodes) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              renderEquations(node);
+            }
+          }
+        }
+      });
+      mutationobserver.observe(document.body, { childList: true, subtree: true });
+
+    });
+    
+  </script>
+  <script>
+    let observer = null;
+    let userScrolling = false;
+    let scrollTimeout = null;
+    let scrollLock = false;
+
+    function isFullyVisible(el) {
+      const rect = el.getBoundingClientRect();
+      return (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+      );
+    }
+
+    document.querySelectorAll('.mech-program-subtitle.toc').forEach(entry => {
+      entry.addEventListener('click', () => {
+        scrollLock = true;
+        const id = entry.id;
+        const tag = entry.tagName; // H1, H2, H3, etc.
+
+
         const headings = document.querySelectorAll(".mech-program-subtitle:not(.toc)");
         const navItems = document.querySelectorAll(".mech-program-subtitle.toc");
         const sections = document.querySelectorAll(".mech-program-section.toc");
         const all_the_headers = Array.from(document.querySelectorAll('[section]'));
-        observer = new IntersectionObserver((entries) => {
 
-        entries
-        .slice() // Create a shallow copy to avoid mutating the original entries array
-        .sort((a, b) => {
-            // Sort entries based on scroll direction
-            return scrolling_down
-            ? a.boundingClientRect.top - b.boundingClientRect.top // Ascending for scrolling down
-            : b.boundingClientRect.top - a.boundingClientRect.top; // Descending for scrolling up
-        })
-        .forEach(entry => {
-            if (entry.isIntersecting) {
-                const id = entry.target.id;
-                const tag = entry.target.tagName; // H1, H2, H3, etc.
+        navItems.forEach(item => item.classList.remove("active"));
+        sections.forEach(item => item.classList.remove("active"));
 
-                const activeNav = Array.from(navItems).find(item => {
+        const section = entry.closest("section");
+
+        if (section) {
+          if (!isFullyVisible(section)) {
+            section.scrollIntoView();
+          }
+          const matchingTocSection = Array.from(sections).find(item => item.id === section.id);
+          if (matchingTocSection) {
+            matchingTocSection.classList.add("active");
+          }
+
+          // Now grab the h2, h3, and h4 elements within that section
+          const h3s = Array.from(section.querySelectorAll('h3'));
+          const h4s = Array.from(section.querySelectorAll('h4'));
+
+          if (tag === "H5") {
+            const closestH4 = h4s.reverse().find(h4 => h4.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
+            const H4Nav = Array.from(navItems).find(item => {
                 const link = item.querySelector("a[href]");
-                return link && link.getAttribute("href") === `#${id}`;
-                });
+                return link && link.getAttribute("href") === `#${closestH4.id}`;
+            });
+            closestH4.classList.add("active");
+          }
 
-                if (!activeNav) return;
+          if (tag === "H4" || tag === "H5") {
+            const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
+            const H3Nav = Array.from(navItems).find(item => {
+                const link = item.querySelector("a[href]");
+                return link && link.getAttribute("href") === `#${closestH3.id}`;
+            });
+            closestH3.classList.add("active");
+          }
 
-                // Deactivate all TOC items
-                navItems.forEach(item => item.classList.remove("active"));
-                sections.forEach(item => item.classList.remove("active"));
+          // if tag is h3 then we want to add a "visible" class to all of the headings with the same section
+          if (tag === "H3") {
+            const h3_id = entry.getAttribute("section");
+            all_the_headers.forEach(item => {
+              const item_id = item.getAttribute("section");
+              if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {
+                item.classList.add("visible");
+              } else {
+                item.classList.remove("visible");
+              }
+            });
+          }
 
-                // Activate the current section's top-level H2
-                const section = entry.target.closest("section");
-                if (section) {
-                const matchingTocSection = Array.from(sections).find(item => {
-                    const toc_section_id = item.getAttribute("section");
-                    const section_id = section.getAttribute("section");
-                    if (toc_section_id && section_id) {
-                    return toc_section_id === section_id;
-                    }
-                });
-                if (matchingTocSection) {
-                    matchingTocSection.classList.add("active");
-                    const toc = document.querySelector(".mech-toc");
+          const topLevelHeading = section.querySelector("h2");
+          topLevelHeading.classList.add("active");
 
-                    if (toc && matchingTocSection) {
-                    const itemOffsetTop = matchingTocSection.offsetTop;
-                    const itemHeight = matchingTocSection.offsetHeight;
-                    const tocHeight = toc.clientHeight;
-                    const scrollTop = toc.scrollTop;
+        }
+        entry.classList.add("active");
+        currentActiveTag = tag;
+        const link = entry.querySelector('a[href]');
+        if (link) {
+          window.location.hash = link.getAttribute('href');
+        }
+      });
+    });
 
-                    // Center the item manually if it's out of view
-                    const visibleTop = scrollTop;
-                    const visibleBottom = scrollTop + tocHeight;
+    function createObserver(rootMarginValue,scrolling_down) {
+      if (observer) observer.disconnect(); // Clean up old observer
+      const headings = document.querySelectorAll(".mech-program-subtitle:not(.toc)");
+      const navItems = document.querySelectorAll(".mech-program-subtitle.toc");
+      const sections = document.querySelectorAll(".mech-program-section.toc");
+      const all_the_headers = Array.from(document.querySelectorAll('[section]'));
+      observer = new IntersectionObserver((entries) => {
 
-                    if (itemOffsetTop < visibleTop || itemOffsetTop + itemHeight > visibleBottom) {
-                        toc.scrollTo({
-                        top: itemOffsetTop - tocHeight / 2 + itemHeight / 2,
-                        behavior: "smooth"
-                        });
-                    }
-                    }
+    entries
+      .slice() // Create a shallow copy to avoid mutating the original entries array
+      .sort((a, b) => {
+        // Sort entries based on scroll direction
+        return scrolling_down
+          ? a.boundingClientRect.top - b.boundingClientRect.top // Ascending for scrolling down
+          : b.boundingClientRect.top - a.boundingClientRect.top; // Descending for scrolling up
+      })
+      .forEach(entry => {
+        if (entry.isIntersecting) {
+            const id = entry.target.id;
+            const tag = entry.target.tagName; // H1, H2, H3, etc.
+
+            const activeNav = Array.from(navItems).find(item => {
+              const link = item.querySelector("a[href]");
+              return link && link.getAttribute("href") === `#${id}`;
+            });
+
+            if (!activeNav) return;
+
+            // Deactivate all TOC items
+            navItems.forEach(item => item.classList.remove("active"));
+            sections.forEach(item => item.classList.remove("active"));
+
+            // Activate the current section's top-level H2
+            const section = entry.target.closest("section");
+            if (section) {
+              const matchingTocSection = Array.from(sections).find(item => {
+                const toc_section_id = item.getAttribute("section");
+                const section_id = section.getAttribute("section");
+                if (toc_section_id && section_id) {
+                  return toc_section_id === section_id;
                 }
+              });
+              if (matchingTocSection) {
+                matchingTocSection.classList.add("active");
+                const toc = document.querySelector(".mech-toc");
 
-                // Now grab the h3, h4, h5 elements within that section
-                const h3s = Array.from(section.querySelectorAll('h3'));
-                const h4s = Array.from(section.querySelectorAll('h4'));
-                const h5s = Array.from(section.querySelectorAll('h5'));
+                if (toc && matchingTocSection) {
+                  const itemOffsetTop = matchingTocSection.offsetTop;
+                  const itemHeight = matchingTocSection.offsetHeight;
+                  const tocHeight = toc.clientHeight;
+                  const scrollTop = toc.scrollTop;
 
-                if (tag === "H5") {
-                    const closestH4 = h4s.reverse().find(h4 => h4.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
-                    const H4Nav = Array.from(navItems).find(item => {
-                        const link = item.querySelector("a[href]");
-                        return link && link.getAttribute("href") === `#${closestH4.id}`;
+                  // Center the item manually if it's out of view
+                  const visibleTop = scrollTop;
+                  const visibleBottom = scrollTop + tocHeight;
+
+                  if (itemOffsetTop < visibleTop || itemOffsetTop + itemHeight > visibleBottom) {
+                    toc.scrollTo({
+                      top: itemOffsetTop - tocHeight / 2 + itemHeight / 2,
+                      behavior: "smooth"
                     });
-                    if (H4Nav) {
-                    H4Nav.classList.add("active");
-                    const h4_id = H4Nav.getAttribute("section");
-                    all_the_headers.forEach(item => {
-                        const item_id = item.getAttribute("section");
-                        if (item_id && item_id.startsWith(h4_id) && item.tagName === "H4") {
-                        } else {
-                        item.classList.remove("visible");
-                        }
-                    });
-                    }
+                  }
                 }
+              }
 
-                if (tag === "H4" || tag == "H5") {
-                    const entry_section = entry.target.getAttribute("section");
-                    const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
-                    const H3Nav = Array.from(navItems).find(item => {
+              // Now grab the h3, h4, h5 elements within that section
+              const h3s = Array.from(section.querySelectorAll('h3'));
+              const h4s = Array.from(section.querySelectorAll('h4'));
+              const h5s = Array.from(section.querySelectorAll('h5'));
+
+              if (tag === "H5") {
+                const closestH4 = h4s.reverse().find(h4 => h4.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
+                const H4Nav = Array.from(navItems).find(item => {
                     const link = item.querySelector("a[href]");
-                    return link && link.getAttribute("href") === `#${closestH3.id}`;
-                    });
-                    if (H3Nav) {
-                    H3Nav.classList.add("active");
-                    const h3_id = H3Nav.getAttribute("section");
-                    all_the_headers.forEach(item => {
-                        const item_id = item.getAttribute("section");
-                        // Check if the item_id starts with the h3_id and is an H4, if so, add "visible", if not, remove "visible"
-                        if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {
-                        item.classList.add("visible");
-                        } else {
-                        item.classList.remove("visible");
-                        }
-                    });
+                    return link && link.getAttribute("href") === `#${closestH4.id}`;
+                });
+                if (H4Nav) {
+                  H4Nav.classList.add("active");
+                  const h4_id = H4Nav.getAttribute("section");
+                  all_the_headers.forEach(item => {
+                    const item_id = item.getAttribute("section");
+                    if (item_id && item_id.startsWith(h4_id) && item.tagName === "H4") {
+                    } else {
+                      item.classList.remove("visible");
                     }
+                  });
                 }
+              }
 
-                // if tag is h3 then we want to add a "visible" class to all of the headings with the same section
-                if (tag === "H3") {
-                    const h3_id = entry.target.getAttribute("section");
-                    all_the_headers.forEach(item => {
+              if (tag === "H4" || tag == "H5") {
+                const entry_section = entry.target.getAttribute("section");
+                const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
+                const H3Nav = Array.from(navItems).find(item => {
+                  const link = item.querySelector("a[href]");
+                  return link && link.getAttribute("href") === `#${closestH3.id}`;
+                });
+                if (H3Nav) {
+                  H3Nav.classList.add("active");
+                  const h3_id = H3Nav.getAttribute("section");
+                  all_the_headers.forEach(item => {
                     const item_id = item.getAttribute("section");
                     // Check if the item_id starts with the h3_id and is an H4, if so, add "visible", if not, remove "visible"
                     if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {
-                        item.classList.add("visible");
+                      item.classList.add("visible");
                     } else {
-                        item.classList.remove("visible");
+                      item.classList.remove("visible");
                     }
-                    });
+                  });
                 }
+              }
 
-                const topLevelHeading = section.querySelector("h2");
-                if (topLevelHeading) {
-                    const topLevelNav = Array.from(navItems).find(item => {
-                    const link = item.querySelector("a[href]");
-                    return link && link.getAttribute("href") === `#${topLevelHeading.id}`;
-                    });
-                    if (topLevelNav) {
-                    topLevelNav.classList.add("active");
-                    }
+              // if tag is h3 then we want to add a "visible" class to all of the headings with the same section
+              if (tag === "H3") {
+                const h3_id = entry.target.getAttribute("section");
+                all_the_headers.forEach(item => {
+                  const item_id = item.getAttribute("section");
+                  // Check if the item_id starts with the h3_id and is an H4, if so, add "visible", if not, remove "visible"
+                  if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {
+                    item.classList.add("visible");
+                  } else {
+                    item.classList.remove("visible");
+                  }
+                });
+              }
+
+              const topLevelHeading = section.querySelector("h2");
+              if (topLevelHeading) {
+                const topLevelNav = Array.from(navItems).find(item => {
+                  const link = item.querySelector("a[href]");
+                  return link && link.getAttribute("href") === `#${topLevelHeading.id}`;
+                });
+                if (topLevelNav) {
+                  topLevelNav.classList.add("active");
                 }
-                }
-                activeNav.classList.add("active");
-                currentActiveTag = tag;
+              }
             }
-            });
-        }, {
-            root: null,
-            rootMargin: rootMarginValue,
-            threshold: 0
+            activeNav.classList.add("active");
+            currentActiveTag = tag;
+          }
         });
-        headings.forEach(heading => observer.observe(heading));
-        }
+      }, {
+        root: null,
+        rootMargin: rootMarginValue,
+        threshold: 0
+      });
+      headings.forEach(heading => observer.observe(heading));
+    }
 
 
-        window.addEventListener("DOMContentLoaded", () => {
-        createObserver("0px 0px 0px 0px");
+    window.addEventListener("DOMContentLoaded", () => {
+      createObserver("0px 0px 0px 0px");
 
-        function renderEquations(root = document) {
-            const blockElements = root.querySelectorAll(".mech-equation");
-            blockElements.forEach(el => {
-            if (!el.getAttribute("data-rendered")) {
-                const eq = el.getAttribute("equation");
-                if (eq) {
-                katex.render(eq, el, { throwOnError: false });
-                el.setAttribute("data-rendered", "true");
-                }
-            }
-            });
-
-            const inlineElements = root.querySelectorAll(".mech-inline-equation");
-            inlineElements.forEach(el => {
-            if (!el.getAttribute("data-rendered")) {
-                const eq = el.getAttribute("equation");
-                if (eq) {
-                katex.render(eq, el, { throwOnError: false });
-                el.setAttribute("data-rendered", "true");
-                }
-            }
-            });
-
-            document.querySelectorAll(".mermaid svg").forEach(svg => {
-            const labels = svg.querySelector(".node-labels");
-            if (labels && svg.lastElementChild !== labels) {
-                svg.appendChild(labels); // Move labels to end = on top
-            }
-            });
-        }
-
-        renderEquations();
-
-        // Set up a MutationObserver to watch for new elements
-        const observer = new MutationObserver(mutations => {
-            for (const mutation of mutations) {
-            for (const node of mutation.addedNodes) {
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                renderEquations(node);
-                }
-            }
-            }
-        });
-
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-        });
-        });
-
-
-        let lastScrollY = window.scrollY;
-        let scrolling_down = true;
-        let margin = 10;
-
-        function getScrollPercentage() {
-        const scrollTop = window.scrollY || window.pageYOffset;
-        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-
-        if (docHeight === 0) return 0; // avoid division by zero on short pages
-        return scrollTop / docHeight;
-        }
-
-        window.addEventListener("scroll", () => {
-        if (scrollLock) {
-            scrollLock = false;
-            return;
-        }
-        
-        const percent = getScrollPercentage();
-        const currentScrollY = window.scrollY;
-        scrolling_down = currentScrollY > lastScrollY;
-
-        if (currentScrollY !== lastScrollY) {
-            lastScrollY = currentScrollY;
-        }
-
-        if (percent < 0.05) {
-            createObserver("0px 0px -90% 0px", scrolling_down);
-        } else if (percent < 0.2) {
-            createObserver("-0% 0px -90% 0px", scrolling_down);
-        } else if (percent < 0.3) {
-            createObserver("-10% 0px -80% 0px", scrolling_down);
-        } else if (percent < 0.4) {
-            createObserver("-20% 0px -70% 0px", scrolling_down);
-        } else if (percent < 0.5) {
-            createObserver("-30% 0px -60% 0px", scrolling_down);
-        } else if (percent < 0.6) {
-            createObserver("-40% 0px -50% 0px", scrolling_down);
-        } else if (percent < 0.7) {
-            createObserver("-50% 0px -40% 0px", scrolling_down);
-        } else if (percent < 0.8) {
-            createObserver("-60% 0px -30% 0px", scrolling_down);
-        } else if (percent < 0.9) {
-            createObserver("-70% 0px -20% 0px", scrolling_down);
-        } else if (percent <= 0.95) {
-            createObserver("-80% 0px 0% 0px", scrolling_down);
-        }
-        });
-
-    </script>
-    <script type="module">
-
-
-      import init, {WasmMech} from '/pkg/mech_wasm.js';
-      let wasm_core;
-      async function run() {
-        await init();
-        var code = `{}`;
-        wasm_core = new WasmMech();
-        var xhr = new XMLHttpRequest();
-        var codeUrl = `/code${window.location.pathname}`;
-        xhr.open('GET', codeUrl, true);
-        xhr.onload = function (e) {
-          if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-              var src = xhr.responseText;
-              wasm_core.run_program(src);
-              wasm_core.init();
-              wasm_core.render_inline_values();
-              wasm_core.render_codeblock_output_values();
-              wasm_core.attach_repl("mech-output");
-            } else {
-              console.error("Defaulting to included program");
-              wasm_core.run_program(code);
-              wasm_core.init();
-              wasm_core.render_inline_values();
-              wasm_core.render_codeblock_output_values();
-              wasm_core.attach_repl("mech-output");
+      function renderEquations(root = document) {
+        const blockElements = root.querySelectorAll(".mech-equation");
+        blockElements.forEach(el => {
+          if (!el.getAttribute("data-rendered")) {
+            const eq = el.getAttribute("equation");
+            if (eq) {
+              katex.render(eq, el, { throwOnError: false });
+              el.setAttribute("data-rendered", "true");
             }
           }
-        };
-        xhr.onerror = function (e) {
-          console.error("I've been waiting for this error. Look me up in formatter.rs");
-          console.error(xhr.statusText);
-        };
-        xhr.send(null);        
+        });
+
+        const inlineElements = root.querySelectorAll(".mech-inline-equation");
+        inlineElements.forEach(el => {
+          if (!el.getAttribute("data-rendered")) {
+            const eq = el.getAttribute("equation");
+            if (eq) {
+              katex.render(eq, el, { throwOnError: false });
+              el.setAttribute("data-rendered", "true");
+            }
+          }
+        });
+
+        document.querySelectorAll(".mermaid svg").forEach(svg => {
+          const labels = svg.querySelector(".node-labels");
+          if (labels && svg.lastElementChild !== labels) {
+            svg.appendChild(labels); // Move labels to end = on top
+          }
+        });
       }
-      run();
-    </script>
-  </body>
+
+      renderEquations();
+
+      // Set up a MutationObserver to watch for new elements
+      const observer = new MutationObserver(mutations => {
+        for (const mutation of mutations) {
+          for (const node of mutation.addedNodes) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              renderEquations(node);
+            }
+          }
+        }
+      });
+
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+    });
+
+
+    let lastScrollY = window.scrollY;
+    let scrolling_down = true;
+    let margin = 10;
+
+    function getScrollPercentage() {
+      const scrollTop = window.scrollY || window.pageYOffset;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+
+      if (docHeight === 0) return 0; // avoid division by zero on short pages
+      return scrollTop / docHeight;
+    }
+
+    window.addEventListener("scroll", () => {
+      if (scrollLock) {
+        scrollLock = false;
+        return;
+      }
+      
+      const percent = getScrollPercentage();
+      const currentScrollY = window.scrollY;
+      scrolling_down = currentScrollY > lastScrollY;
+
+      if (currentScrollY !== lastScrollY) {
+        lastScrollY = currentScrollY;
+      }
+
+      if (percent < 0.05) {
+        createObserver("0px 0px -90% 0px", scrolling_down);
+      } else if (percent < 0.2) {
+        createObserver("-0% 0px -90% 0px", scrolling_down);
+      } else if (percent < 0.3) {
+        createObserver("-10% 0px -80% 0px", scrolling_down);
+      } else if (percent < 0.4) {
+        createObserver("-20% 0px -70% 0px", scrolling_down);
+      } else if (percent < 0.5) {
+        createObserver("-30% 0px -60% 0px", scrolling_down);
+      } else if (percent < 0.6) {
+        createObserver("-40% 0px -50% 0px", scrolling_down);
+      } else if (percent < 0.7) {
+        createObserver("-50% 0px -40% 0px", scrolling_down);
+      } else if (percent < 0.8) {
+        createObserver("-60% 0px -30% 0px", scrolling_down);
+      } else if (percent < 0.9) {
+        createObserver("-70% 0px -20% 0px", scrolling_down);
+      } else if (percent <= 0.95) {
+        createObserver("-80% 0px 0% 0px", scrolling_down);
+      }
+    });
+
+</script>
+  <script type="module">
+    /*import init, { WasmMech, help_html } from '/pkg/mech_wasm.js';
+
+    let wasm_core;
+
+    async function initializeWasm() {
+      await init();
+      wasm_core = new WasmMech();
+      wasm_core.init();
+      wasm_core.attach_repl("sidebar");
+      let help = help_html();
+      document.getElementById("left-pane").innerHTML = help;
+      const sidebar = document.getElementById('sidebar');
+    }
+    initializeWasm();*/
+  </script>
+  <script type="module">
+    import init, {WasmMech} from '/pkg/mech_wasm.js';
+    let wasm_core;
+    async function run() {
+      await init();
+      var code = `{{CODE}}`;
+      wasm_core = new WasmMech();
+      var xhr = new XMLHttpRequest();
+      var codeUrl = `/code${window.location.pathname}`;
+      xhr.open('GET', codeUrl, true);
+      xhr.onload = function (e) {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            var src = xhr.responseText;
+            wasm_core.run_program(src);
+            wasm_core.init();
+            wasm_core.render_inline_values();
+            wasm_core.render_codeblock_output_values();
+            wasm_core.attach_repl("mech-output");
+          } else {
+            console.error("Defaulting to included program");
+            wasm_core.run_program(code);
+            wasm_core.init();
+            wasm_core.render_inline_values();
+            wasm_core.render_codeblock_output_values();
+            wasm_core.attach_repl("mech-output");
+          }
+        }
+      };
+      xhr.onerror = function (e) {
+        console.error("I've been waiting for this error. Look me up in formatter.rs");
+        console.error(xhr.statusText);
+      };
+      xhr.send(null);        
+    }
+    run();
+  </script>
+</body>
 </html>

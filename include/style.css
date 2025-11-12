@@ -3,6 +3,7 @@
 :root {
   --op-color: #73b997;
   --bracket-color: rgb(177, 187, 196);
+  --sidebar-width: 300px;
 }
 
 html {
@@ -18,6 +19,16 @@ body {
     font-size: 1rem;
 }
 
+.mech-document {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    scrollbar-width: none;       
+    -ms-overflow-style: none;
+}
+
 .mech-root {
     width: 100%;
     display: flex;
@@ -25,12 +36,43 @@ body {
 }
 
 .mech-content {
-    min-width: 800px;
-    padding-top: 20px;
-    padding-bottom: 20px;
     counter-reset: h2 equation;
+    /*min-width: 800px;
     margin-right: clamp(300px, 30vw, 800px);
-    flex: 2;
+    */
+    overflow: auto;
+    height: 100vh;
+    flex: 1;
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+}
+
+.mech-toc.hidden {
+  display: none;
+}
+
+.mech-toc.hidden ~ .mech-content {
+  margin-left: 0;
+}
+
+.super.compact .mech-content {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;
+}
+
+.mech-toc {
+    max-width: 250px;
+    position: absolute;
+    counter-reset: h2;
+    color: #f2ead9;
+    overflow-y: auto;
+    overflow-x: hidden;
+    top: 0px;
+    margin-left: calc(50% - 350px - 250px - 150px);
+    height: 100vh;
+    overflow: auto;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;     /* Firefox */              
 }
 
 .mech-program {
@@ -39,25 +81,59 @@ body {
 }
 
 #mech-output {
-  background-color: #040608;
-  color: #f2ead9;
-  font-family: 'FiraCodeLight', monospace;
-  font-size: 1rem;
-  position: fixed;
-  top: 0;
-  right: 0;
-  height: 100vh;
-  width: clamp(300px, 30vw, 800px);
-  overflow-y: auto;
-  box-sizing: border-box;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  z-index: 10; 
-  scrollbar-width: none;     /* Firefox */
-  -ms-overflow-style: none;  /* IE 10+ */
+
 }
+
+.compact .mech-program h1 {
+    width: 100%;
+    margin-left: 0px;
+}
+.compact .mech-program h2 {
+    width: 100%;
+    margin-left: 0px;
+}
+.compact .mech-program h3 {
+    margin-left: 0px;
+}
+
+
+.super.compact .mech-content {
+        max-width: 100%;
+        min-width: 300px;
+        margin: 10px;
+    }
+
+.super.compact .mech-program {
+        max-width: 100%;
+        min-width: 0px;
+    }
+
+.super.compact .mech-program h1 {
+        width: 100%;
+        margin-left: 0px;
+    }
+.super.compact .mech-program h2 {
+        width: 100%;
+        margin-left: 0px;
+    }
+.super.compact .mech-program h3 {
+        margin-left: 0px;
+    }
+    
+.super.compact .mech-program-section {
+        padding-left: 0px;
+        padding-right: 0px;
+    }
+
+.super.compact .mech-table {
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+.super.compact .mech-statement {
+        min-width: fit-content;
+    }
+
 
 #mech-output::-webkit-scrollbar {
   display: none;             /* Chrome, Safari, Edge */
@@ -69,6 +145,7 @@ body {
 
 .repl-prompt {
     color: #F3B62D;
+    width: 20px;
 }
 
 .repl-result .mech-output-value {
@@ -91,38 +168,37 @@ body {
 
 .repl-input,
 .repl-code {
-  display: inline-block;       
-  font-family: 'FiraCodeLight', monospace;     
+  display: block;
+  font-family: 'FiraCodeLight', monospace;
   font-size: 1em;
+  min-height: 1.2em;
   line-height: 1.2em;
   color: #f2ead9;
   padding: 0;
   margin: 0;
+  padding-left: 25px;
   border: none;
   outline: none;
+  position: relative;
   background: transparent;
+  width: calc(100% - 25px);
+  white-space: pre-wrap;   /* preserve spacing and wrap */
+  word-wrap: break-word;   /* break long words */
+  overflow-wrap: break-word; 
+  resize: none;            /* prevent user resizing */
 }
-.mech-toc {
-    width: 250px;
-    counter-reset: h2;
-    background-color: #171D21;
-    color: #f2ead9;
-    overflow-y: auto;
-    overflow-x: hidden;
-    position: sticky; 
-    top: 0; 
-    height: 100vh;
-    flex-shrink: 0;
+
+.repl-code::before, 
+.repl-input::before {
+    content: ">:";
+    color: #F3B62D;
+    margin-left: -25px;
+    position: absolute;
+    pointer-events: none;
 }
 
 .mech-toc h2 {
     line-height: 23px;
-}
-
-.mech-toc {
-  overflow: auto;              /* Enables scrolling */
-  scrollbar-width: none;       /* Firefox */
-  -ms-overflow-style: none;    /* IE 10+ */
 }
 
 .mech-toc::-webkit-scrollbar {
@@ -395,6 +471,22 @@ h5.toc {
     display: inline-flex;
 }
 
+.mech-modal {
+    display: block;
+    background-color: #171D21;
+    color: #e6dac2;
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 1rem;
+    line-height: 18px;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #888f92;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    box-shadow: 0 1px 20px rgba(0, 0, 0, 1);
+    z-index:1000;
+}
+
 .mech-code-block {
     display: block;
     background-color: #171D21;
@@ -639,12 +731,14 @@ code {
 
 .mech-paragraph a {
     color: #F8D07A;
-    text-decoration: underline;
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
 }
 
 .mech-paragraph a:hover {
     color: #f18181;
     text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 .mech-all {
@@ -875,7 +969,7 @@ code {
 }
 
 .mech-comment {
-    color: #ef5f90;
+    color: #5c6467;
     font-style: italic;
     padding-top: 20px;
     display: flex; /* align contents horizontally */
@@ -884,7 +978,7 @@ code {
 
 .mech-comment p {
     margin: 0;
-    color: #ef5f90;
+    color: #939a9e;
     display: inline;
 }
 
@@ -1111,20 +1205,115 @@ li p {
 .mech-block-quote {
     width: 80%;
     background-color: #1d2227; 
-    border-left: 4px solid #F3B62D;; 
-    padding: 40px 30px 40px 30px;
+    border-left: 4px solid #F3B62D;
+    padding: 40px 30px;
     margin: 40px auto;
     color: #f2ead9; 
     border-radius: 3px;
     font-style: italic;
     font-family: 'Georgia', serif;
-    /* optional visual tweaks */
+    position: relative;
+}
+
+.mech-block-quote::before,
+.mech-block-quote::after {
+    color: #F3B62D;
+    font-size: 32pt;
+    font-family: 'Georgia', serif;
+    position: absolute;
+}
+
+.mech-block-quote::before {
+    content: "“";
+    left: 15px;
+    top: 5px;
+}
+
+.mech-block-quote::after {
+    content: "”";
+    right: 15px;
+    bottom: -17px;
 }
 
 .mech-block-quote p {
     margin: 0;
     line-height: 1.6;
     font-size: 14pt;
+}
+
+
+.mech-info-block {
+    width: 80%;
+    background-color: #1d2227;
+    border-left: 4px solid #f18181;
+    padding: 20px 20px 20px 50px;
+    margin: 20px auto;
+    color: #f2ead9;
+    border-radius: 3px;
+    font-family: 'Georgia', serif;
+    position: relative;
+    font-style: normal;
+}
+
+.mech-info-block::before {
+    content: "!";
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #f18181;
+    color: #1d2227;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 11pt;
+}
+
+.mech-info-block p {
+    margin: 0;
+    line-height: 1.5;
+    font-size: 12pt;
+}
+
+.mech-question-block {
+    width: 80%;
+    background-color: #1d2227;
+    border-left: 4px solid #6ca8ff;
+    padding: 20px 20px 20px 50px;
+    margin: 20px auto;
+    color: #f2ead9;
+    border-radius: 3px;
+    font-family: 'Georgia', serif;
+    position: relative;
+    font-style: normal;
+}
+
+.mech-question-block::before {
+    content: "?";
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #6ca8ff;
+    color: #1d2227;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 11pt;
+}
+
+.mech-question-block p {
+    margin: 0;
+    line-height: 1.5;
+    font-size: 12pt;
 }
 
 .mech-thematic-break {
@@ -1314,6 +1503,7 @@ h5::before {
     background-color: #0d1013;
     padding-top: 10px;
     padding-bottom: 10px;
+    border-left: 4px solid #d65858;
 }
 
 h2:hover a {
@@ -1371,7 +1561,7 @@ h6:hover a {
 mark {
     background-color: #F3B62D;
     border: 1px solid #ffe4a4;
-    color: #2F353B;
+    color: #5a4105;
     font-weight: 400;
     padding: 0.2em 0.4em;
     border-radius: 4px;
@@ -1702,7 +1892,7 @@ mark {
     }
 }
 
-@media (max-width: 1470px) {
+@media (max-width: 1100px) {
     .mech-toc {
         display: none;
     }
@@ -1717,7 +1907,7 @@ mark {
     }
 }
 
-@media (max-width: 750px) {
+@media (max-width: 900px) {
     .mech-content {
         max-width: 100%;
         min-width: 300px;
