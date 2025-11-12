@@ -1452,9 +1452,9 @@ Title
 1. Section Title
 ----------------
 
-(2) Sub Section Title
+(1.1) Sub Section Title
 
-(a) Sub Sub Section Title
+(1.1.1) Sub Sub Section Title
 ```
 
 Section titles and the first level of sub-section titles comprise the table of contents, which is generated automatically.
