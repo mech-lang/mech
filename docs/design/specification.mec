@@ -1575,7 +1575,7 @@ Section references are inline references to section titles, and are indicated wi
 This is a paragraph with a footnote reference.[^1] Here is a citation reference.[MECH] Finally, we have a section reference to §10.4.
 
 [^1]: This is the text of the footnote.
-[MECH]: Mech Programming Language. (2024). Retrieved from https://mechlang.org (Mech Official Website)
+[MECH]: Mech Programming Language. (2024). Retrieved from https://mech-lang.org (Mech Official Website)
 ```
 
 This renders as:
@@ -1583,7 +1583,7 @@ This renders as:
 This is a paragraph with a footnote reference.[^1] Here is a citation reference.[MECH] Finally, we have a section reference to §10.4.
 
 [^1]: This is the text of the footnote.
-[MECH]: Mech Programming Language. (2024). Retrieved from https://mechlang.org (Mech Official Website)
+[MECH]: Mech Programming Language. (2024). Retrieved from https://mech-lang.org (Mech Official Website)
 
 (?)> Although the referenec is defined here in the document, it will be rendered at the bottom of the document in the "Works Cited" section. This is in contrast to footnotes, which are rendered where they are defined.
 
