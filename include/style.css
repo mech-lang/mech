@@ -1908,7 +1908,19 @@ mark {
     .mech-program h3 {
         margin-left: 0px;
     }
-    .mech-figure {
+}
+
+@media (max-width: 1150px) {
+    .mech-toc {
+        display: none;
+    }
+    .mech-content {
+        margin: auto;
+    }
+    #mech-output {
+        display: none;
+    }
+        .mech-figure {
         margin: 0px auto;
     }
     .mech-image {
@@ -1932,18 +1944,6 @@ mark {
         float: right;
         margin-left: 20px;
         margin-right: 0px;
-    }
-}
-
-@media (max-width: 1150px) {
-    .mech-toc {
-        display: none;
-    }
-    .mech-content {
-        margin: auto;
-    }
-    #mech-output {
-        display: none;
     }
 }
 
