@@ -706,7 +706,7 @@ The kind of a set consists of:
 
   {}               -- Empty set
   {1}              -- Singleton set with one element
-  {1.2, 3.4, 5.6}  -- Set of floags
+  {1.2, 3.4, 5.6}  -- Set of floats
   {"a", "b", "c"}  -- Set of strings
   {{1,2},{3,4}}    -- Nested set of sets
 
