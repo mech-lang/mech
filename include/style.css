@@ -1329,6 +1329,10 @@ li p {
     margin-bottom: 20px;
 }
 
+.mech-code-block.hidden {
+    display: none;
+}
+
 .mech-fenced-mech-block .mech-code-block {
     background-color: #171D21;
     border-radius: 10px 10px 0px 0px;  
