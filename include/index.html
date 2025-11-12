@@ -152,10 +152,10 @@
     <div class="content" id="left-pane">
         {{CONTENT}}
     </div>
-    <div class="resizer" id="resizer">
+    <div class="resizer hidden" id="resizer">
       <button class="toggle-button" id="toggle-repl">|</button>
     </div>
-    <div class="sidebar mech-repl" id="mech-output"></div>
+    <div class="sidebar mech-repl hidden" id="mech-output"></div>
   </div>
 
   <script>
@@ -440,19 +440,7 @@
 
         if (section) {
           if (!isFullyVisible(section)) {
-            const scrollContainer = document.querySelector('.content');
-            if (scrollContainer) {
-              const sectionTop = section.offsetTop;
-              const maxScroll = scrollContainer.scrollHeight - scrollContainer.clientHeight;
-              const targetScroll = Math.min(sectionTop, maxScroll);
-              scrollContainer.scrollTo({
-                top: targetScroll,
-                behavior: 'smooth'
-              });
-            } else {
-              // fallback just in case
-              section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
+            section.scrollIntoView();
           }
           const matchingTocSection = Array.from(sections).find(item => item.id === section.id);
           if (matchingTocSection) {
