@@ -1872,6 +1872,24 @@ option-map := "{", ws0, *mapping, ws0, "}" ;
 option-mapping :=  ws0, expression, ws0, ":", ws0, expression, ?comma, ws0 ;
 ```
 
+Images are added to Mechdown documents using the `![alt-text](image-url)` syntax. An optional options map can be provided within curly braces `{}` to specify additional attributes for the image, such as width, height, or alignment. 
+
+The alt-text is a rich paragraph that can contain any paragraph elements. It is configured to display below the image as a caption by default. The caption is accompanied by a figure number, which is automatically assigned based on the section of the document in which the image appears.
+
+Images can be floated to the left or right by prefixing with `<<` or `>>`, respectively. This allows text to wrap around the image and caption.
+
+(10.9.1) Example
+
+```
+![The Mech "M"](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true)
+![A smaller Mech "M"](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true){width: "100px", height: "100px"}
+```
+
+This renders as:
+
+![The Mech "M"](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true)
+![A smaller Mech "M"](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true){width: "100px", height: "100px"}
+
 (10.10) Mech Extensions 
 
 ```ebnf
