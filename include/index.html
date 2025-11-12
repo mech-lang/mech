@@ -440,7 +440,19 @@
 
         if (section) {
           if (!isFullyVisible(section)) {
-            section.scrollIntoView();
+            const scrollContainer = document.querySelector('.content');
+            if (scrollContainer) {
+              const sectionTop = section.offsetTop;
+              const maxScroll = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+              const targetScroll = Math.min(sectionTop, maxScroll);
+              scrollContainer.scrollTo({
+                top: targetScroll,
+                behavior: 'smooth'
+              });
+            } else {
+              // fallback just in case
+              section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
           }
           const matchingTocSection = Array.from(sections).find(item => item.id === section.id);
           if (matchingTocSection) {
