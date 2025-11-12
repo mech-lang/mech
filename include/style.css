@@ -1892,6 +1892,10 @@ mark {
     margin-bottom: 0px;
 }
 
+.mech-float.right .mech-figure-caption {
+    text-align: left;
+}
+
 @media (max-width: 1650px) {
     .mech-program h1 {
         width: 700px;
@@ -1904,15 +1908,37 @@ mark {
     .mech-program h3 {
         margin-left: 0px;
     }
-}
-
-@media (max-width: 1100px) {
-    .mech-toc {
-        display: none;
+    .mech-figure {
+        margin: 0px auto;
+    }
+    .mech-image {
+        max-width: 100%;
+    }
+    .mech-float .mech-figure-caption {
+        width: 100%;
+    }    
+    .mech-figure-label {
+        color: #F3B62D; 
+        font-size: 1rem;
+        min-width: 60px;
+        text-align: right;
+    }
+    .mech-float.left {
+        float: left;
+        margin-right: 20px;
+        margin-left: 0px;
+    }
+    .mech-float.right {
+        float: right;
+        margin-left: 20px;
+        margin-right: 0px;
     }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1150px) {
+    .mech-toc {
+        display: none;
+    }
     .mech-content {
         margin: auto;
     }
