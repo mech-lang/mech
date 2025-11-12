@@ -4,14 +4,12 @@ Mech Platform Specification
 1. Introduction
 -------------------------------------------------------------------------------
 
-This document specifies the default syntax and semantics of the Mech programming platform, which is designed for developing reactive systems like robots, games, and user interfaces. The syntax specified herein is one of many possible syntaxes and interfaces for Mech, but it may be thought of as the default texual representation of Mech.
-
-This specification starts by defining the most atomic elements of the language, and then builds up to more complex structures.
+This document specifies the default syntax and semantics of the Mech programming platform, which is designed for developing reactive systems like robots, games, and user interfaces. Mech is a programming platform, so the the syntax specified herein must be understood as one of many possible syntaxes and interfaces for Mech. However, the semantics of data types, data structures, and other programming constructs defined in this document are fundamental to the Mech platform and must be supported by system targeting it.
 
 This document is for:
 
-- Language designers who want to implement a parser for Mech.
-- Tool developers who want to build tools that work with Mech code.
+- Language designers who want to target Mech as a backend.
+- Developers creating tools to interact with Mech code.
 - Anyone who want to understand the syntax and structure of Mech programs.
 
 2. Source Code Representation
@@ -19,15 +17,17 @@ This document is for:
 
 (2.1) File Format
 
-Mech source code can be stored in files with either the `.mec` extension. 
+Mech source code must be stored in files with a `.mec` extension.
 
-Source code is ecoded with UTF-8, which allows for Unicode support. This choice has several benefits:
+Source code is ecoded with UTF-8, which allows for Unicode support in identifiers, strings, and comments.
 
 (2.2) Literate Programming and Mechdown
 
-Literate programming presents programs as structured documents where explanations and code are given equal precedence. Mech supports this concept through a format called Mechdown, a Markdown varient with extensions to support embedded Mech syntax. This document is formatted with Mechdown to demonstrate how it is used.
+Mech supports literate programming as a first-class language feature. Literate programming is when code and documentation are interwoven in a single source file, allowing developers to write code that is both executable and well-documented.
 
-For more information, see the [Mechdown Section](#45036232896389885).
+Mech supports this concept through a format called Mechdown, a Markdown dialect with extensions to support embedded Mech programs. This document is formatted with Mechdown to demonstrate its features.
+
+For more information, see the [Mechdown Section](#24738341931264987).
 
 (2.3) Whitespace
 
@@ -96,7 +96,7 @@ enum-separator := ws0, "|", ws0 ;
 | Assign       | `:=` `=` `+=` `-=` `*=` `/=` `^=`                  |
 | Arithmetic   | `+` `-` `*` `/` `÷` `^` `%`                        |
 | Condition    | `!=` `¬=` `≠` `==` `>` `<` `>=` `≤` `≥`            |
-| Matrix       | `**` `·` `⨯` `\\` `'`                               |
+| Matrix       | `**` `·` `⨯` `\\` `'`                              |
 | Logic        | `||` `&&` `^^` `⊕` `⊻` `∧` `∨` `¬` `!`            |
 | Set          | `∪` `∩` `∖` `∁` `⊂` `⊃` `⊆` `⊇` `⊊` `⊋` `∈` `∉` |
 | Table        | `⋈` `⟕` `⟖` `⟗` `⋉` `▷`                        |
@@ -1279,7 +1279,7 @@ variable-define := ?tilde, var
       , define-operator
       , expression ;
 ```
-**Examples** 
+(8.1.1) Examples
 
 ```
     intVar := 10                                -- Variable definition with initialization
@@ -1378,16 +1378,11 @@ Moreover, Mechdown supports tables and other features that are not present in Ma
 
 Mech programs and scripts can be written entirely without Mechdown, but literate programming with Mechdown is idomatic.
 
-(10.1) Body
+(10.1) Document Structure
 
 ```ebnf
 program := ws0, ?title, body, ws0 ;
 body := ws0, +(section, section-elements), ws0 ;
-```
-
-(10.2) Sections and Section Elements
-
-```ebnf
 section-element := +mech-code 
       | list 
       | footnote 
@@ -1408,7 +1403,9 @@ section := ul-subtitle, *section-element ;
 section-elements := +(¬ul-subtitle, section-element) ;
 ```
 
-(10.3) Titles
+A Mechdown document consists of an optional title followed by a body containing sections. Each section can contain various elements such as paragraphs, subtitles, code blocks, lists, footnotes, citations, images, equations, tables, and thematic breaks.
+
+(10.2) Titles
 
 ```ebnf
 title := +text
@@ -1462,7 +1459,7 @@ Title
 
 Section titles and the first level of sub-section titles comprise the table of contents, which is generated automatically.
 
-(10.4) Paragraphs
+(10.3) Paragraphs
 
 ```ebnf
 paragraph := +paragraph-element;
@@ -1497,7 +1494,7 @@ paragraph-text := +(¬(paragraph-exclude), text) ;
 
 At their base, paragraphs are blocks or raw text that start with a valid paragraph starter and end with a newline character.
 
-(10.4.1) Paragraph Elements
+(10.3.1) Paragraph Elements
 
 ```ebnf
 strong := (asterisk, asterisk), +paragraph-element, (asterisk, asterisk) ;
@@ -1530,7 +1527,7 @@ Beyond raw text, paragraphs also can contain various markup which indicates inli
   - [Hyperlinks](#)
   - Autonumbered inline references [MECH]
   - Autonumbered footnote references[^1]
-  - Section references §10.4
+  - Section references §10.3
 ```
 
 This renders as
@@ -1549,9 +1546,9 @@ This renders as
   - [Hyperlinks](#)
   - Autonumbered inline references [MECH]
   - Autonumbered footnote references[^1]
-  - Section references §10.4
+  - Section references §10.3
 
-(10.4.2) References
+(10.3.2) References
 
 ```ebnf
 footnote := "[^", +text, "]", ":", ws0, paragraph ;
@@ -1569,7 +1566,7 @@ Citations are used to reference external sources or documents. They are indicate
 
 Section references are inline references to section titles, and are indicated with a `§` followed by the section number, or a unique section label.
 
-(10.4.2.1) Examples
+(10.3.2.1) Examples
 
 ```
 This is a paragraph with a footnote reference.[^1] Here is a citation reference.[MECH] Finally, we have a section reference to §10.4.
@@ -1587,7 +1584,7 @@ This is a paragraph with a footnote reference.[^1] Here is a citation reference.
 
 (?)> Although the referenec is defined here in the document, it will be rendered at the bottom of the document in the "Works Cited" section. This is in contrast to footnotes, which are rendered where they are defined.
 
-(10.5) Lists
+(10.4) Lists
 
 ```ebnf
 unordered-list := +list-item, ?new-line, ws0 ;
@@ -1675,15 +1672,69 @@ When rendered, they look like this:
 
 ***
 
-(10.7) Code Blocks
+(10.5) Code Blocks
 
 ```ebnf
-code-block := (grave, grave, grave), new-line, any, (grave, grave, grave), new-line, ws0 ;
+code-block :=
+    codeblock-sigil, 
+    *space-tab,      
+    ?code-identifier,
+    ?option-map,     
+    *space-tab,      
+    new-line,        
+    code-content,    
+    codeblock-sigil, 
+    ws0
+;
+codeblock-sigil := grave-codeblock-sigil | tilde-codeblock-sigil ;
+grave-codeblock-sigil := grave, grave, grave ;
+tilde-codeblock-sigil := tilde, tilde, tilde ;
+code-identifier := +((¬"{", text));
+code-content := *(¬codeblock-sigil , any);
 ```
 
 Mechdown supports code blocks, which are enclosed in triple backticks (graves) and can contain any text. Code blocks are useful for including Mech code snippets or other text that should be displayed verbatim.
 
-(10.8) Equations
+Blocks are deliniated by a code fence, whether triple graves or triple tildes. Optionally, a code identifier can be provided after the opening code fence to indicate the programming language of the code block. This enables syntax highlighting when rendered.
+
+When "mech" is specified as the code identifier, the code block is treated as Mech code and syntax highlighting is applied accordingly. See §10.10 for more details specific to Mech code blocks.
+
+When "ebnf" is specified as the code identifier, the code block is treated as EBNF syntax and syntax highlighting is applied accordingly.
+
+Start and end code fences must be of the same type (either graves or tildes). To embed a code fence in another code fence, use the alternate type for the inner fence.
+
+
+(10.5.1) Examples
+
+~~~
+```
+This is a code block deliniated with graves.
+```
+~~~
+
+```
+~~~
+This is a code block deliniated with tildes.
+~~~
+```
+
+This one has a label:
+
+~~~
+```ebnf
+X := A | B, C ;
+```
+~~~
+
+The label can also have an options map:
+
+~~~
+```ebnf{width: "25px}
+X := A | B, C ;
+```
+~~~
+
+(10.6) Equations
 
 ```ebnf
 equation := (dollar, dollar), +text, new-line;
@@ -1703,7 +1754,7 @@ $$ c = \pm\sqrt{a^2 + b^2}
 
 Mechdown also supports inline equations, which begin and conclude with a `$$`. They are expressed with LaTeX syntax, like so: `$$c^2 = a^2 + b^2$$`. This is rendered by a third-party library into $$c^2 = a^2 + b^2$$.
 
-(10.9) Callout Blocks
+(10.7) Callout Blocks
 
 ```ebnf
 block-quote := ">", ws0, +paragraph ;
@@ -1743,7 +1794,7 @@ When rendered, they look like this:
 (?)> This is a question block with multiple paragraphs.
 This is the second paragraph.
 
-(10.10) Tables
+(10.8) Tables
 
 ```ebnf
 markdown-table := markdown-table-header, *markdown-table-row ;
@@ -1795,7 +1846,7 @@ Any number of dashes can be used to indicate the width of the column, and they c
 
 The body of a table is defined using rows of text separated by pipes. Each row can contain any number of columns, and the number of columns in each row must match the number of columns in the header.
 
-**Example:**
+(10.8.1) Example
 
 ```
 | Align Left  | Align Center | Align Right |
@@ -1813,12 +1864,107 @@ Renders the following table:
 | Two         | Five         | {2 * 20}    |
 | Three       | Six          | {3 * 30}    |
 
-(10.11) Mech Extensions 
+(10.9) Images
 
 ```ebnf
+img := "![", paragraph, "]", "(", +text, ")" , ?option-map ;
+option-map := "{", ws0, *mapping, ws0, "}" ;
+option-mapping :=  ws0, expression, ws0, ":", ws0, expression, ?comma, ws0 ;
+```
+
+(10.10) Mech Extensions 
+
+```ebnf
+eval-inline-mech-cdoe := "{", ws0, expression, ws0, "}" ;
+inline-mech-cdoe := "{{", ws0, expression, ws0, "}}" ;
 mech-code := mech-code-alt, ("\n" | ";" | comment) ;
 mech-code-alt := fsm-specification | fsm-implementation | function-define | statement | expression | comment ;
 ```
+
+Mechdown extends the base markup language to include Mech code block support. These blocks integrate directly with the Mech runtime and are parsed, executed, and rendered as live, reactive code segments.
+
+(10.9.1) Mech Code Blocks
+
+Mech code ban be written directly into any Mechdown document, or within a fence. Each has different semantics.
+
+Subsequent lines of unadorned Mech code are treated as part of the same Mech program, and are executed in sequence. The scope of these blocks is global, so any variable defined in a code block can be referenced from other blocks, or also inline code elements. However, no output is rendered for unadorned Mech code.
+
+Fenced Mech code much be indicated with a triple fence (either `\`` or `~`), followed by the language specifier `mech`. Code within these fences is executed in the same global scope as unadorned Mech code, but any output from the final expression in the block is rendered below the code fence. This allows for live code examples that show both the code and its output.
+
+Mech code blocks can be configured by adding a `:` at the end followed by a string or an option map. This configuration can specify options such as whether to show output, hide code, or other rendering preferences. Current options include:
+
+- mech:interpreter-id - Scope block code to a specific interpreter instance. This is useful for separating examples and tests that should not change the global program state.
+- mech:hidden - This will hide the code block from being rendered by Mechdown. Code in this block will still execute in the global scope.
+- mech:disabled - This will disable execution of the code block. The code will be rendered as-is, but not executed.
+
+Furthermore, an options map can be provided within curly braces `{}` to specify multiple options in a structured way, where the keys are identifiers and the values are strings. By default, these otions are applied to the style of the code block.
+
+(10.9.1.2) Examples
+
+**Example 1: Unadorned Mech Code**
+
+~~~
+my-var := 123     -- This code isn't in a code fence, so there is no output attached.
+my-var2 := my-var + 1
+~~~
+
+This renders as:
+
+my-var := 123     -- This code isn't in a code fence, so there is no output attached.
+my-var2 := my-var + 1
+
+**Example 2: Fenced Mech Code**
+
+~~~
+```mech
+result := my-var2 * 2   -- This code is in a code fence, so the output will be rendered below.
+```
+~~~
+
+This renders as:
+
+```mech
+result := my-var2 * 2   -- This code is in a code fence, so the output will be rendered below.
+```
+
+**Example 3: Fenced Mech Code targeting a sub interpreter**
+
+~~~
+```mech:ex1
+value := 10 * 5
+```
+```mech:ex1
+result := value + 20
+```
+~~~
+
+This renders as:
+
+```mech:ex1
+value := 10 * 5
+```
+```mech:ex1
+result := value + 20
+```
+
+(10.9.2) Inline Mech Code
+
+Mechdown supports inline Mech code, which can be used to embed Mech expressions directly within paragraphs. Inline Mech code comes in two variants:
+
+- `{{expression}}`: This syntax is used for inline Mech code that should be syntax highlighted but not evaluated. It is useful for documentation purposes where you want to show Mech code without executing it.
+- `{expression}`: This syntax is used for inline Mech code that should be evaluated and its result displayed within the paragraph. It allows for dynamic content generation based on Mech expressions. If an interpreter is not available, the code will be displayed as-if it were a syntax-highlighted block.
+
+(10.9.2.1) Examples
+
+```
+The result of 6 times 7 is {6 * 7}.
+The syntax for defining a variable in Mech is {{var-name := value}}.
+```
+
+This renders as:
+
+The result of 6 times 7 is {6 * 7}.
+The syntax for defining a variable in Mech is {{var-name := value}}.
 
 11. Notation
 -------------------------------------------------------------------------------
