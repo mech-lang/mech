@@ -269,7 +269,7 @@ pub fn option_mapping(input: ParseString) -> ParseResult<(Identifier, MechString
   Ok((input, (key, value)))
 }
 
-// img := "![", paragraph, "]", "(", +text, ")" ;
+// img := "![", paragraph, "]", "(", +text, ")" , ?option-map ;
 pub fn img(input: ParseString) -> ParseResult<Image> {
   let (input, _) = img_prefix(input)?;
   let (input, caption_text) = paragraph(input)?;
@@ -296,19 +296,23 @@ pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, elements))
 }
 
-// eval-inline-mech-cdoe := "{", expression, "}" ;`
+// eval-inline-mech-cdoe := "{", ws0, expression, ws0, "}" ;`
 pub fn eval_inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = left_brace(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, expr) = expression(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = right_brace(input)?;
   Ok((input, ParagraphElement::EvalInlineMechCode(expr)))
 }
 
-// inline-mech-cdoe := "{{", expression, "}}" ;`
+// inline-mech-cdoe := "{{", ws0, expression, ws0, "}}" ;`
 pub fn inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = left_brace(input)?;
   let (input, _) = left_brace(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, expr) = mech_code_alt(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = right_brace(input)?;
   let (input, _) = right_brace(input)?;
   Ok((input, ParagraphElement::InlineMechCode(expr)))
@@ -660,9 +664,10 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
         // get rid of the prefix and then treat the rest of the string after : as an identifier
         let rest = tag.trim_start_matches("mech").trim_start_matches("mec").trim_start_matches("🤖").trim_start_matches(":");
         
-        let config = if rest == "" {BlockConfig { namespace: 0, disabled: false}}
-        else if rest == "disabled" { BlockConfig { namespace: hash_str(rest), disabled: true }} 
-        else { BlockConfig { namespace: hash_str(rest), disabled: false} };
+        let config = if rest == "" {BlockConfig { namespace: 0, disabled: false, hidden: false}}
+        else if rest == "disabled" { BlockConfig { namespace: hash_str(rest), disabled: true, hidden: false} }
+        else if rest == "hidden" { BlockConfig { namespace: hash_str(rest), disabled: false, hidden: true} }
+        else { BlockConfig { namespace: hash_str(rest), disabled: false, hidden: false} };
 
         let mech_src = block_src.iter().collect::<String>();
         let graphemes = graphemes::init_source(&mech_src);

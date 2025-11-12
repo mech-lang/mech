@@ -447,6 +447,7 @@ impl Citation {
 pub struct BlockConfig {
   pub namespace: u64,
   pub disabled: bool,
+  pub hidden: bool,
 }
 
 pub type Footnote = (Token, Paragraph);
