@@ -73,9 +73,11 @@ Mech Programming Language Documentation
 2. [N-Body Simulation](examples/n-body.html) - a simulation of gravitational interactions between multiple bodies.
 3. [Extended Kalman Filter](examples/ekf.html) - an implementation of the Extended Kalman Filter algorithm for state estimation.
 
-docs/machine := {
+```mech:hidden
+document/index := {
   name: "docs" 
   version: "v0.2.65"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/mech/docs"
   license: "Apache-2.0"}
+```
