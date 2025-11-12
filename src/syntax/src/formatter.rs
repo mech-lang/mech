@@ -453,7 +453,10 @@ impl Formatter {
         // Print it, but give it a hidden class so it can be toggled visible via JS
         format!("<pre class=\"mech-code-block hidden\"{}>{}</pre>", style_attr, src)
       } else {
-        format!("<div class=\"mech-fenced-mech-block\"{}><pre id=\"{}\" class=\"mech-code-block\" interpreter=\"{}\" output=\"{}\">{}</pre></div>", style_attr, output_id, intrp_id, output_id, src)
+        format!("<div class=\"mech-fenced-mech-block\"{}>
+          <div class=\"mech-code-block\">{}</div>
+          <div class=\"mech-block-output\" id=\"{}:{}\"></div>
+        </div>", style_attr, src, output_id, intrp_id)
       }
     } else {
       format!("```mech{}\n{}\n```", src, format!(":{}", disabled_tag))
