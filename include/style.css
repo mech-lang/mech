@@ -1748,6 +1748,16 @@ mark {
     text-decoration: underline;
 }
 
+#mech-output.hidden {
+    display: none;
+    width: 0px;
+}
+
+#resizer.hidden {
+    display: none;
+    width: 0px;
+}
+
 .mech-command {
     background-color: #171D21;
     border: 1px solid #777;
