@@ -2200,8 +2200,8 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn logic_op(&mut self, node: &LogicOp) -> String {
     match node {
-      LogicOp::And => "&".to_string(),
-      LogicOp::Or => "|".to_string(),
+      LogicOp::And => "&&".to_string(),
+      LogicOp::Or => "||".to_string(),
       LogicOp::Xor => "⊻".to_string(),
       LogicOp::Not => "¬".to_string(),
     }
