@@ -25,10 +25,10 @@ Here's Mech some code:
 This short example demonstrates several key features of the language:
 
 - **Concise syntax**: Expressive and flexible, with no need for keywords or semicolons; Mech programs are generally shorter than in other languages.
-- **Logical indexing**: Select and manipulate vector elements via conditions, enabling declarative iteration and parallel execution.
 - **Broadcast operations**: Vector operations apply elementwise automatically, removing loops and enabling efficient vectorization.
 - **Type inference**: Variable and expression types are inferred, so explicit type declarations are often unnecessary.
 - **Immutable by default**: Variables are immutable unless specified, promoting safer code and easier reasoning.
+- **Logical indexing**: Select and manipulate vector elements via conditions, enabling declarative iteration and parallel execution.
 - **Rich text formatting**: Comments and code support rich formatting, making documentation clear and readable.
 
 For a complete list of planned features and their implementation statuses, see the [ROADMAP](https://docs.mech-lang.org/IV.design/roadmap.html).
