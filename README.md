@@ -61,11 +61,11 @@ Comprehensive documentation is available at [docs.mech-lang.org](https://docs.me
 
 The Mech community stays active at a few places around the Internet:
 
-- 👾 [Discord](https://discord.gg/asqP25NNTH) - for live chat
-- 🐙 [GitHub](https://github.com/mech-lang) - for code and issues
-- 📺 [YouTube](https://www.youtube.com/@MechLang) - for video tutorials
-- 🛸 [Reddit](https://www.reddit.com/r/mechlang/) - for help and general discussion
-- 📧 [Mailing List](https://groups.google.com/g/mechtalk) - for dev discussion
+- [Discord](https://discord.gg/asqP25NNTH) - for live chat
+- [GitHub](https://github.com/mech-lang) - for code and issues
+- [YouTube](https://www.youtube.com/@MechLang) - for video tutorials
+- [Reddit](https://www.reddit.com/r/mechlang/) - for help and general discussion
+- [Mailing List](https://groups.google.com/g/mechtalk) - for dev discussion
 
 Feel free to stop by and introduce yourself -- we're happy to meet new users and answer questions! 
 
