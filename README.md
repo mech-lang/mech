@@ -6,9 +6,9 @@
 
 **It simplifies data** distribution, transformation, and analysis **so you can focus** on your project.
 
-- [Try Mech](https://try.mech-lang.org) online in your browser or 
+- [Try Mech](https://try.mech-lang.org) online in your browser. 
 - [Read the docs](https://docs.mech-lang.org) to learn the language.
-- Stay updated with our [blog](https://mech-lang.org/blog/).
+- [Follow our blog](https://mech-lang.org/blog/) to stay updated on new developments.
 
 The following code implements FizzBuzz in Mech:
 
