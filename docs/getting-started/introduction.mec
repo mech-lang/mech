@@ -4,14 +4,14 @@ Introduction
 1. Welcome to Mech!
 ------------------------------------------------------------------------------
 
-Hello and welcome to the documentation for Mech, a programming language for developing data-driven, reactive systems. Mech authors build programs by defining data dependencies, transformations, and state machines. This makes Mech particularly well-suited for applications that require real-time data processing, such as simulations, visualizations, and cyber-physical systems like robots.
+Hello and welcome to the documentation for Mech, a programming language and platform for developing data-driven, reactive systems. Mech authors build programs by defining data dependencies, transformations, and state machines. This makes Mech particularly well-suited for applications that require real-time data processing, such as simulations, visualizations, and cyber-physical systems like robots.
 
 (1.1) An Example: FizzBuzz
 
-Let's get right to it, here's Mech some code:
+Here's Mech some code:
 
 ```mech
-  x := 1..=10                -- A row vector of numbers from 1 to 10
+  x := 1..=10               -- A row vector of numbers from 1 to 10
   ~out<[string]> := x       -- Convert `x` into mutable string vec
   
   ix2 := (x % 2) == 0       -- Indices for multiples of 2
@@ -24,86 +24,63 @@ Let's get right to it, here's Mech some code:
 
 This short example demonstrates several key features of the language:
 
-- The syntax is concise, expressive and flexible, without the need for keywords and semicolons. In general, Mech programs should be much shorter than equivalent programs in other languages.
-- Logical indexing manipulates elements of vectors based on conditions, a declarative way to express iteration and choice, which lends to parallel execution.
-- Operations are broadcast elementwise across vectors without needing to write loops, which allows for more efficient execution and automatic vectorization resulting code.
-- Type inference is used to determine the types of variables and expressions, so you don't have to specify all types explicitly.
-- Variables are immutable by default, which encourages safer programming practices and makes reasoning about code easier.
-- Rich text formatting is supported throughout Mech, including in comments, allowing you to document your code in a way that is easy to read and understand.
+- **Concise syntax**: Expressive and flexible, with no need for keywords or semicolons; Mech programs are generally shorter than in other languages.
+- **Logical indexing**: Select and manipulate vector elements via conditions, enabling declarative iteration and parallel execution.
+- **Broadcast operations**: Vector operations apply elementwise automatically, removing loops and enabling efficient vectorization.
+- **Type inference**: Variable and expression types are inferred, so explicit type declarations are often unnecessary.
+- **Immutable by default**: Variables are immutable unless specified, promoting safer code and easier reasoning.
+- **Rich text formatting**: Comments and code support rich formatting, making documentation clear and readable.
 
 (1.2) Why Mech?
 
 (1.2.1) The Big Idea
 
-Mech is disigned for building data transformation pipelines, or a feedback control loops. It's ideal for any purpose where data is flowing through a system, being transformed, and then used to drive visualizations or control actions. This pattern is common in many domains:
+Mech is designed to make building data-driven, reactive systems easier by providing a programming model that is based on defining data dependencies and transformations.
 
-- *Games* - a loop that processes user input (game controller), updates the game state, and then renders the updated state to the screen.
-- *IOT* - a loop that processes data from sensors, updates the state of the system, and then sends commands to actuators or other devices.
-- *User* interfaces - a loop that processes user input (mouse/keyboard), updates the UI state, and then renders the updated UI.
-- *Data* science - a pipeline that processes data, applies transformations and analyses, and then produces visualizations or reports.
-- *Robotics* - a loop that processes sensor data, updates the robot's state, and then sends commands to the robot's actuators.
+This covers a lot of common use cases:
 
-Each of these examples looks like a feedback or feedforward control loop, and would be good candidates for implementation in Mech. Where they differ is in the specific data types flowing in and out of the system, and the kinds of transformations that are applied to the data. But architechturally, they are all very similar.
+- **Games** - receives user input from game controller, updates internal player scores and runs game logic, then renders the game to the screen.
+- **Embedded Systems** - sensors make environmental readings and update the device, which reacts by controlling actuators or sending messages.
+- **User Interfaces** - user clicks a button or types on their keyboard, which changes the UI state, which is then rendered to the screen.
+- **Data Science** - user loads data from a source and processes it, which updates visualizations or statistical models.
+- **Robotics** - sensor readings from cameras and LIDAR are processed by the robot to update its internal belief, which is used to plan and execute actions in the physical world.
+- **Web Applications** - user interactions and network events update the application state, which is then rendered to the DOM (Document Object Model) for display in the browser.
 
-Today, programming languages like C, C++, and Python are the most commonly used languages for building these kinds of systems, which is unfortunate, because they are by nature sequential, whereas the applications are inherently data-driven, and asynchronous. Therefore, significant effort has been spent to retrofit these languages to support data-driven programming -- with varying degrees of success -- using frameworks, libraries, and middleware.
+However, most programming languages are based on a model of sequential execution, where the program is a series of instructions that are executed one after the other. Therefore when building these systems in those langauges, develoeprs often bring in additional libraries, framework, and middleware to bridge the gap between the sequential programming model and the data-driven, reactive nature of these applications.
 
-Mech looks to distill what makes these frameworks and libraries successful into a proper language, with first-class support for data-driven programming. We're not trying to invent something completely new, but rather to take the best ideas from existing languages and frameworks, and combine them into a coherent whole.
-
-(1.2.2) Lineage
-
-Mech is growing on a strange branch of the programming language family tree. We've already mentioned MATLAB as a major influence, but Mech also draws inspiration from a number of other languages and paradigms, including:
-
-- **Eve** - Aside from MATLAB, Eve is the most direct influence on Mech. Eve was a dataflow language and environment focused on reactivity, declarative programming, and live coding. Mech builds on Eve's strengths, such as its spreadsheet-like model and live programming environment.
-
-- **Rust** - The Mech compiler is implemented in Rust, and so it inherits some of Rust's design principles, such as its focus on safety, concurrency, and performance.
-
-- **Smalltalk** - Mech is inspired by Smalltalk's introspective programming model, which allows you to inspect and modify the program's structure and behavior at runtime. Mech also shares Smalltalk's focus on object-oriented programming, in the original sense as a message-passing model for communication between objects.
-
-- **Logo** - Mech shares in Logo's mission of being accessible to beginners, especially kids, and its focus on interactive, visual programming.
-
-- **Visual Basic 6** - The best version of Visual Basic, which was a popular for its GUI for building Windows desktop apps. Mech takes inspiration from VB6's event-driven programming model and its focus on building interactive applications with a GUI.
-
-- **ROS** - Not a programming language, but a middleware for building robot applications. Mech draws inspiration from ROS's modular architecture, its focus on data-driven design, and its use of a publish-subscribe messaging model for communication between components.
-
-- **Lucid** - The first dataflow programming language, designed for building data-driven programs. Mech is inspired by Lucid's focus on data dependencies, its use of a declarative programming model, and its support for temporal operators.
-
-If you've used or loved these languages, then you might find similar features in Mech that make it a good fit for your projects! 
+In Mech, programmers define data and how they connect to other data in the program. Then they describe how to transform them using a rich set of built-in operators and functions. Mech's compiler and runtime automatically determine how data flows through programs, optimize them for performance. The Mech Platform also serializes, distributes, and logs your data. Together, this allows you to build efficient, data-driven, distributed systems that react to change, without having to write custom event loops or bring in large frameworks.
 
 (1.2.4) Is Mech for you?
 
-Mech isn't just for building robots -- its reactive programming model and data-driven design make it suitable for a wide range of applications, from data science to game development. If you can model your project as a feedback control loop, or a data transformation pipeline, then Mech is a good fit for you.
+Mech is't just for building robots -- if you can model your project as a feedback control loop, or a data transformation pipeline, then Mech is a good fit for you.
 
-Mech is for you if:
+Mech is for you if you're a:
 
--(📊) You're a data scientist makes interactive visualizations of data, and you'd like host it on the internet or embed it in a native desktop application.
--(🎮) You're a game designer who wants to build a game that requires networking and real-time data processing for multiplayer interactions.
--(🧑‍🎨) You're an artist who creates interactive installations or generative art that make use of sensors and servos.
--(🤖) You're an engineer builds devices or robot that interact with the real-world via embedded microcontrollers, sensors, and motors.
--(🧑‍🏫) You're an educator uses animations and visualizations to teach concepts in math, science, or art.
--(🧑‍🔬) You're a researcher who builds simulations or models of a complex system, and you'd like to distribute it on the web or embed it inside of your journal article.
--(🧑‍💻) You're a developer builds GPU accelerated applications that work natively across windows, mac, linux, and the web.
--(🕴️) You're a business person is comfortable with spreadsheets  to something that can scale to automate business processes as well.
--(🧙) You're a programming language enthusiast who wants to get involved in a project that is researching new directions in language design and tooling.
-
-*****
-
-[^1]: The United States Defense Advanced Research Projects Agency, formerly ARPA, which is responsible for developing emerging technologies for the United States military. Its most famous project is the ARPANET, which was the precursor to the modern Internet.
-
-[^2]: The Ben Franklin Racing Team was a partnership between University of Pennsylvania, Lehigh University, and Lockheed Martin. Lehigh University is the author's graduate alma mater.
+-(📊) Data scientist who creates interactive data visualizations for the web or desktop applications.
+-(🎮) Game designer who builds multiplayer games with networking and real-time data processing.
+-(🧑‍🎨) Artist who creates interactive installations or generative art using sensors and actuators.
+-(🤖) Engineer who builds robots or devices that interact with the real world via microcontrollers, sensors, and motors.
+-(🧑‍🏫) Educator who teaches math, science, or art concepts with animations and visualizations. 
+-(🧑‍🔬) Researcher who investigates simulations or models of complex systems, and who writes scientific papers or develops tools for analysis.
+-(🧑‍💻) Developer who codes GPU-accelerated applications that run natively on Windows, macOS, Linux, and the web.
+-(🕴️) Business professional who translates spreadsheet workflows into scalable automated business processes.
+-(🧙) Programming language enthusiast who wants to get involved in a project that is researching new directions in language design and tooling!
 
 3. Programming System
 -------------------------------------------------------------------------------
 
-Whereas traditional languages provide only syntax and a runtime, Mech comes with integrated tools for data transformation, distribution, resource monitoring, and program optimization.
+We refer to Mech as a "programming system" because it encompasses more than just a programming language, but also a platform for building, running, and managing Mech programs [^1].
+
+Mech comes with integrated tools for data transformation, distribution, resource monitoring, and program optimization. We call this the "Platform", which is distinct from the "Language", which is the syntax and semantics used to write Mech programs.
 
 (3.1) Overview
 
 The Mech programming system consists of four parts:
 
 1. **A data description language**, which allows you to define the structure of your data and how it can be transformed.
-2. **A reactive programming model**, based on state machines, which allows authors to write systems that can take advantage of asynchrouns and parallel program execution. (WIP)
-3. **A distributed execution engine**, which allows you to run Mech programs across multiple machines in a variety of environments, including CPUs, GPUs, embedded devices, and the web. (WIP)
-4. **A rich set of "machines"**, libraries, tools, and data sources which provide a wide range of functionality, including data visualization, machine learning, simulation, and more. (WIP)
+2. **A reactive programming model**, based on state machines, which allows you to write systems that can take advantage of asynchrouns and parallel program execution. `WIP`
+3. **A distributed execution engine**, which allows you to run Mech programs across multiple machines in a variety of environments. `WIP`
+4. **A rich set of "machines"**, libraries, tools, and data sources which provide a wide range of functionality. `WIP`
 
 (3.2) Tools
 
@@ -127,7 +104,7 @@ This documentation is designed to help you get started with Mech, understand its
 3. **Guides**: provides practical guides and tutorials for using Mech, including a quick introduction to the language, tutorials for specific use cases, and guides for developers coming from other programming languages.
 4. **Design Documents**: information on the design principles behind Mech, including the language specification, design principles, syntax design notes, and the roadmap for future development, as well as the history of the language.
 
-**Note** - This documentation is written in Mechdown, a lightweight markup language that is compatible with Mech. This means that each document is a valid Mech program that can be executed.
+(?)> This documentation is written in Mechdown, a lightweight markup language that is compatible with Mech. This means that each document is a valid program that can be executed on the Mech platform.
 
 5. Getting Involved
 -------------------------------------------------------------------------------
@@ -145,33 +122,13 @@ The Mech community stays active at a few places around the Internet:
 
 Mech has been in [active development since 2018](https://github.com/mech-lang/mech/graphs/contributors), and reached beta status in 2022.
 
-The beta phase has focused on stabilizing the language and fixing some of the shortcomings of the initial design. We anticipate four stages of development in the beta stage:
+The beta phase has focused on stabilizing the core language and fixing shortcomings of the initial design. We anticipate four stages of development in the beta stage:
 
 -(☑️) [v0.1](https://github.com/mech-lang/mech/tree/v0.1-beta) - proof of concept system - minimum viable language implementation
 -(📍) [v0.2](https://github.com/mech-lang/mech/tree/v0.2-beta) - data specification - formulas, defining and manipulating data
 -(☐) v0.3 - program specification - functions, modules, state machines
 -(☐) v0.4 - system specification - tools, distributed programs, capabilities
 
-Currently the languages version is `v0.2`. This version require a rewrite of most of the `v0.1` codebase to accomodate changes to the data model and programming model, so many of the features in `v0.1` have yet to be reimplemented. 
+Currently the platform version is `v0.2.65-beta`.
 
-Visit the [Roadmap](https://docs.mech-lang.org/IV.design/roadmap.html) for more information on the current status of features.
-
-[CMU1]: CMU: http://www.tartanracing.org/team.html
-[CMU2]: CMU: https://www.ri.cmu.edu/pub_files/2007/4/Tartan_Racing.pdf
-[CMU3]: CMU: https://www.cs.cmu.edu/~aldrich/courses/654/tools/coverity-on-boss.pdf
-
-[STAN1]: Stanford: https://cs.stanford.edu/group/roadrunner/team.html
-[STAN2]: Stanford: https://robots.stanford.edu/papers/junior08.pdf
-
-[MIT1]: MIT: https://grandchallenge.mit.edu/index.shtml
-[MIT2]: MIT: https://dspace.mit.edu/handle/1721.1/39822
-
-[VT1]: Virginia Tech: https://www.romela.org/wp-content/uploads/2015/05/Odin-Team-VictorTango’s-Entry-in-the-DARPA-Urban-Challenge.pdf
-[VT2]: Virginia Tech: https://web.archive.org/web/20080524000738/http://www.victortango.org/
-[VT3]: Virginia Tech: https://news.vt.edu/articles/2007/08/2007-429.html
-
-[BFRT1]: BFRT: https://vaderlab.wordpress.com/the-ben-franklin-racing-team/
-[BFRT2]: BFRT: https://onlinelibrary.wiley.com/doi/abs/10.1002/rob.20260
-
-[CU1]: Cornell: https://onlinelibrary.wiley.com/doi/abs/10.1002/rob.20253
-[CU2]: Corenell: http://www.coep.ufrj.br/~ramon/COE-841/robotics/book%202009%20-%20The%20DARPA%20Urban%20Challenge%20-%20Buehler,%20Iagnemma%20&%20Singh.pdf
+Visit the [ROADMAP](https://docs.mech-lang.org/IV.design/roadmap.html) for more information on the current status of features.
