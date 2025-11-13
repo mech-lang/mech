@@ -2,17 +2,19 @@
   <img width="500px" src="https://mech-lang.org/img/logo.png" alt="Mech Logo">
 </p>
 
-**Mech** is a language for building **data-driven** and **reactive** systems like robots, games, user interfaces, and more. It simplifies **composing**, **transforming**, and **distributing** data, so you can focus on the core complexities of your project.
+**Mech is for building** data-driven, reactive systems like **robots**, games, embedded devices and more.
+
+**It simplifies data** distribution, transformation, and analysis **so you can focus** on your project.
 
 [Try Mech](https://try.mech-lang.org) online in your browser or stay updated through our [blog](https://mech-lang.org/blog/).
 
-## 📂 Download and Install
+## 💾 Download and Install
 
-### 💾 From Binary
+### From Binary
 
 Download the latest release for your platform [here](https://github.com/mech-lang/mech/releases/latest).
 
-### 📦 From Source
+### From Source
 
 To build Mech from source, you’ll first need to install [Rust](https://www.rust-lang.org/learn/get-started) (make sure to install a recent version on the nightly release channel, currently `nightly-2025-01-15`). 
 
@@ -32,7 +34,7 @@ cargo install mech
 
 ## 📚 Documentation
 
-New to Mech? Start with [Learn Mech in Fifteen Minutes](https://docs.mech-lang.org/III.guides/mech-in-fifteen-minutes.html).
+New to Mech? Start with [Learn Mech in Fifteen Minutes](https://docs.mech-lang.org/guides/mech-in-fifteen-minutes.html).
 
 Comprehensive documentation is available at [docs.mech-lang.org](https://docs.mech-lang.org) and open-sourced on [GitHub](https://github.com/mech-lang/mech/tree/main/docs).
 
@@ -59,7 +61,7 @@ A Brief Roadmap:
 - ☐ v0.3 - program specification - functions, modules, state machines
 - ☐ v0.4 - system specification - tools, distributed programs, capabilities
 
-For more details, read the [ROADMAP](https://docs.mech-lang.org/IV.design/roadmap.html).
+For more details, read the [ROADMAP](https://docs.mech-lang.org/design/roadmap.html).
 
 A new version of Mech is [released every week](https://github.com/mech-lang/mech/releases).
 
