@@ -6,7 +6,24 @@
 
 **It simplifies data** distribution, transformation, and analysis **so you can focus** on your project.
 
-[Try Mech](https://try.mech-lang.org) online in your browser or stay updated through our [blog](https://mech-lang.org/blog/).
+- [Try Mech](https://try.mech-lang.org) online in your browser or 
+- [Read the docs](https://docs.mech-lang.org) to learn the language.
+- Stay updated with our [blog](https://mech-lang.org/blog/).
+
+Here's an example of Mech code that implements the classic FizzBuzz program:
+
+<p align="center">
+  <img width="680px" src="https://mech-lang.org/img/fizzbuzzblock.png" alt="Classic FizzBuzz program expressed in Mech">
+</p>
+
+Some notable features are demonstrated in this short example:
+
+- **Concise Syntax**: Expressive and flexible, with no need for keywords or semicolons; Mech programs are generally shorter than in other languages.
+- **Broadcast Operations**: Vector operations apply elementwise automatically, removing explicit loops and enabling efficient vectorization.
+- **Logical Indexing**: Vector elements are conditionally selected using broadcast logic operations, enabling declarative iteration and parallel execution.
+- **Type Inference**: Variable and expression types are inferred, so explicit type declarations are often unnecessary.
+- **Immutable**: Variables are immutable unless specified, promoting safer code and easier reasoning.
+- **Rich Text**: Mech programs support rich formatting and literate programming through Mechdown, a Markdown dialect.
 
 ## 💾 Download and Install
 
