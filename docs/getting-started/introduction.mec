@@ -31,7 +31,7 @@ This short example demonstrates several key features of the language:
 - **Logical indexing**: Select and manipulate vector elements via conditions, enabling declarative iteration and parallel execution.
 - **Rich text formatting**: Comments and code support rich formatting, making documentation clear and readable.
 
-For a complete list of planned features and their implementation statuses, see the [ROADMAP](https://docs.mech-lang.org/IV.design/roadmap.html).
+For a complete list of planned features and their implementation statuses, see the [ROADMAP](https://docs.mech-lang.org/IV.design/ROADMAP.html).
 
 (1.2) Why Mech?
 
@@ -115,4 +115,4 @@ The beta phase has focused on stabilizing the core language and fixing shortcomi
 
 Currently the platform version is `v0.2.66-beta`.
 
-Visit the [ROADMAP](https://docs.mech-lang.org/IV.design/roadmap.html) for more information on the current status of features.
+Visit the [ROADMAP](https://docs.mech-lang.org/IV.design/ROADMAP.html) for more information on the current status of features.

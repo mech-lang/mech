@@ -80,7 +80,7 @@ A Brief Roadmap:
 - ☐ v0.3 - program specification - functions, modules, state machines
 - ☐ v0.4 - system specification - tools, distributed programs, capabilities
 
-For more details, read the [ROADMAP](https://docs.mech-lang.org/design/roadmap.html).
+For more details, read the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html).
 
 A new version of Mech is [released every week](https://github.com/mech-lang/mech/releases).
 
