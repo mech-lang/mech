@@ -80,17 +80,21 @@ impl Interpreter {
   }
 
   #[cfg(feature = "functions")]
-  pub fn step(&mut self, steps: u64) -> &Value {
+  pub fn step(&mut self, steps: u64) -> Value {
     let state_brrw = self.state.borrow();
     let mut plan_brrw = state_brrw.plan.borrow_mut();
+    // if plan is empty just return an empty value
     let mut result = Value::Empty;
+    if plan_brrw.is_empty() {
+      self.out = Value::Empty;
+      return result;
+    }
     for i in 0..steps {
       for fxn in plan_brrw.iter() {
         fxn.solve();
       }
     }
-    self.out = plan_brrw.last().unwrap().out().clone();
-    &self.out
+    plan_brrw.last().unwrap().out().clone()
   }
 
   #[cfg(feature = "functions")]
