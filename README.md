@@ -10,15 +10,16 @@
 - [Read the docs](https://docs.mech-lang.org) to learn the language.
 - Stay updated with our [blog](https://mech-lang.org/blog/).
 
-The following example implements FizzBuzz in Mech:
+The following code implements FizzBuzz in Mech:
 
 <p align="center">
   <img width="680px" src="https://mech-lang.org/img/fizzbuzzblock.png" alt="Classic FizzBuzz program expressed in Mech">
 </p>
 
-You can try the [extended example](https://docs.mech-lang.org/examples/fizzbuzz.html) in the docs.
 
-Some notable features are demonstrated in this short program:
+See the docs for an [extended version](https://docs.mech-lang.org/examples/fizzbuzz.html) that runs live in your browser.
+
+Some notable features of Mech are demonstrated in this short program:
 
 - **Concise Syntax**: Expressive and flexible, with no need for keywords or semicolons; Mech programs are generally shorter than in other languages.
 - **Broadcast Operations**: Vector operations apply elementwise automatically, removing explicit loops and enabling efficient vectorization.
