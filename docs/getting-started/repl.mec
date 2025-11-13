@@ -1,7 +1,9 @@
 Using the Mech REPL
 ===============================================================================
 
-The Mech Read-Eval-Print Loop (REPL) provides an interactive environment for executing Mech commands, inspecting symbols, and debugging programs. Below are the available REPL commands.
+The Mech Read-Eval-Print-Loop (REPL) provides an interactive environment for executing Mech commands, inspecting symbols, and debugging programs.
+
+Below are the available REPL commands.
 
 1. Starting the REPL
 -------------------------------------------------------------------------------
@@ -15,10 +17,10 @@ mech
 You can load a script into the REPL by running with the `--repl` option:
 
 ```sh
-mech --repl my_script.mec
+mech my_script.mec --repl
 ```
 
-Once inside, you can enter commands prefixed with `:`, otherwise the REPL will interpret the input as a Mech expression and evaluate it, and print the result with the associated type.
+Once inside, you can enter commands prefixed with `:`, otherwise the REPL will interpret the input as a Mech expression, evaluate it, and print the result with the associated type.
 
 2. Commands
 -------------------------------------------------------------------------------
