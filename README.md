@@ -31,11 +31,11 @@ Some notable features of Mech are demonstrated in this short program:
 
 ### From Binary
 
-Download the latest release for your platform [here](https://github.com/mech-lang/mech/releases/latest).
+[Download](https://docs.mech-lang.org/getting-started/install.html) the precompiled latest release for your platform.
 
 ### From Source
 
-To build Mech from source, you’ll first need to install [Rust](https://www.rust-lang.org/learn/get-started) (make sure to install a recent version on the nightly release channel, currently `nightly-2025-01-15`). 
+To build Mech from source, you’ll first need to install [Rust](https://www.rust-lang.org/learn/get-started) (make sure to install a recent version on the nightly release channel, currently we are developing against `nightly-2025-07-31`). 
 
 Then follow the instructions below to compile the Mech toolchain, bundled in a single executable called `mech`:
 
