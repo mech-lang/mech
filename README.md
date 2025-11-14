@@ -10,6 +10,8 @@
 - [Read the docs](https://docs.mech-lang.org) to learn the language.
 - [Follow our blog](https://mech-lang.org/blog/) to stay updated on new developments.
 
+***
+
 The following code implements FizzBuzz in Mech:
 
 <p align="center">
