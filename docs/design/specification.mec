@@ -4,7 +4,7 @@ Mech Platform Specification
 1. Introduction
 -------------------------------------------------------------------------------
 
-This document specifies the default syntax and semantics of the Mech programming platform, which is designed for developing reactive systems like robots, games, and user interfaces. Mech is a programming platform, so the the syntax specified herein must be understood as one of many possible syntaxes and interfaces for Mech. However, the semantics of data types, data structures, and other programming constructs defined in this document are fundamental to the Mech platform and must be supported by system targeting it.
+This document defines the default syntax and semantics of the Mech programming platform, which is designed for building reactive systems such as robots, games, and user interfaces. As a platform, Mech can support multiple syntaxes and interfaces; the syntax presented here is just one possible option. However, the semantics of data types, data structures, and other core programming constructs described in this document are fundamental to Mech and must be supported by any system targeting the platform.
 
 This document is for:
 
