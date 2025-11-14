@@ -148,7 +148,7 @@
     #header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: left;
       background-color: #0d1013;
       background: linear-gradient(90deg, #0d1013, #1a1f24); /* Add gradient */
       padding: 0 3rem; /* Bring content in from edges */
@@ -160,6 +160,7 @@
       top: 0;
       z-index: 9999;
       box-shadow: 0 4px 10px rgba(0,0,0,1);
+      gap: 2rem;
     }
 
   #logo {
@@ -216,8 +217,10 @@
     #header {
       flex-direction: row;
       align-items: flex-start;
-      padding: 0 1rem;
+      padding: 0px 1rem;
       height: auto;
+      padding-top: 3px;
+      gap: 1rem;
     }
     #logo img {
       height: 25px;
@@ -226,7 +229,7 @@
       flex-wrap: wrap;
       gap: 1rem;
       font-size: 0.9rem;
-      padding-top: 3px;
+      padding-top: 0px;
     }
   }
   </style>
