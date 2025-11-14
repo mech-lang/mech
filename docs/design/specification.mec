@@ -10,7 +10,7 @@ This document is for:
 
 - Language designers who want to target Mech as a backend.
 - Developers creating tools to interact with Mech code.
-- Anyone who want to understand the syntax and structure of Mech programs.
+- Anyone who wants to understand the syntax and structure of Mech programs.
 
 2. Source Code Representation
 -------------------------------------------------------------------------------
