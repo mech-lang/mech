@@ -1,6 +1,6 @@
-<center>
+<p align="center">
   <img width="500px" src="https://mech-lang.org/img/logo.png" alt="Mech Logo">
-</center>
+</p>
 
 **Mech is for building** data-driven, reactive systems like **robots**, games, embedded devices and more.
 
@@ -12,9 +12,9 @@
 
 The following code implements FizzBuzz in Mech:
 
-<center>
+<p align="center">
   <img width="680px" src="https://mech-lang.org/img/fizzbuzzblock.png" alt='The classic FizzBuzz program expressed in Mech: x := 1..=10;~out<[string]>:=x;ix2:=(x % 2) == 0;ix3:=(x % 3) == 0;out[ix2]="✨";out[ix3]="🐝";out[ix2 && ix3]="✨🐝";'>
-</center>
+</p>
 
 See the docs for an [extended version](https://docs.mech-lang.org/examples/fizzbuzz.html) that runs live in your browser.
 
