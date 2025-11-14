@@ -40,7 +40,7 @@
 
     .container {
       display: flex;
-      height: 100%;
+      height: calc(100vh - 60px);  /* Change from height: 100% */
       width: 100%;
     }
 
@@ -52,8 +52,9 @@
       padding: 0px;
       margin: 0px;
       flex-grow: 1;
-      scrollbar-width: none;       
-      -ms-overflow-style: none;
+      min-height: 0;
+      overflow-y: auto;  /* Make sure this is here */
+
     }
 
     .resizer {
@@ -143,10 +144,82 @@
     .toggle-button.edge-right:hover {
 
     }
+#header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #0d1013;
+  padding: 0 3rem; /* Bring content in from edges */
+  height: 60px;
+  border-bottom: 1px solid #35393d;
+  font-family: 'FiraCodeLight', monospace;
+  color: #f2ead9;
+}
+
+#logo {
+  padding-left: 1rem; /* Extra space on logo side */
+}
+
+/* Logo */
+#logo img {
+  height: 40px; /* scale to fit header */
+}
+
+/* Nav container */
+#nav {
+  display: flex;
+  align-items: center;
+  gap: 2rem; /* spacing between nav items */
+  font-size: 1rem;
+  text-transform: uppercase;
+  padding-right: 1rem;
+}
+
+/* Nav links */
+#nav a {
+  color: #f2ead9;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+#nav a:hover {
+  color: rgb(246,192,78); /* highlight hover in yellow like logo */
+}
+
+/* Optional: add colon motif before links for terminal feel */
+#nav span::before {
+  content: ":";
+  margin-right: 0.25rem;
+  letter-spacing: -0.5ch;
+  color: rgb(246,192,78);
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+#nav span.active::before {
+  content: ">:";
+  margin-right: 0.25rem;
+  letter-spacing: -0.5ch;
+  color: rgb(246,192,78);
+  font-size: 1.2rem;
+  font-weight: bold;
+}
   </style>
 
 </head>
 <body>
+  <header id="header">
+    <div id="logo">
+      <img src="https://mech-lang.org/img/logo.png" alt="MECH Logo" height="40">
+    </div>
+    <div id="nav">
+      <span><a href="#about">About</a></span>
+      <span ><a href="#blog">Blog</a></span>
+      <span><a href="#community">Community</a></span>
+      <span class="active"><a href="#docs">Docs</a></span>
+      <span><a href="#explore">Explore</a></span>
+    </div>
+  </header>
   <div class="container mech-root" mech-interpreter-id=0>
     {{TOC}}
     <div class="content" id="left-pane">
@@ -157,7 +230,49 @@
     </div>
     <div class="sidebar mech-repl hidden" id="mech-output"></div>
   </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const contentPane = document.getElementById('left-pane');
+      const tocLinks = document.querySelectorAll('a.toc[href^="#"]');
+      const contentLinks = document.querySelectorAll('.content a[href^="#"]'); // Add this
 
+      // Handle TOC links
+      tocLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          
+          const targetId = link.getAttribute('href').substring(1);
+          const targetElement = document.getElementById(targetId);
+          
+          if (targetElement && contentPane.contains(targetElement)) {
+            const contentRect = contentPane.getBoundingClientRect();
+            const targetRect = targetElement.getBoundingClientRect();
+            const scrollOffset = targetRect.top - contentRect.top + contentPane.scrollTop;
+            
+            contentPane.scrollTop = scrollOffset;
+          }
+        });
+      });
+
+      // Handle content links
+      contentLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          
+          const targetId = link.getAttribute('href').substring(1);
+          const targetElement = document.getElementById(targetId);
+          
+          if (targetElement && contentPane.contains(targetElement)) {
+            const contentRect = contentPane.getBoundingClientRect();
+            const targetRect = targetElement.getBoundingClientRect();
+            const scrollOffset = targetRect.top - contentRect.top + contentPane.scrollTop;
+            
+            contentPane.scrollTop = scrollOffset;
+          }
+        });
+      });
+    });
+  </script>
   <script>
     const left_pane = document.getElementById('left-pane');
     const resizer = document.getElementById('resizer');
@@ -168,7 +283,7 @@
     let isDragging = false;
     let replVisible = true;
     let replFull = false;
-    let lastSidebarWidth = sidebar.offsetWidth;
+    let lastSidebarWidth = Math.max(sidebar.offsetWidth, 300);
 
     const updateTocMargin = (toc_width) => {
       if (!content || !sidebar || !toc) return;
@@ -334,7 +449,8 @@
       if (!replVisible) {
         replVisible = true;
         sidebar.classList.remove('hidden');
-        sidebar.style.width = lastSidebarWidth + 'px';
+        const restoredWidth = Math.max(lastSidebarWidth, 300); // Ensure minimum 300px
+        sidebar.style.width = restoredWidth + 'px';
         sidebar.style.marginLeft = `0px`;
         toggleButton.innerHTML = '|';
         toggleButton.style.left = `-4px`;
@@ -437,9 +553,9 @@
       const section = entry.closest("section");
       if (section) {
         // Scroll the section into view if not fully visible
-        if (!isFullyVisible(section)) {
-          section.scrollIntoView({ behavior: "smooth" });
-        }
+        //if (!isFullyVisible(section)) {
+        //  section.scrollIntoView({ behavior: "smooth" });
+        //}
 
         // Activate matching TOC section
         const matchingTocSection = Array.from(sections).find(item => item.id === section.id);
@@ -705,14 +821,15 @@
   let margin = 10;
 
   function getScrollPercentage() {
-    const scrollTop = window.scrollY || window.pageYOffset;
-    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const contentPane = document.getElementById('left-pane');
+    const scrollTop = contentPane.scrollTop;
+    const docHeight = contentPane.scrollHeight - contentPane.clientHeight;
 
-    if (docHeight === 0) return 0; // avoid division by zero on short pages
+    if (docHeight === 0) return 0;
     return scrollTop / docHeight;
   }
 
-  window.addEventListener("scroll", () => {
+  document.getElementById('left-pane').addEventListener("scroll", () => {
     if (scrollLock) {
       scrollLock = false;
       return;

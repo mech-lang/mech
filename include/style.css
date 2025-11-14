@@ -37,14 +37,7 @@ body {
 
 .mech-content {
     counter-reset: h2 equation;
-    /*min-width: 800px;
-    margin-right: clamp(300px, 30vw, 800px);
-    */
-    overflow: auto;
-    height: 100vh;
-    flex: 1;
-    overflow-y: scroll;
-    scrollbar-gutter: stable;
+    margin-top: 50px;
 }
 
 .mech-toc.hidden {
@@ -69,10 +62,11 @@ body {
     overflow-x: hidden;
     top: 0px;
     margin-left: calc(50% - 350px - 250px - 150px);
-    height: 100vh;
     overflow: auto;
     -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;     /* Firefox */              
+    scrollbar-width: none;     /* Firefox */         
+    height: calc(100vh - 60px);   
+    margin-top: 60px;  
 }
 
 .mech-program {
