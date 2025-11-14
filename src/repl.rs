@@ -122,7 +122,9 @@ impl MechRepl {
       ReplCommand::Cd(path) => {
         let path = PathBuf::from(path);
         env::set_current_dir(&path).unwrap();
-        return Ok("".to_string());
+        // return the absolute path
+        let path = env::current_dir().unwrap();
+        return Ok(format!("{}", path.display()));
       }
       #[cfg(feature = "serde")]
       ReplCommand::Save(path) => {

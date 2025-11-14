@@ -30,7 +30,7 @@ The result `Y` has the same shape as the inputs.
 
 | Argument | Kind                     | Description                           |
 |----------|--------------------------|---------------------------------------|
-| `Y`      | matches input            | Bessel function of the second kind of order `N` evaluated at `X`. The shape of `Y` matches the broadcasted shape of `N` and `X`. |
+| `Y`      | matches input            | Bessel function of the second kind of order `N` evaluated at `X`. The shape of `Y` matches the broadcast shape of `N` and `X`. |
 
 5. Examples  
 -------------------------------------------------------------------------------

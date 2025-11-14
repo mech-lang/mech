@@ -49,18 +49,18 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       return Ok(out)
     },
     #[cfg(feature = "functions")]
-    SectionElement::FencedMechCode((code,config)) => {
-      if config.disabled == true {
+    SectionElement::FencedMechCode(block) => {
+      if block.config.disabled == true {
         return Ok(Value::Empty);
       }
-      let code_id = config.namespace;
+      let code_id = block.config.namespace;
       if code_id == 0 {
-        for (c,_) in code {
+        for (c,_) in &block.code {
           out = mech_code(&c, &p)?;
         }
         // Save the output of the last code block in the parent interpreter
         // so we can reference it later.
-        let (last_code, _) = code.last().unwrap();
+        let (last_code, _) = block.code.last().unwrap();
         let out_id = hash_str(&format!("{:?}", last_code));
         p.out_values.borrow_mut().insert(out_id, out.clone());
       } else {
@@ -73,12 +73,12 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
           .entry(code_id)
           .or_insert(Box::new(new_sub_interpreter))
           .as_mut();
-        for (c,_) in code {
+        for (c,_) in &block.code {
           out = mech_code(&c, &pp)?;
         }
         // Save the output of the last code block in the parent interpreter
         // so we can reference it later.
-        let (last_code,_) = code.last().unwrap();
+        let (last_code,_) = block.code.last().unwrap();
         let out_id = hash_str(&format!("{:?}", last_code));
         pp.out_values.borrow_mut().insert(out_id, out.clone());
       }

@@ -447,6 +447,7 @@ impl Citation {
 pub struct BlockConfig {
   pub namespace: u64,
   pub disabled: bool,
+  pub hidden: bool,
 }
 
 pub type Footnote = (Token, Paragraph);
@@ -456,6 +457,14 @@ pub type Footnote = (Token, Paragraph);
 pub enum FloatDirection {
   Left,
   Right,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct FencedMechCode {
+  pub code: Vec<(MechCode,Option<Comment>)>,
+  pub config: BlockConfig,
+  pub options: Option<OptionMap>,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -470,7 +479,7 @@ pub enum SectionElement {
   Comment(Comment),
   Diagram(Token),
   Equation(Token),
-  FencedMechCode((Vec<(MechCode,Option<Comment>)>, BlockConfig)),
+  FencedMechCode(FencedMechCode),
   Float((Box<SectionElement>, FloatDirection)),
   Footnote(Footnote),
   Grammar(Grammar),
@@ -486,9 +495,9 @@ pub enum SectionElement {
 impl SectionElement {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
-      SectionElement::FencedMechCode((code,config)) => {
+      SectionElement::FencedMechCode(c) => {
         let mut tokens = vec![];
-        for (c,_) in code {
+        for (c,_) in &c.code {
           tokens.append(&mut c.tokens());
         }
         tokens

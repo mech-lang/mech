@@ -54,3 +54,30 @@ Mech includes all of the matrix operations, data manipulation, and high-level ab
 which make it more suitable for building complex, distributed systems from prototype to production. 
 
 So why Mech? If you're looking to build a complex system, something on the order of a robot car, Mech will allow you to implement it in fewer lines of code, with performance on par with systems langauges, but safety and flexibility that you would expect from a high-level language.
+
+***
+
+[^1]: The United States Defense Advanced Research Projects Agency, formerly ARPA, which is responsible for developing emerging technologies for the United States military. Its most famous project is the ARPANET, which was the precursor to the modern Internet.
+
+[^2]: The Ben Franklin Racing Team was a partnership between University of Pennsylvania, Lehigh University, and Lockheed Martin. Lehigh University is the author's graduate alma mater.
+
+
+[CMU1]: CMU: http://www.tartanracing.org/team.html
+[CMU2]: CMU: https://www.ri.cmu.edu/pub_files/2007/4/Tartan_Racing.pdf
+[CMU3]: CMU: https://www.cs.cmu.edu/~aldrich/courses/654/tools/coverity-on-boss.pdf
+
+[STAN1]: Stanford: https://cs.stanford.edu/group/roadrunner/team.html
+[STAN2]: Stanford: https://robots.stanford.edu/papers/junior08.pdf
+
+[MIT1]: MIT: https://grandchallenge.mit.edu/index.shtml
+[MIT2]: MIT: https://dspace.mit.edu/handle/1721.1/39822
+
+[VT1]: Virginia Tech: https://www.romela.org/wp-content/uploads/2015/05/Odin-Team-VictorTango’s-Entry-in-the-DARPA-Urban-Challenge.pdf
+[VT2]: Virginia Tech: https://web.archive.org/web/20080524000738/http://www.victortango.org/
+[VT3]: Virginia Tech: https://news.vt.edu/articles/2007/08/2007-429.html
+
+[BFRT1]: BFRT: https://vaderlab.wordpress.com/the-ben-franklin-racing-team/
+[BFRT2]: BFRT: https://onlinelibrary.wiley.com/doi/abs/10.1002/rob.20260
+
+[CU1]: Cornell: https://onlinelibrary.wiley.com/doi/abs/10.1002/rob.20253
+[CU2]: Corenell: http://www.coep.ufrj.br/~ramon/COE-841/robotics/book%202009%20-%20The%20DARPA%20Urban%20Challenge%20-%20Buehler,%20Iagnemma%20&%20Singh.pdf

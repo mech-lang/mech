@@ -269,7 +269,7 @@ pub fn option_mapping(input: ParseString) -> ParseResult<(Identifier, MechString
   Ok((input, (key, value)))
 }
 
-// img := "![", paragraph, "]", "(", +text, ")" ;
+// img := "![", paragraph, "]", "(", +text, ")" , ?option-map ;
 pub fn img(input: ParseString) -> ParseResult<Image> {
   let (input, _) = img_prefix(input)?;
   let (input, caption_text) = paragraph(input)?;
@@ -296,19 +296,23 @@ pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, elements))
 }
 
-// eval-inline-mech-cdoe := "{", expression, "}" ;`
+// eval-inline-mech-cdoe := "{", ws0, expression, ws0, "}" ;`
 pub fn eval_inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = left_brace(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, expr) = expression(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = right_brace(input)?;
   Ok((input, ParagraphElement::EvalInlineMechCode(expr)))
 }
 
-// inline-mech-cdoe := "{{", expression, "}}" ;`
+// inline-mech-cdoe := "{{", ws0, expression, ws0, "}}" ;`
 pub fn inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = left_brace(input)?;
   let (input, _) = left_brace(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, expr) = mech_code_alt(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = right_brace(input)?;
   let (input, _) = right_brace(input)?;
   Ok((input, ParagraphElement::InlineMechCode(expr)))
@@ -609,7 +613,7 @@ pub fn skip_till_eol(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// codeblock-sigil := grave, grave, grave | tilde, tilde, tilde ;
+// codeblock-sigil := "```" | "~~~" ;
 pub fn codeblock_sigil(input: ParseString) -> ParseResult<fn(ParseString) -> ParseResult<Token>> {
   let (input, sgl_tkn) = alt((grave_codeblock_sigil, tilde_codeblock_sigil))(input)?;
   let sgl_cmb = match sgl_tkn.kind {
@@ -620,16 +624,16 @@ pub fn codeblock_sigil(input: ParseString) -> ParseResult<fn(ParseString) -> Par
   Ok((input, sgl_cmb))
 }
 
-// grave-codeblock := grave-codeblock-sigil, *(space | tab), +text, *(space | tab), newline, *(¬grave-codeblock-sigil, any), grave-codeblock-sigil, *(space | tab), ws0 ;
-// tilde-codeblock := tilde-codeblock-sigil, *(space | tab), +text, *(space | tab), newline, *(¬tilde-codeblock-sigil, any), tilde-codeblock-sigil, *(space | tab), ws0 ;
-// code-block := grave-codeblock | tilde-codeblock ;
+//
 pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
   let msg1 = "Expects 3 graves to start a code block";
   let msg2 = "Expects new_line";
   let msg3 = "Expects 3 graves followed by new_line to terminate a code block";
   let (input, (end_sgl,r)) = range(codeblock_sigil)(input)?;
   let (input, _) = many0(space_tab)(input)?;
-  let (input, code_id) = many0(text)(input)?;
+  let (input, code_id) = many0(tuple((is_not(left_brace),text)))(input)?;
+  let code_id = code_id.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>();
+  let (input, options) = opt(option_map)(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = label!(new_line, msg2)(input)?;
   let (input, (text,src_range)) = range(many0(nom_tuple((
@@ -660,9 +664,10 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
         // get rid of the prefix and then treat the rest of the string after : as an identifier
         let rest = tag.trim_start_matches("mech").trim_start_matches("mec").trim_start_matches("🤖").trim_start_matches(":");
         
-        let config = if rest == "" {BlockConfig { namespace: 0, disabled: false}}
-        else if rest == "disabled" { BlockConfig { namespace: hash_str(rest), disabled: true }} 
-        else { BlockConfig { namespace: hash_str(rest), disabled: false} };
+        let config = if rest == "" {BlockConfig { namespace: 0, disabled: false, hidden: false}}
+        else if rest == "disabled" { BlockConfig { namespace: 0, disabled: true, hidden: false} }
+        else if rest == "hidden" { BlockConfig { namespace: 0, disabled: false, hidden: true} }
+        else { BlockConfig { namespace: hash_str(rest), disabled: false, hidden: false} };
 
         let mech_src = block_src.iter().collect::<String>();
         let graphemes = graphemes::init_source(&mech_src);
@@ -671,7 +676,7 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
         match many1(mech_code)(parse_string) {
           Ok((_, mech_tree)) => {
             // TODO what if not all the input is parsed? Is that handled?
-            return Ok((input, SectionElement::FencedMechCode((mech_tree,config))));
+            return Ok((input, SectionElement::FencedMechCode(FencedMechCode{code: mech_tree, config, options})));
           },
           Err(err) => {
             println!("Error parsing Mech code: {:?}", err);

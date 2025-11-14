@@ -37,6 +37,7 @@ pub enum ReplCommand {
 pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand> {
   let (input, _) = tag(":")(input)?;
   let (input, command) = alt((
+    cd_rpl,
     step_rpl,
     clear_rpl,
     clc_rpl,
@@ -48,7 +49,6 @@ pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand> {
     symbols_rpl,
     plan_rpl,
     ls_rpl,
-    cd_rpl,
     whos_rpl,
     docs_rpl,
   ))(input)?;
@@ -82,12 +82,12 @@ fn docs_rpl(input: &str) -> IResult<&str, ReplCommand> {
 }
 
 fn help_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = alt((tag("h"), tag("help")))(input)?;
+  let (input, _) = alt((tag("help"),tag("h")))(input)?;
   Ok((input, ReplCommand::Help))
 }
 
 fn quit_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = alt((tag("q"), tag("quit"), tag("exit")))(input)?;
+  let (input, _) = alt((tag("quit"), tag("exit"), tag("q")))(input)?;
   Ok((input, ReplCommand::Quit))
 }
 
@@ -99,14 +99,14 @@ fn cd_rpl(input: &str) -> IResult<&str, ReplCommand> {
 }
 
 fn symbols_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = alt((tag("s"), tag("symbols")))(input)?;
+  let (input, _) = alt((tag("symbols"), tag("s")))(input)?;
   let (input, _) = space0(input)?;
   let (input, name) = opt(take_while(|c: char| c.is_alphanumeric()))(input)?;
   Ok((input, ReplCommand::Symbols(name.map(|s| s.to_string()))))
 }
 
 fn plan_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = alt((tag("p"), tag("plan")))(input)?;
+  let (input, _) = alt((tag("plan"), tag("p")))(input)?;
   Ok((input, ReplCommand::Plan))
 }
 

@@ -400,10 +400,10 @@ impl Formatter {
     }
   }
 
-  pub fn fenced_mech_code(&mut self, node: &Vec<(MechCode, Option<Comment>)>, config: &BlockConfig) -> String {
-    self.interpreter_id = config.namespace;
+  pub fn fenced_mech_code(&mut self, block: &FencedMechCode) -> String {
+    self.interpreter_id = block.config.namespace;
     let mut src = String::new();
-    for (code,cmmnt) in node {
+    for (code,cmmnt) in &block.code {
       let c = match code {
         MechCode::Comment(cmnt) => self.comment(cmnt),
         MechCode::Expression(expr) => self.expression(expr),
@@ -425,20 +425,38 @@ impl Formatter {
     }
     let intrp_id = self.interpreter_id;
     self.interpreter_id = 0;
-    let disabled_tag = match config.disabled {
+    let disabled_tag = match block.config.disabled {
       true => "disabled".to_string(),
       false => "".to_string(),
     };
     if self.html {
-      let (out_node,_) = node.last().unwrap();
+      let (out_node,_) = block.code.last().unwrap();
       let output_id = hash_str(&format!("{:?}", out_node));
-      if config.disabled {
-        format!("<pre class=\"mech-code-block\">{}</pre>", src)
+      let style_attr = match &block.options {
+        Some(option_map) if !option_map.elements.is_empty() => {
+          let style_str = option_map
+            .elements
+            .iter()
+            .map(|(k, v)| {
+              let clean_value = v.to_string().trim_matches('"').to_string();
+              format!("{}: {}", k.to_string(), clean_value)
+            })
+            .collect::<Vec<_>>()
+            .join("; ");
+          format!(" style=\"{}\"", style_str)
+        }
+        _ => "".to_string(),
+      };
+      if block.config.disabled {
+        format!("<pre class=\"mech-code-block disabled\"{}>{}</pre>", style_attr, src)
+      } else if block.config.hidden {
+        // Print it, but give it a hidden class so it can be toggled visible via JS
+        format!("<pre class=\"mech-code-block hidden\"{}>{}</pre>", style_attr, src)
       } else {
-        format!("<div class=\"mech-fenced-mech-block\">
+        format!("<div class=\"mech-fenced-mech-block\"{}>
           <div class=\"mech-code-block\">{}</div>
           <div class=\"mech-block-output\" id=\"{}:{}\"></div>
-        </div>", src, output_id, intrp_id)
+        </div>", style_attr, src, output_id, intrp_id)
       }
     } else {
       format!("```mech{}\n{}\n```", src, format!(":{}", disabled_tag))
@@ -596,7 +614,7 @@ impl Formatter {
       SectionElement::Comment(n) => self.comment(n),
       SectionElement::Diagram(n) => self.diagram(n),
       SectionElement::Equation(n) => self.equation(n),
-      SectionElement::FencedMechCode((n,s)) => self.fenced_mech_code(n,s),
+      SectionElement::FencedMechCode(n) => self.fenced_mech_code(n),
       SectionElement::Float((n,f)) => self.float(n,f),
       SectionElement::Footnote(n) => self.footnote(n),
       SectionElement::Grammar(n) => self.grammar(n),
@@ -2182,8 +2200,8 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn logic_op(&mut self, node: &LogicOp) -> String {
     match node {
-      LogicOp::And => "&".to_string(),
-      LogicOp::Or => "|".to_string(),
+      LogicOp::And => "&&".to_string(),
+      LogicOp::Or => "||".to_string(),
       LogicOp::Xor => "⊻".to_string(),
       LogicOp::Not => "¬".to_string(),
     }

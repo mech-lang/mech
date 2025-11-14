@@ -77,16 +77,27 @@ Some design goals of Mech include:
 - The language should be learnable by a wide range of people, from beginners to experienced programmers, from students to professionals, and from artists to scientists.
 
 
-(1.3) Family Tree
+(1.3) Lineage
 
-Mech is inspired by the following programming languages:
+Mech draws inspiration from a number of other languages and paradigms, including:
 
-- **Matlab** - the primary influence for Mech'd data model and syntax.
-- **Eve** - the primary influence for Mech's programming model, which is built on a database.
-- **Rust** - Mech is implemented in Rust, and so adopts some of the design principles and expressions of Rust, like pattern matching.
-- **Smalltalk** - Mech is a programming system like Smalltalk, with a focus on interactive programming and live coding.
-- **Logo** - the design principle of Logo which make it a language accessible to children have 
-- **Lucid** - the first dataflow programming language.
+- **Eve** - Aside from MATLAB, Eve is the most direct influence on Mech. Eve was a dataflow language and environment focused on reactivity, declarative programming, and live coding. Mech builds on Eve's strengths, such as its spreadsheet-like model and live programming environment.
+
+- **Rust** - The Mech compiler is implemented in Rust, and so it inherits some of Rust's design principles, such as its focus on safety, concurrency, and performance.
+
+- **Smalltalk** - Mech is inspired by Smalltalk's introspective programming model, which allows you to inspect and modify the program's structure and behavior at runtime. Mech also shares Smalltalk's focus on object-oriented programming, in the original sense as a message-passing model for communication between objects.
+
+- **Logo** - Mech shares in Logo's mission of being accessible to beginners, especially kids, and its focus on interactive, visual programming.
+
+- **Visual Basic 6** - The best version of Visual Basic, which was a popular for its GUI for building Windows desktop apps. Mech takes inspiration from VB6's event-driven programming model and its focus on building interactive applications with a GUI.
+
+- **ROS** - Not a programming language, but a middleware for building robot applications. Mech draws inspiration from ROS's modular architecture, its focus on data-driven design, and its use of a publish-subscribe messaging model for communication between components.
+
+- **Lucid** - The first dataflow programming language, designed for building data-driven programs. Mech is inspired by Lucid's focus on data dependencies, its use of a declarative programming model, and its support for temporal operators.
+
+- **Excel** - The ubiquitous spreadsheet application, which popularized the idea of defining data dependencies and transformations in a tabular format. Mech takes inspiration from Excel's cell-based model, its use of formulas for data transformation, and its focus on interactivity and live updates.
+
+- **Lua** - Mech has many design goals and features similar to Lua, so it might surprise people to know it was *not* a major influence in Mech's design. I think most of what Mech has in common with Lua came from Matlab. That said, lately we have picked up some ideas from Lua tooling that have inspired some Mech tools.
 
 
 [^1]: If you squit (and not especially hard) C++, Java, Python, Javascript, are all the same programming language.  Jakubovic, Edwards and Petricek have referred to this as a ["Hornets Nest" of programming languages](https://tomasp.net/techdims/#footer=index,navigation;left=catalogue,list;top=catalogue,index). This is not to say that these languages are not distinct, but rather that they are all variations on a well-studied theme. There is still a lot of unexplored territory in the programming language design space.

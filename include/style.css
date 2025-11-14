@@ -37,14 +37,7 @@ body {
 
 .mech-content {
     counter-reset: h2 equation;
-    /*min-width: 800px;
-    margin-right: clamp(300px, 30vw, 800px);
-    */
-    overflow: auto;
-    height: 100vh;
-    flex: 1;
-    overflow-y: scroll;
-    scrollbar-gutter: stable;
+    margin-top: 50px;
 }
 
 .mech-toc.hidden {
@@ -69,10 +62,11 @@ body {
     overflow-x: hidden;
     top: 0px;
     margin-left: calc(50% - 350px - 250px - 150px);
-    height: 100vh;
     overflow: auto;
     -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;     /* Firefox */              
+    scrollbar-width: none;     /* Firefox */         
+    height: calc(100vh - 60px);   
+    margin-top: 60px;  
 }
 
 .mech-program {
@@ -1329,6 +1323,10 @@ li p {
     margin-bottom: 20px;
 }
 
+.mech-code-block.hidden {
+    display: none;
+}
+
 .mech-fenced-mech-block .mech-code-block {
     background-color: #171D21;
     border-radius: 10px 10px 0px 0px;  
@@ -1744,6 +1742,16 @@ mark {
     text-decoration: underline;
 }
 
+#mech-output.hidden {
+    display: none;
+    width: 0px;
+}
+
+#resizer.hidden {
+    display: none;
+    width: 0px;
+}
+
 .mech-command {
     background-color: #171D21;
     border: 1px solid #777;
@@ -1878,6 +1886,10 @@ mark {
     margin-bottom: 0px;
 }
 
+.mech-float.right .mech-figure-caption {
+    text-align: left;
+}
+
 @media (max-width: 1650px) {
     .mech-program h1 {
         width: 700px;
@@ -1892,18 +1904,40 @@ mark {
     }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1150px) {
     .mech-toc {
         display: none;
     }
-}
-
-@media (max-width: 1100px) {
     .mech-content {
         margin: auto;
     }
     #mech-output {
         display: none;
+    }
+        .mech-figure {
+        margin: 0px auto;
+    }
+    .mech-image {
+        max-width: 100%;
+    }
+    .mech-float .mech-figure-caption {
+        width: 100%;
+    }    
+    .mech-figure-label {
+        color: #F3B62D; 
+        font-size: 1rem;
+        min-width: 60px;
+        text-align: right;
+    }
+    .mech-float.left {
+        float: left;
+        margin-right: 20px;
+        margin-left: 0px;
+    }
+    .mech-float.right {
+        float: right;
+        margin-left: 20px;
+        margin-right: 0px;
     }
 }
 

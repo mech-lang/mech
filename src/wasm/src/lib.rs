@@ -237,6 +237,16 @@ pub fn attach_repl(&mut self, repl_id: &str) {
     .dyn_into::<HtmlElement>()
     .expect("Element should be HtmlElement");
 
+  // Remove "hidden" from REPL container and the resizer.
+  let resizer = document
+    .get_element_by_id("resizer")
+    .expect("Resizer element not found");
+  resizer.class_list().remove_1("hidden").unwrap();
+  let repl_container = document
+    .get_element_by_id("mech-output")
+    .expect("REPL container element not found");
+  repl_container.class_list().remove_1("hidden").unwrap();
+
   // Rc<RefCell> to store the create_prompt callback
   let create_prompt: Rc<RefCell<Option<Box<dyn Fn()>>>> = Rc::new(RefCell::new(None));
   let create_prompt_clone = create_prompt.clone();
