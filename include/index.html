@@ -422,77 +422,79 @@
     }
 
     document.querySelectorAll('.mech-program-subtitle.toc').forEach(entry => {
-      entry.addEventListener('click', () => {
-        scrollLock = true;
-        const id = entry.id;
-        const tag = entry.tagName; // H1, H2, H3, etc.
+    entry.addEventListener('click', () => {
+      scrollLock = true; // prevent observer from firing during this scroll
 
+      const tag = entry.tagName; // H1, H2, H3, etc.
+      const navItems = document.querySelectorAll(".mech-program-subtitle.toc");
+      const sections = document.querySelectorAll(".mech-program-section.toc");
+      const all_headers = Array.from(document.querySelectorAll('[section]'));
 
-        const headings = document.querySelectorAll(".mech-program-subtitle:not(.toc)");
-        const navItems = document.querySelectorAll(".mech-program-subtitle.toc");
-        const sections = document.querySelectorAll(".mech-program-section.toc");
-        const all_the_headers = Array.from(document.querySelectorAll('[section]'));
+      // Clear previous active states
+      navItems.forEach(item => item.classList.remove("active"));
+      sections.forEach(item => item.classList.remove("active"));
 
-        navItems.forEach(item => item.classList.remove("active"));
-        sections.forEach(item => item.classList.remove("active"));
-
-        const section = entry.closest("section");
-
-        if (section) {
-          if (!isFullyVisible(section)) {
-            section.scrollIntoView();
-          }
-          const matchingTocSection = Array.from(sections).find(item => item.id === section.id);
-          if (matchingTocSection) {
-            matchingTocSection.classList.add("active");
-          }
-
-          // Now grab the h2, h3, and h4 elements within that section
-          const h3s = Array.from(section.querySelectorAll('h3'));
-          const h4s = Array.from(section.querySelectorAll('h4'));
-
-          if (tag === "H5") {
-            const closestH4 = h4s.reverse().find(h4 => h4.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
-            const H4Nav = Array.from(navItems).find(item => {
-                const link = item.querySelector("a[href]");
-                return link && link.getAttribute("href") === `#${closestH4.id}`;
-            });
-            closestH4.classList.add("active");
-          }
-
-          if (tag === "H4" || tag === "H5") {
-            const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
-            const H3Nav = Array.from(navItems).find(item => {
-                const link = item.querySelector("a[href]");
-                return link && link.getAttribute("href") === `#${closestH3.id}`;
-            });
-            closestH3.classList.add("active");
-          }
-
-          // if tag is h3 then we want to add a "visible" class to all of the headings with the same section
-          if (tag === "H3") {
-            const h3_id = entry.getAttribute("section");
-            all_the_headers.forEach(item => {
-              const item_id = item.getAttribute("section");
-              if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {
-                item.classList.add("visible");
-              } else {
-                item.classList.remove("visible");
-              }
-            });
-          }
-
-          const topLevelHeading = section.querySelector("h2");
-          topLevelHeading.classList.add("active");
-
+      const section = entry.closest("section");
+      if (section) {
+        // Scroll the section into view if not fully visible
+        if (!isFullyVisible(section)) {
+          section.scrollIntoView({ behavior: "smooth" });
         }
-        entry.classList.add("active");
-        currentActiveTag = tag;
-        const link = entry.querySelector('a[href]');
-        if (link) {
-          window.location.hash = link.getAttribute('href');
+
+        // Activate matching TOC section
+        const matchingTocSection = Array.from(sections).find(item => item.id === section.id);
+        if (matchingTocSection) matchingTocSection.classList.add("active");
+
+        // Grab subheadings
+        const h3s = Array.from(section.querySelectorAll('h3'));
+        const h4s = Array.from(section.querySelectorAll('h4'));
+        const h5s = Array.from(section.querySelectorAll('h5'));
+
+        // Handle H5 → activate closest H4
+        if (tag === "H5") {
+          const closestH4 = h4s.reverse().find(h4 => h4.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
+          if (closestH4) closestH4.classList.add("active");
         }
-      });
+
+        // Handle H4 or H5 → activate closest H3
+        if (tag === "H4" || tag === "H5") {
+          const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
+          if (closestH3) closestH3.classList.add("active");
+        }
+
+        // H3 → mark visible H4s within this section
+        if (tag === "H3") {
+          const h3_id = entry.getAttribute("section");
+          all_headers.forEach(item => {
+            const item_id = item.getAttribute("section");
+            if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {
+              item.classList.add("visible");
+            } else {
+              item.classList.remove("visible");
+            }
+          });
+        }
+
+        // Activate top-level H2
+        const topLevelHeading = section.querySelector("h2");
+        if (topLevelHeading) topLevelHeading.classList.add("active");
+      }
+
+      // Activate clicked TOC entry
+      entry.classList.add("active");
+      currentActiveTag = tag;
+
+      // Update URL without triggering hashchange
+      const link = entry.querySelector('a[href]');
+      if (link) {
+        history.replaceState(null, '', link.getAttribute('href'));
+      }
+
+      // Release the scroll lock after smooth scrolling finishes
+      setTimeout(() => {
+        scrollLock = false;
+      }, 300); // adjust timing if needed
+    });
     });
 
     function createObserver(rootMarginValue,scrolling_down) {
@@ -502,139 +504,139 @@
       const sections = document.querySelectorAll(".mech-program-section.toc");
       const all_the_headers = Array.from(document.querySelectorAll('[section]'));
       observer = new IntersectionObserver((entries) => {
+        if (scrollLock) return;
+        entries
+          .slice() // Create a shallow copy to avoid mutating the original entries array
+          .sort((a, b) => {
+            // Sort entries based on scroll direction
+            return scrolling_down
+              ? a.boundingClientRect.top - b.boundingClientRect.top // Ascending for scrolling down
+              : b.boundingClientRect.top - a.boundingClientRect.top; // Descending for scrolling up
+          })
+          .forEach(entry => {
+            if (entry.isIntersecting) {
+                const id = entry.target.id;
+                const tag = entry.target.tagName; // H1, H2, H3, etc.
 
-    entries
-      .slice() // Create a shallow copy to avoid mutating the original entries array
-      .sort((a, b) => {
-        // Sort entries based on scroll direction
-        return scrolling_down
-          ? a.boundingClientRect.top - b.boundingClientRect.top // Ascending for scrolling down
-          : b.boundingClientRect.top - a.boundingClientRect.top; // Descending for scrolling up
-      })
-      .forEach(entry => {
-        if (entry.isIntersecting) {
-            const id = entry.target.id;
-            const tag = entry.target.tagName; // H1, H2, H3, etc.
+                const activeNav = Array.from(navItems).find(item => {
+                  const link = item.querySelector("a[href]");
+                  return link && link.getAttribute("href") === `#${id}`;
+                });
 
-            const activeNav = Array.from(navItems).find(item => {
-              const link = item.querySelector("a[href]");
-              return link && link.getAttribute("href") === `#${id}`;
-            });
+                if (!activeNav) return;
 
-            if (!activeNav) return;
+                // Deactivate all TOC items
+                navItems.forEach(item => item.classList.remove("active"));
+                sections.forEach(item => item.classList.remove("active"));
 
-            // Deactivate all TOC items
-            navItems.forEach(item => item.classList.remove("active"));
-            sections.forEach(item => item.classList.remove("active"));
+                // Activate the current section's top-level H2
+                const section = entry.target.closest("section");
+                if (section) {
+                  const matchingTocSection = Array.from(sections).find(item => {
+                    const toc_section_id = item.getAttribute("section");
+                    const section_id = section.getAttribute("section");
+                    if (toc_section_id && section_id) {
+                      return toc_section_id === section_id;
+                    }
+                  });
+                  if (matchingTocSection) {
+                    matchingTocSection.classList.add("active");
+                    const toc = document.querySelector(".mech-toc");
 
-            // Activate the current section's top-level H2
-            const section = entry.target.closest("section");
-            if (section) {
-              const matchingTocSection = Array.from(sections).find(item => {
-                const toc_section_id = item.getAttribute("section");
-                const section_id = section.getAttribute("section");
-                if (toc_section_id && section_id) {
-                  return toc_section_id === section_id;
-                }
-              });
-              if (matchingTocSection) {
-                matchingTocSection.classList.add("active");
-                const toc = document.querySelector(".mech-toc");
+                    if (toc && matchingTocSection) {
+                      const itemOffsetTop = matchingTocSection.offsetTop;
+                      const itemHeight = matchingTocSection.offsetHeight;
+                      const tocHeight = toc.clientHeight;
+                      const scrollTop = toc.scrollTop;
 
-                if (toc && matchingTocSection) {
-                  const itemOffsetTop = matchingTocSection.offsetTop;
-                  const itemHeight = matchingTocSection.offsetHeight;
-                  const tocHeight = toc.clientHeight;
-                  const scrollTop = toc.scrollTop;
+                      // Center the item manually if it's out of view
+                      const visibleTop = scrollTop;
+                      const visibleBottom = scrollTop + tocHeight;
 
-                  // Center the item manually if it's out of view
-                  const visibleTop = scrollTop;
-                  const visibleBottom = scrollTop + tocHeight;
+                      if (itemOffsetTop < visibleTop || itemOffsetTop + itemHeight > visibleBottom) {
+                        toc.scrollTo({
+                          top: itemOffsetTop - tocHeight / 2 + itemHeight / 2,
+                          behavior: "smooth"
+                        });
+                      }
+                    }
+                  }
 
-                  if (itemOffsetTop < visibleTop || itemOffsetTop + itemHeight > visibleBottom) {
-                    toc.scrollTo({
-                      top: itemOffsetTop - tocHeight / 2 + itemHeight / 2,
-                      behavior: "smooth"
+                  // Now grab the h3, h4, h5 elements within that section
+                  const h3s = Array.from(section.querySelectorAll('h3'));
+                  const h4s = Array.from(section.querySelectorAll('h4'));
+                  const h5s = Array.from(section.querySelectorAll('h5'));
+
+                  if (tag === "H5") {
+                    const closestH4 = h4s.reverse().find(h4 => h4.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
+                    const H4Nav = Array.from(navItems).find(item => {
+                        const link = item.querySelector("a[href]");
+                        return link && link.getAttribute("href") === `#${closestH4.id}`;
+                    });
+                    if (H4Nav) {
+                      H4Nav.classList.add("active");
+                      const h4_id = H4Nav.getAttribute("section");
+                      all_the_headers.forEach(item => {
+                        const item_id = item.getAttribute("section");
+                        if (item_id && item_id.startsWith(h4_id) && item.tagName === "H4") {
+                        } else {
+                          item.classList.remove("visible");
+                        }
+                      });
+                    }
+                  }
+
+                  if (tag === "H4" || tag == "H5") {
+                    const entry_section = entry.target.getAttribute("section");
+                    const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
+                    const H3Nav = Array.from(navItems).find(item => {
+                      const link = item.querySelector("a[href]");
+                      return link && link.getAttribute("href") === `#${closestH3.id}`;
+                    });
+                    if (H3Nav) {
+                      H3Nav.classList.add("active");
+                      const h3_id = H3Nav.getAttribute("section");
+                      all_the_headers.forEach(item => {
+                        const item_id = item.getAttribute("section");
+                        // Check if the item_id starts with the h3_id and is an H4, if so, add "visible", if not, remove "visible"
+                        if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {
+                          item.classList.add("visible");
+                        } else {
+                          item.classList.remove("visible");
+                        }
+                      });
+                    }
+                  }
+
+                  // if tag is h3 then we want to add a "visible" class to all of the headings with the same section
+                  if (tag === "H3") {
+                    const h3_id = entry.target.getAttribute("section");
+                    all_the_headers.forEach(item => {
+                      const item_id = item.getAttribute("section");
+                      // Check if the item_id starts with the h3_id and is an H4, if so, add "visible", if not, remove "visible"
+                      if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {
+                        item.classList.add("visible");
+                      } else {
+                        item.classList.remove("visible");
+                      }
                     });
                   }
-                }
-              }
 
-              // Now grab the h3, h4, h5 elements within that section
-              const h3s = Array.from(section.querySelectorAll('h3'));
-              const h4s = Array.from(section.querySelectorAll('h4'));
-              const h5s = Array.from(section.querySelectorAll('h5'));
-
-              if (tag === "H5") {
-                const closestH4 = h4s.reverse().find(h4 => h4.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
-                const H4Nav = Array.from(navItems).find(item => {
-                    const link = item.querySelector("a[href]");
-                    return link && link.getAttribute("href") === `#${closestH4.id}`;
-                });
-                if (H4Nav) {
-                  H4Nav.classList.add("active");
-                  const h4_id = H4Nav.getAttribute("section");
-                  all_the_headers.forEach(item => {
-                    const item_id = item.getAttribute("section");
-                    if (item_id && item_id.startsWith(h4_id) && item.tagName === "H4") {
-                    } else {
-                      item.classList.remove("visible");
+                  const topLevelHeading = section.querySelector("h2");
+                  if (topLevelHeading) {
+                    const topLevelNav = Array.from(navItems).find(item => {
+                      const link = item.querySelector("a[href]");
+                      return link && link.getAttribute("href") === `#${topLevelHeading.id}`;
+                    });
+                    if (topLevelNav) {
+                      topLevelNav.classList.add("active");
                     }
-                  });
-                }
-              }
-
-              if (tag === "H4" || tag == "H5") {
-                const entry_section = entry.target.getAttribute("section");
-                const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
-                const H3Nav = Array.from(navItems).find(item => {
-                  const link = item.querySelector("a[href]");
-                  return link && link.getAttribute("href") === `#${closestH3.id}`;
-                });
-                if (H3Nav) {
-                  H3Nav.classList.add("active");
-                  const h3_id = H3Nav.getAttribute("section");
-                  all_the_headers.forEach(item => {
-                    const item_id = item.getAttribute("section");
-                    // Check if the item_id starts with the h3_id and is an H4, if so, add "visible", if not, remove "visible"
-                    if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {
-                      item.classList.add("visible");
-                    } else {
-                      item.classList.remove("visible");
-                    }
-                  });
-                }
-              }
-
-              // if tag is h3 then we want to add a "visible" class to all of the headings with the same section
-              if (tag === "H3") {
-                const h3_id = entry.target.getAttribute("section");
-                all_the_headers.forEach(item => {
-                  const item_id = item.getAttribute("section");
-                  // Check if the item_id starts with the h3_id and is an H4, if so, add "visible", if not, remove "visible"
-                  if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {
-                    item.classList.add("visible");
-                  } else {
-                    item.classList.remove("visible");
                   }
-                });
-              }
-
-              const topLevelHeading = section.querySelector("h2");
-              if (topLevelHeading) {
-                const topLevelNav = Array.from(navItems).find(item => {
-                  const link = item.querySelector("a[href]");
-                  return link && link.getAttribute("href") === `#${topLevelHeading.id}`;
-                });
-                if (topLevelNav) {
-                  topLevelNav.classList.add("active");
                 }
-              }
+                activeNav.classList.add("active");
+                currentActiveTag = tag;
             }
-            activeNav.classList.add("active");
-            currentActiveTag = tag;
-          }
-        });
+          });
       }, {
         root: null,
         rootMargin: rootMarginValue,
@@ -698,56 +700,56 @@
     });
 
 
-    let lastScrollY = window.scrollY;
-    let scrolling_down = true;
-    let margin = 10;
+  let lastScrollY = window.scrollY;
+  let scrolling_down = true;
+  let margin = 10;
 
-    function getScrollPercentage() {
-      const scrollTop = window.scrollY || window.pageYOffset;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  function getScrollPercentage() {
+    const scrollTop = window.scrollY || window.pageYOffset;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
 
-      if (docHeight === 0) return 0; // avoid division by zero on short pages
-      return scrollTop / docHeight;
+    if (docHeight === 0) return 0; // avoid division by zero on short pages
+    return scrollTop / docHeight;
+  }
+
+  window.addEventListener("scroll", () => {
+    if (scrollLock) {
+      scrollLock = false;
+      return;
+    }
+    
+    const percent = getScrollPercentage();
+    const currentScrollY = window.scrollY;
+    scrolling_down = currentScrollY > lastScrollY;
+
+    if (currentScrollY !== lastScrollY) {
+      lastScrollY = currentScrollY;
     }
 
-    window.addEventListener("scroll", () => {
-      if (scrollLock) {
-        scrollLock = false;
-        return;
-      }
-      
-      const percent = getScrollPercentage();
-      const currentScrollY = window.scrollY;
-      scrolling_down = currentScrollY > lastScrollY;
+    if (percent < 0.05) {
+      createObserver("0px 0px -90% 0px", scrolling_down);
+    } else if (percent < 0.2) {
+      createObserver("-0% 0px -90% 0px", scrolling_down);
+    } else if (percent < 0.3) {
+      createObserver("-10% 0px -80% 0px", scrolling_down);
+    } else if (percent < 0.4) {
+      createObserver("-20% 0px -70% 0px", scrolling_down);
+    } else if (percent < 0.5) {
+      createObserver("-30% 0px -60% 0px", scrolling_down);
+    } else if (percent < 0.6) {
+      createObserver("-40% 0px -50% 0px", scrolling_down);
+    } else if (percent < 0.7) {
+      createObserver("-50% 0px -40% 0px", scrolling_down);
+    } else if (percent < 0.8) {
+      createObserver("-60% 0px -30% 0px", scrolling_down);
+    } else if (percent < 0.9) {
+      createObserver("-70% 0px -20% 0px", scrolling_down);
+    } else if (percent <= 0.95) {
+      createObserver("-80% 0px 0% 0px", scrolling_down);
+    }
+  });
 
-      if (currentScrollY !== lastScrollY) {
-        lastScrollY = currentScrollY;
-      }
-
-      if (percent < 0.05) {
-        createObserver("0px 0px -90% 0px", scrolling_down);
-      } else if (percent < 0.2) {
-        createObserver("-0% 0px -90% 0px", scrolling_down);
-      } else if (percent < 0.3) {
-        createObserver("-10% 0px -80% 0px", scrolling_down);
-      } else if (percent < 0.4) {
-        createObserver("-20% 0px -70% 0px", scrolling_down);
-      } else if (percent < 0.5) {
-        createObserver("-30% 0px -60% 0px", scrolling_down);
-      } else if (percent < 0.6) {
-        createObserver("-40% 0px -50% 0px", scrolling_down);
-      } else if (percent < 0.7) {
-        createObserver("-50% 0px -40% 0px", scrolling_down);
-      } else if (percent < 0.8) {
-        createObserver("-60% 0px -30% 0px", scrolling_down);
-      } else if (percent < 0.9) {
-        createObserver("-70% 0px -20% 0px", scrolling_down);
-      } else if (percent <= 0.95) {
-        createObserver("-80% 0px 0% 0px", scrolling_down);
-      }
-    });
-
-</script>
+  </script>
   <script type="module">
     /*import init, { WasmMech, help_html } from '/pkg/mech_wasm.js';
 
