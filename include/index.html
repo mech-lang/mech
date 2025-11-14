@@ -144,80 +144,106 @@
     .toggle-button.edge-right:hover {
 
     }
-#header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: #0d1013;
-  padding: 0 3rem; /* Bring content in from edges */
-  height: 60px;
-  border-bottom: 1px solid #35393d;
-  font-family: 'FiraCodeLight', monospace;
-  color: #f2ead9;
-}
 
-#logo {
-  padding-left: 1rem; /* Extra space on logo side */
-}
+    #header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #0d1013;
+      background: linear-gradient(90deg, #0d1013, #1a1f24); /* Add gradient */
+      padding: 0 3rem; /* Bring content in from edges */
+      height: 60px;
+      border-bottom: 1px solid #35393d;
+      font-family: 'FiraCodeLight', monospace;
+      color: #f2ead9;
+      position: sticky;
+      top: 0;
+      z-index: 9999;
+      box-shadow: 0 4px 10px rgba(0,0,0,1);
+    }
 
-/* Logo */
-#logo img {
-  height: 40px; /* scale to fit header */
-}
+  #logo {
+    padding-left: 1rem; /* Extra space on logo side */
+  }
 
-/* Nav container */
-#nav {
-  display: flex;
-  align-items: center;
-  gap: 2rem; /* spacing between nav items */
-  font-size: 1rem;
-  text-transform: uppercase;
-  padding-right: 1rem;
-}
+  /* Logo */
+  #logo img {
+    height: 40px; /* scale to fit header */
+  }
 
-/* Nav links */
-#nav a {
-  color: #f2ead9;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
+  /* Nav container */
+  #nav {
+    display: flex;
+    align-items: center;
+    gap: 2rem; /* spacing between nav items */
+    font-size: 1rem;
+    text-transform: uppercase;
+    padding-right: 1rem;
+  }
 
-#nav a:hover {
-  color: rgb(246,192,78); /* highlight hover in yellow like logo */
-}
+  /* Nav links */
+  #nav a {
+    color: #f2ead9;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
 
-/* Optional: add colon motif before links for terminal feel */
-#nav span::before {
-  content: ":";
-  margin-right: 0.25rem;
-  letter-spacing: -0.5ch;
-  color: rgb(246,192,78);
-  font-size: 1.2rem;
-  font-weight: bold;
-}
+  #nav a:hover {
+    color: rgb(246,192,78); /* highlight hover in yellow like logo */
+  }
 
-#nav span.active::before {
-  content: ">:";
-  margin-right: 0.25rem;
-  letter-spacing: -0.5ch;
-  color: rgb(246,192,78);
-  font-size: 1.2rem;
-  font-weight: bold;
-}
+  /* Optional: add colon motif before links for terminal feel */
+  #nav span::before {
+    content: ":";
+    margin-right: 0.25rem;
+    letter-spacing: -0.5ch;
+    color: rgb(246,192,78);
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+
+  #nav span.active::before {
+    content: ">:";
+    margin-right: 0.25rem;
+    letter-spacing: -0.5ch;
+    color: rgb(246,192,78);
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+
+  /* compress the header if the view is small */
+  @media (max-width: 768px) {
+    #header {
+      flex-direction: row;
+      align-items: flex-start;
+      padding: 0 1rem;
+      height: auto;
+    }
+    #logo img {
+      height: 25px;
+    }
+    #nav {
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.9rem;
+      padding-top: 3px;
+    }
+  }
   </style>
-
 </head>
 <body>
   <header id="header">
     <div id="logo">
-      <img src="https://mech-lang.org/img/logo.png" alt="MECH Logo" height="40">
+      <a href="https://mech-lang.org">
+        <img src="https://mech-lang.org/img/logo.png" alt="MECH Logo" height="40">
+      </a>
     </div>
     <div id="nav">
-      <span><a href="#about">About</a></span>
-      <span ><a href="#blog">Blog</a></span>
-      <span><a href="#community">Community</a></span>
-      <span class="active"><a href="#docs">Docs</a></span>
-      <span><a href="#explore">Explore</a></span>
+      <span><a href="https://about.mech-lang.org">About</a></span>
+      <span ><a href="https://mech-lang.org/blog">Blog</a></span>
+      <span><a href="https://mech-lang.org/community">Community</a></span>
+      <span class="active"><a href="https://docs.mech-lang.org">Docs</a></span>
+      <span><a href="https://try.mech-lang.org">Explore</a></span>
     </div>
   </header>
   <div class="container mech-root" mech-interpreter-id=0>
