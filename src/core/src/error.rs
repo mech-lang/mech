@@ -9,6 +9,151 @@ type Rows = usize;
 type Cols = usize;
 pub type ParserErrorReport = Vec<ParserErrorContext>;
 
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct SourceRange {
+  pub file_id: u64,
+  pub start: u32,   
+  pub end: u32,
+}
+
+impl SourceRange {
+  pub fn new(file_id: u64, start: u32, end: u32) -> Self {
+    Self { file_id, start, end }
+  }
+
+  pub fn empty(file_id: u64, pos: u32) -> Self {
+    Self { file_id, start: pos, end: pos }
+  }
+
+  pub fn length(&self) -> u32 {
+    self.end - self.start
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CompilerSourceRange {
+  pub file: &'static str,
+  pub line: u32,
+}
+
+impl CompilerSourceRange {
+  pub fn here() -> Self {
+    Self {
+      file: file!(),
+      line: line!(),
+    }
+  }
+}
+
+#[macro_export]
+macro_rules! compiler_loc {
+  () => {
+    $crate::CompilerSourceRange {
+      file: file!(),
+      line: line!(),
+    }
+  };
+}
+
+pub trait MechErrorKind2: std::fmt::Debug + Send + Sync {
+  fn name(&self) -> &str;
+  fn message(&self) -> String;
+}
+
+#[derive(Debug)]
+pub struct MechError2 {
+  pub kind: Box<dyn MechErrorKind2>,
+  pub program_range: Option<SourceRange>,
+  pub annotations: Vec<SourceRange>,
+  pub compiler_location: Option<CompilerSourceRange>,
+  pub source: Option<Box<MechError2>>, // for propagation
+}
+
+impl MechError2 {
+  pub fn new<K: MechErrorKind2 + 'static>(
+    kind: K,
+    program_range: Option<SourceRange>
+  ) -> Self {
+    Self {
+      kind: Box::new(kind),
+      program_range,
+      annotations: Vec::new(),
+      compiler_location: None,
+      source: None,
+    }
+  }
+
+  pub fn with_compiler_loc(mut self) -> Self {
+    self.compiler_location = Some(CompilerSourceRange::here());
+    self
+  }
+
+  pub fn with_specific_compiler_loc(mut self, loc: CompilerSourceRange) -> Self {
+    self.compiler_location = Some(loc);
+    self
+  }
+
+  pub fn with_annotation(mut self, range: SourceRange) -> Self {
+    self.annotations.push(range);
+    self
+  }
+
+  pub fn with_annotations<I>(mut self, iter: I) -> Self
+  where
+    I: IntoIterator<Item = SourceRange>,
+  {
+    self.annotations.extend(iter);
+    self
+  }
+
+  pub fn with_source(mut self, src: MechError2) -> Self {
+    self.source = Some(Box::new(src));
+    self
+  }
+
+  pub fn primary_range(&self) -> Option<SourceRange> {
+    self.program_range
+  }
+
+  pub fn simple_message(&self) -> String {
+    format!("{}: {}", self.kind.name(), self.kind.message())
+  }
+
+  pub fn full_chain_message(&self) -> String {
+    let mut out = self.simple_message();
+    let mut current = &self.source;
+
+    while let Some(err) = current {
+      out.push_str("\nCaused by: ");
+      out.push_str(&err.simple_message());
+      current = &err.source;
+    }
+
+    out
+  }
+
+  pub fn boxed(self) -> Box<Self> {
+    Box::new(self)
+  }
+}
+
+#[derive(Debug)]
+pub struct UndefinedKindError {
+  pub kind_id: u64,
+}
+impl MechErrorKind2 for UndefinedKindError {
+  fn name(&self) -> &str {
+    "UndefinedKind"
+  }
+
+  fn message(&self) -> String {
+    format!("Kind `{}` is not defined.", self.kind_id)
+  }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct MechError{ 
