@@ -24,11 +24,12 @@ Precompiled binaries are available for the following platforms:
 | **macOS**  | [aarch64](https://github.com/mech-lang/mech/releases/download/v0.2.66-beta/mech_v0.2.66-beta_full_mac_aarch64.zip)| [aarch64](https://github.com/mech-lang/mech/releases/download/v0.2.66-beta/mech_v0.2.66-beta_base_mac_aarch64.zip) |
 | **Web**    | [wasm](https://github.com/mech-lang/mech/releases/download/v0.2.66-beta/mech_wasm_bg.wasm.br)                     |                                                                                                                |
 
-(?)> **Full** installation includes the standard library and all numeric datatypes. **Base** installation includes the standard library but only `f64`, `i64`, and `r64` numeric types.
+(?)> **Full** installation includes the standard library and all numeric datatypes. 
+**Base** installation includes the standard library but only `f64`, `i64`, and `r64` numeric types.
 
 You can find previous releases and release notes at [/mech-lang/mech/releases](https://github.com/mech-lang/mech/releases).
 
-To install, download the appropriate binary for your operating system and extract it to a directory of your choice. The Mech toolchain is distributed as a singular executable file and doesn't require an installer.
+To install, download the appropriate binary for your operating system and extract it to a directory of your choice. The Mech toolchain is distributed as a single executable file and doesn't require an installer.
 
 See the toolchain documation for more information on how this program works.
 
