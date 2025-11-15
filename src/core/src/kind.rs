@@ -66,13 +66,13 @@ impl Kind {
       Kind::Scalar(id) => {
         match kinds.get(id).cloned() {
           Some(val_knd) => Ok(val_knd),
-          None => Err(MechError {
-            file: file!().to_string(),
-            tokens: vec![],
-            msg: "".to_string(),
-            id: line!(),
-            kind: MechErrorKind::UndefinedKind(*id),
-          }),
+          None => Err(
+            MechError2::new(
+              UndefinedKindError { kind_id: *id },
+              None,
+            )
+            .with_compiler_loc()
+          ),
         }
       },
       Kind::Set(kind, size) => {
