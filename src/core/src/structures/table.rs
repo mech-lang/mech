@@ -61,7 +61,12 @@ impl MechTable {
 
   pub fn from_records(records: Vec<MechRecord>) -> MResult<MechTable> {
     if records.is_empty() {
-      return Err(MechError { id: line!(), file: file!().to_string(), tokens: vec![], msg: "Cannot create MechTable from empty record list.".to_string(), kind: MechErrorKind::None});
+      return Err(
+        MechError2::new(
+          EmptyRecordListError,
+          None
+        ).with_compiler_loc()
+      );
     }
 
     let first = &records[0];
@@ -102,7 +107,7 @@ impl MechTable {
 
   pub fn from_kind(kind: ValueKind) -> MResult<MechTable> {
     match kind {
-      ValueKind::Table(tbl,sze) => {
+      ValueKind::Table(tbl, sze) => {
         let mut data = IndexMap::new();
         let mut col_names = HashMap::new();
         for (col_id, col_kind) in &tbl {
@@ -110,10 +115,15 @@ impl MechTable {
           col_names.insert(hash_str(col_id), col_id.clone());
           data.insert(hash_str(&col_id), (col_kind.clone(), matrix));
         }
-        Ok(MechTable {rows: sze, cols: tbl.len(), data, col_names})
+        Ok(MechTable { rows: sze, cols: tbl.len(), data, col_names })
       }
       _ => {
-        return Err(MechError { id: line!(), file: file!().to_string(), tokens: vec![], msg: "Cannot create MechTable from non-table kind.".to_string(), kind: MechErrorKind::None });
+        return Err(
+          MechError2::new(
+            CannotCreateTableFromNonTableKindError,
+            None
+          ).with_compiler_loc()
+        );
       }
     }
   }
@@ -131,29 +141,42 @@ impl MechTable {
   }
 
   pub fn check_record_schema(&self, record: &MechRecord) -> MResult<bool> {
-
     for (&col_id, record_value) in &record.data {
       // Check that the column exists in the table
-      // self.get data col id _or continue to the next column
-      let (expected_kind, column_matrix) = match self.data.get(&col_id) {
+      let (expected_kind, _column_matrix) = match self.data.get(&col_id) {
         Some(data) => data,
-        None => {
-          continue;
-        }
+        None => continue,
       };
 
       // Check actual value kind
       let actual_kind = record_value.kind();
-
       if expected_kind != &actual_kind {
-        return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Schema mismatch: column {} kind mismatch (expected: {:?}, found: {:?})",col_id, expected_kind, actual_kind),kind: MechErrorKind::None,});
+        return Err(
+          MechError2::new(
+            ColumnKindMismatchError {
+              column_id: col_id,
+              expected_kind: format!("{:?}", expected_kind),
+              actual_kind: format!("{:?}", actual_kind),
+            },
+            None
+          ).with_compiler_loc()
+        );
       }
 
       // Check column name
       if let Some(expected_name) = self.col_names.get(&col_id) {
         if let Some(field_name) = record.field_names.get(&col_id) {
           if expected_name != field_name {
-            return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Schema mismatch: column {} name mismatch (expected: '{}', found: '{}')",col_id, expected_name, field_name),kind: MechErrorKind::None,});
+            return Err(
+              MechError2::new(
+                ColumnNameMismatchError {
+                  column_id: col_id,
+                  expected_name: expected_name.clone(),
+                  actual_name: field_name.clone(),
+                },
+                None
+              ).with_compiler_loc()
+            );
           }
         }
       }
@@ -163,26 +186,49 @@ impl MechTable {
   }
   
   pub fn check_table_schema(&self, record: &MechTable) -> MResult<bool> {
-
     // Check that the column names match
     for (&col_id, col_name) in &self.col_names {
-      if let Some(record_name) = record.col_names.get(&col_id) {
-        if col_name != record_name {
-          return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Schema mismatch: column {} name mismatch (expected: '{}', found: '{}')",col_id, col_name, record_name),kind: MechErrorKind::None,});
+      match record.col_names.get(&col_id) {
+        Some(record_name) if col_name != record_name => {
+          return Err(MechError2::new(
+            ColumnNameMismatchError {
+              column_id: col_id,
+              expected_name: col_name.clone(),
+              actual_name: record_name.clone(),
+            },
+            None
+          ).with_compiler_loc());
         }
-      } else {
-        return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Schema mismatch: column {} not found in record",col_id),kind: MechErrorKind::None,});
+        None => {
+          return Err(MechError2::new(
+            ColumnNotFoundError { column_id: col_id },
+            None
+          ).with_compiler_loc());
+        }
+        _ => {}
       }
     }
 
     // Check that the data kinds match
     for (&col_id, (expected_kind, _)) in &self.data {
-      if let Some((record_kind, _)) = record.data.get(&col_id) {
-        if expected_kind != record_kind {
-          return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Schema mismatch: column {} kind mismatch (expected: {:?}, found: {:?})",col_id, expected_kind, record_kind),kind: MechErrorKind::None,});
+      match record.data.get(&col_id) {
+        Some((record_kind, _)) if expected_kind != record_kind => {
+          return Err(MechError2::new(
+            ColumnKindMismatchError {
+              column_id: col_id,
+              expected_kind: format!("{:?}", expected_kind),
+              actual_kind: format!("{:?}", record_kind),
+            },
+            None
+          ).with_compiler_loc());
         }
-      } else {
-        return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Schema mismatch: column {} not found in record",col_id),kind: MechErrorKind::None,});
+        None => {
+          return Err(MechError2::new(
+            ColumnNotFoundError { column_id: col_id },
+            None
+          ).with_compiler_loc());
+        }
+        _ => {}
       }
     }
 
@@ -191,23 +237,23 @@ impl MechTable {
 
   pub fn append_table(&mut self, other: &MechTable) -> MResult<()> {
     self.check_table_schema(other)?;
-    for (&col_id, (_, other_matrix)) in &other.data {
-      let (_, self_matrix) = self.data.get_mut(&col_id).ok_or(MechError {
-        id: line!(),
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: format!("Column {} not found in destination table", col_id),
-        kind: MechErrorKind::None,
-      })?;
 
-      self_matrix.append(other_matrix).map_err(|err| MechError {
-        id: line!(),
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: "".to_string(),
-        kind: MechErrorKind::None,
-      })?;
+    for (&col_id, (_, other_matrix)) in &other.data {
+      let (_, self_matrix) = self.data.get_mut(&col_id).ok_or_else(|| 
+        MechError2::new(
+          ColumnNotFoundError { column_id: col_id },
+          None
+        ).with_compiler_loc()
+      )?;
+
+      self_matrix.append(other_matrix).map_err(|err| 
+        MechError2::new(
+          MatrixAppendError { column_id: col_id },
+          None
+        ).with_compiler_loc()
+      )?;
     }
+
     self.rows += other.rows;
     Ok(())
   }
@@ -386,5 +432,83 @@ impl Hash for MechTable {
       knd.hash(state);
       val.hash(state);
     }
+  }
+}
+
+#[derive(Debug)]
+pub struct EmptyRecordListError;
+
+impl MechErrorKind2 for EmptyRecordListError {
+  fn name(&self) -> &str {
+    "EmptyRecordList"
+  }
+  fn message(&self) -> String {
+    "Cannot create MechTable from an empty record list.".to_string()
+  }
+}
+
+#[derive(Debug)]
+pub struct CannotCreateTableFromNonTableKindError;
+
+impl MechErrorKind2 for CannotCreateTableFromNonTableKindError {
+  fn name(&self) -> &str {
+    "CannotCreateTableFromNonTableKind"
+  }
+  fn message(&self) -> String {
+    "Cannot create MechTable from non-table kind.".to_string()
+  }
+}
+
+#[derive(Debug)]
+pub struct ColumnKindMismatchError {
+  pub column_id: u64,
+  pub expected_kind: String,
+  pub actual_kind: String,
+}
+
+impl MechErrorKind2 for ColumnKindMismatchError {
+  fn name(&self) -> &str { "ColumnKindMismatch" }
+  fn message(&self) -> String {
+    format!("Schema mismatch: column {} kind mismatch (expected: {}, found: {}).",
+            self.column_id, self.expected_kind, self.actual_kind)
+  }
+}
+
+#[derive(Debug)]
+pub struct ColumnNameMismatchError {
+  pub column_id: u64,
+  pub expected_name: String,
+  pub actual_name: String,
+}
+
+impl MechErrorKind2 for ColumnNameMismatchError {
+  fn name(&self) -> &str { "ColumnNameMismatch" }
+  fn message(&self) -> String {
+    format!("Schema mismatch: column {} name mismatch (expected: '{}', found: '{}').",
+            self.column_id, self.expected_name, self.actual_name)
+  }
+}
+
+#[derive(Debug)]
+pub struct ColumnNotFoundError {
+  pub column_id: u64,
+}
+
+impl MechErrorKind2 for ColumnNotFoundError {
+  fn name(&self) -> &str { "ColumnNotFound" }
+  fn message(&self) -> String {
+    format!("Schema mismatch: column {} not found in table.", self.column_id)
+  }
+}
+
+#[derive(Debug)]
+pub struct MatrixAppendError {
+  pub column_id: u64,
+}
+
+impl MechErrorKind2 for MatrixAppendError {
+  fn name(&self) -> &str { "MatrixAppendError" }
+  fn message(&self) -> String {
+    format!("Failed to append matrix for column {}.", self.column_id)
   }
 }
