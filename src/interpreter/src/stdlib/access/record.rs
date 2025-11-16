@@ -32,7 +32,7 @@ impl MechFunctionCompiler for RecordAccessField {
   }
 }
 
-pub fn impl_access_record_fxn(source: Value, key: Value) -> Result<Box<dyn MechFunction>, MechError> {
+pub fn impl_access_record_fxn(source: Value, key: Value) -> MResult<Box<dyn MechFunction>> {
   match (source,key) {
     (Value::Record(rcd), Value::Id(id)) => {
       let k = id;

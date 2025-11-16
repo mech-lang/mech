@@ -123,7 +123,7 @@ macro_rules! impl_access_column_table_match_arms {
   }
 }
 
-fn impl_access_column_table_fxn(source: Value, key: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_column_table_fxn(source: Value, key: Value) -> MResult<Box<dyn MechFunction>> {
   impl_access_column_table_match_arms!(
     (source,key),
     Bool,bool::default(),"bool";

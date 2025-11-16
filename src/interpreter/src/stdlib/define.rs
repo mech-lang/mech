@@ -32,7 +32,7 @@ where
   MatA: Debug + CompileConst + ConstElem + AsNaKind + 'static,
   Ref<MatA>: ToValue
 {
-  fn new(args: FunctionArgs) -> Result<Box<dyn MechFunction>, MechError> {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
       FunctionArgs::Binary(var, arg1, arg2) => {
         let var: Ref<MatA> = unsafe { var.as_unchecked() }.clone();

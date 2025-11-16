@@ -97,7 +97,7 @@ macro_rules! impl_assign_value_match_arms {
   };
 }
 
-fn assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
   impl_assign_value_match_arms!(
     (sink, source),
     Bool,   "bool";

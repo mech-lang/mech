@@ -816,7 +816,7 @@ macro_rules! impl_access_scalar_match_arms {
   }
 }
 
-fn impl_access_scalar_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_scalar_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   impl_access_match_arms!(Access1DS, scalar, (lhs_value, ixes.as_slice()))
 }
 
@@ -926,7 +926,7 @@ macro_rules! impl_access_scalar_scalar_match_arms {
   }
 }
 
-fn impl_access_scalar_scalar_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_scalar_scalar_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   impl_access_match_arms!(Access2DSS, scalar_scalar, (lhs_value, ixes.as_slice()))
 }
 
@@ -1131,7 +1131,7 @@ macro_rules! impl_access_range_match_arms {
   }
 }
 
-fn impl_access_range_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_range_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   impl_access_match_arms!(Access1DR, range, (lhs_value, ixes.as_slice()))
 }
 
@@ -1421,7 +1421,7 @@ macro_rules! impl_access_all_match_arms {
   }
 }
 
-fn impl_access_all_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_all_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   impl_access_match_arms!(Access1DA, all, (lhs_value, ixes.as_slice()))
 }
 
@@ -1491,7 +1491,7 @@ macro_rules! impl_access_all_scalar_match_arms {
   }
 }
 
-fn impl_access_all_scalar_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_all_scalar_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   impl_access_match_arms!(Access2DAS, all_scalar, (lhs_value, ixes.as_slice()))
 }
 
@@ -1566,7 +1566,7 @@ macro_rules! impl_access_scalar_all_match_arms {
   }
 }
 
-fn impl_access_scalar_all_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_scalar_all_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
  impl_access_match_arms!(Access2DSA, scalar_all, (lhs_value, ixes.as_slice()))
 }
 
@@ -1788,7 +1788,7 @@ macro_rules! impl_access_range_all_match_arms {
   }
 }
 
-fn impl_access_range_all_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_range_all_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   impl_access_match_arms!(Access2DRA, range_all, (lhs_value, ixes.as_slice()))
 }
 
@@ -1889,7 +1889,7 @@ macro_rules! impl_access_range_scalar_match_arms {
   }
 }
 
-fn impl_access_range_scalar_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_range_scalar_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   impl_access_match_arms!(Access2DRS, range_scalar, (lhs_value, ixes.as_slice()))
 }
 
@@ -1990,7 +1990,7 @@ macro_rules! impl_access_scalar_range_match_arms {
   }
 }
 
-fn impl_access_scalar_range_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_scalar_range_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   impl_access_match_arms!(Access2DSR, scalar_range, (lhs_value, ixes.as_slice()))
 }
 

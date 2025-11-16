@@ -231,7 +231,7 @@ impl MechFunctionCompiler for TableAppendTable {
   }
 }
 
-pub fn add_assign_table_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
+pub fn add_assign_table_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
   match (sink.clone(),source.clone()) {
     (Value::Table(tbl), Value::Record(rcrd)) => {
       tbl.borrow().check_record_schema(&rcrd.borrow())?;

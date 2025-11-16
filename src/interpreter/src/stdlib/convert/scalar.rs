@@ -10,7 +10,7 @@ struct ConvertSEnum {
 }
 #[cfg(feature = "enum")]
 impl MechFunctionFactory for ConvertSEnum {
-  fn new(args: FunctionArgs) -> Result<Box<dyn MechFunction>, MechError> {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
       FunctionArgs::Unary(out, _) => {
         let out: Ref<MechEnum> = unsafe { out.as_unchecked() }.clone();
