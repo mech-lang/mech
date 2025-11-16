@@ -105,7 +105,7 @@ macro_rules! sum_row_op2 {
 }
 
   
-  fn impl_stats_sum_row_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  fn impl_stats_sum_row_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_stats_sum_row_match_arms!(
       lhs_value,
       I8,   i8,   "i8";
