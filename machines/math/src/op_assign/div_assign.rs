@@ -55,7 +55,7 @@ macro_rules! impl_div_assign_range_fxn_v {
 impl_assign_scalar_scalar!(Div, /=);
 impl_assign_vector_vector!(Div, /=);
 impl_assign_vector_scalar!(Div, /=);
-fn div_assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn div_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
   impl_op_assign_value_match_arms!(
     Div,
     (sink, source),

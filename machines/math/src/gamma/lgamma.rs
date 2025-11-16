@@ -36,7 +36,7 @@ impl_math_unop!(MathLgamma, F32, lgammaf, FeatureFlag::Custom(hash_str("math/lga
 #[cfg(feature = "f64")]
 impl_math_unop!(MathLgamma, F64, lgamma, FeatureFlag::Custom(hash_str("math/lgamma")));
 
-fn impl_lgamma_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_lgamma_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathLgamma,
     (lhs_value),

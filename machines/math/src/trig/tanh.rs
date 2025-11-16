@@ -43,7 +43,7 @@ impl_math_unop!(MathTanh, F32, tanhf, FeatureFlag::Custom(hash_str("math/tanh"))
 #[cfg(feature = "f64")]
 impl_math_unop!(MathTanh, F64, tanh, FeatureFlag::Custom(hash_str("math/tanh")));
 
-fn impl_tanh_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_tanh_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathTanh,
     (lhs_value),

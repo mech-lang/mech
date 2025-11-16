@@ -36,7 +36,7 @@ impl_math_unop!(MathCeil, F32, ceilf, FeatureFlag::Custom(hash_str("math/ceil"))
 #[cfg(feature = "f64")]
 impl_math_unop!(MathCeil, F64, ceil, FeatureFlag::Custom(hash_str("math/ceil")));
 
-fn impl_ceil_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_ceil_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathCeil,
     (lhs_value),

@@ -36,7 +36,7 @@ impl_math_unop!(MathErfc, F32, erfcf, FeatureFlag::Custom(hash_str("math/erfc"))
 #[cfg(feature = "f64")]
 impl_math_unop!(MathErfc, F64, erfc, FeatureFlag::Custom(hash_str("math/erfc")));
 
-fn impl_erfc_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_erfc_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathErfc,
     (lhs_value),

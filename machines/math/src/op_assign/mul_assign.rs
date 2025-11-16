@@ -53,7 +53,7 @@ impl_assign_scalar_scalar!(Mul, *=);
 impl_assign_vector_vector!(Mul, *=);
 impl_assign_vector_scalar!(Mul, *=);
 
-fn mul_assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn mul_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
   impl_op_assign_value_match_arms!(
     Mul,
     (sink, source),

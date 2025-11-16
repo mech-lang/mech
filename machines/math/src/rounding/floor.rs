@@ -36,7 +36,7 @@ impl_math_unop!(MathFloor, F32, floorf, FeatureFlag::Custom(hash_str("math/floor
 #[cfg(feature = "f64")]
 impl_math_unop!(MathFloor, F64, floor, FeatureFlag::Custom(hash_str("math/floor")));
 
-fn impl_floor_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_floor_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathFloor,
     (lhs_value),

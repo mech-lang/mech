@@ -173,7 +173,7 @@ macro_rules! impl_math_fxns2 {
 
 impl_math_fxns2!(Mod);
 
-fn impl_mod_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_mod_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_binop_match_arms!(
     Mod,
     register_fxn_descriptor_inner,

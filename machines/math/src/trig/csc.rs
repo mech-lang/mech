@@ -36,7 +36,7 @@ impl_math_unop!(MathCsc, F32, cscf, FeatureFlag::Custom(hash_str("math/csc")));
 #[cfg(feature = "f64")]
 impl_math_unop!(MathCsc, F64, csc, FeatureFlag::Custom(hash_str("math/csc")));
 
-fn impl_csc_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_csc_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathCsc,
     (lhs_value),

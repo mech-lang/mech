@@ -36,7 +36,7 @@ impl_math_unop!(MathRint, F32, rintf, FeatureFlag::Custom(hash_str("math/rint"))
 #[cfg(feature = "f64")]
 impl_math_unop!(MathRint, F64, rint, FeatureFlag::Custom(hash_str("math/rint")));
 
-fn impl_rint_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_rint_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathRint,
     (lhs_value),

@@ -125,7 +125,7 @@ register_fxn_descriptor!(NegateS,
   C64, "c64"
 );
 
-fn impl_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_neg_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms!(
     Negate,
     (lhs_value),

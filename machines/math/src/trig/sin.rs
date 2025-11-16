@@ -36,7 +36,7 @@ impl_math_unop!(MathSin, F32, sinf, FeatureFlag::Custom(hash_str("math/sin")));
 #[cfg(feature = "f64")]
 impl_math_unop!(MathSin, F64, sin, FeatureFlag::Custom(hash_str("math/sin")));
 
-fn impl_sin_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_sin_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathSin,
     (lhs_value),

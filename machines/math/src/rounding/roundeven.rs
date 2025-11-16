@@ -36,7 +36,7 @@ impl_math_unop!(MathRoundeven, F32, roundevenf, FeatureFlag::Custom(hash_str("ma
 #[cfg(feature = "f64")]
 impl_math_unop!(MathRoundeven, F64, roundeven, FeatureFlag::Custom(hash_str("math/roundeven")));
 
-fn impl_roundeven_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_roundeven_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathRoundeven,
     (lhs_value),

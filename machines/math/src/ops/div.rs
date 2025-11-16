@@ -100,7 +100,7 @@ macro_rules! div_row_mat_op {
 
 impl_math_fxns!(Div);
 
-fn impl_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_div_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_binop_match_arms!(
     Div,
     register_fxn_descriptor_inner,

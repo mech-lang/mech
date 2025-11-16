@@ -130,7 +130,7 @@ impl_two_arg_fxn!(FminimumMDF64, DMatrix<F64>, DMatrix<F64>, DMatrix<F64>, fmini
 #[cfg(feature = "f64")]
 impl_two_arg_fxn!(FminimumF64, F64, F64, F64, fminimum_op);
 
-fn impl_fminimum_fxn(arg1_value: Value, arg2_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_fminimum_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
   match (arg1_value,arg2_value) {
     #[cfg(feature = "f32")]
     (Value::F32(arg1),Value::F32(arg2)) => Ok(Box::new(FminimumF32{arg1, arg2, out: Ref::new(F32::zero())})),

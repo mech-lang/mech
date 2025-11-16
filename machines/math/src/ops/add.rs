@@ -77,7 +77,7 @@ macro_rules! add_scalar_rhs_op {
 
 impl_math_fxns!(Add);
 
-fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_binop_match_arms!(
     Add,
     register_fxn_descriptor_inner,

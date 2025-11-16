@@ -36,7 +36,7 @@ impl_math_unop!(MathExponential, F64, exponential, FeatureFlag::Custom(hash_str(
 #[cfg(feature = "f32")]
 impl_math_unop!(MathExponential, F32, exponentialf, FeatureFlag::Custom(hash_str("math/exponential")));
 
-fn impl_exponential_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_exponential_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathExponential,
     lhs_value,

@@ -36,7 +36,7 @@ impl_math_unop!(MathLog, F32, logf, FeatureFlag::Custom(hash_str("math/log")));
 #[cfg(feature = "f64")]
 impl_math_unop!(MathLog, F64, log, FeatureFlag::Custom(hash_str("math/log")));
 
-fn impl_log_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_log_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathLog,
     (lhs_value),

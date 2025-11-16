@@ -36,7 +36,7 @@ impl_math_unop!(MathCos, F32, cosf, FeatureFlag::Custom(hash_str("math/cos")));
 #[cfg(feature = "f64")]
 impl_math_unop!(MathCos, F64, cos, FeatureFlag::Custom(hash_str("math/cos")));
 
-fn impl_cos_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_cos_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathCos,
     (lhs_value),

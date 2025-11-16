@@ -89,7 +89,7 @@ impl_math_unop!(MathAbs, C64, abs, FeatureFlag::Custom(hash_str("math/abs")));
 #[cfg(feature = "r64")]
 impl_math_unop!(MathAbs, R64, abs, FeatureFlag::Custom(hash_str("math/abs")));
 
-fn impl_abs_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_abs_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathAbs,
     (lhs_value),

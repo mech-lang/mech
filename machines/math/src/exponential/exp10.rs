@@ -36,7 +36,7 @@ impl_math_unop!(MathExp10, F64, exp10, FeatureFlag::Custom(hash_str("math/exp10"
 #[cfg(feature = "f32")]
 impl_math_unop!(MathExp10, F32, exp10f, FeatureFlag::Custom(hash_str("math/exp10")));
 
-fn impl_exp10_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_exp10_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathExp10,
     lhs_value,

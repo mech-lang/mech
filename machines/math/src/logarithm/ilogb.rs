@@ -36,7 +36,7 @@ impl_math_unop!(MathIlogb, F32, ilogbf, FeatureFlag::Custom(hash_str("math/ilogb
 #[cfg(feature = "f64")]
 impl_math_unop!(MathIlogb, F64, ilogb, FeatureFlag::Custom(hash_str("math/ilogb")));
 
-fn impl_ilogb_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_ilogb_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathIlogb,
     (lhs_value),

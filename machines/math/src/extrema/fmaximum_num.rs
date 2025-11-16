@@ -130,7 +130,7 @@ impl_two_arg_fxn!(Fmaximum_numMDF64, DMatrix<F64>, DMatrix<F64>, DMatrix<F64>, f
 #[cfg(feature = "f64")]
 impl_two_arg_fxn!(Fmaximum_numF64, F64, F64, F64, fmaximum_num_op);
 
-fn impl_fmaximum_num_fxn(arg1_value: Value, arg2_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_fmaximum_num_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
   match (arg1_value,arg2_value) {
     #[cfg(feature = "f32")]
     (Value::F32(arg1),Value::F32(arg2)) => Ok(Box::new(Fmaximum_numF32{arg1, arg2, out: Ref::new(F32::zero())})),

@@ -36,7 +36,7 @@ impl_math_unop!(MathSqrt, F32, sqrtf, FeatureFlag::Custom(hash_str("math/sqrt"))
 #[cfg(feature = "f64")]
 impl_math_unop!(MathSqrt, F64, sqrt, FeatureFlag::Custom(hash_str("math/sqrt")));
 
-fn impl_sqrt_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_sqrt_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathSqrt,
     (lhs_value),

@@ -36,7 +36,7 @@ impl_math_unop!(MathRound, F32, roundf, FeatureFlag::Custom(hash_str("math/round
 #[cfg(feature = "f64")]
 impl_math_unop!(MathRound, F64, round, FeatureFlag::Custom(hash_str("math/round")));
 
-fn impl_round_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_round_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathRound,
     (lhs_value),

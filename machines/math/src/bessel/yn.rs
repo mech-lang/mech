@@ -130,7 +130,7 @@ impl_two_arg_fxn!(YnMDF64, DMatrix<F64>, DMatrix<F64>, DMatrix<F64>, yn_vec_op);
 #[cfg(feature = "f64")]
 impl_two_arg_fxn!(YnF64, F64, F64, F64, yn_op);
 
-fn impl_yn_fxn(arg1_value: Value, arg2_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_yn_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
   match (arg1_value,arg2_value) {
     #[cfg(feature = "f32")]
     (Value::F32(arg1),Value::F32(arg2)) => Ok(Box::new(YnF32{arg1, arg2, out: Ref::new(F32::zero())})),

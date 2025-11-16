@@ -217,7 +217,7 @@ impl MechFunctionCompiler for ExpRational
   }
 }
 
-fn impl_exp_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_exp_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   match (&lhs_value, &rhs_value) {
     #[cfg(all(feature = "rational", feature = "i32"))]
     (Value::R64(lhs), Value::I32(rhs)) => {

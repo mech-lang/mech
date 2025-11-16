@@ -40,7 +40,7 @@ impl_math_unop!(MathSinh, F32, sinhf, FeatureFlag::Custom(hash_str("math/sinh"))
 #[cfg(feature = "f64")]
 impl_math_unop!(MathSinh, F64, sinh, FeatureFlag::Custom(hash_str("math/sinh")));
 
-fn impl_sinh_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_sinh_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathSinh,
     (lhs_value),
