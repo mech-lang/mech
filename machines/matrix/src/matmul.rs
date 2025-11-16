@@ -237,7 +237,12 @@ macro_rules! impl_matmul_match_arms {
             let (lhs_rows,lhs_cols) = {lhs.borrow().shape()};
             let (rhs_rows,rhs_cols) = {rhs.borrow().shape()};
             if lhs_cols != rhs_rows {
-              return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![]) });
+              return Err(
+                MechError2::new(
+                  DimensionMismatch { dims: vec![lhs_rows, lhs_cols, rhs_rows, rhs_cols] },
+                  None
+                ).with_compiler_loc()
+              );
             }
             Ok(Box::new(MatMulMDMD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(DMatrix::from_element(lhs_rows, rhs_cols, $target_type::zero())) }))
           },
@@ -246,7 +251,10 @@ macro_rules! impl_matmul_match_arms {
             let (lhs_rows,lhs_cols) = {lhs.borrow().shape()};
             let (rhs_rows,rhs_cols) = {rhs.borrow().shape()};
             if lhs_cols != rhs_rows {
-              return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![]) });
+              return Err(MechError2::new(
+                DimensionMismatch { dims: vec![lhs_rows, lhs_cols, rhs_rows, rhs_cols] },
+                None
+              ).with_compiler_loc());
             }
             Ok(Box::new(MatMulMDVD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(DVector::from_element(lhs_rows, $target_type::zero())) }))
           },
@@ -255,7 +263,10 @@ macro_rules! impl_matmul_match_arms {
             let (lhs_rows,lhs_cols) = {lhs.borrow().shape()};
             let (rhs_rows,rhs_cols) = {rhs.borrow().shape()};
             if lhs_cols != rhs_rows {
-              return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![]) });
+              return Err(MechError2::new(
+                DimensionMismatch { dims: vec![lhs_rows, rhs_cols, lhs_cols, rhs_rows] },
+                None
+              ).with_compiler_loc());
             }
             Ok(Box::new(MatMulMDRD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(DMatrix::from_element(lhs_rows, rhs_cols, $target_type::zero())) }))
           },
@@ -264,7 +275,10 @@ macro_rules! impl_matmul_match_arms {
             let (lhs_rows,lhs_cols) = {lhs.borrow().shape()};
             let (rhs_rows,rhs_cols) = {rhs.borrow().shape()};
             if lhs_cols != rhs_rows {
-              return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![]) });
+              return Err(MechError2::new(
+                DimensionMismatch { dims: vec![lhs_rows, rhs_cols, lhs_cols, rhs_rows] },
+                None
+              ).with_compiler_loc());
             }
             Ok(Box::new(MatMulMDM3x2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(DMatrix::from_element(lhs_rows, rhs_cols, $target_type::zero())) }))
           },
@@ -272,11 +286,17 @@ macro_rules! impl_matmul_match_arms {
           (Value::$matrix_kind(lhs), Value::$matrix_kind(rhs)) => {
             let lhs_shape = lhs.shape();
             let rhs_shape = rhs.shape();
-            return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![]) });
+            return Err(MechError2::new(
+              DimensionMismatch { dims: vec![lhs_shape[0], lhs_shape[1], rhs_shape[0], rhs_shape[1]] },
+              None
+            ).with_compiler_loc());
           }
         )+
       )+
-      x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      x => Err(MechError2::new(
+        UnhandledFunctionArgumentKind2 { arg: x, fxn_name: stringify!($fxn).to_string() },
+        None
+      ).with_compiler_loc()),
     }
   }
 }

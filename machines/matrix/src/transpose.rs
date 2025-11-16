@@ -32,7 +32,11 @@ macro_rules! impl_transpose {
             let out: Ref<$out_type> = unsafe{ out.as_unchecked().clone() };
             Ok(Box::new($struct_name{arg, out}))
           }
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Expected unary arguments, got {:#?}", args), id: line!(), kind: MechErrorKind::None }),
+          _ => Err(MechError2::new(
+              IncorrectNumberOfArguments { expected: 1, found: args.len() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
@@ -136,7 +140,11 @@ macro_rules! impl_transpose_match_arms {
             },
           )+
         )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:#?}", x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError2::new(
+            UnhandledFunctionArgumentKind1 { arg: x, fxn_name: "MatrixTranspose".to_string() },
+            None
+          ).with_compiler_loc()
+        ),
       }
     }
   }

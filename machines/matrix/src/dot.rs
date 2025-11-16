@@ -92,7 +92,12 @@ macro_rules! impl_dot_match_arms {
             let (lhs_rows,lhs_cols) = {lhs.borrow().shape()};
             let (rhs_rows,rhs_cols) = {rhs.borrow().shape()};
             if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
-              return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("Matrix dimensions must agree: lhs is {}x{}, rhs is {}x{}", lhs_rows, lhs_cols, rhs_rows, rhs_cols), id: line!(), kind: MechErrorKind::None }); 
+              return Err(
+                MechError2::new(
+                  DimensionMismatch { dims: vec![lhs_rows, lhs_cols, rhs_rows, rhs_cols] },
+                  None
+                ).with_compiler_loc()
+              );
             }
             Ok(Box::new(DotMDMD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) }))
           },
@@ -101,7 +106,10 @@ macro_rules! impl_dot_match_arms {
             let lhs_len = {lhs.borrow().len()};
             let rhs_len = {rhs.borrow().len()};
             if lhs_len != rhs_len {
-              return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("Vector dimensions must agree: lhs is {}, rhs is {}", lhs_len, rhs_len), id: line!(), kind: MechErrorKind::None }); 
+              return Err(MechError2::new(
+                DimensionMismatch { dims: vec![lhs_len, rhs_len] },
+                None
+              ).with_compiler_loc());
             }
             Ok(Box::new(DotVDVD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) }))
           },
@@ -110,13 +118,20 @@ macro_rules! impl_dot_match_arms {
             let lhs_len = {lhs.borrow().len()};
             let rhs_len = {rhs.borrow().len()};
             if lhs_len != rhs_len {
-              return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("Vector dimensions must agree: lhs is {}, rhs is {}", lhs_len, rhs_len), id: line!(), kind: MechErrorKind::None }); 
+              return Err(MechError2::new(
+                DimensionMismatch { dims: vec![lhs_len, rhs_len] },
+                None
+              ).with_compiler_loc());
             }
             Ok(Box::new(DotRDRD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) }))
           },
         )+
       )+
-      x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      x => Err(MechError2::new(
+          UnhandledFunctionArgumentKind2 { arg: x, fxn_name: stringify!($fxn).to_string() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
