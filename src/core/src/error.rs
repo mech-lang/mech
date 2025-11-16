@@ -58,7 +58,7 @@ macro_rules! compiler_loc {
   };
 }
 
-pub trait MechErrorKind2: std::fmt::Debug + Send + Sync {
+pub trait MechErrorKind2: std::fmt::Debug {
   fn name(&self) -> &str;
   fn message(&self) -> String;
 }
@@ -265,7 +265,6 @@ impl From<std::io::Error> for MechError2 {
 pub struct IoErrorWrapper {
   pub msg: String,
 }
-
 impl MechErrorKind2 for IoErrorWrapper {
   fn name(&self) -> &str { "IoError" }
 
