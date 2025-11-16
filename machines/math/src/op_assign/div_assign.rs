@@ -80,7 +80,7 @@ pub struct DivAssignValue {}
 impl NativeFunctionCompiler for DivAssignValue {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
     }
     let sink = arguments[0].clone();
     let source = arguments[1].clone();
@@ -91,7 +91,11 @@ impl NativeFunctionCompiler for DivAssignValue {
           (Value::MutableReference(sink),Value::MutableReference(source)) => { div_assign_value_fxn(sink.borrow().clone(),source.borrow().clone()) },
           (sink,Value::MutableReference(source)) => { div_assign_value_fxn(sink.clone(),source.borrow().clone()) },
           (Value::MutableReference(sink),source) => { div_assign_value_fxn(sink.borrow().clone(),source.clone()) },
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: x.clone(), fxn_name: "math/div-assign".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
@@ -162,7 +166,7 @@ pub struct DivAssignRange {}
 impl NativeFunctionCompiler for DivAssignRange {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
     }
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
@@ -170,11 +174,15 @@ impl NativeFunctionCompiler for DivAssignRange {
     match div_assign_range_fxn(sink.clone(),source.clone(),ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(x) => {
-        match (sink,ixes,source) {
+        match (&sink, &ixes, &source) {
           (Value::MutableReference(sink),ixes,Value::MutableReference(source)) => { div_assign_range_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
           (sink,ixes,Value::MutableReference(source)) => { div_assign_range_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
           (Value::MutableReference(sink),ixes,source) => { div_assign_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+              UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.to_vec(), source.clone()), fxn_name: "math/div-assign/range".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
@@ -256,7 +264,7 @@ pub struct DivAssignRangeAll {}
 impl NativeFunctionCompiler for DivAssignRangeAll {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
     }
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
@@ -264,11 +272,15 @@ impl NativeFunctionCompiler for DivAssignRangeAll {
     match div_assign_range_all_fxn(sink.clone(),source.clone(),ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
-        match (sink,ixes,source) {
+        match (&sink,&ixes,&source) {
           (Value::MutableReference(sink),ixes,Value::MutableReference(source)) => { div_assign_range_all_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
           (sink,ixes,Value::MutableReference(source)) => { div_assign_range_all_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
           (Value::MutableReference(sink),ixes,source) => { div_assign_range_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          _ => Err(MechError2::new(
+              UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.to_vec(), source.clone()), fxn_name: "math/div-assign/range-all".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }

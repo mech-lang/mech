@@ -54,7 +54,11 @@ macro_rules! impl_two_arg_fxn {
             let out: Ref<$out_kind> = unsafe{ out.as_unchecked().clone() };
             Ok(Box::new($struct_name {arg1, arg2, out}))
           },
-          _ => Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Invalid arguments to {}", stringify!($struct_name)),id: line!(),kind: MechErrorKind::IncorrectNumberOfArguments,})
+          _ => Err(MechError2::new(
+              IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
@@ -214,7 +218,11 @@ macro_rules! impl_binop_atan2 {
             Ok(Box::new([<$fxn MD $t>]{arg1, arg2, out: Ref::new(DMatrix::from_element(rows, cols, $zero_fn))}))
           },
         )+
-        x => Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("{:?}", x),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,})
+        x => Err(MechError2::new(
+            UnhandledFunctionArgumentKind2 { arg: x, fxn_name: stringify!($fxn).to_string() },
+            None
+          ).with_compiler_loc()
+        ),
       }
     }
   }
@@ -232,7 +240,7 @@ pub struct MathAtan2 {}
 impl NativeFunctionCompiler for MathAtan2 {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
     }
     let arg1 = arguments[0].clone();
     let arg2 = arguments[1].clone();
@@ -243,7 +251,11 @@ impl NativeFunctionCompiler for MathAtan2 {
           (Value::MutableReference(arg1),Value::MutableReference(arg2)) => {impl_atan2_fxn(arg1.borrow().clone(),arg2.borrow().clone())}
           (Value::MutableReference(arg1),arg2) => {impl_atan2_fxn(arg1.borrow().clone(),arg2.clone())}
           (arg1,Value::MutableReference(arg2)) => {impl_atan2_fxn(arg1.clone(),arg2.borrow().clone())}
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: x, fxn_name: "math/atan2".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }

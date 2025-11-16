@@ -57,26 +57,21 @@ pub struct MathAtanh {}
 impl NativeFunctionCompiler for MathAtanh {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError {
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: "".to_string(),
-        id: line!(),
-        kind: MechErrorKind::IncorrectNumberOfArguments,
-      });
+      return Err(MechError2::new(
+        IncorrectNumberOfArguments { expected: 1, found: arguments.len() },
+        None
+      ).with_compiler_loc());
     }
     let input = arguments[0].clone();
     match impl_atanh_fxn(input.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => match input {
         Value::MutableReference(input) => impl_atanh_fxn(input.borrow().clone()),
-        _ => Err(MechError {
-          file: file!().to_string(),
-          tokens: vec![],
-          msg: "".to_string(),
-          id: line!(),
-          kind: MechErrorKind::UnhandledFunctionArgumentKind,
-        }),
+        _ => Err(MechError2::new(
+            UnhandledFunctionArgumentKind1 { arg: input.clone(), fxn_name: "math/atanh".to_string() },
+            None
+          ).with_compiler_loc()
+        ),
       },
     }
   }

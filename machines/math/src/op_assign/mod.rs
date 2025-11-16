@@ -61,7 +61,11 @@ macro_rules! impl_op_assign_range_fxn_s {
             let sink: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self { sink, source, ixes, _marker: PhantomData::default() }))
           },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          _ => Err(MechError2::new(
+              IncorrectNumberOfArguments { expected: 3, found: args.len() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
@@ -139,7 +143,11 @@ macro_rules! impl_op_assign_range_fxn_v {
             let sink: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self { sink, source, ixes, _marker: PhantomData::default() }))
           },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          _ => Err(MechError2::new(
+              IncorrectNumberOfArguments { expected: 3, found: args.len() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
@@ -190,7 +198,7 @@ macro_rules! op_assign_range_fxn {
   ($op_fxn_name:tt, $fxn_name:ident) => {
     paste::paste! {
       fn $op_fxn_name(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-        let arg = (sink, ixes.as_slice(), source);
+        let arg = (sink.clone(), ixes.as_slice(), source.clone());
                      impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u8, "u8")
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u16, "u16"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u32, "u32"))
@@ -204,7 +212,11 @@ macro_rules! op_assign_range_fxn {
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, F64, "f64"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, R64, "rational"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, C64, "complex"))
-        .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+        .map_err(|_| MechError2::new(
+            UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.to_vec(), source.clone()), fxn_name: stringify!($fxn_name).to_string() },
+            None
+          ).with_compiler_loc()
+        )
       }
     }
   }
@@ -215,7 +227,7 @@ macro_rules! op_assign_range_all_fxn {
   ($op_fxn_name:tt, $fxn_name:ident) => {
     paste::paste! {
       fn $op_fxn_name(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-        let arg = (sink, ixes.as_slice(), source);
+        let arg = (sink.clone(), ixes.as_slice(), source.clone());
                      impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u8, "u8")
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u16, "u16"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u32, "u32"))
@@ -229,7 +241,11 @@ macro_rules! op_assign_range_all_fxn {
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, F64, "f64"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, R64, "rational"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, C64, "complex"))
-        .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+        .map_err(|_| MechError2::new(
+            UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.to_vec(), source.clone()), fxn_name: stringify!($fxn_name).to_string() },
+            None
+          ).with_compiler_loc()
+        )
       }
     }
   }
@@ -258,7 +274,7 @@ macro_rules! impl_assign_scalar_scalar {
               let sink: Ref<T> = unsafe { out.as_unchecked() }.clone();
               Ok(Box::new(Self { sink, source }))
             },
-            _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+            _ => Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc())
           }    
         }    
       }
@@ -337,7 +353,7 @@ macro_rules! impl_assign_vector_vector {
               let sink: Ref<MatA> = unsafe { out.as_unchecked() }.clone();
               Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))
             },
-            _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+            _ => Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc())
           }    
         }    
       }
@@ -408,7 +424,11 @@ macro_rules! impl_assign_vector_scalar {
               let sink: Ref<MatA> = unsafe { out.as_unchecked() }.clone();
               Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))
             },
-            _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+            _ => Err(MechError2::new(
+                IncorrectNumberOfArguments { expected: 2, found: args.len() },
+                None
+              ).with_compiler_loc()
+            )
           }    
         }    
       }
@@ -601,7 +621,11 @@ macro_rules! impl_op_assign_value_match_arms {
           #[cfg(all(feature = $feature, feature = "row_vectord"))]
           (Value::[<Matrix $value_kind>](Matrix::RowDVector(sink)), Value::[<Matrix $value_kind>](Matrix::RowDVector(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
         )+
-        x => Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Unhandled args {:?}", x),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,}),
+        x => Err(MechError2::new(
+            UnhandledFunctionArgumentKind2 { arg: x.clone(), fxn_name: stringify!($op).to_string() },
+            None
+          ).with_compiler_loc()
+        ),
       }
     }
   };

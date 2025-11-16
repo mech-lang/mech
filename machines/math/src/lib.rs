@@ -147,7 +147,10 @@ macro_rules! impl_urnop_match_arms2 {
               Ok(Box::new([<$lib $lhs_type:camel MD>]{arg, out: Ref::new(DMatrix::from_element(rows,cols,$default))}))},
           )+
         )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}", x).to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError2::new(
+          UnhandledFunctionArgumentKind1{arg: x.clone(), fxn_name: stringify!($lib).to_string()},
+          None
+        ).with_compiler_loc()),
       }}}}
 
 #[macro_export]

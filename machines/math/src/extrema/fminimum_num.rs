@@ -204,7 +204,11 @@ fn impl_fminimum_num_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dy
       let cols = arg1.borrow().ncols();
       Ok(Box::new(Fminimum_numMDF64{arg1, arg2, out: Ref::new(DMatrix::from_element(rows,cols,F64::zero()))}))
     },
-    x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    x => Err(MechError2::new(
+        UnhandledFunctionArgumentKind2 { arg: x.clone(), fxn_name: "math/fminimum-num".to_string() },
+        None
+      ).with_compiler_loc()
+    ),
   }
 }
 
@@ -213,7 +217,7 @@ pub struct MathFminimum_num {}
 impl NativeFunctionCompiler for MathFminimum_num {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
     }
     let arg1 = arguments[0].clone();
     let arg2 = arguments[1].clone();
@@ -224,7 +228,11 @@ impl NativeFunctionCompiler for MathFminimum_num {
           (Value::MutableReference(arg1),Value::MutableReference(arg2)) => {impl_fminimum_num_fxn(arg1.borrow().clone(),arg2.borrow().clone())}
           (Value::MutableReference(arg1),arg2) => {impl_fminimum_num_fxn(arg1.borrow().clone(),arg2.clone())}
           (arg1,Value::MutableReference(arg2)) => {impl_fminimum_num_fxn(arg1.clone(),arg2.borrow().clone())}
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: x.clone(), fxn_name: "math/fminimum-num".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
