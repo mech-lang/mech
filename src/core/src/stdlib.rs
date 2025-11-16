@@ -834,55 +834,69 @@ macro_rules! impl_binop_match_arms {
               let (rows,cols) = {lhs.borrow().shape()};
               let rhs_shape = rhs.shape();
               match (rows,cols,rhs_shape[0],rhs_shape[1]) {
-              // matching rows
-              (n,_,m,1) if n == m => (),
-              // matching cols
-              (_,n,1,m) if n == m => (),
-              // mismatching dimensions
-              _ => {return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![]) });},
+                // matching rows
+                (n,_,m,1) if n == m => (),
+                // matching cols
+                (_,n,1,m) if n == m => (),
+                // mismatching dimensions
+                _ => {
+                  return Err(
+                    MechError2::new(
+                      DimensionMismatch { dims: vec![rows, cols, rhs_shape[0], rhs_shape[1]] },
+                      None
+                    ).with_compiler_loc()
+                  );
+                }
               }
               match rhs {
-              #[cfg(feature = "vector2")]
-              Matrix::Vector2(rhs) => {
-                $registrar!([<$lib MDV2>], $target_type, $value_string);
-                Ok(Box::new([<$lib MDV2>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "vector3")]
-              Matrix::Vector3(rhs) => {
-                $registrar!([<$lib MDV3>], $target_type, $value_string);
-                Ok(Box::new([<$lib MDV3>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "vector4")]
-              Matrix::Vector4(rhs) => {
-                $registrar!([<$lib MDV4>], $target_type, $value_string);
-                Ok(Box::new([<$lib MDV4>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "vectord")]
-              Matrix::DVector(rhs) => {
-                $registrar!([<$lib MDVD>], $target_type, $value_string);
-                Ok(Box::new([<$lib MDVD>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "row_vector2")]
-              Matrix::RowVector2(rhs) => {
-                $registrar!([<$lib MDR2>], $target_type, $value_string);
-                Ok(Box::new([<$lib MDR2>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "row_vector3")]
-              Matrix::RowVector3(rhs) => {
-                $registrar!([<$lib MDR3>], $target_type, $value_string);
-                Ok(Box::new([<$lib MDR3>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "row_vector4")]
-              Matrix::RowVector4(rhs) => {
-                $registrar!([<$lib MDR4>], $target_type, $value_string);
-                Ok(Box::new([<$lib MDR4>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "row_vectord")]
-              Matrix::RowDVector(rhs) => {
-                $registrar!([<$lib MDRD>], $target_type, $value_string);
-                Ok(Box::new([<$lib MDRD>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              _ => {return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![]) });},
+                #[cfg(feature = "vector2")]
+                Matrix::Vector2(rhs) => {
+                  $registrar!([<$lib MDV2>], $target_type, $value_string);
+                  Ok(Box::new([<$lib MDV2>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "vector3")]
+                Matrix::Vector3(rhs) => {
+                  $registrar!([<$lib MDV3>], $target_type, $value_string);
+                  Ok(Box::new([<$lib MDV3>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "vector4")]
+                Matrix::Vector4(rhs) => {
+                  $registrar!([<$lib MDV4>], $target_type, $value_string);
+                  Ok(Box::new([<$lib MDV4>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "vectord")]
+                Matrix::DVector(rhs) => {
+                  $registrar!([<$lib MDVD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib MDVD>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "row_vector2")]
+                Matrix::RowVector2(rhs) => {
+                  $registrar!([<$lib MDR2>], $target_type, $value_string);
+                  Ok(Box::new([<$lib MDR2>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "row_vector3")]
+                Matrix::RowVector3(rhs) => {
+                  $registrar!([<$lib MDR3>], $target_type, $value_string);
+                  Ok(Box::new([<$lib MDR3>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "row_vector4")]
+                Matrix::RowVector4(rhs) => {
+                  $registrar!([<$lib MDR4>], $target_type, $value_string);
+                  Ok(Box::new([<$lib MDR4>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "row_vectord")]
+                Matrix::RowDVector(rhs) => {
+                  $registrar!([<$lib MDRD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib MDRD>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                x => {
+                  return Err(
+                    MechError2::new(
+                      DimensionMismatch { dims: vec![rows, cols, rhs_shape[0], rhs_shape[1]] },
+                      None
+                    ).with_compiler_loc()
+                  );
+                }
               }
             },
             // Vector Matrix
@@ -942,60 +956,77 @@ macro_rules! impl_binop_match_arms {
               let (rows,cols) = {rhs.borrow().shape()};
               let lhs_shape = lhs.shape();
               match (lhs_shape[0],lhs_shape[1],rows,cols) {
-              // matching rows
-              (m,1,n,_) if n == m => (),
-              // matching cols
-              (1,m,_,n) if n == m => (),
-              // mismatching dimensions
-              _ => {return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![]) });},
+                // matching rows
+                (m,1,n,_) if n == m => (),
+                // matching cols
+                (1,m,_,n) if n == m => (),
+                // mismatching dimensions
+                _ => {
+                  return Err(
+                    MechError2::new(
+                      DimensionMismatch { dims: vec![lhs_shape[0], lhs_shape[1], rows, cols] },
+                      None
+                    ).with_compiler_loc()
+                  );
+                }
               }
               match lhs {
-              #[cfg(feature = "vector2")]
-              Matrix::Vector2(lhs) => {
-                $registrar!([<$lib V2MD>], $target_type, $value_string);
-                Ok(Box::new([<$lib V2MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "vector3")]
-              Matrix::Vector3(lhs) => {
-                $registrar!([<$lib V3MD>], $target_type, $value_string);
-                Ok(Box::new([<$lib V3MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "vector4")]
-              Matrix::Vector4(lhs) => {
-                $registrar!([<$lib V4MD>], $target_type, $value_string);
-                Ok(Box::new([<$lib V4MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "vectord")]
-              Matrix::DVector(lhs) => {
-                $registrar!([<$lib VDMD>], $target_type, $value_string);
-                Ok(Box::new([<$lib VDMD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "row_vector2")]
-              Matrix::RowVector2(lhs) => {
-                $registrar!([<$lib R2MD>], $target_type, $value_string);
-                Ok(Box::new([<$lib R2MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "row_vector3")]
-              Matrix::RowVector3(lhs) => {
-                $registrar!([<$lib R3MD>], $target_type, $value_string);
-                Ok(Box::new([<$lib R3MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "row_vector4")]
-              Matrix::RowVector4(lhs) => {
-                $registrar!([<$lib R4MD>], $target_type, $value_string);
-                Ok(Box::new([<$lib R4MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "row_vectord")]
-              Matrix::RowDVector(lhs) => {
-                $registrar!([<$lib RDMD>], $target_type, $value_string);
-                Ok(Box::new([<$lib RDMD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              _ => {return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![]) });},
+                #[cfg(feature = "vector2")]
+                Matrix::Vector2(lhs) => {
+                  $registrar!([<$lib V2MD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib V2MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "vector3")]
+                Matrix::Vector3(lhs) => {
+                  $registrar!([<$lib V3MD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib V3MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "vector4")]
+                Matrix::Vector4(lhs) => {
+                  $registrar!([<$lib V4MD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib V4MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "vectord")]
+                Matrix::DVector(lhs) => {
+                  $registrar!([<$lib VDMD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib VDMD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "row_vector2")]
+                Matrix::RowVector2(lhs) => {
+                  $registrar!([<$lib R2MD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib R2MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "row_vector3")]
+                Matrix::RowVector3(lhs) => {
+                  $registrar!([<$lib R3MD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib R3MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "row_vector4")]
+                Matrix::RowVector4(lhs) => {
+                  $registrar!([<$lib R4MD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib R4MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "row_vectord")]
+                Matrix::RowDVector(lhs) => {
+                  $registrar!([<$lib RDMD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib RDMD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                _ => {
+                  return Err(
+                    MechError2::new(
+                      DimensionMismatch { dims: vec![lhs_shape[0], lhs_shape[1], rows, cols] },
+                      None
+                    ).with_compiler_loc()
+                  );
+                }
               }
             }
           )+
         )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (lhs,rhs) => Err(MechError2::new(
+          UnhandledFunctionArgumentKind{lhs, rhs, fxn_name: stringify!($lib).to_string()},
+          None
+        ).with_compiler_loc()),
       }
     }
   }
@@ -1057,7 +1088,7 @@ macro_rules! impl_mech_binop_fxn {
     impl NativeFunctionCompiler for $fxn_name {
       fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
-          return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+          return Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());
         }
         let lhs_value = arguments[0].clone();
         let rhs_value = arguments[1].clone();
@@ -1068,7 +1099,11 @@ macro_rules! impl_mech_binop_fxn {
               (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {$gen_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
               (lhs_value,Value::MutableReference(rhs)) => { $gen_fxn(lhs_value.clone(), rhs.borrow().clone())}
               (Value::MutableReference(lhs),rhs_value) => { $gen_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-              x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              (lhs, rhs) => Err(MechError2::new(
+                  UnhandledFunctionArgumentKind { lhs,rhs,fxn_name: "combinatorics/n-choose-k".to_string() },
+                  None
+                ).with_compiler_loc()
+              ),            
             }
           }
         }
