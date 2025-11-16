@@ -512,9 +512,9 @@ where T: Debug + Clone + PartialEq + 'static
 {
 
   pub fn append(&mut self, other: &Matrix<T>) -> MResult<()> {
-    match (self, other) {
+    match (&self, &other) {
       #[cfg(feature = "vectord")]
-      (Matrix::DVector(lhs), Matrix::DVector(rhs)) => {
+      (Matrix::DVector(ref lhs), Matrix::DVector(ref rhs)) => {
         let mut lhs = lhs.borrow_mut();
         let rhs = rhs.borrow();
         let old_len = lhs.len();
@@ -525,7 +525,7 @@ where T: Debug + Clone + PartialEq + 'static
         Ok(())
       }
       #[cfg(feature = "row_vectord")]
-      (Matrix::RowDVector(lhs), Matrix::RowDVector(rhs)) => {
+      (Matrix::RowDVector(ref lhs), Matrix::RowDVector(ref rhs)) => {
         let mut lhs = lhs.borrow_mut();
         let rhs = rhs.borrow();
         let old_len = lhs.len();
@@ -537,18 +537,18 @@ where T: Debug + Clone + PartialEq + 'static
       }
       _ => {
         return Err(
-            MechError2::new(
-                IncompatibleMatrixAppendError {
-                    lhs_rows: self.rows(),
-                    lhs_cols: self.cols(),
-                    rhs_rows: other.rows(),
-                    rhs_cols: other.cols(),
-                },
-                None,
-            )
-            .with_compiler_loc()
+          MechError2::new(
+            IncompatibleMatrixAppendError {
+              lhs_rows: self.rows(),
+              lhs_cols: self.cols(),
+              rhs_rows: other.rows(),
+              rhs_cols: other.cols(),
+            },
+            None,
+          )
+          .with_compiler_loc()
         );
-      }    
+      }
     }
   }
 
