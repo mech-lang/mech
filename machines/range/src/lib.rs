@@ -59,6 +59,8 @@ pub use self::exclusive::*;
 #[cfg(feature = "inclusive")]
 pub use self::inclusive::*;
 
+use mech_core::MechErrorKind2;
+
 // ----------------------------------------------------------------------------
 // Range Library
 // ----------------------------------------------------------------------------
@@ -75,4 +77,23 @@ macro_rules! register_range {
       }
     }
   };
+}
+
+#[derive(Debug)]
+pub struct EmptyRangeError;
+impl MechErrorKind2 for EmptyRangeError {
+  fn name(&self) -> &str { "EmptyRange" }
+  fn message(&self) -> String {
+    "Range size must be > 0".to_string()
+  }
+}
+
+#[derive(Debug)]
+pub struct RangeSizeOverflowError;
+
+impl MechErrorKind2 for RangeSizeOverflowError {
+  fn name(&self) -> &str { "RangeSizeOverflow" }
+  fn message(&self) -> String {
+    "Range size overflow".to_string()
+  }
 }
