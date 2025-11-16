@@ -262,6 +262,15 @@ impl From<std::io::Error> for MechError2 {
 }
 
 #[derive(Debug)]
+pub struct DimensionMismatch {
+  pub dims: Vec<usize>,
+}
+impl MechErrorKind2 for DimensionMismatch {
+  fn name(&self) -> &str { "DimensionMismatch" }
+  fn message(&self) -> String { format!("Matrix dimension mismatch: {:?}", self.dims) }
+}
+
+#[derive(Debug)]
 pub struct IoErrorWrapper {
   pub msg: String,
 }
