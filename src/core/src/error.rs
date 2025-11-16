@@ -251,6 +251,29 @@ impl From<()> for MechError {
   }
 }
 
+impl From<std::io::Error> for MechError2 {
+  fn from(err: std::io::Error) -> Self {
+    MechError2::new(
+      IoErrorWrapper { msg: err.to_string() },
+      None
+    )
+    .with_compiler_loc()
+  }
+}
+
+#[derive(Debug)]
+pub struct IoErrorWrapper {
+  pub msg: String,
+}
+
+impl MechErrorKind2 for IoErrorWrapper {
+  fn name(&self) -> &str { "IoError" }
+
+  fn message(&self) -> String {
+    format!("IO error: {}", self.msg)
+  }
+}
+
 /*
 impl fmt::Debug for MechErrorKind {
   #[inline]
