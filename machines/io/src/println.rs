@@ -16,7 +16,7 @@ where
   Mat: Debug + Clone +
        CompileConst + ConstElem + AsValueKind + 'static + Default,
 {
-  fn new(args: FunctionArgs) -> Result<Box<dyn MechFunction>, MechError> {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
       FunctionArgs::Nullary(out) => {
         let out: Ref<Value> = unsafe { out.as_unchecked() }.clone();
@@ -107,7 +107,7 @@ where
   CompileConst + ConstElem + AsValueKind +
   Debug + Default,
 {
-  fn new(args: FunctionArgs) -> Result<Box<dyn MechFunction>, MechError> {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
       FunctionArgs::Nullary(out) => {
         let e0: Ref<T> = unsafe { out.as_unchecked() }.clone();
