@@ -520,6 +520,22 @@ pub enum OpCode {
   Return    = 0xFF,
 }
 
+impl std::fmt::Display for OpCode {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let s = match self {
+      OpCode::ConstLoad => "ConstLoad",
+      OpCode::NullOp    => "NullOp",
+      OpCode::Unop      => "Unop",
+      OpCode::Binop     => "Binop",
+      OpCode::Ternop    => "Ternop",
+      OpCode::Quadop    => "Quadop",
+      OpCode::VarArg    => "VarArg",
+      OpCode::Return    => "Return",
+    };
+    write!(f, "{}", s)
+  }
+}
+
 impl OpCode {
   pub fn from_u8(num: u8) -> Option<OpCode> {
     match num {
