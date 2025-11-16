@@ -32,7 +32,11 @@ where
         let out: Ref<T> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self {arg, out, _marker: PhantomData::default() }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 1, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -86,7 +90,11 @@ where
         let out: Ref<MatA> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self {arg, out, _marker: PhantomData::default() }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 1, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
