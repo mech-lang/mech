@@ -25,7 +25,7 @@ where
   Not<Output = T>,
   Ref<T>: ToValue,
 {
-  fn new(args: FunctionArgs) -> Result<Box<dyn MechFunction>, MechError> {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
       FunctionArgs::Unary(out, arg) => {
         let arg: Ref<T> = unsafe { arg.as_unchecked() }.clone();
@@ -79,7 +79,7 @@ where
   MatA: Debug + CompileConst + ConstElem + AsValueKind + 'static,
   Ref<MatA>: ToValue
 {
-  fn new(args: FunctionArgs) -> Result<Box<dyn MechFunction>, MechError> {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
       FunctionArgs::Unary(out, arg) => {
         let arg: Ref<MatA> = unsafe { arg.as_unchecked() }.clone();
@@ -126,7 +126,7 @@ where
   }
 }
 
-fn impl_not_fxn(arg_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_not_fxn(arg_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms!(
     Not,
     (arg_value),
