@@ -68,7 +68,11 @@ where
         let out = unsafe { out.as_unchecked().clone() };
         Ok(Box::new(StatsSumColumnRD2 { arg, out }))
       }
-      _ => Err(MechError {file: file!().to_string(),tokens: vec![],msg: "".to_string(),id: line!(),kind: MechErrorKind::None,}),
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -146,7 +150,10 @@ macro_rules! impl_stats_sum_column_match_arms {
             Value::[<Matrix $input_type>](Matrix::<$target_type>::DMatrix(arg)) => Ok(Box::new(StatsSumColumnMD{arg: arg.clone(), out: Ref::new(DVector::from_element(arg.borrow().nrows(),$target_type::default())) })),
           )+
         )+
-        _ => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        _ => Err(MechError2::new(
+          UnhandledFunctionArgumentKind1 {arg: $arg, fxn_name: stringify!(StatsSumColumn).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     }
   }

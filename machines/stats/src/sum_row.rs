@@ -98,7 +98,11 @@ macro_rules! sum_row_op2 {
             Value::[<Matrix $input_type>](Matrix::<$target_type>::DMatrix(arg)) => Ok(Box::new(StatsSumRowMD{arg: arg.clone(), out: Ref::new(RowDVector::from_element(arg.borrow().ncols(), $target_type::default())) })),
           )+
         )+
-        x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{:?}", x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError2::new(
+            UnhandledFunctionArgumentKind1 {arg: x, fxn_name: stringify!(StatsSumRow).to_string() },
+            None
+          ).with_compiler_loc()
+        ),
       }
     }
   }

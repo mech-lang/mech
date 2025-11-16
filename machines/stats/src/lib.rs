@@ -77,7 +77,11 @@ macro_rules! impl_stats_unop {
             let out = unsafe{ out.as_unchecked().clone() };
             Ok(Box::new($struct_name { arg, out }))
           }
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None})
+          _ => Err(MechError2::new(
+              IncorrectNumberOfArguments { expected: 2, found: args.len() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
