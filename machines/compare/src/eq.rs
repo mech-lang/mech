@@ -106,13 +106,11 @@ impl MechFunctionFactory for TableEq {
         let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(TableEq { lhs, rhs, out }))
       }
-      _ => Err(MechError {
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: "".to_string(),
-        id: line!(),
-        kind: MechErrorKind::IncorrectNumberOfArguments,
-      }),
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -138,7 +136,7 @@ impl MechFunctionCompiler for TableEq {
   }
 }
 
-fn impl_eq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_eq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   match (&lhs_value, &rhs_value) {
     #[cfg(all(feature = "table"))]
     (Value::Table(lhs), Value::Table(rhs)) => {

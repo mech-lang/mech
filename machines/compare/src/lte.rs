@@ -99,7 +99,7 @@ macro_rules! lte_row_mat_op {
 
 impl_compare_fxns!(LTE);
 
-fn impl_lte_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_lte_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_binop_match_arms!(
     LTE,
     register_fxn_descriptor_inner,
