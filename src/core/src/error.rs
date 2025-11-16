@@ -271,6 +271,18 @@ impl MechErrorKind2 for DimensionMismatch {
 }
 
 #[derive(Debug)]
+pub struct GenericError {
+  pub msg: String,
+}
+impl MechErrorKind2 for GenericError {
+  fn name(&self) -> &str { "GenericError" }
+
+  fn message(&self) -> String {
+    format!("Error: {}", self.msg)
+  }
+}
+
+#[derive(Debug)]
 pub struct IoErrorWrapper {
   pub msg: String,
 }

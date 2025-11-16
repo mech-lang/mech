@@ -296,25 +296,72 @@ pub struct FunctionRegistry {
 }
 
 #[derive(Debug)]
-pub struct UnhandledFunctionArgumentKind {
-  pub lhs: Value,
-  pub rhs: Value,
+pub struct UnhandledFunctionArgumentKind1 {
+  pub arg: Value,
   pub fxn_name: String,
 }
-impl MechErrorKind2 for UnhandledFunctionArgumentKind {
-  fn name(&self) -> &str { "UnhandledFunctionArgumentKind" }
+impl MechErrorKind2 for UnhandledFunctionArgumentKind1 {
+  fn name(&self) -> &str { "UnhandledFunctionArgumentKind1" }
   fn message(&self) -> String {
-    format!("Unhandled function argument kinds for function '{}': lhs = {:?}, rhs = {:?}", self.fxn_name, self.lhs, self.rhs)
+    format!("Unhandled function argument kind for function '{}': arg = {:?}", self.fxn_name, self.arg)
   }
 }
 
 #[derive(Debug)]
 pub struct UnhandledFunctionArgumentKind2 {
-  pub arg: Value,
+  pub arg: (Value, Value),
   pub fxn_name: String,
 }
 impl MechErrorKind2 for UnhandledFunctionArgumentKind2 {
   fn name(&self) -> &str { "UnhandledFunctionArgumentKind2" }
+  fn message(&self) -> String {
+    format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
+  }
+}
+
+#[derive(Debug)]
+pub struct UnhandledFunctionArgumentKind3 {
+  pub arg: (Value, Value, Value),
+  pub fxn_name: String,
+}
+impl MechErrorKind2 for UnhandledFunctionArgumentKind3 {
+  fn name(&self) -> &str { "UnhandledFunctionArgumentKind3" }
+  fn message(&self) -> String {
+    format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
+  }
+}
+
+#[derive(Debug)]
+pub struct UnhandledFunctionArgumentKind4 {
+  pub arg: (Value, Value, Value, Value),
+  pub fxn_name: String,
+}
+impl MechErrorKind2 for UnhandledFunctionArgumentKind4 {
+  fn name(&self) -> &str { "UnhandledFunctionArgumentKind4" }
+  fn message(&self) -> String {
+    format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
+  }
+}
+
+#[derive(Debug)]
+pub struct UnhandledFunctionArgumentKindVarg {
+  pub arg: Vec<Value>,
+  pub fxn_name: String,
+}
+impl MechErrorKind2 for UnhandledFunctionArgumentKindVarg {
+  fn name(&self) -> &str { "UnhandledFunctionArgumentKindVarg" }
+  fn message(&self) -> String {
+    format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
+  }
+}
+
+#[derive(Debug)]
+pub struct UnhandledFunctionArgumentIxes {
+  pub arg: (Value, Vec<Value>, Value),
+  pub fxn_name: String,
+}
+impl MechErrorKind2 for UnhandledFunctionArgumentIxes {
+  fn name(&self) -> &str { "UnhandledFunctionArgumentIxes" }
   fn message(&self) -> String {
     format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
   }
