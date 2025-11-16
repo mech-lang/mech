@@ -32,6 +32,19 @@ pub enum FunctionArgs {
   Variadic(Value, Vec<Value>),
 }
 
+impl FunctionArgs {
+  pub fn len(&self) -> usize {
+    match self {
+      FunctionArgs::Nullary(_) => 0,
+      FunctionArgs::Unary(_, _) => 1,
+      FunctionArgs::Binary(_, _, _) => 2,
+      FunctionArgs::Ternary(_, _, _, _) => 3,
+      FunctionArgs::Quaternary(_, _, _, _, _) => 4,
+      FunctionArgs::Variadic(_, args) => args.len(),
+    }
+  }
+}
+
 #[repr(C)]
 #[derive(Clone)]
 pub struct FunctionDescriptor {
@@ -280,4 +293,32 @@ impl PrettyPrint for Plan {
 
 pub struct FunctionRegistry {
   pub registry: RefCell<HashMap<u64, Box<dyn MechFunctionImpl>>>,
+}
+
+#[derive(Debug)]
+pub struct UnhandledFunctionArgumentKind {
+  pub lhs: Value,
+  pub rhs: Value,
+  pub fxn_name: String,
+}
+impl MechErrorKind2 for UnhandledFunctionArgumentKind {
+  fn name(&self) -> &str { "UnhandledFunctionArgumentKind" }
+  fn message(&self) -> String {
+    format!("Unhandled function argument kinds for function '{}': lhs = {:?}, rhs = {:?}", self.fxn_name, self.lhs, self.rhs)
+  }
+}
+
+#[derive(Debug)]
+pub struct IncorrectNumberOfArguments {
+  pub expected: usize,
+  pub found: usize,
+}
+impl MechErrorKind2 for IncorrectNumberOfArguments {
+  fn name(&self) -> &str {
+    "IncorrectNumberOfArguments"
+  }
+
+  fn message(&self) -> String {
+    format!("Expected {} arguments, but found {}", self.expected, self.found)
+  }
 }
