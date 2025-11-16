@@ -142,7 +142,7 @@ macro_rules! impl_transpose_match_arms {
   }
 }
 
-fn impl_transpose_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_transpose_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_transpose_match_arms!(
     (lhs_value),
     Bool,   bool,   "bool";

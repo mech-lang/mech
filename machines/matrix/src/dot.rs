@@ -121,7 +121,7 @@ macro_rules! impl_dot_match_arms {
   }
 }
 
-fn impl_dot_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_dot_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_dot_match_arms!(
     (lhs_value, rhs_value),
     I8,   MatrixI8,   i8,   "i8";
