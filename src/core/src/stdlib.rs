@@ -1084,7 +1084,7 @@ macro_rules! impl_urnop_match_arms {
           )+
         )+
         x => Err(MechError2::new(
-          UnhandledFunctionArgumentKind2{arg: x.clone(), fxn_name: stringify!($lib).to_string()},
+          UnhandledFunctionArgumentKind1{arg: x.clone(), fxn_name: stringify!($lib).to_string()},
           None
         ).with_compiler_loc()),
       }
