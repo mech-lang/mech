@@ -309,6 +309,18 @@ impl MechErrorKind2 for UnhandledFunctionArgumentKind {
 }
 
 #[derive(Debug)]
+pub struct UnhandledFunctionArgumentKind2 {
+  pub arg: Value,
+  pub fxn_name: String,
+}
+impl MechErrorKind2 for UnhandledFunctionArgumentKind2 {
+  fn name(&self) -> &str { "UnhandledFunctionArgumentKind2" }
+  fn message(&self) -> String {
+    format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
+  }
+}
+
+#[derive(Debug)]
 pub struct IncorrectNumberOfArguments {
   pub expected: usize,
   pub found: usize,
