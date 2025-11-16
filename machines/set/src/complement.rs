@@ -17,7 +17,7 @@ macro_rules! complement_op {
 
 impl_set_fxns!(Complement);
 
-fn impl_complement_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_complement_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 	impl_binop_match_arms!(
 		Complement,
 		register_fxn_descriptor_inner,

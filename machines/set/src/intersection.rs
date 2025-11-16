@@ -17,7 +17,7 @@ macro_rules! intersection_op {
 
 impl_set_fxns!(Intersection);
 
-fn impl_intersection_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_intersection_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 	impl_binop_match_arms!(
 		Intersection,
 		register_fxn_descriptor_inner,

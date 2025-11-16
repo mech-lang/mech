@@ -17,7 +17,7 @@ macro_rules! difference_op {
 
 impl_set_fxns!(Difference);
 
-fn impl_difference_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_difference_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 	impl_binop_match_arms!(
 		Difference,
 		register_fxn_descriptor_inner,
