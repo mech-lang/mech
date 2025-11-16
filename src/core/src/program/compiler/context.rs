@@ -222,7 +222,15 @@ impl CompileCtx {
     // sanity check: the position should equal file_len_before_trailer
     let pos = buf.position();
     if pos != file_len_before_trailer {
-      return Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Buffer position mismatch: expected {}, got {}", file_len_before_trailer, pos),id: line!(),kind: MechErrorKind::GenericError("Buffer position mismatch".to_string()),});
+      return Err(
+        MechError2::new(
+          BufferPositionMismatchError {
+            expected: file_len_before_trailer,
+            got: pos,
+          },
+          None
+        ).with_compiler_loc()
+      );
     }
 
     let bytes_so_far = buf.get_ref().as_slice();
@@ -230,7 +238,15 @@ impl CompileCtx {
     buf.write_u32::<LittleEndian>(checksum)?;
 
     if buf.position() != full_file_len {
-      return Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Final buffer length mismatch: expected {}, got {}", full_file_len, buf.position()),id: line!(),kind: MechErrorKind::GenericError("Final buffer length mismatch".to_string()),});
+      return Err(
+        MechError2::new(
+          FinalBufferLengthMismatchError {
+            expected: full_file_len,
+            got: buf.position(),
+          },
+          None,
+        ).with_compiler_loc()
+      );
     }
 
     Ok(buf.into_inner())
@@ -241,4 +257,30 @@ impl CompileCtx {
 fn align_up(offset: u64, align: u64) -> u64 {
   if align == 0 { return offset; }
   ((offset + align - 1) / align) * align
+}
+
+#[derive(Debug)]
+pub struct BufferPositionMismatchError {
+  pub expected: u64,
+  pub got: u64,
+}
+
+impl MechErrorKind2 for BufferPositionMismatchError {
+  fn name(&self) -> &str { "BufferPositionMismatch" }
+  fn message(&self) -> String {
+    format!("Buffer position mismatch: expected {}, got {}", self.expected, self.got)
+  }
+}
+
+#[derive(Debug)]
+pub struct FinalBufferLengthMismatchError {
+  pub expected: u64,
+  pub got: u64,
+}
+
+impl MechErrorKind2 for FinalBufferLengthMismatchError {
+  fn name(&self) -> &str { "FinalBufferLengthMismatch" }
+  fn message(&self) -> String {
+    format!("Final buffer length mismatch: expected {}, got {}", self.expected, self.got)
+  }
 }
