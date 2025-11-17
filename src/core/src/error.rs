@@ -7,30 +7,6 @@ use crate::*;
 
 type Rows = usize;
 type Cols = usize;
-pub type ParserErrorReport = Vec<ParserErrorContext>;
-
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct SourceRange {
-  pub file_id: u64,
-  pub start: u32,   
-  pub end: u32,
-}
-
-impl SourceRange {
-  pub fn new(file_id: u64, start: u32, end: u32) -> Self {
-    Self { file_id, start, end }
-  }
-
-  pub fn empty(file_id: u64, pos: u32) -> Self {
-    Self { file_id, start: pos, end: pos }
-  }
-
-  pub fn length(&self) -> u32 {
-    self.end - self.start
-  }
-}
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -115,7 +91,7 @@ impl MechError2 {
   }
 
   pub fn primary_range(&self) -> Option<SourceRange> {
-    self.program_range
+    self.program_range.clone()
   }
 
   pub fn simple_message(&self) -> String {
@@ -166,14 +142,6 @@ pub struct MechError{
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-pub struct ParserErrorContext {
-  pub cause_rng: SourceRange,
-  pub err_message: String,
-  pub annotation_rngs: Vec<SourceRange>,
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MechErrorKind {
   UndefinedField(u64),                               // Accessed a field of a record that's not defined
   UndefinedVariable(u64),                            // Accessed a variable that's not defined
@@ -217,7 +185,6 @@ pub enum MechErrorKind {
   IncorrectNumberOfArguments,
   //UnhandledTableShape(TableShape),
   TooManyInputArguments(usize,usize),                // (given,expected)
-  ParserError(ParserErrorReport, String),
   //MissingCapability(Capability),
   InvalidCapabilityToken,
   UnknownReplCommand(String),
