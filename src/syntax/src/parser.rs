@@ -14,7 +14,7 @@
 use crate::*;
 use crate::functions::function_define;
 
-use mech_core::{MechError, MechErrorKind, ParserErrorContext, ParserErrorReport};
+use mech_core::{MechError, MechErrorKind};
 use mech_core::nodes::*;
 use mech_core::nodes::{SectionElement, MechString, Table};
 
@@ -402,13 +402,15 @@ pub fn parse_grammar(text: &str) -> MResult<Grammar> {
   if error_log.is_empty() {
     Ok(result_node.unwrap())
   } else {
-    let report: ParserErrorReport = error_log.into_iter().map(|e| ParserErrorContext {
+    let report: Vec<ParserErrorContext> = error_log.into_iter().map(|e| ParserErrorContext {
       cause_rng: e.0,
       err_message: String::from(e.1.message),
       annotation_rngs: e.1.annotation_rngs,
     }).collect();
-    let msg = TextFormatter::new(text).format_error(&report);
-    Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 3202, kind: MechErrorKind::ParserError(report, msg)})
+    Err(MechError2::new(
+      ParserErrorReport(report),
+      None
+    ))
   }
 }
 
@@ -449,12 +451,14 @@ pub fn parse(text: &str) -> MResult<Program> {
   if error_log.is_empty() {
     Ok(result_node.unwrap())
   } else {
-    let report: ParserErrorReport = error_log.into_iter().map(|e| ParserErrorContext {
+    let report: Vec<ParserErrorContext> = error_log.into_iter().map(|e| ParserErrorContext {
       cause_rng: e.0,
       err_message: String::from(e.1.message),
       annotation_rngs: e.1.annotation_rngs,
     }).collect();
-    let msg = TextFormatter::new(text).format_error(&report);
-    Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 3202, kind: MechErrorKind::ParserError(report, msg)})
+    Err(MechError2::new(
+      ParserErrorReport(report),
+      None
+    ))
   }
 }

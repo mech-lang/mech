@@ -22,6 +22,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use num_traits::*;
 
+#[cfg(feature = "serde")] use serde::{Serialize, Deserialize};
+
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(feature = "no-std")] use alloc::string::String;
@@ -637,20 +639,40 @@ impl<'a> TextFormatter<'a> {
 
   /// Get formatted error message.
   pub fn format_error(&self, errors: &ParserErrorReport) -> String {
-    let n = usize::min(errors.len(), 10);
+    let n = usize::min(errors.0.len(), 10);
     let mut result = String::new();
     result.push('\n');
     for i in 0..n {
-      let ctx = &errors[i];
+      let ctx = &errors.0[i];
       result.push_str(&Self::err_heading(i));
       result.push_str(&self.err_location(ctx));
       result.push_str(&self.err_context(ctx));
       result.push_str("\n\n");
     }
-    let d = errors.len() - n;
+    let d = errors.0.len() - n;
     if d != 0 {
       result.push_str(&Self::err_ending(d));
     }
     result
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct ParserErrorReport(Vec<ParserErrorContext>);
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct ParserErrorContext {
+  pub cause_rng: SourceRange,
+  pub err_message: String,
+  pub annotation_rngs: Vec<SourceRange>,
+}
+impl MechErrorKind2 for ParserErrorReport {
+  fn name(&self) -> &str {
+    "ParserErrorContext"
+  }
+  fn message(&self) -> String {
+    self.0.iter().map(|e| e.err_message.clone()).collect::<Vec<_>>().join(", ")
   }
 }
