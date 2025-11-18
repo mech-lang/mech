@@ -79,7 +79,7 @@ macro_rules! register_range {
   };
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EmptyRangeError;
 impl MechErrorKind2 for EmptyRangeError {
   fn name(&self) -> &str { "EmptyRange" }
@@ -88,7 +88,7 @@ impl MechErrorKind2 for EmptyRangeError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RangeSizeOverflowError;
 
 impl MechErrorKind2 for RangeSizeOverflowError {
