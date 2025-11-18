@@ -74,10 +74,18 @@ fn impl_set_record_column_fxn(sink: Value, source: Value, key: Value) -> MResult
         (Some(Value::C64(sink)), Value::C64(source)) => return Ok(Box::new(RecordAssign{sink: sink.clone(), source: source.clone()})),
         #[cfg(all(feature = "rational", feature = "record"))]
         (Some(Value::R64(sink)), Value::R64(source)) => return Ok(Box::new(RecordAssign{sink: sink.clone(), source: source.clone()})),
-        _ => return Err(MechError {file: file!().to_string(),tokens: vec![],msg: "".to_string(),id: line!(),kind: MechErrorKind::UndefinedField(*k)}),
+        _ => return Err(MechError2::new(
+            UndefinedRecordFieldError { id: k.clone() },
+            None
+          ).with_compiler_loc()
+        ),
       }
     }
-    _ => return Err(MechError{file: file!().to_string(),tokens: vec![],msg: "".to_string(),id: line!(),kind: MechErrorKind::None}),
+    _ => return Err(MechError2::new(
+      UnhandledFunctionArgumentKind3 { arg: (sink.clone(), source.clone(), key.clone()), fxn_name: "record/assign-column".to_string() },
+      None
+    ).with_compiler_loc()
+    ),
   }
 }
 
@@ -85,7 +93,7 @@ pub struct AssignRecordColumn {}
 impl NativeFunctionCompiler for AssignRecordColumn {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() < 3 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let sink = arguments[0].clone();
     let source = arguments[1].clone();
@@ -95,9 +103,25 @@ impl NativeFunctionCompiler for AssignRecordColumn {
       Err(_) => {
         match (&sink,&source,&key) {
           (Value::MutableReference(sink),_,_) => { impl_set_record_column_fxn(sink.borrow().clone(), source.clone(), key.clone()) }
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+              UnhandledFunctionArgumentKind3 { arg: (arguments[0].clone(), arguments[1].clone(), arguments[2].clone()), fxn_name: "record/assign-column".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
+  }
+}
+
+
+#[derive(Debug)]
+pub struct UndefinedRecordFieldError {
+  pub id: u64,
+}
+impl MechErrorKind2 for UndefinedRecordFieldError {
+  fn name(&self) -> &str { "UndefinedRecordField" }
+  fn message(&self) -> String {
+      format!("Field {:?} is not defined in this record.", self.id)
   }
 }

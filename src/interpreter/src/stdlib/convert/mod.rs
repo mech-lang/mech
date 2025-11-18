@@ -574,3 +574,12 @@ macro_rules! impl_lossy_from_numeric_to_string {
 }
 
 impl_lossy_from_numeric_to_string!(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
+
+#[derive(Debug)]
+pub struct UnsupportedConversionError{from: ValueKind, to: ValueKind}
+impl MechErrorKind2 for UnsupportedConversionError {
+  fn name(&self) -> &str { "UnsupportedConversion" }
+  fn message(&self) -> String {
+    format!("Unsupported conversion from {:?} to {:?}", self.from, self.to)
+  }
+}
