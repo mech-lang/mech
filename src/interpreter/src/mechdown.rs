@@ -124,7 +124,11 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     SectionElement::QuoteBlock(x) => x.hash(&mut hasher),
     SectionElement::ThematicBreak => {return Ok(Value::Empty);}
     SectionElement::List(x) => x.hash(&mut hasher),
-    x => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Feature not enabled {:?}", x), id: line!(), kind: MechErrorKind::None});}
+    x => {return Err(MechError2::new(
+        FeatureNotEnabledError,
+        None
+      ).with_compiler_loc().with_tokens(x.tokens())
+    );}
   };
   let hash = hasher.finish();
   Ok(Value::Id(hash))
@@ -141,7 +145,11 @@ pub fn paragraph_element(element: &ParagraphElement, p: &Interpreter) -> MResult
                       // What we really need to do is just defer the execution of this thing to the very end
       }
     }
-    _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None});}
+    _ => {return Err(MechError2::new(
+        NotExecutableError{},
+        None
+      ).with_compiler_loc().with_tokens(element.tokens())
+    );}
   };
   Ok(result)
 }
@@ -174,7 +182,11 @@ pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
       */
     },
     MechCode::Comment(cmmt) => comment(&cmmt, p),
-    x => Err(MechError{file: file!().to_string(), tokens: x.tokens(), msg: format!("Feature not enabled {:?}", x), id: line!(), kind: MechErrorKind::None}),
+    x => Err(MechError2::new(
+        FeatureNotEnabledError,
+        None
+      ).with_compiler_loc().with_tokens(x.tokens())
+    ),
   }
 }
   

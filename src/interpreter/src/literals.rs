@@ -19,7 +19,9 @@ pub fn literal(ltrl: &Literal, p: &Interpreter) -> MResult<Value> {
     Literal::Kind(knd) => kind_value(knd, p),
     #[cfg(feature = "convert")]
     Literal::TypedLiteral((ltrl,kind)) => typed_literal(ltrl,kind,p),
-    _ => Err(MechError{file: file!().to_string(), tokens: ltrl.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+    _ => Err(MechError2::new(
+      FeatureNotEnabledError, None
+      ).with_compiler_loc())
   }
 }
 
@@ -69,8 +71,11 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
           _ => {
             match dim_val.as_usize() {
               Ok(size_val) => dims.push(size_val.clone()),
-              Err(_) => { return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
-            }
+              Err(_) => { return Err(MechError2::new(
+                ExpectedNumericForKindSizeError, None
+                ).with_compiler_loc())
+              }
+            } 
           }
         }
       }
@@ -92,7 +97,10 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
         _ => {
           match size_val.as_usize() {
             Ok(size_val) => size_val,
-            Err(_) => { return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
+            Err(_) => { return Err(MechError2::new(
+              ExpectedNumericForKindSizeError, None
+              ).with_compiler_loc())
+            }
           }
         }
       };
@@ -295,4 +303,16 @@ pub fn boolean(tkn: &Token) -> Value {
     _ => unreachable!(),
   };
   Value::Bool(Ref::new(val))
+}
+
+//            Err(_) => { return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
+#[derive(Debug)]
+pub struct ExpectedNumericForKindSizeError;
+impl MechErrorKind2 for ExpectedNumericForKindSizeError {
+  fn name(&self) -> &str {
+    "ExpectedNumericForKindSize"
+  }
+  fn message(&self) -> String {
+    "Expected a numeric value for kind size, but received a non-numeric value.".to_string()
+  }
 }

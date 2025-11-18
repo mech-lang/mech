@@ -21,7 +21,7 @@ pub fn structure(strct: &Structure, p: &Interpreter) -> MResult<Value> {
     Structure::Set(x) => set(&x, p),
     #[cfg(feature = "map")]
     Structure::Map(x) => map(&x, p),
-    _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+    x => Err(MechError2::new(FeatureNotEnabledError, Some(format!("Feature not enabled for `{:?}`", stringify!(x)))).with_compiler_loc()),
   }
 }
 
@@ -49,7 +49,10 @@ pub fn map(mp: &Map, p: &Interpreter) -> MResult<Value> {
   // verify that all the keys are the same kind:
   for k in m.keys() {
     if k.kind() != key_kind {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::KindMismatch(k.kind(),key_kind)});
+      return Err(MechError2::new(
+        MapKeyKindMismatchError{expected_kind: key_kind.clone(), actual_kind: k.kind().clone()},
+        None
+      ).with_compiler_loc());
     }
   }
   
@@ -57,7 +60,10 @@ pub fn map(mp: &Map, p: &Interpreter) -> MResult<Value> {
   // verify that all the values are the same kind:
   for v in m.values() {
     if v.kind() != value_kind {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::KindMismatch(v.kind(),value_kind)});
+      return Err(MechError2::new(
+        MapValueKindMismatchError{expected_kind: value_kind.clone(), actual_kind: v.kind().clone()},
+        None
+      ).with_compiler_loc());
     }
   }
   Ok(Value::Map(Ref::new(MechMap{
@@ -86,7 +92,7 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
     kinds.push(knd.clone());
     #[cfg(feature = "convert")]
     if knd != val.kind() {
-      let fxn = ConvertKind{}.compile(&vec![val.clone(), Value::Kind(knd)]);
+      let fxn = ConvertKind{}.compile(&vec![val.clone(), Value::Kind(knd.clone())]);
       match fxn {
         Ok(convert_fxn) => {
           convert_fxn.solve();
@@ -95,7 +101,14 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
           data.insert(name_hash, converted_result);
         },
         Err(e) => {
-          return Err(MechError{id: line!(), file: file!().to_string(), tokens: vec![], msg: "".to_string(), kind: MechErrorKind::None});
+          return Err(MechError2::new(
+            TableColumnKindMismatchError {
+              column_id: name_hash,
+              expected_kind: knd.clone(),
+              actual_kind: val.kind().clone(),
+            },
+            None
+          ).with_compiler_loc());
         }
       }
     } else {
@@ -142,7 +155,11 @@ impl MechFunctionFactory for ValueSet {
         let out: Ref<MechSet> = unsafe{ out.as_unchecked().clone() };
         Ok(Box::new(ValueSet {out}))
       },
-      _ => Err(MechError {file: file!().to_string(),tokens: vec![],msg: "Invalid arguments to ValueSet".to_string(),id: line!(),kind: MechErrorKind::IncorrectNumberOfArguments,})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 0, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -189,15 +206,18 @@ pub fn set(m: &Set, p: &Interpreter) -> MResult<Value> {
     let result = expression(el, p)?;
     elements.push(result.clone());
   }
-  let set_kind = if elements.len() > 0 {
+  let element_kind = if elements.len() > 0 {
     elements[0].kind()
   } else {
     ValueKind::Empty
   };
   // Make sure all elements have the same kind
   for el in &elements {
-    if el.kind() != set_kind {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::KindMismatch(el.kind(),set_kind)});
+    if el.kind() != element_kind {
+      return Err(MechError2::new(
+        SetKindMismatchError{expected_kind: element_kind.clone(), actual_kind: el.kind().clone()},
+        None
+      ).with_compiler_loc());
     }
   }
   #[cfg(feature = "functions")]
@@ -222,15 +242,19 @@ pub fn set(m: &Set, p: &Interpreter) -> MResult<Value> {
 macro_rules! handle_value_kind {
   ($value_kind:ident, $val:expr, $field_label:expr, $data_map:expr, $converter:ident) => {{
     let mut vals = Vec::new();
+    let id = $field_label.as_u64().unwrap().borrow().clone();
     for x in $val.as_vec().iter() {
       match x.$converter() {
         Ok(u) => vals.push(u.to_value()),
-        Err(_) => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::WrongTableColumnKind});}
+        Err(_) => {return Err(MechError2::new(
+            TableColumnKindMismatchError { column_id: id.clone(), expected_kind: $value_kind.clone(), actual_kind: x.kind() },
+            None
+          ).with_compiler_loc()
+        );
       }
     }
-    let id = $field_label.as_u64().unwrap().borrow().clone();
     $data_map.insert(id, ($value_kind.clone(), Value::to_matrixd(vals.clone(), vals.len(), 1)));
-  }};}
+  }};}}
 
 #[cfg(feature = "table")]
 pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> { 
@@ -350,7 +374,11 @@ pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
       } else if shape[1] == result.shape()[1] {
         col.push(result);
       } else {
-        return Err(MechError{file: file!().to_string(), tokens: row.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![])});
+        return Err(MechError2::new(
+            DimensionMismatch { dims: vec![shape[1], result.shape()[1]] },
+            None
+          ).with_compiler_loc()
+        );
       }
     }
     if col.is_empty() {
@@ -368,7 +396,10 @@ pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
     plan_brrw.push(new_fxn);
     return Ok(out);
   }
-  return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix horzcat and/or vertcat feature not enabled".to_string(), id: line!(), kind: MechErrorKind::None});
+  return Err(MechError2::new(
+    FeatureNotEnabledError,
+    Some("matrix/vertcat feature not enabled".to_string())).with_compiler_loc()
+  );
 }
 
 #[cfg(feature = "matrix_horzcat")]
@@ -386,7 +417,11 @@ pub fn matrix_row(r: &MatrixRow, p: &Interpreter) -> MResult<Value> {
     } else if shape[0] == result.shape()[0] {
       row.push(result);
     } else {
-      return Err(MechError{file: file!().to_string(), tokens: r.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![])});
+      return Err(MechError2::new(
+          DimensionMismatch { dims: vec![shape[0], result.shape()[0]] },
+          None
+        ).with_compiler_loc()
+      );
     }
   }
   let new_fxn = MatrixHorzCat{}.compile(&row)?;

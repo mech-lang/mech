@@ -18,7 +18,10 @@ pub fn expression(expr: &Expression, p: &Interpreter) -> MResult<Value> {
     #[cfg(feature = "functions")]
     Expression::FunctionCall(fxn_call) => function_call(fxn_call, p),
     //Expression::FsmPipe(_) => todo!(),
-    x => Err(MechError{file: file!().to_string(), tokens: x.tokens(), msg: format!("Feature not enabled {:?}", x), id: line!(), kind: MechErrorKind::None}),
+    x => Err(MechError2::new(
+      FeatureNotEnabledError,
+      None
+    ).with_compiler_loc().with_tokens(x.tokens())),
   }
 }
 
@@ -47,11 +50,15 @@ pub fn slice(slc: &Slice, p: &Interpreter) -> MResult<Value> {
   let symbols = p.symbols();
   let plan = p.plan();
   let functions = p.functions();
-  let name = slc.name.hash();
+  let id = slc.name.hash();
   let symbols_brrw = symbols.borrow();
-  let val: Value = match symbols_brrw.get(name) {
+  let val: Value = match symbols_brrw.get(id) {
     Some(val) => Value::MutableReference(val.clone()),
-    None => {return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
+    None => {return Err(MechError2::new(
+        UndefinedVariableError { id },
+        None
+      ).with_compiler_loc().with_tokens(slc.tokens())
+    )},
   };
   let mut v = val;
   for s in &slc.subscript {
@@ -79,7 +86,11 @@ pub fn subscript_range(sbscrpt: &Subscript, p: &Interpreter) -> MResult<Value> {
       let result = range(rng,p)?;
       match result.as_vecusize() {
         Ok(v) => Ok(v.to_value()),
-        Err(_) => Err(MechError{file: file!().to_string(), tokens: rng.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
+        Err(_) => Err(MechError2::new(
+            InvalidIndexKindError { kind: result.kind() },
+            None
+          ).with_compiler_loc().with_tokens(rng.tokens())
+        ),
       }
     }
     _ => unreachable!()
@@ -307,7 +318,11 @@ pub fn var(v: &Var, p: &Interpreter) -> MResult<Value> {
       return Ok(Value::MutableReference(value.clone()))
     }
     None => {
-      return Err(MechError{file: file!().to_string(), tokens: v.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(id)});
+      return Err(MechError2::new(
+          UndefinedVariableError { id },
+          None
+        ).with_compiler_loc().with_tokens(v.tokens())
+      )
     }
   }
 }
@@ -451,7 +466,11 @@ pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
       FormulaOperator::Set(SetOp::ElementOf) => SetElementOf{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "set_not_element_of")]
       FormulaOperator::Set(SetOp::NotElementOf) => SetNotElementOf{}.compile(&vec![lhs,rhs])?,
-      x => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{x:#?}"), id: line!(), kind: MechErrorKind::UnhandledFormulaOperator(x.clone())}),
+      x => return Err(MechError2::new(
+          UnhandledFormulaOperatorError { operator: x.clone() },
+          None
+        ).with_compiler_loc().with_tokens(trm.tokens())
+      ),
     };
     new_fxn.solve();
     let res = new_fxn.out();
@@ -461,4 +480,39 @@ pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
   let mut plan_brrw = plan.borrow_mut();
   plan_brrw.append(&mut term_plan);
   return Ok(lhs);
+}
+
+#[derive(Debug)]
+pub struct UnhandledFormulaOperatorError {
+  pub operator: FormulaOperator,
+}
+impl MechErrorKind2 for UnhandledFormulaOperatorError {
+  fn name(&self) -> &str { "UnhandledFormulaOperator" }
+  fn message(&self) -> String {
+    format!("Unhandled formula operator: {:#?}", self.operator)
+  }
+}
+
+#[derive(Debug)]
+pub struct UndefinedVariableError {
+  pub id: u64, 
+}
+impl MechErrorKind2 for UndefinedVariableError {
+  fn name(&self) -> &str { "UndefinedVariable" }
+
+  fn message(&self) -> String {
+    format!("Undefined variable: {}", self.id)
+  }
+}
+#[derive(Debug)]
+pub struct InvalidIndexKindError {
+  kind: ValueKind,
+}
+impl MechErrorKind2 for InvalidIndexKindError {
+  fn name(&self) -> &str {
+    "InvalidIndexKind"
+  }
+  fn message(&self) -> String {
+    "Invalid index kind".to_string()
+  }
 }
