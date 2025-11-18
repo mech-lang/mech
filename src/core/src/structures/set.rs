@@ -92,7 +92,7 @@ impl Hash for MechSet {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SetKindMismatchError {
   pub expected_kind: ValueKind,
   pub actual_kind: ValueKind,

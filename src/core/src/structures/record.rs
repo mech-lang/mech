@@ -176,7 +176,7 @@ impl Hash for MechRecord {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MissingFieldInRecordError {
   pub field_id: u64,
 }
@@ -190,7 +190,7 @@ impl MechErrorKind2 for MissingFieldInRecordError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MissingKindForFieldError {
   pub field_id: u64,
 }
@@ -204,7 +204,7 @@ impl MechErrorKind2 for MissingKindForFieldError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MissingKindInComparedRecordError {
   pub field_id: u64,
 }
@@ -218,7 +218,7 @@ impl MechErrorKind2 for MissingKindInComparedRecordError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RecordFieldKindMismatchError {
   pub field_id: u64,
   pub expected_kind: ValueKind,
@@ -237,7 +237,7 @@ impl MechErrorKind2 for RecordFieldKindMismatchError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RecordFieldNameMismatchError {
   pub field_id: u64,
   pub expected_name: Option<String>,
@@ -263,7 +263,7 @@ impl MechErrorKind2 for RecordFieldNameMismatchError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct KeyNotFoundInKeyIndexError {
   pub field_id: u64,
 }

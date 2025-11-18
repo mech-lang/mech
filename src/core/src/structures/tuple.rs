@@ -75,7 +75,7 @@ impl Hash for MechTuple {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TupleDestructureTooManyVarsError{pub value: ValueKind }
 impl MechErrorKind2 for TupleDestructureTooManyVarsError {
   fn name(&self) -> &str { "TupleDestructureTooManyVars" }
@@ -84,7 +84,7 @@ impl MechErrorKind2 for TupleDestructureTooManyVarsError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DestructureExpectedTupleError{pub value: ValueKind }
 impl MechErrorKind2 for DestructureExpectedTupleError {
   fn name(&self) -> &str { "DestructureExpectedTuple" }
@@ -93,7 +93,7 @@ impl MechErrorKind2 for DestructureExpectedTupleError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TupleIndexOutOfBoundsError{pub ix: usize, pub len: usize }
 impl MechErrorKind2 for TupleIndexOutOfBoundsError {
   fn name(&self) -> &str { "TupleIndexOutOfBounds" }

@@ -295,7 +295,7 @@ pub struct FunctionRegistry {
   pub registry: RefCell<HashMap<u64, Box<dyn MechFunctionImpl>>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnhandledFunctionArgumentKind1 {
   pub arg: ValueKind,
   pub fxn_name: String,
@@ -307,7 +307,7 @@ impl MechErrorKind2 for UnhandledFunctionArgumentKind1 {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnhandledFunctionArgumentKind2 {
   pub arg: (ValueKind, ValueKind),
   pub fxn_name: String,
@@ -319,7 +319,7 @@ impl MechErrorKind2 for UnhandledFunctionArgumentKind2 {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnhandledFunctionArgumentKind3 {
   pub arg: (ValueKind, ValueKind, ValueKind),
   pub fxn_name: String,
@@ -331,7 +331,7 @@ impl MechErrorKind2 for UnhandledFunctionArgumentKind3 {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnhandledFunctionArgumentKind4 {
   pub arg: (ValueKind, ValueKind, ValueKind, ValueKind),
   pub fxn_name: String,
@@ -343,7 +343,7 @@ impl MechErrorKind2 for UnhandledFunctionArgumentKind4 {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnhandledFunctionArgumentKindVarg {
   pub arg: Vec<ValueKind>,
   pub fxn_name: String,
@@ -355,7 +355,7 @@ impl MechErrorKind2 for UnhandledFunctionArgumentKindVarg {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnhandledFunctionArgumentIxes {
   pub arg: (ValueKind, Vec<ValueKind>, ValueKind),
   pub fxn_name: String,
@@ -367,7 +367,7 @@ impl MechErrorKind2 for UnhandledFunctionArgumentIxes {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnhandledFunctionArgumentIxesMono {
   pub arg: (ValueKind, Vec<ValueKind>),
   pub fxn_name: String,
@@ -379,7 +379,7 @@ impl MechErrorKind2 for UnhandledFunctionArgumentIxesMono {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IncorrectNumberOfArguments {
   pub expected: usize,
   pub found: usize,

@@ -1,4 +1,6 @@
 use crate::*;
+use std::sync::Arc;
+use std::any::Any;
 
 // Errors
 // ----------------------------------------------------------------------------
@@ -34,16 +36,49 @@ macro_rules! compiler_loc {
   };
 }
 
-pub trait MechErrorKind2: std::fmt::Debug + Send + Sync {
+trait ErrorKindCallbacks: Send + Sync {
+  fn name(&self, data: &dyn Any) -> String;
+  fn message(&self, data: &dyn Any) -> String;
+}
+
+struct CallbacksImpl<K> {
+  // zero-sized; all behavior encoded in trait impl below
+  _marker: std::marker::PhantomData<K>,
+}
+
+impl<K> CallbacksImpl<K> {
+  fn new() -> Self {
+    Self { _marker: std::marker::PhantomData }
+  }
+}
+
+impl<K> ErrorKindCallbacks for CallbacksImpl<K>
+where
+  K: MechErrorKind2 + 'static,
+{
+  fn name(&self, data: &dyn Any) -> String {
+    // downcast and call name()
+    let k = data.downcast_ref::<K>().expect("wrong kind type in vtable");
+    k.name().to_string()
+  }
+
+  fn message(&self, data: &dyn Any) -> String {
+    let k = data.downcast_ref::<K>().expect("wrong kind type in vtable");
+    k.message()
+  }
+}
+
+pub trait MechErrorKind2: std::fmt::Debug + Send + Sync + Clone {
   fn name(&self) -> &str;
   fn message(&self) -> String;
 }
 
 //#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 //#[derive(Clone, Debug, Eq, PartialEq, Hash)]
-#[derive(Debug)]
+#[derive(Clone)]
 pub struct MechError2 {
-  pub kind: Box<dyn MechErrorKind2>,
+  kind_data: Arc<dyn Any + Send + Sync>,
+  kind_callbacks: Arc<dyn ErrorKindCallbacks>, // object-safe vtable
   pub program_range: Option<SourceRange>,
   pub annotations: Vec<SourceRange>,
   pub tokens: Vec<Token>,
@@ -52,20 +87,55 @@ pub struct MechError2 {
   pub message: Option<String>,
 }
 
+impl std::fmt::Debug for MechError2 {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("MechError2")
+      .field("kind_name", &self.kind_name())
+      .field("message", &self.kind_message())
+      .field("program_range", &self.program_range)
+      .field("annotations", &self.annotations)
+      .field("tokens", &self.tokens)
+      .field("compiler_location", &self.compiler_location)
+      .field("source", &self.source)
+      .finish()
+  }
+}
+
 impl MechError2 {
   pub fn new<K: MechErrorKind2 + 'static>(
     kind: K,
     message: Option<String>
   ) -> Self {
-    Self {
-      kind: Box::new(kind),
+    MechError2 {
+      kind_data: Arc::new(kind),
+      kind_callbacks: Arc::new(CallbacksImpl::<K>::new()),
       program_range: None,
-      tokens: Vec::new(),
       annotations: Vec::new(),
+      tokens: Vec::new(),
       compiler_location: None,
       source: None,
       message,
     }
+  }
+
+  /// Get the runtime name (delegates to the underlying kind)
+  pub fn kind_name(&self) -> String {
+    self.kind_callbacks.name(self.kind_data.as_ref())
+  }
+
+  /// Get the runtime message (delegates to the underlying kind)
+  pub fn kind_message(&self) -> String {
+    self.kind_callbacks.message(self.kind_data.as_ref())
+  }
+
+  /// Optional helper that returns the message or the explicit `message` override
+  pub fn display_message(&self) -> String {
+    if let Some(ref m) = self.message { m.clone() } else { self.kind_message() }
+  }
+
+  /// If you ever need downcast access to the concrete kind:
+  pub fn kind_downcast_ref<K: 'static>(&self) -> Option<&K> {
+    self.kind_data.downcast_ref::<K>()
   }
 
   pub fn with_compiler_loc(mut self) -> Self {
@@ -109,7 +179,7 @@ impl MechError2 {
   }
 
   pub fn simple_message(&self) -> String {
-    format!("{}: {}", self.kind.name(), self.kind.message())
+    format!("{}: {}", self.kind_name(), self.kind_message())
   }
 
   pub fn full_chain_message(&self) -> String {
@@ -130,7 +200,7 @@ impl MechError2 {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UndefinedKindError {
   pub kind_id: u64,
 }
@@ -242,7 +312,7 @@ impl From<std::io::Error> for MechError2 {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DimensionMismatch {
   pub dims: Vec<usize>,
 }
@@ -251,7 +321,7 @@ impl MechErrorKind2 for DimensionMismatch {
   fn message(&self) -> String { format!("Matrix dimension mismatch: {:?}", self.dims) }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GenericError {
   pub msg: String,
 }
@@ -263,7 +333,7 @@ impl MechErrorKind2 for GenericError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FeatureNotEnabledError;
 impl MechErrorKind2 for FeatureNotEnabledError {
   fn name(&self) -> &str { "FeatureNotEnabled" }
@@ -273,7 +343,7 @@ impl MechErrorKind2 for FeatureNotEnabledError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NotExecutableError {}
 impl MechErrorKind2 for NotExecutableError {
   fn name(&self) -> &str { "NotExecutable" }
@@ -283,7 +353,7 @@ impl MechErrorKind2 for NotExecutableError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IoErrorWrapper {
   pub msg: String,
 }

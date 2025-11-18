@@ -51,7 +51,7 @@ impl Hash for MechEnum {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnknownEnumVariantError {
   pub enum_id: u64,
   pub given_variant_id: u64,

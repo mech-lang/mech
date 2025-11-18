@@ -2523,7 +2523,7 @@ impl ToValue for Ref<MechRecord> {
 
 // Errors
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnhandledFunctionArgumentKindError;
 
 impl MechErrorKind2 for UnhandledFunctionArgumentKindError {
@@ -2533,7 +2533,7 @@ impl MechErrorKind2 for UnhandledFunctionArgumentKindError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CannotConvertToTypeError {
   pub target_type: &'static str,
 }

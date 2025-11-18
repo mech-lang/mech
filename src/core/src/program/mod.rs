@@ -105,7 +105,7 @@ pub fn parse_version_to_u16(s: &str) -> Option<u16> {
   Some(encoded as u16)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct InvalidMagicNumberError;
 
 impl MechErrorKind2 for InvalidMagicNumberError {

@@ -435,7 +435,7 @@ impl Hash for MechTable {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CannotCreateTableFromEmptyRecordListError;
 
 impl MechErrorKind2 for CannotCreateTableFromEmptyRecordListError {
@@ -447,7 +447,7 @@ impl MechErrorKind2 for CannotCreateTableFromEmptyRecordListError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CannotCreateTableFromNonTableKindError;
 
 impl MechErrorKind2 for CannotCreateTableFromNonTableKindError {
@@ -459,7 +459,7 @@ impl MechErrorKind2 for CannotCreateTableFromNonTableKindError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TableColumnKindMismatchError {
   pub column_id: u64,
   pub expected_kind: ValueKind,
@@ -474,7 +474,7 @@ impl MechErrorKind2 for TableColumnKindMismatchError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TableColumnNameMismatchError {
   pub column_id: u64,
   pub expected_name: String,
@@ -489,7 +489,7 @@ impl MechErrorKind2 for TableColumnNameMismatchError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TableColumnNotFoundError {
   pub column_id: u64,
 }
@@ -501,7 +501,7 @@ impl MechErrorKind2 for TableColumnNotFoundError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MatrixAppendToTableError {
   pub column_id: u64,
 }

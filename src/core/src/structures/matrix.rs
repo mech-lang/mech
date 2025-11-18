@@ -1111,7 +1111,7 @@ impl_to_value_matrix!(DMatrix);
 
 // Errors
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IncompatibleMatrixAppendToTableError {
   pub lhs_rows: usize,
   pub lhs_cols: usize,
@@ -1132,7 +1132,7 @@ impl MechErrorKind2 for IncompatibleMatrixAppendToTableError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ResizeStaticMatrixError;
 
 impl MechErrorKind2 for ResizeStaticMatrixError {
@@ -1144,7 +1144,7 @@ impl MechErrorKind2 for ResizeStaticMatrixError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PushIntoStaticMatrixError;
 
 impl MechErrorKind2 for PushIntoStaticMatrixError {

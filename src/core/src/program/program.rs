@@ -659,22 +659,22 @@ impl ParsedConstEntry {
   pub fn write_to<W: Write>(&self, w: &mut W) -> MResult<()> {
     // type_id (u32)
     w.write_u32::<LittleEndian>(self.type_id)
-      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: e }, None).with_compiler_loc())?;
+      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
     // enc, align, flags, reserved (u8 each)
     w.write_u8(self.enc)
-      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: e }, None).with_compiler_loc())?;
+      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
     w.write_u8(self.align)
-      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: e }, None).with_compiler_loc())?;
+      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
     w.write_u8(self.flags)
-      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: e }, None).with_compiler_loc())?;
+      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
     w.write_u8(self.reserved)
-      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: e }, None).with_compiler_loc())?;
+      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
     // offset (u64)
     w.write_u64::<LittleEndian>(self.offset)
-      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: e }, None).with_compiler_loc())?;
+      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
     // length (u64)
     w.write_u64::<LittleEndian>(self.length)
-      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: e }, None).with_compiler_loc())?;
+      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
     Ok(())
   }
 }
@@ -911,42 +911,42 @@ impl DecodedInstr {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnsupportedBytecodeVersionError;
 impl MechErrorKind2 for UnsupportedBytecodeVersionError {
   fn name(&self) -> &str { "UnsupportedBytecodeVersion" }
   fn message(&self) -> String { "Unsupported bytecode version".to_string() }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IncompatibleMechVersionError;
 impl MechErrorKind2 for IncompatibleMechVersionError {
   fn name(&self) -> &str { "IncompatibleMechVersion" }
   fn message(&self) -> String { "Incompatible Mech version".to_string() }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnsupportedConstantEncodingError;
 impl MechErrorKind2 for UnsupportedConstantEncodingError {
   fn name(&self) -> &str { "UnsupportedConstantEncoding" }
   fn message(&self) -> String { "Unsupported constant encoding".to_string() }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ConstantEntryOutOfBoundsError;
 impl MechErrorKind2 for ConstantEntryOutOfBoundsError {
   fn name(&self) -> &str { "ConstantEntryOutOfBounds" }
   fn message(&self) -> String { "Constant entry out of bounds".to_string() }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ConstantEntryAlignmentError;
 impl MechErrorKind2 for ConstantEntryAlignmentError {
   fn name(&self) -> &str { "ConstantEntryAlignmentError" }
   fn message(&self) -> String { "Constant entry alignment error".to_string() }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ConstantWrongSizeError {
   pub expected: usize,
   pub found: usize,
@@ -962,7 +962,7 @@ impl MechErrorKind2 for ConstantWrongSizeError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ConstantTooShortError {
   pub type_name: &'static str,
 }
@@ -973,7 +973,7 @@ impl MechErrorKind2 for ConstantTooShortError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnsupportedConstantTypeError {
   pub type_tag: TypeTag,
 }
@@ -985,7 +985,7 @@ impl MechErrorKind2 for UnsupportedConstantTypeError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CrcMismatchError {
   pub expected: u32,
   pub found: u32,
@@ -998,14 +998,14 @@ impl MechErrorKind2 for CrcMismatchError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TruncatedInstructionError;
 impl MechErrorKind2 for TruncatedInstructionError {
   fn name(&self) -> &str { "TruncatedInstruction" }
   fn message(&self) -> String { "Truncated instruction: cannot read full opcode or operands".to_string() }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnknownOpcodeError {
   pub opcode: OpCode,
 }
@@ -1014,7 +1014,7 @@ impl MechErrorKind2 for UnknownOpcodeError {
   fn message(&self) -> String { format!("Unknown opcode: {}", self.opcode) }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FileTooShortError {
   pub total_len: u64,
   pub expected_len: u64,
@@ -1029,7 +1029,7 @@ impl MechErrorKind2 for FileTooShortError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct InvalidOpcodeError {
   pub opcode: u8,
 }
@@ -1038,7 +1038,7 @@ impl MechErrorKind2 for InvalidOpcodeError {
   fn message(&self) -> String { format!("Invalid opcode byte: {}", self.opcode) }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnknownConstantTypeError {
   pub tag: u16,
 }
@@ -1050,16 +1050,16 @@ impl MechErrorKind2 for UnknownConstantTypeError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct InvalidUtf8InDictError;
 impl MechErrorKind2 for InvalidUtf8InDictError {
   fn name(&self) -> &str { "InvalidUtf8InDict" }
   fn message(&self) -> String { "Invalid UTF-8 in dictionary entry".to_string() }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ConstEntryWriteIoError {
-  pub source: std::io::Error,
+  pub source: String,
 }
 impl MechErrorKind2 for ConstEntryWriteIoError {
   fn name(&self) -> &str { "ConstEntryWriteIoError" }

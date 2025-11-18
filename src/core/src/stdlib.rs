@@ -2050,7 +2050,7 @@ where
   Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MismatchedIndexLengthsError {
   pub ix1_len: usize,
   pub ix2_len: usize,

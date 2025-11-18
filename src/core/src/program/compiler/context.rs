@@ -259,7 +259,7 @@ fn align_up(offset: u64, align: u64) -> u64 {
   ((offset + align - 1) / align) * align
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BufferPositionMismatchError {
   pub expected: u64,
   pub got: u64,
@@ -272,7 +272,7 @@ impl MechErrorKind2 for BufferPositionMismatchError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FinalBufferLengthMismatchError {
   pub expected: u64,
   pub got: u64,

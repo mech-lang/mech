@@ -78,7 +78,7 @@ impl Hash for MechMap {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MapKeyKindMismatchError {
   pub expected_kind: ValueKind,
   pub actual_kind: ValueKind,
@@ -96,7 +96,7 @@ impl MechErrorKind2 for MapKeyKindMismatchError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MapValueKindMismatchError {
   pub expected_kind: ValueKind,
   pub actual_kind: ValueKind,
