@@ -44,21 +44,25 @@ pub struct MechError2 {
   pub kind: Box<dyn MechErrorKind2>,
   pub program_range: Option<SourceRange>,
   pub annotations: Vec<SourceRange>,
+  pub tokens: Vec<Token>,
   pub compiler_location: Option<CompilerSourceRange>,
   pub source: Option<Box<MechError2>>, // for propagation
+  pub message: Option<String>,
 }
 
 impl MechError2 {
   pub fn new<K: MechErrorKind2 + 'static>(
     kind: K,
-    program_range: Option<SourceRange>
+    message: Option<String>
   ) -> Self {
     Self {
       kind: Box::new(kind),
-      program_range,
+      program_range: None,
+      tokens: Vec::new(),
       annotations: Vec::new(),
       compiler_location: None,
       source: None,
+      message,
     }
   }
 
@@ -82,6 +86,14 @@ impl MechError2 {
     I: IntoIterator<Item = SourceRange>,
   {
     self.annotations.extend(iter);
+    self
+  }
+
+  pub fn with_tokens<I>(mut self, iter: I) -> Self
+  where
+    I: IntoIterator<Item = Token>,
+  {
+    self.tokens.extend(iter);
     self
   }
 
@@ -246,6 +258,26 @@ impl MechErrorKind2 for GenericError {
 
   fn message(&self) -> String {
     format!("Error: {}", self.msg)
+  }
+}
+
+#[derive(Debug)]
+pub struct FeatureNotEnabledError {}
+impl MechErrorKind2 for FeatureNotEnabledError {
+  fn name(&self) -> &str { "FeatureNotEnabled" }
+
+  fn message(&self) -> String {
+    format!("Feature not enabled")
+  }
+}
+
+#[derive(Debug)]
+pub struct NotExecutableError {}
+impl MechErrorKind2 for NotExecutableError {
+  fn name(&self) -> &str { "NotExecutable" }
+
+  fn message(&self) -> String {
+    format!("Not executable")
   }
 }
 
