@@ -34,11 +34,13 @@ macro_rules! compiler_loc {
   };
 }
 
-pub trait MechErrorKind2: std::fmt::Debug {
+pub trait MechErrorKind2: std::fmt::Debug + Send + Sync {
   fn name(&self) -> &str;
   fn message(&self) -> String;
 }
 
+//#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+//#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[derive(Debug)]
 pub struct MechError2 {
   pub kind: Box<dyn MechErrorKind2>,

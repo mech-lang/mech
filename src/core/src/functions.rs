@@ -297,7 +297,7 @@ pub struct FunctionRegistry {
 
 #[derive(Debug)]
 pub struct UnhandledFunctionArgumentKind1 {
-  pub arg: Value,
+  pub arg: ValueKind,
   pub fxn_name: String,
 }
 impl MechErrorKind2 for UnhandledFunctionArgumentKind1 {
@@ -309,7 +309,7 @@ impl MechErrorKind2 for UnhandledFunctionArgumentKind1 {
 
 #[derive(Debug)]
 pub struct UnhandledFunctionArgumentKind2 {
-  pub arg: (Value, Value),
+  pub arg: (ValueKind, ValueKind),
   pub fxn_name: String,
 }
 impl MechErrorKind2 for UnhandledFunctionArgumentKind2 {
@@ -321,7 +321,7 @@ impl MechErrorKind2 for UnhandledFunctionArgumentKind2 {
 
 #[derive(Debug)]
 pub struct UnhandledFunctionArgumentKind3 {
-  pub arg: (Value, Value, Value),
+  pub arg: (ValueKind, ValueKind, ValueKind),
   pub fxn_name: String,
 }
 impl MechErrorKind2 for UnhandledFunctionArgumentKind3 {
@@ -333,7 +333,7 @@ impl MechErrorKind2 for UnhandledFunctionArgumentKind3 {
 
 #[derive(Debug)]
 pub struct UnhandledFunctionArgumentKind4 {
-  pub arg: (Value, Value, Value, Value),
+  pub arg: (ValueKind, ValueKind, ValueKind, ValueKind),
   pub fxn_name: String,
 }
 impl MechErrorKind2 for UnhandledFunctionArgumentKind4 {
@@ -345,7 +345,7 @@ impl MechErrorKind2 for UnhandledFunctionArgumentKind4 {
 
 #[derive(Debug)]
 pub struct UnhandledFunctionArgumentKindVarg {
-  pub arg: Vec<Value>,
+  pub arg: Vec<ValueKind>,
   pub fxn_name: String,
 }
 impl MechErrorKind2 for UnhandledFunctionArgumentKindVarg {
@@ -357,7 +357,7 @@ impl MechErrorKind2 for UnhandledFunctionArgumentKindVarg {
 
 #[derive(Debug)]
 pub struct UnhandledFunctionArgumentIxes {
-  pub arg: (Value, Vec<Value>, Value),
+  pub arg: (ValueKind, Vec<ValueKind>, ValueKind),
   pub fxn_name: String,
 }
 impl MechErrorKind2 for UnhandledFunctionArgumentIxes {
@@ -369,7 +369,7 @@ impl MechErrorKind2 for UnhandledFunctionArgumentIxes {
 
 #[derive(Debug)]
 pub struct UnhandledFunctionArgumentIxesMono {
-  pub arg: (Value, Vec<Value>),
+  pub arg: (ValueKind, Vec<ValueKind>),
   pub fxn_name: String,
 }
 impl MechErrorKind2 for UnhandledFunctionArgumentIxesMono {
