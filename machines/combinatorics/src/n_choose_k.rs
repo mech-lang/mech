@@ -232,8 +232,8 @@ fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> MResult<Box<dyn Mech
     (Value::MatrixR64(n), Value::R64(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(R64::to_matrix(vec![], 0, 0))})),
     #[cfg(all(feature = "matrix", feature = "complex"))]
     (Value::MatrixC64(n), Value::C64(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(C64::to_matrix(vec![], 0, 0))})),
-    x => Err(MechError2::new(
-        UnhandledFunctionArgumentKind2 { arg: x, fxn_name: "combinatorics/n-choose-k".to_string() },
+    (n,k) => Err(MechError2::new(
+        UnhandledFunctionArgumentKind2 { arg: (n.kind(), k.kind()), fxn_name: "combinatorics/n-choose-k".to_string() },
         None
       ).with_compiler_loc()
     ),
@@ -256,8 +256,8 @@ impl NativeFunctionCompiler for CombinatoricsNChooseK {
           (Value::MutableReference(n),Value::MutableReference(k)) => {let n_brrw = n.borrow();let k_brrw = k.borrow();impl_combinatorics_n_choose_k_fxn(n_brrw.clone(),k_brrw.clone())}
           (n,Value::MutableReference(k)) => {let k_brrw = k.borrow(); impl_combinatorics_n_choose_k_fxn(n.clone(),k_brrw.clone())}
           (Value::MutableReference(n),k) => {let n_brrw = n.borrow();impl_combinatorics_n_choose_k_fxn(n_brrw.clone(),k.clone())}
-          x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind2 { arg: x, fxn_name: "combinatorics/n-choose-k".to_string() },
+          (n,k) => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (n.kind(), k.kind()), fxn_name: "combinatorics/n-choose-k".to_string() },
               None
             ).with_compiler_loc()
           ),
