@@ -319,7 +319,7 @@ impl Interpreter {
 
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnknownInstructionError {
   pub instr: String,
 }
@@ -333,7 +333,7 @@ impl MechErrorKind2 for UnknownInstructionError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnknownVariadicFunctionError {
   pub fxn_id: u64,
 }
@@ -347,7 +347,7 @@ impl MechErrorKind2 for UnknownVariadicFunctionError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnknownQuadFunctionError {
   pub fxn_id: u64,
 }
@@ -360,7 +360,7 @@ impl MechErrorKind2 for UnknownQuadFunctionError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnknownTernaryFunctionError {
   pub fxn_id: u64,
 }
@@ -373,7 +373,7 @@ impl MechErrorKind2 for UnknownTernaryFunctionError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnknownBinaryFunctionError {
   pub fxn_id: u64,
 }
@@ -386,7 +386,7 @@ impl MechErrorKind2 for UnknownBinaryFunctionError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnknownUnaryFunctionError {
   pub fxn_id: u64,
 }
@@ -399,7 +399,7 @@ impl MechErrorKind2 for UnknownUnaryFunctionError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnknownNullaryFunctionError {
   pub fxn_id: u64,
 }
@@ -412,21 +412,21 @@ impl MechErrorKind2 for UnknownNullaryFunctionError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IndexOutOfBoundsError;
 impl MechErrorKind2 for IndexOutOfBoundsError {
   fn name(&self) -> &str { "IndexOutOfBounds" }
   fn message(&self) -> String { "Index out of bounds".to_string() }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OverflowSubtractionError;
 impl MechErrorKind2 for OverflowSubtractionError {
   fn name(&self) -> &str { "OverflowSubtraction" }
   fn message(&self) -> String { "Attempted subtraction overflow".to_string() }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnknownPanicError {
   pub details: String
 }

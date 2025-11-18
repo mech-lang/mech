@@ -115,7 +115,7 @@ impl NativeFunctionCompiler for AssignRecordColumn {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UndefinedRecordFieldError {
   pub id: u64,
 }

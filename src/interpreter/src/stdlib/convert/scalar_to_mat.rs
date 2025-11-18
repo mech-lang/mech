@@ -148,7 +148,7 @@ impl NativeFunctionCompiler for ConvertScalarToMat {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CannotReshapeMatrixToEmpty;
 
 impl MechErrorKind2 for CannotReshapeMatrixToEmpty {

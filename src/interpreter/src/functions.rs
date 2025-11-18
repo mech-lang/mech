@@ -74,7 +74,7 @@ pub fn function_call(fxn_call: &FunctionCall, p: &Interpreter) -> MResult<Value>
   unreachable!()
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MissingFunctionError {
   pub function_id: u64,
 }

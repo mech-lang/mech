@@ -358,7 +358,7 @@ impl NativeFunctionCompiler for ConvertKind {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ColumnConvertKindMismatchError {
   pub from: ValueKind,
   pub to: ValueKind,
@@ -374,7 +374,7 @@ impl MechErrorKind2 for ColumnConvertKindMismatchError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ConvertIncorrectNumberOfColumnsError {
   pub from: usize,
   pub to: usize,

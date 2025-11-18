@@ -285,7 +285,7 @@ impl NativeFunctionCompiler for AddAssignTable {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UndefinedTableColumnError {
   pub id: u64,
 }

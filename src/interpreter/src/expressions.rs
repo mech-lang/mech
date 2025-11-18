@@ -482,7 +482,7 @@ pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
   return Ok(lhs);
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnhandledFormulaOperatorError {
   pub operator: FormulaOperator,
 }
@@ -493,7 +493,7 @@ impl MechErrorKind2 for UnhandledFormulaOperatorError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UndefinedVariableError {
   pub id: u64, 
 }
@@ -504,7 +504,7 @@ impl MechErrorKind2 for UndefinedVariableError {
     format!("Undefined variable: {}", self.id)
   }
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct InvalidIndexKindError {
   kind: ValueKind,
 }

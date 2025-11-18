@@ -306,7 +306,7 @@ pub fn boolean(tkn: &Token) -> Value {
 }
 
 //            Err(_) => { return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ExpectedNumericForKindSizeError;
 impl MechErrorKind2 for ExpectedNumericForKindSizeError {
   fn name(&self) -> &str {

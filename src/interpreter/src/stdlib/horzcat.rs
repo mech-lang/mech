@@ -4742,7 +4742,7 @@ register_descriptor! {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HorizontalConcatenateDimensionMismatchError {
 }
 impl MechErrorKind2 for HorizontalConcatenateDimensionMismatchError {

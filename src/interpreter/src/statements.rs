@@ -588,7 +588,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, p: &Inte
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnableToConvertAtomToEnumVariantError {
   pub atom_id: u64,
   pub target_enum_id: u64,
@@ -602,7 +602,7 @@ impl MechErrorKind2 for UnableToConvertAtomToEnumVariantError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnableToConvertAtomError {
   pub atom_id: u64,
 }
@@ -615,7 +615,7 @@ impl MechErrorKind2 for UnableToConvertAtomError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct VariableAlreadyDefinedError {
   pub id: u64,
 }
@@ -626,7 +626,7 @@ impl MechErrorKind2 for VariableAlreadyDefinedError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UndefinedVariableError {
   pub id: u64,
 }
@@ -638,7 +638,7 @@ impl MechErrorKind2 for UndefinedVariableError {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NotMutableError {
   pub id: u64,
 }

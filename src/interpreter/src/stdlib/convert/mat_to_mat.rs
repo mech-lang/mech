@@ -362,7 +362,7 @@ impl NativeFunctionCompiler for ConvertMatToMat {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ReshapeError {
   pub requested: (usize, usize),
   pub original: (usize, usize),

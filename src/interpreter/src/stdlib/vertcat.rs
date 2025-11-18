@@ -1983,7 +1983,7 @@ register_descriptor! {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct VerticalConcatenateDimensionMismatch {
   pub rows: usize,
   pub cols: usize,
