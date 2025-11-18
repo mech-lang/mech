@@ -1032,7 +1032,7 @@ macro_rules! impl_binop_match_arms {
           )+
         )+
         (lhs,rhs) => Err(MechError2::new(
-          UnhandledFunctionArgumentKind2{arg: (lhs, rhs), fxn_name: stringify!($lib).to_string()},
+          UnhandledFunctionArgumentKind2{arg: (lhs.kind(), rhs.kind()), fxn_name: stringify!($lib).to_string()},
           None
         ).with_compiler_loc()),
       }
@@ -1084,7 +1084,7 @@ macro_rules! impl_urnop_match_arms {
           )+
         )+
         x => Err(MechError2::new(
-          UnhandledFunctionArgumentKind1{arg: x.clone(), fxn_name: stringify!($lib).to_string()},
+          UnhandledFunctionArgumentKind1{arg: x.kind(), fxn_name: stringify!($lib).to_string()},
           None
         ).with_compiler_loc()),
       }
@@ -1111,7 +1111,7 @@ macro_rules! impl_mech_binop_fxn {
               (lhs_value,Value::MutableReference(rhs)) => { $gen_fxn(lhs_value.clone(), rhs.borrow().clone())}
               (Value::MutableReference(lhs),rhs_value) => { $gen_fxn(lhs.borrow().clone(), rhs_value.clone()) }
               (lhs, rhs) => Err(MechError2::new(
-                  UnhandledFunctionArgumentKind2 { arg: (lhs, rhs), fxn_name: "combinatorics/n-choose-k".to_string() },
+                  UnhandledFunctionArgumentKind2 { arg: (lhs.kind(), rhs.kind()), fxn_name: "combinatorics/n-choose-k".to_string() },
                   None
                 ).with_compiler_loc()
               ),            
@@ -1146,7 +1146,7 @@ macro_rules! impl_mech_urnop_fxn {
             match (input) {
               (Value::MutableReference(input)) => {$gen_fxn(input.borrow().clone())}
               x => Err(MechError2::new(
-                  UnhandledFunctionArgumentKind1 { arg: x.clone(), fxn_name: "combinatorics/n-choose-k".to_string() },
+                  UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "combinatorics/n-choose-k".to_string() },
                   None
                 ).with_compiler_loc()
               ),
