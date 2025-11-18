@@ -122,7 +122,7 @@ where
     #[cfg(feature = "matrixd")]
     Matrix::DMatrix(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: Ref::new(DMatrix::from_element(shape[0], shape[1], zero)), _marker: PhantomData })),
     _ => Err(MechError2::new(
-        FeatureNotEnabledError{},
+        FeatureNotEnabledError,
         None
       ).with_compiler_loc()
     ),

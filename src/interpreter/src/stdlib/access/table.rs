@@ -115,7 +115,7 @@ macro_rules! impl_access_column_table_match_arms {
               )+
             )+
             // Column not found
-            _ => Err(MechError2::new(TableTableColumnNotFoundError { id: k.clone() }, None).with_compiler_loc()),
+            _ => Err(MechError2::new(TableColumnNotFoundError { column_id: k.clone() }, None).with_compiler_loc()),
           }
         }
         (tbl,key) => Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.clone(), key.clone()), fxn_name: "TableAccessColumn".to_string() }, None).with_compiler_loc()),
@@ -393,7 +393,7 @@ impl NativeFunctionCompiler for TableAccessRange {
     }
     let ixes = arguments.clone().split_off(1);
     let tbl = arguments[0].clone();
-    match (tbl, ixes.as_slice()) {
+    match (tbl.clone(), ixes.as_slice()) {
       #[cfg(all(feature = "table", feature = "matrix"))]
       (Value::Table(source), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
         let out_table = source.borrow().empty_table(ix.borrow().len());
@@ -412,7 +412,7 @@ impl NativeFunctionCompiler for TableAccessRange {
             let out_table = source.borrow().empty_table(ix.borrow().len());
             Ok(Box::new(TableAccessRangeIndex{source: source.clone(), ix: ix.clone(), out: Ref::new(out_table) }))
           }
-          _ => Err(MechError2::new(UnhandledFunctionArgumentMono { arg: (tbl.clone(), ixes.to_vec()), fxn_name: "TableAccessRange".to_string() }, None).with_compiler_loc()),
+          _ => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (tbl.clone(), ixes.to_vec()), fxn_name: "TableAccessRange".to_string() }, None).with_compiler_loc()),
         }
       }
       #[cfg(all(feature = "matrix", feature = "table", feature = "logical_indexing"))]
@@ -423,10 +423,10 @@ impl NativeFunctionCompiler for TableAccessRange {
             let out_table = source.borrow().empty_table(ix.borrow().len());
             Ok(Box::new(TableAccessRangeBool{source: source.clone(), ix: ix.clone(), out: Ref::new(out_table) }))
           }
-          _ => Err(MechError2::new(UnhandledFunctionArgumentMono { arg: (tbl.clone(), ixes.to_vec()), fxn_name: "TableAccessRange".to_string() }, None).with_compiler_loc()),
+          _ => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (tbl.clone(), ixes.to_vec()), fxn_name: "TableAccessRange".to_string() }, None).with_compiler_loc()),
         }
       }
-      _ => Err(MechError2::new(UnhandledFunctionArgumentMono { arg: (tbl.clone(), ixes.to_vec()), fxn_name: "TableAccessRange".to_string() }, None).with_compiler_loc()),
+      _ => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (tbl.clone(), ixes.to_vec()), fxn_name: "TableAccessRange".to_string() }, None).with_compiler_loc()),
     }
   }
 }

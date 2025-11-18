@@ -82,8 +82,8 @@ macro_rules! impl_conversion_scalar_to_mat_match_arms {
                 #[cfg(feature = "matrixd")]
                 [n,m] => {let out = DMatrix::from_element(n,m,v.borrow().clone());  return Ok(Box::new(ConvertScalarToMat2{arg: v, out: Ref::new(out)}));},
                 [] => {return Err(MechError2::new(
-                  UnsupportedConversionError{from: ValueKind::$input_type, to: ValueKind::Matrix(box ValueKind::$target_type, dims.clone())},
-                  Some("Cannot convert scalar to matrix with zero dimensions".to_string())
+                  CannotReshapeMatrixToEmpty,
+                  None
                 ).with_compiler_loc());}
                 _ => todo!(),
               }
@@ -145,5 +145,15 @@ impl NativeFunctionCompiler for ConvertScalarToMat {
         }
       }
     }
+  }
+}
+
+#[derive(Debug)]
+pub struct CannotReshapeMatrixToEmpty;
+
+impl MechErrorKind2 for CannotReshapeMatrixToEmpty {
+  fn name(&self) -> &str { "CannotReshapeMatrixToEmpty" }
+  fn message(&self) -> String {
+    "Cannot reshape matrix to empty dimensions".to_string()
   }
 }

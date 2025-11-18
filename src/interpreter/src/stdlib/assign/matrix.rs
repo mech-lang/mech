@@ -1270,7 +1270,7 @@ impl NativeFunctionCompiler for MatrixAssignScalarRange {
         match sink {
           Value::MutableReference(sink) => { impl_assign_scalar_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
           _ => Err(MechError2::new(
-            UnhandledFunctionArgumentKind { arg: (sink.clone(), ixes.clone(), source.clone()) }, None).with_compiler_loc() ),
+            UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "MatrixAssignScalarRange".to_string() }, None).with_compiler_loc() ),
         }
       }
     }
@@ -1429,7 +1429,7 @@ macro_rules! impl_assign_range_range_fxn_s {
             Ok(Box::new(Self { sink, source, ixes: (ix1, ix2), _marker: PhantomData }))
           }
           _ => Err(MechError2::new(
-            UnhandledFunctionArgumentKind2 { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "matrix/assign-range".to_string() },
+            IncorrectNumberOfArguments{expected: 3, found: args.len()},
             None
           ).with_compiler_loc()),
         }

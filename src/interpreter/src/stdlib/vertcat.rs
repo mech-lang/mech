@@ -1540,7 +1540,7 @@ macro_rules! impl_vertcat_arms {
           #[cfg(feature = "matrixd")]
           (m,n) => {return Ok(Box::new(VerticalConcatenateMD{out:Ref::new(DMatrix::from_vec(m,n,mat))}));}
           _ => Err(MechError2::new(
-            FeatureNotEnabledError{},
+            FeatureNotEnabledError,
             None
           ).with_compiler_loc()),
         }

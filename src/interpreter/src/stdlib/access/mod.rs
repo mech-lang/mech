@@ -36,7 +36,7 @@ impl NativeFunctionCompiler for AccessScalar {
       ValueKind::Matrix(mat,_) => MatrixAccessScalar{}.compile(&arguments),
       #[cfg(feature = "table")]
       ValueKind::Table(tble,_) => TableAccessScalar{}.compile(&arguments),
-      _ => Err(MechError2::new(UnhandledFunctionArgument2 { arg: (src.clone(), index.clone()), fxn_name: "access/scalar".to_string() }, None).with_compiler_loc()),
+      _ => Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (src.clone(), index.clone()), fxn_name: "access/scalar".to_string() }, None).with_compiler_loc()),
     }
   }
 }
@@ -54,7 +54,7 @@ impl NativeFunctionCompiler for AccessRange {
       ValueKind::Matrix(mat,_) => MatrixAccessRange{}.compile(&arguments),
       #[cfg(feature = "table")]
       ValueKind::Table(tble,_) => TableAccessRange{}.compile(&arguments),
-      _ => Err(MechError2::new(UnhandledFunctionArgument2 { arg: (src.clone(), index.clone()), fxn_name: "access/range".to_string() }, None).with_compiler_loc()),
+      _ => Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (src.clone(), index.clone()), fxn_name: "access/range".to_string() }, None).with_compiler_loc()),
     }
   }
 }
@@ -101,7 +101,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
                 ).with_compiler_loc()); }
               }
             }
-            _ => return Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.clone(), index.clone()), fxn_name: "access/swizzle".to_string() }, None).with_compiler_loc()),
+            _ => return Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.clone(), keys.clone()), fxn_name: "access/swizzle".to_string() }, None).with_compiler_loc()),
           }
         }
         todo!("Table swizzle needs to be fixed.");
