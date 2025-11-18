@@ -16,7 +16,11 @@ impl MechFunctionFactory for ConvertSEnum {
         let out: Ref<MechEnum> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self {out}))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("ConvertSEnum requires 1 argument, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 1, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -129,7 +133,10 @@ macro_rules! impl_conversion_match_arms {
             let mat_knd = ValueKind::[<$input_type:camel>];
             // Verify the table has the correct number of columns
             if in_shape[1] != tbl_cols {
-              return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Matrix has {} columns, but table expects {}", in_shape[1], tbl_cols), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+              return Err(MechError2::new(
+                ConvertIncorrectNumberOfColumnsError{from: in_shape[1], to: tbl_cols},
+                None,
+              ).with_compiler_loc());
             }
             // Verify each column of the matrix can be converted to the target type of the table
             for (_, knd) in &tbl {
@@ -138,7 +145,10 @@ macro_rules! impl_conversion_match_arms {
               } else if mat_knd.is_convertible_to(knd) {
                 continue;
               } else {
-                return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Matrix column type {} does not match table column type {}", mat_knd, knd), id: line!(), kind: MechErrorKind::None});
+                return Err(MechError2::new(
+                  ColumnConvertKindMismatchError{from: mat_knd, to: knd.clone()},
+                  None,
+                ).with_compiler_loc());
               }
             }
             // Create a blank table, with as many rows as the matrix has
@@ -161,7 +171,11 @@ macro_rules! impl_conversion_match_arms {
           let val = Ref::new(enm.clone());
           Ok(Box::new(ConvertSEnum{out: val}))
         }
-        x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Could not convert: {:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+        x => Err(MechError2::new(
+            UnsupportedConversionError{from: x.0.kind(), to: x.1.kind()},
+            None,
+          ).with_compiler_loc()
+        ),
       }
     }
   }
@@ -248,7 +262,10 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
       let in_shape = mat.shape();
       // Verify the table has the correct number of columns
       if in_shape[1] != tbl.len() {
-        return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Matrix has {} columns, but table expects {}", in_shape[1], tbl.len()), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+        return Err(MechError2::new(
+          ConvertIncorrectNumberOfColumnsError{from: in_shape[1], to: tbl.len()},
+          None,
+        ).with_compiler_loc());
       }
       // Create a blank table, with as many rows as the matrix has
       let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), in_shape[0]))?;
@@ -259,7 +276,10 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
       let in_shape = mat.shape();
       // Verify the table has the correct number of columns
       if in_shape[1] != tbl.len() {
-        return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Matrix has {} columns, but table expects {}", in_shape[1], tbl.len()), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+        return Err(MechError2::new(
+          ConvertIncorrectNumberOfColumnsError{from: in_shape[1], to: tbl.len()},
+          None,
+        ).with_compiler_loc());
       }
       // Create a blank table, with as many rows as the matrix has
       let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), in_shape[0]))?;
@@ -292,7 +312,7 @@ pub struct ConvertKind {}
 impl NativeFunctionCompiler for ConvertKind {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let source_value = arguments[0].clone();
     let target_kind = arguments[1].clone();
@@ -327,9 +347,44 @@ impl NativeFunctionCompiler for ConvertKind {
           Value::MatrixF32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
           #[cfg(all(feature = "matrix", feature = "f64"))]
           Value::MatrixF64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (arguments[0].clone(), arguments[1].clone()), fxn_name: "convert/scalar".to_string() },
+              None,
+            ).with_compiler_loc()
+          ),
         }
       }
     }
+  }
+}
+
+#[derive(Debug)]
+pub struct ColumnConvertKindMismatchError {
+  pub from: ValueKind,
+  pub to: ValueKind,
+}
+
+impl MechErrorKind2 for ColumnConvertKindMismatchError {
+  fn name(&self) -> &str { "ColumnTypeMismatch" }
+  fn message(&self) -> String {
+    format!(
+      "Matrix column kind {:?} does not match table column kind {:?}. Conversion requires the element types to be compatible.",
+      self.from, self.to
+    )
+  }
+}
+
+#[derive(Debug)]
+pub struct ConvertIncorrectNumberOfColumnsError {
+  pub from: usize,
+  pub to: usize,
+}
+impl MechErrorKind2 for ConvertIncorrectNumberOfColumnsError {
+  fn name(&self) -> &str { "IncorrectNumberOfColumns" }
+  fn message(&self) -> String {
+    format!(
+      "Matrix has {} columns, but table expects {}. Column count must match for assignment.",
+      self.from, self.to
+    )
   }
 }
