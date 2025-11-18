@@ -58,8 +58,8 @@ impl NativeFunctionCompiler for MathSincos {
       Err(_) => {
         match (input) {
           (Value::MutableReference(input)) => {impl_sincos_fxn(input.borrow().clone())}
-          x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind2 { arg: x, fxn_name: "math/sincos".to_string() },
+          (arg1,arg2) => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "math/sincos".to_string() },
               None
             ).with_compiler_loc()
           ),

@@ -213,7 +213,7 @@ macro_rules! op_assign_range_fxn {
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, R64, "rational"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, C64, "complex"))
         .map_err(|_| MechError2::new(
-            UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.to_vec(), source.clone()), fxn_name: stringify!($fxn_name).to_string() },
+            UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: stringify!($fxn_name).to_string() },
             None
           ).with_compiler_loc()
         )
@@ -242,7 +242,7 @@ macro_rules! op_assign_range_all_fxn {
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, R64, "rational"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, C64, "complex"))
         .map_err(|_| MechError2::new(
-            UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.to_vec(), source.clone()), fxn_name: stringify!($fxn_name).to_string() },
+            UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: stringify!($fxn_name).to_string() },
             None
           ).with_compiler_loc()
         )
@@ -621,8 +621,8 @@ macro_rules! impl_op_assign_value_match_arms {
           #[cfg(all(feature = $feature, feature = "row_vectord"))]
           (Value::[<Matrix $value_kind>](Matrix::RowDVector(sink)), Value::[<Matrix $value_kind>](Matrix::RowDVector(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
         )+
-        x => Err(MechError2::new(
-            UnhandledFunctionArgumentKind2 { arg: x.clone(), fxn_name: stringify!($op).to_string() },
+        (arg1,arg2) => Err(MechError2::new(
+            UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($op).to_string() },
             None
           ).with_compiler_loc()
         ),

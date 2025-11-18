@@ -89,8 +89,8 @@ impl NativeFunctionCompiler for AddAssignMath {
           (Value::MutableReference(sink),Value::MutableReference(source)) => { add_assign_math_fxn(sink.borrow().clone(),source.borrow().clone()) },
           (sink,Value::MutableReference(source)) => { add_assign_math_fxn(sink.clone(),source.borrow().clone()) },
           (Value::MutableReference(sink),source) => { add_assign_math_fxn(sink.borrow().clone(),source.clone()) },
-          x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind2 { arg: x, fxn_name: "math/add-assign".to_string() },
+          (arg1,arg2) => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "math/add-assign".to_string() },
               None
             ).with_compiler_loc()
           ),
@@ -177,7 +177,7 @@ impl NativeFunctionCompiler for AddAssignRange {
           (sink,ixes,Value::MutableReference(source)) => { add_assign_range_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
           (Value::MutableReference(sink),ixes,source) => { add_assign_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
           (sink, ixes, source) => Err(MechError2::new(
-              UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.to_vec(), source.clone()), fxn_name: "math/add-assign/range".to_string() },
+              UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: "math/add-assign/range".to_string() },
               None
             ).with_compiler_loc()
           ),
@@ -276,7 +276,7 @@ impl NativeFunctionCompiler for AddAssignRangeAll {
           (sink,ixes,Value::MutableReference(source)) => { add_assign_range_all_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
           (Value::MutableReference(sink),ixes,source) => { add_assign_range_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
           (sink, ixes, source) => Err(MechError2::new(
-              UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.to_vec(), source.clone()), fxn_name: "math/add-assign/range-all".to_string() },
+              UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: "math/add-assign/range-all".to_string() },
               None
             ).with_compiler_loc()
           ),

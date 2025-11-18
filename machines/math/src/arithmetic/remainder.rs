@@ -204,8 +204,8 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
       let cols = arg1.borrow().ncols();
       Ok(Box::new(RemainderMDF64{arg1, arg2, out: Ref::new(DMatrix::from_element(rows,cols,F64::zero()))}))
     },
-    x => Err(MechError2::new(
-        UnhandledFunctionArgumentKind2 { arg: x.clone(), fxn_name: "math/remainder".to_string() },
+    (arg1,arg2) => Err(MechError2::new(
+        UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "math/remainder".to_string() },
         None
       ).with_compiler_loc()
     ),
@@ -228,8 +228,8 @@ impl NativeFunctionCompiler for MathRemainder {
           (Value::MutableReference(arg1),Value::MutableReference(arg2)) => {impl_remainder_fxn(arg1.borrow().clone(),arg2.borrow().clone())}
           (Value::MutableReference(arg1),arg2) => {impl_remainder_fxn(arg1.borrow().clone(),arg2.clone())}
           (arg1,Value::MutableReference(arg2)) => {impl_remainder_fxn(arg1.clone(),arg2.borrow().clone())}
-          x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind2 { arg: x.clone(), fxn_name: "math/remainder".to_string() },
+          (arg1,arg2) => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "math/remainder".to_string() },
               None
             ).with_compiler_loc()
           ),

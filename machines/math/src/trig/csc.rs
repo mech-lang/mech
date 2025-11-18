@@ -59,7 +59,7 @@ impl NativeFunctionCompiler for MathCsc {
         match (input) {
           (Value::MutableReference(input)) => {impl_csc_fxn(input.borrow().clone())}
           x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind1 { arg: x, fxn_name: "math/csc".to_string() },
+              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/csc".to_string() },
               None
             ).with_compiler_loc()
           ),

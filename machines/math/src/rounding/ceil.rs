@@ -59,7 +59,7 @@ impl NativeFunctionCompiler for MathCeil {
         match (input) {
           (Value::MutableReference(input)) => {impl_ceil_fxn(input.borrow().clone())}
           x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind1 { arg: x.clone(), fxn_name: "math/ceil".to_string() },
+              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/ceil".to_string() },
               None
             ).with_compiler_loc()
           ),

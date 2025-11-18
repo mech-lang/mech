@@ -59,7 +59,7 @@ impl NativeFunctionCompiler for MathSin {
         match (input) {
           (Value::MutableReference(input)) => {impl_sin_fxn(input.borrow().clone())}
           x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind1 { arg: x, fxn_name: "math/sin".to_string() },
+              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/sin".to_string() },
               None
             ).with_compiler_loc()
           ),

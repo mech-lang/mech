@@ -59,7 +59,7 @@ impl NativeFunctionCompiler for MathLog10 {
         match (input) {
           (Value::MutableReference(input)) => {impl_log10_fxn(input.borrow().clone())}
           x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind1 { arg: x.clone(), fxn_name: "math/log10".to_string() },
+              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/log10".to_string() },
               None
             ).with_compiler_loc()
           ),

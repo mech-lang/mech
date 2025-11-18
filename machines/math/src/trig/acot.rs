@@ -59,7 +59,7 @@ impl NativeFunctionCompiler for MathAcot {
         match (input) {
           (Value::MutableReference(input)) => {impl_acot_fxn(input.borrow().clone())}
           x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind1 { arg: x.clone(), fxn_name: "math/acot".to_string() },
+              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/acot".to_string() },
               None
             ).with_compiler_loc()
           ),

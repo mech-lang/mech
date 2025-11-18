@@ -59,7 +59,7 @@ impl NativeFunctionCompiler for MathExpm1 {
         match input {
           Value::MutableReference(input) => impl_expm1_fxn(input.borrow().clone()),
           x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind1 { arg: x, fxn_name: "math/expm1".to_string() },
+              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/expm1".to_string() },
               None
             ).with_compiler_loc()
           ),

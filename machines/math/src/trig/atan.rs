@@ -57,7 +57,7 @@ impl NativeFunctionCompiler for MathAtan {
           match (input) {
             (Value::MutableReference(input)) => {impl_atan_fxn(input.borrow().clone())}
             x => Err(MechError2::new(
-                UnhandledFunctionArgumentKind1 { arg: x, fxn_name: "math/atan".to_string() },
+                UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/atan".to_string() },
                 None
               ).with_compiler_loc()
             ),
@@ -74,8 +74,8 @@ impl NativeFunctionCompiler for MathAtan {
             (Value::MutableReference(arg1),Value::MutableReference(arg2)) => {impl_atan2_fxn(arg1.borrow().clone(),arg2.borrow().clone())}
             (Value::MutableReference(arg1),arg2) => {impl_atan2_fxn(arg1.borrow().clone(),arg2.clone())}
             (arg1,Value::MutableReference(arg2)) => {impl_atan2_fxn(arg1.clone(),arg2.borrow().clone())}
-            x => Err(MechError2::new(
-                UnhandledFunctionArgumentKind2 { arg: x, fxn_name: "math/atan".to_string() },
+            (arg1,arg2) => Err(MechError2::new(
+                UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "math/atan".to_string() },
                 None
               ).with_compiler_loc()
             ),

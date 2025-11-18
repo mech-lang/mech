@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for MathSinh {
       Err(_) => match input {
         Value::MutableReference(input) => impl_sinh_fxn(input.borrow().clone()),
         _ => Err(MechError2::new(
-            UnhandledFunctionArgumentKind1 { arg: input.clone(), fxn_name: "math/sinh".to_string() },
+            UnhandledFunctionArgumentKind1 { arg: input.kind(), fxn_name: "math/sinh".to_string() },
             None
           ).with_compiler_loc()
         ),

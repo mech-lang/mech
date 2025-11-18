@@ -59,7 +59,7 @@ impl NativeFunctionCompiler for MathErf {
         match (input) {
           (Value::MutableReference(input)) => {impl_erf_fxn(input.borrow().clone())}
           x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind1 { arg: x.clone(), fxn_name: "math/erf".to_string() },
+              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/erf".to_string() },
               None
             ).with_compiler_loc()
           ),

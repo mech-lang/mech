@@ -59,7 +59,7 @@ impl NativeFunctionCompiler for MathRint {
         match (input) {
           (Value::MutableReference(input)) => {impl_rint_fxn(input.borrow().clone())}
           x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind1 { arg: x.clone(), fxn_name: "math/rint".to_string() },
+              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/rint".to_string() },
               None
             ).with_compiler_loc()
           ),

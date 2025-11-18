@@ -91,8 +91,8 @@ impl NativeFunctionCompiler for DivAssignValue {
           (Value::MutableReference(sink),Value::MutableReference(source)) => { div_assign_value_fxn(sink.borrow().clone(),source.borrow().clone()) },
           (sink,Value::MutableReference(source)) => { div_assign_value_fxn(sink.clone(),source.borrow().clone()) },
           (Value::MutableReference(sink),source) => { div_assign_value_fxn(sink.borrow().clone(),source.clone()) },
-          x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind2 { arg: x.clone(), fxn_name: "math/div-assign".to_string() },
+          (arg1,arg2) => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "math/div-assign".to_string() },
               None
             ).with_compiler_loc()
           ),
@@ -179,7 +179,7 @@ impl NativeFunctionCompiler for DivAssignRange {
           (sink,ixes,Value::MutableReference(source)) => { div_assign_range_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
           (Value::MutableReference(sink),ixes,source) => { div_assign_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
           x => Err(MechError2::new(
-              UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.to_vec(), source.clone()), fxn_name: "math/div-assign/range".to_string() },
+              UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: "math/div-assign/range".to_string() },
               None
             ).with_compiler_loc()
           ),
@@ -277,7 +277,7 @@ impl NativeFunctionCompiler for DivAssignRangeAll {
           (sink,ixes,Value::MutableReference(source)) => { div_assign_range_all_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
           (Value::MutableReference(sink),ixes,source) => { div_assign_range_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
           _ => Err(MechError2::new(
-              UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.to_vec(), source.clone()), fxn_name: "math/div-assign/range-all".to_string() },
+              UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: "math/div-assign/range-all".to_string() },
               None
             ).with_compiler_loc()
           ),

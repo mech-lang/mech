@@ -68,7 +68,7 @@ impl NativeFunctionCompiler for MathCosh {
       Err(_) => match input {
         Value::MutableReference(input) => impl_cosh_fxn(input.borrow().clone()),
         _ => Err(MechError2::new(
-            UnhandledFunctionArgumentKind1 { arg: input.clone(), fxn_name: "math/cosh".to_string() },
+            UnhandledFunctionArgumentKind1 { arg: input.kind(), fxn_name: "math/cosh".to_string() },
             None
           ).with_compiler_loc()
         ),
