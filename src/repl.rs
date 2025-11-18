@@ -181,13 +181,7 @@ impl MechRepl {
         return Ok(format!("{} cycles in {:0.2?} ns\n", n, cycle_duration));
       }
       x => {
-        return Err(MechError {
-          file: file!().to_string(),
-          tokens: vec![],
-          msg: format!("{:?} requires disabled feature. ", x),
-          id: line!(),
-          kind: MechErrorKind::None,
-        });
+        return Err(MechError2::new(FeatureNotEnabledError, None).with_compiler_loc());
       }
     }
   }

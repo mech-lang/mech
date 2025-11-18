@@ -301,3 +301,64 @@ pub fn clc() {
   stdo.execute(terminal::Clear(terminal::ClearType::All));
   stdo.execute(cursor::MoveTo(0,0));
 }
+#[derive(Debug, Clone)]
+pub struct HttpRequestFailed {
+  pub url: String,
+  pub source: String,
+}
+impl MechErrorKind2 for HttpRequestFailed {
+  fn name(&self) -> &str { "HttpRequestFailed" }
+  fn message(&self) -> String {
+  format!("Failed to GET {}: {}", self.url, self.source)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct HttpTextDecodeFailed {
+  pub url: String,
+  pub source: String,
+}
+impl MechErrorKind2 for HttpTextDecodeFailed {
+  fn name(&self) -> &str { "HttpTextDecodeFailed" }
+  fn message(&self) -> String {
+  format!("Failed to read response text {}: {}", self.url, self.source)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct HttpRequestStatusFailed {
+  pub url: String,
+  pub status_code: u16,
+}
+impl MechErrorKind2 for HttpRequestStatusFailed {
+  fn name(&self) -> &str { "HttpRequestStatusFailed" }
+  fn message(&self) -> String {
+  format!("Request to {} failed with status code: {}", self.url, self.status_code)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct FileOpenFailed {
+  pub file_path: String,
+  pub source: String,
+}
+impl MechErrorKind2 for FileOpenFailed {
+  fn name(&self) -> &str { "FileOpenFailed" }
+
+  fn message(&self) -> String {
+    format!("Failed to open file {}: {}", self.file_path, self.source)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct FileWriteFailed {
+  pub file_path: String,
+  pub source: String
+}
+impl MechErrorKind2 for FileWriteFailed {
+  fn name(&self) -> &str { "FileWriteFailed" }
+
+  fn message(&self) -> String {
+    format!("Failed to write file {}: {}", self.file_path, self.source)
+  }
+}

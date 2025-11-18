@@ -1343,7 +1343,10 @@ pub fn cargo_build(
       pb.set_style(fail_style());
       pb.finish_with_message(format!("Failed to start cargo: {} {}", e, style("✗").red()));
       cancel_all("Build cancelled due to cargo error.");
-      return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Failed to start cargo: {}", e), id: line!(), kind: MechErrorKind::GenericError("Cargo build failed".to_string())});
+      return Err(MechError2::new(
+        CargoStartFailed{
+          details: format!("{}", e)
+        }, None).with_compiler_loc())
     }
   };
   let stdout = child.stdout.take().unwrap();
@@ -1388,7 +1391,11 @@ pub fn cargo_build(
         pb.set_style(fail_style());
         pb.finish_with_message(format!("Shim build failed: {} {} {}", output.status, String::from_utf8_lossy(&output.stderr), style("✗").red()));
         cancel_all("Build cancelled due to cargo error.");
-        return Err(MechError {file: file!().to_string(), tokens: vec![], msg: "Cargo build failed".to_string(), id: line!(), kind: MechErrorKind::GenericError("Cargo build failed".to_string())});
+        return Err(MechError2::new(
+          CargoBuildFailed{
+            status: output.status.code().unwrap_or(-1),
+            stderr: String::from_utf8_lossy(&output.stderr).to_string()
+          }, None).with_compiler_loc())
       } else {
         pb.finish_with_message("Shim build finished.");
       }
@@ -1397,7 +1404,10 @@ pub fn cargo_build(
       pb.set_style(fail_style());
       pb.finish_with_message(format!("Failed to wait for Cargo: {} {}", e, style("✗").red()));
       cancel_all("Build cancelled due to Cargo error.");
-      return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Failed to wait for Cargo: {}", e), id: line!(), kind: MechErrorKind::GenericError("Cargo build failed".to_string())});
+      return Err(MechError2::new(
+        CargoWaitFailed{
+          details: format!("{}", e)
+        }, None).with_compiler_loc())
     }
   }
 
@@ -1532,20 +1542,44 @@ fn create_zip_from_pairs(pairs: &[(String, Vec<u8>)]) -> MResult<Vec<u8>> {
       match zip.start_file(&entry_name, options) {
         Ok(_) => {}
         Err(e) => {
-          return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Failed to add file to zip: {}", e), id: line!(), kind: MechErrorKind::GenericError("Zip error".to_string())});
+          return Err(
+            MechError2::new(
+              ZipOperationError {
+                operation: "add",
+                details: e.to_string(),
+              },
+              None,
+            )
+            .with_compiler_loc()
+          );
         }
-      }
+        }
       match zip.write_all(bytes) {
         Ok(_) => {}
         Err(e) => {
-          return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Failed to write file to zip: {}", e), id: line!(), kind: MechErrorKind::GenericError("Zip error".to_string())});
+          return Err(
+            MechError2::new(
+              ZipOperationError {
+                operation: "write",
+                details: e.to_string(),
+              },
+              None,
+            )
+            .with_compiler_loc()
+          );
         }
       }
     }
     match zip.finish() {
       Ok(_) => {}
       Err(e) => {
-        return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Failed to finish zip: {}", e), id: line!(), kind: MechErrorKind::GenericError("Zip error".to_string())});
+        return Err(MechError2::new(
+          ZipOperationError {
+            operation: "finish",
+            details: e.to_string(),
+          },
+          None,
+        ).with_compiler_loc())
       }
     }
   }
@@ -1568,13 +1602,23 @@ fn find_built_exe(project_dir: &Path, shim_name: &str, target: Option<&str>, rel
     if with_exe.exists() {
       return Ok(with_exe);
     } else {
-      return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Built executable not found at {}", with_exe.display()), id: line!(), kind: MechErrorKind::GenericError("Missing executable".to_string())});
+      return Err(MechError2::new(
+        MissingExecutableError {
+          path: with_exe.to_string_lossy().to_string(),
+        },
+        None,
+      ).with_compiler_loc());
     }
   }
   if candidate.exists() {
     return Ok(candidate);
   }
-  Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Built executable not found at {}", candidate.display()), id: line!(), kind: MechErrorKind::GenericError("Missing executable".to_string())})
+  Err(MechError2::new(
+    MissingExecutableError {
+      path: candidate.to_string_lossy().to_string(),
+    },
+    None,
+  ).with_compiler_loc())
 }
 
 fn write_final_exe(built_exe: &Path, zip_bytes: &[u8], out_path: &Path) -> Result<u64> {
@@ -1588,4 +1632,78 @@ fn write_final_exe(built_exe: &Path, zip_bytes: &[u8], out_path: &Path) -> Resul
   out.flush()?;
   // Return the total size of the output file
   Ok(exe_bytes.len() as u64 + zip_size + 8)
+}
+
+#[derive(Debug, Clone)]
+pub struct CargoStartFailed {
+  pub details: String,
+}
+impl MechErrorKind2 for CargoStartFailed {
+  fn name(&self) -> &str {
+    "CargoStartFailed"
+  }
+
+  fn message(&self) -> String {
+    format!("Failed to start cargo: {}", self.details)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct MissingExecutableError {
+  pub path: String,
+}
+impl MechErrorKind2 for MissingExecutableError {
+  fn name(&self) -> &str {
+    "MissingExecutableError"
+  }
+  fn message(&self) -> String {
+    format!("Built executable not found at {}", self.path)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct ZipOperationError {
+  pub operation: &'static str,
+  pub details: String,
+}
+
+impl MechErrorKind2 for ZipOperationError {
+  fn name(&self) -> &str {
+    "ZipOperationError"
+  }
+
+  fn message(&self) -> String {
+    format!("Zip operation '{}' failed: {}", self.operation, self.details)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct CargoBuildFailed {
+  pub status: i32,
+  pub stderr: String,
+}
+impl MechErrorKind2 for CargoBuildFailed {
+  fn name(&self) -> &str {
+    "CargoBuildFailed"
+  }
+  fn message(&self) -> String {
+    format!(
+      "Cargo build failed (status: {}): {}",
+      self.status, self.stderr
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct CargoWaitFailed {
+  pub details: String,
+}
+impl MechErrorKind2 for CargoWaitFailed {
+  fn name(&self) -> &str {
+    "CargoWaitFailed"
+  }
+
+  fn message(&self) -> String {
+    format!("Failed to wait for Cargo: {}", self.details)
+  }
 }

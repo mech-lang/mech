@@ -62,7 +62,10 @@ impl MechServer {
       },
       Err(e) => {
         let msg = format!("Failed to convert stylesheet to string: {}", e);
-        return Err(MechError{file: file!().to_string(), tokens: vec![], msg, id: line!(), kind: MechErrorKind::None});
+        return Err(MechError2::new(
+          Utf8ConversionError { source_error: e.to_string() },
+          None
+        ).with_compiler_loc());
       }
     }
 
@@ -73,8 +76,10 @@ impl MechServer {
         self.mechfs.set_shim(&s);
       },
       Err(e) => {
-        let msg = format!("Failed to convert shim to string: {}", e);
-        return Err(MechError{file: file!().to_string(), tokens: vec![], msg, id: line!(), kind: MechErrorKind::None});
+        return Err(MechError2::new(
+          Utf8ConversionError { source_error: e.to_string() },
+          None
+        ).with_compiler_loc());
       }
     }
 
@@ -106,17 +111,25 @@ impl MechServer {
                 Ok(bytes) => Ok(bytes.to_vec()),
                 Err(e) => {
                   let msg = format!("Failed to download file: {}", e);
-                  Err(MechError{file: file!().to_string(), tokens: vec![], msg, id: line!(), kind: MechErrorKind::None})
+                  Err(MechError2::new(
+                    HttpRequestFailed { url: backup_url.to_string(), source: e.to_string() },
+                    None
+                  ).with_compiler_loc())
                 }
               }
             } else {
               let msg = format!("Failed to download file from URL: {} (status: {}).", backup_url, response.status());
-              Err(MechError{file: file!().to_string(), tokens: vec![], msg, id: line!(), kind: MechErrorKind::None})
+              Err(MechError2::new(
+                HttpRequestStatusFailed { url: backup_url.to_string(), status_code: response.status().as_u16() },
+                None
+              ).with_compiler_loc())
             }
           },
           Err(e) => {
-            let msg = format!("Failed to download file: {}", e);
-            Err(MechError{file: file!().to_string(), tokens: vec![], msg, id: line!(), kind: MechErrorKind::None})
+            Err(MechError2::new(
+              HttpRequestFailed { url: backup_url.to_string(), source: e.to_string() },
+              None
+            ).with_compiler_loc())
           }
         }
       }
@@ -125,7 +138,7 @@ impl MechServer {
 
   pub async fn serve(&self) -> MResult<()> {
     if !self.init {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Server not initialized".to_string(), id: line!(), kind: MechErrorKind::None});
+      return Err(MechError2::new(ServerNotInitializedError, None).with_compiler_loc());
     }
       
     let server_badge = || {"[Mech Server]".truecolor(34, 204, 187)};
@@ -319,4 +332,27 @@ impl MechServer {
     std::process::exit(0);
   }
 
+}
+
+#[derive(Debug, Clone)]
+pub struct ServerNotInitializedError;
+impl MechErrorKind2 for ServerNotInitializedError {
+  fn name(&self) -> &str { "ServerNotInitializedError" }
+
+  fn message(&self) -> String {
+    format!("The server is not initialized.")
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct Utf8ConversionError {
+  pub source_error: String
+}
+impl MechErrorKind2 for Utf8ConversionError {
+  fn name(&self) -> &str {
+    "Utf8ConversionError"
+  }
+  fn message(&self) -> String {
+    format!("Failed to convert bytes into UTF-8 string: {}", self.source_error)
+  }
 }

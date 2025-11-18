@@ -31,7 +31,7 @@ use std::sync::{Arc, Mutex};
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[tokio::main]
-async fn main() -> Result<(), MechError> {
+async fn main() -> Result<(), MechError2> {
   /*panic::set_hook(Box::new(|panic_info| {
     // do nothing.
   }));*/
@@ -360,8 +360,8 @@ async fn main() -> Result<(), MechError> {
     }
 
     let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag); 
-    
-    let return_value = match &result {
+
+    let return_value: Result<(), MechError2> = match &result {
       Ok(ref r) => {
         #[cfg(feature = "pretty_print")]
         println!("{}", r.pretty_print());
