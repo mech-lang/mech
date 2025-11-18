@@ -96,7 +96,7 @@ macro_rules! impl_print_match_arms {
           (Value::[<Matrix $input_type:camel>](Matrix::DVector(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
         )+
         x => Err(MechError2::new(
-            UnhandledFunctionArgumentKind1 { arg: x, fxn_name: "io/println".to_string() },
+            UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "io/println".to_string() },
             None
           ).with_compiler_loc()
         ),
@@ -232,7 +232,7 @@ impl NativeFunctionCompiler for IoPrintln {
         match (input) {
           (Value::MutableReference(input)) => {impl_print_fxn(input.borrow().clone())}
           x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind1 { arg: x, fxn_name: "io/println".to_string() },
+              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "io/println".to_string() },
               None
             ).with_compiler_loc()
           ),
