@@ -350,7 +350,7 @@ impl NativeFunctionCompiler for ConvertMatToMat {
         match source_value {
           Value::MutableReference(rhs) => impl_conversion_mat_to_mat_fxn(rhs.borrow().clone(), target_kind.clone()),
           x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind2 { arg: (arguments[0].clone(), arguments[1].clone()), fxn_name: "convert/mat-to-mat".to_string() },
+              UnhandledFunctionArgumentKind2 { arg: (arguments[0].kind(), arguments[1].kind()), fxn_name: "convert/mat-to-mat".to_string() },
               None
             ).with_compiler_loc()
           ),

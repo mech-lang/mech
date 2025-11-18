@@ -237,7 +237,7 @@ fn impl_assign_scalar_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResu
   .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, bool, "bool"))
   .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, String, "string"))
   .map_err(|_| MechError2::new(
-      UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "matrix/assign-scalar".to_string() },
+      UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "matrix/assign-scalar".to_string() },
       None
     ).with_compiler_loc()
   )
@@ -258,7 +258,7 @@ impl NativeFunctionCompiler for MatrixAssignScalar {
         match sink {
           Value::MutableReference(sink) => { impl_assign_scalar_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
           sink => Err(MechError2::new(
-              UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "matrix/assign-scalar".to_string() },
+              UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "matrix/assign-scalar".to_string() },
               None
             ).with_compiler_loc()
           ),
@@ -349,7 +349,7 @@ fn impl_assign_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResul
   .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, C64,  "complex"))
   .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, bool, "bool"))
   .or_else(|_| impl_set_range_arms_b!(Assign1DR, &arg, String, "string"))
-  .map_err(|_| MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "MatrixAssignRange".to_string() }, None).with_compiler_loc())
+  .map_err(|_| MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "MatrixAssignRange".to_string() }, None).with_compiler_loc())
 }
 
 pub struct MatrixAssignRange {}
@@ -368,7 +368,7 @@ impl NativeFunctionCompiler for MatrixAssignRange {
           (Value::MutableReference(sink),_,Value::MutableReference(source)) => { impl_assign_range_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
           (sink,_,Value::MutableReference(source)) => { impl_assign_range_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
           (Value::MutableReference(sink),_,source) => { impl_assign_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
-          (sink, ixes, source) => Err(MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "MatrixAssignRange".to_string() }, None).with_compiler_loc()),
+          (sink, ixes, source) => Err(MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "MatrixAssignRange".to_string() }, None).with_compiler_loc()),
         }
       }
     }
@@ -455,7 +455,7 @@ fn impl_assign_all_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<
   .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, C64,  "complex"))
   .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, bool, "bool"))
   .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, String, "string"))
-  .map_err(|_| MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "MatrixAssignAll".to_string() }, None).with_compiler_loc())
+  .map_err(|_| MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "MatrixAssignAll".to_string() }, None).with_compiler_loc())
 }
 
 pub struct MatrixAssignAll {}
@@ -472,7 +472,7 @@ impl NativeFunctionCompiler for MatrixAssignAll {
       Err(_) => {
         match sink {
           Value::MutableReference(sink) => { impl_assign_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          _ => Err(MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "MatrixAssignAll".to_string() }, None).with_compiler_loc()),
+          _ => Err(MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "MatrixAssignAll".to_string() }, None).with_compiler_loc()),
         }
       }
     }
@@ -561,7 +561,7 @@ fn impl_assign_scalar_scalar_fxn(sink: Value, source: Value, ixes: Vec<Value>) -
   .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, C64,  "complex"))
   .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, bool, "bool"))
   .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, String, "string"))
-  .map_err(|_| MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "MatrixAssignScalarScalar".to_string() }, None).with_compiler_loc())
+  .map_err(|_| MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "MatrixAssignScalarScalar".to_string() }, None).with_compiler_loc())
 }
 
 pub struct MatrixAssignScalarScalar {}
@@ -578,7 +578,7 @@ impl NativeFunctionCompiler for MatrixAssignScalarScalar {
       Err(_) => {
         match sink {
           Value::MutableReference(sink) => { impl_assign_scalar_scalar_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          _ => Err(MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "MatrixAssignScalarScalar".to_string() }, None).with_compiler_loc()),
+          _ => Err(MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "MatrixAssignScalarScalar".to_string() }, None).with_compiler_loc()),
         }
       }
     }
@@ -690,7 +690,7 @@ fn impl_assign_all_scalar_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> M
   .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, C64,  "complex"))
   .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, bool, "bool"))
   .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, String, "string"))
-  .map_err(|_| MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "MatrixAssignRangeScalar".to_string() }, None).with_compiler_loc())
+  .map_err(|_| MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "MatrixAssignRangeScalar".to_string() }, None).with_compiler_loc())
 }
 
 pub struct MatrixAssignAllScalar {}
@@ -707,7 +707,7 @@ impl NativeFunctionCompiler for MatrixAssignAllScalar {
       Err(x) => {
         match sink {
           Value::MutableReference(sink) => { impl_assign_all_scalar_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          sink => Err(MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "MatrixAssignRangeScalar".to_string() }, None).with_compiler_loc()),
+          sink => Err(MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "MatrixAssignRangeScalar".to_string() }, None).with_compiler_loc()),
         }
       }
     }
@@ -751,7 +751,7 @@ fn impl_assign_scalar_all_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> M
   .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, C64,  "complex"))
   .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, bool, "bool"))
   .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, String, "string"))
-  .map_err(|_| MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "MatrixAssignRangeScalar".to_string() }, None).with_compiler_loc())
+  .map_err(|_| MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "MatrixAssignRangeScalar".to_string() }, None).with_compiler_loc())
 }
 
 pub struct MatrixAssignScalarAll {}
@@ -768,7 +768,7 @@ impl NativeFunctionCompiler for MatrixAssignScalarAll {
       Err(_) => {
         match sink {
           Value::MutableReference(sink) => { impl_assign_scalar_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          _ => Err(MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "MatrixAssignRangeScalar".to_string() }, None).with_compiler_loc()),
+          _ => Err(MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "MatrixAssignRangeScalar".to_string() }, None).with_compiler_loc()),
         }
       }
     }
@@ -1004,7 +1004,7 @@ fn impl_assign_range_scalar_fxn(sink: Value, source: Value, ixes: Vec<Value>) ->
   .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, C64,  "complex"))
   .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, bool, "bool"))
   .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, String, "string"))
-  .map_err(|_| MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "MatrixAssignRangeScalar".to_string() }, None).with_compiler_loc())
+  .map_err(|_| MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "MatrixAssignRangeScalar".to_string() }, None).with_compiler_loc())
 }
 
 pub struct MatrixAssignRangeScalar {}
@@ -1021,7 +1021,7 @@ impl NativeFunctionCompiler for MatrixAssignRangeScalar {
       Err(_) => {
         match sink {
           Value::MutableReference(sink) => { impl_assign_range_scalar_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          _ => Err(MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "MatrixAssignRangeScalar".to_string() }, None).with_compiler_loc()),
+          _ => Err(MechError2::new(UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "MatrixAssignRangeScalar".to_string() }, None).with_compiler_loc()),
         }
       }
     }
@@ -1251,7 +1251,7 @@ fn impl_assign_scalar_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) ->
   .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, bool, "bool"))
   .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, String, "string"))
   .map_err(|_| MechError2::new(
-    UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.to_vec(), source.clone()), fxn_name: "MatrixAssignScalarRange".to_string()  }, None).with_compiler_loc()
+    UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: "MatrixAssignScalarRange".to_string()  }, None).with_compiler_loc()
   )
 }
 
@@ -1270,7 +1270,7 @@ impl NativeFunctionCompiler for MatrixAssignScalarRange {
         match sink {
           Value::MutableReference(sink) => { impl_assign_scalar_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
           _ => Err(MechError2::new(
-            UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "MatrixAssignScalarRange".to_string() }, None).with_compiler_loc() ),
+            UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "MatrixAssignScalarRange".to_string() }, None).with_compiler_loc() ),
         }
       }
     }
@@ -1524,7 +1524,7 @@ fn impl_assign_range_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> 
   .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_ub, Assign2DRR, arg, F64, "f64"))
 
   .map_err(|_| MechError2::new(
-      UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.to_vec(), source.clone()), fxn_name: "matrix/assign-range".to_string() },
+      UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: "matrix/assign-range".to_string() },
       None
     ).with_compiler_loc()
   )
@@ -1545,7 +1545,7 @@ impl NativeFunctionCompiler for MatrixAssignRangeRange {
         match sink {
           Value::MutableReference(sink) => { impl_assign_range_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
           _ => Err(MechError2::new(
-              UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "matrix/assign-range".to_string() },
+              UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "matrix/assign-range".to_string() },
               None
             ).with_compiler_loc()
           ),
@@ -1653,7 +1653,7 @@ macro_rules! matrix_assign_all_range_fxn {
         .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, bool, "bool"))
         .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, String, "string"))
         .map_err(|_| MechError2::new(
-            UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "matrix/assign-scalar".to_string() },
+            UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "matrix/assign-scalar".to_string() },
             None
           ).with_compiler_loc()
         )
@@ -1681,7 +1681,7 @@ impl NativeFunctionCompiler for MatrixAssignAllRange {
           (sink, ixes, Value::MutableReference(source)) => { impl_assign_all_range_fxn(sink.clone(), source.borrow().clone(), ixes.clone()) },
           (Value::MutableReference(sink), ixes, source) => { impl_assign_all_range_fxn(sink.borrow().clone(), source.clone(), ixes.clone()) },
           (sink, ixes, source) => Err(MechError2::new(
-            UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "matrix/assign-scalar".to_string() },
+            UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "matrix/assign-scalar".to_string() },
             None
           ).with_compiler_loc())
         }
@@ -1786,7 +1786,7 @@ macro_rules! matrix_assign_range_all_fxn {
         .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, bool, "bool"))
         .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, String, "string"))
         .map_err(|_| MechError2::new(
-            UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "matrix/assign-range-all".to_string() },
+            UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "matrix/assign-range-all".to_string() },
             None
           ).with_compiler_loc()
         )
@@ -1814,7 +1814,7 @@ impl NativeFunctionCompiler for MatrixAssignRangeAll {
           (sink,ixes,Value::MutableReference(source)) => { impl_assign_range_all_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
           (Value::MutableReference(sink),ixes,source) => { impl_assign_range_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
           x => Err(MechError2::new(
-              UnhandledFunctionArgumentIxes { arg: (sink.clone(), ixes.clone(), source.clone()), fxn_name: "matrix/assign-range-all".to_string() },
+              UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "matrix/assign-range-all".to_string() },
               None
             ).with_compiler_loc()
           ),

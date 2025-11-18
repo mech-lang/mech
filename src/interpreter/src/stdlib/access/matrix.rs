@@ -97,7 +97,7 @@ macro_rules! impl_access_fxn_new {
     let (ref source, ref ixes) = &$arg;
     res.map_err(|_| MechError2::new(
       UnhandledFunctionArgumentIxesMono {
-        arg: (source.clone(), ixes.to_vec()),
+        arg: (source.kind(), ixes.iter().map(|x| x.kind()).collect()),
         fxn_name: stringify!($fxn_name).to_string(),
       },
       None,
@@ -808,7 +808,7 @@ macro_rules! impl_access_scalar_match_arms {
             },
           )+
         )+
-        (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.clone(), ix.to_vec()), fxn_name: stringify!($fxn_name).to_string() }, None).with_compiler_loc()),
+        (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string() }, None).with_compiler_loc()),
       }
     }
   }
@@ -831,7 +831,7 @@ impl NativeFunctionCompiler for MatrixAccessScalar {
       Err(_) => {
         match (mat,ixes) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_scalar_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.clone(), ix.to_vec()), fxn_name: "MatrixAccessScalar".to_string() }, None).with_compiler_loc()),
+          (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessScalar".to_string() }, None).with_compiler_loc()),
         }
       }
     }
@@ -918,7 +918,7 @@ macro_rules! impl_access_scalar_scalar_match_arms {
             },
           )+
         )+
-        (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.clone(), ix.to_vec()), fxn_name: stringify!($fxn_name).to_string() }, None).with_compiler_loc()),
+        (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string() }, None).with_compiler_loc()),
       }
     }
   }
@@ -941,7 +941,7 @@ impl NativeFunctionCompiler for MatrixAccessScalarScalar {
       Err(_) => {
         match (mat,ixes) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_scalar_scalar_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.clone(), ix.to_vec()), fxn_name: "MatrixAccessScalarScalar".to_string() }, None).with_compiler_loc()),
+          (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessScalarScalar".to_string() }, None).with_compiler_loc()),
         }
       }
     }
@@ -1123,7 +1123,7 @@ macro_rules! impl_access_range_match_arms {
             },   
           )+
         )+
-        (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.clone(), ix.to_vec()), fxn_name: stringify!($fxn_name).to_string() }, None).with_compiler_loc()),
+        (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string() }, None).with_compiler_loc()),
       }
     }
   }
@@ -1146,7 +1146,7 @@ impl NativeFunctionCompiler for MatrixAccessRange {
       Err(_) => {
         match (mat,ixes) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_range_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.clone(), ix.to_vec()), fxn_name: "MatrixAccessRange".to_string() }, None).with_compiler_loc()),
+          (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessRange".to_string() }, None).with_compiler_loc()),
         }
       }
     }
@@ -1322,7 +1322,7 @@ macro_rules! impl_access_range_range_arms {
           }
         }
         (src, ix) => Err(MechError2::new(
-          UnhandledFunctionArgumentIxesMono{arg: (src.clone(), ix.to_vec()), fxn_name: stringify!($fxn_name).to_string()}, 
+          UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string()}, 
           None).with_compiler_loc()
         ),
       }
@@ -1354,7 +1354,7 @@ fn matrix_access_range_range_fxn(source: Value, ixes: Vec<Value>) -> MResult<Box
   .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, bool, "bool"))
   .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, String, "string"))
   .map_err(|_| MechError2::new(UnhandledFunctionArgumentIxesMono{
-      arg: (source, ixes), fxn_name: "MatrixAccessRangeRange".to_string()
+      arg: (source.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessRangeRange".to_string()
     }, None).with_compiler_loc())
 }
     
@@ -1372,7 +1372,7 @@ impl NativeFunctionCompiler for MatrixAccessRangeRange {
         match source {
           Value::MutableReference(source) => { matrix_access_range_range_fxn(source.borrow().clone(), ixes.clone()) },
           _ => Err(MechError2::new(
-            UnhandledFunctionArgumentIxesMono{arg: (source.clone(), ixes.clone()), fxn_name: "MatrixAccessRangeRange".to_string()}, 
+            UnhandledFunctionArgumentIxesMono{arg: (source.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessRangeRange".to_string()}, 
             None).with_compiler_loc()
           ),
         }
@@ -1422,7 +1422,7 @@ macro_rules! impl_access_all_match_arms {
           )+
         )+
         (src, ix) => Err(MechError2::new(
-          UnhandledFunctionArgumentIxesMono{arg: (src.clone(), ix.to_vec()), fxn_name: stringify!($fxn_name).to_string()}, 
+          UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string()}, 
           None).with_compiler_loc()
         ),
       }
@@ -1447,7 +1447,7 @@ impl NativeFunctionCompiler for MatrixAccessAll {
       Err(_) => {
         match (mat,ixes) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_all_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: (src.clone(), ix.to_vec()), fxn_name: "MatrixAccessAll".to_string()}, None).with_compiler_loc()),
+          (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessAll".to_string()}, None).with_compiler_loc()),
         }
       }
     }
@@ -1495,7 +1495,7 @@ macro_rules! impl_access_all_scalar_match_arms {
           )+
         )+
         (src, ix) => Err(MechError2::new(
-          UnhandledFunctionArgumentIxesMono{arg: (src.clone(), ix.to_vec()), fxn_name: stringify!($fxn_name).to_string()}, 
+          UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string()}, 
           None).with_compiler_loc()
         ),
       }
@@ -1520,7 +1520,7 @@ impl NativeFunctionCompiler for MatrixAccessAllScalar {
       Err(_) => {
         match (mat,ixes) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_all_scalar_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: (src.clone(), ix.to_vec()), fxn_name: "MatrixAccessAllScalar".to_string()}, None).with_compiler_loc()),
+          (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessAllScalar".to_string()}, None).with_compiler_loc()),
         }
       }
     }
@@ -1573,7 +1573,7 @@ macro_rules! impl_access_scalar_all_match_arms {
           )+
         )+
         (src, ix) => Err(MechError2::new(
-          UnhandledFunctionArgumentIxesMono{arg: (src.clone(), ix.to_vec()), fxn_name: stringify!($fxn_name).to_string()}, 
+          UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string()}, 
           None).with_compiler_loc()
         ),
       }
@@ -1598,7 +1598,7 @@ impl NativeFunctionCompiler for MatrixAccessScalarAll {
       Err(_) => {
         match (mat,ixes) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_scalar_all_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: x.clone(), fxn_name: "MatrixAccessScalarAll".to_string()}, None).with_compiler_loc()),
+          (mat, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: (mat.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessScalarAll".to_string()}, None).with_compiler_loc()),
         }
       }
     }
@@ -1675,7 +1675,7 @@ macro_rules! impl_access_all_range_arms {
         },
         (sink, ix) => {
           Err(MechError2::new(
-            UnhandledFunctionArgumentIxesMono{arg: (sink.clone(), ix.to_vec()), fxn_name: stringify!($fxn_name).to_string()}, 
+            UnhandledFunctionArgumentIxesMono{arg: (sink.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string()}, 
             None).with_compiler_loc()
           )
         }
@@ -1706,7 +1706,7 @@ fn matrix_access_all_range_fxn(source: Value, ixes: Vec<Value>) -> MResult<Box<d
   .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, bool, "bool"))
   .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, String, "string"))
   .map_err(|_| MechError2::new(UnhandledFunctionArgumentIxesMono{
-      arg: (source, ixes), fxn_name: "MatrixAccessAllRange".to_string()
+      arg: (source.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessAllRange".to_string()
     }, None).with_compiler_loc())
 }
     
@@ -1724,7 +1724,7 @@ impl NativeFunctionCompiler for MatrixAccessAllRange {
         match source {
           Value::MutableReference(source) => { matrix_access_all_range_fxn(source.borrow().clone(), ixes.clone()) },
           x => Err(MechError2::new(
-            UnhandledFunctionArgumentIxesMono{arg: (x, ixes.to_vec()), fxn_name: "MatrixAccessAllRange".to_string()}, 
+            UnhandledFunctionArgumentIxesMono{arg: (x.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessAllRange".to_string()}, 
             None).with_compiler_loc()
           ),
         }
@@ -1805,7 +1805,7 @@ macro_rules! impl_access_range_all_match_arms {
             },
           )+
         )+
-        (src, ixes) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: (src, ixes.to_vec()), fxn_name: "MatrixAccessRangeAll".to_string()}, None).with_compiler_loc()),
+        (src, ixes) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessRangeAll".to_string()}, None).with_compiler_loc()),
       }
     }
   }
@@ -1828,7 +1828,7 @@ impl NativeFunctionCompiler for MatrixAccessRangeAll {
       Err(_) => {
         match (mat.clone(),ixes.clone()) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_range_all_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          (src, ixes) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: (src, ixes.to_vec()), fxn_name: "MatrixAccessRangeAll".to_string()}, None).with_compiler_loc()),
+          (src, ixes) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessRangeAll".to_string()}, None).with_compiler_loc()),
         }
       }
     }
@@ -1906,7 +1906,7 @@ macro_rules! impl_access_range_scalar_match_arms {
               Ok(Box::new(Access2DVDbSMD{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DVector::from_element(ix1.borrow().len(),$default)) }))
             },)+
         )+
-        (src, ixes) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: (src, ixes.to_vec()), fxn_name: "MatrixAccessRangeRange".to_string()}, None).with_compiler_loc()),
+        (src, ixes) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessRangeRange".to_string()}, None).with_compiler_loc()),
       }
     }
   }
@@ -1929,7 +1929,7 @@ impl NativeFunctionCompiler for MatrixAccessRangeScalar {
       Err(_) => {
         match (mat,ixes) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_range_scalar_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          (src,ixs) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src, ixs), fxn_name: "MatrixAccessRangeScalar".to_string() }, None).with_compiler_loc()),
+          (src,ixs) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.kind(), ixs.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessRangeScalar".to_string() }, None).with_compiler_loc()),
         }
       }
     }
@@ -2007,7 +2007,7 @@ macro_rules! impl_access_scalar_range_match_arms {
               Ok(Box::new(Access2DSVDbMD{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(RowDVector::from_element(ix2.borrow().len(),$default)) }))
             },)+
         )+
-        (src,ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{ arg: (src.clone(), ix.to_vec()), fxn_name: stringify!($fxn_name).to_string() }, None).with_compiler_loc()),
+        (src,ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{ arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string() }, None).with_compiler_loc()),
       }
     }
   }
@@ -2031,7 +2031,7 @@ impl NativeFunctionCompiler for MatrixAccessScalarRange {
       Err(_) => {
         match (mat.clone(),ixes.clone()) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_scalar_range_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{ arg: (mat.clone(), ixes.clone()), fxn_name: "MatrixAccessScalarRange".to_string() }, None).with_compiler_loc()),
+          x => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{ arg: (mat.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessScalarRange".to_string() }, None).with_compiler_loc()),
         }
       }
     }

@@ -135,7 +135,7 @@ macro_rules! impl_set_column_match_arms {
           }
         }
         (sink, source, key) => Err(MechError2::new(
-            UnhandledFunctionArgumentKind3 { arg: (sink.clone(), source.clone(), key.clone()), fxn_name: stringify!($fxn_name).to_string() },
+            UnhandledFunctionArgumentKind3 { arg: (sink.kind(), source.kind(), key.kind()), fxn_name: stringify!($fxn_name).to_string() },
             None
           ).with_compiler_loc()
         ),
@@ -181,7 +181,7 @@ impl NativeFunctionCompiler for AssignTableColumn {
         match (&sink,&source,&key) {
           (Value::MutableReference(sink),_,_) => { impl_set_column_fxn(sink.borrow().clone(), source.clone(), key.clone()) }
           (sink, source, key) => Err(MechError2::new(
-              UnhandledFunctionArgumentKind3 { arg: (sink.clone(), source.clone(), key.clone()), fxn_name: "table/assign-column".to_string() },
+              UnhandledFunctionArgumentKind3 { arg: (sink.kind(), source.kind(), key.kind()), fxn_name: "table/assign-column".to_string() },
               None
             ).with_compiler_loc()
           ),
@@ -251,8 +251,8 @@ pub fn add_assign_table_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechF
       tbl_sink.borrow().check_table_schema(&tbl_src.borrow())?;
       return Ok(Box::new(TableAppendTable{ sink: tbl_sink, source: tbl_src }))
     }
-    x => return Err(MechError2::new(
-        UnhandledFunctionArgumentKind2 { arg: x, fxn_name: "table/add-assign".to_string() },
+    (sink,source) => return Err(MechError2::new(
+        UnhandledFunctionArgumentKind2 { arg: (sink.kind(),source.kind()), fxn_name: "table/add-assign".to_string() },
         None
       ).with_compiler_loc()
     ),
@@ -274,8 +274,8 @@ impl NativeFunctionCompiler for AddAssignTable {
           (Value::MutableReference(sink),Value::MutableReference(source)) => { add_assign_table_fxn(sink.borrow().clone(),source.borrow().clone()) },
           (sink,Value::MutableReference(source)) => { add_assign_table_fxn(sink.clone(),source.borrow().clone()) },
           (Value::MutableReference(sink),source) => { add_assign_table_fxn(sink.borrow().clone(),source.clone()) },
-          x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind2 { arg: x, fxn_name: "table/add-assign".to_string() },
+          (sink,source) => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (sink.kind(),source.kind()), fxn_name: "table/add-assign".to_string() },
               None
             ).with_compiler_loc()
           ),

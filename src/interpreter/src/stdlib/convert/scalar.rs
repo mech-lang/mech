@@ -348,7 +348,7 @@ impl NativeFunctionCompiler for ConvertKind {
           #[cfg(all(feature = "matrix", feature = "f64"))]
           Value::MatrixF64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
           x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind2 { arg: (arguments[0].clone(), arguments[1].clone()), fxn_name: "convert/scalar".to_string() },
+              UnhandledFunctionArgumentKind2 { arg: (arguments[0].kind(), arguments[1].kind()), fxn_name: "convert/scalar".to_string() },
               None,
             ).with_compiler_loc()
           ),

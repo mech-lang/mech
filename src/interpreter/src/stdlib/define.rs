@@ -247,7 +247,7 @@ macro_rules! impl_variable_define_match_arms {
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         (sink, name, mutable, id) => Err(MechError2::new(
-            UnhandledFunctionArgumentKind3 {arg: (sink.clone(), name.clone(), mutable.clone()), fxn_name: "var/define".to_string() },
+            UnhandledFunctionArgumentKind3 {arg: (sink.kind(), name.kind(), mutable.kind()), fxn_name: "var/define".to_string() },
             None
           ).with_compiler_loc()
         ),
@@ -288,7 +288,7 @@ fn impl_var_define_fxn(var: Value, name: Value, mutable: Value, id: u64) -> MRes
   .or_else(|_| impl_variable_define_match_arms!(&arg, bool, "bool"))
   .or_else(|_| impl_variable_define_match_arms!(&arg, String, "string"))
   .map_err(|_| MechError2::new(
-      UnhandledFunctionArgumentKind3 { arg: (var.clone(), name.clone(), mutable.clone()), fxn_name: "var/define".to_string() },
+      UnhandledFunctionArgumentKind3 { arg: (var.kind(), name.kind(), mutable.kind()), fxn_name: "var/define".to_string() },
       None
     ).with_compiler_loc()
   )
@@ -313,7 +313,7 @@ impl NativeFunctionCompiler for VarDefine {
         match (var) {
           (Value::MutableReference(input)) => {impl_var_define_fxn(input.borrow().clone(), name.clone(), mutable.clone(), id)}
           _ => Err(MechError2::new(
-              UnhandledFunctionArgumentKind3 { arg: (var.clone(), name.clone(), mutable.clone()), fxn_name: "var/define".to_string() },
+              UnhandledFunctionArgumentKind3 { arg: (var.kind(), name.kind(), mutable.kind()), fxn_name: "var/define".to_string() },
               None
             ).with_compiler_loc()
           ),

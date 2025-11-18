@@ -68,7 +68,7 @@ impl NativeFunctionCompiler for TupleAccess{
             Ok(Box::new(new_fxn))
           },
           _ => Err(MechError2::new(
-              UnhandledFunctionArgumentKind2 { arg: (src.clone(), ix1.clone()), fxn_name: "access/tuple-element".to_string() },
+              UnhandledFunctionArgumentKind2 { arg: (src.kind(), ix1.kind()), fxn_name: "access/tuple-element".to_string() },
               None
             ).with_compiler_loc()
           ),

@@ -138,7 +138,7 @@ impl NativeFunctionCompiler for ConvertScalarToMat {
         match source_value {
           Value::MutableReference(rhs) => impl_conversion_scalar_to_mat_fxn(rhs.borrow().clone(), target_kind.clone()),
           x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind2 { arg: (arguments[0].clone(), arguments[1].clone()), fxn_name: "convert/scalar-to-mat".to_string() },
+              UnhandledFunctionArgumentKind2 { arg: (arguments[0].kind(), arguments[1].kind()), fxn_name: "convert/scalar-to-mat".to_string() },
               None,
             ).with_compiler_loc()
           ),

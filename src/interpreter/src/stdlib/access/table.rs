@@ -118,7 +118,7 @@ macro_rules! impl_access_column_table_match_arms {
             _ => Err(MechError2::new(TableColumnNotFoundError { column_id: k.clone() }, None).with_compiler_loc()),
           }
         }
-        (tbl,key) => Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.clone(), key.clone()), fxn_name: "TableAccessColumn".to_string() }, None).with_compiler_loc()),
+        (tbl,key) => Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.kind(), key.kind()), fxn_name: "TableAccessColumn".to_string() }, None).with_compiler_loc()),
       }
     }
   }
@@ -159,7 +159,7 @@ impl NativeFunctionCompiler for TableAccessColumn {
       Err(_) => {
         match (tbl.clone(),&key) {
           (Value::MutableReference(tbl),_) => { impl_access_column_table_fxn(tbl.borrow().clone(), key.clone()) }
-          x => Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.clone(), key.clone()), fxn_name: "TableAccessColumn".to_string() }, None).with_compiler_loc()),
+          x => Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.kind(), key.kind()), fxn_name: "TableAccessColumn".to_string() }, None).with_compiler_loc()),
         }
       }
     }
@@ -253,7 +253,7 @@ impl NativeFunctionCompiler for TableAccessScalar {
       (Value::Table(source), Value::Index(ix)) => {
         let record = match source.borrow().get_record(*ix.borrow()) {
           Some(record) => record,
-          None => return Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.clone(), ix1.clone()), fxn_name: "TableAccessScalar".to_string() }, None).with_compiler_loc()),
+          None => return Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.kind(), ix1.kind()), fxn_name: "TableAccessScalar".to_string() }, None).with_compiler_loc()),
         };
         Ok(Box::new(TableAccessScalarF{source: source.clone(), ix: ix.clone(), out: Ref::new(record) }))
       }
@@ -264,14 +264,14 @@ impl NativeFunctionCompiler for TableAccessScalar {
           Value::Table(source) => {
             let record = match source.borrow().get_record(*ix.borrow()) {
               Some(record) => record,
-              None => return Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.clone(), ix1.clone()), fxn_name: "TableAccessScalar".to_string() }, None).with_compiler_loc()),
+              None => return Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.kind(), ix1.kind()), fxn_name: "TableAccessScalar".to_string() }, None).with_compiler_loc()),
             };
             Ok(Box::new(TableAccessScalarF{source: source.clone(), ix: ix.clone(), out: Ref::new(record) }))
           }
-          _ => Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.clone(), ix1.clone()), fxn_name: "TableAccessScalar".to_string() }, None).with_compiler_loc()),
+          _ => Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.kind(), ix1.kind()), fxn_name: "TableAccessScalar".to_string() }, None).with_compiler_loc()),
         }
       }
-      _ => Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.clone(), ix1.clone()), fxn_name: "TableAccessScalar".to_string() }, None).with_compiler_loc()),
+      _ => Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.kind(), ix1.kind()), fxn_name: "TableAccessScalar".to_string() }, None).with_compiler_loc()),
     }
   }
 }
@@ -412,7 +412,7 @@ impl NativeFunctionCompiler for TableAccessRange {
             let out_table = source.borrow().empty_table(ix.borrow().len());
             Ok(Box::new(TableAccessRangeIndex{source: source.clone(), ix: ix.clone(), out: Ref::new(out_table) }))
           }
-          _ => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (tbl.clone(), ixes.to_vec()), fxn_name: "TableAccessRange".to_string() }, None).with_compiler_loc()),
+          _ => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (tbl.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "TableAccessRange".to_string() }, None).with_compiler_loc()),
         }
       }
       #[cfg(all(feature = "matrix", feature = "table", feature = "logical_indexing"))]
@@ -423,10 +423,10 @@ impl NativeFunctionCompiler for TableAccessRange {
             let out_table = source.borrow().empty_table(ix.borrow().len());
             Ok(Box::new(TableAccessRangeBool{source: source.clone(), ix: ix.clone(), out: Ref::new(out_table) }))
           }
-          _ => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (tbl.clone(), ixes.to_vec()), fxn_name: "TableAccessRange".to_string() }, None).with_compiler_loc()),
+          _ => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (tbl.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "TableAccessRange".to_string() }, None).with_compiler_loc()),
         }
       }
-      _ => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (tbl.clone(), ixes.to_vec()), fxn_name: "TableAccessRange".to_string() }, None).with_compiler_loc()),
+      _ => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (tbl.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "TableAccessRange".to_string() }, None).with_compiler_loc()),
     }
   }
 }

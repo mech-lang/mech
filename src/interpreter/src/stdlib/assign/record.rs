@@ -82,7 +82,7 @@ fn impl_set_record_column_fxn(sink: Value, source: Value, key: Value) -> MResult
       }
     }
     _ => return Err(MechError2::new(
-      UnhandledFunctionArgumentKind3 { arg: (sink.clone(), source.clone(), key.clone()), fxn_name: "record/assign-column".to_string() },
+      UnhandledFunctionArgumentKind3 { arg: (sink.kind(), source.kind(), key.kind()), fxn_name: "record/assign-column".to_string() },
       None
     ).with_compiler_loc()
     ),
@@ -104,7 +104,7 @@ impl NativeFunctionCompiler for AssignRecordColumn {
         match (&sink,&source,&key) {
           (Value::MutableReference(sink),_,_) => { impl_set_record_column_fxn(sink.borrow().clone(), source.clone(), key.clone()) }
           x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind3 { arg: (arguments[0].clone(), arguments[1].clone(), arguments[2].clone()), fxn_name: "record/assign-column".to_string() },
+              UnhandledFunctionArgumentKind3 { arg: (arguments[0].kind(), arguments[1].kind(), arguments[2].kind()), fxn_name: "record/assign-column".to_string() },
               None
             ).with_compiler_loc()
           ),

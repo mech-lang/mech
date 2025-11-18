@@ -1915,7 +1915,7 @@ macro_rules! impl_vertcat_arms {
             Ok(Box::new(VerticalConcatenateNArgs{e0: args, out:Ref::new(out)}))
           }
           _ => {return Err(MechError2::new(
-                UnhandledFunctionArgumentKindVarg { arg: arguments.clone(), fxn_name: "matrix/vertcat".to_string() },
+                UnhandledFunctionArgumentKindVarg { arg: arguments.iter().map(|x| x.kind()).collect(), fxn_name: "matrix/vertcat".to_string() },
                 None
               ).with_compiler_loc()
             );
@@ -1962,7 +1962,7 @@ fn impl_vertcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   { if ValueKind::is_compatible(target_kind.clone(), ValueKind::C64) { return impl_vertcat_arms!(C64, arguments, C64::default()) } }
 
   Err(MechError2::new(
-      UnhandledFunctionArgumentKindVarg { arg: arguments.clone(), fxn_name: "matrix/vertcat".to_string() },
+      UnhandledFunctionArgumentKindVarg { arg: arguments.iter().map(|x| x.kind()).collect(), fxn_name: "matrix/vertcat".to_string() },
       None
     ).with_compiler_loc()
   )

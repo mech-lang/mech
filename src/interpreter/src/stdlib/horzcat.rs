@@ -4059,9 +4059,9 @@ macro_rules! impl_horzcat_arms {
           Value::[<Matrix $kind:camel>](m) => Ok(m.get_copyable_matrix()),
           Value::MutableReference(inner) => match &*inner.borrow() {
             Value::[<Matrix $kind:camel>](m) => Ok(m.get_copyable_matrix()),
-            _ => Err(MechError2::new(UnhandledFunctionArgumentKind1{arg: arg.clone(), fxn_name: "matrix/horzcat".to_string()},None).with_compiler_loc())
+            _ => Err(MechError2::new(UnhandledFunctionArgumentKind1{arg: arg.kind(), fxn_name: "matrix/horzcat".to_string()},None).with_compiler_loc())
           },
-          _ => Err(MechError2::new(UnhandledFunctionArgumentKind1{arg: arg.clone(), fxn_name: "matrix/horzcat".to_string()},None).with_compiler_loc())
+          _ => Err(MechError2::new(UnhandledFunctionArgumentKind1{arg: arg.kind(), fxn_name: "matrix/horzcat".to_string()},None).with_compiler_loc())
         }
       }
       #[cfg(feature = "row_vector2")] // get_r2
@@ -4416,10 +4416,10 @@ macro_rules! impl_horzcat_arms {
                       scalar_args.push((e0.clone(),i));
                       i += 1;
                     }
-                    x => return Err(MechError2::new(UnhandledFunctionArgumentKind1{arg: x, fxn_name: "matrix/horzcat".to_string()}, None).with_compiler_loc()),
+                    x => return Err(MechError2::new(UnhandledFunctionArgumentKind1{arg: x.kind(), fxn_name: "matrix/horzcat".to_string()}, None).with_compiler_loc()),
                   }
                 }
-                x => return Err(MechError2::new(UnhandledFunctionArgumentKind1{arg: x.clone().clone(), fxn_name: "matrix/horzcat".to_string()}, None).with_compiler_loc()),
+                x => return Err(MechError2::new(UnhandledFunctionArgumentKind1{arg: x.kind(), fxn_name: "matrix/horzcat".to_string()}, None).with_compiler_loc()),
               }
             }
             return Ok(Box::new(HorizontalConcatenateRDN{scalar: scalar_args, matrix: matrix_args, out: Ref::new(out)}));
@@ -4660,7 +4660,7 @@ macro_rules! impl_horzcat_arms {
             Ok(Box::new(HorizontalConcatenateNArgs{e0: args, out:Ref::new(out.clone())}))
           }
           x => return Err(MechError2::new(
-              UnhandledFunctionArgumentKindVarg { arg: arguments.clone(), fxn_name: "matrix/horzcat".to_string() },
+              UnhandledFunctionArgumentKindVarg { arg: arguments.iter().map(|x| x.kind()).collect(), fxn_name: "matrix/horzcat".to_string() },
               None
           ).with_compiler_loc()),
         }
@@ -4721,7 +4721,7 @@ fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   { if ValueKind::is_compatible(target_kind.clone(), ValueKind::C64) { return impl_horzcat_arms!(C64, arguments, C64::default()) } }
 
   Err(MechError2::new(
-      UnhandledFunctionArgumentKindVarg { arg: arguments.clone(), fxn_name: "matrix/horzcat".to_string() },
+      UnhandledFunctionArgumentKindVarg { arg: arguments.iter().map(|x| x.kind()).collect(), fxn_name: "matrix/horzcat".to_string() },
       None
     ).with_compiler_loc()
   )

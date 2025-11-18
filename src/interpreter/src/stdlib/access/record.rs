@@ -44,8 +44,8 @@ pub fn impl_access_record_fxn(source: Value, key: Value) -> MResult<Box<dyn Mech
           ).with_compiler_loc()),
       }
     }
-    x => return Err(MechError2::new(
-        UnhandledFunctionArgumentKind2 { arg: x, fxn_name: "RecordAccess".to_string() },
+    (source,key) => return Err(MechError2::new(
+        UnhandledFunctionArgumentKind2 { arg: (source.kind(), key.kind()), fxn_name: "RecordAccess".to_string() },
         None
       ).with_compiler_loc()
     ),
@@ -66,7 +66,7 @@ impl NativeFunctionCompiler for RecordAccess {
         match src {
           Value::MutableReference(rcrd) => { impl_access_record_fxn(rcrd.borrow().clone(), key.clone()) },
           x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind2 { arg: (src.clone(), key.clone()), fxn_name: "RecordAccess".to_string() },
+              UnhandledFunctionArgumentKind2 { arg: (src.kind(), key.kind()), fxn_name: "RecordAccess".to_string() },
               None
             ).with_compiler_loc()
           ),

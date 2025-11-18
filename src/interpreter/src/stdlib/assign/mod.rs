@@ -91,8 +91,8 @@ macro_rules! impl_assign_value_match_arms {
           #[cfg(all(feature = $feature, feature = "row_vectord"))]
           (Value::[<Matrix $value_kind>](Matrix::RowDVector(sink)), Value::[<Matrix $value_kind>](Matrix::RowDVector(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
         )+
-        x => Err(MechError2::new(
-            UnhandledFunctionArgumentKind2 {arg: x, fxn_name: "assign".to_string() },
+        (sink, source) => Err(MechError2::new(
+            UnhandledFunctionArgumentKind2 {arg: (sink.kind(), source.kind()), fxn_name: "assign".to_string() },
             None
           ).with_compiler_loc()
         ),
@@ -138,8 +138,8 @@ impl NativeFunctionCompiler for AssignValue {
           (Value::MutableReference(sink),Value::MutableReference(source)) => { assign_value_fxn(sink.borrow().clone(),source.borrow().clone()) },
           (sink,Value::MutableReference(source)) => { assign_value_fxn(sink.clone(),source.borrow().clone()) },
           (Value::MutableReference(sink),source) => { assign_value_fxn(sink.borrow().clone(),source.clone()) },
-          x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind2 { arg: x, fxn_name: "assign".to_string() },
+          (sink,source) => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (sink.kind(), source.kind()), fxn_name: "assign".to_string() },
               None
             ).with_compiler_loc()
           ),
@@ -162,7 +162,7 @@ impl NativeFunctionCompiler for AssignColumn {
       #[cfg(feature = "record")]
       ValueKind::Record(_) => AssignRecordColumn{}.compile(&arguments),
       _ => Err(MechError2::new(
-          UnhandledFunctionArgumentKind1 { arg: src.clone(), fxn_name: "assign/column".to_string() },
+          UnhandledFunctionArgumentKind1 { arg: src.kind(), fxn_name: "assign/column".to_string() },
           None
         ).with_compiler_loc()
       ),
@@ -179,7 +179,7 @@ pub fn add_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechF
     #[cfg(feature = "math_add_assign")]
     _ => add_assign_math_fxn(sink, source),
     _ => Err(MechError2::new(
-        UnhandledFunctionArgumentKind2 { arg: (sink, source), fxn_name: "assign/add".to_string() },
+        UnhandledFunctionArgumentKind2 { arg: (sink.kind(), source.kind()), fxn_name: "assign/add".to_string() },
         None
       ).with_compiler_loc()
     ),
@@ -202,7 +202,7 @@ impl NativeFunctionCompiler for AddAssignValue {
           (sink,Value::MutableReference(source)) => { add_assign_value_fxn(sink.clone(),source.borrow().clone()) },
           (Value::MutableReference(sink),source) => { add_assign_value_fxn(sink.borrow().clone(),source.clone()) },
           (sink,source) => Err(MechError2::new(
-              UnhandledFunctionArgumentKind2 { arg: (sink, source), fxn_name: "assign/add".to_string() },
+              UnhandledFunctionArgumentKind2 { arg: (sink.kind(), source.kind()), fxn_name: "assign/add".to_string() },
               None
             ).with_compiler_loc()
           ),

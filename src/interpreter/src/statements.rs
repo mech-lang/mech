@@ -42,13 +42,13 @@ pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MRes
       &match &*r_brrw {
         Value::Tuple(tpl) => tpl.clone(),
         _ => return Err(MechError2::new(
-          DestructureExpectedTupleError{ value: source.clone() },
+          DestructureExpectedTupleError{ value: source.kind() },
           None
         ).with_compiler_loc().with_tokens(tpl_dstrct.expression.tokens())),
       }
     },
     _ => return Err(MechError2::new(
-      DestructureExpectedTupleError{ value: source.clone() },
+      DestructureExpectedTupleError{ value: source.kind() },
       None
     ).with_compiler_loc().with_tokens(tpl_dstrct.expression.tokens())),
   };
@@ -67,7 +67,7 @@ pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MRes
       symbols_brrw.dictionary.borrow_mut().insert(id, var.name.to_string());
     } else {
       return Err(MechError2::new(
-        TupleDestructureTooManyVarsError{ value: source.clone() },
+        TupleDestructureTooManyVarsError{ value: source.kind() },
         None
       ).with_compiler_loc().with_tokens(var.tokens()));
     }
