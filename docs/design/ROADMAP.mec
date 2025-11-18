@@ -34,15 +34,14 @@ Target release date: ???
 
 (2.1) Data Specification (v0.2)
 
--(🥚) language server
--(🐣) enums
--(🐣) option types
--(🐣) sets
--(🐣) maps
--(🐣) atoms
 -(🐣) error system
--(🐣) records
--(🐣) tuples
+-(🐤) enums
+-(🐤) option types
+-(🐤) sets
+-(🐤) maps
+-(🐤) atoms
+-(🐤) records
+-(🐤) tuples
 -(🐤) scientific numbers
 -(🐤) imaginary numbers
 -(🐤) rational numbers
@@ -55,13 +54,13 @@ Target release date: ???
 -(🐤) value semantics
 -(🐤) literate programming
 -(🐤) typxe inference
--(🐓) bools
--(🐓) operator broadcasting
--(🐓) logical indexing
--(🐓) matrix builder notation
--(🐓) matrix slicing
--(🐓) variety of numerical datatypes
--(🐓) flexible matrix type with fixed and dynamic sizes for homogeneous data
+-(🐤) bools
+-(🐤) operator broadcasting
+-(🐤) logical indexing
+-(🐤) matrix builder notation
+-(🐤) matrix slicing
+-(🐤) variety of numerical datatypes
+-(🐤) flexible matrix type with fixed and dynamic sizes for homogeneous data
 
 (2.2) Program Specification (v0.3)
 
@@ -69,6 +68,7 @@ Target release date: ???
 -(💭) automatic differentiation
 -(💭) introspection
 -(💭) higher order functions
+-(🥚) language server
 -(🥚) physical units with dimension checking
 -(🥚) file/parameter server
 -(🥚) self-contained binary executables
