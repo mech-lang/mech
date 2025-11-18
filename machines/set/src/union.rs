@@ -74,8 +74,8 @@ fn set_union_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     (Value::Set(lhs), Value::Set(rhs)) => {
       Ok(Box::new(SetUnionFxn { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(MechSet::new(lhs.borrow().kind.clone(), lhs.borrow().num_elements + rhs.borrow().num_elements)) }))
     },
-    x => Err(MechError2::new(
-        UnhandledFunctionArgumentKind2 { arg: x, fxn_name: "set/union".to_string() },
+    (arg1,arg2) => Err(MechError2::new(
+        UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "set/union".to_string() },
         None
       ).with_compiler_loc()
     ),
@@ -97,8 +97,8 @@ impl NativeFunctionCompiler for SetUnion {
           (Value::MutableReference(lhs),Value::MutableReference(rhs)) => { set_union_fxn(lhs.borrow().clone(),rhs.borrow().clone()) },
           (lhs,Value::MutableReference(rhs)) => { set_union_fxn(lhs.clone(),rhs.borrow().clone()) },
           (Value::MutableReference(lhs),rhs) => { set_union_fxn(lhs.borrow().clone(),rhs.clone()) },
-          x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind2 { arg: x, fxn_name: "set/union".to_string() },
+          (arg1,arg2) => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "set/union".to_string() },
               None
             ).with_compiler_loc()
           ),
