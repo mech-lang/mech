@@ -151,7 +151,7 @@ macro_rules! impl_stats_sum_column_match_arms {
           )+
         )+
         _ => Err(MechError2::new(
-          UnhandledFunctionArgumentKind1 {arg: $arg, fxn_name: stringify!(StatsSumColumn).to_string() },
+          UnhandledFunctionArgumentKind1 {arg: $arg.kind(), fxn_name: stringify!(StatsSumColumn).to_string() },
           None
         ).with_compiler_loc()),
       }
