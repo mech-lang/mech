@@ -48,7 +48,7 @@ This covers a lot of common use cases:
 
 However, most programming languages are based on a model of sequential execution, where the program is a series of instructions that are executed one after the other. Therefore when building these systems in those langauges, develoeprs often bring in additional libraries, framework, and middleware to bridge the gap between the sequential programming model and the data-driven, reactive nature of these applications.
 
-In Mech, programmers define data and their relationships. Then they transformations these data with a rich set of operators and functions. Mech's compiler and runtime automatically determine how data flows through programs, and optimizes them for performance. When underlying data change, Mech updates all dependent data automatically. The Mech Platform also serializes, distributes, and logs your data. Together, this allows you to build efficient, data-driven, distributed systems that react to change, without having to write custom event loops or bring in large frameworks.
+In Mech, programmers define data and their relationships. Then they transformation these data with a rich set of operators and functions. Mech's compiler and runtime automatically determine how data flows through programs, and optimizes them for performance. When underlying data change, Mech updates all dependent data automatically. The Mech Platform also serializes, distributes, and logs your data. Together, this allows you to build efficient, data-driven, distributed systems that react to change, without having to write custom event loops or bring in large frameworks.
 
 3. Programming System
 -------------------------------------------------------------------------------
