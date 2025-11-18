@@ -50,3 +50,18 @@ impl Hash for MechEnum {
     self.variants.hash(state);
   }
 }
+
+#[derive(Debug)]
+pub struct UnknownEnumVariantError {
+  pub enum_id: u64,
+  pub given_variant_id: u64,
+}
+impl MechErrorKind2 for UnknownEnumVariantError {
+  fn name(&self) -> &str { "UnknownEnumVariant" }
+  fn message(&self) -> String {
+    format!(
+      "Unknown variant {} for enum {}",
+      self.given_variant_id, self.enum_id
+    )
+  }
+}

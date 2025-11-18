@@ -96,7 +96,7 @@ impl<T: PartialEq> Eq for Ref<T> {}
 pub type MutableReference = Ref<Value>;
 pub type ValRef = Ref<Value>;
 
-pub type MResult<T> = Result<T,MechError>;
+pub type MResult<T> = Result<T,MechError2>;
 
 // Pretty Print
 // ----------------------------------------------------------------------------

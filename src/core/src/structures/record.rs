@@ -16,35 +16,35 @@ pub struct MechRecord {
 impl MechRecord {
 
   pub fn check_record_schema(&self, record: &MechRecord) -> MResult<()> {
-    for (&col_id, _value) in &self.data {
-      // Check column existence
-      if !record.data.contains_key(&col_id) {
-        return Err(MechError2::new(MissingColumnInRecordError { column_id: col_id }, None).with_compiler_loc());
+    for (&field_id, _value) in &self.data {
+      // Check field existence
+      if !record.data.contains_key(&field_id) {
+        return Err(MechError2::new(MissingFieldInRecordError { field_id }, None).with_compiler_loc());
       }
       // Get expected kind
-      let expected_kind = self.kinds.get(self.key_index(col_id)?)
-        .ok_or_else(|| MechError2::new(MissingKindForColumnError { column_id: col_id }, None).with_compiler_loc())?;
+      let expected_kind = self.kinds.get(self.key_index(field_id)?)
+        .ok_or_else(|| MechError2::new(MissingKindForFieldError { field_id }, None).with_compiler_loc())?;
       // Get actual kind
-      let actual_kind = record.kinds.get(record.key_index(col_id)?)
-        .ok_or_else(|| MechError2::new(MissingKindInComparedRecordError { column_id: col_id }, None).with_compiler_loc())?;
+      let actual_kind = record.kinds.get(record.key_index(field_id)?)
+        .ok_or_else(|| MechError2::new(MissingKindInComparedRecordError { field_id }, None).with_compiler_loc())?;
       // Compare kinds
       if expected_kind != actual_kind {
         return Err(MechError2::new(
-          KindMismatchForColumnError {
-            column_id: col_id,
-            expected_kind: format!("{:?}", expected_kind),
-            actual_kind: format!("{:?}", actual_kind),
+          RecordFieldKindMismatchError {
+            field_id,
+            expected_kind: expected_kind.clone(),
+            actual_kind: actual_kind.clone(),
           },
           None
         ).with_compiler_loc());
       }
       // Check field names
-      if self.field_names.get(&col_id) != record.field_names.get(&col_id) {
+      if self.field_names.get(&field_id) != record.field_names.get(&field_id) {
         return Err(MechError2::new(
-          FieldNameMismatchError {
-            column_id: col_id,
-            expected_name: self.field_names.get(&col_id).cloned(),
-            actual_name: record.field_names.get(&col_id).cloned(),
+          RecordFieldNameMismatchError {
+            field_id,
+            expected_name: self.field_names.get(&field_id).cloned(),
+            actual_name: record.field_names.get(&field_id).cloned(),
           },
           None
         ).with_compiler_loc());
@@ -53,10 +53,10 @@ impl MechRecord {
     Ok(())
   }
 
-  fn key_index(&self, col_id: u64) -> MResult<usize> {
-    self.data.keys().position(|&id| id == col_id).ok_or_else(|| {
+  fn key_index(&self, field_id: u64) -> MResult<usize> {
+    self.data.keys().position(|&id| id == field_id).ok_or_else(|| {
       MechError2::new(
-        ColumnNotFoundInKeyIndexError { column_id: col_id },
+        KeyNotFoundInKeyIndexError { field_id },
         None
       ).with_compiler_loc()
     })
@@ -177,36 +177,36 @@ impl Hash for MechRecord {
 }
 
 #[derive(Debug)]
-pub struct MissingColumnInRecordError {
-  pub column_id: u64,
+pub struct MissingFieldInRecordError {
+  pub field_id: u64,
 }
 
-impl MechErrorKind2 for MissingColumnInRecordError {
+impl MechErrorKind2 for MissingFieldInRecordError {
   fn name(&self) -> &str {
-    "MissingColumnInRecord"
+    "MissingFieldInRecord"
   }
   fn message(&self) -> String {
-    format!("Record is missing required column `{}`.", self.column_id)
+    format!("Record is missing required field `{}`.", self.field_id)
   }
 }
 
 #[derive(Debug)]
-pub struct MissingKindForColumnError {
-  pub column_id: u64,
+pub struct MissingKindForFieldError {
+  pub field_id: u64,
 }
 
-impl MechErrorKind2 for MissingKindForColumnError {
+impl MechErrorKind2 for MissingKindForFieldError {
   fn name(&self) -> &str {
-    "MissingKindForColumn"
+    "MissingKindForField"
   }
   fn message(&self) -> String {
-    format!("Missing expected kind for column `{}` in schema.", self.column_id)
+    format!("Missing expected kind for field `{}` in schema.", self.field_id)
   }
 }
 
 #[derive(Debug)]
 pub struct MissingKindInComparedRecordError {
-  pub column_id: u64,
+  pub field_id: u64,
 }
 
 impl MechErrorKind2 for MissingKindInComparedRecordError {
@@ -214,65 +214,65 @@ impl MechErrorKind2 for MissingKindInComparedRecordError {
     "MissingKindInComparedRecord"
   }
   fn message(&self) -> String {
-    format!("Missing kind for column `{}` in the compared record.", self.column_id)
+    format!("Missing kind for field `{}` in the compared record.", self.field_id)
   }
 }
 
 #[derive(Debug)]
-pub struct KindMismatchForColumnError {
-  pub column_id: u64,
-  pub expected_kind: String,
-  pub actual_kind: String,
+pub struct RecordFieldKindMismatchError {
+  pub field_id: u64,
+  pub expected_kind: ValueKind,
+  pub actual_kind: ValueKind,
 }
 
-impl MechErrorKind2 for KindMismatchForColumnError {
+impl MechErrorKind2 for RecordFieldKindMismatchError {
   fn name(&self) -> &str {
-    "KindMismatchForColumn"
+    "RecordFieldKindMismatch"
   }
   fn message(&self) -> String {
     format!(
       "Kind mismatch for column `{}` (expected `{}`, found `{}`).",
-      self.column_id, self.expected_kind, self.actual_kind
+      self.field_id, self.expected_kind, self.actual_kind
     )
   }
 }
 
 #[derive(Debug)]
-pub struct FieldNameMismatchError {
-  pub column_id: u64,
+pub struct RecordFieldNameMismatchError {
+  pub field_id: u64,
   pub expected_name: Option<String>,
   pub actual_name: Option<String>,
 }
 
-impl MechErrorKind2 for FieldNameMismatchError {
+impl MechErrorKind2 for RecordFieldNameMismatchError {
   fn name(&self) -> &str {
-    "FieldNameMismatch"
+    "RecordFieldNameMismatch"
   }
   fn message(&self) -> String {
     match (&self.expected_name, &self.actual_name) {
       (Some(e), Some(a)) => format!(
-        "Field name mismatch for column `{}` (expected `{}`, found `{}`).",
-        self.column_id, e, a
+        "Field name mismatch for field `{}` (expected `{}`, found `{}`).",
+        self.field_id, e, a
       ),
       (Some(e), None) => format!(
-        "Field name mismatch for column `{}` (expected `{}`, but no field found).",
-        self.column_id, e
+        "Field name mismatch for field `{}` (expected `{}`, but no field found).",
+        self.field_id, e
       ),
-      _ => format!("Field name mismatch for column `{}`.", self.column_id),
+      _ => format!("Field name mismatch for field `{}`.", self.field_id),
     }
   }
 }
 
 #[derive(Debug)]
-pub struct ColumnNotFoundInKeyIndexError {
-  pub column_id: u64,
+pub struct KeyNotFoundInKeyIndexError {
+  pub field_id: u64,
 }
 
-impl MechErrorKind2 for ColumnNotFoundInKeyIndexError {
+impl MechErrorKind2 for KeyNotFoundInKeyIndexError {
   fn name(&self) -> &str {
-    "ColumnNotFoundInKeyIndex"
+    "KeyNotFoundInKeyIndex"
   }
   fn message(&self) -> String {
-    format!("Column id `{}` not found in key_index.", self.column_id)
+    format!("Key id `{}` not found in key_index.", self.field_id)
   }
 }

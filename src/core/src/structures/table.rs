@@ -63,7 +63,7 @@ impl MechTable {
     if records.is_empty() {
       return Err(
         MechError2::new(
-          EmptyRecordListError,
+          CannotCreateTableFromEmptyRecordListError,
           None
         ).with_compiler_loc()
       );
@@ -153,10 +153,10 @@ impl MechTable {
       if expected_kind != &actual_kind {
         return Err(
           MechError2::new(
-            ColumnKindMismatchError {
+            TableColumnKindMismatchError {
               column_id: col_id,
-              expected_kind: format!("{:?}", expected_kind),
-              actual_kind: format!("{:?}", actual_kind),
+              expected_kind: expected_kind.clone(),
+              actual_kind: actual_kind.clone(),
             },
             None
           ).with_compiler_loc()
@@ -169,7 +169,7 @@ impl MechTable {
           if expected_name != field_name {
             return Err(
               MechError2::new(
-                ColumnNameMismatchError {
+                TableColumnNameMismatchError {
                   column_id: col_id,
                   expected_name: expected_name.clone(),
                   actual_name: field_name.clone(),
@@ -191,7 +191,7 @@ impl MechTable {
       match record.col_names.get(&col_id) {
         Some(record_name) if col_name != record_name => {
           return Err(MechError2::new(
-            ColumnNameMismatchError {
+            TableColumnNameMismatchError {
               column_id: col_id,
               expected_name: col_name.clone(),
               actual_name: record_name.clone(),
@@ -201,7 +201,7 @@ impl MechTable {
         }
         None => {
           return Err(MechError2::new(
-            ColumnNotFoundError { column_id: col_id },
+            TableColumnNotFoundError { column_id: col_id },
             None
           ).with_compiler_loc());
         }
@@ -214,17 +214,17 @@ impl MechTable {
       match record.data.get(&col_id) {
         Some((record_kind, _)) if expected_kind != record_kind => {
           return Err(MechError2::new(
-            ColumnKindMismatchError {
+            TableColumnKindMismatchError {
               column_id: col_id,
-              expected_kind: format!("{:?}", expected_kind),
-              actual_kind: format!("{:?}", record_kind),
+              expected_kind: expected_kind.clone(),
+              actual_kind: record_kind.clone(),
             },
             None
           ).with_compiler_loc());
         }
         None => {
           return Err(MechError2::new(
-            ColumnNotFoundError { column_id: col_id },
+            TableColumnNotFoundError { column_id: col_id },
             None
           ).with_compiler_loc());
         }
@@ -241,14 +241,14 @@ impl MechTable {
     for (&col_id, (_, other_matrix)) in &other.data {
       let (_, self_matrix) = self.data.get_mut(&col_id).ok_or_else(|| 
         MechError2::new(
-          ColumnNotFoundError { column_id: col_id },
+          TableColumnNotFoundError { column_id: col_id },
           None
         ).with_compiler_loc()
       )?;
 
       self_matrix.append(other_matrix).map_err(|err| 
         MechError2::new(
-          MatrixAppendError { column_id: col_id },
+          MatrixAppendToTableError { column_id: col_id },
           None
         ).with_compiler_loc()
       )?;
@@ -436,9 +436,9 @@ impl Hash for MechTable {
 }
 
 #[derive(Debug)]
-pub struct EmptyRecordListError;
+pub struct CannotCreateTableFromEmptyRecordListError;
 
-impl MechErrorKind2 for EmptyRecordListError {
+impl MechErrorKind2 for CannotCreateTableFromEmptyRecordListError {
   fn name(&self) -> &str {
     "EmptyRecordList"
   }
@@ -460,13 +460,13 @@ impl MechErrorKind2 for CannotCreateTableFromNonTableKindError {
 }
 
 #[derive(Debug)]
-pub struct ColumnKindMismatchError {
+pub struct TableColumnKindMismatchError {
   pub column_id: u64,
-  pub expected_kind: String,
-  pub actual_kind: String,
+  pub expected_kind: ValueKind,
+  pub actual_kind: ValueKind,
 }
 
-impl MechErrorKind2 for ColumnKindMismatchError {
+impl MechErrorKind2 for TableColumnKindMismatchError {
   fn name(&self) -> &str { "ColumnKindMismatch" }
   fn message(&self) -> String {
     format!("Schema mismatch: column {} kind mismatch (expected: {}, found: {}).",
@@ -475,13 +475,13 @@ impl MechErrorKind2 for ColumnKindMismatchError {
 }
 
 #[derive(Debug)]
-pub struct ColumnNameMismatchError {
+pub struct TableColumnNameMismatchError {
   pub column_id: u64,
   pub expected_name: String,
   pub actual_name: String,
 }
 
-impl MechErrorKind2 for ColumnNameMismatchError {
+impl MechErrorKind2 for TableColumnNameMismatchError {
   fn name(&self) -> &str { "ColumnNameMismatch" }
   fn message(&self) -> String {
     format!("Schema mismatch: column {} name mismatch (expected: '{}', found: '{}').",
@@ -490,11 +490,11 @@ impl MechErrorKind2 for ColumnNameMismatchError {
 }
 
 #[derive(Debug)]
-pub struct ColumnNotFoundError {
+pub struct TableColumnNotFoundError {
   pub column_id: u64,
 }
 
-impl MechErrorKind2 for ColumnNotFoundError {
+impl MechErrorKind2 for TableColumnNotFoundError {
   fn name(&self) -> &str { "ColumnNotFound" }
   fn message(&self) -> String {
     format!("Schema mismatch: column {} not found in table.", self.column_id)
@@ -502,12 +502,12 @@ impl MechErrorKind2 for ColumnNotFoundError {
 }
 
 #[derive(Debug)]
-pub struct MatrixAppendError {
+pub struct MatrixAppendToTableError {
   pub column_id: u64,
 }
 
-impl MechErrorKind2 for MatrixAppendError {
-  fn name(&self) -> &str { "MatrixAppendError" }
+impl MechErrorKind2 for MatrixAppendToTableError {
+  fn name(&self) -> &str { "MatrixAppendToTableError" }
   fn message(&self) -> String {
     format!("Failed to append matrix for column {}.", self.column_id)
   }

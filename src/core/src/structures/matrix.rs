@@ -538,7 +538,7 @@ where T: Debug + Clone + PartialEq + 'static
       _ => {
         return Err(
           MechError2::new(
-            IncompatibleMatrixAppendError {
+            IncompatibleMatrixAppendToTableError {
               lhs_rows: self.rows(),
               lhs_cols: self.cols(),
               rhs_rows: other.rows(),
@@ -1112,13 +1112,13 @@ impl_to_value_matrix!(DMatrix);
 // Errors
 
 #[derive(Debug)]
-pub struct IncompatibleMatrixAppendError {
+pub struct IncompatibleMatrixAppendToTableError {
   pub lhs_rows: usize,
   pub lhs_cols: usize,
   pub rhs_rows: usize,
   pub rhs_cols: usize,
 }
-impl MechErrorKind2 for IncompatibleMatrixAppendError {
+impl MechErrorKind2 for IncompatibleMatrixAppendToTableError {
   fn name(&self) -> &str {
     "IncompatibleMatrixAppend"
   }

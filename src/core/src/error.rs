@@ -262,7 +262,7 @@ impl MechErrorKind2 for GenericError {
 }
 
 #[derive(Debug)]
-pub struct FeatureNotEnabledError {}
+pub struct FeatureNotEnabledError;
 impl MechErrorKind2 for FeatureNotEnabledError {
   fn name(&self) -> &str { "FeatureNotEnabled" }
 

@@ -1319,6 +1319,25 @@ pub enum ParagraphElement {
 
 impl ParagraphElement {
 
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      ParagraphElement::Emphasis(t) => t.tokens(),
+      ParagraphElement::FootnoteReference(t) => vec![t.clone()],
+      ParagraphElement::Highlight(t) => t.tokens(),
+      ParagraphElement::Hyperlink((t, u)) => vec![t.clone(), u.clone()],
+      ParagraphElement::InlineCode(t) => vec![t.clone()],
+      ParagraphElement::InlineEquation(t) => vec![t.clone()],
+      ParagraphElement::InlineMechCode(t) => t.tokens(),
+      ParagraphElement::EvalInlineMechCode(t) => t.tokens(),
+      ParagraphElement::Reference(t) => vec![t.clone()],
+      ParagraphElement::SectionReference(t) => vec![t.clone()],
+      ParagraphElement::Strikethrough(t) => t.tokens(),
+      ParagraphElement::Strong(t) => t.tokens(),
+      ParagraphElement::Text(t) => vec![t.clone()],
+      ParagraphElement::Underline(t) => t.tokens(),
+    }
+  }
+
   pub fn to_string(&self) -> String {
     match self {
       ParagraphElement::Emphasis(t) => t.to_string(),
