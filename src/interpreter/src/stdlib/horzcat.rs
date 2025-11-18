@@ -67,7 +67,11 @@ macro_rules! horizontal_concatenate {
               let out: Ref<[<RowVector $vec_size>]<T>> = unsafe { out.as_unchecked() }.clone();
               Ok(Box::new(Self { out }))
             },
-            _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 1 argument, got {:?}", stringify!($name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+            _ => Err(MechError2::new(
+                IncorrectNumberOfArguments { expected: 1, found: args.len() },
+                None
+              ).with_compiler_loc()
+            ),
           }
         }
       }
@@ -118,7 +122,11 @@ macro_rules! horzcat_two_args {
             let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self { e0, e1, out }))
           },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($fxn), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          _ => Err(MechError2::new(
+              IncorrectNumberOfArguments { expected: 2, found: args.len() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
@@ -176,7 +184,11 @@ macro_rules! horzcat_three_args {
             let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self { e0, e1, e2, out }))
           },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($fxn), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          _ => Err(MechError2::new(
+              IncorrectNumberOfArguments { expected: 3, found: args.len() },
+              None
+            ).with_compiler_loc()
+          )
         }
       }
     }
@@ -236,7 +248,11 @@ macro_rules! horzcat_four_args {
             let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self { e0, e1, e2, e3, out }))
           },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 4 arguments, got {:?}", stringify!($fxn), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          _ => Err(MechError2::new(
+              IncorrectNumberOfArguments { expected: 4, found: args.len() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
@@ -294,7 +310,11 @@ where
         let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateTwoArgs requires 2 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -364,7 +384,11 @@ where
         let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateThreeArgs requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -438,7 +462,11 @@ where
         let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateFourArgs requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 4, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -531,7 +559,11 @@ where
         let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateNArgs requires N arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 0, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -598,7 +630,11 @@ where
         let out: Ref<RowDVector<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateRD requires 1 argument, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 1, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -659,7 +695,11 @@ where
         let out: Ref<RowDVector<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { scalar, matrix, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateRDN requires N arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 1, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -748,7 +788,11 @@ where
         let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { arg, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateS1D requires 1 argument, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 1, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -803,7 +847,11 @@ where
         let out: Ref<Matrix1<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { arg, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateS1 requires 1 argument, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 1, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -860,7 +908,11 @@ where
         let out: Ref<RowVector2<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateS2 requires 2 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -920,7 +972,11 @@ where
         let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateS3 requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -983,7 +1039,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateS4 requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 4, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -1054,7 +1114,11 @@ where
         let out: Ref<RowDVector<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSD requires 1 argument, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 1, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -1102,7 +1166,11 @@ macro_rules! horzcat_single {
             let out: Ref<$shape<T>> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self { out }))
           },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 1 argument, got {:?}", stringify!($name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          _ => Err(MechError2::new(
+              IncorrectNumberOfArguments { expected: 1, found: args.len() }, 
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
@@ -1176,7 +1244,11 @@ where
         let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSR2 requires 2 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -1237,7 +1309,11 @@ where
         let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateR2S requires 2 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -1296,7 +1372,11 @@ where
         let out: Ref<RowVector2<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSM1 requires 2 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -1356,7 +1436,11 @@ where
         let out: Ref<RowVector2<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateM1S requires 2 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() },
+          None
+        ).with_compiler_loc()
+      )
     }
   }
 }
@@ -1420,7 +1504,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSSSM1 requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 4, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -1488,7 +1576,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSSM1S requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 4, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -1556,7 +1648,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSM1SS requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 4, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -1624,7 +1720,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateM1SSS requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 4, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),  
     }
   }
 }
@@ -1688,7 +1788,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSR3 requires 2 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() },
+          None
+        ).with_compiler_loc()
+      )
     }
   }
 }
@@ -1750,7 +1854,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateR3S requires 2 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() },
+          None
+        ).with_compiler_loc()
+      )
     }
   }
 }
@@ -1814,7 +1922,11 @@ where
         let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSSM1 requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -1878,7 +1990,11 @@ where
         let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSM1S requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -1942,7 +2058,11 @@ where
         let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateM1SS requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -2006,7 +2126,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSSR2 requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -2071,7 +2195,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSR2S requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -2136,7 +2264,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateR2SS requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -2201,7 +2333,11 @@ where
         let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateM1M1S requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -2275,7 +2411,11 @@ where
         let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateM1SM1 requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -2339,7 +2479,11 @@ where
         let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSM1M1 requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),  
     }
   }
 }
@@ -2439,7 +2583,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSM1R2 requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -2504,7 +2652,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateM1SR2 requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -2571,7 +2723,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSM1SM1 requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 4, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -2637,7 +2793,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateM1R2S requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -2702,7 +2862,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateR2M1S requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -2767,7 +2931,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateR2SM1 requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -2832,7 +3000,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSR2M1 requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -2899,7 +3071,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSSM1M1 requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 4, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -2967,7 +3143,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateM1M1SS requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 4, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -3035,7 +3215,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSM1M1S requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 4, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -3103,7 +3287,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateM1SSM1 requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 4, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -3171,7 +3359,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateM1SM1S requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 4, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -3312,7 +3504,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSM1M1M1 requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 4, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -3380,7 +3576,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateM1SM1M1 requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 4, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -3448,7 +3648,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateM1M1SM1 requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 4, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -3515,7 +3719,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateM1M1M1S requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -3582,7 +3790,11 @@ where
         let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateM1M1M1M1 requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -3847,9 +4059,9 @@ macro_rules! impl_horzcat_arms {
           Value::[<Matrix $kind:camel>](m) => Ok(m.get_copyable_matrix()),
           Value::MutableReference(inner) => match &*inner.borrow() {
             Value::[<Matrix $kind:camel>](m) => Ok(m.get_copyable_matrix()),
-            _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix<{}> or MutableReference to Matrix<{}>, found {:?}", stringify!($kind), stringify!($kind), arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+            _ => Err(MechError2::new(UnhandledFunctionArgumentKind1{arg: arg.clone(), fxn_name: "matrix/horzcat".to_string()},None).with_compiler_loc())
           },
-          _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix<{}> or MutableReference to Matrix<{}>, found {:?}", stringify!($kind), stringify!($kind), arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+          _ => Err(MechError2::new(UnhandledFunctionArgumentKind1{arg: arg.clone(), fxn_name: "matrix/horzcat".to_string()},None).with_compiler_loc())
         }
       }
       #[cfg(feature = "row_vector2")] // get_r2
@@ -3948,7 +4160,7 @@ macro_rules! impl_horzcat_arms {
             match (a_m1, a_sc) {
               (Some(ref e0), None) => return Ok(Box::new(HorizontalConcatenateM1{out: e0.clone()})),
               (None, Some(ref e0)) => return Ok(Box::new(HorizontalConcatenateS1{arg: e0.clone(), out: Ref::new(Matrix1::from_element($default))})),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix1<{}> or Scalar<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              _ => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix1".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(all(feature = "matrixd", not(feature = "matrix1")))]
@@ -3958,7 +4170,7 @@ macro_rules! impl_horzcat_arms {
             match (a_m1, a_sc) {
               (Some(ref e0), None) => return Ok(Box::new(HorizontalConcatenateMD{out: e0.clone()})),
               (None, Some(ref e0)) => return Ok(Box::new(HorizontalConcatenateS1D{arg: e0.clone(), out: Ref::new(DMatrix::from_element(1,1,$default))})),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix1<{}> or Scalar<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              _ => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrixd".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "row_vector2")]
@@ -3966,7 +4178,7 @@ macro_rules! impl_horzcat_arms {
             let er2 = get_r2(&arguments[0]);
             match &er2 {
               Some(ref e0) => return Ok(Box::new(HorizontalConcatenateR2 {out: e0.clone() })),
-              x => return Err(MechError{file: file!().to_string(),tokens: vec![],msg: format!("Expected a RowVector2<{}> for horizontal concatenation, found {:?}", stringify!($kind), x),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+              _ => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("row_vector2".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "row_vector3")]
@@ -3974,7 +4186,7 @@ macro_rules! impl_horzcat_arms {
             let er3 = get_r3(&arguments[0]);
             match &er3 {
               Some(ref e0) => return Ok(Box::new(HorizontalConcatenateR3 { out: e0.clone() })),
-              x => return Err(MechError{file: file!().to_string(),tokens: vec![],msg: format!("Expected a RowVector3<{}> for horizontal concatenation, found {:?}", stringify!($kind), x),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+              _ => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("row_vector3".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "row_vector4")]
@@ -3982,7 +4194,7 @@ macro_rules! impl_horzcat_arms {
             let er4 = get_r4(&arguments[0]);
             match &er4 {
               Some(ref e0) => return Ok(Box::new(HorizontalConcatenateR4{out: e0.clone()})),
-              x => return Err(MechError{file: file!().to_string(),tokens: vec![],msg: format!("Expected a RowVector4<{}> for horizontal concatenation, found {:?}", stringify!($kind), x),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+                _ => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrixd".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "row_vectord")]
@@ -3996,7 +4208,7 @@ macro_rules! impl_horzcat_arms {
               (None, Some(ref e0), None) => return Ok(Box::new(HorizontalConcatenateRD { out: e0.clone() })),
               #[cfg(feature = "matrixd")]
               (None, None, Some(ref e0)) => return Ok(Box::new(HorizontalConcatenateS1D {arg: e0.clone(), out: Ref::new(DMatrix::from_element(1,1,$default))})),
-              x => return Err(MechError{file: file!().to_string(),tokens: vec![],msg: format!("Expected a RowDVector<{}> for horizontal concatenation, found {:?}", stringify!($kind), x),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+              _ => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrixd".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "row_vector2")]
@@ -4014,7 +4226,7 @@ macro_rules! impl_horzcat_arms {
               #[cfg(feature = "matrix1")]
               (None, Some(ref e1), Some(ref e0), None) => return Ok(Box::new(HorizontalConcatenateSM1 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               (None, None, Some(ref e0), Some(ref e1)) => return Ok(Box::new(HorizontalConcatenateS2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix1<{}> or Scalar<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              _ => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix1".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "row_vector3")]
@@ -4035,7 +4247,7 @@ macro_rules! impl_horzcat_arms {
               (_, Some(ref e1), _, _, Some(ref e0), _) => return Ok(Box::new(HorizontalConcatenateM1R2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               #[cfg(feature = "row_vector2")]
               (_, Some(ref e1), Some(ref e0), _, _, _) => return Ok(Box::new(HorizontalConcatenateSR2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a RowVector2<{}>, Scalar<{}> or Matrix1<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              _ => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("row_vector2 or matrix1".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "row_vector4")]
@@ -4060,7 +4272,7 @@ macro_rules! impl_horzcat_arms {
               (_, Some(ref e1), Some(ref e0), _, _, _, _, _) => return Ok(Box::new(HorizontalConcatenateSR3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               #[cfg(feature = "row_vector2")]
               (_, _, _, _, _, _, Some(ref e0), Some(ref e1)) => return Ok(Box::new(HorizontalConcatenateR2R2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a RowVector3<{}>, Scalar<{}>, Matrix1<{}> or RowVector2<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              _ => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix1, row_vector2, row_vector3".to_string())).with_compiler_loc()),
             }
           } 
           #[cfg(feature = "row_vector3")]
@@ -4089,7 +4301,7 @@ macro_rules! impl_horzcat_arms {
               (Some(ref e0), _, _, _, Some(ref e1), Some(ref e2)) => return Ok(Box::new(HorizontalConcatenateM1SS {e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
              #[cfg(feature = "matrix1")]
               (Some(ref e0), Some(ref e1), Some(ref e2), _, _, _) => return Ok(Box::new(HorizontalConcatenateM1M1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
-              _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix1<{}> or Scalar<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              _ => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix1".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "row_vector4")]
@@ -4129,7 +4341,7 @@ macro_rules! impl_horzcat_arms {
               (_, _, Some(ref e2), _, Some(ref e1), _, Some(ref e0), _, _) => return Ok(Box::new(HorizontalConcatenateM1R2S{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
               #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
               (_, _, Some(ref e2), Some(ref e0), _, _, _, Some(ref e1), _) => return Ok(Box::new(HorizontalConcatenateR2M1S{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
-              _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a RowVector2<{}>, Scalar<{}> or Matrix1<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              _ => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("row_vector2 or matrix1".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "row_vector4")]
@@ -4175,7 +4387,7 @@ macro_rules! impl_horzcat_arms {
               (_, _, _, Some(ref e3), Some(ref e0), Some(ref e1), Some(ref e2), _) => return Ok(Box::new(HorizontalConcatenateM1M1M1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
               #[cfg(feature = "matrix1")]
               (_, _, _, _, Some(ref e0), Some(ref e1), Some(ref e2), Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateM1M1M1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Scalar<{}> or Matrix1<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              _ => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix1".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "row_vectord")]
@@ -4204,10 +4416,10 @@ macro_rules! impl_horzcat_arms {
                       scalar_args.push((e0.clone(),i));
                       i += 1;
                     }
-                    x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a RowVectorD<{}> or Scalar<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+                    x => return Err(MechError2::new(UnhandledFunctionArgumentKind1{arg: x, fxn_name: "matrix/horzcat".to_string()}, None).with_compiler_loc()),
                   }
                 }
-                x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a RowVectorD<{}> or Scalar<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+                x => return Err(MechError2::new(UnhandledFunctionArgumentKind1{arg: x.clone().clone(), fxn_name: "matrix/horzcat".to_string()}, None).with_compiler_loc()),
               }
             }
             return Ok(Box::new(HorizontalConcatenateRDN{scalar: scalar_args, matrix: matrix_args, out: Ref::new(out)}));
@@ -4217,7 +4429,7 @@ macro_rules! impl_horzcat_arms {
             let ev2 = get_v2(&arguments[0]);
             match &ev2 {
               Some(ref e0) => return Ok(Box::new(HorizontalConcatenateV2 { out: e0.clone() })),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Vector2<{}> for horizontal concatenation, found {:?}", stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix2")]
@@ -4225,7 +4437,7 @@ macro_rules! impl_horzcat_arms {
             let em2 = get_m2(&arguments[0]);
             match &em2 {
               Some(ref e0) => return Ok(Box::new(HorizontalConcatenateM2 { out: e0.clone() })),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix2<{}> for horizontal concatenation, found {:?}", stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix2".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix2x3")]
@@ -4233,7 +4445,7 @@ macro_rules! impl_horzcat_arms {
             let em2x3 = get_m2x3(&arguments[0]);
             match &em2x3 {
               Some(ref e0) => return Ok(Box::new(HorizontalConcatenateM2x3 { out: e0.clone() })),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix2x3<{}> for horizontal concatenation, found {:?}", stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix2x3".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "vector3")]
@@ -4241,7 +4453,7 @@ macro_rules! impl_horzcat_arms {
             let ev3 = get_v3(&arguments[0]);
             match &ev3 {
               Some(ref e0) => return Ok(Box::new(HorizontalConcatenateV3 { out: e0.clone() })),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Vector3<{}> for horizontal concatenation, found {:?}", stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix3x2")]
@@ -4249,7 +4461,7 @@ macro_rules! impl_horzcat_arms {
             let am3x2 = get_m3x2(&arguments[0]);
             match &am3x2 {
               Some(ref e0) => return Ok(Box::new(HorizontalConcatenateM3x2{out: e0.clone()})),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix3x2<{}> for horizontal concatenation, found {:?}", stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix3x2".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix3")]
@@ -4257,7 +4469,7 @@ macro_rules! impl_horzcat_arms {
             let em3 = get_m3(&arguments[0]);
             match &em3 {
               Some(ref e0) => return Ok(Box::new(HorizontalConcatenateM3 { out: e0.clone() })),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix3<{}> for horizontal concatenation, found {:?}", stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix3".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "vector4")]
@@ -4265,7 +4477,7 @@ macro_rules! impl_horzcat_arms {
             let ev4 = get_v4(&arguments[0]);
             match &ev4 {
               Some(ref e0) => return Ok(Box::new(HorizontalConcatenateV4 { out: e0.clone() })),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Vector4<{}> for horizontal concatenation, found {:?}", stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix4")]
@@ -4273,7 +4485,7 @@ macro_rules! impl_horzcat_arms {
             let em4 = get_m4(&arguments[0]);
             match &em4 {
               Some(ref e0) => return Ok(Box::new(HorizontalConcatenateM4 { out: e0.clone() })),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix4<{}> for horizontal concatenation, found {:?}", stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix4".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrixd")]
@@ -4285,7 +4497,7 @@ macro_rules! impl_horzcat_arms {
               (Some(ref e0), None) => return Ok(Box::new(HorizontalConcatenateMD{out: e0.clone()})),
               #[cfg(feature = "vectord")]
               (NOne, Some(ref e0)) => return Ok(Box::new(HorizontalConcatenateVD{out: e0.clone()})),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a MatrixD<{}> for horizontal concatenation, found {:?}", stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrixd or vectord".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(all(feature = "matrix2", feature ="vector2"))]
@@ -4296,7 +4508,7 @@ macro_rules! impl_horzcat_arms {
             match (av2, bv2) {
               #[cfg(feature = "vector2")]
               (Some(e0), Some(e1)) => return Ok(Box::new(HorizontalConcatenateV2V2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected two Vector2<{}> for horizontal concatenation, found {:?}", stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix3x2")]
@@ -4307,7 +4519,7 @@ macro_rules! impl_horzcat_arms {
             match (av3, bv3) {
               #[cfg(feature = "vector3")]
               (Some(e0), Some(e1)) => return Ok(Box::new(HorizontalConcatenateV3V3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected two Vector3<{}> for horizontal concatenation, found {:?}", stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix2x3")]
@@ -4322,7 +4534,7 @@ macro_rules! impl_horzcat_arms {
               (Some(ref e0), _, _, Some(ref e1)) => return Ok(Box::new(HorizontalConcatenateV2M2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               #[cfg(all(feature = "vector2", feature = "matrix2"))]
               (_, Some(ref e1), Some(ref e0), _) => return Ok(Box::new(HorizontalConcatenateM2V2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Vector2<{}> or Matrix2<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2 or matrix2".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix3")]
@@ -4337,7 +4549,7 @@ macro_rules! impl_horzcat_arms {
               (Some(ref e0), _, _, Some(ref e1)) => return Ok(Box::new(HorizontalConcatenateV3M3x2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               #[cfg(all(feature = "vector3", feature = "matrix3x2"))]
               (_, Some(ref e1), Some(ref e0), _) => return Ok(Box::new(HorizontalConcatenateM3x2V3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Vector3<{}> or Matrix3x2<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3 or matrix3x2".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix4")]
@@ -4354,7 +4566,7 @@ macro_rules! impl_horzcat_arms {
               (_, Some(ref e1), Some(ref e0), _) => return Ok(Box::new(HorizontalConcatenateMDV4 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               #[cfg(feature = "matrixd")]
               (_, _, Some(ref e0), Some(ref e1)) => return Ok(Box::new(HorizontalConcatenateMDMD { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Vector4<{}> or MatrixD<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4 or matrixd".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrixd")]
@@ -4373,7 +4585,7 @@ macro_rules! impl_horzcat_arms {
             match (av2, bv2, cv2) {
               #[cfg(feature = "vector2")]
               (Some(ref e0), Some(ref e1), Some(ref e2)) => return Ok(Box::new(HorizontalConcatenateV2V2V2 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Vector2<{}> for horizontal concatenation, found {:?}", stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix3")]
@@ -4385,7 +4597,7 @@ macro_rules! impl_horzcat_arms {
             match (&av3, &bv3, &cv3) {
               #[cfg(feature = "vector3")]
               (Some(ref e0), Some(ref e1), Some(ref e2)) => return Ok(Box::new(HorizontalConcatenateV3V3V3 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Vector3<{}> for horizontal concatenation, found {:?}", stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrix4")]
@@ -4404,7 +4616,7 @@ macro_rules! impl_horzcat_arms {
               (Some(ref e0), _, Some(ref e2), _, Some(ref e1), _) => return Ok(Box::new(HorizontalConcatenateV4MDV4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
               #[cfg(all(feature = "matrixd", feature = "vector4"))]
               (_, Some(ref e1), Some(ref e2), Some(ref e0), _, _) => return Ok(Box::new(HorizontalConcatenateMDV4V4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Vector4<{}> or MatrixD<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4 or matrixd".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrixd")]
@@ -4425,7 +4637,7 @@ macro_rules! impl_horzcat_arms {
             match (&av4, &bv4, &cv4, &dv4) {
               #[cfg(feature = "vector4")]
               (Some(ref e0), Some(ref e1), Some(ref e2), Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateV4V4V4V4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
-              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Vector4<{}> for horizontal concatenation, found {:?}", stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => return Err(MechError2::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4".to_string())).with_compiler_loc()),
             }
           }
           #[cfg(feature = "matrixd")]
@@ -4447,7 +4659,10 @@ macro_rules! impl_horzcat_arms {
             }
             Ok(Box::new(HorizontalConcatenateNArgs{e0: args, out:Ref::new(out.clone())}))
           }
-          x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a RowVectorD<{}>, Scalar<{}> or Matrix1<{}> for horizontal concatenation, found {:?} with shape {:?}", stringify!($kind), stringify!($kind), stringify!($kind), arguments, x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => return Err(MechError2::new(
+              UnhandledFunctionArgumentKindVarg { arg: arguments.clone(), fxn_name: "matrix/horzcat".to_string() },
+              None
+          ).with_compiler_loc()),
         }
   }}}}
 
@@ -4505,13 +4720,11 @@ fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   #[cfg(feature = "complex")]
   { if ValueKind::is_compatible(target_kind.clone(), ValueKind::C64) { return impl_horzcat_arms!(C64, arguments, C64::default()) } }
 
-  Err(MechError {
-    file: file!().to_string(),
-    tokens: vec![],
-    msg: format!("Horizontal concatenation not implemented for type {:?}", target_kind),
-    id: line!(),
-    kind: MechErrorKind::UnhandledFunctionArgumentKind,
-  })
+  Err(MechError2::new(
+      UnhandledFunctionArgumentKindVarg { arg: arguments.clone(), fxn_name: "matrix/horzcat".to_string() },
+      None
+    ).with_compiler_loc()
+  )
 }
 
 
@@ -4526,5 +4739,15 @@ register_descriptor! {
   FunctionCompilerDescriptor {
     name: "matrix/horzcat",
     ptr: &MatrixHorzCat{},
+  }
+}
+
+#[derive(Debug)]
+pub struct HorizontalConcatenateDimensionMismatchError {
+}
+impl MechErrorKind2 for HorizontalConcatenateDimensionMismatchError {
+  fn name(&self) -> &str { "HorizontalConcatenateDimensionMismatch" }
+  fn message(&self) -> String {
+      format!("Cannot horizontally concatenate matrices/vectors with dimensions that do not align.")
   }
 }

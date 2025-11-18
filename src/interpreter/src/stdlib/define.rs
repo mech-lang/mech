@@ -41,7 +41,11 @@ where
         let id = hash_str(&name.borrow());
         Ok(Box::new(Self {id, name, mutable, var, _marker: PhantomData::default() }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -89,7 +93,11 @@ macro_rules! impl_variable_define_fxn {
               let id = hash_str(&name.borrow());
               Ok(Box::new(Self { id, name, mutable, var }))
             },
-            _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "VariableDefine requires 3 arguments: (var, name, mutable)".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments}),
+            _ => Err(MechError2::new(
+                IncorrectNumberOfArguments { expected: 3, found: args.len() },
+                None
+              ).with_compiler_loc()
+            ),
           }
         }
       }
@@ -238,14 +246,18 @@ macro_rules! impl_variable_define_match_arms {
           register_define!(VariableDefineMatrix, $value_kind, $feature, RowDVector);
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
-        x => Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Unhandled args {:?}", x),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,}),
+        (sink, name, mutable, id) => Err(MechError2::new(
+            UnhandledFunctionArgumentKind3 {arg: (sink.clone(), name.clone(), mutable.clone()), fxn_name: "var/define".to_string() },
+            None
+          ).with_compiler_loc()
+        ),
       }
     }
   };
 }
 
 fn impl_var_define_fxn(var: Value, name: Value, mutable: Value, id: u64) -> MResult<Box<dyn MechFunction>> {
-  let arg = (var, name, mutable, id);
+  let arg = (var.clone(), name.clone(), mutable.clone(), id);
   match arg {
     #[cfg(feature = "table")]
     (Value::Table(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechTable{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
@@ -275,7 +287,11 @@ fn impl_var_define_fxn(var: Value, name: Value, mutable: Value, id: u64) -> MRes
   .or_else(|_| impl_variable_define_match_arms!(&arg, C64,  "complex"))
   .or_else(|_| impl_variable_define_match_arms!(&arg, bool, "bool"))
   .or_else(|_| impl_variable_define_match_arms!(&arg, String, "string"))
-  .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+  .map_err(|_| MechError2::new(
+      UnhandledFunctionArgumentKind3 { arg: (var.clone(), name.clone(), mutable.clone()), fxn_name: "var/define".to_string() },
+      None
+    ).with_compiler_loc()
+  )
 }
 
 
@@ -283,7 +299,7 @@ pub struct VarDefine{}
 impl NativeFunctionCompiler for VarDefine {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 3 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let var = arguments[0].clone();
     let name = &arguments[1].clone();
@@ -296,7 +312,11 @@ impl NativeFunctionCompiler for VarDefine {
       Err(_) => {
         match (var) {
           (Value::MutableReference(input)) => {impl_var_define_fxn(input.borrow().clone(), name.clone(), mutable.clone(), id)}
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          _ => Err(MechError2::new(
+              UnhandledFunctionArgumentKind3 { arg: (var.clone(), name.clone(), mutable.clone()), fxn_name: "var/define".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }

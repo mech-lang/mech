@@ -71,7 +71,7 @@ macro_rules! vertcat_two_args {
             let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self { e0, e1, out }))
           },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($fxn), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 2, found: args.len()}, None).with_compiler_loc())
         }
       }
     }
@@ -142,7 +142,7 @@ macro_rules! vertcat_three_args {
             let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self { e0, e1, e2, out }))
           },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($fxn), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 3, found: args.len()}, None).with_compiler_loc())
         }
       }
     }
@@ -202,7 +202,7 @@ macro_rules! vertcat_four_args {
             let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self { e0, e1, e2, e3, out }))
           },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 4 arguments, got {:?}", stringify!($fxn), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 4, found: args.len()}, None).with_compiler_loc())
         }
       }
     }
@@ -260,7 +260,7 @@ where
         let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("VerticalConcatenateTwoArgs requires 2 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 2, found: args.len()}, None).with_compiler_loc())
     }
   }
 }
@@ -330,7 +330,7 @@ where
         let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("VerticalConcatenateThreeArgs requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 3, found: args.len()}, None).with_compiler_loc())
     }
   }
 }
@@ -404,7 +404,7 @@ where
         let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("VerticalConcatenateFourArgs requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 4, found: args.len()}, None).with_compiler_loc())
     }
   }
 }
@@ -480,7 +480,7 @@ where
         let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("VerticalConcatenateNArgs requires N arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 0, found: args.len()}, None).with_compiler_loc())
     }
   }
 }
@@ -551,7 +551,7 @@ macro_rules! vertical_concatenate {
               let out: Ref<[<$vec_size>]<T>> = unsafe { out.as_unchecked() }.clone();
               Ok(Box::new(Self { out }))
             },
-            _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 1 argument, got {:?}", stringify!($name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+            _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 1, found: args.len()}, None).with_compiler_loc())
           }
         }
       }
@@ -601,7 +601,7 @@ where
         let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("VerticalConcatenateVD2 requires 2 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 2, found: args.len()}, None).with_compiler_loc())
     }
   }
 }
@@ -681,7 +681,7 @@ where
         let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("VerticalConcatenateVD3 requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 3, found: args.len()}, None).with_compiler_loc())
     }
   }
 }
@@ -755,7 +755,7 @@ where
         let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("VerticalConcatenateVD4 requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 4, found: args.len()}, None).with_compiler_loc())
     }
   }
 }
@@ -838,7 +838,7 @@ where
         let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { scalar, matrix, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateRDN requires N arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 0, found: args.len()}, None).with_compiler_loc())
     }
   }
 }
@@ -1022,7 +1022,11 @@ where
         let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("VerticalConcatenateSD requires 1 argument, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 1, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -1535,7 +1539,10 @@ macro_rules! impl_vertcat_arms {
           (3,2) => {return Ok(Box::new(VerticalConcatenateM3x2{out:Ref::new(Matrix3x2::from_vec(mat))}));}
           #[cfg(feature = "matrixd")]
           (m,n) => {return Ok(Box::new(VerticalConcatenateMD{out:Ref::new(DMatrix::from_vec(m,n,mat))}));}
-          x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::None})?,
+          _ => Err(MechError2::new(
+            FeatureNotEnabledError{},
+            None
+          ).with_compiler_loc()),
         }
       } else {
         match (nargs,rows,columns) {
@@ -1907,7 +1914,12 @@ macro_rules! impl_vertcat_arms {
             }
             Ok(Box::new(VerticalConcatenateNArgs{e0: args, out:Ref::new(out)}))
           }
-          _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});}
+          _ => {return Err(MechError2::new(
+                UnhandledFunctionArgumentKindVarg { arg: arguments.clone(), fxn_name: "matrix/vertcat".to_string() },
+                None
+              ).with_compiler_loc()
+            );
+          }
         }
   }}}}}
 
@@ -1949,13 +1961,11 @@ fn impl_vertcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   #[cfg(feature = "complex")]
   { if ValueKind::is_compatible(target_kind.clone(), ValueKind::C64) { return impl_vertcat_arms!(C64, arguments, C64::default()) } }
 
-  Err(MechError {
-    file: file!().to_string(),
-    tokens: vec![],
-    msg: format!("Vertical concatenation not implemented for type {:?}", target_kind),
-    id: line!(),
-    kind: MechErrorKind::UnhandledFunctionArgumentKind,
-  })
+  Err(MechError2::new(
+      UnhandledFunctionArgumentKindVarg { arg: arguments.clone(), fxn_name: "matrix/vertcat".to_string() },
+      None
+    ).with_compiler_loc()
+  )
 }
 
 
@@ -1970,5 +1980,17 @@ register_descriptor! {
   FunctionCompilerDescriptor {
     name: "matrix/vertcat",
     ptr: &MatrixVertCat{},
+  }
+}
+
+#[derive(Debug)]
+pub struct VerticalConcatenateDimensionMismatch {
+  pub rows: usize,
+  pub cols: usize,
+}
+impl MechErrorKind2 for VerticalConcatenateDimensionMismatch {
+  fn name(&self) -> &str { "VerticalConcatenateDimensionMismatch" }
+  fn message(&self) -> String {
+    format!("Cannot vertically concatenate matrices/vectors with dimensions ({}, {})", self.rows, self.cols)
   }
 }
