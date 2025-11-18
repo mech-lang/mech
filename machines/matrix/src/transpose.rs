@@ -141,7 +141,7 @@ macro_rules! impl_transpose_match_arms {
           )+
         )+
         x => Err(MechError2::new(
-            UnhandledFunctionArgumentKind1 { arg: x, fxn_name: "MatrixTranspose".to_string() },
+            UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "MatrixTranspose".to_string() },
             None
           ).with_compiler_loc()
         ),

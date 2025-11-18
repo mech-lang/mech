@@ -293,8 +293,8 @@ macro_rules! impl_matmul_match_arms {
           }
         )+
       )+
-      x => Err(MechError2::new(
-        UnhandledFunctionArgumentKind2 { arg: x, fxn_name: stringify!($fxn).to_string() },
+      (arg1,arg2) => Err(MechError2::new(
+        UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($fxn).to_string() },
         None
       ).with_compiler_loc()),
     }
