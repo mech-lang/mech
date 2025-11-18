@@ -136,8 +136,8 @@ macro_rules! impl_range_exclusive_match_arms {
             }
           }
         )+
-        x => Err(MechError2::new(
-          UnhandledFunctionArgumentKind2 {arg: x, fxn_name: stringify!($fxn).to_string() },
+        (arg1,arg2) => Err(MechError2::new(
+          UnhandledFunctionArgumentKind2 {arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($fxn).to_string() },
           None
         ).with_compiler_loc()),
       }
@@ -178,8 +178,8 @@ impl NativeFunctionCompiler for RangeExclusive {
           (Value::MutableReference(arg1),Value::MutableReference(arg2)) => {impl_range_exclusive_fxn(arg1.borrow().clone(),arg2.borrow().clone())}
           (Value::MutableReference(arg1),arg2) => {impl_range_exclusive_fxn(arg1.borrow().clone(),arg2.clone())}
           (arg1,Value::MutableReference(arg2)) => {impl_range_exclusive_fxn(arg1.clone(),arg2.borrow().clone())}
-          x => Err(MechError2::new(
-              UnhandledFunctionArgumentKind2 { arg: x, fxn_name: "range/exclusive".to_string() },
+          (arg1,arg2) => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "range/exclusive".to_string() },
               None
             ).with_compiler_loc()
           ),        
