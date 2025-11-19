@@ -2017,6 +2017,7 @@ impl Value {
           CannotConvertToTypeError { target_type: "[usize]" },
           None
         ).with_compiler_loc()),
+      Value::MutableReference(x) => x.borrow().as_vecusize(),
       _ =>
         Err(MechError2::new(
           CannotConvertToTypeError { target_type: "[usize]" },
@@ -2025,83 +2026,50 @@ impl Value {
     }
   }
 
-  pub fn as_index(&self) -> MResult<Value> {
-    match self.as_usize() {
-      Ok(ix) => Ok(Value::Index(Ref::new(ix))),
 
+    pub fn as_index(&self) -> MResult<Value> {
+    match self.as_usize() {      
+      Ok(ix) => Ok(Value::Index(Ref::new(ix))),
       #[cfg(feature = "matrix")]
       Err(_) => match self.as_vecusize() {
+        #[cfg(feature = "matrix")]
         Ok(x) => {
-          let s = self.shape();
-          let out = Value::MatrixIndex(
-            usize::to_matrix(x, s[0] * s[1], 1)
-          );
+          let shape = self.shape();
+          let out = Value::MatrixIndex(usize::to_matrix(x, shape[0] * shape[1],1 ));
           Ok(out)
-        }
-
+        },
         #[cfg(all(feature = "matrix", feature = "bool"))]
         Err(_) => match self.as_vecbool() {
           Ok(x) => {
-            let s = self.shape();
-            let out = match (s[0], s[1]) {
-              (1,1) =>
-                Value::Bool(Ref::new(x[0])),
-
+            let shape = self.shape();
+            let out = match (shape[0], shape[1]) {
+              (1,1) => Value::Bool(Ref::new(x[0])),
               #[cfg(all(feature = "vectord", feature = "bool"))]
-              (1,n) =>
-                Value::MatrixBool(
-                  Matrix::DVector(Ref::new(DVector::from_vec(x.clone())))
-                ),
-
+              (1,n) => Value::MatrixBool(Matrix::DVector(Ref::new(DVector::from_vec(x)))),
               #[cfg(all(feature = "vectord", feature = "bool"))]
-              (m,1) =>
-                Value::MatrixBool(
-                  Matrix::DVector(Ref::new(DVector::from_vec(x.clone())))
-                ),
-
+              (m,1) => Value::MatrixBool(Matrix::DVector(Ref::new(DVector::from_vec(x)))),
               #[cfg(all(feature = "vectord", feature = "bool"))]
-              (m,n) =>
-                Value::MatrixBool(
-                  Matrix::DVector(Ref::new(DVector::from_vec(x.clone())))
-                ),
-
+              (m,n) => Value::MatrixBool(Matrix::DVector(Ref::new(DVector::from_vec(x)))),
               _ => todo!(),
             };
             Ok(out)
           }
-
           Err(_) => match self.as_bool() {
-            Ok(x) =>
-              Ok(Value::Bool(x)),
-
-            Err(_) =>
-              Err(
-                MechError2::new(
-                  CannotConvertToTypeError { target_type: "ix" },
-                  None
-                ).with_compiler_loc()
-              ),
-          }
-        }
-        Err(_) =>
-          Err(
-            MechError2::new(
+            Ok(x) => Ok(Value::Bool(x)),
+            Err(_) => Err(MechError2::new(
               CannotConvertToTypeError { target_type: "ix" },
               None
-            ).with_compiler_loc()
-          ),
+            ).with_compiler_loc()),
+          }
+        }
+        x => Err(MechError2::new(
+          CannotConvertToTypeError { target_type: "ix" },
+          None
+        ).with_compiler_loc()),
       }
-
-      _ =>
-        Err(
-          MechError2::new(
-            CannotConvertToTypeError { target_type: "ix" },
-            None
-          ).with_compiler_loc()
-        ),
+      _ => todo!(),
     }
   }
-
 
   pub fn as_usize(&self) -> MResult<usize> {
     match self {      
