@@ -27,6 +27,8 @@ use tabled::{
 use serde_json;
 use std::panic;
 use std::sync::{Arc, Mutex};
+use std::path::Path;
+use std::ffi::OsStr;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -334,48 +336,84 @@ async fn main() -> Result<(), MechError2> {
       m.map(|s| s.to_string()).collect()
     } else { repl_flag = true; vec![] };
 
-    // Run the code
     let mut mechfs = MechFileSystem::new();
-    for p in &paths {
-      match mechfs.watch_source(&p) {
-        Ok(_) => {}
-        Err(err) => {
-          // condense paths into one string for parsing
-          let p = paths.join(" ");
-          // at this point abandon trying to watch fikes and instead now treat the input string as Mech code
-          let parse_result = parser::parse(&p.trim());
-          match parse_result {
-            Ok(tree) => { 
-              let r = intrp.interpret(&tree)?;
-              #[cfg(feature = "pretty_print")]
-              println!("{}", r.pretty_print());
-              #[cfg(not(feature = "pretty_print"))]
-              println!("{:#?}", r);
-              return Ok(());
-            },
-            Err(err) => return Err(err),
+
+    let any_look_like_paths = paths.iter().any(|p| {
+      is_intended_path(p)
+    });
+    if any_look_like_paths {
+      let mut watch_errors = Vec::new();
+      for p in &paths {
+        match mechfs.watch_source(p) {
+          Ok(r) => {}
+          Err(err) => watch_errors.push(err),
+        }
+      }
+      if !watch_errors.is_empty() {
+        // These looked like paths but failed to watch
+        // Print errors
+        for err in &watch_errors {
+          println!("{} {:#?}",
+            "[File Error]".truecolor(246,98,78),
+            err
+          );
+        }
+        std::process::exit(1);
+      }
+    } else {
+      // ---------- 4. Treat the inputs as Mech code ----------
+      intrp.clear();
+      let joined = paths.join(" ");
+      let parse_result = parser::parse(joined.trim());
+
+      match parse_result {
+        Ok(tree) => match intrp.interpret(&tree) {
+          Ok(r) => {
+            println!("{}", r.kind());
+            #[cfg(feature = "pretty_print")]
+            println!("{}", r.pretty_print());
+            #[cfg(not(feature = "pretty_print"))]
+            println!("{:#?}", r);
+            std::process::exit(0);
           }
+          Err(err) => {
+            println!("{} {:#?}",
+              "[Error]".truecolor(246,98,78),
+              err
+            );
+            std::process::exit(1);
+          }
+        },
+
+        Err(err) => {
+          println!("{} {:#?}",
+            "[Parse Error]".truecolor(246,98,78),
+            err
+          );
+          std::process::exit(1);
         }
       }
     }
 
     let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag); 
-
-    let return_value: Result<(), MechError2> = match &result {
-      Ok(ref r) => {
-        #[cfg(feature = "pretty_print")]
-        println!("{}", r.pretty_print());
-        #[cfg(not(feature = "pretty_print"))]
-        println!("{:#?}", r);
-        Ok(())
-      }
-      Err(ref err) => {
-        Err(err.clone())
-      }
-    };
-
     if !repl_flag {
-      return return_value;
+      match &result {
+        Ok(ref r) => {
+          println!("{}", r.kind());
+          #[cfg(feature = "pretty_print")]
+          println!("{}", r.pretty_print());
+          #[cfg(not(feature = "pretty_print"))]
+          println!("{:#?}", r);
+          std::process::exit(0);
+        }
+        Err(ref err) => {
+          println!("{} {:#?}",
+            "[Error]".truecolor(246,98,78),
+            err
+          );
+          std::process::exit(1);
+        }
+      };
     }
     
     #[cfg(windows)]
@@ -428,7 +466,7 @@ async fn main() -> Result<(), MechError2> {
               println!("{}", output);
             }
             Err(err) => {
-              println!("{:?}", err);
+              println!("!{:?}", err);
             }
           }
         }
@@ -445,7 +483,7 @@ async fn main() -> Result<(), MechError2> {
           println!("{}", output);
         }
         Err(err) => {
-          println!("{:?}", err);
+          println!("!!{:?}", err);
         }
       }
     }
@@ -505,5 +543,37 @@ pub fn load_resource(resource_path: &str) -> String {
         String::new()
       }
     }
+  }
+}
+
+fn is_intended_path(s: &str) -> bool {
+  if s.trim().is_empty() { return false; }
+
+  let path = Path::new(s);
+  if s.starts_with("./") || s.starts_with(".\\") || 
+    s.starts_with("../") || s.starts_with("..\\") ||
+    s.starts_with('/') || s.starts_with('\\') {
+    return true;
+  }
+  if s.len() > 2 && s.as_bytes()[1] == b':' {
+    return true;
+  }
+  if s.contains('/') || s.contains('\\') {
+    return true;
+  }
+  if let Some(ext) = path.extension().and_then(OsStr::to_str) {
+    match ext {
+      // Mech specific
+      "mec" | "🤖" | "mecb" | "mdoc" | "mpkg" => true,
+      // Data/Standard formats
+      "m" | "csv" | "tsv" | "txt" | "md" | "json" | "toml" | "yaml" => true,
+      // Web
+      "html" | "htm" | "css" | "js" | "wasm" => true,
+      // Images
+      "png" | "jpg" | "jpeg" | "gif" | "svg" | "bmp" | "ico" => true,
+      _ => false,
+    }
+  } else {
+    false
   }
 }

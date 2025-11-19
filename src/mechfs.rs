@@ -417,10 +417,7 @@ impl MechSources {
       MechSourceCode::String(source) => {
         let tree = match parser::parse(source) {
           Ok(t) => t,
-          Err(err) => {
-            println!("{} {:?}", "[Parse Error]".truecolor(255, 0, 0), err);
-            return Err(err);
-          }
+          Err(err) => return Err(err),
         };
         let mut formatter = Formatter::new();
         let mech_html = formatter.format_html(&tree, self.stylesheet.clone(),self.shim.clone());
