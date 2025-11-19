@@ -214,49 +214,49 @@ pub fn not_factor(input: ParseString) -> ParseResult<Factor> {
 
 // add := "+" ;
 pub fn add(input: ParseString) -> ParseResult<AddSubOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("+")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, AddSubOp::Add))
 }
 
 // subtract := "-" ;
 pub fn subtract(input: ParseString) -> ParseResult<AddSubOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("-")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, AddSubOp::Sub))
 }
 
 // multiply := "*" | "×" ;
 pub fn multiply(input: ParseString) -> ParseResult<MulDivOp> {
-  let (input, _) = ws1e(input)?;
-  let (input, _) = alt((tag("*"), tag("×")))(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
+  let (input, _) = nom_tuple((is_not(matrix_multiply),alt((tag("*"), tag("×")))))(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, MulDivOp::Mul))
 }
 
 // divide := "/" | "÷" ;
 pub fn divide(input: ParseString) -> ParseResult<MulDivOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("/"),tag("÷")))(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, MulDivOp::Div))
 }
 
 // modulus := "%" ;
 pub fn modulus(input: ParseString) -> ParseResult<MulDivOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("%")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, MulDivOp::Mod))
 }
 
 // exponent := "^" ;
 pub fn exponent(input: ParseString) -> ParseResult<ExponentOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("^")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, ExponentOp::Exp))
 }
 
@@ -271,33 +271,33 @@ pub fn matrix_operator(input: ParseString) -> ParseResult<FormulaOperator> {
 
 // matrix-multiply := "**" ;
 pub fn matrix_multiply(input: ParseString) -> ParseResult<VecOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("**")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, VecOp::MatMul))
 }
 
 // matrix-solve := "\" ;
 pub fn matrix_solve(input: ParseString) -> ParseResult<VecOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("\\")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, VecOp::Solve))
 }
 
 // dot-product := "·" | "•" ;
 pub fn dot_product(input: ParseString) -> ParseResult<VecOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("·"),tag("•")))(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, VecOp::Dot))
 }
 
 // cross-product := "⨯" ;
 pub fn cross_product(input: ParseString) -> ParseResult<VecOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("⨯")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, VecOp::Cross))
 }
 
@@ -352,65 +352,65 @@ pub fn comparison_operator(input: ParseString) -> ParseResult<FormulaOperator> {
 
 // not-equal := "!=" | "¬=" | "≠" ;
 pub fn not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("!="),tag("¬="),tag("≠")))(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, ComparisonOp::NotEqual))
 }
 
 // equal-to := "==" ;
 pub fn equal_to(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("==")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, ComparisonOp::Equal))
 }
 
 // strict-not-equal := "=!=" | "=¬=" ;
 pub fn strict_not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("=!="),tag("=¬=")))(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, ComparisonOp::StrictNotEqual))
 }
 
 // strict-equal := "=:=" | "≡" ;
 pub fn strict_equal(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("=:="),tag("≡")))(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, ComparisonOp::StrictEqual))
 }
 
 // greater-than := ">" ;
 pub fn greater_than(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag(">")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, ComparisonOp::GreaterThan))
 }
 
 // less_than := "<" ;
 pub fn less_than(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("<")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, ComparisonOp::LessThan))
 }
 
 // greater-than-equal := ">=" | "≥" ;
 pub fn greater_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag(">="),tag("≥")))(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, ComparisonOp::GreaterThanEqual))
 }
 
 // less-than-equal := "<=" | "≤" ;
 pub fn less_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("<="),tag("≤")))(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, ComparisonOp::LessThanEqual))
 }
 
@@ -425,17 +425,17 @@ pub fn logic_operator(input: ParseString) -> ParseResult<FormulaOperator> {
 
 // or := "|" ;
 pub fn or(input: ParseString) -> ParseResult<LogicOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("||"), tag("∨"), tag("⋁")))(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, LogicOp::Or))
 }
 
 // and := "&" ;
 pub fn and(input: ParseString) -> ParseResult<LogicOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("&&"), tag("∧"), tag("⋀")))(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, LogicOp::And))
 }
 
@@ -447,9 +447,9 @@ pub fn not(input: ParseString) -> ParseResult<LogicOp> {
 
 // xor := "xor" | "⊕" | "⊻" ;
 pub fn xor(input: ParseString) -> ParseResult<LogicOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("^^"), tag("⊕"), tag("⊻")))(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, LogicOp::Xor))
 }
 
@@ -464,49 +464,49 @@ fn table_operator(input: ParseString) -> ParseResult<FormulaOperator> {
 
 // join := "⋈" ;
 fn join(input: ParseString) -> ParseResult<TableOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("⋈")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, TableOp::InnerJoin))
 }
 
 // left-join := "⟕" ;
 fn left_join(input: ParseString) -> ParseResult<TableOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("⟕")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, TableOp::LeftOuterJoin))
 }
 
 // right-join := "⟖" ;
 fn right_join(input: ParseString) -> ParseResult<TableOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("⟖")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, TableOp::RightOuterJoin))
 }
 
 // full-join := "⟗" ;
 fn full_join(input: ParseString) -> ParseResult<TableOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("⟗")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, TableOp::FullOuterJoin))
 }
 
 // left-semi-join := "⋉" ;
 fn left_semi_join(input: ParseString) -> ParseResult<TableOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("⋉")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, TableOp::LeftSemiJoin))
 }
 
 // left-anti-join := "▷" ;
 fn left_anti_join(input: ParseString) -> ParseResult<TableOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("▷")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, TableOp::LeftAntiJoin))
 }
 
@@ -522,81 +522,81 @@ pub fn set_operator(input: ParseString) -> ParseResult<FormulaOperator> {
 
 // union := "∪" ;
 pub fn union_op(input: ParseString) -> ParseResult<SetOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("∪")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, SetOp::Union))
 }
 
 // intersection := "∩" ;
 pub fn intersection(input: ParseString) -> ParseResult<SetOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("∩")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, SetOp::Intersection))
 }
 
 // difference := "∖" ;
 pub fn difference(input: ParseString) -> ParseResult<SetOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("∖")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, SetOp::Difference))
 }
 
 // complement := "∁" ;
 pub fn complement(input: ParseString) -> ParseResult<SetOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("∁")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, SetOp::Complement))
 }
 
 // subset := "⊆" ;
 pub fn subset(input: ParseString) -> ParseResult<SetOp> { 
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("⊆")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, SetOp::Subset))
 }
 
 // superset := "⊇" ;
 pub fn superset(input: ParseString) -> ParseResult<SetOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("⊇")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, SetOp::Superset))
 }
 
 // proper-subset := "⊊" ;
 pub fn proper_subset(input: ParseString) -> ParseResult<SetOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("⊊"), tag("⊂")))(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, SetOp::ProperSubset))
 }
 
 // proper-superset := "⊋" ;
 pub fn proper_superset(input: ParseString) -> ParseResult<SetOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("⊋"), tag("⊃")))(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, SetOp::ProperSuperset))
 }
 
 // element-of := "∈" ;
 pub fn element_of(input: ParseString) -> ParseResult<SetOp> { 
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("∈")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, SetOp::ElementOf))
 }
 
 // not-element-of := "∉" ;
 pub fn not_element_of(input: ParseString) -> ParseResult<SetOp> {
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   let (input, _) = tag("∉")(input)?;
-  let (input, _) = ws1e(input)?;
+  let (input, _) = ws0e(input)?;
   Ok((input, SetOp::NotElementOf))
 }
 
