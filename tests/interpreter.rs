@@ -727,3 +727,5 @@ test_interpreter!(interpret_assign_scalar_no_space, "~z:=10;z=20", Value::F64(Re
 
 
 test_interpreter!(interpret_paren_term_whitespace, "fahrenheit := ( 25 * 9 / 5 ) + 32", Value::F64(Ref::new(F64::new(77.0))));
+
+test_interpreter!(interpret_formulas_no_whitespace, "x:=10*[1,2,3]**[4,5,6]';", Value::MatrixF64(Matrix::from_vec(vec![F64::new(320.0)], 1, 1)));
