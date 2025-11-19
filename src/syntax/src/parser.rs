@@ -14,7 +14,6 @@
 use crate::*;
 use crate::functions::function_define;
 
-use mech_core::{MechError, MechErrorKind};
 use mech_core::nodes::*;
 use mech_core::nodes::{SectionElement, MechString, Table};
 
