@@ -18,10 +18,12 @@ pub struct CompilerSourceRange {
 }
 
 impl CompilerSourceRange {
+  #[track_caller]
   pub fn here() -> Self {
+    let loc = std::panic::Location::caller();
     Self {
-      file: file!(),
-      line: line!(),
+      file: loc.file(),
+      line: loc.line(),
     }
   }
 }
@@ -138,6 +140,7 @@ impl MechError2 {
     self.kind_data.downcast_ref::<K>()
   }
 
+  #[track_caller]
   pub fn with_compiler_loc(mut self) -> Self {
     self.compiler_location = Some(CompilerSourceRange::here());
     self
