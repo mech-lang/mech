@@ -2,6 +2,12 @@
 
 :root {
   --op-color: #73b997;
+  --contrast-color-high: hsl(284, 49%, 80%);
+  --contrast-color-mid: hsl(284, 49%, 75%);
+  --contrast-color-low: hsl(284, 49%, 65%);
+  --main-color-mid: #F3B62D;
+  --main-color-high: #F8D07A;
+  --main-color-low: #d19710;
   --bracket-color: rgb(177, 187, 196);
   --sidebar-width: 300px;
 }
@@ -138,7 +144,7 @@ body {
 }
 
 .repl-prompt {
-    color: #F3B62D;
+    color: var(--main-color-mid);
     width: 20px;
 }
 
@@ -185,7 +191,7 @@ body {
 .repl-code::before, 
 .repl-input::before {
     content: ">:";
-    color: #F3B62D;
+    color: var(--main-color-mid);
     margin-left: -25px;
     position: absolute;
     pointer-events: none;
@@ -219,11 +225,11 @@ h2.toc::before {
 }
 
 .mech-toc h2:hover::before {
-    color: #f18181;
+    color: var(--contrast-color-low);
 }
 
 .mech-toc h2 a:hover {
-    color: #f18181;
+    color: var(--contrast-color-low);
     text-decoration: none;
 }
 
@@ -247,11 +253,11 @@ h3.toc::before {
 }
 
 .mech-toc h3:hover::before {
-    color: #f18181;
+    color: var(--contrast-color-low);
 }
 
 .mech-toc h3 a:hover {
-    color: #f18181;
+    color: var(--contrast-color-low);
     text-decoration: none;
 }
 
@@ -273,11 +279,11 @@ h4.toc::before {
 }
 
 .mech-toc h4:hover::before {
-    color: #f18181;
+    color: var(--contrast-color-low);
 }
 
 .mech-toc h4 a:hover {
-    color: #f18181;
+    color: var(--contrast-color-low);
     text-decoration: none;
 }
 
@@ -299,11 +305,11 @@ h5.toc::before {
 }
 
 .mech-toc h5:hover::before {
-    color: #f18181;
+    color: var(--contrast-color-low);
 }
 
 .mech-toc h5 a:hover {
-    color: #f18181;
+    color: var(--contrast-color-low);
     text-decoration: none;
 }
 
@@ -371,7 +377,7 @@ h5.toc::before {
     width: 900px;
     font-family: 'FiraCodeRegular', monospace;
     padding-bottom: 10px;
-    border-bottom: 4px dashed #d19710;
+    border-bottom: 4px dashed var(--main-color-low);
     color: #f2ead9;
     letter-spacing: 2px;
     font-size: 1.83rem;
@@ -390,7 +396,7 @@ h5.toc::before {
     width: 850px;
     font-family: 'FiraCodeRegular', monospace;
     padding-bottom: 10px;
-    border-bottom: 3px dashed #d19710;
+    border-bottom: 3px dashed var(--main-color-low);
     color: #f2ead9;
     font-size: 1.33rem;
     font-weight: bold;
@@ -724,13 +730,13 @@ code {
 }
 
 .mech-paragraph a {
-    color: #F8D07A;
+    color: var(--main-color-high);
     text-decoration: underline dotted;
     text-underline-offset: 3px;
 }
 
 .mech-paragraph a:hover {
-    color: #f18181;
+    color: var(--main-color-low);
     text-decoration: underline;
     text-underline-offset: 3px;
 }
@@ -986,11 +992,11 @@ code {
 
 
 ul {
-    color: #F3B62D;
+    color: var(--main-color-mid);
 }
 
 ol {
-    color: #F3B62D;
+    color: var(--main-color-mid);
 }
 
 
@@ -1022,12 +1028,12 @@ ol {
 
 .mech-check-list-item input[type="checkbox"]:checked {
     background-color: #171D21;
-    border-color: #F3B62D;
+    border-color: var(--main-color-mid);
 }
 
 .mech-check-list-item input[type="checkbox"]:checked::after {
     content: "✓";
-    color: #F3B62D;
+    color: var(--main-color-mid);
     position: absolute;
     top: 0px;
     left: 1px;
@@ -1066,7 +1072,7 @@ ol {
 }
 
 .mech-figure-label {
-    color: #F3B62D; 
+    color: var(--main-color-mid); 
     font-size: 1rem;
     min-width: 60px;
     text-align: right;
@@ -1188,7 +1194,7 @@ li p {
 }
 
 .mech-table a {
-    color: #F8D07A;
+    color: var(--main-color-high);
     text-decoration: underline;
 }
 
@@ -1199,7 +1205,7 @@ li p {
 .mech-block-quote {
     width: 80%;
     background-color: #1d2227; 
-    border-left: 4px solid #F3B62D;
+    border-left: 4px solid var(--main-color-mid);
     padding: 40px 30px;
     margin: 40px auto;
     color: #f2ead9; 
@@ -1211,7 +1217,7 @@ li p {
 
 .mech-block-quote::before,
 .mech-block-quote::after {
-    color: #F3B62D;
+    color: var(--main-color-mid);
     font-size: 32pt;
     font-family: 'Georgia', serif;
     position: absolute;
@@ -1379,7 +1385,7 @@ li p {
 }
 
 .mech-footnote-id {
-    color: #F3B62D;
+    color: var(--main-color-mid);
     font-weight: bold;
     min-width: 2em;
     text-align: right;
@@ -1397,7 +1403,7 @@ a.mech-footnote-reference {
     font-size: 0.7em;
     vertical-align: super;
     margin-left: 0.1em;
-    color: #F8D07A;
+    color: var(--main-color-high);
     font-weight: bold;
     min-width: 2em;
     text-align: right;
@@ -1413,7 +1419,7 @@ a.mech-footnote-reference {
 
 .mech-abstract {
     background-color: #1f252a;
-    border: 1px solid #F3B62D;
+    border: 1px solid var(--main-color-mid);
     padding: 2em 2em;
     margin: 2em 2em;
     border-radius: 8px;
@@ -1465,63 +1471,67 @@ a.mech-footnote-reference {
 
 
 h2::before {
-    color: #F3B62D;
+    color: var(--main-color-mid);
     counter-increment: h2;
     content: counter(h2) ". ";
 }
 
 h3::before {
-    color: #F3B62D;
+    color: var(--main-color-mid);
     counter-increment: h3;
     content: counter(h2) "." counter(h3) " ";
 }
 
 h4::before {
-    color: #F3B62D;
+    color: var(--main-color-mid);
     counter-increment: h4;
     content: counter(h2) "." counter(h3) "." counter(h4) " ";
 }
 
 h5::before {
-    color: #F3B62D;
+    color: var(--main-color-mid);
     counter-increment: h5;
     content: counter(h2) "." counter(h3) "." counter(h4) "." counter(h5) " ";
 }
 
 
 .mech-program-subtitle.toc.active::before{
-    color: #d65858;
+    color: var(--contrast-color-low);
+}
+
+.mech-program-subtitle.toc.active a:hover {
+    color: var(--contrast-color-low);
 }
 
 .mech-program-subtitle.toc.active a {
-    color: #ee6262;
+    color: var(--contrast-color-high);
 }
 
 .mech-program-section.toc.active{
     background-color: #0d1013;
     padding-top: 10px;
     padding-bottom: 10px;
-    border-left: 4px solid #d65858;
+    border-left: 4px solid var(--contrast-color-high);
 }
 
 h2:hover a {
-    color: #f18181;
+    color: var(--main-color-low);
 }
 
 h3:hover a {
-    color: #f18181;
+    color: var(--main-color-low);
 }
 
 h4:hover a {
-    color: #f18181;
+    color: var(--main-color-low);
 }
 
 h5:hover a {
-    color: #f18181;
+    color: var(--main-color-low);
 }
 
 h6:hover a {
-    color: #f18181;
+    color: var(--main-color-low);
 }
 
 .mech-program-section {
@@ -1544,7 +1554,7 @@ h6:hover a {
     content: "Eq. " counter(equation); 
     font-style: italic;
     float: right;
-    color: #F8D07A;
+    color: var(--main-color-high);
     font-size: 10pt;
     line-height: 1.4;
     font-style: italic;
@@ -1557,7 +1567,7 @@ h6:hover a {
 }
 
 mark {
-    background-color: #F3B62D;
+    background-color: var(--main-color-mid);
     border: 1px solid #ffe4a4;
     color: #5a4105;
     font-weight: 400;
@@ -1583,14 +1593,14 @@ mark {
 }
 
 .mech-citation-id {
-    color: #F3B62D;
+    color: var(--main-color-mid);
     font-family: 'FiraCodeRegular', monospace;
     flex-shrink: 0;
     padding: 3px 10px 3px 10px;
 }
 
 .mech-citation-link {
-    color: #F8D07A;
+    color: var(--main-color-high);
     text-decoration: none;
     word-break: break-all;
     transition: color 0.2s ease;
@@ -1604,7 +1614,7 @@ mark {
 .mech-reference {
     font-family: 'FiraCodeRegular', monospace;
     align-items: baseline;
-    color: #F8D07A;
+    color: var(--main-color-high);
 }
 
 .mech-reference a:hover {
@@ -1612,7 +1622,7 @@ mark {
 }
 
 .mech-reference a {
-    color: #F8D07A;
+    color: var(--main-color-high);
     text-decoration: none;
 }
 
@@ -1697,7 +1707,7 @@ mark {
 }
 
 #mech-output li::marker {
-    color: #F3B62D;
+    color: var(--main-color-mid);
     font-weight: bold;
 }
 
@@ -1733,7 +1743,7 @@ mark {
 }
 
 #mech-output a {
-    color: #F8D07A;
+    color: var(--main-color-high);
     text-decoration: underline;
 }
 
@@ -1924,7 +1934,7 @@ mark {
         width: 100%;
     }    
     .mech-figure-label {
-        color: #F3B62D; 
+        color: var(--main-color-mid); 
         font-size: 1rem;
         min-width: 60px;
         text-align: right;
