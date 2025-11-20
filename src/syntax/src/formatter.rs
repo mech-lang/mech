@@ -629,8 +629,8 @@ impl Formatter {
   }
 
   pub fn footnote(&mut self, node: &Footnote) -> String {
-    let (id_name, p) = node;
-    let note_paragraph = self.paragraph(p);
+    let (id_name, paragraphs) = node;
+    let note_paragraph = paragraphs.iter().map(|p| self.paragraph(p)).collect::<String>();
     let id: u64 = hash_str(&format!("footnote-{}",id_name.to_string()));
     if self.html {
       format!("<div class=\"mech-footnote\" id=\"{}\">

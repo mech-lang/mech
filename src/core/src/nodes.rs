@@ -450,7 +450,7 @@ pub struct BlockConfig {
   pub hidden: bool,
 }
 
-pub type Footnote = (Token, Paragraph);
+pub type Footnote = (Token, Vec<Paragraph>);
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]

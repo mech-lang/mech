@@ -119,13 +119,12 @@ pub fn mechdown_table_row(input: ParseString) -> ParseResult<Vec<Paragraph>> {
   Ok((input, row))
 }
 
-// subtitle := digit_token+, period, space*, text+, new_line, dash+, (space|tab)*, new_line, (space|tab)*, whitespace* ;
+// subtitle := +(digit | alpha), period, *space-tab, paragraph-newline, *space-tab, whitespace* ;
 pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
-  let (input, _) = many1(digit_token)(input)?;
+  let (input, _) = many1((alt((digit_token, alpha_token))))(input)?;
   let (input, _) = period(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, text) = paragraph(input)?;
-  let (input, _) = new_line(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, text) = paragraph_newline(input)?;
   let (input, _) = many1(dash)(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = new_line(input)?;
@@ -134,14 +133,14 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   Ok((input, Subtitle{text, level: 2}))
 }
 
-// alpha_subtitle := (space|tab)*, "(", alpha, ")", (space|tab)+, text+, (space|tab)*, whitespace* ;
+// subtitle := *(space-tab), "(", +(alpha | digit | period), ")", *(space-tab), paragraph-newline, *(space-tab), whitespace* ;
 pub fn subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = left_parenthesis(input)?;
   let (input, num) = separated_list1(period,alt((many1(alpha),many1(digit))))(input)?;
   let (input, _) = right_parenthesis(input)?;
   let (input, _) = many0(space_tab)(input)?;
-  let (input, text) = paragraph(input)?;
+  let (input, text) = paragraph_newline(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = whitespace0(input)?;
   let level: u8 = if num.len() < 3 { 3 } else { num.len() as u8 + 1 };
@@ -356,12 +355,18 @@ pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
   Ok((input, Paragraph{elements}))
 }
 
+// paragraph-newline := +paragraph_element, new_line ;
+pub fn paragraph_newline(input: ParseString) -> ParseResult<Paragraph> {
+  let (input, elements) = many1(paragraph_element)(input)?;
+  let (input, _) = new_line(input)?;
+  Ok((input, Paragraph{elements}))
+}
+
 // indented-ordered-list-item := ws, number, ".", +text, new_line*; 
 pub fn ordered_list_item(input: ParseString) -> ParseResult<(Number,Paragraph)> {
   let (input, number) = number(input)?;
   let (input, _) = period(input)?;
   let (input, list_item) = paragraph(input)?;
-  let (input, _) = new_line(input)?;
   Ok((input, (number,list_item)))
 }
 
@@ -372,7 +377,6 @@ pub fn checked_item(input: ParseString) -> ParseResult<(bool,Paragraph)> {
   let (input, _) = alt((tag("x"),tag("✓"),tag("✗")))(input)?;
   let (input, _) = right_bracket(input)?;
   let (input, list_item) = paragraph(input)?;
-  let (input, _) = new_line(input)?;
   Ok((input, (true,list_item)))
 }
 
@@ -383,7 +387,6 @@ pub fn unchecked_item(input: ParseString) -> ParseResult<(bool,Paragraph)> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = right_bracket(input)?;
   let (input, list_item) = paragraph(input)?;
-  let (input, _) = new_line(input)?;
   Ok((input, (false,list_item)))
 }
 
@@ -709,7 +712,7 @@ pub fn footnote(input: ParseString) -> ParseResult<Footnote> {
   let (input, _) = right_bracket(input)?;
   let (input, _) = colon(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, paragraph) = paragraph(input)?;
+  let (input, paragraph) = many1(paragraph_newline)(input)?;
   let mut tokens = text.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>();
   let footnote_text = Token::merge_tokens(&mut tokens).unwrap();
   let footnote = (footnote_text, paragraph);
@@ -723,81 +726,36 @@ pub fn blank_line(input: ParseString) -> ParseResult<Vec<Token>> {
   Ok((input, st))
 }
 
+// question-block := question-sigil, *space, +paragraph ;
 pub fn question_block(input: ParseString) -> ParseResult<SectionElement> {
-    let (input, _) = question_sigil(input)?;
-    let (input, _) = many0(space_tab)(input)?;
-    let (input, first_para) = paragraph(input)?;
-
-    // Parse *(newline, *space, paragraph)
-    let (input, mut rest_paras) = many0(|input| {
-        let (input, _) = new_line(input)?;
-        let (input, _) = many0(space_tab)(input)?;
-        let (input, para) = paragraph(input)?;
-        Ok((input, para))
-    })(input)?;
-
-    let mut all_paragraphs = vec![first_para];
-    all_paragraphs.append(&mut rest_paras);
-
-    Ok((input, SectionElement::QuestionBlock(all_paragraphs)))
+  let (input, _) = question_sigil(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, paragraphs) = many1(paragraph_newline)(input)?;
+  Ok((input, SectionElement::QuestionBlock(paragraphs)))
 }
 
+// info-block := info-sigil, *space, +paragraph ;
 pub fn info_block(input: ParseString) -> ParseResult<SectionElement> {
-    let (input, _) = info_sigil(input)?;
-    let (input, _) = many0(space_tab)(input)?;
-    let (input, first_para) = paragraph(input)?;
-
-    // Parse *(newline, *space, paragraph)
-    let (input, mut rest_paras) = many0(|input| {
-        let (input, _) = new_line(input)?;
-        let (input, _) = many0(space_tab)(input)?;
-        let (input, para) = paragraph(input)?;
-        Ok((input, para))
-    })(input)?;
-
-    let mut all_paragraphs = vec![first_para];
-    all_paragraphs.append(&mut rest_paras);
-
-    Ok((input, SectionElement::InfoBlock(all_paragraphs)))
+  let (input, _) = info_sigil(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, paragraphs) = many1(paragraph_newline)(input)?;
+  Ok((input, SectionElement::InfoBlock(paragraphs)))
 }
 
+// quote-block := quote-sigil, *space, +paragraph ;
 pub fn quote_block(input: ParseString) -> ParseResult<SectionElement> {
-    let (input, _) = quote_sigil(input)?;
-    let (input, _) = many0(space_tab)(input)?;
-    let (input, first_para) = paragraph(input)?;
-
-    // Parse *(newline, *space, paragraph)
-    let (input, mut rest_paras) = many0(|input| {
-        let (input, _) = new_line(input)?;
-        let (input, _) = many0(space_tab)(input)?;
-        let (input, para) = paragraph(input)?;
-        Ok((input, para))
-    })(input)?;
-
-    let mut all_paragraphs = vec![first_para];
-    all_paragraphs.append(&mut rest_paras);
-
-    Ok((input, SectionElement::QuoteBlock(all_paragraphs)))
+  let (input, _) = quote_sigil(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, paragraphs) = many1(paragraph_newline)(input)?;
+  Ok((input, SectionElement::QuoteBlock(paragraphs)))
 }
 
-// abstract-element := abstract-sigil, *space, paragraph, *(new_line, *space, paragraph)));
+// abstract-element := abstract-sigil, *space, +paragraph ;
 pub fn abstract_el(input: ParseString) -> ParseResult<SectionElement> {
-    let (input, _) = abstract_sigil(input)?;
-    let (input, _) = many0(space_tab)(input)?;
-    let (input, first_para) = paragraph(input)?;
-
-    // Parse *(newline, *space, paragraph)
-    let (input, mut rest_paras) = many0(|input| {
-        let (input, _) = new_line(input)?;
-        let (input, _) = many0(space_tab)(input)?;
-        let (input, para) = paragraph(input)?;
-        Ok((input, para))
-    })(input)?;
-
-    let mut all_paragraphs = vec![first_para];
-    all_paragraphs.append(&mut rest_paras);
-
-    Ok((input, SectionElement::Abstract(all_paragraphs)))
+  let (input, _) = abstract_sigil(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, paragraphs) = many1(paragraph_newline)(input)?;
+  Ok((input, SectionElement::Abstract(paragraphs)))
 }
 
 // equation := "$$" , +text ;
