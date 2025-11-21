@@ -92,9 +92,9 @@ impl_col_set_fxn_shapes!(u64);
 #[cfg(feature = "u128")]
 impl_col_set_fxn_shapes!(u128);
 #[cfg(feature = "f32")]
-impl_col_set_fxn_shapes!(F32);
+impl_col_set_fxn_shapes!(f32);
 #[cfg(feature = "f64")]
-impl_col_set_fxn_shapes!(F64);
+impl_col_set_fxn_shapes!(f64);
 #[cfg(feature = "string")]
 impl_col_set_fxn_shapes!(String);
 #[cfg(feature = "complex")]
@@ -158,8 +158,8 @@ fn impl_set_column_fxn(sink: Value, source: Value, key: Value) -> MResult<Box<dy
     U32,  u32,  "u32";
     U64,  u64,  "u64";
     U128, u128, "u128";
-    F32,  F32,  "f32";
-    F64,  F64,  "f64";
+    F32,  f32,  "f32";
+    F64,  f64,  "f64";
     String, String, "string";
     C64, C64,"complex";
     R64, R64,"rational";

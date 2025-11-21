@@ -100,7 +100,7 @@ where
 #[derive(Debug)]
 struct ConvertSRationalToF64 {
   arg: Ref<R64>,
-  out: Ref<F64>,
+  out: Ref<f64>,
 }
 
 #[cfg(all(feature = "rational", feature = "f64"))]
@@ -162,7 +162,7 @@ macro_rules! impl_conversion_match_arms {
         )+
         #[cfg(feature = "rational")]
         (Value::R64(ref rat), Value::Kind(ValueKind::F64)) => {
-          Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: Ref::new(F64::default())}))
+          Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: Ref::new(f64::default())}))
         }
         #[cfg(all(feature = "atom", feature = "enum"))]
         (Value::Atom(variant_id), Value::Kind(ValueKind::Enum(enum_id))) => {
@@ -256,7 +256,7 @@ where
 fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {
   match (&source_value, &target_kind) {
     #[cfg(all(feature = "rational", feature = "f64"))]
-    (Value::R64(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: Ref::new(F64::default()),}));}
+    (Value::R64(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: Ref::new(f64::default()),}));}
     #[cfg(all(feature = "matrix", feature = "table", feature = "string"))]
     (Value::MatrixString(ref mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
       let in_shape = mat.shape();
@@ -289,19 +289,19 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
   }
   impl_conversion_match_arms!(
     (source_value, target_kind),
-    i8, "i8" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    i16, "i16" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    i32, "i32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    i64, "i64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    i128, "i128" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    u8, "u8" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    u16, "u16" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    u32, "u32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    u64, "u64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    u128, "u128" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    F32, "f32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    F64, "f64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64", R64, "rational";
-    R64, "rational" => String, "string", F64, "f64";
+    i8, "i8" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    i16, "i16" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    i32, "i32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    i64, "i64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    i128, "i128" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    u8, "u8" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    u16, "u16" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    u32, "u32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    u64, "u64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    u128, "u128" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    f32, "f32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    f64, "f64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64", R64, "rational";
+    R64, "rational" => String, "string", f64, "f64";
     String, "string" => String, "string";
     bool, "bool" => String, "string", bool, "bool";
   )

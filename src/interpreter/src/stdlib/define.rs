@@ -124,9 +124,9 @@ macro_rules! impl_variable_define_fxn {
 }
 
 #[cfg(feature = "f64")]
-impl_variable_define_fxn!(F64);
+impl_variable_define_fxn!(f64);
 #[cfg(feature = "f32")]
-impl_variable_define_fxn!(F32);
+impl_variable_define_fxn!(f32);
 #[cfg(feature = "u8")]
 impl_variable_define_fxn!(u8);
 #[cfg(feature = "u16")]
@@ -281,8 +281,8 @@ fn impl_var_define_fxn(var: Value, name: Value, mutable: Value, id: u64) -> MRes
   .or_else(|_| impl_variable_define_match_arms!(&arg, i32,  "i32"))
   .or_else(|_| impl_variable_define_match_arms!(&arg, i64,  "i64"))
   .or_else(|_| impl_variable_define_match_arms!(&arg, i128, "i128"))
-  .or_else(|_| impl_variable_define_match_arms!(&arg, F32,  "f32"))
-  .or_else(|_| impl_variable_define_match_arms!(&arg, F64,  "f64"))
+  .or_else(|_| impl_variable_define_match_arms!(&arg, f32,  "f32"))
+  .or_else(|_| impl_variable_define_match_arms!(&arg, f64,  "f64"))
   .or_else(|_| impl_variable_define_match_arms!(&arg, R64,  "rational"))
   .or_else(|_| impl_variable_define_match_arms!(&arg, C64,  "complex"))
   .or_else(|_| impl_variable_define_match_arms!(&arg, bool, "bool"))

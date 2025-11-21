@@ -397,7 +397,7 @@ pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
         MatrixMatMul{}.compile(&vec![lhs,rhs])?
       }
       #[cfg(feature = "matrix_solve")]
-      FormulaOperator::Vec(VecOp::Solve) => todo!(),
+      FormulaOperator::Vec(VecOp::Solve) => MatrixSolve{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "matrix_cross")]
       FormulaOperator::Vec(VecOp::Cross) => todo!(),
       #[cfg(feature = "matrix_dot")]

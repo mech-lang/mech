@@ -713,8 +713,8 @@ macro_rules! impl_access_match_arms {
         U32  => MatrixU32,  u32,  u32::default(), "u32";
         U64  => MatrixU64,  u64,  u64::default(), "u64";
         U128 => MatrixU128, u128, u128::default(), "u128";
-        F32  => MatrixF32,  F32,  F32::default(), "f32";
-        F64  => MatrixF64,  F64,  F64::default(), "f64";
+        F32  => MatrixF32,  f32,  f32::default(), "f32";
+        F64  => MatrixF64,  f64,  f64::default(), "f64";
         String => MatrixString, String, String::default(), "string";
         C64 => MatrixC64, C64, C64::default(), "complex";
         R64 => MatrixR64, R64, R64::default(), "rational";
@@ -1347,8 +1347,8 @@ fn matrix_access_range_range_fxn(source: Value, ixes: Vec<Value>) -> MResult<Box
   .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, i32,  "i32"))
   .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, i64,  "i64"))
   .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, i128, "i128"))
-  .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, F32,  "f32"))
-  .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, F64,  "f64"))
+  .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, f32,  "f32"))
+  .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, f64,  "f64"))
   .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, R64,  "rational"))
   .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, C64,  "complex"))
   .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, bool, "bool"))
@@ -1699,8 +1699,8 @@ fn matrix_access_all_range_fxn(source: Value, ixes: Vec<Value>) -> MResult<Box<d
   .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, i32,  "i32"))
   .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, i64,  "i64"))
   .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, i128, "i128"))
-  .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, F32,  "f32"))
-  .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, F64,  "f64"))
+  .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, f32,  "f32"))
+  .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, f64,  "f64"))
   .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, R64,  "rational"))
   .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, C64,  "complex"))
   .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, bool, "bool"))

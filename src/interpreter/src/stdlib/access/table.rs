@@ -83,9 +83,9 @@ impl_col_access_fxn_shapes!(u64);
 #[cfg(all(feature = "u128", feature = "matrix"))]
 impl_col_access_fxn_shapes!(u128);
 #[cfg(all(feature = "f32", feature = "matrix"))]
-impl_col_access_fxn_shapes!(F32);
+impl_col_access_fxn_shapes!(f32);
 #[cfg(all(feature = "f64", feature = "matrix"))]
-impl_col_access_fxn_shapes!(F64);
+impl_col_access_fxn_shapes!(f64);
 #[cfg(all(feature = "string", feature = "matrix"))]
 impl_col_access_fxn_shapes!(String);
 #[cfg(all(feature = "complex", feature = "matrix"))]
@@ -138,8 +138,8 @@ fn impl_access_column_table_fxn(source: Value, key: Value) -> MResult<Box<dyn Me
     U32,u32::default(),"u32";
     U64,u64::default(),"u64";
     U128,u128::default(),"u128";
-    F32,F32::default(),"f32";
-    F64,F64::default(),"f64";
+    F32,f32::default(),"f32";
+    F64,f64::default(),"f64";
     String,String::default(),"string";
     C64,C64::default(),"complex";
     R64,R64::default(),"rational";

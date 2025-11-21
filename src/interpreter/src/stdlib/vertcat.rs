@@ -17,8 +17,8 @@ macro_rules! register_vertical_concatenate_fxn {
       i32, "i32", 
       i64, "i64", 
       i128, "i128", 
-      F32, "f32", 
-      F64, "f64", 
+      f32, "f32", 
+      f64, "f64", 
       C64, "c64", 
       R64, "r64"
     );
@@ -39,8 +39,8 @@ macro_rules! register_fxns {
     $op!(i32, "i32");
     $op!(i64, "i64");
     $op!(i128, "i128");
-    $op!(F64, "f64");
-    $op!(F32, "f32");
+    $op!(f64, "f64");
+    $op!(f32, "f32");
     $op!(R64, "r64");
     $op!(C64, "c64");
   }
@@ -1929,10 +1929,10 @@ fn impl_vertcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   let target_kind = kinds[0].clone();
 
   #[cfg(feature = "f64")]
-  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64) { return impl_vertcat_arms!(F64, arguments, F64::default()) } }
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64) { return impl_vertcat_arms!(f64, arguments, f64::default()) } }
 
   #[cfg(feature = "f32")]
-  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::F32) { return impl_vertcat_arms!(F32, arguments, F32::default()) } }
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::F32) { return impl_vertcat_arms!(f32, arguments, f32::default()) } }
 
   #[cfg(feature = "u8")]
   { if ValueKind::is_compatible(target_kind.clone(), ValueKind::U8)  { return impl_vertcat_arms!(u8,  arguments, u8::default()) } }

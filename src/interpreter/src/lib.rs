@@ -27,10 +27,6 @@ use mech_core::MechTuple;
 use mech_core::MechEnum;
 #[cfg(feature = "table")]
 use mech_core::MechTable;
-#[cfg(feature = "f64")]
-use mech_core::F64;
-#[cfg(feature = "f32")]
-use mech_core::F32;
 #[cfg(feature = "complex")]
 use mech_core::C64;
 #[cfg(feature = "rational")]
