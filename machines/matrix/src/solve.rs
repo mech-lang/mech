@@ -130,8 +130,7 @@ macro_rules! impl_solve_match_arms {
 fn impl_solve_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_solve_match_arms!(
     (lhs_value, rhs_value),
-    //MatrixF32,  F32,  "f32";
-    //MatrixF64,  F64,  "f64";
+    MatrixF32,  f32,  "f32";
     MatrixF64,  f64,  "f64";
     //R64, MatrixR64, R64, "rational";
     //C64, MatrixC64, C64, "complex";
