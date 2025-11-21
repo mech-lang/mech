@@ -734,3 +734,5 @@ test_interpreter!(interpret_matrix_negatives, r#"
 A := [2.0, 1.0, -1.0
       -3.0, -1.0, 2.0
       -2.0, 1.0, 2.0]"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, -3.0, -2.0, 1.0, -1.0, 1.0, -1.0, 2.0, 2.0], 3, 3)));
+
+test_interpreter!(interpret_matrix_solve, r#"A := [2.0, 1.0, -1.0;-3.0, -1.0, 2.0;-2.0, 1.0, 2.0];b := [8.0, -11.0, -3.0]'; math/round(A \ b)"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, -1.0], 3, 1)));
