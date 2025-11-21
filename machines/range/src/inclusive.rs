@@ -88,7 +88,7 @@ macro_rules! impl_range_inclusive_match_arms {
           (Value::[<$ty:camel>](from), Value::[<$ty:camel>](to))  => {
             let from_val = *from.borrow();
             let to_val = *to.borrow();
-            let diff = to_val - from_val;
+            let diff = to_val - from_val + $ty::one();
             if diff < $ty::zero() {
               return Err(MechError2::new(
                 EmptyRangeError{},

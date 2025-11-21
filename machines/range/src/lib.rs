@@ -102,7 +102,7 @@ impl MechErrorKind2 for RangeSizeOverflowError {
 macro_rules! range_size_to_usize {
   // Float f32 branch
   ($diff:expr, f32) => {{
-    let v: f32 = $diff + 1.0;
+    let v: f32 = $diff;
     if v < 0.0 {
       return Err(MechError2::new(
         RangeSizeOverflowError {},
@@ -114,7 +114,7 @@ macro_rules! range_size_to_usize {
   
   // Float f64 branch
   ($diff:expr, f64) => {{
-    let v: f64 = $diff + 1.0;
+    let v: f64 = $diff;
     if v < 0.0 {
       return Err(MechError2::new(
         RangeSizeOverflowError {},
@@ -126,7 +126,7 @@ macro_rules! range_size_to_usize {
   
   // Integer branch
   ($diff:expr, $ty:ty) => {{
-    ($diff + <$ty>::one()).try_into().map_err(|_| MechError2::new(
+    $diff.try_into().map_err(|_| MechError2::new(
       RangeSizeOverflowError {},
       None
     ).with_compiler_loc())?
