@@ -342,14 +342,12 @@ pub fn newline_indent(input: ParseString) -> ParseResult<()> {
 // ws1e := ws1, newline-indent? ;
 pub fn ws1e(input: ParseString) -> ParseResult<()> {
   let (input, _) = many1(space_tab)(input)?;
-  let (input, _) = opt(newline_indent)(input)?;
   Ok((input, ()))
 }
 
 // ws0e := ws0, newline-indent? ;
 pub fn ws0e(input: ParseString) -> ParseResult<()> {
   let (input, _) = many0(space_tab)(input)?;
-  let (input, _) = opt(newline_indent)(input)?;
   Ok((input, ()))
 }
 
