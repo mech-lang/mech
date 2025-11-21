@@ -59,6 +59,8 @@ pub mod matmul;
 pub mod transpose;
 #[cfg(feature = "dot")]
 pub mod dot;
+#[cfg(feature = "solve")]
+pub mod solve;
 //pub mod cross;
 
 #[cfg(feature = "matmul")]
@@ -67,6 +69,8 @@ pub use self::matmul::*;
 pub use self::transpose::*;
 #[cfg(feature = "dot")]
 pub use self::dot::*;
+#[cfg(feature = "solve")]
+pub use self::solve::*;
 //pub use self::cross::*;
 
 // ----------------------------------------------------------------------------

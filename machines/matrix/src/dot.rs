@@ -18,12 +18,12 @@ macro_rules! dot_op {
 macro_rules! impl_dot {
   ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
     impl_binop!($name, $type1, $type2, $out_type, dot_op, FeatureFlag::Builtin(FeatureKind::Dot));
-    register_fxn_descriptor!($name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", F32, "f32", F64, "f64");
+    register_fxn_descriptor!($name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64");
   };
 }
 
 impl_binop!(DotScalar, T, T, T, mul_op, FeatureFlag::Builtin(FeatureKind::Dot));
-register_fxn_descriptor!(DotScalar, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", F32, "f32", F64, "f64");
+register_fxn_descriptor!(DotScalar, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64");
 
 #[cfg(all(feature = "row_vector2", feature = "row_vector2"))]
 impl_dot!(DotR2R2, RowVector2<T>, RowVector2<T>, T);
@@ -149,8 +149,8 @@ fn impl_dot_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
     U32,  MatrixU32,  u32,  "u32";
     U64,  MatrixU64,  u64,  "u64";
     U128, MatrixU128, u128, "u128";
-    F32,  MatrixF32,  F32,  "f32";
-    F64,  MatrixF64,  F64,  "f64";
+    F32,  MatrixF32,  f32,  "f32";
+    F64,  MatrixF64,  f64,  "f64";
     R64, MatrixR64, R64, "rational";
     C64, MatrixC64, C64, "complex";
   )
