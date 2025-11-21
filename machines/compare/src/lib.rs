@@ -128,7 +128,7 @@ macro_rules! impl_compare_binop {
       compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
     }
   }
-  register_fxn_descriptor!($struct_name, bool, "bool", String, "string", u8, "u8", i8, "i8", u16, "u16", i16, "i16", u32, "u32", i32, "i32", u64, "u64", i64, "i64", u128, "u128", i128, "i128", F32, "f32", F64, "f64", R64, "r64", C64, "c64");
+  register_fxn_descriptor!($struct_name, bool, "bool", String, "string", u8, "u8", i8, "i8", u16, "u16", i16, "i16", u32, "u32", i32, "i32", u64, "u64", i64, "i64", u128, "u128", i128, "i128", f32, "f32", f64, "f64", R64, "r64", C64, "c64");
 };}
   
 
