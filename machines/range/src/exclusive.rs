@@ -20,7 +20,7 @@ pub struct RangeExclusiveScalar<T, MatA> {
 }
 impl<T, R1, C1, S1> MechFunctionFactory for RangeExclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
-  T: Copy + Debug + Clone + Sync + Send + Step + 
+  T: Copy + Debug + Clone + Sync + Send + 
   CompileConst + ConstElem + AsValueKind +
   PartialOrd + 'static + One + Add<Output = T>,
   Ref<naMatrix<T, R1, C1, S1>>: ToValue,
@@ -93,10 +93,7 @@ macro_rules! impl_range_exclusive_match_arms {
                 None
               ).with_compiler_loc());
             }
-            let size = diff.try_into().map_err(|_| MechError2::new(
-              RangeSizeOverflowError{},
-              None
-            ).with_compiler_loc())?;
+            let size = range_size_to_usize!(diff, $ty);
             let mut vec = vec![from_val; size];
             match size {
               0 => Err(MechError2::new(
@@ -147,8 +144,8 @@ macro_rules! impl_range_exclusive_match_arms {
 
 fn impl_range_exclusive_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_range_exclusive_match_arms!(RangeExclusiveScalar, arg1_value, arg2_value,
-    F32, "f32";
-    F64, "f64";
+    f32, "f32";
+    f64, "f64";
     i8,  "i8";
     i16, "i16";
     i32, "i32";
