@@ -153,7 +153,7 @@ where
     compile_nullop!(name, self.e0, ctx, FeatureFlag::Custom(hash_str("io/print")) );
   }
 }
-register_fxn_descriptor!(IoPrintlnScalar, i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64", bool, "bool", String, "string", C64, "complex", R64, "rational");
+register_fxn_descriptor!(IoPrintlnScalar, i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64", bool, "bool", String, "string", C64, "complex", R64, "rational");
 
 fn impl_print_fxn(source_value: Value) -> MResult<Box<dyn MechFunction>>  {
   if source_value.is_scalar() {
@@ -205,8 +205,8 @@ fn impl_print_fxn(source_value: Value) -> MResult<Box<dyn MechFunction>>  {
     u32,  "u32",
     u64,  "u64",
     u128, "u128",
-    F32,  "f32",
-    F64,  "f64",
+    f32,  "f32",
+    f64,  "f64",
     bool, "bool",
     String, "string",
     C64, "complex",
