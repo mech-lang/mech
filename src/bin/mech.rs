@@ -342,7 +342,6 @@ async fn main() -> Result<(), MechError2> {
       is_intended_path(p)
     });
 
-    println!("paths: {:#?}", any_look_like_paths && !paths.is_empty());
     if !paths.is_empty() {
       if any_look_like_paths {
         let mut watch_errors = Vec::new();
