@@ -92,8 +92,9 @@ pub struct MechError2 {
 impl std::fmt::Debug for MechError2 {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     f.debug_struct("MechError2")
-      .field("kind_name", &self.kind_name())
-      .field("message", &self.kind_message())
+      .field("kind name", &self.kind_name())
+      .field("kind message", &self.kind_message())
+      .field("message", &self.message)
       .field("program_range", &self.program_range)
       .field("annotations", &self.annotations)
       .field("tokens", &self.tokens)
