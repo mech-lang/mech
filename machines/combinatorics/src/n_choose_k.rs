@@ -87,7 +87,7 @@ where
     compile_binop!(name, self.out, self.n, self.k, ctx, FeatureFlag::Custom(hash_str("combinatorics/n-choose-k")));
   }
 }
-register_fxn_descriptor!(NChooseK, u8, "u8", i8, "i8", u16, "u16", i16, "i16", u32, "u32", i32, "i32", u64, "u64", i64, "i64", u128, "u128", i128, "i128", F32, "f32", F64, "f64", R64, "r64", C64, "c64");
+register_fxn_descriptor!(NChooseK, u8, "u8", i8, "i8", u16, "u16", i16, "i16", u32, "u32", i32, "i32", u64, "u64", i64, "i64", u128, "u128", i128, "i128", f32, "f32", f64, "f64", R64, "r64", C64, "c64");
 
 #[cfg(feature = "matrix")]
 #[derive(Debug)]
@@ -171,7 +171,7 @@ where
     compile_binop!(name, self.out, self.n, self.k, ctx, FeatureFlag::Custom(hash_str("combinatorics/n-choose-k")));
   }
 }
-register_fxn_descriptor!(NChooseKMatrix, u8, "u8", i8, "i8", u16, "u16", i16, "i16", u32, "u32", i32, "i32", u64, "u64", i64, "i64", u128, "u128", i128, "i128", F32, "f32", F64, "f64", R64, "r64", C64, "c64");
+register_fxn_descriptor!(NChooseKMatrix, u8, "u8", i8, "i8", u16, "u16", i16, "i16", u32, "u32", i32, "i32", u64, "u64", i64, "i64", u128, "u128", i128, "i128", f32, "f32", f64, "f64", R64, "r64", C64, "c64");
 
 
 fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> MResult<Box<dyn MechFunction>> {
@@ -197,9 +197,9 @@ fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> MResult<Box<dyn Mech
     #[cfg(feature = "i128")]
     (Value::I128(n), Value::I128(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(i128::default())})),
     #[cfg(feature = "f32")]
-    (Value::F32(n), Value::F32(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(F32::default())})),
+    (Value::F32(n), Value::F32(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(f32::default())})),
     #[cfg(feature = "f64")]
-    (Value::F64(n), Value::F64(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(F64::default())})),
+    (Value::F64(n), Value::F64(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(f64::default())})),
     #[cfg(feature = "rational")]
     (Value::R64(n), Value::R64(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(R64::default())})),
     #[cfg(feature = "complex")]
@@ -225,9 +225,9 @@ fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> MResult<Box<dyn Mech
     #[cfg(all(feature = "matrix", feature = "i128"))]
     (Value::MatrixI128(n), Value::I128(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(i128::to_matrix(vec![], 0, 0))})),
     #[cfg(all(feature = "matrix", feature = "f32"))]
-    (Value::MatrixF32(n), Value::F32(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(F32::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixF32(n), Value::F32(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(f32::to_matrix(vec![], 0, 0))})),
     #[cfg(all(feature = "matrix", feature = "f64"))]
-    (Value::MatrixF64(n), Value::F64(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(F64::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixF64(n), Value::F64(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(f64::to_matrix(vec![], 0, 0))})),
     #[cfg(all(feature = "matrix", feature = "rational"))]
     (Value::MatrixR64(n), Value::R64(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(R64::to_matrix(vec![], 0, 0))})),
     #[cfg(all(feature = "matrix", feature = "complex"))]
