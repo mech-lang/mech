@@ -2393,6 +2393,20 @@ impl From<i128> for Value {
   }
 }
 
+#[cfg(feature = "f32")]
+impl From<f32> for Value {
+  fn from(val: f32) -> Self {
+    Value::F32(Ref::new(val))
+  }
+}
+
+#[cfg(feature = "f64")]
+impl From<f64> for Value {
+  fn from(val: f64) -> Self {
+    Value::F64(Ref::new(val))
+  }
+}
+
 #[cfg(any(feature = "bool", feature = "variable_define"))]
 impl From<bool> for Value {
   fn from(val: bool) -> Self {
