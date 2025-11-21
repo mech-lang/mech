@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{log1p,log1pf};
 macro_rules! log1p_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = log1p((*$arg).0);}
+    unsafe{(*$out) = log1p((*$arg));}
   };}
 
 macro_rules! log1p_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = log1p(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = log1p(((&(*$arg))[i]));
       }}};}
 
 macro_rules! log1pf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = log1pf((*$arg).0);}
+    unsafe{(*$out) = log1pf((*$arg));}
   };}  
 
 macro_rules! log1pf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = log1pf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = log1pf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathLog1p, F32, log1pf, FeatureFlag::Custom(hash_str("math/log1p")));
+impl_math_unop!(MathLog1p, f32, log1pf, FeatureFlag::Custom(hash_str("math/log1p")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathLog1p, F64, log1p, FeatureFlag::Custom(hash_str("math/log1p")));
+impl_math_unop!(MathLog1p, f64, log1p, FeatureFlag::Custom(hash_str("math/log1p")));
 
 fn impl_log1p_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathLog1p,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

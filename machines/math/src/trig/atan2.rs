@@ -9,7 +9,7 @@ use mech_core::matrix::Matrix;
 
 macro_rules! atan2_op {
   ($arg1:expr, $arg2:expr, $out:expr) => {
-    unsafe{(*$out).0 = atan2((*$arg1).0,(*$arg2).0);}
+    unsafe{(*$out) = atan2((*$arg1),(*$arg2));}
   };}
 
 macro_rules! atan2_vec_op {
@@ -19,12 +19,12 @@ macro_rules! atan2_vec_op {
       let arg2_deref = &(*$arg2);
       let mut out_deref = (&mut *$out);
       for i in 0..arg1_deref.len() {
-        (out_deref[i]).0 = atan2(arg1_deref[i].0,arg2_deref[i].0);
+        (out_deref[i]) = atan2(arg1_deref[i],arg2_deref[i]);
       }}};}
 
 macro_rules! atan2f_op {
   ($arg1:expr, $arg2:expr, $out:expr) => {
-    unsafe{(*$out).0 = atan2f((*$arg1).0,(*$arg2).0);}
+    unsafe{(*$out) = atan2f((*$arg1),(*$arg2));}
   };}
 
 macro_rules! atan2f_vec_op {
@@ -34,7 +34,7 @@ macro_rules! atan2f_vec_op {
       let arg2_deref = &(*$arg2);
       let mut out_deref = (&mut *$out);
       for i in 0..arg1_deref.len() {
-        (out_deref[i]).0 = atan2f(arg1_deref[i].0,arg2_deref[i].0);
+        (out_deref[i]) = atan2f(arg1_deref[i],arg2_deref[i]);
       }}};}
 
 macro_rules! impl_two_arg_fxn {
@@ -106,14 +106,14 @@ macro_rules! impl_atan2 {
     paste!{
       $(
         #[cfg(all(feature = $type_string, feature = $feature))]
-        impl_two_arg_fxn!([<$struct_name $type>], $kind<$type>, $kind<$type>, $kind<$type>, $op);
+        impl_two_arg_fxn!([<$struct_name $type:camel>], $kind<$type>, $kind<$type>, $kind<$type>, $op);
       )*
     }
   };
 }
 
 impl_atan2!(
-  F64, "f64", atan2_vec_op,
+  f64, "f64", atan2_vec_op,
   Atan2M1, Matrix1, "matrix1";
   Atan2M2, Matrix2, "matrix2";
   Atan2M3, Matrix3, "matrix3";
@@ -132,7 +132,7 @@ impl_atan2!(
 );
 
 impl_atan2!(
-  F32, "f32", atan2f_vec_op,
+  f32, "f32", atan2f_vec_op,
   Atan2M1, Matrix1, "matrix1";
   Atan2M2, Matrix2, "matrix2";
   Atan2M3, Matrix3, "matrix3";
@@ -151,10 +151,10 @@ impl_atan2!(
 );
 
 #[cfg(feature = "f32")]
-impl_two_arg_fxn!(Atan2F32, F32, F32, F32, atan2f_op);
+impl_two_arg_fxn!(Atan2F32, f32, f32, f32, atan2f_op);
 
 #[cfg(feature = "f64")]
-impl_two_arg_fxn!(Atan2F64, F64, F64, F64, atan2_op);
+impl_two_arg_fxn!(Atan2F64, f64, f64, f64, atan2_op);
 
 #[macro_export]
 macro_rules! impl_binop_atan2 {
@@ -164,7 +164,7 @@ macro_rules! impl_binop_atan2 {
         $(
           // Scalar
           #[cfg(feature = $feat)]
-          (Value::$t(arg1), Value::$t(arg2)) => Ok(Box::new([<$fxn $t>]{arg1, arg2, out: Ref::new($t::from($zero_fn))})),
+          (Value::$t(arg1), Value::$t(arg2)) => Ok(Box::new([<$fxn $t>]{arg1, arg2, out: Ref::new($zero_fn)})),
 
           // Fixed matrices
           #[cfg(all(feature = "matrix1", feature = $feat))]
@@ -230,8 +230,8 @@ macro_rules! impl_binop_atan2 {
 
 pub fn impl_atan2_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_binop_atan2!(Atan2, arg1_value, arg2_value,
-    F32, F32::default(), "f32";
-    F64, F64::default(), "f64";
+    F32, f32::default(), "f32";
+    F64, f64::default(), "f64";
   )
 }
 

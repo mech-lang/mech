@@ -208,8 +208,8 @@ macro_rules! op_assign_range_fxn {
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i16, "i16"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i32, "i32"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i64, "i64"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, F32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, F64, "f64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, f32, "f32"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, f64, "f64"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, R64, "rational"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, C64, "complex"))
         .map_err(|_| MechError2::new(
@@ -237,8 +237,8 @@ macro_rules! op_assign_range_all_fxn {
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i16, "i16"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i32, "i32"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i64, "i64"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, F32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, F64, "f64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, f32, "f32"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, f64, "f64"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, R64, "rational"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, C64, "complex"))
         .map_err(|_| MechError2::new(
@@ -316,8 +316,8 @@ macro_rules! impl_assign_scalar_scalar {
         i32, "i32",
         i64, "i64",
         i128, "i128",
-        F32, "f32",
-        F64, "f64",
+        f32, "f32",
+        f64, "f64",
         R64, "r64",
         C64, "c64"
       );
@@ -542,9 +542,9 @@ macro_rules! impl_register_op_assign_vv_all {
     #[cfg(feature = "i128")]
     register_op_assign_vv_all!($macro_name, i128, "i128");
     #[cfg(feature = "f32")]
-    register_op_assign_vv_all!($macro_name, F32, "f32");
+    register_op_assign_vv_all!($macro_name, f32, "f32");
     #[cfg(feature = "f64")]
-    register_op_assign_vv_all!($macro_name, F64, "f64");
+    register_op_assign_vv_all!($macro_name, f64, "f64");
     #[cfg(feature = "r64")]
     register_op_assign_vv_all!($macro_name, R64, "r64");
     #[cfg(feature = "c64")]

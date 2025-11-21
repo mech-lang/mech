@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{acos, acosf};
 macro_rules! asec_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = acos(1.0 / (*$arg).0);}
+    unsafe{(*$out) = acos(1.0 / (*$arg));}
   };}
 
 macro_rules! asec_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = acos(1.0 / ((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = acos(1.0 / ((&(*$arg))[i]));
       }}};}
 
 macro_rules! asecf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = acosf(1.0 / (*$arg).0);}
+    unsafe{(*$out) = acosf(1.0 / (*$arg));}
   };}  
 
 macro_rules! asecf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = acosf(1.0 / ((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = acosf(1.0 / ((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathAsec, F32, asecf, FeatureFlag::Custom(hash_str("math/asec")));
+impl_math_unop!(MathAsec, f32, asecf, FeatureFlag::Custom(hash_str("math/asec")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathAsec, F64, asec, FeatureFlag::Custom(hash_str("math/asec")));
+impl_math_unop!(MathAsec, f64, asec, FeatureFlag::Custom(hash_str("math/asec")));
 
 fn impl_asec_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathAsec,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

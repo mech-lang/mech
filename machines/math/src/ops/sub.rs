@@ -115,8 +115,8 @@ fn impl_sub_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
     U32,  u32,  "u32";
     U64,  u64,  "u64";
     U128, u128, "u128";
-    F32,  F32,  "f32";
-    F64,  F64,  "f64";
+    F32,  f32,  "f32";
+    F64,  f64,  "f64";
     R64, R64, "rational";
     C64, C64, "complex";
   )

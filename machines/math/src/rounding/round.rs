@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{round,roundf};
 macro_rules! round_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = round((*$arg).0);}
+    unsafe{(*$out) = round((*$arg));}
   };}
 
 macro_rules! round_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = round(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = round(((&(*$arg))[i]));
       }}};}
 
 macro_rules! roundf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = roundf((*$arg).0);}
+    unsafe{(*$out) = roundf((*$arg));}
   };}  
 
 macro_rules! roundf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = roundf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = roundf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathRound, F32, roundf, FeatureFlag::Custom(hash_str("math/round")));
+impl_math_unop!(MathRound, f32, roundf, FeatureFlag::Custom(hash_str("math/round")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathRound, F64, round, FeatureFlag::Custom(hash_str("math/round")));
+impl_math_unop!(MathRound, f64, round, FeatureFlag::Custom(hash_str("math/round")));
 
 fn impl_round_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathRound,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{sin, sinf};
 macro_rules! csc_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = 1.0 / sin((*$arg).0);}
+    unsafe{(*$out) = 1.0 / sin((*$arg));}
   };}
 
 macro_rules! csc_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = 1.0 / sin(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = 1.0 / sin(((&(*$arg))[i]));
       }}};}
 
 macro_rules! cscf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = 1.0 / sinf((*$arg).0);}
+    unsafe{(*$out) = 1.0 / sinf((*$arg));}
   };}  
 
 macro_rules! cscf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = 1.0 / sinf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = 1.0 / sinf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathCsc, F32, cscf, FeatureFlag::Custom(hash_str("math/csc")));
+impl_math_unop!(MathCsc, f32, cscf, FeatureFlag::Custom(hash_str("math/csc")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathCsc, F64, csc, FeatureFlag::Custom(hash_str("math/csc")));
+impl_math_unop!(MathCsc, f64, csc, FeatureFlag::Custom(hash_str("math/csc")));
 
 fn impl_csc_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathCsc,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

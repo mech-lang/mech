@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{rint,rintf};
 macro_rules! rint_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = rint((*$arg).0);}
+    unsafe{(*$out) = rint((*$arg));}
   };}
 
 macro_rules! rint_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = rint(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = rint(((&(*$arg))[i]));
       }}};}
 
 macro_rules! rintf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = rintf((*$arg).0);}
+    unsafe{(*$out) = rintf((*$arg));}
   };}  
 
 macro_rules! rintf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = rintf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = rintf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathRint, F32, rintf, FeatureFlag::Custom(hash_str("math/rint")));
+impl_math_unop!(MathRint, f32, rintf, FeatureFlag::Custom(hash_str("math/rint")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathRint, F64, rint, FeatureFlag::Custom(hash_str("math/rint")));
+impl_math_unop!(MathRint, f64, rint, FeatureFlag::Custom(hash_str("math/rint")));
 
 fn impl_rint_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathRint,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

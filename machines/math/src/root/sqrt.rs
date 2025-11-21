@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{sqrt,sqrtf};
 macro_rules! sqrt_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = sqrt((*$arg).0);}
+    unsafe{(*$out) = sqrt((*$arg));}
   };}
 
 macro_rules! sqrt_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = sqrt(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = sqrt(((&(*$arg))[i]));
       }}};}
 
 macro_rules! sqrtf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = sqrtf((*$arg).0);}
+    unsafe{(*$out) = sqrtf((*$arg));}
   };}  
 
 macro_rules! sqrtf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = sqrtf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = sqrtf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathSqrt, F32, sqrtf, FeatureFlag::Custom(hash_str("math/sqrt")));
+impl_math_unop!(MathSqrt, f32, sqrtf, FeatureFlag::Custom(hash_str("math/sqrt")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathSqrt, F64, sqrt, FeatureFlag::Custom(hash_str("math/sqrt")));
+impl_math_unop!(MathSqrt, f64, sqrt, FeatureFlag::Custom(hash_str("math/sqrt")));
 
 fn impl_sqrt_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathSqrt,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{log,logf};
 macro_rules! log_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = log((*$arg).0);}
+    unsafe{(*$out) = log((*$arg));}
   };}
 
 macro_rules! log_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = log(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = log(((&(*$arg))[i]));
       }}};}
 
 macro_rules! logf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = logf((*$arg).0);}
+    unsafe{(*$out) = logf((*$arg));}
   };}  
 
 macro_rules! logf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = logf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = logf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathLog, F32, logf, FeatureFlag::Custom(hash_str("math/log")));
+impl_math_unop!(MathLog, f32, logf, FeatureFlag::Custom(hash_str("math/log")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathLog, F64, log, FeatureFlag::Custom(hash_str("math/log")));
+impl_math_unop!(MathLog, f64, log, FeatureFlag::Custom(hash_str("math/log")));
 
 fn impl_log_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathLog,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

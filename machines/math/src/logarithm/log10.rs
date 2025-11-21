@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{log10,log10f};
 macro_rules! log10_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = log10((*$arg).0);}
+    unsafe{(*$out) = log10((*$arg));}
   };}
 
 macro_rules! log10_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = log10(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = log10(((&(*$arg))[i]));
       }}};}
 
 macro_rules! log10f_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = log10f((*$arg).0);}
+    unsafe{(*$out) = log10f((*$arg));}
   };}  
 
 macro_rules! log10f_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = log10f(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = log10f(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathLog10, F32, log10f, FeatureFlag::Custom(hash_str("math/log10")));
+impl_math_unop!(MathLog10, f32, log10f, FeatureFlag::Custom(hash_str("math/log10")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathLog10, F64, log10, FeatureFlag::Custom(hash_str("math/log10")));
+impl_math_unop!(MathLog10, f64, log10, FeatureFlag::Custom(hash_str("math/log10")));
 
 fn impl_log10_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathLog10,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

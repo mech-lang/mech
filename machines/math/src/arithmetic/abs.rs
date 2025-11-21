@@ -34,26 +34,26 @@ macro_rules! abs_vec_op {
 
 macro_rules! fabs_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = fabs((*$arg).0);}
+    unsafe{(*$out) = fabs((*$arg));}
   };}
 
 macro_rules! fabs_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = fabs(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = fabs(((&(*$arg))[i]));
       }}};}
 
 macro_rules! fabsf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = fabsf((*$arg).0);}
+    unsafe{(*$out) = fabsf((*$arg));}
   };}  
 
 macro_rules! fabsf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = fabsf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = fabsf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "u8")]
@@ -79,9 +79,9 @@ impl_math_unop!(MathAbs, i64, abs, FeatureFlag::Custom(hash_str("math/abs")));
 impl_math_unop!(MathAbs, i128, abs, FeatureFlag::Custom(hash_str("math/abs")));
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathAbs, F32, fabsf, FeatureFlag::Custom(hash_str("math/abs")));
+impl_math_unop!(MathAbs, f32, fabsf, FeatureFlag::Custom(hash_str("math/abs")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathAbs, F64, fabs, FeatureFlag::Custom(hash_str("math/abs")));
+impl_math_unop!(MathAbs, f64, fabs, FeatureFlag::Custom(hash_str("math/abs")));
 
 #[cfg(feature = "c64")]
 impl_math_unop!(MathAbs, C64, abs, FeatureFlag::Custom(hash_str("math/abs")));
@@ -103,8 +103,8 @@ fn impl_abs_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     I32 => MatrixI32, i32, i32::zero(), "i32";
     I64 => MatrixI64, i64, i64::zero(), "i64";
     I128 => MatrixI128, i128, i128::zero(), "i128";
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, f32, f32::zero(), "f32";
+    F64 => MatrixF64, f64, f64::zero(), "f64";
     C64 => MatrixC64, C64, C64::default(), "c64";
     R64 => MatrixR64, R64, R64::zero(), "r64";
   )

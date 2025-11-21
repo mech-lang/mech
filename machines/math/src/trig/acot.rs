@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{atan, atanf};
 macro_rules! acot_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = atan(1.0 / (*$arg).0);}
+    unsafe{(*$out) = atan(1.0 / (*$arg));}
   };}
 
 macro_rules! acot_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = atan(1.0 / ((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = atan(1.0 / ((&(*$arg))[i]));
       }}};}
 
 macro_rules! acotf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = atanf(1.0 / (*$arg).0);}
+    unsafe{(*$out) = atanf(1.0 / (*$arg));}
   };}  
 
 macro_rules! acotf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = atanf(1.0 / ((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = atanf(1.0 / ((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathAcot, F32, acotf, FeatureFlag::Custom(hash_str("math/acot")));
+impl_math_unop!(MathAcot, f32, acotf, FeatureFlag::Custom(hash_str("math/acot")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathAcot, F64, acot, FeatureFlag::Custom(hash_str("math/acot")));
+impl_math_unop!(MathAcot, f64, acot, FeatureFlag::Custom(hash_str("math/acot")));
 
 fn impl_acot_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathAcot,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

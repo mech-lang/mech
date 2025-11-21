@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{floor,floorf};
 macro_rules! floor_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = floor((*$arg).0);}
+    unsafe{(*$out) = floor((*$arg));}
   };}
 
 macro_rules! floor_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = floor(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = floor(((&(*$arg))[i]));
       }}};}
 
 macro_rules! floorf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = floorf((*$arg).0);}
+    unsafe{(*$out) = floorf((*$arg));}
   };}  
 
 macro_rules! floorf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = floorf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = floorf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathFloor, F32, floorf, FeatureFlag::Custom(hash_str("math/floor")));
+impl_math_unop!(MathFloor, f32, floorf, FeatureFlag::Custom(hash_str("math/floor")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathFloor, F64, floor, FeatureFlag::Custom(hash_str("math/floor")));
+impl_math_unop!(MathFloor, f64, floor, FeatureFlag::Custom(hash_str("math/floor")));
 
 fn impl_floor_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathFloor,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

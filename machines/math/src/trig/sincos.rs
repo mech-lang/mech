@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{sincos,sincosf};
 macro_rules! sincos_op {
   ($arg:expr, $out1:expr, $out2:expr) => {
-    unsafe{(*$out1, *$out2) = sincos((*$arg).0);}
+    unsafe{(*$out1, *$out2) = sincos((*$arg));}
   };}
 
 macro_rules! sincos_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = sincos(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = sincos(((&(*$arg))[i]));
       }}};}
 
 macro_rules! sincosf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = sincosf((*$arg).0);}
+    unsafe{(*$out) = sincosf((*$arg));}
   };}  
 
 macro_rules! sincosf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = sincosf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = sincosf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]      
-impl_math_unop!(MathSincos, F32, sincosf, FeatureFlag::Custom(hash_str("math/sincos")));
+impl_math_unop!(MathSincos, f32, sincosf, FeatureFlag::Custom(hash_str("math/sincos")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathSincos, F64, sincos, FeatureFlag::Custom(hash_str("math/sincos")));
+impl_math_unop!(MathSincos, f64, sincos, FeatureFlag::Custom(hash_str("math/sincos")));
 
 fn impl_sincos_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathSincos,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{j0,j0f};
 macro_rules! j0_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = j0((*$arg).0);}
+    unsafe{(*$out) = j0((*$arg));}
   };}
 
 macro_rules! j0_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = j0(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = j0(((&(*$arg))[i]));
       }}};}
 
 macro_rules! j0f_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = j0f((*$arg).0);}
+    unsafe{(*$out) = j0f((*$arg));}
   };}  
 
 macro_rules! j0f_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = j0f(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = j0f(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathJ0, F32, j0f, FeatureFlag::Custom(hash_str("math/j0")));
+impl_math_unop!(MathJ0, f32, j0f, FeatureFlag::Custom(hash_str("math/j0")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathJ0, F64, j0, FeatureFlag::Custom(hash_str("math/j0")));
+impl_math_unop!(MathJ0, f64, j0, FeatureFlag::Custom(hash_str("math/j0")));
 
 fn impl_j0_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathJ0,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

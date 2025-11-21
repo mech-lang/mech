@@ -8,7 +8,7 @@ use mech_core::matrix::Matrix;
 // Sinh ------------------------------------------------------------------------
 macro_rules! sinh_op {
   ($arg:expr, $out:expr) => {
-    unsafe { (*$out).0 = sinh((*$arg).0); }
+    unsafe { (*$out) = sinh((*$arg)); }
   };
 }
 
@@ -16,12 +16,12 @@ macro_rules! sinh_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = sinh(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = sinh(((&(*$arg))[i]));
       }}};}
 
 macro_rules! sinhf_op {
   ($arg:expr, $out:expr) => {
-    unsafe { (*$out).0 = sinhf((*$arg).0); }
+    unsafe { (*$out) = sinhf((*$arg)); }
   };
 }
 
@@ -29,23 +29,23 @@ macro_rules! sinhf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = sinhf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = sinhf(((&(*$arg))[i]));
       }
     }
   };
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathSinh, F32, sinhf, FeatureFlag::Custom(hash_str("math/sinh")));
+impl_math_unop!(MathSinh, f32, sinhf, FeatureFlag::Custom(hash_str("math/sinh")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathSinh, F64, sinh, FeatureFlag::Custom(hash_str("math/sinh")));
+impl_math_unop!(MathSinh, f64, sinh, FeatureFlag::Custom(hash_str("math/sinh")));
 
 fn impl_sinh_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathSinh,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

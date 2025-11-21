@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{exp10, exp10f};
 macro_rules! exp10_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = exp10((*$arg).0);}
+    unsafe{(*$out) = exp10((*$arg));}
   };}
 
 macro_rules! exp10_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = exp10(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = exp10(((&(*$arg))[i]));
       }}};}
 
 macro_rules! exp10f_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = exp10f((*$arg).0);}
+    unsafe{(*$out) = exp10f((*$arg));}
   };}
 
 macro_rules! exp10f_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = exp10f(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = exp10f(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f64")]      
-impl_math_unop!(MathExp10, F64, exp10, FeatureFlag::Custom(hash_str("math/exp10")));
+impl_math_unop!(MathExp10, f64, exp10, FeatureFlag::Custom(hash_str("math/exp10")));
 #[cfg(feature = "f32")]
-impl_math_unop!(MathExp10, F32, exp10f, FeatureFlag::Custom(hash_str("math/exp10")));
+impl_math_unop!(MathExp10, f32, exp10f, FeatureFlag::Custom(hash_str("math/exp10")));
 
 fn impl_exp10_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathExp10,
     lhs_value,
-    F32 => MatrixF32, F32, F32::default(), "f32";
-    F64 => MatrixF64, F64, F64::default(), "f64";
+    F32 => MatrixF32, F32, f32::default(), "f32";
+    F64 => MatrixF64, F64, f64::default(), "f64";
   )
 }
 

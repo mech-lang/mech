@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{ceil,ceilf};
 macro_rules! ceil_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = ceil((*$arg).0);}
+    unsafe{(*$out) = ceil((*$arg));}
   };}
 
 macro_rules! ceil_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = ceil(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = ceil(((&(*$arg))[i]));
       }}};}
 
 macro_rules! ceilf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = ceilf((*$arg).0);}
+    unsafe{(*$out) = ceilf((*$arg));}
   };}  
 
 macro_rules! ceilf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = ceilf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = ceilf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathCeil, F32, ceilf, FeatureFlag::Custom(hash_str("math/ceil")));
+impl_math_unop!(MathCeil, f32, ceilf, FeatureFlag::Custom(hash_str("math/ceil")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathCeil, F64, ceil, FeatureFlag::Custom(hash_str("math/ceil")));
+impl_math_unop!(MathCeil, f64, ceil, FeatureFlag::Custom(hash_str("math/ceil")));
 
 fn impl_ceil_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathCeil,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

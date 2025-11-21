@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{exp, expf};
 macro_rules! exponential_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = exp((*$arg).0);}
+    unsafe{(*$out) = exp((*$arg));}
   };}
 
 macro_rules! exponential_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = exp(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = exp(((&(*$arg))[i]));
       }}};}
 
 macro_rules! exponentialf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = expf((*$arg).0);}
+    unsafe{(*$out) = expf((*$arg));}
   };}
 
 macro_rules! exponentialf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = expf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = expf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f64")]
-impl_math_unop!(MathExponential, F64, exponential, FeatureFlag::Custom(hash_str("math/exponential")));
+impl_math_unop!(MathExponential, f64, exponential, FeatureFlag::Custom(hash_str("math/exponential")));
 #[cfg(feature = "f32")]
-impl_math_unop!(MathExponential, F32, exponentialf, FeatureFlag::Custom(hash_str("math/exponential")));
+impl_math_unop!(MathExponential, f32, exponentialf, FeatureFlag::Custom(hash_str("math/exponential")));
 
 fn impl_exponential_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathExponential,
     lhs_value,
-    F32 => MatrixF32, F32, F32::default(), "f32";
-    F64 => MatrixF64, F64, F64::default(), "f64";
+    F32 => MatrixF32, F32, f32::default(), "f32";
+    F64 => MatrixF64, F64, f64::default(), "f64";
   )
 }
 

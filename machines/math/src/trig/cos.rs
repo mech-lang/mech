@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{cos,cosf};
 macro_rules! cos_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = cos((*$arg).0);}
+    unsafe{(*$out) = cos((*$arg));}
   };}
 
 macro_rules! cos_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = cos(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = cos(((&(*$arg))[i]));
       }}};}
 
 macro_rules! cosf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = cosf((*$arg).0);}
+    unsafe{(*$out) = cosf((*$arg));}
   };}  
 
 macro_rules! cosf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = cosf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = cosf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathCos, F32, cosf, FeatureFlag::Custom(hash_str("math/cos")));
+impl_math_unop!(MathCos, f32, cosf, FeatureFlag::Custom(hash_str("math/cos")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathCos, F64, cos, FeatureFlag::Custom(hash_str("math/cos")));
+impl_math_unop!(MathCos, f64, cos, FeatureFlag::Custom(hash_str("math/cos")));
 
 fn impl_cos_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathCos,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{erf,erff};
 macro_rules! erf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = erf((*$arg).0);}
+    unsafe{(*$out) = erf((*$arg));}
   };}
 
 macro_rules! erf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = erf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = erf(((&(*$arg))[i]));
       }}};}
 
 macro_rules! erff_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = erff((*$arg).0);}
+    unsafe{(*$out) = erff((*$arg));}
   };}  
 
 macro_rules! erff_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = erff(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = erff(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathErf, F32, erff, FeatureFlag::Custom(hash_str("math/erf")));
+impl_math_unop!(MathErf, f32, erff, FeatureFlag::Custom(hash_str("math/erf")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathErf, F64, erf, FeatureFlag::Custom(hash_str("math/erf")));
+impl_math_unop!(MathErf, f64, erf, FeatureFlag::Custom(hash_str("math/erf")));
 
 fn impl_erf_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathErf,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

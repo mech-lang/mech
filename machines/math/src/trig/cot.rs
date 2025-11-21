@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{tan, tanf};
 macro_rules! cot_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = 1.0 / tan((*$arg).0);}
+    unsafe{(*$out) = 1.0 / tan((*$arg));}
   };}
 
 macro_rules! cot_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = 1.0 / tan(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = 1.0 / tan(((&(*$arg))[i]));
       }}};}
 
 macro_rules! cotf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = 1.0 / tanf((*$arg).0);}
+    unsafe{(*$out) = 1.0 / tanf((*$arg));}
   };}  
 
 macro_rules! cotf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = 1.0 / tanf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = 1.0 / tanf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathCot, F32, cotf, FeatureFlag::Custom(hash_str("math/cot")));
+impl_math_unop!(MathCot, f32, cotf, FeatureFlag::Custom(hash_str("math/cot")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathCot, F64, cot, FeatureFlag::Custom(hash_str("math/cot")));
+impl_math_unop!(MathCot, f64, cot, FeatureFlag::Custom(hash_str("math/cot")));
 
 fn impl_cot_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathCot,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

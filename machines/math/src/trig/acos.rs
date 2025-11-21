@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{acos,acosf};
 macro_rules! acos_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = acos((*$arg).0);}
+    unsafe{(*$out) = acos((*$arg));}
   };}
 
 macro_rules! acos_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = acos(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = acos(((&(*$arg))[i]));
       }}};}
 
 macro_rules! acosf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = acosf((*$arg).0);}
+    unsafe{(*$out) = acosf((*$arg));}
   };}  
 
 macro_rules! acosf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = acosf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = acosf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathAcos, F32, acosf, FeatureFlag::Custom(hash_str("math/acos")));
+impl_math_unop!(MathAcos, f32, acosf, FeatureFlag::Custom(hash_str("math/acos")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathAcos, F64, acos, FeatureFlag::Custom(hash_str("math/acos")));
+impl_math_unop!(MathAcos, f64, acos, FeatureFlag::Custom(hash_str("math/acos")));
 
 fn impl_acos_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathAcos,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

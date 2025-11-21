@@ -32,16 +32,16 @@ macro_rules! ilogbf_vec_op {
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathIlogb, F32, ilogbf, FeatureFlag::Custom(hash_str("math/ilogb")));
+impl_math_unop!(MathIlogb, f32, ilogbf, FeatureFlag::Custom(hash_str("math/ilogb")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathIlogb, F64, ilogb, FeatureFlag::Custom(hash_str("math/ilogb")));
+impl_math_unop!(MathIlogb, f64, ilogb, FeatureFlag::Custom(hash_str("math/ilogb")));
 
 fn impl_ilogb_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathIlogb,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 

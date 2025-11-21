@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{asin,asinf};
 macro_rules! asin_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = asin((*$arg).0);}
+    unsafe{(*$out) = asin((*$arg));}
   };}
 
 macro_rules! asin_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = asin(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = asin(((&(*$arg))[i]));
       }}};}
 
 macro_rules! asinf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = asinf((*$arg).0);}
+    unsafe{(*$out) = asinf((*$arg));}
   };}  
 
 macro_rules! asinf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = asinf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = asinf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathAsin, F32, asinf, FeatureFlag::Custom(hash_str("math/asin")));
+impl_math_unop!(MathAsin, f32, asinf, FeatureFlag::Custom(hash_str("math/asin")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathAsin, F64, asin, FeatureFlag::Custom(hash_str("math/asin")));
+impl_math_unop!(MathAsin, f64, asin, FeatureFlag::Custom(hash_str("math/asin")));
 
 fn impl_asin_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathAsin,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 
