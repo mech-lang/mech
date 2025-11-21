@@ -341,56 +341,60 @@ async fn main() -> Result<(), MechError2> {
     let any_look_like_paths = paths.iter().any(|p| {
       is_intended_path(p)
     });
-    if any_look_like_paths {
-      let mut watch_errors = Vec::new();
-      for p in &paths {
-        match mechfs.watch_source(p) {
-          Ok(r) => {}
-          Err(err) => watch_errors.push(err),
-        }
-      }
-      if !watch_errors.is_empty() {
-        // These looked like paths but failed to watch
-        // Print errors
-        for err in &watch_errors {
-          println!("{} {:#?}",
-            "[File Error]".truecolor(246,98,78),
-            err
-          );
-        }
-        std::process::exit(1);
-      }
-    } else {
-      // ---------- 4. Treat the inputs as Mech code ----------
-      intrp.clear();
-      let joined = paths.join(" ");
-      let parse_result = parser::parse(joined.trim());
 
-      match parse_result {
-        Ok(tree) => match intrp.interpret(&tree) {
-          Ok(r) => {
-            println!("{}", r.kind());
-            #[cfg(feature = "pretty_print")]
-            println!("{}", r.pretty_print());
-            #[cfg(not(feature = "pretty_print"))]
-            println!("{:#?}", r);
-            std::process::exit(0);
+    println!("paths: {:#?}", any_look_like_paths && !paths.is_empty());
+    if !paths.is_empty() {
+      if any_look_like_paths {
+        let mut watch_errors = Vec::new();
+        for p in &paths {
+          match mechfs.watch_source(p) {
+            Ok(r) => {}
+            Err(err) => watch_errors.push(err),
           }
+        }
+        if !watch_errors.is_empty() {
+          // These looked like paths but failed to watch
+          // Print errors
+          for err in &watch_errors {
+            println!("{} {:#?}",
+              "[File Error]".truecolor(246,98,78),
+              err
+            );
+          }
+          std::process::exit(1);
+        }
+      } else {
+        // ---------- 4. Treat the inputs as Mech code ----------
+        intrp.clear();
+        let joined = paths.join(" ");
+        let parse_result = parser::parse(joined.trim());
+
+        match parse_result {
+          Ok(tree) => match intrp.interpret(&tree) {
+            Ok(r) => {
+              println!("{}", r.kind());
+              #[cfg(feature = "pretty_print")]
+              println!("{}", r.pretty_print());
+              #[cfg(not(feature = "pretty_print"))]
+              println!("{:#?}", r);
+              std::process::exit(0);
+            }
+            Err(err) => {
+              println!("{} {:#?}",
+                "[Error]".truecolor(246,98,78),
+                err
+              );
+              std::process::exit(1);
+            }
+          },
+
           Err(err) => {
             println!("{} {:#?}",
-              "[Error]".truecolor(246,98,78),
+              "[Parse Error]".truecolor(246,98,78),
               err
             );
             std::process::exit(1);
           }
-        },
-
-        Err(err) => {
-          println!("{} {:#?}",
-            "[Parse Error]".truecolor(246,98,78),
-            err
-          );
-          std::process::exit(1);
         }
       }
     }
