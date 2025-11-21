@@ -126,6 +126,8 @@ fn new_interpreter(id: u64) -> Interpreter {
   fxns.function_compilers.insert(hash_str("matrix/matmul"), &MatrixMatMul{});
   #[cfg(feature = "matrix_dot")]
   fxns.function_compilers.insert(hash_str("matrix/dot"), &MatrixDot{});
+  #[cfg(feature = "matrix_solve")]
+  fxns.function_compilers.insert(hash_str("matrix/solve"), &MatrixSolve{});
 
   // Compare functions
   #[cfg(feature = "compare_eq")]

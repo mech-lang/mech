@@ -163,8 +163,9 @@ io_print = ["io", "mech-interpreter/io_print"]
 io_println = ["io", "mech-interpreter/io_println"]
 
 # Matrix
-matrix_default = ["matrix_dot", "matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_transpose", "mech-interpreter/matrix_default"]
+matrix_default = ["matrix_solve", "matrix_dot", "matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_transpose", "mech-interpreter/matrix_default"]
 matrix_horzcat = ["matrix", "functions", "mech-interpreter/matrix_horzcat"]
+matrix_solve = ["matrix", "mech-interpreter/matrix_solve"]
 matrix_vertcat = ["matrix", "functions", "mech-interpreter/matrix_vertcat"]
 matrix_matmul = ["matrix", "mech-interpreter/matrix_matmul"]
 matrix_transpose = ["matrix", "mech-interpreter/matrix_transpose"]
