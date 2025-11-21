@@ -153,16 +153,16 @@ impl Neg for R64 {
 }
 
 #[cfg(feature = "f64")]
-impl From<R64> for F64 {
+impl From<R64> for f64 {
   fn from(r: R64) -> Self {
-    F64::new(r.0.to_f64().unwrap())
+    r.to_f64().unwrap()
   }
 }
-
+  
 #[cfg(feature = "f64")]
-impl From<F64> for R64 {
-  fn from(f: F64) -> Self {
-    R64(Rational64::from_f64(f.0).unwrap())
+impl From<f64> for R64 {
+  fn from(f: f64) -> Self {
+    R64(Rational64::from_f64(f).unwrap())
   }
 }
 

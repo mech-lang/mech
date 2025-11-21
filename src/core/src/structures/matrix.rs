@@ -95,9 +95,9 @@ impl_to_matrix!(i64);
 #[cfg(feature = "i128")]
 impl_to_matrix!(i128);
 #[cfg(feature = "f32")]
-impl_to_matrix!(F32);
+impl_to_matrix!(f32);
 #[cfg(feature = "f64")]
-impl_to_matrix!(F64);
+impl_to_matrix!(f64);
 #[cfg(feature = "string")]
 impl_to_matrix!(String);
 #[cfg(feature = "complex")]
@@ -1009,9 +1009,9 @@ macro_rules! impl_to_value_for_matrix {
 
 impl_to_value_for_matrix!(Value, MatrixValue);
 #[cfg(feature = "f64")]
-impl_to_value_for_matrix!(F64, MatrixF64);
+impl_to_value_for_matrix!(f64, MatrixF64);
 #[cfg(feature = "f32")]
-impl_to_value_for_matrix!(F32, MatrixF32);
+impl_to_value_for_matrix!(f32, MatrixF32);
 #[cfg(feature = "i8")]
 impl_to_value_for_matrix!(i8, MatrixI8);
 #[cfg(feature = "i16")]
@@ -1069,8 +1069,8 @@ macro_rules! impl_to_value_matrix {
       $matrix_kind, MatrixU32,    u32, "u32",
       $matrix_kind, MatrixU64,    u64, "u64",
       $matrix_kind, MatrixU128,   u128, "u128",
-      $matrix_kind, MatrixF32,    F32, "f32",
-      $matrix_kind, MatrixF64,    F64, "f64",
+      $matrix_kind, MatrixF32,    f32, "f32",
+      $matrix_kind, MatrixF64,    f64, "f64",
       $matrix_kind, MatrixString, String, "string",
       $matrix_kind, MatrixR64, R64, "rational",
       $matrix_kind, MatrixC64, C64, "complex",

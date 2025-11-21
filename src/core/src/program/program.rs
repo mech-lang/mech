@@ -273,7 +273,7 @@ impl ParsedProgram {
             return Err(MechError2::new(ConstantWrongSizeError { expected: 4, found: data.len(), type_name: "f32" }, None).with_compiler_loc());
           }
           let value = f32::from_le_bytes(data.try_into().unwrap());
-          Value::F32(Ref::new(F32::new(value)))
+          Value::F32(Ref::new(value))
         },
         #[cfg(feature = "f64")]
         TypeTag::F64 => {
@@ -281,7 +281,7 @@ impl ParsedProgram {
             return Err(MechError2::new(ConstantWrongSizeError { expected: 8, found: data.len(), type_name: "f64" }, None).with_compiler_loc());
           }
           let value = f64::from_le_bytes(data.try_into().unwrap());
-          Value::F64(Ref::new(F64::new(value)))
+          Value::F64(Ref::new(value))
         },
         #[cfg(feature = "complex")]
         TypeTag::C64 => {
@@ -338,7 +338,7 @@ impl ParsedProgram {
           if data.len() < 4 {
             return Err(MechError2::new(ConstantTooShortError { type_name: "[f32]" }, None).with_compiler_loc());
           }
-          let matrix = Matrix::<F32>::from_le(&data);
+          let matrix = Matrix::<f32>::from_le(&data);
           Value::MatrixF32(matrix)
         }
         #[cfg(all(feature = "matrix", feature = "f64"))]
@@ -346,7 +346,7 @@ impl ParsedProgram {
           if data.len() < 8 {
             return Err(MechError2::new(ConstantTooShortError { type_name: "[f64]" }, None).with_compiler_loc());
           }
-          let matrix = Matrix::<F64>::from_le(&data);
+          let matrix = Matrix::<f64>::from_le(&data);
           Value::MatrixF64(matrix)
         }
         #[cfg(all(feature = "matrix", feature = "u16"))]

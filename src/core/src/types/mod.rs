@@ -38,8 +38,6 @@ use libm::{pow,powf};
 pub mod complex_numbers;
 #[cfg(feature = "rational")]
 pub mod rational_numbers;
-#[cfg(feature = "floats")]
-pub mod floats;
 #[cfg(feature = "atom")]
 pub mod atom;
 
@@ -47,8 +45,6 @@ pub mod atom;
 pub use self::complex_numbers::*;
 #[cfg(feature = "rational")]
 pub use self::rational_numbers::*;
-#[cfg(feature = "floats")]
-pub use self::floats::*;
 #[cfg(feature = "atom")]
 pub use self::atom::*;
 
@@ -133,7 +129,7 @@ macro_rules! impl_pretty_print {
 #[cfg(feature = "u32")] impl_pretty_print!(u32);
 #[cfg(feature = "u64")] impl_pretty_print!(u64);
 #[cfg(feature = "u128")]impl_pretty_print!(u128);
-#[cfg(feature = "f32")] impl_pretty_print!(F32);
-#[cfg(feature = "f64")] impl_pretty_print!(F64);
+#[cfg(feature = "f32")] impl_pretty_print!(f32);
+#[cfg(feature = "f64")] impl_pretty_print!(f64);
 impl_pretty_print!(usize);
 
