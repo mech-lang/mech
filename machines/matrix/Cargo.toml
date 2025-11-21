@@ -49,10 +49,11 @@ baselib = ["bool", "string",
       "mech-core/baselib",
     ]
 
-matrix_default = ["matmul", "transpose", "dot"]
+matrix_default = ["matmul", "transpose", "dot", "solve"]
 matmul = ["num-traits", "matrix"]
 transpose = ["num-traits", "matrix"]
 dot = ["num-traits", "matrix"]
+solve = ["num-traits", "matrix"]
 
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
