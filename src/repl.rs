@@ -169,16 +169,19 @@ impl MechRepl {
           Err(err) => { return Err(err); }
         }
       }
-      ReplCommand::Step(count) => {
-        let n = match count {
+      ReplCommand::Step(step_id, step_count) => {
+        let n: u64 = match step_count {
           Some(n) => n,
           None => 1,
         };
+        let step_id: usize = match step_id {
+          Some(id) => id,
+          None => 0,
+        };
         let now = Instant::now();
-        intrp.step(n as u64);
+        intrp.step(step_id, n)?;
         let elapsed_time = now.elapsed();
-        let cycle_duration = elapsed_time.as_nanos() as f64;
-        return Ok(format!("{} cycles in {:0.2?} ns\n", n, cycle_duration));
+        return Ok(format_cycles(n, elapsed_time));      
       }
       x => {
         return Err(MechError2::new(FeatureNotEnabledError, None).with_compiler_loc());
@@ -186,4 +189,37 @@ impl MechRepl {
     }
   }
 
+}
+
+fn format_cycles(n: u64, cycle_duration: Duration) -> String {
+  let cycle_duration_ns = cycle_duration.as_nanos() as f64;
+
+  // Convert to seconds
+  let cycle_duration_s = cycle_duration_ns / 1_000_000_000.0;
+
+  // Determine a human-friendly unit for display
+  let formatted_duration = if cycle_duration_ns >= 1_000_000_000.0 {
+      format!("{:.3} s", cycle_duration_s)
+  } else if cycle_duration_ns >= 1_000_000.0 {
+      format!("{:.3} ms", cycle_duration_ns / 1_000_000.0)
+  } else if cycle_duration_ns >= 1_000.0 {
+      format!("{:.3} µs", cycle_duration_ns / 1_000.0)
+  } else {
+      format!("{:.3} ns", cycle_duration_ns)
+  };
+
+  // Compute frequency in Hz
+  let frequency_hz = 1.0 / cycle_duration_s;
+
+  let scaled_frequency = if frequency_hz >= 1_000_000_000.0 {
+      format!("{:.3} GHz", frequency_hz / 1_000_000_000.0)
+  } else if frequency_hz >= 1_000_000.0 {
+      format!("{:.3} MHz", frequency_hz / 1_000_000.0)
+  } else if frequency_hz >= 1_000.0 {
+      format!("{:.3} kHz", frequency_hz / 1_000.0)
+  } else {
+      format!("{:.3} Hz", frequency_hz)
+  };
+
+  format!("{} cycles in {} ({})", n, formatted_duration, scaled_frequency)
 }

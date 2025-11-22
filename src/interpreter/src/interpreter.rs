@@ -80,22 +80,67 @@ impl Interpreter {
   }
 
   #[cfg(feature = "functions")]
-  pub fn step(&mut self, steps: u64) -> Value {
+  pub fn step(&mut self, step_id: usize, step_count: u64) -> MResult<Value> {
     let state_brrw = self.state.borrow();
-    let mut plan_brrw = state_brrw.plan.borrow_mut();
-    // if plan is empty just return an empty value
-    let mut result = Value::Empty;
+    let mut plan_brrw = state_brrw.plan.borrow_mut(); // RefMut<Vec<Box<dyn MechFunction>>>
+
     if plan_brrw.is_empty() {
-      self.out = Value::Empty;
-      return result;
+      return Err(MechError2::new(
+          NoStepsInPlanError,
+          None
+        ).with_compiler_loc()
+      );
     }
-    for i in 0..steps {
-      for fxn in plan_brrw.iter() {
-        fxn.solve();
+
+    let len = plan_brrw.len();
+
+    // Case 1: step_id == 0, run entire plan step_count times
+    if step_id == 0 {
+      for _ in 0..step_count {
+        for fxn in plan_brrw.iter_mut() {
+          fxn.solve();
+        }
       }
+      return Ok(plan_brrw[len - 1].out().clone());
     }
-    plan_brrw.last().unwrap().out().clone()
+
+    // Case 2: step a single function by index
+    let idx = step_id as usize;
+    if idx > len {
+      return Err(MechError2::new(
+        StepIndexOutOfBoundsError {
+          step_id,
+          plan_length: len,
+        },
+        None
+      ).with_compiler_loc());
+    }
+
+    let fxn = &mut plan_brrw[idx - 1];
+
+    let fxn_str = fxn.to_string();
+    if fxn_str.lines().count() > 30 {
+      let lines: Vec<&str> = fxn_str.lines().collect();
+      println!("Stepping function:");
+      for line in &lines[0..10] {
+        println!("{}", line);
+      }
+      println!("...");
+      for line in &lines[lines.len() - 10..] {
+        println!("{}", line);
+      }
+    } else {
+      println!("Stepping function:\n{}", fxn_str);
+    }
+
+    for _ in 0..step_count {
+      fxn.solve();
+    }
+
+    Ok(fxn.out().clone())
   }
+
+
 
   #[cfg(feature = "functions")]
   pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
@@ -433,4 +478,25 @@ pub struct UnknownPanicError {
 impl MechErrorKind2 for UnknownPanicError {
   fn name(&self) -> &str { "UnknownPanic" }
   fn message(&self) -> String { self.details.clone() }
+}
+
+#[derive(Debug, Clone)]
+struct StepIndexOutOfBoundsError{
+  pub step_id: usize,
+  pub plan_length: usize,
+}
+impl MechErrorKind2 for StepIndexOutOfBoundsError {
+  fn name(&self) -> &str { "StepIndexOutOfBounds" }
+  fn message(&self) -> String {
+    format!("Step id {} out of range (plan has {} steps)", self.step_id, self.plan_length)
+  }
+}
+
+#[derive(Debug, Clone)]
+struct NoStepsInPlanError;
+impl MechErrorKind2 for NoStepsInPlanError {
+  fn name(&self) -> &str { "NoStepsInPlan" }
+  fn message(&self) -> String {
+    "Plan contains no steps. This program doesn't do anything.".to_string()
+  }
 }
