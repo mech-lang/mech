@@ -17,6 +17,7 @@ use nom::{
 use bincode::serde::encode_to_vec;
 use bincode::config::standard;
 use include_dir::{include_dir, Dir};
+use std::time::{Instant, Duration};
 
 static DOCS_DIR: Dir = include_dir!("docs");
 static EXAMPLES_DIR: Dir = include_dir!("examples/working");
@@ -191,35 +192,49 @@ impl MechRepl {
 
 }
 
-fn format_cycles(n: u64, cycle_duration: Duration) -> String {
-  let cycle_duration_ns = cycle_duration.as_nanos() as f64;
+fn format_cycles(n: u64, total_duration: Duration) -> String {
+  let total_ns = total_duration.as_nanos() as f64;
+  let total_s = total_ns / 1_000_000_000.0;
 
-  // Convert to seconds
-  let cycle_duration_s = cycle_duration_ns / 1_000_000_000.0;
-
-  // Determine a human-friendly unit for display
-  let formatted_duration = if cycle_duration_ns >= 1_000_000_000.0 {
-      format!("{:.3} s", cycle_duration_s)
-  } else if cycle_duration_ns >= 1_000_000.0 {
-      format!("{:.3} ms", cycle_duration_ns / 1_000_000.0)
-  } else if cycle_duration_ns >= 1_000.0 {
-      format!("{:.3} µs", cycle_duration_ns / 1_000.0)
+  // Human-friendly total duration
+  let formatted_total = if total_ns >= 1_000_000_000.0 {
+    format!("{:.3} s", total_s)
+  } else if total_ns >= 1_000_000.0 {
+    format!("{:.3} ms", total_ns / 1_000_000.0)
+  } else if total_ns >= 1_000.0 {
+    format!("{:.3} µs", total_ns / 1_000.0)
   } else {
-      format!("{:.3} ns", cycle_duration_ns)
+    format!("{:.3} ns", total_ns)
   };
 
-  // Compute frequency in Hz
-  let frequency_hz = 1.0 / cycle_duration_s;
+  // Per-cycle duration
+  let cycle_ns = total_ns / n as f64;
+  let cycle_s = cycle_ns / 1_000_000_000.0;
 
-  let scaled_frequency = if frequency_hz >= 1_000_000_000.0 {
-      format!("{:.3} GHz", frequency_hz / 1_000_000_000.0)
-  } else if frequency_hz >= 1_000_000.0 {
-      format!("{:.3} MHz", frequency_hz / 1_000_000.0)
-  } else if frequency_hz >= 1_000.0 {
-      format!("{:.3} kHz", frequency_hz / 1_000.0)
+  let formatted_cycle = if cycle_ns >= 1_000_000_000.0 {
+    format!("{:.3} s", cycle_s)
+  } else if cycle_ns >= 1_000_000.0 {
+    format!("{:.3} ms", cycle_ns / 1_000_000.0)
+  } else if cycle_ns >= 1_000.0 {
+    format!("{:.3} µs", cycle_ns / 1_000.0)
   } else {
-      format!("{:.3} Hz", frequency_hz)
+    format!("{:.3} ns", cycle_ns)
   };
 
-  format!("{} cycles in {} ({})", n, formatted_duration, scaled_frequency)
+  // Cycle frequency
+  let freq_hz = 1.0 / cycle_s;
+  let formatted_freq = if freq_hz >= 1_000_000_000.0 {
+    format!("{:.3} GHz", freq_hz / 1_000_000_000.0)
+  } else if freq_hz >= 1_000_000.0 {
+    format!("{:.3} MHz", freq_hz / 1_000_000.0)
+  } else if freq_hz >= 1_000.0 {
+    format!("{:.3} kHz", freq_hz / 1_000.0)
+  } else {
+    format!("{:.3} Hz", freq_hz)
+  };
+
+  format!(
+    "{} cycles in {} ({} per cycle, {})",
+    n, formatted_total, formatted_cycle, formatted_freq
+  )
 }
