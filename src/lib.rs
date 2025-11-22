@@ -159,7 +159,7 @@ pub fn help() -> String {
   builder.push_record(vec![
     ":step".to_string(),
     "".to_string(),
-    "[step count]".to_string(),
+    "[#step index] [step count]".to_string(),
     "Iterate plan".to_string()
   ]);
   builder.push_record(vec![
@@ -229,7 +229,7 @@ fn pretty_print_tree(tree: &Program) -> String {
   builder.push_record(vec![format!("{}", formatted_tree)]);
   let mut table = builder.build();
   table.with(Style::modern_rounded())
-       .with(Panel::header("🌳 Syntax Tree"));
+       .with(Panel::header("Syntax Tree"));
   format!("{table}")
 }
 
@@ -276,7 +276,7 @@ pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
     .with(mech_table_style())
     .with(Panel::header(format!(
         "{}",
-        "🔍 Whos".truecolor(0xdf, 0xb9, 0x9f)
+        "Whos".truecolor(0xdf, 0xb9, 0x9f)
     )));
 
   format!("\n{table}\n")
