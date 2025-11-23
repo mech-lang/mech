@@ -736,3 +736,7 @@ A := [2.0, 1.0, -1.0
       -2.0, 1.0, 2.0]"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, -3.0, -2.0, 1.0, -1.0, 1.0, -1.0, 2.0, 2.0], 3, 3)));
 
 test_interpreter!(interpret_matrix_solve, r#"A := [2.0, 1.0, -1.0;-3.0, -1.0, 2.0;-2.0, 1.0, 2.0];b := [8.0, -11.0, -3.0]'; math/round(A \ b)"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, -1.0], 3, 1)));
+
+// │ y │ true │ false │
+
+test_interpreter!(table_column_inference, "| y | true | false |", Value::Table(Ref::new(MechTable::from_records(vec![MechRecord::new(vec![("y",Value::Bool(Ref::new(true)))]),MechRecord::new(vec![("y",Value::Bool(Ref::new(false)))]),]).expect("Failed to create MechTable"))));
