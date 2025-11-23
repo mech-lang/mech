@@ -9,8 +9,8 @@ use crate::structures::tuple;
 use nom::{
   IResult,
   branch::alt,
-  sequence::tuple as nom_tuple,
-  combinator::{opt, eof},
+  sequence::{tuple as nom_tuple, preceded, pair},
+  combinator::{opt, eof, cut},
   multi::{many1, many_till, many0, separated_list1,separated_list0},
   Err,
   Err::Failure
@@ -48,13 +48,14 @@ pub fn expression(input: ParseString) -> ParseResult<Expression> {
     Err(_) => match formula(input.clone()) {
       Ok((input, Factor::Expression(expr))) => (input, *expr),
       Ok((input, fctr)) => (input, Expression::Formula(fctr)),
-      Err(err) => {return Err(err);},
+      Err(err) => {
+        return Err(err);},
     } 
   };
   Ok((input, expr))
 }
 
-// formula := l1, (range-operator, l1)* ;
+// formula := l1 ;
 pub fn formula(input: ParseString) -> ParseResult<Factor> {
   let (input, factor) = l1(input)?;
   Ok((input, factor))
@@ -63,7 +64,7 @@ pub fn formula(input: ParseString) -> ParseResult<Factor> {
 // l1 := l2, (add-sub-operator, l2)* ;
 pub fn l1(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l2(input)?;
-  let (input, rhs) = many0(nom_tuple((add_sub_operator,l2)))(input)?;
+  let (input, rhs) = many0(pair(add_sub_operator,cut(l2)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
@@ -71,7 +72,7 @@ pub fn l1(input: ParseString) -> ParseResult<Factor> {
 // l2 := l3, (mul-div-operator | matrix-operator, l3)* ;
 pub fn l2(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l3(input)?;
-  let (input, rhs) = many0(nom_tuple((alt((mul_div_operator, matrix_operator)),l3)))(input)?;
+  let (input, rhs) = many0(pair(alt((mul_div_operator, matrix_operator)),cut(l3)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
@@ -79,7 +80,7 @@ pub fn l2(input: ParseString) -> ParseResult<Factor> {
 // l3 := l4, (exponent-operator, l4)* ;
 pub fn l3(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l4(input)?;
-  let (input, rhs) = many0(nom_tuple((exponent_operator,l4)))(input)?;
+  let (input, rhs) = many0(pair(exponent_operator,cut(l4)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
@@ -87,7 +88,7 @@ pub fn l3(input: ParseString) -> ParseResult<Factor> {
 // l4 := l5, (logic-operator, l5)* ;
 pub fn l4(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l5(input)?;
-  let (input, rhs) = many0(nom_tuple((logic_operator,l5)))(input)?;
+  let (input, rhs) = many0(pair(logic_operator,cut(l5)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
@@ -95,7 +96,7 @@ pub fn l4(input: ParseString) -> ParseResult<Factor> {
 // l5 := factor, (comparison-operator, factor)* ;
 pub fn l5(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l6(input)?;
-  let (input, rhs) = many0(nom_tuple((comparison_operator,l6)))(input)?;
+  let (input, rhs) = many0(pair(comparison_operator,cut(l6)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
@@ -103,7 +104,7 @@ pub fn l5(input: ParseString) -> ParseResult<Factor> {
 // l6 := factor, (table-operator, factor)* ;
 pub fn l6(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l7(input)?;
-  let (input, rhs) = many0(nom_tuple((table_operator,l7)))(input)?;
+  let (input, rhs) = many0(pair(table_operator,cut(l7)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
@@ -111,38 +112,25 @@ pub fn l6(input: ParseString) -> ParseResult<Factor> {
 // l7 := factor, (set-operator, factor)* ;
 pub fn l7(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = factor(input)?;
-  let (input, rhs) = many0(nom_tuple((set_operator,factor)))(input)?;
+  let (input, rhs) = many0(pair(set_operator,cut(factor)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
 
-// factor := (structure| parenthetical-term | fsm-pipe | function-call | literal | slice | var), ?transpose ;
+// factor := parenthetical-term | negate-factor | not-factor | structure | function-call | literal | slice | var ;
 pub fn factor(input: ParseString) -> ParseResult<Factor> {
-  let (input, fctr) = match parenthetical_term(input.clone()) {
-    Ok((input, term)) => (input, term),
-    Err(_) => match negate_factor(input.clone()) {
-      Ok((input, neg)) => (input, neg),
-      Err(_) => match not_factor(input.clone()) {
-        Ok((input, neg)) => (input, neg),
-        Err(_) => match structure(input.clone()) {
-          Ok((input, strct)) => (input, Factor::Expression(Box::new(Expression::Structure(strct)))),
-          Err(_) => match function_call(input.clone()) {
-            Ok((input, fxn)) => (input, Factor::Expression(Box::new(Expression::FunctionCall(fxn)))),
-            Err(_) => match literal(input.clone()) {
-              Ok((input, ltrl)) => (input, Factor::Expression(Box::new(Expression::Literal(ltrl)))),
-              Err(_) => match slice(input.clone()) {
-                Ok((input, slc)) => (input, Factor::Expression(Box::new(Expression::Slice(slc)))),
-                Err(_) => match var(input.clone()) {
-                  Ok((input, var)) => (input, Factor::Expression(Box::new(Expression::Var(var)))),
-                  Err(err) => { return Err(err); },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  };
+  let parsers: Vec<(&str, Box<dyn Fn(ParseString) -> ParseResult<Factor>>)> = vec![
+    ("parenthetical_term", Box::new(|i| parenthetical_term(i))),
+    ("negate_factor", Box::new(|i| negate_factor(i))),
+    ("not_factor", Box::new(|i| not_factor(i))),
+    ("structure", Box::new(|i| structure(i).map(|(i, s)| (i, Factor::Expression(Box::new(Expression::Structure(s))))))),
+    ("function_call", Box::new(|i| function_call(i).map(|(i, f)| (i, Factor::Expression(Box::new(Expression::FunctionCall(f))))))),
+    ("literal", Box::new(|i| literal(i).map(|(i, l)| (i, Factor::Expression(Box::new(Expression::Literal(l))))))),
+    ("slice", Box::new(|i| slice(i).map(|(i, s)| (i, Factor::Expression(Box::new(Expression::Slice(s))))))),
+    ("var", Box::new(|i| var(i).map(|(i, v)| (i, Factor::Expression(Box::new(Expression::Var(v))))))),
+  ];
+  let (input, _) = space_tab0(input)?;
+  let (input, fctr) = alt_best(input, &parsers)?;
   let (input, transpose) = opt(transpose)(input)?;
   let fctr = match transpose {
     Some(_) => Factor::Transpose(Box::new(fctr)),
@@ -153,8 +141,8 @@ pub fn factor(input: ParseString) -> ParseResult<Factor> {
 
 // parenthetical-term := left-parenthesis, formula, right-parenthesis ;
 pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
-  let msg1 = "Expects expression";
-  let msg2 = "Expects right parenthesis ')'";
+  let msg1 = "parenthetical_term: Expects expression";
+  let msg2 = "parenthetical_term: Expects right parenthesis `)`";
   let (input, (_, r)) = range(left_parenthesis)(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, frmla) = label!(formula, msg1)(input)?;
@@ -223,7 +211,7 @@ pub fn add(input: ParseString) -> ParseResult<AddSubOp> {
 // subtract := "-" ;
 pub fn subtract(input: ParseString) -> ParseResult<AddSubOp> {
   let (input, _) = ws0e(input)?;
-  let (input, _) = tag("-")(input)?;
+  let (input, _) = pair(is_not(comment_sigil), tag("-"))(input)?;
   let (input, _) = ws0e(input)?;
   Ok((input, AddSubOp::Sub))
 }
@@ -231,7 +219,7 @@ pub fn subtract(input: ParseString) -> ParseResult<AddSubOp> {
 // multiply := "*" | "×" ;
 pub fn multiply(input: ParseString) -> ParseResult<MulDivOp> {
   let (input, _) = ws0e(input)?;
-  let (input, _) = nom_tuple((is_not(matrix_multiply),alt((tag("*"), tag("×")))))(input)?;
+  let (input, _) = pair(is_not(matrix_multiply),alt((tag("*"), tag("×"))))(input)?;
   let (input, _) = ws0e(input)?;
   Ok((input, MulDivOp::Mul))
 }
@@ -239,7 +227,7 @@ pub fn multiply(input: ParseString) -> ParseResult<MulDivOp> {
 // divide := "/" | "÷" ;
 pub fn divide(input: ParseString) -> ParseResult<MulDivOp> {
   let (input, _) = ws0e(input)?;
-  let (input, _) = alt((tag("/"),tag("÷")))(input)?;
+  let (input, _) = pair(is_not(comment_sigil),alt((tag("/"),tag("÷"))))(input)?;
   let (input, _) = ws0e(input)?;
   Ok((input, MulDivOp::Div))
 }

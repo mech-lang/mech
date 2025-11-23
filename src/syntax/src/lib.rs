@@ -36,6 +36,7 @@ use nom::{
   multi::{many1, many_till, many0, separated_list1},
   Err,
 };
+use nom::Parser;
 
 use std::collections::HashMap;
 use colored::*;
@@ -673,6 +674,93 @@ impl MechErrorKind2 for ParserErrorReport {
     "ParserErrorContext"
   }
   fn message(&self) -> String {
-    self.0.iter().map(|e| e.err_message.clone()).collect::<Vec<_>>().join(", ")
+    self.0.iter()
+      .map(|e| format!(
+        "{}: {} (Annotations: [{}])",
+        format!(
+          "[{}:{}-{}:{}]",
+          e.cause_rng.start.row,
+          e.cause_rng.start.col,
+          e.cause_rng.end.row,
+          e.cause_rng.end.col
+        ),
+        e.err_message,
+        e.annotation_rngs.iter()
+          .map(|rng| format!(
+            "[{}:{}-{}:{}]",
+            rng.start.row,
+            rng.start.col,
+            rng.end.row,
+            rng.end.col
+          ))
+          .collect::<Vec<_>>()
+          .join(", ")
+      ))
+      .collect::<Vec<_>>()
+      .join(", ")
+  }
+}
+
+/// Try a list of parsers in order, tracking successes, failures, and errors.
+/// Returns the best success if any, else best failure, else best error.
+pub fn alt_best<'a, O>(
+  input: ParseString<'a>,
+  parsers: &[(&'static str, Box<dyn Fn(ParseString) -> ParseResult<O>>)],
+) -> ParseResult<'a, O> {
+  let start_cursor = input.cursor;
+
+  let mut best_success: Option<(ParseString, O, usize, &'static str)> = None;
+  let mut best_failure: Option<(nom::Err<ParseError>, usize, &'static str)> = None;
+  let mut best_error:   Option<(nom::Err<ParseError>, usize, &'static str)> = None;
+
+  for (name, parser) in parsers {
+    match parser(input.clone()) {
+      Ok((next_input, val)) => {
+        let consumed = next_input.cursor;
+        if best_success.is_none() || consumed > best_success.as_ref().unwrap().2 {
+          best_success = Some((next_input, val, consumed, name));
+        }
+      }
+
+      Err(nom::Err::Failure(e)) => {
+        let reached = e.remaining_input.cursor;
+        if best_failure.is_none() || reached > best_failure.as_ref().unwrap().1 {
+          best_failure = Some((nom::Err::Failure(e), reached, name));
+        }
+      }
+
+      Err(nom::Err::Error(e)) => {
+        let reached = e.remaining_input.cursor;
+        if best_error.is_none() || reached > best_error.as_ref().unwrap().1 {
+          best_error = Some((nom::Err::Error(e), reached, name));
+        }
+      }
+
+      Err(e @ nom::Err::Incomplete(_)) => {
+        return Err(e);
+      }
+    }
+  }
+
+  // Determine the best result based on the given conditions
+  if let Some((next_input, val, success_cursor, _)) = best_success {
+    if let Some((nom::Err::Failure(failure), failure_cursor, _)) = best_failure {
+      if success_cursor > failure_cursor {
+        Ok((next_input, val))
+      } else {
+        Err(nom::Err::Failure(failure))
+      }
+    } else {
+      Ok((next_input, val))
+    }
+  } else if let Some((nom::Err::Failure(failure), _, _)) = best_failure {
+    Err(nom::Err::Failure(failure))
+  } else if let Some((err, _, _)) = best_error {
+    Err(err)
+  } else {
+    Err(nom::Err::Error(ParseError::new(
+      input,
+      "No parser matched in alt_best",
+    )))
   }
 }

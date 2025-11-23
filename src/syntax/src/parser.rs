@@ -24,8 +24,8 @@ use mech_core::nodes::{SectionElement, MechString, Table};
 use nom::{
   IResult,
   branch::alt,
-  sequence::tuple as nom_tuple,
-  combinator::{opt, eof},
+  sequence::{tuple as nom_tuple, preceded},
+  combinator::{opt, eof, cut},
   multi::{many1, many_till, many0, separated_list1, separated_list0},
   Err,
   Err::Failure
@@ -288,34 +288,24 @@ pub fn skip_empty_mech_directive(input: ParseString) -> ParseResult<String> {
 // mech_code_alt := fsm_specification | fsm_implementation | function_define | statement | expression | comment ;
 pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
   let (input, _) = whitespace0(input)?;
-  /*match fsm_specification(input.clone()) {
-    Ok((input, fsm_spec)) => {return Ok((input, MechCode::FsmSpecification(fsm_spec)));},
-    //Err(Failure(err)) => { return Err(Failure(err)); }
-    _ => () 
-  }
-  match fsm_implementation(input.clone()) {
-    Ok((input, fsm_impl)) => {return Ok((input, MechCode::FsmImplementation(fsm_impl)));},
-    //Err(Failure(err)) => { return Err(Failure(err)); }
-    _ => ()
-  }
-  match function_define(input.clone()) {
-    Ok((input, fxn_def)) => {return Ok((input, MechCode::FunctionDefine(fxn_def)));},
-    //Err(Failure(err)) => { return Err(Failure(err)); }
-    _ => () 
-  }*/
-  match statement(input.clone()) {
-    Ok((input, stmt)) => {return Ok((input, MechCode::Statement(stmt)));},
-    //Err(Failure(err)) => { return Err(Failure(err)); }
-    _ => ()
-  }
-  match expression(input.clone()) {
-    Ok((input, expr)) => {return Ok((input, MechCode::Expression(expr)));},
-    _ => ()
-  }
-  match comment(input.clone()) {
-    Ok((input, cmnt)) => {return Ok((input, MechCode::Comment(cmnt)));},
-    Err(err) => {return Err(err);}
-  }
+  let parsers: Vec<(&str, Box<dyn Fn(ParseString) -> ParseResult<MechCode>>)> = vec![
+    // ("fsm_specification", Box::new(|i| fsm_specification(i).map(|(i, v)| (i, MechCode::FsmSpecification(v))))),
+    // ("fsm_implementation", Box::new(|i| fsm_implementation(i).map(|(i, v)| (i, MechCode::FsmImplementation(v))))),
+    // ("function_define", Box::new(|i| function_define(i).map(|(i, v)| (i, MechCode::FunctionDefine(v))))),
+    ("statement",   Box::new(|i| statement(i).map(|(i, v)| (i, MechCode::Statement(v))))),
+    ("expression",  Box::new(|i| expression(i).map(|(i, v)| (i, MechCode::Expression(v))))),
+    ("comment",     Box::new(|i| comment(i).map(|(i, v)| (i, MechCode::Comment(v))))),
+  ];
+
+  let (input, code) = match alt_best(input, &parsers) {
+    Ok((input, code)) => {
+      (input, code)
+    }
+    Err(e) => {
+      return Err(e);
+    }
+  };
+  Ok((input, code))
 }
 
 // mech_code := mech_code_alt, ("\n" | ";" | comment) ;
@@ -458,6 +448,6 @@ pub fn parse(text: &str) -> MResult<Program> {
     Err(MechError2::new(
       ParserErrorReport(report),
       None
-    ))
+    ).with_compiler_loc())
   }
 }

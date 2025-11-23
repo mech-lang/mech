@@ -295,7 +295,7 @@ pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, elements))
 }
 
-// eval-inline-mech-cdoe := "{", ws0, expression, ws0, "}" ;`
+// eval-inline-mech-code := "{", ws0, expression, ws0, "}" ;`
 pub fn eval_inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = left_brace(input)?;
   let (input, _) = whitespace0(input)?;
@@ -305,7 +305,7 @@ pub fn eval_inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement
   Ok((input, ParagraphElement::EvalInlineMechCode(expr)))
 }
 
-// inline-mech-cdoe := "{{", ws0, expression, ws0, "}}" ;`
+// inline-mech-code := "{{", ws0, expression, ws0, "}}" ;`
 pub fn inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = left_brace(input)?;
   let (input, _) = left_brace(input)?;
@@ -798,69 +798,27 @@ pub fn float(input: ParseString) -> ParseResult<(Box<SectionElement>,FloatDirect
   Ok((input, (Box::new(el), direction)))
 }
 
-// section-element := +mech-code | question-block | info-block | list | footnote | citation | abstract-element | img | equation | markdown-table | float | quote-block | code-block | thematic-break | subtitle | paragraph ;
+// section-element := mech-code | question-block | info-block | list | footnote | citation | abstract-element | img | equation | table | float | quote-block | code-block | thematic-break | subtitle | paragraph ;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
-  let mut best_result: Option<(ParseString, SectionElement)> = None;
-  let mut best_err: Option<nom::Err<ParseError>> = None;
-  let mut furthest_cursor = input.cursor;
-
-  // List of parsers with mapping to SectionElement
-  let parsers: Vec<Box<dyn Fn(ParseString) -> ParseResult<SectionElement>>> = vec![
-    Box::new(|i| many1(mech_code)(i).map(|(i, code)| (i, SectionElement::MechCode(code)))),
-    Box::new(question_block),
-    Box::new(info_block),
-    Box::new(|i| mechdown_list(i).map(|(i, lst)| (i, SectionElement::List(lst)))),
-    Box::new(|i| footnote(i).map(|(i, f)| (i, SectionElement::Footnote(f)))),
-    Box::new(|i| citation(i).map(|(i, c)| (i, SectionElement::Citation(c)))),
-    Box::new(abstract_el),
-    Box::new(|i| img(i).map(|(i, img)| (i, SectionElement::Image(img)))),
-    Box::new(|i| equation(i).map(|(i, e)| (i, SectionElement::Equation(e)))),
-    Box::new(|i| mechdown_table(i).map(|(i, t)| (i, SectionElement::Table(t)))),
-    Box::new(|i| float(i).map(|(i, f)| (i, SectionElement::Float(f)))),
-    Box::new(quote_block),
-    Box::new(code_block),
-    Box::new(|i| thematic_break(i).map(|(i, _)| (i, SectionElement::ThematicBreak))),
-    Box::new(|i| subtitle(i).map(|(i, s)| (i, SectionElement::Subtitle(s)))),
-    Box::new(|i| paragraph(i).map(|(i, p)| (i, SectionElement::Paragraph(p)))), // <--- fixed
+  let parsers: Vec<(&'static str, Box<dyn Fn(ParseString) -> ParseResult<SectionElement>>)> = vec![
+    ("mech_code",       Box::new(|i| many1(mech_code)(i).map(|(i, c)| (i, SectionElement::MechCode(c))))),
+    ("question_block",  Box::new(question_block)),
+    ("info_block",      Box::new(info_block)),
+    ("list",            Box::new(|i| mechdown_list(i).map(|(i, lst)| (i, SectionElement::List(lst))))),
+    ("footnote",        Box::new(|i| footnote(i).map(|(i, f)| (i, SectionElement::Footnote(f))))),
+    ("citation",        Box::new(|i| citation(i).map(|(i, c)| (i, SectionElement::Citation(c))))),
+    ("abstract",        Box::new(abstract_el)),
+    ("img",             Box::new(|i| img(i).map(|(i, img)| (i, SectionElement::Image(img))))),
+    ("equation",        Box::new(|i| equation(i).map(|(i, e)| (i, SectionElement::Equation(e))))),
+    ("table",           Box::new(|i| mechdown_table(i).map(|(i, t)| (i, SectionElement::Table(t))))),
+    ("float",           Box::new(|i| float(i).map(|(i, f)| (i, SectionElement::Float(f))))),
+    ("quote_block",     Box::new(quote_block)),
+    ("code_block",      Box::new(code_block)),
+    ("thematic_break",  Box::new(|i| thematic_break(i).map(|(i, _)| (i, SectionElement::ThematicBreak)))),
+    ("subtitle",        Box::new(|i| subtitle(i).map(|(i, s)| (i, SectionElement::Subtitle(s))))),
+    ("paragraph",       Box::new(|i| paragraph(i).map(|(i, p)| (i, SectionElement::Paragraph(p))))),
   ];
-
-  // Imperative accumulation loop
-  for parser in parsers {
-    match parser(input.clone()) {
-      Ok((next_input, val)) => {
-        let consumed = next_input.cursor.saturating_sub(input.cursor);
-        if consumed > furthest_cursor - input.cursor {
-          furthest_cursor = next_input.cursor;
-          best_result = Some((next_input, val));
-        }
-      }
-      Err(err) => {
-        let reached = match &err {
-          nom::Err::Error(e) | nom::Err::Failure(e) => e.remaining_input.cursor,
-          _ => input.cursor,
-        };
-        if reached > furthest_cursor {
-          furthest_cursor = reached;
-          best_err = Some(err);
-        }
-      }
-    }
-  }
-
-  // Return best match if any, else furthest error
-  let (input, section_element) = match best_result {
-    Some(res) => res,
-    None => {
-      return Err(best_err.unwrap_or_else(|| {
-        nom::Err::Error(ParseError::new(input, "No parser matched"))
-      }))
-    }
-  };
-
-  // Skip trailing blank lines
-  let (input, _) = many0(blank_line)(input)?;
-
-  Ok((input, section_element))
+  alt_best(input, &parsers)
 }
 
 // section := ul_subtitle, *section-element ;

@@ -200,7 +200,3 @@ pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {
   let (input, knd) = kind_annotation(input)?;
   Ok((input, KindDefine{name,kind:knd}))
 }
-
-
-  
-  

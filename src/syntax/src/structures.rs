@@ -8,7 +8,7 @@ use crate::*;
 use nom::{
   IResult,
   branch::alt,
-  sequence::tuple as nom_tuple,
+  sequence::{tuple as nom_tuple, delimited},
   combinator::{opt, eof, peek},
   multi::{many1, many_till, many0, separated_list1,separated_list0},
   bytes::complete::{take_until, take_while},
@@ -97,22 +97,22 @@ pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
 
 // matrix-column := (space | tab)*, expression, ((space | tab)*, ("," | table-separator)?, (space | tab)*) ;
 pub fn matrix_column(input: ParseString) -> ParseResult<MatrixColumn> {
-  let (input, _) = many0(space_tab)(input)?;
+  let (input, _) = space_tab0(input)?;
   let (input, element) = match expression(input) {
     Ok(result) => result,
     Err(err) => {
       return Err(err);
     }
   };
-  let (input, _) = nom_tuple((many0(space_tab),opt(alt((comma,table_separator))), many0(space_tab)))(input)?;
+  let (input, _) = nom_tuple((space_tab0,opt(alt((comma,table_separator))), space_tab0))(input)?;
   Ok((input, MatrixColumn{element}))
 }
 
 // matrix-row := table-separator?, (space | tab)*, matrix-column+, semicolon?, new-line?, (box-drawing-char+, new-line)? ;
 pub fn matrix_row(input: ParseString) -> ParseResult<MatrixRow> {
-  let (input, _) = many0(space_tab)(input)?;
+  let (input, _) = space_tab0(input)?;
   let (input, _) = opt(table_separator)(input)?;
-  let (input, _) = many0(space_tab)(input)?;
+  let (input, _) = space_tab0(input)?;
   let (input, columns) = match many1(matrix_column)(input) {
     Ok(result) => result,
     Err(error) => {
@@ -146,20 +146,26 @@ fn table(input: ParseString) -> ParseResult<Table> {
 // fancy-table := table-top, fancy-header, +fancy-row, table-bottom ;
 pub fn fancy_table(input: ParseString) -> ParseResult<Table> {
   let (input, _) = table_top(input)?;
-  let (input, _) = many0(space_tab)(input)?;
   let (input, _) = table_separator(input)?;
-  let (input, _) = many0(space_tab)(input)?;
-  let (input, header) = table_header(input)?;
-  let (input, rows) = separated_list1(new_line,alt((table_row,row_separator)))(input)?;
+  let (input, header) = fancy_table_header(input)?;
+  let (input, rows) = separated_list1(new_line,alt((table_row2,row_separator)))(input)?;
   let rows: Vec<TableRow> = rows.into_iter().filter(|row| !row.columns.is_empty()).collect();
   Ok((input, Table{header, rows}))
 }
 
+// table-header := list1(space-tab+, field), (space | tab)*, (bar| box-vert), whitespace* ;
+pub fn fancy_table_header(input: ParseString) -> ParseResult<Vec<Field>> {
+  let (input, fields) = separated_list1(table_separator,field)(input)?;
+  let (input, _) = table_separator(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, fields))
+}
+
 // row-separator := *whitespace, *box-drawing-char, *(space | tab), *whitespace ;
 pub fn row_separator(input: ParseString) -> ParseResult<TableRow> {
-  let (input, _) = whitespace0(input)?;
+  let (input, _) = space_tab0(input)?;
   let (input, _) = many1(alt((box_drawing_char,table_end,space_tab)))(input)?;
-  let (input, _) = many0(space_tab)(input)?;
+  let (input, _) = space_tab0(input)?;
   Ok((input, TableRow{columns: vec![]}))
 }
 
@@ -181,63 +187,89 @@ fn table_bottom(input: ParseString) -> ParseResult<()> {
 // inline-table := table-separator, *whitespace, table-header, *whitespace, +table-row;
 pub fn inline_table(input: ParseString) -> ParseResult<Table> {
   let (input, _) = table_separator(input)?;
-  let (input, _) = whitespace0(input)?;
-  let (input, header) = table_header(input)?;
-  let (input, _) = whitespace0(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, header) = inline_table_header(input)?;
+  let (input, _) = space_tab0(input)?;
   let (input, rows) = many1(inline_table_row)(input)?;
   Ok((input, Table{header, rows}))
 }
 
-// table-row := bar, list1((space | tab)*, expression), (space | tab)*, bar, new-line ;
+// inline-table-row := *(space | tab), +(*(space | tab), expression) , *(space | tab), table-separator ;
 pub fn inline_table_row(input: ParseString) -> ParseResult<TableRow> {
-  let (input, _) = many0(space_tab)(input)?;
-  let (input, row) = many1(nom_tuple((many0(space_tab), expression)))(input)?;
-  let (input, _) = many0(space_tab)(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, row) = many1(nom_tuple((space_tab0, expression)))(input)?;
+  let (input, _) = space_tab0(input)?;
   let (input, _) = table_separator(input)?;
   let row = row.into_iter().map(|(_,tkn)| TableColumn{element:tkn}).collect();
   Ok((input, TableRow{columns: row}))
 }
 
-// fancy-table := table-start, (box-drawing-char | whitespace)*, table-header, (box-drawing-char | whitespace)*, table-row+, box-drawing-char*, whitespace*, table-end ;
+// regular-table := table-separator, whitespace*, table-header, +table-row ;
 pub fn regular_table(input: ParseString) -> ParseResult<Table> {
   let (input, _) = table_separator(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, header) = table_header(input)?;
-  let (input, rows) = separated_list1(new_line,table_row)(input)?;
+  let (input, rows) = separated_list1(whitespace0, table_row)(input)?;
   Ok((input, Table{header,rows}))
 }
 
 // table-header := list1(space-tab+, field), (space | tab)*, (bar| box-vert), whitespace* ;
 pub fn table_header(input: ParseString) -> ParseResult<Vec<Field>> {
-  let (input, fields) = separated_list1(many1(alt((space_tab, table_separator))),field)(input)?;
-  let (input, _) = many0(space_tab)(input)?;
+  let (input, fields) = separated_list1(space_tab1,field)(input)?;
+  let (input, _) = space_tab0(input)?;
   let (input, _) = table_separator(input)?;
   let (input, _) = whitespace0(input)?;
   Ok((input, fields))
 }
 
-// table-row := bar, list1((space | tab)*, expression), (space | tab)*, bar, new-line ;
-pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
-  let (input, _) = whitespace0(input)?;
+// table-header := list1(space-tab+, field), (space | tab)*, (bar| box-vert), whitespace* ;
+pub fn inline_table_header(input: ParseString) -> ParseResult<Vec<Field>> {
+  let (input, fields) = separated_list1(space_tab1,field)(input)?;
+  let (input, _) = space_tab0(input)?;
   let (input, _) = table_separator(input)?;
-  let (input, row) = many1(nom_tuple((many0(alt((space_tab, table_separator))), expression)))(input)?;
-  let (input, _) = many0(space_tab)(input)?;
-  let (input, _) = table_separator(input)?;
-  let (input, _) = many0(space_tab)(input)?;
-  let row = row.into_iter().map(|(_,tkn)| TableColumn{element:tkn}).collect();
-  Ok((input, TableRow{columns: row}))
+  let (input, _) = space_tab0(input)?;
+  Ok((input, fields))
 }
 
-// table-column := (space | tab)*, expression, ((space | tab)*, ("," | table-separator)?, (space | tab)*) ;
+// table-row := table-separator, *(space | tab), +table-column, *(space | tab), table-separator, ?new-line ;
+pub fn table_row2(input: ParseString) -> ParseResult<TableRow> {
+  let (input, _) = table_separator(input)?;
+  let sep = delimited(space_tab0, table_separator, space_tab0);
+  let (input, cells) = separated_list1(sep, expression)(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, _) = table_separator(input)?;
+  let (input, _) = space_tab0(input)?;
+  let columns = cells
+      .into_iter()
+      .map(|expr| TableColumn { element: expr })
+      .collect();
+  Ok((input, TableRow { columns }))
+}
+
+// table-row := table-separator, *(space | tab), +table-column, *(space | tab), table-separator, ?new-line ;
+pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
+  let (input, _) = table_separator(input)?;
+  let (input, cells) = separated_list1(space_tab1, expression)(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, _) = table_separator(input)?;
+  let (input, _) = space_tab0(input)?;
+  let columns = cells
+      .into_iter()
+      .map(|expr| TableColumn { element: expr })
+      .collect();
+  Ok((input, TableRow { columns }))
+}
+
+// table-column := *(space | tab), expression, (*(space | tab), ("," | ?table-separator), *(space | tab)) ;
 pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
-  let (input, _) = many0(space_tab)(input)?;
+  let (input, _) = space_tab0(input)?;
   let (input, element) = match expression(input) {
     Ok(result) => result,
     Err(err) => {
       return Err(err);
     }
   };
-  let (input, _) = nom_tuple((many0(space_tab),opt(alt((comma,table_separator))), many0(space_tab)))(input)?;
+  let (input, _) = nom_tuple((space_tab0,opt(alt((comma,table_separator))), space_tab0))(input)?;
   Ok((input, TableColumn{element}))
 }
 
@@ -255,7 +287,7 @@ pub fn box_drawing_char(input: ParseString) -> ParseResult<Token> {
 
 // box-drawing-emoji := box-tl | box-br | box-bl | box-tr | box-tl-round | box-br-round | box-tr-round | box-bl-round | box-vert | box-cross | box-horz | box-t-left | box-t-right | box-t-top | box-t-bottom ;
 pub fn box_drawing_emoji(input: ParseString) -> ParseResult<Token> {
-  alt((box_tl, box_bl, box_tr, box_tl_bold, box_bl_bold, box_tr_bold, box_tl_round, box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
+  alt((box_vert_bold, box_tl, box_bl, box_tr, box_tl_bold, box_bl_bold, box_tr_bold, box_tl_round, box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
 // table-start := box-tl-round | box-tl | left-brace ;
@@ -271,7 +303,9 @@ pub fn table_end(input: ParseString) -> ParseResult<Token> {
 
 // table-separator := box_vert ;
 pub fn table_separator(input: ParseString) -> ParseResult<Token> {
+  let (input, _) = space_tab0(input)?;
   let (input, token) = alt((box_vert,box_vert_bold,bar))(input)?;
+  let (input, _) = space_tab0(input)?;
   Ok((input, token))
 }
 

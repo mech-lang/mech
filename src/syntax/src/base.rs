@@ -219,7 +219,7 @@ pub fn any_token(mut input: ParseString) -> ParseResult<Token> {
 
 // forbidden-emoji := box-drawing | other-forbidden-shapes ;
 pub fn forbidden_emoji(input: ParseString) -> ParseResult<Token> {
-  alt((box_tl, box_br, box_bl, box_tr, box_tr_bold, box_tl_bold, box_br_bold, box_bl_bold, box_t_left,box_tl_round,box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_right, box_t_top, box_t_bottom))(input)
+  box_drawing_emoji(input)
 }
 
 // emoji := (!forbidden-emoji, emoji-grapheme) ;
@@ -294,7 +294,7 @@ pub fn symbol(input: ParseString) -> ParseResult<Token> {
 
 // identifier-symbol := ampersand | dollar | bar | percent | at | slash | hashtag | backslash | tilde | plus | dash | asterisk | caret ;
 pub fn identifier_symbol(input: ParseString) -> ParseResult<Token> {
-  let (input, symbol) = alt((ampersand, dollar, bar, percent, at, slash, hashtag, backslash, tilde, plus, dash, asterisk, caret))(input)?;
+  let (input, symbol) = alt((ampersand, dollar, percent, at, slash, hashtag, backslash, tilde, plus, dash, asterisk, caret))(input)?;
   Ok((input, symbol))
 }
 
@@ -355,6 +355,18 @@ pub fn ws0e(input: ParseString) -> ParseResult<()> {
 pub fn space_tab(input: ParseString) -> ParseResult<Token> {
   let (input, space) = alt((space,tab))(input)?;
   Ok((input, space))
+}
+
+// space-tab0 := *space-tab ;
+pub fn space_tab0(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many0(space_tab)(input)?;
+  Ok((input, ()))
+}
+
+// space-tab1 := +space-tab ;
+pub fn space_tab1(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many1(space_tab)(input)?;
+  Ok((input, ()))
 }
 
 // list-separator := ws0, ",", ws0 ;
