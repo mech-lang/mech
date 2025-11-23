@@ -371,7 +371,7 @@ pub enum TypeTag {
   MatrixF32, MatrixF64, MatrixC64, MatrixR64, MatrixBool, 
   MatrixString, MatrixIndex,
   EnumTag, Record, Map, Atom, 
-  Table, Tuple, Reference, Set, OptionT,
+  Table, Tuple, Reference, Set, OptionT, None,
 }
 
 impl TypeTag {
@@ -386,7 +386,7 @@ impl TypeTag {
       31 => Some(TypeTag::MatrixF32), 32 => Some(TypeTag::MatrixF64), 33 => Some(TypeTag::MatrixC64), 34 => Some(TypeTag::MatrixR64), 35 => Some(TypeTag::MatrixBool), 
       36 => Some(TypeTag::MatrixString), 37 => Some(TypeTag::MatrixIndex),
       38 => Some(TypeTag::EnumTag), 39 => Some(TypeTag::Record), 40 => Some(TypeTag::Map), 41 => Some(TypeTag::Atom), 
-      42 => Some(TypeTag::Table), 43 => Some(TypeTag::Tuple), 44 => Some(TypeTag::Reference), 45 => Some(TypeTag::Set), 46 => Some(TypeTag::OptionT),
+      42 => Some(TypeTag::Table), 43 => Some(TypeTag::Tuple), 44 => Some(TypeTag::Reference), 45 => Some(TypeTag::Set), 46 => Some(TypeTag::OptionT), 47 => Some(TypeTag::None),
       _ => None,
     }
   }

@@ -65,7 +65,7 @@ macro_rules! impl_as_type {
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, C64, R64,
-  String, Bool, Id, Index, Empty, Any, 
+  String, Bool, Id, Index, Empty, Any, None,
   Matrix(Box<ValueKind>,Vec<usize>),  Enum(u64),                  Record(Vec<(String,ValueKind)>),
   Map(Box<ValueKind>,Box<ValueKind>), Atom(u64),                  Table(Vec<(String,ValueKind)>, usize), 
   Tuple(Vec<ValueKind>),              Reference(Box<ValueKind>),  Set(Box<ValueKind>, Option<usize>), 
@@ -107,6 +107,7 @@ impl Display for ValueKind {
       ValueKind::Atom(x) => write!(f, "`{}",x),
       ValueKind::Empty => write!(f, "_"),
       ValueKind::Any => write!(f, "*"),
+      ValueKind::None => write!(f, "none"),
       ValueKind::Option(x) => write!(f, "{}?", x),
     }
   }
@@ -351,6 +352,7 @@ impl ValueKind {
       ValueKind::Id | ValueKind::Index => 8, // id/index -> likely machine word (u64)
       ValueKind::Empty => 1,
       ValueKind::Any => ptr_align,
+      ValueKind::None => 1,
 
       // compound types
       ValueKind::Matrix(elem_ty, _dims) => {

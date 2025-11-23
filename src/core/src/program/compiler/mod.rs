@@ -32,6 +32,7 @@ pub fn encode_value_kind(ts: &mut TypeSection, vk: &ValueKind) -> (TypeTag, Vec<
     ValueKind::Index => TypeTag::Index,
     ValueKind::Empty => TypeTag::Empty,
     ValueKind::Any => TypeTag::Any,
+    ValueKind::None => TypeTag::None,
 
     ValueKind::Matrix(elem, dims) => {
       let elem_id = ts.get_or_intern(elem);

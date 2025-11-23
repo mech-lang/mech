@@ -5,6 +5,7 @@ use crate::*;
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Kind {
   Any,
+  None,
   Atom(u64),
   Empty,
   Enum(u64),
@@ -34,6 +35,7 @@ impl Kind {
   #[cfg(feature = "kind_annotation")]
   pub fn to_value_kind(&self, kinds: &KindTable) -> MResult<ValueKind> {
     match self {
+      Kind::None => Ok(ValueKind::None),
       Kind::Any => Ok(ValueKind::Any),
       Kind::Atom(id) => Ok(ValueKind::Atom(*id)),
       Kind::Empty => Ok(ValueKind::Empty),
