@@ -257,10 +257,13 @@ pub fn skip_empty_mech_directive(input: ParseString) -> ParseResult<String> {
   Ok((input, String::from("mech:")))
 }
 
-// recoverry function for Recoverable nodes
-pub fn recover<T: Recoverable>(input: ParseString) -> ParseResult<T> {
+// recovery function for Recoverable nodes with customizable skip function
+pub fn recover<T: Recoverable, F>(input: ParseString, skip_fn: F) -> ParseResult<T>
+where
+  F: Fn(ParseString) -> ParseResult<()>,
+{
   let start = input.loc();
-  let (input, _) = skip_till_eol(input)?;
+  let (input, _) = skip_fn(input)?;
   let end = input.loc();
   Ok((input, T::error_placeholder(SourceRange { start, end })))
 }
