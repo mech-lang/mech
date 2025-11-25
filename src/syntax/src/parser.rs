@@ -241,31 +241,6 @@ fn skip_till_section_element(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-/*
-fn skip_till_section_element2(input: ParseString) -> ParseResult<ParserNode> {
-  if input.len() == 0 {
-    return Ok((input, ParserNode::Error));
-  }
-  let (input, _) = skip_past_eol(input)?;
-  let (input, _) = many0(nom_tuple((
-    is_not(section_element2),
-    skip_past_eol,
-  )))(input)?;
-  Ok((input, ParserNode::Error))
-}
-
-fn skip_till_section_element3(input: ParseString) -> ParseResult<ParserNode> {
-  if input.len() == 0 {
-    return Ok((input, ParserNode::Error));
-  }
-  let (input, _) = skip_past_eol(input)?;
-  let (input, _) = many0(nom_tuple((
-    is_not(section_element3),
-    skip_past_eol,
-  )))(input)?;
-  Ok((input, ParserNode::Error))
-}*/
-
 // skip_spaces := space* ;
 pub fn skip_spaces(input: ParseString) -> ParseResult<()> {
   let (input, _) = many0(space)(input)?;
@@ -299,9 +274,12 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
 
   let (input, code) = match alt_best(input, &parsers) {
     Ok((input, code)) => {
+      println!("mech_code_alt matched: {:?}", code);
       (input, code)
     }
     Err(e) => {
+      println!("mech_code_alt failed to match any alternative.");
+      println!("Error123: {:?}", e);
       return Err(e);
     }
   };
@@ -324,7 +302,6 @@ pub fn mech_code(input: ParseString) -> ParseResult<(MechCode,Option<Comment>)> 
   };
   Ok((input,(code,cmmt)))
 }
-
 
 // program := ws0, ?title, body, ws0 ;
 pub fn program(input: ParseString) -> ParseResult<Program> {
@@ -413,6 +390,10 @@ pub fn parse(text: &str) -> MResult<Program> {
   let remaining: ParseString = match parse_mech(ParseString::new(&graphemes)) {
     // Got a parse tree, however there may be errors
     Ok((mut remaining_input, parse_tree)) => {
+      println!("Parsed successfully up to cursor {}", remaining_input.cursor);
+      println!("Remaining input: {:?}", remaining_input.rest());
+      println!("Parse tree: {:#?}", parse_tree);
+      println!("Error log: {:?}", remaining_input.error_log);
       error_log.append(&mut remaining_input.error_log);
       result_node = Some(parse_tree);
       remaining_input
@@ -421,6 +402,9 @@ pub fn parse(text: &str) -> MResult<Program> {
     Err(err) => {
       match err {
         Err::Error(mut e) | Err::Failure(mut e) => {
+          println!("Error: {:?}", e);
+          // Error: ParseError { cause_range: [3:11, 3:12), remaining_input: ParseString { graphemes: ["T", "h", "i", "s", " ", "i", "s", " ", "b", "e", "f", "o", "r", "e", " ", "t", "h", "e", " ", "e", "r", "r", "o", "r", ".", "\r\n", "\r\n", "x", " ", ":", "=", " ", "1", " ", "+", " ", "(", "\n"], error_log: [], cursor: 38, location: 3:11 }, error_detail: ParseErrorDetail { message: "parenthetical_term: Expects expression", annotation_rngs: [] } }
+          println!("Remaining input at error: {:?}", e.remaining_input.rest());
           error_log.append(&mut e.remaining_input.error_log);
           error_log.push((e.cause_range, e.error_detail));
           e.remaining_input
