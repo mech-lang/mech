@@ -129,7 +129,6 @@ pub fn factor(input: ParseString) -> ParseResult<Factor> {
     ("slice", Box::new(|i| slice(i).map(|(i, s)| (i, Factor::Expression(Box::new(Expression::Slice(s))))))),
     ("var", Box::new(|i| var(i).map(|(i, v)| (i, Factor::Expression(Box::new(Expression::Var(v))))))),
   ];
-  let (input, _) = space_tab0(input)?;
   let (input, fctr) = alt_best(input, &parsers)?;
   let (input, transpose) = opt(transpose)(input)?;
   let fctr = match transpose {
