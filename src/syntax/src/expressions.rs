@@ -139,14 +139,14 @@ pub fn factor(input: ParseString) -> ParseResult<Factor> {
   Ok((input, fctr))
 }
 
-// parenthetical-term := left-parenthesis, formula, right-parenthesis ;
+// parenthetical-term := left-parenthesis, space-tab0, formula, space-tab0, right-parenthesis ;
 pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
   let msg1 = "parenthetical_term: Expects expression";
   let msg2 = "parenthetical_term: Expects right parenthesis `)`";
   let (input, (_, r)) = range(left_parenthesis)(input)?;
-  let (input, _) = whitespace0(input)?;
+  let (input, _) = space_tab0(input)?;
   let (input, frmla) = label!(formula, msg1)(input)?;
-  let (input, _) = whitespace0(input)?;
+  let (input, _) = space_tab0(input)?;
   let (input, _) = label!(right_parenthesis, msg2, r)(input)?;
   Ok((input, Factor::Parenthetical(Box::new(frmla))))
 }
