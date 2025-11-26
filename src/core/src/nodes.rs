@@ -106,7 +106,7 @@ pub enum TokenKind {
   Newline, Not, Number,
   OutputOperator,
   Percent, Period, Plus,
-  Question, QuestionSigil, Quote, QuoteSigil,
+  QueryOperator, Question, QuestionSigil, Quote, QuoteSigil,
   RightAngle, RightBrace, RightBracket, RightParenthesis,
   SectionSigil, Semicolon, Space, Slash, String, StrikeSigil, StrongSigil,
   Tab, Text, Tilde, TildeCodeBlockSigil, Title, TransitionOperator, True,
@@ -578,6 +578,13 @@ pub enum MechCode {
   //FsmSpecification(FsmSpecification),
   FunctionDefine(FunctionDefine),
   Statement(Statement),
+  Error(Token, SourceRange),
+}
+
+impl Recoverable for MechCode {
+  fn error_placeholder(skipped_tokens: Token, range: SourceRange) -> Self {
+    MechCode::Error(skipped_tokens, range)
+  }
 }
 
 impl MechCode {
@@ -585,6 +592,8 @@ impl MechCode {
     match self {
       MechCode::Expression(x) => x.tokens(),
       MechCode::Statement(x) => x.tokens(),
+      MechCode::Comment(x) => x.tokens(),
+      MechCode::Error(t,_) => vec![t.clone()],
       _ => todo!(),
       //FunctionDefine(x) => x.tokens(),
       //FsmSpecification(x) => x.tokens(),
@@ -1401,6 +1410,16 @@ impl Paragraph {
   pub fn has_errors(&self) -> bool {
     self.error_range.is_some()
   }
+
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for e in &self.elements {
+      let mut e_tkns = e.tokens();
+      tkns.append(&mut e_tkns);
+    }
+    tkns
+  }
+
 }
 
 impl Recoverable for Paragraph {
@@ -1530,6 +1549,12 @@ impl C64Node {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Comment {
   pub paragraph: Paragraph,
+}
+
+impl Comment {
+  pub fn tokens(&self) -> Vec<Token> {
+    self.paragraph.tokens()
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
