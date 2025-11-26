@@ -85,6 +85,11 @@ pub fn merge_src_range(r1: SourceRange, r2: SourceRange) -> SourceRange {
     end:   r2.end.max(r2.end),
   }
 }
+
+pub trait Recoverable: Sized {
+  fn error_placeholder(skipped_tokens: Token, range: SourceRange) -> Self;
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum TokenKind {
@@ -92,7 +97,7 @@ pub enum TokenKind {
   Backslash, Bar, BoxDrawing,
   Caret, CarriageReturn, CarriageReturnNewLine, Colon, CodeBlock, Comma,
   Dash, DefineOperator, Digit, Dollar,
-  Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Exclamation, 
+  Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Error, Exclamation, 
   False, FloatLeft, FloatRight, FootnotePrefix,
   Grave, GraveCodeBlockSigil,
   HashTag, HighlightSigil, HttpPrefix,
@@ -490,6 +495,13 @@ pub enum SectionElement {
   Subtitle(Subtitle),
   Table(MarkdownTable),
   ThematicBreak,
+  Error(Token, SourceRange),
+}
+
+impl Recoverable for SectionElement {
+  fn error_placeholder(skipped_tokens: Token, range: SourceRange) -> Self {
+    SectionElement::Error(skipped_tokens, range)
+  }
 }
 
 impl SectionElement {
@@ -1365,6 +1377,7 @@ impl ParagraphElement {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Paragraph {
   pub elements: Vec<ParagraphElement>,
+  pub error_range: Option<SourceRange>,
 }
 
 impl Paragraph {
@@ -1375,7 +1388,21 @@ impl Paragraph {
     }
     out
   }
+
+  pub fn has_errors(&self) -> bool {
+    self.error_range.is_some()
+  }
 }
+
+impl Recoverable for Paragraph {
+  fn error_placeholder(skipped_tokens: Token, range: SourceRange) -> Self {
+    Paragraph {
+      elements: vec![ParagraphElement::Text(Token::new(TokenKind::Error, range.clone(), skipped_tokens.chars.clone()))],
+      error_range: Some(range),
+    }
+  }
+}
+
 
 pub type Sign = bool;
 pub type Numerator = Token;
