@@ -373,7 +373,7 @@ impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
   /// Not used, unless we have logical error
   fn from_error_kind(input: ParseString<'a>,
                       _kind: nom::error::ErrorKind) -> Self {
-    ParseError::new(input, "Unexpected error")
+    ParseError::new(input, format!("NomErrorKind: {:?}", _kind).leak())
   }
 
   /// Probably not used
