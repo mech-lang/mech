@@ -297,6 +297,13 @@ impl Formatter {
   
   pub fn paragraph_element(&mut self, node: &ParagraphElement) -> String {
     match node {
+      ParagraphElement::Error(t, s) => {
+        if self.html {
+          format!("<span class=\"mech-error\" title=\"Error at {:?}\">{}</span>", s, t.to_string())
+        } else {
+          format!("{{ERROR: {} at {:?}}}", t.to_string(), s)
+        }
+      },
       ParagraphElement::Highlight(n) => {
         if self.html {
           format!("<mark class=\"mech-highlight\">{}</mark>", n.to_string())

@@ -1327,6 +1327,13 @@ pub enum ParagraphElement {
   Strong(Box<ParagraphElement>),
   Text(Token),
   Underline(Box<ParagraphElement>),
+  Error(Token, SourceRange),
+}
+
+impl Recoverable for ParagraphElement {
+  fn error_placeholder(skipped_tokens: Token, range: SourceRange) -> Self {
+    ParagraphElement::Error(skipped_tokens, range)
+  }
 }
 
 impl ParagraphElement {
@@ -1347,6 +1354,7 @@ impl ParagraphElement {
       ParagraphElement::Strong(t) => t.tokens(),
       ParagraphElement::Text(t) => vec![t.clone()],
       ParagraphElement::Underline(t) => t.tokens(),
+      ParagraphElement::Error(t, _) => vec![t.clone()],
     }
   }
 
@@ -1368,6 +1376,7 @@ impl ParagraphElement {
       ParagraphElement::Strong(t) => t.to_string(),
       ParagraphElement::Text(t) => t.to_string(),
       ParagraphElement::Underline(t) => t.to_string(),
+      ParagraphElement::Error(t, s) => format!("{{ERROR: {} at {:?}}}", t.to_string(), s),
     }
   }
 
