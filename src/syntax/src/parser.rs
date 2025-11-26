@@ -213,23 +213,25 @@ pub fn tag(tag: &'static str) -> impl Fn(ParseString) -> ParseResult<String> {
 // -----------------------
 
 // skip_till_eol := (!new_line, any)* ;
-pub fn skip_till_eol(input: ParseString) -> ParseResult<()> {
-  let (input, _) = many0(nom_tuple((
+pub fn skip_till_eol(input: ParseString) -> ParseResult<Token> {
+  let (input, matched) = many0(nom_tuple((
     is_not(new_line),
-    any,
+    any_token,
   )))(input)?;
-  Ok((input, ()))
+  let mut matched: Vec<Token> = matched.into_iter().map(|(_, t)| t).collect(); 
+  let tkn = Token::merge_tokens(&mut matched).unwrap_or(Token::default()); 
+  Ok((input, tkn))
 }
 
 // skip_past_eol := skip_till_eol, new_line ;
-fn skip_past_eol(input: ParseString) -> ParseResult<()> {
+pub fn skip_past_eol(input: ParseString) -> ParseResult<()> {
   let (input, _) = skip_till_eol(input)?;
   let (input, _) = new_line(input)?;
   Ok((input, ()))
 }
 
 // skip_till_section_element := skip_past_eol, (!section_element, skip_past_eol)* ;
-fn skip_till_section_element(input: ParseString) -> ParseResult<()> {
+pub fn skip_till_section_element(input: ParseString) -> ParseResult<()> {
   if input.is_empty() {
     return Ok((input, ()));
   }
@@ -260,12 +262,12 @@ pub fn skip_empty_mech_directive(input: ParseString) -> ParseResult<String> {
 // recovery function for Recoverable nodes with customizable skip function
 pub fn recover<T: Recoverable, F>(input: ParseString, skip_fn: F) -> ParseResult<T>
 where
-  F: Fn(ParseString) -> ParseResult<()>,
+  F: Fn(ParseString) -> ParseResult<Token>,
 {
   let start = input.loc();
-  let (input, _) = skip_fn(input)?;
+  let (input, matched) = skip_fn(input)?;
   let end = input.loc();
-  Ok((input, T::error_placeholder(SourceRange { start, end })))
+  Ok((input, T::error_placeholder(matched, SourceRange { start, end })))
 }
 
 // 4. Public interface
@@ -316,20 +318,24 @@ pub fn mech_code(input: ParseString) -> ParseResult<(MechCode,Option<Comment>)> 
 
 // program := ws0, ?title, body, ws0 ;
 pub fn program(input: ParseString) -> ParseResult<Program> {
+  println!("Parsing program...");
   let msg = "Expects program body";
   let (input, _) = whitespace0(input)?;
   let (input, title) = opt(title)(input)?;
   //let (input, body) = labelr!(body, skip_nil, msg)(input)?;
   let (input, body) = body(input)?;
   let (input, _) = whitespace0(input)?;
+  println!("Done parsing program.");
   Ok((input, Program{title, body}))
 }
 
 // parse_mech := program | statement ;
 pub fn parse_mech(input: ParseString) -> ParseResult<Program> {
+  println!("Parsing mech...");
   //let (input, mech) = alt((program, statement))(input)?;
   //Ok((input, ParserNode::Root { children: vec![mech] }))
   let (input, mech) = program(input)?;
+  println!("Done parsing mech.");
   Ok((input, mech))
 }
 
@@ -413,7 +419,7 @@ pub fn parse(text: &str) -> MResult<Program> {
     Err(err) => {
       match err {
         Err::Error(mut e) | Err::Failure(mut e) => {
-          println!("Error: {:?}", e);
+          println!("Error456: {:?}", e);
           // Error: ParseError { cause_range: [3:11, 3:12), remaining_input: ParseString { graphemes: ["T", "h", "i", "s", " ", "i", "s", " ", "b", "e", "f", "o", "r", "e", " ", "t", "h", "e", " ", "e", "r", "r", "o", "r", ".", "\r\n", "\r\n", "x", " ", ":", "=", " ", "1", " ", "+", " ", "(", "\n"], error_log: [], cursor: 38, location: 3:11 }, error_detail: ParseErrorDetail { message: "parenthetical_term: Expects expression", annotation_rngs: [] } }
           println!("Remaining input at error: {:?}", e.remaining_input.rest());
           error_log.append(&mut e.remaining_input.error_log);

@@ -625,6 +625,24 @@ impl Formatter {
       SectionElement::Subtitle(n) => self.subtitle(n),
       SectionElement::Table(n) => self.mechdown_table(n),
       SectionElement::ThematicBreak => self.thematic_break(),
+      SectionElement::Error(src, range) => self.section_error(src.clone(), range),
+    }
+  }
+
+  pub fn section_error(&mut self, src: Token, range: &SourceRange) -> String {
+    if self.html {
+      let mut error_str = String::new();
+      error_str.push_str(&format!("<div class=\"mech-section-error\">\n"));
+      error_str.push_str(&format!("<strong>Error in section at range {:?}-{:?}:</strong>\n", range.start, range.end));
+      error_str.push_str(&format!("<pre class=\"mech-error-source\">{}</pre>\n", src.to_string()));
+      error_str.push_str("</div>\n");
+      error_str  
+    } else {
+      let mut error_str = String::new();
+      error_str.push_str(&format!("Error in section at range {:?}-{:?}:\n", range.start, range.end));
+      error_str.push_str(&format!("{} ", src.to_string()));
+      error_str.push_str("\n");
+      error_str
     }
   }
 
