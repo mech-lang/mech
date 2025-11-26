@@ -8,7 +8,7 @@ use crate::*;
 use nom::{
   IResult,
   branch::alt,
-  sequence::tuple as nom_tuple,
+  sequence::{tuple as nom_tuple, pair},
   combinator::{opt, eof, peek},
   multi::{many1, many_till, many0, separated_list1,separated_list0},
   bytes::complete::{take_until, take_while},
@@ -351,15 +351,24 @@ pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
 
 // paragraph := +paragraph_element ;
 pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
-  let (input, elements) = many1(paragraph_element)(input)?;
+  let (input, _) = peek(paragraph_element)(input)?;
+  let (input, elements) = many1(
+    pair(
+      is_not(new_line),
+      labelr!(paragraph_element, 
+              |input| recover::<ParagraphElement, _>(input, skip_till_paragraph_element),
+              "Expected paragraph element")
+    )
+  )(input)?;
+  let elements = elements.into_iter().map(|(_,elem)| elem).collect();
   Ok((input, Paragraph{elements, error_range: None}))
 }
 
 // paragraph-newline := +paragraph_element, new_line ;
 pub fn paragraph_newline(input: ParseString) -> ParseResult<Paragraph> {
-  let (input, elements) = many1(paragraph_element)(input)?;
+  let (input, elements) = paragraph(input)?;
   let (input, _) = new_line(input)?;
-  Ok((input, Paragraph{elements, error_range: None}))
+  Ok((input, elements))
 }
 
 // indented-ordered-list-item := ws, number, ".", +text, new_line*; 
