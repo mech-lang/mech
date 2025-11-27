@@ -224,23 +224,65 @@ pub fn skip_till_eol(input: ParseString) -> ParseResult<Token> {
 }
 
 // skip_past_eol := skip_till_eol, new_line ;
-pub fn skip_past_eol(input: ParseString) -> ParseResult<()> {
-  let (input, _) = skip_till_eol(input)?;
-  let (input, _) = new_line(input)?;
-  Ok((input, ()))
+pub fn skip_past_eol(input: ParseString) -> ParseResult<Token> {
+  let (input, matched) = skip_till_eol(input)?;
+  let (input, nl) = new_line(input)?;
+  let matched = Token::merge_tokens(&mut vec![matched, nl]).unwrap_or(Token::default());
+  Ok((input, matched))
+}
+
+// skip-till-end-of-statement := *((!new-line, !";"), any) ;
+pub fn skip_till_end_of_statement(input: ParseString) -> ParseResult<Token> {
+  // If empty, return
+  if input.is_empty() {
+      return Ok((input, Token::default()));
+  }
+
+  // Consume until either newline or ;
+  let (input, matched) = many0(nom_tuple((
+      // is_not matches any char NOT in the set
+      is_not(alt((
+          new_line,
+          semicolon,
+      ))),
+      any_token,
+  )))(input)?;
+
+  let mut matched: Vec<Token> = matched.into_iter().map(|(_, t)| t).collect();
+  let tkn = Token::merge_tokens(&mut matched).unwrap_or(Token::default());
+
+  Ok((input, tkn))
 }
 
 // skip_till_section_element := skip_past_eol, (!section_element, skip_past_eol)* ;
-pub fn skip_till_section_element(input: ParseString) -> ParseResult<()> {
+pub fn skip_till_section_element(input: ParseString) -> ParseResult<Token> {
   if input.is_empty() {
-    return Ok((input, ()));
+    return Ok((input, Token::default()));
   }
-  let (input, _) = skip_past_eol(input)?;
-  let (input, _) = many0(nom_tuple((
+  let (input, matched) = skip_past_eol(input)?;
+  let (input, matched2) = many0(nom_tuple((
     is_not(section_element),
     skip_past_eol,
   )))(input)?;
-  Ok((input, ()))
+  let mut matched: Vec<Token> = vec![matched];
+  matched.extend(matched2.into_iter().map(|(_, t)| t));
+  let tkn = Token::merge_tokens(&mut matched).unwrap_or(Token::default());
+  Ok((input, tkn))
+}
+
+pub fn skip_till_paragraph_element(input: ParseString) -> ParseResult<Token> {
+  // if it's empty, return
+  if input.is_empty() {
+    return Ok((input, Token::default()));
+  }
+  // Otherwise, consume tokens until we reach a paragraph element
+  let (input, matched) = many0(nom_tuple((
+    is_not(paragraph_element),
+    any_token,
+  )))(input)?;
+  let mut matched: Vec<Token> = matched.into_iter().map(|(_, t)| t).collect(); 
+  let tkn = Token::merge_tokens(&mut matched).unwrap_or(Token::default());
+  Ok((input, tkn))
 }
 
 // skip_spaces := space* ;
@@ -275,6 +317,7 @@ where
 
 // mech_code_alt := fsm_specification | fsm_implementation | function_define | statement | expression | comment ;
 pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
+  println!("Parsing mech_code_alt...");
   let (input, _) = whitespace0(input)?;
   let parsers: Vec<(&str, Box<dyn Fn(ParseString) -> ParseResult<MechCode>>)> = vec![
     // ("fsm_specification", Box::new(|i| fsm_specification(i).map(|(i, v)| (i, MechCode::FsmSpecification(v))))),
@@ -284,11 +327,10 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
     ("expression",  Box::new(|i| expression(i).map(|(i, v)| (i, MechCode::Expression(v))))),
     ("comment",     Box::new(|i| comment(i).map(|(i, v)| (i, MechCode::Comment(v))))),
   ];
-
-  let (input, code) = match alt_best(input, &parsers) {
+  match alt_best(input, &parsers) {
     Ok((input, code)) => {
-      println!("mech_code_alt matched: {:?}", code);
-      (input, code)
+      //println!("mech_code_alt matched code: {:#?}", code);
+      return Ok((input, code));
     }
     Err(e) => {
       println!("mech_code_alt failed to match any alternative.");
@@ -296,24 +338,44 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
       return Err(e);
     }
   };
-  Ok((input, code))
+
 }
 
 // mech_code := mech_code_alt, ("\n" | ";" | comment) ;
-pub fn mech_code(input: ParseString) -> ParseResult<(MechCode,Option<Comment>)> {
-  let (input, code) = mech_code_alt(input)?;
-  if input.is_empty() {
-    return Ok((input, (code, None)));
+pub fn mech_code(input: ParseString) -> ParseResult<Vec<(MechCode,Option<Comment>)>> {
+  println!("Parsing mech_code...");
+  let mut output = vec![];
+  let mut new_input = input.clone();
+  loop {
+    let (input, code) = match labelr!(mech_code_alt, |input| recover::<MechCode,_>(input, skip_till_end_of_statement), "Expected mech code")(new_input.clone()) {
+      Ok((input, code)) => {
+        println!("Parsed mech_code element: {:#?}", code);
+        (input, code)
+      }
+      Err(e) => {
+        println!("mech_code failed to parse mech_code_alt.");
+        println!("Error45454: {:?}", e);
+        return Err(e);
+      }
+    };
+    let (input, _) = many0(space_tab)(input)?;
+    let (input, cmmnt) = opt(tuple((opt(semicolon),many0(space_tab),comment)))(input)?;
+    let (input, _) = alt((null(new_line), null(semicolon)))(input)?;
+    let (input, _) = whitespace0(input)?;
+    let cmmt = match cmmnt {
+      Some((_, _, cmnt)) => Some(cmnt),
+      None => None,
+    };
+    println!("Parsed mech_code element: {:#?} with comment: {:#?}", code, cmmt);
+    output.push((code, cmmt));
+    new_input = input;
+    if new_input.is_empty() {
+      break;
+    }
   }
-  let (input, _) = many0(space_tab)(input)?;
-  let (input, cmmnt) = opt(tuple((opt(semicolon),many0(space_tab),comment)))(input)?;
-  let (input, _) = alt((null(new_line), null(semicolon)))(input)?;
-  let (input, _) = whitespace0(input)?;
-  let cmmt = match cmmnt {
-    Some((_, _, cmnt)) => Some(cmnt),
-    None => None,
-  };
-  Ok((input,(code,cmmt)))
+  println!("!!!!!!!!!!!!Cursor after parsing mech_code: {}", new_input.cursor);
+  println!("Done parsing mech_code.");
+  Ok((new_input, output))
 }
 
 // program := ws0, ?title, body, ws0 ;
@@ -324,7 +386,9 @@ pub fn program(input: ParseString) -> ParseResult<Program> {
   let (input, title) = opt(title)(input)?;
   //let (input, body) = labelr!(body, skip_nil, msg)(input)?;
   let (input, body) = body(input)?;
+  //println!("Parsed program body: {:#?}", body);
   let (input, _) = whitespace0(input)?;
+  println!("cursor after parsing program: {}", input.cursor);
   println!("Done parsing program.");
   Ok((input, Program{title, body}))
 }
@@ -420,7 +484,6 @@ pub fn parse(text: &str) -> MResult<Program> {
       match err {
         Err::Error(mut e) | Err::Failure(mut e) => {
           println!("Error456: {:?}", e);
-          // Error: ParseError { cause_range: [3:11, 3:12), remaining_input: ParseString { graphemes: ["T", "h", "i", "s", " ", "i", "s", " ", "b", "e", "f", "o", "r", "e", " ", "t", "h", "e", " ", "e", "r", "r", "o", "r", ".", "\r\n", "\r\n", "x", " ", ":", "=", " ", "1", " ", "+", " ", "(", "\n"], error_log: [], cursor: 38, location: 3:11 }, error_detail: ParseErrorDetail { message: "parenthetical_term: Expects expression", annotation_rngs: [] } }
           println!("Remaining input at error: {:?}", e.remaining_input.rest());
           error_log.append(&mut e.remaining_input.error_log);
           error_log.push((e.cause_range, e.error_detail));
