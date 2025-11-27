@@ -681,7 +681,7 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
         let graphemes = graphemes::init_source(&mech_src);
         let parse_string = ParseString::new(&graphemes);
 
-        match many1(mech_code)(parse_string) {
+        match mech_code(parse_string) {
           Ok((_, mech_tree)) => {
             // TODO what if not all the input is parsed? Is that handled?
             return Ok((input, SectionElement::FencedMechCode(FencedMechCode{code: mech_tree, config, options})));
@@ -806,7 +806,7 @@ pub fn float(input: ParseString) -> ParseResult<(Box<SectionElement>,FloatDirect
 // section-element := mech-code | question-block | info-block | list | footnote | citation | abstract-element | img | equation | table | float | quote-block | code-block | thematic-break | subtitle | paragraph ;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let parsers: Vec<(&'static str, Box<dyn Fn(ParseString) -> ParseResult<SectionElement>>)> = vec![
-    ("mech_code",       Box::new(|i| many1(mech_code)(i).map(|(i, c)| (i, SectionElement::MechCode(c))))),
+    ("mech_code",       Box::new(|i| mech_code(i).map(|(i, c)| (i, SectionElement::MechCode(c))))),
     ("question_block",  Box::new(question_block)),
     ("info_block",      Box::new(info_block)),
     ("list",            Box::new(|i| mechdown_list(i).map(|(i, lst)| (i, SectionElement::List(lst))))),
@@ -829,19 +829,22 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
 // section := ?ul-subtitle, +section-element ;
 pub fn section(input: ParseString) -> ParseResult<Section> {
   println!("Parsing section elements...");
-  let (mut input, subtitle) = opt(ul_subtitle)(input)?;
+  let (input, subtitle) = opt(ul_subtitle)(input)?;
 
   let mut elements = vec![];
 
+  let mut new_input = input.clone();
+
   loop {
+    println!("Next Element: Current cursor position: {}", new_input.cursor);
     // Stop if EOF reached
-    if input.cursor >= input.graphemes.len() {
+    if new_input.cursor >= new_input.graphemes.len() {
       println!("EOF reached while parsing section");
       break;
     }
 
     // Stop if the next thing is a new section (peek, do not consume)
-    if ul_subtitle(input.clone()).is_ok() {
+    if ul_subtitle(new_input.clone()).is_ok() {
       println!("Next section detected, ending current section");
       break;
     }
@@ -855,18 +858,14 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
     //elements.push(sct_elmnt);
     //let (input, _) = many0(blank_line)(input.clone())?;
 
-    match labelr!(
-      section_element,
-      |input| recover::<SectionElement, _>(input, skip_till_eol),
-      "Expected a section element."
-    )(input.clone()) {
-      Ok((next_input, element)) => {
+    match section_element(new_input.clone()) {
+      Ok((input, element)) => {
+
         elements.push(element);
-        input = next_input;
 
         // Skip any blank lines after the element
-        let (next_input, _) = many0(blank_line)(input.clone())?;
-        input = next_input;
+        let (input, _) = many0(blank_line)(input.clone())?;
+        new_input = input;
       }
       Err(err) => {
         // Propagate hard errors
@@ -874,22 +873,36 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
       }
     }
   }
-  println!("Parsed section elements: {:#?}", elements);
-  Ok((input, Section { subtitle, elements }))
+  //println!("Parsed section: {:#?}", elements);
+  Ok((new_input, Section { subtitle, elements }))
 }
 
 // body := whitespace0, +(section, eof), eof ;
 pub fn body(input: ParseString) -> ParseResult<Body> {
   println!("Parsing body...");
-  let (input, _) = whitespace0(input)?;
-  let (input, sections) = match many_till(section, eof)(input) {
-    Ok((input, (secs, _))) => (input, secs),
-    Err(err) => {
-      println!("Error parsing body sections: {:?}", err);
-      return Err(err);
+  let (mut input, _) = whitespace0(input)?;
+  let mut sections = vec![];
+  let mut new_input = input.clone();
+  loop {
+    println!("Parsing next section...");
+    if new_input.cursor >= new_input.graphemes.len() {
+      println!("EOF reached while parsing body");
+      break;
     }
-  };
-  let (input, _) = eof(input)?; // Ensure we are at the end of input
+    // Try parsing a section
+    match section(new_input.clone()) {
+      Ok((input, sect)) => {
+        //println!("Parsed section: {:#?}", sect);
+        sections.push(sect);
+        new_input = input;
+      }
+      Err(err) => {
+        println!("Error parsing section: {:?}", err);
+        return Err(err);
+      }
+    }
+  }
+
   println!("Done parsing body.");
-  Ok((input, Body { sections }))
+  Ok((new_input, Body { sections }))
 }
