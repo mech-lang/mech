@@ -97,7 +97,7 @@ pub fn fsm_statement_transition(input: ParseString) -> ParseResult<Transition> {
 pub fn fsm_block_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = transition_operator(input)?;
   let (input, _) = left_brace(input)?;
-  let (input, code) = many1(mech_code)(input)?;
+  let (input, code) = mech_code(input)?;
   let (input, _) = right_brace(input)?;
   Ok((input, Transition::CodeBlock(code)))
 }
