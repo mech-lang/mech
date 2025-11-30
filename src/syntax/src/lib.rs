@@ -666,16 +666,17 @@ impl<'a> TextFormatter<'a> {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct ParserErrorReport(String, Vec<ParserErrorContext>);
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ParserErrorContext {
   pub cause_rng: SourceRange,
   pub err_message: String,
   pub annotation_rngs: Vec<SourceRange>,
 }
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct ParserErrorReport(pub String, pub Vec<ParserErrorContext>);
+
 impl MechErrorKind2 for ParserErrorReport {
   fn name(&self) -> &str {
     "ParserErrorContext"
