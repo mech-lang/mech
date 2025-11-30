@@ -210,6 +210,13 @@ impl<'a> ParseString<'a> {
     Some(tag.to_string())
   }
 
+  /// Extract graphemes between two cursor indices without mutating self.
+  pub fn slice(&self, start_cursor: usize, end_cursor: usize) -> String {
+    let start = start_cursor.min(self.graphemes.len());
+    let end = end_cursor.min(self.graphemes.len());
+    self.graphemes[start..end].join("")
+  }
+
   /// Mutate self by consuming one grapheme
   fn consume_one(&mut self) -> Option<String> {
     if self.is_empty() {
@@ -716,7 +723,11 @@ pub fn alt_best<'a, O>(
   for (name, parser) in parsers {
     match parser(input.clone()) {
       Ok((next_input, val)) => {
+        if *name == "mech_code" {
+          return Ok((next_input, val));
+        }
         let consumed = next_input.cursor;
+        println!("============================================= consumed: {}", consumed);
         if best_success.is_none() || consumed > best_success.as_ref().unwrap().2 {
           best_success = Some((next_input, val, consumed, name));
         }
