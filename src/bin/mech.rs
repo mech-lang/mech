@@ -355,10 +355,7 @@ async fn main() -> Result<(), MechError2> {
           // These looked like paths but failed to watch
           // Print errors
           for err in &watch_errors {
-            println!("{} {:#?}",
-              "[File Error]".truecolor(246,98,78),
-              err
-            );
+            println!("{}",err.kind_message());
           }
           std::process::exit(1);
         }
