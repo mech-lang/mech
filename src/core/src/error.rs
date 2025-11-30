@@ -121,6 +121,11 @@ impl MechError2 {
     }
   }
 
+  /// Get the kind as a specific type, if it matches
+  pub fn kind_as<K: MechErrorKind2 + 'static>(&self) -> Option<&K> {
+    self.kind_data.downcast_ref::<K>()
+  }
+
   /// Get the runtime name (delegates to the underlying kind)
   pub fn kind_name(&self) -> String {
     self.kind_callbacks.name(self.kind_data.as_ref())
@@ -141,22 +146,26 @@ impl MechError2 {
     self.kind_data.downcast_ref::<K>()
   }
 
+  /// Add a compiler location annotation with the current location
   #[track_caller]
   pub fn with_compiler_loc(mut self) -> Self {
     self.compiler_location = Some(CompilerSourceRange::here());
     self
   }
 
+  /// Specify a particular compiler location
   pub fn with_specific_compiler_loc(mut self, loc: CompilerSourceRange) -> Self {
     self.compiler_location = Some(loc);
     self
   }
 
+  /// Add a source range annotation
   pub fn with_annotation(mut self, range: SourceRange) -> Self {
     self.annotations.push(range);
     self
   }
 
+  /// Add multiple source range annotations
   pub fn with_annotations<I>(mut self, iter: I) -> Self
   where
     I: IntoIterator<Item = SourceRange>,
@@ -165,6 +174,7 @@ impl MechError2 {
     self
   }
 
+  /// Add tokens related to this error
   pub fn with_tokens<I>(mut self, iter: I) -> Self
   where
     I: IntoIterator<Item = Token>,
@@ -173,19 +183,23 @@ impl MechError2 {
     self
   }
 
+  /// Set the source error that caused this one
   pub fn with_source(mut self, src: MechError2) -> Self {
     self.source = Some(Box::new(src));
     self
   }
 
+  /// Get the primary source range associated with this error
   pub fn primary_range(&self) -> Option<SourceRange> {
     self.program_range.clone()
   }
 
+  /// Get a simple message describing the error
   pub fn simple_message(&self) -> String {
     format!("{}: {}", self.kind_name(), self.kind_message())
   }
 
+  /// Get a full chain message including all source errors
   pub fn full_chain_message(&self) -> String {
     let mut out = self.simple_message();
     let mut current = &self.source;
