@@ -73,7 +73,7 @@ impl MechFileSystem {
       },
       Err(e) => {
         Err(MechError2::new(
-          RwLockWriteError {source: format!("{}",e)},
+          RwLockWriteError {source_err: format!("{}",e)},
           Some("Could not set stylesheet.".to_string())
         ).with_compiler_loc())
       },
@@ -88,7 +88,7 @@ impl MechFileSystem {
       },
       Err(e) => {
         Err(MechError2::new(
-          RwLockWriteError {source: format!("{}",e)},
+          RwLockWriteError {source_err: format!("{}",e)},
           Some("Could not set shim.".to_string())
         ).with_compiler_loc())
       },
@@ -107,7 +107,7 @@ impl MechFileSystem {
         },
         Err(e) => {
           Err(MechError2::new(
-            RwLockWriteError {source: format!("{}",e)},
+            RwLockWriteError {source_err: format!("{}",e)},
             Some("Failed to add Mech code.".to_string())
           ).with_compiler_loc())
         },
@@ -133,7 +133,10 @@ impl MechFileSystem {
                 },
                 Err(e) => {
                   println!("{} Failed to load: {}", "[File Error]".truecolor(246,98,78), f.display());
-                  return Err(e);
+                  return Err(MechError2::new(
+                    WatchPathFailed { file_path: f.display().to_string(), source_err: format!("{:?}",e) },
+                    None
+                  ).with_compiler_loc().with_source(e));
                 },
               }
             // load mech bytecode
@@ -262,7 +265,7 @@ impl MechFileSystem {
           }
           Err(err) => {
             return Err(MechError2::new(
-              WatchPathFailed { file_path: src_path.display().to_string(), source: format!("{}",err) },
+              WatchPathFailed { file_path: src_path.display().to_string(), source_err: format!("{}",err) },
               None
             ).with_compiler_loc())
           },
@@ -802,24 +805,24 @@ impl MechErrorKind2 for ExtensionDecodeFailed {
 #[derive(Debug, Clone)]
 pub struct WatchPathFailed {
   pub file_path: String,
-  pub source: String,
+  pub source_err: String,
 }
 impl MechErrorKind2 for WatchPathFailed {
   fn name(&self) -> &str { "WatchPathFailed" }
 
   fn message(&self) -> String {
-    format!("Failed to watch file path {}: {}", self.file_path, self.source)
+    format!("Failed to watch file path {}: {}", self.file_path, self.source_err)
   }
 }
 
 #[derive(Debug, Clone)]
 pub struct RwLockWriteError {
-  pub source: String,
+  pub source_err: String,
 }
 impl MechErrorKind2 for RwLockWriteError {
   fn name(&self) -> &str { "RwLockWriteError" }
 
   fn message(&self) -> String {
-    format!("Failed to acquire write lock: {}", self.source)
+    format!("Failed to acquire write lock: {}", self.source_err)
   }
 }
