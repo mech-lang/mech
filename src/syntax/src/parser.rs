@@ -319,7 +319,6 @@ where
 
 // mech_code_alt := fsm_specification | fsm_implementation | function_define | statement | expression | comment ;
 pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
-  println!("Parsing mech_code_alt...");
   let (input, _) = whitespace0(input)?;
   let parsers: Vec<(&str, Box<dyn Fn(ParseString) -> ParseResult<MechCode>>)> = vec![
     // ("fsm_specification", Box::new(|i| fsm_specification(i).map(|(i, v)| (i, MechCode::FsmSpecification(v))))),
@@ -331,12 +330,9 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
   ];
   match alt_best(input, &parsers) {
     Ok((input, code)) => {
-      println!("mech_code_alt matched code");
       return Ok((input, code));
     }
     Err(e) => {
-      println!("mech_code_alt failed to match any alternative.");
-      println!("Error123: {:?}", e);
       return Err(e);
     }
   };
@@ -358,7 +354,6 @@ pub fn code_terminal(input: ParseString) -> ParseResult<Option<Comment>> {
 
 // mech-code-block := +(mech-code, code-terminal) ;
 pub fn mech_code(input: ParseString) -> ParseResult<Vec<(MechCode,Option<Comment>)>> {
-  println!("Parsing mech_code...");
   let mut output = vec![];
   let mut new_input = input.clone();
   loop {
@@ -394,30 +389,23 @@ pub fn mech_code(input: ParseString) -> ParseResult<Vec<(MechCode,Option<Comment
       Err(e) => {
         // if we didn't parse a terminal, just return what we've got so far.
         if output.len() > 0 {
-          println!("mech_code: could not parse code terminal, but have output already, so returning.");
           return Ok((new_input, output));
         }
         // otherwise, return the error.
-        println!("mech_code: could not parse code terminal, and have no output yet, so returning error.");
-        println!("Error5656: {:?}", e);
         return Err(e);
       }
     };
     output.push((code, cmmt));
-    println!("^^^^^output: {:?}", output);
     new_input = input;
     if new_input.is_empty() {
       break;
     }
   }
-  println!("!!!!!!!!!!!!Cursor after parsing mech_code: {}", new_input.cursor);
-  println!("Done parsing mech_code.");
   Ok((new_input, output))
 }
 
 // program := ws0, ?title, body, ws0 ;
 pub fn program(input: ParseString) -> ParseResult<Program> {
-  println!("Parsing program...");
   let msg = "Expects program body";
   let (input, _) = whitespace0(input)?;
   let (input, title) = opt(title)(input)?;
@@ -425,18 +413,14 @@ pub fn program(input: ParseString) -> ParseResult<Program> {
   let (input, body) = body(input)?;
   //println!("Parsed program body: {:#?}", body);
   let (input, _) = whitespace0(input)?;
-  println!("cursor after parsing program: {}", input.cursor);
-  println!("Done parsing program.");
   Ok((input, Program{title, body}))
 }
 
 // parse_mech := program | statement ;
 pub fn parse_mech(input: ParseString) -> ParseResult<Program> {
-  println!("Parsing mech...");
   //let (input, mech) = alt((program, statement))(input)?;
   //Ok((input, ParserNode::Root { children: vec![mech] }))
   let (input, mech) = program(input)?;
-  println!("Done parsing mech.");
   Ok((input, mech))
 }
 
@@ -492,7 +476,7 @@ pub fn parse_grammar(text: &str) -> MResult<Grammar> {
       annotation_rngs: e.1.annotation_rngs,
     }).collect();
     Err(MechError2::new(
-      ParserErrorReport(report),
+      ParserErrorReport(text.to_string(), report),
       None
     ))
   }
@@ -508,10 +492,6 @@ pub fn parse(text: &str) -> MResult<Program> {
   let remaining: ParseString = match parse_mech(ParseString::new(&graphemes)) {
     // Got a parse tree, however there may be errors
     Ok((mut remaining_input, parse_tree)) => {
-      println!("Parsed successfully up to cursor {}", remaining_input.cursor);
-      println!("Remaining input: {:?}", remaining_input.rest());
-      println!("Parse tree: {:#?}", parse_tree);
-      println!("Error log: {:?}", remaining_input.error_log);
       error_log.append(&mut remaining_input.error_log);
       result_node = Some(parse_tree);
       remaining_input
@@ -520,8 +500,6 @@ pub fn parse(text: &str) -> MResult<Program> {
     Err(err) => {
       match err {
         Err::Error(mut e) | Err::Failure(mut e) => {
-          println!("Error456: {:?}", e);
-          println!("Remaining input at error: {:?}", e.remaining_input.rest());
           error_log.append(&mut e.remaining_input.error_log);
           error_log.push((e.cause_range, e.error_detail));
           e.remaining_input
@@ -547,7 +525,7 @@ pub fn parse(text: &str) -> MResult<Program> {
       annotation_rngs: e.1.annotation_rngs,
     }).collect();
     Err(MechError2::new(
-      ParserErrorReport(report),
+      ParserErrorReport(text.to_string(), report),
       None
     ).with_compiler_loc())
   }

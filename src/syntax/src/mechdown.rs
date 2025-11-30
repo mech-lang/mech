@@ -829,7 +829,6 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
 
 // section := ?ul-subtitle, +section-element ;
 pub fn section(input: ParseString) -> ParseResult<Section> {
-  println!("Parsing section elements...");
   let (input, subtitle) = opt(ul_subtitle)(input)?;
 
   let mut elements = vec![];
@@ -837,7 +836,6 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
   let mut new_input = input.clone();
 
   loop {
-    println!("Next Element: Current cursor position: {}", new_input.cursor);
     // Stop if EOF reached
     if new_input.cursor >= new_input.graphemes.len() {
       //println!("EOF reached while parsing section");
@@ -863,15 +861,11 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
     // check if it's mech_code first, we'll prioritize that
     match mech_code(new_input.clone()) {
       Ok((input, mech_tree)) => {
-        println!("Parsed mech code block in section.");
-        println!("Mech code tree: {:#?}", mech_tree);
         elements.push(SectionElement::MechCode(mech_tree));
         new_input = input;
         continue;
       }
       Err(e) => {
-        println!("Not mech code: {:?}", e);
-        println!("{:#?}", elements);
         // not mech code, try section_element
         //return Err(e);
       }
@@ -897,14 +891,11 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
 
 // body := whitespace0, +(section, eof), eof ;
 pub fn body(input: ParseString) -> ParseResult<Body> {
-  println!("Parsing body...");
   let (mut input, _) = whitespace0(input)?;
   let mut sections = vec![];
   let mut new_input = input.clone();
   loop {
-    println!("Parsing next section...");
     if new_input.cursor >= new_input.graphemes.len() {
-      println!("EOF reached while parsing body");
       break;
     }
     // Try parsing a section
@@ -915,12 +906,9 @@ pub fn body(input: ParseString) -> ParseResult<Body> {
         new_input = input;
       }
       Err(err) => {
-        println!("Error parsing section: {:?}", err);
         return Err(err);
       }
     }
   }
-
-  println!("Done parsing body.");
   Ok((new_input, Body { sections }))
 }

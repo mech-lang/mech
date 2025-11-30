@@ -647,11 +647,11 @@ impl<'a> TextFormatter<'a> {
 
   /// Get formatted error message.
   pub fn format_error(&self, errors: &ParserErrorReport) -> String {
-    let n = usize::min(errors.0.len(), 10);
+    let n = usize::min(errors.1.len(), 10);
     let mut result = String::new();
     result.push('\n');
     for i in 0..n {
-      let ctx = &errors.0[i];
+      let ctx = &errors.1[i];
       result.push_str(&Self::err_heading(i));
       result.push_str(&self.err_location(ctx));
       result.push_str(&self.err_context(ctx));
@@ -667,7 +667,7 @@ impl<'a> TextFormatter<'a> {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct ParserErrorReport(Vec<ParserErrorContext>);
+pub struct ParserErrorReport(String, Vec<ParserErrorContext>);
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
@@ -681,31 +681,71 @@ impl MechErrorKind2 for ParserErrorReport {
     "ParserErrorContext"
   }
   fn message(&self) -> String {
-    self.0.iter()
-      .map(|e| format!(
-        "{}: {} (Annotations: [{}])",
-        format!(
-          "[{}:{}-{}:{}]",
-          e.cause_rng.start.row,
-          e.cause_rng.start.col,
-          e.cause_rng.end.row,
-          e.cause_rng.end.col
-        ),
-        e.err_message,
-        e.annotation_rngs.iter()
-          .map(|rng| format!(
-            "[{}:{}-{}:{}]",
-            rng.start.row,
-            rng.start.col,
-            rng.end.row,
-            rng.end.col
-          ))
+    let source = &self.0;
+    let lines: Vec<&str> = source.lines().collect();
+
+    self.1
+      .iter()
+      .map(|e| {
+        let cause_snippet = extract_snippet(&lines, &e.cause_rng);
+
+        let annotation_snippets = e.annotation_rngs
+          .iter()
+          .map(|rng| extract_snippet(&lines, rng))
           .collect::<Vec<_>>()
-          .join(", ")
-      ))
+          .join("\n");
+
+        format!(
+          "{}: {} (Annotations: [{}])\n\nSource:\n{}\n\nAnnotations:\n{}",
+          format!(
+            "[{}:{}-{}:{}]",
+            e.cause_rng.start.row,
+            e.cause_rng.start.col,
+            e.cause_rng.end.row,
+            e.cause_rng.end.col
+          ),
+          e.err_message,
+          e.annotation_rngs.iter()
+            .map(|rng| format!(
+              "[{}:{}-{}:{}]",
+              rng.start.row, rng.start.col, rng.end.row, rng.end.col
+            ))
+            .collect::<Vec<_>>()
+            .join(", "),
+          indent(&cause_snippet),
+          indent(&annotation_snippets)
+        )
+      })
       .collect::<Vec<_>>()
-      .join(", ")
+      .join("\n\n---\n\n")
   }
+}
+
+fn extract_snippet(lines: &[&str], range: &SourceRange) -> String {
+  let mut out = String::new();
+
+  for row in range.start.row..=range.end.row {
+    if let Some(line) = lines.get(row) {
+      let start = if row == range.start.row { range.start.col } else { 0 };
+      let end   = if row == range.end.row   { range.end.col } else { line.len() };
+
+      let end = end.min(line.len());
+
+      if start <= end {
+        out.push_str(&line[start..end]);
+      }
+      out.push('\n');
+    }
+  }
+
+  out
+}
+
+fn indent(s: &str) -> String {
+  s.lines()
+    .map(|line| format!("  {}", line))
+    .collect::<Vec<_>>()
+    .join("\n")
 }
 
 /// Try a list of parsers in order, tracking successes, failures, and errors.
@@ -727,7 +767,6 @@ pub fn alt_best<'a, O>(
           return Ok((next_input, val));
         }
         let consumed = next_input.cursor;
-        println!("============================================= consumed: {}", consumed);
         if best_success.is_none() || consumed > best_success.as_ref().unwrap().2 {
           best_success = Some((next_input, val, consumed, name));
         }
