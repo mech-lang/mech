@@ -357,7 +357,7 @@ pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
       is_not(new_line),
       labelr!(paragraph_element, 
               |input| recover::<ParagraphElement, _>(input, skip_till_paragraph_element),
-              "Expected paragraph element")
+              "Unexpected paragraph element")
     )
   )(input)?;
   let elements = elements.into_iter().map(|(_,elem)| elem).collect();
@@ -806,7 +806,6 @@ pub fn float(input: ParseString) -> ParseResult<(Box<SectionElement>,FloatDirect
 // section-element := mech-code | question-block | info-block | list | footnote | citation | abstract-element | img | equation | table | float | quote-block | code-block | thematic-break | subtitle | paragraph ;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let parsers: Vec<(&'static str, Box<dyn Fn(ParseString) -> ParseResult<SectionElement>>)> = vec![
-    ("mech_code",       Box::new(|i| mech_code(i).map(|(i, c)| (i, SectionElement::MechCode(c))))),
     ("question_block",  Box::new(question_block)),
     ("info_block",      Box::new(info_block)),
     ("list",            Box::new(|i| mechdown_list(i).map(|(i, lst)| (i, SectionElement::List(lst))))),
@@ -823,7 +822,9 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
     ("subtitle",        Box::new(|i| subtitle(i).map(|(i, s)| (i, SectionElement::Subtitle(s))))),
     ("paragraph",       Box::new(|i| paragraph(i).map(|(i, p)| (i, SectionElement::Paragraph(p))))),
   ];
+
   alt_best(input, &parsers)
+  
 }
 
 // section := ?ul-subtitle, +section-element ;
@@ -839,13 +840,13 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
     println!("Next Element: Current cursor position: {}", new_input.cursor);
     // Stop if EOF reached
     if new_input.cursor >= new_input.graphemes.len() {
-      println!("EOF reached while parsing section");
+      //println!("EOF reached while parsing section");
       break;
     }
 
     // Stop if the next thing is a new section (peek, do not consume)
     if ul_subtitle(new_input.clone()).is_ok() {
-      println!("Next section detected, ending current section");
+      //println!("Next section detected, ending current section");
       break;
     }
 
@@ -858,6 +859,23 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
     //elements.push(sct_elmnt);
     //let (input, _) = many0(blank_line)(input.clone())?;
 
+
+    // check if it's mech_code first, we'll prioritize that
+    match mech_code(new_input.clone()) {
+      Ok((input, mech_tree)) => {
+        println!("Parsed mech code block in section.");
+        println!("Mech code tree: {:#?}", mech_tree);
+        elements.push(SectionElement::MechCode(mech_tree));
+        new_input = input;
+        continue;
+      }
+      Err(e) => {
+        println!("Not mech code: {:?}", e);
+        println!("{:#?}", elements);
+        // not mech code, try section_element
+        //return Err(e);
+      }
+    }
     match section_element(new_input.clone()) {
       Ok((input, element)) => {
 

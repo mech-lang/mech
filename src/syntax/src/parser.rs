@@ -156,6 +156,8 @@ where
         recovery_fn(e.remaining_input)
       }
       Err(Err::Failure(mut e)) => {
+        e.cause_range = SourceRange { start, end: e.cause_range.end };
+        //e.error_detail = error_detail.clone();
         e.log();
         recovery_fn(e.remaining_input)
       },
@@ -329,7 +331,7 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
   ];
   match alt_best(input, &parsers) {
     Ok((input, code)) => {
-      //println!("mech_code_alt matched code: {:#?}", code);
+      println!("mech_code_alt matched code");
       return Ok((input, code));
     }
     Err(e) => {
@@ -341,33 +343,68 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
 
 }
 
-// mech_code := mech_code_alt, ("\n" | ";" | comment) ;
+/// code-terminal := *space-tab, ?(?semicolon, *space-tab, comment), (new-line | ";" | eof), *whitespace ;
+pub fn code_terminal(input: ParseString) -> ParseResult<Option<Comment>> {
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, cmmnt) = opt(tuple((opt(semicolon), many0(space_tab), comment)))(input)?;
+  let (input, _) = alt((null(new_line), null(semicolon), null(eof)))(input)?;
+  let (input, _) = whitespace0(input)?;
+  let cmmt = match cmmnt {
+    Some((_, _, cmnt)) => Some(cmnt),
+    None => None,
+  };
+  Ok((input, cmmt))
+}
+
+// mech-code-block := +(mech-code, code-terminal) ;
 pub fn mech_code(input: ParseString) -> ParseResult<Vec<(MechCode,Option<Comment>)>> {
   println!("Parsing mech_code...");
   let mut output = vec![];
   let mut new_input = input.clone();
   loop {
-    let (input, code) = match labelr!(mech_code_alt, |input| recover::<MechCode,_>(input, skip_till_end_of_statement), "Expected mech code")(new_input.clone()) {
-      Ok((input, code)) => {
-        println!("Parsed mech_code element: {:#?}", code);
-        (input, code)
+    let start = new_input.loc();
+    let start_cursor = new_input.cursor;
+    let (input, code) = match mech_code_alt(new_input.clone()) {
+      Err(Err::Error(mut e)) => {
+        e.cause_range = SourceRange { start, end: e.cause_range.end };
+        e.log();
+        //recovery_fn(e.remaining_input)
+        todo!();
       }
+      Err(Err::Failure(mut e)) => {
+        e.cause_range = SourceRange { start, end: e.cause_range.end };
+        e.log();
+        // skip till the end of the statement
+        let (input, skipped) = skip_till_end_of_statement(e.remaining_input)?;
+        // get tokens from start_cursor to input.cursor
+        let skipped_input = input.slice(start_cursor, input.cursor);
+        let skipped_token = Token {
+          kind: TokenKind::Error,
+          chars: skipped_input.chars().collect(),
+          src_range: SourceRange { start, end: input.loc() },
+        };
+        let mech_error = MechCode::Error(skipped_token, e.cause_range);
+        (input, mech_error)
+      },
+      Ok(x) => x,
+      _ => unreachable!(),
+    };
+    let (input, cmmt) = match code_terminal(input) {
+      Ok((input, cmmt)) => (input, cmmt),
       Err(e) => {
-        println!("mech_code failed to parse mech_code_alt.");
-        println!("Error45454: {:?}", e);
+        // if we didn't parse a terminal, just return what we've got so far.
+        if output.len() > 0 {
+          println!("mech_code: could not parse code terminal, but have output already, so returning.");
+          return Ok((new_input, output));
+        }
+        // otherwise, return the error.
+        println!("mech_code: could not parse code terminal, and have no output yet, so returning error.");
+        println!("Error5656: {:?}", e);
         return Err(e);
       }
     };
-    let (input, _) = many0(space_tab)(input)?;
-    let (input, cmmnt) = opt(tuple((opt(semicolon),many0(space_tab),comment)))(input)?;
-    let (input, _) = alt((null(new_line), null(semicolon)))(input)?;
-    let (input, _) = whitespace0(input)?;
-    let cmmt = match cmmnt {
-      Some((_, _, cmnt)) => Some(cmnt),
-      None => None,
-    };
-    println!("Parsed mech_code element: {:#?} with comment: {:#?}", code, cmmt);
     output.push((code, cmmt));
+    println!("^^^^^output: {:?}", output);
     new_input = input;
     if new_input.is_empty() {
       break;
