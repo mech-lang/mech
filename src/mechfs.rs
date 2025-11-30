@@ -132,6 +132,7 @@ impl MechFileSystem {
                   println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
                 },
                 Err(e) => {
+                  println!("{} Failed to load: {}", "[File Error]".truecolor(246,98,78), f.display());
                   return Err(e);
                 },
               }
