@@ -69,6 +69,12 @@ Target release date: ???
 -(💭) automatic differentiation
 -(💭) introspection
 -(💭) higher order functions
+-(💭) Integrations
+  -(💭) Godot
+  -(💭) Python
+  -(💭) C/C++
+  -(🐣) Rust
+  -(🐣) Javascript
 -(🥚) language server
 -(🥚) physical units with dimension checking
 -(🥚) file/parameter server
