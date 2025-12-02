@@ -207,11 +207,21 @@ pub fn add(input: ParseString) -> ParseResult<AddSubOp> {
   Ok((input, AddSubOp::Add))
 }
 
-// subtract := "-" ;
 pub fn subtract(input: ParseString) -> ParseResult<AddSubOp> {
-  let (input, _) = ws0e(input)?;
+  let (input, _) = alt((spaced_subtract, raw_subtract))(input)?;
+  Ok((input, AddSubOp::Sub))
+}
+
+// subtract := "-" ;
+pub fn raw_subtract(input: ParseString) -> ParseResult<AddSubOp> {
   let (input, _) = pair(is_not(comment_sigil), tag("-"))(input)?;
-  let (input, _) = ws0e(input)?;
+  Ok((input, AddSubOp::Sub))
+}
+
+pub fn spaced_subtract(input: ParseString) -> ParseResult<AddSubOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = raw_subtract(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, AddSubOp::Sub))
 }
 
