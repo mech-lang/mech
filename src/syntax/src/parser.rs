@@ -206,7 +206,7 @@ pub fn tag(tag: &'static str) -> impl Fn(ParseString) -> ParseResult<String> {
     if let Some(matched) = input.consume_tag(tag) {
       Ok((input, matched))
     } else {
-      Err(nom::Err::Error(ParseError::new(input, "Unexpected char")))
+      Err(nom::Err::Error(ParseError::new(input, "Unexpected character")))
     }
   }
 }
@@ -361,12 +361,44 @@ pub fn mech_code(input: ParseString) -> ParseResult<Vec<(MechCode,Option<Comment
     let start_cursor = new_input.cursor;
     let (input, code) = match mech_code_alt(new_input.clone()) {
       Err(Err::Error(mut e)) => {
-        e.cause_range = SourceRange { start, end: e.cause_range.end };
-        e.log();
-        //recovery_fn(e.remaining_input)
-        todo!();
+        // if the error is just "Unexpected character", we will just fail.
+        if e.error_detail.message == "Unexpected character" {
+          if output.len() > 0 {
+            return Ok((new_input, output));
+          } else {
+            return Err(Err::Error(e));
+          }
+        } else {
+          e.cause_range = SourceRange { start, end: e.cause_range.end };
+          e.log();
+          // skip till the end of the statement
+          let (input, skipped) = skip_till_end_of_statement(e.remaining_input)?;
+          // get tokens from start_cursor to input.cursor
+          let skipped_input = input.slice(start_cursor, input.cursor);
+          let skipped_token = Token {
+            kind: TokenKind::Error,
+            chars: skipped_input.chars().collect(),
+            src_range: SourceRange { start, end: input.loc() },
+          };
+          let mech_error = MechCode::Error(skipped_token, e.cause_range);
+          (input, mech_error)
+        }
       }
       Err(Err::Failure(mut e)) => {
+        // Check if this thing matches a section element:
+        match subtitle(new_input.clone()) {
+          Ok((_, _)) => {
+            // if it does, and we have already parsed something, return what we have.
+            if output.len() > 0 {
+              return Ok((new_input, output));
+            } else {
+              return Err(Err::Failure(e));
+            }
+          }
+          Err(_) => { /* continue with error recovery */ }
+        }
+        println!("Error parsing mech code block: {:#?}", e);
+        println!("Rest of input: {:?}", e.remaining_input);
         e.cause_range = SourceRange { start, end: e.cause_range.end };
         e.log();
         // skip till the end of the statement
