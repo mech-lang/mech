@@ -2338,112 +2338,110 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
     let mut i = 0;
     
     let self_closing_tags = HashSet::from([
-        "area", "base", "br", "col", "embed", "hr", "img", "input", 
-        "link", "meta", "param", "source", "track", "wbr"
+      "area", "base", "br", "col", "embed", "hr", "img", "input", 
+      "link", "meta", "param", "source", "track", "wbr"
     ]);
     
     fn matches_tag(chars: &[char], pos: usize, tag: &str) -> bool {
-        let tag_chars: Vec<char> = tag.chars().collect();
-        pos + tag_chars.len() <= chars.len() && chars[pos..pos+tag_chars.len()] == tag_chars[..]
+      let tag_chars: Vec<char> = tag.chars().collect();
+      pos + tag_chars.len() <= chars.len() && chars[pos..pos+tag_chars.len()] == tag_chars[..]
     }
     
     while i < chars.len() {
-        // Handle <pre> and <code> tags
-        if !in_special_tag && (matches_tag(&chars, i, "<pre") || matches_tag(&chars, i, "<code")) {
-            in_special_tag = true;
-            special_tag = if matches_tag(&chars, i, "<pre") { "pre" } else { "code" };
-            
-            result.push('\n');
-            result.push_str(&"  ".repeat(indent_level));
-            
-            // Add the opening tag
-            while i < chars.len() && chars[i] != '>' {
-                result.push(chars[i]);
-                i += 1;
-            }
-            result.push('>');
-            i += 1;
-            indent_level += 1;
-            
-            // Process content
-            let start = i;
-            while i < chars.len() && !matches_tag(&chars, i, &format!("</{}>", special_tag)) {
-                i += 1;
-            }
-            
-            // Add the content as is
-            result.extend(chars[start..i].iter());
-            
-            // Add the closing tag
-            if i < chars.len() {
-                result.push_str(&format!("</{}>", special_tag));
-                i += special_tag.len() + 3;
-                in_special_tag = false;
-                indent_level -= 1;
-            }
-        // Open tag
-        } else if !in_special_tag && i < chars.len() && chars[i] == '<' && i+1 < chars.len() && chars[i+1] != '/' {
-            let tag_start = i + 1;
-            let mut j = tag_start;
-            
-            // Get tag name
-            while j < chars.len() && chars[j].is_alphanumeric() {
-                j += 1;
-            }
-            
-            let tag_name: String = chars[tag_start..j].iter().collect();
-            let is_self_closing = self_closing_tags.contains(tag_name.as_str());
-            
-            // Add newline and indentation
-            result.push('\n');
-            result.push_str(&"  ".repeat(indent_level));
-            
-            // Add the tag
-            while i < chars.len() && chars[i] != '>' {
-                result.push(chars[i]);
-                i += 1;
-            }
-            result.push('>');
-            i += 1;
-            
-            if !is_self_closing {
-                indent_level += 1;
-            }
-        // Close tag
-        } else if !in_special_tag && i < chars.len() && chars[i] == '<' && i+1 < chars.len() && chars[i+1] == '/' {
-            indent_level = indent_level.saturating_sub(1);
-            
-            result.push('\n');
-            result.push_str(&"  ".repeat(indent_level));
-            
-            while i < chars.len() && chars[i] != '>' {
-                result.push(chars[i]);
-                i += 1;
-            }
-            result.push('>');
-            i += 1;
-        // Regular text content
-        } else if !in_special_tag {
-            let start = i;
-            while i < chars.len() && chars[i] != '<' {
-                i += 1;
-            }
-            
-            let content: String = chars[start..i].iter().collect();
-            if !content.trim().is_empty() {
-                result.push('\n');
-                result.push_str(&"  ".repeat(indent_level));
-                result.push_str(&content);
-            }
-        // Inside <pre> or <code>
-        } else {
+      // Handle <pre> and <code> tags
+      if !in_special_tag && (matches_tag(&chars, i, "<pre") || matches_tag(&chars, i, "<code")) {
+        in_special_tag = true;
+        special_tag = if matches_tag(&chars, i, "<pre") { "pre" } else { "code" };
+        
+        result.push('\n');
+        result.push_str(&"  ".repeat(indent_level));
+        
+        // Add the opening tag
+        while i < chars.len() && chars[i] != '>' {
+          result.push(chars[i]);
+          i += 1;
+        }
+        result.push('>');
+        i += 1;
+        indent_level += 1;
+        
+        // Process content
+        let start = i;
+        while i < chars.len() && !matches_tag(&chars, i, &format!("</{}>", special_tag)) {
+          i += 1;
+        }
+        
+        // Add the content as is
+        result.extend(chars[start..i].iter());
+        
+        // Add the closing tag
+        if i < chars.len() {
+          result.push_str(&format!("</{}>", special_tag));
+          i += special_tag.len() + 3;
+          in_special_tag = false;
+          indent_level -= 1;
+        }
+      // Open tag
+      } else if !in_special_tag && i < chars.len() && chars[i] == '<' && i+1 < chars.len() && chars[i+1] != '/' {
+        let tag_start = i + 1;
+        let mut j = tag_start;
+        
+        // Get tag name
+        while j < chars.len() && chars[j].is_alphanumeric() {
+          j += 1;
+      }
+        
+        let tag_name: String = chars[tag_start..j].iter().collect();
+        let is_self_closing = self_closing_tags.contains(tag_name.as_str());
+        
+        // Add newline and indentation
+        result.push('\n');
+        result.push_str(&"  ".repeat(indent_level));
+        
+        // Add the tag
+        while i < chars.len() && chars[i] != '>' {
+          result.push(chars[i]);
+          i += 1;
+        }
+        result.push('>');
+        i += 1;
+        
+        if !is_self_closing {
+          indent_level += 1;
+        }
+      // Close tag
+      } else if !in_special_tag && i < chars.len() && chars[i] == '<' && i+1 < chars.len() && chars[i+1] == '/' {
+        indent_level = indent_level.saturating_sub(1);
+        
+        result.push('\n');
+        result.push_str(&"  ".repeat(indent_level));
+        
+        while i < chars.len() && chars[i] != '>' {
             result.push(chars[i]);
             i += 1;
         }
+        result.push('>');
+        i += 1;
+      // Regular text content
+      } else if !in_special_tag {
+        let start = i;
+        while i < chars.len() && chars[i] != '<' {
+          i += 1;
+        }
+        
+        let content: String = chars[start..i].iter().collect();
+        if !content.trim().is_empty() {
+          result.push('\n');
+          result.push_str(&"  ".repeat(indent_level));
+          result.push_str(&content);
+      }
+      // Inside <pre> or <code>
+      } else {
+        result.push(chars[i]);
+        i += 1;
+      }
     }
-    
     result.push('\n');
     result
-}
- 
+  }
 }
