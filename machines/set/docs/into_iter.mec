@@ -39,14 +39,14 @@ Result:
 (a) Basic consume into a list
 
 ```mech:ex1
-A := ["a", "b", "c"]
+A := {"a", "b", "c"}
 L := set/into_iter(A)
 ```
 
 (b) After consuming, do not use the original set again in the same scope
 
 ```mech:ex2
-A := [10, 20, 30]
+A := {10, 20, 30}
 L := set/into_iter(A)
 ```
 

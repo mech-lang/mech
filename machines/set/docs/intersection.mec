@@ -53,7 +53,7 @@ Result:
 A := {"a", "b", "c"}
 B := {"b", "c", "d"}
 I := A ∩ B
-// I is {"b", "c"}
+-- I is {"b", "c"}
 ```
 
 (b) Numbers
@@ -62,7 +62,7 @@ I := A ∩ B
 A := {1, 2, 3, 4}
 B := {3, 4, 5, 6}
 I := A ∩ B
-// I is {3, 4}
+-- I is {3, 4}
 ```
 
 (c) Order follows the first set
@@ -71,7 +71,7 @@ I := A ∩ B
 A := ["x", "y", "z"]
 B := ["z", "x", "y"]
 I := A ∩ B
-// I is ["x", "y"]
+-- I is ["x", "y"]
 ```
 
 6. Details

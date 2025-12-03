@@ -43,21 +43,22 @@ Result:
 
 ```mech:ex1
 S := set/indexset()
-// S is {}
+-- verify if indexset works on [] or {}
+-- S is {}
 ```
 
-(b) Create a set from a list of numbers
+(b) Create a set from a list of numbers`
 
 ```mech:ex2
 S := set/indexset([1, 2, 3, 2])
-// S is {1, 2, 3}
+-- S is {1, 2, 3}
 ```
 
 (c) Strings with insertion order preserved
 
 ```mech:ex3
 S := set/indexset(["a", "c", "b", "a"])
-// S is {"a", "c", "b"}
+-- S is {"a", "c", "b"}
 ```
 
 6. Details

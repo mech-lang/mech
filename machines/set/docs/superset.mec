@@ -1,0 +1,97 @@
+set/superset
+===============================================================================
+
+%% Superset test (set containment relation)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+R := set/superset(A, B)
+R := A ⊇ B
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Determines whether set `A` is a **superset** of set `B`.  
+A superset contains all elements of another set, possibly more.  
+This function returns a boolean value indicating the result.
+
+The implementation wraps the Rust `IndexSet` containment logic and
+preserves Mech’s deterministic order semantics for reproducibility.
+
+3. Input
+-------------------------------------------------------------------------------
+
+Arguments:
+- A : set of T   — candidate superset
+- B : set of T   — subset being tested
+
+Element type constraints:
+- `T` must be hashable and comparable for equality (`Eq` + `Hash` in Rust).
+- Common scalar kinds: integers, strings, symbols, booleans.
+
+4. Output
+-------------------------------------------------------------------------------
+
+Result:
+- R : boolean — true if all elements of `B` are contained in `A`, otherwise false.
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) True superset
+
+```mech:ex1
+A := {"a", "b", "c", "d"}
+B := {"b", "c"}
+R := set/superset(A, B)
+```
+Result: `R` = true
+
+(b) False superset
+
+```mech:ex2
+A := {1, 2, 3}
+B := {2, 4}
+R := A ⊇ B
+```
+Result: `R` = false
+
+(c) Equal sets still count as supersets
+
+```mech:ex3
+A := {"x", "y", "z"}
+B := {"x", "y", "z"}
+R := set/superset(A, B)
+```
+Result: `R` = true
+
+6. Details
+-------------------------------------------------------------------------------
+
+Set semantics:
+- Inputs are treated as sets (duplicates ignored).
+- Order does not affect results.
+
+Relation logic:
+- `A` is a **superset** of `B` if every element of `B` exists in `A`.
+- This differs from a **proper superset**, which requires `A` to contain
+  strictly more elements than `B`.
+
+Symbolic shorthand:
+- `A ⊇ B` is equivalent to `set/superset(A, B)`.
+
+Performance:
+- Average O(\|B\|) time using hashing; memory O(1).
+
+Determinism:
+- Results are deterministic across runs and platforms.
+
+7. Errors
+-------------------------------------------------------------------------------
+
+- Incorrect number of arguments (expects two).
+- Unsupported element type (not hashable or comparable).
+- Inconsistent element kinds between A and B.

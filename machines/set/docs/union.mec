@@ -48,7 +48,7 @@ Result:
 A := {"a", "b", "c"}
 B := {"b", "c", "d"}
 U := set/union(A, B)
-# Equivalent symbolic form:
+// Equivalent symbolic form:
 U := A ∪ B
 ```
 
@@ -58,7 +58,7 @@ U := A ∪ B
 A := {1, 2, 2, 3}
 B := {2, 4, 4}
 U := set/union(A, B)
-# Equivalent symbolic form:
+// Equivalent symbolic form:
 U := A ∪ B
 ```
 
@@ -68,7 +68,7 @@ U := A ∪ B
 A := {"x", "y"}
 B := {"y", "x", "z"}
 U := set/union(A, B)
-# Equivalent symbolic form:
+// Equivalent symbolic form:
 U := A ∪ B
 ```
 
