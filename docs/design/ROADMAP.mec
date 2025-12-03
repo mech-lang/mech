@@ -4,25 +4,24 @@ Mech Project Roadmap
 1. Project Status
 -------------------------------------------------------------------------------
 
-(1.1) Stage 1 - Alpha v0.0.1 - v0.0.6
+(1.1) Stage 1 - Alpha `v0.0.1` - `v0.0.6`
 
 Conception: started 2014
 Implementation: started 2018
 
-(1.2) Stage 2 - Beta v0.1.0 - v0.4+ (???)
+(1.2) Stage 2 - Beta `v0.1.0` - `v0.4+` (???)
 
 Started: December 2022
-Currently: v0.2.66 (Fall 2025)
+Currently: `v0.2.67` (Fall 2025)
 
-- v0.2 (data specification)    (Current Work)
-- v0.3 (program specification) (Starting in 2026)
-- v0.4 (system specification)
-
+- `v0.2` data specification    `Concluding end of 2025`
+- `v0.3` program specification !!Starting 2026!!
+- `v0.4` system specification `TBD`
 (1.3) Stage 3 - Stable v1.0.0
 
-Target release date: ???
+No target release date yet.
 
-2. Feature Status
+2. Feature Progress
 -------------------------------------------------------------------------------
 
 -(💭) concept
@@ -32,7 +31,14 @@ Target release date: ???
 -(🐓) feature complete
 -(🍗) deprecated
 
-(2.1) Data Specification (v0.2)
+(2.1) Data Specification (`v0.2`)
+
+(!)> Work on `v0.2` is targeted to conclude by the end of 2025, and will transition into `v0.3` starting in 2026.
+
+Now that all `v0.2` work items are at the beta implementation stage, we will prepare to move on to `v0.3`. This will mean wrapping up documentation, tests, and any remaining bugs. 
+
+As beta features, these are are still not complete and are subject to change in `v0.3`.
+
 
 -(🐤) repl
 -(🐤) error system
@@ -62,7 +68,7 @@ Target release date: ???
   -(🐤) logical indexing
   -(🐤) variable type and size checking
   -(🐤) builtin linear algebra tools
--(🐤) standard library functions
+-(🐤) standard library
   -(🐤) combinatorics
   -(🐤) compare
   -(🐤) io
@@ -72,11 +78,11 @@ Target release date: ???
   -(🐤) stats
   -(🐤) range
 
-(2.2) Program Specification (v0.3)
+(2.2) Program Specification (`v0.3`)
+
+Version `v0.3` incorporates all the features of `v0.2`, in addition to the following new features:
 
 -(💭) synthassign
--(💭) state machines
--(💭) automatic differentiation
 -(💭) introspection
 -(💭) higher order functions
 -(💭) new types (dec64, currency, email addresses, dates)
@@ -86,6 +92,8 @@ Target release date: ???
   -(💭) C/C++
   -(🐣) Rust
   -(🐣) Javascript
+-(🥚) state Machines
+-(🥚) automatic differentiation
 -(🥚) language server
 -(🥚) physical units with dimension checking
 -(🥚) file/parameter server
@@ -108,52 +116,10 @@ Target release date: ???
 -(🐣) distributed programs
 -(🐣) concurrent programming
 
-3. Nearterm Goals
+3. Roadmap History
 -------------------------------------------------------------------------------
 
-(3.1) Version 0.3.0
-
--[ ] Dec64
--[ ] Currency
--[ ] Autograd syntax
--[ ] History syntax
--[ ] Database redo
-  -[ ] ACID
-  -[ ] Persistence
-  -[ ] Time travel debugging
--[ ] Machines revamp
-  -[ ] Packaging
-  -[ ] Reuse
-  -[ ] Composition
-  -[ ] Explicit importing
-  -[ ] Remapping
-  -[ ] Specifying versions 
-  -[ ] Manifests
--[ ] Notebook Editor
-  -[ ] Start and stop cores
-  -[ ] Save and load programs
-  -[ ] Workspace explorer
-  -[ ] API endpoint server
-  -[ ] Syntax highlighting
-  -[ ] Embed programs
-  -[ ] Display errors
--[ ] Machines
-  -[ ] json
-  -[ ] sockets
-  -[ ] serial
-  -[ ] bluetooth
-  -[ ] audio
-  -[ ] maps
-  -[ ] plot
-  -[ ] gpgpu
--[ ] State machines
-  -[ ] Specification
-  -[ ] Definition
-
-4. Roadmap History
--------------------------------------------------------------------------------
-
-(4.1) Version 0.0.6 Alpha (unreleased)
+(3.1) Version `v0.0.6-alpha` (unreleased)
 
 -[x] Testing
 -[x] Machines 
@@ -177,7 +143,7 @@ Target release date: ???
   -[x] Mech Compiler
   -[x] Table
 
-(4.2) Version 0.1.0 (December 2022)
+(3.2) Version `v0.1.0` (December 2022)
 
 -[x] User defined functions
 -[x] Errors
@@ -194,7 +160,7 @@ Target release date: ???
   -[x] Matrix
   -[x] GUI
 
-(4.3) Version 0.1.1 (Spring 2023)
+(3.3) Version `v0.1.1` (Spring 2023)
 
 - Core
   -[x] Automatic differentiation
