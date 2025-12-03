@@ -58,6 +58,7 @@ E := set/extract_if(S, |s| starts_with(s, "a"))
 
 Result: E = ["apple", "avocado"], remaining S = ["banana"]
 
+
 6. Details
 -------------------------------------------------------------------------------
 

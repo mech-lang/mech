@@ -3,26 +3,26 @@ use crate::*;
 use indexmap::set::IndexSet;
 use mech_core::set::MechSet;
 
-// Proper Subset ------------------------------------------------------------------
+// Equals ------------------------------------------------------------------------
 //
-// Returns true iff lhs ⊂ rhs, i.e. lhs is a subset of rhs and strictly smaller.
+// Returns true if lhs and rhs contain exactly the same elements.
 //
 
 #[derive(Debug)]
-struct SetProperSubsetFxn {
+struct SetEqualsFxn {
   lhs: Ref<MechSet>,
   rhs: Ref<MechSet>,
   out: Ref<bool>,
 }
 
-impl MechFunctionFactory for SetProperSubsetFxn {
+impl MechFunctionFactory for SetEqualsFxn {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
       FunctionArgs::Binary(out, arg1, arg2) => {
         let lhs: Ref<MechSet> = unsafe { arg1.as_unchecked() }.clone();
         let rhs: Ref<MechSet> = unsafe { arg2.as_unchecked() }.clone();
         let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
-        Ok(Box::new(SetProperSubsetFxn { lhs, rhs, out }))
+        Ok(Box::new(SetEqualsFxn { lhs, rhs, out }))
       },
       _ => Err(MechError{
         file: file!().to_string(),
@@ -30,19 +30,20 @@ impl MechFunctionFactory for SetProperSubsetFxn {
         msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args),
         id: line!(),
         kind: MechErrorKind::IncorrectNumberOfArguments
-      }),
+      })
     }
   }
 }
 
-impl MechFunctionImpl for SetProperSubsetFxn {
+impl MechFunctionImpl for SetEqualsFxn {
   fn solve(&self) {
     unsafe {
       let out_ptr: &mut bool = &mut *(self.out.as_mut_ptr());
       let lhs_ptr: &MechSet = &*(self.lhs.as_ptr());
       let rhs_ptr: &MechSet = &*(self.rhs.as_ptr());
-      // Proper subset: lhs ⊂ rhs  <=>  lhs ⊆ rhs and |lhs| < |rhs|
-      *out_ptr = lhs_ptr.set.is_subset(&rhs_ptr.set) && (lhs_ptr.set.len() < rhs_ptr.set.len());
+
+      // Uses the implementation of PartialEq for IndexSet (== operator)
+      *out_ptr = lhs_ptr.set == rhs_ptr.set;
     }
   }
   fn out(&self) -> Value { Value::Bool(self.out.clone()) }
@@ -50,38 +51,38 @@ impl MechFunctionImpl for SetProperSubsetFxn {
 }
 
 #[cfg(feature = "compiler")]
-impl MechFunctionCompiler for SetProperSubsetFxn {
+impl MechFunctionCompiler for SetEqualsFxn {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    let name = "SetProperSubsetFxn".to_string();
-    // Builtin operator ⊊
-    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::ProperSubset));
+    let name = "SetEqualsFxn".to_string();
+    // Custom feature route: set/equals
+    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Custom(hash_str("set/equals")));
   }
 }
 
 register_descriptor! {
   FunctionDescriptor {
-    name: "SetProperSubsetFxn",
-    ptr: SetProperSubsetFxn::new,
+    name: "SetEqualsFxn",
+    ptr: SetEqualsFxn::new,
   }
 }
 
-fn set_proper_subset_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
+fn set_equals_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
   match (lhs, rhs) {
     (Value::Set(lhs), Value::Set(rhs)) => {
-      Ok(Box::new(SetProperSubsetFxn { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(false) }))
+      Ok(Box::new(SetEqualsFxn { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(false) }))
     },
     x => Err(MechError{
       file: file!().to_string(),
       tokens: vec![],
-      msg: format!("set_proper_subset_fxn cannot handle arguments: {:?}", x),
+      msg: format!("set_equals_fxn cannot handle arguments: {:?}", x),
       id: line!(),
       kind: MechErrorKind::UnhandledFunctionArgumentKind
     }),
   }
 }
 
-pub struct SetProperSubset {}
-impl NativeFunctionCompiler for SetProperSubset {
+pub struct SetEquals {}
+impl NativeFunctionCompiler for SetEquals {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
       return Err(MechError{
@@ -94,13 +95,13 @@ impl NativeFunctionCompiler for SetProperSubset {
     }
     let lhs = arguments[0].clone();
     let rhs = arguments[1].clone();
-    match set_proper_subset_fxn(lhs.clone(), rhs.clone()) {
+    match set_equals_fxn(lhs.clone(), rhs.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match (lhs, rhs) {
-          (Value::MutableReference(lhs), Value::MutableReference(rhs)) => set_proper_subset_fxn(lhs.borrow().clone(), rhs.borrow().clone()),
-          (lhs, Value::MutableReference(rhs)) => set_proper_subset_fxn(lhs.clone(), rhs.borrow().clone()),
-          (Value::MutableReference(lhs), rhs) => set_proper_subset_fxn(lhs.borrow().clone(), rhs.clone()),
+          (Value::MutableReference(lhs), Value::MutableReference(rhs)) => set_equals_fxn(lhs.borrow().clone(), rhs.borrow().clone()),
+          (lhs, Value::MutableReference(rhs)) => set_equals_fxn(lhs.clone(), rhs.borrow().clone()),
+          (Value::MutableReference(lhs), rhs) => set_equals_fxn(lhs.borrow().clone(), rhs.clone()),
           x => Err(MechError{
             file: file!().to_string(),
             tokens: vec![],
@@ -116,7 +117,7 @@ impl NativeFunctionCompiler for SetProperSubset {
 
 register_descriptor! {
   FunctionCompilerDescriptor {
-    name: "set/proper_subset",
-    ptr: &SetProperSubset{},
+    name: "set/equals",
+    ptr: &SetEquals{},
   }
 }

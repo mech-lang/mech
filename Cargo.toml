@@ -1,6 +1,6 @@
 [package]
 name = "mech-set"
-version = "0.2.63"
+version = "0.2.64"
 authors = ["Corey Montella <corey@mech-lang.org>", "Steven McPhillimey <slm526@lehigh.edu>", "Liam Messinger <ljm426@lehigh.edu>", "Natalie Dumler <nad326@lehigh.edu>"]
 description = "Set library for the Mech language"
 documentation = "http://docs.mech-lang.org"
@@ -45,11 +45,46 @@ baselib = ["bool", "string",
       "mech-core/baselib"
     ]
 
-set_default = ["union", "intersection", "difference"]
+membership_default = ["element_of", "not_element_of"]
+modify_default = ["insert", "remove"]
+operations_default = ["cartesianproduct", "difference", "intersection", "powerset", "sym_difference", "union"]
+relations_default = ["disjoint", "equals", "not_equals", "proper_subset", "proper_superset", "subset", "superset"]
+setdata_default = ["size"]
+
+set_default = ["membership_default", "modify_default",
+              "operations_default", "relations_default",
+              "setdata_default"]
+
 set = ["functions"]
-union = ["set"]
-intersection = ["set"]
-difference = ["set"]
+
+membership = ["set"]
+modify = ["set"]
+operations = ["set"]
+relations = ["set"]
+setdata = ["set"]
+
+element_of = ["membership"]
+not_element_of = ["membership"]
+
+insert = ["modify"]
+remove = ["modify"]
+
+cartesianproduct = ["operations"]
+difference = ["operations"]
+intersection = ["operations"]
+powerset = ["operations"]
+sym_difference = ["operations"]
+union = ["operations"]
+
+disjoint = ["relations"]
+equals = ["relations"]
+not_equals = ["relations"]
+proper_subset = ["relations"]
+proper_superset = ["relations"]
+subset = ["relations"]
+superset = ["relations"]
+
+size = ["setdata"]
 
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]

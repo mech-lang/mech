@@ -7,13 +7,13 @@ set/complement
 -------------------------------------------------------------------------------
 
 ```mech:disabled
-C := set/complement(U, A)   # elements in U that are not in A
+C := set/complement(U, A)    
 ```
 Equivalent shorthand forms:
 ```mech:disabled
-C := U ∖ A                  # difference equals complement relative to U
-C := A∁                     # complement of A w.r.t. the active universe (if configured)
-C := A'                     # alternate complement shorthand (if configured)
+C := U ∖ A                  -- difference equals complement relative to U
+C := A∁                     -- complement of A w.r.t. the active universe (if configured)
+C := A'                     -- alternate complement shorthand (if configured)
 ```
 
 2. Description
@@ -53,11 +53,6 @@ Result:
 U := {"a", "b", "c", "d"}
 A := {"b", "d"}
 C := set/complement(U, A)
-# Equivalent:
-# C := U ∖ A
-# If an active universe is configured:
-# C := A∁
-# C := A'
 ```
 Result: `C` = {"a", "c"}
 
@@ -98,7 +93,7 @@ Universe handling:
   in the calling context; otherwise they are not resolved.
 
 Performance:
-- Average O(|U| + |A|) time with hashing; memory O(|U|) for the result.
+- Average O(\|U\| + \|A\|) time with hashing; memory O(\|U\|) for the result.
 
 7. Errors
 -------------------------------------------------------------------------------

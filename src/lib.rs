@@ -11,37 +11,27 @@ use paste::paste;
 use std::fmt::{Display, Debug};
 use std::marker::PhantomData;
 
-#[cfg(feature = "union")]
-pub mod union;
-//#[cfg(feature = "complement")]
-//pub mod complement;
-//#[cfg(feature = "difference")]
-//pub mod difference;
-//#[cfg(feature = "intersection")]
-//pub mod intersection;
-//
-#[cfg(feature = "union")]
-pub use self::union::*;
-//#[cfg(feature = "complement")]
-//pub use self::complement::*;
-//#[cfg(feature = "difference")]
-//pub use self::difference::*;
-//#[cfg(feature = "intersection")]
-//pub use self::intersection::*;
+#[cfg(feature = "membership")]
+pub mod membership;
+#[cfg(feature = "modify")]
+pub mod modify;
+#[cfg(feature = "operations")]
+pub mod operations;
+#[cfg(feature = "relations")]
+pub mod relations;
+#[cfg(feature = "setdata")]
+pub mod setdata;
 
-//#[cfg(feature = "join")]
-//pub mod join;
-//#[cfg(feature = "powerset")]
-//pub mod powerset;
-//
-//#[cfg(feature = "join")]
-//pub use self::join::*;
-//#[cfg(feature = "op_assign")]
-//pub use self::op_assign::*;
-//#[cfg(feature = "ops")]
-//pub use self::ops::*;
-//#[cfg(feature = "powerset")]
-//pub use self::powerset::*;
+#[cfg(feature = "membership")]
+pub use self::membership::*;
+#[cfg(feature = "modify")]
+pub use self::modify::*;
+#[cfg(feature = "operations")]
+pub use self::operations::*;
+#[cfg(feature = "relations")]
+pub use self::relations::*;
+#[cfg(feature = "setdata")]
+pub use self::setdata::*;
 
 
 // ----------------------------------------------------------------------------

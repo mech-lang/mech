@@ -40,7 +40,7 @@ Result:
 (a) Drain numbers from a set
 
 ```mech:ex1
-S := set/indexset([1, 2, 3])
+S := set/indexset({1, 2, 3})
 D := set/drain(S)
 ```
 Result: `D` contains 1, 2, 3. Now `S` is empty.
@@ -48,7 +48,7 @@ Result: `D` contains 1, 2, 3. Now `S` is empty.
 (b) Drain strings
 
 ```mech:ex2
-S := set/indexset(["a", "b", "c"])
+S := set/indexset({"a", "b", "c"})
 D := set/drain(S)
 ```
 Result: `D` contains "a", "b", "c". Now `S` is empty.

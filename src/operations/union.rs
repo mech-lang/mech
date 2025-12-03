@@ -38,10 +38,8 @@ impl MechFunctionImpl for SetUnionFxn {
       // Clear the output set first (optional, depending on semantics)
       out_ptr.set.clear();
 
-      // Union lhs and rhs sets into output
-      for item in lhs_ptr.set.iter().chain(rhs_ptr.set.iter()) {
-        out_ptr.set.insert(item.clone());
-      }
+      // Intersection lhs and rhs sets into output
+      out_ptr.set = lhs_ptr.set.union(&(rhs_ptr.set)).cloned().collect();
 
       // Update metadata
       out_ptr.num_elements = out_ptr.set.len();

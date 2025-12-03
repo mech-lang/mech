@@ -4,28 +4,28 @@ use crate::*;
 use indexmap::set::IndexSet;
 use mech_core::set::MechSet;
 
-// Superset ------------------------------------------------------------------------
+// Disjoint ------------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetSupersetFxn {
+struct SetDisjointFxn {
   lhs: Ref<MechSet>,
   rhs: Ref<MechSet>,
   out: Ref<bool>,
 }
-impl MechFunctionFactory for SetSupersetFxn {
+impl MechFunctionFactory for SetDisjointFxn {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
       FunctionArgs::Binary(out, arg1, arg2) => {
         let lhs: Ref<MechSet> = unsafe { arg1.as_unchecked() }.clone();
         let rhs: Ref<MechSet> = unsafe { arg2.as_unchecked() }.clone();
         let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
-        Ok(Box::new(SetSupersetFxn {lhs, rhs, out }))
+        Ok(Box::new(SetDisjointFxn {lhs, rhs, out }))
       },
       _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
     }
   }    
 }
-impl MechFunctionImpl for SetSupersetFxn {
+impl MechFunctionImpl for SetDisjointFxn {
   fn solve(&self) {
     unsafe {
       // Get mutable reference to the output set
@@ -35,51 +35,51 @@ impl MechFunctionImpl for SetSupersetFxn {
       let lhs_ptr: &MechSet = &*(self.lhs.as_ptr());
       let rhs_ptr: &MechSet = &*(self.rhs.as_ptr());
 
-      // Check if lhs is superset of rhs
-      *out_ptr = lhs_ptr.set.is_superset(&(rhs_ptr.set));
+      // Check if lhs is disjoint of rhs
+      *out_ptr = lhs_ptr.set.is_disjoint(&(rhs_ptr.set));
     }
   }
   fn out(&self) -> Value { Value::Bool(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl MechFunctionCompiler for SetSupersetFxn {
+impl MechFunctionCompiler for SetDisjointFxn {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    let name = format!("SetSupersetFxn");
-    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::Superset) );
+    let name = format!("SetDisjointFxn");
+    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Custom(hash_str("set/disjoint") ));
   }
 }
 register_descriptor! {
   FunctionDescriptor {
-    name: "SetSupersetFxn",
-    ptr: SetSupersetFxn::new,
+    name: "SetDisjointFxn",
+    ptr: SetDisjointFxn::new,
   }
 }
 
-fn set_superset_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
+fn set_disjoint_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
   match (lhs, rhs) {
     (Value::Set(lhs), Value::Set(rhs)) => {
-      Ok(Box::new(SetSupersetFxn { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(false) }))
+      Ok(Box::new(SetDisjointFxn { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(false) }))
     },
-    x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("set_superset_fxn cannot handle arguments: {:?}", x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("set_disjoint_fxn cannot handle arguments: {:?}", x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
   }
 }
 
-pub struct SetSuperset {}
-impl NativeFunctionCompiler for SetSuperset {
+pub struct SetDisjoint {}
+impl NativeFunctionCompiler for SetDisjoint {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let lhs = arguments[0].clone();
     let rhs = arguments[1].clone();
-    match set_superset_fxn(lhs.clone(),rhs.clone()) {
+    match set_disjoint_fxn(lhs.clone(),rhs.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(x) => {
         match (lhs,rhs) {
-          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => { set_superset_fxn(lhs.borrow().clone(),rhs.borrow().clone()) },
-          (lhs,Value::MutableReference(rhs)) => { set_superset_fxn(lhs.clone(),rhs.borrow().clone()) },
-          (Value::MutableReference(lhs),rhs) => { set_superset_fxn(lhs.borrow().clone(),rhs.clone()) },
+          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => { set_disjoint_fxn(lhs.borrow().clone(),rhs.borrow().clone()) },
+          (lhs,Value::MutableReference(rhs)) => { set_disjoint_fxn(lhs.clone(),rhs.borrow().clone()) },
+          (Value::MutableReference(lhs),rhs) => { set_disjoint_fxn(lhs.borrow().clone(),rhs.clone()) },
           x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
@@ -89,7 +89,7 @@ impl NativeFunctionCompiler for SetSuperset {
 
 register_descriptor! {
   FunctionCompilerDescriptor {
-    name: "set/superset",
-    ptr: &SetSuperset{},
+    name: "set/disjoint",
+    ptr: &SetDisjoint{},
   }
 }

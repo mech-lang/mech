@@ -1,0 +1,93 @@
+set/not_element_of
+===============================================================================
+
+%% Membership exclusion test (element not in set)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+R := set/not_element_of(x, S)
+R := x ∉ S
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Determines whether an element `x` is **not** a member of set `S`.  
+This function returns a boolean value indicating whether `x` is *absent* from the set.
+
+It wraps Rust’s `IndexSet` membership check and returns the negated result.
+
+3. Input
+-------------------------------------------------------------------------------
+
+Arguments:
+- x : T — the element being tested for membership.
+- S : set of T — the set to test against.
+
+Element type constraints:
+- `T` must be hashable and comparable for equality (`Eq` + `Hash` in Rust).
+- Common scalar kinds: integers, strings, symbols, booleans.
+
+4. Output
+-------------------------------------------------------------------------------
+
+Result:
+- R : boolean — true if `x` is not an element of `S`, otherwise false.
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) True — element is not in the set
+
+```mech:ex1
+x := "a"
+S := {"a", "b", "c"}
+R := set/not_element_of(x, S)
+```
+Result: `R` = true
+
+(b) False — element is in the set
+
+```mech:ex2
+x := 5
+S := {1, 2, 3, 4}
+R := x ∉ S
+```
+Result: `R` = false
+
+(c) Symbols or strings
+
+```mech:ex3
+x := apple
+S := {banana, pear, grape}
+R := set/not_element_of(x, S)
+```
+Result: `R` = true
+
+6. Details
+-------------------------------------------------------------------------------
+
+Set semantics:
+- The set treats elements as unique based on hash and equality.
+- Duplicates are ignored in the set.
+
+Relation logic:
+- Returns true if the element does not exist in the set.
+
+Symbolic shorthand:
+- `x ∉ S` is equivalent to `set/not_element_of(x, S)`.
+
+Performance:
+- Average O(1) time per lookup using hashing.
+
+Determinism:
+- Results are deterministic across runs and platforms.
+
+7. Errors
+-------------------------------------------------------------------------------
+
+- Incorrect number of arguments (expects two).
+- Unsupported element type (not hashable or comparable).
+- Type mismatch between `x` and elements of `S`.
