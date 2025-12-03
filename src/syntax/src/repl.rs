@@ -23,7 +23,7 @@ pub enum ReplCommand {
   Code(Vec<(String,MechSourceCode)>),
   Ls,
   Cd(String),
-  Step(Option<usize>),
+  Step(Option<usize>,Option<u64>),
   Load(Vec<String>),
   Whos(Vec<String>),
   Plan,
@@ -146,7 +146,22 @@ fn load_rpl(input: &str) -> IResult<&str, ReplCommand> {
 
 fn step_rpl(input: &str) -> IResult<&str, ReplCommand> {
   let (input, _) = tag("step")(input)?;
-  let (input, _) = space0(input)?;
+  let (input, _) = space1(input)?;
+  let (input, step_id) = opt(nom_tuple((tag("#"), digit1, space1)))(input)?;
   let (input, count) = opt(digit1)(input)?;
-  Ok((input, ReplCommand::Step(count.map(|s| s.parse().unwrap()))))
+  let step_id = match step_id {
+    Some((_, id_str, _)) => match id_str.parse::<usize>() {
+      Ok(id) => Some(id),
+      Err(_) => None,
+    },
+    _ => None,
+  };
+  let count = match count {
+      Some(count_str) => match count_str.parse::<u64>() {
+        Ok(count) => Some(count),
+        Err(_) => None,
+      },
+      _ => None,
+  };
+  Ok((input, ReplCommand::Step(step_id, count)))
 }

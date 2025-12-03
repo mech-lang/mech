@@ -1,0 +1,94 @@
+set/proper-subset
+===============================================================================
+
+%% Proper subset test (strict set containment relation)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+R := set/proper-subset(A, B)
+R := A ⊊ B
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Determines whether set `A` is a **proper subset** of set `B`.  
+A proper subset has all its elements contained within another set **and lacks at least one element** that `B` has.  
+This function returns a boolean value indicating the result.
+
+The implementation wraps the Rust `IndexSet` containment logic and
+preserves Mech’s deterministic order semantics for reproducibility.
+
+3. Input
+-------------------------------------------------------------------------------
+
+Arguments:
+- A : set of T   — candidate subset
+- B : set of T   — superset being tested
+
+Element type constraints:
+- `T` must be hashable and comparable for equality (`Eq` + `Hash` in Rust).
+- Common scalar kinds: integers, strings, symbols, booleans.
+
+4. Output
+-------------------------------------------------------------------------------
+
+Result:
+- R : boolean — true if all elements of `A` are contained in `B` and `B` has
+  at least one element not present in `A`.
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(5.1) True proper subset
+
+```mech:ex1
+A := {"b", "c"}
+B := {"a", "b", "c", "d"}
+R := set/proper-subset(A, B)
+```
+
+(5.2) False — equal sets
+
+```mech:ex2
+A := {1, 2, 3}
+B := {1, 2, 3}
+R := A ⊊ B
+```
+
+(5.3) False — not contained
+
+```mech:ex3
+A := {"x", "y", "z"}
+B := {"x", "y"}
+R := set/proper-subset(A, B)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+Set semantics:
+- Inputs are treated as sets (duplicates ignored).
+- Order does not affect results.
+
+Relation logic:
+- `A` is a **proper subset** of `B` if every element of `A` exists in `B`
+  and `B` has at least one additional distinct element.
+
+Symbolic shorthand:
+- `A ⊊ B` is equivalent to `set/proper_subset(A, B)`.
+
+Performance:
+- Average `O(|A|)` time using hashing; memory `O(1)`.
+
+Determinism:
+- Results are deterministic across runs and platforms.
+
+7. Errors
+-------------------------------------------------------------------------------
+
+- Incorrect number of arguments (expects two).
+- Unsupported element type (not hashable or comparable).
+- Inconsistent element kinds between A and B.

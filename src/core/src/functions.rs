@@ -32,6 +32,19 @@ pub enum FunctionArgs {
   Variadic(Value, Vec<Value>),
 }
 
+impl FunctionArgs {
+  pub fn len(&self) -> usize {
+    match self {
+      FunctionArgs::Nullary(_) => 0,
+      FunctionArgs::Unary(_, _) => 1,
+      FunctionArgs::Binary(_, _, _) => 2,
+      FunctionArgs::Ternary(_, _, _, _) => 3,
+      FunctionArgs::Quaternary(_, _, _, _, _) => 4,
+      FunctionArgs::Variadic(_, args) => args.len(),
+    }
+  }
+}
+
 #[repr(C)]
 #[derive(Clone)]
 pub struct FunctionDescriptor {
@@ -244,30 +257,66 @@ impl Plan {
 impl PrettyPrint for Plan {
   fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
-
-    let mut row = vec![];
     let plan_brrw = self.0.borrow();
+
     if self.is_empty() {
       builder.push_record(vec!["".to_string()]);
     } else {
-      for (ix, fxn) in plan_brrw.iter().enumerate() {
-        let plan_str = format!("{}. {}\n", ix + 1, fxn.to_string());
-        row.push(plan_str.clone());
+      let total = plan_brrw.len();
+      let mut display_fxns: Vec<String> = Vec::new();
+
+      // Determine which functions to display
+      let indices: Vec<usize> = if total > 30 {
+          (0..10).chain((total - 10)..total).collect()
+      } else {
+          (0..total).collect()
+      };
+
+      for &ix in &indices {
+        let fxn_str = plan_brrw[ix].to_string();
+        let lines: Vec<&str> = fxn_str.lines().collect();
+
+        let truncated = if lines.len() > 20 {
+          let mut t = Vec::new();
+          t.extend_from_slice(&lines[..10]);           // first 10
+          t.push("…");                                 // ellipsis
+          t.extend_from_slice(&lines[lines.len()-10..]); // last 10
+          t.join("\n")
+        } else {
+          lines.join("\n")
+        };
+
+        display_fxns.push(format!("{}. {}", ix + 1, truncated));
+      }
+
+      // Insert ellipsis for skipped functions
+      if total > 30 {
+        display_fxns.insert(10, "…".to_string());
+      }
+
+      // Push rows in chunks of 4 (like before)
+      let mut row: Vec<String> = Vec::new();
+      for plan_str in display_fxns {
+        row.push(plan_str);
         if row.len() == 4 {
           builder.push_record(row.clone());
           row.clear();
         }
       }
+      if !row.is_empty() {
+        builder.push_record(row);
+      }
     }
-    if row.is_empty() == false {
-      builder.push_record(row.clone());
-    }
+
     let mut table = builder.build();
     table.with(Style::modern_rounded())
-        .with(Panel::header("📋 Plan"));
+          .with(Panel::header("📋 Plan"));
+
     format!("{table}")
   }
 }
+
+
 
 // Function Registry
 // ----------------------------------------------------------------------------
@@ -280,4 +329,103 @@ impl PrettyPrint for Plan {
 
 pub struct FunctionRegistry {
   pub registry: RefCell<HashMap<u64, Box<dyn MechFunctionImpl>>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct UnhandledFunctionArgumentKind1 {
+  pub arg: ValueKind,
+  pub fxn_name: String,
+}
+impl MechErrorKind2 for UnhandledFunctionArgumentKind1 {
+  fn name(&self) -> &str { "UnhandledFunctionArgumentKind1" }
+  fn message(&self) -> String {
+    format!("Unhandled function argument kind for function '{}': arg = {:?}", self.fxn_name, self.arg)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct UnhandledFunctionArgumentKind2 {
+  pub arg: (ValueKind, ValueKind),
+  pub fxn_name: String,
+}
+impl MechErrorKind2 for UnhandledFunctionArgumentKind2 {
+  fn name(&self) -> &str { "UnhandledFunctionArgumentKind2" }
+  fn message(&self) -> String {
+    format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct UnhandledFunctionArgumentKind3 {
+  pub arg: (ValueKind, ValueKind, ValueKind),
+  pub fxn_name: String,
+}
+impl MechErrorKind2 for UnhandledFunctionArgumentKind3 {
+  fn name(&self) -> &str { "UnhandledFunctionArgumentKind3" }
+  fn message(&self) -> String {
+    format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct UnhandledFunctionArgumentKind4 {
+  pub arg: (ValueKind, ValueKind, ValueKind, ValueKind),
+  pub fxn_name: String,
+}
+impl MechErrorKind2 for UnhandledFunctionArgumentKind4 {
+  fn name(&self) -> &str { "UnhandledFunctionArgumentKind4" }
+  fn message(&self) -> String {
+    format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct UnhandledFunctionArgumentKindVarg {
+  pub arg: Vec<ValueKind>,
+  pub fxn_name: String,
+}
+impl MechErrorKind2 for UnhandledFunctionArgumentKindVarg {
+  fn name(&self) -> &str { "UnhandledFunctionArgumentKindVarg" }
+  fn message(&self) -> String {
+    format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct UnhandledFunctionArgumentIxes {
+  pub arg: (ValueKind, Vec<ValueKind>, ValueKind),
+  pub fxn_name: String,
+}
+impl MechErrorKind2 for UnhandledFunctionArgumentIxes {
+  fn name(&self) -> &str { "UnhandledFunctionArgumentIxes" }
+  fn message(&self) -> String {
+    format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct UnhandledFunctionArgumentIxesMono {
+  pub arg: (ValueKind, Vec<ValueKind>),
+  pub fxn_name: String,
+}
+impl MechErrorKind2 for UnhandledFunctionArgumentIxesMono {
+  fn name(&self) -> &str { "UnhandledFunctionArgumentIxesMono" }
+  fn message(&self) -> String {
+    format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct IncorrectNumberOfArguments {
+  pub expected: usize,
+  pub found: usize,
+}
+impl MechErrorKind2 for IncorrectNumberOfArguments {
+  fn name(&self) -> &str {
+    "IncorrectNumberOfArguments"
+  }
+
+  fn message(&self) -> String {
+    format!("Expected {} arguments, but found {}", self.expected, self.found)
+  }
 }

@@ -5,7 +5,7 @@ COPY . .
 
 RUN pwd
 RUN rustup override set nightly
-RUN rustup default nightly-2025-07-31
+RUN rustup default nightly-2025-11-12
 RUN cargo build --bin mech --release
 
 ENV PATH="/mech/target/release:${PATH}"

@@ -25,14 +25,18 @@ where
   Not<Output = T>,
   Ref<T>: ToValue,
 {
-  fn new(args: FunctionArgs) -> Result<Box<dyn MechFunction>, MechError> {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
       FunctionArgs::Unary(out, arg) => {
         let arg: Ref<T> = unsafe { arg.as_unchecked() }.clone();
         let out: Ref<T> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self {arg, out, _marker: PhantomData::default() }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 1, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -79,14 +83,18 @@ where
   MatA: Debug + CompileConst + ConstElem + AsValueKind + 'static,
   Ref<MatA>: ToValue
 {
-  fn new(args: FunctionArgs) -> Result<Box<dyn MechFunction>, MechError> {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
       FunctionArgs::Unary(out, arg) => {
         let arg: Ref<MatA> = unsafe { arg.as_unchecked() }.clone();
         let out: Ref<MatA> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self {arg, out, _marker: PhantomData::default() }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 1, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -126,7 +134,7 @@ where
   }
 }
 
-fn impl_not_fxn(arg_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_not_fxn(arg_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms!(
     Not,
     (arg_value),

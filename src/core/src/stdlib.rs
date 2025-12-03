@@ -261,7 +261,11 @@ macro_rules! impl_binop {
             let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self {lhs, rhs, out }))
           },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          _ => Err(MechError2::new(
+              IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
@@ -314,7 +318,11 @@ macro_rules! impl_unop {
             let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self {arg, out }))
           },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          _ => Err(MechError2::new(
+              IncorrectNumberOfArguments { expected: 1, found: args.len() }, 
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
@@ -834,55 +842,69 @@ macro_rules! impl_binop_match_arms {
               let (rows,cols) = {lhs.borrow().shape()};
               let rhs_shape = rhs.shape();
               match (rows,cols,rhs_shape[0],rhs_shape[1]) {
-              // matching rows
-              (n,_,m,1) if n == m => (),
-              // matching cols
-              (_,n,1,m) if n == m => (),
-              // mismatching dimensions
-              _ => {return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![]) });},
+                // matching rows
+                (n,_,m,1) if n == m => (),
+                // matching cols
+                (_,n,1,m) if n == m => (),
+                // mismatching dimensions
+                _ => {
+                  return Err(
+                    MechError2::new(
+                      DimensionMismatch { dims: vec![rows, cols, rhs_shape[0], rhs_shape[1]] },
+                      None
+                    ).with_compiler_loc()
+                  );
+                }
               }
               match rhs {
-              #[cfg(feature = "vector2")]
-              Matrix::Vector2(rhs) => {
-                $registrar!([<$lib MDV2>], $target_type, $value_string);
-                Ok(Box::new([<$lib MDV2>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "vector3")]
-              Matrix::Vector3(rhs) => {
-                $registrar!([<$lib MDV3>], $target_type, $value_string);
-                Ok(Box::new([<$lib MDV3>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "vector4")]
-              Matrix::Vector4(rhs) => {
-                $registrar!([<$lib MDV4>], $target_type, $value_string);
-                Ok(Box::new([<$lib MDV4>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "vectord")]
-              Matrix::DVector(rhs) => {
-                $registrar!([<$lib MDVD>], $target_type, $value_string);
-                Ok(Box::new([<$lib MDVD>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "row_vector2")]
-              Matrix::RowVector2(rhs) => {
-                $registrar!([<$lib MDR2>], $target_type, $value_string);
-                Ok(Box::new([<$lib MDR2>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "row_vector3")]
-              Matrix::RowVector3(rhs) => {
-                $registrar!([<$lib MDR3>], $target_type, $value_string);
-                Ok(Box::new([<$lib MDR3>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "row_vector4")]
-              Matrix::RowVector4(rhs) => {
-                $registrar!([<$lib MDR4>], $target_type, $value_string);
-                Ok(Box::new([<$lib MDR4>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "row_vectord")]
-              Matrix::RowDVector(rhs) => {
-                $registrar!([<$lib MDRD>], $target_type, $value_string);
-                Ok(Box::new([<$lib MDRD>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              _ => {return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![]) });},
+                #[cfg(feature = "vector2")]
+                Matrix::Vector2(rhs) => {
+                  $registrar!([<$lib MDV2>], $target_type, $value_string);
+                  Ok(Box::new([<$lib MDV2>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "vector3")]
+                Matrix::Vector3(rhs) => {
+                  $registrar!([<$lib MDV3>], $target_type, $value_string);
+                  Ok(Box::new([<$lib MDV3>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "vector4")]
+                Matrix::Vector4(rhs) => {
+                  $registrar!([<$lib MDV4>], $target_type, $value_string);
+                  Ok(Box::new([<$lib MDV4>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "vectord")]
+                Matrix::DVector(rhs) => {
+                  $registrar!([<$lib MDVD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib MDVD>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "row_vector2")]
+                Matrix::RowVector2(rhs) => {
+                  $registrar!([<$lib MDR2>], $target_type, $value_string);
+                  Ok(Box::new([<$lib MDR2>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "row_vector3")]
+                Matrix::RowVector3(rhs) => {
+                  $registrar!([<$lib MDR3>], $target_type, $value_string);
+                  Ok(Box::new([<$lib MDR3>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "row_vector4")]
+                Matrix::RowVector4(rhs) => {
+                  $registrar!([<$lib MDR4>], $target_type, $value_string);
+                  Ok(Box::new([<$lib MDR4>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "row_vectord")]
+                Matrix::RowDVector(rhs) => {
+                  $registrar!([<$lib MDRD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib MDRD>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                x => {
+                  return Err(
+                    MechError2::new(
+                      DimensionMismatch { dims: vec![rows, cols, rhs_shape[0], rhs_shape[1]] },
+                      None
+                    ).with_compiler_loc()
+                  );
+                }
               }
             },
             // Vector Matrix
@@ -942,60 +964,77 @@ macro_rules! impl_binop_match_arms {
               let (rows,cols) = {rhs.borrow().shape()};
               let lhs_shape = lhs.shape();
               match (lhs_shape[0],lhs_shape[1],rows,cols) {
-              // matching rows
-              (m,1,n,_) if n == m => (),
-              // matching cols
-              (1,m,_,n) if n == m => (),
-              // mismatching dimensions
-              _ => {return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![]) });},
+                // matching rows
+                (m,1,n,_) if n == m => (),
+                // matching cols
+                (1,m,_,n) if n == m => (),
+                // mismatching dimensions
+                _ => {
+                  return Err(
+                    MechError2::new(
+                      DimensionMismatch { dims: vec![lhs_shape[0], lhs_shape[1], rows, cols] },
+                      None
+                    ).with_compiler_loc()
+                  );
+                }
               }
               match lhs {
-              #[cfg(feature = "vector2")]
-              Matrix::Vector2(lhs) => {
-                $registrar!([<$lib V2MD>], $target_type, $value_string);
-                Ok(Box::new([<$lib V2MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "vector3")]
-              Matrix::Vector3(lhs) => {
-                $registrar!([<$lib V3MD>], $target_type, $value_string);
-                Ok(Box::new([<$lib V3MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "vector4")]
-              Matrix::Vector4(lhs) => {
-                $registrar!([<$lib V4MD>], $target_type, $value_string);
-                Ok(Box::new([<$lib V4MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "vectord")]
-              Matrix::DVector(lhs) => {
-                $registrar!([<$lib VDMD>], $target_type, $value_string);
-                Ok(Box::new([<$lib VDMD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "row_vector2")]
-              Matrix::RowVector2(lhs) => {
-                $registrar!([<$lib R2MD>], $target_type, $value_string);
-                Ok(Box::new([<$lib R2MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "row_vector3")]
-              Matrix::RowVector3(lhs) => {
-                $registrar!([<$lib R3MD>], $target_type, $value_string);
-                Ok(Box::new([<$lib R3MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "row_vector4")]
-              Matrix::RowVector4(lhs) => {
-                $registrar!([<$lib R4MD>], $target_type, $value_string);
-                Ok(Box::new([<$lib R4MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              #[cfg(feature = "row_vectord")]
-              Matrix::RowDVector(lhs) => {
-                $registrar!([<$lib RDMD>], $target_type, $value_string);
-                Ok(Box::new([<$lib RDMD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
-              },
-              _ => {return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![]) });},
+                #[cfg(feature = "vector2")]
+                Matrix::Vector2(lhs) => {
+                  $registrar!([<$lib V2MD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib V2MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "vector3")]
+                Matrix::Vector3(lhs) => {
+                  $registrar!([<$lib V3MD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib V3MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "vector4")]
+                Matrix::Vector4(lhs) => {
+                  $registrar!([<$lib V4MD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib V4MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "vectord")]
+                Matrix::DVector(lhs) => {
+                  $registrar!([<$lib VDMD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib VDMD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "row_vector2")]
+                Matrix::RowVector2(lhs) => {
+                  $registrar!([<$lib R2MD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib R2MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "row_vector3")]
+                Matrix::RowVector3(lhs) => {
+                  $registrar!([<$lib R3MD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib R3MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "row_vector4")]
+                Matrix::RowVector4(lhs) => {
+                  $registrar!([<$lib R4MD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib R4MD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                #[cfg(feature = "row_vectord")]
+                Matrix::RowDVector(lhs) => {
+                  $registrar!([<$lib RDMD>], $target_type, $value_string);
+                  Ok(Box::new([<$lib RDMD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+                },
+                _ => {
+                  return Err(
+                    MechError2::new(
+                      DimensionMismatch { dims: vec![lhs_shape[0], lhs_shape[1], rows, cols] },
+                      None
+                    ).with_compiler_loc()
+                  );
+                }
               }
             }
           )+
         )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (lhs,rhs) => Err(MechError2::new(
+          UnhandledFunctionArgumentKind2{arg: (lhs.kind(), rhs.kind()), fxn_name: stringify!($lib).to_string()},
+          None
+        ).with_compiler_loc()),
       }
     }
   }
@@ -1044,7 +1083,10 @@ macro_rules! impl_urnop_match_arms {
               Ok(Box::new([<$lib V>]{arg, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default())), _marker: PhantomData::default() }))},
           )+
         )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError2::new(
+          UnhandledFunctionArgumentKind1{arg: x.kind(), fxn_name: stringify!($lib).to_string()},
+          None
+        ).with_compiler_loc()),
       }
     }
   }
@@ -1057,7 +1099,7 @@ macro_rules! impl_mech_binop_fxn {
     impl NativeFunctionCompiler for $fxn_name {
       fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
-          return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+          return Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());
         }
         let lhs_value = arguments[0].clone();
         let rhs_value = arguments[1].clone();
@@ -1068,7 +1110,11 @@ macro_rules! impl_mech_binop_fxn {
               (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {$gen_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
               (lhs_value,Value::MutableReference(rhs)) => { $gen_fxn(lhs_value.clone(), rhs.borrow().clone())}
               (Value::MutableReference(lhs),rhs_value) => { $gen_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-              x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              (lhs, rhs) => Err(MechError2::new(
+                  UnhandledFunctionArgumentKind2 { arg: (lhs.kind(), rhs.kind()), fxn_name: stringify!($fxn_name).to_string() },
+                  None
+                ).with_compiler_loc()
+              ),            
             }
           }
         }
@@ -1091,7 +1137,7 @@ macro_rules! impl_mech_urnop_fxn {
     impl NativeFunctionCompiler for $fxn_name {
       fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
-          return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+          return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
         }
         let input = arguments[0].clone();
         match $gen_fxn(input.clone()) {
@@ -1099,7 +1145,11 @@ macro_rules! impl_mech_urnop_fxn {
           Err(_) => {
             match (input) {
               (Value::MutableReference(input)) => {$gen_fxn(input.borrow().clone())}
-              x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:#?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => Err(MechError2::new(
+                  UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: stringify!($fxn_name).to_string() },
+                  None
+                ).with_compiler_loc()
+              ),
             }
           }
         }
@@ -1322,13 +1372,12 @@ macro_rules! register_assign_s_b {
 #[macro_export]
 macro_rules! impl_assign_fxn {
   ($op:tt, $fxn_name:ident, $arg:expr, $value_kind:ident, $value_string:tt) => {{
-    let mut res: Result<_, MechError> = Err(MechError {
-      file: file!().to_string(),
-      tokens: vec![],
-      msg: String::new(),
-      id: line!(),
-      kind: MechErrorKind::UnhandledFunctionArgumentKind,
-    });
+    let mut res: MResult<_> = Err(MechError2::new(
+      GenericError {
+        msg: "No matching types found".to_string(),
+      },
+      None,
+    ).with_compiler_loc());
     
     #[cfg(feature = "row_vector2")]
     {
@@ -1404,14 +1453,14 @@ macro_rules! impl_assign_fxn {
     {
       res = res.or_else(|_| $op!($fxn_name, DVector, &$arg, $value_kind, $value_string));
     }
-
-    res.map_err(|_| MechError {
-      file: file!().to_string(),
-      tokens: vec![],
-      msg: format!("Unsupported argument: {:?}", &$arg),
-      id: line!(),
-      kind: MechErrorKind::UnhandledFunctionArgumentKind,
-    })
+    let (ref source, ref ixes, ref sink) = &$arg;
+    res.map_err(|_| MechError2::new(
+      UnhandledFunctionArgumentIxes {
+        arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()),
+        fxn_name: stringify!($fxn_name).to_string(),
+      },
+      None,
+    ).with_compiler_loc())
   }}
 }
 
@@ -1426,7 +1475,10 @@ macro_rules! impl_assign_scalar_arms {
           register_assign_s1!([<$fxn_name S>], $value_kind, $value_string, $shape);
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (sink, ixes, source) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     };
   };
@@ -1442,7 +1494,10 @@ macro_rules! impl_assign_all_arms {
           register_assign_s1!([<$fxn_name S>], $value_kind, $value_string, $shape);
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })))           
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (sink, ixes, source) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     };
   };
@@ -1463,7 +1518,10 @@ macro_rules! impl_assign_scalar_scalar_arms {
           register_assign_s!([<$fxn_name MD>], $value_kind, $value_string, $shape, DMatrix);
           box_mech_fxn(Ok(Box::new([<$fxn_name MD>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))           
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (sink, ixes, source) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     };
   };
@@ -1576,7 +1634,10 @@ macro_rules! impl_set_range_arms {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, RowVector4, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (source, ixes, sink) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     };
   };
@@ -1598,7 +1659,10 @@ macro_rules! impl_assign_all_arms_b {
           register_assign_s2!([<$fxn_name VB>], $value_kind, $value_string, $shape, $shape);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (sink, ixes, source) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     };
   };
@@ -1709,7 +1773,10 @@ macro_rules! impl_set_range_all_arms {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, RowVector4, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (source, ixes, sink) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     };
   };
@@ -1825,7 +1892,10 @@ macro_rules! impl_assign_range_scalar_arms {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, RowDVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (source, ixes, sink) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     };
   };
@@ -1941,13 +2011,20 @@ macro_rules! impl_assign_scalar_range_arms {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, RowDVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (sink, ixes, source) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     };
   };
 }
 
-pub fn check_index_lengths<Ix1, Ix2, Source, A, B, C>(ix1: &Ref<Ix1>,ix2: &Ref<Ix2>,source: &Ref<Source>) -> Result<(), MechError>
+pub fn check_index_lengths<Ix1, Ix2, Source, A, B, C>(
+  ix1: &Ref<Ix1>,
+  ix2: &Ref<Ix2>,
+  source: &Ref<Source>
+) -> MResult<()>
 where
   Ix1: AsRef<[A]>,
   Ix2: AsRef<[B]>,
@@ -1956,16 +2033,39 @@ where
   let ix1_len = ix1.borrow().as_ref().len();
   let ix2_len = ix2.borrow().as_ref().len();
   let source_len = source.borrow().as_ref().len();
+
   if ix1_len * ix2_len != source_len {
-    return Err(MechError {
-      file: file!().to_string(),
-      tokens: vec![],
-      msg: format!("Mismatched lengths for indexed assignment: ix1 length ({ix1_len}) * ix2 length ({ix2_len}) must equal source length ({source_len})"),
-      id: line!(),
-      kind: MechErrorKind::UnhandledFunctionArgumentKind,
-    });
+    return Err(
+      MechError2::new(
+        MismatchedIndexLengthsError {
+          ix1_len,
+          ix2_len,
+          source_len,
+        },
+        None
+      )
+      .with_compiler_loc()
+    );
   }
   Ok(())
+}
+
+#[derive(Debug, Clone)]
+pub struct MismatchedIndexLengthsError {
+  pub ix1_len: usize,
+  pub ix2_len: usize,
+  pub source_len: usize,
+}
+impl MechErrorKind2 for MismatchedIndexLengthsError {
+  fn name(&self) -> &str { "MismatchedIndexLengths" }
+
+  fn message(&self) -> String {
+    format!(
+      "Mismatched lengths for indexed assignment: ix1 length ({}) * ix2 length ({}) \
+       must equal source length ({})",
+      self.ix1_len, self.ix2_len, self.source_len
+    )
+  }
 }
 
 #[macro_export]
@@ -2495,7 +2595,10 @@ macro_rules! impl_assign_range_range_arms {
           register_assign_srr2!([<$fxn_name V>], $value_kind, $value_string, $shape, RowDVector, DVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (source, ixes, sink) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     };
   };
@@ -2606,7 +2709,10 @@ macro_rules! impl_assign_all_range_arms {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, RowVector4, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (source, ixes, sink) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     };
   };
@@ -2758,7 +2864,10 @@ macro_rules! impl_assign_all_scalar_arms {
           register_assign_s2!([<$fxn_name V>], $value_kind, $value_string, DMatrix, RowDVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (source, ixes, sink) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     };
   };
@@ -2910,7 +3019,10 @@ macro_rules! impl_assign_scalar_all_arms {
           register_assign_s2!([<$fxn_name V>], $value_kind, $value_string, DMatrix, RowDVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (source, ixes, sink) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     };
   };
@@ -3073,7 +3185,10 @@ macro_rules! impl_set_all_range_arms_b {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, RowVector4, RowVector4, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (source, ixes, sink) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     }
   }
@@ -3206,7 +3321,10 @@ macro_rules! impl_set_range_all_arms_b {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, RowDVector, RowDVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (source, ixes, sink) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     }
   }
@@ -3369,7 +3487,10 @@ macro_rules! impl_set_range_arms_b {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, RowVector4, RowVector4, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (source, ixes, sink) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     };
   };
@@ -3391,7 +3512,10 @@ macro_rules! impl_assign_scalar_arms_b {
           register_assign_s2!([<$fxn_name VB>], $value_kind, $value_string, $shape, $shape);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (source, ixes, sink) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     };
   };
@@ -3502,7 +3626,10 @@ macro_rules! impl_assign_range_scalar_arms_b {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, $shape, DMatrix, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (source, ixes, sink) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     };
   };
@@ -3613,7 +3740,10 @@ macro_rules! impl_assign_scalar_range_arms_b {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, $shape, DMatrix, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (source, ixes, sink) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     };
   };
@@ -3826,7 +3956,10 @@ macro_rules! impl_assign_range_range_arms_b {
           register_assign_srr_b2!([<$fxn_name VBB>], $value_kind, $value_string, DMatrix, DMatrix, DVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (source, ixes, sink) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     }
   }
@@ -3849,7 +3982,10 @@ macro_rules! impl_assign_range_range_arms_bu {
           register_assign_srr_bu2!([<$fxn_name VBU>], $value_kind, $value_string, DMatrix, DMatrix, DVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name VBU>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (source, ixes, sink) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     }
   }
@@ -3872,7 +4008,10 @@ macro_rules! impl_assign_range_range_arms_ub {
           register_assign_srr_ub2!([<$fxn_name VUB>], $value_kind, $value_string, DMatrix, DMatrix, DVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name VUB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (source, ixes, sink) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     }
   }

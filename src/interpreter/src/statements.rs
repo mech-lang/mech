@@ -24,7 +24,11 @@ pub fn statement(stmt: &Statement, p: &Interpreter) -> MResult<Value> {
     //Statement::FsmDeclare(_) => todo!(),
     //Statement::SplitTable => todo!(),
     //Statement::FlattenTable => todo!(),
-    x => return Err(MechError{file:file!().to_string(),tokens:x.tokens(),msg: format!("Feature not enabled {:?}", x), id:line!(),kind:MechErrorKind::None}),
+    x => return Err(MechError2::new(
+        FeatureNotEnabledError,
+        None
+      ).with_compiler_loc().with_tokens(x.tokens())
+    ),
   }
 }
 
@@ -37,23 +41,35 @@ pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MRes
       let r_brrw = r.borrow();
       &match &*r_brrw {
         Value::Tuple(tpl) => tpl.clone(),
-        _ => return Err(MechError{file:file!().to_string(),tokens:tpl_dstrct.vars[0].tokens(),msg:"Expected a tuple.".to_string(),id:line!(),kind:MechErrorKind::GenericError("Expected a tuple.".to_string())}),
+        _ => return Err(MechError2::new(
+          DestructureExpectedTupleError{ value: source.kind() },
+          None
+        ).with_compiler_loc().with_tokens(tpl_dstrct.expression.tokens())),
       }
     },
-    _ => return Err(MechError{file:file!().to_string(),tokens:tpl_dstrct.vars[0].tokens(),msg:format!("Expected a tuple, found: {}", source.kind()),id:line!(),kind:MechErrorKind::GenericError(format!("Expected a tuple, found: {}", source.kind()))}),
+    _ => return Err(MechError2::new(
+      DestructureExpectedTupleError{ value: source.kind() },
+      None
+    ).with_compiler_loc().with_tokens(tpl_dstrct.expression.tokens())),
   };
   let symbols = p.symbols();
   let mut symbols_brrw = symbols.borrow_mut();
   for (i, var) in tpl_dstrct.vars.iter().enumerate() {
     let id = var.hash();
     if symbols_brrw.contains(id) {
-      return Err(MechError{file:file!().to_string(),tokens:var.tokens(),msg:"Note: Variables are defined with the := operator.".to_string(),id:line!(),kind:MechErrorKind::VariableRedefined(id)});
+      return Err(MechError2::new(
+        VariableAlreadyDefinedError { id },
+        None
+      ).with_compiler_loc().with_tokens(var.tokens()));
     }
     if let Some(element) = tpl.borrow().get(i) {
       symbols_brrw.insert(id, element.clone(), true);
       symbols_brrw.dictionary.borrow_mut().insert(id, var.name.to_string());
     } else {
-      return Err(MechError{file:file!().to_string(),tokens:var.tokens(),msg:"Tuple destructure has more variables than elements in the tuple.".to_string(),id:line!(),kind:MechErrorKind::IndexOutOfBounds});
+      return Err(MechError2::new(
+        TupleDestructureTooManyVarsError{ value: source.kind() },
+        None
+      ).with_compiler_loc().with_tokens(var.tokens()));
     }
   }
   Ok(source)
@@ -63,12 +79,16 @@ pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MRes
 pub fn op_assign(op_assgn: &OpAssign, p: &Interpreter) -> MResult<Value> {
   let mut source = expression(&op_assgn.expression, p)?;
   let slc = &op_assgn.target;
-  let name = slc.name.hash();
+  let id = slc.name.hash();
   let sink = { 
     let mut state_brrw = p.state.borrow_mut();
-    match state_brrw.get_symbol(name) {
+    match state_brrw.get_symbol(id) {
       Some(val) => val.borrow().clone(),
-      None => {return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Note: Variables are defined with the := operator.".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
+      None => {return Err(MechError2::new(
+        UndefinedVariableError { id },
+        None,
+      ).with_compiler_loc().with_tokens(slc.name.tokens()));
+      }
     }
   };
   match &slc.subscript {
@@ -115,17 +135,23 @@ pub fn op_assign(op_assgn: &OpAssign, p: &Interpreter) -> MResult<Value> {
 pub fn variable_assign(var_assgn: &VariableAssign, p: &Interpreter) -> MResult<Value> {
   let mut source = expression(&var_assgn.expression, p)?;
   let slc = &var_assgn.target;
-  let name = slc.name.hash();
+  let id = slc.name.hash();
   let sink = {
     let symbols = p.symbols();
     let symbols_brrw = symbols.borrow();
-    match symbols_brrw.get_mutable(name) {
+    match symbols_brrw.get_mutable(id) {
       Some(val) => val.borrow().clone(),
       None => {
-        if !symbols_brrw.contains(name) {
-          return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Note: Variables are defined with the := operator.".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});
+        if !symbols_brrw.contains(id) {
+          return Err(MechError2::new(
+            UndefinedVariableError { id },
+            Some("(!)> Variables are defined with the `:=` operator. *e.g.*: {{x := 123}}".to_string()),
+          ).with_compiler_loc().with_tokens(slc.name.tokens()));
         } else { 
-          return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Note: Variables are defined with the := operator.".to_string(), id: line!(), kind: MechErrorKind::NotMutable(name)});
+          return Err(MechError2::new(
+            NotMutableError { id },
+            Some("(!)> Mutable variables are defined with the `~` operator. *e.g.*: {{~x := 123}}".to_string()),
+          ).with_compiler_loc().with_tokens(slc.name.tokens()));
         }
       }
     }
@@ -147,7 +173,10 @@ pub fn variable_assign(var_assgn: &VariableAssign, p: &Interpreter) -> MResult<V
       p.state.borrow_mut().add_plan_step(fxn);
       return Ok(res);
     }
-    _ => return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Assign and/or Subscript feature not enabled.".to_string(), id: line!(), kind: MechErrorKind::None}),
+    _ => return Err(MechError2::new(
+      FeatureNotEnabledError,
+      None
+    ).with_compiler_loc().with_tokens(var_assgn.target.tokens())),
   }
   unreachable!(); // subscript should have thrown an error if we can't access an element
 }
@@ -183,7 +212,10 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
   {
     let symbols = p.symbols();
     if symbols.borrow().contains(var_id) {
-      return Err(MechError{file: file!().to_string(), tokens: var_def.var.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::VariableRedefined(var_id)}); 
+      return Err(MechError2::new(
+        VariableAlreadyDefinedError { id: var_id },
+        None
+      ).with_compiler_loc().with_tokens(var_def.var.name.tokens()));
     }
   }
   let mut result = expression(&var_def.expression, p)?;
@@ -204,13 +236,19 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
         };
         // Given atom isn't a variant of the enum
         if !my_enum.variants.iter().any(|(enum_variant, inner_value)| given_variant_id.borrow().0 == *enum_variant) {
-          return Err(MechError{file: file!().to_string(), tokens: var_def.expression.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UnknownEnumVairant(*enum_id,given_variant_id.borrow().0)}); 
+          return Err(MechError2::new(
+            UnableToConvertAtomToEnumVariantError { atom_id: given_variant_id.borrow().0, target_enum_id: *enum_id },
+            None
+          ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
         }
       }
       // Atoms can't convert into anything else.
       #[cfg(feature = "atom")]
       (Value::Atom(given_variant_id), target_kind) => {
-        return Err(MechError{file: file!().to_string(), tokens: var_def.expression.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UnableToConvertValueKind}); 
+        return Err(MechError2::new(
+          UnableToConvertAtomError { atom_id: given_variant_id.borrow().0},
+          None
+        ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
       }
       #[cfg(feature = "matrix")]
       (Value::MutableReference(v), ValueKind::Matrix(box target_matrix_knd,_)) => {
@@ -549,3 +587,65 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, p: &Inte
     _ => unreachable!(),
   }
 }
+
+#[derive(Debug, Clone)]
+pub struct UnableToConvertAtomToEnumVariantError {
+  pub atom_id: u64,
+  pub target_enum_id: u64,
+}
+impl MechErrorKind2 for UnableToConvertAtomToEnumVariantError {
+  fn name(&self) -> &str {
+    "UnableToConvertAtomToEnumVariant"
+  }
+  fn message(&self) -> String {
+    format!("Unable to convert atom variant {} to enum {}", self.atom_id, self.target_enum_id)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct UnableToConvertAtomError {
+  pub atom_id: u64,
+}
+impl MechErrorKind2 for UnableToConvertAtomError {
+  fn name(&self) -> &str {
+    "UnableToConvertAtom"
+  }
+  fn message(&self) -> String {
+    format!("Unable to atom  {}", self.atom_id)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct VariableAlreadyDefinedError {
+  pub id: u64,
+}
+impl MechErrorKind2 for VariableAlreadyDefinedError {
+  fn name(&self) -> &str { "VariableAlreadyDefined" }
+  fn message(&self) -> String {
+    format!("Variable already defined: {}", self.id)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct UndefinedVariableError {
+  pub id: u64,
+}
+impl MechErrorKind2 for UndefinedVariableError {
+  fn name(&self) -> &str { "UndefinedVariable" }
+
+  fn message(&self) -> String {
+    format!("Undefined variable: {}", self.id)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct NotMutableError {
+  pub id: u64,
+}
+impl MechErrorKind2 for NotMutableError {
+  fn name(&self) -> &str { "NotMutable" }
+  fn message(&self) -> String {
+    format!("Variable is not mutable: {}", self.id)
+  }
+}
+

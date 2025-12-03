@@ -34,26 +34,26 @@ macro_rules! abs_vec_op {
 
 macro_rules! fabs_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = fabs((*$arg).0);}
+    unsafe{(*$out) = fabs((*$arg));}
   };}
 
 macro_rules! fabs_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = fabs(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = fabs(((&(*$arg))[i]));
       }}};}
 
 macro_rules! fabsf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = fabsf((*$arg).0);}
+    unsafe{(*$out) = fabsf((*$arg));}
   };}  
 
 macro_rules! fabsf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = fabsf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = fabsf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "u8")]
@@ -79,9 +79,9 @@ impl_math_unop!(MathAbs, i64, abs, FeatureFlag::Custom(hash_str("math/abs")));
 impl_math_unop!(MathAbs, i128, abs, FeatureFlag::Custom(hash_str("math/abs")));
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathAbs, F32, fabsf, FeatureFlag::Custom(hash_str("math/abs")));
+impl_math_unop!(MathAbs, f32, fabsf, FeatureFlag::Custom(hash_str("math/abs")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathAbs, F64, fabs, FeatureFlag::Custom(hash_str("math/abs")));
+impl_math_unop!(MathAbs, f64, fabs, FeatureFlag::Custom(hash_str("math/abs")));
 
 #[cfg(feature = "c64")]
 impl_math_unop!(MathAbs, C64, abs, FeatureFlag::Custom(hash_str("math/abs")));
@@ -89,7 +89,7 @@ impl_math_unop!(MathAbs, C64, abs, FeatureFlag::Custom(hash_str("math/abs")));
 #[cfg(feature = "r64")]
 impl_math_unop!(MathAbs, R64, abs, FeatureFlag::Custom(hash_str("math/abs")));
 
-fn impl_abs_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_abs_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathAbs,
     (lhs_value),
@@ -103,8 +103,8 @@ fn impl_abs_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
     I32 => MatrixI32, i32, i32::zero(), "i32";
     I64 => MatrixI64, i64, i64::zero(), "i64";
     I128 => MatrixI128, i128, i128::zero(), "i128";
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, f32, f32::zero(), "f32";
+    F64 => MatrixF64, f64, f64::zero(), "f64";
     C64 => MatrixC64, C64, C64::default(), "c64";
     R64 => MatrixR64, R64, R64::zero(), "r64";
   )
@@ -115,7 +115,7 @@ pub struct MathAbs {}
 impl NativeFunctionCompiler for MathAbs {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let input = arguments[0].clone();
     match impl_abs_fxn(input.clone()) {
@@ -123,7 +123,11 @@ impl NativeFunctionCompiler for MathAbs {
       Err(_) => {
         match (input) {
           (Value::MutableReference(input)) => {impl_abs_fxn(input.borrow().clone())}
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/abs".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }

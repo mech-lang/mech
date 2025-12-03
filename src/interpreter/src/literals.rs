@@ -19,7 +19,9 @@ pub fn literal(ltrl: &Literal, p: &Interpreter) -> MResult<Value> {
     Literal::Kind(knd) => kind_value(knd, p),
     #[cfg(feature = "convert")]
     Literal::TypedLiteral((ltrl,kind)) => typed_literal(ltrl,kind,p),
-    _ => Err(MechError{file: file!().to_string(), tokens: ltrl.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+    _ => Err(MechError2::new(
+      FeatureNotEnabledError, None
+      ).with_compiler_loc())
   }
 }
 
@@ -69,8 +71,11 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
           _ => {
             match dim_val.as_usize() {
               Ok(size_val) => dims.push(size_val.clone()),
-              Err(_) => { return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
-            }
+              Err(_) => { return Err(MechError2::new(
+                ExpectedNumericForKindSizeError, None
+                ).with_compiler_loc())
+              }
+            } 
           }
         }
       }
@@ -92,7 +97,10 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
         _ => {
           match size_val.as_usize() {
             Ok(size_val) => size_val,
-            Err(_) => { return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
+            Err(_) => { return Err(MechError2::new(
+              ExpectedNumericForKindSizeError, None
+              ).with_compiler_loc())
+            }
           }
         }
       };
@@ -142,13 +150,13 @@ pub fn number(num: &Number) -> Value {
 #[cfg(feature = "complex")]
 fn complex(num: &C64Node) -> Value {
   let im: f64 = match real(&num.imaginary.number).as_f64() {
-    Ok(val) => val.borrow().0,
+    Ok(val) => *val.borrow(),
     Err(_) => 0.0,
   };
   match &num.real {
     Some(real_val) => {
       let re: f64 = match real(&real_val).as_f64() {
-        Ok(val) => val.borrow().0,
+        Ok(val) => *val.borrow(),
         Err(_) => 0.0,
       };      
       Value::C64(Ref::new(C64::new(re, im)))
@@ -196,9 +204,9 @@ pub fn negated(num: &RealNumber) -> Value {
     #[cfg(feature = "i128")]
     Value::I128(val) => Value::I128(Ref::new(-*val.borrow())),
     #[cfg(feature = "f64")]
-    Value::F64(val) => Value::F64(Ref::new(F64::new(-((*val.borrow()).0)))),
+    Value::F64(val) => Value::F64(Ref::new(-(*val.borrow()))),
     #[cfg(feature = "f32")]
-    Value::F32(val) => Value::F32(Ref::new(F32::new(-((*val.borrow()).0)))),
+    Value::F32(val) => Value::F32(Ref::new(-(*val.borrow()))),
     x => panic!("Negation is only supported for integer and float types, got {:?}", x),
   }
 }
@@ -259,7 +267,7 @@ pub fn scientific(sci: &(Base,Exponent)) -> Value {
     exp_f64 = -exp_f64;
   }
   let num = num_f64 * 10f64.powf(exp_f64);
-  Value::F64(Ref::new(F64(num)))
+  Value::F64(Ref::new(num))
 }
 
 #[cfg(feature = "floats")]
@@ -267,13 +275,13 @@ pub fn float(flt: &(Token,Token)) -> Value {
   let a = flt.0.chars.iter().collect::<String>();
   let b = flt.1.chars.iter().collect::<String>();
   let num: f64 = format!("{}.{}",a,b).parse::<f64>().unwrap();
-  Value::F64(Ref::new(F64(num)))
+  Value::F64(Ref::new(num))
 }
 
 #[cfg(feature = "f64")]
 pub fn integer(int: &Token) -> Value {
   let num: f64 = int.chars.iter().collect::<String>().parse::<f64>().unwrap();
-  Value::F64(Ref::new(F64::new(num)))
+  Value::F64(Ref::new(num))
 }
 
 #[cfg(feature = "string")]
@@ -295,4 +303,16 @@ pub fn boolean(tkn: &Token) -> Value {
     _ => unreachable!(),
   };
   Value::Bool(Ref::new(val))
+}
+
+//            Err(_) => { return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
+#[derive(Debug, Clone)]
+pub struct ExpectedNumericForKindSizeError;
+impl MechErrorKind2 for ExpectedNumericForKindSizeError {
+  fn name(&self) -> &str {
+    "ExpectedNumericForKindSize"
+  }
+  fn message(&self) -> String {
+    "Expected a numeric value for kind size, but received a non-numeric value.".to_string()
+  }
 }

@@ -41,18 +41,17 @@ macro_rules! impl_as_type {
           #[cfg(feature = "i128")]
           Value::I128(v) => Ok(Ref::new(*v.borrow() as $target_type)),
           #[cfg(feature = "f32")]
-          Value::F32(v) => Ok(Ref::new((*v.borrow()).0 as $target_type)),
+          Value::F32(v) => Ok(Ref::new((*v.borrow()) as $target_type)),
           #[cfg(feature = "f64")]
-          Value::F64(v) => Ok(Ref::new((*v.borrow()).0 as $target_type)),
+          Value::F64(v) => Ok(Ref::new((*v.borrow()) as $target_type)),
           Value::Id(v) => Ok(Ref::new(*v as $target_type)),
           Value::MutableReference(val) => val.borrow().[<as_ $target_type>](),
-          _ => Err(MechError {
-            file: file!().to_string(),
-            tokens: vec![],
-            msg: format!("Cannot convert to {}", stringify!($target_type)),
-            id: line!(),
-            kind: MechErrorKind::UnhandledFunctionArgumentKind,
-          }),
+          _ => Err(
+            MechError2::new(
+              CannotConvertToTypeError { target_type: stringify!($target_type) },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
@@ -66,7 +65,7 @@ macro_rules! impl_as_type {
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, C64, R64,
-  String, Bool, Id, Index, Empty, Any, 
+  String, Bool, Id, Index, Empty, Any, None,
   Matrix(Box<ValueKind>,Vec<usize>),  Enum(u64),                  Record(Vec<(String,ValueKind)>),
   Map(Box<ValueKind>,Box<ValueKind>), Atom(u64),                  Table(Vec<(String,ValueKind)>, usize), 
   Tuple(Vec<ValueKind>),              Reference(Box<ValueKind>),  Set(Box<ValueKind>, Option<usize>), 
@@ -108,6 +107,7 @@ impl Display for ValueKind {
       ValueKind::Atom(x) => write!(f, "`{}",x),
       ValueKind::Empty => write!(f, "_"),
       ValueKind::Any => write!(f, "*"),
+      ValueKind::None => write!(f, "none"),
       ValueKind::Option(x) => write!(f, "{}?", x),
     }
   }
@@ -352,6 +352,7 @@ impl ValueKind {
       ValueKind::Id | ValueKind::Index => 8, // id/index -> likely machine word (u64)
       ValueKind::Empty => 1,
       ValueKind::Any => ptr_align,
+      ValueKind::None => 1,
 
       // compound types
       ValueKind::Matrix(elem_ty, _dims) => {
@@ -474,9 +475,9 @@ impl_as_value_kind!(u64, ValueKind::U64);
 #[cfg(feature = "u128")]
 impl_as_value_kind!(u128, ValueKind::U128);
 #[cfg(feature = "f32")]
-impl_as_value_kind!(F32, ValueKind::F32);
+impl_as_value_kind!(f32, ValueKind::F32);
 #[cfg(feature = "f64")]
-impl_as_value_kind!(F64, ValueKind::F64);
+impl_as_value_kind!(f64, ValueKind::F64);
 #[cfg(any(feature = "bool", feature = "variable_define"))]
 impl_as_value_kind!(bool, ValueKind::Bool);
 #[cfg(any(feature = "string", feature = "variable_define"))]
@@ -538,7 +539,7 @@ impl AsValueKind for Value {
 // Value
 // ----------------------------------------------------------------------------
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Value {
   #[cfg(feature = "u8")]
   U8(Ref<u8>),
@@ -561,9 +562,9 @@ pub enum Value {
   #[cfg(feature = "i128")]
   I128(Ref<i128>),
   #[cfg(feature = "f32")]
-  F32(Ref<F32>),
+  F32(Ref<f32>),
   #[cfg(feature = "f64")]
-  F64(Ref<F64>),
+  F64(Ref<f64>),
   #[cfg(any(feature = "string", feature = "variable_define"))]
   String(Ref<String>),
   #[cfg(any(feature = "bool", feature = "variable_define"))]
@@ -595,9 +596,9 @@ pub enum Value {
   #[cfg(all(feature = "matrix", feature = "i128"))]
   MatrixI128(Matrix<i128>),
   #[cfg(all(feature = "matrix", feature = "f32"))]
-  MatrixF32(Matrix<F32>),
+  MatrixF32(Matrix<f32>),
   #[cfg(all(feature = "matrix", feature = "f64"))]
-  MatrixF64(Matrix<F64>),
+  MatrixF64(Matrix<f64>),
   #[cfg(all(feature = "matrix", feature = "string"))]
   MatrixString(Matrix<String>),
   #[cfg(all(feature = "matrix", feature = "rational"))]
@@ -629,6 +630,8 @@ pub enum Value {
   IndexAll,
   Empty
 }
+
+impl Eq for Value {}
 
 impl fmt::Display for Value {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -668,9 +671,9 @@ impl Hash for Value {
       #[cfg(feature = "i128")]
       Value::I128(x) => x.borrow().hash(state),
       #[cfg(feature = "f32")]
-      Value::F32(x)  => x.borrow().hash(state),
+      Value::F32(x)  => x.borrow().to_bits().hash(state),
       #[cfg(feature = "f64")]
-      Value::F64(x)  => x.borrow().hash(state),
+      Value::F64(x)  => x.borrow().to_bits().hash(state),
       #[cfg(feature = "complex")]
       Value::C64(x) => x.borrow().hash(state),
       #[cfg(any(feature = "bool", feature = "variable_define"))]
@@ -716,9 +719,9 @@ impl Hash for Value {
       #[cfg(all(feature = "matrix", feature = "i128"))]
       Value::MatrixI128(x) => x.hash(state),
       #[cfg(all(feature = "matrix", feature = "f32"))]
-      Value::MatrixF32(x)  => x.hash(state),
+      Value::MatrixF32(x)  => todo!(),
       #[cfg(all(feature = "matrix", feature = "f64"))]
-      Value::MatrixF64(x)  => x.hash(state),
+      Value::MatrixF64(x)  => todo!(),
       #[cfg(all(feature = "matrix", feature = "string"))]
       Value::MatrixString(x) => x.hash(state),
       #[cfg(feature = "matrix")]
@@ -800,13 +803,13 @@ impl Value {
       }
       #[cfg(all(feature = "matrix", feature = "f32"))]
       (ValueKind::F32, Value::MatrixF32(m)) => {
-        let b: Box<dyn CopyMat<F32>> = m.get_copyable_matrix();
-        std::mem::transmute::<Box<dyn CopyMat<F32>>, Box<dyn CopyMat<T>>>(b)
+        let b: Box<dyn CopyMat<f32>> = m.get_copyable_matrix();
+        std::mem::transmute::<Box<dyn CopyMat<f32>>, Box<dyn CopyMat<T>>>(b)
       }
       #[cfg(all(feature = "matrix", feature = "f64"))]
       (ValueKind::F64, Value::MatrixF64(m)) => {
-        let b: Box<dyn CopyMat<F64>> = m.get_copyable_matrix();
-        std::mem::transmute::<Box<dyn CopyMat<F64>>, Box<dyn CopyMat<T>>>(b)
+        let b: Box<dyn CopyMat<f64>> = m.get_copyable_matrix();
+        std::mem::transmute::<Box<dyn CopyMat<f64>>, Box<dyn CopyMat<T>>>(b)
       }
       #[cfg(all(feature = "matrix", feature = "string"))]
       (ValueKind::String, Value::MatrixString(m)) => {
@@ -840,9 +843,9 @@ impl Value {
       #[cfg(feature = "i128")]
       Value::I128(r) => &*(r as *const Ref<i128> as *const Ref<T>),
       #[cfg(feature = "f32")]
-      Value::F32(r) => &*(r as *const Ref<F32> as *const Ref<T>),
+      Value::F32(r) => &*(r as *const Ref<f32> as *const Ref<T>),
       #[cfg(feature = "f64")]
-      Value::F64(r) => &*(r as *const Ref<F64> as *const Ref<T>),
+      Value::F64(r) => &*(r as *const Ref<f64> as *const Ref<T>),
       #[cfg(any(feature = "string", feature = "variable_define"))]
       Value::String(r) => &*(r as *const Ref<String> as *const Ref<T>),
       #[cfg(any(feature = "bool", feature = "variable_define"))]
@@ -981,9 +984,9 @@ impl Value {
     #[cfg(all(feature = "u8", feature = "i128"))]
     (Value::U8(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
     #[cfg(all(feature = "u8", feature = "f32"))]
-    (Value::U8(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
+    (Value::U8(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
     #[cfg(all(feature = "u8", feature = "f64"))]
-    (Value::U8(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
+    (Value::U8(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
 
     #[cfg(all(feature = "u16", feature = "u8"))]
     (Value::U16(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
@@ -1002,9 +1005,9 @@ impl Value {
     #[cfg(all(feature = "u16", feature = "i128"))]
     (Value::U16(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
     #[cfg(all(feature = "u16", feature = "f32"))]
-    (Value::U16(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
+    (Value::U16(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
     #[cfg(all(feature = "u16", feature = "f64"))]
-    (Value::U16(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
+    (Value::U16(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
 
     #[cfg(all(feature = "u32", feature = "u8"))]
     (Value::U32(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
@@ -1023,9 +1026,9 @@ impl Value {
     #[cfg(all(feature = "u32", feature = "i128"))]
     (Value::U32(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
     #[cfg(all(feature = "u32", feature = "f32"))]
-    (Value::U32(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
+    (Value::U32(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
     #[cfg(all(feature = "u32", feature = "f64"))]
-    (Value::U32(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
+    (Value::U32(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
 
     #[cfg(all(feature = "u64", feature = "u8"))]
     (Value::U64(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
@@ -1044,9 +1047,9 @@ impl Value {
     #[cfg(all(feature = "u64", feature = "i128"))]
     (Value::U64(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
     #[cfg(all(feature = "u64", feature = "f32"))]
-    (Value::U64(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
+    (Value::U64(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
     #[cfg(all(feature = "u64", feature = "f64"))]
-    (Value::U64(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
+    (Value::U64(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
 
     #[cfg(all(feature = "u128", feature = "u8"))]
     (Value::U128(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
@@ -1065,9 +1068,9 @@ impl Value {
     #[cfg(all(feature = "u128", feature = "i64"))]
     (Value::U128(v), ValueKind::I64) => Some(Value::I64(Ref::new((*v.borrow()) as i64))),
     #[cfg(all(feature = "u128", feature = "f32"))]
-    (Value::U128(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
+    (Value::U128(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
     #[cfg(all(feature = "u128", feature = "f64"))]
-    (Value::U128(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
+    (Value::U128(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
 
     // ==== Signed widening and narrowing ====
     #[cfg(all(feature = "i8", feature = "i16"))]
@@ -1087,9 +1090,9 @@ impl Value {
     #[cfg(all(feature = "i8", feature = "u128"))]
     (Value::I8(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
     #[cfg(all(feature = "i8", feature = "f32"))]
-    (Value::I8(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
+    (Value::I8(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
     #[cfg(all(feature = "i8", feature = "f64"))]
-    (Value::I8(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
+    (Value::I8(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
 
     #[cfg(all(feature = "i16", feature = "i8"))]
     (Value::I16(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
@@ -1108,9 +1111,9 @@ impl Value {
     #[cfg(all(feature = "i16", feature = "u128"))]
     (Value::I16(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
     #[cfg(all(feature = "i16", feature = "f32"))]
-    (Value::I16(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
+    (Value::I16(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
     #[cfg(all(feature = "i16", feature = "f64"))]
-    (Value::I16(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
+    (Value::I16(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
 
     #[cfg(all(feature = "i32", feature = "i8"))]
     (Value::I32(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
@@ -1129,9 +1132,9 @@ impl Value {
     #[cfg(all(feature = "i32", feature = "u128"))]
     (Value::I32(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
     #[cfg(all(feature = "i32", feature = "f32"))]
-    (Value::I32(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
+    (Value::I32(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
     #[cfg(all(feature = "i32", feature = "f64"))]
-    (Value::I32(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
+    (Value::I32(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
 
     #[cfg(all(feature = "i64", feature = "i8"))]
     (Value::I64(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
@@ -1150,9 +1153,9 @@ impl Value {
     #[cfg(all(feature = "i64", feature = "u128"))]
     (Value::I64(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
     #[cfg(all(feature = "i64", feature = "f32"))]
-    (Value::I64(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
+    (Value::I64(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
     #[cfg(all(feature = "i64", feature = "f64"))]
-    (Value::I64(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
+    (Value::I64(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
 
     #[cfg(all(feature = "i128", feature = "i8"))]
     (Value::I128(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
@@ -1171,58 +1174,57 @@ impl Value {
     #[cfg(all(feature = "i128", feature = "u64"))]
     (Value::I128(v), ValueKind::U64) => Some(Value::U64(Ref::new((*v.borrow()) as u64))),
     #[cfg(all(feature = "i128", feature = "f32"))]
-    (Value::I128(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
+    (Value::I128(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
     #[cfg(all(feature = "i128", feature = "f64"))]
-    (Value::I128(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
+    (Value::I128(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
 
     // ==== Float widening and narrowing ====
     #[cfg(all(feature = "f32", feature = "f64"))]
-    (Value::F32(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(v.borrow().0 as f64)))),
+    (Value::F32(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
     #[cfg(all(feature = "f32", feature = "f64"))]
-    (Value::F64(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(v.borrow().0 as f32)))),
+    (Value::F64(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
 
     // ==== Float to integer conversions (truncate) ====
     #[cfg(all(feature = "f32", feature = "i8"))]
-    (Value::F32(v), ValueKind::I8) => Some(Value::I8(Ref::new(v.borrow().0 as i8))),
+    (Value::F32(v), ValueKind::I8) => Some(Value::I8(Ref::new(*v.borrow() as i8))),
     #[cfg(all(feature = "f32", feature = "i16"))]
-    (Value::F32(v), ValueKind::I16) => Some(Value::I16(Ref::new(v.borrow().0 as i16))),
+    (Value::F32(v), ValueKind::I16) => Some(Value::I16(Ref::new(*v.borrow() as i16))),
     #[cfg(all(feature = "f32", feature = "i32"))]
-    (Value::F32(v), ValueKind::I32) => Some(Value::I32(Ref::new(v.borrow().0 as i32))),
+    (Value::F32(v), ValueKind::I32) => Some(Value::I32(Ref::new(*v.borrow() as i32))),
     #[cfg(all(feature = "f32", feature = "i64"))]
-    (Value::F32(v), ValueKind::I64) => Some(Value::I64(Ref::new(v.borrow().0 as i64))),
+    (Value::F32(v), ValueKind::I64) => Some(Value::I64(Ref::new(*v.borrow() as i64))),
     #[cfg(all(feature = "f32", feature = "i128"))]
-    (Value::F32(v), ValueKind::I128) => Some(Value::I128(Ref::new(v.borrow().0 as i128))),
+    (Value::F32(v), ValueKind::I128) => Some(Value::I128(Ref::new(*v.borrow() as i128))),
     #[cfg(all(feature = "f32", feature = "u8"))]
-    (Value::F32(v), ValueKind::U8) => Some(Value::U8(Ref::new(v.borrow().0 as u8))),
+    (Value::F32(v), ValueKind::U8) => Some(Value::U8(Ref::new(*v.borrow() as u8))),
     #[cfg(all(feature = "f32", feature = "u16"))]
-    (Value::F32(v), ValueKind::U16) => Some(Value::U16(Ref::new(v.borrow().0 as u16))),
+    (Value::F32(v), ValueKind::U16) => Some(Value::U16(Ref::new(*v.borrow() as u16))),
     #[cfg(all(feature = "f32", feature = "u32"))]
-    (Value::F32(v), ValueKind::U32) => Some(Value::U32(Ref::new(v.borrow().0 as u32))),
+    (Value::F32(v), ValueKind::U32) => Some(Value::U32(Ref::new(*v.borrow() as u32))),
     #[cfg(all(feature = "f32", feature = "u64"))]
-    (Value::F32(v), ValueKind::U64) => Some(Value::U64(Ref::new(v.borrow().0 as u64))),
+    (Value::F32(v), ValueKind::U64) => Some(Value::U64(Ref::new(*v.borrow() as u64))),
     #[cfg(all(feature = "f32", feature = "u128"))]
-    (Value::F32(v), ValueKind::U128) => Some(Value::U128(Ref::new(v.borrow().0 as u128))),
-
+    (Value::F32(v), ValueKind::U128) => Some(Value::U128(Ref::new(*v.borrow() as u128))),
     #[cfg(all(feature = "f64", feature = "i8"))]
-    (Value::F64(v), ValueKind::I8) => Some(Value::I8(Ref::new(v.borrow().0 as i8))),
+    (Value::F64(v), ValueKind::I8) => Some(Value::I8(Ref::new(*v.borrow() as i8))),
     #[cfg(all(feature = "f64", feature = "i16"))]
-    (Value::F64(v), ValueKind::I16) => Some(Value::I16(Ref::new(v.borrow().0 as i16))),
+    (Value::F64(v), ValueKind::I16) => Some(Value::I16(Ref::new(*v.borrow() as i16))),
     #[cfg(all(feature = "f64", feature = "i32"))]
-    (Value::F64(v), ValueKind::I32) => Some(Value::I32(Ref::new(v.borrow().0 as i32))),
+    (Value::F64(v), ValueKind::I32) => Some(Value::I32(Ref::new(*v.borrow() as i32))),
     #[cfg(all(feature = "f64", feature = "i64"))]
-    (Value::F64(v), ValueKind::I64) => Some(Value::I64(Ref::new(v.borrow().0 as i64))),
+    (Value::F64(v), ValueKind::I64) => Some(Value::I64(Ref::new(*v.borrow() as i64))),
     #[cfg(all(feature = "f64", feature = "i128"))]
-    (Value::F64(v), ValueKind::I128) => Some(Value::I128(Ref::new(v.borrow().0 as i128))),
+    (Value::F64(v), ValueKind::I128) => Some(Value::I128(Ref::new(*v.borrow() as i128))),
     #[cfg(all(feature = "f64", feature = "u8"))]
-    (Value::F64(v), ValueKind::U8) => Some(Value::U8(Ref::new(v.borrow().0 as u8))),
+    (Value::F64(v), ValueKind::U8) => Some(Value::U8(Ref::new(*v.borrow() as u8))),
     #[cfg(all(feature = "f64", feature = "u16"))]
-    (Value::F64(v), ValueKind::U16) => Some(Value::U16(Ref::new(v.borrow().0 as u16))),
+    (Value::F64(v), ValueKind::U16) => Some(Value::U16(Ref::new(*v.borrow() as u16))),
     #[cfg(all(feature = "f64", feature = "u32"))]
-    (Value::F64(v), ValueKind::U32) => Some(Value::U32(Ref::new(v.borrow().0 as u32))),
+    (Value::F64(v), ValueKind::U32) => Some(Value::U32(Ref::new(*v.borrow() as u32))),
     #[cfg(all(feature = "f64", feature = "u64"))]
-    (Value::F64(v), ValueKind::U64) => Some(Value::U64(Ref::new(v.borrow().0 as u64))),
+    (Value::F64(v), ValueKind::U64) => Some(Value::U64(Ref::new(*v.borrow() as u64))),
     #[cfg(all(feature = "f64", feature = "u128"))]
-    (Value::F64(v), ValueKind::U128) => Some(Value::U128(Ref::new(v.borrow().0 as u128))),
+    (Value::F64(v), ValueKind::U128) => Some(Value::U128(Ref::new(*v.borrow() as u128))),
 
       /*
       // ==== INDEX conversions ====
@@ -1712,8 +1714,19 @@ impl Value {
   }
 
   #[cfg(any(feature = "bool", feature = "variable_define"))]
-  pub fn as_bool(&self) -> MResult<Ref<bool>> {if let Value::Bool(v) = self { Ok(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_bool() } else { Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}) }}
-  
+  pub fn as_bool(&self) -> MResult<Ref<bool>> {
+    if let Value::Bool(v) = self {
+      Ok(v.clone())
+    } else if let Value::MutableReference(val) = self {
+      val.borrow().as_bool()
+    } else {
+      Err(MechError2::new(
+        UnhandledFunctionArgumentKindError,
+        None
+      ).with_compiler_loc())
+    }
+  }
+
   impl_as_type!(i8);
   impl_as_type!(i16);
   impl_as_type!(i32);
@@ -1750,9 +1763,9 @@ impl Value {
       #[cfg(feature = "i128")]
       Value::I128(v) => Ok(Ref::new(v.borrow().to_string())),
       #[cfg(feature = "f32")]
-      Value::F32(v) => Ok(Ref::new(format!("{}", v.borrow().0))),
+      Value::F32(v) => Ok(Ref::new(format!("{}", v.borrow()))),
       #[cfg(feature = "f64")]
-      Value::F64(v) => Ok(Ref::new(format!("{}", v.borrow().0))),
+      Value::F64(v) => Ok(Ref::new(format!("{}", v.borrow()))),
       #[cfg(any(feature = "bool", feature = "variable_define"))]
       Value::Bool(v) => Ok(Ref::new(format!("{}", v.borrow()))),
       #[cfg(feature = "rational")]
@@ -1760,7 +1773,14 @@ impl Value {
       #[cfg(feature = "complex")]
       Value::C64(v) => Ok(Ref::new(v.borrow().to_string())),
       Value::MutableReference(val) => val.borrow().as_string(),
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+      _ => Err(
+        MechError2::new(
+          CannotConvertToTypeError { 
+            target_type: "string",
+          },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 
@@ -1769,9 +1789,9 @@ impl Value {
     match self {
       Value::R64(v) => Ok(v.clone()),
       #[cfg(feature = "f32")]
-      Value::F32(v) => Ok(Ref::new(R64::new(v.borrow().0 as i64, 1))),
+      Value::F32(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "f64")]
-      Value::F64(v) => Ok(Ref::new(R64::new(v.borrow().0 as i64, 1))),
+      Value::F64(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "u8")]
       Value::U8(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "u16")]
@@ -1793,13 +1813,14 @@ impl Value {
       #[cfg(feature = "i128")]
       Value::I128(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
       Value::MutableReference(val) => val.borrow().as_r64(),
-      _ => Err(MechError {
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: "Value cannot be converted to R64".to_string(),
-        id: line!(),
-        kind: MechErrorKind::UnhandledFunctionArgumentKind,
-      }),
+      _ => Err(
+        MechError2::new(
+          CannotConvertToTypeError { 
+            target_type: "r64",
+          },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 
@@ -1808,9 +1829,9 @@ impl Value {
     match self {
       Value::C64(v) => Ok(v.clone()),
       #[cfg(feature = "f32")]
-      Value::F32(v) => Ok(Ref::new(C64::new(v.borrow().0 as f64, 0.0))),
+      Value::F32(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
       #[cfg(feature = "f64")]
-      Value::F64(v) => Ok(Ref::new(C64::new(v.borrow().0, 0.0))),
+      Value::F64(v) => Ok(Ref::new(C64::new(*v.borrow(), 0.0))),
       #[cfg(feature = "u8")]
       Value::U8(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
       #[cfg(feature = "u16")]
@@ -1832,105 +1853,109 @@ impl Value {
       #[cfg(feature = "i128")]
       Value::I128(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
       Value::MutableReference(val) => val.borrow().as_c64(),
-      _ => Err(MechError {
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: "Value cannot be converted to C64".to_string(),
-        id: line!(),
-        kind: MechErrorKind::UnhandledFunctionArgumentKind,
-      }),
+      _ => Err(
+        MechError2::new(
+          CannotConvertToTypeError { 
+            target_type: "c64",
+          },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 
   #[cfg(feature = "f32")]
-  pub fn as_f32(&self) -> MResult<Ref<F32>> {
+  pub fn as_f32(&self) -> MResult<Ref<f32>> {
     match self {
       #[cfg(feature = "u8")]
-      Value::U8(v) => Ok(Ref::new(F32::new(*v.borrow() as f32))),
+      Value::U8(v) => Ok(Ref::new(*v.borrow() as f32)),
       #[cfg(feature = "u16")]
-      Value::U16(v) => Ok(Ref::new(F32::new(*v.borrow() as f32))),
+      Value::U16(v) => Ok(Ref::new(*v.borrow() as f32)),
       #[cfg(feature = "u32")]
-      Value::U32(v) => Ok(Ref::new(F32::new(*v.borrow() as f32))),
+      Value::U32(v) => Ok(Ref::new(*v.borrow() as f32)),
       #[cfg(feature = "u64")]
-      Value::U64(v) => Ok(Ref::new(F32::new(*v.borrow() as f32))),
+      Value::U64(v) => Ok(Ref::new(*v.borrow() as f32)),
       #[cfg(feature = "u128")]
-      Value::U128(v) => Ok(Ref::new(F32::new(*v.borrow() as f32))),
+      Value::U128(v) => Ok(Ref::new(*v.borrow() as f32)),
       #[cfg(feature = "i8")]
-      Value::I8(v) => Ok(Ref::new(F32::new(*v.borrow() as f32))),
+      Value::I8(v) => Ok(Ref::new(*v.borrow() as f32)),
       #[cfg(feature = "i16")]
-      Value::I16(v) => Ok(Ref::new(F32::new(*v.borrow() as f32))),
+      Value::I16(v) => Ok(Ref::new(*v.borrow() as f32)),
       #[cfg(feature = "i32")]
-      Value::I32(v) => Ok(Ref::new(F32::new(*v.borrow() as f32))),
+      Value::I32(v) => Ok(Ref::new(*v.borrow() as f32)),
       #[cfg(feature = "i64")]
-      Value::I64(v) => Ok(Ref::new(F32::new(*v.borrow() as f32))),
+      Value::I64(v) => Ok(Ref::new(*v.borrow() as f32)),
       #[cfg(feature = "i128")]
-      Value::I128(v) => Ok(Ref::new(F32::new(*v.borrow() as f32))),
-      #[cfg(feature = "f32")]
+      Value::I128(v) => Ok(Ref::new(*v.borrow() as f32)),
       Value::F32(v) => Ok(v.clone()),
       #[cfg(feature = "f64")]
-      Value::F64(v) => Ok(Ref::new(F32::new((*v.borrow()).0 as f32))),
+      Value::F64(v) => Ok(Ref::new((*v.borrow()) as f32)),
       Value::MutableReference(val) => val.borrow().as_f32(),
-      _ => Err(MechError {
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: "Value cannot be converted to F32".to_string(),
-        id: line!(),
-        kind: MechErrorKind::UnhandledFunctionArgumentKind,
-      }),
+      _ => Err(
+        MechError2::new(
+          CannotConvertToTypeError { 
+            target_type: "f32",
+          },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 
   #[cfg(feature = "f64")]
-  pub fn as_f64(&self) -> MResult<Ref<F64>> {
+  pub fn as_f64(&self) -> MResult<Ref<f64>> {
     match self {
       #[cfg(feature = "u8")]
-      Value::U8(v) => Ok(Ref::new(F64::new(*v.borrow() as f64))),
+      Value::U8(v) => Ok(Ref::new(*v.borrow() as f64)),
       #[cfg(feature = "u16")]
-      Value::U16(v) => Ok(Ref::new(F64::new(*v.borrow() as f64))),
+      Value::U16(v) => Ok(Ref::new(*v.borrow() as f64)),
       #[cfg(feature = "u32")]
-      Value::U32(v) => Ok(Ref::new(F64::new(*v.borrow() as f64))),
+      Value::U32(v) => Ok(Ref::new(*v.borrow() as f64)),
       #[cfg(feature = "u64")]
-      Value::U64(v) => Ok(Ref::new(F64::new(*v.borrow() as f64))),
+      Value::U64(v) => Ok(Ref::new(*v.borrow() as f64)),
       #[cfg(feature = "u128")]
-      Value::U128(v) => Ok(Ref::new(F64::new(*v.borrow() as f64))),
+      Value::U128(v) => Ok(Ref::new(*v.borrow() as f64)),
       #[cfg(feature = "i8")]
-      Value::I8(v) => Ok(Ref::new(F64::new(*v.borrow() as f64))),
+      Value::I8(v) => Ok(Ref::new(*v.borrow() as f64)),
       #[cfg(feature = "i16")]
-      Value::I16(v) => Ok(Ref::new(F64::new(*v.borrow() as f64))),
+      Value::I16(v) => Ok(Ref::new(*v.borrow() as f64)),
       #[cfg(feature = "i32")]
-      Value::I32(v) => Ok(Ref::new(F64::new(*v.borrow() as f64))),
+      Value::I32(v) => Ok(Ref::new(*v.borrow() as f64)),
       #[cfg(feature = "i64")]
-      Value::I64(v) => Ok(Ref::new(F64::new(*v.borrow() as f64))),
+      Value::I64(v) => Ok(Ref::new(*v.borrow() as f64)),
       #[cfg(feature = "i128")]
-      Value::I128(v) => Ok(Ref::new(F64::new(*v.borrow() as f64))),
+      Value::I128(v) => Ok(Ref::new(*v.borrow() as f64)),
+      #[cfg(feature = "f32")]
+      Value::F32(v) => Ok(Ref::new((*v.borrow()) as f64)),
       Value::F64(v) => Ok(v.clone()),
       Value::MutableReference(val) => val.borrow().as_f64(),
-      _ => Err(MechError {
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: "Value cannot be converted to F64".to_string(),
-        id: line!(),
-        kind: MechErrorKind::UnhandledFunctionArgumentKind,
-      }),
+      _ => Err(
+        MechError2::new(
+          CannotConvertToTypeError { 
+            target_type: "f64",
+          },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 
-  #[cfg(all(feature = "matrix", feature = "bool"))] pub fn as_vecbool(&self) -> MResult<Vec<bool>> { if let Value::MatrixBool(v) = self { Ok(v.as_vec()) } else if let Value::Bool(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecbool() } else { Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Cannot convert to Vec<bool>".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }) } }
-  #[cfg(all(feature = "matrix", feature = "f64"))] pub fn as_vecf64(&self) -> MResult<Vec<F64>> { if let Value::MatrixF64(v) = self { Ok(v.as_vec()) } else if let Value::F64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf64() } else if let Ok(v) = self.as_f64() { Ok(vec![v.borrow().clone()]) } else { Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Cannot convert to Vec<F64>".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }) } }
-  #[cfg(all(feature = "matrix", feature = "f32"))] pub fn as_vecf32(&self) -> MResult<Vec<F32>> { if let Value::MatrixF32(v) = self { Ok(v.as_vec()) } else if let Value::F32(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf32() } else if let Ok(v) = self.as_f32() { Ok(vec![v.borrow().clone()]) } else { Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Cannot convert to Vec<F32>".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }) } }
-  #[cfg(all(feature = "matrix", feature = "u8"))] pub fn as_vecu8(&self) -> MResult<Vec<u8>> { if let Value::MatrixU8(v) = self { Ok(v.as_vec()) } else if let Value::U8(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu8() } else if let Ok(v) = self.as_u8() { Ok(vec![v.borrow().clone()]) } else { Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Cannot convert to Vec<u8>".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }) } }
-  #[cfg(all(feature = "matrix", feature = "u16"))] pub fn as_vecu16(&self) -> MResult<Vec<u16>> { if let Value::MatrixU16(v) = self { Ok(v.as_vec()) } else if let Value::U16(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu16() } else if let Ok(v) = self.as_u16() { Ok(vec![v.borrow().clone()]) } else { Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Cannot convert to Vec<u16>".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }) } }
-  #[cfg(all(feature = "matrix", feature = "u32"))] pub fn as_vecu32(&self) -> MResult<Vec<u32>> { if let Value::MatrixU32(v) = self { Ok(v.as_vec()) } else if let Value::U32(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu32() } else if let Ok(v) = self.as_u32() { Ok(vec![v.borrow().clone()]) } else { Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Cannot convert to Vec<u32>".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }) } }
-  #[cfg(all(feature = "matrix", feature = "u64"))] pub fn as_vecu64(&self) -> MResult<Vec<u64>> { if let Value::MatrixU64(v) = self { Ok(v.as_vec()) } else if let Value::U64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu64() } else if let Ok(v) = self.as_u64() { Ok(vec![v.borrow().clone()]) } else { Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Cannot convert to Vec<u64>".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }) } }
-  #[cfg(all(feature = "matrix", feature = "u128"))] pub fn as_vecu128(&self) -> MResult<Vec<u128>> { if let Value::MatrixU128(v) = self { Ok(v.as_vec()) } else if let Value::U128(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu128() } else if let Ok(v) = self.as_u128() { Ok(vec![v.borrow().clone()]) } else { Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Cannot convert to Vec<u128>".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }) } }
-  #[cfg(all(feature = "matrix", feature = "i8"))] pub fn as_veci8(&self) -> MResult<Vec<i8>> { if let Value::MatrixI8(v) = self { Ok(v.as_vec()) } else if let Value::I8(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci8() } else if let Ok(v) = self.as_i8() { Ok(vec![v.borrow().clone()]) } else { Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Cannot convert to Vec<i8>".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }) } }
-  #[cfg(all(feature = "matrix", feature = "i16"))] pub fn as_veci16(&self) -> MResult<Vec<i16>> { if let Value::MatrixI16(v) = self { Ok(v.as_vec()) } else if let Value::I16(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci16() } else if let Ok(v) = self.as_i16() { Ok(vec![v.borrow().clone()]) } else { Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Cannot convert to Vec<i16>".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }) } }
-  #[cfg(all(feature = "matrix", feature = "i32"))] pub fn as_veci32(&self) -> MResult<Vec<i32>> { if let Value::MatrixI32(v) = self { Ok(v.as_vec()) } else if let Value::I32(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci32() } else if let Ok(v) = self.as_i32() { Ok(vec![v.borrow().clone()]) } else { Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Cannot convert to Vec<i32>".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }) } }
-  #[cfg(all(feature = "matrix", feature = "i64"))] pub fn as_veci64(&self) -> MResult<Vec<i64>> { if let Value::MatrixI64(v) = self { Ok(v.as_vec()) } else if let Value::I64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci64() } else if let Ok(v) = self.as_i64() { Ok(vec![v.borrow().clone()]) } else { Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Cannot convert to Vec<i64>".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }) } }
-  #[cfg(all(feature = "matrix", feature = "i128"))] pub fn as_veci128(&self) -> MResult<Vec<i128>> { if let Value::MatrixI128(v) = self { Ok(v.as_vec()) } else if let Value::I128(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci128() } else if let Ok(v) = self.as_i128() { Ok(vec![v.borrow().clone()]) } else { Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Cannot convert to Vec<i128>".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }) } }
-  #[cfg(all(feature = "matrix", feature = "string"))] pub fn as_vecstring(&self) -> MResult<Vec<String>> { if let Value::MatrixString(v) = self { Ok(v.as_vec()) } else if let Value::String(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecstring() } else { Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Cannot convert to Vec<String>".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }) } }
-  #[cfg(all(feature = "matrix", feature = "r64"))] pub fn as_vecr64(&self) -> MResult<Vec<R64>> { if let Value::MatrixR64(v) = self { Ok(v.as_vec()) } else if let Value::R64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecr64() } else { Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Cannot convert to Vec<R64>".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }) } }
-  #[cfg(all(feature = "matrix", feature = "c64"))] pub fn as_vecc64(&self) -> MResult<Vec<C64>> { if let Value::MatrixC64(v) = self { Ok(v.as_vec()) } else if let Value::C64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecc64() } else { Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Cannot convert to Vec<C64>".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }) } }
+  #[cfg(all(feature = "matrix", feature = "bool"))] pub fn as_vecbool(&self) -> MResult<Vec<bool>> { if let Value::MatrixBool(v) = self { Ok(v.as_vec()) } else if let Value::Bool(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecbool() } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "bool" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "f64"))] pub fn as_vecf64(&self) -> MResult<Vec<f64>> { if let Value::MatrixF64(v) = self { Ok(v.as_vec()) } else if let Value::F64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf64() } else if let Ok(v) = self.as_f64() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "f64" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "f32"))] pub fn as_vecf32(&self) -> MResult<Vec<f32>> { if let Value::MatrixF32(v) = self { Ok(v.as_vec()) } else if let Value::F32(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf32() } else if let Ok(v) = self.as_f32() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "f32" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "u8"))] pub fn as_vecu8(&self) -> MResult<Vec<u8>> { if let Value::MatrixU8(v) = self { Ok(v.as_vec()) } else if let Value::U8(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu8() } else if let Ok(v) = self.as_u8() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "u8" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "u16"))] pub fn as_vecu16(&self) -> MResult<Vec<u16>> { if let Value::MatrixU16(v) = self { Ok(v.as_vec()) } else if let Value::U16(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu16() } else if let Ok(v) = self.as_u16() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "u16" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "u32"))] pub fn as_vecu32(&self) -> MResult<Vec<u32>> { if let Value::MatrixU32(v) = self { Ok(v.as_vec()) } else if let Value::U32(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu32() } else if let Ok(v) = self.as_u32() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "u32" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "u64"))] pub fn as_vecu64(&self) -> MResult<Vec<u64>> { if let Value::MatrixU64(v) = self { Ok(v.as_vec()) } else if let Value::U64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu64() } else if let Ok(v) = self.as_u64() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "u64" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "u128"))] pub fn as_vecu128(&self) -> MResult<Vec<u128>> { if let Value::MatrixU128(v) = self { Ok(v.as_vec()) } else if let Value::U128(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu128() } else if let Ok(v) = self.as_u128() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "u128" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "i8"))] pub fn as_veci8(&self) -> MResult<Vec<i8>> { if let Value::MatrixI8(v) = self { Ok(v.as_vec()) } else if let Value::I8(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci8() } else if let Ok(v) = self.as_i8() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "i8" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "i16"))] pub fn as_veci16(&self) -> MResult<Vec<i16>> { if let Value::MatrixI16(v) = self { Ok(v.as_vec()) } else if let Value::I16(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci16() } else if let Ok(v) = self.as_i16() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "i16" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "i32"))] pub fn as_veci32(&self) -> MResult<Vec<i32>> { if let Value::MatrixI32(v) = self { Ok(v.as_vec()) } else if let Value::I32(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci32() } else if let Ok(v) = self.as_i32() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "i32" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "i64"))] pub fn as_veci64(&self) -> MResult<Vec<i64>> { if let Value::MatrixI64(v) = self { Ok(v.as_vec()) } else if let Value::I64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci64() } else if let Ok(v) = self.as_i64() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "i64" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "i128"))] pub fn as_veci128(&self) -> MResult<Vec<i128>> { if let Value::MatrixI128(v) = self { Ok(v.as_vec()) } else if let Value::I128(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci128() } else if let Ok(v) = self.as_i128() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "i128" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "string"))] pub fn as_vecstring(&self) -> MResult<Vec<String>> { if let Value::MatrixString(v) = self { Ok(v.as_vec()) } else if let Value::String(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecstring() } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "string" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "r64"))] pub fn as_vecr64(&self) -> MResult<Vec<R64>> { if let Value::MatrixR64(v) = self { Ok(v.as_vec()) } else if let Value::R64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecr64() } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "r64" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "c64"))] pub fn as_vecc64(&self) -> MResult<Vec<C64>> { if let Value::MatrixC64(v) = self { Ok(v.as_vec()) } else if let Value::C64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecc64() } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "c64" }, None).with_compiler_loc()) } }
 
   pub fn as_vecusize(&self) -> MResult<Vec<usize>> {
     match self {
@@ -1955,15 +1980,15 @@ impl Value {
       #[cfg(feature = "i128")]
       Value::I128(v) => Ok(vec![*v.borrow() as usize]),
       #[cfg(feature = "f32")]
-      Value::F32(v) => Ok(vec![(*v.borrow()).0 as usize]),
+      Value::F32(v) => Ok(vec![(*v.borrow()) as usize]),
       #[cfg(feature = "f64")]
-      Value::F64(v) => Ok(vec![(*v.borrow()).0 as usize]),
+      Value::F64(v) => Ok(vec![(*v.borrow()) as usize]),
       #[cfg(feature = "matrix")]
       Value::MatrixIndex(v) => Ok(v.as_vec()),
       #[cfg(all(feature = "matrix", feature = "f64"))]
-      Value::MatrixF64(v) => Ok(v.as_vec().iter().map(|x| (*x).0 as usize).collect::<Vec<usize>>()),
+      Value::MatrixF64(v) => Ok(v.as_vec().iter().map(|x| (*x) as usize).collect::<Vec<usize>>()),
       #[cfg(all(feature = "matrix", feature = "f32"))]
-      Value::MatrixF32(v) => Ok(v.as_vec().iter().map(|x| (*x).0 as usize).collect::<Vec<usize>>()),
+      Value::MatrixF32(v) => Ok(v.as_vec().iter().map(|x| (*x) as usize).collect::<Vec<usize>>()),
       #[cfg(all(feature = "matrix", feature = "u8"))]
       Value::MatrixU8(v) => Ok(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
       #[cfg(all(feature = "matrix", feature = "u16"))]  
@@ -1985,33 +2010,28 @@ impl Value {
       #[cfg(all(feature = "matrix", feature = "i64"))]
       Value::MatrixI64(v) => Ok(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
       #[cfg(all(feature = "matrix", feature = "bool"))]
-      Value::MatrixBool(_) => Err(MechError {
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: "Cannot convert MatrixBool to Vec<usize>".to_string(),
-        id: line!(),
-        kind: MechErrorKind::UnhandledFunctionArgumentKind,
-      }),
-      #[cfg(any(feature = "bool", feature = "variable_define"))]
-      Value::Bool(_) => Err(MechError {
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: "Cannot convert Bool to Vec<usize>".to_string(),
-        id: line!(),
-        kind: MechErrorKind::UnhandledFunctionArgumentKind,
-      }),
+      Value::MatrixBool(_) =>
+        Err(MechError2::new(
+          CannotConvertToTypeError { target_type: "[usize]" },
+          None
+        ).with_compiler_loc()),
+      #[cfg(any(feature = "bool", feature = "[usize]"))]
+      Value::Bool(_) =>
+        Err(MechError2::new(
+          CannotConvertToTypeError { target_type: "[usize]" },
+          None
+        ).with_compiler_loc()),
       Value::MutableReference(x) => x.borrow().as_vecusize(),
-      _ => Err(MechError {
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: "Unhandled case for as_vecusize".to_string(),
-        id: line!(),
-        kind: MechErrorKind::UnhandledFunctionArgumentKind,
-      }),
+      _ =>
+        Err(MechError2::new(
+          CannotConvertToTypeError { target_type: "[usize]" },
+          None
+        ).with_compiler_loc()),
     }
   }
 
-  pub fn as_index(&self) -> MResult<Value> {
+
+    pub fn as_index(&self) -> MResult<Value> {
     match self.as_usize() {      
       Ok(ix) => Ok(Value::Index(Ref::new(ix))),
       #[cfg(feature = "matrix")]
@@ -2040,10 +2060,16 @@ impl Value {
           }
           Err(_) => match self.as_bool() {
             Ok(x) => Ok(Value::Bool(x)),
-            Err(_) => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
+            Err(_) => Err(MechError2::new(
+              CannotConvertToTypeError { target_type: "ix" },
+              None
+            ).with_compiler_loc()),
           }
         }
-        x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+        x => Err(MechError2::new(
+          CannotConvertToTypeError { target_type: "ix" },
+          None
+        ).with_compiler_loc()),
       }
       _ => todo!(),
     }
@@ -2073,17 +2099,17 @@ impl Value {
       #[cfg(feature = "i128")]
       Value::I128(v) => Ok(*v.borrow() as usize),
       #[cfg(feature = "f32")]
-      Value::F32(v) => Ok((*v.borrow()).0 as usize),
+      Value::F32(v) => Ok((*v.borrow()) as usize),
       #[cfg(feature = "f64")]
-      Value::F64(v) => Ok((*v.borrow()).0 as usize),
+      Value::F64(v) => Ok((*v.borrow()) as usize),
       Value::MutableReference(v) => v.borrow().as_usize(),
-      _ => Err(MechError {
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: "Value cannot be converted to usize".to_string(),
-        id: line!(),
-        kind: MechErrorKind::UnhandledFunctionArgumentKind,
-      }),
+      _ =>
+        Err(
+          MechError2::new(
+            CannotConvertToTypeError { target_type: "usize" },
+            None
+          ).with_compiler_loc()
+        ),
     }
   }
 
@@ -2092,16 +2118,28 @@ impl Value {
     match self {
       Value::U8(v) => Ok(v.clone()),
       Value::MutableReference(v) => v.borrow().expect_u8(),
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+      _ =>
+        Err(
+          MechError2::new(
+            CannotConvertToTypeError { target_type: "u8" },
+            None
+          ).with_compiler_loc()
+        ),
     }
   }
 
   #[cfg(feature = "f64")]
-  pub fn expect_f64(&self) -> MResult<Ref<F64>> {
+  pub fn expect_f64(&self) -> MResult<Ref<f64>> {
     match self {
       Value::F64(v) => Ok(v.clone()),
       Value::MutableReference(v) => v.borrow().expect_f64(),
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+      _ =>
+        Err(
+          MechError2::new(
+            CannotConvertToTypeError { target_type: "f64" },
+            None
+          ).with_compiler_loc()
+        ),
     }
   }
 
@@ -2133,9 +2171,9 @@ impl PrettyPrint for Value {
       #[cfg(feature = "i128")]
       Value::I128(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
       #[cfg(feature = "f32")]
-      Value::F32(x)  => {builder.push_record(vec![format!("{}",x.borrow().0)]);},
+      Value::F32(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
       #[cfg(feature = "f64")]
-      Value::F64(x)  => {builder.push_record(vec![format!("{}",x.borrow().0)]);},
+      Value::F64(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
       #[cfg(any(feature = "bool", feature = "variable_define"))]
       Value::Bool(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
       #[cfg(feature = "complex")]
@@ -2273,9 +2311,9 @@ impl ToValue for Ref<i64>    { fn to_value(&self) -> Value { Value::I64(self.clo
 #[cfg(feature = "i128")]
 impl ToValue for Ref<i128>   { fn to_value(&self) -> Value { Value::I128(self.clone())   } }
 #[cfg(feature = "f32")]
-impl ToValue for Ref<F32>    { fn to_value(&self) -> Value { Value::F32(self.clone())    } }
+impl ToValue for Ref<f32>    { fn to_value(&self) -> Value { Value::F32(self.clone())    } }
 #[cfg(feature = "f64")]
-impl ToValue for Ref<F64>    { fn to_value(&self) -> Value { Value::F64(self.clone())    } }
+impl ToValue for Ref<f64>    { fn to_value(&self) -> Value { Value::F64(self.clone())    } }
 #[cfg(any(feature = "bool", feature = "variable_define"))]
 impl ToValue for Ref<bool>   { fn to_value(&self) -> Value { Value::Bool(self.clone())   } }
 #[cfg(any(feature = "string", feature = "variable_define"))]
@@ -2357,6 +2395,20 @@ impl From<i128> for Value {
   }
 }
 
+#[cfg(feature = "f32")]
+impl From<f32> for Value {
+  fn from(val: f32) -> Self {
+    Value::F32(Ref::new(val))
+  }
+}
+
+#[cfg(feature = "f64")]
+impl From<f64> for Value {
+  fn from(val: f64) -> Self {
+    Value::F64(Ref::new(val))
+  }
+}
+
 #[cfg(any(feature = "bool", feature = "variable_define"))]
 impl From<bool> for Value {
   fn from(val: bool) -> Self {
@@ -2420,6 +2472,11 @@ impl_to_usize_for!(i64);
 #[cfg(feature = "i128")]
 impl_to_usize_for!(i128);
 
+#[cfg(feature = "f64")]
+impl_to_usize_for!(f64);
+#[cfg(feature = "f32")]
+impl_to_usize_for!(f32);
+
 #[cfg(feature = "table")]
 impl ToValue for Ref<MechTable> {
   fn to_value(&self) -> Value {
@@ -2452,5 +2509,29 @@ impl ToValue for Ref<MechTuple> {
 impl ToValue for Ref<MechRecord> {
   fn to_value(&self) -> Value {
     Value::Record(self.clone())
+  }
+}
+
+// Errors
+
+#[derive(Debug, Clone)]
+pub struct UnhandledFunctionArgumentKindError;
+
+impl MechErrorKind2 for UnhandledFunctionArgumentKindError {
+  fn name(&self) -> &str { "UnhandledFunctionArgumentKind" }
+  fn message(&self) -> String {
+    "Value kind is not valid for this function.".to_string()
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct CannotConvertToTypeError {
+  pub target_type: &'static str,
+}
+
+impl MechErrorKind2 for CannotConvertToTypeError {
+  fn name(&self) -> &str { "CannotConvertToType" }
+  fn message(&self) -> String {
+    format!("Cannot convert to {}", self.target_type)
   }
 }

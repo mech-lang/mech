@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{j0,j0f};
 macro_rules! j0_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = j0((*$arg).0);}
+    unsafe{(*$out) = j0((*$arg));}
   };}
 
 macro_rules! j0_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = j0(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = j0(((&(*$arg))[i]));
       }}};}
 
 macro_rules! j0f_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = j0f((*$arg).0);}
+    unsafe{(*$out) = j0f((*$arg));}
   };}  
 
 macro_rules! j0f_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = j0f(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = j0f(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathJ0, F32, j0f, FeatureFlag::Custom(hash_str("math/j0")));
+impl_math_unop!(MathJ0, f32, j0f, FeatureFlag::Custom(hash_str("math/j0")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathJ0, F64, j0, FeatureFlag::Custom(hash_str("math/j0")));
+impl_math_unop!(MathJ0, f64, j0, FeatureFlag::Custom(hash_str("math/j0")));
 
-fn impl_j0_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_j0_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathJ0,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 
@@ -50,7 +50,7 @@ pub struct MathJ0 {}
 impl NativeFunctionCompiler for MathJ0 {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let input = arguments[0].clone();
     match impl_j0_fxn(input.clone()) {
@@ -58,7 +58,11 @@ impl NativeFunctionCompiler for MathJ0 {
       Err(_) => {
         match (input) {
           (Value::MutableReference(input)) => {impl_j0_fxn(input.borrow().clone())}
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/bessel/j0".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }

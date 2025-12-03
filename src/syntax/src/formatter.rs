@@ -297,6 +297,13 @@ impl Formatter {
   
   pub fn paragraph_element(&mut self, node: &ParagraphElement) -> String {
     match node {
+      ParagraphElement::Error(t, s) => {
+        if self.html {
+          format!("<span class=\"mech-error\" title=\"Error at {:?}\">{}</span>", s, t.to_string())
+        } else {
+          format!("{{ERROR: {} at {:?}}}", t.to_string(), s)
+        }
+      },
       ParagraphElement::Highlight(n) => {
         if self.html {
           format!("<mark class=\"mech-highlight\">{}</mark>", n.to_string())
@@ -625,12 +632,30 @@ impl Formatter {
       SectionElement::Subtitle(n) => self.subtitle(n),
       SectionElement::Table(n) => self.mechdown_table(n),
       SectionElement::ThematicBreak => self.thematic_break(),
+      SectionElement::Error(src, range) => self.section_error(src.clone(), range),
+    }
+  }
+
+  pub fn section_error(&mut self, src: Token, range: &SourceRange) -> String {
+    if self.html {
+      let mut error_str = String::new();
+      error_str.push_str(&format!("<div class=\"mech-section-error\">\n"));
+      error_str.push_str(&format!("<strong>Error in section at range {:?}-{:?}:</strong>\n", range.start, range.end));
+      error_str.push_str(&format!("<pre class=\"mech-error-source\">{}</pre>\n", src.to_string()));
+      error_str.push_str("</div>\n");
+      error_str  
+    } else {
+      let mut error_str = String::new();
+      error_str.push_str(&format!("Error in section at range {:?}-{:?}:\n", range.start, range.end));
+      error_str.push_str(&format!("{} ", src.to_string()));
+      error_str.push_str("\n");
+      error_str
     }
   }
 
   pub fn footnote(&mut self, node: &Footnote) -> String {
-    let (id_name, p) = node;
-    let note_paragraph = self.paragraph(p);
+    let (id_name, paragraphs) = node;
+    let note_paragraph = paragraphs.iter().map(|p| self.paragraph(p)).collect::<String>();
     let id: u64 = hash_str(&format!("footnote-{}",id_name.to_string()));
     if self.html {
       format!("<div class=\"mech-footnote\" id=\"{}\">

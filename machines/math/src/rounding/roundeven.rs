@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{roundeven,roundevenf};
 macro_rules! roundeven_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = roundeven((*$arg).0);}
+    unsafe{(*$out) = roundeven((*$arg));}
   };}
 
 macro_rules! roundeven_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = roundeven(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = roundeven(((&(*$arg))[i]));
       }}};}
 
 macro_rules! roundevenf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = roundevenf((*$arg).0);}
+    unsafe{(*$out) = roundevenf((*$arg));}
   };}  
 
 macro_rules! roundevenf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = roundevenf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = roundevenf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathRoundeven, F32, roundevenf, FeatureFlag::Custom(hash_str("math/roundeven")));
+impl_math_unop!(MathRoundeven, f32, roundevenf, FeatureFlag::Custom(hash_str("math/roundeven")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathRoundeven, F64, roundeven, FeatureFlag::Custom(hash_str("math/roundeven")));
+impl_math_unop!(MathRoundeven, f64, roundeven, FeatureFlag::Custom(hash_str("math/roundeven")));
 
-fn impl_roundeven_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_roundeven_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathRoundeven,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 
@@ -50,7 +50,7 @@ pub struct MathRoundeven {}
 impl NativeFunctionCompiler for MathRoundeven {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let input = arguments[0].clone();
     match impl_roundeven_fxn(input.clone()) {
@@ -58,7 +58,11 @@ impl NativeFunctionCompiler for MathRoundeven {
       Err(_) => {
         match (input) {
           (Value::MutableReference(input)) => {impl_roundeven_fxn(input.borrow().clone())}
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/roundeven".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }

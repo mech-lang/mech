@@ -90,7 +90,7 @@ macro_rules! or_row_mat_op {
 
 impl_logic_fxns!(Or);
 
-fn impl_or_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_or_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_binop_match_arms!(
     Or,
     register_fxn_descriptor_inner_logic,

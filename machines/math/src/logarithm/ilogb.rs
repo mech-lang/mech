@@ -32,16 +32,16 @@ macro_rules! ilogbf_vec_op {
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathIlogb, F32, ilogbf, FeatureFlag::Custom(hash_str("math/ilogb")));
+impl_math_unop!(MathIlogb, f32, ilogbf, FeatureFlag::Custom(hash_str("math/ilogb")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathIlogb, F64, ilogb, FeatureFlag::Custom(hash_str("math/ilogb")));
+impl_math_unop!(MathIlogb, f64, ilogb, FeatureFlag::Custom(hash_str("math/ilogb")));
 
-fn impl_ilogb_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_ilogb_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathIlogb,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 
@@ -50,7 +50,7 @@ pub struct MathIlogb {}
 impl NativeFunctionCompiler for MathIlogb {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let input = arguments[0].clone();
     match impl_ilogb_fxn(input.clone()) {
@@ -58,7 +58,11 @@ impl NativeFunctionCompiler for MathIlogb {
       Err(_) => {
         match (input) {
           (Value::MutableReference(input)) => {impl_ilogb_fxn(input.borrow().clone())}
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/ilogb".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }

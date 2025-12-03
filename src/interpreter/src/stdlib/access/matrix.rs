@@ -14,13 +14,10 @@ use nalgebra::{
 #[macro_export]
 macro_rules! impl_access_fxn_new {
   ($op:tt, $fxn_name:ident, $arg:expr, $value_kind:ident, $value_string:tt) => {{
-    let mut res: Result<_, MechError> = Err(MechError {
-      file: file!().to_string(),
-      tokens: vec![],
-      msg: String::new(),
-      id: line!(),
-      kind: MechErrorKind::UnhandledFunctionArgumentKind,
-    });
+    let mut res: MResult<_> = Err(MechError2::new(
+      GenericError { msg: "No matching type found".to_string() },
+      None
+    ));
     
     #[cfg(feature = "row_vector2")]
     {
@@ -97,13 +94,14 @@ macro_rules! impl_access_fxn_new {
       res = res.or_else(|_| $op!($fxn_name, DVector, &$arg, $value_kind, $value_string));
     }
 
-    res.map_err(|_| MechError {
-      file: file!().to_string(),
-      tokens: vec![],
-      msg: format!("Unsupported argument: {:?}", &$arg),
-      id: line!(),
-      kind: MechErrorKind::UnhandledFunctionArgumentKind,
-    })
+    let (ref source, ref ixes) = &$arg;
+    res.map_err(|_| MechError2::new(
+      UnhandledFunctionArgumentIxesMono {
+        arg: (source.kind(), ixes.iter().map(|x| x.kind()).collect()),
+        fxn_name: stringify!($fxn_name).to_string(),
+      },
+      None,
+    ).with_compiler_loc())
   }}
 }
 
@@ -499,7 +497,7 @@ macro_rules! impl_access_fxn {
             let out: Ref<$out_type> = unsafe{ out.as_unchecked().clone() };
             Ok(Box::new($struct_name{source: n,ixes: k,out}))
           }
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments}),
+          _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 2, found: args.len()}, None).with_compiler_loc()),
         }
       }
     }
@@ -552,7 +550,7 @@ macro_rules! impl_access_fxn2 {
             let out: Ref<$out_type> = unsafe{ out.as_unchecked().clone() };
             Ok(Box::new($struct_name{source ,ix1, ix2, out}))
           }
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments}),
+          _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 3, found: args.len()}, None).with_compiler_loc()),
         }
       }
     }
@@ -715,8 +713,8 @@ macro_rules! impl_access_match_arms {
         U32  => MatrixU32,  u32,  u32::default(), "u32";
         U64  => MatrixU64,  u64,  u64::default(), "u64";
         U128 => MatrixU128, u128, u128::default(), "u128";
-        F32  => MatrixF32,  F32,  F32::default(), "f32";
-        F64  => MatrixF64,  F64,  F64::default(), "f64";
+        F32  => MatrixF32,  f32,  f32::default(), "f32";
+        F64  => MatrixF64,  f64,  f64::default(), "f64";
         String => MatrixString, String, String::default(), "string";
         C64 => MatrixC64, C64, C64::default(), "complex";
         R64 => MatrixR64, R64, R64::default(), "rational";
@@ -810,13 +808,13 @@ macro_rules! impl_access_scalar_match_arms {
             },
           )+
         )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string() }, None).with_compiler_loc()),
       }
     }
   }
 }
 
-fn impl_access_scalar_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_scalar_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   impl_access_match_arms!(Access1DS, scalar, (lhs_value, ixes.as_slice()))
 }
 
@@ -824,7 +822,7 @@ pub struct MatrixAccessScalar {}
 impl NativeFunctionCompiler for MatrixAccessScalar {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let ixes = arguments.clone().split_off(1);
     let mat = arguments[0].clone();
@@ -833,7 +831,7 @@ impl NativeFunctionCompiler for MatrixAccessScalar {
       Err(_) => {
         match (mat,ixes) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_scalar_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessScalar".to_string() }, None).with_compiler_loc()),
         }
       }
     }
@@ -920,13 +918,13 @@ macro_rules! impl_access_scalar_scalar_match_arms {
             },
           )+
         )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: 315, kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string() }, None).with_compiler_loc()),
       }
     }
   }
 }
 
-fn impl_access_scalar_scalar_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_scalar_scalar_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   impl_access_match_arms!(Access2DSS, scalar_scalar, (lhs_value, ixes.as_slice()))
 }
 
@@ -934,7 +932,7 @@ pub struct MatrixAccessScalarScalar {}
 impl NativeFunctionCompiler for MatrixAccessScalarScalar {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 2 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let ixes = arguments.clone().split_off(1);
     let mat = arguments[0].clone();
@@ -943,7 +941,7 @@ impl NativeFunctionCompiler for MatrixAccessScalarScalar {
       Err(_) => {
         match (mat,ixes) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_scalar_scalar_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessScalarScalar".to_string() }, None).with_compiler_loc()),
         }
       }
     }
@@ -1125,13 +1123,13 @@ macro_rules! impl_access_range_match_arms {
             },   
           )+
         )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string() }, None).with_compiler_loc()),
       }
     }
   }
 }
 
-fn impl_access_range_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_range_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   impl_access_match_arms!(Access1DR, range, (lhs_value, ixes.as_slice()))
 }
 
@@ -1139,7 +1137,7 @@ pub struct MatrixAccessRange {}
 impl NativeFunctionCompiler for MatrixAccessRange {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let ixes = arguments.clone().split_off(1);
     let mat = arguments[0].clone();
@@ -1148,7 +1146,7 @@ impl NativeFunctionCompiler for MatrixAccessRange {
       Err(_) => {
         match (mat,ixes) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_range_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessRange".to_string() }, None).with_compiler_loc()),
         }
       }
     }
@@ -1323,7 +1321,10 @@ macro_rules! impl_access_range_range_arms {
             },
           }
         }
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (src, ix) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string()}, 
+          None).with_compiler_loc()
+        ),
       }
     }
   }
@@ -1335,7 +1336,7 @@ impl_range_range_fxn_v!(Access2DRRVUU, access_2d_range_range_vuu, usize, usize);
 impl_range_range_fxn_v!(Access2DRRVUB, access_2d_range_range_vub, usize, bool);
 
 fn matrix_access_range_range_fxn(source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-  let arg = (source, ixes.as_slice());
+  let arg = (source.clone(), ixes.as_slice());
                impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, u8,   "u8")
   .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, u16,  "u16"))
   .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, u32,  "u32"))
@@ -1346,20 +1347,22 @@ fn matrix_access_range_range_fxn(source: Value, ixes: Vec<Value>) -> MResult<Box
   .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, i32,  "i32"))
   .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, i64,  "i64"))
   .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, i128, "i128"))
-  .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, F32,  "f32"))
-  .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, F64,  "f64"))
+  .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, f32,  "f32"))
+  .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, f64,  "f64"))
   .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, R64,  "rational"))
   .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, C64,  "complex"))
   .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, bool, "bool"))
   .or_else(|_| impl_access_fxn_new!(impl_access_range_range_arms, Access2DRR, arg, String, "string"))
-  .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+  .map_err(|_| MechError2::new(UnhandledFunctionArgumentIxesMono{
+      arg: (source.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessRangeRange".to_string()
+    }, None).with_compiler_loc())
 }
     
 pub struct MatrixAccessRangeRange {}
 impl NativeFunctionCompiler for MatrixAccessRangeRange {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let source: Value = arguments[0].clone();
     let ixes = arguments.clone().split_off(1);
@@ -1368,7 +1371,10 @@ impl NativeFunctionCompiler for MatrixAccessRangeRange {
       Err(_) => {
         match source {
           Value::MutableReference(source) => { matrix_access_range_range_fxn(source.borrow().clone(), ixes.clone()) },
-          x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{:?}", x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          _ => Err(MechError2::new(
+            UnhandledFunctionArgumentIxesMono{arg: (source.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessRangeRange".to_string()}, 
+            None).with_compiler_loc()
+          ),
         }
       }
     }
@@ -1415,13 +1421,16 @@ macro_rules! impl_access_all_match_arms {
             },
           )+
         )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (src, ix) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string()}, 
+          None).with_compiler_loc()
+        ),
       }
     }
   }
 }
 
-fn impl_access_all_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_all_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   impl_access_match_arms!(Access1DA, all, (lhs_value, ixes.as_slice()))
 }
 
@@ -1429,7 +1438,7 @@ pub struct MatrixAccessAll {}
 impl NativeFunctionCompiler for MatrixAccessAll {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let ixes = arguments.clone().split_off(1);
     let mat = arguments[0].clone();
@@ -1438,7 +1447,7 @@ impl NativeFunctionCompiler for MatrixAccessAll {
       Err(_) => {
         match (mat,ixes) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_all_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessAll".to_string()}, None).with_compiler_loc()),
         }
       }
     }
@@ -1485,13 +1494,16 @@ macro_rules! impl_access_all_scalar_match_arms {
             },
           )+
         )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (src, ix) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string()}, 
+          None).with_compiler_loc()
+        ),
       }
     }
   }
 }
 
-fn impl_access_all_scalar_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_all_scalar_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   impl_access_match_arms!(Access2DAS, all_scalar, (lhs_value, ixes.as_slice()))
 }
 
@@ -1499,7 +1511,7 @@ pub struct MatrixAccessAllScalar {}
 impl NativeFunctionCompiler for MatrixAccessAllScalar {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 2 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let ixes = arguments.clone().split_off(1);
     let mat = arguments[0].clone();
@@ -1508,7 +1520,7 @@ impl NativeFunctionCompiler for MatrixAccessAllScalar {
       Err(_) => {
         match (mat,ixes) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_all_scalar_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          (src, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessAllScalar".to_string()}, None).with_compiler_loc()),
         }
       }
     }
@@ -1560,13 +1572,16 @@ macro_rules! impl_access_scalar_all_match_arms {
             },
           )+
         )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (src, ix) => Err(MechError2::new(
+          UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string()}, 
+          None).with_compiler_loc()
+        ),
       }
     }
   }
 }
 
-fn impl_access_scalar_all_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_scalar_all_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
  impl_access_match_arms!(Access2DSA, scalar_all, (lhs_value, ixes.as_slice()))
 }
 
@@ -1574,7 +1589,7 @@ pub struct MatrixAccessScalarAll {}
 impl NativeFunctionCompiler for MatrixAccessScalarAll {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 2 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let ixes = arguments.clone().split_off(1);
     let mat = arguments[0].clone();
@@ -1583,7 +1598,7 @@ impl NativeFunctionCompiler for MatrixAccessScalarAll {
       Err(_) => {
         match (mat,ixes) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_scalar_all_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          (mat, ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: (mat.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessScalarAll".to_string()}, None).with_compiler_loc()),
         }
       }
     }
@@ -1658,8 +1673,11 @@ macro_rules! impl_access_all_range_arms {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, DMatrix, $shape, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(source.borrow().nrows(), cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
         },
-        x => {
-          Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind })
+        (sink, ix) => {
+          Err(MechError2::new(
+            UnhandledFunctionArgumentIxesMono{arg: (sink.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string()}, 
+            None).with_compiler_loc()
+          )
         }
       }
     }
@@ -1670,7 +1688,7 @@ impl_all_fxn_v!(Access2DARV,  assign_2d_all_range_v,  usize);
 impl_all_fxn_v!(Access2DARVB, assign_2d_all_range_vb, bool);
 
 fn matrix_access_all_range_fxn(source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-  let arg = (source, ixes.as_slice());
+  let arg = (source.clone(), ixes.as_slice());
                impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, u8,   "u8")
   .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, u16,  "u16"))
   .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, u32,  "u32"))
@@ -1681,20 +1699,22 @@ fn matrix_access_all_range_fxn(source: Value, ixes: Vec<Value>) -> MResult<Box<d
   .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, i32,  "i32"))
   .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, i64,  "i64"))
   .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, i128, "i128"))
-  .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, F32,  "f32"))
-  .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, F64,  "f64"))
+  .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, f32,  "f32"))
+  .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, f64,  "f64"))
   .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, R64,  "rational"))
   .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, C64,  "complex"))
   .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, bool, "bool"))
   .or_else(|_| impl_access_fxn_new!(impl_access_all_range_arms, Access2DAR, arg, String, "string"))
-  .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+  .map_err(|_| MechError2::new(UnhandledFunctionArgumentIxesMono{
+      arg: (source.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessAllRange".to_string()
+    }, None).with_compiler_loc())
 }
     
 pub struct MatrixAccessAllRange {}
 impl NativeFunctionCompiler for MatrixAccessAllRange {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let source: Value = arguments[0].clone();
     let ixes = arguments.clone().split_off(1);
@@ -1703,7 +1723,10 @@ impl NativeFunctionCompiler for MatrixAccessAllRange {
       Err(_) => {
         match source {
           Value::MutableReference(source) => { matrix_access_all_range_fxn(source.borrow().clone(), ixes.clone()) },
-          x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{:?}", x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+            UnhandledFunctionArgumentIxesMono{arg: (x.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessAllRange".to_string()}, 
+            None).with_compiler_loc()
+          ),
         }
       }
     }
@@ -1782,30 +1805,30 @@ macro_rules! impl_access_range_all_match_arms {
             },
           )+
         )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (src, ixes) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessRangeAll".to_string()}, None).with_compiler_loc()),
       }
     }
   }
 }
 
-fn impl_access_range_all_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_range_all_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   impl_access_match_arms!(Access2DRA, range_all, (lhs_value, ixes.as_slice()))
 }
 
-pub struct MatrixAccessRangeAll {}
+  pub struct MatrixAccessRangeAll {}
 impl NativeFunctionCompiler for MatrixAccessRangeAll {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 2 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let ixes = arguments.clone().split_off(1);
     let mat = arguments[0].clone();
     match impl_access_range_all_fxn(mat.clone(), ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
-        match (mat,ixes) {
+        match (mat.clone(),ixes.clone()) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_range_all_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          (src, ixes) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessRangeAll".to_string()}, None).with_compiler_loc()),
         }
       }
     }
@@ -1883,13 +1906,13 @@ macro_rules! impl_access_range_scalar_match_arms {
               Ok(Box::new(Access2DVDbSMD{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DVector::from_element(ix1.borrow().len(),$default)) }))
             },)+
         )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (src, ixes) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{arg: (src.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessRangeRange".to_string()}, None).with_compiler_loc()),
       }
     }
   }
 }
 
-fn impl_access_range_scalar_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_range_scalar_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   impl_access_match_arms!(Access2DRS, range_scalar, (lhs_value, ixes.as_slice()))
 }
 
@@ -1897,7 +1920,7 @@ pub struct MatrixAccessRangeScalar {}
 impl NativeFunctionCompiler for MatrixAccessRangeScalar {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 2 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let ixes = arguments.clone().split_off(1);
     let mat = arguments[0].clone();
@@ -1906,7 +1929,7 @@ impl NativeFunctionCompiler for MatrixAccessRangeScalar {
       Err(_) => {
         match (mat,ixes) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_range_scalar_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          (src,ixs) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (src.kind(), ixs.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessRangeScalar".to_string() }, None).with_compiler_loc()),
         }
       }
     }
@@ -1984,13 +2007,13 @@ macro_rules! impl_access_scalar_range_match_arms {
               Ok(Box::new(Access2DSVDbMD{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(RowDVector::from_element(ix2.borrow().len(),$default)) }))
             },)+
         )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (src,ix) => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{ arg: (src.kind(), ix.iter().map(|x| x.kind()).collect()), fxn_name: stringify!($fxn_name).to_string() }, None).with_compiler_loc()),
       }
     }
   }
 }
 
-fn impl_access_scalar_range_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_scalar_range_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   impl_access_match_arms!(Access2DSR, scalar_range, (lhs_value, ixes.as_slice()))
 }
 
@@ -1999,16 +2022,16 @@ pub struct MatrixAccessScalarRange {}
 impl NativeFunctionCompiler for MatrixAccessScalarRange {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 2 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments{expected: 1, found: arguments.len()}, None).with_compiler_loc());
     }
     let ixes = arguments.clone().split_off(1);
     let mat = arguments[0].clone();
     match impl_access_scalar_range_fxn(mat.clone(), ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
-        match (mat,ixes) {
+        match (mat.clone(),ixes.clone()) {
           (Value::MutableReference(lhs),rhs_value) => { impl_access_scalar_range_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(UnhandledFunctionArgumentIxesMono{ arg: (mat.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "MatrixAccessScalarRange".to_string() }, None).with_compiler_loc()),
         }
       }
     }

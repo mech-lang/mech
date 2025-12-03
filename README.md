@@ -10,6 +10,8 @@
 - [Read the docs](https://docs.mech-lang.org) to learn the language.
 - [Follow our blog](https://mech-lang.org/blog/) to stay updated on new developments.
 
+***
+
 The following code implements FizzBuzz in Mech:
 
 <p align="center">
@@ -35,7 +37,7 @@ Some notable features of Mech are demonstrated in this short program:
 
 ### From Source
 
-To build Mech from source, you’ll first need to install [Rust](https://www.rust-lang.org/learn/get-started) (make sure to install a recent version on the nightly release channel, currently we are developing against `nightly-2025-07-31`). 
+To build Mech from source, you’ll first need to install [Rust](https://www.rust-lang.org/learn/get-started) (make sure to install a recent version on the nightly release channel, currently we are developing against `nightly-2025-11-12`). 
 
 Then follow the instructions below to compile the Mech toolchain, bundled in a single executable called `mech`:
 

@@ -18,12 +18,12 @@ macro_rules! dot_op {
 macro_rules! impl_dot {
   ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
     impl_binop!($name, $type1, $type2, $out_type, dot_op, FeatureFlag::Builtin(FeatureKind::Dot));
-    register_fxn_descriptor!($name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", F32, "f32", F64, "f64");
+    register_fxn_descriptor!($name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64");
   };
 }
 
 impl_binop!(DotScalar, T, T, T, mul_op, FeatureFlag::Builtin(FeatureKind::Dot));
-register_fxn_descriptor!(DotScalar, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", F32, "f32", F64, "f64");
+register_fxn_descriptor!(DotScalar, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64");
 
 #[cfg(all(feature = "row_vector2", feature = "row_vector2"))]
 impl_dot!(DotR2R2, RowVector2<T>, RowVector2<T>, T);
@@ -92,7 +92,12 @@ macro_rules! impl_dot_match_arms {
             let (lhs_rows,lhs_cols) = {lhs.borrow().shape()};
             let (rhs_rows,rhs_cols) = {rhs.borrow().shape()};
             if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
-              return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("Matrix dimensions must agree: lhs is {}x{}, rhs is {}x{}", lhs_rows, lhs_cols, rhs_rows, rhs_cols), id: line!(), kind: MechErrorKind::None }); 
+              return Err(
+                MechError2::new(
+                  DimensionMismatch { dims: vec![lhs_rows, lhs_cols, rhs_rows, rhs_cols] },
+                  None
+                ).with_compiler_loc()
+              );
             }
             Ok(Box::new(DotMDMD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) }))
           },
@@ -101,7 +106,10 @@ macro_rules! impl_dot_match_arms {
             let lhs_len = {lhs.borrow().len()};
             let rhs_len = {rhs.borrow().len()};
             if lhs_len != rhs_len {
-              return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("Vector dimensions must agree: lhs is {}, rhs is {}", lhs_len, rhs_len), id: line!(), kind: MechErrorKind::None }); 
+              return Err(MechError2::new(
+                DimensionMismatch { dims: vec![lhs_len, rhs_len] },
+                None
+              ).with_compiler_loc());
             }
             Ok(Box::new(DotVDVD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) }))
           },
@@ -110,18 +118,25 @@ macro_rules! impl_dot_match_arms {
             let lhs_len = {lhs.borrow().len()};
             let rhs_len = {rhs.borrow().len()};
             if lhs_len != rhs_len {
-              return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("Vector dimensions must agree: lhs is {}, rhs is {}", lhs_len, rhs_len), id: line!(), kind: MechErrorKind::None }); 
+              return Err(MechError2::new(
+                DimensionMismatch { dims: vec![lhs_len, rhs_len] },
+                None
+              ).with_compiler_loc());
             }
             Ok(Box::new(DotRDRD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) }))
           },
         )+
       )+
-      x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      (arg1,arg2) => Err(MechError2::new(
+          UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($fxn).to_string() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
 
-fn impl_dot_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_dot_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_dot_match_arms!(
     (lhs_value, rhs_value),
     I8,   MatrixI8,   i8,   "i8";
@@ -134,8 +149,8 @@ fn impl_dot_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
     U32,  MatrixU32,  u32,  "u32";
     U64,  MatrixU64,  u64,  "u64";
     U128, MatrixU128, u128, "u128";
-    F32,  MatrixF32,  F32,  "f32";
-    F64,  MatrixF64,  F64,  "f64";
+    F32,  MatrixF32,  f32,  "f32";
+    F64,  MatrixF64,  f64,  "f64";
     R64, MatrixR64, R64, "rational";
     C64, MatrixC64, C64, "complex";
   )

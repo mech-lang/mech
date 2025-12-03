@@ -99,7 +99,7 @@ macro_rules! and_row_mat_op {
         
   impl_logic_fxns!(And);
   
-  fn impl_and_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  fn impl_and_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_binop_match_arms!(
       And,
       register_fxn_descriptor_inner_logic,

@@ -91,13 +91,17 @@ macro_rules! impl_assign_value_match_arms {
           #[cfg(all(feature = $feature, feature = "row_vectord"))]
           (Value::[<Matrix $value_kind>](Matrix::RowDVector(sink)), Value::[<Matrix $value_kind>](Matrix::RowDVector(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
         )+
-        x => Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Unhandled args {:?}", x),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,}),
+        (sink, source) => Err(MechError2::new(
+            UnhandledFunctionArgumentKind2 {arg: (sink.kind(), source.kind()), fxn_name: "assign".to_string() },
+            None
+          ).with_compiler_loc()
+        ),
       }
     }
   };
 }
 
-fn assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
   impl_assign_value_match_arms!(
     (sink, source),
     Bool,   "bool";
@@ -123,7 +127,7 @@ pub struct AssignValue {}
 impl NativeFunctionCompiler for AssignValue {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let sink = arguments[0].clone();
     let source = arguments[1].clone();
@@ -134,7 +138,11 @@ impl NativeFunctionCompiler for AssignValue {
           (Value::MutableReference(sink),Value::MutableReference(source)) => { assign_value_fxn(sink.borrow().clone(),source.borrow().clone()) },
           (sink,Value::MutableReference(source)) => { assign_value_fxn(sink.clone(),source.borrow().clone()) },
           (Value::MutableReference(sink),source) => { assign_value_fxn(sink.borrow().clone(),source.clone()) },
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          (sink,source) => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (sink.kind(), source.kind()), fxn_name: "assign".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
@@ -145,7 +153,7 @@ pub struct AssignColumn {}
 impl NativeFunctionCompiler for AssignColumn {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() < 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let src = &arguments[0];
     match src.kind().deref_kind() {
@@ -153,7 +161,11 @@ impl NativeFunctionCompiler for AssignColumn {
       ValueKind::Table(_,_) => AssignTableColumn{}.compile(&arguments),
       #[cfg(feature = "record")]
       ValueKind::Record(_) => AssignRecordColumn{}.compile(&arguments),
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+      _ => Err(MechError2::new(
+          UnhandledFunctionArgumentKind1 { arg: src.kind(), fxn_name: "assign/column".to_string() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -166,7 +178,11 @@ pub fn add_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechF
     Value::Table(_) => add_assign_table_fxn(sink, source),
     #[cfg(feature = "math_add_assign")]
     _ => add_assign_math_fxn(sink, source),
-    _ => Err(MechError{file: file!().to_string(),tokens: vec![],msg: format!("Unhandled args {:?}, {:?}", sink, source),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,}),
+    _ => Err(MechError2::new(
+        UnhandledFunctionArgumentKind2 { arg: (sink.kind(), source.kind()), fxn_name: "assign/add".to_string() },
+        None
+      ).with_compiler_loc()
+    ),
   }
 }
 
@@ -174,7 +190,7 @@ pub struct AddAssignValue {}
 impl NativeFunctionCompiler for AddAssignValue {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let sink = arguments[0].clone();
     let source = arguments[1].clone();
@@ -185,7 +201,11 @@ impl NativeFunctionCompiler for AddAssignValue {
           (Value::MutableReference(sink),Value::MutableReference(source)) => { add_assign_value_fxn(sink.borrow().clone(),source.borrow().clone()) },
           (sink,Value::MutableReference(source)) => { add_assign_value_fxn(sink.clone(),source.borrow().clone()) },
           (Value::MutableReference(sink),source) => { add_assign_value_fxn(sink.borrow().clone(),source.clone()) },
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          (sink,source) => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (sink.kind(), source.kind()), fxn_name: "assign/add".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }

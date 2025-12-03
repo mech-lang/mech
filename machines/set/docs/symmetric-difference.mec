@@ -1,4 +1,4 @@
-set/symmetric_difference
+set/symmetric-difference
 ===============================================================================
 
 %% Symmetric difference of two sets (stable insertion order)
@@ -7,9 +7,7 @@ set/symmetric_difference
 -------------------------------------------------------------------------------
 
 ```mech:disabled
-D := set/symmetric_difference(A, B)
-```
-```mech:disabled
+D := set/symmetric-difference(A, B)
 D := A ∖ B ∪ B ∖ A
 ```
 
@@ -45,28 +43,28 @@ Result:
 5. Examples
 -------------------------------------------------------------------------------
 
-(a) Simple symmetric difference
+(5.1) Simple symmetric difference
 
 ```mech:ex1
 A := {"a", "b", "c"}
 B := {"b", "c", "d"}
-D := set/symmetric_difference(A, B)
+D := set/symmetric-difference(A, B)
 ```
 
-(b) Numbers
+(5.2) Numbers
 
 ```mech:ex2
 A := {1, 2, 3}
 B := {3, 4, 5}
-D := set/symmetric_difference(A, B)
+D := set/symmetric-difference(A, B)
 ```
 
-(c) Order is stable
+(5.3) Order is stable
 
 ```mech:ex3
 A := {"x", "y"}
 B := {"y", "z"}
-D := set/symmetric_difference(A, B)
+D := set/symmetric-difference(A, B)
 ```
 
 6. Details
@@ -80,7 +78,7 @@ Stable insertion order:
 - Matches Rust IndexSet behavior: order reflects first appearance in A, then B.
 
 Performance:
-- Average O(A + B) time with hashing; memory is O(A + B) for the result.
+- Average `O(|A| + |B|)` time with hashing; memory is `O(|A| + |B|)` for the result.
 
 Determinism:
 - Given equal inputs, output order is deterministic across runs and platforms.

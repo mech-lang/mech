@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{log2,log2f};
 macro_rules! log2_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = log2((*$arg).0);}
+    unsafe{(*$out) = log2((*$arg));}
   };}
 
 macro_rules! log2_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = log2(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = log2(((&(*$arg))[i]));
       }}};}
 
 macro_rules! log2f_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = log2f((*$arg).0);}
+    unsafe{(*$out) = log2f((*$arg));}
   };}  
 
 macro_rules! log2f_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = log2f(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = log2f(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathLog2, F32, log2f, FeatureFlag::Custom(hash_str("math/log2")));
+impl_math_unop!(MathLog2, f32, log2f, FeatureFlag::Custom(hash_str("math/log2")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathLog2, F64, log2, FeatureFlag::Custom(hash_str("math/log2")));
+impl_math_unop!(MathLog2, f64, log2, FeatureFlag::Custom(hash_str("math/log2")));
 
-fn impl_log2_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_log2_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathLog2,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 
@@ -50,7 +50,7 @@ pub struct MathLog2 {}
 impl NativeFunctionCompiler for MathLog2 {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let input = arguments[0].clone();
     match impl_log2_fxn(input.clone()) {
@@ -58,7 +58,11 @@ impl NativeFunctionCompiler for MathLog2 {
       Err(_) => {
         match (input) {
           (Value::MutableReference(input)) => {impl_log2_fxn(input.borrow().clone())}
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/log2".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }

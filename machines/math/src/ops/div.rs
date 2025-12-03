@@ -100,7 +100,7 @@ macro_rules! div_row_mat_op {
 
 impl_math_fxns!(Div);
 
-fn impl_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_div_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_binop_match_arms!(
     Div,
     register_fxn_descriptor_inner,
@@ -115,8 +115,8 @@ fn impl_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
     U32,  u32,  "u32";
     U64,  u64,  "u64";
     U128, u128, "u128";
-    F32,  F32,  "f32";
-    F64,  F64,  "f64";
+    F32,  f32,  "f32";
+    F64,  f64,  "f64";
     R64, R64, "rational";
     C64, C64, "complex";
   )

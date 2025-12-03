@@ -79,8 +79,8 @@ Kinds are indicated with a kind annotation, which is the kind identifier encolse
 
 Literals can be annotated with a kind:
 
-- 32-bit floating point number: 123.456<f32>
-- 64-bit floating point number: 123.456<f64>
+- 32-bit floating point number: `123.456<f32>`
+- 64-bit floating point number: `123.456<f64>`
 
 So can identifiers
  

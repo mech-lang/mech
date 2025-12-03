@@ -17,6 +17,7 @@ use nom::{
 use bincode::serde::encode_to_vec;
 use bincode::config::standard;
 use include_dir::{include_dir, Dir};
+use std::time::{Instant, Duration};
 
 static DOCS_DIR: Dir = include_dir!("docs");
 static EXAMPLES_DIR: Dir = include_dir!("examples/working");
@@ -169,27 +170,71 @@ impl MechRepl {
           Err(err) => { return Err(err); }
         }
       }
-      ReplCommand::Step(count) => {
-        let n = match count {
+      ReplCommand::Step(step_id, step_count) => {
+        let n: u64 = match step_count {
           Some(n) => n,
           None => 1,
         };
+        let step_id: usize = match step_id {
+          Some(id) => id,
+          None => 0,
+        };
         let now = Instant::now();
-        intrp.step(n as u64);
+        intrp.step(step_id, n)?;
         let elapsed_time = now.elapsed();
-        let cycle_duration = elapsed_time.as_nanos() as f64;
-        return Ok(format!("{} cycles in {:0.2?} ns\n", n, cycle_duration));
+        return Ok(format_cycles(n, elapsed_time));      
       }
       x => {
-        return Err(MechError {
-          file: file!().to_string(),
-          tokens: vec![],
-          msg: format!("{:?} requires disabled feature. ", x),
-          id: line!(),
-          kind: MechErrorKind::None,
-        });
+        return Err(MechError2::new(FeatureNotEnabledError, None).with_compiler_loc());
       }
     }
   }
 
+}
+
+fn format_cycles(n: u64, total_duration: Duration) -> String {
+  let total_ns = total_duration.as_nanos() as f64;
+  let total_s = total_ns / 1_000_000_000.0;
+
+  // Human-friendly total duration
+  let formatted_total = if total_ns >= 1_000_000_000.0 {
+    format!("{:.3} s", total_s)
+  } else if total_ns >= 1_000_000.0 {
+    format!("{:.3} ms", total_ns / 1_000_000.0)
+  } else if total_ns >= 1_000.0 {
+    format!("{:.3} µs", total_ns / 1_000.0)
+  } else {
+    format!("{:.3} ns", total_ns)
+  };
+
+  // Per-cycle duration
+  let cycle_ns = total_ns / n as f64;
+  let cycle_s = cycle_ns / 1_000_000_000.0;
+
+  let formatted_cycle = if cycle_ns >= 1_000_000_000.0 {
+    format!("{:.3} s", cycle_s)
+  } else if cycle_ns >= 1_000_000.0 {
+    format!("{:.3} ms", cycle_ns / 1_000_000.0)
+  } else if cycle_ns >= 1_000.0 {
+    format!("{:.3} µs", cycle_ns / 1_000.0)
+  } else {
+    format!("{:.3} ns", cycle_ns)
+  };
+
+  // Cycle frequency
+  let freq_hz = 1.0 / cycle_s;
+  let formatted_freq = if freq_hz >= 1_000_000_000.0 {
+    format!("{:.3} GHz", freq_hz / 1_000_000_000.0)
+  } else if freq_hz >= 1_000_000.0 {
+    format!("{:.3} MHz", freq_hz / 1_000_000.0)
+  } else if freq_hz >= 1_000.0 {
+    format!("{:.3} kHz", freq_hz / 1_000.0)
+  } else {
+    format!("{:.3} Hz", freq_hz)
+  };
+
+  format!(
+    "{} cycles in {} ({} per cycle, {})",
+    n, formatted_total, formatted_cycle, formatted_freq
+  )
 }

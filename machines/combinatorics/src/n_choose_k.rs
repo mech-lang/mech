@@ -35,7 +35,11 @@ where
         let out: Ref<T> = unsafe{ out.as_unchecked().clone() };
         Ok(Box::new(Self{n, k, out}))
       }
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments}),
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -83,7 +87,7 @@ where
     compile_binop!(name, self.out, self.n, self.k, ctx, FeatureFlag::Custom(hash_str("combinatorics/n-choose-k")));
   }
 }
-register_fxn_descriptor!(NChooseK, u8, "u8", i8, "i8", u16, "u16", i16, "i16", u32, "u32", i32, "i32", u64, "u64", i64, "i64", u128, "u128", i128, "i128", F32, "f32", F64, "f64", R64, "r64", C64, "c64");
+register_fxn_descriptor!(NChooseK, u8, "u8", i8, "i8", u16, "u16", i16, "i16", u32, "u32", i32, "i32", u64, "u64", i64, "i64", u128, "u128", i128, "i128", f32, "f32", f64, "f64", R64, "r64", C64, "c64");
 
 #[cfg(feature = "matrix")]
 #[derive(Debug)]
@@ -113,7 +117,11 @@ where
         let out: Ref<Matrix<T>> = unsafe{ out.as_unchecked().clone() };
         Ok(Box::new(Self{n, k, out}))
       }
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments}),
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -163,10 +171,10 @@ where
     compile_binop!(name, self.out, self.n, self.k, ctx, FeatureFlag::Custom(hash_str("combinatorics/n-choose-k")));
   }
 }
-register_fxn_descriptor!(NChooseKMatrix, u8, "u8", i8, "i8", u16, "u16", i16, "i16", u32, "u32", i32, "i32", u64, "u64", i64, "i64", u128, "u128", i128, "i128", F32, "f32", F64, "f64", R64, "r64", C64, "c64");
+register_fxn_descriptor!(NChooseKMatrix, u8, "u8", i8, "i8", u16, "u16", i16, "i16", u32, "u32", i32, "i32", u64, "u64", i64, "i64", u128, "u128", i128, "i128", f32, "f32", f64, "f64", R64, "r64", C64, "c64");
 
 
-fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> MResult<Box<dyn MechFunction>> {
   match (n,k) {
     #[cfg(feature = "u8")]
     (Value::U8(n), Value::U8(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(u8::default())})),
@@ -189,9 +197,9 @@ fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> Result<Box<dyn MechF
     #[cfg(feature = "i128")]
     (Value::I128(n), Value::I128(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(i128::default())})),
     #[cfg(feature = "f32")]
-    (Value::F32(n), Value::F32(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(F32::default())})),
+    (Value::F32(n), Value::F32(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(f32::default())})),
     #[cfg(feature = "f64")]
-    (Value::F64(n), Value::F64(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(F64::default())})),
+    (Value::F64(n), Value::F64(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(f64::default())})),
     #[cfg(feature = "rational")]
     (Value::R64(n), Value::R64(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(R64::default())})),
     #[cfg(feature = "complex")]
@@ -217,14 +225,18 @@ fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> Result<Box<dyn MechF
     #[cfg(all(feature = "matrix", feature = "i128"))]
     (Value::MatrixI128(n), Value::I128(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(i128::to_matrix(vec![], 0, 0))})),
     #[cfg(all(feature = "matrix", feature = "f32"))]
-    (Value::MatrixF32(n), Value::F32(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(F32::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixF32(n), Value::F32(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(f32::to_matrix(vec![], 0, 0))})),
     #[cfg(all(feature = "matrix", feature = "f64"))]
-    (Value::MatrixF64(n), Value::F64(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(F64::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixF64(n), Value::F64(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(f64::to_matrix(vec![], 0, 0))})),
     #[cfg(all(feature = "matrix", feature = "rational"))]
     (Value::MatrixR64(n), Value::R64(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(R64::to_matrix(vec![], 0, 0))})),
     #[cfg(all(feature = "matrix", feature = "complex"))]
     (Value::MatrixC64(n), Value::C64(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(C64::to_matrix(vec![], 0, 0))})),
-    x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    (n,k) => Err(MechError2::new(
+        UnhandledFunctionArgumentKind2 { arg: (n.kind(), k.kind()), fxn_name: "combinatorics/n-choose-k".to_string() },
+        None
+      ).with_compiler_loc()
+    ),
   }
 }
  
@@ -232,7 +244,7 @@ pub struct CombinatoricsNChooseK {}
 impl NativeFunctionCompiler for CombinatoricsNChooseK {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());    
     }
     let n = arguments[0].clone();
     let k = arguments[1].clone();
@@ -244,7 +256,11 @@ impl NativeFunctionCompiler for CombinatoricsNChooseK {
           (Value::MutableReference(n),Value::MutableReference(k)) => {let n_brrw = n.borrow();let k_brrw = k.borrow();impl_combinatorics_n_choose_k_fxn(n_brrw.clone(),k_brrw.clone())}
           (n,Value::MutableReference(k)) => {let k_brrw = k.borrow(); impl_combinatorics_n_choose_k_fxn(n.clone(),k_brrw.clone())}
           (Value::MutableReference(n),k) => {let n_brrw = n.borrow();impl_combinatorics_n_choose_k_fxn(n_brrw.clone(),k.clone())}
-          x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          (n,k) => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (n.kind(), k.kind()), fxn_name: "combinatorics/n-choose-k".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }

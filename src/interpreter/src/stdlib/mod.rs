@@ -66,7 +66,10 @@ macro_rules! impl_range_range_fxn_v {
             let sink: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self { sink, source, ixes: (ix1, ix2), _marker: PhantomData::default() }))
           },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          _ => Err(MechError2::new(
+            IncorrectNumberOfArguments { expected: 3, found: args.len() },
+            None
+          ).with_compiler_loc())
         }
       }
     }
@@ -140,7 +143,10 @@ macro_rules! impl_all_fxn_v {
             let sink: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self { sink, source, ixes, _marker: PhantomData::default() }))
           },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          _ => Err(MechError2::new(
+            IncorrectNumberOfArguments { expected: 3, found: args.len() },
+            None
+          ).with_compiler_loc())
         }
       }
     }

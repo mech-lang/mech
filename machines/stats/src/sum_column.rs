@@ -68,7 +68,11 @@ where
         let out = unsafe { out.as_unchecked().clone() };
         Ok(Box::new(StatsSumColumnRD2 { arg, out }))
       }
-      _ => Err(MechError {file: file!().to_string(),tokens: vec![],msg: "".to_string(),id: line!(),kind: MechErrorKind::None,}),
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -104,7 +108,7 @@ where
   }
 }
 #[cfg(all(feature = "row_vectord", feature = "matrixd", not(feature = "matrix1")))]
-register_fxn_descriptor!(StatsSumColumnRD2, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", F32, "f32", F64, "f64", C64, "complex", R64, "rational");
+register_fxn_descriptor!(StatsSumColumnRD2, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64", C64, "complex", R64, "rational");
 
 macro_rules! impl_stats_sum_column_match_arms {
   ($arg:expr, $($input_type:ident, $($target_type:ident, $value_string:tt),+);+ $(;)?) => {
@@ -146,13 +150,16 @@ macro_rules! impl_stats_sum_column_match_arms {
             Value::[<Matrix $input_type>](Matrix::<$target_type>::DMatrix(arg)) => Ok(Box::new(StatsSumColumnMD{arg: arg.clone(), out: Ref::new(DVector::from_element(arg.borrow().nrows(),$target_type::default())) })),
           )+
         )+
-        _ => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        _ => Err(MechError2::new(
+          UnhandledFunctionArgumentKind1 {arg: $arg.kind(), fxn_name: stringify!(StatsSumColumn).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     }
   }
 }
 
-fn impl_stats_sum_column_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_stats_sum_column_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_stats_sum_column_match_arms!(
     lhs_value,
     I8,   i8,   "i8";
@@ -165,8 +172,8 @@ fn impl_stats_sum_column_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, 
     U32,  u32,  "u32";
     U64,  u64,  "u64";
     U128, u128, "u128";
-    F32,  F32,  "f32";
-    F64,  F64,  "f64";
+    F32,  f32,  "f32";
+    F64,  f64,  "f64";
     C64, C64, "complex";
     R64, R64, "rational"
   )

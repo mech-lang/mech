@@ -93,7 +93,6 @@
     .sidebar {
       font-family: 'FiraCodeLight', monospace;
       font-size: 1rem;
-      background-color: #040608;
       color: #f2ead9;
       padding: 1rem;
       overflow: auto;
@@ -169,7 +168,7 @@
 
   /* Logo */
   #logo img {
-    height: 40px; /* scale to fit header */
+    height: 35px; /* scale to fit header */
   }
 
   /* Nav container */
@@ -211,9 +210,13 @@
     font-size: 1.2rem;
     font-weight: bold;
   }
-
+  #github {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+  }
   /* compress the header if the view is small */
-  @media (max-width: 768px) {
+  @media (max-width: 840px) {
     #header {
       flex-direction: row;
       align-items: flex-start;
@@ -231,8 +234,41 @@
       font-size: 0.9rem;
       padding-top: 0px;
     }
+    #github {
+      position: absolute;
+      top: 2px;
+      right: 1rem;
+    }
+  }
+  @media (max-width: 650px) {
+    #header {
+      flex-direction: column;
+      align-items: center; /* Center items horizontally */
+      padding: 0px 1rem;
+      height: auto;
+      padding-top: 3px;
+      gap: 1rem;
+    }
+    #logo img {
+      height: 25px;
+      margin: auto;
+    }
+    #nav {
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.9rem;
+      padding-top: 0px;
+      justify-content: center; /* Center navigation links */
+    }
+    #github {
+      position: relative;
+      top: inherit;
+      right: inherit;
+      margin: auto; /* Center GitHub button */
+    }
   }
   </style>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
 </head>
 <body>
   <header id="header">
@@ -243,10 +279,13 @@
     </div>
     <div id="nav">
       <span><a href="https://about.mech-lang.org">About</a></span>
-      <span ><a href="https://mech-lang.org/blog">Blog</a></span>
+      <span class="active"><a href="https://mech-lang.org/blog">Blog</a></span>
       <span><a href="https://mech-lang.org/community">Community</a></span>
-      <span class="active"><a href="https://docs.mech-lang.org">Docs</a></span>
+      <span ><a href="https://docs.mech-lang.org">Docs</a></span>
       <span><a href="https://try.mech-lang.org">Explore</a></span>
+    </div>
+    <div id="github">
+      <a class="github-button" href="https://github.com/mech-lang/mech" data-color-scheme="no-preference: light; light: light; dark: dark;" data-size="large" data-show-count="true" aria-label="Star mech-lang/mech on GitHub">Star</a>
     </div>
   </header>
   <div class="container mech-root" mech-interpreter-id=0>
@@ -268,9 +307,16 @@
       // Handle TOC links
       tocLinks.forEach(link => {
         link.addEventListener('click', (e) => {
+          const href = link.getAttribute('href');
+          
+          // If it's a REPL command (starts with #:), don't prevent default
+          if (href && href.startsWith('#:')) {
+            return; // Let the browser handle it normally, will trigger hashchange
+          }
+          
           e.preventDefault();
           
-          const targetId = link.getAttribute('href').substring(1);
+          const targetId = href.substring(1);
           const targetElement = document.getElementById(targetId);
           
           if (targetElement && contentPane.contains(targetElement)) {
@@ -286,9 +332,16 @@
       // Handle content links
       contentLinks.forEach(link => {
         link.addEventListener('click', (e) => {
+          const href = link.getAttribute('href');
+          
+          // If it's a REPL command (starts with #:), don't prevent default
+          if (href && href.startsWith('#:')) {
+            return; // Let the browser handle it normally, will trigger hashchange
+          }
+          
           e.preventDefault();
           
-          const targetId = link.getAttribute('href').substring(1);
+          const targetId = href.substring(1);
           const targetElement = document.getElementById(targetId);
           
           if (targetElement && contentPane.contains(targetElement)) {

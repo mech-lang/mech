@@ -59,6 +59,8 @@ pub use self::exclusive::*;
 #[cfg(feature = "inclusive")]
 pub use self::inclusive::*;
 
+use mech_core::MechErrorKind2;
+
 // ----------------------------------------------------------------------------
 // Range Library
 // ----------------------------------------------------------------------------
@@ -75,4 +77,58 @@ macro_rules! register_range {
       }
     }
   };
+}
+
+#[derive(Debug, Clone)]
+pub struct EmptyRangeError;
+impl MechErrorKind2 for EmptyRangeError {
+  fn name(&self) -> &str { "EmptyRange" }
+  fn message(&self) -> String {
+    "Range size must be > 0".to_string()
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RangeSizeOverflowError;
+
+impl MechErrorKind2 for RangeSizeOverflowError {
+  fn name(&self) -> &str { "RangeSizeOverflow" }
+  fn message(&self) -> String {
+    "Range size overflow".to_string()
+  }
+}
+
+#[macro_export]
+macro_rules! range_size_to_usize {
+  // Float f32 branch
+  ($diff:expr, f32) => {{
+    let v: f32 = $diff;
+    if v < 0.0 {
+      return Err(MechError2::new(
+        RangeSizeOverflowError {},
+        None
+      ).with_compiler_loc());
+    }
+    v as usize
+  }};
+  
+  // Float f64 branch
+  ($diff:expr, f64) => {{
+    let v: f64 = $diff;
+    if v < 0.0 {
+      return Err(MechError2::new(
+        RangeSizeOverflowError {},
+        None
+      ).with_compiler_loc());
+    }
+    v as usize
+  }};
+  
+  // Integer branch
+  ($diff:expr, $ty:ty) => {{
+    $diff.try_into().map_err(|_| MechError2::new(
+      RangeSizeOverflowError {},
+      None
+    ).with_compiler_loc())?
+  }};
 }

@@ -92,9 +92,9 @@ impl_col_set_fxn_shapes!(u64);
 #[cfg(feature = "u128")]
 impl_col_set_fxn_shapes!(u128);
 #[cfg(feature = "f32")]
-impl_col_set_fxn_shapes!(F32);
+impl_col_set_fxn_shapes!(f32);
 #[cfg(feature = "f64")]
-impl_col_set_fxn_shapes!(F64);
+impl_col_set_fxn_shapes!(f64);
 #[cfg(feature = "string")]
 impl_col_set_fxn_shapes!(String);
 #[cfg(feature = "complex")]
@@ -129,10 +129,16 @@ macro_rules! impl_set_column_match_arms {
               #[cfg(all(feature = $type_feature, feature = "vectord", feature = "matrix1"))]
               (Some((ValueKind::$lhs_type, Matrix::DVector(sink))), n, Value::[<Matrix $lhs_type>](Matrix::Matrix1(source))) =>Ok(Box::new([<TableSetCol $lhs_type VDM1>]{ source: source.clone(), sink: sink.clone() })),
             )+
-            x => return Err(MechError {file: file!().to_string(),tokens: vec![],msg: "".to_string(),id: line!(),kind: MechErrorKind::UndefinedField(k)}),
+            x => return Err(MechError2::new(
+              UndefinedTableColumnError { id: k.clone() }, None).with_compiler_loc()
+            )
           }
         }
-        x => Err(MechError {file: file!().to_string(),tokens: vec![],msg: "".to_string(),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+        (sink, source, key) => Err(MechError2::new(
+            UnhandledFunctionArgumentKind3 { arg: (sink.kind(), source.kind(), key.kind()), fxn_name: stringify!($fxn_name).to_string() },
+            None
+          ).with_compiler_loc()
+        ),
       }
     }
   }
@@ -152,8 +158,8 @@ fn impl_set_column_fxn(sink: Value, source: Value, key: Value) -> MResult<Box<dy
     U32,  u32,  "u32";
     U64,  u64,  "u64";
     U128, u128, "u128";
-    F32,  F32,  "f32";
-    F64,  F64,  "f64";
+    F32,  f32,  "f32";
+    F64,  f64,  "f64";
     String, String, "string";
     C64, C64,"complex";
     R64, R64,"rational";
@@ -164,7 +170,7 @@ pub struct AssignTableColumn {}
 impl NativeFunctionCompiler for AssignTableColumn {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() < 3 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let sink = arguments[0].clone();
     let source = arguments[1].clone();
@@ -174,7 +180,11 @@ impl NativeFunctionCompiler for AssignTableColumn {
       Err(_) => {
         match (&sink,&source,&key) {
           (Value::MutableReference(sink),_,_) => { impl_set_column_fxn(sink.borrow().clone(), source.clone(), key.clone()) }
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          (sink, source, key) => Err(MechError2::new(
+              UnhandledFunctionArgumentKind3 { arg: (sink.kind(), source.kind(), key.kind()), fxn_name: "table/assign-column".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
@@ -231,7 +241,7 @@ impl MechFunctionCompiler for TableAppendTable {
   }
 }
 
-pub fn add_assign_table_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
+pub fn add_assign_table_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
   match (sink.clone(),source.clone()) {
     (Value::Table(tbl), Value::Record(rcrd)) => {
       tbl.borrow().check_record_schema(&rcrd.borrow())?;
@@ -241,7 +251,11 @@ pub fn add_assign_table_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFu
       tbl_sink.borrow().check_table_schema(&tbl_src.borrow())?;
       return Ok(Box::new(TableAppendTable{ sink: tbl_sink, source: tbl_src }))
     }
-    x => return Err(MechError{file: file!().to_string(),tokens: vec![],msg: format!("Unhandled args {:?}, {:?}", sink, source),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,}),
+    (sink,source) => return Err(MechError2::new(
+        UnhandledFunctionArgumentKind2 { arg: (sink.kind(),source.kind()), fxn_name: "table/add-assign".to_string() },
+        None
+      ).with_compiler_loc()
+    ),
   }
 }
 
@@ -249,7 +263,7 @@ pub struct AddAssignTable {}
 impl NativeFunctionCompiler for AddAssignTable {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let sink = arguments[0].clone();
     let source = arguments[1].clone();
@@ -260,9 +274,24 @@ impl NativeFunctionCompiler for AddAssignTable {
           (Value::MutableReference(sink),Value::MutableReference(source)) => { add_assign_table_fxn(sink.borrow().clone(),source.borrow().clone()) },
           (sink,Value::MutableReference(source)) => { add_assign_table_fxn(sink.clone(),source.borrow().clone()) },
           (Value::MutableReference(sink),source) => { add_assign_table_fxn(sink.borrow().clone(),source.clone()) },
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          (sink,source) => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (sink.kind(),source.kind()), fxn_name: "table/add-assign".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct UndefinedTableColumnError {
+  pub id: u64,
+}
+impl MechErrorKind2 for UndefinedTableColumnError {
+  fn name(&self) -> &str { "UndefinedTableColumn" }
+  fn message(&self) -> String {
+      format!("Column {:?} is not defined in this table.", self.id)
   }
 }

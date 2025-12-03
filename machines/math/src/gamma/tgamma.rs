@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{tgamma,tgammaf};
 macro_rules! tgamma_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = tgamma((*$arg).0);}
+    unsafe{(*$out) = tgamma((*$arg));}
   };}
 
 macro_rules! tgamma_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = tgamma(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = tgamma(((&(*$arg))[i]));
       }}};}
 
 macro_rules! tgammaf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = tgammaf((*$arg).0);}
+    unsafe{(*$out) = tgammaf((*$arg));}
   };}  
 
 macro_rules! tgammaf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = tgammaf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = tgammaf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathTgamma, F32, tgammaf, FeatureFlag::Custom(hash_str("math/tgamma")));
+impl_math_unop!(MathTgamma, f32, tgammaf, FeatureFlag::Custom(hash_str("math/tgamma")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathTgamma, F64, tgamma, FeatureFlag::Custom(hash_str("math/tgamma")));
+impl_math_unop!(MathTgamma, f64, tgamma, FeatureFlag::Custom(hash_str("math/tgamma")));
 
-fn impl_tgamma_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_tgamma_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathTgamma,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 
@@ -50,7 +50,7 @@ pub struct MathTgamma {}
 impl NativeFunctionCompiler for MathTgamma {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let input = arguments[0].clone();
     match impl_tgamma_fxn(input.clone()) {
@@ -58,7 +58,11 @@ impl NativeFunctionCompiler for MathTgamma {
       Err(_) => {
         match (input) {
           (Value::MutableReference(input)) => {impl_tgamma_fxn(input.borrow().clone())}
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/tgamma".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }

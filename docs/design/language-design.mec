@@ -1,6 +1,7 @@
 Language Design
 ===============================================================================
 
+This is a collection of random notes. They aren't really organized yet.
 
 Sometimes it feels like there are already too many programming languages out there, but still, the amount of unexplored territory in the programming language design space remains vast. What's more, many of the existing and popular languages out there are clustered around well-explored and researched paradigms, such as imperative programming, object-oriented programming, and functional programming [^1]. New langauges in this space often focus on incremental imprements -- taking what has worked and advancing it one delta. This is a perfectly valid approach, but it often leads to languages that are more of the same, and potentially a local maximum in the design space [^2]. 
 
@@ -63,6 +64,7 @@ How does mech work well with AI?
 Local scope, don't need to look globally to fiture out things.
 Typed so that the AI can understand the data and how to manipulate it.
 Simple data model that is easy to understand and manipulate.
+Advanced version of syntax is better written by AI, makes code that looks like ascii drawings into programs.
 
 (2.1) Design Goals
 
@@ -76,6 +78,11 @@ Some design goals of Mech include:
 - Programs should be safe and secure, with a focus on preventing common programming errors
 - The language should be learnable by a wide range of people, from beginners to experienced programmers, from students to professionals, and from artists to scientists.
 
+
+2. Development philosophy
+----------------------------------
+
+I'm not a very good programmer, there are many people better than me. Also I'm just one person. So the best thing I can do is leverage the work of other smarter people as much as possible.
 
 (1.3) Lineage
 

@@ -32,7 +32,11 @@ macro_rules! impl_transpose {
             let out: Ref<$out_type> = unsafe{ out.as_unchecked().clone() };
             Ok(Box::new($struct_name{arg, out}))
           }
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Expected unary arguments, got {:#?}", args), id: line!(), kind: MechErrorKind::None }),
+          _ => Err(MechError2::new(
+              IncorrectNumberOfArguments { expected: 1, found: args.len() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
@@ -60,7 +64,7 @@ macro_rules! impl_transpose {
         compile_unop!(name, self.out, self.arg, ctx, $feature_flag);
       }
     }
-    register_fxn_descriptor!($struct_name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", F32, "f32", F64, "f64", bool, "bool", String, "string", C64, "complex", R64, "rational");
+    register_fxn_descriptor!($struct_name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64", bool, "bool", String, "string", C64, "complex", R64, "rational");
   };
 }
 
@@ -136,13 +140,17 @@ macro_rules! impl_transpose_match_arms {
             },
           )+
         )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:#?}", x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError2::new(
+            UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "MatrixTranspose".to_string() },
+            None
+          ).with_compiler_loc()
+        ),
       }
     }
   }
 }
 
-fn impl_transpose_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_transpose_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_transpose_match_arms!(
     (lhs_value),
     Bool,   bool,   "bool";
@@ -156,8 +164,8 @@ fn impl_transpose_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechErr
     U32,    u32,    "u32";
     U64,    u64,    "u64";
     U128,   u128,   "u128";
-    F32,    F32,    "f32";
-    F64,    F64,    "f64";
+    F32,    f32,    "f32";
+    F64,    f64,    "f64";
     String, String, "string";
     C64, C64, "complex";
     R64, R64, "rational";

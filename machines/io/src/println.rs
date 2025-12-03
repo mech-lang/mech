@@ -16,13 +16,17 @@ where
   Mat: Debug + Clone +
        CompileConst + ConstElem + AsValueKind + 'static + Default,
 {
-  fn new(args: FunctionArgs) -> Result<Box<dyn MechFunction>, MechError> {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
       FunctionArgs::Nullary(out) => {
         let out: Ref<Value> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self {e0: Ref::new(Mat::default()), _marker: PhantomData::default()}))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("IoPrintlnMatrix requires 0 argument"), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 0, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -91,7 +95,11 @@ macro_rules! impl_print_match_arms {
           #[cfg(all(feature = $value_string, feature = "vectord"))]
           (Value::[<Matrix $input_type:camel>](Matrix::DVector(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
         )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError2::new(
+            UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "io/println".to_string() },
+            None
+          ).with_compiler_loc()
+        ),
       }
     }
   }
@@ -107,13 +115,17 @@ where
   CompileConst + ConstElem + AsValueKind +
   Debug + Default,
 {
-  fn new(args: FunctionArgs) -> Result<Box<dyn MechFunction>, MechError> {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
       FunctionArgs::Nullary(out) => {
         let e0: Ref<T> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self {e0}))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("IoPrintlnScalar requires 0 argument"), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 0, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -141,7 +153,7 @@ where
     compile_nullop!(name, self.e0, ctx, FeatureFlag::Custom(hash_str("io/print")) );
   }
 }
-register_fxn_descriptor!(IoPrintlnScalar, i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64", bool, "bool", String, "string", C64, "complex", R64, "rational");
+register_fxn_descriptor!(IoPrintlnScalar, i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64", bool, "bool", String, "string", C64, "complex", R64, "rational");
 
 fn impl_print_fxn(source_value: Value) -> MResult<Box<dyn MechFunction>>  {
   if source_value.is_scalar() {
@@ -193,8 +205,8 @@ fn impl_print_fxn(source_value: Value) -> MResult<Box<dyn MechFunction>>  {
     u32,  "u32",
     u64,  "u64",
     u128, "u128",
-    F32,  "f32",
-    F64,  "f64",
+    f32,  "f32",
+    f64,  "f64",
     bool, "bool",
     String, "string",
     C64, "complex",
@@ -207,7 +219,11 @@ pub struct IoPrintln {}
 impl NativeFunctionCompiler for IoPrintln {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 1, found: arguments.len() },
+          None
+        ).with_compiler_loc()
+      );
     }
     let input = arguments[0].clone();
     match impl_print_fxn(input.clone()) {
@@ -215,7 +231,11 @@ impl NativeFunctionCompiler for IoPrintln {
       Err(_) => {
         match (input) {
           (Value::MutableReference(input)) => {impl_print_fxn(input.borrow().clone())}
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "io/println".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }

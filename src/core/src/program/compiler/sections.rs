@@ -215,9 +215,9 @@ pub enum FeatureKind {
   
   HorzCat, VertCat,
   Compiler, PrettyPrint, Serde,
-  MatMul, Transpose, Dot, Cross, Add, 
+  MatMul, Transpose, Dot, Cross, Solve,
   
-  Sub, Mul, Div, Exp, Mod, 
+  Add, Sub, Mul, Div, Exp, Mod, 
   Neg, OpAssign, LT, LTE, GT, 
   
   GTE, EQ, NEQ, And, Or, 
@@ -292,6 +292,7 @@ impl FeatureKind {
       FeatureKind::MatMul => "matrix_matmul".to_string(),
       FeatureKind::Transpose => "matrix_transpose".to_string(),
       FeatureKind::Dot => "matrix_dot".to_string(),
+      FeatureKind::Solve => "matrix_solve".to_string(),
       FeatureKind::Cross => "matrix_cross".to_string(),
       FeatureKind::Add => "math_add".to_string(),
       FeatureKind::Sub => "math_sub".to_string(),
@@ -370,7 +371,7 @@ pub enum TypeTag {
   MatrixF32, MatrixF64, MatrixC64, MatrixR64, MatrixBool, 
   MatrixString, MatrixIndex,
   EnumTag, Record, Map, Atom, 
-  Table, Tuple, Reference, Set, OptionT,
+  Table, Tuple, Reference, Set, OptionT, None,
 }
 
 impl TypeTag {
@@ -385,7 +386,7 @@ impl TypeTag {
       31 => Some(TypeTag::MatrixF32), 32 => Some(TypeTag::MatrixF64), 33 => Some(TypeTag::MatrixC64), 34 => Some(TypeTag::MatrixR64), 35 => Some(TypeTag::MatrixBool), 
       36 => Some(TypeTag::MatrixString), 37 => Some(TypeTag::MatrixIndex),
       38 => Some(TypeTag::EnumTag), 39 => Some(TypeTag::Record), 40 => Some(TypeTag::Map), 41 => Some(TypeTag::Atom), 
-      42 => Some(TypeTag::Table), 43 => Some(TypeTag::Tuple), 44 => Some(TypeTag::Reference), 45 => Some(TypeTag::Set), 46 => Some(TypeTag::OptionT),
+      42 => Some(TypeTag::Table), 43 => Some(TypeTag::Tuple), 44 => Some(TypeTag::Reference), 45 => Some(TypeTag::Set), 46 => Some(TypeTag::OptionT), 47 => Some(TypeTag::None),
       _ => None,
     }
   }
@@ -518,6 +519,22 @@ pub enum OpCode {
   Quadop    = 0x50,
   VarArg    = 0x60,
   Return    = 0xFF,
+}
+
+impl std::fmt::Display for OpCode {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let s = match self {
+      OpCode::ConstLoad => "ConstLoad",
+      OpCode::NullOp    => "NullOp",
+      OpCode::Unop      => "Unop",
+      OpCode::Binop     => "Binop",
+      OpCode::Ternop    => "Ternop",
+      OpCode::Quadop    => "Quadop",
+      OpCode::VarArg    => "VarArg",
+      OpCode::Return    => "Return",
+    };
+    write!(f, "{}", s)
+  }
 }
 
 impl OpCode {

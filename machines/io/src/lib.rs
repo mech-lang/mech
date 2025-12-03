@@ -140,9 +140,9 @@ macro_rules! impl_register_all {
     #[cfg(feature = "i128")]
     register_op_all!($macro_name, i128, "i128");
     #[cfg(feature = "f32")]
-    register_op_all!($macro_name, F32, "f32");
+    register_op_all!($macro_name, f32, "f32");
     #[cfg(feature = "f64")]
-    register_op_all!($macro_name, F64, "f64");
+    register_op_all!($macro_name, f64, "f64");
     #[cfg(feature = "r64")]
     register_op_all!($macro_name, R64, "r64");
     #[cfg(feature = "c64")]

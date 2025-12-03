@@ -1,0 +1,131 @@
+Synthassign - the second most powerful operator in the unverise
+===============================================================
+
+1. Background
+-----------------
+
+Function dispatch is a programming language feature where the runtime system selects which function or method to invoke based on the types or values of the arguments provided. This allows for more flexible and dynamic behavior in code execution.
+
+- The predominant form of function dispatch in most programming languages is single dispatch, where the method to be invoked is determined by the type of a single object (usually the one on which the method is called). This is emphasized by the syntax of method calls in languages like Java, C++, and Python, where the method is invoked on an object instance. e.g. `object.method(args)`
+
+- Other examples of smart dispatch include Julia, which uses multiple dispatch to select methods based on argument types. For example, in Julia, you can define multiple methods for the same function name, and the appropriate method is chosen based on the types of all arguments passed to the function. This allows for interesting behaviors like extreme polymorphism, where libraries and types not intended to work together can interoperate seamlessly.
+
+Moreover, what multiple dispatch enables is brevity of code, because usually to get such interoperability in single-dispatch languages, you would need to write a lot of boilerplate code to handle conversions and interactions between different types. Thus, Julia code can often be much more concise and expressive, but still performant because the dispatching allows the runtime to unbox values and call optimized code paths.
+
+- Matlab introduced the `\` operator in the 1980s as a matrix left division operator.
+- Later on it evolved into a "smart" operator, which dispatched to the appropriate linear algebra routine
+  based on the types and shapes of its operands. It has the ability to solve systems of linear equations, compute least squares solutions, and perform matrix factorizations, and to do so on dense, sparse, and structured matrices of different datatypes, all from a single operator. 
+- The implementation of this operator involves sophisticated heuristics, chosen by experts in linear algebra, that analyze the properties of the input matrices to choose the most efficient method for solving the equations. 
+  
+  It's been said the `\` operator basically established the Mathworks reputation for ease of use and power in numerical computing.
+
+Other AI integrations into programming languages today:
+
+- Copilot: An AI-powered code completion tool developed by GitHub in collaboration with OpenAI. It uses machine learning models trained on a vast amount of code from public repositories to provide context-aware code suggestions and completions as developers write code.
+- Tabnine: An AI-driven code completion tool that integrates with various IDEs and text editors. It uses deep learning models to analyze code patterns and provide relevant suggestions for code completion, helping developers write code faster and with fewer errors.
+- Kite: An AI-powered coding assistant that provides code completions, documentation, and examples as developers write code. It uses machine learning models to understand the context of the code and offer relevant suggestions.
+- DeepCode: An AI-based code review tool that analyzes code for potential bugs, security vulnerabilities, and code quality issues. It uses machine learning models trained on a large dataset of code to provide insights and recommendations for improving code quality.
+- Codex: An AI model developed by OpenAI that can generate code snippets, functions, and even entire programs based on natural language descriptions. It can understand and generate code in multiple programming languages, making it a powerful tool for developers.
+
+
+
+2. Synthassign in Mech
+-----------------------------
+
+Synthassign `?=` is a new operator in Mech that goes beyond traditional single/multiple dispatch based on types, and even the expert heuristics of Matlab's `\` operator. Synthassign uses AI(TM) technology to analyze the input arguments, a statement of the intended transformation of the inputs, and synthesizes an appropriate algorithm to perform the operation.
+
+For example, consider the following Mech code:
+
+students := |name    level      grades       |
+            |"Alice" `Freshman  [90, 95, 88] |
+            |"Bob"   `Senior    [70, 75, 80] |
+            |"Carol" `Junior    [85, 87, 90] |
+            |"Dave"  `Senior    [92, 90, 94] |
+
+gpa ?= students ;
+
+This program is intended to assign to `top-students` the subset of `students` who are doing really well. The `?=` operator will analyze the input data structure `students`, see that the intended variable is named "gpa", and using AI technology, synthesize a Mech algorithm that computes the GPA for each student based on their grades, and assigns the result to the variable `gpa`.
+
+3. The Design 
+-----------------------------
+
+When a program is compiled that includes synthassign statements, it goes through three stage
+1. The program is parsed, and the synthassign statements are identified.
+2. The program is partially evaluated as far as it can be. Any IO statements are left unevaluated. But all types are inferred as far as possible.
+3. Synthasasign statements are and processed in a batch. In this stage, the AI engine is invoked to analyze each synthassign statement, the types and structures of the input data, the surrounding context and comments in the program, and the intended transformation. The AI engine then generates Mech code that implements the desired operation. The AI will also generate questions and ask the programmer for clarification if needed, as well as offer suggestions on how to improve the code or the specification. If the user did not specify a return type, the AI will try to infer it baed on how the results is used later or on how the variable is named, or how the inputs are named. If the user did specify a return type, the AI will ensure that the synthesized code conforms to that type. Either way, the result will be an Option type, meaning that if the AI cannot synthesize code that meets the requirements, it will return None, and the compiler will issue an error message, so code that works with the result of a synthassign must always handle the possibility of failure. They are processed as a group to allow the AI the flexibility to consider the interactions between multiple synthassign statements, and to optimize the generated code across them.
+
+After this stage, either we have mech code for every synthassign statement, or we have error messages indicating what went wrong. If all synthassign statements were successfully synthesized, the program continues to the next compilation stages, where we actually run the program. Every valid mech program must have consistent types, so if the synthesized code does not type check, the compiler will issue an error message.
+
+Or we could do it like this:
+
+students := |name    level      grades        gpa?=   |
+            |"Alice" `Freshman  [90, 95, 88]          |
+            |"Bob"   `Senior    [70, 75, 80]          |
+            |"Carol" `Junior    [85, 87, 90]          |
+            |"Dave"  `Senior    [92, 90, 94]          |
+
+
+Some cool things we can do with this:
+
+Leverage AI features that are not even possible with traditional pogramming:
+
+Create complicated workflows without even understanding Mech code:
+
+Use AI as an execution engine or to generate dummy data.
+
+Use AI to verify data or generate tests or make checks at runtime.
+
+objects ?= return a bounding box for faces of each of the happy people in my-image-file.png ;
+
+summary ?= analayze the sales data and return a summary of key trends and insights :: q1.csv :: sales-people :: 2024-data.mec ;
+
+AI response and history is put into a synth gate: `?===...` e.g:
+
+?===(#345abc)
+To calculate the gpa for each student:
+
+- flatten the grades column 
+- compute the average for each row:
+
+gpa<[f64]> := stats/average/row(students.grades_flatten);
+?===
+
+4. How it's implemented in Mech
+---------------------------------
+
+What features of Mech make this possible?
+
+Interpretation but also static typing, it's a thing that's not seen often in many languages.
+
+What other kinds of programming langauges could synthassign work in?
+
+Could support different levels of AI integration, from simple pattern matching to full natural language understanding.
+
+For instance pedantic mode could do literally only what the prompt states. Interpetive mode could try to infer more context and intent from the surrounding code and comments.
+
+Also maybe we can put ?? anywhere for a hole. Or we can do a typed hole and do ?u64? to mean or something like that.
+
+Compilation process .mec -> mech tool -> .synth (synthesized mech) -> mech compiler -> bytecode -> runtime
+                               ^---- feedback refinement ----
+
+
+
+What features really make this work?
+
+- Declarative syntax
+- value semantics
+- strong static typing with type inference
+- partial program evaluation
+- literate programming
+- memoization
+- friendly for interactive development environments like repls and notebooks
+- fast compilation times
+- package manager with automatic documentation that is standardized and easily navigable / parseable
+- introspection and reflection - able to query the entire program at runtime and compile time
+- quote-less strings i.e. raw paragraphs as in Markdown
+
+
+
+
+
+

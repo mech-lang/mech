@@ -34,16 +34,19 @@ pub struct TupleAccess {}
 impl NativeFunctionCompiler for TupleAccess{
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() < 2 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
-    let ix = &arguments[1];
+    let ix1 = &arguments[1];
     let src = &arguments[0];
-    match (src,ix) {
+    match (src.clone(),ix1.clone()) {
       (Value::Tuple(tpl), Value::Index(ix)) => {
         let tpl_brrw = tpl.borrow();
         let ix_brrw = ix.borrow();
         if *ix_brrw > tpl_brrw.elements.len() || *ix_brrw < 1 {
-            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IndexOutOfBounds});
+            return Err(MechError2::new(
+                TupleIndexOutOfBoundsError { ix: *ix_brrw, len: tpl_brrw.elements.len() },
+                None
+              ).with_compiler_loc());
         }
         let element = tpl_brrw.elements[*ix_brrw - 1].clone();
         let new_fxn = TupleAccessElement{ out: *element };
@@ -55,13 +58,20 @@ impl NativeFunctionCompiler for TupleAccess{
             let ix_brrw = ix.borrow();
             let tpl_brrw = tpl.borrow();
             if *ix_brrw > tpl_brrw.elements.len() || *ix_brrw < 1 {
-              return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IndexOutOfBounds});
+              return Err(MechError2::new(
+                  TupleIndexOutOfBoundsError { ix: *ix_brrw, len: tpl_brrw.elements.len() },
+                  None
+                ).with_compiler_loc());
             }
             let element = tpl_brrw.elements[*ix_brrw - 1].clone();
             let new_fxn = TupleAccessElement{ out: *element };
             Ok(Box::new(new_fxn))
           },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          _ => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (src.kind(), ix1.kind()), fxn_name: "access/tuple-element".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       },
       _ => todo!(),

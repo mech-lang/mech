@@ -95,9 +95,9 @@ impl_to_matrix!(i64);
 #[cfg(feature = "i128")]
 impl_to_matrix!(i128);
 #[cfg(feature = "f32")]
-impl_to_matrix!(F32);
+impl_to_matrix!(f32);
 #[cfg(feature = "f64")]
-impl_to_matrix!(F64);
+impl_to_matrix!(f64);
 #[cfg(feature = "string")]
 impl_to_matrix!(String);
 #[cfg(feature = "complex")]
@@ -512,9 +512,9 @@ where T: Debug + Clone + PartialEq + 'static
 {
 
   pub fn append(&mut self, other: &Matrix<T>) -> MResult<()> {
-    match (self, other) {
+    match (&self, &other) {
       #[cfg(feature = "vectord")]
-      (Matrix::DVector(lhs), Matrix::DVector(rhs)) => {
+      (Matrix::DVector(ref lhs), Matrix::DVector(ref rhs)) => {
         let mut lhs = lhs.borrow_mut();
         let rhs = rhs.borrow();
         let old_len = lhs.len();
@@ -525,7 +525,7 @@ where T: Debug + Clone + PartialEq + 'static
         Ok(())
       }
       #[cfg(feature = "row_vectord")]
-      (Matrix::RowDVector(lhs), Matrix::RowDVector(rhs)) => {
+      (Matrix::RowDVector(ref lhs), Matrix::RowDVector(ref rhs)) => {
         let mut lhs = lhs.borrow_mut();
         let rhs = rhs.borrow();
         let old_len = lhs.len();
@@ -536,14 +536,19 @@ where T: Debug + Clone + PartialEq + 'static
         Ok(())
       }
       _ => {
-        return Err(MechError{
-          id: line!(),
-          file: file!().to_string(),
-          tokens: vec![],
-          msg: "".to_string(),
-          kind: MechErrorKind::None,
-        });
-      }    
+        return Err(
+          MechError2::new(
+            IncompatibleMatrixAppendToTableError {
+              lhs_rows: self.rows(),
+              lhs_cols: self.cols(),
+              rhs_rows: other.rows(),
+              rhs_cols: other.cols(),
+            },
+            None,
+          )
+          .with_compiler_loc()
+        );
+      }
     }
   }
 
@@ -564,13 +569,13 @@ where T: Debug + Clone + PartialEq + 'static
           Ok(())
       }
       _ => {
-        return Err(MechError{
-          id: line!(),
-          file: file!().to_string(),
-          tokens: vec![],
-          msg: "".to_string(),
-          kind: MechErrorKind::None,
-        });
+        return Err(
+          MechError2::new(
+            PushIntoStaticMatrixError,
+            None,
+          )
+          .with_compiler_loc()
+        );
       }
     }
   }
@@ -605,13 +610,13 @@ where T: Debug + Clone + PartialEq + 'static
         Ok(())
       }
       _ => {
-        return Err(MechError{
-          id: line!(),
-          file: file!().to_string(),
-          tokens: vec![],
-          msg: "".to_string(),
-          kind: MechErrorKind::None,
-        });
+        return Err(
+          MechError2::new(
+            ResizeStaticMatrixError,
+            None,
+          )
+          .with_compiler_loc()
+        );
       }
     }
   }
@@ -1004,9 +1009,9 @@ macro_rules! impl_to_value_for_matrix {
 
 impl_to_value_for_matrix!(Value, MatrixValue);
 #[cfg(feature = "f64")]
-impl_to_value_for_matrix!(F64, MatrixF64);
+impl_to_value_for_matrix!(f64, MatrixF64);
 #[cfg(feature = "f32")]
-impl_to_value_for_matrix!(F32, MatrixF32);
+impl_to_value_for_matrix!(f32, MatrixF32);
 #[cfg(feature = "i8")]
 impl_to_value_for_matrix!(i8, MatrixI8);
 #[cfg(feature = "i16")]
@@ -1064,8 +1069,8 @@ macro_rules! impl_to_value_matrix {
       $matrix_kind, MatrixU32,    u32, "u32",
       $matrix_kind, MatrixU64,    u64, "u64",
       $matrix_kind, MatrixU128,   u128, "u128",
-      $matrix_kind, MatrixF32,    F32, "f32",
-      $matrix_kind, MatrixF64,    F64, "f64",
+      $matrix_kind, MatrixF32,    f32, "f32",
+      $matrix_kind, MatrixF64,    f64, "f64",
       $matrix_kind, MatrixString, String, "string",
       $matrix_kind, MatrixR64, R64, "rational",
       $matrix_kind, MatrixC64, C64, "complex",
@@ -1103,3 +1108,51 @@ impl_to_value_matrix!(RowDVector);
 impl_to_value_matrix!(DVector);
 #[cfg(feature = "matrixd")]
 impl_to_value_matrix!(DMatrix);
+
+// Errors
+
+#[derive(Debug, Clone)]
+pub struct IncompatibleMatrixAppendToTableError {
+  pub lhs_rows: usize,
+  pub lhs_cols: usize,
+  pub rhs_rows: usize,
+  pub rhs_cols: usize,
+}
+impl MechErrorKind2 for IncompatibleMatrixAppendToTableError {
+  fn name(&self) -> &str {
+    "IncompatibleMatrixAppend"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Cannot append matrix {}x{} to matrix {}x{}.",
+      self.lhs_rows, self.lhs_cols,
+      self.rhs_rows, self.rhs_cols
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct ResizeStaticMatrixError;
+
+impl MechErrorKind2 for ResizeStaticMatrixError {
+  fn name(&self) -> &str {
+    "ResizeStaticMatrixError"
+  }
+  fn message(&self) -> String {
+    format!("Cannot resize a static matrix.")
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct PushIntoStaticMatrixError;
+
+impl MechErrorKind2 for PushIntoStaticMatrixError {
+  fn name(&self) -> &str {
+    "PushIntoStaticMatrix"
+  }
+
+  fn message(&self) -> String {
+    "Cannot push into a static matrix.".to_string()
+  }
+}

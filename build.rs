@@ -17,28 +17,22 @@ fn main() -> Result<(), Box<dyn Error>> {
     res.set_icon("mech.ico");
     res.compile().unwrap();
   }
-/*
-  let out_dir = env::var("OUT_DIR")?;
-  let dest_path = Path::new(&out_dir).join("mech_app_files.rs");
-  let mut all_the_files = File::create(&dest_path)?;
 
-  writeln!(&mut all_the_files, r##"["##,)?;
-
-  for f in fs::read_dir(SOURCE_DIR)? {
-      let f = f?;
-
-      if !f.file_type()?.is_file() {
-          continue;
-      }
-
-      writeln!(
-          &mut all_the_files,
-          r##"(r"{name}", include_bytes!(r"../../../../../{name}")),"##,
-          name = f.path().display(),
-      )?;
+  if Path::new("src/wasm/pkg/mech_wasm_bg.wasm.br").exists() {
+    println!("cargo:rustc-cfg=has_file_wasm");
   }
 
-  writeln!(&mut all_the_files, r##"]"##,)?;*/
+  if Path::new("src/wasm/pkg/mech_wasm.js").exists() {
+    println!("cargo:rustc-cfg=has_file_js");
+  }
+
+  if Path::new("include/index.html").exists() {
+    println!("cargo:rustc-cfg=has_file_shim");
+  }
+
+  if Path::new("include/style.css").exists() {
+    println!("cargo:rustc-cfg=has_file_stylesheet");
+  }
 
   Ok(())
 }

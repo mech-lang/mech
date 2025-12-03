@@ -21,7 +21,7 @@ pub fn structure(strct: &Structure, p: &Interpreter) -> MResult<Value> {
     Structure::Set(x) => set(&x, p),
     #[cfg(feature = "map")]
     Structure::Map(x) => map(&x, p),
-    _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+    x => Err(MechError2::new(FeatureNotEnabledError, Some(format!("Feature not enabled for `{:?}`", stringify!(x)))).with_compiler_loc()),
   }
 }
 
@@ -49,7 +49,10 @@ pub fn map(mp: &Map, p: &Interpreter) -> MResult<Value> {
   // verify that all the keys are the same kind:
   for k in m.keys() {
     if k.kind() != key_kind {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::KindMismatch(k.kind(),key_kind)});
+      return Err(MechError2::new(
+        MapKeyKindMismatchError{expected_kind: key_kind.clone(), actual_kind: k.kind().clone()},
+        None
+      ).with_compiler_loc());
     }
   }
   
@@ -57,7 +60,10 @@ pub fn map(mp: &Map, p: &Interpreter) -> MResult<Value> {
   // verify that all the values are the same kind:
   for v in m.values() {
     if v.kind() != value_kind {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::KindMismatch(v.kind(),value_kind)});
+      return Err(MechError2::new(
+        MapValueKindMismatchError{expected_kind: value_kind.clone(), actual_kind: v.kind().clone()},
+        None
+      ).with_compiler_loc());
     }
   }
   Ok(Value::Map(Ref::new(MechMap{
@@ -86,7 +92,7 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
     kinds.push(knd.clone());
     #[cfg(feature = "convert")]
     if knd != val.kind() {
-      let fxn = ConvertKind{}.compile(&vec![val.clone(), Value::Kind(knd)]);
+      let fxn = ConvertKind{}.compile(&vec![val.clone(), Value::Kind(knd.clone())]);
       match fxn {
         Ok(convert_fxn) => {
           convert_fxn.solve();
@@ -95,7 +101,14 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
           data.insert(name_hash, converted_result);
         },
         Err(e) => {
-          return Err(MechError{id: line!(), file: file!().to_string(), tokens: vec![], msg: "".to_string(), kind: MechErrorKind::None});
+          return Err(MechError2::new(
+            TableColumnKindMismatchError {
+              column_id: name_hash,
+              expected_kind: knd.clone(),
+              actual_kind: val.kind().clone(),
+            },
+            None
+          ).with_compiler_loc());
         }
       }
     } else {
@@ -142,7 +155,11 @@ impl MechFunctionFactory for ValueSet {
         let out: Ref<MechSet> = unsafe{ out.as_unchecked().clone() };
         Ok(Box::new(ValueSet {out}))
       },
-      _ => Err(MechError {file: file!().to_string(),tokens: vec![],msg: "Invalid arguments to ValueSet".to_string(),id: line!(),kind: MechErrorKind::IncorrectNumberOfArguments,})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 0, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -189,15 +206,18 @@ pub fn set(m: &Set, p: &Interpreter) -> MResult<Value> {
     let result = expression(el, p)?;
     elements.push(result.clone());
   }
-  let set_kind = if elements.len() > 0 {
+  let element_kind = if elements.len() > 0 {
     elements[0].kind()
   } else {
     ValueKind::Empty
   };
   // Make sure all elements have the same kind
   for el in &elements {
-    if el.kind() != set_kind {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::KindMismatch(el.kind(),set_kind)});
+    if el.kind() != element_kind {
+      return Err(MechError2::new(
+        SetKindMismatchError{expected_kind: element_kind.clone(), actual_kind: el.kind().clone()},
+        None
+      ).with_compiler_loc());
     }
   }
   #[cfg(feature = "functions")]
@@ -222,83 +242,142 @@ pub fn set(m: &Set, p: &Interpreter) -> MResult<Value> {
 macro_rules! handle_value_kind {
   ($value_kind:ident, $val:expr, $field_label:expr, $data_map:expr, $converter:ident) => {{
     let mut vals = Vec::new();
+    let id = $field_label; // <- FIXED: it's already a u64
     for x in $val.as_vec().iter() {
       match x.$converter() {
         Ok(u) => vals.push(u.to_value()),
-        Err(_) => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::WrongTableColumnKind});}
+        Err(_) => {
+          return Err(MechError2::new(
+            TableColumnKindMismatchError { 
+              column_id: id, 
+              expected_kind: $value_kind.clone(), 
+              actual_kind: x.kind() 
+            },
+            None
+          ).with_compiler_loc());
+        }
       }
     }
-    let id = $field_label.as_u64().unwrap().borrow().clone();
     $data_map.insert(id, ($value_kind.clone(), Value::to_matrixd(vals.clone(), vals.len(), 1)));
-  }};}
+  }};
+}
+
+
+#[cfg(feature = "table")]
+fn handle_column_kind(
+    kind: ValueKind,
+    id: u64,
+    val: Matrix<Value>,
+    data_map: &mut IndexMap<u64,(ValueKind,Matrix<Value>)>
+) -> MResult<()> 
+{
+  match kind {
+    #[cfg(feature = "i8")]
+    ValueKind::I8   => handle_value_kind!(kind, val, id, data_map, as_i8),
+    #[cfg(feature = "i16")]
+    ValueKind::I16  => handle_value_kind!(kind, val, id, data_map, as_i16),
+    #[cfg(feature = "i32")]
+    ValueKind::I32  => handle_value_kind!(kind, val, id, data_map, as_i32),
+    #[cfg(feature = "i64")]
+    ValueKind::I64  => handle_value_kind!(kind, val, id, data_map, as_i64),
+    #[cfg(feature = "i128")]
+    ValueKind::I128 => handle_value_kind!(kind, val, id, data_map, as_i128),
+
+    #[cfg(feature = "u8")]
+    ValueKind::U8   => handle_value_kind!(kind, val, id, data_map, as_u8),
+    #[cfg(feature = "u16")]
+    ValueKind::U16  => handle_value_kind!(kind, val, id, data_map, as_u16),
+    #[cfg(feature = "u32")]
+    ValueKind::U32  => handle_value_kind!(kind, val, id, data_map, as_u32),
+    #[cfg(feature = "u64")]
+    ValueKind::U64  => handle_value_kind!(kind, val, id, data_map, as_u64),
+    #[cfg(feature = "u128")]
+    ValueKind::U128 => handle_value_kind!(kind, val, id, data_map, as_u128),
+
+    #[cfg(feature = "f32")]
+    ValueKind::F32  => handle_value_kind!(kind, val, id, data_map, as_f32),
+    #[cfg(feature = "f64")]
+    ValueKind::F64  => handle_value_kind!(kind, val, id, data_map, as_f64),
+
+    #[cfg(feature = "string")]
+    ValueKind::String => handle_value_kind!(kind, val, id, data_map, as_string),
+
+    #[cfg(feature = "complex")]
+    ValueKind::C64 => handle_value_kind!(kind, val, id, data_map, as_c64),
+
+    #[cfg(feature = "rational")]
+    ValueKind::R64 => handle_value_kind!(kind, val, id, data_map, as_r64),
+
+    #[cfg(feature = "bool")]
+    ValueKind::Bool => {
+      let vals: Vec<Value> = val.as_vec()
+          .iter()
+          .map(|x| x.as_bool().unwrap().to_value())
+          .collect();
+      data_map.insert(id, (ValueKind::Bool, Value::to_matrix(vals.clone(), vals.len(), 1)));
+    }
+
+    x => {
+      println!("Unsupported kind in table column: {:?}", x);
+      todo!()
+    }
+  }
+
+  Ok(())
+}
 
 #[cfg(feature = "table")]
 pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> { 
   let mut rows = vec![];
   let headings = table_header(&t.header, p)?;
   let mut cols = 0;
-  // Interpret the rows
+
+  // Interpret rows
   for row in &t.rows {
     let result = table_row(row, p)?;
     cols = result.len();
     rows.push(result);
   }
-  // Provision columns
-  let mut data = Vec::new();
-  for i in 0..cols {
-    data.push(vec![])
-  }
-  // Populate columns with data from rows
+
+  // Allocate columns
+  let mut data = vec![Vec::<Value>::new(); cols];
+
+  // Populate columns
   for row in rows {
-    for (ix,el) in row.iter().enumerate() {
-      data[ix].push(el.clone());
+    for (ix, el) in row.into_iter().enumerate() {
+      data[ix].push(el);
     }
   }
-  // Build the table
+
+  // Build table
   let mut data_map: IndexMap<u64,(ValueKind,Matrix<Value>)> = IndexMap::new();
-  for ((id,knd,name),(column)) in headings.iter().zip(data.iter()) {
-    let val = Value::to_matrix(column.clone(),column.len(),1);
-    match knd {
-      #[cfg(feature = "i8")]
-      ValueKind::I8   => handle_value_kind!(knd, val, id, data_map, as_i8),
-      #[cfg(feature = "i16")]
-      ValueKind::I16  => handle_value_kind!(knd, val, id, data_map, as_i16),
-      #[cfg(feature = "i32")]
-      ValueKind::I32  => handle_value_kind!(knd, val, id, data_map, as_i32),
-      #[cfg(feature = "i64")]
-      ValueKind::I64  => handle_value_kind!(knd, val, id, data_map, as_i64),
-      #[cfg(feature = "i128")]
-      ValueKind::I128 => handle_value_kind!(knd, val, id, data_map, as_i128),      
-      #[cfg(feature = "u8")]
-      ValueKind::U8   => handle_value_kind!(knd, val, id, data_map, as_u8),
-      #[cfg(feature = "u16")]
-      ValueKind::U16  => handle_value_kind!(knd, val, id, data_map, as_u16),
-      #[cfg(feature = "u32")]
-      ValueKind::U32  => handle_value_kind!(knd, val, id, data_map, as_u32),
-      #[cfg(feature = "u64")]
-      ValueKind::U64  => handle_value_kind!(knd, val, id, data_map, as_u64),
-      #[cfg(feature = "u128")]
-      ValueKind::U128 => handle_value_kind!(knd, val, id, data_map, as_u128),
-      #[cfg(feature = "f32")]
-      ValueKind::F32  => handle_value_kind!(knd, val, id, data_map, as_f32),
-      #[cfg(feature = "f64")]
-      ValueKind::F64  => handle_value_kind!(knd, val, id, data_map, as_f64),
-      #[cfg(feature = "string")]
-      ValueKind::String  => handle_value_kind!(knd, val, id, data_map, as_string),
-      #[cfg(feature = "complex")]
-      ValueKind::C64  => handle_value_kind!(knd, val, id, data_map, as_c64),
-      #[cfg(feature = "rational")]
-      ValueKind::R64  => handle_value_kind!(knd, val, id, data_map, as_r64),
-      #[cfg(feature = "bool")]
-      ValueKind::Bool => {
-        let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_bool().unwrap().to_value()).collect::<Vec<Value>>();
-        let id = id.as_u64().unwrap().borrow().clone();
-        data_map.insert(id.clone(),(knd.clone(),Value::to_matrix(vals.clone(),vals.len(),1)));
-      },
-      _ => todo!(),
+
+  for ((id, knd, _name), column) in headings.iter().zip(data.iter()) {
+    let id_u64 = id.as_u64().unwrap().borrow().clone();
+
+    // Infer kind if None
+    let actual_kind = match knd {
+      ValueKind::None => {
+        match column.first() {
+          Some(v) => v.kind(),
+          None => ValueKind::String, // default for empty column
+        }
+      }
+      _ => knd.clone(),
     };
+
+    // Convert column to matrix
+    let val = Value::to_matrix(column.clone(), column.len(), 1);
+
+    // Dispatch conversion
+    handle_column_kind(actual_kind, id_u64, val, &mut data_map)?;
   }
-  let names: HashMap<u64,String> = headings.iter().map(|(id,_,name)| (id.as_u64().unwrap().borrow().clone(), name.to_string())).collect();
+
+  // Assign names
+  let names: HashMap<u64, String> = headings.iter()
+      .map(|(id, _, name)| (id.as_u64().unwrap().borrow().clone(), name.to_string()))
+      .collect();
+
   let tbl = MechTable::new(t.rows.len(), cols, data_map.clone(), names);
   Ok(Value::Table(Ref::new(tbl)))
 }
@@ -310,7 +389,7 @@ pub fn table_header(fields: &Vec<Field>, p: &Interpreter) -> MResult<Vec<(Value,
     let id = f.name.hash();
     let kind = match &f.kind {
       Some(k) => kind_annotation(&k.kind, p)?,
-      None => Kind::Any,
+      None => Kind::None,
     };
     headings.push((Value::Id(id),kind.to_value_kind(&p.state.borrow().kinds)?,f.name.clone()));
   }
@@ -350,7 +429,11 @@ pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
       } else if shape[1] == result.shape()[1] {
         col.push(result);
       } else {
-        return Err(MechError{file: file!().to_string(), tokens: row.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![])});
+        return Err(MechError2::new(
+            DimensionMismatch { dims: vec![shape[1], result.shape()[1]] },
+            None
+          ).with_compiler_loc()
+        );
       }
     }
     if col.is_empty() {
@@ -368,7 +451,10 @@ pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
     plan_brrw.push(new_fxn);
     return Ok(out);
   }
-  return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix horzcat and/or vertcat feature not enabled".to_string(), id: line!(), kind: MechErrorKind::None});
+  return Err(MechError2::new(
+    FeatureNotEnabledError,
+    Some("matrix/vertcat feature not enabled".to_string())).with_compiler_loc()
+  );
 }
 
 #[cfg(feature = "matrix_horzcat")]
@@ -386,7 +472,11 @@ pub fn matrix_row(r: &MatrixRow, p: &Interpreter) -> MResult<Value> {
     } else if shape[0] == result.shape()[0] {
       row.push(result);
     } else {
-      return Err(MechError{file: file!().to_string(), tokens: r.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![])});
+      return Err(MechError2::new(
+          DimensionMismatch { dims: vec![shape[0], result.shape()[0]] },
+          None
+        ).with_compiler_loc()
+      );
     }
   }
   let new_fxn = MatrixHorzCat{}.compile(&row)?;

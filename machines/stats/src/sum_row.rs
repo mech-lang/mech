@@ -98,14 +98,18 @@ macro_rules! sum_row_op2 {
             Value::[<Matrix $input_type>](Matrix::<$target_type>::DMatrix(arg)) => Ok(Box::new(StatsSumRowMD{arg: arg.clone(), out: Ref::new(RowDVector::from_element(arg.borrow().ncols(), $target_type::default())) })),
           )+
         )+
-        x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{:?}", x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError2::new(
+            UnhandledFunctionArgumentKind1 {arg: x.kind(), fxn_name: stringify!(StatsSumRow).to_string() },
+            None
+          ).with_compiler_loc()
+        ),
       }
     }
   }
 }
 
   
-  fn impl_stats_sum_row_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  fn impl_stats_sum_row_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_stats_sum_row_match_arms!(
       lhs_value,
       I8,   i8,   "i8";
@@ -118,8 +122,8 @@ macro_rules! sum_row_op2 {
       U32,  u32,  "u32";
       U64,  u64,  "u64";
       U128, u128, "u128";
-      F32,  F32,  "f32";
-      F64,  F64,  "f64";
+      F32,  f32,  "f32";
+      F64,  f64,  "f64";
       C64, C64, "complex";
       R64, R64, "rational";
     )

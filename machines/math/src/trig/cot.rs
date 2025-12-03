@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{tan, tanf};
 macro_rules! cot_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = 1.0 / tan((*$arg).0);}
+    unsafe{(*$out) = 1.0 / tan((*$arg));}
   };}
 
 macro_rules! cot_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = 1.0 / tan(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = 1.0 / tan(((&(*$arg))[i]));
       }}};}
 
 macro_rules! cotf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = 1.0 / tanf((*$arg).0);}
+    unsafe{(*$out) = 1.0 / tanf((*$arg));}
   };}  
 
 macro_rules! cotf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = 1.0 / tanf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = 1.0 / tanf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathCot, F32, cotf, FeatureFlag::Custom(hash_str("math/cot")));
+impl_math_unop!(MathCot, f32, cotf, FeatureFlag::Custom(hash_str("math/cot")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathCot, F64, cot, FeatureFlag::Custom(hash_str("math/cot")));
+impl_math_unop!(MathCot, f64, cot, FeatureFlag::Custom(hash_str("math/cot")));
 
-fn impl_cot_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_cot_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathCot,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 
@@ -50,7 +50,7 @@ pub struct MathCot {}
 impl NativeFunctionCompiler for MathCot {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let input = arguments[0].clone();
     match impl_cot_fxn(input.clone()) {
@@ -58,7 +58,11 @@ impl NativeFunctionCompiler for MathCot {
       Err(_) => {
         match (input) {
           (Value::MutableReference(input)) => {impl_cot_fxn(input.borrow().clone())}
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/cot".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }

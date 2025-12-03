@@ -85,6 +85,11 @@ pub fn merge_src_range(r1: SourceRange, r2: SourceRange) -> SourceRange {
     end:   r2.end.max(r2.end),
   }
 }
+
+pub trait Recoverable: Sized {
+  fn error_placeholder(skipped_tokens: Token, range: SourceRange) -> Self;
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum TokenKind {
@@ -92,7 +97,7 @@ pub enum TokenKind {
   Backslash, Bar, BoxDrawing,
   Caret, CarriageReturn, CarriageReturnNewLine, Colon, CodeBlock, Comma,
   Dash, DefineOperator, Digit, Dollar,
-  Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Exclamation, 
+  Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Error, Exclamation, 
   False, FloatLeft, FloatRight, FootnotePrefix,
   Grave, GraveCodeBlockSigil,
   HashTag, HighlightSigil, HttpPrefix,
@@ -101,7 +106,7 @@ pub enum TokenKind {
   Newline, Not, Number,
   OutputOperator,
   Percent, Period, Plus,
-  Question, QuestionSigil, Quote, QuoteSigil,
+  QueryOperator, Question, QuestionSigil, Quote, QuoteSigil,
   RightAngle, RightBrace, RightBracket, RightParenthesis,
   SectionSigil, Semicolon, Space, Slash, String, StrikeSigil, StrongSigil,
   Tab, Text, Tilde, TildeCodeBlockSigil, Title, TransitionOperator, True,
@@ -450,7 +455,7 @@ pub struct BlockConfig {
   pub hidden: bool,
 }
 
-pub type Footnote = (Token, Paragraph);
+pub type Footnote = (Token, Vec<Paragraph>);
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -490,6 +495,13 @@ pub enum SectionElement {
   Subtitle(Subtitle),
   Table(MarkdownTable),
   ThematicBreak,
+  Error(Token, SourceRange),
+}
+
+impl Recoverable for SectionElement {
+  fn error_placeholder(skipped_tokens: Token, range: SourceRange) -> Self {
+    SectionElement::Error(skipped_tokens, range)
+  }
 }
 
 impl SectionElement {
@@ -566,6 +578,13 @@ pub enum MechCode {
   //FsmSpecification(FsmSpecification),
   FunctionDefine(FunctionDefine),
   Statement(Statement),
+  Error(Token, SourceRange),
+}
+
+impl Recoverable for MechCode {
+  fn error_placeholder(skipped_tokens: Token, range: SourceRange) -> Self {
+    MechCode::Error(skipped_tokens, range)
+  }
 }
 
 impl MechCode {
@@ -573,6 +592,8 @@ impl MechCode {
     match self {
       MechCode::Expression(x) => x.tokens(),
       MechCode::Statement(x) => x.tokens(),
+      MechCode::Comment(x) => x.tokens(),
+      MechCode::Error(t,_) => vec![t.clone()],
       _ => todo!(),
       //FunctionDefine(x) => x.tokens(),
       //FsmSpecification(x) => x.tokens(),
@@ -1315,9 +1336,36 @@ pub enum ParagraphElement {
   Strong(Box<ParagraphElement>),
   Text(Token),
   Underline(Box<ParagraphElement>),
+  Error(Token, SourceRange),
+}
+
+impl Recoverable for ParagraphElement {
+  fn error_placeholder(skipped_tokens: Token, range: SourceRange) -> Self {
+    ParagraphElement::Error(skipped_tokens, range)
+  }
 }
 
 impl ParagraphElement {
+
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      ParagraphElement::Emphasis(t) => t.tokens(),
+      ParagraphElement::FootnoteReference(t) => vec![t.clone()],
+      ParagraphElement::Highlight(t) => t.tokens(),
+      ParagraphElement::Hyperlink((t, u)) => vec![t.clone(), u.clone()],
+      ParagraphElement::InlineCode(t) => vec![t.clone()],
+      ParagraphElement::InlineEquation(t) => vec![t.clone()],
+      ParagraphElement::InlineMechCode(t) => t.tokens(),
+      ParagraphElement::EvalInlineMechCode(t) => t.tokens(),
+      ParagraphElement::Reference(t) => vec![t.clone()],
+      ParagraphElement::SectionReference(t) => vec![t.clone()],
+      ParagraphElement::Strikethrough(t) => t.tokens(),
+      ParagraphElement::Strong(t) => t.tokens(),
+      ParagraphElement::Text(t) => vec![t.clone()],
+      ParagraphElement::Underline(t) => t.tokens(),
+      ParagraphElement::Error(t, _) => vec![t.clone()],
+    }
+  }
 
   pub fn to_string(&self) -> String {
     match self {
@@ -1337,6 +1385,7 @@ impl ParagraphElement {
       ParagraphElement::Strong(t) => t.to_string(),
       ParagraphElement::Text(t) => t.to_string(),
       ParagraphElement::Underline(t) => t.to_string(),
+      ParagraphElement::Error(t, s) => format!("{{ERROR: {} at {:?}}}", t.to_string(), s),
     }
   }
 
@@ -1346,6 +1395,7 @@ impl ParagraphElement {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Paragraph {
   pub elements: Vec<ParagraphElement>,
+  pub error_range: Option<SourceRange>,
 }
 
 impl Paragraph {
@@ -1356,7 +1406,31 @@ impl Paragraph {
     }
     out
   }
+
+  pub fn has_errors(&self) -> bool {
+    self.error_range.is_some()
+  }
+
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for e in &self.elements {
+      let mut e_tkns = e.tokens();
+      tkns.append(&mut e_tkns);
+    }
+    tkns
+  }
+
 }
+
+impl Recoverable for Paragraph {
+  fn error_placeholder(skipped_tokens: Token, range: SourceRange) -> Self {
+    Paragraph {
+      elements: vec![ParagraphElement::Text(Token::new(TokenKind::Error, range.clone(), skipped_tokens.chars.clone()))],
+      error_range: Some(range),
+    }
+  }
+}
+
 
 pub type Sign = bool;
 pub type Numerator = Token;
@@ -1475,6 +1549,12 @@ impl C64Node {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Comment {
   pub paragraph: Paragraph,
+}
+
+impl Comment {
+  pub fn tokens(&self) -> Vec<Token> {
+    self.paragraph.tokens()
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

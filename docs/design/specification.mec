@@ -248,11 +248,13 @@ Identifiers start with letters or most UTF-8 encoded emoji characters, and can c
 
 (3.5.1) Examples
 
+```mech:disabled
   Hello-World
   io/print
   Δx^2
   🤖
   A*
+```
 
 Note: Underscores `_` are not allowed in identifiers, as kebab-case is the preferred style in Mech. Underscores are reported as syntax errors.
 

@@ -121,7 +121,11 @@ where
     Matrix::RowDVector(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: Ref::new(RowDVector::from_element(shape[1], zero)), _marker: PhantomData })),
     #[cfg(feature = "matrixd")]
     Matrix::DMatrix(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: Ref::new(DMatrix::from_element(shape[0], shape[1], zero)), _marker: PhantomData })),
-    _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Unknown matrix type".to_string(), id: line!(), kind: MechErrorKind::None}),
+    _ => Err(MechError2::new(
+        FeatureNotEnabledError,
+        None
+      ).with_compiler_loc()
+    ),
   }
 }
 
@@ -248,7 +252,10 @@ where
     #[cfg(feature = "matrixd")]
     (Matrix::DMatrix(v), n, m) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: Ref::new(DMatrix::from_element(n, m, zero)), _marker: PhantomData })); },
     _ => {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Cannot convert {:?} to {:?}", shape, dims), id: line!(), kind: MechErrorKind::None});
+      return Err(MechError2::new(
+        ReshapeError { original: (dims[0], dims[1]), requested: (shape[0], shape[1]) },
+        None
+      ).with_compiler_loc());
     }
   }
 }
@@ -266,7 +273,7 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
       let shape = source_value.shape();
 
       paste::paste! {
-        match (source_value, target_kind) {
+        match (source_value.clone(), target_kind.clone()) {
           $(
             $(
               #[cfg(all(feature = "matrix", feature = $src_string, feature = $dst_string))]
@@ -278,12 +285,12 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
                 } else if shape[0] * shape[1] == dims[0] * dims[1] {
                   create_reshape_mat_to_mat::<$src, $dst>(v, &dims)
                 } else {
-                  Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: "Unsupported conversion".to_string(),kind: MechErrorKind::None})
+                  Err(MechError2::new(UnsupportedConversionError{from: source_value.kind(), to: target_kind.clone()}, None).with_compiler_loc())
                 }
               }
             )+
           )+
-          _ => Err(MechError {file: file!().to_string(),tokens: vec![],msg: "Unsupported conversion".to_string(),id: line!(),kind: MechErrorKind::None}),
+          _ => Err(MechError2::new(UnsupportedConversionError{from: source_value.kind(), to: target_kind.clone()}, None).with_compiler_loc()),
         }
       }
     }
@@ -292,18 +299,18 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl_conversion_mat_to_mat_fxn! {
-  F64, "f64" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", R64, "rational"];
-  F32, "f32" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", R64, "rational"];
-  u8,  "u8"  => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
-  u16, "u16" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
-  u32, "u32" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
-  u64, "u64" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
-  u128,"u128"=> [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
-  i8,  "i8"  => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
-  i16, "i16" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
-  i32, "i32" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
-  i64, "i64" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
-  i128,"i128"=> [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
+  f64, "f64" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", R64, "rational"];
+  f32, "f32" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", R64, "rational"];
+  u8,  "u8"  => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
+  u16, "u16" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
+  u32, "u32" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
+  u64, "u64" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
+  u128,"u128"=> [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
+  i8,  "i8"  => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
+  i16, "i16" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
+  i32, "i32" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
+  i64, "i64" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
+  i128,"i128"=> [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
   String, "string" => [String, "string"];
   R64, "rational" => [String, "string"];
   C64, "complex" => [String, "string"];
@@ -312,16 +319,16 @@ impl_conversion_mat_to_mat_fxn! {
 
 #[cfg(target_arch = "wasm32")]
 impl_conversion_mat_to_mat_fxn! {
-  F64, "f64" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64", R64, "rational"];
-  F32, "f32" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64", R64, "rational"];
-  u8,  "u8"  => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
-  u16, "u16" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
-  u32, "u32" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
-  u64, "u64" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
-  i8,  "i8"  => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
-  i16, "i16" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
-  i32, "i32" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
-  i64, "i64" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
+  f64, "f64" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64", R64, "rational"];
+  f32, "f32" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64", R64, "rational"];
+  u8,  "u8"  => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
+  u16, "u16" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
+  u32, "u32" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
+  u64, "u64" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
+  i8,  "i8"  => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
+  i16, "i16" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
+  i32, "i32" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
+  i64, "i64" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
   String, "string" => [String, "string"];
   R64, "rational" => [String, "string"];
   C64, "complex" => [String, "string"];
@@ -332,7 +339,7 @@ pub struct ConvertMatToMat {}
 impl NativeFunctionCompiler for ConvertMatToMat {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: String::new(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());
     }
     let source_value = arguments[0].clone();
     let source_kind = source_value.kind();
@@ -342,9 +349,27 @@ impl NativeFunctionCompiler for ConvertMatToMat {
       Err(_) => {
         match source_value {
           Value::MutableReference(rhs) => impl_conversion_mat_to_mat_fxn(rhs.borrow().clone(), target_kind.clone()),
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (arguments[0].kind(), arguments[1].kind()), fxn_name: "convert/mat-to-mat".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
+  }
+}
+
+
+
+#[derive(Debug, Clone)]
+pub struct ReshapeError {
+  pub requested: (usize, usize),
+  pub original: (usize, usize),
+}
+impl MechErrorKind2 for ReshapeError {
+  fn name(&self) -> &str { "ReshapeError" }
+  fn message(&self) -> String {
+    format!("Cannot reshape matrix of shape {:?} into {:?}",self.original,self.requested)
   }
 }

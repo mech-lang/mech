@@ -72,7 +72,10 @@ impl MechFileSystem {
         Ok(())
       },
       Err(e) => {
-        Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Could not set stylesheet".to_string(), id: line!(), kind: MechErrorKind::None})
+        Err(MechError2::new(
+          RwLockWriteError {source_err: format!("{}",e)},
+          Some("Could not set stylesheet.".to_string())
+        ).with_compiler_loc())
       },
     }
   }
@@ -84,7 +87,10 @@ impl MechFileSystem {
         Ok(())
       },
       Err(e) => {
-        Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Could not set shim".to_string(), id: line!(), kind: MechErrorKind::None})
+        Err(MechError2::new(
+          RwLockWriteError {source_err: format!("{}",e)},
+          Some("Could not set shim.".to_string())
+        ).with_compiler_loc())
       },
     }
   }
@@ -100,7 +106,10 @@ impl MechFileSystem {
           sources.add_code(&code)
         },
         Err(e) => {
-          Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Could not add code".to_string(), id: line!(), kind: MechErrorKind::None})
+          Err(MechError2::new(
+            RwLockWriteError {source_err: format!("{}",e)},
+            Some("Failed to add Mech code.".to_string())
+          ).with_compiler_loc())
         },
       }
     }
@@ -123,7 +132,11 @@ impl MechFileSystem {
                   println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
                 },
                 Err(e) => {
-                  return Err(e);
+                  println!("{} Failed to load: {}", "[File Error]".truecolor(246,98,78), f.display());
+                  return Err(MechError2::new(
+                    WatchPathFailed { file_path: f.display().to_string(), source_err: format!("{:?}",e) },
+                    None
+                  ).with_compiler_loc().with_source(e));
                 },
               }
             // load mech bytecode
@@ -228,7 +241,10 @@ impl MechFileSystem {
           }
         }
         Err(e) => {
-          return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None});
+          return Err(MechError2::new(
+            FileWriteFailed { file_path: src.to_string(), source: format!("{}",e) },
+            None
+          ).with_compiler_loc())
         },
       }
     }
@@ -248,7 +264,10 @@ impl MechFileSystem {
             self.watchers.push(Box::new(watcher));
           }
           Err(err) => {
-            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Error watching path: {}", err), id: line!(), kind: MechErrorKind::None});
+            return Err(MechError2::new(
+              WatchPathFailed { file_path: src_path.display().to_string(), source_err: format!("{}",err) },
+              None
+            ).with_compiler_loc())
           },
         }       
       }
@@ -265,7 +284,7 @@ pub struct MechSources {
   shim: String,
   sources: HashMap<u64,MechSourceCode>,             // u64 is the hash of the relative source 
   trees: HashMap<u64,MechSourceCode>,               // stores the ast for the sources
-  errors: HashMap<u64,Vec<MechError>>,              // stores the errors for the sources
+  errors: HashMap<u64,Vec<MechError2>>,              // stores the errors for the sources
   html: HashMap<u64,MechSourceCode>,                // stores the html for the sources
   pub directory: HashMap<PathBuf, PathBuf>,             // relative source -> absolute source
   reverse_lookup: HashMap<PathBuf, PathBuf>,        // absolute source -> relative source
@@ -396,16 +415,13 @@ impl MechSources {
     Ok(())
   }
 
-  fn to_tree_and_html(&mut self, node: &MechSourceCode) -> Result<(MechSourceCode, MechSourceCode), MechError> {
+  fn to_tree_and_html(&mut self, node: &MechSourceCode) -> MResult<(MechSourceCode, MechSourceCode)> {
     match node {
       // Raw source text: parse it and format HTML
       MechSourceCode::String(source) => {
         let tree = match parser::parse(source) {
           Ok(t) => t,
-          Err(err) => {
-            println!("{} {:?}", "[Parse Error]".truecolor(255, 0, 0), err);
-            return Err(MechError {file: file!().to_string(),tokens: vec![],msg: "Failed to parse source code".to_string(),id: line!(),kind: MechErrorKind::None,});
-          }
+          Err(err) => return Err(err),
         };
         let mut formatter = Formatter::new();
         let mech_html = formatter.format_html(&tree, self.stylesheet.clone(),self.shim.clone());
@@ -615,39 +631,63 @@ impl MechSources {
     }
   }
 
-  pub fn read_mech_files(&mut self, mech_paths: &Vec<String>) -> MResult<Vec<(String,MechSourceCode)>> {
+  pub fn read_mech_files(
+    &mut self,
+    mech_paths: &Vec<String>
+  ) -> MResult<Vec<(String,MechSourceCode)>> 
+  {
     let mut code: Vec<(String,MechSourceCode)> = Vec::new();
+
     for path_str in mech_paths {
       let path = Path::new(path_str);
-      // Compile a .mec file on the web
+
       if path_str.starts_with("https") || path_str.starts_with("http") {
         println!("{} {}", "[Downloading]".truecolor(153,221,85), path.display());
+
         match reqwest::blocking::get(path_str) {
           Ok(response) => {
             match response.text() {
               Ok(text) => {
                 let src = MechSourceCode::String(text);
-
                 code.push((path_str.to_owned(), src));
-              },
-              _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None});},
+              }
+              Err(err) => {
+                return Err(MechError2::new(
+                  HttpTextDecodeFailed {
+                    url: path_str.clone(),
+                    source: err.to_string(),
+                  },
+                  None
+                ).with_compiler_loc());
+              }
             }
           }
-          _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None});},
+          Err(err) => {
+                return Err(MechError2::new(
+                  HttpRequestFailed {
+                    url: path_str.clone(),
+                    source: err.to_string(),
+                  },
+                  None
+                ).with_compiler_loc());
+          }
         }
+
       } else {
         match read_mech_source_file(path) {
           Ok(src) => {
             code.push((path_str.to_owned(), src));
-          },
+          }
           Err(err) => {
             return Err(err);
-          },
+          }
         }
-      };
+      }
     }
+
     Ok(code)
   }
+
   
 }
   
@@ -669,7 +709,10 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
               file.read_to_string(&mut buffer);
               Ok(MechSourceCode::String(buffer))
             }
-            Err(err) => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+            Err(err) => return Err(MechError2::new(
+              FileOpenFailed { file_path: path.to_string_lossy().to_string(), source: err.to_string() },
+              None
+            ).with_compiler_loc()),
           }
         }
         Some("html") | Some("htm") | Some("md") | Some("css") => {
@@ -680,7 +723,10 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
               file.read_to_string(&mut buffer);
               Ok(MechSourceCode::Html(buffer))
             }
-            Err(err) => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+            Err(err) => return Err(MechError2::new(
+              FileOpenFailed { file_path: path.to_string_lossy().to_string(), source: err.to_string() },
+              None
+            ).with_compiler_loc()),
           }
         }
         // handle images
@@ -694,7 +740,10 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
               let extension = path.extension().and_then(OsStr::to_str).unwrap_or("").to_string();
               Ok(MechSourceCode::Image(extension, buffer))
             }
-            Err(err) => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+            Err(err) => return Err(MechError2::new(
+              FileOpenFailed { file_path: path.to_string_lossy().to_string(), source: err.to_string() },
+              None
+            ).with_compiler_loc()),
           }
         }
         Some("csv") => {
@@ -708,14 +757,59 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
               }
               todo!();
             }
-            Err(err) => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+            Err(err) => Err(MechError2::new(
+              FileOpenFailed { file_path: path.to_string_lossy().to_string(), source: err.to_string() },
+              None
+            ).with_compiler_loc()),
           }
         }
         x => {
-          Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Unknown file extension: {:?}", x), id: line!(), kind: MechErrorKind::None})
+          Err(MechError2::new(
+            UnknownFileExtensionError {
+              extension: x.unwrap_or("unknown").to_string(),
+            },
+            None
+          ).with_compiler_loc())
         },
       }
     },
-    err => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::GenericError(format!("{:?}", err))}),
+    err => Err(MechError2::new(
+      ExtensionDecodeFailed {path: path.display().to_string()},
+      None
+    ).with_compiler_loc()),
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct UnknownFileExtensionError {
+    pub extension: String,
+}
+impl MechErrorKind2 for UnknownFileExtensionError {
+  fn name(&self) -> &str { "UnknownFileExtensionError" }
+  fn message(&self) -> String {
+    format!("Unknown file extension: {}", self.extension)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct ExtensionDecodeFailed {
+    pub path: String,
+}
+impl MechErrorKind2 for ExtensionDecodeFailed {
+  fn name(&self) -> &str { "ExtensionDecodeFailed" }
+  fn message(&self) -> String {
+    format!("Failed to decode extension for path: {}", self.path)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RwLockWriteError {
+  pub source_err: String,
+}
+impl MechErrorKind2 for RwLockWriteError {
+  fn name(&self) -> &str { "RwLockWriteError" }
+
+  fn message(&self) -> String {
+    format!("Failed to acquire write lock: {}", self.source_err)
   }
 }

@@ -152,42 +152,17 @@ fn tuple_destructure(input: ParseString) -> ParseResult<TupleDestructure> {
   Ok((input, TupleDestructure{vars, expression}))
 }
 
-// statement := variable-define | variable-assign | enum-define | fsm-declare | kind-define ;
+// statement := variable-define | variable-assign | op-assign | enum-define | tuple-destructure | kind-define ;
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
-  match variable_define(input.clone()) {
-    Ok((input, var_def)) => { return Ok((input, Statement::VariableDefine(var_def))); },
-    //Err(Failure(err)) => {return Err(Failure(err))},
-    _ => (),
-  }
-  match variable_assign(input.clone()) {
-    Ok((input, var_asgn)) => { return Ok((input, Statement::VariableAssign(var_asgn))); },
-    //Err(Failure(err)) => {return Err(Failure(err))},
-    _ => (),
-  }
-  match op_assign(input.clone()) {
-    Ok((input, var_asgn)) => { return Ok((input, Statement::OpAssign(var_asgn))); },
-    //Err(Failure(err)) => {return Err(Failure(err))},
-    _ => (),
-  }
-  match enum_define(input.clone()) {
-    Ok((input, enm_def)) => { return Ok((input, Statement::EnumDefine(enm_def))); },
-    //Err(Failure(err)) => {return Err(Failure(err))},
-    _ => (),
-  }
-  match tuple_destructure(input.clone()) {
-    Ok((input, tpl_dstr)) => { return Ok((input, Statement::TupleDestructure(tpl_dstr))); },
-    //Err(Failure(err)) => {return Err(Failure(err))},
-    _ => (),
-  }
-  /*match fsm_declare(input.clone()) {
-    Ok((input, var_def)) => { return Ok((input, Statement::FsmDeclare(var_def))); },
-    //Err(Failure(err)) => {return Err(Failure(err))},
-    _ => (),
-  }*/
-  match kind_define(input.clone()) {
-    Ok((input, knd_def)) => { return Ok((input, Statement::KindDefine(knd_def))); },
-    Err(err) => { return Err(err); },
-  }
+  let parsers: Vec<(&'static str,Box<dyn Fn(ParseString) -> ParseResult<Statement>>)> = vec![
+    ("variable_define", Box::new(|i| variable_define(i).map(|(i, v)| (i, Statement::VariableDefine(v))))),
+    ("variable_assign", Box::new(|i| variable_assign(i).map(|(i, v)| (i, Statement::VariableAssign(v))))),
+    ("op_assign", Box::new(|i| op_assign(i).map(|(i, v)| (i, Statement::OpAssign(v))))),
+    ("enum_define", Box::new(|i| enum_define(i).map(|(i, v)| (i, Statement::EnumDefine(v))))),
+    ("tuple_destructure", Box::new(|i| tuple_destructure(i).map(|(i, v)| (i, Statement::TupleDestructure(v))))),
+    ("kind_define", Box::new(|i| kind_define(i).map(|(i, v)| (i, Statement::KindDefine(v))))),
+  ];
+  alt_best(input, &parsers)
 }
 
 // enum-define := "<", identifier, ">", define-operator, list1(enum-separator, enum-variant);
@@ -225,7 +200,3 @@ pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {
   let (input, knd) = kind_annotation(input)?;
   Ok((input, KindDefine{name,kind:knd}))
 }
-
-
-  
-  

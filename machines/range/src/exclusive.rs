@@ -20,7 +20,7 @@ pub struct RangeExclusiveScalar<T, MatA> {
 }
 impl<T, R1, C1, S1> MechFunctionFactory for RangeExclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
-  T: Copy + Debug + Clone + Sync + Send + Step + 
+  T: Copy + Debug + Clone + Sync + Send + 
   CompileConst + ConstElem + AsValueKind +
   PartialOrd + 'static + One + Add<Output = T>,
   Ref<naMatrix<T, R1, C1, S1>>: ToValue,
@@ -35,7 +35,11 @@ where
         let out: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { from, to, out, phantom: PhantomData::default() }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("RangeExclusiveScalar requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -84,12 +88,18 @@ macro_rules! impl_range_exclusive_match_arms {
             let to_val = *to.borrow();
             let diff = to_val - from_val;
             if diff < $ty::zero() {
-              return Err(MechError {file: file!().to_string(),tokens: vec![],msg: "Range size must be > 0".to_string(),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,});
+              return Err(MechError2::new(
+                EmptyRangeError{},
+                None
+              ).with_compiler_loc());
             }
-            let size = diff.try_into().map_err(|_| MechError {file: file!().to_string(),tokens: vec![],msg: "Range size overflow".to_string(),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,})?;            
+            let size = range_size_to_usize!(diff, $ty);
             let mut vec = vec![from_val; size];
             match size {
-              0 => Err(MechError {file: file!().to_string(),tokens: vec![],msg: "Range size must be > 0".to_string(),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,}),
+              0 => Err(MechError2::new(
+                EmptyRangeError{},
+                None
+              ).with_compiler_loc()),
               #[cfg(feature = "matrix1")]
               1 => {
                 register_range!($fxn, $ty, $feat, Matrix1);
@@ -123,7 +133,10 @@ macro_rules! impl_range_exclusive_match_arms {
             }
           }
         )+
-        x => Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("{:?}", x),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,})
+        (arg1,arg2) => Err(MechError2::new(
+          UnhandledFunctionArgumentKind2 {arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($fxn).to_string() },
+          None
+        ).with_compiler_loc()),
       }
     }
   }
@@ -131,8 +144,8 @@ macro_rules! impl_range_exclusive_match_arms {
 
 fn impl_range_exclusive_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_range_exclusive_match_arms!(RangeExclusiveScalar, arg1_value, arg2_value,
-    F32, "f32";
-    F64, "f64";
+    f32, "f32";
+    f64, "f64";
     i8,  "i8";
     i16, "i16";
     i32, "i32";
@@ -151,7 +164,7 @@ pub struct RangeExclusive {}
 impl NativeFunctionCompiler for RangeExclusive {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
     }
     let arg1 = arguments[0].clone();
     let arg2 = arguments[1].clone();
@@ -162,7 +175,11 @@ impl NativeFunctionCompiler for RangeExclusive {
           (Value::MutableReference(arg1),Value::MutableReference(arg2)) => {impl_range_exclusive_fxn(arg1.borrow().clone(),arg2.borrow().clone())}
           (Value::MutableReference(arg1),arg2) => {impl_range_exclusive_fxn(arg1.borrow().clone(),arg2.clone())}
           (arg1,Value::MutableReference(arg2)) => {impl_range_exclusive_fxn(arg1.clone(),arg2.borrow().clone())}
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          (arg1,arg2) => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "range/exclusive".to_string() },
+              None
+            ).with_compiler_loc()
+          ),        
         }
       }
     }

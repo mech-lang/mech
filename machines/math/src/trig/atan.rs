@@ -9,39 +9,39 @@ use mech_core::matrix::Matrix;
 use libm::{atan,atanf};
 macro_rules! atan_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = atan((*$arg).0);}
+    unsafe{(*$out) = atan((*$arg));}
   };}
 
 macro_rules! atan_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = atan(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = atan(((&(*$arg))[i]));
       }}};}
 
 macro_rules! atanf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = atanf((*$arg).0);}
+    unsafe{(*$out) = atanf((*$arg));}
   };}  
 
 macro_rules! atanf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]).0 = atanf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]) = atanf(((&(*$arg))[i]));
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathAtan, F32, atanf, FeatureFlag::Custom(hash_str("math/atan")));
+impl_math_unop!(MathAtan, f32, atanf, FeatureFlag::Custom(hash_str("math/atan")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathAtan, F64, atan, FeatureFlag::Custom(hash_str("math/atan")));
+impl_math_unop!(MathAtan, f64, atan, FeatureFlag::Custom(hash_str("math/atan")));
 
-fn impl_atan_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_atan_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathAtan,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "f32";
-    F64 => MatrixF64, F64, F64::zero(), "f64";
+    F32 => MatrixF32, F32, f32::zero(), "f32";
+    F64 => MatrixF64, F64, f64::zero(), "f64";
   )
 }
 
@@ -56,7 +56,11 @@ impl NativeFunctionCompiler for MathAtan {
         Err(_) => {
           match (input) {
             (Value::MutableReference(input)) => {impl_atan_fxn(input.borrow().clone())}
-            x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+            x => Err(MechError2::new(
+                UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/atan".to_string() },
+                None
+              ).with_compiler_loc()
+            ),
           }
         }
       }
@@ -70,12 +74,16 @@ impl NativeFunctionCompiler for MathAtan {
             (Value::MutableReference(arg1),Value::MutableReference(arg2)) => {impl_atan2_fxn(arg1.borrow().clone(),arg2.borrow().clone())}
             (Value::MutableReference(arg1),arg2) => {impl_atan2_fxn(arg1.borrow().clone(),arg2.clone())}
             (arg1,Value::MutableReference(arg2)) => {impl_atan2_fxn(arg1.clone(),arg2.borrow().clone())}
-            x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+            (arg1,arg2) => Err(MechError2::new(
+                UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "math/atan".to_string() },
+                None
+              ).with_compiler_loc()
+            ),
           }
         }
       }
     } else {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
     }
   }
 }

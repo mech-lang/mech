@@ -77,7 +77,11 @@ macro_rules! impl_stats_unop {
             let out = unsafe{ out.as_unchecked().clone() };
             Ok(Box::new($struct_name { arg, out }))
           }
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None})
+          _ => Err(MechError2::new(
+              IncorrectNumberOfArguments { expected: 2, found: args.len() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
@@ -112,6 +116,6 @@ macro_rules! impl_stats_unop {
 macro_rules! impls_stas {
   ($name:ident, $arg_type:ty, $out_type:ty, $op:ident) => {
     impl_stats_unop!($name, $arg_type, $out_type, $op);
-    register_fxn_descriptor!($name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", F32, "f32", F64, "f64", C64, "complex", R64, "rational");
+    register_fxn_descriptor!($name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64", C64, "complex", R64, "rational");
   };
 }

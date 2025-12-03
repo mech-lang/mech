@@ -14,7 +14,7 @@ use mech_core::*;
 use mech_core::matrix::{Matrix, ToMatrix};
 use mech_core::kind::Kind;
 use mech_core::{Dictionary, Ref, Value, ValueKind, ValRef, ToValue};
-use mech_core::{MechError, MechErrorKind, hash_str, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
+use mech_core::{hash_str, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 #[cfg(feature = "map")]
 use mech_core::MechMap;
 #[cfg(feature = "record")]
@@ -27,10 +27,6 @@ use mech_core::MechTuple;
 use mech_core::MechEnum;
 #[cfg(feature = "table")]
 use mech_core::MechTable;
-#[cfg(feature = "f64")]
-use mech_core::F64;
-#[cfg(feature = "f32")]
-use mech_core::F32;
 #[cfg(feature = "complex")]
 use mech_core::C64;
 #[cfg(feature = "rational")]

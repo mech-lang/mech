@@ -159,7 +159,7 @@ pub fn help() -> String {
   builder.push_record(vec![
     ":step".to_string(),
     "".to_string(),
-    "[step count]".to_string(),
+    "[#step index] [step count]".to_string(),
     "Iterate plan".to_string()
   ]);
   builder.push_record(vec![
@@ -176,7 +176,7 @@ pub fn help() -> String {
   ]);
   let mut table = builder.build();
   table.with(mech_table_style())
-       .with(Panel::header(format!("{}","🧭 Help".truecolor(0xdf,0xb9,0x9f))));
+       .with(Panel::header(format!("{}","Help".truecolor(0xdf,0xb9,0x9f))));
   format!("\n{table}\n")
 }
 
@@ -216,7 +216,7 @@ pub fn ls() -> String {
   }
   let mut table = builder.build();
   table.with(mech_table_style())
-       .with(Panel::header(format!("{}","📂 Directory Listing".truecolor(0xdf,0xb9,0x9f))));
+       .with(Panel::header(format!("{}","Directory Listing".truecolor(0xdf,0xb9,0x9f))));
   format!("\nDirectory: {}\n\n{table}\n",current_dir.display())
 }
 
@@ -229,7 +229,7 @@ fn pretty_print_tree(tree: &Program) -> String {
   builder.push_record(vec![format!("{}", formatted_tree)]);
   let mut table = builder.build();
   table.with(Style::modern_rounded())
-       .with(Panel::header("🌳 Syntax Tree"));
+       .with(Panel::header("Syntax Tree"));
   format!("{table}")
 }
 
@@ -276,7 +276,7 @@ pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
     .with(mech_table_style())
     .with(Panel::header(format!(
         "{}",
-        "🔍 Whos".truecolor(0xdf, 0xb9, 0x9f)
+        "Whos".truecolor(0xdf, 0xb9, 0x9f)
     )));
 
   format!("\n{table}\n")
@@ -292,7 +292,7 @@ fn pretty_print_symbols(intrp: &Interpreter) -> String {
 
   let mut table = builder.build();
   table.with(mech_table_style())   
-        .with(Panel::header(format!("{}","🔣 Symbols".truecolor(0xdf,0xb9,0x9f))));
+        .with(Panel::header(format!("{}","Symbols".truecolor(0xdf,0xb9,0x9f))));
   format!("\n{table}\n")
 }
 
@@ -300,4 +300,78 @@ pub fn clc() {
   let mut stdo = stdout();
   stdo.execute(terminal::Clear(terminal::ClearType::All));
   stdo.execute(cursor::MoveTo(0,0));
+}
+#[derive(Debug, Clone)]
+pub struct HttpRequestFailed {
+  pub url: String,
+  pub source: String,
+}
+impl MechErrorKind2 for HttpRequestFailed {
+  fn name(&self) -> &str { "HttpRequestFailed" }
+  fn message(&self) -> String {
+  format!("Failed to GET {}: {}", self.url, self.source)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct HttpTextDecodeFailed {
+  pub url: String,
+  pub source: String,
+}
+impl MechErrorKind2 for HttpTextDecodeFailed {
+  fn name(&self) -> &str { "HttpTextDecodeFailed" }
+  fn message(&self) -> String {
+  format!("Failed to read response text {}: {}", self.url, self.source)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct HttpRequestStatusFailed {
+  pub url: String,
+  pub status_code: u16,
+}
+impl MechErrorKind2 for HttpRequestStatusFailed {
+  fn name(&self) -> &str { "HttpRequestStatusFailed" }
+  fn message(&self) -> String {
+  format!("Request to {} failed with status code: {}", self.url, self.status_code)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct FileOpenFailed {
+  pub file_path: String,
+  pub source: String,
+}
+impl MechErrorKind2 for FileOpenFailed {
+  fn name(&self) -> &str { "FileOpenFailed" }
+
+  fn message(&self) -> String {
+    format!("Failed to open file {}: {}", self.file_path, self.source)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct FileWriteFailed {
+  pub file_path: String,
+  pub source: String
+}
+impl MechErrorKind2 for FileWriteFailed {
+  fn name(&self) -> &str { "FileWriteFailed" }
+
+  fn message(&self) -> String {
+    format!("Failed to write file {}: {}", self.file_path, self.source)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct WatchPathFailed {
+  pub file_path: String,
+  pub source_err: String,
+}
+impl MechErrorKind2 for WatchPathFailed {
+  fn name(&self) -> &str { "WatchPathFailed" }
+
+  fn message(&self) -> String {
+    format!("Failed to watch file path {}: {}", self.file_path, self.source_err)
+  }
 }

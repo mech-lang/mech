@@ -10,13 +10,17 @@ struct ConvertSEnum {
 }
 #[cfg(feature = "enum")]
 impl MechFunctionFactory for ConvertSEnum {
-  fn new(args: FunctionArgs) -> Result<Box<dyn MechFunction>, MechError> {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
       FunctionArgs::Unary(out, _) => {
         let out: Ref<MechEnum> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self {out}))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("ConvertSEnum requires 1 argument, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 1, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -96,7 +100,7 @@ where
 #[derive(Debug)]
 struct ConvertSRationalToF64 {
   arg: Ref<R64>,
-  out: Ref<F64>,
+  out: Ref<f64>,
 }
 
 #[cfg(all(feature = "rational", feature = "f64"))]
@@ -129,7 +133,10 @@ macro_rules! impl_conversion_match_arms {
             let mat_knd = ValueKind::[<$input_type:camel>];
             // Verify the table has the correct number of columns
             if in_shape[1] != tbl_cols {
-              return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Matrix has {} columns, but table expects {}", in_shape[1], tbl_cols), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+              return Err(MechError2::new(
+                ConvertIncorrectNumberOfColumnsError{from: in_shape[1], to: tbl_cols},
+                None,
+              ).with_compiler_loc());
             }
             // Verify each column of the matrix can be converted to the target type of the table
             for (_, knd) in &tbl {
@@ -138,7 +145,10 @@ macro_rules! impl_conversion_match_arms {
               } else if mat_knd.is_convertible_to(knd) {
                 continue;
               } else {
-                return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Matrix column type {} does not match table column type {}", mat_knd, knd), id: line!(), kind: MechErrorKind::None});
+                return Err(MechError2::new(
+                  ColumnConvertKindMismatchError{from: mat_knd, to: knd.clone()},
+                  None,
+                ).with_compiler_loc());
               }
             }
             // Create a blank table, with as many rows as the matrix has
@@ -152,7 +162,7 @@ macro_rules! impl_conversion_match_arms {
         )+
         #[cfg(feature = "rational")]
         (Value::R64(ref rat), Value::Kind(ValueKind::F64)) => {
-          Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: Ref::new(F64::default())}))
+          Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: Ref::new(f64::default())}))
         }
         #[cfg(all(feature = "atom", feature = "enum"))]
         (Value::Atom(variant_id), Value::Kind(ValueKind::Enum(enum_id))) => {
@@ -161,7 +171,11 @@ macro_rules! impl_conversion_match_arms {
           let val = Ref::new(enm.clone());
           Ok(Box::new(ConvertSEnum{out: val}))
         }
-        x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Could not convert: {:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+        x => Err(MechError2::new(
+            UnsupportedConversionError{from: x.0.kind(), to: x.1.kind()},
+            None,
+          ).with_compiler_loc()
+        ),
       }
     }
   }
@@ -242,13 +256,16 @@ where
 fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {
   match (&source_value, &target_kind) {
     #[cfg(all(feature = "rational", feature = "f64"))]
-    (Value::R64(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: Ref::new(F64::default()),}));}
+    (Value::R64(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: Ref::new(f64::default()),}));}
     #[cfg(all(feature = "matrix", feature = "table", feature = "string"))]
     (Value::MatrixString(ref mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
       let in_shape = mat.shape();
       // Verify the table has the correct number of columns
       if in_shape[1] != tbl.len() {
-        return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Matrix has {} columns, but table expects {}", in_shape[1], tbl.len()), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+        return Err(MechError2::new(
+          ConvertIncorrectNumberOfColumnsError{from: in_shape[1], to: tbl.len()},
+          None,
+        ).with_compiler_loc());
       }
       // Create a blank table, with as many rows as the matrix has
       let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), in_shape[0]))?;
@@ -259,7 +276,10 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
       let in_shape = mat.shape();
       // Verify the table has the correct number of columns
       if in_shape[1] != tbl.len() {
-        return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Matrix has {} columns, but table expects {}", in_shape[1], tbl.len()), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+        return Err(MechError2::new(
+          ConvertIncorrectNumberOfColumnsError{from: in_shape[1], to: tbl.len()},
+          None,
+        ).with_compiler_loc());
       }
       // Create a blank table, with as many rows as the matrix has
       let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), in_shape[0]))?;
@@ -269,19 +289,19 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
   }
   impl_conversion_match_arms!(
     (source_value, target_kind),
-    i8, "i8" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    i16, "i16" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    i32, "i32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    i64, "i64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    i128, "i128" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    u8, "u8" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    u16, "u16" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    u32, "u32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    u64, "u64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    u128, "u128" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    F32, "f32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    F64, "f64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64", R64, "rational";
-    R64, "rational" => String, "string", F64, "f64";
+    i8, "i8" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    i16, "i16" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    i32, "i32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    i64, "i64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    i128, "i128" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    u8, "u8" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    u16, "u16" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    u32, "u32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    u64, "u64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    u128, "u128" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    f32, "f32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64";
+    f64, "f64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", f32, "f32", f64, "f64", R64, "rational";
+    R64, "rational" => String, "string", f64, "f64";
     String, "string" => String, "string";
     bool, "bool" => String, "string", bool, "bool";
   )
@@ -292,7 +312,7 @@ pub struct ConvertKind {}
 impl NativeFunctionCompiler for ConvertKind {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let source_value = arguments[0].clone();
     let target_kind = arguments[1].clone();
@@ -327,9 +347,44 @@ impl NativeFunctionCompiler for ConvertKind {
           Value::MatrixF32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
           #[cfg(all(feature = "matrix", feature = "f64"))]
           Value::MatrixF64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (arguments[0].kind(), arguments[1].kind()), fxn_name: "convert/scalar".to_string() },
+              None,
+            ).with_compiler_loc()
+          ),
         }
       }
     }
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct ColumnConvertKindMismatchError {
+  pub from: ValueKind,
+  pub to: ValueKind,
+}
+
+impl MechErrorKind2 for ColumnConvertKindMismatchError {
+  fn name(&self) -> &str { "ColumnTypeMismatch" }
+  fn message(&self) -> String {
+    format!(
+      "Matrix column kind {:?} does not match table column kind {:?}. Conversion requires the element types to be compatible.",
+      self.from, self.to
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct ConvertIncorrectNumberOfColumnsError {
+  pub from: usize,
+  pub to: usize,
+}
+impl MechErrorKind2 for ConvertIncorrectNumberOfColumnsError {
+  fn name(&self) -> &str { "IncorrectNumberOfColumns" }
+  fn message(&self) -> String {
+    format!(
+      "Matrix has {} columns, but table expects {}. Column count must match for assignment.",
+      self.from, self.to
+    )
   }
 }

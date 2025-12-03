@@ -130,7 +130,11 @@ macro_rules! impl_expop {
           let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
           Ok(Box::new(Self {lhs, rhs, out }))
         },
-        _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        _ => Err(MechError2::new(
+            IncorrectNumberOfArguments { expected: 2, found: 0 },
+            None
+          ).with_compiler_loc()
+        ),
       }
     }
   }
@@ -191,7 +195,11 @@ impl MechFunctionFactory for ExpRational {
         let out: Ref<R64> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self {lhs, rhs, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("ExpRational requires 2 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: 0 },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -217,7 +225,7 @@ impl MechFunctionCompiler for ExpRational
   }
 }
 
-fn impl_exp_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_exp_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   match (&lhs_value, &rhs_value) {
     #[cfg(all(feature = "rational", feature = "i32"))]
     (Value::R64(lhs), Value::I32(rhs)) => {
@@ -236,8 +244,8 @@ fn impl_exp_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
     U8,   u8,   "u8";
     U16,  u16,  "u16";
     U32,  u32,  "u32";
-    F32,  F32,  "f32";
-    F64,  F64,  "f64";
+    F32,  f32,  "f32";
+    F64,  f64,  "f64";
   )
 }
 

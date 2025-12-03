@@ -41,28 +41,25 @@ Result:
 5. Examples
 -------------------------------------------------------------------------------
 
-(a) Basic slice
+(5.1) Basic slice
 
 ```mech:ex1
 A := {"a", "b", "c", "d", "e"}
 S := set/slice(A, 1, 3)
-// S is ["b", "c", "d"]
 ```
 
-(b) Slice to end when count exceeds remaining
+(5.2) Slice to end when count exceeds remaining
 
 ```mech:ex2
 A := {10, 20, 30, 40}
 S := set/slice(A, 2, 10)
-// S is [30, 40]
 ```
 
-(c) Empty slice
+(5.3) Empty slice
 
 ```mech:ex3
 A := {"x", "y"}
 S := set/slice(A, 2, 5)
-// S is []
 ```
 
 6. Details
@@ -78,9 +75,9 @@ Not a set:
   tests by value in constant time. Use the original set for hashed lookups.
 
 Indexing rules:
-- start must be between 0 and len(A).
+- start must be between 0 and `len(A)`.
 - count may be zero.
-- If start + count exceeds len(A), the slice stops at the end of A.
+- If `start + count > len(A)`, the slice stops at the end of A.
 
 Performance:
 - Creating a slice is cheap and does not re hash elements. Access is by index.

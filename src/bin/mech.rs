@@ -17,6 +17,7 @@ use crossterm::{
   ExecutableCommand, QueueableCommand,
   terminal, cursor, style::Print,
 };
+use ariadne::{Report, ReportKind, Label, Color, sources};
 use clap::{arg, command, value_parser, Arg, ArgAction, Command};
 use std::path::PathBuf;
 use tabled::{
@@ -27,11 +28,13 @@ use tabled::{
 use serde_json;
 use std::panic;
 use std::sync::{Arc, Mutex};
+use std::path::Path;
+use std::ffi::OsStr;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[tokio::main]
-async fn main() -> Result<(), MechError> {
+async fn main() -> Result<(), MechError2> {
   /*panic::set_hook(Box::new(|panic_info| {
     // do nothing.
   }));*/
@@ -191,8 +194,8 @@ async fn main() -> Result<(), MechError> {
     let full_address: String = format!("{}:{}",address,port);
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let stylesheet = matches.get_one::<String>("stylesheet").cloned().unwrap_or("include/style.css".to_string());
-    let wasm_pkg = matches.get_one::<String>("wasm").cloned().unwrap_or("src/wasm/pkg".to_string());
-    let shim = matches.get_one::<String>("shim").cloned().unwrap_or("include/shim.html".to_string());
+    let wasm_pkg = matches.get_one::<String>("wasm").cloned().unwrap_or("".to_string());
+    let shim = matches.get_one::<String>("shim").cloned().unwrap_or("".to_string());
 
     if cfg!(feature = "serve") {
       let mut server = MechServer::new(full_address, stylesheet.to_string(), shim.to_string(), wasm_pkg.to_string());
@@ -334,48 +337,81 @@ async fn main() -> Result<(), MechError> {
       m.map(|s| s.to_string()).collect()
     } else { repl_flag = true; vec![] };
 
-    // Run the code
     let mut mechfs = MechFileSystem::new();
-    for p in &paths {
-      match mechfs.watch_source(&p) {
-        Ok(_) => {}
-        Err(err) => {
-          // condense paths into one string for parsing
-          let p = paths.join(" ");
-          // at this point abandon trying to watch fikes and instead now treat the input string as Mech code
-          let parse_result = parser::parse(&p.trim());
-          match parse_result {
-            Ok(tree) => { 
-              let r = intrp.interpret(&tree)?;
+
+    let any_look_like_paths = paths.iter().any(|p| {
+      is_intended_path(p)
+    });
+
+    if !paths.is_empty() {
+      if any_look_like_paths {
+        let mut watch_errors = Vec::new();
+        for p in &paths {
+          match mechfs.watch_source(p) {
+            Ok(r) => {}
+            Err(err) => watch_errors.push(err),
+          }
+        }
+        if !watch_errors.is_empty() {
+          // These looked like paths but failed to watch
+          // Print errors
+          for err in &watch_errors {
+            print_mech_error(err);
+          }
+          std::process::exit(1);
+        }
+      } else {
+        // ---------- 4. Treat the inputs as Mech code ----------
+        intrp.clear();
+        let joined = paths.join(" ");
+        let parse_result = parser::parse(joined.trim());
+
+        match parse_result {
+          Ok(tree) => match intrp.interpret(&tree) {
+            Ok(r) => {
+              println!("{}", r.kind());
               #[cfg(feature = "pretty_print")]
               println!("{}", r.pretty_print());
               #[cfg(not(feature = "pretty_print"))]
               println!("{:#?}", r);
-              return Ok(());
-            },
-            Err(err) => return Err(err),
+              std::process::exit(0);
+            }
+            Err(err) => {
+              println!("{} {:#?}",
+                "[Error]".truecolor(246,98,78),
+                err
+              );
+              std::process::exit(1);
+            }
+          },
+
+          Err(err) => {
+            println!("{} {:#?}",
+              "[Parse Error]".truecolor(246,98,78),
+              err
+            );
+            std::process::exit(1);
           }
         }
       }
     }
 
     let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag); 
-    
-    let return_value = match &result {
-      Ok(ref r) => {
-        #[cfg(feature = "pretty_print")]
-        println!("{}", r.pretty_print());
-        #[cfg(not(feature = "pretty_print"))]
-        println!("{:#?}", r);
-        Ok(())
-      }
-      Err(ref err) => {
-        Err(err.clone())
-      }
-    };
-
     if !repl_flag {
-      return return_value;
+      match &result {
+        Ok(ref r) => {
+          println!("{}", r.kind());
+          #[cfg(feature = "pretty_print")]
+          println!("{}", r.pretty_print());
+          #[cfg(not(feature = "pretty_print"))]
+          println!("{:#?}", r);
+          std::process::exit(0);
+        }
+        Err(ref err) => {
+          print_mech_error(err);
+          std::process::exit(1);
+        }
+      };
     }
     
     #[cfg(windows)]
@@ -428,7 +464,7 @@ async fn main() -> Result<(), MechError> {
               println!("{}", output);
             }
             Err(err) => {
-              println!("{:?}", err);
+              println!("!{:?}", err);
             }
           }
         }
@@ -445,7 +481,7 @@ async fn main() -> Result<(), MechError> {
           println!("{}", output);
         }
         Err(err) => {
-          println!("{:?}", err);
+          println!("!!{:?}", err);
         }
       }
     }
@@ -507,3 +543,133 @@ pub fn load_resource(resource_path: &str) -> String {
     }
   }
 }
+
+fn is_intended_path(s: &str) -> bool {
+  if s.trim().is_empty() { return false; }
+
+  let path = Path::new(s);
+  if s.starts_with("./") || s.starts_with(".\\") || 
+    s.starts_with("../") || s.starts_with("..\\") ||
+    s.starts_with('/') || s.starts_with('\\') {
+    return true;
+  }
+  if s.len() > 2 && s.as_bytes()[1] == b':' {
+    return true;
+  }
+  if s.contains('/') || s.contains('\\') {
+    return true;
+  }
+  if let Some(ext) = path.extension().and_then(OsStr::to_str) {
+    match ext {
+      // Mech specific
+      "mec" | "🤖" | "mecb" | "mdoc" | "mpkg" => true,
+      // Data/Standard formats
+      "m" | "csv" | "tsv" | "txt" | "md" | "json" | "toml" | "yaml" => true,
+      // Web
+      "html" | "htm" | "css" | "js" | "wasm" => true,
+      // Images
+      "png" | "jpg" | "jpeg" | "gif" | "svg" | "bmp" | "ico" => true,
+      _ => false,
+    }
+  } else {
+    false
+  }
+}
+
+fn source_range_to_offset_range(file_content: &str, range: &SourceRange) -> (usize, usize) {
+  let mut offset = 0;
+  let mut start_offset = 0;
+  let mut end_offset = 0;
+
+  for (line_index, line) in file_content.split_inclusive('\n').enumerate() {
+    let row = line_index + 1;
+    let line_len = line.len();
+    if row == range.start.row {
+      start_offset = offset + (range.start.col - 1);
+    }
+    if row == range.end.row {
+      end_offset = offset + (range.end.col - 1);
+      break;
+    }
+    offset += line_len;
+  }
+  end_offset = end_offset.min(file_content.len());
+  while start_offset < end_offset
+    && file_content.as_bytes()[start_offset].is_ascii_whitespace()
+  {
+    start_offset += 1;
+  }
+  while end_offset > start_offset
+    && file_content.as_bytes()[end_offset - 1].is_ascii_whitespace()
+  {
+    end_offset -= 1;
+  }
+  if end_offset <= start_offset {
+    end_offset = start_offset + 1;
+    // Clamp in case we were at EOF
+    end_offset = end_offset.min(file_content.len());
+  }
+  (start_offset, end_offset)
+}
+
+pub fn print_mech_error(err: &MechError2) {
+  if let Some(watch_error) = err.kind_as::<WatchPathFailed>() {
+    let src_file_path = watch_error.file_path.to_string();
+    match &err.source {
+      Some(src_err) => {
+        if let Some(report) = &src_err.kind_as::<ParserErrorReport>() {
+          let first_error_range = report.1.first().map(|e| e.cause_rng.clone()).unwrap_or(SourceRange::default());
+          let (first_start, first_end) = source_range_to_offset_range(&report.0, &first_error_range);
+          let mut error_report = Report::build(ReportKind::Error, (src_file_path.clone(), first_start..first_end))
+              .with_message(format!("Syntax Errors Found: {}", report.1.len()));
+
+          for (err_num, err_ctx) in report.1.iter().enumerate() {
+            let (start, end) = source_range_to_offset_range(&report.0, &err_ctx.cause_rng);
+
+            if let Some(annotation_rng) = err_ctx.annotation_rngs.first() {
+              let (ann_start, ann_end) = source_range_to_offset_range(&report.0, annotation_rng);
+
+              error_report = error_report.with_label(
+                Label::new((src_file_path.clone(), ann_start..ann_end))
+                      .with_message(format!(
+                        "#{}: {} [{}:{}]",
+                        err_num + 1,
+                        err_ctx.err_message,
+                        annotation_rng.start.row,
+                        annotation_rng.start.col
+                      ))
+                    .with_color(Color::Yellow),
+              );
+            } else {
+              error_report = error_report.with_label(
+                Label::new((src_file_path.clone(), start..end))
+                      .with_message(format!(
+                        "#{}: {} [{}:{}]",
+                        err_num + 1,
+                        err_ctx.err_message,
+                        err_ctx.cause_rng.start.row,
+                        err_ctx.cause_rng.start.col
+                      ))
+                    .with_color(Color::Yellow),
+              );
+            }
+          }
+          let cache = sources([(src_file_path.clone(), report.0.clone())]);
+          error_report.finish().print(cache).unwrap_or_else(|e| {
+            println!("Error printing report: {:?}", e);
+          });
+        } else {
+          println!("Error:");
+          println!("{:#?}", err);
+        }                
+      }
+      None => {
+        println!("Error:");
+        println!("{:#?}", err);
+      }
+    }
+  } else {
+      println!("Error:");
+      println!("{:#?}", err);
+  }
+} 

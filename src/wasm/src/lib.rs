@@ -126,6 +126,8 @@ fn new_interpreter(id: u64) -> Interpreter {
   fxns.function_compilers.insert(hash_str("matrix/matmul"), &MatrixMatMul{});
   #[cfg(feature = "matrix_dot")]
   fxns.function_compilers.insert(hash_str("matrix/dot"), &MatrixDot{});
+  #[cfg(feature = "matrix_solve")]
+  fxns.function_compilers.insert(hash_str("matrix/solve"), &MatrixSolve{});
 
   // Compare functions
   #[cfg(feature = "compare_eq")]
@@ -154,6 +156,22 @@ fn new_interpreter(id: u64) -> Interpreter {
   // Set Functions
   #[cfg(feature = "set_union")]
   fxns.function_compilers.insert(hash_str("set/union"), &SetUnion{});
+  #[cfg(feature = "set_intersection")]
+  fxns.function_compilers.insert(hash_str("set/intersection"), &SetIntersection{});
+  #[cfg(feature = "set_difference")]
+  fxns.function_compilers.insert(hash_str("set/difference"), &SetDifference{});
+  #[cfg(feature = "set_subset")]
+  fxns.function_compilers.insert(hash_str("set/subset"), &SetSubset{});
+  #[cfg(feature = "set_superset")]
+  fxns.function_compilers.insert(hash_str("set/superset"), &SetSuperset{});
+  #[cfg(feature = "set_proper_subset")]
+  fxns.function_compilers.insert(hash_str("set/proper-subset"), &SetProperSubset{});
+  #[cfg(feature = "set_proper_superset")]
+  fxns.function_compilers.insert(hash_str("set/proper-superset"), &SetProperSuperset{});
+  #[cfg(feature = "set_element_of")]
+  fxns.function_compilers.insert(hash_str("set/element-of"), &SetElementOf{});
+  #[cfg(feature = "set_not_element_of")]
+  fxns.function_compilers.insert(hash_str("set/not-element-of"), &SetNotElementOf{});
 
   intrp
 

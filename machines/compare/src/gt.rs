@@ -91,7 +91,7 @@ macro_rules! gt_row_mat_op {
 
 impl_compare_fxns!(GT);
 
-fn impl_gt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_gt_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_binop_match_arms!(
     GT,
     register_fxn_descriptor_inner,

@@ -77,3 +77,39 @@ impl Hash for MechMap {
     }
   }
 }
+
+#[derive(Debug, Clone)]
+pub struct MapKeyKindMismatchError {
+  pub expected_kind: ValueKind,
+  pub actual_kind: ValueKind,
+}
+impl MechErrorKind2 for MapKeyKindMismatchError {
+  fn name(&self) -> &str {
+    "MapKeyKindMismatch"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Map key kind mismatch (expected `{}`, found `{}`).",
+      self.expected_kind, self.actual_kind
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct MapValueKindMismatchError {
+  pub expected_kind: ValueKind,
+  pub actual_kind: ValueKind,
+}
+impl MechErrorKind2 for MapValueKindMismatchError {
+  fn name(&self) -> &str {
+    "MapValueKindMismatch"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Map value kind mismatch (expected `{}`, found `{}`).",
+      self.expected_kind, self.actual_kind
+    )
+  }
+}

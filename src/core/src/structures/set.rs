@@ -91,3 +91,16 @@ impl Hash for MechSet {
     }
   }
 }
+
+#[derive(Debug, Clone)]
+pub struct SetKindMismatchError {
+  pub expected_kind: ValueKind,
+  pub actual_kind: ValueKind,
+}
+impl MechErrorKind2 for SetKindMismatchError {
+  fn name(&self) -> &str { "SetKindMismatch" }
+  fn message(&self) -> String {
+    format!("Schema mismatch: set kind mismatch (expected: {}, found: {}).",
+            self.expected_kind, self.actual_kind)
+  }
+}

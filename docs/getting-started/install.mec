@@ -6,15 +6,9 @@ Download and Install Mech
 
 The easiest way to install Mech is to use the installer provided for your platform. The installer includes the `mech` command-line tool, which is a standalone executable that includes everything you need to get started with Mech.
 
-- **Windows** - [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.66-beta/mech-installer-v0.2.66-beta-win-x86-64.exe)
+- **Windows** - [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.66-beta/mech_v0.2.66-beta_full_win_x86-64_installer.exe)
 
 Right now, the installer is only available for Windows, but we are working on providing installers for other platforms in the future.
-
-
-(1.1) Desktop App
-
-We're experimenting with a Tauri-based app for Mech as well, which is kind of like Electron but Rust's version; it uses the system's webview to render the UI, which makes it much more lightweight and efficient. Right now all it does is wrap the Mech REPL, and it works, but it's not clear if this is the right direction for the project. If you want to try it out, you can [download the Mech Tauri app for Windows](https://github.com/mech-lang/mech/releases/download/v0.2.66-beta/mech-app_0.2.66_x86-64-setup.exe).
-
 
 2. Binary
 -------------------------------------------------------------------------------
@@ -23,16 +17,19 @@ Mech is easy to install without the installer -- the whole toolchain is just a s
 
 Precompiled binaries are available for the following platforms:
 
-| OS         | Architecture                                                                                                 |
-| ---------- | ------------------------------------------------------------------------------------------------------------ |
-| **Wndows** | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.66-beta/mech-v0.2.66-beta-win-x86-64.7z)   |
-| **Linux**  | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.66-beta/mech-v0.2.66-beta-win-x86-64.7z)   |
-| **macOS**  | [aarch64](https://github.com/mech-lang/mech/releases/download/v0.2.66-beta/mech-v0.2.66-beta-mac-aarch64.zip) |
-| **Web**    | [wasm](https://github.com/mech-lang/mech/releases/download/v0.2.66-beta/mech_wasm_bg.wasm.br)                |
+| OS         | Full                                                                                                              | Base                                                                                                               |
+| ---------- | ------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| **Wndows** | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.66-beta/mech_v0.2.66-beta_full_win_x86-64.7z)   | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.66-beta/mech_v0.2.66-beta_base_win_x86-64.7z)    | 
+| **Linux**  | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.66-beta/mech_v0.2.66-beta_full_linux_x86-64.7z) | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.66-beta/mech_v0.2.66-beta_base_linux_x86-64.7z)  | 
+| **macOS**  | [aarch64](https://github.com/mech-lang/mech/releases/download/v0.2.66-beta/mech_v0.2.66-beta_full_mac_aarch64.zip)| [aarch64](https://github.com/mech-lang/mech/releases/download/v0.2.66-beta/mech_v0.2.66-beta_base_mac_aarch64.zip) |
+| **Web**    | [wasm](https://github.com/mech-lang/mech/releases/download/v0.2.66-beta/mech_wasm_bg.wasm.br)                     |                                                                                                                |
+
+(?)> **Full** installation includes the standard library and all numeric datatypes. 
+**Base** installation includes the standard library but only `f64`, `i64`, and `r64` numeric types.
 
 You can find previous releases and release notes at [/mech-lang/mech/releases](https://github.com/mech-lang/mech/releases).
 
-To install, download the appropriate binary for your operating system and extract it to a directory of your choice. The Mech toolchain is distributed as a singular executable file and doesn't require an installer.
+To install, download the appropriate binary for your operating system and extract it to a directory of your choice. The Mech toolchain is distributed as a single executable file and doesn't require an installer.
 
 See the toolchain documation for more information on how this program works.
 
@@ -43,12 +40,12 @@ If mech is not available for your platform, or if you want to build it from sour
 
 (2.1) Install Rust and Cargo
 
-First you will need [Rust](https://www.rust-lang.org/learn/get-started). Make sure to install a recent version on the nightly release channel, currently `nightly-2025-07-31`.
+First you will need [Rust](https://www.rust-lang.org/learn/get-started). Make sure to install a recent version on the nightly release channel, currently `nightly-2025-11-12`.
 
 In Bash:
 
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain nightly-2025-07-31
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain nightly-2025-11-12
 ```
 
 This command will download and install the Rust toolchain, including Cargo, the Rust package manager. Rustup is a tool for managing Rust versions and associated tools.
@@ -56,7 +53,7 @@ This command will download and install the Rust toolchain, including Cargo, the 
 In PowerShell:
 
 ```powershell
-irm https://win.rustup.rs -OutFile rustup-init.exe; Start-Process -Wait -FilePath .\rustup-init.exe -ArgumentList "-y --default-toolchain nightly-2025-07-31"; Remove-Item .\rustup-init.exe
+irm https://win.rustup.rs -OutFile rustup-init.exe; Start-Process -Wait -FilePath .\rustup-init.exe -ArgumentList "-y --default-toolchain nightly-2025-11-12"; Remove-Item .\rustup-init.exe
 ```
 
 This command will: 

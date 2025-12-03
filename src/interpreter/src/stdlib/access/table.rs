@@ -83,9 +83,9 @@ impl_col_access_fxn_shapes!(u64);
 #[cfg(all(feature = "u128", feature = "matrix"))]
 impl_col_access_fxn_shapes!(u128);
 #[cfg(all(feature = "f32", feature = "matrix"))]
-impl_col_access_fxn_shapes!(F32);
+impl_col_access_fxn_shapes!(f32);
 #[cfg(all(feature = "f64", feature = "matrix"))]
-impl_col_access_fxn_shapes!(F64);
+impl_col_access_fxn_shapes!(f64);
 #[cfg(all(feature = "string", feature = "matrix"))]
 impl_col_access_fxn_shapes!(String);
 #[cfg(all(feature = "complex", feature = "matrix"))]
@@ -114,16 +114,17 @@ macro_rules! impl_access_column_table_match_arms {
                 (Some((ValueKind::$lhs_type,value)),n) => Ok(Box::new([<TableAccessCol $lhs_type VD>]{source: value.clone(), out: Ref::new(DVector::from_element(n,$default)) })),
               )+
             )+
-            x => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "no shape".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+            // Column not found
+            _ => Err(MechError2::new(TableColumnNotFoundError { column_id: k.clone() }, None).with_compiler_loc()),
           }
         }
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:#?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        (tbl,key) => Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.kind(), key.kind()), fxn_name: "TableAccessColumn".to_string() }, None).with_compiler_loc()),
       }
     }
   }
 }
 
-fn impl_access_column_table_fxn(source: Value, key: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_access_column_table_fxn(source: Value, key: Value) -> MResult<Box<dyn MechFunction>> {
   impl_access_column_table_match_arms!(
     (source,key),
     Bool,bool::default(),"bool";
@@ -137,8 +138,8 @@ fn impl_access_column_table_fxn(source: Value, key: Value) -> Result<Box<dyn Mec
     U32,u32::default(),"u32";
     U64,u64::default(),"u64";
     U128,u128::default(),"u128";
-    F32,F32::default(),"f32";
-    F64,F64::default(),"f64";
+    F32,f32::default(),"f32";
+    F64,f64::default(),"f64";
     String,String::default(),"string";
     C64,C64::default(),"complex";
     R64,R64::default(),"rational";
@@ -149,16 +150,16 @@ pub struct TableAccessColumn {}
 impl NativeFunctionCompiler for TableAccessColumn {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let tbl = arguments[0].clone();
     let key = arguments[1].clone();
     match impl_access_column_table_fxn(tbl.clone(), key.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
-        match (tbl,&key) {
+        match (tbl.clone(),&key) {
           (Value::MutableReference(tbl),_) => { impl_access_column_table_fxn(tbl.borrow().clone(), key.clone()) }
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.kind(), key.kind()), fxn_name: "TableAccessColumn".to_string() }, None).with_compiler_loc()),
         }
       }
     }
@@ -243,16 +244,16 @@ pub struct TableAccessScalar{}
 impl NativeFunctionCompiler for TableAccessScalar {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let tbl = arguments[0].clone();
-    let ix = arguments[1].clone();
-    match (tbl, ix) {
+    let ix1 = arguments[1].clone();
+    match (tbl.clone(), ix1.clone()) {
       #[cfg(feature = "table")]
       (Value::Table(source), Value::Index(ix)) => {
         let record = match source.borrow().get_record(*ix.borrow()) {
           Some(record) => record,
-          None => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+          None => return Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.kind(), ix1.kind()), fxn_name: "TableAccessScalar".to_string() }, None).with_compiler_loc()),
         };
         Ok(Box::new(TableAccessScalarF{source: source.clone(), ix: ix.clone(), out: Ref::new(record) }))
       }
@@ -263,14 +264,14 @@ impl NativeFunctionCompiler for TableAccessScalar {
           Value::Table(source) => {
             let record = match source.borrow().get_record(*ix.borrow()) {
               Some(record) => record,
-              None => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+              None => return Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.kind(), ix1.kind()), fxn_name: "TableAccessScalar".to_string() }, None).with_compiler_loc()),
             };
             Ok(Box::new(TableAccessScalarF{source: source.clone(), ix: ix.clone(), out: Ref::new(record) }))
           }
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+          _ => Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.kind(), ix1.kind()), fxn_name: "TableAccessScalar".to_string() }, None).with_compiler_loc()),
         }
       }
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+      _ => Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (tbl.kind(), ix1.kind()), fxn_name: "TableAccessScalar".to_string() }, None).with_compiler_loc()),
     }
   }
 }
@@ -388,11 +389,11 @@ pub struct TableAccessRange{}
 impl NativeFunctionCompiler for TableAccessRange {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let ixes = arguments.clone().split_off(1);
     let tbl = arguments[0].clone();
-    match (tbl, ixes.as_slice()) {
+    match (tbl.clone(), ixes.as_slice()) {
       #[cfg(all(feature = "table", feature = "matrix"))]
       (Value::Table(source), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
         let out_table = source.borrow().empty_table(ix.borrow().len());
@@ -411,7 +412,7 @@ impl NativeFunctionCompiler for TableAccessRange {
             let out_table = source.borrow().empty_table(ix.borrow().len());
             Ok(Box::new(TableAccessRangeIndex{source: source.clone(), ix: ix.clone(), out: Ref::new(out_table) }))
           }
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+          _ => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (tbl.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "TableAccessRange".to_string() }, None).with_compiler_loc()),
         }
       }
       #[cfg(all(feature = "matrix", feature = "table", feature = "logical_indexing"))]
@@ -422,10 +423,10 @@ impl NativeFunctionCompiler for TableAccessRange {
             let out_table = source.borrow().empty_table(ix.borrow().len());
             Ok(Box::new(TableAccessRangeBool{source: source.clone(), ix: ix.clone(), out: Ref::new(out_table) }))
           }
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+          _ => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (tbl.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "TableAccessRange".to_string() }, None).with_compiler_loc()),
         }
       }
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+      _ => Err(MechError2::new(UnhandledFunctionArgumentIxesMono { arg: (tbl.kind(), ixes.iter().map(|x| x.kind()).collect()), fxn_name: "TableAccessRange".to_string() }, None).with_compiler_loc()),
     }
   }
 }

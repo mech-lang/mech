@@ -22,6 +22,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use num_traits::*;
 
+#[cfg(feature = "serde")] use serde::{Serialize, Deserialize};
+
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
 #[cfg(feature = "no-std")] use alloc::string::String;
@@ -34,6 +36,7 @@ use nom::{
   multi::{many1, many_till, many0, separated_list1},
   Err,
 };
+use nom::Parser;
 
 use std::collections::HashMap;
 use colored::*;
@@ -207,6 +210,13 @@ impl<'a> ParseString<'a> {
     Some(tag.to_string())
   }
 
+  /// Extract graphemes between two cursor indices without mutating self.
+  pub fn slice(&self, start_cursor: usize, end_cursor: usize) -> String {
+    let start = start_cursor.min(self.graphemes.len());
+    let end = end_cursor.min(self.graphemes.len());
+    self.graphemes[start..end].join("")
+  }
+
   /// Mutate self by consuming one grapheme
   fn consume_one(&mut self) -> Option<String> {
     if self.is_empty() {
@@ -370,7 +380,7 @@ impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
   /// Not used, unless we have logical error
   fn from_error_kind(input: ParseString<'a>,
                       _kind: nom::error::ErrorKind) -> Self {
-    ParseError::new(input, "Unexpected error")
+    ParseError::new(input, format!("NomErrorKind: {:?}", _kind).leak())
   }
 
   /// Probably not used
@@ -637,20 +647,171 @@ impl<'a> TextFormatter<'a> {
 
   /// Get formatted error message.
   pub fn format_error(&self, errors: &ParserErrorReport) -> String {
-    let n = usize::min(errors.len(), 10);
+    let n = usize::min(errors.1.len(), 10);
     let mut result = String::new();
     result.push('\n');
     for i in 0..n {
-      let ctx = &errors[i];
+      let ctx = &errors.1[i];
       result.push_str(&Self::err_heading(i));
       result.push_str(&self.err_location(ctx));
       result.push_str(&self.err_context(ctx));
       result.push_str("\n\n");
     }
-    let d = errors.len() - n;
+    let d = errors.0.len() - n;
     if d != 0 {
       result.push_str(&Self::err_ending(d));
     }
     result
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct ParserErrorContext {
+  pub cause_rng: SourceRange,
+  pub err_message: String,
+  pub annotation_rngs: Vec<SourceRange>,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct ParserErrorReport(pub String, pub Vec<ParserErrorContext>);
+
+impl MechErrorKind2 for ParserErrorReport {
+  fn name(&self) -> &str {
+    "ParserErrorContext"
+  }
+  fn message(&self) -> String {
+    let source = &self.0;
+    let lines: Vec<&str> = source.lines().collect();
+
+    self.1
+      .iter()
+      .map(|e| {
+        let cause_snippet = extract_snippet(&lines, &e.cause_rng);
+
+        let annotation_snippets = e.annotation_rngs
+          .iter()
+          .map(|rng| extract_snippet(&lines, rng))
+          .collect::<Vec<_>>()
+          .join("\n");
+
+        format!(
+          "{}: {} (Annotations: [{}])\n\nSource:\n{}\n\nAnnotations:\n{}",
+          format!(
+            "[{}:{}-{}:{}]",
+            e.cause_rng.start.row,
+            e.cause_rng.start.col,
+            e.cause_rng.end.row,
+            e.cause_rng.end.col
+          ),
+          e.err_message,
+          e.annotation_rngs.iter()
+            .map(|rng| format!(
+              "[{}:{}-{}:{}]",
+              rng.start.row, rng.start.col, rng.end.row, rng.end.col
+            ))
+            .collect::<Vec<_>>()
+            .join(", "),
+          indent(&cause_snippet),
+          indent(&annotation_snippets)
+        )
+      })
+      .collect::<Vec<_>>()
+      .join("\n\n---\n\n")
+  }
+}
+
+fn extract_snippet(lines: &[&str], range: &SourceRange) -> String {
+  let mut out = String::new();
+
+  for row in range.start.row..=range.end.row {
+    if let Some(line) = lines.get(row) {
+      let start = if row == range.start.row { range.start.col } else { 0 };
+      let end   = if row == range.end.row   { range.end.col } else { line.len() };
+
+      let end = end.min(line.len());
+
+      if start <= end {
+        out.push_str(&line[start..end]);
+      }
+      out.push('\n');
+    }
+  }
+
+  out
+}
+
+fn indent(s: &str) -> String {
+  s.lines()
+    .map(|line| format!("  {}", line))
+    .collect::<Vec<_>>()
+    .join("\n")
+}
+
+/// Try a list of parsers in order, tracking successes, failures, and errors.
+/// Returns the best success if any, else best failure, else best error.
+pub fn alt_best<'a, O>(
+  input: ParseString<'a>,
+  parsers: &[(&'static str, Box<dyn Fn(ParseString) -> ParseResult<O>>)],
+) -> ParseResult<'a, O> {
+  let start_cursor = input.cursor;
+
+  let mut best_success: Option<(ParseString, O, usize, &'static str)> = None;
+  let mut best_failure: Option<(nom::Err<ParseError>, usize, &'static str)> = None;
+  let mut best_error:   Option<(nom::Err<ParseError>, usize, &'static str)> = None;
+
+  for (name, parser) in parsers {
+    match parser(input.clone()) {
+      Ok((next_input, val)) => {
+        if *name == "mech_code" {
+          return Ok((next_input, val));
+        }
+        let consumed = next_input.cursor;
+        if best_success.is_none() || consumed > best_success.as_ref().unwrap().2 {
+          best_success = Some((next_input, val, consumed, name));
+        }
+      }
+
+      Err(nom::Err::Failure(e)) => {
+        let reached = e.remaining_input.cursor;
+        if best_failure.is_none() || reached > best_failure.as_ref().unwrap().1 {
+          best_failure = Some((nom::Err::Failure(e), reached, name));
+        }
+      }
+
+      Err(nom::Err::Error(e)) => {
+        let reached = e.remaining_input.cursor;
+        if best_error.is_none() || reached > best_error.as_ref().unwrap().1 {
+          best_error = Some((nom::Err::Error(e), reached, name));
+        }
+      }
+
+      Err(e @ nom::Err::Incomplete(_)) => {
+        return Err(e);
+      }
+    }
+  }
+
+  // Determine the best result based on the given conditions
+  if let Some((next_input, val, success_cursor, _)) = best_success {
+    if let Some((nom::Err::Failure(failure), failure_cursor, _)) = best_failure {
+      if success_cursor > failure_cursor {
+        Ok((next_input, val))
+      } else {
+        Err(nom::Err::Failure(failure))
+      }
+    } else {
+      Ok((next_input, val))
+    }
+  } else if let Some((nom::Err::Failure(failure), _, _)) = best_failure {
+    Err(nom::Err::Failure(failure))
+  } else if let Some((err, _, _)) = best_error {
+    Err(err)
+  } else {
+    Err(nom::Err::Error(ParseError::new(
+      input,
+      "No parser matched in alt_best",
+    )))
   }
 }

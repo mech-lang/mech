@@ -5,6 +5,7 @@ use crate::*;
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Kind {
   Any,
+  None,
   Atom(u64),
   Empty,
   Enum(u64),
@@ -34,6 +35,7 @@ impl Kind {
   #[cfg(feature = "kind_annotation")]
   pub fn to_value_kind(&self, kinds: &KindTable) -> MResult<ValueKind> {
     match self {
+      Kind::None => Ok(ValueKind::None),
       Kind::Any => Ok(ValueKind::Any),
       Kind::Atom(id) => Ok(ValueKind::Atom(*id)),
       Kind::Empty => Ok(ValueKind::Empty),
@@ -66,13 +68,13 @@ impl Kind {
       Kind::Scalar(id) => {
         match kinds.get(id).cloned() {
           Some(val_knd) => Ok(val_knd),
-          None => Err(MechError {
-            file: file!().to_string(),
-            tokens: vec![],
-            msg: "".to_string(),
-            id: line!(),
-            kind: MechErrorKind::UndefinedKind(*id),
-          }),
+          None => Err(
+            MechError2::new(
+              UndefinedKindError { kind_id: *id },
+              None,
+            )
+            .with_compiler_loc()
+          ),
         }
       },
       Kind::Set(kind, size) => {

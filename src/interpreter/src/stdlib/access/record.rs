@@ -32,16 +32,23 @@ impl MechFunctionCompiler for RecordAccessField {
   }
 }
 
-pub fn impl_access_record_fxn(source: Value, key: Value) -> Result<Box<dyn MechFunction>, MechError> {
+pub fn impl_access_record_fxn(source: Value, key: Value) -> MResult<Box<dyn MechFunction>> {
   match (source,key) {
     (Value::Record(rcd), Value::Id(id)) => {
       let k = id;
       match rcd.borrow().get(&k) {
         Some(value) => Ok(Box::new(RecordAccessField{source: value.clone()})),
-        None => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)}),
+        None => Err(MechError2::new(
+            UndefinedRecordFieldError { id: k.clone() },
+            None
+          ).with_compiler_loc()),
       }
     }
-    x => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Unhandled args {:?}", x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+    (source,key) => return Err(MechError2::new(
+        UnhandledFunctionArgumentKind2 { arg: (source.kind(), key.kind()), fxn_name: "RecordAccess".to_string() },
+        None
+      ).with_compiler_loc()
+    ),
   }
 }
 
@@ -49,7 +56,7 @@ pub struct RecordAccess {}
 impl NativeFunctionCompiler for RecordAccess {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let key = &arguments[1];
     let src = &arguments[0];
@@ -58,7 +65,11 @@ impl NativeFunctionCompiler for RecordAccess {
       Err(_) => {
         match src {
           Value::MutableReference(rcrd) => { impl_access_record_fxn(rcrd.borrow().clone(), key.clone()) },
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:#?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+              UnhandledFunctionArgumentKind2 { arg: (src.kind(), key.kind()), fxn_name: "RecordAccess".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }

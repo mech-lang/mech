@@ -162,6 +162,7 @@ leaf!(section_sigil, "§", TokenKind::SectionSigil);
 ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);
 ws0_leaf!(async_transition_operator, "~>", TokenKind::AsyncTransitionOperator);
 ws0_leaf!(define_operator, ":=", TokenKind::DefineOperator);
+ws0_leaf!(query_operator, "?=", TokenKind::QueryOperator);
 ws0_leaf!(output_operator, "=>", TokenKind::OutputOperator);
 ws0_leaf!(transition_operator, "->", TokenKind::TransitionOperator);
 
@@ -219,7 +220,7 @@ pub fn any_token(mut input: ParseString) -> ParseResult<Token> {
 
 // forbidden-emoji := box-drawing | other-forbidden-shapes ;
 pub fn forbidden_emoji(input: ParseString) -> ParseResult<Token> {
-  alt((box_tl, box_br, box_bl, box_tr, box_tr_bold, box_tl_bold, box_br_bold, box_bl_bold, box_t_left,box_tl_round,box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_right, box_t_top, box_t_bottom))(input)
+  box_drawing_emoji(input)
 }
 
 // emoji := (!forbidden-emoji, emoji-grapheme) ;
@@ -294,7 +295,7 @@ pub fn symbol(input: ParseString) -> ParseResult<Token> {
 
 // identifier-symbol := ampersand | dollar | bar | percent | at | slash | hashtag | backslash | tilde | plus | dash | asterisk | caret ;
 pub fn identifier_symbol(input: ParseString) -> ParseResult<Token> {
-  let (input, symbol) = alt((ampersand, dollar, bar, percent, at, slash, hashtag, backslash, tilde, plus, dash, asterisk, caret))(input)?;
+  let (input, symbol) = alt((ampersand, dollar, percent, at, slash, hashtag, backslash, tilde, plus, dash, asterisk, caret))(input)?;
   Ok((input, symbol))
 }
 
@@ -339,10 +340,15 @@ pub fn newline_indent(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// ws0e := ws0, newline-indent? ;
+// ws1e := ws1, newline-indent? ;
 pub fn ws1e(input: ParseString) -> ParseResult<()> {
   let (input, _) = many1(space_tab)(input)?;
-  let (input, _) = opt(newline_indent)(input)?;
+  Ok((input, ()))
+}
+
+// ws0e := ws0, newline-indent? ;
+pub fn ws0e(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many0(space_tab)(input)?;
   Ok((input, ()))
 }
 
@@ -350,6 +356,18 @@ pub fn ws1e(input: ParseString) -> ParseResult<()> {
 pub fn space_tab(input: ParseString) -> ParseResult<Token> {
   let (input, space) = alt((space,tab))(input)?;
   Ok((input, space))
+}
+
+// space-tab0 := *space-tab ;
+pub fn space_tab0(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many0(space_tab)(input)?;
+  Ok((input, ()))
+}
+
+// space-tab1 := +space-tab ;
+pub fn space_tab1(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many1(space_tab)(input)?;
+  Ok((input, ()))
 }
 
 // list-separator := ws0, ",", ws0 ;

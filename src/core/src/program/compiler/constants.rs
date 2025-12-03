@@ -100,19 +100,19 @@ impl CompileConst for Value {
 }
 
 #[cfg(all(feature = "f64", feature = "compiler"))]
-impl CompileConst for F64 {
+impl CompileConst for f64 {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
-    payload.write_f64::<LittleEndian>(self.0)?;
+    payload.write_f64::<LittleEndian>(*self)?;
     ctx.compile_const(&payload, ValueKind::F64)
   }
 }
 
 #[cfg(feature = "f32")]
-impl CompileConst for F32 {
+impl CompileConst for f32 {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
-    payload.write_f32::<LittleEndian>(self.0)?;
+    payload.write_f32::<LittleEndian>(*self)?;
     ctx.compile_const(&payload, ValueKind::F32)
   }
 }
@@ -446,34 +446,6 @@ pub trait ConstElem {
   fn align() -> u8 { 1 }
 }
 
-#[cfg(feature = "f64")]
-impl ConstElem for F64 {
-  fn write_le(&self, out: &mut Vec<u8>) {
-    out.write_f64::<LittleEndian>(self.0).expect("write f64");
-  }
-  fn from_le(bytes: &[u8]) -> Self {
-    let mut rdr = std::io::Cursor::new(bytes);
-    let val = rdr.read_f64::<LittleEndian>().expect("read f64");
-    F64(val)
-  }
-  fn value_kind(&self) -> ValueKind { ValueKind::F64 }
-  fn align() -> u8 { 8 }
-}
-
-#[cfg(feature = "f32")]
-impl ConstElem for F32 {
-  fn write_le(&self, out: &mut Vec<u8>) {
-    out.write_f32::<LittleEndian>(self.0).expect("write f32");
-  }
-  fn from_le(bytes: &[u8]) -> Self {
-    let mut rdr = std::io::Cursor::new(bytes);
-    let val = rdr.read_f32::<LittleEndian>().expect("read f32");
-    F32(val)
-  }
-  fn value_kind(&self) -> ValueKind { ValueKind::F32 }
-  fn align() -> u8 { 4 }
-} 
-
 macro_rules! impl_const_elem {
   ($feature:literal, $t:ty, $align:expr) => {
     paste!{
@@ -509,6 +481,10 @@ impl_const_elem!("i32", i32, 4);
 impl_const_elem!("i64", i64, 8);
 #[cfg(feature = "i128")]
 impl_const_elem!("i128", i128, 16);
+#[cfg(feature = "f32")]
+impl_const_elem!("f32", f32, 4);
+#[cfg(feature = "f64")]
+impl_const_elem!("f64", f64, 8);
 
 #[cfg(feature = "u8")]
 impl ConstElem for u8 {
@@ -1006,9 +982,9 @@ impl ConstElem for Value {
       #[cfg(feature = "i128")]
       ValueKind::I128 => Value::I128(Ref::new(<i128 as ConstElem>::from_le(payload))),
       #[cfg(feature = "f32")]
-      ValueKind::F32 => Value::F32(Ref::new(<F32 as ConstElem>::from_le(payload))),
+      ValueKind::F32 => Value::F32(Ref::new(<f32 as ConstElem>::from_le(payload))),
       #[cfg(feature = "f64")]
-      ValueKind::F64 => Value::F64(Ref::new(<F64 as ConstElem>::from_le(payload))),
+      ValueKind::F64 => Value::F64(Ref::new(<f64 as ConstElem>::from_le(payload))),
       #[cfg(feature = "rational")]
       ValueKind::R64 => Value::R64(Ref::new(<R64 as ConstElem>::from_le(payload))),
       #[cfg(feature = "complex")]

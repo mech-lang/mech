@@ -26,7 +26,11 @@ where
         let out: Ref<O> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self {arg, out, _marker: PhantomData }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Negate requires 1 argument, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 1, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -60,8 +64,8 @@ register_fxn_descriptor!(NegateV,
   i32, "i32",
   i64, "i64",
   i128, "i128",
-  F32, "f32",
-  F64, "f64",
+  f32, "f32",
+  f64, "f64",
   R64, "r64",
   C64, "c64"
 );
@@ -85,7 +89,11 @@ where
         let out: Ref<O> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self {arg, out, _marker: PhantomData }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Negate requires 1 argument, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 1, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
     }
   }
 }
@@ -119,13 +127,13 @@ register_fxn_descriptor!(NegateS,
   i32, "i32",
   i64, "i64",
   i128, "i128",
-  F32, "f32",
-  F64, "f64",
+  f32, "f32",
+  f64, "f64",
   R64, "r64",
   C64, "c64"
 );
 
-fn impl_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_neg_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms!(
     Negate,
     (lhs_value),
@@ -134,8 +142,8 @@ fn impl_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
     I32,  i32,  "i32";
     I64,  i64,  "i64";
     I128, i128, "i128";
-    F32,  F32,  "f32";
-    F64,  F64,  "f64";
+    F32,  f32,  "f32";
+    F64,  f64,  "f64";
     R64, R64, "rational";
     C64, C64, "complex";
   )

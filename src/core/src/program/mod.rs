@@ -104,3 +104,11 @@ pub fn parse_version_to_u16(s: &str) -> Option<u16> {
   let encoded = (major << 13) | (minor << 8) | patch;
   Some(encoded as u16)
 }
+
+#[derive(Debug, Clone)]
+pub struct InvalidMagicNumberError;
+
+impl MechErrorKind2 for InvalidMagicNumberError {
+  fn name(&self) -> &str { "InvalidMagicNumber" }
+  fn message(&self) -> String { "Invalid magic number".to_string() }
+}

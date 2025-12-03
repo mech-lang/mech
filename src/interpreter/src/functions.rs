@@ -63,9 +63,24 @@ pub fn function_call(fxn_call: &FunctionCall, p: &Interpreter) -> MResult<Value>
             Err(x) => {return Err(x);}
           }
         }
-        None => {return Err(MechError{file: file!().to_string(), tokens: fxn_call.name.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::MissingFunction(fxn_name_id)});}
+        None => {return Err(MechError2::new(
+            MissingFunctionError{ function_id: fxn_name_id },
+            None
+          ).with_compiler_loc().with_tokens(fxn_call.name.tokens())
+        );}
       }
     }
   }   
   unreachable!()
+}
+
+#[derive(Debug, Clone)]
+pub struct MissingFunctionError {
+  pub function_id: u64,
+}
+impl MechErrorKind2 for MissingFunctionError {
+  fn name(&self) -> &str { "MissingFunction" }
+  fn message(&self) -> String {
+    format!("Function with id {} not found", self.function_id)
+  }
 }

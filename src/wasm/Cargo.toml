@@ -1,6 +1,6 @@
 [package]
 name = "mech-wasm"
-version = "0.2.66"
+version = "0.2.67"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "A web assembly wrapper for Mech core and syntax. Allows Mech to be embedded in the browser."
 documentation = "http://docs.mech-lang.org"
@@ -163,8 +163,9 @@ io_print = ["io", "mech-interpreter/io_print"]
 io_println = ["io", "mech-interpreter/io_println"]
 
 # Matrix
-matrix_default = ["matrix_dot", "matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_transpose", "mech-interpreter/matrix_default"]
+matrix_default = ["matrix_solve", "matrix_dot", "matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_transpose", "mech-interpreter/matrix_default"]
 matrix_horzcat = ["matrix", "functions", "mech-interpreter/matrix_horzcat"]
+matrix_solve = ["matrix", "mech-interpreter/matrix_solve"]
 matrix_vertcat = ["matrix", "functions", "mech-interpreter/matrix_vertcat"]
 matrix_matmul = ["matrix", "mech-interpreter/matrix_matmul"]
 matrix_transpose = ["matrix", "mech-interpreter/matrix_transpose"]
@@ -259,9 +260,9 @@ dot_indexing = ["subscript", "mech-core/dot_indexing", "mech-interpreter/dot_ind
 swizzle = ["subscript", "mech-core/swizzle", "mech-interpreter/swizzle", "mech-syntax/swizzle"]
 
 [dependencies]
-mech-core = { version = "0.2.66", default-features = false}
-mech-syntax = { version = "0.2.66", default-features = false}
-mech-interpreter = { version = "0.2.66", default-features = false}
+mech-core = { version = "0.2.67", default-features = false}
+mech-syntax = { version = "0.2.67", default-features = false}
+mech-interpreter = { version = "0.2.67", default-features = false}
 
 hashbrown = "0.15.5"
 wasm-bindgen = "0.2.100"

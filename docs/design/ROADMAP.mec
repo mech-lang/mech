@@ -34,45 +34,52 @@ Target release date: ???
 
 (2.1) Data Specification (v0.2)
 
--(🥚) language server
--(🐣) enums
--(🐣) option types
--(🐣) sets
--(🐣) maps
--(🐣) atoms
--(🐣) error system
--(🐣) records
--(🐣) tuples
+-(🐤) repl
+-(🐤) error system
+-(🐤) value semantics
+-(🐤) mechdown
+-(🐤) type inference
+-(🐤) variety of numerical datatypes
 -(🐤) scientific numbers
 -(🐤) imaginary numbers
 -(🐤) rational numbers
+-(🐤) enums
+-(🐤) option types
+-(🐤) sets
+-(🐤) maps
+-(🐤) atoms
+-(🐤) records
+-(🐤) tuples
 -(🐤) tables (dataframe)
 -(🐤) strings
--(🐤) repl
+-(🐤) bools
 -(🐤) standard library functions
+-(🐤) flexible matrix type with fixed and dynamic sizes for homogeneous data
+-(🐤) matrix builder notation
+-(🐤) matrix slicing
+-(🐤) operator broadcasting
+-(🐤) logical indexing
 -(🐤) variable type and size checking
 -(🐤) builtin linear algebra tools
--(🐤) value semantics
--(🐤) literate programming
--(🐤) typxe inference
--(🐓) bools
--(🐓) operator broadcasting
--(🐓) logical indexing
--(🐓) matrix builder notation
--(🐓) matrix slicing
--(🐓) variety of numerical datatypes
--(🐓) flexible matrix type with fixed and dynamic sizes for homogeneous data
 
 (2.2) Program Specification (v0.3)
 
+-(💭) synthassign
 -(💭) state machines
 -(💭) automatic differentiation
 -(💭) introspection
 -(💭) higher order functions
+-(💭) Integrations
+  -(💭) Godot
+  -(💭) Python
+  -(💭) C/C++
+  -(🐣) Rust
+  -(🐣) Javascript
+-(🥚) language server
 -(🥚) physical units with dimension checking
 -(🥚) file/parameter server
--(🥚) self-contained binary executables
 -(🥚) time travel debugging
+-(🐣) self-contained binary executables
 -(🐣) bytecode interpreter
 -(🐣) build system
 -(🐣) user defined functions

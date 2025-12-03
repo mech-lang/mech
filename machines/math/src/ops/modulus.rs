@@ -35,7 +35,11 @@ macro_rules! impl_binop2 {
             let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self {lhs, rhs, out }))
           },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          _ => Err(MechError2::new(
+              IncorrectNumberOfArguments { expected: 2, found: 0 },
+              None
+            ).with_compiler_loc()
+          ),
         }
       }
     }
@@ -173,7 +177,7 @@ macro_rules! impl_math_fxns2 {
 
 impl_math_fxns2!(Mod);
 
-fn impl_mod_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_mod_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_binop_match_arms!(
     Mod,
     register_fxn_descriptor_inner,
@@ -188,8 +192,8 @@ fn impl_mod_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
     U32,  u32,  "u32";
     U64,  u64,  "u64";
     U128, u128, "u128";
-    F32,  F32,  "f32";
-    F64,  F64,  "f64";
+    F32,  f32,  "f32";
+    F64,  f64,  "f64";
   )
 }
 
