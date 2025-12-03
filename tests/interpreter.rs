@@ -740,3 +740,21 @@ test_interpreter!(interpret_matrix_solve, r#"A := [2.0, 1.0, -1.0;-3.0, -1.0, 2.
 // │ y │ true │ false │
 
 test_interpreter!(table_column_inference, "| y | true | false |", Value::Table(Ref::new(MechTable::from_records(vec![MechRecord::new(vec![("y",Value::Bool(Ref::new(true)))]),MechRecord::new(vec![("y",Value::Bool(Ref::new(false)))]),]).expect("Failed to create MechTable"))));
+
+test_interpreter!(interpret_set_union, r#"A := {1, 2, 3}; B := {2, 3, 4}; U := A ∪ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0)), Value::F64(Ref::new(4.0))]))));
+test_interpreter!(interpret_set_intersection, r#"A := {1, 2, 3}; B := {2, 3, 4}; U := A ∩ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0))]))));
+test_interpreter!(interpret_set_difference, r#"A := {"a", "b", "c"}; B := {"b", "c", "d"}; U := A ∖ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::String(Ref::new("a".to_string()))]))));
+test_interpreter!(interpret_set_subset, r#"A := {"b", "c"}; B := {"b", "c", "d"}; C := A ⊆ B"#, Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_set_superset, r#"A := {"b", "c", "d"}; B := {"b", "c"}; C := A ⊇ B"#, Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_set_membership, r#"A := {1, 2, 3}; B := 2 ∈ A;"#, Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_set_not_membership, r#"A := {1, 2, 3}; B := 4 ∉ A;"#, Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_set_strict_subset, r#"A := {1, 2}; B := {1, 2, 3}; C := A ⊂ B"#, Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_set_strict_superset, r#"A := {1, 2, 3}; B := {1, 2}; C := A ⊃ B"#, Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_set_strict_subset2, r#"A := {1, 2}; B := {1, 2}; C := A ⊊ B"#, Value::Bool(Ref::new(false)));
+test_interpreter!(interpret_set_strict_superset2, r#"A := {1, 2}; B := {1, 2}; C := A ⊋ B"#, Value::Bool(Ref::new(false)));
+
+test_interpreter!(interpret_set_union_empty, r#"A := {}; B := {1, 2}; U := A ∪ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0))]))));
+test_interpreter!(interpret_set_intersection_empty, r#"A := {}; B := {1, 2, 3}; U := A ∩ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![]))));
+test_interpreter!(interpret_set_difference_empty, r#"A := {1, 2}; B := {1, 2}; U := A ∖ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![]))));
+test_interpreter!(interpret_set_union_duplicates, r#"A := {1, 1, 2}; B := {2, 2, 3}; U := A ∪ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0))]))));
+test_interpreter!(interpret_set_subset_empty_left, r#"A := {}; B := {1}; C := A ⊆ B"#, Value::Bool(Ref::new(true)));

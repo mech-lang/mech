@@ -119,7 +119,7 @@ c64 = ["complex", "mech-core/c64", "mech-set/c64", "mech-math/c64", "mech-compar
 r64 = ["rational", "mech-core/r64", "mech-set/r64", "mech-math/r64", "mech-compare/r64", "mech-combinatorics/r64", "mech-logic/r64", "mech-matrix/r64", "mech-io/r64", "mech-stats/r64", "mech-range/r64"]
 
 # Structs
-set = ["indexmap", "mech-core/set", "mech-set/set", "mech-math/set", "mech-compare/set", "mech-combinatorics/set", "mech-logic/set", "mech-matrix/set", "mech-io/set", "mech-stats/set", "mech-range/set"]
+set = ["indexmap", "mech-core/set", "mech-set/set", "mech-math/set", "mech-compare/set", "mech-combinatorics/set", "mech-logic/set", "mech-matrix/set", "mech-io/set", "mech-stats/set", "mech-range/set", "functions"]
 map = ["indexmap", "mech-core/map", "mech-set/map", "mech-math/map", "mech-compare/map", "mech-combinatorics/map", "mech-logic/map", "mech-matrix/map", "mech-io/map", "mech-stats/map", "mech-range/map"]
 table = ["indexmap", "vectord", "record", "mech-core/table", "mech-set/table", "mech-math/table", "mech-compare/table", "mech-combinatorics/table", "mech-logic/table", "mech-matrix/table", "mech-io/table", "mech-stats/table", "mech-range/table"]
 tuple = ["mech-core/tuple", "mech-set/tuple", "mech-math/tuple", "mech-compare/tuple", "mech-combinatorics/tuple", "mech-logic/tuple", "mech-matrix/tuple", "mech-io/tuple", "mech-stats/tuple", "mech-range/tuple"]
@@ -254,20 +254,32 @@ math_neg = ["math_ops", "mech-math/neg"]
 math_sqrt = ["math_root", "mech-math/sqrt"]
 
 # Set
-set_default = ["mech-set/set_default"]
-#set_default = ["set_union", "set_intersection", "set_difference", "mech-set/set_default",
-#               "set_subset", "set_superset", "set_proper_subset", "set_proper_superset", 
-#               "set_element_of", "set_not_element_of"]
-#set_union = ["set", "mech-set/union"]
-#set_intersection = ["set", "mech-set/intersection"]
-#set_difference = ["set", "mech-set/difference"]
-#set_subset = ["set", "mech-set/subset"]
-#set_superset = ["set", "mech-set/superset"]
-#set_proper_subset = ["set", "mech-set/proper_subset"]
-#set_proper_superset = ["set", "mech-set/proper_superset"]
-#set_element_of = ["set", "mech-set/element_of"]
-#set_not_element_of = ["set", "mech-set/not_element_of"]
-
+set_default = ["set_membership_default", "set_modify_default",
+              "set_operations_default", "set_relations_default",
+              "set_setdata_default"]
+set_membership_default = ["set_element_of", "set_not_element_of"]
+set_modify_default = ["set_insert", "set_remove"]
+set_operations_default = ["set_cartesian_product", "set_difference", "set_intersection", "set_powerset", "set_symmetric_difference", "set_union"]
+set_relations_default = ["set_disjoint", "set_equals", "set_not_equals", "set_proper_subset", "set_proper_superset", "set_subset", "set_superset"]
+set_setdata_default = ["set_size"]
+set_size = ["set", "mech-set/size"]
+set_insert = ["set", "mech-set/insert"]
+set_remove = ["set", "mech-set/remove"]
+set_powerset = ["set", "mech-set/powerset"]
+set_symmetric_difference = ["set", "mech-set/symmetric_difference"]
+set_disjoint = ["set", "mech-set/disjoint"]
+set_equals = ["set", "mech-set/equals"]
+set_not_equals = ["set", "mech-set/not_equals"]
+set_element_of = ["set", "mech-set/element_of"]
+set_not_element_of = ["set", "mech-set/not_element_of"]
+set_proper_subset = ["set", "mech-set/proper_subset"]
+set_proper_superset = ["set", "mech-set/proper_superset"]
+set_subset = ["set", "mech-set/subset"]
+set_superset = ["set", "mech-set/superset"]
+set_difference = ["set", "mech-set/difference"]
+set_intersection = ["set", "mech-set/intersection"]
+set_union = ["set", "mech-set/union"]
+set_cartesian_product = ["set", "mech-set/cartesian_product"]
 
 [dependencies]
 mech-core = { version = "0.2.66", default-features = false }
