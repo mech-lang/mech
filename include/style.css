@@ -1,15 +1,25 @@
 @import url(https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/fira_code.css);
 
 :root {
-  --op-color: #73b997;
+  --bracket-color: #c19dca;
+  --op-color: #c19dca;
+  --literal-color: #9cc7f3;
   --contrast-color-high: hsl(284, 49%, 80%);
   --contrast-color-mid: hsl(284, 49%, 75%);
   --contrast-color-low: hsl(284, 49%, 65%);
   --main-color-mid: #F3B62D;
   --main-color-high: #F8D07A;
   --main-color-low: #d19710;
-  --bracket-color: rgb(177, 187, 196);
+  --out-bracket-color: rgb(177, 187, 196);
   --sidebar-width: 300px;
+  --text-color: #f2ead9;
+  --code-border-color: #414749;
+  --inline-code-border-color: #414749;
+  --code-output-background-color: #040608;
+  --var-name-color: #eddaf1;
+  --field-name-color: #efd8aa;
+  --kind-annotation-color: #f09fca;
+  --kind-annotation-color-dark: #d574a8;
 }
 
 html {
@@ -63,7 +73,7 @@ body {
     max-width: 250px;
     position: absolute;
     counter-reset: h2;
-    color: #f2ead9;
+    color: var(--text-color);
     overflow-y: auto;
     overflow-x: hidden;
     top: 0px;
@@ -173,7 +183,7 @@ body {
   font-size: 1em;
   min-height: 1.2em;
   line-height: 1.2em;
-  color: #f2ead9;
+  color: var(--text-color);
   padding: 0;
   margin: 0;
   padding-left: 25px;
@@ -220,7 +230,7 @@ h2.toc::before {
 }
 
 .mech-toc h2 a {
-    color: #f2ead9;
+    color: var(--text-color);
     text-decoration: none;
 }
 
@@ -248,7 +258,7 @@ h3.toc::before {
 }
 
 .mech-toc h3 a {
-    color: #f2ead9;
+    color: var(--text-color);
     text-decoration: none;
 }
 
@@ -274,7 +284,7 @@ h4.toc::before {
 }
 
 .mech-toc h4 a {
-    color: #f2ead9;
+    color: var(--text-color);
     text-decoration: none;
 }
 
@@ -300,7 +310,7 @@ h5.toc::before {
 }
 
 .mech-toc h5 a {
-    color: #f2ead9;
+    color: var(--text-color);
     text-decoration: none;
 }
 
@@ -378,7 +388,7 @@ h5.toc::before {
     font-family: 'FiraCodeRegular', monospace;
     padding-bottom: 10px;
     border-bottom: 4px dashed var(--main-color-low);
-    color: #f2ead9;
+    color: var(--text-color);
     letter-spacing: 2px;
     font-size: 1.83rem;
     font-weight: bold;
@@ -388,7 +398,7 @@ h5.toc::before {
 }
 
 .mech-program h2 a {
-    color: #f2ead9;
+    color: var(--text-color);
     text-decoration: none;
 }
 
@@ -397,7 +407,7 @@ h5.toc::before {
     font-family: 'FiraCodeRegular', monospace;
     padding-bottom: 10px;
     border-bottom: 3px dashed var(--main-color-low);
-    color: #f2ead9;
+    color: var(--text-color);
     font-size: 1.33rem;
     font-weight: bold;
     letter-spacing: 2px;
@@ -407,13 +417,13 @@ h5.toc::before {
 }
 
 .mech-program h3 a {
-    color: #f2ead9;
+    color: var(--text-color);
     text-decoration: none;
 }
 
 .mech-program h3 {
     font-family: 'FiraCodeRegular', monospace;
-    color: #f2ead9;
+    color: var(--text-color);
     font-size: 1.17rem;
     font-weight: bold;
     margin-bottom: 10px;
@@ -422,13 +432,13 @@ h5.toc::before {
 }
 
 .mech-program h4 a {
-    color: #f2ead9;
+    color: var(--text-color);
     text-decoration: none;
 }
 
 .mech-program h4 {
     font-family: 'FiraCodeRegular', monospace;
-    color: #f2ead9;
+    color: var(--text-color);
     font-size: 1rem;
     font-weight: bold;
     margin-bottom: 10px;
@@ -436,13 +446,13 @@ h5.toc::before {
 }
 
 .mech-program h5 a {
-    color: #f2ead9;
+    color: var(--text-color);
     text-decoration: none;
 }
 
 .mech-program h5 {
     font-family: 'FiraCodeRegular', monospace;
-    color: #f2ead9;
+    color: var(--text-color);
     font-size: 1rem;
     font-weight: bold;
     margin-bottom: 10px;
@@ -473,14 +483,14 @@ h5.toc {
 
 .mech-modal {
     display: block;
-    background-color: #171D21;
+    background-color: var(--code-output-background-color);
     color: #e6dac2;
     font-family: 'FiraCodeLight', monospace;
     font-size: 1rem;
     line-height: 18px;
     padding: 20px;
     border-radius: 10px;
-    border: 1px solid #888f92;
+    border: 1px solid var(--code-border-color);
     margin-bottom: 20px;
     overflow-x: auto;
     box-shadow: 0 1px 20px rgba(0, 0, 0, 1);
@@ -496,10 +506,10 @@ h5.toc {
     line-height: 18px;
     padding: 20px;
     border-radius: 10px;
-    border: 1px solid #888f92;
+    border: 1px solid var(--code-border-color);
     margin-bottom: 20px;
     overflow-x: auto;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.7);
 }
 
 .mech-code-block::-webkit-scrollbar {
@@ -534,7 +544,7 @@ h5.toc {
     line-height: 18px;
     padding: 20px;
     border-radius: 10px;
-    border: 1px solid #888f92;
+    border: 1px solid var(--code-border-color);
     margin-bottom: 20px;
     overflow-x: auto;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
@@ -633,7 +643,7 @@ h5.toc {
 }
 
 .mech-var-name {
-    color: #eddaf1;
+    color: var(--var-name-color);
     font-style: bold;
 }
 
@@ -642,15 +652,15 @@ h5.toc {
 }
 
 .mech-boolean {
-    color: #C7DCAE;
+    color: var(--literal-color);
 }
 
 .mech-atom {
-    color: #C7DCAE;
+    color: var(--literal-color);
 }
 
 .mech-empty {
-    color: #C7DCAE;
+    color: var(--literal-color);
 }
 
 .mech-grammar-define-op {
@@ -661,7 +671,7 @@ h5.toc {
 }
 
 .mech-number {
-    color: #9ccdf4;
+    color: var(--literal-color);
 }
 
 .mech-factor {
@@ -678,8 +688,8 @@ code {
 
 .mech-inline-code {
     background-color: #171D21;
-    border: 1px solid #777;
-    color: #eddaf1;
+    border: 1px solid var(--inline-code-border-color);
+    color: var(--var-name-color);
     font-family: 'FiraCodeLight', monospace;
     font-size: 1rem;
     padding: 0px 6px 0px 6px;
@@ -692,7 +702,7 @@ code {
     display: inline-flex;
     vertical-align: middle;
     background-color: #171D21;
-    border: 1px solid #777;
+    border: 1px solid var(--inline-code-border-color);
     font-family: 'FiraCodeLight', monospace;
     font-size: 1rem;
     padding: 0px 6px 0px 6px;
@@ -703,8 +713,8 @@ code {
 
 .mech-inline-mech-code {
     background-color: #171D21;
-    border: 1px solid #777;
-    color: #9ccdf4;
+    border: 1px solid var(--inline-code-border-color);
+    color: var(--literal-color);
     font-family: 'FiraCodeLight', monospace;
     font-size: 1rem;
     padding: 0px 6px 0px 6px;
@@ -754,6 +764,7 @@ code {
 }
 
 .mech-record {
+    color: var(--op-color);
     display: flex;
 }
 
@@ -775,11 +786,19 @@ code {
 
 .mech-bracket {
     display: inline-flex;
-    color: #A157B5
+    color: var(--bracket-color);
 }
 
 .mech-start-brace {
-    color: #a157b5
+    color: var(--bracket-color);
+}
+
+.mech-start-paren {
+    color: var(--bracket-color);
+}
+
+.mech-end-paren {
+    color: var(--bracket-color);
 }
 
 .mech-clickable:hover {
@@ -788,11 +807,15 @@ code {
 }
 
 .mech-end-brace {
-    color: #a157b5
+    color: var(--bracket-color);
+}
+
+.mech-subscript {
+    color: var(--op-color);
 }
 
 .mech-dot {
-    color: #9cc7f3;
+    color: var(--field-name-color);
 }
 
 .mech-binding-colon-op {
@@ -800,20 +823,20 @@ code {
 }
 
 .mech-right-paren {
-    color: #a157b5
+    color: var(--bracket-color);
 }
 
 .mech-left-paren {
-    color: #a157b5
+    color: var(--bracket-color);
 }
 
 .mech-binding-name {
-    color: #9cc7f3;
+    color: var(--field-name-color);
     padding-left: 6px;
 }
 
 .mech-parenthetical {
-    color: #a157b5;
+    color: var(--bracket-color);
 }
 
 .mech-function-name {
@@ -825,7 +848,7 @@ code {
 }
 
 .mech-kind {
-    color: #ec8e8e;
+    color: var(--kind-annotation-color);
     display: inline-flex;
 }
 
@@ -848,11 +871,15 @@ code {
 }
 
 .mech-kind-annotation {
-    color: #ee6262;
+    color: var(--kind-annotation-color-dark);
 }
 
 .mech-kind .mech-literal .mech-number {
-    color: #ec8e8e;
+    color: var(--kind-annotation-color);
+}
+
+.mech-kind-annotation .mech-empty {
+    color: var(--kind-annotation-color);
 }
 
 .mech-fsm-state {
@@ -955,6 +982,10 @@ code {
     margin-right: 6px;
 }
 
+.mech-tuple {
+    color: var(--op-color);
+}
+
 .mech-state-name {
     color: #dbc3a5;
 }
@@ -987,7 +1018,7 @@ code {
 }
 
 .mech-string {
-    color: #ee6262;
+    color: var(--literal-color);
 }
 
 
@@ -1116,11 +1147,15 @@ li p {
     margin-bottom: 2px;
 }
 
+.mech-field-name {
+    color: var(--field-name-color);
+}
+
 .mech-table-header {
     color: #dbc3a5;
     text-align: center;
     font-weight: bold;
-    border-bottom: 1px solid #888f92;
+    border-bottom: 1px solid var(--code-border-color);
 }
 
 .mech-table-cell.left {
@@ -1147,11 +1182,11 @@ li p {
 
 .mech-table {
     background-color: #2F353B;
-    color: #f2ead9; 
+    color: var(--text-color); 
     margin-bottom: 20px;
     padding: 0px;
     border-collapse: collapse;
-    border: 1px solid #888f92;
+    border: 1px solid var(--code-border-color);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
@@ -1186,7 +1221,7 @@ li p {
 
 .mech-table .mech-table-cell {
     padding: 20px 10px 20px 10px;
-    border-bottom: 1px solid #888f92; 
+    border-bottom: 1px solid var(--code-border-color);
 }
 
 .mech-table tbody tr:hover {
@@ -1208,7 +1243,7 @@ li p {
     border-left: 4px solid var(--main-color-mid);
     padding: 40px 30px;
     margin: 40px auto;
-    color: #f2ead9; 
+    color: var(--text-color); 
     border-radius: 3px;
     font-style: italic;
     font-family: 'Georgia', serif;
@@ -1248,7 +1283,7 @@ li p {
     border-left: 4px solid #f18181;
     padding: 20px 20px 20px 50px;
     margin: 20px auto;
-    color: #f2ead9;
+    color: var(--text-color);
     border-radius: 3px;
     font-family: 'Georgia', serif;
     position: relative;
@@ -1285,7 +1320,7 @@ li p {
     border-left: 4px solid #6ca8ff;
     padding: 20px 20px 20px 50px;
     margin: 20px auto;
-    color: #f2ead9;
+    color: var(--text-color);
     border-radius: 3px;
     font-family: 'Georgia', serif;
     position: relative;
@@ -1327,6 +1362,7 @@ li p {
 .mech-fenced-mech-block {
     border-radius: 10px;
     margin-bottom: 20px;
+    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.7);
 }
 
 .mech-code-block.hidden {
@@ -1336,18 +1372,19 @@ li p {
 .mech-fenced-mech-block .mech-code-block {
     background-color: #171D21;
     border-radius: 10px 10px 0px 0px;  
-    border-bottom: 2px solid rgb(199, 220, 174);
+    border-bottom: 0px solid var(--code-border-color);
     margin-bottom: 0px;
+    box-shadow: none;
 }
 
 .mech-block-output {
     margin-top: 0px;
-    background-color: #222A30; 
-    color: #f2ead9;
+    background-color: var(--code-output-background-color);
+    color: var(--text-color);
     font-family: 'FiraCodeLight', monospace;
     font-size: 1rem;
     padding: 20px;
-    border: 1px solid #888f92;
+    border: 1px solid var(--code-border-color);
     border-radius: 0px 0px 10px 10px; /* Only bottom corners rounded */
     overflow-x: auto;
 }
@@ -1395,7 +1432,7 @@ li p {
 .mech-footnote .mech-paragraph {
     margin: 0;
     line-height: 1.6;
-    color: #f2ead9;
+    color: var(--text-color);
 }
 
 a.mech-footnote-reference {
@@ -1584,7 +1621,7 @@ mark {
 .mech-citation {
     display: flex;
     align-items: baseline;
-    color: #f2ead9;
+    color: var(--text-color);
 }
 
 .mech-citation p {
@@ -1609,6 +1646,10 @@ mark {
 .mech-citation-link:hover {
     color: #f18181;
     text-decoration: underline;
+}
+
+.mech-repl {
+    background-color: var(--code-output-background-color);
 }
 
 .mech-reference {
@@ -1655,8 +1696,8 @@ mark {
 .mech-matrix-outer{
     width: fit-content;
     position:relative;
-    border-left: 3px solid var(--bracket-color);
-    border-right: 3px solid var(--bracket-color);
+    border-left: 3px solid var(--out-bracket-color);
+    border-right: 3px solid var(--out-bracket-color);
 }
 .mech-matrix-outer:after{
     content:'';
@@ -1664,14 +1705,14 @@ mark {
     height:3px;
     width: 3px;
     right:0;
-    border-top: 3px solid var(--bracket-color);
+    border-top: 3px solid var(--out-bracket-color);
 }
 .mech-matrix-outer:before{
       content:'';
     position:absolute;
     height:3px;
     width: 3px;
-    border-top: 3px solid var(--bracket-color);
+    border-top: 3px solid var(--out-bracket-color);
 }
 .mech-matrix-inner:before{
       content:'';
@@ -1679,7 +1720,7 @@ mark {
     height:3px;
     width: 3px;
     bottom:0;
-    border-bottom: 3px solid var(--bracket-color);
+    border-bottom: 3px solid var(--out-bracket-color);
 }
 .mech-matrix-inner:after {
       content:'';
@@ -1687,11 +1728,11 @@ mark {
     height:3px;
     width: 3px;
     bottom:0; right:0;
-    border-bottom: 3px solid var(--bracket-color);
+    border-bottom: 3px solid var(--out-bracket-color);
 }
 
 .mech-output-kind {
-    color: #ec8e8e;
+    color: var(--kind-annotation-color);
     font-weight: bold;
     font-family: 'FiraCodeRegular', monospace;
     margin-bottom: 10px;
@@ -1703,7 +1744,7 @@ mark {
 }
 
 #mech-output li {
-    color: #f2ead9;
+    color: var(--text-color);
 }
 
 #mech-output li::marker {
@@ -1765,7 +1806,7 @@ mark {
 .mech-command {
     background-color: #171D21;
     border: 1px solid #777;
-    color: #eddaf1;
+    color: var(--var-name-color);
     font-family: 'FiraCodeLight', monospace;
     font-size: 1rem;
     padding: 0px 6px 0px 6px;
@@ -1799,7 +1840,7 @@ mark {
     width: 100%;
     margin: auto;
     font-family: 'FiraCodeRegular', monospace;
-    color: #f2ead9;
+    color: var(--text-color);
     font-weight: bold;
     border-bottom: none;
     font-size: 1rem;
@@ -1809,7 +1850,7 @@ mark {
     width: 100%;
     margin: auto;
     font-family: 'FiraCodeRegular', monospace;
-    color: #f2ead9;
+    color: var(--text-color);
     font-weight: bold;
     border-bottom: none;
     font-size: 1rem;
@@ -1819,7 +1860,7 @@ mark {
     width: 100%;
     margin: auto;
     font-family: 'FiraCodeRegular', monospace;
-    color: #f2ead9;
+    color: var(--text-color);
     font-weight: bold;
     font-size: 1rem;
     margin-bottom: 10px;
@@ -1829,7 +1870,7 @@ mark {
     width: 100%;
     margin: auto;
     font-family: 'FiraCodeRegular', monospace;
-    color: #f2ead9;
+    color: var(--text-color);
     font-weight: bold;
     border-bottom: none;
     font-size: 1rem;
@@ -1839,7 +1880,7 @@ mark {
     width: 100%;
     margin: auto;
     font-family: 'FiraCodeRegular', monospace;
-    color: #f2ead9;
+    color: var(--text-color);
     font-weight: bold;
     border-bottom: none;
     font-size: 1rem;
@@ -1849,7 +1890,7 @@ mark {
     width: 100%;
     margin: auto;
     font-family: 'FiraCodeRegular', monospace;
-    color: #f2ead9;
+    color: var(--text-color);
     font-weight: bold;
     border-bottom: none;
     font-size: 1rem;
