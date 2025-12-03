@@ -263,6 +263,7 @@ macro_rules! handle_value_kind {
 }
 
 
+#[cfg(feature = "table")]
 fn handle_column_kind(
     kind: ValueKind,
     id: u64,

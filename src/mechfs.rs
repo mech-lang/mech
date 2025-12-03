@@ -803,19 +803,6 @@ impl MechErrorKind2 for ExtensionDecodeFailed {
 }
 
 #[derive(Debug, Clone)]
-pub struct WatchPathFailed {
-  pub file_path: String,
-  pub source_err: String,
-}
-impl MechErrorKind2 for WatchPathFailed {
-  fn name(&self) -> &str { "WatchPathFailed" }
-
-  fn message(&self) -> String {
-    format!("Failed to watch file path {}: {}", self.file_path, self.source_err)
-  }
-}
-
-#[derive(Debug, Clone)]
 pub struct RwLockWriteError {
   pub source_err: String,
 }

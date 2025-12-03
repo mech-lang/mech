@@ -193,7 +193,7 @@ async fn main() -> Result<(), MechError2> {
     let address = matches.get_one::<String>("address").cloned().unwrap_or("127.0.0.1".to_string());
     let full_address: String = format!("{}:{}",address,port);
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let stylesheet = matches.get_one::<String>("stylesheet").cloned().unwrap_or("".to_string());
+    let stylesheet = matches.get_one::<String>("stylesheet").cloned().unwrap_or("include/style.css".to_string());
     let wasm_pkg = matches.get_one::<String>("wasm").cloned().unwrap_or("".to_string());
     let shim = matches.get_one::<String>("shim").cloned().unwrap_or("".to_string());
 
