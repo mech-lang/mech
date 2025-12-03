@@ -215,7 +215,7 @@ pub fn regular_table(input: ParseString) -> ParseResult<Table> {
 
 // table-header := list1(space-tab+, field), (space | tab)*, (bar| box-vert), whitespace* ;
 pub fn table_header(input: ParseString) -> ParseResult<Vec<Field>> {
-  let (input, fields) = separated_list1(space_tab1,field)(input)?;
+  let (input, fields) = separated_list1(space_tab1,header_field)(input)?;
   let (input, _) = space_tab0(input)?;
   let (input, _) = table_separator(input)?;
   let (input, _) = whitespace0(input)?;
@@ -224,7 +224,7 @@ pub fn table_header(input: ParseString) -> ParseResult<Vec<Field>> {
 
 // table-header := list1(space-tab+, field), (space | tab)*, (bar| box-vert), whitespace* ;
 pub fn inline_table_header(input: ParseString) -> ParseResult<Vec<Field>> {
-  let (input, fields) = separated_list1(space_tab1,field)(input)?;
+  let (input, fields) = separated_list1(space_tab1,header_field)(input)?;
   let (input, _) = space_tab0(input)?;
   let (input, _) = table_separator(input)?;
   let (input, _) = space_tab0(input)?;
@@ -271,6 +271,13 @@ pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
   };
   let (input, _) = nom_tuple((space_tab0,opt(alt((comma,table_separator))), space_tab0))(input)?;
   Ok((input, TableColumn{element}))
+}
+
+// field := identifier, kind-annotation? ;
+pub fn header_field(input: ParseString) -> ParseResult<Field> {
+  let (input, name) = identifier(input)?;
+  let (input, kind) = kind_annotation(input)?;
+  Ok((input, Field{name, kind: Some(kind)}))
 }
 
 // field := identifier, kind-annotation? ;

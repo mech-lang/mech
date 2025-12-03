@@ -25,7 +25,7 @@ use nom::{
   IResult,
   branch::alt,
   sequence::{tuple as nom_tuple, preceded},
-  combinator::{opt, eof, cut},
+  combinator::{opt, eof, cut, peek},
   multi::{many1, many_till, many0, separated_list1, separated_list0},
   Err,
   Err::Failure
@@ -357,6 +357,16 @@ pub fn mech_code(input: ParseString) -> ParseResult<Vec<(MechCode,Option<Comment
   let mut output = vec![];
   let mut new_input = input.clone();
   loop {
+
+    if peek(not_mech_code)(new_input.clone()).is_ok() {
+      if output.len() > 0 {
+        return Ok((new_input, output));
+      } else {
+        let e = ParseError::new(new_input, "Unexpected character");
+        return Err(Err::Error(e));
+      }
+    }
+
     let start = new_input.loc();
     let start_cursor = new_input.cursor;
     let (input, code) = match mech_code_alt(new_input.clone()) {
@@ -397,8 +407,6 @@ pub fn mech_code(input: ParseString) -> ParseResult<Vec<(MechCode,Option<Comment
           }
           Err(_) => { /* continue with error recovery */ }
         }
-        println!("Error parsing mech code block: {:#?}", e);
-        println!("Rest of input: {:?}", e.remaining_input);
         e.cause_range = SourceRange { start, end: e.cause_range.end };
         e.log();
         // skip till the end of the statement
