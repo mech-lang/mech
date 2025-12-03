@@ -21,15 +21,20 @@ crate-type = ["dylib", "rlib"]
 [features]
 no_std = ["mech-core/no_std"]
 
-default = ["stdlib", "pretty_print", "serde", "compiler", "program",
-            "statements_default", "subscript_default",
-            "mech-core/default",
+default = ["baselib", "pretty_print", "serde", "compiler", "program",
+           "u8", "u16", "u32", "u64", "u128", 
+           "i8", "i16", "i32", "i64", "i128", 
+           "f32", "f64", "c64", "r64", 
+           "bool", "string",
+           "set_default",
+           "statements_default", "subscript_default",
+           "mech-core/default",
           ]
 
 base = ["baselib", "pretty_print", "serde", "compiler", "program",
-      "set_default",
-      "statements_default", "subscript_default",
-      "mech-core/base",
+        "set_default",
+        "statements_default", "subscript_default",
+        "mech-core/base",
       ]   
       
 baselib = ["bool", "string", 
@@ -185,7 +190,7 @@ dot_indexing = ["subscript", "mech-core/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle"]
 
 [dependencies]
-mech-core = { path = "../../src/core", version = "0.2.66", default-features = false }
+mech-core = { version = "0.2.66" }
 
 paste = "1.0.15"
 inventory = "0.3.21"
