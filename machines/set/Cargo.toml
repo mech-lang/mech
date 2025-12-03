@@ -52,7 +52,7 @@ baselib = ["bool", "string",
 
 membership_default = ["element_of", "not_element_of"]
 modify_default = ["insert", "remove"]
-operations_default = ["cartesianproduct", "difference", "intersection", "powerset", "sym_difference", "union"]
+operations_default = ["cartesian_product", "difference", "intersection", "powerset", "symmetric_difference", "union"]
 relations_default = ["disjoint", "equals", "not_equals", "proper_subset", "proper_superset", "subset", "superset"]
 setdata_default = ["size"]
 
@@ -74,11 +74,11 @@ not_element_of = ["membership"]
 insert = ["modify"]
 remove = ["modify"]
 
-cartesianproduct = ["operations"]
+cartesian_product = ["operations"]
 difference = ["operations"]
 intersection = ["operations"]
 powerset = ["operations"]
-sym_difference = ["operations"]
+symmetric_difference = ["operations"]
 union = ["operations"]
 
 disjoint = ["relations"]

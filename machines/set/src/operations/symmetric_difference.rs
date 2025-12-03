@@ -59,7 +59,7 @@ impl MechFunctionImpl for SetSymDifferenceFxn {
 impl MechFunctionCompiler for SetSymDifferenceFxn {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let name = format!("SetSymDifferenceFxn");
-    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Custom(hash_str("set/sym_difference")));
+    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Custom(hash_str("set/symmetric-difference")));
   }
 }
 
@@ -83,7 +83,7 @@ fn set_sym_difference_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunctio
       }))
     },
     x => Err(MechError2::new(
-      UnhandledFunctionArgumentKind2 { arg: (x.0.kind(), x.1.kind()), fxn_name: "set/sym-difference".to_string() },
+      UnhandledFunctionArgumentKind2 { arg: (x.0.kind(), x.1.kind()), fxn_name: "set/symmetric-difference".to_string() },
       None
     ).with_compiler_loc()),
   }
@@ -105,7 +105,7 @@ impl NativeFunctionCompiler for SetSymDifference {
           (lhs, Value::MutableReference(rhs)) => { set_sym_difference_fxn(lhs.clone(), rhs.borrow().clone()) },
           (Value::MutableReference(lhs), rhs) => { set_sym_difference_fxn(lhs.borrow().clone(), rhs.clone()) },
           x => Err(MechError2::new(
-            UnhandledFunctionArgumentKind2 { arg: (x.0.kind(), x.1.kind()), fxn_name: "set/sym-difference".to_string() },
+            UnhandledFunctionArgumentKind2 { arg: (x.0.kind(), x.1.kind()), fxn_name: "set/symmetric-difference".to_string() },
             None
           ).with_compiler_loc()),
         }
@@ -116,7 +116,7 @@ impl NativeFunctionCompiler for SetSymDifference {
 
 register_descriptor! {
   FunctionCompilerDescriptor {
-    name: "set/sym-difference",
+    name: "set/symmetric-difference",
     ptr: &SetSymDifference{},
   }
 }

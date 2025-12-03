@@ -63,7 +63,7 @@ impl MechFunctionImpl for SetCartesianProductFxn {
 impl MechFunctionCompiler for SetCartesianProductFxn {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let name = format!("SetCartesianProductFxn");
-    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Custom(hash_str("set/cartesianproduct")) );
+    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Custom(hash_str("set/cartesian-product")) );
   }
 }
 register_descriptor! {
@@ -73,7 +73,7 @@ register_descriptor! {
   }
 }
 
-fn set_cartesianproduct_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
+fn set_cartesian_product_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
   match (lhs, rhs) {
     (Value::Set(lhs), Value::Set(rhs)) => {
       Ok(Box::new(SetCartesianProductFxn { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(MechSet::new(ValueKind::Tuple(vec![lhs.borrow().kind.clone(), rhs.borrow().kind.clone()]), lhs.borrow().num_elements * rhs.borrow().num_elements)) }))
@@ -93,13 +93,13 @@ impl NativeFunctionCompiler for SetCartesianProduct {
     }
     let lhs = arguments[0].clone();
     let rhs = arguments[1].clone();
-    match set_cartesianproduct_fxn(lhs.clone(),rhs.clone()) {
+    match set_cartesian_product_fxn(lhs.clone(),rhs.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(x) => {
         match (lhs,rhs) {
-          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => { set_cartesianproduct_fxn(lhs.borrow().clone(),rhs.borrow().clone()) },
-          (lhs,Value::MutableReference(rhs)) => { set_cartesianproduct_fxn(lhs.clone(),rhs.borrow().clone()) },
-          (Value::MutableReference(lhs),rhs) => { set_cartesianproduct_fxn(lhs.borrow().clone(),rhs.clone()) },
+          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => { set_cartesian_product_fxn(lhs.borrow().clone(),rhs.borrow().clone()) },
+          (lhs,Value::MutableReference(rhs)) => { set_cartesian_product_fxn(lhs.clone(),rhs.borrow().clone()) },
+          (Value::MutableReference(lhs),rhs) => { set_cartesian_product_fxn(lhs.borrow().clone(),rhs.clone()) },
           x => Err(MechError2::new(
             UnhandledFunctionArgumentKind2 { arg: (x.0.kind(), x.1.kind()), fxn_name: "set/cartesian-product".to_string() },
             None

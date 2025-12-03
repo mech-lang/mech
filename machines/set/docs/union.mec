@@ -14,12 +14,10 @@ U := A ∪ B
 2. Description
 -------------------------------------------------------------------------------
 
-Computes the union of two sets A and B, returning every distinct element that
-appears in either input. The implementation wraps a Rust `IndexSet::union`
-iterator, so the result preserves stable insertion order:
+Computes the union of two sets A and B, returning every distinct element that appears in either input. The implementation wraps a Rust `IndexSet::union` iterator, so the result preserves stable insertion order:
 
-- All elements from A appear first in A's order.
-- Then any elements from B that are not already in A are appended in B's order.
+- All elements from `A` appear first in `A`'s order.
+- Then any elements from `B` that are not already in `A` are appended in `B`'s order.
 
 3. Input
 -------------------------------------------------------------------------------
@@ -47,9 +45,7 @@ Result:
 ```mech:ex1
 A := {"a", "b", "c"}
 B := {"b", "c", "d"}
-U := set/union(A, B)
-// Equivalent symbolic form:
-U := A ∪ B
+C := A ∪ B
 ```
 
 (b) Duplicates in inputs are ignored
@@ -57,9 +53,7 @@ U := A ∪ B
 ```mech:ex2
 A := {1, 2, 2, 3}
 B := {2, 4, 4}
-U := set/union(A, B)
-// Equivalent symbolic form:
-U := A ∪ B
+C := A ∪ B
 ```
 
 (c) Order is stable by first appearance (IndexSet semantics)
@@ -67,9 +61,7 @@ U := A ∪ B
 ```mech:ex3
 A := {"x", "y"}
 B := {"y", "x", "z"}
-U := set/union(A, B)
-// Equivalent symbolic form:
-U := A ∪ B
+C := A ∪ B
 ```
 
 6. Details
@@ -87,8 +79,7 @@ Performance:
 - Average O(\|A\| + \|B\|) time with hashing; memory is O(\|A\| + \|B\|) for the union.
 
 Determinism:
-- Given equal inputs, output order is deterministic across runs and platforms
-  because it derives from insertion order rather than raw hash iteration order.
+- Given equal inputs, output order is deterministic across runs and platforms because it derives from insertion order rather than raw hash iteration order.
 
 7. Errors
 -------------------------------------------------------------------------------
