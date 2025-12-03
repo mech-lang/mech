@@ -1,4 +1,4 @@
-set/not_element_of
+set/not-element-of
 ===============================================================================
 
 %% Membership exclusion test (element not in set)
@@ -7,7 +7,7 @@ set/not_element_of
 -------------------------------------------------------------------------------
 
 ```mech:disabled
-R := set/not_element_of(x, S)
+R := set/not-element-of(x, S)
 R := x ∉ S
 ```
 
@@ -39,32 +39,29 @@ Result:
 5. Examples
 -------------------------------------------------------------------------------
 
-(a) True — element is not in the set
+(5.1) True — element is not in the set
 
 ```mech:ex1
 x := "a"
 S := {"a", "b", "c"}
-R := set/not_element_of(x, S)
+R := set/not-element-of(x, S)
 ```
-Result: `R` = true
 
-(b) False — element is in the set
+(5.2) False — element is in the set
 
 ```mech:ex2
 x := 5
 S := {1, 2, 3, 4}
 R := x ∉ S
 ```
-Result: `R` = false
 
-(c) Symbols or strings
+(5.3) Symbols or strings
 
 ```mech:ex3
 x := apple
 S := {banana, pear, grape}
-R := set/not_element_of(x, S)
+R := set/not-element-of(x, S)
 ```
-Result: `R` = true
 
 6. Details
 -------------------------------------------------------------------------------

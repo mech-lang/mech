@@ -1,4 +1,4 @@
-set/proper_subset
+set/proper-subset
 ===============================================================================
 
 %% Proper subset test (strict set containment relation)
@@ -7,7 +7,7 @@ set/proper_subset
 -------------------------------------------------------------------------------
 
 ```mech:disabled
-R := set/proper_subset(A, B)
+R := set/proper-subset(A, B)
 R := A ⊊ B
 ```
 
@@ -42,32 +42,29 @@ Result:
 5. Examples
 -------------------------------------------------------------------------------
 
-(a) True proper subset
+(5.1) True proper subset
 
 ```mech:ex1
 A := {"b", "c"}
 B := {"a", "b", "c", "d"}
-R := set/proper_subset(A, B)
+R := set/proper-subset(A, B)
 ```
-Result: `R` = true
 
-(b) False — equal sets
+(5.2) False — equal sets
 
 ```mech:ex2
 A := {1, 2, 3}
 B := {1, 2, 3}
 R := A ⊊ B
 ```
-Result: `R` = false
 
-(c) False — not contained
+(5.3) False — not contained
 
 ```mech:ex3
 A := {"x", "y", "z"}
 B := {"x", "y"}
-R := set/proper_subset(A, B)
+R := set/proper-subset(A, B)
 ```
-Result: `R` = false
 
 6. Details
 -------------------------------------------------------------------------------
@@ -84,7 +81,7 @@ Symbolic shorthand:
 - `A ⊊ B` is equivalent to `set/proper_subset(A, B)`.
 
 Performance:
-- Average O(|A|) time using hashing; memory O(1).
+- Average `O(|A|)` time using hashing; memory `O(1)`.
 
 Determinism:
 - Results are deterministic across runs and platforms.

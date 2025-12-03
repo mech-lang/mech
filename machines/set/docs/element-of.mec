@@ -1,4 +1,4 @@
-set/element_of
+set/element-of
 ===============================================================================
 
 %% Membership inclusion test (element in set)
@@ -7,7 +7,7 @@ set/element_of
 -------------------------------------------------------------------------------
 
 ```mech:disabled
-R := set/element_of(x, S)
+R := set/element-of(x, S)
 R := x ∈ S
 ```
 
@@ -17,7 +17,7 @@ R := x ∈ S
 Determines whether an element `x` is a **member** of set `S`.  
 This function returns a boolean value indicating whether `x` exists within the set.
 
-It wraps Rust’s `IndexSet` membership check, returning true if the element is found.
+It wraps Rust's `IndexSet` membership check, returning true if the element is found.
 
 3. Input
 -------------------------------------------------------------------------------
@@ -39,32 +39,29 @@ Result:
 5. Examples
 -------------------------------------------------------------------------------
 
-(a) True — element is in the set
+(5.1) True — element is in the set
 
 ```mech:ex1
 x := "b"
 S := {"a", "b", "c"}
-R := set/element_of(x, S)
+R := set/element-of(x, S)
 ```
-Result: `R` = true
 
-(b) False — element not in the set
+(5.2) False — element not in the set
 
 ```mech:ex2
 x := 5
 S := {1, 2, 3, 4}
 R := x ∈ S
 ```
-Result: `R` = false
 
-(c) Symbols or strings
+(5.3) Symbols or strings
 
 ```mech:ex3
 x := pear
 S := {apple, pear, banana}
-R := set/element_of(x, S)
+R := set/element-of(x, S)
 ```
-Result: `R` = true
 
 6. Details
 -------------------------------------------------------------------------------
@@ -77,7 +74,7 @@ Relation logic:
 - Returns true if the element exists in the set.
 
 Symbolic shorthand:
-- `x ∈ S` is equivalent to `set/element_of(x, S)`.
+- `x ∈ S` is equivalent to `set/element-of(x, S)`.
 
 Performance:
 - Average O(1) time per lookup using hashing.

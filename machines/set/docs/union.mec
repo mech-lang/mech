@@ -7,8 +7,8 @@ set/union
 -------------------------------------------------------------------------------
 
 ```mech:disabled
-U := set/union(A, B)
-U := A ∪ B
+C := set/union(A, B)
+C := A ∪ B
 ```
 
 2. Description
@@ -23,8 +23,8 @@ Computes the union of two sets A and B, returning every distinct element that ap
 -------------------------------------------------------------------------------
 
 Arguments:
-- A : set of T   (or an array treated as a set; duplicates ignored)
-- B : set of T   (or an array treated as a set; duplicates ignored)
+- `A` : set of T (or an array treated as a set; duplicates ignored)
+- `B` : set of T (or an array treated as a set; duplicates ignored)
 
 Element type constraints:
 - T must be hashable and comparable for equality (Eq and Hash in Rust).
@@ -34,13 +34,13 @@ Element type constraints:
 -------------------------------------------------------------------------------
 
 Result:
-- U : set of T containing all unique elements from A and B, ordered with A first
-  and then any new elements from B.
+- `C` : set of T containing all unique elements from `A` and `B`, ordered with `A` first
+  and then any new elements from `B`.
 
 5. Examples
 -------------------------------------------------------------------------------
 
-(a) Simple union of two small sets
+(5.1) Simple union of two small sets
 
 ```mech:ex1
 A := {"a", "b", "c"}
@@ -48,7 +48,7 @@ B := {"b", "c", "d"}
 C := A ∪ B
 ```
 
-(b) Duplicates in inputs are ignored
+(5.2) Duplicates in inputs are ignored
 
 ```mech:ex2
 A := {1, 2, 2, 3}
@@ -56,7 +56,7 @@ B := {2, 4, 4}
 C := A ∪ B
 ```
 
-(c) Order is stable by first appearance (IndexSet semantics)
+(5.3) Order is stable by first appearance (IndexSet semantics)
 
 ```mech:ex3
 A := {"x", "y"}

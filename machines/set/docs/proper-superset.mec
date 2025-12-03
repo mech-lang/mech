@@ -1,4 +1,4 @@
-set/proper_superset
+set/proper-superset
 ===============================================================================
 
 %% Proper superset test (strict set containment relation)
@@ -7,7 +7,7 @@ set/proper_superset
 -------------------------------------------------------------------------------
 
 ```mech:disabled
-R := set/proper_superset(A, B)
+R := set/proper-superset(A, B)
 R := A ⊋ B
 ```
 
@@ -19,7 +19,7 @@ A proper superset contains all elements of another set **and at least one more**
 This function returns a boolean value indicating the result.
 
 The implementation wraps the Rust `IndexSet` containment logic and
-preserves Mech’s deterministic order semantics for reproducibility.
+preserves Mech's deterministic order semantics for reproducibility.
 
 3. Input
 -------------------------------------------------------------------------------
@@ -42,32 +42,29 @@ Result:
 5. Examples
 -------------------------------------------------------------------------------
 
-(a) True proper superset
+(5.1) True proper superset
 
 ```mech:ex1
 A := {"a", "b", "c", "d"}
 B := {"b", "c"}
-R := set/proper_superset(A, B)
+R := set/proper-superset(A, B)
 ```
-Result: `R` = true
 
-(b) False — equal sets
+(5.2) False — equal sets
 
 ```mech:ex2
 A := {1, 2, 3}
 B := {1, 2, 3}
 R := A ⊋ B
 ```
-Result: `R` = false
 
-(c) False — missing an element
+(5.3) False — missing an element
 
 ```mech:ex3
 A := {"x", "y"}
 B := {"x", "y", "z"}
-R := set/proper_superset(A, B)
+R := set/proper-superset(A, B)
 ```
-Result: `R` = false
 
 6. Details
 -------------------------------------------------------------------------------
@@ -84,7 +81,7 @@ Symbolic shorthand:
 - `A ⊋ B` is equivalent to `set/proper_superset(A, B)`.
 
 Performance:
-- Average O(\|B\|) time using hashing; memory O(1).
+- Average `O(|B|)` time using hashing; memory `O(1)`.
 
 Determinism:
 - Results are deterministic across runs and platforms.

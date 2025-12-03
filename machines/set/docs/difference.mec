@@ -42,32 +42,29 @@ Result:
 5. Examples
 -------------------------------------------------------------------------------
 
-(a) Simple difference
+(5.1) Simple difference
 
 ```mech:ex1
 A := {"a", "b", "c"}
 B := {"b", "c", "d"}
 D := set/difference(A, B)
 ```
-Result: `D` = {"a"}
 
-(b) Numbers
+(5.2) Numbers
 
 ```mech:ex2
 A := {1, 2, 3, 4}
 B := {3, 4, 5}
 D := A ∖ B
 ```
-Result: `D` = {1, 2}
 
-(c) Order is preserved from A
+(5.3) Order is preserved from A
 
 ```mech:ex3
 A := {"x", "y", "z"}
 B := {"z"}
 D := set/difference(A, B)
 ```
-Result: `D` = {"x", "y"}
 
 6. Details
 -------------------------------------------------------------------------------
