@@ -389,7 +389,7 @@ pub fn paragraph_newline(input: ParseString) -> ParseResult<Paragraph> {
 pub fn ordered_list_item(input: ParseString) -> ParseResult<(Number,Paragraph)> {
   let (input, number) = number(input)?;
   let (input, _) = period(input)?;
-  let (input, list_item) = paragraph(input)?;
+  let (input, list_item) = labelr!(paragraph_newline, |input| recover::<Paragraph, _>(input, skip_till_eol), "Expects paragraph as list item")(input)?;
   Ok((input, (number,list_item)))
 }
 
@@ -399,7 +399,7 @@ pub fn checked_item(input: ParseString) -> ParseResult<(bool,Paragraph)> {
   let (input, _) = left_bracket(input)?;
   let (input, _) = alt((tag("x"),tag("✓"),tag("✗")))(input)?;
   let (input, _) = right_bracket(input)?;
-  let (input, list_item) = paragraph(input)?;
+  let (input, list_item) = labelr!(paragraph_newline, |input| recover::<Paragraph, _>(input, skip_till_eol), "Expects paragraph as list item")(input)?;
   Ok((input, (true,list_item)))
 }
 
@@ -409,7 +409,7 @@ pub fn unchecked_item(input: ParseString) -> ParseResult<(bool,Paragraph)> {
   let (input, _) = left_bracket(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = right_bracket(input)?;
-  let (input, list_item) = paragraph(input)?;
+  let (input, list_item) = labelr!(paragraph_newline, |input| recover::<Paragraph, _>(input, skip_till_eol), "Expects paragraph as list item")(input)?;
   Ok((input, (false,list_item)))
 }
 
