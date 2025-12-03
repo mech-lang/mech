@@ -368,10 +368,10 @@ m2 := [3 4]'
 m := [m1; m2]  -- Evaluates to `[1 2 3 4]'`
 ```
 
-You can also concatenate matrices of different sizes as long as the number of columns matches:
+You can also vertically concatenate matrices of different sizes as long as each matrix has the same number of columns:
 
 ```mech:ex75
 m1 := [1 2; 3 4]
 m2 := [5 6]
-m := [m1; m2]  -- Evaluates to `[1 2; 4 5; 3 6]`
+m := [m1; m2]  -- Evaluates to `[1 2; 3 4; 5 6]`
 ```

@@ -13,7 +13,7 @@ Mech Programming Language Documentation
 -------------------------------------------------------------------------------
 
 1. Data Model
-    - [Data Types and Kinds](reference/values.html)
+    - [Data, Data Types, and Kinds](reference/values.html)
     - Data Structures
         - [Enum](reference/enum.html) - defines a set of named constant values
         - [Map](reference/map.html) - stores key-value pairs for fast lookups.
@@ -22,14 +22,18 @@ Mech Programming Language Documentation
         - [Set](reference/set.html) - unordered collection of unique values
         - [Table](reference/table.html) - collection of heterogeneous data organized into rows and columns.
         - [Tuple](reference/tuple.html) - fixed-size, ordered grouping of heterogeneous values.
-    - Operators and Expressions
-        - Operators
+    - Statements and Expressions
+        - Defining and Assigning Data
+        - Formulas
         - Indexing
+    - Error Handling
+    - Memory Management
 2. Programming Model `Coming v0.3`
     - Functions
     - State Machines
-    - Machines
-    - Mech Programs
+    - SynthAssign
+    - Modules
+    - Programs
 3. System Model `Coming v0.4`
     - Capabilities
     - Distributed Computation
