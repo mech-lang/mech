@@ -22,13 +22,7 @@ impl MechFunctionFactory for SetSizeFxn {
         let out: Ref<u64> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(SetSizeFxn { input, out }))
       },
-      _ => Err(MechError{
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: format!("{} requires 1 argument, got {:?}", stringify!($struct_name), args),
-        id: line!(),
-        kind: MechErrorKind::IncorrectNumberOfArguments
-      })
+      _ => Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: args.len() }, None).with_compiler_loc()),
     }
   }
 }
@@ -65,27 +59,18 @@ register_descriptor! {
 fn set_size_fxn(input: Value) -> MResult<Box<dyn MechFunction>> {
   match input {
     Value::Set(s) => Ok(Box::new(SetSizeFxn { input: s.clone(), out: Ref::new(0u64) })),
-    x => Err(MechError{
-      file: file!().to_string(),
-      tokens: vec![],
-      msg: format!("set_size_fxn cannot handle argument: {:?}", x),
-      id: line!(),
-      kind: MechErrorKind::UnhandledFunctionArgumentKind
-    }),
+    x => Err(MechError2::new(UnhandledFunctionArgumentKind1 {
+      arg: x.kind(),
+      fxn_name: "set/size".to_string(),
+    }, None).with_compiler_loc()),
   }
 }
 
 pub struct SetSize {}
 impl NativeFunctionCompiler for SetSize {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() == 0 {
-      return Err(MechError{
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: "".to_string(),
-        id: line!(),
-        kind: MechErrorKind::IncorrectNumberOfArguments
-      });
+    if arguments.len() != 1 {
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
     }
     let input = arguments[0].clone();
     match set_size_fxn(input.clone()) {
@@ -93,13 +78,10 @@ impl NativeFunctionCompiler for SetSize {
       Err(_) => {
         match input {
           Value::MutableReference(r) => set_size_fxn(r.borrow().clone()),
-          x => Err(MechError{
-            file: file!().to_string(),
-            tokens: vec![],
-            msg: format!("{:?}", x),
-            id: line!(),
-            kind: MechErrorKind::UnhandledFunctionArgumentKind
-          }),
+          x => Err(MechError2::new(
+            UnhandledFunctionArgumentKind1 { arg: arguments[0].kind(), fxn_name: "set/size".to_string() },
+            None
+          ).with_compiler_loc()),
         }
       }
     }

@@ -21,7 +21,7 @@ impl MechFunctionFactory for SetCartesianProductFxn {
         let out: Ref<MechSet> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(SetCartesianProductFxn {lhs, rhs, out }))
       },
-      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      _ => Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc()),
     }
   }    
 }
@@ -78,15 +78,18 @@ fn set_cartesianproduct_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunct
     (Value::Set(lhs), Value::Set(rhs)) => {
       Ok(Box::new(SetCartesianProductFxn { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(MechSet::new(ValueKind::Tuple(vec![lhs.borrow().kind.clone(), rhs.borrow().kind.clone()]), lhs.borrow().num_elements * rhs.borrow().num_elements)) }))
     },
-    x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("set_cartesianproduct_fxn cannot handle arguments: {:?}", x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    x => Err(MechError2::new(
+      UnhandledFunctionArgumentKind2 { arg: (x.0.kind(), x.1.kind()), fxn_name: "set/cartesian-product".to_string() },
+      None
+    ).with_compiler_loc()),
   }
 }
 
 pub struct SetCartesianProduct {}
 impl NativeFunctionCompiler for SetCartesianProduct {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() <= 1 {
-      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    if arguments.len() != 2 {
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());
     }
     let lhs = arguments[0].clone();
     let rhs = arguments[1].clone();
@@ -97,7 +100,10 @@ impl NativeFunctionCompiler for SetCartesianProduct {
           (Value::MutableReference(lhs),Value::MutableReference(rhs)) => { set_cartesianproduct_fxn(lhs.borrow().clone(),rhs.borrow().clone()) },
           (lhs,Value::MutableReference(rhs)) => { set_cartesianproduct_fxn(lhs.clone(),rhs.borrow().clone()) },
           (Value::MutableReference(lhs),rhs) => { set_cartesianproduct_fxn(lhs.borrow().clone(),rhs.clone()) },
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError2::new(
+            UnhandledFunctionArgumentKind2 { arg: (x.0.kind(), x.1.kind()), fxn_name: "set/cartesian-product".to_string() },
+            None
+          ).with_compiler_loc()),
         }
       }
     }
@@ -106,7 +112,7 @@ impl NativeFunctionCompiler for SetCartesianProduct {
 
 register_descriptor! {
   FunctionCompilerDescriptor {
-    name: "set/cartesianproduct",
+    name: "set/cartesian-product",
     ptr: &SetCartesianProduct{},
   }
 }

@@ -24,13 +24,7 @@ impl MechFunctionFactory for SetNotElementOfFxn {
         let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(SetNotElementOfFxn { elem, set, out }))
       },
-      _ => Err(MechError{
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args),
-        id: line!(),
-        kind: MechErrorKind::IncorrectNumberOfArguments
-      }),
+      _ => Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc()),
     }
   }
 }
@@ -75,27 +69,20 @@ fn set_not_element_of_fxn(elem: Value, set: Value) -> MResult<Box<dyn MechFuncti
     (elem, Value::Set(set)) => {
       Ok(Box::new(SetNotElementOfFxn { elem: Ref::new(elem.clone()), set: set.clone(), out: Ref::new(false) }))
     },
-    x => Err(MechError{
-      file: file!().to_string(),
-      tokens: vec![],
-      msg: format!("set_not_element_of_fxn cannot handle arguments: {:?}", x),
-      id: line!(),
-      kind: MechErrorKind::UnhandledFunctionArgumentKind
-    }),
+    x => Err(MechError2::new(
+      UnhandledFunctionArgumentKind2 {
+        arg: (x.0.kind(), x.1.kind()),
+        fxn_name: "set/not-element-of".to_string(),
+      }, None
+    ).with_compiler_loc()),
   }
 }
 
 pub struct SetNotElementOf {}
 impl NativeFunctionCompiler for SetNotElementOf {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() <= 1 {
-      return Err(MechError{
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: "".to_string(),
-        id: line!(),
-        kind: MechErrorKind::IncorrectNumberOfArguments
-      });
+    if arguments.len() != 2 {
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());
     }
     let elem = arguments[0].clone();
     let set = arguments[1].clone();
@@ -106,13 +93,10 @@ impl NativeFunctionCompiler for SetNotElementOf {
           (Value::MutableReference(elem), Value::MutableReference(set)) => set_not_element_of_fxn(elem.borrow().clone(), set.borrow().clone()),
           (elem, Value::MutableReference(set)) => set_not_element_of_fxn(elem.clone(), set.borrow().clone()),
           (Value::MutableReference(elem), set) => set_not_element_of_fxn(elem.borrow().clone(), set.clone()),
-          x => Err(MechError{
-            file: file!().to_string(),
-            tokens: vec![],
-            msg: format!("{:?}", x),
-            id: line!(),
-            kind: MechErrorKind::UnhandledFunctionArgumentKind
-          }),
+          x => Err(MechError2::new(
+            UnhandledFunctionArgumentKind2 { arg: (x.0.kind(), x.1.kind()), fxn_name: "set/not-element-of".to_string() },
+            None
+          ).with_compiler_loc()),
         }
       }
     }
@@ -121,7 +105,7 @@ impl NativeFunctionCompiler for SetNotElementOf {
 
 register_descriptor! {
   FunctionCompilerDescriptor {
-    name: "set/not_element_of",
+    name: "set/not-element-of",
     ptr: &SetNotElementOf{},
   }
 }
