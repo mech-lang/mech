@@ -33,6 +33,26 @@ use std::ffi::OsStr;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+#[cfg(has_file_wasm)]
+static MECHWASM: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm_bg.wasm.br");
+#[cfg(not(has_file_wasm))]
+static MECHWASM: &[u8] = b"No Embedded WASM";
+
+#[cfg(has_file_js)]
+static MECHJS: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm.js");
+#[cfg(not(has_file_js))]
+static MECHJS: &[u8] = b"No Embedded JS";
+
+#[cfg(has_file_shim)]
+static SHIMHTML: &str = include_str!("../../include/index.html");
+#[cfg(not(has_file_shim))]
+static SHIMHTML: &str = "No Embedded Shim";
+
+#[cfg(has_file_stylesheet)]
+static STYLESHEET: &str = include_str!("../../include/style.css");
+#[cfg(not(has_file_stylesheet))]
+static STYLESHEET: &str = "No Embedded Stylesheet";
+
 #[tokio::main]
 async fn main() -> Result<(), MechError2> {
   /*panic::set_hook(Box::new(|panic_info| {
@@ -145,17 +165,17 @@ async fn main() -> Result<(), MechError2> {
         .short('s')
         .long("stylesheet")
         .value_name("STYLESHEET")
-        .help("Sets the stylesheet for the HTML output (include/style.css)"))
+        .help("Sets the stylesheet for the HTML output"))
       .arg(Arg::new("shim")
         .short('m')
         .long("shim")
         .value_name("SHIM")
-        .help("Sets the shim for the HTML output (include/shim.html)"))
+        .help("Sets the shim for the HTML output"))
       .arg(Arg::new("wasm")
         .short('w')
         .long("wasm")
         .value_name("WASM")
-        .help("Sets the the path to the wasm package (src/wasm/pkg"))
+        .help("Sets the the path to the wasm package"))
       .arg(Arg::new("address")
         .short('a')
         .long("address")
@@ -188,17 +208,51 @@ async fn main() -> Result<(), MechError2> {
   // --------------------------------------------------------------------------
   #[cfg(feature = "serve")]
   if let Some(matches) = matches.subcommand_matches("serve") {
-
+    let badge = "[Mech Server]".truecolor(34, 204, 187);
+    
     let port: String = matches.get_one::<String>("port").cloned().unwrap_or("8081".to_string());
     let address = matches.get_one::<String>("address").cloned().unwrap_or("127.0.0.1".to_string());
     let full_address: String = format!("{}:{}",address,port);
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let stylesheet = matches.get_one::<String>("stylesheet").cloned().unwrap_or("include/style.css".to_string());
+    let stylesheet_path = matches.get_one::<String>("stylesheet").cloned().unwrap_or("".to_string());
     let wasm_pkg = matches.get_one::<String>("wasm").cloned().unwrap_or("".to_string());
-    let shim = matches.get_one::<String>("shim").cloned().unwrap_or("".to_string());
+    let shim_path = matches.get_one::<String>("shim").cloned().unwrap_or("".to_string());
+
+    let shim_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/shim.html".to_string();
+    let stylesheet_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/style.css".to_string();
+    let wasm_backup_url = format!("https://github.com/mech-lang/mech/releases/download/v{}-beta/mech_wasm_bg.wasm.br", VERSION);
+    let js_backup_url = format!("https://github.com/mech-lang/mech/releases/download/v{}-beta/mech_wasm.js", VERSION);
+
+    let wasm_path = format!("{}/mech_wasm_bg.wasm.br", wasm_pkg);
+    let js_path = format!("{}/mech_wasm.js", wasm_pkg);
+
+    // Load stylesheet
+    println!("{} Loading resources...", badge);
+    print!("{} Loading stylesheet...", badge);
+    let stylesheet = read_or_download(&stylesheet_path, &stylesheet_backup_url, Some(STYLESHEET.as_bytes()))
+        .await?;
+    let stylesheet_str = String::from_utf8(stylesheet)
+        .map_err(|e| MechError2::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
+
+    // Load shim HTML
+    print!("{} Loading HTML shim...", badge);
+    let shim = read_or_download(&shim_path, &shim_backup_url, Some(SHIMHTML.as_bytes()))
+        .await?;
+    let shim_str = String::from_utf8(shim)
+        .map_err(|e| MechError2::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
+
+    // Load WASM
+    print!("{} Loading WASM...", badge);
+    let wasm = read_or_download(&wasm_path, &wasm_backup_url, Some(MECHWASM))
+        .await?;
+
+    // Load JS shim
+    print!("{} Loading JS...", badge);
+    let js = read_or_download(&js_path, &js_backup_url, Some(MECHJS))
+        .await?;
 
     if cfg!(feature = "serve") {
-      let mut server = MechServer::new(full_address, stylesheet.to_string(), shim.to_string(), wasm_pkg.to_string());
+      let mut server = MechServer::new("Mech Server".to_string(), full_address, stylesheet_str, shim_str, wasm, js);
       #[cfg(feature = "serve")]
       server.init().await?;
       #[cfg(feature = "serve")]
