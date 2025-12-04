@@ -13,8 +13,6 @@ pub struct MechServer {
   init: bool,
   stylesheet: String,
   html_shim: String,
-  wasm_bytes: Vec<u8>,
-  js_shim: Vec<u8>,
   full_address: String,
   mechfs: MechFileSystem,
   js: Vec<u8>,
@@ -23,7 +21,7 @@ pub struct MechServer {
 
 impl MechServer {
 
-  pub fn new(name: String, full_address: String, stylesheet: String, html_shim: String, wasm_bytes: Vec<u8>, js_shim: Vec<u8>) -> Self {
+  pub fn new(name: String, full_address: String, stylesheet: String, html_shim: String, wasm: Vec<u8>, js: Vec<u8>) -> Self {
     let mut mechfs = MechFileSystem::new();
 
     Self {
@@ -31,19 +29,17 @@ impl MechServer {
       init: false,
       stylesheet,
       html_shim,
-      wasm_bytes,
-      js_shim,
+      js,
+      wasm,
       full_address: full_address,
       mechfs,
-      js: vec![],
-      wasm: vec![],
     }
   }
 
   pub async fn init(&mut self) -> MResult<()> {
-    self.init = true;
     self.mechfs.set_stylesheet(&self.stylesheet)?;
     self.mechfs.set_shim(&self.html_shim)?;
+    self.init = true;
     Ok(())
   }
 
@@ -54,19 +50,14 @@ impl MechServer {
     Ok(())
   }
 
-  fn choose_bytes_or_path<'a>(
-      &'a self,
-      user_path: &'a str,
-      embedded: &'a [u8],
-      backup_url: &'a str,
-  ) -> Source<'a> {
-      if !user_path.is_empty() {
-          Source::UserFile(user_path)
-      } else if !embedded.is_empty() {
-          Source::Embedded(embedded)
-      } else {
-          Source::Url(backup_url)
-      }
+  fn choose_bytes_or_path<'a>( &'a self, user_path: &'a str, embedded: &'a [u8], backup_url: &'a str) -> Source<'a> {
+    if !user_path.is_empty() {
+      Source::UserFile(user_path)
+    } else if !embedded.is_empty() {
+      Source::Embedded(embedded)
+    } else {
+      Source::Url(backup_url)
+    }
   }
 
   pub async fn serve(&self) -> MResult<()> {
