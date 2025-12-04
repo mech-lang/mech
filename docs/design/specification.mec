@@ -229,14 +229,9 @@ qq := 10 * 20     -- The value of qq is {qq}
 
 (3.4) Keywords
 
-There are only two keywords in Mech: `true` and `false`. Because Mech is designed to be used by non-English speakers, the syntax allows for an alternative representation, which can be used in place of the English keywords.
+Because Mech is designed to be used by speakers of all languages, Mech has no reserved keywords. Instead, Mech uses symbols and punctuation for all operators and syntax constructs.
 
-| Keyword   | Alternative |
-|-----------|-------------|
-| `true`    | `✓`         |
-| `false`   | `✗`         |
-
-This allows users to write code in their native language without the need to learn English keywords.
+See the [Syntax Design Document](design/syntax-design.html) for a discussion on keywords.
 
 (3.5) Identifiers
 
@@ -567,16 +562,16 @@ structure := empty-set
 Data structures in Mech can be broadly classified into two categories: ordered collections that allow duplicated elements, and unordered collections that do now allow duplicated elements.
 
 **Ordered elements, duplicates allowed**
-    - Vector (Nx1)
-    - Row Vector (1xN)
-    - Matrix (N-D)
-    - Tuple
+- Vector (Nx1)
+- Row Vector (1xN)
+- Matrix (N-D)
+- Tuple
+- Table
 
 **Unordered elements, no duplicates**
-    - Record
-    - Table
-    - Set
-    - Map
+- Record
+- Set
+- Map
 
 Each data structure has its own semantics, which will be described in this section.
 
@@ -1861,7 +1856,7 @@ The body of a table is defined using rows of text separated by pipes. Each row c
 Renders the following table:
 
 | Align Left  | Align Center | Align Right |
-|:------------|:------------:|0-----------:|
+|:------------|:------------:|------------:|
 | One         | Four         | {1 * 10}    |
 | Two         | Five         | {2 * 20}    |
 | Three       | Six          | {3 * 30}    |
