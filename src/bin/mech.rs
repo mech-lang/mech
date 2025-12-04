@@ -320,7 +320,6 @@ async fn main() -> Result<(), MechError2> {
   if let Some(matches) = matches.subcommand_matches("format") {
     let badge = "[Mech Formatter]".truecolor(34, 204, 187);
     let html_flag = matches.get_flag("html");
-
     let stylesheet_path = matches
         .get_one::<String>("stylesheet")
         .cloned()
@@ -339,6 +338,19 @@ async fn main() -> Result<(), MechError2> {
         .get_many::<String>("mech_format_file_paths")
         .map_or(vec![], |files| files.map(|file| file.to_string()).collect());
 
+    // If the user provided exactly one path
+    if mech_paths.len() == 1 {
+      let input_path = PathBuf::from(&mech_paths[0]);
+      if input_path.is_dir() && is_output_file {
+        eprintln!(
+          "{} Cannot write directory `{}` into single output file `{}`. Provide a directory for --out instead.",
+          "[Error]".truecolor(246,98,78),
+          input_path.display(),
+          output_path.display()
+        );
+        return Ok(());
+      }
+    }
     let mut mechfs = MechFileSystem::new();
 
     println!("{} Loading resources...", badge);
