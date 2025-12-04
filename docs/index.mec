@@ -15,19 +15,20 @@ Mech Programming Language Documentation
 1. Data Model
     - [Data, Data Types, and Kinds](reference/values.html)
     - Data Structures
-        - [Enum](reference/enum.html) - defines a set of named constant values
-        - [Map](reference/map.html) - stores key-value pairs for fast lookups.
+        - [Enum](reference/enum.html) - defines a set of named constant values `todo`
+        - [Map](reference/map.html) - stores key-value pairs for fast lookups. `todo`
         - [Matrix](reference/matrix.html) - 2D array of homogenous values arranged in rows and columns.
-        - [Record](reference/record.html) - groups related fields, usually for representing structured data.
-        - [Set](reference/set.html) - unordered collection of unique values
+        - [Record](reference/record.html) - groups related fields, usually for representing structured data. `todo`
+        - [Set](reference/set.html) - unordered collection of unique values `todo`
         - [Table](reference/table.html) - collection of heterogeneous data organized into rows and columns.
-        - [Tuple](reference/tuple.html) - fixed-size, ordered grouping of heterogeneous values.
+        - [Tuple](reference/tuple.html) - fixed-size, ordered grouping of heterogeneous values. `todo`
     - Statements and Expressions
-        - Defining and Assigning Data
-        - Formulas
-        - Indexing
-    - Error Handling
-    - Memory Management
+        - [Defining, Assigning, and Accessing Data](reference/define.html) `todo`
+        - [Kind Conversion](reference/convert.html) `todo`
+        - [Formulas](reference/formulas.html) `todo`
+        - [Indexing](reference/indexing.html) `todo`
+    - [Error Handling](reference/errors.html) `todo`
+    - [Memory Management](reference/memory.html) `todo`
 2. Programming Model `Coming v0.3`
     - Functions
     - State Machines
@@ -38,36 +39,37 @@ Mech Programming Language Documentation
     - Capabilities
     - Distributed Computation
     - Concurrency and Parallelism
-4. Mechdown Reference
+4. [Mechdown Reference](reference/mechdown.html) `todo`
 
 3. Standard Library
 -------------------------------------------------------------------------------
 
-- Assign
-- Access
-- Combinatorics
-- Compare
-- Convert
-- Io
-- Logic
-- [Math](stdlib/math/index.html)
-- Matrix
-- Range
-- Stats
+- [Assign](stdlib/assign/index.html) `todo`
+- [Access](stdlib/access/index.html) `todo`
+- [Combinatorics](stdlib/combinatorics/index.html) `todo`
+- [Compare](stdlib/compare/index.html) `todo`
+- [Convert](stdlib/convert/index.html) `todo`
+- [Io](stdlib/io/index.html) `todo`
+- [Logic](stdlib/logic/index.html) `todo`
+- [Math](stdlib/math/index.html) `todo`
+- [Matrix](stdlib/matrix/index.html) `todo`
+- [Range](stdlib/range/index.html) `todo`
+- [Set](stdlib/set/index.html) `todo`
+- [Stats](stdlib/stats/index.html) `todo`
 
 4. Guides
 -------------------------------------------------------------------------------
 
-1. [Mech in Fifteen Minutes](guides/mech-in-fifteen-minutes.html)
-2. Tutorials
+1. [Mech in Fifteen Minutes](guides/mech-in-fifteen-minutes.html) `todo`
+2. [Tutorials](guides/tutorials.html) `todo`
 
 5. Language Design Documents
 -------------------------------------------------------------------------------
 
 1. [Language Specification](design/specification.html)
-2. Language Design Principles
-3. Syntax Design Notes
-4. [History](design/history.html)
+2. [Language Design Principles](design/language-design.html)  `todo`
+3. [Syntax Design Notes](design/syntax-design.html) `todo`
+4. [History](design/history.html)  `todo`
 5. [Roadmap](design/ROADMAP.html)
 
 6. Examples
