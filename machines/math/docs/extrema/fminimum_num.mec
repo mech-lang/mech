@@ -1,4 +1,4 @@
-math/fminimum_num
+math/fminimum-num
 ===============================================================================
 
 %% Elementwise minimum, IEEE-754 minimumNumber semantics
@@ -7,7 +7,7 @@ math/fminimum_num
 -------------------------------------------------------------------------------
 
 ```mech:disabled
-Z := math/fminimum_num(X, Y)
+Z := math/fminimum-num(X, Y)
 ```
 
 2. Description
@@ -39,7 +39,7 @@ if exactly one argument is `NaN`, the other argument is returned; if both are
 (a) Minimum of two numbers
 
 ```mech:ex1
-z := math/fminimum_num(2.5, 7.0)    
+z := math/fminimum-num(2.5, 7.0)    
 ```
 
 (b) Elementwise minimum for vectors
@@ -47,7 +47,7 @@ z := math/fminimum_num(2.5, 7.0)
 ```mech:ex2
 x := [1.0, 5.0, -3.0]
 y := [4.0, 2.0, -7.0]
-z := math/fminimum_num(x, y)         
+z := math/fminimum-num(x, y)         
 ```
 
 (c) Elementwise minimum for a matrix
@@ -55,7 +55,7 @@ z := math/fminimum_num(x, y)
 ```mech:ex3
 a := [1.0, -2.0; 3.5, 0.0]
 b := [0.5, -3.0; 2.0, 4.0]
-z := math/fminimum_num(a, b)         
+z := math/fminimum-num(a, b)         
 ```
 
 (d) Behavior with NaN (minimumNumber semantics)
@@ -63,7 +63,7 @@ z := math/fminimum_num(a, b)
 ```mech:ex4
 x := [NaN,  2.0, NaN]
 y := [1.0, NaN, NaN]
-z := math/fminimum_num(x, y)        
+z := math/fminimum-num(x, y)        
 ```
 
 6. Details
@@ -73,17 +73,17 @@ z := math/fminimum_num(x, y)
 
 - **Shapes:** `X` and `Y` must have identical shapes. Scalars with scalars, vectors with vectors, and matrices with matrices (same dimensions). The result `Z` matches the input shape.
 
-- **Types:** Backed by platform implementations of `fminimum_num` (f64) and `fminimum_numf` (f32). Vector and matrix forms apply the same operation elementwise. Mixed-precision inputs are not allowed; cast beforehand if needed.
+- **Types:** Backed by platform implementations of `fminimum-num` (f64) and `fminimum-numf` (f32). Vector and matrix forms apply the same operation elementwise. Mixed-precision inputs are not allowed; cast beforehand if needed.
 
-- **Signed zeros & ties:** Per IEEE-754 and typical libm behavior, `math/fminimum_num(+0.0, -0.0)` yields `-0.0`. If values compare equal, the chosen operand follows IEEE rules and underlying implementation details.
+- **Signed zeros & ties:** Per IEEE-754 and typical libm behavior, `math/fminimum-num(+0.0, -0.0)` yields `-0.0`. If values compare equal, the chosen operand follows IEEE rules and underlying implementation details.
 
 - **Performance:** Vector and matrix forms loop over elements in place. For large arrays, prefer matching contiguous memory layouts to maximize locality.
 
 7. Notes for Implementers
 -------------------------------------------------------------------------------
 
-This operation corresponds to the Rust/libm functions `fminimum_num` (f64) and
-`fminimum_numf` (f32). In this codebase, dispatch is generated across scalar,
+This operation corresponds to the Rust/libm functions `fminimum-num` (f64) and
+`fminimum-numf` (f32). In this codebase, dispatch is generated across scalar,
 vector, and matrix types; each variant performs the same elementwise minimum and
 returns an output of the same shape and type.
 

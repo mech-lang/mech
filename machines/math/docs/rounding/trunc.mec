@@ -76,8 +76,8 @@ y := math/trunc(x)
 -------------------------------------------------------------------------------
 
 Backed by Rust/libm `trunc` (f64) and `truncf` (f32). Implementations dispatch
-across scalar, vector, and matrix variants. Matches IEEE‑754 behavior for
-truncate‑toward‑zero.
+across scalar, vector, and matrix variants. Matches IEEE-754 behavior for
+truncate-toward-zero.
 
 8. See also
 -------------------------------------------------------------------------------

@@ -68,7 +68,8 @@ y := math/log1p(x)
 -------------------------------------------------------------------------------
 
 - **Definition:**  
-  $$ \ln(1 + x) = \int_1^{1+x} \frac{1}{t} dt, \quad x > -1. 
+  
+$$ \ln(1 + x) = \int_1^{1+x} \frac{1}{t} dt, \quad x > -1. 
 
 - **Domain & special cases (real inputs):**
   - `x > -1`: returns finite real value.

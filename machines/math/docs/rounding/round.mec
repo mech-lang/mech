@@ -76,7 +76,7 @@ y := math/round(x)
 -------------------------------------------------------------------------------
 
 Backed by Rust/libm `round` (f64) and `roundf` (f32). Implementations dispatch
-across scalar, vector, and matrix variants. Behavior is defined to match IEEE‑754
+across scalar, vector, and matrix variants. Behavior is defined to match IEEE-754
 "round half away from zero".
 
 8. See also

@@ -14,7 +14,7 @@ Y := math/rint(X)
 -------------------------------------------------------------------------------
 
 Rounds each element of the input to the nearest integer, following the current
-floating‑point rounding mode of the system (commonly "round to even"). Unlike
+floating-point rounding mode of the system (commonly "round to even"). Unlike
 `floor`, `ceil`, or `trunc`, the exact behavior depends on the runtime rounding
 mode.
 
@@ -66,7 +66,7 @@ y := math/rint(x)
 -------------------------------------------------------------------------------
 
 - **Definition:** `rint(x)` returns the nearest integer to `x`, as a floating point value.
-- **Rounding mode:** The result depends on the current floating‑point environment (typically IEEE‑754 round‑to‑nearest, ties‑to‑even).
+- **Rounding mode:** The result depends on the current floating-point environment (typically IEEE-754 round-to-nearest, ties-to-even).
 - **Domain:** All real values are valid inputs.
 - **Special cases:**
   - `rint(±∞) = ±∞`
@@ -78,7 +78,7 @@ y := math/rint(x)
 
 Backed by Rust/libm `rint` (f64) and `rintf` (f32). Implementations dispatch
 across scalar, vector, and matrix variants. Behavior for halfway cases depends
-on the platform’s floating‑point rounding mode.
+on the platform’s floating-point rounding mode.
 
 8. See also
 -------------------------------------------------------------------------------

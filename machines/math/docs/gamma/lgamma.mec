@@ -54,7 +54,7 @@ x := [0.5, 1.5; 2.5, 3.5]
 y := math/lgamma(x)             
 ```
 
-(d) Log‑factorial via Γ
+(d) Log-factorial via Γ
 
 ```mech:ex4
 n := 10.0
