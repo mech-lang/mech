@@ -252,6 +252,7 @@ async fn main() -> Result<(), MechError2> {
         .await?;
 
     if cfg!(feature = "serve") {
+      #[cfg(feature = "serve")]
       let mut server = MechServer::new("Mech Server".to_string(), full_address, stylesheet_str, shim_str, wasm, js);
       #[cfg(feature = "serve")]
       server.init().await?;

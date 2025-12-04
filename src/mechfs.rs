@@ -285,7 +285,7 @@ pub struct MechSources {
   sources: HashMap<u64,MechSourceCode>,             // u64 is the hash of the relative source 
   trees: HashMap<u64,MechSourceCode>,               // stores the ast for the sources
   errors: HashMap<u64,Vec<MechError2>>,              // stores the errors for the sources
-  pub html: HashMap<u64,MechSourceCode>,                // stores the html for the sources
+  html: HashMap<u64,MechSourceCode>,                // stores the html for the sources
   pub directory: HashMap<PathBuf, PathBuf>,             // relative source -> absolute source
   reverse_lookup: HashMap<PathBuf, PathBuf>,        // absolute source -> relative source
   id_map: HashMap<u64,PathBuf>,                     // hash -> path
