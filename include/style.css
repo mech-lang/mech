@@ -13,13 +13,20 @@
   --out-bracket-color: rgb(177, 187, 196);
   --sidebar-width: 300px;
   --text-color: #f2ead9;
-  --code-border-color: #414749;
-  --inline-code-border-color: #414749;
-  --code-output-background-color: #040608;
+  --code-border-color: #4d5257;
+  --inline-code-border-color: #4d5257;
+  --code-background-color: #090d11;
+  --code-output-background-color: #020303;
   --var-name-color: #eddaf1;
   --field-name-color: #efd8aa;
   --kind-annotation-color: #f09fca;
   --kind-annotation-color-dark: #d574a8;
+  --body-background-color: #0d1117;
+  --abstract-background-color: #171c26;
+  --callout-background-color: #171c26;
+  --mechdown-table-odd-row-background-color: hsl(222, 25%, 9%);
+  --mechdown-table-even-row-background-color: #171c26;
+  --mechdown-table-row-hover-background-color: hsl(222, 25%, 20%);
 }
 
 html {
@@ -28,7 +35,7 @@ html {
 
 body {
     font-family: 'Lato', sans-serif;
-    background-color: #0d1013;
+    background-color: var(--body-background-color);
     font-weight:300;
     margin: 0;
     padding: 0;
@@ -387,7 +394,7 @@ h5.toc::before {
     width: 900px;
     font-family: 'FiraCodeRegular', monospace;
     padding-bottom: 10px;
-    border-bottom: 4px dashed var(--main-color-low);
+    border-bottom: 3px dashed var(--main-color-low);
     color: var(--text-color);
     letter-spacing: 2px;
     font-size: 1.83rem;
@@ -499,7 +506,7 @@ h5.toc {
 
 .mech-code-block {
     display: block;
-    background-color: #171D21;
+    background-color: var(--code-background-color);
     color: #e6dac2;
     font-family: 'FiraCodeLight', monospace;
     font-size: 1rem;
@@ -537,7 +544,7 @@ h5.toc {
 
 .mech-grammar {
     display: block;
-    background-color: #171D21;
+    background-color: var(--code-background-color);
     color: #ada594;
     font-family: 'FiraCodeLight', monospace;
     font-size: 1rem;
@@ -687,7 +694,7 @@ code {
 }
 
 .mech-inline-code {
-    background-color: #171D21;
+    background-color: var(--code-background-color);
     border: 1px solid var(--inline-code-border-color);
     color: var(--var-name-color);
     font-family: 'FiraCodeLight', monospace;
@@ -701,7 +708,7 @@ code {
 .mech-inline-mech-code-formatted .mech-code-block {
     display: inline-flex;
     vertical-align: middle;
-    background-color: #171D21;
+    background-color: var(--code-background-color);
     border: 1px solid var(--inline-code-border-color);
     font-family: 'FiraCodeLight', monospace;
     font-size: 1rem;
@@ -711,8 +718,16 @@ code {
     box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
 }
 
+.mech-fenced-mech-block .mech-code-block {
+    background-color: var(--code-background-color);
+    border-radius: 10px 10px 0px 0px;  
+    border-bottom: 0px solid var(--code-border-color);
+    margin-bottom: 0px;
+    box-shadow: none;
+}
+
 .mech-inline-mech-code {
-    background-color: #171D21;
+    background-color: var(--code-background-color);
     border: 1px solid var(--inline-code-border-color);
     color: var(--literal-color);
     font-family: 'FiraCodeLight', monospace;
@@ -1181,8 +1196,10 @@ li p {
 }
 
 .mech-table {
-    background-color: #2F353B;
+    background-color: var(--mechdown-table-even-row-background-color);
     color: var(--text-color); 
+    margin-left: auto;
+    margin-right: auto;
     margin-bottom: 20px;
     padding: 0px;
     border-collapse: collapse;
@@ -1204,7 +1221,7 @@ li p {
 }
 
 .mech-table thead {
-    background-color: #171D21;
+    background-color: var(--mechdown-table-odd-row-background-color);
 }
 
 .mech-table .mech-table-header-cell {
@@ -1212,11 +1229,11 @@ li p {
 }
 
 .mech-table .mech-table-row-even {
-    background-color: #232A30; 
+    background-color: var(--mechdown-table-even-row-background-color); 
 }
 
 .mech-table .mech-table-row-odd {
-    background-color: #171D21; 
+    background-color: var(--mechdown-table-odd-row-background-color);
 }
 
 .mech-table .mech-table-cell {
@@ -1225,7 +1242,7 @@ li p {
 }
 
 .mech-table tbody tr:hover {
-    background-color: #3A4148; 
+    background-color: var(--mechdown-table-row-hover-background-color);
 }
 
 .mech-table a {
@@ -1239,7 +1256,7 @@ li p {
 
 .mech-block-quote {
     width: 80%;
-    background-color: #1d2227; 
+    background-color: var(--callout-background-color);
     border-left: 4px solid var(--main-color-mid);
     padding: 40px 30px;
     margin: 40px auto;
@@ -1279,7 +1296,7 @@ li p {
 
 .mech-info-block {
     width: 80%;
-    background-color: #1d2227;
+    background-color: var(--callout-background-color);
     border-left: 4px solid #f18181;
     padding: 20px 20px 20px 50px;
     margin: 20px auto;
@@ -1316,7 +1333,7 @@ li p {
 
 .mech-question-block {
     width: 80%;
-    background-color: #1d2227;
+    background-color: var(--callout-background-color);
     border-left: 4px solid #6ca8ff;
     padding: 20px 20px 20px 50px;
     margin: 20px auto;
@@ -1367,14 +1384,6 @@ li p {
 
 .mech-code-block.hidden {
     display: none;
-}
-
-.mech-fenced-mech-block .mech-code-block {
-    background-color: #171D21;
-    border-radius: 10px 10px 0px 0px;  
-    border-bottom: 0px solid var(--code-border-color);
-    margin-bottom: 0px;
-    box-shadow: none;
 }
 
 .mech-block-output {
@@ -1455,12 +1464,13 @@ a.mech-footnote-reference {
 }
 
 .mech-abstract {
-    background-color: #1f252a;
+    background-color: var(--abstract-background-color);
     border: 1px solid var(--main-color-mid);
     padding: 2em 2em;
     margin: 2em 2em;
     border-radius: 8px;
     color: #dcd4c9;
+    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.7);
 }
 
 .mech-abstract p {
@@ -1545,7 +1555,6 @@ h5::before {
 }
 
 .mech-program-section.toc.active{
-    background-color: #0d1013;
     padding-top: 10px;
     padding-bottom: 10px;
     border-left: 4px solid var(--contrast-color-high);
