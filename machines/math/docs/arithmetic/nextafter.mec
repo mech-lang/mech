@@ -67,9 +67,9 @@ The nextafter function is defined for both single-precision (f32) and
 double-precision (f64) floating-point numbers. It returns the adjacent
 floating-point representation in the direction of the second argument.
 
-- If Target > X, nextafter(X, Target) returns the least floating-point number greater than X.
-- If Target < X, nextafter(X, Target) returns the greatest floating-point number less than X.
-- If Target == X, the result is X.
+- If `Target > X`, `nextafter(X, Target)` returns the least floating-point number greater than X.
+- If `Target < X`, `nextafter(X, Target)` returns the greatest floating-point number less than X.
+- If `Target == X`, the result is X.
 
 This function is useful in numerical analysis for detecting underflow,
 controlling rounding behavior, and testing algorithms that are sensitive

@@ -58,14 +58,6 @@ b := [0.5, -3.0; 2.0, 4.0]
 z := math/fmin(a, b)               
 ```
 
-(d) Behavior with NaN (minimumNumber semantics)
-
-```mech:ex4
-x := [NaN,  2.0, NaN]
-y := [1.0, NaN, NaN]
-z := math/fmin(x, y)               
-```
-
 6. Details
 -------------------------------------------------------------------------------
 

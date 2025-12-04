@@ -80,7 +80,7 @@ y := math/roundeven(x)
 -------------------------------------------------------------------------------
 
 Backed by Rust/libm `roundeven` (f64) and `roundevenf` (f32). Implementations
-dispatch across scalar, vector, and matrix variants. Ensures IEEE‑754 compliance
+dispatch across scalar, vector, and matrix variants. Ensures IEEE-754 compliance
 for "round half to even".
 
 8. See also

@@ -1,7 +1,7 @@
 math/ilogb
 ===============================================================================
 
-%% Integer base‑2 exponent of a floating‑point value (element‑wise)
+%% Integer base-2 exponent of a floating-point value (element-wise)
 
 1. Usage
 -------------------------------------------------------------------------------
@@ -13,7 +13,7 @@ E := math/ilogb(X)
 2. Description
 -------------------------------------------------------------------------------
 
-Returns the **integer exponent** of each floating‑point element of `X` such that:
+Returns the **integer exponent** of each floating-point element of `X` such that:
 
 ```
 X = m * 2^E   with   m ∈ [1, 2)  (for normal numbers)
@@ -29,7 +29,7 @@ shape as `X` but contains **integers**.
 
 | Argument | Kind                             | Description                                              |
 |----------|----------------------------------|----------------------------------------------------------|
-| `X`      | `f32`, `f64`, `[float]`, `[[float]]` | Floating‑point value(s) to extract the base‑2 exponent from. |
+| `X`      | `f32`, `f64`, `[float]`, `[[float]]` | Floating-point value(s) to extract the base-2 exponent from. |
 
 4. Output
 -------------------------------------------------------------------------------
@@ -44,9 +44,9 @@ shape as `X` but contains **integers**.
 (a) Scalars
 
 ```mech:ex1
-e1 := math/ilogb(1.0)        // 0   since 1.0 = 1.0 * 2^0
-e2 := math/ilogb(8.0)        // 3   since 8.0 = 1.0 * 2^3
-e3 := math/ilogb(0.75)       // -1  since 0.75 = 1.5 * 2^-1
+e1 := math/ilogb(1.0)        // 0   since `1.0 = 1.0 * 2^0`
+e2 := math/ilogb(8.0)        // 3   since `8.0 = 1.0 * 2^3`
+e3 := math/ilogb(0.75)       // -1  since `0.75 = 1.5 * 2^-1`
 ```
 
 (b) Vector input
@@ -66,14 +66,14 @@ e := math/ilogb(m)           // [-2, -1; 0, 2]
 6. Details
 -------------------------------------------------------------------------------
 
-- **Element‑wise semantics.** Arrays are processed per element; the output shape matches the input shape.
-- **Types.** Implemented for `f32` (`ilogbf`) and `f64` (`ilogb`). Output elements are 32‑bit integers.
+- **Element-wise semantics.** Arrays are processed per element; the output shape matches the input shape.
+- **Types.** Implemented for `f32` (`ilogbf`) and `f64` (`ilogb`). Output elements are 32-bit integers.
 - **Special values (per libm/C99):**
-  - `math/ilogb(0)` returns an implementation‑defined sentinel (commonly `FP_ILOGB0`), which is a large negative integer.
+  - `math/ilogb(0)` returns an implementation-defined sentinel (commonly `FP_ILOGB0`), which is a large negative integer.
   - `math/ilogb(±∞)` returns a large positive sentinel (`FP_ILOGBINF`).
-  - `math/ilogb(NaN)` returns an implementation‑defined value (commonly `FP_ILOGBNAN`).
+  - `math/ilogb(NaN)` returns an implementation-defined value (commonly `FP_ILOGBNAN`).
   - Subnormal inputs return the exponent of their normalized representation.
-- **Relationship to `frexp`.** If `x = m * 2^e` with `m ∈ [0.5, 1)`, then `ilogb(x) = floor(log2(|x|))` for normal numbers, and `e - 1` from `frexp` semantics.
+- **Relationship to frexp** If `x = m * 2^e` with `m ∈ [0.5, 1)`, then `ilogb(x) = floor(log2(|x|))` for normal numbers, and `e - 1` from `frexp` semantics.
 
 **Errors.** Wrong arity (expects exactly one argument) or unsupported dtype.
 
