@@ -599,9 +599,9 @@ pub fn not_element_of(input: ParseString) -> ParseResult<SetOp> {
 
 // symmetric-difference := "Δ" ;
 pub fn symmetric_difference(input: ParseString) -> ParseResult<SetOp> {
-  let (input, _) = ws0e(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = tag("Δ")(input)?;
-  let (input, _) = ws0e(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, SetOp::SymmetricDifference))
 }
 
