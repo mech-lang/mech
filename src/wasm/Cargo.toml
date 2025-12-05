@@ -264,7 +264,6 @@ mech-core = { version = "0.2.67", default-features = false}
 mech-syntax = { version = "0.2.67", default-features = false}
 mech-interpreter = { version = "0.2.67", default-features = false}
 
-hashbrown = "0.15.5"
 wasm-bindgen = "0.2.100"
 js-sys = "0.3.77"
 miniz_oxide = "0.8.9"
