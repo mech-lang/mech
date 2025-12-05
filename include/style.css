@@ -766,6 +766,19 @@ code {
     text-underline-offset: 3px;
 }
 
+a.mech-hyperlink .mech-inline-code {
+    display: inline-block;          /* isolates from parent text-decoration */
+    text-decoration: none !important;  /* remove inherited underline */
+    border: 2px dotted var(--main-color-high);      /* yellow dotted border */
+    padding: 0 3px;                 /* optional spacing */
+    border-radius: 3px;             /* optional rounded corners */
+    color: inherit;                 /* match link color */
+}
+
+a.mech-hyperlink:hover .mech-inline-code {
+    border-color: var(--main-color-low);
+}
+
 .mech-all {
     color: var(--op-color);
 }
