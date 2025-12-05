@@ -11,7 +11,7 @@ categories = ["science::robotics", "science", "game-engines", "web-programming"]
 license = "Apache-2.0"
 readme = "README.md"
 edition = "2021"
-rust-version = "1.88"
+rust-version = "1.93"
 
 [badges]
 gitlab = { repository = "mech-lang/mech", branch = "main" }
@@ -200,6 +200,8 @@ console = { version = "0.16.1", optional = true }
 indicatif = { version = "0.18.0", optional = true }
 tempfile = { version = "3.23.0", optional = true }
 zip = { version =  "5.1.1", optional = true }
+# Taking on this dependency because flate2 1.1.6 has a build issue on Windows. Will wait for 1.1.7
+flate2 = "=1.1.5"
 
 [workspace]
 members = [

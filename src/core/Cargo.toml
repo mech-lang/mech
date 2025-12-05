@@ -11,7 +11,7 @@ categories = ["no-std", "science::robotics", "science", "game-engines", "databas
 license = "Apache-2.0"
 readme = "README.md"
 edition = "2021"
-rust-version = "1.88"
+rust-version = "1.93"
 
 [badges]
 gitlab = { repository = "mech-lang/core", branch = "main" }
