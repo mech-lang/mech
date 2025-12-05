@@ -17,7 +17,7 @@ R := x ∉ S
 Determines whether an element `x` is **not** a member of set `S`.  
 This function returns a boolean value indicating whether `x` is *absent* from the set.
 
-It wraps Rust’s `IndexSet` membership check and returns the negated result.
+It wraps Rust's `IndexSet` membership check and returns the negated result.
 
 3. Input
 -------------------------------------------------------------------------------

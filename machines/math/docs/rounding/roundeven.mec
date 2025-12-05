@@ -15,7 +15,7 @@ Y := math/roundeven(X)
 
 Rounds each element of the input to the nearest integer, with halfway cases
 rounded to the **nearest even integer**. This rule is also known as
-"banker’s rounding" or **round half to even**.
+"banker's rounding" or **round half to even**.
 
 $$ y = \mathrm{roundeven}(x)
 

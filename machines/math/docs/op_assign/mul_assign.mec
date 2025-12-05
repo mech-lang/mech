@@ -65,7 +65,7 @@ x *= 6
 
 - **Type behavior & edge cases:**
   - **Integer overflow:** Large products may overflow fixed-width integers. Consider using a wider type or `f32/f64` if overflow is a concern.
-  - **Complex/rational:** Uses the engine’s exact arithmetic for rationals and standard complex multiplication for complex numbers.
+  - **Complex/rational:** Uses the engine's exact arithmetic for rationals and standard complex multiplication for complex numbers.
   - **NaN/Inf propagation (floats):** Behaves per IEEE-754/libm.
 
 - **In-place behavior:** The sink is modified directly and returned as the result.
