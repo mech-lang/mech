@@ -15,8 +15,8 @@ Set related functions.
 -------------------------------------------------------------------------------
 
 stats/machine := {
-  name: "set" 
-  version: "v0.2.66"
-  authors: ["Corey Montella"]
+  name: "set"
+  version: "v0.2.67"
+  authors: ["Natalie Dumler", "Steven McPhillimey", "Liam Messinger", "Corey Montella"]
   machine-url: "https://gitlab.com/mech-lang/machines/set"
   license: "Apache-2.0"}
