@@ -11,14 +11,19 @@ Functions in the `set/ops` module are supported by infix operators.
 2. Modules
 -------------------------------------------------------------------------------
 
-- **ops** - Basic set operations
-    -(∪) [`union`](ops/union.html) - Computes the union of two sets.
-    -(∩) [`intersection`](ops/intersection.html) - Computes the intersection of two sets.
-    -(∖) [`difference`](ops/difference.html) - Computes the difference between two sets.
-    -(⊆) [`subset`](ops/subset.html) - Determines if one set is a subset of another.
-    -(⊊) [`proper-subset`](ops/proper-subset.html) - Determines if one set is a proper subset of another.
-    -(⊇) [`superset`](ops/superset.html) - Determines if one set is a superset of another.
-    -(⊋) [`proper-superset`](ops/proper-superset.html) - Determines if one set is a proper superset of another.
-    -(∈) [`element-of`](ops/element-of.html) - Checks if an element is a member of a set.
-    -(∉) [`not-element-of`](ops/not-element-of.html) - Checks if an element is not a member of a set.
-    -(∆) [`symmetric-difference`](ops/symmetric-difference.html) - Computes the symmetric difference between two sets.
+(2.1) ops
+
+Basic set operations
+
+| Operator | Function                                                | Description                                           | 
+|:--------:|--------------------------------------------------------:|-------------------------------------------------------|
+|`∪`       | [`union`](ops/union.html)                               | Computes the union of two sets.                       |
+|`∩`       | [`intersection`](ops/intersection.html)                 | Computes the intersection of two sets.                |
+|`∖`       | [`difference`](ops/difference.html)                     | Computes the difference between two sets.             |
+|`⊆`       | [`subset`](ops/subset.html)                             | Determines if one set is a subset of another.         |
+|`⊊`       | [`proper-subset`](ops/proper-subset.html)               | Determines if one set is a proper subset of another.  |
+|`⊇`       | [`superset`](ops/superset.html)                         | Determines if one set is a superset of another.       |
+|`⊋`       | [`proper-superset`](ops/proper-superset.html)           | Determines if one set is a proper superset of another.|
+|`∈`       | [`element-of`](ops/element-of.html)                     | Checks if an element is a member of a set.            |
+|`∉`       | [`not-element-of`](ops/not-element-of.html)             | Checks if an element is not a member of a set.        |
+|`∆`       | [`symmetric-difference`](ops/symmetric-difference.html) | Computes the symdifference between two sets.          |
