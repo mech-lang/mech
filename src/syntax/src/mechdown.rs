@@ -219,16 +219,14 @@ pub fn inline_equation(input: ParseString) -> ParseResult<ParagraphElement> {
 // hyperlink := "[", +text, "]", "(", +text, ")" ;
 pub fn hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = left_bracket(input)?;
-  let (input, link_text) = many1(tuple((is_not(right_bracket),text)))(input)?;
+  let (input, link_text) = inline_paragraph(input)?;
   let (input, _) = right_bracket(input)?;
   let (input, _) = left_parenthesis(input)?;
   let (input, link) = many1(tuple((is_not(right_parenthesis),text)))(input)?;
   let (input, _) = right_parenthesis(input)?;
   let mut tokens = link.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>();
   let link_merged = Token::merge_tokens(&mut tokens).unwrap();
-  let mut tokens = link_text.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>();
-  let text_merged = Token::merge_tokens(&mut tokens).unwrap();
-  Ok((input, ParagraphElement::Hyperlink((text_merged, link_merged))))
+  Ok((input, ParagraphElement::Hyperlink((link_text, link_merged))))
 }
 
 // raw-hyperlink := http-prefix, +text ;
@@ -236,8 +234,9 @@ pub fn raw_hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = peek(http_prefix)(input)?;
   let (input, address) = many1(tuple((is_not(space), text)))(input)?;
   let mut tokens = address.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>();
-  let url = Token::merge_tokens(&mut tokens).unwrap();
-  Ok((input, ParagraphElement::Hyperlink((url.clone(), url))))
+  let url_token = Token::merge_tokens(&mut tokens).unwrap();
+  let url_paragraph = Paragraph::from_tokens(vec![url_token.clone()]);
+  Ok((input, ParagraphElement::Hyperlink((url_paragraph, url_token))))
 }
 
 // option-map := "{", whitespace*, mapping*, whitespace*, "}" ;

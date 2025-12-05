@@ -256,6 +256,20 @@ impl Formatter {
     result
   }
 
+  pub fn inline_paragraph(&mut self, node: &Paragraph) -> String {
+    let mut src = "".to_string();
+    for el in node.elements.iter() {
+      let el_str = self.paragraph_element(el);
+      src = format!("{}{}", src, el_str);
+    }
+    let result = if self.html {
+      format!("<span class=\"mech-inline-paragraph\">{}</span>",src)
+    } else {
+      format!("{}",src)
+    };
+    result
+  }
+
   fn footnote_reference(&mut self, node: &Token) -> String {
     let id_string = node.to_string();
     let id_hash = hash_str(&format!("footnote-{}",id_string));
@@ -352,7 +366,7 @@ impl Formatter {
       },
       ParagraphElement::Hyperlink((text, url)) => {
         let url_str = url.to_string();
-        let text_str = text.to_string();
+        let text_str = self.inline_paragraph(text);
         if self.html {
           format!("<a href=\"{}\" class=\"mech-hyperlink\">{}</a>",url_str,text_str)
         } else {
@@ -2177,6 +2191,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       SetOp::ProperSuperset => "⊋".to_string(),
       SetOp::ElementOf => "∈".to_string(),
       SetOp::NotElementOf => "∉".to_string(),
+      SetOp::SymmetricDifference => "Δ".to_string(),
     }
   }
 
