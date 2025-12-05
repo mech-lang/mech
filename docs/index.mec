@@ -51,10 +51,10 @@ Mech Programming Language Documentation
 - [Convert](stdlib/convert/index.html) `todo`
 - [Io](stdlib/io/index.html) `todo`
 - [Logic](stdlib/logic/index.html) `todo`
-- [Math](stdlib/math/index.html) `todo`
+- [Math](stdlib/math/index.html)
 - [Matrix](stdlib/matrix/index.html) `todo`
 - [Range](stdlib/range/index.html) `todo`
-- [Set](stdlib/set/index.html) `todo`
+- [Set](stdlib/set/index.html)
 - [Stats](stdlib/stats/index.html) `todo`
 
 4. Guides
@@ -82,7 +82,7 @@ Mech Programming Language Documentation
 ```mech:hidden
 document/index := {
   name: "docs" 
-  version: "v0.2.66"
+  version: "v0.2.67"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/mech/docs"
   license: "Apache-2.0"}
