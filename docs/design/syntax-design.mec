@@ -1,0 +1,159 @@
+Syntax Design Document
+===============================================================================
+
+1. Overview
+-------------------------------------------------------------------------------
+
+This document outlines the design principles behind the syntax of the Mech programming platform. As a platform, Mech can support multiple syntaxes, so the depending on the context and audience, different syntaxes may be more appropriate.
+
+This document focuses on the core syntax used in Mech source files, aiming to provide clarity on how various language constructs are represented. In the future, other syntaxes may be developed for specific use cases. That's why a document like this is important to establish a common understanding of the core syntax design principles for the syntax that did get implemented, because everything was done purposefully.
+
+In this document, "Mech" will interchangeably be used to refer to the syntax and the platform as a whole.
+
+The organization of this document is as follows:
+
+- Section 1. Design Goals and Non Goals: outlines the primary objectives that guided the syntax design.
+- Section 2. Key Syntax Features: highlights the main features of the Mech syntax.
+- Section 3. Mechdown and Mech: provides an overview of the Mechdown syntax used for documentation and how that influenced the design of Mech (and vice versa).
+- Section 5. Matlab adjacency: discusses similarities and differences between Mech syntax and Matlab syntax, given their shared focus on mathematical computation.
+- Section 6. Literate Programming: explores how Mech supports literate programming practices through its syntax and documentation capabilities.
+- Section 7. The case for kebab-case: explains the choice of kebab-case for naming conventions in Mech and why this tradeoff was made.
+- Section 8. No Keywords: discusses the decision to avoid reserved keywords in Mech syntax to enhance flexibility and reduce conflicts.
+- Section 9. Numbers: Discusses how Mech represents numeric literals in its syntax.
+- Section 10. Kinds: Kinds are a kind of sub language withing brackets that allow for concise representation of types and data structures.
+- Section 11. Matrix Syntax: Details the syntax used for defining and manipulating matrices in Mech.
+- Section 12. Table Syntax: Details the syntax used for defining and manipulating tables in Mech.
+- Section 13. State Machines: Explores the syntax used for defining state machines in Mech.
+
+
+1. Design Goals and Non Goals
+-------------------------------------------------------------------------------
+
+(1.1) Goals
+
+Mech has all the typical goals of a sytanx. It should be easy to read and write, unambiguous, expressive, and consistent.
+
+We want Mech to be familiar but at the same time are primary goal with this syntax is to explore the design space of syntaxes. Often times it's said that language syntax is mostly solved, but we believe that is true only for the mainstream programming paradigms. There are other paradigms out there which have different abstractions and conventions which will likely require different syntax choices to support. Mech is an opportunity to explore some of those design spaces.
+
+We want Mech to be used by people who speak languages other than English. Mech should be easy to localize, and people should be able to use Mech in their native language without knowing any English at all.
+
+Mech supports a live programming environment, so the syntax should be easy to parse incrementally and support partial programs, as well as error recovery so that transient errors don't prevent a good program from continuing to work. Parsing should be fast.
+
+The syntax needs to be supported as a Mech data type. It should be serializable, comparable, diffable, and manipulable as a first-class value within the Mech platform.
+
+We want to support literate programming, so the syntax should integrate well with documentation and support interleaving code and prose.
+
+This syntax needs to support all the features of Mech.
+
+While we might implement an specialized editor for Mech, the syntax should also be easy to use in general-purpose text editors and IDEs, with support for syntax highlighting, code completion, and other common features.
+
+The user must be able to express every feature on a standard keyboard.
+
+Should be easy to learn for kids up to professionals.
+
+Should allow for progressive exposure of features, so beginners can start with a simple subset and gradually learn more advanced constructs.
+
+Although Mech will be supported by sophisticated language tooling, programs written in the syntax should stand on their own, with enough explicitly written details that the meaning is clear without relying on external tools.
+
+Mech syntax should integrate well with AI technology. AI LLM technology works by predicting the next token in a sequence, so the syntax should be designed to facilitate this process, making it easier for AI to understand and generate Mech code. This means we want short code, local context, and unambiguous meaning so that the LLM can easily predict what comes next.
+
+Where possible, we want to support native conventions of mathematical notation, so that mathematical expressions are easy to read and write.
+
+We want this syntax to be extensible, even by users. So that means we are talking about a homoiconic syntax where the syntax itself can be represented as a Mech data type, and users can define new syntactic constructs as needed.
+
+(1.2) Non Goals
+
+Widespread adoption of this syntax is not a goal, therefore we will not be bound by popular conventions.
+
+Parser simplicity. We don't care if there are multiple implementations of this syntax -- as this may be one of many, it's not important to make sure it's replicable but rathar that it demonstrates all the featuers of Mech. Therefore we will not choose features based on whether they make the parser simpler or harder to implement.
+
+Although it's a goal the user should be able to express every feature using the standard ASCII character set, it's not a goal that every program be limited to the ASCII character set and standard keyboard. One assumption we are making is that AI will write most Mech code that will ever exist, and where humans do write Mech manually, they do so with the assistance of tooling that can easily provide special characters and autocomplete where physical keyboards are lacking. Therefore it might be the case that humans and AI write mech in different ways with different characters.
+
+2. Key Syntax Features
+-------------------------------------------------------------------------------
+
+- Mechdown: Mech syntax was designed alongside Mechdown, a markup language for writing documentation in Mech. The two syntaxes share similar design principles and conventions, allowing for seamless integration between code and documentation.
+
+- Kebab-case: Mech uses kebab-case (hyphen-separated words) for naming conventions. This choice was made to enhance readability and avoid conflicts with reserved keywords.
+
+- No Keywords: Mech avoids reserved keywords, allowing users to define identifiers without worrying about conflicts with language constructs. This enhances flexibility and reduces naming collisions.
+
+- Numbers: Mech supports a variety of numeric literals, including integers, floating-point numbers, and complex numbers. The syntax for these literals is designed to be clear and unambiguous.
+
+- Kinds: Kinds in Mech are represented using brackets, allowing users to define types and data structures concisely. For example, `[i32]` represents an array of 32-bit integers.
+
+- Matrix Syntax: Mech provides a straightforward syntax for defining matrices using semicolons to separate rows and commas to separate columns. For example, `[1, 2; 3, 4]` defines a 2x2 matrix.
+
+- Table Syntax: Mech provides syntax for defining tables, which are collections of heterogeneous data organized into rows and columns. Users can define tables using a combination of braces and brackets.
+
+- State Machines: Mech provides syntax for defining state machines, allowing users to specify states, transitions, and actions in a clear and structured manner.
+
+3. Mechdown and Mech
+-------------------------------------------------------------------------------
+
+- **Mechdown**: Mechdown is a markup language used for writing documentation in Mech. It supports features such as code blocks, headings, lists, and links, allowing users to create rich documentation for their Mech code.
+- **Integration**: The Mech syntax is designed to integrate seamlessly with Mechdown, allowing users to include Mech code snippets directly within their documentation. This promotes literate programming practices and helps users understand the code in context.
+- **Consistency**: The syntax of Mech is consistent with the conventions used in Mechdown, ensuring a smooth transition between writing code and documentation.
+
+4. Matlab Adjacency
+-------------------------------------------------------------------------------
+
+- **Familiarity**: Mech's syntax draws inspiration from Matlab, particularly in its handling of matrices and mathematical operations. This familiarity can help users who are already accustomed to Matlab transition to Mech more easily.
+- **Differences**: While Mech shares some similarities with Matlab, it also introduces unique features and constructs that differentiate it from Matlab. For example, Mech's support for state machines and its emphasis on distributed computation set it apart from Matlab's primarily single-machine focus.
+
+5. Literate Programming
+-------------------------------------------------------------------------------
+
+- **Documentation Integration**: Mech encourages literate programming by allowing users to interleave code and documentation seamlessly. This helps users explain their code and its purpose alongside the implementation.
+- **Code Blocks**: Mechdown supports code blocks that can contain Mech code, enabling users to provide examples and explanations directly within their documentation.
+- **Clarity and Understanding**: By promoting literate programming practices, Mech aims to enhance the clarity and understanding of code, making it easier for users to learn and collaborate.
+
+6. The Case for Kebab-Case
+-------------------------------------------------------------------------------
+
+- **Readability**: Kebab-case (using hyphens to separate words) is often considered more readable than other naming conventions, such as camelCase or snake_case. The use of hyphens can make it easier to distinguish individual words in identifiers.
+- **Consistency**: Kebab-case provides a consistent naming convention across the language, reducing confusion and making it easier for users to remember and use identifiers.
+- **Avoiding Conflicts**: By using kebab-case, Mech can avoid potential conflicts with reserved keywords or built-in functions that may use other naming conventions.
+
+7. No Keywords
+-------------------------------------------------------------------------------
+
+- **Flexibility**: By avoiding reserved keywords, Mech allows users to define identifiers without worrying about conflicts with language constructs. This enhances flexibility and reduces the likelihood of naming collisions.
+- **Simplicity**: The absence of keywords simplifies the syntax and reduces the cognitive load for users, as they do not need to remember a list of reserved words.
+- **Contextual Understanding**: Mech relies on context to determine the meaning of identifiers, allowing for more natural and intuitive code.
+
+8. Numbers
+-------------------------------------------------------------------------------
+
+- **Numeric Literals**: Mech supports a variety of numeric literals, including integers, floating-point numbers, and complex numbers. The syntax for these literals is designed to be clear and unambiguous.
+- **Scientific Notation**: Mech allows for scientific notation in floating-point literals, enabling users to express very large or very small numbers concisely.
+- **Type Suffixes**: Mech supports type suffixes for numeric literals, allowing users to specify the desired type explicitly (e.g., `42i32` for a 32-bit integer).
+
+9. Kinds
+-------------------------------------------------------------------------------
+
+- **Kind Syntax**: Kinds in Mech are represented using brackets, allowing users to define types and data structures concisely. For example, `[i32]` represents an array of 32-bit integers.
+- **Type Definitions**: Kinds can be used to define complex types, such as arrays of sets or maps, enabling users to express their data structures clearly.
+- **Type Inference**: Mech supports type inference for kinds, allowing users to omit explicit type annotations in many cases while still benefiting from strong typing.
+
+10. Matrix Syntax
+------------------------------------------------------------------------------- 
+
+- **Matrix Definition**: Mech provides a straightforward syntax for defining matrices using semicolons to separate rows and commas to separate columns. For example, `[1, 2; 3, 4]` defines a 2x2 matrix.
+- **Element Access**: Mech allows users to access matrix elements using parentheses, similar to mathematical notation. For example, `A(1, 2)` accesses the element in the first row and second column of matrix `A`.
+- **Matrix Operations**: Mech supports a variety of matrix operations, such as addition, multiplication, and transposition, using familiar mathematical symbols.
+
+11. Table Syntax
+-------------------------------------------------------------------------------
+
+- **Table Definition**: Mech provides syntax for defining tables, which are collections of heterogeneous data organized into rows and columns. Users can define tables using a combination of braces and brackets.
+- **Column Access**: Mech allows users to access table columns using dot notation, enabling easy retrieval of specific data.
+- **Row Operations**: Mech supports operations on table rows, such as filtering and aggregation, allowing users to manipulate tabular data effectively.
+
+12. State Machines
+-------------------------------------------------------------------------------
+
+- **State Machine Definition**: Mech provides syntax for defining state machines, allowing users to specify states, transitions, and actions in a clear and structured manner.
+
+- **Transition Syntax**: Transitions between states are defined using arrows (`->`), enabling users to express state changes intuitively.
+- **Actions and Events**: Mech allows users to define actions and events associated with state transitions, enabling complex behavior within state machines.
