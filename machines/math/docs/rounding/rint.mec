@@ -82,5 +82,5 @@ on the platform’s floating-point rounding mode.
 
 8. See also
 -------------------------------------------------------------------------------
-
-`math/floor`, `math/ceil`, `math/trunc`, `math/round`
+  
+[`math/floor`], [`math/ceil`], [`math/trunc`], [`math/round`]

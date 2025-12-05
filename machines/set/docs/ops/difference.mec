@@ -37,7 +37,7 @@ Element type constraints:
 -------------------------------------------------------------------------------
 
 Result:
-- D : set of T containing elements in A but not in B, preserving A’s order.
+- D : set of T containing elements in A but not in B, preserving A's order.
 
 5. Examples
 -------------------------------------------------------------------------------
@@ -74,7 +74,7 @@ Set semantics:
 - Only distinct elements present in A but not in B are returned.
 
 Stable insertion order:
-- Matches Rust IndexSet behavior: difference elements follow A’s order.
+- Matches Rust IndexSet behavior: difference elements follow A's order.
 
 Performance:
 - Average O(\|A\| + \|B\|) time with hashing, memory O(\|A\|) for the result.

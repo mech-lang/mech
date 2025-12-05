@@ -19,7 +19,7 @@ A subset has all its elements contained within another set.
 This function returns a boolean value indicating the result.
 
 The implementation wraps the Rust `IndexSet` containment logic and
-preserves Mech’s deterministic order semantics for reproducibility.
+preserves Mech's deterministic order semantics for reproducibility.
 
 3. Input
 -------------------------------------------------------------------------------
