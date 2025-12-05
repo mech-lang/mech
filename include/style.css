@@ -4,12 +4,12 @@
   --bracket-color: #c19dca;
   --op-color: #c19dca;
   --literal-color: #9cc7f3;
-  --contrast-color-high: hsl(284, 49%, 80%);
-  --contrast-color-mid: hsl(284, 49%, 75%);
-  --contrast-color-low: hsl(284, 49%, 65%);
-  --main-color-mid: #F3B62D;
-  --main-color-high: #F8D07A;
-  --main-color-low: #d19710;
+  --contrast-color-high: hsl(264, 54%, 80%);
+  --contrast-color-mid:  hsl(264, 54%, 70%);
+  --contrast-color-low:  hsl(264, 54%, 60%);
+  --main-color-high: hsl(42, 89%, 80%);
+  --main-color-mid:  hsl(42, 89%, 70%);
+  --main-color-low:  hsl(42, 89%, 60%);
   --out-bracket-color: rgb(177, 187, 196);
   --sidebar-width: 300px;
   --text-color: #f2ead9;
@@ -26,7 +26,7 @@
   --callout-background-color: #171c26;
   --mechdown-table-odd-row-background-color: hsl(222, 25%, 9%);
   --mechdown-table-even-row-background-color: #171c26;
-  --mechdown-table-row-hover-background-color: hsl(222, 25%, 20%);
+  --mechdown-table-row-hover-background-color: hsl(222, 25%, 17%);
 }
 
 html {
@@ -766,17 +766,23 @@ code {
     text-underline-offset: 3px;
 }
 
+.mech-program-subtitle:hover {
+    color: var(--contrast-color-low);
+    cursor: pointer;
+}
+
 a.mech-hyperlink .mech-inline-code {
     display: inline-block;          /* isolates from parent text-decoration */
     text-decoration: none !important;  /* remove inherited underline */
-    border: 2px dotted var(--main-color-high);      /* yellow dotted border */
+    border: 1px dashed var(--main-color-mid);      /* yellow dotted border */
     padding: 0 3px;                 /* optional spacing */
     border-radius: 3px;             /* optional rounded corners */
-    color: inherit;                 /* match link color */
+    color: var(--main-color-mid);                 /* match link color */
 }
 
 a.mech-hyperlink:hover .mech-inline-code {
-    border-color: var(--main-color-low);
+    color: var(--main-color-high);
+    border-color: var(--main-color-high);
 }
 
 .mech-all {
@@ -1577,20 +1583,40 @@ h2:hover a {
     color: var(--main-color-low);
 }
 
+.toc h2:hover a {
+    color: var(--contrast-color-low);
+}
+
 h3:hover a {
     color: var(--main-color-low);
+}
+
+.toc h3:hover a {
+    color: var(--contrast-color-low);
 }
 
 h4:hover a {
     color: var(--main-color-low);
 }
 
+.toc h4:hover a {
+    color: var(--contrast-color-low);
+}
+
 h5:hover a {
     color: var(--main-color-low);
 }
 
+.toc h5:hover a {
+    color: var(--contrast-color-low);
+}
+
 h6:hover a {
     color: var(--main-color-low);
+}
+
+.toc h6:hover a {
+    color: var(--contrast-color-low);
 }
 
 .mech-program-section {
@@ -1666,7 +1692,7 @@ mark {
 }
 
 .mech-citation-link:hover {
-    color: #f18181;
+    color: var(--main-color-low);
     text-decoration: underline;
 }
 
