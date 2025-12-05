@@ -1317,7 +1317,7 @@ impl MechString {
   }
 }
 
-pub type Hyperlink = (Token, Token);
+pub type Hyperlink = (Paragraph, Token);
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -1352,7 +1352,11 @@ impl ParagraphElement {
       ParagraphElement::Emphasis(t) => t.tokens(),
       ParagraphElement::FootnoteReference(t) => vec![t.clone()],
       ParagraphElement::Highlight(t) => t.tokens(),
-      ParagraphElement::Hyperlink((t, u)) => vec![t.clone(), u.clone()],
+      ParagraphElement::Hyperlink((t, u)) => {
+        let mut tokens = t.tokens();
+        tokens.push(u.clone());
+        tokens
+      },
       ParagraphElement::InlineCode(t) => vec![t.clone()],
       ParagraphElement::InlineEquation(t) => vec![t.clone()],
       ParagraphElement::InlineMechCode(t) => t.tokens(),
@@ -1405,6 +1409,14 @@ impl Paragraph {
       out.push_str(&e.to_string());
     }
     out
+  }
+
+  pub fn from_tokens(tokens: Vec<Token>) -> Paragraph {
+    let elements = tokens.into_iter().map(|t| ParagraphElement::Text(t)).collect();
+    Paragraph {
+      elements,
+      error_range: None,
+    }
   }
 
   pub fn has_errors(&self) -> bool {
@@ -1688,12 +1700,13 @@ pub enum SetOp {
   Intersection,
   Difference,
   Complement,
-  Subset,
-  Superset,
-  ProperSubset,
-  ProperSuperset,
   ElementOf,
   NotElementOf,
+  ProperSubset,
+  ProperSuperset,
+  Subset,
+  Superset,
+  SymmetricDifference,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
