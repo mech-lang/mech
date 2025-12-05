@@ -1,0 +1,26 @@
+math
+===============================================================================
+
+1. Overview
+-------------------------------------------------------------------------------
+
+This machine provides functionality for working with basic mathematical functions.
+
+Functions in the `math/ops` module are supported by infix operators.
+
+2. Modules
+-------------------------------------------------------------------------------
+
+(2.1) ops
+
+Basic arithmetic operations defined on scalar and matrix input for multiple numeric datatypes.
+
+| Operator  | Function               | Description                                              | 
+|:---------:|-----------------------:|----------------------------------------------------------|
+|`+`        | [`add`](ops/add.html)  | Adds two operands.                                       |
+|`-`        | [`sub`](ops/sub.html)  | Subtracts second operand from the first.                 |
+|`*`        | [`mul`](ops/mul.html)  | Multiplies two operands.                                 |
+|`/`        | [`div`](ops/div.html)  | Divides first operand by the second.                     |
+|`^`        | [`pow`](ops/pow.html)  | Raises first operand to the power of the second.         |
+|`%`        | [`mod`](ops/mod.html)  | Computes the modulus of the first operand by the second. |
+|`-` (unary)| [`neg`](ops/neg.html)  | Negates the operand.                                     |
