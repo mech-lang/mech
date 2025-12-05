@@ -452,6 +452,8 @@ pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
       FormulaOperator::Set(SetOp::Intersection) => SetIntersection{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "set_difference")]
       FormulaOperator::Set(SetOp::Difference) => SetDifference{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "set_symmetric_difference")]
+      FormulaOperator::Set(SetOp::SymmetricDifference) => SetSymmetricDifference{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "set_complement")]
       FormulaOperator::Set(SetOp::Complement) => todo!(),
       #[cfg(feature = "set_subset")]

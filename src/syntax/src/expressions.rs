@@ -511,9 +511,9 @@ fn left_anti_join(input: ParseString) -> ParseResult<TableOp> {
 // Set Operations
 // ----------------------------------------------------------------------------
 
-// set-operator := union | intersection | difference | complement | subset | superset | proper-subset | proper-superset | element-of | not-element-of ;
+// set-operator := union | intersection | difference | complement | subset | superset | proper-subset | proper-superset | element-of | not-element-of | symmetric-difference ;
 pub fn set_operator(input: ParseString) -> ParseResult<FormulaOperator> {
-  let (input, op) = alt((union_op,intersection,difference,complement,subset,superset,proper_subset,proper_superset,element_of,not_element_of))(input)?;
+  let (input, op) = alt((union_op,intersection,difference,complement,subset,superset,proper_subset,proper_superset,element_of,not_element_of,symmetric_difference))(input)?;
   Ok((input, FormulaOperator::Set(op)))
 }
 
@@ -595,6 +595,14 @@ pub fn not_element_of(input: ParseString) -> ParseResult<SetOp> {
   let (input, _) = tag("∉")(input)?;
   let (input, _) = ws0e(input)?;
   Ok((input, SetOp::NotElementOf))
+}
+
+// symmetric-difference := "Δ" ;
+pub fn symmetric_difference(input: ParseString) -> ParseResult<SetOp> {
+  let (input, _) = ws0e(input)?;
+  let (input, _) = tag("Δ")(input)?;
+  let (input, _) = ws0e(input)?;
+  Ok((input, SetOp::SymmetricDifference))
 }
 
 // Subscript Operations

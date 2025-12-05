@@ -1178,7 +1178,8 @@ superset := "⊇";
 proper-subset := "⊊";       
 proper-superset := "⊋";       
 element-of := "∈";       
-not-element-of := "∉";       
+not-element-of := "∉";   
+symmetric-difference := "Δ";
 ```
 
 (6.7) Range
