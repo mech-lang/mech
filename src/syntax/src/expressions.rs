@@ -77,10 +77,10 @@ pub fn l2(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l3 := l4, (exponent-operator, l4)* ;
+// l3 := l4, (power-operator, l4)* ;
 pub fn l3(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l4(input)?;
-  let (input, rhs) = many0(pair(exponent_operator,cut(l4)))(input)?;
+  let (input, rhs) = many0(pair(power_operator,cut(l4)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
@@ -179,10 +179,10 @@ pub fn mul_div_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   Ok((input, FormulaOperator::MulDiv(op)))
 }
 
-// exponent-operator := exponent ;
-pub fn exponent_operator(input: ParseString) -> ParseResult<FormulaOperator> {
-  let (input, op) = exponent(input)?;
-  Ok((input, FormulaOperator::Exponent(op)))
+// power-operator := power ;
+pub fn power_operator(input: ParseString) -> ParseResult<FormulaOperator> {
+  let (input, op) = power(input)?;
+  Ok((input, FormulaOperator::Power(op)))
 }
 
 // negate-factor := "-", factor ;
@@ -249,12 +249,12 @@ pub fn modulus(input: ParseString) -> ParseResult<MulDivOp> {
   Ok((input, MulDivOp::Mod))
 }
 
-// exponent := "^" ;
-pub fn exponent(input: ParseString) -> ParseResult<ExponentOp> {
+// power := "^" ;
+pub fn power(input: ParseString) -> ParseResult<PowerOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("^")(input)?;
   let (input, _) = ws0e(input)?;
-  Ok((input, ExponentOp::Exp))
+  Ok((input, PowerOp::Pow))
 }
 
 // Matrix Operations

@@ -101,7 +101,7 @@ f64 = ["floats"]
 c64 = ["complex"]
 r64 = ["rational"]
 
-math_exp = ["libm", "num-traits"]
+math_pow = ["libm", "num-traits"]
 range = []
 
 # Structs

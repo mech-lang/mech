@@ -9,8 +9,8 @@ pub mod sub;
 pub mod mul;
 #[cfg(feature = "div")]
 pub mod div;
-#[cfg(feature = "exp")]
-pub mod exp;
+#[cfg(feature = "pow")]
+pub mod pow;
 #[cfg(feature = "mod")]
 pub mod modulus;
 #[cfg(feature = "neg")]
@@ -24,8 +24,8 @@ pub use self::sub::*;
 pub use self::mul::*;
 #[cfg(feature = "div")]
 pub use self::div::*;
-#[cfg(feature = "exp")]
-pub use self::exp::*;
+#[cfg(feature = "pow")]
+pub use self::pow::*;
 #[cfg(feature = "mod")]
 pub use self::modulus::*;
 #[cfg(feature = "neg")]

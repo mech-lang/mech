@@ -56,12 +56,12 @@ extern crate tabled;
 extern crate serde_derive;
 #[cfg(feature = "serde")]
 extern crate serde;
-#[cfg(any(feature = "math_exp", feature = "f64", feature = "f32", feature = "complex", feature = "rational"))]
+#[cfg(any(feature = "math_pow", feature = "f64", feature = "f32", feature = "complex", feature = "rational"))]
 extern crate num_traits;
 
 use paste::paste;
 
-#[cfg(any(feature = "math_exp", feature = "f64"))]
+#[cfg(any(feature = "math_pow", feature = "f64"))]
 use num_traits::*;
 #[cfg(feature = "rational")]
 use num_rational::Rational64;

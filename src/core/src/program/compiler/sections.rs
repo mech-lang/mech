@@ -217,7 +217,7 @@ pub enum FeatureKind {
   Compiler, PrettyPrint, Serde,
   MatMul, Transpose, Dot, Cross, Solve,
   
-  Add, Sub, Mul, Div, Exp, Mod, 
+  Add, Sub, Mul, Div, Pow, Mod, 
   Neg, OpAssign, LT, LTE, GT, 
   
   GTE, EQ, NEQ, And, Or, 
@@ -298,7 +298,7 @@ impl FeatureKind {
       FeatureKind::Sub => "math_sub".to_string(),
       FeatureKind::Mul => "math_mul".to_string(),
       FeatureKind::Div => "math_div".to_string(),
-      FeatureKind::Exp => "math_exp".to_string(),
+      FeatureKind::Pow => "math_pow".to_string(),
       FeatureKind::Mod => "math_mod".to_string(),
       FeatureKind::Neg => "math_neg".to_string(),
       FeatureKind::OpAssign => "math_opassign".to_string(),

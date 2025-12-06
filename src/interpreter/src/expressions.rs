@@ -387,8 +387,8 @@ pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
       FormulaOperator::MulDiv(MulDivOp::Div) => MathDiv{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "math_mod")]
       FormulaOperator::MulDiv(MulDivOp::Mod) => MathMod{}.compile(&vec![lhs,rhs])?,
-      #[cfg(feature = "math_exp")]
-      FormulaOperator::Exponent(ExponentOp::Exp) => MathExp{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "math_pow")]
+      FormulaOperator::Power(PowerOp::Pow) => MathPow{}.compile(&vec![lhs,rhs])?,
 
       // Matrix
       #[cfg(feature = "matrix_matmul")]

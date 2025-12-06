@@ -402,8 +402,8 @@ op_assign!(sub_assign, Sub);
 op_assign!(mul_assign, Mul);
 #[cfg(feature = "math_mul_assign")]
 op_assign!(div_assign, Div);
-//#[cfg(feature = "math_exp")]
-//op_assign!(exp_assign, Exp);
+//#[cfg(feature = "math_pow")]
+//op_assign!(pow_assign, Pow);
 
 #[cfg(all(feature = "subscript", feature = "assign"))]
 pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, p: &Interpreter) -> MResult<Value> {
