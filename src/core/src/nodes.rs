@@ -97,20 +97,21 @@ pub enum TokenKind {
   Backslash, Bar, BoxDrawing,
   Caret, CarriageReturn, CarriageReturnNewLine, Colon, CodeBlock, Comma,
   Dash, DefineOperator, Digit, Dollar,
-  Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Error, Exclamation, 
+  Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Error, ErrorSigil, Exclamation, 
   False, FloatLeft, FloatRight, FootnotePrefix,
   Grave, GraveCodeBlockSigil,
   HashTag, HighlightSigil, HttpPrefix,
-  Identifier, ImgPrefix, InfoSigil, InlineCode, 
+  IdeaSigil, Identifier, ImgPrefix, InfoSigil, InlineCode, 
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
   Newline, Not, Number,
   OutputOperator,
   Percent, Period, Plus,
   QueryOperator, Question, QuestionSigil, Quote, QuoteSigil,
   RightAngle, RightBrace, RightBracket, RightParenthesis,
-  SectionSigil, Semicolon, Space, Slash, String, StrikeSigil, StrongSigil,
+  SectionSigil, Semicolon, Space, Slash, String, StrikeSigil, StrongSigil, SuccessSigil,
   Tab, Text, Tilde, TildeCodeBlockSigil, Title, TransitionOperator, True,
   UnderlineSigil, Underscore,
+  WarningSigil,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -478,6 +479,10 @@ pub enum SectionElement {
   Abstract(Vec<Paragraph>),
   QuoteBlock(Vec<Paragraph>),
   InfoBlock(Vec<Paragraph>),
+  SuccessBlock(Vec<Paragraph>),
+  IdeaBlock(Vec<Paragraph>),
+  WarningBlock(Vec<Paragraph>),
+  ErrorBlock(Vec<Paragraph>),
   QuestionBlock(Vec<Paragraph>),
   Citation(Citation),
   CodeBlock(Token),
@@ -1643,8 +1648,8 @@ pub enum VecOp {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum ExponentOp {
-  Exp
+pub enum PowerOp {
+  Pow
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -1674,7 +1679,7 @@ pub enum LogicOp {
 pub enum FormulaOperator {
   AddSub(AddSubOp),
   Comparison(ComparisonOp),
-  Exponent(ExponentOp),
+  Power(PowerOp),
   Logic(LogicOp),
   MulDiv(MulDivOp),
   Vec(VecOp),
