@@ -61,8 +61,8 @@ test_interpreter!(interpret_formula_math_sub, "2 - 2", Value::F64(Ref::new(0.0))
 test_interpreter!(interpret_formula_math_mul, "2 * 2", Value::F64(Ref::new(4.0)));
 test_interpreter!(interpret_formula_math_div, "2 / 2", Value::F64(Ref::new(1.0)));
 #[cfg(feature = "u8")]
-test_interpreter!(interpret_formula_math_exp, "2<u8> ^ 2<u8>", Value::U8(Ref::new(4)));
-test_interpreter!(interpret_formula_math_exp_f64, "2.0 ^ 2.0", Value::F64(Ref::new(4.0)));
+test_interpreter!(interpret_formula_math_pow, "2<u8> ^ 2<u8>", Value::U8(Ref::new(4)));
+test_interpreter!(interpret_formula_math_pow_f64, "2.0 ^ 2.0", Value::F64(Ref::new(4.0)));
 test_interpreter!(interpret_formulat_math_add_rational, "1/10 + 2/10 + 3/10", Value::R64(Ref::new(R64::new(6, 10))));
 test_interpreter!(interpret_formulat_math_sub_rational, "1/10 - 2/10 - 3/10", Value::R64(Ref::new(R64::new(-4, 10))));
 test_interpreter!(interpret_formula_math_mul_rational, "1/10 * 2/10 * 3/10", Value::R64(Ref::new(R64::new(3, 500))));
