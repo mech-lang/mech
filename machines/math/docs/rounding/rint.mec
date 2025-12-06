@@ -78,9 +78,4 @@ y := math/rint(x)
 
 Backed by Rust/libm `rint` (f64) and `rintf` (f32). Implementations dispatch
 across scalar, vector, and matrix variants. Behavior for halfway cases depends
-on the platform’s floating-point rounding mode.
-
-8. See also
--------------------------------------------------------------------------------
-  
-[`math/floor`], [`math/ceil`], [`math/trunc`], [`math/round`]
+on the platform's floating-point rounding mode.
