@@ -51,7 +51,7 @@ baselib = ["bool", "string",
 
 arithmetic_default = ["copysign", "abs", "fdim", "fmod", "nextafter", "remainder"]
 bessel_default = ["j0", "j1", "jn", "y0", "y1", "yn"]
-exponential_default = ["exponential", "exp2", "exp10", "expm1"]
+exponential_default = ["exp", "exp2", "exp10", "expm1"]
 extrema_default = ["max", "min"]
 gamma_default = ["lgamma", "tgamma"]
 logarithm_default = ["log", "log1p", "log10", "log2"]
@@ -69,7 +69,7 @@ math_default = ["arithmetic_default", "bessel_default", "exponential_default", "
 math = ["num-traits", "libm", "functions"]
 arithmetic = ["math"]
 bessel = ["math"]
-exponential = ["math"]
+exp = ["math"]
 extrema = ["math"]
 gamma = ["math"]
 logarithm = ["math"]
