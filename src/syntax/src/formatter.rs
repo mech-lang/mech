@@ -611,7 +611,7 @@ impl Formatter {
     if self.html {
       format!("<div class=\"mech-info-block\">{}</div>",info_paragraph)
     } else {
-      format!("(!)> {}\n",info_paragraph)
+      format!("(i)> {}\n",info_paragraph)
     }
   }
 
@@ -624,11 +624,51 @@ impl Formatter {
     }
   }
 
+  pub fn success_block(&mut self, node: &Vec<Paragraph>) -> String {
+    let success_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
+    if self.html {
+      format!("<div class=\"mech-success-block\">{}</div>",success_paragraph)
+    } else {
+      format!("(✓)>> {}\n",success_paragraph)
+    }
+  }
+
+  pub fn warning_block(&mut self, node: &Vec<Paragraph>) -> String {
+    let warning_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
+    if self.html {
+      format!("<div class=\"mech-warning-block\">{}</div>",warning_paragraph)
+    } else {
+      format!("(!)>> {}\n",warning_paragraph)
+    }
+  }
+
+  pub fn idea_block(&mut self, node: &Vec<Paragraph>) -> String {
+    let idea_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
+    if self.html {
+      format!("<div class=\"mech-idea-block\">{}</div>",idea_paragraph)
+    } else {
+      format!("(*)> {}\n",idea_paragraph)
+    }
+  }
+
+  pub fn error_block(&mut self, node: &Vec<Paragraph>) -> String {
+    let error_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
+    if self.html {
+      format!("<div class=\"mech-error-block\">{}</div>",error_paragraph)
+    } else {
+      format!("(✗)>> {}\n",error_paragraph)
+    }
+  }
+
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     match node {
       SectionElement::Abstract(n) => self.abstract_el(n),
       SectionElement::QuoteBlock(n) => self.quote_block(n),
+      SectionElement::SuccessBlock(n) => self.success_block(n),
+      SectionElement::IdeaBlock(n) => self.idea_block(n),
       SectionElement::InfoBlock(n) => self.info_block(n),
+      SectionElement::WarningBlock(n) => self.warning_block(n),
+      SectionElement::ErrorBlock(n) => self.error_block(n),
       SectionElement::QuestionBlock(n) => self.question_block(n),
       SectionElement::Citation(n) => self.citation(n),
       SectionElement::CodeBlock(n) => self.code_block(n),
@@ -2154,7 +2194,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
     let f = match node {
       FormulaOperator::AddSub(op) => self.add_sub_op(op),
       FormulaOperator::MulDiv(op) => self.mul_div_op(op),
-      FormulaOperator::Exponent(op) => self.exponent_op(op),
+      FormulaOperator::Power(op) => self.power_op(op),
       FormulaOperator::Vec(op) => self.vec_op(op),
       FormulaOperator::Comparison(op) => self.comparison_op(op),
       FormulaOperator::Logic(op) => self.logic_op(op),
@@ -2210,9 +2250,9 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
     }
   }
 
-  pub fn exponent_op(&mut self, node: &ExponentOp) -> String {
+  pub fn power_op(&mut self, node: &PowerOp) -> String {
     match node {
-      ExponentOp::Exp => "^".to_string(),
+      PowerOp::Pow => "^".to_string(),
     }
   }
 
