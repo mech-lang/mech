@@ -423,6 +423,7 @@ impl Formatter {
 
   pub fn fenced_mech_code(&mut self, block: &FencedMechCode) -> String {
     self.interpreter_id = block.config.namespace;
+    let namespace_str = &block.config.namespace_str;
     let mut src = String::new();
     for (code,cmmnt) in &block.code {
       let c = match code {
@@ -474,10 +475,16 @@ impl Formatter {
         // Print it, but give it a hidden class so it can be toggled visible via JS
         format!("<pre class=\"mech-code-block hidden\"{}>{}</pre>", style_attr, src)
       } else {
+        let namespace_str = if namespace_str.is_empty() {
+          "".to_string()
+        } else {
+          format!("<div class=\"mech-code-block-namespace\">{}</div>", namespace_str)
+        };
         format!("<div class=\"mech-fenced-mech-block\"{}>
+          {}
           <div class=\"mech-code-block\">{}</div>
           <div class=\"mech-block-output\" id=\"{}:{}\"></div>
-        </div>", style_attr, src, output_id, intrp_id)
+        </div>", style_attr, namespace_str, src, output_id, intrp_id)
       }
     } else {
       format!("```mech{}\n{}\n```", src, format!(":{}", disabled_tag))

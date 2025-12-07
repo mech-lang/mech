@@ -488,6 +488,7 @@ impl Citation {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct BlockConfig {
+  pub namespace_str: String,
   pub namespace: u64,
   pub disabled: bool,
   pub hidden: bool,
