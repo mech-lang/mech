@@ -97,14 +97,14 @@ Row vectors and column vectors are special cases of matrices:
 
 You can convert a matrix to another kind using a kind annotation. For example:
 
-```mech:ex211
+```mech:ex 2.1.1
 m := [1 2 3]
 v<[u8]> := m  -- Converts `[f64]` to `[u8]`
 ```
 
 You can also convert a vector of numbers into a vector of strings:
 
-```mech:ex212
+```mech:ex 2.1.2
 v := [1 2 3]
 s<[string]> := v  -- Converts `[f64]` to `[string]`
 ```
@@ -113,7 +113,7 @@ s<[string]> := v  -- Converts `[f64]` to `[string]`
 
 You can reshape a matrix to a different size as long as the total number of elements remains the same. For example, you can reshape a 2x3 matrix into a 3x2 matrix:
 
-```mech:ex222
+```mech:ex 2.2.2
 m := [1 2 3 4 5 6]
 v<[f64]:3,2> := m  -- Reshapes the matrix to a 3x2 matrix
 ```
@@ -127,14 +127,14 @@ You can construct new matricies from existing ones using concatenation.
 
 Vertical concatenation is done bay stacking rows on top of each other, referencing another matrix or vector within the brackets.
 
-```mech:ex31
+```mech:ex 3.1
 x := [1 2 3]  -- A row vector (1x3)
 y := [x;x;x]  -- A matrix (3x3)
 ```
 
 Horizontal concatenation:
 
-```mech:ex32
+```mech:ex 3.2
 x := [1;2;3]  -- A column vector (3x1)
 y := [x,x,x]  -- A matrix (3x3)
 ```
@@ -150,28 +150,28 @@ Indexing starts at 1, not 0, so the first element is accessed with `1`.
 
 For a 1D vector, you can access elements using a single index:
 
-```mech:ex411
+```mech:ex 4.1.1
 m := ["a" "b" "c" "d"]
 (m[1], m[4])  -- Access the first and fourth elements
 ```
 
 Indexing into a column vector is similar:
 
-```mech:ex412
+```mech:ex 4.1.2
 m := ["a";"b";"c";"d"]
 (m[1], m[4])  -- Access the first and fourth elements
 ```
 
 For a 2D matrix, you can access elements using two indices, in a `[row, column]` format:
 
-```mech:ex413
+```mech:ex 4.1.3
 m := [1 2 3; 4 5 6]
 m[2,3] -- Access the element in the second row and third column
 ```
 
 The first index is the row, and the second index is the column. It's possible to use a single index to access matrix elements, which will return the element at that index in a column-major order. For example, considering the matrix above:
 
-```mech:ex413
+```mech:ex 4.1.3
 m[2] -- returns {m[2]}
 ```
 
@@ -185,59 +185,59 @@ You can slice it in various ways. For a matrix x with `N` rows and `M` columns, 
 
 | Syntax              | Description                        | Resulting Size   |
 |---------------------|------------------------------------|------------------|
-| `x[:]`              | Slice all elements                 | `[N*M x 1]`      |
-| `x[1,:]`            | Slice a row                        | `[1 x M]`        |
-| `x[:,2]`            | Slice a column                     | `[N x 1]`        |
-| `x[1..=2,:]`        | Slice a range of rows              | `[2 x M]`        |
-| `x[[1,3],:]`        | Slice specific rows                | `[2 x M]`        |
-| `x[[1,3],[1,3]]`    | Slice specific rows and columns    | `[2 x 2]`        |
-| `x[[1 1 2 2],:]`    | Slice the rows multiple times      | `[4 x M]`        |
+| {{x[:]}}              | Slice all elements                 | `[N*M x 1]`      |
+| {{x[1,:]}}            | Slice a row                        | `[1 x M]`        |
+| {{x[:,2]}}            | Slice a column                     | `[N x 1]`        |
+| {{x[1..=2,:]}}        | Slice a range of rows              | `[2 x M]`        |
+| {{x[[1,3],:]}}        | Slice specific rows                | `[2 x M]`        |
+| {{x[[1,3],[1,3]]}}    | Slice specific rows and columns    | `[2 x 2]`        |
+| {{x[[1 1 2 2],:]}}    | Slice the rows multiple times      | `[4 x M]`        |
 
 (4.2.1) Examples
 
 Given the matrix:
 
-```mech:ex421
+```mech:ex 4.2.1
 m := [1 2 3; 4 5 6; 7 8 9]
 ```
 
 Slice the entire matrix:
 
-```mech:ex421
+```mech:ex 4.2.1
 m[:]
 ```
 Slice the first row:
 
-```mech:ex421
+```mech:ex 4.2.1
 m[1,:]
 ```
 Slice the second colum:
 
-```mech:ex421
+```mech:ex 4.2.1
 m[:,2]
 ```
 
 Slice the first two rows:
 
-```mech:ex421
+```mech:ex 4.2.1
 m[1..=2,:]
 ```
 
 Slice rows 1 and 3:
 
-```mech:ex421
+```mech:ex 4.2.1
 m[[1,3],:]
 ```
 
 Slice the corners:
 
-```mech:ex421
+```mech:ex 4.2.1
 m[[1,3],[1,3]]
 ```
 
 Slice the first rows multiple times:
 
-```mech:ex421
+```mech:ex 4.2.1
 m[[1 1 1 1],:]
 ```
 
@@ -245,7 +245,7 @@ m[[1 1 1 1],:]
 
 Logical indexing allows you to select elements based on a condition. For example, if you have a matrix of numbers and want to select only those greater than 5:
 
-```mech:ex431
+```mech:ex 4.3.1
 m := 1..=10
 m[m > 5]  -- Selects elements greater than 5
 ```
@@ -257,21 +257,21 @@ Assignment indexing follows the same syntax as accessing elements, but uses the 
 
 Assignment only works if the matrix is mutable:
 
-```mech:ex51
+```mech:ex 5.1
 ~m := [1 2 3 4 5 6] -- A mutable matrix
 m[3] = 42  -- Assigns the value 10 to the element in the second row and third Column
 ```
 
 You can assign an entire row or column:
 
-```mech:ex52
+```mech:ex 5.2
 ~m := [1 2 3; 4 5 6; 7 8 9]
 m[2,:] = 42  -- Assigns `42` to every column of the second row
 ```
 
 Logical indexing can also be used for assignment. 
 
-```mech:ex53
+```mech:ex 5.3
 ~m := [1 2 3 4]
 ix := [true false false true]  -- A logical index
 m[ix] = 0 -- Sets elements at the logical index to zero
@@ -279,7 +279,7 @@ m[ix] = 0 -- Sets elements at the logical index to zero
 
 For example, to set all even numbers in a matrix to zero:
 
-```mech:ex54
+```mech:ex 5.4
 ~m := [1 2 3 4 5 6]
 m[(m % 2) == 0] = 0  -- Sets all even numbers to zero
 ```
@@ -293,7 +293,7 @@ Matrix operations include addition, subtraction, multiplication, and division. T
 
 If matrices have the same dimension, standard arithmetic operations are performed element-wise:
 
-```mech:ex611
+```mech:ex 6.1.1
 m1 := [1 2 3; 4 5 6]
 m2 := [7 8 9; 10 11 12]
 m1 + m2  -- Adds the two matrices element-wise
@@ -301,7 +301,7 @@ m1 + m2  -- Adds the two matrices element-wise
 
 If one of the operands is a scalar, it will be added or subtracted from each element of the matrix:
 
-```mech:ex612
+```mech:ex 6.1.2
 m := [1 2 3 4 5] 
 m + 10  -- Adds 10 to each element of the vector
 ```
@@ -310,7 +310,7 @@ m + 10  -- Adds 10 to each element of the vector
 
 Matrix multiplication is performed using the `**` operator. For the operation to be valid, the number of columns in the first matrix must match the number of rows in the second matrix:
 
-```mech:ex621
+```mech:ex 6.2.1
 m1 := [1 2 3; 4 5 6 ]
 m2 := [7 8; 9 10; 11 12]
 m1 ** m2  -- Multiplies the two matrices
@@ -320,7 +320,7 @@ m1 ** m2  -- Multiplies the two matrices
 
 The transpose of a matrix is obtained by swapping its rows and columns. This can be done using the `grave` operator:
 
-```mech:ex63
+```mech:ex 6.3.1
 m := [1 2 3 4 5 6]
 m'  -- Transposes the matrix to `6x1`
 ```
@@ -336,7 +336,7 @@ When concatenating matrices, they must have compatible dimensions. For horizonta
 
 Horizontal concatenation is done by placing matrices or vectors next to each other, separated by commas or spaces. For example:
 
-```mech:ex71
+```mech:ex 7.1
 m1 := [1 2]
 m2 := [3 4]
 m := [m1, m2]  -- Evaluates to `[1 2 3 4]`
@@ -344,7 +344,7 @@ m := [m1, m2]  -- Evaluates to `[1 2 3 4]`
 
 The concated matrices must have the same number of rows, but they can have different numbers of columns.
 
-```mech:ex72
+```mech:ex 7.2
 m1 := [1]
 m2 := [2 3]
 m := [m1, m2]  -- Evaluates to `[1 2 3]`
@@ -352,7 +352,7 @@ m := [m1, m2]  -- Evaluates to `[1 2 3]`
 
 Contatenate a 2x2 matrix with a 2x1 vector:
 
-```mech:ex73
+```mech:ex 7.3
 m1 := [1 2; 4 5]
 m2 := [3; 6]
 m := [m1, m2]  -- Evaluates to `[1 2 3; 4 5 6]`
@@ -362,7 +362,7 @@ m := [m1, m2]  -- Evaluates to `[1 2 3; 4 5 6]`
 
 Vertical concatenation is done by stacking matrices or vectors on top of each other, separated by semicolons or newlines. The matrices must have the same number of columns, but they can have different numbers of rows.
 
-```mech:ex74
+```mech:ex 7.4
 m1 := [1 2]'
 m2 := [3 4]'
 m := [m1; m2]  -- Evaluates to `[1 2 3 4]'`
@@ -370,7 +370,7 @@ m := [m1; m2]  -- Evaluates to `[1 2 3 4]'`
 
 You can also vertically concatenate matrices of different sizes as long as each matrix has the same number of columns:
 
-```mech:ex75
+```mech:ex 7.5
 m1 := [1 2; 3 4]
 m2 := [5 6]
 m := [m1; m2]  -- Evaluates to `[1 2; 3 4; 5 6]`
