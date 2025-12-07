@@ -684,10 +684,10 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
         // get rid of the prefix and then treat the rest of the string after : as an identifier
         let rest = tag.trim_start_matches("mech").trim_start_matches("mec").trim_start_matches("🤖").trim_start_matches(":");
         
-        let config = if rest == "" {BlockConfig { namespace: 0, disabled: false, hidden: false}}
-        else if rest == "disabled" { BlockConfig { namespace: 0, disabled: true, hidden: false} }
-        else if rest == "hidden" { BlockConfig { namespace: 0, disabled: false, hidden: true} }
-        else { BlockConfig { namespace: hash_str(rest), disabled: false, hidden: false} };
+        let config = if rest == "" {BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: false, hidden: false}}
+        else if rest == "disabled" { BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: true, hidden: false} }
+        else if rest == "hidden" { BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: false, hidden: true} }
+        else { BlockConfig { namespace_str: rest.to_string(), namespace: hash_str(rest), disabled: false, hidden: false} };
 
         let mech_src = block_src.iter().collect::<String>();
         let graphemes = graphemes::init_source(&mech_src);

@@ -32,7 +32,7 @@
   --mechdown-table-row-hover-background-color: hsl(222, 25%, 17%);
   --h2-underline-color: #343b46;
   --toc-heading-number-color: rgba(255, 255, 255, 0.55);
-  --title-underline-color: #545b67;
+  --title-underline-color: hsl(42, 89%, 70%);
   --callout-background-color: #1f2533;
   --warning-color: hsl(44, 100%, 75%);
   --error-color: hsl(350, 100%, 75%);
@@ -40,6 +40,7 @@
   --success-color: hsl(130, 100%, 75%);
   --idea-color: hsl(271, 100%, 75%);
   --question-color: hsl(191, 100%, 75%);
+  --code-namespace-label-color: #f5a7d3;
 }
 
 html {
@@ -1582,6 +1583,24 @@ li p {
 
 .mech-code-block.hidden {
     display: none;
+}
+
+.mech-fenced-mech-block {
+  position: relative;   /* makes this the anchor for absolute positioning */
+}
+
+.mech-code-block-namespace {
+    color: var(--code-namespace-label-color);
+    position: absolute;
+    top: -10px;
+    right: 15px;
+    background: rgb(13 17 23);
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    border: 1px solid var(--code-namespace-label-color);
+    /* box-shadow: 0 2px 5px rgba(0,0,0,0.1); */
+    pointer-events: none;
 }
 
 .mech-block-output {
