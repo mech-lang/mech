@@ -30,6 +30,9 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
   match element {
     SectionElement::InfoBlock(x) => x.hash(&mut hasher),
     SectionElement::QuestionBlock(x) => x.hash(&mut hasher),
+    SectionElement::WarningBlock(x) => x.hash(&mut hasher),
+    SectionElement::ErrorBlock(x) => x.hash(&mut hasher),
+    SectionElement::IdeaBlock(x) => x.hash(&mut hasher),
     SectionElement::Image(x) => x.hash(&mut hasher),
     SectionElement::Float(x) => x.hash(&mut hasher),
     SectionElement::Citation(x) => x.hash(&mut hasher),

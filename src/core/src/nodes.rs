@@ -434,6 +434,43 @@ pub enum GrammarExpression {
   Terminal(Token),
 }
 
+impl GrammarExpression {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      GrammarExpression::Choice(exprs) => {
+        let mut tokens = vec![];
+        for expr in exprs {
+          tokens.append(&mut expr.tokens());
+        }
+        tokens
+      }
+      GrammarExpression::Definition(id) => id.tokens(),
+      GrammarExpression::Group(expr) => expr.tokens(),
+      GrammarExpression::List(expr1, expr2) => {
+        let mut tokens = expr1.tokens();
+        tokens.append(&mut expr2.tokens());
+        tokens
+      }
+      GrammarExpression::Not(expr) => expr.tokens(),
+      GrammarExpression::Optional(expr) => expr.tokens(),
+      GrammarExpression::Peek(expr) => expr.tokens(),
+      GrammarExpression::Repeat0(expr) => expr.tokens(),
+      GrammarExpression::Repeat1(expr) => expr.tokens(),
+      GrammarExpression::Range(t1, t2) => vec![t1.clone(), t2.clone()],
+      GrammarExpression::Sequence(exprs) => {
+        let mut tokens = vec![];
+        for expr in exprs {
+          tokens.append(&mut expr.tokens());
+        }
+        tokens
+      }
+      GrammarExpression::Terminal(t) => vec![t.clone()],
+    }
+  }
+
+
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Citation {
@@ -510,26 +547,117 @@ impl Recoverable for SectionElement {
 }
 
 impl SectionElement {
+
   pub fn tokens(&self) -> Vec<Token> {
     match self {
       SectionElement::FencedMechCode(c) => {
         let mut tokens = vec![];
-        for (c,_) in &c.code {
+        for (c, _) in &c.code {
           tokens.append(&mut c.tokens());
         }
         tokens
       }
       SectionElement::MechCode(codes) => {
         let mut tokens = vec![];
-        for (code,_) in codes {
+        for (code, _) in codes {
           tokens.append(&mut code.tokens());
         }
         tokens
+      }
+      SectionElement::Abstract(paragraphs)
+      | SectionElement::QuoteBlock(paragraphs)
+      | SectionElement::InfoBlock(paragraphs)
+      | SectionElement::SuccessBlock(paragraphs)
+      | SectionElement::IdeaBlock(paragraphs)
+      | SectionElement::WarningBlock(paragraphs)
+      | SectionElement::ErrorBlock(paragraphs)
+      | SectionElement::QuestionBlock(paragraphs) => {
+        let mut tokens = vec![];
+        for paragraph in paragraphs {
+          tokens.append(&mut paragraph.tokens());
+        }
+        tokens
+      }
+      SectionElement::Citation(citation) => citation.text.tokens(),
+      SectionElement::CodeBlock(token)
+      | SectionElement::Diagram(token)
+      | SectionElement::Equation(token) => vec![token.clone()],
+      SectionElement::Comment(comment) => comment.tokens(),
+      SectionElement::Float((element, _)) => element.tokens(),
+      SectionElement::Footnote((_, paragraphs)) => {
+        let mut tokens = vec![];
+        for paragraph in paragraphs {
+          tokens.append(&mut paragraph.tokens());
+        }
+        tokens
+      }
+        SectionElement::Grammar(grammar) => {
+        let mut tokens = vec![];
+        for rule in &grammar.rules {
+          tokens.append(&mut rule.name.tokens());
+          tokens.append(&mut rule.expr.tokens());
+        }
+        tokens
+      }
+      SectionElement::Image(image) => {
+        let mut tokens = vec![image.src.clone()];
+        if let Some(caption) = &image.caption {
+          tokens.append(&mut caption.tokens());
+        }
+        tokens
+      }
+      SectionElement::List(list) => match list {
+      MDList::Unordered(items) => {
+        let mut tokens = vec![];
+        for ((_, paragraph), sublist) in items {
+        tokens.append(&mut paragraph.tokens());
+        if let Some(sublist) = sublist {
+          tokens.append(&mut sublist.tokens());
+        }
+        }
+        tokens
+      }
+      MDList::Ordered(ordered_list) => {
+        let mut tokens = ordered_list.start.tokens();
+        for ((_, paragraph), sublist) in &ordered_list.items {
+        tokens.append(&mut paragraph.tokens());
+        if let Some(sublist) = sublist {
+          tokens.append(&mut sublist.tokens());
+        }
+        }
+        tokens
+      }
+      MDList::Check(items) => {
+        let mut tokens = vec![];
+        for ((_, paragraph), sublist) in items {
+        tokens.append(&mut paragraph.tokens());
+        if let Some(sublist) = sublist {
+          tokens.append(&mut sublist.tokens());
+        }
+        }
+        tokens
+      }
       },
-      _ => todo!(),
+      SectionElement::Paragraph(paragraph) => paragraph.tokens(),
+      SectionElement::Subtitle(subtitle) => subtitle.text.tokens(),
+      SectionElement::Table(table) => {
+        let mut tokens = vec![];
+        for header in &table.header {
+          tokens.append(&mut header.tokens());
+        }
+        for row in &table.rows {
+          for column in row {
+          tokens.append(&mut column.tokens());
+          }
+        }
+        tokens
+      }
+      SectionElement::ThematicBreak => vec![],
+      SectionElement::Error(token, _) => vec![token.clone()],
     }
   }
 }
+
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -572,6 +700,45 @@ pub enum MDList {
   Unordered(UnorderedList),
   Ordered(OrderedList),
   Check(CheckList)
+}
+
+impl MDList {
+
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      MDList::Unordered(items) => {
+        let mut tokens = vec![];
+        for ((_, paragraph), sublist) in items {
+          tokens.append(&mut paragraph.tokens());
+          if let Some(sublist) = sublist {
+            tokens.append(&mut sublist.tokens());
+          }
+        }
+        tokens
+      }
+      MDList::Ordered(ordered_list) => {
+        let mut tokens = ordered_list.start.tokens();
+        for ((_, paragraph), sublist) in &ordered_list.items {
+          tokens.append(&mut paragraph.tokens());
+          if let Some(sublist) = sublist {
+            tokens.append(&mut sublist.tokens());
+          }
+        }
+        tokens
+      }
+      MDList::Check(items) => {
+        let mut tokens = vec![];
+        for ((_, paragraph), sublist) in items {
+          tokens.append(&mut paragraph.tokens());
+          if let Some(sublist) = sublist {
+            tokens.append(&mut sublist.tokens());
+          }
+        }
+        tokens
+      }
+    }
+  }
+
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
