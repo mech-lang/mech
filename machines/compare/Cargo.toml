@@ -48,7 +48,7 @@ baselib = ["bool", "string",
       "mech-core/baselib",
     ]
 
-compare_default = ["eq", "neq", "lt", "gt", "lte", "gte"]
+compare_default = ["eq", "neq", "lt", "gt", "lte", "gte", "min", "max"]
 compare = ["functions", "bool"]
 eq = ["compare"]
 neq = ["compare"]
@@ -56,6 +56,8 @@ lt = ["compare"]
 gt = ["compare"]
 lte = ["compare"]
 gte = ["compare"]
+min = ["compare"]
+max = ["compare"]
 
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
