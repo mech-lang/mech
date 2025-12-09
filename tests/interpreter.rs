@@ -758,3 +758,10 @@ test_interpreter!(interpret_set_intersection_empty, r#"A := {}; B := {1, 2, 3}; 
 test_interpreter!(interpret_set_difference_empty, r#"A := {1, 2}; B := {1, 2}; U := A ∖ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![]))));
 test_interpreter!(interpret_set_union_duplicates, r#"A := {1, 1, 2}; B := {2, 2, 3}; U := A ∪ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0))]))));
 test_interpreter!(interpret_set_subset_empty_left, r#"A := {}; B := {1}; C := A ⊆ B"#, Value::Bool(Ref::new(true)));
+
+test_interpreter!(interpret_compare_max_scalar, "compare/max(5,3)", Value::F64(Ref::new(5.0)));
+test_interpreter!(interpret_compare_max_vector, "compare/max([3 4 5 6],4)", Value::MatrixF64(Matrix::from_vec(vec![4.0, 4.0, 5.0, 6.0], 1, 4)));
+test_interpreter!(interpret_compare_max_vector_vector, "compare/max([3 4 5 6],[6 5 4 3])", Value::MatrixF64(Matrix::from_vec(vec![6.0, 5.0, 5.0, 6.0], 1, 4)));
+test_interpreter!(interpret_compare_min_scalar, "compare/min(5,3)", Value::F64(Ref::new(3.0)));
+test_interpreter!(interpret_compare_min_vector, "compare/min([3 4 5 6],4)", Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 4.0, 4.0], 1, 4)));
+test_interpreter!(interpret_compare_min_vector_vector, "compare/min([3 4 5 6],[6 5 4 3])", Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 4.0, 3.0], 1, 4)));
