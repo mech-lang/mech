@@ -222,6 +222,7 @@ pub enum FeatureKind {
   
   GTE, EQ, NEQ, And, Or, 
   Xor, Not, Convert, Assign, Access,
+  Min, Max,
 
   Union, Intersection, Difference, Complement, Subset, 
   Superset, ProperSubset, ProperSuperset, ElementOf, NotElementOf,
@@ -308,6 +309,8 @@ impl FeatureKind {
       FeatureKind::GTE => "compare_gte".to_string(),
       FeatureKind::EQ => "compare_eq".to_string(),
       FeatureKind::NEQ => "compare_neq".to_string(),
+      FeatureKind::Min => "compare_min".to_string(),
+      FeatureKind::Max => "compare_max".to_string(),
       FeatureKind::And => "logic_and".to_string(),
       FeatureKind::Or => "logic_or".to_string(),
       FeatureKind::Xor => "logic_xor".to_string(),
