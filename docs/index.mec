@@ -82,7 +82,7 @@ Mech Programming Language Documentation
 ```mech:hidden
 document/index := {
   name: "docs" 
-  version: "v0.2.67"
+  version: "v0.2.68"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/mech/docs"
   license: "Apache-2.0"}
