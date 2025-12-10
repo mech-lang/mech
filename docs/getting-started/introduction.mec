@@ -92,6 +92,15 @@ The Mech programming platform consists of four parts:
 
 Some of the key features of the Mech programming platform include:
 
+- **Automatic data propagation**: Mech automatically tracks data dependencies and propagates changes through the program, ensuring that all dependent data are updated correctly.
+- **Vectorized operations**: Mech supports vectorized operations, allowing you to perform computations on entire arrays of data without explicit loops, which leads to more concise and efficient code.
+- **Live, literate programming**: Mech supports live literate programming environment, meaning you can write and execute code in an interactive notebook-style interface, with rich text formatting and inline documentation.
+- **Distribution and serialization**: Mech programs can be easily distributed across multiple machines, and all data can be serialized and deserialized automatically, including entire functions and programs.
+- **Time travel debugging**: Mech's runtime supports time travel debugging, allowing you to step forwards and backwards through program execution to inspect the state of your data at any point in time.
+- **AI-optimized**: Mech is designed to be particularly amenable to the architectures and techniques used in artificial intelligence systems, making it easier for AI to understand and write Mech code even without having been trained on it.
+
+For a complete list of features and the statuses of their implementations, see the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html).
+
 4. About this Documentation
 -------------------------------------------------------------------------------
 
