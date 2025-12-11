@@ -35,7 +35,7 @@ For a complete list of planned features and their implementation statuses, see t
 
 (1.2) The Vision and Need
 
-Most popular languages today were conceived at a time before the rise of the Internet, smartphones, cloud computing, and now robotics and artificial intelligence. They've managed to stay relevant by continually adapting to new paradigms and use cases, which takes the form of adding new language features, libraries, frameworks, and middleware on top of the core language. But this comes at a cost of increased complexity, both in terms of the language itself and the ecosystem surrounding it, which makes it harder to learn and use them correctly.
+Most popular languages today were conceived at a time before the rise of the Internet, smartphones, cloud computing, and now robotics and artificial intelligence[^1]. They've managed to stay relevant by continually evolving and adapting to new paradigms and use cases, which takes the form of adding new language features, libraries, frameworks, and middleware on top of the core language. This process of evolution has worked for a long time, but now with AI we are entering a new era of computing that demands a fresh approach. The rules of computing have changed, and langauges designed even 10 years ago are struggling to keep up to modern computing demands.
 
 But what if we approached it from the opposite direction? Instead of starting from a language of the past and layering on compatibility for the present, what if we start in the context of the present and work backwards to design a language that fits the needs of today best, without worrying about baggage from the past? Could such a language be simpler, more powerful, more expressive, and easier to use? Would the design turn out substantively different from the languages we are currently retrofitting for the present? Would it allow programmers to build more reliable, more performant, and easier-to-maintain systems?
 
@@ -139,3 +139,7 @@ The beta phase has focused on stabilizing the core language and fixing shortcomi
 Currently the platform version is `v0.2.68-beta`.
 
 Visit the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html) for more information on the current status of features.
+
+***
+
+[^1]: Some believe that AI will completely supplant programming languages; instead of writing code and compiling to machine code, LLMs will either directly write machinecode, or even act as a runtime environment and execute the program itself. We do not believe this will happen, at least in the nearterm. See our post ["LLMs Will Not Replace Programming Languages"](https://mech-lang.org/post/2025-01-09-programming-chatgpt/) for more on our reasoning, but the short version is that programming languages provide a level of abstraction and structure that is necessary for building complex systems, and that AI systems will need to work within these abstractions to be effective.
