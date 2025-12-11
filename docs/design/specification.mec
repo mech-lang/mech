@@ -12,6 +12,74 @@ This document is for:
 - Developers creating tools to interact with Mech code.
 - Anyone who wants to understand the syntax and structure of Mech programs.
 
+(1.1) Example Programs
+
+We start by presenting a few example Mech programs to illustrate the syntax and semantics of the language.
+
+(1.1.1) Hello, World!
+
+First, the classic program which prints the string "Hello, World!" to the console:
+
+```mech:hello, world!
+"Hello World!"
+```
+
+In Mech, the last expression in a program is automatically returned as the result of the program, so the output is printed without needing an explicit print statement. This is an example where Mech reduces incidental complexity.
+
+(1.1.2) FizzBuzz
+
+Next, a simple FizzBuzz program that prints the numbers from 1 to 100, replacing multiples of 3 with "Fizz", multiples of 5 with "Buzz", and multiples of both with "FizzBuzz":
+
+```mech:fizzbuzz
+  x := 1..=10               -- A row vector of numbers from {1} to {10}
+  ~out<[string]> := x       -- Convert `x` into mutable string vec
+  
+  ix2 := (x % 2) == 0       -- Indices for multiples of {2}
+  ix3 := (x % 3) == 0       -- Indices for multiples of {3}
+  
+  out[ix2] = "✨"           -- Set multiples of {2} to {"✨"}
+  out[ix3] = "🐝"           -- Set multiples of {3} to {"🐝"}
+  out[ix2 && ix3] = "✨🐝"  -- Set multiples of both to {"✨🐝"}
+```
+
+This example demonstrates several core Mech features:
+
+- **Concise syntax**: Expressive and flexible, with no need for keywords or semicolons; Mech programs are generally shorter than in other languages.
+- **Broadcast operations**: Vector operations apply elementwise automatically, removing loops and enabling efficient vectorization.
+- **Static typing**: Types are checked at compile time, catching errors early and improving performance.
+- **Type inference**: Variable and expression types are inferred, so explicit type declarations are often unnecessary.
+- **Immutable by default**: Variables are immutable unless specified, promoting safer code and easier reasoning.
+- **Logical indexing**: Select and manipulate vector elements via conditions, enabling declarative iteration and parallel execution.
+- **Rich text formatting**: Comments and code support rich formatting using a Markdown-like syntax called Mechdown, making documentation clear and readable.
+
+(1.2) Matrix Multiplication
+
+Here is an example of matrix multiplication in Mech:
+
+```mech:matrix multiplication
+  A := [1 2; 3 4]       -- 2x2 Matrix
+  B := [1 2 3; 4 5 6]   -- 2x3 Matrix
+  C := A ** B           -- Matrix multiplication resulting in a 2x2 Matrix
+```
+
+Mech also features robust integrated Linear Algebra capabilities, making it easy to work with matrices and vectors. In this example, we define two matrices `A` and `B`, and then compute their product `C` using the `**` operator. These calculations are checked for dimensional compatibility at compile time, rejecting any program at compiletime which would result in a dimension mismatch.
+
+(1.3) Gaussian Elimination
+
+Here is an example of performing Gaussian elimination to solve a system of linear equations:
+
+```mech:gaussian elimination
+A := [2  1 -1
+     -3 -1  2
+     -2  1  2]   -- 3x3 Matrix to represent coefficients
+
+b := [8 -11 -3]' -- 3x1 Column Vector to represent constants
+
+x := A \ b       -- Solves the system Ax = b for x
+```
+
+The `\\` operator runs a Gaussian elimination algorithm to solve the system of equations represented by the matrix `A` and vector `b`. The result is stored in vector `x`, which contains the solution to the equations.
+
 2. Source Code Representation
 -------------------------------------------------------------------------------
 
