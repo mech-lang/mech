@@ -838,7 +838,20 @@ pub enum Pattern {
   Expression(Expression),
   Formula(Factor),
   TupleStruct(PatternTupleStruct),
+  Tuple(PatternTuple),
   Wildcard,
+}
+
+impl Pattern {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Pattern::Expression(e) => e.tokens(),
+      Pattern::Formula(f) => f.tokens(),
+      Pattern::TupleStruct(ts) => ts.tokens(),
+      Pattern::Tuple(t) => t.tokens(),
+      Pattern::Wildcard => vec![],
+    }
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -848,7 +861,29 @@ pub struct PatternTupleStruct {
   pub patterns: Vec<Pattern>,
 }
 
-pub type PatternTuple = Vec<Pattern>;
+impl PatternTupleStruct {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.name.tokens();
+    for p in &self.patterns {
+      tokens.append(&mut p.tokens());
+    }
+    tokens
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct PatternTuple(pub Vec<Pattern>);
+
+impl PatternTuple {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = vec![];
+    for p in &self.0 {
+        tokens.append(&mut p.tokens());
+    }
+    tokens
+  }
+}
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -1317,6 +1352,7 @@ pub enum Expression {
   Range(Box<RangeExpression>),
   Slice(Slice),
   Structure(Structure),
+  SetComprehension(Box<SetComprehension>),
   Var(Var),
 }
 
@@ -1329,7 +1365,47 @@ impl Expression {
       Expression::Formula(fctr) => fctr.tokens(),
       Expression::Range(range) => range.tokens(),
       Expression::Slice(slice) => slice.tokens(),
+      Expression::SetComprehension(sc) => sc.tokens(),
       _ => todo!(),
+    }
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct SetComprehension {
+  pub expression: Expression,
+  pub qualifiers: Vec<ComprehensionQualifier>,
+}
+
+impl SetComprehension {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.expression.tokens();
+    for qualifier in &self.qualifiers {
+      tokens.append(&mut qualifier.tokens());
+    }
+    tokens
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ComprehensionQualifier {
+  Generator((Pattern,Expression)),
+  Filter(Expression),
+  Let(VariableDefine),
+}
+
+impl ComprehensionQualifier {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      ComprehensionQualifier::Generator((pattern, expr)) => {
+        let mut tokens = pattern.tokens();
+        tokens.append(&mut expr.tokens());
+        tokens
+      }
+      ComprehensionQualifier::Filter(expr) => expr.tokens(),
+      ComprehensionQualifier::Let(var_def) => var_def.tokens(),
     }
   }
 }

@@ -1279,6 +1279,7 @@ impl Formatter {
           format!("*")
         }
       },
+      Pattern::Tuple(tpl) => self.pattern_tuple(tpl),
       Pattern::Formula(factor) => self.factor(factor),
       Pattern::Expression(expr) => self.expression(expr),
       Pattern::TupleStruct(tuple_struct) => self.pattern_tuple_struct(tuple_struct),
@@ -1311,6 +1312,27 @@ impl Formatter {
       </span>",name,patterns)
     } else {
       format!("`{}({})", name, patterns)
+    }
+  }
+
+  pub fn pattern_tuple(&mut self, node: &PatternTuple) -> String {
+    let mut patterns = "".to_string();
+    for (i, pattern) in node.0.iter().enumerate() {
+      let p = self.pattern(pattern);
+      if i == 0 {
+        patterns = format!("{}", p);
+      } else {
+        patterns = format!("{}, {}", patterns, p);
+      }
+    }
+    if self.html {
+      format!("<span class=\"mech-pattern-tuple\">
+        <span class=\"mech-left-paren\">(</span>
+        <span class=\"mech-patterns\">{}</span>
+        <span class=\"mech-right-paren\">)</span>
+      </span>",patterns)
+    } else {
+      format!("({})", patterns)
     }
   }
 
