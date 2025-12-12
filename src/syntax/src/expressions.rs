@@ -605,6 +605,42 @@ pub fn symmetric_difference(input: ParseString) -> ParseResult<SetOp> {
   Ok((input, SetOp::SymmetricDifference))
 }
 
+// set-comprehension := "{", formula, "|", [set-qualifier, ","], "}" ;
+pub fn set_comprehension(input: ParseString) -> ParseResult<SetComprehension> {
+  let (input, _) = left_brace(input)?;
+  let (input, expr) = expression(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, _) = bar(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, quals) = separated_list1(list_separator, comprehension_qualifier)(input)?;
+  let (input, _) = right_brace(input)?;
+  Ok((input, SetComprehension{ expression: expr, qualifiers: quals }))
+}
+
+// set-qualifier := generator | expression | variable-define  ;
+pub fn comprehension_qualifier(input: ParseString) -> ParseResult<ComprehensionQualifier> {
+  match generator(input.clone()) {
+    Ok((input, gen)) => Ok((input, gen)),
+    Err(_) => match variable_define(input.clone()) {
+      Ok((input, var_def)) => Ok((input, ComprehensionQualifier::Let(var_def))),
+      Err(_) => {
+        let (input, expr) = expression(input)?;
+        Ok((input, ComprehensionQualifier::Filter(expr)))
+      }
+    }
+  }
+}
+
+// generator := pattern, "<-", expression ;
+pub fn generator(input: ParseString) -> ParseResult<ComprehensionQualifier> {
+  let (input, ptrn) = pattern(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, _) = tag("<-")(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, expr) = expression(input)?;
+  Ok((input, ComprehensionQualifier::Generator((ptrn, expr))))
+}
+
 // Subscript Operations
 // ----------------------------------------------------------------------------
 
