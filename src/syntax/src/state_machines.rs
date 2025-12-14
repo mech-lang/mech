@@ -144,7 +144,7 @@ pub fn pattern(input: ParseString) -> ParseResult<Pattern> {
     Ok((input, tpl)) => {return Ok((input, Pattern::Tuple(tpl)))},
     _ => ()
   }
-  match (input.clone()) {
+  match expression(input.clone()) {
     Ok((input, expr)) => {return Ok((input, Pattern::Expression(expr)))},
     Err(err) => {return Err(err)},
   }
