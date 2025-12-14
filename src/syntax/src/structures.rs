@@ -150,7 +150,7 @@ pub fn fancy_table(input: ParseString) -> ParseResult<Table> {
   let (input, header) = fancy_table_header(input)?;
   let (input, rows) = separated_list1(new_line,alt((table_row2,row_separator)))(input)?;
   let rows: Vec<TableRow> = rows.into_iter().filter(|row| !row.columns.is_empty()).collect();
-  Ok((input, Table{header, rows}))
+  Ok((input, Table{header: TableHeader::new(header), rows}))
 }
 
 // table-header := list1(space-tab+, field), (space | tab)*, (bar| box-vert), whitespace* ;
@@ -191,7 +191,7 @@ pub fn inline_table(input: ParseString) -> ParseResult<Table> {
   let (input, header) = inline_table_header(input)?;
   let (input, _) = space_tab0(input)?;
   let (input, rows) = many1(inline_table_row)(input)?;
-  Ok((input, Table{header, rows}))
+  Ok((input, Table{header: TableHeader::new(header), rows}))
 }
 
 // inline-table-row := *(space | tab), +(*(space | tab), expression) , *(space | tab), table-separator ;
@@ -210,7 +210,7 @@ pub fn regular_table(input: ParseString) -> ParseResult<Table> {
   let (input, _) = whitespace0(input)?;
   let (input, header) = table_header(input)?;
   let (input, rows) = separated_list1(whitespace0, table_row)(input)?;
-  Ok((input, Table{header,rows}))
+  Ok((input, Table{header: TableHeader::new(header), rows}))
 }
 
 // table-header := list1(space-tab+, field), (space | tab)*, (bar| box-vert), whitespace* ;

@@ -256,7 +256,8 @@ math_sqrt = ["math_root", "mech-math/sqrt"]
 # Set
 set_default = ["set_membership_default", "set_modify_default",
               "set_operations_default", "set_relations_default",
-              "set_setdata_default"]
+              "set_comprehensions", "set_setdata_default"]
+set_comprehensions = ["functions", "set", "mech-set/comprehensions"]              
 set_membership_default = ["set_element_of", "set_not_element_of"]
 set_modify_default = ["set_insert", "set_remove"]
 set_operations_default = ["set_cartesian_product", "set_difference", "set_intersection", "set_powerset", "set_symmetric_difference", "set_union"]

@@ -1599,6 +1599,7 @@ impl Formatter {
       Expression::Slice(slice) => self.slice(slice),
       Expression::FunctionCall(function_call) => self.function_call(function_call),
       Expression::Range(range) => self.range_expression(range),
+      Expression::SetComprehension(set_comp) => self.set_comprehension(set_comp),
       _ => todo!(),
       //Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe, src),
     };
@@ -1606,6 +1607,64 @@ impl Formatter {
       format!("<span class=\"mech-expression\">{}</span>",e)
     } else {
       format!("{}", e)
+    }
+  }
+
+  pub fn set_comprehension(&mut self, node: &SetComprehension) -> String {
+    let expr = self.expression(&node.expression);
+
+    let qualifiers = node
+      .qualifiers
+      .iter()
+      .map(|q| self.comprehension_qualifier(q))
+      .collect::<Vec<_>>()
+      .join(", ");
+
+    if self.html {
+      format!(
+        "<span class=\"mech-set-comprehension\">\
+          <span class=\"mech-set-open\">{{</span>\
+          <span class=\"mech-set-expression\">{}</span>\
+          <span class=\"mech-set-bar\"> | </span>\
+          <span class=\"mech-set-qualifiers\">{}</span>\
+          <span class=\"mech-set-close\">}}</span>\
+        </span>",
+        expr, qualifiers
+      )
+    } else {
+      format!("{{ {} | {} }}", expr, qualifiers)
+    }
+  }
+
+  pub fn comprehension_qualifier(&mut self, node: &ComprehensionQualifier) -> String {
+    match node {
+      ComprehensionQualifier::Generator((pattern, expr)) => {
+        self.generator(pattern, expr)
+      }
+      ComprehensionQualifier::Let(var_def) => {
+        self.variable_define(var_def)
+      }
+      ComprehensionQualifier::Filter(expr) => {
+        self.expression(expr)
+      }
+    }
+  }
+
+  pub fn generator(&mut self, pattern: &Pattern, expr: &Expression) -> String {
+    let p = self.pattern(pattern);
+    let e = self.expression(expr);
+
+    if self.html {
+      format!(
+        "<span class=\"mech-generator\">\
+          <span class=\"mech-generator-pattern\">{}</span>\
+          <span class=\"mech-generator-arrow\"> &lt;- </span>\
+          <span class=\"mech-generator-expression\">{}</span>\
+        </span>",
+        p, e
+      )
+    } else {
+      format!("{} <- {}", p, e)
     }
   }
 
@@ -1870,7 +1929,7 @@ impl Formatter {
 
   pub fn table_header(&mut self, node: &TableHeader) -> String {
     let mut src = "".to_string();
-    for (i, field) in node.iter().enumerate() {
+    for (i, field) in node.0.iter().enumerate() {
       let f = self.field(field);
       if self.html {
         src = format!("{}<th class=\"mech-table-field\">{}</th>",src, f);

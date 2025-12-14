@@ -17,12 +17,23 @@ pub fn expression(expr: &Expression, p: &Interpreter) -> MResult<Value> {
     Expression::Literal(ltrl) => literal(&ltrl, p),
     #[cfg(feature = "functions")]
     Expression::FunctionCall(fxn_call) => function_call(fxn_call, p),
+    #[cfg(feature = "set_comprehensions")]
+    Expression::SetComprehension(set_comp) => set_comprehension(set_comp, p),
     //Expression::FsmPipe(_) => todo!(),
     x => Err(MechError2::new(
       FeatureNotEnabledError,
       None
     ).with_compiler_loc().with_tokens(x.tokens())),
   }
+}
+
+#[cfg(feature = "set_comprehensions")]
+pub fn set_comprehension(set_comp: &SetComprehension, p: &Interpreter) -> MResult<Value> {
+  
+  println!("Evaluating set comprehension: {:#?}", set_comp);
+
+
+  todo!()
 }
 
 #[cfg(feature = "range")]

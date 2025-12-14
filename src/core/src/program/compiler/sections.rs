@@ -226,6 +226,7 @@ pub enum FeatureKind {
 
   Union, Intersection, Difference, Complement, Subset, 
   Superset, ProperSubset, ProperSuperset, ElementOf, NotElementOf,
+  SetComprehensions,
 
   Functions, Formulas,
   Custom = 0xFFFF,
@@ -328,6 +329,7 @@ impl FeatureKind {
       FeatureKind::ProperSuperset => "set_proper_superset".to_string(),
       FeatureKind::ElementOf => "set_element_of".to_string(),
       FeatureKind::NotElementOf => "set_not_element_of".to_string(),
+      FeatureKind::SetComprehensions => "set_comprehensions".to_string(),
       FeatureKind::Functions => "functions".to_string(),
       FeatureKind::Formulas => "formulas".to_string(),
       FeatureKind::Custom => "custom".to_string(),

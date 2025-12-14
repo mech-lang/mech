@@ -1043,6 +1043,17 @@ pub struct Record {
   pub bindings: Vec<Binding>,
 }
 
+impl Record {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for b in &self.bindings {
+      let mut t = b.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Structure {
@@ -1059,8 +1070,14 @@ pub enum Structure {
 impl Structure {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
+      Structure::Empty => vec![],
+      Structure::Map(map) => map.tokens(),
       Structure::Matrix(mat) => mat.tokens(),
-      _ => todo!(),
+      Structure::Record(rec) => rec.tokens(),
+      Structure::Set(set) => set.tokens(),
+      Structure::Table(tab) => tab.tokens(),
+      Structure::Tuple(tup) => tup.tokens(),
+      Structure::TupleStruct(ts) => ts.tokens(),
     }
   }
 }
@@ -1071,11 +1088,30 @@ pub struct Map {
   pub elements: Vec<Mapping>,
 }
 
+impl Map {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for e in &self.elements {
+      let mut t = e.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Mapping {
   pub key: Expression,
   pub value: Expression,
+}
+
+impl Mapping {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.key.tokens();
+    tkns.append(&mut self.value.tokens());
+    tkns
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -1084,10 +1120,27 @@ pub struct Set {
   pub elements: Vec<Expression>,
 }
 
+impl Set {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for e in &self.elements {
+      let mut t = e.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Atom {
   pub name: Identifier,
+}
+
+impl Atom {
+  pub fn tokens(&self) -> Vec<Token> {
+    self.name.tokens()
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -1095,6 +1148,14 @@ pub struct Atom {
 pub struct TupleStruct {
   pub name: Identifier,
   pub value: Box<Expression>,
+}
+
+impl TupleStruct {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.name.tokens();
+    tkns.append(&mut self.value.tokens());
+    tkns
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -1114,13 +1175,44 @@ impl Matrix {
   }
 }
 
-pub type TableHeader = Vec<Field>;
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct TableHeader(pub Vec<Field>);
+
+impl TableHeader {
+  pub fn new(fields: Vec<Field>) -> TableHeader {
+    TableHeader(fields)
+  }
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for f in &self.0 {
+      let mut t = f.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
+}
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Table {
   pub header: TableHeader,
   pub rows: Vec<TableRow>,
+}
+
+impl Table {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for f in &self.header.0 {
+      let mut t = f.tokens();
+      tkns.append(&mut t);
+    }
+    for r in &self.rows {
+      let mut t = r.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -1130,10 +1222,27 @@ pub struct Field {
   pub kind: Option<KindAnnotation>,
 }
 
+impl Field {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.name.tokens();
+    if let Some(knd) = &self.kind {
+      let mut t = knd.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct TableColumn {
   pub element: Expression,
+}
+
+impl TableColumn {
+  pub fn tokens(&self) -> Vec<Token> {
+    self.element.tokens()
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -1152,6 +1261,17 @@ impl MatrixColumn {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct TableRow {
   pub columns: Vec<TableColumn>,
+}
+
+impl TableRow {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for r in &self.columns {
+      let mut t = r.element.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -1204,7 +1324,6 @@ impl Var {
     tkns
   }
 }
-
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -1431,12 +1550,33 @@ pub struct Tuple {
   pub elements: Vec<Expression>
 }
 
+impl Tuple {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = vec![];
+    for elem in &self.elements {
+      tokens.append(&mut elem.tokens());
+    }
+    tokens
+  }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Binding {
   pub name: Identifier,
   pub kind: Option<KindAnnotation>,
   pub value: Expression,
+}
+
+impl Binding {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.name.tokens();
+    if let Some(knd) = &self.kind {
+      tokens.append(&mut knd.tokens());
+    }
+    tokens.append(&mut self.value.tokens());
+    tokens
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
