@@ -383,9 +383,9 @@ pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> {
 }
 
 #[cfg(feature = "kind_annotation")]
-pub fn table_header(fields: &Vec<Field>, p: &Interpreter) -> MResult<Vec<(Value,ValueKind,Identifier)>> {
+pub fn table_header(fields: &TableHeader, p: &Interpreter) -> MResult<Vec<(Value,ValueKind,Identifier)>> {
   let mut headings: Vec<(Value,ValueKind,Identifier)> = Vec::new();
-  for f in fields {
+  for f in &fields.0 {
     let id = f.name.hash();
     let kind = match &f.kind {
       Some(k) => kind_annotation(&k.kind, p)?,
