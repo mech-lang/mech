@@ -1,5 +1,5 @@
 use crate::*;
-use indexmap::set::IndexSet;
+use indexmap::set::{IndexSet, Iter};
 
 // Set --------------------------------------------------------------------------
 
@@ -19,7 +19,6 @@ impl MechSet {
       set: IndexSet::with_capacity(size)
     }
   }
-
 
   #[cfg(feature = "pretty_print")]
   pub fn to_html(&self) -> String {
@@ -55,6 +54,15 @@ impl MechSet {
       num_elements: set.len(),
       set}
   }
+
+  pub fn from_set(set: IndexSet<Value>) -> MechSet {
+    let kind = if set.len() > 0 { set.iter().next().unwrap().kind() } else { ValueKind::Empty };
+    MechSet{
+      kind,
+      num_elements: set.len(),
+      set}
+  }
+
 }
 
 #[cfg(feature = "pretty_print")]

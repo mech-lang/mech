@@ -1357,7 +1357,6 @@ impl Identifier {
 
 }
 
-
 impl Identifier {
   pub fn hash(&self) -> u64 {
     hash_chars(&self.name.chars)
