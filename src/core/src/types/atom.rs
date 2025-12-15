@@ -2,8 +2,14 @@ use crate::*;
 use super::*;
 
 #[cfg(feature = "atom")]
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct MechAtom(pub (u64, Ref<Dictionary>));
+
+impl PartialEq<MechAtom> for MechAtom {
+  fn eq(&self, other: &MechAtom) -> bool {
+    &self.id() == &other.id()
+  }
+}
 
 impl MechAtom {
   pub fn id(&self) -> u64 {
@@ -15,6 +21,10 @@ impl MechAtom {
   }
   pub fn dictionary(&self) -> Ref<Dictionary> {
     self.0.1.clone()
+  }
+  pub fn new(id: u64) -> MechAtom {
+    let dict = Ref::new(Dictionary::new());
+    MechAtom((id, dict))
   }
 
 }
