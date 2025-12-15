@@ -6,6 +6,7 @@ use crate::*;
 pub struct MechEnum {
   pub id: u64,
   pub variants: Vec<(u64, Option<Value>)>,
+  pub names: Ref<Dictionary>,
 }
 
 impl MechEnum {
@@ -35,12 +36,22 @@ impl MechEnum {
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for MechEnum {
   fn pretty_print(&self) -> String {
-    let mut builder = Builder::default();
-    let string_elements: Vec<String> = vec![format!("{}{:?}",self.id,self.variants)];
-    builder.push_record(string_elements);
-    let mut table = builder.build();
-    table.with(Style::modern_rounded());
-    format!("{table}")
+    println!("Pretty printing enum...");
+    println!("Enum ID: {}", self.id);
+    println!("Variants: {:?}", self.variants);
+    println!("Names: {:?}", self.names.borrow());
+    let mut variants = Vec::new();
+    let dict_brrw = self.names.borrow();
+    let enum_name = dict_brrw.get(&self.id).unwrap();
+    for (id, value) in &self.variants {
+      let value_str = match value {
+        Some(v) => v.pretty_print(),
+        None => "None".to_string(),
+      };
+      let variant_name = dict_brrw.get(id).unwrap();
+      variants.push(format!("{}: {}", variant_name, value_str));
+    }
+    format!("`{} {{ {} }}", enum_name, variants.join(" | "))
   }
 }
 
