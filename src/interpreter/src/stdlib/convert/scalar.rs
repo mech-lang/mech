@@ -165,11 +165,15 @@ macro_rules! impl_conversion_match_arms {
           Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: Ref::new(f64::default())}))
         }
         #[cfg(all(feature = "atom", feature = "enum"))]
-        (Value::Atom(variant_id), Value::Kind(ValueKind::Enum(enum_id))) => {
-          let variants = vec![(variant_id.borrow().0,None)];
-          todo!("FIx name lookup for enum conversion, atom doesn't store name, so we can't populate names dictionary yet.");
-          let enm = MechEnum{id: enum_id, variants, names: Ref::new(Dictionary::new())};
+        (Value::Atom(atom), Value::Kind(ValueKind::Enum(enum_id, enum_variant_name))) => {
+          let atom_brrw = atom.borrow();
+          let variant_id = atom_brrw.id();
+          let atom_name = atom_brrw.name();
+          let variants = vec![(variant_id,None)];
+          let dictionary = (*atom_brrw).dictionary();
+          let enm = MechEnum{id: enum_id, variants, names: dictionary};
           let val = Ref::new(enm.clone());
+          todo!("This isn't finished yet");
           Ok(Box::new(ConvertSEnum{out: val}))
         }
         x => Err(MechError2::new(

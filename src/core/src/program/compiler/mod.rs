@@ -61,8 +61,11 @@ pub fn encode_value_kind(ts: &mut TypeSection, vk: &ValueKind) -> (TypeTag, Vec<
       }
     }
 
-    ValueKind::Enum(space) => {
-      b.write_u64::<LittleEndian>(*space).unwrap();
+    ValueKind::Enum(id, name) => {
+      b.write_u64::<LittleEndian>(*id).unwrap();
+      let name_bytes = name.as_bytes();
+      b.write_u32::<LittleEndian>(name_bytes.len() as u32).unwrap();
+      b.extend_from_slice(name_bytes);
       TypeTag::EnumTag
     }
 
@@ -86,8 +89,11 @@ pub fn encode_value_kind(ts: &mut TypeSection, vk: &ValueKind) -> (TypeTag, Vec<
       TypeTag::Map
     }
 
-    ValueKind::Atom(id) => {
+    ValueKind::Atom(id, name) => {
       b.write_u64::<LittleEndian>(*id).unwrap();
+      let name_bytes = name.as_bytes();
+      b.write_u32::<LittleEndian>(name_bytes.len() as u32).unwrap();
+      b.extend_from_slice(name_bytes);
       TypeTag::Atom
     }
 

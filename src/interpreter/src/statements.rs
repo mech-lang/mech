@@ -239,16 +239,20 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
     match (&result, &target_knd) {
       // Atom is a variant of an enum
       #[cfg(all(feature = "atom", feature = "enum"))]
-      (Value::Atom(given_variant_id), ValueKind::Enum(enum_id)) => {
+      (Value::Atom(atom_variant), ValueKind::Enum(enum_id, enum_variant_name)) => {
+        let atom_variant_brrw = atom_variant.borrow();
         let enums = &state_brrw.enums;
         let my_enum = match enums.get(enum_id) {
           Some(my_enum) => my_enum,
           None => todo!(),
         };
+        let dictionary = state_brrw.dictionary.clone();
+        let atom_id = atom_variant_brrw.id();
+        let atom_name = atom_variant_brrw.name();
         // Given atom isn't a variant of the enum
-        if !my_enum.variants.iter().any(|(enum_variant, inner_value)| given_variant_id.borrow().0 == *enum_variant) {
+        if !my_enum.variants.iter().any(|(enum_variant, inner_value)| atom_id == *enum_variant) {
           return Err(MechError2::new(
-            UnableToConvertAtomToEnumVariantError { atom_id: given_variant_id.borrow().0, target_enum_id: *enum_id },
+            UnableToConvertAtomToEnumVariantError { atom_name: atom_name, target_enum_variant_name: enum_variant_name.clone() },
             None
           ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
         }
@@ -257,7 +261,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       #[cfg(feature = "atom")]
       (Value::Atom(given_variant_id), target_kind) => {
         return Err(MechError2::new(
-          UnableToConvertAtomError { atom_id: given_variant_id.borrow().0},
+          UnableToConvertAtomError { atom_id: given_variant_id.borrow().0.0},
           None
         ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
       }
@@ -601,15 +605,15 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
 
 #[derive(Debug, Clone)]
 pub struct UnableToConvertAtomToEnumVariantError {
-  pub atom_id: u64,
-  pub target_enum_id: u64,
+  pub atom_name: String,
+  pub target_enum_variant_name: String,
 }
 impl MechErrorKind2 for UnableToConvertAtomToEnumVariantError {
   fn name(&self) -> &str {
     "UnableToConvertAtomToEnumVariant"
   }
   fn message(&self) -> String {
-    format!("Unable to convert atom variant {} to enum {}", self.atom_id, self.target_enum_id)
+    format!("Unable to convert atom variant `{} to enum <{}>", self.atom_name, self.target_enum_variant_name)
   }
 }
 

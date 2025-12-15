@@ -14,7 +14,7 @@ pub fn literal(ltrl: &Literal, p: &Interpreter) -> MResult<Value> {
     #[cfg(feature = "string")]
     Literal::String(strng) => Ok(string(strng)),
     #[cfg(feature = "atom")]
-    Literal::Atom(atm) => Ok(atom(atm)),
+    Literal::Atom(atm) => Ok(atom(atm, p)),
     #[cfg(feature = "kind_annotation")]
     Literal::Kind(knd) => kind_value(knd, p),
     #[cfg(feature = "convert")]
@@ -34,7 +34,11 @@ pub fn kind_value(knd: &NodeKind, p: &Interpreter) -> MResult<Value> {
 pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
   match knd {
     NodeKind::Any => Ok(Kind::Any),
-    NodeKind::Atom(id) => Ok(Kind::Atom(id.hash())),
+    NodeKind::Atom(atm_identifier) => {
+      let id = atm_identifier.hash();
+      let name = atm_identifier.to_string();
+      Ok(Kind::Atom(id, name))
+    }
     NodeKind::Empty => Ok(Kind::Empty),
     NodeKind::Record(elements) => {
       let mut knds = vec![];
@@ -133,9 +137,15 @@ pub fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, p: &Interpreter)
 }
 
 #[cfg(feature = "atom")]
-pub fn atom(atm: &Atom) -> Value {
+pub fn atom(atm: &Atom, p: &Interpreter) -> Value {
   let id = atm.name.hash();
-  Value::Atom(Ref::new(MechAtom(id)))
+  let state = p.state.borrow();
+  let dictionary = state.dictionary.clone();
+  {
+    let mut dictionary_brrw = dictionary.borrow_mut();
+    dictionary_brrw.insert(id, atm.name.to_string());
+  }
+  Value::Atom(Ref::new(MechAtom((id, dictionary))))
 }
 
 pub fn number(num: &Number) -> Value {
