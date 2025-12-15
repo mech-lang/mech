@@ -66,9 +66,9 @@ macro_rules! impl_as_type {
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, C64, R64,
   String, Bool, Id, Index, Empty, Any, None,
-  Matrix(Box<ValueKind>,Vec<usize>),  Enum(u64),                  Record(Vec<(String,ValueKind)>),
-  Map(Box<ValueKind>,Box<ValueKind>), Atom(u64),                  Table(Vec<(String,ValueKind)>, usize), 
-  Tuple(Vec<ValueKind>),              Reference(Box<ValueKind>),  Set(Box<ValueKind>, Option<usize>), 
+  Matrix(Box<ValueKind>,Vec<usize>),  Enum(u64,String),             Record(Vec<(String,ValueKind)>),
+  Map(Box<ValueKind>,Box<ValueKind>), Atom(u64,String),             Table(Vec<(String,ValueKind)>, usize), 
+  Tuple(Vec<ValueKind>),              Reference(Box<ValueKind>),    Set(Box<ValueKind>, Option<usize>), 
   Option(Box<ValueKind>),
 }
 
@@ -92,7 +92,6 @@ impl Display for ValueKind {
       ValueKind::String => write!(f, "string"),
       ValueKind::Bool => write!(f, "bool"),
       ValueKind::Matrix(x,s) => write!(f, "[{}]:{}", x, s.iter().map(|s| s.to_string()).collect::<Vec<String>>().join(",")),
-      ValueKind::Enum(x) => write!(f, "{}",x),
       ValueKind::Set(x,el) => write!(f, "{{{}}}{}", x, el.map_or("".to_string(), |e| format!(":{}", e))),
       ValueKind::Map(x,y) => write!(f, "{{{}:{}}}",x,y),
       ValueKind::Record(x) => write!(f, "{{{}}}",x.iter().map(|(i,k)| format!("{}<{}>",i.to_string(),k)).collect::<Vec<String>>().join(" ")),
@@ -104,7 +103,8 @@ impl Display for ValueKind {
       ValueKind::Id => write!(f, "id"),
       ValueKind::Index => write!(f, "ix"),
       ValueKind::Reference(x) => write!(f, "{}",x),
-      ValueKind::Atom(x) => write!(f, "`{}",x),
+      ValueKind::Enum(x, name) => write!(f, "`{}", name),
+      ValueKind::Atom(x, name) => write!(f, "`{}", name),
       ValueKind::Empty => write!(f, "_"),
       ValueKind::Any => write!(f, "*"),
       ValueKind::None => write!(f, "none"),
@@ -157,7 +157,7 @@ impl ValueKind {
       #[cfg(feature = "tuple")] 
       ValueKind::Tuple(_) => FeatureKind::Tuple,
       #[cfg(feature = "enum")]
-      ValueKind::Enum(_) => FeatureKind::Enum,
+      ValueKind::Enum(..) => FeatureKind::Enum,
       #[cfg(feature = "matrix")]
       ValueKind::Matrix(_,shape) => {
         match shape[..] {
@@ -198,7 +198,7 @@ impl ValueKind {
       ValueKind::C64 => FeatureKind::C64,
       #[cfg(feature = "rational")]
       ValueKind::R64 => FeatureKind::R64,
-      ValueKind::Atom(_) => FeatureKind::Atom,
+      ValueKind::Atom(..) => FeatureKind::Atom,
       ValueKind::Index => FeatureKind::Index,
       _ => panic!("Unsupported feature kind for value kind: {}", self),
     }
@@ -320,7 +320,7 @@ impl ValueKind {
   }
 
   pub fn align(&self) -> usize {
-    // pointer alignment (platform word size) for pointer-like kinds
+    // pointer alignment (platform word size)
     let ptr_align = mem::align_of::<usize>();
 
     match self {
@@ -330,67 +330,58 @@ impl ValueKind {
       ValueKind::U32  => 4,
       ValueKind::U64  => 8,
       ValueKind::U128 => 16,
-
       // signed integers
       ValueKind::I8   => 1,
       ValueKind::I16  => 2,
       ValueKind::I32  => 4,
       ValueKind::I64  => 8,
       ValueKind::I128 => 16,
-
       // floats
       ValueKind::F32  => 4,
       ValueKind::F64  => 8,
-
       // complex / rational (assume composed of f64 parts)
       ValueKind::C64 => 8,
       ValueKind::R64 => 8,
-
       // small simple payloads
-      ValueKind::Bool => 1,
-      ValueKind::String => 1, // strings are length+bytes; bytes are packed
-      ValueKind::Id | ValueKind::Index => 8, // id/index -> likely machine word (u64)
+      ValueKind::Bool  => 1,
+      ValueKind::String => ptr_align, // String = (ptr, len, cap)
+      ValueKind::Id | ValueKind::Index => 8,
       ValueKind::Empty => 1,
-      ValueKind::Any => ptr_align,
-      ValueKind::None => 1,
-
+      ValueKind::Any   => ptr_align,
+      ValueKind::None  => 1,
       // compound types
-      ValueKind::Matrix(elem_ty, _dims) => {
-        // matrix alignment = alignment of element type
+      ValueKind::Matrix(elem_ty, _) => {
+        // flat element storage
         elem_ty.align()
       }
-
-      ValueKind::Enum(_space) => 8, // enum tag stored in u64
-      ValueKind::Atom(_id) => 8,
-
+      // inline enum / atom payloads
+      ValueKind::Enum(_, _) => 8, // u64 + String => max(8, 8)
+      ValueKind::Atom(_, _) => 8,
       ValueKind::Record(fields) => {
-        // record alignment = max alignment of fields (or 1 if empty)
+        // record alignment = max field alignment
         fields.iter()
-            .map(|(_, ty)| ty.align())
-            .max()
-            .unwrap_or(1)
+          .map(|(_, ty)| ty.align())
+          .max()
+          .unwrap_or(1)
       }
-
-      ValueKind::Map(_, _) => ptr_align,   // typically pointer-based representation
-      ValueKind::Table(cols, _pk) => {
-        // table: use max column alignment or pointer-align if empty
+      // pointer-backed containers
+      ValueKind::Map(_, _)   => ptr_align,
+      ValueKind::Table(cols, _) => {
         cols.iter()
-            .map(|(_, ty)| ty.align())
-            .max()
-            .unwrap_or(ptr_align)
+          .map(|(_, ty)| ty.align())
+          .max()
+          .unwrap_or(ptr_align)
       }
-
       ValueKind::Tuple(elems) => {
-        elems.iter().map(|ty| ty.align()).max().unwrap_or(1)
+        elems.iter()
+          .map(|ty| ty.align())
+          .max()
+          .unwrap_or(1)
       }
-
-      ValueKind::Reference(inner) => ptr_align, // references are pointers at runtime
-
+      ValueKind::Reference(_) => ptr_align,
       ValueKind::Set(elem, _) => {
-        // set alignment equals element alignment (or ptr_align fallback)
-        match elem.as_ref() {
-          v => v.align()
-        }
+        // if Set is implemented inline; otherwise use ptr_align
+        elem.align()
       }
       ValueKind::Option(inner) => inner.align(),
     }
@@ -1575,7 +1566,7 @@ impl Value {
       #[cfg(any(feature = "bool", feature = "variable_define"))]
       Value::Bool(_) => ValueKind::Bool,
       #[cfg(feature = "atom")]
-      Value::Atom(x) => ValueKind::Atom((x.borrow().0)),
+      Value::Atom(x) => ValueKind::Atom(x.borrow().id(), x.borrow().name().clone()),
       #[cfg(feature = "matrix")]
       Value::MatrixValue(x) => ValueKind::Matrix(Box::new(ValueKind::Any),x.shape()),
       #[cfg(feature = "matrix")]
