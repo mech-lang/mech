@@ -47,6 +47,7 @@ pub fn match_value(pattern: &Pattern,value: &Value,env: &mut Environment) -> MRe
       },
       _ => todo!("Unsupported expression in pattern"),
     },
+    #[cfg(feature = "tuple")]
     Pattern::Tuple(pat_tuple) => {
       match value {
         Value::Tuple(values) => {
@@ -76,6 +77,12 @@ pub fn match_value(pattern: &Pattern,value: &Value,env: &mut Environment) -> MRe
     Pattern::TupleStruct(pat_struct) => {
       todo!("Implement tuple struct pattern matching")
     },
+    _ => {
+      Err(MechError2::new(
+        FeatureNotEnabledError,
+        None
+      ).with_compiler_loc())
+    } 
   }
 }
 
