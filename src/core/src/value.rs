@@ -2322,6 +2322,8 @@ impl ToValue for Ref<String> { fn to_value(&self) -> Value { Value::String(self.
 impl ToValue for Ref<R64> { fn to_value(&self) -> Value { Value::R64(self.clone()) } }
 #[cfg(feature = "complex")]
 impl ToValue for Ref<C64> { fn to_value(&self) -> Value { Value::C64(self.clone()) } }
+#[cfg(feature = "atom")]
+impl ToValue for Ref<MechAtom> { fn to_value(&self) -> Value { Value::Atom(self.clone()) } }
 
 impl ToValue for Ref<Value> { fn to_value(&self) -> Value { (*self.borrow()).clone() } }
 
