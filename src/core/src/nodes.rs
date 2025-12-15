@@ -836,7 +836,6 @@ pub enum Transition {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Pattern {
   Expression(Expression),
-  Formula(Factor),
   TupleStruct(PatternTupleStruct),
   Tuple(PatternTuple),
   Wildcard,
@@ -846,7 +845,6 @@ impl Pattern {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
       Pattern::Expression(e) => e.tokens(),
-      Pattern::Formula(f) => f.tokens(),
       Pattern::TupleStruct(ts) => ts.tokens(),
       Pattern::Tuple(t) => t.tokens(),
       Pattern::Wildcard => vec![],

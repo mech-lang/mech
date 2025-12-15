@@ -1280,7 +1280,6 @@ impl Formatter {
         }
       },
       Pattern::Tuple(tpl) => self.pattern_tuple(tpl),
-      Pattern::Formula(factor) => self.factor(factor),
       Pattern::Expression(expr) => self.expression(expr),
       Pattern::TupleStruct(tuple_struct) => self.pattern_tuple_struct(tuple_struct),
     };
