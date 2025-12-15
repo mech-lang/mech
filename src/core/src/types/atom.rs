@@ -2,13 +2,26 @@ use crate::*;
 use super::*;
 
 #[cfg(feature = "atom")]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(PartialEq, Clone, Copy, PartialOrd, Debug)]
-pub struct MechAtom(pub u64);
+#[derive(PartialEq, Clone, Debug)]
+pub struct MechAtom(pub (u64, Ref<Dictionary>));
+
+impl MechAtom {
+  pub fn id(&self) -> u64 {
+    self.0.0
+  }
+  pub fn name(&self) -> String {
+    let names_brrw = self.0.1.borrow();
+    names_brrw.get(&self.0.0).cloned().unwrap_or_else(|| format!("{}", emojify(&(self.0.0 as u16))))
+  }
+  pub fn dictionary(&self) -> Ref<Dictionary> {
+    self.0.1.clone()
+  }
+
+}
 
 impl Hash for MechAtom {
   fn hash<H: Hasher>(&self, state: &mut H) {
-    self.0.hash(state);
+    self.0 .0.hash(state);
   }
 }
 
@@ -20,6 +33,10 @@ impl fmt::Display for MechAtom {
 
 impl PrettyPrint for MechAtom {
   fn pretty_print(&self) -> String {
-    format!("`{}", emojify(&(self.0 as u16)))
+    let names_brrw = self.0.1.borrow();
+    if let Some(name) = names_brrw.get(&self.0.0) {
+      return format!("`{}", name);
+    } 
+    format!("`{}", emojify(&(self.0.0 as u16)))
   }
 }
