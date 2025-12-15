@@ -18,7 +18,10 @@ pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -
     #[cfg(feature = "kind_define")]
     Statement::KindDefine(knd_def) => kind_define(&knd_def, p),
     #[cfg(feature = "enum")]
-    Statement::EnumDefine(enm_def) => enum_define(&enm_def, p),
+    Statement::EnumDefine(enm_def) => {
+      enum_define(&enm_def, p)?;
+      Ok(Value::Empty)
+    }
     #[cfg(feature = "math")]
     Statement::OpAssign(op_assgn) => op_assign(&op_assgn, env, p),
     //Statement::FsmDeclare(_) => todo!(),
@@ -182,16 +185,24 @@ pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p:
 }
 
 #[cfg(feature = "enum")]
-pub fn enum_define(enm_def: &EnumDefine, p: &Interpreter) -> MResult<Value> {
+pub fn enum_define(enm_def: &EnumDefine, p: &Interpreter) -> MResult<()> {
   let id = enm_def.name.hash();
   let variants = enm_def.variants.iter().map(|v| (v.name.hash(),None)).collect::<Vec<(u64, Option<Value>)>>();
   let state = &p.state;
   let mut state_brrw = state.borrow_mut();
-  let enm = MechEnum{id, variants};
+  let dictionary = state_brrw.dictionary.clone();
+  {
+    let mut dictionary_brrw = dictionary.borrow_mut();
+    dictionary_brrw.insert(enm_def.name.hash(), enm_def.name.to_string());
+    for variant in &enm_def.variants {
+      dictionary_brrw.insert(variant.name.hash(), variant.name.to_string());
+    }
+  }
+  let enm = MechEnum{id, variants, names: dictionary};
   let val = Value::Enum(Ref::new(enm.clone()));
   state_brrw.enums.insert(id, enm.clone());
   state_brrw.kinds.insert(id, val.kind());
-  Ok(val)
+  Ok(())
 }
 
 #[cfg(feature = "kind_define")]
