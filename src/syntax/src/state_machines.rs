@@ -135,11 +135,6 @@ pub fn pattern(input: ParseString) -> ParseResult<Pattern> {
     Ok((input, _)) => {return Ok((input, Pattern::Wildcard))},
     _ => ()
   }
-  match formula(input.clone()) {
-    Ok((input, Factor::Expression(expr))) => {return Ok((input, Pattern::Expression(*expr)))},
-    Ok((input, frmla)) => {return Ok((input, Pattern::Formula(frmla)))},
-    Err(err) => {return Err(err)},
-  }
   match pattern_tuple(input.clone()) {
     Ok((input, tpl)) => {return Ok((input, Pattern::Tuple(tpl)))},
     _ => ()
@@ -169,7 +164,7 @@ pub fn pattern_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruc
 // pattern-tuple := "(", [pattern, ","], ")" ;
 pub fn pattern_tuple(input: ParseString) -> ParseResult<PatternTuple> {
   let (input, _) = left_parenthesis(input)?;
-  let (input, patterns) = separated_list0(list_separator, pattern)(input)?;
+  let (input, patterns) = separated_list1(list_separator, pattern)(input)?;
   let (input, _) = right_parenthesis(input)?;
   Ok((input, PatternTuple(patterns)))
 }
