@@ -84,8 +84,34 @@ pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult
                 // If match fails, skip this element
               }
             }
+            Value::MutableReference(ref_set) => {
+              let ref_set_brrw = ref_set.borrow();
+              match &*ref_set_brrw {
+                Value::Set(mset) => {
+                  let set_brrw = mset.borrow();
+
+                  for element in set_brrw.set.iter() {
+                    let mut new_env = env.clone();
+
+                    // Try to match the element with the pattern
+                    if match_value(pattern, element, &mut new_env).is_ok() {
+                      new_envs.push(new_env);
+                    }
+                    // If match fails, skip this element
+                  }
+                }
+                x => return Err(MechError2::new(
+                  SetComprehensionGeneratorError{
+                    found: x.kind(),
+                  },
+                  None
+                ).with_compiler_loc()),
+              }
+            }
             x => return Err(MechError2::new(
-              SetComprehensionGeneratorError,
+              SetComprehensionGeneratorError{
+                found: x.kind(),
+              },
               None
             ).with_compiler_loc()),
           }
@@ -670,13 +696,15 @@ impl MechErrorKind2 for InvalidIndexKindError {
 }
 
 #[derive(Debug, Clone)]
-pub struct SetComprehensionGeneratorError;
+pub struct SetComprehensionGeneratorError{
+  found: ValueKind,
+}
 
 impl MechErrorKind2 for SetComprehensionGeneratorError {
   fn name(&self) -> &str {
     "SetComprehensionGenerator"
   }
   fn message(&self) -> String {
-    "Set comprehension generator must produce a set".to_string()
+    format!("Set comprehension generator must produce a set, found kind: {:?}", self.found)
   }
 }
