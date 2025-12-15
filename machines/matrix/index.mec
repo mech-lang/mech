@@ -18,7 +18,7 @@ Provides standard matrix functions.
 
 matrix/machine = {
   name: "matrix" 
-  version: "v0.2.69"
+  version: "v0.2.70"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/matrix"
   license: "Apache-2.0"}
