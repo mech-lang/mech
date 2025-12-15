@@ -11,6 +11,11 @@ pub struct MechEnum {
 
 impl MechEnum {
 
+  pub fn name(&self) -> String {
+    let names_brrw = self.names.borrow();
+    names_brrw.get(&self.id).cloned().unwrap_or_else(|| format!("{}", self.id))
+  }
+
   #[cfg(feature = "pretty_print")]
   pub fn to_html(&self) -> String {
     let mut variants = Vec::new();
@@ -25,7 +30,7 @@ impl MechEnum {
   }
 
   pub fn kind(&self) -> ValueKind {
-    ValueKind::Enum(self.id)
+    ValueKind::Enum(self.id, self.name())
   }
 
   pub fn size_of(&self) -> usize {
