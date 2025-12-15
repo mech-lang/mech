@@ -100,6 +100,8 @@ Version `v0.3` incorporates all the features of `v0.2`, in addition to the follo
 -(🥚) time travel debugging
 -(🥚) machine revamp
 -(🥚) database revamp
+-(🐣) Set completions
+-(🐣) List completions
 -(🐣) self-contained binary executables
 -(🐣) bytecode interpreter
 -(🐣) build system
