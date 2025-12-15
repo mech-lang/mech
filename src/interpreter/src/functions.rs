@@ -49,7 +49,7 @@ pub fn function_call(fxn_call: &FunctionCall, p: &Interpreter) -> MResult<Value>
         Some(fxn_compiler) => {
           let mut input_arg_values = vec![];
           for (arg_name, arg_expr) in fxn_call.args.iter() {
-            let result = expression(&arg_expr, p)?;
+            let result = expression(&arg_expr, None, p)?;
             input_arg_values.push(result);
           }
           match fxn_compiler.compile(&input_arg_values) {
