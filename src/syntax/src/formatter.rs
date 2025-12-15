@@ -1480,14 +1480,47 @@ impl Formatter {
       Statement::VariableAssign(var_asgn) => self.variable_assign(var_asgn),
       Statement::TupleDestructure(tpl_dstrct) => self.tuple_destructure(tpl_dstrct),
       Statement::KindDefine(kind_def) => self.kind_define(kind_def),
+      Statement::EnumDefine(enum_def) => self.enum_define(enum_def),
       _ => todo!(),
-      //Statement::EnumDefine(enum_def) => self.enum_define(enum_def, src),
       //Statement::FsmDeclare(fsm_decl) => self.fsm_declare(fsm_decl, src),
     };
     if self.html {
       format!("<span class=\"mech-statement\">{}</span>",s)
     } else {
       format!("{}", s)
+    }
+  }
+
+  pub fn enum_define(&mut self, node: &EnumDefine) -> String {
+    let name = node.name.to_string();
+    let mut variants = "".to_string();
+    for (i, variant) in node.variants.iter().enumerate() {
+      if i == 0 {
+        variants = format!("{}", self.enum_variant(variant));
+      } else {
+        variants = format!("{} | {}", variants, self.enum_variant(variant));
+      }
+    }
+    if self.html {
+      format!("<span class=\"mech-enum-define\"><span class=\"mech-enum-name\">{}</span><span class=\"mech-enum-define-op\">:=</span><span class=\"mech-enum-variants\">{}</span></span>",name,variants)
+    } else {
+      format!("<{}> := {}", name, variants)
+    }
+  }
+
+  pub fn enum_variant(&mut self, node: &EnumVariant) -> String {
+    let name = node.name.to_string();
+    let mut kind = "".to_string();
+    match &node.value {
+      Some(k) => {
+        kind = self.kind_annotation(&k.kind);
+      },
+      None => {},
+    }
+    if self.html {
+      format!("<span class=\"mech-enum-variant\"><span class=\"mech-enum-variant-name\">{}</span><span class=\"mech-enum-variant-kind\">{}</span></span>",name,kind)
+    } else {
+      format!("{}{}", name, kind)
     }
   }
 
