@@ -1,6 +1,6 @@
 [package]
 name = "mech-math"
-version = "0.2.67"
+version = "0.2.69"
 authors = ["Corey Montella <corey@mech-lang.org>", "Steven McPhillimey <slm526@lehigh.edu>", "Liam Messinger <ljm426@lehigh.edu>", "Natalie Dumler <nad326@lehigh.edu>"]
 description = "Math library for the Mech language"
 documentation = "http://docs.mech-lang.org"
@@ -51,11 +51,11 @@ baselib = ["bool", "string",
 
 arithmetic_default = ["copysign", "abs", "fdim", "fmod", "nextafter", "remainder"]
 bessel_default = ["j0", "j1", "jn", "y0", "y1", "yn"]
-exponential_default = ["exponential", "exp2", "exp10", "expm1"]
-extrema_default = ["fmax", "fmaximum", "fmaximum_num", "fmin", "fminimum", "fminimum_num"]
+exponential_default = ["exp", "exp2", "exp10", "expm1"]
+extrema_default = ["max", "min"]
 gamma_default = ["lgamma", "tgamma"]
 logarithm_default = ["log", "log1p", "log10", "log2"]
-ops_default = ["add", "sub", "mul", "div", "exp", "mod", "neg"]
+ops_default = ["add", "sub", "mul", "div", "pow", "mod", "neg"]
 ops_assign_default = ["add_assign", "sub_assign", "mul_assign", "div_assign"]
 root_default = ["cbrt", "sqrt"]
 rounding_default = ["ceil", "floor", "rint", "round", "roundeven", "trunc"]
@@ -69,7 +69,7 @@ math_default = ["arithmetic_default", "bessel_default", "exponential_default", "
 math = ["num-traits", "libm", "functions"]
 arithmetic = ["math"]
 bessel = ["math"]
-exponential = ["math"]
+exp = ["math"]
 extrema = ["math"]
 gamma = ["math"]
 logarithm = ["math"]
@@ -98,16 +98,12 @@ y0 = ["bessel"]
 y1 = ["bessel"]
 yn = ["bessel"]
 
-exp2 = ["exponential"]
-exp10 = ["exponential"]
-expm1 = ["exponential"]
+exp2 = ["exp"]
+exp10 = ["exp"]
+expm1 = ["exp"]
 
-fmax = ["extrema"]
-fmaximum = ["extrema"]
-fmaximum_num = ["extrema"]
-fmin = ["extrema"]
-fminimum = ["extrema"]
-fminimum_num = ["extrema"]
+max = ["extrema"]
+min = ["extrema"]
 
 lgamma = ["gamma"]
 tgamma = ["gamma"]
@@ -119,7 +115,7 @@ log2 = ["logarithm"]
 
 add = ["ops"]
 div = ["ops"]
-exp = ["ops", "mech-core/math_exp"]
+pow = ["ops", "mech-core/math_pow"]
 mod = ["ops"]
 mul = ["ops"]
 neg = ["simba", "ops"]
@@ -260,7 +256,7 @@ dot_indexing = ["subscript", "mech-core/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle"]
 
 [dependencies]
-mech-core = {path = "../../src/core", version = "0.2.67" }
+mech-core = {path = "../../src/core", version = "0.2.69" }
 
 libm = {version = "0.2.15", optional = true}
 simba = {version = "0.9.0", optional = true}

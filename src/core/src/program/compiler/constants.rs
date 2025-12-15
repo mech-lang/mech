@@ -397,7 +397,7 @@ impl CompileConst for MechEnum {
         }
       }
     }
-    ctx.compile_const(&payload, ValueKind::Enum(self.id))
+    ctx.compile_const(&payload, ValueKind::Enum(self.id, self.name()))
   }
 }
 
@@ -405,8 +405,9 @@ impl CompileConst for MechEnum {
 impl CompileConst for MechAtom {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
-    payload.write_u64::<LittleEndian>(self.0)?;
-    ctx.compile_const(&payload, ValueKind::Atom(self.0))
+    payload.write_u64::<LittleEndian>(self.id())?;
+    self.name().write_le(&mut payload);
+    ctx.compile_const(&payload, ValueKind::Atom(self.id(), self.name().clone()))
   }
 }
 
@@ -1031,9 +1032,10 @@ impl ConstElem for ValueKind {
           out.write_u32::<LittleEndian>(*d as u32).expect("write matrix dim");
         }
       },
-      ValueKind::Enum(id) => {
+      ValueKind::Enum(id, name) => {
         out.write_u8(22).expect("write value kind");
         out.write_u64::<LittleEndian>(*id).expect("write enum id");
+        name.write_le(out);
       },
       #[cfg(feature = "record")]
       ValueKind::Record(fields) => {
@@ -1049,9 +1051,10 @@ impl ConstElem for ValueKind {
         key_vk.write_le(out);
         val_vk.write_le(out);
       },
-      ValueKind::Atom(id) => {
+      ValueKind::Atom(id, name) => {
         out.write_u8(25).expect("write value kind");
         out.write_u64::<LittleEndian>(*id).expect("write atom id");
+        name.write_le(out);
       },
       #[cfg(feature = "table")]
       ValueKind::Table(fields, row_count) => {
@@ -1132,7 +1135,11 @@ impl ConstElem for ValueKind {
         ValueKind::Matrix(Box::new(elem_vk), dims)
       }
       #[cfg(feature = "enum")]
-      22 => ValueKind::Enum(cursor.read_u64::<LittleEndian>().expect("read enum id")),
+      22 => {
+        let id = cursor.read_u64::<LittleEndian>().expect("read enum id");
+        let name = String::from_le(&bytes[cursor.position() as usize..]);
+        ValueKind::Enum(id, name)
+      }
       #[cfg(feature = "table")]
       26 => {
         let field_count = cursor.read_u32::<LittleEndian>().expect("read table fields length") as usize;
@@ -1211,7 +1218,7 @@ impl ConstElem for MechEnum {
   fn from_le(_bytes: &[u8]) -> Self {
     unimplemented!("from_le not implemented for MechEnum")
   }
-  fn value_kind(&self) -> ValueKind { ValueKind::Enum(0) } // id 0 as placeholder
+  fn value_kind(&self) -> ValueKind { ValueKind::Enum(0,"".to_string()) } // id 0 as placeholder
   fn align() -> u8 { 8 }
 }
 

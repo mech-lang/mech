@@ -32,22 +32,22 @@ macro_rules! exponentialf_vec_op {
       }}};}
 
 #[cfg(feature = "f64")]
-impl_math_unop!(MathExponential, f64, exponential, FeatureFlag::Custom(hash_str("math/exponential")));
+impl_math_unop!(MathExp, f64, exponential, FeatureFlag::Custom(hash_str("math/exp")));
 #[cfg(feature = "f32")]
-impl_math_unop!(MathExponential, f32, exponentialf, FeatureFlag::Custom(hash_str("math/exponential")));
+impl_math_unop!(MathExp, f32, exponentialf, FeatureFlag::Custom(hash_str("math/exp")));
 
 fn impl_exponential_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
-    MathExponential,
+    MathExp,
     lhs_value,
     F32 => MatrixF32, F32, f32::default(), "f32";
     F64 => MatrixF64, F64, f64::default(), "f64";
   )
 }
 
-pub struct MathExponential {}
+pub struct MathExp {}
 
-impl NativeFunctionCompiler for MathExponential {
+impl NativeFunctionCompiler for MathExp {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
       return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
@@ -71,7 +71,7 @@ impl NativeFunctionCompiler for MathExponential {
 
 register_descriptor! {
   FunctionCompilerDescriptor {
-    name: "math/exponential",
-    ptr: &MathExponential{},
+    name: "math/exp",
+    ptr: &MathExp{},
   }
 }

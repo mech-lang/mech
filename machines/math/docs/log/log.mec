@@ -64,7 +64,8 @@ y := math/log(x)
 -------------------------------------------------------------------------------
 
 - **Definition:**  
-  $$ \ln(x) = \int_1^x \frac{1}{t} dt, \quad x > 0.
+
+$$ \ln(x) = \int_1^x \frac{1}{t} dt, \quad x > 0.
 
 - **Domain & special cases (real inputs):**
   - `x > 0`: returns finite real value.

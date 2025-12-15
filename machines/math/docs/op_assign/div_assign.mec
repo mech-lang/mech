@@ -130,7 +130,7 @@ A[mask, :] /= 3
 - **Type behavior & edge cases:**
   - **Division by zero:** For integer sinks, this is typically an error; for floats, results may be `±∞` or `NaN` depending on the source value.
   - **Integer division:** Follows Rust semantics—division truncates toward zero and stays in the integer domain. Cast to `f32`/`f64` if you need fractional results.
-  - **Complex/rational:** Uses the engine’s exact arithmetic for rationals and standard complex division for complex numbers.
+  - **Complex/rational:** Uses the engine's exact arithmetic for rationals and standard complex division for complex numbers.
   - **NaN/Inf propagation (floats):** Behaves per IEEE-754/libm.
 
 - **In-place behavior:** The sink is modified directly and returned as the result.

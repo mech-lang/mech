@@ -50,8 +50,6 @@ pub mod arithmetic;
 pub mod bessel;
 #[cfg(feature = "exponential")]
 pub mod exponential;
-#[cfg(feature = "extrema")]
-pub mod extrema;
 #[cfg(feature = "gamma")]
 pub mod gamma;
 #[cfg(feature = "logarithm")]
@@ -75,8 +73,6 @@ pub use self::arithmetic::*;
 pub use self::bessel::*;
 #[cfg(feature = "exponential")]
 pub use self::exponential::*;
-#[cfg(feature = "extrema")]
-pub use self::extrema::*;
 #[cfg(feature = "gamma")]
 pub use self::gamma::*;
 #[cfg(feature = "logarithm")]

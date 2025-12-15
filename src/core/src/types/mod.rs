@@ -26,11 +26,11 @@ use std::num::FpCategory;
 use std::iter::Step;
 
 use paste::paste;
-#[cfg(feature = "math_exp")]
+#[cfg(feature = "math_pow")]
 use num_traits::Pow;
 #[cfg(any(feature = "f64", feature = "f32", feature = "complex", feature = "rational"))]
 use num_traits::{Zero, One};
-#[cfg(feature = "math_exp")]
+#[cfg(feature = "math_pow")]
 use libm::{pow,powf};
 
 

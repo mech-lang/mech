@@ -1,32 +1,32 @@
-set/superset
+set/proper-subset
 ===============================================================================
 
-%% Superset test (set containment relation)
+%% Proper subset test (strict set containment relation)
 
 1. Usage
 -------------------------------------------------------------------------------
 
 ```mech:disabled
-R := set/superset(A, B)
-R := A ⊇ B
+R := set/proper-subset(A, B)
+R := A ⊊ B
 ```
 
 2. Description
 -------------------------------------------------------------------------------
 
-Determines whether set `A` is a **superset** of set `B`.  
-A superset contains all elements of another set, possibly more.  
+Determines whether set `A` is a **proper subset** of set `B`.  
+A proper subset has all its elements contained within another set **and lacks at least one element** that `B` has.  
 This function returns a boolean value indicating the result.
 
 The implementation wraps the Rust `IndexSet` containment logic and
-preserves Mech’s deterministic order semantics for reproducibility.
+preserves Mech's deterministic order semantics for reproducibility.
 
 3. Input
 -------------------------------------------------------------------------------
 
 Arguments:
-- A : set of T   — candidate superset
-- B : set of T   — subset being tested
+- A : set of T   — candidate subset
+- B : set of T   — superset being tested
 
 Element type constraints:
 - `T` must be hashable and comparable for equality (`Eq` + `Hash` in Rust).
@@ -36,37 +36,35 @@ Element type constraints:
 -------------------------------------------------------------------------------
 
 Result:
-- R : boolean — true if all elements of `B` are contained in `A`, otherwise false.
+- R : boolean — true if all elements of `A` are contained in `B` and `B` has
+  at least one element not present in `A`.
 
 5. Examples
 -------------------------------------------------------------------------------
 
-(a) True superset
+(5.1) True proper subset
 
 ```mech:ex1
-A := {"a", "b", "c", "d"}
-B := {"b", "c"}
-R := set/superset(A, B)
+A := {"b", "c"}
+B := {"a", "b", "c", "d"}
+R := set/proper-subset(A, B)
 ```
-Result: `R` = true
 
-(b) False superset
+(5.2) False — equal sets
 
 ```mech:ex2
 A := {1, 2, 3}
-B := {2, 4}
-R := A ⊇ B
+B := {1, 2, 3}
+R := A ⊊ B
 ```
-Result: `R` = false
 
-(c) Equal sets still count as supersets
+(5.3) False — not contained
 
 ```mech:ex3
 A := {"x", "y", "z"}
-B := {"x", "y", "z"}
-R := set/superset(A, B)
+B := {"x", "y"}
+R := set/proper-subset(A, B)
 ```
-Result: `R` = true
 
 6. Details
 -------------------------------------------------------------------------------
@@ -76,15 +74,14 @@ Set semantics:
 - Order does not affect results.
 
 Relation logic:
-- `A` is a **superset** of `B` if every element of `B` exists in `A`.
-- This differs from a **proper superset**, which requires `A` to contain
-  strictly more elements than `B`.
+- `A` is a **proper subset** of `B` if every element of `A` exists in `B`
+  and `B` has at least one additional distinct element.
 
 Symbolic shorthand:
-- `A ⊇ B` is equivalent to `set/superset(A, B)`.
+- `A ⊊ B` is equivalent to `set/proper_subset(A, B)`.
 
 Performance:
-- Average O(\|B\|) time using hashing; memory O(1).
+- Average `O(|A|)` time using hashing; memory `O(1)`.
 
 Determinism:
 - Results are deterministic across runs and platforms.

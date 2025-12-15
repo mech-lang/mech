@@ -1,6 +1,6 @@
 [package]
 name = "mech-notebook"
-version = "0.2.66"
+version = "0.2.68"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Gui notebook interface for the Mech programming language."
 documentation = "http://docs.mech-lang.org"
@@ -11,10 +11,10 @@ categories = ["science::robotics", "science", "game-engines", "web-programming"]
 license = "Apache-2.0"
 readme = "README.md"
 edition = "2021"
-rust-version = "1.88"
+rust-version = "1.93"
 
 [dependencies]
-mech = "0.2.66"
+mech = "0.2.68"
 egui = "0.31.1"
 eframe = "0.31.1"
 

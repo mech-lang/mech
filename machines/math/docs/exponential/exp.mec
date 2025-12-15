@@ -1,7 +1,7 @@
 math/exponential
 ===============================================================================
 
-%% Natural exponential e^x (element-wise)
+%% Natural exponential `e^x` (element-wise)
 
 1. Usage
 -------------------------------------------------------------------------------
@@ -14,8 +14,8 @@ Y := math/exponential(X)
 -------------------------------------------------------------------------------
 
 Computes the natural exponential of each element of `X`: `Y = e^X`.  
-Supports scalars, vectors, and matrices of 32‑bit or 64‑bit floating‑point numbers.  
-For arrays, the operation is **element‑wise** and preserves shape.
+Supports scalars, vectors, and matrices of 32-bit or 64-bit floating-point numbers.  
+For arrays, the operation is **element-wise** and preserves shape.
 
 3. Input
 -------------------------------------------------------------------------------
@@ -29,7 +29,7 @@ For arrays, the operation is **element‑wise** and preserves shape.
 
 | Argument | Kind          | Description                                              |
 |----------|---------------|----------------------------------------------------------|
-| `Y`      | matches input | `e^X` computed element‑wise; same shape and dtype as `X` |
+| `Y`      | matches input | `e^X` computed element-wise; same shape and dtype as `X` |
 
 5. Examples
 -------------------------------------------------------------------------------
@@ -43,7 +43,7 @@ y := math/exponential(1.0)        // ≈ 2.718281828...
 (b) Exponential of a scalar (f32)
 
 ```mech:ex2
-y := math/exponential(1.0f)       // 32‑bit float result
+y := math/exponential(1.0<f32>)       // 32-bit float result
 ```
 
 (c) Exponential of a vector
@@ -64,8 +64,8 @@ y := math/exponential(m)
 -------------------------------------------------------------------------------
 
 - **Types:** Implemented for `f32` and `f64` using platform libm (`expf` for `f32`, `exp` for `f64`).  
-- **Element‑wise semantics:** Arrays are processed per element; shape is preserved. No broadcasting is involved (unary op).
-- **Numerics & special values (IEEE‑754):**
+- **Element-wise semantics:** Arrays are processed per element; shape is preserved. No broadcasting is involved (unary op).
+- **Numerics & special values (IEEE-754):**
   - Large positive inputs may overflow to `+Inf`.
   - Large negative inputs may underflow to `+0.0` (subnormal or zero).
   - `NaN` inputs propagate (`exp(NaN) = NaN`).

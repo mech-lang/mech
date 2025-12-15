@@ -33,6 +33,26 @@ use std::ffi::OsStr;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+#[cfg(has_file_wasm)]
+static MECHWASM: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm_bg.wasm.br");
+#[cfg(not(has_file_wasm))]
+static MECHWASM: &[u8] = b"No Embedded WASM";
+
+#[cfg(has_file_js)]
+static MECHJS: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm.js");
+#[cfg(not(has_file_js))]
+static MECHJS: &[u8] = b"No Embedded JS";
+
+#[cfg(has_file_shim)]
+static SHIMHTML: &str = include_str!("../../include/index.html");
+#[cfg(not(has_file_shim))]
+static SHIMHTML: &str = "No Embedded Shim";
+
+#[cfg(has_file_stylesheet)]
+static STYLESHEET: &str = include_str!("../../include/style.css");
+#[cfg(not(has_file_stylesheet))]
+static STYLESHEET: &str = "No Embedded Stylesheet";
+
 #[tokio::main]
 async fn main() -> Result<(), MechError2> {
   /*panic::set_hook(Box::new(|panic_info| {
@@ -145,17 +165,17 @@ async fn main() -> Result<(), MechError2> {
         .short('s')
         .long("stylesheet")
         .value_name("STYLESHEET")
-        .help("Sets the stylesheet for the HTML output (include/style.css)"))
+        .help("Sets the stylesheet for the HTML output"))
       .arg(Arg::new("shim")
         .short('m')
         .long("shim")
         .value_name("SHIM")
-        .help("Sets the shim for the HTML output (include/shim.html)"))
+        .help("Sets the shim for the HTML output"))
       .arg(Arg::new("wasm")
         .short('w')
         .long("wasm")
         .value_name("WASM")
-        .help("Sets the the path to the wasm package (src/wasm/pkg"))
+        .help("Sets the the path to the wasm package"))
       .arg(Arg::new("address")
         .short('a')
         .long("address")
@@ -183,22 +203,57 @@ async fn main() -> Result<(), MechError2> {
   let mut repl_flag = matches.get_flag("repl");
   let time_flag = matches.get_flag("time");
 
+  let shim_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/shim.html".to_string();
+  let stylesheet_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/style.css".to_string();
+  let wasm_backup_url = format!("https://github.com/mech-lang/mech/releases/download/v{}-beta/mech_wasm_bg.wasm.br", VERSION);
+  let js_backup_url = format!("https://github.com/mech-lang/mech/releases/download/v{}-beta/mech_wasm.js", VERSION);
+
   // --------------------------------------------------------------------------
   // Serve
   // --------------------------------------------------------------------------
   #[cfg(feature = "serve")]
   if let Some(matches) = matches.subcommand_matches("serve") {
-
+    let badge = "[Mech Server]".truecolor(34, 204, 187);
+    
     let port: String = matches.get_one::<String>("port").cloned().unwrap_or("8081".to_string());
     let address = matches.get_one::<String>("address").cloned().unwrap_or("127.0.0.1".to_string());
     let full_address: String = format!("{}:{}",address,port);
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let stylesheet = matches.get_one::<String>("stylesheet").cloned().unwrap_or("include/style.css".to_string());
+    let stylesheet_path = matches.get_one::<String>("stylesheet").cloned().unwrap_or("".to_string());
     let wasm_pkg = matches.get_one::<String>("wasm").cloned().unwrap_or("".to_string());
-    let shim = matches.get_one::<String>("shim").cloned().unwrap_or("".to_string());
+    let shim_path = matches.get_one::<String>("shim").cloned().unwrap_or("".to_string());
+
+    let wasm_path = format!("{}/mech_wasm_bg.wasm.br", wasm_pkg);
+    let js_path = format!("{}/mech_wasm.js", wasm_pkg);
+
+    // Load stylesheet
+    println!("{} Loading resources...", badge);
+    print!("{} Loading stylesheet...", badge);
+    let stylesheet = read_or_download(&stylesheet_path, &stylesheet_backup_url, Some(STYLESHEET.as_bytes()))
+        .await?;
+    let stylesheet_str = String::from_utf8(stylesheet)
+        .map_err(|e| MechError2::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
+
+    // Load shim HTML
+    print!("{} Loading HTML shim...", badge);
+    let shim = read_or_download(&shim_path, &shim_backup_url, Some(SHIMHTML.as_bytes()))
+        .await?;
+    let shim_str = String::from_utf8(shim)
+        .map_err(|e| MechError2::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
+
+    // Load WASM
+    print!("{} Loading WASM...", badge);
+    let wasm = read_or_download(&wasm_path, &wasm_backup_url, Some(MECHWASM))
+        .await?;
+
+    // Load JS shim
+    print!("{} Loading JS...", badge);
+    let js = read_or_download(&js_path, &js_backup_url, Some(MECHJS))
+        .await?;
 
     if cfg!(feature = "serve") {
-      let mut server = MechServer::new(full_address, stylesheet.to_string(), shim.to_string(), wasm_pkg.to_string());
+      #[cfg(feature = "serve")]
+      let mut server = MechServer::new("Mech Server".to_string(), full_address, stylesheet_str, shim_str, wasm, js);
       #[cfg(feature = "serve")]
       server.init().await?;
       #[cfg(feature = "serve")]
@@ -264,66 +319,129 @@ async fn main() -> Result<(), MechError2> {
   // --------------------------------------------------------------------------
   #[cfg(feature = "formatter")]
   if let Some(matches) = matches.subcommand_matches("format") {
+    let badge = "[Mech Formatter]".truecolor(34, 204, 187);
     let html_flag = matches.get_flag("html");
-    let stylesheet_url = matches.get_one::<String>("stylesheet").cloned().unwrap_or("https://gitlab.com/mech-lang/mech/-/raw/v0.2-beta/include/style.css?ref_type=heads".to_string());
-    let shim_url = matches.get_one::<String>("shim").cloned().unwrap_or("https://gitlab.com/mech-lang/mech/-/raw/v0.2-beta/include/shim.html?ref_type=heads".to_string());
-    let output_path = PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
+    let stylesheet_path = matches
+        .get_one::<String>("stylesheet")
+        .cloned()
+        .unwrap_or("".to_string());
 
-    let mech_paths: Vec<String> = matches.get_many::<String>("mech_format_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+    let shim_path = matches
+        .get_one::<String>("shim")
+        .cloned()
+        .unwrap_or("".to_string());
+
+    let output_path =
+        PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
+    let is_output_file = output_path.extension().is_some();
+
+    let mech_paths: Vec<String> = matches
+        .get_many::<String>("mech_format_file_paths")
+        .map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+
+    // If the user provided exactly one path
+    if mech_paths.len() == 1 {
+      let input_path = PathBuf::from(&mech_paths[0]);
+      if input_path.is_dir() && is_output_file {
+        eprintln!(
+          "{} Cannot write directory `{}` into single output file `{}`. Provide a directory for --out instead.",
+          "[Error]".truecolor(246,98,78),
+          input_path.display(),
+          output_path.display()
+        );
+        return Ok(());
+      }
+    }
     let mut mechfs = MechFileSystem::new();
-    
-    // open file or url. If it's a local file load it from disk, if it's a url fetch it from internet
-    #[cfg(feature = "async")]
-    let stylesheet = load_resource(&stylesheet_url).await;
-    #[cfg(feature = "async")]
-    let shim = load_resource(&shim_url).await;
 
-    #[cfg(not(feature = "async"))]
-    let stylesheet = load_resource(&stylesheet_url);
-    #[cfg(not(feature = "async"))]
-    let shim = load_resource(&shim_url);
+    println!("{} Loading resources...", badge);
 
-    mechfs.set_stylesheet(&stylesheet);
-    mechfs.set_shim(&shim);
+    // Load stylesheet
+    print!("{} Loading stylesheet...", badge);
+    let stylesheet = read_or_download(&stylesheet_path, &stylesheet_backup_url, Some(STYLESHEET.as_bytes()))
+            .await?;
+    let stylesheet_str = String::from_utf8(stylesheet).map_err(|e| {
+      MechError2::new(
+        Utf8ConversionError {
+          source_error: e.to_string(),
+        },
+        None,
+      )
+      .with_compiler_loc()
+    })?;
+
+    // Load shim HTML
+    print!("{} Loading HTML shim...", badge);
+    let shim = read_or_download(&shim_path, &shim_backup_url, Some(SHIMHTML.as_bytes())).await?;
+    let shim_str = String::from_utf8(shim).map_err(|e| {
+      MechError2::new(
+        Utf8ConversionError {
+          source_error: e.to_string(),
+        },
+        None,
+      )
+      .with_compiler_loc()
+    })?;
+
+    mechfs.set_stylesheet(&stylesheet_str);
+    mechfs.set_shim(&shim_str);
+
     for path in mech_paths {
       mechfs.watch_source(&path)?;
     }
+
     let sources = mechfs.sources();
     let read_sources = sources.read().unwrap();
 
-    // Create the directory html_output_path
-    if output_path != PathBuf::from(".") {
+    // Only create directory if output_path is not a file
+    if !is_output_file && output_path != PathBuf::from(".") {
       match fs::create_dir_all(&output_path) {
-        Ok(_) => {
-          println!("{} Directory created: {}", "[Created]".truecolor(153,221,85), output_path.display());
-        }
-        Err(err) => {
-          println!("Error creating directory: {:?}", err);
-        }
+        Ok(_) => println!(
+          "{} Directory created: {}",
+          "[Created]".truecolor(153, 221, 85),
+          output_path.display()
+        ),
+        Err(err) => println!("Error creating directory: {:?}", err),
       }
     }
 
-    // Process files based on the flag
+    // HTML mode
     if html_flag {
-      for (fid, mech_src) in read_sources.html_iter() {
+      let html_items: Vec<_> = read_sources.html_iter().collect();
+      let is_single_html = html_items.len() == 1;
+
+      if is_output_file && is_single_html {
+        // write ONLY HTML result to output file
+        let (_, mech_src) = html_items[0];
         if let MechSourceCode::Html(content) = mech_src {
-          let mut filename = read_sources.get_path_from_id(*fid).unwrap().clone();
-          filename = filename.with_extension("html");
-          let output_file = output_path.join(filename);
-          save_to_file(output_file, content)?;
+          save_to_file(output_path, content)?;
+        }
+      } else {
+        // otherwise produce multiple output files
+        for (fid, mech_src) in html_items {
+          if let MechSourceCode::Html(content) = mech_src {
+            let mut filename = read_sources.get_path_from_id(*fid).unwrap().clone();
+            filename = filename.with_extension("html");
+            let output_file = if is_output_file { output_path.clone() } 
+                              else { output_path.join(filename) };
+            save_to_file(output_file, content)?;
+          }
         }
       }
     } else {
+      // Raw source mode
       for (fid, mech_src) in read_sources.sources_iter() {
         let content = mech_src.to_string();
         let filename = read_sources.get_path_from_id(*fid).unwrap().clone();
-        let output_file = output_path.join(filename);
+        let output_file = if is_output_file { output_path.clone() } 
+                          else { output_path.join(filename) };
         save_to_file(output_file, &content)?;
       }
     }
 
     return Ok(());
   }
+
 
   // --------------------------------------------------------------------------
   // Run

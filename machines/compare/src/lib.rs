@@ -53,6 +53,10 @@ pub mod gte;
 pub mod eq;
 #[cfg(feature = "neq")]
 pub mod neq;
+#[cfg(feature = "min")]
+pub mod min;
+#[cfg(feature = "max")]
+pub mod max;
 
 #[cfg(feature = "gt")]
 pub use self::gt::*;
@@ -66,6 +70,10 @@ pub use self::gte::*;
 pub use self::eq::*;
 #[cfg(feature = "neq")]
 pub use self::neq::*;
+#[cfg(feature = "min")]
+pub use self::min::*;
+#[cfg(feature = "max")]
+pub use self::max::*;
 
 // ----------------------------------------------------------------------------
 // Compare Library
@@ -130,11 +138,17 @@ macro_rules! impl_compare_binop {
   }
   register_fxn_descriptor!($struct_name, bool, "bool", String, "string", u8, "u8", i8, "i8", u16, "u16", i16, "i16", u32, "u32", i32, "i32", u64, "u64", i64, "i64", u128, "u128", i128, "i128", f32, "f32", f64, "f64", R64, "r64", C64, "c64");
 };}
-  
 
 #[macro_export]
 macro_rules! impl_compare_fxns {
   ($lib:ident) => {
     impl_fxns!($lib,T,bool,impl_compare_binop);
+  }
+}
+
+#[macro_export]
+macro_rules! impl_compare_fxns2 {
+  ($lib:ident) => {
+    impl_fxns!($lib,T,T,impl_compare_binop);
   }
 }

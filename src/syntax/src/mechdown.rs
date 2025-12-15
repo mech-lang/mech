@@ -135,6 +135,7 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
 
 // subtitle := *(space-tab), "(", +(alpha | digit | period), ")", *(space-tab), paragraph-newline, *(space-tab), whitespace* ;
 pub fn subtitle(input: ParseString) -> ParseResult<Subtitle> {
+  let (input, _) = peek(is_not(alt((error_sigil, info_sigil))))(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = left_parenthesis(input)?;
   let (input, num) = separated_list1(period,alt((many1(alpha),many1(digit))))(input)?;
@@ -219,16 +220,14 @@ pub fn inline_equation(input: ParseString) -> ParseResult<ParagraphElement> {
 // hyperlink := "[", +text, "]", "(", +text, ")" ;
 pub fn hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = left_bracket(input)?;
-  let (input, link_text) = many1(tuple((is_not(right_bracket),text)))(input)?;
+  let (input, link_text) = inline_paragraph(input)?;
   let (input, _) = right_bracket(input)?;
   let (input, _) = left_parenthesis(input)?;
   let (input, link) = many1(tuple((is_not(right_parenthesis),text)))(input)?;
   let (input, _) = right_parenthesis(input)?;
   let mut tokens = link.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>();
   let link_merged = Token::merge_tokens(&mut tokens).unwrap();
-  let mut tokens = link_text.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>();
-  let text_merged = Token::merge_tokens(&mut tokens).unwrap();
-  Ok((input, ParagraphElement::Hyperlink((text_merged, link_merged))))
+  Ok((input, ParagraphElement::Hyperlink((link_text, link_merged))))
 }
 
 // raw-hyperlink := http-prefix, +text ;
@@ -236,8 +235,9 @@ pub fn raw_hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = peek(http_prefix)(input)?;
   let (input, address) = many1(tuple((is_not(space), text)))(input)?;
   let mut tokens = address.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>();
-  let url = Token::merge_tokens(&mut tokens).unwrap();
-  Ok((input, ParagraphElement::Hyperlink((url.clone(), url))))
+  let url_token = Token::merge_tokens(&mut tokens).unwrap();
+  let url_paragraph = Paragraph::from_tokens(vec![url_token.clone()]);
+  Ok((input, ParagraphElement::Hyperlink((url_paragraph, url_token))))
 }
 
 // option-map := "{", whitespace*, mapping*, whitespace*, "}" ;
@@ -368,7 +368,7 @@ pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
   let (input, _) = peek(paragraph_element)(input)?;
   let (input, elements) = many1(
     pair(
-      is_not(new_line),
+      is_not(alt((null(new_line), null(idea_sigil)))),
       labelr!(paragraph_element, 
               |input| recover::<ParagraphElement, _>(input, skip_till_paragraph_element),
               "Unexpected paragraph element")
@@ -389,7 +389,7 @@ pub fn paragraph_newline(input: ParseString) -> ParseResult<Paragraph> {
 pub fn ordered_list_item(input: ParseString) -> ParseResult<(Number,Paragraph)> {
   let (input, number) = number(input)?;
   let (input, _) = period(input)?;
-  let (input, list_item) = paragraph(input)?;
+  let (input, list_item) = labelr!(paragraph_newline, |input| recover::<Paragraph, _>(input, skip_till_eol), "Expects paragraph as list item")(input)?;
   Ok((input, (number,list_item)))
 }
 
@@ -399,7 +399,7 @@ pub fn checked_item(input: ParseString) -> ParseResult<(bool,Paragraph)> {
   let (input, _) = left_bracket(input)?;
   let (input, _) = alt((tag("x"),tag("✓"),tag("✗")))(input)?;
   let (input, _) = right_bracket(input)?;
-  let (input, list_item) = paragraph(input)?;
+  let (input, list_item) = labelr!(paragraph_newline, |input| recover::<Paragraph, _>(input, skip_till_eol), "Expects paragraph as list item")(input)?;
   Ok((input, (true,list_item)))
 }
 
@@ -409,7 +409,7 @@ pub fn unchecked_item(input: ParseString) -> ParseResult<(bool,Paragraph)> {
   let (input, _) = left_bracket(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = right_bracket(input)?;
-  let (input, list_item) = paragraph(input)?;
+  let (input, list_item) = labelr!(paragraph_newline, |input| recover::<Paragraph, _>(input, skip_till_eol), "Expects paragraph as list item")(input)?;
   Ok((input, (false,list_item)))
 }
 
@@ -684,10 +684,10 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
         // get rid of the prefix and then treat the rest of the string after : as an identifier
         let rest = tag.trim_start_matches("mech").trim_start_matches("mec").trim_start_matches("🤖").trim_start_matches(":");
         
-        let config = if rest == "" {BlockConfig { namespace: 0, disabled: false, hidden: false}}
-        else if rest == "disabled" { BlockConfig { namespace: 0, disabled: true, hidden: false} }
-        else if rest == "hidden" { BlockConfig { namespace: 0, disabled: false, hidden: true} }
-        else { BlockConfig { namespace: hash_str(rest), disabled: false, hidden: false} };
+        let config = if rest == "" {BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: false, hidden: false}}
+        else if rest == "disabled" { BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: true, hidden: false} }
+        else if rest == "hidden" { BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: false, hidden: true} }
+        else { BlockConfig { namespace_str: rest.to_string(), namespace: hash_str(rest), disabled: false, hidden: false} };
 
         let mech_src = block_src.iter().collect::<String>();
         let graphemes = graphemes::init_source(&mech_src);
@@ -768,6 +768,41 @@ pub fn quote_block(input: ParseString) -> ParseResult<SectionElement> {
   Ok((input, SectionElement::QuoteBlock(paragraphs)))
 }
 
+// warning-block := warning-sigil, *space, +paragraph ;
+pub fn warning_block(input: ParseString) -> ParseResult<SectionElement> {
+  let (input, _) = peek(is_not(float_sigil))(input)?;
+  let (input, _) = warning_sigil(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, paragraphs) = many1(paragraph_newline)(input)?;
+  Ok((input, SectionElement::WarningBlock(paragraphs)))
+}
+
+// success-block := success-sigil, *space, +paragraph ;
+pub fn success_block(input: ParseString) -> ParseResult<SectionElement> {
+  let (input, _) = peek(is_not(float_sigil))(input)?;
+  let (input, _) = alt((success_sigil, success_check_sigil))(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, paragraphs) = many1(paragraph_newline)(input)?;
+  Ok((input, SectionElement::SuccessBlock(paragraphs)))
+}
+
+// error-block := error-sigil, *space, +paragraph ;
+pub fn error_block(input: ParseString) -> ParseResult<SectionElement> {
+  let (input, _) = peek(is_not(float_sigil))(input)?;
+  let (input, _) = alt((error_sigil, error_alt_sigil))(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, paragraphs) = many1(paragraph_newline)(input)?;
+  Ok((input, SectionElement::ErrorBlock(paragraphs)))
+}
+
+// idea-block := idea-sigil, *space, +paragraph ;
+pub fn idea_block(input: ParseString) -> ParseResult<SectionElement> {
+  let (input, _) = idea_sigil(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, paragraphs) = many1(paragraph_newline)(input)?;
+  Ok((input, SectionElement::IdeaBlock(paragraphs)))
+}
+
 // abstract-element := abstract-sigil, *space, +paragraph ;
 pub fn abstract_el(input: ParseString) -> ParseResult<SectionElement> {
   let (input, _) = abstract_sigil(input)?;
@@ -818,15 +853,20 @@ pub fn float(input: ParseString) -> ParseResult<(Box<SectionElement>,FloatDirect
 
 // float := float-sigil, section-element ;
 pub fn not_mech_code(input: ParseString) -> ParseResult<()> {
-  let (input, _) = alt((null(question_block), null(info_block), null(img), null(float)))(input)?;
+  let (input, _) = alt((null(question_block), 
+    null(info_block),  
+    null(success_block),
+    null(warning_block),
+    null(error_block),
+    null(idea_block),
+    null(img), 
+    null(float)))(input)?;
   Ok((input, ()))
 }
 
 // section-element := mech-code | question-block | info-block | list | footnote | citation | abstract-element | img | equation | table | float | quote-block | code-block | thematic-break | subtitle | paragraph ;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let parsers: Vec<(&'static str, Box<dyn Fn(ParseString) -> ParseResult<SectionElement>>)> = vec![
-    ("question_block",  Box::new(question_block)),
-    ("info_block",      Box::new(info_block)),
     ("list",            Box::new(|i| mechdown_list(i).map(|(i, lst)| (i, SectionElement::List(lst))))),
     ("footnote",        Box::new(|i| footnote(i).map(|(i, f)| (i, SectionElement::Footnote(f))))),
     ("citation",        Box::new(|i| citation(i).map(|(i, c)| (i, SectionElement::Citation(c))))),
@@ -839,6 +879,12 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
     ("code_block",      Box::new(code_block)),
     ("thematic_break",  Box::new(|i| thematic_break(i).map(|(i, _)| (i, SectionElement::ThematicBreak)))),
     ("subtitle",        Box::new(|i| subtitle(i).map(|(i, s)| (i, SectionElement::Subtitle(s))))),
+    ("question_block",  Box::new(question_block)),
+    ("info_block",      Box::new(info_block)),
+    ("success_block",   Box::new(success_block)),
+    ("warning_block",   Box::new(warning_block)),
+    ("error_block",     Box::new(error_block)),
+    ("idea_block",      Box::new(idea_block)),
     ("paragraph",       Box::new(|i| paragraph(i).map(|(i, p)| (i, SectionElement::Paragraph(p))))),
   ];
 

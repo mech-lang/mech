@@ -80,9 +80,11 @@ This equation breaks down into:
 Let's assume we have the following information:
 
 
+```mech:bayes
 P-Disease := 0.01          -- 1% of the population has the disease
 P-Pos-Disease := 0.99      -- true positive rate is 99%
 P-Pos-No-Disease := 0.05   -- false positive rate is 5%
+```
 
 Then the total probability of a positive test is:
 
@@ -94,13 +96,13 @@ P(\text{Positive} \mid \text{No Disease}) \cdot P(\text{No Disease})
 
 Plugging in the values:
 
-```mech
+```mech:bayes
 P-Pos := P-Pos-Disease * P-Disease + P-Pos-No-Disease * P-Pos-Disease
 ```
 
 Now apply Bayes' Theorem:
 
-```mech
+```mech:bayes
 P-Disease-Pos := P-Pos-Disease * P-Disease / P-Pos
 ```
 

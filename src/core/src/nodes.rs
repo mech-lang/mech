@@ -97,20 +97,21 @@ pub enum TokenKind {
   Backslash, Bar, BoxDrawing,
   Caret, CarriageReturn, CarriageReturnNewLine, Colon, CodeBlock, Comma,
   Dash, DefineOperator, Digit, Dollar,
-  Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Error, Exclamation, 
+  Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Error, ErrorSigil, Exclamation, 
   False, FloatLeft, FloatRight, FootnotePrefix,
   Grave, GraveCodeBlockSigil,
   HashTag, HighlightSigil, HttpPrefix,
-  Identifier, ImgPrefix, InfoSigil, InlineCode, 
+  IdeaSigil, Identifier, ImgPrefix, InfoSigil, InlineCode, 
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
   Newline, Not, Number,
   OutputOperator,
   Percent, Period, Plus,
   QueryOperator, Question, QuestionSigil, Quote, QuoteSigil,
   RightAngle, RightBrace, RightBracket, RightParenthesis,
-  SectionSigil, Semicolon, Space, Slash, String, StrikeSigil, StrongSigil,
+  SectionSigil, Semicolon, Space, Slash, String, StrikeSigil, StrongSigil, SuccessSigil,
   Tab, Text, Tilde, TildeCodeBlockSigil, Title, TransitionOperator, True,
   UnderlineSigil, Underscore,
+  WarningSigil,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -433,6 +434,43 @@ pub enum GrammarExpression {
   Terminal(Token),
 }
 
+impl GrammarExpression {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      GrammarExpression::Choice(exprs) => {
+        let mut tokens = vec![];
+        for expr in exprs {
+          tokens.append(&mut expr.tokens());
+        }
+        tokens
+      }
+      GrammarExpression::Definition(id) => id.tokens(),
+      GrammarExpression::Group(expr) => expr.tokens(),
+      GrammarExpression::List(expr1, expr2) => {
+        let mut tokens = expr1.tokens();
+        tokens.append(&mut expr2.tokens());
+        tokens
+      }
+      GrammarExpression::Not(expr) => expr.tokens(),
+      GrammarExpression::Optional(expr) => expr.tokens(),
+      GrammarExpression::Peek(expr) => expr.tokens(),
+      GrammarExpression::Repeat0(expr) => expr.tokens(),
+      GrammarExpression::Repeat1(expr) => expr.tokens(),
+      GrammarExpression::Range(t1, t2) => vec![t1.clone(), t2.clone()],
+      GrammarExpression::Sequence(exprs) => {
+        let mut tokens = vec![];
+        for expr in exprs {
+          tokens.append(&mut expr.tokens());
+        }
+        tokens
+      }
+      GrammarExpression::Terminal(t) => vec![t.clone()],
+    }
+  }
+
+
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Citation {
@@ -450,6 +488,7 @@ impl Citation {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct BlockConfig {
+  pub namespace_str: String,
   pub namespace: u64,
   pub disabled: bool,
   pub hidden: bool,
@@ -478,6 +517,10 @@ pub enum SectionElement {
   Abstract(Vec<Paragraph>),
   QuoteBlock(Vec<Paragraph>),
   InfoBlock(Vec<Paragraph>),
+  SuccessBlock(Vec<Paragraph>),
+  IdeaBlock(Vec<Paragraph>),
+  WarningBlock(Vec<Paragraph>),
+  ErrorBlock(Vec<Paragraph>),
   QuestionBlock(Vec<Paragraph>),
   Citation(Citation),
   CodeBlock(Token),
@@ -505,26 +548,117 @@ impl Recoverable for SectionElement {
 }
 
 impl SectionElement {
+
   pub fn tokens(&self) -> Vec<Token> {
     match self {
       SectionElement::FencedMechCode(c) => {
         let mut tokens = vec![];
-        for (c,_) in &c.code {
+        for (c, _) in &c.code {
           tokens.append(&mut c.tokens());
         }
         tokens
       }
       SectionElement::MechCode(codes) => {
         let mut tokens = vec![];
-        for (code,_) in codes {
+        for (code, _) in codes {
           tokens.append(&mut code.tokens());
         }
         tokens
+      }
+      SectionElement::Abstract(paragraphs)
+      | SectionElement::QuoteBlock(paragraphs)
+      | SectionElement::InfoBlock(paragraphs)
+      | SectionElement::SuccessBlock(paragraphs)
+      | SectionElement::IdeaBlock(paragraphs)
+      | SectionElement::WarningBlock(paragraphs)
+      | SectionElement::ErrorBlock(paragraphs)
+      | SectionElement::QuestionBlock(paragraphs) => {
+        let mut tokens = vec![];
+        for paragraph in paragraphs {
+          tokens.append(&mut paragraph.tokens());
+        }
+        tokens
+      }
+      SectionElement::Citation(citation) => citation.text.tokens(),
+      SectionElement::CodeBlock(token)
+      | SectionElement::Diagram(token)
+      | SectionElement::Equation(token) => vec![token.clone()],
+      SectionElement::Comment(comment) => comment.tokens(),
+      SectionElement::Float((element, _)) => element.tokens(),
+      SectionElement::Footnote((_, paragraphs)) => {
+        let mut tokens = vec![];
+        for paragraph in paragraphs {
+          tokens.append(&mut paragraph.tokens());
+        }
+        tokens
+      }
+        SectionElement::Grammar(grammar) => {
+        let mut tokens = vec![];
+        for rule in &grammar.rules {
+          tokens.append(&mut rule.name.tokens());
+          tokens.append(&mut rule.expr.tokens());
+        }
+        tokens
+      }
+      SectionElement::Image(image) => {
+        let mut tokens = vec![image.src.clone()];
+        if let Some(caption) = &image.caption {
+          tokens.append(&mut caption.tokens());
+        }
+        tokens
+      }
+      SectionElement::List(list) => match list {
+      MDList::Unordered(items) => {
+        let mut tokens = vec![];
+        for ((_, paragraph), sublist) in items {
+        tokens.append(&mut paragraph.tokens());
+        if let Some(sublist) = sublist {
+          tokens.append(&mut sublist.tokens());
+        }
+        }
+        tokens
+      }
+      MDList::Ordered(ordered_list) => {
+        let mut tokens = ordered_list.start.tokens();
+        for ((_, paragraph), sublist) in &ordered_list.items {
+        tokens.append(&mut paragraph.tokens());
+        if let Some(sublist) = sublist {
+          tokens.append(&mut sublist.tokens());
+        }
+        }
+        tokens
+      }
+      MDList::Check(items) => {
+        let mut tokens = vec![];
+        for ((_, paragraph), sublist) in items {
+        tokens.append(&mut paragraph.tokens());
+        if let Some(sublist) = sublist {
+          tokens.append(&mut sublist.tokens());
+        }
+        }
+        tokens
+      }
       },
-      _ => todo!(),
+      SectionElement::Paragraph(paragraph) => paragraph.tokens(),
+      SectionElement::Subtitle(subtitle) => subtitle.text.tokens(),
+      SectionElement::Table(table) => {
+        let mut tokens = vec![];
+        for header in &table.header {
+          tokens.append(&mut header.tokens());
+        }
+        for row in &table.rows {
+          for column in row {
+          tokens.append(&mut column.tokens());
+          }
+        }
+        tokens
+      }
+      SectionElement::ThematicBreak => vec![],
+      SectionElement::Error(token, _) => vec![token.clone()],
     }
   }
 }
+
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -567,6 +701,45 @@ pub enum MDList {
   Unordered(UnorderedList),
   Ordered(OrderedList),
   Check(CheckList)
+}
+
+impl MDList {
+
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      MDList::Unordered(items) => {
+        let mut tokens = vec![];
+        for ((_, paragraph), sublist) in items {
+          tokens.append(&mut paragraph.tokens());
+          if let Some(sublist) = sublist {
+            tokens.append(&mut sublist.tokens());
+          }
+        }
+        tokens
+      }
+      MDList::Ordered(ordered_list) => {
+        let mut tokens = ordered_list.start.tokens();
+        for ((_, paragraph), sublist) in &ordered_list.items {
+          tokens.append(&mut paragraph.tokens());
+          if let Some(sublist) = sublist {
+            tokens.append(&mut sublist.tokens());
+          }
+        }
+        tokens
+      }
+      MDList::Check(items) => {
+        let mut tokens = vec![];
+        for ((_, paragraph), sublist) in items {
+          tokens.append(&mut paragraph.tokens());
+          if let Some(sublist) = sublist {
+            tokens.append(&mut sublist.tokens());
+          }
+        }
+        tokens
+      }
+    }
+  }
+
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -663,9 +836,20 @@ pub enum Transition {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Pattern {
   Expression(Expression),
-  Formula(Factor),
   TupleStruct(PatternTupleStruct),
+  Tuple(PatternTuple),
   Wildcard,
+}
+
+impl Pattern {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Pattern::Expression(e) => e.tokens(),
+      Pattern::TupleStruct(ts) => ts.tokens(),
+      Pattern::Tuple(t) => t.tokens(),
+      Pattern::Wildcard => vec![],
+    }
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -675,7 +859,29 @@ pub struct PatternTupleStruct {
   pub patterns: Vec<Pattern>,
 }
 
-pub type PatternTuple = Vec<Pattern>;
+impl PatternTupleStruct {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.name.tokens();
+    for p in &self.patterns {
+      tokens.append(&mut p.tokens());
+    }
+    tokens
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct PatternTuple(pub Vec<Pattern>);
+
+impl PatternTuple {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = vec![];
+    for p in &self.0 {
+        tokens.append(&mut p.tokens());
+    }
+    tokens
+  }
+}
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -835,6 +1041,17 @@ pub struct Record {
   pub bindings: Vec<Binding>,
 }
 
+impl Record {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for b in &self.bindings {
+      let mut t = b.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Structure {
@@ -851,8 +1068,14 @@ pub enum Structure {
 impl Structure {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
+      Structure::Empty => vec![],
+      Structure::Map(map) => map.tokens(),
       Structure::Matrix(mat) => mat.tokens(),
-      _ => todo!(),
+      Structure::Record(rec) => rec.tokens(),
+      Structure::Set(set) => set.tokens(),
+      Structure::Table(tab) => tab.tokens(),
+      Structure::Tuple(tup) => tup.tokens(),
+      Structure::TupleStruct(ts) => ts.tokens(),
     }
   }
 }
@@ -863,11 +1086,30 @@ pub struct Map {
   pub elements: Vec<Mapping>,
 }
 
+impl Map {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for e in &self.elements {
+      let mut t = e.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Mapping {
   pub key: Expression,
   pub value: Expression,
+}
+
+impl Mapping {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.key.tokens();
+    tkns.append(&mut self.value.tokens());
+    tkns
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -876,10 +1118,27 @@ pub struct Set {
   pub elements: Vec<Expression>,
 }
 
+impl Set {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for e in &self.elements {
+      let mut t = e.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Atom {
   pub name: Identifier,
+}
+
+impl Atom {
+  pub fn tokens(&self) -> Vec<Token> {
+    self.name.tokens()
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -887,6 +1146,14 @@ pub struct Atom {
 pub struct TupleStruct {
   pub name: Identifier,
   pub value: Box<Expression>,
+}
+
+impl TupleStruct {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.name.tokens();
+    tkns.append(&mut self.value.tokens());
+    tkns
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -906,13 +1173,44 @@ impl Matrix {
   }
 }
 
-pub type TableHeader = Vec<Field>;
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct TableHeader(pub Vec<Field>);
+
+impl TableHeader {
+  pub fn new(fields: Vec<Field>) -> TableHeader {
+    TableHeader(fields)
+  }
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for f in &self.0 {
+      let mut t = f.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
+}
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Table {
   pub header: TableHeader,
   pub rows: Vec<TableRow>,
+}
+
+impl Table {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for f in &self.header.0 {
+      let mut t = f.tokens();
+      tkns.append(&mut t);
+    }
+    for r in &self.rows {
+      let mut t = r.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -922,10 +1220,27 @@ pub struct Field {
   pub kind: Option<KindAnnotation>,
 }
 
+impl Field {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.name.tokens();
+    if let Some(knd) = &self.kind {
+      let mut t = knd.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct TableColumn {
   pub element: Expression,
+}
+
+impl TableColumn {
+  pub fn tokens(&self) -> Vec<Token> {
+    self.element.tokens()
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -944,6 +1259,17 @@ impl MatrixColumn {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct TableRow {
   pub columns: Vec<TableColumn>,
+}
+
+impl TableRow {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for r in &self.columns {
+      let mut t = r.element.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -997,7 +1323,6 @@ impl Var {
   }
 }
 
-
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct VariableAssign {
@@ -1029,7 +1354,6 @@ impl Identifier {
   }
 
 }
-
 
 impl Identifier {
   pub fn hash(&self) -> u64 {
@@ -1144,6 +1468,7 @@ pub enum Expression {
   Range(Box<RangeExpression>),
   Slice(Slice),
   Structure(Structure),
+  SetComprehension(Box<SetComprehension>),
   Var(Var),
 }
 
@@ -1156,7 +1481,47 @@ impl Expression {
       Expression::Formula(fctr) => fctr.tokens(),
       Expression::Range(range) => range.tokens(),
       Expression::Slice(slice) => slice.tokens(),
+      Expression::SetComprehension(sc) => sc.tokens(),
       _ => todo!(),
+    }
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct SetComprehension {
+  pub expression: Expression,
+  pub qualifiers: Vec<ComprehensionQualifier>,
+}
+
+impl SetComprehension {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.expression.tokens();
+    for qualifier in &self.qualifiers {
+      tokens.append(&mut qualifier.tokens());
+    }
+    tokens
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ComprehensionQualifier {
+  Generator((Pattern,Expression)),
+  Filter(Expression),
+  Let(VariableDefine),
+}
+
+impl ComprehensionQualifier {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      ComprehensionQualifier::Generator((pattern, expr)) => {
+        let mut tokens = pattern.tokens();
+        tokens.append(&mut expr.tokens());
+        tokens
+      }
+      ComprehensionQualifier::Filter(expr) => expr.tokens(),
+      ComprehensionQualifier::Let(var_def) => var_def.tokens(),
     }
   }
 }
@@ -1182,12 +1547,33 @@ pub struct Tuple {
   pub elements: Vec<Expression>
 }
 
+impl Tuple {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = vec![];
+    for elem in &self.elements {
+      tokens.append(&mut elem.tokens());
+    }
+    tokens
+  }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Binding {
   pub name: Identifier,
   pub kind: Option<KindAnnotation>,
   pub value: Expression,
+}
+
+impl Binding {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.name.tokens();
+    if let Some(knd) = &self.kind {
+      tokens.append(&mut knd.tokens());
+    }
+    tokens.append(&mut self.value.tokens());
+    tokens
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -1317,7 +1703,7 @@ impl MechString {
   }
 }
 
-pub type Hyperlink = (Token, Token);
+pub type Hyperlink = (Paragraph, Token);
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -1352,7 +1738,11 @@ impl ParagraphElement {
       ParagraphElement::Emphasis(t) => t.tokens(),
       ParagraphElement::FootnoteReference(t) => vec![t.clone()],
       ParagraphElement::Highlight(t) => t.tokens(),
-      ParagraphElement::Hyperlink((t, u)) => vec![t.clone(), u.clone()],
+      ParagraphElement::Hyperlink((t, u)) => {
+        let mut tokens = t.tokens();
+        tokens.push(u.clone());
+        tokens
+      },
       ParagraphElement::InlineCode(t) => vec![t.clone()],
       ParagraphElement::InlineEquation(t) => vec![t.clone()],
       ParagraphElement::InlineMechCode(t) => t.tokens(),
@@ -1405,6 +1795,14 @@ impl Paragraph {
       out.push_str(&e.to_string());
     }
     out
+  }
+
+  pub fn from_tokens(tokens: Vec<Token>) -> Paragraph {
+    let elements = tokens.into_iter().map(|t| ParagraphElement::Text(t)).collect();
+    Paragraph {
+      elements,
+      error_range: None,
+    }
   }
 
   pub fn has_errors(&self) -> bool {
@@ -1631,8 +2029,8 @@ pub enum VecOp {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum ExponentOp {
-  Exp
+pub enum PowerOp {
+  Pow
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -1662,7 +2060,7 @@ pub enum LogicOp {
 pub enum FormulaOperator {
   AddSub(AddSubOp),
   Comparison(ComparisonOp),
-  Exponent(ExponentOp),
+  Power(PowerOp),
   Logic(LogicOp),
   MulDiv(MulDivOp),
   Vec(VecOp),
@@ -1688,12 +2086,13 @@ pub enum SetOp {
   Intersection,
   Difference,
   Complement,
-  Subset,
-  Superset,
-  ProperSubset,
-  ProperSuperset,
   ElementOf,
   NotElementOf,
+  ProperSubset,
+  ProperSuperset,
+  Subset,
+  Superset,
+  SymmetricDifference,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

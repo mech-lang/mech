@@ -30,6 +30,9 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
   match element {
     SectionElement::InfoBlock(x) => x.hash(&mut hasher),
     SectionElement::QuestionBlock(x) => x.hash(&mut hasher),
+    SectionElement::WarningBlock(x) => x.hash(&mut hasher),
+    SectionElement::ErrorBlock(x) => x.hash(&mut hasher),
+    SectionElement::IdeaBlock(x) => x.hash(&mut hasher),
     SectionElement::Image(x) => x.hash(&mut hasher),
     SectionElement::Float(x) => x.hash(&mut hasher),
     SectionElement::Citation(x) => x.hash(&mut hasher),
@@ -138,7 +141,7 @@ pub fn paragraph_element(element: &ParagraphElement, p: &Interpreter) -> MResult
   let result = match element {
     ParagraphElement::EvalInlineMechCode(expr) => {
       let code_id = hash_str(&format!("{:?}", expr));
-      match expression(&expr, p) {
+      match expression(&expr, None, p) {
         Ok(val) => (code_id,val),
         Err(e) => (code_id,Value::Empty), // the expression failed perhaps because the value isn't defined yet.
         _ => todo!(), // What do we do in the case when it really is an error though?
@@ -168,8 +171,8 @@ pub fn comment(cmmt: &Comment, p: &Interpreter) -> MResult<Value> {
 
 pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
   match &code {
-    MechCode::Expression(expr) => expression(&expr, p),
-    MechCode::Statement(stmt) => statement(&stmt, p),
+    MechCode::Expression(expr) => expression(&expr, None, p),
+    MechCode::Statement(stmt) => statement(&stmt, None, p),
     //MechCode::FsmSpecification(_) => todo!(),
     //MechCode::FsmImplementation(_) => todo!(),
     #[cfg(feature = "functions")]

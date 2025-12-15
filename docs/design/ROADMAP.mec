@@ -4,25 +4,24 @@ Mech Project Roadmap
 1. Project Status
 -------------------------------------------------------------------------------
 
-(1.1) Stage 1 - Alpha v0.0.1 - v0.0.6
+(1.1) Stage 1 - Alpha `v0.0.1` - `v0.0.6`
 
 Conception: started 2014
 Implementation: started 2018
 
-(1.2) Stage 2 - Beta v0.1.0 - v0.4+ (???)
+(1.2) Stage 2 - Beta `v0.1.0` - `v0.4+` (???)
 
 Started: December 2022
-Currently: v0.2.66 (Fall 2025)
+Currently: `v0.2.69` (Fall 2025)
 
-- v0.2 (data specification)    (Current Work)
-- v0.3 (program specification) (Starting in 2026)
-- v0.4 (system specification)
-
+- `v0.2` data specification    `Concluding end of 2025`
+- `v0.3` program specification !!Starting 2026!!
+- `v0.4` system specification `TBD`
 (1.3) Stage 3 - Stable v1.0.0
 
-Target release date: ???
+No target release date yet.
 
-2. Feature Status
+2. Feature Progress
 -------------------------------------------------------------------------------
 
 -(💭) concept
@@ -32,53 +31,77 @@ Target release date: ???
 -(🐓) feature complete
 -(🍗) deprecated
 
-(2.1) Data Specification (v0.2)
+(2.1) Data Specification (`v0.2`)
+
+(!)> Work on `v0.2` is targeted to conclude by the end of 2025, and will transition into `v0.3` starting in 2026.
+
+Now that all `v0.2` work items are at the beta implementation stage, we will prepare to move on to `v0.3`. This will mean wrapping up documentation, tests, and any remaining bugs. 
+
+As beta features, these are are still not complete and are subject to change in `v0.3`.
+
 
 -(🐤) repl
 -(🐤) error system
 -(🐤) value semantics
 -(🐤) mechdown
 -(🐤) type inference
--(🐤) variety of numerical datatypes
--(🐤) scientific numbers
--(🐤) imaginary numbers
--(🐤) rational numbers
--(🐤) enums
--(🐤) option types
--(🐤) sets
--(🐤) maps
--(🐤) atoms
--(🐤) records
--(🐤) tuples
--(🐤) tables (dataframe)
--(🐤) strings
--(🐤) bools
--(🐤) standard library functions
+-(🐤) new data types
+  -(🐤) variety of numerical datatypes
+    -(🐤) scientific numbers
+    -(🐤) imaginary numbers
+    -(🐤) rational numbers
+  -(🐤) strings
+  -(🐤) bools
+-(🐤) new data structures
+  -(🐤) enums
+  -(🐤) option types
+  -(🐤) sets
+  -(🐤) maps
+  -(🐤) atoms
+  -(🐤) records
+  -(🐤) tuples
+  -(🐤) tables (dataframe)
 -(🐤) flexible matrix type with fixed and dynamic sizes for homogeneous data
--(🐤) matrix builder notation
--(🐤) matrix slicing
--(🐤) operator broadcasting
--(🐤) logical indexing
--(🐤) variable type and size checking
--(🐤) builtin linear algebra tools
+  -(🐤) matrix builder notation
+  -(🐤) matrix slicing
+  -(🐤) operator broadcasting
+  -(🐤) logical indexing
+  -(🐤) variable type and size checking
+  -(🐤) builtin linear algebra tools
+-(🐤) standard library
+  -(🐤) combinatorics
+  -(🐤) compare
+  -(🐤) io
+  -(🐤) math
+  -(🐤) matrix
+  -(🐤) set
+  -(🐤) stats
+  -(🐤) range
 
-(2.2) Program Specification (v0.3)
+(2.2) Program Specification (`v0.3`)
+
+Version `v0.3` incorporates all the features of `v0.2`, in addition to the following new features:
 
 -(💭) synthassign
--(💭) state machines
--(💭) automatic differentiation
 -(💭) introspection
 -(💭) higher order functions
+-(💭) new types (dec64, currency, email addresses, dates)
 -(💭) Integrations
   -(💭) Godot
   -(💭) Python
   -(💭) C/C++
   -(🐣) Rust
   -(🐣) Javascript
+-(🥚) state Machines
+-(🥚) automatic differentiation
 -(🥚) language server
 -(🥚) physical units with dimension checking
 -(🥚) file/parameter server
 -(🥚) time travel debugging
+-(🥚) machine revamp
+-(🥚) database revamp
+-(🐣) Set completions
+-(🐣) List completions
 -(🐣) self-contained binary executables
 -(🐣) bytecode interpreter
 -(🐣) build system
@@ -95,124 +118,10 @@ Target release date: ???
 -(🐣) distributed programs
 -(🐣) concurrent programming
 
-3. Nearterm Goals
+3. Roadmap History
 -------------------------------------------------------------------------------
 
-(3.1) Version 0.2.0
-
-Current work is focused on reimplementing the core of the Mech language to reorient programs around state machines. Version 0.2 will be focused on dataspecification - entering data into the system, slicing, remixing, and reshaping it for use in program logic.
-
--[x] Monorepo
-- New Literals
-  -[x] Atoms
-  -[x] Specifying units
-  -[x] Scientific notation
-- Table redo
-  -[x] Different kinds: Table, Matrix, Record, Set, Tuple, Enum
-  -[x] Simplify indexing
-  -[x] HashTable/HashSet support
-- Stdlib Redo
-  -[x] Math
-  -[x] Compare
-  -[x] Logic
-  -[x] Range
-  -[x] Access
-  -[x] Convert
-- Parser Redo
-  -[x] Mechdown
-  -[x] Statements
-  -[x] Expressions
-  -[x] Structures
-  -[x] Formatter
-- Mechdown Redo
-  -[x] Headers
-  -[x] Paragraphs
-  -[x] Code Block
-  -[x] Ordered List
-- Expression
-  -[x] Var  
-  -[x] Range
-  -[x] Slice
-  -[x] Forumula
-  -[x] Struct
-  -[x] Literal
-  -[x] Function call
-- Statement
-  -[x] VarDefine
-  -[x] VarAssign
-  -[x] Kind Define
-  -[x] Enum Define
-- Matrix
-  -[x] Multiply
-  -[x] Transpose
-- Docs
-  -[x] Language Spec
-  -[x] Learn Mech in 15 Minutes
-
-(3.2) Version 0.3.0
-
--[ ] Dec64
--[ ] Currency
--[ ] Autograd syntax
--[ ] History syntax
--[ ] Database redo
-  -[ ] ACID
-  -[ ] Persistence
-  -[ ] Time travel debugging
-  -[ ] Capabilities
--[ ] Distributed runtime redo
-  -[ ] Core syntax
-  -[ ] CAP
-  -[ ] QOS
-  -[ ] Inbox
-  -[ ] Capabilities
--[ ] Machines revamp
-  -[ ] Packaging
-  -[ ] Reuse
-  -[ ] Composition
-  -[ ] Explicit importing
-  -[ ] Remapping
-  -[ ] Specifying versions  
--[ ] Editor
-  -[ ] Start and stop cores
-  -[ ] Save and load programs
-  -[ ] Workspace explorer
-  -[ ] API endpoint server
-  -[ ] Syntax highlighting
-  -[ ] Embed programs
-  -[ ] Display errors
--[ ] Machines
-  -[ ] json
-  -[ ] sockets
-  -[ ] serial
-  -[ ] bluetooth
-  -[ ] audio
-  -[ ] maps
-  -[ ] plot
-  -[ ] gpgpu
-- State machines
-  -[ ] Specification
-  -[ ] Definition
--[ ] Split 
--[ ] Flatten 
--[ ] Solve linear system
--[ ] FSM Pipe
--[ ] Tutorials
--[ ] How-Tos
--[ ] Mech for X
-- Website
-  -[ ] Homepage
-  -[ ] Blog
-  -[ ] Docs
-  -[ ] Try
-- Function Redo
-  -[x] FXN Call
-  -[x] FXN Defintiion
-
-4. Project History
--------------------------------------------------------------------------------
-
-(4.1) Version 0.0.6 Alpha (unreleased)
+(3.1) Version `v0.0.6-alpha` (unreleased)
 
 -[x] Testing
 -[x] Machines 
@@ -236,7 +145,7 @@ Current work is focused on reimplementing the core of the Mech language to reori
   -[x] Mech Compiler
   -[x] Table
 
-(4.2) Version 0.1.0 (December 2022)
+(3.2) Version `v0.1.0` (December 2022)
 
 -[x] User defined functions
 -[x] Errors
@@ -253,7 +162,7 @@ Current work is focused on reimplementing the core of the Mech language to reori
   -[x] Matrix
   -[x] GUI
 
-(4.3) Version 0.1.1 (Spring 2023)
+(3.3) Version `v0.1.1` (Spring 2023)
 
 - Core
   -[x] Automatic differentiation

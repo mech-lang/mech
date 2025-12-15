@@ -1,6 +1,6 @@
 [package]
 name = "mech-set"
-version = "0.2.67"
+version = "0.2.69"
 authors = ["Corey Montella <corey@mech-lang.org>", "Steven McPhillimey <slm526@lehigh.edu>", "Liam Messinger <ljm426@lehigh.edu>", "Natalie Dumler <nad326@lehigh.edu>"]
 description = "Set library for the Mech language"
 documentation = "http://docs.mech-lang.org"
@@ -58,7 +58,7 @@ setdata_default = ["size"]
 
 set_default = ["membership_default", "modify_default",
               "operations_default", "relations_default",
-              "setdata_default"]
+              "setdata_default", "comprehensions"]
 
 set = ["functions"]
 
@@ -67,6 +67,7 @@ modify = ["set"]
 operations = ["set"]
 relations = ["set"]
 setdata = ["set"]
+comprehensions = ["set"]
 
 element_of = ["membership"]
 not_element_of = ["membership"]
@@ -190,7 +191,7 @@ dot_indexing = ["subscript", "mech-core/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle"]
 
 [dependencies]
-mech-core = { version = "0.2.67" }
+mech-core = { version = "0.2.69" }
 
 paste = "1.0.15"
 inventory = "0.3.21"

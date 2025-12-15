@@ -183,19 +183,20 @@ pub fn help() -> String {
 pub fn save_to_file(mut path: PathBuf, content: &str) -> MResult<()> {
   // If path is a directory, give it a default file name
   if path.is_dir() {
-      path.push("output.html");
+    path.push("output.html");
   }
 
-  println!("{} Saving file to {}", "[Save]".truecolor(153,221,85), path.display());
+  print!("{} Saving file to {}...", "[Save]".truecolor(153,221,85), path.display());
+  stdout().flush()?;
 
   if let Some(parent) = path.parent() {
-      fs::create_dir_all(parent)?;
+    fs::create_dir_all(parent)?;
   }
 
   let mut file = fs::File::create(&path)?;
   file.write_all(content.as_bytes())?;
 
-  println!("{} File saved as {}", "[Save]".truecolor(153,221,85), path.display());
+  println!("Done.");
   Ok(())
 }
 
@@ -301,6 +302,71 @@ pub fn clc() {
   stdo.execute(terminal::Clear(terminal::ClearType::All));
   stdo.execute(cursor::MoveTo(0,0));
 }
+
+pub enum Source<'a> {
+  UserFile(&'a str),
+  Embedded(&'a [u8]),
+  Url(&'a str),
+}
+
+pub async fn read_or_download(path: &str,backup_url: &str, embedded: Option<&[u8]>) -> MResult<Vec<u8>> {
+
+  // 1. User-supplied path always wins
+  match std::fs::read(path) {
+    Ok(content) => {
+      println!("Using user-supplied resource: {}", path);
+      return Ok(content);
+    }
+    Err(_) => { /* continue to embedded / download */ }
+  }
+
+  // 2. Embedded bytes (included via include_bytes!)
+  if let Some(bytes) = embedded {
+    if !bytes.is_empty() {
+      println!("Using embedded resource");
+      return Ok(bytes.to_vec());
+    }
+  }
+
+  // 3. Fallback: Download from remote URL
+  println!("Downloading from {}", backup_url);
+
+  let response = reqwest::get(backup_url).await.map_err(|e| {
+    MechError2::new(
+      HttpRequestFailed {
+        url: backup_url.to_string(),
+        source: e.to_string(),
+      },
+      None,
+    )
+    .with_compiler_loc()
+  })?;
+
+  if !response.status().is_success() {
+    return Err(MechError2::new(
+      HttpRequestStatusFailed {
+        url: backup_url.to_string(),
+        status_code: response.status().as_u16(),
+      },
+      None,
+    )
+    .with_compiler_loc());
+  }
+
+  let bytes = response.bytes().await.map_err(|e| {
+    MechError2::new(
+      HttpRequestFailed {
+        url: backup_url.to_string(),
+        source: e.to_string(),
+      },
+      None,
+    )
+    .with_compiler_loc()
+  })?;
+
+  Ok(bytes.to_vec())
+}
+
 #[derive(Debug, Clone)]
 pub struct HttpRequestFailed {
   pub url: String,

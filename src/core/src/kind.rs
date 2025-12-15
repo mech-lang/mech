@@ -6,9 +6,9 @@ use crate::*;
 pub enum Kind {
   Any,
   None,
-  Atom(u64),
+  Atom(u64, String),
   Empty,
-  Enum(u64),
+  Enum(u64, String),
   //Fsm(Vec<Kind>,Vec<Kind>),
   //Function(Vec<Kind>,Vec<Kind>),
   Id,
@@ -37,9 +37,9 @@ impl Kind {
     match self {
       Kind::None => Ok(ValueKind::None),
       Kind::Any => Ok(ValueKind::Any),
-      Kind::Atom(id) => Ok(ValueKind::Atom(*id)),
       Kind::Empty => Ok(ValueKind::Empty),
-      Kind::Enum(id) => Ok(ValueKind::Enum(*id)),
+      Kind::Atom(id, name) => Ok(ValueKind::Atom(*id, name.clone())),
+      Kind::Enum(id, name) => Ok(ValueKind::Enum(*id, name.clone())),
       Kind::Id => Ok(ValueKind::Id),
       Kind::Index => Ok(ValueKind::Index),
       Kind::Map(keys, vals) => {

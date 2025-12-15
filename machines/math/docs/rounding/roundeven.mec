@@ -15,7 +15,7 @@ Y := math/roundeven(X)
 
 Rounds each element of the input to the nearest integer, with halfway cases
 rounded to the **nearest even integer**. This rule is also known as
-"banker’s rounding" or **round half to even**.
+"banker's rounding" or **round half to even**.
 
 $$ y = \mathrm{roundeven}(x)
 
@@ -80,7 +80,7 @@ y := math/roundeven(x)
 -------------------------------------------------------------------------------
 
 Backed by Rust/libm `roundeven` (f64) and `roundevenf` (f32). Implementations
-dispatch across scalar, vector, and matrix variants. Ensures IEEE‑754 compliance
+dispatch across scalar, vector, and matrix variants. Ensures IEEE-754 compliance
 for "round half to even".
 
 8. See also

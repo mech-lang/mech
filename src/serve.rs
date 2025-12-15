@@ -8,39 +8,11 @@ use crate::*;
     
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-#[cfg(has_file_wasm)]
-static MECHWASM: &[u8] = include_bytes!("../src/wasm/pkg/mech_wasm_bg.wasm.br");
-#[cfg(not(has_file_wasm))]
-static MECHWASM: &[u8] = b"";
-
-#[cfg(has_file_js)]
-static MECHJS: &[u8] = include_bytes!("../src/wasm/pkg/mech_wasm.js");
-#[cfg(not(has_file_js))]
-static MECHJS: &[u8] = b"";
-
-#[cfg(has_file_shim)]
-static SHIMHTML: &str = include_str!("../include/index.html");
-#[cfg(not(has_file_shim))]
-static SHIMHTML: &str = "123";
-
-#[cfg(has_file_stylesheet)]
-static STYLESHEET: &str = include_str!("../include/style.css");
-#[cfg(not(has_file_stylesheet))]
-static STYLESHEET: &str = "";
-
-pub enum Source<'a> {
-  UserFile(&'a str),
-  Embedded(&'a [u8]),
-  Url(&'a str),
-}
-
 pub struct MechServer {
   badge: ColoredString,
   init: bool,
-  stylesheet_path: (String, String),
-  shim_path: (String, String),
-  wasm_path: (String, String),
-  js_path: (String, String),
+  stylesheet: String,
+  html_shim: String,
   full_address: String,
   mechfs: MechFileSystem,
   js: Vec<u8>,
@@ -49,70 +21,24 @@ pub struct MechServer {
 
 impl MechServer {
 
-  pub fn new(full_address: String, stylesheet_path: String, shim_path: String, wasm_pkg: String) -> Self {
-    let shim_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/shim.html".to_string();
-    let stylesheet_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/style.css".to_string();
-    let wasm_backup_url = format!("https://github.com/mech-lang/mech/releases/download/v{}-beta/mech_wasm_bg.wasm.br", VERSION);
-    let js_backup_url = format!("https://github.com/mech-lang/mech/releases/download/v{}-beta/mech_wasm.js", VERSION);
-
-    let wasm_path = format!("{}/mech_wasm_bg.wasm.br", wasm_pkg);
-    let js_path = format!("{}/mech_wasm.js", wasm_pkg);
-
+  pub fn new(name: String, full_address: String, stylesheet: String, html_shim: String, wasm: Vec<u8>, js: Vec<u8>) -> Self {
     let mut mechfs = MechFileSystem::new();
 
     Self {
-      badge: "[Mech Server]".truecolor(34, 204, 187),
+      badge: format!("[{}] Server", name).truecolor(34, 204, 187),
       init: false,
-      stylesheet_path: (stylesheet_path, stylesheet_backup_url),
-      shim_path: (shim_path, shim_backup_url),
-      wasm_path: (wasm_path, wasm_backup_url),
-      js_path: (js_path, js_backup_url),
+      stylesheet,
+      html_shim,
+      js,
+      wasm,
       full_address: full_address,
       mechfs,
-      js: vec![],
-      wasm: vec![],
     }
   }
 
   pub async fn init(&mut self) -> MResult<()> {
-    let (stylesheet_path, stylesheet_backup_url) = &self.stylesheet_path;
-    let (wasm_path, wasm_backup_url) = &self.wasm_path;
-    let (js_path, js_backup_url) = &self.js_path;
-    let (shim_path, shim_backup_url) = &self.shim_path;
-
-    // Load stylesheet
-    println!("{} Loading resources...", self.badge);
-    print!("{} Loading stylesheet...", self.badge);
-    let stylesheet = self
-        .read_or_download(stylesheet_path, stylesheet_backup_url, Some(STYLESHEET.as_bytes()))
-        .await?;
-    let stylesheet_str = String::from_utf8(stylesheet)
-        .map_err(|e| MechError2::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
-    self.mechfs.set_stylesheet(&stylesheet_str);
-
-    // Load shim HTML
-    print!("{} Loading HTML shim...", self.badge);
-    let shim = self
-        .read_or_download(shim_path, shim_backup_url, Some(SHIMHTML.as_bytes()))
-        .await?;
-    let shim_str = String::from_utf8(shim)
-        .map_err(|e| MechError2::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
-    self.mechfs.set_shim(&shim_str);
-
-    // WASM (supports user -> embedded -> download)
-    print!("{} Loading WASM...", self.badge);
-    let wasm = self
-        .read_or_download(wasm_path, wasm_backup_url, Some(MECHWASM))
-        .await?;
-    self.wasm = wasm;
-
-    // JS shim (supports user -> embedded -> download)
-    print!("{} Loading JS...", self.badge);
-    let js = self
-        .read_or_download(js_path, js_backup_url, Some(MECHJS))
-        .await?;
-    self.js = js;
-
+    self.mechfs.set_stylesheet(&self.stylesheet)?;
+    self.mechfs.set_shim(&self.html_shim)?;
     self.init = true;
     Ok(())
   }
@@ -124,77 +50,14 @@ impl MechServer {
     Ok(())
   }
 
-  fn choose_bytes_or_path<'a>(
-      &'a self,
-      user_path: &'a str,
-      embedded: &'a [u8],
-      backup_url: &'a str,
-  ) -> Source<'a> {
-      if !user_path.is_empty() {
-          Source::UserFile(user_path)
-      } else if !embedded.is_empty() {
-          Source::Embedded(embedded)
-      } else {
-          Source::Url(backup_url)
-      }
-  }
-
-  pub async fn read_or_download(&self,path: &str,backup_url: &str, embedded: Option<&[u8]>) -> MResult<Vec<u8>> {
-
-    // 1. User-supplied path always wins
-    match std::fs::read(path) {
-      Ok(content) => {
-        println!("Using user-supplied resource: {}", path);
-        return Ok(content);
-      }
-      Err(_) => { /* continue to embedded / download */ }
+  fn choose_bytes_or_path<'a>( &'a self, user_path: &'a str, embedded: &'a [u8], backup_url: &'a str) -> Source<'a> {
+    if !user_path.is_empty() {
+      Source::UserFile(user_path)
+    } else if !embedded.is_empty() {
+      Source::Embedded(embedded)
+    } else {
+      Source::Url(backup_url)
     }
-
-    // 2. Embedded bytes (included via include_bytes!)
-    if let Some(bytes) = embedded {
-      if !bytes.is_empty() {
-        println!("Using embedded resource");
-        return Ok(bytes.to_vec());
-      }
-    }
-
-    // 3. Fallback: Download from remote URL
-    println!("Downloading from {}", backup_url);
-
-    let response = reqwest::get(backup_url).await.map_err(|e| {
-      MechError2::new(
-        HttpRequestFailed {
-          url: backup_url.to_string(),
-          source: e.to_string(),
-        },
-        None,
-      )
-      .with_compiler_loc()
-    })?;
-
-    if !response.status().is_success() {
-      return Err(MechError2::new(
-        HttpRequestStatusFailed {
-          url: backup_url.to_string(),
-          status_code: response.status().as_u16(),
-        },
-        None,
-      )
-      .with_compiler_loc());
-    }
-
-    let bytes = response.bytes().await.map_err(|e| {
-      MechError2::new(
-        HttpRequestFailed {
-          url: backup_url.to_string(),
-          source: e.to_string(),
-        },
-        None,
-      )
-      .with_compiler_loc()
-    })?;
-
-    Ok(bytes.to_vec())
   }
 
   pub async fn serve(&self) -> MResult<()> {

@@ -89,8 +89,8 @@ fn set_sym_difference_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunctio
   }
 }
 
-pub struct SetSymDifference {}
-impl NativeFunctionCompiler for SetSymDifference {
+pub struct SetSymmetricDifference {}
+impl NativeFunctionCompiler for SetSymmetricDifference {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
       return Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());
@@ -117,6 +117,6 @@ impl NativeFunctionCompiler for SetSymDifference {
 register_descriptor! {
   FunctionCompilerDescriptor {
     name: "set/symmetric-difference",
-    ptr: &SetSymDifference{},
+    ptr: &SetSymmetricDifference{},
   }
 }

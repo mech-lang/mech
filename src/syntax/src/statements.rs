@@ -145,7 +145,7 @@ pub fn op_assign(input: ParseString) -> ParseResult<OpAssign> {
 // tuple-destructure := "(", list1(identifier, comma), ")", ":=", expression ;
 fn tuple_destructure(input: ParseString) -> ParseResult<TupleDestructure> {
   let (input, _) = left_parenthesis(input)?;
-  let (input, vars) = separated_list1(comma, identifier)(input)?;
+  let (input, vars) = separated_list1(list_separator, identifier)(input)?;
   let (input, _) = right_parenthesis(input)?;
   let (input, _) = define_operator(input)?;
   let (input, expression) = expression(input)?;

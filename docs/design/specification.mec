@@ -12,6 +12,75 @@ This document is for:
 - Developers creating tools to interact with Mech code.
 - Anyone who wants to understand the syntax and structure of Mech programs.
 
+(1.1) Example Programs
+
+We start by presenting a few example Mech programs to illustrate the syntax and semantics of the language.
+
+(1.1.1) Hello, World!
+
+First, the classic program which prints the string "Hello, World!" to the console:
+
+```mech:hello, world!
+"Hello World!"
+```
+
+In Mech, the result of the last expression in a program is automatically returned and printed to the console, without needing an explicit print statement. This is an example where Mech reduces incidental complexity.
+
+(1.1.2) FizzBuzz
+
+Next, a simple FizzBuzz program that prints the numbers from 1 to 10, replacing multiples of 2 with "Fizz", multiples of 3 with "Buzz", and multiples of both with "FizzBuzz":
+
+```mech:fizzbuzz
+  x := 1..=10               -- A row vector of numbers from {1} to {10}
+  ~out<[string]> := x       -- Convert `x` into mutable string vec
+  
+  ix2 := (x % 2) == 0       -- Indices for multiples of {2}
+  ix3 := (x % 3) == 0       -- Indices for multiples of {3}
+  
+  out[ix2] = "✨"           -- Set multiples of {2} to {"✨"}
+  out[ix3] = "🐝"           -- Set multiples of {3} to {"🐝"}
+  out[ix2 && ix3] = "✨🐝"  -- Set multiples of both to {"✨🐝"}
+```
+
+This example demonstrates several core Mech features:
+
+- **Concise syntax**: Expressive and flexible, with no need for keywords or semicolons; Mech programs are generally shorter than in other languages.
+- **Declarative style**: Focus on what to compute, not how to compute it, leading to clearer and more maintainable code.
+- **Broadcast operations**: Vector operations apply elementwise automatically, removing loops and enabling efficient vectorization.
+- **Static typing**: Types are checked at compile time, catching errors early and improving performance.
+- **Type inference**: Variable and expression types are inferred, so explicit type declarations are often unnecessary.
+- **Immutable by default**: Variables are immutable unless specified, promoting safer code and easier reasoning.
+- **Logical indexing**: Select and manipulate vector elements via conditions, enabling declarative iteration and parallel execution.
+- **Rich text formatting**: Comments and code support rich formatting using a Markdown-like syntax called Mechdown, making documentation clear and readable.
+
+(1.1.3) Matrix Multiplication
+
+Here is an example of matrix multiplication in Mech:
+
+```mech:matrix multiplication
+  A := [1 2; 3 4]       -- 2x2 Matrix
+  B := [1 2 3; 4 5 6]   -- 2x3 Matrix
+  C := A ** B           -- Matrix multiplication resulting in a 2x2 Matrix
+```
+
+Mech also features robust integrated Linear Algebra capabilities, making it easy to work with matrices and vectors. In this example, we define two matrices `A` and `B`, and then compute their product `C` using the `**` operator. These calculations are checked for dimensional compatibility at compile time, rejecting any program at compiletime which would result in a dimension mismatch.
+
+(1.1.4) Gaussian Elimination
+
+Here is an example of performing Gaussian elimination to solve a system of linear equations:
+
+```mech:gaussian elimination
+A := [2  1 -1
+     -3 -1  2
+     -2  1  2]   -- 3x3 Matrix to represent coefficients
+
+b := [8 -11 -3]' -- 3x1 Column Vector to represent constants
+
+x := A \ b       -- Solves the system Ax = b for x
+```
+
+The `\\` operator runs a Gaussian elimination algorithm to solve the system of equations represented by the matrix `A` and vector `b`. The result is stored in vector `x`, which contains the solution to the equations.
+
 2. Source Code Representation
 -------------------------------------------------------------------------------
 
@@ -91,18 +160,18 @@ enum-separator := ws0, "|", ws0 ;
 
 (3.2.1) Operators
 
-| Category     | Operators                                          |
-|--------------|----------------------------------------------------|
-| Assign       | `:=` `=` `+=` `-=` `*=` `/=` `^=`                  |
-| Arithmetic   | `+` `-` `*` `/` `÷` `^` `%`                        |
-| Condition    | `!=` `¬=` `≠` `==` `>` `<` `>=` `≤` `≥`            |
-| Matrix       | `**` `·` `⨯` `\\` `'`                              |
-| Logic        | `||` `&&` `^^` `⊕` `⊻` `∧` `∨` `¬` `!`            |
-| Set          | `∪` `∩` `∖` `∁` `⊂` `⊃` `⊆` `⊇` `⊊` `⊋` `∈` `∉` |
-| Table        | `⋈` `⟕` `⟖` `⟗` `⋉` `▷`                        |
-| Range        | `..` `..=`                                         |
-| Transition   | `=>` `->` `~>`                                     |
-| Guard        | `|` `│` `├` `└`                                    |
+| Category     | Operators                                             |
+|--------------|-------------------------------------------------------|
+| Assign       | `:=` `=` `+=` `-=` `*=` `/=` `^=`                     |
+| Arithmetic   | `+` `-` `*` `/` `÷` `^` `%`                           |
+| Condition    | `!=` `¬=` `≠` `==` `>` `<` `>=` `≤` `≥`               |
+| Matrix       | `**` `·` `⨯` `\\` `'`                                 |
+| Logic        | `||` `&&` `^^` `⊕` `⊻` `∧` `∨` `¬` `!`               |
+| Set          | `∪` `∩` `∖` `∁` `⊂` `⊃` `⊆` `⊇` `⊊` `⊋` `∈` `∉` `Δ` |
+| Table        | `⋈` `⟕` `⟖` `⟗` `⋉` `▷`                           |
+| Range        | `..` `..=`                                            |
+| Transition   | `=>` `->` `~>`                                        |
+| Guard        | `|` `│` `├` `└`                                       |
 
 (3.2.2) Punctutation
 
@@ -229,14 +298,9 @@ qq := 10 * 20     -- The value of qq is {qq}
 
 (3.4) Keywords
 
-There are only two keywords in Mech: `true` and `false`. Because Mech is designed to be used by non-English speakers, the syntax allows for an alternative representation, which can be used in place of the English keywords.
+Because Mech is designed to be used by speakers of all languages, Mech has no reserved keywords. Instead, Mech uses symbols and punctuation for all operators and syntax constructs.
 
-| Keyword   | Alternative |
-|-----------|-------------|
-| `true`    | `✓`         |
-| `false`   | `✗`         |
-
-This allows users to write code in their native language without the need to learn English keywords.
+See the [Syntax Design Document](design/syntax-design.html) for a discussion on keywords.
 
 (3.5) Identifiers
 
@@ -567,16 +631,16 @@ structure := empty-set
 Data structures in Mech can be broadly classified into two categories: ordered collections that allow duplicated elements, and unordered collections that do now allow duplicated elements.
 
 **Ordered elements, duplicates allowed**
-    - Vector (Nx1)
-    - Row Vector (1xN)
-    - Matrix (N-D)
-    - Tuple
+- Vector (Nx1)
+- Row Vector (1xN)
+- Matrix (N-D)
+- Tuple
+- Table
 
 **Unordered elements, no duplicates**
-    - Record
-    - Table
-    - Set
-    - Map
+- Record
+- Set
+- Map
 
 Each data structure has its own semantics, which will be described in this section.
 
@@ -1183,7 +1247,8 @@ superset := "⊇";
 proper-subset := "⊊";       
 proper-superset := "⊋";       
 element-of := "∈";       
-not-element-of := "∉";       
+not-element-of := "∉";   
+symmetric-difference := "Δ";
 ```
 
 (6.7) Range
@@ -1760,26 +1825,42 @@ Mechdown also supports inline equations, which begin and conclude with a `$$`. T
 
 ```ebnf
 block-quote := ">", ws0, +paragraph ;
-block-important := "(!)>", ws0, +paragraph ;
+block-info := "(i)>", ws0, +paragraph ;
 block-question := "(?)>", ws0, +paragraph ;
+block-warning := "(!)>", ws0, +paragraph ;
+block-error := "(x)>", ws0, +paragraph ;
+block-success := "(+)>", ws0, +paragraph ;
+block-idea := "(*)>", ws0, +paragraph ;
 ```
 
-Callouts are used to emphasize a paragraphs, and classifies them into one of three semantic categories:
+Callout blocks are used to emphasize a paragraph, and classifies them into one of seven semantic categories:
 
-- Quotes: for quotations, indicated with a `>`.
-- Important: for information critical to the reader, indicated with a `(!)>`
-- Question: for anticipated and frequently asked questions, indicated with a `(?)>`
+- *Quotation*: for quotations, indicated with a `>`.
+- *Info*: for information the reader should know, indicated with a `(i)>`
+- *Question*: for anticipated and frequently asked questions, indicated with a `(?)>`
+- *Warning*: for cautions and warnings, indicated with a `(!)>`
+- *Error*: for errors and critical issues, indicated with a `(x)>`
+- *Success*: for success messages and positive outcomes, indicated with a `(+)>`
+- *Idea*: for ideas and suggestions, indicated with a `(*)>`
 
 Multiple paragraphs can be included in the callout block as long as there are no newline characters between them (although a newline is of course required to end a paragraph).
 
-**Example:**
+(10.7.1) Examples
 
 ```
 > This is a quote block.
 
-(!)> This is an important block.
+(i)> This is an info block.
 
 (?)> This is a question block.
+
+(!)> This is a warning block.
+
+(x)> This is an error block.
+
+(+)> This is a success block.
+
+(*)> This is an idea block.
 
 (?)> This is a question block with multiple paragraphs.
 This is the second paragraph.
@@ -1789,9 +1870,17 @@ When rendered, they look like this:
 
 > This is a quote block.
 
-(!)> This is an important block.
+(i)> This is an info block.
 
 (?)> This is a question block.
+
+(!)> This is a warning block.
+
+(x)> This is an error block.
+
+(+)> This is a success block.
+
+(*)> This is an idea block.
 
 (?)> This is a question block with multiple paragraphs.
 This is the second paragraph.
@@ -1861,7 +1950,7 @@ The body of a table is defined using rows of text separated by pipes. Each row c
 Renders the following table:
 
 | Align Left  | Align Center | Align Right |
-|:------------|:------------:|0-----------:|
+|:------------|:------------:|------------:|
 | One         | Four         | {1 * 10}    |
 | Two         | Five         | {2 * 20}    |
 | Three       | Six          | {3 * 30}    |

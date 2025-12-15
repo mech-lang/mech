@@ -62,8 +62,8 @@ fn new_interpreter(id: u64) -> Interpreter {
   fxns.function_compilers.insert(hash_str("math/div"), &MathDiv{});
   #[cfg(feature = "math_mod")]
   fxns.function_compilers.insert(hash_str("math/mod"), &MathMod{});
-  #[cfg(feature = "math_exp")]
-  fxns.function_compilers.insert(hash_str("math/exp"), &MathExp{});
+  #[cfg(feature = "math_pow")]
+  fxns.function_compilers.insert(hash_str("math/pow"), &MathPow{});
   #[cfg(feature = "math_neg")]
   fxns.function_compilers.insert(hash_str("math/neg"), &MathNegate{});
   

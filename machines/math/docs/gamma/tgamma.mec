@@ -70,7 +70,7 @@ y := math/tgamma(0.5)
 - **Domain & special cases:**
   - Poles at non-positive integers: Γ(0), Γ(-1), Γ(-2), ... diverge to ±∞.
   - Γ(0.5) = √π, Γ(1) = 1, Γ(2) = 1, Γ(3) = 2.
-  - For x < 0 and not integer, Γ(x) can be finite but alternates in sign.
+  - For `x < 0` and not integer, `Γ(x)` can be finite but alternates in sign.
   - If `x` is `NaN`, result is `NaN`. For `+∞`, Γ(+∞) = +∞. For `-∞`, result is `NaN`.
 
 - **Shapes & types:** Scalars map to scalars; vectors/matrices are computed elementwise with the same shape. Implementations exist for `f64` (`tgamma`) and `f32` (`tgammaf`). Mixed precision is not allowed—cast beforehand.

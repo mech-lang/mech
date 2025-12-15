@@ -46,7 +46,7 @@ test_interpreter!(interpret_literal_string_multiline, r#""Hello
  World""#, Value::String(Ref::new("Hello \n World".to_string())));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(Ref::new(true)));
 test_interpreter!(interpret_literal_false, "false", Value::Bool(Ref::new(false)));
-test_interpreter!(interpret_literal_atom, "`A", Value::Atom(Ref::new(MechAtom(55450514845822917))));
+test_interpreter!(interpret_literal_atom, "`A", Value::Atom(Ref::new(MechAtom::new(55450514845822917))));
 test_interpreter!(interpret_literal_empty, "_", Value::Empty);
 test_interpreter!(interpret_literal_complex, "5+4i", Value::C64(Ref::new(C64::new(5.0, 4.0))));
 test_interpreter!(interpret_literal_complex2, "5-4i", Value::C64(Ref::new(C64::new(5.0, -4.0))));
@@ -61,8 +61,8 @@ test_interpreter!(interpret_formula_math_sub, "2 - 2", Value::F64(Ref::new(0.0))
 test_interpreter!(interpret_formula_math_mul, "2 * 2", Value::F64(Ref::new(4.0)));
 test_interpreter!(interpret_formula_math_div, "2 / 2", Value::F64(Ref::new(1.0)));
 #[cfg(feature = "u8")]
-test_interpreter!(interpret_formula_math_exp, "2<u8> ^ 2<u8>", Value::U8(Ref::new(4)));
-test_interpreter!(interpret_formula_math_exp_f64, "2.0 ^ 2.0", Value::F64(Ref::new(4.0)));
+test_interpreter!(interpret_formula_math_pow, "2<u8> ^ 2<u8>", Value::U8(Ref::new(4)));
+test_interpreter!(interpret_formula_math_pow_f64, "2.0 ^ 2.0", Value::F64(Ref::new(4.0)));
 test_interpreter!(interpret_formulat_math_add_rational, "1/10 + 2/10 + 3/10", Value::R64(Ref::new(R64::new(6, 10))));
 test_interpreter!(interpret_formulat_math_sub_rational, "1/10 - 2/10 - 3/10", Value::R64(Ref::new(R64::new(-4, 10))));
 test_interpreter!(interpret_formula_math_mul_rational, "1/10 * 2/10 * 3/10", Value::R64(Ref::new(R64::new(3, 500))));
@@ -758,3 +758,14 @@ test_interpreter!(interpret_set_intersection_empty, r#"A := {}; B := {1, 2, 3}; 
 test_interpreter!(interpret_set_difference_empty, r#"A := {1, 2}; B := {1, 2}; U := A ∖ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![]))));
 test_interpreter!(interpret_set_union_duplicates, r#"A := {1, 1, 2}; B := {2, 2, 3}; U := A ∪ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0))]))));
 test_interpreter!(interpret_set_subset_empty_left, r#"A := {}; B := {1}; C := A ⊆ B"#, Value::Bool(Ref::new(true)));
+
+test_interpreter!(interpret_compare_max_scalar, "compare/max(5,3)", Value::F64(Ref::new(5.0)));
+test_interpreter!(interpret_compare_max_vector, "compare/max([3 4 5 6],4)", Value::MatrixF64(Matrix::from_vec(vec![4.0, 4.0, 5.0, 6.0], 1, 4)));
+test_interpreter!(interpret_compare_max_vector_vector, "compare/max([3 4 5 6],[6 5 4 3])", Value::MatrixF64(Matrix::from_vec(vec![6.0, 5.0, 5.0, 6.0], 1, 4)));
+test_interpreter!(interpret_compare_min_scalar, "compare/min(5,3)", Value::F64(Ref::new(3.0)));
+test_interpreter!(interpret_compare_min_vector, "compare/min([3 4 5 6],4)", Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 4.0, 4.0], 1, 4)));
+test_interpreter!(interpret_compare_min_vector_vector, "compare/min([3 4 5 6],[6 5 4 3])", Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 4.0, 3.0], 1, 4)));
+
+test_interpreter!(interpret_set_comprehension, r#"{ x * x | x <- {1,2,3,4}, y := 2, (x % 2) == 0 }"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(4.0)), Value::F64(Ref::new(16.0))]))));
+test_interpreter!(interpret_set_comprehension_variable, r#"qq := {1,2,3,4}; { x * x | x <- qq, y := 2, (x % 2) != 0 }"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(9.0))]))));
+test_interpreter!(interpret_set_comprehension_tuple, r#"qq := {(1,2),(3,4),(5,6),(7,8)}; { x * x | (x, *) <- qq }"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(9.0)), Value::F64(Ref::new(25.0)), Value::F64(Ref::new(49.0))]))));

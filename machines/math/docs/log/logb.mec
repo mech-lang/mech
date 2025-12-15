@@ -64,7 +64,8 @@ y := math/ilogb(1e-308)
 -------------------------------------------------------------------------------
 
 - **Definition:**  
-  $$ \text{ilogb}(x) = e, \quad \text{where } x = m \, 2^e, \; 1 \le |m| < 2. 
+  
+$$ \text{ilogb}(x) = e, \quad \text{where } x = m \, 2^e, \; 1 \le |m| < 2. 
 
 - **Special cases:**
   - `ilogb(0)` → implementation-defined large negative integer (commonly `INT_MIN`).

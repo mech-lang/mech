@@ -1,0 +1,168 @@
+math
+===============================================================================
+
+1. Overview
+-------------------------------------------------------------------------------
+
+This library provides functionality for working with basic mathematical functions.
+
+Functions in the `math/ops` module are supported by infix operators.
+
+Functions in this library are designed to work with the following datatypes:
+
+- Signed integers: `i8`, `i16`, `i32`, `i64`, `i128`
+- Unsigned integers: `u8`, `u16`, `u32`, `u64`, `u128`
+- Fractional numbers: `f32`, `f64`, `r64`
+- Complex numbers: `c64`
+
+Also, the functions in this library support both scalar and matrix inputs where applicable.
+
+(!)> Some functions may only be defined for a subset of these datatypes. For example, trigonometric functions are only defined for fractional and complex types. Please refer to the specific function documentation for details.
+
+2. Modules
+-------------------------------------------------------------------------------
+
+(2.1) op
+
+Basic arithmetic operations defined on scalar and matrix input for multiple numeric datatypes.
+
+| Operator  | Function               | Description                                              | 
+|:---------:|-----------------------:|----------------------------------------------------------|
+|`+`        | [`add`](ops/add.html)  | Adds two operands.                                       |
+|`-`        | [`sub`](ops/sub.html)  | Subtracts second operand from the first.                 |
+|`*`        | [`mul`](ops/mul.html)  | Multiplies two operands.                                 |
+|`/`        | [`div`](ops/div.html)  | Divides first operand by the second.                     |
+|`^`        | [`pow`](ops/pow.html)  | Raises first operand to the power of the second.         |
+|`%`        | [`mod`](ops/mod.html)  | Computes the modulus of the first operand by the second. |
+|`-` (unary)| [`neg`](ops/neg.html)  | Negates the operand.                                     |
+
+(2.2) op-assign
+
+Basic arithmetic assignment operations defined on scalar and matrix input for multiple numeric datatypes.
+
+| Operator  | Function                                    | Description                                                                          |
+|:---------:|--------------------------------------------:|--------------------------------------------------------------------------------------|
+|`+=`       | [`add-assign`](op-assign/add-assign.html)   | Adds second operand to the first and assigns the result to the first.                |
+|`-=`       | [`sub-assign`](op-assign/sub-assign.html)   | Subtracts second operand from the first and assigns the result to the first.         |
+|`*=`       | [`mul-assign`](op-assign/mul-assign.html)   | Multiplies first operand by the second and assigns the result to the first.          |
+|`/=`       | [`div-assign`](op-assign/div-assign.html)   | Divides first operand by the second and assigns the result to the first.             |
+|`^=`       | [`pow-assign`](op-assign/pow-assign.html)   | Raises first operand to the power of the second and assigns the result to the first. |
+
+(2.3) root
+
+Cube root and square root functions for multiple numeric datatypes.
+
+| Function                          | Description                                 |
+|----------------------------------:|---------------------------------------------|
+| [`sqrt`](root/sqrt.html)          | Computes the square root of a value.        |
+| [`cbrt`](root/cbrt.html)          | Computes the cube root of a value.          |
+
+(2.4) rounding
+
+Rounding functions for multiple numeric datatypes.
+
+| Function                          | Description                                 |
+|----------------------------------:|---------------------------------------------|
+| [`ceil`](rounding/ceil.html)      | Round up to the nearest whole number.       |
+| [`floor`](rounding/floor.html)    | Round down to the nearest whole number.     |
+| [`round`](rounding/round.html)    | Rounds a value to the nearest whole number. |
+| [`trunc`](rounding/trunc.html)    | Truncates the decimal portion of a value.   |
+
+(2.5) trig
+
+Trigonometric and hyperbolic functions, as well as their inverses, for multiple numeric datatypes.
+
+(2.5.1) Basic Trigonometric Functions
+
+| Function                          | Description                                      |
+|----------------------------------:|--------------------------------------------------|
+|[`sin`](trig/sin.html)             | Computes the sine of an angle.                   |
+|[`cos`](trig/cos.html)             | Computes the cosine of an angle.                 |
+|[`tan`](trig/tan.html)             | Computes the tangent of an angle.                |
+|[`csc`](trig/csc.html)             | Computes the cosecant of an angle.               |
+|[`sec`](trig/sec.html)             | Computes the secant of an angle.                 |
+|[`cot`](trig/cot.html)             | Computes the cotangent of an angle.              |
+
+(2.5.2) Inverse Trigonometric Functions
+
+| Function                          | Description                                      |
+|----------------------------------:|--------------------------------------------------|
+|[`asin`](trig/asin.html)           | Computes the arcsine of a value.                 |
+|[`acos`](trig/acos.html)           | Computes the arccosine of a value.               |
+|[`atan`](trig/atan.html)           | Computes the arctangent of a value.              |
+|[`atan2`](trig/atan2.html)         | Computes the arctangent of two values.           |
+|[`acsc`](trig/acsc.html)           | Computes the arccosecant of a value.             |
+|[`asec`](trig/asec.html)           | Computes the arcsecant of a value.               |
+|[`acot`](trig/acot.html)           | Computes the arccotangent of a value.            |
+
+(2.5.3) Basic Hyperbolic Functions
+
+| Function                          | Description                                      |
+|----------------------------------:|--------------------------------------------------|
+|[`sinh`](trig/sinh.html)     | Computes the hyperbolic sine of a value.               |
+|[`cosh`](trig/cosh.html)     | Computes the hyperbolic cosine of a value.             |
+|[`tanh`](trig/tanh.html)     | Computes the hyperbolic tangent of a value.            |
+|[`csch`](trig/csch.html)     | Computes the hyperbolic cosecant of a value.           |
+|[`sech`](trig/sech.html)     | Computes the hyperbolic secant of a value.             |
+|[`coth`](trig/coth.html)     | Computes the hyperbolic cotangent of a value.          |
+
+(2.5.4) Inverse Hyperbolic Functions
+
+| Function                          | Description                                      |
+|----------------------------------:|--------------------------------------------------|
+|[`asinh`](trig/asinh.html)   | Computes the inverse hyperbolic sine of a value.       |
+|[`acosh`](trig/acosh.html)   | Computes the inverse hyperbolic cosine of a value.     |
+|[`atanh`](trig/atanh.html)   | Computes the inverse hyperbolic tangent of a value.    |
+|[`acsch`](trig/acsch.html)   | Computes the inverse hyperbolic cosecant of a value.   |
+|[`asech`](trig/asech.html)   | Computes the inverse hyperbolic secant of a value.     |
+|[`acoth`](trig/acoth.html)   | Computes the inverse hyperbolic cotangent of a value.  |
+
+(2.6) logarithm
+
+Logarithmic functions for multiple numeric datatypes.
+
+| Function                          | Description                              |
+|----------------------------------:|------------------------------------------|
+| [`log`](log/log.html)           | Computes the natural logarithm (base *e*). |
+| [`log10`](log/log10.html)       | Computes the base-10 logarithm.            |
+| [`log2`](log/log2.html)         | Computes the base-2 logarithm.             |
+| [`log1p`](log/log1p.html)       | Computes the natural logarithm of (1 + x). |
+| [`ilogb`](log/ilogb.html)       | Computes the integer base-2 logarithm.     |
+
+(2.7) exponential
+
+Exponential functions for multiple numeric datatypes.
+
+| Function                          | Description                                        |
+|----------------------------------:|----------------------------------------------------|
+| [`exp`](exponential/exp.html)     | Computes the exponential function e^x.             |
+| [`exp2`](exponential/exp2.html)   | Computes 2 raised to the power of x.               |
+| [`exp10`](exponential/exp10.html) | Computes 10 raised to the power of x.              |
+| [`expm1`](exponential/expm1.html) | Computes e^x - 1.                                  |
+
+(2.8) bessel
+
+| Function                 | Description                                                 |
+|-------------------------:|-------------------------------------------------------------|
+| [`j0`](bessel/j0.html)   | Computes the Bessel function of the first kind of order 0.  |
+| [`j1`](bessel/j1.html)   | Computes the Bessel function of the first kind of order 1.  |
+| [`jn`](bessel/jn.html)   | Computes the Bessel function of the first kind of order n.  |
+| [`y0`](bessel/y0.html)   | Computes the Bessel function of the second kind of order 0. |
+| [`y1`](bessel/y1.html)   | Computes the Bessel function of the second kind of order 1. |
+| [`yn`](bessel/yn.html)   | Computes the Bessel function of the second kind of order n. |
+
+(2.9) gamma
+
+| Function                          | Description                                 |
+|----------------------------------:|---------------------------------------------|
+| [`tgamma`](gamma/tgamma.html)     | Computes the gamma function of a value.      |
+| [`lgamma`](gamma/lgamma.html)     | Computes the natural logarithm of the gamma function of a value. |
+
+(2.10) stat-error
+
+| Function                          | Description                                 |
+|----------------------------------:|---------------------------------------------|
+| [`erf`](stat_error/erf.html)           | Computes the error function of a value.      |
+| [`erfc`](stat_error/erfc.html)         | Computes the complementary error function of a value. |
+
+

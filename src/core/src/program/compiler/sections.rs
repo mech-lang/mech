@@ -217,14 +217,16 @@ pub enum FeatureKind {
   Compiler, PrettyPrint, Serde,
   MatMul, Transpose, Dot, Cross, Solve,
   
-  Add, Sub, Mul, Div, Exp, Mod, 
+  Add, Sub, Mul, Div, Pow, Mod, 
   Neg, OpAssign, LT, LTE, GT, 
   
   GTE, EQ, NEQ, And, Or, 
   Xor, Not, Convert, Assign, Access,
+  Min, Max,
 
   Union, Intersection, Difference, Complement, Subset, 
   Superset, ProperSubset, ProperSuperset, ElementOf, NotElementOf,
+  SetComprehensions,
 
   Functions, Formulas,
   Custom = 0xFFFF,
@@ -298,7 +300,7 @@ impl FeatureKind {
       FeatureKind::Sub => "math_sub".to_string(),
       FeatureKind::Mul => "math_mul".to_string(),
       FeatureKind::Div => "math_div".to_string(),
-      FeatureKind::Exp => "math_exp".to_string(),
+      FeatureKind::Pow => "math_pow".to_string(),
       FeatureKind::Mod => "math_mod".to_string(),
       FeatureKind::Neg => "math_neg".to_string(),
       FeatureKind::OpAssign => "math_opassign".to_string(),
@@ -308,6 +310,8 @@ impl FeatureKind {
       FeatureKind::GTE => "compare_gte".to_string(),
       FeatureKind::EQ => "compare_eq".to_string(),
       FeatureKind::NEQ => "compare_neq".to_string(),
+      FeatureKind::Min => "compare_min".to_string(),
+      FeatureKind::Max => "compare_max".to_string(),
       FeatureKind::And => "logic_and".to_string(),
       FeatureKind::Or => "logic_or".to_string(),
       FeatureKind::Xor => "logic_xor".to_string(),
@@ -325,6 +329,7 @@ impl FeatureKind {
       FeatureKind::ProperSuperset => "set_proper_superset".to_string(),
       FeatureKind::ElementOf => "set_element_of".to_string(),
       FeatureKind::NotElementOf => "set_not_element_of".to_string(),
+      FeatureKind::SetComprehensions => "set_comprehensions".to_string(),
       FeatureKind::Functions => "functions".to_string(),
       FeatureKind::Formulas => "formulas".to_string(),
       FeatureKind::Custom => "custom".to_string(),

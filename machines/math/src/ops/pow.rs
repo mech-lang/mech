@@ -4,9 +4,9 @@ use num_traits::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
 
-// Exp ------------------------------------------------------------------------
+// Pow ------------------------------------------------------------------------
 
-macro_rules! exp_op {
+macro_rules! pow_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       *$out = (&*$lhs).pow(*$rhs);
@@ -14,7 +14,7 @@ macro_rules! exp_op {
   };
 }
 
-macro_rules! exp_vec_op {
+macro_rules! pow_vec_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       for i in 0..(&*$lhs).len() {
@@ -24,7 +24,7 @@ macro_rules! exp_vec_op {
   };
 }
 
-macro_rules! exp_scalar_lhs_op {
+macro_rules! pow_scalar_lhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       for i in 0..(&*$lhs).len() {
@@ -34,7 +34,7 @@ macro_rules! exp_scalar_lhs_op {
   };
 }
 
-macro_rules! exp_scalar_rhs_op {
+macro_rules! pow_scalar_rhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       for i in 0..(&*$rhs).len() {
@@ -44,7 +44,7 @@ macro_rules! exp_scalar_rhs_op {
   };
 }
 
-macro_rules! exp_mat_vec_op {
+macro_rules! pow_mat_vec_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       let mut out_deref = &mut (*$out);
@@ -58,7 +58,7 @@ macro_rules! exp_mat_vec_op {
     }
   };}
 
-macro_rules! exp_vec_mat_op {
+macro_rules! pow_vec_mat_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       let mut out_deref = &mut (*$out);
@@ -72,7 +72,7 @@ macro_rules! exp_vec_mat_op {
     }
   };}
 
-macro_rules! exp_mat_row_op {
+macro_rules! pow_mat_row_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       let mut out_deref = &mut (*$out);
@@ -86,7 +86,7 @@ macro_rules! exp_mat_row_op {
     }
   };}
 
-macro_rules! exp_row_mat_op {
+macro_rules! pow_row_mat_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       let mut out_deref = &mut (*$out);
@@ -101,7 +101,7 @@ macro_rules! exp_row_mat_op {
   };} 
   
 #[macro_export]
-macro_rules! impl_expop {
+macro_rules! impl_powop {
 ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
   #[derive(Debug)]
   struct $struct_name<T> {
@@ -171,22 +171,22 @@ macro_rules! impl_expop {
   }};}
 
 #[macro_export]
-macro_rules! impl_math_fxns_exp {
+macro_rules! impl_math_fxns_pow {
   ($lib:ident) => {
-    impl_fxns!($lib,T,T,impl_expop);
+    impl_fxns!($lib,T,T,impl_powop);
   }}
 
-impl_math_fxns_exp!(Exp);
+impl_math_fxns_pow!(Pow);
 
 #[cfg(all(feature = "rational", feature = "i32"))]
 #[derive(Debug)]
-pub struct ExpRational {
+pub struct PowRational {
   pub lhs: Ref<R64>,
   pub rhs: Ref<i32>,
   pub out: Ref<R64>,
 }
 #[cfg(all(feature = "rational", feature = "i32"))]
-impl MechFunctionFactory for ExpRational {
+impl MechFunctionFactory for PowRational {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
       FunctionArgs::Binary(out, arg1, arg2) => {
@@ -204,7 +204,7 @@ impl MechFunctionFactory for ExpRational {
   }
 }
 #[cfg(all(feature = "rational", feature = "i32"))]
-impl MechFunctionImpl for ExpRational {
+impl MechFunctionImpl for PowRational {
   fn solve(&self) {
     let lhs_ptr = self.lhs.as_ptr();
     let rhs_ptr = self.rhs.as_ptr();
@@ -217,19 +217,19 @@ impl MechFunctionImpl for ExpRational {
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(all(feature = "rational", feature = "i32", feature = "compiler"))]
-impl MechFunctionCompiler for ExpRational 
+impl MechFunctionCompiler for PowRational 
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    let name = format!("ExpRational<{}>", R64::as_value_kind());
-    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::Exp) );
+    let name = format!("PowRational<{}>", R64::as_value_kind());
+    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::Pow) );
   }
 }
 
-fn impl_exp_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_pow_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   match (&lhs_value, &rhs_value) {
     #[cfg(all(feature = "rational", feature = "i32"))]
     (Value::R64(lhs), Value::I32(rhs)) => {
-      return Ok(Box::new(ExpRational {
+      return Ok(Box::new(PowRational {
         lhs: lhs.clone(),
         rhs: rhs.clone(),
         out: Ref::new(R64::default()),
@@ -238,7 +238,7 @@ fn impl_exp_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
     _ => (),
   }
   impl_binop_match_arms!(
-    Exp,
+    Pow,
     register_fxn_descriptor_inner,
     (lhs_value, rhs_value),
     U8,   u8,   "u8";
@@ -249,4 +249,4 @@ fn impl_exp_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
   )
 }
 
-impl_mech_binop_fxn!(MathExp,impl_exp_fxn,"math/exp");
+impl_mech_binop_fxn!(MathPow,impl_pow_fxn,"math/pow");

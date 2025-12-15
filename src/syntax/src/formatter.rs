@@ -256,6 +256,20 @@ impl Formatter {
     result
   }
 
+  pub fn inline_paragraph(&mut self, node: &Paragraph) -> String {
+    let mut src = "".to_string();
+    for el in node.elements.iter() {
+      let el_str = self.paragraph_element(el);
+      src = format!("{}{}", src, el_str);
+    }
+    let result = if self.html {
+      format!("<span class=\"mech-inline-paragraph\">{}</span>",src)
+    } else {
+      format!("{}",src)
+    };
+    result
+  }
+
   fn footnote_reference(&mut self, node: &Token) -> String {
     let id_string = node.to_string();
     let id_hash = hash_str(&format!("footnote-{}",id_string));
@@ -352,7 +366,7 @@ impl Formatter {
       },
       ParagraphElement::Hyperlink((text, url)) => {
         let url_str = url.to_string();
-        let text_str = text.to_string();
+        let text_str = self.inline_paragraph(text);
         if self.html {
           format!("<a href=\"{}\" class=\"mech-hyperlink\">{}</a>",url_str,text_str)
         } else {
@@ -409,6 +423,7 @@ impl Formatter {
 
   pub fn fenced_mech_code(&mut self, block: &FencedMechCode) -> String {
     self.interpreter_id = block.config.namespace;
+    let namespace_str = &block.config.namespace_str;
     let mut src = String::new();
     for (code,cmmnt) in &block.code {
       let c = match code {
@@ -460,10 +475,16 @@ impl Formatter {
         // Print it, but give it a hidden class so it can be toggled visible via JS
         format!("<pre class=\"mech-code-block hidden\"{}>{}</pre>", style_attr, src)
       } else {
+        let namespace_str = if namespace_str.is_empty() {
+          "".to_string()
+        } else {
+          format!("<div class=\"mech-code-block-namespace\">{}</div>", namespace_str)
+        };
         format!("<div class=\"mech-fenced-mech-block\"{}>
+          {}
           <div class=\"mech-code-block\">{}</div>
           <div class=\"mech-block-output\" id=\"{}:{}\"></div>
-        </div>", style_attr, src, output_id, intrp_id)
+        </div>", style_attr, namespace_str, src, output_id, intrp_id)
       }
     } else {
       format!("```mech{}\n{}\n```", src, format!(":{}", disabled_tag))
@@ -597,7 +618,7 @@ impl Formatter {
     if self.html {
       format!("<div class=\"mech-info-block\">{}</div>",info_paragraph)
     } else {
-      format!("(!)> {}\n",info_paragraph)
+      format!("(i)> {}\n",info_paragraph)
     }
   }
 
@@ -610,11 +631,51 @@ impl Formatter {
     }
   }
 
+  pub fn success_block(&mut self, node: &Vec<Paragraph>) -> String {
+    let success_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
+    if self.html {
+      format!("<div class=\"mech-success-block\">{}</div>",success_paragraph)
+    } else {
+      format!("(✓)>> {}\n",success_paragraph)
+    }
+  }
+
+  pub fn warning_block(&mut self, node: &Vec<Paragraph>) -> String {
+    let warning_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
+    if self.html {
+      format!("<div class=\"mech-warning-block\">{}</div>",warning_paragraph)
+    } else {
+      format!("(!)>> {}\n",warning_paragraph)
+    }
+  }
+
+  pub fn idea_block(&mut self, node: &Vec<Paragraph>) -> String {
+    let idea_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
+    if self.html {
+      format!("<div class=\"mech-idea-block\">{}</div>",idea_paragraph)
+    } else {
+      format!("(*)> {}\n",idea_paragraph)
+    }
+  }
+
+  pub fn error_block(&mut self, node: &Vec<Paragraph>) -> String {
+    let error_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
+    if self.html {
+      format!("<div class=\"mech-error-block\">{}</div>",error_paragraph)
+    } else {
+      format!("(✗)>> {}\n",error_paragraph)
+    }
+  }
+
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     match node {
       SectionElement::Abstract(n) => self.abstract_el(n),
       SectionElement::QuoteBlock(n) => self.quote_block(n),
+      SectionElement::SuccessBlock(n) => self.success_block(n),
+      SectionElement::IdeaBlock(n) => self.idea_block(n),
       SectionElement::InfoBlock(n) => self.info_block(n),
+      SectionElement::WarningBlock(n) => self.warning_block(n),
+      SectionElement::ErrorBlock(n) => self.error_block(n),
       SectionElement::QuestionBlock(n) => self.question_block(n),
       SectionElement::Citation(n) => self.citation(n),
       SectionElement::CodeBlock(n) => self.code_block(n),
@@ -1218,7 +1279,7 @@ impl Formatter {
           format!("*")
         }
       },
-      Pattern::Formula(factor) => self.factor(factor),
+      Pattern::Tuple(tpl) => self.pattern_tuple(tpl),
       Pattern::Expression(expr) => self.expression(expr),
       Pattern::TupleStruct(tuple_struct) => self.pattern_tuple_struct(tuple_struct),
     };
@@ -1250,6 +1311,27 @@ impl Formatter {
       </span>",name,patterns)
     } else {
       format!("`{}({})", name, patterns)
+    }
+  }
+
+  pub fn pattern_tuple(&mut self, node: &PatternTuple) -> String {
+    let mut patterns = "".to_string();
+    for (i, pattern) in node.0.iter().enumerate() {
+      let p = self.pattern(pattern);
+      if i == 0 {
+        patterns = format!("{}", p);
+      } else {
+        patterns = format!("{}, {}", patterns, p);
+      }
+    }
+    if self.html {
+      format!("<span class=\"mech-pattern-tuple\">
+        <span class=\"mech-left-paren\">(</span>
+        <span class=\"mech-patterns\">{}</span>
+        <span class=\"mech-right-paren\">)</span>
+      </span>",patterns)
+    } else {
+      format!("({})", patterns)
     }
   }
 
@@ -1398,14 +1480,47 @@ impl Formatter {
       Statement::VariableAssign(var_asgn) => self.variable_assign(var_asgn),
       Statement::TupleDestructure(tpl_dstrct) => self.tuple_destructure(tpl_dstrct),
       Statement::KindDefine(kind_def) => self.kind_define(kind_def),
+      Statement::EnumDefine(enum_def) => self.enum_define(enum_def),
       _ => todo!(),
-      //Statement::EnumDefine(enum_def) => self.enum_define(enum_def, src),
       //Statement::FsmDeclare(fsm_decl) => self.fsm_declare(fsm_decl, src),
     };
     if self.html {
       format!("<span class=\"mech-statement\">{}</span>",s)
     } else {
       format!("{}", s)
+    }
+  }
+
+  pub fn enum_define(&mut self, node: &EnumDefine) -> String {
+    let name = node.name.to_string();
+    let mut variants = "".to_string();
+    for (i, variant) in node.variants.iter().enumerate() {
+      if i == 0 {
+        variants = format!("{}", self.enum_variant(variant));
+      } else {
+        variants = format!("{} | {}", variants, self.enum_variant(variant));
+      }
+    }
+    if self.html {
+      format!("<span class=\"mech-enum-define\"><span class=\"mech-enum-name\">{}</span><span class=\"mech-enum-define-op\">:=</span><span class=\"mech-enum-variants\">{}</span></span>",name,variants)
+    } else {
+      format!("<{}> := {}", name, variants)
+    }
+  }
+
+  pub fn enum_variant(&mut self, node: &EnumVariant) -> String {
+    let name = node.name.to_string();
+    let mut kind = "".to_string();
+    match &node.value {
+      Some(k) => {
+        kind = self.kind_annotation(&k.kind);
+      },
+      None => {},
+    }
+    if self.html {
+      format!("<span class=\"mech-enum-variant\"><span class=\"mech-enum-variant-name\">{}</span><span class=\"mech-enum-variant-kind\">{}</span></span>",name,kind)
+    } else {
+      format!("{}{}", name, kind)
     }
   }
 
@@ -1516,6 +1631,7 @@ impl Formatter {
       Expression::Slice(slice) => self.slice(slice),
       Expression::FunctionCall(function_call) => self.function_call(function_call),
       Expression::Range(range) => self.range_expression(range),
+      Expression::SetComprehension(set_comp) => self.set_comprehension(set_comp),
       _ => todo!(),
       //Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe, src),
     };
@@ -1523,6 +1639,64 @@ impl Formatter {
       format!("<span class=\"mech-expression\">{}</span>",e)
     } else {
       format!("{}", e)
+    }
+  }
+
+  pub fn set_comprehension(&mut self, node: &SetComprehension) -> String {
+    let expr = self.expression(&node.expression);
+
+    let qualifiers = node
+      .qualifiers
+      .iter()
+      .map(|q| self.comprehension_qualifier(q))
+      .collect::<Vec<_>>()
+      .join(", ");
+
+    if self.html {
+      format!(
+        "<span class=\"mech-set-comprehension\">\
+          <span class=\"mech-set-open\">{{</span>\
+          <span class=\"mech-set-expression\">{}</span>\
+          <span class=\"mech-set-bar\"> | </span>\
+          <span class=\"mech-set-qualifiers\">{}</span>\
+          <span class=\"mech-set-close\">}}</span>\
+        </span>",
+        expr, qualifiers
+      )
+    } else {
+      format!("{{ {} | {} }}", expr, qualifiers)
+    }
+  }
+
+  pub fn comprehension_qualifier(&mut self, node: &ComprehensionQualifier) -> String {
+    match node {
+      ComprehensionQualifier::Generator((pattern, expr)) => {
+        self.generator(pattern, expr)
+      }
+      ComprehensionQualifier::Let(var_def) => {
+        self.variable_define(var_def)
+      }
+      ComprehensionQualifier::Filter(expr) => {
+        self.expression(expr)
+      }
+    }
+  }
+
+  pub fn generator(&mut self, pattern: &Pattern, expr: &Expression) -> String {
+    let p = self.pattern(pattern);
+    let e = self.expression(expr);
+
+    if self.html {
+      format!(
+        "<span class=\"mech-generator\">\
+          <span class=\"mech-generator-pattern\">{}</span>\
+          <span class=\"mech-generator-arrow\"> &lt;- </span>\
+          <span class=\"mech-generator-expression\">{}</span>\
+        </span>",
+        p, e
+      )
+    } else {
+      format!("{} <- {}", p, e)
     }
   }
 
@@ -1787,7 +1961,7 @@ impl Formatter {
 
   pub fn table_header(&mut self, node: &TableHeader) -> String {
     let mut src = "".to_string();
-    for (i, field) in node.iter().enumerate() {
+    for (i, field) in node.0.iter().enumerate() {
       let f = self.field(field);
       if self.html {
         src = format!("{}<th class=\"mech-table-field\">{}</th>",src, f);
@@ -2140,7 +2314,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
     let f = match node {
       FormulaOperator::AddSub(op) => self.add_sub_op(op),
       FormulaOperator::MulDiv(op) => self.mul_div_op(op),
-      FormulaOperator::Exponent(op) => self.exponent_op(op),
+      FormulaOperator::Power(op) => self.power_op(op),
       FormulaOperator::Vec(op) => self.vec_op(op),
       FormulaOperator::Comparison(op) => self.comparison_op(op),
       FormulaOperator::Logic(op) => self.logic_op(op),
@@ -2177,6 +2351,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       SetOp::ProperSuperset => "⊋".to_string(),
       SetOp::ElementOf => "∈".to_string(),
       SetOp::NotElementOf => "∉".to_string(),
+      SetOp::SymmetricDifference => "Δ".to_string(),
     }
   }
 
@@ -2195,9 +2370,9 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
     }
   }
 
-  pub fn exponent_op(&mut self, node: &ExponentOp) -> String {
+  pub fn power_op(&mut self, node: &PowerOp) -> String {
     match node {
-      ExponentOp::Exp => "^".to_string(),
+      PowerOp::Pow => "^".to_string(),
     }
   }
 
@@ -2338,112 +2513,110 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
     let mut i = 0;
     
     let self_closing_tags = HashSet::from([
-        "area", "base", "br", "col", "embed", "hr", "img", "input", 
-        "link", "meta", "param", "source", "track", "wbr"
+      "area", "base", "br", "col", "embed", "hr", "img", "input", 
+      "link", "meta", "param", "source", "track", "wbr"
     ]);
     
     fn matches_tag(chars: &[char], pos: usize, tag: &str) -> bool {
-        let tag_chars: Vec<char> = tag.chars().collect();
-        pos + tag_chars.len() <= chars.len() && chars[pos..pos+tag_chars.len()] == tag_chars[..]
+      let tag_chars: Vec<char> = tag.chars().collect();
+      pos + tag_chars.len() <= chars.len() && chars[pos..pos+tag_chars.len()] == tag_chars[..]
     }
     
     while i < chars.len() {
-        // Handle <pre> and <code> tags
-        if !in_special_tag && (matches_tag(&chars, i, "<pre") || matches_tag(&chars, i, "<code")) {
-            in_special_tag = true;
-            special_tag = if matches_tag(&chars, i, "<pre") { "pre" } else { "code" };
-            
-            result.push('\n');
-            result.push_str(&"  ".repeat(indent_level));
-            
-            // Add the opening tag
-            while i < chars.len() && chars[i] != '>' {
-                result.push(chars[i]);
-                i += 1;
-            }
-            result.push('>');
-            i += 1;
-            indent_level += 1;
-            
-            // Process content
-            let start = i;
-            while i < chars.len() && !matches_tag(&chars, i, &format!("</{}>", special_tag)) {
-                i += 1;
-            }
-            
-            // Add the content as is
-            result.extend(chars[start..i].iter());
-            
-            // Add the closing tag
-            if i < chars.len() {
-                result.push_str(&format!("</{}>", special_tag));
-                i += special_tag.len() + 3;
-                in_special_tag = false;
-                indent_level -= 1;
-            }
-        // Open tag
-        } else if !in_special_tag && i < chars.len() && chars[i] == '<' && i+1 < chars.len() && chars[i+1] != '/' {
-            let tag_start = i + 1;
-            let mut j = tag_start;
-            
-            // Get tag name
-            while j < chars.len() && chars[j].is_alphanumeric() {
-                j += 1;
-            }
-            
-            let tag_name: String = chars[tag_start..j].iter().collect();
-            let is_self_closing = self_closing_tags.contains(tag_name.as_str());
-            
-            // Add newline and indentation
-            result.push('\n');
-            result.push_str(&"  ".repeat(indent_level));
-            
-            // Add the tag
-            while i < chars.len() && chars[i] != '>' {
-                result.push(chars[i]);
-                i += 1;
-            }
-            result.push('>');
-            i += 1;
-            
-            if !is_self_closing {
-                indent_level += 1;
-            }
-        // Close tag
-        } else if !in_special_tag && i < chars.len() && chars[i] == '<' && i+1 < chars.len() && chars[i+1] == '/' {
-            indent_level = indent_level.saturating_sub(1);
-            
-            result.push('\n');
-            result.push_str(&"  ".repeat(indent_level));
-            
-            while i < chars.len() && chars[i] != '>' {
-                result.push(chars[i]);
-                i += 1;
-            }
-            result.push('>');
-            i += 1;
-        // Regular text content
-        } else if !in_special_tag {
-            let start = i;
-            while i < chars.len() && chars[i] != '<' {
-                i += 1;
-            }
-            
-            let content: String = chars[start..i].iter().collect();
-            if !content.trim().is_empty() {
-                result.push('\n');
-                result.push_str(&"  ".repeat(indent_level));
-                result.push_str(&content);
-            }
-        // Inside <pre> or <code>
-        } else {
+      // Handle <pre> and <code> tags
+      if !in_special_tag && (matches_tag(&chars, i, "<pre") || matches_tag(&chars, i, "<code")) {
+        in_special_tag = true;
+        special_tag = if matches_tag(&chars, i, "<pre") { "pre" } else { "code" };
+        
+        result.push('\n');
+        result.push_str(&"  ".repeat(indent_level));
+        
+        // Add the opening tag
+        while i < chars.len() && chars[i] != '>' {
+          result.push(chars[i]);
+          i += 1;
+        }
+        result.push('>');
+        i += 1;
+        indent_level += 1;
+        
+        // Process content
+        let start = i;
+        while i < chars.len() && !matches_tag(&chars, i, &format!("</{}>", special_tag)) {
+          i += 1;
+        }
+        
+        // Add the content as is
+        result.extend(chars[start..i].iter());
+        
+        // Add the closing tag
+        if i < chars.len() {
+          result.push_str(&format!("</{}>", special_tag));
+          i += special_tag.len() + 3;
+          in_special_tag = false;
+          indent_level -= 1;
+        }
+      // Open tag
+      } else if !in_special_tag && i < chars.len() && chars[i] == '<' && i+1 < chars.len() && chars[i+1] != '/' {
+        let tag_start = i + 1;
+        let mut j = tag_start;
+        
+        // Get tag name
+        while j < chars.len() && chars[j].is_alphanumeric() {
+          j += 1;
+      }
+        
+        let tag_name: String = chars[tag_start..j].iter().collect();
+        let is_self_closing = self_closing_tags.contains(tag_name.as_str());
+        
+        // Add newline and indentation
+        result.push('\n');
+        result.push_str(&"  ".repeat(indent_level));
+        
+        // Add the tag
+        while i < chars.len() && chars[i] != '>' {
+          result.push(chars[i]);
+          i += 1;
+        }
+        result.push('>');
+        i += 1;
+        
+        if !is_self_closing {
+          indent_level += 1;
+        }
+      // Close tag
+      } else if !in_special_tag && i < chars.len() && chars[i] == '<' && i+1 < chars.len() && chars[i+1] == '/' {
+        indent_level = indent_level.saturating_sub(1);
+        
+        result.push('\n');
+        result.push_str(&"  ".repeat(indent_level));
+        
+        while i < chars.len() && chars[i] != '>' {
             result.push(chars[i]);
             i += 1;
         }
+        result.push('>');
+        i += 1;
+      // Regular text content
+      } else if !in_special_tag {
+        let start = i;
+        while i < chars.len() && chars[i] != '<' {
+          i += 1;
+        }
+        
+        let content: String = chars[start..i].iter().collect();
+        if !content.trim().is_empty() {
+          result.push('\n');
+          result.push_str(&"  ".repeat(indent_level));
+          result.push_str(&content);
+      }
+      // Inside <pre> or <code>
+      } else {
+        result.push(chars[i]);
+        i += 1;
+      }
     }
-    
     result.push('\n');
     result
-}
- 
+  }
 }

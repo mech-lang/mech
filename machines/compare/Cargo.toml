@@ -1,6 +1,6 @@
 [package]
 name = "mech-compare"
-version = "0.2.67"
+version = "0.2.69"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Comparison library for the Mech language"
 documentation = "http://docs.mech-lang.org"
@@ -48,7 +48,7 @@ baselib = ["bool", "string",
       "mech-core/baselib",
     ]
 
-compare_default = ["eq", "neq", "lt", "gt", "lte", "gte"]
+compare_default = ["eq", "neq", "lt", "gt", "lte", "gte", "min", "max"]
 compare = ["functions", "bool"]
 eq = ["compare"]
 neq = ["compare"]
@@ -56,6 +56,8 @@ lt = ["compare"]
 gt = ["compare"]
 lte = ["compare"]
 gte = ["compare"]
+min = ["compare"]
+max = ["compare"]
 
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
@@ -157,7 +159,7 @@ dot_indexing = ["subscript", "mech-core/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle"]
 
 [dependencies]
-mech-core = {version = "0.2.67", default-features = false}
+mech-core = {version = "0.2.69", default-features = false}
 
 paste = "1.0.15"
 inventory = "0.3.21"

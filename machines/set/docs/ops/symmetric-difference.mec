@@ -8,13 +8,13 @@ set/symmetric-difference
 
 ```mech:disabled
 D := set/symmetric-difference(A, B)
-D := A ∖ B ∪ B ∖ A
+D := A Δ B
 ```
 
 2. Description
 -------------------------------------------------------------------------------
 
-Computes the symmetric difference of two sets A and B (A ∖ B ∪ B ∖ A).  
+Computes the symmetric difference of two sets A and B (A Δ B).  
 The result contains elements that appear in exactly one of the inputs, but not both.
 
 The implementation wraps a Rust IndexSet symmetric difference iterator, so the result
@@ -56,7 +56,7 @@ D := set/symmetric-difference(A, B)
 ```mech:ex2
 A := {1, 2, 3}
 B := {3, 4, 5}
-D := set/symmetric-difference(A, B)
+D := A Δ B
 ```
 
 (5.3) Order is stable

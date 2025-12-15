@@ -41,22 +41,27 @@ like literals and variables.
 - `factor`: atomic units (literals, function calls, variables, etc.)
 */
 
-// expression := range-expression | formula ;
+// expression := set-comprehension | range-expression | formula ;
 pub fn expression(input: ParseString) -> ParseResult<Expression> {
-  let (input, expr) = match range_expression(input.clone()) {
-    Ok((input, rng)) => (input, Expression::Range(Box::new(rng))),
-    Err(_) => match formula(input.clone()) {
-      Ok((input, Factor::Expression(expr))) => (input, *expr),
-      Ok((input, fctr)) => (input, Expression::Formula(fctr)),
-      Err(err) => {
-        return Err(err);},
-    } 
+  println!("Parsing expression...");
+  let (input, expr) = match set_comprehension(input.clone()) {
+    Ok((input, sc)) => (input, Expression::SetComprehension(Box::new(sc))),
+    Err(_) => match range_expression(input.clone()) {
+      Ok((input, rng)) => (input, Expression::Range(Box::new(rng))),
+      Err(_) => match formula(input.clone()) {
+        Ok((input, Factor::Expression(expr))) => (input, *expr),
+        Ok((input, fctr)) => (input, Expression::Formula(fctr)),
+        Err(err) => {
+          return Err(err);},
+      } 
+    }
   };
   Ok((input, expr))
 }
 
 // formula := l1 ;
 pub fn formula(input: ParseString) -> ParseResult<Factor> {
+  println!("Parsing formula...");
   let (input, factor) = l1(input)?;
   Ok((input, factor))
 }
@@ -71,16 +76,18 @@ pub fn l1(input: ParseString) -> ParseResult<Factor> {
 
 // l2 := l3, (mul-div-operator | matrix-operator, l3)* ;
 pub fn l2(input: ParseString) -> ParseResult<Factor> {
+  println!("Parsing l2...");
   let (input, lhs) = l3(input)?;
   let (input, rhs) = many0(pair(alt((mul_div_operator, matrix_operator)),cut(l3)))(input)?;
+  println!("l2 rhs: {:?}", rhs);
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
 
-// l3 := l4, (exponent-operator, l4)* ;
+// l3 := l4, (power-operator, l4)* ;
 pub fn l3(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l4(input)?;
-  let (input, rhs) = many0(pair(exponent_operator,cut(l4)))(input)?;
+  let (input, rhs) = many0(pair(power_operator,cut(l4)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
@@ -179,10 +186,10 @@ pub fn mul_div_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   Ok((input, FormulaOperator::MulDiv(op)))
 }
 
-// exponent-operator := exponent ;
-pub fn exponent_operator(input: ParseString) -> ParseResult<FormulaOperator> {
-  let (input, op) = exponent(input)?;
-  Ok((input, FormulaOperator::Exponent(op)))
+// power-operator := power ;
+pub fn power_operator(input: ParseString) -> ParseResult<FormulaOperator> {
+  let (input, op) = power(input)?;
+  Ok((input, FormulaOperator::Power(op)))
 }
 
 // negate-factor := "-", factor ;
@@ -249,12 +256,12 @@ pub fn modulus(input: ParseString) -> ParseResult<MulDivOp> {
   Ok((input, MulDivOp::Mod))
 }
 
-// exponent := "^" ;
-pub fn exponent(input: ParseString) -> ParseResult<ExponentOp> {
+// power := "^" ;
+pub fn power(input: ParseString) -> ParseResult<PowerOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("^")(input)?;
   let (input, _) = ws0e(input)?;
-  Ok((input, ExponentOp::Exp))
+  Ok((input, PowerOp::Pow))
 }
 
 // Matrix Operations
@@ -390,6 +397,7 @@ pub fn greater_than(input: ParseString) -> ParseResult<ComparisonOp> {
 // less_than := "<" ;
 pub fn less_than(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = ws0e(input)?;
+  let (input, _) = is_not(tag("<-"))(input)?;
   let (input, _) = tag("<")(input)?;
   let (input, _) = ws0e(input)?;
   Ok((input, ComparisonOp::LessThan))
@@ -511,9 +519,9 @@ fn left_anti_join(input: ParseString) -> ParseResult<TableOp> {
 // Set Operations
 // ----------------------------------------------------------------------------
 
-// set-operator := union | intersection | difference | complement | subset | superset | proper-subset | proper-superset | element-of | not-element-of ;
+// set-operator := union | intersection | difference | complement | subset | superset | proper-subset | proper-superset | element-of | not-element-of | symmetric-difference ;
 pub fn set_operator(input: ParseString) -> ParseResult<FormulaOperator> {
-  let (input, op) = alt((union_op,intersection,difference,complement,subset,superset,proper_subset,proper_superset,element_of,not_element_of))(input)?;
+  let (input, op) = alt((union_op,intersection,difference,complement,subset,superset,proper_subset,proper_superset,element_of,not_element_of,symmetric_difference))(input)?;
   Ok((input, FormulaOperator::Set(op)))
 }
 
@@ -595,6 +603,55 @@ pub fn not_element_of(input: ParseString) -> ParseResult<SetOp> {
   let (input, _) = tag("∉")(input)?;
   let (input, _) = ws0e(input)?;
   Ok((input, SetOp::NotElementOf))
+}
+
+// symmetric-difference := "Δ" ;
+pub fn symmetric_difference(input: ParseString) -> ParseResult<SetOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = tag("Δ")(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, SetOp::SymmetricDifference))
+}
+
+// Set Comprehensions
+// ----------------------------------------------------------------------------
+
+// set-comprehension := "{", formula, "|", [set-qualifier, ","], "}" ;
+pub fn set_comprehension(input: ParseString) -> ParseResult<SetComprehension> {
+  let (input, _) = left_brace(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, expr) = expression(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, _) = bar(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, quals) = separated_list1(list_separator, comprehension_qualifier)(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, _) = right_brace(input)?;
+  Ok((input, SetComprehension{ expression: expr, qualifiers: quals }))
+}
+
+// set-qualifier := generator | expression | variable-define  ;
+pub fn comprehension_qualifier(input: ParseString) -> ParseResult<ComprehensionQualifier> {
+  match generator(input.clone()) {
+    Ok((input, gen)) => Ok((input, gen)),
+    Err(_) => match variable_define(input.clone()) {
+      Ok((input, var_def)) => Ok((input, ComprehensionQualifier::Let(var_def))),
+      Err(_) => {
+        let (input, expr) = expression(input)?;
+        Ok((input, ComprehensionQualifier::Filter(expr)))
+      }
+    }
+  }
+}
+
+// generator := pattern, "<-", expression ;
+pub fn generator(input: ParseString) -> ParseResult<ComprehensionQualifier> {
+  let (input, ptrn) = pattern(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, _) = cut(tag("<-"))(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, expr) = expression(input)?;
+  Ok((input, ComprehensionQualifier::Generator((ptrn, expr))))
 }
 
 // Subscript Operations
