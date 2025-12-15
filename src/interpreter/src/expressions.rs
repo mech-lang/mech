@@ -48,14 +48,34 @@ pub fn match_value(pattern: &Pattern,value: &Value,env: &mut Environment) -> MRe
       _ => todo!("Unsupported expression in pattern"),
     },
     Pattern::Tuple(pat_tuple) => {
-      todo!("Implement tuple pattern matching")
+      match value {
+        Value::Tuple(values) => {
+          let values_brrw = values.borrow();
+          if pat_tuple.0.len() != values_brrw.elements.len() {
+            return Err(MechError2::new(
+              ArityMismatchError{
+                expected: pat_tuple.0.len(),
+                found: values_brrw.elements.len(),
+              },
+              None
+            ).with_compiler_loc());
+          }
+          for (pat, val) in pat_tuple.0.iter().zip(values_brrw.elements.iter()) {
+            match_value(pat, val, env)?;
+          }
+          Ok(())
+        }
+        _ => Err(MechError2::new(
+          PatternExpectedTupleError{
+            found: value.kind(),
+          },
+          None
+        ).with_compiler_loc()),
+      }
     },
     Pattern::TupleStruct(pat_struct) => {
       todo!("Implement tuple struct pattern matching")
     },
-    Pattern::Formula(_) => {
-      todo!("Implement formula pattern matching")
-    }
   }
 }
 
@@ -706,5 +726,32 @@ impl MechErrorKind2 for SetComprehensionGeneratorError {
   }
   fn message(&self) -> String {
     format!("Set comprehension generator must produce a set, found kind: {:?}", self.found)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct PatternExpectedTupleError{
+  found: ValueKind,
+}
+impl MechErrorKind2 for PatternExpectedTupleError {
+  fn name(&self) -> &str {
+    "PatternExpectedTuple"
+  }
+  fn message(&self) -> String {
+    format!("Pattern expected a tuple, found kind: {:?}", self.found)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct ArityMismatchError {
+  expected: usize,
+  found: usize,
+}
+impl MechErrorKind2 for ArityMismatchError {
+  fn name(&self) -> &str {
+    "ArityMismatch"
+  }
+  fn message(&self) -> String {
+    format!("Arity mismatch: expected {}, found {}", self.expected, self.found)
   }
 }
