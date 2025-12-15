@@ -159,15 +159,13 @@ pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult
         envs
           .into_iter()
           .filter(|env| {
-            println!("Evaluating filter in env: {:#?}", env);
-              match expression(expr, Some(env), p) {
-                Ok(Value::Bool(v)) => v.borrow().clone(),
-                x => {
-                  println!("Filter did not evaluate to bool: {:?}", x);
-                  false
-                }
-                Err(_) => false,
+            match expression(expr, Some(env), p) {
+              Ok(Value::Bool(v)) => v.borrow().clone(),
+              Ok(x) => {
+                false
               }
+              Err(_) => false,
+            }
           })
           .collect()
       }
@@ -499,7 +497,6 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
   let state_brrw = p.state.borrow();
   let symbols_brrw = state_brrw.symbol_table.borrow();
   let id = v.name.hash();
-  println!("Looking up variable with id: {} in env: {:?}", id, env);
   match env {
     Some(env) => {
       match env.get(&id) {
