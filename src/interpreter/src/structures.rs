@@ -4,32 +4,32 @@ use std::collections::HashMap;
 // Structures
 // ----------------------------------------------------------------------------
 
-pub fn structure(strct: &Structure, p: &Interpreter) -> MResult<Value> {
+pub fn structure(strct: &Structure, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   match strct {
     Structure::Empty => Ok(Value::Empty),
     #[cfg(feature = "record")]
-    Structure::Record(x) => record(&x, p),
+    Structure::Record(x) => record(&x, env, p),
     #[cfg(feature = "matrix")]
-    Structure::Matrix(x) => matrix(&x, p),
+    Structure::Matrix(x) => matrix(&x, env, p),
     #[cfg(feature = "table")]
-    Structure::Table(x) => table(&x, p),
+    Structure::Table(x) => table(&x, env, p),
     #[cfg(feature = "tuple")]
-    Structure::Tuple(x) => tuple(&x, p),
+    Structure::Tuple(x) => tuple(&x, env, p),
     #[cfg(feature = "tuple_struct")]
     Structure::TupleStruct(x) => todo!(),
     #[cfg(feature = "set")]
-    Structure::Set(x) => set(&x, p),
+    Structure::Set(x) => set(&x, env, p),
     #[cfg(feature = "map")]
-    Structure::Map(x) => map(&x, p),
+    Structure::Map(x) => map(&x, env, p),
     x => Err(MechError2::new(FeatureNotEnabledError, Some(format!("Feature not enabled for `{:?}`", stringify!(x)))).with_compiler_loc()),
   }
 }
 
 #[cfg(feature = "tuple")]
-pub fn tuple(tpl: &Tuple, p: &Interpreter) -> MResult<Value> {
+pub fn tuple(tpl: &Tuple, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   let mut elements = vec![];
   for el in &tpl.elements {
-    let result = expression(el,p)?;
+    let result = expression(el, env, p)?;
     elements.push(Box::new(result));
   }
   let mech_tuple = Ref::new(MechTuple{elements});
@@ -37,11 +37,11 @@ pub fn tuple(tpl: &Tuple, p: &Interpreter) -> MResult<Value> {
 }
 
 #[cfg(feature = "map")]
-pub fn map(mp: &Map, p: &Interpreter) -> MResult<Value> {
+pub fn map(mp: &Map, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   let mut m = IndexMap::new();
   for b in &mp.elements {
-    let key = expression(&b.key, p)?;
-    let val = expression(&b.value, p)?;
+    let key = expression(&b.key, env, p)?;
+    let val = expression(&b.value, env, p)?;
     m.insert(key,val);
   }
   
@@ -75,7 +75,7 @@ pub fn map(mp: &Map, p: &Interpreter) -> MResult<Value> {
 }
 
 #[cfg(feature = "record")]
-pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
+pub fn record(rcrd: &Record, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   let mut data: IndexMap<u64,Value> = IndexMap::new();
   let cols: usize = rcrd.bindings.len();
   let mut kinds: Vec<ValueKind> = Vec::new();
@@ -83,7 +83,7 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
   for b in &rcrd.bindings {
     let name_hash = b.name.hash();
     let name_str = b.name.to_string();
-    let val = expression(&b.value, p)?;
+    let val = expression(&b.value, env, p)?;
     let knd: ValueKind = match &b.kind {
       Some(k) => kind_annotation(&k.kind, p)?.to_value_kind(&p.state.borrow().kinds)?,
       None => val.kind(),
@@ -200,10 +200,10 @@ register_descriptor!{
 }
 
 #[cfg(feature = "set")]
-pub fn set(m: &Set, p: &Interpreter) -> MResult<Value> { 
+pub fn set(m: &Set, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> { 
   let mut elements = Vec::new();
   for el in &m.elements {
-    let result = expression(el, p)?;
+    let result = expression(el, env, p)?;
     elements.push(result.clone());
   }
   let element_kind = if elements.len() > 0 {
@@ -327,14 +327,14 @@ fn handle_column_kind(
 }
 
 #[cfg(feature = "table")]
-pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> { 
+pub fn table(t: &Table, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> { 
   let mut rows = vec![];
-  let headings = table_header(&t.header, p)?;
+  let headings = table_header(&t.header, env, p)?;
   let mut cols = 0;
 
   // Interpret rows
   for row in &t.rows {
-    let result = table_row(row, p)?;
+    let result = table_row(row, env, p)?;
     cols = result.len();
     rows.push(result);
   }
@@ -383,7 +383,7 @@ pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> {
 }
 
 #[cfg(feature = "kind_annotation")]
-pub fn table_header(fields: &TableHeader, p: &Interpreter) -> MResult<Vec<(Value,ValueKind,Identifier)>> {
+pub fn table_header(fields: &TableHeader, env: Option<&Environment>, p: &Interpreter) -> MResult<Vec<(Value,ValueKind,Identifier)>> {
   let mut headings: Vec<(Value,ValueKind,Identifier)> = Vec::new();
   for f in &fields.0 {
     let id = f.name.hash();
@@ -396,24 +396,24 @@ pub fn table_header(fields: &TableHeader, p: &Interpreter) -> MResult<Vec<(Value
   Ok(headings)
 }
 
-pub fn table_row(r: &TableRow, p: &Interpreter) -> MResult<Vec<Value>> {
+pub fn table_row(r: &TableRow, env: Option<&Environment>, p: &Interpreter) -> MResult<Vec<Value>> {
   let mut row: Vec<Value> = Vec::new();
   for col in &r.columns {
-    let result = table_column(col, p)?;
+    let result = table_column(col, env, p)?;
     row.push(result);
   }
   Ok(row)
 }
 
-pub fn table_column(r: &TableColumn, p: &Interpreter) -> MResult<Value> { 
-  expression(&r.element, p)
+pub fn table_column(r: &TableColumn, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> { 
+  expression(&r.element, env, p)
 }
 
 // Matrix
 // ----------------------------------------------------------------------------
 
 #[cfg(feature = "matrix")]
-pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
+pub fn matrix(m: &Mat, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   let mut shape = vec![0, 0];
   let mut col: Vec<Value> = Vec::new();
@@ -421,7 +421,7 @@ pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
   #[cfg(feature = "matrix_horzcat")]
   {
     for row in &m.rows {
-      let result = matrix_row(row, p)?;
+      let result = matrix_row(row, env, p)?;
       if shape == vec![0,0] {
         shape = result.shape();
         kind = result.kind();
@@ -458,13 +458,13 @@ pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
 }
 
 #[cfg(feature = "matrix_horzcat")]
-pub fn matrix_row(r: &MatrixRow, p: &Interpreter) -> MResult<Value> {
+pub fn matrix_row(r: &MatrixRow, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   let mut row: Vec<Value> = Vec::new();
   let mut shape = vec![0, 0];
   let mut kind = ValueKind::Empty;
   for col in &r.columns {
-    let result = matrix_column(col, p)?;
+    let result = matrix_column(col, env, p)?;
     if shape == vec![0,0] {
       shape = result.shape();
       kind = result.kind();
@@ -487,6 +487,6 @@ pub fn matrix_row(r: &MatrixRow, p: &Interpreter) -> MResult<Value> {
   Ok(out)
 }
 
-pub fn matrix_column(r: &MatrixColumn, p: &Interpreter) -> MResult<Value> { 
-  expression(&r.element, p)
+pub fn matrix_column(r: &MatrixColumn, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> { 
+  expression(&r.element, env, p)
 }
