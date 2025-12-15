@@ -767,3 +767,4 @@ test_interpreter!(interpret_compare_min_vector, "compare/min([3 4 5 6],4)", Valu
 test_interpreter!(interpret_compare_min_vector_vector, "compare/min([3 4 5 6],[6 5 4 3])", Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 4.0, 3.0], 1, 4)));
 
 test_interpreter!(interpret_set_comprehension, r#"{ x * x | x <- {1,2,3,4}, y := 2, (x % 2) == 0 }"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(4.0)), Value::F64(Ref::new(16.0))]))));
+test_interpreter!(interpret_set_comprehension_variable, r#"qq := {1,2,3,4}; { x * x | x <- qq, y := 2, (x % 2) != 0 }"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(9.0))]))));
