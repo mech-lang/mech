@@ -30,7 +30,7 @@ pub fn expression(expr: &Expression, env: Option<&Environment>, p: &Interpreter)
   }
 }
 
-pub fn match_value(pattern: &Pattern,value: &Value,env: &mut Environment) -> MResult<()> {
+pub fn pattern_match_value(pattern: &Pattern, value: &Value, env: &mut Environment) -> MResult<()> {
   match pattern {
     Pattern::Wildcard => Ok(()),
     Pattern::Expression(expr) => match expr {
@@ -38,7 +38,16 @@ pub fn match_value(pattern: &Pattern,value: &Value,env: &mut Environment) -> MRe
         let id = &var.name.hash();
         match env.get(id) {
           Some(existing) if existing == value => Ok(()),
-          Some(_) => todo!(),
+          Some(existing) => {
+            Err(MechError2::new(
+                PatternMatchError {
+                    var: var.name.to_string(),
+                    expected: existing.to_string(),
+                    found: value.to_string(),
+                },
+                None
+            ).with_compiler_loc())
+          }
           None => {
             env.insert(id.clone(), value.clone());
             Ok(())
@@ -61,8 +70,8 @@ pub fn match_value(pattern: &Pattern,value: &Value,env: &mut Environment) -> MRe
               None
             ).with_compiler_loc());
           }
-          for (pat, val) in pat_tuple.0.iter().zip(values_brrw.elements.iter()) {
-            match_value(pat, val, env)?;
+          for (pttrn, val) in pat_tuple.0.iter().zip(values_brrw.elements.iter()) {
+            pattern_match_value(pttrn, val, env)?;
           }
           Ok(())
         }
@@ -92,7 +101,7 @@ pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult
   // Process each qualifier in order
   for qual in &set_comp.qualifiers {
     envs = match qual {
-      ComprehensionQualifier::Generator((pattern, expr)) => {
+      ComprehensionQualifier::Generator((pttrn, expr)) => {
         let mut new_envs = Vec::new();
         for env in &envs {
           // Evaluate the generator expression
@@ -101,11 +110,11 @@ pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult
             Value::Set(mset) => {
               let set_brrw = mset.borrow();
 
-              for element in set_brrw.set.iter() {
+              for elmnt in set_brrw.set.iter() {
                 let mut new_env = env.clone();
 
                 // Try to match the element with the pattern
-                if match_value(pattern, element, &mut new_env).is_ok() {
+                if pattern_match_value(pttrn, elmnt, &mut new_env).is_ok() {
                   new_envs.push(new_env);
                 }
                 // If match fails, skip this element
@@ -117,11 +126,11 @@ pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult
                 Value::Set(mset) => {
                   let set_brrw = mset.borrow();
 
-                  for element in set_brrw.set.iter() {
+                  for elmnt in set_brrw.set.iter() {
                     let mut new_env = env.clone();
 
                     // Try to match the element with the pattern
-                    if match_value(pattern, element, &mut new_env).is_ok() {
+                    if pattern_match_value(pttrn, elmnt, &mut new_env).is_ok() {
                       new_envs.push(new_env);
                     }
                     // If match fails, skip this element
@@ -760,5 +769,24 @@ impl MechErrorKind2 for ArityMismatchError {
   }
   fn message(&self) -> String {
     format!("Arity mismatch: expected {}, found {}", self.expected, self.found)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct PatternMatchError {
+  pub var: String,
+  pub expected: String,
+  pub found: String,
+}
+
+impl MechErrorKind2 for PatternMatchError {
+  fn name(&self) -> &str {
+    "PatternMatchError"
+  }
+  fn message(&self) -> String {
+    format!(
+      "Pattern match error for variable '{}': expected value {}, found value {}",
+      self.var, self.expected, self.found
+    )
   }
 }
