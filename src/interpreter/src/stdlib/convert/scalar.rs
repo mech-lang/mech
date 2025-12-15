@@ -167,7 +167,8 @@ macro_rules! impl_conversion_match_arms {
         #[cfg(all(feature = "atom", feature = "enum"))]
         (Value::Atom(variant_id), Value::Kind(ValueKind::Enum(enum_id))) => {
           let variants = vec![(variant_id.borrow().0,None)];
-          let enm = MechEnum{id: enum_id, variants};
+          todo!("FIx name lookup for enum conversion, atom doesn't store name, so we can't populate names dictionary yet.");
+          let enm = MechEnum{id: enum_id, variants, names: Ref::new(Dictionary::new())};
           let val = Ref::new(enm.clone());
           Ok(Box::new(ConvertSEnum{out: val}))
         }
