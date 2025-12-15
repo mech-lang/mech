@@ -4490,7 +4490,6 @@ macro_rules! impl_horzcat_arms {
           }
           #[cfg(feature = "matrixd")]
           (1, m, n) => {
-            println!("Horzcat MatrixD branch {:?}", arguments);
             let emd = get_md(&arguments[0]);
             let evd = get_vd(&arguments[0]);
             match (emd, evd) {
