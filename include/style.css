@@ -344,6 +344,26 @@ h5.toc::before {
     text-decoration: none;
 }
 
+.mech-set {
+    color: var(--op-color);
+}
+
+.mech-set-comprehension {
+    color: var(--op-color);
+}
+
+.mech-set-open {
+    color: var(--bracket-color);
+}
+
+.mech-set-close {
+    color: var(--bracket-color);
+}
+
+.mech-set-bar {
+    color: var(--op-color);
+}
+
 .mech-matrix {
     display: inline-flex;
 }
