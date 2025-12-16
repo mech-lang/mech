@@ -12,6 +12,7 @@ pub struct Interpreter {
   pub id: u64,
   ip: usize,  // instruction pointer
   pub state: Ref<ProgramState>,
+  pub stack: Vec<Frame>,
   registers: Vec<Value>,
   constants: Vec<Value>,
   #[cfg(feature = "compiler")]
@@ -28,6 +29,7 @@ impl Clone for Interpreter {
       id: self.id,
       ip: self.ip,
       state: Ref::new(self.state.borrow().clone()),
+      stack: self.stack.clone(),
       registers: self.registers.clone(),
       constants: self.constants.clone(),
       #[cfg(feature = "compiler")]
@@ -50,6 +52,7 @@ impl Interpreter {
       id,
       ip: 0,
       state: Ref::new(state),
+      stack: Vec::new(),
       registers: Vec::new(),
       constants: Vec::new(),
       out: Value::Empty,
