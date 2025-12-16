@@ -83,7 +83,7 @@ The `\\` operator runs a Gaussian elimination algorithm to solve the system of e
 
 (1.1.5) Friends-of-Friends
 
-Mech isn't just for numerical computing; it can also be used for data manipulation and querying. Here is an example of a friend-of-a-friend relational set comprehensions:
+Mech has a `set` datastructure with support for set comprehensions and relational algebra. Here is an example that finds the friends-of-friends for a given user in a social network:
 
 ```mech:friends-of-friends
 pairs := {(1, 2), (1, 3), (2, 8), (3, 5), (3, 9)}           
