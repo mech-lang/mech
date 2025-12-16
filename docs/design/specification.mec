@@ -125,7 +125,7 @@ Semicolons and commas are treated as whitespace in most cases. Except in these c
 - Semicolons can be used to separate statements so they can be written inline.
 - Semicolons can be used in a matrix to separate rows, so they can be written inline.
 
-For more information, see the [Syntax Design Document](#).
+For more information, see the [Syntax Design Document](design/syntax-design.html).
 
 3. Lexical Elements
 -------------------------------------------------------------------------------
