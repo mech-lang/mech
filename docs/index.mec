@@ -9,7 +9,7 @@ Mech Programming Language Documentation
 3. [Build and Run Mech Programs](getting-started/build-and-run.html)
 4. [Mech REPL](getting-started/repl.html) 
 
-2. Language Reference
+2. System Reference
 -------------------------------------------------------------------------------
 
 1. Data Model
@@ -24,13 +24,14 @@ Mech Programming Language Documentation
         - [Tuple](reference/tuple.html) - fixed-size, ordered grouping of heterogeneous values. `todo`
     - Statements and Expressions
         - [Defining, Assigning, and Accessing Data](reference/define.html) `todo`
-        - [Kind Conversion](reference/convert.html) `todo`
+        - [Data Conversion](reference/convert.html) `todo`
         - [Formulas](reference/formulas.html) `todo`
         - [Indexing](reference/indexing.html) `todo`
     - [Error Handling](reference/errors.html) `todo`
     - [Memory Management](reference/memory.html) `todo`
 2. Programming Model `Coming v0.3`
     - Functions
+    - Comprehensions
     - State Machines
     - SynthAssign
     - Modules
@@ -63,11 +64,11 @@ Mech Programming Language Documentation
 1. [Mech in Fifteen Minutes](guides/mech-in-fifteen-minutes.html) `todo`
 2. [Tutorials](guides/tutorials.html) `todo`
 
-5. Language Design Documents
+5. Project Design Documents
 -------------------------------------------------------------------------------
 
-1. [Language Specification](design/specification.html)
-2. [Language Design Principles](design/language-design.html)  `todo`
+1. [System Specification](design/specification.html)
+2. [Design Principles](design/design-principles.html)  `todo`
 3. [Syntax Design Notes](design/syntax-design.html) `todo`
 4. [History](design/history.html)  `todo`
 5. [Roadmap](design/ROADMAP.html)
