@@ -85,6 +85,7 @@ Version `v0.3` incorporates all the features of `v0.2`, in addition to the follo
 -(💭) introspection
 -(💭) higher order functions
 -(💭) new types (dec64, currency, email addresses, dates)
+-(💭) List comprehension
 -(💭) Integrations
   -(💭) Godot
   -(💭) Python
@@ -100,7 +101,6 @@ Version `v0.3` incorporates all the features of `v0.2`, in addition to the follo
 -(🥚) machine revamp
 -(🥚) database revamp
 -(🐣) Set comprehension
--(🐣) List comprehension
 -(🐣) self-contained binary executables
 -(🐣) bytecode interpreter
 -(🐣) build system
