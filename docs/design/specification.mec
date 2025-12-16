@@ -91,9 +91,9 @@ user := 1
 {fof | (u, f) <- pairs, (f, fof) <- pairs, u == user}
 ```
 
-This query says "Given a set of friend pairs, and a user, find all friends-of-friends for that user". The solution is `{8, 5, 9}`, since user `1` is friends with `2`, who is friends with `8`; and user `1` is also friends with `3`, who is friends with `5` and `9`.
+The solution is `{8, 5, 9}` because user `1` is friends with `2`, who is friends with `8`; and user `1` is also friends with `3`, who is friends with `5` and `9`.
 
-Set comprehensions operate over sets, and support pattern matching and data joining. In this case, because we specifified `f` in two different generators, we defined a natural join over which allowed us draw associations between elements in the friend-pairs set.
+Set comprehensions operate over sets, and support pattern matching and data joining. In this case, because we specifified `f` in two different generators, we defined a natural join over the friend-pairs set, drawing relationships between elements.
 
 2. Source Code Representation
 -------------------------------------------------------------------------------
