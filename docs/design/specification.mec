@@ -1864,15 +1864,15 @@ Multiple paragraphs can be included in the callout block as long as there are no
 ```
 > This is a quote block.
 
-(i)> This is an info block.
-
-(?)> This is a question block.
+(x)> This is an error block.
 
 (!)> This is a warning block.
 
-(x)> This is an error block.
-
 (+)> This is a success block.
+
+(?)> This is a question block.
+
+(i)> This is an info block.
 
 (*)> This is an idea block.
 
@@ -1884,15 +1884,15 @@ When rendered, they look like this:
 
 > This is a quote block.
 
-(i)> This is an info block.
-
-(?)> This is a question block.
+(x)> This is an error block.
 
 (!)> This is a warning block.
 
-(x)> This is an error block.
-
 (+)> This is a success block.
+
+(?)> This is a question block.
+
+(i)> This is an info block.
 
 (*)> This is an idea block.
 
