@@ -702,6 +702,7 @@ h5.toc {
 .mech-var-name {
     color: var(--var-name-color);
     font-style: bold;
+    white-space: nowrap;
 }
 
 .mech-output-kind {
@@ -1619,8 +1620,11 @@ li p {
     border-radius: 10px;
     font-size: 0.7rem;
     border: 1px solid var(--code-namespace-label-color);
-    /* box-shadow: 0 2px 5px rgba(0,0,0,0.1); */
-    pointer-events: none;
+}
+
+.mech-code-block-namespace a {
+    color: var(--code-namespace-label-color);
+    text-decoration: none;
 }
 
 .mech-block-output {
