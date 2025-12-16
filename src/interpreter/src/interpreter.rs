@@ -61,6 +61,11 @@ impl Interpreter {
     }
   }
 
+  #[cfg(feature = "symbol_table")]
+  pub fn set_environment(&mut self, env: SymbolTableRef) {
+    self.state.borrow_mut().environment = Some(env);
+  }
+
   pub fn clear_plan(&mut self) {
     self.state.borrow_mut().plan.borrow_mut().clear();
   }
