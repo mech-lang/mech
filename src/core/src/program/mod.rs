@@ -40,6 +40,23 @@ pub struct ProgramState {
   pub dictionary: Ref<Dictionary>,
 }
 
+impl Clone for ProgramState {
+  fn clone(&self) -> Self {
+    ProgramState {
+      #[cfg(feature = "symbol_table")]
+      symbol_table: self.symbol_table.clone(),
+      #[cfg(feature = "functions")]
+      functions: self.functions.clone(),
+      #[cfg(feature = "functions")]
+      plan: self.plan.clone(),
+      kinds: self.kinds.clone(),
+      #[cfg(feature = "enum")]
+      enums: self.enums.clone(),
+      dictionary: self.dictionary.clone(),
+    }
+  }
+}
+
 impl ProgramState {
   pub fn new() -> ProgramState {
     ProgramState {
@@ -54,6 +71,29 @@ impl ProgramState {
       enums: EnumTable::new(),
       dictionary: Ref::new(Dictionary::new()),
     }
+  }
+
+  #[cfg(feature = "pretty_print")]
+  pub fn pretty_print(&self) -> String {
+    let mut output = String::new();
+    output.push_str("Program State:\n");
+    #[cfg(feature = "symbol_table")]
+    {
+      output.push_str("Symbol Table:\n");
+      output.push_str(&self.symbol_table.borrow().pretty_print());
+    }
+    #[cfg(feature = "functions")]
+    {
+      output.push_str(&self.functions.borrow().pretty_print());
+    }
+    #[cfg(feature = "functions")]
+    {
+      output.push_str("Execution Plan:\n");
+      for (i, step) in self.plan.borrow().iter().enumerate() {
+        output.push_str(&format!("  Step {}: {}\n", i, step.to_string()));
+      }
+    }
+    output
   }
 
   #[cfg(feature = "symbol_table")]
