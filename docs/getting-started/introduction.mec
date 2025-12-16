@@ -33,19 +33,25 @@ This short example demonstrates several key features of the language:
 
 For a complete list of planned features and their implementation statuses, see the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html).
 
-(1.2) The Vision and Need
+(1.2) The Vision and Need - A New Programming Paradigm for the AI Era
 
-Most popular languages today were conceived at a time before the rise of the Internet, smartphones, cloud computing, and now robotics and artificial intelligence[^1]. They've managed to stay relevant by continually evolving and adapting to new paradigms and use cases, which takes the form of adding new language features, libraries, frameworks, and middleware on top of the core language. This process of evolution has worked for a long time, but now with AI we are entering a new era of computing that demands a fresh approach. The rules of computing have changed, and langauges designed even 10 years ago are struggling to keep up to modern computing demands.
+One of the central insights in Seymour Papert's 1980 book [Mindstorms](https://worrydream.com/refs/Papert_1980_-_Mindstorms,_1st_ed.pdf) is that new technology often requires rethinking old paradigms. Papert, a pioneer in educational computing[^1], observed that although computers offered exciting possibilities for teachers and learners, they were often used to reinforce outdated methods like drill-and-practice exercises. To truly unlock their potential, he argued, we needed to rethink how we teach and learn -- not just apply old approaches to new tools. His solution was the Logo programming language, which enabled children as young as five to use computers in ways they never could before. So we have seen that langauges can be used to help people to access new ways of thinking, no matter their age or background.
 
-But what if we approached it from the opposite direction? Instead of starting from a language of the past and layering on compatibility for the present, what if we start in the context of the present and work backwards to design a language that fits the needs of today best, without worrying about baggage from the past? Could such a language be simpler, more powerful, more expressive, and easier to use? Would the design turn out substantively different from the languages we are currently retrofitting for the present? Would it allow programmers to build more reliable, more performant, and easier-to-maintain systems?
+Today, with generative AI and large language models, history rhymes. Right now, programmers ask AI to generate code in languages designed decades ago, often for paradigms very different from today's challenges; most widely used programming languages were created before the rise of the Internet, smartphones, cloud computing, and AI[^2]. They've remained relevant by evolving through additional libraries, frameworks, and tools. But these incremental updates can only go so far -- modern computing demands new approaches.
 
-These are the foundational questions the Mech project aims to answer. We are combing through 70 years of programming language history, taking the most promising ideas -- some of which have achieved mainstream success, many of which have only begun to be explored -- and reimagining them for the modern era. The result is a language and platform designed from the ground up to seriously tackle the incidental complexity that has accrued in software development over the past several decades.
+What would a programming system designed for AI look like? Can a language be designed that is easier for AI to write? Could programmers use AI tools to write code in it more effectively than in other languages? Could such a system be simpler, more expressive, and easier to use? Would such a language help programmers build systems that are more reliable, easier to maintain, and better suited for modern hardware?
 
-That's a tall order, but we believe it's necessary to build the next generation of software systems capable of meeting the demands of the future. These systems will need to be more adaptive, more resilient, and more capable of handling the complexities of the real world. They will be driven by streams of data from a variety of sources, processed in real time, executed on heterogeneous hardware and software platforms, and deployed over networks distributed all over the world. Not only that, the actual software will not be written by humans, but generated and optimized by artificial intelligence systems. And it won't be executed on a machine tied to a desk, but on a robot that can move in the world and has agency. 
+These are the questions the Mech project seeks to answer. We are combining lessons from 70 years of programming history with the realities of today's technology. The result is a language and platform built to provide tools that take better advantage of AI capabilities, while also being easier and more enjoyable for human programmers to use.
 
-We call these "data-driven, reactive systems", and Mech is designed to be *the* language and platform for building them.
+(1.3) Mech Puts Data First
 
-(1.3) Why Mech?
+More than anything, computing today is about data. Programs ingest, transform, and output data. They respond to changes in data from users, sensors, and networks. They process large datasets to extract insights and make decisions. AI systems especially rely on data, for training, inference, and context.
+
+Yet most programming languages are designed around the idea of sequences of instructions that manipulate memory locations -- the data is not represented and manipulated directly, but rather idirectly through these instructions. Data is hidden in registers and not viewable or queryable by the programmer. This makes it difficult to reason about how data flows through a program, and how changes in data affect the program's behavior. And when it comes time to debug, optimize, or extend the program, this indirect representation of data becomes a major obstacle.
+
+In Mech, you start by defining data and transformations on them. The Mech compiler and runtime automatically determine how data flows through your program, and optimizes it for performance. When underlying data change, Mech updates all dependent data automatically. This makes it easier to build systems that react to change, without having to write custom event loops or bring in large frameworks.
+
+(1.4) Use Cases
 
 Mech is designed to make building data-driven systems easier by providing a reactive programming model based on defining data dependencies and transformations. Mech also provides a new AI-first programming model that allows users to write Mech programs without even knowing the language -- an idea that is very hard to implement on top of languages not designed for this new frontier.
 
@@ -118,11 +124,11 @@ This documentation is designed to help you get started with Mech, understand its
 
 The Mech community stays active at a few places around the Internet:
 
--(👾) [Discord](https://discord.gg/asqP25NNTH) - for live chat
--(🐙) [GitHub](https://github.com/mech-lang) - for code and issues
--(📺) [YouTube](https://www.youtube.com/@MechLang) - for video tutorials
--(🛸) [Reddit](https://www.reddit.com/r/mechlang/) - for help and general discussion
--(📧) [Mailing List](https://groups.google.com/g/mechtalk) - for dev discussion
+- [Discord](https://discord.gg/asqP25NNTH) - for live chat
+- [GitHub](https://github.com/mech-lang) - for code and issues
+- [YouTube](https://www.youtube.com/@MechLang) - for video tutorials
+- [Reddit](https://www.reddit.com/r/mechlang/) - for help and general discussion
+- [Mailing List](https://groups.google.com/g/mechtalk) - for dev discussion
 
 6. Project Status
 -------------------------------------------------------------------------------
@@ -142,4 +148,6 @@ Visit the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html) for more inf
 
 ***
 
-[^1]: Some believe that AI will completely supplant programming languages; instead of writing code and compiling to machine code, LLMs will either directly write machinecode, or even act as a runtime environment and execute the program itself. We do not believe this will happen, at least in the nearterm. See our post ["LLMs Will Not Replace Programming Languages"](https://mech-lang.org/post/2025-01-09-programming-chatgpt/) for more on our reasoning, but the short version is that programming languages provide a level of abstraction and structure that is necessary for building complex systems, and that AI systems will need to work within these abstractions to be effective.
+[^1]: Papert was a pioneer in the field of educational computing, and is best known for his work on the Logo programming language and his advocacy for constructivist learning theories.
+
+[^2]: Some believe that AI will completely supplant programming languages; instead of writing code and compiling to machine code, LLMs will either directly write machinecode, or even act as a runtime environment and execute the program itself. We do not believe this will happen, at least in the nearterm. See our post ["LLMs Will Not Replace Programming Languages"](https://mech-lang.org/post/2025-01-09-programming-chatgpt/) for more on our reasoning, but the short version is that programming languages provide a level of abstraction and structure that is necessary for building complex systems, and that AI systems will need to work within these abstractions to be effective.
