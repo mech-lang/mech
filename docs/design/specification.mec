@@ -24,7 +24,7 @@ First, the classic program which prints the string "Hello, World!" to the consol
 "Hello World!"
 ```
 
-In Mech, the result of the last expression in a program is automatically returned and printed to the console, without needing an explicit print statement. This is an example where Mech reduces incidental complexity.
+In Mech, the result of the final expression in a program is automatically returned and printed to the console, without needing an explicit print statement. This is an example where Mech reduces incidental complexity.
 
 (1.1.2) FizzBuzz
 
