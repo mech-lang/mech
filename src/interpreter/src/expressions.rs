@@ -98,6 +98,10 @@ pub fn pattern_match_value(pattern: &Pattern, value: &Value, env: &mut Environme
 #[cfg(feature = "set_comprehensions")]
 pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult<Value> {
   let mut envs: Vec<Environment> = vec![HashMap::new()];
+  let comprehension_id = hash_str(&format!("{:?}", set_comp));
+  let mut new_p = p.clone();
+  new_p.id = comprehension_id;
+  new_p.clear_plan();
   // Process each qualifier in order
   for qual in &set_comp.qualifiers {
     envs = match qual {
@@ -105,7 +109,7 @@ pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult
         let mut new_envs = Vec::new();
         for env in &envs {
           // Evaluate the generator expression
-          let collection = expression(expr, Some(env), p)?;
+          let collection = expression(expr, Some(env), &new_p)?;
           match collection {
             Value::Set(mset) => {
               let set_brrw = mset.borrow();
@@ -159,7 +163,8 @@ pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult
         envs
           .into_iter()
           .filter(|env| {
-            match expression(expr, Some(env), p) {
+            let result = expression(expr, Some(env), &new_p);
+            match result {
               Ok(Value::Bool(v)) => v.borrow().clone(),
               Ok(x) => {
                 false
@@ -172,7 +177,7 @@ pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult
       ComprehensionQualifier::Let(var_def) => {
         envs.into_iter()
             .map(|mut env| -> MResult<_> {
-                let val = expression(&var_def.expression, Some(&env), p)?;
+                let val = expression(&var_def.expression, Some(&env), &new_p)?;
                 env.insert(var_def.var.name.hash(), val);
                 Ok(env)
             })
@@ -183,7 +188,7 @@ pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult
   // Step 3: evaluate the LHS expression in each environment
   let mut result_set = IndexSet::new();
   for env in envs {
-    let val = expression(&set_comp.expression, Some(&env), p)?;
+    let val = expression(&set_comp.expression, Some(&env), &new_p)?;
     if !result_set.contains(&val) {
       result_set.insert(val);
     }
