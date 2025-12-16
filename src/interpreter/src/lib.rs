@@ -78,6 +78,7 @@ pub mod functions;
 pub mod statements;
 pub mod expressions;
 pub mod mechdown;
+pub mod frame;
 
 pub use mech_core::*;
 
@@ -89,6 +90,7 @@ pub use crate::functions::*;
 pub use crate::statements::*;
 pub use crate::expressions::*;
 pub use crate::mechdown::*;
+pub use crate::frame::*;
 
 #[cfg(feature = "access")]
 pub use crate::stdlib::access::*;
