@@ -14,7 +14,7 @@
   --main-color-low:  hsl(42, 89%, 60%);
   --out-bracket-color: hsl(288, 30%, 85%);
   --sidebar-width: 300px;
-  --text-color-light: hsl(40, 100%, 98%);
+  --text-color-light: hsl(40, 100%, 95%);
   --text-color: hsl(41, 49%, 90%);
   --text-color-dark: hsl(41, 49%, 25%);
   --code-border-color: #4d5257;
@@ -2300,7 +2300,7 @@ mark {
 
 .mech-strong {
     font-weight: 900;
-    color: #fef2d4;
+    color: var(--text-color);
 }
 
 .mech-diagram {
