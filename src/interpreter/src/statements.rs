@@ -85,12 +85,19 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
   let id = slc.name.hash();
   let sink = { 
     let mut state_brrw = p.state.borrow_mut();
-    match state_brrw.get_symbol(id) {
+    match state_brrw.get_mutable_symbol(id) {
       Some(val) => val.borrow().clone(),
-      None => {return Err(MechError2::new(
-        UndefinedVariableError { id },
-        None,
-      ).with_compiler_loc().with_tokens(slc.name.tokens()));
+      None => {
+        match state_brrw.contains_symbol(id) {
+          true => return Err(MechError2::new(
+            NotMutableError { id },
+            Some("(!)> Mutable variables are defined with the `~` operator. *e.g.*: {{~x := 123}}".to_string()),
+          ).with_compiler_loc().with_tokens(slc.name.tokens())),
+          false => return Err(MechError2::new(
+            UndefinedVariableError { id },
+            Some("(!)> Variables are defined with the `:=` operator. *e.g.*: {{x := 123}}".to_string()),
+          ).with_compiler_loc().with_tokens(slc.name.tokens())),
+        }
       }
     }
   };
