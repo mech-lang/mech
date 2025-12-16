@@ -125,6 +125,19 @@ impl Functions {
     self.dictionary.borrow_mut().insert(id, fxn.name.to_string());
   }
 
+  #[cfg(feature = "pretty_print")]
+  pub fn pretty_print(&self) -> String {
+    let mut output = String::new();
+    output.push_str("\nFunctions:\n");
+    // print number of functions loaded:
+    output.push_str(&format!("Total Functions: {}\n", self.functions.len()));
+    //for (id, fxn_ptr) in &self.functions {
+    //  let dict_brrw = self.dictionary.borrow();
+    //  let name = dict_brrw.get(id).unwrap();
+    //  output.push_str(&format!("  {}: {:?}\n", name, fxn_ptr));
+    //}
+    output
+  }
 
 }
 
