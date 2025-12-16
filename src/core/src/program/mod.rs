@@ -30,6 +30,8 @@ pub type EnumTable = HashMap<u64, MechEnum>;
 pub struct ProgramState {
   #[cfg(feature = "symbol_table")]
   pub symbol_table: SymbolTableRef,
+  #[cfg(feature = "symbol_table")]
+  pub environment: Option<SymbolTableRef>,
   #[cfg(feature = "functions")]
   pub functions: FunctionsRef,
   #[cfg(feature = "functions")]
@@ -45,6 +47,8 @@ impl Clone for ProgramState {
     ProgramState {
       #[cfg(feature = "symbol_table")]
       symbol_table: self.symbol_table.clone(),
+      #[cfg(feature = "symbol_table")]
+      environment: self.environment.clone(),
       #[cfg(feature = "functions")]
       functions: self.functions.clone(),
       #[cfg(feature = "functions")]
@@ -62,6 +66,8 @@ impl ProgramState {
     ProgramState {
       #[cfg(feature = "symbol_table")]
       symbol_table: Ref::new(SymbolTable::new()),
+      #[cfg(feature = "symbol_table")]
+      environment: None,
       #[cfg(feature = "functions")]
       functions: Ref::new(Functions::new()),
       #[cfg(feature = "functions")]
@@ -102,6 +108,49 @@ impl ProgramState {
     syms.get(id)
   }
 
+  #[cfg(feature = "symbol_table")]
+  pub fn get_mutable_symbol(&self, id: u64) -> Option<ValRef> {
+    let syms = self.symbol_table.borrow();
+    syms.get_mutable(id)
+  }
+
+  #[cfg(feature = "symbol_table")]
+  pub fn contains_symbol(&self, id: u64) -> bool {
+    if let Some(env) = &self.environment {
+      let env_brrw = env.borrow();
+      if env_brrw.contains(id) {
+        true
+      } else {
+        let syms = self.symbol_table.borrow();
+        syms.contains(id)
+      }
+    } else {
+      let syms = self.symbol_table.borrow();
+      syms.contains(id)
+    }
+  }
+
+  #[cfg(feature = "symbol_table")]
+  pub fn get_environment(&self) -> Option<SymbolTableRef> {
+    self.environment.clone()
+  }
+
+  /// Look up symbol in environment first, then in global symbol table
+  #[cfg(feature = "symbol_table")]
+  pub fn get_env_symbol(&self, id: u64) -> Option<Ref<Value>> {
+    if let Some(env) = &self.environment {
+      let env_brrw = env.borrow();
+      match env_brrw.get(id) {
+        Some(val) => Some(val),
+        None => {
+          let sym_brrw = self.symbol_table.borrow();
+          sym_brrw.get(id)
+        }
+      }
+    } else {
+      None
+    }
+  }
       
   #[cfg(feature = "functions")]
   pub fn add_plan_step(&self, step: Box<dyn MechFunction>) {
@@ -124,6 +173,19 @@ impl ProgramState {
     let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
     dict_brrw.insert(id,name);
     val_ref
+  }
+
+  #[cfg(feature = "symbol_table")]
+  pub fn save_env_symbol(&self, id: u64, name: String, value: Value, mutable: bool) -> ValRef {
+    if let Some(env) = &self.environment {
+      let mut env_brrw = env.borrow_mut();
+      let val_ref = env_brrw.insert(id,value,mutable);
+      let mut dict_brrw = env_brrw.dictionary.borrow_mut();
+      dict_brrw.insert(id,name);
+      val_ref
+    } else {
+      panic!("No environment to save variable into");
+    }
   }
 
 }
