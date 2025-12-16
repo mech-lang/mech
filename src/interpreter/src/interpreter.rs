@@ -22,6 +22,24 @@ pub struct Interpreter {
   pub sub_interpreters: Ref<HashMap<u64, Box<Interpreter>>>,
 }
 
+impl Clone for Interpreter {
+  fn clone(&self) -> Self {
+    Self {
+      id: self.id,
+      ip: self.ip,
+      state: Ref::new(self.state.borrow().clone()),
+      registers: self.registers.clone(),
+      constants: self.constants.clone(),
+      #[cfg(feature = "compiler")]
+      context: None,
+      code: self.code.clone(),
+      out: self.out.clone(),
+      out_values: self.out_values.clone(),
+      sub_interpreters: self.sub_interpreters.clone(),
+    }
+  }
+}
+
 impl Interpreter {
   pub fn new(id: u64) -> Self {
     let mut state = ProgramState::new();
@@ -43,6 +61,44 @@ impl Interpreter {
     }
   }
 
+  pub fn clear_plan(&mut self) {
+    self.state.borrow_mut().plan.borrow_mut().clear();
+  }
+
+  #[cfg(feature = "pretty_print")]
+  pub fn pretty_print(&self) -> String {
+    let mut output = String::new();
+    output.push_str(&format!("Interpreter ID: {}\n", self.id));
+    // print state
+    output.push_str(&self.state.borrow().pretty_print());
+
+    output.push_str("Registers:\n");
+    for (i, reg) in self.registers.iter().enumerate() {
+      output.push_str(&format!("  R{}: {}\n", i, reg));
+    }
+    output.push_str("Constants:\n");
+    for (i, constant) in self.constants.iter().enumerate() {
+      output.push_str(&format!("  C{}: {}\n", i, constant));
+    }
+    output.push_str(&format!("Output Value: {}\n", self.out));
+    output.push_str(&format!(
+      "Number of Sub-Interpreters: {}\n",
+      self.sub_interpreters.borrow().len()
+    ));
+    output.push_str("Output Values:\n");
+    for (key, value) in self.out_values.borrow().iter() {
+      output.push_str(&format!("  {}: {}\n", key, value));
+    }
+    output.push_str(&format!("Code Length: {}\n", self.code.len()));
+    #[cfg(feature = "compiler")]
+    if let Some(context) = &self.context {
+      output.push_str("Context: Exists\n");
+    } else {
+      output.push_str("Context: None\n");
+    }
+    output
+  }
+
   pub fn clear(&mut self) {
     let id = self.id;
     *self = Interpreter::new(id);
@@ -53,6 +109,18 @@ impl Interpreter {
     let state_brrw = self.state.borrow();
     let syms = state_brrw.symbol_table.borrow();
     syms.pretty_print()
+  }
+
+  #[cfg(feature = "pretty_print")]
+  pub fn pretty_print_plan(&self) -> String {
+    let state_brrw = self.state.borrow();
+    let plan = state_brrw.plan.borrow();
+    let mut result = String::new();
+    for (i, step) in plan.iter().enumerate() {
+      result.push_str(&format!("Step {}:\n", i));
+      result.push_str(&format!("{}\n", step.to_string()));
+    }
+    result
   }
 
   #[cfg(feature = "functions")]
