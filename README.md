@@ -29,7 +29,7 @@ Some notable features of Mech are demonstrated in this short program:
 - **Immutable**: Variables are immutable unless specified, promoting safer code and easier reasoning.
 - **Rich Text**: Mech programs support rich formatting and literate programming through Mechdown, a Markdown dialect.
 
-## 💾 Download and Install
+## Download and Install
 
 ### From Binary
 
@@ -53,13 +53,13 @@ Alternatively, you can install Mech directly via Rust's [Cargo](https://crates.i
 cargo install mech
 ```
 
-## 📚 Documentation
+## Documentation
 
 New to Mech? Start with [Learn Mech in Fifteen Minutes](https://docs.mech-lang.org/guides/mech-in-fifteen-minutes.html).
 
 Comprehensive documentation is available at [docs.mech-lang.org](https://docs.mech-lang.org) and open-sourced on [GitHub](https://github.com/mech-lang/mech/tree/main/docs).
 
-## 🪐 Community
+## Community
 
 The Mech community stays active at a few places around the Internet:
 
@@ -71,7 +71,7 @@ The Mech community stays active at a few places around the Internet:
 
 Feel free to stop by and introduce yourself -- we're happy to meet new users and answer questions! 
 
-## 🗺️ Project Roadmap
+## Project Roadmap
 
 Mech v0.2 is currently **beta** status, meaning most intended features are implemented, but rough edges abound and there is a general lack of documentation. Development is focused on testing and documentation.
 
@@ -86,10 +86,10 @@ For more details, read the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.h
 
 A new version of Mech is [released every week](https://github.com/mech-lang/mech/releases).
 
-## 🐲 Notice
+## Notice
 
 Mech should be considered unstable and therefore unfit for use in critical systems until v1.0 is released.
 
-## ⚖️ License
+## License
 
 Licensed under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0).
