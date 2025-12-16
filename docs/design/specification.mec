@@ -86,12 +86,14 @@ The `\\` operator runs a Gaussian elimination algorithm to solve the system of e
 Mech isn't just for numerical computing; it can also be used for data manipulation and querying. Here is an example of a friend-of-a-friend relational set comprehensions:
 
 ```mech:friends-of-friends
-friend-pairs := {(1, 2), (1, 3), (2, 8), (3, 5), (3, 9)}
-user := 1
-{fof | (u, f) <- friend-pairs, (f, fof) <- friend-pairs, u == user}
+pairs := {(1, 2), (1, 3), (2, 8), (3, 5), (3, 9)}           
+user := 1                                                   
+{fof | (u, f) <- pairs, (f, fof) <- pairs, u == user}
 ```
 
-This query says "Given a set of friend pairs, and a user, find all friends-of-friends for that user". Set comprehensions operate over sets, and support pattern matching and data joining. In this case, because we specifified `f` in two different generators, we defined a natural join which allowed us draw associations between elements in the friend-pairs set.
+This query says "Given a set of friend pairs, and a user, find all friends-of-friends for that user". The solution is `{8, 5, 9}`, since user `1` is friends with `2`, who is friends with `8`; and user `1` is also friends with `3`, who is friends with `5` and `9`.
+
+Set comprehensions operate over sets, and support pattern matching and data joining. In this case, because we specifified `f` in two different generators, we defined a natural join over which allowed us draw associations between elements in the friend-pairs set.
 
 2. Source Code Representation
 -------------------------------------------------------------------------------
