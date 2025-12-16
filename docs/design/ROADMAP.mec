@@ -33,12 +33,11 @@ No target release date yet.
 
 (2.1) Data Specification (`v0.2`)
 
-(!)> Work on `v0.2` is targeted to conclude by the end of 2025, and will transition into `v0.3` starting in 2026.
+(i)> Work on `v0.2` is targeted to conclude by the end of 2025, and will transition into `v0.3` starting in 2026.
 
 Now that all `v0.2` work items are at the beta implementation stage, we will prepare to move on to `v0.3`. This will mean wrapping up documentation, tests, and any remaining bugs. 
 
 As beta features, these are are still not complete and are subject to change in `v0.3`.
-
 
 -(🐤) repl
 -(🐤) error system
@@ -100,8 +99,8 @@ Version `v0.3` incorporates all the features of `v0.2`, in addition to the follo
 -(🥚) time travel debugging
 -(🥚) machine revamp
 -(🥚) database revamp
--(🐣) Set completions
--(🐣) List completions
+-(🐣) Set comprehension
+-(🐣) List comprehension
 -(🐣) self-contained binary executables
 -(🐣) bytecode interpreter
 -(🐣) build system
