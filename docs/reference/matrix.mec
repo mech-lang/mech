@@ -1,11 +1,7 @@
 Matrix
 ===============================================================================
 
-A matrix is a collection of homogenous datatypes in 2-Dimensions. Because the datatypes are assumed to be homogenous, they are unwrapped from their container types and therefore offer the most efficient access to the underlying data in Mech.
-
-Matricies can contain the following kinds: `number`, `string`, `bool`.
-
-**Note:** More kinds and dimensions will be supported in the future.
+%% A matrix is a collection of homogenous datatypes in 2-Dimensions. Because the datatypes are assumed to be homogenous, they are unwrapped from their container types and therefore offer the most efficient access to the underlying data in Mech.
 
 1. Syntax
 -------------------------------------------------------------------------------
