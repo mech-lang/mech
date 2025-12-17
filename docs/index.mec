@@ -1,4 +1,4 @@
-Mech Programming Language Documentation
+Mech Documentation
 ===============================================================================
 
 1. Getting Started
@@ -9,31 +9,31 @@ Mech Programming Language Documentation
 3. [Build and Run Mech Programs](getting-started/build-and-run.html)
 4. [Mech REPL](getting-started/repl.html) 
 
-2. System Reference
+2. Platform Reference
 -------------------------------------------------------------------------------
 
 1. Data Model
-    - [Data, Data Types, and Kinds](reference/values.html)
+    - [Data, Data Types, and Kinds](/reference/values.html)
     - Data Structures
-        - [Enum](reference/enum.html) - defines a set of named constant values `todo`
-        - [Map](reference/map.html) - stores key-value pairs for fast lookups. `todo`
-        - [Matrix](reference/matrix.html) - 2D array of homogenous values arranged in rows and columns.
-        - [Record](reference/record.html) - groups related fields, usually for representing structured data. `todo`
-        - [Set](reference/set.html) - unordered collection of unique values `todo`
-        - [Table](reference/table.html) - collection of heterogeneous data organized into rows and columns.
-        - [Tuple](reference/tuple.html) - fixed-size, ordered grouping of heterogeneous values. `todo`
+        - [Enum](/reference/enum.html) - defines a set of named constant values `todo`
+        - [Map](/reference/map.html) - stores key-value pairs for fast lookups. `todo`
+        - [Matrix](/reference/matrix.html) - 2D array of homogenous values arranged in rows and columns.
+        - [Record](/reference/record.html) - groups related fields, usually for representing structured data. `todo`
+        - [Set](/reference/set.html) - unordered collection of unique values `todo`
+        - [Table](/reference/table.html) - collection of heterogeneous data organized into rows and columns.
+        - [Tuple](/reference/tuple.html) - fixed-size, ordered grouping of heterogeneous values. `todo`
     - Statements and Expressions
-        - [Defining, Assigning, and Accessing Data](reference/define.html) `todo`
-        - [Data Conversion](reference/convert.html) `todo`
-        - [Formulas](reference/formulas.html) `todo`
-        - [Indexing](reference/indexing.html) `todo`
-    - [Error Handling](reference/errors.html) `todo`
-    - [Memory Management](reference/memory.html) `todo`
-2. Programming Model `Coming v0.3`
+        - [Defining, Assigning, and Accessing Data](/reference/define.html) `todo` - create data and change it.
+        - [Data Conversion](/reference/convert.html) `todo` - convert data from one kind to another.
+        - [Formulas](/reference/formulas.html) `todo` - compute values using expressions.
+        - [Indexing](/reference/indexing.html) `todo` - access elements within data structures.
+    - [Error Handling](/reference/errors.html) `todo` - manage and respond to errors.
+2. Program Model `Coming v0.3`
     - Functions
     - Comprehensions
     - State Machines
     - SynthAssign
+    - Tests
     - Modules
     - Programs
 3. System Model `Coming v0.4`
@@ -45,40 +45,40 @@ Mech Programming Language Documentation
 3. Standard Library
 -------------------------------------------------------------------------------
 
-- [Assign](stdlib/assign/index.html) `todo`
-- [Access](stdlib/access/index.html) `todo`
-- [Combinatorics](stdlib/combinatorics/index.html) `todo`
-- [Compare](stdlib/compare/index.html) `todo`
-- [Convert](stdlib/convert/index.html) `todo`
-- [Io](stdlib/io/index.html) `todo`
-- [Logic](stdlib/logic/index.html) `todo`
-- [Math](stdlib/math/index.html)
-- [Matrix](stdlib/matrix/index.html) `todo`
-- [Range](stdlib/range/index.html) `todo`
-- [Set](stdlib/set/index.html)
-- [Stats](stdlib/stats/index.html) `todo`
+- [Assign](/stdlib/assign/index.html) `todo`
+- [Access](/stdlib/access/index.html) `todo`
+- [Combinatorics](/stdlib/combinatorics/index.html) `todo`
+- [Compare](/stdlib/compare/index.html) `todo`
+- [Convert](/stdlib/convert/index.html) `todo`
+- [Io](/stdlib/io/index.html) `todo`
+- [Logic](/stdlib/logic/index.html) `todo`
+- [Math](/stdlib/math/index.html)
+- [Matrix](/stdlib/matrix/index.html) `todo`
+- [Range](/stdlib/range/index.html) `todo`
+- [Set](/stdlib/set/index.html)
+- [Stats](/stdlib/stats/index.html) `todo`
 
 4. Guides
 -------------------------------------------------------------------------------
 
-1. [Mech in Fifteen Minutes](guides/mech-in-fifteen-minutes.html) `todo`
-2. [Tutorials](guides/tutorials.html) `todo`
+- [Mech in Fifteen Minutes](/guides/mech-in-fifteen-minutes.html) `todo`
+- [Tutorials](/guides/tutorials.html) `todo`
 
 5. Project Design Documents
 -------------------------------------------------------------------------------
 
-1. [System Specification](design/specification.html)
-2. [Design Principles](design/design-principles.html)  `todo`
-3. [Syntax Design Notes](design/syntax-design.html) `todo`
-4. [History](design/history.html)  `todo`
-5. [Roadmap](design/ROADMAP.html)
+- [System Specification](/design/specification.html)
+- [Design Principles](/design/design-principles.html)  `todo`
+- [Syntax Design Notes](/design/syntax-design.html) `todo`
+- [History](/design/history.html)  `todo`
+- [Roadmap](/design/ROADMAP.html)
 
 6. Examples
 -------------------------------------------------------------------------------
 
-1. [Fizz Buzz](examples/fizzbuzz.html) - a classic programming exercise that demonstrates the use of Mech's data model and operators.
-2. [N-Body Simulation](examples/n-body.html) - a simulation of gravitational interactions between multiple bodies.
-3. [Extended Kalman Filter](examples/ekf.html) - an implementation of the Extended Kalman Filter algorithm for state estimation.
+- [Fizz Buzz](/examples/fizzbuzz.html) - a classic programming exercise that demonstrates the use of Mech's data model and operators.
+- [N-Body Simulation](/examples/n-body.html) - a simulation of gravitational interactions between multiple bodies.
+- [Extended Kalman Filter](/examples/ekf.html) - an implementation of the Extended Kalman Filter algorithm for state estimation.
 
 ```mech:hidden
 document/index := {
