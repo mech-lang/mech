@@ -119,10 +119,6 @@ impl Formatter {
 
   pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
     self.toc = true;
-    let title = match &toc.title {
-      Some(title) => self.title(&title),
-      None => "".to_string(),
-    };
     let sections = self.sections(&toc.sections);
     self.toc = false;
     let section_id = hash_str(&format!("section-{}",self.h2_num + 1));
@@ -135,7 +131,7 @@ impl Formatter {
     } else {
       "".to_string()
     };
-    format!("<div class=\"mech-toc\">{}{}{}</div>",title,sections,formatted_works_cited)
+    format!("<div class=\"mech-toc\">{}{}</div>",sections,formatted_works_cited)
   }
 
   pub fn sections(&mut self, sections: &Vec<Section>) -> String {
