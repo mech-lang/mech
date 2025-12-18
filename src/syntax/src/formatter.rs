@@ -2049,11 +2049,16 @@ impl Formatter {
 
   pub fn binding(&mut self, node: &Binding) -> String {
     let name = node.name.to_string();
+    let kind = if let Some(kind) = &node.kind {
+      self.kind_annotation(&kind.kind)
+    } else {
+      "".to_string()
+    };
     let value = self.expression(&node.value);
     if self.html {
-      format!("<span class=\"mech-binding\"><span class=\"mech-binding-name\">{}</span><span class=\"mech-binding-colon-op\">:</span><span class=\"mech-binding-value\">{}</span></span>",name,value)
+      format!("<span class=\"mech-binding\"><span class=\"mech-binding-name\">{}</span><span class=\"mech-binding-kind\">{}</span><span class=\"mech-binding-colon-op\">:</span><span class=\"mech-binding-value\">{}</span></span>",name,kind,value)
     } else {
-      format!("{}: {}", name, value)
+      format!("{}{}: {}", name, kind, value)
     }
   }
 
