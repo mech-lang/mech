@@ -460,6 +460,7 @@ test_interpreter!(interpret_set_empty,"{_}", Value::Set(Ref::new(MechSet::from_v
 test_interpreter!(interpret_set_empty2,"{}", Value::Set(Ref::new(MechSet::from_vec(vec![]))));
 test_interpreter!(interpret_set, "{1,2,3}", Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0))]))));
 test_interpreter!(interpret_record,r#"{a: 1, b: "Hello"}"#, Value::Record(Ref::new(MechRecord::from_vec(vec![((55170961230981453,"a".to_string()),Value::F64(Ref::new(1.0))),((44311847522083591,"b".to_string()),Value::String(Ref::new("Hello".to_string())))]))));
+test_interpreter!(interpret_define_custom_record, r#"<point2>:=<{a<f64>,b<f64>}>; p<point2>:={a:1.0,b:2.0}"#, Value::Record(Ref::new(MechRecord::from_vec(vec![((55170961230981453,"a".to_string()),Value::F64(Ref::new(1.0))),((44311847522083591,"b".to_string()),Value::F64(Ref::new(2.0)))]))));
 test_interpreter!(interpret_record_field_access,r#"a := {x: 1,  y: 2}; a.y"#, Value::F64(Ref::new(2.0)));
 test_interpreter!(interpret_map, r#"{"a": 1, "b": 2}"#, Value::Map(Ref::new(MechMap::from_vec(vec![(Value::String(Ref::new("a".to_string())),Value::F64(Ref::new(1.0))), (Value::String(Ref::new("b".to_string())),Value::F64(Ref::new(2.0)))]))));
 test_interpreter!(interpret_set_rational, r#"{1/2, 3/4}"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::R64(Ref::new(R64::new(1, 2))), Value::R64(Ref::new(R64::new(3, 4)))]))));
