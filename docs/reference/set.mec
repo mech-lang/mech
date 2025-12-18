@@ -1,21 +1,225 @@
-Set
-===============================================================================
+set
+================================================================================
+
+%% A set is an unordered collection of unique values. Sets are useful for representing groups of items where duplicates are not allowed, and for performing mathematical set operations like union, intersection, and difference.
 
 1. Syntax
 -------------------------------------------------------------------------------
 
-2. Kind
--------------------------------------------------------------------------------
+A set is declared using curly braces `{}`.
 
-3. Construction
--------------------------------------------------------------------------------
+Elements are separated by commas `,`. Duplicate elements are automatically removed.
+
+```
+{}                 -- An empty set
+{1, 2, 3}          -- A set of numbers
+{"a", "b", "c"}    -- A set of strings
+{1, 1, 2, 3}       -- Duplicates are removed
+```
+
+When parsed and rendered, this code will appear as:
+
+{}                 -- An empty set
+{1, 2, 3}          -- A set of numbers
+{"a", "b", "c"}    -- A set of strings
+{1, 1, 2, 3}       -- Duplicates are removed
+
+Sets are unordered. The order in which elements appear does not affect equality or behavior.
+
+2. Kind
+---------------------------------------------------------------------------
+
+In general, a set has the kind:
+
+```
+<{T}:N>
+```
+
+Where `T` is the kind of the elements, and `N` indicates how many elements are in the set. The number of elements can be omitted to compare sets of different sizes, but strictly speaking, two sets of different sizes have different kinds.
+
+For example:
+
+```mech:ex 2.1
+A := {1, 2, 3}       -- kind: {<{f64}:3>}
+B := {4, 5}          -- kind: {<{f64}:2>}
+```
+
+Other examples include:
+
+```mech:ex 2.2
+{1, 2, 3}         -- kind: {<{f64}:3>}
+{"a", "b"}        -- kind: {<{string}:2>}
+{(1, 2), (3, 4)}  -- kind: {<{(f64,f64)}:2>}
+```
+
+3. Constructing
+---------------------------------------------------------------------------
+
+There are three two to create sets:
+
+- Set literals
+    - {{A := {1, 2, 3}}}
+- Set Comprehensions
+    - {{B := {x * x | x <- 1..=5}}}
+
+(3.1) Set Literals
+
+An empty set is written as `{}`, and has kind `{<{_}>}`:
+
+```mech:ex 3.1.1
+{}
+```
+
+Non-empty sets are written with elements inside the braces, separated by commas:
+
+```mech:ex 3.1.2
+{1, 2, 3}
+```
+
+(3.2) Set Comprehensions
+
+Sets can be constructed using *set comprehensions*, which generate elements based on patterns and predicates.
+
+Comprehensions may contain:
+
+- One or more generators (`<-`)
+- Boolean conditions
+- Let bindings
+- Arbitrary expressions for the yielded element
+
+For example, the following comprehension generates the set of friends-of-friends for a given user, excluding those with an ID of 9 or higher:
+
+```mech:ex 3.2
+pairs := {(1, 2), (1, 3), (2, 8), (3, 5), (3, 9)}
+user := 1
+{fof | (u, f) <- pairs, (f, fof) <- pairs, u == user, fof < 9}
+```
 
 4. Accessing Elements
 -------------------------------------------------------------------------------
 
+Sets do **not** support positional indexing, since they are unordered.
+
+Instead, elements are accessed through:
+
+- Membership tests
+- Set operations
+- Iteration (via comprehensions)
+
+(4.1) Membership
+
+Use `∈` to test membership:
+
+```mech:ex 4.1
+A := {1, 2, 3}
+2 ∈ A
+```
+
+```mech:ex 4.1
+4 ∈ A
+```
+
+Use `∉` for non-membership:
+
+```mech:ex 4.1
+4 ∉ A
+```
+
 5. Assigning Elements
 --------------------------------------------------------------------------------
 
-6. Operations
--------------------------------------------------------------------------------
+Sets are immutable values. You cannot assign into a set by index.
 
+Instead, new sets are created using set operations.
+
+```mech:ex 5.1
+A := {1, 2, 3}
+A2 := A ∪ {4}     -- Creates a new set
+```
+
+6. Operations
+---------------------------------------------------------------------------
+
+Mech supports standard mathematical set operations.
+
+(6.1) Union
+
+The union of two sets contains all elements that appear in either set.
+
+```mech:ex 6.1
+A := {1, 2, 3}
+B := {2, 3, 4}
+A ∪ B     -- {1, 2, 3, 4}
+```
+
+Union with the empty set:
+
+```mech:ex 6.2
+{} ∪ {1, 2}  -- {1, 2}
+```
+
+For more, see [`set/union`](/stdlib/set/union.html).
+
+(6.2) Intersection
+
+The intersection contains elements common to both sets.
+
+```
+A := {1, 2, 3}
+B := {2, 3, 4}
+A ∩ B     -- {2, 3}
+```
+
+Intersection with the empty set:
+
+```
+{} ∩ A    -- {}
+```
+
+(6.3) Difference
+
+The difference `A ∖ B` contains elements in `A` that are not in `B`.
+
+```
+A := {"a", "b", "c"}
+B := {"b", "c", "d"}
+A ∖ B     -- {"a"}
+```
+
+(6.4) Subset and Superset
+
+```
+A := {"b", "c"}
+B := {"b", "c", "d"}
+
+A ⊆ B    -- true
+B ⊇ A    -- true
+```
+
+Strict subset and superset:
+
+```
+A := {1, 2}
+B := {1, 2, 3}
+
+A ⊂ B    -- true
+B ⊃ A    -- true
+```
+
+If the sets are equal, strict relations are false:
+
+```
+A := {1, 2}
+B := {1, 2}
+
+A ⊊ B    -- false
+A ⊋ B    -- false
+```
+
+(6.5) Equality
+
+Two sets are equal if they contain the same elements, regardless of order.
+
+```
+{1, 2, 3} == {3, 2, 1}  -- true
+```
