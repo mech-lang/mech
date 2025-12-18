@@ -360,7 +360,7 @@ pub fn kind_map(input: ParseString) -> ParseResult<Kind> {
 // kind-record := "{", list1(",", (identifier, kind)), "}" ;
 pub fn kind_record(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_brace(input)?;
-  let (input, elements) = separated_list1(list_separator, nom_tuple((identifier, kind_annotation)))(input)?;
+  let (input, elements) = separated_list1(alt((list_separator,space_tab1)), nom_tuple((identifier, kind_annotation)))(input)?;
   let (input, _) = right_brace(input)?;
   let elements = elements.into_iter().map(|(id, knd)| (id, knd.kind)).collect();
   Ok((input, Kind::Record(elements)))
