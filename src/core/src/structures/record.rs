@@ -126,6 +126,18 @@ impl MechRecord {
     MechRecord{cols: data.len(), kinds, data, field_names}
   }
 
+  pub fn from_kind(fields: &Vec<(String,ValueKind)>) -> MResult<MechRecord> {
+    let mut data = IndexMap::new();
+    let mut field_names = HashMap::new();
+    for (name, knd) in fields {
+      let col_id = hash_str(name);
+      field_names.insert(col_id, name.to_string());
+      data.insert(col_id, Value::from_kind(knd));
+    }
+    let kinds = data.iter().map(|(_,v)| v.kind()).collect();
+    Ok(MechRecord{cols: data.len(), kinds, data, field_names})
+  }
+
   pub fn insert_field(&mut self, key: u64, value: Value) {
     self.cols += 1;
     self.kinds.push(value.kind());
