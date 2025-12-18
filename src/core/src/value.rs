@@ -732,6 +732,10 @@ impl Hash for Value {
 }
 impl Value {
 
+  pub fn from_kind(kind: &ValueKind) -> Self {
+    todo!();
+  }
+
   #[cfg(feature = "matrix")]
   pub unsafe fn get_copyable_matrix_unchecked<T>(&self) -> Box<dyn CopyMat<T>> 
   where T: AsValueKind + 'static
