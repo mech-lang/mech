@@ -162,19 +162,19 @@ impl MechRecord {
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for MechRecord {
   fn pretty_print(&self) -> String {
-    let mut builder = Builder::default();
-    let mut key_strings = vec![];
-    let mut element_strings = vec![];
-    for (k,v) in &self.data {
+    let mut lines = Vec::new();
+
+    for (k, v) in &self.data {
       let field_name = self.field_names.get(k).unwrap();
-      key_strings.push(format!("{}<{}>",field_name, v.kind()));
-      element_strings.push(v.pretty_print());
+      lines.push(format!(
+        "  {}<{}>: {}",
+        field_name,
+        v.kind(),
+        v.pretty_print()
+      ));
     }
-    builder.push_record(key_strings);
-    builder.push_record(element_strings);
-    let mut table = builder.build();
-    table.with(Style::modern_rounded());
-    format!("{table}")
+
+    format!("{{\n{}\n}}", lines.join("\n"))
   }
 }
 
