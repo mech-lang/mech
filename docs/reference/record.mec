@@ -1,21 +1,162 @@
-Record
+record
 ===============================================================================
+
+%% A record is a collection of named fields, where each field has a name and a kind. Records group heterogeneous values into a single structured value, similar to a row in a table or a struct in other languages.
 
 1. Syntax
 -------------------------------------------------------------------------------
 
+Records are written using curly braces `{}` with named fields. Each field is written as `name: value` and fields are separated by commas.
+
+```
+{ x: 1, y: true }
+{ name: "Alice", age: 42, active: true }
+```
+
+When parsed and rendered, this code will appear as:
+
+```mech:disabled
+{ x: 1, y: true }
+{ name: "Alice", age: 42, active: true }
+```
+
+Records may be written inline or across multiple lines for readability:
+
+```
+{
+  x: 1.2,
+  y: true,
+  label: "pt1"
+}
+```
+
 2. Kind
 -------------------------------------------------------------------------------
+
+The kind of a record is determined by the names and kinds of its fields.
+
+```mech
+{ x: 1, y: true }
+```
+
+In general, a record has the kind:
+
+```
+<{ field1<T1> field2<T2> ... }>
+```
+
+Record kinds are *structural*: two records have the same kind if they have the same field names with the same kinds, regardless of field order.
 
 3. Construction
 -------------------------------------------------------------------------------
 
-4. Accessing Elements
+There are three ways to create a record:
+
+- Record literals
+- Selecting a row from a table
+
+```
+r := { x: 3, y: false }
+```
+
+(3.1) From Tables
+
+Selecting a single row from a table produces a record whose fields correspond to the table columns.
+
+```
+T := | x<f64>  y<bool> |
+     |  1.2     true   |
+     |  1.3     false  |
+
+r := T{1}   -- r is a record {x: 1.2, y: true}
+```
+
+4. Accessing Fields
 -------------------------------------------------------------------------------
 
-5. Assigning Elements
---------------------------------------------------------------------------------
+Fields are accessed using dot indexing `.`.
 
-6. Operations
+```
+r := { x: 1.2, y: true }
+r.x   -- 1.2
+r.y   -- true
+```
+
+(4.1) Nested Records
+
+Records may contain other records as fields.
+
+```
+r := { pos: { x: 1, y: 2 }, label: "A" }
+r.pos.x   -- 1
+```
+
+5. Assigning Fields
 -------------------------------------------------------------------------------
 
+Records are immutable values. You cannot assign to an individual field in-place.
+
+Instead, create a new record by constructing one explicitly:
+
+```
+r := { x: 1, y: 2 }
+r2 := { x: r.x, y: 3 }
+```
+
+When records originate from tables, updates are performed at the table level, not on the record value itself.
+
+6. Records and Tables
+-------------------------------------------------------------------------------
+
+Tables are conceptually *sets of records*. Each row in a table corresponds to one record with the same field names as the table columns.
+
+```
+T := | x<u8> y<bool> |
+     |  1    true   |
+     |  2    false  |
+
+T{1} : <{x<u8> y<bool>}>
+```
+
+Selecting multiple rows produces a table, not a set of records:
+
+```mech
+T{1..=2}   -- returns a table
+```
+
+7. Records in Expressions
+-------------------------------------------------------------------------------
+
+Records can be used inside expressions, passed to functions, and constructed within comprehensions.
+
+```
+{ x: i, y: i*i } | i <- 1..=5
+```
+
+This produces a set of records, each with fields `x` and `y`.
+
+8. Heterogeneous Fields
+-------------------------------------------------------------------------------
+
+Records naturally support heterogeneous data, since each field has its own kind.
+
+```
+r := { id: 1u64, name: "Bob", data: [1 2 3] }
+```
+
+Optional fields may be expressed using option kinds:
+
+```mech
+r := { x: 1?, y: _ }
+```
+
+9. Equality
+-------------------------------------------------------------------------------
+
+Two records are equal if all corresponding fields are equal.
+
+```
+{ x: 1, y: 2 } == { y: 2, x: 1 }  -- true
+```
+
+Record equality is field-based and order-independent.
