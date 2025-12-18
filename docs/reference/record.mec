@@ -65,6 +65,7 @@ There are three ways to create a record:
 
 - Record literals
 - Selecting a row from a table
+- Comprehensions
 
 (3.1) Record Literals
 
@@ -112,6 +113,22 @@ T := | x<f64>  y<bool> |
 r := T{1}   -- r is a record `{x&lt;f64&gt;,y&lt;bool&gt;}`
 ```
 
+(3.4) Record Comprehensions
+
+Set comprehensions can be used to create sets of records. Each element in the resulting set is a record constructed from the comprehension's output expression.
+
+```mech:ex 3.4
+my-set := {1 2 3}
+{{x: i, y: i * i } | i <- my-set}
+```
+
+Likewise, list comprehensions can create lists of records:
+
+```
+my-list := [1 2 3]
+[{x: i, y: i * i } | i <- my-list]
+```
+
 4. Accessing Fields
 -------------------------------------------------------------------------------
 
@@ -141,69 +158,54 @@ r.pos.x
 5. Assigning Fields
 -------------------------------------------------------------------------------
 
-Records are immutable values. You cannot assign to an individual field in-place.
+Records are immutable unless defined with the `~` operator.
 
-Instead, create a new record by constructing one explicitly:
-
+```mech:ex 5.1
+~r := { x: 1, y: 2 }
+r.x = 42
+r
 ```
+
+If you try to assign to a field of an immutable record, an error is raised:
+
+```mech:disabled
 r := { x: 1, y: 2 }
-r2 := { x: r.x, y: 3 }
+r.x = 42   -- Error: cannot assign to field of immutable record
 ```
 
 When records originate from tables, updates are performed at the table level, not on the record value itself.
+
+```mech:ex 5.2
+~T := | x<f64>  y<bool> |
+     |  1.2     true   |
+     |  1.3     false  |
+~r := T{1}        -- r is a mutable record
+r.x = 42         -- Update field x in record r
+T.x[1]          -- Access updated value from table T
+```
+
+In this example, updating `r.x` also updates the corresponding value in table `T`.
 
 6. Records and Tables
 -------------------------------------------------------------------------------
 
 Tables are conceptually *sets of records*. Each row in a table corresponds to one record with the same field names as the table columns.
 
-```
+```mech:ex 6.1
 T := | x<u8> y<bool> |
      |  1    true   |
      |  2    false  |
+     |  3    true   |
+```
 
-T{1} : <{x<u8> y<bool>}>
+Here the type of `T` is a table with two columns, `x` of kind `u8` and `y` of kind `bool`. A single row of the table can be selected to produce a record of a corresponding kind:
+
+```mech:ex 6.1
+T{1}
 ```
 
 Selecting multiple rows produces a table, not a set of records:
 
-```
+```mech:ex 6.1
 T{1..=2}   -- returns a table
 ```
-
-7. Records in Expressions
--------------------------------------------------------------------------------
-
-Records can be used inside expressions, passed to functions, and constructed within comprehensions.
-
-```
-{ x: i, y: i*i } | i <- 1..=5
-```
-
-This produces a set of records, each with fields `x` and `y`.
-
-8. Heterogeneous Fields
--------------------------------------------------------------------------------
-
-Records naturally support heterogeneous data, since each field has its own kind.
-
-```
-r := { id: 1u64, name: "Bob", data: [1 2 3] }
-```
-
-Optional fields may be expressed using option kinds:
-
-```
-r := { x: 1?, y: _ }
-```
-
-9. Equality
--------------------------------------------------------------------------------
-
-Two records are equal if all corresponding fields are equal.
-
-```
-{ x: 1, y: 2 } == { y: 2, x: 1 }  -- true
-```
-
-Record equality is field-based and order-independent.
