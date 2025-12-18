@@ -114,7 +114,7 @@ It's possible to convert a matrix of one kind to a table of different kinded col
 b<|foo<u8>,bar<i8>|> := x
 ```
 
-(3.3) From records
+(3.3) From Records
 
 4. Accessing Elements
 -------------------------------------------------------------------------------
