@@ -1,7 +1,7 @@
 Matrix
 ===============================================================================
 
-%% A matrix is a collection of homogenous datatypes in 2-Dimensions. Because the datatypes are assumed to be homogenous, they are unwrapped from their container types and therefore offer the most efficient access to the underlying data in Mech.
+%% A matrix is a collection of homogenous datatypes in 2-Dimensions. Various operations can be performed on matricies, including arithmetic, concatenation, and matrix multiplication. Matrices can be sliced, indexed, and reshaped.
 
 1. Syntax
 -------------------------------------------------------------------------------
@@ -24,19 +24,22 @@ Use commas `,` or spaces to separate columns.
 [1,2;3,4] -- A matrix (2x2)
 [1 2
  3 4]     -- The same matrix
+[1 + 2; 3 + 4] -- Elements can be expressions
 ```
 
 By default, all matrices are rank 2, meaning they have rows and columns. Elementes are indexed in a `[row, column]` format.
 
 When parsed and formatted, they look like this:
 
-```mech:disabled
+```mech
 -- Row Vector
 [1 2 3]  
 -- Column Vector
 [1;2;3]  
 -- Matrix
 [1 2;3 4]
+-- Vector from expressions
+[1 + 2; 3 + 4] 
 ```
 
 (1.1) Fancy Syntax
@@ -137,6 +140,8 @@ x := [1;2;3]  -- A column vector (3x1)
 y := [x,x,x]  -- A matrix (3x3)
 ```
 
+See section §7 for more details on concatenation.
+
 4. Accessing Elements
 -------------------------------------------------------------------------------
 
@@ -187,9 +192,9 @@ You can slice it in various ways. For a matrix x with `N` rows and `M` columns, 
 | {{x[1,:]}}            | Slice a row                        | `[1 x M]`        |
 | {{x[:,2]}}            | Slice a column                     | `[N x 1]`        |
 | {{x[1..=2,:]}}        | Slice a range of rows              | `[2 x M]`        |
-| {{x[[1,3],:]}}        | Slice specific rows                | `[2 x M]`        |
-| {{x[[1,3],[1,3]]}}    | Slice specific rows and columns    | `[2 x 2]`        |
-| {{x[[1 1 2 2],:]}}    | Slice the rows multiple times      | `[4 x M]`        |
+| `x[[1,3],:]`        | Slice specific rows                | `[2 x M]`        |
+| `x[[1,3],[1,3]]`    | Slice specific rows and columns    | `[2 x 2]`        |
+| `x[[1 1 2 2],:]`    | Slice the rows multiple times      | `[4 x M]`        |
 
 (4.2.1) Examples
 
