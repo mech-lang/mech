@@ -95,6 +95,8 @@ user := 1
 {fof | (u, f) <- pairs, (f, fof) <- pairs, u == user, fof < 9}
 ```
 
+For more, see [`set/comprehensions`](/stdlib/set/comprehensions.html)
+
 4. Accessing Elements
 -------------------------------------------------------------------------------
 
@@ -115,6 +117,8 @@ A := {1, 2, 3}
 2 ∈ A
 ```
 
+For more, see [`set/element-of`](/stdlib/set/element-of.html)
+
 ```mech:ex 4.1
 4 ∈ A
 ```
@@ -124,6 +128,8 @@ Use `∉` for non-membership:
 ```mech:ex 4.1
 4 ∉ A
 ```
+
+For more, see [`set/not-element-of`](/stdlib/set/not-element-of.html)
 
 5. Assigning Elements
 --------------------------------------------------------------------------------
@@ -152,74 +158,78 @@ B := {2, 3, 4}
 A ∪ B     -- {1, 2, 3, 4}
 ```
 
-Union with the empty set:
-
-```mech:ex 6.2
-{} ∪ {1, 2}  -- {1, 2}
-```
-
-For more, see [`set/union`](/stdlib/set/union.html).
+For more, see [`set/union`](/stdlib/set/union.html)
 
 (6.2) Intersection
 
 The intersection contains elements common to both sets.
 
-```
+```mech:ex 6.2
 A := {1, 2, 3}
 B := {2, 3, 4}
 A ∩ B     -- {2, 3}
 ```
 
-Intersection with the empty set:
-
-```
-{} ∩ A    -- {}
-```
+For more, see [`set/intersection`](/stdlib/set/intersection.html)
 
 (6.3) Difference
 
 The difference `A ∖ B` contains elements in `A` that are not in `B`.
 
-```
+```mech:ex 6.3
 A := {"a", "b", "c"}
 B := {"b", "c", "d"}
 A ∖ B     -- {"a"}
 ```
 
+For more, see [`set/difference`](/stdlib/set/difference.html)
+
 (6.4) Subset and Superset
 
-```
+The subset operator `⊆` tests if all elements of one set are contained in another:
+
+```mech:ex 6.4
 A := {"b", "c"}
 B := {"b", "c", "d"}
-
-A ⊆ B    -- true
-B ⊇ A    -- true
+A ⊆ B
 ```
 
-Strict subset and superset:
+For more, see [`set/subset`](/stdlib/set/subset.html)
 
+Similarly, the superset operator `⊇` tests if a set contains all elements of another:
+
+```mech:ex 6.4
+B ⊇ A
 ```
+
+For more, see [`set/superset`](/stdlib/set/superset.html)
+
+(6.5) Strict Subset and Superset
+
+```mech:ex 6.5
 A := {1, 2}
 B := {1, 2, 3}
-
-A ⊂ B    -- true
-B ⊃ A    -- true
+A ⊂ B
 ```
+
+For more, see [`set/strict-subset`](/stdlib/set/strict-subset.html)
+
+Likewise, the strict superset operator `⊃` tests if a set strictly contains another:
+
+```mech:ex 6.5
+B ⊃ A
+```
+For more, see [`set/strict-superset`](/stdlib/set/strict-superset.html)
 
 If the sets are equal, strict relations are false:
 
-```
+```mech:ex 6.6
 A := {1, 2}
 B := {1, 2}
-
-A ⊊ B    -- false
-A ⊋ B    -- false
+A ⊊ B
 ```
+Also:
 
-(6.5) Equality
-
-Two sets are equal if they contain the same elements, regardless of order.
-
-```
-{1, 2, 3} == {3, 2, 1}  -- true
+```mech:ex 6.6
+A ⊋ B
 ```
