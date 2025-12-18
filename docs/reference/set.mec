@@ -32,10 +32,10 @@ Sets are unordered. The order in which elements appear does not affect equality 
 In general, a set has the kind:
 
 ```mech:disabled
-<{T}>
+<{T}:N>
 ```
 
-Where `T` is the kind of the elements. The number of elements can be omitted to compare sets of different sizes, but strictly speaking, two sets of different sizes have different kinds.
+Where `T` is the kind of the elements, and `N` is the number of elements. The number of elements can be omitted to compare sets of different sizes, but strictly speaking, two sets of different sizes have different kinds.
 
 For example:
 
@@ -155,7 +155,7 @@ The union of two sets contains all elements that appear in either set.
 ```mech:ex 6.1
 A := {1, 2, 3}
 B := {2, 3, 4}
-A ∪ B     -- {1, 2, 3, 4}
+A ∪ B
 ```
 
 For more, see [`set/union`](/stdlib/set/union.html)
@@ -167,7 +167,7 @@ The intersection contains elements common to both sets.
 ```mech:ex 6.2
 A := {1, 2, 3}
 B := {2, 3, 4}
-A ∩ B     -- {2, 3}
+A ∩ B
 ```
 
 For more, see [`set/intersection`](/stdlib/set/intersection.html)
@@ -179,7 +179,7 @@ The difference `A ∖ B` contains elements in `A` that are not in `B`.
 ```mech:ex 6.3
 A := {"a", "b", "c"}
 B := {"b", "c", "d"}
-A ∖ B     -- {"a"}
+A ∖ B
 ```
 
 For more, see [`set/difference`](/stdlib/set/difference.html)
