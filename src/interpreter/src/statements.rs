@@ -272,6 +272,17 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
           None
         ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
       }
+      #[cfg(feature = "record")]
+      (Value::Record(ref rec), ref target_kind @ ValueKind::Record(ref target_rec_knd)) => {
+        let rec_brrw = rec.borrow();
+        let rec_knd = rec_brrw.kind();
+        if &rec_knd != *target_kind {
+          return Err(MechError2::new(
+            UnableToConvertRecordError { source_record_kind: rec_knd.clone(), target_record_kind: (*target_kind).clone() },
+            None
+          ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
+        }
+      }
       #[cfg(feature = "matrix")]
       (Value::MutableReference(v), ValueKind::Matrix(box target_matrix_knd,_)) => {
         let value = v.borrow().clone();
@@ -668,6 +679,21 @@ impl MechErrorKind2 for NotMutableError {
   fn name(&self) -> &str { "NotMutable" }
   fn message(&self) -> String {
     format!("Variable is not mutable: {}", self.id)
+  }
+}
+
+#[cfg(feature = "record")]
+#[derive(Debug, Clone)]
+pub struct UnableToConvertRecordError {
+  pub source_record_kind: ValueKind,
+  pub target_record_kind: ValueKind,
+}
+impl MechErrorKind2 for UnableToConvertRecordError {
+  fn name(&self) -> &str {
+    "UnableToConvertRecord"
+  }
+  fn message(&self) -> String {
+    format!("Unable to convert record of kind `{:?}` to record of kind `{:?}`", self.source_record_kind, self.target_record_kind)
   }
 }
 
