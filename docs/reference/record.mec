@@ -35,8 +35,8 @@ Records may be written inline or across multiple lines for readability:
 
 In general, a record has the kind:
 
-```
-<{ field1&lt;T1&gt; field2&lt;T2&gt; ... }>
+```mech:disabled
+<{field1<kind1>, field2<kind2>,...}>
 ```
 
 The kind of a record is determined by the names and kinds of its fields. The kind of a filed is inferred from its value, but can also be specified explicitly. For example, the following record has two fields, `x` of kind `f64` and `y` of kind `bool`. Therefore the kind is `{x<f64> y<bool>}`.
@@ -58,9 +58,6 @@ Custom record kinds can be defined:
 p<point3> := { x: 1.0, y: 2.0, z: 3.0 }
 ```
 
-
-
-
 3. Construction
 -------------------------------------------------------------------------------
 
@@ -69,20 +66,50 @@ There are three ways to create a record:
 - Record literals
 - Selecting a row from a table
 
-```
+(3.1) Record Literals
+
+Record literals are written using curly braces `{}` with named fields. Each field is written as `name: value` and fields are separated by commas.
+
+```mech:ex 3.1
 r := { x: 3, y: false }
 ```
 
-(3.1) From Tables
+Field kinds can be specified explicitly:
+
+```mech:ex 3.1.1
+r := { x<u8>: 3, y: false }   -- x is explicitly typed as `u8`, y is inferred as `bool`
+```
+
+(3.2) Nested Records
+
+Records can be nested:
+
+```mech:ex 3.2
+r := { pos: { x: 1, y: 2 }, label: "A" }    -- record with nested record field
+```
+
+Nested records can also be written across multiple lines for readability:
+
+```
+r := {
+  pos: {
+    x: 1
+    y: 2
+  }
+  label: "A"
+}
+```
+
+(3.3) From Tables
 
 Selecting a single row from a table produces a record whose fields correspond to the table columns.
 
-```
+```mech:ex 3.3
 T := | x<f64>  y<bool> |
      |  1.2     true   |
      |  1.3     false  |
 
-r := T{1}   -- r is a record {x: 1.2, y: true}
+r := T{1}   -- r is a record `{x&lt;f64&gt;,y&lt;bool&gt;}`
 ```
 
 4. Accessing Fields
@@ -90,19 +117,25 @@ r := T{1}   -- r is a record {x: 1.2, y: true}
 
 Fields are accessed using dot indexing `.`.
 
-```
+(4.1) Dot Indexing
+
+```mech:ex 4.1
 r := { x: 1.2, y: true }
-r.x   -- 1.2
-r.y   -- true
+r.x
+```
+Likewise, `y` can be accessed to return a `bool` value:
+
+```mech:ex 4.1
+r.y
 ```
 
-(4.1) Nested Records
+(4.2) Nested Records
 
-Records may contain other records as fields.
+By chaining dot indexing, nested fields can be accessed:
 
-```
+```mech:ex 4.2
 r := { pos: { x: 1, y: 2 }, label: "A" }
-r.pos.x   -- 1
+r.pos.x
 ```
 
 5. Assigning Fields
