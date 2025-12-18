@@ -31,11 +31,11 @@ Sets are unordered. The order in which elements appear does not affect equality 
 
 In general, a set has the kind:
 
-```
-<{T}:N>
+```mech:disabled
+<{T}>
 ```
 
-Where `T` is the kind of the elements, and `N` indicates how many elements are in the set. The number of elements can be omitted to compare sets of different sizes, but strictly speaking, two sets of different sizes have different kinds.
+Where `T` is the kind of the elements. The number of elements can be omitted to compare sets of different sizes, but strictly speaking, two sets of different sizes have different kinds.
 
 For example:
 
