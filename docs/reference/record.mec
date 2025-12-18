@@ -33,19 +33,33 @@ Records may be written inline or across multiple lines for readability:
 2. Kind
 -------------------------------------------------------------------------------
 
-The kind of a record is determined by the names and kinds of its fields.
-
-```mech
-{ x: 1, y: true }
-```
-
 In general, a record has the kind:
 
 ```
-<{ field1<T1> field2<T2> ... }>
+<{ field1&lt;T1&gt; field2&lt;T2&gt; ... }>
 ```
 
-Record kinds are *structural*: two records have the same kind if they have the same field names with the same kinds, regardless of field order.
+The kind of a record is determined by the names and kinds of its fields. The kind of a filed is inferred from its value, but can also be specified explicitly. For example, the following record has two fields, `x` of kind `f64` and `y` of kind `bool`. Therefore the kind is `{x<f64> y<bool>}`.
+
+```mech:ex 2.1
+{ x: 1, y: true }
+```
+
+The kind of a field can be specified with a type annotation:
+
+```mech:ex 2.2
+{ x<u8>: 1, y<bool>: true }
+```
+
+Custom record kinds can be defined:
+
+```mech:ex 2.3
+<point3> := <{x<f64> y<f64> z<f64>}>
+p<point3> := { x: 1.0, y: 2.0, z: 3.0 }
+```
+
+
+
 
 3. Construction
 -------------------------------------------------------------------------------
@@ -120,7 +134,7 @@ T{1} : <{x<u8> y<bool>}>
 
 Selecting multiple rows produces a table, not a set of records:
 
-```mech
+```
 T{1..=2}   -- returns a table
 ```
 
@@ -146,7 +160,7 @@ r := { id: 1u64, name: "Bob", data: [1 2 3] }
 
 Optional fields may be expressed using option kinds:
 
-```mech
+```
 r := { x: 1?, y: _ }
 ```
 
