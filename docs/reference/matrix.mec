@@ -3,6 +3,20 @@ Matrix
 
 %% A matrix is a collection of homogenous datatypes in 2-Dimensions. Various operations can be performed on matricies, including arithmetic, concatenation, and matrix multiplication. Matrices can be sliced, indexed, and reshaped.
 
+***
+
+| Function                                            | Description                                            |
+|-----------------------------------------------------|--------------------------------------------------------|
+| [`math/ops`](/stdlib/math/ops.html)                 | Perform element-wise arithmetic operations on matrices |
+| [`compare/ops`](/stdlib/compare/ops.html)           | Perform element-wise comparison operations on matrices |
+| [`logic/ops`](/stdlib/logic/ops.html)               | Perform element-wise logical operations on matrices    |
+| [`matrix/matmul`](/stdlib/matrix/matmul.html)       | Perform matrix multiplication                          |
+| [`matrix/transpose`](/stdlib/matrix/transpose.html) | Transpose a matrix                                     |
+| [`matrix/dot`](/stdlib/matrix/dot.html)             | Compute the dot product of two vectors                 |
+| [`matrix/solve`](/stdlib/matrix/solve.html)         | Solve a system of linear equations                     |
+| [`matrix/horzcat`](/stdlib/matrix/horzcat.html)     | Arrange matrices side-by-side                          |
+| [`matrix/vertcat`](/stdlib/matrix/vertcat.html)     | Arrange matrices one above the other                   |
+
 1. Syntax
 -------------------------------------------------------------------------------
 
@@ -94,7 +108,7 @@ Row vectors and column vectors are special cases of matrices:
 <[T]:_,1>  -- A dynamic column vector with an unspecified number of elements
 ```
 
-(2.1) Conversion
+(2.1) Convert
 
 You can convert a matrix to another kind using a kind annotation. For example:
 
@@ -124,6 +138,24 @@ This will also convert the matrix elements to `u8` from `f64`.
 3. Construction
 -------------------------------------------------------------------------------
 
+Matrices can be constructed in several ways:
+
+- Matrix literals
+- From concatenation of existing matrices or vectors
+- From ranges
+- From tables
+
+(3.1) Matrix literals
+
+Matrix literals are written using square brackets `[]`, with rows separated by semicolons `;` or newlines, and columns separated by commas `,` or spaces.
+
+```mech:ex 3.1
+m1 := [1 2 3; 4 5 6]   -- A 2x3 matrix
+m2 := [1; 2; 3]        -- A 3x1 column vector
+m3 := [1, 2, 3]        -- A 1x3 row vector
+```
+(3.2) From Concatenation
+
 You can construct new matricies from existing ones using concatenation.
 
 Vertical concatenation is done bay stacking rows on top of each other, referencing another matrix or vector within the brackets.
@@ -133,7 +165,7 @@ x := [1 2 3]  -- A row vector (1x3)
 y := [x;x;x]  -- A matrix (3x3)
 ```
 
-Horizontal concatenation:
+Horizontal concatenation is done by placing matrices or vectors side by side, referencing another matrix or vector within the brackets.
 
 ```mech:ex 3.2
 x := [1;2;3]  -- A column vector (3x1)
@@ -141,6 +173,31 @@ y := [x,x,x]  -- A matrix (3x3)
 ```
 
 See section §7 for more details on concatenation.
+
+(3.3) From Ranges
+
+You can create a matrix from a range of numbers. By default, ranges produce column vectors.
+
+```mech:ex 3.3.1
+m := 1..=4          -- A column vector with values from 1 to 4, inclusive
+```
+
+```mech:ex 3.3.2
+m := 1..4           -- A column vector with values from 1 to 4, exclusive, the matrix has 3 elements
+```
+
+(3.5) From Tables
+
+You can create a matrix from a table using a kind annotation, as long as the kinds are compatible. For example, if you have a table with columns of kind `f64`, you can create a matrix of kind `f64`:
+
+```mech:ex 3.5
+a:=| x<f64>  y<f64> | 
+   |  1.6    2.3   |
+   |  1.3    3.4   |
+   |  2.7    4.5   |
+   |  1.5    5.6   |
+m<[u8]> := a.x
+```
 
 4. Accessing Elements
 -------------------------------------------------------------------------------
@@ -256,13 +313,11 @@ m[m > 5]  -- Selects elements greater than 5
 5. Assigning Elements
 --------------------------------------------------------------------------------
 
-Assignment indexing follows the same syntax as accessing elements, but uses the `=` operator to assign a new value.
-
-Assignment only works if the matrix is mutable:
+Assignment follows the same syntax as accessing, but it only works if the matrix was declared as mutable:
 
 ```mech:ex 5.1
 ~m := [1 2 3 4 5 6] -- A mutable matrix
-m[3] = 42  -- Assigns the value 10 to the element in the second row and third Column
+m[3] = 42  -- Assigns the value `42` to the element in the second row and third Column
 ```
 
 You can assign an entire row or column:
@@ -290,7 +345,7 @@ m[(m % 2) == 0] = 0  -- Sets all even numbers to zero
 6. Operations
 -------------------------------------------------------------------------------
 
-Matrix operations include addition, subtraction, multiplication, and division. These operations are performed element-wise.
+Matrix operations include `add`, `sub`, `mul`, `div`, and `pow`. These operations are performed element-wise on the matrix.
 
 (6.1) Arithmetic Operations 
 
@@ -311,11 +366,55 @@ m + 10  -- Adds 10 to each element of the vector
 
 For more, see [`math/ops`](/stdlib/math/ops.html)
 
-(6.2) Matrix Multiplication
+(6.2) Comparison Operations
+
+Standard comparison operations can be performed element-wise on matrices of the same dimension:
+
+```mech:ex 6.2.1
+m1 := [1 2 3; 4 5 6]
+m2 := [3 2 1; 6 5 4]
+m1 < m2  -- Compares the two matrices element-wise
+```
+
+If one of the operands is a scalar, it will be compared to each element of the matrix:
+
+```mech:ex 6.2.2
+m := [1 2 3 4 5] 
+mask := m >= 3  -- Compares each element of the vector to 3
+```
+
+This is a common way to create logical indices for selecting elements from a matrix. In the above example, the variable `mask` represents a mask for all elements greater than or equal to 3. This mask can be applied to the original matrix to extract those elements:
+
+```mech:ex 6.2.2
+selected := m[mask]  -- Selects elements from m where mask is `true`
+```
+
+For more, see [`compare/ops`](/stdlib/compare/ops.html)
+
+(6.3) Logical Operations
+
+Logical operations can be performed element-wise on matrices of the same dimension:
+
+```mech:ex 6.3.1
+m1 := [true false true; false true false]
+m2 := [false false true; true true false]
+mask := m1 && m2  -- Performs element-wise logical AND
+```
+
+This can be used to assign values based on multiple conditions. For example, to set elements to zero where two conditions are met:
+
+```mech:ex 6.3.1
+~q := [1 2 3; 4 5 6]
+q[!mask] = 0 -- Sets elements to zero where mask is `false`
+```
+
+For more, see [`logic/ops`](/stdlib/logic/ops.html)
+
+(6.4) Matrix Multiplication
 
 Matrix multiplication is performed using the `**` operator. For the operation to be valid, the number of columns in the first matrix must match the number of rows in the second matrix:
 
-```mech:ex 6.2.1
+```mech:ex 6.4
 m1 := [1 2 3; 4 5 6 ]
 m2 := [7 8; 9 10; 11 12]
 m1 ** m2  -- Multiplies the two matrices
@@ -323,22 +422,22 @@ m1 ** m2  -- Multiplies the two matrices
 
 For more, see [`matrix/matmul`](/stdlib/matrix/matmul.html)
 
-(6.3) Matrix Transpose
+(6.5) Matrix Transpose
 
 The transpose of a matrix is obtained by swapping its rows and columns. This can be done using the `grave` operator:
 
-```mech:ex 6.3.1
+```mech:ex 6.5
 m := [1 2 3 4 5 6]
 m'  -- Transposes the matrix to `6x1`
 ```
 
 For more, see [`matrix/transpose`](/stdlib/matrix/transpose.html)
 
-(6.4) Dot Product
+(6.6) Dot Product
 
 The dot product of two vectors can be computed using the `·` operator:
 
-```mech:ex 6.4.1
+```mech:ex 6.6
 v1 := [1 2 3]
 v2 := [4 5 6]
 v1 · v2  -- Computes the dot product of the two vectors
@@ -346,11 +445,11 @@ v1 · v2  -- Computes the dot product of the two vectors
 
 For more, see [`matrix/dot`](/stdlib/matrix/dot.html)
 
-(6.5) Solve Systems of Linear Equations
+(6.7) Solve Systems of Linear Equations
 
 You can solve a system of linear equations represented in matrix form `Ax = b` using the `solve` function:
 
-```mech:ex 6.5.1
+```mech:ex 6.7
 A := [2 1; 1 3]
 b := [8; 13]
 x := A \ b  -- Solves for x in Ax = b
