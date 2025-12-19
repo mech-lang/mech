@@ -80,7 +80,7 @@ If the key does not exist, the result is `none`.
 
 For nested maps, use multiple brackets:
 
-```
+```mech:ex 4.2
 m := {"a": {"b": 2}}
 m{"a"}{"b"}   -- Returns 2
 ```
@@ -90,15 +90,9 @@ m{"a"}{"b"}   -- Returns 2
 
 Maps can be modified if they are declared mutable with `~`.
 
-```
-~m := {}
-m{"a"} = 42     -- Adds or updates key "a"
+```mech:ex 5.1
+~m := {"a": 10}
+m{"a"} = 42     -- Updates key "a"
 m{"b"} = 17     -- Adds key "b"
-```
-
-You can also assign to nested keys:
-
-```
-~m := {"config": {}}
-m{"config"}{"theme"} = "dark"
+m{"a"}
 ```
