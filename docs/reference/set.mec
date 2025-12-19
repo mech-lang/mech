@@ -3,6 +3,21 @@ set
 
 %% A set is an unordered collection of unique values. Sets are useful for representing groups of items where duplicates are not allowed, and for performing mathematical set operations like union, intersection, and difference.
 
+***
+
+| Operator | Function                                                | Description                                           | 
+|:--------:|--------------------------------------------------------:|-------------------------------------------------------|
+|`∪`       | [`union`](ops/union.html)                               | Computes the union of two sets.                       |
+|`∩`       | [`intersection`](ops/intersection.html)                 | Computes the intersection of two sets.                |
+|`∖`       | [`difference`](ops/difference.html)                     | Computes the difference between two sets.             |
+|`⊆`       | [`subset`](ops/subset.html)                             | Determines if one set is a subset of another.         |
+|`⊊`       | [`proper-subset`](ops/proper-subset.html)               | Determines if one set is a proper subset of another.  |
+|`⊇`       | [`superset`](ops/superset.html)                         | Determines if one set is a superset of another.       |
+|`⊋`       | [`proper-superset`](ops/proper-superset.html)           | Determines if one set is a proper superset of another.|
+|`∈`       | [`element-of`](ops/element-of.html)                     | Checks if an element is a member of a set.            |
+|`∉`       | [`not-element-of`](ops/not-element-of.html)             | Checks if an element is not a member of a set.        |
+|`∆`       | [`symmetric-difference`](ops/symmetric-difference.html) | Computes the symdifference between two sets.          |
+
 1. Syntax
 -------------------------------------------------------------------------------
 
@@ -100,13 +115,13 @@ For more, see [`set/comprehensions`](/stdlib/set/comprehensions.html)
 4. Accessing Elements
 -------------------------------------------------------------------------------
 
-Sets do **not** support positional indexing, since they are unordered.
+Because sets are unordered collections, you cannot access elements by index or position like you would with lists or arrays.
 
 Instead, elements are accessed through:
 
-- Membership tests
-- Set operations
-- Iteration (via comprehensions)
+- Membership tests -- checking if an element is in the set or not
+- Set operations -- union, intersection, difference, etc.
+- Iteration (via comprehensions) -- to process or transform elements one by one, but not in any specific order
 
 (4.1) Membership
 
@@ -134,13 +149,20 @@ For more, see [`set/not-element-of`](/stdlib/set/not-element-of.html)
 5. Assigning Elements
 --------------------------------------------------------------------------------
 
-Sets are immutable values. You cannot assign into a set by index.
+Sets are immutable, meaning that once they are created you cannot add or remove elements from them.
 
-Instead, new sets are created using set operations.
+Instead, new sets are created using set operations. To add elements to a set, use the union operator `∪` to combine the existing set with a new element:
 
 ```mech:ex 5.1
 A := {1, 2, 3}
 A2 := A ∪ {4}     -- Creates a new set
+```
+
+To remove elements from a set, use the difference operator `∖`:
+
+```mech:ex 5.2
+A := {1, 2, 3}
+A2 := A ∖ {2}     -- Creates a new set without 2
 ```
 
 6. Operations
@@ -204,7 +226,7 @@ B ⊇ A
 
 For more, see [`set/superset`](/stdlib/set/superset.html)
 
-(6.5) Strict Subset and Superset
+(6.5) Proper Subset and Superset
 
 ```mech:ex 6.5
 A := {1, 2}
@@ -212,14 +234,14 @@ B := {1, 2, 3}
 A ⊂ B
 ```
 
-For more, see [`set/strict-subset`](/stdlib/set/strict-subset.html)
+For more, see [`set/proper-subset`](/stdlib/set/proper-subset.html)
 
-Likewise, the strict superset operator `⊃` tests if a set strictly contains another:
+Likewise, the proper superset operator `⊃` tests if a set strictly contains another:
 
 ```mech:ex 6.5
 B ⊃ A
 ```
-For more, see [`set/strict-superset`](/stdlib/set/strict-superset.html)
+For more, see [`set/proper-superset`](/stdlib/set/proper-superset.html)
 
 If the sets are equal, strict relations are false:
 
