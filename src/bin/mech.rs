@@ -599,7 +599,7 @@ async fn main() -> Result<(), MechError2> {
           println!("{}", output);
         }
         Err(err) => {
-          println!("!!{:?}", err);
+          println!("(x)> {:#?}", err);
         }
       }
     }
