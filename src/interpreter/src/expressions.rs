@@ -359,12 +359,13 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
         [Subscript::Formula(ix)] => {
           let result = subscript_formula(&subs[0], env, p)?;
           let shape = result.shape();
-          println!("Shape in brace subscript formula: {:?}", shape);
           fxn_input.push(result);
           match shape[..] {
             [1, 1] => plan.borrow_mut().push(AccessScalar{}.compile(&fxn_input)?),
             #[cfg(feature = "subscript_range")]
-            [n] => plan.borrow_mut().push(AccessRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(AccessRange{}.compile(&fxn_input)?),
+            #[cfg(feature = "subscript_range")]
+            [1,n] => plan.borrow_mut().push(AccessRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         },
