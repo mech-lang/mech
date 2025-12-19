@@ -1,40 +1,46 @@
 Data - Types and Kinds
 ===============================================================================
 
-Mech supports various primitive data types, each associated with one or more kinds. For example, the number `42` can be represented by an `i32` datatype, which is of kind `i32`, `signed`, `integer`, `real`, `number`, and `value` (the latter of which is a sort of superset of all kinds).
-
+%% Mech supports various primitive data types, each associated with one or more kinds. For example, the number `42` can be represented by an `i32` datatype, which is of kind `i32`, `signed`, `integer`, `real`, `number`, and `value` (the latter of which is a sort of superset of all kinds).
 Data types can be combined to form more complex structures, such as matrices, maps, sets, tuples, records, and tables. Each of these structures can also have associated kinds that are derived from the kinds of their constituent elements.
 
-1. Datatypes
+1. Data Types
 -------------------------------------------------------------------------------
 
-Data in Mech is represented using one of the following primitive datatypes:
+Data in Mech is represented using one of the following primitive data types:
+
+- {<number>} - Represents numeric values.
+- {<string>} - Represents text values.
+- {<bool>} - Represents boolean values (`true` or `false`).
+- {<atom>} - Represents symbolic constants.
+- {<kind>} - Represents types or categories of values.
+- {<empty>} - Represents an empty value or placeholder.
 
 (1.1) Number
 
-**Number** - Represents numeric values, including integers, floating-point numbers, and complex numbers.
+**Number** - Represents numeric values, including integers, floating-point numbers, and complex numbers. Numbers can be further classified into a tree of subtypes, which affect which operations are valid on them:
 
 - **Real** - Real numbers, including integers and floats.
   - **Integers** - Whole numbers, which can be positive, negative, or zero.
     - **Signed** - Can represent both negative and positive values.
-      - `i8` - 8-bit signed integer
-      - `i16` - 16-bit signed integer
-      - `i32` - 32-bit signed integer
-      - `i64` - 64-bit signed integer
-      - `i128` - 128-bit signed integer
+      - {<i8>} - 8-bit signed integer
+      - {<i16>} - 16-bit signed integer
+      - {<i32>} - 32-bit signed integer
+      - {<i64>} - 64-bit signed integer
+      - {<i128>} - 128-bit signed integer
     - **Unsigned** - Can only represent zero and positive values.
-      - `u8` - 8-bit unsigned integer
-      - `u16` - 16-bit unsigned integer
-      - `u32` - 32-bit unsigned integer
-      - `u64` - 64-bit unsigned integer
-      - `u128` - 128-bit unsigned integer
+      - {<u8>} - 8-bit unsigned integer
+      - {<u16>} - 16-bit unsigned integer
+      - {<u32>} - 32-bit unsigned integer
+      - {<u64>} - 64-bit unsigned integer
+      - {<u128>} - 128-bit unsigned integer
   - **Fractional** - Decimal numbers with fractional components.
-    - `f32` - 32-bit floating-point number
-    - `f64` - 64-bit floating-point number
+    - {<f32>} - 32-bit floating-point number
+    - {<f64>} - 64-bit floating-point number
   - **Rational** - Represents rational numbers as a fraction of two integers.
-    - `r64` - 64-bit rational number (with numerator and denominator as a pair of `i64`)
+    - {<r64>} - 64-bit rational number (with numerator and denominator as a pair of {<i64>})
 - **Imaginary** - Represent imaginary components of complex numbers.
-  - `c64` - 64-bit complex number (with real and imaginary parts as a pair of `f64`)
+  - {<c64>} - 64-bit complex number (with real and imaginary parts as a pair of {<f64>})
 
 (1.2) String
 
@@ -68,7 +74,7 @@ Represents a type or category of values, such as `i32`, `f64`, `string`, etc. Ki
 
 (1.5.1) Kind
 
-The kind of a kind is itself, and `kind`. For example, the kind {<i32>} has the kind:
+The kind of a kind is itself, and `kind`. For example, the kind {{<i32>}} has the kind:
 
 ```mech:disabled
   <i32>
@@ -84,6 +90,12 @@ Represents an empty value, placeholder, or the absence of a value.
   <_>
 
 (1.5.2) Examples
+
+```mech:disabled
+x := _        -- An empty value
+y<_> := _     -- An empty value of kind `_`
+```
+
 
 2. Data Structures
 -------------------------------------------------------------------------------
@@ -105,14 +117,14 @@ Every value in Mech has one or more associated kinds, which describe its type an
 
 Any valid identifier can be used as a kind as long as it is unique in the program. Mech provides a set of predefined kinds for common data types, but you can also define your own kinds as well, and construct compound kinds from other kinds.
 
-For example, the kind of a signed 32-bit integer is represented as: `u8`. The kind of a matrix is represented at `[T]`. These can be combined into the kind `[u8]`, which represents a matrix of unsigned 8-bit integers.
+For example, the kind of a signed 32-bit integer is represented as: {{<i32>}}. The kind of a matrix is represented as {{<[T]>}}. These can be combined into the kind {{<[i32]>}}, which represents a matrix of signed 32-bit integers.
 
 (3.1.2) Kind Annotations
 
 Kind annotations are a tag that you can apply to values and expressions to specify their type explicitly. Syntatically they are specified with a form called a "kirby", which encases the kind in angle brackets:
 
 ```mech:disabled
-  <u8>    -- A value of kind `u8`
+  <u8>    -- An unsigned 8-bit integer
   <[u8]>  -- A matrix of unsigned 8-bit integers
   <(o,O)> -- A tuple of two elements of kind `o` and `O` respectively
 ```
@@ -143,32 +155,32 @@ The kind of {{x}} is its value, {{<[u8]>}}.
 
 Kinds start from one of the primitive data types:
 
-| Data Type         | Kind                                                        |
-|-------------------|-------------------------------------------------------------|
+| Data Type         | Kind                                                   |
+|-------------------|--------------------------------------------------------|
 | Signed integers   | {{<i8>}}, {{<i16>}}, {{<i32>}}, {{<i64>}}, {{<i128>}}  |
 | Unsigned integers | {{<u8>}}, {{<u16>}}, {{<u32>}}, {{<u64>}}, {{<u128>}}  |
-| Floating-point    | {{<f32>}}, {{<f64>}}                                      |
-| Rational          | {{<r64>}}                                                  |  
-| Complex           | {{<c64>}}                                                  |
-| String            | {{<string>}}                                               |
-| Boolean           | {{<bool>}}                                                 |
-| Atom              | {{<atom>}}                                                 |
-| Kind              | {{<kind>}}                                                 |
-| Empty             | {{<_>}}                                                    |
+| Floating-point    | {{<f32>}}, {{<f64>}}                                   |
+| Rational          | {{<r64>}}                                              |  
+| Complex           | {{<c64>}}                                              |
+| String            | {{<string>}}                                           |
+| Boolean           | {{<bool>}}                                             |
+| Atom              | {{<atom>}}                                             |
+| Kind              | {{<kind>}}                                             |
+| Empty             | {{<_>}}                                                |
 
 (3.3) Compound Kinds
 
 Kinds compose into more complex kinds based on the data structures they represent.
 
-| Data Structure | Kind                       | Example                    |
-|----------------|----------------------------|----------------------------|
-| Matrix         | `[T]:N,M`                  | {{<[u8]:2,3>}}            |
-| Set            | `{T}:N`                    | {{<{u8}:3>}}              |
-| Record         | `{T1,T2,..}`               | {{<{x<u8>,y<string>}>}}   |
-| Map            | `{K:V}`                    | {{<{string:i32}>}}        |
-| Table          | `|arg1<T1>,arg2<T2>,..|:N` | {{<|x<u8>,y<string>|:3>}} |
-| Tuple          | `(T1,T2,...)`              | {{<(u8,string,bool)>}}    |
-| Enum           | `enum`                     | {{<enum>}}                |
+| Data Structure | Kind                       | Example                   | Meaning                                   |
+|----------------|----------------------------|---------------------------| ------------------------------------------|
+| Matrix         | `[T]:N,M`                  | {{<[u8]:2,3>}}            | 2x3 matrix of `u8` values                 |
+| Set            | `{T}:N`                    | {{<{u8}:3>}}              | Set of 3 `u8` values                      |
+| Record         | `{T1,T2,..}`               | {{<{x<u8>,y<string>}>}}   | Record with fields `x` and `y`            |
+| Map            | `{K:V}`                    | {{<{string:i32}>}}        | Map from `string` to `i32`                |
+| Table          | `|arg1<T1>,arg2<T2>,..|:N` | {{<|x<u8>,y<string>|:3>}} | Table with columns `x` and `y` and 3 rows |
+| Tuple          | `(T1,T2,...)`              | {{<(u8,string,bool)>}}    | Tuple of `u8`, `string`, and `bool`       |
+| Enum           | `enum`                     | {{<enum>}}                | Enum type                                 |
 
 (3.3) Custom Kinds
 
