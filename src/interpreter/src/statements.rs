@@ -616,7 +616,48 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
       let res = new_fxn.out();
       return Ok(res);
     },
-    Subscript::Brace(x) => todo!(),
+    Subscript::Brace(subs) => {
+      let mut fxn_input = vec![sink.clone()];
+      match &subs[..] {
+        #[cfg(feature = "subscript_formula")]
+        [Subscript::Formula(ix)] => {
+          fxn_input.push(source.clone());
+          let ixes = subscript_formula(&subs[0], env, p)?;
+          let shape = ixes.shape();
+          fxn_input.push(ixes);
+          match shape[..] {
+            #[cfg(feature = "map")]
+            [1,1] => plan.borrow_mut().push(MapAssignScalar{}.compile(&fxn_input)?),
+            //#[cfg(all(feature = "matrix", feature = "subscript_range", feature = "assign"))]
+            //[1,n] => plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?),
+            //#[cfg(all(feature = "matrix", feature = "subscript_range", feature = "assign"))]
+            //[n,1] => plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
+        },
+        #[cfg(all(feature = "matrix", feature = "subscript_range"))]
+        [Subscript::Range(ix)] => {
+          todo!();
+          //fxn_input.push(source.clone());
+          //let ixes = subscript_range(&subs[0], env, p)?;
+          //fxn_input.push(ixes);
+          //plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?);
+        },
+        #[cfg(all(feature = "matrix", feature = "subscript_range"))]
+        [Subscript::All] => {
+          todo!();
+          //fxn_input.push(source.clone());
+          //fxn_input.push(Value::IndexAll);
+          //plan.borrow_mut().push(MatrixAssignAll{}.compile(&fxn_input)?);
+        },
+        _ => unreachable!(),
+      };
+      let plan_brrw = plan.borrow();
+      let mut new_fxn = &plan_brrw.last().unwrap();
+      new_fxn.solve();
+      let res = new_fxn.out();
+      return Ok(res);      
+    }
     _ => unreachable!(),
   }
 }
