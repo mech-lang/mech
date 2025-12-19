@@ -437,6 +437,22 @@ impl CompileConst for MechTuple {
   }
 }
 
+#[cfg(feature = "map")]
+impl CompileConst for MechMap {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    let mut payload = Vec::<u8>::new();
+    self.key_kind.write_le(&mut payload);
+    self.value_kind.write_le(&mut payload);
+    payload.write_u32::<LittleEndian>(self.map.len() as u32)?;
+    for (key, value) in &self.map {
+      key.write_le(&mut payload);
+      value.write_le(&mut payload);
+    }
+    let map_vk = ValueKind::Map(Box::new(self.key_kind.clone()), Box::new(self.value_kind.clone()));
+    ctx.compile_const(&payload, map_vk)
+  }
+}
+
 // ConstElem Trait
 // ----------------------------------------------------------------------------
 
