@@ -16,7 +16,7 @@ Mech Documentation
     - [Data - Types and Kinds](/reference/data.html)
     - Data Structures
         - [Enum](/reference/enum.html) - defines a set of named constant values `todo`
-        - [Map](/reference/map.html) - stores key-value pairs for fast lookups. `todo`
+        - [Map](/reference/map.html) - stores key-value pairs for fast lookups.
         - [Matrix](/reference/matrix.html) - 2D array of homogenous values arranged in rows and columns.
         - [Record](/reference/record.html) - groups related fields, usually for representing structured data.
         - [Set](/reference/set.html) - unordered collection of unique values
