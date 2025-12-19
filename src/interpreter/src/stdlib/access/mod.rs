@@ -10,6 +10,8 @@ pub mod record;
 pub mod table;
 #[cfg(feature = "tuple")]
 pub mod tuple;
+#[cfg(feature = "map")]
+pub mod map;
 
 #[cfg(feature = "matrix")]
 pub use self::matrix::*;
@@ -19,6 +21,8 @@ pub use self::record::*;
 pub use self::table::*;
 #[cfg(feature = "tuple")]
 pub use self::tuple::*;
+#[cfg(feature = "map")]
+pub use self::map::*;
 
 #[macro_use]
 use crate::stdlib::*;
@@ -36,6 +40,8 @@ impl NativeFunctionCompiler for AccessScalar {
       ValueKind::Matrix(mat,_) => MatrixAccessScalar{}.compile(&arguments),
       #[cfg(feature = "table")]
       ValueKind::Table(tble,_) => TableAccessScalar{}.compile(&arguments),
+      #[cfg(feature = "map")]
+      ValueKind::Map(..) => MapAccess{}.compile(&arguments),
       _ => Err(MechError2::new(UnhandledFunctionArgumentKind2 { arg: (src.kind(), index.kind()), fxn_name: "access/scalar".to_string() }, None).with_compiler_loc()),
     }
   }
@@ -159,6 +165,8 @@ pub fn impl_access_column_fxn(source: Value, key: Value) -> MResult<Box<dyn Mech
   match source.kind().deref_kind() {
     #[cfg(feature = "record")]
     ValueKind::Record(_) => RecordAccess{}.compile(&vec![source,key]),
+    #[cfg(feature = "map")]
+    ValueKind::Map(..) => MapAccess{}.compile(&vec![source,key]),
     #[cfg(feature = "table")]
     ValueKind::Table(_,_) => TableAccessColumn{}.compile(&vec![source,key]),
     _ => Err(MechError2::new(
