@@ -1,7 +1,7 @@
 set
 ================================================================================
 
-%% A set is an unordered collection of unique values. Sets are useful for representing groups of items where duplicates are not allowed, and for performing mathematical set operations like union, intersection, and difference.
+%% A `set` is an unordered collection of unique values. Sets are useful for representing groups of items where duplicates are not allowed, and for performing mathematical set operations like union, intersection, and difference.
 
 ***
 
@@ -70,12 +70,11 @@ Other examples include:
 3. Constructing
 ---------------------------------------------------------------------------
 
-There are three two to create sets:
+There are three ways to create sets:
 
-- Set literals
-    - {{A := {1, 2, 3}}}
+- Set Literals
 - Set Comprehensions
-    - {{B := {x * x | x <- 1..=5}}}
+- From Matrices
 
 (3.1) Set Literals
 
@@ -111,6 +110,15 @@ user := 1
 ```
 
 For more, see [`set/comprehensions`](/stdlib/set/comprehensions.html)
+
+(3.3) From Matrices
+
+You can create a set from a matrix using a kind annotation, as long as the kinds are compatible. For example, if you have a matrix of `f64` values, you can create a set of kind `f64`:
+
+```
+x := [1.1 2.2; 3.3 4.4]
+s<{f64}> := x
+```
 
 4. Accessing Elements
 -------------------------------------------------------------------------------
