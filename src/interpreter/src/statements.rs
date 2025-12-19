@@ -377,7 +377,7 @@ macro_rules! op_assign {
             match &subs[..] {
               [Subscript::Formula(ix)] => {
                 fxn_input.push(source.clone());
-                let ixes = subscript_formula(&subs[0], env, p)?;
+                let ixes = subscript_formula_ix(&subs[0], env, p)?;
                 let shape = ixes.shape();
                 fxn_input.push(ixes);
                 match shape[..] {
@@ -389,7 +389,7 @@ macro_rules! op_assign {
               },
               [Subscript::Formula(ix1),Subscript::All] => {
                 fxn_input.push(source.clone());
-                let ix = subscript_formula(&subs[0], env, p)?;
+                let ix = subscript_formula_ix(&subs[0], env, p)?;
                 let shape = ix.shape();
                 fxn_input.push(ix);
                 fxn_input.push(Value::IndexAll);
@@ -465,7 +465,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
         #[cfg(feature = "subscript_formula")]
         [Subscript::Formula(ix)] => {
           fxn_input.push(source.clone());
-          let ixes = subscript_formula(&subs[0], env, p)?;
+          let ixes = subscript_formula_ix(&subs[0], env, p)?;
           let shape = ixes.shape();
           fxn_input.push(ixes);
           match shape[..] {
@@ -495,8 +495,8 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
         #[cfg(feature = "subscript_formula")]
         [Subscript::Formula(ix1),Subscript::Formula(ix2)] => {
           fxn_input.push(source.clone());
-          let result1 = subscript_formula(&subs[0], env, p)?;
-          let result2 = subscript_formula(&subs[1], env, p)?;
+          let result1 = subscript_formula_ix(&subs[0], env, p)?;
+          let result2 = subscript_formula_ix(&subs[1], env, p)?;
           let shape1 = result1.shape();
           let shape2 = result2.shape();
           fxn_input.push(result1);
@@ -526,7 +526,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
         [Subscript::All,Subscript::Formula(ix2)] => {
           fxn_input.push(source.clone());
           fxn_input.push(Value::IndexAll);
-          let ix = subscript_formula(&subs[1], env, p)?;
+          let ix = subscript_formula_ix(&subs[1], env, p)?;
           let shape = ix.shape();
           fxn_input.push(ix);
           match shape[..] {
@@ -542,7 +542,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
         #[cfg(feature = "subscript_formula")]
         [Subscript::Formula(ix1),Subscript::All] => {
           fxn_input.push(source.clone());
-          let ix = subscript_formula(&subs[0], env, p)?;
+          let ix = subscript_formula_ix(&subs[0], env, p)?;
           let shape = ix.shape();
           fxn_input.push(ix);
           fxn_input.push(Value::IndexAll);
@@ -561,7 +561,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(source.clone());
           let result = subscript_range(&subs[0], env, p)?;
           fxn_input.push(result);
-          let result = subscript_formula(&subs[1], env, p)?;
+          let result = subscript_formula_ix(&subs[1], env, p)?;
           let shape = result.shape();
           fxn_input.push(result);
           match &shape[..] {
@@ -577,7 +577,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
         #[cfg(all(feature = "subscript_formula", feature = "subscript_range"))]
         [Subscript::Formula(ix1),Subscript::Range(ix2)] => {
           fxn_input.push(source.clone());
-          let result = subscript_formula(&subs[0], env, p)?;
+          let result = subscript_formula_ix(&subs[0], env, p)?;
           let shape = result.shape();
           fxn_input.push(result);
           let result = subscript_range(&subs[1], env, p)?;
