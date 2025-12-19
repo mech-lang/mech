@@ -1,21 +1,21 @@
 Matrix
 ===============================================================================
 
-%% A matrix is a collection of homogenous datatypes in 2-Dimensions. Various operations can be performed on matricies, including arithmetic, concatenation, and matrix multiplication. Matrices can be sliced, indexed, and reshaped.
+%% A `matrix` is a collection of homogenous datatypes in 2-Dimensions. Various operations can be performed on matricies, including arithmetic, concatenation, and matrix multiplication. Matrices can be sliced, indexed, and reshaped.
 
 ***
 
-| Function                                            | Description                                            |
-|-----------------------------------------------------|--------------------------------------------------------|
-| [`math/ops`](/stdlib/math/ops.html)                 | Perform element-wise arithmetic operations on matrices |
-| [`compare/ops`](/stdlib/compare/ops.html)           | Perform element-wise comparison operations on matrices |
-| [`logic/ops`](/stdlib/logic/ops.html)               | Perform element-wise logical operations on matrices    |
-| [`matrix/matmul`](/stdlib/matrix/matmul.html)       | Perform matrix multiplication                          |
-| [`matrix/transpose`](/stdlib/matrix/transpose.html) | Transpose a matrix                                     |
-| [`matrix/dot`](/stdlib/matrix/dot.html)             | Compute the dot product of two vectors                 |
-| [`matrix/solve`](/stdlib/matrix/solve.html)         | Solve a system of linear equations                     |
-| [`matrix/horzcat`](/stdlib/matrix/horzcat.html)     | Arrange matrices side-by-side                          |
-| [`matrix/vertcat`](/stdlib/matrix/vertcat.html)     | Arrange matrices one above the other                   |
+| Operator   | Function                                     | Description                                            |
+|------------|---------------------------------------------:|--------------------------------------------------------|
+| {{A + B}}  | [`math/ops`](/stdlib/math/ops.html)          | Perform element-wise arithmetic operations on matrices |
+| {{A > B}}  | [`compare/ops`](/stdlib/compare/ops.html)    | Perform element-wise comparison operations on matrices |
+| {{A || B}} | [`logic/ops`](/stdlib/logic/ops.html)        | Perform element-wise logical operations on matrices    |
+| {{A ** B}} | [`matmul`](/stdlib/matrix/matmul.html)       | Perform matrix multiplication                          |
+| {{A'}}     | [`transpose`](/stdlib/matrix/transpose.html) | Transpose a matrix                                     |
+| {{a · b}}  | [`dot`](/stdlib/matrix/dot.html)             | Compute the dot product of two vectors                 |
+| {{A \ b}}  | [`solve`](/stdlib/matrix/solve.html)         | Solve a system of linear equations                     |
+| `[x y]`    | [`horzcat`](/stdlib/matrix/horzcat.html)     | Arrange matrices side-by-side                          |
+| `[x; y]`   | [`vertcat`](/stdlib/matrix/vertcat.html)     | Arrange matrices one above the other                   |
 
 1. Syntax
 -------------------------------------------------------------------------------
@@ -144,6 +144,7 @@ Matrices can be constructed in several ways:
 - From concatenation of existing matrices or vectors
 - From ranges
 - From tables
+- From sets
 
 (3.1) Matrix literals
 
@@ -197,6 +198,15 @@ a:=| x<f64>  y<f64> |
    |  2.7    4.5   |
    |  1.5    5.6   |
 m<[u8]> := a.x
+```
+
+(3.6) From Sets
+
+You can create a matrix from a set using a kind annotation, as long as the kinds are compatible. For example, if you have a set of `f64` values, you can create a matrix of kind `f64`:
+
+```
+s := {1.1, 2.2, 3.3, 4.4}
+m<[f64]:2,2> := s
 ```
 
 4. Accessing Elements
