@@ -163,6 +163,8 @@ impl_variable_define_fxn!(MechSet);
 impl_variable_define_fxn!(MechTuple);
 #[cfg(feature = "record")]
 impl_variable_define_fxn!(MechRecord);
+#[cfg(feature = "map")]
+impl_variable_define_fxn!(MechMap);
 #[cfg(feature = "atom")]
 impl_variable_define_fxn!(MechAtom);
 
@@ -269,6 +271,8 @@ fn impl_var_define_fxn(var: Value, name: Value, mutable: Value, id: u64) -> MRes
     (Value::Tuple(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechTuple{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
     #[cfg(feature = "record")]
     (Value::Record(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechRecord{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
+    #[cfg(feature = "map")]
+    (Value::Map(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechMap{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
     #[cfg(feature = "atom")]
     (Value::Atom(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechAtom{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
     _ => (),
