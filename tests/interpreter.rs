@@ -464,6 +464,8 @@ test_interpreter!(interpret_define_custom_record, r#"<point2>:=<{a<f64>,b<f64>}>
 test_interpreter!(interpret_record_field_access,r#"a := {x: 1,  y: 2}; a.y"#, Value::F64(Ref::new(2.0)));
 test_interpreter!(interpret_map, r#"{"a": 1, "b": 2}"#, Value::Map(Ref::new(MechMap::from_vec(vec![(Value::String(Ref::new("a".to_string())),Value::F64(Ref::new(1.0))), (Value::String(Ref::new("b".to_string())),Value::F64(Ref::new(2.0)))]))));
 test_interpreter!(interpret_map_access, r#"m := {"a": 10, "b": 20}; m{"b"}"#, Value::F64(Ref::new(20.0)));
+test_interpreter!(interpret_map_assign, r#"~m := {"a": 10, "b": 20}; m{"b"} = 42; m{"b"}"#, Value::F64(Ref::new(42.0)));
+test_interpreter!(interpret_map_assign2, r#"~m := {"a": 10, "b": 20}; m{"c"} = 42; m{"c"}"#, Value::F64(Ref::new(42.0)));
 test_interpreter!(interpret_set_rational, r#"{1/2, 3/4}"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::R64(Ref::new(R64::new(1, 2))), Value::R64(Ref::new(R64::new(3, 4)))]))));
 
 /*test_interpreter!(interpret_function_define,r#"foo(x<f64>) = z<f64> :=
