@@ -13,12 +13,12 @@ Mech Documentation
 -------------------------------------------------------------------------------
 
 1. Data Model
-    - [Data, Data Types, and Kinds](/reference/values.html)
+    - [Data - Types and Kinds](/reference/data.html)
     - Data Structures
         - [Enum](/reference/enum.html) - defines a set of named constant values `todo`
         - [Map](/reference/map.html) - stores key-value pairs for fast lookups. `todo`
         - [Matrix](/reference/matrix.html) - 2D array of homogenous values arranged in rows and columns.
-        - [Record](/reference/record.html) - groups related fields, usually for representing structured data. `todo`
+        - [Record](/reference/record.html) - groups related fields, usually for representing structured data.
         - [Set](/reference/set.html) - unordered collection of unique values
         - [Table](/reference/table.html) - collection of heterogeneous data organized into rows and columns.
         - [Tuple](/reference/tuple.html) - fixed-size, ordered grouping of heterogeneous values. `todo`
