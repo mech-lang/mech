@@ -1,9 +1,8 @@
-Map
+map
 ===============================================================================
 
-A `Map` in Mech is an unordered collection of unique keys, each associated with a corresponding value. Maps are useful for representing associative data, such as key-value pairs, dictionaries, or lookup tables.
+%% A `map` is a collection of key-value pairs, where each key is unique and maps to a corresponding value. Maps are useful for storing and retrieving data based on keys.
 
-Unlike matrices, maps do not require homogeneous values, but keys must be unique within the map.
 
 1. Syntax
 -------------------------------------------------------------------------------
@@ -26,7 +25,7 @@ You can define maps using curly braces `{}` with a colon `:` to separate keys fr
 
 Evaluates to:
 
-```mech:disabled
+```mech
 {}                       -- An empty map
 {"a": 1}                 -- A single key-value pair
 {"a": 10, "b": 20}       -- Multiple key-value pairs
@@ -38,47 +37,41 @@ Evaluates to:
 }                        -- Multi-line format
 ```
 
-**Notes:**
-
-- Keys are typically strings but may support additional types in future.
-- Keys must be unique.
-- Values can be any Mech kind (number, string, bool, matrix, another map, etc).
-
 2. Kind
 -------------------------------------------------------------------------------
 
 The kind of a map describes the type of its keys and values:
 
 ```mech:disabled
-<{string:u8}>                 -- A map from strings to unsigned 8-bit integers
-<{string:{string:u8}}>       -- A nested map
-<{T:U}>                      -- A generic map from kind `T` to kind `U`
+<{K:V}>
 ```
 
-If either key or value kinds are dynamic, an underscore `_` is used:
+Where `K` is the kind of the keys, and `V` is the kind of the values. For example:
 
 ```mech:disabled
-<{_:_}>                      -- A fully dynamic map
-<{string:_}>                 -- A map with known key kind but unknown value kind
+<{string:u8}>                 -- A map from strings to unsigned 8-bit integers
+<{string:{string:u8}}>       -- A nested map
+<{u8:f64}>                   -- A map from unsigned 8-bit integers to 64-bit floats, can only hold 256 keys
 ```
 
 3. Construction
 -------------------------------------------------------------------------------
 
-Maps can be constructed inline or from other data sources (e.g., parsed JSON, CSV headers, or computed results).
+Maps can be constructed using map literals.
 
-```mech:disabled
-m := {"name": "Alice", "age": 30}
+
+(3.1) Map Literals
+
+```mech
+m := {"a": 10, "b": 20}
 ```
-
-You can also dynamically insert or build maps using assignment (see Section 5).
 
 4. Accessing Elements
 -------------------------------------------------------------------------------
 
 Elements in a map are accessed using square brackets `[]` with the key.
 
-```mech:ex1
+```mech:ex 4.1
 m := {"a": 10, "b": 20}
 m{"a"}     -- Returns 10
 ```
