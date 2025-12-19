@@ -261,6 +261,16 @@ pub fn slice(slc: &Slice, env: Option<&Environment>,p: &Interpreter) -> MResult<
 pub fn subscript_formula(sbscrpt: &Subscript, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   match sbscrpt {
     Subscript::Formula(fctr) => {
+      factor(fctr, env, p)
+    }
+    _ => unreachable!()
+  }
+}
+
+#[cfg(feature = "subscript_formula")]
+pub fn subscript_formula_ix(sbscrpt: &Subscript, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+  match sbscrpt {
+    Subscript::Formula(fctr) => {
       let result = factor(fctr, env, p)?;
       result.as_index()
     }
@@ -342,14 +352,50 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
       plan.borrow_mut().push(new_fxn);
       return Ok(res);
     },
-    #[cfg(feature = "subscript_slice")]
-    Subscript::Brace(subs) |
-    Subscript::Bracket(subs) => {
+    Subscript::Brace(subs) => {
       let mut fxn_input = vec![val.clone()];
       match &subs[..] {
         #[cfg(feature = "subscript_formula")]
         [Subscript::Formula(ix)] => {
           let result = subscript_formula(&subs[0], env, p)?;
+          let shape = result.shape();
+          println!("Shape in brace subscript formula: {:?}", shape);
+          fxn_input.push(result);
+          match shape[..] {
+            [1, 1] => plan.borrow_mut().push(AccessScalar{}.compile(&fxn_input)?),
+            #[cfg(feature = "subscript_range")]
+            [n] => plan.borrow_mut().push(AccessRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
+        },
+        #[cfg(feature = "subscript_range")]
+        [Subscript::Range(ix)] => {
+          let result = subscript_range(&subs[0], env, p)?;
+          fxn_input.push(result);
+          plan.borrow_mut().push(AccessRange{}.compile(&fxn_input)?);
+        },
+        /*[Subscript::All] => {
+          fxn_input.push(Value::IndexAll);
+          #[cfg(feature = "matrix")]
+          plan.borrow_mut().push(MapAccessAll{}.compile(&fxn_input)?);
+        },*/
+        _ => {
+          todo!("Implement brace subscript")
+        }
+      }
+      let plan_brrw = plan.borrow();
+      let mut new_fxn = &plan_brrw.last().unwrap();
+      new_fxn.solve();
+      let res = new_fxn.out();
+      return Ok(res);
+    }
+    #[cfg(feature = "subscript_slice")]
+    Subscript::Bracket(subs) => {
+      let mut fxn_input = vec![val.clone()];
+      match &subs[..] {
+        #[cfg(feature = "subscript_formula")]
+        [Subscript::Formula(ix)] => {
+          let result = subscript_formula_ix(&subs[0], env, p)?;
           let shape = result.shape();
           fxn_input.push(result);
           match shape[..] {
@@ -367,7 +413,6 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
           fxn_input.push(result);
           plan.borrow_mut().push(AccessRange{}.compile(&fxn_input)?);
         },
-        #[cfg(feature = "subscript_range")]
         [Subscript::All] => {
           fxn_input.push(Value::IndexAll);
           #[cfg(feature = "matrix")]
@@ -376,10 +421,10 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
         [Subscript::All,Subscript::All] => todo!(),
         #[cfg(feature = "subscript_formula")]
         [Subscript::Formula(ix1),Subscript::Formula(ix2)] => {
-          let result = subscript_formula(&subs[0], env, p)?;
+          let result = subscript_formula_ix(&subs[0], env, p)?;
           let shape1 = result.shape();
           fxn_input.push(result);
-          let result = subscript_formula(&subs[1], env, p)?;
+          let result = subscript_formula_ix(&subs[1], env, p)?;
           let shape2 = result.shape();
           fxn_input.push(result);
           match ((shape1[0],shape1[1]),(shape2[0],shape2[1])) {
@@ -406,7 +451,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
         #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
         [Subscript::All,Subscript::Formula(ix2)] => {
           fxn_input.push(Value::IndexAll);
-          let result = subscript_formula(&subs[1], env, p)?;
+          let result = subscript_formula_ix(&subs[1], env, p)?;
           let shape = result.shape();
           fxn_input.push(result);
           match &shape[..] {
@@ -421,7 +466,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
         },
         #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
         [Subscript::Formula(ix1),Subscript::All] => {
-          let result = subscript_formula(&subs[0], env, p)?;
+          let result = subscript_formula_ix(&subs[0], env, p)?;
           let shape = result.shape();
           fxn_input.push(result);
           fxn_input.push(Value::IndexAll);
@@ -439,7 +484,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
         [Subscript::Range(ix1),Subscript::Formula(ix2)] => {
           let result = subscript_range(&subs[0], env, p)?;
           fxn_input.push(result);
-          let result = subscript_formula(&subs[1], env, p)?;
+          let result = subscript_formula_ix(&subs[1], env, p)?;
           let shape = result.shape();
           fxn_input.push(result);
           match &shape[..] {
@@ -454,7 +499,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
         },
         #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
         [Subscript::Formula(ix1),Subscript::Range(ix2)] => {
-          let result = subscript_formula(&subs[0], env, p)?;
+          let result = subscript_formula_ix(&subs[0], env, p)?;
           let shape = result.shape();
           fxn_input.push(result);
           let result = subscript_range(&subs[1], env, p)?;
