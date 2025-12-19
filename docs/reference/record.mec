@@ -1,7 +1,7 @@
 record
 ===============================================================================
 
-%% A record is a collection of named fields, where each field has a name and a kind. Records group heterogeneous values into a single structured value, similar to a row in a table or a struct in other languages.
+%% A `record` is a collection of named fields, where each field has a name and a kind. Records group heterogeneous values into a single structured value, similar to a row in a table or a struct in other languages.
 
 1. Syntax
 -------------------------------------------------------------------------------
@@ -110,7 +110,7 @@ T := | x<f64>  y<bool> |
      |  1.2     true   |
      |  1.3     false  |
 
-r := T{1}   -- r is a record `{x&lt;f64&gt;,y&lt;bool&gt;}`
+r := T[1]   -- r is a record `{x&lt;f64&gt;,y&lt;bool&gt;}`
 ```
 
 (3.4) Record Comprehensions
@@ -179,7 +179,7 @@ When records originate from tables, updates are performed at the table level, no
 ~T := | x<f64>  y<bool> |
      |  1.2     true   |
      |  1.3     false  |
-~r := T{1}        -- r is a mutable record
+~r := T[1]        -- r is a mutable record
 r.x = 42         -- Update field x in record r
 T.x[1]          -- Access updated value from table T
 ```
@@ -201,11 +201,11 @@ T := | x<u8> y<bool> |
 Here the type of `T` is a table with two columns, `x` of kind `u8` and `y` of kind `bool`. A single row of the table can be selected to produce a record of a corresponding kind:
 
 ```mech:ex 6.1
-T{1}
+T[1]
 ```
 
 Selecting multiple rows produces a table, not a set of records:
 
 ```mech:ex 6.1
-T{1..=2}   -- returns a table
+T[1..=2]   -- returns a table
 ```
