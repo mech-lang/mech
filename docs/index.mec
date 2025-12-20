@@ -12,37 +12,59 @@ Mech Documentation
 2. Platform Reference
 -------------------------------------------------------------------------------
 
-1. Data Model
-    - [Data - Types and Kinds](/reference/data.html)
-    - Data Structures
-        - [Enum](/reference/enum.html) - defines a set of named constant values `todo`
-        - [Map](/reference/map.html) - stores key-value pairs for fast lookups.
-        - [Matrix](/reference/matrix.html) - 2D array of homogenous values arranged in rows and columns.
-        - [Record](/reference/record.html) - groups related fields, usually for representing structured data.
-        - [Set](/reference/set.html) - unordered collection of unique values
-        - [Table](/reference/table.html) - collection of heterogeneous data organized into rows and columns.
-        - [Tuple](/reference/tuple.html) - fixed-size, ordered grouping of heterogeneous values. `todo`
-    - Statements and Expressions
-        - [Defining, Assigning, and Accessing Data](/reference/define.html) `todo` - create data and change it.
-        - [Data Conversion](/reference/convert.html) `todo` - convert data from one kind to another.
-        - [Formulas](/reference/formulas.html) `todo` - compute values using expressions.
-        - [Indexing](/reference/indexing.html) `todo` - access elements within data structures.
-    - [Error Handling](/reference/errors.html) `todo` - manage and respond to errors.
-2. Program Model `Coming v0.3`
-    - Functions
-    - Comprehensions
-    - State Machines
-    - SynthAssign
-    - Tests
-    - Modules
-    - Programs
-3. System Model `Coming v0.4`
-    - Capabilities
-    - Distributed Computation
-    - Concurrency and Parallelism
-4. [Mechdown Reference](reference/mechdown.html) `todo`
+(2.1) Data Model
 
-3. Standard Library
+- [Data - Types and Kinds](/reference/data.html)
+- Data Structures
+    - [Enum](/reference/enum.html) - defines a set of named constant values `todo`
+    - [Map](/reference/map.html) - stores key-value pairs for fast lookups.
+    - [Matrix](/reference/matrix.html) - 2D array of homogenous values arranged in rows and columns.
+    - [Record](/reference/record.html) - groups related fields, usually for representing structured data.
+    - [Set](/reference/set.html) - unordered collection of unique values
+    - [Table](/reference/table.html) - collection of heterogeneous data organized into rows and columns.
+    - [Tuple](/reference/tuple.html) - fixed-size, ordered grouping of heterogeneous values. `todo`
+- Statements and Expressions
+    - [Defining, Assigning, and Accessing Data](/reference/define.html) `todo` - create data and change it.
+    - [Data Conversion](/reference/convert.html) `todo` - convert data from one kind to another.
+    - [Formulas](/reference/formulas.html) `todo` - compute values using expressions.
+    - [Indexing](/reference/indexing.html) `todo` - access elements within data structures.
+- [Error Handling](/reference/errors.html) `todo` - manage and respond to errors.
+
+(2.2) Program Model
+
+(i)> Coming `v0.3`
+
+- Functions
+- Comprehensions
+- State Machines
+- SynthAssign
+- Tests
+- Modules
+- Programs
+
+(2.3) System Model
+
+(i)> Coming `v0.4`
+
+- Capabilities
+- Distributed Computation
+- Concurrency and Parallelism
+
+3. Mechdown Reference
+-------------------------------------------------------------------------------
+
+- Titles and Headings `todo`
+- Paragraphs `todo`
+- Lists `todo`
+- Code Blocks `todo`
+- Tables `todo`
+- Images `todo`
+- Thematic Breaks `todo`
+- Equations `todo`
+- Callout Blocks `todo`
+- Diagrams `todo`
+
+4. Standard Library
 -------------------------------------------------------------------------------
 
 - [Assign](/stdlib/assign/index.html) `todo`
@@ -58,13 +80,13 @@ Mech Documentation
 - [Set](/stdlib/set/index.html)
 - [Stats](/stdlib/stats/index.html) `todo`
 
-4. Guides
+5. Guides
 -------------------------------------------------------------------------------
 
 - [Mech in Fifteen Minutes](/guides/mech-in-fifteen-minutes.html) `todo`
 - [Tutorials](/guides/tutorials.html) `todo`
 
-5. Project Design Documents
+6. Project Design Documents
 -------------------------------------------------------------------------------
 
 - [System Specification](/design/specification.html)
@@ -73,7 +95,7 @@ Mech Documentation
 - [History](/design/history.html)  `todo`
 - [Roadmap](/design/ROADMAP.html)
 
-6. Examples
+7. Examples
 -------------------------------------------------------------------------------
 
 - [Fizz Buzz](/examples/fizzbuzz.html) - a classic programming exercise that demonstrates the use of Mech's data model and operators.

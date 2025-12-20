@@ -20,8 +20,10 @@ Platform Reference
     - [Indexing](/reference/indexing.html) `todo` - access elements within data structures.
 - [Error Handling](/reference/errors.html) `todo` - manage and respond to errors.
 
-2. Programming Model `Coming v0.3`
+2. Programming Model
 ---------------------------------------------------------------------------
+
+(i)> Coming `v0.3`
 
 - Functions
 - Comprehensions
@@ -30,8 +32,10 @@ Platform Reference
 - Modules
 - Programs
 
-3. System Model `Coming v0.4`
+3. System Model
 ---------------------------------------------------------------------------
+
+(i)> Coming `v0.4`
 
 - Capabilities
 - Distributed Computation
