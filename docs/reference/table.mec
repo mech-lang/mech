@@ -152,7 +152,7 @@ Table columns are just vectors, so they support the same indexing operations as 
 You can access a record in a table by specifying the row index on the table itself:
 
 ```mech:ex 4
-a{1}  -- Select the first record in the table, returns a `record`
+a[1]  -- Select the first record in the table, returns a `record`
 ```
 
 (4.4) Access Several Records
@@ -160,13 +160,13 @@ a{1}  -- Select the first record in the table, returns a `record`
 You can access a range of records by using a vector as an index:
 
 ```mech:ex 4
-a{2..=3}  -- Select records 2 through 3, returns a `table`
+a[2..=3]  -- Select records 2 through 3, returns a `table`
 ```
 
 It's possible to select the same row multiple times:
 
 ```mech:ex 4
-a{[1 1 2 2]}  -- Select records 1 and 2 twice
+a[[1 1 2 2]]  -- Select records 1 and 2 twice
 ```
 
 (4.5) Filter Records
@@ -174,13 +174,13 @@ a{[1 1 2 2]}  -- Select records 1 and 2 twice
 You can filter records using logical indexing. For example, to select records where `y` is `true`:
 
 ```mech:ex 4
-a{a.y}  -- Select records where `y` is `true`
+a[a.y]  -- Select records where `y` is `true`
 ```
 
 Or to filter records where `x` is greater than `1.5`:
 
 ```mech:ex 4
-a{a.x > 1.5}  -- Select records where `x` is greater than `1.5`
+a[a.x > 1.5]  -- Select records where `x` is greater than `1.5`
 ```
 
 5. Heterogeneous Columns
