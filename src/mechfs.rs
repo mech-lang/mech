@@ -134,7 +134,7 @@ impl MechFileSystem {
                 Err(e) => {
                   println!("{} Failed to load: {}", "[File Error]".truecolor(246,98,78), f.display());
                   return Err(MechError2::new(
-                    WatchPathFailed { file_path: f.display().to_string(), source_err: format!("{:?}",e) },
+                    WatchPathFailed { file_path: f.display().to_string(), source_err: format!("{:#?}",e) },
                     None
                   ).with_compiler_loc().with_source(e));
                 },
