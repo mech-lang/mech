@@ -104,6 +104,8 @@ For a complete list of features and the statuses of their implementations, see t
 4. About this Documentation
 -------------------------------------------------------------------------------
 
+(4.1) Structure
+
 This documentation is designed to help you get started with Mech, understand its core concepts, and provide guidance on how to use the language effectively. It is structured as follows:
 
 1. **Getting Started**: an introduction to Mech, how to install it, and how to build and run Mech programs. It also covers the Mech REPL (Read-Eval-Print Loop) for interactive programming.
@@ -111,7 +113,24 @@ This documentation is designed to help you get started with Mech, understand its
 3. **Guides**: provides practical guides and tutorials for using Mech, including a quick introduction to the language, tutorials for specific use cases, and guides for developers coming from other programming languages.
 4. **Design Documents**: information on the design principles behind Mech, including the language specification, design principles, syntax design notes, and the roadmap for future development, as well as the history of the language.
 
-(i)> This documentation is written in Mechdown, a lightweight markup language that is designed simulatneously with Mech. This means that each document is a valid program that can be executed on the Mech platform.
+(4.2) Conventions
+
+This documentation uses several conventions to help you navigate and understand the content:
+
+- **Executable Code Blocks**: Mech code examples are presented in code blocks, with syntax highlighting to improve readability.
+- **Links**: hyperlinks to other sections of the documentation or external resources are provided throughout the text for easy navigation.
+- **Module Links**: references to standard library functions and modules are indicated differently to distinguish them from regular text.
+  - This is a reference to the [`set`](/stdlib/set/index.html) module.
+  - This is a reference to the [`set/union`](/stdlib/set/union.html) function.
+- **Notes and Warnings**: important information, tips, and warnings are highlighted using callout blocks to draw attention to them.
+
+(i)> This is an example of a note.
+
+(!)> This is an example of a warning.
+
+(4.3) Mechdown
+
+This documentation is written in Mechdown, a lightweight markup language that is designed simulatneously with Mech. This means that each document is a valid program that can be executed on the Mech platform.
 
 5. Getting Involved
 -------------------------------------------------------------------------------
