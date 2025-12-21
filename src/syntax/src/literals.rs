@@ -329,7 +329,7 @@ pub fn kind_empty(input: ParseString) -> ParseResult<Kind> {
 
 // kind-atom := "`", identifier ;
 pub fn kind_atom(input: ParseString) -> ParseResult<Kind> {
-  let (input, _) = grave(input)?;
+  let (input, _) = colon(input)?;
   let (input, atm) = identifier(input)?;
   Ok((input, Kind::Atom(atm)))
 }
