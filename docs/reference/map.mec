@@ -94,5 +94,5 @@ Maps can be modified if they are declared mutable with `~`.
 ~m := {"a": 10}
 m{"a"} = 42     -- Updates key "a"
 m{"b"} = 17     -- Adds key "b"
-m{"a"}
+m
 ```
