@@ -33,7 +33,7 @@ The kind of an enum value is the enum kind itself. For example:
 
 Enum values are constructed by selecting a variant name, optionally providing a value if the variant carries data.
 
-```
+```mech:ex 3.1
 <color> := red | green | blue
 c<color> := :color/red
 ```
