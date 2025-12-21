@@ -127,7 +127,7 @@ c   -- false
 6. Assigning Elements
 ----------------------------------------------------------------------------
 
-Mutable tuples allow assignment:
+Mutable tuples allow assignment via dot indexing:
 
 ```mech:ex 6.1
 ~q := (10, "b", true)
