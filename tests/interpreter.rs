@@ -407,6 +407,7 @@ test_interpreter!(interpret_tuple, "(1,true)", Value::Tuple(Ref::new(MechTuple::
 test_interpreter!(interpret_tuple_nested, r#"(1,("Hello",false))"#, Value::Tuple(Ref::new(MechTuple::from_vec(vec![Value::F64(Ref::new(1.0)), Value::Tuple(Ref::new(MechTuple::from_vec(vec![Value::String(Ref::new("Hello".to_string())), Value::Bool(Ref::new(false))])))]))));
 test_interpreter!(interpret_tuple_access, r#"q := (10, "b", true); r := (q.3, q.2, q.1)"#, Value::Tuple(Ref::new(MechTuple::from_vec(vec![Value::Bool(Ref::new(true)), Value::String(Ref::new("b".to_string())), Value::F64(Ref::new(10.0))]))));
 test_interpreter!(interpret_tuple_destructure, r#"a := (10, 11, 12); (x,y,z) := a; x + y + z"#, Value::F64(Ref::new(33.0)));
+test_interpreter!(interpret_tuple_assign, r#"~t := (1,2); t.1 = 10; t.1 + t.2"#, Value::F64(Ref::new(12.0)));
 
 test_interpreter!(interpret_slice, "a := [1,2,3]; a[2]", Value::F64(Ref::new(2.0)));
 test_interpreter!(interpret_slice_v, "a := [1,2,3]'; a[2]", Value::F64(Ref::new(2.0)));
