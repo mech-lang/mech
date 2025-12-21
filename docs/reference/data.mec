@@ -64,9 +64,9 @@ A symbolic constant, often used for tags or enums.
 
 (1.5.1) Kind
 
-The kind of an atom is itself. For example, the atom {{`A}} has the kind:
+The kind of an atom is itself. For example, the atom {{:A}} has the kind:
 
-  <`A>
+  <:A>
 
 (1.5) Kind
 
@@ -202,3 +202,26 @@ Then you could use this kind to define a variable:
 v1<point3> := [1 2 3]   -- Defines v1, a 3-element vector of f32 values
 v2<point3> := [4 5]     -- Error: kind mismatch, expected 3 elements but got 2
 ```
+
+(3.4) Enumerations
+
+Enumerations, also known as enums, are a special kind that defines variants with optional associated data. Enums are useful for representing a fixed set of related values.
+
+You can define an enum kind like this:
+
+```mech:disabled
+<color> := red | green | blue
+```
+
+The kind of the enum is {{<color>}}, and the possible values are the variants `:color/red`, `:color/green`, and `:color/blue`.
+
+```mech:ex 3.4
+<color> := red | green | blue
+c<color> := :color/red
+```
+
+```mech:disabled
+d<color> := :color/yellow   -- Error: `yellow` is not a variant of the `color` enum
+```
+
+

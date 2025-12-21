@@ -426,14 +426,16 @@ The kind of a kind is itself. For example, the kind `<[u8]:2,3>` has the kind {<
 
 (4.1.2) Examples
 
+```mech:disabled
 <_>             -- Empty         
-<`A>            -- Atom         
+<:A>            -- Atom         
 <{A:B}>         -- Map          
 <{A}>           -- Set              
 <[A]>           -- Matrix              
 <(A,B,C)>       -- Tuple
 <|x<A>, y<B>|>  -- Table
 <{x<A>, y<B>}>  -- Record      
+```
 
 (4.2) Numbers
 
@@ -601,14 +603,18 @@ An atom is a symbolic constant used to represent a fixed, named value. Atoms are
 
 The kind of an atom is itself. For example, the atom {:A} has the kind {<:A>}.
 
-  <:A> -- Represents an atom with the name :A.
+```mech:disabled
+  <:A> -- Represents an atom with the name `:A`.
+```
 
 (4.5.2) Examples
 
-  :A
-  :MyAtom
-  :🐦
-  :Δx^2
+```mech:disabled
+:A
+:MyAtom
+:🐦
+:Δx^2
+```
 
 (4.6) Empty
 
