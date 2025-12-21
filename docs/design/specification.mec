@@ -389,7 +389,7 @@ kind := kind-fxn
       | kind-map 
       | kind-brace ;
 kind-empty := +"_" ;
-kind-atom := "`", identifier ;
+kind-atom := ":", identifier ;
 kind-map := "{"
       , kind
       , ":"
@@ -592,23 +592,23 @@ A boolean literal represents a logical truth value, and can be expressed in eith
 (4.5) Atoms
 
 ```ebnf
-atom := "`", identifier ;
+atom := ":", identifier ;
 ```
 
-An atom is a symbolic constant used to represent a fixed, named value. Atoms are prefixed with a backtick and followed by an identifier. They are used to represent tags, enums, or other symbolic values in the code.
+An atom is a symbolic constant used to represent a fixed, named value. Atoms are prefixed with a colon and followed by an identifier. They are used to represent tags, enums, or other symbolic values in the code.
 
 (4.5.1) Kind
 
-The kind of an atom is itself. For example, the atom {`A} has the kind {<`A>}.
+The kind of an atom is itself. For example, the atom {:A} has the kind {<:A>}.
 
-  <`A> -- Represents an atom with the name `A`.
+  <:A> -- Represents an atom with the name :A.
 
 (4.5.2) Examples
 
-  `A
-  `MyAtom
-  `🐦
-  `Δx^2
+  :A
+  :MyAtom
+  :🐦
+  :Δx^2
 
 (4.6) Empty
 
