@@ -306,10 +306,9 @@ pub fn empty() -> Value {
 
 #[cfg(feature = "bool")]
 pub fn boolean(tkn: &Token) -> Value {
-  let strng: String = tkn.chars.iter().collect::<String>();
-  let val = match strng.as_str() {
-    "true" => true,
-    "false" => false,
+  let val = match tkn.kind {
+    TokenKind::True => true,
+    TokenKind::False => false,
     _ => unreachable!(),
   };
   Value::Bool(Ref::new(val))
