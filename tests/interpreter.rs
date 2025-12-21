@@ -776,3 +776,5 @@ test_interpreter!(interpret_set_comprehension_tuple, r#"qq := {(1,2),(3,4),(5,6)
 
 test_interpreter!(interpret_table_record_mutation, r#"~T:=|x<f64> y<bool>|1.2 true|1.3 false|;~r:=T[1];r.x=42;T.x[1]"#, Value::F64(Ref::new(42.0)));
 //test_interpreter!("interpret_table_record_mutation_fail", r#"T := | x<f64>  y<bool> |  1.2     true   |  1.3     false  |;~r := T{1};r.x = 42;T.x[1]"#, Value::F64(Ref::new(1.2)));
+
+test_interpreter!(interpret_define_custom_enum, r#"<color>:=red|green|blue; x<color>:=:color/red;"#, Value::Atom(Ref::new(MechAtom::new(hash_str("color/red")))));
