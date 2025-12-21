@@ -6,11 +6,11 @@ Introduction
 
 Hello and welcome to the documentation for Mech, a programming language and platform for developing data-driven, reactive systems. Mech authors build programs by defining data dependencies, transformations, and state machines. This makes Mech particularly well-suited for applications that require real-time data processing, such as simulations, visualizations, and cyber-physical systems like robots.
 
-(1.1) An Example: FizzBuzz
+(1.1) An Example Program
 
-Here's Mech some code:
+Here's some Mech code for a familiar program, FizzBuzz:
 
-```mech
+```mech:FizzBuzz
   x := 1..=10               -- A row vector of numbers from {1} to {10}
   ~out<[string]> := x       -- Convert `x` into mutable string vec
   
@@ -31,17 +31,11 @@ This short example demonstrates several key features of the language:
 - **Logical indexing**: Select and manipulate vector elements via conditions, enabling declarative iteration and parallel execution.
 - **Rich text formatting**: Comments and code support rich formatting, making documentation clear and readable.
 
-For a complete list of planned features and their implementation statuses, see the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html).
+(i)> For a complete list of planned features, see the [ROADMAP](/design/ROADMAP.html).
 
-(1.2) The Vision and Need - A New Programming Paradigm for the AI Era
+(1.2) The Need
 
-One of the central insights in Seymour Papert's 1980 book [Mindstorms](https://worrydream.com/refs/Papert_1980_-_Mindstorms,_1st_ed.pdf) is that new technology often requires rethinking old paradigms. Papert, a pioneer in educational computing[^1], observed that although computers offered exciting possibilities for teachers and learners, they were often used to reinforce outdated methods like drill-and-practice exercises. To truly unlock their potential, he argued, we needed to rethink how we teach and learn -- not just apply old approaches to new tools. His solution was the Logo programming language, which enabled children as young as five to use computers in ways they never could before. So we have seen that langauges can be used to help people to access new ways of thinking, no matter their age or background.
 
-Today, with generative AI and large language models, history rhymes. Right now, programmers ask AI to generate code in languages designed decades ago, often for paradigms very different from today's challenges; most widely used programming languages were created before the rise of the Internet, smartphones, cloud computing, and AI[^2]. They've remained relevant by evolving through additional libraries, frameworks, and tools. But these incremental updates can only go so far -- modern computing demands new approaches.
-
-What would a programming system designed for AI look like? Can a language be designed that is easier for AI to write? Could programmers use AI tools to write code in it more effectively than in other languages? Could such a system be simpler, more expressive, and easier to use? Would such a language help programmers build systems that are more reliable, easier to maintain, and better suited for modern hardware?
-
-These are the questions the Mech project seeks to answer. We are combining lessons from 70 years of programming history with the realities of today's technology. The result is a language and platform built to provide tools that take better advantage of AI capabilities, while also being easier and more enjoyable for human programmers to use.
 
 (1.3) Mech Puts Data First
 
