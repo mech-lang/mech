@@ -1531,23 +1531,24 @@ impl Formatter {
     }
   }
 
-
-  // Tuple Destructure node looks like this:
-  // #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
-//pub struct TupleDestructure {
-//  pub vars: Vec<Identifier>,
-//  pub expression: Expression,
-//}
-  // It's defined like (a,b,c) := foo
-  // where foo is an expression
   pub fn tuple_destructure(&mut self, node: &TupleDestructure) -> String {
     let mut vars = "".to_string();
     for (i, var) in node.vars.iter().enumerate() {
       let v = var.to_string();
       if i == 0 {
-        vars = format!("{}", v);
+        if self.html {
+          let id = format!("{}:{}",hash_str(&v),self.interpreter_id);
+          vars = format!("<span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span>",id,v);
+        } else {
+          vars = format!("{}", v);
+        }
       } else {
-        vars = format!("{}, {}", vars, v);
+        if self.html {
+          let id = format!("{}:{}",hash_str(&v),self.interpreter_id);
+          vars = format!("{}, <span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span>", vars, id, v);
+        } else {
+          vars = format!("{}, {}", vars, v);
+        }
       }
     }
     let expression = self.expression(&node.expression);
