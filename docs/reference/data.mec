@@ -9,38 +9,42 @@ Data types can be combined to form more complex structures, such as matrices, ma
 
 Data in Mech is represented using one of the following primitive data types:
 
-- {<number>} - Represents numeric values.
-- {<string>} - Represents text values.
-- {<bool>} - Represents boolean values (`true` or `false`).
-- {<atom>} - Represents symbolic constants.
-- {<kind>} - Represents types or categories of values.
-- {<empty>} - Represents an empty value or placeholder.
+| Data Type                          | Description                                      |
+|-----------------------------------:|--------------------------------------------------|
+| [`number`](/reference/number.html) | Represents numeric values.                       |
+| [`string`](/reference/string.html) | Represents text values.                          |
+| [`bool`](/reference/bool.html)     | Represents logical values                        |
+| [`atom`](/reference/atom.html)     | Represents symbolic constants.                   |
+| [`kind`](/reference/kind.html)     | Represents types or categories of values.        |
+| [`empty`](/reference/empty.html)   | Represents an empty value or placeholder.        |
 
 (1.1) Number
 
-**Number** - Represents numeric values, including integers, floating-point numbers, and complex numbers. Numbers can be further classified into a tree of subtypes, which affect which operations are valid on them:
+Represents numeric values, including integers, floating-point numbers, and complex numbers. Numbers can be further classified into a tree of subtypes, which affect which operations are valid on them:
 
 - **Real** - Real numbers, including integers and floats.
-  - **Integers** - Whole numbers, which can be positive, negative, or zero.
-    - **Signed** - Can represent both negative and positive values.
-      - {<i8>} - 8-bit signed integer
-      - {<i16>} - 16-bit signed integer
-      - {<i32>} - 32-bit signed integer
-      - {<i64>} - 64-bit signed integer
-      - {<i128>} - 128-bit signed integer
-    - **Unsigned** - Can only represent zero and positive values.
-      - {<u8>} - 8-bit unsigned integer
-      - {<u16>} - 16-bit unsigned integer
-      - {<u32>} - 32-bit unsigned integer
-      - {<u64>} - 64-bit unsigned integer
-      - {<u128>} - 128-bit unsigned integer
-  - **Fractional** - Decimal numbers with fractional components.
-    - {<f32>} - 32-bit floating-point number
-    - {<f64>} - 64-bit floating-point number
-  - **Rational** - Represents rational numbers as a fraction of two integers.
-    - {<r64>} - 64-bit rational number (with numerator and denominator as a pair of {<i64>})
-- **Imaginary** - Represent imaginary components of complex numbers.
-  - {<c64>} - 64-bit complex number (with real and imaginary parts as a pair of {<f64>})
+  - **Integers** - Whole numbers, which can be positive, negative, or zero
+    - **Signed** - Can represent both negative and positive values
+      - [`i8`](/reference/i8.html) - 8-bit signed integer
+      - [`i16`](/reference/i16.html) - 16-bit signed integer
+      - [`i32`](/reference/i32.html) - 32-bit signed integer
+      - [`i64`](/reference/i64.html) - 64-bit signed integer
+      - [`i128`](/reference/i128.html) - 128-bit signed integer
+    - **Unsigned** - Can only represent zero and positive values
+      - [`u8`](/reference/u8.html) - 8-bit unsigned integer
+      - [`u16`](/reference/u16.html) - 16-bit unsigned integer
+      - [`u32`](/reference/u32.html) - 32-bit unsigned integer
+      - [`u64`](/reference/u64.html) - 64-bit unsigned integer
+      - [`u128`](/reference/u128.html) - 128-bit unsigned integer
+  - **Fractional** - Decimal numbers with fractional components
+    - [`f32`](/reference/f32.html) - 32-bit floating-point number
+    - [`f64`](/reference/f64.html) - 64-bit floating-point number
+  - **Rational** - Represents rational numbers as a fraction of two integers
+    - [`r64`](/reference/r64.html) - 64-bit rational number
+- **Imaginary** - Represent imaginary components of complex numbers
+  - [`c64`](/reference/c64.html) - 64-bit complex number
+
+For more, see [`number`](/reference/number.html).
 
 (1.2) String
 
@@ -50,6 +54,8 @@ A sequence of UTF-8 characters representing text.
 
   <string>
 
+For more, see [`string`](/reference/string.html).
+
 (1.3) Boolean
 
 Represents logical truth values.
@@ -57,6 +63,8 @@ Represents logical truth values.
 (1.3.1) Kind
 
   <bool>
+
+For more, see [`bool`](/reference/bool.html).
 
 (1.4) Atom
 
@@ -67,6 +75,8 @@ A symbolic constant, often used for tags or enums.
 The kind of an atom is itself. For example, the atom {{:A}} has the kind:
 
   <:A>
+
+For more, see [`atom`](/reference/atom.html).
 
 (1.5) Kind
 
@@ -80,6 +90,8 @@ The kind of a kind is itself, and `kind`. For example, the kind {{<i32>}} has th
   <i32>
   <kind>
 ```
+
+for more, see [`kind`](/reference/kind.html).
 
 (1.5) Empty
 
@@ -96,17 +108,21 @@ x := _        -- An empty value
 y<_> := _     -- An empty value of kind `_`
 ```
 
+For more, see [`empty`](/reference/empty.html).
 
 2. Data Structures
 -------------------------------------------------------------------------------
 
-- [Enum](enum.html) - defines a set of named constant values
-- [Map](map.html) - stores key-value pairs for fast lookups.
-- [Matrix](matrix.html) - 2D array of homogenous values arranged in rows and columns.
-- [Record](record.html) - groups related fields, usually for representing structured data.
-- [Set](set.html) - unordered collection of unique values
-- [Table](table.html) - collection of heterogeneous data organized into rows and columns.
-- [Tuple](tuple.html) - fixed-size, ordered grouping of heterogeneous values.
+Data structures in Mech are used to organize and manipulate collections of data. The primary data structures include:
+
+| Data Structure                     | Description                                                       |
+|-----------------------------------:|-------------------------------------------------------------------|
+| [`map`](/reference/map.html)       | stores key-value pairs for fast lookups.                          |
+| [`matrix`](/reference/matrix.html) | 2D array of homogenous values arranged in rows and columns.       |
+| [`record`](/reference/record.html) | groups related fields, usually for representing structured data.  |
+| [`set`](/reference/set.html)       | unordered collection of unique values                             |
+| [`table`](/reference/table.html)   | collection of heterogeneous data organized into rows and columns. |
+| [`tuple`](/reference/tuple.html)   | fixed-size, ordered grouping of heterogeneous values.             |
 
 3. Kinds
 -------------------------------------------------------------------------------
@@ -180,7 +196,6 @@ Kinds compose into more complex kinds based on the data structures they represen
 | Map            | `{K:V}`                    | {{<{string:i32}>}}        | Map from `string` to `i32`                |
 | Table          | `|arg1<T1>,arg2<T2>,..|:N` | {{<|x<u8>,y<string>|:3>}} | Table with columns `x` and `y` and 3 rows |
 | Tuple          | `(T1,T2,...)`              | {{<(u8,string,bool)>}}    | Tuple of `u8`, `string`, and `bool`       |
-| Enum           | `enum`                     | {{<enum>}}                | Enum type                                 |
 
 (3.3) Custom Kinds
 
@@ -221,7 +236,7 @@ c<color> := :color/red
 ```
 
 ```mech:disabled
-d<color> := :color/yellow   -- Error: `yellow` is not a variant of the `color` enum
+d<color> := :color/yellow   -- Error: `yellow` is not a variant
 ```
 
 
