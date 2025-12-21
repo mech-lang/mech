@@ -9,7 +9,7 @@ Platform Reference
     - [`bool`](/reference/bool.html) - logical values for true and false `todo`
     - [`empty`](/reference/empty.html) - represents an absence of value `todo`
     - [`kind`](/reference/kind.html) - a category of values `todo`
-    - [`number`](/reference/number.html) - numeric values, including integers and floating-point numbers `todo`
+    - [`number`](/reference/number.html) - numeric values, including integers and floating-point numbers
     - [`string`](/reference/string.html) - sequence of UTF-8 characters representing text `todo`
 - Data Structures
     - [`map`](/reference/map.html) - stores key-value pairs for fast lookups
