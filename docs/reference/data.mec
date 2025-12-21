@@ -22,26 +22,25 @@ Data in Mech is represented using one of the following primitive data types:
 
 Represents numeric values, including integers, floating-point numbers, and complex numbers. Numbers can be further classified into a tree of subtypes, which affect which operations are valid on them:
 
-- **Real** - Real numbers, including integers and floats.
-  - **Integers** - Whole numbers, which can be positive, negative, or zero
-    - **Signed** - Can represent both negative and positive values
-      - [`i8`](/reference/i8.html) - 8-bit signed integer
-      - [`i16`](/reference/i16.html) - 16-bit signed integer
-      - [`i32`](/reference/i32.html) - 32-bit signed integer
-      - [`i64`](/reference/i64.html) - 64-bit signed integer
-      - [`i128`](/reference/i128.html) - 128-bit signed integer
-    - **Unsigned** - Can only represent zero and positive values
-      - [`u8`](/reference/u8.html) - 8-bit unsigned integer
-      - [`u16`](/reference/u16.html) - 16-bit unsigned integer
-      - [`u32`](/reference/u32.html) - 32-bit unsigned integer
-      - [`u64`](/reference/u64.html) - 64-bit unsigned integer
-      - [`u128`](/reference/u128.html) - 128-bit unsigned integer
-  - **Fractional** - Decimal numbers with fractional components
-    - [`f32`](/reference/f32.html) - 32-bit floating-point number
-    - [`f64`](/reference/f64.html) - 64-bit floating-point number
-  - **Rational** - Represents rational numbers as a fraction of two integers
-    - [`r64`](/reference/r64.html) - 64-bit rational number
-- **Imaginary** - Represent imaginary components of complex numbers
+- **Integers** - Whole numbers, which can be positive, negative, or zero
+  - **Signed** - Can represent both negative and positive values
+    - [`i8`](/reference/i8.html) - 8-bit signed integer
+    - [`i16`](/reference/i16.html) - 16-bit signed integer
+    - [`i32`](/reference/i32.html) - 32-bit signed integer
+    - [`i64`](/reference/i64.html) - 64-bit signed integer
+    - [`i128`](/reference/i128.html) - 128-bit signed integer
+  - **Unsigned** - Can only represent zero and positive values
+    - [`u8`](/reference/u8.html) - 8-bit unsigned integer
+    - [`u16`](/reference/u16.html) - 16-bit unsigned integer
+    - [`u32`](/reference/u32.html) - 32-bit unsigned integer
+    - [`u64`](/reference/u64.html) - 64-bit unsigned integer
+    - [`u128`](/reference/u128.html) - 128-bit unsigned integer
+- **Fractional** - Decimal numbers with fractional components
+  - [`f32`](/reference/f32.html) - 32-bit floating-point number
+  - [`f64`](/reference/f64.html) - 64-bit floating-point number
+- **Rational** - Numbers represented as fractions of integers
+  - [`r64`](/reference/r64.html) - 64-bit rational number
+- **Complex** - Numbers with real and imaginary components
   - [`c64`](/reference/c64.html) - 64-bit complex number
 
 For more, see [`number`](/reference/number.html).
