@@ -246,7 +246,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
     match (&result, &target_knd) {
       // Atom is a variant of an enum
       #[cfg(all(feature = "atom", feature = "enum"))]
-      (Value::Atom(atom_variant), ValueKind::Enum(enum_id, enum_variant_name)) => {
+      (Value::Atom(atom_variant), ValueKind::Enum(enum_id, target_enum_variant_name)) => {
         let atom_variant_brrw = atom_variant.borrow();
         let enums = &state_brrw.enums;
         let my_enum = match enums.get(enum_id) {
@@ -256,10 +256,26 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
         let dictionary = state_brrw.dictionary.clone();
         let atom_id = atom_variant_brrw.id();
         let atom_name = atom_variant_brrw.name();
-        // Given atom isn't a variant of the enum
-        if !my_enum.variants.iter().any(|(enum_variant, inner_value)| atom_id == *enum_variant) {
+        // split the enum name at the '/' to get the variant name
+        let enum_variant_name = if let Some((enum_name, variant_name)) = atom_name.split_once('/') {
+          if enum_name != target_enum_variant_name {
+            return Err(MechError2::new(
+              UnableToConvertAtomToEnumVariantError { atom_name: atom_name.clone(), target_enum_variant_name: target_enum_variant_name.to_string() },
+              None
+            ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
+          }
+          variant_name.to_string()
+        } else {
           return Err(MechError2::new(
-            UnableToConvertAtomToEnumVariantError { atom_name: atom_name, target_enum_variant_name: enum_variant_name.clone() },
+            UnableToConvertAtomToEnumVariantError { atom_name: atom_name.clone(), target_enum_variant_name: target_enum_variant_name.clone() },
+            None
+          ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
+        };
+        let variant_id = hash_str(&enum_variant_name);
+        // Given atom isn't a variant of the enum
+        if !my_enum.variants.iter().any(|(known_enum_variant, inner_value)| variant_id == *known_enum_variant) {
+          return Err(MechError2::new(
+            UnableToConvertAtomToEnumVariantError { atom_name: atom_name.clone(), target_enum_variant_name: target_enum_variant_name.clone() },
             None
           ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
         }
