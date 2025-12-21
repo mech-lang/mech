@@ -402,6 +402,20 @@ h5.toc::before {
     gap: 6px;
 }
 
+.mech-enum-name {
+    color: var(--kind-annotation-color);
+}
+
+.mech-enum-define {
+    display: inline-flex;
+    gap: 6px;
+    color: var(--op-color);
+}
+
+.mech-enum-variant {
+    color: var(--literal-color);
+}
+
 .mech-kind-define-op {
     padding-left:  6px;
     padding-right: 6px;
