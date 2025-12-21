@@ -1,21 +1,138 @@
-Tuple
-===============================================================================
+tuple
+===========================================================================
+
+%% A `tuple` is an ordered collection of elements, potentially of heterogeneous kinds, similar to a fixed-length list.
 
 1. Syntax
 -------------------------------------------------------------------------------
 
+Tuples are defined using parentheses `()` with elements separated by commas.
+
+```
+(1, true)
+("Hello", 42, false)
+(1, ("Hello", false))
+```
+
+When parsed and rendered, this code will appear as:
+
+```mech:disabled
+(1, true)               -- two-tuple of f64 and bool
+("Hello", 42, false)    -- three-tuple of string, f64, and bool
+(1, ("Hello", false))   -- nested tuple
+```
+
+(i)> There is no such thing as a single-element tuple in Mech. A single value in parentheses is just that value. For example, `(42)` is just `42`, not a one-tuple containing `42`.
+
 2. Kind
 -------------------------------------------------------------------------------
+
+The kind of a tuple is determined by the kinds of its elements. For example:
+
+```mech:disabled
+(1, true)       -- kind: {{<(f64,bool)>}}
+("Hello", 42)   -- kind: {{<(string,f64)>}}
+```
+
+Tuples can be nested, and the kind reflects the structure:
+
+```
+(1, ("Hello", false)) -- kind: {{<(f64,(string,bool))>}}
+```
 
 3. Construction
 -------------------------------------------------------------------------------
 
+There are two ways to construct tuples:
+
+- Tuple literals
+- Comprehensions
+
+(3.1) Tuple Literals
+
+```
+q := (10, "b", true)
+nested := (1, ("Hello", false))
+```
+
 4. Accessing Elements
 -------------------------------------------------------------------------------
 
-5. Assigning Elements
---------------------------------------------------------------------------------
+Tuple elements are accessed by their 1-based index using the `.` operator.
 
-6. Operations
+```
+q := (10, "b", true)
+q.1   -- 10
+q.2   -- "b"
+q.3   -- true
+```
+
+Nested tuples are accessed recursively:
+
+```
+nested := (1, ("Hello", false))
+nested.2.1   -- "Hello"
+nested.2.2   -- false
+```
+
+5. Destructuring
+----------------------------------------------------------------------------
+
+Tuples can be destructured into variables:
+
+```
+a := (10, 11, 12)
+(x, y, z) := a
+x + y + z   -- 33
+```
+
+Destructuring works recursively for nested tuples:
+
+```
+nested := (1, ("Hello", false))
+(a, (b, c)) := nested
+a   -- 1
+b   -- "Hello"
+c   -- false
+```
+
+6. Assignment and Immutability
+----------------------------------------------------------------------------
+
+Tuples are immutable unless defined with the `~` operator. Attempting to assign to an element of an immutable tuple raises an error.
+
+```mech:disabled
+q := (10, "b", true)
+q.1 = 42   -- Error: cannot assign to element of immutable tuple
+```
+
+Mutable tuples allow assignment:
+
+```
+~q := (10, "b", true)
+q.1 = 42   -- Updates the first element
+```
+
+7. Operations
 -------------------------------------------------------------------------------
 
+Tuples support standard operations such as comparison for equality and ordering (if elements are comparable). Operations on elements must respect their kinds.
+
+Equality example:
+
+```
+(1, true) == (1, true)   -- true
+(1, true) == (true, 1)   -- false
+```
+
+8. Tuples in Expressions
+-------------------------------------------------------------------------------
+
+Tuples can be used inside expressions, returned from functions, and composed in comprehensions:
+
+```
+my-list := [1 2 3]
+[(i, i*i) | i <- my-list]   -- List of tuples
+```
+
+Tuples can be nested or combined with records for structured data representations.
