@@ -1493,13 +1493,21 @@ impl Formatter {
     let mut variants = "".to_string();
     for (i, variant) in node.variants.iter().enumerate() {
       if i == 0 {
-        variants = format!("{}", self.enum_variant(variant));
+        if self.html {
+          variants = format!("<span class=\"mech-enum-variant\">{}</span>", self.enum_variant(variant));
+        } else {
+          variants = format!("{}", self.enum_variant(variant));
+        }
       } else {
-        variants = format!("{} | {}", variants, self.enum_variant(variant));
+        if self.html {
+          variants = format!("{}<span class=\"mech-enum-variant-sep\">|</span><span class=\"mech-enum-variant\">{}</span>", variants, self.enum_variant(variant));
+        } else {
+          variants = format!("{} | {}", variants, self.enum_variant(variant));
+        }
       }
     }
     if self.html {
-      format!("<span class=\"mech-enum-define\"><span class=\"mech-enum-name\">{}</span><span class=\"mech-enum-define-op\">:=</span><span class=\"mech-enum-variants\">{}</span></span>",name,variants)
+      format!("<span class=\"mech-enum-define\"><span class=\"mech-kind-annotation\">&lt;<span class=\"mech-enum-name\">{}</span>&gt;</span><span class=\"mech-enum-define-op\">:=</span><span class=\"mech-enum-variants\">{}</span></span>",name,variants)
     } else {
       format!("<{}> := {}", name, variants)
     }
