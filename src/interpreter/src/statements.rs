@@ -453,8 +453,15 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
       plan.borrow_mut().push(new_fxn);
       return Ok(res);
     },
+    #[cfg(feature = "tuple")]
     Subscript::DotInt(x) => {
-      todo!()
+      let ix = real(x).as_index()?;
+      let mut fxn_input: Vec<Value> = vec![sink.clone(), source.clone(), ix.clone()];
+      let new_fxn = TupleAssignScalar{}.compile(&fxn_input)?;
+      new_fxn.solve();
+      let res = new_fxn.out();
+      plan.borrow_mut().push(new_fxn);
+      return Ok(res);
     },
     Subscript::Swizzle(x) => {
       unreachable!()
