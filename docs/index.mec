@@ -15,9 +15,14 @@ Mech Documentation
 
 (2.1) Data Model
 
-- [Data - Types and Kinds](/reference/data.html)
+- [Data Types](/reference/data.html)
+    - [`atom`](/reference/atom.html) - symbolic constants, often used for tags or enums `todo`
+    - [`bool`](/reference/bool.html) - logical values for true and false `todo`
+    - [`empty`](/reference/empty.html) - represents an absence of value `todo`
+    - [`kind`](/reference/kind.html) - a category of values `todo`
+    - [`number`](/reference/number.html) - numeric values, including integers and floating-point numbers `todo`
+    - [`string`](/reference/string.html) - sequence of UTF-8 characters representing text `todo`
 - Data Structures
-    - [`enum`](/reference/enum.html) - defines a set of named constant values
     - [`map`](/reference/map.html) - stores key-value pairs for fast lookups
     - [`matrix`](/reference/matrix.html) - 2D array of homogenous values arranged in rows and columns
     - [`record`](/reference/record.html) - groups related fields, usually for representing structured data
