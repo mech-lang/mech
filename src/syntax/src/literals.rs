@@ -38,9 +38,9 @@ pub fn literal(input: ParseString) -> ParseResult<Literal> {
   Ok((input, result))
 }
 
-// atom := "`", identifier ;
+// atom := ":", identifier ;
 pub fn atom(input: ParseString) -> ParseResult<Atom> {
-  let (input, _) = grave(input)?;
+  let (input, _) = colon(input)?;
   let (input, name) = identifier(input)?;
   Ok((input, Atom{name}))
 }
