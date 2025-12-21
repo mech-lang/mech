@@ -396,6 +396,12 @@ h5.toc::before {
     color: var(--op-color);
 }
 
+.mech-variable-assign {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+}
+
 .mech-kind-define-op {
     padding-left:  6px;
     padding-right: 6px;
@@ -1101,6 +1107,12 @@ a.mech-hyperlink:hover .mech-inline-code {
 }
 
 .mech-tuple {
+    color: var(--op-color);
+}
+
+.mech-tuple-destructure {
+    display: flex;
+    gap: 6px;
     color: var(--op-color);
 }
 
