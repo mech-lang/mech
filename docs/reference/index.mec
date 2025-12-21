@@ -18,7 +18,6 @@ Platform Reference
     - [Data Conversion](/reference/convert.html) `todo` - convert data from one kind to another
     - [Formulas](/reference/formulas.html) `todo` - compute values using expressions
     - [Indexing](/reference/indexing.html) `todo` - access elements within data structures
-- [Error Handling](/reference/errors.html) `todo` - manage and respond to errors
 
 2. Programming Model
 ---------------------------------------------------------------------------
@@ -27,6 +26,7 @@ Platform Reference
 
 - Functions
 - Comprehensions
+- Error Handling
 - State Machines
 - SynthAssign
 - Modules

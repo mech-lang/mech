@@ -8,6 +8,7 @@ Mech Documentation
 2. [Install Mech](getting-started/install.html)
 3. [Build and Run Mech Programs](getting-started/build-and-run.html)
 4. [Mech REPL](getting-started/repl.html) 
+5. [Your First Mech Program](getting-started/first-program.html) `todo`
 
 2. Platform Reference
 -------------------------------------------------------------------------------
@@ -28,13 +29,13 @@ Mech Documentation
     - [Data Conversion](/reference/convert.html) `todo` - convert data from one kind to another
     - [Formulas](/reference/formulas.html) `todo` - compute values using expressions
     - [Indexing](/reference/indexing.html) `todo` - access elements within data structures
-- [Error Handling](/reference/errors.html) `todo` - manage and respond to errors
 
 (2.2) Program Model
 
 (i)> Coming `v0.3`
 
 - Functions
+- Error Handling
 - Comprehensions
 - State Machines
 - SynthAssign
