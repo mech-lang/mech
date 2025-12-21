@@ -45,6 +45,8 @@ test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String(Ref::new
 test_interpreter!(interpret_literal_string_multiline, r#""Hello 
  World""#, Value::String(Ref::new("Hello \n World".to_string())));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_literal_true2, "✓ ", Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_literal_false2, "✗ ", Value::Bool(Ref::new(false)));
 test_interpreter!(interpret_literal_false, "false", Value::Bool(Ref::new(false)));
 test_interpreter!(interpret_literal_atom, ":A", Value::Atom(Ref::new(MechAtom::new(55450514845822917))));
 test_interpreter!(interpret_literal_empty, "_", Value::Empty);
