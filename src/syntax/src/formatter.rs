@@ -1300,14 +1300,14 @@ impl Formatter {
     }
     if self.html {
       format!("<span class=\"mech-tuple-struct\">
-        `
+        <span class=\"mech-tuple-struct-sigil\">:</span>
         <span class=\"mech-tuple-struct-name\">{}</span>
         <span class=\"mech-left-paren\">(</span>
         <span class=\"mech-tuple-struct-patterns\">{}</span>
         <span class=\"mech-right-paren\">)</span>
       </span>",name,patterns)
     } else {
-      format!("`{}({})", name, patterns)
+      format!(":{}({})", name, patterns)
     }
   }
 
@@ -1445,7 +1445,7 @@ impl Formatter {
     }
     if self.html {
       format!("<div class=\"mech-state-definition\">
-      <span class=\"mech-state-name\">`{}</span>
+      <span class=\"mech-state-name\"><span class=\"mech-state-name-sigil\">:</span>{}</span>
       <span class=\"mech-left-paren\">(</span>
       <span class=\"mech-state-variables\">{}</span>
       <span class=\"mech-right-paren\">)</span>
@@ -2187,7 +2187,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       Kind::Any => "*".to_string(),
       Kind::Scalar(ident) => ident.to_string(),
       Kind::Empty => "_".to_string(),
-      Kind::Atom(ident) => format!("`{}",ident.to_string()),
+      Kind::Atom(ident) => format!(":{}",ident.to_string()),
       Kind::Tuple(kinds) => {
         let mut src = "".to_string();
         for (i, kind) in kinds.iter().enumerate() {
@@ -2451,9 +2451,9 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn atom(&mut self, node: &Atom) -> String {
     if self.html {
-      format!("<span class=\"mech-atom\"><span class=\"mech-atom-grave\">`</span><span class=\"mech-atom-name\">{}</span></span>",node.name.to_string())
+      format!("<span class=\"mech-atom\"><span class=\"mech-atom-colon\">:</span><span class=\"mech-atom-name\">{}</span></span>",node.name.to_string())
     } else {
-      format!("`{}", node.name.to_string())
+      format!(":{}", node.name.to_string())
     }
   }
 
