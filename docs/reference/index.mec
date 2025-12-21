@@ -4,15 +4,20 @@ Platform Reference
 1. Data Model
 ---------------------------------------------------------------------------
 
-- [Data - Types and Kinds](/reference/data.html)
+- [Data Types](/reference/data.html)
+    - [`atom`](/reference/atom.html) - symbolic constants, often used for tags or enums `todo`
+    - [`bool`](/reference/bool.html) - logical values for true and false `todo`
+    - [`empty`](/reference/empty.html) - represents an absence of value `todo`
+    - [`kind`](/reference/kind.html) - a category of values `todo`
+    - [`number`](/reference/number.html) - numeric values, including integers and floating-point numbers `todo`
+    - [`string`](/reference/string.html) - sequence of UTF-8 characters representing text `todo`
 - Data Structures
-    - [Enum](/reference/enum.html) - defines a set of named constant values
-    - [Map](/reference/map.html) - stores key-value pairs for fast lookups
-    - [Matrix](/reference/matrix.html) - 2D array of homogenous values arranged in rows and columns
-    - [Record](/reference/record.html) - groups related fields, usually for representing structured data
-    - [Set](/reference/set.html) - unordered collection of unique values
-    - [Table](/reference/table.html) - collection of heterogeneous data organized into rows and columns
-    - [Tuple](/reference/tuple.html) - fixed-size, ordered grouping of heterogeneous values
+    - [`map`](/reference/map.html) - stores key-value pairs for fast lookups
+    - [`matrix`](/reference/matrix.html) - 2D array of homogenous values arranged in rows and columns
+    - [`record`](/reference/record.html) - groups related fields, usually for representing structured data
+    - [`set`](/reference/set.html) - unordered collection of unique values
+    - [`table`](/reference/table.html) - collection of heterogeneous data organized into rows and columns
+    - [`tuple`](/reference/tuple.html) - fixed-size, ordered grouping of heterogeneous values
 - Statements and Expressions
     - [Defining, Assigning, and Accessing Data](/reference/define.html) `todo` - create data and change it
     - [Data Conversion](/reference/convert.html) `todo` - convert data from one kind to another
