@@ -1,21 +1,39 @@
-Enum
+enum
 ===============================================================================
 
+%% An `enum` represents a value that may be one of a fixed set of named variants. Enums are useful for modeling mutually exclusive states, tagged values, and sum types in a clear and type-safe way.
+
 1. Syntax
--------------------------------------------------------------------------------
-
-2. Kind
--------------------------------------------------------------------------------
-
-3. Construction
--------------------------------------------------------------------------------
-
-4. Accessing Elements
--------------------------------------------------------------------------------
-
-5. Assigning Elements
 --------------------------------------------------------------------------------
 
-6. Operations
--------------------------------------------------------------------------------
+Enums are defined by declaring a set of named variants, each of which is an atom.
 
+```
+&lt;color&gt; := red | green | blue
+```
+
+When parsed and rendered, this code will appear as:
+
+```mech:disabled
+<color> := red | green | blue
+```
+
+
+2. Kind
+--------------------------------------------------------------------------------
+
+The kind of an enum value is the enum kind itself. For example:
+
+```mech:disabled
+<color>
+```
+
+3. Construction
+--------------------------------------------------------------------------------
+
+Enum values are constructed by selecting a variant name, optionally providing a value if the variant carries data.
+
+```
+<color> := red | green | blue
+c<color> := :color/red
+```
