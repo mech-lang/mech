@@ -1100,7 +1100,7 @@ impl Map {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Mapping {
-  pub key: Literal,
+  pub key: Expression,
   pub value: Expression,
 }
 

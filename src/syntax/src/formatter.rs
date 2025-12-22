@@ -1911,7 +1911,7 @@ impl Formatter {
   }
 
   pub fn mapping(&mut self, node: &Mapping) -> String {
-    let key = self.literal(&node.key);
+    let key = self.expression(&node.key);
     let value = self.expression(&node.value);
     if self.html {
       format!("<span class=\"mech-mapping\"><span class=\"mech-key\">{}</span><span class=\"mech-colon-op\">:</span><span class=\"mech-value\">{}</span></span>",key,value)
