@@ -345,7 +345,7 @@ pub fn map(input: ParseString) -> ParseResult<Map> {
   Ok((input, Map{elements}))
 }
 
-// mapping :=  whitespace*, literal, whitespace*, colon, whitespace*, expression, ("," | whitespace*) ;
+// mapping :=  whitespace*, expression, whitespace*, ":", whitespace*, expression, comma?, whitespace* ;
 pub fn mapping(input: ParseString) -> ParseResult<Mapping> {
   let msg1 = "Unexpected space before colon ':'";
   let msg2 = "Expects a value";
