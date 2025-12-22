@@ -227,7 +227,7 @@ You can define an enum kind like this:
 <color> := red | green | blue
 ```
 
-The kind of the enum is {{<color>}}, and the possible values are the variants `:color/red`, `:color/green`, and `:color/blue`.
+The kind of the enum is {{<color>}}, and the possible values are the variants {{:color/red}}, {{:color/green}}, and {{:color/blue}}.
 
 ```mech:ex 3.4
 <color> := red | green | blue
