@@ -12,7 +12,6 @@ You can define maps using curly braces `{}` with a colon `:` to separate keys fr
 **Examples:**
 
 ```
-{}                       -- An empty map
 {"a": 1}                 -- A single key-value pair
 {"a": 10, "b": 20}       -- Multiple key-value pairs
 {"a": {"b": 2}}          -- Nested maps
@@ -26,7 +25,6 @@ You can define maps using curly braces `{}` with a colon `:` to separate keys fr
 Evaluates to:
 
 ```mech
-{}                       -- An empty map
 {"a": 1}                 -- A single key-value pair
 {"a": 10, "b": 20}       -- Multiple key-value pairs
 {"a": {"b": 2}}          -- Nested maps
