@@ -40,7 +40,7 @@ pub fn tuple(tpl: &Tuple, env: Option<&Environment>, p: &Interpreter) -> MResult
 pub fn map(mp: &Map, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   let mut m = IndexMap::new();
   for b in &mp.elements {
-    let key = expression(&b.key, env, p)?;
+    let key = literal(&b.key, p)?;
     let val = expression(&b.value, env, p)?;
     m.insert(key,val);
   }
