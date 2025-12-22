@@ -352,7 +352,8 @@ pub fn mapping(input: ParseString) -> ParseResult<Mapping> {
   let msg3 = "Expects whitespace or comma followed by whitespace";
   let msg4 = "Expects whitespace";
   let (input, _) = whitespace0(input)?;
-  let (input, key) = expression(input)?;
+  let (input, _) = peek(is_not(empty))(input)?;
+  let (input, key) = literal(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = colon(input)?;
   let (input, _) = whitespace0(input)?;
