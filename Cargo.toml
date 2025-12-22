@@ -1,6 +1,6 @@
 [package]
 name = "mech"
-version = "0.2.70"
+version = "0.2.71"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Mech is a programming language for building reactive systems like robots, games, and animations."
 documentation = "https://docs.mech-lang.org"
