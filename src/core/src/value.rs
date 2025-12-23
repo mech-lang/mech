@@ -69,7 +69,7 @@ pub enum ValueKind {
   Matrix(Box<ValueKind>,Vec<usize>),  Enum(u64,String),             Record(Vec<(String,ValueKind)>),
   Map(Box<ValueKind>,Box<ValueKind>), Atom(u64,String),             Table(Vec<(String,ValueKind)>, usize), 
   Tuple(Vec<ValueKind>),              Reference(Box<ValueKind>),    Set(Box<ValueKind>, Option<usize>), 
-  Option(Box<ValueKind>),
+  Option(Box<ValueKind>),             Kind(Box<ValueKind>),    
 }
 
 impl Display for ValueKind {
@@ -109,6 +109,7 @@ impl Display for ValueKind {
       ValueKind::Any => write!(f, "*"),
       ValueKind::None => write!(f, "none"),
       ValueKind::Option(x) => write!(f, "{}?", x),
+      ValueKind::Kind(x) => todo!(), // write!(f, "<{}>", x),
     }
   }
 }
@@ -384,6 +385,7 @@ impl ValueKind {
         elem.align()
       }
       ValueKind::Option(inner) => inner.align(),
+      ValueKind::Kind(inner) => inner.align(),
     }
   }
 }
@@ -2232,7 +2234,7 @@ impl PrettyPrint for Value {
       Value::Empty => builder.push_record(vec!["_"]),
       Value::IndexAll => builder.push_record(vec![":"]),
       Value::Id(x) => builder.push_record(vec![format!("{}",humanize(x))]),
-      Value::Kind(x) => builder.push_record(vec![format!("{}",x)]),
+      //Value::Kind(x) => builder.push_record(vec![format!("{}",x)]),
       x => {
         todo!("{x:#?}");
       },

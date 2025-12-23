@@ -1614,6 +1614,7 @@ pub enum Kind {
   Option(Box<Kind>),
   Scalar(Identifier),
   Tuple(Vec<Kind>),
+  Kind(Box<Kind>),
 }
 
 impl Kind {
@@ -1655,6 +1656,7 @@ impl Kind {
       Kind::Map(x, y) => x.tokens().into_iter().chain(y.tokens()).collect(),
       Kind::Scalar(x) => x.tokens(),
       Kind::Atom(x) => x.tokens(),
+      Kind::Kind(x) => x.tokens(),
       Kind::Empty => vec![],
       Kind::Any => vec![],
     }

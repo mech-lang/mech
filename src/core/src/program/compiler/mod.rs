@@ -19,6 +19,11 @@ pub type Register = u32;
 pub fn encode_value_kind(ts: &mut TypeSection, vk: &ValueKind) -> (TypeTag, Vec<u8>) {
   let mut b = Vec::new();
   let tag = match vk {
+    ValueKind::Kind(kind) => {
+      let kind_id = ts.get_or_intern(kind);
+      b.write_u32::<LittleEndian>(kind_id).unwrap();
+      TypeTag::Kind
+    },
     ValueKind::U8 => TypeTag::U8, ValueKind::U16 => TypeTag::U16, ValueKind::U32 => TypeTag::U32,
     ValueKind::U64 => TypeTag::U64, ValueKind::U128 => TypeTag::U128,
     ValueKind::I8 => TypeTag::I8, ValueKind::I16 => TypeTag::I16, ValueKind::I32 => TypeTag::I32,
