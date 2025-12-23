@@ -2173,6 +2173,14 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn kind(&mut self, node: &Kind) -> String {
     let annotation = match node {
+      Kind::Kind(kind) => {
+        let kind_kind = self.kind(kind);
+        if self.html {
+          format!("<span class=\"mech-kind-annotation\">&lt;{}&gt;</span>",kind_kind)
+        } else {
+          format!("<{}>", kind_kind)
+        }
+      },
       Kind::Option(kind) => {
         let k = self.kind(kind);
         if self.html {

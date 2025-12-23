@@ -22,7 +22,9 @@ pub fn literal(input: ParseString) -> ParseResult<Literal> {
           _ => match empty(input.clone()) {
             Ok((input, empty)) => (input, Literal::Empty(empty)), 
             Err(err) => match kind_annotation(input.clone()) {
-              Ok((input, knd)) => (input, Literal::Kind(knd.kind)),
+              Ok((input, knd)) => {
+                (input, Literal::Kind(knd.kind))
+              }
               Err(err) => return Err(err),
             }
           }
@@ -300,8 +302,25 @@ pub fn kind(input: ParseString) -> ParseResult<Kind> {
     kind_set,
     kind_table, 
     kind_tuple,
+    kind_kind,
   ))(input)?;
   Ok((input, kind))
+}
+
+// kind-kind := "<", kind, ">" ;
+pub fn kind_kind(input: ParseString) -> ParseResult<Kind> {
+  let msg2 = "Expects at least one unit in kind annotation";
+  let msg3 = "Expects right angle";
+  let (input, (_, r)) = range(left_angle)(input)?;
+
+  let (input, kind) = kind(input)?;
+  let (input, optional) = opt(question)(input)?;
+  let (input, _) = label!(right_angle, msg3, r)(input)?;
+  let kind = match optional {
+    Some(_) => Kind::Option(Box::new(kind)),
+    None => kind,
+  };
+  Ok((input, Kind::Kind(Box::new(kind))))
 }
 
 // kind-table := "|" , list1(",", (identifier, kind)), "|", ":", list0(",", literal) ;
