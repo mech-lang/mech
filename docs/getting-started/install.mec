@@ -6,7 +6,7 @@ Download and Install Mech
 
 The easiest way to install Mech is to use the installer provided for your platform. The installer includes the `mech` command-line tool, which is a standalone executable that includes everything you need to get started with Mech.
 
-- **Windows** - [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.72-beta/mech_v0.2.72-beta_full_win_x86-64_installer.exe)
+- **Windows** - [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.73-beta/mech_v0.2.73-beta_full_win_x86-64_installer.exe)
 
 Right now, the installer is only available for Windows, but we are working on providing installers for other platforms in the future.
 
@@ -19,10 +19,10 @@ Precompiled binaries are available for the following platforms:
 
 | OS         | Full                                                                                                              | Base                                                                                                               |
 | ---------- | ------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
-| **Wndows** | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.72-beta/mech_v0.2.72-beta_full_win_x86-64.7z)   | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.72-beta/mech_v0.2.72-beta_base_win_x86-64.7z)    | 
-| **Linux**  | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.72-beta/mech_v0.2.72-beta_full_linux_x86-64.7z) | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.72-beta/mech_v0.2.72-beta_base_linux_x86-64.7z)  | 
-| **macOS**  | [aarch64](https://github.com/mech-lang/mech/releases/download/v0.2.72-beta/mech_v0.2.72-beta_full_mac_aarch64.zip)| [aarch64](https://github.com/mech-lang/mech/releases/download/v0.2.72-beta/mech_v0.2.72-beta_base_mac_aarch64.zip) |
-| **Web**    | [wasm](https://github.com/mech-lang/mech/releases/download/v0.2.72-beta/mech_wasm_bg.wasm.br)                     |                                                                                                                |
+| **Wndows** | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.73-beta/mech_v0.2.73-beta_full_win_x86-64.7z)   | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.73-beta/mech_v0.2.73-beta_base_win_x86-64.7z)    | 
+| **Linux**  | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.73-beta/mech_v0.2.73-beta_full_linux_x86-64.7z) | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.73-beta/mech_v0.2.73-beta_base_linux_x86-64.7z)  | 
+| **macOS**  | [aarch64](https://github.com/mech-lang/mech/releases/download/v0.2.73-beta/mech_v0.2.73-beta_full_mac_aarch64.zip)| [aarch64](https://github.com/mech-lang/mech/releases/download/v0.2.73-beta/mech_v0.2.73-beta_base_mac_aarch64.zip) |
+| **Web**    | [wasm](https://github.com/mech-lang/mech/releases/download/v0.2.73-beta/mech_wasm_bg.wasm.br)                     |                                                                                                                |
 
 (i)> **Full** installation includes the standard library and all numeric datatypes. 
 **Base** installation includes the standard library but only `f64`, `i64`, and `r64` numeric types.

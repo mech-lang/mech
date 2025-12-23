@@ -155,7 +155,7 @@ The beta phase has focused on stabilizing the core language and fixing shortcomi
 -(☐) v0.3 - program specification - functions, modules, state machines
 -(☐) v0.4 - system specification - tools, distributed programs, capabilities
 
-Currently the platform version is `v0.2.72-beta`.
+Currently the platform version is `v0.2.73-beta`.
 
 Visit the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html) for more information on the current status of features.
 
