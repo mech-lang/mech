@@ -30,7 +30,7 @@ pub fn expression(expr: &Expression, env: Option<&Environment>, p: &Interpreter)
   }
 }
 
-pub fn match_value(pattern: &Pattern,value: &Value,env: &mut Environment) -> MResult<()> {
+pub fn pattern_match_value(pattern: &Pattern, value: &Value, env: &mut Environment) -> MResult<()> {
   match pattern {
     Pattern::Wildcard => Ok(()),
     Pattern::Expression(expr) => match expr {
@@ -38,7 +38,16 @@ pub fn match_value(pattern: &Pattern,value: &Value,env: &mut Environment) -> MRe
         let id = &var.name.hash();
         match env.get(id) {
           Some(existing) if existing == value => Ok(()),
-          Some(_) => todo!(),
+          Some(existing) => {
+            Err(MechError2::new(
+                PatternMatchError {
+                    var: var.name.to_string(),
+                    expected: existing.to_string(),
+                    found: value.to_string(),
+                },
+                None
+            ).with_compiler_loc())
+          }
           None => {
             env.insert(id.clone(), value.clone());
             Ok(())
@@ -61,8 +70,8 @@ pub fn match_value(pattern: &Pattern,value: &Value,env: &mut Environment) -> MRe
               None
             ).with_compiler_loc());
           }
-          for (pat, val) in pat_tuple.0.iter().zip(values_brrw.elements.iter()) {
-            match_value(pat, val, env)?;
+          for (pttrn, val) in pat_tuple.0.iter().zip(values_brrw.elements.iter()) {
+            pattern_match_value(pttrn, val, env)?;
           }
           Ok(())
         }
@@ -89,23 +98,27 @@ pub fn match_value(pattern: &Pattern,value: &Value,env: &mut Environment) -> MRe
 #[cfg(feature = "set_comprehensions")]
 pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult<Value> {
   let mut envs: Vec<Environment> = vec![HashMap::new()];
+  let comprehension_id = hash_str(&format!("{:?}", set_comp));
+  let mut new_p = p.clone();
+  new_p.id = comprehension_id;
+  new_p.clear_plan();
   // Process each qualifier in order
   for qual in &set_comp.qualifiers {
     envs = match qual {
-      ComprehensionQualifier::Generator((pattern, expr)) => {
+      ComprehensionQualifier::Generator((pttrn, expr)) => {
         let mut new_envs = Vec::new();
         for env in &envs {
           // Evaluate the generator expression
-          let collection = expression(expr, Some(env), p)?;
+          let collection = expression(expr, Some(env), &new_p)?;
           match collection {
             Value::Set(mset) => {
               let set_brrw = mset.borrow();
 
-              for element in set_brrw.set.iter() {
+              for elmnt in set_brrw.set.iter() {
                 let mut new_env = env.clone();
 
                 // Try to match the element with the pattern
-                if match_value(pattern, element, &mut new_env).is_ok() {
+                if pattern_match_value(pttrn, elmnt, &mut new_env).is_ok() {
                   new_envs.push(new_env);
                 }
                 // If match fails, skip this element
@@ -117,11 +130,11 @@ pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult
                 Value::Set(mset) => {
                   let set_brrw = mset.borrow();
 
-                  for element in set_brrw.set.iter() {
+                  for elmnt in set_brrw.set.iter() {
                     let mut new_env = env.clone();
 
                     // Try to match the element with the pattern
-                    if match_value(pattern, element, &mut new_env).is_ok() {
+                    if pattern_match_value(pttrn, elmnt, &mut new_env).is_ok() {
                       new_envs.push(new_env);
                     }
                     // If match fails, skip this element
@@ -150,22 +163,21 @@ pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult
         envs
           .into_iter()
           .filter(|env| {
-            println!("Evaluating filter in env: {:#?}", env);
-              match expression(expr, Some(env), p) {
-                Ok(Value::Bool(v)) => v.borrow().clone(),
-                x => {
-                  println!("Filter did not evaluate to bool: {:?}", x);
-                  false
-                }
-                Err(_) => false,
+            let result = expression(expr, Some(env), &new_p);
+            match result {
+              Ok(Value::Bool(v)) => v.borrow().clone(),
+              Ok(x) => {
+                false
               }
+              Err(_) => false,
+            }
           })
           .collect()
       }
       ComprehensionQualifier::Let(var_def) => {
         envs.into_iter()
             .map(|mut env| -> MResult<_> {
-                let val = expression(&var_def.expression, Some(&env), p)?;
+                let val = expression(&var_def.expression, Some(&env), &new_p)?;
                 env.insert(var_def.var.name.hash(), val);
                 Ok(env)
             })
@@ -176,7 +188,7 @@ pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult
   // Step 3: evaluate the LHS expression in each environment
   let mut result_set = IndexSet::new();
   for env in envs {
-    let val = expression(&set_comp.expression, Some(&env), p)?;
+    let val = expression(&set_comp.expression, Some(&env), &new_p)?;
     if !result_set.contains(&val) {
       result_set.insert(val);
     }
@@ -247,6 +259,16 @@ pub fn slice(slc: &Slice, env: Option<&Environment>,p: &Interpreter) -> MResult<
 
 #[cfg(feature = "subscript_formula")]
 pub fn subscript_formula(sbscrpt: &Subscript, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+  match sbscrpt {
+    Subscript::Formula(fctr) => {
+      factor(fctr, env, p)
+    }
+    _ => unreachable!()
+  }
+}
+
+#[cfg(feature = "subscript_formula")]
+pub fn subscript_formula_ix(sbscrpt: &Subscript, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   match sbscrpt {
     Subscript::Formula(fctr) => {
       let result = factor(fctr, env, p)?;
@@ -330,14 +352,51 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
       plan.borrow_mut().push(new_fxn);
       return Ok(res);
     },
-    #[cfg(feature = "subscript_slice")]
-    Subscript::Brace(subs) |
-    Subscript::Bracket(subs) => {
+    Subscript::Brace(subs) => {
       let mut fxn_input = vec![val.clone()];
       match &subs[..] {
         #[cfg(feature = "subscript_formula")]
         [Subscript::Formula(ix)] => {
           let result = subscript_formula(&subs[0], env, p)?;
+          let shape = result.shape();
+          fxn_input.push(result);
+          match shape[..] {
+            [1, 1] => plan.borrow_mut().push(AccessScalar{}.compile(&fxn_input)?),
+            #[cfg(feature = "subscript_range")]
+            [n,1] => plan.borrow_mut().push(AccessRange{}.compile(&fxn_input)?),
+            #[cfg(feature = "subscript_range")]
+            [1,n] => plan.borrow_mut().push(AccessRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
+        },
+        #[cfg(feature = "subscript_range")]
+        [Subscript::Range(ix)] => {
+          let result = subscript_range(&subs[0], env, p)?;
+          fxn_input.push(result);
+          plan.borrow_mut().push(AccessRange{}.compile(&fxn_input)?);
+        },
+        /*[Subscript::All] => {
+          fxn_input.push(Value::IndexAll);
+          #[cfg(feature = "matrix")]
+          plan.borrow_mut().push(MapAccessAll{}.compile(&fxn_input)?);
+        },*/
+        _ => {
+          todo!("Implement brace subscript")
+        }
+      }
+      let plan_brrw = plan.borrow();
+      let mut new_fxn = &plan_brrw.last().unwrap();
+      new_fxn.solve();
+      let res = new_fxn.out();
+      return Ok(res);
+    }
+    #[cfg(feature = "subscript_slice")]
+    Subscript::Bracket(subs) => {
+      let mut fxn_input = vec![val.clone()];
+      match &subs[..] {
+        #[cfg(feature = "subscript_formula")]
+        [Subscript::Formula(ix)] => {
+          let result = subscript_formula_ix(&subs[0], env, p)?;
           let shape = result.shape();
           fxn_input.push(result);
           match shape[..] {
@@ -355,7 +414,6 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
           fxn_input.push(result);
           plan.borrow_mut().push(AccessRange{}.compile(&fxn_input)?);
         },
-        #[cfg(feature = "subscript_range")]
         [Subscript::All] => {
           fxn_input.push(Value::IndexAll);
           #[cfg(feature = "matrix")]
@@ -364,10 +422,10 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
         [Subscript::All,Subscript::All] => todo!(),
         #[cfg(feature = "subscript_formula")]
         [Subscript::Formula(ix1),Subscript::Formula(ix2)] => {
-          let result = subscript_formula(&subs[0], env, p)?;
+          let result = subscript_formula_ix(&subs[0], env, p)?;
           let shape1 = result.shape();
           fxn_input.push(result);
-          let result = subscript_formula(&subs[1], env, p)?;
+          let result = subscript_formula_ix(&subs[1], env, p)?;
           let shape2 = result.shape();
           fxn_input.push(result);
           match ((shape1[0],shape1[1]),(shape2[0],shape2[1])) {
@@ -394,7 +452,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
         #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
         [Subscript::All,Subscript::Formula(ix2)] => {
           fxn_input.push(Value::IndexAll);
-          let result = subscript_formula(&subs[1], env, p)?;
+          let result = subscript_formula_ix(&subs[1], env, p)?;
           let shape = result.shape();
           fxn_input.push(result);
           match &shape[..] {
@@ -409,7 +467,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
         },
         #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
         [Subscript::Formula(ix1),Subscript::All] => {
-          let result = subscript_formula(&subs[0], env, p)?;
+          let result = subscript_formula_ix(&subs[0], env, p)?;
           let shape = result.shape();
           fxn_input.push(result);
           fxn_input.push(Value::IndexAll);
@@ -427,7 +485,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
         [Subscript::Range(ix1),Subscript::Formula(ix2)] => {
           let result = subscript_range(&subs[0], env, p)?;
           fxn_input.push(result);
-          let result = subscript_formula(&subs[1], env, p)?;
+          let result = subscript_formula_ix(&subs[1], env, p)?;
           let shape = result.shape();
           fxn_input.push(result);
           match &shape[..] {
@@ -442,7 +500,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
         },
         #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
         [Subscript::Formula(ix1),Subscript::Range(ix2)] => {
-          let result = subscript_formula(&subs[0], env, p)?;
+          let result = subscript_formula_ix(&subs[0], env, p)?;
           let shape = result.shape();
           fxn_input.push(result);
           let result = subscript_range(&subs[1], env, p)?;
@@ -490,7 +548,6 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
   let state_brrw = p.state.borrow();
   let symbols_brrw = state_brrw.symbol_table.borrow();
   let id = v.name.hash();
-  println!("Looking up variable with id: {} in env: {:?}", id, env);
   match env {
     Some(env) => {
       match env.get(&id) {
@@ -760,5 +817,24 @@ impl MechErrorKind2 for ArityMismatchError {
   }
   fn message(&self) -> String {
     format!("Arity mismatch: expected {}, found {}", self.expected, self.found)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct PatternMatchError {
+  pub var: String,
+  pub expected: String,
+  pub found: String,
+}
+
+impl MechErrorKind2 for PatternMatchError {
+  fn name(&self) -> &str {
+    "PatternMatchError"
+  }
+  fn message(&self) -> String {
+    format!(
+      "Pattern match error for variable '{}': expected value {}, found value {}",
+      self.var, self.expected, self.found
+    )
   }
 }

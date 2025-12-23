@@ -699,8 +699,14 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
             return Ok((input, SectionElement::FencedMechCode(FencedMechCode{code: mech_tree, config, options})));
           },
           Err(err) => {
-            println!("Error parsing Mech code: {:#?}", err);
-            todo!();
+            return Err(nom::Err::Error(ParseError {
+                cause_range: SourceRange::default(),
+                remaining_input: input,
+                error_detail: ParseErrorDetail {
+                    message: "Generic error parsing Mech code block",
+                    annotation_rngs: Vec::new(),
+                },
+            }));
           }
         };
       } else if tag.starts_with("equation") || tag.starts_with("eq") || tag.starts_with("math") || tag.starts_with("latex") || tag.starts_with("tex") {

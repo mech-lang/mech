@@ -103,8 +103,8 @@ impl Display for ValueKind {
       ValueKind::Id => write!(f, "id"),
       ValueKind::Index => write!(f, "ix"),
       ValueKind::Reference(x) => write!(f, "{}",x),
-      ValueKind::Enum(x, name) => write!(f, "`{}", name),
-      ValueKind::Atom(x, name) => write!(f, "`{}", name),
+      ValueKind::Enum(x, name) => write!(f, ":{}", name),
+      ValueKind::Atom(x, name) => write!(f, ":{}", name),
       ValueKind::Empty => write!(f, "_"),
       ValueKind::Any => write!(f, "*"),
       ValueKind::None => write!(f, "none"),
@@ -731,6 +731,10 @@ impl Hash for Value {
   }
 }
 impl Value {
+
+  pub fn from_kind(kind: &ValueKind) -> Self {
+    todo!();
+  }
 
   #[cfg(feature = "matrix")]
   pub unsafe fn get_copyable_matrix_unchecked<T>(&self) -> Box<dyn CopyMat<T>> 
@@ -1410,7 +1414,7 @@ impl Value {
       #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixC64(m) => m.to_html(),
       #[cfg(feature = "atom")]
-      Value::Atom(a) => format!("<span class=\"mech-atom\"><span class=\"mech-atom-grave\">`</span><span class=\"mech-atom-name\">{}</span></span>",a.borrow()),
+      Value::Atom(a) => format!("<span class=\"mech-atom\"><span class=\"mech-atom-colon\">:</span><span class=\"mech-atom-name\">{}</span></span>",a.borrow()),
       #[cfg(feature = "set")]
       Value::Set(s) => s.borrow().to_html(),
       #[cfg(feature = "map")]

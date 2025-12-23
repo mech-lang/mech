@@ -45,8 +45,8 @@ impl PrettyPrint for MechAtom {
   fn pretty_print(&self) -> String {
     let names_brrw = self.0.1.borrow();
     if let Some(name) = names_brrw.get(&self.0.0) {
-      return format!("`{}", name);
+      return format!(":{}", name);
     } 
-    format!("`{}", emojify(&(self.0.0 as u16)))
+    format!(":{}", emojify(&(self.0.0 as u16)))
   }
 }

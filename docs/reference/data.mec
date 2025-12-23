@@ -1,0 +1,241 @@
+Data - Types and Kinds
+===============================================================================
+
+%% Mech supports various primitive data types, each associated with one or more kinds. For example, the number `42` can be represented by an `i32` datatype, which is of kind `i32`, `signed`, `integer`, `real`, `number`, and `value` (the latter of which is a sort of superset of all kinds).
+Data types can be combined to form more complex structures, such as matrices, maps, sets, tuples, records, and tables. Each of these structures can also have associated kinds that are derived from the kinds of their constituent elements.
+
+1. Data Types
+-------------------------------------------------------------------------------
+
+Data in Mech is represented using one of the following primitive data types:
+
+| Data Type                          | Description                                      |
+|-----------------------------------:|--------------------------------------------------|
+| [`number`](/reference/number.html) | Represents numeric values.                       |
+| [`string`](/reference/string.html) | Represents text values.                          |
+| [`bool`](/reference/bool.html)     | Represents logical values                        |
+| [`atom`](/reference/atom.html)     | Represents symbolic constants.                   |
+| [`kind`](/reference/kind.html)     | Represents types or categories of values.        |
+| [`empty`](/reference/empty.html)   | Represents an empty value or placeholder.        |
+
+(1.1) Number
+
+Represents numeric values, including integers, floating-point numbers, and complex numbers. Numbers can be further classified into a tree of subtypes, which affect which operations are valid on them:
+
+- **Integers** - Whole numbers, which can be positive, negative, or zero
+  - **Signed** - Can represent both negative and positive values
+    - [`i8`](/reference/i8.html) - 8-bit signed integer
+    - [`i16`](/reference/i16.html) - 16-bit signed integer
+    - [`i32`](/reference/i32.html) - 32-bit signed integer
+    - [`i64`](/reference/i64.html) - 64-bit signed integer
+    - [`i128`](/reference/i128.html) - 128-bit signed integer
+  - **Unsigned** - Can only represent zero and positive values
+    - [`u8`](/reference/u8.html) - 8-bit unsigned integer
+    - [`u16`](/reference/u16.html) - 16-bit unsigned integer
+    - [`u32`](/reference/u32.html) - 32-bit unsigned integer
+    - [`u64`](/reference/u64.html) - 64-bit unsigned integer
+    - [`u128`](/reference/u128.html) - 128-bit unsigned integer
+- **Fractional** - Decimal numbers with fractional components
+  - [`f32`](/reference/f32.html) - 32-bit floating-point number
+  - [`f64`](/reference/f64.html) - 64-bit floating-point number
+- **Rational** - Numbers represented as fractions of integers
+  - [`r64`](/reference/r64.html) - 64-bit rational number
+- **Complex** - Numbers with real and imaginary components
+  - [`c64`](/reference/c64.html) - 64-bit complex number
+
+For more, see [`number`](/reference/number.html).
+
+(1.2) String
+
+A sequence of UTF-8 characters representing text.
+
+(1.2.1) Kind
+
+  <string>
+
+For more, see [`string`](/reference/string.html).
+
+(1.3) Boolean
+
+Represents logical truth values.
+
+(1.3.1) Kind
+
+  <bool>
+
+For more, see [`bool`](/reference/bool.html).
+
+(1.4) Atom
+
+A symbolic constant, often used for tags or enums.
+
+(1.5.1) Kind
+
+The kind of an atom is itself. For example, the atom {{:A}} has the kind:
+
+  <:A>
+
+For more, see [`atom`](/reference/atom.html).
+
+(1.5) Kind
+
+Represents a type or category of values, such as `i32`, `f64`, `string`, etc. Kinds can be used to classify values and determine their operations.
+
+(1.5.1) Kind
+
+The kind of a kind is itself, and `kind`. For example, the kind {{<i32>}} has the kind:
+
+```mech:disabled
+  <i32>
+  <kind>
+```
+
+for more, see [`kind`](/reference/kind.html).
+
+(1.5) Empty
+
+Represents an empty value, placeholder, or the absence of a value.
+
+(1.5.1) Kind
+
+  <_>
+
+(1.5.2) Examples
+
+```mech:disabled
+x := _        -- An empty value
+y<_> := _     -- An empty value of kind `_`
+```
+
+For more, see [`empty`](/reference/empty.html).
+
+2. Data Structures
+-------------------------------------------------------------------------------
+
+Data structures in Mech are used to organize and manipulate collections of data. The primary data structures include:
+
+| Data Structure                     | Description                                                       |
+|-----------------------------------:|-------------------------------------------------------------------|
+| [`map`](/reference/map.html)       | stores key-value pairs for fast lookups.                          |
+| [`matrix`](/reference/matrix.html) | 2D array of homogenous values arranged in rows and columns.       |
+| [`record`](/reference/record.html) | groups related fields, usually for representing structured data.  |
+| [`set`](/reference/set.html)       | unordered collection of unique values                             |
+| [`table`](/reference/table.html)   | collection of heterogeneous data organized into rows and columns. |
+| [`tuple`](/reference/tuple.html)   | fixed-size, ordered grouping of heterogeneous values.             |
+
+3. Kinds
+-------------------------------------------------------------------------------
+
+Every value in Mech has one or more associated kinds, which describe its type and properties.
+
+(3.1) Syntax
+
+Any valid identifier can be used as a kind as long as it is unique in the program. Mech provides a set of predefined kinds for common data types, but you can also define your own kinds as well, and construct compound kinds from other kinds.
+
+For example, the kind of a signed 32-bit integer is represented as: {{<i32>}}. The kind of a matrix is represented as {{<[T]>}}. These can be combined into the kind {{<[i32]>}}, which represents a matrix of signed 32-bit integers.
+
+(3.1.2) Kind Annotations
+
+Kind annotations are a tag that you can apply to values and expressions to specify their type explicitly. Syntatically they are specified with a form called a "kirby", which encases the kind in angle brackets:
+
+```mech:disabled
+  <u8>    -- An unsigned 8-bit integer
+  <[u8]>  -- A matrix of unsigned 8-bit integers
+  <(o,O)> -- A tuple of two elements of kind `o` and `O` respectively
+```
+
+Kind annotations can be used to annotate literals with their data type:
+
+```mech:disabled
+x := 42<u8> -- defines `x` as an unsigned 8-bit integer with the value 42
+```
+
+They can be used for type conversions as well:
+
+```mech:disabled
+x := [1 2 3]         -- 1x3 row vec of f64 numbers: `[f64]:1,3`
+y<[u8]> := [4 5 6]   -- 1x3 row vec of u8 numbers: `[u8]:1,3`
+z<[u8]> := x         -- Convert `[f64]:1,3` to `[u8]:1,3`
+```
+
+Kind annotations can also be assigned to variables:
+
+```mech:disabled
+x := <u8>  -- Assigns the kind `u8` as the value of `x`
+```
+
+The kind of {{x}} is its value, {{<[u8]>}}.
+
+(3.2) Simple Kinds
+
+Kinds start from one of the primitive data types:
+
+| Data Type         | Kind                                                   |
+|-------------------|--------------------------------------------------------|
+| Signed integers   | {{<i8>}}, {{<i16>}}, {{<i32>}}, {{<i64>}}, {{<i128>}}  |
+| Unsigned integers | {{<u8>}}, {{<u16>}}, {{<u32>}}, {{<u64>}}, {{<u128>}}  |
+| Floating-point    | {{<f32>}}, {{<f64>}}                                   |
+| Rational          | {{<r64>}}                                              |  
+| Complex           | {{<c64>}}                                              |
+| String            | {{<string>}}                                           |
+| Boolean           | {{<bool>}}                                             |
+| Atom              | {{<atom>}}                                             |
+| Kind              | {{<kind>}}                                             |
+| Empty             | {{<_>}}                                                |
+
+(3.3) Compound Kinds
+
+Kinds compose into more complex kinds based on the data structures they represent.
+
+| Data Structure | Kind                       | Example                   | Meaning                                   |
+|----------------|----------------------------|---------------------------| ------------------------------------------|
+| Matrix         | `[T]:N,M`                  | {{<[u8]:2,3>}}            | 2x3 matrix of `u8` values                 |
+| Set            | `{T}:N`                    | {{<{u8}:3>}}              | Set of 3 `u8` values                      |
+| Record         | `{T1,T2,..}`               | {{<{x<u8>,y<string>}>}}   | Record with fields `x` and `y`            |
+| Map            | `{K:V}`                    | {{<{string:i32}>}}        | Map from `string` to `i32`                |
+| Table          | `|arg1<T1>,arg2<T2>,..|:N` | {{<|x<u8>,y<string>|:3>}} | Table with columns `x` and `y` and 3 rows |
+| Tuple          | `(T1,T2,...)`              | {{<(u8,string,bool)>}}    | Tuple of `u8`, `string`, and `bool`       |
+
+(3.3) Custom Kinds
+
+You can define a custom kind with the following syntax:
+
+```mech:disabled
+<T> := <S> -- Defines custom kind `T`, an alias for `S`
+```
+
+For example, if you wanted to represent a 3D point as a vector of three `f32` values, you could define a custom kind like this:
+
+```mech:disabled
+<point3> := <[f32]:3>
+```
+
+Then you could use this kind to define a variable:
+
+```mech:disabled
+v1<point3> := [1 2 3]   -- Defines v1, a 3-element vector of f32 values
+v2<point3> := [4 5]     -- Error: kind mismatch, expected 3 elements but got 2
+```
+
+(3.4) Enumerations
+
+Enumerations, also known as enums, are a special kind that defines variants with optional associated data. Enums are useful for representing a fixed set of related values.
+
+You can define an enum kind like this:
+
+```mech:disabled
+<color> := red | green | blue
+```
+
+The kind of the enum is {{<color>}}, and the possible values are the variants {{:color/red}}, {{:color/green}}, and {{:color/blue}}.
+
+```mech:ex 3.4
+<color> := red | green | blue
+c<color> := :color/red
+```
+
+```mech:disabled
+d<color> := :color/yellow   -- Error: `yellow` is not a variant
+```
+
+

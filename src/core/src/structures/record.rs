@@ -126,6 +126,18 @@ impl MechRecord {
     MechRecord{cols: data.len(), kinds, data, field_names}
   }
 
+  pub fn from_kind(fields: &Vec<(String,ValueKind)>) -> MResult<MechRecord> {
+    let mut data = IndexMap::new();
+    let mut field_names = HashMap::new();
+    for (name, knd) in fields {
+      let col_id = hash_str(name);
+      field_names.insert(col_id, name.to_string());
+      data.insert(col_id, Value::from_kind(knd));
+    }
+    let kinds = data.iter().map(|(_,v)| v.kind()).collect();
+    Ok(MechRecord{cols: data.len(), kinds, data, field_names})
+  }
+
   pub fn insert_field(&mut self, key: u64, value: Value) {
     self.cols += 1;
     self.kinds.push(value.kind());
@@ -150,19 +162,19 @@ impl MechRecord {
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for MechRecord {
   fn pretty_print(&self) -> String {
-    let mut builder = Builder::default();
-    let mut key_strings = vec![];
-    let mut element_strings = vec![];
-    for (k,v) in &self.data {
+    let mut lines = Vec::new();
+
+    for (k, v) in &self.data {
       let field_name = self.field_names.get(k).unwrap();
-      key_strings.push(format!("{}<{}>",field_name, v.kind()));
-      element_strings.push(v.pretty_print());
+      lines.push(format!(
+        "  {}<{}>: {}",
+        field_name,
+        v.kind(),
+        v.pretty_print()
+      ));
     }
-    builder.push_record(key_strings);
-    builder.push_record(element_strings);
-    let mut table = builder.build();
-    table.with(Style::modern_rounded());
-    format!("{table}")
+
+    format!("{{\n{}\n}}", lines.join("\n"))
   }
 }
 

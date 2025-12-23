@@ -119,10 +119,6 @@ impl Formatter {
 
   pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
     self.toc = true;
-    let title = match &toc.title {
-      Some(title) => self.title(&title),
-      None => "".to_string(),
-    };
     let sections = self.sections(&toc.sections);
     self.toc = false;
     let section_id = hash_str(&format!("section-{}",self.h2_num + 1));
@@ -135,7 +131,7 @@ impl Formatter {
     } else {
       "".to_string()
     };
-    format!("<div class=\"mech-toc\">{}{}{}</div>",title,sections,formatted_works_cited)
+    format!("<div class=\"mech-toc\">{}{}</div>",sections,formatted_works_cited)
   }
 
   pub fn sections(&mut self, sections: &Vec<Section>) -> String {
@@ -423,6 +419,7 @@ impl Formatter {
 
   pub fn fenced_mech_code(&mut self, block: &FencedMechCode) -> String {
     self.interpreter_id = block.config.namespace;
+    let block_id = hash_str(&format!("{:?}",block));
     let namespace_str = &block.config.namespace_str;
     let mut src = String::new();
     for (code,cmmnt) in &block.code {
@@ -478,13 +475,13 @@ impl Formatter {
         let namespace_str = if namespace_str.is_empty() {
           "".to_string()
         } else {
-          format!("<div class=\"mech-code-block-namespace\">{}</div>", namespace_str)
+          format!("<div class=\"mech-code-block-namespace\"><a href=\"#{}\">{}</a></div>", block_id, namespace_str)
         };
-        format!("<div class=\"mech-fenced-mech-block\"{}>
+        format!("<div id=\"{}\" class=\"mech-fenced-mech-block\"{}>
           {}
           <div class=\"mech-code-block\">{}</div>
           <div class=\"mech-block-output\" id=\"{}:{}\"></div>
-        </div>", style_attr, namespace_str, src, output_id, intrp_id)
+        </div>", block_id, style_attr, namespace_str, src, output_id, intrp_id)
       }
     } else {
       format!("```mech{}\n{}\n```", src, format!(":{}", disabled_tag))
@@ -1303,14 +1300,14 @@ impl Formatter {
     }
     if self.html {
       format!("<span class=\"mech-tuple-struct\">
-        `
+        <span class=\"mech-tuple-struct-sigil\">:</span>
         <span class=\"mech-tuple-struct-name\">{}</span>
         <span class=\"mech-left-paren\">(</span>
         <span class=\"mech-tuple-struct-patterns\">{}</span>
         <span class=\"mech-right-paren\">)</span>
       </span>",name,patterns)
     } else {
-      format!("`{}({})", name, patterns)
+      format!(":{}({})", name, patterns)
     }
   }
 
@@ -1448,7 +1445,7 @@ impl Formatter {
     }
     if self.html {
       format!("<div class=\"mech-state-definition\">
-      <span class=\"mech-state-name\">`{}</span>
+      <span class=\"mech-state-name\"><span class=\"mech-state-name-sigil\">:</span>{}</span>
       <span class=\"mech-left-paren\">(</span>
       <span class=\"mech-state-variables\">{}</span>
       <span class=\"mech-right-paren\">)</span>
@@ -1496,13 +1493,21 @@ impl Formatter {
     let mut variants = "".to_string();
     for (i, variant) in node.variants.iter().enumerate() {
       if i == 0 {
-        variants = format!("{}", self.enum_variant(variant));
+        if self.html {
+          variants = format!("<span class=\"mech-enum-variant\">{}</span>", self.enum_variant(variant));
+        } else {
+          variants = format!("{}", self.enum_variant(variant));
+        }
       } else {
-        variants = format!("{} | {}", variants, self.enum_variant(variant));
+        if self.html {
+          variants = format!("{}<span class=\"mech-enum-variant-sep\">|</span><span class=\"mech-enum-variant\">{}</span>", variants, self.enum_variant(variant));
+        } else {
+          variants = format!("{} | {}", variants, self.enum_variant(variant));
+        }
       }
     }
     if self.html {
-      format!("<span class=\"mech-enum-define\"><span class=\"mech-enum-name\">{}</span><span class=\"mech-enum-define-op\">:=</span><span class=\"mech-enum-variants\">{}</span></span>",name,variants)
+      format!("<span class=\"mech-enum-define\"><span class=\"mech-kind-annotation\">&lt;<span class=\"mech-enum-name\">{}</span>&gt;</span><span class=\"mech-enum-define-op\">:=</span><span class=\"mech-enum-variants\">{}</span></span>",name,variants)
     } else {
       format!("<{}> := {}", name, variants)
     }
@@ -1534,23 +1539,24 @@ impl Formatter {
     }
   }
 
-
-  // Tuple Destructure node looks like this:
-  // #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
-//pub struct TupleDestructure {
-//  pub vars: Vec<Identifier>,
-//  pub expression: Expression,
-//}
-  // It's defined like (a,b,c) := foo
-  // where foo is an expression
   pub fn tuple_destructure(&mut self, node: &TupleDestructure) -> String {
     let mut vars = "".to_string();
     for (i, var) in node.vars.iter().enumerate() {
       let v = var.to_string();
       if i == 0 {
-        vars = format!("{}", v);
+        if self.html {
+          let id = format!("{}:{}",hash_str(&v),self.interpreter_id);
+          vars = format!("<span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span>",id,v);
+        } else {
+          vars = format!("{}", v);
+        }
       } else {
-        vars = format!("{}, {}", vars, v);
+        if self.html {
+          let id = format!("{}:{}",hash_str(&v),self.interpreter_id);
+          vars = format!("{}, <span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span>", vars, id, v);
+        } else {
+          vars = format!("{}, {}", vars, v);
+        }
       }
     }
     let expression = self.expression(&node.expression);
@@ -2052,11 +2058,16 @@ impl Formatter {
 
   pub fn binding(&mut self, node: &Binding) -> String {
     let name = node.name.to_string();
+    let kind = if let Some(kind) = &node.kind {
+      self.kind_annotation(&kind.kind)
+    } else {
+      "".to_string()
+    };
     let value = self.expression(&node.value);
     if self.html {
-      format!("<span class=\"mech-binding\"><span class=\"mech-binding-name\">{}</span><span class=\"mech-binding-colon-op\">:</span><span class=\"mech-binding-value\">{}</span></span>",name,value)
+      format!("<span class=\"mech-binding\"><span class=\"mech-binding-name\">{}</span><span class=\"mech-binding-kind\">{}</span><span class=\"mech-binding-colon-op\">:</span><span class=\"mech-binding-value\">{}</span></span>",name,kind,value)
     } else {
-      format!("{}: {}", name, value)
+      format!("{}{}: {}", name, kind, value)
     }
   }
 
@@ -2184,7 +2195,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       Kind::Any => "*".to_string(),
       Kind::Scalar(ident) => ident.to_string(),
       Kind::Empty => "_".to_string(),
-      Kind::Atom(ident) => format!("`{}",ident.to_string()),
+      Kind::Atom(ident) => format!(":{}",ident.to_string()),
       Kind::Tuple(kinds) => {
         let mut src = "".to_string();
         for (i, kind) in kinds.iter().enumerate() {
@@ -2448,9 +2459,9 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn atom(&mut self, node: &Atom) -> String {
     if self.html {
-      format!("<span class=\"mech-atom\"><span class=\"mech-atom-grave\">`</span><span class=\"mech-atom-name\">{}</span></span>",node.name.to_string())
+      format!("<span class=\"mech-atom\"><span class=\"mech-atom-colon\">:</span><span class=\"mech-atom-name\">{}</span></span>",node.name.to_string())
     } else {
-      format!("`{}", node.name.to_string())
+      format!(":{}", node.name.to_string())
     }
   }
 

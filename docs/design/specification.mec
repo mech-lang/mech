@@ -24,7 +24,7 @@ First, the classic program which prints the string "Hello, World!" to the consol
 "Hello World!"
 ```
 
-In Mech, the result of the last expression in a program is automatically returned and printed to the console, without needing an explicit print statement. This is an example where Mech reduces incidental complexity.
+In Mech, the result of the final expression in a program is automatically returned and printed to the console, without needing an explicit print statement. This is an example where Mech reduces incidental complexity.
 
 (1.1.2) FizzBuzz
 
@@ -81,6 +81,20 @@ x := A \ b       -- Solves the system Ax = b for x
 
 The `\\` operator runs a Gaussian elimination algorithm to solve the system of equations represented by the matrix `A` and vector `b`. The result is stored in vector `x`, which contains the solution to the equations.
 
+(1.1.5) Friends-of-Friends
+
+Mech has a `set` datastructure with support for set comprehensions and relational algebra. Here is an example that finds the friends-of-friends for a given user in a social network:
+
+```mech:friends-of-friends
+pairs := {(1, 2), (1, 3), (2, 8), (3, 5), (3, 9)}           
+user := 1                                                   
+{fof | (u, f) <- pairs, (f, fof) <- pairs, u == user}
+```
+
+The solution is `{8, 5, 9}` because user `1` is friends with `2`, who is friends with `8`; and user `1` is also friends with `3`, who is friends with `5` and `9`.
+
+Set comprehensions operate over sets, and support pattern matching and data joining. In this case, because we specifified `f` in two different generators, we defined a natural join over the friend-pairs set, drawing relationships between elements.
+
 2. Source Code Representation
 -------------------------------------------------------------------------------
 
@@ -111,7 +125,7 @@ Semicolons and commas are treated as whitespace in most cases. Except in these c
 - Semicolons can be used to separate statements so they can be written inline.
 - Semicolons can be used in a matrix to separate rows, so they can be written inline.
 
-For more information, see the [Syntax Design Document](#).
+For more information, see the [Syntax Design Document](design/syntax-design.html).
 
 3. Lexical Elements
 -------------------------------------------------------------------------------
@@ -375,7 +389,7 @@ kind := kind-fxn
       | kind-map 
       | kind-brace ;
 kind-empty := +"_" ;
-kind-atom := "`", identifier ;
+kind-atom := ":", identifier ;
 kind-map := "{"
       , kind
       , ":"
@@ -412,14 +426,16 @@ The kind of a kind is itself. For example, the kind `<[u8]:2,3>` has the kind {<
 
 (4.1.2) Examples
 
+```mech:disabled
 <_>             -- Empty         
-<`A>            -- Atom         
+<:A>            -- Atom         
 <{A:B}>         -- Map          
 <{A}>           -- Set              
 <[A]>           -- Matrix              
 <(A,B,C)>       -- Tuple
 <|x<A>, y<B>|>  -- Table
 <{x<A>, y<B>}>  -- Record      
+```
 
 (4.2) Numbers
 
@@ -578,23 +594,27 @@ A boolean literal represents a logical truth value, and can be expressed in eith
 (4.5) Atoms
 
 ```ebnf
-atom := "`", identifier ;
+atom := ":", identifier ;
 ```
 
-An atom is a symbolic constant used to represent a fixed, named value. Atoms are prefixed with a backtick and followed by an identifier. They are used to represent tags, enums, or other symbolic values in the code.
+An atom is a symbolic constant used to represent a fixed, named value. Atoms are prefixed with a colon and followed by an identifier. They are used to represent tags, enums, or other symbolic values in the code.
 
 (4.5.1) Kind
 
-The kind of an atom is itself. For example, the atom {`A} has the kind {<`A>}.
+The kind of an atom is itself. For example, the atom {:A} has the kind {<:A>}.
 
-  <`A> -- Represents an atom with the name `A`.
+```mech:disabled
+  <:A> -- Represents an atom with the name `:A`.
+```
 
 (4.5.2) Examples
 
-  `A
-  `MyAtom
-  `🐦
-  `Δx^2
+```mech:disabled
+:A
+:MyAtom
+:🐦
+:Δx^2
+```
 
 (4.6) Empty
 
@@ -830,7 +850,6 @@ The kind of a map consists of:
 
 (5.3.2) Examples
 
-{_:_}                       -- Empty map
 {"a": 1}                    -- Map with a single key-value pair
 {1: 0xA, 2: 0xB, 3: 0xC}    -- Map with multiple key-value pairs
 {"a": {"b": 10}}            -- Nested map
@@ -1006,10 +1025,12 @@ Here, `x` holds both floats and strings, and y holds both integers and booleans.
 
 When used as a value in a table, `_` indicates that a cell is missing and will be filled in later.
 
+```
   | x<u8>  y<string> z<[u8]:1,3> |
   |  _      "a"        [1 2 3]   |
   |  4      "b"           _      |
   |  7       _         [7 8; ]   |
+```
 
 **Fancy Representation**
 
@@ -1075,7 +1096,7 @@ This defines a record with three fields:
 
 **Example 2: Explicitly Typed Record**
 
-  { x<u8>: 1, y<string>: "a", z<[u8]:1,3>: [1 2 3] }
+  { x<u8>: 1, y<string>: "a", z<[f64]:1,3>: [1 2 3] }
 
 Here, each field has an explicit kind:
 
@@ -1364,8 +1385,11 @@ variable-assign := slice-ref
       , expression ;
 ```
 **Examples**
-    numbers := [1, 2, 3, 4, 5]
-    numbers[2] = 10             -- Assign value 10 to index 2 of the array
+
+```mech:ex 8.2
+~numbers := [1, 2, 3, 4, 5]
+numbers[2] = 10             -- Assign value 10 to index 2 of the array
+```
 
 (8.3) Op-Assign
 
@@ -1386,12 +1410,16 @@ op-assign := slice-ref
       , expression ;
 ```
 (8.3.1) Examples
+
+
+```mech:disabled
     counter := 0
     counter += 5                 -- Add 5 to counter (addition assignment)
     counter -= 3                 -- Subtract 3 from counter (subtraction assignment)
     counter *= 2                 -- Multiply counter by 2 (multiplication assignment)
     counter /= 4                 -- Divide counter by 4 (division assignment)
     counter ^= 2                 -- Exponentiate counter by 2 (exponentiation assignment)
+```
 
 (8.4) Enum Define
 
@@ -1850,15 +1878,15 @@ Multiple paragraphs can be included in the callout block as long as there are no
 ```
 > This is a quote block.
 
-(i)> This is an info block.
-
-(?)> This is a question block.
+(x)> This is an error block.
 
 (!)> This is a warning block.
 
-(x)> This is an error block.
-
 (+)> This is a success block.
+
+(?)> This is a question block.
+
+(i)> This is an info block.
 
 (*)> This is an idea block.
 
@@ -1870,15 +1898,15 @@ When rendered, they look like this:
 
 > This is a quote block.
 
-(i)> This is an info block.
-
-(?)> This is a question block.
+(x)> This is an error block.
 
 (!)> This is a warning block.
 
-(x)> This is an error block.
-
 (+)> This is a success block.
+
+(?)> This is a question block.
+
+(i)> This is an info block.
 
 (*)> This is an idea block.
 

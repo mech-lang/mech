@@ -127,9 +127,14 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     SectionElement::QuoteBlock(x) => x.hash(&mut hasher),
     SectionElement::ThematicBreak => {return Ok(Value::Empty);}
     SectionElement::List(x) => x.hash(&mut hasher),
+    SectionElement::SuccessBlock(x) => x.hash(&mut hasher),
+    SectionElement::ErrorBlock(x) => x.hash(&mut hasher),
+    SectionElement::WarningBlock(x) => x.hash(&mut hasher),
+    SectionElement::InfoBlock(x) => x.hash(&mut hasher),
+    SectionElement::IdeaBlock(x) => x.hash(&mut hasher),
     x => {return Err(MechError2::new(
         FeatureNotEnabledError,
-        None
+        Some(format!("Feature not enabled for section element: {:?}", x)),
       ).with_compiler_loc().with_tokens(x.tokens())
     );}
   };

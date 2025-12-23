@@ -257,7 +257,13 @@ async fn main() -> Result<(), MechError2> {
       #[cfg(feature = "serve")]
       server.init().await?;
       #[cfg(feature = "serve")]
-      server.load_sources(&mech_paths)?;
+      match server.load_sources(&mech_paths) {
+        Ok(_) => println!("{} Sources loaded.", badge),
+        Err(err) => {
+          println!("{} {:#?}", "[Error]".truecolor(246,98,78), err);
+          std::process::exit(1);
+        }
+      }
       #[cfg(feature = "serve")]
       server.serve().await?;
     }    
@@ -599,7 +605,7 @@ async fn main() -> Result<(), MechError2> {
           println!("{}", output);
         }
         Err(err) => {
-          println!("!!{:?}", err);
+          println!("(x)> {:#?}", err);
         }
       }
     }
