@@ -752,6 +752,7 @@ pub struct UnableToConvertRecordError {
   pub source_record_kind: ValueKind,
   pub target_record_kind: ValueKind,
 }
+#[cfg(feature = "record")]
 impl MechErrorKind2 for UnableToConvertRecordError {
   fn name(&self) -> &str {
     "UnableToConvertRecord"
