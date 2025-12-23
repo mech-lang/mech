@@ -27,7 +27,7 @@ called Mechdown, exemplified by this document.
 
 Comments are therefore to be used primarily inside of code blocks.
 
-Comments support formatting, such as bold, underline, links, etc. For example:
+Comments support paragraph formatting, such as bold, underline, links, etc. For example:
 
 ```
  -- **bold** and __underline__ and [links](https://mech-lang.org) are supported in comments.
@@ -36,7 +36,7 @@ Comments support formatting, such as bold, underline, links, etc. For example:
 2. Identifiers
 -------------------------------------------------------------------------------
 
-Identifiers start with letters or most UTF-8 encoded emoji characters, and can contain alphanumeric, most emojis, `/`, `*`, `+`, `-`, and `^` characters.
+Identifiers start with letters or most UTF-8 encoded characters, and can contain alphanumeric, most emojis, `/`, `*`, `+`, `-`, and `^` characters.
 
 - {{Hello-Word}}
 - {{io/stdout}}
@@ -44,13 +44,8 @@ Identifiers start with letters or most UTF-8 encoded emoji characters, and can c
 - {{🤖}}
 - {{A*}}
 
-Note: The preferred identifier case in Mech is kebab-case (words deliniated by dashes). Slashes also allow identifiers to be scoped to a particular namespace. For example, functions in the math machine are prefixed with `math/`:
-
-- Cosine: `math/sin`
-- Sine: `math/cos` 
-- Log: `math/log` 
-
-Mech doesn't support underscores in identifiers.
+(i)> The preferred identifier case in Mech is kebab-case (words deliniated by dashes). Slashes also allow identifiers to be scoped to a particular namespace. 
+To maintain a consistent style, Mech does not support underscores in identifiers.
 
 
 3. Kinds 
