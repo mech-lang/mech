@@ -33,6 +33,10 @@ pub fn kind_value(knd: &NodeKind, p: &Interpreter) -> MResult<Value> {
 
 pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
   match knd {
+    NodeKind::Kind(knd) => {
+      let knda = kind_annotation(knd, p)?;
+      Ok(Kind::Kind(Box::new(knda)))
+    }
     NodeKind::Any => Ok(Kind::Any),
     NodeKind::Atom(atm_identifier) => {
       let id = atm_identifier.hash();
