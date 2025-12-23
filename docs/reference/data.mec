@@ -86,7 +86,7 @@ Represents a type or category of values, such as `i32`, `f64`, `string`, etc. Ki
 The kind of a kind is itself, and `kind`. For example, the kind {{<i32>}} has the kind:
 
 ```mech:disabled
-  <i32>
+  <<i32>>
   <kind>
 ```
 
@@ -164,7 +164,7 @@ Kind annotations can also be assigned to variables:
 x := <u8>  -- Assigns the kind `u8` as the value of `x`
 ```
 
-The kind of {{x}} is its value, {{<[u8]>}}.
+The kind of {{x}} is {{<<u8>>}}.
 
 (3.2) Simple Kinds
 
@@ -179,8 +179,8 @@ Kinds start from one of the primitive data types:
 | Complex           | {{<c64>}}                                              |
 | String            | {{<string>}}                                           |
 | Boolean           | {{<bool>}}                                             |
-| Atom              | {{<atom>}}                                             |
-| Kind              | {{<kind>}}                                             |
+| Atom              | {{<:atom>}}                                             |
+| Kind              | {{<<kind>>}}                                             |
 | Empty             | {{<_>}}                                                |
 
 (3.3) Compound Kinds
