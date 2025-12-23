@@ -12,6 +12,7 @@ pub struct Interpreter {
   pub id: u64,
   ip: usize,  // instruction pointer
   pub state: Ref<ProgramState>,
+  #[cfg(feature = "functions")]
   pub stack: Vec<Frame>,
   registers: Vec<Value>,
   constants: Vec<Value>,
@@ -29,6 +30,7 @@ impl Clone for Interpreter {
       id: self.id,
       ip: self.ip,
       state: Ref::new(self.state.borrow().clone()),
+      #[cfg(feature = "functions")]
       stack: self.stack.clone(),
       registers: self.registers.clone(),
       constants: self.constants.clone(),
@@ -52,6 +54,7 @@ impl Interpreter {
       id,
       ip: 0,
       state: Ref::new(state),
+      #[cfg(feature = "functions")]
       stack: Vec::new(),
       registers: Vec::new(),
       constants: Vec::new(),
@@ -69,6 +72,7 @@ impl Interpreter {
     self.state.borrow_mut().environment = Some(env);
   }
 
+  #[cfg(feature = "functions")]
   pub fn clear_plan(&mut self) {
     self.state.borrow_mut().plan.borrow_mut().clear();
   }
