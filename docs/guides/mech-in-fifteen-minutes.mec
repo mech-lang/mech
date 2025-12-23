@@ -30,8 +30,11 @@ Comments are therefore to be used primarily inside of code blocks.
 Comments support paragraph formatting, such as bold, underline, links, etc. For example:
 
 ```
- -- **bold** and __underline__ and [links](https://mech-lang.org) are supported in comments.
+ -- Comments support **bold**,  __underline__, [links](/foo/bar), etc.
 ```
+
+ -- Comments support **bold**,  __underline__, [links](/foo/bar), etc.
+
 
 2. Identifiers
 -------------------------------------------------------------------------------
