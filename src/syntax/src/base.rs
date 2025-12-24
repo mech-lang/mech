@@ -101,6 +101,9 @@ leaf!{english_true_literal, "true", TokenKind::True}
 leaf!{english_false_literal, "false", TokenKind::False}
 
 leaf!{space, " ", TokenKind::Space}
+leaf!{nbsp, "\u{00A0}", TokenKind::Space}
+leaf!{thin_space, "\u{2009}", TokenKind::Space}
+
 leaf!{new_line_char, "\n", TokenKind::Newline}
 leaf!{carriage_return, "\r", TokenKind::CarriageReturn}
 leaf!{carriage_return_new_line, "\r\n", TokenKind::CarriageReturn}
@@ -226,7 +229,7 @@ pub fn any_token(mut input: ParseString) -> ParseResult<Token> {
 
 // forbidden-emoji := box-drawing | other-forbidden-shapes ;
 pub fn forbidden_emoji(input: ParseString) -> ParseResult<Token> {
-  box_drawing_emoji(input)
+  alt((box_drawing_emoji, nbsp, thin_space))(input)
 }
 
 // emoji := (!forbidden-emoji, emoji-grapheme) ;
@@ -360,7 +363,7 @@ pub fn ws0e(input: ParseString) -> ParseResult<()> {
 
 // space-tab := space | tab ;
 pub fn space_tab(input: ParseString) -> ParseResult<Token> {
-  let (input, space) = alt((space,tab))(input)?;
+  let (input, space) = alt((space,tab,nbsp,thin_space))(input)?;
   Ok((input, space))
 }
 
