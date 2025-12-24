@@ -20,15 +20,13 @@ Numbers in Mech can be classified into the following categories:
     - [`u32`](/reference/u32.html) - 32-bit unsigned integer
     - [`u64`](/reference/u64.html) - 64-bit unsigned integer
     - [`u128`](/reference/u128.html) - 128-bit unsigned integer
-- **Fractional** - Decimal numbers with fractional components
+- **Float** - Decimal numbers with fractional components
   - [`f32`](/reference/f32.html) - 32-bit floating-point number
   - [`f64`](/reference/f64.html) - 64-bit floating-point number
 - **Rational** - Numbers represented as fractions of integers
   - [`r64`](/reference/r64.html) - 64-bit rational number
 - **Complex** - Numbers with real and imaginary components
   - [`c64`](/reference/c64.html) - 64-bit complex number
-
-(i)> By default, numeric literals without a decimal point are treated as type `f64`. To specify a different numeric type, you can use a kind annotation. For example, to create an unsigned 32-bit integer, you can write {{42<u32>}}.
 
 1. Integers
 -------------------------------------------------------------------------------
@@ -54,24 +52,31 @@ Both signed and unsigned integers from `8` to `128` bits are supported in Mech. 
 | [`u32`](/reference/u32.html)   | `32-bit` unsigned integer | `0`             | `4e9 - 1`        |
 | [`u64`](/reference/u64.html)   | `64-bit` unsigned integer | `0`             | `18e18 - 1`      |
 | [`u128`](/reference/u128.html) | `128-bit` unsigned integer| `0`             | `3.4e38 - 1`     |
-2. Fractional Numbers
+
+For more, see [`integer`](/reference/integer.html).
+
+2. Float Numbers
 -------------------------------------------------------------------------------
 
-Fractional numbers in Mech are represented using floating-point types. Mech supports both `f32` and `f64` types, which correspond to 32-bit and 64-bit IEEE 754 floating-point numbers, respectively.
+Float numbers in Mech are represented using standard floating-point types. Mech supports both `f32` and `f64` types, which correspond to 32-bit and 64-bit IEEE 754 floating-point numbers, respectively.
 
 | Type                           | Description                  | Precision         | Range                    |
 |-------------------------------:|------------------------------|-------------------|--------------------------|
 | [`f32`](/reference/f32.html)   | 32-bit floating-point number | 7 decimal digits  | `±1.5e-45` to `±3.4e38`  |
 | [`f64`](/reference/f64.html)   | 64-bit floating-point number | 15 decimal digits | `±5e-324` to `±1.7e308`  |
 
+For more, see [`float`](/reference/float.html).
+
 3. Rational Numbers
 -------------------------------------------------------------------------------
 
 Rational numbers in Mech are represented using the `r64` type, which allows for exact representation of fractions as ratios of two integers.
 
-| Type                           | Description            | Examples               |
-|-------------------------------:|------------------------|------------------------|
+| Type                           | Description            | Examples                     |
+|-------------------------------:|------------------------|------------------------------|
 | [`r64`](/reference/r64.html)   | 64-bit rational number | {{3/4}}, {{-5/2}}, {{7/1}}   |
+
+For more, see [`rational`](/reference/rational.html).
 
 4. Complex Numbers
 -------------------------------------------------------------------------------
@@ -80,4 +85,6 @@ Complex numbers in Mech are represented using the `c64` type, which consists of 
 
 | Type                           | Description            | Examples                          |
 |-------------------------------:|------------------------|-----------------------------------|
-| [`c64`](/reference/c64.html)   | 64-bit complex number  | {{3+4i}}, {{1-2i}}, {{0+1j}} |
+| [`c64`](/reference/c64.html)   | 64-bit complex number  | {{3+4i}}, {{1-2i}}, {{0+1j}}      |
+
+For more, see [`complex`](/reference/complex.html).
