@@ -109,7 +109,7 @@ impl Display for ValueKind {
       ValueKind::Any => write!(f, "*"),
       ValueKind::None => write!(f, "none"),
       ValueKind::Option(x) => write!(f, "{}?", x),
-      ValueKind::Kind(x) => todo!(), // write!(f, "<{}>", x),
+      ValueKind::Kind(x) => write!(f, "<{}>", x),
     }
   }
 }
@@ -2234,7 +2234,7 @@ impl PrettyPrint for Value {
       Value::Empty => builder.push_record(vec!["_"]),
       Value::IndexAll => builder.push_record(vec![":"]),
       Value::Id(x) => builder.push_record(vec![format!("{}",humanize(x))]),
-      //Value::Kind(x) => builder.push_record(vec![format!("{}",x)]),
+      Value::Kind(x) => builder.push_record(vec![format!("<{}>",x)]),
       x => {
         todo!("{x:#?}");
       },
