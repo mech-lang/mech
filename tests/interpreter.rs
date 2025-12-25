@@ -32,6 +32,8 @@ macro_rules! test_interpreter {
 
 test_interpreter!(interpret_literal_integer, "123", Value::F64(Ref::new(123.0)));
 test_interpreter!(interpret_literal_sci, "1.23e2", Value::F64(Ref::new(123.0)));
+#[cfg(feature = "u8")]
+test_interpreter!(interpret_formula_literal_suffix, "100u8", Value::U8(Ref::new(100)));
 #[cfg(feature = "i64")]
 test_interpreter!(interpret_literal_bin, "0b10101", Value::I64(Ref::new(0b10101)));
 #[cfg(feature = "i64")]
