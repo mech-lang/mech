@@ -1878,6 +1878,7 @@ pub enum RealNumber {
   Float((Whole,Part)),
   Hexadecimal(Token),
   Integer(Token),
+  TypedInteger((Token,KindAnnotation)),
   Negated(Box<RealNumber>),
   Octal(Token),
   Rational((Numerator,Denominator)),
@@ -1888,7 +1889,26 @@ impl RealNumber {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
       RealNumber::Integer(tkn) => vec![tkn.clone()],
-      _ => todo!(),
+      RealNumber::TypedInteger((tkn, _)) => vec![tkn.clone()],
+      RealNumber::Float((whole, part)) => vec![whole.clone(), part.clone()],
+      RealNumber::Binary(tkn) => vec![tkn.clone()],
+      RealNumber::Hexadecimal(tkn) => vec![tkn.clone()],
+      RealNumber::Octal(tkn) => vec![tkn.clone()],
+      RealNumber::Decimal(tkn) => vec![tkn.clone()],
+      RealNumber::Rational((num, den)) => vec![num.clone(), den.clone()],
+      RealNumber::Scientific(((whole,part), exponent)) => {
+        let mut tokens = vec![whole.clone(), part.clone()];
+        let (sign, whole_exp, part_exp) = exponent;
+        tokens.push(Token::new(TokenKind::Plus, SourceRange::default(), if *sign { vec!['+'] } else { vec!['-'] }));
+        tokens.push(whole_exp.clone());
+        tokens.push(part_exp.clone());
+        tokens
+      }
+      RealNumber::Negated(x) => {
+        let mut tokens = vec![Token::new(TokenKind::Dash, SourceRange::default(), vec!['-'])];
+        tokens.append(&mut x.tokens());
+        tokens
+      }
     }
   }
   pub fn to_string(&self) -> String {
@@ -1907,6 +1927,7 @@ impl RealNumber {
         let part_str = part.to_string();
         format!("{}{}.{}/10^{}", whole.to_string(), part.to_string(), sign_str, whole_str)
       }
+      RealNumber::TypedInteger((tkn, kind)) => format!("{}{}", tkn.to_string(), kind.kind.tokens().iter().map(|t| t.to_string()).collect::<String>()),
       RealNumber::Negated(x) => format!("-{}", x.to_string()),
     }
   }
