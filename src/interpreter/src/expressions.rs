@@ -312,7 +312,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
     },
     Subscript::DotInt(x) => {
       let mut fxn_input = vec![val.clone()];
-      let result = real(&x.clone());
+      let result = real(&x.clone(), p)?;
       fxn_input.push(result.as_index()?);
       match val.deref_kind() {
         #[cfg(feature = "matrix")]

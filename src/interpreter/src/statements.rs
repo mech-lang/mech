@@ -471,7 +471,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
     },
     #[cfg(feature = "tuple")]
     Subscript::DotInt(x) => {
-      let ix = real(x).as_index()?;
+      let ix = real(x, p)?.as_index()?;
       let mut fxn_input: Vec<Value> = vec![sink.clone(), source.clone(), ix.clone()];
       let new_fxn = TupleAssignScalar{}.compile(&fxn_input)?;
       new_fxn.solve();

@@ -10,7 +10,7 @@ pub fn literal(ltrl: &Literal, p: &Interpreter) -> MResult<Value> {
     Literal::Empty(_) => Ok(empty()),
     #[cfg(feature = "bool")]
     Literal::Boolean(bln) => Ok(boolean(bln)),
-    Literal::Number(num) => Ok(number(num)),
+    Literal::Number(num) => number(num, p),
     #[cfg(feature = "string")]
     Literal::String(strng) => Ok(string(strng)),
     #[cfg(feature = "atom")]
@@ -152,37 +152,38 @@ pub fn atom(atm: &Atom, p: &Interpreter) -> Value {
   Value::Atom(Ref::new(MechAtom((id, dictionary))))
 }
 
-pub fn number(num: &Number) -> Value {
+pub fn number(num: &Number, p: &Interpreter) -> MResult<Value> {
   match num {
-    Number::Real(num) => real(num),
+    Number::Real(num) => real(num, p),
     #[cfg(feature = "complex")]
-    Number::Complex(num) => complex(num),
+    Number::Complex(num) => complex(num, p),
     _ => panic!("Number type not supported."),
   }
 }
 
 #[cfg(feature = "complex")]
-fn complex(num: &C64Node) -> Value {
-  let im: f64 = match real(&num.imaginary.number).as_f64() {
+fn complex(num: &C64Node, p: &Interpreter) -> MResult<Value> {
+  let im: f64 = match real(&num.imaginary.number, p)?.as_f64() {
     Ok(val) => *val.borrow(),
     Err(_) => 0.0,
   };
-  match &num.real {
+  let result = match &num.real {
     Some(real_val) => {
-      let re: f64 = match real(&real_val).as_f64() {
+      let re: f64 = match real(&real_val, p)?.as_f64() {
         Ok(val) => *val.borrow(),
         Err(_) => 0.0,
       };      
       Value::C64(Ref::new(C64::new(re, im)))
     },
     None => Value::C64(Ref::new(C64::new(0.0, im))),
-  }
+  };
+  Ok(result)
 }
 
-pub fn real(rl: &RealNumber) -> Value {
-  match rl {
+pub fn real(rl: &RealNumber, p: &Interpreter) -> MResult<Value> {
+  let result = match rl {
     #[cfg(feature = "math_neg")]
-    RealNumber::Negated(num) => negated(num),
+    RealNumber::Negated(num) => negated(num, p)?,
     #[cfg(feature = "f64")]
     RealNumber::Integer(num) => integer(num),
     #[cfg(feature = "floats")]
@@ -199,14 +200,19 @@ pub fn real(rl: &RealNumber) -> Value {
     RealNumber::Scientific(num) => scientific(num),
     #[cfg(feature = "rational")]
     RealNumber::Rational(num) => rational(num),
+    RealNumber::TypedInteger((num_tkn, kind)) => {
+      let num: Literal = Literal::Number(Number::Real(RealNumber::Integer(num_tkn.clone())));
+      typed_literal(&num, kind, p)?
+    },
     _ => panic!("Number type not supported."),
-  }
+  };
+  Ok(result)
 }
 
 #[cfg(feature = "math_neg")]
-pub fn negated(num: &RealNumber) -> Value {
-  let num_val = real(&num);
-  match num_val {
+pub fn negated(num: &RealNumber, p: &Interpreter) -> MResult<Value> {
+  let num_val = real(&num, p)?;
+  let result = match num_val {
     #[cfg(feature = "i8")]
     Value::I8(val) => Value::I8(Ref::new(-*val.borrow())),
     #[cfg(feature = "i16")]
@@ -222,7 +228,8 @@ pub fn negated(num: &RealNumber) -> Value {
     #[cfg(feature = "f32")]
     Value::F32(val) => Value::F32(Ref::new(-(*val.borrow()))),
     x => panic!("Negation is only supported for integer and float types, got {:?}", x),
-  }
+  };
+  Ok(result)
 }
 
 #[cfg(feature = "rational")]
