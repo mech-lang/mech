@@ -97,7 +97,7 @@ pub fn number(input: ParseString) -> ParseResult<Number> {
 
 // complex-number := real-number, ("i"|"j")? | (("+"|"-"), real-number, ("i"|"j")) ;
 pub fn complex_number(input: ParseString) -> ParseResult<C64Node> {
-  let (input, real_num) = real_number(input)?;
+  let (input, real_num) = untyped_real_number(input)?;
   if let Ok((input, _)) = alt((tag("i"), tag("j")))(input.clone()) {
     return Ok((
       input,
@@ -108,7 +108,7 @@ pub fn complex_number(input: ParseString) -> ParseResult<C64Node> {
     ));
   }
   if let Ok((input, (sign, imaginary_num, _))) = 
-    nom_tuple((alt((plus, dash)), real_number, alt((tag("i"), tag("j")))))(input.clone())
+    nom_tuple((alt((plus, dash)), untyped_real_number, alt((tag("i"), tag("j")))))(input.clone())
   {
     let imaginary = match sign.kind {
       TokenKind::Plus => imaginary_num,
@@ -141,12 +141,31 @@ pub fn real_number(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, result))
 }
 
+// real-number := ?dash, (hexadecimal-literal | decimal-literal | octal-literal | binary-literal | scientific-literal | rational-literal | float-literal | integer-literal) ;
+pub fn untyped_real_number(input: ParseString) -> ParseResult<RealNumber> {
+  let (input, neg) = opt(dash)(input)?;
+  let (input, result) = alt((hexadecimal_literal, decimal_literal, octal_literal, binary_literal, scientific_literal, rational_literal, float_literal, untyped_integer))(input)?;
+  let result = match neg {
+    Some(_) => RealNumber::Negated(Box::new(result)),
+    None => result,
+  };
+  Ok((input, result))
+}
+
 // rational-literal := integer-literal, slash, integer-literal ;
 pub fn rational_literal(input: ParseString) -> ParseResult<RealNumber> {
-  let (input, RealNumber::Integer(numerator)) = integer_literal(input)? else { unreachable!() };
+  let (input, numerator) = match integer_literal(input)? {
+    (input, RealNumber::Integer(num)) => (input, num),
+    (input, RealNumber::TypedInteger((num,_))) => (input, num),
+    _ => unreachable!(),
+  };
   let (input, _) = slash(input)?;
-  let (input, RealNumber::Integer(denominator)) = integer_literal(input)? else { unreachable!() };
-  Ok((input, RealNumber::Rational((numerator,denominator))))
+  let (input, denominator) = match integer_literal(input)? {
+    (input, RealNumber::Integer(den)) => (input, den),
+    (input, RealNumber::TypedInteger((den,_))) => (input, den),
+    _ => unreachable!(),
+  };
+  Ok((input, RealNumber::Rational((numerator, denominator))))
 }
 
 // scientific-literal := (float-literal | integer-literal), ("e" | "E"), ?plus, ?dash, (float-literal | integer-literal) ;
@@ -156,6 +175,9 @@ pub fn scientific_literal(input: ParseString) -> ParseResult<RealNumber> {
       (input, base)
     }
     _ => match integer_literal(input.clone()) {
+      Ok((input, RealNumber::TypedInteger((base,_))) ) => {
+        (input, (base, Token::default()))
+      }
       Ok((input, RealNumber::Integer(base))) => {
         (input, (base, Token::default()))
       }
@@ -213,11 +235,28 @@ pub fn float_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, result))
 }
 
-// integer := digit1 ;
+// integer := digit1, ?suffix ;
 pub fn integer_literal(input: ParseString) -> ParseResult<RealNumber> {
+  alt((typed_integer, untyped_integer))(input)
+}
+
+// typed_integer := digit1, suffix ;
+pub fn typed_integer(input: ParseString) -> ParseResult<RealNumber> {
   let (input, mut digits) = digit_sequence(input)?;
   let mut merged = Token::merge_tokens(&mut digits).unwrap();
-  merged.kind = TokenKind::Number; 
+  let (input, suffix) = identifier(input)?; // Suffix is mandatory for typed integers
+  merged.kind = TokenKind::Number;
+  let kind_annotation = KindAnnotation {
+    kind: Kind::Scalar(suffix),
+  };
+  Ok((input, RealNumber::TypedInteger((merged, kind_annotation))))
+}
+
+// untyped_integer := digit1 ;
+pub fn untyped_integer(input: ParseString) -> ParseResult<RealNumber> {
+  let (input, mut digits) = digit_sequence(input)?;
+  let mut merged = Token::merge_tokens(&mut digits).unwrap();
+  merged.kind = TokenKind::Number;
   Ok((input, RealNumber::Integer(merged)))
 }
 

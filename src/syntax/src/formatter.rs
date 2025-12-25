@@ -2504,6 +2504,11 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       RealNumber::Binary(token) => format!("0b{}", token.to_string()),
       RealNumber::Scientific(((whole, part), (sign, ewhole, epart))) => format!("{}.{}e{}{}.{}", whole.to_string(), part.to_string(), if *sign { "-" } else { "+" }, ewhole.to_string(), epart.to_string()),
       RealNumber::Rational((numerator, denominator)) => format!("{}/{}", numerator.to_string(), denominator.to_string()),
+      RealNumber::TypedInteger((token, kind_annotation)) => {
+        let num = token.to_string();
+        let annotation = self.kind_annotation(&kind_annotation.kind);
+        format!("{}{}", num, annotation)
+      }
     }
   }
 
