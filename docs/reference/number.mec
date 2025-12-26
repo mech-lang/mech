@@ -126,7 +126,7 @@ Each value is inferred as `f64` unless otherwise specified. To specify a specifi
 
 Integer literals can be written in the following formats:
 
-```mech:ex 2.1.1
+```mech:disabled
 0d42       -- decimal
 0x2ABC     -- hexadecimal
 0o654      -- octal
@@ -135,7 +135,7 @@ Integer literals can be written in the following formats:
 
 Decrimals without a prefix are inferred as floating-point numbers (`f64`), while those with the `0d` prefix are inferred as signed integers (`i64`). Each of the other formats are also inferred as `i64` unless otherwise specified. Any integer literal can be suffixed with a specific kind to indicate its type:
 
-```mech:ex 2.1.2
+```mech:disabled
 42u8         -- unsigned 8-bit integer
 -15i16       -- signed 16-bit integer
 0xFF<u32>    -- unsigned 32-bit integer
