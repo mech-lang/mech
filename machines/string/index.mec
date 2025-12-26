@@ -1,0 +1,24 @@
+string
+=======
+
+1. Description
+---------------
+
+Provides functions for working with strings.
+
+2. Provided Functions
+----------------------
+
+- string/split()
+- string/join()
+- string/length()
+
+3. Info
+--------
+
+#string/machine = [
+  name: "string" 
+  version: "v0.0.1"
+  authors: "Corey Montella" 
+  machine-url: "https://gitlab.com/mech-lang/machines/string"
+  license: "Apache-2.0"]
