@@ -1,0 +1,163 @@
+string
+===============================================================================
+
+%% A `string` represents an immutable sequence of Unicode characters. Strings are used for textual data, identifiers, labels, and human-readable values. They are first-class values and integrate naturally with records, tuples, tables, maps, and comprehensions.
+
+1. Syntax
+-------------------------------------------------------------------------------
+
+String literals are written using double quotes `"`.
+
+```
+""
+"hello"
+"Hello, world!"
+"Mech"
+```
+
+Strings may contain spaces and punctuation. Whitespace inside a string literal is preserved.
+
+Escape sequences may be used for special characters:
+
+```
+"line 1\nline 2"
+"quote: \""
+"tab\tseparated"
+```
+
+2. Kind
+-------------------------------------------------------------------------------
+
+Strings have the kind:
+
+```mech:disabled
+<string>
+```
+
+All string values share the same kind regardless of length or contents.
+
+3. Construction
+-------------------------------------------------------------------------------
+
+Strings can be constructed in the following ways:
+
+- String literals
+- Results of string operations
+- Calling the `to-string()` function on other data types.
+
+(3.1) String Literals
+
+```mech:ex 3.1
+name := "Alice"
+label := "point A"
+```
+
+(3.2) String Concatenation
+
+Strings can be concatenated using the `+` operator.
+
+```mech:ex 3.2
+first := "Hello"
+second := "World"
+greeting := first + ", " + second + "!"
+```
+
+(3.3) Conversion to String
+
+Many values can be converted to strings explicitly.
+
+```mech:ex 3.3
+x := 42
+s := x<string>
+```
+
+4. Accessing Characters
+
+---
+
+Strings are sequences of characters and can be indexed.
+
+Indexing is **1-based**.
+
+```mech:ex 4.1
+s := "Mech"
+s[1]   -- 'M'
+s[4]   -- 'h'
+```
+
+Accessing an index outside the bounds of the string raises an error.
+
+5. Assignment and Mutability
+
+---
+
+Strings are immutable values. Individual characters cannot be modified in place.
+
+```mech:disabled
+s := "cat"
+s[1] = "b"   -- Error: strings are immutable
+```
+
+Assignment rebinds a name rather than modifying the string value.
+
+```mech:ex 5.1
+s := "cat"
+s = "bat"
+```
+
+When stored inside mutable structures, the string value itself is replaced:
+
+```mech:ex 5.2
+~r := { label: "A" }
+r.label = "B"
+```
+
+6. Operations
+
+---
+
+Common string operations include:
+
+* Concatenation `+`
+* Equality and inequality comparison
+* Ordering comparisons (lexicographic)
+
+```mech:ex 6.1
+"a" + "b"
+"cat" == "cat"
+"apple" < "banana"
+```
+
+7. Strings in Data Structures
+
+---
+
+Strings are commonly used as:
+
+* Record field values
+* Tuple elements
+* Table columns
+* Map keys and values
+
+```mech:ex 7.1
+p := ("x", "y")
+r := { name: "Alice", city: "Paris" }
+T := | name<string> age<i64> |
+     | "Bob"       42       |
+```
+
+Strings used as map keys are compared by value.
+
+8. Equality and Ordering
+
+---
+
+String equality compares character sequences exactly.
+
+Ordering comparisons are lexicographic and based on Unicode code point order.
+
+```mech:ex 8.1
+"abc" == "abc"
+"abc" != "abd"
+"
+```
