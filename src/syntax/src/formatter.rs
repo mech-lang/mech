@@ -2506,7 +2506,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       RealNumber::Rational((numerator, denominator)) => format!("{}/{}", numerator.to_string(), denominator.to_string()),
       RealNumber::TypedInteger((token, kind_annotation)) => {
         let num = token.to_string();
-        let annotation = self.kind_annotation(&kind_annotation.kind);
+        let annotation = &kind_annotation.kind.tokens().iter().map(|tkn| tkn.to_string()).collect::<Vec<String>>().join("");
         format!("{}{}", num, annotation)
       }
     }
