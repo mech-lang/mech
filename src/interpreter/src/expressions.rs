@@ -638,7 +638,14 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
     let new_fxn: Box<dyn MechFunction> = match op {
       // Math
       #[cfg(feature = "math_add")]
-      FormulaOperator::AddSub(AddSubOp::Add) => MathAdd{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::AddSub(AddSubOp::Add) => {
+        match (lhs, rhs) {
+          #[cfg(feature = "string_concat")]
+          (Value::String(_), Value::String(_)) => StringConcat{}.compile(&vec![lhs,rhs])?,
+          _ => MathAdd{}.compile(&vec![lhs,rhs])?,
+
+        }
+      }
       #[cfg(feature = "math_sub")]
       FormulaOperator::AddSub(AddSubOp::Sub) => MathSub{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "math_mul")]
