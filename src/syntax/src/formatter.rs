@@ -2498,7 +2498,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       RealNumber::Negated(real_number) => format!("-{}", self.real_number(real_number)),
       RealNumber::Integer(token) => token.to_string(),
       RealNumber::Float((whole, part)) => format!("{}.{}", whole.to_string(), part.to_string()),
-      RealNumber::Decimal(token) => token.to_string(),
+      RealNumber::Decimal(token) => format!("0d{}", token.to_string()),
       RealNumber::Hexadecimal(token) => format!("0x{}", token.to_string()),
       RealNumber::Octal(token) => format!("0o{}", token.to_string()),
       RealNumber::Binary(token) => format!("0b{}", token.to_string()),
