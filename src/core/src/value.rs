@@ -1379,6 +1379,8 @@ impl Value {
       Value::Bool(b) => format!("<span class='mech-boolean'>{}</span>", b.borrow()),
       #[cfg(feature = "complex")]
       Value::C64(c) => c.borrow().to_html(),
+      #[cfg(feature = "rational")]
+      Value::R64(r) => r.borrow().to_html(),
       #[cfg(all(feature = "matrix", feature = "u8"))]
       Value::MatrixU8(m) => m.to_html(),
       #[cfg(all(feature = "matrix", feature = "u16"))]
