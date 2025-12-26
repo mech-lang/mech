@@ -14,7 +14,7 @@ Set related functions.
 3. Info
 -------------------------------------------------------------------------------
 
-stats/machine := {
+set/machine := {
   name: "set"
   version: "v0.2.73"
   authors: ["Natalie Dumler", "Steven McPhillimey", "Liam Messinger", "Corey Montella"]
