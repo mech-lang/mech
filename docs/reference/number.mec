@@ -91,170 +91,89 @@ For more, see [`complex`](/reference/complex.html).
 2. Syntax
 -------------------------------------------------------------------------------
 
-Numeric literis in Mech can be expressed in various formats:
+Numeric literals can be expressed in various formats:
 
-- Integers, including decimal (base 10), hexadecimal (base 16), octal (base 8), and binary (base 2)
-- Floating-point numbers, including standard decimal notation and scientific notation
-- Rational numbers, expressed as fractions
+- Floating-point numbers, expressed in standard decimal notation and scientific notation
+- Integers, expressed in decimal (base 10), hexadecimal (base 16), octal (base 8), and binary (base 2)
+- Rational numbers, expressed as fractions `a/b`, where `a` is the numerator and `b` is the denominator
 - Complex numbers, expressed in the form `a + bi` or `a + bj`, where `a` is the real part and `b` is the imaginary part
 
-(2.1) Integer Literals
+(2.1) Floating-Point Literals
 
+Floating-point literals are used to represent decimal numbers with fractional components. They are flexible in that they can represent both very large and very small numbers, and also can represent integer values between -1.7e308 and 1.7e308 for `f64`, and between -3.4e38 and 3.4e38 for `f32`.
 
+Floating-point literals are expressed in standard decimal notation or scientific notation:
 
-Numeric literals are written using standard decimal notation.
+```mech:disabled
+42         -- inferred as `f64`
+3.14       
+-0.001     
+2.5e3      
+-1.2E-2
+```    
 
-```
-0
-1
--3
-42
-3.14
--0.001
-```
+Each value is inferred as `f64` unless otherwise specified. To specify a specific type, floating-point literals can also be suffixed with a specific kind:
 
-Integers and floating-point numbers use the same literal syntax; the specific numeric kind is inferred from context or defaults.
-
-Scientific notation may be supported where applicable:
-
-```
-1.0e3
--2.5e-2
-```
-
-2. Kind
-
----
-
-Numbers have concrete kinds such as:
-
-* `u8`, `u16`, `u32`, `u64` (unsigned integers)
-* `i8`, `i16`, `i32`, `i64` (signed integers)
-* `f32`, `f64` (floating-point)
-
-A numeric literal has an inferred kind unless explicitly annotated. For example:
-
-```mech:ex 2.1
-x := 1        -- inferred numeric kind (default integer)
-y := 1.0      -- inferred as f64
+```mech:disabled
+42<f32>
+3.14<f32>     
+-0.001<f64>
+2.5e3<f32>
+-1.2E-2<f64>
 ```
 
-Kinds may be specified explicitly:
+(2.2) Integer Literals
 
-```mech:ex 2.2
-x<u8> := 255
-y<f32> := 3.14
+Integer literals can be written in the following formats:
+
+```mech:ex 2.1.1
+0d42       -- decimal
+0x2ABC     -- hexadecimal
+0o654      -- octal
+0b101010   -- binary
 ```
 
-3. Construction
--------------------------------------------------------------------------------
+Decrimals without a prefix are inferred as floating-point numbers (`f64`), while those with the `0d` prefix are inferred as signed integers (`i64`). Each of the other formats are also inferred as `i64` unless otherwise specified. Any integer literal can be suffixed with a specific kind to indicate its type:
 
-Numbers are constructed in the following ways:
-
-- Numeric literals
-- Results of arithmetic expressions
-- Parsed from strings
-
-(3.1) Arithmetic Expressions
-
-```mech:ex 3.1
-a := 10 + 5
-b := a * 2
-c := b - 3
+```mech:ex 2.1.2
+42u8         -- unsigned 8-bit integer
+-15i16       -- signed 16-bit integer
+0xFF<u32>    -- unsigned 32-bit integer
+0d1000<u64>  -- signed 64-bit integer
 ```
 
-(3.2) Conversion and Promotion
+Decimal literals can be signed or unsigned. Signed literal types include `i8`, `i16`, `i32`, `i64`, and `i128`. Unsigned literal types include `u8`, `u16`, `u32`, `u64`, and `u128`.
 
-When operations involve mixed numeric kinds, values are promoted according to numeric promotion rules.
+(2.3) Rational Literals
 
-```mech:ex 3.2
-x := 1        -- integer
-y := 2.5      -- floating-point
-z := x + y    -- promoted to floating-point
+Rational numbers are used to represent fractions exactly as ratios of two integers. They are expressed in the form `a/b`, where `a` is the numerator and `b` is the denominator.
+
+Rational numbers are written as follows:
+
+```mech:disabled
+3/4
+-5/2
+7/7         -- A whole number represented as a rational
 ```
 
-Explicit conversion may be required when narrowing:
+Two rational literals can represent the same numeric value but have different representations:
 
-```mech:ex 3.3
-x<u8> := 255
-y := x<u16>
+```mech:ex 2.3.2
+x :=1/2     -- Represents `0.5`
+y := 2/4    -- Also represents `0.5`
+x == y      -- Evaluates to `true`
 ```
 
-4. Operations
--------------------------------------------------------------------------------
+(2.4) Complex Literals
 
-Numbers support standard arithmetic operations:
+Complex numbers are used to represent numbers with both real and imaginary components. They are expressed in the form `a + bi` or `a + bj`, where `a` is the real part and `b` is the imaginary part.
 
-* Addition `+`
-* Subtraction `-`
-* Multiplication `*`
-* Division `/`
-* Remainder `%`
+Complex numbers are written as follows:
 
-```mech:ex 4.1
-a := 7 + 3
-b := 7 * 3
-c := 7 / 2
-d := 7 % 2
+```mech:disabled
+3+4i
+1-2j
+0+1i
 ```
 
-Comparison operations return `bool` values:
-
-* Equality `==`
-* Inequality `!=`
-* Less than `<`
-* Less than or equal `<=`
-* Greater than `>`
-* Greater than or equal `>=`
-
-```mech:ex 4.2
-x := 5
-x > 3
-x == 5
-```
-
-5. Assignment and Mutability
-
----
-
-Numbers are immutable values. Assignment rebinds a name rather than modifying a numeric value.
-
-```mech:ex 5.1
-x := 10
-x = 20    -- rebinds x
-```
-
-When stored in mutable structures (tables, maps, records, tuples), numeric elements may be updated via the containing structure.
-
-```mech:ex 5.2
-~T := | x<i64> |
-     |   1    |
-T.x[1] = 42
-```
-
-6. Numbers in Data Structures
-
----
-
-Numbers commonly appear as elements of tuples, records, tables, lists, sets, and maps.
-
-```mech:ex 6.1
-p := (1, 2, 3)
-r := { x: 1.5, y: -2.0 }
-S := {1 2 3 4}
-```
-
-Numeric kinds are preserved within structures unless explicitly converted.
-
-7. Ordering and Equality
-
----
-
-Numbers are totally ordered within the same kind. Equality compares numeric value.
-
-```mech:ex 7.1
-1 < 2
-3.0 == 3.0
-```
-
-Comparisons between different numeric kinds follow promotion rules or require explicit conversion, depending on context.
+The imaginary unit can be represented by either `i` or `j`. Both representations are equivalent and can be used interchangeably.
