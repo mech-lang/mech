@@ -2,8 +2,6 @@
 #![allow(warnings)]
 #[macro_use]
 extern crate mech_core;
-#[cfg(feature = "matrix")]
-extern crate nalgebra as na;
 extern crate paste;
 
 use mech_core::*;
@@ -42,8 +40,6 @@ use nalgebra::Matrix3x2;
 use nalgebra::Matrix2;
 
 use paste::paste;
-#[cfg(feature = "matrix")]
-use mech_core::matrix::Matrix;
 
 #[cfg(feature = "concat")]
 pub mod concat;
@@ -52,19 +48,23 @@ pub mod concat;
 pub use self::concat::*;
 
 // ----------------------------------------------------------------------------
-// String Library
+// Compare Library
 // ----------------------------------------------------------------------------
 
 #[macro_export]
 macro_rules! impl_string_binop {
   ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
     #[derive(Debug)]
-    struct $struct_name {
+    struct $struct_name<T> {
       lhs: Ref<$arg1_type>,
       rhs: Ref<$arg2_type>,
       out: Ref<$out_type>,
     }
-    impl MechFunctionFactory for $struct_name
+    impl<T> MechFunctionFactory for $struct_name<T>
+    where
+      T: std::fmt::Debug + Clone + Sync + Send + 'static + 
+      ConstElem + CompileConst + AsValueKind,
+      Ref<$out_type>: ToValue
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -72,17 +72,21 @@ macro_rules! impl_string_binop {
             let lhs: Ref<$arg1_type> = unsafe { arg1.as_unchecked() }.clone();
             let rhs: Ref<$arg2_type> = unsafe { arg2.as_unchecked() }.clone();
             let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
-            Ok(Box::new(Self {lhs, rhs, out }))
+            todo!();
+            //Ok(Box::new(Self {lhs, rhs, out }))
           },
           _ => Err(MechError2::new(
-              IncorrectNumberOfArguments { expected: 2, found: args.len() },
+              IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
               None
             ).with_compiler_loc()
           ),
         }
       }
     }
-    impl MechFunctionImpl for $struct_name
+    impl<T> MechFunctionImpl for $struct_name<T>
+    where
+      T: std::fmt::Debug + Clone + Sync + Send + 'static,
+      Ref<$out_type>: ToValue
     {
     fn solve(&self) {
       let lhs_ptr = self.lhs.as_ptr();
@@ -94,11 +98,21 @@ macro_rules! impl_string_binop {
     fn to_string(&self) -> String { format!("{:#?}", self) }
   }
   #[cfg(feature = "compiler")]
-  impl MechFunctionCompiler for $struct_name
+  impl<T> MechFunctionCompiler for $struct_name<T> 
+  where
+    T: ConstElem + CompileConst + AsValueKind
   {
     fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-      let name = format!("{}<string>", stringify!($struct_name));
+      let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
       compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
     }
   }
+  register_fxn_descriptor!($struct_name, String, "string");
 };}
+
+#[macro_export]
+macro_rules! impl_string_fxns {
+  ($lib:ident) => {
+    impl_fxns!($lib,T,bool,impl_string_binop);
+  }
+}
