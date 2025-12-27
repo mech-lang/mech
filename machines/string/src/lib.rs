@@ -48,8 +48,20 @@ pub mod concat;
 pub use self::concat::*;
 
 // ----------------------------------------------------------------------------
-// Compare Library
+// String Library
 // ----------------------------------------------------------------------------
+
+pub trait Concat {
+  fn concat(&self, rhs: &Self) -> Self;
+}
+
+impl Concat for String {
+  fn concat(&self, rhs: &Self) -> Self {
+    let mut s = self.clone();
+    s.push_str(rhs);
+    s
+  }
+}
 
 #[macro_export]
 macro_rules! impl_string_binop {
@@ -63,7 +75,7 @@ macro_rules! impl_string_binop {
     impl<T> MechFunctionFactory for $struct_name<T>
     where
       T: std::fmt::Debug + Clone + Sync + Send + 'static + 
-      ConstElem + CompileConst + AsValueKind,
+      ConstElem + CompileConst + AsValueKind + Concat,
       Ref<$out_type>: ToValue
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -72,8 +84,7 @@ macro_rules! impl_string_binop {
             let lhs: Ref<$arg1_type> = unsafe { arg1.as_unchecked() }.clone();
             let rhs: Ref<$arg2_type> = unsafe { arg2.as_unchecked() }.clone();
             let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
-            todo!();
-            //Ok(Box::new(Self {lhs, rhs, out }))
+            Ok(Box::new(Self {lhs, rhs, out }))
           },
           _ => Err(MechError2::new(
               IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
@@ -85,7 +96,7 @@ macro_rules! impl_string_binop {
     }
     impl<T> MechFunctionImpl for $struct_name<T>
     where
-      T: std::fmt::Debug + Clone + Sync + Send + 'static,
+      T: std::fmt::Debug + Clone + Sync + Send + 'static + Concat,
       Ref<$out_type>: ToValue
     {
     fn solve(&self) {
@@ -113,6 +124,6 @@ macro_rules! impl_string_binop {
 #[macro_export]
 macro_rules! impl_string_fxns {
   ($lib:ident) => {
-    impl_fxns!($lib,T,bool,impl_string_binop);
+    impl_fxns!($lib,T,T,impl_string_binop);
   }
 }
