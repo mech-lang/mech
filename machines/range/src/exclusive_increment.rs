@@ -97,7 +97,18 @@ macro_rules! impl_range_increment_exclusive_match_arms {
                 None
               ).with_compiler_loc());
             }
-            let size = ((diff as f64) / (step_val as f64)).ceil() as usize;
+            let size = {
+              let diff = to_val as f64 - from_val as f64;
+              let step = step_val as f64;
+              if step == 0.0 {
+                return Err(MechError2::new(EmptyRangeError {}, None).with_compiler_loc());
+              }
+              if (diff > 0.0 && step > 0.0) || (diff < 0.0 && step < 0.0) {
+                (diff / step).ceil() as usize
+              } else {
+                0
+              }
+            };
             let mut vec = vec![from_val; size];
             match size {
               0 => Err(MechError2::new(
