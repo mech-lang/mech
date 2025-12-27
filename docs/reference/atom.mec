@@ -1,0 +1,65 @@
+atom
+===============================================================================
+
+%% An `atom` represents a unique, immutable symbolic identifier. Atoms are often used for tags, labels, enumeration values, or lightweight identifiers that do not require the full semantics of strings. Atoms are compared by identity rather than by content.
+
+1. Syntax
+---------------------------------------------------------------------------
+
+Atoms are written using a leading colon `:` followed by an identifier:
+
+```mech:disabled
+:foo
+:help
+:my-atom
+:🐦
+:Δt
+```
+Atom names may be any valid identifier, including Unicode characters.
+
+2. Kind
+-------------------------------------------------------------------------------
+
+The kind of an atom is itself:
+
+```mech:disabled
+<:foo>
+<:help>
+<:my-atom>
+<:🐦>
+<:Δt>
+```
+
+3. Construction
+-------------------------------------------------------------------------------
+
+Atoms can be constructed using the colon syntax:
+
+```mech:ex 3.3.1
+tag1 := :start
+tag2 := :end
+status := :pending
+```
+
+4. Identity
+-------------------------------------------------------------------------------
+
+Atoms are unique by their name. Two atoms with the same name are identical:
+
+```mech:ex 3.3.2
+a := :foo
+b := :foo
+a == b
+```
+
+This evaluates to {{true}} because both `a` and `b` refer to the same atom `:foo`.
+
+5. Enums
+-------------------------------------------------------------------------------
+
+Atoms are commonly used to define enumeration values:
+
+```mech:ex 3.3.3
+<status> := pending | active | completed | failed;
+current<status> := :status/pending
+```
