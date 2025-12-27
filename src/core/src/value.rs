@@ -1418,7 +1418,7 @@ impl Value {
       #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixC64(m) => m.to_html(),
       #[cfg(feature = "atom")]
-      Value::Atom(a) => format!("<span class=\"mech-atom\"><span class=\"mech-atom-name\">:{}</span></span>",a.borrow()),
+      Value::Atom(a) => a.borrow().to_html(),
       #[cfg(feature = "set")]
       Value::Set(s) => s.borrow().to_html(),
       #[cfg(feature = "map")]
