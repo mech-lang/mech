@@ -25,14 +25,14 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program",
   "i8", "i16", "i32", "i64", "i128", 
   "f32", "f64", "c64", "r64", 
   "set_default", "math_default", "compare_default", "combinatorics_default", "logic_default",
-  "matrix_default", "io_default", "range_default", "stats_default",
+  "matrix_default", "io_default", "range_default", "stats_default", "string_default",
   "statements_default", "subscript_default",
   "mech-core/default",
   "mech-set/default", "mech-math/default", "mech-compare/default", "mech-combinatorics/default", "mech-logic/default", "mech-matrix/default", "mech-io/default", "mech-stats/default", "mech-range/default",
   ]
 base = ["baselib", "pretty_print", "serde", "compiler", "program",
       "set_default", "math_default", "compare_default", "combinatorics_default", "logic_default",
-      "matrix_default", "io_default", "range_default", "stats_default",
+      "matrix_default", "io_default", "range_default", "stats_default", "string_default",
       "statements_default", "subscript_default",
       "mech-core/base", "mech-set/base", "mech-math/base", "mech-compare/base", "mech-combinatorics/base", "mech-logic/base", "mech-matrix/base", "mech-io/base", "mech-stats/base", "mech-range/base",
       ]    
@@ -94,7 +94,7 @@ assign = ["functions"]
 convert = ["functions"]
 
 bool = ["mech-core/bool", "mech-set/bool", "mech-compare/bool", "mech-math/bool", "mech-combinatorics/bool", "mech-logic/bool", "mech-matrix/bool", "mech-io/bool", "mech-stats/bool", "mech-range/bool"]
-string = ["mech-core/string", "mech-set/string", "mech-math/string", "mech-compare/string", "mech-combinatorics/string", "mech-logic/string", "mech-matrix/string", "mech-io/string", "mech-stats/string", "mech-range/string"]
+string = ["mech-string", "mech-core/string", "mech-set/string", "mech-math/string", "mech-compare/string", "mech-combinatorics/string", "mech-logic/string", "mech-matrix/string", "mech-io/string", "mech-stats/string", "mech-range/string"]
 
 # Numbers
 numbers = ["mech-core/numbers", "mech-set/numbers", "mech-math/numbers", "mech-compare/numbers", "mech-combinatorics/numbers", "mech-logic/numbers", "mech-matrix/numbers", "mech-io/numbers", "mech-stats/numbers", "mech-range/numbers"]
@@ -282,6 +282,10 @@ set_intersection = ["set", "mech-set/intersection"]
 set_union = ["set", "mech-set/union"]
 set_cartesian_product = ["set", "mech-set/cartesian_product"]
 
+# String
+string_default = ["string_concat", "mech-string/string_default"]
+string_concat = ["string", "mech-string/concat"]
+
 [dependencies]
 mech-core = { version = "0.2.73", default-features = false }
 mech-math = { version = "0.2.73", default-features = false, optional = true}
@@ -293,6 +297,7 @@ mech-stats = { version = "0.2.73", default-features = false, optional = true }
 mech-io = { version = "0.2.73", default-features = false, optional = true }
 mech-set = { version = "0.2.73", default-features = false, optional = true }
 mech-combinatorics = { version = "0.2.73", default-features = false, optional = true }
+mech-string = { version = "0.2.73", default-features = false, optional = true }
 
 paste = "1.0.15"
 byteorder = "1.5.0"

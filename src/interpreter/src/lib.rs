@@ -61,6 +61,8 @@ use mech_range::inclusive::RangeInclusive;
 use mech_range::exclusive::RangeExclusive;
 #[cfg(feature = "set")]
 use mech_set::*;
+#[cfg(feature = "string")]
+use mech_string::*;
 
 #[cfg(feature = "matrix")]
 use na::DMatrix;
