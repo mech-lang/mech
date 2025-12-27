@@ -21,7 +21,7 @@ Mech Documentation
     - [`empty`](/reference/empty.html) - represents an absence of value `todo`
     - [`kind`](/reference/kind.html) - a category of values `todo`
     - [`number`](/reference/number.html) - numeric values, including integers and floating-point numbers
-    - [`string`](/reference/string.html) - sequence of UTF-8 characters representing text `todo`
+    - [`string`](/reference/string.html) - sequence of UTF-8 characters representing text
 - Data Structures
     - [`map`](/reference/map.html) - stores key-value pairs for fast lookups
     - [`matrix`](/reference/matrix.html) - 2D array of homogenous values arranged in rows and columns
