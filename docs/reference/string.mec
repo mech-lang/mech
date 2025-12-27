@@ -43,121 +43,56 @@ Strings can be constructed in the following ways:
 
 - String literals
 - Results of string operations
-- Calling the `to-string()` function on other data types.
+- Conversion from other kinds
 
 (3.1) String Literals
 
-```mech:ex 3.1
-name := "Alice"
-label := "point A"
+```
+"Hello"
+"This is a string literal."
+"This is a multiline
+string literal"
 ```
 
 (3.2) String Concatenation
 
-Strings can be concatenated using the `+` operator.
+Strings can be concatenated using the `+` operator:
 
-```mech:ex 3.2
+```mech:ex 3.2.1
 first := "Hello"
 second := "World"
 greeting := first + ", " + second + "!"
 ```
 
+String concatentation is broadcast element-wise over matrices of strings:
+
+```mech:ex 3.2.2
+prefix := "Item"
+letters := ["A" "B" "C"]
+labels := prefix + letters
+```
+
+If both operands are matrices of strings, they must have compatible dimensions:
+
+```mech:ex 3.2.3
+m1 := ["a" "b"; "c" "d"]
+m2 := ["1" "2"; "3" "4"]
+result := m1 + m2
+```
+
 (3.3) Conversion to String
 
-Many values can be converted to strings explicitly.
+All values can be converted to strings explicitly.
 
 ```mech:ex 3.3
 x := 42
-s := x<string>
+s<string> := x
 ```
 
-4. Accessing Characters
+Use {{<[string]>}} to create a matrix of strings:
 
----
-
-Strings are sequences of characters and can be indexed.
-
-Indexing is **1-based**.
-
-```mech:ex 4.1
-s := "Mech"
-s[1]   -- 'M'
-s[4]   -- 'h'
+```mech:ex 3.4
+m<[string]:2,2> := [1 2 3 4]
 ```
 
-Accessing an index outside the bounds of the string raises an error.
-
-5. Assignment and Mutability
-
----
-
-Strings are immutable values. Individual characters cannot be modified in place.
-
-```mech:disabled
-s := "cat"
-s[1] = "b"   -- Error: strings are immutable
-```
-
-Assignment rebinds a name rather than modifying the string value.
-
-```mech:ex 5.1
-s := "cat"
-s = "bat"
-```
-
-When stored inside mutable structures, the string value itself is replaced:
-
-```mech:ex 5.2
-~r := { label: "A" }
-r.label = "B"
-```
-
-6. Operations
-
----
-
-Common string operations include:
-
-* Concatenation `+`
-* Equality and inequality comparison
-* Ordering comparisons (lexicographic)
-
-```mech:ex 6.1
-"a" + "b"
-"cat" == "cat"
-"apple" < "banana"
-```
-
-7. Strings in Data Structures
-
----
-
-Strings are commonly used as:
-
-* Record field values
-* Tuple elements
-* Table columns
-* Map keys and values
-
-```mech:ex 7.1
-p := ("x", "y")
-r := { name: "Alice", city: "Paris" }
-T := | name<string> age<i64> |
-     | "Bob"       42       |
-```
-
-Strings used as map keys are compared by value.
-
-8. Equality and Ordering
-
----
-
-String equality compares character sequences exactly.
-
-Ordering comparisons are lexicographic and based on Unicode code point order.
-
-```mech:ex 8.1
-"abc" == "abc"
-"abc" != "abd"
-"
-```
+This converts a {{<[f64]:1,4>}} matrix to a {{<[string]:2,2>}} matrix.
