@@ -218,7 +218,7 @@ pub enum FeatureKind {
   MatMul, Transpose, Dot, Cross, Solve,
   
   Add, Sub, Mul, Div, Pow, Mod, 
-  Neg, OpAssign, LT, LTE, GT, 
+  Neg, OpAssign, LT, LTE, GT,
   
   GTE, EQ, NEQ, And, Or, 
   Xor, Not, Convert, Assign, Access,
@@ -227,6 +227,8 @@ pub enum FeatureKind {
   Union, Intersection, Difference, Complement, Subset, 
   Superset, ProperSubset, ProperSuperset, ElementOf, NotElementOf,
   SetComprehensions,
+
+  StringConcat,
 
   Functions, Formulas,
   Custom = 0xFFFF,
@@ -332,6 +334,7 @@ impl FeatureKind {
       FeatureKind::SetComprehensions => "set_comprehensions".to_string(),
       FeatureKind::Functions => "functions".to_string(),
       FeatureKind::Formulas => "formulas".to_string(),
+      FeatureKind::StringConcat => "string_concat".to_string(),
       FeatureKind::Custom => "custom".to_string(),
     }
   }
