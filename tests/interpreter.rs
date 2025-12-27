@@ -786,4 +786,4 @@ test_interpreter!(interpret_string_concatenation, r#"x := "Hello, " + "world!""#
 test_interpreter!(interpret_string_concatenation2, r#""a" + "b" + "c""#, Value::String(Ref::new("abc".to_string())));
 test_interpreter!(interpret_string_concatenation_var, r#"greeting := "Hello"; name := "Alice"; message := greeting + ", " + name + "!""#, Value::String(Ref::new("Hello, Alice!".to_string())));
 test_interpreter!(interpret_string_concatenation_matrix, r#"["a" "b"] + "c""#, Value::MatrixString(Matrix::from_vec(vec!["ac".to_string(), "bc".to_string()], 1, 2)));
-test_interpreter!(interpret_string_concatenation_matrix2, r#"["a" "b"; "c" "d"] + ["1" "2"; "3" "4"]"#, Value::MatrixString(Matrix::from_vec(vec!["a1".to_string(), "b2".to_string(), "c3".to_string(), "d4".to_string()], 2, 2)));
+test_interpreter!(interpret_string_concatenation_matrix2, r#"["a" "b"; "c" "d"] + ["1" "2"; "3" "4"]"#, Value::MatrixString(Matrix::from_vec(vec!["a1".to_string(), "c3".to_string(), "b2".to_string(), "d4".to_string()], 2, 2)));
