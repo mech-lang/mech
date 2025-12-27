@@ -293,7 +293,17 @@ pub fn punctuation(input: ParseString) -> ParseResult<Token> {
 pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
   let (input, _) = backslash(input)?;
   let (input, mut symbol) = alt((alpha_token, symbol, punctuation))(input)?;
+  // Update kind
   symbol.kind = TokenKind::EscapedChar;
+  // Transform the char to visible escaped form if needed
+  symbol.chars = symbol.chars.iter().flat_map(|&c| {
+    match c {
+      'n' => vec!['\n'],
+      't' => vec!['\t'],
+      'r' => vec!['\r'],
+      other => vec![other],
+    }
+  }).collect();
   Ok((input, symbol))
 }
 
