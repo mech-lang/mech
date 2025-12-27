@@ -90,7 +90,123 @@ macro_rules! neq_row_mat_op {
 
 impl_compare_fxns!(NEQ);
 
+#[cfg(feature = "atom")]
+#[derive(Debug)]
+pub struct AtomNeq {
+  pub lhs: Ref<MechAtom>,
+  pub rhs: Ref<MechAtom>,
+  pub out: Ref<bool>,
+}
+impl MechFunctionFactory for AtomNeq {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Binary(out, arg1, arg2) => {
+        let lhs: Ref<MechAtom> = unsafe { arg1.as_unchecked() }.clone();
+        let rhs: Ref<MechAtom> = unsafe { arg2.as_unchecked() }.clone();
+        let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(AtomNeq { lhs, rhs, out }))
+      }
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
+    }
+  }
+}
+#[cfg(feature = "atom")]
+impl MechFunctionImpl for AtomNeq {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let mut out_ptr = self.out.as_mut_ptr();
+    unsafe {
+      *out_ptr = (*lhs_ptr) != (*rhs_ptr);
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "atom")]
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for AtomNeq {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let name = format!("AtomNeq");
+    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::Atom));
+  }
+}
+
+
+#[cfg(feature = "table")]
+#[derive(Debug)]
+pub struct TableNeq {
+  pub lhs: Ref<MechTable>,
+  pub rhs: Ref<MechTable>,
+  pub out: Ref<bool>,
+}
+impl MechFunctionFactory for TableNeq {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Binary(out, arg1, arg2) => {
+        let lhs: Ref<MechTable> = unsafe { arg1.as_unchecked() }.clone();
+        let rhs: Ref<MechTable> = unsafe { arg2.as_unchecked() }.clone();
+        let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(TableNeq { lhs, rhs, out }))
+      }
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
+    }
+  }
+}
+#[cfg(feature = "table")]
+impl MechFunctionImpl for TableNeq {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let mut out_ptr = self.out.as_mut_ptr();
+    unsafe {
+      *out_ptr = (*lhs_ptr) != (*rhs_ptr);
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "table")]
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for TableNeq {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let name = format!("TableNeq");
+    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::Table));
+  }
+}
+
 fn impl_neq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+  match (&lhs_value, &rhs_value) {
+    #[cfg(all(feature = "table"))]
+    (Value::Table(lhs), Value::Table(rhs)) => {
+      register_descriptor! {
+        FunctionDescriptor {
+          name: "TableNeq",
+          ptr: TableNeq::new,
+        }
+      }
+      return Ok(Box::new(TableNeq{lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(false) }));
+    }
+    #[cfg(feature = "atom")]
+    (Value::Atom(lhs), Value::Atom(rhs)) => {
+      register_descriptor! {
+        FunctionDescriptor {
+          name: "AtomNeq",
+          ptr: AtomNeq::new,
+        }
+      }
+      return Ok(Box::new(AtomNeq{lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(false) }));
+    }
+    _ => (),
+  }
   impl_binop_match_arms!(
     NEQ,
     register_fxn_descriptor_inner,
