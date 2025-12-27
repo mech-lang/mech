@@ -1,6 +1,8 @@
 use crate::*;
 use super::*;
 
+use std::cmp::Ordering;
+
 #[cfg(feature = "atom")]
 #[derive(Clone, Debug)]
 pub struct MechAtom(pub (u64, Ref<Dictionary>));
@@ -8,6 +10,20 @@ pub struct MechAtom(pub (u64, Ref<Dictionary>));
 impl PartialEq<MechAtom> for MechAtom {
   fn eq(&self, other: &MechAtom) -> bool {
     &self.id() == &other.id()
+  }
+}
+
+impl Eq for MechAtom {}
+
+impl PartialOrd for MechAtom {
+  fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+    self.id().partial_cmp(&other.id())
+  }
+}
+
+impl Ord for MechAtom {
+  fn cmp(&self, other: &Self) -> Ordering {
+    self.id().cmp(&other.id())
   }
 }
 
