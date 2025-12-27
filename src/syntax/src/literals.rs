@@ -55,7 +55,10 @@ pub fn string(input: ParseString) -> ParseResult<MechString> {
   let (input, matched) = many0(nom_tuple((is_not(quote), alt((text,new_line)))))(input)?;
   let (input, _) = quote(input)?;
   let (_, mut text): ((), Vec<_>) = matched.into_iter().unzip();
-  let mut merged = Token::merge_tokens(&mut text).unwrap();
+  let mut merged = match Token::merge_tokens(&mut text) {
+    Some(t) => t,
+    None => Token::default(),
+  };
   merged.kind = TokenKind::String;
   Ok((input, MechString { text: merged }))
 }
