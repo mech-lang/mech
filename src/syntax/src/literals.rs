@@ -47,13 +47,38 @@ pub fn atom(input: ParseString) -> ParseResult<Atom> {
   Ok((input, Atom{name}))
 }
 
-
-// string := quote, *(¬quote, (text | new-line)), quote ;
+// string := raw-string | utf8-string ;
 pub fn string(input: ParseString) -> ParseResult<MechString> {
+  match raw_string(input.clone()) {
+    Ok((input, s)) => Ok((input, s)),
+    _ => match utf8_string(input.clone()) {
+      Ok((input, s)) => Ok((input, s)),
+      Err(err) => return Err(err),
+    },
+  }
+}
+
+// utf8-string := quote, *(¬quote, (text | new-line)), quote ;
+pub fn utf8_string(input: ParseString) -> ParseResult<MechString> {
   let msg = "Character not allowed in string";
   let (input, _) = quote(input)?;
-  let (input, matched) = many0(nom_tuple((is_not(quote), alt((text,new_line)))))(input)?;
+  let (input, matched) = many0(nom_tuple((is_not(quote), alt((text, new_line)))))(input)?;
   let (input, _) = quote(input)?;
+  let (_, mut text): ((), Vec<_>) = matched.into_iter().unzip();
+  let mut merged = match Token::merge_tokens(&mut text) {
+    Some(t) => t,
+    None => Token::default(),
+  };
+  merged.kind = TokenKind::String;
+  Ok((input, MechString { text: merged }))
+}
+
+// raw-string := `"""`, *(¬`"""`, (raw-text | new-line)), `"""` ;
+pub fn raw_string(input: ParseString) -> ParseResult<MechString> {
+  let msg = "Character not allowed in string";
+  let (input, _) = nom_tuple((quote, quote, quote))(input)?;
+  let (input, matched) = many0(nom_tuple((is_not(nom_tuple((quote, quote, quote))), alt((raw_text, new_line)))))(input)?;
+  let (input, _) = nom_tuple((quote, quote, quote))(input)?;
   let (_, mut text): ((), Vec<_>) = matched.into_iter().unzip();
   let mut merged = match Token::merge_tokens(&mut text) {
     Some(t) => t,

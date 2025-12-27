@@ -292,7 +292,8 @@ pub fn punctuation(input: ParseString) -> ParseResult<Token> {
 // escaped-char := "\" ,  alpha | symbol | punctuation ;
 pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
   let (input, _) = backslash(input)?;
-  let (input, symbol) = alt((alpha_token, symbol, punctuation))(input)?;
+  let (input, mut symbol) = alt((alpha_token, symbol, punctuation))(input)?;
+  symbol.kind = TokenKind::EscapedChar;
   Ok((input, symbol))
 }
 
@@ -308,9 +309,15 @@ pub fn identifier_symbol(input: ParseString) -> ParseResult<Token> {
   Ok((input, symbol))
 }
 
-// text := alpha | digit | space | tab | escaped_char | punctuation | grouping_symbol | symbol ;
+// text := alpha | digit | space | emoji | forbidden_emoji | space | tab | escaped-char | punctuation | grouping-symbol | symbol ;
 pub fn text(input: ParseString) -> ParseResult<Token> {
   let (input, text) = alt((alpha_token, digit_token, emoji, forbidden_emoji, space, tab, escaped_char, punctuation, grouping_symbol, symbol))(input)?;
+  Ok((input, text))
+}
+
+// raw-text := alpha | digit | emoji | forbidden_emoji | space | tab | punctuation | grouping_symbol | symbol ;
+pub fn raw_text(input: ParseString) -> ParseResult<Token> {
+  let (input, text) = alt((alpha_token, digit_token, emoji, forbidden_emoji, space, tab, punctuation, grouping_symbol, symbol))(input)?;
   Ok((input, text))
 }
 
