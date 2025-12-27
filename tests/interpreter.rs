@@ -44,6 +44,7 @@ test_interpreter!(interpret_literal_oct, "0o1234", Value::I64(Ref::new(0o1234)))
 test_interpreter!(interpret_literal_dec, "0d1234", Value::I64(Ref::new(1234)));
 test_interpreter!(interpret_literal_float, "1.23", Value::F64(Ref::new(1.23)));
 test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String(Ref::new("Hello".to_string())));
+test_interpreter!(interpret_literal_string_empty, r#""""#, Value::String(Ref::new("".to_string())));
 test_interpreter!(interpret_literal_string_multiline, r#""Hello 
  World""#, Value::String(Ref::new("Hello \n World".to_string())));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(Ref::new(true)));
