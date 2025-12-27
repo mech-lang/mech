@@ -231,6 +231,7 @@ mech-io = { path = 'machines/io' }
 mech-range = { path = 'machines/range' }
 mech-logic = { path = 'machines/logic' }
 mech-set = { path = 'machines/set' }
+mech-string = { path = 'machines/string' }
 
 [patch.'https://gitlab.com/mech-lang/core']
 mech-core = { path = 'src/core', version = '0.2.73' }
