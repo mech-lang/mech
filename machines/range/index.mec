@@ -10,7 +10,9 @@ Provides functions that produce a range of values.
 -------------------------------------------------------------------------------
 
 - `range/inclusive`
+- `range/inclusive-increment`
 - `range/exclusive`
+- `range/exclusive-increment`
 
 3. Info
 -------------------------------------------------------------------------------
