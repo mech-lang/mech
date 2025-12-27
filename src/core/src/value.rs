@@ -1737,6 +1737,16 @@ impl Value {
   impl_as_type!(u64);
   impl_as_type!(u128);
 
+  pub fn is_string(&self) -> bool {
+    match self {
+      #[cfg(feature = "string")]
+      Value::String(_) => true,
+      Value::MatrixString(_) => true,
+      Value::MutableReference(val) => val.borrow().is_string(),
+      _ => false,
+    }
+  }
+
   #[cfg(any(feature = "string", feature = "variable_define"))]
   pub fn as_string(&self) -> MResult<Ref<String>> {
     match self {
