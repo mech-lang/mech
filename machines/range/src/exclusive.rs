@@ -164,7 +164,7 @@ pub struct RangeExclusive {}
 impl NativeFunctionCompiler for RangeExclusive {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() },None).with_compiler_loc());
     }
     let arg1 = arguments[0].clone();
     let arg2 = arguments[1].clone();

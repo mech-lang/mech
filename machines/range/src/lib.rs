@@ -51,13 +51,21 @@ use mech_core::matrix::Matrix;
 
 #[cfg(feature = "exclusive")]
 pub mod exclusive;
+#[cfg(feature = "exclusive")]
+pub mod exclusive_increment;
 #[cfg(feature = "inclusive")]
 pub mod inclusive;
+//#[cfg(feature = "inclusive")]
+//pub mod inclusive_increment;
 
 #[cfg(feature = "exclusive")]
 pub use self::exclusive::*;
+#[cfg(feature = "exclusive")]
+pub use self::exclusive_increment::*;
 #[cfg(feature = "inclusive")]
 pub use self::inclusive::*;
+//#[cfg(feature = "inclusive")]
+//pub use self::inclusive_increment::*;
 
 use mech_core::MechErrorKind2;
 
