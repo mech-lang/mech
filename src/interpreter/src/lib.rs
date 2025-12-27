@@ -56,7 +56,9 @@ use mech_logic::*;
 #[cfg(feature = "compare")]
 use mech_compare::*;
 #[cfg(feature = "range_inclusive")]
-use mech_range::inclusive::RangeInclusive;
+use mech_range::inclusive::*;
+#[cfg(feature = "range_inclusive")]
+use mech_range::inclusive_increment::*;
 #[cfg(feature = "range_exclusive")]
 use mech_range::exclusive::*;
 #[cfg(feature = "range_exclusive")]

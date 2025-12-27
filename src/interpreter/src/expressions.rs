@@ -208,8 +208,8 @@ pub fn range(rng: &RangeExpression, env: Option<&Environment>, p: &Interpreter) 
       match &rng.operator {
         #[cfg(feature = "range_exclusive")]
         RangeOp::Exclusive => RangeIncrementExclusive{}.compile(&vec![start, step, terminal])?,
-        //#[cfg(feature = "range_inclusive")]
-        //RangeOp::Inclusive => RangeIncrementInclusive{}.compile(&vec![start,terminal])?,
+        #[cfg(feature = "range_inclusive")]
+        RangeOp::Inclusive => RangeIncrementInclusive{}.compile(&vec![start, step, terminal])?,
         x => unreachable!(),
       }
     }
