@@ -790,7 +790,10 @@ test_interpreter!(interpret_string_concatenation_matrix, r#"["a" "b"] + "c""#, V
 test_interpreter!(interpret_string_concatenation_matrix2, r#"["a" "b"; "c" "d"] + ["1" "2"; "3" "4"]"#, Value::MatrixString(Matrix::from_vec(vec!["a1".to_string(), "c3".to_string(), "b2".to_string(), "d4".to_string()], 2, 2)));
 test_interpreter!(interpret_string_concatenation_matrix3, r#"prefix := "Item"; letters := ["A" "B" "C"]; labels := prefix + letters"#, Value::MatrixString(Matrix::from_vec(vec!["ItemA".to_string(), "ItemB".to_string(), "ItemC".to_string()], 1, 3)));
 test_interpreter!(interpret_string_raw_literal, r#""""C:\Users\Name\Documents""""#, Value::String(Ref::new(r"C:\Users\Name\Documents".to_string())));
-test_interpreter!(interpret_string_raw_literal_multiline, r#""""
-This is a raw string literal.It can span multiple lines
+test_interpreter!(interpret_string_raw_literal_multiline, r#""""This is a raw string literal.It can span multiple lines
 and include "quotes" and \backslashes\ without needing escapes.""""#, Value::String(Ref::new(r#"This is a raw string literal.It can span multiple lines
 and include "quotes" and \backslashes\ without needing escapes."#.to_string())));
+test_interpreter!(interpret_atom_equality, r#"a := :status/active; b := :status/active; c := (a == b);"#, Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_atom_inequality_false, r#"a := :status/active; b := :status/active; c := (a != b);"#, Value::Bool(Ref::new(false)));
+test_interpreter!(interpret_atom_inequality, r#"a := :status/active; b := :status/inactive; c := (a != b);"#, Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_atom_equality_false, r#"a := :status/active; b := :status/inactive; c := (a == b);"#, Value::Bool(Ref::new(false)));
