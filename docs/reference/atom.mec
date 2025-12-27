@@ -44,7 +44,7 @@ status := :pending
 4. Identity
 -------------------------------------------------------------------------------
 
-Atoms are unique by their name. Two atoms with the same name are identical:
+Two atoms with the same name are identical:
 
 ```mech:ex 3.3.2
 a := :foo
