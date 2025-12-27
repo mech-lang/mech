@@ -8,11 +8,13 @@ string
 
 String literals are written using double quotes `"`.
 
-```
+```mech:disabled
 ""
-"hello"
 "Hello, world!"
-"Mech"
+"Multi
+Line
+String"
+"Unicode: 🤖🦾🦿"
 ```
 
 Strings may contain spaces and punctuation. Whitespace inside a string literal is preserved.
@@ -23,6 +25,26 @@ Escape sequences may be used for special characters:
 "line 1\nline 2"
 "quote: \""
 "tab\tseparated"
+"backslash: \\"
+```
+When rendered:
+```mech:disabled
+"line 1\nline 2"
+"quote: \""
+"tab\tseparated"
+"backslash: \\"
+```
+
+Raw string literals can be created using triple double quotes `"""`. In this form, escape sequences are not processed, and all characters are taken literally, including backslashes and quotes.
+
+```
+"""C:\Users\Name\Documents"""
+"""This is a "raw" \string\ literal."""
+```
+When rendered: 
+```mech:disabled
+"""C:\Users\Name\Documents"""
+"""This is a "raw" \string\ literal."""
 ```
 
 2. Kind
@@ -47,11 +69,22 @@ Strings can be constructed in the following ways:
 
 (3.1) String Literals
 
-```
+String literals are written using double quotes `"` and may contain escape sequences and newlines:
+
+```mech:disabled
 "Hello"
 "This is a string literal."
 "This is a multiline
 string literal"
+"This string contains a newline:\nSee?"
+```
+
+Raw string literals are written with triple quotes and can contain unescaped characters, as well as newlines:
+
+```mech:disabled
+"""C:\Program Files\Mech"""
+"""This is a raw string literal.It can span multiple lines
+and include "quotes" and \backslashes\ without needing escapes."""
 ```
 
 (3.2) String Concatenation
@@ -95,4 +128,4 @@ Use {{<[string]>}} to create a matrix of strings:
 m<[string]:2,2> := [1 2 3 4]
 ```
 
-This converts a {{<[f64]:1,4>}} matrix to a {{<[string]:2,2>}} matrix.
+This converts a {{<[f64]:1,4>}} (row matrix of floats) to a {{<[string]:2,2>}} (square matrix of strings).
