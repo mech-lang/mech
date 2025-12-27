@@ -279,6 +279,7 @@ test_interpreter!(interpret_reference_bool2, "x := false; x && true", Value::Boo
 test_interpreter!(interpret_variable_recall, "a := 1; b := 2; a", Value::MutableReference(Ref::new(Value::F64(Ref::new(1.0)))));
 
 test_interpreter!(interpret_matrix_range_exclusive, "1..4", Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0], 1, 3)));
+test_interpreter!(interpret_matrix_range_exclusive_step, "1..4..12", Value::MatrixF64(Matrix::from_vec(vec![1.0, 5.0, 9.0], 1, 3)));
 #[cfg(feature = "u8")]
 test_interpreter!(interpret_matrix_range_exclusive_u8, "1<u8>..4<u8>", Value::MatrixU8(Matrix::from_vec(vec![1, 2, 3], 1, 3)));
 test_interpreter!(interpret_matrix_range_inclusive, "1..=4", Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0], 1, 4)));
