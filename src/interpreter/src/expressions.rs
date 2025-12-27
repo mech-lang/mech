@@ -202,12 +202,26 @@ pub fn range(rng: &RangeExpression, env: Option<&Environment>, p: &Interpreter) 
   let plan = p.plan();
   let start = factor(&rng.start, env, p)?;
   let terminal = factor(&rng.terminal, env, p)?;
-  let new_fxn = match &rng.operator {
-    #[cfg(feature = "range_exclusive")]
-    RangeOp::Exclusive => RangeExclusive{}.compile(&vec![start,terminal])?,
-    #[cfg(feature = "range_inclusive")]
-    RangeOp::Inclusive => RangeInclusive{}.compile(&vec![start,terminal])?,
-    x => unreachable!(),
+  let new_fxn = match &rng.increment {
+    Some((_,inc)) => {
+      let step = factor(inc, env, p)?;
+      match &rng.operator {
+        #[cfg(feature = "range_exclusive")]
+        RangeOp::Exclusive => RangeIncrementExclusive{}.compile(&vec![start, step, terminal])?,
+        //#[cfg(feature = "range_inclusive")]
+        //RangeOp::Inclusive => RangeIncrementInclusive{}.compile(&vec![start,terminal])?,
+        x => unreachable!(),
+      }
+    }
+    None => {
+      match &rng.operator {
+        #[cfg(feature = "range_exclusive")]
+        RangeOp::Exclusive => RangeExclusive{}.compile(&vec![start,terminal])?,
+        #[cfg(feature = "range_inclusive")]
+        RangeOp::Inclusive => RangeInclusive{}.compile(&vec![start,terminal])?,
+        x => unreachable!(),
+      }
+    }
   };
   let mut plan_brrw = plan.borrow_mut();
   plan_brrw.push(new_fxn);
