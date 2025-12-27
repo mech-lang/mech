@@ -228,7 +228,7 @@ pub enum FeatureKind {
   Superset, ProperSubset, ProperSuperset, ElementOf, NotElementOf,
   SetComprehensions,
 
-  StringConcat,
+  Concat,
 
   Functions, Formulas,
   Custom = 0xFFFF,
@@ -334,7 +334,7 @@ impl FeatureKind {
       FeatureKind::SetComprehensions => "set_comprehensions".to_string(),
       FeatureKind::Functions => "functions".to_string(),
       FeatureKind::Formulas => "formulas".to_string(),
-      FeatureKind::StringConcat => "string_concat".to_string(),
+      FeatureKind::Concat => "string_concat".to_string(),
       FeatureKind::Custom => "custom".to_string(),
     }
   }
