@@ -97,7 +97,7 @@ pub enum TokenKind {
   Backslash, Bar, BoxDrawing,
   Caret, CarriageReturn, CarriageReturnNewLine, Colon, CodeBlock, Comma,
   Dash, DefineOperator, Digit, Dollar,
-  Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Error, ErrorSigil, Exclamation, 
+  Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Error, ErrorSigil, EscapedChar, Exclamation, 
   False, FloatLeft, FloatRight, FootnotePrefix,
   Grave, GraveCodeBlockSigil,
   HashTag, HighlightSigil, HttpPrefix,
