@@ -2467,7 +2467,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn atom(&mut self, node: &Atom) -> String {
     if self.html {
-      format!("<span class=\"mech-atom\"><span class=\"mech-atom-name\">{}</span></span>",node.name.to_string())
+      format!("<span class=\"mech-atom\"><span class=\"mech-atom-name\">:{}</span></span>",node.name.to_string())
     } else {
       format!(":{}", node.name.to_string())
     }
