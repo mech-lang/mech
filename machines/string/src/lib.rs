@@ -56,7 +56,7 @@ pub use self::concat::*;
 // ----------------------------------------------------------------------------
 
 #[macro_export]
-macro_rules! impl_l_binop {
+macro_rules! impl_string_binop {
   ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
     #[derive(Debug)]
     struct $struct_name {
@@ -102,10 +102,3 @@ macro_rules! impl_l_binop {
     }
   }
 };}
-
-#[macro_export]
-macro_rules! impl_logic_fxns {
-  ($lib:ident) => {
-    impl_fxns!($lib,String,String,impl_logic_binop);
-  }
-}
