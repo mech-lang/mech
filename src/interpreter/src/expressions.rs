@@ -640,11 +640,7 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
       FormulaOperator::AddSub(AddSubOp::Add) => {
         match (&lhs, &rhs) {
           #[cfg(feature = "string_concat")]
-          (_, Value::MatrixString(_)) |
-          (Value::MatrixString(_), _) |
-          (Value::String(_), _) |
-          (_, Value::String(_)) => StringConcat{}.compile(&vec![lhs,rhs])?,
-          (Value::String(_), _) => StringConcat{}.compile(&vec![lhs,rhs])?,
+          (_, value) | (value, _) if value.is_string() => StringConcat{}.compile(&vec![lhs, rhs])?,
           #[cfg(feature = "math_add")]
           _ => MathAdd{}.compile(&vec![lhs,rhs])?,
         }
