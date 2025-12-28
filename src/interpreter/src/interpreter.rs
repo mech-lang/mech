@@ -181,28 +181,30 @@ impl Interpreter {
 
     // Case 1: step_id == 0, run entire plan step_count times
     if step_id == 0 {
-      // Initialize total durations per step
-      let mut total_durations = vec![Duration::ZERO; len];
-
-      for _ in 0..step_count {
-        for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
-          if self.profile {
+      if self.profile {
+        // Initialize total durations per step
+        let mut total_durations = vec![Duration::ZERO; len];
+        for _ in 0..step_count {
+          for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
             let start = Instant::now();
             fxn.solve();
             total_durations[idx] += start.elapsed();
-          } else {
+          }
+        }
+        // Print histogram if profiling is enabled
+        if self.profile {
+          println!("\nStep timing summary and histogram:");
+          print_histogram(&total_durations);
+        }
+        return Ok(plan_brrw[len - 1].out().clone());
+      } else {
+        for _ in 0..step_count {
+          for fxn in plan_brrw.iter_mut() {
             fxn.solve();
           }
         }
+        return Ok(plan_brrw[len - 1].out().clone());
       }
-
-      // Print histogram if profiling is enabled
-      if self.profile {
-        println!("\nStep timing summary and histogram:");
-        print_histogram(&total_durations);
-      }
-
-      return Ok(plan_brrw[len - 1].out().clone());
     }
 
 
@@ -629,7 +631,7 @@ fn print_histogram(total_durations: &[Duration]) {
     } else {
       ((dur.as_nanos() * max_bar_len as u128) / max_duration.as_nanos()) as usize
     };
-    let bar = std::iter::repeat('█').take(bar_len).collect::<String>();
+    let bar = std::iter::repeat('░').take(bar_len).collect::<String>();
 
     println!("{:>5}  {:>10}  {}", idx, format_duration(*dur), bar);
   }
