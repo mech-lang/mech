@@ -4,12 +4,14 @@ use std::collections::HashMap;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::io::{Cursor, Read, Write};
 use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
+use std::time::Instant;
 
 // Interpreter 
 // ----------------------------------------------------------------------------
 
 pub struct Interpreter {
   pub id: u64,
+  pub profile: bool,
   ip: usize,  // instruction pointer
   pub state: Ref<ProgramState>,
   #[cfg(feature = "functions")]
@@ -29,6 +31,7 @@ impl Clone for Interpreter {
     Self {
       id: self.id,
       ip: self.ip,
+      profile: false,
       state: Ref::new(self.state.borrow().clone()),
       #[cfg(feature = "functions")]
       stack: self.stack.clone(),
@@ -53,6 +56,7 @@ impl Interpreter {
     Self {
       id,
       ip: 0,
+      profile: false,
       state: Ref::new(state),
       #[cfg(feature = "functions")]
       stack: Vec::new(),
@@ -176,12 +180,36 @@ impl Interpreter {
 
     // Case 1: step_id == 0, run entire plan step_count times
     if step_id == 0 {
-      for _ in 0..step_count {
-        for fxn in plan_brrw.iter_mut() {
-          fxn.solve();
+      if self.profile {
+        let mut timings: Vec<(usize, std::time::Duration)> = Vec::with_capacity(len);
+        for _ in 0..step_count {
+          for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
+            let start = Instant::now();
+            fxn.solve();
+            let duration = start.elapsed();
+            // Save the timing
+            timings.push((idx, duration));
+          }
         }
+        // Summarize timings per step
+        for step_idx in 0..len {
+          let total_time: std::time::Duration = timings
+              .iter()
+              .filter(|(idx, _)| *idx == step_idx)
+              .map(|(_, d)| *d)
+              .sum();
+
+          println!("Total time for step {}: {:?}", step_idx, total_time);
+        }
+        return Ok(plan_brrw[len - 1].out().clone());
+      } else {
+        for _ in 0..step_count {
+          for fxn in plan_brrw.iter_mut() {
+            fxn.solve();
+          }
+        }
+        return Ok(plan_brrw[len - 1].out().clone());        
       }
-      return Ok(plan_brrw[len - 1].out().clone());
     }
 
     // Case 2: step a single function by index
