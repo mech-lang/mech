@@ -5,6 +5,7 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::io::{Cursor, Read, Write};
 use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
 use std::time::Instant;
+use std::time::Duration;
 
 // Interpreter 
 // ----------------------------------------------------------------------------
@@ -180,37 +181,30 @@ impl Interpreter {
 
     // Case 1: step_id == 0, run entire plan step_count times
     if step_id == 0 {
-      if self.profile {
-        let mut timings: Vec<(usize, std::time::Duration)> = Vec::with_capacity(len);
-        for _ in 0..step_count {
-          for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
+      // Initialize total durations per step
+      let mut total_durations = vec![Duration::ZERO; len];
+
+      for _ in 0..step_count {
+        for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
+          if self.profile {
             let start = Instant::now();
             fxn.solve();
-            let duration = start.elapsed();
-            // Save the timing
-            timings.push((idx, duration));
-          }
-        }
-        // Summarize timings per step
-        for step_idx in 0..len {
-          let total_time: std::time::Duration = timings
-              .iter()
-              .filter(|(idx, _)| *idx == step_idx)
-              .map(|(_, d)| *d)
-              .sum();
-
-          println!("Total time for step {}: {:?}", step_idx, total_time);
-        }
-        return Ok(plan_brrw[len - 1].out().clone());
-      } else {
-        for _ in 0..step_count {
-          for fxn in plan_brrw.iter_mut() {
+            total_durations[idx] += start.elapsed();
+          } else {
             fxn.solve();
           }
         }
-        return Ok(plan_brrw[len - 1].out().clone());        
       }
+
+      // Print histogram if profiling is enabled
+      if self.profile {
+        println!("\nStep timing summary and histogram:");
+        print_histogram(&total_durations);
+      }
+
+      return Ok(plan_brrw[len - 1].out().clone());
     }
+
 
     // Case 2: step a single function by index
     let idx = step_id as usize;
@@ -606,5 +600,37 @@ impl MechErrorKind2 for NoStepsInPlanError {
   fn name(&self) -> &str { "NoStepsInPlan" }
   fn message(&self) -> String {
     "Plan contains no steps. This program doesn't do anything.".to_string()
+  }
+}
+
+fn format_duration(d: Duration) -> String {
+  let ns = d.as_nanos();
+  if ns < 1_000 {
+    format!("{}ns", ns)
+  } else if ns < 1_000_000 {
+    format!("{:.2}µs", ns as f64 / 1_000.0)
+  } else if ns < 1_000_000_000 {
+    format!("{:.2}ms", ns as f64 / 1_000_000.0)
+  } else {
+    format!("{:.2}s", ns as f64 / 1_000_000_000.0)
+  }
+}
+
+fn print_histogram(total_durations: &[Duration]) {
+  let max_duration = total_durations.iter().cloned().max().unwrap_or(Duration::ZERO);
+  let max_bar_len = 50; // max characters for the bar
+
+  println!("{:>5}  {:>10}  {}", "#", "Time", "Histogram");
+  println!("-----------------------------------------------");
+
+  for (idx, dur) in total_durations.iter().enumerate() {
+    let bar_len = if max_duration.as_nanos() == 0 {
+      0
+    } else {
+      ((dur.as_nanos() * max_bar_len as u128) / max_duration.as_nanos()) as usize
+    };
+    let bar = std::iter::repeat('█').take(bar_len).collect::<String>();
+
+    println!("{:>5}  {:>10}  {}", idx, format_duration(*dur), bar);
   }
 }
