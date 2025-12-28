@@ -48,19 +48,17 @@ where
 impl<T, R1, C1, S1> MechFunctionImpl for RangeIncrementExclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
   Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-  T: Scalar + Clone + Debug + Sync + Send + 'static + PartialOrd + One + Add<Output = T> + 'static,
+  T: Copy + Scalar + Clone + Debug + Sync + Send + 'static + PartialOrd + One + Add<Output = T> + 'static,
   R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
 {
   fn solve(&self) {
-    let from_ptr = self.from.as_ptr();
-    let step_ptr = self.step.as_ptr();
-    let to_ptr = self.to.as_ptr();
-    let out_ptr = self.out.as_mut_ptr();
-    let mut current = from_ptr;
     unsafe {
-      for val in (*out_ptr).iter_mut() {
-        *val = (*current).clone();
-        current = &(*current).clone().add((*step_ptr).clone());
+      let out_ptr = self.out.as_ptr() as *mut naMatrix<T, R1, C1, S1>;
+      let mut current = *self.from.as_ptr();
+      let step = *self.step.as_ptr();
+      for i in 0..(*out_ptr).len() {
+        (&mut (*out_ptr))[i] = current;
+        current = current + step;
       }
     }
   }
