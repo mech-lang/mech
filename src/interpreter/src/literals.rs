@@ -200,6 +200,7 @@ pub fn real(rl: &RealNumber, p: &Interpreter) -> MResult<Value> {
     RealNumber::Scientific(num) => scientific(num),
     #[cfg(feature = "rational")]
     RealNumber::Rational(num) => rational(num),
+    #[cfg(feature = "convert")]
     RealNumber::TypedInteger((num_tkn, kind)) => {
       let num: Literal = Literal::Number(Number::Real(RealNumber::Integer(num_tkn.clone())));
       typed_literal(&num, kind, p)?
