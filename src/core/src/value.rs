@@ -1741,6 +1741,7 @@ impl Value {
     match self {
       #[cfg(feature = "string")]
       Value::String(_) => true,
+      #[cfg(feature = "string")]
       Value::MatrixString(_) => true,
       Value::MutableReference(val) => val.borrow().is_string(),
       _ => false,
