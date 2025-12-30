@@ -22,7 +22,9 @@ pub fn literal(input: ParseString) -> ParseResult<Literal> {
           _ => match empty(input.clone()) {
             Ok((input, empty)) => (input, Literal::Empty(empty)), 
             Err(err) => match kind_annotation(input.clone()) {
-              Ok((input, knd)) => (input, Literal::Kind(knd.kind)),
+              Ok((input, knd)) => {
+                (input, Literal::Kind(knd.kind))
+              }
               Err(err) => return Err(err),
             }
           }
@@ -45,15 +47,43 @@ pub fn atom(input: ParseString) -> ParseResult<Atom> {
   Ok((input, Atom{name}))
 }
 
-
-// string := quote, *(¬quote, (text | new-line)), quote ;
+// string := raw-string | utf8-string ;
 pub fn string(input: ParseString) -> ParseResult<MechString> {
+  match raw_string(input.clone()) {
+    Ok((input, s)) => Ok((input, s)),
+    _ => match utf8_string(input.clone()) {
+      Ok((input, s)) => Ok((input, s)),
+      Err(err) => return Err(err),
+    },
+  }
+}
+
+// utf8-string := quote, *(¬quote, (text | new-line)), quote ;
+pub fn utf8_string(input: ParseString) -> ParseResult<MechString> {
   let msg = "Character not allowed in string";
   let (input, _) = quote(input)?;
-  let (input, matched) = many0(nom_tuple((is_not(quote), alt((text,new_line)))))(input)?;
+  let (input, matched) = many0(nom_tuple((is_not(quote), alt((text, new_line)))))(input)?;
   let (input, _) = quote(input)?;
   let (_, mut text): ((), Vec<_>) = matched.into_iter().unzip();
-  let mut merged = Token::merge_tokens(&mut text).unwrap();
+  let mut merged = match Token::merge_tokens(&mut text) {
+    Some(t) => t,
+    None => Token::default(),
+  };
+  merged.kind = TokenKind::String;
+  Ok((input, MechString { text: merged }))
+}
+
+// raw-string := `"""`, *(¬`"""`, (raw-text | new-line)), `"""` ;
+pub fn raw_string(input: ParseString) -> ParseResult<MechString> {
+  let msg = "Character not allowed in string";
+  let (input, _) = nom_tuple((quote, quote, quote))(input)?;
+  let (input, matched) = many0(nom_tuple((is_not(nom_tuple((quote, quote, quote))), alt((raw_text, new_line)))))(input)?;
+  let (input, _) = nom_tuple((quote, quote, quote))(input)?;
+  let (_, mut text): ((), Vec<_>) = matched.into_iter().unzip();
+  let mut merged = match Token::merge_tokens(&mut text) {
+    Some(t) => t,
+    None => Token::default(),
+  };
   merged.kind = TokenKind::String;
   Ok((input, MechString { text: merged }))
 }
@@ -95,7 +125,7 @@ pub fn number(input: ParseString) -> ParseResult<Number> {
 
 // complex-number := real-number, ("i"|"j")? | (("+"|"-"), real-number, ("i"|"j")) ;
 pub fn complex_number(input: ParseString) -> ParseResult<C64Node> {
-  let (input, real_num) = real_number(input)?;
+  let (input, real_num) = untyped_real_number(input)?;
   if let Ok((input, _)) = alt((tag("i"), tag("j")))(input.clone()) {
     return Ok((
       input,
@@ -106,7 +136,7 @@ pub fn complex_number(input: ParseString) -> ParseResult<C64Node> {
     ));
   }
   if let Ok((input, (sign, imaginary_num, _))) = 
-    nom_tuple((alt((plus, dash)), real_number, alt((tag("i"), tag("j")))))(input.clone())
+    nom_tuple((alt((plus, dash)), untyped_real_number, alt((tag("i"), tag("j")))))(input.clone())
   {
     let imaginary = match sign.kind {
       TokenKind::Plus => imaginary_num,
@@ -139,12 +169,31 @@ pub fn real_number(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, result))
 }
 
+// real-number := ?dash, (hexadecimal-literal | decimal-literal | octal-literal | binary-literal | scientific-literal | rational-literal | float-literal | integer-literal) ;
+pub fn untyped_real_number(input: ParseString) -> ParseResult<RealNumber> {
+  let (input, neg) = opt(dash)(input)?;
+  let (input, result) = alt((hexadecimal_literal, decimal_literal, octal_literal, binary_literal, scientific_literal, rational_literal, float_literal, untyped_integer))(input)?;
+  let result = match neg {
+    Some(_) => RealNumber::Negated(Box::new(result)),
+    None => result,
+  };
+  Ok((input, result))
+}
+
 // rational-literal := integer-literal, slash, integer-literal ;
 pub fn rational_literal(input: ParseString) -> ParseResult<RealNumber> {
-  let (input, RealNumber::Integer(numerator)) = integer_literal(input)? else { unreachable!() };
+  let (input, numerator) = match integer_literal(input)? {
+    (input, RealNumber::Integer(num)) => (input, num),
+    (input, RealNumber::TypedInteger((num,_))) => (input, num),
+    _ => unreachable!(),
+  };
   let (input, _) = slash(input)?;
-  let (input, RealNumber::Integer(denominator)) = integer_literal(input)? else { unreachable!() };
-  Ok((input, RealNumber::Rational((numerator,denominator))))
+  let (input, denominator) = match integer_literal(input)? {
+    (input, RealNumber::Integer(den)) => (input, den),
+    (input, RealNumber::TypedInteger((den,_))) => (input, den),
+    _ => unreachable!(),
+  };
+  Ok((input, RealNumber::Rational((numerator, denominator))))
 }
 
 // scientific-literal := (float-literal | integer-literal), ("e" | "E"), ?plus, ?dash, (float-literal | integer-literal) ;
@@ -154,6 +203,9 @@ pub fn scientific_literal(input: ParseString) -> ParseResult<RealNumber> {
       (input, base)
     }
     _ => match integer_literal(input.clone()) {
+      Ok((input, RealNumber::TypedInteger((base,_))) ) => {
+        (input, (base, Token::default()))
+      }
       Ok((input, RealNumber::Integer(base))) => {
         (input, (base, Token::default()))
       }
@@ -211,11 +263,28 @@ pub fn float_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, result))
 }
 
-// integer := digit1 ;
+// integer := digit1, ?suffix ;
 pub fn integer_literal(input: ParseString) -> ParseResult<RealNumber> {
+  alt((typed_integer, untyped_integer))(input)
+}
+
+// typed_integer := digit1, suffix ;
+pub fn typed_integer(input: ParseString) -> ParseResult<RealNumber> {
   let (input, mut digits) = digit_sequence(input)?;
   let mut merged = Token::merge_tokens(&mut digits).unwrap();
-  merged.kind = TokenKind::Number; 
+  let (input, suffix) = identifier(input)?; // Suffix is mandatory for typed integers
+  merged.kind = TokenKind::Number;
+  let kind_annotation = KindAnnotation {
+    kind: Kind::Scalar(suffix),
+  };
+  Ok((input, RealNumber::TypedInteger((merged, kind_annotation))))
+}
+
+// untyped_integer := digit1 ;
+pub fn untyped_integer(input: ParseString) -> ParseResult<RealNumber> {
+  let (input, mut digits) = digit_sequence(input)?;
+  let mut merged = Token::merge_tokens(&mut digits).unwrap();
+  merged.kind = TokenKind::Number;
   Ok((input, RealNumber::Integer(merged)))
 }
 
@@ -300,8 +369,25 @@ pub fn kind(input: ParseString) -> ParseResult<Kind> {
     kind_set,
     kind_table, 
     kind_tuple,
+    kind_kind,
   ))(input)?;
   Ok((input, kind))
+}
+
+// kind-kind := "<", kind, ">" ;
+pub fn kind_kind(input: ParseString) -> ParseResult<Kind> {
+  let msg2 = "Expects at least one unit in kind annotation";
+  let msg3 = "Expects right angle";
+  let (input, (_, r)) = range(left_angle)(input)?;
+
+  let (input, kind) = kind(input)?;
+  let (input, optional) = opt(question)(input)?;
+  let (input, _) = label!(right_angle, msg3, r)(input)?;
+  let kind = match optional {
+    Some(_) => Kind::Option(Box::new(kind)),
+    None => kind,
+  };
+  Ok((input, Kind::Kind(Box::new(kind))))
 }
 
 // kind-table := "|" , list1(",", (identifier, kind)), "|", ":", list0(",", literal) ;

@@ -90,6 +90,52 @@ macro_rules! eq_row_mat_op {
 
 impl_compare_fxns!(EQ);
 
+#[cfg(feature = "atom")]
+#[derive(Debug)]
+pub struct AtomEq {
+  pub lhs: Ref<MechAtom>,
+  pub rhs: Ref<MechAtom>,
+  pub out: Ref<bool>,
+}
+impl MechFunctionFactory for AtomEq {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Binary(out, arg1, arg2) => {
+        let lhs: Ref<MechAtom> = unsafe { arg1.as_unchecked() }.clone();
+        let rhs: Ref<MechAtom> = unsafe { arg2.as_unchecked() }.clone();
+        let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(AtomEq { lhs, rhs, out }))
+      }
+      _ => Err(MechError2::new(
+          IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
+          None
+        ).with_compiler_loc()
+      ),
+    }
+  }
+}
+#[cfg(feature = "atom")]
+impl MechFunctionImpl for AtomEq {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let mut out_ptr = self.out.as_mut_ptr();
+    unsafe {
+      *out_ptr = (*lhs_ptr) == (*rhs_ptr);
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "atom")]
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for AtomEq {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let name = format!("AtomEq");
+    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::Atom));
+  }
+}
+
 #[cfg(feature = "table")]
 #[derive(Debug)]
 pub struct TableEq {
@@ -140,7 +186,6 @@ fn impl_eq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFuncti
   match (&lhs_value, &rhs_value) {
     #[cfg(all(feature = "table"))]
     (Value::Table(lhs), Value::Table(rhs)) => {
-      println!("Registering TableEq");
       register_descriptor! {
         FunctionDescriptor {
           name: "TableEq",
@@ -148,6 +193,16 @@ fn impl_eq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFuncti
         }
       }
       return Ok(Box::new(TableEq{lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(false) }));
+    }
+    #[cfg(feature = "atom")]
+    (Value::Atom(lhs), Value::Atom(rhs)) => {
+      register_descriptor! {
+        FunctionDescriptor {
+          name: "AtomEq",
+          ptr: AtomEq::new,
+        }
+      }
+      return Ok(Box::new(AtomEq{lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(false) }));
     }
     _ => (),
   }

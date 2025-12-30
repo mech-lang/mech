@@ -2173,6 +2173,14 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn kind(&mut self, node: &Kind) -> String {
     let annotation = match node {
+      Kind::Kind(kind) => {
+        let kind_kind = self.kind(kind);
+        if self.html {
+          format!("<span class=\"mech-kind-annotation\">&lt;{}&gt;</span>",kind_kind)
+        } else {
+          format!("<{}>", kind_kind)
+        }
+      },
       Kind::Option(kind) => {
         let k = self.kind(kind);
         if self.html {
@@ -2459,7 +2467,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn atom(&mut self, node: &Atom) -> String {
     if self.html {
-      format!("<span class=\"mech-atom\"><span class=\"mech-atom-colon\">:</span><span class=\"mech-atom-name\">{}</span></span>",node.name.to_string())
+      format!("<span class=\"mech-atom\"><span class=\"mech-atom-name\">:{}</span></span>",node.name.to_string())
     } else {
       format!(":{}", node.name.to_string())
     }
@@ -2490,12 +2498,17 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       RealNumber::Negated(real_number) => format!("-{}", self.real_number(real_number)),
       RealNumber::Integer(token) => token.to_string(),
       RealNumber::Float((whole, part)) => format!("{}.{}", whole.to_string(), part.to_string()),
-      RealNumber::Decimal(token) => token.to_string(),
+      RealNumber::Decimal(token) => format!("0d{}", token.to_string()),
       RealNumber::Hexadecimal(token) => format!("0x{}", token.to_string()),
       RealNumber::Octal(token) => format!("0o{}", token.to_string()),
       RealNumber::Binary(token) => format!("0b{}", token.to_string()),
       RealNumber::Scientific(((whole, part), (sign, ewhole, epart))) => format!("{}.{}e{}{}.{}", whole.to_string(), part.to_string(), if *sign { "-" } else { "+" }, ewhole.to_string(), epart.to_string()),
       RealNumber::Rational((numerator, denominator)) => format!("{}/{}", numerator.to_string(), denominator.to_string()),
+      RealNumber::TypedInteger((token, kind_annotation)) => {
+        let num = token.to_string();
+        let annotation = &kind_annotation.kind.tokens().iter().map(|tkn| tkn.to_string()).collect::<Vec<String>>().join("");
+        format!("{}{}", num, annotation)
+      }
     }
   }
 

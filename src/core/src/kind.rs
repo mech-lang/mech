@@ -22,6 +22,7 @@ pub enum Kind {
   Set(Box<Kind>,Option<usize>),
   Table(Vec<(String,Kind)>,usize),
   Tuple(Vec<Kind>),
+  Kind(Box<Kind>),
 }
 
 impl Kind {
@@ -35,6 +36,10 @@ impl Kind {
   #[cfg(feature = "kind_annotation")]
   pub fn to_value_kind(&self, kinds: &KindTable) -> MResult<ValueKind> {
     match self {
+      Kind::Kind(kind) => {
+        let val_knd = kind.to_value_kind(kinds)?;
+        Ok(ValueKind::Kind(Box::new(val_knd)))
+      },
       Kind::None => Ok(ValueKind::None),
       Kind::Any => Ok(ValueKind::Any),
       Kind::Empty => Ok(ValueKind::Empty),

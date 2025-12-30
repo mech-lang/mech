@@ -1,0 +1,23 @@
+empty
+===============================================================================
+
+%% The `empty` value, represented by `_`, is a placeholder indicating absence of a value, missing data, or an intentionally ignored element. It is used to represent missing values in tables and skipped elements in tuple destructuring.
+
+1. Syntax
+---------------------------------------------------------------------------
+
+An empty value is written using one or more underscores `_`:
+
+```mech:disabled
+_
+___
+```
+
+2. Kind
+-------------------------------------------------------------------------------
+
+The kind of an empty value is just empty:
+
+```mech:disabled
+<_>
+```

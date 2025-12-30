@@ -90,7 +90,7 @@ macro_rules! impl_compare_binop {
     }
     impl<T> MechFunctionFactory for $struct_name<T>
     where
-      T: std::fmt::Debug + Clone + Sync + Send + 'static + 
+      T: std::fmt::Debug + Clone + 'static + 
       ConstElem + CompileConst + AsValueKind +
       PartialEq + PartialOrd,
       Ref<$out_type>: ToValue
@@ -113,7 +113,7 @@ macro_rules! impl_compare_binop {
     }
     impl<T> MechFunctionImpl for $struct_name<T>
     where
-      T: std::fmt::Debug + Clone + Sync + Send + 'static + 
+      T: std::fmt::Debug + Clone + 'static + 
       PartialEq + PartialOrd,
       Ref<$out_type>: ToValue
     {

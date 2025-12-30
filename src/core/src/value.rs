@@ -69,7 +69,7 @@ pub enum ValueKind {
   Matrix(Box<ValueKind>,Vec<usize>),  Enum(u64,String),             Record(Vec<(String,ValueKind)>),
   Map(Box<ValueKind>,Box<ValueKind>), Atom(u64,String),             Table(Vec<(String,ValueKind)>, usize), 
   Tuple(Vec<ValueKind>),              Reference(Box<ValueKind>),    Set(Box<ValueKind>, Option<usize>), 
-  Option(Box<ValueKind>),
+  Option(Box<ValueKind>),             Kind(Box<ValueKind>),    
 }
 
 impl Display for ValueKind {
@@ -109,6 +109,7 @@ impl Display for ValueKind {
       ValueKind::Any => write!(f, "*"),
       ValueKind::None => write!(f, "none"),
       ValueKind::Option(x) => write!(f, "{}?", x),
+      ValueKind::Kind(x) => write!(f, "<{}>", x),
     }
   }
 }
@@ -384,6 +385,7 @@ impl ValueKind {
         elem.align()
       }
       ValueKind::Option(inner) => inner.align(),
+      ValueKind::Kind(inner) => inner.align(),
     }
   }
 }
@@ -1377,6 +1379,8 @@ impl Value {
       Value::Bool(b) => format!("<span class='mech-boolean'>{}</span>", b.borrow()),
       #[cfg(feature = "complex")]
       Value::C64(c) => c.borrow().to_html(),
+      #[cfg(feature = "rational")]
+      Value::R64(r) => r.borrow().to_html(),
       #[cfg(all(feature = "matrix", feature = "u8"))]
       Value::MatrixU8(m) => m.to_html(),
       #[cfg(all(feature = "matrix", feature = "u16"))]
@@ -1414,7 +1418,7 @@ impl Value {
       #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixC64(m) => m.to_html(),
       #[cfg(feature = "atom")]
-      Value::Atom(a) => format!("<span class=\"mech-atom\"><span class=\"mech-atom-colon\">:</span><span class=\"mech-atom-name\">{}</span></span>",a.borrow()),
+      Value::Atom(a) => a.borrow().to_html(),
       #[cfg(feature = "set")]
       Value::Set(s) => s.borrow().to_html(),
       #[cfg(feature = "map")]
@@ -1732,6 +1736,17 @@ impl Value {
   impl_as_type!(u32);
   impl_as_type!(u64);
   impl_as_type!(u128);
+
+  pub fn is_string(&self) -> bool {
+    match self {
+      #[cfg(feature = "string")]
+      Value::String(_) => true,
+      #[cfg(feature = "string")]
+      Value::MatrixString(_) => true,
+      Value::MutableReference(val) => val.borrow().is_string(),
+      _ => false,
+    }
+  }
 
   #[cfg(any(feature = "string", feature = "variable_define"))]
   pub fn as_string(&self) -> MResult<Ref<String>> {
@@ -2232,7 +2247,7 @@ impl PrettyPrint for Value {
       Value::Empty => builder.push_record(vec!["_"]),
       Value::IndexAll => builder.push_record(vec![":"]),
       Value::Id(x) => builder.push_record(vec![format!("{}",humanize(x))]),
-      Value::Kind(x) => builder.push_record(vec![format!("{}",x)]),
+      Value::Kind(x) => builder.push_record(vec![format!("<{}>",x)]),
       x => {
         todo!("{x:#?}");
       },

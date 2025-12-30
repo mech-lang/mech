@@ -101,6 +101,9 @@ leaf!{english_true_literal, "true", TokenKind::True}
 leaf!{english_false_literal, "false", TokenKind::False}
 
 leaf!{space, " ", TokenKind::Space}
+leaf!{nbsp, "\u{00A0}", TokenKind::Space}
+leaf!{thin_space, "\u{2009}", TokenKind::Space}
+
 leaf!{new_line_char, "\n", TokenKind::Newline}
 leaf!{carriage_return, "\r", TokenKind::CarriageReturn}
 leaf!{carriage_return_new_line, "\r\n", TokenKind::CarriageReturn}
@@ -226,7 +229,7 @@ pub fn any_token(mut input: ParseString) -> ParseResult<Token> {
 
 // forbidden-emoji := box-drawing | other-forbidden-shapes ;
 pub fn forbidden_emoji(input: ParseString) -> ParseResult<Token> {
-  box_drawing_emoji(input)
+  alt((box_drawing_emoji, nbsp, thin_space))(input)
 }
 
 // emoji := (!forbidden-emoji, emoji-grapheme) ;
@@ -289,7 +292,18 @@ pub fn punctuation(input: ParseString) -> ParseResult<Token> {
 // escaped-char := "\" ,  alpha | symbol | punctuation ;
 pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
   let (input, _) = backslash(input)?;
-  let (input, symbol) = alt((alpha_token, symbol, punctuation))(input)?;
+  let (input, mut symbol) = alt((alpha_token, symbol, punctuation))(input)?;
+  // Update kind
+  symbol.kind = TokenKind::EscapedChar;
+  // Transform the char to visible escaped form if needed
+  symbol.chars = symbol.chars.iter().flat_map(|&c| {
+    match c {
+      'n' => vec!['\n'],
+      't' => vec!['\t'],
+      'r' => vec!['\r'],
+      other => vec![other],
+    }
+  }).collect();
   Ok((input, symbol))
 }
 
@@ -305,9 +319,15 @@ pub fn identifier_symbol(input: ParseString) -> ParseResult<Token> {
   Ok((input, symbol))
 }
 
-// text := alpha | digit | space | tab | escaped_char | punctuation | grouping_symbol | symbol ;
+// text := alpha | digit | space | emoji | forbidden_emoji | space | tab | escaped-char | punctuation | grouping-symbol | symbol ;
 pub fn text(input: ParseString) -> ParseResult<Token> {
   let (input, text) = alt((alpha_token, digit_token, emoji, forbidden_emoji, space, tab, escaped_char, punctuation, grouping_symbol, symbol))(input)?;
+  Ok((input, text))
+}
+
+// raw-text := alpha | digit | emoji | forbidden_emoji | space | tab | punctuation | grouping_symbol | symbol ;
+pub fn raw_text(input: ParseString) -> ParseResult<Token> {
+  let (input, text) = alt((alpha_token, digit_token, emoji, forbidden_emoji, space, tab, punctuation, grouping_symbol, symbol))(input)?;
   Ok((input, text))
 }
 
@@ -360,7 +380,7 @@ pub fn ws0e(input: ParseString) -> ParseResult<()> {
 
 // space-tab := space | tab ;
 pub fn space_tab(input: ParseString) -> ParseResult<Token> {
-  let (input, space) = alt((space,tab))(input)?;
+  let (input, space) = alt((space,tab,nbsp,thin_space))(input)?;
   Ok((input, space))
 }
 

@@ -32,6 +32,8 @@ macro_rules! test_interpreter {
 
 test_interpreter!(interpret_literal_integer, "123", Value::F64(Ref::new(123.0)));
 test_interpreter!(interpret_literal_sci, "1.23e2", Value::F64(Ref::new(123.0)));
+#[cfg(feature = "u8")]
+test_interpreter!(interpret_formula_literal_suffix, "100u8", Value::U8(Ref::new(100)));
 #[cfg(feature = "i64")]
 test_interpreter!(interpret_literal_bin, "0b10101", Value::I64(Ref::new(0b10101)));
 #[cfg(feature = "i64")]
@@ -42,6 +44,7 @@ test_interpreter!(interpret_literal_oct, "0o1234", Value::I64(Ref::new(0o1234)))
 test_interpreter!(interpret_literal_dec, "0d1234", Value::I64(Ref::new(1234)));
 test_interpreter!(interpret_literal_float, "1.23", Value::F64(Ref::new(1.23)));
 test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String(Ref::new("Hello".to_string())));
+test_interpreter!(interpret_literal_string_empty, r#""""#, Value::String(Ref::new("".to_string())));
 test_interpreter!(interpret_literal_string_multiline, r#""Hello 
  World""#, Value::String(Ref::new("Hello \n World".to_string())));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(Ref::new(true)));
@@ -276,9 +279,11 @@ test_interpreter!(interpret_reference_bool2, "x := false; x && true", Value::Boo
 test_interpreter!(interpret_variable_recall, "a := 1; b := 2; a", Value::MutableReference(Ref::new(Value::F64(Ref::new(1.0)))));
 
 test_interpreter!(interpret_matrix_range_exclusive, "1..4", Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0], 1, 3)));
+test_interpreter!(interpret_matrix_range_exclusive_step, "1..4..13", Value::MatrixF64(Matrix::from_vec(vec![1.0, 5.0, 9.0], 1, 3)));
 #[cfg(feature = "u8")]
 test_interpreter!(interpret_matrix_range_exclusive_u8, "1<u8>..4<u8>", Value::MatrixU8(Matrix::from_vec(vec![1, 2, 3], 1, 3)));
 test_interpreter!(interpret_matrix_range_inclusive, "1..=4", Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0], 1, 4)));
+test_interpreter!(interpret_matrix_range_inclusive_step, "1..4..=13", Value::MatrixF64(Matrix::from_vec(vec![1.0, 5.0, 9.0, 13.0], 1, 4)));
 #[cfg(feature = "u8")]
 test_interpreter!(interpret_matrix_range_inclusive_u8, "1<u8>..=4<u8>", Value::MatrixU8(Matrix::from_vec(vec![1, 2, 3, 4], 1, 4)));
 test_interpreter!(interpret_matrix_empty, "[]", Value::MatrixValue(Matrix::from_vec(vec![], 0, 0)));
@@ -780,3 +785,17 @@ test_interpreter!(interpret_table_record_mutation, r#"~T:=|x<f64> y<bool>|1.2 tr
 //test_interpreter!("interpret_table_record_mutation_fail", r#"T := | x<f64>  y<bool> |  1.2     true   |  1.3     false  |;~r := T{1};r.x = 42;T.x[1]"#, Value::F64(Ref::new(1.2)));
 
 test_interpreter!(interpret_define_custom_enum, r#"<color>:=red|green|blue; x<color>:=:color/red;"#, Value::Atom(Ref::new(MechAtom::new(hash_str("color/red")))));
+test_interpreter!(interpret_string_concatenation, r#"x := "Hello, " + "world!""#, Value::String(Ref::new("Hello, world!".to_string())));
+test_interpreter!(interpret_string_concatenation2, r#""a" + "b" + "c""#, Value::String(Ref::new("abc".to_string())));
+test_interpreter!(interpret_string_concatenation_var, r#"greeting := "Hello"; name := "Alice"; message := greeting + ", " + name + "!""#, Value::String(Ref::new("Hello, Alice!".to_string())));
+test_interpreter!(interpret_string_concatenation_matrix, r#"["a" "b"] + "c""#, Value::MatrixString(Matrix::from_vec(vec!["ac".to_string(), "bc".to_string()], 1, 2)));
+test_interpreter!(interpret_string_concatenation_matrix2, r#"["a" "b"; "c" "d"] + ["1" "2"; "3" "4"]"#, Value::MatrixString(Matrix::from_vec(vec!["a1".to_string(), "c3".to_string(), "b2".to_string(), "d4".to_string()], 2, 2)));
+test_interpreter!(interpret_string_concatenation_matrix3, r#"prefix := "Item"; letters := ["A" "B" "C"]; labels := prefix + letters"#, Value::MatrixString(Matrix::from_vec(vec!["ItemA".to_string(), "ItemB".to_string(), "ItemC".to_string()], 1, 3)));
+test_interpreter!(interpret_string_raw_literal, r#""""C:\Users\Name\Documents""""#, Value::String(Ref::new(r"C:\Users\Name\Documents".to_string())));
+test_interpreter!(interpret_string_raw_literal_multiline, r#""""This is a raw string literal.It can span multiple lines
+and include "quotes" and \backslashes\ without needing escapes.""""#, Value::String(Ref::new(r#"This is a raw string literal.It can span multiple lines
+and include "quotes" and \backslashes\ without needing escapes."#.to_string())));
+test_interpreter!(interpret_atom_equality, r#"a := :status/active; b := :status/active; c := (a == b);"#, Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_atom_inequality_false, r#"a := :status/active; b := :status/active; c := (a != b);"#, Value::Bool(Ref::new(false)));
+test_interpreter!(interpret_atom_inequality, r#"a := :status/active; b := :status/inactive; c := (a != b);"#, Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_atom_equality_false, r#"a := :status/active; b := :status/inactive; c := (a == b);"#, Value::Bool(Ref::new(false)));

@@ -10,14 +10,16 @@ Provides functions that produce a range of values.
 -------------------------------------------------------------------------------
 
 - `range/inclusive`
+- `range/inclusive-increment`
 - `range/exclusive`
+- `range/exclusive-increment`
 
 3. Info
 -------------------------------------------------------------------------------
 
 range/machine = {
   name: "range" 
-  version: "v0.2.73"
+  version: "v0.2.74"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/range"
   license: "Apache-2.0"}

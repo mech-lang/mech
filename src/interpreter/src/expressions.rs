@@ -202,12 +202,26 @@ pub fn range(rng: &RangeExpression, env: Option<&Environment>, p: &Interpreter) 
   let plan = p.plan();
   let start = factor(&rng.start, env, p)?;
   let terminal = factor(&rng.terminal, env, p)?;
-  let new_fxn = match &rng.operator {
-    #[cfg(feature = "range_exclusive")]
-    RangeOp::Exclusive => RangeExclusive{}.compile(&vec![start,terminal])?,
-    #[cfg(feature = "range_inclusive")]
-    RangeOp::Inclusive => RangeInclusive{}.compile(&vec![start,terminal])?,
-    x => unreachable!(),
+  let new_fxn = match &rng.increment {
+    Some((_,inc)) => {
+      let step = factor(inc, env, p)?;
+      match &rng.operator {
+        #[cfg(feature = "range_exclusive")]
+        RangeOp::Exclusive => RangeIncrementExclusive{}.compile(&vec![start, step, terminal])?,
+        #[cfg(feature = "range_inclusive")]
+        RangeOp::Inclusive => RangeIncrementInclusive{}.compile(&vec![start, step, terminal])?,
+        x => unreachable!(),
+      }
+    }
+    None => {
+      match &rng.operator {
+        #[cfg(feature = "range_exclusive")]
+        RangeOp::Exclusive => RangeExclusive{}.compile(&vec![start,terminal])?,
+        #[cfg(feature = "range_inclusive")]
+        RangeOp::Inclusive => RangeInclusive{}.compile(&vec![start,terminal])?,
+        x => unreachable!(),
+      }
+    }
   };
   let mut plan_brrw = plan.borrow_mut();
   plan_brrw.push(new_fxn);
@@ -312,7 +326,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
     },
     Subscript::DotInt(x) => {
       let mut fxn_input = vec![val.clone()];
-      let result = real(&x.clone());
+      let result = real(&x.clone(), p)?;
       fxn_input.push(result.as_index()?);
       match val.deref_kind() {
         #[cfg(feature = "matrix")]
@@ -637,8 +651,14 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
     let rhs = factor(&rhs, env, p)?;
     let new_fxn: Box<dyn MechFunction> = match op {
       // Math
-      #[cfg(feature = "math_add")]
-      FormulaOperator::AddSub(AddSubOp::Add) => MathAdd{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::AddSub(AddSubOp::Add) => {
+        match (&lhs, &rhs) {
+          #[cfg(feature = "string_concat")]
+          (_, value) | (value, _) if value.is_string() => StringConcat{}.compile(&vec![lhs, rhs])?,
+          #[cfg(feature = "math_add")]
+          _ => MathAdd{}.compile(&vec![lhs,rhs])?,
+        }
+      }
       #[cfg(feature = "math_sub")]
       FormulaOperator::AddSub(AddSubOp::Sub) => MathSub{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "math_mul")]

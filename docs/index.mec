@@ -16,12 +16,12 @@ Mech Documentation
 (2.1) Data Model
 
 - [Data Types](/reference/data.html)
-    - [`atom`](/reference/atom.html) - symbolic constants, often used for tags or enums `todo`
+    - [`atom`](/reference/atom.html) - symbolic constants, often used for tags or enums
     - [`bool`](/reference/bool.html) - logical values for true and false `todo`
-    - [`empty`](/reference/empty.html) - represents an absence of value `todo`
+    - [`empty`](/reference/empty.html) - represents an absence of value
     - [`kind`](/reference/kind.html) - a category of values `todo`
     - [`number`](/reference/number.html) - numeric values, including integers and floating-point numbers
-    - [`string`](/reference/string.html) - sequence of UTF-8 characters representing text `todo`
+    - [`string`](/reference/string.html) - sequence of UTF-8 characters representing text
 - Data Structures
     - [`map`](/reference/map.html) - stores key-value pairs for fast lookups
     - [`matrix`](/reference/matrix.html) - 2D array of homogenous values arranged in rows and columns
@@ -85,6 +85,7 @@ Mech Documentation
 - [Range](/stdlib/range/index.html) `todo`
 - [Set](/stdlib/set/index.html)
 - [Stats](/stdlib/stats/index.html) `todo`
+- [String](/stdlib/string/index.html) `todo`
 
 5. Guides
 -------------------------------------------------------------------------------
@@ -111,7 +112,7 @@ Mech Documentation
 ```mech:hidden
 document/index := {
   name: "docs" 
-  version: "v0.2.73"
+  version: "v0.2.74"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/mech/docs"
   license: "Apache-2.0"}
