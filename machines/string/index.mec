@@ -16,7 +16,7 @@ String related functions.
 
 string/machine := {
   name: "string" 
-  version: "v0.2.73"
+  version: "v0.2.74"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/string"
   license: "Apache-2.0"}
