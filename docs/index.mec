@@ -112,7 +112,7 @@ Mech Documentation
 ```mech:hidden
 document/index := {
   name: "docs" 
-  version: "v0.2.73"
+  version: "v0.2.74"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/mech/docs"
   license: "Apache-2.0"}
