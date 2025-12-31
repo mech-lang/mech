@@ -17,7 +17,7 @@ Mech Documentation
 
 - [Data Types](/reference/data.html)
     - [`atom`](/reference/atom.html) - symbolic constants, often used for tags or enums
-    - [`bool`](/reference/bool.html) - logical values for true and false `todo`
+    - [`bool`](/reference/bool.html) - logical values for true and false
     - [`empty`](/reference/empty.html) - represents an absence of value
     - [`kind`](/reference/kind.html) - a category of values `todo`
     - [`number`](/reference/number.html) - numeric values, including integers and floating-point numbers
