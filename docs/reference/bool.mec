@@ -1,0 +1,74 @@
+bool
+===============================================================================
+
+%% A `bool` represents a binary logical truth value. 
+
+1. Syntax
+---------------------------------------------------------------------------
+
+Boolean literals are written using the keywords `true` and `false`.
+
+```mech:disabled
+true
+false
+```
+
+Several alterantive forms are also accepted:
+
+```mech:disabled
+✓  -- true
+✗  -- false
+```
+
+2. Kind
+-------------------------------------------------------------------------------
+
+Boolean values have the kind:
+
+```mech:disabled
+<bool>
+```
+
+Additionally, the kinds `true` and `false` are subkinds of `bool`:
+
+```mech:disabled
+<true>  
+<false> 
+```
+
+3. Logical Operations
+-------------------------------------------------------------------------------
+
+Boolean values support the following logical operations:
+
+```mech:disabled
+!true         -- false
+true && false -- false
+true || false -- true
+```
+
+For more, see [`compare`](/stdlib/compare.html).
+
+4. Comparison Operations
+-------------------------------------------------------------------------------
+
+Comparison operators produce boolean results:
+
+```mech:disabled
+5 == 5
+3 != 4
+2 < 10
+```
+
+For more, see [`logic`](/stdlib/logic.html).
+
+5. Filtering
+----------------------------------------------------------------------------
+
+An array of logical values can be used as an index to filter another array:
+
+```mech:ex 5.1
+x := [1 2 3 4]
+ix := x > 2
+x[ix]     -- selects elements where ix is true
+```
