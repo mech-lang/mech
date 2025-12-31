@@ -1,0 +1,199 @@
+kind
+===============================================================================
+
+%% A `kind` is a compositional descriptor that classifies values, defines their
+structure, and constrains operations without a separate meta-type system.
+
+
+Kinds describe the *type*, *structure*, and *properties* of values in Mech. Every value has one or more associated kinds, and kinds themselves are values that participate directly in the language.
+
+Kinds serve five primary roles:
+
+1. Describe data type e.g. `i32`, `string`, `bool`, ec.
+2. Constraining operations e.g. `**` (matrix multiply) is only valid for matrix kinds
+3. Describing structure (matrices, sets, records, tables, tuples)
+4. Enabling user-defined abstractions (aliases, enums, semantic kinds)
+5. Pattern matching and type reasoning
+
+1. Syntax
+-------------------------------------------------------------------------------
+
+Kinds are written using *kind annotations*, which enclose
+a kind in angle brackets:
+
+~~~
+<i32>        -- signed 32-bit integer
+<string>    -- string
+<[u8]>      -- matrix of u8 values
+<(u8,bool)> -- tuple of u8 and bool
+~~~
+
+Each data structure has its own kind syntax, see (§5).
+
+
+2. Kinds as Values
+-------------------------------------------------------------------------------
+
+Kinds are values in Mech.
+
+This means:
+
+- Kinds can be assigned to variables
+- Kinds can be passed, stored, and inspected
+- Kinds themselves have kinds
+
+For example:
+
+~~~
+x := <u8>
+~~~
+
+The value of `x` is the kind `<u8>`.  
+The kind of `x` is:
+
+~~~
+<<u8>>
+~~~
+
+3. The Kind of a Kind
+-------------------------------------------------------------------------------
+
+Every kind has at least two associated kinds:
+
+1. Itself
+2. `kind`
+
+For example, the kind `<i32>` has the kinds:
+
+~~~
+<<i32>>
+<kind>
+~~~
+
+Written explicitly:
+
+~~~
+<i32> : <<i32>, <kind>
+~~~
+
+This self-referential property allows Mech to reason about kinds uniformly,
+without a separate meta-type system.
+
+4. Simple Kinds
+-------------------------------------------------------------------------------
+
+Simple kinds correspond directly to primitive data types.
+
+| Data Type         | Kind                                        |
+|-------------------|---------------------------------------------|
+| Signed integers   | `<i8>`, `<i16>`, `<i32>`, `<i64>`, `<i128>` |
+| Unsigned integers | `<u8>`, `<u16>`, `<u32>`, `<u64>`, `<u128>` |
+| Floating-point    | `<f32>`, `<f64>`                            |
+| Rational          | `<r64>`                                     |
+| Complex           | `<c64>`                                     |
+| String            | `<string>`                                  |
+| Boolean           | `<bool>`                                    |
+| Atom              | `<:atom>`                                   |
+| Kind              | `<kind>`                                    |
+| Empty             | `<_>`                                       |
+
+5. Compound Kinds
+-------------------------------------------------------------------------------
+
+Kinds compose structurally according to the data structures they describe.
+
+| Data Structure | Kind Syntax       | Example                 | Meaning                                   |
+|----------------|-------------------|-------------------------|-------------------------------------------|
+| Matrix         | `[T]:N,M`         | `<[u8]:2,3>`            | `2x3` matrix of `u8` values                 |
+| Set            | `{T}:N`           | `<{u8}:3>`              | Set of 3 `u8` values                      |
+| Record         | `{field<T>,...}`  | `<{x<u8>,y<string>}>`   | Record with fields `x` and `y`            |
+| Map            | `{K:V}`           | `<{string:i32}>`        | Map from `string` to `i32`                |
+| Table          | `|name<T>,...|:N` | `<|x<u8>,y<string>|:3>` | Table with columns `x`,`y` and 3 rows     |
+| Tuple          | `(T1,T2,...)`     | `<(u8,string,bool)>`    | Ordered tuple of heterogeneous values     |
+
+Compound kinds are recursively derived from the kinds of their constituent elements.
+
+6. Kind Annotations
+-------------------------------------------------------------------------------
+
+Kind annotations may be applied to:
+
+(6.1) Literals
+
+~~~
+x := 42<u8>
+~~~
+
+Defines `x` as an unsigned 8-bit integer with value `42`.
+
+(6.2) Variables
+
+~~~
+y<u8> := 10
+~~~
+
+Constrains `y` to always have kind `<u8>`.
+
+(6.3) Conversions
+
+~~~
+x := [1 2 3]         -- `[f64]:1,3`
+y<[u8]> := [4 5 6]   -- `[u8]:1,3`
+z<[u8]> := x         -- converts `[f64]:1,3` → `[u8]:1,3`
+~~~
+
+Conversions succeed only when a valid transformation exists.
+
+7. Custom Kinds
+-------------------------------------------------------------------------------
+
+Users may define custom kinds as aliases of existing kinds:
+
+~~~
+<T> := <S>
+~~~
+
+Example:
+
+~~~
+<point3> := <[f32]:3>
+~~~
+
+Usage:
+
+~~~
+p1<point3> := [1 2 3]
+p2<point3> := [4 5]   -- Error: expected 3 elements
+~~~
+
+Custom kinds introduce semantic meaning without changing runtime representation.
+
+8. Enumerations
+-------------------------------------------------------------------------------
+
+Enumerations (enums) define a fixed set of named variants.
+
+~~~
+<color> := red | green | blue
+~~~
+
+The kind of the enum is `<color>`.  
+The possible values are:
+
+- `:color/red`
+- `:color/green`
+- `:color/blue`
+
+Example:
+
+~~~
+c<color> := :color/red
+~~~
+
+Invalid variants are rejected:
+
+~~~
+d<color> := :color/yellow   -- Error
+~~~
+
+Enums are kinds and participate in all kind-based reasoning.
