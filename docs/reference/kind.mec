@@ -7,13 +7,13 @@ structure, and constrains operations without a separate meta-type system.
 
 Kinds describe the *type*, *structure*, and *properties* of values in Mech. Every value has one or more associated kinds, and kinds themselves are values that participate directly in the language.
 
-Kinds serve five primary roles:
+Kinds contain information to describe:
 
-1. Describe data type e.g. `i32`, `string`, `bool`, ec.
-2. Constraining operations e.g. `**` (matrix multiply) is only valid for matrix kinds
-3. Describing structure (matrices, sets, records, tables, tuples)
-4. Enabling user-defined abstractions (aliases, enums, semantic kinds)
-5. Pattern matching and type reasoning
+- Data type e.g. `i32`, `string`, `bool`, ec.
+- Data structure e.g. matrix, set, record, table or tuple
+- Data size e.g. matrix dimensions, set size, table rows
+
+(!)> Kinds do *not* indicate whether a value is mutable or immutable. The mutability is determined by the user when the value is created, and is independent of its kind. In other words, mutability is a property of the variable or binding that holds the value, whereas a kind describes the inherent nature of the data contained within the value.
 
 1. Syntax
 -------------------------------------------------------------------------------
@@ -21,14 +21,14 @@ Kinds serve five primary roles:
 Kinds are written using *kind annotations*, which enclose
 a kind in angle brackets:
 
-~~~
+~~~mech:disabled
 <i32>        -- signed 32-bit integer
 <string>    -- string
 <[u8]>      -- matrix of u8 values
 <(u8,bool)> -- tuple of u8 and bool
 ~~~
 
-Each data structure has its own kind syntax, see (§5).
+Each data structure has a unique syntax, see (§5).
 
 
 2. Kinds as Values
@@ -84,32 +84,32 @@ without a separate meta-type system.
 
 Simple kinds correspond directly to primitive data types.
 
-| Data Type         | Kind                                        |
-|-------------------|---------------------------------------------|
-| Signed integers   | `<i8>`, `<i16>`, `<i32>`, `<i64>`, `<i128>` |
-| Unsigned integers | `<u8>`, `<u16>`, `<u32>`, `<u64>`, `<u128>` |
-| Floating-point    | `<f32>`, `<f64>`                            |
-| Rational          | `<r64>`                                     |
-| Complex           | `<c64>`                                     |
-| String            | `<string>`                                  |
-| Boolean           | `<bool>`                                    |
-| Atom              | `<:atom>`                                   |
-| Kind              | `<kind>`                                    |
-| Empty             | `<_>`                                       |
+| Data Type         | Kind                                                  |
+|-------------------|-------------------------------------------------------|
+| Signed integers   | {{<i8>}}, {{<i16>}}, {{<i32>}}, {{<i64>}}, {{<i128>}} |
+| Unsigned integers | {{<u8>}}, {{<u16>}}, {{<u32>}}, {{<u64>}}, {{<u128>}} |
+| Floating-point    | {{<f32>}}, {{<f64>}}                                  |
+| Rational          | {{<r64>}}                                             |
+| Complex           | {{<c64>}}                                             |
+| String            | {{<string>}}                                          |
+| Boolean           | {{<bool>}}                                            |
+| Atom              | {{<:atom>}}                                           |
+| Kind              | {{<kind>}}                                            |
+| Empty             | {{<_>}}                                               |
 
 5. Compound Kinds
 -------------------------------------------------------------------------------
 
 Kinds compose structurally according to the data structures they describe.
 
-| Data Structure | Kind Syntax       | Example                 | Meaning                                   |
-|----------------|-------------------|-------------------------|-------------------------------------------|
-| Matrix         | `[T]:N,M`         | `<[u8]:2,3>`            | `2x3` matrix of `u8` values                 |
-| Set            | `{T}:N`           | `<{u8}:3>`              | Set of 3 `u8` values                      |
-| Record         | `{field<T>,...}`  | `<{x<u8>,y<string>}>`   | Record with fields `x` and `y`            |
-| Map            | `{K:V}`           | `<{string:i32}>`        | Map from `string` to `i32`                |
-| Table          | `|name<T>,...|:N` | `<|x<u8>,y<string>|:3>` | Table with columns `x`,`y` and 3 rows     |
-| Tuple          | `(T1,T2,...)`     | `<(u8,string,bool)>`    | Ordered tuple of heterogeneous values     |
+| Data Structure | Kind Syntax       | Example                   | Meaning                                 |
+|----------------|-------------------|---------------------------|-----------------------------------------|
+| Matrix         | `[T]:N,M`         | {{<[u8]:2,3>}}            | `2x3` matrix of `u8` values             |
+| Set            | `{T}:N`           | {{<{u8}:3>}}              | Set of 3 `u8` values                    |
+| Record         | `{field<T>,...}`  | {{<{x<u8>,y<string>}>}}   | Record with fields `x` and `y`          |
+| Map            | `{K:V}`           | {{<{string:i32}>}}        | Map from `string` to `i32`              |
+| Table          | `|name<T>,...|:N` | {{<|x<u8>,y<string>|:3>}} | Table with columns `x`,`y` and 3 rows   |
+| Tuple          | `(T1,T2,...)`     | {{<(u8,string,bool)>}}    | Ordered tuple of heterogeneous values   |
 
 Compound kinds are recursively derived from the kinds of their constituent elements.
 
