@@ -72,3 +72,5 @@ x := [1 2 3 4]
 ix := x > 2
 x[ix]     -- selects elements where ix is true
 ```
+
+For more, see [`indexing`](/reference/indexing.html).
