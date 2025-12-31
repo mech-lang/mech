@@ -28,7 +28,7 @@ a kind in angle brackets:
 <(u8,bool)> -- tuple of u8 and bool
 ~~~
 
-Each data structure has a unique syntax, see (§5).
+Each data structure has a unique syntax, see (§4).
 
 
 2. Kinds as Values
@@ -44,42 +44,15 @@ This means:
 
 For example:
 
-~~~
+~~~mech:disabled
 x := <u8>
 ~~~
 
-The value of `x` is the kind `<u8>`.  
-The kind of `x` is:
+The value of `x` is {{<u8>}}, and the kind of `x` is {{<<u8>>}}.
 
-~~~
-<<u8>>
-~~~
+(*)> This means the kind of {{<<u8>>}} is {{<<<u8>>>}}, and so on.
 
-3. The Kind of a Kind
--------------------------------------------------------------------------------
-
-Every kind has at least two associated kinds:
-
-1. Itself
-2. `kind`
-
-For example, the kind `<i32>` has the kinds:
-
-~~~
-<<i32>>
-<kind>
-~~~
-
-Written explicitly:
-
-~~~
-<i32> : <<i32>, <kind>
-~~~
-
-This self-referential property allows Mech to reason about kinds uniformly,
-without a separate meta-type system.
-
-4. Simple Kinds
+3. Simple Kinds
 -------------------------------------------------------------------------------
 
 Simple kinds correspond directly to primitive data types.
@@ -97,7 +70,7 @@ Simple kinds correspond directly to primitive data types.
 | Kind              | {{<kind>}}                                            |
 | Empty             | {{<_>}}                                               |
 
-5. Compound Kinds
+4. Compound Kinds
 -------------------------------------------------------------------------------
 
 Kinds compose structurally according to the data structures they describe.
@@ -113,55 +86,63 @@ Kinds compose structurally according to the data structures they describe.
 
 Compound kinds are recursively derived from the kinds of their constituent elements.
 
-6. Kind Annotations
+5. Kind Annotations
 -------------------------------------------------------------------------------
 
-Kind annotations may be applied to:
+Kind annotations may be used in expressions to specify or constrain the kind of a value.
 
-(6.1) Literals
+(5.1) Literals
 
-~~~
+~~~mech:ex 5.1
 x := 42<u8>
 ~~~
 
 Defines `x` as an unsigned 8-bit integer with value `42`.
 
-(6.2) Variables
+(5.2) Variables
 
-~~~
+~~~mech:ex 5.2
 y<u8> := 10
 ~~~
 
-Constrains `y` to always have kind `<u8>`.
+Constrains `y` to always have kind {{<u8>}}.
 
-(6.3) Conversions
+(5.3) Conversions
 
-~~~
+~~~mech:ex 5.3
 x := [1 2 3]         -- `[f64]:1,3`
-y<[u8]> := [4 5 6]   -- `[u8]:1,3`
-z<[u8]> := x         -- converts `[f64]:1,3` → `[u8]:1,3`
+z<[u8]> := x         -- converts `[f64]:1,3` -> `[u8]:1,3`
 ~~~
 
-Conversions succeed only when a valid transformation exists.
+Conversions succeed only when a valid transformation exists, otherwise a compile-time error is raised.
 
-7. Custom Kinds
+(5.4) Matrix Reshaping
+
+~~~mech:ex 5.4
+m := [1 2 3 4 5 6]          -- `[f64]:1,6`
+n<[i32]:2,3> := m            -- reshapes to `[i32]:2,3`
+~~~
+
+Matrices may be reshaped to compatible dimensions using kind annotations.
+
+6. Custom Kinds
 -------------------------------------------------------------------------------
 
 Users may define custom kinds as aliases of existing kinds:
 
-~~~
+~~~mech:disabled
 <T> := <S>
 ~~~
 
 Example:
 
-~~~
-<point3> := <[f32]:3>
+~~~mech:disabled
+<point3> := <[f64]:3>
 ~~~
 
 Usage:
 
-~~~
+~~~mech:disabled
 p1<point3> := [1 2 3]
 p2<point3> := [4 5]   -- Error: expected 3 elements
 ~~~
@@ -173,7 +154,7 @@ Custom kinds introduce semantic meaning without changing runtime representation.
 
 Enumerations (enums) define a fixed set of named variants.
 
-~~~
+~~~mech:ex 8.1
 <color> := red | green | blue
 ~~~
 
@@ -186,14 +167,14 @@ The possible values are:
 
 Example:
 
-~~~
-c<color> := :color/red
+~~~mech:ex 8.1
+example<color> := :color/green
 ~~~
 
 Invalid variants are rejected:
 
-~~~
-d<color> := :color/yellow   -- Error
+~~~mech:disabled
+example2<color> := :color/yellow   -- Error, yellow not in enum
 ~~~
 
 Enums are kinds and participate in all kind-based reasoning.
