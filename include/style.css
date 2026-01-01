@@ -910,6 +910,10 @@ a.mech-hyperlink:hover .mech-inline-code {
     display: inline-flex;
 }
 
+.mech-function-call .mech-argument-list {
+    color: var(--function-bracket-color);
+}
+
 .mech-function-call .mech-left-paren, .mech-function-call .mech-right-paren {
     color: var(--function-bracket-color);
 }

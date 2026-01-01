@@ -17,9 +17,9 @@ Mech Documentation
 
 - [Data Types](/reference/data.html)
     - [`atom`](/reference/atom.html) - symbolic constants, often used for tags or enums
-    - [`bool`](/reference/bool.html) - logical values for true and false `todo`
+    - [`bool`](/reference/bool.html) - logical values for true and false
     - [`empty`](/reference/empty.html) - represents an absence of value
-    - [`kind`](/reference/kind.html) - a category of values `todo`
+    - [`kind`](/reference/kind.html) - a category of values
     - [`number`](/reference/number.html) - numeric values, including integers and floating-point numbers
     - [`string`](/reference/string.html) - sequence of UTF-8 characters representing text
 - Data Structures
@@ -59,16 +59,26 @@ Mech Documentation
 3. Mechdown Reference
 -------------------------------------------------------------------------------
 
-- Titles and Headings `todo`
-- Paragraphs `todo`
-- Lists `todo`
-- Code Blocks `todo`
-- Tables `todo`
-- Images `todo`
-- Thematic Breaks `todo`
-- Equations `todo`
-- Callout Blocks `todo`
-- Diagrams `todo`
+- Introduction
+    - What is Mechdown? `todo`
+    - Writing Mechdown Documents `todo`
+    - Mechdown Syntax Overview `todo`
+- Mechdown Documents `todo`
+    - Sections and Subsections `todo`
+    - Tables of Contents `todo`
+    - Bredcrumbs `todo`
+    - Document Metadata `todo`
+- Document Elements
+    - [Title](/mechdown/title.html)
+    - [Paragraph](/mechdown/paragraph.html)
+    - [List](/mechdown/list.html)
+    - [Code Block](/mechdown/code-block.html)
+    - [Table](/mechdown/table.html) `todo`
+    - [Image](/mechdown/image.html) `todo`
+    - [Thematic Break](/mechdown/thematic-break.html)
+    - [Equation](/mechdown/equation.html)
+    - [Callout Block](/mechdown/callout-block.html)
+    - [Diagram](/mechdown/diagram.html)
 
 4. Standard Library
 -------------------------------------------------------------------------------

@@ -1,0 +1,45 @@
+code-block
+===============================================================================
+
+%% A `code block` is a block element that represents a section of preformatted text, typically used to display code snippets.
+
+Mechdown supports code blocks, which are enclosed in triple backticks (graves) and can contain any text. Code blocks are useful for including Mech code snippets or other text that should be displayed verbatim.
+
+Blocks are deliniated by a code fence, whether triple graves or triple tildes. Optionally, a code identifier can be provided after the opening code fence to indicate the programming language of the code block. This enables syntax highlighting when rendered.
+
+When "mech" is specified as the code identifier, the code block is treated as Mech code and syntax highlighting is applied accordingly. See §10.10 for more details specific to Mech code blocks.
+
+When "ebnf" is specified as the code identifier, the code block is treated as EBNF syntax and syntax highlighting is applied accordingly.
+
+Start and end code fences must be of the same type (either graves or tildes). To embed a code fence in another code fence, use the alternate type for the inner fence.
+
+
+(10.5.1) Examples
+
+~~~
+```
+This is a code block deliniated with graves.
+```
+~~~
+
+```
+~~~
+This is a code block deliniated with tildes.
+~~~
+```
+
+This one has a label:
+
+~~~
+```ebnf
+X := A | B, C ;
+```
+~~~
+
+The label can also have an options map:
+
+~~~
+```ebnf{width: "25px}
+X := A | B, C ;
+```
+~~~
