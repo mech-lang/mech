@@ -1,0 +1,44 @@
+mechdown-table
+===============================================================================
+
+%% A `mechdown table` is a structured element that organizes data into rows and columns, allowing for clear presentation and comparison of information.
+
+Mechdown tables consist of a header, and a body. The header is defined using a pipe `|` to separate columns, and a row of dashes `-` to indicate the alignment of each column. The body of the table contains rows of data, also separated by pipes. 
+
+1. Table Heading
+-------------------------------------------------------------------------------
+
+The header of a table is defined using a row of text followed by a row of dashes. The dashes indicate the alignment of each column.
+
+**Column Alignment:**
+
+Columns can be aligned in one of three ways:
+
+- Left-aligned: `:--` or `--`
+- Right-aligned: `--:`
+- Center-aligned: `:--:`
+
+Any number of dashes can be used to indicate the width of the column, and they can be of different lengths.
+
+2. Table Body
+-------------------------------------------------------------------------------
+
+The body of a table is defined using rows of text separated by pipes. Each row can contain any number of columns, and the number of columns in each row must match the number of columns in the header.
+
+2.1 Example
+
+```
+| Align Left  | Align Center | Align Right |
+|:------------|:------------:|------------:|
+| One         | Four         | {1 * 10}    |
+| Two         | Five         | {2 * 20}    |
+| Three       | Six          | {3 * 30}    |
+```
+
+Renders the following table:
+
+| Align Left  | Align Center | Align Right |
+|:------------|:------------:|------------:|
+| One         | Four         | {1 * 10}    |
+| Two         | Five         | {2 * 20}    |
+| Three       | Six          | {3 * 30}    |
