@@ -69,16 +69,16 @@ Mech Documentation
     - Bredcrumbs `todo`
     - Document Metadata `todo`
 - Document Elements
-    - [Titles and Headings](/mechdown/titles.html) `todo`
-    - [Paragraphs](/mechdown/paragraphs.html) `todo`
-    - [Lists](/mechdown/lists.html) `todo`
-    - [Code Blocks](/mechdown/code-blocks.html) `todo`
-    - [Tables](/mechdown/tables.html) `todo`
-    - [Images](/mechdown/images.html) `todo`
-    - [Thematic Breaks](/mechdown/thematic-breaks.html) `todo`
-    - [Equations](/mechdown/equations.html) `todo`
-    - [Callout Blocks](/mechdown/callout-blocks.html) `todo`
-    - [Diagrams](/mechdown/diagrams.html) `todo`
+    - [Titles and Headings](/mechdown/title.html) `todo`
+    - [Paragraphs](/mechdown/paragraph.html) `todo`
+    - [Lists](/mechdown/list.html) `todo`
+    - [Code Blocks](/mechdown/code-block.html) `todo`
+    - [Tables](/mechdown/table.html) `todo`
+    - [Images](/mechdown/image.html) `todo`
+    - [Thematic Breaks](/mechdown/thematic-break.html) `todo`
+    - [Equations](/mechdown/equation.html) `todo`
+    - [Callout Blocks](/mechdown/callout-block.html) `todo`
+    - [Diagrams](/mechdown/diagram.html) `todo`
 
 4. Standard Library
 -------------------------------------------------------------------------------
