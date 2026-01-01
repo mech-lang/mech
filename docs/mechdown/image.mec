@@ -10,7 +10,7 @@ The alt-text is a rich paragraph that can contain any paragraph elements. It is 
 
 Images can be floated to the left or right by prefixing with `<<` or `>>`, respectively. This allows text to wrap around the image and caption.
 
-2.1 Example
+**Example**
 
 ```
 ![The Mech "M"](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true)
