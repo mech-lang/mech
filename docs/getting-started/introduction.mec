@@ -128,8 +128,6 @@ The Mech programming system consists of four parts:
 4. **Tools** - A set of command-line tools and utilities for working with Mech programs.
 5. **Notebook** - An interactive notebook environment for writing and executing Mech code in a rich, document-like interface.
 
-(3.1) Mech
-
 (3.2) Tools
 
 - `mech` - the Mech programming language toolchain, which includes:
