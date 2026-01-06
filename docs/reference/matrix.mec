@@ -146,7 +146,7 @@ Matrices can be constructed in several ways:
 - From tables
 - From sets
 
-(3.1) Matrix literals
+(3.1) Matrix Literals
 
 Matrix literals are written using square brackets `[]`, with rows separated by semicolons `;` or newlines, and columns separated by commas `,` or spaces.
 
@@ -355,7 +355,7 @@ m[(m % 2) == 0] = 0  -- Sets all even numbers to zero
 6. Operations
 -------------------------------------------------------------------------------
 
-Matrix operations include `add`, `sub`, `mul`, `div`, and `pow`. These operations are performed element-wise on the matrix.
+Matrix operations include `add`, `sub`, `mul`, `div`, and `pow`. These operations are broadcast element-wise on the matrix.
 
 (6.1) Arithmetic Operations 
 
