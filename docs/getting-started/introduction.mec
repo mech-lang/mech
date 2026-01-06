@@ -130,15 +130,15 @@ The Mech programming system consists of four parts:
 
 (3.2) Tools
 
-- `mech` - the Mech programming language toolchain, which includes:
+- [`mech`](https://github.com/mech-lang/mech) - the Mech programming language toolchain, which includes:
     - Parser and compiler for the text-based Mech syntax
     - Runtime for executing Mech programs
     - REPL for interactive programming
     - Formatter for formatting Mech code into canonical style or HTML documentation.
     - Server for serving Mech programs to a wasm client
     - Language Server Protocol implementation
-- `mech-wasm` - a wasm-based client for running Mech programs in the browser or other wasm environments.
-- `mech-notebook` - a notebook editor for Mech that runs natively on Windows, macOS, and Linux, and also supports running in the browser via `mech-wasm`.
+- [`mech-wasm`](https://github.com/mech-lang/mech/tree/main/src/wasm) - a wasm-based client for running Mech programs in the browser or other wasm environments.
+- [`mech-notebook`](https://github.com/mech-lang/mech/tree/main/notebook) - a notebook editor for Mech that runs natively on Windows, macOS, and Linux, and also supports running in the browser via `mech-wasm`.
 
 (3.3) Features
 
