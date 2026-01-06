@@ -2001,6 +2001,10 @@ mark {
     padding-left: 10px;
 }
 
+.mech-matrix-element {
+    text-align: right;
+}
+
 .mech-matrix-outer{
     width: fit-content;
     position:relative;
