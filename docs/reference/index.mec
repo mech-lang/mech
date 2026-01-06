@@ -22,7 +22,7 @@ Platform Reference
     - [Defining, Assigning, and Accessing Data](/reference/define.html) `todo` - create data and change it
     - [Data Conversion](/reference/convert.html) `todo` - convert data from one kind to another
     - [Formulas](/reference/formulas.html) `todo` - compute values using expressions
-    - [Indexing](/reference/indexing.html) `todo` - access elements within data structures
+    - [Indexing](/reference/indexing.html) - access elements within data structures
 
 2. Programming Model
 ---------------------------------------------------------------------------
