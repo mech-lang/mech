@@ -37,9 +37,7 @@ For a complete list of planned features, see the [ROADMAP](/design/ROADMAP.html)
 
 (*)> Because you have structured data, and you want to program some sort of behavior when it changes.
 
-What does it mean to program data? Most of the time data is static, it just sits there existing without any behavior 
-
-Mech programs start at your data. You define your data structures, and then define how they relate to each other through formulas and state machines. The Mech compiler and runtime automatically determine how data flows through your program, and optimizes it for performance. When underlying data change, Mech updates all dependent data automatically. This makes it easier to build systems that react to change, without having to write custom event loops or bring in large frameworks.
+Mech programs start with your data. You define data structures, and then define how they relate to each other through formulas and state machines. The Mech compiler and runtime automatically determine how data flows through your program, and optimizes it for performance. When underlying data change, Mech updates all dependent data automatically. This makes it easier to build systems that react to change, without having to write custom event loops or bring in large frameworks.
 
 Mech is an embeddable language, meaning you can integrate it into existing applications and systems. This allows you to leverage Mech's data-driven programming model without having to rewrite your entire codebase, so the cost of adoption is low.
 
