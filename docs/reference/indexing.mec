@@ -9,6 +9,23 @@ indexing
 2. Matrix Slicing
 -------------------------------------------------------------------------------
 
+Slicing allows you to access multiple elements at once, either entire rows or columns, or specific ranges of rows and columns.
+
+The `:` operator can be used to access entire rows or columns:
+
+You can slice it in various ways. For a matrix x with `N` rows and `M` columns, the following indexing operations are valid:
+
+| Syntax              | Description                        | Resulting Size   |
+|---------------------|------------------------------------|------------------|
+| {{x[:]}}              | Slice all elements                 | `[N*M x 1]`      |
+| {{x[1,:]}}            | Slice a row                        | `[1 x M]`        |
+| {{x[:,2]}}            | Slice a column                     | `[N x 1]`        |
+| {{x[1..=2,:]}}        | Slice a range of rows              | `[2 x M]`        |
+| `x[[1,3],:]`        | Slice specific rows                | `[2 x M]`        |
+| `x[[1,3],[1,3]]`    | Slice specific rows and columns    | `[2 x 2]`        |
+| `x[[1 1 2 2],:]`    | Slice the rows multiple times      | `[4 x M]`        |
+
+For more, see the [`matrix`](/reference/matrix.mec#Slicing) documentation.
 
 3. Logical Indexing
 -------------------------------------------------------------------------------
