@@ -8,7 +8,7 @@ Hello and welcome to the documentation for Mech, a programming language and plat
 
 (1.1) Example Programs
 
-We start by presenting a few example Mech programs to illustrate the syntax and semantics of the language.
+To give you a sense of what Mech looks like, here are a few example programs that demonstrate some of its core features and syntax.
 
 (1.1.1) Hello, World!
 
@@ -87,7 +87,7 @@ user := 1
 
 The solution is `{8, 5, 9}` because user `1` is friends with `2`, who is friends with `8`; and user `1` is also friends with `3`, who is friends with `5` and `9`.
 
-Set comprehensions operate over sets, and support pattern matching and data joining. In this case, because we specifified `f` in two different generators, we defined a natural join over the friend-pairs set, drawing relationships between elements.
+Set comprehensions operate over sets, and support pattern matching and data joining. In this case, because we used the same symbol `f` in two different generators, we defined a natural join over the friend-pairs set, drawing relationships between elements.
 
 (1.2) Why Mech
 
