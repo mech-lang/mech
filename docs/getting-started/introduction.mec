@@ -31,50 +31,50 @@ This short example demonstrates several key features of the language:
 - **Logical indexing**: Select and manipulate vector elements via conditions, enabling declarative iteration and parallel execution.
 - **Rich text formatting**: Comments and code support rich formatting, making documentation clear and readable.
 
-(i)> For a complete list of planned features, see the [ROADMAP](/design/ROADMAP.html).
+For a complete list of planned features, see the [ROADMAP](/design/ROADMAP.html).
 
-(1.2) The Need
+(1.2) Why Mech
 
+(*)> Because you have structured data, and you want to program some sort of behavior when it changes.
 
+What does it mean to program data? Most of the time data is static, it just sits there existing without any behavior 
 
-(1.3) Mech Puts Data First
+Mech programs start at your data. You define your data structures, and then define how they relate to each other through formulas and state machines. The Mech compiler and runtime automatically determine how data flows through your program, and optimizes it for performance. When underlying data change, Mech updates all dependent data automatically. This makes it easier to build systems that react to change, without having to write custom event loops or bring in large frameworks.
 
-More than anything, computing today is about data. Programs ingest, transform, and output data. They respond to changes in data from users, sensors, and networks. They process large datasets to extract insights and make decisions. AI systems especially rely on data, for training, inference, and context.
+Mech is an embeddable language, meaning you can integrate it into existing applications and systems. This allows you to leverage Mech's data-driven programming model without having to rewrite your entire codebase, so the cost of adoption is low.
 
-Yet most programming languages are designed around the idea of sequences of instructions that manipulate memory locations -- the data is not represented and manipulated directly, but rather idirectly through these instructions. Data is hidden in registers and not viewable or queryable by the programmer. This makes it difficult to reason about how data flows through a program, and how changes in data affect the program's behavior. And when it comes time to debug, optimize, or extend the program, this indirect representation of data becomes a major obstacle.
+You don't even have to use Mech as a full programming language, because it's also a pretty good presentation language. Mechdown, the markup language used to write this documentation, is designed to be both human-readable and machine-executable. This means you can write documents that are also valid Mech programs, as a front-end for your non-Mech systems.
 
-In Mech, you start by defining data and transformations on them. The Mech compiler and runtime automatically determine how data flows through your program, and optimizes it for performance. When underlying data change, Mech updates all dependent data automatically. This makes it easier to build systems that react to change, without having to write custom event loops or bring in large frameworks.
+Over time, you can use more Mech incrementally, starting with small scripts and moving to larger programs as you become more comfortable with the language.
 
-(1.4) Use Cases
+(1.3) Use Cases
 
-Mech is designed to make building data-driven systems easier by providing a reactive programming model based on defining data dependencies and transformations. Mech also provides a new AI-first programming model that allows users to write Mech programs without even knowing the language -- an idea that is very hard to implement on top of languages not designed for this new frontier.
-
-Mech programs can be thought of as feedback control systems, where data flows through a network of transformations and state machines that react to changes in the data. This covers a lot of common use cases:
+Mech programs can be thought of as feedback control systems, which are systems that maintain a desired state by continuously adjusting their behavior based on changes in input data. This program architecture is surprisingly general, and covers a variety of common use cases:
 
 - Games - receives user input from a game controller, updates internal player scores and runs game logic, then renders the game to the screen.
 - Embedded Systems - sensors make environmental readings and update the device, which reacts by controlling actuators or sending messages.
 - User Interfaces - the user clicks a button or types on their keyboard, which changes the UI state, which is then rendered to the screen.
 - Data Science - the user loads data from a source and processes it, which updates visualizations or statistical models.  
 - Robotics - sensor readings from cameras and LIDAR are processed by the robot to update its internal belief, which is used to plan and execute actions in the physical world.
-- Web Applications - user interactions and network events update the application state, which is then rendered to the DOM (Document Object Model) for display in the browser.
+- Web Applications - user interactions and network events update the application state, which is then rendered to the DOM for display in the browser.
+- Financial Systems - market data and user transactions update the system state, which is then used to make trading decisions or generate reports.
 
 If you are building one of these types of systems, Mech may be a good fit for your project!
 
 3. Programming System
 -------------------------------------------------------------------------------
 
-Mech comes with integrated tools for data transformation, distribution, resource monitoring, and program optimization. We call this the "Platform", which is distinct from the "Language", which is the syntax and semantics used to write Mech programs.
-
-In Mech, programmers define data and their relationships. Then they transformation these data with a rich set of operators and functions. Mech's compiler and runtime automatically determine how data flows through programs, and optimizes them for performance. When underlying data change, Mech updates all dependent data automatically. The Mech Platform also serializes, distributes, and logs your data. Together, this allows you to build efficient, data-driven, distributed systems that react to change, without having to write custom event loops or bring in large frameworks.
-
 (3.1) Overview
 
-The Mech programming platform consists of four parts:
+The Mech programming system consists of four parts:
 
-1. **A data description language**, which allows you to define the structure of your data and how it can be transformed.
-2. **A reactive programming model**, based on state machines, which allows you to write systems that can take advantage of asynchrouns and parallel program execution. `WIP`
-3. **A distributed execution engine**, which allows you to run Mech programs across multiple machines in a variety of environments. `WIP`
-4. **A rich set of "machines"**, libraries, tools, and data sources which provide a wide range of functionality. `WIP`
+1. **Mech** - The programming language proper, which includes the syntax, semantics, and core libraries for writing Mech programs.
+2. **Mechdown** - A lightweight markup language for writing Mech documentation and literate programs.
+3. **Standard Library** - A collection of modules and functions that provide common functionality for Mech programs.
+4. **Tools** - A set of command-line tools and utilities for working with Mech programs.
+5. **Notebook** - An interactive notebook environment for writing and executing Mech code in a rich, document-like interface.
+
+(3.1) Mech
 
 (3.2) Tools
 
@@ -95,13 +95,13 @@ Some of the key features of the Mech programming platform include:
 - **Automatic data propagation**: Mech automatically tracks data dependencies and propagates changes through the program, ensuring that all dependent data are updated correctly.
 - **Vectorized operations**: Mech supports vectorized operations, allowing you to perform computations on entire arrays of data without explicit loops, which leads to more concise and efficient code.
 - **Live, literate programming**: Mech supports live literate programming environment, meaning you can write and execute code in an interactive notebook-style interface, with rich text formatting and inline documentation.
-- **Distribution and serialization**: Mech programs can be easily distributed across multiple machines, and all data can be serialized and deserialized automatically, including entire functions and programs.
+- **Distribution and Serialization**: Mech programs can be easily distributed across multiple machines, and all data can be serialized and deserialized automatically, including entire functions and programs.
 - **Time travel debugging**: Mech's runtime supports time travel debugging, allowing you to step forwards and backwards through program execution to inspect the state of your data at any point in time.
-- **AI-optimized**: Mech is designed to be particularly amenable to the architectures and techniques used in artificial intelligence systems, making it easier for AI to understand and write Mech code even without having been trained on it.
+- **AI-optimized**: Mech is designed to work with AI systems, making it easier for AI to understand and write Mech code even without having been trained on it.
 
 For a complete list of features and the statuses of their implementations, see the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html).
 
-4. About this Documentation
+4. About This Documentation
 -------------------------------------------------------------------------------
 
 (4.1) Structure
