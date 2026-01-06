@@ -93,13 +93,13 @@ Set comprehensions operate over sets, and support pattern matching and data join
 
 (*)> Because you have structured data, and you want to program some sort of behavior when it changes.
 
-Mech programs start with your data. You define data structures, and then define how they relate to each other through formulas and state machines. The Mech compiler and runtime automatically determine how data flows through your program, and optimizes it for performance. When underlying data change, Mech updates all dependent data automatically. This makes it easier to build systems that react to change, without having to write custom event loops or bring in large frameworks.
+Mech programs start with data. You define data structures, and then describe how they relate to each other through formulas and state machines. The Mech compiler and runtime automatically determine how data flows through your program, and optimizes it for performance. When underlying data change, Mech updates all dependent data automatically. This makes it easier to build systems that react to change, without having to write custom event loops or bring in large frameworks.
 
 Mech is an embeddable language, meaning you can integrate it into existing applications and systems. This allows you to leverage Mech's data-driven programming model without having to rewrite your entire codebase, so the cost of adoption is low.
 
-You don't even have to use Mech as a full programming language, because it's also a pretty good presentation language. Mechdown, the markup language used to write this documentation, is designed to be both human-readable and machine-executable. This means you can write documents that are also valid Mech programs, as a front-end for your non-Mech systems.
+You don't even have to use Mech as a full programming language, because it's also a pretty good presentation language as well. Mechdown, the markup language used to write this documentation, is designed to be both human-readable and machine-executable. This means you can write documents that are also valid Mech programs, as a front-end for your non-Mech systems.
 
-Over time, you can use more Mech incrementally, starting with small scripts and moving to larger programs as you become more comfortable with the language.
+Over time, you can use more Mech incrementally where it makes the most sense and brings the most leverage, starting with small scripts and moving to larger programs as you become more comfortable with the language.
 
 (1.3) Use Cases
 
