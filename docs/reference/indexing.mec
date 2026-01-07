@@ -70,10 +70,6 @@ cols := [false, true, true]
 
 You can combine logical conditions using logical operators:
 
-- `&` — logical AND  
-- `|` — logical OR  
-- `!` — logical NOT  
-
 ```mech:logical
 x[(x > 0) && (x < 4)]
 ```

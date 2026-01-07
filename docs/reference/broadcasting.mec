@@ -1,4 +1,4 @@
-broadcasting expressions
+Expression Broadcasting
 ===============================================================================
 
 %% `broadcasting` allows you to apply operations element-wise over data structures such as matrices.
