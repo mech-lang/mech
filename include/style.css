@@ -776,6 +776,10 @@ h5.toc {
 .mech-literal {
 }
 
+.mech-matrix .mech-number {
+    text-align: right;
+}
+
 .mech-number {
     color: var(--literal-color);
 }
