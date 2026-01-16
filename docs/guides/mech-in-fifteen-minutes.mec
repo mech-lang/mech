@@ -1,16 +1,6 @@
 Learn Mech in Fifteen Minutes                                
 ===============================================================================
 
-
-Table of Contents:
-
-- 1. Comments
-- 2. Identifiers
-- 3. Kinds 
-- 4. Literals
-- 5. Variables
-- 6. Collections
-
 1. Comments 
 -------------------------------------------------------------------------------
 
@@ -20,8 +10,7 @@ Table of Contents:
 // Also a single line comment.
 ```
 
-Mech does not support multiline comments. Instead, Mech encourages literate programming through a Markdown-esque syntax
-called Mechdown, exemplified by this document.
+Mech does not support multiline comments. Instead, Mech encourages literate programming through a Markdown-esque syntax called Mechdown, exemplified by this document.
 
 Comments are therefore to be used primarily inside of code blocks.
 
@@ -31,8 +20,7 @@ Comments support paragraph formatting, such as bold, underline, links, etc. For 
  -- Comments support **bold**,  __underline__, [links](/foo/bar), etc.
 ```
 
- -- Comments support **bold**,  __underline__, [links](/foo/bar), etc.
-
+-- Comments support **bold**,  __underline__, [links](/foo/bar), etc.
 
 2. Identifiers
 -------------------------------------------------------------------------------
@@ -46,7 +34,8 @@ Identifiers start with letters or most UTF-8 encoded characters, and can contain
 - {{A*}}
 
 (i)> The preferred identifier case in Mech is kebab-case (words deliniated by dashes). Slashes also allow identifiers to be scoped to a particular namespace. 
-To maintain a consistent style, Mech does not support underscores in identifiers.
+
+(!)> To maintain a consistent style, Mech does not support underscores in identifiers and they will result in a syntax error.
 
 3. Kinds
 -------------------------------------------------------------------------------
