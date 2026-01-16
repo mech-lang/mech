@@ -100,33 +100,120 @@ my-color<color> := :color/green     -- a valid color
 other-color<color> := :color/yellow -- error: invalid variant
 ```
 
-4. Literals
+4. Data Types
 -------------------------------------------------------------------------------
-
-Supported literals include:
-
-- (a) Numbers
-- (b) Strings
-- (c) Booleans
-- (d) Atoms
-- (e) Empty
 
 (4.1) Numbers
 
-- Integers: `1234`
-- Floats: `123.456`
-- Decimal: `0d1234567890`
-- Hexadecimal: `0x1234567890ABCDEF`
-- Octal: `0o12345670`
-- Binary: `0b100110101`
-- Scientific: `123e456` or `123E456`
-- Rational: `1/2` is the rational number 1 over 2, not 1 divided by 2.
-- Imaginary: `1234i`
-- Complex: `12.34+5.67i`
+Numbers in Mech can be classified into the following categories:
 
-Kind:
+- **Integers** - Whole numbers, which can be positive, negative, or zero
+  - **Signed** - Can represent both negative and positive values
+    - [`i8`](/reference/i8.html) - 8-bit signed integer
+    - [`i16`](/reference/i16.html) - 16-bit signed integer
+    - [`i32`](/reference/i32.html) - 32-bit signed integer
+    - [`i64`](/reference/i64.html) - 64-bit signed integer
+    - [`i128`](/reference/i128.html) - 128-bit signed integer
+  - **Unsigned** - Can only represent zero and positive values
+    - [`u8`](/reference/u8.html) - 8-bit unsigned integer
+    - [`u16`](/reference/u16.html) - 16-bit unsigned integer
+    - [`u32`](/reference/u32.html) - 32-bit unsigned integer
+    - [`u64`](/reference/u64.html) - 64-bit unsigned integer
+    - [`u128`](/reference/u128.html) - 128-bit unsigned integer
+- **Float** - Decimal numbers with fractional components
+  - [`f32`](/reference/f32.html) - 32-bit floating-point number
+  - [`f64`](/reference/f64.html) - 64-bit floating-point number
+- **Rational** - Numbers represented as fractions of integers
+  - [`r64`](/reference/r64.html) - 64-bit rational number
+- **Complex** - Numbers with real and imaginary components
+  - [`c64`](/reference/c64.html) - 64-bit complex number
 
-`<number>` is a generic, unsized number type. Mech also supports fixed sized numbers e.g.: `<u8>`, `<f32>`, `<i64>` etc.
+Numeric literals can be expressed in various formats:
+
+- Floating-point numbers, expressed in standard decimal notation and scientific notation
+- Integers, expressed in decimal (base 10), hexadecimal (base 16), octal (base 8), and binary (base 2)
+- Rational numbers, expressed as fractions `a/b`, where `a` is the numerator and `b` is the denominator
+- Complex numbers, expressed in the form `a + bi` or `a + bj`, where `a` is the real part and `b` is the imaginary part
+
+(4.1.1) Floating-Point Literals
+
+Floating-point literals are used to represent decimal numbers with fractional components. They are flexible in that they can represent both very large and very small numbers, and also can represent integer values between -1.7e308 and 1.7e308 for `f64`, and between -3.4e38 and 3.4e38 for `f32`.
+
+Floating-point literals are expressed in standard decimal notation or scientific notation:
+
+```mech:disabled
+42         -- inferred as `f64`
+3.14       
+-0.001     
+2.5e3      
+-1.2E-2
+```    
+
+Each value is inferred as `f64` unless otherwise specified. To specify a specific type, floating-point literals can also be suffixed with a specific kind:
+
+```mech:disabled
+42<f32>
+3.14<f32>     
+-0.001<f64>
+2.5e3<f32>
+-1.2E-2<f64>
+```
+
+(4.1.2) Integer Literals
+
+Integer literals can be written in the following formats:
+
+```mech:disabled
+0d42       -- decimal
+0x2ABC     -- hexadecimal
+0o654      -- octal
+0b101010   -- binary
+```
+
+Decimals without a prefix are inferred as floating-point numbers (`f64`), while those with the `0d` prefix are inferred as signed integers (`i64`). Each of the other formats are also inferred as `i64` unless otherwise specified. Any integer literal can be suffixed with a specific kind to indicate its type:
+
+```mech:disabled
+42u8         -- unsigned 8-bit integer
+-15i16       -- signed 16-bit integer
+0xFF<u32>    -- unsigned 32-bit integer
+0d1000<u64>  -- signed 64-bit integer
+```
+
+Decimal literals can be signed or unsigned. Signed literal types include `i8`, `i16`, `i32`, `i64`, and `i128`. Unsigned literal types include `u8`, `u16`, `u32`, `u64`, and `u128`.
+
+(4.1.3) Rational Literals
+
+Rational numbers are used to represent fractions exactly as ratios of two integers. They are expressed in the form `a/b`, where `a` is the numerator and `b` is the denominator.
+
+Rational numbers are written as follows:
+
+```mech:disabled
+3/4
+-5/2
+7/7         -- A whole number represented as a rational
+```
+
+Two rational literals can represent the same numeric value but have different representations:
+
+```mech:ex 4.1.3
+x :=1/2     -- Represents `0.5`
+y := 2/4    -- Also represents `0.5`
+x == y      -- Evaluates to `true`
+```
+
+(4.1.4) Complex Literals
+
+Complex numbers are used to represent numbers with both real and imaginary components. They are expressed in the form `a + bi` or `a + bj`, where `a` is the real part and `b` is the imaginary part.
+
+Complex numbers are written as follows:
+
+```mech:disabled
+3+4i
+1-2j
+0+1i
+```
+
+The imaginary unit can be represented by either `i` or `j`. Both representations are equivalent and can be used interchangeably.
 
 (4.2) Strings
 
