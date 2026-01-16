@@ -33,7 +33,7 @@ Identifiers start with letters or most UTF-8 encoded characters, and can contain
 - {{🤖}}
 - {{A*}}
 
-(i)> The preferred identifier case in Mech is kebab-case (words deliniated by dashes). Slashes also allow identifiers to be scoped to a particular namespace. 
+The preferred identifier case in Mech is kebab-case (words deliniated by dashes). Slashes also allow identifiers to be scoped to a particular namespace. 
 
 (!)> To maintain a consistent style, Mech does not support underscores in identifiers and they will result in a syntax error.
 
