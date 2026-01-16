@@ -217,21 +217,45 @@ The imaginary unit can be represented by either `i` or `j`. Both representations
 
 (4.2) Strings
 
-Strings are encoded with UTF-8 and support linebreaks.
+String literals are written using double quotes `"`.
+
+```mech:disabled
+""
+"Hello, world!"
+"Multi
+Line
+String"
+"Unicode: 🤖🦾🦿"
+```
+
+Strings may contain spaces and punctuation. Whitespace inside a string literal is preserved.
+
+Escape sequences may be used for special characters:
 
 ```
-"Hello World"
-
-"Mulitline 
-Strings"
-
-"characters like \" and \\ are escaped with, \\ e.g. \\\""
+"line 1\nline 2"
+"quote: \""
+"tab\tseparated"
+"backslash: \\"
+```
+When rendered:
+```mech:disabled
+"line 1\nline 2"
+"quote: \""
+"tab\tseparated"
+"backslash: \\"
 ```
 
-Kind: 
+Raw string literals can be created using triple double quotes `"""`. In this form, escape sequences are not processed, and all characters are taken literally, including backslashes and quotes.
 
 ```
-<string>
+"""C:\Users\Name\Documents"""
+"""This is a "raw" \string\ literal."""
+```
+When rendered: 
+```mech:disabled
+"""C:\Users\Name\Documents"""
+"""This is a "raw" \string\ literal."""
 ```
 
 (4.3) Boolean
