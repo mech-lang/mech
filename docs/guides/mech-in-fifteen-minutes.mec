@@ -258,6 +258,49 @@ When rendered:
 """This is a "raw" \string\ literal."""
 ```
 
+(4.2.1) String Concatenation
+
+Strings can be concatenated using the `+` operator:
+
+```mech:ex 3.2.1
+first := "Hello"
+second := "World"
+greeting := first + ", " + second + "!"
+```
+
+String concatentation is broadcast element-wise over matrices of strings:
+
+```mech:ex 3.2.2
+prefix := "Item"
+letters := ["A" "B" "C"]
+labels := prefix + letters
+```
+
+If both operands are matrices of strings, they must have compatible dimensions:
+
+```mech:ex 3.2.3
+m1 := ["a" "b"; "c" "d"]
+m2 := ["1" "2"; "3" "4"]
+result := m1 + m2
+```
+
+(4.2.2) Conversion to String
+
+All values can be converted to strings explicitly.
+
+```mech:ex 3.3
+x := 42
+s<string> := x
+```
+
+Use {{<[string]>}} to create a matrix of strings:
+
+```mech:ex 3.4
+m<[string]:2,2> := [1 2 3 4]
+```
+
+This converts a {{<[f64]:1,4>}} (row matrix of floats) to a {{<[string]:2,2>}} (square matrix of strings).
+
 (4.3) Boolean
 
 - True: `true` or `✓`
