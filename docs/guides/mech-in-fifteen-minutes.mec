@@ -10,8 +10,6 @@ Table of Contents:
 - 4. Literals
 - 5. Variables
 - 6. Collections
-- 7. Functions (todo)
-- 8. State Machines (todo)
 
 1. Comments 
 -------------------------------------------------------------------------------
@@ -50,70 +48,68 @@ Identifiers start with letters or most UTF-8 encoded characters, and can contain
 (i)> The preferred identifier case in Mech is kebab-case (words deliniated by dashes). Slashes also allow identifiers to be scoped to a particular namespace. 
 To maintain a consistent style, Mech does not support underscores in identifiers.
 
-
-3. Kinds 
+3. Kinds
 -------------------------------------------------------------------------------
+Kinds describe the **type**, **structure**, and **size** of data. In Mech, kinds are first-class values—you can assign them to variables and pass them around.
 
-Every variable has an associated "kind" or "datatype". They are indicated with a kind annotation.
+**Note:** Kinds describe the data, not mutability. Mutability is a property of the binding, not the kind.
 
-Builtin kinds:
+(3.1) Syntax & Simple Kinds
 
-- number
-    - Unsigned intengers: u8, u16, u32, u64, u128
-    - Signed intengers: i8, i16, i32, i64, i128
-    - IEEE 754 Floating Point: f32, f64
-- string
-- bool
-- atom
-- empty
+Kinds are written inside angle brackets `< >`.
 
-(3.1) Kind Annotations
+| Category              | Examples           |
+| :---------------------| :------------------|
+| **Signed Integers**   | {{<i8>}}, {{<i16>}}, {{<i32>}}, {{<i64>}}, {{<i128>}} |
+| **Unsigned Integers** | {{<u8>}}, {{<u16>}}, {{<u32>}}, {{<u64>}}, {{<u128>}} |
+| **Complex Numbers**   | {{<c64>}}            |
+| **Rational Numbers**  | {{<rs64>}}           |
+| **Floats**            | {{<f32>}}, {{<f64>}}   |
+| **Text**              | {{<string>}}         |
+| **Logic**             | {{<bool>}}           |
+| **Kind**              | {{<<kind>>}}         | 
+| **Empty**             | {{<_>}}              |
 
-Kinds are indicated with a kind annotation, which is the kind identifier encolsed in `<>` e.g.:
+(3.2) Compound Kinds
 
-```
-<u8>
-```
+Kinds compose structurally to describe collections.
 
-Literals can be annotated with a kind:
+- **Matrix:** {{<[u8]:2,3>}} (A 2x3 matrix of u8s)
+- **Table:** {{<|x<u8>,y<string>|:3>}} (A table with 3 rows and specific columns)
+- **Tuple:** {{<(u8,bool)>}} (An ordered pair)
+- **Map:** {{<{string:i32}>}} (Maps strings to integers)
 
-- 32-bit floating point number: `123.456<f32>`
-- 64-bit floating point number: `123.456<f64>`
+(3.3) Kind Annotations & Conversion
 
-So can identifiers
- 
-- Cast `a` to unsigned 64 bit datatype: `a<u64>`
+Annotations constrain variables or cast literals.
 
-(3.2) Collections
-
-Multidimensional data can be expressed with teh foloowing collection data structures representing collections of values:
-
-`[]`: vectors, matrices
-`()`: tuples
-`{}`: sets, maps, records, and tables
-
-- Unsized set of unsigned 8-bit integers: `<{u8}>`
-- 1x3 vector of strings: `<[string]:3>` or `<[string]:1,3>`
-- 3x1 column vector of bools: `<[bool]:3,1>`
-- 2x3 matrix of 32-bit floats: `<[f32]:2,3>`
-- Nx3 matrix of 32-bit floats: `<[f32]:_,3>`
-
-(3.3) Custom Kinds
-
-Create a kind that is an alias for `(u8,bool)`:
-
-```
-<my-kind> := <(u8,bool)>
+```mech:disabled
+x := 42<u8>            -- Literal annotation
+y<u8> := 10            -- Variable constraint
+m := [1 2 3 4 5 6]     -- [f64]:1,6
+n<[i32]:2,3> := m      -- Reshapes and converts to 2x3 i32 matrix
 ```
 
-Define a kind that is a matrix with an unspecified number of rows and 3 columns:
+(3.4) Custom Kinds & Enums
 
+**Aliases:**
+
+You can create aliases for semantic clarity.
+
+```mech:disabled
+<point3> := <[f64]:3>
+p<point3> := [10 20 30]
 ```
-<matrix-3d> := <[u8]:_,3>
+
+**Enums:**
+
+Enums define a fixed set of variants using atoms.
+
+```mech:disabled
+<color> := red | green | blue
+my-color<color> := :color/green     -- a valid color
+other-color<color> := :color/yellow -- error: invalid variant
 ```
-
-This type implies that the matrix can grow in rows, which adds flexibility but impacts performance.
-
 
 4. Literals
 -------------------------------------------------------------------------------
