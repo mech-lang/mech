@@ -303,30 +303,48 @@ This converts a {{<[f64]:1,4>}} (row matrix of floats) to a {{<[string]:2,2>}} (
 
 (4.3) Boolean
 
-- True: `true` or `✓`
-- False: `false` or `✗`
+Boolean literals are written using the keywords `true` and `false`.
 
-Note: `true` and `false` are the only keywords built into the language.
-
-Kind:
-
-```
-<bool>
+```mech:disabled
+true
+false
 ```
 
-(4.4) Atoms
+Several alterantive forms are also accepted:
 
-Atoms are used as enum variants and unique keys. They are identifiers prefixed 
-with a grave. An atom evaluates to iteself and its kind is its identifier.
-
-```
-`A
+```mech:disabled
+✓  -- true
+✗  -- false
 ```
 
-Kind:
+(4.3.1) Logical Operations
 
+Boolean values support the following logical operations:
+
+```mech:disabled
+!true         -- false
+true && false -- false
+true || false -- true
 ```
-<`A>
+
+(4.3.2) Comparison Operations
+
+Comparison operators produce boolean results:
+
+```mech:disabled
+5 == 5
+3 != 4
+2 < 10
+```
+
+(4.3.3) Filtering
+
+An array of logical values can be used as an index to filter another array:
+
+```mech:ex 5.1
+x := [1 2 3 4]
+ix := x > 2
+x[ix]     -- selects elements where ix is true
 ```
 
 (4.5) Empty
