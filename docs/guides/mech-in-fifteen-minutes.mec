@@ -103,7 +103,7 @@ other-color<color> := :color/yellow -- error: invalid variant
 4. Data Types
 -------------------------------------------------------------------------------
 
-(4.1) Numbers
+(4.1) Number
 
 Numbers in Mech can be classified into the following categories:
 
@@ -215,7 +215,7 @@ Complex numbers are written as follows:
 
 The imaginary unit can be represented by either `i` or `j`. Both representations are equivalent and can be used interchangeably.
 
-(4.2) Strings
+(4.2) String
 
 String literals are written using double quotes `"`.
 
@@ -345,6 +345,27 @@ An array of logical values can be used as an index to filter another array:
 x := [1 2 3 4]
 ix := x > 2
 x[ix]     -- selects elements where ix is true
+```
+
+(4.4) Atom
+
+Atoms are written using a leading colon `:` followed by an identifier:
+
+```mech:disabled
+:foo
+:help
+:my-atom
+:🐦
+:Δt
+```
+Atom names may be any valid identifier, including Unicode characters.
+
+Two atoms with the same name are identical:
+
+```mech:disabled
+a := :foo
+b := :foo
+a == b  -- evaluates to {{true}}
 ```
 
 (4.5) Empty
