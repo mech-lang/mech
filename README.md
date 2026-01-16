@@ -1,4 +1,7 @@
 <p align="center">
+    <img width="300px" src="https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/hello.png?ref_type=heads">
+</p>
+<p align="center">
   <img width="500px" src="https://mech-lang.org/img/logo.png" alt="Mech Logo">
 </p>
 
