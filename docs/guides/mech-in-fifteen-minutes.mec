@@ -556,17 +556,26 @@ You can write tables inline as well:
 
 (6.6) Set
 
-An unordered collection of unique, homogenous elements.
+A set is declared using curly braces `{}`.
+
+Elements are separated by commas `,`. Duplicate elements are automatically removed.
+
 ```
-- Empty:     {} or {_}
-- Singleton: {1}
-- Basic:     {1,2,3}
-- Nested:    {{1,2},{3,4}}
+{}                 -- An empty set
+{1, 2, 3}          -- A set of numbers
+{"a", "b", "c"}    -- A set of strings
+{1, 1, 2, 3}       -- Duplicates are removed
 ```
-Kind:
-```
-<{u8}:3>
-```
+
+When parsed and rendered, this code will appear as:
+
+{}                 -- An empty set
+{1, 2, 3}          -- A set of numbers
+{"a", "b", "c"}    -- A set of strings
+{1, 1, 2, 3}       -- Duplicates are removed
+
+Sets are unordered. The order in which elements appear does not affect equality or behavior.
+
 (6.7) Map
 
 An unordered collection of unique keys associated with a corresponding value.
