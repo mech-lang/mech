@@ -407,7 +407,7 @@ You can use a kind annotation in the variable declaration to constrain the varia
 z<u8> := 255
 ```
 
-6. Collections
+6. Data Structures
 -------------------------------------------------------------------------------
 
 - Ordered elements, duplicates allowed
