@@ -370,20 +370,14 @@ a == b  -- evaluates to {{true}}
 
 (4.5) Empty
 
-Empty is a hole, it represents a value that has not been initialized yet, or a 
-collection that is empty. Empty's expressed as any number of underscore 
-characters:
+An empty value is written using one or more underscores `_`:
 
-```
+```mech:disabled
 _
 ___
 ```
 
-Kind:
-
-```
-<_>
-```
+Empty is used to represent missing values in tables and skipped elements in tuple destructuring.
 
 5. Variables
 -------------------------------------------------------------------------------
