@@ -410,90 +410,98 @@ z<u8> := 255
 6. Data Structures
 -------------------------------------------------------------------------------
 
-- Ordered elements, duplicates allowed
-    - (a) Vector (row/column)
-    - (b) Matrix (N-D)
-    - (c) Tuple
-- Unordered elements, no duplicates
-    - (d) Record
-    - (e) Table
-    - (f) Set
-    - (g) Map
+(6.1) Matrix
 
-(6.1) Vector
+Declare a matrix using square brackets `[]`.
 
-A matrix is a N-D collection of homogenous datatypes.
+Use semicolons `;` or newlines to separate rows. 
+
+Use commas `,` or spaces to separate columns.
 
 ```
-- Empty                 []              (0x0)
-- Scalar                [1]             (1x1) 
-- Row Vector            [1 2 3]         (1x3) 
-- Column Vector         [1;2;3]         (3x1) 
-- Also Column           [1              (3x1)
-                         2  
-                         3]
-- Nested                [[1],[2],[3]]   (1x3x1)                                     
-- Transpose             [1 2 3]'        (3x1)
+[1,2,3]   -- A row vector (1x3)
+[1 2 3]   -- The same row vector
+
+[1;2;3]   -- A column vector (3x1)
+[1        
+ 2
+ 3]       -- The same column vector
+
+[1,2;3,4] -- A matrix (2x2)
+[1 2
+ 3 4]     -- The same matrix
+[1 + 2; 3 + 4] -- Elements can be expressions
 ```
 
-Kind: 
+By default, all matrices are rank 2, meaning they have rows and columns. Elementes are indexed in a `[row, column]` format.
 
-```
-- Dynamic Row vector    <[u8]:1,_>
-- Scalar matrix         <[u8]:1> or <[u8]:1,1>
-- Column vector         <[u8]:5> or <[u8]:5,1>
-- Row vector            <[u8]:1,5>
-```
+When parsed and formatted, they look like this:
 
-Note: Vectors have at least 1 scalar dimension.
-
-(6.2) Matrix
-
-```
-- Matrix                [1 2; 3 4]       (2x2)
-- Also Matrix           [1 2             (2x2)
-                         3 4]            
-- Transpose             [1 2; 3 4; 5 6]' (2x3)
+```mech
+-- Row Vector
+[1 2 3]  
+-- Column Vector
+[1;2;3]  
+-- Matrix
+[1 2;3 4]
+-- Vector from expressions
+[1 + 2; 3 + 4] 
 ```
 
-Mech supports fancy box drawing tables:
+(6.1.1) Broadcast Operations 
 
-```
-╭───┬───┬───╮
-│ 1 │ 2 │ 3 │
-├───┼───┼───┤
-│ 4 │ 5 │ 6 │
-├───┼───┼───┤
-│ 7 │ 8 │ 9 │
-╰───┴───┴───╯
+If matrices have the same dimension, standard arithmetic operations are performed element-wise:
+
+```mech:ex 6.1.1
+m1 := [1 2 3; 4 5 6]
+m2 := [7 8 9; 10 11 12]
+m1 + m2  -- Adds the two matrices element-wise
 ```
 
-Kind:
+If one of the operands is a scalar, it will be added or subtracted from each element of the matrix:
 
-```
-- Dynamic matrix        <[u8]>
-- 2D Matrix             <[u8]:2,3>
-- 3D Matrix             <[u8]:2,3,4>
+```mech:ex 6.1.2
+m := [1 2 3 4 5] 
+m + 10  -- Adds 10 to each element of the vector
 ```
 
 (6.3) Tuple
 
-A tuple is a collection of values of different data types stored in a single 
-entity, allowing for the storage and manipulation of multiple values together.
+A tuple is a collection of values of different data types stored in a single entity, allowing for the storage and manipulation of multiple values together.
+
+Tuples are defined using parentheses `()` with elements separated by commas.
 
 ```
-- Empty   ()
-- Single  (1)
-- Multi   (1,1,3)
-- Nested  (1,(2,3))
-- Mixed   (1, true, "Hello")
+(1, true)
+("Hello", 42, false)
+(1, ("Hello", false))
 ```
 
-Kind:
+When parsed and rendered, this code will appear as:
 
+```mech:disabled
+(1, true)               -- two-tuple of f64 and bool
+("Hello", 42, false)    -- three-tuple of string, f64, and bool
+(1, ("Hello", false))   -- nested tuple
 ```
-- Two-tuple of u8 and string    <(u8,string)>
-- Three-tuple of u8s            <(u8,u8,u8)>
+
+(6.3.1) Element Access
+
+Tuple elements are accessed by their 1-based index using the `.` operator.
+
+```mech:ex 4.1
+q := (10, "b", true)
+q.1
+```
+
+(6.3.2) Destructuring
+
+Tuples can be destructured into variables:
+
+```mech:ex 5.1
+a := (10, 11, 12)
+(x, y, z) := a
+x + y + z
 ```
 
 (6.4) Record
