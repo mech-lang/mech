@@ -71,7 +71,7 @@ impl Formatter {
   }
 
   pub fn works_cited(&mut self) -> String {
-    if self.citation_num == 0 {
+    if self.citations.is_empty() {
       return "".to_string();
     }
     let id = hash_str("works-cited");
@@ -121,17 +121,21 @@ impl Formatter {
     self.toc = true;
     let sections = self.sections(&toc.sections);
     self.toc = false;
-    let section_id = hash_str(&format!("section-{}",self.h2_num + 1));
-    let formatted_works_cited = if self.html && self.citation_num > 0 {
-      format!("<section id=\"\" section=\"{}\" class=\"mech-program-section toc\">
+    let section_id = hash_str(&format!("section-{}", self.h2_num + 1));
+    let formatted_works_cited = if self.html && self.citation_num > 0 && !self.citations.is_empty() {
+      format!(
+        "<section id=\"\" section=\"{}\" class=\"mech-program-section toc\">
   <h2 id=\"\" section=\"{}\" class=\"mech-program-subtitle toc active\">
     <a class=\"mech-program-subtitle-link toc\" href=\"#67320967384727436\">Works Cited</a>
   </h2>
-</section>", section_id, self.h2_num + 1)
+</section>",
+        section_id,
+        self.h2_num + 1
+      )
     } else {
       "".to_string()
     };
-    format!("<div class=\"mech-toc\">{}{}</div>",sections,formatted_works_cited)
+    format!("<div class=\"mech-toc\">{}{}</div>", sections, formatted_works_cited)
   }
 
   pub fn sections(&mut self, sections: &Vec<Section>) -> String {
