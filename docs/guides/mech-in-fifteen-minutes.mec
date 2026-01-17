@@ -578,18 +578,28 @@ Sets are unordered. The order in which elements appear does not affect equality 
 
 (6.7) Map
 
-An unordered collection of unique keys associated with a corresponding value.
-```
-- Empty:             {_:_}
-- Single element:    {"a":1}
-- Multiple elements: {"a":10, "b":20, "c": 30}
-- Nested:            {"a":{"a":10}}
-- Multiline:
-    { "a" : 10 
-      "b" : 20
-      "c" : 30 }
-```
-Kind:
+You can define maps using curly braces `{}` with a colon `:` to separate keys from values.
 
-- A map of strings to u8s: `<{string:u8}>`
-- A map of strings to a map of strings to u8: `<{string:{string:u8}}>`
+```
+{"a": 1}                 -- A single key-value pair
+{"a": 10, "b": 20}       -- Multiple key-value pairs
+{"a": {"b": 2}}          -- Nested maps
+{
+  "a": 10
+  "b": 20
+  "c": 30
+}                        -- Multi-line format
+```
+
+Evaluates to:
+
+```mech
+{"a": 1}                 -- A single key-value pair
+{"a": 10, "b": 20}       -- Multiple key-value pairs
+{"a": {"b": 2}}          -- Nested maps
+{
+  "a": 10
+  "b": 20
+  "c": 30
+}                        -- Multi-line format
+```
