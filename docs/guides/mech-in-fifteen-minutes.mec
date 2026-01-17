@@ -489,7 +489,7 @@ When parsed and rendered, this code will appear as:
 
 Tuple elements are accessed by their 1-based index using the `.` operator.
 
-```mech:ex 4.1
+```mech:ex 6.3.1
 q := (10, "b", true)
 q.1
 ```
@@ -498,7 +498,7 @@ q.1
 
 Tuples can be destructured into variables:
 
-```mech:ex 5.1
+```mech:ex 6.3.2
 a := (10, 11, 12)
 (x, y, z) := a
 x + y + z
@@ -506,91 +506,53 @@ x + y + z
 
 (6.4) Record
 
-A set of heterogeneously typed fields and their associated data.
+Records are written using curly braces `{}` with named fields. Each field is written as `name: value` and fields are separated by commas.
 
 ```
-- Simple:   { x: 1 y: "a", z: [1 2 3] }
-- Typed:    { x<u8>: 1, y<string>: "a", z<[u8]:3,1>: [1;2;3] }
-- Nested:   { a: {b: 1, c: "hi"}, b: [1;2;3] }
-- Multiline
+{ x: 1, y: true }
+{ name: "Alice", age: 42, active: true }
 ```
+
+When parsed and rendered, this code will appear as:
+
+```mech:disabled
+{ x: 1, y: true }
+{ name: "Alice", age: 42, active: true }
+```
+
+Records may be written inline or across multiple lines for readability:
 
 ```
 {
-    a: {
-        b: 1, 
-        c: "hi"
-    }, 
-    b: [
-        1
-        2
-        3
-    ]
+  x: 1.2,
+  y: true,
+  label: "pt1"
 }
-```
-
-Kind:
-
-```
-<{u8,string}:1,2>
 ```
 
 (6.5) Table 
 
-A table is set of records.
-
-Define a table with two columns -- one named `x` of kind `f32`; and the named 
-`y` of kind `u8`:
+Tables are defined using the pipe `|` character. Each column is defined with a name and a kind, which describes the type of data it holds.
 
 ```
-{ x<f32>  y<u8> | 
-  1.2     9 
-  1.3     8     }
+| x&ltf32&gt  y&ltbool&gt | 
+|  1.2     true   |
+|  1.3     false  |
 ```
 
-They can be written inline:
+This creates a table with two columns, `x` of kind `f32` and `y` of kind `bool`:
 
-```
-{ x<f32> y<u8> | 1.2 9; 1.3 8 }
-```
-
-The `_` kind indicates column elements can be hetergeneous.
-
-```
-{ x<_>   y<_> |
-  1.2    true 
-  "Hi"   8    }
+```mech:disabled
+| x<f32>  y<bool> | 
+|  1.2     true   |
+|  1.3     false  |
 ```
 
-Elements do not have to be fully filled in:
+You can write tables inline as well:
 
 ```
-{ x<u8>  y<string> z<[u8]:3> |
-   _      "a"       [1;2;3] 
-   4      "b"          _    
-   7       _        [7;8;9]  }
+| x&ltf32&gt  y&ltbool&gt | 1.2 true | 1.3 false |
 ```
-
-Tables can be fancy too:
-
-```
-╭──────────────────────────────╮
-│ x<u8>   y<string>  z<[u8]:3> │
-├───────┬──────────┬───────────┤
-│   _   │   "a"    │  [1;2;3]  │
-├───────┼──────────┼───────────┤
-│   4   │   "b"    │     _     │
-├───────┼──────────┼───────────┤
-│   7   │    _     │  [7;8;9]  │
-╰───────┴──────────┴───────────╯
-```
-
-Kind: 
-
-```
-<{u8,string,[u8]:3}:3,3>
-```
-Note: Tables are more flexible and expressive than matricies, but are slower.
 
 (6.6) Set
 
