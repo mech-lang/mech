@@ -556,44 +556,22 @@ You can write tables inline as well:
 
 (6.6) Set
 
-A set is declared using curly braces `{}`.
+A set is an unordered collection of unique elements. They are defined using curly braces `{}`.
 
 Elements are separated by commas `,`. Duplicate elements are automatically removed.
 
-```
+```mech:disabled
 {}                 -- An empty set
 {1, 2, 3}          -- A set of numbers
 {"a", "b", "c"}    -- A set of strings
 {1, 1, 2, 3}       -- Duplicates are removed
 ```
-
-When parsed and rendered, this code will appear as:
-
-{}                 -- An empty set
-{1, 2, 3}          -- A set of numbers
-{"a", "b", "c"}    -- A set of strings
-{1, 1, 2, 3}       -- Duplicates are removed
-
-Sets are unordered. The order in which elements appear does not affect equality or behavior.
 
 (6.7) Map
 
 You can define maps using curly braces `{}` with a colon `:` to separate keys from values.
 
-```
-{"a": 1}                 -- A single key-value pair
-{"a": 10, "b": 20}       -- Multiple key-value pairs
-{"a": {"b": 2}}          -- Nested maps
-{
-  "a": 10
-  "b": 20
-  "c": 30
-}                        -- Multi-line format
-```
-
-Evaluates to:
-
-```mech
+```mech:disabled
 {"a": 1}                 -- A single key-value pair
 {"a": 10, "b": 20}       -- Multiple key-value pairs
 {"a": {"b": 2}}          -- Nested maps
