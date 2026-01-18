@@ -1,4 +1,4 @@
-Matrix
+matrix
 ===============================================================================
 
 %% A `matrix` is a collection of homogenous datatypes in 2-Dimensions. Various operations can be performed on matricies, including arithmetic, concatenation, and matrix multiplication. Matrices can be sliced, indexed, and reshaped.
