@@ -1065,8 +1065,8 @@ record := table-start
       , ws0
       , table-end ;
 ```
-A Record is a collection of named fields, where each field consists of a key-value pair. Records provide a structured way to group related data while allowing heterogeneous types.
 
+A Record is a collection of named fields, where each field consists of a key-value pair. Records provide a structured way to group related data while allowing heterogeneous types.
 
 (5.6.1) Kind
 
