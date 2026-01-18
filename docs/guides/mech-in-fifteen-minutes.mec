@@ -39,13 +39,14 @@ The preferred identifier case in Mech is kebab-case (words deliniated by dashes)
 
 3. Kinds
 -------------------------------------------------------------------------------
-Kinds describe the **type**, **structure**, and **size** of data. In Mech, kinds are first-class values—you can assign them to variables and pass them around.
 
-**Note:** Kinds describe the data, not mutability. Mutability is a property of the binding, not the kind.
+A kind describes the type of data a value can hold. Every value in Mech has a kind, and kinds themselves are values.
 
-(3.1) Syntax & Simple Kinds
+Kinds describe the data type, not mutability, which is a property of the data binding.
 
-Kinds are written inside angle brackets `< >`.
+(3.1) Simple Kinds
+
+Kinds are written inside angle brackets `< >`. The following kinds represent the built-in data types in a base Mech distribution:
 
 | Category              | Examples           |
 | :---------------------| :------------------|
@@ -63,10 +64,11 @@ Kinds are written inside angle brackets `< >`.
 
 Kinds compose structurally to describe collections.
 
-- **Matrix:** {{<[u8]:2,3>}} (A 2x3 matrix of u8s)
-- **Table:** {{<|x<u8>,y<string>|:3>}} (A table with 3 rows and specific columns)
-- **Tuple:** {{<(u8,bool)>}} (An ordered pair)
-- **Map:** {{<{string:i32}>}} (Maps strings to integers)
+- **Matrix:** {{<[T]:2,3>}} (A 2x3 matrix of `T`)
+- **Table:** {{<|x<T>,y<U>|:3>}} (A table with columns `x` and `y` of types `T` and `U`, and 3 rows)
+- **Tuple:** {{<(T,U)>}} (An ordered pair)
+- **Map:** {{<{K:V}>}} (Maps `K` to `V`)
+- **Set:** {{<{T}>}} (A set of unique `T` values)
 
 (3.3) Kind Annotations & Conversion
 
