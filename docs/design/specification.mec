@@ -983,70 +983,34 @@ The kind of a table column is equivalent to a vector of the table column kind. F
 
 <[u8]:1,3> -- A table column is a vector.
 
-(5.5.2) Examples
+(5.5.2) Semantics
 
-Tables are enclosed in `{}` and contain a header row specifying column names and kinds. The pipe \| separates the header from the data rows.
+- Each record consists of ordered fields (columns).
+- Fields can have different kinds (types).
+- All values in a column must be of the same kind.
+- The number of columns is fixed and part of the table's kind.
+- Tables allow missing values (denoted by `_`).
 
-  | x<f32>  y<u8> | 
-  | 1.2     9     |
-  | 1.3     8     |
+(5.5.3) Examples
 
-This defines a table with two columns:
+A basic table:
 
-- `x<f32>`: A floating-point column.
-- `y<u8>`: An unsigned 8-bit integer column.
-
-The same table can be written in a compact, inline format using `|` to separate rows.
-
+```mech:ex 5.5.3.1
+| x<u8>  y<string> z<bool> |
+| 1      "a"       true    |
+| 4      "b"       false   |
+| 7      "c"       true    |
 ```
-| x<f32> y<u8> | 1.2 9 | 1.3 8 |
-```
-
-Where the first cell is the header row, and the subsequent cells are the data rows, with each column separated by a space or comma.
-
-(5.5.1) Semantics
-
-- Structured: Each record consists of ordered fields (columns).
-- Heterogeneous: Fields can have different kinds (types).
-- Homogeneous: Each row has a similar structure, with the same fields.
-- Sparse: Tables allow missing values (denoted by `_`).
-
-**Any Fields**
 
 The `*` is the "any" kind and allows columns to contain data from mixed kinds.
 
+```mech:ex 5.5.3.2
   | x<*>   y<*> |
   | 1.2    true |
   | "Hi"   8<u8>|
+```
 
 Here, `x` holds both floats and strings, and y holds both integers and booleans. This can be useful for dealing with data whose type is not known at compiletime.
-
-**Incomplete Tables**
-
-When used as a value in a table, `_` indicates that a cell is missing and will be filled in later.
-
-```
-  | x<u8>  y<string> z<[u8]:1,3> |
-  |  _      "a"        [1 2 3]   |
-  |  4      "b"           _      |
-  |  7       _         [7 8; ]   |
-```
-
-**Fancy Representation**
-
-The Mech REPL prints tables using a fancy represntation, which is valid as input to a Mech program as well. The above table is equavlent to the following fancy table:
-
-```
-╭───────────────────────────────────╮
-│ x<u8?>   y<string?>  z<[u8]:1,4?> │
-├────────┬───────────┬──────────────┤
-│   _    │    "a"    │   [1 2 3]    │
-├────────┼───────────┼──────────────┤
-│   4    │    "b"    │      _       │
-├────────┼───────────┼──────────────┤
-│   7    │     _     │   [7 8 9]    │
-╰────────┴───────────┴──────────────╯
-```
 
 (5.6) Record
 
@@ -1085,7 +1049,7 @@ A simple record with two fields. The kinds of these fields are inferred from the
 The kinds of fields can be specified explicitly:
 
 ```mech:ex 5.6.2.2
-{id<u32>: 12345, scores<[f32]:3>: [95.5, 88.0, 76.5]}  
+{id<u32>: 12345, name: "Bob"}
 ```
 
 Records can be nested, allowing fields to contain other records:
