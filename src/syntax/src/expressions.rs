@@ -263,7 +263,7 @@ pub fn power(input: ParseString) -> ParseResult<PowerOp> {
 // Matrix Operations
 // ----------------------------------------------------------------------------
 
-// matrix-operator := matrix-multiply | multiply | divide | matrix-solve ;
+// matrix-operator := matrix-multiply | matrix-solve | dot-product | cross-product ;
 pub fn matrix_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   let (input, op) = alt((matrix_multiply, matrix_solve, dot_product, cross_product))(input)?;
   Ok((input, FormulaOperator::Vec(op)))
