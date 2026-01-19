@@ -1081,37 +1081,24 @@ parenthetical-term := left-parenthesis, formula, right-parenthesis ;
 negate-factor := "-", factor ;
 
 formula := l1, *(range-operator, l1) ;
-add-sub-operator := add | subtract ;
 l1 := l2, *(add-sub-operator, l2) ;
-mul-div-operator := multiply | divide ;
-matrix-operator := matrix-multiply 
-      | multiply 
-      | divide 
-      | matrix-solve ;
 l2 := l3, *(mul-div-operator | matrix-operator, l3) ;
-exponent-operator := exponent ;
-l3 := l4, *(exponent-operator, l4) ;
-logic-operator := and 
-      | or 
-      | xor ;
+l3 := l4, *(power-operator, l4) ;
 l4 := l5, *(logic-operator, l5) ;
-comparison-operator := not-equal 
-      | equal-to 
-      | greater-than-equal 
-      | greater-than 
-      | less-than-equal 
-      | less-than ;
-l5 := factor, *(comparison-operator, factor) ;  
-factor := (structure
-      | parenthetical-term 
-      | fsm-pipe 
+l5 := l6, *(comparison-operator, l6) ;  
+l6 := l7, *(table-operator, l7) ;
+l7 := factor, *(set-operator, factor) ;
+factor := (parenthetical-term 
+      | negate-factor 
+      | not-factor
+      | structure
       | function-call 
       | literal 
       | slice 
       | var), ?transpose ;
 ```
 
-A formula is an expression that follows operator precedence rules and consists of arithmetic, logical, comparison, matrix, and range expressions. Expressions in formulas are evaluated according to their precedence, with higher-precedence operations being evaluated first.
+A formula is an expression that follows operator precedence rules and consists of arithmetic, logical, comparison, matrix, range, table, and set expressions. Expressions in formulas are evaluated according to their precedence, with higher-precedence operations being evaluated first. Precedence rules are encoded in the structure of the formula grammar.
 
 (6.1.1) Operator Precedence
 
@@ -1119,12 +1106,15 @@ Operators in formulas are applied according to the following precedence, from hi
 
 1. Parentheses - Explicit grouping of expressions.
 2. Negation and Logical NOT - Unary operations.
-3. Exponentiation - Raising to a power.
-4. Multiplication, Division, and Matrix Operations - Elementwise and matrix operations.
-5. Addition and Subtraction - Binary arithmetic operations.
-6. Comparison Operators - Elementwise comparisons.
-7. Logical Operators - and, or, xor.
-8. Range Operators - Used in range expressions.
+3. Set Operations - Union, intersection, difference, etc.
+4. Table Operations - Left join, right join, full join, etc.
+5. Comparison - `==`, `!=`, `<`, `>`, `<=`, `>=`
+6. Logical Operations - `&&`, `||`, `xor`
+7. Power - `^`
+8. Matrix Operations - `**`, `·`, `⨯`, `\\`
+9. Multiplication, Division, Remainder - `*`, `/`, `%`
+10. Add, Subtract - `+`, `-`
+11. Range - `..`, `..=`
 
 (6.1.2) Evaluation Order and Associativity
 
@@ -1137,7 +1127,7 @@ Operators in formulas are applied according to the following precedence, from hi
 add       := "+" ;
 subtract  := "-" ;
 multiply  := "*" ;
-divide    := "/" ;
+divide    := "/" | "÷" ;
 exponent  := "^" ;
 remainder := "%" ;
 ```
@@ -1145,8 +1135,8 @@ remainder := "%" ;
 (6.3) Matrix
 
 ```ebnf
-solve           := "\\" ;
-dot-product     := "·" ;
+solve           := "\" ;
+dot-product     := "·" | "•" ;
 cross-product   := "⨯" ;
 matrix-multiply := "**" ;
 transpose       := "'" ;
@@ -1156,9 +1146,11 @@ transpose       := "'" ;
 
 ```ebnf
 not-equal        := "!=" | "¬=" | "≠" ;    
-equal            := "==" ;             
-greater          := "> " ;            
-less             := "< " ;            
+equal            := "==" ;  
+strict-equal     := "===" ;          
+not-strict-equal := "=!=", "=¬=";           
+greater          := ">" ;            
+less             := "<" ;            
 greater-or-equal := ">=" | "≥"  ;       
 less-or-equal    := "<=" | "≤"  ;       
 ```
@@ -1166,13 +1158,24 @@ less-or-equal    := "<=" | "≤"  ;
 (6.5) Logical
 
 ```ebnf
-or           := "|" ;            
-and          := "&" ;            
+or           := "||" ;            
+and          := "&&" ;            
 not          := "!" | "¬";         
 exclusive-or := "xor" | "⊕" | "⊻" ;   
 ```
 
-(6.6) Set
+(6.6) Table
+
+```ebnf
+natural-join := "⋈ " ;
+left0-join := "⟕ " ;
+right-join := "⟖ " ;
+full-join := "⟗ " ;
+left-semi-join := "⋉ " ;
+right-semi-join := "▷:" ;
+```
+
+(6.7) Set
 
 ```ebnf
 union := "∪";       
@@ -1188,7 +1191,7 @@ not-element-of := "∉";
 symmetric-difference := "Δ";
 ```
 
-(6.7) Range
+(6.8) Range
 
 ```ebnf
 range-inclusive := "..=" ;
