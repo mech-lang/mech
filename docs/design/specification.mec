@@ -796,12 +796,6 @@ The kind of a set consists of:
   {"a", "b", "c"}  -- Set of strings
   {{1,2},{3,4}}    -- Nested set of sets
 
-**Edge Cases**
-
-- `{}` represents an empty set.
-- `{1, 1, 2}` results in `{1, 2}` due to uniqueness constraints.
-- `{1, "hello"}` results in a type error due to homogeneity constraints.
-
 (5.2.3) Semantics
 
 - Homogeneity: All elements in a set must be of the same type.
@@ -857,12 +851,6 @@ The kind of a map consists of:
   "b" : 20
   "c" : 30 }                -- Multiline map
 
-**Edge Cases**
-
-- `{_:_}` represents an empty map.
-- If the map is mutable, inserting a duplicate key overwrites the previous value
-- `{1: "hello", 2: "world"}` is valid, but `{1: "hello", "one": "world"}` results in an error, as the keys are not homogenous.
-
 (5.3.3) Semantics
 
 - Key Uniqueness: Each key in a map must be unique.
@@ -887,37 +875,23 @@ A Tuple is defined using parentheses `()` and contains an ordered collection of 
 
 (5.4.1) Kind
 
+The kind of a tuple consists of the kinds of its elements. For example:
+
   <(u8,string)>    -- Two-tuple of u8 and string    
-  <(u8,u8,u8)>     -- Three-tuple of u8s            
+  <(u8,u8,u8)>     -- Three-tuple of u8s     
+  <(f64,(string,bool))> -- Nested tuple 
 
 (5.4.2) Examples
-
-  ()                 
-  (1)                
+                
   (1,1,3)                
   (1,(2,3))                
   (1, true, "Hello")
-  ([1, 2, 3, 4], 7, false)          
-
-**Edge Cases:**
-
-- `()` represents an empty tuple.
-
-- `(1)` is a single-element tuple, not a parenthetical expression that evaluates to `1`.
-
-- Tuples maintain the type of each element, so `(1, "hello")` has the kind `<(f64,string)>`,, unlike sets which require homogeneity.
+  ([1, 2, 3, 4], 7, false)       
 
 (5.4.3) Semantics
 
-- Ordered: The order of elements within a tuple is preserved.
-- Heterogeneous: A tuple can contain elements of different types.
-- Immutable: Once created, the elements in a tuple cannot be changed.
-
-(5.4.4) Operations
-
-- Access: Elements can be accessed by their position (zero-based index).
-- Concatenation: Tuples can be combined to form a larger tuple.
-- Decomposition: Tuples can be unpacked into individual variables.
+- The order of elements within a tuple is preserved.
+- A tuple can contain elements of different types.
 
 (5.5) Table
 
@@ -983,15 +957,8 @@ The kind of a table column is equivalent to a vector of the table column kind. F
 
 <[u8]:1,3> -- A table column is a vector.
 
-(5.5.2) Semantics
 
-- Each record consists of ordered fields (columns).
-- Fields can have different kinds (types).
-- All values in a column must be of the same kind.
-- The number of columns is fixed and part of the table's kind.
-- Tables allow missing values (denoted by `_`).
-
-(5.5.3) Examples
+(5.5.2) Examples
 
 A basic table:
 
@@ -1011,6 +978,15 @@ The `*` is the "any" kind and allows columns to contain data from mixed kinds.
 ```
 
 Here, `x` holds both floats and strings, and y holds both integers and booleans. This can be useful for dealing with data whose type is not known at compiletime.
+
+
+(5.5.3) Semantics
+
+- Each record consists of ordered fields (columns).
+- Fields can have different kinds (types).
+- All values in a column must be of the same kind.
+- The number of columns is fixed and part of the table's kind.
+- Tables allow missing values (denoted by `_`).
 
 (5.6) Record
 
@@ -1042,19 +1018,19 @@ This denotes a record with fields:
 
 A simple record with two fields. The kinds of these fields are inferred from the values:
 
-```mech:ex 5.6.2.1
+```mech:ex 5.6.3.1
 {name: "Alice", age: 30u8}  
 ```
 
 The kinds of fields can be specified explicitly:
 
-```mech:ex 5.6.2.2
+```mech:ex 5.6.3.2
 {id<u32>: 12345, name: "Bob"}
 ```
 
 Records can be nested, allowing fields to contain other records:
 
-```mech:ex 5.6.2.3
+```mech:ex 5.6.3.3
 {
   title: "Lord of the Rings", 
   author: {
@@ -1065,7 +1041,7 @@ Records can be nested, allowing fields to contain other records:
 }
 ```
 
-(5.6.2) Semantics
+(5.6.3) Semantics
 
 - Each field is identified by a unique name.
 - Fields can have different types.
