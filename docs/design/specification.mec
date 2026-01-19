@@ -1147,7 +1147,7 @@ transpose       := "'" ;
 ```ebnf
 not-equal        := "!=" | "¬=" | "≠" ;    
 equal            := "==" ;  
-strict-equal     := "===" ;          
+strict-equal     := "=:=" , "≡" ;          
 not-strict-equal := "=!=", "=¬=";           
 greater          := ">" ;            
 less             := "<" ;            
@@ -1919,14 +1919,14 @@ Images can be floated to the left or right by prefixing with `<<` or `>>`, respe
 (10.9.1) Example
 
 ```
-![The Mech "M"](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true)
-![A smaller Mech "M"](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true){width: "100px", height: "100px"}
+![Mika running to get the job done!](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/running.png?ref_type=heads)
+![A smaller version of Mika](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/running.png?ref_type=heads){width: "200px"}
 ```
 
 This renders as:
 
-![The Mech "M"](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true)
-![A smaller Mech "M"](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true){width: "100px", height: "100px"}
+![Mika running to get the job done!](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/running.png?ref_type=heads)
+![A smaller version of Mika](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/running.png?ref_type=heads){width: "200px"}
 
 (10.10) Mech Extensions 
 
