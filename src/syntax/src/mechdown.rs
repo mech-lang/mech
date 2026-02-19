@@ -269,17 +269,17 @@ pub fn option_mapping(input: ParseString) -> ParseResult<(Identifier, MechString
   Ok((input, (key, value)))
 }
 
-// img := "![", paragraph, "]", "(", +text, ")" , ?option-map ;
+// img := "![", *text, "]", "(", +text, ")" , ?option-map ;
 pub fn img(input: ParseString) -> ParseResult<Image> {
   let (input, _) = img_prefix(input)?;
-  let (input, caption_text) = inline_paragraph(input)?;
+  let (input, caption_text) = opt(inline_paragraph)(input)?;
   let (input, _) = right_bracket(input)?;
   let (input, _) = left_parenthesis(input)?;
   let (input, src) = many1(tuple((is_not(right_parenthesis),text)))(input)?;
   let (input, _) = right_parenthesis(input)?;
   let (input, style) = opt(option_map)(input)?;
   let merged_src = Token::merge_tokens(&mut src.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>()).unwrap();
-  Ok((input, Image{src: merged_src, caption: Some(caption_text), style}))
+  Ok((input, Image{src: merged_src, caption: caption_text, style}))
 }
 
 // paragraph-text := ¬(img-prefix | http-prefix | left-bracket | tilde | asterisk | underscore | grave | define-operator | bar), +text ;
