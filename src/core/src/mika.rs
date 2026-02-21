@@ -28,11 +28,12 @@ pub enum MikaExpression {
   Sad,           // (◞◯◟)
   Scared,        // (Ͼ◯Ͽ)
   Shades,        // (⌐▰◯▰)
-  Sleeping,      // (-◯-) ⸨Hello Welcome to Mech! I'm Mika!
+  Sleeping,      // (⹇◯⹇)
   Smiling,       // (ᗣ◯ᗣ)
   Squinting,     // (≖◯≖)
   Surprised,     // (°◯°)
   TearingUp,     // (ᗩ◯ᗩ)
+  Unimpressed,   // (¬◯¬)
   Wired,         // (◉◯◉)
 }
 
@@ -56,9 +57,10 @@ impl MikaExpression {
       MikaExpression::Sad => ("◞", "◯", "◟"),
       MikaExpression::Scared => ("Ͼ", "◯", "Ͽ"),
       MikaExpression::Shades => ("⌐▰", "◯", "▰"),
-      MikaExpression::Sleeping => ("-", "◯", "-"),
+      MikaExpression::Sleeping => ("⹇", "◯", "⹇"),
       MikaExpression::Squinting => ("≖", "◯", "≖"),
       MikaExpression::Surprised => ("°", "◯", "°"),
+      MikaExpression::Unimpressed => ("¬", "◯", "¬"),
       MikaExpression::Wired => ("◉", "◯", "◉"),
     }
   }
