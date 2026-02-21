@@ -121,6 +121,7 @@ impl SmallMika {
   }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum MikaArm {
   Bat,               // ᗑ
   BigGripperLeft,    // Ɔ∞
