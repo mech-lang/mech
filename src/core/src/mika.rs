@@ -193,6 +193,7 @@ impl MikaArm {
 
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum MikaFace {
   Normal,      // ⦿
   Open,        // ◯
@@ -205,6 +206,24 @@ pub enum MikaFace {
   Error,       // ⊗
   Filled,      // ⏺
   FlatMouth,   // ⍜
+}
+
+impl MikaFace {
+  pub fn symbol(&self) -> &'static str {
+    match self {
+      MikaFace::Normal => "⦿",
+      MikaFace::Open => "◯",
+      MikaFace::Back => "⊕",
+      MikaFace::Stage1 => "∘",
+      MikaFace::Stage2 => "⦾",
+      MikaFace::Stage3 => "⦾",
+      MikaFace::Blink => "⊖",
+      MikaFace::Wide => "⦵",
+      MikaFace::Error => "⊗",
+      MikaFace::Filled => "⏺",
+      MikaFace::FlatMouth => "⍜",
+    }
+  }
 }
 
 // Mylo is a secondary character, he's under development right now on the basis of these faces. Maybe he's a villain? Maybe he's Mika's siblng? I don't know.
