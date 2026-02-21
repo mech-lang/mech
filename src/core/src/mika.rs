@@ -236,3 +236,15 @@ pub enum MyloExpression {
   Angry,      // (ᘭ◯ᘪ)
   Crossed,    // (ᑢ◯ᑝ)
 }
+
+impl MyloExpression {
+  pub fn symbols(&self) -> (&'static str, &'static str, &'static str) {
+    match self {
+      MyloExpression::Eyes => ("ᑕ", "◯", "ᑐ"),
+      MyloExpression::Focused => ("ᕮ", "◯", "ᕭ"),
+      MyloExpression::Alarm => ("ᕳ", "◯", "ᕲ"),
+      MyloExpression::Angry => ("ᘭ", "◯", "ᘪ"),
+      MyloExpression::Crossed => ("ᑢ", "◯", "ᑝ"),
+    }
+  }
+}
