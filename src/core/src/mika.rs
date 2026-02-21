@@ -66,45 +66,47 @@ impl MikaExpression {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum SmallMika {
-  Bat,          // ᗑ⦿ᗑ
-  BigHug,       // ›⌣⦿⌣‹
-  Cheering,     // ╰⦿╯
-  Dancing,      // ~⦿~
-  GripperLeft,  // ›─⦿╮
-  GripperRight, // ╭⦿─‹
-  GestureLeft,  // ⌣⦿╮
-  GestureRight, // ╭⦿⌣
-  Idle,         // ╭⦿╮
-  Knight,       // ⸸⦿ᗢ
-  Matrix,       // ·¬⦿⌐·
-  OWA,          // ⸸⦿ᗑ
-  PointingLeft, // ╭⦿─
-  PointingRight,// ─⦿╮
-  Punching,     // ᓂ⦿ᓄ
-  Shrug,        // -◡⦿◡-
-  ServingLeft,  // -◡⦿╮
-  ServingRight, // ╭⦿◡-
-  WavingRight,  // ╭⦿╯
-  WavingLeft,   // ╰⦿╮
+  Bat,            // ᗑ⦿ᗑ
+  BigHug,         // ›⌣⦿⌣‹
+  Cheering,       // ╰⦿╯
+  Dancing,        // ~⦿~
+  GripperLeft,    // ›─⦿╮
+  GripperRight,   // ╭⦿─‹
+  GestureLeft,    // ⌣⦿╮
+  GestureRight,   // ╭⦿⌣
+  Idle,           // ╭⦿╮
+  Knight,         // ⸸⦿ᗢ
+  Matrix,         // ·¬⦿⌐·
+  OWA,            // ⸸⦿ᗑ
+  PointingLeft,   // ╭⦿─
+  PointingRight,  // ─⦿╮
+  Punching,       // ᓂ⦿ᓄ
+  ShootLeft,      // ·¬⦿╮
+  ShootRight,     // ╭⦿⌐·
+  Shrug,          // -◡⦿◡-
+  ServingLeft,    // -◡⦿╮
+  ServingRight,   // ╭⦿◡-
+  WavingRight,    // ╭⦿╯
+  WavingLeft,     // ╰⦿╮
 }
 
 impl SmallMika {
   pub fn symbols(&self) -> (MikaArm, MikaFace, MikaArm) {
     match self {
-      SmallMika::Bat => (MikaArm::Bat, "⦿", MikaArm::Bat),
-      SmallMika::BigHug => (MikaArm::GestureLeft, "⦿", MikaArm::GestureRight),
-      SmallMika::Cheering => (MikaArm::UpLeft, "⦿", MikaArm::UpRight),
-      SmallMika::Dancing => (MikaArm::Dance, "⦿", MikaArm::Dance),
-      SmallMika::GripperLeft => (MikaArm::GripperLeft, "⦿", MikaArm::UpRight),
-      SmallMika::GripperRight => (MikaArm::UpLeft, "⦿", MikaArm::GripperRight),
-      SmallMika::Idle => (MikaArm::Left, "⦿", MikaArm::Right),
-      SmallMika::Knight => (MikaArm::Sword, "⦿", MikaArm::Shield),
-      SmallMika::Matrix => (MikaArm::ShootLeft, "⦿", MikaArm::ShootRight),
-      SmallMika::PointingLeft => (MikaArm::PointingLeft, "⦿", MikaArm::UpRight),
-      SmallMika::PointingRight => (MikaArm::UpLeft, "⦿", MikaArm::PointingRight),
-      SmallMika::Shrug => (MikaArm::ShrugLeft, "⦿", MikaArm::ShrugRight),
-      SmallMika::WavingLeft => (MikaArm::UpLeft, "⦿", MikaArm::UpRight),
-      SmallMika::WavingRight => (MikaArm::UpLeft, "⦿", MikaArm::UpRight),
+      SmallMika::Bat            => (MikaArm::Bat,          MikaFace::Normal, MikaArm::Bat),
+      SmallMika::BigHug         => (MikaArm::GestureLeft,  MikaFace::Normal, MikaArm::GestureRight),
+      SmallMika::Cheering       => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::UpRight),
+      SmallMika::Dancing        => (MikaArm::Dance,        MikaFace::Normal, MikaArm::Dance),
+      SmallMika::GripperLeft    => (MikaArm::GripperLeft,  MikaFace::Normal, MikaArm::UpRight),
+      SmallMika::GripperRight   => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::GripperRight),
+      SmallMika::Idle           => (MikaArm::Left,         MikaFace::Normal, MikaArm::Right),
+      SmallMika::Knight         => (MikaArm::Sword,        MikaFace::Normal, MikaArm::Shield),
+      SmallMika::Matrix         => (MikaArm::ShootLeft,    MikaFace::Normal, MikaArm::ShootRight),
+      SmallMika::PointingLeft   => (MikaArm::PointingLeft, MikaFace::Normal, MikaArm::UpRight),
+      SmallMika::PointingRight  => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::PointingRight),
+      SmallMika::Shrug          => (MikaArm::ShrugLeft,    MikaFace::Normal, MikaArm::ShrugRight),
+      SmallMika::WavingLeft     => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::UpRight),
+      SmallMika::WavingRight    => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::UpRight),
     }
   }
 }
@@ -174,6 +176,10 @@ impl MikaArm {
     matches!(self, MikaArm::UpRight | MikaArm::Bat | MikaArm::BigGripperRight | MikaArm::CurlRight | MikaArm::GestureRight | MikaArm::GripperRight | MikaArm::Right | MikaArm::ShootRight | MikaArm::ShrugRight | MikaArm::Dance)
   }
 
+}
+
+pub enum MikaFace {
+  Normal,       // ⦿
 }
 
 // Mylo is a secondary character, he's under development right now on the basis of these faces. Maybe he's a villain? Maybe he's Mika's siblng? I don't know.
