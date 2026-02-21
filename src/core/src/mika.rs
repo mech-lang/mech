@@ -28,7 +28,7 @@ pub enum MikaExpression {
   Sad,           // (◞◯◟)
   Scared,        // (Ͼ◯Ͽ)
   Shades,        // (⌐▰◯▰)
-  Sleeping,      // (-◯-) 「Hello Welcome to Mech! I'm Mika!」
+  Sleeping,      // (-◯-) ⸨Hello Welcome to Mech! I'm Mika!
   Smiling,       // (ᗣ◯ᗣ)
   Squinting,     // (≖◯≖)
   Surprised,     // (°◯°)
@@ -65,11 +65,12 @@ impl MikaExpression {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub enum SmallMika {
+pub enum MicoMika {
   Bat,            // ᗑ⦿ᗑ
   BigHug,         // ›⌣⦿⌣‹
-  Cheering,       // ╰⦿╯
+  Cheering,       // ⸌⦿⸍
   Dancing,        // ~⦿~
+  Goal,           // ╰⦿╯
   GripperLeft,    // ›─⦿╮
   GripperRight,   // ╭⦿─‹
   GestureLeft,    // ⌣⦿╮
@@ -81,8 +82,8 @@ pub enum SmallMika {
   PointingLeft,   // ╭⦿─
   PointingRight,  // ─⦿╮
   Punching,       // ᓂ⦿ᓄ
-  ShootLeft,      // ·¬⦿╮
-  ShootRight,     // ╭⦿⌐·
+  ShootingLeft,   // ·¬⦿╮
+  ShootingRight,  // ╭⦿⌐·
   Shrug,          // -◡⦿◡-
   ServingLeft,    // -◡⦿╮
   ServingRight,   // ╭⦿◡-
@@ -95,16 +96,25 @@ impl SmallMika {
     match self {
       SmallMika::Bat            => (MikaArm::Bat,          MikaFace::Normal, MikaArm::Bat),
       SmallMika::BigHug         => (MikaArm::GestureLeft,  MikaFace::Normal, MikaArm::GestureRight),
-      SmallMika::Cheering       => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::UpRight),
+      SmallMika::Cheering       => (MikaArm::RaisedLeft,   MikaFace::Normal, MikaArm::RaisedRight),
       SmallMika::Dancing        => (MikaArm::Dance,        MikaFace::Normal, MikaArm::Dance),
+      SmallMika::Goal           => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::UpRight),
       SmallMika::GripperLeft    => (MikaArm::GripperLeft,  MikaFace::Normal, MikaArm::UpRight),
       SmallMika::GripperRight   => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::GripperRight),
+      SmallMika::GestureLeft    => (MikaArm::GestureLeft,  MikaFace::Normal, MikaArm::UpRight),
+      SmallMika::GestureRight   => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::GestureRight),
       SmallMika::Idle           => (MikaArm::Left,         MikaFace::Normal, MikaArm::Right),
       SmallMika::Knight         => (MikaArm::Sword,        MikaFace::Normal, MikaArm::Shield),
       SmallMika::Matrix         => (MikaArm::ShootLeft,    MikaFace::Normal, MikaArm::ShootRight),
+      SmallMika::OWA            => (MikaArm::Sword,        MikaFace::Normal, MikaArm::Bat),
       SmallMika::PointingLeft   => (MikaArm::PointingLeft, MikaFace::Normal, MikaArm::UpRight),
       SmallMika::PointingRight  => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::PointingRight),
+      SmallMika::Punching       => (MikaArm::PunchLeft,    MikaFace::Normal, MikaArm::PunchLowRight),
+      SmallMika::ShootingLeft   => (MikaArm::ShootLeft,    MikaFace::Normal, MikaArm::UpRight),
+      SmallMika::ShootingRight  => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::ShootRight),
       SmallMika::Shrug          => (MikaArm::ShrugLeft,    MikaFace::Normal, MikaArm::ShrugRight),
+      SmallMika::ServingLeft    => (MikaArm::ServingLeft,  MikaFace::Normal, MikaArm::UpRight),
+      SmallMika::ServingRight   => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::ServingRight),
       SmallMika::WavingLeft     => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::UpRight),
       SmallMika::WavingRight    => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::UpRight),
     }
@@ -112,74 +122,89 @@ impl SmallMika {
 }
 
 pub enum MikaArm {
-  UpLeft,         // ╰
-  UpRight,        // ╯
-  Bat,            // ᗑ
-  BigGripperLeft, // Ɔ∞
-  BigGripperRight,// ∞C
-  CurlLeft,       // ᕦ
-  CurlRight,      // ᕤ
-  Dance,          // ~
-  GestureLeft,    // ›⌣
-  GestureRight,   // ⌣‹
-  GripperLeft,    // ›─
-  GripperRight,   // ─‹
-  Left,           // ╭
-  Right,          // ╮
-  Shield,         // ᗢ
-  ShootLeft,      // ·¬
-  ShootRight,     // ⌐·
-  ShrugLeft,      // -◡
-  ShrugRight,     // ◡-
-  Sword,          // ⸸
-  PunchLeft,      // ᓂ
-  PunchRight,     // ᓀ
-  PunchLowLeft,   // ᓇ
-  PunchLowRight,  // ᓄ
+  Bat,               // ᗑ
+  BigGripperLeft,    // Ɔ∞
+  BigGripperRight,   // ∞C
+  CurlLeft,          // ᕦ
+  CurlRight,         // ᕤ
+  Dance,             // ~
+  GesturingLeft,     // ›⌣
+  GesturingRight,    // ⌣‹
+  GripperLeft,       // ›─
+  GripperRight,      // ─‹
+  Left,              // ╭
+  RaisedLeft,        // ⸌
+  RaisedRight,       // ⸍
+  Right,             // ╮
+  Shield,            // ᗢ
+  ShootingLeft,      // ·¬
+  ShootingRight,     // ⌐·
+  ShrugingLeft,      // -◡
+  ShrugingRight,     // ◡-
+  Sword,             // ⸸
+  PointingLeft,      // ╭─
+  PunchingLeft,      // ᓂ
+  PunchingRight,     // ᓀ
+  PunchingLowLeft,   // ᓇ
+  PunchingLowRight,  // ᓄ
+  UpLeft,            // ╰
+  UpRight,           // ╯
 }
 
 impl MikaArm {
   pub fn symbol(&self) -> &'static str {
     match self {
-      MikaArm::UpLeft => "╰",
-      MikaArm::UpRight => "╯",
       MikaArm::Bat => "ᗑ",
       MikaArm::BigGripperLeft => "Ɔ∞",
       MikaArm::BigGripperRight => "∞C",
       MikaArm::CurlLeft => "ᕦ",
       MikaArm::CurlRight => "ᕤ",
       MikaArm::Dance => "~",
-      MikaArm::GestureLeft => "›⌣",
-      MikaArm::GestureRight => "⌣‹",
+      MikaArm::GesturingLeft => "⌣",
+      MikaArm::GesturingRight => "⌣",
       MikaArm::GripperLeft => "›─",
       MikaArm::GripperRight => "─‹",
       MikaArm::Left => "╭",
+      MikaArm::RaisedLeft => "⸌",
+      MikaArm::RaisedRight => "⸍",
       MikaArm::Right => "╮",
       MikaArm::Shield => "ᗢ",
-      MikaArm::ShootLeft => "·¬",
-      MikaArm::ShootRight => "⌐·",
-      MikaArm::ShrugLeft => "-◡",
-      MikaArm::ShrugRight => "◡-",
+      MikaArm::ShootingLeft => "·¬",
+      MikaArm::ShootingRight => "⌐·",
+      MikaArm::ShrugingLeft => "-◡",
+      MikaArm::ShrugingRight => "◡-",
       MikaArm::Sword => "⸸",
-      MikaArm::PunchLeft => "ᓂ",
-      MikaArm::PunchRight => "ᓀ",
-      MikaArm::PunchLowLeft => "ᓇ",
-      MikaArm::PunchLowRight => "ᓄ",
+      MikaArm::PunchingLeft => "ᓂ",
+      MikaArm::PunchingRight => "ᓀ",
+      MikaArm::PunchingLowLeft => "ᓇ",
+      MikaArm::PunchingLowRight => "ᓄ",
+      MikaArm::UpLeft => "╰",
+      MikaArm::UpRight => "╯",
     }
   }
 
   pub fn is_left(&self) -> bool {
-    matches!(self, MikaArm::UpLeft | MikaArm::Bat | MikaArm::BigGripperLeft | MikaArm::CurlLeft | MikaArm::GestureLeft | MikaArm::GripperLeft | MikaArm::Left | MikaArm::ShootLeft | MikaArm::ShrugLeft | MikaArm::Dance)
+    matches!(self, MikaArm::UpLeft | MikaArm::Bat | MikaArm::BigGripperLeft | MikaArm::CurlLeft | MikaArm::GesturingLeft | MikaArm::GripperLeft | MikaArm::Left | MikaArm::ShootingLeft | MikaArm::ShrugingLeft | MikaArm::Dance)
   }
 
   pub fn is_right(&self) -> bool {
-    matches!(self, MikaArm::UpRight | MikaArm::Bat | MikaArm::BigGripperRight | MikaArm::CurlRight | MikaArm::GestureRight | MikaArm::GripperRight | MikaArm::Right | MikaArm::ShootRight | MikaArm::ShrugRight | MikaArm::Dance)
+    matches!(self, MikaArm::UpRight | MikaArm::Bat | MikaArm::BigGripperRight | MikaArm::CurlRight | MikaArm::GesturingRight | MikaArm::GripperRight | MikaArm::Right | MikaArm::ShootingRight | MikaArm::ShrugingRight | MikaArm::Dance)
   }
 
 }
 
 pub enum MikaFace {
-  Normal,       // ⦿
+  Normal,      // ⦿
+  Open,        // ◯
+  Back,        // ⊕
+  Stage1,      // ⊙
+  Stage2,      // ⊚
+  Stage3,      // ⦾
+  Blink,       // ⊖
+  Wide,        // ⦵
+  Error,       // ⊗
+  Filled,      // ⏺
+  FlatMouth,   // ⍜
 }
 
 // Mylo is a secondary character, he's under development right now on the basis of these faces. Maybe he's a villain? Maybe he's Mika's siblng? I don't know.
