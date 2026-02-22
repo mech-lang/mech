@@ -6,6 +6,13 @@ use crate::*;
 // Inline Mika
 // -----------------------------------------------------------------------------
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct MiniMIka {
+  pub expression: MikaExpression,
+  pub left_arm: MikaArm,
+  pub right_arm: MikaArm,
+}
+
 // Inline Mika lives in the terminal. She greets users when they start Mech, and provides a friendly face to interact with. She can display a variety of expressions and poses, and can be used to add personality and fun to the Mech experience. Users can customize Mika's appearance and expressions, and she can be used to provide feedback, celebrate achievements, or just add a bit of whimsy to the coding process.
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -93,32 +100,32 @@ pub enum MicoMika {
   WavingLeft,     // ╰⦿╮
 }
 
-impl SmallMika {
+impl MicoMika {
   pub fn symbols(&self) -> (MikaArm, MikaFace, MikaArm) {
     match self {
-      SmallMika::Bat            => (MikaArm::Bat,          MikaFace::Normal, MikaArm::Bat),
-      SmallMika::BigHug         => (MikaArm::GestureLeft,  MikaFace::Normal, MikaArm::GestureRight),
-      SmallMika::Cheering       => (MikaArm::RaisedLeft,   MikaFace::Normal, MikaArm::RaisedRight),
-      SmallMika::Dancing        => (MikaArm::Dance,        MikaFace::Normal, MikaArm::Dance),
-      SmallMika::Goal           => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::UpRight),
-      SmallMika::GripperLeft    => (MikaArm::GripperLeft,  MikaFace::Normal, MikaArm::UpRight),
-      SmallMika::GripperRight   => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::GripperRight),
-      SmallMika::GestureLeft    => (MikaArm::GestureLeft,  MikaFace::Normal, MikaArm::UpRight),
-      SmallMika::GestureRight   => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::GestureRight),
-      SmallMika::Idle           => (MikaArm::Left,         MikaFace::Normal, MikaArm::Right),
-      SmallMika::Knight         => (MikaArm::Sword,        MikaFace::Normal, MikaArm::Shield),
-      SmallMika::Matrix         => (MikaArm::ShootLeft,    MikaFace::Normal, MikaArm::ShootRight),
-      SmallMika::OneWing        => (MikaArm::Sword,        MikaFace::Normal, MikaArm::Bat),
-      SmallMika::PointingLeft   => (MikaArm::PointingLeft, MikaFace::Normal, MikaArm::UpRight),
-      SmallMika::PointingRight  => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::PointingRight),
-      SmallMika::Punching       => (MikaArm::PunchLeft,    MikaFace::Normal, MikaArm::PunchLowRight),
-      SmallMika::ShootingLeft   => (MikaArm::ShootLeft,    MikaFace::Normal, MikaArm::UpRight),
-      SmallMika::ShootingRight  => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::ShootRight),
-      SmallMika::Shrug          => (MikaArm::ShrugLeft,    MikaFace::Normal, MikaArm::ShrugRight),
-      SmallMika::ServingLeft    => (MikaArm::ServingLeft,  MikaFace::Normal, MikaArm::UpRight),
-      SmallMika::ServingRight   => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::ServingRight),
-      SmallMika::WavingLeft     => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::UpRight),
-      SmallMika::WavingRight    => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::UpRight),
+      MicoMika::Bat            => (MikaArm::Bat,          MikaFace::Normal, MikaArm::Bat),
+      MicoMika::BigHug         => (MikaArm::GestureLeft,  MikaFace::Normal, MikaArm::GestureRight),
+      MicoMika::Cheering       => (MikaArm::RaisedLeft,   MikaFace::Normal, MikaArm::RaisedRight),
+      MicoMika::Dancing        => (MikaArm::Dance,        MikaFace::Normal, MikaArm::Dance),
+      MicoMika::Goal           => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::UpRight),
+      MicoMika::GripperLeft    => (MikaArm::GripperLeft,  MikaFace::Normal, MikaArm::UpRight),
+      MicoMika::GripperRight   => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::GripperRight),
+      MicoMika::GestureLeft    => (MikaArm::GestureLeft,  MikaFace::Normal, MikaArm::UpRight),
+      MicoMika::GestureRight   => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::GestureRight),
+      MicoMika::Idle           => (MikaArm::Left,         MikaFace::Normal, MikaArm::Right),
+      MicoMika::Knight         => (MikaArm::Sword,        MikaFace::Normal, MikaArm::Shield),
+      MicoMika::Matrix         => (MikaArm::ShootLeft,    MikaFace::Normal, MikaArm::ShootRight),
+      MicoMika::OneWing        => (MikaArm::Sword,        MikaFace::Normal, MikaArm::Bat),
+      MicoMika::PointingLeft   => (MikaArm::PointingLeft, MikaFace::Normal, MikaArm::UpRight),
+      MicoMika::PointingRight  => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::PointingRight),
+      MicoMika::Punching       => (MikaArm::PunchLeft,    MikaFace::Normal, MikaArm::PunchLowRight),
+      MicoMika::ShootingLeft   => (MikaArm::ShootLeft,    MikaFace::Normal, MikaArm::UpRight),
+      MicoMika::ShootingRight  => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::ShootRight),
+      MicoMika::Shrug          => (MikaArm::ShrugLeft,    MikaFace::Normal, MikaArm::ShrugRight),
+      MicoMika::ServingLeft    => (MikaArm::ServingLeft,  MikaFace::Normal, MikaArm::UpRight),
+      MicoMika::ServingRight   => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::ServingRight),
+      MicoMika::WavingLeft     => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::UpRight),
+      MicoMika::WavingRight    => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::UpRight),
     }
   }
 }
