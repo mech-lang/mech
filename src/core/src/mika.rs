@@ -80,7 +80,7 @@ pub enum MicoMika {
   Idle,           // ╭⦿╮
   Knight,         // ⸸⦿ᗢ
   Matrix,         // ·¬⦿⌐·
-  OWA,            // ⸸⦿ᗑ
+  OneWing,        // ⸸⦿ᗑ
   PointingLeft,   // ╭⦿─
   PointingRight,  // ─⦿╮
   Punching,       // ᓂ⦿ᓄ
@@ -108,7 +108,7 @@ impl SmallMika {
       SmallMika::Idle           => (MikaArm::Left,         MikaFace::Normal, MikaArm::Right),
       SmallMika::Knight         => (MikaArm::Sword,        MikaFace::Normal, MikaArm::Shield),
       SmallMika::Matrix         => (MikaArm::ShootLeft,    MikaFace::Normal, MikaArm::ShootRight),
-      SmallMika::OWA            => (MikaArm::Sword,        MikaFace::Normal, MikaArm::Bat),
+      SmallMika::OneWing        => (MikaArm::Sword,        MikaFace::Normal, MikaArm::Bat),
       SmallMika::PointingLeft   => (MikaArm::PointingLeft, MikaFace::Normal, MikaArm::UpRight),
       SmallMika::PointingRight  => (MikaArm::UpLeft,       MikaFace::Normal, MikaArm::PointingRight),
       SmallMika::Punching       => (MikaArm::PunchLeft,    MikaFace::Normal, MikaArm::PunchLowRight),
