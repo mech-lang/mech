@@ -261,7 +261,8 @@ static MICROMIKA_WAVE: &[&str] = &["╭⦿╯","╭⦿─",];
 static MICROMIKA_RAISE_ARMS: &[&str] = &["╭⦿╮","─⦿─","╰⦿╯"];
 static MICROMIKA_LOWER_ARMS: &[&str] = &["╰⦿╯","─⦿─","╭⦿╮"];
 static MICROMIKA_FLAPPING: &[&str] = &["─⦿─","╰⦿╯"];
-static MICROMIKA_GRIPPING: &[&str] = &["╭⦿─‹ -> ╭⦿─-"];
+static MICROMIKA_GRIPPING_RIGHT: &[&str] = &["╭⦿─‹ -> ╭⦿─-"];
+static MICROMIKA_GRIPPING_LEFT: &[&str] = &["›─⦿╮ -> -─⦿╮"];
 
 
 // Mylo is a secondary character, he's under development right now on the basis of these faces. Maybe he's a villain? Maybe he's Mika's siblng? I don't know.
