@@ -51,33 +51,33 @@ pub enum MikaExpression {
 }
 
 impl MikaExpression {
-  pub fn symbols(&self) -> (&'static str, &'static str, &'static str) {
+  pub fn symbols(&self) -> (&'static str, MikaNose, &'static str) {
     match self {
-      MikaExpression::Content => ("ˆ", "◯", "ˆ"),
-      MikaExpression::Confused => ("ಠ", "◯", "ಠ"),
-      MikaExpression::Crying => ("╥", "◯", "╥"),
-      MikaExpression::Dazed => ("⋇", "◯", "⋇"),
-      MikaExpression::Dead => ("✖", "◯", "✖"),
-      MikaExpression::EyesSqueezed => ("≻", "◯", "≺"),
-      MikaExpression::Glaring => ("ㆆ", "⍜", "ㆆ"),
-      MikaExpression::Happy => ("◜", "◯", "◝"),
-      MikaExpression::Normal => ("˙", "◯", "˙"),
-      MikaExpression::PeerRight => ("⚆", "◯", "⚆"),
-      MikaExpression::PeerStraight => ("☉", "◯", "☉"),
-      MikaExpression::Pleased => ("◠", "◯", "◠"),
-      MikaExpression::Resolved => ("◡̀", "◯", "◡́"),
-      MikaExpression::RollingEyes => ("◕", "◯", "◕"),
-      MikaExpression::Sad => ("◞", "◯", "◟"),
-      MikaExpression::Scared => ("Ͼ", "◯", "Ͽ"),
-      MikaExpression::Shades => ("⌐▰", "◯", "▰"),
-      MikaExpression::Sleeping => ("⹇", "◯", "⹇"),
-      MikaExpression::Squinting => ("≖", "◯", "≖"),
-      MikaExpression::Surprised => ("°", "◯", "°"),
-      MikaExpression::Unimpressed => ("¬", "◯", "¬"),
-      MikaExpression::Wired => ("◉", "◯", "◉"),
-      MikaExpression::Smiling => ("ᗣ", "◯", "ᗣ"),
-      MikaExpression::SuperSqueezed => ("ᗒ", "◯", "ᗕ"),
-      MikaExpression::TearingUp => ("ᗩ", "◯", "ᗩ"),
+      MikaExpression::Content => ("ˆ", MikaNose::Open, "ˆ"),
+      MikaExpression::Confused => ("ಠ", MikaNose::Open, "ಠ"),
+      MikaExpression::Crying => ("╥", MikaNose::Open, "╥"),
+      MikaExpression::Dazed => ("⋇", MikaNose::Open, "⋇"),
+      MikaExpression::Dead => ("✖", MikaNose::Open, "✖"),
+      MikaExpression::EyesSqueezed => ("≻", MikaNose::Open, "≺"),
+      MikaExpression::Glaring => ("ㆆ", MikaNose::FlatMouth, "ㆆ"),
+      MikaExpression::Happy => ("◜", MikaNose::Open, "◝"),
+      MikaExpression::Normal => ("˙", MikaNose::Open, "˙"),
+      MikaExpression::PeerRight => ("⚆", MikaNose::Open, "⚆"),
+      MikaExpression::PeerStraight => ("☉", MikaNose::Open, "☉"),
+      MikaExpression::Pleased => ("◠", MikaNose::Open, "◠"),
+      MikaExpression::Resolved => ("◡̀", MikaNose::Open, "◡́"),
+      MikaExpression::RollingEyes => ("◕", MikaNose::Open, "◕"),
+      MikaExpression::Sad => ("◞", MikaNose::Open, "◟"),
+      MikaExpression::Scared => ("Ͼ", MikaNose::Open, "Ͽ"),
+      MikaExpression::Shades => ("⌐▰", MikaNose::Open, "▰"),
+      MikaExpression::Sleeping => ("⹇", MikaNose::Open, "⹇"),
+      MikaExpression::Squinting => ("≖", MikaNose::Open, "≖"),
+      MikaExpression::Surprised => ("°", MikaNose::Open, "°"),
+      MikaExpression::Unimpressed => ("¬", MikaNose::Open, "¬"),
+      MikaExpression::Wired => ("◉", MikaNose::Open, "◉"),
+      MikaExpression::Smiling => ("ᗣ", MikaNose::Open, "ᗣ"),
+      MikaExpression::SuperSqueezed => ("ᗒ", MikaNose::Open, "ᗕ"),
+      MikaExpression::TearingUp => ("ᗩ", MikaNose::Open, "ᗩ"),
     }
   }
 }
@@ -214,7 +214,7 @@ impl MikaArm {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum MikaFace {
+pub enum MikaNose {
   Normal,      // ⦿
   Open,        // ◯
   Back,        // ⊕
@@ -228,20 +228,24 @@ pub enum MikaFace {
   FlatMouth,   // ⍜
 }
 
-impl MikaFace {
+impl MikaNose {
   pub fn symbol(&self) -> &'static str {
     match self {
-      MikaFace::Normal => "⦿",
-      MikaFace::Open => "◯",
-      MikaFace::Back => "⊕",
-      MikaFace::Stage1 => "∘",
-      MikaFace::Stage2 => "⦾",
-      MikaFace::Stage3 => "⦾",
-      MikaFace::Blink => "⊖",
-      MikaFace::Wide => "⦵",
-      MikaFace::Error => "⊗",
-      MikaFace::Filled => "⏺",
-      MikaFace::FlatMouth => "⍜",
+      MikaNose::Normal => "⦿",
+      MikaNose::Open => "◯",
+      MikaNose::Back => "⊕",
+      MikaNose::Stage1 => "∘",
+      MikaNose::Stage2 => "⦾",
+      MikaNose::Stage3 => "⦾",
+      MikaNose::Blink => "⊖",
+      MikaNose::Wide => "⦵",
+      MikaNose::Error => "⊗",
+      MikaNose::Filled => "⏺",
+      MikaNose::FlatMouth => "⍜",
+      MikaNose::Hex => "⬢",
+      MikaNose::Pentagon => "⬟",
+      MikaNose::Hexagon2 => "⬣",
+      MikaNose::HexagonOpen => "⎔",
     }
   }
 }
@@ -251,7 +255,7 @@ impl MikaFace {
 // Sleep
 static MIRCOMIKA_POWEROFF: &[&str] = &["╭⦿╮","╭⦾╮","╭⊚╮","╭⊙╮","╭◯╮"];
 static MIRCOMIKA_POWERON: &[&str] = &["╭◯╮","╭⊙╮","╭⊚╮","╭⦾╮","╭⦿╮"];
-static MICROMIKA_BLINK: &[&str] = &["╭⦿╮""╭⊖╮","╭⦿╮"];
+static MICROMIKA_BLINK: &[&str] = &["╭⦿╮","╭⊖╮","╭⦿╮"];
 static MICROMIKA_PULSE: &[&str] = &["╭⦿╮","╭⦾╮","╭⊚╮","╭⊙╮","╭⊚╮","╭⦾╮","╭⦿╮"];
 static MICROMIKA_WAVE: &[&str] = &["╭⦿╯","╭⦿─",];
 static MICROMIKA_RAISE_ARMS: &[&str] = &["╭⦿╮","─⦿─","╰⦿╯"];
@@ -264,21 +268,21 @@ static MICROMIKA_GRIPPING: &[&str] = &["╭⦿─‹ -> ╭⦿─-"];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum MyloExpression {
-  Eyes,       // (ᑕ◯ᑐ)
-  Focused,    // (ᕮ◯ᕭ)
-  Alarm,      // (ᕳ◯ᕲ)
-  Angry,      // (ᘭ◯ᘪ)
-  Crossed,    // (ᑢ◯ᑝ)
+  Eyes,       // (ᑕ⎔ᑐ)
+  Focused,    // (ᕮ⎔ᕭ)
+  Alarm,      // (ᕳ⎔ᕲ)
+  Angry,      // (ᘭ⎔ᘪ)
+  Crossed,    // (ᑢ⎔ᑝ)
 }
 
 impl MyloExpression {
   pub fn symbols(&self) -> (&'static str, &'static str, &'static str) {
     match self {
-      MyloExpression::Eyes => ("ᑕ", "◯", "ᑐ"),
-      MyloExpression::Focused => ("ᕮ", "◯", "ᕭ"),
-      MyloExpression::Alarm => ("ᕳ", "◯", "ᕲ"),
-      MyloExpression::Angry => ("ᘭ", "◯", "ᘪ"),
-      MyloExpression::Crossed => ("ᑢ", "◯", "ᑝ"),
+      MyloExpression::Eyes => ("ᑕ", "⎔", "ᑐ"),
+      MyloExpression::Focused => ("ᕮ", "⎔", "ᕭ"),
+      MyloExpression::Alarm => ("ᕳ", "⎔", "ᕲ"),
+      MyloExpression::Angry => ("ᘭ", "⎔", "ᘪ"),
+      MyloExpression::Crossed => ("ᑢ", "⎔", "ᑝ"),
     }
   }
 }
