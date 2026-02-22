@@ -147,8 +147,8 @@ pub enum MikaArm {
   CurlLeft,          // ᕦ
   CurlRight,         // ᕤ
   Dance,             // ~
-  GestureLeft,        // ›⌣
-  GestureRight,       // ⌣‹
+  GestureLeft,       // ›⌣
+  GestureRight,      // ⌣‹
   GripperLeft,       // ›─
   GripperRight,      // ─‹
   Left,              // ╭
@@ -158,8 +158,8 @@ pub enum MikaArm {
   Shield,            // ᗢ
   ShootLeft,         // ·¬
   ShootRight,        // ⌐·
-  ShrugLeft,        // -◡
-  ShrugRight,       // ◡-
+  ShrugLeft,         // -◡
+  ShrugRight,        // ◡-
   Sword,             // ⸸
   Point,             // ─
   PunchLeft,         // ᓂ
@@ -245,6 +245,20 @@ impl MikaFace {
     }
   }
 }
+
+// Animations
+
+// Sleep
+static MIRCOMIKA_POWEROFF: &[&str] = &["╭⦿╮","╭⦾╮","╭⊚╮","╭⊙╮","╭◯╮"];
+static MIRCOMIKA_POWERON: &[&str] = &["╭◯╮","╭⊙╮","╭⊚╮","╭⦾╮","╭⦿╮"];
+static MICROMIKA_BLINK: &[&str] = &["╭⦿╮""╭⊖╮","╭⦿╮"];
+static MICROMIKA_PULSE: &[&str] = &["╭⦿╮","╭⦾╮","╭⊚╮","╭⊙╮","╭⊚╮","╭⦾╮","╭⦿╮"];
+static MICROMIKA_WAVE: &[&str] = &["╭⦿╯","╭⦿─",];
+static MICROMIKA_RAISE_ARMS: &[&str] = &["╭⦿╮","─⦿─","╰⦿╯"];
+static MICROMIKA_LOWER_ARMS: &[&str] = &["╰⦿╯","─⦿─","╭⦿╮"];
+static MICROMIKA_FLAPPING: &[&str] = &["─⦿─","╰⦿╯"];
+static MICROMIKA_GRIPPING: &[&str] = &["╭⦿─‹ -> ╭⦿─-"];
+
 
 // Mylo is a secondary character, he's under development right now on the basis of these faces. Maybe he's a villain? Maybe he's Mika's siblng? I don't know.
 
