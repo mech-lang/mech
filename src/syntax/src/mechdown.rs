@@ -24,7 +24,7 @@ use crate::*;
 // Mechdown
 // ============================================================================
 
-// title := text+, new_line, equal+, (space|tab)*, whitespace* ;
+// title := +text, new-line, +equal, *(space|tab), *whitespace ;
 pub fn title(input: ParseString) -> ParseResult<Title> {
   let (input, mut text) = many1(text)(input)?;
   let (input, _) = new_line(input)?;
