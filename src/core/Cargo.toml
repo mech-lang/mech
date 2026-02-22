@@ -20,13 +20,13 @@ maintenance = { status = "actively-developed" }
 [features]
 no_std = ["rlibc", "hashbrown", "embedded-io", "fxhash"]
 
-default = ["baselib", "pretty_print", "serde", "compiler", "program",
-          "u8", "u16", "u32", "u64", "u128", 
+default = ["baselib", "pretty_print", "serde", "compiler", "mika", "program",
+          "u8", "u16", "u32", "u64", "u128",
           "i8", "i16", "i32", "i64", "i128", 
           "f32", "f64", "c64", "r64", 
             "statements_default", "subscript_default",
           ]
-base = ["baselib", "pretty_print", "serde", "compiler", "program",
+base = ["baselib", "pretty_print", "serde", "compiler", "mika", "program",
       "statements_default", "subscript_default",
       ]   
 
@@ -65,6 +65,7 @@ compiler = ["crc32fast", "byteorder"]
 program = ["crc32fast", "byteorder"]
 pretty_print = ["tabled", "serde_json"]
 serde = ["brotli", "base64", "serde_derive", "serde_json", "bincode", "indexmap/serde", "bincode/serde", "dep:serde"]
+mika = []
 
 statements = []
 variables = ["variable_define", "symbol_table"]
