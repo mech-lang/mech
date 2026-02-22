@@ -22,6 +22,64 @@ pub struct MiniMika {
 // Inline Mika lives in the terminal. She greets users when they start Mech, and provides a friendly face to interact with. She can display a variety of expressions and poses, and can be used to add personality and fun to the Mech experience. Users can customize Mika's appearance and expressions, and she can be used to provide feedback, celebrate achievements, or just add a bit of whimsy to the coding process.
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum MikaEyeLeft {
+  Content,       // ˆ
+  Confused,      // ಠ 
+  Crying,        // ╥
+  Dazed,         // ⋇
+  Dead,          // ✖
+  EyesSqueezed,  // ≻
+  SuperSqueezed, // ᗒ
+  Glaring,       // ㆆ
+  Happy,         // ◜
+  Normal,        // ˙
+  PeerRight,     // ⚆
+  PeerStraight,  // ☉
+  Pleased,       // ◠
+  Resolved,      // ◡̀
+  RollingEyes,   // ◕
+  Sad,           // ◞
+  Scared,        // Ͼ
+  Shades,        // ⌐▰
+  Sleeping,      // ⹇
+  Smiling,       // ᗣ
+  Squinting,     // ≖
+  Surprised,     // °
+  TearingUp,     // ᗩ
+  Unimpressed,   // ¬
+  Wired,         // ◉
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum MikaEyeRight {
+  Content,       // ˆ
+  Confused,      // ಠ 
+  Crying,        // ╥
+  Dazed,         // ⋇
+  Dead,          // ✖
+  EyesSqueezed,  // ≺
+  SuperSqueezed, // ᗕ
+  Glaring,       // ㆆ
+  Happy,         // ◝
+  Normal,        // ˙
+  PeerRight,     // ⚆
+  PeerStraight,  // ☉
+  Pleased,       // ◠
+  Resolved,      // ◡́
+  RollingEyes,   // ◕
+  Sad,           // ◟
+  Scared,        // Ͽ
+  Shades,        // ▰
+  Sleeping,      // ⹇
+  Smiling,       // ᗣ
+  Squinting,     // ≖
+  Surprised,     // °
+  TearingUp,     // ᗩ
+  Unimpressed,   // ¬
+  Wired,         // ◉
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum MikaExpression {
   Content,       // (ˆ◯ˆ)
   Confused,      // (ಠ◯ಠ) 
@@ -51,33 +109,33 @@ pub enum MikaExpression {
 }
 
 impl MikaExpression {
-  pub fn symbols(&self) -> (&'static str, MikaNose, &'static str) {
+  pub fn symbols(&self) -> (MikaEyeLeft, MikaNose, MikaEyeRight) {
     match self {
-      MikaExpression::Content => ("ˆ", MikaNose::Open, "ˆ"),
-      MikaExpression::Confused => ("ಠ", MikaNose::Open, "ಠ"),
-      MikaExpression::Crying => ("╥", MikaNose::Open, "╥"),
-      MikaExpression::Dazed => ("⋇", MikaNose::Open, "⋇"),
-      MikaExpression::Dead => ("✖", MikaNose::Open, "✖"),
-      MikaExpression::EyesSqueezed => ("≻", MikaNose::Open, "≺"),
-      MikaExpression::Glaring => ("ㆆ", MikaNose::FlatMouth, "ㆆ"),
-      MikaExpression::Happy => ("◜", MikaNose::Open, "◝"),
-      MikaExpression::Normal => ("˙", MikaNose::Open, "˙"),
-      MikaExpression::PeerRight => ("⚆", MikaNose::Open, "⚆"),
-      MikaExpression::PeerStraight => ("☉", MikaNose::Open, "☉"),
-      MikaExpression::Pleased => ("◠", MikaNose::Open, "◠"),
-      MikaExpression::Resolved => ("◡̀", MikaNose::Open, "◡́"),
-      MikaExpression::RollingEyes => ("◕", MikaNose::Open, "◕"),
-      MikaExpression::Sad => ("◞", MikaNose::Open, "◟"),
-      MikaExpression::Scared => ("Ͼ", MikaNose::Open, "Ͽ"),
-      MikaExpression::Shades => ("⌐▰", MikaNose::Open, "▰"),
-      MikaExpression::Sleeping => ("⹇", MikaNose::Open, "⹇"),
-      MikaExpression::Squinting => ("≖", MikaNose::Open, "≖"),
-      MikaExpression::Surprised => ("°", MikaNose::Open, "°"),
-      MikaExpression::Unimpressed => ("¬", MikaNose::Open, "¬"),
-      MikaExpression::Wired => ("◉", MikaNose::Open, "◉"),
-      MikaExpression::Smiling => ("ᗣ", MikaNose::Open, "ᗣ"),
-      MikaExpression::SuperSqueezed => ("ᗒ", MikaNose::Open, "ᗕ"),
-      MikaExpression::TearingUp => ("ᗩ", MikaNose::Open, "ᗩ"),
+      MikaExpression::Content       => (MikaEyeLeft::Content,       MikaNose::Open,       MikaEyeRight::Content),
+      MikaExpression::Confused      => (MikaEyeLeft::Confused,      MikaNose::Open,       MikaEyeRight::Confused),
+      MikaExpression::Crying        => (MikaEyeLeft::Crying,        MikaNose::Open,       MikaEyeRight::Crying),
+      MikaExpression::Dazed         => (MikaEyeLeft::Dazed,         MikaNose::Open,       MikaEyeRight::Dazed),
+      MikaExpression::Dead          => (MikaEyeLeft::Dead,          MikaNose::Open,       MikaEyeRight::Dead),
+      MikaExpression::EyesSqueezed  => (MikaEyeLeft::EyesSqueezed,  MikaNose::Open,       MikaEyeRight::EyesSqueezed),
+      MikaExpression::Glaring       => (MikaEyeLeft::Glaring,       MikaNose::FlatMouth,  MikaEyeRight::Glaring),
+      MikaExpression::Happy         => (MikaEyeLeft::Happy,         MikaNose::Open,       MikaEyeRight::Happy),
+      MikaExpression::Normal        => (MikaEyeLeft::Normal,        MikaNose::Open,       MikaEyeRight::Normal),
+      MikaExpression::PeerRight     => (MikaEyeLeft::PeerRight,     MikaNose::Open,       MikaEyeRight::PeerRight),
+      MikaExpression::PeerStraight  => (MikaEyeLeft::PeerStraight,  MikaNose::Open,       MikaEyeRight::PeerStraight),
+      MikaExpression::Pleased       => (MikaEyeLeft::Pleased,       MikaNose::Open,       MikaEyeRight::Pleased),
+      MikaExpression::Resolved      => (MikaEyeLeft::Resolved,      MikaNose::Open,       MikaEyeRight::Resolved),
+      MikaExpression::RollingEyes   => (MikaEyeLeft::RollingEyes,   MikaNose::Open,       MikaEyeRight::RollingEyes),
+      MikaExpression::Sad           => (MikaEyeLeft::Sad,           MikaNose::Open,       MikaEyeRight::Sad),
+      MikaExpression::Scared        => (MikaEyeLeft::Scared,        MikaNose::Open,       MikaEyeRight::Scared),
+      MikaExpression::Shades        => (MikaEyeLeft::Shades,        MikaNose::Open,       MikaEyeRight::Shades),
+      MikaExpression::Sleeping      => (MikaEyeLeft::Sleeping,      MikaNose::Open,       MikaEyeRight::Sleeping),
+      MikaExpression::Smiling       => (MikaEyeLeft::Smiling,       MikaNose::Open,       MikaEyeRight::Smiling),
+      MikaExpression::Squinting     => (MikaEyeLeft::Squinting,     MikaNose::Open,       MikaEyeRight::Squinting),
+      MikaExpression::SuperSqueezed => (MikaEyeLeft::SuperSqueezed, MikaNose::Open,       MikaEyeRight::SuperSqueezed),
+      MikaExpression::Surprised     => (MikaEyeLeft::Surprised,     MikaNose::Open,       MikaEyeRight::Surprised),
+      MikaExpression::TearingUp     => (MikaEyeLeft::TearingUp,     MikaNose::Open,       MikaEyeRight::TearingUp),
+      MikaExpression::Unimpressed   => (MikaEyeLeft::Unimpressed,   MikaNose::Open,       MikaEyeRight::Unimpressed),
+      MikaExpression::Wired         => (MikaEyeLeft::Wired,         MikaNose::Open,       MikaEyeRight::Wired),
     }
   }
 }
@@ -110,31 +168,31 @@ pub enum MicroMika {
 }
 
 impl MicroMika {
-  pub fn symbols(&self) -> (MikaArm, MikaFace, MikaArm) {
+  pub fn symbols(&self) -> (MikaArm, MikaNose, MikaArm) {
     match self {
-      MicroMika::Bat            => (MikaArm::BatWing,     MikaFace::Normal,  MikaArm::BatWing),
-      MicroMika::BigHug         => (MikaArm::GestureLeft, MikaFace::Normal,  MikaArm::GestureRight),
-      MicroMika::Cheer          => (MikaArm::RaisedLeft,  MikaFace::Normal,  MikaArm::RaisedRight),
-      MicroMika::Dance          => (MikaArm::Dance,       MikaFace::Normal,  MikaArm::Dance),
-      MicroMika::Goal           => (MikaArm::UpLeft,      MikaFace::Normal,  MikaArm::UpRight),
-      MicroMika::GripperLeft    => (MikaArm::GripperLeft, MikaFace::Normal,  MikaArm::UpRight),
-      MicroMika::GripperRight   => (MikaArm::UpLeft,      MikaFace::Normal,  MikaArm::GripperRight),
-      MicroMika::GestureLeft    => (MikaArm::GestureLeft, MikaFace::Normal,  MikaArm::UpRight),
-      MicroMika::GestureRight   => (MikaArm::UpLeft,      MikaFace::Normal,  MikaArm::GestureRight),
-      MicroMika::Idle           => (MikaArm::Left,        MikaFace::Normal,  MikaArm::Right),
-      MicroMika::Knight         => (MikaArm::Sword,       MikaFace::Normal,  MikaArm::Shield),
-      MicroMika::Matrix         => (MikaArm::ShootLeft,   MikaFace::Normal,  MikaArm::ShootRight),
-      MicroMika::OneWing        => (MikaArm::Sword,       MikaFace::Normal,  MikaArm::BatWing),
-      MicroMika::PointLeft      => (MikaArm::Point,       MikaFace::Normal,  MikaArm::UpRight),
-      MicroMika::PointRight     => (MikaArm::UpLeft,      MikaFace::Normal,  MikaArm::Point),
-      MicroMika::Punch          => (MikaArm::PunchLeft,   MikaFace::Normal,  MikaArm::PunchLowRight),
-      MicroMika::ShootLeft      => (MikaArm::ShootLeft,   MikaFace::Normal,  MikaArm::UpRight),
-      MicroMika::ShootRight     => (MikaArm::UpLeft,      MikaFace::Normal,  MikaArm::ShootRight),
-      MicroMika::Shrug          => (MikaArm::ShrugLeft,   MikaFace::Normal,  MikaArm::ShrugRight),
-      MicroMika::ServeLeft      => (MikaArm::ShrugLeft,   MikaFace::Normal,  MikaArm::UpRight),
-      MicroMika::ServeRight     => (MikaArm::UpLeft,      MikaFace::Normal,  MikaArm::ShrugRight),
-      MicroMika::WaveLeft       => (MikaArm::UpLeft,      MikaFace::Normal,  MikaArm::UpRight),
-      MicroMika::WaveRight      => (MikaArm::UpLeft,      MikaFace::Normal,  MikaArm::UpRight),
+      MicroMika::Bat            => (MikaArm::BatWing,     MikaNose::Normal,  MikaArm::BatWing),
+      MicroMika::BigHug         => (MikaArm::GestureLeft, MikaNose::Normal,  MikaArm::GestureRight),
+      MicroMika::Cheer          => (MikaArm::RaisedLeft,  MikaNose::Normal,  MikaArm::RaisedRight),
+      MicroMika::Dance          => (MikaArm::Dance,       MikaNose::Normal,  MikaArm::Dance),
+      MicroMika::Goal           => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::UpRight),
+      MicroMika::GripperLeft    => (MikaArm::GripperLeft, MikaNose::Normal,  MikaArm::UpRight),
+      MicroMika::GripperRight   => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::GripperRight),
+      MicroMika::GestureLeft    => (MikaArm::GestureLeft, MikaNose::Normal,  MikaArm::UpRight),
+      MicroMika::GestureRight   => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::GestureRight),
+      MicroMika::Idle           => (MikaArm::Left,        MikaNose::Normal,  MikaArm::Right),
+      MicroMika::Knight         => (MikaArm::Sword,       MikaNose::Normal,  MikaArm::Shield),
+      MicroMika::Matrix         => (MikaArm::ShootLeft,   MikaNose::Normal,  MikaArm::ShootRight),
+      MicroMika::OneWing        => (MikaArm::Sword,       MikaNose::Normal,  MikaArm::BatWing),
+      MicroMika::PointLeft      => (MikaArm::Point,       MikaNose::Normal,  MikaArm::UpRight),
+      MicroMika::PointRight     => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::Point),
+      MicroMika::Punch          => (MikaArm::PunchLeft,   MikaNose::Normal,  MikaArm::PunchLowRight),
+      MicroMika::ShootLeft      => (MikaArm::ShootLeft,   MikaNose::Normal,  MikaArm::UpRight),
+      MicroMika::ShootRight     => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::ShootRight),
+      MicroMika::Shrug          => (MikaArm::ShrugLeft,   MikaNose::Normal,  MikaArm::ShrugRight),
+      MicroMika::ServeLeft      => (MikaArm::ShrugLeft,   MikaNose::Normal,  MikaArm::UpRight),
+      MicroMika::ServeRight     => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::ShrugRight),
+      MicroMika::WaveLeft       => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::UpRight),
+      MicroMika::WaveRight      => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::UpRight),
     }
   }
 }
@@ -226,6 +284,10 @@ pub enum MikaNose {
   Error,       // ⊗
   Filled,      // ⏺
   FlatMouth,   // ⍜
+  Hexagon,     // ⬢
+  Pentagon,    // ⬟
+  Hexagon2,    // ⬣
+  HexagonOpen, // ⎔
 }
 
 impl MikaNose {
@@ -242,7 +304,7 @@ impl MikaNose {
       MikaNose::Error => "⊗",
       MikaNose::Filled => "⏺",
       MikaNose::FlatMouth => "⍜",
-      MikaNose::Hex => "⬢",
+      MikaNose::Hexagon => "⬢",
       MikaNose::Pentagon => "⬟",
       MikaNose::Hexagon2 => "⬣",
       MikaNose::HexagonOpen => "⎔",
@@ -263,7 +325,6 @@ static MICROMIKA_LOWER_ARMS: &[&str] = &["╰⦿╯","─⦿─","╭⦿╮"];
 static MICROMIKA_FLAPPING: &[&str] = &["─⦿─","╰⦿╯"];
 static MICROMIKA_GRIPPING_RIGHT: &[&str] = &["╭⦿─‹ -> ╭⦿─-"];
 static MICROMIKA_GRIPPING_LEFT: &[&str] = &["›─⦿╮ -> -─⦿╮"];
-
 
 // Mylo is a secondary character, he's under development right now on the basis of these faces. Maybe he's a villain? Maybe he's Mika's siblng? I don't know.
 
