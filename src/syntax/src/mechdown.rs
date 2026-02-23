@@ -891,6 +891,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
     ("warning_block",   Box::new(warning_block)),
     ("error_block",     Box::new(error_block)),
     ("idea_block",      Box::new(idea_block)),
+    ("mika",            Box::new(|i| mika(i).map(|(i, mb)| (i, SectionElement::Mika(mb))))),
     ("paragraph",       Box::new(|i| paragraph(i).map(|(i, p)| (i, SectionElement::Paragraph(p))))),
   ];
 

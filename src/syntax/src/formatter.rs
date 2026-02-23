@@ -668,6 +668,26 @@ impl Formatter {
     }
   }
 
+  pub fn mika(&mut self, node: &(Mika, Option<MikaSection>)) -> String {
+    let (mika, section) = node;
+    let mika_str = format!("<div class=\"mech-mika\">{}</div>", mika.to_string());
+    if self.html {
+      match section {
+        Some(sec) => {
+          let mut sec_str = "".to_string();
+          for el in &sec.elements {
+            let section_element = self.section_element(el);
+            sec_str.push_str(&section_element);
+          }
+          format!("<div class=\"mech-mika-section\">{} {}</div>", mika_str, sec_str)
+        },
+        None => mika_str,
+      }
+    } else {
+      mika_str
+    }
+  }
+
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     match node {
       SectionElement::Abstract(n) => self.abstract_el(n),
@@ -690,6 +710,7 @@ impl Formatter {
       SectionElement::Image(n) => self.image(n),
       SectionElement::List(n) => self.list(n),
       SectionElement::MechCode(n) => self.mech_code(n),
+      SectionElement::Mika(n) => self.mika(n),
       SectionElement::Paragraph(n) => self.paragraph(n),
       SectionElement::Subtitle(n) => self.subtitle(n),
       SectionElement::Table(n) => self.mechdown_table(n),

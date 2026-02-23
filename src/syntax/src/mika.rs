@@ -250,17 +250,10 @@ pub fn mini_mika(input: ParseString) -> ParseResult<Mika> {
 }*/
 
 // mika := mini-mika | micro-mika ;
-pub fn mika(input: ParseString) -> ParseResult<Mika> {
-  let (input, mut mika) = alt((micro_mika))(input)?;
-  let (input, speech_bubble) = opt(mika_speech_bubble)(input)?;
-  if let Some(speech_bubble) = speech_bubble {
-    mika = match mika {
-    Mika::Micro(m) => Mika::MicroWithSpeechBubble(m, speech_bubble),
-    //Mika::Mini(m) => Mika::MiniWithSpeechBubble(m, speech_bubble),
-    _ => unreachable!(),
-    }
-  }
-  Ok((input, mika))
+pub fn mika(input: ParseString) -> ParseResult<(Mika,Option<MikaSection>)> {
+  let (input, mika) = micro_mika(input)?;
+  let (input, mika_section) = opt(mika_section)(input)?;
+  Ok((input, (mika, mika_section)))
 }
 
 // Helpers
