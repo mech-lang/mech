@@ -5,22 +5,45 @@ use crate::*;
 
 // Inline Mika lives in the terminal. She greets users when they start Mech, and provides a friendly face to interact with. She can be depicted in a variety of expressions, sizes, colors, and poses. 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct MikaSection {
   pub elements: Vec<SectionElement>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Mika {
-  Mini(MiniMika, Option<MikaSection>),
-  Micro(MicroMika, Option<MikaSection>),
+  Mini(MiniMika),
+  Micro(MicroMika),
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+impl Mika {
+
+  pub fn to_string(&self) -> String {
+    match self {
+      Mika::Mini(mini) => mini.to_string(),
+      Mika::Micro(micro) => micro.to_string(),
+    }
+  }
+
+  pub fn tokens(&self) -> Vec<Token> {
+    todo!();
+  }
+}
+
+#[derive(Clone, Copy,Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct MiniMika {
   pub expression: MikaExpression,
   pub left_arm: Option<MikaArm>,
   pub right_arm: Option<MikaArm>,
+}
+
+impl MiniMika {
+  pub fn to_string(&self) -> String {
+    let (left_eye, nose, right_eye) = self.expression.symbols();
+    let left_arm = self.left_arm.map_or("", |arm| arm.symbol());
+    let right_arm = self.right_arm.map_or("", |arm| arm.symbol());
+    format!("{}({}{}{}){}", left_arm, left_eye, nose, right_eye, right_arm)
+  }
 }
 
 // Parts
@@ -43,6 +66,12 @@ pub enum MikaNose {
   Pentagon,    // ⬟
   Hexagon2,    // ⬣
   HexagonOpen, // ⎔
+}
+
+impl std::fmt::Display for MikaNose {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self.symbol())
+  }
 }
 
 impl MikaNose {
@@ -171,6 +200,44 @@ pub enum MikaEyeLeft {
   Wired,         // ◉
 }
 
+impl Display for MikaEyeLeft {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self.symbol())
+  }
+}
+
+impl MikaEyeLeft {
+  pub fn symbol(&self) -> &'static str {
+    match self {
+      MikaEyeLeft::Content => "ˆ",
+      MikaEyeLeft::Confused => "ಠ",
+      MikaEyeLeft::Crying => "╥",
+      MikaEyeLeft::Dazed => "⋇",
+      MikaEyeLeft::Dead => "✖",
+      MikaEyeLeft::EyesSqueezed => "≻",
+      MikaEyeLeft::SuperSqueezed => "ᗒ",
+      MikaEyeLeft::Glaring => "ㆆ",
+      MikaEyeLeft::Happy => "◜",
+      MikaEyeLeft::Normal => "˙",
+      MikaEyeLeft::PeerRight => "⚆",
+      MikaEyeLeft::PeerStraight => "☉",
+      MikaEyeLeft::Pleased => "◠",
+      MikaEyeLeft::Resolved => "◡̀",
+      MikaEyeLeft::RollingEyes => "◕",
+      MikaEyeLeft::Sad => "◞",
+      MikaEyeLeft::Scared => "Ͼ",
+      MikaEyeLeft::Shades => "⌐▰",
+      MikaEyeLeft::Sleeping => "⹇",
+      MikaEyeLeft::Smiling => "ᗣ",
+      MikaEyeLeft::Squinting => "≖",
+      MikaEyeLeft::Surprised => "°",
+      MikaEyeLeft::TearingUp => "ᗩ",
+      MikaEyeLeft::Unimpressed => "¬",
+      MikaEyeLeft::Wired => "◉",
+    }
+  }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum MikaEyeRight {
   Content,       // ˆ
@@ -198,6 +265,44 @@ pub enum MikaEyeRight {
   TearingUp,     // ᗩ
   Unimpressed,   // ¬
   Wired,         // ◉
+}
+
+impl std::fmt::Display for MikaEyeRight {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self.symbol())
+  }
+}
+
+impl MikaEyeRight {
+  pub fn symbol(&self) -> &'static str {
+    match self {
+      MikaEyeRight::Content => "ˆ",
+      MikaEyeRight::Confused => "ಠ",
+      MikaEyeRight::Crying => "╥",
+      MikaEyeRight::Dazed => "⋇",
+      MikaEyeRight::Dead => "✖",
+      MikaEyeRight::EyesSqueezed => "≺",
+      MikaEyeRight::SuperSqueezed => "ᗕ",
+      MikaEyeRight::Glaring => "ㆆ",
+      MikaEyeRight::Happy => "◝",
+      MikaEyeRight::Normal => "˙",
+      MikaEyeRight::PeerRight => "⚆",
+      MikaEyeRight::PeerStraight => "☉",
+      MikaEyeRight::Pleased => "◠",
+      MikaEyeRight::Resolved => "◡́",
+      MikaEyeRight::RollingEyes => "◕",
+      MikaEyeRight::Sad => "◟",
+      MikaEyeRight::Scared => "Ͽ",
+      MikaEyeRight::Shades => "▰",
+      MikaEyeRight::Sleeping => "⹇",
+      MikaEyeRight::Smiling => "ᗣ",
+      MikaEyeRight::Squinting => "≖",
+      MikaEyeRight::Surprised => "°",
+      MikaEyeRight::TearingUp => "ᗩ",
+      MikaEyeRight::Unimpressed => "¬",
+      MikaEyeRight::Wired => "◉",
+    }
+  }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -292,6 +397,12 @@ pub enum MicroMika {
 }
 
 impl MicroMika {
+
+  pub fn to_string(&self) -> String {
+    let (left_arm, nose, right_arm) = self.symbols();
+    format!("{}{}{}", left_arm.symbol(), nose.symbol(), right_arm.symbol())
+  }
+
   pub fn symbols(&self) -> (MikaArm, MikaNose, MikaArm) {
     match self {
       MicroMika::Bat            => (MikaArm::BatWing,     MikaNose::Normal,  MikaArm::BatWing),

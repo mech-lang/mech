@@ -103,7 +103,7 @@ pub enum TokenKind {
   HashTag, HighlightSigil, HttpPrefix,
   IdeaSigil, Identifier, ImgPrefix, InfoSigil, InlineCode, 
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
-  Mika(Mika), MikaSectionOpen, MikaSectionClose,
+  Mika(Mika), MikaSection, MikaSectionOpen, MikaSectionClose,
   Newline, Not, Number,
   OutputOperator,
   Percent, Period, Plus,
@@ -535,6 +535,7 @@ pub enum SectionElement {
   Image(Image),
   List(MDList),
   MechCode(Vec<(MechCode,Option<Comment>)>),
+  Mika((Mika, Option<MikaSection>)),
   Paragraph(Paragraph),
   Subtitle(Subtitle),
   Table(MarkdownTable),
@@ -552,6 +553,16 @@ impl SectionElement {
 
   pub fn tokens(&self) -> Vec<Token> {
     match self {
+      SectionElement::Mika((mika, mika_section)) => {
+        let mut tokens = vec![];
+        tokens.append(&mut mika.tokens());
+        if let Some(mika_section) = mika_section {
+          for mika_section_element in &mika_section.elements {
+            tokens.append(&mut mika_section_element.tokens());
+          }
+        }
+        tokens
+      },
       SectionElement::FencedMechCode(c) => {
         let mut tokens = vec![];
         for (c, _) in &c.code {
