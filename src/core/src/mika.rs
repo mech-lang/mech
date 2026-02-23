@@ -16,6 +16,12 @@ pub enum Mika {
   Micro(MicroMika),
 }
 
+impl std::fmt::Display for Mika {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self.to_string())
+  }
+}
+
 impl Mika {
 
   pub fn to_string(&self) -> String {
@@ -26,7 +32,7 @@ impl Mika {
   }
 
   pub fn tokens(&self) -> Vec<Token> {
-    todo!();
+    vec![Token::new(TokenKind::Mika(self.clone()), SourceRange::default(), vec![])]
   }
 }
 
@@ -370,7 +376,20 @@ impl MikaExpression {
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum MicroMika {
+pub struct MicroMika {
+  pub left_arm: MikaArm,
+  pub nose: MikaNose,
+  pub right_arm: MikaArm,
+}
+
+impl MicroMika {
+  pub fn to_string(&self) -> String {
+    format!("{}{}{}", self.left_arm.symbol(), self.nose.symbol(), self.right_arm.symbol())
+  }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum MicroMikaKind {
   Bat,            // ᗑ⦿ᗑ
   BigHug,         // ›⌣⦿⌣‹
   Cheer,          // ⸌⦿⸍
@@ -396,7 +415,7 @@ pub enum MicroMika {
   WaveRight,      // ╭⦿╯
 }
 
-impl MicroMika {
+impl MicroMikaKind {
 
   pub fn to_string(&self) -> String {
     let (left_arm, nose, right_arm) = self.symbols();
@@ -405,29 +424,29 @@ impl MicroMika {
 
   pub fn symbols(&self) -> (MikaArm, MikaNose, MikaArm) {
     match self {
-      MicroMika::Bat            => (MikaArm::BatWing,     MikaNose::Normal,  MikaArm::BatWing),
-      MicroMika::BigHug         => (MikaArm::GestureLeft, MikaNose::Normal,  MikaArm::GestureRight),
-      MicroMika::Cheer          => (MikaArm::RaisedLeft,  MikaNose::Normal,  MikaArm::RaisedRight),
-      MicroMika::Dance          => (MikaArm::Dance,       MikaNose::Normal,  MikaArm::Dance),
-      MicroMika::Goal           => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::UpRight),
-      MicroMika::GripperLeft    => (MikaArm::GripperLeft, MikaNose::Normal,  MikaArm::UpRight),
-      MicroMika::GripperRight   => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::GripperRight),
-      MicroMika::GestureLeft    => (MikaArm::GestureLeft, MikaNose::Normal,  MikaArm::UpRight),
-      MicroMika::GestureRight   => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::GestureRight),
-      MicroMika::Idle           => (MikaArm::Left,        MikaNose::Normal,  MikaArm::Right),
-      MicroMika::Knight         => (MikaArm::Sword,       MikaNose::Normal,  MikaArm::Shield),
-      MicroMika::Matrix         => (MikaArm::ShootLeft,   MikaNose::Normal,  MikaArm::ShootRight),
-      MicroMika::OneWing        => (MikaArm::Sword,       MikaNose::Normal,  MikaArm::BatWing),
-      MicroMika::PointLeft      => (MikaArm::Point,       MikaNose::Normal,  MikaArm::UpRight),
-      MicroMika::PointRight     => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::Point),
-      MicroMika::Punch          => (MikaArm::PunchLeft,   MikaNose::Normal,  MikaArm::PunchLowRight),
-      MicroMika::ShootLeft      => (MikaArm::ShootLeft,   MikaNose::Normal,  MikaArm::UpRight),
-      MicroMika::ShootRight     => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::ShootRight),
-      MicroMika::Shrug          => (MikaArm::ShrugLeft,   MikaNose::Normal,  MikaArm::ShrugRight),
-      MicroMika::ServeLeft      => (MikaArm::ShrugLeft,   MikaNose::Normal,  MikaArm::UpRight),
-      MicroMika::ServeRight     => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::ShrugRight),
-      MicroMika::WaveLeft       => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::UpRight),
-      MicroMika::WaveRight      => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::UpRight),
+      MicroMikaKind::Bat            => (MikaArm::BatWing,     MikaNose::Normal,  MikaArm::BatWing),
+      MicroMikaKind::BigHug         => (MikaArm::GestureLeft, MikaNose::Normal,  MikaArm::GestureRight),
+      MicroMikaKind::Cheer          => (MikaArm::RaisedLeft,  MikaNose::Normal,  MikaArm::RaisedRight),
+      MicroMikaKind::Dance          => (MikaArm::Dance,       MikaNose::Normal,  MikaArm::Dance),
+      MicroMikaKind::Goal           => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::UpRight),
+      MicroMikaKind::GripperLeft    => (MikaArm::GripperLeft, MikaNose::Normal,  MikaArm::UpRight),
+      MicroMikaKind::GripperRight   => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::GripperRight),
+      MicroMikaKind::GestureLeft    => (MikaArm::GestureLeft, MikaNose::Normal,  MikaArm::UpRight),
+      MicroMikaKind::GestureRight   => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::GestureRight),
+      MicroMikaKind::Idle           => (MikaArm::Left,        MikaNose::Normal,  MikaArm::Right),
+      MicroMikaKind::Knight         => (MikaArm::Sword,       MikaNose::Normal,  MikaArm::Shield),
+      MicroMikaKind::Matrix         => (MikaArm::ShootLeft,   MikaNose::Normal,  MikaArm::ShootRight),
+      MicroMikaKind::OneWing        => (MikaArm::Sword,       MikaNose::Normal,  MikaArm::BatWing),
+      MicroMikaKind::PointLeft      => (MikaArm::Point,       MikaNose::Normal,  MikaArm::UpRight),
+      MicroMikaKind::PointRight     => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::Point),
+      MicroMikaKind::Punch          => (MikaArm::PunchLeft,   MikaNose::Normal,  MikaArm::PunchLowRight),
+      MicroMikaKind::ShootLeft      => (MikaArm::ShootLeft,   MikaNose::Normal,  MikaArm::UpRight),
+      MicroMikaKind::ShootRight     => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::ShootRight),
+      MicroMikaKind::Shrug          => (MikaArm::ShrugLeft,   MikaNose::Normal,  MikaArm::ShrugRight),
+      MicroMikaKind::ServeLeft      => (MikaArm::ShrugLeft,   MikaNose::Normal,  MikaArm::UpRight),
+      MicroMikaKind::ServeRight     => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::ShrugRight),
+      MicroMikaKind::WaveLeft       => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::UpRight),
+      MicroMikaKind::WaveRight      => (MikaArm::UpLeft,      MikaNose::Normal,  MikaArm::UpRight),
     }
   }
 }
