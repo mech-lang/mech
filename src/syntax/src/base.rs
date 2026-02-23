@@ -167,6 +167,8 @@ leaf!(grave_codeblock_sigil, "```", TokenKind::GraveCodeBlockSigil);
 leaf!(tilde_codeblock_sigil, "~~~", TokenKind::TildeCodeBlockSigil);
 leaf!(underline_sigil, "__", TokenKind::UnderlineSigil);
 leaf!(section_sigil, "§", TokenKind::SectionSigil);
+leaf!(mika_section_open, "⸢", TokenKind::MikaSectionOpen);
+leaf!(mika_section_close, "⸥", TokenKind::MikaSectionClose);
 
 ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);
 ws0_leaf!(async_transition_operator, "~>", TokenKind::AsyncTransitionOperator);
