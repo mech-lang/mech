@@ -42,6 +42,15 @@ impl MechAtom {
     let dict = Ref::new(Dictionary::new());
     MechAtom((id, dict))
   }
+  pub fn from_name(name: &str) -> MechAtom {
+    let id = hash_str(name);
+    let dict = Ref::new(Dictionary::new());
+    {
+      let mut dict_brrw = dict.borrow_mut();
+      dict_brrw.insert(id, name.to_string());
+    }
+    MechAtom((id, dict))
+  }
   pub fn to_html(&self) -> String {
     format!("<span class=\"mech-atom\"><span class=\"mech-atom-name\">{}</span></span>",self.name())
   }

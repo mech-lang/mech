@@ -132,7 +132,9 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     SectionElement::WarningBlock(x) => x.hash(&mut hasher),
     SectionElement::InfoBlock(x) => x.hash(&mut hasher),
     SectionElement::IdeaBlock(x) => x.hash(&mut hasher),
-    SectionElement::Mika(x) => x.hash(&mut hasher),
+    SectionElement::Mika((m,s)) => {
+      return Ok(Value::Atom(Ref::new(MechAtom::from_name(&m.to_string()))));
+    },
     x => {return Err(MechError2::new(
         FeatureNotEnabledError,
         Some(format!("Feature not enabled for section element: {:?}", x)),
