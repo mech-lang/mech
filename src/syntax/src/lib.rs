@@ -40,7 +40,7 @@ use nom::Parser;
 use std::collections::HashMap;
 use colored::*;
 
-#[cfg(feature = "mechdown")]
+//#[cfg(feature = "mechdown")]
 pub mod mechdown;
 pub mod expressions;
 pub mod statements;
@@ -58,7 +58,7 @@ pub mod functions;
 pub mod repl;
 
 pub use crate::parser::*;
-#[cfg(feature = "mechdown")]
+//#[cfg(feature = "mechdown")]
 pub use crate::mechdown::*;
 pub use crate::expressions::*;
 pub use crate::statements::*;
