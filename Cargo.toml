@@ -25,7 +25,7 @@ required-features = ["compiler"]
 [features]
 no_std = ["mech-core/no_std", "mech-interpreter/no_std", "mech-syntax/no_std"]
 
-default = ["baselib", "pretty_print", "serde", "compiler", "program",
+default = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "u8", "u16", "u32", "u64", "u128", 
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
@@ -33,7 +33,7 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program",
       "formatter", "mechfs", "serve", "run", "repl", "build", "whos", "async",
       "mech-core/default", "mech-interpreter/default", "mech-syntax/default",
       ]
-base = ["baselib", "pretty_print", "serde", "compiler", "program",
+base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "statements_default", "subscript_default",
       "formatter", "mechfs", "serve", "run", "repl", "build","whos", "async",
       "mech-core/base", "mech-interpreter/base", "mech-syntax/base",
@@ -82,6 +82,7 @@ compiler = ["anyhow", "console", "indicatif", "tempfile", "zip", "mech-core/comp
 program = ["mech-core/program", "mech-interpreter/program", "mech-syntax/program"]
 pretty_print = ["mech-core/pretty_print", "mech-interpreter/pretty_print", "mech-syntax/pretty_print"]
 serde = ["mech-core/serde", "mech-interpreter/serde", "mech-syntax/serde"]
+mika = ["mech-syntax/mika", "mech-core/mika"]
 
 statements = ["mech-core/statements", "mech-interpreter/statements", "mech-syntax/statements"]
 variables = ["variable_define", "symbol_table", "mech-core/variables", "mech-interpreter/variables", "mech-syntax/variables"]
