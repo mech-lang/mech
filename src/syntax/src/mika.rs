@@ -233,8 +233,9 @@ pub fn mika_expression_inner(input: ParseString) -> ParseResult<MikaExpression> 
 // micro-mika := arm-left, face, arm-right ;   e.g. ╭⦿╮  ╰⦿╯  ─⦿╮  ╭⦿⌣
 pub fn micro_mika(input: ParseString) -> ParseResult<Mika> {
   let (input, left_arm)  = mika_arm_left(input)?;
+  let (input, nose)      = mika_nose(input)?;
   let (input, right_arm) = mika_arm_right(input)?;
-  Ok((input, Mika::Micro(micromika_from_arms(left_arm, right_arm))))
+  Ok((input, Mika::Micro(MicroMika{ left_arm, nose, right_arm})))
 }
 /*
 // mini-mika := arm-left, expression-inner, arm-right ;   e.g. ╭(˙◯˙)╮
@@ -253,36 +254,6 @@ pub fn mini_mika(input: ParseString) -> ParseResult<Mika> {
 pub fn mika(input: ParseString) -> ParseResult<(Mika,Option<MikaSection>)> {
   let (input, mika) = micro_mika(input)?;
   let (input, mika_section) = opt(mika_section)(input)?;
+  let (input, _) = whitespace0(input)?;
   Ok((input, (mika, mika_section)))
-}
-
-// Helpers
-// ---------------------------------------------------------------------------
-
-fn micromika_from_arms(left: MikaArm, right: MikaArm) -> MicroMika {
-  use MikaArm::*;
-  match (left, right) {
-    (BatWing,      BatWing)       => MicroMika::Bat,
-    (GestureLeft,  GestureRight)  => MicroMika::BigHug,
-    (RaisedLeft,   RaisedRight)   => MicroMika::Cheer,
-    (Dance,        Dance)         => MicroMika::Dance,
-    (UpLeft,       UpRight)       => MicroMika::Goal,
-    (GripperLeft,  UpRight)       => MicroMika::GripperLeft,
-    (UpLeft,       GripperRight)  => MicroMika::GripperRight,
-    (GestureLeft,  UpRight)       => MicroMika::GestureLeft,
-    (UpLeft,       GestureRight)  => MicroMika::GestureRight,
-    (Left,         Right)         => MicroMika::Idle,
-    (Sword,        Shield)        => MicroMika::Knight,
-    (ShootLeft,    ShootRight)    => MicroMika::Matrix,
-    (Sword,        BatWing)       => MicroMika::OneWing,
-    (Point,        UpRight)       => MicroMika::PointLeft,
-    (UpLeft,       Point)         => MicroMika::PointRight,
-    (PunchLeft,    PunchLowRight) => MicroMika::Punch,
-    (ShootLeft,    UpRight)       => MicroMika::ShootLeft,
-    (UpLeft,       ShootRight)    => MicroMika::ShootRight,
-    (ShrugLeft,    ShrugRight)    => MicroMika::Shrug,
-    (ShrugLeft,    UpRight)       => MicroMika::ServeLeft,
-    (UpLeft,       ShrugRight)    => MicroMika::ServeRight,
-    _                             => MicroMika::Idle,
-  }
 }

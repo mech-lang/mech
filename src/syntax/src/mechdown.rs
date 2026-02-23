@@ -891,7 +891,6 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
     ("warning_block",   Box::new(warning_block)),
     ("error_block",     Box::new(error_block)),
     ("idea_block",      Box::new(idea_block)),
-    ("mika",            Box::new(|i| mika(i).map(|(i, mb)| (i, SectionElement::Mika(mb))))),
     ("paragraph",       Box::new(|i| paragraph(i).map(|(i, p)| (i, SectionElement::Paragraph(p))))),
   ];
 
@@ -929,7 +928,19 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
     //elements.push(sct_elmnt);
     //let (input, _) = many0(blank_line)(input.clone())?;
 
-
+    #[cfg(feature = "mika")]
+    match mika(new_input.clone()) {
+      Ok((input, mika)) => {
+        elements.push(SectionElement::Mika(mika));
+        new_input = input;
+        continue;
+      }
+      Err(e) => {
+        // not mika code, try mech code
+        //return Err(e);
+      }
+    }
+  
     // check if it's mech_code first, we'll prioritize that
     match mech_code(new_input.clone()) {
       Ok((input, mech_tree)) => {
@@ -957,7 +968,6 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
       }
     }
   }
-  //println!("Parsed section: {:#?}", elements);
   Ok((new_input, Section { subtitle, elements }))
 }
 
