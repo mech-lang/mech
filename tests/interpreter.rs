@@ -801,3 +801,4 @@ test_interpreter!(interpret_atom_inequality, r#"a := :status/active; b := :statu
 test_interpreter!(interpret_atom_equality_false, r#"a := :status/active; b := :status/inactive; c := (a == b);"#, Value::Bool(Ref::new(false)));
 
 test_interpreter!(interpreter_mika, r#"╭⦿╯"#, Value::Atom(Ref::new(MechAtom::from_name("╭⦿╯"))));
+test_interpreter!(interpreter_mika_gripper, r#"Ɔ∞⦿╯"#, Value::Atom(Ref::new(MechAtom::from_name("Ɔ∞⦿╯"))));
