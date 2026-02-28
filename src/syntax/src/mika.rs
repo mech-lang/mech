@@ -278,58 +278,32 @@ pub fn mika_nose(input: ParseString) -> ParseResult<MikaNose> {
   }))
 }
 
-/*
-
-// mika-expression-inner := "(", eye-left, nose, eye-right, ")" ;
+// mika-expression-inner := eye-left, nose, eye-right;
 pub fn mika_expression_inner(input: ParseString) -> ParseResult<MikaExpression> {
-  let (input, left_eye)  = mika_eye_left(input)?;
-  let (input, nose)      = mika_nose(input)?;
-  let (input, right_eye) = mika_eye_right(input)?;
-  let (input, _)         = right_parenthesis(input)?;
+  let (input, left) = mika_eye_left(input)?;
+  let (input, nose) = mika_nose(input)?;
 
-  let l = left_eye.chars.iter().collect::<String>();
-  let n = nose.chars.iter().collect::<String>();
-  let r = right_eye.chars.iter().collect::<String>();
+  let expr = EXPRESSIONS.iter().find(|&&e| {
+    let (l, n, _) = e.symbols();
+    l == left && n == nose
+  });
 
-  let expr = match (l.as_str(), n.as_str(), r.as_str()) {
-    ("ˆ",   "◯", "ˆ")   => MikaExpression::Content,
-    ("ಠ",   "◯", "ಠ")   => MikaExpression::Confused,
-    ("╥",   "◯", "╥")   => MikaExpression::Crying,
-    ("⋇",   "◯", "⋇")   => MikaExpression::Dazed,
-    ("✖",   "◯", "✖")   => MikaExpression::Dead,
-    ("≻",   "◯", "≺")   => MikaExpression::EyesSqueezed,
-    ("ᗒ",   "◯", "ᗕ")   => MikaExpression::SuperSqueezed,
-    ("ㆆ",  "⍜", "ㆆ")  => MikaExpression::Glaring,
-    ("◜",   "◯", "◝")   => MikaExpression::Happy,
-    ("˙",   "◯", "˙")   => MikaExpression::Normal,
-    ("⚆",   "◯", "⚆")   => MikaExpression::PeerRight,
-    ("☉",   "◯", "☉")   => MikaExpression::PeerStraight,
-    ("◠",   "◯", "◠")   => MikaExpression::Pleased,
-    ("◡̀",  "◯", "◡́")  => MikaExpression::Resolved,
-    ("◕",   "◯", "◕")   => MikaExpression::RollingEyes,
-    ("◞",   "◯", "◟")   => MikaExpression::Sad,
-    ("Ͼ",   "◯", "Ͽ")   => MikaExpression::Scared,
-    ("⌐▰",  "◯", "▰")   => MikaExpression::Shades,
-    ("⹇",   "◯", "⹇")   => MikaExpression::Sleeping,
-    ("ᗣ",   "◯", "ᗣ")   => MikaExpression::Smiling,
-    ("≖",   "◯", "≖")   => MikaExpression::Squinting,
-    ("°",   "◯", "°")   => MikaExpression::Surprised,
-    ("ᗩ",   "◯", "ᗩ")   => MikaExpression::TearingUp,
-    ("¬",   "◯", "¬")   => MikaExpression::Unimpressed,
-    ("◉",   "◯", "◉")   => MikaExpression::Wired,
-    _ => {
-      return Err(nom::Err::Error(ParseError {
-        cause_range: SourceRange::default(),
-        remaining_input: input,
-        error_detail: ParseErrorDetail {
-          message: "Unrecognized Mika expression",
-          annotation_rngs: Vec::new(),
-        },
-      }));
+  match expr {
+    Some(&expr) => {
+      let (_, _, right) = expr.symbols();
+      let (input, _) = tag(right.symbol())(input)?;
+      Ok((input, expr))
     }
-  };
-  Ok((input, expr))
-}*/
+    None => Err(nom::Err::Error(ParseError {
+      cause_range: SourceRange::default(),
+      remaining_input: input,
+      error_detail: ParseErrorDetail {
+        message: "Unrecognized Mika expression",
+        annotation_rngs: Vec::new(),
+      },
+    })),
+  }
+}
 
 // Mika Character
 // ---------------------------------------------------------------------------
@@ -341,7 +315,7 @@ pub fn micro_mika(input: ParseString) -> ParseResult<Mika> {
   let (input, right_arm) = mika_arm_right(input)?;
   Ok((input, Mika::Micro(MicroMika{ left_arm, nose, right_arm})))
 }
-/*
+
 // mini-mika := arm-left, expression-inner, arm-right ;   e.g. ╭(˙◯˙)╮
 pub fn mini_mika(input: ParseString) -> ParseResult<Mika> {
   let (input, left_arm)        = opt(mika_arm_left)(input)?;
@@ -352,11 +326,11 @@ pub fn mini_mika(input: ParseString) -> ParseResult<Mika> {
   let (input, _)               = right_parenthesis(input)?;
   let (input, right_arm)       = opt(mika_arm_right)(input)?;
   Ok((input, Mika::Mini(MiniMika { expression, left_arm: left_arm.or(right_arm_left), right_arm: right_arm.or(left_arm_right) })))
-}*/
+}
 
 // mika := mini-mika | micro-mika ;
 pub fn mika(input: ParseString) -> ParseResult<(Mika,Option<MikaSection>)> {
-  let (input, mika) = micro_mika(input)?;
+  let (input, mika) = alt((mini_mika, micro_mika))(input)?;
   let (input, mika_section) = opt(mika_section)(input)?;
   let (input, _) = whitespace0(input)?;
   Ok((input, (mika, mika_section)))
