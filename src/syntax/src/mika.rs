@@ -39,33 +39,6 @@ pub fn mika_section(input: ParseString) -> ParseResult<MikaSection> {
 // Face / Arm Primitives
 // ---------------------------------------------------------------------------
 
-// mika-face := "⦿" | "◯" | "⊕" | "∘" | "⦾" | "⊖" | "⦵" | "⊗" | "⏺" | "⍜" ;
-pub fn mika_nose(input: ParseString) -> ParseResult<MikaNose> {
-  let (input, tok) = alt((
-    tag("⦿"), tag("◯"), tag("⊕"), tag("∘"),
-    tag("⦾"), tag("⊖"), tag("⦵"), tag("⊗"),
-    tag("⏺"), tag("⍜"), tag("⬢"), tag("⬟"), tag("⬣"), tag("⎔"),
-  ))(input)?;
-  let face = match tok.chars().collect::<String>().as_str() {
-    "⦿" => MikaNose::Normal,
-    "◯" => MikaNose::Open,
-    "⊕" => MikaNose::Back,
-    "∘" => MikaNose::Stage1,
-    "⦾" => MikaNose::Stage2,
-    "⊖" => MikaNose::Blink,
-    "⦵" => MikaNose::Wide,
-    "⊗" => MikaNose::Error,
-    "⏺" => MikaNose::Filled,
-    "⍜" => MikaNose::FlatMouth,
-    "⬢" => MikaNose::Hexagon,
-    "⬟" => MikaNose::Pentagon,
-    "⬣" => MikaNose::Hexagon2,
-    "⎔" => MikaNose::HexagonOpen,
-    _ => unreachable!(),
-  };
-  Ok((input, face))
-}
-
 // Longer multi-char tokens matched before their single-char prefixes.
 pub fn mika_arm_left(input: ParseString) -> ParseResult<MikaArm> {
   let (input, tok) = alt((
@@ -146,35 +119,166 @@ pub fn mika_arm_right(input: ParseString) -> ParseResult<MikaArm> {
   };
   Ok((input, arm))
 }
-/*
+
 // Expression Primitives
 // ---------------------------------------------------------------------------
 
-pub fn mika_eye_left(input: ParseString) -> ParseResult<Token> {
-  alt((
-    tag("⌐▰"),  // Shades — two chars, must precede single-char alternatives
-    tag("ˆ"),  tag("ಠ"),  tag("╥"),  tag("⋇"),  tag("✖"),
-    tag("≻"),  tag("ᗒ"),  tag("ㆆ"),  tag("◜"),  tag("˙"),
-    tag("⚆"),  tag("☉"),  tag("◠"),  tag("◡̀"), tag("◕"),
-    tag("◞"),  tag("Ͼ"),  tag("⹇"),  tag("≖"),  tag("°"),
-    tag("¬"),  tag("◉"),  tag("ᗣ"),  tag("ᗩ"),
-    // Mylo
-    tag("ᑕ"),  tag("ᕮ"),  tag("ᕳ"),  tag("ᘭ"),  tag("ᑢ"),
-  ))(input)
+// The order matters — longer tags must be tried before any of their prefixes.
+// MikaEyeLeft::Shades is "⌐▰" (two chars) and must precede all single-char tags.
+const LEFT_EYE_ORDER: &[MikaEyeLeft] = &[
+  MikaEyeLeft::Shades,        // "⌐▰"  — multi-char, must be first
+  MikaEyeLeft::Content,       // "ˆ"
+  MikaEyeLeft::Confused,      // "ಠ"
+  MikaEyeLeft::Crying,        // "╥"
+  MikaEyeLeft::Dazed,         // "⋇"
+  MikaEyeLeft::Dead,          // "✖"
+  MikaEyeLeft::EyesSqueezed,  // "≻"
+  MikaEyeLeft::SuperSqueezed, // "ᗒ"
+  MikaEyeLeft::Glaring,       // "ㆆ"
+  MikaEyeLeft::Happy,         // "◜"
+  MikaEyeLeft::Normal,        // "˙"
+  MikaEyeLeft::PeerRight,     // "⚆"
+  MikaEyeLeft::PeerStraight,  // "☉"
+  MikaEyeLeft::Pleased,       // "◠"
+  MikaEyeLeft::Resolved,      // "◡̀"
+  MikaEyeLeft::RollingEyes,   // "◕"
+  MikaEyeLeft::Sad,            // "◞"
+  MikaEyeLeft::Scared,        // "Ͼ"
+  MikaEyeLeft::Sleeping,      // "⹇"
+  MikaEyeLeft::Smiling,       // "ᗣ"
+  MikaEyeLeft::Squinting,     // "≖"
+  MikaEyeLeft::Surprised,     // "°"
+  MikaEyeLeft::TearingUp,     // "ᗩ"
+  MikaEyeLeft::Unimpressed,   // "¬"
+  MikaEyeLeft::Wired,         // "◉"
+];
+
+const RIGHT_EYE_ORDER: &[MikaEyeRight] = &[
+  MikaEyeRight::Content,
+  MikaEyeRight::Confused,
+  MikaEyeRight::Crying,
+  MikaEyeRight::Dazed,
+  MikaEyeRight::Dead,
+  MikaEyeRight::EyesSqueezed,
+  MikaEyeRight::SuperSqueezed,
+  MikaEyeRight::Glaring,
+  MikaEyeRight::Happy,
+  MikaEyeRight::Normal,
+  MikaEyeRight::PeerRight,
+  MikaEyeRight::PeerStraight,
+  MikaEyeRight::Pleased,
+  MikaEyeRight::Resolved,
+  MikaEyeRight::RollingEyes,
+  MikaEyeRight::Sad,
+  MikaEyeRight::Scared,
+  MikaEyeRight::Shades,       // "▰"
+  MikaEyeRight::Sleeping,
+  MikaEyeRight::Smiling,
+  MikaEyeRight::Squinting,
+  MikaEyeRight::Surprised,
+  MikaEyeRight::TearingUp,
+  MikaEyeRight::Unimpressed,
+  MikaEyeRight::Wired,
+];
+
+const NOSE_ORDER: &[MikaNose] = &[
+  MikaNose::Normal,
+  MikaNose::Open,
+  MikaNose::Back,
+  MikaNose::Stage1,
+  MikaNose::Stage2,
+  MikaNose::Stage3,
+  MikaNose::Blink,
+  MikaNose::Wide,
+  MikaNose::Error,
+  MikaNose::Filled,
+  MikaNose::FlatMouth,
+  MikaNose::Hexagon,
+  MikaNose::Pentagon,
+  MikaNose::Hexagon2,
+  MikaNose::HexagonOpen,
+];
+
+// All known Mika expressions — used by mika_expression_inner to resolve
+// (left_eye, nose) -> MikaExpression and then consume the expected right eye.
+const EXPRESSIONS: &[MikaExpression] = &[
+  MikaExpression::Content,
+  MikaExpression::Confused,
+  MikaExpression::Crying,
+  MikaExpression::Dazed,
+  MikaExpression::Dead,
+  MikaExpression::EyesSqueezed,
+  MikaExpression::SuperSqueezed,
+  MikaExpression::Glaring,
+  MikaExpression::Happy,
+  MikaExpression::Normal,
+  MikaExpression::PeerRight,
+  MikaExpression::PeerStraight,
+  MikaExpression::Pleased,
+  MikaExpression::Resolved,
+  MikaExpression::RollingEyes,
+  MikaExpression::Sad,
+  MikaExpression::Scared,
+  MikaExpression::Shades,
+  MikaExpression::Sleeping,
+  MikaExpression::Smiling,
+  MikaExpression::Squinting,
+  MikaExpression::Surprised,
+  MikaExpression::TearingUp,
+  MikaExpression::Unimpressed,
+  MikaExpression::Wired,
+];
+
+pub fn mika_eye_left(input: ParseString) -> ParseResult<MikaEyeLeft> {
+  for &variant in LEFT_EYE_ORDER {
+    if let Ok((rest, _)) = tag(variant.symbol())(input.clone()) {
+      return Ok((rest, variant));
+    }
+  }
+  Err(nom::Err::Error(ParseError {
+    cause_range: SourceRange::default(),
+    remaining_input: input,
+    error_detail: ParseErrorDetail {
+      message: "Expected Mika left eye",
+      annotation_rngs: Vec::new(),
+    },
+  }))
 }
 
-pub fn mika_eye_right(input: ParseString) -> ParseResult<Token> {
-  alt((
-    tag("▰"),
-    tag("ˆ"),  tag("ಠ"),  tag("╥"),  tag("⋇"),  tag("✖"),
-    tag("≺"),  tag("ᗕ"),  tag("ㆆ"),  tag("◝"),  tag("˙"),
-    tag("⚆"),  tag("☉"),  tag("◠"),  tag("◡́"), tag("◕"),
-    tag("◟"),  tag("Ͽ"),  tag("⹇"),  tag("≖"),  tag("°"),
-    tag("¬"),  tag("◉"),  tag("ᗣ"),  tag("ᗩ"),
-    // Mylo
-    tag("ᑐ"),  tag("ᕭ"),  tag("ᕲ"),  tag("ᘪ"),  tag("ᑝ"),
-  ))(input)
+pub fn mika_eye_right(input: ParseString) -> ParseResult<MikaEyeRight> {
+  for &variant in RIGHT_EYE_ORDER {
+    if let Ok((rest, _)) = tag(variant.symbol())(input.clone()) {
+      return Ok((rest, variant));
+    }
+  }
+  Err(nom::Err::Error(ParseError {
+    cause_range: SourceRange::default(),
+    remaining_input: input,
+    error_detail: ParseErrorDetail {
+      message: "Expected Mika right eye",
+      annotation_rngs: Vec::new(),
+    },
+  }))
 }
+
+// mika-nose := "⦿" | "◯" | "⊕" | "∘" | "⦾" | "⊖" | "⦵" | "⊗" | "⏺" | "⍜" ;
+pub fn mika_nose(input: ParseString) -> ParseResult<MikaNose> {
+  for &variant in NOSE_ORDER {
+    if let Ok((rest, _)) = tag(variant.symbol())(input.clone()) {
+      return Ok((rest, variant));
+    }
+  }
+  Err(nom::Err::Error(ParseError {
+    cause_range: SourceRange::default(),
+    remaining_input: input,
+    error_detail: ParseErrorDetail {
+      message: "Expected Mika nose",
+      annotation_rngs: Vec::new(),
+    },
+  }))
+}
+
+/*
 
 // mika-expression-inner := "(", eye-left, nose, eye-right, ")" ;
 pub fn mika_expression_inner(input: ParseString) -> ParseResult<MikaExpression> {
