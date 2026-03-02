@@ -566,7 +566,7 @@ impl SectionElement {
         let mut tokens = vec![];
         tokens.append(&mut mika.tokens());
         if let Some(mika_section) = mika_section {
-          for mika_section_element in &mika_section.elements {
+          for mika_section_element in &mika_section.elements.elements {
             tokens.append(&mut mika_section_element.tokens());
           }
         }

@@ -7,7 +7,7 @@ use crate::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct MikaSection {
-  pub elements: Vec<SectionElement>,
+  pub elements: Section,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
