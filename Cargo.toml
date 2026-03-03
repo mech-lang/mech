@@ -169,13 +169,13 @@ nalgebra = "0.34.1"
 
 [dependencies]
 mech-core        = { version = "0.3.0", default-features = false }
-mech-syntax      = { version = "0.2.75", default-features = false }
+mech-syntax      = { version = "0.3.0", default-features = false }
 mech-interpreter = { version = "0.3.0", default-features = false }
 
 sevenz-rust = "0.6.1"
 colored = "3.0.0"
-serde = "1.0.219"
-serde_derive = "1.0.219"
+serde = "1.0.228"
+serde_derive = "1.0.228"
 crossterm = "0.29.0"
 tabled = "0.20.0"
 crossbeam-channel = "0.5.14"
@@ -238,7 +238,7 @@ mech-string = { path = 'machines/string' }
 mech-core = { path = 'src/core', version = '0.3.0' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
-mech-syntax = { path = 'src/syntax', version = '0.2.75' }
+mech-syntax = { path = 'src/syntax', version = '0.3.0' }
 
 [patch.'https://gitlab.com/mech-lang/interpreter']
 mech-interpreter = { path = 'src/interpreter', version = '0.3.0' }
