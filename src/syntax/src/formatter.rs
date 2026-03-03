@@ -675,7 +675,7 @@ impl Formatter {
       match section {
         Some(sec) => {
           let mut sec_str = "".to_string();
-          for el in &sec.elements {
+          for el in &sec.elements.elements {
             let section_element = self.section_element(el);
             sec_str.push_str(&section_element);
           }

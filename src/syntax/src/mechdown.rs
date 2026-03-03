@@ -284,7 +284,7 @@ pub fn img(input: ParseString) -> ParseResult<Image> {
 
 // paragraph-text := ¬(img-prefix | http-prefix | left-bracket | tilde | asterisk | underscore | grave | define-operator | bar), +text ;
 pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
-  let (input, elements) = match many1(nom_tuple((is_not(alt((section_sigil, footnote_prefix, highlight_sigil, equation_sigil, img_prefix, http_prefix, left_brace, left_bracket, left_angle, right_bracket, tilde, asterisk, underscore, grave, define_operator, bar))),text)))(input) {
+  let (input, elements) = match many1(nom_tuple((is_not(alt((section_sigil, footnote_prefix, highlight_sigil, equation_sigil, img_prefix, http_prefix, left_brace, left_bracket, left_angle, right_bracket, tilde, asterisk, underscore, grave, define_operator, bar, mika_section_open, mika_section_close))),text)))(input) {
     Ok((input, mut text)) => {
       let mut text = text.into_iter().map(|(_,tkn)| tkn).collect();
       let mut text = Token::merge_tokens(&mut text).unwrap();
@@ -347,6 +347,7 @@ pub fn section_reference(input: ParseString) -> ParseResult<ParagraphElement> {
 
 // paragraph-element := hyperlink | reference | section-ref | raw-hyperlink | highlight | footnote-reference | inline-mech-code | eval-inline-mech-code | inline-equation | paragraph-text | strong | highlight | emphasis | inline-code | strikethrough | underline ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
+  println!("Parsing paragraph element at: {:?}", input.peek(0));
   alt((hyperlink, reference, section_reference, raw_hyperlink, highlight, footnote_reference, inline_mech_code, eval_inline_mech_code, inline_equation, paragraph_text, strong, highlight, emphasis, inline_code, strikethrough, underline))(input)
 }
 
@@ -368,7 +369,7 @@ pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
   let (input, _) = peek(paragraph_element)(input)?;
   let (input, elements) = many1(
     pair(
-      is_not(alt((null(new_line), null(idea_sigil)))),
+      is_not(alt((null(new_line), null(mika_section_close), null(idea_sigil)))),
       labelr!(paragraph_element, 
               |input| recover::<ParagraphElement, _>(input, skip_till_paragraph_element),
               "Unexpected paragraph element")
@@ -928,9 +929,11 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
     //elements.push(sct_elmnt);
     //let (input, _) = many0(blank_line)(input.clone())?;
 
+    println!("Parsing Mika at: {:?}", new_input.peek(0));
     #[cfg(feature = "mika")]
     match mika(new_input.clone()) {
       Ok((input, mika)) => {
+        println!("Parsed Mika code block: {:#?}", mika);
         elements.push(SectionElement::Mika(mika));
         new_input = input;
         continue;
