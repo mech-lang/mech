@@ -54,7 +54,7 @@ impl NativeFunctionCompiler for TupleAccess{
       },
       (Value::MutableReference(tpl), Value::Index(ix)) => {
         match &*tpl.borrow() {
-          Value::Tuple(ref tpl) => {
+          Value::Tuple(tpl) => {
             let ix_brrw = ix.borrow();
             let tpl_brrw = tpl.borrow();
             if *ix_brrw > tpl_brrw.elements.len() || *ix_brrw < 1 {

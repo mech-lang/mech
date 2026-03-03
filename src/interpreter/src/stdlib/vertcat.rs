@@ -1585,7 +1585,7 @@ macro_rules! impl_vertcat_arms {
           (1,m,1) => {
             match &arguments[..] {
               // rd
-              [Value::[<Matrix $kind:camel>](Matrix::DVector(ref e0))] => {
+              [Value::[<Matrix $kind:camel>](Matrix::DVector(e0))] => {
                 return Ok(Box::new(VerticalConcatenateVD{out: e0.clone()}));
               }
               _ => todo!(),
