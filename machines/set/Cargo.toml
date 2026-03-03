@@ -194,7 +194,7 @@ swizzle = ["subscript", "mech-core/swizzle"]
 mech-core = {version = "0.3.0", default-features = false}
 
 paste = "1.0.15"
-inventory = "0.3.21"
-indexmap = "1.9.3"
+inventory = "0.3.22"
+indexmap = "2.13.0"
 
 [workspace]
