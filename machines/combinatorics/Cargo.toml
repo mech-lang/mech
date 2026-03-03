@@ -9,7 +9,7 @@ repository = "https://github.com/mech-machines/combinatorics"
 keywords = ["mech", "language", "programming"]
 license = "Apache-2.0"
 readme = "README.md"
-edition = "2021"
+edition = "2024"
 
 [badges]
 gitlab = { repository = "mech-lang/machines/combinatorics", branch = "main" }
