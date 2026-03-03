@@ -168,7 +168,7 @@ matrix_vertcat = ["matrix"]
 nalgebra = "0.34.0"
 
 [dependencies]
-mech-core        = { version = "0.2.75", default-features = false }
+mech-core        = { version = "0.3.0", default-features = false }
 mech-syntax      = { version = "0.2.75", default-features = false }
 mech-interpreter = { version = "0.2.75", default-features = false }
 
@@ -235,7 +235,7 @@ mech-set = { path = 'machines/set' }
 mech-string = { path = 'machines/string' }
 
 [patch.'https://gitlab.com/mech-lang/core']
-mech-core = { path = 'src/core', version = '0.2.75' }
+mech-core = { path = 'src/core', version = '0.3.0' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
 mech-syntax = { path = 'src/syntax', version = '0.2.75' }

@@ -288,7 +288,7 @@ string_default = ["string_concat", "mech-string/string_default"]
 string_concat = ["string", "mech-string/concat"]
 
 [dependencies]
-mech-core = { version = "0.2.75", default-features = false }
+mech-core = {version = "0.3.0", default-features = false}
 mech-math = { version = "0.2.75", default-features = false, optional = true}
 mech-logic = { version = "0.2.75", default-features = false, optional = true }
 mech-range = { version = "0.2.75", default-features = false, optional = true }

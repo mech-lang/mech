@@ -260,7 +260,7 @@ dot_indexing = ["subscript", "mech-core/dot_indexing", "mech-interpreter/dot_ind
 swizzle = ["subscript", "mech-core/swizzle", "mech-interpreter/swizzle", "mech-syntax/swizzle"]
 
 [dependencies]
-mech-core = { version = "0.2.75", default-features = false}
+mech-core = {version = "0.3.0", default-features = false}
 mech-syntax = { version = "0.2.75", default-features = false}
 mech-interpreter = { version = "0.2.75", default-features = false}
 
