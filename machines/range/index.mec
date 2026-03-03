@@ -19,7 +19,7 @@ Provides functions that produce a range of values.
 
 range/machine = {
   name: "range" 
-  version: "v0.2.75"
+  version: "v0.3.0"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/range"
   license: "Apache-2.0"}
