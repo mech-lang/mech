@@ -405,7 +405,7 @@ where
       #[cfg(feature = "row_vector2")]
       Matrix::RowVector2(ref x) => Box::new(x.clone()),
       #[cfg(feature = "row_vectord")]
-      Matrix::RowDVector(ref x) => Box::new(x.clone()),
+      Matrix::RowDVector(x) => Box::new(x.clone()),
       #[cfg(feature = "vector4")]
       Matrix::Vector4(ref x) => Box::new(x.clone()),
       #[cfg(feature = "vector3")]
@@ -413,7 +413,7 @@ where
       #[cfg(feature = "vector2")]
       Matrix::Vector2(ref x) => Box::new(x.clone()),
       #[cfg(feature = "vectord")]
-      Matrix::DVector(ref x) => Box::new(x.clone()),
+      Matrix::DVector(x) => Box::new(x.clone()),
       #[cfg(feature = "matrix4")]
       Matrix::Matrix4(ref x) => Box::new(x.clone()),
       #[cfg(feature = "matrix3")]
@@ -427,7 +427,7 @@ where
       #[cfg(feature = "matrix2x3")]
       Matrix::Matrix2x3(ref x) => Box::new(x.clone()),
       #[cfg(feature = "matrixd")]
-      Matrix::DMatrix(ref x) => Box::new(x.clone()),
+      Matrix::DMatrix(x) => Box::new(x.clone()),
       _ => panic!("Unsupported matrix size"),
     }
   }
@@ -514,7 +514,7 @@ where T: Debug + Clone + PartialEq + 'static
   pub fn append(&mut self, other: &Matrix<T>) -> MResult<()> {
     match (&self, &other) {
       #[cfg(feature = "vectord")]
-      (Matrix::DVector(ref lhs), Matrix::DVector(ref rhs)) => {
+      (Matrix::DVector(lhs), Matrix::DVector(rhs)) => {
         let mut lhs = lhs.borrow_mut();
         let rhs = rhs.borrow();
         let old_len = lhs.len();
@@ -525,7 +525,7 @@ where T: Debug + Clone + PartialEq + 'static
         Ok(())
       }
       #[cfg(feature = "row_vectord")]
-      (Matrix::RowDVector(ref lhs), Matrix::RowDVector(ref rhs)) => {
+      (Matrix::RowDVector(lhs), Matrix::RowDVector(rhs)) => {
         let mut lhs = lhs.borrow_mut();
         let rhs = rhs.borrow();
         let old_len = lhs.len();
