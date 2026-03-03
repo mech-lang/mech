@@ -523,7 +523,7 @@ async fn main() -> Result<(), MechError2> {
     let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag); 
     if !repl_flag {
       match &result {
-        Ok(ref r) => {
+        Ok(r) => {
           println!("{}", r.kind());
           #[cfg(feature = "pretty_print")]
           println!("{}", r.pretty_print());
@@ -531,7 +531,7 @@ async fn main() -> Result<(), MechError2> {
           println!("{:#?}", r);
           std::process::exit(0);
         }
-        Err(ref err) => {
+        Err(err) => {
           print_mech_error(err);
           std::process::exit(1);
         }
