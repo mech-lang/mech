@@ -629,7 +629,7 @@ pub fn set_comprehension(input: ParseString) -> ParseResult<SetComprehension> {
 // set-qualifier := generator | expression | variable-define  ;
 pub fn comprehension_qualifier(input: ParseString) -> ParseResult<ComprehensionQualifier> {
   match generator(input.clone()) {
-    Ok((input, gen)) => Ok((input, gen)),
+    Ok((input, generator)) => Ok((input, generator)),
     Err(_) => match variable_define(input.clone()) {
       Ok((input, var_def)) => Ok((input, ComprehensionQualifier::Let(var_def))),
       Err(_) => {
