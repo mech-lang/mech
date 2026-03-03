@@ -165,12 +165,12 @@ matrix_horzcat = ["matrix"]
 matrix_vertcat = ["matrix"]
 
 [dev-dependencies]
-nalgebra = "0.34.0"
+nalgebra = "0.34.1"
 
 [dependencies]
 mech-core        = { version = "0.3.0", default-features = false }
 mech-syntax      = { version = "0.2.75", default-features = false }
-mech-interpreter = { version = "0.2.75", default-features = false }
+mech-interpreter = { version = "0.3.0", default-features = false }
 
 sevenz-rust = "0.6.1"
 colored = "3.0.0"
@@ -190,7 +190,7 @@ notify = "8.0.0"
 ariadne = "0.6.0"
 clap = { version = "4.5.40", features = ["cargo"]}
 bincode = { version = "2.0.1", features = ["serde"]}
-indexmap = { version = "2.10.0", features = ["serde"]}
+indexmap = { version = "2.13.0", features = ["serde"]}
 reqwest = { version = "0.12.20", features = ["blocking"]}
 warp = { version = "0.3.7", features = ["compression"]}
 tokio = { version = "1.44.1", features = ["full"]}
@@ -241,7 +241,7 @@ mech-core = { path = 'src/core', version = '0.3.0' }
 mech-syntax = { path = 'src/syntax', version = '0.2.75' }
 
 [patch.'https://gitlab.com/mech-lang/interpreter']
-mech-interpreter = { path = 'src/interpreter', version = '0.2.75' }
+mech-interpreter = { path = 'src/interpreter', version = '0.3.0' }
 
 #[patch.'https://gitlab.com/mech-lang/wasm']
 #mech-wasm = { path = 'src/wasm', version = '0.2.44' }

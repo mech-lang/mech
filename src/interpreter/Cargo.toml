@@ -1,6 +1,6 @@
 [package]
 name = "mech-interpreter"
-version = "0.2.75"
+version = "0.3.0"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "The Mech language runtime."
 documentation = "http://docs.mech-lang.org"
@@ -10,8 +10,8 @@ keywords = ["mech", "language", "programming", "dataflow", "runtime"]
 categories = ["no-std", "science::robotics", "science", "game-engines", "database-implementations"]
 license = "Apache-2.0"
 readme = "README.md"
-edition = "2021"
-rust-version = "1.93"
+edition = "2024"
+rust-version = "1.96"
 
 [badges]
 gitlab = { repository = "mech-lang/mech", branch = "main" }
@@ -289,22 +289,22 @@ string_concat = ["string", "mech-string/concat"]
 
 [dependencies]
 mech-core = {version = "0.3.0", default-features = false}
-mech-math = { version = "0.2.75", default-features = false, optional = true}
-mech-logic = { version = "0.2.75", default-features = false, optional = true }
-mech-range = { version = "0.2.75", default-features = false, optional = true }
-mech-matrix = { version = "0.2.75", default-features = false, optional = true }
-mech-compare = { version = "0.2.75", default-features = false, optional = true }
-mech-stats = { version = "0.2.75", default-features = false, optional = true }
-mech-io = { version = "0.2.75", default-features = false, optional = true }
-mech-set = { version = "0.2.75", default-features = false, optional = true }
-mech-combinatorics = { version = "0.2.75", default-features = false, optional = true }
-mech-string = { version = "0.2.75", default-features = false, optional = true }
+mech-math = { version = "0.3.0", default-features = false, optional = true}
+mech-logic = { version = "0.3.0", default-features = false, optional = true }
+mech-range = { version = "0.3.0", default-features = false, optional = true }
+mech-matrix = { version = "0.3.0", default-features = false, optional = true }
+mech-compare = { version = "0.3.0", default-features = false, optional = true }
+mech-stats = { version = "0.3.0", default-features = false, optional = true }
+mech-io = { version = "0.3.0", default-features = false, optional = true }
+mech-set = { version = "0.3.0", default-features = false, optional = true }
+mech-combinatorics = { version = "0.3.0", default-features = false, optional = true }
+mech-string = { version = "0.3.0", default-features = false, optional = true }
 
 paste = "1.0.15"
 byteorder = "1.5.0"
-inventory = "0.3.21"
-nalgebra = {version = "0.34.0", optional = true}
-indexmap = {version = "2.10.0", optional = true}
+inventory = "0.3.22"
+nalgebra = {version = "0.34.1", optional = true}
+indexmap = {version = "2.13.0", optional = true}
 bincode = {version = "2.0.1", optional = true}
 
 [dependencies.num-traits]
