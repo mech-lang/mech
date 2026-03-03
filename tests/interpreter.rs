@@ -803,3 +803,4 @@ test_interpreter!(interpret_atom_equality_false, r#"a := :status/active; b := :s
 test_interpreter!(interpreter_mika_micromica, r#"╭⦿╯"#, Value::Atom(Ref::new(MechAtom::from_name("╭⦿╯"))));
 test_interpreter!(interpreter_mika_micromica_gripper, r#"Ɔ∞⦿╯"#, Value::Atom(Ref::new(MechAtom::from_name("Ɔ∞⦿╯"))));
 test_interpreter!(interpreter_mika_minimika, r#"(˙◯˙)"#, Value::Atom(Ref::new(MechAtom::from_name("(˙◯˙)"))));
+test_interpreter!(interpreter_mika_micromica_mikasection, r#"╭⦿╯ ⸢Hello, I'm Mika!⸥"#, Value::Atom(Ref::new(MechAtom::from_name("╭⦿╯"))));

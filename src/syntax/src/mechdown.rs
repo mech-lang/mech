@@ -920,6 +920,11 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
       break;
     }
 
+    #[cfg(feature = "mika")]
+    if mika_section_close(new_input.clone()).is_ok() {
+      break;
+    }
+
     /*let (input, sct_elmnt) = labelr!(
       section_element,
       |input| recover::<SectionElement, _>(input, skip_till_eol),
@@ -929,7 +934,6 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
     //elements.push(sct_elmnt);
     //let (input, _) = many0(blank_line)(input.clone())?;
 
-    println!("Parsing Mika at: {:?}", new_input.peek(0));
     #[cfg(feature = "mika")]
     match mika(new_input.clone()) {
       Ok((input, mika)) => {
@@ -956,6 +960,8 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
         //return Err(e);
       }
     }
+
+    println!("Parsing section element at: {:?}", new_input.peek(0));
     match section_element(new_input.clone()) {
       Ok((input, element)) => {
 
