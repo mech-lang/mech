@@ -1,21 +1,211 @@
-Record
+record
 ===============================================================================
+
+%% A `record` is a collection of named fields, where each field has a name and a kind. Records group heterogeneous values into a single structured value, similar to a row in a table or a struct in other languages.
 
 1. Syntax
 -------------------------------------------------------------------------------
 
+Records are written using curly braces `{}` with named fields. Each field is written as `name: value` and fields are separated by commas.
+
+```
+{ x: 1, y: true }
+{ name: "Alice", age: 42, active: true }
+```
+
+When parsed and rendered, this code will appear as:
+
+```mech:disabled
+{ x: 1, y: true }
+{ name: "Alice", age: 42, active: true }
+```
+
+Records may be written inline or across multiple lines for readability:
+
+```
+{
+  x: 1.2,
+  y: true,
+  label: "pt1"
+}
+```
+
 2. Kind
 -------------------------------------------------------------------------------
+
+In general, a record has the kind:
+
+```mech:disabled
+<{field1<kind1>, field2<kind2>,...}>
+```
+
+The kind of a record is determined by the names and kinds of its fields. The kind of a filed is inferred from its value, but can also be specified explicitly. For example, the following record has two fields, `x` of kind `f64` and `y` of kind `bool`. Therefore the kind is `{x<f64> y<bool>}`.
+
+```mech:ex 2.1
+{ x: 1, y: true }
+```
+
+The kind of a field can be specified with a type annotation:
+
+```mech:ex 2.2
+{ x<u8>: 1, y<bool>: true }
+```
+
+Custom record kinds can be defined:
+
+```mech:ex 2.3
+<point3> := <{x<f64> y<f64> z<f64>}>
+p<point3> := { x: 1.0, y: 2.0, z: 3.0 }
+```
 
 3. Construction
 -------------------------------------------------------------------------------
 
-4. Accessing Elements
+There are three ways to create a record:
+
+- Record literals
+- Selecting a row from a table
+- Comprehensions
+
+(3.1) Record Literals
+
+Record literals are written using curly braces `{}` with named fields. Each field is written as `name: value` and fields are separated by commas.
+
+```mech:ex 3.1
+r := { x: 3, y: false }
+```
+
+Field kinds can be specified explicitly:
+
+```mech:ex 3.1.1
+r := { x<u8>: 3, y: false }   -- x is explicitly typed as `u8`, y is inferred as `bool`
+```
+
+(3.2) Nested Records
+
+Records can be nested:
+
+```mech:ex 3.2
+r := { pos: { x: 1, y: 2 }, label: "A" }    -- record with nested record field
+```
+
+Nested records can also be written across multiple lines for readability:
+
+```
+r := {
+  pos: {
+    x: 1
+    y: 2
+  }
+  label: "A"
+}
+```
+
+(3.3) From Tables
+
+Selecting a single row from a table produces a record whose fields correspond to the table columns.
+
+```mech:ex 3.3
+T := | x<f64>  y<bool> |
+     |  1.2     true   |
+     |  1.3     false  |
+
+r := T[1]   -- r is a record `{x&lt;f64&gt;,y&lt;bool&gt;}`
+```
+
+(3.4) Record Comprehensions
+
+Set comprehensions can be used to create sets of records. Each element in the resulting set is a record constructed from the comprehension's output expression.
+
+```mech:ex 3.4
+my-set := {1 2 3}
+{{x: i, y: i * i } | i <- my-set}
+```
+
+Likewise, list comprehensions can create lists of records:
+
+```
+my-list := [1 2 3]
+[{x: i, y: i * i } | i <- my-list]
+```
+
+4. Accessing Fields
 -------------------------------------------------------------------------------
 
-5. Assigning Elements
---------------------------------------------------------------------------------
+Fields are accessed using dot indexing `.`.
 
-6. Operations
+(4.1) Dot Indexing
+
+```mech:ex 4.1
+r := { x: 1.2, y: true }
+r.x
+```
+Likewise, `y` can be accessed to return a `bool` value:
+
+```mech:ex 4.1
+r.y
+```
+
+(4.2) Nested Records
+
+By chaining dot indexing, nested fields can be accessed:
+
+```mech:ex 4.2
+r := { pos: { x: 1, y: 2 }, label: "A" }
+r.pos.x
+```
+
+5. Assigning Fields
 -------------------------------------------------------------------------------
 
+Records are immutable unless defined with the `~` operator.
+
+```mech:ex 5.1
+~r := { x: 1, y: 2 }
+r.x = 42
+r
+```
+
+If you try to assign to a field of an immutable record, an error is raised:
+
+```mech:disabled
+r := { x: 1, y: 2 }
+r.x = 42   -- Error: cannot assign to field of immutable record
+```
+
+When records originate from tables, updates are performed at the table level, not on the record value itself.
+
+```mech:ex 5.2
+~T := | x<f64>  y<bool> |
+     |  1.2     true   |
+     |  1.3     false  |
+~r := T[1]        -- r is a mutable record
+r.x = 42         -- Update field x in record r
+T.x[1]          -- Access updated value from table T
+```
+
+In this example, updating `r.x` also updates the corresponding value in table `T`.
+
+6. Records and Tables
+-------------------------------------------------------------------------------
+
+Tables are conceptually *sets of records*. Each row in a table corresponds to one record with the same field names as the table columns.
+
+```mech:ex 6.1
+T := | x<u8> y<bool> |
+     |  1    true   |
+     |  2    false  |
+     |  3    true   |
+```
+
+Here the type of `T` is a table with two columns, `x` of kind `u8` and `y` of kind `bool`. A single row of the table can be selected to produce a record of a corresponding kind:
+
+```mech:ex 6.1
+T[1]
+```
+
+Selecting multiple rows produces a table, not a set of records:
+
+```mech:ex 6.1
+T[1..=2]   -- returns a table
+```

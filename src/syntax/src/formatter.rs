@@ -71,7 +71,7 @@ impl Formatter {
   }
 
   pub fn works_cited(&mut self) -> String {
-    if self.citation_num == 0 {
+    if self.citations.is_empty() {
       return "".to_string();
     }
     let id = hash_str("works-cited");
@@ -119,23 +119,23 @@ impl Formatter {
 
   pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
     self.toc = true;
-    let title = match &toc.title {
-      Some(title) => self.title(&title),
-      None => "".to_string(),
-    };
     let sections = self.sections(&toc.sections);
     self.toc = false;
-    let section_id = hash_str(&format!("section-{}",self.h2_num + 1));
-    let formatted_works_cited = if self.html && self.citation_num > 0 {
-      format!("<section id=\"\" section=\"{}\" class=\"mech-program-section toc\">
+    let section_id = hash_str(&format!("section-{}", self.h2_num + 1));
+    let formatted_works_cited = if self.html && self.citation_num > 0 && !self.citations.is_empty() {
+      format!(
+        "<section id=\"\" section=\"{}\" class=\"mech-program-section toc\">
   <h2 id=\"\" section=\"{}\" class=\"mech-program-subtitle toc active\">
     <a class=\"mech-program-subtitle-link toc\" href=\"#67320967384727436\">Works Cited</a>
   </h2>
-</section>", section_id, self.h2_num + 1)
+</section>",
+        section_id,
+        self.h2_num + 1
+      )
     } else {
       "".to_string()
     };
-    format!("<div class=\"mech-toc\">{}{}{}</div>",title,sections,formatted_works_cited)
+    format!("<div class=\"mech-toc\">{}{}</div>", sections, formatted_works_cited)
   }
 
   pub fn sections(&mut self, sections: &Vec<Section>) -> String {
@@ -668,6 +668,26 @@ impl Formatter {
     }
   }
 
+  pub fn mika(&mut self, node: &(Mika, Option<MikaSection>)) -> String {
+    let (mika, section) = node;
+    let mika_str = format!("<div class=\"mech-mika\">{}</div>", mika.to_string());
+    if self.html {
+      match section {
+        Some(sec) => {
+          let mut sec_str = "".to_string();
+          for el in &sec.elements.elements {
+            let section_element = self.section_element(el);
+            sec_str.push_str(&section_element);
+          }
+          format!("<div class=\"mech-mika-section\">{} {}</div>", mika_str, sec_str)
+        },
+        None => mika_str,
+      }
+    } else {
+      mika_str
+    }
+  }
+
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     match node {
       SectionElement::Abstract(n) => self.abstract_el(n),
@@ -690,6 +710,7 @@ impl Formatter {
       SectionElement::Image(n) => self.image(n),
       SectionElement::List(n) => self.list(n),
       SectionElement::MechCode(n) => self.mech_code(n),
+      SectionElement::Mika(n) => self.mika(n),
       SectionElement::Paragraph(n) => self.paragraph(n),
       SectionElement::Subtitle(n) => self.subtitle(n),
       SectionElement::Table(n) => self.mechdown_table(n),
@@ -1304,14 +1325,14 @@ impl Formatter {
     }
     if self.html {
       format!("<span class=\"mech-tuple-struct\">
-        `
+        <span class=\"mech-tuple-struct-sigil\">:</span>
         <span class=\"mech-tuple-struct-name\">{}</span>
         <span class=\"mech-left-paren\">(</span>
         <span class=\"mech-tuple-struct-patterns\">{}</span>
         <span class=\"mech-right-paren\">)</span>
       </span>",name,patterns)
     } else {
-      format!("`{}({})", name, patterns)
+      format!(":{}({})", name, patterns)
     }
   }
 
@@ -1449,7 +1470,7 @@ impl Formatter {
     }
     if self.html {
       format!("<div class=\"mech-state-definition\">
-      <span class=\"mech-state-name\">`{}</span>
+      <span class=\"mech-state-name\"><span class=\"mech-state-name-sigil\">:</span>{}</span>
       <span class=\"mech-left-paren\">(</span>
       <span class=\"mech-state-variables\">{}</span>
       <span class=\"mech-right-paren\">)</span>
@@ -1497,13 +1518,21 @@ impl Formatter {
     let mut variants = "".to_string();
     for (i, variant) in node.variants.iter().enumerate() {
       if i == 0 {
-        variants = format!("{}", self.enum_variant(variant));
+        if self.html {
+          variants = format!("<span class=\"mech-enum-variant\">{}</span>", self.enum_variant(variant));
+        } else {
+          variants = format!("{}", self.enum_variant(variant));
+        }
       } else {
-        variants = format!("{} | {}", variants, self.enum_variant(variant));
+        if self.html {
+          variants = format!("{}<span class=\"mech-enum-variant-sep\">|</span><span class=\"mech-enum-variant\">{}</span>", variants, self.enum_variant(variant));
+        } else {
+          variants = format!("{} | {}", variants, self.enum_variant(variant));
+        }
       }
     }
     if self.html {
-      format!("<span class=\"mech-enum-define\"><span class=\"mech-enum-name\">{}</span><span class=\"mech-enum-define-op\">:=</span><span class=\"mech-enum-variants\">{}</span></span>",name,variants)
+      format!("<span class=\"mech-enum-define\"><span class=\"mech-kind-annotation\">&lt;<span class=\"mech-enum-name\">{}</span>&gt;</span><span class=\"mech-enum-define-op\">:=</span><span class=\"mech-enum-variants\">{}</span></span>",name,variants)
     } else {
       format!("<{}> := {}", name, variants)
     }
@@ -1535,23 +1564,24 @@ impl Formatter {
     }
   }
 
-
-  // Tuple Destructure node looks like this:
-  // #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
-//pub struct TupleDestructure {
-//  pub vars: Vec<Identifier>,
-//  pub expression: Expression,
-//}
-  // It's defined like (a,b,c) := foo
-  // where foo is an expression
   pub fn tuple_destructure(&mut self, node: &TupleDestructure) -> String {
     let mut vars = "".to_string();
     for (i, var) in node.vars.iter().enumerate() {
       let v = var.to_string();
       if i == 0 {
-        vars = format!("{}", v);
+        if self.html {
+          let id = format!("{}:{}",hash_str(&v),self.interpreter_id);
+          vars = format!("<span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span>",id,v);
+        } else {
+          vars = format!("{}", v);
+        }
       } else {
-        vars = format!("{}, {}", vars, v);
+        if self.html {
+          let id = format!("{}:{}",hash_str(&v),self.interpreter_id);
+          vars = format!("{}, <span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span>", vars, id, v);
+        } else {
+          vars = format!("{}, {}", vars, v);
+        }
       }
     }
     let expression = self.expression(&node.expression);
@@ -2053,11 +2083,16 @@ impl Formatter {
 
   pub fn binding(&mut self, node: &Binding) -> String {
     let name = node.name.to_string();
+    let kind = if let Some(kind) = &node.kind {
+      self.kind_annotation(&kind.kind)
+    } else {
+      "".to_string()
+    };
     let value = self.expression(&node.value);
     if self.html {
-      format!("<span class=\"mech-binding\"><span class=\"mech-binding-name\">{}</span><span class=\"mech-binding-colon-op\">:</span><span class=\"mech-binding-value\">{}</span></span>",name,value)
+      format!("<span class=\"mech-binding\"><span class=\"mech-binding-name\">{}</span><span class=\"mech-binding-kind\">{}</span><span class=\"mech-binding-colon-op\">:</span><span class=\"mech-binding-value\">{}</span></span>",name,kind,value)
     } else {
-      format!("{}: {}", name, value)
+      format!("{}{}: {}", name, kind, value)
     }
   }
 
@@ -2163,6 +2198,14 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn kind(&mut self, node: &Kind) -> String {
     let annotation = match node {
+      Kind::Kind(kind) => {
+        let kind_kind = self.kind(kind);
+        if self.html {
+          format!("<span class=\"mech-kind-annotation\">&lt;{}&gt;</span>",kind_kind)
+        } else {
+          format!("<{}>", kind_kind)
+        }
+      },
       Kind::Option(kind) => {
         let k = self.kind(kind);
         if self.html {
@@ -2185,7 +2228,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       Kind::Any => "*".to_string(),
       Kind::Scalar(ident) => ident.to_string(),
       Kind::Empty => "_".to_string(),
-      Kind::Atom(ident) => format!("`{}",ident.to_string()),
+      Kind::Atom(ident) => format!(":{}",ident.to_string()),
       Kind::Tuple(kinds) => {
         let mut src = "".to_string();
         for (i, kind) in kinds.iter().enumerate() {
@@ -2449,9 +2492,9 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn atom(&mut self, node: &Atom) -> String {
     if self.html {
-      format!("<span class=\"mech-atom\"><span class=\"mech-atom-grave\">`</span><span class=\"mech-atom-name\">{}</span></span>",node.name.to_string())
+      format!("<span class=\"mech-atom\"><span class=\"mech-atom-name\">:{}</span></span>",node.name.to_string())
     } else {
-      format!("`{}", node.name.to_string())
+      format!(":{}", node.name.to_string())
     }
   }
 
@@ -2480,12 +2523,17 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       RealNumber::Negated(real_number) => format!("-{}", self.real_number(real_number)),
       RealNumber::Integer(token) => token.to_string(),
       RealNumber::Float((whole, part)) => format!("{}.{}", whole.to_string(), part.to_string()),
-      RealNumber::Decimal(token) => token.to_string(),
+      RealNumber::Decimal(token) => format!("0d{}", token.to_string()),
       RealNumber::Hexadecimal(token) => format!("0x{}", token.to_string()),
       RealNumber::Octal(token) => format!("0o{}", token.to_string()),
       RealNumber::Binary(token) => format!("0b{}", token.to_string()),
       RealNumber::Scientific(((whole, part), (sign, ewhole, epart))) => format!("{}.{}e{}{}.{}", whole.to_string(), part.to_string(), if *sign { "-" } else { "+" }, ewhole.to_string(), epart.to_string()),
       RealNumber::Rational((numerator, denominator)) => format!("{}/{}", numerator.to_string(), denominator.to_string()),
+      RealNumber::TypedInteger((token, kind_annotation)) => {
+        let num = token.to_string();
+        let annotation = &kind_annotation.kind.tokens().iter().map(|tkn| tkn.to_string()).collect::<Vec<String>>().join("");
+        format!("{}{}", num, annotation)
+      }
     }
   }
 

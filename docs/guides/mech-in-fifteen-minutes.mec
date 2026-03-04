@@ -1,18 +1,6 @@
 Learn Mech in Fifteen Minutes                                
 ===============================================================================
 
-
-Table of Contents:
-
-- 1. Comments
-- 2. Identifiers
-- 3. Kinds 
-- 4. Literals
-- 5. Variables
-- 6. Collections
-- 7. Functions (todo)
-- 8. State Machines (todo)
-
 1. Comments 
 -------------------------------------------------------------------------------
 
@@ -22,21 +10,22 @@ Table of Contents:
 // Also a single line comment.
 ```
 
-Mech does not support multiline comments. Instead, Mech encourages literate programming through a Markdown-esque syntax
-called Mechdown, exemplified by this document.
+Mech does not support multiline comments. Instead, Mech encourages literate programming through a Markdown-esque syntax called Mechdown, exemplified by this document.
 
 Comments are therefore to be used primarily inside of code blocks.
 
-Comments support formatting, such as bold, underline, links, etc. For example:
+Comments support paragraph formatting, such as bold, underline, links, etc. For example:
 
 ```
- -- **bold** and __underline__ and [links](https://mech-lang.org) are supported in comments.
+ -- Comments support **bold**,  __underline__, [links](/foo/bar), etc.
 ```
+
+-- Comments support **bold**,  __underline__, [links](/foo/bar), etc.
 
 2. Identifiers
 -------------------------------------------------------------------------------
 
-Identifiers start with letters or most UTF-8 encoded emoji characters, and can contain alphanumeric, most emojis, `/`, `*`, `+`, `-`, and `^` characters.
+Identifiers start with letters or most UTF-8 encoded characters, and can contain alphanumeric, most emojis, `/`, `*`, `+`, `-`, and `^` characters.
 
 - {{Hello-Word}}
 - {{io/stdout}}
@@ -44,409 +33,553 @@ Identifiers start with letters or most UTF-8 encoded emoji characters, and can c
 - {{🤖}}
 - {{A*}}
 
-Note: The preferred identifier case in Mech is kebab-case (words deliniated by dashes). Slashes also allow identifiers to be scoped to a particular namespace. For example, functions in the math machine are prefixed with `math/`:
+The preferred identifier case in Mech is kebab-case (words deliniated by dashes). Slashes also allow identifiers to be scoped to a particular namespace. 
 
-- Cosine: `math/sin`
-- Sine: `math/cos` 
-- Log: `math/log` 
+(!)> To maintain a consistent style, Mech does not support underscores in identifiers and they will result in a syntax error.
 
-Mech doesn't support underscores in identifiers.
-
-
-3. Kinds 
+3. Kinds
 -------------------------------------------------------------------------------
 
-Every variable has an associated "kind" or "datatype". They are indicated with a kind annotation.
+A kind describes the type of data a value can hold. Every value in Mech has a kind, and kinds themselves are values.
 
-Builtin kinds:
+Kinds describe the data type, not mutability, which is a property of the data binding.
 
-- number
-    - Unsigned intengers: u8, u16, u32, u64, u128
-    - Signed intengers: i8, i16, i32, i64, i128
-    - IEEE 754 Floating Point: f32, f64
-- string
-- bool
-- atom
-- empty
+(3.1) Simple Kinds
 
-(3.1) Kind Annotations
+Kinds are written inside angle brackets `< >`. The following kinds represent the built-in data types in a base Mech distribution:
 
-Kinds are indicated with a kind annotation, which is the kind identifier encolsed in `<>` e.g.:
+| Category              | Examples           |
+| :---------------------| :------------------|
+| **Signed Integers**   | {{<i8>}}, {{<i16>}}, {{<i32>}}, {{<i64>}}, {{<i128>}} |
+| **Unsigned Integers** | {{<u8>}}, {{<u16>}}, {{<u32>}}, {{<u64>}}, {{<u128>}} |
+| **Complex Numbers**   | {{<c64>}}            |
+| **Rational Numbers**  | {{<rs64>}}           |
+| **Floats**            | {{<f32>}}, {{<f64>}}   |
+| **Text**              | {{<string>}}         |
+| **Logic**             | {{<bool>}}           |
+| **Kind**              | {{<<kind>>}}         | 
+| **Empty**             | {{<_>}}              |
 
-```
-<u8>
-```
+(3.2) Compound Kinds
 
-Literals can be annotated with a kind:
+Kinds compose structurally to describe collections.
 
-- 32-bit floating point number: `123.456<f32>`
-- 64-bit floating point number: `123.456<f64>`
+- **Matrix:** {{<[T]:2,3>}} (A 2x3 matrix of `T`)
+- **Table:** {{<|x<T>,y<U>|:3>}} (A table with columns `x` and `y` of types `T` and `U`, and 3 rows)
+- **Tuple:** {{<(T,U)>}} (An ordered pair)
+- **Map:** {{<{K:V}>}} (Maps `K` to `V`)
+- **Set:** {{<{T}>}} (A set of unique `T` values)
 
-So can identifiers
- 
-- Cast `a` to unsigned 64 bit datatype: `a<u64>`
+(3.3) Kind Annotations & Conversion
 
-(3.2) Collections
+Annotations constrain variables or cast literals.
 
-Multidimensional data can be expressed with teh foloowing collection data structures representing collections of values:
-
-`[]`: vectors, matrices
-`()`: tuples
-`{}`: sets, maps, records, and tables
-
-- Unsized set of unsigned 8-bit integers: `<{u8}>`
-- 1x3 vector of strings: `<[string]:3>` or `<[string]:1,3>`
-- 3x1 column vector of bools: `<[bool]:3,1>`
-- 2x3 matrix of 32-bit floats: `<[f32]:2,3>`
-- Nx3 matrix of 32-bit floats: `<[f32]:_,3>`
-
-(3.3) Custom Kinds
-
-Create a kind that is an alias for `(u8,bool)`:
-
-```
-<my-kind> := <(u8,bool)>
+```mech:disabled
+x := 42<u8>            -- Literal annotation
+y<u8> := 10            -- Variable constraint
+m := [1 2 3 4 5 6]     -- [f64]:1,6
+n<[i32]:2,3> := m      -- Reshapes and converts to 2x3 i32 matrix
 ```
 
-Define a kind that is a matrix with an unspecified number of rows and 3 columns:
+(3.4) Custom Kinds & Enums
 
+**Aliases:**
+
+You can create aliases for semantic clarity.
+
+```mech:disabled
+<point3> := <[f64]:3>
+p<point3> := [10 20 30]
 ```
-<matrix-3d> := <[u8]:_,3>
+
+**Enums:**
+
+Enums define a fixed set of variants using atoms.
+
+```mech:disabled
+<color> := red | green | blue
+my-color<color> := :color/green     -- a valid color
+other-color<color> := :color/yellow -- error: invalid variant
 ```
 
-This type implies that the matrix can grow in rows, which adds flexibility but impacts performance.
-
-
-4. Literals
+4. Data Types
 -------------------------------------------------------------------------------
 
-Supported literals include:
+(4.1) Number
 
-- (a) Numbers
-- (b) Strings
-- (c) Booleans
-- (d) Atoms
-- (e) Empty
+Numbers in Mech can be classified into the following categories:
 
-(4.1) Numbers
+- **Integers** - Whole numbers, which can be positive, negative, or zero
+  - **Signed** - Can represent both negative and positive values
+    - [`i8`](/reference/i8.html) - 8-bit signed integer
+    - [`i16`](/reference/i16.html) - 16-bit signed integer
+    - [`i32`](/reference/i32.html) - 32-bit signed integer
+    - [`i64`](/reference/i64.html) - 64-bit signed integer
+    - [`i128`](/reference/i128.html) - 128-bit signed integer
+  - **Unsigned** - Can only represent zero and positive values
+    - [`u8`](/reference/u8.html) - 8-bit unsigned integer
+    - [`u16`](/reference/u16.html) - 16-bit unsigned integer
+    - [`u32`](/reference/u32.html) - 32-bit unsigned integer
+    - [`u64`](/reference/u64.html) - 64-bit unsigned integer
+    - [`u128`](/reference/u128.html) - 128-bit unsigned integer
+- **Float** - Decimal numbers with fractional components
+  - [`f32`](/reference/f32.html) - 32-bit floating-point number
+  - [`f64`](/reference/f64.html) - 64-bit floating-point number
+- **Rational** - Numbers represented as fractions of integers
+  - [`r64`](/reference/r64.html) - 64-bit rational number
+- **Complex** - Numbers with real and imaginary components
+  - [`c64`](/reference/c64.html) - 64-bit complex number
 
-- Integers: `1234`
-- Floats: `123.456`
-- Decimal: `0d1234567890`
-- Hexadecimal: `0x1234567890ABCDEF`
-- Octal: `0o12345670`
-- Binary: `0b100110101`
-- Scientific: `123e456` or `123E456`
-- Rational: `1/2` is the rational number 1 over 2, not 1 divided by 2.
-- Imaginary: `1234i`
-- Complex: `12.34+5.67i`
+Numeric literals can be expressed in various formats:
 
-Kind:
+- Floating-point numbers, expressed in standard decimal notation and scientific notation
+- Integers, expressed in decimal (base 10), hexadecimal (base 16), octal (base 8), and binary (base 2)
+- Rational numbers, expressed as fractions `a/b`, where `a` is the numerator and `b` is the denominator
+- Complex numbers, expressed in the form `a + bi` or `a + bj`, where `a` is the real part and `b` is the imaginary part
 
-`<number>` is a generic, unsized number type. Mech also supports fixed sized numbers e.g.: `<u8>`, `<f32>`, `<i64>` etc.
+(4.1.1) Floating-Point Literals
 
-(4.2) Strings
+Floating-point literals are used to represent decimal numbers with fractional components. They are flexible in that they can represent both very large and very small numbers, and also can represent integer values between -1.7e308 and 1.7e308 for `f64`, and between -3.4e38 and 3.4e38 for `f32`.
 
-Strings are encoded with UTF-8 and support linebreaks.
+Floating-point literals are expressed in standard decimal notation or scientific notation:
+
+```mech:disabled
+42         -- inferred as `f64`
+3.14       
+-0.001     
+2.5e3      
+-1.2E-2
+```    
+
+Each value is inferred as `f64` unless otherwise specified. To specify a specific type, floating-point literals can also be suffixed with a specific kind:
+
+```mech:disabled
+42<f32>
+3.14<f32>     
+-0.001<f64>
+2.5e3<f32>
+-1.2E-2<f64>
+```
+
+(4.1.2) Integer Literals
+
+Integer literals can be written in the following formats:
+
+```mech:disabled
+0d42       -- decimal
+0x2ABC     -- hexadecimal
+0o654      -- octal
+0b101010   -- binary
+```
+
+Decimals without a prefix are inferred as floating-point numbers (`f64`), while those with the `0d` prefix are inferred as signed integers (`i64`). Each of the other formats are also inferred as `i64` unless otherwise specified. Any integer literal can be suffixed with a specific kind to indicate its type:
+
+```mech:disabled
+42u8         -- unsigned 8-bit integer
+-15i16       -- signed 16-bit integer
+0xFF<u32>    -- unsigned 32-bit integer
+0d1000<u64>  -- signed 64-bit integer
+```
+
+Decimal literals can be signed or unsigned. Signed literal types include `i8`, `i16`, `i32`, `i64`, and `i128`. Unsigned literal types include `u8`, `u16`, `u32`, `u64`, and `u128`.
+
+(4.1.3) Rational Literals
+
+Rational numbers are used to represent fractions exactly as ratios of two integers. They are expressed in the form `a/b`, where `a` is the numerator and `b` is the denominator.
+
+Rational numbers are written as follows:
+
+```mech:disabled
+3/4
+-5/2
+7/7         -- A whole number represented as a rational
+```
+
+Two rational literals can represent the same numeric value but have different representations:
+
+```mech:ex 4.1.3
+x :=1/2     -- Represents `0.5`
+y := 2/4    -- Also represents `0.5`
+x == y      -- Evaluates to `true`
+```
+
+(4.1.4) Complex Literals
+
+Complex numbers are used to represent numbers with both real and imaginary components. They are expressed in the form `a + bi` or `a + bj`, where `a` is the real part and `b` is the imaginary part.
+
+Complex numbers are written as follows:
+
+```mech:disabled
+3+4i
+1-2j
+0+1i
+```
+
+The imaginary unit can be represented by either `i` or `j`. Both representations are equivalent and can be used interchangeably.
+
+(4.2) String
+
+String literals are written using double quotes `"`.
+
+```mech:disabled
+""
+"Hello, world!"
+"Multi
+Line
+String"
+"Unicode: 🤖🦾🦿"
+```
+
+Strings may contain spaces and punctuation. Whitespace inside a string literal is preserved.
+
+Escape sequences may be used for special characters:
 
 ```
-"Hello World"
-
-"Mulitline 
-Strings"
-
-"characters like \" and \\ are escaped with, \\ e.g. \\\""
+"line 1\nline 2"
+"quote: \""
+"tab\tseparated"
+"backslash: \\"
+```
+When rendered:
+```mech:disabled
+"line 1\nline 2"
+"quote: \""
+"tab\tseparated"
+"backslash: \\"
 ```
 
-Kind: 
+Raw string literals can be created using triple double quotes `"""`. In this form, escape sequences are not processed, and all characters are taken literally, including backslashes and quotes.
 
 ```
-<string>
+"""C:\Users\Name\Documents"""
+"""This is a "raw" \string\ literal."""
 ```
+When rendered: 
+```mech:disabled
+"""C:\Users\Name\Documents"""
+"""This is a "raw" \string\ literal."""
+```
+
+(4.2.1) String Concatenation
+
+Strings can be concatenated using the `+` operator:
+
+```mech:ex 3.2.1
+first := "Hello"
+second := "World"
+greeting := first + ", " + second + "!"
+```
+
+String concatentation is broadcast element-wise over matrices of strings:
+
+```mech:ex 3.2.2
+prefix := "Item"
+letters := ["A" "B" "C"]
+labels := prefix + letters
+```
+
+If both operands are matrices of strings, they must have compatible dimensions:
+
+```mech:ex 3.2.3
+m1 := ["a" "b"; "c" "d"]
+m2 := ["1" "2"; "3" "4"]
+result := m1 + m2
+```
+
+(4.2.2) Conversion to String
+
+All values can be converted to strings explicitly.
+
+```mech:ex 3.3
+x := 42
+s<string> := x
+```
+
+Use {{<[string]>}} to create a matrix of strings:
+
+```mech:ex 3.4
+m<[string]:2,2> := [1 2 3 4]
+```
+
+This converts a {{<[f64]:1,4>}} (row matrix of floats) to a {{<[string]:2,2>}} (square matrix of strings).
 
 (4.3) Boolean
 
-- True: `true` or `✓`
-- False: `false` or `✗`
+Boolean literals are written using the keywords `true` and `false`.
 
-Note: `true` and `false` are the only keywords built into the language.
-
-Kind:
-
-```
-<bool>
+```mech:disabled
+true
+false
 ```
 
-(4.4) Atoms
+Several alterantive forms are also accepted:
 
-Atoms are used as enum variants and unique keys. They are identifiers prefixed 
-with a grave. An atom evaluates to iteself and its kind is its identifier.
-
-```
-`A
+```mech:disabled
+✓  -- true
+✗  -- false
 ```
 
-Kind:
+(4.3.1) Logical Operations
 
+Boolean values support the following logical operations:
+
+```mech:disabled
+!true         -- false
+true && false -- false
+true || false -- true
 ```
-<`A>
+
+(4.3.2) Comparison Operations
+
+Comparison operators produce boolean results:
+
+```mech:disabled
+5 == 5
+3 != 4
+2 < 10
+```
+
+(4.3.3) Filtering
+
+An array of logical values can be used as an index to filter another array:
+
+```mech:ex 5.1
+x := [1 2 3 4]
+ix := x > 2
+x[ix]     -- selects elements where ix is true
+```
+
+(4.4) Atom
+
+Atoms are written using a leading colon `:` followed by an identifier:
+
+```mech:disabled
+:foo
+:help
+:my-atom
+:🐦
+:Δt
+```
+Atom names may be any valid identifier, including Unicode characters.
+
+Two atoms with the same name are identical:
+
+```mech:disabled
+a := :foo
+b := :foo
+a == b  -- evaluates to {{true}}
 ```
 
 (4.5) Empty
 
-Empty is a hole, it represents a value that has not been initialized yet, or a 
-collection that is empty. Empty's expressed as any number of underscore 
-characters:
+An empty value is written using one or more underscores `_`:
 
-```
+```mech:disabled
 _
 ___
 ```
 
-Kind:
-
-```
-<_>
-```
+Empty is used to represent missing values in tables and skipped elements in tuple destructuring.
 
 5. Variables
 -------------------------------------------------------------------------------
 
-Any of the afforementioned datatypes or literals can be assigned to a variable 
-for reference in other places.
+Variables are created using the `:=` operator:
 
-Define a variable x with value 123:
-
-```
+```mech:disabled
 x := 123
 ```
 
-By default, all numbers are f64 for maximum flexibility. For performance, you
-can specify a smaller-sized number. For instance, you can create an unsigned 
-8-bit integer:
+By default, all variables are immutable. To create a mutable variable, prefix the variable name with `~`:
 
-```
-y<u8> := 123
-z := 123<u8>
+```mech:ex 5.1
+~y := 456
+y = y + 1  -- valid
 ```
 
 Semicolons can be used to write multiple statements on one line:
 
-```
+```mech:disabled
 a := 123; b := 456;
 ```
 
-Here are some more examples:
+You can use a kind annotation in the variable declaration to constrain the variable to a specific kind:
 
-```
-c := [1 2 3]                -- a 1x3 row vector of f64 numbers
-d<[i64]:1,3> := [1 2 3]     -- a 1x3 row vector of i64 numbers
+```mech:disabled
+z<u8> := 255
 ```
 
-6. Collections
+6. Data Structures
 -------------------------------------------------------------------------------
 
-- Ordered elements, duplicates allowed
-    - (a) Vector (row/column)
-    - (b) Matrix (N-D)
-    - (c) Tuple
-- Unordered elements, no duplicates
-    - (d) Record
-    - (e) Table
-    - (f) Set
-    - (g) Map
+(6.1) Matrix
 
-(6.1) Vector
+Declare a matrix using square brackets `[]`.
 
-A matrix is a N-D collection of homogenous datatypes.
+Use semicolons `;` or newlines to separate rows. 
+
+Use commas `,` or spaces to separate columns.
 
 ```
-- Empty                 []              (0x0)
-- Scalar                [1]             (1x1) 
-- Row Vector            [1 2 3]         (1x3) 
-- Column Vector         [1;2;3]         (3x1) 
-- Also Column           [1              (3x1)
-                         2  
-                         3]
-- Nested                [[1],[2],[3]]   (1x3x1)                                     
-- Transpose             [1 2 3]'        (3x1)
+[1,2,3]   -- A row vector (1x3)
+[1 2 3]   -- The same row vector
+
+[1;2;3]   -- A column vector (3x1)
+[1        
+ 2
+ 3]       -- The same column vector
+
+[1,2;3,4] -- A matrix (2x2)
+[1 2
+ 3 4]     -- The same matrix
+[1 + 2; 3 + 4] -- Elements can be expressions
 ```
 
-Kind: 
+By default, all matrices are rank 2, meaning they have rows and columns. Elementes are indexed in a `[row, column]` format.
 
-```
-- Dynamic Row vector    <[u8]:1,_>
-- Scalar matrix         <[u8]:1> or <[u8]:1,1>
-- Column vector         <[u8]:5> or <[u8]:5,1>
-- Row vector            <[u8]:1,5>
-```
+When parsed and formatted, they look like this:
 
-Note: Vectors have at least 1 scalar dimension.
-
-(6.2) Matrix
-
-```
-- Matrix                [1 2; 3 4]       (2x2)
-- Also Matrix           [1 2             (2x2)
-                         3 4]            
-- Transpose             [1 2; 3 4; 5 6]' (2x3)
+```mech
+-- Row Vector
+[1 2 3]  
+-- Column Vector
+[1;2;3]  
+-- Matrix
+[1 2;3 4]
+-- Vector from expressions
+[1 + 2; 3 + 4] 
 ```
 
-Mech supports fancy box drawing tables:
+(6.1.1) Broadcast Operations 
 
-```
-╭───┬───┬───╮
-│ 1 │ 2 │ 3 │
-├───┼───┼───┤
-│ 4 │ 5 │ 6 │
-├───┼───┼───┤
-│ 7 │ 8 │ 9 │
-╰───┴───┴───╯
+If matrices have the same dimension, standard arithmetic operations are performed element-wise:
+
+```mech:ex 6.1.1
+m1 := [1 2 3; 4 5 6]
+m2 := [7 8 9; 10 11 12]
+m1 + m2  -- Adds the two matrices element-wise
 ```
 
-Kind:
+If one of the operands is a scalar, it will be added or subtracted from each element of the matrix:
 
-```
-- Dynamic matrix        <[u8]>
-- 2D Matrix             <[u8]:2,3>
-- 3D Matrix             <[u8]:2,3,4>
+```mech:ex 6.1.2
+m := [1 2 3 4 5] 
+m + 10  -- Adds 10 to each element of the vector
 ```
 
 (6.3) Tuple
 
-A tuple is a collection of values of different data types stored in a single 
-entity, allowing for the storage and manipulation of multiple values together.
+A tuple is a collection of values of different data types stored in a single entity, allowing for the storage and manipulation of multiple values together.
+
+Tuples are defined using parentheses `()` with elements separated by commas.
 
 ```
-- Empty   ()
-- Single  (1)
-- Multi   (1,1,3)
-- Nested  (1,(2,3))
-- Mixed   (1, true, "Hello")
+(1, true)
+("Hello", 42, false)
+(1, ("Hello", false))
 ```
 
-Kind:
+When parsed and rendered, this code will appear as:
 
+```mech:disabled
+(1, true)               -- two-tuple of f64 and bool
+("Hello", 42, false)    -- three-tuple of string, f64, and bool
+(1, ("Hello", false))   -- nested tuple
 ```
-- Two-tuple of u8 and string    <(u8,string)>
-- Three-tuple of u8s            <(u8,u8,u8)>
+
+(6.3.1) Element Access
+
+Tuple elements are accessed by their 1-based index using the `.` operator.
+
+```mech:ex 6.3.1
+q := (10, "b", true)
+q.1
+```
+
+(6.3.2) Destructuring
+
+Tuples can be destructured into variables:
+
+```mech:ex 6.3.2
+a := (10, 11, 12)
+(x, y, z) := a
+x + y + z
 ```
 
 (6.4) Record
 
-A set of heterogeneously typed fields and their associated data.
+Records are written using curly braces `{}` with named fields. Each field is written as `name: value` and fields are separated by commas.
 
 ```
-- Simple:   { x: 1 y: "a", z: [1 2 3] }
-- Typed:    { x<u8>: 1, y<string>: "a", z<[u8]:3,1>: [1;2;3] }
-- Nested:   { a: {b: 1, c: "hi"}, b: [1;2;3] }
-- Multiline
+{ x: 1, y: true }
+{ name: "Alice", age: 42, active: true }
 ```
+
+When parsed and rendered, this code will appear as:
+
+```mech:disabled
+{ x: 1, y: true }
+{ name: "Alice", age: 42, active: true }
+```
+
+Records may be written inline or across multiple lines for readability:
 
 ```
 {
-    a: {
-        b: 1, 
-        c: "hi"
-    }, 
-    b: [
-        1
-        2
-        3
-    ]
+  x: 1.2,
+  y: true,
+  label: "pt1"
 }
-```
-
-Kind:
-
-```
-<{u8,string}:1,2>
 ```
 
 (6.5) Table 
 
-A table is set of records.
-
-Define a table with two columns -- one named `x` of kind `f32`; and the named 
-`y` of kind `u8`:
+Tables are defined using the pipe `|` character. Each column is defined with a name and a kind, which describes the type of data it holds.
 
 ```
-{ x<f32>  y<u8> | 
-  1.2     9 
-  1.3     8     }
+| x&ltf32&gt  y&ltbool&gt | 
+|  1.2     true   |
+|  1.3     false  |
 ```
 
-They can be written inline:
+This creates a table with two columns, `x` of kind `f32` and `y` of kind `bool`:
 
-```
-{ x<f32> y<u8> | 1.2 9; 1.3 8 }
-```
-
-The `_` kind indicates column elements can be hetergeneous.
-
-```
-{ x<_>   y<_> |
-  1.2    true 
-  "Hi"   8    }
+```mech:disabled
+| x<f32>  y<bool> | 
+|  1.2     true   |
+|  1.3     false  |
 ```
 
-Elements do not have to be fully filled in:
+You can write tables inline as well:
 
 ```
-{ x<u8>  y<string> z<[u8]:3> |
-   _      "a"       [1;2;3] 
-   4      "b"          _    
-   7       _        [7;8;9]  }
+| x&ltf32&gt  y&ltbool&gt | 1.2 true | 1.3 false |
 ```
-
-Tables can be fancy too:
-
-```
-╭──────────────────────────────╮
-│ x<u8>   y<string>  z<[u8]:3> │
-├───────┬──────────┬───────────┤
-│   _   │   "a"    │  [1;2;3]  │
-├───────┼──────────┼───────────┤
-│   4   │   "b"    │     _     │
-├───────┼──────────┼───────────┤
-│   7   │    _     │  [7;8;9]  │
-╰───────┴──────────┴───────────╯
-```
-
-Kind: 
-
-```
-<{u8,string,[u8]:3}:3,3>
-```
-Note: Tables are more flexible and expressive than matricies, but are slower.
 
 (6.6) Set
 
-An unordered collection of unique, homogenous elements.
+A set is an unordered collection of unique elements. They are defined using curly braces `{}`.
+
+Elements are separated by commas `,`. Duplicate elements are automatically removed.
+
+```mech:disabled
+{}                 -- An empty set
+{1, 2, 3}          -- A set of numbers
+{"a", "b", "c"}    -- A set of strings
+{1, 1, 2, 3}       -- Duplicates are removed
 ```
-- Empty:     {} or {_}
-- Singleton: {1}
-- Basic:     {1,2,3}
-- Nested:    {{1,2},{3,4}}
-```
-Kind:
-```
-<{u8}:3>
-```
+
 (6.7) Map
 
-An unordered collection of unique keys associated with a corresponding value.
-```
-- Empty:             {_:_}
-- Single element:    {"a":1}
-- Multiple elements: {"a":10, "b":20, "c": 30}
-- Nested:            {"a":{"a":10}}
-- Multiline:
-    { "a" : 10 
-      "b" : 20
-      "c" : 30 }
-```
-Kind:
+You can define maps using curly braces `{}` with a colon `:` to separate keys from values.
 
-- A map of strings to u8s: `<{string:u8}>`
-- A map of strings to a map of strings to u8: `<{string:{string:u8}}>`
+```mech:disabled
+{"a": 1}                 -- A single key-value pair
+{"a": 10, "b": 20}       -- Multiple key-value pairs
+{"a": {"b": 2}}          -- Nested maps
+{
+  "a": 10
+  "b": 20
+  "c": 30
+}                        -- Multi-line format
+```

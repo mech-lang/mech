@@ -134,7 +134,7 @@ impl MechFileSystem {
                 Err(e) => {
                   println!("{} Failed to load: {}", "[File Error]".truecolor(246,98,78), f.display());
                   return Err(MechError2::new(
-                    WatchPathFailed { file_path: f.display().to_string(), source_err: format!("{:?}",e) },
+                    WatchPathFailed { file_path: f.display().to_string(), source_err: format!("{:#?}",e) },
                     None
                   ).with_compiler_loc().with_source(e));
                 },
@@ -345,7 +345,7 @@ impl MechSources {
     
     // update the tree
     let (new_tree, new_html) = match source {
-      MechSourceCode::String(ref source) => match parser::parse(&source) {
+      MechSourceCode::String(source) => match parser::parse(&source) {
         Ok(tree) => {
           let mut formatter = Formatter::new();
           let mech_html = formatter.format_html(&tree,self.stylesheet.clone(),self.shim.clone());
@@ -354,7 +354,7 @@ impl MechSources {
         }
         Err(err) => {return Err(err)},
       },
-      MechSourceCode::Html(ref html) => {
+      MechSourceCode::Html(html) => {
         // TODO If it's HTML, we can parse it as a Mech source code.
         (MechSourceCode::Tree(core::Program{title: None, body: core::Body{sections: vec![]}}), 
           MechSourceCode::Html(html.clone()))
@@ -383,7 +383,7 @@ impl MechSources {
   pub fn add_code(&mut self, code: &MechSourceCode) -> MResult<()> {
     
     match code {
-      MechSourceCode::String(ref source) => {
+      MechSourceCode::String(source) => {
         let tree = parser::parse(&source)?;
         let mut formatter = Formatter::new();
         let mech_html = formatter.format_html(&tree,self.stylesheet.clone(),self.shim.clone());
@@ -396,7 +396,7 @@ impl MechSources {
         self.html.insert(file_id, MechSourceCode::Html(mech_html));
         self.id_map.insert(file_id,PathBuf::new());
       },
-      MechSourceCode::Tree(ref tree) => {
+      MechSourceCode::Tree(tree) => {
         let mut formatter = Formatter::new();
         let mech_html = formatter.format_html(&tree,self.stylesheet.clone(),self.shim.clone());
         //let mech_html = Formatter::humanize_html(mech_html);

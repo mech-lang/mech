@@ -1,0 +1,126 @@
+indexing
+===============================================================================
+
+%% An `index` is a way to access elements of a data structure, such as arrays, matrices, or tables, using specific criteria or positions.
+
+1. Introduction
+-------------------------------------------------------------------------------
+
+There are various ways to access elements within data structures in Mech. The most common methods are:
+
+- **Regular Indexing** - Accessing elements using specific integer positions.
+- **Matrix Slicing** - Accessing multiple elements at once using ranges or entire rows/columns.
+- **Logical Indexing** - Accessing elements based on boolean conditions.
+- **Dot Indexing** - Accessing fields or properties of structured data types.
+
+2. Matrix Slicing
+-------------------------------------------------------------------------------
+
+Slicing allows you to access multiple elements at once, either entire rows or columns, or specific ranges of rows and columns.
+
+The `:` operator can be used to access entire rows or columns:
+
+You can slice it in various ways. For a matrix x with `N` rows and `M` columns, the following indexing operations are valid:
+
+| Syntax              | Description                        | Resulting Size   |
+|---------------------|------------------------------------|------------------|
+| {{x[:]}}              | Slice all elements                 | `[N*M x 1]`      |
+| {{x[1,:]}}            | Slice a row                        | `[1 x M]`        |
+| {{x[:,2]}}            | Slice a column                     | `[N x 1]`        |
+| {{x[1..=2,:]}}        | Slice a range of rows              | `[2 x M]`        |
+| `x[[1,3],:]`        | Slice specific rows                | `[2 x M]`        |
+| `x[[1,3],[1,3]]`    | Slice specific rows and columns    | `[2 x 2]`        |
+| `x[[1 1 2 2],:]`    | Slice the rows multiple times      | `[4 x M]`        |
+
+For more, see the [`matrix`](/reference/matrix.mec#Slicing) documentation.
+
+3. Logical Indexing
+-------------------------------------------------------------------------------
+
+A logical index is a boolean array (`true` / `false`) of the same size
+as the data being indexed. Elements corresponding to `true` are selected; those
+corresponding to `false` are ignored.
+
+```mech:logical
+x := [ 1  -2   3
+       0   5  -1 
+       1   0   0 ]
+```
+
+| Expression    | Description            | Result              |
+|---------------|------------------------|---------------------|
+| `x[x > 0]`    | All positive elements  | `[1, 3, 5]`         |
+| `x[x < 0]`    | All negative elements  | `[-2, -1]`          |
+| `x[x == 0]`   | All zero elements      | `[0 0 0]`           |
+| `x[x != 0]`   | All non-zero elements  | `[1, -2, 3, 5, -1]` |
+
+Logical indexing can also be applied per row or per column by using logical
+vectors.
+
+```mech:logical
+rows := [true, false]
+cols := [false, true, true]
+```
+
+| Syntax         | Description                            | Resulting Size |
+|----------------|----------------------------------------|----------------|
+| `x[rows, :]`   | Select rows where `rows` is `true`     | `[1 x M]`      |
+| `x[:, cols]`   | Select columns where `cols` is `true`  | `[N x 2]`      |
+| `x[rows,cols]` | Select rows and columns logically      | `[1 x 2]`      |
+
+You can combine logical conditions using logical operators:
+
+```mech:logical
+x[(x > 0) && (x < 4)]
+```
+
+This selects `[1, 3]`, the elements greater than `0` and less than `4`.
+
+Logical indexing can be combined with regular indexing for more complex selections. For example, to select positive elements from the first two rows:
+
+```mech:logical
+x[1..=2, :][x[1..=2, :] > 0]
+```
+
+4. Dot Indexing
+-------------------------------------------------------------------------------
+
+Dot indexing is used to access fields or properties of structured data types, such as records or objects.
+
+```mech:dot-indexing
+person := {
+  name: "Alice",
+  age: 30,
+  address: {
+    street: "123 Red Queen St",
+    city: "Wonderland"
+  }
+}
+```
+
+To access the fields of the `person` record, you can use dot notation:
+
+| Expression            | Description                  | Result               |
+|-----------------------|------------------------------|----------------------|
+| `person.name`         | Access the `name` field      | `"Alice"`            |
+| `person.age`          | Access the `age` field       | `30`                 |
+| `person.address.city` | Access the `city` field      | `"Wonderland"`       |
+
+Dot indexing can also be used with tables:
+
+```mech:dot-indexing
+employees := 
+| name<string> age<u8> position<string> |
+| "Bob"        28      "Engineer"     |
+| "Carol"      34      "Manager"      |
+| "Dave"       25      "Intern"       |
+| "Eve"        30      "Designer"     |
+```
+
+You can use dot indexing to access columns in the table:
+
+```mech:dot-indexing
+employees.name
+```
+
+This returns the `name` column: `["Bob", "Carol", "Dave", "Eve"]`.

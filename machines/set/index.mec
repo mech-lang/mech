@@ -14,9 +14,9 @@ Set related functions.
 3. Info
 -------------------------------------------------------------------------------
 
-stats/machine := {
+set/machine := {
   name: "set"
-  version: "v0.2.70"
+  version: "v0.3.0"
   authors: ["Natalie Dumler", "Steven McPhillimey", "Liam Messinger", "Corey Montella"]
   machine-url: "https://gitlab.com/mech-lang/machines/set"
   license: "Apache-2.0"}

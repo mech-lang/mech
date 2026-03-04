@@ -97,12 +97,15 @@ pub enum TokenKind {
   Backslash, Bar, BoxDrawing,
   Caret, CarriageReturn, CarriageReturnNewLine, Colon, CodeBlock, Comma,
   Dash, DefineOperator, Digit, Dollar,
-  Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Error, ErrorSigil, Exclamation, 
+  Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Error, ErrorSigil, EscapedChar, Exclamation, 
   False, FloatLeft, FloatRight, FootnotePrefix,
   Grave, GraveCodeBlockSigil,
   HashTag, HighlightSigil, HttpPrefix,
   IdeaSigil, Identifier, ImgPrefix, InfoSigil, InlineCode, 
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
+  #[cfg(feature = "mika")]
+  Mika(Mika), 
+  MikaSection, MikaSectionOpen, MikaSectionClose,
   Newline, Not, Number,
   OutputOperator,
   Percent, Period, Plus,
@@ -534,6 +537,8 @@ pub enum SectionElement {
   Image(Image),
   List(MDList),
   MechCode(Vec<(MechCode,Option<Comment>)>),
+  #[cfg(feature = "mika")]
+  Mika((Mika, Option<MikaSection>)),
   Paragraph(Paragraph),
   Subtitle(Subtitle),
   Table(MarkdownTable),
@@ -551,6 +556,17 @@ impl SectionElement {
 
   pub fn tokens(&self) -> Vec<Token> {
     match self {
+      #[cfg(feature = "mika")]
+      SectionElement::Mika((mika, mika_section)) => {
+        let mut tokens = vec![];
+        tokens.append(&mut mika.tokens());
+        if let Some(mika_section) = mika_section {
+          for mika_section_element in &mika_section.elements.elements {
+            tokens.append(&mut mika_section_element.tokens());
+          }
+        }
+        tokens
+      },
       SectionElement::FencedMechCode(c) => {
         let mut tokens = vec![];
         for (c, _) in &c.code {
@@ -1614,6 +1630,7 @@ pub enum Kind {
   Option(Box<Kind>),
   Scalar(Identifier),
   Tuple(Vec<Kind>),
+  Kind(Box<Kind>),
 }
 
 impl Kind {
@@ -1655,6 +1672,7 @@ impl Kind {
       Kind::Map(x, y) => x.tokens().into_iter().chain(y.tokens()).collect(),
       Kind::Scalar(x) => x.tokens(),
       Kind::Atom(x) => x.tokens(),
+      Kind::Kind(x) => x.tokens(),
       Kind::Empty => vec![],
       Kind::Any => vec![],
     }
@@ -1876,6 +1894,7 @@ pub enum RealNumber {
   Float((Whole,Part)),
   Hexadecimal(Token),
   Integer(Token),
+  TypedInteger((Token,KindAnnotation)),
   Negated(Box<RealNumber>),
   Octal(Token),
   Rational((Numerator,Denominator)),
@@ -1886,7 +1905,26 @@ impl RealNumber {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
       RealNumber::Integer(tkn) => vec![tkn.clone()],
-      _ => todo!(),
+      RealNumber::TypedInteger((tkn, _)) => vec![tkn.clone()],
+      RealNumber::Float((whole, part)) => vec![whole.clone(), part.clone()],
+      RealNumber::Binary(tkn) => vec![tkn.clone()],
+      RealNumber::Hexadecimal(tkn) => vec![tkn.clone()],
+      RealNumber::Octal(tkn) => vec![tkn.clone()],
+      RealNumber::Decimal(tkn) => vec![tkn.clone()],
+      RealNumber::Rational((num, den)) => vec![num.clone(), den.clone()],
+      RealNumber::Scientific(((whole,part), exponent)) => {
+        let mut tokens = vec![whole.clone(), part.clone()];
+        let (sign, whole_exp, part_exp) = exponent;
+        tokens.push(Token::new(TokenKind::Plus, SourceRange::default(), if *sign { vec!['+'] } else { vec!['-'] }));
+        tokens.push(whole_exp.clone());
+        tokens.push(part_exp.clone());
+        tokens
+      }
+      RealNumber::Negated(x) => {
+        let mut tokens = vec![Token::new(TokenKind::Dash, SourceRange::default(), vec!['-'])];
+        tokens.append(&mut x.tokens());
+        tokens
+      }
     }
   }
   pub fn to_string(&self) -> String {
@@ -1905,6 +1943,7 @@ impl RealNumber {
         let part_str = part.to_string();
         format!("{}{}.{}/10^{}", whole.to_string(), part.to_string(), sign_str, whole_str)
       }
+      RealNumber::TypedInteger((tkn, kind)) => format!("{}{}", tkn.to_string(), kind.kind.tokens().iter().map(|t| t.to_string()).collect::<String>()),
       RealNumber::Negated(x) => format!("-{}", x.to_string()),
     }
   }

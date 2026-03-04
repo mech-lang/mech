@@ -56,11 +56,17 @@ use mech_logic::*;
 #[cfg(feature = "compare")]
 use mech_compare::*;
 #[cfg(feature = "range_inclusive")]
-use mech_range::inclusive::RangeInclusive;
+use mech_range::inclusive::*;
+#[cfg(feature = "range_inclusive")]
+use mech_range::inclusive_increment::*;
 #[cfg(feature = "range_exclusive")]
-use mech_range::exclusive::RangeExclusive;
+use mech_range::exclusive::*;
+#[cfg(feature = "range_exclusive")]
+use mech_range::exclusive_increment::*;
 #[cfg(feature = "set")]
 use mech_set::*;
+#[cfg(feature = "string")]
+use mech_string::*;
 
 #[cfg(feature = "matrix")]
 use na::DMatrix;
@@ -78,6 +84,7 @@ pub mod functions;
 pub mod statements;
 pub mod expressions;
 pub mod mechdown;
+#[cfg(feature = "functions")]
 pub mod frame;
 
 pub use mech_core::*;
@@ -90,6 +97,7 @@ pub use crate::functions::*;
 pub use crate::statements::*;
 pub use crate::expressions::*;
 pub use crate::mechdown::*;
+#[cfg(feature = "functions")]
 pub use crate::frame::*;
 
 #[cfg(feature = "access")]

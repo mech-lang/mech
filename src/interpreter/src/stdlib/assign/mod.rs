@@ -7,6 +7,10 @@ pub mod matrix;
 pub mod record;
 #[cfg(feature = "table")]
 pub mod table;
+#[cfg(feature = "map")]
+pub mod map;
+#[cfg(feature = "tuple")]
+pub mod tuple;
 
 #[cfg(feature = "matrix")]
 pub use self::matrix::*;
@@ -14,6 +18,10 @@ pub use self::matrix::*;
 pub use self::record::*;
 #[cfg(feature = "table")]
 pub use self::table::*;
+#[cfg(feature = "map")]
+pub use self::map::*;
+#[cfg(feature = "tuple")]
+pub use self::tuple::*;
 
 // ----------------------------------------------------------------------------
 // Assign 
@@ -160,7 +168,7 @@ impl NativeFunctionCompiler for AssignColumn {
       #[cfg(feature = "table")]
       ValueKind::Table(_,_) => AssignTableColumn{}.compile(&arguments),
       #[cfg(feature = "record")]
-      ValueKind::Record(_) => AssignRecordColumn{}.compile(&arguments),
+      ValueKind::Record(_) => AssignRecordField{}.compile(&arguments),
       _ => Err(MechError2::new(
           UnhandledFunctionArgumentKind1 { arg: src.kind(), fxn_name: "assign/column".to_string() },
           None

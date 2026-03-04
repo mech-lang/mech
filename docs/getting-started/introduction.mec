@@ -6,11 +6,25 @@ Introduction
 
 Hello and welcome to the documentation for Mech, a programming language and platform for developing data-driven, reactive systems. Mech authors build programs by defining data dependencies, transformations, and state machines. This makes Mech particularly well-suited for applications that require real-time data processing, such as simulations, visualizations, and cyber-physical systems like robots.
 
-(1.1) An Example: FizzBuzz
+(1.1) Example Programs
 
-Here's Mech some code:
+To give you a sense of what Mech looks like, here are a few example programs that demonstrate some of its core features and syntax.
 
-```mech
+(1.1.1) Hello, World!
+
+First, the classic program which prints the string "Hello, World!" to the console:
+
+```mech:hello, world!
+"Hello World!"
+```
+
+In Mech, the result of the final expression in a program is automatically returned and printed to the console, without needing an explicit print statement.
+
+(1.1.2) FizzBuzz
+
+Next, a simple FizzBuzz program that prints the numbers from 1 to 10, replacing multiples of 2 with "Fizz", multiples of 3 with "Buzz", and multiples of both with "FizzBuzz":
+
+```mech:fizzbuzz
   x := 1..=10               -- A row vector of numbers from {1} to {10}
   ~out<[string]> := x       -- Convert `x` into mutable string vec
   
@@ -22,71 +36,109 @@ Here's Mech some code:
   out[ix2 && ix3] = "✨🐝"  -- Set multiples of both to {"✨🐝"}
 ```
 
-This short example demonstrates several key features of the language:
+This example demonstrates several core Mech features:
 
 - **Concise syntax**: Expressive and flexible, with no need for keywords or semicolons; Mech programs are generally shorter than in other languages.
+- **Declarative style**: Focus on what to compute, not how to compute it, leading to clearer and more maintainable code.
 - **Broadcast operations**: Vector operations apply elementwise automatically, removing loops and enabling efficient vectorization.
+- **Static typing**: Types are checked at compile time, catching errors early and improving performance.
 - **Type inference**: Variable and expression types are inferred, so explicit type declarations are often unnecessary.
 - **Immutable by default**: Variables are immutable unless specified, promoting safer code and easier reasoning.
 - **Logical indexing**: Select and manipulate vector elements via conditions, enabling declarative iteration and parallel execution.
-- **Rich text formatting**: Comments and code support rich formatting, making documentation clear and readable.
+- **Rich text formatting**: Comments and code support rich formatting using a Markdown-like syntax called Mechdown, making documentation clear and readable.
 
-For a complete list of planned features and their implementation statuses, see the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html).
+(1.1.3) Matrix Multiplication
 
-(1.2) The Vision and Need
+Here is an example of matrix multiplication in Mech:
 
-Most popular languages today were conceived at a time before the rise of the Internet, smartphones, cloud computing, and now robotics and artificial intelligence[^1]. They've managed to stay relevant by continually evolving and adapting to new paradigms and use cases, which takes the form of adding new language features, libraries, frameworks, and middleware on top of the core language. This process of evolution has worked for a long time, but now with AI we are entering a new era of computing that demands a fresh approach. The rules of computing have changed, and langauges designed even 10 years ago are struggling to keep up to modern computing demands.
+```mech:matrix multiplication
+  A := [1 2; 3 4]       -- 2x2 Matrix
+  B := [1 2 3; 4 5 6]   -- 2x3 Matrix
+  C := A ** B           -- Matrix multiplication resulting in a 2x2 Matrix
+```
 
-But what if we approached it from the opposite direction? Instead of starting from a language of the past and layering on compatibility for the present, what if we start in the context of the present and work backwards to design a language that fits the needs of today best, without worrying about baggage from the past? Could such a language be simpler, more powerful, more expressive, and easier to use? Would the design turn out substantively different from the languages we are currently retrofitting for the present? Would it allow programmers to build more reliable, more performant, and easier-to-maintain systems?
+Mech also features robust integrated Linear Algebra capabilities, making it easy to work with matrices and vectors. In this example, we define two matrices `A` and `B`, and then compute their product `C` using the `**` operator. These calculations are checked for dimensional compatibility at compile time, rejecting any program at compiletime which would result in a dimension mismatch.
 
-These are the foundational questions the Mech project aims to answer. We are combing through 70 years of programming language history, taking the most promising ideas -- some of which have achieved mainstream success, many of which have only begun to be explored -- and reimagining them for the modern era. The result is a language and platform designed from the ground up to seriously tackle the incidental complexity that has accrued in software development over the past several decades.
+(1.1.4) Gaussian Elimination
 
-That's a tall order, but we believe it's necessary to build the next generation of software systems capable of meeting the demands of the future. These systems will need to be more adaptive, more resilient, and more capable of handling the complexities of the real world. They will be driven by streams of data from a variety of sources, processed in real time, executed on heterogeneous hardware and software platforms, and deployed over networks distributed all over the world. Not only that, the actual software will not be written by humans, but generated and optimized by artificial intelligence systems. And it won't be executed on a machine tied to a desk, but on a robot that can move in the world and has agency. 
+Here is an example of performing Gaussian elimination to solve a system of linear equations:
 
-We call these "data-driven, reactive systems", and Mech is designed to be *the* language and platform for building them.
+```mech:gaussian elimination
+A := [2  1 -1
+     -3 -1  2
+     -2  1  2]   -- 3x3 Matrix to represent coefficients
 
-(1.3) Why Mech?
+b := [8 -11 -3]' -- 3x1 Column Vector to represent constants
 
-Mech is designed to make building data-driven systems easier by providing a reactive programming model based on defining data dependencies and transformations. Mech also provides a new AI-first programming model that allows users to write Mech programs without even knowing the language -- an idea that is very hard to implement on top of languages not designed for this new frontier.
+x := A \ b       -- Solves the system Ax = b for x
+```
 
-Mech programs can be thought of as feedback control systems, where data flows through a network of transformations and state machines that react to changes in the data. This covers a lot of common use cases:
+The `\\` operator runs a Gaussian elimination algorithm to solve the system of equations represented by the matrix `A` and vector `b`. The result is stored in vector `x`, which contains the solution to the equations.
+
+(1.1.5) Friends-of-Friends
+
+Mech has a `set` datastructure with support for set comprehensions and relational algebra. Here is an example that finds the friends-of-friends for a given user in a social network:
+
+```mech:friends-of-friends
+pairs := {(1, 2), (1, 3), (2, 8), (3, 5), (3, 9)}           
+user := 1                                                   
+{fof | (u, f) <- pairs, (f, fof) <- pairs, u == user}
+```
+
+The solution is `{8, 5, 9}` because user `1` is friends with `2`, who is friends with `8`; and user `1` is also friends with `3`, who is friends with `5` and `9`.
+
+Set comprehensions operate over sets, and support pattern matching and data joining. In this case, because we used the same symbol `f` in two different generators, we defined a natural join over the friend-pairs set, drawing relationships between elements.
+
+(1.2) Why Mech
+
+(*)> Because you have structured data, and you want to program some sort of behavior when it changes.
+
+Mech programs start with data. You define data structures, and then describe how they relate to each other through formulas and state machines. The Mech compiler and runtime automatically determine how data flows through your program, and optimizes it for performance. When underlying data change, Mech updates all dependent data automatically. This makes it easier to build systems that react to change, without having to write custom event loops or bring in large frameworks.
+
+Mech is an embeddable language, meaning you can integrate it into existing applications and systems. This allows you to leverage Mech's data-driven programming model without having to rewrite your entire codebase, so the cost of adoption is low.
+
+You don't even have to use Mech as a full programming language, because it's also a pretty good presentation language as well. Mechdown, the markup language used to write this documentation, is designed to be both human-readable and machine-executable. This means you can write documents that are also valid Mech programs, as a front-end for your non-Mech systems.
+
+Over time, you can use more Mech incrementally where it makes the most sense and brings the most leverage, starting with small scripts and moving to larger programs as you become more comfortable with the language.
+
+(1.3) Use Cases
+
+Mech programs can be thought of as feedback control systems, which are systems that maintain a desired state by continuously adjusting their behavior based on changes in input data. This program architecture is surprisingly general, and covers a variety of common use cases:
 
 - Games - receives user input from a game controller, updates internal player scores and runs game logic, then renders the game to the screen.
 - Embedded Systems - sensors make environmental readings and update the device, which reacts by controlling actuators or sending messages.
 - User Interfaces - the user clicks a button or types on their keyboard, which changes the UI state, which is then rendered to the screen.
 - Data Science - the user loads data from a source and processes it, which updates visualizations or statistical models.  
 - Robotics - sensor readings from cameras and LIDAR are processed by the robot to update its internal belief, which is used to plan and execute actions in the physical world.
-- Web Applications - user interactions and network events update the application state, which is then rendered to the DOM (Document Object Model) for display in the browser.
+- Web Applications - user interactions and network events update the application state, which is then rendered to the DOM for display in the browser.
+- Financial Systems - market data and user transactions update the system state, which is then used to make trading decisions or generate reports.
 
 If you are building one of these types of systems, Mech may be a good fit for your project!
 
 3. Programming System
 -------------------------------------------------------------------------------
 
-Mech comes with integrated tools for data transformation, distribution, resource monitoring, and program optimization. We call this the "Platform", which is distinct from the "Language", which is the syntax and semantics used to write Mech programs.
-
-In Mech, programmers define data and their relationships. Then they transformation these data with a rich set of operators and functions. Mech's compiler and runtime automatically determine how data flows through programs, and optimizes them for performance. When underlying data change, Mech updates all dependent data automatically. The Mech Platform also serializes, distributes, and logs your data. Together, this allows you to build efficient, data-driven, distributed systems that react to change, without having to write custom event loops or bring in large frameworks.
-
 (3.1) Overview
 
-The Mech programming platform consists of four parts:
+The Mech programming system consists of four parts:
 
-1. **A data description language**, which allows you to define the structure of your data and how it can be transformed.
-2. **A reactive programming model**, based on state machines, which allows you to write systems that can take advantage of asynchrouns and parallel program execution. `WIP`
-3. **A distributed execution engine**, which allows you to run Mech programs across multiple machines in a variety of environments. `WIP`
-4. **A rich set of "machines"**, libraries, tools, and data sources which provide a wide range of functionality. `WIP`
+1. **Mech** - The programming language proper, which includes the syntax, semantics, and core libraries for writing Mech programs.
+2. **Mechdown** - A lightweight markup language for writing Mech documentation and literate programs.
+3. **Standard Library** - A collection of modules and functions that provide common functionality for Mech programs.
+4. **Tools** - A set of command-line tools and utilities for working with Mech programs.
+5. **Notebook** - An interactive notebook environment for writing and executing Mech code in a rich, document-like interface.
 
 (3.2) Tools
 
-- `mech` - the Mech programming language toolchain, which includes:
+- [`mech`](https://github.com/mech-lang/mech) - the Mech programming language toolchain, which includes:
     - Parser and compiler for the text-based Mech syntax
     - Runtime for executing Mech programs
     - REPL for interactive programming
     - Formatter for formatting Mech code into canonical style or HTML documentation.
     - Server for serving Mech programs to a wasm client
     - Language Server Protocol implementation
-- `mech-wasm` - a wasm-based client for running Mech programs in the browser or other wasm environments.
-- `mech-notebook` - a notebook editor for Mech that runs natively on Windows, macOS, and Linux, and also supports running in the browser via `mech-wasm`.
+- [`mech-wasm`](https://github.com/mech-lang/mech/tree/main/src/wasm) - a wasm-based client for running Mech programs in the browser or other wasm environments.
+- [`mech-notebook`](https://github.com/mech-lang/mech/tree/main/notebook) - a notebook editor for Mech that runs natively on Windows, macOS, and Linux, and also supports running in the browser via `mech-wasm`.
 
 (3.3) Features
 
@@ -95,14 +147,16 @@ Some of the key features of the Mech programming platform include:
 - **Automatic data propagation**: Mech automatically tracks data dependencies and propagates changes through the program, ensuring that all dependent data are updated correctly.
 - **Vectorized operations**: Mech supports vectorized operations, allowing you to perform computations on entire arrays of data without explicit loops, which leads to more concise and efficient code.
 - **Live, literate programming**: Mech supports live literate programming environment, meaning you can write and execute code in an interactive notebook-style interface, with rich text formatting and inline documentation.
-- **Distribution and serialization**: Mech programs can be easily distributed across multiple machines, and all data can be serialized and deserialized automatically, including entire functions and programs.
+- **Distribution and Serialization**: Mech programs can be easily distributed across multiple machines, and all data can be serialized and deserialized automatically, including entire functions and programs.
 - **Time travel debugging**: Mech's runtime supports time travel debugging, allowing you to step forwards and backwards through program execution to inspect the state of your data at any point in time.
-- **AI-optimized**: Mech is designed to be particularly amenable to the architectures and techniques used in artificial intelligence systems, making it easier for AI to understand and write Mech code even without having been trained on it.
+- **AI-optimized**: Mech is designed to work with AI systems, making it easier for AI to understand and write Mech code even without having been trained on it.
 
 For a complete list of features and the statuses of their implementations, see the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html).
 
-4. About this Documentation
+4. About This Documentation
 -------------------------------------------------------------------------------
+
+(4.1) Structure
 
 This documentation is designed to help you get started with Mech, understand its core concepts, and provide guidance on how to use the language effectively. It is structured as follows:
 
@@ -111,18 +165,35 @@ This documentation is designed to help you get started with Mech, understand its
 3. **Guides**: provides practical guides and tutorials for using Mech, including a quick introduction to the language, tutorials for specific use cases, and guides for developers coming from other programming languages.
 4. **Design Documents**: information on the design principles behind Mech, including the language specification, design principles, syntax design notes, and the roadmap for future development, as well as the history of the language.
 
-(i)> This documentation is written in Mechdown, a lightweight markup language that is designed simulatneously with Mech. This means that each document is a valid program that can be executed on the Mech platform.
+(4.2) Conventions
+
+This documentation uses several conventions to help you navigate and understand the content:
+
+- **Executable Code Blocks**: Mech code examples are presented in code blocks, with syntax highlighting to improve readability.
+- **Links**: hyperlinks to other sections of the documentation or external resources are provided throughout the text for easy navigation.
+- **Module Links**: references to standard library functions and modules are indicated differently to distinguish them from regular text.
+  - This is a reference to the [`set`](/stdlib/set/index.html) module.
+  - This is a reference to the [`set/union`](/stdlib/set/union.html) function.
+- **Notes and Warnings**: important information, tips, and warnings are highlighted using callout blocks to draw attention to them.
+
+(i)> This is an example of a note.
+
+(!)> This is an example of a warning.
+
+(4.3) Mechdown
+
+This documentation is written in Mechdown, a lightweight markup language that is designed simulatneously with Mech. This means that each document is a valid program that can be executed on the Mech platform.
 
 5. Getting Involved
 -------------------------------------------------------------------------------
 
 The Mech community stays active at a few places around the Internet:
 
--(👾) [Discord](https://discord.gg/asqP25NNTH) - for live chat
--(🐙) [GitHub](https://github.com/mech-lang) - for code and issues
--(📺) [YouTube](https://www.youtube.com/@MechLang) - for video tutorials
--(🛸) [Reddit](https://www.reddit.com/r/mechlang/) - for help and general discussion
--(📧) [Mailing List](https://groups.google.com/g/mechtalk) - for dev discussion
+- [Discord](https://discord.gg/asqP25NNTH) - for live chat
+- [GitHub](https://github.com/mech-lang) - for code and issues
+- [YouTube](https://www.youtube.com/@MechLang) - for video tutorials
+- [Reddit](https://www.reddit.com/r/mechlang/) - for help and general discussion
+- [Mailing List](https://groups.google.com/g/mechtalk) - for dev discussion
 
 6. Project Status
 -------------------------------------------------------------------------------
@@ -136,10 +207,12 @@ The beta phase has focused on stabilizing the core language and fixing shortcomi
 -(☐) v0.3 - program specification - functions, modules, state machines
 -(☐) v0.4 - system specification - tools, distributed programs, capabilities
 
-Currently the platform version is `v0.2.70-beta`.
+Currently the platform version is `v0.2.74-beta`.
 
 Visit the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html) for more information on the current status of features.
 
 ***
 
-[^1]: Some believe that AI will completely supplant programming languages; instead of writing code and compiling to machine code, LLMs will either directly write machinecode, or even act as a runtime environment and execute the program itself. We do not believe this will happen, at least in the nearterm. See our post ["LLMs Will Not Replace Programming Languages"](https://mech-lang.org/post/2025-01-09-programming-chatgpt/) for more on our reasoning, but the short version is that programming languages provide a level of abstraction and structure that is necessary for building complex systems, and that AI systems will need to work within these abstractions to be effective.
+[^1]: Papert was a pioneer in the field of educational computing, and is best known for his work on the Logo programming language and his advocacy for constructivist learning theories.
+
+[^2]: Some believe that AI will completely supplant programming languages; instead of writing code and compiling to machine code, LLMs will either directly write machinecode, or even act as a runtime environment and execute the program itself. We do not believe this will happen, at least in the nearterm. See our post ["LLMs Will Not Replace Programming Languages"](https://mech-lang.org/post/2025-01-09-programming-chatgpt/) for more on our reasoning, but the short version is that programming languages provide a level of abstraction and structure that is necessary for building complex systems, and that AI systems will need to work within these abstractions to be effective.

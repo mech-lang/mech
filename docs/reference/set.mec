@@ -1,21 +1,265 @@
-Set
-===============================================================================
+set
+================================================================================
+
+%% A `set` is an unordered collection of unique values. Sets are useful for representing groups of items where duplicates are not allowed, and for performing mathematical set operations like union, intersection, and difference.
+
+***
+
+| Operator | Function                                                | Description                                           | 
+|:--------:|--------------------------------------------------------:|-------------------------------------------------------|
+|`∪`       | [`union`](ops/union.html)                               | Computes the union of two sets.                       |
+|`∩`       | [`intersection`](ops/intersection.html)                 | Computes the intersection of two sets.                |
+|`∖`       | [`difference`](ops/difference.html)                     | Computes the difference between two sets.             |
+|`⊆`       | [`subset`](ops/subset.html)                             | Determines if one set is a subset of another.         |
+|`⊊`       | [`proper-subset`](ops/proper-subset.html)               | Determines if one set is a proper subset of another.  |
+|`⊇`       | [`superset`](ops/superset.html)                         | Determines if one set is a superset of another.       |
+|`⊋`       | [`proper-superset`](ops/proper-superset.html)           | Determines if one set is a proper superset of another.|
+|`∈`       | [`element-of`](ops/element-of.html)                     | Checks if an element is a member of a set.            |
+|`∉`       | [`not-element-of`](ops/not-element-of.html)             | Checks if an element is not a member of a set.        |
+|`∆`       | [`symmetric-difference`](ops/symmetric-difference.html) | Computes the symdifference between two sets.          |
 
 1. Syntax
 -------------------------------------------------------------------------------
 
-2. Kind
--------------------------------------------------------------------------------
+A set is declared using curly braces `{}`.
 
-3. Construction
--------------------------------------------------------------------------------
+Elements are separated by commas `,`. Duplicate elements are automatically removed.
+
+```
+{}                 -- An empty set
+{1, 2, 3}          -- A set of numbers
+{"a", "b", "c"}    -- A set of strings
+{1, 1, 2, 3}       -- Duplicates are removed
+```
+
+When parsed and rendered, this code will appear as:
+
+{}                 -- An empty set
+{1, 2, 3}          -- A set of numbers
+{"a", "b", "c"}    -- A set of strings
+{1, 1, 2, 3}       -- Duplicates are removed
+
+Sets are unordered. The order in which elements appear does not affect equality or behavior.
+
+2. Kind
+---------------------------------------------------------------------------
+
+In general, a set has the kind:
+
+```mech:disabled
+<{T}:N>
+```
+
+Where `T` is the kind of the elements, and `N` is the number of elements. The number of elements can be omitted to compare sets of different sizes, but strictly speaking, two sets of different sizes have different kinds.
+
+For example:
+
+```mech:ex 2.1
+A := {1, 2, 3}       -- kind: {<{f64}:3>}
+B := {4, 5}          -- kind: {<{f64}:2>}
+```
+
+Other examples include:
+
+```mech:ex 2.2
+{1, 2, 3}         -- kind: {<{f64}:3>}
+{"a", "b"}        -- kind: {<{string}:2>}
+{(1, 2), (3, 4)}  -- kind: {<{(f64,f64)}:2>}
+```
+
+3. Constructing
+---------------------------------------------------------------------------
+
+There are three ways to create sets:
+
+- Set Literals
+- Set Comprehensions
+- From Matrices
+
+(3.1) Set Literals
+
+An empty set is written as `{}`, and has kind `{<{_}>}`:
+
+```mech:ex 3.1.1
+{}
+```
+
+Non-empty sets are written with elements inside the braces, separated by commas:
+
+```mech:ex 3.1.2
+{1, 2, 3}
+```
+
+(3.2) Set Comprehensions
+
+Sets can be constructed using *set comprehensions*, which generate elements based on patterns and predicates.
+
+Comprehensions may contain:
+
+- One or more generators (`<-`)
+- Boolean conditions
+- Let bindings
+- Arbitrary expressions for the yielded element
+
+For example, the following comprehension generates the set of friends-of-friends for a given user, excluding those with an ID of 9 or higher:
+
+```mech:ex 3.2
+pairs := {(1, 2), (1, 3), (2, 8), (3, 5), (3, 9)}
+user := 1
+{fof | (u, f) <- pairs, (f, fof) <- pairs, u == user, fof < 9}
+```
+
+For more, see [`set/comprehensions`](/stdlib/set/comprehensions.html)
+
+(3.3) From Matrices
+
+You can create a set from a matrix using a kind annotation, as long as the kinds are compatible. For example, if you have a matrix of `f64` values, you can create a set of kind `f64`:
+
+```
+x := [1.1 2.2; 3.3 4.4]
+s<{f64}> := x
+```
 
 4. Accessing Elements
 -------------------------------------------------------------------------------
 
+Because sets are unordered collections, you cannot access elements by index or position like you would with lists or arrays.
+
+Instead, elements are accessed through:
+
+- Membership tests -- checking if an element is in the set or not
+- Set operations -- union, intersection, difference, etc.
+- Iteration (via comprehensions) -- to process or transform elements one by one, but not in any specific order
+
+(4.1) Membership
+
+Use `∈` to test membership:
+
+```mech:ex 4.1
+A := {1, 2, 3}
+2 ∈ A
+```
+
+For more, see [`set/element-of`](/stdlib/set/element-of.html)
+
+```mech:ex 4.1
+4 ∈ A
+```
+
+Use `∉` for non-membership:
+
+```mech:ex 4.1
+4 ∉ A
+```
+
+For more, see [`set/not-element-of`](/stdlib/set/not-element-of.html)
+
 5. Assigning Elements
 --------------------------------------------------------------------------------
 
-6. Operations
--------------------------------------------------------------------------------
+Sets are immutable, meaning that once they are created you cannot add or remove elements from them.
 
+Instead, new sets are created using set operations. To add elements to a set, use the union operator `∪` to combine the existing set with a new element:
+
+```mech:ex 5.1
+A := {1, 2, 3}
+A2 := A ∪ {4}     -- Creates a new set
+```
+
+To remove elements from a set, use the difference operator `∖`:
+
+```mech:ex 5.2
+A := {1, 2, 3}
+A2 := A ∖ {2}     -- Creates a new set without 2
+```
+
+6. Operations
+---------------------------------------------------------------------------
+
+Mech supports standard mathematical set operations.
+
+(6.1) Union
+
+The union of two sets contains all elements that appear in either set.
+
+```mech:ex 6.1
+A := {1, 2, 3}
+B := {2, 3, 4}
+A ∪ B
+```
+
+For more, see [`set/union`](/stdlib/set/union.html)
+
+(6.2) Intersection
+
+The intersection contains elements common to both sets.
+
+```mech:ex 6.2
+A := {1, 2, 3}
+B := {2, 3, 4}
+A ∩ B
+```
+
+For more, see [`set/intersection`](/stdlib/set/intersection.html)
+
+(6.3) Difference
+
+The difference `A ∖ B` contains elements in `A` that are not in `B`.
+
+```mech:ex 6.3
+A := {"a", "b", "c"}
+B := {"b", "c", "d"}
+A ∖ B
+```
+
+For more, see [`set/difference`](/stdlib/set/difference.html)
+
+(6.4) Subset and Superset
+
+The subset operator `⊆` tests if all elements of one set are contained in another:
+
+```mech:ex 6.4
+A := {"b", "c"}
+B := {"b", "c", "d"}
+A ⊆ B
+```
+
+For more, see [`set/subset`](/stdlib/set/subset.html)
+
+Similarly, the superset operator `⊇` tests if a set contains all elements of another:
+
+```mech:ex 6.4
+B ⊇ A
+```
+
+For more, see [`set/superset`](/stdlib/set/superset.html)
+
+(6.5) Proper Subset and Superset
+
+```mech:ex 6.5
+A := {1, 2}
+B := {1, 2, 3}
+A ⊂ B
+```
+
+For more, see [`set/proper-subset`](/stdlib/set/proper-subset.html)
+
+Likewise, the proper superset operator `⊃` tests if a set strictly contains another:
+
+```mech:ex 6.5
+B ⊃ A
+```
+For more, see [`set/proper-superset`](/stdlib/set/proper-superset.html)
+
+If the sets are equal, strict relations are false:
+
+```mech:ex 6.6
+A := {1, 2}
+B := {1, 2}
+A ⊊ B
+```
+Also:
+
+```mech:ex 6.6
+A ⊋ B
+```

@@ -316,6 +316,13 @@ fn handle_column_kind(
           .collect();
       data_map.insert(id, (ValueKind::Bool, Value::to_matrix(vals.clone(), vals.len(), 1)));
     }
+    ValueKind::Any => {
+      let vals: Vec<Value> = val.as_vec()
+          .iter()
+          .map(|x| x.clone())
+          .collect();
+      data_map.insert(id, (ValueKind::Any, Value::to_matrix(vals.clone(), vals.len(), 1)));
+    }
 
     x => {
       println!("Unsupported kind in table column: {:?}", x);

@@ -1,0 +1,58 @@
+list
+===============================================================================
+ 
+%% A `list` is a block element that represents an ordered or unordered collection of items. Lists can be nested and may contain other block elements such as paragraphs, code blocks, and images.
+
+ 
+There are two varities of lists, unordered, which are delinated with a `-` or a graphicl and ordered list, which are delinated with a numeral like `1.`, and are numbered in order automatically when formatted.
+
+**Example:**
+
+```
+- Item 1
+- Item 2
+- Item 3
+
+1. Item 1
+2. Item 2
+3. Item 3
+```
+
+When rendered, they look like this:
+
+- Item 1
+- Item 2
+- Item 3
+
+List items are paragraphs, and can contain any inline elements.
+
+**Example:**
+
+```
+- **First**: item 1
+- **Second**: item 2
+- **Third**: item 3
+```
+
+Here's a list of some of the features of lists:
+
+1. Bullet lists
+    - One
+    - Two
+    - Three
+2. Custom lists
+    -(🦜) Four
+    -(🏴‍☠️) Five
+    -(🐷) Six
+3. Numbered lists
+    1. One
+    2. Two
+    3. Three
+4. Custom start number
+    7. One
+    8. Two
+    9. Three
+5. Check lists
+    -[ ] One
+    -[x] Two
+    -[ ] Three

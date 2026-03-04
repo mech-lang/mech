@@ -4,7 +4,7 @@ test:cargo:
     RUST_BACKTRACE: full
   script:
   - rustup show
-  - rustup default nightly-2025-11-12
+  - rustup default nightly-2026-03-03
   - cargo clean
   - cargo build --bin mech
   - cargo build --no-default-features

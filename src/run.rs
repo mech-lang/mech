@@ -40,7 +40,7 @@ pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: 
   let sources = sources.read().unwrap();
   for (file,source) in sources.sources_iter() {
     match source {
-      MechSourceCode::Program(ref code_vec) => {
+      MechSourceCode::Program(code_vec) => {
         for c in code_vec {
           match c {
             MechSourceCode::Tree(tree) => {

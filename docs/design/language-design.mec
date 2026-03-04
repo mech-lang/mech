@@ -110,3 +110,70 @@ Mech draws inspiration from a number of other languages and paradigms, including
 [^1]: If you squit (and not especially hard) C++, Java, Python, Javascript, are all the same programming language.  Jakubovic, Edwards and Petricek have referred to this as a ["Hornets Nest" of programming languages](https://tomasp.net/techdims/#footer=index,navigation;left=catalogue,list;top=catalogue,index). This is not to say that these languages are not distinct, but rather that they are all variations on a well-studied theme. There is still a lot of unexplored territory in the programming language design space.
 
 [^2]: Alan Kay referred to this situation as "planes of innovation" and described two orthogonal planes: the "pink plane" and the "blue plane". Practitioners making progress on the pink plane are focused on improving known systems and practices, and they can't even recognize the existence of the blue plane. The result being that many improvements that can only be found on the pink plane are not even considered, and the blue plane remains at a local maximum.
+
+
+If AI gets MATLAB wrong:
+
+sum(A, 3)   % error if 2D
+
+
+You know.
+
+If AI gets K wrong:
+
++/A
+
+
+It still returns something — often plausible.
+
+Silent wrongness is poison for statistical generation.
+
+
+1. AI-First Language Design
+
+
+One of the central insights in Seymour Papert's 1980 book [Mindstorms](https://worrydream.com/refs/Papert_1980_-_Mindstorms,_1st_ed.pdf) is that new technology often requires rethinking old paradigms. Papert, a pioneer in educational computing[^1], observed that although computers offered exciting possibilities, they were often used to reinforce outdated methods like drill-and-practice exercises. To unlock their potential, he argued, we needed to rethink how we teach and learn -- not just apply old approaches to new tools. His solution was the Logo programming language, which enabled children as young as five to use computers in ways they never could before. Languages, he showed, can help people access new ways of thinking, no matter their age or background.
+
+Today, with generative AI and large language models, history rhymes. Programmers are now asking AI to generate code in languages designed decades ago, often for paradigms very different from today's challenges. Most widely used programming languages predate the Internet, smartphones, cloud computing, and AI. They have remained relevant through libraries, frameworks, and incremental updates -- but modern computing demands new approaches.
+
+There's a school of thought that believes AI systems will eventually eliminate the need for programming languages altogether, allowing users to simply describe their desired outcomes in natural language, while the LLM will write the machine code directly, skipping the need for an intermediate programming language altogether.
+
+Some ways an AI-first language might be designed.
+
+First let's consider the AI itself.
+
+The interface is text-based, so the language should be text-based. This might seem obvious but we are starting from the ground up, so everything is on the table. Many future of programming systems have been propsoed that are graphical. There migt be room for them still but for now, being text-based first is a clear requirement.
+
+The LLM uses a natural language interface but it accepts unstructured text and also text that can be marked up and that is meaningful to the LLM.
+
+The LLM does *not* have to know the language ahead of time but it benefits from drawing associations between things it *does* know.
+
+AI works through tokenizations, which are not at the character level, but rather at the subword level. This means that the language should be designed to be tokenization-friendly
+
+
+
+
+First of all, the exection context does not matter so much. The source code as a document becomes more valuable because not only does it get compiled into source code, but now it can be read by the LLM and act as a knowledge base for the program itself. This means that the language should be designed to be readable and understandable by both humans and LLMs.
+
+Resurgence of literate programming ideas, where code and documentation are interwoven, making it easier for LLMs to understand the intent behind the code.
+
+Being more explicit is preferred, but we also want to be concise because there's a lot to say and a limited context window.
+
+- function arguments
+- variable names should be expressive
+- locality is important, having things close together that are related
+- types should be explicit but also inferred where possible
+
+- partial execution and putting the values in the document itself so the LLM can see them and help with reasoning, since it's not a great execution engine.
+
+
+
+
+
+Another school of thought believes taht because AI systems have been so thoroughly trained on existing languages like Python, that future programming langauges will never be able to compete, and therefore language design is frozen.
+
+We disagree on both counts. 
+
+To the extent that LLMs are used to write code today, they are writing code in langauges humans invented for their abstraction capabilities. The recent history of programming has been about building higher-level abstractions to make programming easier for humans. Although LLMs have different capabilities when it comes to writing code (they are very fast, for starters), they still need abstractions to reason about complex systems. Natural Langauges are insufficient for logical reasoning LLMs for the same reasons 
+
+

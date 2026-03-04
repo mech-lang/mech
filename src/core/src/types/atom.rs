@@ -1,6 +1,8 @@
 use crate::*;
 use super::*;
 
+use std::cmp::Ordering;
+
 #[cfg(feature = "atom")]
 #[derive(Clone, Debug)]
 pub struct MechAtom(pub (u64, Ref<Dictionary>));
@@ -8,6 +10,20 @@ pub struct MechAtom(pub (u64, Ref<Dictionary>));
 impl PartialEq<MechAtom> for MechAtom {
   fn eq(&self, other: &MechAtom) -> bool {
     &self.id() == &other.id()
+  }
+}
+
+impl Eq for MechAtom {}
+
+impl PartialOrd for MechAtom {
+  fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+    self.id().partial_cmp(&other.id())
+  }
+}
+
+impl Ord for MechAtom {
+  fn cmp(&self, other: &Self) -> Ordering {
+    self.id().cmp(&other.id())
   }
 }
 
@@ -26,6 +42,18 @@ impl MechAtom {
     let dict = Ref::new(Dictionary::new());
     MechAtom((id, dict))
   }
+  pub fn from_name(name: &str) -> MechAtom {
+    let id = hash_str(name);
+    let dict = Ref::new(Dictionary::new());
+    {
+      let mut dict_brrw = dict.borrow_mut();
+      dict_brrw.insert(id, name.to_string());
+    }
+    MechAtom((id, dict))
+  }
+  pub fn to_html(&self) -> String {
+    format!("<span class=\"mech-atom\"><span class=\"mech-atom-name\">{}</span></span>",self.name())
+  }
 
 }
 
@@ -43,10 +71,7 @@ impl fmt::Display for MechAtom {
 
 impl PrettyPrint for MechAtom {
   fn pretty_print(&self) -> String {
-    let names_brrw = self.0.1.borrow();
-    if let Some(name) = names_brrw.get(&self.0.0) {
-      return format!("`{}", name);
-    } 
-    format!("`{}", emojify(&(self.0.0 as u16)))
+    let name = self.name();
+    format!(":{}", name)
   }
 }

@@ -170,6 +170,14 @@ impl MechRepl {
           Err(err) => { return Err(err); }
         }
       }
+      ReplCommand::Profile(on) => {
+        intrp.profile = on;
+        if on {
+          Ok("Profiling enabled.".to_string())
+        } else {
+          Ok("Profiling disabled.".to_string())
+        }
+      }
       ReplCommand::Step(step_id, step_count) => {
         let n: u64 = match step_count {
           Some(n) => n,

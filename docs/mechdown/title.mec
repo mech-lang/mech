@@ -1,0 +1,20 @@
+title
+===============================================================================
+
+There are 6 levels of titles: the document title, section titles, and two levels of sub section titles. 
+
+**Example:**
+
+```
+Title
+========
+
+1. Section Title
+----------------
+
+(1.1) Sub Section Title
+
+(1.1.1) Sub Sub Section Title
+```
+
+Section titles and the first level of sub-section titles comprise the table of contents, which is generated automatically.

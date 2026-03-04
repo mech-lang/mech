@@ -12,6 +12,10 @@ impl R64 {
     R64(Rational64::new(numer, denom))
   }
 
+  pub fn to_html(&self) -> String {
+    format!("<span class='mech-literal'><span class='mech-rational'>{}/{}</span></span>", self.numer(), self.denom())
+  }
+
   pub fn abs(&self) -> Self {
     R64(self.0.abs())
   }

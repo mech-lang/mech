@@ -22,6 +22,7 @@ pub enum ReplCommand {
   Docs(Option<String>),
   Code(Vec<(String,MechSourceCode)>),
   Ls,
+  Profile(bool),
   Cd(String),
   Step(Option<usize>,Option<u64>),
   Load(Vec<String>),
@@ -47,12 +48,14 @@ pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand> {
     quit_rpl,
     save_rpl,
     symbols_rpl,
+    profile_rpl,
     plan_rpl,
     ls_rpl,
     whos_rpl,
     docs_rpl,
   ))(input)?;
-  let (input, _) = opt(tag("\r\n"))(input)?;
+  let (input, _) = opt(tag("\r"))(input)?;
+  let (input, _) = opt(tag("\n"))(input)?;
   if !input.is_empty() {
     return Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Eof)));
   }
@@ -71,6 +74,13 @@ fn code_rpl(input: &str) -> IResult<&str, ReplCommand> {
   let (input, _) = space0(input)?;
   let (input, code) = take_while(|_| true)(input)?;
   Ok((input, ReplCommand::Code(vec![("repl".to_string(), MechSourceCode::String(code.to_string()))])))
+}
+
+fn profile_rpl(input: &str) -> IResult<&str, ReplCommand> {
+  let (input, _) = tag("profile")(input)?;
+  let (input, _) = space0(input)?;
+  let (input, on_off) = alt((tag("on"), tag("off")))(input)?;
+  Ok((input, ReplCommand::Profile(on_off == "on")))
 }
 
 fn docs_rpl(input: &str) -> IResult<&str, ReplCommand> {
@@ -111,15 +121,15 @@ fn plan_rpl(input: &str) -> IResult<&str, ReplCommand> {
 }
 
 fn identifier(input: &str) -> IResult<&str, String> {
-    let (input, id) = take_till1(|c| c == ' ' || c == '\n' || c == '\r')(input)?;
-    Ok((input, id.to_string()))
+  let (input, id) = take_till1(|c| c == ' ' || c == '\n' || c == '\r')(input)?;
+  Ok((input, id.to_string()))
 }
 
 fn whos_rpl(input: &str) -> IResult<&str, ReplCommand> {
-    let (input, _) = alt((tag("whos"), tag("w")))(input)?;
-    let (input, _) = space0(input)?;
-    let (input, names) = separated_list0(many1(tag(" ")), identifier)(input)?;
-    Ok((input, ReplCommand::Whos(names)))
+  let (input, _) = alt((tag("whos"), tag("w")))(input)?;
+  let (input, _) = space0(input)?;
+  let (input, names) = separated_list0(many1(tag(" ")), identifier)(input)?;
+  Ok((input, ReplCommand::Whos(names)))
 }
 
 fn clear_rpl(input: &str) -> IResult<&str, ReplCommand> {
@@ -157,11 +167,11 @@ fn step_rpl(input: &str) -> IResult<&str, ReplCommand> {
     _ => None,
   };
   let count = match count {
-      Some(count_str) => match count_str.parse::<u64>() {
-        Ok(count) => Some(count),
-        Err(_) => None,
-      },
-      _ => None,
+    Some(count_str) => match count_str.parse::<u64>() {
+      Ok(count) => Some(count),
+      Err(_) => None,
+    },
+    _ => None,
   };
   Ok((input, ReplCommand::Step(step_id, count)))
 }

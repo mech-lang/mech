@@ -1,14 +1,15 @@
 Standard Library
 ===============================================================================
 
-- Assign
-- Access
-- Combinatorics
-- Compare
-- Convert
-- Io
-- Logic
-- [Math](stdlib/math/index.html)
-- Matrix
-- Range
-- Stats
+- [Assign](/stdlib/assign/index.html) `todo`
+- [Access](/stdlib/access/index.html) `todo`
+- [Combinatorics](/stdlib/combinatorics/index.html) `todo`
+- [Compare](/stdlib/compare/index.html) `todo`
+- [Convert](/stdlib/convert/index.html) `todo`
+- [Io](/stdlib/io/index.html) `todo`
+- [Logic](/stdlib/logic/index.html) `todo`
+- [Math](/stdlib/math/index.html)
+- [Matrix](/stdlib/matrix/index.html) `todo`
+- [Range](/stdlib/range/index.html) `todo`
+- [Set](/stdlib/set/index.html)
+- [Stats](/stdlib/stats/index.html) `todo`

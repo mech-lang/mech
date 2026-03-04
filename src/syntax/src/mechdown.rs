@@ -24,7 +24,7 @@ use crate::*;
 // Mechdown
 // ============================================================================
 
-// title := text+, new_line, equal+, (space|tab)*, whitespace* ;
+// title := +text, new-line, +equal, *(space|tab), *whitespace ;
 pub fn title(input: ParseString) -> ParseResult<Title> {
   let (input, mut text) = many1(text)(input)?;
   let (input, _) = new_line(input)?;
@@ -269,22 +269,22 @@ pub fn option_mapping(input: ParseString) -> ParseResult<(Identifier, MechString
   Ok((input, (key, value)))
 }
 
-// img := "![", paragraph, "]", "(", +text, ")" , ?option-map ;
+// img := "![", *text, "]", "(", +text, ")" , ?option-map ;
 pub fn img(input: ParseString) -> ParseResult<Image> {
   let (input, _) = img_prefix(input)?;
-  let (input, caption_text) = inline_paragraph(input)?;
+  let (input, caption_text) = opt(inline_paragraph)(input)?;
   let (input, _) = right_bracket(input)?;
   let (input, _) = left_parenthesis(input)?;
   let (input, src) = many1(tuple((is_not(right_parenthesis),text)))(input)?;
   let (input, _) = right_parenthesis(input)?;
   let (input, style) = opt(option_map)(input)?;
   let merged_src = Token::merge_tokens(&mut src.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>()).unwrap();
-  Ok((input, Image{src: merged_src, caption: Some(caption_text), style}))
+  Ok((input, Image{src: merged_src, caption: caption_text, style}))
 }
 
 // paragraph-text := ¬(img-prefix | http-prefix | left-bracket | tilde | asterisk | underscore | grave | define-operator | bar), +text ;
 pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
-  let (input, elements) = match many1(nom_tuple((is_not(alt((section_sigil, footnote_prefix, highlight_sigil, equation_sigil, img_prefix, http_prefix, left_brace, left_bracket, left_angle, right_bracket, tilde, asterisk, underscore, grave, define_operator, bar))),text)))(input) {
+  let (input, elements) = match many1(nom_tuple((is_not(alt((section_sigil, footnote_prefix, highlight_sigil, equation_sigil, img_prefix, http_prefix, left_brace, left_bracket, left_angle, right_bracket, tilde, asterisk, underscore, grave, define_operator, bar, mika_section_open, mika_section_close))),text)))(input) {
     Ok((input, mut text)) => {
       let mut text = text.into_iter().map(|(_,tkn)| tkn).collect();
       let mut text = Token::merge_tokens(&mut text).unwrap();
@@ -347,6 +347,7 @@ pub fn section_reference(input: ParseString) -> ParseResult<ParagraphElement> {
 
 // paragraph-element := hyperlink | reference | section-ref | raw-hyperlink | highlight | footnote-reference | inline-mech-code | eval-inline-mech-code | inline-equation | paragraph-text | strong | highlight | emphasis | inline-code | strikethrough | underline ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
+  println!("Parsing paragraph element at: {:?}", input.peek(0));
   alt((hyperlink, reference, section_reference, raw_hyperlink, highlight, footnote_reference, inline_mech_code, eval_inline_mech_code, inline_equation, paragraph_text, strong, highlight, emphasis, inline_code, strikethrough, underline))(input)
 }
 
@@ -368,7 +369,7 @@ pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
   let (input, _) = peek(paragraph_element)(input)?;
   let (input, elements) = many1(
     pair(
-      is_not(alt((null(new_line), null(idea_sigil)))),
+      is_not(alt((null(new_line), null(mika_section_close), null(idea_sigil)))),
       labelr!(paragraph_element, 
               |input| recover::<ParagraphElement, _>(input, skip_till_paragraph_element),
               "Unexpected paragraph element")
@@ -699,8 +700,14 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
             return Ok((input, SectionElement::FencedMechCode(FencedMechCode{code: mech_tree, config, options})));
           },
           Err(err) => {
-            println!("Error parsing Mech code: {:#?}", err);
-            todo!();
+            return Err(nom::Err::Error(ParseError {
+                cause_range: SourceRange::default(),
+                remaining_input: input,
+                error_detail: ParseErrorDetail {
+                    message: "Generic error parsing Mech code block",
+                    annotation_rngs: Vec::new(),
+                },
+            }));
           }
         };
       } else if tag.starts_with("equation") || tag.starts_with("eq") || tag.starts_with("math") || tag.starts_with("latex") || tag.starts_with("tex") {
@@ -913,6 +920,11 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
       break;
     }
 
+    #[cfg(feature = "mika")]
+    if mika_section_close(new_input.clone()).is_ok() {
+      break;
+    }
+
     /*let (input, sct_elmnt) = labelr!(
       section_element,
       |input| recover::<SectionElement, _>(input, skip_till_eol),
@@ -922,7 +934,20 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
     //elements.push(sct_elmnt);
     //let (input, _) = many0(blank_line)(input.clone())?;
 
-
+    #[cfg(feature = "mika")]
+    match mika(new_input.clone()) {
+      Ok((input, mika)) => {
+        println!("Parsed Mika code block: {:#?}", mika);
+        elements.push(SectionElement::Mika(mika));
+        new_input = input;
+        continue;
+      }
+      Err(e) => {
+        // not mika code, try mech code
+        //return Err(e);
+      }
+    }
+  
     // check if it's mech_code first, we'll prioritize that
     match mech_code(new_input.clone()) {
       Ok((input, mech_tree)) => {
@@ -935,6 +960,8 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
         //return Err(e);
       }
     }
+
+    println!("Parsing section element at: {:?}", new_input.peek(0));
     match section_element(new_input.clone()) {
       Ok((input, element)) => {
 
@@ -950,7 +977,6 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
       }
     }
   }
-  //println!("Parsed section: {:#?}", elements);
   Ok((new_input, Section { subtitle, elements }))
 }
 

@@ -46,18 +46,16 @@ where
 impl<T, R1, C1, S1> MechFunctionImpl for RangeExclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
   Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-  T: Scalar + Clone + Debug + Sync + Send + 'static + PartialOrd + One + Add<Output = T> + 'static,
+  T: Copy + Scalar + Clone + Debug + Sync + Send + 'static + PartialOrd + One + Add<Output = T> + 'static,
   R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
 {
   fn solve(&self) {
-    let from_ptr = self.from.as_ptr();
-    let to_ptr = self.to.as_ptr();
-    let out_ptr = self.out.as_mut_ptr();
-    let mut current = from_ptr;
     unsafe {
-      for val in (*out_ptr).iter_mut() {
-        *val = (*current).clone();
-        current = &(*current).clone().add(T::one());
+      let out_ptr = self.out.as_ptr() as *mut naMatrix<T, R1, C1, S1>;
+      let mut current = *self.from.as_ptr();
+      for i in 0..(*out_ptr).len() {
+        (&mut (*out_ptr))[i] = current;
+        current = current + T::one();
       }
     }
   }
@@ -164,7 +162,7 @@ pub struct RangeExclusive {}
 impl NativeFunctionCompiler for RangeExclusive {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
+      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() },None).with_compiler_loc());
     }
     let arg1 = arguments[0].clone();
     let arg2 = arguments[1].clone();
