@@ -167,6 +167,8 @@ leaf!(grave_codeblock_sigil, "```", TokenKind::GraveCodeBlockSigil);
 leaf!(tilde_codeblock_sigil, "~~~", TokenKind::TildeCodeBlockSigil);
 leaf!(underline_sigil, "__", TokenKind::UnderlineSigil);
 leaf!(section_sigil, "§", TokenKind::SectionSigil);
+leaf!(mika_section_open, "⸢", TokenKind::MikaSectionOpen);
+leaf!(mika_section_close, "⸥", TokenKind::MikaSectionClose);
 
 ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);
 ws0_leaf!(async_transition_operator, "~>", TokenKind::AsyncTransitionOperator);
@@ -229,7 +231,7 @@ pub fn any_token(mut input: ParseString) -> ParseResult<Token> {
 
 // forbidden-emoji := box-drawing | other-forbidden-shapes ;
 pub fn forbidden_emoji(input: ParseString) -> ParseResult<Token> {
-  alt((box_drawing_emoji, nbsp, thin_space))(input)
+  alt((box_drawing_emoji, nbsp, thin_space, mika_section_open, mika_section_close))(input)
 }
 
 // emoji := (!forbidden-emoji, emoji-grapheme) ;

@@ -26,7 +26,7 @@ mech-syntax = "0.2.44"
 mech-interpreter = "0.2.44"
 
 #serde = {version = "1.0.219", default-features = false, features = ["alloc"] }
-#serde_derive = "1.0.219"
+#serde_derive = "1.0.228"
 #hashbrown = "0.15.3"
 #crossbeam-channel = "0.5.15"
 

@@ -1,6 +1,6 @@
 [package]
 name = "mech-interpreter"
-version = "0.2.74"
+version = "0.3.0"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "The Mech language runtime."
 documentation = "http://docs.mech-lang.org"
@@ -10,8 +10,8 @@ keywords = ["mech", "language", "programming", "dataflow", "runtime"]
 categories = ["no-std", "science::robotics", "science", "game-engines", "database-implementations"]
 license = "Apache-2.0"
 readme = "README.md"
-edition = "2021"
-rust-version = "1.93"
+edition = "2024"
+rust-version = "1.96"
 
 [badges]
 gitlab = { repository = "mech-lang/mech", branch = "main" }
@@ -20,7 +20,7 @@ maintenance = { status = "actively-developed" }
 [features]
 no_std = ["mech-core/no_std", "mech-math/no_std", "mech-compare/no_std", "mech-combinatorics/no_std", "mech-logic/no_std", "mech-matrix/no_std", "mech-io/no_std", "mech-stats/no_std", "mech-range/no_std"]
 
-default = ["baselib", "pretty_print", "serde", "compiler", "program",
+default = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
   "u8", "u16", "u32", "u64", "u128", 
   "i8", "i16", "i32", "i64", "i128", 
   "f32", "f64", "c64", "r64", 
@@ -30,7 +30,7 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program",
   "mech-core/default",
   "mech-set/default", "mech-math/default", "mech-compare/default", "mech-combinatorics/default", "mech-logic/default", "mech-matrix/default", "mech-io/default", "mech-stats/default", "mech-range/default", "mech-string/default",
   ]
-base = ["baselib", "pretty_print", "serde", "compiler", "program",
+base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "set_default", "math_default", "compare_default", "combinatorics_default", "logic_default",
       "matrix_default", "io_default", "range_default", "stats_default", "string_default",
       "statements_default", "subscript_default",
@@ -78,6 +78,7 @@ compiler = ["mech-core/compiler", "mech-set/compiler", "mech-math/compiler", "me
 program = ["mech-core/program", "mech-set/program", "mech-math/program", "mech-compare/program", "mech-combinatorics/program", "mech-logic/program", "mech-matrix/program", "mech-io/program", "mech-stats/program", "mech-range/program", "mech-string/program"]
 pretty_print = ["mech-core/pretty_print", "mech-set/pretty_print", "mech-math/pretty_print", "mech-compare/pretty_print", "mech-combinatorics/pretty_print", "mech-logic/pretty_print", "mech-matrix/pretty_print", "mech-io/pretty_print", "mech-stats/pretty_print", "mech-range/pretty_print", "mech-string/pretty_print"]
 serde = ["mech-core/serde", "mech-set/serde", "mech-math/serde", "mech-compare/serde", "mech-combinatorics/serde", "mech-logic/serde", "mech-matrix/serde", "mech-io/serde", "mech-stats/serde", "mech-range/serde", "mech-string/serde"]
+mika = ["mech-core/mika"]
 
 statements = ["mech-core/statements", "mech-set/statements", "mech-math/statements", "mech-compare/statements", "mech-combinatorics/statements", "mech-logic/statements", "mech-matrix/statements", "mech-io/statements", "mech-stats/statements", "mech-range/statements", "mech-string/statements"]
 variables = ["variable_define", "symbol_table", "mech-core/variables", "mech-set/variables", "mech-math/variables", "mech-compare/variables", "mech-combinatorics/variables", "mech-logic/variables", "mech-matrix/variables", "mech-io/variables", "mech-stats/variables", "mech-range/variables", "mech-string/variables"]
@@ -287,23 +288,23 @@ string_default = ["string_concat", "mech-string/string_default"]
 string_concat = ["string", "mech-string/concat"]
 
 [dependencies]
-mech-core = { version = "0.2.74", default-features = false }
-mech-math = { version = "0.2.74", default-features = false, optional = true}
-mech-logic = { version = "0.2.74", default-features = false, optional = true }
-mech-range = { version = "0.2.74", default-features = false, optional = true }
-mech-matrix = { version = "0.2.74", default-features = false, optional = true }
-mech-compare = { version = "0.2.74", default-features = false, optional = true }
-mech-stats = { version = "0.2.74", default-features = false, optional = true }
-mech-io = { version = "0.2.74", default-features = false, optional = true }
-mech-set = { version = "0.2.74", default-features = false, optional = true }
-mech-combinatorics = { version = "0.2.74", default-features = false, optional = true }
-mech-string = { version = "0.2.74", default-features = false, optional = true }
+mech-core = {version = "0.3.0", default-features = false}
+mech-math = { version = "0.3.0", default-features = false, optional = true}
+mech-logic = { version = "0.3.0", default-features = false, optional = true }
+mech-range = { version = "0.3.0", default-features = false, optional = true }
+mech-matrix = { version = "0.3.0", default-features = false, optional = true }
+mech-compare = { version = "0.3.0", default-features = false, optional = true }
+mech-stats = { version = "0.3.0", default-features = false, optional = true }
+mech-io = { version = "0.3.0", default-features = false, optional = true }
+mech-set = { version = "0.3.0", default-features = false, optional = true }
+mech-combinatorics = { version = "0.3.0", default-features = false, optional = true }
+mech-string = { version = "0.3.0", default-features = false, optional = true }
 
 paste = "1.0.15"
 byteorder = "1.5.0"
-inventory = "0.3.21"
-nalgebra = {version = "0.34.0", optional = true}
-indexmap = {version = "2.10.0", optional = true}
+inventory = "0.3.22"
+nalgebra = {version = "0.34.1", optional = true}
+indexmap = {version = "2.13.0", optional = true}
 bincode = {version = "2.0.1", optional = true}
 
 [dependencies.num-traits]

@@ -776,6 +776,10 @@ h5.toc {
 .mech-literal {
 }
 
+.mech-matrix .mech-number {
+    text-align: right;
+}
+
 .mech-number {
     color: var(--literal-color);
 }
@@ -840,6 +844,10 @@ code {
 
 
 .mech-formula-operator {
+    color: var(--op-color);
+}
+
+.mech-not-op {
     color: var(--op-color);
 }
 
@@ -1999,6 +2007,10 @@ mark {
 
 .mech-output-value {
     padding-left: 10px;
+}
+
+.mech-matrix-element {
+    text-align: right;
 }
 
 .mech-matrix-outer{

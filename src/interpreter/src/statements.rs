@@ -40,7 +40,7 @@ pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MRes
   let source = expression(&tpl_dstrct.expression, None, p)?;
   let tpl = match &source {
     Value::Tuple(tpl) => tpl,
-    Value::MutableReference(ref r) => {
+    Value::MutableReference(r) => {
       let r_brrw = r.borrow();
       &match &*r_brrw {
         Value::Tuple(tpl) => tpl.clone(),
@@ -289,7 +289,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
         ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
       }
       #[cfg(feature = "record")]
-      (Value::Record(ref rec), ref target_kind @ ValueKind::Record(ref target_rec_knd)) => {
+      (Value::Record(rec), ref target_kind @ ValueKind::Record(target_rec_knd)) => {
         let rec_brrw = rec.borrow();
         let rec_knd = rec_brrw.kind();
         if &rec_knd != *target_kind {

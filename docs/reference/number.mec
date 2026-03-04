@@ -133,7 +133,7 @@ Integer literals can be written in the following formats:
 0b101010   -- binary
 ```
 
-Decrimals without a prefix are inferred as floating-point numbers (`f64`), while those with the `0d` prefix are inferred as signed integers (`i64`). Each of the other formats are also inferred as `i64` unless otherwise specified. Any integer literal can be suffixed with a specific kind to indicate its type:
+Decimals without a prefix are inferred as floating-point numbers (`f64`), while those with the `0d` prefix are inferred as signed integers (`i64`). Each of the other formats are also inferred as `i64` unless otherwise specified. Any integer literal can be suffixed with a specific kind to indicate its type:
 
 ```mech:disabled
 42u8         -- unsigned 8-bit integer

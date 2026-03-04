@@ -71,7 +71,7 @@ impl Formatter {
   }
 
   pub fn works_cited(&mut self) -> String {
-    if self.citation_num == 0 {
+    if self.citations.is_empty() {
       return "".to_string();
     }
     let id = hash_str("works-cited");
@@ -121,17 +121,21 @@ impl Formatter {
     self.toc = true;
     let sections = self.sections(&toc.sections);
     self.toc = false;
-    let section_id = hash_str(&format!("section-{}",self.h2_num + 1));
-    let formatted_works_cited = if self.html && self.citation_num > 0 {
-      format!("<section id=\"\" section=\"{}\" class=\"mech-program-section toc\">
+    let section_id = hash_str(&format!("section-{}", self.h2_num + 1));
+    let formatted_works_cited = if self.html && self.citation_num > 0 && !self.citations.is_empty() {
+      format!(
+        "<section id=\"\" section=\"{}\" class=\"mech-program-section toc\">
   <h2 id=\"\" section=\"{}\" class=\"mech-program-subtitle toc active\">
     <a class=\"mech-program-subtitle-link toc\" href=\"#67320967384727436\">Works Cited</a>
   </h2>
-</section>", section_id, self.h2_num + 1)
+</section>",
+        section_id,
+        self.h2_num + 1
+      )
     } else {
       "".to_string()
     };
-    format!("<div class=\"mech-toc\">{}{}</div>",sections,formatted_works_cited)
+    format!("<div class=\"mech-toc\">{}{}</div>", sections, formatted_works_cited)
   }
 
   pub fn sections(&mut self, sections: &Vec<Section>) -> String {
@@ -664,6 +668,26 @@ impl Formatter {
     }
   }
 
+  pub fn mika(&mut self, node: &(Mika, Option<MikaSection>)) -> String {
+    let (mika, section) = node;
+    let mika_str = format!("<div class=\"mech-mika\">{}</div>", mika.to_string());
+    if self.html {
+      match section {
+        Some(sec) => {
+          let mut sec_str = "".to_string();
+          for el in &sec.elements.elements {
+            let section_element = self.section_element(el);
+            sec_str.push_str(&section_element);
+          }
+          format!("<div class=\"mech-mika-section\">{} {}</div>", mika_str, sec_str)
+        },
+        None => mika_str,
+      }
+    } else {
+      mika_str
+    }
+  }
+
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     match node {
       SectionElement::Abstract(n) => self.abstract_el(n),
@@ -686,6 +710,7 @@ impl Formatter {
       SectionElement::Image(n) => self.image(n),
       SectionElement::List(n) => self.list(n),
       SectionElement::MechCode(n) => self.mech_code(n),
+      SectionElement::Mika(n) => self.mika(n),
       SectionElement::Paragraph(n) => self.paragraph(n),
       SectionElement::Subtitle(n) => self.subtitle(n),
       SectionElement::Table(n) => self.mechdown_table(n),

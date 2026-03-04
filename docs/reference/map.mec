@@ -9,8 +9,6 @@ map
 
 You can define maps using curly braces `{}` with a colon `:` to separate keys from values.
 
-**Examples:**
-
 ```
 {"a": 1}                 -- A single key-value pair
 {"a": 10, "b": 20}       -- Multiple key-value pairs

@@ -54,7 +54,8 @@ pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand> {
     whos_rpl,
     docs_rpl,
   ))(input)?;
-  let (input, _) = opt(tag("\r\n"))(input)?;
+  let (input, _) = opt(tag("\r"))(input)?;
+  let (input, _) = opt(tag("\n"))(input)?;
   if !input.is_empty() {
     return Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Eof)));
   }

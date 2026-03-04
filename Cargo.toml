@@ -1,6 +1,6 @@
 [package]
 name = "mech"
-version = "0.2.74"
+version = "0.3.0"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Mech is a programming language for building reactive systems like robots, games, and animations."
 documentation = "https://docs.mech-lang.org"
@@ -10,8 +10,8 @@ keywords = ["mech", "language", "programming", "dataflow", "runtime"]
 categories = ["science::robotics", "science", "game-engines", "web-programming"]
 license = "Apache-2.0"
 readme = "README.md"
-edition = "2021"
-rust-version = "1.93"
+edition = "2024"
+rust-version = "1.96"
 
 [badges]
 gitlab = { repository = "mech-lang/mech", branch = "main" }
@@ -25,7 +25,7 @@ required-features = ["compiler"]
 [features]
 no_std = ["mech-core/no_std", "mech-interpreter/no_std", "mech-syntax/no_std"]
 
-default = ["baselib", "pretty_print", "serde", "compiler", "program",
+default = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "u8", "u16", "u32", "u64", "u128", 
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
@@ -33,7 +33,7 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program",
       "formatter", "mechfs", "serve", "run", "repl", "build", "whos", "async",
       "mech-core/default", "mech-interpreter/default", "mech-syntax/default",
       ]
-base = ["baselib", "pretty_print", "serde", "compiler", "program",
+base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "statements_default", "subscript_default",
       "formatter", "mechfs", "serve", "run", "repl", "build","whos", "async",
       "mech-core/base", "mech-interpreter/base", "mech-syntax/base",
@@ -82,6 +82,7 @@ compiler = ["anyhow", "console", "indicatif", "tempfile", "zip", "mech-core/comp
 program = ["mech-core/program", "mech-interpreter/program", "mech-syntax/program"]
 pretty_print = ["mech-core/pretty_print", "mech-interpreter/pretty_print", "mech-syntax/pretty_print"]
 serde = ["mech-core/serde", "mech-interpreter/serde", "mech-syntax/serde"]
+mika = ["mech-syntax/mika", "mech-core/mika"]
 
 statements = ["mech-core/statements", "mech-interpreter/statements", "mech-syntax/statements"]
 variables = ["variable_define", "symbol_table", "mech-core/variables", "mech-interpreter/variables", "mech-syntax/variables"]
@@ -164,41 +165,41 @@ matrix_horzcat = ["matrix"]
 matrix_vertcat = ["matrix"]
 
 [dev-dependencies]
-nalgebra = "0.34.0"
+nalgebra = "0.34.1"
 
 [dependencies]
-mech-core        = { version = "0.2.74", default-features = false }
-mech-syntax      = { version = "0.2.74", default-features = false }
-mech-interpreter = { version = "0.2.74", default-features = false }
+mech-core        = { version = "0.3.0", default-features = false }
+mech-syntax      = { version = "0.3.0", default-features = false }
+mech-interpreter = { version = "0.3.0", default-features = false }
 
 sevenz-rust = "0.6.1"
-colored = "3.0.0"
-serde = "1.0.219"
-serde_derive = "1.0.219"
+colored = "3.1.1"
+serde = "1.0.228"
+serde_derive = "1.0.228"
 crossterm = "0.29.0"
 tabled = "0.20.0"
-crossbeam-channel = "0.5.14"
-serde_json = "1.0.140"
+crossbeam-channel = "0.5.15"
+serde_json = "1.0.149"
 nom = "7.1.3"
-ctrlc = "3.4.5"
-csv = "1.3.1"
-chrono = "0.4.40"
+ctrlc = "3.5.2"
+csv = "1.4.0"
+chrono = "0.4.44"
 base64 = "0.22.1"
 rand = "0.9.2"
-notify = "8.0.0"
+notify = "8.2.0"
 ariadne = "0.6.0"
-clap = { version = "4.5.40", features = ["cargo"]}
+clap = { version = "4.5.60", features = ["cargo"]}
 bincode = { version = "2.0.1", features = ["serde"]}
-indexmap = { version = "2.10.0", features = ["serde"]}
-reqwest = { version = "0.12.20", features = ["blocking"]}
+indexmap = { version = "2.13.0", features = ["serde"]}
+reqwest = { version = "0.13.2", features = ["blocking"]}
 warp = { version = "0.3.7", features = ["compression"]}
-tokio = { version = "1.44.1", features = ["full"]}
+tokio = { version = "1.50.0", features = ["full"]}
 include_dir = {version = "0.7.4", features = ["glob"]}
 
-anyhow = { version = "1.0.100", optional = true }
-console = { version = "0.16.1", optional = true }
-indicatif = { version = "0.18.0", optional = true }
-tempfile = { version = "3.23.0", optional = true }
+anyhow = { version = "1.0.102", optional = true }
+console = { version = "0.16.2", optional = true }
+indicatif = { version = "0.18.4", optional = true }
+tempfile = { version = "3.26.0", optional = true }
 zip = { version =  "5.1.1", optional = true }
 
 [workspace]
@@ -214,7 +215,7 @@ winres = "0.1.12"
 
 [package.metadata.winres]
 OriginalFilename = "MECH.EXE"
-LegalCopyright = "Copyright © 2025"
+LegalCopyright = "Copyright © 2026"
 
 [patch.crates-io]
 mech-core = { path = 'src/core' }
@@ -234,13 +235,13 @@ mech-set = { path = 'machines/set' }
 mech-string = { path = 'machines/string' }
 
 [patch.'https://gitlab.com/mech-lang/core']
-mech-core = { path = 'src/core', version = '0.2.74' }
+mech-core = { path = 'src/core', version = '0.3.0' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
-mech-syntax = { path = 'src/syntax', version = '0.2.74' }
+mech-syntax = { path = 'src/syntax', version = '0.3.0' }
 
 [patch.'https://gitlab.com/mech-lang/interpreter']
-mech-interpreter = { path = 'src/interpreter', version = '0.2.74' }
+mech-interpreter = { path = 'src/interpreter', version = '0.3.0' }
 
 #[patch.'https://gitlab.com/mech-lang/wasm']
 #mech-wasm = { path = 'src/wasm', version = '0.2.44' }

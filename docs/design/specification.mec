@@ -796,12 +796,6 @@ The kind of a set consists of:
   {"a", "b", "c"}  -- Set of strings
   {{1,2},{3,4}}    -- Nested set of sets
 
-**Edge Cases**
-
-- `{}` represents an empty set.
-- `{1, 1, 2}` results in `{1, 2}` due to uniqueness constraints.
-- `{1, "hello"}` results in a type error due to homogeneity constraints.
-
 (5.2.3) Semantics
 
 - Homogeneity: All elements in a set must be of the same type.
@@ -857,12 +851,6 @@ The kind of a map consists of:
   "b" : 20
   "c" : 30 }                -- Multiline map
 
-**Edge Cases**
-
-- `{_:_}` represents an empty map.
-- If the map is mutable, inserting a duplicate key overwrites the previous value
-- `{1: "hello", 2: "world"}` is valid, but `{1: "hello", "one": "world"}` results in an error, as the keys are not homogenous.
-
 (5.3.3) Semantics
 
 - Key Uniqueness: Each key in a map must be unique.
@@ -887,37 +875,23 @@ A Tuple is defined using parentheses `()` and contains an ordered collection of 
 
 (5.4.1) Kind
 
+The kind of a tuple consists of the kinds of its elements. For example:
+
   <(u8,string)>    -- Two-tuple of u8 and string    
-  <(u8,u8,u8)>     -- Three-tuple of u8s            
+  <(u8,u8,u8)>     -- Three-tuple of u8s     
+  <(f64,(string,bool))> -- Nested tuple 
 
 (5.4.2) Examples
-
-  ()                 
-  (1)                
+                
   (1,1,3)                
   (1,(2,3))                
   (1, true, "Hello")
-  ([1, 2, 3, 4], 7, false)          
-
-**Edge Cases:**
-
-- `()` represents an empty tuple.
-
-- `(1)` is a single-element tuple, not a parenthetical expression that evaluates to `1`.
-
-- Tuples maintain the type of each element, so `(1, "hello")` has the kind `<(f64,string)>`,, unlike sets which require homogeneity.
+  ([1, 2, 3, 4], 7, false)       
 
 (5.4.3) Semantics
 
-- Ordered: The order of elements within a tuple is preserved.
-- Heterogeneous: A tuple can contain elements of different types.
-- Immutable: Once created, the elements in a tuple cannot be changed.
-
-(5.4.4) Operations
-
-- Access: Elements can be accessed by their position (zero-based index).
-- Concatenation: Tuples can be combined to form a larger tuple.
-- Decomposition: Tuples can be unpacked into individual variables.
+- The order of elements within a tuple is preserved.
+- A tuple can contain elements of different types.
 
 (5.5) Table
 
@@ -983,78 +957,36 @@ The kind of a table column is equivalent to a vector of the table column kind. F
 
 <[u8]:1,3> -- A table column is a vector.
 
+
 (5.5.2) Examples
 
-Tables are enclosed in `{}` and contain a header row specifying column names and kinds. The pipe \| separates the header from the data rows.
+A basic table:
 
-  | x<f32>  y<u8> | 
-  | 1.2     9     |
-  | 1.3     8     |
-
-This defines a table with two columns:
-
-- `x<f32>`: A floating-point column.
-- `y<u8>`: An unsigned 8-bit integer column.
-
-The same table can be written in a compact, inline format using semicolons `|` to separate rows.
-
+```mech:ex 5.5.3.1
+| x<u8>  y<string> z<bool> |
+| 1      "a"       true    |
+| 4      "b"       false   |
+| 7      "c"       true    |
 ```
-| x<f32> y<u8> | 1.2 9 | 1.3 8 |
-```
-
-Where the first cell is the header row, and the subsequent cells are the data rows, with each column separated by a space or comma.
-
-(5.5.1) Semantics
-
-- Structured: Each record consists of ordered fields (columns).
-- Heterogeneous: Fields can have different kinds (types).
-- Homogeneous: Each row has a similar structure, with the same fields.
-- Sparse: Tables allow missing values (denoted by `_`).
-
-**Any Fields**
 
 The `*` is the "any" kind and allows columns to contain data from mixed kinds.
 
+```mech:ex 5.5.3.2
   | x<*>   y<*> |
   | 1.2    true |
   | "Hi"   8<u8>|
+```
 
 Here, `x` holds both floats and strings, and y holds both integers and booleans. This can be useful for dealing with data whose type is not known at compiletime.
 
-**Incomplete Tables**
 
-When used as a value in a table, `_` indicates that a cell is missing and will be filled in later.
+(5.5.3) Semantics
 
-```
-  | x<u8>  y<string> z<[u8]:1,3> |
-  |  _      "a"        [1 2 3]   |
-  |  4      "b"           _      |
-  |  7       _         [7 8; ]   |
-```
-
-**Fancy Representation**
-
-The Mech REPL prints tables using a fancy represntation, which is valid as input to a Mech program as well. The above table is equavlent to the following fancy table:
-
-```
-╭───────────────────────────────────╮
-│ x<u8?>   y<string?>  z<[u8]:1,4?> │
-├────────┬───────────┬──────────────┤
-│   _    │    "a"    │   [1 2 3]    │
-├────────┼───────────┼──────────────┤
-│   4    │    "b"    │      _       │
-├────────┼───────────┼──────────────┤
-│   7    │     _     │   [7 8 9]    │
-╰────────┴───────────┴──────────────╯
-```
-
-**Performance Considerations:**
-
-Tables are more expressive and flexible than matrices, because they can support missing values and mixed types. However, they may be slower due to additional metadata and dynamic typing associated with each cell, and the unwrapping involved in accessing data.
-
-Table columns are stored in a column matrix with unboxed value element, so operating column-wise on table values can be fast.
-
-However, "any" kinded columns resolve to a column matrix of fully wrapped values, so they will not work with matrix operations that expect unboxed values.
+- Each record consists of ordered fields (columns).
+- Fields can have different kinds (types).
+- All values in a column must be of the same kind.
+- The number of columns is fixed and part of the table's kind.
+- Tables allow missing values (denoted by `_`).
 
 (5.6) Record
 
@@ -1065,72 +997,56 @@ record := table-start
       , ws0
       , table-end ;
 ```
-A Record is a collection of named fields, where each field consists of a key-value pair. Records provide a structured way to group related data while allowing heterogeneous types.
 
+A `record` is a collection of named fields. Each field consists of a key-value pair, where the key is an identifier and the value is a Mech value. Records provide a structured way to group related data while allowing heterogeneous types.
 
 (5.6.1) Kind
 
 A record's kind describes the types of its fields:
 
+```mech:disabled
+<{field1<kind1>, field2<kind2>,...}>
+```
 
-<{x<u8>,y<string>,z<[u8]:1,3>}>
+This denotes a record with fields:
 
-
-This denotes a record with three fields:
-
-- x: `u8`
-- y: `string`
-- z: `[u8]:1,3` (a 1×3 array of u8 values)
+- `field1<kind1>`: A field named `field1` of type `kind1`.
+- `field2<kind2>`: A field named `field2` of type `kind2`.
+- `...`: Additional fields as needed.
 
 (5.6.2) Examples
 
-**Examples 1: Implicitly Typed Records**
+A simple record with two fields. The kinds of these fields are inferred from the values:
 
-  { x: 1 y: "a", z: [1 2 3] }
+```mech:ex 5.6.3.1
+{name: "Alice", age: 30u8}  
+```
 
-This defines a record with three fields:
+The kinds of fields can be specified explicitly:
 
-- x (implicitly an float).
-- y (implicitly a string).
-- z (implicitly a column matrix of floats).
+```mech:ex 5.6.3.2
+{id<u32>: 12345, name: "Bob"}
+```
 
-**Example 2: Explicitly Typed Record**
+Records can be nested, allowing fields to contain other records:
 
-  { x<u8>: 1, y<string>: "a", z<[f64]:1,3>: [1 2 3] }
-
-Here, each field has an explicit kind:
-
-- `x<u8>`: A `u8` integer.
-- `y<string>`: A string.
-- `z<[u8]:3,1>`: A fixed-size 3×1 matrix of `u8` integers.
-
-**Example 3: Nested Records**
-
-  { a: {b: 1, c: "hi"}, b: [1;2;3] }
-
-This record contains:
-
-- a: A nested record `{b: 1, c: "hi"}`.
-- b: A columm matrix `[1;2;3]`.
+```mech:ex 5.6.3.3
+{
+  title: "Lord of the Rings", 
+  author: {
+      name: "J.R.R. Tolkien", 
+      birth-year: 1892u16
+  }
+  published: 1954u16
+}
+```
 
 (5.6.3) Semantics
 
-- Named Fields: Each field is identified by a unique name.
-- Heterogeneous: Fields can have different types.
-- Nested: Records can contain other records.
-
-**Defining Records:**
-
-Records are enclosed in `{}` and contain bindings of the form key: value. The type of each field can be inferred or explicitly specified.
-
-**Comparison to Tables**
-
-- Records group related attributes of a single entity.
-- Access a field on a record yields a scalar of that type, rather than a column matrix.
-- A table with one row is not the same as a record, as they have to be stored differently internally.
-- A table can be thought of as a vector of records.
-
-Tables represent multiple records (rows) sharing a common structure.
+- Each field is identified by a unique name.
+- Fields can have different types.
+- Records can contain other records.
+- The shape of a record is immutable, meaning fields cannot be added or removed after creation even if the record is declared mutable. A mutable record allows modification of field values but not the structure.
 
 6. Expressions
 -------------------------------------------------------------------------------
@@ -1165,37 +1081,24 @@ parenthetical-term := left-parenthesis, formula, right-parenthesis ;
 negate-factor := "-", factor ;
 
 formula := l1, *(range-operator, l1) ;
-add-sub-operator := add | subtract ;
 l1 := l2, *(add-sub-operator, l2) ;
-mul-div-operator := multiply | divide ;
-matrix-operator := matrix-multiply 
-      | multiply 
-      | divide 
-      | matrix-solve ;
 l2 := l3, *(mul-div-operator | matrix-operator, l3) ;
-exponent-operator := exponent ;
-l3 := l4, *(exponent-operator, l4) ;
-logic-operator := and 
-      | or 
-      | xor ;
+l3 := l4, *(power-operator, l4) ;
 l4 := l5, *(logic-operator, l5) ;
-comparison-operator := not-equal 
-      | equal-to 
-      | greater-than-equal 
-      | greater-than 
-      | less-than-equal 
-      | less-than ;
-l5 := factor, *(comparison-operator, factor) ;  
-factor := (structure
-      | parenthetical-term 
-      | fsm-pipe 
+l5 := l6, *(comparison-operator, l6) ;  
+l6 := l7, *(table-operator, l7) ;
+l7 := factor, *(set-operator, factor) ;
+factor := (parenthetical-term 
+      | negate-factor 
+      | not-factor
+      | structure
       | function-call 
       | literal 
       | slice 
       | var), ?transpose ;
 ```
 
-A formula is an expression that follows operator precedence rules and consists of arithmetic, logical, comparison, matrix, and range expressions. Expressions in formulas are evaluated according to their precedence, with higher-precedence operations being evaluated first.
+A formula is an expression that follows operator precedence rules and consists of arithmetic, logical, comparison, matrix, range, table, and set expressions. Expressions in formulas are evaluated according to their precedence, with higher-precedence operations being evaluated first. Precedence rules are encoded in the structure of the formula grammar.
 
 (6.1.1) Operator Precedence
 
@@ -1203,12 +1106,15 @@ Operators in formulas are applied according to the following precedence, from hi
 
 1. Parentheses - Explicit grouping of expressions.
 2. Negation and Logical NOT - Unary operations.
-3. Exponentiation - Raising to a power.
-4. Multiplication, Division, and Matrix Operations - Elementwise and matrix operations.
-5. Addition and Subtraction - Binary arithmetic operations.
-6. Comparison Operators - Elementwise comparisons.
-7. Logical Operators - and, or, xor.
-8. Range Operators - Used in range expressions.
+3. Set Operations - Union, intersection, difference, etc.
+4. Table Operations - Left join, right join, full join, etc.
+5. Comparison - `==`, `!=`, `<`, `>`, `<=`, `>=`
+6. Logical Operations - `&&`, `||`, `xor`
+7. Power - `^`
+8. Matrix Operations - `**`, `·`, `⨯`, `\\`
+9. Multiplication, Division, Remainder - `*`, `/`, `%`
+10. Add, Subtract - `+`, `-`
+11. Range - `..`, `..=`
 
 (6.1.2) Evaluation Order and Associativity
 
@@ -1221,7 +1127,7 @@ Operators in formulas are applied according to the following precedence, from hi
 add       := "+" ;
 subtract  := "-" ;
 multiply  := "*" ;
-divide    := "/" ;
+divide    := "/" | "÷" ;
 exponent  := "^" ;
 remainder := "%" ;
 ```
@@ -1229,8 +1135,8 @@ remainder := "%" ;
 (6.3) Matrix
 
 ```ebnf
-solve           := "\\" ;
-dot-product     := "·" ;
+solve           := "\" ;
+dot-product     := "·" | "•" ;
 cross-product   := "⨯" ;
 matrix-multiply := "**" ;
 transpose       := "'" ;
@@ -1240,9 +1146,11 @@ transpose       := "'" ;
 
 ```ebnf
 not-equal        := "!=" | "¬=" | "≠" ;    
-equal            := "==" ;             
-greater          := "> " ;            
-less             := "< " ;            
+equal            := "==" ;  
+strict-equal     := "=:=" , "≡" ;          
+not-strict-equal := "=!=", "=¬=";           
+greater          := ">" ;            
+less             := "<" ;            
 greater-or-equal := ">=" | "≥"  ;       
 less-or-equal    := "<=" | "≤"  ;       
 ```
@@ -1250,13 +1158,24 @@ less-or-equal    := "<=" | "≤"  ;
 (6.5) Logical
 
 ```ebnf
-or           := "|" ;            
-and          := "&" ;            
+or           := "||" ;            
+and          := "&&" ;            
 not          := "!" | "¬";         
 exclusive-or := "xor" | "⊕" | "⊻" ;   
 ```
 
-(6.6) Set
+(6.6) Table
+
+```ebnf
+natural-join := "⋈ " ;
+left0-join := "⟕ " ;
+right-join := "⟖ " ;
+full-join := "⟗ " ;
+left-semi-join := "⋉ " ;
+right-semi-join := "▷:" ;
+```
+
+(6.7) Set
 
 ```ebnf
 union := "∪";       
@@ -1272,7 +1191,7 @@ not-element-of := "∉";
 symmetric-difference := "Δ";
 ```
 
-(6.7) Range
+(6.8) Range
 
 ```ebnf
 range-inclusive := "..=" ;
@@ -2000,14 +1919,14 @@ Images can be floated to the left or right by prefixing with `<<` or `>>`, respe
 (10.9.1) Example
 
 ```
-![The Mech "M"](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true)
-![A smaller Mech "M"](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true){width: "100px", height: "100px"}
+![Mika running to get the job done!](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/running.png?ref_type=heads)
+![A smaller version of Mika](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/running.png?ref_type=heads){width: "200px"}
 ```
 
 This renders as:
 
-![The Mech "M"](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true)
-![A smaller Mech "M"](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true){width: "100px", height: "100px"}
+![Mika running to get the job done!](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/running.png?ref_type=heads)
+![A smaller version of Mika](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/running.png?ref_type=heads){width: "200px"}
 
 (10.10) Mech Extensions 
 

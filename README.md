@@ -1,4 +1,7 @@
 <p align="center">
+    <img width="300px" src="https://gitlab.com/mech-lang/assets/-/raw/v0.3-beta/images/mika/hello.png?ref_type=heads">
+</p>
+<p align="center">
   <img width="500px" src="https://mech-lang.org/img/logo.png" alt="Mech Logo">
 </p>
 
@@ -15,7 +18,7 @@
 The following code implements FizzBuzz in Mech:
 
 <p align="center">
-  <img width="680px" src="https://mech-lang.org/img/fizzbuzzblock.png" alt='The classic FizzBuzz program expressed in Mech: x := 1..=10;~out<[string]>:=x;ix2:=(x % 2) == 0;ix3:=(x % 3) == 0;out[ix2]="✨";out[ix3]="🐝";out[ix2 && ix3]="✨🐝";'>
+  <img width="680px" src="https://mech-lang.org/img/fizzbuzzblock.png" alt='The classic FizzBuzz program expressed in Mech: x:=1..=10; ~out<[string]>:=x; ix2:=(x % 2) == 0; ix3:=(x % 3) == 0; out[ix2]="✨"; out[ix3]="🐝"; out[ix2 && ix3]="✨🐝";'>
 </p>
 
 See the docs for an [extended version](https://docs.mech-lang.org/examples/fizzbuzz.html) that runs live in your browser.
@@ -37,7 +40,7 @@ Some notable features of Mech are demonstrated in this short program:
 
 ### From Source
 
-To build Mech from source, you'll first need to install [Rust](https://www.rust-lang.org/learn/get-started) (make sure to install a recent version on the nightly release channel, currently we are developing against `nightly-2025-11-12`). 
+To build Mech from source, you'll first need to install [Rust](https://www.rust-lang.org/learn/get-started) (make sure to install a recent version on the nightly release channel, currently we are developing against `nightly-2026-03-02`). 
 
 Then follow the instructions below to compile the Mech toolchain, bundled in a single executable called `mech`:
 
@@ -73,13 +76,13 @@ Feel free to stop by and introduce yourself -- we're happy to meet new users and
 
 ## Project Roadmap
 
-Mech v0.2 is currently **beta** status, meaning most intended features are implemented, but rough edges abound and there is a general lack of documentation. Development is focused on testing and documentation.
+Mech v0.3 is currently **beta** status, meaning most intended features are implemented, but rough edges abound and there is a general lack of documentation. Development is focused on testing and documentation.
 
 A Brief Roadmap:
 
 - ☑️ [v0.1](https://github.com/mech-lang/mech/tree/v0.1-beta) - proof of concept system - minimum viable language implementation
-- 📍 [v0.2](https://github.com/mech-lang/mech/tree/v0.2-beta) - data specification - formulas, defining and manipulating data
-- ☐ v0.3 - program specification - functions, modules, state machines
+- ☑️ [v0.2](https://github.com/mech-lang/mech/tree/v0.2-beta) - data specification - formulas, defining and manipulating data
+- 📍 [v0.3](https://github.com/mech-lang/mech/tree/v0.3-beta) - program specification - functions, modules, state machines
 - ☐ v0.4 - system specification - tools, distributed programs, capabilities
 
 For more details, read the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html).

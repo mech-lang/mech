@@ -32,8 +32,8 @@ Mech Documentation
 - Statements and Expressions
     - [Defining, Assigning, and Accessing Data](/reference/define.html) `todo` - create data and change it
     - [Data Conversion](/reference/convert.html) `todo` - convert data from one kind to another
-    - [Formulas](/reference/formulas.html) `todo` - compute values using expressions
-    - [Indexing](/reference/indexing.html) `todo` - access elements within data structures
+    - [Expression Broadcasting](/reference/broadcasting.html) - apply operations over data structures
+    - [Indexing](/reference/indexing.html) - access elements within data structures
 
 (2.2) Program Model
 
@@ -73,8 +73,8 @@ Mech Documentation
     - [Paragraph](/mechdown/paragraph.html)
     - [List](/mechdown/list.html)
     - [Code Block](/mechdown/code-block.html)
-    - [Table](/mechdown/table.html) `todo`
-    - [Image](/mechdown/image.html) `todo`
+    - [Table](/mechdown/table.html)
+    - [Image](/mechdown/image.html)
     - [Thematic Break](/mechdown/thematic-break.html)
     - [Equation](/mechdown/equation.html)
     - [Callout Block](/mechdown/callout-block.html)
@@ -100,7 +100,7 @@ Mech Documentation
 5. Guides
 -------------------------------------------------------------------------------
 
-- [Mech in Fifteen Minutes](/guides/mech-in-fifteen-minutes.html) `todo`
+- [Mech in Fifteen Minutes](/guides/mech-in-fifteen-minutes.html)
 - [Tutorials](/guides/tutorials.html) `todo`
 
 6. Project Design Documents
@@ -122,7 +122,7 @@ Mech Documentation
 ```mech:hidden
 document/index := {
   name: "docs" 
-  version: "v0.2.74"
+  version: "v0.3.0"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/mech/docs"
   license: "Apache-2.0"}

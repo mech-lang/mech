@@ -1453,7 +1453,7 @@ macro_rules! impl_assign_fxn {
     {
       res = res.or_else(|_| $op!($fxn_name, DVector, &$arg, $value_kind, $value_string));
     }
-    let (ref source, ref ixes, ref sink) = &$arg;
+    let &(ref source, ref ixes, ref sink) = &$arg;
     res.map_err(|_| MechError2::new(
       UnhandledFunctionArgumentIxes {
         arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()),
