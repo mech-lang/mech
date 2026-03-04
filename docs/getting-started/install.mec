@@ -70,13 +70,14 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 
 (2.2) Download and Build Mech
 
+To build Mech, you'll have to download the source code from the Git repository, build the wasm target, and then build the binary. You can do this using Git and Cargo.
+
 ```bash
 git clone https://gitlab.com/mech-lang/mech
 cd mech
-cargo build --bin mech --release
 ```
 
-(2.3) Build the Wasm Target
+(2.2.1) Build the Wasm Target
 
 If you want to build the WebAssembly target, you will need to install the `wasm-pack` tool. You can do this using Cargo:
 
@@ -90,6 +91,18 @@ Then, navigate to the `wasm` directory and build the target:
 cd mech\src\wasm
 wasm-pack build --target web
 ```
+
+This will compile the WebAssembly target and generate the necessary files in the `pkg` directory.
+
+(2.2.2) Build the Binary
+
+To build the Mech binary, navigate back to the root of the repository and run:
+
+```bash
+cargo build --release --bin mech
+```
+
+This will compile the Mech binary in release mode, which optimizes the code for performance. The resulting executable will be located in the `target/release` directory. Compile time can be long for mech/interpreter
 
 3. Cargo
 -------------------------------------------------------------------------------
