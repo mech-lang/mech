@@ -31,9 +31,7 @@ use crate::*;
 pub fn mika_section(input: ParseString) -> ParseResult<MikaSection> {
   let msg = "Expects ⸥ to close speech bubble";
   let (input, (_, r)) = range(mika_section_open)(input)?;
-  println!("Parsing Mika section starting at: {:?}", input.peek(0));
   let (input, elements) = section(input)?;
-  println!("DONE GET HERE ----------------------------------------");
   let (input, _) = label!(mika_section_close, msg, r)(input)?;
   Ok((input, MikaSection { elements }))
 }
@@ -51,7 +49,7 @@ pub fn mika_arm_left(input: ParseString) -> ParseResult<MikaArm> {
     tag("-◡"),  // ShrugLeft
     tag("ᗑ"),  // BatWing
     tag("ᕦ"),  // CurlLeft
-    tag("~"),   // Dance
+    tag("~"),  // Dance
     tag("⌣"),  // GestureLeft (bare)
     tag("╭"),  // Left
     tag("⸌"),  // RaisedLeft
@@ -334,8 +332,6 @@ pub fn mini_mika(input: ParseString) -> ParseResult<Mika> {
 pub fn mika(input: ParseString) -> ParseResult<(Mika,Option<MikaSection>)> {
   let (input, mika) = alt((mini_mika, micro_mika))(input)?;
   let (input, _) = whitespace0(input)?;
-  println!("Parsed Mika character: {:#?}", mika);
-  println!("Current input after parsing Mika character: {:?}", input.peek(0));
   let (input, mika_section) = opt(mika_section)(input)?;
   let (input, _) = whitespace0(input)?;
   Ok((input, (mika, mika_section)))

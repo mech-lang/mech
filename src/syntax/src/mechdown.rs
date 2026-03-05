@@ -347,7 +347,6 @@ pub fn section_reference(input: ParseString) -> ParseResult<ParagraphElement> {
 
 // paragraph-element := hyperlink | reference | section-ref | raw-hyperlink | highlight | footnote-reference | inline-mech-code | eval-inline-mech-code | inline-equation | paragraph-text | strong | highlight | emphasis | inline-code | strikethrough | underline ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
-  println!("Parsing paragraph element at: {:?}", input.peek(0));
   alt((hyperlink, reference, section_reference, raw_hyperlink, highlight, footnote_reference, inline_mech_code, eval_inline_mech_code, inline_equation, paragraph_text, strong, highlight, emphasis, inline_code, strikethrough, underline))(input)
 }
 
@@ -937,7 +936,6 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
     #[cfg(feature = "mika")]
     match mika(new_input.clone()) {
       Ok((input, mika)) => {
-        println!("Parsed Mika code block: {:#?}", mika);
         elements.push(SectionElement::Mika(mika));
         new_input = input;
         continue;
@@ -961,7 +959,6 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
       }
     }
 
-    println!("Parsing section element at: {:?}", new_input.peek(0));
     match section_element(new_input.clone()) {
       Ok((input, element)) => {
 
