@@ -203,8 +203,8 @@ Mech has been in [active development since 2018](https://github.com/mech-lang/me
 The beta phase has focused on stabilizing the core language and fixing shortcomings of the initial design. We anticipate four stages of development in the beta stage:
 
 -(☑️) [v0.1](https://github.com/mech-lang/mech/tree/v0.1-beta) - proof of concept system - minimum viable language implementation
--(📍) [v0.2](https://github.com/mech-lang/mech/tree/v0.2-beta) - data specification - formulas, defining and manipulating data
--(☐) v0.3 - program specification - functions, modules, state machines
+-(☑️) [v0.2](https://github.com/mech-lang/mech/tree/v0.2-beta) - data specification - formulas, defining and manipulating data
+-(📍) [v0.3](https://github.com/mech-lang/mech/tree/v0.3-beta) - program specification - functions, modules, state machines
 -(☐) v0.4 - system specification - tools, distributed programs, capabilities
 
 Currently the platform version is `v0.2.74-beta`.
