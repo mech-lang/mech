@@ -105,7 +105,7 @@ For instance pedantic mode could do literally only what the prompt states. Inter
 
 Also maybe we can put ?? anywhere for a hole. Or we can do a typed hole and do ?u64? to mean or something like that.
 
-Compilation process .mec -> mech tool -> .synth (synthesized mech) -> mech compiler -> bytecode -> runtime
+Compilation process .mec -> mech tool -> .syn (synthesized mech) -> mech compiler -> bytecode -> runtime
                                ^---- feedback refinement ----
 
 
