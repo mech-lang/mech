@@ -866,6 +866,7 @@ pub fn not_mech_code(input: ParseString) -> ParseResult<()> {
     null(error_block),
     null(idea_block),
     null(img), 
+    null(mika_section_close),
     null(float)))(input)?;
   Ok((input, ()))
 }
