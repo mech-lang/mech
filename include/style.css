@@ -2501,3 +2501,20 @@ mark {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
                Inter, sans-serif;
 }
+
+.mech-mika-section {
+    background: hsl(240, 17.24%, 5.69%);
+    border: 1px dashed hsl(288, 30%, 70%);
+    border-radius: 10px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.mech-mika {
+    font-family: 'FiraCodeRegular', monospace;
+    color: #f3bd4e;
+    float: left;
+    display: block;
+    padding-top: 18px;
+    padding-right: 10px;
+}
