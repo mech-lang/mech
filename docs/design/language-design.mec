@@ -41,7 +41,7 @@ Let's deconstruct this elevator pitch:
 
 Mech subscribes to a simple philosophy:
 
-> "Make simple things simple and complex things possible." - Alan Kay
+> "Make simple things simple and complex things possible." 
 
 This means that Mech should be easy to use for simple tasks, but also powerful enough to handle complex problems. The language is designed to be expressive and flexible, allowing programmers to work with data in a way that feels natural and intuitive.
 
@@ -177,3 +177,110 @@ We disagree on both counts.
 To the extent that LLMs are used to write code today, they are writing code in langauges humans invented for their abstraction capabilities. The recent history of programming has been about building higher-level abstractions to make programming easier for humans. Although LLMs have different capabilities when it comes to writing code (they are very fast, for starters), they still need abstractions to reason about complex systems. Natural Langauges are insufficient for logical reasoning LLMs for the same reasons 
 
 
+
+
+
+
+
+
+
+Okay let's work through the whole rationale....
+
+The way I see it is that there was a "cambrian explosion" of programming language ideas that happened in the 60s and 70s, when the field of programming languages was still very young and there were many unexplored ideas and paradigms. Since then, there has been a lot of incremental progress and refinement of existing languages, but not as much exploration of new paradigms. With the advent of AI and LLMs, we are now at a point where we can explore new paradigms that are better suited for working with AI, and that can leverage the strengths of LLMs while mitigating their weaknesses. This is an exciting time for programming language design, and we believe that there is still a lot of unexplored territory in this space.
+
+So look at the past, when C was invented what did hardware look like? It was 16-bit machines, with very limited memory and processing power. C was designed to be a low-level language that could be compiled efficiently for these machines, while still providing some level of abstraction and portability. It was a great fit for the hardware of the time, and it became widely adopted as a result.
+
+Then what about C++, Python? When they were invented still most processors were single-core, and the Internet was not really in widespread use. The concept of a GPU was still in its infancy, let alone neural processing units.
+
+Moreover the machines themselves were inert, not sensing, shackled to a desk, not able to move in the world, affect it in any way, sense it. Also the primary input device was a keyboard, maybe a mouse. Now we have touch, pen, audio, and more. The form factors have also changed dramatically, from desktop computers to laptops, tablets, phones, and even wearable devices. The way we interact with machines has also evolved, with voice assistants, gesture recognition, and more.
+
+And all of that is BEFORE the advent of AI. Now we have machines that can process and analyze vast amounts of data, and that can generate human-like text, images, and even code. The capabilities of these machines are fundamentally different from the machines of the past, and they require new approaches to programming.
+
+So what is the machine of the future. It can sense the world. It can move. It has several inputs that work simultaneously and it has verious output devices from monitors to printers to 3D printers to robot arms and legs. Multiple cores on the CPU but also multiple processing units which are heterogenous, as well as distributed spatially across the world in data centers and compute centers. Moreover some of that compute is now in the AI cloud.
+
+Now we characterize this machine of the present and near future:
+
+- Heterogenous processing units (CPU, GPU, NPU)
+- Multiple input devices (keyboard, mouse, touch, pen, audio, LiDAR, camera)
+- Multiple output devices (monitor, printer, 3D printer, robot arms and legs)
+- Distributed data and compute across the world
+- Potentially multiple users (human and/or AI) interacting with the machine simultaneously
+- Connected to a vast data stream from the Internet and sensors
+- Real-time interaction and responsiveness
+- AI capabilities for processing and generating data
+
+We also have to consider who is going to be using this machine. Really, these days we can't even stipulate the user of the machine is themselves a human being -- it could very well be the case that the primary user of the machine is an AI, and the human is just a secondary user, or even a bystander. So we characterize them separately:
+
+Human users:
+
+- They may be young or old
+- They may have no experience or a lot of experience with programming generally, but not much with this language in particular.
+- They may be students, professionals, artists, teachers, scientists, or professional programmers / engineers.
+- Their purpose for using this system may be to write programs, to learn programming, to create art, to do data analysis, to build robots, or any number of other things.
+- They have some sort of data that they want to work with, or some sort of project they want to work on, and they want to use this machine to help them with that.
+- They may not know how to program.
+
+AI users:
+
+- They may be large language models, or they may be smaller, more specialized models.
+- They may be running on the local machine, or they may be running in the cloud at a remote location.
+- The AI may not have been trained to write Mech code specifically
+- The AI has a limited context window and limited execution capabilities
+- Adding context to the AI improves its ability to write code
+- The AI is proficient at writing code but it may contain critical errors both in terms of incorrect code and misunderstanding the requirements of the task at hand.
+
+
+
+
+
+
+
+
+
+
+
+So add this all up and here's my proposal for a language that programs this machine (which machine is referring to the whole computing environment, not just a single computer).
+
+Let's go over the design constraints:
+
+- First of all it's important to note that the reader and writer of this language may be either human or AI. In fact the writer of Mech code may primarily be AI.
+- The language must be approachable for people and AI of all skill levels, from beginners to experts, and from students to professionals.
+- Programming langauges are elements of programming communities, people with a similiar programming identity and culture, so the language should be designed to foster a strong sense of community and identity among its users.
+- Mech
+
+
+
+
+
+
+
+
+
+
+Declarative, data-driven, reactive programming model that is designed to work well with AI and LLMs. Let's talk about the properties of this language.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Mech programs are written by humans for humans, by AI for AI, by AI for humans, and by humans for AI. 
+
+- Declarative: The language should allow programmers to describe what they want to achieve, rather than how to achieve it. 
+
+
+It's important for the LLM to be able to understand what the code does without having to run it, since the LLM is not a great execution engine, and also running it may have side effects that cannot be contained or undone.
+
+- Data-driven: When we stipulate declarative, data-drive is a natural fit because it defines the basis of the program as the input data streams and the transformations on that data, rather than a sequence of instructions which is the typical alternative. This also allows the LLM to understand the program in terms of data dependencies and transformations, including intermediate values.
+
+- Reactive: When we stipulate data-driven, reactive is also a natural fit because it allows the program to respond to changes in the input data streams in real-time. This also allows the LLM to understand the program in terms of how it responds to changes in data, rather than just what it does with static data, allowing for more dynamic reasoning about the program's behavior and identifying potential issues or improvements.

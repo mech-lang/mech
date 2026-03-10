@@ -37,24 +37,22 @@ Mech Documentation
 
 (2.2) Program Model
 
-(i)> Coming `v0.3`
-
-- Functions
-- Error Handling
-- Comprehensions
-- State Machines
-- SynthAssign
-- Tests
-- Modules
-- Programs
+- [Functions] - `todo`
+- [Error Handling] - `todo`
+- [Comprehensions] - `todo`
+- [State Machines] - `todo`
+- [Synthesis and Generation] - `todo`
+- [Tests] - `todo`
+- [Programs] - `todo`
 
 (2.3) System Model
 
 (i)> Coming `v0.4`
 
+- Modules
 - Capabilities
 - Distributed Computation
-- Concurrency and Parallelism
+- Concurrency
 
 3. Mechdown Reference
 -------------------------------------------------------------------------------
