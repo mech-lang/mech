@@ -32,29 +32,9 @@ Some notable features of Mech are demonstrated in this short program:
 - **Immutable**: Variables are immutable unless specified, promoting safer code and easier reasoning.
 - **Rich Text**: Mech programs support rich formatting and literate programming through Mechdown, a Markdown dialect.
 
-## Download and Install
+## Run Mech
 
-### From Binary
-
-[Download](https://docs.mech-lang.org/getting-started/install.html) the precompiled latest release for your platform.
-
-### From Source
-
-To build Mech from source, you'll first need to install [Rust](https://www.rust-lang.org/learn/get-started) (make sure to install a recent version on the nightly release channel, currently we are developing against `nightly-2026-03-02`). 
-
-Then follow the instructions below to compile the Mech toolchain, bundled in a single executable called `mech`:
-
-```bash
-git clone https://gitlab.com/mech-lang/mech
-cd mech
-cargo build --bin mech --release
-```
-
-Alternatively, you can install Mech directly via Rust's [Cargo](https://crates.io/crates/mech) utility:
-
-```bash
-cargo install mech
-```
+There are several ways to get Mech running on your machine, which you can find in the [docs](https://docs.mech-lang.org/getting-started/installation.html). The easiest way to get started is to use the online REPL at [try.mech-lang.org](https://try.mech-lang.org).
 
 ## Documentation
 
@@ -64,7 +44,7 @@ Comprehensive documentation is available at [docs.mech-lang.org](https://docs.me
 
 ## Community
 
-The Mech community stays active at a few places around the Internet:
+The Mech community gathers at a few places around the Internet:
 
 - [Discord](https://discord.gg/asqP25NNTH) - for live chat
 - [GitHub](https://github.com/mech-lang) - for code and issues
@@ -76,7 +56,7 @@ Feel free to stop by and introduce yourself -- we're happy to meet new users and
 
 ## Project Roadmap
 
-Mech v0.3 is currently **beta** status, meaning most intended features are implemented, but rough edges abound and there is a general lack of documentation. Development is focused on testing and documentation.
+Mech v0.3 is currently **beta** status, meaning many intended features are implemented, but rough edges abound and there is a general lack of documentation.
 
 A Brief Roadmap:
 
@@ -86,8 +66,6 @@ A Brief Roadmap:
 - ☐ v0.4 - system specification - tools, distributed programs, capabilities
 
 For more details, read the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html).
-
-A new version of Mech is [released every week](https://github.com/mech-lang/mech/releases).
 
 ## Notice
 
