@@ -25,11 +25,14 @@ use tabled::{
   settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
   Tabled,
 };
+use indicatif::{ProgressBar, ProgressStyle, MultiProgress};
 use serde_json;
 use std::panic;
 use std::sync::{Arc, Mutex};
 use std::path::Path;
 use std::ffi::OsStr;
+use std::time::Duration;
+use std::thread;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -555,7 +558,17 @@ async fn main() -> Result<(), MechError2> {
       let mut caught_inturrupts = ci.lock().unwrap();
       *caught_inturrupts += 1;
       if *caught_inturrupts >= 3 {
-        println!("Okay, cya!");
+        let final_state = ProgressBar::new_spinner();
+        let completed_style = ProgressStyle::with_template(
+          "{spinner} {msg}"
+        ).unwrap().tick_strings(MIKAWAVE);  
+        final_state.set_prefix("[Success]");
+        final_state.set_style(completed_style);
+        final_state.set_message("Okay cya!");
+        for _ in 0..MIKAWAVE.len() - 1 {
+          thread::sleep(Duration::from_millis(100));
+          final_state.tick();
+        }
         std::process::exit(0);
       }
       println!("Enter \":quit\" to terminate this REPL session.");
