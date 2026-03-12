@@ -229,9 +229,13 @@ AI users:
 - Adding context to the AI improves its ability to write code
 - The AI is proficient at writing code but it may contain critical errors both in terms of incorrect code and misunderstanding the requirements of the task at hand.
 
+So let's talk about the actual language. We know that the LLM gets information from context so literate programming is a natural fit, and in fact we can take it to the next level by making the source code itself a kind of knowledge base that the LLM can draw from when writing code. This means that the language should be designed to be readable and understandable by both humans and LLMs, and that it should allow for partial execution and putting intermediate values in the document itself so that the LLM can see them and help with reasoning.
 
+Following that logic, declarative programming seems the right paradigm, because then the meaning of the program is written directly in the source code. This also gives us options for compiling the code.
 
+Declarative limits our design options considerably but it's alright because we have good options. Dataflow is nice because we will be working with sensor streams, which continutally produce data for the system.
 
+Hardware for a robot can is heterogenous and distributed -- that is, the sensors and actuators may be distributed across the robot, and the processing units may also be distributed across the robot as well; and they are not guaranteed to be from the same manufacturer or to have the same architecture -- so a distributed programming model is a natural fit. This also allows us to build systems that can run on multiple devices or machines, making it easy to scale our applications.
 
 
 
