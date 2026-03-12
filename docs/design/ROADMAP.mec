@@ -83,7 +83,7 @@ As beta features, these are are still not complete and are subject to change in 
 
 Version `v0.3` incorporates all the features of `v0.2`, in addition to the following new features:
 
--(💭) synthassign
+-(💭) synth/gen
 -(💭) introspection
 -(💭) higher order functions
 -(💭) new types (dec64, currency, email addresses, dates)
