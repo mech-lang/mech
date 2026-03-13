@@ -37,7 +37,7 @@ pub static MIKAWAKE: &[&str] = &[
 ];
 
 pub static MIKABLINK: &[&str] = &[
-  "╭⦿╮", "╭⊖╮", "╭⦿╮"
+  "╭⦿╮", "╭⊖╮", "╭⦿╮", "╭⊖╮", "╭⦿╮", "╭⦿╮", "╭⦿╮", "╭⦿╮"
 ];
 
 pub static MIKAPULSE: &[&str] = &[
