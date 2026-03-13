@@ -549,7 +549,7 @@ async fn main() -> Result<(), MechError2> {
     stdo.execute(cursor::MoveToNextLine(1));
     println!("\n                {}                ",format!("v{}",VERSION).truecolor(246,192,78));
     println!("           {}           \n", "www.mech-lang.org");
-    println!("Enter \":help\" for a list of all commands.\n");
+    println!("╭⦿╮ ⸢Enter \":help\" for a list of all commands.⸥\n");
 
     // Catch Ctrl-C a couple times before quitting
     let mut ci = caught_inturrupts.clone();
@@ -560,18 +560,18 @@ async fn main() -> Result<(), MechError2> {
       if *caught_inturrupts >= 3 {
         let final_state = ProgressBar::new_spinner();
         let completed_style = ProgressStyle::with_template(
-          "{spinner} {msg}"
+          "{spinner:.yellow} {msg}"
         ).unwrap().tick_strings(MIKAWAVE);  
         final_state.set_prefix("[Success]");
         final_state.set_style(completed_style);
-        final_state.set_message("Okay cya!");
+        final_state.set_message("⸢Okay cya!⸥");
         for _ in 0..MIKAWAVE.len() - 1 {
-          thread::sleep(Duration::from_millis(100));
+          thread::sleep(Duration::from_millis(150));
           final_state.tick();
         }
         std::process::exit(0);
       }
-      println!("Enter \":quit\" to terminate this REPL session.");
+      println!("╭⦿╮ ⸢Enter \":quit\" to terminate this REPL session.⸥");
       print_prompt();
     }).expect("Error setting Ctrl-C handler");
   }
