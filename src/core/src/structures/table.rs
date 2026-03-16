@@ -62,7 +62,7 @@ impl MechTable {
   pub fn from_records(records: Vec<MechRecord>) -> MResult<MechTable> {
     if records.is_empty() {
       return Err(
-        MechError2::new(
+        MechError::new(
           CannotCreateTableFromEmptyRecordListError,
           None
         ).with_compiler_loc()
@@ -119,7 +119,7 @@ impl MechTable {
       }
       _ => {
         return Err(
-          MechError2::new(
+          MechError::new(
             CannotCreateTableFromNonTableKindError,
             None
           ).with_compiler_loc()
@@ -152,7 +152,7 @@ impl MechTable {
       let actual_kind = record_value.kind();
       if expected_kind != &actual_kind {
         return Err(
-          MechError2::new(
+          MechError::new(
             TableColumnKindMismatchError {
               column_id: col_id,
               expected_kind: expected_kind.clone(),
@@ -168,7 +168,7 @@ impl MechTable {
         if let Some(field_name) = record.field_names.get(&col_id) {
           if expected_name != field_name {
             return Err(
-              MechError2::new(
+              MechError::new(
                 TableColumnNameMismatchError {
                   column_id: col_id,
                   expected_name: expected_name.clone(),
@@ -190,7 +190,7 @@ impl MechTable {
     for (&col_id, col_name) in &self.col_names {
       match record.col_names.get(&col_id) {
         Some(record_name) if col_name != record_name => {
-          return Err(MechError2::new(
+          return Err(MechError::new(
             TableColumnNameMismatchError {
               column_id: col_id,
               expected_name: col_name.clone(),
@@ -200,7 +200,7 @@ impl MechTable {
           ).with_compiler_loc());
         }
         None => {
-          return Err(MechError2::new(
+          return Err(MechError::new(
             TableColumnNotFoundError { column_id: col_id },
             None
           ).with_compiler_loc());
@@ -213,7 +213,7 @@ impl MechTable {
     for (&col_id, (expected_kind, _)) in &self.data {
       match record.data.get(&col_id) {
         Some((record_kind, _)) if expected_kind != record_kind => {
-          return Err(MechError2::new(
+          return Err(MechError::new(
             TableColumnKindMismatchError {
               column_id: col_id,
               expected_kind: expected_kind.clone(),
@@ -223,7 +223,7 @@ impl MechTable {
           ).with_compiler_loc());
         }
         None => {
-          return Err(MechError2::new(
+          return Err(MechError::new(
             TableColumnNotFoundError { column_id: col_id },
             None
           ).with_compiler_loc());
@@ -240,14 +240,14 @@ impl MechTable {
 
     for (&col_id, (_, other_matrix)) in &other.data {
       let (_, self_matrix) = self.data.get_mut(&col_id).ok_or_else(|| 
-        MechError2::new(
+        MechError::new(
           TableColumnNotFoundError { column_id: col_id },
           None
         ).with_compiler_loc()
       )?;
 
       self_matrix.append(other_matrix).map_err(|err| 
-        MechError2::new(
+        MechError::new(
           MatrixAppendToTableError { column_id: col_id },
           None
         ).with_compiler_loc()

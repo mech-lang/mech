@@ -41,7 +41,7 @@ where
         let id = hash_str(&name.borrow());
         Ok(Box::new(Self {id, name, mutable, var, _marker: PhantomData::default() }))
       },
-      _ => Err(MechError2::new(
+      _ => Err(MechError::new(
           IncorrectNumberOfArguments { expected: 3, found: args.len() },
           None
         ).with_compiler_loc()
@@ -93,7 +93,7 @@ macro_rules! impl_variable_define_fxn {
               let id = hash_str(&name.borrow());
               Ok(Box::new(Self { id, name, mutable, var }))
             },
-            _ => Err(MechError2::new(
+            _ => Err(MechError::new(
                 IncorrectNumberOfArguments { expected: 3, found: args.len() },
                 None
               ).with_compiler_loc()
@@ -250,7 +250,7 @@ macro_rules! impl_variable_define_match_arms {
           register_define!(VariableDefineMatrix, $value_kind, $feature, RowDVector);
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
-        (sink, name, mutable, id) => Err(MechError2::new(
+        (sink, name, mutable, id) => Err(MechError::new(
             UnhandledFunctionArgumentKind3 {arg: (sink.kind(), name.kind(), mutable.kind()), fxn_name: "var/define".to_string() },
             None
           ).with_compiler_loc()
@@ -295,7 +295,7 @@ fn impl_var_define_fxn(var: Value, name: Value, mutable: Value, id: u64) -> MRes
   .or_else(|_| impl_variable_define_match_arms!(&arg, C64,  "complex"))
   .or_else(|_| impl_variable_define_match_arms!(&arg, bool, "bool"))
   .or_else(|_| impl_variable_define_match_arms!(&arg, String, "string"))
-  .map_err(|_| MechError2::new(
+  .map_err(|_| MechError::new(
       UnhandledFunctionArgumentKind3 { arg: (var.kind(), name.kind(), mutable.kind()), fxn_name: "var/define".to_string() },
       None
     ).with_compiler_loc()
@@ -307,7 +307,7 @@ pub struct VarDefine{}
 impl NativeFunctionCompiler for VarDefine {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 3 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let var = arguments[0].clone();
     let name = &arguments[1].clone();
@@ -320,7 +320,7 @@ impl NativeFunctionCompiler for VarDefine {
       Err(_) => {
         match (var) {
           (Value::MutableReference(input)) => {impl_var_define_fxn(input.borrow().clone(), name.clone(), mutable.clone(), id)}
-          _ => Err(MechError2::new(
+          _ => Err(MechError::new(
               UnhandledFunctionArgumentKind3 { arg: (var.kind(), name.kind(), mutable.kind()), fxn_name: "var/define".to_string() },
               None
             ).with_compiler_loc()

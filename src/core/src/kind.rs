@@ -74,7 +74,7 @@ impl Kind {
         match kinds.get(id).cloned() {
           Some(val_knd) => Ok(val_knd),
           None => Err(
-            MechError2::new(
+            MechError::new(
               UndefinedKindError { kind_id: *id },
               None,
             )

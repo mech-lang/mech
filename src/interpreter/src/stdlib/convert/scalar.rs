@@ -16,7 +16,7 @@ impl MechFunctionFactory for ConvertSEnum {
         let out: Ref<MechEnum> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self {out}))
       },
-      _ => Err(MechError2::new(
+      _ => Err(MechError::new(
           IncorrectNumberOfArguments { expected: 1, found: args.len() },
           None
         ).with_compiler_loc()
@@ -133,7 +133,7 @@ macro_rules! impl_conversion_match_arms {
             let mat_knd = ValueKind::[<$input_type:camel>];
             // Verify the table has the correct number of columns
             if in_shape[1] != tbl_cols {
-              return Err(MechError2::new(
+              return Err(MechError::new(
                 ConvertIncorrectNumberOfColumnsError{from: in_shape[1], to: tbl_cols},
                 None,
               ).with_compiler_loc());
@@ -145,7 +145,7 @@ macro_rules! impl_conversion_match_arms {
               } else if mat_knd.is_convertible_to(knd) {
                 continue;
               } else {
-                return Err(MechError2::new(
+                return Err(MechError::new(
                   ColumnConvertKindMismatchError{from: mat_knd, to: knd.clone()},
                   None,
                 ).with_compiler_loc());
@@ -176,7 +176,7 @@ macro_rules! impl_conversion_match_arms {
           todo!("This isn't finished yet");
           Ok(Box::new(ConvertSEnum{out: val}))
         }
-        x => Err(MechError2::new(
+        x => Err(MechError::new(
             UnsupportedConversionError{from: x.0.kind(), to: x.1.kind()},
             None,
           ).with_compiler_loc()
@@ -267,7 +267,7 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
       let in_shape = mat.shape();
       // Verify the table has the correct number of columns
       if in_shape[1] != tbl.len() {
-        return Err(MechError2::new(
+        return Err(MechError::new(
           ConvertIncorrectNumberOfColumnsError{from: in_shape[1], to: tbl.len()},
           None,
         ).with_compiler_loc());
@@ -281,7 +281,7 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
       let in_shape = mat.shape();
       // Verify the table has the correct number of columns
       if in_shape[1] != tbl.len() {
-        return Err(MechError2::new(
+        return Err(MechError::new(
           ConvertIncorrectNumberOfColumnsError{from: in_shape[1], to: tbl.len()},
           None,
         ).with_compiler_loc());
@@ -317,7 +317,7 @@ pub struct ConvertKind {}
 impl NativeFunctionCompiler for ConvertKind {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let source_value = arguments[0].clone();
     let target_kind = arguments[1].clone();
@@ -352,7 +352,7 @@ impl NativeFunctionCompiler for ConvertKind {
           Value::MatrixF32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
           #[cfg(all(feature = "matrix", feature = "f64"))]
           Value::MatrixF64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-          x => Err(MechError2::new(
+          x => Err(MechError::new(
               UnhandledFunctionArgumentKind2 { arg: (arguments[0].kind(), arguments[1].kind()), fxn_name: "convert/scalar".to_string() },
               None,
             ).with_compiler_loc()

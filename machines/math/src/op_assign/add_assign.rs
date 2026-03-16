@@ -78,7 +78,7 @@ pub struct AddAssignMath {}
 impl NativeFunctionCompiler for AddAssignMath {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
     }
     let sink = arguments[0].clone();
     let source = arguments[1].clone();
@@ -89,7 +89,7 @@ impl NativeFunctionCompiler for AddAssignMath {
           (Value::MutableReference(sink),Value::MutableReference(source)) => { add_assign_math_fxn(sink.borrow().clone(),source.borrow().clone()) },
           (sink,Value::MutableReference(source)) => { add_assign_math_fxn(sink.clone(),source.borrow().clone()) },
           (Value::MutableReference(sink),source) => { add_assign_math_fxn(sink.borrow().clone(),source.clone()) },
-          (arg1,arg2) => Err(MechError2::new(
+          (arg1,arg2) => Err(MechError::new(
               UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "math/add-assign".to_string() },
               None
             ).with_compiler_loc()
@@ -164,7 +164,7 @@ pub struct AddAssignRange {}
 impl NativeFunctionCompiler for AddAssignRange {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
     }
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
@@ -176,7 +176,7 @@ impl NativeFunctionCompiler for AddAssignRange {
           (Value::MutableReference(sink),ixes,Value::MutableReference(source)) => { add_assign_range_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
           (sink,ixes,Value::MutableReference(source)) => { add_assign_range_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
           (Value::MutableReference(sink),ixes,source) => { add_assign_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
-          (sink, ixes, source) => Err(MechError2::new(
+          (sink, ixes, source) => Err(MechError::new(
               UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: "math/add-assign/range".to_string() },
               None
             ).with_compiler_loc()
@@ -263,7 +263,7 @@ pub struct AddAssignRangeAll {}
 impl NativeFunctionCompiler for AddAssignRangeAll {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
     }
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
@@ -275,7 +275,7 @@ impl NativeFunctionCompiler for AddAssignRangeAll {
           (Value::MutableReference(sink),ixes,Value::MutableReference(source)) => { add_assign_range_all_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
           (sink,ixes,Value::MutableReference(source)) => { add_assign_range_all_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
           (Value::MutableReference(sink),ixes,source) => { add_assign_range_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
-          (sink, ixes, source) => Err(MechError2::new(
+          (sink, ixes, source) => Err(MechError::new(
               UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: "math/add-assign/range-all".to_string() },
               None
             ).with_compiler_loc()

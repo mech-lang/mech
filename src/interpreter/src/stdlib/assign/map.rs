@@ -47,7 +47,7 @@ fn impl_set_map_value_fxn(
 
       // Key kind check
       if key.kind() != map.key_kind {
-        return Err(MechError2::new(
+        return Err(MechError::new(
           MapKeyKindMismatchError {
             expected_kind: map.key_kind.clone(),
             actual_kind: key.kind(),
@@ -84,7 +84,7 @@ fn impl_set_map_value_fxn(
           Ok(Box::new(MapAssign { sink: sink.clone(), source: source.clone() }))
         }
 
-        _ => Err(MechError2::new(
+        _ => Err(MechError::new(
           MapValueKindMismatchError {
             expected_kind: map.value_kind.clone(),
             actual_kind: source.kind(),
@@ -95,7 +95,7 @@ fn impl_set_map_value_fxn(
       }
     }
 
-    _ => Err(MechError2::new(
+    _ => Err(MechError::new(
       UnhandledFunctionArgumentKind3 {
         arg: (sink.kind(), source.kind(), key.kind()),
         fxn_name: "map/assign".to_string(),
@@ -112,7 +112,7 @@ pub struct MapAssignScalar {}
 impl NativeFunctionCompiler for MapAssignScalar {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() < 3 {
-      return Err(MechError2::new(
+      return Err(MechError::new(
         IncorrectNumberOfArguments {
           expected: 3,
           found: arguments.len(),
@@ -133,7 +133,7 @@ impl NativeFunctionCompiler for MapAssignScalar {
         Value::MutableReference(sink_ref) => {
           impl_set_map_value_fxn(sink_ref.borrow().clone(), source, key)
         }
-        _ => Err(MechError2::new(
+        _ => Err(MechError::new(
           UnhandledFunctionArgumentKind3 {
             arg: (arguments[0].kind(), arguments[1].kind(), arguments[2].kind()),
             fxn_name: "map/assign".to_string(),

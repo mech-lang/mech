@@ -81,7 +81,7 @@ macro_rules! impl_conversion_scalar_to_mat_match_arms {
                 [n,1] => {let out = DVector::from_element(n,v.borrow().clone());    return Ok(Box::new(ConvertScalarToMat2{arg: v, out: Ref::new(out)}));},
                 #[cfg(feature = "matrixd")]
                 [n,m] => {let out = DMatrix::from_element(n,m,v.borrow().clone());  return Ok(Box::new(ConvertScalarToMat2{arg: v, out: Ref::new(out)}));},
-                [] => {return Err(MechError2::new(
+                [] => {return Err(MechError::new(
                   CannotReshapeMatrixToEmpty,
                   None
                 ).with_compiler_loc());}
@@ -90,7 +90,7 @@ macro_rules! impl_conversion_scalar_to_mat_match_arms {
             }
           )+
         )+
-        x => Err(MechError2::new(
+        x => Err(MechError::new(
             UnsupportedConversionError{from: x.0.kind(), to: x.1.clone()},
             None
           ).with_compiler_loc()
@@ -127,7 +127,7 @@ pub struct ConvertScalarToMat {}
 impl NativeFunctionCompiler for ConvertScalarToMat {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let source_value = arguments[0].clone();
     let source_kind = source_value.kind();
@@ -137,7 +137,7 @@ impl NativeFunctionCompiler for ConvertScalarToMat {
       Err(_) => {
         match source_value {
           Value::MutableReference(rhs) => impl_conversion_scalar_to_mat_fxn(rhs.borrow().clone(), target_kind.clone()),
-          x => Err(MechError2::new(
+          x => Err(MechError::new(
               UnhandledFunctionArgumentKind2 { arg: (arguments[0].kind(), arguments[1].kind()), fxn_name: "convert/scalar-to-mat".to_string() },
               None,
             ).with_compiler_loc()

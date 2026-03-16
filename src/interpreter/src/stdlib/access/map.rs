@@ -41,14 +41,14 @@ pub fn impl_access_map_fxn(source: Value, key: Value) -> MResult<Box<dyn MechFun
           out: value.clone(),
           source: map.clone(),
         })),
-        None => Err(MechError2::new(
+        None => Err(MechError::new(
           UndefinedMapKeyError { key: key.to_string() },
           None,
         ).with_compiler_loc()),
       }
     }
 
-    (source, key) => Err(MechError2::new(
+    (source, key) => Err(MechError::new(
       UnhandledFunctionArgumentKind2 {
         arg: (source.kind(), key.kind()),
         fxn_name: "MapAccess".to_string(),
@@ -63,7 +63,7 @@ pub struct MapAccess {}
 impl NativeFunctionCompiler for MapAccess {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError2::new(
+      return Err(MechError::new(
         IncorrectNumberOfArguments {
           expected: 2,
           found: arguments.len(),
@@ -80,7 +80,7 @@ impl NativeFunctionCompiler for MapAccess {
       #[cfg(feature = "map")]
       ValueKind::Map(key_kind, _) => {
         if key.kind() != *key_kind {
-          return Err(MechError2::new(
+          return Err(MechError::new(
             UnhandledFunctionArgumentKind2 { arg: (src.kind(), key.kind()), fxn_name: "MapAccess".to_string() },
             None,
           ).with_compiler_loc());
@@ -96,7 +96,7 @@ impl NativeFunctionCompiler for MapAccess {
           Value::MutableReference(map) => {
             impl_access_map_fxn(map.borrow().clone(), key.clone())
           }
-          _ => Err(MechError2::new(
+          _ => Err(MechError::new(
             UnhandledFunctionArgumentKind2 {
               arg: (src.kind(), key.kind()),
               fxn_name: "MapAccess".to_string(),

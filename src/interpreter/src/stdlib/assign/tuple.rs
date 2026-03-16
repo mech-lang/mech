@@ -64,7 +64,7 @@ fn impl_tuple_assign_fxn(
       let tuple = tuple_ref.borrow();
 
       if index >= tuple.size() {
-        return Err(MechError2::new(
+        return Err(MechError::new(
           TupleIndexOutOfBoundsError {
             ix: index + 1,
             len: tuple.size(),
@@ -109,7 +109,7 @@ fn impl_tuple_assign_fxn(
           }))
         }
 
-        _ => Err(MechError2::new(
+        _ => Err(MechError::new(
           TupleElementKindMismatchError {
             expected: sink.kind(),
             actual: source.kind(),
@@ -119,7 +119,7 @@ fn impl_tuple_assign_fxn(
       }
     }
 
-    _ => Err(MechError2::new(
+    _ => Err(MechError::new(
       DestructureExpectedTupleError {
         value: tuple.kind(),
       },
@@ -136,7 +136,7 @@ impl NativeFunctionCompiler for TupleAssignScalar {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
 
     if arguments.len() != 3 {
-      return Err(MechError2::new(
+      return Err(MechError::new(
         IncorrectNumberOfArguments {
           expected: 3,
           found: arguments.len(),
@@ -153,7 +153,7 @@ impl NativeFunctionCompiler for TupleAssignScalar {
       Value::Index(ix) => {
         let ix = *ix.borrow() as isize;
         if ix <= 0 {
-          return Err(MechError2::new(
+          return Err(MechError::new(
             TupleIndexOutOfBoundsError {
               ix: ix as usize,
               len: 0,
@@ -165,7 +165,7 @@ impl NativeFunctionCompiler for TupleAssignScalar {
       }
 
       _ => {
-        return Err(MechError2::new(
+        return Err(MechError::new(
           UnhandledFunctionArgumentKind3 {
             arg: (tuple.kind(), source.kind(), index_val.kind()),
             fxn_name: "tuple/assign".to_string(),
@@ -183,7 +183,7 @@ impl NativeFunctionCompiler for TupleAssignScalar {
           impl_tuple_assign_fxn(tuple_ref.borrow().clone(), source, index)
         }
 
-        _ => Err(MechError2::new(
+        _ => Err(MechError::new(
           UnhandledFunctionArgumentKind3 {
             arg: (arguments[0].kind(), arguments[1].kind(), arguments[2].kind()),
             fxn_name: "tuple/assign".to_string(),

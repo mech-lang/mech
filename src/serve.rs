@@ -62,7 +62,7 @@ impl MechServer {
 
   pub async fn serve(&self) -> MResult<()> {
     if !self.init {
-      return Err(MechError2::new(ServerNotInitializedError, None).with_compiler_loc());
+      return Err(MechError::new(ServerNotInitializedError, None).with_compiler_loc());
     }
       
     let server_badge = || {"[Mech Server]".truecolor(34, 204, 187)};

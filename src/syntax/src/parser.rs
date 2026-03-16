@@ -516,7 +516,7 @@ pub fn parse_grammar(text: &str) -> MResult<Grammar> {
       err_message: String::from(e.1.message),
       annotation_rngs: e.1.annotation_rngs,
     }).collect();
-    Err(MechError2::new(
+    Err(MechError::new(
       ParserErrorReport(text.to_string(), report),
       None
     ))
@@ -565,7 +565,7 @@ pub fn parse(text: &str) -> MResult<Program> {
       err_message: String::from(e.1.message),
       annotation_rngs: e.1.annotation_rngs,
     }).collect();
-    Err(MechError2::new(
+    Err(MechError::new(
       ParserErrorReport(text.to_string(), report),
       None
     ).with_compiler_loc())

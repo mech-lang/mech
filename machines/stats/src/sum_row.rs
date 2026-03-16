@@ -98,7 +98,7 @@ macro_rules! sum_row_op2 {
             Value::[<Matrix $input_type>](Matrix::<$target_type>::DMatrix(arg)) => Ok(Box::new(StatsSumRowMD{arg: arg.clone(), out: Ref::new(RowDVector::from_element(arg.borrow().ncols(), $target_type::default())) })),
           )+
         )+
-        x => Err(MechError2::new(
+        x => Err(MechError::new(
             UnhandledFunctionArgumentKind1 {arg: x.kind(), fxn_name: stringify!(StatsSumRow).to_string() },
             None
           ).with_compiler_loc()

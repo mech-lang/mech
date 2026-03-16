@@ -19,17 +19,17 @@ impl MechRecord {
     for (&field_id, _value) in &self.data {
       // Check field existence
       if !record.data.contains_key(&field_id) {
-        return Err(MechError2::new(MissingFieldInRecordError { field_id }, None).with_compiler_loc());
+        return Err(MechError::new(MissingFieldInRecordError { field_id }, None).with_compiler_loc());
       }
       // Get expected kind
       let expected_kind = self.kinds.get(self.key_index(field_id)?)
-        .ok_or_else(|| MechError2::new(MissingKindForFieldError { field_id }, None).with_compiler_loc())?;
+        .ok_or_else(|| MechError::new(MissingKindForFieldError { field_id }, None).with_compiler_loc())?;
       // Get actual kind
       let actual_kind = record.kinds.get(record.key_index(field_id)?)
-        .ok_or_else(|| MechError2::new(MissingKindInComparedRecordError { field_id }, None).with_compiler_loc())?;
+        .ok_or_else(|| MechError::new(MissingKindInComparedRecordError { field_id }, None).with_compiler_loc())?;
       // Compare kinds
       if expected_kind != actual_kind {
-        return Err(MechError2::new(
+        return Err(MechError::new(
           RecordFieldKindMismatchError {
             field_id,
             expected_kind: expected_kind.clone(),
@@ -40,7 +40,7 @@ impl MechRecord {
       }
       // Check field names
       if self.field_names.get(&field_id) != record.field_names.get(&field_id) {
-        return Err(MechError2::new(
+        return Err(MechError::new(
           RecordFieldNameMismatchError {
             field_id,
             expected_name: self.field_names.get(&field_id).cloned(),
@@ -55,7 +55,7 @@ impl MechRecord {
 
   fn key_index(&self, field_id: u64) -> MResult<usize> {
     self.data.keys().position(|&id| id == field_id).ok_or_else(|| {
-      MechError2::new(
+      MechError::new(
         KeyNotFoundInKeyIndexError { field_id },
         None
       ).with_compiler_loc()

@@ -61,7 +61,7 @@ macro_rules! impl_op_assign_range_fxn_s {
             let sink: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self { sink, source, ixes, _marker: PhantomData::default() }))
           },
-          _ => Err(MechError2::new(
+          _ => Err(MechError::new(
               IncorrectNumberOfArguments { expected: 3, found: args.len() },
               None
             ).with_compiler_loc()
@@ -143,7 +143,7 @@ macro_rules! impl_op_assign_range_fxn_v {
             let sink: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self { sink, source, ixes, _marker: PhantomData::default() }))
           },
-          _ => Err(MechError2::new(
+          _ => Err(MechError::new(
               IncorrectNumberOfArguments { expected: 3, found: args.len() },
               None
             ).with_compiler_loc()
@@ -212,7 +212,7 @@ macro_rules! op_assign_range_fxn {
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, f64, "f64"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, R64, "rational"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, C64, "complex"))
-        .map_err(|_| MechError2::new(
+        .map_err(|_| MechError::new(
             UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: stringify!($fxn_name).to_string() },
             None
           ).with_compiler_loc()
@@ -241,7 +241,7 @@ macro_rules! op_assign_range_all_fxn {
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, f64, "f64"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, R64, "rational"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, C64, "complex"))
-        .map_err(|_| MechError2::new(
+        .map_err(|_| MechError::new(
             UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: stringify!($fxn_name).to_string() },
             None
           ).with_compiler_loc()
@@ -274,7 +274,7 @@ macro_rules! impl_assign_scalar_scalar {
               let sink: Ref<T> = unsafe { out.as_unchecked() }.clone();
               Ok(Box::new(Self { sink, source }))
             },
-            _ => Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc())
+            _ => Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc())
           }    
         }    
       }
@@ -353,7 +353,7 @@ macro_rules! impl_assign_vector_vector {
               let sink: Ref<MatA> = unsafe { out.as_unchecked() }.clone();
               Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))
             },
-            _ => Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc())
+            _ => Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc())
           }    
         }    
       }
@@ -424,7 +424,7 @@ macro_rules! impl_assign_vector_scalar {
               let sink: Ref<MatA> = unsafe { out.as_unchecked() }.clone();
               Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))
             },
-            _ => Err(MechError2::new(
+            _ => Err(MechError::new(
                 IncorrectNumberOfArguments { expected: 2, found: args.len() },
                 None
               ).with_compiler_loc()
@@ -621,7 +621,7 @@ macro_rules! impl_op_assign_value_match_arms {
           #[cfg(all(feature = $feature, feature = "row_vectord"))]
           (Value::[<Matrix $value_kind>](Matrix::RowDVector(sink)), Value::[<Matrix $value_kind>](Matrix::RowDVector(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
         )+
-        (arg1,arg2) => Err(MechError2::new(
+        (arg1,arg2) => Err(MechError::new(
             UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($op).to_string() },
             None
           ).with_compiler_loc()

@@ -35,7 +35,7 @@ where
         let out: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { from, to, out, phantom: PhantomData::default() }))
       },
-      _ => Err(MechError2::new(
+      _ => Err(MechError::new(
           IncorrectNumberOfArguments { expected: 3, found: args.len() },
           None
         ).with_compiler_loc()
@@ -86,7 +86,7 @@ macro_rules! impl_range_exclusive_match_arms {
             let to_val = *to.borrow();
             let diff = to_val - from_val;
             if diff < $ty::zero() {
-              return Err(MechError2::new(
+              return Err(MechError::new(
                 EmptyRangeError{},
                 None
               ).with_compiler_loc());
@@ -94,7 +94,7 @@ macro_rules! impl_range_exclusive_match_arms {
             let size = range_size_to_usize!(diff, $ty);
             let mut vec = vec![from_val; size];
             match size {
-              0 => Err(MechError2::new(
+              0 => Err(MechError::new(
                 EmptyRangeError{},
                 None
               ).with_compiler_loc()),
@@ -131,7 +131,7 @@ macro_rules! impl_range_exclusive_match_arms {
             }
           }
         )+
-        (arg1,arg2) => Err(MechError2::new(
+        (arg1,arg2) => Err(MechError::new(
           UnhandledFunctionArgumentKind2 {arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($fxn).to_string() },
           None
         ).with_compiler_loc()),
@@ -162,7 +162,7 @@ pub struct RangeExclusive {}
 impl NativeFunctionCompiler for RangeExclusive {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() },None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() },None).with_compiler_loc());
     }
     let arg1 = arguments[0].clone();
     let arg2 = arguments[1].clone();
@@ -173,7 +173,7 @@ impl NativeFunctionCompiler for RangeExclusive {
           (Value::MutableReference(arg1),Value::MutableReference(arg2)) => {impl_range_exclusive_fxn(arg1.borrow().clone(),arg2.borrow().clone())}
           (Value::MutableReference(arg1),arg2) => {impl_range_exclusive_fxn(arg1.borrow().clone(),arg2.clone())}
           (arg1,Value::MutableReference(arg2)) => {impl_range_exclusive_fxn(arg1.clone(),arg2.borrow().clone())}
-          (arg1,arg2) => Err(MechError2::new(
+          (arg1,arg2) => Err(MechError::new(
               UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "range/exclusive".to_string() },
               None
             ).with_compiler_loc()

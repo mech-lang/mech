@@ -57,7 +57,7 @@ static STYLESHEET: &str = include_str!("../../include/style.css");
 static STYLESHEET: &str = "No Embedded Stylesheet";
 
 #[tokio::main]
-async fn main() -> Result<(), MechError2> {
+async fn main() -> Result<(), MechError> {
   /*panic::set_hook(Box::new(|panic_info| {
     // do nothing.
   }));*/
@@ -239,14 +239,14 @@ async fn main() -> Result<(), MechError2> {
     let stylesheet = read_or_download(&stylesheet_path, &stylesheet_backup_url, Some(STYLESHEET.as_bytes()))
         .await?;
     let stylesheet_str = String::from_utf8(stylesheet)
-        .map_err(|e| MechError2::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
+        .map_err(|e| MechError::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
 
     // Load shim HTML
     print!("{} Loading HTML shim...", badge);
     let shim = read_or_download(&shim_path, &shim_backup_url, Some(SHIMHTML.as_bytes()))
         .await?;
     let shim_str = String::from_utf8(shim)
-        .map_err(|e| MechError2::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
+        .map_err(|e| MechError::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
 
     // Load WASM
     print!("{} Loading WASM...", badge);
@@ -374,7 +374,7 @@ async fn main() -> Result<(), MechError2> {
     let stylesheet = read_or_download(&stylesheet_path, &stylesheet_backup_url, Some(STYLESHEET.as_bytes()))
             .await?;
     let stylesheet_str = String::from_utf8(stylesheet).map_err(|e| {
-      MechError2::new(
+      MechError::new(
         Utf8ConversionError {
           source_error: e.to_string(),
         },
@@ -387,7 +387,7 @@ async fn main() -> Result<(), MechError2> {
     print!("{} Loading HTML shim...", badge);
     let shim = read_or_download(&shim_path, &shim_backup_url, Some(SHIMHTML.as_bytes())).await?;
     let shim_str = String::from_utf8(shim).map_err(|e| {
-      MechError2::new(
+      MechError::new(
         Utf8ConversionError {
           source_error: e.to_string(),
         },
@@ -753,7 +753,7 @@ fn source_range_to_offset_range(file_content: &str, range: &SourceRange) -> (usi
   (start_offset, end_offset)
 }
 
-pub fn print_mech_error(err: &MechError2) {
+pub fn print_mech_error(err: &MechError) {
   if let Some(watch_error) = err.kind_as::<WatchPathFailed>() {
     let src_file_path = watch_error.file_path.to_string();
     match &err.source {

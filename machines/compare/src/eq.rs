@@ -106,7 +106,7 @@ impl MechFunctionFactory for AtomEq {
         let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(AtomEq { lhs, rhs, out }))
       }
-      _ => Err(MechError2::new(
+      _ => Err(MechError::new(
           IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
           None
         ).with_compiler_loc()
@@ -152,7 +152,7 @@ impl MechFunctionFactory for TableEq {
         let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(TableEq { lhs, rhs, out }))
       }
-      _ => Err(MechError2::new(
+      _ => Err(MechError::new(
           IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
           None
         ).with_compiler_loc()

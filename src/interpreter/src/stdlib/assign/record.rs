@@ -74,14 +74,14 @@ fn impl_set_record_column_fxn(sink: Value, source: Value, key: Value) -> MResult
         (Some(Value::C64(sink)), Value::C64(source)) => return Ok(Box::new(RecordAssign{sink: sink.clone(), source: source.clone()})),
         #[cfg(all(feature = "rational", feature = "record"))]
         (Some(Value::R64(sink)), Value::R64(source)) => return Ok(Box::new(RecordAssign{sink: sink.clone(), source: source.clone()})),
-        _ => return Err(MechError2::new(
+        _ => return Err(MechError::new(
             UndefinedRecordFieldError { id: k.clone() },
             None
           ).with_compiler_loc()
         ),
       }
     }
-    _ => return Err(MechError2::new(
+    _ => return Err(MechError::new(
       UnhandledFunctionArgumentKind3 { arg: (sink.kind(), source.kind(), key.kind()), fxn_name: "record/assign-field".to_string() },
       None
     ).with_compiler_loc()
@@ -93,7 +93,7 @@ pub struct AssignRecordField {}
 impl NativeFunctionCompiler for AssignRecordField {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() < 3 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let sink = arguments[0].clone();
     let source = arguments[1].clone();
@@ -103,7 +103,7 @@ impl NativeFunctionCompiler for AssignRecordField {
       Err(_) => {
         match (&sink,&source,&key) {
           (Value::MutableReference(sink),_,_) => { impl_set_record_column_fxn(sink.borrow().clone(), source.clone(), key.clone()) }
-          x => Err(MechError2::new(
+          x => Err(MechError::new(
               UnhandledFunctionArgumentKind3 { arg: (arguments[0].kind(), arguments[1].kind(), arguments[2].kind()), fxn_name: "record/assign-field".to_string() },
               None
             ).with_compiler_loc()

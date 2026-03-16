@@ -86,7 +86,7 @@ macro_rules! impl_string_binop {
             let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self {lhs, rhs, out }))
           },
-          _ => Err(MechError2::new(
+          _ => Err(MechError::new(
               IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
               None
             ).with_compiler_loc()

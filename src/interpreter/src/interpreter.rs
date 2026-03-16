@@ -170,7 +170,7 @@ impl Interpreter {
     let mut plan_brrw = state_brrw.plan.borrow_mut(); // RefMut<Vec<Box<dyn MechFunction>>>
 
     if plan_brrw.is_empty() {
-      return Err(MechError2::new(
+      return Err(MechError::new(
           NoStepsInPlanError,
           None
         ).with_compiler_loc()
@@ -211,7 +211,7 @@ impl Interpreter {
     // Case 2: step a single function by index
     let idx = step_id as usize;
     if idx > len {
-      return Err(MechError2::new(
+      return Err(MechError::new(
         StepIndexOutOfBoundsError {
           step_id,
           plan_length: len,
@@ -261,17 +261,17 @@ impl Interpreter {
     .map_err(|err| {
       if let Some(raw_msg) = err.downcast_ref::<&'static str>() {
         if raw_msg.contains("Index out of bounds") {
-          MechError2::new(
+          MechError::new(
             IndexOutOfBoundsError,
             None,
           ).with_compiler_loc()
         } else if raw_msg.contains("attempt to subtract with overflow") {
-          MechError2::new(
+          MechError::new(
             OverflowSubtractionError,
             None,
           ).with_compiler_loc()
         } else {
-          MechError2::new(
+          MechError::new(
             UnknownPanicError {
               details: raw_msg.to_string(),
             },
@@ -279,7 +279,7 @@ impl Interpreter {
           ).with_compiler_loc()
         }
       } else {
-        MechError2::new(
+        MechError::new(
           UnknownPanicError {
             details: "Non-string panic".to_string(),
           },
@@ -330,7 +330,7 @@ impl Interpreter {
                 state_brrw.add_plan_step(fxn);
               },
               None => {
-                return Err(MechError2::new(
+                return Err(MechError::new(
                   UnknownNullaryFunctionError { fxn_id: *fxn_id },
                   None
                 ).with_compiler_loc());
@@ -347,7 +347,7 @@ impl Interpreter {
                 state_brrw.add_plan_step(fxn);
               },
               None => {
-                return Err(MechError2::new(
+                return Err(MechError::new(
                   UnknownUnaryFunctionError { fxn_id: *fxn_id },
                   None
                 ).with_compiler_loc());
@@ -365,7 +365,7 @@ impl Interpreter {
                 state_brrw.add_plan_step(fxn);
               },
               None => {
-                return Err(MechError2::new(
+                return Err(MechError::new(
                   UnknownBinaryFunctionError { fxn_id: *fxn_id },
                   None
                 ).with_compiler_loc());
@@ -384,7 +384,7 @@ impl Interpreter {
                 state_brrw.add_plan_step(fxn);
               },
               None => {
-                return Err(MechError2::new(
+                return Err(MechError::new(
                   UnknownTernaryFunctionError { fxn_id: *fxn_id },
                   None
                 ).with_compiler_loc());
@@ -404,7 +404,7 @@ impl Interpreter {
                 state_brrw.add_plan_step(fxn);
               },
               None => {
-                return Err(MechError2::new(
+                return Err(MechError::new(
                   UnknownQuadFunctionError { fxn_id: *fxn_id },
                   None
                 ).with_compiler_loc());
@@ -421,7 +421,7 @@ impl Interpreter {
                 state_brrw.add_plan_step(fxn);
               },
               None => {
-                return Err(MechError2::new(
+                return Err(MechError::new(
                   UnknownVariadicFunctionError { fxn_id: *fxn_id },
                   None
                 ).with_compiler_loc());
@@ -432,7 +432,7 @@ impl Interpreter {
             todo!();
           },
           x => {
-            return Err(MechError2::new(
+            return Err(MechError::new(
               UnknownInstructionError { instr: format!("{:?}", x) },
               None
             ).with_compiler_loc());

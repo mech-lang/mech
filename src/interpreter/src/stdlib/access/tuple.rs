@@ -34,7 +34,7 @@ pub struct TupleAccess {}
 impl NativeFunctionCompiler for TupleAccess{
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() < 2 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let ix1 = &arguments[1];
     let src = &arguments[0];
@@ -43,7 +43,7 @@ impl NativeFunctionCompiler for TupleAccess{
         let tpl_brrw = tpl.borrow();
         let ix_brrw = ix.borrow();
         if *ix_brrw > tpl_brrw.elements.len() || *ix_brrw < 1 {
-            return Err(MechError2::new(
+            return Err(MechError::new(
                 TupleIndexOutOfBoundsError { ix: *ix_brrw, len: tpl_brrw.elements.len() },
                 None
               ).with_compiler_loc());
@@ -58,7 +58,7 @@ impl NativeFunctionCompiler for TupleAccess{
             let ix_brrw = ix.borrow();
             let tpl_brrw = tpl.borrow();
             if *ix_brrw > tpl_brrw.elements.len() || *ix_brrw < 1 {
-              return Err(MechError2::new(
+              return Err(MechError::new(
                   TupleIndexOutOfBoundsError { ix: *ix_brrw, len: tpl_brrw.elements.len() },
                   None
                 ).with_compiler_loc());
@@ -67,7 +67,7 @@ impl NativeFunctionCompiler for TupleAccess{
             let new_fxn = TupleAccessElement{ out: *element };
             Ok(Box::new(new_fxn))
           },
-          _ => Err(MechError2::new(
+          _ => Err(MechError::new(
               UnhandledFunctionArgumentKind2 { arg: (src.kind(), ix1.kind()), fxn_name: "access/tuple-element".to_string() },
               None
             ).with_compiler_loc()

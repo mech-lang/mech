@@ -332,7 +332,7 @@ pub async fn read_or_download(path: &str,backup_url: &str, embedded: Option<&[u8
   println!("Downloading from {}", backup_url);
 
   let response = reqwest::get(backup_url).await.map_err(|e| {
-    MechError2::new(
+    MechError::new(
       HttpRequestFailed {
         url: backup_url.to_string(),
         source: e.to_string(),
@@ -343,7 +343,7 @@ pub async fn read_or_download(path: &str,backup_url: &str, embedded: Option<&[u8
   })?;
 
   if !response.status().is_success() {
-    return Err(MechError2::new(
+    return Err(MechError::new(
       HttpRequestStatusFailed {
         url: backup_url.to_string(),
         status_code: response.status().as_u16(),
@@ -354,7 +354,7 @@ pub async fn read_or_download(path: &str,backup_url: &str, embedded: Option<&[u8
   }
 
   let bytes = response.bytes().await.map_err(|e| {
-    MechError2::new(
+    MechError::new(
       HttpRequestFailed {
         url: backup_url.to_string(),
         source: e.to_string(),

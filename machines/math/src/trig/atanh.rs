@@ -57,7 +57,7 @@ pub struct MathAtanh {}
 impl NativeFunctionCompiler for MathAtanh {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError2::new(
+      return Err(MechError::new(
         IncorrectNumberOfArguments { expected: 1, found: arguments.len() },
         None
       ).with_compiler_loc());
@@ -67,7 +67,7 @@ impl NativeFunctionCompiler for MathAtanh {
       Ok(fxn) => Ok(fxn),
       Err(_) => match input {
         Value::MutableReference(input) => impl_atanh_fxn(input.borrow().clone()),
-        _ => Err(MechError2::new(
+        _ => Err(MechError::new(
             UnhandledFunctionArgumentKind1 { arg: input.kind(), fxn_name: "math/atanh".to_string() },
             None
           ).with_compiler_loc()

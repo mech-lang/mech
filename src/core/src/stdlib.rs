@@ -261,7 +261,7 @@ macro_rules! impl_binop {
             let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self {lhs, rhs, out }))
           },
-          _ => Err(MechError2::new(
+          _ => Err(MechError::new(
               IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
               None
             ).with_compiler_loc()
@@ -318,7 +318,7 @@ macro_rules! impl_unop {
             let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self {arg, out }))
           },
-          _ => Err(MechError2::new(
+          _ => Err(MechError::new(
               IncorrectNumberOfArguments { expected: 1, found: args.len() }, 
               None
             ).with_compiler_loc()
@@ -849,7 +849,7 @@ macro_rules! impl_binop_match_arms {
                 // mismatching dimensions
                 _ => {
                   return Err(
-                    MechError2::new(
+                    MechError::new(
                       DimensionMismatch { dims: vec![rows, cols, rhs_shape[0], rhs_shape[1]] },
                       None
                     ).with_compiler_loc()
@@ -899,7 +899,7 @@ macro_rules! impl_binop_match_arms {
                 },
                 x => {
                   return Err(
-                    MechError2::new(
+                    MechError::new(
                       DimensionMismatch { dims: vec![rows, cols, rhs_shape[0], rhs_shape[1]] },
                       None
                     ).with_compiler_loc()
@@ -971,7 +971,7 @@ macro_rules! impl_binop_match_arms {
                 // mismatching dimensions
                 _ => {
                   return Err(
-                    MechError2::new(
+                    MechError::new(
                       DimensionMismatch { dims: vec![lhs_shape[0], lhs_shape[1], rows, cols] },
                       None
                     ).with_compiler_loc()
@@ -1021,7 +1021,7 @@ macro_rules! impl_binop_match_arms {
                 },
                 _ => {
                   return Err(
-                    MechError2::new(
+                    MechError::new(
                       DimensionMismatch { dims: vec![lhs_shape[0], lhs_shape[1], rows, cols] },
                       None
                     ).with_compiler_loc()
@@ -1031,7 +1031,7 @@ macro_rules! impl_binop_match_arms {
             }
           )+
         )+
-        (lhs,rhs) => Err(MechError2::new(
+        (lhs,rhs) => Err(MechError::new(
           UnhandledFunctionArgumentKind2{arg: (lhs.kind(), rhs.kind()), fxn_name: stringify!($lib).to_string()},
           None
         ).with_compiler_loc()),
@@ -1083,7 +1083,7 @@ macro_rules! impl_urnop_match_arms {
               Ok(Box::new([<$lib V>]{arg, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default())), _marker: PhantomData::default() }))},
           )+
         )+
-        x => Err(MechError2::new(
+        x => Err(MechError::new(
           UnhandledFunctionArgumentKind1{arg: x.kind(), fxn_name: stringify!($lib).to_string()},
           None
         ).with_compiler_loc()),
@@ -1099,7 +1099,7 @@ macro_rules! impl_mech_binop_fxn {
     impl NativeFunctionCompiler for $fxn_name {
       fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
-          return Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());
+          return Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());
         }
         let lhs_value = arguments[0].clone();
         let rhs_value = arguments[1].clone();
@@ -1110,7 +1110,7 @@ macro_rules! impl_mech_binop_fxn {
               (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {$gen_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
               (lhs_value,Value::MutableReference(rhs)) => { $gen_fxn(lhs_value.clone(), rhs.borrow().clone())}
               (Value::MutableReference(lhs),rhs_value) => { $gen_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-              (lhs, rhs) => Err(MechError2::new(
+              (lhs, rhs) => Err(MechError::new(
                   UnhandledFunctionArgumentKind2 { arg: (lhs.kind(), rhs.kind()), fxn_name: stringify!($fxn_name).to_string() },
                   None
                 ).with_compiler_loc()
@@ -1137,7 +1137,7 @@ macro_rules! impl_mech_urnop_fxn {
     impl NativeFunctionCompiler for $fxn_name {
       fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
-          return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
+          return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
         }
         let input = arguments[0].clone();
         match $gen_fxn(input.clone()) {
@@ -1145,7 +1145,7 @@ macro_rules! impl_mech_urnop_fxn {
           Err(_) => {
             match (input) {
               (Value::MutableReference(input)) => {$gen_fxn(input.borrow().clone())}
-              x => Err(MechError2::new(
+              x => Err(MechError::new(
                   UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: stringify!($fxn_name).to_string() },
                   None
                 ).with_compiler_loc()
@@ -1372,7 +1372,7 @@ macro_rules! register_assign_s_b {
 #[macro_export]
 macro_rules! impl_assign_fxn {
   ($op:tt, $fxn_name:ident, $arg:expr, $value_kind:ident, $value_string:tt) => {{
-    let mut res: MResult<_> = Err(MechError2::new(
+    let mut res: MResult<_> = Err(MechError::new(
       GenericError {
         msg: "No matching types found".to_string(),
       },
@@ -1454,7 +1454,7 @@ macro_rules! impl_assign_fxn {
       res = res.or_else(|_| $op!($fxn_name, DVector, &$arg, $value_kind, $value_string));
     }
     let &(ref source, ref ixes, ref sink) = &$arg;
-    res.map_err(|_| MechError2::new(
+    res.map_err(|_| MechError::new(
       UnhandledFunctionArgumentIxes {
         arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()),
         fxn_name: stringify!($fxn_name).to_string(),
@@ -1475,7 +1475,7 @@ macro_rules! impl_assign_scalar_arms {
           register_assign_s1!([<$fxn_name S>], $value_kind, $value_string, $shape);
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
         },
-        (sink, ixes, source) => Err(MechError2::new(
+        (sink, ixes, source) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -1494,7 +1494,7 @@ macro_rules! impl_assign_all_arms {
           register_assign_s1!([<$fxn_name S>], $value_kind, $value_string, $shape);
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })))           
         },
-        (sink, ixes, source) => Err(MechError2::new(
+        (sink, ixes, source) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -1518,7 +1518,7 @@ macro_rules! impl_assign_scalar_scalar_arms {
           register_assign_s!([<$fxn_name MD>], $value_kind, $value_string, $shape, DMatrix);
           box_mech_fxn(Ok(Box::new([<$fxn_name MD>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))           
         },
-        (sink, ixes, source) => Err(MechError2::new(
+        (sink, ixes, source) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -1634,7 +1634,7 @@ macro_rules! impl_set_range_arms {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, RowVector4, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        (source, ixes, sink) => Err(MechError2::new(
+        (source, ixes, sink) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -1659,7 +1659,7 @@ macro_rules! impl_assign_all_arms_b {
           register_assign_s2!([<$fxn_name VB>], $value_kind, $value_string, $shape, $shape);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        (sink, ixes, source) => Err(MechError2::new(
+        (sink, ixes, source) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -1773,7 +1773,7 @@ macro_rules! impl_set_range_all_arms {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, RowVector4, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        (source, ixes, sink) => Err(MechError2::new(
+        (source, ixes, sink) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -1892,7 +1892,7 @@ macro_rules! impl_assign_range_scalar_arms {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, RowDVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
-        (source, ixes, sink) => Err(MechError2::new(
+        (source, ixes, sink) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -2011,7 +2011,7 @@ macro_rules! impl_assign_scalar_range_arms {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, RowDVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        (sink, ixes, source) => Err(MechError2::new(
+        (sink, ixes, source) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -2036,7 +2036,7 @@ where
 
   if ix1_len * ix2_len != source_len {
     return Err(
-      MechError2::new(
+      MechError::new(
         MismatchedIndexLengthsError {
           ix1_len,
           ix2_len,
@@ -2595,7 +2595,7 @@ macro_rules! impl_assign_range_range_arms {
           register_assign_srr2!([<$fxn_name V>], $value_kind, $value_string, $shape, RowDVector, DVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        (source, ixes, sink) => Err(MechError2::new(
+        (source, ixes, sink) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -2709,7 +2709,7 @@ macro_rules! impl_assign_all_range_arms {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, RowVector4, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        (source, ixes, sink) => Err(MechError2::new(
+        (source, ixes, sink) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -2864,7 +2864,7 @@ macro_rules! impl_assign_all_scalar_arms {
           register_assign_s2!([<$fxn_name V>], $value_kind, $value_string, DMatrix, RowDVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        (source, ixes, sink) => Err(MechError2::new(
+        (source, ixes, sink) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -3019,7 +3019,7 @@ macro_rules! impl_assign_scalar_all_arms {
           register_assign_s2!([<$fxn_name V>], $value_kind, $value_string, DMatrix, RowDVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        (source, ixes, sink) => Err(MechError2::new(
+        (source, ixes, sink) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -3185,7 +3185,7 @@ macro_rules! impl_set_all_range_arms_b {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, RowVector4, RowVector4, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        (source, ixes, sink) => Err(MechError2::new(
+        (source, ixes, sink) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -3321,7 +3321,7 @@ macro_rules! impl_set_range_all_arms_b {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, RowDVector, RowDVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        (source, ixes, sink) => Err(MechError2::new(
+        (source, ixes, sink) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -3487,7 +3487,7 @@ macro_rules! impl_set_range_arms_b {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, RowVector4, RowVector4, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        (source, ixes, sink) => Err(MechError2::new(
+        (source, ixes, sink) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -3512,7 +3512,7 @@ macro_rules! impl_assign_scalar_arms_b {
           register_assign_s2!([<$fxn_name VB>], $value_kind, $value_string, $shape, $shape);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
-        (source, ixes, sink) => Err(MechError2::new(
+        (source, ixes, sink) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -3626,7 +3626,7 @@ macro_rules! impl_assign_range_scalar_arms_b {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, $shape, DMatrix, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
-        (source, ixes, sink) => Err(MechError2::new(
+        (source, ixes, sink) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -3740,7 +3740,7 @@ macro_rules! impl_assign_scalar_range_arms_b {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, $shape, DMatrix, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        (source, ixes, sink) => Err(MechError2::new(
+        (source, ixes, sink) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -3956,7 +3956,7 @@ macro_rules! impl_assign_range_range_arms_b {
           register_assign_srr_b2!([<$fxn_name VBB>], $value_kind, $value_string, DMatrix, DMatrix, DVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        (source, ixes, sink) => Err(MechError2::new(
+        (source, ixes, sink) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -3982,7 +3982,7 @@ macro_rules! impl_assign_range_range_arms_bu {
           register_assign_srr_bu2!([<$fxn_name VBU>], $value_kind, $value_string, DMatrix, DMatrix, DVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name VBU>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        (source, ixes, sink) => Err(MechError2::new(
+        (source, ixes, sink) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),
@@ -4008,7 +4008,7 @@ macro_rules! impl_assign_range_range_arms_ub {
           register_assign_srr_ub2!([<$fxn_name VUB>], $value_kind, $value_string, DMatrix, DMatrix, DVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name VUB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        (source, ixes, sink) => Err(MechError2::new(
+        (source, ixes, sink) => Err(MechError::new(
           UnhandledFunctionArgumentIxes { arg: (source.kind(), ixes.to_vec().iter().map(|x| x.kind()).collect(), sink.kind()), fxn_name: stringify!($fxn_name).to_string() },
           None
         ).with_compiler_loc()),

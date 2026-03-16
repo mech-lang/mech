@@ -32,7 +32,7 @@ macro_rules! impl_transpose {
             let out: Ref<$out_type> = unsafe{ out.as_unchecked().clone() };
             Ok(Box::new($struct_name{arg, out}))
           }
-          _ => Err(MechError2::new(
+          _ => Err(MechError::new(
               IncorrectNumberOfArguments { expected: 1, found: args.len() },
               None
             ).with_compiler_loc()
@@ -140,7 +140,7 @@ macro_rules! impl_transpose_match_arms {
             },
           )+
         )+
-        x => Err(MechError2::new(
+        x => Err(MechError::new(
             UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "MatrixTranspose".to_string() },
             None
           ).with_compiler_loc()

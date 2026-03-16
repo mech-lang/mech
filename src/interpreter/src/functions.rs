@@ -63,7 +63,7 @@ pub fn function_call(fxn_call: &FunctionCall, p: &Interpreter) -> MResult<Value>
             Err(x) => {return Err(x);}
           }
         }
-        None => {return Err(MechError2::new(
+        None => {return Err(MechError::new(
             MissingFunctionError{ function_id: fxn_name_id },
             None
           ).with_compiler_loc().with_tokens(fxn_call.name.tokens())

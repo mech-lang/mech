@@ -23,7 +23,7 @@ pub fn expression(expr: &Expression, env: Option<&Environment>, p: &Interpreter)
     #[cfg(feature = "set_comprehensions")]
     Expression::SetComprehension(set_comp) => set_comprehension(set_comp, p),
     //Expression::FsmPipe(_) => todo!(),
-    x => Err(MechError2::new(
+    x => Err(MechError::new(
       FeatureNotEnabledError,
       None
     ).with_compiler_loc().with_tokens(x.tokens())),
@@ -39,7 +39,7 @@ pub fn pattern_match_value(pattern: &Pattern, value: &Value, env: &mut Environme
         match env.get(id) {
           Some(existing) if existing == value => Ok(()),
           Some(existing) => {
-            Err(MechError2::new(
+            Err(MechError::new(
                 PatternMatchError {
                     var: var.name.to_string(),
                     expected: existing.to_string(),
@@ -62,7 +62,7 @@ pub fn pattern_match_value(pattern: &Pattern, value: &Value, env: &mut Environme
         Value::Tuple(values) => {
           let values_brrw = values.borrow();
           if pat_tuple.0.len() != values_brrw.elements.len() {
-            return Err(MechError2::new(
+            return Err(MechError::new(
               ArityMismatchError{
                 expected: pat_tuple.0.len(),
                 found: values_brrw.elements.len(),
@@ -75,7 +75,7 @@ pub fn pattern_match_value(pattern: &Pattern, value: &Value, env: &mut Environme
           }
           Ok(())
         }
-        _ => Err(MechError2::new(
+        _ => Err(MechError::new(
           PatternExpectedTupleError{
             found: value.kind(),
           },
@@ -87,7 +87,7 @@ pub fn pattern_match_value(pattern: &Pattern, value: &Value, env: &mut Environme
       todo!("Implement tuple struct pattern matching")
     },
     _ => {
-      Err(MechError2::new(
+      Err(MechError::new(
         FeatureNotEnabledError,
         None
       ).with_compiler_loc())
@@ -140,7 +140,7 @@ pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult
                     // If match fails, skip this element
                   }
                 }
-                x => return Err(MechError2::new(
+                x => return Err(MechError::new(
                   SetComprehensionGeneratorError{
                     found: x.kind(),
                   },
@@ -148,7 +148,7 @@ pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult
                 ).with_compiler_loc()),
               }
             }
-            x => return Err(MechError2::new(
+            x => return Err(MechError::new(
               SetComprehensionGeneratorError{
                 found: x.kind(),
               },
@@ -242,7 +242,7 @@ pub fn slice(slc: &Slice, env: Option<&Environment>,p: &Interpreter) -> MResult<
       match p.symbols().borrow().get(id) {
         Some(val) => Value::MutableReference(val.clone()),
         None => {
-          return Err(MechError2::new(
+          return Err(MechError::new(
             UndefinedVariableError { id },
             None,
           )
@@ -255,7 +255,7 @@ pub fn slice(slc: &Slice, env: Option<&Environment>,p: &Interpreter) -> MResult<
     match p.symbols().borrow().get(id) {
       Some(val) => Value::MutableReference(val.clone()),
       None => {
-        return Err(MechError2::new(
+        return Err(MechError::new(
           UndefinedVariableError { id },
           None,
         )
@@ -299,7 +299,7 @@ pub fn subscript_range(sbscrpt: &Subscript, env: Option<&Environment>, p: &Inter
       let result = range(rng, env, p)?;
       match result.as_vecusize() {
         Ok(v) => Ok(v.to_value()),
-        Err(_) => Err(MechError2::new(
+        Err(_) => Err(MechError::new(
             InvalidIndexKindError { kind: result.kind() },
             None
           ).with_compiler_loc().with_tokens(rng.tokens())
@@ -574,7 +574,7 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
               return Ok(Value::MutableReference(value.clone()))
             }
             None => {
-              return Err(MechError2::new(
+              return Err(MechError::new(
                   UndefinedVariableError { id },
                   None
                 ).with_compiler_loc().with_tokens(v.tokens())
@@ -590,7 +590,7 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
           return Ok(Value::MutableReference(value.clone()))
         }
         None => {
-          return Err(MechError2::new(
+          return Err(MechError::new(
               UndefinedVariableError { id },
               None
             ).with_compiler_loc().with_tokens(v.tokens())
@@ -748,7 +748,7 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
       FormulaOperator::Set(SetOp::ElementOf) => SetElementOf{}.compile(&vec![lhs,rhs])?,
       #[cfg(feature = "set_not_element_of")]
       FormulaOperator::Set(SetOp::NotElementOf) => SetNotElementOf{}.compile(&vec![lhs,rhs])?,
-      x => return Err(MechError2::new(
+      x => return Err(MechError::new(
           UnhandledFormulaOperatorError { operator: x.clone() },
           None
         ).with_compiler_loc().with_tokens(trm.tokens())

@@ -50,7 +50,7 @@ pub struct MathCbrt {}
 impl NativeFunctionCompiler for MathCbrt {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let input = arguments[0].clone();
     match impl_cbrt_fxn(input.clone()) {
@@ -58,7 +58,7 @@ impl NativeFunctionCompiler for MathCbrt {
       Err(_) => {
         match (input) {
           (Value::MutableReference(input)) => {impl_cbrt_fxn(input.borrow().clone())}
-          x => Err(MechError2::new(
+          x => Err(MechError::new(
               UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/cbrt".to_string() },
               None
             ).with_compiler_loc()

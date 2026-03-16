@@ -37,7 +37,7 @@ where
         let out: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { from, step, to, out, phantom: PhantomData::default() }))
       },
-      _ => Err(MechError2::new(
+      _ => Err(MechError::new(
           IncorrectNumberOfArguments { expected: 3, found: args.len() },
           None
         ).with_compiler_loc()
@@ -90,7 +90,7 @@ macro_rules! impl_range_increment_inclusive_match_arms {
             let to_val = *to.borrow();
             let diff = to_val - from_val;
             if diff < $ty::zero() {
-              return Err(MechError2::new(
+              return Err(MechError::new(
                 EmptyRangeError{},
                 None
               ).with_compiler_loc());
@@ -99,19 +99,19 @@ macro_rules! impl_range_increment_inclusive_match_arms {
               let diff = to_val as f64 - from_val as f64;
               let step = step_val as f64;
               if step == 0.0 {
-                return Err(MechError2::new(EmptyRangeError {}, None).with_compiler_loc());
+                return Err(MechError::new(EmptyRangeError {}, None).with_compiler_loc());
               }
               if (diff > 0.0 && step > 0.0) || (diff < 0.0 && step < 0.0) {
                 (diff / step).floor() as usize + 1
               } else if diff == 0.0 {
                 1
               } else {
-                return Err(MechError2::new(EmptyRangeError {}, None).with_compiler_loc());
+                return Err(MechError::new(EmptyRangeError {}, None).with_compiler_loc());
               }
             };
             let mut vec = vec![from_val; size];
             match size {
-              0 => Err(MechError2::new(
+              0 => Err(MechError::new(
                 EmptyRangeError{},
                 None
               ).with_compiler_loc()),
@@ -148,7 +148,7 @@ macro_rules! impl_range_increment_inclusive_match_arms {
             }
           }
         )+
-        (arg1,arg2,arg3) => Err(MechError2::new(
+        (arg1,arg2,arg3) => Err(MechError::new(
           UnhandledFunctionArgumentKind3 {arg: (arg1.kind(),arg2.kind(), arg3.kind()), fxn_name: stringify!($fxn).to_string() },
           None
         ).with_compiler_loc()),
@@ -179,7 +179,7 @@ pub struct RangeIncrementInclusive {}
 impl NativeFunctionCompiler for RangeIncrementInclusive {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 3 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 3, found: arguments.len() },None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 3, found: arguments.len() },None).with_compiler_loc());
     }
     let arg1 = arguments[0].clone();
     let arg2 = arguments[1].clone();
@@ -209,7 +209,7 @@ impl NativeFunctionCompiler for RangeIncrementInclusive {
           (arg1, arg2, Value::MutableReference(arg3)) => {
             impl_range_increment_inclusive_fxn(arg1.clone(), arg2.clone(), arg3.borrow().clone())
           }
-          (arg1, arg2, arg3) => Err(MechError2::new(
+          (arg1, arg2, arg3) => Err(MechError::new(
             UnhandledFunctionArgumentKind3 { arg: (arg1.kind(), arg2.kind(), arg3.kind()), fxn_name: "range/inclusive-increment".to_string() },
             None
           ).with_compiler_loc()),

@@ -29,7 +29,7 @@ macro_rules! impl_binop_solve {
             let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self {lhs, rhs, out }))
           },
-          _ => Err(MechError2::new(
+          _ => Err(MechError::new(
               IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
               None
             ).with_compiler_loc()
@@ -95,13 +95,13 @@ macro_rules! impl_solve_match_arms {
             let (a_rows, a_cols) = lhs.borrow().shape();
             let (b_rows, b_cols) = rhs.borrow().shape();
             if b_cols != 1 {
-              return Err(MechError2::new(
+              return Err(MechError::new(
                 DimensionMismatch { dims: vec![a_rows, a_cols, b_rows, b_cols] },
                 Some("Right-hand side must be a vector (1 column)".to_string())
               ).with_compiler_loc());
             }
             if a_rows != b_rows {
-              return Err(MechError2::new(
+              return Err(MechError::new(
                 DimensionMismatch { dims: vec![a_rows, a_cols, b_rows, b_cols] },
                 Some("Matrix rows must match vector rows".to_string())
               ).with_compiler_loc());
@@ -112,14 +112,14 @@ macro_rules! impl_solve_match_arms {
           (Value::$matrix_kind(lhs), Value::$matrix_kind(rhs)) => {
             let lhs_shape = lhs.shape();
             let rhs_shape = rhs.shape();
-            return Err(MechError2::new(
+            return Err(MechError::new(
               DimensionMismatch { dims: vec![lhs_shape[0], lhs_shape[1], rhs_shape[0], rhs_shape[1]] },
               Some("Matrix multiplication is only implemented for `matrixd` and `vectord` types".to_string())
             ).with_compiler_loc());
           }
         )+
       )+
-      (arg1,arg2) => Err(MechError2::new(
+      (arg1,arg2) => Err(MechError::new(
         UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($fxn).to_string() },
         Some("Unsupported types for matrix multiplication".to_string())
       ).with_compiler_loc()),

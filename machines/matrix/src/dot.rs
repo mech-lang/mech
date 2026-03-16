@@ -93,7 +93,7 @@ macro_rules! impl_dot_match_arms {
             let (rhs_rows,rhs_cols) = {rhs.borrow().shape()};
             if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
               return Err(
-                MechError2::new(
+                MechError::new(
                   DimensionMismatch { dims: vec![lhs_rows, lhs_cols, rhs_rows, rhs_cols] },
                   None
                 ).with_compiler_loc()
@@ -106,7 +106,7 @@ macro_rules! impl_dot_match_arms {
             let lhs_len = {lhs.borrow().len()};
             let rhs_len = {rhs.borrow().len()};
             if lhs_len != rhs_len {
-              return Err(MechError2::new(
+              return Err(MechError::new(
                 DimensionMismatch { dims: vec![lhs_len, rhs_len] },
                 None
               ).with_compiler_loc());
@@ -118,7 +118,7 @@ macro_rules! impl_dot_match_arms {
             let lhs_len = {lhs.borrow().len()};
             let rhs_len = {rhs.borrow().len()};
             if lhs_len != rhs_len {
-              return Err(MechError2::new(
+              return Err(MechError::new(
                 DimensionMismatch { dims: vec![lhs_len, rhs_len] },
                 None
               ).with_compiler_loc());
@@ -127,7 +127,7 @@ macro_rules! impl_dot_match_arms {
           },
         )+
       )+
-      (arg1,arg2) => Err(MechError2::new(
+      (arg1,arg2) => Err(MechError::new(
           UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($fxn).to_string() },
           None
         ).with_compiler_loc()

@@ -193,7 +193,7 @@ impl MechRepl {
         return Ok(format_cycles(n, elapsed_time));      
       }
       x => {
-        return Err(MechError2::new(FeatureNotEnabledError, None).with_compiler_loc());
+        return Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc());
       }
     }
   }

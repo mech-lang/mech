@@ -223,7 +223,7 @@ impl CompileCtx {
     let pos = buf.position();
     if pos != file_len_before_trailer {
       return Err(
-        MechError2::new(
+        MechError::new(
           BufferPositionMismatchError {
             expected: file_len_before_trailer,
             got: pos,
@@ -239,7 +239,7 @@ impl CompileCtx {
 
     if buf.position() != full_file_len {
       return Err(
-        MechError2::new(
+        MechError::new(
           FinalBufferLengthMismatchError {
             expected: full_file_len,
             got: buf.position(),

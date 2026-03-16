@@ -24,7 +24,7 @@ impl MechFunctionFactory for SetElementOfFxn {
         let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(SetElementOfFxn { elem, set, out }))
       },
-      _ => Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc()),
+      _ => Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc()),
     }
   }
 }
@@ -69,7 +69,7 @@ fn set_element_of_fxn(elem: Value, set: Value) -> MResult<Box<dyn MechFunction>>
     (elem, Value::Set(set)) => {
       Ok(Box::new(SetElementOfFxn { elem: Ref::new(elem.clone()), set: set.clone(), out: Ref::new(false) }))
     },
-    x => Err(MechError2::new(
+    x => Err(MechError::new(
       UnhandledFunctionArgumentKind2 {
         arg: (x.0.kind(), x.1.kind()),
         fxn_name: "set/element-of".to_string(),
@@ -82,7 +82,7 @@ pub struct SetElementOf {}
 impl NativeFunctionCompiler for SetElementOf {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());
     }
     let elem = arguments[0].clone();
     let set = arguments[1].clone();
@@ -93,7 +93,7 @@ impl NativeFunctionCompiler for SetElementOf {
           (Value::MutableReference(elem), Value::MutableReference(set)) => set_element_of_fxn(elem.borrow().clone(), set.borrow().clone()),
           (elem, Value::MutableReference(set)) => set_element_of_fxn(elem.clone(), set.borrow().clone()),
           (Value::MutableReference(elem), set) => set_element_of_fxn(elem.borrow().clone(), set.clone()),
-          x => Err(MechError2::new(
+          x => Err(MechError::new(
             UnhandledFunctionArgumentKind2 { arg: (x.0.kind(), x.1.kind()), fxn_name: "set/element-of".to_string() },
             None
           ).with_compiler_loc()),

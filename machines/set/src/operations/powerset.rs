@@ -21,7 +21,7 @@ impl MechFunctionFactory for SetPowersetFxn {
         let out: Ref<MechSet> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(SetPowersetFxn {input, out }))
       },
-      _ => Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: args.len() }, None).with_compiler_loc()),
+      _ => Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: args.len() }, None).with_compiler_loc()),
     }
   }    
 }
@@ -100,7 +100,7 @@ fn set_powerset_fxn(input: Value) -> MResult<Box<dyn MechFunction>> {
     (Value::Set(input)) => {
       Ok(Box::new(SetPowersetFxn { input: input.clone(), out: Ref::new(MechSet::new(input.borrow().kind.clone(), 2_u32.pow(input.borrow().num_elements as u32) as usize)) }))
     },
-    x => Err(MechError2::new(
+    x => Err(MechError::new(
       UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "set/powerset".to_string() },
       None
     ).with_compiler_loc()),
@@ -111,7 +111,7 @@ pub struct SetPowerset {}
 impl NativeFunctionCompiler for SetPowerset {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let input = arguments[0].clone();
     match set_powerset_fxn(input.clone()) {
@@ -120,7 +120,7 @@ impl NativeFunctionCompiler for SetPowerset {
         match input {
           Value::MutableReference(input) => { set_powerset_fxn(input.borrow().clone()) },
           input => { set_powerset_fxn(input.clone()) },
-          x => Err(MechError2::new(
+          x => Err(MechError::new(
             UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "set/powerset".to_string() },
             None
           ).with_compiler_loc()),

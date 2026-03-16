@@ -130,7 +130,7 @@ macro_rules! impl_powop {
           let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
           Ok(Box::new(Self {lhs, rhs, out }))
         },
-        _ => Err(MechError2::new(
+        _ => Err(MechError::new(
             IncorrectNumberOfArguments { expected: 2, found: 0 },
             None
           ).with_compiler_loc()
@@ -195,7 +195,7 @@ impl MechFunctionFactory for PowRational {
         let out: Ref<R64> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self {lhs, rhs, out }))
       },
-      _ => Err(MechError2::new(
+      _ => Err(MechError::new(
           IncorrectNumberOfArguments { expected: 2, found: 0 },
           None
         ).with_compiler_loc()

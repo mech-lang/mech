@@ -50,7 +50,7 @@ pub struct MathSincos {}
 impl NativeFunctionCompiler for MathSincos {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let input = arguments[0].clone();
     match impl_sincos_fxn(input.clone()) {
@@ -58,7 +58,7 @@ impl NativeFunctionCompiler for MathSincos {
       Err(_) => {
         match (input) {
           (Value::MutableReference(input)) => {impl_sincos_fxn(input.borrow().clone())}
-          (arg1,arg2) => Err(MechError2::new(
+          (arg1,arg2) => Err(MechError::new(
               UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "math/sincos".to_string() },
               None
             ).with_compiler_loc()

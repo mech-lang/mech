@@ -77,7 +77,7 @@ macro_rules! impl_stats_unop {
             let out = unsafe{ out.as_unchecked().clone() };
             Ok(Box::new($struct_name { arg, out }))
           }
-          _ => Err(MechError2::new(
+          _ => Err(MechError::new(
               IncorrectNumberOfArguments { expected: 2, found: args.len() },
               None
             ).with_compiler_loc()

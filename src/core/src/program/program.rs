@@ -86,7 +86,7 @@ impl ParsedProgram {
     // Check magic number
     if !self.header.validate_magic(b"MECH") {
       return Err(
-        MechError2::new(
+        MechError::new(
           InvalidMagicNumberError,
           None,
         ).with_compiler_loc()
@@ -96,7 +96,7 @@ impl ParsedProgram {
     // Check version number
     if self.header.version != 1 {
       return Err(
-        MechError2::new(
+        MechError::new(
           UnsupportedBytecodeVersionError,
           None,
         ).with_compiler_loc()
@@ -106,7 +106,7 @@ impl ParsedProgram {
     // Check mech version
     if self.header.mech_ver != parse_version_to_u16(env!("CARGO_PKG_VERSION")).unwrap() {
       return Err(
-        MechError2::new(
+        MechError::new(
           IncompatibleMechVersionError,
           None,
         ).with_compiler_loc()
@@ -124,7 +124,7 @@ impl ParsedProgram {
       // Encoding check
       if const_entry.enc != ConstEncoding::Inline as u8 {
         return Err(
-          MechError2::new(
+          MechError::new(
             UnsupportedConstantEncodingError,
             None,
           ).with_compiler_loc()
@@ -134,7 +134,7 @@ impl ParsedProgram {
       // Bounds check #1
       if const_entry.offset.checked_add(const_entry.length).is_none() {
         return Err(
-          MechError2::new(
+          MechError::new(
             ConstantEntryOutOfBoundsError,
             None,
           ).with_compiler_loc()
@@ -145,7 +145,7 @@ impl ParsedProgram {
       let end = const_entry.offset + const_entry.length;
       if end > blob_len {
         return Err(
-          MechError2::new(
+          MechError::new(
             ConstantEntryOutOfBoundsError,
             None,
           ).with_compiler_loc()
@@ -155,7 +155,7 @@ impl ParsedProgram {
       // Alignment check
       if !check_alignment(const_entry.offset, const_entry.align) {
         return Err(
-          MechError2::new(
+          MechError::new(
             ConstantEntryAlignmentError,
             None,
           ).with_compiler_loc()
@@ -174,7 +174,7 @@ impl ParsedProgram {
         #[cfg(feature = "bool")]
         TypeTag::Bool => {
           if data.len() != 1 {
-            return Err(MechError2::new(ConstantWrongSizeError {expected: 1,found: data.len(),type_name: "Bool",},None,).with_compiler_loc());
+            return Err(MechError::new(ConstantWrongSizeError {expected: 1,found: data.len(),type_name: "Bool",},None,).with_compiler_loc());
           }
           let value = data[0] != 0;
           Value::Bool(Ref::new(value))
@@ -182,7 +182,7 @@ impl ParsedProgram {
         #[cfg(feature = "string")]
         TypeTag::String => {
           if data.len() < 4 {
-            return Err(MechError2::new(ConstantWrongSizeError {expected: 4, found: data.len(), type_name: "String",}, None,).with_compiler_loc());
+            return Err(MechError::new(ConstantWrongSizeError {expected: 4, found: data.len(), type_name: "String",}, None,).with_compiler_loc());
           }
           let s = String::from_le(&data);
           Value::String(Ref::new(s))
@@ -190,7 +190,7 @@ impl ParsedProgram {
         #[cfg(feature = "u8")]
         TypeTag::U8 => {
           if data.len() != 1 { 
-            return Err(MechError2::new(ConstantWrongSizeError { expected: 1, found: data.len(), type_name: "U8" }, None).with_compiler_loc()); 
+            return Err(MechError::new(ConstantWrongSizeError { expected: 1, found: data.len(), type_name: "U8" }, None).with_compiler_loc()); 
           }
           let value = data[0];
           Value::U8(Ref::new(value))
@@ -198,7 +198,7 @@ impl ParsedProgram {
         #[cfg(feature = "u16")]
         TypeTag::U16 => {
           if data.len() != 2 {
-            return Err(MechError2::new(ConstantWrongSizeError { expected: 2, found: data.len(), type_name: "U16" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantWrongSizeError { expected: 2, found: data.len(), type_name: "U16" }, None).with_compiler_loc());
           }
           let value = u16::from_le_bytes(data.try_into().unwrap());
           Value::U16(Ref::new(value))
@@ -206,7 +206,7 @@ impl ParsedProgram {
         #[cfg(feature = "u32")]
         TypeTag::U32 => {
           if data.len() != 4 {
-            return Err(MechError2::new(ConstantWrongSizeError { expected: 4, found: data.len(), type_name: "U32" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantWrongSizeError { expected: 4, found: data.len(), type_name: "U32" }, None).with_compiler_loc());
           }
           let value = u32::from_le_bytes(data.try_into().unwrap());
           Value::U32(Ref::new(value))
@@ -214,7 +214,7 @@ impl ParsedProgram {
         #[cfg(feature = "u64")]
         TypeTag::U64 => {
           if data.len() != 8 {
-            return Err(MechError2::new(ConstantWrongSizeError { expected: 8, found: data.len(), type_name: "U64" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantWrongSizeError { expected: 8, found: data.len(), type_name: "U64" }, None).with_compiler_loc());
           }
           let value = u64::from_le_bytes(data.try_into().unwrap());
           Value::U64(Ref::new(value))
@@ -222,7 +222,7 @@ impl ParsedProgram {
         #[cfg(feature = "u128")]
         TypeTag::U128 => {
           if data.len() != 16 {
-            return Err(MechError2::new(ConstantWrongSizeError { expected: 16, found: data.len(), type_name: "U128" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantWrongSizeError { expected: 16, found: data.len(), type_name: "U128" }, None).with_compiler_loc());
           }
           let value = u128::from_le_bytes(data.try_into().unwrap());
           Value::U128(Ref::new(value))
@@ -230,7 +230,7 @@ impl ParsedProgram {
         #[cfg(feature = "i8")]
         TypeTag::I8 => {
           if data.len() != 1 {
-            return Err(MechError2::new(ConstantWrongSizeError { expected: 1, found: data.len(), type_name: "I8" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantWrongSizeError { expected: 1, found: data.len(), type_name: "I8" }, None).with_compiler_loc());
           }
           let value = data[0] as i8;
           Value::I8(Ref::new(value))
@@ -238,7 +238,7 @@ impl ParsedProgram {
         #[cfg(feature = "i16")]
         TypeTag::I16 => {
           if data.len() != 2 {
-            return Err(MechError2::new(ConstantWrongSizeError { expected: 2, found: data.len(), type_name: "I16" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantWrongSizeError { expected: 2, found: data.len(), type_name: "I16" }, None).with_compiler_loc());
           }
           let value = i16::from_le_bytes(data.try_into().unwrap());
           Value::I16(Ref::new(value))
@@ -246,7 +246,7 @@ impl ParsedProgram {
         #[cfg(feature = "i32")]
         TypeTag::I32 => {
           if data.len() != 4 {
-            return Err(MechError2::new(ConstantWrongSizeError { expected: 4, found: data.len(), type_name: "I32" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantWrongSizeError { expected: 4, found: data.len(), type_name: "I32" }, None).with_compiler_loc());
           }
           let value = i32::from_le_bytes(data.try_into().unwrap());
           Value::I32(Ref::new(value))
@@ -254,7 +254,7 @@ impl ParsedProgram {
         #[cfg(feature = "i64")]
         TypeTag::I64 => {
           if data.len() != 8 {
-            return Err(MechError2::new(ConstantWrongSizeError { expected: 8, found: data.len(), type_name: "I64" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantWrongSizeError { expected: 8, found: data.len(), type_name: "I64" }, None).with_compiler_loc());
           }
           let value = i64::from_le_bytes(data.try_into().unwrap());
           Value::I64(Ref::new(value))
@@ -262,7 +262,7 @@ impl ParsedProgram {
         #[cfg(feature = "i128")]
         TypeTag::I128 => {
           if data.len() != 16 {
-            return Err(MechError2::new(ConstantWrongSizeError { expected: 16, found: data.len(), type_name: "i128" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantWrongSizeError { expected: 16, found: data.len(), type_name: "i128" }, None).with_compiler_loc());
           }
           let value = i128::from_le_bytes(data.try_into().unwrap());
           Value::I128(Ref::new(value))
@@ -270,7 +270,7 @@ impl ParsedProgram {
         #[cfg(feature = "f32")]
         TypeTag::F32 => {
           if data.len() != 4 {
-            return Err(MechError2::new(ConstantWrongSizeError { expected: 4, found: data.len(), type_name: "f32" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantWrongSizeError { expected: 4, found: data.len(), type_name: "f32" }, None).with_compiler_loc());
           }
           let value = f32::from_le_bytes(data.try_into().unwrap());
           Value::F32(Ref::new(value))
@@ -278,7 +278,7 @@ impl ParsedProgram {
         #[cfg(feature = "f64")]
         TypeTag::F64 => {
           if data.len() != 8 {
-            return Err(MechError2::new(ConstantWrongSizeError { expected: 8, found: data.len(), type_name: "f64" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantWrongSizeError { expected: 8, found: data.len(), type_name: "f64" }, None).with_compiler_loc());
           }
           let value = f64::from_le_bytes(data.try_into().unwrap());
           Value::F64(Ref::new(value))
@@ -286,7 +286,7 @@ impl ParsedProgram {
         #[cfg(feature = "complex")]
         TypeTag::C64 => {
           if data.len() != 16 {
-            return Err(MechError2::new(ConstantWrongSizeError { expected: 16, found: data.len(), type_name: "c64" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantWrongSizeError { expected: 16, found: data.len(), type_name: "c64" }, None).with_compiler_loc());
           }
           let real = f64::from_le_bytes(data[0..8].try_into().unwrap());
           let imag = f64::from_le_bytes(data[8..16].try_into().unwrap());
@@ -295,7 +295,7 @@ impl ParsedProgram {
         #[cfg(feature = "rational")]
         TypeTag::R64 => {
           if data.len() != 16 {
-            return Err(MechError2::new(ConstantWrongSizeError { expected: 16, found: data.len(), type_name: "r64" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantWrongSizeError { expected: 16, found: data.len(), type_name: "r64" }, None).with_compiler_loc());
           }
           let numer = i64::from_le_bytes(data[0..8].try_into().unwrap());
           let denom = i64::from_le_bytes(data[8..16].try_into().unwrap());
@@ -304,7 +304,7 @@ impl ParsedProgram {
         #[cfg(all(feature = "matrix", feature = "string"))]
         TypeTag::MatrixString => {
           if data.len() < 8 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "[string]" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "[string]" }, None).with_compiler_loc());
           }
           let matrix = Matrix::<String>::from_le(&data);
           Value::MatrixString(matrix)
@@ -312,7 +312,7 @@ impl ParsedProgram {
         #[cfg(all(feature = "matrix", feature = "bool"))]
         TypeTag::MatrixBool => {
           if data.len() < 1 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "[bool]" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "[bool]" }, None).with_compiler_loc());
           }
           let matrix = Matrix::<bool>::from_le(&data);
           Value::MatrixBool(matrix)
@@ -320,7 +320,7 @@ impl ParsedProgram {
         #[cfg(all(feature = "matrix", feature = "u8"))]
         TypeTag::MatrixU8 => {
           if data.len() < 1 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "[u8]" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "[u8]" }, None).with_compiler_loc());
           }
           let matrix = Matrix::<u8>::from_le(&data);
           Value::MatrixU8(matrix)
@@ -328,7 +328,7 @@ impl ParsedProgram {
         #[cfg(all(feature = "matrix", feature = "i8"))]
         TypeTag::MatrixI8 => {
           if data.len() < 1 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "[i8]" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "[i8]" }, None).with_compiler_loc());
           }
           let matrix = Matrix::<i8>::from_le(&data);
           Value::MatrixI8(matrix)
@@ -336,7 +336,7 @@ impl ParsedProgram {
         #[cfg(all(feature = "matrix", feature = "f32"))]
         TypeTag::MatrixF32 => {
           if data.len() < 4 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "[f32]" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "[f32]" }, None).with_compiler_loc());
           }
           let matrix = Matrix::<f32>::from_le(&data);
           Value::MatrixF32(matrix)
@@ -344,7 +344,7 @@ impl ParsedProgram {
         #[cfg(all(feature = "matrix", feature = "f64"))]
         TypeTag::MatrixF64 => {
           if data.len() < 8 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "[f64]" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "[f64]" }, None).with_compiler_loc());
           }
           let matrix = Matrix::<f64>::from_le(&data);
           Value::MatrixF64(matrix)
@@ -352,7 +352,7 @@ impl ParsedProgram {
         #[cfg(all(feature = "matrix", feature = "u16"))]
         TypeTag::MatrixU16 => {
           if data.len() < 2 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "[u16]" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "[u16]" }, None).with_compiler_loc());
           }
           let matrix = Matrix::<u16>::from_le(&data);
           Value::MatrixU16(matrix)
@@ -360,7 +360,7 @@ impl ParsedProgram {
         #[cfg(all(feature = "matrix", feature = "u32"))]
         TypeTag::MatrixU32 => {
           if data.len() < 4 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "[u32]" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "[u32]" }, None).with_compiler_loc());
           }
           let matrix = Matrix::<u32>::from_le(&data);
           Value::MatrixU32(matrix)
@@ -368,7 +368,7 @@ impl ParsedProgram {
         #[cfg(all(feature = "matrix", feature = "u64"))]
         TypeTag::MatrixU64 => {
           if data.len() < 8 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "[u64]" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "[u64]" }, None).with_compiler_loc());
           }
           let matrix = Matrix::<u64>::from_le(&data);
           Value::MatrixU64(matrix)
@@ -376,7 +376,7 @@ impl ParsedProgram {
         #[cfg(all(feature = "matrix", feature = "u128"))]
         TypeTag::MatrixU128 => {
           if data.len() < 16 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "[u128]" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "[u128]" }, None).with_compiler_loc());
           }
           let matrix = Matrix::<u128>::from_le(&data);
           Value::MatrixU128(matrix)
@@ -384,7 +384,7 @@ impl ParsedProgram {
         #[cfg(all(feature = "matrix", feature = "i16"))]
         TypeTag::MatrixI16 => {
           if data.len() < 2 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "[i16]" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "[i16]" }, None).with_compiler_loc());
           }
           let matrix = Matrix::<i16>::from_le(&data);
           Value::MatrixI16(matrix)
@@ -392,7 +392,7 @@ impl ParsedProgram {
         #[cfg(all(feature = "matrix", feature = "i32"))]
         TypeTag::MatrixI32 => {
           if data.len() < 4 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "[i32]" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "[i32]" }, None).with_compiler_loc());
           }
           let matrix = Matrix::<i32>::from_le(&data);
           Value::MatrixI32(matrix)
@@ -400,7 +400,7 @@ impl ParsedProgram {
         #[cfg(all(feature = "matrix", feature = "i64"))]
         TypeTag::MatrixI64 => {
           if data.len() < 8 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "[i64]" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "[i64]" }, None).with_compiler_loc());
           }
           let matrix = Matrix::<i64>::from_le(&data);
           Value::MatrixI64(matrix)
@@ -408,7 +408,7 @@ impl ParsedProgram {
         #[cfg(all(feature = "matrix", feature = "i128"))]
         TypeTag::MatrixI128 => {
           if data.len() < 8 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "[i128]" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "[i128]" }, None).with_compiler_loc());
           }
           let matrix = Matrix::<i128>::from_le(&data);
           Value::MatrixI128(matrix)
@@ -416,7 +416,7 @@ impl ParsedProgram {
         #[cfg(all(feature = "matrix", feature = "c64"))]
         TypeTag::MatrixC64 => {
           if data.len() < 8 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "[c64]" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "[c64]" }, None).with_compiler_loc());
           }
           let matrix = Matrix::<C64>::from_le(&data);
           Value::MatrixC64(matrix)
@@ -424,7 +424,7 @@ impl ParsedProgram {
         #[cfg(all(feature = "matrix", feature = "r64"))]
         TypeTag::MatrixR64 => {
           if data.len() < 8 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "[r64]" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "[r64]" }, None).with_compiler_loc());
           }
           let matrix = Matrix::<R64>::from_le(&data);
           Value::MatrixR64(matrix)
@@ -432,14 +432,14 @@ impl ParsedProgram {
         #[cfg(feature = "matrix")]
         TypeTag::MatrixIndex => {
           if data.len() < 8 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "[ix]" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "[ix]" }, None).with_compiler_loc());
           }
           let matrix = Matrix::<usize>::from_le(&data);
           Value::MatrixIndex(matrix)
         },
         TypeTag::Index => {
           if data.len() != 8 {
-            return Err(MechError2::new(ConstantWrongSizeError { expected: 8, found: data.len(), type_name: "Index" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantWrongSizeError { expected: 8, found: data.len(), type_name: "Index" }, None).with_compiler_loc());
           }
           let value = u64::from_le_bytes(data.try_into().unwrap()) as usize;
           Value::Index(Ref::new(value))
@@ -447,7 +447,7 @@ impl ParsedProgram {
         #[cfg(feature = "set")]
         TypeTag::Set => {
           if data.len() < 4 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "set" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "set" }, None).with_compiler_loc());
           }
           let set = MechSet::from_le(&data);
           Value::Set(Ref::new(set))
@@ -455,14 +455,14 @@ impl ParsedProgram {
         #[cfg(feature = "table")]
         TypeTag::Table => {
           if data.len() < 8 {
-            return Err(MechError2::new(ConstantTooShortError { type_name: "table" }, None).with_compiler_loc());
+            return Err(MechError::new(ConstantTooShortError { type_name: "table" }, None).with_compiler_loc());
           }
           let table = MechTable::from_le(&data);
           Value::Table(Ref::new(table))
         }
         _ => {
           return Err(
-            MechError2::new(
+            MechError::new(
               UnsupportedConstantTypeError { type_tag: ty.tag },
               None,
             )
@@ -525,7 +525,7 @@ fn load_program_from_reader<R: Read + Seek>(r: &mut R, total_len: u64) -> MResul
   // quick magic check
   if !header.validate_magic(b"MECH") {
     return Err(
-      MechError2::new(InvalidMagicNumberError, None)
+      MechError::new(InvalidMagicNumberError, None)
         .with_compiler_loc()
     );
   }
@@ -557,7 +557,7 @@ fn load_program_from_reader<R: Read + Seek>(r: &mut R, total_len: u64) -> MResul
         types.entries.push(TypeEntry { tag, bytes });
       } else {
         return Err(
-        MechError2::new(UnknownConstantTypeError { tag }, None)
+        MechError::new(UnknownConstantTypeError { tag }, None)
           .with_compiler_loc()
         );
       }
@@ -622,7 +622,7 @@ fn load_program_from_reader<R: Read + Seek>(r: &mut R, total_len: u64) -> MResul
       let mut name_bytes = vec![0u8; name_len];
       cur.read_exact(&mut name_bytes)?;
       let name = String::from_utf8(name_bytes).map_err(|_| 
-          MechError2::new(InvalidUtf8InDictError, None)
+          MechError::new(InvalidUtf8InDictError, None)
             .with_compiler_loc()
       )?;
       dictionary.insert(id, name);
@@ -659,22 +659,22 @@ impl ParsedConstEntry {
   pub fn write_to<W: Write>(&self, w: &mut W) -> MResult<()> {
     // type_id (u32)
     w.write_u32::<LittleEndian>(self.type_id)
-      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
+      .map_err(|e| MechError::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
     // enc, align, flags, reserved (u8 each)
     w.write_u8(self.enc)
-      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
+      .map_err(|e| MechError::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
     w.write_u8(self.align)
-      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
+      .map_err(|e| MechError::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
     w.write_u8(self.flags)
-      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
+      .map_err(|e| MechError::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
     w.write_u8(self.reserved)
-      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
+      .map_err(|e| MechError::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
     // offset (u64)
     w.write_u64::<LittleEndian>(self.offset)
-      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
+      .map_err(|e| MechError::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
     // length (u64)
     w.write_u64::<LittleEndian>(self.length)
-      .map_err(|e| MechError2::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
+      .map_err(|e| MechError::new(ConstEntryWriteIoError { source: format!("{}", e) }, None).with_compiler_loc())?;
     Ok(())
   }
 }
@@ -696,7 +696,7 @@ fn parse_const_entries(mut cur: Cursor<&[u8]>, count: usize) -> io::Result<Vec<P
 
 pub fn verify_crc_trailer_seek<R: Read + Seek>(r: &mut R, total_len: u64) -> MResult<()> {
   if total_len < 4 {
-    return Err(MechError2::new(
+    return Err(MechError::new(
       FileTooShortError { total_len, expected_len: 4 },
       None
     ).with_compiler_loc());
@@ -712,7 +712,7 @@ pub fn verify_crc_trailer_seek<R: Read + Seek>(r: &mut R, total_len: u64) -> MRe
 
   let file_crc = crc32fast::hash(&buf);
   if file_crc != expected_crc {
-    Err(MechError2::new(
+    Err(MechError::new(
       CrcMismatchError { expected: expected_crc, found: file_crc },
       None
     ).with_compiler_loc())
@@ -759,7 +759,7 @@ fn decode_instructions(mut cur: Cursor<&[u8]>) -> MResult<Vec<DecodedInstr>> {
     // if remaining < 8, can't read opcode
     let rem = cur.get_ref().len() - pos_before as usize;
     if rem < 8 {
-      return Err(MechError2::new(
+      return Err(MechError::new(
         TruncatedInstructionError,
         None
       ).with_compiler_loc());
@@ -829,13 +829,13 @@ fn decode_instructions(mut cur: Cursor<&[u8]>) -> MResult<Vec<DecodedInstr>> {
         out.push(DecodedInstr::VarArg { fxn_id: fxn_id, dst, args });
       }
       Some(unknown) => {
-        return Err(MechError2::new(
+        return Err(MechError::new(
           UnknownOpcodeError { opcode: unknown },
           None
         ).with_compiler_loc());
       }
       None => {
-        return Err(MechError2::new(
+        return Err(MechError::new(
           InvalidOpcodeError { opcode: opcode_byte },
           None
         ).with_compiler_loc());

@@ -78,20 +78,20 @@ pub trait MechErrorKind2: std::fmt::Debug + Send + Sync + Clone {
 //#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 //#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[derive(Clone)]
-pub struct MechError2 {
+pub struct MechError {
   kind_data: Arc<dyn Any + Send + Sync>,
   kind_callbacks: Arc<dyn ErrorKindCallbacks>, // object-safe vtable
   pub program_range: Option<SourceRange>,
   pub annotations: Vec<SourceRange>,
   pub tokens: Vec<Token>,
   pub compiler_location: Option<CompilerSourceRange>,
-  pub source: Option<Box<MechError2>>, // for propagation
+  pub source: Option<Box<MechError>>, // for propagation
   pub message: Option<String>,
 }
 
-impl std::fmt::Debug for MechError2 {
+impl std::fmt::Debug for MechError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.debug_struct("MechError2")
+    f.debug_struct("MechError")
       .field("kind name", &self.kind_name())
       .field("kind message", &self.kind_message())
       .field("message", &self.message)
@@ -104,12 +104,12 @@ impl std::fmt::Debug for MechError2 {
   }
 }
 
-impl MechError2 {
+impl MechError {
   pub fn new<K: MechErrorKind2 + 'static>(
     kind: K,
     message: Option<String>
   ) -> Self {
-    MechError2 {
+    MechError {
       kind_data: Arc::new(kind),
       kind_callbacks: Arc::new(CallbacksImpl::<K>::new()),
       program_range: None,
@@ -184,7 +184,7 @@ impl MechError2 {
   }
 
   /// Set the source error that caused this one
-  pub fn with_source(mut self, src: MechError2) -> Self {
+  pub fn with_source(mut self, src: MechError) -> Self {
     self.source = Some(Box::new(src));
     self
   }
@@ -231,9 +231,9 @@ impl MechErrorKind2 for UndefinedKindError {
   }
 }
 
-impl From<std::io::Error> for MechError2 {
+impl From<std::io::Error> for MechError {
   fn from(err: std::io::Error) -> Self {
-    MechError2::new(
+    MechError::new(
       IoErrorWrapper { msg: err.to_string() },
       None
     )

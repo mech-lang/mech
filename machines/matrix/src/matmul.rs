@@ -238,7 +238,7 @@ macro_rules! impl_matmul_match_arms {
             let (rhs_rows,rhs_cols) = {rhs.borrow().shape()};
             if lhs_cols != rhs_rows {
               return Err(
-                MechError2::new(
+                MechError::new(
                   DimensionMismatch { dims: vec![lhs_rows, lhs_cols, rhs_rows, rhs_cols] },
                   None
                 ).with_compiler_loc()
@@ -251,7 +251,7 @@ macro_rules! impl_matmul_match_arms {
             let (lhs_rows,lhs_cols) = {lhs.borrow().shape()};
             let (rhs_rows,rhs_cols) = {rhs.borrow().shape()};
             if lhs_cols != rhs_rows {
-              return Err(MechError2::new(
+              return Err(MechError::new(
                 DimensionMismatch { dims: vec![lhs_rows, lhs_cols, rhs_rows, rhs_cols] },
                 None
               ).with_compiler_loc());
@@ -263,7 +263,7 @@ macro_rules! impl_matmul_match_arms {
             let (lhs_rows,lhs_cols) = {lhs.borrow().shape()};
             let (rhs_rows,rhs_cols) = {rhs.borrow().shape()};
             if lhs_cols != rhs_rows {
-              return Err(MechError2::new(
+              return Err(MechError::new(
                 DimensionMismatch { dims: vec![lhs_rows, rhs_cols, lhs_cols, rhs_rows] },
                 None
               ).with_compiler_loc());
@@ -275,7 +275,7 @@ macro_rules! impl_matmul_match_arms {
             let (lhs_rows,lhs_cols) = {lhs.borrow().shape()};
             let (rhs_rows,rhs_cols) = {rhs.borrow().shape()};
             if lhs_cols != rhs_rows {
-              return Err(MechError2::new(
+              return Err(MechError::new(
                 DimensionMismatch { dims: vec![lhs_rows, rhs_cols, lhs_cols, rhs_rows] },
                 None
               ).with_compiler_loc());
@@ -286,14 +286,14 @@ macro_rules! impl_matmul_match_arms {
           (Value::$matrix_kind(lhs), Value::$matrix_kind(rhs)) => {
             let lhs_shape = lhs.shape();
             let rhs_shape = rhs.shape();
-            return Err(MechError2::new(
+            return Err(MechError::new(
               DimensionMismatch { dims: vec![lhs_shape[0], lhs_shape[1], rhs_shape[0], rhs_shape[1]] },
               None
             ).with_compiler_loc());
           }
         )+
       )+
-      (arg1,arg2) => Err(MechError2::new(
+      (arg1,arg2) => Err(MechError::new(
         UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($fxn).to_string() },
         None
       ).with_compiler_loc()),

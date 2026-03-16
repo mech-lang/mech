@@ -112,7 +112,7 @@ macro_rules! range_size_to_usize {
   ($diff:expr, f32) => {{
     let v: f32 = $diff;
     if v < 0.0 {
-      return Err(MechError2::new(
+      return Err(MechError::new(
         RangeSizeOverflowError {},
         None
       ).with_compiler_loc());
@@ -124,7 +124,7 @@ macro_rules! range_size_to_usize {
   ($diff:expr, f64) => {{
     let v: f64 = $diff;
     if v < 0.0 {
-      return Err(MechError2::new(
+      return Err(MechError::new(
         RangeSizeOverflowError {},
         None
       ).with_compiler_loc());
@@ -134,7 +134,7 @@ macro_rules! range_size_to_usize {
   
   // Integer branch
   ($diff:expr, $ty:ty) => {{
-    $diff.try_into().map_err(|_| MechError2::new(
+    $diff.try_into().map_err(|_| MechError::new(
       RangeSizeOverflowError {},
       None
     ).with_compiler_loc())?
