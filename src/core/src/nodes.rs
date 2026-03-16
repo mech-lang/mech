@@ -534,6 +534,7 @@ pub enum SectionElement {
   Float((Box<SectionElement>, FloatDirection)),
   Footnote(Footnote),
   Grammar(Grammar),
+  Include(Token),
   Image(Image),
   List(MDList),
   MechCode(Vec<(MechCode,Option<Comment>)>),
@@ -623,6 +624,7 @@ impl SectionElement {
         }
         tokens
       }
+      SectionElement::Include(path) => vec![path.clone()],
       SectionElement::List(list) => match list {
       MDList::Unordered(items) => {
         let mut tokens = vec![];
