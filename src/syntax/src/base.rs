@@ -169,6 +169,7 @@ leaf!(underline_sigil, "__", TokenKind::UnderlineSigil);
 leaf!(section_sigil, "§", TokenKind::SectionSigil);
 leaf!(mika_section_open, "⸢", TokenKind::MikaSectionOpen);
 leaf!(mika_section_close, "⸥", TokenKind::MikaSectionClose);
+leaf!(prompt, ">:", TokenKind::Prompt);
 
 ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);
 ws0_leaf!(async_transition_operator, "~>", TokenKind::AsyncTransitionOperator);
