@@ -108,7 +108,7 @@ pub enum TokenKind {
   MikaSection, MikaSectionOpen, MikaSectionClose,
   Newline, Not, Number,
   OutputOperator,
-  Percent, Period, Plus,
+  Percent, Period, Plus, Prompt,
   Question, QuestionSigil, Quote, QuoteSigil,
   RightAngle, RightBrace, RightBracket, RightParenthesis,
   SectionSigil, Semicolon, Space, Slash, String, StrikeSigil, StrongSigil, SuccessSigil, SynthOperator,
