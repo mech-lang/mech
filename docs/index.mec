@@ -37,13 +37,13 @@ Mech Documentation
 
 (2.2) Program Model
 
-- [Functions] - `todo`
-- [Error Handling] - `todo`
-- [Comprehensions] - `todo`
-- [State Machines] - `todo`
-- [Synthesis and Generation] - `todo`
-- [Tests] - `todo`
-- [Programs] - `todo`
+- [Functions](#) `todo`
+- [Error Handling](#) `todo`
+- [Comprehensions](#) `todo`
+- [State Machines](#) `todo`
+- [Synthesis and Generation](#) `todo`
+- [Tests](#) `todo`
+- [Programs](#) `todo`
 
 (2.3) System Model
 
