@@ -28,6 +28,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
   let mut hasher = DefaultHasher::new();
   let mut out = Value::Empty; 
   match element {
+    SectionElement::Prompt(x) => x.hash(&mut hasher),
     SectionElement::InfoBlock(x) => x.hash(&mut hasher),
     SectionElement::QuestionBlock(x) => x.hash(&mut hasher),
     SectionElement::WarningBlock(x) => x.hash(&mut hasher),
