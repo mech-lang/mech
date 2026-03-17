@@ -98,7 +98,12 @@ async fn main() -> Result<(), MechError> {
   let mika = "╭⦿╮".truecolor(246,192,78);
   let mika_point = "╭⦿─".truecolor(246,192,78);
   let mika_hello = "╭⦿╯".truecolor(246,192,78);
-
+  let help_cmd = ":help".bright_yellow();
+  let quit_cmd = ":quit".bright_yellow();
+  let ctrlc_cmd = ":ctrl+c".bright_yellow();
+  let mika_open = "⸢".bright_yellow();
+  let mika_close = "⸥".bright_yellow();
+  
   let about = format!("{}", text_logo);
 
   let matches = Command::new("Mech")
@@ -553,12 +558,12 @@ async fn main() -> Result<(), MechError> {
     stdo.execute(cursor::MoveToNextLine(1));
     println!("\n                {}                ",format!("v{}",VERSION).truecolor(246,192,78));
     println!("           {}           \n", "www.mech-lang.org");
-    println!("{} ⸢Enter \":help\" for a list of all commands.⸥\n", mika_hello);
+    println!("{} {}Enter {} for a list of all commands.{}\n", mika_hello, mika_open, help_cmd, mika_close);
 
     // Catch Ctrl-C a couple times before quitting
     let mut ci = caught_inturrupts.clone();
     ctrlc::set_handler(move || {
-      println!("[Ctrl+C]");
+      println!("{}", ctrlc_cmd);
       let mut caught_inturrupts = ci.lock().unwrap();
       *caught_inturrupts += 1;
       if *caught_inturrupts >= 3 {
@@ -568,16 +573,16 @@ async fn main() -> Result<(), MechError> {
         ).unwrap().tick_strings(MIKAWAVE);  
         final_state.set_prefix("[Success]");
         final_state.set_style(completed_style);
-        final_state.set_message("⸢Okay cya!⸥\n");
+        final_state.set_message(format!("{}Okay cya!{}\n", mika_open, mika_close));
         for _ in 0..MIKAWAVE.len() - 1 {
           thread::sleep(Duration::from_millis(100));
           final_state.tick();
         }
         std::process::exit(0);
       }
-      println!("\n{} ⸢Enter \":quit\" to terminate this REPL session.⸥\n", mika_point);
+      println!("\n{} {}Enter {} to terminate this REPL session.{}\n", mika_point, mika_open, quit_cmd, mika_close);
       print_prompt();
-    }).expect("Error setting Ctrl-C handler");
+    }).expect("Error setting Ctrl+C handler");
   }
 
   // --------------------------------------------------------------------------

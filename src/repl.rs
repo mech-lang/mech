@@ -165,7 +165,8 @@ impl MechRepl {
             let out = r.pretty_print();
             #[cfg(not(feature = "pretty_print"))]
             let out = format!("{:#?}", r);
-            return Ok(format!("\n{}\n{}\n", r.kind(), r));
+            let kind_formatted = format!("{}", r.kind());
+            return Ok(format!("\n{}\n{}\n", kind_formatted.truecolor(240, 159, 202), r));
           },
           Err(err) => { return Err(err); }
         }
