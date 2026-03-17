@@ -688,6 +688,15 @@ impl Formatter {
     }
   }
 
+  pub fn prompt(&mut self, node: &SectionElement) -> String {
+    let prompt_str = self.section_element(node);
+    if self.html {
+      format!("<div class=\"mech-prompt\"><span class=\"mech-prompt-sigil\">>:</span>{}</div>", prompt_str)
+    } else {
+      format!(">: {}\n", prompt_str)
+    }
+  }
+    
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     match node {
       SectionElement::Abstract(n) => self.abstract_el(n),
@@ -703,6 +712,7 @@ impl Formatter {
       SectionElement::Comment(n) => self.comment(n),
       SectionElement::Diagram(n) => self.diagram(n),
       SectionElement::Equation(n) => self.equation(n),
+      SectionElement::Prompt(n) => self.prompt(n),
       SectionElement::FencedMechCode(n) => self.fenced_mech_code(n),
       SectionElement::Float((n,f)) => self.float(n,f),
       SectionElement::Footnote(n) => self.footnote(n),

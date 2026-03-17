@@ -742,6 +742,14 @@ pub fn footnote(input: ParseString) -> ParseResult<Footnote> {
   Ok((input, footnote))
 }
 
+// prompt := prompt-sigil, *space, +paragraph ;
+pub fn prompt(input: ParseString) -> ParseResult<SectionElement> {
+  let (input, _) = prompt_sigil(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, element) = section_element(input)?;
+  Ok((input, SectionElement::Prompt(Box::new(element))))
+}
+
 pub fn blank_line(input: ParseString) -> ParseResult<Vec<Token>> {
   let (input, mut st) = many0(space_tab)(input)?;
   let (input, n) = new_line(input)?;
@@ -768,6 +776,7 @@ pub fn info_block(input: ParseString) -> ParseResult<SectionElement> {
 // quote-block := quote-sigil, *space, +paragraph ;
 pub fn quote_block(input: ParseString) -> ParseResult<SectionElement> {
   let (input, _) = peek(is_not(float_sigil))(input)?;
+  let (input, _) = peek(is_not(prompt_sigil))(input)?;
   let (input, _) = quote_sigil(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, paragraphs) = many1(paragraph_newline)(input)?;
@@ -875,6 +884,7 @@ pub fn not_mech_code(input: ParseString) -> ParseResult<()> {
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let parsers: Vec<(&'static str, Box<dyn Fn(ParseString) -> ParseResult<SectionElement>>)> = vec![
     ("list",            Box::new(|i| mechdown_list(i).map(|(i, lst)| (i, SectionElement::List(lst))))),
+    ("prompt",          Box::new(prompt)),
     ("footnote",        Box::new(|i| footnote(i).map(|(i, f)| (i, SectionElement::Footnote(f))))),
     ("citation",        Box::new(|i| citation(i).map(|(i, c)| (i, SectionElement::Citation(c))))),
     ("abstract",        Box::new(abstract_el)),
@@ -882,7 +892,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
     ("equation",        Box::new(|i| equation(i).map(|(i, e)| (i, SectionElement::Equation(e))))),
     ("table",           Box::new(|i| mechdown_table(i).map(|(i, t)| (i, SectionElement::Table(t))))),
     ("float",           Box::new(|i| float(i).map(|(i, f)| (i, SectionElement::Float(f))))),
-    ("quote_block",     Box::new(quote_block)),
+    //("quote_block",     Box::new(quote_block)),
     ("code_block",      Box::new(code_block)),
     ("thematic_break",  Box::new(|i| thematic_break(i).map(|(i, _)| (i, SectionElement::ThematicBreak)))),
     ("subtitle",        Box::new(|i| subtitle(i).map(|(i, s)| (i, SectionElement::Subtitle(s))))),
