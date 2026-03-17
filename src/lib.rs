@@ -184,7 +184,7 @@ pub fn help() -> String {
   ]);
   let mut table = builder.build();
   table.with(mech_table_style())
-       .with(Panel::header(format!("{}","Mech Help".yellow())));
+       .with(Panel::header(format!("{}","Help".yellow())));
   format!("\n{table}\n")
 }
 
@@ -225,7 +225,7 @@ pub fn ls() -> String {
   }
   let mut table = builder.build();
   table.with(mech_table_style())
-       .with(Panel::header(format!("{}","Directory Listing".truecolor(0xdf,0xb9,0x9f))));
+       .with(Panel::header(format!("{}","Directory Listing".yellow())));
   format!("\nDirectory: {}\n\n{table}\n",current_dir.display())
 }
 
@@ -285,7 +285,7 @@ pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
     .with(mech_table_style())
     .with(Panel::header(format!(
         "{}",
-        "Whos".truecolor(0xdf, 0xb9, 0x9f)
+        "Whos".yellow()
     )));
 
   format!("\n{table}\n")
@@ -301,7 +301,7 @@ fn pretty_print_symbols(intrp: &Interpreter) -> String {
 
   let mut table = builder.build();
   table.with(mech_table_style())   
-        .with(Panel::header(format!("{}","Symbols".truecolor(0xdf,0xb9,0x9f))));
+        .with(Panel::header(format!("{}","Symbols".yellow())));
   format!("\n{table}\n")
 }
 
