@@ -4744,7 +4744,7 @@ register_descriptor! {
 #[derive(Debug, Clone)]
 pub struct HorizontalConcatenateDimensionMismatchError {
 }
-impl MechErrorKind2 for HorizontalConcatenateDimensionMismatchError {
+impl MechErrorKind for HorizontalConcatenateDimensionMismatchError {
   fn name(&self) -> &str { "HorizontalConcatenateDimensionMismatch" }
   fn message(&self) -> String {
       format!("Cannot horizontally concatenate matrices/vectors with dimensions that do not align.")
