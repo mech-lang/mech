@@ -32,7 +32,7 @@ where
         let out: Ref<T> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self {arg, out, _marker: PhantomData::default() }))
       },
-      _ => Err(MechError2::new(
+      _ => Err(MechError::new(
           IncorrectNumberOfArguments { expected: 1, found: args.len() },
           None
         ).with_compiler_loc()
@@ -90,7 +90,7 @@ where
         let out: Ref<MatA> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self {arg, out, _marker: PhantomData::default() }))
       },
-      _ => Err(MechError2::new(
+      _ => Err(MechError::new(
           IncorrectNumberOfArguments { expected: 1, found: args.len() },
           None
         ).with_compiler_loc()

@@ -78,7 +78,7 @@ pub struct MulAssignValue {}
 impl NativeFunctionCompiler for MulAssignValue {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
     }
     let sink = arguments[0].clone();
     let source = arguments[1].clone();
@@ -89,7 +89,7 @@ impl NativeFunctionCompiler for MulAssignValue {
           (Value::MutableReference(sink),Value::MutableReference(source)) => { mul_assign_value_fxn(sink.borrow().clone(),source.borrow().clone()) },
           (sink,Value::MutableReference(source)) => { mul_assign_value_fxn(sink.clone(),source.borrow().clone()) },
           (Value::MutableReference(sink),source) => { mul_assign_value_fxn(sink.borrow().clone(),source.clone()) },
-          (arg1,arg2) => Err(MechError2::new(
+          (arg1,arg2) => Err(MechError::new(
               UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "math/mul-assign".to_string() },
               None
             ).with_compiler_loc()
@@ -158,7 +158,7 @@ pub struct MulAssignRange {}
 impl NativeFunctionCompiler for MulAssignRange {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
     }
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
@@ -170,7 +170,7 @@ impl NativeFunctionCompiler for MulAssignRange {
           (Value::MutableReference(sink),ixes,Value::MutableReference(source)) => { mul_assign_range_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
           (sink,ixes,Value::MutableReference(source)) => { mul_assign_range_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
           (Value::MutableReference(sink),ixes,source) => { mul_assign_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
-          x => Err(MechError2::new(
+          x => Err(MechError::new(
               UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "math/mul-assign/range".to_string() },
               None
             ).with_compiler_loc()
@@ -259,7 +259,7 @@ pub struct MulAssignRangeAll {}
 impl NativeFunctionCompiler for MulAssignRangeAll {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
     }
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
@@ -271,7 +271,7 @@ impl NativeFunctionCompiler for MulAssignRangeAll {
           (Value::MutableReference(sink),ixes,Value::MutableReference(source)) => { mul_assign_range_all_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
           (sink,ixes,Value::MutableReference(source)) => { mul_assign_range_all_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
           (Value::MutableReference(sink),ixes,source) => { mul_assign_range_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
-          x => Err(MechError2::new(
+          x => Err(MechError::new(
               //UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "math/mul-assign/range-all".to_string() },
               UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|x| x.kind()).collect(), source.kind()), fxn_name: "math/mul-assign/range-all".to_string() },
               None

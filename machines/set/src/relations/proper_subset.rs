@@ -24,7 +24,7 @@ impl MechFunctionFactory for SetProperSubsetFxn {
         let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(SetProperSubsetFxn { lhs, rhs, out }))
       },
-      _ => Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc()),
+      _ => Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc()),
     }
   }
 }
@@ -64,7 +64,7 @@ fn set_proper_subset_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction
     (Value::Set(lhs), Value::Set(rhs)) => {
       Ok(Box::new(SetProperSubsetFxn { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(false) }))
     },
-    x => Err(MechError2::new(
+    x => Err(MechError::new(
       UnhandledFunctionArgumentKind2 {
         arg: (x.0.kind(), x.1.kind()),
         fxn_name: "set/proper-subset".to_string(),
@@ -77,7 +77,7 @@ pub struct SetProperSubset {}
 impl NativeFunctionCompiler for SetProperSubset {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());
     }
     let lhs = arguments[0].clone();
     let rhs = arguments[1].clone();
@@ -88,7 +88,7 @@ impl NativeFunctionCompiler for SetProperSubset {
           (Value::MutableReference(lhs), Value::MutableReference(rhs)) => set_proper_subset_fxn(lhs.borrow().clone(), rhs.borrow().clone()),
           (lhs, Value::MutableReference(rhs)) => set_proper_subset_fxn(lhs.clone(), rhs.borrow().clone()),
           (Value::MutableReference(lhs), rhs) => set_proper_subset_fxn(lhs.borrow().clone(), rhs.clone()),
-          x => Err(MechError2::new(
+          x => Err(MechError::new(
             UnhandledFunctionArgumentKind2 { arg: (x.0.kind(), x.1.kind()), fxn_name: "set/proper-subset".to_string() },
             None
           ).with_compiler_loc()),

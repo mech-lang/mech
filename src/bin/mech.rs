@@ -25,11 +25,14 @@ use tabled::{
   settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
   Tabled,
 };
+use indicatif::{ProgressBar, ProgressStyle, MultiProgress};
 use serde_json;
 use std::panic;
 use std::sync::{Arc, Mutex};
 use std::path::Path;
 use std::ffi::OsStr;
+use std::time::Duration;
+use std::thread;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -54,7 +57,7 @@ static STYLESHEET: &str = include_str!("../../include/style.css");
 static STYLESHEET: &str = "No Embedded Stylesheet";
 
 #[tokio::main]
-async fn main() -> Result<(), MechError2> {
+async fn main() -> Result<(), MechError> {
   /*panic::set_hook(Box::new(|panic_info| {
     // do nothing.
   }));*/
@@ -91,7 +94,16 @@ async fn main() -> Result<(), MechError2> {
         ╲┊┊╱    ╱                  ╲╱____╱                   ╲╱____╱                   ╲╱____╱
          ╲╱____╱"#.truecolor(246,192,78);
 
-
+  
+  let micromika = "╭◉╮".truecolor(246,192,78);
+  let micromika_point = "╭◉─".truecolor(246,192,78);
+  let micromika_hello = "╭◉╯".truecolor(246,192,78);
+  let help_cmd = ":help".bright_yellow();
+  let quit_cmd = ":quit".bright_yellow();
+  let ctrlc_cmd = ":ctrl+c".bright_yellow();
+  let mika_open = "⸢".bright_yellow();
+  let mika_close = "⸥".bright_yellow();
+  
   let about = format!("{}", text_logo);
 
   let matches = Command::new("Mech")
@@ -232,14 +244,14 @@ async fn main() -> Result<(), MechError2> {
     let stylesheet = read_or_download(&stylesheet_path, &stylesheet_backup_url, Some(STYLESHEET.as_bytes()))
         .await?;
     let stylesheet_str = String::from_utf8(stylesheet)
-        .map_err(|e| MechError2::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
+        .map_err(|e| MechError::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
 
     // Load shim HTML
     print!("{} Loading HTML shim...", badge);
     let shim = read_or_download(&shim_path, &shim_backup_url, Some(SHIMHTML.as_bytes()))
         .await?;
     let shim_str = String::from_utf8(shim)
-        .map_err(|e| MechError2::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
+        .map_err(|e| MechError::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
 
     // Load WASM
     print!("{} Loading WASM...", badge);
@@ -367,7 +379,7 @@ async fn main() -> Result<(), MechError2> {
     let stylesheet = read_or_download(&stylesheet_path, &stylesheet_backup_url, Some(STYLESHEET.as_bytes()))
             .await?;
     let stylesheet_str = String::from_utf8(stylesheet).map_err(|e| {
-      MechError2::new(
+      MechError::new(
         Utf8ConversionError {
           source_error: e.to_string(),
         },
@@ -380,7 +392,7 @@ async fn main() -> Result<(), MechError2> {
     print!("{} Loading HTML shim...", badge);
     let shim = read_or_download(&shim_path, &shim_backup_url, Some(SHIMHTML.as_bytes())).await?;
     let shim_str = String::from_utf8(shim).map_err(|e| {
-      MechError2::new(
+      MechError::new(
         Utf8ConversionError {
           source_error: e.to_string(),
         },
@@ -546,21 +558,31 @@ async fn main() -> Result<(), MechError2> {
     stdo.execute(cursor::MoveToNextLine(1));
     println!("\n                {}                ",format!("v{}",VERSION).truecolor(246,192,78));
     println!("           {}           \n", "www.mech-lang.org");
-    println!("Enter \":help\" for a list of all commands.\n");
+    let intro_message = format!("{}Enter {} for a list of all commands.{}\n", mika_open, help_cmd, mika_close); 
+    println!("{} {}", micromika, intro_message);
 
     // Catch Ctrl-C a couple times before quitting
     let mut ci = caught_inturrupts.clone();
     ctrlc::set_handler(move || {
-      println!("[Ctrl+C]");
+      println!("{}", ctrlc_cmd);
       let mut caught_inturrupts = ci.lock().unwrap();
       *caught_inturrupts += 1;
       if *caught_inturrupts >= 3 {
-        println!("Okay, cya!");
+        let final_state = ProgressBar::new_spinner();
+        let completed_style = ProgressStyle::with_template(
+          "\n{spinner:.yellow} {msg}"
+        ).unwrap().tick_strings(MICROMIKA_WAVE);  
+        final_state.set_style(completed_style);
+        final_state.set_message(format!("{}Okay cya!{}\n", mika_open, mika_close));
+        for _ in 0..MICROMIKA_WAVE.len() - 1 {
+          thread::sleep(Duration::from_millis(100));
+          final_state.tick();
+        }
         std::process::exit(0);
       }
-      println!("Enter \":quit\" to terminate this REPL session.");
+      println!("\n{} {}Enter {} to terminate this REPL session.{}\n", micromika_point, mika_open, quit_cmd, mika_close);
       print_prompt();
-    }).expect("Error setting Ctrl-C handler");
+    }).expect("Error setting Ctrl+C handler");
   }
 
   // --------------------------------------------------------------------------
@@ -736,7 +758,7 @@ fn source_range_to_offset_range(file_content: &str, range: &SourceRange) -> (usi
   (start_offset, end_offset)
 }
 
-pub fn print_mech_error(err: &MechError2) {
+pub fn print_mech_error(err: &MechError) {
   if let Some(watch_error) = err.kind_as::<WatchPathFailed>() {
     let src_file_path = watch_error.file_path.to_string();
     match &err.source {

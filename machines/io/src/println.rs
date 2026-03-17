@@ -22,7 +22,7 @@ where
         let out: Ref<Value> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self {e0: Ref::new(Mat::default()), _marker: PhantomData::default()}))
       },
-      _ => Err(MechError2::new(
+      _ => Err(MechError::new(
           IncorrectNumberOfArguments { expected: 0, found: args.len() },
           None
         ).with_compiler_loc()
@@ -95,7 +95,7 @@ macro_rules! impl_print_match_arms {
           #[cfg(all(feature = $value_string, feature = "vectord"))]
           (Value::[<Matrix $input_type:camel>](Matrix::DVector(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
         )+
-        x => Err(MechError2::new(
+        x => Err(MechError::new(
             UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "io/println".to_string() },
             None
           ).with_compiler_loc()
@@ -121,7 +121,7 @@ where
         let e0: Ref<T> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self {e0}))
       },
-      _ => Err(MechError2::new(
+      _ => Err(MechError::new(
           IncorrectNumberOfArguments { expected: 0, found: args.len() },
           None
         ).with_compiler_loc()
@@ -219,7 +219,7 @@ pub struct IoPrintln {}
 impl NativeFunctionCompiler for IoPrintln {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError2::new(
+      return Err(MechError::new(
           IncorrectNumberOfArguments { expected: 1, found: arguments.len() },
           None
         ).with_compiler_loc()
@@ -231,7 +231,7 @@ impl NativeFunctionCompiler for IoPrintln {
       Err(_) => {
         match (input) {
           (Value::MutableReference(input)) => {impl_print_fxn(input.borrow().clone())}
-          x => Err(MechError2::new(
+          x => Err(MechError::new(
               UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "io/println".to_string() },
               None
             ).with_compiler_loc()

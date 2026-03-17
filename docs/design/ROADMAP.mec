@@ -12,9 +12,10 @@ Implementation: started 2018
 (1.2) Stage 2 - Beta `v0.1.0` - `v0.4+` (???)
 
 Started: December 2022
-Currently: `v0.3.0` (Spring 2026)
+Currently: `v0.3.1` (Spring 2026)
 
-- `v0.2` data specification    `Concluded end of 2025`
+- `v0.1` proof of concept `Concluded 2023`
+- `v0.2` data specification    `Concluded 2025`
 - `v0.3` program specification !!Started 2026!!
 - `v0.4` system specification `TBD`
 
@@ -33,8 +34,6 @@ No target release date yet.
 -(🍗) deprecated
 
 (2.1) Data Specification (`v0.2`)
-
-(i)> Work on `v0.2` is targeted to conclude by the end of 2025, and will transition into `v0.3` starting in 2026.
 
 Now that all `v0.2` work items are at the beta implementation stage, we will prepare to move on to `v0.3`. This will mean wrapping up documentation, tests, and any remaining bugs. 
 
@@ -80,9 +79,11 @@ As beta features, these are are still not complete and are subject to change in 
 
 (2.2) Program Specification (`v0.3`)
 
+(i)> Work on `v0.3` began in 2026.
+
 Version `v0.3` incorporates all the features of `v0.2`, in addition to the following new features:
 
--(💭) synthassign
+-(💭) synth/gen
 -(💭) introspection
 -(💭) higher order functions
 -(💭) new types (dec64, currency, email addresses, dates)

@@ -54,7 +54,7 @@ macro_rules! impl_two_arg_fxn {
             let out: Ref<$out_kind> = unsafe{ out.as_unchecked().clone() };
             Ok(Box::new($struct_name {arg1, arg2, out}))
           },
-          _ => Err(MechError2::new(
+          _ => Err(MechError::new(
               IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
               None
             ).with_compiler_loc()
@@ -218,7 +218,7 @@ macro_rules! impl_binop_atan2 {
             Ok(Box::new([<$fxn MD $t>]{arg1, arg2, out: Ref::new(DMatrix::from_element(rows, cols, $zero_fn))}))
           },
         )+
-        (arg1,arg2) => Err(MechError2::new(
+        (arg1,arg2) => Err(MechError::new(
             UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($fxn).to_string() },
             None
           ).with_compiler_loc()
@@ -240,7 +240,7 @@ pub struct MathAtan2 {}
 impl NativeFunctionCompiler for MathAtan2 {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
     }
     let arg1 = arguments[0].clone();
     let arg2 = arguments[1].clone();
@@ -251,7 +251,7 @@ impl NativeFunctionCompiler for MathAtan2 {
           (Value::MutableReference(arg1),Value::MutableReference(arg2)) => {impl_atan2_fxn(arg1.borrow().clone(),arg2.borrow().clone())}
           (Value::MutableReference(arg1),arg2) => {impl_atan2_fxn(arg1.borrow().clone(),arg2.clone())}
           (arg1,Value::MutableReference(arg2)) => {impl_atan2_fxn(arg1.clone(),arg2.borrow().clone())}
-          (arg1,arg2) => Err(MechError2::new(
+          (arg1,arg2) => Err(MechError::new(
               UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "math/atan2".to_string() },
               None
             ).with_compiler_loc()

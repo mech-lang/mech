@@ -106,7 +106,7 @@ impl MechFunctionFactory for AtomNeq {
         let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(AtomNeq { lhs, rhs, out }))
       }
-      _ => Err(MechError2::new(
+      _ => Err(MechError::new(
           IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
           None
         ).with_compiler_loc()
@@ -153,7 +153,7 @@ impl MechFunctionFactory for TableNeq {
         let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(TableNeq { lhs, rhs, out }))
       }
-      _ => Err(MechError2::new(
+      _ => Err(MechError::new(
           IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
           None
         ).with_compiler_loc()

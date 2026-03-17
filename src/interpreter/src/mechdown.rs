@@ -28,6 +28,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
   let mut hasher = DefaultHasher::new();
   let mut out = Value::Empty; 
   match element {
+    SectionElement::Prompt(x) => x.hash(&mut hasher),
     SectionElement::InfoBlock(x) => x.hash(&mut hasher),
     SectionElement::QuestionBlock(x) => x.hash(&mut hasher),
     SectionElement::WarningBlock(x) => x.hash(&mut hasher),
@@ -136,7 +137,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     SectionElement::Mika((m,s)) => {
       return Ok(Value::Atom(Ref::new(MechAtom::from_name(&m.to_string()))));
     },
-    x => {return Err(MechError2::new(
+    x => {return Err(MechError::new(
         FeatureNotEnabledError,
         Some(format!("Feature not enabled for section element: {:?}", x)),
       ).with_compiler_loc().with_tokens(x.tokens())
@@ -157,7 +158,7 @@ pub fn paragraph_element(element: &ParagraphElement, p: &Interpreter) -> MResult
                       // What we really need to do is just defer the execution of this thing to the very end
       }
     }
-    _ => {return Err(MechError2::new(
+    _ => {return Err(MechError::new(
         NotExecutableError{},
         None
       ).with_compiler_loc().with_tokens(element.tokens())
@@ -194,7 +195,7 @@ pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
       */
     },
     MechCode::Comment(cmmt) => comment(&cmmt, p),
-    x => Err(MechError2::new(
+    x => Err(MechError::new(
         FeatureNotEnabledError,
         None
       ).with_compiler_loc().with_tokens(x.tokens())

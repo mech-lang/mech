@@ -21,7 +21,7 @@ pub fn structure(strct: &Structure, env: Option<&Environment>, p: &Interpreter) 
     Structure::Set(x) => set(&x, env, p),
     #[cfg(feature = "map")]
     Structure::Map(x) => map(&x, env, p),
-    x => Err(MechError2::new(FeatureNotEnabledError, Some(format!("Feature not enabled for `{:?}`", stringify!(x)))).with_compiler_loc()),
+    x => Err(MechError::new(FeatureNotEnabledError, Some(format!("Feature not enabled for `{:?}`", stringify!(x)))).with_compiler_loc()),
   }
 }
 
@@ -49,7 +49,7 @@ pub fn map(mp: &Map, env: Option<&Environment>, p: &Interpreter) -> MResult<Valu
   // verify that all the keys are the same kind:
   for k in m.keys() {
     if k.kind() != key_kind {
-      return Err(MechError2::new(
+      return Err(MechError::new(
         MapKeyKindMismatchError{expected_kind: key_kind.clone(), actual_kind: k.kind().clone()},
         None
       ).with_compiler_loc());
@@ -60,7 +60,7 @@ pub fn map(mp: &Map, env: Option<&Environment>, p: &Interpreter) -> MResult<Valu
   // verify that all the values are the same kind:
   for v in m.values() {
     if v.kind() != value_kind {
-      return Err(MechError2::new(
+      return Err(MechError::new(
         MapValueKindMismatchError{expected_kind: value_kind.clone(), actual_kind: v.kind().clone()},
         None
       ).with_compiler_loc());
@@ -101,7 +101,7 @@ pub fn record(rcrd: &Record, env: Option<&Environment>, p: &Interpreter) -> MRes
           data.insert(name_hash, converted_result);
         },
         Err(e) => {
-          return Err(MechError2::new(
+          return Err(MechError::new(
             TableColumnKindMismatchError {
               column_id: name_hash,
               expected_kind: knd.clone(),
@@ -155,7 +155,7 @@ impl MechFunctionFactory for ValueSet {
         let out: Ref<MechSet> = unsafe{ out.as_unchecked().clone() };
         Ok(Box::new(ValueSet {out}))
       },
-      _ => Err(MechError2::new(
+      _ => Err(MechError::new(
           IncorrectNumberOfArguments { expected: 0, found: args.len() },
           None
         ).with_compiler_loc()
@@ -214,7 +214,7 @@ pub fn set(m: &Set, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
   // Make sure all elements have the same kind
   for el in &elements {
     if el.kind() != element_kind {
-      return Err(MechError2::new(
+      return Err(MechError::new(
         SetKindMismatchError{expected_kind: element_kind.clone(), actual_kind: el.kind().clone()},
         None
       ).with_compiler_loc());
@@ -247,7 +247,7 @@ macro_rules! handle_value_kind {
       match x.$converter() {
         Ok(u) => vals.push(u.to_value()),
         Err(_) => {
-          return Err(MechError2::new(
+          return Err(MechError::new(
             TableColumnKindMismatchError { 
               column_id: id, 
               expected_kind: $value_kind.clone(), 
@@ -436,7 +436,7 @@ pub fn matrix(m: &Mat, env: Option<&Environment>, p: &Interpreter) -> MResult<Va
       } else if shape[1] == result.shape()[1] {
         col.push(result);
       } else {
-        return Err(MechError2::new(
+        return Err(MechError::new(
             DimensionMismatch { dims: vec![shape[1], result.shape()[1]] },
             None
           ).with_compiler_loc()
@@ -458,7 +458,7 @@ pub fn matrix(m: &Mat, env: Option<&Environment>, p: &Interpreter) -> MResult<Va
     plan_brrw.push(new_fxn);
     return Ok(out);
   }
-  return Err(MechError2::new(
+  return Err(MechError::new(
     FeatureNotEnabledError,
     Some("matrix/vertcat feature not enabled".to_string())).with_compiler_loc()
   );
@@ -479,7 +479,7 @@ pub fn matrix_row(r: &MatrixRow, env: Option<&Environment>, p: &Interpreter) -> 
     } else if shape[0] == result.shape()[0] {
       row.push(result);
     } else {
-      return Err(MechError2::new(
+      return Err(MechError::new(
           DimensionMismatch { dims: vec![shape[0], result.shape()[0]] },
           None
         ).with_compiler_loc()

@@ -19,7 +19,7 @@ impl MechFunctionFactory for SetComplementFxn {
         let out: Ref<MechSet> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(SetComplementFxn {input, out }))
       },
-      _ => Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: args.len() }, None).with_compiler_loc())
+      _ => Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: args.len() }, None).with_compiler_loc())
     }
   }    
 }
@@ -71,7 +71,7 @@ fn set_complement_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> 
     (Value::Set(lhs), Value::Set(rhs)) => {
       Ok(Box::new(SetComplementFxn { input: input.clone(), out: Ref::new(MechSet::new(input.borrow().kind.clone(), input.borrow().num_elements)) }))
     },
-    x => Err(MechError2::new(
+    x => Err(MechError::new(
       UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "set/complement".to_string() },
       None
     ).with_compiler_loc()),
@@ -82,7 +82,7 @@ pub struct SetComplement {}
 impl NativeFunctionCompiler for SetComplement {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let input = arguments[0].clone();
     match set_complement_fxn(input) {
@@ -91,7 +91,7 @@ impl NativeFunctionCompiler for SetComplement {
         match (input) {
           (Value::MutableReference(input)) => { set_complement_fxn(input.borrow().clone()) },
           (input) => { set_complement_fxn(input.clone()) },
-          x => Err(MechError2::new(
+          x => Err(MechError::new(
             UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "set/complement".to_string() },
             None
           ).with_compiler_loc()),

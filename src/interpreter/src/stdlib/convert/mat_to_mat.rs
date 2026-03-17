@@ -121,7 +121,7 @@ where
     Matrix::RowDVector(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: Ref::new(RowDVector::from_element(shape[1], zero)), _marker: PhantomData })),
     #[cfg(feature = "matrixd")]
     Matrix::DMatrix(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: Ref::new(DMatrix::from_element(shape[0], shape[1], zero)), _marker: PhantomData })),
-    _ => Err(MechError2::new(
+    _ => Err(MechError::new(
         FeatureNotEnabledError,
         None
       ).with_compiler_loc()
@@ -252,7 +252,7 @@ where
     #[cfg(feature = "matrixd")]
     (Matrix::DMatrix(v), n, m) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: Ref::new(DMatrix::from_element(n, m, zero)), _marker: PhantomData })); },
     _ => {
-      return Err(MechError2::new(
+      return Err(MechError::new(
         ReshapeError { original: (dims[0], dims[1]), requested: (shape[0], shape[1]) },
         None
       ).with_compiler_loc());
@@ -285,12 +285,12 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
                 } else if shape[0] * shape[1] == dims[0] * dims[1] {
                   create_reshape_mat_to_mat::<$src, $dst>(v, &dims)
                 } else {
-                  Err(MechError2::new(UnsupportedConversionError{from: source_value.kind(), to: target_kind.clone()}, None).with_compiler_loc())
+                  Err(MechError::new(UnsupportedConversionError{from: source_value.kind(), to: target_kind.clone()}, None).with_compiler_loc())
                 }
               }
             )+
           )+
-          _ => Err(MechError2::new(UnsupportedConversionError{from: source_value.kind(), to: target_kind.clone()}, None).with_compiler_loc()),
+          _ => Err(MechError::new(UnsupportedConversionError{from: source_value.kind(), to: target_kind.clone()}, None).with_compiler_loc()),
         }
       }
     }
@@ -339,7 +339,7 @@ pub struct ConvertMatToMat {}
 impl NativeFunctionCompiler for ConvertMatToMat {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());
     }
     let source_value = arguments[0].clone();
     let source_kind = source_value.kind();
@@ -349,7 +349,7 @@ impl NativeFunctionCompiler for ConvertMatToMat {
       Err(_) => {
         match source_value {
           Value::MutableReference(rhs) => impl_conversion_mat_to_mat_fxn(rhs.borrow().clone(), target_kind.clone()),
-          x => Err(MechError2::new(
+          x => Err(MechError::new(
               UnhandledFunctionArgumentKind2 { arg: (arguments[0].kind(), arguments[1].kind()), fxn_name: "convert/mat-to-mat".to_string() },
               None
             ).with_compiler_loc()

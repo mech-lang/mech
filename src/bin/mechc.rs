@@ -1343,7 +1343,7 @@ pub fn cargo_build(
       pb.set_style(fail_style());
       pb.finish_with_message(format!("Failed to start cargo: {} {}", e, style("✗").red()));
       cancel_all("Build cancelled due to cargo error.");
-      return Err(MechError2::new(
+      return Err(MechError::new(
         CargoStartFailed{
           details: format!("{}", e)
         }, None).with_compiler_loc())
@@ -1391,7 +1391,7 @@ pub fn cargo_build(
         pb.set_style(fail_style());
         pb.finish_with_message(format!("Shim build failed: {} {} {}", output.status, String::from_utf8_lossy(&output.stderr), style("✗").red()));
         cancel_all("Build cancelled due to cargo error.");
-        return Err(MechError2::new(
+        return Err(MechError::new(
           CargoBuildFailed{
             status: output.status.code().unwrap_or(-1),
             stderr: String::from_utf8_lossy(&output.stderr).to_string()
@@ -1404,7 +1404,7 @@ pub fn cargo_build(
       pb.set_style(fail_style());
       pb.finish_with_message(format!("Failed to wait for Cargo: {} {}", e, style("✗").red()));
       cancel_all("Build cancelled due to Cargo error.");
-      return Err(MechError2::new(
+      return Err(MechError::new(
         CargoWaitFailed{
           details: format!("{}", e)
         }, None).with_compiler_loc())
@@ -1543,7 +1543,7 @@ fn create_zip_from_pairs(pairs: &[(String, Vec<u8>)]) -> MResult<Vec<u8>> {
         Ok(_) => {}
         Err(e) => {
           return Err(
-            MechError2::new(
+            MechError::new(
               ZipOperationError {
                 operation: "add",
                 details: e.to_string(),
@@ -1558,7 +1558,7 @@ fn create_zip_from_pairs(pairs: &[(String, Vec<u8>)]) -> MResult<Vec<u8>> {
         Ok(_) => {}
         Err(e) => {
           return Err(
-            MechError2::new(
+            MechError::new(
               ZipOperationError {
                 operation: "write",
                 details: e.to_string(),
@@ -1573,7 +1573,7 @@ fn create_zip_from_pairs(pairs: &[(String, Vec<u8>)]) -> MResult<Vec<u8>> {
     match zip.finish() {
       Ok(_) => {}
       Err(e) => {
-        return Err(MechError2::new(
+        return Err(MechError::new(
           ZipOperationError {
             operation: "finish",
             details: e.to_string(),
@@ -1602,7 +1602,7 @@ fn find_built_exe(project_dir: &Path, shim_name: &str, target: Option<&str>, rel
     if with_exe.exists() {
       return Ok(with_exe);
     } else {
-      return Err(MechError2::new(
+      return Err(MechError::new(
         MissingExecutableError {
           path: with_exe.to_string_lossy().to_string(),
         },
@@ -1613,7 +1613,7 @@ fn find_built_exe(project_dir: &Path, shim_name: &str, target: Option<&str>, rel
   if candidate.exists() {
     return Ok(candidate);
   }
-  Err(MechError2::new(
+  Err(MechError::new(
     MissingExecutableError {
       path: candidate.to_string_lossy().to_string(),
     },

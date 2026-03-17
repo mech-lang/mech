@@ -71,7 +71,7 @@ macro_rules! vertcat_two_args {
             let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self { e0, e1, out }))
           },
-          _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 2, found: args.len()}, None).with_compiler_loc())
+          _ => Err(MechError::new(IncorrectNumberOfArguments{expected: 2, found: args.len()}, None).with_compiler_loc())
         }
       }
     }
@@ -142,7 +142,7 @@ macro_rules! vertcat_three_args {
             let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self { e0, e1, e2, out }))
           },
-          _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 3, found: args.len()}, None).with_compiler_loc())
+          _ => Err(MechError::new(IncorrectNumberOfArguments{expected: 3, found: args.len()}, None).with_compiler_loc())
         }
       }
     }
@@ -202,7 +202,7 @@ macro_rules! vertcat_four_args {
             let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self { e0, e1, e2, e3, out }))
           },
-          _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 4, found: args.len()}, None).with_compiler_loc())
+          _ => Err(MechError::new(IncorrectNumberOfArguments{expected: 4, found: args.len()}, None).with_compiler_loc())
         }
       }
     }
@@ -260,7 +260,7 @@ where
         let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, out }))
       },
-      _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 2, found: args.len()}, None).with_compiler_loc())
+      _ => Err(MechError::new(IncorrectNumberOfArguments{expected: 2, found: args.len()}, None).with_compiler_loc())
     }
   }
 }
@@ -330,7 +330,7 @@ where
         let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 3, found: args.len()}, None).with_compiler_loc())
+      _ => Err(MechError::new(IncorrectNumberOfArguments{expected: 3, found: args.len()}, None).with_compiler_loc())
     }
   }
 }
@@ -404,7 +404,7 @@ where
         let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 4, found: args.len()}, None).with_compiler_loc())
+      _ => Err(MechError::new(IncorrectNumberOfArguments{expected: 4, found: args.len()}, None).with_compiler_loc())
     }
   }
 }
@@ -480,7 +480,7 @@ where
         let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, out }))
       },
-      _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 0, found: args.len()}, None).with_compiler_loc())
+      _ => Err(MechError::new(IncorrectNumberOfArguments{expected: 0, found: args.len()}, None).with_compiler_loc())
     }
   }
 }
@@ -551,7 +551,7 @@ macro_rules! vertical_concatenate {
               let out: Ref<[<$vec_size>]<T>> = unsafe { out.as_unchecked() }.clone();
               Ok(Box::new(Self { out }))
             },
-            _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 1, found: args.len()}, None).with_compiler_loc())
+            _ => Err(MechError::new(IncorrectNumberOfArguments{expected: 1, found: args.len()}, None).with_compiler_loc())
           }
         }
       }
@@ -601,7 +601,7 @@ where
         let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, out }))
       },
-      _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 2, found: args.len()}, None).with_compiler_loc())
+      _ => Err(MechError::new(IncorrectNumberOfArguments{expected: 2, found: args.len()}, None).with_compiler_loc())
     }
   }
 }
@@ -681,7 +681,7 @@ where
         let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, out }))
       },
-      _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 3, found: args.len()}, None).with_compiler_loc())
+      _ => Err(MechError::new(IncorrectNumberOfArguments{expected: 3, found: args.len()}, None).with_compiler_loc())
     }
   }
 }
@@ -755,7 +755,7 @@ where
         let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { e0, e1, e2, e3, out }))
       },
-      _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 4, found: args.len()}, None).with_compiler_loc())
+      _ => Err(MechError::new(IncorrectNumberOfArguments{expected: 4, found: args.len()}, None).with_compiler_loc())
     }
   }
 }
@@ -838,7 +838,7 @@ where
         let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { scalar, matrix, out }))
       },
-      _ => Err(MechError2::new(IncorrectNumberOfArguments{expected: 0, found: args.len()}, None).with_compiler_loc())
+      _ => Err(MechError::new(IncorrectNumberOfArguments{expected: 0, found: args.len()}, None).with_compiler_loc())
     }
   }
 }
@@ -1022,7 +1022,7 @@ where
         let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(Self { out }))
       },
-      _ => Err(MechError2::new(
+      _ => Err(MechError::new(
           IncorrectNumberOfArguments { expected: 1, found: args.len() }, 
           None
         ).with_compiler_loc()
@@ -1539,7 +1539,7 @@ macro_rules! impl_vertcat_arms {
           (3,2) => {return Ok(Box::new(VerticalConcatenateM3x2{out:Ref::new(Matrix3x2::from_vec(mat))}));}
           #[cfg(feature = "matrixd")]
           (m,n) => {return Ok(Box::new(VerticalConcatenateMD{out:Ref::new(DMatrix::from_vec(m,n,mat))}));}
-          _ => Err(MechError2::new(
+          _ => Err(MechError::new(
             FeatureNotEnabledError,
             None
           ).with_compiler_loc()),
@@ -1914,7 +1914,7 @@ macro_rules! impl_vertcat_arms {
             }
             Ok(Box::new(VerticalConcatenateNArgs{e0: args, out:Ref::new(out)}))
           }
-          _ => {return Err(MechError2::new(
+          _ => {return Err(MechError::new(
                 UnhandledFunctionArgumentKindVarg { arg: arguments.iter().map(|x| x.kind()).collect(), fxn_name: "matrix/vertcat".to_string() },
                 None
               ).with_compiler_loc()
@@ -1961,7 +1961,7 @@ fn impl_vertcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   #[cfg(feature = "complex")]
   { if ValueKind::is_compatible(target_kind.clone(), ValueKind::C64) { return impl_vertcat_arms!(C64, arguments, C64::default()) } }
 
-  Err(MechError2::new(
+  Err(MechError::new(
       UnhandledFunctionArgumentKindVarg { arg: arguments.iter().map(|x| x.kind()).collect(), fxn_name: "matrix/vertcat".to_string() },
       None
     ).with_compiler_loc()

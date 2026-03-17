@@ -47,7 +47,7 @@ macro_rules! impl_as_type {
           Value::Id(v) => Ok(Ref::new(*v as $target_type)),
           Value::MutableReference(val) => val.borrow().[<as_ $target_type>](),
           _ => Err(
-            MechError2::new(
+            MechError::new(
               CannotConvertToTypeError { target_type: stringify!($target_type) },
               None
             ).with_compiler_loc()
@@ -1719,7 +1719,7 @@ impl Value {
     } else if let Value::MutableReference(val) = self {
       val.borrow().as_bool()
     } else {
-      Err(MechError2::new(
+      Err(MechError::new(
         UnhandledFunctionArgumentKindError,
         None
       ).with_compiler_loc())
@@ -1784,7 +1784,7 @@ impl Value {
       Value::C64(v) => Ok(Ref::new(v.borrow().to_string())),
       Value::MutableReference(val) => val.borrow().as_string(),
       _ => Err(
-        MechError2::new(
+        MechError::new(
           CannotConvertToTypeError { 
             target_type: "string",
           },
@@ -1824,7 +1824,7 @@ impl Value {
       Value::I128(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
       Value::MutableReference(val) => val.borrow().as_r64(),
       _ => Err(
-        MechError2::new(
+        MechError::new(
           CannotConvertToTypeError { 
             target_type: "r64",
           },
@@ -1864,7 +1864,7 @@ impl Value {
       Value::I128(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
       Value::MutableReference(val) => val.borrow().as_c64(),
       _ => Err(
-        MechError2::new(
+        MechError::new(
           CannotConvertToTypeError { 
             target_type: "c64",
           },
@@ -1902,7 +1902,7 @@ impl Value {
       Value::F64(v) => Ok(Ref::new((*v.borrow()) as f32)),
       Value::MutableReference(val) => val.borrow().as_f32(),
       _ => Err(
-        MechError2::new(
+        MechError::new(
           CannotConvertToTypeError { 
             target_type: "f32",
           },
@@ -1940,7 +1940,7 @@ impl Value {
       Value::F64(v) => Ok(v.clone()),
       Value::MutableReference(val) => val.borrow().as_f64(),
       _ => Err(
-        MechError2::new(
+        MechError::new(
           CannotConvertToTypeError { 
             target_type: "f64",
           },
@@ -1950,22 +1950,22 @@ impl Value {
     }
   }
 
-  #[cfg(all(feature = "matrix", feature = "bool"))] pub fn as_vecbool(&self) -> MResult<Vec<bool>> { if let Value::MatrixBool(v) = self { Ok(v.as_vec()) } else if let Value::Bool(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecbool() } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "bool" }, None).with_compiler_loc()) } }
-  #[cfg(all(feature = "matrix", feature = "f64"))] pub fn as_vecf64(&self) -> MResult<Vec<f64>> { if let Value::MatrixF64(v) = self { Ok(v.as_vec()) } else if let Value::F64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf64() } else if let Ok(v) = self.as_f64() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "f64" }, None).with_compiler_loc()) } }
-  #[cfg(all(feature = "matrix", feature = "f32"))] pub fn as_vecf32(&self) -> MResult<Vec<f32>> { if let Value::MatrixF32(v) = self { Ok(v.as_vec()) } else if let Value::F32(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf32() } else if let Ok(v) = self.as_f32() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "f32" }, None).with_compiler_loc()) } }
-  #[cfg(all(feature = "matrix", feature = "u8"))] pub fn as_vecu8(&self) -> MResult<Vec<u8>> { if let Value::MatrixU8(v) = self { Ok(v.as_vec()) } else if let Value::U8(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu8() } else if let Ok(v) = self.as_u8() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "u8" }, None).with_compiler_loc()) } }
-  #[cfg(all(feature = "matrix", feature = "u16"))] pub fn as_vecu16(&self) -> MResult<Vec<u16>> { if let Value::MatrixU16(v) = self { Ok(v.as_vec()) } else if let Value::U16(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu16() } else if let Ok(v) = self.as_u16() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "u16" }, None).with_compiler_loc()) } }
-  #[cfg(all(feature = "matrix", feature = "u32"))] pub fn as_vecu32(&self) -> MResult<Vec<u32>> { if let Value::MatrixU32(v) = self { Ok(v.as_vec()) } else if let Value::U32(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu32() } else if let Ok(v) = self.as_u32() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "u32" }, None).with_compiler_loc()) } }
-  #[cfg(all(feature = "matrix", feature = "u64"))] pub fn as_vecu64(&self) -> MResult<Vec<u64>> { if let Value::MatrixU64(v) = self { Ok(v.as_vec()) } else if let Value::U64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu64() } else if let Ok(v) = self.as_u64() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "u64" }, None).with_compiler_loc()) } }
-  #[cfg(all(feature = "matrix", feature = "u128"))] pub fn as_vecu128(&self) -> MResult<Vec<u128>> { if let Value::MatrixU128(v) = self { Ok(v.as_vec()) } else if let Value::U128(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu128() } else if let Ok(v) = self.as_u128() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "u128" }, None).with_compiler_loc()) } }
-  #[cfg(all(feature = "matrix", feature = "i8"))] pub fn as_veci8(&self) -> MResult<Vec<i8>> { if let Value::MatrixI8(v) = self { Ok(v.as_vec()) } else if let Value::I8(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci8() } else if let Ok(v) = self.as_i8() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "i8" }, None).with_compiler_loc()) } }
-  #[cfg(all(feature = "matrix", feature = "i16"))] pub fn as_veci16(&self) -> MResult<Vec<i16>> { if let Value::MatrixI16(v) = self { Ok(v.as_vec()) } else if let Value::I16(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci16() } else if let Ok(v) = self.as_i16() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "i16" }, None).with_compiler_loc()) } }
-  #[cfg(all(feature = "matrix", feature = "i32"))] pub fn as_veci32(&self) -> MResult<Vec<i32>> { if let Value::MatrixI32(v) = self { Ok(v.as_vec()) } else if let Value::I32(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci32() } else if let Ok(v) = self.as_i32() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "i32" }, None).with_compiler_loc()) } }
-  #[cfg(all(feature = "matrix", feature = "i64"))] pub fn as_veci64(&self) -> MResult<Vec<i64>> { if let Value::MatrixI64(v) = self { Ok(v.as_vec()) } else if let Value::I64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci64() } else if let Ok(v) = self.as_i64() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "i64" }, None).with_compiler_loc()) } }
-  #[cfg(all(feature = "matrix", feature = "i128"))] pub fn as_veci128(&self) -> MResult<Vec<i128>> { if let Value::MatrixI128(v) = self { Ok(v.as_vec()) } else if let Value::I128(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci128() } else if let Ok(v) = self.as_i128() { Ok(vec![v.borrow().clone()]) } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "i128" }, None).with_compiler_loc()) } }
-  #[cfg(all(feature = "matrix", feature = "string"))] pub fn as_vecstring(&self) -> MResult<Vec<String>> { if let Value::MatrixString(v) = self { Ok(v.as_vec()) } else if let Value::String(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecstring() } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "string" }, None).with_compiler_loc()) } }
-  #[cfg(all(feature = "matrix", feature = "r64"))] pub fn as_vecr64(&self) -> MResult<Vec<R64>> { if let Value::MatrixR64(v) = self { Ok(v.as_vec()) } else if let Value::R64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecr64() } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "r64" }, None).with_compiler_loc()) } }
-  #[cfg(all(feature = "matrix", feature = "c64"))] pub fn as_vecc64(&self) -> MResult<Vec<C64>> { if let Value::MatrixC64(v) = self { Ok(v.as_vec()) } else if let Value::C64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecc64() } else { Err(MechError2::new(CannotConvertToTypeError { target_type: "c64" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "bool"))] pub fn as_vecbool(&self) -> MResult<Vec<bool>> { if let Value::MatrixBool(v) = self { Ok(v.as_vec()) } else if let Value::Bool(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecbool() } else { Err(MechError::new(CannotConvertToTypeError { target_type: "bool" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "f64"))] pub fn as_vecf64(&self) -> MResult<Vec<f64>> { if let Value::MatrixF64(v) = self { Ok(v.as_vec()) } else if let Value::F64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf64() } else if let Ok(v) = self.as_f64() { Ok(vec![v.borrow().clone()]) } else { Err(MechError::new(CannotConvertToTypeError { target_type: "f64" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "f32"))] pub fn as_vecf32(&self) -> MResult<Vec<f32>> { if let Value::MatrixF32(v) = self { Ok(v.as_vec()) } else if let Value::F32(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf32() } else if let Ok(v) = self.as_f32() { Ok(vec![v.borrow().clone()]) } else { Err(MechError::new(CannotConvertToTypeError { target_type: "f32" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "u8"))] pub fn as_vecu8(&self) -> MResult<Vec<u8>> { if let Value::MatrixU8(v) = self { Ok(v.as_vec()) } else if let Value::U8(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu8() } else if let Ok(v) = self.as_u8() { Ok(vec![v.borrow().clone()]) } else { Err(MechError::new(CannotConvertToTypeError { target_type: "u8" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "u16"))] pub fn as_vecu16(&self) -> MResult<Vec<u16>> { if let Value::MatrixU16(v) = self { Ok(v.as_vec()) } else if let Value::U16(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu16() } else if let Ok(v) = self.as_u16() { Ok(vec![v.borrow().clone()]) } else { Err(MechError::new(CannotConvertToTypeError { target_type: "u16" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "u32"))] pub fn as_vecu32(&self) -> MResult<Vec<u32>> { if let Value::MatrixU32(v) = self { Ok(v.as_vec()) } else if let Value::U32(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu32() } else if let Ok(v) = self.as_u32() { Ok(vec![v.borrow().clone()]) } else { Err(MechError::new(CannotConvertToTypeError { target_type: "u32" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "u64"))] pub fn as_vecu64(&self) -> MResult<Vec<u64>> { if let Value::MatrixU64(v) = self { Ok(v.as_vec()) } else if let Value::U64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu64() } else if let Ok(v) = self.as_u64() { Ok(vec![v.borrow().clone()]) } else { Err(MechError::new(CannotConvertToTypeError { target_type: "u64" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "u128"))] pub fn as_vecu128(&self) -> MResult<Vec<u128>> { if let Value::MatrixU128(v) = self { Ok(v.as_vec()) } else if let Value::U128(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu128() } else if let Ok(v) = self.as_u128() { Ok(vec![v.borrow().clone()]) } else { Err(MechError::new(CannotConvertToTypeError { target_type: "u128" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "i8"))] pub fn as_veci8(&self) -> MResult<Vec<i8>> { if let Value::MatrixI8(v) = self { Ok(v.as_vec()) } else if let Value::I8(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci8() } else if let Ok(v) = self.as_i8() { Ok(vec![v.borrow().clone()]) } else { Err(MechError::new(CannotConvertToTypeError { target_type: "i8" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "i16"))] pub fn as_veci16(&self) -> MResult<Vec<i16>> { if let Value::MatrixI16(v) = self { Ok(v.as_vec()) } else if let Value::I16(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci16() } else if let Ok(v) = self.as_i16() { Ok(vec![v.borrow().clone()]) } else { Err(MechError::new(CannotConvertToTypeError { target_type: "i16" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "i32"))] pub fn as_veci32(&self) -> MResult<Vec<i32>> { if let Value::MatrixI32(v) = self { Ok(v.as_vec()) } else if let Value::I32(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci32() } else if let Ok(v) = self.as_i32() { Ok(vec![v.borrow().clone()]) } else { Err(MechError::new(CannotConvertToTypeError { target_type: "i32" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "i64"))] pub fn as_veci64(&self) -> MResult<Vec<i64>> { if let Value::MatrixI64(v) = self { Ok(v.as_vec()) } else if let Value::I64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci64() } else if let Ok(v) = self.as_i64() { Ok(vec![v.borrow().clone()]) } else { Err(MechError::new(CannotConvertToTypeError { target_type: "i64" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "i128"))] pub fn as_veci128(&self) -> MResult<Vec<i128>> { if let Value::MatrixI128(v) = self { Ok(v.as_vec()) } else if let Value::I128(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci128() } else if let Ok(v) = self.as_i128() { Ok(vec![v.borrow().clone()]) } else { Err(MechError::new(CannotConvertToTypeError { target_type: "i128" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "string"))] pub fn as_vecstring(&self) -> MResult<Vec<String>> { if let Value::MatrixString(v) = self { Ok(v.as_vec()) } else if let Value::String(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecstring() } else { Err(MechError::new(CannotConvertToTypeError { target_type: "string" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "r64"))] pub fn as_vecr64(&self) -> MResult<Vec<R64>> { if let Value::MatrixR64(v) = self { Ok(v.as_vec()) } else if let Value::R64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecr64() } else { Err(MechError::new(CannotConvertToTypeError { target_type: "r64" }, None).with_compiler_loc()) } }
+  #[cfg(all(feature = "matrix", feature = "c64"))] pub fn as_vecc64(&self) -> MResult<Vec<C64>> { if let Value::MatrixC64(v) = self { Ok(v.as_vec()) } else if let Value::C64(v) = self { Ok(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecc64() } else { Err(MechError::new(CannotConvertToTypeError { target_type: "c64" }, None).with_compiler_loc()) } }
 
   pub fn as_vecusize(&self) -> MResult<Vec<usize>> {
     match self {
@@ -2021,19 +2021,19 @@ impl Value {
       Value::MatrixI64(v) => Ok(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
       #[cfg(all(feature = "matrix", feature = "bool"))]
       Value::MatrixBool(_) =>
-        Err(MechError2::new(
+        Err(MechError::new(
           CannotConvertToTypeError { target_type: "[usize]" },
           None
         ).with_compiler_loc()),
       #[cfg(any(feature = "bool", feature = "[usize]"))]
       Value::Bool(_) =>
-        Err(MechError2::new(
+        Err(MechError::new(
           CannotConvertToTypeError { target_type: "[usize]" },
           None
         ).with_compiler_loc()),
       Value::MutableReference(x) => x.borrow().as_vecusize(),
       _ =>
-        Err(MechError2::new(
+        Err(MechError::new(
           CannotConvertToTypeError { target_type: "[usize]" },
           None
         ).with_compiler_loc()),
@@ -2070,13 +2070,13 @@ impl Value {
           }
           Err(_) => match self.as_bool() {
             Ok(x) => Ok(Value::Bool(x)),
-            Err(_) => Err(MechError2::new(
+            Err(_) => Err(MechError::new(
               CannotConvertToTypeError { target_type: "ix" },
               None
             ).with_compiler_loc()),
           }
         }
-        x => Err(MechError2::new(
+        x => Err(MechError::new(
           CannotConvertToTypeError { target_type: "ix" },
           None
         ).with_compiler_loc()),
@@ -2115,7 +2115,7 @@ impl Value {
       Value::MutableReference(v) => v.borrow().as_usize(),
       _ =>
         Err(
-          MechError2::new(
+          MechError::new(
             CannotConvertToTypeError { target_type: "usize" },
             None
           ).with_compiler_loc()
@@ -2130,7 +2130,7 @@ impl Value {
       Value::MutableReference(v) => v.borrow().expect_u8(),
       _ =>
         Err(
-          MechError2::new(
+          MechError::new(
             CannotConvertToTypeError { target_type: "u8" },
             None
           ).with_compiler_loc()
@@ -2145,7 +2145,7 @@ impl Value {
       Value::MutableReference(v) => v.borrow().expect_f64(),
       _ =>
         Err(
-          MechError2::new(
+          MechError::new(
             CannotConvertToTypeError { target_type: "f64" },
             None
           ).with_compiler_loc()

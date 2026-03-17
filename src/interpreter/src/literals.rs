@@ -19,7 +19,7 @@ pub fn literal(ltrl: &Literal, p: &Interpreter) -> MResult<Value> {
     Literal::Kind(knd) => kind_value(knd, p),
     #[cfg(feature = "convert")]
     Literal::TypedLiteral((ltrl,kind)) => typed_literal(ltrl,kind,p),
-    _ => Err(MechError2::new(
+    _ => Err(MechError::new(
       FeatureNotEnabledError, None
       ).with_compiler_loc())
   }
@@ -79,7 +79,7 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
           _ => {
             match dim_val.as_usize() {
               Ok(size_val) => dims.push(size_val.clone()),
-              Err(_) => { return Err(MechError2::new(
+              Err(_) => { return Err(MechError::new(
                 ExpectedNumericForKindSizeError, None
                 ).with_compiler_loc())
               }
@@ -105,7 +105,7 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
         _ => {
           match size_val.as_usize() {
             Ok(size_val) => size_val,
-            Err(_) => { return Err(MechError2::new(
+            Err(_) => { return Err(MechError::new(
               ExpectedNumericForKindSizeError, None
               ).with_compiler_loc())
             }

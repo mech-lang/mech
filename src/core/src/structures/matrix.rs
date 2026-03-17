@@ -537,7 +537,7 @@ where T: Debug + Clone + PartialEq + 'static
       }
       _ => {
         return Err(
-          MechError2::new(
+          MechError::new(
             IncompatibleMatrixAppendToTableError {
               lhs_rows: self.rows(),
               lhs_cols: self.cols(),
@@ -570,7 +570,7 @@ where T: Debug + Clone + PartialEq + 'static
       }
       _ => {
         return Err(
-          MechError2::new(
+          MechError::new(
             PushIntoStaticMatrixError,
             None,
           )
@@ -611,7 +611,7 @@ where T: Debug + Clone + PartialEq + 'static
       }
       _ => {
         return Err(
-          MechError2::new(
+          MechError::new(
             ResizeStaticMatrixError,
             None,
           )

@@ -72,7 +72,7 @@ impl MechFileSystem {
         Ok(())
       },
       Err(e) => {
-        Err(MechError2::new(
+        Err(MechError::new(
           RwLockWriteError {source_err: format!("{}",e)},
           Some("Could not set stylesheet.".to_string())
         ).with_compiler_loc())
@@ -87,7 +87,7 @@ impl MechFileSystem {
         Ok(())
       },
       Err(e) => {
-        Err(MechError2::new(
+        Err(MechError::new(
           RwLockWriteError {source_err: format!("{}",e)},
           Some("Could not set shim.".to_string())
         ).with_compiler_loc())
@@ -106,7 +106,7 @@ impl MechFileSystem {
           sources.add_code(&code)
         },
         Err(e) => {
-          Err(MechError2::new(
+          Err(MechError::new(
             RwLockWriteError {source_err: format!("{}",e)},
             Some("Failed to add Mech code.".to_string())
           ).with_compiler_loc())
@@ -133,7 +133,7 @@ impl MechFileSystem {
                 },
                 Err(e) => {
                   println!("{} Failed to load: {}", "[File Error]".truecolor(246,98,78), f.display());
-                  return Err(MechError2::new(
+                  return Err(MechError::new(
                     WatchPathFailed { file_path: f.display().to_string(), source_err: format!("{:#?}",e) },
                     None
                   ).with_compiler_loc().with_source(e));
@@ -241,7 +241,7 @@ impl MechFileSystem {
           }
         }
         Err(e) => {
-          return Err(MechError2::new(
+          return Err(MechError::new(
             FileWriteFailed { file_path: src.to_string(), source: format!("{}",e) },
             None
           ).with_compiler_loc())
@@ -264,7 +264,7 @@ impl MechFileSystem {
             self.watchers.push(Box::new(watcher));
           }
           Err(err) => {
-            return Err(MechError2::new(
+            return Err(MechError::new(
               WatchPathFailed { file_path: src_path.display().to_string(), source_err: format!("{}",err) },
               None
             ).with_compiler_loc())
@@ -284,7 +284,7 @@ pub struct MechSources {
   shim: String,
   sources: HashMap<u64,MechSourceCode>,             // u64 is the hash of the relative source 
   trees: HashMap<u64,MechSourceCode>,               // stores the ast for the sources
-  errors: HashMap<u64,Vec<MechError2>>,              // stores the errors for the sources
+  errors: HashMap<u64,Vec<MechError>>,              // stores the errors for the sources
   html: HashMap<u64,MechSourceCode>,                // stores the html for the sources
   pub directory: HashMap<PathBuf, PathBuf>,             // relative source -> absolute source
   reverse_lookup: HashMap<PathBuf, PathBuf>,        // absolute source -> relative source
@@ -652,7 +652,7 @@ impl MechSources {
                 code.push((path_str.to_owned(), src));
               }
               Err(err) => {
-                return Err(MechError2::new(
+                return Err(MechError::new(
                   HttpTextDecodeFailed {
                     url: path_str.clone(),
                     source: err.to_string(),
@@ -663,7 +663,7 @@ impl MechSources {
             }
           }
           Err(err) => {
-                return Err(MechError2::new(
+                return Err(MechError::new(
                   HttpRequestFailed {
                     url: path_str.clone(),
                     source: err.to_string(),
@@ -709,7 +709,7 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
               file.read_to_string(&mut buffer);
               Ok(MechSourceCode::String(buffer))
             }
-            Err(err) => return Err(MechError2::new(
+            Err(err) => return Err(MechError::new(
               FileOpenFailed { file_path: path.to_string_lossy().to_string(), source: err.to_string() },
               None
             ).with_compiler_loc()),
@@ -723,7 +723,7 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
               file.read_to_string(&mut buffer);
               Ok(MechSourceCode::Html(buffer))
             }
-            Err(err) => return Err(MechError2::new(
+            Err(err) => return Err(MechError::new(
               FileOpenFailed { file_path: path.to_string_lossy().to_string(), source: err.to_string() },
               None
             ).with_compiler_loc()),
@@ -740,7 +740,7 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
               let extension = path.extension().and_then(OsStr::to_str).unwrap_or("").to_string();
               Ok(MechSourceCode::Image(extension, buffer))
             }
-            Err(err) => return Err(MechError2::new(
+            Err(err) => return Err(MechError::new(
               FileOpenFailed { file_path: path.to_string_lossy().to_string(), source: err.to_string() },
               None
             ).with_compiler_loc()),
@@ -757,14 +757,14 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
               }
               todo!();
             }
-            Err(err) => Err(MechError2::new(
+            Err(err) => Err(MechError::new(
               FileOpenFailed { file_path: path.to_string_lossy().to_string(), source: err.to_string() },
               None
             ).with_compiler_loc()),
           }
         }
         x => {
-          Err(MechError2::new(
+          Err(MechError::new(
             UnknownFileExtensionError {
               extension: x.unwrap_or("unknown").to_string(),
             },
@@ -773,7 +773,7 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
         },
       }
     },
-    err => Err(MechError2::new(
+    err => Err(MechError::new(
       ExtensionDecodeFailed {path: path.display().to_string()},
       None
     ).with_compiler_loc()),

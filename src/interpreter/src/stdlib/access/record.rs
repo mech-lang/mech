@@ -38,13 +38,13 @@ pub fn impl_access_record_fxn(source: Value, key: Value) -> MResult<Box<dyn Mech
       let k = id;
       match rcd.borrow().get(&k) {
         Some(value) => Ok(Box::new(RecordAccessField{source: value.clone()})),
-        None => Err(MechError2::new(
+        None => Err(MechError::new(
             UndefinedRecordFieldError { id: k.clone() },
             None
           ).with_compiler_loc()),
       }
     }
-    (source,key) => return Err(MechError2::new(
+    (source,key) => return Err(MechError::new(
         UnhandledFunctionArgumentKind2 { arg: (source.kind(), key.kind()), fxn_name: "RecordAccess".to_string() },
         None
       ).with_compiler_loc()
@@ -56,7 +56,7 @@ pub struct RecordAccess {}
 impl NativeFunctionCompiler for RecordAccess {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
     let key = &arguments[1];
     let src = &arguments[0];
@@ -65,7 +65,7 @@ impl NativeFunctionCompiler for RecordAccess {
       Err(_) => {
         match src {
           Value::MutableReference(rcrd) => { impl_access_record_fxn(rcrd.borrow().clone(), key.clone()) },
-          x => Err(MechError2::new(
+          x => Err(MechError::new(
               UnhandledFunctionArgumentKind2 { arg: (src.kind(), key.kind()), fxn_name: "RecordAccess".to_string() },
               None
             ).with_compiler_loc()

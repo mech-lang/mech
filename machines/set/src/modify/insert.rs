@@ -21,7 +21,7 @@ impl MechFunctionFactory for SetInsertFxn {
         let out: Ref<MechSet> = unsafe { out.as_unchecked() }.clone();
         Ok(Box::new(SetInsertFxn {arg1, arg2, out }))
       },
-      _ => Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc()),
+      _ => Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc()),
     }
   }    
 }
@@ -98,7 +98,7 @@ fn set_insert_fxn(arg1: Value, arg2: Value) -> MResult<Box<dyn MechFunction>> {
     (Value::Set(arg1), arg2) => {
       Ok(Box::new(SetInsertFxn { arg1: arg1.clone(), arg2: Ref::new(arg2.clone()), out: Ref::new(MechSet::new(arg1.borrow().kind.clone(), arg1.borrow().num_elements + 1)) }))
     },
-    x => Err(MechError2::new(
+    x => Err(MechError::new(
       UnhandledFunctionArgumentKind2 { arg: (x.0.kind(), x.1.kind()), fxn_name: "set/insert".to_string() },
       None
     ).with_compiler_loc()),
@@ -109,7 +109,7 @@ pub struct SetInsert {}
 impl NativeFunctionCompiler for SetInsert {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());
     }
     let arg1 = arguments[0].clone();
     let arg2 = arguments[1].clone();
@@ -120,7 +120,7 @@ impl NativeFunctionCompiler for SetInsert {
           (Value::MutableReference(arg1),Value::MutableReference(arg2)) => { set_insert_fxn(arg1.borrow().clone(),arg2.borrow().clone()) },
           (arg1,Value::MutableReference(arg2)) => { set_insert_fxn(arg1.clone(),arg2.borrow().clone()) },
           (Value::MutableReference(arg1),arg2) => { set_insert_fxn(arg1.borrow().clone(),arg2.clone()) },
-          x => Err(MechError2::new(
+          x => Err(MechError::new(
             UnhandledFunctionArgumentKind2 { arg: (x.0.kind(), x.1.kind()), fxn_name: "set/insert".to_string() },
             None
           ).with_compiler_loc()),

@@ -35,7 +35,7 @@ where
         let out: Ref<T> = unsafe{ out.as_unchecked().clone() };
         Ok(Box::new(Self{n, k, out}))
       }
-      _ => Err(MechError2::new(
+      _ => Err(MechError::new(
           IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
           None
         ).with_compiler_loc()
@@ -117,7 +117,7 @@ where
         let out: Ref<Matrix<T>> = unsafe{ out.as_unchecked().clone() };
         Ok(Box::new(Self{n, k, out}))
       }
-      _ => Err(MechError2::new(
+      _ => Err(MechError::new(
           IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
           None
         ).with_compiler_loc()
@@ -232,7 +232,7 @@ fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> MResult<Box<dyn Mech
     (Value::MatrixR64(n), Value::R64(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(R64::to_matrix(vec![], 0, 0))})),
     #[cfg(all(feature = "matrix", feature = "complex"))]
     (Value::MatrixC64(n), Value::C64(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(C64::to_matrix(vec![], 0, 0))})),
-    (n,k) => Err(MechError2::new(
+    (n,k) => Err(MechError::new(
         UnhandledFunctionArgumentKind2 { arg: (n.kind(), k.kind()), fxn_name: "combinatorics/n-choose-k".to_string() },
         None
       ).with_compiler_loc()
@@ -244,7 +244,7 @@ pub struct CombinatoricsNChooseK {}
 impl NativeFunctionCompiler for CombinatoricsNChooseK {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError2::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());    
+      return Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None).with_compiler_loc());    
     }
     let n = arguments[0].clone();
     let k = arguments[1].clone();
@@ -256,7 +256,7 @@ impl NativeFunctionCompiler for CombinatoricsNChooseK {
           (Value::MutableReference(n),Value::MutableReference(k)) => {let n_brrw = n.borrow();let k_brrw = k.borrow();impl_combinatorics_n_choose_k_fxn(n_brrw.clone(),k_brrw.clone())}
           (n,Value::MutableReference(k)) => {let k_brrw = k.borrow(); impl_combinatorics_n_choose_k_fxn(n.clone(),k_brrw.clone())}
           (Value::MutableReference(n),k) => {let n_brrw = n.borrow();impl_combinatorics_n_choose_k_fxn(n_brrw.clone(),k.clone())}
-          (n,k) => Err(MechError2::new(
+          (n,k) => Err(MechError::new(
               UnhandledFunctionArgumentKind2 { arg: (n.kind(), k.kind()), fxn_name: "combinatorics/n-choose-k".to_string() },
               None
             ).with_compiler_loc()

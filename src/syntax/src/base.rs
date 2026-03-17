@@ -169,11 +169,13 @@ leaf!(underline_sigil, "__", TokenKind::UnderlineSigil);
 leaf!(section_sigil, "§", TokenKind::SectionSigil);
 leaf!(mika_section_open, "⸢", TokenKind::MikaSectionOpen);
 leaf!(mika_section_close, "⸥", TokenKind::MikaSectionClose);
+leaf!(prompt_sigil, ">:", TokenKind::PromptSigil);
 
 ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);
 ws0_leaf!(async_transition_operator, "~>", TokenKind::AsyncTransitionOperator);
 ws0_leaf!(define_operator, ":=", TokenKind::DefineOperator);
-ws0_leaf!(query_operator, "?=", TokenKind::QueryOperator);
+ws0_leaf!(synth_operator, "?=", TokenKind::SynthOperator);
+ws0_leaf!(gen_operator, "@=", TokenKind::GenOperator);
 ws0_leaf!(output_operator, "=>", TokenKind::OutputOperator);
 ws0_leaf!(transition_operator, "->", TokenKind::TransitionOperator);
 

@@ -99,7 +99,7 @@ pub enum TokenKind {
   Dash, DefineOperator, Digit, Dollar,
   Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Error, ErrorSigil, EscapedChar, Exclamation, 
   False, FloatLeft, FloatRight, FootnotePrefix,
-  Grave, GraveCodeBlockSigil,
+  GenOperator, Grave, GraveCodeBlockSigil,
   HashTag, HighlightSigil, HttpPrefix,
   IdeaSigil, Identifier, ImgPrefix, InfoSigil, InlineCode, 
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
@@ -108,10 +108,10 @@ pub enum TokenKind {
   MikaSection, MikaSectionOpen, MikaSectionClose,
   Newline, Not, Number,
   OutputOperator,
-  Percent, Period, Plus,
-  QueryOperator, Question, QuestionSigil, Quote, QuoteSigil,
+  Percent, Period, Plus, PromptSigil,
+  Question, QuestionSigil, Quote, QuoteSigil,
   RightAngle, RightBrace, RightBracket, RightParenthesis,
-  SectionSigil, Semicolon, Space, Slash, String, StrikeSigil, StrongSigil, SuccessSigil,
+  SectionSigil, Semicolon, Space, Slash, String, StrikeSigil, StrongSigil, SuccessSigil, SynthOperator,
   Tab, Text, Tilde, TildeCodeBlockSigil, Title, TransitionOperator, True,
   UnderlineSigil, Underscore,
   WarningSigil,
@@ -542,6 +542,7 @@ pub enum SectionElement {
   Paragraph(Paragraph),
   Subtitle(Subtitle),
   Table(MarkdownTable),
+  Prompt(Box<SectionElement>),
   ThematicBreak,
   Error(Token, SourceRange),
 }
@@ -556,6 +557,7 @@ impl SectionElement {
 
   pub fn tokens(&self) -> Vec<Token> {
     match self {
+      SectionElement::Prompt(prompt) => prompt.tokens(),
       #[cfg(feature = "mika")]
       SectionElement::Mika((mika, mika_section)) => {
         let mut tokens = vec![];

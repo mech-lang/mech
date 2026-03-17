@@ -246,6 +246,7 @@ pub fn skip_till_end_of_statement(input: ParseString) -> ParseResult<Token> {
       is_not(alt((
           new_line,
           semicolon,
+          mika_section_close,
       ))),
       any_token,
   )))(input)?;
@@ -343,7 +344,7 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
 pub fn code_terminal(input: ParseString) -> ParseResult<Option<Comment>> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, cmmnt) = opt(tuple((opt(semicolon), many0(space_tab), comment)))(input)?;
-  let (input, _) = alt((null(new_line), null(semicolon), null(eof)))(input)?;
+  let (input, _) = alt((null(new_line), null(semicolon), null(eof), null(peek(mika_section_close))))(input)?;
   let (input, _) = whitespace0(input)?;
   let cmmt = match cmmnt {
     Some((_, _, cmnt)) => Some(cmnt),
@@ -515,7 +516,7 @@ pub fn parse_grammar(text: &str) -> MResult<Grammar> {
       err_message: String::from(e.1.message),
       annotation_rngs: e.1.annotation_rngs,
     }).collect();
-    Err(MechError2::new(
+    Err(MechError::new(
       ParserErrorReport(text.to_string(), report),
       None
     ))
@@ -564,7 +565,7 @@ pub fn parse(text: &str) -> MResult<Program> {
       err_message: String::from(e.1.message),
       annotation_rngs: e.1.annotation_rngs,
     }).collect();
-    Err(MechError2::new(
+    Err(MechError::new(
       ParserErrorReport(text.to_string(), report),
       None
     ).with_compiler_loc())

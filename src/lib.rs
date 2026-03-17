@@ -1,7 +1,9 @@
 #![allow(warnings)]
-// # Mech
+// Mech
+//=============================================================================
 
-// ## Prelude
+// Prelude
+// ----------------------------------------------------------------------------
 
 pub extern crate mech_core as core;
 pub extern crate mech_syntax as syntax;
@@ -101,82 +103,88 @@ pub fn mech_table_style() -> Style<(),(),(),(),(),(),2,0> {
 
 pub fn help() -> String {
   let mut builder = Builder::default();
-  builder.push_record(vec!["Command","Short","Parameters","Description"]);
+  builder.push_record(vec!["Command".bright_white().to_string(),"Short".bright_white().to_string(),"Parameters".to_string(),"Description".to_string()]);
   builder.push_record(vec![
-    ":cd".to_string(),
-    "".to_string(),
-    "[target path]".to_string(),
-    "Change directory".to_string()
+    ":cd".bright_yellow().to_string(),
+    "".bright_yellow().to_string(),
+    "target-path".to_string(),
+    "Change directory to target-path, which can be relative or absolute.".to_string()
   ]);
   builder.push_record(vec![
-    ":clc".to_string(),
-    ":c".to_string(),
+    ":clc".bright_yellow().to_string(),
+    ":c".bright_yellow().to_string(),
     "".to_string(),
     "Clear the screen".to_string()
   ]);
   builder.push_record(vec![
-    ":clear".to_string(),
-    "".to_string(),
-    "[target variable]".to_string(),
+    ":clear".bright_yellow().to_string(),
+    "".bright_yellow().to_string(),
+    "[target-variable]".to_string(),
     "Clear the interpreter state".to_string()
   ]);
   builder.push_record(vec![
-    ":docs".to_string(),
-    ":d".to_string(),
-    "[doc name]".to_string(),
+    ":docs".bright_yellow().to_string(),
+    ":d".bright_yellow().to_string(),
+    "[doc-name]".to_string(),
     "Search documentation for a given doc".to_string()
   ]);
   builder.push_record(vec![
-    ":help".to_string(),
-    ":h".to_string(),
+    ":help".bright_yellow().to_string(),
+    ":h".bright_yellow().to_string(),
     "".to_string(),
-    "Display this help message".to_string()
+    "Display this help message.".to_string()
   ]);
   builder.push_record(vec![
-    ":load".to_string(),
-    "".to_string(),
-    "[file path]".to_string(),
-    "Load a file".to_string()
+    ":load".bright_yellow().to_string(),
+    "".bright_yellow().to_string(),
+    "file-path".to_string(),
+    "Load a file.".to_string()
   ]);
   builder.push_record(vec![
-    ":ls".to_string(),
-    "".to_string(),
-    "[target path]".to_string(),
-    "List directory contents".to_string()
+    ":ls".bright_yellow().to_string(),
+    "".bright_yellow().to_string(),
+    "[target-path]".to_string(),
+    "List directory contents. Optionally supply a target path.".to_string()
   ]);
   builder.push_record(vec![
-    ":plan".to_string(),
-    ":p".to_string(),
+    ":plan".bright_yellow().to_string(),
+    ":p".bright_yellow().to_string(),
     "".to_string(),
-    "Display the plan".to_string()
+    "Display each step of the current plan.".to_string()
     ]);
   builder.push_record(vec![
-    ":quit".to_string(),
-    ":q".to_string(),
+    ":quit".bright_yellow().to_string(),
+    ":q".bright_yellow().to_string(),
     "".to_string(),
-    "Quit the REPL".to_string()
+    "Quit the REPL.".to_string()
   ]);
   builder.push_record(vec![
-    ":step".to_string(),
+    ":step".bright_yellow().to_string(),
+    "".bright_yellow().to_string(),
+    "[#step-index] [step-count]".to_string(),
+    "Iterate the step-index of the plan step-count times.".to_string()
+  ]);
+  builder.push_record(vec![
+    ":symbols".bright_yellow().to_string(),
+    ":s".bright_yellow().to_string(),
+    "[search-pattern]".to_string(),
+    "Search symbol directory. If no pattern is provided, the entire directory is printed.".to_string()
+  ]);
+  builder.push_record(vec![
+    ":version".bright_yellow().to_string(),
+    ":v".bright_yellow().to_string(),
     "".to_string(),
-    "[#step index] [step count]".to_string(),
-    "Iterate plan".to_string()
+    "Print version information.".to_string()
   ]);
   builder.push_record(vec![
-    ":symbols".to_string(),
-    ":s".to_string(),
+    ":whos".bright_yellow().to_string(),
+    ":w".bright_yellow().to_string(),
     "[search pattern]".to_string(),
-    "Search symbols".to_string()
-  ]);
-  builder.push_record(vec![
-    ":whos".to_string(),
-    ":w".to_string(),
-    "[search pattern]".to_string(),
-    "Search symbol directory".to_string()
+    "Print summary table of session variables. Supply a search pattern to filter the table.".to_string()
   ]);
   let mut table = builder.build();
   table.with(mech_table_style())
-       .with(Panel::header(format!("{}","Help".truecolor(0xdf,0xb9,0x9f))));
+       .with(Panel::header(format!("{}","Help".yellow())));
   format!("\n{table}\n")
 }
 
@@ -217,7 +225,7 @@ pub fn ls() -> String {
   }
   let mut table = builder.build();
   table.with(mech_table_style())
-       .with(Panel::header(format!("{}","Directory Listing".truecolor(0xdf,0xb9,0x9f))));
+       .with(Panel::header(format!("{}","Directory Listing".yellow())));
   format!("\nDirectory: {}\n\n{table}\n",current_dir.display())
 }
 
@@ -277,7 +285,7 @@ pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
     .with(mech_table_style())
     .with(Panel::header(format!(
         "{}",
-        "Whos".truecolor(0xdf, 0xb9, 0x9f)
+        "Whos".yellow()
     )));
 
   format!("\n{table}\n")
@@ -293,7 +301,7 @@ fn pretty_print_symbols(intrp: &Interpreter) -> String {
 
   let mut table = builder.build();
   table.with(mech_table_style())   
-        .with(Panel::header(format!("{}","Symbols".truecolor(0xdf,0xb9,0x9f))));
+        .with(Panel::header(format!("{}","Symbols".yellow())));
   format!("\n{table}\n")
 }
 
@@ -332,7 +340,7 @@ pub async fn read_or_download(path: &str,backup_url: &str, embedded: Option<&[u8
   println!("Downloading from {}", backup_url);
 
   let response = reqwest::get(backup_url).await.map_err(|e| {
-    MechError2::new(
+    MechError::new(
       HttpRequestFailed {
         url: backup_url.to_string(),
         source: e.to_string(),
@@ -343,7 +351,7 @@ pub async fn read_or_download(path: &str,backup_url: &str, embedded: Option<&[u8
   })?;
 
   if !response.status().is_success() {
-    return Err(MechError2::new(
+    return Err(MechError::new(
       HttpRequestStatusFailed {
         url: backup_url.to_string(),
         status_code: response.status().as_u16(),
@@ -354,7 +362,7 @@ pub async fn read_or_download(path: &str,backup_url: &str, embedded: Option<&[u8
   }
 
   let bytes = response.bytes().await.map_err(|e| {
-    MechError2::new(
+    MechError::new(
       HttpRequestFailed {
         url: backup_url.to_string(),
         source: e.to_string(),
@@ -439,5 +447,17 @@ impl MechErrorKind2 for WatchPathFailed {
 
   fn message(&self) -> String {
     format!("Failed to watch file path {}: {}", self.file_path, self.source_err)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct PathNotFound {
+  pub file_path: String,
+}
+impl MechErrorKind2 for PathNotFound {
+  fn name(&self) -> &str { "PathNotFound" }
+
+  fn message(&self) -> String {
+    format!("Path not found: {}", self.file_path)
   }
 }

@@ -27,7 +27,7 @@ pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -
     //Statement::FsmDeclare(_) => todo!(),
     //Statement::SplitTable => todo!(),
     //Statement::FlattenTable => todo!(),
-    x => return Err(MechError2::new(
+    x => return Err(MechError::new(
         FeatureNotEnabledError,
         None
       ).with_compiler_loc().with_tokens(x.tokens())
@@ -44,13 +44,13 @@ pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MRes
       let r_brrw = r.borrow();
       &match &*r_brrw {
         Value::Tuple(tpl) => tpl.clone(),
-        _ => return Err(MechError2::new(
+        _ => return Err(MechError::new(
           DestructureExpectedTupleError{ value: source.kind() },
           None
         ).with_compiler_loc().with_tokens(tpl_dstrct.expression.tokens())),
       }
     },
-    _ => return Err(MechError2::new(
+    _ => return Err(MechError::new(
       DestructureExpectedTupleError{ value: source.kind() },
       None
     ).with_compiler_loc().with_tokens(tpl_dstrct.expression.tokens())),
@@ -60,7 +60,7 @@ pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MRes
   for (i, var) in tpl_dstrct.vars.iter().enumerate() {
     let id = var.hash();
     if symbols_brrw.contains(id) {
-      return Err(MechError2::new(
+      return Err(MechError::new(
         VariableAlreadyDefinedError { id },
         None
       ).with_compiler_loc().with_tokens(var.tokens()));
@@ -69,7 +69,7 @@ pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MRes
       symbols_brrw.insert(id, element.clone(), true);
       symbols_brrw.dictionary.borrow_mut().insert(id, var.name.to_string());
     } else {
-      return Err(MechError2::new(
+      return Err(MechError::new(
         TupleDestructureTooManyVarsError{ value: source.kind() },
         None
       ).with_compiler_loc().with_tokens(var.tokens()));
@@ -89,11 +89,11 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
       Some(val) => val.borrow().clone(),
       None => {
         match state_brrw.contains_symbol(id) {
-          true => return Err(MechError2::new(
+          true => return Err(MechError::new(
             NotMutableError { id },
             Some("(!)> Mutable variables are defined with the `~` operator. *e.g.*: {{~x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens())),
-          false => return Err(MechError2::new(
+          false => return Err(MechError::new(
             UndefinedVariableError { id },
             Some("(!)> Variables are defined with the `:=` operator. *e.g.*: {{x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens())),
@@ -153,12 +153,12 @@ pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p:
       Some(val) => val.borrow().clone(),
       None => {
         if !symbols_brrw.contains(id) {
-          return Err(MechError2::new(
+          return Err(MechError::new(
             UndefinedVariableError { id },
             Some("(!)> Variables are defined with the `:=` operator. *e.g.*: {{x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens()));
         } else { 
-          return Err(MechError2::new(
+          return Err(MechError::new(
             NotMutableError { id },
             Some("(!)> Mutable variables are defined with the `~` operator. *e.g.*: {{~x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens()));
@@ -183,7 +183,7 @@ pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p:
       p.state.borrow_mut().add_plan_step(fxn);
       return Ok(res);
     }
-    _ => return Err(MechError2::new(
+    _ => return Err(MechError::new(
       FeatureNotEnabledError,
       None
     ).with_compiler_loc().with_tokens(var_assgn.target.tokens())),
@@ -230,7 +230,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
   {
     let symbols = p.symbols();
     if symbols.borrow().contains(var_id) {
-      return Err(MechError2::new(
+      return Err(MechError::new(
         VariableAlreadyDefinedError { id: var_id },
         None
       ).with_compiler_loc().with_tokens(var_def.var.name.tokens()));
@@ -259,14 +259,14 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
         // split the enum name at the '/' to get the variant name
         let enum_variant_name = if let Some((enum_name, variant_name)) = atom_name.split_once('/') {
           if enum_name != target_enum_variant_name {
-            return Err(MechError2::new(
+            return Err(MechError::new(
               UnableToConvertAtomToEnumVariantError { atom_name: atom_name.clone(), target_enum_variant_name: target_enum_variant_name.to_string() },
               None
             ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
           }
           variant_name.to_string()
         } else {
-          return Err(MechError2::new(
+          return Err(MechError::new(
             UnableToConvertAtomToEnumVariantError { atom_name: atom_name.clone(), target_enum_variant_name: target_enum_variant_name.clone() },
             None
           ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
@@ -274,7 +274,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
         let variant_id = hash_str(&enum_variant_name);
         // Given atom isn't a variant of the enum
         if !my_enum.variants.iter().any(|(known_enum_variant, inner_value)| variant_id == *known_enum_variant) {
-          return Err(MechError2::new(
+          return Err(MechError::new(
             UnableToConvertAtomToEnumVariantError { atom_name: atom_name.clone(), target_enum_variant_name: target_enum_variant_name.clone() },
             None
           ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
@@ -283,7 +283,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       // Atoms can't convert into anything else.
       #[cfg(feature = "atom")]
       (Value::Atom(given_variant_id), target_kind) => {
-        return Err(MechError2::new(
+        return Err(MechError::new(
           UnableToConvertAtomError { atom_id: given_variant_id.borrow().0.0},
           None
         ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
@@ -293,7 +293,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
         let rec_brrw = rec.borrow();
         let rec_knd = rec_brrw.kind();
         if &rec_knd != *target_kind {
-          return Err(MechError2::new(
+          return Err(MechError::new(
             UnableToConvertRecordError { source_record_kind: rec_knd.clone(), target_record_kind: (*target_kind).clone() },
             None
           ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
