@@ -458,14 +458,14 @@ impl MicroMikaKind {
 // Sleep
 static MIRCOMIKA_POWEROFF: &[&str] = &["╭⦿╮","╭⦾╮","╭⊚╮","╭⊙╮","╭◯╮"];
 static MIRCOMIKA_POWERON: &[&str] = &["╭◯╮","╭⊙╮","╭⊚╮","╭⦾╮","╭⦿╮"];
-static MICROMIKA_BLINK: &[&str] = &["╭⦿╮","╭⊖╮","╭⦿╮"];
-static MICROMIKA_PULSE: &[&str] = &["╭⦿╮","╭⦾╮","╭⊚╮","╭⊙╮","╭⊚╮","╭⦾╮","╭⦿╮"];
-static MICROMIKA_WAVE: &[&str] = &["╭⦿╯","╭⦿─",];
-static MICROMIKA_RAISE_ARMS: &[&str] = &["╭⦿╮","─⦿─","╰⦿╯"];
-static MICROMIKA_LOWER_ARMS: &[&str] = &["╰⦿╯","─⦿─","╭⦿╮"];
-static MICROMIKA_FLAPPING: &[&str] = &["─⦿─","╰⦿╯"];
-static MICROMIKA_GRIPPING_RIGHT: &[&str] = &["╭⦿─‹ -> ╭⦿─-"];
-static MICROMIKA_GRIPPING_LEFT: &[&str] = &["›─⦿╮ -> -─⦿╮"];
+static MICROMIKA_BLINK: &[&str] = &["╭◉╮","╭⊖╮","╭◉╮"];
+static MICROMIKA_PULSE: &[&str] = &["╭◉╮","╭⦾╮","╭⊚╮","╭⊙╮","╭⊚╮","╭⦾╮","╭◉╮"];
+static MICROMIKA_WAVE: &[&str] = &["╭◉╯","╭◉─",];
+static MICROMIKA_RAISE_ARMS: &[&str] = &["╭◉╮","─◉─","╰◉╯"];
+static MICROMIKA_ATTENTION: &[&str] = &["╰◉╯","─◉─","╭◉╮"];
+static MICROMIKA_FLAPPING: &[&str] = &["─◉─","╰◉╯"];
+static MICROMIKA_GRIPPING_RIGHT: &[&str] = &["╭◉─‹ -> ╭◉─-"];
+static MICROMIKA_GRIPPING_LEFT: &[&str] = &["›─◉╮ -> -─◉╮"];
 
 // Mylo
 // ---------------------------------------------------------------------------
