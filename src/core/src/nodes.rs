@@ -542,6 +542,7 @@ pub enum SectionElement {
   Paragraph(Paragraph),
   Subtitle(Subtitle),
   Table(MarkdownTable),
+  Prompt(Box<SectionElement>),
   ThematicBreak,
   Error(Token, SourceRange),
 }
@@ -556,6 +557,7 @@ impl SectionElement {
 
   pub fn tokens(&self) -> Vec<Token> {
     match self {
+      SectionElement::Prompt(prompt) => prompt.tokens(),
       #[cfg(feature = "mika")]
       SectionElement::Mika((mika, mika_section)) => {
         let mut tokens = vec![];
