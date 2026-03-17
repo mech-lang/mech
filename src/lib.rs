@@ -103,74 +103,74 @@ pub fn help() -> String {
   let mut builder = Builder::default();
   builder.push_record(vec!["Command","Short","Parameters","Description"]);
   builder.push_record(vec![
-    ":cd".to_string(),
-    "".to_string(),
+    ":cd".bright_yellow().to_string(),
+    "".bright_yellow().to_string(),
     "[target path]".to_string(),
     "Change directory".to_string()
   ]);
   builder.push_record(vec![
-    ":clc".to_string(),
-    ":c".to_string(),
+    ":clc".bright_yellow().to_string(),
+    ":c".bright_yellow().to_string(),
     "".to_string(),
     "Clear the screen".to_string()
   ]);
   builder.push_record(vec![
-    ":clear".to_string(),
-    "".to_string(),
+    ":clear".bright_yellow().to_string(),
+    "".bright_yellow().to_string(),
     "[target variable]".to_string(),
     "Clear the interpreter state".to_string()
   ]);
   builder.push_record(vec![
-    ":docs".to_string(),
-    ":d".to_string(),
+    ":docs".bright_yellow().to_string(),
+    ":d".bright_yellow().to_string(),
     "[doc name]".to_string(),
     "Search documentation for a given doc".to_string()
   ]);
   builder.push_record(vec![
-    ":help".to_string(),
-    ":h".to_string(),
+    ":help".bright_yellow().to_string(),
+    ":h".bright_yellow().to_string(),
     "".to_string(),
     "Display this help message".to_string()
   ]);
   builder.push_record(vec![
-    ":load".to_string(),
-    "".to_string(),
+    ":load".bright_yellow().to_string(),
+    "".bright_yellow().to_string(),
     "[file path]".to_string(),
     "Load a file".to_string()
   ]);
   builder.push_record(vec![
-    ":ls".to_string(),
-    "".to_string(),
+    ":ls".bright_yellow().to_string(),
+    "".bright_yellow().to_string(),
     "[target path]".to_string(),
     "List directory contents".to_string()
   ]);
   builder.push_record(vec![
-    ":plan".to_string(),
-    ":p".to_string(),
+    ":plan".bright_yellow().to_string(),
+    ":p".bright_yellow().to_string(),
     "".to_string(),
     "Display the plan".to_string()
     ]);
   builder.push_record(vec![
-    ":quit".to_string(),
-    ":q".to_string(),
+    ":quit".bright_yellow().to_string(),
+    ":q".bright_yellow().to_string(),
     "".to_string(),
     "Quit the REPL".to_string()
   ]);
   builder.push_record(vec![
-    ":step".to_string(),
-    "".to_string(),
+    ":step".bright_yellow().to_string(),
+    "".bright_yellow().to_string(),
     "[#step index] [step count]".to_string(),
     "Iterate plan".to_string()
   ]);
   builder.push_record(vec![
-    ":symbols".to_string(),
-    ":s".to_string(),
+    ":symbols".bright_yellow().to_string(),
+    ":s".bright_yellow().to_string(),
     "[search pattern]".to_string(),
     "Search symbols".to_string()
   ]);
   builder.push_record(vec![
-    ":whos".to_string(),
-    ":w".to_string(),
+    ":whos".bright_yellow().to_string(),
+    ":w".bright_yellow().to_string(),
     "[search pattern]".to_string(),
     "Search symbol directory".to_string()
   ]);
