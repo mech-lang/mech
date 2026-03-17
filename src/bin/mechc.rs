@@ -1638,7 +1638,7 @@ fn write_final_exe(built_exe: &Path, zip_bytes: &[u8], out_path: &Path) -> Resul
 pub struct CargoStartFailed {
   pub details: String,
 }
-impl MechErrorKind2 for CargoStartFailed {
+impl MechErrorKind for CargoStartFailed {
   fn name(&self) -> &str {
     "CargoStartFailed"
   }
@@ -1652,7 +1652,7 @@ impl MechErrorKind2 for CargoStartFailed {
 pub struct MissingExecutableError {
   pub path: String,
 }
-impl MechErrorKind2 for MissingExecutableError {
+impl MechErrorKind for MissingExecutableError {
   fn name(&self) -> &str {
     "MissingExecutableError"
   }
@@ -1667,7 +1667,7 @@ pub struct ZipOperationError {
   pub details: String,
 }
 
-impl MechErrorKind2 for ZipOperationError {
+impl MechErrorKind for ZipOperationError {
   fn name(&self) -> &str {
     "ZipOperationError"
   }
@@ -1682,7 +1682,7 @@ pub struct CargoBuildFailed {
   pub status: i32,
   pub stderr: String,
 }
-impl MechErrorKind2 for CargoBuildFailed {
+impl MechErrorKind for CargoBuildFailed {
   fn name(&self) -> &str {
     "CargoBuildFailed"
   }
@@ -1698,7 +1698,7 @@ impl MechErrorKind2 for CargoBuildFailed {
 pub struct CargoWaitFailed {
   pub details: String,
 }
-impl MechErrorKind2 for CargoWaitFailed {
+impl MechErrorKind for CargoWaitFailed {
   fn name(&self) -> &str {
     "CargoWaitFailed"
   }

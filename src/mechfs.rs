@@ -784,7 +784,7 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
 pub struct UnknownFileExtensionError {
     pub extension: String,
 }
-impl MechErrorKind2 for UnknownFileExtensionError {
+impl MechErrorKind for UnknownFileExtensionError {
   fn name(&self) -> &str { "UnknownFileExtensionError" }
   fn message(&self) -> String {
     format!("Unknown file extension: {}", self.extension)
@@ -795,7 +795,7 @@ impl MechErrorKind2 for UnknownFileExtensionError {
 pub struct ExtensionDecodeFailed {
     pub path: String,
 }
-impl MechErrorKind2 for ExtensionDecodeFailed {
+impl MechErrorKind for ExtensionDecodeFailed {
   fn name(&self) -> &str { "ExtensionDecodeFailed" }
   fn message(&self) -> String {
     format!("Failed to decode extension for path: {}", self.path)
@@ -806,7 +806,7 @@ impl MechErrorKind2 for ExtensionDecodeFailed {
 pub struct RwLockWriteError {
   pub source_err: String,
 }
-impl MechErrorKind2 for RwLockWriteError {
+impl MechErrorKind for RwLockWriteError {
   fn name(&self) -> &str { "RwLockWriteError" }
 
   fn message(&self) -> String {

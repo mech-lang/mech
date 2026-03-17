@@ -768,7 +768,7 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
 pub struct UnhandledFormulaOperatorError {
   pub operator: FormulaOperator,
 }
-impl MechErrorKind2 for UnhandledFormulaOperatorError {
+impl MechErrorKind for UnhandledFormulaOperatorError {
   fn name(&self) -> &str { "UnhandledFormulaOperator" }
   fn message(&self) -> String {
     format!("Unhandled formula operator: {:#?}", self.operator)
@@ -779,7 +779,7 @@ impl MechErrorKind2 for UnhandledFormulaOperatorError {
 pub struct UndefinedVariableError {
   pub id: u64, 
 }
-impl MechErrorKind2 for UndefinedVariableError {
+impl MechErrorKind for UndefinedVariableError {
   fn name(&self) -> &str { "UndefinedVariable" }
 
   fn message(&self) -> String {
@@ -790,7 +790,7 @@ impl MechErrorKind2 for UndefinedVariableError {
 pub struct InvalidIndexKindError {
   kind: ValueKind,
 }
-impl MechErrorKind2 for InvalidIndexKindError {
+impl MechErrorKind for InvalidIndexKindError {
   fn name(&self) -> &str {
     "InvalidIndexKind"
   }
@@ -804,7 +804,7 @@ pub struct SetComprehensionGeneratorError{
   found: ValueKind,
 }
 
-impl MechErrorKind2 for SetComprehensionGeneratorError {
+impl MechErrorKind for SetComprehensionGeneratorError {
   fn name(&self) -> &str {
     "SetComprehensionGenerator"
   }
@@ -817,7 +817,7 @@ impl MechErrorKind2 for SetComprehensionGeneratorError {
 pub struct PatternExpectedTupleError{
   found: ValueKind,
 }
-impl MechErrorKind2 for PatternExpectedTupleError {
+impl MechErrorKind for PatternExpectedTupleError {
   fn name(&self) -> &str {
     "PatternExpectedTuple"
   }
@@ -831,7 +831,7 @@ pub struct ArityMismatchError {
   expected: usize,
   found: usize,
 }
-impl MechErrorKind2 for ArityMismatchError {
+impl MechErrorKind for ArityMismatchError {
   fn name(&self) -> &str {
     "ArityMismatch"
   }
@@ -847,7 +847,7 @@ pub struct PatternMatchError {
   pub found: String,
 }
 
-impl MechErrorKind2 for PatternMatchError {
+impl MechErrorKind for PatternMatchError {
   fn name(&self) -> &str {
     "PatternMatchError"
   }

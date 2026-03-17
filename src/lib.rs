@@ -386,7 +386,7 @@ pub struct HttpRequestFailed {
   pub url: String,
   pub source: String,
 }
-impl MechErrorKind2 for HttpRequestFailed {
+impl MechErrorKind for HttpRequestFailed {
   fn name(&self) -> &str { "HttpRequestFailed" }
   fn message(&self) -> String {
   format!("Failed to GET {}: {}", self.url, self.source)
@@ -398,7 +398,7 @@ pub struct HttpTextDecodeFailed {
   pub url: String,
   pub source: String,
 }
-impl MechErrorKind2 for HttpTextDecodeFailed {
+impl MechErrorKind for HttpTextDecodeFailed {
   fn name(&self) -> &str { "HttpTextDecodeFailed" }
   fn message(&self) -> String {
   format!("Failed to read response text {}: {}", self.url, self.source)
@@ -410,7 +410,7 @@ pub struct HttpRequestStatusFailed {
   pub url: String,
   pub status_code: u16,
 }
-impl MechErrorKind2 for HttpRequestStatusFailed {
+impl MechErrorKind for HttpRequestStatusFailed {
   fn name(&self) -> &str { "HttpRequestStatusFailed" }
   fn message(&self) -> String {
   format!("Request to {} failed with status code: {}", self.url, self.status_code)
@@ -422,7 +422,7 @@ pub struct FileOpenFailed {
   pub file_path: String,
   pub source: String,
 }
-impl MechErrorKind2 for FileOpenFailed {
+impl MechErrorKind for FileOpenFailed {
   fn name(&self) -> &str { "FileOpenFailed" }
 
   fn message(&self) -> String {
@@ -435,7 +435,7 @@ pub struct FileWriteFailed {
   pub file_path: String,
   pub source: String
 }
-impl MechErrorKind2 for FileWriteFailed {
+impl MechErrorKind for FileWriteFailed {
   fn name(&self) -> &str { "FileWriteFailed" }
 
   fn message(&self) -> String {
@@ -448,7 +448,7 @@ pub struct WatchPathFailed {
   pub file_path: String,
   pub source_err: String,
 }
-impl MechErrorKind2 for WatchPathFailed {
+impl MechErrorKind for WatchPathFailed {
   fn name(&self) -> &str { "WatchPathFailed" }
 
   fn message(&self) -> String {
@@ -460,7 +460,7 @@ impl MechErrorKind2 for WatchPathFailed {
 pub struct PathNotFound {
   pub file_path: String,
 }
-impl MechErrorKind2 for PathNotFound {
+impl MechErrorKind for PathNotFound {
   fn name(&self) -> &str { "PathNotFound" }
 
   fn message(&self) -> String {

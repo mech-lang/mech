@@ -78,7 +78,7 @@ pub fn function_call(fxn_call: &FunctionCall, p: &Interpreter) -> MResult<Value>
 pub struct MissingFunctionError {
   pub function_id: u64,
 }
-impl MechErrorKind2 for MissingFunctionError {
+impl MechErrorKind for MissingFunctionError {
   fn name(&self) -> &str { "MissingFunction" }
   fn message(&self) -> String {
     format!("Function with id {} not found", self.function_id)

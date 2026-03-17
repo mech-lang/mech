@@ -67,7 +67,7 @@ pub use self::inclusive::*;
 #[cfg(feature = "inclusive")]
 pub use self::inclusive_increment::*;
 
-use mech_core::MechErrorKind2;
+use mech_core::MechErrorKind;
 
 // ----------------------------------------------------------------------------
 // Range Library
@@ -89,7 +89,7 @@ macro_rules! register_range {
 
 #[derive(Debug, Clone)]
 pub struct EmptyRangeError;
-impl MechErrorKind2 for EmptyRangeError {
+impl MechErrorKind for EmptyRangeError {
   fn name(&self) -> &str { "EmptyRange" }
   fn message(&self) -> String {
     "Range size must be > 0".to_string()
@@ -99,7 +99,7 @@ impl MechErrorKind2 for EmptyRangeError {
 #[derive(Debug, Clone)]
 pub struct RangeSizeOverflowError;
 
-impl MechErrorKind2 for RangeSizeOverflowError {
+impl MechErrorKind for RangeSizeOverflowError {
   fn name(&self) -> &str { "RangeSizeOverflow" }
   fn message(&self) -> String {
     "Range size overflow".to_string()

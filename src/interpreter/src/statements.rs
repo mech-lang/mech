@@ -690,7 +690,7 @@ pub struct UnableToConvertAtomToEnumVariantError {
   pub atom_name: String,
   pub target_enum_variant_name: String,
 }
-impl MechErrorKind2 for UnableToConvertAtomToEnumVariantError {
+impl MechErrorKind for UnableToConvertAtomToEnumVariantError {
   fn name(&self) -> &str {
     "UnableToConvertAtomToEnumVariant"
   }
@@ -703,7 +703,7 @@ impl MechErrorKind2 for UnableToConvertAtomToEnumVariantError {
 pub struct UnableToConvertAtomError {
   pub atom_id: u64,
 }
-impl MechErrorKind2 for UnableToConvertAtomError {
+impl MechErrorKind for UnableToConvertAtomError {
   fn name(&self) -> &str {
     "UnableToConvertAtom"
   }
@@ -716,7 +716,7 @@ impl MechErrorKind2 for UnableToConvertAtomError {
 pub struct VariableAlreadyDefinedError {
   pub id: u64,
 }
-impl MechErrorKind2 for VariableAlreadyDefinedError {
+impl MechErrorKind for VariableAlreadyDefinedError {
   fn name(&self) -> &str { "VariableAlreadyDefined" }
   fn message(&self) -> String {
     format!("Variable already defined: {}", self.id)
@@ -727,7 +727,7 @@ impl MechErrorKind2 for VariableAlreadyDefinedError {
 pub struct UndefinedVariableError {
   pub id: u64,
 }
-impl MechErrorKind2 for UndefinedVariableError {
+impl MechErrorKind for UndefinedVariableError {
   fn name(&self) -> &str { "UndefinedVariable" }
 
   fn message(&self) -> String {
@@ -739,7 +739,7 @@ impl MechErrorKind2 for UndefinedVariableError {
 pub struct NotMutableError {
   pub id: u64,
 }
-impl MechErrorKind2 for NotMutableError {
+impl MechErrorKind for NotMutableError {
   fn name(&self) -> &str { "NotMutable" }
   fn message(&self) -> String {
     format!("Variable is not mutable: {}", self.id)
@@ -753,7 +753,7 @@ pub struct UnableToConvertRecordError {
   pub target_record_kind: ValueKind,
 }
 #[cfg(feature = "record")]
-impl MechErrorKind2 for UnableToConvertRecordError {
+impl MechErrorKind for UnableToConvertRecordError {
   fn name(&self) -> &str {
     "UnableToConvertRecord"
   }

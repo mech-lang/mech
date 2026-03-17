@@ -682,7 +682,7 @@ pub struct ParserErrorContext {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ParserErrorReport(pub String, pub Vec<ParserErrorContext>);
 
-impl MechErrorKind2 for ParserErrorReport {
+impl MechErrorKind for ParserErrorReport {
   fn name(&self) -> &str {
     "ParserErrorContext"
   }

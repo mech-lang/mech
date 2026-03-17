@@ -56,7 +56,7 @@ impl<K> CallbacksImpl<K> {
 
 impl<K> ErrorKindCallbacks for CallbacksImpl<K>
 where
-  K: MechErrorKind2 + 'static,
+  K: MechErrorKind + 'static,
 {
   fn name(&self, data: &dyn Any) -> String {
     // downcast and call name()
@@ -70,7 +70,7 @@ where
   }
 }
 
-pub trait MechErrorKind2: std::fmt::Debug + Send + Sync + Clone {
+pub trait MechErrorKind: std::fmt::Debug + Send + Sync + Clone {
   fn name(&self) -> &str;
   fn message(&self) -> String;
 }
@@ -105,7 +105,7 @@ impl std::fmt::Debug for MechError {
 }
 
 impl MechError {
-  pub fn new<K: MechErrorKind2 + 'static>(
+  pub fn new<K: MechErrorKind + 'static>(
     kind: K,
     message: Option<String>
   ) -> Self {
@@ -122,7 +122,7 @@ impl MechError {
   }
 
   /// Get the kind as a specific type, if it matches
-  pub fn kind_as<K: MechErrorKind2 + 'static>(&self) -> Option<&K> {
+  pub fn kind_as<K: MechErrorKind + 'static>(&self) -> Option<&K> {
     self.kind_data.downcast_ref::<K>()
   }
 
@@ -222,7 +222,7 @@ impl MechError {
 pub struct UndefinedKindError {
   pub kind_id: u64,
 }
-impl MechErrorKind2 for UndefinedKindError {
+impl MechErrorKind for UndefinedKindError {
   fn name(&self) -> &str {
     "UndefinedKind"
   }
@@ -245,7 +245,7 @@ impl From<std::io::Error> for MechError {
 pub struct DimensionMismatch {
   pub dims: Vec<usize>,
 }
-impl MechErrorKind2 for DimensionMismatch {
+impl MechErrorKind for DimensionMismatch {
   fn name(&self) -> &str { "DimensionMismatch" }
   fn message(&self) -> String { format!("Matrix dimension mismatch: {:?}", self.dims) }
 }
@@ -254,7 +254,7 @@ impl MechErrorKind2 for DimensionMismatch {
 pub struct GenericError {
   pub msg: String,
 }
-impl MechErrorKind2 for GenericError {
+impl MechErrorKind for GenericError {
   fn name(&self) -> &str { "GenericError" }
 
   fn message(&self) -> String {
@@ -264,7 +264,7 @@ impl MechErrorKind2 for GenericError {
 
 #[derive(Debug, Clone)]
 pub struct FeatureNotEnabledError;
-impl MechErrorKind2 for FeatureNotEnabledError {
+impl MechErrorKind for FeatureNotEnabledError {
   fn name(&self) -> &str { "FeatureNotEnabled" }
 
   fn message(&self) -> String {
@@ -274,7 +274,7 @@ impl MechErrorKind2 for FeatureNotEnabledError {
 
 #[derive(Debug, Clone)]
 pub struct NotExecutableError {}
-impl MechErrorKind2 for NotExecutableError {
+impl MechErrorKind for NotExecutableError {
   fn name(&self) -> &str { "NotExecutable" }
 
   fn message(&self) -> String {
@@ -286,7 +286,7 @@ impl MechErrorKind2 for NotExecutableError {
 pub struct IoErrorWrapper {
   pub msg: String,
 }
-impl MechErrorKind2 for IoErrorWrapper {
+impl MechErrorKind for IoErrorWrapper {
   fn name(&self) -> &str { "IoError" }
 
   fn message(&self) -> String {
