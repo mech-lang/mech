@@ -122,10 +122,21 @@ impl MechRepl {
       }
       ReplCommand::Cd(path) => {
         let path = PathBuf::from(path);
-        env::set_current_dir(&path).unwrap();
-        // return the absolute path
-        let path = env::current_dir().unwrap();
-        return Ok(format!("{}", path.display()));
+        match env::set_current_dir(&path) {
+          Ok(_) => {
+            match env::current_dir() {
+              Ok(current_path) => {
+                return Ok(format!("{}", current_path.display()));
+              }
+              Err(e) => {
+                return Err(MechError::new(PathNotFound{ file_path: path.display().to_string() }, None).with_compiler_loc());
+              }
+            }
+          }
+          Err(e) => {
+            return Err(MechError::new(PathNotFound{ file_path: path.display().to_string() }, None).with_compiler_loc());
+          }
+        }
       }
       #[cfg(feature = "serde")]
       ReplCommand::Save(path) => {
@@ -165,8 +176,8 @@ impl MechRepl {
             let out = r.pretty_print();
             #[cfg(not(feature = "pretty_print"))]
             let out = format!("{:#?}", r);
-            let kind_formatted = format!("{}", r.kind());
-            return Ok(format!("\n{}\n{}\n", kind_formatted.truecolor(240, 159, 202), r));
+            let kind_formatted = format!("{}", r.kind()).ansi_color(218);
+            return Ok(format!("\n{}\n{}\n", kind_formatted, r));
           },
           Err(err) => { return Err(err); }
         }
