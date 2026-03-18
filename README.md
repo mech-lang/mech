@@ -34,7 +34,7 @@ Some notable features of Mech are demonstrated in this short program:
 
 ## Run Mech
 
-There are several ways to get Mech running on your machine, which you can find in the [docs](https://docs.mech-lang.org/getting-started/installation.html). The easiest way to get started is to use the online REPL at [try.mech-lang.org](https://try.mech-lang.org).
+There are [several ways](https://docs.mech-lang.org/getting-started/install.html) to get Mech running on your machine, which you can find in the documentation. But the easiest way to get started is to use the online REPL at [try.mech-lang.org](https://try.mech-lang.org).
 
 ## Documentation
 
