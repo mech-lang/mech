@@ -143,6 +143,7 @@ Matrices can be constructed in several ways:
 - Matrix literals
 - From concatenation of existing matrices or vectors
 - From ranges
+- From comprehensions
 - From tables
 - From sets
 
@@ -186,6 +187,31 @@ m := 1..=4          -- A column vector with values from 1 to 4, inclusive
 ```mech:ex 3.3.2
 m := 1..4           -- A column vector with values from 1 to 4, exclusive, the matrix has 3 elements
 ```
+
+(3.4) From Comprehensions
+
+Matrices can also be constructed with *matrix comprehensions*. A matrix comprehension uses square brackets and has the form {{[ expression | qualifiers ]}}.
+
+Qualifiers may include:
+
+- one or more generators (`<-`)
+- let bindings (`:=`)
+- boolean filters
+
+For example, this comprehension squares the even elements of a row vector and returns them as a row vector:
+
+```mech:ex 3.4.1
+[ x * x | x <- [1 2 3 4], (x % 2) == 0 ]
+```
+
+You can also generate from a named matrix value:
+
+```mech:ex 3.4.2
+qq := [1 2 3 4]
+[ x * x | x <- qq, (x % 2) != 0 ]
+```
+
+Matrix comprehensions use the same qualifier style as set comprehensions, but they produce matrix values instead of sets.
 
 (3.5) From Tables
 

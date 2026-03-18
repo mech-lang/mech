@@ -1673,6 +1673,7 @@ impl Formatter {
       Expression::FunctionCall(function_call) => self.function_call(function_call),
       Expression::Range(range) => self.range_expression(range),
       Expression::SetComprehension(set_comp) => self.set_comprehension(set_comp),
+      Expression::MatrixComprehension(matrix_comp) => self.matrix_comprehension(matrix_comp),
       _ => todo!(),
       //Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe, src),
     };
@@ -1706,6 +1707,30 @@ impl Formatter {
       )
     } else {
       format!("{{ {} | {} }}", expr, qualifiers)
+    }
+  }
+
+  pub fn matrix_comprehension(&mut self, node: &MatrixComprehension) -> String {
+    let expr = self.expression(&node.expression);
+    let quals = node.qualifiers
+      .iter()
+      .map(|q| self.comprehension_qualifier(q))
+      .collect::<Vec<_>>()
+      .join(", ");
+
+    if self.html {
+      format!(
+        "<span class=\"mech-matrix-comprehension\">\\
+          <span class=\"mech-bracket start\">[</span>\\
+          <span class=\"mech-comp-expr\">{}</span> \\
+          <span class=\"mech-comp-bar\">|</span> \\
+          <span class=\"mech-comp-quals\">{}</span>\\
+          <span class=\"mech-bracket end\">]</span>\\
+        </span>",
+        expr, quals
+      )
+    } else {
+      format!("[ {} | {} ]", expr, quals)
     }
   }
 
