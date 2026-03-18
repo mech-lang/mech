@@ -1487,6 +1487,7 @@ pub enum Expression {
   Slice(Slice),
   Structure(Structure),
   SetComprehension(Box<SetComprehension>),
+  MatrixComprehension(Box<MatrixComprehension>),
   Var(Var),
 }
 
@@ -1500,6 +1501,7 @@ impl Expression {
       Expression::Range(range) => range.tokens(),
       Expression::Slice(slice) => slice.tokens(),
       Expression::SetComprehension(sc) => sc.tokens(),
+      Expression::MatrixComprehension(mc) => mc.tokens(),
       _ => todo!(),
     }
   }
@@ -1513,6 +1515,23 @@ pub struct SetComprehension {
 }
 
 impl SetComprehension {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.expression.tokens();
+    for qualifier in &self.qualifiers {
+      tokens.append(&mut qualifier.tokens());
+    }
+    tokens
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct MatrixComprehension {
+  pub expression: Expression,
+  pub qualifiers: Vec<ComprehensionQualifier>,
+}
+
+impl MatrixComprehension {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tokens = self.expression.tokens();
     for qualifier in &self.qualifiers {
