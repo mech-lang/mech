@@ -369,7 +369,7 @@ pub struct ReshapeError {
   pub requested: (usize, usize),
   pub original: (usize, usize),
 }
-impl MechErrorKind2 for ReshapeError {
+impl MechErrorKind for ReshapeError {
   fn name(&self) -> &str { "ReshapeError" }
   fn message(&self) -> String {
     format!("Cannot reshape matrix of shape {:?} into {:?}",self.original,self.requested)

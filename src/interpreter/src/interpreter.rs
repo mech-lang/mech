@@ -472,7 +472,7 @@ impl Interpreter {
 pub struct UnknownInstructionError {
   pub instr: String,
 }
-impl MechErrorKind2 for UnknownInstructionError {
+impl MechErrorKind for UnknownInstructionError {
   fn name(&self) -> &str {
     "UnknownInstruction"
   }
@@ -487,7 +487,7 @@ pub struct UnknownVariadicFunctionError {
   pub fxn_id: u64,
 }
 
-impl MechErrorKind2 for UnknownVariadicFunctionError {
+impl MechErrorKind for UnknownVariadicFunctionError {
   fn name(&self) -> &str {
     "UnknownVariadicFunction"
   }
@@ -500,7 +500,7 @@ impl MechErrorKind2 for UnknownVariadicFunctionError {
 pub struct UnknownQuadFunctionError {
   pub fxn_id: u64,
 }
-impl MechErrorKind2 for UnknownQuadFunctionError {
+impl MechErrorKind for UnknownQuadFunctionError {
   fn name(&self) -> &str {
     "UnknownQuadFunction"
   }
@@ -513,7 +513,7 @@ impl MechErrorKind2 for UnknownQuadFunctionError {
 pub struct UnknownTernaryFunctionError {
   pub fxn_id: u64,
 }
-impl MechErrorKind2 for UnknownTernaryFunctionError {
+impl MechErrorKind for UnknownTernaryFunctionError {
   fn name(&self) -> &str {
     "UnknownTernaryFunction"
   }
@@ -526,7 +526,7 @@ impl MechErrorKind2 for UnknownTernaryFunctionError {
 pub struct UnknownBinaryFunctionError {
   pub fxn_id: u64,
 }
-impl MechErrorKind2 for UnknownBinaryFunctionError {
+impl MechErrorKind for UnknownBinaryFunctionError {
   fn name(&self) -> &str {
     "UnknownBinaryFunction"
   }
@@ -539,7 +539,7 @@ impl MechErrorKind2 for UnknownBinaryFunctionError {
 pub struct UnknownUnaryFunctionError {
   pub fxn_id: u64,
 }
-impl MechErrorKind2 for UnknownUnaryFunctionError {
+impl MechErrorKind for UnknownUnaryFunctionError {
   fn name(&self) -> &str {
     "UnknownUnaryFunction"
   }
@@ -552,7 +552,7 @@ impl MechErrorKind2 for UnknownUnaryFunctionError {
 pub struct UnknownNullaryFunctionError {
   pub fxn_id: u64,
 }
-impl MechErrorKind2 for UnknownNullaryFunctionError {
+impl MechErrorKind for UnknownNullaryFunctionError {
   fn name(&self) -> &str {
     "UnknownNullaryFunction"
   }
@@ -563,14 +563,14 @@ impl MechErrorKind2 for UnknownNullaryFunctionError {
 
 #[derive(Debug, Clone)]
 pub struct IndexOutOfBoundsError;
-impl MechErrorKind2 for IndexOutOfBoundsError {
+impl MechErrorKind for IndexOutOfBoundsError {
   fn name(&self) -> &str { "IndexOutOfBounds" }
   fn message(&self) -> String { "Index out of bounds".to_string() }
 }
 
 #[derive(Debug, Clone)]
 pub struct OverflowSubtractionError;
-impl MechErrorKind2 for OverflowSubtractionError {
+impl MechErrorKind for OverflowSubtractionError {
   fn name(&self) -> &str { "OverflowSubtraction" }
   fn message(&self) -> String { "Attempted subtraction overflow".to_string() }
 }
@@ -579,7 +579,7 @@ impl MechErrorKind2 for OverflowSubtractionError {
 pub struct UnknownPanicError {
   pub details: String
 }
-impl MechErrorKind2 for UnknownPanicError {
+impl MechErrorKind for UnknownPanicError {
   fn name(&self) -> &str { "UnknownPanic" }
   fn message(&self) -> String { self.details.clone() }
 }
@@ -589,7 +589,7 @@ struct StepIndexOutOfBoundsError{
   pub step_id: usize,
   pub plan_length: usize,
 }
-impl MechErrorKind2 for StepIndexOutOfBoundsError {
+impl MechErrorKind for StepIndexOutOfBoundsError {
   fn name(&self) -> &str { "StepIndexOutOfBounds" }
   fn message(&self) -> String {
     format!("Step id {} out of range (plan has {} steps)", self.step_id, self.plan_length)
@@ -598,7 +598,7 @@ impl MechErrorKind2 for StepIndexOutOfBoundsError {
 
 #[derive(Debug, Clone)]
 struct NoStepsInPlanError;
-impl MechErrorKind2 for NoStepsInPlanError {
+impl MechErrorKind for NoStepsInPlanError {
   fn name(&self) -> &str { "NoStepsInPlan" }
   fn message(&self) -> String {
     "Plan contains no steps. This program doesn't do anything.".to_string()

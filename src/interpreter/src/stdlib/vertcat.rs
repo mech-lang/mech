@@ -1988,7 +1988,7 @@ pub struct VerticalConcatenateDimensionMismatch {
   pub rows: usize,
   pub cols: usize,
 }
-impl MechErrorKind2 for VerticalConcatenateDimensionMismatch {
+impl MechErrorKind for VerticalConcatenateDimensionMismatch {
   fn name(&self) -> &str { "VerticalConcatenateDimensionMismatch" }
   fn message(&self) -> String {
     format!("Cannot vertically concatenate matrices/vectors with dimensions ({}, {})", self.rows, self.cols)

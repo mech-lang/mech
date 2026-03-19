@@ -210,7 +210,7 @@ pub fn parse_version_to_u16(s: &str) -> Option<u16> {
 #[derive(Debug, Clone)]
 pub struct InvalidMagicNumberError;
 
-impl MechErrorKind2 for InvalidMagicNumberError {
+impl MechErrorKind for InvalidMagicNumberError {
   fn name(&self) -> &str { "InvalidMagicNumber" }
   fn message(&self) -> String { "Invalid magic number".to_string() }
 }

@@ -151,7 +151,7 @@ impl NativeFunctionCompiler for ConvertScalarToMat {
 #[derive(Debug, Clone)]
 pub struct CannotReshapeMatrixToEmpty;
 
-impl MechErrorKind2 for CannotReshapeMatrixToEmpty {
+impl MechErrorKind for CannotReshapeMatrixToEmpty {
   fn name(&self) -> &str { "CannotReshapeMatrixToEmpty" }
   fn message(&self) -> String {
     "Cannot reshape matrix to empty dimensions".to_string()

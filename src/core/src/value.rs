@@ -2529,7 +2529,7 @@ impl ToValue for Ref<MechRecord> {
 #[derive(Debug, Clone)]
 pub struct UnhandledFunctionArgumentKindError;
 
-impl MechErrorKind2 for UnhandledFunctionArgumentKindError {
+impl MechErrorKind for UnhandledFunctionArgumentKindError {
   fn name(&self) -> &str { "UnhandledFunctionArgumentKind" }
   fn message(&self) -> String {
     "Value kind is not valid for this function.".to_string()
@@ -2541,7 +2541,7 @@ pub struct CannotConvertToTypeError {
   pub target_type: &'static str,
 }
 
-impl MechErrorKind2 for CannotConvertToTypeError {
+impl MechErrorKind for CannotConvertToTypeError {
   fn name(&self) -> &str { "CannotConvertToType" }
   fn message(&self) -> String {
     format!("Cannot convert to {}", self.target_type)

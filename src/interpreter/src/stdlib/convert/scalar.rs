@@ -369,7 +369,7 @@ pub struct ColumnConvertKindMismatchError {
   pub to: ValueKind,
 }
 
-impl MechErrorKind2 for ColumnConvertKindMismatchError {
+impl MechErrorKind for ColumnConvertKindMismatchError {
   fn name(&self) -> &str { "ColumnTypeMismatch" }
   fn message(&self) -> String {
     format!(
@@ -384,7 +384,7 @@ pub struct ConvertIncorrectNumberOfColumnsError {
   pub from: usize,
   pub to: usize,
 }
-impl MechErrorKind2 for ConvertIncorrectNumberOfColumnsError {
+impl MechErrorKind for ConvertIncorrectNumberOfColumnsError {
   fn name(&self) -> &str { "IncorrectNumberOfColumns" }
   fn message(&self) -> String {
     format!(

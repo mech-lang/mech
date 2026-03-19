@@ -2056,7 +2056,7 @@ pub struct MismatchedIndexLengthsError {
   pub ix2_len: usize,
   pub source_len: usize,
 }
-impl MechErrorKind2 for MismatchedIndexLengthsError {
+impl MechErrorKind for MismatchedIndexLengthsError {
   fn name(&self) -> &str { "MismatchedIndexLengths" }
 
   fn message(&self) -> String {

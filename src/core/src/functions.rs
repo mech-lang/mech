@@ -349,7 +349,7 @@ pub struct UnhandledFunctionArgumentKind1 {
   pub arg: ValueKind,
   pub fxn_name: String,
 }
-impl MechErrorKind2 for UnhandledFunctionArgumentKind1 {
+impl MechErrorKind for UnhandledFunctionArgumentKind1 {
   fn name(&self) -> &str { "UnhandledFunctionArgumentKind1" }
   fn message(&self) -> String {
     format!("Unhandled function argument kind for function '{}': arg = {:?}", self.fxn_name, self.arg)
@@ -361,7 +361,7 @@ pub struct UnhandledFunctionArgumentKind2 {
   pub arg: (ValueKind, ValueKind),
   pub fxn_name: String,
 }
-impl MechErrorKind2 for UnhandledFunctionArgumentKind2 {
+impl MechErrorKind for UnhandledFunctionArgumentKind2 {
   fn name(&self) -> &str { "UnhandledFunctionArgumentKind2" }
   fn message(&self) -> String {
     format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
@@ -373,7 +373,7 @@ pub struct UnhandledFunctionArgumentKind3 {
   pub arg: (ValueKind, ValueKind, ValueKind),
   pub fxn_name: String,
 }
-impl MechErrorKind2 for UnhandledFunctionArgumentKind3 {
+impl MechErrorKind for UnhandledFunctionArgumentKind3 {
   fn name(&self) -> &str { "UnhandledFunctionArgumentKind3" }
   fn message(&self) -> String {
     format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
@@ -385,7 +385,7 @@ pub struct UnhandledFunctionArgumentKind4 {
   pub arg: (ValueKind, ValueKind, ValueKind, ValueKind),
   pub fxn_name: String,
 }
-impl MechErrorKind2 for UnhandledFunctionArgumentKind4 {
+impl MechErrorKind for UnhandledFunctionArgumentKind4 {
   fn name(&self) -> &str { "UnhandledFunctionArgumentKind4" }
   fn message(&self) -> String {
     format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
@@ -397,7 +397,7 @@ pub struct UnhandledFunctionArgumentKindVarg {
   pub arg: Vec<ValueKind>,
   pub fxn_name: String,
 }
-impl MechErrorKind2 for UnhandledFunctionArgumentKindVarg {
+impl MechErrorKind for UnhandledFunctionArgumentKindVarg {
   fn name(&self) -> &str { "UnhandledFunctionArgumentKindVarg" }
   fn message(&self) -> String {
     format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
@@ -409,7 +409,7 @@ pub struct UnhandledFunctionArgumentIxes {
   pub arg: (ValueKind, Vec<ValueKind>, ValueKind),
   pub fxn_name: String,
 }
-impl MechErrorKind2 for UnhandledFunctionArgumentIxes {
+impl MechErrorKind for UnhandledFunctionArgumentIxes {
   fn name(&self) -> &str { "UnhandledFunctionArgumentIxes" }
   fn message(&self) -> String {
     format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
@@ -421,7 +421,7 @@ pub struct UnhandledFunctionArgumentIxesMono {
   pub arg: (ValueKind, Vec<ValueKind>),
   pub fxn_name: String,
 }
-impl MechErrorKind2 for UnhandledFunctionArgumentIxesMono {
+impl MechErrorKind for UnhandledFunctionArgumentIxesMono {
   fn name(&self) -> &str { "UnhandledFunctionArgumentIxesMono" }
   fn message(&self) -> String {
     format!("Unhandled function argument kinds for function '{}': arg = {:?}", self.fxn_name, self.arg)
@@ -433,7 +433,7 @@ pub struct IncorrectNumberOfArguments {
   pub expected: usize,
   pub found: usize,
 }
-impl MechErrorKind2 for IncorrectNumberOfArguments {
+impl MechErrorKind for IncorrectNumberOfArguments {
   fn name(&self) -> &str {
     "IncorrectNumberOfArguments"
   }

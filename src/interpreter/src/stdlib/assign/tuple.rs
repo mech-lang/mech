@@ -203,7 +203,7 @@ pub struct TupleElementKindMismatchError {
   pub actual: ValueKind,
 }
 
-impl MechErrorKind2 for TupleElementKindMismatchError {
+impl MechErrorKind for TupleElementKindMismatchError {
   fn name(&self) -> &str {
     "TupleElementKindMismatch"
   }
