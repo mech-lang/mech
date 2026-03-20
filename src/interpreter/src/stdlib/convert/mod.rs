@@ -366,6 +366,60 @@ lossless_into_int_to_float!(i64);
 #[cfg(feature = "i128")]
 lossless_into_int_to_float!(i128);
 
+#[cfg(feature = "bool")]
+impl LosslessInto<bool> for bool {
+  fn lossless_into(self) -> bool {
+    self
+  }
+}
+
+#[cfg(all(feature = "bool", feature = "f64"))]
+impl LosslessInto<f64> for bool {
+  fn lossless_into(self) -> f64 {
+    if self { 1.0 } else { 0.0 }
+  }
+}
+
+#[cfg(all(feature = "bool", feature = "f32"))]
+impl LosslessInto<f32> for bool {
+  fn lossless_into(self) -> f32 {
+    if self { 1.0 } else { 0.0 }
+  }
+}
+
+macro_rules! lossless_into_bool {
+  ($to_type:ty) => {
+    paste! {
+      impl LosslessInto<$to_type> for bool {
+        fn lossless_into(self) -> $to_type {
+          if self { 1 } else { 0 }
+        }
+      }
+    }
+  };
+}
+
+#[cfg(all(feature = "bool", feature = "u8"))]
+lossless_into_bool!(u8);
+#[cfg(all(feature = "bool", feature = "u16"))]
+lossless_into_bool!(u16);
+#[cfg(all(feature = "bool", feature = "u32"))]
+lossless_into_bool!(u32);
+#[cfg(all(feature = "bool", feature = "u64"))]
+lossless_into_bool!(u64);
+#[cfg(all(feature = "bool", feature = "u128"))]
+lossless_into_bool!(u128);
+#[cfg(all(feature = "bool", feature = "i8"))]
+lossless_into_bool!(i8);
+#[cfg(all(feature = "bool", feature = "i16"))]
+lossless_into_bool!(i16);
+#[cfg(all(feature = "bool", feature = "i32"))]
+lossless_into_bool!(i32);
+#[cfg(all(feature = "bool", feature = "i64"))]
+lossless_into_bool!(i64);
+#[cfg(all(feature = "bool", feature = "i128"))]
+lossless_into_bool!(i128);
+
 #[cfg(all(feature = "f64", feature = "f32"))]
 impl LosslessInto<f32> for f64 {
   fn lossless_into(self) -> f32 {
