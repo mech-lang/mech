@@ -832,11 +832,7 @@ pub struct ComprehensionGeneratorError{
   found: ValueKind,
 }
 
-<<<<<<< HEAD
-impl MechErrorKind2 for ComprehensionGeneratorError {
-=======
-impl MechErrorKind for SetComprehensionGeneratorError {
->>>>>>> 93cf1d294b2dc19026a724838bf3b9c2c1abb9ff
+impl MechErrorKind for ComprehensionGeneratorError {
   fn name(&self) -> &str {
     "ComprehensionGenerator"
   }
