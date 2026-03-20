@@ -22,6 +22,7 @@ pub fn expression(expr: &Expression, env: Option<&Environment>, p: &Interpreter)
     Expression::FunctionCall(fxn_call) => function_call(fxn_call, p),
     #[cfg(feature = "set_comprehensions")]
     Expression::SetComprehension(set_comp) => set_comprehension(set_comp, p),
+    #[cfg(feature = "matrix_comprehensions")]
     Expression::MatrixComprehension(matrix_comp) => matrix_comprehension(matrix_comp, p),
     //Expression::FsmPipe(_) => todo!(),
     x => Err(MechError::new(
@@ -31,6 +32,7 @@ pub fn expression(expr: &Expression, env: Option<&Environment>, p: &Interpreter)
   }
 }
 
+#[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
 pub fn pattern_match_value(pattern: &Pattern, value: &Value, env: &mut Environment) -> MResult<()> {
   match pattern {
     Pattern::Wildcard => Ok(()),
@@ -96,6 +98,7 @@ pub fn pattern_match_value(pattern: &Pattern, value: &Value, env: &mut Environme
   }
 }
 
+#[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
 fn comprehension_environments(qualifiers: &[ComprehensionQualifier], comprehension_id: u64, p: &Interpreter) -> MResult<(Vec<Environment>, Interpreter)> {
   let mut envs: Vec<Environment> = vec![HashMap::new()];
   let mut new_p = p.clone();
@@ -143,6 +146,7 @@ fn comprehension_environments(qualifiers: &[ComprehensionQualifier], comprehensi
   Ok((envs, new_p))
 }
 
+#[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
 fn comprehension_generator_values(collection: &Value) -> MResult<Vec<Value>> {
   match collection {
     #[cfg(feature = "set")]
@@ -207,6 +211,7 @@ pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult
   Ok(Value::Set(Ref::new(MechSet::from_set(result_set))))
 }
 
+#[cfg(feature = "matrix_comprehensions")]
 pub fn matrix_comprehension(matrix_comp: &MatrixComprehension,p: &Interpreter) -> MResult<Value> {
   let comprehension_id = hash_str(&format!("{:?}", matrix_comp));
   let (envs, new_p) = comprehension_environments(&matrix_comp.qualifiers, comprehension_id, p)?;
