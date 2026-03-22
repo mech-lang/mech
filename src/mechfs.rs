@@ -454,6 +454,78 @@ impl MechSources {
     }
   }
 
+  fn extract_include_path(line: &str) -> Option<String> {
+    let trimmed = line.trim();
+    if !(trimmed.starts_with("{{") && trimmed.ends_with("}}")) {
+      return None;
+    }
+    let path = trimmed
+      .trim_start_matches("{{")
+      .trim_end_matches("}}")
+      .trim()
+      .to_string();
+    if path.ends_with(".mec") || path.ends_with(".md") || path.ends_with(".html") || path.ends_with(".htm") {
+      Some(path)
+    } else {
+      None
+    }
+  }
+
+  fn expand_mechdown_includes(
+    &self,
+    source: &str,
+    current_file: &Path,
+    visited: &mut std::collections::HashSet<PathBuf>,
+  ) -> MResult<String> {
+    let mut expanded = String::new();
+
+    for line in source.lines() {
+      if let Some(include_path) = Self::extract_include_path(line) {
+        let include_candidate = current_file
+          .parent()
+          .unwrap_or_else(|| Path::new("."))
+          .join(&include_path);
+
+        if include_candidate.exists() {
+          let include_canonical = include_candidate.canonicalize().map_err(|err| {
+            MechError2::new(
+              FileOpenFailed {
+                file_path: include_candidate.to_string_lossy().to_string(),
+                source: err.to_string(),
+              },
+              None,
+            ).with_compiler_loc()
+          })?;
+
+          if visited.contains(&include_canonical) {
+            continue;
+          }
+
+          visited.insert(include_canonical.clone());
+          match read_mech_source_file(&include_canonical)? {
+            MechSourceCode::String(include_source) => {
+              let include_expanded = self.expand_mechdown_includes(&include_source, &include_canonical, visited)?;
+              expanded.push_str(&include_expanded);
+              if !include_expanded.ends_with('\n') {
+                expanded.push('\n');
+              }
+            }
+            _ => {
+              expanded.push_str(line);
+              expanded.push('\n');
+            }
+          }
+          continue;
+        }
+      }
+
+      expanded.push_str(line);
+      expanded.push('\n');
+    }
+
+    Ok(expanded)
+  }
+
   pub fn add_source(&mut self, src_str: &str, src_root: &str) -> MResult<MechSourceCode> {
     use MechSourceCode::*;
     let src_path = std::path::Path::new(src_str);
@@ -480,6 +552,16 @@ impl MechSources {
         Ok(MechSourceCode::Image(extension, img_bytes))
       } 
       Ok(src) => {
+        let src = match src {
+          MechSourceCode::String(source_text) => {
+            let mut visited = std::collections::HashSet::new();
+            visited.insert(canonical_path.clone());
+            let expanded = self.expand_mechdown_includes(&source_text, &canonical_path, &mut visited)?;
+            MechSourceCode::String(expanded)
+          }
+          other => other,
+        };
+
         let (tree_sc, html_sc) = self.to_tree_and_html(&src)?;
         let file_id = hash_str(&canonical_path.display().to_string());
 

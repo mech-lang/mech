@@ -688,6 +688,10 @@ impl Formatter {
     }
   }
 
+  pub fn include(&mut self, node: &Token) -> String {
+    format!("{{{{{}}}}}", node.to_string())
+  }
+
   pub fn prompt(&mut self, node: &SectionElement) -> String {
     let prompt_str = self.section_element(node);
     if self.html {
@@ -717,6 +721,7 @@ impl Formatter {
       SectionElement::Float((n,f)) => self.float(n,f),
       SectionElement::Footnote(n) => self.footnote(n),
       SectionElement::Grammar(n) => self.grammar(n),
+      SectionElement::Include(n) => self.include(n),
       SectionElement::Image(n) => self.image(n),
       SectionElement::List(n) => self.list(n),
       SectionElement::MechCode(n) => self.mech_code(n),

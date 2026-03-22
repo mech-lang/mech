@@ -834,6 +834,33 @@ pub fn equation(input: ParseString) -> ParseResult<Token> {
   Ok((input, eqn))
 }
 
+// include-document := "{{", +text, "}}" ;
+pub fn include_document(input: ParseString) -> ParseResult<Token> {
+  let (input, _) = left_brace(input)?;
+  let (input, _) = left_brace(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, path_tokens) = many1(tuple((is_not(right_brace), text)))(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = right_brace(input)?;
+  let (input, _) = right_brace(input)?;
+
+  let mut path_tokens = path_tokens.into_iter().map(|(_, tkn)| tkn).collect::<Vec<Token>>();
+  let mut path = Token::merge_tokens(&mut path_tokens).unwrap_or_default();
+  path.kind = TokenKind::Text;
+
+  let include_path = path.to_string().trim().to_string();
+  let valid_extension = include_path.ends_with(".mec")
+    || include_path.ends_with(".md")
+    || include_path.ends_with(".html")
+    || include_path.ends_with(".htm");
+
+  if !valid_extension {
+    return Err(nom::Err::Error(ParseError::new(input, "Expected include path like {{foo.mec}}")));
+  }
+
+  Ok((input, path))
+}
+
 // citation := "[", (identifier | number), "]", ":", ws0, paragraph, ws0, ?("(", +text, ")") ;
 pub fn citation(input: ParseString) -> ParseResult<Citation> {
   let (input, _) = left_bracket(input)?;
@@ -889,6 +916,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
     ("citation",        Box::new(|i| citation(i).map(|(i, c)| (i, SectionElement::Citation(c))))),
     ("abstract",        Box::new(abstract_el)),
     ("img",             Box::new(|i| img(i).map(|(i, img)| (i, SectionElement::Image(img))))),
+    ("include",         Box::new(|i| include_document(i).map(|(i, p)| (i, SectionElement::Include(p))))),
     ("equation",        Box::new(|i| equation(i).map(|(i, e)| (i, SectionElement::Equation(e))))),
     ("table",           Box::new(|i| mechdown_table(i).map(|(i, t)| (i, SectionElement::Table(t))))),
     ("float",           Box::new(|i| float(i).map(|(i, f)| (i, SectionElement::Float(f))))),
