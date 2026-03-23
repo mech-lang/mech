@@ -21,6 +21,7 @@ use std::fmt;
 pub type FunctionsRef = Ref<Functions>;
 pub type FunctionTable = HashMap<u64, fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>>;
 pub type FunctionCompilerTable = HashMap<u64, &'static dyn NativeFunctionCompiler>;
+pub type UserFunctionTable = HashMap<u64, FunctionDefinition>;
 
 #[derive(Clone,Debug)]
 pub enum FunctionArgs {
@@ -107,14 +108,16 @@ pub trait NativeFunctionCompiler {
 pub struct Functions {
   pub functions: FunctionTable,
   pub function_compilers: FunctionCompilerTable,
+  pub user_functions: UserFunctionTable,
   pub dictionary: Ref<Dictionary>,
 }
 
 impl Functions {
   pub fn new() -> Self {
     Self {
-      functions: HashMap::new(), 
-      function_compilers: HashMap::new(), 
+      functions: HashMap::new(),
+      function_compilers: HashMap::new(),
+      user_functions: HashMap::new(),
       dictionary: Ref::new(Dictionary::new()),
     }
   }
@@ -131,6 +134,7 @@ impl Functions {
     output.push_str("\nFunctions:\n");
     // print number of functions loaded:
     output.push_str(&format!("Total Functions: {}\n", self.functions.len()));
+    output.push_str(&format!("User Functions: {}\n", self.user_functions.len()));
     //for (id, fxn_ptr) in &self.functions {
     //  let dict_brrw = self.dictionary.borrow();
     //  let name = dict_brrw.get(id).unwrap();
