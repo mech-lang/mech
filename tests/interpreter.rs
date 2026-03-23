@@ -478,15 +478,15 @@ test_interpreter!(interpret_set_rational, r#"{1/2, 3/4}"#, Value::Set(Ref::new(M
 
 test_interpreter!(interpret_function_define,r#"foo(x<f64>) = z<f64> :=
 z := 10 + x.
-foo(10)"#, Value::F64(Ref::new(20.0)));
+foo(10)"#, Value::MutableReference(Ref::new(Value::F64(Ref::new(20.0)))));
 test_interpreter!(interpret_function_define_2_args,r#"foo(x<f64>, y<f64>) = z<f64> :=
 z := x + y.
-foo(10,20)"#, Value::F64(Ref::new(30.0)));
+foo(10,20)"#, Value::MutableReference(Ref::new(Value::F64(Ref::new(30.0)))));
 test_interpreter!(interpret_function_define_statements,r#"foo(x<f64>, y<f64>) = z<f64> :=
     a := 1 + x
     b := y + 1
     z := a + b.
-foo(10,20)"#, Value::F64(Ref::new(32.0)));
+foo(10,20)"#, Value::MutableReference(Ref::new(Value::F64(Ref::new(32.0)))));
 test_interpreter!(interpret_function_call_native_vector, "math/sin([1.570796327 1.570796327])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
 test_interpreter!(interpret_function_call_native, r#"math/sin(1.5707963267948966)"#, Value::F64(Ref::new(1.0)));
 test_interpreter!(interpret_function_call_native_cos, r#"math/cos(0.0)"#, Value::F64(Ref::new(1.0)));
