@@ -134,7 +134,7 @@ fn execute_function_match_arms(
         let mut env = Environment::new();
         if pattern_matches_arguments(&arm.pattern, input_arg_values, &mut env, p)? {
             let out = expression(&arm.expression, Some(&env), p)?;
-            return Ok(detach_value(&out));
+            return coerce_function_output_kind(detach_value(&out), fxn_def, p);
         }
     }
     Err(MechError::new(
@@ -206,10 +206,38 @@ fn pattern_matches_value(
             }
         }
         Pattern::Expression(expr) => {
+            if let Some(var_id) = extract_pattern_variable_id(expr) {
+                let detached = detach_value(value);
+                if let Some(existing) = env.get(&var_id) {
+                    return Ok(existing == &detached);
+                }
+                env.insert(var_id, detached);
+                return Ok(true);
+            }
             let expected = expression(expr, Some(env), p)?;
             Ok(values_match(&detach_value(&expected), &detach_value(value)))
         }
         Pattern::TupleStruct(_) => Ok(false),
+    }
+}
+
+fn extract_pattern_variable_id(expr: &Expression) -> Option<u64> {
+    match expr {
+        Expression::Var(var) => Some(var.name.hash()),
+        Expression::Formula(factor) => match factor {
+            Factor::Expression(inner_expr) => extract_pattern_variable_id(inner_expr),
+            Factor::Term(term) if term.rhs.is_empty() => extract_pattern_variable_id_from_term(&term.lhs),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+fn extract_pattern_variable_id_from_term(factor: &Factor) -> Option<u64> {
+    match factor {
+        Factor::Expression(expr) => extract_pattern_variable_id(expr),
+        Factor::Parenthetical(inner) => extract_pattern_variable_id_from_term(inner),
+        _ => None,
     }
 }
 
@@ -226,6 +254,17 @@ fn values_match(expected: &Value, actual: &Value) -> bool {
         }
     }
     false
+}
+
+fn coerce_function_output_kind(value: Value, fxn_def: &FunctionDefinition, p: &Interpreter) -> MResult<Value> {
+    if fxn_def.output.is_empty() {
+        return Ok(value);
+    }
+    let Some((_, kind_annotation)) = fxn_def.output.get_index(0) else {
+        return Ok(value);
+    };
+    let target_kind = kind_annotation.kind.to_value_kind(&p.state.borrow().kinds)?;
+    Ok(value.convert_to(&target_kind).unwrap_or(value))
 }
 
 struct FunctionScope {
