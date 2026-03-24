@@ -49,14 +49,20 @@ fn function_define_match_arms(
 ) -> ParseResult<FunctionDefine> {
   let (input, _) = transition_operator(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, _output_kind) = kind_annotation(input)?;
+  let (input, output_kind) = kind_annotation(input)?;
+  let output = vec![FunctionArgument {
+    name: Identifier {
+      name: Token::new(TokenKind::Identifier, output_kind.src_range.clone(), vec!['_']),
+    },
+    kind: output_kind,
+  }];
   let (input, _) = many1(alt((whitespace1, statement_separator)))(input)?;
   let (input, match_arms) = many1(function_match_arm)(input)?;
   let (input, _) = opt(period)(input)?;
   Ok((input, FunctionDefine {
     name,
     input: input_args,
-    output: vec![],
+    output,
     statements: vec![],
     match_arms,
   }))
