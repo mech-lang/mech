@@ -492,6 +492,38 @@ z := 10 + x.
 foo(x<f64>) = z<f64> :=
 z := bar(x).
 foo(10)"#, Value::F64(Ref::new(20.0)));
+#[cfg(feature = "u64")]
+test_interpreter!(interpret_function_recursive_max,r#"max(x<u64>, y<u64>) -> <u64>
+  ├ (0, y) -> y
+  ├ (x, 0) -> x
+  └ (x, y) -> max(x - 1<u64>, y - 1<u64>) + 1<u64>.
+max(4<u64>, 7<u64>)"#, Value::U64(Ref::new(7)));
+#[cfg(feature = "u64")]
+test_interpreter!(interpret_function_recursive_is_zero,r#"is-zero(x<u64>) -> <bool>
+  ├ 0 -> true
+  └ * -> false.
+is-zero(0<u64>)"#, Value::Bool(Ref::new(true)));
+#[cfg(feature = "u64")]
+test_interpreter!(interpret_function_recursive_factorial_tree,r#"factorial(x<u64>) -> <u64>
+  ├ 0 -> 1
+  └ n -> n * factorial(n - 1<u64>).
+factorial(5<u64>)"#, Value::U64(Ref::new(120)));
+#[cfg(feature = "u64")]
+test_interpreter!(interpret_function_recursive_factorial_bar,r#"factorial(x<u64>) -> <u64>
+  | 0 -> 1
+  | n -> n * factorial(n - 1<u64>).
+factorial(6<u64>)"#, Value::U64(Ref::new(720)));
+#[cfg(feature = "u64")]
+test_interpreter!(interpret_function_recursive_fib,r#"fib(x<u64>) -> <u64>
+  ├ 0 -> 0
+  ├ 1 -> 1
+  └ n -> fib(n - 1<u64>) + fib(n - 2<u64>).
+fib(10<u64>)"#, Value::U64(Ref::new(55)));
+#[cfg(feature = "u64")]
+test_interpreter!(interpret_function_recursive_power,r#"power(x<u64>, y<u64>) -> <u64>
+  ├ (*, 0) -> 1
+  └ (x, y) -> x * power(x, y - 1<u64>).
+power(2<u64>, 10<u64>)"#, Value::U64(Ref::new(1024)));
 test_interpreter!(interpret_function_call_native_vector, "math/sin([1.570796327 1.570796327])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
 test_interpreter!(interpret_function_call_native, r#"math/sin(1.5707963267948966)"#, Value::F64(Ref::new(1.0)));
 test_interpreter!(interpret_function_call_native_cos, r#"math/cos(0.0)"#, Value::F64(Ref::new(1.0)));

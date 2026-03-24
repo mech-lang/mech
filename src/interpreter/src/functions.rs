@@ -110,6 +110,12 @@ fn execute_user_function(
     let scope = FunctionScope::enter(p);
     bind_function_inputs(fxn_def, input_arg_values, p)?;
 
+    if !fxn_def.code.match_arms.is_empty() {
+        let output = execute_function_match_arms(fxn_def, input_arg_values, p);
+        drop(scope);
+        return output;
+    }
+
     for statement_node in &fxn_def.code.statements {
         statement(statement_node, None, p)?;
     }
@@ -117,6 +123,109 @@ fn execute_user_function(
     let output = collect_function_output(p, fxn_def);
     drop(scope);
     output
+}
+
+fn execute_function_match_arms(
+    fxn_def: &FunctionDefinition,
+    input_arg_values: &Vec<Value>,
+    p: &Interpreter,
+) -> MResult<Value> {
+    for arm in &fxn_def.code.match_arms {
+        let mut env = Environment::new();
+        if pattern_matches_arguments(&arm.pattern, input_arg_values, &mut env, p)? {
+            let out = expression(&arm.expression, Some(&env), p)?;
+            return Ok(detach_value(&out));
+        }
+    }
+    Err(MechError::new(
+        FunctionOutputUndefinedError {
+            output_id: fxn_def.id,
+        },
+        None,
+    )
+    .with_compiler_loc()
+    .with_tokens(fxn_def.code.name.tokens()))
+}
+
+fn pattern_matches_arguments(
+    pattern: &Pattern,
+    args: &Vec<Value>,
+    env: &mut Environment,
+    p: &Interpreter,
+) -> MResult<bool> {
+    if args.len() == 1 {
+        return pattern_matches_value(pattern, &args[0], env, p);
+    }
+    match pattern {
+        Pattern::Tuple(pattern_tuple) => {
+            if pattern_tuple.0.len() != args.len() {
+                return Ok(false);
+            }
+            for (pat, arg) in pattern_tuple.0.iter().zip(args.iter()) {
+                if !pattern_matches_value(pat, arg, env, p)? {
+                    return Ok(false);
+                }
+            }
+            Ok(true)
+        }
+        _ => Ok(false),
+    }
+}
+
+fn pattern_matches_value(
+    pattern: &Pattern,
+    value: &Value,
+    env: &mut Environment,
+    p: &Interpreter,
+) -> MResult<bool> {
+    match pattern {
+        Pattern::Wildcard => Ok(true),
+        Pattern::Tuple(pattern_tuple) => match detach_value(value) {
+            Value::Tuple(tuple) => {
+                let tuple_brrw = tuple.borrow();
+                if pattern_tuple.0.len() != tuple_brrw.elements.len() {
+                    return Ok(false);
+                }
+                for (pat, val) in pattern_tuple.0.iter().zip(tuple_brrw.elements.iter()) {
+                    if !pattern_matches_value(pat, val, env, p)? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
+            _ => Ok(false),
+        },
+        Pattern::Expression(Expression::Var(var)) => {
+            let var_id = var.name.hash();
+            let detached = detach_value(value);
+            if let Some(existing) = env.get(&var_id) {
+                Ok(existing == &detached)
+            } else {
+                env.insert(var_id, detached);
+                Ok(true)
+            }
+        }
+        Pattern::Expression(expr) => {
+            let expected = expression(expr, Some(env), p)?;
+            Ok(values_match(&detach_value(&expected), &detach_value(value)))
+        }
+        Pattern::TupleStruct(_) => Ok(false),
+    }
+}
+
+fn values_match(expected: &Value, actual: &Value) -> bool {
+    if expected == actual {
+        return true;
+    }
+    #[cfg(all(feature = "u64", feature = "f64"))]
+    {
+        match (expected, actual) {
+            (Value::F64(x), Value::U64(y)) => return (*x.borrow() as u64) == *y.borrow(),
+            (Value::U64(x), Value::F64(y)) => return *x.borrow() == (*y.borrow() as u64),
+            _ => {}
+        }
+    }
+    false
 }
 
 struct FunctionScope {
