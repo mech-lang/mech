@@ -21,6 +21,7 @@ use std::fmt;
 pub type FunctionsRef = Ref<Functions>;
 pub type FunctionTable = HashMap<u64, fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>>;
 pub type FunctionCompilerTable = HashMap<u64, &'static dyn NativeFunctionCompiler>;
+pub type UserFunctionTable = HashMap<u64, FunctionDefinition>;
 
 #[derive(Clone,Debug)]
 pub enum FunctionArgs {
@@ -107,14 +108,16 @@ pub trait NativeFunctionCompiler {
 pub struct Functions {
   pub functions: FunctionTable,
   pub function_compilers: FunctionCompilerTable,
+  pub user_functions: UserFunctionTable,
   pub dictionary: Ref<Dictionary>,
 }
 
 impl Functions {
   pub fn new() -> Self {
     Self {
-      functions: HashMap::new(), 
-      function_compilers: HashMap::new(), 
+      functions: HashMap::new(),
+      function_compilers: HashMap::new(),
+      user_functions: HashMap::new(),
       dictionary: Ref::new(Dictionary::new()),
     }
   }
@@ -131,6 +134,7 @@ impl Functions {
     output.push_str("\nFunctions:\n");
     // print number of functions loaded:
     output.push_str(&format!("Total Functions: {}\n", self.functions.len()));
+    output.push_str(&format!("User Functions: {}\n", self.user_functions.len()));
     //for (id, fxn_ptr) in &self.functions {
     //  let dict_brrw = self.dictionary.borrow();
     //  let name = dict_brrw.get(id).unwrap();
@@ -160,7 +164,7 @@ impl fmt::Debug for FunctionDefinition {
       return fmt::Display::fmt(&self.pretty_print(), f);
       fmt::Display::fmt(&"".to_string(), f)
     } else {
-      write!(f, "FunctionDefinition {{ id: {}, name: {}, input: {:?}, output: {:?}, symbols: {:?} }}", 
+      write!(f, "FunctionDefinition {{ id: {}, name: {}, input: {:?}, output: {:?}, symbols: {:?} }}",
       self.id, self.name, self.input, self.output, self.symbols.borrow())
     }
   }
@@ -176,8 +180,8 @@ impl PrettyPrint for FunctionDefinition {
     for step in self.plan.borrow().iter() {
       plan_str = format!("{}  - {}\n",plan_str,step.to_string());
     }
-    let data = vec!["📥 Input", &input_str, 
-                    "📤 Output", &output_str, 
+    let data = vec!["📥 Input", &input_str,
+                    "📤 Output", &output_str,
                     "🔣 Symbols",   &symbols_str,
                     "📋 Plan", &plan_str];
     let mut table = tabled::Table::new(data);
@@ -227,7 +231,7 @@ impl MechFunctionImpl for UserFunction {
     self.fxn.solve();
   }
   fn out(&self) -> Value {
-    Value::MutableReference(self.fxn.out.clone())
+    self.fxn.out.borrow().clone()
   }
   fn to_string(&self) -> String { format!("UserFxn::{:?}", self.fxn.name) }
 }

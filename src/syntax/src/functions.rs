@@ -22,13 +22,66 @@ pub fn function_define(input: ParseString) -> ParseResult<FunctionDefine> {
   let ((input, input_args)) = separated_list0(list_separator, function_arg)(input)?;
   let ((input, _)) = right_parenthesis(input)?;
   let ((input, _)) = whitespace0(input)?;
+  match function_define_match_arms(input.clone(), name.clone(), input_args.clone()) {
+    Ok((input, fxn_def)) => Ok((input, fxn_def)),
+    Err(_) => function_define_statements(input, name, input_args),
+  }
+}
+
+fn function_define_statements(
+  input: ParseString,
+  name: Identifier,
+  input_args: Vec<FunctionArgument>,
+) -> ParseResult<FunctionDefine> {
   let ((input, _)) = equal(input)?;
   let ((input, _)) = whitespace0(input)?;
   let ((input, output)) = alt((function_out_args,function_out_arg))(input)?;
   let ((input, _)) = define_operator(input)?;
   let ((input, statements)) = separated_list1(alt((whitespace1,statement_separator)), statement)(input)?;
   let ((input, _)) = period(input)?;
-  Ok((input,FunctionDefine{name,input: input_args,output,statements}))
+  Ok((input,FunctionDefine{name,input: input_args,output,statements,match_arms: vec![]}))
+}
+
+fn function_define_match_arms(
+  input: ParseString,
+  name: Identifier,
+  input_args: Vec<FunctionArgument>,
+) -> ParseResult<FunctionDefine> {
+  let (input, _) = transition_operator(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, output_kind) = kind_annotation(input)?;
+  let output = vec![FunctionArgument {
+    name: Identifier {
+      name: Token::new(TokenKind::Identifier, output_kind.src_range.clone(), vec!['_']),
+    },
+    kind: output_kind,
+  }];
+  let (input, _) = many1(alt((whitespace1, statement_separator)))(input)?;
+  let (input, match_arms) = many1(function_match_arm)(input)?;
+  let (input, _) = opt(period)(input)?;
+  Ok((input, FunctionDefine {
+    name,
+    input: input_args,
+    output,
+    statements: vec![],
+    match_arms,
+  }))
+}
+
+fn function_match_arm(input: ParseString) -> ParseResult<FunctionMatchArm> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = alt((box_t_left, box_bl, bar))(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, pattern) = crate::state_machines::pattern(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = transition_operator(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, expr) = expression(input)?;
+  let (input, _) = opt(alt((whitespace1, statement_separator)))(input)?;
+  Ok((input, FunctionMatchArm {
+    pattern,
+    expression: expr,
+  }))
 }
 
 // function_out_args := "(", list1(list_separator, function_arg), ")" ;
