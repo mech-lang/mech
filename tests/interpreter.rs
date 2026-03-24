@@ -476,8 +476,8 @@ test_interpreter!(interpret_map_assign, r#"~m := {"a": 10, "b": 20}; m{"b"} = 42
 test_interpreter!(interpret_map_assign2, r#"~m := {"a": 10, "b": 20}; m{"c"} = 42; m{"c"}"#, Value::F64(Ref::new(42.0)));
 test_interpreter!(interpret_set_rational, r#"{1/2, 3/4}"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::R64(Ref::new(R64::new(1, 2))), Value::R64(Ref::new(R64::new(3, 4)))]))));
 
-/*test_interpreter!(interpret_function_define,r#"foo(x<f64>) = z<f64> :=
-z := 10 + x. 
+test_interpreter!(interpret_function_define,r#"foo(x<f64>) = z<f64> :=
+z := 10 + x.
 foo(10)"#, Value::F64(Ref::new(20.0)));
 test_interpreter!(interpret_function_define_2_args,r#"foo(x<f64>, y<f64>) = z<f64> :=
 z := x + y.
@@ -486,7 +486,12 @@ test_interpreter!(interpret_function_define_statements,r#"foo(x<f64>, y<f64>) = 
     a := 1 + x
     b := y + 1
     z := a + b.
-foo(10,20)"#, Value::F64(Ref::new(32.0)));*/
+foo(10,20)"#, Value::F64(Ref::new(32.0)));
+test_interpreter!(interpret_function_define_nested_call,r#"bar(x<f64>) = z<f64> :=
+z := 10 + x.
+foo(x<f64>) = z<f64> :=
+z := bar(x).
+foo(10)"#, Value::F64(Ref::new(20.0)));
 test_interpreter!(interpret_function_call_native_vector, "math/sin([1.570796327 1.570796327])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
 test_interpreter!(interpret_function_call_native, r#"math/sin(1.5707963267948966)"#, Value::F64(Ref::new(1.0)));
 test_interpreter!(interpret_function_call_native_cos, r#"math/cos(0.0)"#, Value::F64(Ref::new(1.0)));
