@@ -800,6 +800,14 @@ pub struct FunctionDefine {
   pub input: Vec<FunctionArgument>,
   pub output: Vec<FunctionArgument>,
   pub statements: Vec<Statement>,
+  pub match_arms: Vec<FunctionMatchArm>,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct FunctionMatchArm {
+  pub pattern: Pattern,
+  pub expression: Expression,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
