@@ -38,7 +38,11 @@ pub fn function_define(fxn_def: &FunctionDefine, p: &Interpreter) -> MResult<Fun
     Ok(new_fxn)
 }
 
-pub fn function_call(fxn_call: &FunctionCall, p: &Interpreter) -> MResult<Value> {
+pub fn function_call(
+    fxn_call: &FunctionCall,
+    env: Option<&Environment>,
+    p: &Interpreter,
+) -> MResult<Value> {
     let plan = p.plan();
     let functions = p.functions();
     let fxn_name_id = fxn_call.name.hash();
@@ -46,7 +50,7 @@ pub fn function_call(fxn_call: &FunctionCall, p: &Interpreter) -> MResult<Value>
     if let Some(user_fxn) = { functions.borrow().user_functions.get(&fxn_name_id).cloned() } {
         let mut input_arg_values = vec![];
         for (_, arg_expr) in fxn_call.args.iter() {
-            input_arg_values.push(expression(arg_expr, None, p)?);
+            input_arg_values.push(expression(arg_expr, env, p)?);
         }
         return execute_user_function(&user_fxn, &input_arg_values, p);
     }
@@ -66,7 +70,7 @@ pub fn function_call(fxn_call: &FunctionCall, p: &Interpreter) -> MResult<Value>
         Some(fxn_compiler) => {
             let mut input_arg_values = vec![];
             for (_, arg_expr) in fxn_call.args.iter() {
-                input_arg_values.push(expression(arg_expr, None, p)?);
+                input_arg_values.push(expression(arg_expr, env, p)?);
             }
             match fxn_compiler.compile(&input_arg_values) {
                 Ok(new_fxn) => {
@@ -260,11 +264,20 @@ fn coerce_function_output_kind(value: Value, fxn_def: &FunctionDefinition, p: &I
     if fxn_def.output.is_empty() {
         return Ok(value);
     }
-    let Some((_, kind_annotation)) = fxn_def.output.get_index(0) else {
+    let Some((_, output_kind_annotation)) = fxn_def.output.get_index(0) else {
         return Ok(value);
     };
-    let target_kind = kind_annotation.kind.to_value_kind(&p.state.borrow().kinds)?;
+    #[cfg(feature = "kind_annotation")]
+    {
+    let target_kind = kind_annotation(&output_kind_annotation.kind, p)?
+        .to_value_kind(&p.state.borrow().kinds)?;
     Ok(value.convert_to(&target_kind).unwrap_or(value))
+    }
+    #[cfg(not(feature = "kind_annotation"))]
+    {
+        let _ = (output_kind_annotation, p);
+        Ok(value)
+    }
 }
 
 struct FunctionScope {
