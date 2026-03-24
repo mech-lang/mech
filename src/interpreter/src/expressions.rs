@@ -19,7 +19,7 @@ pub fn expression(expr: &Expression, env: Option<&Environment>, p: &Interpreter)
     Expression::Structure(strct) => structure(strct, env, p),
     Expression::Literal(ltrl) => literal(&ltrl, p),
     #[cfg(feature = "functions")]
-    Expression::FunctionCall(fxn_call) => function_call(fxn_call, p),
+    Expression::FunctionCall(fxn_call) => function_call(fxn_call, env, p),
     #[cfg(feature = "set_comprehensions")]
     Expression::SetComprehension(set_comp) => set_comprehension(set_comp, p),
     Expression::MatrixComprehension(matrix_comp) => matrix_comprehension(matrix_comp, p),

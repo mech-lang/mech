@@ -50,9 +50,14 @@ fn function_define_match_arms(
   let (input, _) = transition_operator(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, output_kind) = kind_annotation(input)?;
+  let output_src_range = output_kind
+    .tokens()
+    .first()
+    .map(|token| token.src_range.clone())
+    .unwrap_or_default();
   let output = vec![FunctionArgument {
     name: Identifier {
-      name: Token::new(TokenKind::Identifier, output_kind.src_range.clone(), vec!['_']),
+      name: Token::new(TokenKind::Identifier, output_src_range, vec!['_']),
     },
     kind: output_kind,
   }];
