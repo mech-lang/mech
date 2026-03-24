@@ -4,83 +4,237 @@ use crate::*;
 // ----------------------------------------------------------------------------
 
 pub fn function_define(fxn_def: &FunctionDefine, p: &Interpreter) -> MResult<FunctionDefinition> {
-  /*let fxn_name_id = fxn_def.name.hash();
-  let mut new_fxn = FunctionDefinition::new(fxn_name_id,fxn_def.name.to_string(), fxn_def.clone());
-  for input_arg in &fxn_def.input {
-    let arg_id = input_arg.name.hash();
-    new_fxn.input.insert(arg_id,input_arg.kind.clone());
-    let in_arg = Value::F64(Ref::new(F64::new(0.0)));
-    new_fxn.symbols.borrow_mut().insert(arg_id, in_arg, false);
-  }
-  let output_arg_ids = fxn_def.output.iter().map(|output_arg| {
-    let arg_id = output_arg.name.hash();
-    new_fxn.output.insert(arg_id,output_arg.kind.clone());
-    arg_id
-  }).collect::<Vec<u64>>();
-  
-  for stmnt in &fxn_def.statements {
-    let result = statement(stmnt, new_fxn.plan.clone(), new_fxn.symbols.clone(), functions.clone());
-  }    
-  // get the output cell
-  {
-    let symbol_brrw = new_fxn.symbols.borrow();
-    for arg_id in output_arg_ids {
-      match symbol_brrw.get(arg_id) {
-        Some(cell) => new_fxn.out = cell.clone(),
-        None => { return Err(MechError{file: file!().to_string(), tokens: fxn_def.output.iter().flat_map(|a| a.tokens()).collect(), msg: "".to_string(), id: line!(), kind: MechErrorKind::OutputUndefinedInFunctionBody(arg_id)});} 
-      }
+    let fxn_name_id = fxn_def.name.hash();
+    let mut new_fxn =
+        FunctionDefinition::new(fxn_name_id, fxn_def.name.to_string(), fxn_def.clone());
+
+    for input_arg in &fxn_def.input {
+        new_fxn
+            .input
+            .insert(input_arg.name.hash(), input_arg.kind.clone());
     }
-  }
-  Ok(new_fxn)*/
-  todo!("Function define needs to be redone!");
+
+    for output_arg in &fxn_def.output {
+        new_fxn
+            .output
+            .insert(output_arg.name.hash(), output_arg.kind.clone());
+    }
+
+    let functions = p.functions();
+    let mut functions_brrw = functions.borrow_mut();
+    functions_brrw
+        .user_functions
+        .insert(fxn_name_id, new_fxn.clone());
+    functions_brrw
+        .dictionary
+        .borrow_mut()
+        .insert(fxn_name_id, fxn_def.name.to_string());
+    p.state
+        .borrow()
+        .dictionary
+        .borrow_mut()
+        .insert(fxn_name_id, fxn_def.name.to_string());
+
+    Ok(new_fxn)
 }
 
 pub fn function_call(fxn_call: &FunctionCall, p: &Interpreter) -> MResult<Value> {
-  let plan = p.plan();
-  let functions = p.functions();
-  let fxn_name_id = fxn_call.name.hash();
-  let fxns_brrw = functions.borrow();
-  match fxns_brrw.functions.get(&fxn_name_id) {
-    Some(fxn) => {
-      todo!();
-    }
-    None => { 
-      match fxns_brrw.function_compilers.get(&fxn_name_id) {
-        Some(fxn_compiler) => {
-          let mut input_arg_values = vec![];
-          for (arg_name, arg_expr) in fxn_call.args.iter() {
-            let result = expression(&arg_expr, None, p)?;
-            input_arg_values.push(result);
-          }
-          match fxn_compiler.compile(&input_arg_values) {
-            Ok(new_fxn) => {
-              let mut plan_brrw = plan.borrow_mut();
-              new_fxn.solve();
-              let result = new_fxn.out();
-              plan_brrw.push(new_fxn);
-              return Ok(result)
-            }
-            Err(x) => {return Err(x);}
-          }
+    let plan = p.plan();
+    let functions = p.functions();
+    let fxn_name_id = fxn_call.name.hash();
+
+    if let Some(user_fxn) = { functions.borrow().user_functions.get(&fxn_name_id).cloned() } {
+        let mut input_arg_values = vec![];
+        for (_, arg_expr) in fxn_call.args.iter() {
+            input_arg_values.push(expression(arg_expr, None, p)?);
         }
-        None => {return Err(MechError::new(
-            MissingFunctionError{ function_id: fxn_name_id },
-            None
-          ).with_compiler_loc().with_tokens(fxn_call.name.tokens())
-        );}
-      }
+        return execute_user_function(&user_fxn, &input_arg_values, p);
     }
-  }   
-  unreachable!()
+
+    if { functions.borrow().functions.contains_key(&fxn_name_id) } {
+        todo!();
+    }
+
+    let fxn_compiler = {
+        functions
+            .borrow()
+            .function_compilers
+            .get(&fxn_name_id)
+            .copied()
+    };
+    match fxn_compiler {
+        Some(fxn_compiler) => {
+            let mut input_arg_values = vec![];
+            for (_, arg_expr) in fxn_call.args.iter() {
+                input_arg_values.push(expression(arg_expr, None, p)?);
+            }
+            match fxn_compiler.compile(&input_arg_values) {
+                Ok(new_fxn) => {
+                    let mut plan_brrw = plan.borrow_mut();
+                    new_fxn.solve();
+                    let result = new_fxn.out();
+                    plan_brrw.push(new_fxn);
+                    Ok(result)
+                }
+                Err(err) => Err(err),
+            }
+        }
+        None => Err(MechError::new(
+            MissingFunctionError {
+                function_id: fxn_name_id,
+            },
+            None,
+        )
+        .with_compiler_loc()
+        .with_tokens(fxn_call.name.tokens())),
+    }
+}
+
+fn execute_user_function(
+    fxn_def: &FunctionDefinition,
+    input_arg_values: &Vec<Value>,
+    p: &Interpreter,
+) -> MResult<Value> {
+    if input_arg_values.len() != fxn_def.input.len() {
+        return Err(MechError::new(
+            IncorrectNumberOfArguments {
+                expected: fxn_def.input.len(),
+                found: input_arg_values.len(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+        .with_tokens(fxn_def.code.name.tokens()));
+    }
+
+    let scope = FunctionScope::enter(p);
+    bind_function_inputs(fxn_def, input_arg_values, p)?;
+
+    for statement_node in &fxn_def.code.statements {
+        statement(statement_node, None, p)?;
+    }
+
+    let output = collect_function_output(p, fxn_def);
+    drop(scope);
+    output
+}
+
+struct FunctionScope {
+    state: Ref<ProgramState>,
+    previous_symbols: SymbolTableRef,
+    previous_plan: Plan,
+    previous_environment: Option<SymbolTableRef>,
+}
+
+impl FunctionScope {
+    fn enter(p: &Interpreter) -> Self {
+        let state = p.state.clone();
+        let mut state_brrw = state.borrow_mut();
+        let mut local_symbols = SymbolTable::new();
+        local_symbols.dictionary = state_brrw.dictionary.clone();
+        let local_symbols = Ref::new(local_symbols);
+        let previous_symbols = std::mem::replace(&mut state_brrw.symbol_table, local_symbols);
+        let previous_plan = std::mem::replace(&mut state_brrw.plan, Plan::new());
+        let previous_environment = state_brrw.environment.take();
+        drop(state_brrw);
+
+        Self {
+            state,
+            previous_symbols,
+            previous_plan,
+            previous_environment,
+        }
+    }
+}
+
+impl Drop for FunctionScope {
+    fn drop(&mut self) {
+        let mut state_brrw = self.state.borrow_mut();
+        state_brrw.symbol_table = self.previous_symbols.clone();
+        state_brrw.plan = self.previous_plan.clone();
+        state_brrw.environment = self.previous_environment.clone();
+    }
+}
+
+fn bind_function_inputs(
+    fxn_def: &FunctionDefinition,
+    input_arg_values: &Vec<Value>,
+    p: &Interpreter,
+) -> MResult<()> {
+    let scoped_state = p.state.borrow();
+    for ((arg_id, _), input_value) in fxn_def.input.iter().zip(input_arg_values.iter()) {
+        let arg_name = fxn_def
+            .code
+            .input
+            .iter()
+            .find(|arg| arg.name.hash() == *arg_id)
+            .map(|arg| arg.name.to_string())
+            .unwrap_or_else(|| arg_id.to_string());
+        scoped_state.save_symbol(*arg_id, arg_name, detach_value(input_value), false);
+    }
+    Ok(())
+}
+
+fn collect_function_output(p: &Interpreter, fxn_def: &FunctionDefinition) -> MResult<Value> {
+    let symbols = p.symbols();
+    let symbols_brrw = symbols.borrow();
+    let mut outputs = vec![];
+
+    for output_arg in &fxn_def.code.output {
+        let output_id = output_arg.name.hash();
+        match symbols_brrw.get(output_id) {
+            Some(cell) => outputs.push(detach_value(&cell.borrow())),
+            None => {
+                return Err(
+                    MechError::new(FunctionOutputUndefinedError { output_id }, None)
+                        .with_compiler_loc()
+                        .with_tokens(output_arg.tokens()),
+                );
+            }
+        }
+    }
+
+    Ok(match outputs.len() {
+        0 => Value::Empty,
+        1 => outputs.remove(0),
+        _ => Value::Tuple(Ref::new(MechTuple::from_vec(outputs))),
+    })
+}
+
+fn detach_value(value: &Value) -> Value {
+    match value {
+        Value::MutableReference(reference) => detach_value(&reference.borrow()),
+        _ => value.clone(),
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct MissingFunctionError {
-  pub function_id: u64,
+    pub function_id: u64,
 }
+
 impl MechErrorKind for MissingFunctionError {
-  fn name(&self) -> &str { "MissingFunction" }
-  fn message(&self) -> String {
-    format!("Function with id {} not found", self.function_id)
-  }
+    fn name(&self) -> &str {
+        "MissingFunction"
+    }
+    fn message(&self) -> String {
+        format!("Function with id {} not found", self.function_id)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FunctionOutputUndefinedError {
+    pub output_id: u64,
+}
+
+impl MechErrorKind for FunctionOutputUndefinedError {
+    fn name(&self) -> &str {
+        "FunctionOutputUndefined"
+    }
+    fn message(&self) -> String {
+        format!(
+            "Function output {} was declared but never defined",
+            self.output_id
+        )
+    }
 }
