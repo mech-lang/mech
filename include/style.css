@@ -5,6 +5,7 @@
   --op-color: hsl(288, 30%, 70%);
   --function-name-color: hsl(133, 33%, 80%);
   --function-bracket-color: hsl(133, 33%, 70%);
+  --function-arrow-color: hsl(133, 33%, 60%);
   --literal-color: hsl(210, 78%, 78%);
   --contrast-color-high: hsl(288, 30%, 80%);
   --contrast-color-mid:  hsl(288, 30%, 70%);
@@ -2517,4 +2518,49 @@ mark {
     display: block;
     padding-top: 18px;
     padding-right: 10px;
+}
+
+.mech-function-match-arms {
+    margin-bottom: 10px;
+}
+
+.mech-function-signature .mech-left-paren {
+    color: var(--function-bracket-color);
+}
+
+.mech-function-arrow {
+    color: var(--function-arrow-color);
+}
+
+.mech-function-match-arms .mech-function-arrow {
+    margin-right: 10px;
+}
+
+/* Indent the arms block */
+.mech-function-match-arms {
+    display: block;
+    padding-left: 2ch;
+}
+
+/* Each arm on its own line */
+.mech-function-match-arm {
+    display: block;
+    line-height: 1.1;
+}
+
+/* Hide the standalone period span — it's a sibling of block divs
+   so it will always fall to a new line */
+.mech-function-period {
+    display: none;
+}
+
+.mech-function-branch {
+    margin-right: 10px;
+    color: var(--function-arrow-color);
+}
+
+/* Inject the period inline at the end of the last arm's content instead */
+.mech-function-match-arm:last-of-type::after {
+    content: ".";
+    color: var(--function-arrow-color);
 }

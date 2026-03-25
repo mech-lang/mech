@@ -1487,7 +1487,7 @@ impl Formatter {
           let pattern = self.pattern(&arm.pattern);
           let expression = self.expression(&arm.expression);
           if self.html {
-            format!("<div class=\"mech-function-match-arm\"><span class=\"mech-function-branch\">{}</span> <span class=\"mech-function-pattern\">{}</span> <span class=\"mech-function-arrow\">-&gt;</span> <span class=\"mech-function-expression\">{}</span></div>", branch, pattern, expression)
+            format!("<div class=\"mech-function-match-arm\"><span class=\"mech-function-branch\">{}</span><span class=\"mech-function-pattern\">{}</span> <span class=\"mech-function-arrow\">-&gt;</span><span class=\"mech-function-expression\">{}</span></div>", branch, pattern, expression)
           } else {
             format!("  {} {} -> {}", branch, pattern, expression)
           }
@@ -1496,7 +1496,7 @@ impl Formatter {
         .join(if self.html { "" } else { "\n" });
 
       if self.html {
-        format!("<div class=\"mech-function-define\"><div class=\"mech-function-signature\"><span class=\"mech-function-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-function-input\">{}</span><span class=\"mech-right-paren\">)</span> <span class=\"mech-function-arrow\">-&gt;</span> <span class=\"mech-function-output\">{}</span></div><div class=\"mech-function-match-arms\">{}.</div></div>", name, input, output_kind, arms)
+        format!("<div class=\"mech-function-define\"><div class=\"mech-function-signature\"><span class=\"mech-function-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-function-input\">{}</span><span class=\"mech-right-paren\">)</span> <span class=\"mech-function-arrow\">-&gt;</span> <span class=\"mech-function-output\">{}</span></div><div class=\"mech-function-match-arms\">{}<span class=\"mech-function-period\">.</span></div></div>", name, input, output_kind, arms)
       } else {
         format!("{}({}) -> {}\n{}.", name, input, output_kind, arms)
       }
