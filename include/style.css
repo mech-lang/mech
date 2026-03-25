@@ -2528,6 +2528,10 @@ mark {
     color: var(--function-bracket-color);
 }
 
+.mech-function-signature .mech-right-paren {
+    color: var(--function-bracket-color);
+}
+
 .mech-function-arrow {
     color: var(--function-arrow-color);
 }
