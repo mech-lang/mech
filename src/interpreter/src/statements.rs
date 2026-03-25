@@ -300,7 +300,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
         }
       }
       #[cfg(feature = "matrix")]
-      (Value::MutableReference(v), ValueKind::Matrix(box target_matrix_knd,_)) => {
+      (Value::MutableReference(v), ValueKind::Matrix(target_matrix_knd,_)) => {
         let value = v.borrow().clone();
         if value.is_matrix() {
           let convert_fxn = ConvertMatToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
@@ -310,8 +310,8 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
           result = converted_result;
         } else {
           let value_kind = value.kind();
-          if value_kind.deref_kind() != target_matrix_knd.clone() && value_kind != *target_matrix_knd {
-            let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.clone())])?;
+          if value_kind.deref_kind() != target_matrix_knd.as_ref().clone() && value_kind != *target_matrix_knd.clone() {
+            let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
             convert_fxn.solve();
             let converted_result = convert_fxn.out();
             state_brrw.add_plan_step(convert_fxn);
@@ -325,7 +325,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
         }
       }
       #[cfg(feature = "matrix")]
-      (value, ValueKind::Matrix(box target_matrix_knd,_)) => {
+      (value, ValueKind::Matrix(target_matrix_knd,_)) => {
         if value.is_matrix() {
           let convert_fxn = ConvertMatToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
           convert_fxn.solve();
@@ -334,8 +334,8 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
           result = converted_result;
         } else {
           let value_kind = value.kind();
-          if value_kind.deref_kind() != target_matrix_knd.clone() && value_kind != *target_matrix_knd {
-            let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.clone())])?;
+          if value_kind.deref_kind() != target_matrix_knd.as_ref().clone() && value_kind != *target_matrix_knd.clone() {
+            let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
             convert_fxn.solve();
             let converted_result = convert_fxn.out();
             state_brrw.add_plan_step(convert_fxn);

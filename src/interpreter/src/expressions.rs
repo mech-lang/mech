@@ -906,18 +906,18 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
       FormulaOperator::Logic(LogicOp::Xor) => LogicXor{}.compile(&vec![lhs,rhs])?,
       
       // Table
-      #[cfg(feature = "table_inner_join")]
-      FormulaOperator::Table(TableOp::InnerJoin) => todo!(),
-      #[cfg(feature = "table_left_outer_join")]
-      FormulaOperator::Table(TableOp::LeftOuterJoin) => todo!(),
-      #[cfg(feature = "table_right_outer_join")]
-      FormulaOperator::Table(TableOp::RightOuterJoin) => todo!(),
-      #[cfg(feature = "table_full_outer_join")]
-      FormulaOperator::Table(TableOp::FullOuterJoin) => todo!(),
-      #[cfg(feature = "table_left_semi_join")]
-      FormulaOperator::Table(TableOp::LeftSemiJoin) => todo!(),
-      #[cfg(feature = "table_left_anti_join")]
-      FormulaOperator::Table(TableOp::LeftAntiJoin) => todo!(),
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::InnerJoin) => TableInnerJoin{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::LeftOuterJoin) => TableLeftOuterJoin{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::RightOuterJoin) => TableRightOuterJoin{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::FullOuterJoin) => TableFullOuterJoin{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::LeftSemiJoin) => TableLeftSemiJoin{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::LeftAntiJoin) => TableLeftAntiJoin{}.compile(&vec![lhs,rhs])?,
 
       // Set
       #[cfg(feature = "set_union")]

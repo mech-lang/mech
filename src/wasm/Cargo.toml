@@ -11,7 +11,7 @@ categories = ["science::robotics", "science", "wasm", "web-programming"]
 license = "Apache-2.0"
 readme = "README.md"
 edition = "2024"
-rust-version = "1.96"
+rust-version = "1.92"
 
 [badges]
 gitlab = { repository = "mech-lang/mech", branch = "main" }
