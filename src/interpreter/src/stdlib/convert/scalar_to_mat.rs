@@ -49,7 +49,7 @@ macro_rules! impl_conversion_scalar_to_mat_match_arms {
         $(
           $(
             #[cfg(all(feature = "matrix", feature = $type_string))]
-            (Value::$input_type(v), ValueKind::Matrix(box ValueKind::$target_type, dims)) => {
+            (Value::$input_type(v), ValueKind::Matrix(target_kind, dims)) if matches!(target_kind.as_ref(), ValueKind::$target_type) => {
               match dims[..] {
                 #[cfg(feature = "matrix1")]
                 [1,1] => {let out = Matrix1::from_element(v.borrow().clone());      return Ok(Box::new(ConvertScalarToMat2{arg: v, out: Ref::new(out)}));},

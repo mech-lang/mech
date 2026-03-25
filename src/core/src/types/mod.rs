@@ -22,9 +22,6 @@ use core::num::FpCategory;
 #[cfg(not(feature = "no_std"))]
 use std::num::FpCategory;
 
-#[cfg(not(feature = "no_std"))]
-use std::iter::Step;
-
 use paste::paste;
 #[cfg(feature = "math_pow")]
 use num_traits::Pow;
