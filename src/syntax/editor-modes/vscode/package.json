@@ -1,86 +1,46 @@
 {
-    "name": "mech",
-    "displayName": "Mech",
-    "description": "Support for the Mech programming language.",
-    "version": "0.2.59",
-    "publisher": "Mech",
-    "icon": "images/logo.png",
-    "engines": {
-        "vscode": "^1.13.0"
-    },
-    "categories": [
-        "Programming Languages"
-    ],
-    "repository": {
-        "url": "https://github.com/mech-lang/mech.git"
-    },
-    "main": "./out/extension",
-    "contributes": {
-        "languages": [
-            {
-                "id": "Mech",
-                "aliases": [
-                    "Mech"
-                ],
-                "extensions": [
-                    "mec",
-                    "🤖"
-                ],
-                "configuration": "./language-configuration.json"
-            }
+  "name": "mech",
+  "displayName": "Mech",
+  "description": "Syntax highlighting and language configuration for the Mech programming language.",
+  "version": "0.3.0",
+  "publisher": "Mech",
+  "icon": "images/logo.png",
+  "license": "Apache-2.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "mech",
+    "mechdown"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mech-lang/mech.git"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "mech",
+        "aliases": [
+          "Mech",
+          "mech"
         ],
-        "grammars": [
-            {
-                "language": "Mech",
-                "scopeName": "source.mech",
-                "path": "./syntaxes/mech.tmLanguage.json"
-            }
+        "extensions": [
+          ".mec",
+          ".🤖"
         ],
-        "configuration": {
-            "type": "object",
-            "title": "Example configuration",
-            "properties": {
-                "languageServerExample.maxNumberOfProblems": {
-                    "scope": "resource",
-                    "type": "number",
-                    "default": 100,
-                    "description": "Controls the maximum number of problems produced by the server."
-                },
-                "languageServerExample.trace.server": {
-                    "scope": "window",
-                    "type": "string",
-                    "enum": [
-                        "off",
-                        "messages",
-                        "verbose"
-                    ],
-                    "default": "off",
-                    "description": "Traces the communication between VS Code and the language server."
-                }
-            }
-        }
-    },
-    "activationEvents": [
-        "onLanguage:Mech"
+        "configuration": "./language-configuration.json"
+      }
     ],
-    "dependencies": {
-        "vscode-languageclient": "^7.0.0"
-    },
-    "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -b",
-        "watch": "tsc -b -w",
-        "lint": "eslint ./src --ext .ts,.tsx",
-        "postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
-        "test": "sh ./scripts/e2e.sh"
-    },
-    "devDependencies": {
-        "@types/node": "^18.11.9",
-        "@types/vscode": "^1.63.0",
-        "@typescript-eslint/eslint-plugin": "^4.16.0",
-        "@typescript-eslint/parser": "^4.16.0",
-        "@vscode/test-electron": "^2.1.2",
-        "eslint": "^7.21.0",
-        "typescript": "^4.9.5"
-    }
+    "grammars": [
+      {
+        "language": "mech",
+        "scopeName": "source.mech",
+        "path": "./syntaxes/mech.tmLanguage.json"
+      }
+    ]
+  }
 }
