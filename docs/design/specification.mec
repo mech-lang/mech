@@ -60,7 +60,7 @@ Here is an example of matrix multiplication in Mech:
 ```mech:matrix multiplication
   A := [1 2; 3 4]       -- 2x2 Matrix
   B := [1 2 3; 4 5 6]   -- 2x3 Matrix
-  C := A ** B           -- Matrix multiplication resulting in a 2x2 Matrix
+  C := A ** B           -- Matrix multiplication resulting in a 2x3 Matrix
 ```
 
 Mech also features robust integrated Linear Algebra capabilities, making it easy to work with matrices and vectors. In this example, we define two matrices `A` and `B`, and then compute their product `C` using the `**` operator. These calculations are checked for dimensional compatibility at compile time, rejecting any program at compiletime which would result in a dimension mismatch.
