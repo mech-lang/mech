@@ -3,6 +3,7 @@
 :root {
   --bracket-color: hsl(288, 30%, 70%);
   --op-color: hsl(288, 30%, 70%);
+  --function-signature-color: hsl(133, 33%, 80%);
   --function-name-color: hsl(133, 33%, 80%);
   --function-bracket-color: hsl(133, 33%, 70%);
   --function-arrow-color: hsl(133, 33%, 60%);
@@ -42,6 +43,8 @@
   --idea-color: hsl(271, 100%, 75%);
   --question-color: hsl(191, 100%, 75%);
   --code-namespace-label-color: #f5a7d3;
+  --pattern-color: hsl(133, 33%, 70%);
+  --pattern-parent-color: hsl(133, 33%, 70%);
 }
 
 html {
@@ -1126,7 +1129,7 @@ a.mech-hyperlink:hover .mech-inline-code {
 
 .mech-pattern-wildcard {
     display: inline-flex;
-    color: #ee6262;
+    color: var(--pattern-color);
 }
 
 .mech-tuple-struct {
@@ -2559,7 +2562,6 @@ mark {
 }
 
 .mech-function-branch {
-    margin-right: 10px;
     color: var(--function-arrow-color);
 }
 
@@ -2567,4 +2569,28 @@ mark {
 .mech-function-match-arm:last-of-type::after {
     content: ".";
     color: var(--function-arrow-color);
+}
+
+.mech-function-input {
+    color: var(--function-signature-color);
+}
+
+.mech-pattern {
+    color: var(--pattern-color);
+}
+
+.mech-pattern .mech-left-paren {
+    color: var(--pattern-paren-color);
+}
+
+.mech-pattern .mech-right-paren {
+    color: var(--pattern-paren-color);
+}
+
+.mech-pattern .mech-number {
+    color: var(--pattern-color);
+}
+
+.mech-pattern .mech-var-name {
+    color: var(--pattern-color);
 }
