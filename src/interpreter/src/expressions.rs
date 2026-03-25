@@ -198,17 +198,146 @@ fn comprehension_generator_values(collection: &Value) -> MResult<Vec<Value>> {
 }
 
 #[cfg(feature = "set_comprehensions")]
+#[derive(Debug)]
+pub struct ValueSetComprehension {
+  pub out: Ref<MechSet>,
+}
+#[cfg(all(feature = "set_comprehensions", feature = "functions"))]
+impl MechFunctionImpl for ValueSetComprehension {
+  fn solve(&self) {}
+  fn out(&self) -> Value { Value::Set(self.out.clone()) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(all(feature = "set_comprehensions", feature = "functions"))]
+impl MechFunctionFactory for ValueSetComprehension {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Nullary(out) => {
+        let out: Ref<MechSet> = unsafe{ out.as_unchecked().clone() };
+        Ok(Box::new(ValueSetComprehension { out }))
+      }
+      _ => Err(MechError::new(
+        IncorrectNumberOfArguments { expected: 0, found: args.len() },
+        None
+      ).with_compiler_loc()),
+    }
+  }
+}
+#[cfg(all(feature = "set_comprehensions", feature = "compiler"))]
+impl MechFunctionCompiler for ValueSetComprehension {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    compile_nullop!("set/comprehension", self.out, ctx, FeatureFlag::Builtin(FeatureKind::SetComprehensions));
+  }
+}
+#[cfg(all(feature = "set_comprehensions", feature = "functions"))]
+register_descriptor! {
+  FunctionDescriptor {
+    name: "set/comprehension",
+    ptr: ValueSetComprehension::new,
+  }
+}
+#[cfg(feature = "set_comprehensions")]
+pub struct SetComprehensionDefine {}
+#[cfg(all(feature = "set_comprehensions", feature = "functions"))]
+impl NativeFunctionCompiler for SetComprehensionDefine {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    Ok(Box::new(ValueSetComprehension {
+      out: Ref::new(MechSet::from_vec(arguments.clone())),
+    }))
+  }
+}
+#[cfg(all(feature = "set_comprehensions", feature = "functions"))]
+register_descriptor!{
+  FunctionCompilerDescriptor {
+    name: "set/comprehension",
+    ptr: &SetComprehensionDefine{},
+  }
+}
+
+#[cfg(feature = "matrix_comprehensions")]
+#[derive(Debug)]
+pub struct ValueMatrixComprehension {
+  pub out: Ref<Value>,
+}
+#[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
+impl MechFunctionImpl for ValueMatrixComprehension {
+  fn solve(&self) {}
+  fn out(&self) -> Value { self.out.borrow().clone() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
+impl MechFunctionFactory for ValueMatrixComprehension {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Nullary(out) => Ok(Box::new(ValueMatrixComprehension { out: Ref::new(out) })),
+      _ => Err(MechError::new(
+        IncorrectNumberOfArguments { expected: 0, found: args.len() },
+        None
+      ).with_compiler_loc()),
+    }
+  }
+}
+#[cfg(all(feature = "matrix_comprehensions", feature = "compiler"))]
+impl MechFunctionCompiler for ValueMatrixComprehension {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    compile_nullop!("matrix/comprehension", self.out, ctx, FeatureFlag::Builtin(FeatureKind::MatrixComprehensions));
+  }
+}
+#[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
+register_descriptor! {
+  FunctionDescriptor {
+    name: "matrix/comprehension",
+    ptr: ValueMatrixComprehension::new,
+  }
+}
+#[cfg(feature = "matrix_comprehensions")]
+pub struct MatrixComprehensionDefine {}
+#[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
+impl NativeFunctionCompiler for MatrixComprehensionDefine {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    let out = if arguments.is_empty() {
+      Value::MatrixValue(Matrix::from_vec(vec![], 0, 0))
+    } else {
+      let fxn = MatrixHorzCat {}.compile(arguments)?;
+      fxn.solve();
+      fxn.out()
+    };
+    Ok(Box::new(ValueMatrixComprehension { out: Ref::new(out) }))
+  }
+}
+#[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
+register_descriptor!{
+  FunctionCompilerDescriptor {
+    name: "matrix/comprehension",
+    ptr: &MatrixComprehensionDefine{},
+  }
+}
+
+#[cfg(feature = "set_comprehensions")]
 pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult<Value> {
   let comprehension_id = hash_str(&format!("{:?}", set_comp));
   let (envs, new_p) = comprehension_environments(&set_comp.qualifiers, comprehension_id, p)?;
-  let mut result_set = IndexSet::new();
+  let mut values = Vec::new();
   for env in envs {
     let val = expression(&set_comp.expression, Some(&env), &new_p)?;
-    if !result_set.contains(&val) {
-      result_set.insert(val);
-    }
+    values.push(val);
   }
-  Ok(Value::Set(Ref::new(MechSet::from_set(result_set))))
+  let functions = p.functions();
+  let set_define_id = hash_str("set/comprehension");
+  let set_define = {
+    functions
+      .borrow()
+      .function_compilers
+      .get(&set_define_id)
+      .copied()
+  };
+  match set_define {
+    Some(compiler) => execute_native_function_compiler(compiler, &values, p),
+    None => Err(MechError::new(
+      MissingFunctionError { function_id: set_define_id },
+      None,
+    ).with_compiler_loc()),
+  }
 }
 
 #[cfg(feature = "matrix_comprehensions")]
@@ -219,14 +348,22 @@ pub fn matrix_comprehension(matrix_comp: &MatrixComprehension,p: &Interpreter) -
   for env in envs {
     values.push(expression(&matrix_comp.expression, Some(&env), &new_p)?);
   }
-  if values.is_empty() {
-    return Ok(Value::MatrixValue(Matrix::from_vec(vec![], 0, 0)));
+  let functions = p.functions();
+  let horzcat_id = hash_str("matrix/comprehension");
+  let horzcat = {
+    functions
+      .borrow()
+      .function_compilers
+      .get(&horzcat_id)
+      .copied()
+  };
+  match horzcat {
+    Some(compiler) => execute_native_function_compiler(compiler, &values, p),
+    None => Err(MechError::new(
+      MissingFunctionError { function_id: horzcat_id },
+      None,
+    ).with_compiler_loc()),
   }
-  let new_fxn = MatrixHorzCat{}.compile(&values)?;
-  new_fxn.solve();
-  let out = new_fxn.out();
-  p.plan().borrow_mut().push(new_fxn);
-  Ok(out)
 }
 
 
