@@ -47,6 +47,23 @@ This example demonstrates several core Mech features:
 - **Logical indexing**: Select and manipulate vector elements via conditions, enabling declarative iteration and parallel execution.
 - **Rich text formatting**: Comments and code support rich formatting using a Markdown-like syntax called Mechdown, making documentation clear and readable.
 
+(1.1.3) Power Function
+
+Here is an example of a recursive function to compute the power of a number:
+
+```mech:power-function
+power(x<u64>, y<u64>) -> <u64>
+  ├ (*, 0) -> 1
+  └ (x, y) -> x * power(x, y - 1u64).
+power(2u64, 4u64)
+```
+
+This example defines a function `power` that takes two unsigned 64-bit integers as input and returns an unsigned 64-bit integer as output. The function uses pattern matching defines the base case, `(*, 0)`, which matches any `x` with `y` equal to `0`, returning `1`. 
+
+The recursive case, `(x, y)`, matches any `x` and `y`, and computes the power by multiplying `x` with the result of `power(x, y - 1_u64)`, effectively reducing the exponent `y` by `1` until it reaches `0`. 
+
+The final line calls the function with `2` raised to the power of `4`, which returns return `16`.
+
 (1.1.3) Matrix Multiplication
 
 Here is an example of matrix multiplication in Mech:
