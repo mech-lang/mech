@@ -1146,9 +1146,9 @@ impl Formatter {
         MechCode::Expression(expr) => self.expression(expr),
         //MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
         //MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
-        //MechCode::FunctionDefine(func_def) => self.function_define(func_def, src),
+        MechCode::FunctionDefine(func_def) => self.function_define(func_def, src),
         MechCode::Statement(stmt) => self.statement(stmt),
-        _ => todo!(),
+        x => todo!("Unhandled MechCode: {:#?}", x),
       };
       let formatted_comment = match cmmnt {
         Some(cmmt) => self.comment(cmmt),
