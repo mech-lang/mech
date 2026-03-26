@@ -43,7 +43,6 @@ pub fn function_call(
     env: Option<&Environment>,
     p: &Interpreter,
 ) -> MResult<Value> {
-    let plan = p.plan();
     let functions = p.functions();
     let fxn_name_id = fxn_call.name.hash();
 
@@ -72,16 +71,7 @@ pub fn function_call(
             for (_, arg_expr) in fxn_call.args.iter() {
                 input_arg_values.push(expression(arg_expr, env, p)?);
             }
-            match fxn_compiler.compile(&input_arg_values) {
-                Ok(new_fxn) => {
-                    let mut plan_brrw = plan.borrow_mut();
-                    new_fxn.solve();
-                    let result = new_fxn.out();
-                    plan_brrw.push(new_fxn);
-                    Ok(result)
-                }
-                Err(err) => Err(err),
-            }
+            execute_native_function_compiler(fxn_compiler, &input_arg_values, p)
         }
         None => Err(MechError::new(
             MissingFunctionError {
@@ -91,6 +81,24 @@ pub fn function_call(
         )
         .with_compiler_loc()
         .with_tokens(fxn_call.name.tokens())),
+    }
+}
+
+pub fn execute_native_function_compiler(
+    fxn_compiler: &'static dyn NativeFunctionCompiler,
+    input_arg_values: &Vec<Value>,
+    p: &Interpreter,
+) -> MResult<Value> {
+    let plan = p.plan();
+    match fxn_compiler.compile(input_arg_values) {
+        Ok(new_fxn) => {
+            let mut plan_brrw = plan.borrow_mut();
+            new_fxn.solve();
+            let result = new_fxn.out();
+            plan_brrw.push(new_fxn);
+            Ok(result)
+        }
+        Err(err) => Err(err),
     }
 }
 
