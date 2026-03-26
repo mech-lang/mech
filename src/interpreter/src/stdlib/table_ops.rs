@@ -276,7 +276,7 @@ impl MechFunctionCompiler for TableJoinFxn {
             self.lhs,
             self.rhs,
             ctx,
-            FeatureFlag::Builtin(FeatureKind::Function)
+            FeatureFlag::Builtin(FeatureKind::Functions)
         );
     }
 }

@@ -285,7 +285,7 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
                 } else if shape[0] * shape[1] == dims[0] * dims[1] {
                   create_reshape_mat_to_mat::<$src, $dst>(v, &dims)
                 } else {
-                  Err(MechError::new(UnsupportedConversionError{from: source_value.kind(), to: target_kind.clone()}, None).with_compiler_loc())
+                  Err(MechError::new(UnsupportedConversionError{from: source_value.kind(), to: target_kind.as_ref().clone()}, None).with_compiler_loc())
                 }
               }
             )+
