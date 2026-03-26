@@ -757,6 +757,36 @@ test_interpreter!(interpret_table_from_matrix3,r#"x:=[true false; true false]; a
 #[cfg(all(feature = "i8", feature = "u8"))]
 test_interpreter!(interpret_table_from_matrix4,r#"x:=[1 2; 3 4]; a<|x<u8> y<i8>|> := x;"#,Value::Table(Ref::new(MechTable::from_records(vec![MechRecord::new(vec![("x", Value::U8(Ref::new(1))),("y", Value::I8(Ref::new(2)))]),MechRecord::new(vec![("x", Value::U8(Ref::new(3))),("y", Value::I8(Ref::new(4)))]),]).expect("Failed to create MechTable"))));
 
+#[cfg(all(feature = "table", feature = "u64"))]
+test_interpreter!(interpret_table_inner_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ⋈ B; J.b[1]"#, Value::U64(Ref::new(200)));
+#[cfg(all(feature = "table", feature = "u64"))]
+test_interpreter!(interpret_table_inner_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/join(A, B); J.b[2]"#, Value::U64(Ref::new(300)));
+
+#[cfg(all(feature = "table", feature = "u64"))]
+test_interpreter!(interpret_table_left_outer_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ⟕ B; J.id[1]"#, Value::U64(Ref::new(1)));
+#[cfg(all(feature = "table", feature = "u64"))]
+test_interpreter!(interpret_table_left_outer_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-outer-join(A, B); J.id[2]"#, Value::U64(Ref::new(2)));
+
+#[cfg(all(feature = "table", feature = "u64"))]
+test_interpreter!(interpret_table_right_outer_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ⟖ B; J.id[3]"#, Value::U64(Ref::new(4)));
+#[cfg(all(feature = "table", feature = "u64"))]
+test_interpreter!(interpret_table_right_outer_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/right-outer-join(A, B); J.id[3]"#, Value::U64(Ref::new(4)));
+
+#[cfg(all(feature = "table", feature = "u64"))]
+test_interpreter!(interpret_table_full_outer_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ⟗ B; J.id[4]"#, Value::U64(Ref::new(4)));
+#[cfg(all(feature = "table", feature = "u64"))]
+test_interpreter!(interpret_table_full_outer_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/full-outer-join(A, B); J.id[1]"#, Value::U64(Ref::new(1)));
+
+#[cfg(all(feature = "table", feature = "u64"))]
+test_interpreter!(interpret_table_left_semi_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ⋉ B; J.a[2]"#, Value::U64(Ref::new(30)));
+#[cfg(all(feature = "table", feature = "u64"))]
+test_interpreter!(interpret_table_left_semi_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-semi-join(A, B); J.id[1]"#, Value::U64(Ref::new(2)));
+
+#[cfg(all(feature = "table", feature = "u64"))]
+test_interpreter!(interpret_table_left_anti_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ▷ B; J.id[1]"#, Value::U64(Ref::new(1)));
+#[cfg(all(feature = "table", feature = "u64"))]
+test_interpreter!(interpret_table_left_anti_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-anti-join(A, B); J.a[1]"#, Value::U64(Ref::new(10)));
+
 #[cfg(feature = "u64")]
 test_interpreter!(interpret_matrix_reshape,r#"x:=[1 3; 2 4]; y<[u64]:4,1> := x"#, Value::MatrixU64(Matrix::from_vec(vec![1, 2, 3, 4], 4, 1)));
 

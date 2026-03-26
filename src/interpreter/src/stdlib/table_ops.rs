@@ -435,3 +435,40 @@ impl NativeFunctionCompiler for TableLeftAntiJoin {
         compile_table_join(arguments, JoinMode::LeftAnti)
     }
 }
+
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "table/join",
+    ptr: &TableInnerJoin{},
+  }
+}
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "table/left-outer-join",
+    ptr: &TableLeftOuterJoin{},
+  }
+}
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "table/right-outer-join",
+    ptr: &TableRightOuterJoin{},
+  }
+}
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "table/full-outer-join",
+    ptr: &TableFullOuterJoin{},
+  }
+}
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "table/left-semi-join",
+    ptr: &TableLeftSemiJoin{},
+  }
+}
+register_descriptor! {
+  FunctionCompilerDescriptor {
+    name: "table/left-anti-join",
+    ptr: &TableLeftAntiJoin{},
+  }
+}
