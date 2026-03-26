@@ -197,14 +197,26 @@ fn comprehension_generator_values(collection: &Value) -> MResult<Vec<Value>> {
   }
 }
 
+#[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
+fn detach_comprehension_value(value: &Value) -> Value {
+  match value {
+    Value::MutableReference(reference) => reference.borrow().clone(),
+    _ => value.clone(),
+  }
+}
+
 #[cfg(feature = "set_comprehensions")]
 #[derive(Debug)]
 pub struct ValueSetComprehension {
+  pub arguments: Vec<Value>,
   pub out: Ref<MechSet>,
 }
 #[cfg(all(feature = "set_comprehensions", feature = "functions"))]
 impl MechFunctionImpl for ValueSetComprehension {
-  fn solve(&self) {}
+  fn solve(&self) {
+    let args = self.arguments.iter().map(detach_comprehension_value).collect::<Vec<Value>>();
+    *self.out.borrow_mut() = MechSet::from_vec(args);
+  }
   fn out(&self) -> Value { Value::Set(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
@@ -214,7 +226,7 @@ impl MechFunctionFactory for ValueSetComprehension {
     match args {
       FunctionArgs::Nullary(out) => {
         let out: Ref<MechSet> = unsafe{ out.as_unchecked().clone() };
-        Ok(Box::new(ValueSetComprehension { out }))
+        Ok(Box::new(ValueSetComprehension { arguments: Vec::new(), out }))
       }
       _ => Err(MechError::new(
         IncorrectNumberOfArguments { expected: 0, found: args.len() },
@@ -242,6 +254,7 @@ pub struct SetComprehensionDefine {}
 impl NativeFunctionCompiler for SetComprehensionDefine {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     Ok(Box::new(ValueSetComprehension {
+      arguments: arguments.clone(),
       out: Ref::new(MechSet::from_vec(arguments.clone())),
     }))
   }
@@ -257,11 +270,22 @@ register_descriptor!{
 #[cfg(feature = "matrix_comprehensions")]
 #[derive(Debug)]
 pub struct ValueMatrixComprehension {
+  pub arguments: Vec<Value>,
   pub out: Ref<Value>,
 }
 #[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
 impl MechFunctionImpl for ValueMatrixComprehension {
-  fn solve(&self) {}
+  fn solve(&self) {
+    let args = self.arguments.iter().map(detach_comprehension_value).collect::<Vec<Value>>();
+    let out = if args.is_empty() {
+      Value::MatrixValue(Matrix::from_vec(vec![], 0, 0))
+    } else {
+      let fxn = MatrixHorzCat{}.compile(&args).expect("matrix/comprehension input kinds changed to incompatible values");
+      fxn.solve();
+      fxn.out()
+    };
+    *self.out.borrow_mut() = out;
+  }
   fn out(&self) -> Value { self.out.borrow().clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
@@ -269,7 +293,7 @@ impl MechFunctionImpl for ValueMatrixComprehension {
 impl MechFunctionFactory for ValueMatrixComprehension {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
-      FunctionArgs::Nullary(out) => Ok(Box::new(ValueMatrixComprehension { out: Ref::new(out) })),
+      FunctionArgs::Nullary(out) => Ok(Box::new(ValueMatrixComprehension { arguments: Vec::new(), out: Ref::new(out) })),
       _ => Err(MechError::new(
         IncorrectNumberOfArguments { expected: 0, found: args.len() },
         None
@@ -302,7 +326,7 @@ impl NativeFunctionCompiler for MatrixComprehensionDefine {
       fxn.solve();
       fxn.out()
     };
-    Ok(Box::new(ValueMatrixComprehension { out: Ref::new(out) }))
+    Ok(Box::new(ValueMatrixComprehension { arguments: arguments.clone(), out: Ref::new(out) }))
   }
 }
 #[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
