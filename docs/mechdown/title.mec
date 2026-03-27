@@ -1,20 +1,36 @@
 title
 ===============================================================================
 
-There are 6 levels of titles: the document title, section titles, and two levels of sub section titles. 
+%% Titles define the structure of a Mechdown document and drive generated navigation such as the table of contents.
 
-**Example:**
+Mechdown supports hierarchical titles:
 
-```
-Title
-========
+- **Document title**: the file's top heading
+- **Section titles**: numbered headings such as `1. Section`
+- **Subsection titles**: headings such as `(1.1) Subsection`
+- **Sub-subsection titles**: headings such as `(1.1.1) Topic`
+
+1. Rules and conventions
+-------------------------------------------------------------------------------
+
+- Use one document title per file.
+- Keep section numbering sequential.
+- Keep subsection numbering aligned with the parent section.
+- Prefer short, descriptive titles so generated navigation remains readable.
+
+2. Example
+-------------------------------------------------------------------------------
+
+```mech
+Mechdown Title Guide
+===============================================================================
 
 1. Section Title
-----------------
+-------------------------------------------------------------------------------
 
-(1.1) Sub Section Title
+(1.1) Subsection Title
 
-(1.1.1) Sub Sub Section Title
+(1.1.1) Sub-subsection Title
 ```
 
-Section titles and the first level of sub-section titles comprise the table of contents, which is generated automatically.
+Section and first-level subsection titles are included in the generated table of contents.
