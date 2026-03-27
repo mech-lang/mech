@@ -112,9 +112,15 @@ pub fn help() -> String {
   ]);
   builder.push_record(vec![
     ":clc".bright_yellow().to_string(),
-    ":c".bright_yellow().to_string(),
+    "".bright_yellow().to_string(),
     "".to_string(),
     "Clear the screen".to_string()
+  ]);
+  builder.push_record(vec![
+    ":code".bright_yellow().to_string(),
+    ":c".bright_yellow().to_string(),
+    "mech-code".to_string(),
+    "Execute inline Mech code.".to_string()
   ]);
   builder.push_record(vec![
     ":clear".bright_yellow().to_string(),
