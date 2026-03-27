@@ -24,6 +24,8 @@ pub mod horzcat;
 pub mod vertcat;
 #[cfg(feature = "variable_define")]
 pub mod define;
+#[cfg(feature = "table")]
+pub mod table_ops;
 
 pub trait LosslessInto<T> {
   fn lossless_into(self) -> T;

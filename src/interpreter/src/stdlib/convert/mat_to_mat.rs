@@ -277,7 +277,7 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
           $(
             $(
               #[cfg(all(feature = "matrix", feature = $src_string, feature = $dst_string))]
-              (Value::[<Matrix $src:camel>](v), ValueKind::Matrix(box ValueKind::[<$dst:camel>], dims)) => {
+              (Value::[<Matrix $src:camel>](v), ValueKind::Matrix(target_kind, dims)) if matches!(target_kind.as_ref(), ValueKind::[<$dst:camel>]) => {
                 if dims.is_empty() { 
                   create_convert_mat_to_mat::<$src, $dst>(v, &shape)
                 } else if ((shape[0] == dims[0]) && (shape[1] == dims[1])) {
@@ -285,7 +285,7 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
                 } else if shape[0] * shape[1] == dims[0] * dims[1] {
                   create_reshape_mat_to_mat::<$src, $dst>(v, &dims)
                 } else {
-                  Err(MechError::new(UnsupportedConversionError{from: source_value.kind(), to: target_kind.clone()}, None).with_compiler_loc())
+                  Err(MechError::new(UnsupportedConversionError{from: source_value.kind(), to: target_kind.as_ref().clone()}, None).with_compiler_loc())
                 }
               }
             )+

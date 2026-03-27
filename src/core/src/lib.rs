@@ -1,12 +1,6 @@
 #![cfg_attr(feature = "no_std", no_std)]
-#![feature(get_mut_unchecked)]
 #![allow(warnings)]
-#![feature(iter_intersperse)]
-#![feature(extract_if)]
 #![allow(dead_code)]
-#![feature(step_trait)]
-#![feature(box_patterns)]
-#![feature(where_clause_attrs)]
 
 //extern crate core as rust_core;
 extern crate seahash;
