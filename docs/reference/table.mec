@@ -232,31 +232,37 @@ b := | id<u64>  y<u64> |
 Returns rows where keys exist in both tables.
 
 ```mech:join-example
-a ⋈ b -- table/join(a,b)
+a ⋈ b
 ```
+
+For more, see [`table/join`](/stdlib/table/join.html)
 
 (6.2) Left Outer Join `⟕`
 
 Returns all left rows plus matching right data when present.
 
 ```mech:join-example
-a ⟕ b -- table/left-outer-join(a,b)
+a ⟕ b
 ```
+
+For more, see [`table/left-outer-join`](/stdlib/table/left-outer-join.html)
 
 (6.3) Right Outer Join `⟖`
 
 Returns all right rows plus matching left data when present.
 
 ```mech:join-example
-a ⟖ b -- table/right-outer-join(a,b)
+a ⟖ b
 ```
+
+For more, see [`table/right-outer-join`](/stdlib/table/right-outer-join.html)
 
 (6.4) Full Outer Join `⟗`
 
 Returns all rows from both sides, combining matches when available.
 
 ```mech:join-example
-a ⟗ b -- table/full-outer-join(a,b)
+a ⟗ b
 ```
 
 (6.5) Left Semi Join `⋉`
@@ -264,13 +270,35 @@ a ⟗ b -- table/full-outer-join(a,b)
 Returns only left rows that have at least one match in the right table.
 
 ```mech:join-example
-a ⋉ b -- table/left-semi-join(a,b)
+a ⋉ b
 ```
+For more, see [`table/left-semi-join`](/stdlib/table/left-semi-join.html)
 
-(6.6) Left Anti Join `▷`
+(6.6) Right Semi Join `⋊`
+
+Returns only right rows that have at least one match in the left table.
+
+```mech:join-example
+a ⋊ b
+```
+For more, see [`table/right-semi-join`](/stdlib/table/right-semi-join.html)
+
+(6.7) Left Anti Join `▷`
 
 Returns only left rows that have no match in the right table.
 
 ```mech:join-example
-a ▷ b -- table/left-anti-join(a,b)
+a ▷ b
 ```
+
+For more, see [`table/left-anti-join`](/stdlib/table/left-anti-join.html)
+
+(6.8) Right Anti Join `◁`
+
+Returns only right rows that have no match in the left table.
+
+```mech:join-example
+a ◁ b
+```
+
+For more, see [`table/right-anti-join`](/stdlib/table/right-anti-join.html)
