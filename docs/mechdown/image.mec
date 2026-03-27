@@ -1,23 +1,33 @@
 image
 ===============================================================================
 
-%% An `image` is a visual element that can be embedded within a Mechdown document to display pictures, diagrams, or other graphical content.
+%% Images embed visual assets in a Mechdown document and can include captions and display options.
 
+Use Markdown-style image syntax:
 
-Images are added to Mechdown documents using the `![alt-text](image-url)` syntax. An optional options map can be provided within curly braces `{}` to specify additional attributes for the image, such as width, height, or alignment. 
+`![alt-text](image-url)`
 
-The alt-text is a rich paragraph that can contain any paragraph elements. It is configured to display below the image as a caption by default. The caption is accompanied by a figure number, which is automatically assigned based on the section of the document in which the image appears.
+1. Captions and alt text
+-------------------------------------------------------------------------------
 
-Images can be floated to the left or right by prefixing with `<<` or `>>`, respectively. This allows text to wrap around the image and caption.
+In Mechdown, alt text may be rendered as a caption. Figure numbering is automatically generated based on document order.
 
-**Example**
+2. Options map
+-------------------------------------------------------------------------------
 
+An optional options map can set attributes such as width, height, or alignment.
+
+```mech
+![Mech logo](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true)
+![Small logo](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true){width: "100px", height: "100px"}
 ```
-![The Mech "M"](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true)
-![A smaller Mech "M"](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true){width: "100px", height: "100px"}
-```
 
-This renders as:
+3. Floating
+-------------------------------------------------------------------------------
 
-![The Mech "M"](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true)
-![A smaller Mech "M"](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true){width: "100px", height: "100px"}
+Use float markers to wrap text around an image:
+
+- `<<` float left
+- `>>` float right
+
+(i)> Prefer concise alt text that describes the figure's purpose, not only its appearance.
