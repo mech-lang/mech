@@ -226,3 +226,28 @@ pub fn fsm_args(input: ParseString) -> ParseResult<Vec<(Option<Identifier>,Expre
   let (input, _) = right_parenthesis(input)?;
   Ok((input, args))
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn parse_fsm_specification() {
+    let source = "#TrafficLight(color) := | `Red | `Green.";
+    let graphemes = crate::graphemes::init_source(source);
+    let input = ParseString::new(&graphemes);
+    let (_, parsed) = fsm_specification(input).expect("fsm specification should parse");
+    assert_eq!(parsed.name.to_string(), "TrafficLight");
+    assert_eq!(parsed.states.len(), 2);
+  }
+
+  #[test]
+  fn parse_fsm_implementation() {
+    let source = "#TrafficLight(color) -> `Red `Red -> `Green `Green -> `Red.";
+    let graphemes = crate::graphemes::init_source(source);
+    let input = ParseString::new(&graphemes);
+    let (_, parsed) = fsm_implementation(input).expect("fsm implementation should parse");
+    assert_eq!(parsed.name.to_string(), "TrafficLight");
+    assert_eq!(parsed.arms.len(), 2);
+  }
+}

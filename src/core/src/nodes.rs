@@ -765,8 +765,8 @@ impl MDList {
 pub enum MechCode {
   Comment(Comment),
   Expression(Expression),
-  //FsmImplementation(FsmImplementation),
-  //FsmSpecification(FsmSpecification),
+  FsmImplementation(FsmImplementation),
+  FsmSpecification(FsmSpecification),
   FunctionDefine(FunctionDefine),
   Statement(Statement),
   Error(Token, SourceRange),
@@ -784,11 +784,10 @@ impl MechCode {
       MechCode::Expression(x) => x.tokens(),
       MechCode::Statement(x) => x.tokens(),
       MechCode::Comment(x) => x.tokens(),
+      MechCode::FsmSpecification(_) => vec![],
+      MechCode::FsmImplementation(_) => vec![],
+      MechCode::FunctionDefine(_) => vec![],
       MechCode::Error(t,_) => vec![t.clone()],
-      _ => todo!(),
-      //FunctionDefine(x) => x.tokens(),
-      //FsmSpecification(x) => x.tokens(),
-      //FsmImplementation(x) => x.tokens(),
     }
   }
 }
