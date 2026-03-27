@@ -1,6 +1,6 @@
-#![feature(step_trait)]
 #![no_main]
 #![allow(warnings)]
+#![feature(step_trait)]
 #[macro_use]
 extern crate mech_core;
 #[cfg(feature = "matrix")]
