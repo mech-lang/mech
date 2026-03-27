@@ -206,3 +206,77 @@ You can omit values in the table using using `_` to indicate a missing value. In
 |   4      "b"             _      |
 |   7       _           [7 8 9]   |
 ```
+
+6. Relational Operators
+-------------------------------------------------------------------------------
+
+Table relational operators match rows using shared column names (natural-join
+style behavior for the join keys).
+
+Given:
+
+```mech:ex
+a := | id<u64>  x<u64> |
+     |   1       10    |
+     |   2       20    |
+     |   3       30    |
+
+b := | id<u64>  y<u64> |
+     |   2      200    |
+     |   3      300    |
+     |   4      400    |
+```
+
+(6.1) Inner Join `⋈`
+
+Returns rows where keys exist in both tables.
+
+```mech:ex
+a ⋈ b
+-- equivalent: table/join(a,b)
+```
+
+(6.2) Left Outer Join `⟕`
+
+Returns all left rows plus matching right data when present.
+
+```mech:ex
+a ⟕ b
+-- equivalent: table/left-outer-join(a,b)
+```
+
+(6.3) Right Outer Join `⟖`
+
+Returns all right rows plus matching left data when present.
+
+```mech:ex
+a ⟖ b
+-- equivalent: table/right-outer-join(a,b)
+```
+
+(6.4) Full Outer Join `⟗`
+
+Returns all rows from both sides, combining matches when available.
+
+```mech:ex
+a ⟗ b
+-- equivalent: table/full-outer-join(a,b)
+```
+
+(6.5) Left Semi Join `⋉`
+
+Returns only left rows that have at least one match in the right table.
+
+```mech:ex
+a ⋉ b
+-- equivalent: table/left-semi-join(a,b)
+```
+
+(6.6) Left Anti Join `▷`
+
+Returns only left rows that have no match in the right table.
+
+```mech:ex
+a ▷ b
+-- equivalent: table/left-anti-join(a,b)
+```
