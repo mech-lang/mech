@@ -53,6 +53,8 @@ test_interpreter!(interpret_literal_false2, "✗ ", Value::Bool(Ref::new(false))
 test_interpreter!(interpret_literal_false, "false", Value::Bool(Ref::new(false)));
 test_interpreter!(interpret_literal_atom, ":A", Value::Atom(Ref::new(MechAtom::new(55450514845822917))));
 test_interpreter!(interpret_literal_empty, "_", Value::Empty);
+test_interpreter!(interpret_define_empty_variable, "em := _", Value::Empty);
+test_interpreter!(interpret_define_typed_empty_variable, "emp<_> := _", Value::Empty);
 test_interpreter!(interpret_literal_complex, "5+4i", Value::C64(Ref::new(C64::new(5.0, 4.0))));
 test_interpreter!(interpret_literal_complex2, "5-4i", Value::C64(Ref::new(C64::new(5.0, -4.0))));
 test_interpreter!(interpret_literal_complex3, "5-4j", Value::C64(Ref::new(C64::new(5.0, -4.0))));
