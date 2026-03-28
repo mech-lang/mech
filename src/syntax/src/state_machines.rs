@@ -151,13 +151,19 @@ pub fn wildcard(input: ParseString) -> ParseResult<Pattern> {
   Ok((input, Pattern::Wildcard))
 }
 
-// pattern_tuple_struct := grave, identifier, "(", list1(",", pattern), ")" ;
+// pattern_tuple_struct := grave, identifier, ("(", list1(",", pattern), ")")? ;
 pub fn pattern_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
   let (input, _) = grave(input)?;
   let (input, id) = identifier(input)?;
-  let (input, _) = left_parenthesis(input)?;
-  let (input, patterns) = separated_list1(list_separator, pattern)(input)?;
-  let (input, _) = right_parenthesis(input)?;
+  let (input, patterns) = opt(nom_tuple((
+    left_parenthesis,
+    separated_list1(list_separator, pattern),
+    right_parenthesis
+  )))(input)?;
+  let patterns = match patterns {
+    Some((_, patterns, _)) => patterns,
+    None => vec![],
+  };
   Ok((input, PatternTupleStruct{name: id, patterns}))
 }
 
@@ -249,5 +255,31 @@ mod tests {
     let (_, parsed) = fsm_implementation(input).expect("fsm implementation should parse");
     assert_eq!(parsed.name.to_string(), "TrafficLight");
     assert_eq!(parsed.arms.len(), 2);
+  }
+
+  #[test]
+  fn parse_fsm_declaration_statement() {
+    let source = "#TrafficLight := #TrafficLight -> `Red";
+    let graphemes = crate::graphemes::init_source(source);
+    let input = ParseString::new(&graphemes);
+    let (_, parsed) = fsm_declare(input).expect("fsm declaration should parse");
+    assert_eq!(parsed.fsm.name.to_string(), "TrafficLight");
+    assert_eq!(parsed.pipe.start.name.to_string(), "TrafficLight");
+    assert_eq!(parsed.pipe.transitions.len(), 1);
+  }
+
+  #[test]
+  fn parse_fsm_pipe_expression() {
+    let source = "#TrafficLight -> `Green";
+    let graphemes = crate::graphemes::init_source(source);
+    let input = ParseString::new(&graphemes);
+    let (_, parsed) = expression(input).expect("fsm pipe expression should parse");
+    match parsed {
+      Expression::FsmPipe(pipe) => {
+        assert_eq!(pipe.start.name.to_string(), "TrafficLight");
+        assert_eq!(pipe.transitions.len(), 1);
+      }
+      _ => panic!("expected Expression::FsmPipe"),
+    }
   }
 }
