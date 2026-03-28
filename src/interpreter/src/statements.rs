@@ -243,7 +243,8 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
     let mut state_brrw = &mut p.state.borrow_mut();
     let target_knd = knd.to_value_kind(&mut state_brrw.kinds)?;
     // Do kind checking
-    match (&result, &target_knd) {
+    if result.kind() != target_knd {
+      match (&result, &target_knd) {
       // Atom is a variant of an enum
       #[cfg(all(feature = "atom", feature = "enum"))]
       (Value::Atom(atom_variant), ValueKind::Enum(enum_id, target_enum_variant_name)) => {
@@ -350,13 +351,14 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       }
       // Kind isn't checked
       x => {
-        let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_knd)])?;
+        let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
         convert_fxn.solve();
         let converted_result = convert_fxn.out();
         state_brrw.add_plan_step(convert_fxn);
         result = converted_result;
       },
-    };
+      };
+    }
     // Save symbol to interpreter
     let val_ref = state_brrw.save_symbol(var_id, var_name.clone(), result.clone(), var_def.mutable);
     // Add variable define step to plan

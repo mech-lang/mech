@@ -60,6 +60,19 @@ where
   fn out(&self) -> Value {self.var.to_value()}
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+
+#[derive(Debug, Clone)]
+pub struct VariableDefineEmpty {
+  id: u64,
+  name: Ref<String>,
+  mutable: Ref<bool>,
+}
+
+impl MechFunctionImpl for VariableDefineEmpty {
+  fn solve(&self) {}
+  fn out(&self) -> Value { Value::Empty }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
 #[cfg(feature = "compiler")]
 impl<T, MatA> MechFunctionCompiler for VariableDefineMatrix<T, MatA> 
 where
@@ -263,6 +276,7 @@ macro_rules! impl_variable_define_match_arms {
 fn impl_var_define_fxn(var: Value, name: Value, mutable: Value, id: u64) -> MResult<Box<dyn MechFunction>> {
   let arg = (var.clone(), name.clone(), mutable.clone(), id);
   match arg {
+    (Value::Empty, name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineEmpty{ name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
     #[cfg(feature = "table")]
     (Value::Table(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechTable{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
     #[cfg(feature = "set")]
