@@ -43,7 +43,9 @@ like literals and variables.
 
 // expression := set-comprehension | range-expression | formula ;
 pub fn expression(input: ParseString) -> ParseResult<Expression> {
-  let (input, expr) = match set_comprehension(input.clone()) {
+  let (input, expr) = match fsm_pipe(input.clone()) {
+    Ok((input, pipe)) => (input, Expression::FsmPipe(pipe)),
+    Err(_) => match set_comprehension(input.clone()) {
     Ok((input, sc)) => (input, Expression::SetComprehension(Box::new(sc))),
     Err(_) => match range_expression(input.clone()) {
       Ok((input, rng)) => (input, Expression::Range(Box::new(rng))),
@@ -53,6 +55,7 @@ pub fn expression(input: ParseString) -> ParseResult<Expression> {
         Err(err) => {
           return Err(err);},
       } 
+    }
     }
   };
   Ok((input, expr))

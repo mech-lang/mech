@@ -23,7 +23,7 @@ pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> 
   let (input, input_vars) = separated_list0(list_separator, identifier)(input)?;
   let (input, _) = right_parenthesis(input)?;
   let (input, _) = transition_operator(input)?;
-  let (input, start) = pattern(input)?;
+  let (input, start) = fsm_state_atom_pattern(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, arms) = many1(fsm_arm)(input)?;
   let (input, _) = period(input)?;
@@ -41,7 +41,7 @@ pub fn fsm_arm(input: ParseString) -> ParseResult<FsmArm> {
 // fsm_guard_arm := comment*, pattern, fsm_guard+ ;
 pub fn fsm_guard_arm(input: ParseString) -> ParseResult<FsmArm> {
   let (input, _) = many0(comment)(input)?;
-  let (input, start) = pattern(input)?;
+  let (input, start) = fsm_state_atom_pattern(input)?;
   let (input, grds) = many1(fsm_guard)(input)?;
   Ok((input, FsmArm::Guard(start, grds)))
 }
@@ -62,7 +62,7 @@ pub fn fsm_guard(input: ParseString) -> ParseResult<Guard> {
 // fsm_transition := comment*, pattern, (fsm_statement_transition | fsm_state_transition | fsm_output | fsm_async_transition | fsm_block_transition)+ ;
 pub fn fsm_transition(input: ParseString) -> ParseResult<FsmArm> {
   let (input, _) = many0(comment)(input)?;
-  let (input, start) = pattern(input)?;
+  let (input, start) = fsm_state_atom_pattern(input)?;
   let (input, trns) = many1(alt((
     fsm_state_transition,
     fsm_output,
@@ -72,18 +72,24 @@ pub fn fsm_transition(input: ParseString) -> ParseResult<FsmArm> {
   Ok((input, FsmArm::Transition(start, trns)))
 }
 
-// fsm_state_transition := transition_operator, pattern ;
+// fsm_state_transition := transition_operator, atom ;
 pub fn fsm_state_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = transition_operator(input)?;
-  let (input, ptrn) = pattern(input)?;
+  let (input, ptrn) = fsm_state_atom_pattern(input)?;
   Ok((input, Transition::Next(ptrn)))
 }
 
-// fsm_async_transition := async_transition_operator, pattern ;
+// fsm_async_transition := async_transition_operator, atom ;
 pub fn fsm_async_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = async_transition_operator(input)?;
-  let (input, ptrn) = pattern(input)?;
+  let (input, ptrn) = fsm_state_atom_pattern(input)?;
   Ok((input, Transition::Async(ptrn)))
+}
+
+// fsm_state_atom_pattern := atom ;
+fn fsm_state_atom_pattern(input: ParseString) -> ParseResult<Pattern> {
+  let (input, atm) = atom(input)?;
+  Ok((input, Pattern::Expression(Expression::Literal(Literal::Atom(atm)))))
 }
 
 // fsm_statement_transition := transition_operator, statement ;
@@ -151,13 +157,19 @@ pub fn wildcard(input: ParseString) -> ParseResult<Pattern> {
   Ok((input, Pattern::Wildcard))
 }
 
-// pattern_tuple_struct := grave, identifier, "(", list1(",", pattern), ")" ;
+// pattern_tuple_struct := grave, identifier, ("(", list1(",", pattern), ")")? ;
 pub fn pattern_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
   let (input, _) = grave(input)?;
   let (input, id) = identifier(input)?;
-  let (input, _) = left_parenthesis(input)?;
-  let (input, patterns) = separated_list1(list_separator, pattern)(input)?;
-  let (input, _) = right_parenthesis(input)?;
+  let (input, patterns) = opt(nom_tuple((
+    left_parenthesis,
+    separated_list1(list_separator, pattern),
+    right_parenthesis
+  )))(input)?;
+  let patterns = match patterns {
+    Some((_, patterns, _)) => patterns,
+    None => vec![],
+  };
   Ok((input, PatternTupleStruct{name: id, patterns}))
 }
 
@@ -169,14 +181,13 @@ pub fn pattern_tuple(input: ParseString) -> ParseResult<PatternTuple> {
   Ok((input, PatternTuple(patterns)))
 }
 
-// fsm_state_definition := guard_operator, grave, identifier, fsm_state_definition_variables? ;
+// fsm_state_definition := guard_operator, atom, fsm_state_definition_variables? ;
 pub fn fsm_state_definition(input: ParseString) -> ParseResult<StateDefinition> {
   let (input, _) = guard_operator(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, _) = grave(input)?;
-  let (input, name) = identifier(input)?;
+  let (input, state_atom) = atom(input)?;
   let (input, vars) = opt(fsm_state_definition_variables)(input)?;
-  Ok((input, StateDefinition{name,state_variables: vars}))
+  Ok((input, StateDefinition{name: state_atom.name,state_variables: vars}))
 }
 
 // fsm_state_definition_variables := "(", list0(list_separator, var), ")" ;
@@ -225,4 +236,55 @@ pub fn fsm_args(input: ParseString) -> ParseResult<Vec<(Option<Identifier>,Expre
   let (input, args) = separated_list0(list_separator, alt((call_arg_with_binding,call_arg)))(input)?;
   let (input, _) = right_parenthesis(input)?;
   Ok((input, args))
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn parse_fsm_specification() {
+    let source = "#TrafficLight(color) := | :Red | :Green.";
+    let graphemes = crate::graphemes::init_source(source);
+    let input = ParseString::new(&graphemes);
+    let (_, parsed) = fsm_specification(input).expect("fsm specification should parse");
+    assert_eq!(parsed.name.to_string(), "TrafficLight");
+    assert_eq!(parsed.states.len(), 2);
+  }
+
+  #[test]
+  fn parse_fsm_implementation() {
+    let source = "#TrafficLight(color) -> :Red :Red -> :Green :Green -> :Red.";
+    let graphemes = crate::graphemes::init_source(source);
+    let input = ParseString::new(&graphemes);
+    let (_, parsed) = fsm_implementation(input).expect("fsm implementation should parse");
+    assert_eq!(parsed.name.to_string(), "TrafficLight");
+    assert_eq!(parsed.arms.len(), 2);
+  }
+
+  #[test]
+  fn parse_fsm_declaration_statement() {
+    let source = "#TrafficLight := #TrafficLight -> :Red";
+    let graphemes = crate::graphemes::init_source(source);
+    let input = ParseString::new(&graphemes);
+    let (_, parsed) = fsm_declare(input).expect("fsm declaration should parse");
+    assert_eq!(parsed.fsm.name.to_string(), "TrafficLight");
+    assert_eq!(parsed.pipe.start.name.to_string(), "TrafficLight");
+    assert_eq!(parsed.pipe.transitions.len(), 1);
+  }
+
+  #[test]
+  fn parse_fsm_pipe_expression() {
+    let source = "#TrafficLight -> :Green";
+    let graphemes = crate::graphemes::init_source(source);
+    let input = ParseString::new(&graphemes);
+    let (_, parsed) = expression(input).expect("fsm pipe expression should parse");
+    match parsed {
+      Expression::FsmPipe(pipe) => {
+        assert_eq!(pipe.start.name.to_string(), "TrafficLight");
+        assert_eq!(pipe.transitions.len(), 1);
+      }
+      _ => panic!("expected Expression::FsmPipe"),
+    }
+  }
 }
