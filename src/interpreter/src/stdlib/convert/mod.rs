@@ -464,6 +464,13 @@ impl LosslessInto<f64> for R64 {
     }
   }
 }
+
+#[cfg(feature = "rational")]
+impl LosslessInto<R64> for R64 {
+  fn lossless_into(self) -> R64 {
+    self
+  }
+}
 #[cfg(all(feature = "rational", feature = "f64"))]
 impl LosslessInto<R64> for f64 {
   fn lossless_into(self) -> R64 {
@@ -482,6 +489,13 @@ impl LosslessInto<R64> for f32 {
 impl LosslessInto<String> for C64 {
   fn lossless_into(self) -> String {
     self.pretty_print()
+  }
+}
+
+#[cfg(feature = "complex")]
+impl LosslessInto<C64> for C64 {
+  fn lossless_into(self) -> C64 {
+    self
   }
 }
 
