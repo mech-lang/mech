@@ -1055,7 +1055,11 @@ Records can be nested, allowing fields to contain other records:
 expression := range-expression | formula ;
 ```
 
+**Prose**
+
 Expressions define computations in Mech. Most expressions operate elementwise over collections according to the rules of broadcasting.
+
+Expressions are referentially transparent unless they appear inside a statement that mutates a mutable binding. In other words, expression evaluation itself computes values; statements control storage and updates.
 
 **Broadcasting Rules:**
 
@@ -1073,6 +1077,16 @@ Expressions define computations in Mech. Most expressions operate elementwise ov
 - Set Operations: Union, intersection, and other set-specific operations.
 - Range Expressions: Constructing sequences of values.
 - Indexing: Accessing elements within collections using direct and computed indices.
+
+**Kind**
+
+An expression has a single inferred result kind, determined from operand kinds, operator rules, and broadcasting compatibility.
+
+**Examples**
+
+  x := [1 2 3]
+  y := x + 10
+  z := (y > 11) && [true true false]
 
 (6.1) Formula 
 
@@ -1098,7 +1112,11 @@ factor := (parenthetical-term
       | var), ?transpose ;
 ```
 
+**Prose**
+
 A formula is an expression that follows operator precedence rules and consists of arithmetic, logical, comparison, matrix, range, table, and set expressions. Expressions in formulas are evaluated according to their precedence, with higher-precedence operations being evaluated first. Precedence rules are encoded in the structure of the formula grammar.
+
+Formulas are the default "computation language" of Mech. A formula may combine scalar values, structures, function calls, and indexing operations in a single expression tree.
 
 (6.1.1) Operator Precedence
 
@@ -1120,6 +1138,18 @@ Operators in formulas are applied according to the following precedence, from hi
 
 - Left-to-right associativity applies to all operators, including exponentiation.
 - Parentheses explicitly override precedence rules.
+- Unary operators (`-` and logical `not`) bind tighter than binary operators.
+- If a formula contains subexpressions with incompatible kinds or shapes, it fails with a type or shape error.
+
+**Kind**
+
+The kind of a formula is the kind of its resulting value after operator and broadcast resolution.
+
+**Examples**
+
+  (1 + 2) * 3
+  [1 2 3] + ([4 5 6] * 2)
+  (a > b) || (b == c)
 
 (6.2) Arithmetic
 
@@ -1132,6 +1162,35 @@ exponent  := "^" ;
 remainder := "%" ;
 ```
 
+**Prose**
+
+Arithmetic operators apply to scalar numbers and, through broadcasting, to vectors, matrices, and table columns.
+
+- `+` and `-` perform addition and subtraction.
+- `*` and `/` (or `÷`) perform multiplication and division.
+- `^` performs exponentiation.
+- `%` computes the remainder after division.
+
+When both operands are collections, shapes must be compatible under broadcast rules. When one operand is scalar, that scalar is broadcast across the other operand.
+
+Arithmetic obeys kind constraints:
+
+- Integer and floating-point combinations are unified to a compatible numeric kind.
+- Operations that cannot be represented in the target kind (e.g., division by zero, invalid remainder, overflow when required to be checked) produce errors according to runtime/target policy.
+- Arithmetic is defined elementwise for collection operands.
+
+**Kind**
+
+- Inputs: numeric kinds (`i*`, `u*`, `f*`, `r*`, `c*` where supported by operator).
+- Output: promoted numeric kind or collection of promoted numeric kind.
+
+**Examples**
+
+  1 + 2            -- 3
+  8 % 3            -- 2
+  [1 2 3] * 10     -- [10 20 30]
+  [1 2 3] + [4 5 6] -- [5 7 9]
+
 (6.3) Matrix
 
 ```ebnf
@@ -1141,6 +1200,37 @@ cross-product   := "⨯" ;
 matrix-multiply := "**" ;
 transpose       := "'" ;
 ```
+
+**Prose**
+
+Matrix operators provide linear algebra semantics in addition to elementwise arithmetic:
+
+- `**` performs matrix multiplication, requiring inner dimensions to agree.
+- `·` (or `•`) computes dot products for vector-like operands.
+- `⨯` computes a cross product for three-dimensional vectors.
+- `\` solves linear systems of the form `A \ b`.
+- `'` transposes a matrix (or row/column vector).
+
+Dimension and kind constraints are enforced:
+
+- `A ** B` requires `cols(A) == rows(B)`.
+- `A \ b` requires a solvable system with compatible dimensions.
+- Dot and cross products require vector-compatible operands.
+- Invalid linear algebra operations are errors (never silently reshaped).
+
+**Kind**
+
+- `A ** B`: `<[T]:m,n> × <[T]:n,p> -> <[T]:m,p>`
+- `A \ b`: `<[T]:n,n> × <[T]:n,k> -> <[T]:n,k>` (when solvable)
+- `u · v`: vector-compatible numeric inputs -> scalar numeric output
+- `u ⨯ v`: 3D vector inputs -> 3D vector output
+- `X'`: transpose preserves element kind and swaps dimensions
+
+**Examples**
+
+  [1 2 3]'            -- column vector transpose
+  [1 2;3 4] ** [5;6]  -- matrix-vector multiply
+  [1 2 3] · [4 5 6]   -- dot product
 
 (6.4) Comparison
 
@@ -1155,6 +1245,32 @@ greater-or-equal := ">=" | "≥"  ;
 less-or-equal    := "<=" | "≤"  ;       
 ```
 
+**Prose**
+
+Comparison operators evaluate relationships between values and return booleans. In collection contexts, comparison is performed elementwise and yields a boolean collection of the same shape.
+
+- Equality: `==`
+- Inequality: `!=`, `¬=`, `≠`
+- Ordering: `<`, `>`, `<=`/`≤`, `>=`/`≥`
+- Strict equality variants (`=:=`, `≡`) are reserved for exact-kind/value identity semantics.
+
+Comparison semantics:
+
+- Ordered comparisons (`<`, `<=`, `>`, `>=`) require orderable operands.
+- Equality comparisons are defined for all comparable kinds.
+- Collection comparisons require shape compatibility or valid broadcasting.
+
+**Kind**
+
+- Inputs: comparable kinds (numeric, boolean, string, atom, and compatible structures).
+- Output: `bool` or collection of `<bool>` under broadcasting.
+
+**Examples**
+
+  10 > 4                 -- true
+  [1 2 3] == [1 0 3]     -- [true false true]
+  [1 2 3] <= 2           -- [true true false]
+
 (6.5) Logical
 
 ```ebnf
@@ -1163,6 +1279,30 @@ and          := "&&" ;
 not          := "!" | "¬";         
 exclusive-or := "xor" | "⊕" | "⊻" ;   
 ```
+
+**Prose**
+
+Logical operators are defined on booleans and boolean collections:
+
+- `&&` for conjunction (AND)
+- `||` for disjunction (OR)
+- `!` or `¬` for negation (NOT)
+- `xor`, `⊕`, or `⊻` for exclusive-or
+
+When applied to collections, operations are elementwise under broadcast rules.
+
+Logical operators require boolean operands after type checking/coercion rules. Non-boolean operands are rejected unless explicitly converted.
+
+**Kind**
+
+- Inputs: `bool` or collections of `bool`.
+- Output: `bool` or collection of `bool`.
+
+**Examples**
+
+  true && false            -- false
+  !false                   -- true
+  [true false] || [false true] -- [true true]
 
 (6.6) Table
 
@@ -1174,6 +1314,37 @@ full-join := "⟗ " ;
 left-semi-join := "⋉ " ;
 right-semi-join := "▷:" ;
 ```
+
+**Prose**
+
+Table operators implement relational algebra over tables:
+
+- `⋈` natural join
+- `⟕` left outer join
+- `⟖` right outer join
+- `⟗` full outer join
+- `⋉` left semi join
+- `▷` right semi join
+
+Join compatibility is checked against column names and kinds. Join results produce new tables whose columns and row cardinalities are determined by join semantics.
+
+Table operator semantics:
+
+- Natural join matches rows on shared column names.
+- Outer joins preserve unmatched rows from their respective preserved side and fill missing fields with empty values.
+- Semi joins filter one side by match existence without projecting full columns from the other side.
+- Output column names and kinds are resolved statically where possible.
+
+**Kind**
+
+- Inputs: table kinds such as `<|...|:n>` and `<|...|:m>`.
+- Output: a derived table kind whose schema depends on join operator and participating columns.
+
+**Examples**
+
+  people ⋈ pets
+  people ⟕ pets
+  left-table ⋉ right-table
 
 (6.7) Set
 
@@ -1191,12 +1362,63 @@ not-element-of := "∉";
 symmetric-difference := "Δ";
 ```
 
+**Prose**
+
+Set operators provide declarative operations over unordered unique collections:
+
+- `∪` union
+- `∩` intersection
+- `∖` difference
+- `Δ` symmetric difference
+- `∁` complement (context dependent universe)
+- `⊆`, `⊇`, `⊊`, `⊋` for subset/superset relations
+- `∈`, `∉` for membership tests
+
+Relation operators produce booleans; constructor operators produce sets.
+
+Set semantics are mathematical:
+
+- Membership and subset relations are insensitive to insertion order.
+- Set constructors and operations remove duplicates.
+- Operands must have compatible element kinds for binary set constructors.
+
+**Kind**
+
+- Constructor ops (`∪`, `∩`, `∖`, `Δ`, `∁`) take sets and return sets.
+- Relation ops (`⊆`, `⊇`, `⊊`, `⊋`, `∈`, `∉`) return `bool`.
+
+**Examples**
+
+  {1,2,3} ∪ {3,4}
+  {1,2,3} ∩ {2,4}
+  2 ∈ {1,2,3}
+
 (6.8) Range
 
 ```ebnf
 range-inclusive := "..=" ;
 range-exclusive := ".." ;
 ```
+
+**Prose**
+
+Range expressions construct numeric sequences:
+
+- `a..b` excludes `b`
+- `a..=b` includes `b`
+
+Ranges are typically materialized as vectors and are commonly used for indexing, iteration by transformation, and data generation.
+
+Range bounds are evaluated first, then sequence materialization occurs according to inclusive/exclusive endpoint rules. Descending ranges are valid when bounds imply reverse progression under implementation rules.
+
+**Kind**
+
+Range expressions produce numeric vectors (or row vectors) whose element kind is inferred from bounds.
+
+**Examples**
+
+  1..5    -- [1 2 3 4]
+  1..=5   -- [1 2 3 4 5]
 
 7. Indexing
 -------------------------------------------------------------------------------
@@ -1209,6 +1431,31 @@ subscript := swizzle-subscript
       | brace-subscript ; 
 index := identifier, +subscript ;
 ```
+
+**Prose**
+
+Indexing selects or projects data from structured values without changing their underlying element kinds. Subscripts can be chained from left to right, where each subscript consumes the result of the previous one.
+
+General indexing semantics:
+
+- Indexing is 1-based.
+- Negative indices count backward from the end (`-1` is the last element).
+- Scalar indexing returns a value; slicing returns a structure of the same family (matrix slice, set subset, table projection/filter result, etc.).
+- Out-of-bounds indices are errors.
+- Index expressions are evaluated before selection, and may be computed formulas.
+- In multidimensional indexing, omitted dimensions are treated as full selection when allowed by the structure.
+- Boolean mask indexing selects elements corresponding to `true` positions when mask shape is compatible.
+
+**Kind**
+
+- Input: indexable structures (`matrix`, `tuple`, `record`, `map`, `set`, `table`).
+- Output: scalar value, structural slice, or projection depending on selector form.
+
+**Examples**
+
+  data[1]
+  data[1..=3]
+  record.field
 
 (7.1) Slicing
 
@@ -1224,6 +1471,25 @@ formula-subscript := formula ;
 range-subscript := range-expression ;
 select-all := ":" ;
 ```
+
+**Prose**
+
+Bracket and brace subscripts perform positional and computed selection.
+
+- `[]` is used for ordered/indexed collections (e.g., matrices, vectors, tuples, table rows/columns depending on context).
+- `{}` is used for set/map/record-style keyed or membership-oriented indexing.
+- `:` selects all elements along a dimension.
+- Range subscripts select contiguous spans.
+- Formula subscripts allow dynamic indices and boolean masks.
+
+When multiple dimensions are supplied, each dimension is sliced independently and then combined into the resulting projection.
+
+Slicing preserves dimensionality unless a scalar-only selection collapses a dimension by definition of the target structure.
+
+**Kind**
+
+- Matrix/vector slicing returns matrix/vector kinds with derived shapes.
+- Record/map/set brace selection returns the corresponding projected kind.
 
 (7.1.1) Examples
 
@@ -1245,6 +1511,23 @@ select-all := ":" ;
 dot-subscript := ".", identifier ;
 dot-subscript-int := ".", integer-literal ;
 ```
+
+**Prose**
+
+Dot indexing projects named or positional members:
+
+- `.name` accesses a named field (records, table columns, enum payload fields, module/object-like namespaces).
+- `.N` accesses positional components where numeric dot access is supported (e.g., tuple-like values).
+
+Dot indexing is composable with other subscript forms, enabling chains such as `table.column[1..=10]` or `record.nested.field`.
+
+Dot access on unknown fields is a compile-time error when schema is known statically, otherwise a runtime error.
+
+**Kind**
+
+- `.name`: projects declared field/column kind.
+- `.N`: projects positional component kind.
+
 (7.2.1) Examples
 ```
 dot_result_1 := object.field        -- Dot subscript with identifier
@@ -1258,6 +1541,20 @@ swizzle-subscript := "."
       , "," 
       , [identifier, ","] ;
 ```
+
+**Prose**
+
+Swizzle indexing selects multiple named components and returns them in the order requested. This is commonly used with vector- or record-like values to construct compact projections.
+
+- Duplicate names are allowed and duplicate the selected component in the result.
+- Missing names produce an indexing error.
+- The result shape depends on the receiver kind (for example, tuple-like projection vs record-like projection).
+- Swizzle projection is stable: output order matches selector order exactly.
+
+**Kind**
+
+Swizzle produces a projected compound kind assembled from the selected component kinds in selector order.
+
 (7.3.1) Examples
 
 ```
@@ -1272,10 +1569,25 @@ swizzle-subscript := "."
 ```ebnf
 statement := variable-define 
       | variable-assign 
+      | op-assign
       | enum-define 
       | fsm-declare 
       | kind-define ;
 ```
+
+**Prose**
+
+Statements introduce bindings, update mutable state, and define reusable type/variant declarations. Unlike expressions, statements may change program state over time.
+
+**Kind**
+
+Statements are effectful program forms and do not evaluate to a user-visible data kind by themselves.
+
+**Examples**
+
+  x := 1
+  ~y := [1 2 3]
+  y[2] = 10
 
 (8.1) Variable Define
 
@@ -1286,6 +1598,20 @@ variable-define := ?tilde, var
       , define-operator
       , expression ;
 ```
+
+**Prose**
+
+Variable definition binds a name to the value of an expression.
+
+- `:=` introduces a new binding.
+- A leading `~` marks the binding as mutable.
+- Without `~`, bindings are immutable and cannot be reassigned.
+- The bound kind is inferred from the expression unless explicitly annotated.
+
+**Kind**
+
+The variable receives the inferred or annotated kind of the defining expression.
+
 (8.1.1) Examples
 
 ```
@@ -1303,6 +1629,20 @@ variable-assign := slice-ref
       , assign-operator
       , expression ;
 ```
+
+**Prose**
+
+Variable assignment updates an existing mutable binding or a mutable slice of a structure.
+
+- `=` never creates new bindings.
+- Assignment requires mutability at the target location.
+- Kinds and shapes must be assignment-compatible.
+- Assigning through slices updates only selected positions.
+
+**Kind**
+
+The right-hand side must be assignable to the target kind (including shape constraints for structured targets).
+
 **Examples**
 
 ```mech:ex 8.2
@@ -1328,6 +1668,21 @@ op-assign := slice-ref
       , op-assign-operator
       , expression ;
 ```
+
+**Prose**
+
+Op-assign is shorthand for read-modify-write updates on mutable targets:
+
+- `x += y` is equivalent to `x = x + y`
+- `x -= y` is equivalent to `x = x - y`
+- and similarly for `*=`, `/=`, `^=`
+
+The operation is type-checked exactly as if the expanded assignment were written explicitly.
+
+**Kind**
+
+Op-assign requires the target and operand kinds to be valid for the referenced arithmetic operator; result kind must remain assignable to the target.
+
 (8.3.1) Examples
 
 
@@ -1354,6 +1709,21 @@ enum-variant-kind := "("
       , kind-annotation
       , ")" ;
 ```
+
+**Prose**
+
+Enum definitions declare a closed algebraic data type with one or more named variants.
+
+- Variant names must be unique within the enum.
+- Variants may optionally carry payloads with explicit kinds.
+- Pattern matching and exhaustive handling can rely on this closed variant set.
+
+**Kind**
+
+An enum introduces a new sum kind. Each variant has either:
+- a nullary constructor kind, or
+- a constructor carrying the declared payload kind.
+
 (8.4.1) Examples
 
 ```
@@ -1370,6 +1740,18 @@ kind-define := "<"
       , define-operator
       , kind-annotation ;
 ```
+
+**Prose**
+
+Kind definitions create aliases for complex kind expressions.
+
+- Aliases improve readability and reduce duplication.
+- Aliases are transparent during type checking (they do not create nominally distinct runtime kinds unless specified by backend semantics).
+
+**Kind**
+
+A kind definition maps an identifier to a target kind expression for reuse in annotations and declarations.
+
 (8.5.1) Examples
 
 ```
@@ -1382,6 +1764,13 @@ kind-define := "<"
 ```ebnf
 mech := mechdown-program | statement ;
 ```
+
+A Mech program can be authored either as:
+
+- A raw sequence of Mech statements/expressions, or
+- A Mechdown document with embedded executable Mech blocks.
+
+Both forms compile to the same core semantics. Mechdown primarily changes authoring and rendering behavior, not language meaning.
 
 10. Mechdown
 -------------------------------------------------------------------------------
