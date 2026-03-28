@@ -237,6 +237,12 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
     }
   }
   let mut result = expression(&var_def.expression, None, p)?;
+  // Variable definitions should capture the current value, not a mutable reference wrapper.
+  // This prevents nested `MutableReference` values when defining from another symbol
+  // (e.g. `b := a`), which can break operations like indexing and equality on `b`.
+  if let Value::MutableReference(value_ref) = &result {
+    result = value_ref.borrow().clone();
+  }
   #[cfg(all(feature = "kind_annotation", feature = "convert"))]
   if let Some(knd_anntn) =  &var_def.var.kind {
     let knd = kind_annotation(&knd_anntn.kind,p)?;
