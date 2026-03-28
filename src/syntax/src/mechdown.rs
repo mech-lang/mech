@@ -24,18 +24,31 @@ use crate::*;
 // Mechdown
 // ============================================================================
 
-// title := +text, new-line, +equal, *(space|tab), *whitespace ;
+// title := +text, new-line, +equal, *(space|tab), ?byline, *whitespace ;
 pub fn title(input: ParseString) -> ParseResult<Title> {
   let (input, mut text) = many1(text)(input)?;
   let (input, _) = new_line(input)?;
   let (input, _) = many1(equal)(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = new_line(input)?;
+  let (input, byline) = opt(byline)(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = whitespace0(input)?;
   let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
-  Ok((input, Title{text: title}))
+  Ok((input, Title{text: title, byline}))
+}
+
+// byline := *new-line, *(space|tab), paragraph, new-line, +equal, *(space|tab), new-line ;
+pub fn byline(input: ParseString) -> ParseResult<Paragraph> {
+  let (input, _) = many0(new_line)(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, byline) = paragraph(input)?;
+  let (input, _) = new_line(input)?;
+  let (input, _) = many1(equal)(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, _) = new_line(input)?;
+  Ok((input, byline))
 }
 
 pub struct MarkdownTableHeader {

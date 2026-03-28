@@ -164,9 +164,20 @@ impl Formatter {
 
   pub fn title(&mut self, node: &Title) -> String {
     if self.html {
-      format!("<h1 class=\"mech-program-title\">{}</h1>",node.to_string())
+      let byline = match &node.byline {
+        Some(byline) => format!("<h2 class=\"mech-program-byline\">{}</h2>", byline.to_string()),
+        None => "".to_string(),
+      };
+      format!("<h1 class=\"mech-program-title\">{}</h1>{}",node.to_string(), byline)
     } else {
-      format!("{}\n===============================================================================\n",node.to_string()) 
+      match &node.byline {
+        Some(byline) => format!(
+          "{}\n===============================================================================\n{}\n===============================================================================\n",
+          node.to_string(),
+          byline.to_string()
+        ),
+        None => format!("{}\n===============================================================================\n",node.to_string()),
+      }
     }
   }
 

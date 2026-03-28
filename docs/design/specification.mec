@@ -1426,7 +1426,15 @@ title := +text
       , new-line
       , +"="
       , *(space|tab)
+      , ?byline
       , ws0 ;
+byline := *new-line
+       , *(space|tab)
+       , paragraph
+       , new-line
+       , +"="
+       , *(space|tab)
+       , new-line ;
 paragraph-element := +(¬define-operator, text) ;
 paragraph := paragraph-starter, *paragraph-element ;
 subtitle := +digit-token
@@ -1461,6 +1469,9 @@ There are 6 levels of titles: the document title, section titles, and two levels
 
 ```
 Title
+========
+
+v0.3.1-beta
 ========
 
 1. Section Title

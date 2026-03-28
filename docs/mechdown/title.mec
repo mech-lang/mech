@@ -14,6 +14,7 @@ Mechdown supports hierarchical titles:
 -------------------------------------------------------------------------------
 
 - Use one document title per file.
+- Optionally include one byline directly under the title (for example a version string).
 - Keep section numbering sequential.
 - Keep subsection numbering aligned with the parent section.
 - Prefer short, descriptive titles so generated navigation remains readable.
@@ -23,6 +24,9 @@ Mechdown supports hierarchical titles:
 
 ```mech
 Mechdown Title Guide
+===============================================================================
+
+v0.3.1-beta
 ===============================================================================
 
 1. Section Title
