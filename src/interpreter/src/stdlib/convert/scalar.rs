@@ -46,6 +46,44 @@ register_descriptor! {
   }
 }
 
+#[derive(Debug)]
+struct ConvertSEmpty {
+  out: Ref<Value>,
+}
+impl MechFunctionFactory for ConvertSEmpty {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Unary(out, _) => {
+        let out: Ref<Value> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { out }))
+      },
+      _ => Err(MechError::new(
+          IncorrectNumberOfArguments { expected: 1, found: args.len() },
+          None
+        ).with_compiler_loc()
+      ),
+    }
+  }
+}
+impl MechFunctionImpl for ConvertSEmpty {
+  fn solve(&self) {}
+  fn out(&self) -> Value { self.out.borrow().clone() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for ConvertSEmpty {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let name = "ConvertSEmpty<empty>".to_string();
+    compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
+  }
+}
+register_descriptor! {
+  FunctionDescriptor {
+    name: "ConvertSEmpty<empty>",
+    ptr: ConvertSEmpty::new,
+  }
+}
+
 #[cfg(all(feature = "matrix", feature = "table"))]
 #[derive(Debug)]
 struct ConvertMat2Table<T> {
@@ -260,6 +298,7 @@ where
 
 fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {
   match (&source_value, &target_kind) {
+    (Value::Empty, Value::Kind(ValueKind::Empty)) => {return Ok(Box::new(ConvertSEmpty{ out: Ref::new(Value::Empty) }));}
     #[cfg(all(feature = "rational", feature = "f64"))]
     (Value::R64(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: Ref::new(f64::default()),}));}
     #[cfg(all(feature = "matrix", feature = "table", feature = "string"))]
