@@ -242,6 +242,7 @@ test_interpreter!(interpret_kind_convert_twice, "x<u64> := 1; y<i8> := x", Value
 test_interpreter!(interpret_kind_convert_float, "x<f32> := 123;", Value::F32(Ref::new(123.0)));
 test_interpreter!(interpret_kind_convert_rational, "x<r64> := 1 / 2; y<f64> := x", Value::F64(Ref::new(0.5)));
 test_interpreter!(interpret_kind_convert_rational2, "x<f64> := 1/2; y<r64> := x", Value::R64(Ref::new(R64::new(1, 2))));
+test_interpreter!(interpret_kind_convert_mat_to_any, "x := [2 3 4]; y<[*]> := x", Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, 4.0], 1, 3)));
 
 test_interpreter!(interpret_kind_define, "<foo> := <f64>; x<foo> := 123", Value::F64(Ref::new(123.0)));
 test_interpreter!(interpret_formula_math_neg, "-1", Value::F64(Ref::new(-1.0)));
