@@ -303,6 +303,48 @@ macro_rules! impl_variable_define_match_arms {
 fn impl_var_define_fxn(var: Value, name: Value, mutable: Value, id: u64) -> MResult<Box<dyn MechFunction>> {
   let arg = (var.clone(), name.clone(), mutable.clone(), id);
   match arg {
+    (Value::Kind(kind), name, mutable, id) => {
+      let initialized_value = match kind.deref_kind() {
+        #[cfg(feature = "u8")]
+        ValueKind::U8 => Value::U8(Ref::new(u8::default())),
+        #[cfg(feature = "u16")]
+        ValueKind::U16 => Value::U16(Ref::new(u16::default())),
+        #[cfg(feature = "u32")]
+        ValueKind::U32 => Value::U32(Ref::new(u32::default())),
+        #[cfg(feature = "u64")]
+        ValueKind::U64 => Value::U64(Ref::new(u64::default())),
+        #[cfg(feature = "u128")]
+        ValueKind::U128 => Value::U128(Ref::new(u128::default())),
+        #[cfg(feature = "i8")]
+        ValueKind::I8 => Value::I8(Ref::new(i8::default())),
+        #[cfg(feature = "i16")]
+        ValueKind::I16 => Value::I16(Ref::new(i16::default())),
+        #[cfg(feature = "i32")]
+        ValueKind::I32 => Value::I32(Ref::new(i32::default())),
+        #[cfg(feature = "i64")]
+        ValueKind::I64 => Value::I64(Ref::new(i64::default())),
+        #[cfg(feature = "i128")]
+        ValueKind::I128 => Value::I128(Ref::new(i128::default())),
+        #[cfg(feature = "f32")]
+        ValueKind::F32 => Value::F32(Ref::new(f32::default())),
+        #[cfg(feature = "f64")]
+        ValueKind::F64 => Value::F64(Ref::new(f64::default())),
+        #[cfg(feature = "complex")]
+        ValueKind::C64 => Value::C64(Ref::new(C64::default())),
+        #[cfg(feature = "rational")]
+        ValueKind::R64 => Value::R64(Ref::new(R64::default())),
+        #[cfg(feature = "bool")]
+        ValueKind::Bool => Value::Bool(Ref::new(bool::default())),
+        #[cfg(feature = "string")]
+        ValueKind::String => Value::String(Ref::new(String::default())),
+        _ => return Err(MechError::new(
+            UnhandledFunctionArgumentKind3 { arg: (Value::Kind(kind).kind(), name.kind(), mutable.kind()), fxn_name: "var/define".to_string() },
+            None
+          ).with_compiler_loc()
+        ),
+      };
+      return impl_var_define_fxn(initialized_value, name, mutable, id);
+    },
     (Value::Empty, name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineEmpty { var: Ref::new(Value::Empty), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
     #[cfg(feature = "table")]
     (Value::Table(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechTable{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
