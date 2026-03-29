@@ -96,10 +96,14 @@ where T: Debug + Clone + PartialEq + Into<Value> + 'static,
   fn solve(&self) {
     let arg = &self.arg;
     let mut out_table = self.out.borrow_mut();
-    let (rows, cols) = (arg.rows(), arg.cols());
+    let rows_to_copy = if out_table.rows == 0 {
+      arg.rows()
+    } else {
+      arg.rows().min(out_table.rows)
+    };
 
-    for (col_ix, (ix, (col_kind, out_col))) in out_table.data.iter_mut().enumerate() {
-      for row_ix in 0..rows {
+    for (col_ix, (_ix, (col_kind, out_col))) in out_table.data.iter_mut().enumerate() {
+      for row_ix in 0..rows_to_copy {
         let value = arg.index2d(row_ix + 1, col_ix + 1).clone().into();
         let converted_value = value.convert_to(col_kind).unwrap();
         out_col.set_index1d(row_ix, converted_value);
@@ -187,8 +191,9 @@ macro_rules! impl_conversion_match_arms {
                 ).with_compiler_loc());
               }
             }
-            // Create a blank table, with as many rows as the matrix has
-            let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), in_shape[0]))?;
+            // Create a blank table using the target row count when provided, otherwise infer from matrix rows.
+            let out_rows = if sze == 0 { in_shape[0] } else { sze };
+            let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), out_rows))?;
             Ok(Box::new(ConvertMat2Table::<$input_type>{arg: mat.clone(), out: Ref::new(out)}))
           }
           $(
