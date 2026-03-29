@@ -168,6 +168,46 @@ impl_variable_define_fxn!(MechMap);
 #[cfg(feature = "atom")]
 impl_variable_define_fxn!(MechAtom);
 
+#[derive(Debug, Clone)]
+pub struct VariableDefineEmpty {
+  id: u64,
+  name: Ref<String>,
+  mutable: Ref<bool>,
+  var: Ref<Value>,
+}
+impl MechFunctionImpl for VariableDefineEmpty {
+  fn solve(&self) {}
+  fn out(&self) -> Value { self.var.borrow().clone() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for VariableDefineEmpty {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let name = "VariableDefineEmpty".to_string();
+    compile_binop!(name, self.var, self.name, self.mutable, ctx, FeatureFlag::Builtin(FeatureKind::VariableDefine) );
+  }
+}
+register_descriptor! {
+  FunctionDescriptor {
+    name: "VariableDefineEmpty",
+    ptr: |args: FunctionArgs| -> MResult<Box<dyn MechFunction>> {
+      match args {
+        FunctionArgs::Binary(var, arg1, arg2) => {
+          let var: Ref<Value> = unsafe { var.as_unchecked() }.clone();
+          let name: Ref<String> = unsafe { arg1.as_unchecked() }.clone();
+          let mutable: Ref<bool> = unsafe { arg2.as_unchecked() }.clone();
+          let id = hash_str(&name.borrow());
+          Ok(Box::new(VariableDefineEmpty { id, name, mutable, var }))
+        }
+        _ => Err(MechError::new(
+          IncorrectNumberOfArguments { expected: 3, found: args.len() },
+          None
+        ).with_compiler_loc()),
+      }
+    },
+  }
+}
+
 #[macro_export]
 macro_rules! impl_variable_define_match_arms {
   ($arg:expr, $value_kind:ty, $feature:expr) => {
@@ -263,6 +303,7 @@ macro_rules! impl_variable_define_match_arms {
 fn impl_var_define_fxn(var: Value, name: Value, mutable: Value, id: u64) -> MResult<Box<dyn MechFunction>> {
   let arg = (var.clone(), name.clone(), mutable.clone(), id);
   match arg {
+    (Value::Empty, name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineEmpty { var: Ref::new(Value::Empty), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
     #[cfg(feature = "table")]
     (Value::Table(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechTable{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
     #[cfg(feature = "set")]
