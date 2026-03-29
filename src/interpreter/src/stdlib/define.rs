@@ -303,6 +303,14 @@ macro_rules! impl_variable_define_match_arms {
 fn impl_var_define_fxn(var: Value, name: Value, mutable: Value, id: u64) -> MResult<Box<dyn MechFunction>> {
   let arg = (var.clone(), name.clone(), mutable.clone(), id);
   match arg {
+    (Value::Kind(kind), name, mutable, id) => {
+      return box_mech_fxn(Ok(Box::new(VariableDefineEmpty {
+        var: Ref::new(Value::Kind(kind)),
+        name: name.as_string()?,
+        mutable: mutable.as_bool()?,
+        id,
+      })));
+    },
     (Value::Empty, name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineEmpty { var: Ref::new(Value::Empty), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
     #[cfg(feature = "table")]
     (Value::Table(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechTable{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),

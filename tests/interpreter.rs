@@ -54,6 +54,15 @@ test_interpreter!(interpret_literal_false, "false", Value::Bool(Ref::new(false))
 test_interpreter!(interpret_literal_atom, ":A", Value::Atom(Ref::new(MechAtom::new(55450514845822917))));
 test_interpreter!(interpret_literal_empty, "_", Value::Empty);
 test_interpreter!(interpret_variable_define_empty, "em := _", Value::Empty);
+#[cfg(feature = "u8")]
+test_interpreter!(interpret_variable_define_kind_literal, "x := <u8>;", Value::Kind(ValueKind::U8));
+#[test]
+fn interpret_variable_define_undefined_kind_literal_error() {
+  let s = "x := <foo>;";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  assert!(intrp.interpret(&tree).is_err());
+}
 test_interpreter!(interpret_variable_define_typed_empty, "emp<_> := _", Value::Empty);
 test_interpreter!(interpret_literal_complex, "5+4i", Value::C64(Ref::new(C64::new(5.0, 4.0))));
 test_interpreter!(interpret_literal_complex2, "5-4i", Value::C64(Ref::new(C64::new(5.0, -4.0))));
