@@ -46,6 +46,42 @@ register_descriptor! {
   }
 }
 
+#[derive(Debug)]
+struct ConvertSEmpty {
+  out: Ref<Value>,
+}
+
+impl MechFunctionImpl for ConvertSEmpty {
+  fn solve(&self) { }
+  fn out(&self) -> Value { self.out.borrow().clone() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for ConvertSEmpty {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let name = format!("ConvertSEmpty<empty>");
+    compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
+  }
+}
+register_descriptor! {
+  FunctionDescriptor {
+    name: "ConvertSEmpty<empty>",
+    ptr: |args: FunctionArgs| -> MResult<Box<dyn MechFunction>> {
+      match args {
+        FunctionArgs::Nullary(out) => {
+          let out: Ref<Value> = unsafe { out.as_unchecked() }.clone();
+          Ok(Box::new(ConvertSEmpty { out }))
+        },
+        _ => Err(MechError::new(
+            IncorrectNumberOfArguments { expected: 0, found: args.len() },
+            None
+          ).with_compiler_loc()
+        ),
+      }
+    },
+  }
+}
+
 #[cfg(all(feature = "matrix", feature = "table"))]
 #[derive(Debug)]
 struct ConvertMat2Table<T> {
@@ -175,6 +211,9 @@ macro_rules! impl_conversion_match_arms {
           let val = Ref::new(enm.clone());
           todo!("This isn't finished yet");
           Ok(Box::new(ConvertSEnum{out: val}))
+        }
+        (Value::Empty, Value::Kind(ValueKind::Empty)) => {
+          Ok(Box::new(ConvertSEmpty { out: Ref::new(Value::Empty) }))
         }
         x => Err(MechError::new(
             UnsupportedConversionError{from: x.0.kind(), to: x.1.kind()},
