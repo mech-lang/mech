@@ -29,8 +29,8 @@ Platform Reference
 
 (i)> Coming `v0.3`
 
-- Functions
-- Comprehensions
+- [Functions](/reference/functions.html)
+- [Comprehensions](/reference/comprehensions.html)
 - Error Handling
 - State Machines
 - SynthAssign
