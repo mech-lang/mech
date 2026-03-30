@@ -13,12 +13,13 @@ Mechdown supports hierarchical titles:
 1. Rules and conventions
 -------------------------------------------------------------------------------
 
-- Use one document title per file.
+- Use one document title per file. The document can have an optional byline (author, date, etc.) immediately following the title.
 - Keep section numbering sequential.
 - Keep subsection numbering aligned with the parent section.
 - Prefer short, descriptive titles so generated navigation remains readable.
 
-2. Example
+
+2. Examples
 -------------------------------------------------------------------------------
 
 ```
@@ -34,3 +35,12 @@ Mechdown Title Guide
 ```
 
 Section and first-level subsection titles are included in the generated table of contents.
+
+To add a byline, place it immediately after the title and conclude with a second `===` separator:
+
+```
+My Document
+===============================================================================
+By Mika the Mech
+===============================================================================
+```
