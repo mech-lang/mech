@@ -21,7 +21,7 @@ Column alignment markers:
 2. Example
 -------------------------------------------------------------------------------
 
-```mech
+```
 | Feature      | Support | Notes            |
 |:-------------|:-------:|-----------------:|
 | Sections     | Yes     | Numbered titles  |

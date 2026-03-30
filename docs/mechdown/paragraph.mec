@@ -39,11 +39,14 @@ Mechdown supports references for footnotes, citations, and sections.
 
 (2.1) Example
 
-```mech
+```
 This paragraph includes a footnote[^1], a citation[MECH], and a section link to §2.1.
 
 [^1]: Supplemental detail appears in the footnote body.
 [MECH]: Mech Programming Language. (2024). https://mech-lang.org
 ```
 
-(?)> Citation definitions are typically rendered in an auto-generated references section, while footnotes render near their definitions.
+This paragraph includes a footnote[^1], a citation[MECH], and a section link to §2.1.
+
+[^1]: Supplemental detail appears in the footnote body.
+[MECH]: Mech Programming Language. (2024). https://mech-lang.org

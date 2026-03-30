@@ -8,11 +8,11 @@ equation
 
 Block equations start with `$$` and continue as an equation block.
 
-```mech
+```
 $$ c = \pm\sqrt{a^2 + b^2}
 ```
 
-Rendered:
+Rendered
 
 $$ c = \pm\sqrt{a^2 + b^2}
 

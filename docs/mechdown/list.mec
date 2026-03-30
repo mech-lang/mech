@@ -16,43 +16,86 @@ Mechdown supports:
 2. Basic examples
 -------------------------------------------------------------------------------
 
-```mech
+(2.1) Unordered List
+
+```
+- Item 1
+- Item 2
+- Item 3
+```
+
 - Item 1
 - Item 2
 - Item 3
 
+(2.2) Ordered List
+
+```
 1. First
 2. Second
 3. Third
 ```
 
-3. Rich and nested items
--------------------------------------------------------------------------------
+1. First
+2. Second
+3. Third
 
-List items are paragraph blocks, so they can include inline formatting and nested lists.
+(2.2.1) Custom Start Number
 
-```mech
-1. **Priorities**
-   - Reliability
-   - Performance
-2. Milestones
-   7. Alpha
-   8. Beta
-   9. Release
-3. Tasks
-   -[ ] Write docs
-   -[x] Add examples
+To start an ordered list at a specific number, set the first item to that number.
+
+```
+7. Alpha
+8. Beta
+9. Gamma
 ```
 
-Rendered example:
+7. Alpha
+8. Beta
+9. Gamma
 
-1. **Priorities**
-   - Reliability
-   - Performance
-2. Milestones
-   7. Alpha
-   8. Beta
-   9. Release
-3. Tasks
-   -[ ] Write docs
-   -[x] Add examples
+(2.3) Custom Bullets
+
+Mechdown supports custom bullet symbols using the syntax `-(symbol)`, where the symbol can be any valid Unicode character or emoji.
+
+```
+-(🦜) Parrot
+-(🏴‍☠️) Pirate
+-(🐷) Pig
+```
+
+-(🦜) Parrot
+-(🏴‍☠️) Pirate
+-(🐷) Pig
+
+(2.4) Nested Lists
+
+Lists can be nested to any depth by indenting child items with at least two spaces. Sub lists can be any valid list type.
+
+```
+- Parent Item
+   - Child Item 1
+   - Child Item 2
+      1. Subchild 1
+      2. Subchild 2
+- Another Parent
+   -(⭐) Starred Child
+   -(🌟) Another Starred Child
+```
+
+3. Interactive Lists
+-------------------------------------------------------------------------------
+
+Mechdown supports various interactive list types that can be used for task tracking, checklists, and more.
+
+(3.1) Checklists
+
+```
+-[ ] Write docs
+-[x] Add examples
+-[ ] Review
+```
+
+-[ ] Write docs
+-[x] Add examples
+-[ ] Review

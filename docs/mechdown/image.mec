@@ -17,7 +17,7 @@ In Mechdown, alt text may be rendered as a caption. Figure numbering is automati
 
 An optional options map can set attributes such as width, height, or alignment.
 
-```mech
+```
 ![Mech logo](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true)
 ![Small logo](https://github.com/mech-lang/assets/blob/main/images/mech-m2.png?raw=true){width: "100px", height: "100px"}
 ```

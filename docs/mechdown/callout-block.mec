@@ -1,55 +1,56 @@
 callout-block
 ===============================================================================
 
-%% Callout blocks highlight content with semantic intent such as warning, question, or success.
+%% A `callout block` is a block element used to emphasize a paragraph by classifying it into one of several semantic categories such as quotation, info, question, warning, error, success, or idea.
 
-1. Callout types
--------------------------------------------------------------------------------
+Callout blocks are used to emphasize a paragraph, and classifies them into one of seven semantic categories:
 
-- `>` Quote
-- `(i)>` Info
-- `(?)>` Question
-- `(!)>` Warning
-- `(x)>` Error
-- `(+)>` Success
-- `(*)>` Idea
+- *Quotation*: for quotations, indicated with a `>`.
+- *Info*: for information the reader should know, indicated with a `(i)>`
+- *Question*: for anticipated and frequently asked questions, indicated with a `(?)>`
+- *Warning*: for cautions and warnings, indicated with a `(!)>`
+- *Error*: for errors and critical issues, indicated with a `(x)>`
+- *Success*: for success messages and positive outcomes, indicated with a `(+)>`
+- *Idea*: for ideas and suggestions, indicated with a `(*)>`
 
-2. Examples
--------------------------------------------------------------------------------
+Multiple paragraphs can be included in the callout block as long as there are no newline characters between them (although a newline is of course required to end a paragraph).
 
-```mech
+(10.7.1) Examples
+
+```
 > This is a quote block.
 
-(i)> This is an informational note.
+(x)> This is an error block.
 
-(?)> This is a question prompt.
+(!)> This is a warning block.
 
-(!)> This is a warning.
+(+)> This is a success block.
 
-(x)> This is an error message.
+(?)> This is a question block.
 
-(+)> This indicates success.
+(i)> This is an info block.
 
-(*)> This is an idea.
+(*)> This is an idea block.
+
+(?)> This is a question block with multiple paragraphs.
+This is the second paragraph.
 ```
 
-Rendered form:
+When rendered, they look like this:
 
 > This is a quote block.
 
-(i)> This is an informational note.
+(x)> This is an error block.
 
-(?)> This is a question prompt.
+(!)> This is a warning block.
 
-(!)> This is a warning.
+(+)> This is a success block.
 
-(x)> This is an error message.
+(?)> This is a question block.
 
-(+)> This indicates success.
+(i)> This is an info block.
 
-(*)> This is an idea.
+(*)> This is an idea block.
 
-3. Multi-line callouts
--------------------------------------------------------------------------------
-
-A callout may span multiple lines as long as it remains part of the same block.
+(?)> This is a question block with multiple paragraphs.
+This is the second paragraph.
