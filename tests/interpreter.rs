@@ -897,6 +897,7 @@ test_interpreter!(interpret_compare_min_vector_vector, "compare/min([3 4 5 6],[6
 test_interpreter!(interpret_set_comprehension, r#"{ x * x | x <- {1,2,3,4}, y := 2, (x % 2) == 0 }"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(4.0)), Value::F64(Ref::new(16.0))]))));
 test_interpreter!(interpret_set_comprehension_variable, r#"qq := {1,2,3,4}; { x * x | x <- qq, y := 2, (x % 2) != 0 }"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(9.0))]))));
 test_interpreter!(interpret_set_comprehension_tuple, r#"qq := {(1,2),(3,4),(5,6),(7,8)}; { x * x | (x, *) <- qq }"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(9.0)), Value::F64(Ref::new(25.0)), Value::F64(Ref::new(49.0))]))));
+test_interpreter!(interpret_set_comprehension_fof, r#"pairs:= {(1,2), (1,3), (2,8), (3,5), (3,9)}; user := 1; {fof | ( u, f ) <- pairs, ( f, fof ) <- pairs, u ⩵ user}"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(5.0)), Value::F64(Ref::new(9.0)), Value::F64(Ref::new(8.0))]))));
 
 test_interpreter!(interpret_matrix_comprehension, r#"[ x * x | x <- [1 2 3 4], y := 2, (x % 2) == 0 ]"#, Value::MatrixF64(Matrix::from_vec(vec![4.0, 16.0], 1, 2)));
 test_interpreter!(interpret_matrix_comprehension_variable, r#"qq := [1 2 3 4]; [ x * x | x <- qq, y := 2, (x % 2) != 0 ]"#, Value::MatrixF64(Matrix::from_vec(vec![1.0, 9.0], 1, 2)));

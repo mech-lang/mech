@@ -365,7 +365,7 @@ pub fn not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
 // equal-to := "==" ;
 pub fn equal_to(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = ws0e(input)?;
-  let (input, _) = tag("==")(input)?;
+  let (input, _) = alt((tag("=="),tag("⩵")))(input)?;
   let (input, _) = ws0e(input)?;
   Ok((input, ComparisonOp::Equal))
 }
