@@ -111,6 +111,8 @@ test_interpreter!(interpret_matrix_lt_rational, "[1/2 3/4] < [3/4 1/2]", Value::
 test_interpreter!(interpret_matrix_lt_complex, "[1+2i 3+4i] < [2+3i 4+5i]", Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2)));
 test_interpreter!(interpret_matrix_lte_rational, "[1/2 3/4] <= [1/2 3/4]", Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2)));
 test_interpreter!(interpret_matrix_lte_complex, "[1+2i 3+4i] <= [1+2i 3+4i]", Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2)));
+test_interpreter!(interpret_matrix_assignment_copy_index, "a := [1 2 3; 4 5 6; 7 8 9]; b := a; b[2,3]", Value::F64(Ref::new(6.0)));
+test_interpreter!(interpret_matrix_assignment_copy_eq, "a := [1 2 3; 4 5 6; 7 8 9]; b := a; b == a", Value::MatrixBool(Matrix::from_vec(vec![true, true, true, true, true, true, true, true, true], 3, 3)));
 #[cfg(feature = "u64")]
 test_interpreter!(interpret_kind_annotation, "1<u64>", Value::U64(Ref::new(1)));
 #[cfg(feature = "u64")]
