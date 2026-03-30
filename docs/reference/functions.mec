@@ -1,0 +1,110 @@
+functions
+================================================================================
+
+%% A `function` maps input values to output values. In Mech, functions are branch-based and support pattern matching, recursion, and kind annotations.
+
+***
+
+1. Syntax
+-------------------------------------------------------------------------------
+
+Functions are defined with a signature, one or more branches, and a trailing `.`.
+
+```mech:disabled
+name(arg1<kind1>, arg2<kind2>, ...) -> <return-kind>
+  ├ pattern-1 -> expression-1
+  ├ pattern-2 -> expression-2
+  └ pattern-n -> expression-n.
+```
+
+A function call uses regular call syntax:
+
+```mech:disabled
+name(value1, value2)
+```
+
+2. Semantics
+-------------------------------------------------------------------------------
+
+- Branches are matched from top to bottom.
+- The first matching branch is selected.
+- Function bodies are expressions.
+- Functions can call themselves recursively.
+- Calls are expressions, so they can be nested in formulas and broadcast over vectors/matrices.
+
+3. Defining Functions
+-------------------------------------------------------------------------------
+
+(3.1) Simple Branching
+
+```mech:ex 3.1
+choose(op<kind>, x<f64>, y<f64>) -> <f64>
+  ├ (#add, x, y) -> x + y
+  ├ (#sub, x, y) -> x - y
+  ├ (#mul, x, y) -> x * y
+  └ (#div, x, y) -> x / y.
+
+[choose(#add, 3.0, 2.0)
+ choose(#sub, 3.0, 2.0)
+ choose(#mul, 3.0, 2.0)
+ choose(#div, 3.0, 2.0)]
+```
+
+(3.2) Recursive Power
+
+```mech:ex 3.2
+power(x<u64>, n<u64>) -> <u64>
+  ├ (*, 0u64) -> 1u64
+  └ (x, n) -> x * power(x, n - 1u64).
+
+power(2u64, 8u64)
+```
+
+(3.3) Recursive Factorial
+
+```mech:ex 3.3
+factorial(n<u64>) -> <u64>
+  ├ 0u64 -> 1u64
+  └ n -> n * factorial(n - 1u64).
+
+factorial(10u64)
+```
+
+(3.4) Recursive Fibonacci
+
+```mech:ex 3.4
+fib(n<u64>) -> <u64>
+  ├ 0u64 -> 0u64
+  ├ 1u64 -> 1u64
+  └ n -> fib(n - 1u64) + fib(n - 2u64).
+
+fib(10u64)
+```
+
+4. Calling Functions
+-------------------------------------------------------------------------------
+
+Function calls can be used directly in larger expressions:
+
+```mech:ex 4.1
+power(2u64, 5u64) + factorial(4u64)
+```
+
+Function calls can also broadcast over vectors:
+
+```mech:ex 4.2
+fib(n<u64>) -> <u64>
+  ├ 0u64 -> 0u64
+  ├ 1u64 -> 1u64
+  └ n -> fib(n - 1u64) + fib(n - 2u64).
+
+xs := 0u64..=10u64
+fib(xs)
+```
+
+5. Notes
+-------------------------------------------------------------------------------
+
+- Prefer explicit base cases in recursive definitions.
+- Use kind annotations on public function interfaces for clarity.
+- Keep branch patterns specific to avoid accidental broad matches.

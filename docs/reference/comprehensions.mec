@@ -1,0 +1,97 @@
+comprehensions
+================================================================================
+
+%% A `comprehension` builds a set from generators and predicates. It is useful for concise construction, filtering, and relational joins over data.
+
+***
+
+1. Syntax
+-------------------------------------------------------------------------------
+
+A set comprehension has the form:
+
+```mech:disabled
+{yield-expression | clause-1, clause-2, ..., clause-n}
+```
+
+Common clause forms:
+
+- Generator: `pattern <- source`
+- Predicate: `condition`
+
+2. Semantics
+-------------------------------------------------------------------------------
+
+- Generators introduce variables and iterate values from a source collection.
+- Predicates filter candidate bindings.
+- Later clauses can use variables introduced by earlier clauses.
+- Reused variables across generators naturally express join-like relationships.
+- The result is a set, so duplicates are removed.
+
+3. Basic Examples
+-------------------------------------------------------------------------------
+
+(3.1) Squares
+
+```mech:ex 3.1
+A := {1,2,3,4,5}
+{x*x | x <- A}
+```
+
+(3.2) Filtering Evens
+
+```mech:ex 3.2
+A := {1,2,3,4,5,6,7,8,9,10}
+{x | x <- A, x % 2 == 0}
+```
+
+(3.3) Set Intersection Pattern
+
+```mech:ex 3.3
+A := {1,2,3,4,5,6,7,8,9,10}
+B := {2,3,5,7,11,13}
+{x | x <- A, x <- B}
+```
+
+4. Matrix-Oriented Index Sets
+-------------------------------------------------------------------------------
+
+Comprehensions are often used to generate index sets for matrix-style work.
+
+(4.1) EYE Indices
+
+```mech:ex 4.1
+n := 4
+EYE := {(i,j) | i <- 1..=n, j <- 1..=n, i == j}
+```
+
+(4.2) Triangular Indices
+
+```mech:ex 4.2
+n := 5
+upper-tri-ix := {(i,j) | i <- 1..=n, j <- 1..=n, i <= j}
+lower-tri-ix := {(i,j) | i <- 1..=n, j <- 1..=n, i >= j}
+strict-upper-tri-ix := {(i,j) | i <- 1..=n, j <- 1..=n, i < j}
+```
+
+5. Relational-Style Comprehensions
+-------------------------------------------------------------------------------
+
+(5.1) Friends of Friends
+
+```mech:ex 5.1
+pairs := {(1, 2), (1, 3), (2, 8), (3, 5), (3, 9)}
+user := 1
+{fof | (u, f) <- pairs, (f, fof) <- pairs, u == user}
+```
+
+(5.2) Pythagorean Triples
+
+```mech:ex 5.2
+limit := 30
+{(a,b,c) |
+  a <- 1..=limit,
+  b <- a..=limit,
+  c <- b..=limit,
+  a*a + b*b == c*c}
+```
