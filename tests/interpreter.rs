@@ -64,6 +64,40 @@ fn interpret_variable_define_undefined_kind_literal_error() {
   assert!(intrp.interpret(&tree).is_err());
 }
 test_interpreter!(interpret_variable_define_typed_empty, "emp<_> := _", Value::Empty);
+#[test]
+fn interpret_variable_define_typed_set_from_range_matrix() {
+  let s = "input<{f64}> := 1..=5";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  match result {
+    Value::Set(mset) => {
+      let mset = mset.borrow();
+      assert_eq!(mset.set.len(), 5);
+      for value in [1.0, 2.0, 3.0, 4.0, 5.0] {
+        assert!(mset.set.contains(&Value::F64(Ref::new(value))));
+      }
+    }
+    _ => panic!("Expected set output"),
+  }
+}
+#[test]
+fn interpret_variable_define_typed_set_from_matrix() {
+  let s = "input<{f64}> := [1 2; 3 4; 5 6]";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  match result {
+    Value::Set(mset) => {
+      let mset = mset.borrow();
+      assert_eq!(mset.set.len(), 6);
+      for value in [1.0, 2.0, 3.0, 4.0, 5.0, 6.0] {
+        assert!(mset.set.contains(&Value::F64(Ref::new(value))));
+      }
+    }
+    _ => panic!("Expected set output"),
+  }
+}
 test_interpreter!(interpret_literal_complex, "5+4i", Value::C64(Ref::new(C64::new(5.0, 4.0))));
 test_interpreter!(interpret_literal_complex2, "5-4i", Value::C64(Ref::new(C64::new(5.0, -4.0))));
 test_interpreter!(interpret_literal_complex3, "5-4j", Value::C64(Ref::new(C64::new(5.0, -4.0))));
