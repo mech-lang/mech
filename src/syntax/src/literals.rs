@@ -393,11 +393,19 @@ pub fn kind_kind(input: ParseString) -> ParseResult<Kind> {
 // kind-table := "|" , list1(",", (identifier, kind)), "|", ":", list0(",", literal) ;
 pub fn kind_table(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = bar(input)?;
-  let (input, elements) = separated_list1(alt((null(list_separator),null(many1(space_tab)))), nom_tuple((identifier, kind_annotation)))(input)?;
+  let (input, elements) = separated_list1(
+    alt((null(list_separator),null(many1(space_tab)))),
+    nom_tuple((identifier, opt(kind_annotation)))
+  )(input)?;
   let (input, _) = bar(input)?;
   let (input, size) = opt(tuple((colon,literal)))(input)?;
   let size = size.map(|(_, ltrl)| ltrl).unwrap_or_else(|| Literal::Empty(Token::default()));
-  let elements = elements.into_iter().map(|(id, knd)| (id, knd.kind)).collect();
+  let default_kind = Kind::Scalar(Identifier{
+    name: Token::new(TokenKind::Identifier, SourceRange::default(), "u64".chars().collect()),
+  });
+  let elements = elements.into_iter()
+    .map(|(id, knd)| (id, knd.map(|k| k.kind).unwrap_or(default_kind.clone())))
+    .collect();
   Ok((input, Kind::Table((elements, Box::new(size)))))
 }
 
