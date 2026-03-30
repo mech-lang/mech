@@ -132,6 +132,81 @@ where
   }
 }
 
+#[cfg(all(feature = "matrix", feature = "set"))]
+fn matrix_to_values(value: &Value) -> Option<Vec<Value>> {
+  match value {
+    Value::MutableReference(reference) => matrix_to_values(&reference.borrow()),
+    Value::MatrixIndex(matrix) => Some(matrix.as_vec().into_iter().map(|value| Value::Index(Ref::new(value))).collect()),
+    #[cfg(feature = "bool")]
+    Value::MatrixBool(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "u8")]
+    Value::MatrixU8(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "u16")]
+    Value::MatrixU16(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "u32")]
+    Value::MatrixU32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "u64")]
+    Value::MatrixU64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "u128")]
+    Value::MatrixU128(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "i8")]
+    Value::MatrixI8(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "i16")]
+    Value::MatrixI16(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "i32")]
+    Value::MatrixI32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "i64")]
+    Value::MatrixI64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "i128")]
+    Value::MatrixI128(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "f32")]
+    Value::MatrixF32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "f64")]
+    Value::MatrixF64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "string")]
+    Value::MatrixString(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "rational")]
+    Value::MatrixR64(matrix) => Some(matrix.as_vec().into_iter().map(|value| value.to_value()).collect()),
+    #[cfg(feature = "complex")]
+    Value::MatrixC64(matrix) => Some(matrix.as_vec().into_iter().map(|value| value.to_value()).collect()),
+    Value::MatrixValue(matrix) => Some(matrix.as_vec()),
+    _ => None,
+  }
+}
+
+#[cfg(all(feature = "matrix", feature = "set"))]
+#[derive(Debug)]
+struct ConvertMatToSet {
+  arg: Value,
+  target_kind: ValueKind,
+  out: Ref<MechSet>,
+}
+
+#[cfg(all(feature = "matrix", feature = "set"))]
+impl MechFunctionImpl for ConvertMatToSet {
+  fn solve(&self) {
+    let values = matrix_to_values(&self.arg).unwrap_or_default();
+    let converted_values = values
+      .into_iter()
+      .map(|value| {
+        value
+          .convert_to(&self.target_kind)
+          .unwrap_or_else(|| panic!("Unable to convert matrix element to target set kind {}", self.target_kind))
+      })
+      .collect::<Vec<_>>();
+    *self.out.borrow_mut() = MechSet::from_vec(converted_values);
+  }
+  fn out(&self) -> Value { Value::Set(self.out.clone()) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(all(feature = "compiler", feature = "matrix", feature = "set"))]
+impl MechFunctionCompiler for ConvertMatToSet {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let name = format!("ConvertMatToSet");
+    compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
+  }
+}
+
 #[cfg(all(feature = "rational", feature = "f64"))]
 #[derive(Debug)]
 struct ConvertSRationalToF64 {
@@ -300,6 +375,22 @@ where
 
 fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {
   match (&source_value, &target_kind) {
+    #[cfg(all(feature = "matrix", feature = "set"))]
+    (source, Value::Kind(ValueKind::Set(target_kind, _))) => {
+      if let Some(values) = matrix_to_values(source) {
+        let converted_values = values
+          .into_iter()
+          .map(|value| value.convert_to(target_kind))
+          .collect::<Option<Vec<_>>>();
+        if let Some(converted_values) = converted_values {
+          return Ok(Box::new(ConvertMatToSet {
+            arg: source_value.clone(),
+            target_kind: target_kind.as_ref().clone(),
+            out: Ref::new(MechSet::from_vec(converted_values)),
+          }));
+        }
+      }
+    }
     #[cfg(all(feature = "rational", feature = "f64"))]
     (Value::R64(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: Ref::new(f64::default()),}));}
     #[cfg(all(feature = "matrix", feature = "table", feature = "string"))]
