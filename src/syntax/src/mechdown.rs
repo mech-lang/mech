@@ -29,13 +29,17 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
   let (input, mut text) = many1(text)(input)?;
   let (input, _) = new_line(input)?;
   let (input, _) = many1(equal)(input)?;
-  let (input, _) = many0(space_tab)(input)?;
-  let (input, _) = new_line(input)?;
-  let (input, _) = many0(space_tab)(input)?;
   let (input, _) = whitespace0(input)?;
+  let (input, byline) = opt(byline)(input)?;
   let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
-  Ok((input, Title{text: title}))
+  Ok((input, Title{text: title, byline}))
+}
+
+pub fn byline(input: ParseString) -> ParseResult<Paragraph> {
+  let (input, byline) = paragraph_newline(input)?;
+  let (input, _) = many1(equal)(input)?;
+  Ok((input, byline))
 }
 
 pub struct MarkdownTableHeader {
@@ -242,7 +246,7 @@ pub fn raw_hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
 
 // option-map := "{", whitespace*, mapping*, whitespace*, "}" ;
 pub fn option_map(input: ParseString) -> ParseResult<OptionMap> {
-  let msg = "Expects right bracket '}' to terminate inline table";
+  let msg = "Expects right bracket '}' to terminate map.";
   let (input, (_, r)) = range(left_brace)(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, elements) = many1(option_mapping)(input)?;

@@ -480,6 +480,16 @@ h5.toc::before {
   border-radius: 2px;
 }
 
+.mech-program-byline {
+  font-size: 1em;
+  font-weight: normal;
+  color: #666;      /* subtle, secondary color */
+  margin-top: 0;
+  margin-bottom: 1em;
+  line-height: 1.2;
+  font-style: italic;
+  text-align: center;
+}
 
 .mech-program h2 a {
     color: var(--text-color);

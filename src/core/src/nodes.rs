@@ -305,6 +305,7 @@ fn pretty_print(&self) -> String {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Title {
   pub text: Token,
+  pub byline: Option<Paragraph>,
 }
 
 impl Title {
