@@ -357,20 +357,29 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
         result = converted_result;
       },
     };
+    let detached_result = detach_variable_value(&result);
     // Save symbol to interpreter
-    let val_ref = state_brrw.save_symbol(var_id, var_name.clone(), result.clone(), var_def.mutable);
+    let val_ref = state_brrw.save_symbol(var_id, var_name.clone(), detached_result.clone(), var_def.mutable);
     // Add variable define step to plan
-    let var_def_fxn = VarDefine{}.compile(&vec![result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
+    let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
     state_brrw.add_plan_step(var_def_fxn);
-    return Ok(result);
+    return Ok(detached_result);
   } 
   let mut state_brrw = p.state.borrow_mut();
+  let detached_result = detach_variable_value(&result);
   // Save symbol to interpreter
-  let val_ref = state_brrw.save_symbol(var_id,var_name.clone(),result.clone(),var_def.mutable);
+  let val_ref = state_brrw.save_symbol(var_id,var_name.clone(),detached_result.clone(),var_def.mutable);
   // Add variable define step to plan
-  let var_def_fxn = VarDefine{}.compile(&vec![result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
+  let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
   state_brrw.add_plan_step(var_def_fxn);
-  return Ok(result);
+  return Ok(detached_result);
+}
+
+fn detach_variable_value(value: &Value) -> Value {
+  match value {
+    Value::MutableReference(reference) => detach_variable_value(&reference.borrow()),
+    _ => value.clone(),
+  }
 }
 
 macro_rules! op_assign {
