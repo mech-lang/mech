@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+jobs:
+  cargo:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Build and test
+        run: |
+          cargo clean
+          cargo build --bin mech
+          cargo build --no-default-features
+          cargo test interpret --no-default-features --features "base u8 u16 u32 u64 u128 i8 i16 i32 i64 i128 f32"
+          cargo test bytecode --no-default-features --features "base u8 u16 u32 u64 u128 i8 i16 i32 i64 i128 f32"

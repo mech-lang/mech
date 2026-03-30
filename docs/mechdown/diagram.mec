@@ -1,2 +1,24 @@
 diagram
 ===============================================================================
+
+%% A diagram block embeds structured visual syntax (for example Mermaid) that is rendered into a figure.
+
+Diagrams are useful for architecture overviews, data-flow maps, and state transitions.
+
+1. Mermaid example
+-------------------------------------------------------------------------------
+
+```mermaid
+graph TD
+  A[Input] --> B[Transform]
+  B --> C[Output]
+```
+
+2. Usage notes
+-------------------------------------------------------------------------------
+
+- Keep labels short so rendered nodes remain legible.
+- Prefer top-down (`TD`) or left-right (`LR`) layouts for readability.
+- Pair diagrams with a short explanatory paragraph.
+
+(i)> Diagram support depends on the renderer configuration. If raw diagram text appears, enable diagram rendering in your documentation pipeline.

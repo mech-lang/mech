@@ -1,44 +1,40 @@
 mechdown-table
 ===============================================================================
 
-%% A `mechdown table` is a structured element that organizes data into rows and columns, allowing for clear presentation and comparison of information.
+%% A Mechdown table organizes data into rows and columns for comparison and reference.
 
-Mechdown tables consist of a header, and a body. The header is defined using a pipe `|` to separate columns, and a row of dashes `-` to indicate the alignment of each column. The body of the table contains rows of data, also separated by pipes. 
+A table contains:
 
-1. Table Heading
+1. A header row
+2. An alignment row
+3. One or more body rows
+
+1. Alignment syntax
 -------------------------------------------------------------------------------
 
-The header of a table is defined using a row of text followed by a row of dashes. The dashes indicate the alignment of each column.
+Column alignment markers:
 
-**Column Alignment:**
+- Left: `:---` or `---`
+- Center: `:---:`
+- Right: `---:`
 
-Columns can be aligned in one of three ways:
-
-- Left-aligned: `:--` or `--`
-- Right-aligned: `--:`
-- Center-aligned: `:--:`
-
-Any number of dashes can be used to indicate the width of the column, and they can be of different lengths.
-
-2. Table Body
+2. Example
 -------------------------------------------------------------------------------
 
-The body of a table is defined using rows of text separated by pipes. Each row can contain any number of columns, and the number of columns in each row must match the number of columns in the header.
-
-2.1 Example
-
-```
-| Align Left  | Align Center | Align Right |
-|:------------|:------------:|------------:|
-| One         | Four         | {1 * 10}    |
-| Two         | Five         | {2 * 20}    |
-| Three       | Six          | {3 * 30}    |
+```mech
+| Feature      | Support | Notes            |
+|:-------------|:-------:|-----------------:|
+| Sections     | Yes     | Numbered titles  |
+| Equations    | Yes     | LaTeX syntax     |
+| Callouts     | Yes     | Semantic variants|
 ```
 
-Renders the following table:
+Rendered form:
 
-| Align Left  | Align Center | Align Right |
-|:------------|:------------:|------------:|
-| One         | Four         | {1 * 10}    |
-| Two         | Five         | {2 * 20}    |
-| Three       | Six          | {3 * 30}    |
+| Feature      | Support | Notes            |
+|:-------------|:-------:|-----------------:|
+| Sections     | Yes     | Numbered titles  |
+| Equations    | Yes     | LaTeX syntax     |
+| Callouts     | Yes     | Semantic variants|
+
+(i)> Keep column counts consistent across all rows.

@@ -1,45 +1,48 @@
 code-block
 ===============================================================================
 
-%% A `code block` is a block element that represents a section of preformatted text, typically used to display code snippets.
+%% A code block is preformatted text enclosed in a fenced block. It is used for source code, terminal output, grammar snippets, and other literal text.
 
-Mechdown supports code blocks, which are enclosed in triple backticks (graves) and can contain any text. Code blocks are useful for including Mech code snippets or other text that should be displayed verbatim.
+1. Fences
+-------------------------------------------------------------------------------
 
-Blocks are deliniated by a code fence, whether triple graves or triple tildes. Optionally, a code identifier can be provided after the opening code fence to indicate the programming language of the code block. This enables syntax highlighting when rendered.
+Use triple backticks (```) or triple tildes (~~~) to open and close a block. Opening and closing fence types must match.
 
-When "mech" is specified as the code identifier, the code block is treated as Mech code and syntax highlighting is applied accordingly. See §10.10 for more details specific to Mech code blocks.
+You may add an optional language identifier after the opening fence for syntax highlighting.
 
-When "ebnf" is specified as the code identifier, the code block is treated as EBNF syntax and syntax highlighting is applied accordingly.
+Common labels include:
 
-Start and end code fences must be of the same type (either graves or tildes). To embed a code fence in another code fence, use the alternate type for the inner fence.
+- `mech` for Mech code
+- `ebnf` for grammar notation
+- `bash`, `json`, etc. for external examples
 
-
-(10.5.1) Examples
-
-~~~
-```
-This is a code block deliniated with graves.
-```
-~~~
-
-```
-~~~
-This is a code block deliniated with tildes.
-~~~
-```
-
-This one has a label:
+2. Examples
+-------------------------------------------------------------------------------
 
 ~~~
-```ebnf
-X := A | B, C ;
+```mech
+speed := distance / time
 ```
 ~~~
 
-The label can also have an options map:
+```
+~~~ebnf
+Expr := Term , { ("+" | "-") , Term } ;
+~~~
+```
+
+3. Fence nesting
+-------------------------------------------------------------------------------
+
+To include one fence style inside another, alternate the outer fence type.
+
+(3.1) Example
 
 ~~~
-```ebnf{width: "25px}
-X := A | B, C ;
+```text
+Here is an inner fence:
+~~~
+content
+~~~
 ```
 ~~~
