@@ -1,0 +1,76 @@
+Defining, Assigning, and Accessing Data
+===============================================================================
+
+%% This section covers the core forms used to create values, update values, and read values from data structures.
+
+1. Defining Data
+-------------------------------------------------------------------------------
+
+Use `:=` to define new data. The interpreter infers the resulting kind when possible.
+
+```mech:ex 1
+x := 42
+name := "Mika"
+flags := [true false true]
+```
+
+You can also define structured values:
+
+```mech:ex 2
+point := (3, 4)
+config := {mode: :fast retries: 3}
+```
+
+2. Assigning and Re-assigning Data
+-------------------------------------------------------------------------------
+
+Use assignment to update existing bindings and data locations.
+
+```mech:ex 3
+count := 0
+count = count + 1
+```
+
+For structured data, assignment can target slices or fields.
+
+```mech:disabled
+A := [1 2 3
+      4 5 6]
+A[2,3] = 9
+
+person := {name: "Alice" age: 30}
+person.age = 31
+```
+
+3. Kind-Constrained Definitions
+-------------------------------------------------------------------------------
+
+Annotate data with a kind to enforce shape/type expectations.
+
+```mech:ex 4
+id<u32> := 7
+scores<[f64]:1,3> := [9.5 8.0 10.0]
+```
+
+If a value does not match the annotation, Mech raises a kind mismatch error.
+
+4. Accessing Data
+-------------------------------------------------------------------------------
+
+Common access patterns include:
+
+- Name access: `x`
+- Index access: `A[2,3]`
+- Field access: `record.field`
+- Column access: `table.column`
+
+```mech:disabled
+A := [10 20 30
+      40 50 60]
+first_row := A[1,:]
+
+user := {name: "Rin" role: :admin}
+role := user.role
+```
+
+For full indexing details, see [`indexing`](/reference/indexing.html).

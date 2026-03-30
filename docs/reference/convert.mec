@@ -1,0 +1,62 @@
+Data Conversion
+===============================================================================
+
+%% Mech supports explicit and annotation-driven conversion between compatible kinds.
+
+1. Why Convert Data?
+-------------------------------------------------------------------------------
+
+Conversion is useful when:
+
+- Interfacing with APIs or tables that require specific kinds.
+- Reducing storage size (for example, `f64` to `u8`).
+- Preparing data for numeric or logical operations.
+
+2. Conversion with Kind Annotations
+-------------------------------------------------------------------------------
+
+Apply a kind annotation to request conversion.
+
+```mech:ex 1
+x := [1 2 3]
+y<[u8]> := x
+```
+
+In this example, `x` is inferred as a numeric matrix (commonly `f64`), and `y` is converted to `u8`.
+
+3. Scalar Conversion
+-------------------------------------------------------------------------------
+
+Scalars can be converted similarly:
+
+```mech:ex 2
+n := 42
+n_u16<u16> := n
+ratio := 3.14
+ratio_f32<f32> := ratio
+```
+
+4. Conversion Rules and Safety
+-------------------------------------------------------------------------------
+
+- Conversions must be defined between source and target kinds.
+- Some numeric conversions can lose precision.
+- Overflowing conversions may fail depending on target range.
+- Structural conversion requires compatible shapes.
+
+```mech:disabled
+big := 999
+small<u8> := big   -- may fail or truncate depending on conversion semantics
+```
+
+5. Converting Structured Data
+-------------------------------------------------------------------------------
+
+You can convert elements in vectors/matrices by annotating the result kind:
+
+```mech:disabled
+A := [1.2 2.7 3.1]
+B<[u8]:1,3> := A
+```
+
+For operations that combine conversion with math, see [`broadcasting`](/reference/broadcasting.html).
