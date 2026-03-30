@@ -102,6 +102,9 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     },
     SectionElement::Footnote(x) => x.hash(&mut hasher),
     SectionElement::Paragraph(x) => {
+      if let Some(table_value) = inline_table_paragraph_to_value(x)? {
+        return Ok(table_value);
+      }
       for el in x.elements.iter() {
         let (code_id,value) = match paragraph_element(&el, p) {
           Ok(val) => val,
@@ -112,6 +115,9 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     },
     SectionElement::Grammar(x) => x.hash(&mut hasher),
     SectionElement::Table(x) => {
+      if let Ok(table_value) = markdown_table_to_value(x) {
+        return Ok(table_value);
+      }
       for row in &x.rows {
         for cell in row {
           for el in &cell.elements {
@@ -197,4 +203,90 @@ pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
       ).with_compiler_loc().with_tokens(x.tokens())
     ),
   }
+}
+
+fn markdown_table_to_value(table: &MarkdownTable) -> MResult<Value> {
+  let mut headers: Vec<String> = table.header.iter().map(|header| header.to_string().trim().to_string()).collect();
+  let rows: Vec<Vec<String>> = table.rows.iter().map(|row| {
+    row.iter().map(|column| column.to_string().trim().to_string()).collect()
+  }).collect();
+
+  if headers.is_empty() && rows.len() == 1 && !rows[0].is_empty() {
+    headers = vec![rows[0][0].clone()];
+    let compact_records: Vec<_> = rows[0]
+      .iter()
+      .skip(1)
+      .map(|value_text| MechRecord::new(vec![(headers[0].as_str(), parse_markdown_table_value(value_text))]))
+      .collect();
+    let compact_table = MechTable::from_records(compact_records)?;
+    return Ok(Value::Table(Ref::new(compact_table)));
+  }
+
+  if headers.is_empty() {
+    return Err(MechError::new(
+      GenericError { msg: "Markdown table is missing a header row.".to_string() },
+      None,
+    ));
+  }
+
+  let mut records = Vec::with_capacity(rows.len());
+  for row in &rows {
+    if row.len() != headers.len() {
+      return Err(MechError::new(
+        GenericError { msg: "Markdown table row has a different number of columns than the header.".to_string() },
+        None,
+      ));
+    }
+
+    let mut fields = Vec::with_capacity(row.len());
+    for (text, header) in row.iter().zip(headers.iter()) {
+      let value = parse_markdown_table_value(text);
+      fields.push((header.as_str(), value));
+    }
+    records.push(MechRecord::new(fields));
+  }
+
+  let table = MechTable::from_records(records)?;
+  Ok(Value::Table(Ref::new(table)))
+}
+
+fn parse_markdown_table_value(text: &str) -> Value {
+  if text.eq_ignore_ascii_case("true") || text == "✓" {
+    return Value::Bool(Ref::new(true));
+  }
+  if text.eq_ignore_ascii_case("false") || text == "✗" {
+    return Value::Bool(Ref::new(false));
+  }
+  if let Ok(value) = text.parse::<f64>() {
+    return Value::F64(Ref::new(value));
+  }
+  Value::String(Ref::new(text.to_string()))
+}
+
+fn inline_table_paragraph_to_value(paragraph: &Paragraph) -> MResult<Option<Value>> {
+  let text = paragraph.to_string();
+  let trimmed = text.trim();
+  if !(trimmed.starts_with('|') && trimmed.ends_with('|')) {
+    return Ok(None);
+  }
+
+  let cells: Vec<String> = trimmed
+    .split('|')
+    .map(|cell| cell.trim())
+    .filter(|cell| !cell.is_empty())
+    .map(|cell| cell.to_string())
+    .collect();
+
+  if cells.len() < 2 {
+    return Ok(None);
+  }
+
+  let header = vec![cells[0].clone()];
+  let mut records = Vec::with_capacity(cells.len() - 1);
+  for value_text in cells.iter().skip(1) {
+    records.push(MechRecord::new(vec![(header[0].as_str(), parse_markdown_table_value(value_text))]));
+  }
+
+  let table = MechTable::from_records(records)?;
+  Ok(Some(Value::Table(Ref::new(table))))
 }

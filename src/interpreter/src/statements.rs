@@ -357,7 +357,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
         result = converted_result;
       },
     };
-    let detached_result = detach_variable_value(&result);
+    let detached_result = detach_variable_value(&result, state_brrw);
     // Save symbol to interpreter
     let val_ref = state_brrw.save_symbol(var_id, var_name.clone(), detached_result.clone(), var_def.mutable);
     // Add variable define step to plan
@@ -366,7 +366,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
     return Ok(detached_result);
   } 
   let mut state_brrw = p.state.borrow_mut();
-  let detached_result = detach_variable_value(&result);
+  let detached_result = detach_variable_value(&result, &state_brrw);
   // Save symbol to interpreter
   let val_ref = state_brrw.save_symbol(var_id,var_name.clone(),detached_result.clone(),var_def.mutable);
   // Add variable define step to plan
@@ -375,9 +375,16 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
   return Ok(detached_result);
 }
 
-fn detach_variable_value(value: &Value) -> Value {
+fn detach_variable_value(value: &Value, state: &ProgramState) -> Value {
   match value {
-    Value::MutableReference(reference) => detach_variable_value(&reference.borrow()),
+    Value::MutableReference(reference) => detach_variable_value(&reference.borrow(), state),
+    Value::Id(id) => {
+      if let Some(symbol) = state.get_env_symbol(*id).or_else(|| state.get_symbol(*id)) {
+        detach_variable_value(&symbol.borrow(), state)
+      } else {
+        value.clone()
+      }
+    }
     _ => value.clone(),
   }
 }
