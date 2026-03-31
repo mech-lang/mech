@@ -1,8 +1,8 @@
 // setdata module (size, etc.)
 #[macro_use]
 
-#[cfg(feature = "size")]
+#[cfg(all(feature = "size", feature = "u64"))]
 pub mod size;
 
-#[cfg(feature = "size")]
+#[cfg(all(feature = "size", feature = "u64"))]
 pub use self::size::*;

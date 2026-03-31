@@ -1,16 +1,17 @@
 thematic-break
 ===============================================================================
 
+%% A thematic break visually separates major sections within a document.
 
-Thematic breaks are horizontal lines that can be used to separate sections of a document. They are created using three or more asterisks.
-
-**Example:**
+Insert a line with three or more asterisks:
 
 ```
 ***
 ***********
 ```
 
-When rendered, they look like this:
+Rendered form:
 
 ***
+
+Use thematic breaks sparingly to avoid visual clutter.

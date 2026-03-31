@@ -913,35 +913,35 @@ impl DecodedInstr {
 
 #[derive(Debug, Clone)]
 pub struct UnsupportedBytecodeVersionError;
-impl MechErrorKind2 for UnsupportedBytecodeVersionError {
+impl MechErrorKind for UnsupportedBytecodeVersionError {
   fn name(&self) -> &str { "UnsupportedBytecodeVersion" }
   fn message(&self) -> String { "Unsupported bytecode version".to_string() }
 }
 
 #[derive(Debug, Clone)]
 pub struct IncompatibleMechVersionError;
-impl MechErrorKind2 for IncompatibleMechVersionError {
+impl MechErrorKind for IncompatibleMechVersionError {
   fn name(&self) -> &str { "IncompatibleMechVersion" }
   fn message(&self) -> String { "Incompatible Mech version".to_string() }
 }
 
 #[derive(Debug, Clone)]
 pub struct UnsupportedConstantEncodingError;
-impl MechErrorKind2 for UnsupportedConstantEncodingError {
+impl MechErrorKind for UnsupportedConstantEncodingError {
   fn name(&self) -> &str { "UnsupportedConstantEncoding" }
   fn message(&self) -> String { "Unsupported constant encoding".to_string() }
 }
 
 #[derive(Debug, Clone)]
 pub struct ConstantEntryOutOfBoundsError;
-impl MechErrorKind2 for ConstantEntryOutOfBoundsError {
+impl MechErrorKind for ConstantEntryOutOfBoundsError {
   fn name(&self) -> &str { "ConstantEntryOutOfBounds" }
   fn message(&self) -> String { "Constant entry out of bounds".to_string() }
 }
 
 #[derive(Debug, Clone)]
 pub struct ConstantEntryAlignmentError;
-impl MechErrorKind2 for ConstantEntryAlignmentError {
+impl MechErrorKind for ConstantEntryAlignmentError {
   fn name(&self) -> &str { "ConstantEntryAlignmentError" }
   fn message(&self) -> String { "Constant entry alignment error".to_string() }
 }
@@ -952,7 +952,7 @@ pub struct ConstantWrongSizeError {
   pub found: usize,
   pub type_name: &'static str,
 }
-impl MechErrorKind2 for ConstantWrongSizeError {
+impl MechErrorKind for ConstantWrongSizeError {
   fn name(&self) -> &str { "ConstantWrongSize" }
   fn message(&self) -> String {
     format!(
@@ -966,7 +966,7 @@ impl MechErrorKind2 for ConstantWrongSizeError {
 pub struct ConstantTooShortError {
   pub type_name: &'static str,
 }
-impl MechErrorKind2 for ConstantTooShortError {
+impl MechErrorKind for ConstantTooShortError {
   fn name(&self) -> &str { "ConstantTooShort" }
   fn message(&self) -> String {
     format!("{} constant too short", self.type_name)
@@ -977,7 +977,7 @@ impl MechErrorKind2 for ConstantTooShortError {
 pub struct UnsupportedConstantTypeError {
   pub type_tag: TypeTag,
 }
-impl MechErrorKind2 for UnsupportedConstantTypeError {
+impl MechErrorKind for UnsupportedConstantTypeError {
   fn name(&self) -> &str { "UnsupportedConstantType" }
 
   fn message(&self) -> String {
@@ -990,7 +990,7 @@ pub struct CrcMismatchError {
   pub expected: u32,
   pub found: u32,
 }
-impl MechErrorKind2 for CrcMismatchError {
+impl MechErrorKind for CrcMismatchError {
   fn name(&self) -> &str { "CrcMismatch" }
 
   fn message(&self) -> String {
@@ -1000,7 +1000,7 @@ impl MechErrorKind2 for CrcMismatchError {
 
 #[derive(Debug, Clone)]
 pub struct TruncatedInstructionError;
-impl MechErrorKind2 for TruncatedInstructionError {
+impl MechErrorKind for TruncatedInstructionError {
   fn name(&self) -> &str { "TruncatedInstruction" }
   fn message(&self) -> String { "Truncated instruction: cannot read full opcode or operands".to_string() }
 }
@@ -1009,7 +1009,7 @@ impl MechErrorKind2 for TruncatedInstructionError {
 pub struct UnknownOpcodeError {
   pub opcode: OpCode,
 }
-impl MechErrorKind2 for UnknownOpcodeError {
+impl MechErrorKind for UnknownOpcodeError {
   fn name(&self) -> &str { "UnknownOpcode" }
   fn message(&self) -> String { format!("Unknown opcode: {}", self.opcode) }
 }
@@ -1019,7 +1019,7 @@ pub struct FileTooShortError {
   pub total_len: u64,
   pub expected_len: u64,
 }
-impl MechErrorKind2 for FileTooShortError {
+impl MechErrorKind for FileTooShortError {
   fn name(&self) -> &str { "FileTooShort" }
   fn message(&self) -> String {
     format!(
@@ -1033,7 +1033,7 @@ impl MechErrorKind2 for FileTooShortError {
 pub struct InvalidOpcodeError {
   pub opcode: u8,
 }
-impl MechErrorKind2 for InvalidOpcodeError {
+impl MechErrorKind for InvalidOpcodeError {
   fn name(&self) -> &str { "InvalidOpcode" }
   fn message(&self) -> String { format!("Invalid opcode byte: {}", self.opcode) }
 }
@@ -1042,7 +1042,7 @@ impl MechErrorKind2 for InvalidOpcodeError {
 pub struct UnknownConstantTypeError {
   pub tag: u16,
 }
-impl MechErrorKind2 for UnknownConstantTypeError {
+impl MechErrorKind for UnknownConstantTypeError {
   fn name(&self) -> &str { "UnknownConstantType" }
 
   fn message(&self) -> String {
@@ -1052,7 +1052,7 @@ impl MechErrorKind2 for UnknownConstantTypeError {
 
 #[derive(Debug, Clone)]
 pub struct InvalidUtf8InDictError;
-impl MechErrorKind2 for InvalidUtf8InDictError {
+impl MechErrorKind for InvalidUtf8InDictError {
   fn name(&self) -> &str { "InvalidUtf8InDict" }
   fn message(&self) -> String { "Invalid UTF-8 in dictionary entry".to_string() }
 }
@@ -1061,7 +1061,7 @@ impl MechErrorKind2 for InvalidUtf8InDictError {
 pub struct ConstEntryWriteIoError {
   pub source: String,
 }
-impl MechErrorKind2 for ConstEntryWriteIoError {
+impl MechErrorKind for ConstEntryWriteIoError {
   fn name(&self) -> &str { "ConstEntryWriteIoError" }
   fn message(&self) -> String { format!("Failed to write constant entry: {}", self.source) }
 }

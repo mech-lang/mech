@@ -1,0 +1,82 @@
+comprehensions
+================================================================================
+
+%% A `comprehension` builds a set from generators and predicates. It is useful for concise construction, filtering, and relational joins over data. Mech several comprehension forms including matrix, set, and table comprehensions.
+
+1. Syntax
+-------------------------------------------------------------------------------
+
+A set comprehension has the form:
+
+```
+{yield-expression | clause-1, clause-2, ..., clause-n}
+```
+
+Matrix comprehensions have a similar form but use square brackets and yield a matrix instead of a set:
+
+```
+[yield-expression | clause-1, clause-2, ..., clause-n]
+```
+
+Common clause forms:
+
+- Generator: `pattern <- source`
+- Predicate: `condition`
+
+2. Semantics
+-------------------------------------------------------------------------------
+
+- Generators introduce variables and iterate values from a source collection.
+- Predicates filter candidate bindings.
+- Later clauses can use variables introduced by earlier clauses.
+- Reused variables across generators naturally express join-like relationships.
+- The result is a set, so duplicates are removed.
+
+3. Basic Examples
+-------------------------------------------------------------------------------
+
+(3.1) Squares
+
+```mech:ex 3.1
+A := {1,2,3,4,5}
+{x * x | x <- A}
+```
+
+(3.2) Filtering Evens
+
+```mech:ex 3.2
+A := {1,2,3,4,5,6,7,8,9,10}
+{x | x <- A, (x % 2) == 0}
+```
+
+(3.3) Set Intersection Pattern
+
+```mech:ex 3.3
+A := {1,2,3,4,5,6,7,8,9,10}
+B := {2,3,5,7,11,13}
+{x | x <- A, x <- B}
+```
+
+4. Relational-Style Comprehensions
+-------------------------------------------------------------------------------
+
+Free variables across generators express join-like relationships.
+
+(4.1) Friends of Friends
+
+For example, to find "friends of friends" in a social graph represented as pairs of friends:
+
+```mech:ex 4.1
+pairs := {(1, 2), (1, 3), (2, 8), (3, 5), (3, 9)}
+user := 1
+{fof | (u, f) <- pairs, (f, fof) <- pairs, u == user}
+```
+
+(4.2) Pythagorean Triples
+
+Here's a more complex example that finds all Pythagorean triples, which are sets of three positive integers (a, b, c) such that a^2 + b^2 = c^2, with each integer less than or equal to a specified limit `n`. The comprehension uses two generators to iterate over possible values of a, b, and c, and a predicate to filter for valid triples:
+
+```mech:ex 4.2
+n := 13
+{(a,b,c) | a <- 1..=n, b <- a..=n, c <- b..=n, (a * a + b * b) == (c * c)}
+```

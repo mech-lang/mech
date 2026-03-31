@@ -1,6 +1,6 @@
 [package]
 name = "mech-interpreter"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "The Mech language runtime."
 documentation = "http://docs.mech-lang.org"
@@ -11,7 +11,7 @@ categories = ["no-std", "science::robotics", "science", "game-engines", "databas
 license = "Apache-2.0"
 readme = "README.md"
 edition = "2024"
-rust-version = "1.96"
+rust-version = "1.92"
 
 [badges]
 gitlab = { repository = "mech-lang/mech", branch = "main" }
@@ -174,7 +174,8 @@ io_print = ["io", "mech-io/print"]
 io_println = ["io", "mech-io/println"]
 
 # Matrix
-matrix_default = ["matrix_solve", "matrix_dot", "matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_transpose", "mech-matrix/matrix_default"]
+matrix_default = ["matrix_solve", "matrix_dot", "matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_transpose", "mech-matrix/matrix_default", "matrix_comprehensions"]
+matrix_comprehensions = ["functions", "matrix", "mech-matrix/comprehensions"]              
 matrix_horzcat = ["matrix", "functions"]
 matrix_vertcat = ["matrix", "functions"]
 matrix_solve = ["matrix", "mech-matrix/solve"]
@@ -288,17 +289,17 @@ string_default = ["string_concat", "mech-string/string_default"]
 string_concat = ["string", "mech-string/concat"]
 
 [dependencies]
-mech-core = {version = "0.3.1", default-features = false}
-mech-math = { version = "0.3.1", default-features = false, optional = true}
-mech-logic = { version = "0.3.1", default-features = false, optional = true }
-mech-range = { version = "0.3.1", default-features = false, optional = true }
-mech-matrix = { version = "0.3.1", default-features = false, optional = true }
-mech-compare = { version = "0.3.1", default-features = false, optional = true }
-mech-stats = { version = "0.3.1", default-features = false, optional = true }
-mech-io = { version = "0.3.1", default-features = false, optional = true }
-mech-set = { version = "0.3.1", default-features = false, optional = true }
-mech-combinatorics = { version = "0.3.1", default-features = false, optional = true }
-mech-string = { version = "0.3.1", default-features = false, optional = true }
+mech-core = {version = "0.3.2", default-features = false}
+mech-math = { version = "0.3.2", default-features = false, optional = true}
+mech-logic = { version = "0.3.2", default-features = false, optional = true }
+mech-range = { version = "0.3.2", default-features = false, optional = true }
+mech-matrix = { version = "0.3.2", default-features = false, optional = true }
+mech-compare = { version = "0.3.2", default-features = false, optional = true }
+mech-stats = { version = "0.3.2", default-features = false, optional = true }
+mech-io = { version = "0.3.2", default-features = false, optional = true }
+mech-set = { version = "0.3.2", default-features = false, optional = true }
+mech-combinatorics = { version = "0.3.2", default-features = false, optional = true }
+mech-string = { version = "0.3.2", default-features = false, optional = true }
 
 paste = "1.0.15"
 byteorder = "1.5.0"

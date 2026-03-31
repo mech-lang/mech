@@ -438,7 +438,7 @@ impl Hash for MechTable {
 #[derive(Debug, Clone)]
 pub struct CannotCreateTableFromEmptyRecordListError;
 
-impl MechErrorKind2 for CannotCreateTableFromEmptyRecordListError {
+impl MechErrorKind for CannotCreateTableFromEmptyRecordListError {
   fn name(&self) -> &str {
     "EmptyRecordList"
   }
@@ -450,7 +450,7 @@ impl MechErrorKind2 for CannotCreateTableFromEmptyRecordListError {
 #[derive(Debug, Clone)]
 pub struct CannotCreateTableFromNonTableKindError;
 
-impl MechErrorKind2 for CannotCreateTableFromNonTableKindError {
+impl MechErrorKind for CannotCreateTableFromNonTableKindError {
   fn name(&self) -> &str {
     "CannotCreateTableFromNonTableKind"
   }
@@ -466,7 +466,7 @@ pub struct TableColumnKindMismatchError {
   pub actual_kind: ValueKind,
 }
 
-impl MechErrorKind2 for TableColumnKindMismatchError {
+impl MechErrorKind for TableColumnKindMismatchError {
   fn name(&self) -> &str { "ColumnKindMismatch" }
   fn message(&self) -> String {
     format!("Schema mismatch: column {} kind mismatch (expected: {}, found: {}).",
@@ -481,7 +481,7 @@ pub struct TableColumnNameMismatchError {
   pub actual_name: String,
 }
 
-impl MechErrorKind2 for TableColumnNameMismatchError {
+impl MechErrorKind for TableColumnNameMismatchError {
   fn name(&self) -> &str { "ColumnNameMismatch" }
   fn message(&self) -> String {
     format!("Schema mismatch: column {} name mismatch (expected: '{}', found: '{}').",
@@ -494,7 +494,7 @@ pub struct TableColumnNotFoundError {
   pub column_id: u64,
 }
 
-impl MechErrorKind2 for TableColumnNotFoundError {
+impl MechErrorKind for TableColumnNotFoundError {
   fn name(&self) -> &str { "ColumnNotFound" }
   fn message(&self) -> String {
     format!("Schema mismatch: column {} not found in table.", self.column_id)
@@ -506,7 +506,7 @@ pub struct MatrixAppendToTableError {
   pub column_id: u64,
 }
 
-impl MechErrorKind2 for MatrixAppendToTableError {
+impl MechErrorKind for MatrixAppendToTableError {
   fn name(&self) -> &str { "MatrixAppendToTableError" }
   fn message(&self) -> String {
     format!("Failed to append matrix for column {}.", self.column_id)

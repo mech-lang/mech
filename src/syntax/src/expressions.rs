@@ -41,11 +41,13 @@ like literals and variables.
 - `factor`: atomic units (literals, function calls, variables, etc.)
 */
 
-// expression := set-comprehension | range-expression | formula ;
+// expression := set-comprehension | matrix-comprehension | range-expression | formula ;
 pub fn expression(input: ParseString) -> ParseResult<Expression> {
   let (input, expr) = match set_comprehension(input.clone()) {
     Ok((input, sc)) => (input, Expression::SetComprehension(Box::new(sc))),
-    Err(_) => match range_expression(input.clone()) {
+    Err(_) => match matrix_comprehension(input.clone()) {
+      Ok((input, mc)) => (input, Expression::MatrixComprehension(Box::new(mc))),
+      Err(_) => match range_expression(input.clone()) {
       Ok((input, rng)) => (input, Expression::Range(Box::new(rng))),
       Err(_) => match formula(input.clone()) {
         Ok((input, Factor::Expression(expr))) => (input, *expr),
@@ -53,6 +55,7 @@ pub fn expression(input: ParseString) -> ParseResult<Expression> {
         Err(err) => {
           return Err(err);},
       } 
+    }
     }
   };
   Ok((input, expr))
@@ -126,6 +129,7 @@ pub fn factor(input: ParseString) -> ParseResult<Factor> {
     ("parenthetical_term", Box::new(|i| parenthetical_term(i))),
     ("negate_factor", Box::new(|i| negate_factor(i))),
     ("not_factor", Box::new(|i| not_factor(i))),
+    ("matrix_comprehension", Box::new(|i| matrix_comprehension(i).map(|(i, m)| (i, Factor::Expression(Box::new(Expression::MatrixComprehension(Box::new(m)))))))),
     ("structure", Box::new(|i| structure(i).map(|(i, s)| (i, Factor::Expression(Box::new(Expression::Structure(s))))))),
     ("function_call", Box::new(|i| function_call(i).map(|(i, f)| (i, Factor::Expression(Box::new(Expression::FunctionCall(f))))))),
     ("literal", Box::new(|i| literal(i).map(|(i, l)| (i, Factor::Expression(Box::new(Expression::Literal(l))))))),
@@ -361,7 +365,7 @@ pub fn not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
 // equal-to := "==" ;
 pub fn equal_to(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = ws0e(input)?;
-  let (input, _) = tag("==")(input)?;
+  let (input, _) = alt((tag("=="),tag("⩵")))(input)?;
   let (input, _) = ws0e(input)?;
   Ok((input, ComparisonOp::Equal))
 }
@@ -624,6 +628,20 @@ pub fn set_comprehension(input: ParseString) -> ParseResult<SetComprehension> {
   let (input, _) = space_tab0(input)?;
   let (input, _) = right_brace(input)?;
   Ok((input, SetComprehension{ expression: expr, qualifiers: quals }))
+}
+
+// matrix-comprehension := "[", expression, "|", [matrix-qualifier, ","], "]" ;
+pub fn matrix_comprehension(input: ParseString) -> ParseResult<MatrixComprehension> {
+  let (input, _) = left_bracket(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, expr) = expression(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, _) = bar(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, quals) = separated_list1(list_separator, comprehension_qualifier)(input)?;
+  let (input, _) = space_tab0(input)?;
+  let (input, _) = right_bracket(input)?;
+  Ok((input, MatrixComprehension{ expression: expr, qualifiers: quals }))
 }
 
 // set-qualifier := generator | expression | variable-define  ;

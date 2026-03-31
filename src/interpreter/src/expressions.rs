@@ -19,9 +19,11 @@ pub fn expression(expr: &Expression, env: Option<&Environment>, p: &Interpreter)
     Expression::Structure(strct) => structure(strct, env, p),
     Expression::Literal(ltrl) => literal(&ltrl, p),
     #[cfg(feature = "functions")]
-    Expression::FunctionCall(fxn_call) => function_call(fxn_call, p),
+    Expression::FunctionCall(fxn_call) => function_call(fxn_call, env, p),
     #[cfg(feature = "set_comprehensions")]
     Expression::SetComprehension(set_comp) => set_comprehension(set_comp, p),
+    #[cfg(feature = "matrix_comprehensions")]
+    Expression::MatrixComprehension(matrix_comp) => matrix_comprehension(matrix_comp, p),
     //Expression::FsmPipe(_) => todo!(),
     x => Err(MechError::new(
       FeatureNotEnabledError,
@@ -30,6 +32,7 @@ pub fn expression(expr: &Expression, env: Option<&Environment>, p: &Interpreter)
   }
 }
 
+#[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
 pub fn pattern_match_value(pattern: &Pattern, value: &Value, env: &mut Environment) -> MResult<()> {
   match pattern {
     Pattern::Wildcard => Ok(()),
@@ -95,80 +98,35 @@ pub fn pattern_match_value(pattern: &Pattern, value: &Value, env: &mut Environme
   }
 }
 
-#[cfg(feature = "set_comprehensions")]
-pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult<Value> {
+#[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
+fn comprehension_environments(qualifiers: &[ComprehensionQualifier], comprehension_id: u64, p: &Interpreter) -> MResult<(Vec<Environment>, Interpreter)> {
   let mut envs: Vec<Environment> = vec![HashMap::new()];
-  let comprehension_id = hash_str(&format!("{:?}", set_comp));
   let mut new_p = p.clone();
   new_p.id = comprehension_id;
   new_p.clear_plan();
-  // Process each qualifier in order
-  for qual in &set_comp.qualifiers {
+  for qual in qualifiers {
     envs = match qual {
       ComprehensionQualifier::Generator((pttrn, expr)) => {
         let mut new_envs = Vec::new();
         for env in &envs {
-          // Evaluate the generator expression
           let collection = expression(expr, Some(env), &new_p)?;
-          match collection {
-            Value::Set(mset) => {
-              let set_brrw = mset.borrow();
-
-              for elmnt in set_brrw.set.iter() {
-                let mut new_env = env.clone();
-
-                // Try to match the element with the pattern
-                if pattern_match_value(pttrn, elmnt, &mut new_env).is_ok() {
-                  new_envs.push(new_env);
-                }
-                // If match fails, skip this element
-              }
+          for elmnt in comprehension_generator_values(&collection)? {
+            let mut new_env = env.clone();
+            if pattern_match_value(pttrn, &elmnt, &mut new_env).is_ok() {
+              new_envs.push(new_env);
             }
-            Value::MutableReference(ref_set) => {
-              let ref_set_brrw = ref_set.borrow();
-              match &*ref_set_brrw {
-                Value::Set(mset) => {
-                  let set_brrw = mset.borrow();
-
-                  for elmnt in set_brrw.set.iter() {
-                    let mut new_env = env.clone();
-
-                    // Try to match the element with the pattern
-                    if pattern_match_value(pttrn, elmnt, &mut new_env).is_ok() {
-                      new_envs.push(new_env);
-                    }
-                    // If match fails, skip this element
-                  }
-                }
-                x => return Err(MechError::new(
-                  SetComprehensionGeneratorError{
-                    found: x.kind(),
-                  },
-                  None
-                ).with_compiler_loc()),
-              }
-            }
-            x => return Err(MechError::new(
-              SetComprehensionGeneratorError{
-                found: x.kind(),
-              },
-              None
-            ).with_compiler_loc()),
           }
         }
         new_envs
       }
       ComprehensionQualifier::Filter(expr) => {
-        // Keep only environments where the filter evaluates to true
         envs
           .into_iter()
           .filter(|env| {
             let result = expression(expr, Some(env), &new_p);
             match result {
               Ok(Value::Bool(v)) => v.borrow().clone(),
-              Ok(x) => {
-                false
-              }
+              Ok(_) => false,
               Err(_) => false,
             }
           })
@@ -185,15 +143,251 @@ pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult
       }
     };
   }
-  // Step 3: evaluate the LHS expression in each environment
-  let mut result_set = IndexSet::new();
-  for env in envs {
-    let val = expression(&set_comp.expression, Some(&env), &new_p)?;
-    if !result_set.contains(&val) {
-      result_set.insert(val);
+  Ok((envs, new_p))
+}
+
+#[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
+fn comprehension_generator_values(collection: &Value) -> MResult<Vec<Value>> {
+  match collection {
+    #[cfg(feature = "set")]
+    Value::Set(mset) => Ok(mset.borrow().set.iter().cloned().collect()),
+    #[cfg(feature = "matrix")]
+    Value::MatrixIndex(matrix) => Ok(matrix.as_vec().into_iter().map(|value| Value::Index(Ref::new(value))).collect()),
+    #[cfg(all(feature = "matrix", feature = "bool"))]
+    Value::MatrixBool(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "u8"))]
+    Value::MatrixU8(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "u16"))]
+    Value::MatrixU16(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "u32"))]
+    Value::MatrixU32(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "u64"))]
+    Value::MatrixU64(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "u128"))]
+    Value::MatrixU128(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "i8"))]
+    Value::MatrixI8(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "i16"))]
+    Value::MatrixI16(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "i32"))]
+    Value::MatrixI32(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "i64"))]
+    Value::MatrixI64(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "i128"))]
+    Value::MatrixI128(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "f32"))]
+    Value::MatrixF32(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "f64"))]
+    Value::MatrixF64(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "string"))]
+    Value::MatrixString(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "rational"))]
+    Value::MatrixR64(matrix) => Ok(matrix.as_vec().into_iter().map(|value| value.to_value()).collect()),
+    #[cfg(all(feature = "matrix", feature = "complex"))]
+    Value::MatrixC64(matrix) => Ok(matrix.as_vec().into_iter().map(|value| value.to_value()).collect()),
+    #[cfg(feature = "matrix")]
+    Value::MatrixValue(matrix) => Ok(matrix.as_vec()),
+    Value::MutableReference(reference) => comprehension_generator_values(&reference.borrow()),
+    x => Err(MechError::new(
+      ComprehensionGeneratorError{
+        found: x.kind(),
+      },
+      None
+    ).with_compiler_loc()),
+  }
+}
+
+#[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
+fn detach_comprehension_value(value: &Value) -> Value {
+  match value {
+    Value::MutableReference(reference) => reference.borrow().clone(),
+    _ => value.clone(),
+  }
+}
+
+#[cfg(feature = "set_comprehensions")]
+#[derive(Debug)]
+pub struct ValueSetComprehension {
+  pub arguments: Vec<Value>,
+  pub out: Ref<MechSet>,
+}
+#[cfg(all(feature = "set_comprehensions", feature = "functions"))]
+impl MechFunctionImpl for ValueSetComprehension {
+  fn solve(&self) {
+    let args = self.arguments.iter().map(detach_comprehension_value).collect::<Vec<Value>>();
+    *self.out.borrow_mut() = MechSet::from_vec(args);
+  }
+  fn out(&self) -> Value { Value::Set(self.out.clone()) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(all(feature = "set_comprehensions", feature = "functions"))]
+impl MechFunctionFactory for ValueSetComprehension {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Nullary(out) => {
+        let out: Ref<MechSet> = unsafe{ out.as_unchecked().clone() };
+        Ok(Box::new(ValueSetComprehension { arguments: Vec::new(), out }))
+      }
+      _ => Err(MechError::new(
+        IncorrectNumberOfArguments { expected: 0, found: args.len() },
+        None
+      ).with_compiler_loc()),
     }
   }
-  Ok(Value::Set(Ref::new(MechSet::from_set(result_set))))
+}
+#[cfg(all(feature = "set_comprehensions", feature = "compiler"))]
+impl MechFunctionCompiler for ValueSetComprehension {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    compile_nullop!("set/comprehension", self.out, ctx, FeatureFlag::Builtin(FeatureKind::SetComprehensions));
+  }
+}
+#[cfg(all(feature = "set_comprehensions", feature = "functions"))]
+register_descriptor! {
+  FunctionDescriptor {
+    name: "set/comprehension",
+    ptr: ValueSetComprehension::new,
+  }
+}
+#[cfg(feature = "set_comprehensions")]
+pub struct SetComprehensionDefine {}
+#[cfg(all(feature = "set_comprehensions", feature = "functions"))]
+impl NativeFunctionCompiler for SetComprehensionDefine {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    Ok(Box::new(ValueSetComprehension {
+      arguments: arguments.clone(),
+      out: Ref::new(MechSet::from_vec(arguments.clone())),
+    }))
+  }
+}
+#[cfg(all(feature = "set_comprehensions", feature = "functions"))]
+register_descriptor!{
+  FunctionCompilerDescriptor {
+    name: "set/comprehension",
+    ptr: &SetComprehensionDefine{},
+  }
+}
+
+#[cfg(feature = "matrix_comprehensions")]
+#[derive(Debug)]
+pub struct ValueMatrixComprehension {
+  pub arguments: Vec<Value>,
+  pub out: Ref<Value>,
+}
+#[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
+impl MechFunctionImpl for ValueMatrixComprehension {
+  fn solve(&self) {
+    let args = self.arguments.iter().map(detach_comprehension_value).collect::<Vec<Value>>();
+    let out = if args.is_empty() {
+      Value::MatrixValue(Matrix::from_vec(vec![], 0, 0))
+    } else {
+      let fxn = MatrixHorzCat{}.compile(&args).expect("matrix/comprehension input kinds changed to incompatible values");
+      fxn.solve();
+      fxn.out()
+    };
+    *self.out.borrow_mut() = out;
+  }
+  fn out(&self) -> Value { self.out.borrow().clone() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
+impl MechFunctionFactory for ValueMatrixComprehension {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Nullary(out) => Ok(Box::new(ValueMatrixComprehension { arguments: Vec::new(), out: Ref::new(out) })),
+      _ => Err(MechError::new(
+        IncorrectNumberOfArguments { expected: 0, found: args.len() },
+        None
+      ).with_compiler_loc()),
+    }
+  }
+}
+#[cfg(all(feature = "matrix_comprehensions", feature = "compiler"))]
+impl MechFunctionCompiler for ValueMatrixComprehension {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    compile_nullop!("matrix/comprehension", self.out, ctx, FeatureFlag::Builtin(FeatureKind::MatrixComprehensions));
+  }
+}
+#[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
+register_descriptor! {
+  FunctionDescriptor {
+    name: "matrix/comprehension",
+    ptr: ValueMatrixComprehension::new,
+  }
+}
+#[cfg(feature = "matrix_comprehensions")]
+pub struct MatrixComprehensionDefine {}
+#[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
+impl NativeFunctionCompiler for MatrixComprehensionDefine {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    let out = if arguments.is_empty() {
+      Value::MatrixValue(Matrix::from_vec(vec![], 0, 0))
+    } else {
+      let fxn = MatrixHorzCat {}.compile(arguments)?;
+      fxn.solve();
+      fxn.out()
+    };
+    Ok(Box::new(ValueMatrixComprehension { arguments: arguments.clone(), out: Ref::new(out) }))
+  }
+}
+#[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
+register_descriptor!{
+  FunctionCompilerDescriptor {
+    name: "matrix/comprehension",
+    ptr: &MatrixComprehensionDefine{},
+  }
+}
+
+#[cfg(feature = "set_comprehensions")]
+pub fn set_comprehension(set_comp: &SetComprehension,p: &Interpreter) -> MResult<Value> {
+  let comprehension_id = hash_str(&format!("{:?}", set_comp));
+  let (envs, new_p) = comprehension_environments(&set_comp.qualifiers, comprehension_id, p)?;
+  let mut values = Vec::new();
+  for env in envs {
+    let val = expression(&set_comp.expression, Some(&env), &new_p)?;
+    values.push(val);
+  }
+  let functions = p.functions();
+  let set_define_id = hash_str("set/comprehension");
+  let set_define = {
+    functions
+      .borrow()
+      .function_compilers
+      .get(&set_define_id)
+      .copied()
+  };
+  match set_define {
+    Some(compiler) => execute_native_function_compiler(compiler, &values, p),
+    None => Err(MechError::new(
+      MissingFunctionError { function_id: set_define_id },
+      None,
+    ).with_compiler_loc()),
+  }
+}
+
+#[cfg(feature = "matrix_comprehensions")]
+pub fn matrix_comprehension(matrix_comp: &MatrixComprehension,p: &Interpreter) -> MResult<Value> {
+  let comprehension_id = hash_str(&format!("{:?}", matrix_comp));
+  let (envs, new_p) = comprehension_environments(&matrix_comp.qualifiers, comprehension_id, p)?;
+  let mut values = Vec::new();
+  for env in envs {
+    values.push(expression(&matrix_comp.expression, Some(&env), &new_p)?);
+  }
+  let functions = p.functions();
+  let horzcat_id = hash_str("matrix/comprehension");
+  let horzcat = {
+    functions
+      .borrow()
+      .function_compilers
+      .get(&horzcat_id)
+      .copied()
+  };
+  match horzcat {
+    Some(compiler) => execute_native_function_compiler(compiler, &values, p),
+    None => Err(MechError::new(
+      MissingFunctionError { function_id: horzcat_id },
+      None,
+    ).with_compiler_loc()),
+  }
 }
 
 
@@ -712,18 +906,18 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
       FormulaOperator::Logic(LogicOp::Xor) => LogicXor{}.compile(&vec![lhs,rhs])?,
       
       // Table
-      #[cfg(feature = "table_inner_join")]
-      FormulaOperator::Table(TableOp::InnerJoin) => todo!(),
-      #[cfg(feature = "table_left_outer_join")]
-      FormulaOperator::Table(TableOp::LeftOuterJoin) => todo!(),
-      #[cfg(feature = "table_right_outer_join")]
-      FormulaOperator::Table(TableOp::RightOuterJoin) => todo!(),
-      #[cfg(feature = "table_full_outer_join")]
-      FormulaOperator::Table(TableOp::FullOuterJoin) => todo!(),
-      #[cfg(feature = "table_left_semi_join")]
-      FormulaOperator::Table(TableOp::LeftSemiJoin) => todo!(),
-      #[cfg(feature = "table_left_anti_join")]
-      FormulaOperator::Table(TableOp::LeftAntiJoin) => todo!(),
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::InnerJoin) => TableInnerJoin{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::LeftOuterJoin) => TableLeftOuterJoin{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::RightOuterJoin) => TableRightOuterJoin{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::FullOuterJoin) => TableFullOuterJoin{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::LeftSemiJoin) => TableLeftSemiJoin{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::LeftAntiJoin) => TableLeftAntiJoin{}.compile(&vec![lhs,rhs])?,
 
       // Set
       #[cfg(feature = "set_union")]
@@ -768,7 +962,7 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
 pub struct UnhandledFormulaOperatorError {
   pub operator: FormulaOperator,
 }
-impl MechErrorKind2 for UnhandledFormulaOperatorError {
+impl MechErrorKind for UnhandledFormulaOperatorError {
   fn name(&self) -> &str { "UnhandledFormulaOperator" }
   fn message(&self) -> String {
     format!("Unhandled formula operator: {:#?}", self.operator)
@@ -779,7 +973,7 @@ impl MechErrorKind2 for UnhandledFormulaOperatorError {
 pub struct UndefinedVariableError {
   pub id: u64, 
 }
-impl MechErrorKind2 for UndefinedVariableError {
+impl MechErrorKind for UndefinedVariableError {
   fn name(&self) -> &str { "UndefinedVariable" }
 
   fn message(&self) -> String {
@@ -790,7 +984,7 @@ impl MechErrorKind2 for UndefinedVariableError {
 pub struct InvalidIndexKindError {
   kind: ValueKind,
 }
-impl MechErrorKind2 for InvalidIndexKindError {
+impl MechErrorKind for InvalidIndexKindError {
   fn name(&self) -> &str {
     "InvalidIndexKind"
   }
@@ -800,16 +994,16 @@ impl MechErrorKind2 for InvalidIndexKindError {
 }
 
 #[derive(Debug, Clone)]
-pub struct SetComprehensionGeneratorError{
+pub struct ComprehensionGeneratorError{
   found: ValueKind,
 }
 
-impl MechErrorKind2 for SetComprehensionGeneratorError {
+impl MechErrorKind for ComprehensionGeneratorError {
   fn name(&self) -> &str {
-    "SetComprehensionGenerator"
+    "ComprehensionGenerator"
   }
   fn message(&self) -> String {
-    format!("Set comprehension generator must produce a set, found kind: {:?}", self.found)
+    format!("Comprehension generator must produce a set or matrix, found kind: {:?}", self.found)
   }
 }
 
@@ -817,7 +1011,7 @@ impl MechErrorKind2 for SetComprehensionGeneratorError {
 pub struct PatternExpectedTupleError{
   found: ValueKind,
 }
-impl MechErrorKind2 for PatternExpectedTupleError {
+impl MechErrorKind for PatternExpectedTupleError {
   fn name(&self) -> &str {
     "PatternExpectedTuple"
   }
@@ -831,7 +1025,7 @@ pub struct ArityMismatchError {
   expected: usize,
   found: usize,
 }
-impl MechErrorKind2 for ArityMismatchError {
+impl MechErrorKind for ArityMismatchError {
   fn name(&self) -> &str {
     "ArityMismatch"
   }
@@ -847,7 +1041,7 @@ pub struct PatternMatchError {
   pub found: String,
 }
 
-impl MechErrorKind2 for PatternMatchError {
+impl MechErrorKind for PatternMatchError {
   fn name(&self) -> &str {
     "PatternMatchError"
   }

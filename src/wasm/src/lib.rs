@@ -128,6 +128,8 @@ fn new_interpreter(id: u64) -> Interpreter {
   fxns.function_compilers.insert(hash_str("matrix/dot"), &MatrixDot{});
   #[cfg(feature = "matrix_solve")]
   fxns.function_compilers.insert(hash_str("matrix/solve"), &MatrixSolve{});
+  #[cfg(feature = "matrix_comprehensions")]
+  fxns.function_compilers.insert(hash_str("matrix/comprehension"), &MatrixComprehensionDefine{});
 
   // Compare functions
   #[cfg(feature = "compare_eq")]
@@ -172,6 +174,8 @@ fn new_interpreter(id: u64) -> Interpreter {
   fxns.function_compilers.insert(hash_str("set/element-of"), &SetElementOf{});
   #[cfg(feature = "set_not_element_of")]
   fxns.function_compilers.insert(hash_str("set/not-element-of"), &SetNotElementOf{});
+  #[cfg(feature = "set_comprehensions")]
+  fxns.function_compilers.insert(hash_str("set/comprehension"), &SetComprehensionDefine{});
 
   intrp
 

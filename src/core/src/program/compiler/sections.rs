@@ -216,6 +216,7 @@ pub enum FeatureKind {
   HorzCat, VertCat,
   Compiler, PrettyPrint, Serde,
   MatMul, Transpose, Dot, Cross, Solve,
+  MatrixComprehensions,
   
   Add, Sub, Mul, Div, Pow, Mod, 
   Neg, OpAssign, LT, LTE, GT,
@@ -298,6 +299,7 @@ impl FeatureKind {
       FeatureKind::Dot => "matrix_dot".to_string(),
       FeatureKind::Solve => "matrix_solve".to_string(),
       FeatureKind::Cross => "matrix_cross".to_string(),
+      FeatureKind::MatrixComprehensions => "matrix_comprehensions".to_string(),
       FeatureKind::Add => "math_add".to_string(),
       FeatureKind::Sub => "math_sub".to_string(),
       FeatureKind::Mul => "math_mul".to_string(),

@@ -163,10 +163,34 @@ impl Formatter {
   }
 
   pub fn title(&mut self, node: &Title) -> String {
+    let title = node.text.to_string();
+
     if self.html {
-      format!("<h1 class=\"mech-program-title\">{}</h1>",node.to_string())
+      if let Some(byline) = &node.byline {
+        let formatted_byline = self.paragraph(byline);
+        format!(
+          "<h1 class=\"mech-program-title\">{}</h1>\n<div class=\"mech-program-byline\">{}</div>",
+          title,
+          formatted_byline
+        )
+      } else {
+        format!("<h1 class=\"mech-program-title\">{}</h1>", title)
+      }
     } else {
-      format!("{}\n===============================================================================\n",node.to_string()) 
+      let mut out = format!(
+        "{}\n===============================================================================\n",
+        title
+      );
+
+      if let Some(byline) = &node.byline {
+        let byline_str = self.paragraph(byline);
+        out.push_str(&format!(
+          "{}\n===============================================================================\n",
+          byline_str
+        ));
+      }
+
+      out
     }
   }
 
@@ -432,9 +456,9 @@ impl Formatter {
         MechCode::Expression(expr) => self.expression(expr),
         //MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
         //MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
-        //MechCode::FunctionDefine(func_def) => self.function_define(func_def),
+        MechCode::FunctionDefine(func_def) => self.function_define(func_def),
         MechCode::Statement(stmt) => self.statement(stmt),
-        _ => todo!(),
+        x => format!("{{{:?}}}", x)
       };
       let formatted_comment = match cmmnt {
         Some(cmmt) => self.comment(cmmt),
@@ -1146,9 +1170,9 @@ impl Formatter {
         MechCode::Expression(expr) => self.expression(expr),
         //MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
         //MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
-        //MechCode::FunctionDefine(func_def) => self.function_define(func_def, src),
+        MechCode::FunctionDefine(func_def) => self.function_define(func_def),
         MechCode::Statement(stmt) => self.statement(stmt),
-        _ => todo!(),
+        x => todo!("Unhandled MechCode: {:#?}", x),
       };
       let formatted_comment = match cmmnt {
         Some(cmmt) => self.comment(cmmt),
@@ -1462,6 +1486,83 @@ impl Formatter {
     }
   }
 
+  pub fn function_define(&mut self, node: &FunctionDefine) -> String {
+    let name = node.name.to_string();
+    let input = node
+      .input
+      .iter()
+      .map(|arg| self.function_argument(arg))
+      .collect::<Vec<_>>()
+      .join(", ");
+
+    if !node.match_arms.is_empty() {
+      let output_kind = node
+        .output
+        .first()
+        .map(|arg| self.kind_annotation(&arg.kind.kind))
+        .unwrap_or_else(|| "<_>".to_string());
+
+      let arms = node
+        .match_arms
+        .iter()
+        .enumerate()
+        .map(|(ix, arm)| {
+          let branch = if ix + 1 == node.match_arms.len() { "└" } else { "├" };
+          let pattern = self.pattern(&arm.pattern);
+          let expression = self.expression(&arm.expression);
+          if self.html {
+            format!("<div class=\"mech-function-match-arm\"><span class=\"mech-function-branch\">{}</span><span class=\"mech-function-pattern\">{}</span> <span class=\"mech-function-arrow\">-&gt;</span><span class=\"mech-function-expression\">{}</span></div>", branch, pattern, expression)
+          } else {
+            format!("  {} {} -> {}", branch, pattern, expression)
+          }
+        })
+        .collect::<Vec<_>>()
+        .join(if self.html { "" } else { "\n" });
+
+      if self.html {
+        format!("<div class=\"mech-function-define\"><div class=\"mech-function-signature\"><span class=\"mech-function-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-function-input\">{}</span><span class=\"mech-right-paren\">)</span> <span class=\"mech-function-arrow\">-&gt;</span> <span class=\"mech-function-output\">{}</span></div><div class=\"mech-function-match-arms\">{}<span class=\"mech-function-period\">.</span></div></div>", name, input, output_kind, arms)
+      } else {
+        format!("{}({}) -> {}\n{}.", name, input, output_kind, arms)
+      }
+    } else {
+      let output = if node.output.len() == 1 {
+        self.function_argument(&node.output[0])
+      } else {
+        format!(
+          "({})",
+          node.output
+            .iter()
+            .map(|arg| self.function_argument(arg))
+            .collect::<Vec<_>>()
+            .join(", ")
+        )
+      };
+
+      let statements = node
+        .statements
+        .iter()
+        .map(|stmt| self.statement(stmt))
+        .collect::<Vec<_>>()
+        .join(if self.html { "" } else { "\n" });
+
+      if self.html {
+        format!("<div class=\"mech-function-define\"><div class=\"mech-function-signature\"><span class=\"mech-function-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-function-input\">{}</span><span class=\"mech-right-paren\">)</span> <span class=\"mech-function-equals\">=</span> <span class=\"mech-function-output\">{}</span> <span class=\"mech-define-op\">:=</span></div><div class=\"mech-function-body\">{}.</div></div>", name, input, output, statements)
+      } else {
+        format!("{}({}) = {} :=\n{}.", name, input, output, statements)
+      }
+    }
+  }
+
+  pub fn function_argument(&mut self, node: &FunctionArgument) -> String {
+    let name = node.name.to_string();
+    let kind = self.kind_annotation(&node.kind.kind);
+    if self.html {
+      format!("<span class=\"mech-function-argument\"><span class=\"mech-function-argument-name\">{}</span><span class=\"mech-function-argument-kind\">{}</span></span>", name, kind)
+    } else {
+      format!("{}{}", name, kind)
+    }
+  }
+
   pub fn state_definition(&mut self, node: &StateDefinition) -> String {
     let name = node.name.to_string();
     let mut state_variables = "".to_string();
@@ -1673,6 +1774,7 @@ impl Formatter {
       Expression::FunctionCall(function_call) => self.function_call(function_call),
       Expression::Range(range) => self.range_expression(range),
       Expression::SetComprehension(set_comp) => self.set_comprehension(set_comp),
+      Expression::MatrixComprehension(matrix_comp) => self.matrix_comprehension(matrix_comp),
       _ => todo!(),
       //Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe, src),
     };
@@ -1706,6 +1808,30 @@ impl Formatter {
       )
     } else {
       format!("{{ {} | {} }}", expr, qualifiers)
+    }
+  }
+
+  pub fn matrix_comprehension(&mut self, node: &MatrixComprehension) -> String {
+    let expr = self.expression(&node.expression);
+    let quals = node.qualifiers
+      .iter()
+      .map(|q| self.comprehension_qualifier(q))
+      .collect::<Vec<_>>()
+      .join(", ");
+
+    if self.html {
+      format!(
+        "<span class=\"mech-matrix-comprehension\">\\
+          <span class=\"mech-bracket start\">[</span>\\
+          <span class=\"mech-comp-expr\">{}</span> \\
+          <span class=\"mech-comp-bar\">|</span> \\
+          <span class=\"mech-comp-quals\">{}</span>\\
+          <span class=\"mech-bracket end\">]</span>\\
+        </span>",
+        expr, quals
+      )
+    } else {
+      format!("[ {} | {} ]", expr, quals)
     }
   }
 

@@ -82,7 +82,7 @@ pub struct MapKeyKindMismatchError {
   pub expected_kind: ValueKind,
   pub actual_kind: ValueKind,
 }
-impl MechErrorKind2 for MapKeyKindMismatchError {
+impl MechErrorKind for MapKeyKindMismatchError {
   fn name(&self) -> &str {
     "MapKeyKindMismatch"
   }
@@ -100,7 +100,7 @@ pub struct MapValueKindMismatchError {
   pub expected_kind: ValueKind,
   pub actual_kind: ValueKind,
 }
-impl MechErrorKind2 for MapValueKindMismatchError {
+impl MechErrorKind for MapValueKindMismatchError {
   fn name(&self) -> &str {
     "MapValueKindMismatch"
   }

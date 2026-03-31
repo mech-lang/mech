@@ -119,7 +119,7 @@ impl NativeFunctionCompiler for AssignRecordField {
 pub struct UndefinedRecordFieldError {
   pub id: u64,
 }
-impl MechErrorKind2 for UndefinedRecordFieldError {
+impl MechErrorKind for UndefinedRecordFieldError {
   fn name(&self) -> &str { "UndefinedRecordField" }
   fn message(&self) -> String {
       format!("Field {:?} is not defined in this record.", self.id)

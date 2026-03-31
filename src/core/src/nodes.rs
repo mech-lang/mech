@@ -305,6 +305,7 @@ fn pretty_print(&self) -> String {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Title {
   pub text: Token,
+  pub byline: Option<Paragraph>,
 }
 
 impl Title {
@@ -800,6 +801,14 @@ pub struct FunctionDefine {
   pub input: Vec<FunctionArgument>,
   pub output: Vec<FunctionArgument>,
   pub statements: Vec<Statement>,
+  pub match_arms: Vec<FunctionMatchArm>,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct FunctionMatchArm {
+  pub pattern: Pattern,
+  pub expression: Expression,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -1487,6 +1496,7 @@ pub enum Expression {
   Slice(Slice),
   Structure(Structure),
   SetComprehension(Box<SetComprehension>),
+  MatrixComprehension(Box<MatrixComprehension>),
   Var(Var),
 }
 
@@ -1500,6 +1510,7 @@ impl Expression {
       Expression::Range(range) => range.tokens(),
       Expression::Slice(slice) => slice.tokens(),
       Expression::SetComprehension(sc) => sc.tokens(),
+      Expression::MatrixComprehension(mc) => mc.tokens(),
       _ => todo!(),
     }
   }
@@ -1513,6 +1524,23 @@ pub struct SetComprehension {
 }
 
 impl SetComprehension {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.expression.tokens();
+    for qualifier in &self.qualifiers {
+      tokens.append(&mut qualifier.tokens());
+    }
+    tokens
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct MatrixComprehension {
+  pub expression: Expression,
+  pub qualifiers: Vec<ComprehensionQualifier>,
+}
+
+impl MatrixComprehension {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tokens = self.expression.tokens();
     for qualifier in &self.qualifiers {

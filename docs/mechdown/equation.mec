@@ -1,19 +1,26 @@
 equation
 ===============================================================================
 
-%% An `equation` is a block or paragraph level mathematical expression written in LaTeX syntax.
+%% Equations express mathematical notation in LaTeX syntax as block or inline elements.
 
+1. Block equations
+-------------------------------------------------------------------------------
 
-Equations are orefixed with `$$` and can contain any text. They are used to display mathematical expressions or formulas expressed in LaTeX syntax.
-
-For instance,
+Block equations start with `$$` and continue as an equation block.
 
 ```
 $$ c = \pm\sqrt{a^2 + b^2}
 ```
 
-when rendered will look like this:
+Rendered
 
 $$ c = \pm\sqrt{a^2 + b^2}
 
-Mechdown also supports inline equations, which begin and conclude with a `$$`. They are expressed with LaTeX syntax, like so: `$$c^2 = a^2 + b^2$$`. This is rendered by a third-party library into $$c^2 = a^2 + b^2$$.
+2. Inline equations
+-------------------------------------------------------------------------------
+
+Inline equations are enclosed by `$$...$$` within paragraph text.
+
+Example: `The identity $$a^2+b^2=c^2$$ is well known.`
+
+(i)> Equation rendering is performed by a math typesetting library, so use valid LaTeX syntax for reliable output.

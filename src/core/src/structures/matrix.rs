@@ -1118,7 +1118,7 @@ pub struct IncompatibleMatrixAppendToTableError {
   pub rhs_rows: usize,
   pub rhs_cols: usize,
 }
-impl MechErrorKind2 for IncompatibleMatrixAppendToTableError {
+impl MechErrorKind for IncompatibleMatrixAppendToTableError {
   fn name(&self) -> &str {
     "IncompatibleMatrixAppend"
   }
@@ -1135,7 +1135,7 @@ impl MechErrorKind2 for IncompatibleMatrixAppendToTableError {
 #[derive(Debug, Clone)]
 pub struct ResizeStaticMatrixError;
 
-impl MechErrorKind2 for ResizeStaticMatrixError {
+impl MechErrorKind for ResizeStaticMatrixError {
   fn name(&self) -> &str {
     "ResizeStaticMatrixError"
   }
@@ -1147,7 +1147,7 @@ impl MechErrorKind2 for ResizeStaticMatrixError {
 #[derive(Debug, Clone)]
 pub struct PushIntoStaticMatrixError;
 
-impl MechErrorKind2 for PushIntoStaticMatrixError {
+impl MechErrorKind for PushIntoStaticMatrixError {
   fn name(&self) -> &str {
     "PushIntoStaticMatrix"
   }

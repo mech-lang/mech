@@ -289,7 +289,7 @@ impl NativeFunctionCompiler for AddAssignTable {
 pub struct UndefinedTableColumnError {
   pub id: u64,
 }
-impl MechErrorKind2 for UndefinedTableColumnError {
+impl MechErrorKind for UndefinedTableColumnError {
   fn name(&self) -> &str { "UndefinedTableColumn" }
   fn message(&self) -> String {
       format!("Column {:?} is not defined in this table.", self.id)

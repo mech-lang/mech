@@ -193,7 +193,7 @@ pub struct MissingFieldInRecordError {
   pub field_id: u64,
 }
 
-impl MechErrorKind2 for MissingFieldInRecordError {
+impl MechErrorKind for MissingFieldInRecordError {
   fn name(&self) -> &str {
     "MissingFieldInRecord"
   }
@@ -207,7 +207,7 @@ pub struct MissingKindForFieldError {
   pub field_id: u64,
 }
 
-impl MechErrorKind2 for MissingKindForFieldError {
+impl MechErrorKind for MissingKindForFieldError {
   fn name(&self) -> &str {
     "MissingKindForField"
   }
@@ -221,7 +221,7 @@ pub struct MissingKindInComparedRecordError {
   pub field_id: u64,
 }
 
-impl MechErrorKind2 for MissingKindInComparedRecordError {
+impl MechErrorKind for MissingKindInComparedRecordError {
   fn name(&self) -> &str {
     "MissingKindInComparedRecord"
   }
@@ -237,7 +237,7 @@ pub struct RecordFieldKindMismatchError {
   pub actual_kind: ValueKind,
 }
 
-impl MechErrorKind2 for RecordFieldKindMismatchError {
+impl MechErrorKind for RecordFieldKindMismatchError {
   fn name(&self) -> &str {
     "RecordFieldKindMismatch"
   }
@@ -256,7 +256,7 @@ pub struct RecordFieldNameMismatchError {
   pub actual_name: Option<String>,
 }
 
-impl MechErrorKind2 for RecordFieldNameMismatchError {
+impl MechErrorKind for RecordFieldNameMismatchError {
   fn name(&self) -> &str {
     "RecordFieldNameMismatch"
   }
@@ -280,7 +280,7 @@ pub struct KeyNotFoundInKeyIndexError {
   pub field_id: u64,
 }
 
-impl MechErrorKind2 for KeyNotFoundInKeyIndexError {
+impl MechErrorKind for KeyNotFoundInKeyIndexError {
   fn name(&self) -> &str {
     "KeyNotFoundInKeyIndex"
   }

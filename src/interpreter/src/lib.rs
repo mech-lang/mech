@@ -1,7 +1,4 @@
 #![allow(warnings)]
-#![feature(step_trait)]
-#![feature(box_patterns)]
-#![feature(trivial_bounds)]
 #![feature(where_clause_attrs)]
 
 #[cfg(feature = "matrix")]
@@ -43,6 +40,8 @@ use crate::stdlib::convert::*;
 use crate::stdlib::horzcat::*;
 #[cfg(feature = "matrix_vertcat")]
 use crate::stdlib::vertcat::*;
+#[cfg(feature = "table")]
+use crate::stdlib::table_ops::*;
 #[cfg(feature = "combinatorics")]
 use mech_combinatorics::*;
 #[cfg(feature = "matrix")]
@@ -110,6 +109,8 @@ pub use crate::stdlib::convert::*;
 pub use crate::stdlib::horzcat::*;
 #[cfg(feature = "matrix_vertcat")]
 pub use crate::stdlib::vertcat::*;
+#[cfg(feature = "table")]
+pub use crate::stdlib::table_ops::*;
 #[cfg(feature = "combinatorics")]
 pub use mech_combinatorics::*;
 #[cfg(feature = "matrix")]

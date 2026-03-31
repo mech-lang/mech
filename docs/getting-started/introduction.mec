@@ -47,17 +47,35 @@ This example demonstrates several core Mech features:
 - **Logical indexing**: Select and manipulate vector elements via conditions, enabling declarative iteration and parallel execution.
 - **Rich text formatting**: Comments and code support rich formatting using a Markdown-like syntax called Mechdown, making documentation clear and readable.
 
+(1.1.3) Power Function
+
+Here is an example of a recursive function to compute the power of a number:
+
+```mech:power-function
+power(x<u64>, y<u64>) -> <u64>
+  ├ (*, 0) -> 1
+  └ (x, y) -> x * power(x, y - 1u64).
+power(2u64, 4u64)
+```
+
+- **Pattern matching**: Different input cases are handled cleanly and declaratively with patterened matching on function parameters.
+- **Kind annotations**: Function parameters and return types are be annotated for clarity and type checking.
+- **Recursive functions**: Functions in Mech can be defined recursively, allowing for elegant solutions to problems that have a self-similar structure.
+- **Idempotent**: Functions produce the same output for the same input and can be automatically memoized by the runtime for improved performance on repeated calls with the same arguments.
+
 (1.1.3) Matrix Multiplication
 
 Here is an example of matrix multiplication in Mech:
 
 ```mech:matrix multiplication
-  A := [1 2; 3 4]       -- 2x2 Matrix
-  B := [1 2 3; 4 5 6]   -- 2x3 Matrix
-  C := A ** B           -- Matrix multiplication resulting in a 2x2 Matrix
+  A := [1 2; 3 4]        -- 2x2 matrix
+  B := [1 2; 3 4; 5 6]'  -- 3x2 transposed to 2x3 matrix
+  C := A ** B            -- Matrix multiply produces 2x3 matrix
 ```
 
-Mech also features robust integrated Linear Algebra capabilities, making it easy to work with matrices and vectors. In this example, we define two matrices `A` and `B`, and then compute their product `C` using the `**` operator. These calculations are checked for dimensional compatibility at compile time, rejecting any program at compiletime which would result in a dimension mismatch.
+- **Matrices**: Matrices and vectors are built into the language, unified as a single data type
+- **Linear algebra operations**: Common linear algebra operations like matrix multiplication, transpose, and cross are supported natively with concise syntax.
+- **Shape validation**: Matrix dimensions are checked at compile time and rejected if they are incompatible for the operation.
 
 (1.1.4) Gaussian Elimination
 
@@ -73,7 +91,9 @@ b := [8 -11 -3]' -- 3x1 Column Vector to represent constants
 x := A \ b       -- Solves the system Ax = b for x
 ```
 
-The `\\` operator runs a Gaussian elimination algorithm to solve the system of equations represented by the matrix `A` and vector `b`. The result is stored in vector `x`, which contains the solution to the equations.
+- **Solvers**: Mech includes built-in solvers for common mathematical problems, such as linear systems, optimization, and differential equations.
+- **Numeric precision**: Supports data types with varying levels of precision up to 128 bits, as well as floating-point, rational, imaginary, complex, and arbitrary precision integers.
+- **Performance**: Mech's solvers are optimized for performance, and can take advantage of hardware acceleration when available.
 
 (1.1.5) Friends-of-Friends
 
@@ -85,9 +105,10 @@ user := 1
 {fof | (u, f) <- pairs, (f, fof) <- pairs, u == user}
 ```
 
-The solution is `{8, 5, 9}` because user `1` is friends with `2`, who is friends with `8`; and user `1` is also friends with `3`, who is friends with `5` and `9`.
-
-Set comprehensions operate over sets, and support pattern matching and data joining. In this case, because we used the same symbol `f` in two different generators, we defined a natural join over the friend-pairs set, drawing relationships between elements.
+- **Set comprehensions**: concisely create sets from an iterable in a single line of code
+- **Pattern matching**: Tuples are destructured directly in the comprehension.
+- **Relational**: Reusing variables creates natural joins across data.
+- **Declarative**: Relationships are described without explicit iteration.
 
 (1.2) Why Mech
 
@@ -207,7 +228,7 @@ The beta phase has focused on stabilizing the core language and fixing shortcomi
 -(📍) [v0.3](https://github.com/mech-lang/mech/tree/v0.3-beta) - program specification - functions, modules, state machines
 -(☐) v0.4 - system specification - tools, distributed programs, capabilities
 
-Currently the platform version is `v0.2.74-beta`.
+Currently the platform version is `v0.3.2-beta`.
 
 Visit the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html) for more information on the current status of features.
 
