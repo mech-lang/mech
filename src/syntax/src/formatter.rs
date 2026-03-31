@@ -458,7 +458,7 @@ impl Formatter {
         //MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
         MechCode::FunctionDefine(func_def) => self.function_define(func_def),
         MechCode::Statement(stmt) => self.statement(stmt),
-        _ => todo!(),
+        x => format!("{{{:?}}}", x)
       };
       let formatted_comment = match cmmnt {
         Some(cmmt) => self.comment(cmmt),
