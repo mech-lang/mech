@@ -1,6 +1,6 @@
 Mech Documentation
 ===============================================================================
-v0.3.1-beta
+v0.3.2-beta
 ===============================================================================
 
 
@@ -135,7 +135,7 @@ See: [Comprehensions Reference](/reference/comprehensions.html)
 ```mech:hidden
 document/index := {
   name: "docs" 
-  version: "v0.3.1"
+  version: "v0.3.2"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/mech/docs"
   license: "Apache-2.0"}
