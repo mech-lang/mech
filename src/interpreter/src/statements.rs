@@ -24,7 +24,7 @@ pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -
     }
     #[cfg(feature = "math")]
     Statement::OpAssign(op_assgn) => op_assign(&op_assgn, env, p),
-    //Statement::FsmDeclare(_) => todo!(),
+    Statement::FsmDeclare(fsm_decl) => fsm_declare(fsm_decl, env, p),
     //Statement::SplitTable => todo!(),
     //Statement::FlattenTable => todo!(),
     x => return Err(MechError::new(
@@ -373,6 +373,14 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
   let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
   state_brrw.add_plan_step(var_def_fxn);
   return Ok(detached_result);
+}
+
+pub fn fsm_declare(fsm_decl: &FsmDeclare, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+  let result = execute_fsm_pipe(&fsm_decl.pipe, env, p)?;
+  let id = fsm_decl.fsm.name.hash();
+  let name = fsm_decl.fsm.name.to_string();
+  p.state.borrow().save_symbol(id, name, detach_value(&result), false);
+  Ok(result)
 }
 
 fn detach_variable_value(value: &Value) -> Value {

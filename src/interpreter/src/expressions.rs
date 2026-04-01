@@ -24,7 +24,7 @@ pub fn expression(expr: &Expression, env: Option<&Environment>, p: &Interpreter)
     Expression::SetComprehension(set_comp) => set_comprehension(set_comp, p),
     #[cfg(feature = "matrix_comprehensions")]
     Expression::MatrixComprehension(matrix_comp) => matrix_comprehension(matrix_comp, p),
-    //Expression::FsmPipe(_) => todo!(),
+    Expression::FsmPipe(fsm_pipe) => execute_fsm_pipe(fsm_pipe, env, p),
     x => Err(MechError::new(
       FeatureNotEnabledError,
       None

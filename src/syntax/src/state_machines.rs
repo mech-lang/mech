@@ -88,6 +88,9 @@ pub fn fsm_async_transition(input: ParseString) -> ParseResult<Transition> {
 
 // fsm_state_atom_pattern := atom ;
 fn fsm_state_atom_pattern(input: ParseString) -> ParseResult<Pattern> {
+  if let Ok((input, tpl)) = pattern_tuple_struct(input.clone()) {
+    return Ok((input, Pattern::TupleStruct(tpl)));
+  }
   let (input, atm) = atom(input)?;
   Ok((input, Pattern::Expression(Expression::Literal(Literal::Atom(atm)))))
 }

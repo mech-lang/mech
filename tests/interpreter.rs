@@ -53,6 +53,25 @@ test_interpreter!(interpret_literal_false2, "✗ ", Value::Bool(Ref::new(false))
 test_interpreter!(interpret_literal_false, "false", Value::Bool(Ref::new(false)));
 test_interpreter!(interpret_literal_atom, ":A", Value::Atom(Ref::new(MechAtom::new(55450514845822917))));
 test_interpreter!(interpret_literal_empty, "_", Value::Empty);
+#[test]
+fn interpret_fsm_tuple_struct_states() {
+  let s = "#Counter(x) -> `Count(x)\n`Count(v)\n  ├ v > 0 -> `Done(v)\n  └ * -> `Done(1)\n`Done(v) => v.\n#Counter(0)";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  match result {
+    Value::Tuple(tpl) => {
+      let tpl_brrw = tpl.borrow();
+      assert_eq!(tpl_brrw.elements.len(), 2);
+      match &*tpl_brrw.elements[0] {
+        Value::Atom(atm) => assert_eq!(atm.borrow().id(), hash_str("Done")),
+        _ => panic!("expected tuple state atom"),
+      }
+      assert_eq!(*tpl_brrw.elements[1], Value::F64(Ref::new(1.0)));
+    }
+    _ => panic!("expected tuple state output"),
+  }
+}
 test_interpreter!(interpret_variable_define_empty, "em := _", Value::Empty);
 #[cfg(feature = "u8")]
 test_interpreter!(interpret_variable_define_kind_literal, "x := <u8>;", Value::Kind(ValueKind::U8));
