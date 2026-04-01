@@ -41,21 +41,25 @@ like literals and variables.
 - `factor`: atomic units (literals, function calls, variables, etc.)
 */
 
-// expression := set-comprehension | matrix-comprehension | range-expression | formula ;
+// expression := fsm-pipe | set-comprehension | matrix-comprehension | range-expression | formula ;
 pub fn expression(input: ParseString) -> ParseResult<Expression> {
-  let (input, expr) = match set_comprehension(input.clone()) {
-    Ok((input, sc)) => (input, Expression::SetComprehension(Box::new(sc))),
-    Err(_) => match matrix_comprehension(input.clone()) {
-      Ok((input, mc)) => (input, Expression::MatrixComprehension(Box::new(mc))),
-      Err(_) => match range_expression(input.clone()) {
-      Ok((input, rng)) => (input, Expression::Range(Box::new(rng))),
-      Err(_) => match formula(input.clone()) {
-        Ok((input, Factor::Expression(expr))) => (input, *expr),
-        Ok((input, fctr)) => (input, Expression::Formula(fctr)),
-        Err(err) => {
-          return Err(err);},
-      } 
-    }
+  let (input, expr) = match fsm_pipe(input.clone()) {
+    Ok((input, pipe)) => (input, Expression::FsmPipe(pipe)),
+    Err(_) => match set_comprehension(input.clone()) {
+      Ok((input, sc)) => (input, Expression::SetComprehension(Box::new(sc))),
+      Err(_) => match matrix_comprehension(input.clone()) {
+        Ok((input, mc)) => (input, Expression::MatrixComprehension(Box::new(mc))),
+        Err(_) => match range_expression(input.clone()) {
+          Ok((input, rng)) => (input, Expression::Range(Box::new(rng))),
+          Err(_) => match formula(input.clone()) {
+            Ok((input, Factor::Expression(expr))) => (input, *expr),
+            Ok((input, fctr)) => (input, Expression::Formula(fctr)),
+            Err(err) => {
+              return Err(err);
+            }
+          }
+        }
+      }
     }
   };
   Ok((input, expr))
