@@ -110,6 +110,8 @@ test_interpreter!(interpret_formula_math_add, "2 + 2", Value::F64(Ref::new(4.0))
 test_interpreter!(interpret_formula_math_sub, "2 - 2", Value::F64(Ref::new(0.0)));
 test_interpreter!(interpret_formula_math_mul, "2 * 2", Value::F64(Ref::new(4.0)));
 test_interpreter!(interpret_formula_math_div, "2 / 2", Value::F64(Ref::new(1.0)));
+test_interpreter!(interpret_formula_precedence_mul_before_compare, "1 * 2 > 1 * 1", Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_formula_precedence_add_before_compare, "1 + 2 > 1", Value::Bool(Ref::new(true)));
 #[cfg(feature = "u8")]
 test_interpreter!(interpret_formula_math_pow, "2<u8> ^ 2<u8>", Value::U8(Ref::new(4)));
 test_interpreter!(interpret_formula_math_pow_f64, "2.0 ^ 2.0", Value::F64(Ref::new(4.0)));
