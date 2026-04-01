@@ -31,11 +31,11 @@ through increasingly tightly-binding operations, down to the basic elements
 like literals and variables.
 
 - `formula`: entry point
-- `l1`: addition and subtraction (`+`, `-`)
-- `l2`: multiplication, division, matrix operations
-- `l3`: exponentiation (`^`)
-- `l4`: logical operators (e.g., `and`, `or`)
-- `l5`: comparisons (e.g., `==`, `<`, `>`)
+- `l1`: logical operators (e.g., `and`, `or`)
+- `l2`: comparisons (e.g., `==`, `<`, `>`)
+- `l3`: addition and subtraction (`+`, `-`)
+- `l4`: multiplication, division, matrix operations
+- `l5`: exponentiation (`^`)
 - `l6`: table operations (e.g., joins)
 - `l7`: set operations (e.g., union, intersection)
 - `factor`: atomic units (literals, function calls, variables, etc.)
@@ -71,42 +71,42 @@ pub fn formula(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l1 := l2, (add-sub-operator, l2)* ;
+// l1 := l2, (logic-operator, l2)* ;
 pub fn l1(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l2(input)?;
-  let (input, rhs) = many0(pair(add_sub_operator,cut(l2)))(input)?;
+  let (input, rhs) = many0(pair(logic_operator,cut(l2)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
 
-// l2 := l3, (mul-div-operator | matrix-operator, l3)* ;
+// l2 := l3, (comparison-operator, l3)* ;
 pub fn l2(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l3(input)?;
-  let (input, rhs) = many0(pair(alt((mul_div_operator, matrix_operator)),cut(l3)))(input)?;
+  let (input, rhs) = many0(pair(comparison_operator,cut(l3)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
 
-// l3 := l4, (power-operator, l4)* ;
+// l3 := l4, (add-sub-operator, l4)* ;
 pub fn l3(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l4(input)?;
-  let (input, rhs) = many0(pair(power_operator,cut(l4)))(input)?;
+  let (input, rhs) = many0(pair(add_sub_operator,cut(l4)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
 
-// l4 := l5, (logic-operator, l5)* ;
+// l4 := l5, (mul-div-operator | matrix-operator, l5)* ;
 pub fn l4(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l5(input)?;
-  let (input, rhs) = many0(pair(logic_operator,cut(l5)))(input)?;
+  let (input, rhs) = many0(pair(alt((mul_div_operator, matrix_operator)),cut(l5)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
 
-// l5 := factor, (comparison-operator, factor)* ;
+// l5 := factor, (power-operator, factor)* ;
 pub fn l5(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l6(input)?;
-  let (input, rhs) = many0(pair(comparison_operator,cut(l6)))(input)?;
+  let (input, rhs) = many0(pair(power_operator,cut(l6)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
@@ -752,4 +752,47 @@ pub fn formula_subscript(input: ParseString) -> ParseResult<Subscript> {
 pub fn range_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, rng) = range_expression(input)?;
   Ok((input, Subscript::Range(rng)))
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  fn parse_formula(src: &str) -> Factor {
+    let graphemes = crate::graphemes::init_source(src);
+    let input = ParseString::new(&graphemes);
+    let (_, parsed) = formula(input).expect("formula should parse");
+    parsed
+  }
+
+  #[test]
+  fn comparison_has_lower_precedence_than_multiplication() {
+    let parsed = parse_formula("1 * 2 > 1 * 1");
+    let term = match parsed {
+      Factor::Term(term) => term,
+      other => panic!("expected top-level term, got {:?}", other),
+    };
+    assert_eq!(term.rhs.len(), 1);
+    assert!(matches!(
+      term.rhs[0].0,
+      FormulaOperator::Comparison(ComparisonOp::GreaterThan)
+    ));
+    assert!(matches!(term.lhs, Factor::Term(_)));
+    assert!(matches!(term.rhs[0].1, Factor::Term(_)));
+  }
+
+  #[test]
+  fn comparison_has_lower_precedence_than_addition() {
+    let parsed = parse_formula("1 + 2 > 1");
+    let term = match parsed {
+      Factor::Term(term) => term,
+      other => panic!("expected top-level term, got {:?}", other),
+    };
+    assert_eq!(term.rhs.len(), 1);
+    assert!(matches!(
+      term.rhs[0].0,
+      FormulaOperator::Comparison(ComparisonOp::GreaterThan)
+    ));
+    assert!(matches!(term.lhs, Factor::Term(_)));
+  }
 }
