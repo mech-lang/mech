@@ -24,6 +24,7 @@ pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -
     }
     #[cfg(feature = "math")]
     Statement::OpAssign(op_assgn) => op_assign(&op_assgn, env, p),
+    #[cfg(feature = "functions")]
     Statement::FsmDeclare(fsm_decl) => fsm_declare(fsm_decl, env, p),
     //Statement::SplitTable => todo!(),
     //Statement::FlattenTable => todo!(),
@@ -375,11 +376,18 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
   return Ok(detached_result);
 }
 
+#[cfg(feature = "functions")]
 pub fn fsm_declare(fsm_decl: &FsmDeclare, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
-  let result = execute_fsm_pipe(&fsm_decl.pipe, env, p)?;
+  let result = crate::functions::execute_fsm_pipe(&fsm_decl.pipe, env, p)?;
   let id = fsm_decl.fsm.name.hash();
   let name = fsm_decl.fsm.name.to_string();
-  p.state.borrow().save_symbol(id, name, detach_value(&result), false);
+  #[cfg(feature = "symbol_table")]
+  {
+    let symbols = p.symbols();
+    let mut symbols_brrw = symbols.borrow_mut();
+    symbols_brrw.insert(id, detach_variable_value(&result), false);
+    symbols_brrw.dictionary.borrow_mut().insert(id, name);
+  }
   Ok(result)
 }
 

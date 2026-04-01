@@ -184,8 +184,9 @@ pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
     MechCode::Expression(expr) => expression(&expr, None, p),
     MechCode::Statement(stmt) => statement(&stmt, None, p),
     MechCode::FsmSpecification(_) => Ok(Value::Empty),
+    #[cfg(feature = "functions")]
     MechCode::FsmImplementation(fsm_impl) => {
-      register_fsm_implementation(fsm_impl, p)?;
+      crate::functions::register_fsm_implementation(fsm_impl, p)?;
       Ok(Value::Empty)
     },
     #[cfg(feature = "functions")]

@@ -91,7 +91,7 @@ pub use mech_core::*;
 pub use crate::literals::*;
 pub use crate::interpreter::*;
 pub use crate::structures::*;
-#[cfg(feature = "functifons")]
+#[cfg(feature = "functions")]
 pub use crate::functions::*;
 pub use crate::statements::*;
 pub use crate::expressions::*;
