@@ -114,7 +114,7 @@ pub struct UndefinedMapKeyError {
   pub key: String,
 }
 
-impl MechErrorKind2 for UndefinedMapKeyError {
+impl MechErrorKind for UndefinedMapKeyError {
   fn name(&self) -> &str {
     "UndefinedMapKey"
   }

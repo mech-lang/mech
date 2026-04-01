@@ -1,22 +1,65 @@
 mechdown
 ===============================================================================
 
+%% Mechdown is Mech's documentation and publishing format. It combines readable plain text with structure for sections, references, equations, code, and executable snippets.
+
 1. Introduction
 -------------------------------------------------------------------------------
 
-- What is Mechdown? `todo`
-- Writing Mechdown Documents `todo`
-- Mechdown Syntax Overview `todo`
+Mechdown is designed to be easy to write in a text editor while still producing high-quality rendered documentation. It supports familiar markup for text formatting, links, lists, and code fences, while also adding language-specific features such as executable Mech snippets and numbered section references.
 
-2. Mechdown Documents
+A Mechdown file is plain UTF-8 text. You can keep prose, runnable examples, diagrams, and citations in the same source document.
+
+2. Writing Mechdown documents
 -------------------------------------------------------------------------------
 
-- Sections and Subsections `todo`
-- Tables of Contents `todo`
-- Bredcrumbs `todo`
-- Document Metadata `todo`
+A typical document uses this high-level structure:
 
-3. Document Elements
+1. A document title (top-level heading)
+2. Numbered sections
+3. Optional subsections
+4. Block elements such as lists, code blocks, tables, images, equations, and callouts
+
+Minimal example:
+
+```
+My Document
+===============================================================================
+
+1. Introduction
+-------------------------------------------------------------------------------
+
+This is a paragraph with **inline formatting** and a [link](https://mech-lang.org).
+
+(1.1) Notes
+
+- Lists
+- Tables
+- Code blocks
+```
+
+3. Syntax overview
+-------------------------------------------------------------------------------
+
+Mechdown syntax is composed of:
+
+- **Structural elements**: titles, sections, subsections
+- **Block elements**: paragraphs, lists, code blocks, tables, images, thematic breaks, equations, callouts, diagrams
+- **Inline elements**: emphasis, inline code, links, inline equations, references
+
+Most elements are line-oriented and intentionally readable in raw form.
+
+4. Document structure and navigation
+-------------------------------------------------------------------------------
+
+- Section headings define document hierarchy.
+- A table of contents is generated from section and subsection headings.
+- Numbered headings enable stable references from other sections.
+- Footnotes and citations can be collected and rendered consistently.
+
+(i)> Keep section numbers stable once documents are published so links and references remain valid.
+
+5. Element reference
 -------------------------------------------------------------------------------
 
 - [Title](/mechdown/title.html)

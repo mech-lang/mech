@@ -300,7 +300,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
         }
       }
       #[cfg(feature = "matrix")]
-      (Value::MutableReference(v), ValueKind::Matrix(box target_matrix_knd,_)) => {
+      (Value::MutableReference(v), ValueKind::Matrix(target_matrix_knd,_)) => {
         let value = v.borrow().clone();
         if value.is_matrix() {
           let convert_fxn = ConvertMatToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
@@ -310,8 +310,8 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
           result = converted_result;
         } else {
           let value_kind = value.kind();
-          if value_kind.deref_kind() != target_matrix_knd.clone() && value_kind != *target_matrix_knd {
-            let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.clone())])?;
+          if value_kind.deref_kind() != target_matrix_knd.as_ref().clone() && value_kind != *target_matrix_knd.clone() {
+            let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
             convert_fxn.solve();
             let converted_result = convert_fxn.out();
             state_brrw.add_plan_step(convert_fxn);
@@ -325,7 +325,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
         }
       }
       #[cfg(feature = "matrix")]
-      (value, ValueKind::Matrix(box target_matrix_knd,_)) => {
+      (value, ValueKind::Matrix(target_matrix_knd,_)) => {
         if value.is_matrix() {
           let convert_fxn = ConvertMatToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
           convert_fxn.solve();
@@ -334,8 +334,8 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
           result = converted_result;
         } else {
           let value_kind = value.kind();
-          if value_kind.deref_kind() != target_matrix_knd.clone() && value_kind != *target_matrix_knd {
-            let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.clone())])?;
+          if value_kind.deref_kind() != target_matrix_knd.as_ref().clone() && value_kind != *target_matrix_knd.clone() {
+            let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
             convert_fxn.solve();
             let converted_result = convert_fxn.out();
             state_brrw.add_plan_step(convert_fxn);
@@ -357,20 +357,29 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
         result = converted_result;
       },
     };
+    let detached_result = detach_variable_value(&result);
     // Save symbol to interpreter
-    let val_ref = state_brrw.save_symbol(var_id, var_name.clone(), result.clone(), var_def.mutable);
+    let val_ref = state_brrw.save_symbol(var_id, var_name.clone(), detached_result.clone(), var_def.mutable);
     // Add variable define step to plan
-    let var_def_fxn = VarDefine{}.compile(&vec![result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
+    let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
     state_brrw.add_plan_step(var_def_fxn);
-    return Ok(result);
+    return Ok(detached_result);
   } 
   let mut state_brrw = p.state.borrow_mut();
+  let detached_result = detach_variable_value(&result);
   // Save symbol to interpreter
-  let val_ref = state_brrw.save_symbol(var_id,var_name.clone(),result.clone(),var_def.mutable);
+  let val_ref = state_brrw.save_symbol(var_id,var_name.clone(),detached_result.clone(),var_def.mutable);
   // Add variable define step to plan
-  let var_def_fxn = VarDefine{}.compile(&vec![result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
+  let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
   state_brrw.add_plan_step(var_def_fxn);
-  return Ok(result);
+  return Ok(detached_result);
+}
+
+fn detach_variable_value(value: &Value) -> Value {
+  match value {
+    Value::MutableReference(reference) => detach_variable_value(&reference.borrow()),
+    _ => value.clone(),
+  }
 }
 
 macro_rules! op_assign {
@@ -690,7 +699,7 @@ pub struct UnableToConvertAtomToEnumVariantError {
   pub atom_name: String,
   pub target_enum_variant_name: String,
 }
-impl MechErrorKind2 for UnableToConvertAtomToEnumVariantError {
+impl MechErrorKind for UnableToConvertAtomToEnumVariantError {
   fn name(&self) -> &str {
     "UnableToConvertAtomToEnumVariant"
   }
@@ -703,7 +712,7 @@ impl MechErrorKind2 for UnableToConvertAtomToEnumVariantError {
 pub struct UnableToConvertAtomError {
   pub atom_id: u64,
 }
-impl MechErrorKind2 for UnableToConvertAtomError {
+impl MechErrorKind for UnableToConvertAtomError {
   fn name(&self) -> &str {
     "UnableToConvertAtom"
   }
@@ -716,7 +725,7 @@ impl MechErrorKind2 for UnableToConvertAtomError {
 pub struct VariableAlreadyDefinedError {
   pub id: u64,
 }
-impl MechErrorKind2 for VariableAlreadyDefinedError {
+impl MechErrorKind for VariableAlreadyDefinedError {
   fn name(&self) -> &str { "VariableAlreadyDefined" }
   fn message(&self) -> String {
     format!("Variable already defined: {}", self.id)
@@ -727,7 +736,7 @@ impl MechErrorKind2 for VariableAlreadyDefinedError {
 pub struct UndefinedVariableError {
   pub id: u64,
 }
-impl MechErrorKind2 for UndefinedVariableError {
+impl MechErrorKind for UndefinedVariableError {
   fn name(&self) -> &str { "UndefinedVariable" }
 
   fn message(&self) -> String {
@@ -739,7 +748,7 @@ impl MechErrorKind2 for UndefinedVariableError {
 pub struct NotMutableError {
   pub id: u64,
 }
-impl MechErrorKind2 for NotMutableError {
+impl MechErrorKind for NotMutableError {
   fn name(&self) -> &str { "NotMutable" }
   fn message(&self) -> String {
     format!("Variable is not mutable: {}", self.id)
@@ -753,7 +762,7 @@ pub struct UnableToConvertRecordError {
   pub target_record_kind: ValueKind,
 }
 #[cfg(feature = "record")]
-impl MechErrorKind2 for UnableToConvertRecordError {
+impl MechErrorKind for UnableToConvertRecordError {
   fn name(&self) -> &str {
     "UnableToConvertRecord"
   }

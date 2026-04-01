@@ -265,7 +265,7 @@ pub struct BufferPositionMismatchError {
   pub got: u64,
 }
 
-impl MechErrorKind2 for BufferPositionMismatchError {
+impl MechErrorKind for BufferPositionMismatchError {
   fn name(&self) -> &str { "BufferPositionMismatch" }
   fn message(&self) -> String {
     format!("Buffer position mismatch: expected {}, got {}", self.expected, self.got)
@@ -278,7 +278,7 @@ pub struct FinalBufferLengthMismatchError {
   pub got: u64,
 }
 
-impl MechErrorKind2 for FinalBufferLengthMismatchError {
+impl MechErrorKind for FinalBufferLengthMismatchError {
   fn name(&self) -> &str { "FinalBufferLengthMismatch" }
   fn message(&self) -> String {
     format!("Final buffer length mismatch: expected {}, got {}", self.expected, self.got)

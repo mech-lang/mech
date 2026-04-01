@@ -49,7 +49,7 @@ macro_rules! impl_conversion_scalar_to_mat_match_arms {
         $(
           $(
             #[cfg(all(feature = "matrix", feature = $type_string))]
-            (Value::$input_type(v), ValueKind::Matrix(box ValueKind::$target_type, dims)) => {
+            (Value::$input_type(v), ValueKind::Matrix(target_kind, dims)) if matches!(target_kind.as_ref(), ValueKind::$target_type) => {
               match dims[..] {
                 #[cfg(feature = "matrix1")]
                 [1,1] => {let out = Matrix1::from_element(v.borrow().clone());      return Ok(Box::new(ConvertScalarToMat2{arg: v, out: Ref::new(out)}));},
@@ -151,7 +151,7 @@ impl NativeFunctionCompiler for ConvertScalarToMat {
 #[derive(Debug, Clone)]
 pub struct CannotReshapeMatrixToEmpty;
 
-impl MechErrorKind2 for CannotReshapeMatrixToEmpty {
+impl MechErrorKind for CannotReshapeMatrixToEmpty {
   fn name(&self) -> &str { "CannotReshapeMatrixToEmpty" }
   fn message(&self) -> String {
     "Cannot reshape matrix to empty dimensions".to_string()

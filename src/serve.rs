@@ -260,7 +260,7 @@ impl MechServer {
 
 #[derive(Debug, Clone)]
 pub struct ServerNotInitializedError;
-impl MechErrorKind2 for ServerNotInitializedError {
+impl MechErrorKind for ServerNotInitializedError {
   fn name(&self) -> &str { "ServerNotInitializedError" }
 
   fn message(&self) -> String {
@@ -272,7 +272,7 @@ impl MechErrorKind2 for ServerNotInitializedError {
 pub struct Utf8ConversionError {
   pub source_error: String
 }
-impl MechErrorKind2 for Utf8ConversionError {
+impl MechErrorKind for Utf8ConversionError {
   fn name(&self) -> &str {
     "Utf8ConversionError"
   }

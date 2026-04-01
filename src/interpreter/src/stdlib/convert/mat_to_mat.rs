@@ -275,9 +275,21 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
       paste::paste! {
         match (source_value.clone(), target_kind.clone()) {
           $(
+            #[cfg(all(feature = "matrix", feature = $src_string))]
+            (Value::[<Matrix $src:camel>](v), ValueKind::Matrix(target_kind, dims)) if matches!(target_kind.as_ref(), ValueKind::Any) => {
+              if dims.is_empty() {
+                create_convert_mat_to_mat::<$src, $src>(v, &shape)
+              } else if ((shape[0] == dims[0]) && (shape[1] == dims[1])) {
+                create_convert_mat_to_mat::<$src, $src>(v, &dims)
+              } else if shape[0] * shape[1] == dims[0] * dims[1] {
+                create_reshape_mat_to_mat::<$src, $src>(v, &dims)
+              } else {
+                Err(MechError::new(UnsupportedConversionError{from: source_value.kind(), to: target_kind.as_ref().clone()}, None).with_compiler_loc())
+              }
+            }
             $(
               #[cfg(all(feature = "matrix", feature = $src_string, feature = $dst_string))]
-              (Value::[<Matrix $src:camel>](v), ValueKind::Matrix(box ValueKind::[<$dst:camel>], dims)) => {
+              (Value::[<Matrix $src:camel>](v), ValueKind::Matrix(target_kind, dims)) if matches!(target_kind.as_ref(), ValueKind::[<$dst:camel>]) => {
                 if dims.is_empty() { 
                   create_convert_mat_to_mat::<$src, $dst>(v, &shape)
                 } else if ((shape[0] == dims[0]) && (shape[1] == dims[1])) {
@@ -285,7 +297,7 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
                 } else if shape[0] * shape[1] == dims[0] * dims[1] {
                   create_reshape_mat_to_mat::<$src, $dst>(v, &dims)
                 } else {
-                  Err(MechError::new(UnsupportedConversionError{from: source_value.kind(), to: target_kind.clone()}, None).with_compiler_loc())
+                  Err(MechError::new(UnsupportedConversionError{from: source_value.kind(), to: target_kind.as_ref().clone()}, None).with_compiler_loc())
                 }
               }
             )+
@@ -311,6 +323,7 @@ impl_conversion_mat_to_mat_fxn! {
   i32, "i32" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
   i64, "i64" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
   i128,"i128"=> [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
+  bool, "bool" => [bool, "bool", String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
   String, "string" => [String, "string"];
   R64, "rational" => [String, "string"];
   C64, "complex" => [String, "string"];
@@ -329,6 +342,7 @@ impl_conversion_mat_to_mat_fxn! {
   i16, "i16" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
   i32, "i32" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
   i64, "i64" => [String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
+  bool, "bool" => [bool, "bool", String, "string", f64, "f64", f32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
   String, "string" => [String, "string"];
   R64, "rational" => [String, "string"];
   C64, "complex" => [String, "string"];
@@ -367,7 +381,7 @@ pub struct ReshapeError {
   pub requested: (usize, usize),
   pub original: (usize, usize),
 }
-impl MechErrorKind2 for ReshapeError {
+impl MechErrorKind for ReshapeError {
   fn name(&self) -> &str { "ReshapeError" }
   fn message(&self) -> String {
     format!("Cannot reshape matrix of shape {:?} into {:?}",self.original,self.requested)

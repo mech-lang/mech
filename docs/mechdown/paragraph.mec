@@ -1,74 +1,52 @@
 paragraph
 ================================================================================
 
-%% A `paragraph` is a block of raw text that starts with a valid paragraph starter and ends with a newline character. Paragraphs consist of one or more lines of text, and may contain inline elements such as links, code snippets, and equations.
+%% A paragraph is the default text block in Mechdown. It supports rich inline markup for formatting, references, and inline expressions.
 
-1. Paragraph elements
+A paragraph starts at a valid paragraph starter and ends at a blank line or a new block element.
+
+1. Inline markup
 -------------------------------------------------------------------------------
 
-Beyond raw text, paragraphs also can contain various markup which indicates inline elements. Mechdown supports the following inline markup:
+Paragraphs support inline markup such as:
 
 ```
-- Text Markup
-  - **Bold Text**
-  - *Italic Text*
-  - __Underline Text__
-  - ~~Strikethough Text~~
-  - !!Highlighted Text!!
-- Inline Elements
-  - `Inline code blocks`
+- Text formatting
+  - **Bold text**
+  - *Italic text*
+  - __Underline text__
+  - ~~Strikethrough text~~
+  - !!Highlighted text!!
+- Inline elements
+  - `Inline code`
   - {{inline-mech := syntax + "highlighting"}}
   - $$\pm\sqrt{inline^2 + equation^2}$$
-- Link Elements
-  - [Hyperlinks](#)
-  - Autonumbered inline references [MECH]
-  - Autonumbered footnote references[^1]
-  - Section references §10.3
+- Links and references
+  - [Hyperlinks](https://mech-lang.org)
+  - Citation references [MECH]
+  - Footnote references[^1]
+  - Section references §2.1
 ```
-
-This renders as
-
-- Text Markup
-  - **Bold Text**
-  - *Italic Text*
-  - __Underline Text__
-  - ~~Strikethough Text~~
-  - !!Highlighted Text!!
-- Inline Elements
-  - `Inline code blocks`
-  - {{inline-mech := syntax + "highlighting"}}
-  - $$\pm\sqrt{inline^2 + equation^2}$$
-- Link Elements
-  - [Hyperlinks](#)
-  - Autonumbered inline references [MECH]
-  - Autonumbered footnote references[^1]
-  - Section references §10.3
 
 2. References
 -------------------------------------------------------------------------------
 
-Mechdown supports various references including footnotes, citations, and section references.
+Mechdown supports references for footnotes, citations, and sections.
 
-Footnotes are used to indicate additional information or references at the bottom of the document. They are referenced inline using a `[^label]` syntax. Footnotes are defined as section elements, and are rendered where they are defined. They are indicated with a `[^label]:` syntax, followed by the footnote text.
+- **Footnotes** use `[^label]` inline and `[^label]: definition` where defined.
+- **Citations** use `[LABEL]` inline and `[LABEL]: citation text` in definitions.
+- **Section references** use `§` followed by a section number or section label.
 
-Citations are used to reference external sources or documents. They are indicated inline using a `[label]` syntax. Citations are defined as section elements, and are rendered at the bottom of the document, in an auto-generated "Works Cited" section. They are indicated with a `[label]:` syntax, followed by the citation text and optional additional information in parentheses. The label used in reference must match the label used in the citation definition.
-
-Section references are inline references to section titles, and are indicated with a `§` followed by the section number, or a unique section label.
-
-(2.1) Examples
+(2.1) Example
 
 ```
-This is a paragraph with a footnote reference.[^1] Here is a citation reference.[MECH] Finally, we have a section reference to §10.4.
+This paragraph includes a footnote[^1], a citation[MECH], and a section link to §2.1.
 
-[^1]: This is the text of the footnote.
-[MECH]: Mech Programming Language. (2024). Retrieved from https://mech-lang.org (Mech Official Website)
+[^1]: Supplemental detail appears in the footnote body.
+[MECH]: Mech Programming Language. (2024). https://mech-lang.org
 ```
 
-This renders as:
+This paragraph includes a footnote[^1], a citation[MECH], and a section link to §2.1.
 
-This is a paragraph with a footnote reference.[^1] Here is a citation reference.[MECH] Finally, we have a section reference to §10.4.
-
-[^1]: This is the text of the footnote.
-[MECH]: Mech Programming Language. (2024). Retrieved from https://mech-lang.org (Mech Official Website)
-
-(?)> Although the referenec is defined here in the document, it will be rendered at the bottom of the document in the "Works Cited" section. This is in contrast to footnotes, which are rendered where they are defined.
+[^1]: Supplemental detail appears in the footnote body.
+[MECH]: Mech Programming Language. (2024). https://mech-lang.org

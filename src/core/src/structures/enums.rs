@@ -72,7 +72,7 @@ pub struct UnknownEnumVariantError {
   pub enum_id: u64,
   pub given_variant_id: u64,
 }
-impl MechErrorKind2 for UnknownEnumVariantError {
+impl MechErrorKind for UnknownEnumVariantError {
   fn name(&self) -> &str { "UnknownEnumVariant" }
   fn message(&self) -> String {
     format!(

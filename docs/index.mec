@@ -1,5 +1,8 @@
 Mech Documentation
 ===============================================================================
+v0.3.2-beta
+===============================================================================
+
 
 1. Getting Started
 -------------------------------------------------------------------------------
@@ -37,13 +40,25 @@ Mech Documentation
 
 (2.2) Program Model
 
-- [Functions](#) `todo`
-- [Error Handling](#) `todo`
-- [Comprehensions](#) `todo`
-- [State Machines](#) `todo`
-- [Synthesis and Generation](#) `todo`
-- [Tests](#) `todo`
-- [Programs](#) `todo`
+- [Functions](/reference/functions.html)
+- Error Handling `todo`
+- [Comprehensions](/reference/comprehensions.html)
+- State Machines `todo`
+- Synthesis and Generation `todo`
+- Tests `todo`
+- Programs `todo`
+
+(2.2.1) Functions
+
+Functions are branch-based and use pattern matching over inputs.
+
+See: [Functions Reference](/reference/functions.html)
+
+(2.2.2) Comprehensions
+
+Comprehensions construct sets from generators and predicates in a concise declarative form.
+
+See: [Comprehensions Reference](/reference/comprehensions.html)
 
 (2.3) System Model
 
@@ -120,7 +135,7 @@ Mech Documentation
 ```mech:hidden
 document/index := {
   name: "docs" 
-  version: "v0.3.1"
+  version: "v0.3.2"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/mech/docs"
   license: "Apache-2.0"}

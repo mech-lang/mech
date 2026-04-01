@@ -12,7 +12,7 @@ Implementation: started 2018
 (1.2) Stage 2 - Beta `v0.1.0` - `v0.4+` (???)
 
 Started: December 2022
-Currently: `v0.3.1` (Spring 2026)
+Currently: `v0.3.2` (Spring 2026)
 
 - `v0.1` proof of concept `Concluded 2023`
 - `v0.2` data specification    `Concluded 2025`
@@ -26,12 +26,14 @@ No target release date yet.
 2. Feature Progress
 -------------------------------------------------------------------------------
 
--(💭) concept
--(🥚) proof of concept implementation
--(🐣) alpha implementation
--(🐤) beta implementation
--(🐓) feature complete
--(🍗) deprecated
+| Icon | Status | Description |
+|------|:--------:|-------------|
+| 💭 | Concept | Just an idea, no implementation |
+| 🥚 | Proof of Concept | Hacked implementation sketch |
+| 🐣 | Alpha Implementation | Missing features, many bugs, undocumented |
+| 🐤 | Beta Implementation | Completed, with bugs, some tests and docs |
+| 🐓 | Feature Complete | Fully implemented, tested, documented |
+| 🍗 | Deprecated | Removed from specification, should not be used |
 
 (2.1) Data Specification (`v0.2`)
 
@@ -87,14 +89,12 @@ Version `v0.3` incorporates all the features of `v0.2`, in addition to the follo
 -(💭) introspection
 -(💭) higher order functions
 -(💭) new types (dec64, currency, email addresses, dates)
--(💭) List comprehension
 -(💭) Integrations
   -(💭) Godot
   -(💭) Python
   -(💭) C/C++
   -(🐣) Rust
   -(🐣) Javascript
--(🥚) mika
 -(🥚) state Machines
 -(🥚) automatic differentiation
 -(🥚) language server
@@ -103,11 +103,14 @@ Version `v0.3` incorporates all the features of `v0.2`, in addition to the follo
 -(🥚) time travel debugging
 -(🥚) machine revamp
 -(🥚) database revamp
--(🐣) Set comprehension
+-(🐣) mika
+-(🐣) matrix comprehension
+-(🐣) set comprehension
 -(🐣) self-contained binary executables
 -(🐣) bytecode interpreter
 -(🐣) build system
 -(🐣) user defined functions
+  -(🐣) recursive functions
 -(🐣) tests
 -(🐣) profiler
 -(🐣) gui

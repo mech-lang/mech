@@ -105,7 +105,7 @@ pub struct SetKindMismatchError {
   pub expected_kind: ValueKind,
   pub actual_kind: ValueKind,
 }
-impl MechErrorKind2 for SetKindMismatchError {
+impl MechErrorKind for SetKindMismatchError {
   fn name(&self) -> &str { "SetKindMismatch" }
   fn message(&self) -> String {
     format!("Schema mismatch: set kind mismatch (expected: {}, found: {}).",

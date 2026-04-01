@@ -157,26 +157,24 @@ pub fn wildcard(input: ParseString) -> ParseResult<Pattern> {
   Ok((input, Pattern::Wildcard))
 }
 
-// pattern_tuple_struct := grave, identifier, ("(", list1(",", pattern), ")")? ;
+// pattern_tuple_struct := grave, identifier, "(", list1(",", pattern), ")" ;
 pub fn pattern_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
   let (input, _) = grave(input)?;
   let (input, id) = identifier(input)?;
-  let (input, patterns) = opt(nom_tuple((
-    left_parenthesis,
-    separated_list1(list_separator, pattern),
-    right_parenthesis
-  )))(input)?;
-  let patterns = match patterns {
-    Some((_, patterns, _)) => patterns,
-    None => vec![],
-  };
+  let (input, _) = left_parenthesis(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, patterns) = separated_list1(list_separator, pattern)(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = right_parenthesis(input)?;
   Ok((input, PatternTupleStruct{name: id, patterns}))
 }
 
 // pattern-tuple := "(", [pattern, ","], ")" ;
 pub fn pattern_tuple(input: ParseString) -> ParseResult<PatternTuple> {
   let (input, _) = left_parenthesis(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, patterns) = separated_list1(list_separator, pattern)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = right_parenthesis(input)?;
   Ok((input, PatternTuple(patterns)))
 }

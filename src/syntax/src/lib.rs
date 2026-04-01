@@ -2,11 +2,8 @@
 
 #![cfg_attr(feature = "no-std", no_std)]
 #![cfg_attr(feature = "no-std", alloc)]
-#![feature(extract_if)]
-#![feature(get_mut_unchecked)]
 #![allow(dead_code)]
 #![allow(warnings)]
-#![feature(step_trait)]
 
 extern crate mech_core;
 #[cfg(feature="no-std")] #[macro_use] extern crate alloc;
@@ -682,7 +679,7 @@ pub struct ParserErrorContext {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ParserErrorReport(pub String, pub Vec<ParserErrorContext>);
 
-impl MechErrorKind2 for ParserErrorReport {
+impl MechErrorKind for ParserErrorReport {
   fn name(&self) -> &str {
     "ParserErrorContext"
   }

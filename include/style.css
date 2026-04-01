@@ -3,8 +3,10 @@
 :root {
   --bracket-color: hsl(288, 30%, 70%);
   --op-color: hsl(288, 30%, 70%);
+  --function-signature-color: hsl(133, 33%, 80%);
   --function-name-color: hsl(133, 33%, 80%);
   --function-bracket-color: hsl(133, 33%, 70%);
+  --function-arrow-color: hsl(133, 33%, 60%);
   --literal-color: hsl(210, 78%, 78%);
   --contrast-color-high: hsl(288, 30%, 80%);
   --contrast-color-mid:  hsl(288, 30%, 70%);
@@ -41,6 +43,8 @@
   --idea-color: hsl(271, 100%, 75%);
   --question-color: hsl(191, 100%, 75%);
   --code-namespace-label-color: #f5a7d3;
+  --pattern-color: hsl(133, 33%, 70%);
+  --pattern-parent-color: hsl(133, 33%, 70%);
 }
 
 html {
@@ -476,6 +480,16 @@ h5.toc::before {
   border-radius: 2px;
 }
 
+.mech-program-byline {
+  font-size: 1em;
+  font-weight: normal;
+  color: #666;      /* subtle, secondary color */
+  margin-top: 0;
+  margin-bottom: 1em;
+  line-height: 1.2;
+  font-style: italic;
+  text-align: center;
+}
 
 .mech-program h2 a {
     color: var(--text-color);
@@ -1125,7 +1139,7 @@ a.mech-hyperlink:hover .mech-inline-code {
 
 .mech-pattern-wildcard {
     display: inline-flex;
-    color: #ee6262;
+    color: var(--pattern-color);
 }
 
 .mech-tuple-struct {
@@ -2517,4 +2531,76 @@ mark {
     display: block;
     padding-top: 18px;
     padding-right: 10px;
+}
+
+.mech-function-match-arms {
+    margin-bottom: 10px;
+}
+
+.mech-function-signature .mech-left-paren {
+    color: var(--function-bracket-color);
+}
+
+.mech-function-signature .mech-right-paren {
+    color: var(--function-bracket-color);
+}
+
+.mech-function-arrow {
+    color: var(--function-arrow-color);
+}
+
+.mech-function-match-arms .mech-function-arrow {
+    margin-right: 10px;
+}
+
+/* Indent the arms block */
+.mech-function-match-arms {
+    display: block;
+    padding-left: 2ch;
+}
+
+/* Each arm on its own line */
+.mech-function-match-arm {
+    display: block;
+    line-height: 1.1;
+}
+
+/* Hide the standalone period span — it's a sibling of block divs
+   so it will always fall to a new line */
+.mech-function-period {
+    display: none;
+}
+
+.mech-function-branch {
+    color: var(--function-arrow-color);
+}
+
+/* Inject the period inline at the end of the last arm's content instead */
+.mech-function-match-arm:last-of-type::after {
+    content: ".";
+    color: var(--function-arrow-color);
+}
+
+.mech-function-input {
+    color: var(--function-signature-color);
+}
+
+.mech-pattern {
+    color: var(--pattern-color);
+}
+
+.mech-pattern .mech-left-paren {
+    color: var(--pattern-paren-color);
+}
+
+.mech-pattern .mech-right-paren {
+    color: var(--pattern-paren-color);
+}
+
+.mech-pattern .mech-number {
+    color: var(--pattern-color);
+}
+
+.mech-pattern .mech-var-name {
+    color: var(--pattern-color);
 }

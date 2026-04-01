@@ -1,6 +1,6 @@
 [package]
 name = "mech-matrix"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Matrix library for the Mech language"
 documentation = "http://docs.mech-lang.org"
@@ -49,11 +49,13 @@ baselib = ["bool", "string",
       "mech-core/baselib",
     ]
 
-matrix_default = ["matmul", "transpose", "dot", "solve"]
+matrix_default = ["matmul", "transpose", "dot", "solve", "comprehensions"]
 matmul = ["num-traits", "matrix"]
 transpose = ["num-traits", "matrix"]
 dot = ["num-traits", "matrix"]
 solve = ["num-traits", "matrix"]
+comprehensions = ["functions", "matrix"]
+
 
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
@@ -155,7 +157,7 @@ dot_indexing = ["subscript", "mech-core/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle"]
 
 [dependencies]
-mech-core = {version = "0.3.1", default-features = false}
+mech-core = {version = "0.3.2", default-features = false}
 
 simba = {version = "0.9.0", optional = true}
 paste = "1.0.15"

@@ -46,6 +46,42 @@ register_descriptor! {
   }
 }
 
+#[derive(Debug)]
+struct ConvertSEmpty {
+  out: Ref<Value>,
+}
+
+impl MechFunctionImpl for ConvertSEmpty {
+  fn solve(&self) { }
+  fn out(&self) -> Value { self.out.borrow().clone() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for ConvertSEmpty {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let name = format!("ConvertSEmpty<empty>");
+    compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
+  }
+}
+register_descriptor! {
+  FunctionDescriptor {
+    name: "ConvertSEmpty<empty>",
+    ptr: |args: FunctionArgs| -> MResult<Box<dyn MechFunction>> {
+      match args {
+        FunctionArgs::Nullary(out) => {
+          let out: Ref<Value> = unsafe { out.as_unchecked() }.clone();
+          Ok(Box::new(ConvertSEmpty { out }))
+        },
+        _ => Err(MechError::new(
+            IncorrectNumberOfArguments { expected: 0, found: args.len() },
+            None
+          ).with_compiler_loc()
+        ),
+      }
+    },
+  }
+}
+
 #[cfg(all(feature = "matrix", feature = "table"))]
 #[derive(Debug)]
 struct ConvertMat2Table<T> {
@@ -60,7 +96,7 @@ where T: Debug + Clone + PartialEq + Into<Value> + 'static,
   fn solve(&self) {
     let arg = &self.arg;
     let mut out_table = self.out.borrow_mut();
-    let (rows, cols) = (arg.rows(), arg.cols());
+    let rows = arg.rows().min(out_table.rows);
 
     for (col_ix, (ix, (col_kind, out_col))) in out_table.data.iter_mut().enumerate() {
       for row_ix in 0..rows {
@@ -93,6 +129,81 @@ where
     );
 
     return Ok(registers[0]);
+  }
+}
+
+#[cfg(all(feature = "matrix", feature = "set"))]
+fn matrix_to_values(value: &Value) -> Option<Vec<Value>> {
+  match value {
+    Value::MutableReference(reference) => matrix_to_values(&reference.borrow()),
+    Value::MatrixIndex(matrix) => Some(matrix.as_vec().into_iter().map(|value| Value::Index(Ref::new(value))).collect()),
+    #[cfg(feature = "bool")]
+    Value::MatrixBool(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "u8")]
+    Value::MatrixU8(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "u16")]
+    Value::MatrixU16(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "u32")]
+    Value::MatrixU32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "u64")]
+    Value::MatrixU64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "u128")]
+    Value::MatrixU128(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "i8")]
+    Value::MatrixI8(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "i16")]
+    Value::MatrixI16(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "i32")]
+    Value::MatrixI32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "i64")]
+    Value::MatrixI64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "i128")]
+    Value::MatrixI128(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "f32")]
+    Value::MatrixF32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "f64")]
+    Value::MatrixF64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "string")]
+    Value::MatrixString(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(feature = "rational")]
+    Value::MatrixR64(matrix) => Some(matrix.as_vec().into_iter().map(|value| value.to_value()).collect()),
+    #[cfg(feature = "complex")]
+    Value::MatrixC64(matrix) => Some(matrix.as_vec().into_iter().map(|value| value.to_value()).collect()),
+    Value::MatrixValue(matrix) => Some(matrix.as_vec()),
+    _ => None,
+  }
+}
+
+#[cfg(all(feature = "matrix", feature = "set"))]
+#[derive(Debug)]
+struct ConvertMatToSet {
+  arg: Value,
+  target_kind: ValueKind,
+  out: Ref<MechSet>,
+}
+
+#[cfg(all(feature = "matrix", feature = "set"))]
+impl MechFunctionImpl for ConvertMatToSet {
+  fn solve(&self) {
+    let values = matrix_to_values(&self.arg).unwrap_or_default();
+    let converted_values = values
+      .into_iter()
+      .map(|value| {
+        value
+          .convert_to(&self.target_kind)
+          .unwrap_or_else(|| panic!("Unable to convert matrix element to target set kind {}", self.target_kind))
+      })
+      .collect::<Vec<_>>();
+    *self.out.borrow_mut() = MechSet::from_vec(converted_values);
+  }
+  fn out(&self) -> Value { Value::Set(self.out.clone()) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(all(feature = "compiler", feature = "matrix", feature = "set"))]
+impl MechFunctionCompiler for ConvertMatToSet {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let name = format!("ConvertMatToSet");
+    compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
 }
 
@@ -151,8 +262,9 @@ macro_rules! impl_conversion_match_arms {
                 ).with_compiler_loc());
               }
             }
-            // Create a blank table, with as many rows as the matrix has
-            let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), in_shape[0]))?;
+            // Create a blank table matching the requested size, or source rows if unspecified.
+            let out_rows = if sze == 0 { in_shape[0] } else { sze };
+            let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), out_rows))?;
             Ok(Box::new(ConvertMat2Table::<$input_type>{arg: mat.clone(), out: Ref::new(out)}))
           }
           $(
@@ -175,6 +287,9 @@ macro_rules! impl_conversion_match_arms {
           let val = Ref::new(enm.clone());
           todo!("This isn't finished yet");
           Ok(Box::new(ConvertSEnum{out: val}))
+        }
+        (Value::Empty, Value::Kind(ValueKind::Empty)) => {
+          Ok(Box::new(ConvertSEmpty { out: Ref::new(Value::Empty) }))
         }
         x => Err(MechError::new(
             UnsupportedConversionError{from: x.0.kind(), to: x.1.kind()},
@@ -260,6 +375,22 @@ where
 
 fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {
   match (&source_value, &target_kind) {
+    #[cfg(all(feature = "matrix", feature = "set"))]
+    (source, Value::Kind(ValueKind::Set(target_kind, _))) => {
+      if let Some(values) = matrix_to_values(source) {
+        let converted_values = values
+          .into_iter()
+          .map(|value| value.convert_to(target_kind))
+          .collect::<Option<Vec<_>>>();
+        if let Some(converted_values) = converted_values {
+          return Ok(Box::new(ConvertMatToSet {
+            arg: source_value.clone(),
+            target_kind: target_kind.as_ref().clone(),
+            out: Ref::new(MechSet::from_vec(converted_values)),
+          }));
+        }
+      }
+    }
     #[cfg(all(feature = "rational", feature = "f64"))]
     (Value::R64(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: Ref::new(f64::default()),}));}
     #[cfg(all(feature = "matrix", feature = "table", feature = "string"))]
@@ -272,8 +403,9 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
           None,
         ).with_compiler_loc());
       }
-      // Create a blank table, with as many rows as the matrix has
-      let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), in_shape[0]))?;
+      // Create a blank table matching the requested size, or source rows if unspecified.
+      let out_rows = if *sze == 0 { in_shape[0] } else { *sze };
+      let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), out_rows))?;
       return Ok(Box::new(ConvertMat2Table::<String>{arg: mat.clone(), out: Ref::new(out)}));
     }
     #[cfg(all(feature = "matrix", feature = "table", feature = "bool"))]
@@ -286,8 +418,9 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
           None,
         ).with_compiler_loc());
       }
-      // Create a blank table, with as many rows as the matrix has
-      let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), in_shape[0]))?;
+      // Create a blank table matching the requested size, or source rows if unspecified.
+      let out_rows = if *sze == 0 { in_shape[0] } else { *sze };
+      let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), out_rows))?;
       return Ok(Box::new(ConvertMat2Table::<bool>{arg: mat.clone(), out: Ref::new(out)}));
     }
     _ =>(),
@@ -369,7 +502,7 @@ pub struct ColumnConvertKindMismatchError {
   pub to: ValueKind,
 }
 
-impl MechErrorKind2 for ColumnConvertKindMismatchError {
+impl MechErrorKind for ColumnConvertKindMismatchError {
   fn name(&self) -> &str { "ColumnTypeMismatch" }
   fn message(&self) -> String {
     format!(
@@ -384,7 +517,7 @@ pub struct ConvertIncorrectNumberOfColumnsError {
   pub from: usize,
   pub to: usize,
 }
-impl MechErrorKind2 for ConvertIncorrectNumberOfColumnsError {
+impl MechErrorKind for ConvertIncorrectNumberOfColumnsError {
   fn name(&self) -> &str { "IncorrectNumberOfColumns" }
   fn message(&self) -> String {
     format!(

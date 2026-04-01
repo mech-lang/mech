@@ -276,22 +276,22 @@ impl ValueKind {
       (I8, Index) | (I16, Index) | (I32, Index) | (I64, Index) | (I128, Index) => true,
 
       // Matrix: element type convertible and shape matches
-      (Matrix(box a, ashape), Matrix(box b, bshape)) if ashape.into_iter().product::<usize>() == bshape.into_iter().product::<usize>() && a.is_convertible_to(b) => true,
+      (Matrix(a, ashape), Matrix(b, bshape)) if ashape.into_iter().product::<usize>() == bshape.into_iter().product::<usize>() && a.as_ref().is_convertible_to(b.as_ref()) => true,
 
       // Option conversions
-      (Option(box a), Option(box b)) if a.is_convertible_to(b) => true,
+      (Option(a), Option(b)) if a.as_ref().is_convertible_to(b.as_ref()) => true,
 
       // Reference conversions
-      (Reference(box a), Reference(box b)) if a.is_convertible_to(b) => true,
+      (Reference(a), Reference(b)) if a.as_ref().is_convertible_to(b.as_ref()) => true,
 
       // Tuple conversions (element-wise)
       (Tuple(a), Tuple(b)) if a.len() == b.len() && a.iter().zip(b.iter()).all(|(x, y)| x.is_convertible_to(y)) => true,
 
       // Set conversions
-      (Set(box a, _), Set(box b, _)) if a.is_convertible_to(b) => true,
+      (Set(a, _), Set(b, _)) if a.as_ref().is_convertible_to(b.as_ref()) => true,
 
       // Map conversions
-      (Map(box ak, box av), Map(box bk, box bv)) if ak.is_convertible_to(bk) && av.is_convertible_to(bv) => true,
+      (Map(ak, av), Map(bk, bv)) if ak.as_ref().is_convertible_to(bk.as_ref()) && av.as_ref().is_convertible_to(bv.as_ref()) => true,
 
       // Table conversions: allow source to have extra columns
       (Table(acols, _), Table(bcols, _)) if bcols.iter().all(|(bk, bv)| 
@@ -2529,7 +2529,7 @@ impl ToValue for Ref<MechRecord> {
 #[derive(Debug, Clone)]
 pub struct UnhandledFunctionArgumentKindError;
 
-impl MechErrorKind2 for UnhandledFunctionArgumentKindError {
+impl MechErrorKind for UnhandledFunctionArgumentKindError {
   fn name(&self) -> &str { "UnhandledFunctionArgumentKind" }
   fn message(&self) -> String {
     "Value kind is not valid for this function.".to_string()
@@ -2541,7 +2541,7 @@ pub struct CannotConvertToTypeError {
   pub target_type: &'static str,
 }
 
-impl MechErrorKind2 for CannotConvertToTypeError {
+impl MechErrorKind for CannotConvertToTypeError {
   fn name(&self) -> &str { "CannotConvertToType" }
   fn message(&self) -> String {
     format!("Cannot convert to {}", self.target_type)
