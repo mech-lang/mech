@@ -53,14 +53,11 @@ test_interpreter!(interpret_literal_false2, "✗ ", Value::Bool(Ref::new(false))
 test_interpreter!(interpret_literal_false, "false", Value::Bool(Ref::new(false)));
 test_interpreter!(interpret_literal_atom, ":A", Value::Atom(Ref::new(MechAtom::new(55450514845822917))));
 test_interpreter!(interpret_literal_empty, "_", Value::Empty);
-#[test]
-fn interpret_fsm_tuple_struct_states() {
-  let s = "#Counter(x) -> :Count(x)\n:Count(v)\n  ├ v > 0 -> :Done(v)\n  └ * -> :Done(1)\n:Done(v) => v.\n#Counter(0)";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
-  assert_eq!(result, Value::F64(Ref::new(1.0)));
-}
+test_interpreter!(
+  interpret_fsm_tuple_struct_states,
+  "#Counter(x) -> :Count(x)\n:Count(v)\n  ├ v > 0 -> :Done(v)\n  └ * -> :Done(1)\n:Done(v) => v.\n#Counter(0)",
+  Value::F64(Ref::new(1.0))
+);
 
 test_interpreter!(
   interpret_fsm_counter_example_with_kinds,
@@ -68,18 +65,11 @@ test_interpreter!(
   Value::F64(Ref::new(0.0))
 );
 
-#[test]
-fn interpret_fsm_fibonacci_reaches_done_state() {
-  let s = "#Fibonacci(n<u64>) => <u64>\n  ├ :Compute(n<u64>, a<u64>, b<u64>)\n  └ :Done(n<u64>).\n\n#Fibonacci(n<u64>) -> :Compute(n, 0, 1)\n  :Compute(n, a, b)\n    ├ n > 0 -> :Compute(n - 1, b, a + b)\n    └ n == 0 -> :Done(a)\n  :Done(n) => n.\n\n#Fibonacci(10)";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
-  match result {
-    Value::U64(n) => assert_eq!(*n.borrow(), 55),
-    Value::F64(n) => assert_eq!(*n.borrow(), 55.0),
-    _ => panic!("expected numeric fibonacci output"),
-  }
-}
+test_interpreter!(
+  interpret_fsm_fibonacci_reaches_done_state,
+  "#Fibonacci(n<u64>) => <u64>\n  ├ :Compute(n<u64>, a<u64>, b<u64>)\n  └ :Done(n<u64>).\n\n#Fibonacci(n<u64>) -> :Compute(n, 0, 1)\n  :Compute(n, a, b)\n    ├ n > 0 -> :Compute(n - 1, b, a + b)\n    └ n == 0 -> :Done(a)\n  :Done(n) => n.\n\n#Fibonacci(10)",
+  Value::F64(Ref::new(55.0))
+);
 test_interpreter!(interpret_variable_define_empty, "em := _", Value::Empty);
 #[cfg(feature = "u8")]
 test_interpreter!(interpret_variable_define_kind_literal, "x := <u8>;", Value::Kind(ValueKind::U8));
