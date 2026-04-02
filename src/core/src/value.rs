@@ -1431,6 +1431,7 @@ impl Value {
       Value::Tuple(t) => t.borrow().to_html(),
       #[cfg(feature = "enum")]
       Value::Enum(e) => e.borrow().to_html(),
+      Value::Empty => "<span class='mech-empty'>_</span>".to_string(),
       Value::MutableReference(m) => {
         let inner = m.borrow();
         format!("<span class='mech-reference'>{}</span>", inner.to_html())
