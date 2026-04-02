@@ -156,16 +156,24 @@ fn execute_fsm_pipe_traced(
     p: &Interpreter,
 ) -> MResult<Value> {
     println!(
-        "[trace][fsm] start {} state={}",
-        fsm.name.to_string(),
-        summarize_value(state)
+        "{}",
+        format_fsm_trace(
+            "start",
+            format!(
+                "name={} state={}",
+                fsm.name.to_string(),
+                summarize_value(state)
+            )
+        )
     );
     let max_steps = 10_000usize; // TODO This must be a parameter
     for step in 0..max_steps {
         println!(
-            "[trace][fsm] step={} state={}",
-            step,
-            summarize_value(state)
+            "{}",
+            format_fsm_trace(
+                "step",
+                format!("{step:>4} state={}", summarize_value(state))
+            )
         );
         let mut transitioned = false;
         for (arm_idx, arm) in fsm.arms.iter().enumerate() {
@@ -174,20 +182,38 @@ fn execute_fsm_pipe_traced(
                     let mut arm_env = call_env.clone();
                     clear_pattern_bindings(pattern, &mut arm_env);
                     println!(
-                        "[trace][fsm] arm[{arm_idx}] transition pattern={}",
-                        summarize_pattern(pattern)
+                        "{}",
+                        format_fsm_trace(
+                            "arm",
+                            format!(
+                                "[{arm_idx}] transition pattern={}",
+                                summarize_pattern(pattern)
+                            )
+                        )
                     );
                     if pattern_matches_value(pattern, state, &mut arm_env, p)? {
-                        println!("[trace][fsm] arm[{arm_idx}] matched");
+                        println!(
+                            "{}",
+                            format_fsm_trace("arm", format!("[{arm_idx}] matched"))
+                        );
                         let out = apply_transitions(transitions, state, &mut arm_env, p)?;
                         *call_env = arm_env;
                         if let Some(value) = out {
-                            println!("[trace][fsm] output {}", summarize_value(&value));
+                            println!(
+                                "{}",
+                                format_fsm_trace(
+                                    "output",
+                                    format!("value={}", summarize_value(&value))
+                                )
+                            );
                             return Ok(value);
                         }
                         println!(
-                            "[trace][fsm] arm[{arm_idx}] next_state={}",
-                            summarize_value(state)
+                            "{}",
+                            format_fsm_trace(
+                                "state",
+                                format!("arm[{arm_idx}] next={}", summarize_value(state))
+                            )
                         );
                         transitioned = true;
                         break;
@@ -197,13 +223,19 @@ fn execute_fsm_pipe_traced(
                     let mut arm_env = call_env.clone();
                     clear_pattern_bindings(pattern, &mut arm_env);
                     println!(
-                        "[trace][fsm] arm[{arm_idx}] guard pattern={}",
-                        summarize_pattern(pattern)
+                        "{}",
+                        format_fsm_trace(
+                            "arm",
+                            format!("[{arm_idx}] guard pattern={}", summarize_pattern(pattern))
+                        )
                     );
                     if !pattern_matches_value(pattern, state, &mut arm_env, p)? {
                         continue;
                     }
-                    println!("[trace][fsm] arm[{arm_idx}] guard pattern matched");
+                    println!(
+                        "{}",
+                        format_fsm_trace("arm", format!("[{arm_idx}] guard pattern matched"))
+                    );
                     for guard in guards {
                         let guard_passes = match &guard.condition {
                             Pattern::Wildcard => true,
@@ -215,16 +247,28 @@ fn execute_fsm_pipe_traced(
                         if !guard_passes {
                             continue;
                         }
-                        println!("[trace][fsm] arm[{arm_idx}] guard condition passed");
+                        println!(
+                            "{}",
+                            format_fsm_trace("guard", format!("arm[{arm_idx}] condition passed"))
+                        );
                         let out = apply_transitions(&guard.transitions, state, &mut arm_env, p)?;
                         *call_env = arm_env;
                         if let Some(value) = out {
-                            println!("[trace][fsm] output {}", summarize_value(&value));
+                            println!(
+                                "{}",
+                                format_fsm_trace(
+                                    "output",
+                                    format!("value={}", summarize_value(&value))
+                                )
+                            );
                             return Ok(value);
                         }
                         println!(
-                            "[trace][fsm] arm[{arm_idx}] next_state={}",
-                            summarize_value(state)
+                            "{}",
+                            format_fsm_trace(
+                                "state",
+                                format!("arm[{arm_idx}] next={}", summarize_value(state))
+                            )
                         );
                         transitioned = true;
                         break;
@@ -236,7 +280,10 @@ fn execute_fsm_pipe_traced(
             }
         }
         if !transitioned {
-            println!("[trace][fsm] halted {}", summarize_value(state));
+            println!(
+                "{}",
+                format_fsm_trace("halt", format!("state={}", summarize_value(state)))
+            );
             return Ok(state.clone());
         }
     }
@@ -383,4 +430,9 @@ fn truncate_for_trace(text: &str, max_chars: usize) -> String {
     let mut truncated = text.chars().take(max_chars).collect::<String>();
     truncated.push('…');
     truncated
+}
+
+#[cfg(feature = "state_machines")]
+fn format_fsm_trace(label: &str, message: String) -> String {
+    format!("[trace][fsm][{label:>6}] {message}")
 }
