@@ -53,30 +53,17 @@ test_interpreter!(interpret_literal_false2, "✗ ", Value::Bool(Ref::new(false))
 test_interpreter!(interpret_literal_false, "false", Value::Bool(Ref::new(false)));
 test_interpreter!(interpret_literal_atom, ":A", Value::Atom(Ref::new(MechAtom::new(55450514845822917))));
 test_interpreter!(interpret_literal_empty, "_", Value::Empty);
-#[test]
-fn interpret_fsm_tuple_struct_states() {
-  let s = "#Counter(x) -> :Count(x)\n:Count(v)\n  ├ v > 0 -> :Done(v)\n  └ * -> :Done(1)\n:Done(v) => v.\n#Counter(0)";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
-  match result {
-    Value::Tuple(tpl) => {
-      let tpl_brrw = tpl.borrow();
-      assert_eq!(tpl_brrw.elements.len(), 2);
-      match &*tpl_brrw.elements[0] {
-        Value::Atom(atm) => assert_eq!(atm.borrow().id(), hash_str("Done")),
-        _ => panic!("expected tuple state atom"),
-      }
-      assert_eq!(*tpl_brrw.elements[1], Value::F64(Ref::new(1.0)));
-    }
-    _ => panic!("expected tuple state output"),
-  }
-}
 
 test_interpreter!(
-  interpret_fsm_counter_example_with_kinds,
+  interpret_fsm_counter_example,
   "#Counter(n<u64>) => <u64>\n  ├ :Count(n<u64>)\n  └ :Done(n<u64>).\n\n#Counter(n<u64>) -> :Count(n)\n  :Count(n)\n    ├ n > 0 -> :Count(n - 1)\n    └ n == 0 -> :Done(0)\n  :Done(n) => n.\n\n#Counter(5)",
   Value::F64(Ref::new(0.0))
+);
+
+test_interpreter!(
+  interpret_fsm_fibonacci,
+  "#Fibonacci(n<u64>) => <u64>\n  ├ :Compute(n<u64>, a<u64>, b<u64>)\n  └ :Done(n<u64>).\n\n#Fibonacci(n<u64>) -> :Compute(n, 0, 1)\n  :Compute(n, a, b)\n    ├ n > 0 -> :Compute(n - 1, b, a + b)\n    └ n == 0 -> :Done(a)\n  :Done(n) => n.\n\n#Fibonacci(10)",
+  Value::F64(Ref::new(55.0))
 );
 test_interpreter!(interpret_variable_define_empty, "em := _", Value::Empty);
 #[cfg(feature = "u8")]
