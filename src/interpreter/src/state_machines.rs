@@ -403,8 +403,57 @@ fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -> MR
 #[cfg(feature = "state_machines")]
 fn summarize_value(value: &Value) -> String {
     const MAX_TRACE_CHARS: usize = 96;
-    let rendered = single_line_trace_text(&format!("{:?}", value));
+    let rendered = single_line_trace_text(&summarize_value_compact(value, 0));
     truncate_for_trace(&rendered, MAX_TRACE_CHARS)
+}
+
+fn summarize_value_compact(value: &Value, depth: usize) -> String {
+    if depth > 2 {
+        return format!("{}(..)", value.kind().to_string());
+    }
+    match value {
+        #[cfg(feature = "u64")]
+        Value::U64(x) => format!("u64(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
+        #[cfg(feature = "i64")]
+        Value::I64(x) => format!("i64(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
+        #[cfg(feature = "f64")]
+        Value::F64(x) => format!("f64(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
+        #[cfg(feature = "bool")]
+        Value::Bool(x) => format!("bool(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
+        #[cfg(feature = "string")]
+        Value::String(x) => format!("str(@{:04x}:\"{}\")", short_addr(x.addr()), x.borrow()),
+        #[cfg(feature = "atom")]
+        Value::Atom(x) => format!("{}(@{:04x})", x.borrow().to_string(), short_addr(x.addr())),
+        #[cfg(feature = "tuple")]
+        Value::Tuple(tuple_ref) => summarize_tuple_value(tuple_ref, depth),
+        _ => format!(
+            "{}({})",
+            value.kind().to_string(),
+            truncate_for_trace(&single_line_trace_text(&format!("{:?}", value)), 48)
+        ),
+    }
+}
+
+#[cfg(feature = "tuple")]
+fn summarize_tuple_value(tuple_ref: &Ref<MechTuple>, depth: usize) -> String {
+    let tuple = tuple_ref.borrow();
+    let mut parts = Vec::new();
+    for element in tuple.elements.iter().take(3) {
+        parts.push(summarize_value_compact(element, depth + 1));
+    }
+    if tuple.elements.len() > 3 {
+        parts.push("…".to_string());
+    }
+    format!(
+        "tuple(@{:04x}; len={}; [{}])",
+        short_addr(tuple_ref.addr()),
+        tuple.elements.len(),
+        parts.join(", ")
+    )
+}
+
+fn short_addr(addr: usize) -> u16 {
+    (addr & 0xffff) as u16
 }
 
 #[cfg(feature = "state_machines")]
