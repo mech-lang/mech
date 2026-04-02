@@ -403,7 +403,7 @@ fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -> MR
 #[cfg(feature = "state_machines")]
 fn summarize_value(value: &Value) -> String {
     const MAX_TRACE_CHARS: usize = 96;
-    let rendered = single_line_trace_text(&value.to_string());
+    let rendered = single_line_trace_text(&format!("{:?}", value));
     truncate_for_trace(&rendered, MAX_TRACE_CHARS)
 }
 
