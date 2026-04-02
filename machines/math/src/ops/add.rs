@@ -78,6 +78,21 @@ macro_rules! add_scalar_rhs_op {
 impl_math_fxns!(Add);
 
 fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+  #[cfg(feature = "c64")]
+  match (&lhs_value, &rhs_value) {
+    (Value::C64(lhs), rhs) if !matches!(rhs, Value::C64(_)) => {
+      if let Ok(rhs_c64) = rhs.as_c64() {
+        return impl_add_fxn(Value::C64(lhs.clone()), Value::C64(rhs_c64));
+      }
+    }
+    (lhs, Value::C64(rhs)) if !matches!(lhs, Value::C64(_)) => {
+      if let Ok(lhs_c64) = lhs.as_c64() {
+        return impl_add_fxn(Value::C64(lhs_c64), Value::C64(rhs.clone()));
+      }
+    }
+    _ => {}
+  }
+
   impl_binop_match_arms!(
     Add,
     register_fxn_descriptor_inner,
