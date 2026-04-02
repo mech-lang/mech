@@ -55,7 +55,7 @@ test_interpreter!(interpret_literal_atom, ":A", Value::Atom(Ref::new(MechAtom::n
 test_interpreter!(interpret_literal_empty, "_", Value::Empty);
 #[test]
 fn interpret_fsm_tuple_struct_states() {
-  let s = "#Counter(x) -> `Count(x)\n`Count(v)\n  ├ v > 0 -> `Done(v)\n  └ * -> `Done(1)\n`Done(v) => v.\n#Counter(0)";
+  let s = "#Counter(x) -> :Count(x)\n:Count(v)\n  ├ v > 0 -> :Done(v)\n  └ * -> :Done(1)\n:Done(v) => v.\n#Counter(0)";
   let tree = parser::parse(s).unwrap();
   let mut intrp = Interpreter::new(0);
   let result = intrp.interpret(&tree).unwrap();
