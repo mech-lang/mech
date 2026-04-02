@@ -865,7 +865,7 @@ pub fn float_sigil(input: ParseString) -> ParseResult<FloatDirection> {
 // float := float-sigil, section-element ;
 pub fn float(input: ParseString) -> ParseResult<(Box<SectionElement>,FloatDirection)> {
   let (input, direction) = float_sigil(input)?;
-  let (input, _) = many0(space_tab)(input)?;
+  let (input, _) = many1(space_tab)(input)?;
   let (input, el) = section_element(input)?;
   Ok((input, (Box::new(el), direction)))
 }
