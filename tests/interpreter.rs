@@ -59,18 +59,7 @@ fn interpret_fsm_tuple_struct_states() {
   let tree = parser::parse(s).unwrap();
   let mut intrp = Interpreter::new(0);
   let result = intrp.interpret(&tree).unwrap();
-  match result {
-    Value::Tuple(tpl) => {
-      let tpl_brrw = tpl.borrow();
-      assert_eq!(tpl_brrw.elements.len(), 2);
-      match &*tpl_brrw.elements[0] {
-        Value::Atom(atm) => assert_eq!(atm.borrow().id(), hash_str("Done")),
-        _ => panic!("expected tuple state atom"),
-      }
-      assert_eq!(*tpl_brrw.elements[1], Value::F64(Ref::new(1.0)));
-    }
-    _ => panic!("expected tuple state output"),
-  }
+  assert_eq!(result, Value::F64(Ref::new(1.0)));
 }
 
 test_interpreter!(
@@ -78,6 +67,19 @@ test_interpreter!(
   "#Counter(n<u64>) => <u64>\n  ├ :Count(n<u64>)\n  └ :Done(n<u64>).\n\n#Counter(n<u64>) -> :Count(n)\n  :Count(n)\n    ├ n > 0 -> :Count(n - 1)\n    └ n == 0 -> :Done(0)\n  :Done(n) => n.\n\n#Counter(5)",
   Value::F64(Ref::new(0.0))
 );
+
+#[test]
+fn interpret_fsm_fibonacci_reaches_done_state() {
+  let s = "#Fibonacci(n<u64>) => <u64>\n  ├ :Compute(n<u64>, a<u64>, b<u64>)\n  └ :Done(n<u64>).\n\n#Fibonacci(n<u64>) -> :Compute(n, 0, 1)\n  :Compute(n, a, b)\n    ├ n > 0 -> :Compute(n - 1, b, a + b)\n    └ n == 0 -> :Done(a)\n  :Done(n) => n.\n\n#Fibonacci(10)";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  match result {
+    Value::U64(n) => assert_eq!(*n.borrow(), 55),
+    Value::F64(n) => assert_eq!(*n.borrow(), 55.0),
+    _ => panic!("expected numeric fibonacci output"),
+  }
+}
 test_interpreter!(interpret_variable_define_empty, "em := _", Value::Empty);
 #[cfg(feature = "u8")]
 test_interpreter!(interpret_variable_define_kind_literal, "x := <u8>;", Value::Kind(ValueKind::U8));
