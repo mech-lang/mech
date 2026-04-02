@@ -24,7 +24,7 @@ pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -
     }
     #[cfg(feature = "math")]
     Statement::OpAssign(op_assgn) => op_assign(&op_assgn, env, p),
-    #[cfg(feature = "functions")]
+    #[cfg(feature = "state_machines")]
     Statement::FsmDeclare(fsm_decl) => fsm_declare(fsm_decl, env, p),
     //Statement::SplitTable => todo!(),
     //Statement::FlattenTable => todo!(),
@@ -376,9 +376,9 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
   return Ok(detached_result);
 }
 
-#[cfg(feature = "functions")]
+#[cfg(feature = "state_machines")]
 pub fn fsm_declare(fsm_decl: &FsmDeclare, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
-  let result = crate::functions::execute_fsm_pipe(&fsm_decl.pipe, env, p)?;
+  let result = crate::state_machines::execute_fsm_pipe(&fsm_decl.pipe, env, p)?;
   let id = fsm_decl.fsm.name.hash();
   let name = fsm_decl.fsm.name.to_string();
   #[cfg(feature = "symbol_table")]

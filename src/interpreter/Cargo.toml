@@ -26,14 +26,14 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
   "f32", "f64", "c64", "r64", 
   "set_default", "math_default", "compare_default", "combinatorics_default", "logic_default",
   "matrix_default", "io_default", "range_default", "stats_default", "string_default",
-  "statements_default", "subscript_default",
+  "statements_default", "subscript_default", "state_machines",
   "mech-core/default",
   "mech-set/default", "mech-math/default", "mech-compare/default", "mech-combinatorics/default", "mech-logic/default", "mech-matrix/default", "mech-io/default", "mech-stats/default", "mech-range/default", "mech-string/default",
   ]
 base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "set_default", "math_default", "compare_default", "combinatorics_default", "logic_default",
       "matrix_default", "io_default", "range_default", "stats_default", "string_default",
-      "statements_default", "subscript_default",
+      "statements_default", "subscript_default", "state_machines",
       "mech-core/base", "mech-set/base", "mech-math/base", "mech-compare/base", "mech-combinatorics/base", "mech-logic/base", "mech-matrix/base", "mech-io/base", "mech-stats/base", "mech-range/base", "mech-string/base",
       ]    
   
@@ -88,6 +88,7 @@ kind_define = ["kind_annotation", "functions", "statements", "mech-core/kind_def
 kind_annotation = ["functions", "mech-core/kind_annotation", "mech-set/kind_annotation", "mech-math/kind_annotation", "mech-compare/kind_annotation", "mech-combinatorics/kind_annotation", "mech-logic/kind_annotation", "mech-matrix/kind_annotation", "mech-io/kind_annotation", "mech-stats/kind_annotation", "mech-range/kind_annotation", "mech-string/kind_annotation"]
 formulas = ["mech-core/formulas", "mech-set/formulas", "mech-math/formulas", "mech-compare/formulas", "mech-combinatorics/formulas", "mech-logic/formulas", "mech-matrix/formulas", "mech-io/formulas", "mech-stats/formulas", "mech-range/formulas", "mech-string/formulas"]
 functions = ["symbol_table", "mech-core/functions", "mech-set/functions", "mech-math/functions", "mech-compare/functions", "mech-combinatorics/functions", "mech-logic/functions", "mech-matrix/functions", "mech-io/functions", "mech-stats/functions", "mech-range/functions", "mech-string/functions"]
+state_machines = ["functions", "statements", "atom", "tuple", "formulas"]
 symbol_table = ["mech-core/symbol_table", "mech-set/symbol_table", "mech-math/symbol_table", "mech-compare/symbol_table", "mech-combinatorics/symbol_table", "mech-logic/symbol_table", "mech-matrix/symbol_table", "mech-io/symbol_table", "mech-stats/symbol_table", "mech-range/symbol_table", "mech-string/symbol_table"]
 
 access = ["functions"]
