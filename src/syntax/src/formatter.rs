@@ -1803,16 +1803,16 @@ impl Formatter {
           }
         }
         if self.html {
-          format!("<span class=\"mech-fsm-instance\"><span class=\"mech-fsm-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-fsm-args\">{}</span><span class=\"mech-right-paren\">)</span></span>",name,args)
+          format!("<span class=\"mech-fsm-instance\"><span class=\"mech-fsm-name\">#{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-fsm-args\">{}</span><span class=\"mech-right-paren\">)</span></span>",name,args)
         } else {
-          format!("{}({})", name, args)
+          format!("#{}({})", name, args)
         }
       },
       None => {
         if self.html {
-          format!("<span class=\"mech-fsm-instance\"><span class=\"mech-fsm-name\">{}</span></span>",name)
+          format!("<span class=\"mech-fsm-instance\"><span class=\"mech-fsm-name\">#{}</span></span>",name)
         } else {
-          format!("{}", name)
+          format!("#{}", name)
         }
       },
     }
