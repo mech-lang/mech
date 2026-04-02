@@ -1,4 +1,5 @@
 use crate::*;
+use std::collections::HashSet;
 
 #[cfg(feature = "state_machines")]
 pub fn register_fsm_implementation(fsm: &FsmImplementation, p: &Interpreter) -> MResult<()> {
@@ -52,6 +53,7 @@ pub fn execute_fsm_pipe(
     for (arg_name, arg_value) in fsm.input.iter().zip(args.iter()) {
         call_env.insert(arg_name.hash(), detach_value(arg_value));
     }
+    let input_binding_ids: HashSet<u64> = fsm.input.iter().map(|arg| arg.hash()).collect();
 
     let mut state = pattern_to_value(&fsm.start, &call_env, p)?;
     let max_steps = 10_000usize;
@@ -61,6 +63,7 @@ pub fn execute_fsm_pipe(
             match arm {
                 FsmArm::Transition(pattern, transitions) => {
                     let mut arm_env = call_env.clone();
+                    clear_pattern_bindings(pattern, &input_binding_ids, &mut arm_env);
                     if pattern_matches_value(pattern, &state, &mut arm_env, p)? {
                         let out = apply_transitions(transitions, &mut state, &mut arm_env, p)?;
                         call_env = arm_env;
@@ -73,6 +76,7 @@ pub fn execute_fsm_pipe(
                 }
                 FsmArm::Guard(pattern, guards) => {
                     let mut arm_env = call_env.clone();
+                    clear_pattern_bindings(pattern, &input_binding_ids, &mut arm_env);
                     if !pattern_matches_value(pattern, &state, &mut arm_env, p)? {
                         continue;
                     }
@@ -113,6 +117,39 @@ pub fn execute_fsm_pipe(
         )
         .with_compiler_loc(),
     )
+}
+
+#[cfg(feature = "state_machines")]
+fn clear_pattern_bindings(
+    pattern: &Pattern,
+    input_binding_ids: &HashSet<u64>,
+    env: &mut Environment,
+) {
+    let mut ids = Vec::new();
+    collect_pattern_variable_ids(pattern, &mut ids);
+    for var_id in ids {
+        if input_binding_ids.contains(&var_id) {
+            env.remove(&var_id);
+        }
+    }
+}
+
+#[cfg(feature = "state_machines")]
+fn collect_pattern_variable_ids(pattern: &Pattern, ids: &mut Vec<u64>) {
+    match pattern {
+        Pattern::Expression(Expression::Var(var)) => ids.push(var.name.hash()),
+        Pattern::Tuple(tuple) => {
+            for item in &tuple.0 {
+                collect_pattern_variable_ids(item, ids);
+            }
+        }
+        Pattern::TupleStruct(tuple_struct) => {
+            for item in &tuple_struct.patterns {
+                collect_pattern_variable_ids(item, ids);
+            }
+        }
+        _ => {}
+    }
 }
 
 #[cfg(feature = "state_machines")]
