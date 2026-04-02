@@ -1775,13 +1775,64 @@ impl Formatter {
       Expression::Range(range) => self.range_expression(range),
       Expression::SetComprehension(set_comp) => self.set_comprehension(set_comp),
       Expression::MatrixComprehension(matrix_comp) => self.matrix_comprehension(matrix_comp),
-      _ => todo!(),
-      //Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe, src),
+      Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe),
+      x => todo!("Unhandled Expression: {:#?}", x),
     };
     if self.html {
       format!("<span class=\"mech-expression\">{}</span>",e)
     } else {
       format!("{}", e)
+    }
+  }
+
+  pub fn fsm_instance(&mut self, node: &FsmInstance) -> String {
+    let name = node.name.to_string();
+    let mut args = "".to_string();
+    match &node.args {
+      Some(arguments) => {
+        for (i, (ident, expr)) in arguments.iter().enumerate() {
+          let e = self.expression(expr);
+          let arg_str = match ident {
+            Some(id) => format!("{}: {}", id.to_string(), e),
+            None => e,
+          };
+          if i == 0 {
+            args = format!("{}", arg_str);
+          } else {
+            args = format!("{}, {}", args, arg_str);
+          }
+        }
+        if self.html {
+          format!("<span class=\"mech-fsm-instance\"><span class=\"mech-fsm-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-fsm-args\">{}</span><span class=\"mech-right-paren\">)</span></span>",name,args)
+        } else {
+          format!("{}({})", name, args)
+        }
+      },
+      None => {
+        if self.html {
+          format!("<span class=\"mech-fsm-instance\"><span class=\"mech-fsm-name\">{}</span></span>",name)
+        } else {
+          format!("{}", name)
+        }
+      },
+    }
+  }
+
+  pub fn fsm_pipe(&mut self, node: &FsmPipe) -> String {
+    let start = self.fsm_instance(&node.start);
+    let mut transitions = "".to_string();
+    for (i, transition) in node.transitions.iter().enumerate() {
+      let t = self.transition(transition);
+      if i == 0 {
+        transitions = format!("{}", t);
+      } else {
+        transitions = format!("{}{}", transitions, t);
+      }
+    }
+    if self.html {
+      format!("<span class=\"mech-fsm-pipe\"><span class=\"mech-fsm-pipe-start\">{}</span><span class=\"mech-fsm-pipe-transitions\">{}</span></span>",start,transitions)
+    } else {
+      format!("{}{}", start, transitions)
     }
   }
 
