@@ -27,7 +27,7 @@ An optional options map can set attributes such as width, height, or alignment.
 
 Use float markers to wrap text around an image:
 
-- `<<` float left
-- `>>` float right
+- `<<:` float left
+- `:>>` float right
 
 (i)> Prefer concise alt text that describes the figure's purpose, not only its appearance.

@@ -110,6 +110,33 @@ user := 1
 - **Relational**: Reusing variables creates natural joins across data.
 - **Declarative**: Relationships are described without explicit iteration.
 
+(1.1.6) Relational Joins
+
+Tables are a core data structure in Mech and support relational operators like joins. Here is an example that uses a join to combine data from two tables based on a shared key:
+
+a := | id<u64>  hw1<u8> |
+     |   1       10    |
+     |   2       20    |
+     |   3       30    |
+     
+b := | id<u64>  hw2<u8> |
+     |   2      200     |
+     |   3      300     |
+     |   4      400     |
+a ⟗ b
+```
+
+The resulting table has all rows from table `a`, with matching data from table `b` where available, and empty values where there is no match.
+
+(6.1) Inner Join `⋈`
+
+Returns rows where keys exist in both tables.
+
+```mech:join-example
+a ⋈ b -- table/join(a,b)
+
+
+
 (1.2) Why Mech
 
 (*)> Because you have structured data, and you want to program some sort of behavior when it changes.

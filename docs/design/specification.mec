@@ -1984,7 +1984,7 @@ Images are added to Mechdown documents using the `![alt-text](image-url)` syntax
 
 The alt-text is a rich paragraph that can contain any paragraph elements. It is configured to display below the image as a caption by default. The caption is accompanied by a figure number, which is automatically assigned based on the section of the document in which the image appears.
 
-Images can be floated to the left or right by prefixing with `<<` or `>>`, respectively. This allows text to wrap around the image and caption.
+Images can be floated to the left or right by prefixing with `<<:` or `:>>`, respectively. This allows text to wrap around the image and caption.
 
 (10.9.1) Example
 
