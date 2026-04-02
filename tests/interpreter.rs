@@ -257,9 +257,15 @@ test_interpreter!(interpret_formula_math_add_u64, "2<u64> + 2<u64>", Value::U64(
 #[cfg(feature = "u64")]
 test_interpreter!(interpret_formula_math_sub_u64, "2<u64> - 2<u64>", Value::U64(Ref::new(0)));
 #[cfg(feature = "u64")]
+test_interpreter!(interpret_formula_math_sub_u64_with_default_literal_rhs, "2<u64> - 1", Value::U64(Ref::new(1)));
+#[cfg(feature = "u64")]
 test_interpreter!(interpret_formula_math_div_u64, "2<u64> / 2<u64>", Value::U64(Ref::new(1)));
 #[cfg(feature = "u64")]
 test_interpreter!(interpret_formula_math_mul_u64, "2<u64> * 2<u64>", Value::U64(Ref::new(4)));
+#[cfg(feature = "u64")]
+test_interpreter!(interpret_formula_compare_gt_u64_with_default_literal_rhs, "2<u64> > 1", Value::Bool(Ref::new(true)));
+#[cfg(feature = "u64")]
+test_interpreter!(interpret_formula_compare_gt_u64_with_default_literal_lhs, "2 > 1<u64>", Value::Bool(Ref::new(true)));
 // u128
 #[cfg(feature = "u128")]
 test_interpreter!(interpret_formula_math_add_u128, "2<u128> + 2<u128>", Value::U128(Ref::new(4)));

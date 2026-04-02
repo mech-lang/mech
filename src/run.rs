@@ -35,7 +35,8 @@ macro_rules! print_plan {
 }
 
 
-pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: bool, debug_flag: bool, time_flag: bool) -> MResult<Value> {
+pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: bool, debug_flag: bool, time_flag: bool, trace_flag: bool) -> MResult<Value> {
+  intrp.trace = trace_flag;
   let sources = code.sources();
   let sources = sources.read().unwrap();
   for (file,source) in sources.sources_iter() {
