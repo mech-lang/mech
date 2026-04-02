@@ -403,7 +403,8 @@ fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -> MR
 #[cfg(feature = "state_machines")]
 fn summarize_value(value: &Value) -> String {
     const MAX_TRACE_CHARS: usize = 96;
-    truncate_for_trace(&value.to_string(), MAX_TRACE_CHARS)
+    let rendered = single_line_trace_text(&value.to_string());
+    truncate_for_trace(&rendered, MAX_TRACE_CHARS)
 }
 
 #[cfg(feature = "state_machines")]
@@ -414,7 +415,7 @@ fn summarize_pattern(pattern: &Pattern) -> String {
         Pattern::Tuple(tuple) => format!("tuple(len={})", tuple.0.len()),
         Pattern::TupleStruct(tuple_struct) => {
             format!(
-                "{}(len={})",
+                ":{}(len={})",
                 tuple_struct.name.to_string(),
                 tuple_struct.patterns.len()
             )
@@ -435,4 +436,9 @@ fn truncate_for_trace(text: &str, max_chars: usize) -> String {
 #[cfg(feature = "state_machines")]
 fn format_fsm_trace(label: &str, message: String) -> String {
     format!("[trace][fsm][{label:>6}] {message}")
+}
+
+#[cfg(feature = "state_machines")]
+fn single_line_trace_text(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
