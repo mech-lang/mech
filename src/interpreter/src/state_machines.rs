@@ -52,7 +52,7 @@ pub fn execute_fsm_pipe(
         call_env.insert(arg_name.hash(), detach_value(arg_value));
     }
     let mut state = pattern_to_value(&fsm.start, &call_env, p)?;
-    let max_steps = 10_000usize;
+    let max_steps = 10_000usize; // TODO This must be a parameter
     for _ in 0..max_steps {
         let mut transitioned = false;
         for arm in &fsm.arms {
