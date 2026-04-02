@@ -216,11 +216,17 @@ impl Interpreter {
                 .next()
                 .unwrap_or("<unknown-step>")
                 .to_string();
-              println!("[trace] step[{idx}] -> {fxn_header}");
+              println!("[trace][plan] step[{idx}] {fxn_header}");
             }
             fxn.solve();
             if self.trace {
-              println!("[trace] step[{idx}] out = {}", fxn.out());
+              let output = fxn.out().to_string();
+              let output = if output.chars().count() > 96 {
+                format!("{}…", output.chars().take(96).collect::<String>())
+              } else {
+                output
+              };
+              println!("[trace][plan] step[{idx}] out={output}");
             }
           }
         }

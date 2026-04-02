@@ -43,6 +43,17 @@ pub fn function_call(
     env: Option<&Environment>,
     p: &Interpreter,
 ) -> MResult<Value> {
+    if p.trace {
+        return function_call_traced(fxn_call, env, p);
+    }
+    function_call_untraced(fxn_call, env, p)
+}
+
+fn function_call_untraced(
+    fxn_call: &FunctionCall,
+    env: Option<&Environment>,
+    p: &Interpreter,
+) -> MResult<Value> {
     let functions = p.functions();
     let fxn_name_id = fxn_call.name.hash();
 
@@ -50,13 +61,6 @@ pub fn function_call(
         let mut input_arg_values = vec![];
         for (_, arg_expr) in fxn_call.args.iter() {
             input_arg_values.push(expression(arg_expr, env, p)?);
-        }
-        if p.trace {
-            println!(
-                "[trace] call user function {}({})",
-                fxn_call.name.to_string(),
-                format_trace_args(&input_arg_values)
-            );
         }
         return execute_user_function(&user_fxn, &input_arg_values, p);
     }
@@ -78,13 +82,63 @@ pub fn function_call(
             for (_, arg_expr) in fxn_call.args.iter() {
                 input_arg_values.push(expression(arg_expr, env, p)?);
             }
-            if p.trace {
-                println!(
-                    "[trace] call native function {}({})",
-                    fxn_call.name.to_string(),
-                    format_trace_args(&input_arg_values)
-                );
+            execute_native_function_compiler(fxn_compiler, &input_arg_values, p)
+        }
+        None => Err(MechError::new(
+            MissingFunctionError {
+                function_id: fxn_name_id,
+            },
+            None,
+        )
+        .with_compiler_loc()
+        .with_tokens(fxn_call.name.tokens())),
+    }
+}
+
+fn function_call_traced(
+    fxn_call: &FunctionCall,
+    env: Option<&Environment>,
+    p: &Interpreter,
+) -> MResult<Value> {
+    let functions = p.functions();
+    let fxn_name_id = fxn_call.name.hash();
+
+    if let Some(user_fxn) = { functions.borrow().user_functions.get(&fxn_name_id).cloned() } {
+        let mut input_arg_values = vec![];
+        for (_, arg_expr) in fxn_call.args.iter() {
+            input_arg_values.push(expression(arg_expr, env, p)?);
+        }
+        return execute_user_function(&user_fxn, &input_arg_values, p);
+    }
+
+    if { functions.borrow().functions.contains_key(&fxn_name_id) } {
+        todo!();
+    }
+
+    let fxn_compiler = {
+        functions
+            .borrow()
+            .function_compilers
+            .get(&fxn_name_id)
+            .copied()
+    };
+    match fxn_compiler {
+        Some(fxn_compiler) => {
+            let mut input_arg_values = vec![];
+            for (_, arg_expr) in fxn_call.args.iter() {
+                input_arg_values.push(expression(arg_expr, env, p)?);
             }
+            println!(
+                "{}",
+                format_trace(
+                    "fn",
+                    format!(
+                        "native {}({})",
+                        fxn_call.name.to_string(),
+                        format_trace_args(&input_arg_values)
+                    ),
+                )
+            );
             execute_native_function_compiler(fxn_compiler, &input_arg_values, p)
         }
         None => Err(MechError::new(
@@ -103,28 +157,62 @@ pub fn execute_native_function_compiler(
     input_arg_values: &Vec<Value>,
     p: &Interpreter,
 ) -> MResult<Value> {
+    if p.trace {
+        return execute_native_function_compiler_traced(fxn_compiler, input_arg_values, p);
+    }
+    execute_native_function_compiler_untraced(fxn_compiler, input_arg_values, p)
+}
+
+fn execute_native_function_compiler_untraced(
+    fxn_compiler: &'static dyn NativeFunctionCompiler,
+    input_arg_values: &Vec<Value>,
+    p: &Interpreter,
+) -> MResult<Value> {
     let plan = p.plan();
     match fxn_compiler.compile(input_arg_values) {
         Ok(mut new_fxn) => {
-            if p.trace {
-                let arm_name = new_fxn
-                    .to_string()
-                    .lines()
-                    .next()
-                    .unwrap_or("<unknown-arm>")
-                    .to_string();
-                println!(
-                    "[trace] state arm selected: {} | args=[{}]",
-                    arm_name,
-                    format_trace_args(input_arg_values)
-                );
-            }
             let mut plan_brrw = plan.borrow_mut();
             new_fxn.solve();
             let result = new_fxn.out();
-            if p.trace {
-                println!("[trace] state arm result: {}", result);
-            }
+            plan_brrw.push(new_fxn);
+            Ok(result)
+        }
+        Err(err) => Err(err),
+    }
+}
+
+fn execute_native_function_compiler_traced(
+    fxn_compiler: &'static dyn NativeFunctionCompiler,
+    input_arg_values: &Vec<Value>,
+    p: &Interpreter,
+) -> MResult<Value> {
+    let plan = p.plan();
+    match fxn_compiler.compile(input_arg_values) {
+        Ok(mut new_fxn) => {
+            let arm_name = new_fxn
+                .to_string()
+                .lines()
+                .next()
+                .unwrap_or("<unknown-arm>")
+                .to_string();
+            println!(
+                "{}",
+                format_trace(
+                    "arm",
+                    format!(
+                        "selected {} args=[{}]",
+                        arm_name,
+                        format_trace_args(input_arg_values)
+                    ),
+                )
+            );
+            let mut plan_brrw = plan.borrow_mut();
+            new_fxn.solve();
+            let result = new_fxn.out();
+            println!(
+                "{}",
+                format_trace("arm", format!("result {}", summarize_value(&result)))
+            );
             plan_brrw.push(new_fxn);
             Ok(result)
         }
@@ -133,6 +221,17 @@ pub fn execute_native_function_compiler(
 }
 
 fn execute_user_function(
+    fxn_def: &FunctionDefinition,
+    input_arg_values: &Vec<Value>,
+    p: &Interpreter,
+) -> MResult<Value> {
+    if p.trace {
+        return execute_user_function_traced(fxn_def, input_arg_values, p);
+    }
+    execute_user_function_untraced(fxn_def, input_arg_values, p)
+}
+
+fn execute_user_function_untraced(
     fxn_def: &FunctionDefinition,
     input_arg_values: &Vec<Value>,
     p: &Interpreter,
@@ -167,20 +266,89 @@ fn execute_user_function(
     output
 }
 
+fn execute_user_function_traced(
+    fxn_def: &FunctionDefinition,
+    input_arg_values: &Vec<Value>,
+    p: &Interpreter,
+) -> MResult<Value> {
+    if input_arg_values.len() != fxn_def.input.len() {
+        return Err(MechError::new(
+            IncorrectNumberOfArguments {
+                expected: fxn_def.input.len(),
+                found: input_arg_values.len(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+        .with_tokens(fxn_def.code.name.tokens()));
+    }
+
+    println!(
+        "{}",
+        format_trace(
+            "fn",
+            format!(
+                "enter {}({})",
+                fxn_def.name,
+                format_trace_args(input_arg_values)
+            ),
+        )
+    );
+
+    let scope = FunctionScope::enter(p);
+    bind_function_inputs(fxn_def, input_arg_values, p)?;
+
+    let output = if !fxn_def.code.match_arms.is_empty() {
+        execute_function_match_arms_traced(fxn_def, input_arg_values, p)
+    } else {
+        for statement_node in &fxn_def.code.statements {
+            statement(statement_node, None, p)?;
+        }
+        collect_function_output(p, fxn_def)
+    };
+
+    drop(scope);
+
+    match output {
+        Ok(value) => {
+            println!(
+                "{}",
+                format_trace(
+                    "fn",
+                    format!("exit  {} => {}", fxn_def.name, summarize_value(&value))
+                )
+            );
+            Ok(value)
+        }
+        Err(err) => {
+            println!(
+                "{}",
+                format_trace("fn", format!("fail  {} => {:?}", fxn_def.name, err))
+            );
+            Err(err)
+        }
+    }
+}
+
 fn execute_function_match_arms(
+    fxn_def: &FunctionDefinition,
+    input_arg_values: &Vec<Value>,
+    p: &Interpreter,
+) -> MResult<Value> {
+    if p.trace {
+        return execute_function_match_arms_traced(fxn_def, input_arg_values, p);
+    }
+    execute_function_match_arms_untraced(fxn_def, input_arg_values, p)
+}
+
+fn execute_function_match_arms_untraced(
     fxn_def: &FunctionDefinition,
     input_arg_values: &Vec<Value>,
     p: &Interpreter,
 ) -> MResult<Value> {
     for arm in &fxn_def.code.match_arms {
         let mut env = Environment::new();
-        if p.trace {
-            println!("[trace] testing user arm pattern: {:?}", arm.pattern);
-        }
         if pattern_matches_arguments(&arm.pattern, input_arg_values, &mut env, p)? {
-            if p.trace {
-                println!("[trace] matched user arm pattern: {:?}", arm.pattern);
-            }
             let out = expression(&arm.expression, Some(&env), p)?;
             return coerce_function_output_kind(detach_value(&out), fxn_def, p);
         }
@@ -195,12 +363,161 @@ fn execute_function_match_arms(
     .with_tokens(fxn_def.code.name.tokens()))
 }
 
+fn execute_function_match_arms_traced(
+    fxn_def: &FunctionDefinition,
+    input_arg_values: &Vec<Value>,
+    p: &Interpreter,
+) -> MResult<Value> {
+    for (arm_idx, arm) in fxn_def.code.match_arms.iter().enumerate() {
+        let mut env = Environment::new();
+        let args_summary = summarize_values_with_kinds(input_arg_values);
+        let pattern_summary = summarize_pattern(&arm.pattern);
+        let matched = pattern_matches_arguments(&arm.pattern, input_arg_values, &mut env, p)?;
+        let marker = if matched { "✓" } else { "X" };
+        println!(
+            "{}",
+            format_trace(
+                "match",
+                format!(
+                    "arm[{arm_idx}] test pattern={pattern_summary} args=[{args_summary}] {marker}"
+                )
+            )
+        );
+        if matched {
+            let out = expression(&arm.expression, Some(&env), p)?;
+            let coerced = coerce_function_output_kind(detach_value(&out), fxn_def, p)?;
+            println!(
+                "{}",
+                format_trace(
+                    "match",
+                    format!(
+                        "arm[{arm_idx}] out  value={} kind={}",
+                        summarize_value(&coerced),
+                        coerced.kind().to_string()
+                    )
+                )
+            );
+            return Ok(coerced);
+        }
+    }
+    Err(MechError::new(
+        FunctionOutputUndefinedError {
+            output_id: fxn_def.id,
+        },
+        None,
+    )
+    .with_compiler_loc()
+    .with_tokens(fxn_def.code.name.tokens()))
+}
+
+fn format_trace(scope: &str, message: String) -> String {
+    format!("[trace][{scope}] {message}")
+}
+
 fn format_trace_args(values: &Vec<Value>) -> String {
     values
         .iter()
-        .map(|value| format!("{}", value))
+        .map(summarize_value)
         .collect::<Vec<_>>()
         .join(", ")
+}
+
+fn summarize_value(value: &Value) -> String {
+    const MAX_TRACE_CHARS: usize = 96;
+    let rendered = single_line_trace_text(&summarize_value_compact(value, 0));
+    truncate_for_trace(&rendered, MAX_TRACE_CHARS)
+}
+
+fn summarize_value_compact(value: &Value, depth: usize) -> String {
+    if depth > 2 {
+        return format!("{}(..)", value.kind().to_string());
+    }
+    match value {
+        #[cfg(feature = "u64")]
+        Value::U64(x) => format!("u64(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
+        #[cfg(feature = "i64")]
+        Value::I64(x) => format!("i64(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
+        #[cfg(feature = "f64")]
+        Value::F64(x) => format!("f64(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
+        #[cfg(feature = "bool")]
+        Value::Bool(x) => format!("bool(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
+        #[cfg(feature = "string")]
+        Value::String(x) => format!("str(@{:04x}:\"{}\")", short_addr(x.addr()), x.borrow()),
+        #[cfg(feature = "atom")]
+        Value::Atom(x) => format!("{}(@{:04x})", x.borrow().to_string(), short_addr(x.addr())),
+        #[cfg(feature = "tuple")]
+        Value::Tuple(tuple_ref) => summarize_tuple_value(tuple_ref, depth),
+        _ => format!(
+            "{}({})",
+            value.kind().to_string(),
+            truncate_for_trace(&single_line_trace_text(&format!("{:?}", value)), 48)
+        ),
+    }
+}
+
+#[cfg(feature = "tuple")]
+fn summarize_tuple_value(tuple_ref: &Ref<MechTuple>, depth: usize) -> String {
+    let tuple = tuple_ref.borrow();
+    let mut parts = Vec::new();
+    for element in tuple.elements.iter().take(3) {
+        parts.push(summarize_value_compact(element, depth + 1));
+    }
+    if tuple.elements.len() > 3 {
+        parts.push("…".to_string());
+    }
+    format!(
+        "tuple(@{:04x}; len={}; [{}])",
+        short_addr(tuple_ref.addr()),
+        tuple.elements.len(),
+        parts.join(", ")
+    )
+}
+
+fn short_addr(addr: usize) -> u16 {
+    (addr & 0xffff) as u16
+}
+
+fn summarize_values_with_kinds(values: &Vec<Value>) -> String {
+    values
+        .iter()
+        .enumerate()
+        .map(|(idx, value)| {
+            format!(
+                "#{idx}={} :{}",
+                summarize_value(value),
+                value.kind().to_string()
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+fn summarize_pattern(pattern: &Pattern) -> String {
+    match pattern {
+        Pattern::Wildcard => "_".to_string(),
+        Pattern::Expression(expr) => truncate_for_trace(&format!("{:?}", expr), 72),
+        Pattern::Tuple(tuple) => format!("tuple(len={})", tuple.0.len()),
+        Pattern::TupleStruct(tuple_struct) => {
+            format!(
+                "{}(len={})",
+                tuple_struct.name.to_string(),
+                tuple_struct.patterns.len()
+            )
+        }
+    }
+}
+
+fn truncate_for_trace(text: &str, max_chars: usize) -> String {
+    if text.chars().count() <= max_chars {
+        return text.to_string();
+    }
+    let mut truncated = text.chars().take(max_chars).collect::<String>();
+    truncated.push('…');
+    truncated
+}
+
+fn single_line_trace_text(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 fn pattern_matches_arguments(
@@ -288,7 +605,10 @@ pub(crate) fn pattern_matches_value(
                 if !values_match(&expected_state, &detach_value(&tuple_brrw.elements[0])) {
                     return Ok(false);
                 }
-                for (pat, val) in pat_struct.patterns.iter().zip(tuple_brrw.elements.iter().skip(1))
+                for (pat, val) in pat_struct
+                    .patterns
+                    .iter()
+                    .zip(tuple_brrw.elements.iter().skip(1))
                 {
                     if !pattern_matches_value(pat, val, env, p)? {
                         return Ok(false);
@@ -306,7 +626,9 @@ fn extract_pattern_variable_id(expr: &Expression) -> Option<u64> {
         Expression::Var(var) => Some(var.name.hash()),
         Expression::Formula(factor) => match factor {
             Factor::Expression(inner_expr) => extract_pattern_variable_id(inner_expr),
-            Factor::Term(term) if term.rhs.is_empty() => extract_pattern_variable_id_from_term(&term.lhs),
+            Factor::Term(term) if term.rhs.is_empty() => {
+                extract_pattern_variable_id_from_term(&term.lhs)
+            }
             _ => None,
         },
         _ => None,
@@ -336,7 +658,11 @@ fn values_match(expected: &Value, actual: &Value) -> bool {
     false
 }
 
-fn coerce_function_output_kind(value: Value, fxn_def: &FunctionDefinition, p: &Interpreter) -> MResult<Value> {
+fn coerce_function_output_kind(
+    value: Value,
+    fxn_def: &FunctionDefinition,
+    p: &Interpreter,
+) -> MResult<Value> {
     if fxn_def.output.is_empty() {
         return Ok(value);
     }
@@ -345,9 +671,9 @@ fn coerce_function_output_kind(value: Value, fxn_def: &FunctionDefinition, p: &I
     };
     #[cfg(feature = "kind_annotation")]
     {
-    let target_kind = kind_annotation(&output_kind_annotation.kind, p)?
-        .to_value_kind(&p.state.borrow().kinds)?;
-    Ok(value.convert_to(&target_kind).unwrap_or(value))
+        let target_kind = kind_annotation(&output_kind_annotation.kind, p)?
+            .to_value_kind(&p.state.borrow().kinds)?;
+        Ok(value.convert_to(&target_kind).unwrap_or(value))
     }
     #[cfg(not(feature = "kind_annotation"))]
     {
