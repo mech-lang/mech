@@ -27,7 +27,6 @@ pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> 
   let (input, _) = whitespace0(input)?;
   let (input, arms) = many1(fsm_arm)(input)?;
   let (input, _) = period(input)?;
-  let input_vars = input_vars.into_iter().map(|v| v.name).collect();
   Ok((input, FsmImplementation{name,input: input_vars,start,arms}))
 }
 

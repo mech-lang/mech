@@ -48,8 +48,28 @@ pub fn execute_fsm_pipe(
             .with_tokens(fsm_pipe.start.tokens()),
         );
     }
-    for (arg_name, arg_value) in fsm.input.iter().zip(args.iter()) {
-        call_env.insert(arg_name.hash(), detach_value(arg_value));
+    for (arg_decl, arg_value) in fsm.input.iter().zip(args.iter()) {
+        #[cfg(feature = "kind_annotation")]
+        if let Some(kind_annotation_node) = &arg_decl.kind {
+            let expected_kind = kind_annotation(&kind_annotation_node.kind, p)?
+                .to_value_kind(&p.state.borrow().kinds)?;
+            let actual_kind = arg_value.kind();
+            if actual_kind != expected_kind {
+                return Err(
+                    MechError::new(
+                        FsmArgumentKindMismatchError {
+                            argument: arg_decl.name.to_string(),
+                            expected_kind,
+                            actual_kind,
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                    .with_tokens(fsm_pipe.start.tokens()),
+                );
+            }
+        }
+        call_env.insert(arg_decl.name.hash(), detach_value(arg_value));
     }
     let mut state = pattern_to_value(&fsm.start, &call_env, p)?;
     let max_steps = 10_000usize; // TODO This must be a parameter
@@ -113,6 +133,29 @@ pub fn execute_fsm_pipe(
         )
         .with_compiler_loc(),
     )
+}
+
+#[cfg(feature = "state_machines")]
+#[derive(Debug, Clone)]
+pub struct FsmArgumentKindMismatchError {
+    pub argument: String,
+    pub expected_kind: ValueKind,
+    pub actual_kind: ValueKind,
+}
+
+#[cfg(feature = "state_machines")]
+impl MechErrorKind for FsmArgumentKindMismatchError {
+    fn name(&self) -> &str {
+        "FsmArgumentKindMismatch"
+    }
+    fn message(&self) -> String {
+        format!(
+            "FSM argument '{}' expected kind '{}' but received '{}'",
+            self.argument,
+            self.expected_kind.to_string(),
+            self.actual_kind.to_string()
+        )
+    }
 }
 
 #[cfg(feature = "state_machines")]
