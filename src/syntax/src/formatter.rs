@@ -454,8 +454,8 @@ impl Formatter {
       let c = match code {
         MechCode::Comment(cmnt) => self.comment(cmnt),
         MechCode::Expression(expr) => self.expression(expr),
-        //MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
-        //MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
+        MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
+        MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
         MechCode::FunctionDefine(func_def) => self.function_define(func_def),
         MechCode::Statement(stmt) => self.statement(stmt),
         x => format!("{{{:?}}}", x)
@@ -1168,8 +1168,8 @@ impl Formatter {
       let c = match code {
         MechCode::Comment(cmnt) => self.comment(cmnt),
         MechCode::Expression(expr) => self.expression(expr),
-        //MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
-        //MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
+        MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
+        MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
         MechCode::FunctionDefine(func_def) => self.function_define(func_def),
         MechCode::Statement(stmt) => self.statement(stmt),
         x => todo!("Unhandled MechCode: {:#?}", x),

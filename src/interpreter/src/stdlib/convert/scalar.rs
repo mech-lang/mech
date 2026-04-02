@@ -434,6 +434,43 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
       let out = MechTable::from_kind(ValueKind::Table(resolved_tbl, out_rows))?;
       return Ok(Box::new(ConvertMat2Table::<bool>{arg: mat.clone(), out: Ref::new(out)}));
     }
+    #[cfg(all(feature = "matrix", feature = "table"))]
+    (Value::Table(table), Value::Kind(ValueKind::Matrix(target_kind, dims))) => {
+      let table = table.borrow();
+      let rows = table.rows();
+      let cols = table.cols();
+
+      if !dims.is_empty() {
+        let dim_count = dims.iter().product::<usize>();
+        if dim_count != rows * cols {
+          return Err(MechError::new(
+            ConvertIncorrectNumberOfColumnsError { from: rows * cols, to: dim_count },
+            None,
+          ).with_compiler_loc());
+        }
+      }
+
+      let mut elements = Vec::with_capacity(rows * cols);
+      for (_column_id, (_kind, column_values)) in table.data.iter() {
+        elements.extend(column_values.as_vec());
+      }
+
+      if target_kind.as_ref() != &ValueKind::Any {
+        return Err(MechError::new(
+          UnhandledFunctionArgumentKind2 {
+            arg: (
+              source_value.kind(),
+              ValueKind::Matrix(target_kind.clone(), dims.clone()),
+            ),
+            fxn_name: "convert/scalar".to_string(),
+          },
+          None,
+        ).with_compiler_loc());
+      }
+
+      let matrix = Value::MatrixValue(Matrix::from_vec(elements, rows, cols));
+      return Ok(Box::new(ConvertSEmpty { out: Ref::new(matrix) }));
+    }
     _ =>(),
   }
   impl_conversion_match_arms!(

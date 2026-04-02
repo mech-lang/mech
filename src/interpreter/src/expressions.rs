@@ -754,43 +754,58 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, env: Option<&Environment>, p:
 
 #[cfg(feature = "symbol_table")]
 pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
-  let state_brrw = p.state.borrow();
-  let symbols_brrw = state_brrw.symbol_table.borrow();
+  let maybe_cast_to_kind = |value: Value| -> MResult<Value> {
+    match &v.kind {
+      Some(kind_anntn) => {
+        let target_kind = {
+          let state_brrw = p.state.borrow();
+          kind_annotation(&kind_anntn.kind, p)?.to_value_kind(&state_brrw.kinds)?
+        };
+        let convert_fxn = ConvertKind{}.compile(&vec![value, Value::Kind(target_kind)])?;
+        convert_fxn.solve();
+        let out = convert_fxn.out();
+        p.state.borrow_mut().add_plan_step(convert_fxn);
+        Ok(out)
+      }
+      None => Ok(value),
+    }
+  };
+
   let id = v.name.hash();
   match env {
     Some(env) => {
       match env.get(&id) {
-        Some(value) => {
-          return Ok(value.clone())
-        }
+        Some(value) => maybe_cast_to_kind(value.clone()),
         None => {
-          match symbols_brrw.get(id) {
-            Some(value) => {
-              return Ok(Value::MutableReference(value.clone()))
-            }
-            None => {
-              return Err(MechError::new(
+          let state_brrw = p.state.borrow();
+          let symbols_brrw = state_brrw.symbol_table.borrow();
+          let symbol_value = symbols_brrw.get(id);
+          drop(symbols_brrw);
+          drop(state_brrw);
+          match symbol_value {
+            Some(value) => maybe_cast_to_kind(Value::MutableReference(value)),
+            None => Err(MechError::new(
                   UndefinedVariableError { id },
                   None
                 ).with_compiler_loc().with_tokens(v.tokens())
-              )
-            }
+              ),
           }
         }
       }
     }
     None => {
-      match symbols_brrw.get(id) {
-        Some(value) => {
-          return Ok(Value::MutableReference(value.clone()))
-        }
-        None => {
-          return Err(MechError::new(
+      let state_brrw = p.state.borrow();
+      let symbols_brrw = state_brrw.symbol_table.borrow();
+      let symbol_value = symbols_brrw.get(id);
+      drop(symbols_brrw);
+      drop(state_brrw);
+      match symbol_value {
+        Some(value) => maybe_cast_to_kind(Value::MutableReference(value)),
+        None => Err(MechError::new(
               UndefinedVariableError { id },
               None
             ).with_compiler_loc().with_tokens(v.tokens())
-          )
-        }
+          ),
       }
     }
   }
