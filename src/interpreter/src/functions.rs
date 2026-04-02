@@ -53,7 +53,7 @@ pub fn function_call(
         }
         if p.trace {
             println!(
-                "[trace] call user function {}({})",
+                "[trace][fn] user {}({})",
                 fxn_call.name.to_string(),
                 format_trace_args(&input_arg_values)
             );
@@ -80,7 +80,7 @@ pub fn function_call(
             }
             if p.trace {
                 println!(
-                    "[trace] call native function {}({})",
+                    "[trace][fn] native {}({})",
                     fxn_call.name.to_string(),
                     format_trace_args(&input_arg_values)
                 );
@@ -114,7 +114,7 @@ pub fn execute_native_function_compiler(
                     .unwrap_or("<unknown-arm>")
                     .to_string();
                 println!(
-                    "[trace] state arm selected: {} | args=[{}]",
+                    "[trace][arm] selected {} args=[{}]",
                     arm_name,
                     format_trace_args(input_arg_values)
                 );
@@ -123,7 +123,7 @@ pub fn execute_native_function_compiler(
             new_fxn.solve();
             let result = new_fxn.out();
             if p.trace {
-                println!("[trace] state arm result: {}", result);
+                println!("[trace][arm] result {}", summarize_value(&result));
             }
             plan_brrw.push(new_fxn);
             Ok(result)
@@ -175,11 +175,11 @@ fn execute_function_match_arms(
     for arm in &fxn_def.code.match_arms {
         let mut env = Environment::new();
         if p.trace {
-            println!("[trace] testing user arm pattern: {:?}", arm.pattern);
+            println!("[trace][match] testing {}", summarize_pattern(&arm.pattern));
         }
         if pattern_matches_arguments(&arm.pattern, input_arg_values, &mut env, p)? {
             if p.trace {
-                println!("[trace] matched user arm pattern: {:?}", arm.pattern);
+                println!("[trace][match] matched {}", summarize_pattern(&arm.pattern));
             }
             let out = expression(&arm.expression, Some(&env), p)?;
             return coerce_function_output_kind(detach_value(&out), fxn_def, p);
@@ -198,9 +198,39 @@ fn execute_function_match_arms(
 fn format_trace_args(values: &Vec<Value>) -> String {
     values
         .iter()
-        .map(|value| format!("{}", value))
+        .map(summarize_value)
         .collect::<Vec<_>>()
         .join(", ")
+}
+
+fn summarize_value(value: &Value) -> String {
+    const MAX_TRACE_CHARS: usize = 96;
+    let rendered = value.to_string();
+    truncate_for_trace(&rendered, MAX_TRACE_CHARS)
+}
+
+fn summarize_pattern(pattern: &Pattern) -> String {
+    match pattern {
+        Pattern::Wildcard => "_".to_string(),
+        Pattern::Expression(expr) => truncate_for_trace(&format!("{:?}", expr), 72),
+        Pattern::Tuple(tuple) => format!("tuple(len={})", tuple.0.len()),
+        Pattern::TupleStruct(tuple_struct) => {
+            format!(
+                "{}(len={})",
+                tuple_struct.name.to_string(),
+                tuple_struct.patterns.len()
+            )
+        }
+    }
+}
+
+fn truncate_for_trace(text: &str, max_chars: usize) -> String {
+    if text.chars().count() <= max_chars {
+        return text.to_string();
+    }
+    let mut truncated = text.chars().take(max_chars).collect::<String>();
+    truncated.push('…');
+    truncated
 }
 
 fn pattern_matches_arguments(
@@ -288,7 +318,10 @@ pub(crate) fn pattern_matches_value(
                 if !values_match(&expected_state, &detach_value(&tuple_brrw.elements[0])) {
                     return Ok(false);
                 }
-                for (pat, val) in pat_struct.patterns.iter().zip(tuple_brrw.elements.iter().skip(1))
+                for (pat, val) in pat_struct
+                    .patterns
+                    .iter()
+                    .zip(tuple_brrw.elements.iter().skip(1))
                 {
                     if !pattern_matches_value(pat, val, env, p)? {
                         return Ok(false);
@@ -306,7 +339,9 @@ fn extract_pattern_variable_id(expr: &Expression) -> Option<u64> {
         Expression::Var(var) => Some(var.name.hash()),
         Expression::Formula(factor) => match factor {
             Factor::Expression(inner_expr) => extract_pattern_variable_id(inner_expr),
-            Factor::Term(term) if term.rhs.is_empty() => extract_pattern_variable_id_from_term(&term.lhs),
+            Factor::Term(term) if term.rhs.is_empty() => {
+                extract_pattern_variable_id_from_term(&term.lhs)
+            }
             _ => None,
         },
         _ => None,
@@ -336,7 +371,11 @@ fn values_match(expected: &Value, actual: &Value) -> bool {
     false
 }
 
-fn coerce_function_output_kind(value: Value, fxn_def: &FunctionDefinition, p: &Interpreter) -> MResult<Value> {
+fn coerce_function_output_kind(
+    value: Value,
+    fxn_def: &FunctionDefinition,
+    p: &Interpreter,
+) -> MResult<Value> {
     if fxn_def.output.is_empty() {
         return Ok(value);
     }
@@ -345,9 +384,9 @@ fn coerce_function_output_kind(value: Value, fxn_def: &FunctionDefinition, p: &I
     };
     #[cfg(feature = "kind_annotation")]
     {
-    let target_kind = kind_annotation(&output_kind_annotation.kind, p)?
-        .to_value_kind(&p.state.borrow().kinds)?;
-    Ok(value.convert_to(&target_kind).unwrap_or(value))
+        let target_kind = kind_annotation(&output_kind_annotation.kind, p)?
+            .to_value_kind(&p.state.borrow().kinds)?;
+        Ok(value.convert_to(&target_kind).unwrap_or(value))
     }
     #[cfg(not(feature = "kind_annotation"))]
     {
