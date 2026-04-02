@@ -51,6 +51,13 @@ pub fn function_call(
         for (_, arg_expr) in fxn_call.args.iter() {
             input_arg_values.push(expression(arg_expr, env, p)?);
         }
+        if p.trace {
+            println!(
+                "[trace] call user function {}({})",
+                fxn_call.name.to_string(),
+                format_trace_args(&input_arg_values)
+            );
+        }
         return execute_user_function(&user_fxn, &input_arg_values, p);
     }
 
@@ -70,6 +77,13 @@ pub fn function_call(
             let mut input_arg_values = vec![];
             for (_, arg_expr) in fxn_call.args.iter() {
                 input_arg_values.push(expression(arg_expr, env, p)?);
+            }
+            if p.trace {
+                println!(
+                    "[trace] call native function {}({})",
+                    fxn_call.name.to_string(),
+                    format_trace_args(&input_arg_values)
+                );
             }
             execute_native_function_compiler(fxn_compiler, &input_arg_values, p)
         }
@@ -91,10 +105,26 @@ pub fn execute_native_function_compiler(
 ) -> MResult<Value> {
     let plan = p.plan();
     match fxn_compiler.compile(input_arg_values) {
-        Ok(new_fxn) => {
+        Ok(mut new_fxn) => {
+            if p.trace {
+                let arm_name = new_fxn
+                    .to_string()
+                    .lines()
+                    .next()
+                    .unwrap_or("<unknown-arm>")
+                    .to_string();
+                println!(
+                    "[trace] state arm selected: {} | args=[{}]",
+                    arm_name,
+                    format_trace_args(input_arg_values)
+                );
+            }
             let mut plan_brrw = plan.borrow_mut();
             new_fxn.solve();
             let result = new_fxn.out();
+            if p.trace {
+                println!("[trace] state arm result: {}", result);
+            }
             plan_brrw.push(new_fxn);
             Ok(result)
         }
@@ -144,7 +174,13 @@ fn execute_function_match_arms(
 ) -> MResult<Value> {
     for arm in &fxn_def.code.match_arms {
         let mut env = Environment::new();
+        if p.trace {
+            println!("[trace] testing user arm pattern: {:?}", arm.pattern);
+        }
         if pattern_matches_arguments(&arm.pattern, input_arg_values, &mut env, p)? {
+            if p.trace {
+                println!("[trace] matched user arm pattern: {:?}", arm.pattern);
+            }
             let out = expression(&arm.expression, Some(&env), p)?;
             return coerce_function_output_kind(detach_value(&out), fxn_def, p);
         }
@@ -157,6 +193,14 @@ fn execute_function_match_arms(
     )
     .with_compiler_loc()
     .with_tokens(fxn_def.code.name.tokens()))
+}
+
+fn format_trace_args(values: &Vec<Value>) -> String {
+    values
+        .iter()
+        .map(|value| format!("{}", value))
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 fn pattern_matches_arguments(

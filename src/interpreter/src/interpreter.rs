@@ -13,6 +13,7 @@ use std::time::Duration;
 pub struct Interpreter {
   pub id: u64,
   pub profile: bool,
+  pub trace: bool,
   ip: usize,  // instruction pointer
   pub state: Ref<ProgramState>,
   #[cfg(feature = "functions")]
@@ -33,6 +34,7 @@ impl Clone for Interpreter {
       id: self.id,
       ip: self.ip,
       profile: false,
+      trace: self.trace,
       state: Ref::new(self.state.borrow().clone()),
       #[cfg(feature = "functions")]
       stack: self.stack.clone(),
@@ -58,6 +60,7 @@ impl Interpreter {
       id,
       ip: 0,
       profile: false,
+      trace: false,
       state: Ref::new(state),
       #[cfg(feature = "functions")]
       stack: Vec::new(),
@@ -199,8 +202,20 @@ impl Interpreter {
         return Ok(plan_brrw[len - 1].out().clone());
       } else {
         for _ in 0..step_count {
-          for fxn in plan_brrw.iter_mut() {
+          for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
+            if self.trace {
+              let fxn_header = fxn
+                .to_string()
+                .lines()
+                .next()
+                .unwrap_or("<unknown-step>")
+                .to_string();
+              println!("[trace] step[{idx}] -> {fxn_header}");
+            }
             fxn.solve();
+            if self.trace {
+              println!("[trace] step[{idx}] out = {}", fxn.out());
+            }
           }
         }
         return Ok(plan_brrw[len - 1].out().clone());
