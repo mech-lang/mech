@@ -108,17 +108,6 @@ fn function_call_traced(
         for (_, arg_expr) in fxn_call.args.iter() {
             input_arg_values.push(expression(arg_expr, env, p)?);
         }
-        println!(
-            "{}",
-            format_trace(
-                "fn",
-                format!(
-                    "user {}({})",
-                    fxn_call.name.to_string(),
-                    format_trace_args(&input_arg_values)
-                ),
-            )
-        );
         return execute_user_function(&user_fxn, &input_arg_values, p);
     }
 
@@ -381,39 +370,35 @@ fn execute_function_match_arms_traced(
 ) -> MResult<Value> {
     for (arm_idx, arm) in fxn_def.code.match_arms.iter().enumerate() {
         let mut env = Environment::new();
+        let args_summary = summarize_values_with_kinds(input_arg_values);
+        let pattern_summary = summarize_pattern(&arm.pattern);
+        let matched = pattern_matches_arguments(&arm.pattern, input_arg_values, &mut env, p)?;
+        let marker = if matched { "✓" } else { "X" };
         println!(
             "{}",
             format_trace(
                 "match",
                 format!(
-                    "arm[{arm_idx}] test pattern={}",
-                    summarize_pattern(&arm.pattern)
+                    "arm[{arm_idx}] test pattern={pattern_summary} args=[{args_summary}] {marker}"
                 )
             )
         );
-        if pattern_matches_arguments(&arm.pattern, input_arg_values, &mut env, p)? {
-            println!(
-                "{}",
-                format_trace(
-                    "match",
-                    format!(
-                        "arm[{arm_idx}] hit  pattern={}",
-                        summarize_pattern(&arm.pattern)
-                    )
-                )
-            );
+        if matched {
             let out = expression(&arm.expression, Some(&env), p)?;
             let coerced = coerce_function_output_kind(detach_value(&out), fxn_def, p)?;
             println!(
                 "{}",
                 format_trace(
                     "match",
-                    format!("arm[{arm_idx}] out  value={}", summarize_value(&coerced))
+                    format!(
+                        "arm[{arm_idx}] out  value={} kind={}",
+                        summarize_value(&coerced),
+                        coerced.kind().to_string()
+                    )
                 )
             );
             return Ok(coerced);
         }
-        println!("{}", format_trace("match", format!("arm[{arm_idx}] miss")));
     }
     Err(MechError::new(
         FunctionOutputUndefinedError {
@@ -441,6 +426,21 @@ fn summarize_value(value: &Value) -> String {
     const MAX_TRACE_CHARS: usize = 96;
     let rendered = single_line_trace_text(&value.to_string());
     truncate_for_trace(&rendered, MAX_TRACE_CHARS)
+}
+
+fn summarize_values_with_kinds(values: &Vec<Value>) -> String {
+    values
+        .iter()
+        .enumerate()
+        .map(|(idx, value)| {
+            format!(
+                "#{idx}={} :{}",
+                summarize_value(value),
+                value.kind().to_string()
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 fn summarize_pattern(pattern: &Pattern) -> String {
