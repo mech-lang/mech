@@ -1195,7 +1195,7 @@ impl Formatter {
     let name = node.name.to_string();
     let mut input = "".to_string();
     for (i, ident) in node.input.iter().enumerate() {
-      let v = ident.to_string();
+      let v = self.var(ident);
       if i == 0 {
         input = format!("{}", v);
       } else {

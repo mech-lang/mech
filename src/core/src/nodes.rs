@@ -829,7 +829,7 @@ impl FunctionArgument {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FsmImplementation {
   pub name: Identifier,
-  pub input: Vec<Identifier>,
+  pub input: Vec<Var>,
   pub start: Pattern,
   pub arms: Vec<FsmArm>,
 }
