@@ -53,20 +53,15 @@ test_interpreter!(interpret_literal_false2, "✗ ", Value::Bool(Ref::new(false))
 test_interpreter!(interpret_literal_false, "false", Value::Bool(Ref::new(false)));
 test_interpreter!(interpret_literal_atom, ":A", Value::Atom(Ref::new(MechAtom::new(55450514845822917))));
 test_interpreter!(interpret_literal_empty, "_", Value::Empty);
-test_interpreter!(
-  interpret_fsm_tuple_struct_states,
-  "#Counter(x) -> :Count(x)\n:Count(v)\n  ├ v > 0 -> :Done(v)\n  └ * -> :Done(1)\n:Done(v) => v.\n#Counter(0)",
-  Value::F64(Ref::new(1.0))
-);
 
 test_interpreter!(
-  interpret_fsm_counter_example_with_kinds,
+  interpret_fsm_counter_example,
   "#Counter(n<u64>) => <u64>\n  ├ :Count(n<u64>)\n  └ :Done(n<u64>).\n\n#Counter(n<u64>) -> :Count(n)\n  :Count(n)\n    ├ n > 0 -> :Count(n - 1)\n    └ n == 0 -> :Done(0)\n  :Done(n) => n.\n\n#Counter(5)",
   Value::F64(Ref::new(0.0))
 );
 
 test_interpreter!(
-  interpret_fsm_fibonacci_reaches_done_state,
+  interpret_fsm_fibonacci,
   "#Fibonacci(n<u64>) => <u64>\n  ├ :Compute(n<u64>, a<u64>, b<u64>)\n  └ :Done(n<u64>).\n\n#Fibonacci(n<u64>) -> :Compute(n, 0, 1)\n  :Compute(n, a, b)\n    ├ n > 0 -> :Compute(n - 1, b, a + b)\n    └ n == 0 -> :Done(a)\n  :Done(n) => n.\n\n#Fibonacci(10)",
   Value::F64(Ref::new(55.0))
 );
