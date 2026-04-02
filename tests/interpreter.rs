@@ -181,6 +181,16 @@ test_interpreter!(
 test_interpreter!(interpret_kind_annotation, "1<u64>", Value::U64(Ref::new(1)));
 #[cfg(feature = "u64")]
 test_interpreter!(interpret_kind_annotation_math, "1<u64> + 1<u64>", Value::U64(Ref::new(2)));
+#[cfg(feature = "f64")]
+test_interpreter!(
+  interpret_nested_kind_matrix_literal,
+  "<<[f64]:3>>",
+  Value::Kind(ValueKind::Kind(Box::new(ValueKind::Matrix(Box::new(ValueKind::F64), vec![3]))))
+);
+
+// New tests overflow - unsigned
+// test_interpreter!(interpret_kind_math_overflow_u64, "18446744073709551615<u64> + 1<u64>", Value::U64(Ref::new(0)));
+// test_interpreter!(interpret_kind_math_overflow_u128, "340282366920938463463374607431768211455<u128> + 1<u128>", Value::U128(Ref::new(0)));
 
 
 // New tests overflow - unsigned
