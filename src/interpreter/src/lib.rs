@@ -80,6 +80,8 @@ pub mod interpreter;
 pub mod stdlib;
 #[cfg(feature = "functions")]
 pub mod functions;
+#[cfg(feature = "state_machines")]
+pub mod state_machines;
 pub mod statements;
 pub mod expressions;
 pub mod mechdown;
@@ -91,8 +93,10 @@ pub use mech_core::*;
 pub use crate::literals::*;
 pub use crate::interpreter::*;
 pub use crate::structures::*;
-#[cfg(feature = "functifons")]
+#[cfg(feature = "functions")]
 pub use crate::functions::*;
+#[cfg(feature = "state_machines")]
+pub use crate::state_machines::*;
 pub use crate::statements::*;
 pub use crate::expressions::*;
 pub use crate::mechdown::*;

@@ -88,6 +88,12 @@ pub fn fsm_async_transition(input: ParseString) -> ParseResult<Transition> {
 
 // fsm_state_atom_pattern := atom ;
 fn fsm_state_atom_pattern(input: ParseString) -> ParseResult<Pattern> {
+  if let Ok((input, tpl)) = pattern_atom_struct(input.clone()) {
+    return Ok((input, Pattern::TupleStruct(tpl)));
+  }
+  if let Ok((input, tpl)) = pattern_tuple_struct(input.clone()) {
+    return Ok((input, Pattern::TupleStruct(tpl)));
+  }
   let (input, atm) = atom(input)?;
   Ok((input, Pattern::Expression(Expression::Literal(Literal::Atom(atm)))))
 }
@@ -133,6 +139,10 @@ pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
 
 // pattern := pattern_tuple_struct | wildcard | formula ;
 pub fn pattern(input: ParseString) -> ParseResult<Pattern> {
+  match pattern_atom_struct(input.clone()) {
+    Ok((input, tpl)) => {return Ok((input, Pattern::TupleStruct(tpl)))},
+    _ => ()
+  }
   match pattern_tuple_struct(input.clone()) {
     Ok((input, tpl)) => {return Ok((input, Pattern::TupleStruct(tpl)))},
     _ => ()
@@ -160,6 +170,18 @@ pub fn wildcard(input: ParseString) -> ParseResult<Pattern> {
 // pattern_tuple_struct := grave, identifier, "(", list1(",", pattern), ")" ;
 pub fn pattern_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
   let (input, _) = grave(input)?;
+  let (input, id) = identifier(input)?;
+  let (input, _) = left_parenthesis(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, patterns) = separated_list1(list_separator, pattern)(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = right_parenthesis(input)?;
+  Ok((input, PatternTupleStruct{name: id, patterns}))
+}
+
+// pattern_atom_struct := ":", identifier, "(", list1(",", pattern), ")" ;
+pub fn pattern_atom_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
+  let (input, _) = colon(input)?;
   let (input, id) = identifier(input)?;
   let (input, _) = left_parenthesis(input)?;
   let (input, _) = whitespace0(input)?;
@@ -284,5 +306,14 @@ mod tests {
       }
       _ => panic!("expected Expression::FsmPipe"),
     }
+  }
+
+  #[test]
+  fn parse_fsm_colon_tuple_state() {
+    let source = "#Counter(x) -> :Count(x) :Count(v) -> :Done(v) :Done(v) => v.";
+    let graphemes = crate::graphemes::init_source(source);
+    let input = ParseString::new(&graphemes);
+    let (_, parsed) = fsm_implementation(input).expect("colon tuple-struct states should parse");
+    assert_eq!(parsed.arms.len(), 2);
   }
 }

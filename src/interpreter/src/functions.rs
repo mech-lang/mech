@@ -184,7 +184,7 @@ fn pattern_matches_arguments(
     }
 }
 
-fn pattern_matches_value(
+pub(crate) fn pattern_matches_value(
     pattern: &Pattern,
     value: &Value,
     env: &mut Environment,
@@ -229,7 +229,31 @@ fn pattern_matches_value(
             let expected = expression(expr, Some(env), p)?;
             Ok(values_match(&detach_value(&expected), &detach_value(value)))
         }
-        Pattern::TupleStruct(_) => Ok(false),
+        Pattern::TupleStruct(pat_struct) => match detach_value(value) {
+            Value::Tuple(tuple) => {
+                let tuple_brrw = tuple.borrow();
+                if tuple_brrw.elements.len() != pat_struct.patterns.len() + 1 {
+                    return Ok(false);
+                }
+                let expected_state = atom(
+                    &Atom {
+                        name: pat_struct.name.clone(),
+                    },
+                    p,
+                );
+                if !values_match(&expected_state, &detach_value(&tuple_brrw.elements[0])) {
+                    return Ok(false);
+                }
+                for (pat, val) in pat_struct.patterns.iter().zip(tuple_brrw.elements.iter().skip(1))
+                {
+                    if !pattern_matches_value(pat, val, env, p)? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
+            _ => Ok(false),
+        },
     }
 }
 
@@ -370,7 +394,7 @@ fn collect_function_output(p: &Interpreter, fxn_def: &FunctionDefinition) -> MRe
     })
 }
 
-fn detach_value(value: &Value) -> Value {
+pub(crate) fn detach_value(value: &Value) -> Value {
     match value {
         Value::MutableReference(reference) => detach_value(&reference.borrow()),
         _ => value.clone(),

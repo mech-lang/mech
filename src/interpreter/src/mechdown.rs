@@ -183,8 +183,12 @@ pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
   match &code {
     MechCode::Expression(expr) => expression(&expr, None, p),
     MechCode::Statement(stmt) => statement(&stmt, None, p),
-    //MechCode::FsmSpecification(_) => todo!(),
-    //MechCode::FsmImplementation(_) => todo!(),
+    MechCode::FsmSpecification(_) => Ok(Value::Empty),
+    #[cfg(feature = "state_machines")]
+    MechCode::FsmImplementation(fsm_impl) => {
+      crate::state_machines::register_fsm_implementation(fsm_impl, p)?;
+      Ok(Value::Empty)
+    },
     #[cfg(feature = "functions")]
     MechCode::FunctionDefine(fxn_def) => {
       function_define(&fxn_def, p)?;
