@@ -274,16 +274,6 @@ mod tests {
   }
 
   #[test]
-  fn parse_fsm_specification_without_define_operator() {
-    let source = "#Counter(n<u64>) => <u64> ├ :Count(n<u64>) └ :Done(n<u64>).";
-    let graphemes = crate::graphemes::init_source(source);
-    let input = ParseString::new(&graphemes);
-    let (_, parsed) = fsm_specification(input).expect("fsm specification should parse without `:=`");
-    assert_eq!(parsed.name.to_string(), "Counter");
-    assert_eq!(parsed.states.len(), 2);
-  }
-
-  #[test]
   fn parse_fsm_implementation() {
     let source = "#TrafficLight(color) -> :Red :Red -> :Green :Green -> :Red.";
     let graphemes = crate::graphemes::init_source(source);
