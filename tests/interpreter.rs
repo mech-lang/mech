@@ -72,6 +72,15 @@ fn interpret_fsm_tuple_struct_states() {
     _ => panic!("expected tuple state output"),
   }
 }
+
+#[test]
+fn interpret_fsm_counter_example_with_kinds() {
+  let s = "#Counter(n<u64>) => <u64>\n  ├ :Count(n<u64>)\n  └ :Done(n<u64>).\n\n#Counter(n<u64>) -> :Count(n)\n  :Count(n)\n    ├ n > 0 -> :Count(n - 1)\n    └ n == 0 -> :Done(0)\n  :Done(n) => n.\n\n#Counter(5)";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  assert_eq!(result, Value::F64(Ref::new(0.0)));
+}
 test_interpreter!(interpret_variable_define_empty, "em := _", Value::Empty);
 #[cfg(feature = "u8")]
 test_interpreter!(interpret_variable_define_kind_literal, "x := <u8>;", Value::Kind(ValueKind::U8));

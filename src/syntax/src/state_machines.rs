@@ -15,18 +15,19 @@ pub fn guard_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// fsm_implementation := "#", identifier, "(", list0(",", identifier), ")", transition_operator, pattern, whitespace*, fsm_arm+, "." ;
+// fsm_implementation := "#", identifier, "(", list0(",", var), ")", transition_operator, pattern, whitespace*, fsm_arm+, "." ;
 pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> {
   let (input, _) = hashtag(input)?;
   let (input, name) = identifier(input)?;
   let (input, _) = left_parenthesis(input)?;
-  let (input, input_vars) = separated_list0(list_separator, identifier)(input)?;
+  let (input, input_vars) = separated_list0(list_separator, var)(input)?;
   let (input, _) = right_parenthesis(input)?;
   let (input, _) = transition_operator(input)?;
   let (input, start) = fsm_state_atom_pattern(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, arms) = many1(fsm_arm)(input)?;
   let (input, _) = period(input)?;
+  let input_vars = input_vars.into_iter().map(|v| v.name).collect();
   Ok((input, FsmImplementation{name,input: input_vars,start,arms}))
 }
 
@@ -122,7 +123,7 @@ pub fn fsm_output(input: ParseString) -> ParseResult<Transition> {
   Ok((input, Transition::Output(ptrn)))
 }
 
-// fsm_specification := "#", identifier, "(", list0(",", var), ")", output_operator?, kind_annotation?, define_operator, fsm_state_definition+, "." ;
+// fsm_specification := "#", identifier, "(", list0(",", var), ")", output_operator?, kind_annotation?, define_operator?, fsm_state_definition+, "." ;
 pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
   let (input, _) = hashtag(input)?;
   let (input, name) = identifier(input)?;
@@ -131,7 +132,7 @@ pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
   let (input, _) = right_parenthesis(input)?;
   let (input, _) = opt(output_operator)(input)?;
   let (input, output) = opt(kind_annotation)(input)?;
-  let (input, _) = define_operator(input)?;
+  let (input, _) = opt(define_operator)(input)?;
   let (input, states) = many1(fsm_state_definition)(input)?;
   let (input, _) = period(input)?;
   Ok((input, FsmSpecification{name,input: input_vars, output, states}))
@@ -269,6 +270,16 @@ mod tests {
     let input = ParseString::new(&graphemes);
     let (_, parsed) = fsm_specification(input).expect("fsm specification should parse");
     assert_eq!(parsed.name.to_string(), "TrafficLight");
+    assert_eq!(parsed.states.len(), 2);
+  }
+
+  #[test]
+  fn parse_fsm_specification_without_define_operator() {
+    let source = "#Counter(n<u64>) => <u64> ├ :Count(n<u64>) └ :Done(n<u64>).";
+    let graphemes = crate::graphemes::init_source(source);
+    let input = ParseString::new(&graphemes);
+    let (_, parsed) = fsm_specification(input).expect("fsm specification should parse without `:=`");
+    assert_eq!(parsed.name.to_string(), "Counter");
     assert_eq!(parsed.states.len(), 2);
   }
 
