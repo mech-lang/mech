@@ -202,7 +202,11 @@ async fn main() -> Result<(), MechError> {
         .short('t')
         .long("time")
         .help("Measure how long the programs takes to execute.")
-        .action(ArgAction::SetTrue))       
+        .action(ArgAction::SetTrue))
+    .arg(Arg::new("trace")
+        .long("trace")
+        .help("Print trace output for state-machine arms and function calls")
+        .action(ArgAction::SetTrue))
     .arg(Arg::new("repl")
         .short('r')
         .long("repl")
@@ -214,6 +218,7 @@ async fn main() -> Result<(), MechError> {
   let tree_flag = matches.get_flag("tree");
   let mut repl_flag = matches.get_flag("repl");
   let time_flag = matches.get_flag("time");
+  let trace_flag = matches.get_flag("trace");
 
   let shim_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/shim.html".to_string();
   let stylesheet_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/style.css".to_string();
@@ -312,7 +317,7 @@ async fn main() -> Result<(), MechError> {
     let uuid = generate_uuid();
     let mut intrp = Interpreter::new(uuid);
 
-    let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag); 
+    let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag, trace_flag); 
 
     let bytecode = intrp.compile()?;
 
@@ -532,7 +537,7 @@ async fn main() -> Result<(), MechError> {
       }
     }
 
-    let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag); 
+    let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag, trace_flag); 
     if !repl_flag {
       match &result {
         Ok(r) => {
