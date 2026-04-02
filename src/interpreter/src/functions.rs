@@ -236,6 +236,17 @@ fn execute_user_function(
     input_arg_values: &Vec<Value>,
     p: &Interpreter,
 ) -> MResult<Value> {
+    if p.trace {
+        return execute_user_function_traced(fxn_def, input_arg_values, p);
+    }
+    execute_user_function_untraced(fxn_def, input_arg_values, p)
+}
+
+fn execute_user_function_untraced(
+    fxn_def: &FunctionDefinition,
+    input_arg_values: &Vec<Value>,
+    p: &Interpreter,
+) -> MResult<Value> {
     if input_arg_values.len() != fxn_def.input.len() {
         return Err(MechError::new(
             IncorrectNumberOfArguments {
@@ -264,6 +275,70 @@ fn execute_user_function(
     let output = collect_function_output(p, fxn_def);
     drop(scope);
     output
+}
+
+fn execute_user_function_traced(
+    fxn_def: &FunctionDefinition,
+    input_arg_values: &Vec<Value>,
+    p: &Interpreter,
+) -> MResult<Value> {
+    if input_arg_values.len() != fxn_def.input.len() {
+        return Err(MechError::new(
+            IncorrectNumberOfArguments {
+                expected: fxn_def.input.len(),
+                found: input_arg_values.len(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+        .with_tokens(fxn_def.code.name.tokens()));
+    }
+
+    println!(
+        "{}",
+        format_trace(
+            "fn",
+            format!(
+                "enter {}({})",
+                fxn_def.name,
+                format_trace_args(input_arg_values)
+            ),
+        )
+    );
+
+    let scope = FunctionScope::enter(p);
+    bind_function_inputs(fxn_def, input_arg_values, p)?;
+
+    let output = if !fxn_def.code.match_arms.is_empty() {
+        execute_function_match_arms_traced(fxn_def, input_arg_values, p)
+    } else {
+        for statement_node in &fxn_def.code.statements {
+            statement(statement_node, None, p)?;
+        }
+        collect_function_output(p, fxn_def)
+    };
+
+    drop(scope);
+
+    match output {
+        Ok(value) => {
+            println!(
+                "{}",
+                format_trace(
+                    "fn",
+                    format!("exit  {} => {}", fxn_def.name, summarize_value(&value))
+                )
+            );
+            Ok(value)
+        }
+        Err(err) => {
+            println!(
+                "{}",
+                format_trace("fn", format!("fail  {} => {:?}", fxn_def.name, err))
+            );
+            Err(err)
+        }
+    }
 }
 
 fn execute_function_match_arms(
@@ -304,13 +379,16 @@ fn execute_function_match_arms_traced(
     input_arg_values: &Vec<Value>,
     p: &Interpreter,
 ) -> MResult<Value> {
-    for arm in &fxn_def.code.match_arms {
+    for (arm_idx, arm) in fxn_def.code.match_arms.iter().enumerate() {
         let mut env = Environment::new();
         println!(
             "{}",
             format_trace(
                 "match",
-                format!("testing {}", summarize_pattern(&arm.pattern))
+                format!(
+                    "arm[{arm_idx}] test pattern={}",
+                    summarize_pattern(&arm.pattern)
+                )
             )
         );
         if pattern_matches_arguments(&arm.pattern, input_arg_values, &mut env, p)? {
@@ -318,12 +396,24 @@ fn execute_function_match_arms_traced(
                 "{}",
                 format_trace(
                     "match",
-                    format!("matched {}", summarize_pattern(&arm.pattern))
+                    format!(
+                        "arm[{arm_idx}] hit  pattern={}",
+                        summarize_pattern(&arm.pattern)
+                    )
                 )
             );
             let out = expression(&arm.expression, Some(&env), p)?;
-            return coerce_function_output_kind(detach_value(&out), fxn_def, p);
+            let coerced = coerce_function_output_kind(detach_value(&out), fxn_def, p)?;
+            println!(
+                "{}",
+                format_trace(
+                    "match",
+                    format!("arm[{arm_idx}] out  value={}", summarize_value(&coerced))
+                )
+            );
+            return Ok(coerced);
         }
+        println!("{}", format_trace("match", format!("arm[{arm_idx}] miss")));
     }
     Err(MechError::new(
         FunctionOutputUndefinedError {
@@ -349,7 +439,7 @@ fn format_trace_args(values: &Vec<Value>) -> String {
 
 fn summarize_value(value: &Value) -> String {
     const MAX_TRACE_CHARS: usize = 96;
-    let rendered = value.to_string();
+    let rendered = single_line_trace_text(&value.to_string());
     truncate_for_trace(&rendered, MAX_TRACE_CHARS)
 }
 
@@ -375,6 +465,10 @@ fn truncate_for_trace(text: &str, max_chars: usize) -> String {
     let mut truncated = text.chars().take(max_chars).collect::<String>();
     truncated.push('…');
     truncated
+}
+
+fn single_line_trace_text(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 fn pattern_matches_arguments(
