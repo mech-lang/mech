@@ -1110,11 +1110,23 @@ macro_rules! impl_mech_binop_fxn {
               (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {$gen_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
               (lhs_value,Value::MutableReference(rhs)) => { $gen_fxn(lhs_value.clone(), rhs.borrow().clone())}
               (Value::MutableReference(lhs),rhs_value) => { $gen_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-              (lhs, rhs) => Err(MechError::new(
+            (lhs, rhs) => {
+              if let Some(rhs_converted) = rhs.convert_to(&lhs.kind()) {
+                if let Ok(fxn) = $gen_fxn(lhs.clone(), rhs_converted) {
+                  return Ok(fxn);
+                }
+              }
+              if let Some(lhs_converted) = lhs.convert_to(&rhs.kind()) {
+                if let Ok(fxn) = $gen_fxn(lhs_converted, rhs.clone()) {
+                  return Ok(fxn);
+                }
+              }
+              Err(MechError::new(
                   UnhandledFunctionArgumentKind2 { arg: (lhs.kind(), rhs.kind()), fxn_name: stringify!($fxn_name).to_string() },
                   None
                 ).with_compiler_loc()
-              ),            
+              )
+            },            
             }
           }
         }
