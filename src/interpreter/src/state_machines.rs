@@ -1,3 +1,6 @@
+use crate::tracing::{
+    format_fsm_trace, summarize_guard_condition, summarize_pattern, summarize_value,
+};
 use crate::*;
 #[cfg(feature = "state_machines")]
 pub fn register_fsm_implementation(fsm: &FsmImplementation, p: &Interpreter) -> MResult<()> {
@@ -122,7 +125,7 @@ fn execute_fsm_pipe_impl(
                             format!(
                                 "[{arm_idx}] check transition pattern={} {}",
                                 summarize_pattern(pattern),
-                                if matched { "✓" } else { "X" }
+                                if matched { "✓" } else { "✗" }
                             )
                         )
                     );
@@ -169,7 +172,7 @@ fn execute_fsm_pipe_impl(
                             format!(
                                 "[{arm_idx}] check guard pattern={} {}",
                                 summarize_pattern(pattern),
-                                if pattern_matched { "✓" } else { "X" }
+                                if pattern_matched { "✓" } else { "✗" }
                             )
                         )
                     );
@@ -191,8 +194,8 @@ fn execute_fsm_pipe_impl(
                                 "guard",
                                 format!(
                                     "arm[{arm_idx}] check guard[{guard_idx}] condition={} {}",
-                                    summarize_pattern(&guard.condition),
-                                    if guard_passes { "✓" } else { "X" }
+                                    summarize_guard_condition(&guard.condition),
+                                    if guard_passes { "✓" } else { "✗" }
                                 )
                             )
                         );
@@ -354,96 +357,4 @@ fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -> MR
             Ok(Value::Tuple(Ref::new(MechTuple::from_vec(values))))
         }
     }
-}
-
-#[cfg(feature = "state_machines")]
-fn summarize_value(value: &Value) -> String {
-    const MAX_TRACE_CHARS: usize = 1000;
-    let rendered = single_line_trace_text(&summarize_value_compact(value, 0));
-    truncate_for_trace(&rendered, MAX_TRACE_CHARS)
-}
-
-fn summarize_value_compact(value: &Value, depth: usize) -> String {
-    if depth > 2 {
-        return format!("{}(..)", value.kind().to_string());
-    }
-    match value {
-        #[cfg(feature = "u64")]
-        Value::U64(x) => format!("u64(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
-        #[cfg(feature = "i64")]
-        Value::I64(x) => format!("i64(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
-        #[cfg(feature = "f64")]
-        Value::F64(x) => format!("f64(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
-        #[cfg(feature = "bool")]
-        Value::Bool(x) => format!("bool(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
-        #[cfg(feature = "string")]
-        Value::String(x) => format!("str(@{:04x}:\"{}\")", short_addr(x.addr()), x.borrow()),
-        #[cfg(feature = "atom")]
-        Value::Atom(x) => format!("{}(@{:04x})", x.borrow().to_string(), short_addr(x.addr())),
-        #[cfg(feature = "tuple")]
-        Value::Tuple(tuple_ref) => summarize_tuple_value(tuple_ref, depth),
-        _ => format!(
-            "{}({})",
-            value.kind().to_string(),
-            truncate_for_trace(&single_line_trace_text(&format!("{:?}", value)), 48)
-        ),
-    }
-}
-
-#[cfg(feature = "tuple")]
-fn summarize_tuple_value(tuple_ref: &Ref<MechTuple>, depth: usize) -> String {
-    let tuple = tuple_ref.borrow();
-    let mut parts = Vec::new();
-    for element in tuple.elements.iter().take(3) {
-        parts.push(summarize_value_compact(element, depth + 1));
-    }
-    if tuple.elements.len() > 3 {
-        parts.push("…".to_string());
-    }
-    format!(
-        "(@{:04x}; len={}; [{}])",
-        short_addr(tuple_ref.addr()),
-        tuple.elements.len(),
-        parts.join(", ")
-    )
-}
-
-fn short_addr(addr: usize) -> u16 {
-    (addr & 0xffff) as u16
-}
-
-#[cfg(feature = "state_machines")]
-fn summarize_pattern(pattern: &Pattern) -> String {
-    match pattern {
-        Pattern::Wildcard => "*".to_string(),
-        Pattern::Expression(expr) => truncate_for_trace(&format!("{:?}", expr), 1000),
-        Pattern::Tuple(tuple) => format!("tuple(len={})", tuple.0.len()),
-        Pattern::TupleStruct(tuple_struct) => {
-            format!(
-                ":{}(len={})",
-                tuple_struct.name.to_string(),
-                tuple_struct.patterns.len()
-            )
-        }
-    }
-}
-
-#[cfg(feature = "state_machines")]
-fn truncate_for_trace(text: &str, max_chars: usize) -> String {
-    if text.chars().count() <= max_chars {
-        return text.to_string();
-    }
-    let mut truncated = text.chars().take(max_chars).collect::<String>();
-    truncated.push('…');
-    truncated
-}
-
-#[cfg(feature = "state_machines")]
-fn format_fsm_trace(label: &str, message: String) -> String {
-    format!("[trace][fsm][{label:>6}] {message}")
-}
-
-#[cfg(feature = "state_machines")]
-fn single_line_trace_text(text: &str) -> String {
-    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }

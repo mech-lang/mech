@@ -11,7 +11,11 @@ extern crate mech_core;
 macro_rules! trace_println {
   ($interpreter:expr, $($arg:tt)*) => {
     if $interpreter.trace {
-      println!($($arg)*);
+      let __trace_line = format!($($arg)*);
+      $interpreter.push_trace_line(__trace_line.clone());
+      if $interpreter.trace_to_stdout {
+        println!("{}", __trace_line);
+      }
     }
   };
 }
@@ -40,8 +44,9 @@ use crate::stdlib::vertcat::*;
 use mech_combinatorics::*;
 #[cfg(feature = "compare")]
 use mech_compare::*;
-#[cfg(feature = "complex")]
-use mech_core::C64;
+use mech_core::kind::Kind;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::{Matrix, ToMatrix};
 #[cfg(feature = "enum")]
 use mech_core::MechEnum;
 #[cfg(feature = "map")]
@@ -54,14 +59,13 @@ use mech_core::MechSet;
 use mech_core::MechTable;
 #[cfg(feature = "tuple")]
 use mech_core::MechTuple;
+#[cfg(feature = "complex")]
+use mech_core::C64;
 #[cfg(feature = "rational")]
 use mech_core::R64;
-use mech_core::kind::Kind;
-#[cfg(feature = "matrix")]
-use mech_core::matrix::{Matrix, ToMatrix};
 use mech_core::*;
+use mech_core::{hash_str, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*, MResult};
 use mech_core::{Dictionary, Ref, ToValue, ValRef, Value, ValueKind};
-use mech_core::{MResult, hash_str, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 #[cfg(feature = "logic")]
 use mech_logic::*;
 #[cfg(feature = "math")]
@@ -103,6 +107,7 @@ pub mod state_machines;
 pub mod statements;
 pub mod stdlib;
 pub mod structures;
+pub mod tracing;
 
 pub use mech_core::*;
 
@@ -118,6 +123,7 @@ pub use crate::mechdown::*;
 pub use crate::state_machines::*;
 pub use crate::statements::*;
 pub use crate::structures::*;
+pub use crate::tracing::*;
 
 #[cfg(feature = "access")]
 pub use crate::stdlib::access::*;
