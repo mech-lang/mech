@@ -30,12 +30,12 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
       "statements_default", "subscript_default", "state_machines",
-      "formatter", "mechfs", "serve", "run", "repl", "build", "whos", "async",
+      "formatter", "mechfs", "serve", "run", "repl", "build", "whos", "async", "trace",
       "mech-core/default", "mech-interpreter/default", "mech-syntax/default",
       ]
 base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "statements_default", "subscript_default", "state_machines",
-      "formatter", "mechfs", "serve", "run", "repl", "build","whos", "async",
+      "formatter", "mechfs", "serve", "run", "repl", "build","whos", "async", "trace",
       "mech-core/base", "mech-interpreter/base", "mech-syntax/base",
       ]
 build = ["compiler"]
