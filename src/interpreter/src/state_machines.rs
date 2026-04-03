@@ -332,7 +332,6 @@ fn validate_fsm_state_coverage(fsm: &FsmImplementation, fsm_pipe: &FsmPipe) -> M
     Ok(())
 }
 
-#[cfg(feature = "state_machines")]
 fn validate_transition_target_state(
     transition: &Transition,
     fsm: &FsmImplementation,
@@ -359,7 +358,6 @@ fn validate_transition_target_state(
     Ok(())
 }
 
-#[cfg(feature = "state_machines")]
 fn state_name_from_pattern(pattern: &Pattern) -> Option<String> {
     match pattern {
         Pattern::TupleStruct(tuple_struct) => Some(tuple_struct.name.to_string()),
@@ -368,7 +366,6 @@ fn state_name_from_pattern(pattern: &Pattern) -> Option<String> {
     }
 }
 
-#[cfg(feature = "state_machines")]
 fn clear_pattern_bindings(pattern: &Pattern, env: &mut Environment) {
     let mut ids = Vec::new();
     collect_pattern_variable_ids(pattern, &mut ids);
@@ -377,7 +374,6 @@ fn clear_pattern_bindings(pattern: &Pattern, env: &mut Environment) {
     }
 }
 
-#[cfg(feature = "state_machines")]
 fn collect_pattern_variable_ids(pattern: &Pattern, ids: &mut Vec<u64>) {
     match pattern {
         Pattern::Expression(Expression::Var(var)) => ids.push(var.name.hash()),
@@ -395,7 +391,6 @@ fn collect_pattern_variable_ids(pattern: &Pattern, ids: &mut Vec<u64>) {
     }
 }
 
-#[cfg(feature = "state_machines")]
 fn apply_transitions(
     transitions: &[Transition],
     state: &mut Value,
@@ -423,7 +418,6 @@ fn apply_transitions(
     Ok(None)
 }
 
-#[cfg(feature = "state_machines")]
 fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -> MResult<Value> {
     match pattern {
         Pattern::Wildcard => Ok(Value::Empty),
@@ -454,14 +448,12 @@ fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -> MR
 // FSM Errors
 // ----------------------------------------------------------------------------
 
-#[cfg(feature = "state_machines")]
 #[derive(Debug, Clone)]
 pub struct FsmUndefinedStateError {
     pub fsm_name: String,
     pub state_name: String,
 }
 
-#[cfg(feature = "state_machines")]
 impl MechErrorKind for FsmUndefinedStateError {
     fn name(&self) -> &str {
         "FsmUndefinedState"
@@ -474,13 +466,13 @@ impl MechErrorKind for FsmUndefinedStateError {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct FsmGuardConditionKindMismatchError {
     pub arm_index: usize,
     pub guard_index: usize,
     pub actual_kind: ValueKind,
 }
 
-#[cfg(feature = "state_machines")]
 impl MechErrorKind for FsmGuardConditionKindMismatchError {
     fn name(&self) -> &str {
         "FsmGuardConditionKindMismatch"
@@ -502,7 +494,6 @@ pub struct FsmExceededTransitionLimitError {
     pub max_transitions: usize,
 }
 
-#[cfg(feature = "state_machines")]
 impl MechErrorKind for FsmExceededTransitionLimitError {
     fn name(&self) -> &str {
         "FsmExceededTransitionLimit"
@@ -516,7 +507,6 @@ impl MechErrorKind for FsmExceededTransitionLimitError {
     }
 }
 
-#[cfg(feature = "state_machines")]
 #[derive(Debug, Clone)]
 pub struct FsmArgumentKindMismatchError {
     pub argument: String,
@@ -524,7 +514,6 @@ pub struct FsmArgumentKindMismatchError {
     pub actual_kind: ValueKind,
 }
 
-#[cfg(feature = "state_machines")]
 impl MechErrorKind for FsmArgumentKindMismatchError {
     fn name(&self) -> &str {
         "FsmArgumentKindMismatch"
