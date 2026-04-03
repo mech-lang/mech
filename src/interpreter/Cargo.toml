@@ -36,6 +36,8 @@ base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "statements_default", "subscript_default", "state_machines",
       "mech-core/base", "mech-set/base", "mech-math/base", "mech-compare/base", "mech-combinatorics/base", "mech-logic/base", "mech-matrix/base", "mech-io/base", "mech-stats/base", "mech-range/base", "mech-string/base",
       ]    
+
+trace = []
   
 statements_default = ["variable_assign","variable_define","kind_define",
     "mech-core/statements_default", "mech-set/statements_default", "mech-math/statements_default", "mech-compare/statements_default", "mech-combinatorics/statements_default", "mech-logic/statements_default", "mech-matrix/statements_default", "mech-io/statements_default", "mech-stats/statements_default", "mech-range/statements_default", "mech-string/statements_default"]
