@@ -150,6 +150,8 @@ test_interpreter!(interpret_formula_math_div_rational, "1/10 / 2/10 / 3/10", Val
 test_interpreter!(interpret_formula_math_add_complex, "1+2i + 3+4i", Value::C64(Ref::new(C64::new(4.0, 6.0))));
 test_interpreter!(interpret_formula_math_add_complex_real_rhs, "4i + 1", Value::C64(Ref::new(C64::new(1.0, 4.0))));
 test_interpreter!(interpret_formula_math_add_complex_real_lhs, "1 + 4i", Value::C64(Ref::new(C64::new(1.0, 4.0))));
+test_interpreter!(interpret_variable_define_complex_real_sum, "y := 4i + 1", Value::C64(Ref::new(C64::new(1.0, 4.0))));
+test_interpreter!(interpret_variable_add_complex_real, "z := 4i; z + 1", Value::C64(Ref::new(C64::new(1.0, 4.0))));
 test_interpreter!(interpret_formula_math_sub_complex, "1+2i - 3+4i", Value::C64(Ref::new(C64::new(-2.0, -2.0))));
 test_interpreter!(interpret_formula_math_mul_complex, "1+2i * 3+4i", Value::C64(Ref::new(C64::new(-5.0, 10.0))));
 test_interpreter!(interpret_formula_math_div_complex, "1+2i / 3+4i", Value::C64(Ref::new(C64::new(0.44, 0.08))));
