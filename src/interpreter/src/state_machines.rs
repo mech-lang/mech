@@ -3,6 +3,10 @@ use crate::tracing::{
 };
 use crate::*;
 use std::collections::HashSet;
+
+// Finite State Machines
+// ----------------------------------------------------------------------------
+
 #[cfg(feature = "state_machines")]
 pub fn register_fsm_implementation(fsm: &FsmImplementation, p: &Interpreter) -> MResult<()> {
     let fsm_id = fsm.name.hash();
@@ -186,7 +190,20 @@ fn execute_fsm_pipe_impl(
                             Pattern::Wildcard => true,
                             _ => {
                                 let cond = pattern_to_value(&guard.condition, &arm_env, p)?;
-                                matches!(cond, Value::Bool(x) if *x.borrow())
+                                match cond {
+                                    Value::Bool(x) => *x.borrow(),
+                                    other => {
+                                        return Err(MechError::new(
+                                            FsmGuardConditionKindMismatchError {
+                                                arm_index: arm_idx,
+                                                guard_index: guard_idx,
+                                                actual_kind: other.kind(),
+                                            },
+                                            None,
+                                        )
+                                        .with_compiler_loc())
+                                    }
+                                }
                             }
                         };
                         trace_println!(
@@ -249,53 +266,12 @@ fn execute_fsm_pipe_impl(
         }
     }
     Err(MechError::new(
-        FeatureNotEnabledError,
-        Some("FSM exceeded maximum transition limit".to_string()),
+        FsmExceededTransitionLimitError {
+            max_transitions: max_steps,
+        },
+        None,
     )
     .with_compiler_loc())
-}
-
-#[cfg(feature = "state_machines")]
-#[derive(Debug, Clone)]
-pub struct FsmArgumentKindMismatchError {
-    pub argument: String,
-    pub expected_kind: ValueKind,
-    pub actual_kind: ValueKind,
-}
-
-#[cfg(feature = "state_machines")]
-impl MechErrorKind for FsmArgumentKindMismatchError {
-    fn name(&self) -> &str {
-        "FsmArgumentKindMismatch"
-    }
-    fn message(&self) -> String {
-        format!(
-            "FSM argument '{}' expected kind '{}' but received '{}'",
-            self.argument,
-            self.expected_kind.to_string(),
-            self.actual_kind.to_string()
-        )
-    }
-}
-
-#[cfg(feature = "state_machines")]
-#[derive(Debug, Clone)]
-pub struct FsmUndefinedStateError {
-    pub fsm_name: String,
-    pub state_name: String,
-}
-
-#[cfg(feature = "state_machines")]
-impl MechErrorKind for FsmUndefinedStateError {
-    fn name(&self) -> &str {
-        "FsmUndefinedState"
-    }
-    fn message(&self) -> String {
-        format!(
-            "FSM '{}' references undefined state '{}'",
-            self.fsm_name, self.state_name
-        )
-    }
 }
 
 #[cfg(feature = "state_machines")]
@@ -472,5 +448,93 @@ fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -> MR
             }
             Ok(Value::Tuple(Ref::new(MechTuple::from_vec(values))))
         }
+    }
+}
+
+// FSM Errors
+// ----------------------------------------------------------------------------
+
+#[cfg(feature = "state_machines")]
+#[derive(Debug, Clone)]
+pub struct FsmUndefinedStateError {
+    pub fsm_name: String,
+    pub state_name: String,
+}
+
+#[cfg(feature = "state_machines")]
+impl MechErrorKind for FsmUndefinedStateError {
+    fn name(&self) -> &str {
+        "FsmUndefinedState"
+    }
+    fn message(&self) -> String {
+        format!(
+            "FSM '{}' references undefined state '{}'",
+            self.fsm_name, self.state_name
+        )
+    }
+}
+
+pub struct FsmGuardConditionKindMismatchError {
+    pub arm_index: usize,
+    pub guard_index: usize,
+    pub actual_kind: ValueKind,
+}
+
+#[cfg(feature = "state_machines")]
+impl MechErrorKind for FsmGuardConditionKindMismatchError {
+    fn name(&self) -> &str {
+        "FsmGuardConditionKindMismatch"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "FSM guard condition arm[{}] guard[{}] must evaluate to Bool, got '{}'",
+            self.arm_index,
+            self.guard_index,
+            self.actual_kind.to_string(),
+        )
+    }
+}
+
+
+#[derive(Debug, Clone)]
+pub struct FsmExceededTransitionLimitError {
+    pub max_transitions: usize,
+}
+
+#[cfg(feature = "state_machines")]
+impl MechErrorKind for FsmExceededTransitionLimitError {
+    fn name(&self) -> &str {
+        "FsmExceededTransitionLimit"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "FSM exceeded maximum transition limit of {} steps",
+            self.max_transitions
+        )
+    }
+}
+
+#[cfg(feature = "state_machines")]
+#[derive(Debug, Clone)]
+pub struct FsmArgumentKindMismatchError {
+    pub argument: String,
+    pub expected_kind: ValueKind,
+    pub actual_kind: ValueKind,
+}
+
+#[cfg(feature = "state_machines")]
+impl MechErrorKind for FsmArgumentKindMismatchError {
+    fn name(&self) -> &str {
+        "FsmArgumentKindMismatch"
+    }
+    fn message(&self) -> String {
+        format!(
+            "FSM argument '{}' expected kind '{}' but received '{}'",
+            self.argument,
+            self.expected_kind.to_string(),
+            self.actual_kind.to_string()
+        )
     }
 }
