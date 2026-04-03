@@ -2,7 +2,11 @@ use crate::tracing::{
     format_fsm_trace, summarize_guard_condition, summarize_pattern, summarize_value,
 };
 use crate::*;
-#[cfg(feature = "state_machines")]
+use std::collections::HashSet;
+
+// Finite State Machines
+// ----------------------------------------------------------------------------
+
 pub fn register_fsm_implementation(fsm: &FsmImplementation, p: &Interpreter) -> MResult<()> {
     let fsm_id = fsm.name.hash();
     p.user_state_machines
@@ -16,7 +20,6 @@ pub fn register_fsm_implementation(fsm: &FsmImplementation, p: &Interpreter) -> 
     Ok(())
 }
 
-#[cfg(feature = "state_machines")]
 pub fn execute_fsm_pipe(
     fsm_pipe: &FsmPipe,
     env: Option<&Environment>,
@@ -78,10 +81,10 @@ pub fn execute_fsm_pipe(
         call_env.insert(arg_decl.name.hash(), detach_value(arg_value));
     }
     let mut state = pattern_to_value(&fsm.start, &call_env, p)?;
+    validate_fsm_state_coverage(&fsm, fsm_pipe)?;
     execute_fsm_pipe_impl(&fsm, &mut state, &mut call_env, p)
 }
 
-#[cfg(feature = "state_machines")]
 fn execute_fsm_pipe_impl(
     fsm: &FsmImplementation,
     state: &mut Value,
@@ -268,74 +271,97 @@ fn execute_fsm_pipe_impl(
     .with_compiler_loc())
 }
 
-#[cfg(feature = "state_machines")]
-#[derive(Debug, Clone)]
-pub struct FsmArgumentKindMismatchError {
-    pub argument: String,
-    pub expected_kind: ValueKind,
-    pub actual_kind: ValueKind,
-}
-
-#[cfg(feature = "state_machines")]
-impl MechErrorKind for FsmArgumentKindMismatchError {
-    fn name(&self) -> &str {
-        "FsmArgumentKindMismatch"
+fn validate_fsm_state_coverage(fsm: &FsmImplementation, fsm_pipe: &FsmPipe) -> MResult<()> {
+    let state_names: HashSet<String> = fsm
+        .arms
+        .iter()
+        .filter_map(|arm| {
+            let pattern = match arm {
+                FsmArm::Guard(pattern, _) | FsmArm::Transition(pattern, _) => pattern,
+            };
+            state_name_from_pattern(pattern)
+        })
+        .collect();
+    if state_names.is_empty() {
+        return Ok(());
     }
-    fn message(&self) -> String {
-        format!(
-            "FSM argument '{}' expected kind '{}' but received '{}'",
-            self.argument,
-            self.expected_kind.to_string(),
-            self.actual_kind.to_string()
+
+    let start_state = state_name_from_pattern(&fsm.start).ok_or_else(|| {
+        MechError::new(
+            FsmUndefinedStateError {
+                fsm_name: fsm.name.to_string(),
+                state_name: summarize_pattern(&fsm.start),
+            },
+            None,
         )
-    }
-}
-
-#[cfg(feature = "state_machines")]
-#[derive(Debug, Clone)]
-pub struct FsmGuardConditionKindMismatchError {
-    pub arm_index: usize,
-    pub guard_index: usize,
-    pub actual_kind: ValueKind,
-}
-
-#[cfg(feature = "state_machines")]
-impl MechErrorKind for FsmGuardConditionKindMismatchError {
-    fn name(&self) -> &str {
-        "FsmGuardConditionKindMismatch"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "FSM guard condition arm[{}] guard[{}] must evaluate to Bool, got '{}'",
-            self.arm_index,
-            self.guard_index,
-            self.actual_kind.to_string(),
+        .with_compiler_loc()
+        .with_tokens(fsm_pipe.start.tokens())
+    })?;
+    if !state_names.contains(&start_state) {
+        return Err(MechError::new(
+            FsmUndefinedStateError {
+                fsm_name: fsm.name.to_string(),
+                state_name: start_state,
+            },
+            None,
         )
+        .with_compiler_loc()
+        .with_tokens(fsm_pipe.start.tokens()));
+    }
+
+    for arm in &fsm.arms {
+        let transitions = match arm {
+            FsmArm::Transition(_, transitions) => transitions.as_slice(),
+            FsmArm::Guard(_, guards) => {
+                for guard in guards {
+                    for transition in &guard.transitions {
+                        validate_transition_target_state(transition, fsm, &state_names, fsm_pipe)?;
+                    }
+                }
+                &[]
+            }
+        };
+        for transition in transitions {
+            validate_transition_target_state(transition, fsm, &state_names, fsm_pipe)?;
+        }
+    }
+    Ok(())
+}
+
+fn validate_transition_target_state(
+    transition: &Transition,
+    fsm: &FsmImplementation,
+    state_names: &HashSet<String>,
+    fsm_pipe: &FsmPipe,
+) -> MResult<()> {
+    let target = match transition {
+        Transition::Next(pattern) | Transition::Async(pattern) => state_name_from_pattern(pattern),
+        _ => None,
+    };
+    if let Some(state_name) = target {
+        if !state_names.contains(&state_name) {
+            return Err(MechError::new(
+                FsmUndefinedStateError {
+                    fsm_name: fsm.name.to_string(),
+                    state_name,
+                },
+                None,
+            )
+            .with_compiler_loc()
+            .with_tokens(fsm_pipe.start.tokens()));
+        }
+    }
+    Ok(())
+}
+
+fn state_name_from_pattern(pattern: &Pattern) -> Option<String> {
+    match pattern {
+        Pattern::TupleStruct(tuple_struct) => Some(tuple_struct.name.to_string()),
+        Pattern::Expression(Expression::Literal(Literal::Atom(atom))) => Some(atom.name.to_string()),
+        _ => None,
     }
 }
 
-#[cfg(feature = "state_machines")]
-#[derive(Debug, Clone)]
-pub struct FsmExceededTransitionLimitError {
-    pub max_transitions: usize,
-}
-
-#[cfg(feature = "state_machines")]
-impl MechErrorKind for FsmExceededTransitionLimitError {
-    fn name(&self) -> &str {
-        "FsmExceededTransitionLimit"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "FSM exceeded maximum transition limit of {} steps",
-            self.max_transitions
-        )
-    }
-}
-
-#[cfg(feature = "state_machines")]
 fn clear_pattern_bindings(pattern: &Pattern, env: &mut Environment) {
     let mut ids = Vec::new();
     collect_pattern_variable_ids(pattern, &mut ids);
@@ -344,7 +370,6 @@ fn clear_pattern_bindings(pattern: &Pattern, env: &mut Environment) {
     }
 }
 
-#[cfg(feature = "state_machines")]
 fn collect_pattern_variable_ids(pattern: &Pattern, ids: &mut Vec<u64>) {
     match pattern {
         Pattern::Expression(Expression::Var(var)) => ids.push(var.name.hash()),
@@ -362,7 +387,6 @@ fn collect_pattern_variable_ids(pattern: &Pattern, ids: &mut Vec<u64>) {
     }
 }
 
-#[cfg(feature = "state_machines")]
 fn apply_transitions(
     transitions: &[Transition],
     state: &mut Value,
@@ -390,7 +414,6 @@ fn apply_transitions(
     Ok(None)
 }
 
-#[cfg(feature = "state_machines")]
 fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -> MResult<Value> {
     match pattern {
         Pattern::Wildcard => Ok(Value::Empty),
@@ -415,5 +438,88 @@ fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -> MR
             }
             Ok(Value::Tuple(Ref::new(MechTuple::from_vec(values))))
         }
+    }
+}
+
+// FSM Errors
+// ----------------------------------------------------------------------------
+
+#[derive(Debug, Clone)]
+pub struct FsmUndefinedStateError {
+    pub fsm_name: String,
+    pub state_name: String,
+}
+
+impl MechErrorKind for FsmUndefinedStateError {
+    fn name(&self) -> &str {
+        "FsmUndefinedState"
+    }
+    fn message(&self) -> String {
+        format!(
+            "FSM '{}' references undefined state '{}'",
+            self.fsm_name, self.state_name
+        )
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FsmGuardConditionKindMismatchError {
+    pub arm_index: usize,
+    pub guard_index: usize,
+    pub actual_kind: ValueKind,
+}
+
+impl MechErrorKind for FsmGuardConditionKindMismatchError {
+    fn name(&self) -> &str {
+        "FsmGuardConditionKindMismatch"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "FSM guard condition arm[{}] guard[{}] must evaluate to Bool, got '{}'",
+            self.arm_index,
+            self.guard_index,
+            self.actual_kind.to_string(),
+        )
+    }
+}
+
+
+#[derive(Debug, Clone)]
+pub struct FsmExceededTransitionLimitError {
+    pub max_transitions: usize,
+}
+
+impl MechErrorKind for FsmExceededTransitionLimitError {
+    fn name(&self) -> &str {
+        "FsmExceededTransitionLimit"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "FSM exceeded maximum transition limit of {} steps",
+            self.max_transitions
+        )
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FsmArgumentKindMismatchError {
+    pub argument: String,
+    pub expected_kind: ValueKind,
+    pub actual_kind: ValueKind,
+}
+
+impl MechErrorKind for FsmArgumentKindMismatchError {
+    fn name(&self) -> &str {
+        "FsmArgumentKindMismatch"
+    }
+    fn message(&self) -> String {
+        format!(
+            "FSM argument '{}' expected kind '{}' but received '{}'",
+            self.argument,
+            self.expected_kind.to_string(),
+            self.actual_kind.to_string()
+        )
     }
 }
