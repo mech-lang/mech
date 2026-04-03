@@ -184,7 +184,20 @@ fn execute_fsm_pipe_impl(
                             Pattern::Wildcard => true,
                             _ => {
                                 let cond = pattern_to_value(&guard.condition, &arm_env, p)?;
-                                matches!(cond, Value::Bool(x) if *x.borrow())
+                                match cond {
+                                    Value::Bool(x) => *x.borrow(),
+                                    other => {
+                                        return Err(MechError::new(
+                                            FsmGuardConditionKindMismatchError {
+                                                arm_index: arm_idx,
+                                                guard_index: guard_idx,
+                                                actual_kind: other.kind(),
+                                            },
+                                            None,
+                                        )
+                                        .with_compiler_loc())
+                                    }
+                                }
                             }
                         };
                         trace_println!(
@@ -247,8 +260,10 @@ fn execute_fsm_pipe_impl(
         }
     }
     Err(MechError::new(
-        FeatureNotEnabledError,
-        Some("FSM exceeded maximum transition limit".to_string()),
+        FsmExceededTransitionLimitError {
+            max_transitions: max_steps,
+        },
+        None,
     )
     .with_compiler_loc())
 }
@@ -272,6 +287,50 @@ impl MechErrorKind for FsmArgumentKindMismatchError {
             self.argument,
             self.expected_kind.to_string(),
             self.actual_kind.to_string()
+        )
+    }
+}
+
+#[cfg(feature = "state_machines")]
+#[derive(Debug, Clone)]
+pub struct FsmGuardConditionKindMismatchError {
+    pub arm_index: usize,
+    pub guard_index: usize,
+    pub actual_kind: ValueKind,
+}
+
+#[cfg(feature = "state_machines")]
+impl MechErrorKind for FsmGuardConditionKindMismatchError {
+    fn name(&self) -> &str {
+        "FsmGuardConditionKindMismatch"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "FSM guard condition arm[{}] guard[{}] must evaluate to Bool, got '{}'",
+            self.arm_index,
+            self.guard_index,
+            self.actual_kind.to_string(),
+        )
+    }
+}
+
+#[cfg(feature = "state_machines")]
+#[derive(Debug, Clone)]
+pub struct FsmExceededTransitionLimitError {
+    pub max_transitions: usize,
+}
+
+#[cfg(feature = "state_machines")]
+impl MechErrorKind for FsmExceededTransitionLimitError {
+    fn name(&self) -> &str {
+        "FsmExceededTransitionLimit"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "FSM exceeded maximum transition limit of {} steps",
+            self.max_transitions
         )
     }
 }
