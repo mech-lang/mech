@@ -7,7 +7,6 @@ use std::collections::HashSet;
 // Finite State Machines
 // ----------------------------------------------------------------------------
 
-#[cfg(feature = "state_machines")]
 pub fn register_fsm_implementation(fsm: &FsmImplementation, p: &Interpreter) -> MResult<()> {
     let fsm_id = fsm.name.hash();
     p.user_state_machines
@@ -21,7 +20,6 @@ pub fn register_fsm_implementation(fsm: &FsmImplementation, p: &Interpreter) -> 
     Ok(())
 }
 
-#[cfg(feature = "state_machines")]
 pub fn execute_fsm_pipe(
     fsm_pipe: &FsmPipe,
     env: Option<&Environment>,
@@ -87,7 +85,6 @@ pub fn execute_fsm_pipe(
     execute_fsm_pipe_impl(&fsm, &mut state, &mut call_env, p)
 }
 
-#[cfg(feature = "state_machines")]
 fn execute_fsm_pipe_impl(
     fsm: &FsmImplementation,
     state: &mut Value,
@@ -274,7 +271,6 @@ fn execute_fsm_pipe_impl(
     .with_compiler_loc())
 }
 
-#[cfg(feature = "state_machines")]
 fn validate_fsm_state_coverage(fsm: &FsmImplementation, fsm_pipe: &FsmPipe) -> MResult<()> {
     let state_names: HashSet<String> = fsm
         .arms
