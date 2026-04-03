@@ -2,6 +2,7 @@ use crate::tracing::{
     format_fsm_trace, summarize_guard_condition, summarize_pattern, summarize_value,
 };
 use crate::*;
+use std::collections::HashSet;
 #[cfg(feature = "state_machines")]
 pub fn register_fsm_implementation(fsm: &FsmImplementation, p: &Interpreter) -> MResult<()> {
     let fsm_id = fsm.name.hash();
@@ -78,6 +79,7 @@ pub fn execute_fsm_pipe(
         call_env.insert(arg_decl.name.hash(), detach_value(arg_value));
     }
     let mut state = pattern_to_value(&fsm.start, &call_env, p)?;
+    validate_fsm_state_coverage(&fsm, fsm_pipe)?;
     execute_fsm_pipe_impl(&fsm, &mut state, &mut call_env, p)
 }
 
@@ -273,6 +275,120 @@ impl MechErrorKind for FsmArgumentKindMismatchError {
             self.expected_kind.to_string(),
             self.actual_kind.to_string()
         )
+    }
+}
+
+#[cfg(feature = "state_machines")]
+#[derive(Debug, Clone)]
+pub struct FsmUndefinedStateError {
+    pub fsm_name: String,
+    pub state_name: String,
+}
+
+#[cfg(feature = "state_machines")]
+impl MechErrorKind for FsmUndefinedStateError {
+    fn name(&self) -> &str {
+        "FsmUndefinedState"
+    }
+    fn message(&self) -> String {
+        format!(
+            "FSM '{}' references undefined state '{}'",
+            self.fsm_name, self.state_name
+        )
+    }
+}
+
+#[cfg(feature = "state_machines")]
+fn validate_fsm_state_coverage(fsm: &FsmImplementation, fsm_pipe: &FsmPipe) -> MResult<()> {
+    let state_names: HashSet<String> = fsm
+        .arms
+        .iter()
+        .filter_map(|arm| {
+            let pattern = match arm {
+                FsmArm::Guard(pattern, _) | FsmArm::Transition(pattern, _) => pattern,
+            };
+            state_name_from_pattern(pattern)
+        })
+        .collect();
+    if state_names.is_empty() {
+        return Ok(());
+    }
+
+    let start_state = state_name_from_pattern(&fsm.start).ok_or_else(|| {
+        MechError::new(
+            FsmUndefinedStateError {
+                fsm_name: fsm.name.to_string(),
+                state_name: summarize_pattern(&fsm.start),
+            },
+            None,
+        )
+        .with_compiler_loc()
+        .with_tokens(fsm_pipe.start.tokens())
+    })?;
+    if !state_names.contains(&start_state) {
+        return Err(MechError::new(
+            FsmUndefinedStateError {
+                fsm_name: fsm.name.to_string(),
+                state_name: start_state,
+            },
+            None,
+        )
+        .with_compiler_loc()
+        .with_tokens(fsm_pipe.start.tokens()));
+    }
+
+    for arm in &fsm.arms {
+        let transitions = match arm {
+            FsmArm::Transition(_, transitions) => transitions.as_slice(),
+            FsmArm::Guard(_, guards) => {
+                for guard in guards {
+                    for transition in &guard.transitions {
+                        validate_transition_target_state(transition, fsm, &state_names, fsm_pipe)?;
+                    }
+                }
+                &[]
+            }
+        };
+        for transition in transitions {
+            validate_transition_target_state(transition, fsm, &state_names, fsm_pipe)?;
+        }
+    }
+    Ok(())
+}
+
+#[cfg(feature = "state_machines")]
+fn validate_transition_target_state(
+    transition: &Transition,
+    fsm: &FsmImplementation,
+    state_names: &HashSet<String>,
+    fsm_pipe: &FsmPipe,
+) -> MResult<()> {
+    let target = match transition {
+        Transition::Next(pattern) | Transition::Async(pattern) => state_name_from_pattern(pattern),
+        _ => None,
+    };
+    if let Some(state_name) = target {
+        if !state_names.contains(&state_name) {
+            return Err(MechError::new(
+                FsmUndefinedStateError {
+                    fsm_name: fsm.name.to_string(),
+                    state_name,
+                },
+                None,
+            )
+            .with_compiler_loc()
+            .with_tokens(fsm_pipe.start.tokens()));
+        }
+    }
+    Ok(())
+}
+
+#[cfg(feature = "state_machines")]
+fn state_name_from_pattern(pattern: &Pattern) -> Option<String> {
+    match pattern {
+        Pattern::TupleStruct(tuple_struct) => Some(tuple_struct.name.to_string()),
+        Pattern::Expression(Expression::Literal(Literal::Atom(atom))) => Some(atom.name.to_string()),
+        _ => None,
     }
 }
 

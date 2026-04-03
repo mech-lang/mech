@@ -81,6 +81,20 @@ test_interpreter!(
   "#Fibonacci(n<u64>) => <u64>\n  ├ :Compute(n<u64>, a<u64>, b<u64>)\n  └ :Done(n<u64>).\n\n#Fibonacci(n<u64>) -> :Compute(n, 0u64, 1u64)\n  :Compute(n, a, b)\n    ├ n > 0u64 -> :Compute(n - 1u64, b, a + b)\n    └ n == 0u64 -> :Done(a)\n  :Done(n) => n.\n\n#Fibonacci(10u64)",
   Value::U64(Ref::new(55))
 );
+
+#[test]
+fn interpret_fsm_fails_when_transition_targets_undefined_state() {
+  let s = "#Door(n<u64>) => <u64>\n  ├ :Closed(n<u64>)\n  └ :Open(n<u64>).\n\n#Door(n<u64>) -> :Closed(n)\n  :Closed(n) -> :Locked(n)\n  :Open(n) => n.\n\n#Door(1u64)";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  assert!(intrp.interpret(&tree).is_err());
+}
+
+test_interpreter!(
+  interpret_fsm_accepts_when_all_states_are_implemented,
+  "#Door(n<u64>) => <u64>\n  ├ :Closed(n<u64>)\n  ├ :Open(n<u64>)\n  └ :Locked(n<u64>).\n\n#Door(n<u64>) -> :Closed(n)\n  :Closed(n) -> :Locked(n)\n  :Locked(n) -> :Open(n)\n  :Open(n) => n.\n\n#Door(1u64)",
+  Value::U64(Ref::new(1))
+);
 test_interpreter!(interpret_variable_define_empty, "em := _", Value::Empty);
 #[cfg(feature = "u8")]
 test_interpreter!(interpret_variable_define_kind_literal, "x := <u8>;", Value::Kind(ValueKind::U8));
