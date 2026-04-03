@@ -2,7 +2,7 @@ use crate::*;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::collections::HashMap;
 use std::io::{Cursor, Read, Write};
-use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::rc::Rc;
 use std::time::Duration;
 use std::time::Instant;
@@ -15,6 +15,10 @@ pub struct Interpreter {
     pub profile: bool,
     #[cfg(feature = "trace")]
     pub trace: bool,
+    #[cfg(feature = "trace")]
+    pub trace_to_stdout: bool,
+    #[cfg(feature = "trace")]
+    pub trace_events: Ref<Vec<TraceEvent>>,
     ip: usize, // instruction pointer
     pub state: Ref<ProgramState>,
     #[cfg(feature = "functions")]
@@ -39,6 +43,10 @@ impl Clone for Interpreter {
             profile: false,
             #[cfg(feature = "trace")]
             trace: self.trace,
+            #[cfg(feature = "trace")]
+            trace_to_stdout: self.trace_to_stdout,
+            #[cfg(feature = "trace")]
+            trace_events: self.trace_events.clone(),
             state: Ref::new(self.state.borrow().clone()),
             #[cfg(feature = "functions")]
             stack: self.stack.clone(),
@@ -68,6 +76,10 @@ impl Interpreter {
             profile: false,
             #[cfg(feature = "trace")]
             trace: false,
+            #[cfg(feature = "trace")]
+            trace_to_stdout: true,
+            #[cfg(feature = "trace")]
+            trace_events: Ref::new(Vec::new()),
             state: Ref::new(state),
             #[cfg(feature = "functions")]
             stack: Vec::new(),
@@ -142,6 +154,46 @@ impl Interpreter {
         {
             let _ = enabled;
         }
+    }
+
+    #[cfg(feature = "trace")]
+    pub fn set_trace_to_stdout(&mut self, enabled: bool) {
+        self.trace_to_stdout = enabled;
+    }
+
+    #[cfg(feature = "trace")]
+    pub fn clear_trace_events(&self) {
+        self.trace_events.borrow_mut().clear();
+    }
+
+    #[cfg(feature = "trace")]
+    pub fn trace_events(&self) -> Vec<TraceEvent> {
+        self.trace_events.borrow().clone()
+    }
+
+    #[cfg(feature = "trace")]
+    pub fn trace_events_to_json(&self) -> String {
+        let trace_events = self.trace_events.borrow();
+        trace_events_to_json(trace_events.as_slice())
+    }
+
+    #[cfg(feature = "trace")]
+    pub fn push_trace_line(&self, rendered: String) {
+        let (channel, label, message) = parse_trace_line(&rendered);
+        let mut trace_events = self.trace_events.borrow_mut();
+        let index = trace_events.len();
+        trace_events.push(TraceEvent {
+            index,
+            channel,
+            label,
+            message,
+            rendered,
+        });
+    }
+
+    #[cfg(all(feature = "trace", feature = "state_machines"))]
+    pub fn formatted_fsm_trace(&self) -> String {
+        format_fsm_trace_report(&self.trace_events())
     }
 
     #[cfg(feature = "pretty_print")]
