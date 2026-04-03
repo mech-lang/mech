@@ -1,17 +1,17 @@
-# Mech Mode for Visual Studio Code
+# Mech extension for Visual Studio Code
 
-Find out more at https://mech-lang.org
+Syntax highlighting and language configuration for Mech (`.mec`) files.
 
-## Installation
+## Install from Marketplace
 
-In Visual Studio Code, run the command
-
-```
-ext install Mech
+```bash
+code --install-extension Mech.mech
 ```
 
-Or search for "Mech" in the marketplace browser and click "install".
+Or search for **Mech** in VS Code Extensions.
 
 ## Features
 
-- Syntax highlighting for *.mec documents.
+- TextMate grammar aligned with the syntax used in the official docs (including the Fifteen Minutes guide)
+- Highlights comments, headings, callouts, numeric units, operators, functions, and types
+- Supports fenced code blocks and inline math blocks used in docs

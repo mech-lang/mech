@@ -1,61 +1,90 @@
 {
-	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-	"name": "mech",
-	"patterns": [
-		{
-      		"match": "^=+$",
-      		"name": "markup.heading.underline.mech"
-		},
-		{
-			"match": "^-+$",
-			"name": "markup.heading.underline.mech"
-    	},
-		{
-			"match": "^(\\d+\\. )",
-			"name": "markup.heading.mech"
-		},
-		{
-			"match": "^\\(\\d+(?:\\.\\d+)+\\)",
-			"name": "markup.heading.mech"
-		},
-		{
-			"begin": "\\$\\$",
-			"end": "\\$\\$|\\n",
-			"name": "string"
-		},
-		{
-		    "match": "\\b\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?\\b",
-  		    "name": "constant.numeric"
-		},
-		{
-			"begin": "^\\s*([^\\s\\+\\-\\*\\/\\^]+(?:\\[[^\\]]*\\])?)\\s*([\\+\\-\\*\\/\\^]=|:=)",
-			"end": "$",
-			"beginCaptures": {
-				"1": {
-				"name": "variable.name"
-				},
-				"2": {
-				"name": "string"
-				}
-			},
-			"patterns": [
-				{
-				"match": "[^\\s\\d\\.\\^\\*\\+\\-\\/\\(\\)]+(?:\\/[\\w\\/]+)*(?:\\[[^\\]]*\\])?",
-				"name": "variable.name"
-				},
-				{
-				"match": "\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?",
-				"name": "constant.numeric"
-				},
-				{
-				"match": "[\\+\\-\\*\\/\\^]",
-				"name": "string"
-				}
-			]
-		}
-	],
-	"repository": {
-		
-	},
-	"scopeName": "source.mech"
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Mech",
+  "scopeName": "source.mech",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#atoms" },
+    { "include": "#booleans" },
+    { "include": "#numbers" },
+    { "include": "#kinds" },
+    { "include": "#functions" },
+    { "include": "#variables" },
+    { "include": "#operators" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        { "match": "%%.*$", "name": "comment.line.double-percent.mech" },
+        { "match": "--.*$", "name": "comment.line.double-dash.mech" },
+        { "match": "//.*$", "name": "comment.line.double-slash.mech" }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "begin": "\"",
+          "end": "\"",
+          "name": "string.quoted.double.mech",
+          "patterns": [
+            { "match": "\\\\.", "name": "constant.character.escape.mech" }
+          ]
+        }
+      ]
+    },
+    "atoms": {
+      "patterns": [
+        { "match": "`[^\\s\\[\\]{}(),;\"'`]+", "name": "constant.language.atom.mech" }
+      ]
+    },
+    "booleans": {
+      "patterns": [
+        { "match": "\\b(?:true|false)\\b", "name": "constant.language.boolean.mech" },
+        { "match": "[✓✗]", "name": "constant.language.boolean.mech" }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        { "match": "\\b0x[0-9A-Fa-f]+\\b", "name": "constant.numeric.hex.mech" },
+        { "match": "\\b0o[0-7]+\\b", "name": "constant.numeric.octal.mech" },
+        { "match": "\\b0b[01]+\\b", "name": "constant.numeric.binary.mech" },
+        { "match": "\\b0d[0-9]+\\b", "name": "constant.numeric.decimal.mech" },
+        { "match": "(?<![\\w.])\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?i\\b", "name": "constant.numeric.imaginary.mech" },
+        { "match": "(?<![\\w.])\\d+(?:\\.\\d+)?\\/\\d+(?:\\.\\d+)?(?!\\w)", "name": "constant.numeric.rational.mech" },
+        { "match": "(?<![\\w.])\\$?\\d+(?:_\\d+)*(?:\\.\\d+(?:_\\d+)*)?(?:[eE][+-]?\\d+)?\\b", "name": "constant.numeric.mech" },
+        { "match": "\\.{2}=|\\.{2}", "name": "keyword.operator.range.mech" }
+      ]
+    },
+    "kinds": {
+      "patterns": [
+        { "match": "<[^>\\n]+>", "name": "storage.type.kind.mech" },
+        { "match": "\\b_+\\b", "name": "constant.language.empty.mech" }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        { "match": "#[^\\s\\[\\]{}(),;\"'`]+", "name": "entity.name.function.mech" },
+        { "match": "\\b[^\\d\\s\\[\\]{}(),;\"'`][^\\s\\[\\]{}(),;\"'`]*(?=\\s*\\()", "name": "entity.name.function.call.mech" }
+      ]
+    },
+    "variables": {
+      "patterns": [
+        { "match": "~[^\\d\\s\\[\\]{}(),;\"'`][^\\s\\[\\]{}(),;\"'`]*", "name": "variable.other.mutable.mech" },
+        { "match": "\\b[^\\d\\s\\[\\]{}(),;\"'`][^\\s\\[\\]{}(),;\"'`]*\\b", "name": "variable.other.readwrite.mech" }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        { "match": "::=|:=|\\+=|-=|\\*=|/=|==|!=|<=|>=|=>|~>|->|<-|\\*\\*|&&|\\|\\|", "name": "keyword.operator.mech" },
+        { "match": "[+\\-*/^%=<>?:]", "name": "keyword.operator.mech" }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        { "match": "[\\[\\]{}(),;|']", "name": "punctuation.section.mech" }
+      ]
+    }
+  }
 }
