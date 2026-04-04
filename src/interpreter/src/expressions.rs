@@ -837,13 +837,24 @@ pub fn option_match_expression(opt_match: &OptionMatchExpression, env: Option<&E
     let matched = match &arm.pattern {
       Pattern::Wildcard => true,
       Pattern::Expression(expr) => match expr {
-        Expression::Var(_) => crate::functions::pattern_matches_value(&arm.pattern, &detached_source, &mut guard_env, p)?,
-        _ => match expression(expr, Some(&guard_env), p)? {
-          Value::Bool(flag) => *flag.borrow(),
-          _ => false,
-        },
+        Expression::Var(_) => option_pattern_matches_value(&arm.pattern, &detached_source, &mut guard_env, p)?,
+        _ => {
+          let cond_value = expression(expr, Some(&guard_env), p)?;
+          #[cfg(feature = "bool")]
+          {
+            match cond_value {
+              Value::Bool(flag) => *flag.borrow(),
+              _ => false,
+            }
+          }
+          #[cfg(not(feature = "bool"))]
+          {
+            let _ = cond_value;
+            false
+          }
+        }
       },
-      _ => crate::functions::pattern_matches_value(&arm.pattern, &detached_source, &mut guard_env, p)?,
+      _ => option_pattern_matches_value(&arm.pattern, &detached_source, &mut guard_env, p)?,
     };
     if matched {
       return expression(&arm.expression, Some(&guard_env), p);
@@ -863,6 +874,47 @@ fn option_value_is_empty(value: &Value) -> bool {
     Value::Tuple(tuple) => tuple.borrow().elements.iter().any(|value| option_value_is_empty(value.as_ref())),
     Value::MutableReference(reference) => option_value_is_empty(&reference.borrow()),
     _ => false,
+  }
+}
+
+fn option_pattern_matches_value(
+  pattern: &Pattern,
+  value: &Value,
+  env: &mut Environment,
+  p: &Interpreter,
+) -> MResult<bool> {
+  match pattern {
+    Pattern::Wildcard => Ok(true),
+    Pattern::Tuple(pattern_tuple) => match value {
+      #[cfg(feature = "tuple")]
+      Value::Tuple(tuple) => {
+        let tuple_brrw = tuple.borrow();
+        if pattern_tuple.0.len() != tuple_brrw.elements.len() {
+          return Ok(false);
+        }
+        for (pat, val) in pattern_tuple.0.iter().zip(tuple_brrw.elements.iter()) {
+          if !option_pattern_matches_value(pat, val, env, p)? {
+            return Ok(false);
+          }
+        }
+        Ok(true)
+      }
+      _ => Ok(false),
+    },
+    Pattern::Expression(Expression::Var(var)) => {
+      let var_id = var.name.hash();
+      if let Some(existing) = env.get(&var_id) {
+        Ok(existing == value)
+      } else {
+        env.insert(var_id, value.clone());
+        Ok(true)
+      }
+    }
+    Pattern::Expression(expr) => {
+      let expected = expression(expr, Some(env), p)?;
+      Ok(expected == *value)
+    }
+    Pattern::TupleStruct(_) => Ok(false),
   }
 }
 
