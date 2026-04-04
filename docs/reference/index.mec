@@ -10,6 +10,7 @@ Platform Reference
     - [`empty`](/reference/empty.html) - represents an absence of value
     - [`kind`](/reference/kind.html) - a category of values
     - [`number`](/reference/number.html) - numeric values, including integers and floating-point numbers
+    - [`option`](/reference/option.html) - optional values that may be empty or present
     - [`string`](/reference/string.html) - sequence of UTF-8 characters representing text
 - Data Structures
     - [`map`](/reference/map.html) - stores key-value pairs for fast lookups

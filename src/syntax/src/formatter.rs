@@ -1775,6 +1775,7 @@ impl Formatter {
       Expression::Range(range) => self.range_expression(range),
       Expression::SetComprehension(set_comp) => self.set_comprehension(set_comp),
       Expression::MatrixComprehension(matrix_comp) => self.matrix_comprehension(matrix_comp),
+      Expression::OptionMatch(opt_match) => self.option_match_expression(opt_match),
       Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe),
       x => todo!("Unhandled Expression: {:#?}", x),
     };
@@ -1783,6 +1784,17 @@ impl Formatter {
     } else {
       format!("{}", e)
     }
+  }
+
+  pub fn option_match_expression(&mut self, node: &OptionMatchExpression) -> String {
+    let source = self.expression(&node.source);
+    let mut lines = vec![format!("{}?", source)];
+    for arm in &node.arms {
+      let pattern = self.pattern(&arm.pattern);
+      let expr = self.expression(&arm.expression);
+      lines.push(format!("│ {} -> {}", pattern, expr));
+    }
+    lines.join("\n")
   }
 
   pub fn fsm_instance(&mut self, node: &FsmInstance) -> String {

@@ -279,6 +279,8 @@ impl ValueKind {
       (Matrix(a, ashape), Matrix(b, bshape)) if ashape.into_iter().product::<usize>() == bshape.into_iter().product::<usize>() && a.as_ref().is_convertible_to(b.as_ref()) => true,
 
       // Option conversions
+      (x, Option(b)) if x.is_convertible_to(b.as_ref()) => true,
+      (Empty, Option(_)) => true,
       (Option(a), Option(b)) if a.as_ref().is_convertible_to(b.as_ref()) => true,
 
       // Reference conversions
@@ -963,6 +965,8 @@ impl Value {
     }
 
     match (self, other) {
+    (Value::Empty, ValueKind::Option(_)) => Some(Value::Empty),
+    (value, ValueKind::Option(inner)) => value.convert_to(inner.as_ref()),
     // ==== Unsigned widening and narrowing ====
     #[cfg(all(feature = "u8", feature = "u16"))]
     (Value::U8(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
