@@ -51,18 +51,48 @@ pub fn expression(input: ParseString) -> ParseResult<Expression> {
         Ok((input, mc)) => (input, Expression::MatrixComprehension(Box::new(mc))),
         Err(_) => match range_expression(input.clone()) {
           Ok((input, rng)) => (input, Expression::Range(Box::new(rng))),
-          Err(_) => match formula(input.clone()) {
-            Ok((input, Factor::Expression(expr))) => (input, *expr),
-            Ok((input, fctr)) => (input, Expression::Formula(fctr)),
-            Err(err) => {
-              return Err(err);
+          Err(_) => match option_match_expression(input.clone()) {
+            Ok((input, expr)) => (input, Expression::OptionMatch(Box::new(expr))),
+            Err(_) => match formula(input.clone()) {
+              Ok((input, Factor::Expression(expr))) => (input, *expr),
+              Ok((input, fctr)) => (input, Expression::Formula(fctr)),
+              Err(err) => {
+                return Err(err);
+              }
             }
-          }
+          },
         }
       }
     }
   };
   Ok((input, expr))
+}
+
+// option-match-expression := expression, "?", whitespace*, option-match-arm+, period? ;
+pub fn option_match_expression(input: ParseString) -> ParseResult<OptionMatchExpression> {
+  let (input, source) = factor(input)?;
+  let source = match source {
+    Factor::Expression(expr) => *expr,
+    fctr => Expression::Formula(fctr),
+  };
+  let (input, _) = question(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, arms) = many1(option_match_arm)(input)?;
+  let (input, _) = opt(period)(input)?;
+  Ok((input, OptionMatchExpression { source, arms }))
+}
+
+// option-match-arm := guard-operator, pattern, transition-operator, expression, statement-separator? ;
+pub fn option_match_arm(input: ParseString) -> ParseResult<OptionMatchArm> {
+  let (input, _) = crate::state_machines::guard_operator(input)?;
+  let (input, pattern) = crate::state_machines::pattern(input)?;
+  let (input, _) = transition_operator(input)?;
+  let (input, expr) = expression(input)?;
+  let (input, _) = opt(alt((whitespace1, statement_separator)))(input)?;
+  Ok((input, OptionMatchArm {
+    pattern,
+    expression: expr,
+  }))
 }
 
 // formula := l1 ;

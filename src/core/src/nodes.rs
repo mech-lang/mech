@@ -812,6 +812,13 @@ pub struct FunctionMatchArm {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct OptionMatchArm {
+  pub pattern: Pattern,
+  pub expression: Expression,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FunctionArgument {
   pub name: Identifier,
   pub kind: KindAnnotation,
@@ -1633,6 +1640,7 @@ pub enum Expression {
   FunctionCall(FunctionCall),
   FsmPipe(FsmPipe),
   Literal(Literal),
+  OptionMatch(Box<OptionMatchExpression>),
   Range(Box<RangeExpression>),
   Slice(Slice),
   Structure(Structure),
@@ -1648,6 +1656,7 @@ impl Expression {
       Expression::Literal(ltrl) => ltrl.tokens(),
       Expression::Structure(strct) => strct.tokens(),
       Expression::Formula(fctr) => fctr.tokens(),
+      Expression::OptionMatch(opt_match) => opt_match.tokens(),
       Expression::Range(range) => range.tokens(),
       Expression::Slice(slice) => slice.tokens(),
       Expression::SetComprehension(sc) => sc.tokens(),
@@ -1655,6 +1664,24 @@ impl Expression {
       Expression::MatrixComprehension(mc) => mc.tokens(),
       _ => todo!(),
     }
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct OptionMatchExpression {
+  pub source: Expression,
+  pub arms: Vec<OptionMatchArm>,
+}
+
+impl OptionMatchExpression {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.source.tokens();
+    for arm in &self.arms {
+      tokens.append(&mut arm.pattern.tokens());
+      tokens.append(&mut arm.expression.tokens());
+    }
+    tokens
   }
 }
 

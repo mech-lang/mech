@@ -24,6 +24,7 @@ pub fn expression(expr: &Expression, env: Option<&Environment>, p: &Interpreter)
     Expression::SetComprehension(set_comp) => set_comprehension(set_comp, p),
     #[cfg(feature = "matrix_comprehensions")]
     Expression::MatrixComprehension(matrix_comp) => matrix_comprehension(matrix_comp, p),
+    Expression::OptionMatch(opt_match) => option_match_expression(opt_match, env, p),
     #[cfg(feature = "state_machines")]
     Expression::FsmPipe(fsm_pipe) => crate::state_machines::execute_fsm_pipe(fsm_pipe, env, p),
     x => Err(MechError::new(
@@ -811,6 +812,112 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
   }
 }
 
+pub fn option_match_expression(opt_match: &OptionMatchExpression, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+  let source = expression(&opt_match.source, env, p)?;
+  let detached_source = match &source {
+    Value::MutableReference(reference) => reference.borrow().clone(),
+    _ => source.clone(),
+  };
+  let mut base_env = env.cloned().unwrap_or_default();
+  if let Expression::Var(var) = &opt_match.source {
+    base_env.insert(var.name.hash(), detached_source.clone());
+  }
+  if option_value_is_empty(&detached_source) {
+    if let Some(arm) = opt_match.arms.iter().find(|arm| matches!(arm.pattern, Pattern::Wildcard)) {
+      return expression(&arm.expression, Some(&base_env), p);
+    }
+    return Err(MechError::new(
+      OptionMatchNoArmMatchedError,
+      None,
+    ).with_compiler_loc().with_tokens(opt_match.source.tokens()));
+  }
+
+  for arm in &opt_match.arms {
+    let mut guard_env = base_env.clone();
+    let matched = match &arm.pattern {
+      Pattern::Wildcard => true,
+      Pattern::Expression(expr) => match expr {
+        Expression::Var(_) => option_pattern_matches_value(&arm.pattern, &detached_source, &mut guard_env, p)?,
+        _ => {
+          let cond_value = expression(expr, Some(&guard_env), p)?;
+          #[cfg(feature = "bool")]
+          {
+            match cond_value {
+              Value::Bool(flag) => *flag.borrow(),
+              _ => false,
+            }
+          }
+          #[cfg(not(feature = "bool"))]
+          {
+            let _ = cond_value;
+            false
+          }
+        }
+      },
+      _ => option_pattern_matches_value(&arm.pattern, &detached_source, &mut guard_env, p)?,
+    };
+    if matched {
+      return expression(&arm.expression, Some(&guard_env), p);
+    }
+  }
+
+  Err(MechError::new(
+    OptionMatchNoArmMatchedError,
+    None,
+  ).with_compiler_loc().with_tokens(opt_match.source.tokens()))
+}
+
+fn option_value_is_empty(value: &Value) -> bool {
+  match value {
+    Value::Empty => true,
+    #[cfg(feature = "tuple")]
+    Value::Tuple(tuple) => tuple.borrow().elements.iter().any(|value| option_value_is_empty(value.as_ref())),
+    Value::MutableReference(reference) => option_value_is_empty(&reference.borrow()),
+    _ => false,
+  }
+}
+
+fn option_pattern_matches_value(
+  pattern: &Pattern,
+  value: &Value,
+  env: &mut Environment,
+  p: &Interpreter,
+) -> MResult<bool> {
+  match pattern {
+    Pattern::Wildcard => Ok(true),
+    Pattern::Tuple(pattern_tuple) => match value {
+      #[cfg(feature = "tuple")]
+      Value::Tuple(tuple) => {
+        let tuple_brrw = tuple.borrow();
+        if pattern_tuple.0.len() != tuple_brrw.elements.len() {
+          return Ok(false);
+        }
+        for (pat, val) in pattern_tuple.0.iter().zip(tuple_brrw.elements.iter()) {
+          if !option_pattern_matches_value(pat, val, env, p)? {
+            return Ok(false);
+          }
+        }
+        Ok(true)
+      }
+      _ => Ok(false),
+    },
+    Pattern::Expression(Expression::Var(var)) => {
+      let var_id = var.name.hash();
+      if let Some(existing) = env.get(&var_id) {
+        Ok(existing == value)
+      } else {
+        env.insert(var_id, value.clone());
+        Ok(true)
+      }
+    }
+    Pattern::Expression(expr) => {
+      let expected = expression(expr, Some(env), p)?;
+      Ok(expected == *value)
+    }
+    Pattern::TupleStruct(_) => Ok(false),
+  }
+}
+
 #[cfg(feature = "formulas")]
 pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   match fctr {
@@ -1055,6 +1162,15 @@ pub struct PatternMatchError {
   pub var: String,
   pub expected: String,
   pub found: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct OptionMatchNoArmMatchedError;
+impl MechErrorKind for OptionMatchNoArmMatchedError {
+  fn name(&self) -> &str { "OptionMatchNoArmMatched" }
+  fn message(&self) -> String {
+    format!("No option match arm matched the provided value.")
+  }
 }
 
 impl MechErrorKind for PatternMatchError {
