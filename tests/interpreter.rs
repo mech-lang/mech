@@ -137,6 +137,14 @@ fn interpret_option_match_rejects_mismatched_arm_kinds() {
   let mut intrp = Interpreter::new(0);
   assert!(intrp.interpret(&tree).is_err());
 }
+
+#[test]
+fn interpret_option_match_requires_wildcard_arm() {
+  let s = "foo<u64?> := 1234\n\nbar := foo?\n  | 0 -> 9.\n\nbar";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  assert!(intrp.interpret(&tree).is_err());
+}
 #[test]
 fn interpret_variable_define_typed_set_from_range_matrix() {
   let s = "input<{f64}> := 1..=5";

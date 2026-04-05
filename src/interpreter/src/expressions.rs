@@ -813,6 +813,12 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
 }
 
 pub fn option_match_expression(opt_match: &OptionMatchExpression, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+  if !opt_match.arms.iter().any(|arm| matches!(arm.pattern, Pattern::Wildcard)) {
+    return Err(MechError::new(
+      OptionMatchNonExhaustiveError,
+      None,
+    ).with_compiler_loc().with_tokens(opt_match.source.tokens()));
+  }
   let source = expression(&opt_match.source, env, p)?;
   let detached_source = match &source {
     Value::MutableReference(reference) => reference.borrow().clone(),
@@ -1229,6 +1235,15 @@ impl MechErrorKind for OptionMatchArmKindMismatchError {
       "Option match arm kind mismatch: expected {:?}, found {:?}",
       self.expected, self.found
     )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct OptionMatchNonExhaustiveError;
+impl MechErrorKind for OptionMatchNonExhaustiveError {
+  fn name(&self) -> &str { "OptionMatchNonExhaustive" }
+  fn message(&self) -> String {
+    "Option match must include a wildcard (`*`) arm to handle empty values.".to_string()
   }
 }
 
