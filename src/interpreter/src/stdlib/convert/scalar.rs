@@ -300,6 +300,19 @@ macro_rules! impl_conversion_match_arms {
         (Value::Empty, Value::Kind(ValueKind::Empty)) => {
           Ok(Box::new(ConvertSEmpty { out: Ref::new(Value::Empty) }))
         }
+        (value, Value::Kind(ValueKind::Option(inner_kind))) => {
+          let converted = if value == Value::Empty {
+            Value::Empty
+          } else {
+            value
+              .convert_to(inner_kind.as_ref())
+              .ok_or_else(|| MechError::new(
+                UnsupportedConversionError { from: value.kind(), to: ValueKind::Option(inner_kind.clone()) },
+                None,
+              ).with_compiler_loc())?
+          };
+          Ok(Box::new(ConvertSEmpty { out: Ref::new(converted) }))
+        }
         x => Err(MechError::new(
             UnsupportedConversionError{from: x.0.kind(), to: x.1.kind()},
             None,

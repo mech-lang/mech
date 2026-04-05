@@ -106,6 +106,45 @@ fn interpret_variable_define_undefined_kind_literal_error() {
   assert!(intrp.interpret(&tree).is_err());
 }
 test_interpreter!(interpret_variable_define_typed_empty, "emp<_> := _", Value::Empty);
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_variable_define_typed_option_some,
+  "x<u64?> := 123u64",
+  Value::U64(Ref::new(123))
+);
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_variable_define_typed_option_none,
+  "x<u64?> := _",
+  Value::Empty
+);
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_option_match_scalar_some,
+  "x<u64?> := 4u64; x? | x > 3u64 -> x | * -> 0u64.",
+  Value::U64(Ref::new(4))
+);
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_option_match_tuple_destructure,
+  "x<u64?> := 2u64; y<u64?> := _; (x2,y2) := (x,y)? | (x,y) -> (x,y) | * -> (0u64,0u64).; x2 + y2",
+  Value::U64(Ref::new(0))
+);
+#[test]
+fn interpret_option_match_rejects_mismatched_arm_kinds() {
+  let s = "foo<f64?> := 1234\n\nbar := foo?\n  | x -> \"One Two Three\"\n  | * -> 12.\n\nbar";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  assert!(intrp.interpret(&tree).is_err());
+}
+
+#[test]
+fn interpret_option_match_requires_wildcard_arm() {
+  let s = "foo<u64?> := 1234\n\nbar := foo?\n  | 0 -> 9.\n\nbar";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  assert!(intrp.interpret(&tree).is_err());
+}
 #[test]
 fn interpret_variable_define_typed_set_from_range_matrix() {
   let s = "input<{f64}> := 1..=5";
