@@ -832,7 +832,7 @@ pub fn option_match_expression(opt_match: &OptionMatchExpression, env: Option<&E
     ).with_compiler_loc().with_tokens(opt_match.source.tokens()));
   }
 
-  for arm in &opt_match.arms {
+  for (arm_ix, arm) in opt_match.arms.iter().enumerate() {
     let mut guard_env = base_env.clone();
     let matched = match &arm.pattern {
       Pattern::Wildcard => true,
@@ -857,7 +857,16 @@ pub fn option_match_expression(opt_match: &OptionMatchExpression, env: Option<&E
       _ => option_pattern_matches_value(&arm.pattern, &detached_source, &mut guard_env, p)?,
     };
     if matched {
-      return expression(&arm.expression, Some(&guard_env), p);
+      let output = expression(&arm.expression, Some(&guard_env), p)?;
+      option_match_validate_arm_kinds(
+        opt_match,
+        arm_ix,
+        &output.kind(),
+        &detached_source,
+        &base_env,
+        p,
+      )?;
+      return Ok(output);
     }
   }
 
@@ -865,6 +874,41 @@ pub fn option_match_expression(opt_match: &OptionMatchExpression, env: Option<&E
     OptionMatchNoArmMatchedError,
     None,
   ).with_compiler_loc().with_tokens(opt_match.source.tokens()))
+}
+
+fn option_match_validate_arm_kinds(
+  opt_match: &OptionMatchExpression,
+  matched_arm_ix: usize,
+  matched_kind: &ValueKind,
+  source: &Value,
+  base_env: &Environment,
+  p: &Interpreter,
+) -> MResult<()> {
+  for (ix, arm) in opt_match.arms.iter().enumerate() {
+    if ix == matched_arm_ix {
+      continue;
+    }
+    let mut arm_env = base_env.clone();
+    let applicable = match arm.pattern {
+      Pattern::Wildcard => true,
+      _ => option_pattern_matches_value(&arm.pattern, source, &mut arm_env, p)?,
+    };
+    if !applicable {
+      continue;
+    }
+    let arm_value = expression(&arm.expression, Some(&arm_env), p)?;
+    let arm_kind = arm_value.kind();
+    if arm_kind != *matched_kind {
+      return Err(MechError::new(
+        OptionMatchArmKindMismatchError {
+          expected: matched_kind.clone(),
+          found: arm_kind,
+        },
+        None,
+      ).with_compiler_loc().with_tokens(arm.expression.tokens()));
+    }
+  }
+  Ok(())
 }
 
 fn option_value_is_empty(value: &Value) -> bool {
@@ -1170,6 +1214,21 @@ impl MechErrorKind for OptionMatchNoArmMatchedError {
   fn name(&self) -> &str { "OptionMatchNoArmMatched" }
   fn message(&self) -> String {
     format!("No option match arm matched the provided value.")
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct OptionMatchArmKindMismatchError {
+  expected: ValueKind,
+  found: ValueKind,
+}
+impl MechErrorKind for OptionMatchArmKindMismatchError {
+  fn name(&self) -> &str { "OptionMatchArmKindMismatch" }
+  fn message(&self) -> String {
+    format!(
+      "Option match arm kind mismatch: expected {:?}, found {:?}",
+      self.expected, self.found
+    )
   }
 }
 

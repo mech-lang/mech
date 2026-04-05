@@ -131,6 +131,13 @@ test_interpreter!(
   Value::U64(Ref::new(0))
 );
 #[test]
+fn interpret_option_match_rejects_mismatched_arm_kinds() {
+  let s = "foo<f64?> := 1234\n\nbar := foo?\n  | x -> \"One Two Three\"\n  | * -> 12.\n\nbar";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  assert!(intrp.interpret(&tree).is_err());
+}
+#[test]
 fn interpret_variable_define_typed_set_from_range_matrix() {
   let s = "input<{f64}> := 1..=5";
   let tree = parser::parse(s).unwrap();
