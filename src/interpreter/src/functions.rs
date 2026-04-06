@@ -336,6 +336,15 @@ fn summarize_pattern(pattern: &Pattern) -> String {
         Pattern::Wildcard => "_".to_string(),
         Pattern::Expression(expr) => truncate_for_trace(&format!("{:?}", expr), 72),
         Pattern::Tuple(tuple) => format!("tuple(len={})", tuple.0.len()),
+        Pattern::Array(array) => {
+            let spread = if array.spread.is_some() { ",spread" } else { "" };
+            format!(
+                "array(prefix={}{} ,suffix={})",
+                array.prefix.len(),
+                spread,
+                array.suffix.len()
+            )
+        }
         Pattern::TupleStruct(tuple_struct) => {
             format!(
                 "{}(len={})",
@@ -407,6 +416,59 @@ pub(crate) fn pattern_matches_value(
             }
             _ => Ok(false),
         },
+        Pattern::Array(pattern_array) => {
+            let detached = detach_value(value);
+            let values = match matrix_like_values(&detached) {
+                Some(values) => values,
+                None => return Ok(false),
+            };
+            if values.len() < pattern_array.prefix.len() + pattern_array.suffix.len() {
+                return Ok(false);
+            }
+
+            for (pat, val) in pattern_array.prefix.iter().zip(values.iter()) {
+                if !pattern_matches_value(pat, val, env, p)? {
+                    return Ok(false);
+                }
+            }
+
+            let suffix_start = values.len() - pattern_array.suffix.len();
+            for (pat, val) in pattern_array
+                .suffix
+                .iter()
+                .zip(values[suffix_start..].iter())
+            {
+                if !pattern_matches_value(pat, val, env, p)? {
+                    return Ok(false);
+                }
+            }
+
+            if pattern_array.spread.is_none() && values.len() != pattern_array.prefix.len() + pattern_array.suffix.len() {
+                return Ok(false);
+            }
+
+            if let Some(spread) = &pattern_array.spread {
+                if let Some(binding) = &spread.binding {
+                    let middle = values[pattern_array.prefix.len()..suffix_start].to_vec();
+                    #[cfg(feature = "matrix")]
+                    let captured = Value::MatrixValue(Matrix::from_vec(
+                        middle,
+                        1,
+                        suffix_start.saturating_sub(pattern_array.prefix.len()),
+                    ));
+                    #[cfg(not(feature = "matrix"))]
+                    let captured = {
+                        let _ = middle;
+                        return Ok(false);
+                    };
+                    if !pattern_matches_value(binding, &captured, env, p)? {
+                        return Ok(false);
+                    }
+                }
+            }
+
+            Ok(true)
+        }
         Pattern::Expression(Expression::Var(var)) => {
             let var_id = var.name.hash();
             let detached = detach_value(value);
@@ -457,6 +519,48 @@ pub(crate) fn pattern_matches_value(
             }
             _ => Ok(false),
         },
+    }
+}
+
+fn matrix_like_values(value: &Value) -> Option<Vec<Value>> {
+    match value {
+        #[cfg(feature = "matrix")]
+        Value::MatrixIndex(matrix) => Some(matrix.as_vec().into_iter().map(|value| Value::Index(Ref::new(value))).collect()),
+        #[cfg(all(feature = "matrix", feature = "bool"))]
+        Value::MatrixBool(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        #[cfg(all(feature = "matrix", feature = "u8"))]
+        Value::MatrixU8(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        #[cfg(all(feature = "matrix", feature = "u16"))]
+        Value::MatrixU16(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        #[cfg(all(feature = "matrix", feature = "u32"))]
+        Value::MatrixU32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        #[cfg(all(feature = "matrix", feature = "u64"))]
+        Value::MatrixU64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        #[cfg(all(feature = "matrix", feature = "u128"))]
+        Value::MatrixU128(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        #[cfg(all(feature = "matrix", feature = "i8"))]
+        Value::MatrixI8(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        #[cfg(all(feature = "matrix", feature = "i16"))]
+        Value::MatrixI16(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        #[cfg(all(feature = "matrix", feature = "i32"))]
+        Value::MatrixI32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        #[cfg(all(feature = "matrix", feature = "i64"))]
+        Value::MatrixI64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        #[cfg(all(feature = "matrix", feature = "i128"))]
+        Value::MatrixI128(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        #[cfg(all(feature = "matrix", feature = "f32"))]
+        Value::MatrixF32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        #[cfg(all(feature = "matrix", feature = "f64"))]
+        Value::MatrixF64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        #[cfg(all(feature = "matrix", feature = "string"))]
+        Value::MatrixString(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        #[cfg(all(feature = "matrix", feature = "rational"))]
+        Value::MatrixR64(matrix) => Some(matrix.as_vec().into_iter().map(|value| value.to_value()).collect()),
+        #[cfg(all(feature = "matrix", feature = "complex"))]
+        Value::MatrixC64(matrix) => Some(matrix.as_vec().into_iter().map(|value| value.to_value()).collect()),
+        #[cfg(feature = "matrix")]
+        Value::MatrixValue(matrix) => Some(matrix.as_vec()),
+        _ => None,
     }
 }
 

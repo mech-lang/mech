@@ -378,6 +378,19 @@ fn collect_pattern_variable_ids(pattern: &Pattern, ids: &mut Vec<u64>) {
                 collect_pattern_variable_ids(item, ids);
             }
         }
+        Pattern::Array(array) => {
+            for item in &array.prefix {
+                collect_pattern_variable_ids(item, ids);
+            }
+            if let Some(spread) = &array.spread {
+                if let Some(binding) = &spread.binding {
+                    collect_pattern_variable_ids(binding, ids);
+                }
+            }
+            for item in &array.suffix {
+                collect_pattern_variable_ids(item, ids);
+            }
+        }
         Pattern::TupleStruct(tuple_struct) => {
             for item in &tuple_struct.patterns {
                 collect_pattern_variable_ids(item, ids);
@@ -424,6 +437,36 @@ fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -> MR
                 values.push(pattern_to_value(inner, env, p)?);
             }
             Ok(Value::Tuple(Ref::new(MechTuple::from_vec(values))))
+        }
+        Pattern::Array(array) => {
+            let mut values = Vec::new();
+            for inner in &array.prefix {
+                values.push(pattern_to_value(inner, env, p)?);
+            }
+            if let Some(spread) = &array.spread {
+                if let Some(binding) = &spread.binding {
+                    match pattern_to_value(binding, env, p)? {
+                        Value::MatrixValue(matrix) => values.extend(matrix.as_vec()),
+                        other => values.push(other),
+                    }
+                }
+            }
+            for inner in &array.suffix {
+                values.push(pattern_to_value(inner, env, p)?);
+            }
+            #[cfg(feature = "matrix")]
+            {
+                Ok(Value::MatrixValue(Matrix::from_vec(values.clone(), 1, values.len())))
+            }
+            #[cfg(not(feature = "matrix"))]
+            {
+                let _ = values;
+                Err(MechError::new(
+                    FeatureNotEnabledError,
+                    None,
+                )
+                .with_compiler_loc())
+            }
         }
         Pattern::TupleStruct(pattern_tuple_struct) => {
             let mut values = Vec::with_capacity(pattern_tuple_struct.patterns.len() + 1);

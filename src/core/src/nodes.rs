@@ -934,6 +934,7 @@ pub enum Pattern {
   Expression(Expression),
   TupleStruct(PatternTupleStruct),
   Tuple(PatternTuple),
+  Array(PatternArray),
   Wildcard,
 }
 
@@ -943,9 +944,42 @@ impl Pattern {
       Pattern::Expression(e) => e.tokens(),
       Pattern::TupleStruct(ts) => ts.tokens(),
       Pattern::Tuple(t) => t.tokens(),
+      Pattern::Array(a) => a.tokens(),
       Pattern::Wildcard => vec![],
     }
   }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct PatternArray {
+  pub prefix: Vec<Pattern>,
+  pub spread: Option<PatternArraySpread>,
+  pub suffix: Vec<Pattern>,
+}
+
+impl PatternArray {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = vec![];
+    for p in &self.prefix {
+      tokens.append(&mut p.tokens());
+    }
+    if let Some(spread) = &self.spread {
+      if let Some(binding) = &spread.binding {
+        tokens.append(&mut binding.tokens());
+      }
+    }
+    for p in &self.suffix {
+      tokens.append(&mut p.tokens());
+    }
+    tokens
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct PatternArraySpread {
+  pub binding: Option<Box<Pattern>>,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

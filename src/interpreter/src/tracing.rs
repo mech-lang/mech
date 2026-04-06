@@ -172,6 +172,15 @@ pub fn summarize_pattern(pattern: &Pattern) -> String {
         Pattern::Wildcard => "*".to_string(),
         Pattern::Expression(expr) => truncate_for_trace(&format!("{:?}", expr), 1000),
         Pattern::Tuple(tuple) => format!("tuple(len={})", tuple.0.len()),
+        Pattern::Array(array) => {
+            let spread = if array.spread.is_some() { ", spread" } else { "" };
+            format!(
+                "array(prefix={}, suffix={}{} )",
+                array.prefix.len(),
+                array.suffix.len(),
+                spread
+            )
+        }
         Pattern::TupleStruct(tuple_struct) => {
             format!(
                 ":{}(len={})",
