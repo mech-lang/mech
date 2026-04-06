@@ -1336,6 +1336,7 @@ impl Formatter {
         }
       },
       Pattern::Tuple(tpl) => self.pattern_tuple(tpl),
+      Pattern::Array(arr) => self.pattern_array(arr),
       Pattern::Expression(expr) => self.expression(expr),
       Pattern::TupleStruct(tuple_struct) => self.pattern_tuple_struct(tuple_struct),
     };
@@ -1784,6 +1785,23 @@ impl Formatter {
     } else {
       format!("{}", e)
     }
+  }
+
+  pub fn pattern_array(&mut self, node: &PatternArray) -> String {
+    let mut parts: Vec<String> = vec![];
+    for p in &node.prefix {
+      parts.push(self.pattern(p));
+    }
+    if let Some(spread) = &node.spread {
+      parts.push("...".to_string());
+      if let Some(binding) = &spread.binding {
+        parts.push(self.pattern(binding));
+      }
+    }
+    for p in &node.suffix {
+      parts.push(self.pattern(p));
+    }
+    format!("[{}]", parts.join(" "))
   }
 
   pub fn option_match_expression(&mut self, node: &OptionMatchExpression) -> String {
