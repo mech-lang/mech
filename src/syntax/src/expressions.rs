@@ -85,7 +85,7 @@ pub fn option_match_expression(input: ParseString) -> ParseResult<OptionMatchExp
 // option-match-arm := guard-operator, pattern, transition-operator, expression, statement-separator? ;
 pub fn option_match_arm(input: ParseString) -> ParseResult<OptionMatchArm> {
   let (input, _) = crate::state_machines::guard_operator(input)?;
-  let (input, pattern) = crate::state_machines::pattern(input)?;
+  let (input, pattern) = crate::patterns::pattern(input)?;
   let (input, _) = transition_operator(input)?;
   let (input, expr) = expression(input)?;
   let (input, _) = opt(alt((whitespace1, statement_separator)))(input)?;

@@ -924,6 +924,46 @@ fn option_pattern_matches_value(
 ) -> MResult<bool> {
   match pattern {
     Pattern::Wildcard => Ok(true),
+    #[cfg(feature = "functions")]
+    Pattern::Expression(Expression::Var(_)) => crate::functions::pattern_matches_value(pattern, value, env, p),
+    #[cfg(not(feature = "functions"))]
+    Pattern::Expression(Expression::Var(var)) => {
+      let var_id = var.name.hash();
+      let detached = option_detach_value(value);
+      if let Some(existing) = env.get(&var_id) {
+        Ok(existing == &detached)
+      } else {
+        env.insert(var_id, detached);
+        Ok(true)
+      }
+    }
+    Pattern::Expression(expr) => {
+      let expected = expression(expr, Some(env), p)?;
+      Ok(option_pattern_expression_matches_value(&expected, &option_detach_value(value)))
+    }
+    #[cfg(feature = "functions")]
+    _ => crate::functions::pattern_matches_value(pattern, value, env, p),
+    #[cfg(not(feature = "functions"))]
+    _ => option_pattern_matches_value_fallback(pattern, value, env, p),
+  }
+}
+
+fn option_detach_value(value: &Value) -> Value {
+  match value {
+    Value::MutableReference(reference) => option_detach_value(&reference.borrow()),
+    _ => value.clone(),
+  }
+}
+
+#[cfg(not(feature = "functions"))]
+fn option_pattern_matches_value_fallback(
+  pattern: &Pattern,
+  value: &Value,
+  env: &mut Environment,
+  p: &Interpreter,
+) -> MResult<bool> {
+  match pattern {
+    Pattern::Wildcard => Ok(true),
     Pattern::Tuple(pattern_tuple) => match value {
       #[cfg(feature = "tuple")]
       Value::Tuple(tuple) => {
@@ -932,7 +972,7 @@ fn option_pattern_matches_value(
           return Ok(false);
         }
         for (pat, val) in pattern_tuple.0.iter().zip(tuple_brrw.elements.iter()) {
-          if !option_pattern_matches_value(pat, val, env, p)? {
+          if !option_pattern_matches_value_fallback(pat, val, env, p)? {
             return Ok(false);
           }
         }
@@ -941,7 +981,7 @@ fn option_pattern_matches_value(
       _ => Ok(false),
     },
     Pattern::Array(pattern_array) => {
-      let values = match option_matrix_like_values(value) {
+      let values = match option_matrix_like_values_fallback(value) {
         Some(values) => values,
         None => return Ok(false),
       };
@@ -949,13 +989,13 @@ fn option_pattern_matches_value(
         return Ok(false);
       }
       for (pat, val) in pattern_array.prefix.iter().zip(values.iter()) {
-        if !option_pattern_matches_value(pat, val, env, p)? {
+        if !option_pattern_matches_value_fallback(pat, val, env, p)? {
           return Ok(false);
         }
       }
       let suffix_start = values.len() - pattern_array.suffix.len();
       for (pat, val) in pattern_array.suffix.iter().zip(values[suffix_start..].iter()) {
-        if !option_pattern_matches_value(pat, val, env, p)? {
+        if !option_pattern_matches_value_fallback(pat, val, env, p)? {
           return Ok(false);
         }
       }
@@ -976,7 +1016,7 @@ fn option_pattern_matches_value(
             let _ = middle;
             return Ok(false);
           };
-          if !option_pattern_matches_value(binding, &captured, env, p)? {
+          if !option_pattern_matches_value_fallback(binding, &captured, env, p)? {
             return Ok(false);
           }
         }
@@ -985,22 +1025,24 @@ fn option_pattern_matches_value(
     }
     Pattern::Expression(Expression::Var(var)) => {
       let var_id = var.name.hash();
+      let detached = option_detach_value(value);
       if let Some(existing) = env.get(&var_id) {
-        Ok(existing == value)
+        Ok(existing == &detached)
       } else {
-        env.insert(var_id, value.clone());
+        env.insert(var_id, detached);
         Ok(true)
       }
     }
     Pattern::Expression(expr) => {
       let expected = expression(expr, Some(env), p)?;
-      Ok(option_pattern_expression_matches_value(&expected, value))
+      Ok(option_pattern_expression_matches_value(&expected, &option_detach_value(value)))
     }
     Pattern::TupleStruct(_) => Ok(false),
   }
 }
 
-fn option_matrix_like_values(value: &Value) -> Option<Vec<Value>> {
+#[cfg(not(feature = "functions"))]
+fn option_matrix_like_values_fallback(value: &Value) -> Option<Vec<Value>> {
   match value {
     #[cfg(feature = "matrix")]
     Value::MatrixIndex(matrix) => Some(matrix.as_vec().into_iter().map(|value| Value::Index(Ref::new(value))).collect()),
@@ -1038,7 +1080,7 @@ fn option_matrix_like_values(value: &Value) -> Option<Vec<Value>> {
     Value::MatrixC64(matrix) => Some(matrix.as_vec().into_iter().map(|value| value.to_value()).collect()),
     #[cfg(feature = "matrix")]
     Value::MatrixValue(matrix) => Some(matrix.as_vec()),
-    Value::MutableReference(reference) => option_matrix_like_values(&reference.borrow()),
+    Value::MutableReference(reference) => option_matrix_like_values_fallback(&reference.borrow()),
     _ => None,
   }
 }

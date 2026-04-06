@@ -23,7 +23,7 @@ pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> 
   let (input, input_vars) = separated_list0(list_separator, var)(input)?;
   let (input, _) = right_parenthesis(input)?;
   let (input, _) = transition_operator(input)?;
-  let (input, start) = fsm_state_atom_pattern(input)?;
+  let (input, start) = crate::patterns::pattern(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, arms) = many1(fsm_arm)(input)?;
   let (input, _) = period(input)?;
@@ -41,7 +41,7 @@ pub fn fsm_arm(input: ParseString) -> ParseResult<FsmArm> {
 // fsm_guard_arm := comment*, pattern, fsm_guard+ ;
 pub fn fsm_guard_arm(input: ParseString) -> ParseResult<FsmArm> {
   let (input, _) = many0(comment)(input)?;
-  let (input, start) = fsm_state_atom_pattern(input)?;
+  let (input, start) = crate::patterns::pattern(input)?;
   let (input, grds) = many1(fsm_guard)(input)?;
   Ok((input, FsmArm::Guard(start, grds)))
 }
@@ -49,7 +49,7 @@ pub fn fsm_guard_arm(input: ParseString) -> ParseResult<FsmArm> {
 // fsm_guard := guard_operator, pattern, (fsm_statement_transition | fsm_state_transition | fsm_output | fsm_async_transition | fsm_block_transition)+ ;
 pub fn fsm_guard(input: ParseString) -> ParseResult<Guard> {
   let (input, _) = guard_operator(input)?;
-  let (input, cnd) = pattern(input)?;
+  let (input, cnd) = crate::patterns::pattern(input)?;
   let (input, trns) = many1(alt((
     fsm_statement_transition,
     fsm_state_transition,
@@ -62,7 +62,7 @@ pub fn fsm_guard(input: ParseString) -> ParseResult<Guard> {
 // fsm_transition := comment*, pattern, (fsm_statement_transition | fsm_state_transition | fsm_output | fsm_async_transition | fsm_block_transition)+ ;
 pub fn fsm_transition(input: ParseString) -> ParseResult<FsmArm> {
   let (input, _) = many0(comment)(input)?;
-  let (input, start) = fsm_state_atom_pattern(input)?;
+  let (input, start) = crate::patterns::pattern(input)?;
   let (input, trns) = many1(alt((
     fsm_state_transition,
     fsm_output,
@@ -75,27 +75,15 @@ pub fn fsm_transition(input: ParseString) -> ParseResult<FsmArm> {
 // fsm_state_transition := transition_operator, atom ;
 pub fn fsm_state_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = transition_operator(input)?;
-  let (input, ptrn) = fsm_state_atom_pattern(input)?;
+  let (input, ptrn) = crate::patterns::pattern(input)?;
   Ok((input, Transition::Next(ptrn)))
 }
 
 // fsm_async_transition := async_transition_operator, atom ;
 pub fn fsm_async_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = async_transition_operator(input)?;
-  let (input, ptrn) = fsm_state_atom_pattern(input)?;
+  let (input, ptrn) = crate::patterns::pattern(input)?;
   Ok((input, Transition::Async(ptrn)))
-}
-
-// fsm_state_atom_pattern := atom ;
-fn fsm_state_atom_pattern(input: ParseString) -> ParseResult<Pattern> {
-  if let Ok((input, tpl)) = pattern_atom_struct(input.clone()) {
-    return Ok((input, Pattern::TupleStruct(tpl)));
-  }
-  if let Ok((input, tpl)) = pattern_tuple_struct(input.clone()) {
-    return Ok((input, Pattern::TupleStruct(tpl)));
-  }
-  let (input, atm) = atom(input)?;
-  Ok((input, Pattern::Expression(Expression::Literal(Literal::Atom(atm)))))
 }
 
 // fsm_statement_transition := transition_operator, statement ;
@@ -118,7 +106,7 @@ pub fn fsm_block_transition(input: ParseString) -> ParseResult<Transition> {
 // fsm_output := output_operator, pattern ;
 pub fn fsm_output(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = output_operator(input)?;
-  let ((input, ptrn)) = pattern(input)?;
+  let ((input, ptrn)) = crate::patterns::pattern(input)?;
   Ok((input, Transition::Output(ptrn)))
 }
 
@@ -135,144 +123,6 @@ pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
   let (input, states) = many1(fsm_state_definition)(input)?;
   let (input, _) = period(input)?;
   Ok((input, FsmSpecification{name,input: input_vars, output, states}))
-}
-
-// pattern := pattern_tuple_struct | wildcard | formula ;
-pub fn pattern(input: ParseString) -> ParseResult<Pattern> {
-  match pattern_atom_struct(input.clone()) {
-    Ok((input, tpl)) => {return Ok((input, Pattern::TupleStruct(tpl)))},
-    _ => ()
-  }
-  match pattern_tuple_struct(input.clone()) {
-    Ok((input, tpl)) => {return Ok((input, Pattern::TupleStruct(tpl)))},
-    _ => ()
-  }
-  match wildcard(input.clone()) {
-    Ok((input, _)) => {return Ok((input, Pattern::Wildcard))},
-    _ => ()
-  }
-  match pattern_array(input.clone()) {
-    Ok((input, arr)) => {return Ok((input, Pattern::Array(arr)))},
-    _ => ()
-  }
-  match pattern_tuple(input.clone()) {
-    Ok((input, tpl)) => {return Ok((input, Pattern::Tuple(tpl)))},
-    _ => ()
-  }
-  match expression(input.clone()) {
-    Ok((input, expr)) => {return Ok((input, Pattern::Expression(expr)))},
-    Err(err) => {return Err(err)},
-  }
-}
-
-// wildcard := "*" ;
-pub fn wildcard(input: ParseString) -> ParseResult<Pattern> {
-  let ((input, _)) = asterisk(input)?;
-  Ok((input, Pattern::Wildcard))
-}
-
-// pattern_tuple_struct := grave, identifier, "(", list1(",", pattern), ")" ;
-pub fn pattern_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
-  let (input, _) = grave(input)?;
-  let (input, id) = identifier(input)?;
-  let (input, _) = left_parenthesis(input)?;
-  let (input, _) = whitespace0(input)?;
-  let (input, patterns) = separated_list1(list_separator, pattern)(input)?;
-  let (input, _) = whitespace0(input)?;
-  let (input, _) = right_parenthesis(input)?;
-  Ok((input, PatternTupleStruct{name: id, patterns}))
-}
-
-fn spread_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = alt((tag("..."), tag("…")))(input)?;
-  Ok((input, ()))
-}
-
-fn pattern_array_item(input: ParseString) -> ParseResult<Pattern> {
-  if let Ok((input, _)) = wildcard(input.clone()) {
-    return Ok((input, Pattern::Wildcard));
-  }
-  let (input, expr) = expression(input)?;
-  Ok((input, Pattern::Expression(expr)))
-}
-
-// pattern_array := "[", [pattern_array_item|spread], "]" ;
-pub fn pattern_array(input: ParseString) -> ParseResult<PatternArray> {
-  let (mut input, _) = left_bracket(input)?;
-  let (i, _) = whitespace0(input)?;
-  input = i;
-
-  let mut items: Vec<Pattern> = vec![];
-  let mut spread_ix: Option<usize> = None;
-
-  if let Ok((i, _)) = right_bracket(input.clone()) {
-    return Ok((i, PatternArray { prefix: vec![], spread: None, suffix: vec![] }));
-  }
-
-  loop {
-    let (next_input, _) = whitespace0(input.clone())?;
-    input = next_input;
-
-    if spread_ix.is_none() {
-      if let Ok((after_spread, _)) = spread_operator(input.clone()) {
-        spread_ix = Some(items.len());
-        input = after_spread;
-      } else {
-        let (after_item, item) = pattern_array_item(input.clone())?;
-        items.push(item);
-        input = after_item;
-      }
-    } else {
-      let (after_item, item) = pattern_array_item(input.clone())?;
-      items.push(item);
-      input = after_item;
-    }
-
-    let (after_ws, _) = whitespace0(input.clone())?;
-    if let Ok((after_rb, _)) = right_bracket(after_ws.clone()) {
-      let split = spread_ix.unwrap_or(items.len());
-      let mut suffix = if split < items.len() { items.split_off(split) } else { vec![] };
-      let prefix = items;
-      let spread = if spread_ix.is_some() {
-        let prefix_ends_wildcard = matches!(prefix.last(), Some(Pattern::Wildcard));
-        let mut spread_binding: Option<Box<Pattern>> = None;
-        if prefix_ends_wildcard {
-          if suffix.len() == 1 {
-            spread_binding = suffix.pop().map(Box::new);
-          } else if suffix.len() >= 2 {
-            spread_binding = Some(Box::new(suffix.remove(0)));
-          }
-        }
-        Some(PatternArraySpread { binding: spread_binding })
-      } else {
-        None
-      };
-      return Ok((after_rb, PatternArray { prefix, spread, suffix }));
-    }
-    input = after_ws;
-  }
-}
-
-// pattern_atom_struct := ":", identifier, "(", list1(",", pattern), ")" ;
-pub fn pattern_atom_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
-  let (input, _) = colon(input)?;
-  let (input, id) = identifier(input)?;
-  let (input, _) = left_parenthesis(input)?;
-  let (input, _) = whitespace0(input)?;
-  let (input, patterns) = separated_list1(list_separator, pattern)(input)?;
-  let (input, _) = whitespace0(input)?;
-  let (input, _) = right_parenthesis(input)?;
-  Ok((input, PatternTupleStruct{name: id, patterns}))
-}
-
-// pattern-tuple := "(", [pattern, ","], ")" ;
-pub fn pattern_tuple(input: ParseString) -> ParseResult<PatternTuple> {
-  let (input, _) = left_parenthesis(input)?;
-  let (input, _) = whitespace0(input)?;
-  let (input, patterns) = separated_list1(list_separator, pattern)(input)?;
-  let (input, _) = whitespace0(input)?;
-  let (input, _) = right_parenthesis(input)?;
-  Ok((input, PatternTuple(patterns)))
 }
 
 // fsm_state_definition := guard_operator, atom, fsm_state_definition_variables? ;
