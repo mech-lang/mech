@@ -80,7 +80,7 @@ pub fn execute_fsm_pipe(
         }
         call_env.insert(arg_decl.name.hash(), detach_value(arg_value));
     }
-    let mut state = pattern_to_value(&fsm.start, &call_env, p)?;
+    let mut state = crate::patterns::pattern_to_value(&fsm.start, &call_env, p)?;
     validate_fsm_state_coverage(&fsm, fsm_pipe)?;
     execute_fsm_pipe_impl(&fsm, &mut state, &mut call_env, p)
 }
@@ -118,8 +118,9 @@ fn execute_fsm_pipe_impl(
             match arm {
                 FsmArm::Transition(pattern, transitions) => {
                     let mut arm_env = call_env.clone();
-                    clear_pattern_bindings(pattern, &mut arm_env);
-                    let matched = pattern_matches_value(pattern, state, &mut arm_env, p)?;
+                    crate::patterns::clear_pattern_bindings(pattern, &mut arm_env);
+                    let matched =
+                        crate::patterns::pattern_matches_value(pattern, state, &mut arm_env, p)?;
                     trace_println!(
                         p,
                         "{}",
@@ -165,8 +166,9 @@ fn execute_fsm_pipe_impl(
                 }
                 FsmArm::Guard(pattern, guards) => {
                     let mut arm_env = call_env.clone();
-                    clear_pattern_bindings(pattern, &mut arm_env);
-                    let pattern_matched = pattern_matches_value(pattern, state, &mut arm_env, p)?;
+                    crate::patterns::clear_pattern_bindings(pattern, &mut arm_env);
+                    let pattern_matched =
+                        crate::patterns::pattern_matches_value(pattern, state, &mut arm_env, p)?;
                     trace_println!(
                         p,
                         "{}",
@@ -186,7 +188,11 @@ fn execute_fsm_pipe_impl(
                         let guard_passes = match &guard.condition {
                             Pattern::Wildcard => true,
                             _ => {
-                                let cond = pattern_to_value(&guard.condition, &arm_env, p)?;
+                                let cond = crate::patterns::pattern_to_value(
+                                    &guard.condition,
+                                    &arm_env,
+                                    p,
+                                )?;
                                 match cond {
                                     Value::Bool(x) => *x.borrow(),
                                     other => {
@@ -198,7 +204,7 @@ fn execute_fsm_pipe_impl(
                                             },
                                             None,
                                         )
-                                        .with_compiler_loc())
+                                        .with_compiler_loc());
                                     }
                                 }
                             }
@@ -357,46 +363,10 @@ fn validate_transition_target_state(
 fn state_name_from_pattern(pattern: &Pattern) -> Option<String> {
     match pattern {
         Pattern::TupleStruct(tuple_struct) => Some(tuple_struct.name.to_string()),
-        Pattern::Expression(Expression::Literal(Literal::Atom(atom))) => Some(atom.name.to_string()),
+        Pattern::Expression(Expression::Literal(Literal::Atom(atom))) => {
+            Some(atom.name.to_string())
+        }
         _ => None,
-    }
-}
-
-fn clear_pattern_bindings(pattern: &Pattern, env: &mut Environment) {
-    let mut ids = Vec::new();
-    collect_pattern_variable_ids(pattern, &mut ids);
-    for var_id in ids {
-        env.remove(&var_id);
-    }
-}
-
-fn collect_pattern_variable_ids(pattern: &Pattern, ids: &mut Vec<u64>) {
-    match pattern {
-        Pattern::Expression(Expression::Var(var)) => ids.push(var.name.hash()),
-        Pattern::Tuple(tuple) => {
-            for item in &tuple.0 {
-                collect_pattern_variable_ids(item, ids);
-            }
-        }
-        Pattern::Array(array) => {
-            for item in &array.prefix {
-                collect_pattern_variable_ids(item, ids);
-            }
-            if let Some(spread) = &array.spread {
-                if let Some(binding) = &spread.binding {
-                    collect_pattern_variable_ids(binding, ids);
-                }
-            }
-            for item in &array.suffix {
-                collect_pattern_variable_ids(item, ids);
-            }
-        }
-        Pattern::TupleStruct(tuple_struct) => {
-            for item in &tuple_struct.patterns {
-                collect_pattern_variable_ids(item, ids);
-            }
-        }
-        _ => {}
     }
 }
 
@@ -409,10 +379,14 @@ fn apply_transitions(
     for transition in transitions {
         match transition {
             Transition::Next(next_pattern) | Transition::Async(next_pattern) => {
-                *state = pattern_to_value(next_pattern, env, p)?;
+                *state = crate::patterns::pattern_to_value(next_pattern, env, p)?;
             }
             Transition::Output(output_pattern) => {
-                return Ok(Some(pattern_to_value(output_pattern, env, p)?));
+                return Ok(Some(crate::patterns::pattern_to_value(
+                    output_pattern,
+                    env,
+                    p,
+                )?));
             }
             Transition::Statement(stmt) => {
                 statement(stmt, Some(env), p)?;
@@ -425,63 +399,6 @@ fn apply_transitions(
         }
     }
     Ok(None)
-}
-
-fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -> MResult<Value> {
-    match pattern {
-        Pattern::Wildcard => Ok(Value::Empty),
-        Pattern::Expression(expr) => expression(expr, Some(env), p),
-        Pattern::Tuple(pattern_tuple) => {
-            let mut values = Vec::with_capacity(pattern_tuple.0.len());
-            for inner in &pattern_tuple.0 {
-                values.push(pattern_to_value(inner, env, p)?);
-            }
-            Ok(Value::Tuple(Ref::new(MechTuple::from_vec(values))))
-        }
-        Pattern::Array(array) => {
-            let mut values = Vec::new();
-            for inner in &array.prefix {
-                values.push(pattern_to_value(inner, env, p)?);
-            }
-            if let Some(spread) = &array.spread {
-                if let Some(binding) = &spread.binding {
-                    match pattern_to_value(binding, env, p)? {
-                        Value::MatrixValue(matrix) => values.extend(matrix.as_vec()),
-                        other => values.push(other),
-                    }
-                }
-            }
-            for inner in &array.suffix {
-                values.push(pattern_to_value(inner, env, p)?);
-            }
-            #[cfg(feature = "matrix")]
-            {
-                Ok(Value::MatrixValue(Matrix::from_vec(values.clone(), 1, values.len())))
-            }
-            #[cfg(not(feature = "matrix"))]
-            {
-                let _ = values;
-                Err(MechError::new(
-                    FeatureNotEnabledError,
-                    None,
-                )
-                .with_compiler_loc())
-            }
-        }
-        Pattern::TupleStruct(pattern_tuple_struct) => {
-            let mut values = Vec::with_capacity(pattern_tuple_struct.patterns.len() + 1);
-            values.push(atom(
-                &Atom {
-                    name: pattern_tuple_struct.name.clone(),
-                },
-                p,
-            ));
-            for inner in &pattern_tuple_struct.patterns {
-                values.push(pattern_to_value(inner, env, p)?);
-            }
-            Ok(Value::Tuple(Ref::new(MechTuple::from_vec(values))))
-        }
-    }
 }
 
 // FSM Errors
@@ -526,7 +443,6 @@ impl MechErrorKind for FsmGuardConditionKindMismatchError {
         )
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub struct FsmExceededTransitionLimitError {

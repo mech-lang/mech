@@ -102,6 +102,7 @@ pub mod functions;
 pub mod interpreter;
 pub mod literals;
 pub mod mechdown;
+pub mod patterns;
 #[cfg(feature = "state_machines")]
 pub mod state_machines;
 pub mod statements;
@@ -119,6 +120,7 @@ pub use crate::functions::*;
 pub use crate::interpreter::*;
 pub use crate::literals::*;
 pub use crate::mechdown::*;
+pub use crate::patterns::*;
 #[cfg(feature = "state_machines")]
 pub use crate::state_machines::*;
 pub use crate::statements::*;
