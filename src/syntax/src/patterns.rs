@@ -1,5 +1,6 @@
 #[macro_use]
 use crate::*;
+use nom::{multi::many0, sequence::{preceded, terminated}};
 
 // pattern := pattern_atom_struct | pattern_tuple_struct | wildcard | pattern_array | pattern_tuple | expression ;
 pub fn pattern(input: ParseString) -> ParseResult<Pattern> {
@@ -60,61 +61,86 @@ fn pattern_array_item(input: ParseString) -> ParseResult<Pattern> {
   Ok((input, Pattern::Expression(expr)))
 }
 
+#[derive(Clone)]
+enum PatternArrayToken {
+  Spread,
+  Item(Pattern),
+}
+
+fn pattern_array_token(input: ParseString) -> ParseResult<PatternArrayToken> {
+  if let Ok((input, _)) = spread_operator(input.clone()) {
+    return Ok((input, PatternArrayToken::Spread));
+  }
+  let (input, item) = pattern_array_item(input)?;
+  Ok((input, PatternArrayToken::Item(item)))
+}
+
 // pattern_array := "[", [pattern_array_item|spread], "]" ;
 pub fn pattern_array(input: ParseString) -> ParseResult<PatternArray> {
-  let (mut input, _) = left_bracket(input)?;
-  let (i, _) = whitespace0(input)?;
-  input = i;
+  let (input, _) = left_bracket(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, tokens) = many0(terminated(preceded(whitespace0, pattern_array_token), whitespace0))(input)?;
+  let (input, _) = right_bracket(input)?;
 
-  let mut items: Vec<Pattern> = vec![];
-  let mut spread_ix: Option<usize> = None;
+  let spread_positions = tokens
+    .iter()
+    .enumerate()
+    .filter_map(|(ix, token)| match token {
+      PatternArrayToken::Spread => Some(ix),
+      PatternArrayToken::Item(_) => None,
+    })
+    .collect::<Vec<usize>>();
 
-  if let Ok((i, _)) = right_bracket(input.clone()) {
-    return Ok((i, PatternArray { prefix: vec![], spread: None, suffix: vec![] }));
+  if spread_positions.len() > 1 {
+    return Err(nom::Err::Error(ParseError::new(
+      input,
+      "Only one spread operator is allowed in an array pattern",
+    )));
   }
 
-  loop {
-    let (next_input, _) = whitespace0(input.clone())?;
-    input = next_input;
+  let spread_ix = spread_positions.first().copied();
+  let mut prefix = vec![];
+  let mut suffix = vec![];
 
-    if spread_ix.is_none() {
-      if let Ok((after_spread, _)) = spread_operator(input.clone()) {
-        spread_ix = Some(items.len());
-        input = after_spread;
-      } else {
-        let (after_item, item) = pattern_array_item(input.clone())?;
-        items.push(item);
-        input = after_item;
+  if let Some(ix) = spread_ix {
+    prefix = tokens[..ix]
+      .iter()
+      .filter_map(|token| match token {
+        PatternArrayToken::Item(pattern) => Some(pattern.clone()),
+        PatternArrayToken::Spread => None,
+      })
+      .collect();
+    suffix = tokens[ix + 1..]
+      .iter()
+      .filter_map(|token| match token {
+        PatternArrayToken::Item(pattern) => Some(pattern.clone()),
+        PatternArrayToken::Spread => None,
+      })
+      .collect();
+  } else {
+    prefix = tokens
+      .iter()
+      .filter_map(|token| match token {
+        PatternArrayToken::Item(pattern) => Some(pattern.clone()),
+        PatternArrayToken::Spread => None,
+      })
+      .collect();
+  }
+
+  let spread = spread_ix.map(|_| {
+    let prefix_ends_wildcard = matches!(prefix.last(), Some(Pattern::Wildcard));
+    let mut spread_binding: Option<Box<Pattern>> = None;
+    if prefix_ends_wildcard {
+      if suffix.len() == 1 {
+        spread_binding = suffix.pop().map(Box::new);
+      } else if suffix.len() >= 2 {
+        spread_binding = Some(Box::new(suffix.remove(0)));
       }
-    } else {
-      let (after_item, item) = pattern_array_item(input.clone())?;
-      items.push(item);
-      input = after_item;
     }
+    PatternArraySpread { binding: spread_binding }
+  });
 
-    let (after_ws, _) = whitespace0(input.clone())?;
-    if let Ok((after_rb, _)) = right_bracket(after_ws.clone()) {
-      let split = spread_ix.unwrap_or(items.len());
-      let mut suffix = if split < items.len() { items.split_off(split) } else { vec![] };
-      let prefix = items;
-      let spread = if spread_ix.is_some() {
-        let prefix_ends_wildcard = matches!(prefix.last(), Some(Pattern::Wildcard));
-        let mut spread_binding: Option<Box<Pattern>> = None;
-        if prefix_ends_wildcard {
-          if suffix.len() == 1 {
-            spread_binding = suffix.pop().map(Box::new);
-          } else if suffix.len() >= 2 {
-            spread_binding = Some(Box::new(suffix.remove(0)));
-          }
-        }
-        Some(PatternArraySpread { binding: spread_binding })
-      } else {
-        None
-      };
-      return Ok((after_rb, PatternArray { prefix, spread, suffix }));
-    }
-    input = after_ws;
-  }
+  Ok((input, PatternArray { prefix, spread, suffix }))
 }
 
 // pattern_atom_struct := ":", identifier, "(", list1(",", pattern), ")" ;
