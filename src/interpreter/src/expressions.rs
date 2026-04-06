@@ -1041,6 +1041,8 @@ fn option_matrix_like_values(value: &Value) -> Option<Vec<Value>> {
     Value::MutableReference(reference) => option_matrix_like_values(&reference.borrow()),
     _ => None,
   }
+}
+
 fn option_pattern_expression_matches_value(pattern_value: &Value, value: &Value) -> bool {
   #[cfg(feature = "bool")]
   if let Value::Bool(flag) = pattern_value {
