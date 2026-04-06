@@ -254,18 +254,57 @@ fn extract_pattern_variable_id_from_term(factor: &Factor) -> Option<u64> {
 }
 
 fn values_match(expected: &Value, actual: &Value) -> bool {
+    fn unwrap_option_like(value: &Value) -> Value {
+        match value {
+            Value::Enum(enum_value) => {
+                let enum_brrw = enum_value.borrow();
+                if enum_brrw.variants.len() == 1 {
+                    if let Some(inner) = &enum_brrw.variants[0].1 {
+                        return unwrap_option_like(inner);
+                    }
+                }
+                value.clone()
+            }
+            _ => value.clone(),
+        }
+    }
+
+    let expected = unwrap_option_like(expected);
+    let actual = unwrap_option_like(actual);
+
     if expected == actual {
         return true;
     }
     #[cfg(all(feature = "u64", feature = "f64"))]
     {
-        match (expected, actual) {
+        match (&expected, &actual) {
             (Value::F64(x), Value::U64(y)) => return (*x.borrow() as u64) == *y.borrow(),
             (Value::U64(x), Value::F64(y)) => return *x.borrow() == (*y.borrow() as u64),
             _ => {}
         }
     }
     false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(feature = "u64")]
+    #[test]
+    fn values_match_option_like_enum_payload() {
+        let mut names = Dictionary::default();
+        names.insert(1, "Option".to_string());
+        names.insert(2, "Some".to_string());
+
+        let wrapped_zero = Value::Enum(Ref::new(MechEnum {
+            id: 1,
+            variants: vec![(2, Some(Value::U64(Ref::new(0))))],
+            names: Ref::new(names),
+        }));
+
+        assert!(values_match(&Value::U64(Ref::new(0)), &wrapped_zero));
+    }
 }
 
 fn coerce_function_output_kind(value: Value, fxn_def: &FunctionDefinition, p: &Interpreter) -> MResult<Value> {
