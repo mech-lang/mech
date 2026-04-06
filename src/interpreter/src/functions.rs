@@ -450,7 +450,17 @@ pub(crate) fn pattern_matches_value(
             if let Some(spread) = &pattern_array.spread {
                 if let Some(binding) = &spread.binding {
                     let middle = values[pattern_array.prefix.len()..suffix_start].to_vec();
-                    let captured = Value::MatrixValue(Matrix::from_vec(middle, 1, suffix_start.saturating_sub(pattern_array.prefix.len())));
+                    #[cfg(feature = "matrix")]
+                    let captured = Value::MatrixValue(Matrix::from_vec(
+                        middle,
+                        1,
+                        suffix_start.saturating_sub(pattern_array.prefix.len()),
+                    ));
+                    #[cfg(not(feature = "matrix"))]
+                    let captured = {
+                        let _ = middle;
+                        return Ok(false);
+                    };
                     if !pattern_matches_value(binding, &captured, env, p)? {
                         return Ok(false);
                     }

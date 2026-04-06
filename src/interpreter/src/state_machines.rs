@@ -454,7 +454,19 @@ fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -> MR
             for inner in &array.suffix {
                 values.push(pattern_to_value(inner, env, p)?);
             }
-            Ok(Value::MatrixValue(Matrix::from_vec(values.clone(), 1, values.len())))
+            #[cfg(feature = "matrix")]
+            {
+                Ok(Value::MatrixValue(Matrix::from_vec(values.clone(), 1, values.len())))
+            }
+            #[cfg(not(feature = "matrix"))]
+            {
+                let _ = values;
+                Err(MechError::new(
+                    FeatureNotEnabledError,
+                    None,
+                )
+                .with_compiler_loc())
+            }
         }
         Pattern::TupleStruct(pattern_tuple_struct) => {
             let mut values = Vec::with_capacity(pattern_tuple_struct.patterns.len() + 1);
