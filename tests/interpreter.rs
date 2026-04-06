@@ -160,7 +160,8 @@ fn interpret_option_match_array_pattern_head() {
   let result = intrp.interpret(&tree).unwrap();
   match result {
     Value::MutableReference(reference) => assert_eq!(*reference.borrow(), Value::U64(Ref::new(10))),
-    _ => panic!("Expected mutable reference output"),
+    Value::U64(value) => assert_eq!(*value.borrow(), 10),
+    _ => panic!("Expected u64 output"),
   }
 }
 
@@ -175,6 +176,37 @@ fn interpret_option_match_array_pattern_last() {
     _ => panic!("Expected mutable reference output"),
   }
 }
+
+#[test]
+fn interpret_option_match_tuple_struct_pattern() {
+  let s = "state := (:Done, 9u64); y := state? | :Done(x) -> x | * -> 0u64.; y";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  match result {
+    Value::MutableReference(reference) => assert_eq!(*reference.borrow(), Value::U64(Ref::new(9))),
+    _ => panic!("Expected mutable reference output"),
+  }
+}
+
+#[test]
+fn interpret_function_array_pattern_arms() {
+  let s = "head(xs<[u64]:1,3>) -> <u64>\n  | [x ...] -> x\n  | * -> 0u64.\nhead([10u64 20u64 30u64])";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  match result {
+    Value::MutableReference(reference) => assert_eq!(*reference.borrow(), Value::U64(Ref::new(10))),
+    Value::U64(value) => assert_eq!(*value.borrow(), 10),
+    _ => panic!("Expected u64 output"),
+  }
+}
+
+test_interpreter!(
+  interpret_fsm_array_pattern_state_arguments,
+  "#VecFsm(n<u64>) => <u64>\n  ├ :Scan(xs<[u64]:1,3>)\n  └ :Done(out<u64>).\n\n#VecFsm(n<u64>) -> :Scan([1u64 2u64 3u64])\n  :Scan([x ... y]) -> :Done(x + y)\n  :Done(out) => out.\n\n#VecFsm(0u64)",
+  Value::U64(Ref::new(4))
+);
 
 #[test]
 fn parser_accepts_function_array_pattern_arms() {

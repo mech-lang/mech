@@ -77,7 +77,7 @@ fn function_match_arm(input: ParseString) -> ParseResult<FunctionMatchArm> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = alt((box_t_left, box_bl, bar))(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, pattern) = crate::state_machines::pattern(input)?;
+  let (input, pattern) = crate::patterns::pattern(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = transition_operator(input)?;
   let (input, _) = whitespace0(input)?;
