@@ -126,6 +126,12 @@ test_interpreter!(
 );
 #[cfg(feature = "u64")]
 test_interpreter!(
+  interpret_option_match_literal_pattern_matches_inner_value,
+  "foo<u64?> := 0\n\nfoo?\n  | 0 -> 9\n  | * -> 10.",
+  Value::F64(Ref::new(9.0))
+);
+#[cfg(feature = "u64")]
+test_interpreter!(
   interpret_option_match_tuple_destructure,
   "x<u64?> := 2u64; y<u64?> := _; (x2,y2) := (x,y)? | (x,y) -> (x,y) | * -> (0u64,0u64).; x2 + y2",
   Value::U64(Ref::new(0))

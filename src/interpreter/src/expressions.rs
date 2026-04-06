@@ -845,19 +845,8 @@ pub fn option_match_expression(opt_match: &OptionMatchExpression, env: Option<&E
       Pattern::Expression(expr) => match expr {
         Expression::Var(_) => option_pattern_matches_value(&arm.pattern, &detached_source, &mut guard_env, p)?,
         _ => {
-          let cond_value = expression(expr, Some(&guard_env), p)?;
-          #[cfg(feature = "bool")]
-          {
-            match cond_value {
-              Value::Bool(flag) => *flag.borrow(),
-              _ => false,
-            }
-          }
-          #[cfg(not(feature = "bool"))]
-          {
-            let _ = cond_value;
-            false
-          }
+          let pattern_value = expression(expr, Some(&guard_env), p)?;
+          option_pattern_expression_matches_value(&pattern_value, &detached_source)
         }
       },
       _ => option_pattern_matches_value(&arm.pattern, &detached_source, &mut guard_env, p)?,
@@ -1005,7 +994,7 @@ fn option_pattern_matches_value(
     }
     Pattern::Expression(expr) => {
       let expected = expression(expr, Some(env), p)?;
-      Ok(expected == *value)
+      Ok(option_pattern_expression_matches_value(&expected, value))
     }
     Pattern::TupleStruct(_) => Ok(false),
   }
@@ -1052,6 +1041,27 @@ fn option_matrix_like_values(value: &Value) -> Option<Vec<Value>> {
     Value::MutableReference(reference) => option_matrix_like_values(&reference.borrow()),
     _ => None,
   }
+fn option_pattern_expression_matches_value(pattern_value: &Value, value: &Value) -> bool {
+  #[cfg(feature = "bool")]
+  if let Value::Bool(flag) = pattern_value {
+    return *flag.borrow();
+  }
+  option_values_match(pattern_value, value)
+}
+
+fn option_values_match(expected: &Value, actual: &Value) -> bool {
+  if expected == actual {
+    return true;
+  }
+  #[cfg(all(feature = "u64", feature = "f64"))]
+  {
+    match (expected, actual) {
+      (Value::F64(x), Value::U64(y)) => return (*x.borrow() as u64) == *y.borrow(),
+      (Value::U64(x), Value::F64(y)) => return *x.borrow() == (*y.borrow() as u64),
+      _ => {}
+    }
+  }
+  false
 }
 
 #[cfg(feature = "formulas")]
