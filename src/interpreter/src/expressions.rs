@@ -924,14 +924,164 @@ fn option_pattern_matches_value(
 ) -> MResult<bool> {
   match pattern {
     Pattern::Wildcard => Ok(true),
-    Pattern::Expression(Expression::Var(_)) => {
-      crate::functions::pattern_matches_value(pattern, value, env, p)
+    #[cfg(feature = "functions")]
+    Pattern::Expression(Expression::Var(_)) => crate::functions::pattern_matches_value(pattern, value, env, p),
+    #[cfg(not(feature = "functions"))]
+    Pattern::Expression(Expression::Var(var)) => {
+      let var_id = var.name.hash();
+      let detached = option_detach_value(value);
+      if let Some(existing) = env.get(&var_id) {
+        Ok(existing == &detached)
+      } else {
+        env.insert(var_id, detached);
+        Ok(true)
+      }
     }
     Pattern::Expression(expr) => {
       let expected = expression(expr, Some(env), p)?;
-      Ok(option_pattern_expression_matches_value(&expected, &detach_value(value)))
+      Ok(option_pattern_expression_matches_value(&expected, &option_detach_value(value)))
     }
+    #[cfg(feature = "functions")]
     _ => crate::functions::pattern_matches_value(pattern, value, env, p),
+    #[cfg(not(feature = "functions"))]
+    _ => option_pattern_matches_value_fallback(pattern, value, env, p),
+  }
+}
+
+fn option_detach_value(value: &Value) -> Value {
+  match value {
+    Value::MutableReference(reference) => option_detach_value(&reference.borrow()),
+    _ => value.clone(),
+  }
+}
+
+#[cfg(not(feature = "functions"))]
+fn option_pattern_matches_value_fallback(
+  pattern: &Pattern,
+  value: &Value,
+  env: &mut Environment,
+  p: &Interpreter,
+) -> MResult<bool> {
+  match pattern {
+    Pattern::Wildcard => Ok(true),
+    Pattern::Tuple(pattern_tuple) => match value {
+      #[cfg(feature = "tuple")]
+      Value::Tuple(tuple) => {
+        let tuple_brrw = tuple.borrow();
+        if pattern_tuple.0.len() != tuple_brrw.elements.len() {
+          return Ok(false);
+        }
+        for (pat, val) in pattern_tuple.0.iter().zip(tuple_brrw.elements.iter()) {
+          if !option_pattern_matches_value_fallback(pat, val, env, p)? {
+            return Ok(false);
+          }
+        }
+        Ok(true)
+      }
+      _ => Ok(false),
+    },
+    Pattern::Array(pattern_array) => {
+      let values = match option_matrix_like_values_fallback(value) {
+        Some(values) => values,
+        None => return Ok(false),
+      };
+      if values.len() < pattern_array.prefix.len() + pattern_array.suffix.len() {
+        return Ok(false);
+      }
+      for (pat, val) in pattern_array.prefix.iter().zip(values.iter()) {
+        if !option_pattern_matches_value_fallback(pat, val, env, p)? {
+          return Ok(false);
+        }
+      }
+      let suffix_start = values.len() - pattern_array.suffix.len();
+      for (pat, val) in pattern_array.suffix.iter().zip(values[suffix_start..].iter()) {
+        if !option_pattern_matches_value_fallback(pat, val, env, p)? {
+          return Ok(false);
+        }
+      }
+      if pattern_array.spread.is_none() && values.len() != pattern_array.prefix.len() + pattern_array.suffix.len() {
+        return Ok(false);
+      }
+      if let Some(spread) = &pattern_array.spread {
+        if let Some(binding) = &spread.binding {
+          let middle = values[pattern_array.prefix.len()..suffix_start].to_vec();
+          #[cfg(feature = "matrix")]
+          let captured = Value::MatrixValue(Matrix::from_vec(
+            middle,
+            1,
+            suffix_start.saturating_sub(pattern_array.prefix.len()),
+          ));
+          #[cfg(not(feature = "matrix"))]
+          let captured = {
+            let _ = middle;
+            return Ok(false);
+          };
+          if !option_pattern_matches_value_fallback(binding, &captured, env, p)? {
+            return Ok(false);
+          }
+        }
+      }
+      Ok(true)
+    }
+    Pattern::Expression(Expression::Var(var)) => {
+      let var_id = var.name.hash();
+      let detached = option_detach_value(value);
+      if let Some(existing) = env.get(&var_id) {
+        Ok(existing == &detached)
+      } else {
+        env.insert(var_id, detached);
+        Ok(true)
+      }
+    }
+    Pattern::Expression(expr) => {
+      let expected = expression(expr, Some(env), p)?;
+      Ok(option_pattern_expression_matches_value(&expected, &option_detach_value(value)))
+    }
+    Pattern::TupleStruct(_) => Ok(false),
+  }
+}
+
+#[cfg(not(feature = "functions"))]
+fn option_matrix_like_values_fallback(value: &Value) -> Option<Vec<Value>> {
+  match value {
+    #[cfg(feature = "matrix")]
+    Value::MatrixIndex(matrix) => Some(matrix.as_vec().into_iter().map(|value| Value::Index(Ref::new(value))).collect()),
+    #[cfg(all(feature = "matrix", feature = "bool"))]
+    Value::MatrixBool(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "u8"))]
+    Value::MatrixU8(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "u16"))]
+    Value::MatrixU16(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "u32"))]
+    Value::MatrixU32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "u64"))]
+    Value::MatrixU64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "u128"))]
+    Value::MatrixU128(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "i8"))]
+    Value::MatrixI8(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "i16"))]
+    Value::MatrixI16(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "i32"))]
+    Value::MatrixI32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "i64"))]
+    Value::MatrixI64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "i128"))]
+    Value::MatrixI128(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "f32"))]
+    Value::MatrixF32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "f64"))]
+    Value::MatrixF64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "string"))]
+    Value::MatrixString(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+    #[cfg(all(feature = "matrix", feature = "rational"))]
+    Value::MatrixR64(matrix) => Some(matrix.as_vec().into_iter().map(|value| value.to_value()).collect()),
+    #[cfg(all(feature = "matrix", feature = "complex"))]
+    Value::MatrixC64(matrix) => Some(matrix.as_vec().into_iter().map(|value| value.to_value()).collect()),
+    #[cfg(feature = "matrix")]
+    Value::MatrixValue(matrix) => Some(matrix.as_vec()),
+    Value::MutableReference(reference) => option_matrix_like_values_fallback(&reference.borrow()),
+    _ => None,
   }
 }
 
