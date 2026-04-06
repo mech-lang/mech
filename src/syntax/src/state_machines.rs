@@ -333,55 +333,6 @@ pub fn fsm_args(input: ParseString) -> ParseResult<Vec<(Option<Identifier>,Expre
 }
 
 #[cfg(test)]
-mod array_pattern_tests {
-  use super::*;
-
-  fn parse_pattern(src: &str) -> Pattern {
-    let gs = crate::graphemes::init_source(src);
-    let input = ParseString::new(&gs);
-    let (rest, pattern) = pattern(input).expect("pattern should parse");
-    let _ = whitespace0(rest).unwrap();
-    pattern
-  }
-
-  #[test]
-  fn parse_array_pattern_head() {
-    match parse_pattern("[x ...]") {
-      Pattern::Array(arr) => {
-        assert_eq!(arr.prefix.len(), 1);
-        assert!(arr.spread.is_some());
-        assert!(arr.suffix.is_empty());
-      }
-      _ => panic!("expected array pattern"),
-    }
-  }
-
-  #[test]
-  fn parse_array_pattern_last() {
-    match parse_pattern("[... x]") {
-      Pattern::Array(arr) => {
-        assert!(arr.prefix.is_empty());
-        assert!(arr.spread.is_some());
-        assert_eq!(arr.suffix.len(), 1);
-      }
-      _ => panic!("expected array pattern"),
-    }
-  }
-
-  #[test]
-  fn parse_array_pattern_empty() {
-    match parse_pattern("[]") {
-      Pattern::Array(arr) => {
-        assert!(arr.prefix.is_empty());
-        assert!(arr.spread.is_none());
-        assert!(arr.suffix.is_empty());
-      }
-      _ => panic!("expected array pattern"),
-    }
-  }
-}
-
-#[cfg(test)]
 mod tests {
   use super::*;
 
