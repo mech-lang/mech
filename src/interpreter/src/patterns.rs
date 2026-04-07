@@ -50,13 +50,11 @@ pub fn pattern_matches_value_with_semantics(pattern: &Pattern, value: &Value, en
               return Ok(false);
             }
           }
-          Ok(true)
+          return Ok(true);
         }
-        _ => Ok(false),
+        _ => {return Ok(false);},
       }
-      let _ = pattern_tuple;
-      let _ = detached_value;
-      Ok(false)
+      return Ok(false);
     }
     #[cfg(feature = "matrix")]
     Pattern::Array(pattern_array) => {
@@ -158,11 +156,11 @@ pub fn pattern_matches_value_with_semantics(pattern: &Pattern, value: &Value, en
               return Ok(false);
             }
           }
-          Ok(true)
+          return Ok(true);
         }
-        _ => Ok(false),
+        _ => return Ok(false),
       }
-      Ok(false)
+      return Ok(false);
     } 
   }
 }
@@ -185,9 +183,7 @@ pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -
       for inner in &pattern_tuple.0 {
         values.push(pattern_to_value(inner, env, p)?);
       }
-      Ok(Value::Tuple(Ref::new(MechTuple::from_vec(values))))
-      let _ = pattern_tuple;
-      Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc())
+      return Ok(Value::Tuple(Ref::new(MechTuple::from_vec(values))));
     }
     #[cfg(feature = "matrix")]
     Pattern::Array(array) => {
@@ -199,18 +195,16 @@ pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -
         if let Some(binding) = &spread.binding {
           let bound = pattern_to_value(binding, env, p)?;
           match bound {
-            Value::MatrixValue(matrix) => values.extend(matrix.as_vec()),
-            other => values.push(other),
+            Value::MatrixValue(ref matrix) => values.extend(matrix.as_vec()),
+            ref other => values.push(other.clone()),
           }
-          values.push(bound);
+          values.push(bound.clone());
         }
       }
       for inner in &array.suffix {
         values.push(pattern_to_value(inner, env, p)?);
       }
-      Ok(Value::MatrixValue(Matrix::from_vec(values.clone(), 1, values.len())))
-      let _ = values;
-      Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc())
+      return Ok(Value::MatrixValue(Matrix::from_vec(values.clone(), 1, values.len())));
     }
     #[cfg(all(feature = "tuple", feature = "atom"))]
     Pattern::TupleStruct(pattern_tuple_struct) => {
@@ -219,9 +213,7 @@ pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -
       for inner in &pattern_tuple_struct.patterns {
         values.push(pattern_to_value(inner, env, p)?);
       }
-      Ok(Value::Tuple(Ref::new(MechTuple::from_vec(values))))
-      let _ = pattern_tuple_struct;
-      Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc())
+      return Ok(Value::Tuple(Ref::new(MechTuple::from_vec(values))));
     }
     _ => Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc()),
   }
