@@ -97,8 +97,6 @@ use std::time::Duration;
 
 pub mod expressions;
 #[cfg(feature = "functions")]
-pub mod frame;
-#[cfg(feature = "functions")]
 pub mod functions;
 pub mod interpreter;
 pub mod literals;
@@ -114,8 +112,6 @@ pub mod tracing;
 pub use mech_core::*;
 
 pub use crate::expressions::*;
-#[cfg(feature = "functions")]
-pub use crate::frame::*;
 #[cfg(feature = "functions")]
 pub use crate::functions::*;
 pub use crate::interpreter::*;
