@@ -174,7 +174,8 @@ pub fn pattern_matches_value_with_semantics(pattern: &Pattern, value: &Value, en
         _ => return Ok(false),
       }
       return Ok(false);
-    } 
+    }
+    x => Err(MechError::new(FeatureNotEnabledError, Some(format!("Pattern not enabled: {:?}", x))).with_compiler_loc().with_tokens(x.tokens())), 
   }
 }
 
@@ -196,7 +197,7 @@ pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -
   match pattern {
     Pattern::Wildcard => Ok(Value::Empty),
     Pattern::Expression(expr) => expression(expr, Some(env), p),
-    #[cfg(not(feature = "tuple"))]
+    #[cfg(feature = "tuple")]
     Pattern::Tuple(pattern_tuple) => {
       let mut values = Vec::with_capacity(pattern_tuple.0.len());
       for inner in &pattern_tuple.0 {
