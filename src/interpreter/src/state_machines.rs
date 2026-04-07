@@ -261,7 +261,7 @@ fn execute_fsm_pipe_impl(fsm: &FsmImplementation, state: &mut Value, call_env: &
   }
   Err(MechError::new(
     FsmExceededTransitionLimitError {
-      max_transitions: max_steps,
+      max_transitions: p.max_steps,
     },
     None,
   )
