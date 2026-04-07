@@ -406,79 +406,79 @@ fn apply_transitions(
 
 #[derive(Debug, Clone)]
 pub struct FsmUndefinedStateError {
-    pub fsm_name: String,
-    pub state_name: String,
+  pub fsm_name: String,
+  pub state_name: String,
 }
 
 impl MechErrorKind for FsmUndefinedStateError {
-    fn name(&self) -> &str {
-        "FsmUndefinedState"
-    }
-    fn message(&self) -> String {
-        format!(
-            "FSM '{}' references undefined state '{}'",
-            self.fsm_name, self.state_name
-        )
-    }
+  fn name(&self) -> &str {
+    "FsmUndefinedState"
+  }
+  fn message(&self) -> String {
+    format!(
+      "FSM '{}' references undefined state '{}'",
+      self.fsm_name, self.state_name
+    )
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct FsmGuardConditionKindMismatchError {
-    pub arm_index: usize,
-    pub guard_index: usize,
-    pub actual_kind: ValueKind,
+  pub arm_index: usize,
+  pub guard_index: usize,
+  pub actual_kind: ValueKind,
 }
 
 impl MechErrorKind for FsmGuardConditionKindMismatchError {
-    fn name(&self) -> &str {
-        "FsmGuardConditionKindMismatch"
-    }
+  fn name(&self) -> &str {
+    "FsmGuardConditionKindMismatch"
+  }
 
-    fn message(&self) -> String {
-        format!(
-            "FSM guard condition arm[{}] guard[{}] must evaluate to Bool, got '{}'",
-            self.arm_index,
-            self.guard_index,
-            self.actual_kind.to_string(),
-        )
-    }
+  fn message(&self) -> String {
+    format!(
+      "FSM guard condition arm[{}] guard[{}] must evaluate to Bool, got '{}'",
+      self.arm_index,
+      self.guard_index,
+      self.actual_kind.to_string(),
+    )
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct FsmExceededTransitionLimitError {
-    pub max_transitions: usize,
+  pub max_transitions: usize,
 }
 
 impl MechErrorKind for FsmExceededTransitionLimitError {
-    fn name(&self) -> &str {
-        "FsmExceededTransitionLimit"
-    }
+  fn name(&self) -> &str {
+    "FsmExceededTransitionLimit"
+  }
 
-    fn message(&self) -> String {
-        format!(
-            "FSM exceeded maximum transition limit of {} steps",
-            self.max_transitions
-        )
-    }
+  fn message(&self) -> String {
+    format!(
+      "FSM exceeded maximum transition limit of {} steps",
+      self.max_transitions
+    )
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct FsmArgumentKindMismatchError {
-    pub argument: String,
-    pub expected_kind: ValueKind,
-    pub actual_kind: ValueKind,
+  pub argument: String,
+  pub expected_kind: ValueKind,
+  pub actual_kind: ValueKind,
 }
 
 impl MechErrorKind for FsmArgumentKindMismatchError {
-    fn name(&self) -> &str {
-        "FsmArgumentKindMismatch"
-    }
-    fn message(&self) -> String {
-        format!(
-            "FSM argument '{}' expected kind '{}' but received '{}'",
-            self.argument,
-            self.expected_kind.to_string(),
-            self.actual_kind.to_string()
-        )
-    }
+  fn name(&self) -> &str {
+    "FsmArgumentKindMismatch"
+  }
+  fn message(&self) -> String {
+    format!(
+      "FSM argument '{}' expected kind '{}' but received '{}'",
+      self.argument,
+      self.expected_kind.to_string(),
+      self.actual_kind.to_string()
+    )
+  }
 }
