@@ -3,12 +3,23 @@ use crate::*;
 // Patterns
 // ----------------------------------------------------------------------------
 
+// Implements pattern matching. Handles matching runtime Values against 
+// Pattern AST nodes, binding variables into an Environment. 
+ 
+// Supports destructuring of tuples, arrays/matrices, and tagged tuple-structs, 
+// and reconstructing values from patterns.
+
+// Used by functinos, state machines, and option guards.
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PatternMatchSemantics {
-    Standard,
-    OptionGuard,
+  Standard,     // Standard semantics: pattern expressions are evaluated once and compared to the value.
+  OptionGuard,  // Option guard semantics: pattern expressions are evaluated for each value and must evaluate to true for all to match.
 }
 
+// Entry point for multi-argument dispatch. When a function is called with 
+// multiple arguments, this wraps them as if they were a tuple and delegates 
+// to pattern_matches_value.
 pub fn pattern_matches_arguments(pattern: &Pattern, args: &Vec<Value>, env: &mut Environment, p: &Interpreter) -> MResult<bool> {
   if args.len() == 1 {
     return pattern_matches_value(pattern, &args[0], env, p);
@@ -33,6 +44,13 @@ pub fn pattern_matches_value(pattern: &Pattern, value: &Value, env: &mut Environ
   pattern_matches_value_with_semantics(pattern, value, env, p, PatternMatchSemantics::Standard)
 }
 
+// Takes a semantics mode. Dispatches on pattern kind:
+// Wildcard - always succeeds, binds nothing.
+// - Tuple - recursively matches element-wise against a Value::Tuple, requiring equal arity.
+// - Array - matches prefix and suffix element-wise against any matrix-like value, with optional spread binding (...) for the middle slice.
+// - Expression(Var()) - if the variable is already in the environment, checks equality (used for repeated variable patterns).
+// - Expression(other) - attempts to extract a variable id from more complex expression wrappers (parentheticals, single-term formulas) and handles them like Var.
+// - TupleStruct - matches a tagged tuple
 pub fn pattern_matches_value_with_semantics(pattern: &Pattern, value: &Value, env: &mut Environment, p: &Interpreter, semantics: PatternMatchSemantics) -> MResult<bool> {
   let detached_value = deep_detach_value(value);
   match pattern {
@@ -96,10 +114,6 @@ pub fn pattern_matches_value_with_semantics(pattern: &Pattern, value: &Value, en
             1,
             suffix_start.saturating_sub(pattern_array.prefix.len()),
           ));
-          let captured = {
-            let _ = middle;
-            return Ok(false);
-          };
           if !pattern_matches_value_with_semantics(binding, &captured, env, p, semantics)?
           {
             return Ok(false);
@@ -165,6 +179,10 @@ pub fn pattern_matches_value_with_semantics(pattern: &Pattern, value: &Value, en
   }
 }
 
+
+// Collects all variable ids introduced by a pattern (via 
+// collect_pattern_variable_ids) and removes them from the environment. Used 
+// to undo bindings when a pattern arm fails or needs to be retried.
 pub fn clear_pattern_bindings(pattern: &Pattern, env: &mut Environment) {
   let mut ids = Vec::new();
   collect_pattern_variable_ids(pattern, &mut ids);
@@ -173,6 +191,8 @@ pub fn clear_pattern_bindings(pattern: &Pattern, env: &mut Environment) {
   }
 }
 
+
+// Reconstructs a Value from a pattern using the current environment. This is the inverse of matching. used to extract or re-emit bound values.
 pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -> MResult<Value> {
   match pattern {
     Pattern::Wildcard => Ok(Value::Empty),
@@ -219,6 +239,9 @@ pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -
   }
 }
 
+// Mutable reference unwrapper. Recursively follows Value::MutableReference 
+// chains until it reaches a plain value, then clones it. Ensures the pattern 
+// matcher always works on an owned, non-reference value.
 fn deep_detach_value(value: &Value) -> Value {
   match value {
     Value::MutableReference(reference) => deep_detach_value(&reference.borrow()),
@@ -226,6 +249,10 @@ fn deep_detach_value(value: &Value) -> Value {
   }
 }
 
+// Variable id harvester. Recursively walks a pattern and pushes the hashed ids 
+// of all bound variable names into a Vec<u64>. Handles Var expressions, tuples, 
+// arrays (including spread bindings), and tuple-structs. Used by 
+// clear_pattern_bindings.
 fn collect_pattern_variable_ids(pattern: &Pattern, ids: &mut Vec<u64>) {
   match pattern {
     Pattern::Expression(Expression::Var(var)) => ids.push(var.name.hash()),
@@ -259,6 +286,7 @@ fn collect_pattern_variable_ids(pattern: &Pattern, ids: &mut Vec<u64>) {
   }
 }
 
+// Used by the Array pattern arm to get a uniform element list regardless of the matrix's concrete numeric type.
 fn matrix_like_values(value: &Value) -> Option<Vec<Value>> {
   match value {
     #[cfg(feature = "matrix")]
@@ -339,6 +367,7 @@ fn extract_pattern_variable_id_from_term(factor: &Factor) -> Option<u64> {
   }
 }
 
+// TODO: This needs to be expanded to handle all types.
 fn values_match(expected: &Value, actual: &Value) -> bool {
   if expected == actual {
     return true;
