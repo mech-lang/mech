@@ -1,0 +1,84 @@
+patterns
+================================================================================
+
+%% Patterns are a single matching language shared by functions, state-machine transitions, and option-match guards.
+
+1. Pattern forms
+-------------------------------------------------------------------------------
+
+Mech patterns support the same core shapes in every pattern context:
+
+- `_` wildcard: matches anything and binds nothing.
+- Variable pattern: binds a value (for example `x`).
+- Literal / expression pattern: matches when evaluated pattern equals the candidate value.
+- Tuple pattern: positional matching for tuples, e.g. `(head, tail)`.
+- Tuple-struct pattern: state-like tagged tuples, e.g. `ready(x)`.
+- Array pattern: prefix/suffix matching with optional spread capture.
+
+2. Function match arms
+-------------------------------------------------------------------------------
+
+Function branches are evaluated top-to-bottom. The first arm whose pattern matches call arguments is selected.
+
+```mech
+abs(x) -> <f64>
+  ├ n if n < 0.0 -> -n
+  └ n -> n.
+```
+
+Multiple call arguments are matched with tuple-style structure:
+
+```mech
+max2(a, b) -> <u64>
+  ├ (x, y) if x > y -> x
+  └ (_, y) -> y.
+```
+
+3. State machine transitions
+-------------------------------------------------------------------------------
+
+State-machine arms use the same pattern forms to match the current state value.
+
+```mech
+traffic() -> <atom>
+  @red -> @green
+  @green -> @yellow
+  @yellow -> @red.
+```
+
+Tuple-struct patterns are useful for richer states:
+
+```mech
+connection() -> <atom>
+  connecting(retries) ->
+    | retries < 3 -> connecting(retries + 1)
+    | _ -> failed
+  connected -> connected.
+```
+
+4. Option-match guards
+-------------------------------------------------------------------------------
+
+Option matching also reuses the same pattern syntax. A wildcard arm is required for exhaustiveness.
+
+```mech
+result := value ?
+  | x if x > 10 -> "large"
+  | x -> "small"
+  | _ -> "empty".
+```
+
+Guard-like conditions in option arms are pattern expressions that evaluate to `bool` in the arm environment.
+
+5. Binding behavior
+-------------------------------------------------------------------------------
+
+- Repeated variable names in one pattern require equality with the previous binding.
+- Bound names are available to arm expressions and transition statements.
+- Wildcards never bind.
+- Array spread bindings capture the unmatched middle segment.
+
+6. Shared semantics notes
+-------------------------------------------------------------------------------
+
+All three systems (functions, FSMs, option matches) use one interpreter pattern engine, so tuple/array/tagged-state matching and variable bindings behave consistently across contexts.
