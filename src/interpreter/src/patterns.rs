@@ -50,21 +50,32 @@ pub fn pattern_matches_value_with_semantics(
     let detached_value = deep_detach_value(value);
     match pattern {
         Pattern::Wildcard => Ok(true),
-        Pattern::Tuple(pattern_tuple) => match detached_value {
-            Value::Tuple(tuple) => {
-                let tuple_brrw = tuple.borrow();
-                if pattern_tuple.0.len() != tuple_brrw.elements.len() {
-                    return Ok(false);
-                }
-                for (pat, val) in pattern_tuple.0.iter().zip(tuple_brrw.elements.iter()) {
-                    if !pattern_matches_value_with_semantics(pat, val, env, p, semantics)? {
-                        return Ok(false);
+        Pattern::Tuple(pattern_tuple) => {
+            #[cfg(feature = "tuple")]
+            {
+                match detached_value {
+                    Value::Tuple(tuple) => {
+                        let tuple_brrw = tuple.borrow();
+                        if pattern_tuple.0.len() != tuple_brrw.elements.len() {
+                            return Ok(false);
+                        }
+                        for (pat, val) in pattern_tuple.0.iter().zip(tuple_brrw.elements.iter()) {
+                            if !pattern_matches_value_with_semantics(pat, val, env, p, semantics)? {
+                                return Ok(false);
+                            }
+                        }
+                        Ok(true)
                     }
+                    _ => Ok(false),
                 }
-                Ok(true)
             }
-            _ => Ok(false),
-        },
+            #[cfg(not(feature = "tuple"))]
+            {
+                let _ = pattern_tuple;
+                let _ = detached_value;
+                Ok(false)
+            }
+        }
         Pattern::Array(pattern_array) => {
             let values = match matrix_like_values(&detached_value) {
                 Some(values) => values,
@@ -146,34 +157,49 @@ pub fn pattern_matches_value_with_semantics(
             }
             Ok(values_match(&deep_detach_value(&expected), &detached_value))
         }
-        Pattern::TupleStruct(pat_struct) => match detached_value {
-            Value::Tuple(tuple) => {
-                let tuple_brrw = tuple.borrow();
-                if tuple_brrw.elements.len() != pat_struct.patterns.len() + 1 {
-                    return Ok(false);
-                }
-                let expected_state = atom(
-                    &Atom {
-                        name: pat_struct.name.clone(),
-                    },
-                    p,
-                );
-                if !values_match(&expected_state, &deep_detach_value(&tuple_brrw.elements[0])) {
-                    return Ok(false);
-                }
-                for (pat, val) in pat_struct
-                    .patterns
-                    .iter()
-                    .zip(tuple_brrw.elements.iter().skip(1))
-                {
-                    if !pattern_matches_value_with_semantics(pat, val, env, p, semantics)? {
-                        return Ok(false);
+        Pattern::TupleStruct(pat_struct) => {
+            #[cfg(all(feature = "tuple", feature = "atom"))]
+            {
+                match detached_value {
+                    Value::Tuple(tuple) => {
+                        let tuple_brrw = tuple.borrow();
+                        if tuple_brrw.elements.len() != pat_struct.patterns.len() + 1 {
+                            return Ok(false);
+                        }
+                        let expected_state = atom(
+                            &Atom {
+                                name: pat_struct.name.clone(),
+                            },
+                            p,
+                        );
+                        if !values_match(
+                            &expected_state,
+                            &deep_detach_value(&tuple_brrw.elements[0]),
+                        ) {
+                            return Ok(false);
+                        }
+                        for (pat, val) in pat_struct
+                            .patterns
+                            .iter()
+                            .zip(tuple_brrw.elements.iter().skip(1))
+                        {
+                            if !pattern_matches_value_with_semantics(pat, val, env, p, semantics)? {
+                                return Ok(false);
+                            }
+                        }
+                        Ok(true)
                     }
+                    _ => Ok(false),
                 }
-                Ok(true)
             }
-            _ => Ok(false),
-        },
+            #[cfg(not(all(feature = "tuple", feature = "atom")))]
+            {
+                let _ = pat_struct;
+                let _ = detached_value;
+                let _ = p;
+                Ok(false)
+            }
+        }
     }
 }
 
@@ -190,11 +216,19 @@ pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -
         Pattern::Wildcard => Ok(Value::Empty),
         Pattern::Expression(expr) => expression(expr, Some(env), p),
         Pattern::Tuple(pattern_tuple) => {
-            let mut values = Vec::with_capacity(pattern_tuple.0.len());
-            for inner in &pattern_tuple.0 {
-                values.push(pattern_to_value(inner, env, p)?);
+            #[cfg(feature = "tuple")]
+            {
+                let mut values = Vec::with_capacity(pattern_tuple.0.len());
+                for inner in &pattern_tuple.0 {
+                    values.push(pattern_to_value(inner, env, p)?);
+                }
+                Ok(Value::Tuple(Ref::new(MechTuple::from_vec(values))))
             }
-            Ok(Value::Tuple(Ref::new(MechTuple::from_vec(values))))
+            #[cfg(not(feature = "tuple"))]
+            {
+                let _ = pattern_tuple;
+                Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc())
+            }
         }
         Pattern::Array(array) => {
             let mut values = Vec::new();
@@ -203,9 +237,15 @@ pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -
             }
             if let Some(spread) = &array.spread {
                 if let Some(binding) = &spread.binding {
-                    match pattern_to_value(binding, env, p)? {
+                    let bound = pattern_to_value(binding, env, p)?;
+                    #[cfg(feature = "matrix")]
+                    match bound {
                         Value::MatrixValue(matrix) => values.extend(matrix.as_vec()),
                         other => values.push(other),
+                    }
+                    #[cfg(not(feature = "matrix"))]
+                    {
+                        values.push(bound);
                     }
                 }
             }
@@ -227,17 +267,25 @@ pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -
             }
         }
         Pattern::TupleStruct(pattern_tuple_struct) => {
-            let mut values = Vec::with_capacity(pattern_tuple_struct.patterns.len() + 1);
-            values.push(atom(
-                &Atom {
-                    name: pattern_tuple_struct.name.clone(),
-                },
-                p,
-            ));
-            for inner in &pattern_tuple_struct.patterns {
-                values.push(pattern_to_value(inner, env, p)?);
+            #[cfg(all(feature = "tuple", feature = "atom"))]
+            {
+                let mut values = Vec::with_capacity(pattern_tuple_struct.patterns.len() + 1);
+                values.push(atom(
+                    &Atom {
+                        name: pattern_tuple_struct.name.clone(),
+                    },
+                    p,
+                ));
+                for inner in &pattern_tuple_struct.patterns {
+                    values.push(pattern_to_value(inner, env, p)?);
+                }
+                Ok(Value::Tuple(Ref::new(MechTuple::from_vec(values))))
             }
-            Ok(Value::Tuple(Ref::new(MechTuple::from_vec(values))))
+            #[cfg(not(all(feature = "tuple", feature = "atom")))]
+            {
+                let _ = pattern_tuple_struct;
+                Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc())
+            }
         }
     }
 }
@@ -245,7 +293,7 @@ pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -
 fn deep_detach_value(value: &Value) -> Value {
     match value {
         Value::MutableReference(reference) => deep_detach_value(&reference.borrow()),
-        _ => detach_value(value),
+        _ => value.clone(),
     }
 }
 
