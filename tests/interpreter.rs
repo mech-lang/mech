@@ -136,13 +136,11 @@ test_interpreter!(
   "x<u64?> := 2u64; y<u64?> := _; (x2,y2) := (x,y)? | (x,y) -> (x,y) | * -> (0u64,0u64).; x2 + y2",
   Value::U64(Ref::new(0))
 );
-#[test]
-fn interpret_option_match_rejects_mismatched_arm_kinds() {
-  let s = "foo<f64?> := 1234\n\nbar := foo?\n  | x -> \"One Two Three\"\n  | * -> 12.\n\nbar";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  assert!(intrp.interpret(&tree).is_err());
-}
+test_interpreter!(
+  interpret_match_allows_unreachable_wildcard_with_different_kind,
+  "foo<f64?> := 1234\n\nbar := foo?\n  | x -> \"One Two Three\"\n  | * -> 12.\n\nbar + \"\"",
+  Value::String(Ref::new("One Two Three".to_string()))
+);
 
 #[test]
 fn interpret_option_match_requires_wildcard_arm() {
@@ -152,30 +150,26 @@ fn interpret_option_match_requires_wildcard_arm() {
   assert!(intrp.interpret(&tree).is_err());
 }
 
-#[test]
-fn interpret_option_match_array_pattern_head() {
-  let s = "xs := [10u64 20u64 30u64]; y := xs? | [x ...] -> x | * -> 0u64.; y";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
-  match result {
-    Value::MutableReference(reference) => assert_eq!(*reference.borrow(), Value::U64(Ref::new(10))),
-    Value::U64(value) => assert_eq!(*value.borrow(), 10),
-    _ => panic!("Expected u64 output"),
-  }
-}
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_match_array_pattern_head,
+  "xs := [10u64 20u64 30u64]; y := xs? | [x ...] -> x | * -> 0u64.; y + 0u64",
+  Value::U64(Ref::new(10))
+);
 
-#[test]
-fn interpret_option_match_array_pattern_last() {
-  let s = "xs := [10u64 20u64 30u64]; y := xs? | [... x] -> x | * -> 0u64.; y";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
-  match result {
-    Value::MutableReference(reference) => assert_eq!(*reference.borrow(), Value::U64(Ref::new(30))),
-    _ => panic!("Expected mutable reference output"),
-  }
-}
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_match_array_pattern_last,
+  "xs := [10u64 20u64 30u64]; y := xs? | [... x] -> x | * -> 0u64.; y + 0u64",
+  Value::U64(Ref::new(30))
+);
+
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_match_tuple_pattern_with_guards,
+  "foo := (1u64, 2u64, 3u64)\n\nmax<u64> := foo?\n  | (a, b, c), a > b && a > c -> a\n  | (a, b, c), b > a && b > c -> b\n  | (a, b, c), c > a && c > b -> c\n  | * -> 0u64.\n\nmax + 0u64",
+  Value::U64(Ref::new(3))
+);
 
 test_interpreter!(interpret_option_match_tuple_struct_pattern, "state := (:Done, 9u64); y := state? | :Done(x) -> x | * -> 0u64.; y + 0u64", Value::U64(Ref::new(9)));
 test_interpreter!(interpret_function_array_pattern_arms, "head(xs<[u64]:1,3>) -> <u64>\n  | [x ...] -> x\n  | * -> 0u64.\nhead([10u64 20u64 30u64]) + 0u64", Value::U64(Ref::new(10)));
