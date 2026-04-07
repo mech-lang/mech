@@ -996,6 +996,15 @@ test_interpreter!(interpret_convert_rational_to_string,r#"x<string>:=1/2"#, Valu
 test_interpreter!(interpret_convert_f64_to_string2,r#"x<string>:=123"#, Value::String(Ref::new(String::from("123"))));
 
 test_interpreter!(interpret_convert_f64_to_rational_to_string,r#"x<string> := 0.5<r64>"#,Value::String(Ref::new(String::from("1/2"))));
+test_interpreter!(interpret_convert_matrix_to_optional_unsized_matrix, r#"x<[u64]?> := [1u64 2u64 3u64]; x[1]"#, Value::U64(Ref::new(1u64)));
+test_interpreter!(interpret_user_function_input_annotation_optional_promotion, r#"
+x := [1u64 2u64 3u64]
+head(x<[u64]?>) -> <u64?>
+  | [] -> _
+  | [h ...] -> h
+  | _ -> _.
+head(x)
+"#, Value::U64(Ref::new(1u64)));
 
 test_interpreter!(interpret_matrix_power_and_addition,"~μ := [1 2 3]; K := [0.1 0.2 0.3; 0.4 0.5 0.6; 0.7 0.8 0.9]; Ẑ := [0.01; 0.02; 0.03]; μ = μ + (K ** Ẑ)'", Value::MatrixF64(Matrix::from_vec(vec![1.014, 2.032, 3.05], 1, 3)));
 test_interpreter!(interpret_assign_scalar_no_space, "~z:=10;z=20", Value::F64(Ref::new(20.0)));
