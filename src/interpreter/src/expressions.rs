@@ -24,7 +24,7 @@ pub fn expression(expr: &Expression, env: Option<&Environment>, p: &Interpreter)
         Expression::SetComprehension(set_comp) => set_comprehension(set_comp, p),
         #[cfg(feature = "matrix_comprehensions")]
         Expression::MatrixComprehension(matrix_comp) => matrix_comprehension(matrix_comp, p),
-        Expression::OptionMatch(opt_match) => option_match_expression(opt_match, env, p),
+        Expression::Match(match_expr) => match_expression(match_expr, env, p),
         #[cfg(feature = "state_machines")]
         Expression::FsmPipe(fsm_pipe) => crate::state_machines::execute_fsm_pipe(fsm_pipe, env, p),
         x => Err(MechError::new(FeatureNotEnabledError, None)
@@ -913,43 +913,31 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
     }
 }
 
-pub fn option_match_expression(
-    opt_match: &OptionMatchExpression,
+pub fn match_expression(
+    match_expr: &MatchExpression,
     env: Option<&Environment>,
     p: &Interpreter,
 ) -> MResult<Value> {
-    if !opt_match
+    if !match_expr
         .arms
         .iter()
         .any(|arm| matches!(arm.pattern, Pattern::Wildcard))
     {
-        return Err(MechError::new(OptionMatchNonExhaustiveError, None)
+        return Err(MechError::new(MatchNonExhaustiveError, None)
             .with_compiler_loc()
-            .with_tokens(opt_match.source.tokens()));
+            .with_tokens(match_expr.source.tokens()));
     }
-    let source = expression(&opt_match.source, env, p)?;
+    let source = expression(&match_expr.source, env, p)?;
     let detached_source = match &source {
         Value::MutableReference(reference) => reference.borrow().clone(),
         _ => source.clone(),
     };
     let mut base_env = env.cloned().unwrap_or_default();
-    if let Expression::Var(var) = &opt_match.source {
+    if let Expression::Var(var) = &match_expr.source {
         base_env.insert(var.name.hash(), detached_source.clone());
     }
-    if option_value_is_empty(&detached_source) {
-        if let Some(arm) = opt_match
-            .arms
-            .iter()
-            .find(|arm| matches!(arm.pattern, Pattern::Wildcard))
-        {
-            return expression(&arm.expression, Some(&base_env), p);
-        }
-        return Err(MechError::new(OptionMatchNoArmMatchedError, None)
-            .with_compiler_loc()
-            .with_tokens(opt_match.source.tokens()));
-    }
 
-    for (arm_ix, arm) in opt_match.arms.iter().enumerate() {
+    for (arm_ix, arm) in match_expr.arms.iter().enumerate() {
         let mut guard_env = base_env.clone();
         let matched = match &arm.pattern {
             Pattern::Wildcard => true,
@@ -961,10 +949,14 @@ pub fn option_match_expression(
                 crate::patterns::PatternMatchSemantics::OptionGuard,
             )?,
         };
-        if matched {
+        let passed_guard = match &arm.guard {
+            Some(guard) => guard_expression_true(guard, &guard_env, p)?,
+            None => true,
+        };
+        if matched && passed_guard {
             let output = expression(&arm.expression, Some(&guard_env), p)?;
-            option_match_validate_arm_kinds(
-                opt_match,
+            match_validate_arm_kinds(
+                match_expr,
                 arm_ix,
                 &output.kind(),
                 &detached_source,
@@ -975,20 +967,20 @@ pub fn option_match_expression(
         }
     }
 
-    Err(MechError::new(OptionMatchNoArmMatchedError, None)
+    Err(MechError::new(MatchNoArmMatchedError, None)
         .with_compiler_loc()
-        .with_tokens(opt_match.source.tokens()))
+        .with_tokens(match_expr.source.tokens()))
 }
 
-fn option_match_validate_arm_kinds(
-    opt_match: &OptionMatchExpression,
+fn match_validate_arm_kinds(
+    match_expr: &MatchExpression,
     matched_arm_ix: usize,
     matched_kind: &ValueKind,
     source: &Value,
     base_env: &Environment,
     p: &Interpreter,
 ) -> MResult<()> {
-    for (ix, arm) in opt_match.arms.iter().enumerate() {
+    for (ix, arm) in match_expr.arms.iter().enumerate() {
         if ix == matched_arm_ix {
             continue;
         }
@@ -1003,14 +995,18 @@ fn option_match_validate_arm_kinds(
                 crate::patterns::PatternMatchSemantics::OptionGuard,
             )?,
         };
-        if !applicable {
+        let passed_guard = match &arm.guard {
+            Some(guard) => guard_expression_true(guard, &arm_env, p)?,
+            None => true,
+        };
+        if !(applicable && passed_guard) {
             continue;
         }
         let arm_value = expression(&arm.expression, Some(&arm_env), p)?;
         let arm_kind = arm_value.kind();
         if arm_kind != *matched_kind {
             return Err(MechError::new(
-                OptionMatchArmKindMismatchError {
+                MatchArmKindMismatchError {
                     expected: matched_kind.clone(),
                     found: arm_kind,
                 },
@@ -1023,18 +1019,13 @@ fn option_match_validate_arm_kinds(
     Ok(())
 }
 
-fn option_value_is_empty(value: &Value) -> bool {
-    match value {
-        Value::Empty => true,
-        #[cfg(feature = "tuple")]
-        Value::Tuple(tuple) => tuple
-            .borrow()
-            .elements
-            .iter()
-            .any(|value| option_value_is_empty(value.as_ref())),
-        Value::MutableReference(reference) => option_value_is_empty(&reference.borrow()),
-        _ => false,
+fn guard_expression_true(guard: &Expression, env: &Environment, p: &Interpreter) -> MResult<bool> {
+    let guard_result = expression(guard, Some(env), p)?;
+    #[cfg(feature = "bool")]
+    if let Value::Bool(flag) = guard_result {
+        return Ok(*flag.borrow());
     }
+    Ok(false)
 }
 
 #[cfg(feature = "formulas")]
@@ -1333,41 +1324,41 @@ pub struct PatternMatchError {
 }
 
 #[derive(Debug, Clone)]
-pub struct OptionMatchNoArmMatchedError;
-impl MechErrorKind for OptionMatchNoArmMatchedError {
+pub struct MatchNoArmMatchedError;
+impl MechErrorKind for MatchNoArmMatchedError {
     fn name(&self) -> &str {
-        "OptionMatchNoArmMatched"
+        "MatchNoArmMatched"
     }
     fn message(&self) -> String {
-        format!("No option match arm matched the provided value.")
+        format!("No match arm matched the provided value.")
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct OptionMatchArmKindMismatchError {
+pub struct MatchArmKindMismatchError {
     expected: ValueKind,
     found: ValueKind,
 }
-impl MechErrorKind for OptionMatchArmKindMismatchError {
+impl MechErrorKind for MatchArmKindMismatchError {
     fn name(&self) -> &str {
-        "OptionMatchArmKindMismatch"
+        "MatchArmKindMismatch"
     }
     fn message(&self) -> String {
         format!(
-            "Option match arm kind mismatch: expected {:?}, found {:?}",
+            "Match arm kind mismatch: expected {:?}, found {:?}",
             self.expected, self.found
         )
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct OptionMatchNonExhaustiveError;
-impl MechErrorKind for OptionMatchNonExhaustiveError {
+pub struct MatchNonExhaustiveError;
+impl MechErrorKind for MatchNonExhaustiveError {
     fn name(&self) -> &str {
-        "OptionMatchNonExhaustive"
+        "MatchNonExhaustive"
     }
     fn message(&self) -> String {
-        "Option match must include a wildcard (`*`) arm to handle empty values.".to_string()
+        "Match expression must include a wildcard (`*`) arm.".to_string()
     }
 }
 
