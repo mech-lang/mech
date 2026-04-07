@@ -166,11 +166,11 @@ pub fn pattern_matches_value_with_semantics(pattern: &Pattern, value: &Value, en
 }
 
 pub fn clear_pattern_bindings(pattern: &Pattern, env: &mut Environment) {
-    let mut ids = Vec::new();
-    collect_pattern_variable_ids(pattern, &mut ids);
-    for var_id in ids {
-      env.remove(&var_id);
-    }
+  let mut ids = Vec::new();
+  collect_pattern_variable_ids(pattern, &mut ids);
+  for var_id in ids {
+    env.remove(&var_id);
+  }
 }
 
 pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -> MResult<Value> {
@@ -343,14 +343,12 @@ fn values_match(expected: &Value, actual: &Value) -> bool {
   if expected == actual {
     return true;
   }
-  {
-    match (expected, actual) {
-      #[cfg(all(feature = "u64", feature = "f64"))]
-      (Value::F64(x), Value::U64(y)) => return (*x.borrow() as u64) == *y.borrow(),
-      #[cfg(all(feature = "u64", feature = "f64"))]
-      (Value::U64(x), Value::F64(y)) => return *x.borrow() == (*y.borrow() as u64),
-      _ => {}
-    }
+  match (expected, actual) {
+    #[cfg(all(feature = "u64", feature = "f64"))]
+    (Value::F64(x), Value::U64(y)) => return (*x.borrow() as u64) == *y.borrow(),
+    #[cfg(all(feature = "u64", feature = "f64"))]
+    (Value::U64(x), Value::F64(y)) => return *x.borrow() == (*y.borrow() as u64),
+    _ => {}
   }
   false
 }
