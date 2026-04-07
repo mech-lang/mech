@@ -596,194 +596,161 @@ impl Interpreter {
     }
 }
 
+// Interpreter Errors
+// ----------------------------------------------------------------------------
+
 #[derive(Debug, Clone)]
 pub struct UnknownInstructionError {
-    pub instr: String,
+  pub instr: String,
 }
 impl MechErrorKind for UnknownInstructionError {
-    fn name(&self) -> &str {
-        "UnknownInstruction"
-    }
+  fn name(&self) -> &str {
+    "UnknownInstruction"
+  }
 
-    fn message(&self) -> String {
-        format!("Unknown instruction: {}", self.instr)
-    }
+  fn message(&self) -> String {
+    format!("Unknown instruction: {}", self.instr)
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct UnknownVariadicFunctionError {
-    pub fxn_id: u64,
+  pub fxn_id: u64,
 }
 
 impl MechErrorKind for UnknownVariadicFunctionError {
-    fn name(&self) -> &str {
-        "UnknownVariadicFunction"
-    }
-    fn message(&self) -> String {
-        format!("Unknown variadic function ID: {}", self.fxn_id)
-    }
+  fn name(&self) -> &str {
+    "UnknownVariadicFunction"
+  }
+  fn message(&self) -> String {
+    format!("Unknown variadic function ID: {}", self.fxn_id)
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct UnknownQuadFunctionError {
-    pub fxn_id: u64,
+  pub fxn_id: u64,
 }
 impl MechErrorKind for UnknownQuadFunctionError {
-    fn name(&self) -> &str {
-        "UnknownQuadFunction"
-    }
-    fn message(&self) -> String {
-        format!("Unknown quad function ID: {}", self.fxn_id)
-    }
+  fn name(&self) -> &str {
+    "UnknownQuadFunction"
+  }
+  fn message(&self) -> String {
+    format!("Unknown quad function ID: {}", self.fxn_id)
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct UnknownTernaryFunctionError {
-    pub fxn_id: u64,
+  pub fxn_id: u64,
 }
 impl MechErrorKind for UnknownTernaryFunctionError {
-    fn name(&self) -> &str {
-        "UnknownTernaryFunction"
-    }
-    fn message(&self) -> String {
-        format!("Unknown ternary function ID: {}", self.fxn_id)
-    }
+  fn name(&self) -> &str {
+    "UnknownTernaryFunction"
+  }
+  fn message(&self) -> String {
+    format!("Unknown ternary function ID: {}", self.fxn_id)
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct UnknownBinaryFunctionError {
-    pub fxn_id: u64,
+  pub fxn_id: u64,
 }
 impl MechErrorKind for UnknownBinaryFunctionError {
-    fn name(&self) -> &str {
-        "UnknownBinaryFunction"
-    }
-    fn message(&self) -> String {
-        format!("Unknown binary function ID: {}", self.fxn_id)
-    }
+  fn name(&self) -> &str {
+    "UnknownBinaryFunction"
+  }
+  fn message(&self) -> String {
+    format!("Unknown binary function ID: {}", self.fxn_id)
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct UnknownUnaryFunctionError {
-    pub fxn_id: u64,
+  pub fxn_id: u64,
 }
 impl MechErrorKind for UnknownUnaryFunctionError {
-    fn name(&self) -> &str {
-        "UnknownUnaryFunction"
-    }
-    fn message(&self) -> String {
-        format!("Unknown unary function ID: {}", self.fxn_id)
-    }
+  fn name(&self) -> &str {
+    "UnknownUnaryFunction"
+  }
+  fn message(&self) -> String {
+    format!("Unknown unary function ID: {}", self.fxn_id)
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct UnknownNullaryFunctionError {
-    pub fxn_id: u64,
+  pub fxn_id: u64,
 }
 impl MechErrorKind for UnknownNullaryFunctionError {
-    fn name(&self) -> &str {
-        "UnknownNullaryFunction"
-    }
-    fn message(&self) -> String {
-        format!("Unknown nullary function ID: {}", self.fxn_id)
-    }
+  fn name(&self) -> &str {
+    "UnknownNullaryFunction"
+  }
+  fn message(&self) -> String {
+    format!("Unknown nullary function ID: {}", self.fxn_id)
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct IndexOutOfBoundsError;
 impl MechErrorKind for IndexOutOfBoundsError {
-    fn name(&self) -> &str {
-        "IndexOutOfBounds"
-    }
-    fn message(&self) -> String {
-        "Index out of bounds".to_string()
-    }
+  fn name(&self) -> &str {
+    "IndexOutOfBounds"
+  }
+  fn message(&self) -> String {
+    "Index out of bounds".to_string()
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct OverflowSubtractionError;
 impl MechErrorKind for OverflowSubtractionError {
-    fn name(&self) -> &str {
-        "OverflowSubtraction"
-    }
-    fn message(&self) -> String {
-        "Attempted subtraction overflow".to_string()
-    }
+  fn name(&self) -> &str {
+    "OverflowSubtraction"
+  }
+  fn message(&self) -> String {
+    "Attempted subtraction overflow".to_string()
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct UnknownPanicError {
-    pub details: String,
+  pub details: String,
 }
 impl MechErrorKind for UnknownPanicError {
-    fn name(&self) -> &str {
-        "UnknownPanic"
-    }
-    fn message(&self) -> String {
-        self.details.clone()
-    }
+  fn name(&self) -> &str {
+    "UnknownPanic"
+  }
+  fn message(&self) -> String {
+    self.details.clone()
+  }
 }
 
 #[derive(Debug, Clone)]
 struct StepIndexOutOfBoundsError {
-    pub step_id: usize,
-    pub plan_length: usize,
+  pub step_id: usize,
+  pub plan_length: usize,
 }
 impl MechErrorKind for StepIndexOutOfBoundsError {
-    fn name(&self) -> &str {
-        "StepIndexOutOfBounds"
-    }
-    fn message(&self) -> String {
-        format!(
-            "Step id {} out of range (plan has {} steps)",
-            self.step_id, self.plan_length
-        )
-    }
+  fn name(&self) -> &str {
+    "StepIndexOutOfBounds"
+  }
+  fn message(&self) -> String {
+    format!(
+      "Step id {} out of range (plan has {} steps)",
+      self.step_id, self.plan_length
+    )
+  }
 }
 
 #[derive(Debug, Clone)]
 struct NoStepsInPlanError;
 impl MechErrorKind for NoStepsInPlanError {
-    fn name(&self) -> &str {
-        "NoStepsInPlan"
-    }
-    fn message(&self) -> String {
-        "Plan contains no steps. This program doesn't do anything.".to_string()
-    }
-}
-
-fn format_duration(d: Duration) -> String {
-    let ns = d.as_nanos();
-    if ns < 1_000 {
-        format!("{}ns", ns)
-    } else if ns < 1_000_000 {
-        format!("{:.2}µs", ns as f64 / 1_000.0)
-    } else if ns < 1_000_000_000 {
-        format!("{:.2}ms", ns as f64 / 1_000_000.0)
-    } else {
-        format!("{:.2}s", ns as f64 / 1_000_000_000.0)
-    }
-}
-
-fn print_histogram(total_durations: &[Duration]) {
-    let max_duration = total_durations
-        .iter()
-        .cloned()
-        .max()
-        .unwrap_or(Duration::ZERO);
-    let max_bar_len = 50; // max characters for the bar
-
-    println!("{:>5}  {:>10}  {}", "#", "Time", "Histogram");
-    println!("-----------------------------------------------");
-
-    for (idx, dur) in total_durations.iter().enumerate() {
-        let bar_len = if max_duration.as_nanos() == 0 {
-            0
-        } else {
-            ((dur.as_nanos() * max_bar_len as u128) / max_duration.as_nanos()) as usize
-        };
-        let bar = std::iter::repeat('░').take(bar_len).collect::<String>();
-
-        println!("{:>5}  {:>10}  {}", idx, format_duration(*dur), bar);
-    }
+  fn name(&self) -> &str {
+    "NoStepsInPlan"
+  }
+  fn message(&self) -> String {
+    "Plan contains no steps. This program doesn't do anything.".to_string()
+  }
 }
