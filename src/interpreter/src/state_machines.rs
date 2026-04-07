@@ -78,7 +78,7 @@ pub fn execute_fsm_pipe(fsm_pipe: &FsmPipe, env: Option<&Environment>, p: &Inter
       }
       call_env.insert(arg_decl.name.hash(), detach_value(arg_value));
   }
-  let mut state = crate::patterns::pattern_to_value(&fsm.start, &call_env, p)?;
+  let mut state = pattern_to_value(&fsm.start, &call_env, p)?;
   validate_fsm_state_coverage(&fsm, fsm_pipe)?;
   execute_fsm_pipe_impl(&fsm, &mut state, &mut call_env, p)
 }
@@ -96,156 +96,152 @@ fn execute_fsm_pipe_impl(fsm: &FsmImplementation, state: &mut Value, call_env: &
       )
     )
   );
+  // Step through the FSM, applying transitions until we hit a terminal state (no applicable transitions) or exceed the step limit.
   for step in 0..p.max_steps {
     trace_println!(
-        p,
-        "{}",
-        format_fsm_trace(
-            "step",
-            format!("{step:>4} state={}", summarize_value(state))
-        )
+      p,
+      "{}",
+      format_fsm_trace(
+        "step",
+        format!("{step:>4} state={}", summarize_value(state))
+      )
     );
     let mut transitioned = false;
     for (arm_idx, arm) in fsm.arms.iter().enumerate() {
       match arm {
         FsmArm::Transition(pattern, transitions) => {
-            let mut arm_env = call_env.clone();
-            crate::patterns::clear_pattern_bindings(pattern, &mut arm_env);
-            let matched =
-                crate::patterns::pattern_matches_value(pattern, state, &mut arm_env, p)?;
-            trace_println!(
+          let mut arm_env = call_env.clone();
+          clear_pattern_bindings(pattern, &mut arm_env);
+          let matched = pattern_matches_value(pattern, state, &mut arm_env, p)?;
+          trace_println!(
+            p,
+            "{}",
+            format_fsm_trace(
+              "arm",
+              format!(
+                "[{arm_idx}] check transition pattern={} {}",
+                summarize_pattern(pattern),
+                if matched { "✓" } else { "✗" }
+              )
+            )
+          );
+          if matched {
+            let previous_state = summarize_value(state);
+            let out = apply_transitions(transitions, state, &mut arm_env, p)?;
+            *call_env = arm_env;
+            if let Some(value) = out {
+              trace_println!(
                 p,
                 "{}",
                 format_fsm_trace(
-                    "arm",
-                    format!(
-                        "[{arm_idx}] check transition pattern={} {}",
-                        summarize_pattern(pattern),
-                        if matched { "✓" } else { "✗" }
-                    )
+                  "output",
+                  format!("value={}", summarize_value(&value))
                 )
-            );
-            if matched {
-                let previous_state = summarize_value(state);
-                let out = apply_transitions(transitions, state, &mut arm_env, p)?;
-                *call_env = arm_env;
-                if let Some(value) = out {
-                    trace_println!(
-                        p,
-                        "{}",
-                        format_fsm_trace(
-                            "output",
-                            format!("value={}", summarize_value(&value))
-                        )
-                    );
-                    return Ok(value);
-                }
-                trace_println!(
-                    p,
-                    "{}",
-                    format_fsm_trace(
-                        "transition",
-                        format!(
-                            "arm[{arm_idx}] {} -> {}",
-                            previous_state,
-                            summarize_value(state)
-                        )
-                    )
-                );
-                transitioned = true;
-                break;
+              );
+              return Ok(value);
             }
-        }
-        FsmArm::Guard(pattern, guards) => {
-          let mut arm_env = call_env.clone();
-          crate::patterns::clear_pattern_bindings(pattern, &mut arm_env);
-          let pattern_matched = crate::patterns::pattern_matches_value(pattern, state, &mut arm_env, p)?;
-          trace_println!(
+            trace_println!(
               p,
               "{}",
               format_fsm_trace(
-                  "arm",
-                  format!(
-                      "[{arm_idx}] check guard pattern={} {}",
-                      summarize_pattern(pattern),
-                      if pattern_matched { "✓" } else { "✗" }
-                  )
+                "transition",
+                format!(
+                  "arm[{arm_idx}] {} -> {}",
+                  previous_state,
+                  summarize_value(state)
+                )
               )
+            );
+            transitioned = true;
+            break;
+          }
+        }
+        FsmArm::Guard(pattern, guards) => {
+          let mut arm_env = call_env.clone();
+          clear_pattern_bindings(pattern, &mut arm_env);
+          let pattern_matched = pattern_matches_value(pattern, state, &mut arm_env, p)?;
+          trace_println!(
+            p,
+            "{}",
+            format_fsm_trace(
+              "arm",
+              format!(
+                "[{arm_idx}] check guard pattern={} {}",
+                summarize_pattern(pattern),
+                if pattern_matched { "✓" } else { "✗" }
+              )
+            )
           );
           if !pattern_matched {
-              continue;
+            continue;
           }
           for (guard_idx, guard) in guards.iter().enumerate() {
-              let guard_passes = match &guard.condition {
-                  Pattern::Wildcard => true,
-                  _ => {
-                      let cond = crate::patterns::pattern_to_value(
-                          &guard.condition,
-                          &arm_env,
-                          p,
-                      )?;
-                      match cond {
-                          Value::Bool(x) => *x.borrow(),
-                          other => {
-                              return Err(MechError::new(
-                                  FsmGuardConditionKindMismatchError {
-                                      arm_index: arm_idx,
-                                      guard_index: guard_idx,
-                                      actual_kind: other.kind(),
-                                  },
-                                  None,
-                              )
-                              .with_compiler_loc());
-                          }
-                      }
+            let guard_passes = match &guard.condition {
+              Pattern::Wildcard => true,
+              _ => {
+                let cond = pattern_to_value(&guard.condition,&arm_env,p)?;
+                match cond {
+                  Value::Bool(x) => *x.borrow(),
+                  other => {
+                    return Err(MechError::new(
+                      FsmGuardConditionKindMismatchError {
+                        arm_index: arm_idx,
+                        guard_index: guard_idx,
+                        actual_kind: other.kind(),
+                      },
+                      None,
+                    )
+                    .with_compiler_loc());
                   }
-              };
-              trace_println!(
-                  p,
-                  "{}",
-                  format_fsm_trace(
-                      "guard",
-                      format!(
-                          "arm[{arm_idx}] check guard[{guard_idx}] condition={} {}",
-                          summarize_guard_condition(&guard.condition),
-                          if guard_passes { "✓" } else { "✗" }
-                      )
-                  )
-              );
-              if !guard_passes {
-                  continue;
+                }
               }
-              let previous_state = summarize_value(state);
-              let out = apply_transitions(&guard.transitions, state, &mut arm_env, p)?;
-              *call_env = arm_env;
-              if let Some(value) = out {
-                  trace_println!(
-                      p,
-                      "{}",
-                      format_fsm_trace(
-                          "output",
-                          format!("value={}", summarize_value(&value))
-                      )
-                  );
-                  return Ok(value);
-              }
+            };
+            trace_println!(
+              p,
+              "{}",
+              format_fsm_trace(
+                "guard",
+                format!(
+                  "arm[{arm_idx}] check guard[{guard_idx}] condition={} {}",
+                  summarize_guard_condition(&guard.condition),
+                  if guard_passes { "✓" } else { "✗" }
+                )
+              )
+            );
+            if !guard_passes {
+              continue;
+            }
+            let previous_state = summarize_value(state);
+            let out = apply_transitions(&guard.transitions, state, &mut arm_env, p)?;
+            *call_env = arm_env;
+            if let Some(value) = out {
               trace_println!(
-                  p,
-                  "{}",
-                  format_fsm_trace(
-                      "transition",
-                      format!(
-                          "arm[{arm_idx}] {} -> {}",
-                          previous_state,
-                          summarize_value(state)
-                      )
-                  )
+                p,
+                "{}",
+                format_fsm_trace(
+                  "output",
+                  format!("value={}", summarize_value(&value))
+                )
               );
-              transitioned = true;
-              break;
+              return Ok(value);
+            }
+            trace_println!(
+              p,
+              "{}",
+              format_fsm_trace(
+                "transition",
+                format!(
+                  "arm[{arm_idx}] {} -> {}",
+                  previous_state,
+                  summarize_value(state)
+                )
+              )
+            );
+            transitioned = true;
+            break;
           }
           if transitioned {
-              break;
+            break;
           }
         }
       }
@@ -360,10 +356,10 @@ fn apply_transitions(transitions: &[Transition], state: &mut Value, env: &mut En
   for transition in transitions {
     match transition {
       Transition::Next(next_pattern) | Transition::Async(next_pattern) => {
-        *state = crate::patterns::pattern_to_value(next_pattern, env, p)?;
+        *state = pattern_to_value(next_pattern, env, p)?;
       }
       Transition::Output(output_pattern) => {
-        return Ok(Some(crate::patterns::pattern_to_value(
+        return Ok(Some(pattern_to_value(
           output_pattern,
           env,
           p,
