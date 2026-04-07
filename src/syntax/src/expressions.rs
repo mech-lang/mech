@@ -51,8 +51,8 @@ pub fn expression(input: ParseString) -> ParseResult<Expression> {
         Ok((input, mc)) => (input, Expression::MatrixComprehension(Box::new(mc))),
         Err(_) => match range_expression(input.clone()) {
           Ok((input, rng)) => (input, Expression::Range(Box::new(rng))),
-          Err(_) => match option_match_expression(input.clone()) {
-            Ok((input, expr)) => (input, Expression::OptionMatch(Box::new(expr))),
+          Err(_) => match match_expression(input.clone()) {
+            Ok((input, expr)) => (input, Expression::Match(Box::new(expr))),
             Err(_) => match formula(input.clone()) {
               Ok((input, Factor::Expression(expr))) => (input, *expr),
               Ok((input, fctr)) => (input, Expression::Formula(fctr)),
@@ -68,8 +68,8 @@ pub fn expression(input: ParseString) -> ParseResult<Expression> {
   Ok((input, expr))
 }
 
-// option-match-expression := expression, "?", whitespace*, option-match-arm+, period? ;
-pub fn option_match_expression(input: ParseString) -> ParseResult<OptionMatchExpression> {
+// match-expression := expression, "?", whitespace*, match-arm+, period? ;
+pub fn match_expression(input: ParseString) -> ParseResult<MatchExpression> {
   let (input, source) = factor(input)?;
   let source = match source {
     Factor::Expression(expr) => *expr,
@@ -77,20 +77,25 @@ pub fn option_match_expression(input: ParseString) -> ParseResult<OptionMatchExp
   };
   let (input, _) = question(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, arms) = many1(option_match_arm)(input)?;
+  let (input, arms) = many1(match_arm)(input)?;
   let (input, _) = opt(period)(input)?;
-  Ok((input, OptionMatchExpression { source, arms }))
+  Ok((input, MatchExpression { source, arms }))
 }
 
-// option-match-arm := guard-operator, pattern, transition-operator, expression, statement-separator? ;
-pub fn option_match_arm(input: ParseString) -> ParseResult<OptionMatchArm> {
+// match-arm := guard-operator, pattern, [",", expression], transition-operator, expression, statement-separator? ;
+pub fn match_arm(input: ParseString) -> ParseResult<MatchArm> {
   let (input, _) = crate::state_machines::guard_operator(input)?;
   let (input, pattern) = crate::patterns::pattern(input)?;
+  let (input, guard) = opt(preceded(
+    list_separator,
+    preceded(whitespace0, expression),
+  ))(input)?;
   let (input, _) = transition_operator(input)?;
   let (input, expr) = expression(input)?;
   let (input, _) = opt(alt((whitespace1, statement_separator)))(input)?;
-  Ok((input, OptionMatchArm {
+  Ok((input, MatchArm {
     pattern,
+    guard,
     expression: expr,
   }))
 }
@@ -133,7 +138,7 @@ pub fn l4(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l5 := factor, (power-operator, factor)* ;
+// l5 := l6, (power-operator, l6)* ;
 pub fn l5(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l6(input)?;
   let (input, rhs) = many0(pair(power_operator,cut(l6)))(input)?;
@@ -141,7 +146,7 @@ pub fn l5(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l6 := factor, (table-operator, factor)* ;
+// l6 := l7, (table-operator, l7)* ;
 pub fn l6(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l7(input)?;
   let (input, rhs) = many0(pair(table_operator,cut(l7)))(input)?;
