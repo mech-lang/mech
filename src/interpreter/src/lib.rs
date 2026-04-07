@@ -93,6 +93,7 @@ use indexmap::map::IndexMap;
 use indexmap::set::IndexSet;
 #[cfg(feature = "matrix")]
 use na::DMatrix;
+use std::time::Duration;
 
 pub mod expressions;
 #[cfg(feature = "functions")]

@@ -111,52 +111,52 @@ impl Interpreter {
 
     #[cfg(feature = "pretty_print")]
     pub fn pretty_print(&self) -> String {
-        let mut output = String::new();
-        output.push_str(&format!("Interpreter ID: {}\n", self.id));
-        // print state
-        output.push_str(&self.state.borrow().pretty_print());
+      let mut output = String::new();
+      output.push_str(&format!("Interpreter ID: {}\n", self.id));
+      // print state
+      output.push_str(&self.state.borrow().pretty_print());
 
-        output.push_str("Registers:\n");
-        for (i, reg) in self.registers.iter().enumerate() {
-            output.push_str(&format!("  R{}: {}\n", i, reg));
-        }
-        output.push_str("Constants:\n");
-        for (i, constant) in self.constants.iter().enumerate() {
-            output.push_str(&format!("  C{}: {}\n", i, constant));
-        }
-        output.push_str(&format!("Output Value: {}\n", self.out));
-        output.push_str(&format!(
-            "Number of Sub-Interpreters: {}\n",
-            self.sub_interpreters.borrow().len()
-        ));
-        output.push_str("Output Values:\n");
-        for (key, value) in self.out_values.borrow().iter() {
-            output.push_str(&format!("  {}: {}\n", key, value));
-        }
-        output.push_str(&format!("Code Length: {}\n", self.code.len()));
-        #[cfg(feature = "compiler")]
-        if let Some(context) = &self.context {
-            output.push_str("Context: Exists\n");
-        } else {
-            output.push_str("Context: None\n");
-        }
-        output
+      output.push_str("Registers:\n");
+      for (i, reg) in self.registers.iter().enumerate() {
+        output.push_str(&format!("  R{}: {}\n", i, reg));
+      }
+      output.push_str("Constants:\n");
+      for (i, constant) in self.constants.iter().enumerate() {
+        output.push_str(&format!("  C{}: {}\n", i, constant));
+      }
+      output.push_str(&format!("Output Value: {}\n", self.out));
+      output.push_str(&format!(
+        "Number of Sub-Interpreters: {}\n",
+        self.sub_interpreters.borrow().len()
+      ));
+      output.push_str("Output Values:\n");
+      for (key, value) in self.out_values.borrow().iter() {
+        output.push_str(&format!("  {}: {}\n", key, value));
+      }
+      output.push_str(&format!("Code Length: {}\n", self.code.len()));
+      #[cfg(feature = "compiler")]
+      if let Some(context) = &self.context {
+        output.push_str("Context: Exists\n");
+      } else {
+        output.push_str("Context: None\n");
+      }
+      output
     }
 
     pub fn clear(&mut self) {
-        let id = self.id;
-        *self = Interpreter::new(id);
+      let id = self.id;
+      *self = Interpreter::new(id);
     }
 
     pub fn set_trace_enabled(&mut self, enabled: bool) {
-        #[cfg(feature = "trace")]
-        {
-            self.trace = enabled;
-        }
-        #[cfg(not(feature = "trace"))]
-        {
-            let _ = enabled;
-        }
+      #[cfg(feature = "trace")]
+      {
+        self.trace = enabled;
+      }
+      #[cfg(not(feature = "trace"))]
+      {
+        let _ = enabled;
+      }
     }
 
     #[cfg(feature = "trace")]
