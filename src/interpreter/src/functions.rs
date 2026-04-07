@@ -444,7 +444,7 @@ fn bind_function_inputs(
     p: &Interpreter,
 ) -> MResult<()> {
     let scoped_state = p.state.borrow();
-    for ((arg_id, _), input_value) in fxn_def.input.iter().zip(input_arg_values.iter()) {
+    for ((arg_id, input_kind_annotation), input_value) in fxn_def.input.iter().zip(input_arg_values.iter()) {
         let arg_name = fxn_def
             .code
             .input
@@ -452,7 +452,32 @@ fn bind_function_inputs(
             .find(|arg| arg.name.hash() == *arg_id)
             .map(|arg| arg.name.to_string())
             .unwrap_or_else(|| arg_id.to_string());
-        scoped_state.save_symbol(*arg_id, arg_name, detach_value(input_value), false);
+        let bound_value = {
+            #[cfg(feature = "kind_annotation")]
+            {
+                let target_kind = kind_annotation(&input_kind_annotation.kind, p)?
+                    .to_value_kind(&p.state.borrow().kinds)?;
+                let detached_input = detach_value(input_value);
+                detached_input.clone().convert_to(&target_kind).ok_or_else(|| {
+                    MechError::new(
+                        FunctionInputTypeMismatchError {
+                            function_name: fxn_def.name.clone(),
+                            argument_name: arg_name.clone(),
+                            expected: target_kind.clone(),
+                            found: detached_input.kind(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                    .with_tokens(input_kind_annotation.tokens())
+                })?
+            }
+            #[cfg(not(feature = "kind_annotation"))]
+            {
+                detach_value(input_value)
+            }
+        };
+        scoped_state.save_symbol(*arg_id, arg_name, bound_value, false);
     }
     Ok(())
 }
@@ -517,6 +542,27 @@ impl MechErrorKind for FunctionOutputUndefinedError {
         format!(
             "Function output {} was declared but never defined",
             self.output_id
+        )
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FunctionInputTypeMismatchError {
+    pub function_name: String,
+    pub argument_name: String,
+    pub expected: ValueKind,
+    pub found: ValueKind,
+}
+
+impl MechErrorKind for FunctionInputTypeMismatchError {
+    fn name(&self) -> &str {
+        "FunctionInputTypeMismatch"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "Function '{}' argument '{}' expected {}, found {}",
+            self.function_name, self.argument_name, self.expected, self.found
         )
     }
 }
