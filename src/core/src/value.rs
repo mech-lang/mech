@@ -969,7 +969,11 @@ impl Value {
     match (self, other) {
     (Value::Empty, ValueKind::Option(_)) => Some(Value::Empty),
     (value, ValueKind::Option(inner)) => value.convert_to(inner.as_ref()),
-    (value, ValueKind::Matrix(_, target_shape)) if target_shape.is_empty() && value.is_matrix() => Some(value.clone()),
+    (value, ValueKind::Matrix(_, target_shape))
+      if target_shape.is_empty() && matches!(value.kind(), ValueKind::Matrix(_, _)) =>
+    {
+      Some(value.clone())
+    },
     // ==== Unsigned widening and narrowing ====
     #[cfg(all(feature = "u8", feature = "u16"))]
     (Value::U8(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
