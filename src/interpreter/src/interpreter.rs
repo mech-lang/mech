@@ -375,225 +375,205 @@ impl Interpreter {
         })?
     }
 
-    #[cfg(feature = "program")]
-    pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
-        // Reset the instruction pointer
-        self.ip = 0;
-        // Resize the registers and constant table
-        self.registers = vec![Value::Empty; program.header.reg_count as usize];
-        self.constants = vec![Value::Empty; program.const_entries.len()];
-        // Load the constants
-        self.constants = program.decode_const_entries()?;
-        // Load the symbol table
-        {
-            let mut state_brrw = self.state.borrow_mut();
-            let mut symbol_table = state_brrw.symbol_table.borrow_mut();
-            for (id, reg) in program.symbols.iter() {
-                let constant = self.constants[*reg as usize].clone();
-                self.out = constant.clone();
-                let mutable = program.mutable_symbols.contains(id);
-                symbol_table.insert(*id, constant, mutable);
-            }
-        }
-        // Load the instructions
-        {
-            let state_brrw = self.state.borrow();
-            let functions_table = state_brrw.functions.borrow();
-            while self.ip < program.instrs.len() {
-                let instr = &program.instrs[self.ip];
-                match instr {
-                    DecodedInstr::ConstLoad { dst, const_id } => {
-                        let value = self.constants[*const_id as usize].clone();
-                        self.registers[*dst as usize] = value;
-                    }
-                    DecodedInstr::NullOp { fxn_id, dst } => {
-                        match functions_table.functions.get(fxn_id) {
-                            Some(fxn_factory) => {
-                                let out = &self.registers[*dst as usize];
-                                let fxn = fxn_factory(FunctionArgs::Nullary(out.clone()))?;
-                                self.out = fxn.out().clone();
-                                state_brrw.add_plan_step(fxn);
-                            }
-                            None => {
-                                return Err(MechError::new(
-                                    UnknownNullaryFunctionError { fxn_id: *fxn_id },
-                                    None,
-                                )
-                                .with_compiler_loc());
-                            }
-                        }
-                    }
-                    DecodedInstr::UnOp { fxn_id, dst, src } => {
-                        match functions_table.functions.get(fxn_id) {
-                            Some(fxn_factory) => {
-                                let src = &self.registers[*src as usize];
-                                let out = &self.registers[*dst as usize];
-                                let fxn =
-                                    fxn_factory(FunctionArgs::Unary(out.clone(), src.clone()))?;
-                                self.out = fxn.out().clone();
-                                state_brrw.add_plan_step(fxn);
-                            }
-                            None => {
-                                return Err(MechError::new(
-                                    UnknownUnaryFunctionError { fxn_id: *fxn_id },
-                                    None,
-                                )
-                                .with_compiler_loc());
-                            }
-                        }
-                    }
-                    DecodedInstr::BinOp {
-                        fxn_id,
-                        dst,
-                        lhs,
-                        rhs,
-                    } => match functions_table.functions.get(fxn_id) {
-                        Some(fxn_factory) => {
-                            let lhs = &self.registers[*lhs as usize];
-                            let rhs = &self.registers[*rhs as usize];
-                            let out = &self.registers[*dst as usize];
-                            let fxn = fxn_factory(FunctionArgs::Binary(
-                                out.clone(),
-                                lhs.clone(),
-                                rhs.clone(),
-                            ))?;
-                            self.out = fxn.out().clone();
-                            state_brrw.add_plan_step(fxn);
-                        }
-                        None => {
-                            return Err(MechError::new(
-                                UnknownBinaryFunctionError { fxn_id: *fxn_id },
-                                None,
-                            )
-                            .with_compiler_loc());
-                        }
-                    },
-                    DecodedInstr::TernOp {
-                        fxn_id,
-                        dst,
-                        a,
-                        b,
-                        c,
-                    } => match functions_table.functions.get(fxn_id) {
-                        Some(fxn_factory) => {
-                            let arg1 = &self.registers[*a as usize];
-                            let arg2 = &self.registers[*b as usize];
-                            let arg3 = &self.registers[*c as usize];
-                            let out = &self.registers[*dst as usize];
-                            let fxn = fxn_factory(FunctionArgs::Ternary(
-                                out.clone(),
-                                arg1.clone(),
-                                arg2.clone(),
-                                arg3.clone(),
-                            ))?;
-                            self.out = fxn.out().clone();
-                            state_brrw.add_plan_step(fxn);
-                        }
-                        None => {
-                            return Err(MechError::new(
-                                UnknownTernaryFunctionError { fxn_id: *fxn_id },
-                                None,
-                            )
-                            .with_compiler_loc());
-                        }
-                    },
-                    DecodedInstr::QuadOp {
-                        fxn_id,
-                        dst,
-                        a,
-                        b,
-                        c,
-                        d,
-                    } => match functions_table.functions.get(fxn_id) {
-                        Some(fxn_factory) => {
-                            let arg1 = &self.registers[*a as usize];
-                            let arg2 = &self.registers[*b as usize];
-                            let arg3 = &self.registers[*c as usize];
-                            let arg4 = &self.registers[*d as usize];
-                            let out = &self.registers[*dst as usize];
-                            let fxn = fxn_factory(FunctionArgs::Quaternary(
-                                out.clone(),
-                                arg1.clone(),
-                                arg2.clone(),
-                                arg3.clone(),
-                                arg4.clone(),
-                            ))?;
-                            self.out = fxn.out().clone();
-                            state_brrw.add_plan_step(fxn);
-                        }
-                        None => {
-                            return Err(MechError::new(
-                                UnknownQuadFunctionError { fxn_id: *fxn_id },
-                                None,
-                            )
-                            .with_compiler_loc());
-                        }
-                    },
-                    DecodedInstr::VarArg { fxn_id, dst, args } => {
-                        match functions_table.functions.get(fxn_id) {
-                            Some(fxn_factory) => {
-                                let arg_values: Vec<Value> = args
-                                    .iter()
-                                    .map(|r| self.registers[*r as usize].clone())
-                                    .collect();
-                                let out = &self.registers[*dst as usize];
-                                let fxn =
-                                    fxn_factory(FunctionArgs::Variadic(out.clone(), arg_values))?;
-                                self.out = fxn.out().clone();
-                                state_brrw.add_plan_step(fxn);
-                            }
-                            None => {
-                                return Err(MechError::new(
-                                    UnknownVariadicFunctionError { fxn_id: *fxn_id },
-                                    None,
-                                )
-                                .with_compiler_loc());
-                            }
-                        }
-                    }
-                    DecodedInstr::Ret { src } => {
-                        todo!();
-                    }
-                    x => {
-                        return Err(MechError::new(
-                            UnknownInstructionError {
-                                instr: format!("{:?}", x),
-                            },
-                            None,
-                        )
-                        .with_compiler_loc());
-                    }
-                }
-                self.ip += 1;
-            }
-        }
-        // Load the dictionary
-        {
-            let mut state_brrw = self.state.borrow_mut();
-            let mut symbol_table = state_brrw.symbol_table.borrow_mut();
-            for (id, name) in &program.dictionary {
-                symbol_table
-                    .dictionary
-                    .borrow_mut()
-                    .insert(*id, name.clone());
-                state_brrw.dictionary.borrow_mut().insert(*id, name.clone());
-            }
-        }
-        Ok(self.out.clone())
+  #[cfg(feature = "program")]
+  pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
+    // Reset the instruction pointer
+    self.ip = 0;
+    // Resize the registers and constant table
+    self.registers = vec![Value::Empty; program.header.reg_count as usize];
+    self.constants = vec![Value::Empty; program.const_entries.len()];
+    // Load the constants
+    self.constants = program.decode_const_entries()?;
+    // Load the symbol table
+    {
+      let mut state_brrw = self.state.borrow_mut();
+      let mut symbol_table = state_brrw.symbol_table.borrow_mut();
+      for (id, reg) in program.symbols.iter() {
+        let constant = self.constants[*reg as usize].clone();
+        self.out = constant.clone();
+        let mutable = program.mutable_symbols.contains(id);
+        symbol_table.insert(*id, constant, mutable);
+      }
     }
+    // Load the instructions
+    {
+      let state_brrw = self.state.borrow();
+      let functions_table = state_brrw.functions.borrow();
+      while self.ip < program.instrs.len() {
+        let instr = &program.instrs[self.ip];
+        match instr {
+          DecodedInstr::ConstLoad { dst, const_id } => {
+            let value = self.constants[*const_id as usize].clone();
+            self.registers[*dst as usize] = value;
+          }
+          DecodedInstr::NullOp { fxn_id, dst } => {
+            match functions_table.functions.get(fxn_id) {
+              Some(fxn_factory) => {
+                let out = &self.registers[*dst as usize];
+                let fxn = fxn_factory(FunctionArgs::Nullary(out.clone()))?;
+                self.out = fxn.out().clone();
+                state_brrw.add_plan_step(fxn);
+              }
+              None => {
+                return Err(MechError::new(
+                  UnknownNullaryFunctionError { fxn_id: *fxn_id },
+                  None,
+                )
+                .with_compiler_loc());
+              }
+            }
+          }
+          DecodedInstr::UnOp { fxn_id, dst, src } => {
+            match functions_table.functions.get(fxn_id) {
+              Some(fxn_factory) => {
+                let src = &self.registers[*src as usize];
+                let out = &self.registers[*dst as usize];
+                let fxn =
+                    fxn_factory(FunctionArgs::Unary(out.clone(), src.clone()))?;
+                self.out = fxn.out().clone();
+                state_brrw.add_plan_step(fxn);
+              }
+              None => {
+                return Err(MechError::new(
+                  UnknownUnaryFunctionError { fxn_id: *fxn_id },
+                  None,
+                )
+                .with_compiler_loc());
+              }
+            }
+          }
+          DecodedInstr::BinOp { fxn_id, dst, lhs, rhs } => 
+          match functions_table.functions.get(fxn_id) {
+            Some(fxn_factory) => {
+              let lhs = &self.registers[*lhs as usize];
+              let rhs = &self.registers[*rhs as usize];
+              let out = &self.registers[*dst as usize];
+              let fxn = fxn_factory(FunctionArgs::Binary(out.clone(),lhs.clone(),rhs.clone()))?;
+              self.out = fxn.out().clone();
+              state_brrw.add_plan_step(fxn);
+            }
+            None => {
+              return Err(MechError::new(
+                UnknownBinaryFunctionError { fxn_id: *fxn_id },
+                None,
+              )
+              .with_compiler_loc());
+            }
+          },
+          DecodedInstr::TernOp {fxn_id,dst,a,b,c} => 
+          match functions_table.functions.get(fxn_id) {
+            Some(fxn_factory) => {
+              let arg1 = &self.registers[*a as usize];
+              let arg2 = &self.registers[*b as usize];
+              let arg3 = &self.registers[*c as usize];
+              let out = &self.registers[*dst as usize];
+              let fxn = fxn_factory(FunctionArgs::Ternary(
+                out.clone(),
+                arg1.clone(),
+                arg2.clone(),
+                arg3.clone(),
+              ))?;
+              self.out = fxn.out().clone();
+              state_brrw.add_plan_step(fxn);
+            }
+            None => {
+              return Err(MechError::new(
+                UnknownTernaryFunctionError { fxn_id: *fxn_id },
+                None,
+              )
+              .with_compiler_loc());
+            }
+          },
+          DecodedInstr::QuadOp {fxn_id,dst,a,b,c,d } => 
+            match functions_table.functions.get(fxn_id) {
+              Some(fxn_factory) => {
+                let arg1 = &self.registers[*a as usize];
+                let arg2 = &self.registers[*b as usize];
+                let arg3 = &self.registers[*c as usize];
+                let arg4 = &self.registers[*d as usize];
+                let out = &self.registers[*dst as usize];
+                let fxn = fxn_factory(FunctionArgs::Quaternary(
+                    out.clone(),
+                    arg1.clone(),
+                    arg2.clone(),
+                    arg3.clone(),
+                    arg4.clone(),
+                ))?;
+                self.out = fxn.out().clone();
+                state_brrw.add_plan_step(fxn);
+              }
+              None => {
+                return Err(MechError::new(
+                  UnknownQuadFunctionError { fxn_id: *fxn_id },
+                  None,
+                )
+                .with_compiler_loc());
+              }
+          },
+          DecodedInstr::VarArg { fxn_id, dst, args } => {
+            match functions_table.functions.get(fxn_id) {
+              Some(fxn_factory) => {
+                let arg_values: Vec<Value> = args
+                  .iter()
+                  .map(|r| self.registers[*r as usize].clone())
+                  .collect();
+                let out = &self.registers[*dst as usize];
+                let fxn = fxn_factory(FunctionArgs::Variadic(out.clone(), arg_values))?;
+                self.out = fxn.out().clone();
+                state_brrw.add_plan_step(fxn);
+              }
+              None => {
+                return Err(MechError::new(
+                  UnknownVariadicFunctionError { fxn_id: *fxn_id },
+                  None,
+                )
+                .with_compiler_loc());
+              }
+            }
+          }
+          DecodedInstr::Ret { src } => {
+            todo!();
+          }
+          x => {
+            return Err(MechError::new(
+              UnknownInstructionError {
+                instr: format!("{:?}", x),
+              },
+              None,
+            )
+            .with_compiler_loc());
+          }
+        }
+        self.ip += 1;
+      }
+    }
+    // Load the dictionary
+    {
+      let mut state_brrw = self.state.borrow_mut();
+      let mut symbol_table = state_brrw.symbol_table.borrow_mut();
+      for (id, name) in &program.dictionary {
+        symbol_table
+            .dictionary
+            .borrow_mut()
+            .insert(*id, name.clone());
+        state_brrw.dictionary.borrow_mut().insert(*id, name.clone());
+      }
+    }
+    Ok(self.out.clone())
+  }
 
-    #[cfg(feature = "compiler")]
-    pub fn compile(&mut self) -> MResult<Vec<u8>> {
-        let state_brrw = self.state.borrow();
-        let mut plan_brrw = state_brrw.plan.borrow_mut();
-        let mut ctx = CompileCtx::new();
-        for step in plan_brrw.iter() {
-            step.compile(&mut ctx)?;
-        }
-        let bytes = ctx.compile()?;
-        self.context = Some(ctx);
-        Ok(bytes)
+  #[cfg(feature = "compiler")]
+  pub fn compile(&mut self) -> MResult<Vec<u8>> {
+    let state_brrw = self.state.borrow();
+    let mut plan_brrw = state_brrw.plan.borrow_mut();
+    let mut ctx = CompileCtx::new();
+    for step in plan_brrw.iter() {
+        step.compile(&mut ctx)?;
     }
+    let bytes = ctx.compile()?;
+    self.context = Some(ctx);
+    Ok(bytes)
+  }
 }
 
 // Interpreter Errors
