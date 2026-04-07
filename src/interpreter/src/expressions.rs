@@ -936,6 +936,21 @@ pub fn match_expression(
     if let Expression::Var(var) = &match_expr.source {
         base_env.insert(var.name.hash(), detached_source.clone());
     }
+    if value_contains_empty(&detached_source) {
+        if let Some(arm) = match_expr
+            .arms
+            .iter()
+            .find(|arm| matches!(arm.pattern, Pattern::Wildcard))
+        {
+            let passed_guard = match &arm.guard {
+                Some(guard) => guard_expression_true(guard, &base_env, p)?,
+                None => true,
+            };
+            if passed_guard {
+                return expression(&arm.expression, Some(&base_env), p);
+            }
+        }
+    }
 
     for (arm_ix, arm) in match_expr.arms.iter().enumerate() {
         let mut guard_env = base_env.clone();
@@ -984,6 +999,9 @@ fn match_validate_arm_kinds(
         if ix == matched_arm_ix {
             continue;
         }
+        if matches!(arm.pattern, Pattern::Wildcard) {
+            continue;
+        }
         let mut arm_env = base_env.clone();
         let applicable = match arm.pattern {
             Pattern::Wildcard => true,
@@ -1026,6 +1044,20 @@ fn guard_expression_true(guard: &Expression, env: &Environment, p: &Interpreter)
         return Ok(*flag.borrow());
     }
     Ok(false)
+}
+
+fn value_contains_empty(value: &Value) -> bool {
+    match value {
+        Value::Empty => true,
+        #[cfg(feature = "tuple")]
+        Value::Tuple(tuple) => tuple
+            .borrow()
+            .elements
+            .iter()
+            .any(|value| value_contains_empty(value.as_ref())),
+        Value::MutableReference(reference) => value_contains_empty(&reference.borrow()),
+        _ => false,
+    }
 }
 
 #[cfg(feature = "formulas")]

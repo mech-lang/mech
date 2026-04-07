@@ -136,13 +136,11 @@ test_interpreter!(
   "x<u64?> := 2u64; y<u64?> := _; (x2,y2) := (x,y)? | (x,y) -> (x,y) | * -> (0u64,0u64).; x2 + y2",
   Value::U64(Ref::new(0))
 );
-#[test]
-fn interpret_option_match_rejects_mismatched_arm_kinds() {
-  let s = "foo<f64?> := 1234\n\nbar := foo?\n  | x -> \"One Two Three\"\n  | * -> 12.\n\nbar";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  assert!(intrp.interpret(&tree).is_err());
-}
+test_interpreter!(
+  interpret_match_allows_unreachable_wildcard_with_different_kind,
+  "foo<f64?> := 1234\n\nbar := foo?\n  | x -> \"One Two Three\"\n  | * -> 12.\n\nbar + \"\"",
+  Value::String(Ref::new("One Two Three".to_string()))
+);
 
 #[test]
 fn interpret_option_match_requires_wildcard_arm() {
