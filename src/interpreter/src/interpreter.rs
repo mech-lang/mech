@@ -11,28 +11,29 @@ use std::time::Instant;
 // ----------------------------------------------------------------------------
 
 pub struct Interpreter {
-    pub id: u64,
-    pub profile: bool,
-    #[cfg(feature = "trace")]
-    pub trace: bool,
-    #[cfg(feature = "trace")]
-    pub trace_to_stdout: bool,
-    #[cfg(feature = "trace")]
-    pub trace_events: Ref<Vec<TraceEvent>>,
-    ip: usize, // instruction pointer
-    pub state: Ref<ProgramState>,
-    #[cfg(feature = "functions")]
-    pub stack: Vec<Frame>,
-    registers: Vec<Value>,
-    constants: Vec<Value>,
-    #[cfg(feature = "compiler")]
-    pub context: Option<CompileCtx>,
-    pub code: Vec<MechSourceCode>,
-    pub out: Value,
-    pub out_values: Ref<HashMap<u64, Value>>,
-    #[cfg(feature = "state_machines")]
-    pub user_state_machines: Ref<HashMap<u64, FsmImplementation>>,
-    pub sub_interpreters: Ref<HashMap<u64, Box<Interpreter>>>,
+  pub id: u64,
+  pub profile: bool,
+  pub max_steps: usize,
+  #[cfg(feature = "trace")]
+  pub trace: bool,
+  #[cfg(feature = "trace")]
+  pub trace_to_stdout: bool,
+  #[cfg(feature = "trace")]
+  pub trace_events: Ref<Vec<TraceEvent>>,
+  ip: usize, // instruction pointer
+  pub state: Ref<ProgramState>,
+  #[cfg(feature = "functions")]
+  pub stack: Vec<Frame>,
+  registers: Vec<Value>,
+  constants: Vec<Value>,
+  #[cfg(feature = "compiler")]
+  pub context: Option<CompileCtx>,
+  pub code: Vec<MechSourceCode>,
+  pub out: Value,
+  pub out_values: Ref<HashMap<u64, Value>>,
+  #[cfg(feature = "state_machines")]
+  pub user_state_machines: Ref<HashMap<u64, FsmImplementation>>,
+  pub sub_interpreters: Ref<HashMap<u64, Box<Interpreter>>>,
 }
 
 impl Clone for Interpreter {
@@ -41,6 +42,7 @@ impl Clone for Interpreter {
             id: self.id,
             ip: self.ip,
             profile: false,
+            max_steps: self.max_steps,
             #[cfg(feature = "trace")]
             trace: self.trace,
             #[cfg(feature = "trace")]
@@ -74,6 +76,7 @@ impl Interpreter {
             id,
             ip: 0,
             profile: false,
+            max_steps: 10_00000, // Default maximum steps
             #[cfg(feature = "trace")]
             trace: false,
             #[cfg(feature = "trace")]
