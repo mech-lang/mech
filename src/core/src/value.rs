@@ -275,7 +275,9 @@ impl ValueKind {
       (U8, Index) | (U16, Index) | (U32, Index) | (U64, Index) | (U128, Index) |
       (I8, Index) | (I16, Index) | (I32, Index) | (I64, Index) | (I128, Index) => true,
 
-      // Matrix: element type convertible and shape matches
+      // Matrix: element type convertible and shape matches.
+      // An empty target shape (`[]`) is treated as a wildcard shape.
+      (Matrix(a, _ashape), Matrix(b, bshape)) if bshape.is_empty() && a.as_ref().is_convertible_to(b.as_ref()) => true,
       (Matrix(a, ashape), Matrix(b, bshape)) if ashape.into_iter().product::<usize>() == bshape.into_iter().product::<usize>() && a.as_ref().is_convertible_to(b.as_ref()) => true,
 
       // Option conversions
@@ -967,6 +969,11 @@ impl Value {
     match (self, other) {
     (Value::Empty, ValueKind::Option(_)) => Some(Value::Empty),
     (value, ValueKind::Option(inner)) => value.convert_to(inner.as_ref()),
+    (value, ValueKind::Matrix(_, target_shape))
+      if target_shape.is_empty() && matches!(value.kind(), ValueKind::Matrix(_, _)) =>
+    {
+      Some(value.clone())
+    },
     // ==== Unsigned widening and narrowing ====
     #[cfg(all(feature = "u8", feature = "u16"))]
     (Value::U8(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
