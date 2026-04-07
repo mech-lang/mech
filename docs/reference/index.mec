@@ -31,6 +31,7 @@ Platform Reference
 (i)> Coming `v0.3`
 
 - [Functions](/reference/functions.html)
+- [Patterns](/reference/patterns.html)
 - [Comprehensions](/reference/comprehensions.html)
 - Error Handling
 - State Machines
