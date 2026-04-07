@@ -156,8 +156,7 @@ pub fn pattern_matches_value_with_semantics(pattern: &Pattern, value: &Value, en
           if tuple_brrw.elements.len() != pat_struct.patterns.len() + 1 {
             return Ok(false);
           }
-          let expected_state = atom(&Atom {name: pat_struct.name.clone(),},p,
-          );
+          let expected_state = atom(&Atom {name: pat_struct.name.clone(),},p);
           if !values_match(&expected_state, &deep_detach_value(&tuple_brrw.elements[0])) {
             return Ok(false);
           }
