@@ -1121,7 +1121,11 @@ unwrap(x)
 "#;
   let tree = parser::parse(s).unwrap();
   let mut intrp = Interpreter::new(0);
-  assert!(intrp.interpret(&tree).is_err());
+  let err = intrp.interpret(&tree).unwrap_err();
+  let msg = format!("{:?}", err);
+  assert!(msg.contains("FunctionMatchNonExhaustive"));
+  assert!(msg.contains(":none"));
+  assert!(msg.contains("wildcard"));
 }
 test_interpreter!(interpret_string_concatenation, r#"x := "Hello, " + "world!""#, Value::String(Ref::new("Hello, world!".to_string())));
 test_interpreter!(interpret_string_concatenation2, r#""a" + "b" + "c""#, Value::String(Ref::new("abc".to_string())));

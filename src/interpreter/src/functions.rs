@@ -320,7 +320,31 @@ fn execute_function_match_arms(
                             .iter()
                             .all(|(variant_id, _)| covered_variants.contains(variant_id));
                         if !all_covered {
-                            return Err(MechError::new(MatchNonExhaustiveError, None)
+                            let missing_patterns = enum_def
+                                .variants
+                                .iter()
+                                .filter(|(variant_id, _)| !covered_variants.contains(variant_id))
+                                .map(|(variant_id, payload_kind)| {
+                                    let variant_name = enum_def
+                                        .names
+                                        .borrow()
+                                        .get(variant_id)
+                                        .cloned()
+                                        .unwrap_or_else(|| variant_id.to_string());
+                                    if payload_kind.is_some() {
+                                        format!(":{}(...)", variant_name)
+                                    } else {
+                                        format!(":{}", variant_name)
+                                    }
+                                })
+                                .collect::<Vec<String>>();
+                            return Err(MechError::new(
+                                FunctionMatchNonExhaustiveError {
+                                    function_name: fxn_def.name.clone(),
+                                    missing_patterns,
+                                },
+                                None,
+                            )
                                 .with_compiler_loc()
                                 .with_tokens(fxn_def.code.name.tokens()));
                         }
@@ -752,6 +776,26 @@ pub struct FunctionInputTypeMismatchError {
     pub argument_name: String,
     pub expected: ValueKind,
     pub found: ValueKind,
+}
+
+#[derive(Debug, Clone)]
+pub struct FunctionMatchNonExhaustiveError {
+    pub function_name: String,
+    pub missing_patterns: Vec<String>,
+}
+
+impl MechErrorKind for FunctionMatchNonExhaustiveError {
+    fn name(&self) -> &str {
+        "FunctionMatchNonExhaustive"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "Function '{}' has non-exhaustive match arms. Missing patterns: {}. Add the missing patterns or add a wildcard (`*`) arm.",
+            self.function_name,
+            self.missing_patterns.join(", ")
+        )
+    }
 }
 
 impl MechErrorKind for FunctionInputTypeMismatchError {
