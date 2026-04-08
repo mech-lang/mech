@@ -535,6 +535,40 @@ fn bind_function_inputs(
                 let target_kind = kind_annotation(&input_kind_annotation.kind, p)?
                     .to_value_kind(&p.state.borrow().kinds)?;
                 let detached_input = detach_value(input_value);
+                #[cfg(all(feature = "enum", feature = "atom"))]
+                if let ValueKind::Enum(enum_id, _) = &target_kind {
+                    let state_brrw = p.state.borrow();
+                    if enum_value_matches(detached_input.clone(), *enum_id, &state_brrw) {
+                        detached_input.clone()
+                    } else {
+                        return Err(MechError::new(
+                            FunctionInputTypeMismatchError {
+                                function_name: fxn_def.name.clone(),
+                                argument_name: arg_name.clone(),
+                                expected: target_kind.clone(),
+                                found: detached_input.kind(),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc()
+                        .with_tokens(input_kind_annotation.tokens()));
+                    }
+                } else {
+                    detached_input.clone().convert_to(&target_kind).ok_or_else(|| {
+                        MechError::new(
+                            FunctionInputTypeMismatchError {
+                                function_name: fxn_def.name.clone(),
+                                argument_name: arg_name.clone(),
+                                expected: target_kind.clone(),
+                                found: detached_input.kind(),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc()
+                        .with_tokens(input_kind_annotation.tokens())
+                    })?
+                }
+                #[cfg(not(all(feature = "enum", feature = "atom")))]
                 detached_input.clone().convert_to(&target_kind).ok_or_else(|| {
                     MechError::new(
                         FunctionInputTypeMismatchError {
@@ -557,6 +591,50 @@ fn bind_function_inputs(
         scoped_state.save_symbol(*arg_id, arg_name, bound_value, false);
     }
     Ok(())
+}
+
+#[cfg(all(feature = "enum", feature = "atom"))]
+fn enum_value_matches(value: Value, enum_id: u64, state: &ProgramState) -> bool {
+    let enum_def = match state.enums.get(&enum_id) {
+        Some(enm) => enm,
+        None => return false,
+    };
+    match value {
+        Value::Atom(atom) => {
+            let variant_id = atom.borrow().id();
+            enum_def
+                .variants
+                .iter()
+                .any(|(known_variant, payload_kind)| *known_variant == variant_id && payload_kind.is_none())
+        }
+        #[cfg(feature = "tuple")]
+        Value::Tuple(tuple_val) => {
+            let tuple_brrw = tuple_val.borrow();
+            if tuple_brrw.elements.len() != 2 {
+                return false;
+            }
+            let tag = match tuple_brrw.elements[0].as_ref() {
+                Value::Atom(atom) => atom.borrow().id(),
+                _ => return false,
+            };
+            let payload = tuple_brrw.elements[1].as_ref().clone();
+            let (_, declared_payload_kind) = match enum_def.variants.iter().find(|(known_variant, _)| *known_variant == tag) {
+                Some(entry) => entry,
+                None => return false,
+            };
+            match declared_payload_kind {
+                Some(Value::Kind(expected_kind)) => match expected_kind {
+                    ValueKind::Enum(inner_enum_id, _) => enum_value_matches(payload, *inner_enum_id, state),
+                    _ => {
+                        payload.kind() == expected_kind.clone()
+                            || payload.convert_to(expected_kind).is_some()
+                    }
+                },
+                _ => false,
+            }
+        }
+        _ => false,
+    }
 }
 
 fn collect_function_output(p: &Interpreter, fxn_def: &FunctionDefinition) -> MResult<Value> {

@@ -1094,6 +1094,18 @@ result := x?
   | *              -> 0u64.
 result + 0u64
 "#, Value::U64(Ref::new(42u64)));
+test_interpreter!(interpret_tagged_union_function_input_enum_kind, r#"
+<result> := :ok<u64> | :err<string>
+<option> := :some<result> | :none
+x<option> := :some(:err("this sucks"))
+
+unwrap(x<option>) -> <u64>
+  | :some(:ok(n))  -> n
+  | :some(:err(e)) -> 0u64
+  | :none          -> 0u64.
+
+unwrap(x)
+"#, Value::U64(Ref::new(0u64)));
 test_interpreter!(interpret_string_concatenation, r#"x := "Hello, " + "world!""#, Value::String(Ref::new("Hello, world!".to_string())));
 test_interpreter!(interpret_string_concatenation2, r#""a" + "b" + "c""#, Value::String(Ref::new("abc".to_string())));
 test_interpreter!(interpret_string_concatenation_var, r#"greeting := "Hello"; name := "Alice"; message := greeting + ", " + name + "!""#, Value::String(Ref::new("Hello, Alice!".to_string())));
