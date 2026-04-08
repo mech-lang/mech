@@ -1119,6 +1119,14 @@ test_interpreter!(interpret_table_record_mutation, r#"~T:=|x<f64> y<bool>|1.2 tr
 //test_interpreter!("interpret_table_record_mutation_fail", r#"T := | x<f64>  y<bool> |  1.2     true   |  1.3     false  |;~r := T{1};r.x = 42;T.x[1]"#, Value::F64(Ref::new(1.2)));
 
 test_interpreter!(interpret_define_custom_enum, r#"<color>:=:red|:green|:blue; x<color>:=:red;"#, Value::Atom(Ref::new(MechAtom::new(hash_str("red")))));
+test_interpreter!(interpret_kind_membership_enum_payload, r#"
+<color> := :red<u64> | :green<u64> | :blue
+:red(300) ∈ <color>
+"#, Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_kind_not_membership_enum_payload, r#"
+<color> := :red<u64> | :green<u64> | :blue
+:red("300") ∉ <color>
+"#, Value::Bool(Ref::new(true)));
 test_interpreter!(interpret_tagged_union_nested_match, r#"
 <result> := :ok<u64> | :err<string>
 <option> := :some<result> | :none
