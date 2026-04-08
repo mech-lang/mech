@@ -172,6 +172,19 @@ test_interpreter!(
 );
 
 test_interpreter!(interpret_option_match_tuple_struct_pattern, "state := (:Done, 9u64); y := state? | :Done(x) -> x | * -> 0u64.; y + 0u64", Value::U64(Ref::new(9)));
+#[test]
+fn interpret_tagged_union_match_requires_exhaustive_arms() {
+  let s = r#"
+<result> := :ok<u64> | :err<string>
+<option> := :some<result> | :none
+x<option> := :some(:ok(42u64))
+result := x?
+  | :some(:ok(n)) -> n.
+"#;
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  assert!(intrp.interpret(&tree).is_err());
+}
 test_interpreter!(
   interpret_function_shorthand_match_arm_broadcasts_over_matrix_input,
   "add-one(x<f64>) -> <f64>\n  | x + 1.\n\nadd-one([1 2 3])",
