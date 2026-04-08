@@ -77,3 +77,24 @@ max := triple?
   | * -> 0.
 max
 ```
+
+4. Enum variant matching
+-------------------------------------------------------------------------------
+
+Match arms can destructure enum variants directly, including variants that carry values.
+
+```mech:match enum
+<color> := :red<f64> | :green<f64> | :blue<f64>
+my-color<color> := :red(300)
+
+string-color := my-color?
+  | :red(100) -> "dark red"
+  | :red(50) -> "light red"
+  | :red(x), x < 50 -> "pink"
+  | :red(x), x > 100 -> "maroon"
+  | :green(100) -> "dark green"
+  | * -> "unknown".
+string-color
+```
+
+This combines literal variant matches (for example `:red(100)`) with guarded captures (for example `:red(x), x > 100`).
