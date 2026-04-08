@@ -1,4 +1,6 @@
 use crate::*;
+#[cfg(all(feature = "kind_annotation", feature = "enum"))]
+use std::collections::HashSet;
 
 // Functions
 // ----------------------------------------------------------------------------
@@ -284,6 +286,49 @@ fn execute_function_match_arms(
     input_arg_values: &Vec<Value>,
     p: &Interpreter,
 ) -> MResult<Value> {
+    #[cfg(all(feature = "kind_annotation", feature = "enum"))]
+    {
+        let has_wildcard = fxn_def
+            .code
+            .match_arms
+            .iter()
+            .any(|arm| matches!(arm.pattern, Pattern::Wildcard));
+        if !has_wildcard && fxn_def.input.len() == 1 {
+            if let Some((_, kind_annotation_node)) = fxn_def.input.iter().next() {
+                let input_kind = kind_annotation(&kind_annotation_node.kind, p)?
+                    .to_value_kind(&p.state.borrow().kinds)?;
+                if let ValueKind::Enum(enum_id, _) = input_kind {
+                    let state_brrw = p.state.borrow();
+                    if let Some(enum_def) = state_brrw.enums.get(&enum_id) {
+                        let mut covered_variants: HashSet<u64> = HashSet::new();
+                        for arm in &fxn_def.code.match_arms {
+                            match &arm.pattern {
+                                #[cfg(feature = "atom")]
+                                Pattern::TupleStruct(tuple_struct) => {
+                                    covered_variants.insert(tuple_struct.name.hash());
+                                }
+                                Pattern::Expression(expr) => {
+                                    if let Expression::Literal(Literal::Atom(atom)) = expr {
+                                        covered_variants.insert(atom.name.hash());
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                        let all_covered = enum_def
+                            .variants
+                            .iter()
+                            .all(|(variant_id, _)| covered_variants.contains(variant_id));
+                        if !all_covered {
+                            return Err(MechError::new(MatchNonExhaustiveError, None)
+                                .with_compiler_loc()
+                                .with_tokens(fxn_def.code.name.tokens()));
+                        }
+                    }
+                }
+            }
+        }
+    }
     for (arm_idx, arm) in fxn_def.code.match_arms.iter().enumerate() {
         let mut env = Environment::new();
         let matched = crate::patterns::pattern_matches_arguments(
