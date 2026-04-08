@@ -1225,6 +1225,11 @@ not-element-of := "∉";
 symmetric-difference := "Δ";
 ```
 
+`∈` and `∉` are overloaded:
+
+- set membership: `x ∈ S`, `x ∉ S` where `S` is a set
+- kind membership: `x ∈ <K>`, `x ∉ <K>` where `<K>` is a kind value
+
 (6.8) Range
 
 ```ebnf

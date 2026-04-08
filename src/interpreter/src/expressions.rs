@@ -1329,9 +1329,21 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
                 SetProperSuperset {}.compile(&vec![lhs, rhs])?
             }
             #[cfg(feature = "set_element_of")]
-            FormulaOperator::Set(SetOp::ElementOf) => SetElementOf {}.compile(&vec![lhs, rhs])?,
+            FormulaOperator::Set(SetOp::ElementOf) => {
+                #[cfg(feature = "kind_annotation")]
+                if let Value::Kind(kind) = &rhs {
+                    lhs = Value::Bool(Ref::new(value_in_kind(&lhs, kind, p)));
+                    continue;
+                }
+                SetElementOf {}.compile(&vec![lhs, rhs])?
+            }
             #[cfg(feature = "set_not_element_of")]
             FormulaOperator::Set(SetOp::NotElementOf) => {
+                #[cfg(feature = "kind_annotation")]
+                if let Value::Kind(kind) = &rhs {
+                    lhs = Value::Bool(Ref::new(!value_in_kind(&lhs, kind, p)));
+                    continue;
+                }
                 SetNotElementOf {}.compile(&vec![lhs, rhs])?
             }
             x => {
@@ -1353,6 +1365,64 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
     let mut plan_brrw = plan.borrow_mut();
     plan_brrw.append(&mut term_plan);
     return Ok(lhs);
+}
+
+#[cfg(all(feature = "kind_annotation", feature = "enum", feature = "atom"))]
+fn enum_value_matches_kind(value: &Value, enum_id: u64, state: &ProgramState) -> bool {
+    let enum_def = match state.enums.get(&enum_id) {
+        Some(enm) => enm,
+        None => return false,
+    };
+    match value {
+        Value::Atom(atom) => {
+            let variant_id = atom.borrow().id();
+            enum_def
+                .variants
+                .iter()
+                .any(|(known_variant, payload_kind)| *known_variant == variant_id && payload_kind.is_none())
+        }
+        #[cfg(feature = "tuple")]
+        Value::Tuple(tuple_val) => {
+            let tuple_brrw = tuple_val.borrow();
+            if tuple_brrw.elements.len() != 2 {
+                return false;
+            }
+            let tag = match tuple_brrw.elements[0].as_ref() {
+                Value::Atom(atom) => atom.borrow().id(),
+                _ => return false,
+            };
+            let payload = tuple_brrw.elements[1].as_ref();
+            let (_, declared_payload_kind) = match enum_def
+                .variants
+                .iter()
+                .find(|(known_variant, _)| *known_variant == tag)
+            {
+                Some(entry) => entry,
+                None => return false,
+            };
+            match declared_payload_kind {
+                Some(Value::Kind(expected_kind)) => match expected_kind {
+                    ValueKind::Enum(inner_enum_id, _) => {
+                        enum_value_matches_kind(payload, *inner_enum_id, state)
+                    }
+                    _ => payload.kind() == expected_kind.clone() || payload.convert_to(expected_kind).is_some(),
+                },
+                _ => false,
+            }
+        }
+        _ => false,
+    }
+}
+
+#[cfg(feature = "kind_annotation")]
+fn value_in_kind(value: &Value, kind: &ValueKind, p: &Interpreter) -> bool {
+    let detached = detach_value(value);
+    #[cfg(all(feature = "enum", feature = "atom"))]
+    if let ValueKind::Enum(enum_id, _) = kind {
+        let state_brrw = p.state.borrow();
+        return enum_value_matches_kind(&detached, *enum_id, &state_brrw);
+    }
+    detached.convert_to(kind).is_some()
 }
 
 #[derive(Debug, Clone)]
