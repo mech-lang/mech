@@ -142,12 +142,22 @@ pub fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, p: &Interpreter)
 
 #[cfg(feature = "atom")]
 pub fn atom(atm: &Atom, p: &Interpreter) -> Value {
-  let id = atm.name.hash();
+  let full_name = atm.name.to_string();
+  let canonical_name = full_name
+    .rsplit_once('/')
+    .map(|(_, variant)| variant.to_string())
+    .unwrap_or_else(|| full_name.clone());
+  let id = hash_str(&canonical_name);
   let state = p.state.borrow();
   let dictionary = state.dictionary.clone();
   {
     let mut dictionary_brrw = dictionary.borrow_mut();
-    dictionary_brrw.insert(id, atm.name.to_string());
+    dictionary_brrw.insert(id, canonical_name);
+    // Keep the originally parsed representation available in the dictionary
+    // for diagnostics and tooling, while preserving canonical atom identity.
+    if full_name.contains('/') {
+      dictionary_brrw.insert(hash_str(&full_name), full_name);
+    }
   }
   Value::Atom(Ref::new(MechAtom((id, dictionary))))
 }

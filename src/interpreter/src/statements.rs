@@ -254,26 +254,16 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
           Some(my_enum) => my_enum,
           None => todo!(),
         };
-        let dictionary = state_brrw.dictionary.clone();
-        let atom_id = atom_variant_brrw.id();
         let atom_name = atom_variant_brrw.name();
-        // split the enum name at the '/' to get the variant name
-        let enum_variant_name = if let Some((enum_name, variant_name)) = atom_name.split_once('/') {
-          if enum_name != target_enum_variant_name {
-            return Err(MechError::new(
-              UnableToConvertAtomToEnumVariantError { atom_name: atom_name.clone(), target_enum_variant_name: target_enum_variant_name.to_string() },
-              None
-            ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
-          }
-          variant_name.to_string()
-        } else {
-          return Err(MechError::new(
-            UnableToConvertAtomToEnumVariantError { atom_name: atom_name.clone(), target_enum_variant_name: target_enum_variant_name.clone() },
-            None
-          ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
-        };
+        // Resolve to canonical global atom id by variant name.
+        // Qualified forms like :color/red and bare forms like :red map to the
+        // same atom identity (`red`).
+        let enum_variant_name = atom_name
+          .rsplit_once('/')
+          .map(|(_, variant_name)| variant_name.to_string())
+          .unwrap_or(atom_name.clone());
         let variant_id = hash_str(&enum_variant_name);
-        // Given atom isn't a variant of the enum
+        // Given atom isn't a variant of the enum.
         if !my_enum.variants.iter().any(|(known_enum_variant, inner_value)| variant_id == *known_enum_variant) {
           return Err(MechError::new(
             UnableToConvertAtomToEnumVariantError { atom_name: atom_name.clone(), target_enum_variant_name: target_enum_variant_name.clone() },

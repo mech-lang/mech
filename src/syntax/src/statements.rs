@@ -176,9 +176,10 @@ pub fn enum_define(input: ParseString) -> ParseResult<EnumDefine> {
   Ok((input, EnumDefine{name, variants}))
 }
 
-// enum-variant := grave?, identifier, enum-variant-kind? ;
+// enum-variant := grave?, colon?, identifier, enum-variant-kind? ;
 pub fn enum_variant(input: ParseString) -> ParseResult<EnumVariant> {
   let (input, _) = opt(grave)(input)?;
+  let (input, _) = opt(colon)(input)?;
   let (input, name) = identifier(input)?;
   let (input, value) = opt(enum_variant_kind)(input)?;
   Ok((input, EnumVariant{name, value}))
