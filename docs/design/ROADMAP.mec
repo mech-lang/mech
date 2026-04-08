@@ -95,7 +95,6 @@ Version `v0.3` incorporates all the features of `v0.2`, in addition to the follo
   -(💭) C/C++
   -(🐣) Rust
   -(🐣) Javascript
--(🥚) state Machines
 -(🥚) automatic differentiation
 -(🥚) language server
 -(🥚) physical units with dimension checking
@@ -103,6 +102,9 @@ Version `v0.3` incorporates all the features of `v0.2`, in addition to the follo
 -(🥚) time travel debugging
 -(🥚) machine revamp
 -(🥚) database revamp
+-(🐣) state machines
+-(🐣) match expressions
+-(🐣) patterns
 -(🐣) mika
 -(🐣) matrix comprehension
 -(🐣) set comprehension
