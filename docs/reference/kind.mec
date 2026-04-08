@@ -178,3 +178,47 @@ example2<color> := :color/yellow   -- Error, yellow not in enum
 ~~~
 
 Enums are kinds and participate in all kind-based reasoning.
+
+(8.2) Variants with payload kinds
+
+Enum variants may optionally carry data. Payload kinds can be written either
+inline (`ok<u64>`) or with parentheses (`ok(<u64>)`):
+
+~~~mech:ex 8.2
+<response> := ok<u64> | error<string> | timeout
+
+r1<response> := :ok(200)
+r2<response> := :error("Not Found")
+r3<response> := :timeout
+~~~
+
+In this enum:
+
+- `ok` requires a `u64` payload
+- `error` requires a `string` payload
+- `timeout` carries no payload
+
+Assignments with the wrong payload kind are rejected:
+
+~~~mech:disabled
+rbad<response> := :ok("200")   -- Error: expected u64 payload
+~~~
+
+(8.3) Enum kinds in pattern matching
+
+Enums participate in pattern matching like other kinds, including payload
+destructuring:
+
+~~~mech:ex 8.3
+<response> := ok<u64> | error<string> | timeout
+r<response> := :error("Not Found")
+
+status-code<u64> := r?
+  | :ok(code) -> code
+  | :error(msg) -> 500
+  | :timeout -> 408
+  | * -> 500.
+~~~
+
+When matching enum kinds, arms should be exhaustive (cover every variant or use
+`*`). Non-exhaustive matches are reported as errors.

@@ -1392,18 +1392,33 @@ enum-define := "<"
       , define-operator
       , [enum-variant, enum-separator];
 enum-variant := ?grave
+      , ?colon
       , identifier
-      , ?enum-variant-kind ;
+      , ?(enum-variant-kind | enum-variant-inline-kind) ;
 enum-variant-kind := "("
       , kind-annotation
       , ")" ;
+enum-variant-inline-kind := kind-annotation ;
 ```
 (8.4.1) Examples
 
+```mech:disabled
+<status> := active | inactive | pending
+<response> := ok<u64> | error<string> | timeout
+
+state<status> := :status/active
+reply<response> := :ok(200)
+
+status-code<u64> := reply?
+  | :ok(code) -> code
+  | :error(message) -> 500
+  | :timeout -> 408
+  | * -> 500.
 ```
-    status < Active | Inactive | Pending  -- Enum definition with variants
-    priority < High | Medium | Low        -- Enum definition for priority levels
-```
+
+Enum variant identifiers follow normal identifier rules. Underscores are not
+valid in identifiers, so names such as `not_found` are rejected; use kebab-case
+instead (for example `not-found`).
 
 (8.5) Function Define
 
