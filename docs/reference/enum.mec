@@ -6,16 +6,16 @@ enum
 1. Syntax
 --------------------------------------------------------------------------------
 
-Enums are defined by declaring a set of named variants, each of which is an atom.
+Enums are defined by declaring a set of atom variants. Variants may be plain tags or carry typed payloads.
 
 ```
-&lt;color&gt; := red | green | blue
+<color> := :red<f64> | :green<f64> | :blue<f64>
 ```
 
 When parsed and rendered, this code will appear as:
 
 ```mech:disabled
-<color> := red | green | blue
+<color> := :red<f64> | :green<f64> | :blue<f64>
 ```
 
 
@@ -31,9 +31,9 @@ The kind of an enum value is the enum kind itself. For example:
 3. Construction
 --------------------------------------------------------------------------------
 
-Enum values are constructed by selecting a variant name, optionally providing a value if the variant carries data.
+Enum values are constructed by selecting a variant atom and, when required, supplying its payload value.
 
 ```mech:ex 3.1
-<color> := red | green | blue
-c<color> := :color/red
+<color> := :red<f64> | :green<f64> | :blue<f64>
+c<color> := :red(300)
 ```
