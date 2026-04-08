@@ -150,6 +150,42 @@ fn interpret_option_match_requires_wildcard_arm() {
   assert!(intrp.interpret(&tree).is_err());
 }
 
+#[test]
+fn interpret_enum_match_reports_missing_variants_color() {
+  let s = r#"
+<color> := :red | :green | :blue
+my-color<color> := :red
+string-color := my-color?
+  | :red   -> "red"
+  | :green -> "green".
+"#;
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let err = intrp.interpret(&tree).unwrap_err();
+  let msg = format!("{:?}", err);
+  assert!(msg.contains("MatchNonExhaustive"));
+  assert!(msg.contains(":blue"));
+  assert!(msg.contains("wildcard"));
+}
+
+#[test]
+fn interpret_enum_match_reports_missing_variants_generalized() {
+  let s = r#"
+<door> := :open | :closed | :locked
+state<door> := :open
+label := state?
+  | :open   -> "open"
+  | :closed -> "closed".
+"#;
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let err = intrp.interpret(&tree).unwrap_err();
+  let msg = format!("{:?}", err);
+  assert!(msg.contains("MatchNonExhaustive"));
+  assert!(msg.contains(":locked"));
+  assert!(msg.contains("wildcard"));
+}
+
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_match_array_pattern_head,
