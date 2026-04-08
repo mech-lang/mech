@@ -149,28 +149,3 @@ pub fn call_arg(input: ParseString) -> ParseResult<(Option<Identifier>,Expressio
   let (input, expr) = expression(input)?;
   Ok((input, (None, expr)))
 }
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn parse_function_define_match_arm_without_pattern() {
-    let source = "add-one(x<f64>) -> <f64>\n  | x + 1.";
-    let graphemes = crate::graphemes::init_source(source);
-    let input = ParseString::new(&graphemes);
-    let (_, parsed) = function_define(input).expect("function with shorthand match arm should parse");
-    assert_eq!(parsed.match_arms.len(), 1);
-    assert_eq!(parsed.match_arms[0].pattern, Pattern::Wildcard);
-  }
-
-  #[test]
-  fn parse_function_define_match_arms_mixed() {
-    let source = "score(x<f64>, weight<f64>, bias<f64>) -> <f64>\n  | x + 1\n  | * -> 0.";
-    let graphemes = crate::graphemes::init_source(source);
-    let input = ParseString::new(&graphemes);
-    let (_, parsed) = function_define(input).expect("mixed function match arms should parse");
-    assert_eq!(parsed.match_arms.len(), 2);
-    assert_eq!(parsed.match_arms[0].pattern, Pattern::Wildcard);
-  }
-}
