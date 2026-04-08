@@ -77,14 +77,23 @@ fn function_match_arm(input: ParseString) -> ParseResult<FunctionMatchArm> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = alt((box_t_left, box_bl, bar))(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, pattern) = crate::patterns::pattern(input)?;
-  let (input, _) = whitespace0(input)?;
-  let (input, _) = transition_operator(input)?;
-  let (input, _) = whitespace0(input)?;
+  if let Ok((input, pattern)) = crate::patterns::pattern(input.clone()) {
+    if let Ok((input, _)) = whitespace0(input) {
+      if let Ok((input, _)) = transition_operator(input) {
+        let (input, _) = whitespace0(input)?;
+        let (input, expr) = expression(input)?;
+        let (input, _) = opt(alt((whitespace1, statement_separator)))(input)?;
+        return Ok((input, FunctionMatchArm {
+          pattern,
+          expression: expr,
+        }));
+      }
+    }
+  }
   let (input, expr) = expression(input)?;
   let (input, _) = opt(alt((whitespace1, statement_separator)))(input)?;
   Ok((input, FunctionMatchArm {
-    pattern,
+    pattern: Pattern::Wildcard,
     expression: expr,
   }))
 }
@@ -139,4 +148,29 @@ pub fn call_arg_with_binding(input: ParseString) -> ParseResult<(Option<Identifi
 pub fn call_arg(input: ParseString) -> ParseResult<(Option<Identifier>,Expression)> {
   let (input, expr) = expression(input)?;
   Ok((input, (None, expr)))
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn parse_function_define_match_arm_without_pattern() {
+    let source = "add-one(x<f64>) -> <f64>\n  | x + 1.";
+    let graphemes = crate::graphemes::init_source(source);
+    let input = ParseString::new(&graphemes);
+    let (_, parsed) = function_define(input).expect("function with shorthand match arm should parse");
+    assert_eq!(parsed.match_arms.len(), 1);
+    assert_eq!(parsed.match_arms[0].pattern, Pattern::Wildcard);
+  }
+
+  #[test]
+  fn parse_function_define_match_arms_mixed() {
+    let source = "score(x<f64>, weight<f64>, bias<f64>) -> <f64>\n  | x + 1\n  | * -> 0.";
+    let graphemes = crate::graphemes::init_source(source);
+    let input = ParseString::new(&graphemes);
+    let (_, parsed) = function_define(input).expect("mixed function match arms should parse");
+    assert_eq!(parsed.match_arms.len(), 2);
+    assert_eq!(parsed.match_arms[0].pattern, Pattern::Wildcard);
+  }
 }
