@@ -152,6 +152,11 @@ fn execute_user_function(
         .with_tokens(fxn_def.code.name.tokens()));
     }
 
+    #[cfg(feature = "matrix")]
+    if let Some(result) = try_broadcast_user_function(fxn_def, input_arg_values, p)? {
+        return Ok(result);
+    }
+
     trace_println!(
         p,
         "{}",
@@ -199,6 +204,78 @@ fn execute_user_function(
             );
             Err(err)
         }
+    }
+}
+
+#[cfg(feature = "matrix")]
+fn try_broadcast_user_function(
+    fxn_def: &FunctionDefinition,
+    input_arg_values: &Vec<Value>,
+    p: &Interpreter,
+) -> MResult<Option<Value>> {
+    if input_arg_values.len() != 1 || fxn_def.code.output.len() != 1 || fxn_def.code.input.len() != 1 {
+        return Ok(None);
+    }
+
+    let source = detach_value(&input_arg_values[0]);
+    if !source.is_matrix() {
+        return Ok(None);
+    }
+
+    #[cfg(feature = "kind_annotation")]
+    let (input_kind, output_kind) = {
+        let input_kind = kind_annotation(&fxn_def.code.input[0].kind.kind, p)?
+            .to_value_kind(&p.state.borrow().kinds)?;
+        let output_kind = kind_annotation(&fxn_def.code.output[0].kind.kind, p)?
+            .to_value_kind(&p.state.borrow().kinds)?;
+        (input_kind, output_kind)
+    };
+
+    #[cfg(not(feature = "kind_annotation"))]
+    let (input_kind, output_kind) = {
+        return Ok(None);
+    };
+
+    if input_kind != output_kind || matches!(input_kind, ValueKind::Matrix(_, _)) {
+        return Ok(None);
+    }
+
+    let Some(elements) = crate::patterns::matrix_like_values(&source) else {
+        return Ok(None);
+    };
+
+    let mut outputs = Vec::with_capacity(elements.len());
+    for element in elements {
+        outputs.push(execute_user_function(fxn_def, &vec![element], p)?);
+    }
+
+    let shape = source.shape();
+    Ok(Some(build_typed_matrix_from_values(
+        &output_kind,
+        outputs,
+        shape[0],
+        shape[1],
+    )))
+}
+
+#[cfg(feature = "matrix")]
+fn build_typed_matrix_from_values(
+    output_kind: &ValueKind,
+    outputs: Vec<Value>,
+    rows: usize,
+    cols: usize,
+) -> Value {
+    match output_kind {
+        #[cfg(feature = "f64")]
+        ValueKind::F64 => Value::MatrixF64(f64::to_matrix(
+            outputs
+                .into_iter()
+                .map(|value| value.as_f64().expect("Expected f64 output").borrow().clone())
+                .collect::<Vec<f64>>(),
+            rows,
+            cols,
+        )),
+        _ => Value::MatrixValue(Value::to_matrix(outputs, rows, cols)),
     }
 }
 
