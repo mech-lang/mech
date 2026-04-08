@@ -150,6 +150,42 @@ fn interpret_option_match_requires_wildcard_arm() {
   assert!(intrp.interpret(&tree).is_err());
 }
 
+#[test]
+fn interpret_enum_match_reports_missing_variants_color() {
+  let s = r#"
+<color> := :red | :green | :blue
+my-color<color> := :red
+string-color := my-color?
+  | :red   -> "red"
+  | :green -> "green".
+"#;
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let err = intrp.interpret(&tree).unwrap_err();
+  let msg = format!("{:?}", err);
+  assert!(msg.contains("MatchNonExhaustive"));
+  assert!(msg.contains(":blue"));
+  assert!(msg.contains("wildcard"));
+}
+
+#[test]
+fn interpret_enum_match_reports_missing_variants_generalized() {
+  let s = r#"
+<door> := :open | :closed | :locked
+state<door> := :open
+label := state?
+  | :open   -> "open"
+  | :closed -> "closed".
+"#;
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let err = intrp.interpret(&tree).unwrap_err();
+  let msg = format!("{:?}", err);
+  assert!(msg.contains("MatchNonExhaustive"));
+  assert!(msg.contains(":locked"));
+  assert!(msg.contains("wildcard"));
+}
+
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_match_array_pattern_head,
@@ -172,6 +208,19 @@ test_interpreter!(
 );
 
 test_interpreter!(interpret_option_match_tuple_struct_pattern, "state := (:Done, 9u64); y := state? | :Done(x) -> x | * -> 0u64.; y + 0u64", Value::U64(Ref::new(9)));
+#[test]
+fn interpret_tagged_union_match_requires_exhaustive_arms() {
+  let s = r#"
+<result> := :ok<u64> | :err<string>
+<option> := :some<result> | :none
+x<option> := :some(:ok(42u64))
+result := x?
+  | :some(:ok(n)) -> n.
+"#;
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  assert!(intrp.interpret(&tree).is_err());
+}
 test_interpreter!(
   interpret_function_shorthand_match_arm_broadcasts_over_matrix_input,
   "add-one(x<f64>) -> <f64>\n  | x + 1.\n\nadd-one([1 2 3])",
@@ -1069,7 +1118,51 @@ test_interpreter!(interpret_matrix_comprehension_variable, r#"qq := [1 2 3 4]; [
 test_interpreter!(interpret_table_record_mutation, r#"~T:=|x<f64> y<bool>|1.2 true|1.3 false|;~r:=T[1];r.x=42;T.x[1]"#, Value::F64(Ref::new(42.0)));
 //test_interpreter!("interpret_table_record_mutation_fail", r#"T := | x<f64>  y<bool> |  1.2     true   |  1.3     false  |;~r := T{1};r.x = 42;T.x[1]"#, Value::F64(Ref::new(1.2)));
 
-test_interpreter!(interpret_define_custom_enum, r#"<color>:=red|green|blue; x<color>:=:color/red;"#, Value::Atom(Ref::new(MechAtom::new(hash_str("color/red")))));
+test_interpreter!(interpret_define_custom_enum, r#"<color>:=:red|:green|:blue; x<color>:=:red;"#, Value::Atom(Ref::new(MechAtom::new(hash_str("red")))));
+test_interpreter!(interpret_tagged_union_nested_match, r#"
+<result> := :ok<u64> | :err<string>
+<option> := :some<result> | :none
+x<option> := :some(:ok(42u64))
+result := x?
+  | :some(:ok(n))  -> n
+  | :some(:err(e)) -> 0u64
+  | :none          -> 0u64
+  | *              -> 0u64.
+result + 0u64
+"#, Value::U64(Ref::new(42u64)));
+test_interpreter!(interpret_tagged_union_function_input_enum_kind, r#"
+<result> := :ok<u64> | :err<string>
+<option> := :some<result> | :none
+x<option> := :some(:err("this sucks"))
+
+unwrap(x<option>) -> <u64>
+  | :some(:ok(n))  -> n
+  | :some(:err(e)) -> 0u64
+  | :none          -> 0u64.
+
+unwrap(x)
+"#, Value::U64(Ref::new(0u64)));
+#[test]
+fn interpret_tagged_union_function_match_requires_exhaustive_arms() {
+  let s = r#"
+<result> := :ok<u64> | :err<string>
+<option> := :some<result> | :none
+x<option> := :some(:err("this sucks"))
+
+unwrap(x<option>) -> <u64>
+  | :some(:ok(n))  -> n
+  | :some(:err(e)) -> 0u64.
+
+unwrap(x)
+"#;
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let err = intrp.interpret(&tree).unwrap_err();
+  let msg = format!("{:?}", err);
+  assert!(msg.contains("FunctionMatchNonExhaustive"));
+  assert!(msg.contains(":none"));
+  assert!(msg.contains("wildcard"));
+}
 test_interpreter!(interpret_string_concatenation, r#"x := "Hello, " + "world!""#, Value::String(Ref::new("Hello, world!".to_string())));
 test_interpreter!(interpret_string_concatenation2, r#""a" + "b" + "c""#, Value::String(Ref::new("abc".to_string())));
 test_interpreter!(interpret_string_concatenation_var, r#"greeting := "Hello"; name := "Alice"; message := greeting + ", " + name + "!""#, Value::String(Ref::new("Hello, Alice!".to_string())));

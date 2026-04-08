@@ -1,4 +1,6 @@
 use crate::*;
+#[cfg(all(feature = "kind_annotation", feature = "enum"))]
+use std::collections::HashSet;
 
 // Functions
 // ----------------------------------------------------------------------------
@@ -284,6 +286,73 @@ fn execute_function_match_arms(
     input_arg_values: &Vec<Value>,
     p: &Interpreter,
 ) -> MResult<Value> {
+    #[cfg(all(feature = "kind_annotation", feature = "enum"))]
+    {
+        let has_wildcard = fxn_def
+            .code
+            .match_arms
+            .iter()
+            .any(|arm| matches!(arm.pattern, Pattern::Wildcard));
+        if !has_wildcard && fxn_def.input.len() == 1 {
+            if let Some((_, kind_annotation_node)) = fxn_def.input.iter().next() {
+                let input_kind = kind_annotation(&kind_annotation_node.kind, p)?
+                    .to_value_kind(&p.state.borrow().kinds)?;
+                if let ValueKind::Enum(enum_id, _) = input_kind {
+                    let state_brrw = p.state.borrow();
+                    if let Some(enum_def) = state_brrw.enums.get(&enum_id) {
+                        let mut covered_variants: HashSet<u64> = HashSet::new();
+                        for arm in &fxn_def.code.match_arms {
+                            match &arm.pattern {
+                                #[cfg(feature = "atom")]
+                                Pattern::TupleStruct(tuple_struct) => {
+                                    covered_variants.insert(tuple_struct.name.hash());
+                                }
+                                Pattern::Expression(expr) => {
+                                    if let Expression::Literal(Literal::Atom(atom)) = expr {
+                                        covered_variants.insert(atom.name.hash());
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                        let all_covered = enum_def
+                            .variants
+                            .iter()
+                            .all(|(variant_id, _)| covered_variants.contains(variant_id));
+                        if !all_covered {
+                            let missing_patterns = enum_def
+                                .variants
+                                .iter()
+                                .filter(|(variant_id, _)| !covered_variants.contains(variant_id))
+                                .map(|(variant_id, payload_kind)| {
+                                    let variant_name = enum_def
+                                        .names
+                                        .borrow()
+                                        .get(variant_id)
+                                        .cloned()
+                                        .unwrap_or_else(|| variant_id.to_string());
+                                    if payload_kind.is_some() {
+                                        format!(":{}(...)", variant_name)
+                                    } else {
+                                        format!(":{}", variant_name)
+                                    }
+                                })
+                                .collect::<Vec<String>>();
+                            return Err(MechError::new(
+                                FunctionMatchNonExhaustiveError {
+                                    function_name: fxn_def.name.clone(),
+                                    missing_patterns,
+                                },
+                                None,
+                            )
+                                .with_compiler_loc()
+                                .with_tokens(fxn_def.code.name.tokens()));
+                        }
+                    }
+                }
+            }
+        }
+    }
     for (arm_idx, arm) in fxn_def.code.match_arms.iter().enumerate() {
         let mut env = Environment::new();
         let matched = crate::patterns::pattern_matches_arguments(
@@ -535,6 +604,40 @@ fn bind_function_inputs(
                 let target_kind = kind_annotation(&input_kind_annotation.kind, p)?
                     .to_value_kind(&p.state.borrow().kinds)?;
                 let detached_input = detach_value(input_value);
+                #[cfg(all(feature = "enum", feature = "atom"))]
+                if let ValueKind::Enum(enum_id, _) = &target_kind {
+                    let state_brrw = p.state.borrow();
+                    if enum_value_matches(detached_input.clone(), *enum_id, &state_brrw) {
+                        detached_input.clone()
+                    } else {
+                        return Err(MechError::new(
+                            FunctionInputTypeMismatchError {
+                                function_name: fxn_def.name.clone(),
+                                argument_name: arg_name.clone(),
+                                expected: target_kind.clone(),
+                                found: detached_input.kind(),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc()
+                        .with_tokens(input_kind_annotation.tokens()));
+                    }
+                } else {
+                    detached_input.clone().convert_to(&target_kind).ok_or_else(|| {
+                        MechError::new(
+                            FunctionInputTypeMismatchError {
+                                function_name: fxn_def.name.clone(),
+                                argument_name: arg_name.clone(),
+                                expected: target_kind.clone(),
+                                found: detached_input.kind(),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc()
+                        .with_tokens(input_kind_annotation.tokens())
+                    })?
+                }
+                #[cfg(not(all(feature = "enum", feature = "atom")))]
                 detached_input.clone().convert_to(&target_kind).ok_or_else(|| {
                     MechError::new(
                         FunctionInputTypeMismatchError {
@@ -557,6 +660,50 @@ fn bind_function_inputs(
         scoped_state.save_symbol(*arg_id, arg_name, bound_value, false);
     }
     Ok(())
+}
+
+#[cfg(all(feature = "enum", feature = "atom"))]
+fn enum_value_matches(value: Value, enum_id: u64, state: &ProgramState) -> bool {
+    let enum_def = match state.enums.get(&enum_id) {
+        Some(enm) => enm,
+        None => return false,
+    };
+    match value {
+        Value::Atom(atom) => {
+            let variant_id = atom.borrow().id();
+            enum_def
+                .variants
+                .iter()
+                .any(|(known_variant, payload_kind)| *known_variant == variant_id && payload_kind.is_none())
+        }
+        #[cfg(feature = "tuple")]
+        Value::Tuple(tuple_val) => {
+            let tuple_brrw = tuple_val.borrow();
+            if tuple_brrw.elements.len() != 2 {
+                return false;
+            }
+            let tag = match tuple_brrw.elements[0].as_ref() {
+                Value::Atom(atom) => atom.borrow().id(),
+                _ => return false,
+            };
+            let payload = tuple_brrw.elements[1].as_ref().clone();
+            let (_, declared_payload_kind) = match enum_def.variants.iter().find(|(known_variant, _)| *known_variant == tag) {
+                Some(entry) => entry,
+                None => return false,
+            };
+            match declared_payload_kind {
+                Some(Value::Kind(expected_kind)) => match expected_kind {
+                    ValueKind::Enum(inner_enum_id, _) => enum_value_matches(payload, *inner_enum_id, state),
+                    _ => {
+                        payload.kind() == expected_kind.clone()
+                            || payload.convert_to(expected_kind).is_some()
+                    }
+                },
+                _ => false,
+            }
+        }
+        _ => false,
+    }
 }
 
 fn collect_function_output(p: &Interpreter, fxn_def: &FunctionDefinition) -> MResult<Value> {
@@ -629,6 +776,26 @@ pub struct FunctionInputTypeMismatchError {
     pub argument_name: String,
     pub expected: ValueKind,
     pub found: ValueKind,
+}
+
+#[derive(Debug, Clone)]
+pub struct FunctionMatchNonExhaustiveError {
+    pub function_name: String,
+    pub missing_patterns: Vec<String>,
+}
+
+impl MechErrorKind for FunctionMatchNonExhaustiveError {
+    fn name(&self) -> &str {
+        "FunctionMatchNonExhaustive"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "Function '{}' has non-exhaustive match arms. Missing patterns: {}. Add the missing patterns or add a wildcard (`*`) arm.",
+            self.function_name,
+            self.missing_patterns.join(", ")
+        )
+    }
 }
 
 impl MechErrorKind for FunctionInputTypeMismatchError {

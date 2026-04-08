@@ -195,7 +195,21 @@ pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p:
 #[cfg(feature = "enum")]
 pub fn enum_define(enm_def: &EnumDefine, p: &Interpreter) -> MResult<()> {
   let id = enm_def.name.hash();
-  let variants = enm_def.variants.iter().map(|v| (v.name.hash(),None)).collect::<Vec<(u64, Option<Value>)>>();
+  let mut variants: Vec<(u64, Option<Value>)> = Vec::new();
+  {
+    let mut state_brrw = p.state.borrow_mut();
+    for v in &enm_def.variants {
+      let payload = match &v.value {
+        Some(kind_annotation_node) => {
+          let knd = kind_annotation(&kind_annotation_node.kind, p)?;
+          let vk = knd.to_value_kind(&mut state_brrw.kinds)?;
+          Some(Value::Kind(vk))
+        }
+        None => None,
+      };
+      variants.push((v.name.hash(), payload));
+    }
+  }
   let state = &p.state;
   let mut state_brrw = state.borrow_mut();
   let dictionary = state_brrw.dictionary.clone();
@@ -224,6 +238,48 @@ pub fn kind_define(knd_def: &KindDefine, p: &Interpreter) -> MResult<Value> {
   Ok(Value::Kind(value_kind))
 }
 
+#[cfg(all(feature = "enum", feature = "atom"))]
+fn value_matches_enum_variant(value: &Value, enum_id: u64, state: &ProgramState) -> bool {
+  let my_enum = match state.enums.get(&enum_id) {
+    Some(enm) => enm,
+    None => return false,
+  };
+  match value {
+    Value::Atom(atom_variant) => {
+      let variant_id = atom_variant.borrow().id();
+      my_enum.variants.iter().any(|(known_variant, payload_kind)| *known_variant == variant_id && payload_kind.is_none())
+    }
+    #[cfg(feature = "tuple")]
+    Value::Tuple(tuple_val) => {
+      let tuple_brrw = tuple_val.borrow();
+      if tuple_brrw.elements.len() != 2 {
+        return false;
+      }
+      let variant_atom = match tuple_brrw.elements[0].as_ref() {
+        Value::Atom(atom) => atom.borrow(),
+        _ => return false,
+      };
+      let variant_id = variant_atom.id();
+      let payload = tuple_brrw.elements[1].as_ref();
+      let (_, declared_payload_kind) = match my_enum.variants.iter().find(|(known_variant, _)| *known_variant == variant_id) {
+        Some(v) => v,
+        None => return false,
+      };
+      match declared_payload_kind {
+        Some(Value::Kind(expected_kind)) => match expected_kind {
+          ValueKind::Enum(inner_enum_id, _) => value_matches_enum_variant(payload, *inner_enum_id, state),
+          _ => {
+            payload.kind() == expected_kind.clone() ||
+            ConvertKind{}.compile(&vec![payload.clone(), Value::Kind(expected_kind.clone())]).is_ok()
+          }
+        },
+        _ => false,
+      }
+    }
+    _ => false,
+  }
+}
+
 #[cfg(feature = "variable_define")]
 pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Value> {
   let var_id = var_def.var.name.hash();
@@ -248,35 +304,20 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       // Atom is a variant of an enum
       #[cfg(all(feature = "atom", feature = "enum"))]
       (Value::Atom(atom_variant), ValueKind::Enum(enum_id, target_enum_variant_name)) => {
-        let atom_variant_brrw = atom_variant.borrow();
-        let enums = &state_brrw.enums;
-        let my_enum = match enums.get(enum_id) {
-          Some(my_enum) => my_enum,
-          None => todo!(),
-        };
-        let dictionary = state_brrw.dictionary.clone();
-        let atom_id = atom_variant_brrw.id();
-        let atom_name = atom_variant_brrw.name();
-        // split the enum name at the '/' to get the variant name
-        let enum_variant_name = if let Some((enum_name, variant_name)) = atom_name.split_once('/') {
-          if enum_name != target_enum_variant_name {
-            return Err(MechError::new(
-              UnableToConvertAtomToEnumVariantError { atom_name: atom_name.clone(), target_enum_variant_name: target_enum_variant_name.to_string() },
-              None
-            ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
-          }
-          variant_name.to_string()
-        } else {
+        let atom_name = atom_variant.borrow().name();
+        if !value_matches_enum_variant(&result, *enum_id, &*state_brrw) {
           return Err(MechError::new(
             UnableToConvertAtomToEnumVariantError { atom_name: atom_name.clone(), target_enum_variant_name: target_enum_variant_name.clone() },
             None
           ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
-        };
-        let variant_id = hash_str(&enum_variant_name);
-        // Given atom isn't a variant of the enum
-        if !my_enum.variants.iter().any(|(known_enum_variant, inner_value)| variant_id == *known_enum_variant) {
+        }
+      }
+      #[cfg(all(feature = "tuple", feature = "atom", feature = "enum"))]
+      (Value::Tuple(tuple_val), ValueKind::Enum(enum_id, target_enum_variant_name)) => {
+        let atom_name = format!("{:?}", tuple_val);
+        if !value_matches_enum_variant(&result, *enum_id, &*state_brrw) {
           return Err(MechError::new(
-            UnableToConvertAtomToEnumVariantError { atom_name: atom_name.clone(), target_enum_variant_name: target_enum_variant_name.clone() },
+            UnableToConvertAtomToEnumVariantError { atom_name, target_enum_variant_name: target_enum_variant_name.clone() },
             None
           ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
         }
