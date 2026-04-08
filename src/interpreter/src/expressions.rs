@@ -1,5 +1,7 @@
 use crate::*;
 use std::collections::HashMap;
+#[cfg(feature = "enum")]
+use std::collections::HashSet;
 
 // Expressions
 // ----------------------------------------------------------------------------
@@ -918,20 +920,34 @@ pub fn match_expression(
     env: Option<&Environment>,
     p: &Interpreter,
 ) -> MResult<Value> {
-    if !match_expr
-        .arms
-        .iter()
-        .any(|arm| matches!(arm.pattern, Pattern::Wildcard))
-    {
-        return Err(MechError::new(MatchNonExhaustiveError, None)
-            .with_compiler_loc()
-            .with_tokens(match_expr.source.tokens()));
-    }
     let source = expression(&match_expr.source, env, p)?;
     let detached_source = match &source {
         Value::MutableReference(reference) => reference.borrow().clone(),
         _ => source.clone(),
     };
+    if !match_expr
+        .arms
+        .iter()
+        .any(|arm| matches!(arm.pattern, Pattern::Wildcard))
+    {
+        #[cfg(feature = "enum")]
+        if let Some((enum_name, missing_patterns)) =
+            infer_missing_enum_match_patterns(match_expr, &detached_source, p)
+        {
+            return Err(MechError::new(
+                MatchNonExhaustiveVariantsError {
+                    enum_name,
+                    missing_patterns,
+                },
+                None,
+            )
+            .with_compiler_loc()
+            .with_tokens(match_expr.source.tokens()));
+        }
+        return Err(MechError::new(MatchNonExhaustiveError, None)
+            .with_compiler_loc()
+            .with_tokens(match_expr.source.tokens()));
+    }
     let mut base_env = env.cloned().unwrap_or_default();
     if let Expression::Var(var) = &match_expr.source {
         base_env.insert(var.name.hash(), detached_source.clone());
@@ -985,6 +1001,83 @@ pub fn match_expression(
     Err(MechError::new(MatchNoArmMatchedError, None)
         .with_compiler_loc()
         .with_tokens(match_expr.source.tokens()))
+}
+
+#[cfg(feature = "enum")]
+fn infer_missing_enum_match_patterns(
+    match_expr: &MatchExpression,
+    source: &Value,
+    p: &Interpreter,
+) -> Option<(String, Vec<String>)> {
+    let source_tag = match source {
+        Value::Atom(atom) => Some(atom.borrow().id()),
+        #[cfg(feature = "tuple")]
+        Value::Tuple(tuple_val) => {
+            let tuple_brrw = tuple_val.borrow();
+            match tuple_brrw.elements.first() {
+                Some(tag) => match tag.as_ref() {
+                    Value::Atom(atom) => Some(atom.borrow().id()),
+                    _ => None,
+                },
+                None => None,
+            }
+        }
+        _ => None,
+    }?;
+
+    let mut arm_tags: HashSet<u64> = HashSet::new();
+    for arm in &match_expr.arms {
+        match &arm.pattern {
+            Pattern::Expression(Expression::Literal(Literal::Atom(atom))) => {
+                arm_tags.insert(atom.name.hash());
+            }
+            #[cfg(feature = "atom")]
+            Pattern::TupleStruct(pattern_tuple_struct) => {
+                arm_tags.insert(pattern_tuple_struct.name.hash());
+            }
+            _ => {}
+        }
+    }
+    if arm_tags.is_empty() {
+        return None;
+    }
+
+    let state_brrw = p.state.borrow();
+    let candidates: Vec<&MechEnum> = state_brrw
+        .enums
+        .values()
+        .filter(|enm| {
+            let variant_ids: HashSet<u64> = enm.variants.iter().map(|(id, _)| *id).collect();
+            variant_ids.contains(&source_tag) && arm_tags.is_subset(&variant_ids)
+        })
+        .collect();
+    if candidates.len() != 1 {
+        return None;
+    }
+    let enum_def = candidates[0];
+    let variant_ids: HashSet<u64> = enum_def.variants.iter().map(|(id, _)| *id).collect();
+    let missing_ids: Vec<u64> = variant_ids.difference(&arm_tags).copied().collect();
+    if missing_ids.is_empty() {
+        return None;
+    }
+    let names_brrw = enum_def.names.borrow();
+    let missing_patterns = enum_def
+        .variants
+        .iter()
+        .filter(|(id, _)| missing_ids.contains(id))
+        .map(|(id, payload_kind)| {
+            let variant_name = names_brrw
+                .get(id)
+                .cloned()
+                .unwrap_or_else(|| id.to_string());
+            if payload_kind.is_some() {
+                format!(":{}(...)", variant_name)
+            } else {
+                format!(":{}", variant_name)
+            }
+        })
+        .collect::<Vec<String>>();
+    Some((enum_def.name(), missing_patterns))
 }
 
 fn match_validate_arm_kinds(
@@ -1391,6 +1484,24 @@ impl MechErrorKind for MatchNonExhaustiveError {
     }
     fn message(&self) -> String {
         "Match expression must include a wildcard (`*`) arm.".to_string()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct MatchNonExhaustiveVariantsError {
+    pub enum_name: String,
+    pub missing_patterns: Vec<String>,
+}
+impl MechErrorKind for MatchNonExhaustiveVariantsError {
+    fn name(&self) -> &str {
+        "MatchNonExhaustive"
+    }
+    fn message(&self) -> String {
+        format!(
+            "Match over enum '{}' is non-exhaustive. Missing patterns: {}. Add the missing patterns or add a wildcard (`*`) arm.",
+            self.enum_name,
+            self.missing_patterns.join(", ")
+        )
     }
 }
 

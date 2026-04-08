@@ -176,11 +176,12 @@ pub fn enum_define(input: ParseString) -> ParseResult<EnumDefine> {
   Ok((input, EnumDefine{name, variants}))
 }
 
-// enum-variant := grave?, identifier, enum-variant-kind? ;
+// enum-variant := grave?, colon?, identifier, enum-variant-kind? ;
 pub fn enum_variant(input: ParseString) -> ParseResult<EnumVariant> {
   let (input, _) = opt(grave)(input)?;
+  let (input, _) = opt(colon)(input)?;
   let (input, name) = identifier(input)?;
-  let (input, value) = opt(enum_variant_kind)(input)?;
+  let (input, value) = opt(alt((enum_variant_kind, enum_variant_inline_kind)))(input)?;
   Ok((input, EnumVariant{name, value}))
 }
 
@@ -190,6 +191,12 @@ pub fn enum_variant_kind(input: ParseString) -> ParseResult<KindAnnotation> {
   let (input, annotation) = kind_annotation(input)?;
   let (input, _) = right_parenthesis(input)?;
   Ok((input, annotation))
+}
+
+// enum-variant-inline-kind := kind-annotation ;
+// Allows compact tagged-union syntax like `:ok<u64>`.
+pub fn enum_variant_inline_kind(input: ParseString) -> ParseResult<KindAnnotation> {
+  kind_annotation(input)
 }
 
 // kind-define := "<", identifier, ">", define-operator, kind-annotation ;
