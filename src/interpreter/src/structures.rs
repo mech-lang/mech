@@ -15,8 +15,8 @@ pub fn structure(strct: &Structure, env: Option<&Environment>, p: &Interpreter) 
     Structure::Table(x) => table(&x, env, p),
     #[cfg(feature = "tuple")]
     Structure::Tuple(x) => tuple(&x, env, p),
-    #[cfg(feature = "tuple_struct")]
-    Structure::TupleStruct(x) => todo!(),
+    #[cfg(all(feature = "tuple", feature = "atom"))]
+    Structure::TupleStruct(x) => tuple_struct(&x, env, p),
     #[cfg(feature = "set")]
     Structure::Set(x) => set(&x, env, p),
     #[cfg(feature = "map")]
@@ -34,6 +34,16 @@ pub fn tuple(tpl: &Tuple, env: Option<&Environment>, p: &Interpreter) -> MResult
   }
   let mech_tuple = Ref::new(MechTuple{elements});
   Ok(Value::Tuple(mech_tuple))
+}
+
+#[cfg(all(feature = "tuple", feature = "atom"))]
+pub fn tuple_struct(tpl: &TupleStruct, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+  let mut elements = vec![];
+  let atom_value = atom(&Atom { name: tpl.name.clone() }, p);
+  elements.push(Box::new(atom_value));
+  let payload = expression(&tpl.value, env, p)?;
+  elements.push(Box::new(payload));
+  Ok(Value::Tuple(Ref::new(MechTuple { elements })))
 }
 
 #[cfg(feature = "map")]

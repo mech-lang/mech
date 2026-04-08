@@ -436,7 +436,7 @@ pub fn tuple(input: ParseString) -> ParseResult<Tuple> {
 
 // tuple-struct = atom, "(", expression, ")" ;
 pub fn tuple_struct(input: ParseString) -> ParseResult<TupleStruct> {
-  let (input, _) = grave(input)?;
+  let (input, _) = colon(input)?;
   let (input, name) = identifier(input)?;
   let (input, _) = left_parenthesis(input)?;
   let (input, _) = whitespace0(input)?;

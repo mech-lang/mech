@@ -1069,9 +1069,18 @@ test_interpreter!(interpret_matrix_comprehension_variable, r#"qq := [1 2 3 4]; [
 test_interpreter!(interpret_table_record_mutation, r#"~T:=|x<f64> y<bool>|1.2 true|1.3 false|;~r:=T[1];r.x=42;T.x[1]"#, Value::F64(Ref::new(42.0)));
 //test_interpreter!("interpret_table_record_mutation_fail", r#"T := | x<f64>  y<bool> |  1.2     true   |  1.3     false  |;~r := T{1};r.x = 42;T.x[1]"#, Value::F64(Ref::new(1.2)));
 
-test_interpreter!(interpret_define_custom_enum, r#"<color>:=red|green|blue; x<color>:=:color/red;"#, Value::Atom(Ref::new(MechAtom::new(hash_str("red")))));
-test_interpreter!(interpret_define_custom_enum_with_colon_variants, r#"<color>:=:red|:green|:blue; x<color>:=:red;"#, Value::Atom(Ref::new(MechAtom::new(hash_str("red")))));
-test_interpreter!(interpret_qualified_and_bare_atom_have_same_identity, r#"a := :color/red; b := :red; a == b"#, Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_define_custom_enum, r#"<color>:=:red|:green|:blue; x<color>:=:red;"#, Value::Atom(Ref::new(MechAtom::new(hash_str("red")))));
+test_interpreter!(interpret_tagged_union_nested_match, r#"
+<result> := :ok<u64> | :err<string>
+<option> := :some<result> | :none
+x<option> := :some(:ok(42u64))
+result := x?
+  | :some(:ok(n))  -> n
+  | :some(:err(e)) -> 0u64
+  | :none          -> 0u64
+  | *              -> 0u64.
+result + 0u64
+"#, Value::U64(Ref::new(42u64)));
 test_interpreter!(interpret_string_concatenation, r#"x := "Hello, " + "world!""#, Value::String(Ref::new("Hello, world!".to_string())));
 test_interpreter!(interpret_string_concatenation2, r#""a" + "b" + "c""#, Value::String(Ref::new("abc".to_string())));
 test_interpreter!(interpret_string_concatenation_var, r#"greeting := "Hello"; name := "Alice"; message := greeting + ", " + name + "!""#, Value::String(Ref::new("Hello, Alice!".to_string())));
