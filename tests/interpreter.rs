@@ -172,6 +172,11 @@ test_interpreter!(
 );
 
 test_interpreter!(interpret_option_match_tuple_struct_pattern, "state := (:Done, 9u64); y := state? | :Done(x) -> x | * -> 0u64.; y + 0u64", Value::U64(Ref::new(9)));
+test_interpreter!(
+  interpret_function_shorthand_match_arm_broadcasts_over_matrix_input,
+  "add-one(x<f64>) -> <f64>\n  | x + 1.\n\nadd-one([1 2 3])",
+  Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, 4.0], 1, 3))
+);
 test_interpreter!(interpret_function_array_pattern_arms, "head(xs<[u64]:1,3>) -> <u64>\n  | [x ...] -> x\n  | * -> 0u64.\nhead([10u64 20u64 30u64]) + 0u64", Value::U64(Ref::new(10)));
 test_interpreter!(interpret_fsm_array_pattern_state_arguments, "#VecFsm(n<u64>) => <u64>\n  ├ :Scan(xs<[u64]:1,3>)\n  └ :Done(out<u64>).\n\n#VecFsm(n<u64>) -> :Scan([1u64 2u64 3u64])\n  :Scan([x ... y]) -> :Done(x + y)\n  :Done(out) => out.\n\n#VecFsm(0u64)", Value::U64(Ref::new(4)));
 #[test]
@@ -722,6 +727,9 @@ test_interpreter!(interpret_function_call_native_vector, "math/sin([1.570796327 
 test_interpreter!(interpret_function_call_native, r#"math/sin(1.5707963267948966)"#, Value::F64(Ref::new(1.0)));
 test_interpreter!(interpret_function_call_native_cos, r#"math/cos(0.0)"#, Value::F64(Ref::new(1.0)));
 test_interpreter!(interpret_function_call_native_vector2, "math/cos([0.0 0.0])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
+test_interpreter!(interpret_user_function_scalar_auto_broadcast, r#"add-one(x<f64>) -> <f64>
+  | * -> x + 1.
+add-one([1 2 3])"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, 4.0], 1, 3)));
 
 test_interpreter!(interpret_set_value,"~x := 1.23; x = 4.56;", Value::F64(Ref::new(4.56)));
 test_interpreter!(interpret_set_value_row_vector,"~x := [6,2]; x[1] = 4;", Value::MatrixF64(Matrix::from_vec(vec![4.0, 2.0], 1, 2)));

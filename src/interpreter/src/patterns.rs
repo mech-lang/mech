@@ -287,7 +287,7 @@ fn collect_pattern_variable_ids(pattern: &Pattern, ids: &mut Vec<u64>) {
 }
 
 // Used by the Array pattern arm to get a uniform element list regardless of the matrix's concrete numeric type.
-fn matrix_like_values(value: &Value) -> Option<Vec<Value>> {
+pub(crate) fn matrix_like_values(value: &Value) -> Option<Vec<Value>> {
   match value {
     #[cfg(feature = "matrix")]
     Value::MatrixIndex(matrix) => Some(
