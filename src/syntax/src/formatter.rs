@@ -1807,7 +1807,8 @@ impl Formatter {
   pub fn match_expression(&mut self, node: &MatchExpression) -> String {
     let source = self.expression(&node.source);
     let mut lines = vec![format!("{}?", source)];
-    for arm in &node.arms {
+    for (ix, arm) in node.arms.iter().enumerate() {
+      let branch = if ix + 1 == node.arms.len() { "└" } else { "├" };
       let pattern = self.pattern(&arm.pattern);
       let guard = arm
         .guard
@@ -1815,9 +1816,29 @@ impl Formatter {
         .map(|expr| format!(", {}", self.expression(expr)))
         .unwrap_or_default();
       let expr = self.expression(&arm.expression);
-      lines.push(format!("│ {}{} -> {}", pattern, guard, expr));
+      if self.html {
+        lines.push(format!(
+          "<span class=\"mech-match-arm\"><span class=\"mech-match-branch\">{}</span> <span class=\"mech-match-pattern\">{}{}</span> <span class=\"mech-match-arrow\">-&gt;</span> <span class=\"mech-match-expression\">{}</span></span>",
+          branch, pattern, guard, expr
+        ));
+      } else {
+        lines.push(format!("{} {}{} -> {}", branch, pattern, guard, expr));
+      }
     }
-    lines.join("\n")
+    if self.html {
+      format!(
+        "<span class=\"mech-match-expression\"><span class=\"mech-match-source\">{}?</span>{}</span>",
+        source,
+        lines
+          .iter()
+          .skip(1)
+          .cloned()
+          .collect::<Vec<_>>()
+          .join("")
+      )
+    } else {
+      lines.join("\n")
+    }
   }
 
   pub fn fsm_instance(&mut self, node: &FsmInstance) -> String {
