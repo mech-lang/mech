@@ -204,8 +204,8 @@ test_interpreter!(
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_match_array_pattern_rest_binding,
-  "xs := [10u64 20u64 30u64]; y := xs? | [x | rest] => x | * => 0u64.; y + 0u64",
-  Value::U64(Ref::new(10))
+  "xs := [10u64 20u64 30u64 40u64]; y := xs? | [a, b | rest] => rest? | [r ...] => r | * => 0u64. | * => 0u64.; y + 0u64",
+  Value::U64(Ref::new(30))
 );
 
 #[cfg(feature = "u64")]
