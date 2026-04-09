@@ -9,6 +9,7 @@ use web_sys::{window, HtmlElement, HtmlInputElement, Node, Element, HashChangeEv
 use js_sys::decode_uri_component;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use gloo_net::http::Request;
 use wasm_bindgen_futures::spawn_local;
 
@@ -856,34 +857,84 @@ pub fn attach_repl(&mut self, repl_id: &str) {
   }
 
   #[cfg(feature = "run_program")]
+  fn format_runtime_error_html(&self, message: &str) -> String {
+    let escaped_message = html_escape(message);
+    format!(
+      "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\"><pre>{}</pre></div>",
+      escaped_message
+    )
+  }
+
+  #[cfg(feature = "run_program")]
+  fn emit_runtime_error(&self, message: &str) {
+    let mut rendered_to_page = false;
+    let formatted_error = self.format_runtime_error_html(message);
+
+    if let Some(window) = web_sys::window() {
+      if let Some(document) = window.document() {
+        if let Ok(output_blocks) = document.query_selector_all(".mech-block-output") {
+          for i in 0..output_blocks.length() {
+            if let Some(output_node) = output_blocks.item(i) {
+              if let Ok(output_el) = output_node.dyn_into::<web_sys::Element>() {
+                output_el.set_inner_html(&formatted_error);
+                rendered_to_page = true;
+              }
+            }
+          }
+        }
+
+        if !rendered_to_page {
+          if let Some(root) = document.get_element_by_id("mech-root") {
+            root.set_inner_html(&formatted_error);
+            rendered_to_page = true;
+          }
+        }
+      }
+    }
+
+    if !rendered_to_page {
+      web_sys::console::error_1(&format!("Runtime error: {}", message).into());
+    }
+  }
+
+  #[cfg(feature = "run_program")]
+  fn interpret_with_runtime_error_handling(&mut self, tree: &Program) {
+    match catch_unwind(AssertUnwindSafe(|| self.interpreter.interpret(tree))) {
+      Ok(Ok(result)) => {
+        log!("{}", result.pretty_print());
+      }
+      Ok(Err(err)) => {
+        let err_message = format!("{:?}", err);
+        self.emit_runtime_error(&err_message);
+      }
+      Err(panic_payload) => {
+        let panic_message = if let Some(message) = panic_payload.downcast_ref::<&str>() {
+          (*message).to_string()
+        } else if let Some(message) = panic_payload.downcast_ref::<String>() {
+          message.clone()
+        } else {
+          "Unknown panic while running Mech program".to_string()
+        };
+        self.emit_runtime_error(&panic_message);
+      }
+    }
+  }
+
+  #[cfg(feature = "run_program")]
   #[wasm_bindgen]
   pub fn run_program(&mut self, src: &str) { 
     // Decompress the string into a Program
     match decode_and_decompress(&src) {
       Ok(tree) => {
-        match self.interpreter.interpret(&tree) {
-          Ok(result) => {
-            log!("{}", result.pretty_print());
-          },
-          Err(err) => {
-            log!("{:?}", err);
-          }
-        }
+        self.interpret_with_runtime_error_handling(&tree);
       },
       Err(err) => {
         match parse(src) {
           Ok(tree) => {
-            match self.interpreter.interpret(&tree) {
-              Ok(result) => {
-                log!("{}", result.pretty_print());
-              },
-              Err(err) => {
-                log!("{:?}", err);
-              }
-            }
+            self.interpret_with_runtime_error_handling(&tree);
           },
           Err(parse_err) => {
-            log!("Error parsing program: {:?}", parse_err);
+            self.emit_runtime_error(&format!("Error parsing program: {:?}", parse_err));
           }
         }
       }
