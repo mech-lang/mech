@@ -125,7 +125,30 @@ n<[i32]:2,3> := m            -- reshapes to `[i32]:2,3`
 
 Matrices may be reshaped to compatible dimensions using kind annotations.
 
-6. Custom Kinds
+6. Kind Membership (`∈`, `∉`)
+-------------------------------------------------------------------------------
+
+The set membership operators are also defined for kinds:
+
+- `value ∈ <kind>` returns `true` when `value` conforms to `<kind>`
+- `value ∉ <kind>` returns `true` when `value` does not conform to `<kind>`
+
+Examples:
+
+```mech:ex 6.1
+42 ∈ <u64>         -- true
+42 ∉ <string>      -- true
+```
+
+This also applies to enum kinds (including payload variants):
+
+```mech:ex 6.2
+<color> := :red<u64> | :green<u64> | :blue
+:red(300) ∈ <color>   -- true
+:red("300") ∈ <color> -- false
+```
+
+7. Custom Kinds
 -------------------------------------------------------------------------------
 
 Users may define custom kinds as aliases of existing kinds:
@@ -224,4 +247,4 @@ status-code<u64> := r?
   | * -> 500.
 ```
 
-When matching enum kinds, arms should be exhaustive (cover every variant or use `*`). Non-exhaustive matches are reported as errors.
+When matching enum kinds, arms should be exhaustive (cover every variant or use `*`). Non-exhaustive matches are reported as compile-time errors.
