@@ -17,7 +17,7 @@ General form:
   └ :Done(result<kind>).
 
 #MachineName(input<kind>) -> :StateA(...)
-  :StateA(...) -> :StateB(...)
+  :StateA(...) => :StateB(...)
   :StateB(...)
     ├ guard -> :StateA(...)
     └ guard -> :Done(...)

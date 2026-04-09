@@ -241,10 +241,10 @@ Enums participate in pattern matching like other kinds, including payload destru
 r<response> := :error("Not Found")
 
 status-code<u64> := r?
-  | :ok(code) -> code
-  | :error(msg) -> 500
-  | :timeout -> 408
-  | * -> 500.
+  | :ok(code) => code
+  | :error(msg) => 500
+  | :timeout => 408
+  | * => 500.
 ```
 
 When matching enum kinds, arms should be exhaustive (cover every variant or use `*`). Non-exhaustive matches are reported as compile-time errors.

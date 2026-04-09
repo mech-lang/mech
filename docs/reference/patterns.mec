@@ -23,17 +23,17 @@ Mech patterns support the same core shapes in every pattern context:
 Function branches are evaluated top-to-bottom. The first arm whose pattern matches call arguments is selected.
 
 ```
-abs(x) -> <f64>
-  ├ n if n < 0.0 -> -n
-  └ n -> n.
+abs(x) => <f64>
+  ├ n if n < 0.0 => -n
+  └ n => n.
 ```
 
 Multiple call arguments are matched with tuple-style structure:
 
 ```
-max2(a, b) -> <u64>
-  ├ (x, y) if x > y -> x
-  └ (_, y) -> y.
+max2(a, b) => <u64>
+  ├ (x, y) if x > y => x
+  └ (_, y) => y.
 ```
 
 3. Match guards
@@ -44,9 +44,9 @@ Option matching also reuses the same pattern syntax. A wildcard arm is required 
 ```mech
 value<f64?> := 123.456
 result := value?
-  ├ x, x > 10 -> "large"
-  ├ x -> "small"
-  └ * -> "empty".
+  ├ x, x > 10 => "large"
+  ├ x => "small"
+  └ * => "empty".
 ```
 
 Guard-like conditions in option arms are pattern expressions that evaluate to `bool` in the arm environment.
@@ -57,12 +57,12 @@ You can also match atom-tagged values:
 <color> := :red<f64> | :green<f64> | :blue<f64>
 my-color<color> := :red(300)
 shade := my-color?
-  ├ :red(100) -> "dark red"
-  ├ :red(50) -> "light red"
-  ├ :red(x), x < 50 -> "pink"
-  ├ :red(x), x > 100 -> "maroon"
-  ├ :green(100) -> "dark green"
-  └ * -> "unknown".
+  ├ :red(100) => "dark red"
+  ├ :red(50) => "light red"
+  ├ :red(x), x < 50 => "pink"
+  ├ :red(x), x > 100 => "maroon"
+  ├ :green(100) => "dark green"
+  └ * => "unknown".
 ```
 
 Deeply nested patterns are also possible:
@@ -72,8 +72,8 @@ Deeply nested patterns are also possible:
 <wrapped> := :some(<result>) | :none
 wrapped-val := :some(:ok(42))
 status := wrapped-val?
-  ├ :some(:ok(42)) -> "the answer"
-  ├ :some(:ok(x)) -> "success"
-  ├ :some(:err(msg)) -> msg
-  └ * -> "no result".
+  ├ :some(:ok(42)) => "the answer"
+  ├ :some(:ok(x)) => "success"
+  ├ :some(:err(msg)) => msg
+  └ * => "no result".
 ```

@@ -52,9 +52,9 @@ This example demonstrates several core Mech features:
 Here is an example of a recursive function to compute the power of a number:
 
 ```mech:power-function
-power(x<u64>, y<u64>) -> <u64>
-  ├ (*, 0) -> 1
-  └ (x, y) -> x * power(x, y - 1u64).
+power(x<u64>, y<u64>) => <u64>
+  ├ (*, 0) => 1
+  └ (x, y) => x * power(x, y - 1u64).
 power(2u64, 4u64)
 ```
 

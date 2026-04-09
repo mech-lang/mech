@@ -121,30 +121,30 @@ test_interpreter!(
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_option_match_scalar_some,
-  "x<u64?> := 4u64; x? | x > 3u64 -> x | * -> 0u64.",
+  "x<u64?> := 4u64; x? | x > 3u64 => x | * => 0u64.",
   Value::U64(Ref::new(4))
 );
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_option_match_literal_pattern_matches_inner_value,
-  "foo<u64?> := 0\n\nfoo?\n  | 0 -> 9\n  | * -> 10.",
+  "foo<u64?> := 0\n\nfoo?\n  | 0 => 9\n  | * => 10.",
   Value::F64(Ref::new(9.0))
 );
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_option_match_tuple_destructure,
-  "x<u64?> := 2u64; y<u64?> := _; (x2,y2) := (x,y)? | (x,y) -> (x,y) | * -> (0u64,0u64).; x2 + y2",
+  "x<u64?> := 2u64; y<u64?> := _; (x2,y2) := (x,y)? | (x,y) => (x,y) | * => (0u64,0u64).; x2 + y2",
   Value::U64(Ref::new(0))
 );
 test_interpreter!(
   interpret_match_allows_unreachable_wildcard_with_different_kind,
-  "foo<f64?> := 1234\n\nbar := foo?\n  | x -> \"One Two Three\"\n  | * -> 12.\n\nbar + \"\"",
+  "foo<f64?> := 1234\n\nbar := foo?\n  | x => \"One Two Three\"\n  | * => 12.\n\nbar + \"\"",
   Value::String(Ref::new("One Two Three".to_string()))
 );
 
 #[test]
 fn interpret_option_match_requires_wildcard_arm() {
-  let s = "foo<u64?> := 1234\n\nbar := foo?\n  | 0 -> 9.\n\nbar";
+  let s = "foo<u64?> := 1234\n\nbar := foo?\n  | 0 => 9.\n\nbar";
   let tree = parser::parse(s).unwrap();
   let mut intrp = Interpreter::new(0);
   assert!(intrp.interpret(&tree).is_err());
@@ -156,8 +156,8 @@ fn interpret_enum_match_reports_missing_variants_color() {
 <color> := :red | :green | :blue
 my-color<color> := :red
 string-color := my-color?
-  | :red   -> "red"
-  | :green -> "green".
+  | :red   => "red"
+  | :green => "green".
 "#;
   let tree = parser::parse(s).unwrap();
   let mut intrp = Interpreter::new(0);
@@ -174,8 +174,8 @@ fn interpret_enum_match_reports_missing_variants_generalized() {
 <door> := :open | :closed | :locked
 state<door> := :open
 label := state?
-  | :open   -> "open"
-  | :closed -> "closed".
+  | :open   => "open"
+  | :closed => "closed".
 "#;
   let tree = parser::parse(s).unwrap();
   let mut intrp = Interpreter::new(0);
@@ -189,25 +189,25 @@ label := state?
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_match_array_pattern_head,
-  "xs := [10u64 20u64 30u64]; y := xs? | [x ...] -> x | * -> 0u64.; y + 0u64",
+  "xs := [10u64 20u64 30u64]; y := xs? | [x ...] => x | * => 0u64.; y + 0u64",
   Value::U64(Ref::new(10))
 );
 
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_match_array_pattern_last,
-  "xs := [10u64 20u64 30u64]; y := xs? | [... x] -> x | * -> 0u64.; y + 0u64",
+  "xs := [10u64 20u64 30u64]; y := xs? | [... x] => x | * => 0u64.; y + 0u64",
   Value::U64(Ref::new(30))
 );
 
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_match_tuple_pattern_with_guards,
-  "foo := (1u64, 2u64, 3u64)\n\nmax<u64> := foo?\n  | (a, b, c), a > b && a > c -> a\n  | (a, b, c), b > a && b > c -> b\n  | (a, b, c), c > a && c > b -> c\n  | * -> 0u64.\n\nmax + 0u64",
+  "foo := (1u64, 2u64, 3u64)\n\nmax<u64> := foo?\n  | (a, b, c), a > b && a > c => a\n  | (a, b, c), b > a && b > c => b\n  | (a, b, c), c > a && c > b => c\n  | * => 0u64.\n\nmax + 0u64",
   Value::U64(Ref::new(3))
 );
 
-test_interpreter!(interpret_option_match_tuple_struct_pattern, "state := (:Done, 9u64); y := state? | :Done(x) -> x | * -> 0u64.; y + 0u64", Value::U64(Ref::new(9)));
+test_interpreter!(interpret_option_match_tuple_struct_pattern, "state := (:Done, 9u64); y := state? | :Done(x) => x | * => 0u64.; y + 0u64", Value::U64(Ref::new(9)));
 #[test]
 fn interpret_tagged_union_match_requires_exhaustive_arms() {
   let s = r#"
@@ -215,7 +215,7 @@ fn interpret_tagged_union_match_requires_exhaustive_arms() {
 <option> := :some<result> | :none
 x<option> := :some(:ok(42u64))
 result := x?
-  | :some(:ok(n)) -> n.
+  | :some(:ok(n)) => n.
 "#;
   let tree = parser::parse(s).unwrap();
   let mut intrp = Interpreter::new(0);
@@ -223,10 +223,10 @@ result := x?
 }
 test_interpreter!(
   interpret_function_shorthand_match_arm_broadcasts_over_matrix_input,
-  "add-one(x<f64>) -> <f64>\n  | x + 1.\n\nadd-one([1 2 3])",
+  "add-one(x<f64>) => <f64>\n  | x + 1.\n\nadd-one([1 2 3])",
   Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, 4.0], 1, 3))
 );
-test_interpreter!(interpret_function_array_pattern_arms, "head(xs<[u64]:1,3>) -> <u64>\n  | [x ...] -> x\n  | * -> 0u64.\nhead([10u64 20u64 30u64]) + 0u64", Value::U64(Ref::new(10)));
+test_interpreter!(interpret_function_array_pattern_arms, "head(xs<[u64]:1,3>) => <u64>\n  | [x ...] => x\n  | * => 0u64.\nhead([10u64 20u64 30u64]) + 0u64", Value::U64(Ref::new(10)));
 test_interpreter!(interpret_fsm_array_pattern_state_arguments, "#VecFsm(n<u64>) => <u64>\n  ├ :Scan(xs<[u64]:1,3>)\n  └ :Done(out<u64>).\n\n#VecFsm(n<u64>) -> :Scan([1u64 2u64 3u64])\n  :Scan([x ... y]) -> :Done(x + y)\n  :Done(out) => out.\n\n#VecFsm(0u64)", Value::U64(Ref::new(4)));
 #[test]
 fn interpret_variable_define_typed_set_from_range_matrix() {
@@ -741,43 +741,43 @@ foo(x<f64>) = z<f64> :=
 z := bar(x).
 foo(10)"#, Value::F64(Ref::new(20.0)));
 #[cfg(feature = "u64")]
-test_interpreter!(interpret_function_recursive_max,r#"max(x<u64>, y<u64>) -> <u64>
-  ├ (0, y) -> y
-  ├ (x, 0) -> x
-  └ (x, y) -> max(x - 1<u64>, y - 1<u64>) + 1<u64>.
+test_interpreter!(interpret_function_recursive_max,r#"max(x<u64>, y<u64>) => <u64>
+  ├ (0, y) => y
+  ├ (x, 0) => x
+  └ (x, y) => max(x - 1<u64>, y - 1<u64>) + 1<u64>.
 max(4<u64>, 7<u64>)"#, Value::U64(Ref::new(7)));
 #[cfg(feature = "u64")]
-test_interpreter!(interpret_function_recursive_is_zero,r#"is-zero(x<u64>) -> <bool>
-  ├ 0 -> true
-  └ * -> false.
+test_interpreter!(interpret_function_recursive_is_zero,r#"is-zero(x<u64>) => <bool>
+  ├ 0 => true
+  └ * => false.
 is-zero(0<u64>)"#, Value::Bool(Ref::new(true)));
 #[cfg(feature = "u64")]
-test_interpreter!(interpret_function_recursive_factorial_tree,r#"factorial(x<u64>) -> <u64>
-  ├ 0 -> 1
-  └ n -> n * factorial(n - 1<u64>).
+test_interpreter!(interpret_function_recursive_factorial_tree,r#"factorial(x<u64>) => <u64>
+  ├ 0 => 1
+  └ n => n * factorial(n - 1<u64>).
 factorial(5<u64>)"#, Value::U64(Ref::new(120)));
 #[cfg(feature = "u64")]
-test_interpreter!(interpret_function_recursive_factorial_bar,r#"factorial(x<u64>) -> <u64>
-  | 0 -> 1
-  | n -> n * factorial(n - 1<u64>).
+test_interpreter!(interpret_function_recursive_factorial_bar,r#"factorial(x<u64>) => <u64>
+  | 0 => 1
+  | n => n * factorial(n - 1<u64>).
 factorial(6<u64>)"#, Value::U64(Ref::new(720)));
 #[cfg(feature = "u64")]
-test_interpreter!(interpret_function_recursive_fib,r#"fib(x<u64>) -> <u64>
-  ├ 0 -> 0
-  ├ 1 -> 1
-  └ n -> fib(n - 1<u64>) + fib(n - 2<u64>).
+test_interpreter!(interpret_function_recursive_fib,r#"fib(x<u64>) => <u64>
+  ├ 0 => 0
+  ├ 1 => 1
+  └ n => fib(n - 1<u64>) + fib(n - 2<u64>).
 fib(10<u64>)"#, Value::U64(Ref::new(55)));
 #[cfg(feature = "u64")]
-test_interpreter!(interpret_function_recursive_power,r#"power(x<u64>, y<u64>) -> <u64>
-  ├ (*, 0) -> 1
-  └ (x, y) -> x * power(x, y - 1<u64>).
+test_interpreter!(interpret_function_recursive_power,r#"power(x<u64>, y<u64>) => <u64>
+  ├ (*, 0) => 1
+  └ (x, y) => x * power(x, y - 1<u64>).
 power(2<u64>, 10<u64>)"#, Value::U64(Ref::new(1024)));
 test_interpreter!(interpret_function_call_native_vector, "math/sin([1.570796327 1.570796327])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
 test_interpreter!(interpret_function_call_native, r#"math/sin(1.5707963267948966)"#, Value::F64(Ref::new(1.0)));
 test_interpreter!(interpret_function_call_native_cos, r#"math/cos(0.0)"#, Value::F64(Ref::new(1.0)));
 test_interpreter!(interpret_function_call_native_vector2, "math/cos([0.0 0.0])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
-test_interpreter!(interpret_user_function_scalar_auto_broadcast, r#"add-one(x<f64>) -> <f64>
-  | * -> x + 1.
+test_interpreter!(interpret_user_function_scalar_auto_broadcast, r#"add-one(x<f64>) => <f64>
+  | * => x + 1.
 add-one([1 2 3])"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, 4.0], 1, 3)));
 
 test_interpreter!(interpret_set_value,"~x := 1.23; x = 4.56;", Value::F64(Ref::new(4.56)));
@@ -1056,10 +1056,10 @@ test_interpreter!(interpret_convert_f64_to_rational_to_string,r#"x<string> := 0.
 test_interpreter!(interpret_convert_matrix_to_optional_unsized_matrix, r#"x<[u64]?> := [1u64 2u64 3u64]; x[1]"#, Value::U64(Ref::new(1u64)));
 test_interpreter!(interpret_user_function_input_annotation_optional_promotion, r#"
 x := [1u64 2u64 3u64]
-head(x<[u64]?>) -> <u64?>
-  | [] -> _
-  | [h ...] -> h
-  | _ -> _.
+head(x<[u64]?>) => <u64?>
+  | [] => _
+  | [h ...] => h
+  | _ => _.
 head(x)
 "#, Value::U64(Ref::new(1u64)));
 
@@ -1132,10 +1132,10 @@ test_interpreter!(interpret_tagged_union_nested_match, r#"
 <option> := :some<result> | :none
 x<option> := :some(:ok(42u64))
 result := x?
-  | :some(:ok(n))  -> n
-  | :some(:err(e)) -> 0u64
-  | :none          -> 0u64
-  | *              -> 0u64.
+  | :some(:ok(n))  => n
+  | :some(:err(e)) => 0u64
+  | :none          => 0u64
+  | *              => 0u64.
 result + 0u64
 "#, Value::U64(Ref::new(42u64)));
 test_interpreter!(interpret_tagged_union_function_input_enum_kind, r#"
@@ -1143,10 +1143,10 @@ test_interpreter!(interpret_tagged_union_function_input_enum_kind, r#"
 <option> := :some<result> | :none
 x<option> := :some(:err("this sucks"))
 
-unwrap(x<option>) -> <u64>
-  | :some(:ok(n))  -> n
-  | :some(:err(e)) -> 0u64
-  | :none          -> 0u64.
+unwrap(x<option>) => <u64>
+  | :some(:ok(n))  => n
+  | :some(:err(e)) => 0u64
+  | :none          => 0u64.
 
 unwrap(x)
 "#, Value::U64(Ref::new(0u64)));
@@ -1157,9 +1157,9 @@ fn interpret_tagged_union_function_match_requires_exhaustive_arms() {
 <option> := :some<result> | :none
 x<option> := :some(:err("this sucks"))
 
-unwrap(x<option>) -> <u64>
-  | :some(:ok(n))  -> n
-  | :some(:err(e)) -> 0u64.
+unwrap(x<option>) => <u64>
+  | :some(:ok(n))  => n
+  | :some(:err(e)) => 0u64.
 
 unwrap(x)
 "#;

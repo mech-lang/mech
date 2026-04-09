@@ -10,9 +10,9 @@ General form:
 
 ```
 result := source?
-  | pattern -> expression
-  | pattern, guard -> expression
-  | * -> fallback.
+  | pattern => expression
+  | pattern, guard => expression
+  | * => fallback.
 ```
 
 Notes:
@@ -30,8 +30,8 @@ Used for optional values, which may potentially be empty and require a fallback:
 ```mech:match optional
 x<f64?> := 2
 safe-value<f64> := x?
-  | v -> v
-  | * -> 0.
+  | v => v
+  | * => 0.
 safe-value
 ```
 
@@ -39,31 +39,31 @@ Patterns must be exhaustive, so a wildcard arm is required to handle the `_` cas
 
 ```mech:match optional
 string-number<string> := x?
-  | 1 -> "one"
-  | 2 -> "two"
-  | _ -> "other".
+  | 1 => "one"
+  | 2 => "two"
+  | * => "other".
 string-number
 ```
 
-2. Array pattern matching
+2. Matrices
 -------------------------------------------------------------------------------
 
 Use array patterns with spread to pull out head/last values.
 
-```mech:match array
+```mech:match vector
 y := [10 20 30]
 head<f64> := y?
-  | [] -> 0
-  | [h ...] -> h
-  | * -> 0.
+  | [] => 0
+  | [h ...] => h
+  | * => 0.
 last<f64> := y?
-  | [] -> 0
-  | [... l] -> l
-  | * -> 0.
+  | [] => 0
+  | [... l] => l
+  | * => 0.
 (head, last)
 ```
 
-3. Tuple pattern matching with guards
+3. Tuples
 -------------------------------------------------------------------------------
 
 Each arm can have an optional guard, which is a boolean expression that must evaluate to true for the arm to match. Guards are only evaluated after pattern variables are bound, and the first one that matches the pattern and the guard is selected.
@@ -71,14 +71,14 @@ Each arm can have an optional guard, which is a boolean expression that must eva
 ```mech:match tuple
 triple := (3, 4, 2)
 max := triple?
-  | (a, b, c), a > b && a > c -> a
-  | (a, b, c), b > a && b > c -> b
-  | (a, b, c), c > a && c > b -> c
-  | * -> 0.
+  | (a, b, c), a > b && a > c => a
+  | (a, b, c), b > a && b > c => b
+  | (a, b, c), c > a && c > b => c
+  | * => 0.
 max
 ```
 
-4. Enum variant matching
+4. Enums
 -------------------------------------------------------------------------------
 
 Match arms can destructure enum variants directly, including variants that carry values.
@@ -88,12 +88,12 @@ Match arms can destructure enum variants directly, including variants that carry
 my-color<color> := :red(300)
 
 string-color := my-color?
-  | :red(100) -> "dark red"
-  | :red(50) -> "light red"
-  | :red(x), x < 50 -> "pink"
-  | :red(x), x > 100 -> "maroon"
-  | :green(100) -> "dark green"
-  | * -> "unknown".
+  | :red(100) => "dark red"
+  | :red(50) => "light red"
+  | :red(x), x < 50 => "pink"
+  | :red(x), x > 100 => "maroon"
+  | :green(100) => "dark green"
+  | * => "unknown".
 string-color
 ```
 

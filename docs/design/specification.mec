@@ -1415,10 +1415,10 @@ state<status> := :status/active
 reply<response> := :ok(200)
 
 status-code<u64> := reply?
-  | :ok(code) -> code
-  | :error(message) -> 500
-  | :timeout -> 408
-  | * -> 500.
+  | :ok(code) => code
+  | :error(message) => 500
+  | :timeout => 408
+  | * => 500.
 ```
 
 Enum variant identifiers follow normal identifier rules. Underscores are not
@@ -1437,7 +1437,7 @@ function-signature := identifier
       , ?[function-argument, list-separator]
       , ")"
       , ws0
-      , "->"
+      , "=>"
       , ws0
       , kind-annotation ;
 function-argument := identifier, ?kind-annotation ;
@@ -1446,7 +1446,7 @@ function-branch := ws0
       , ws0
       , (expression | tuple)
       , ws0
-      , "->"
+      , "=>"
       , ws0
       , expression
       , ?new-line ;
@@ -1455,9 +1455,9 @@ function-branch := ws0
 Functions are declared with a signature and one or more branches. Branches are matched in order and can be recursive.
 
 ```mech:ex 8.5
-power(x<u64>, n<u64>) -> <u64>
-  ├ (*, 0u64) -> 1u64
-  └ (x, n) -> x * power(x, n - 1u64).
+power(x<u64>, n<u64>) => <u64>
+  ├ (*, 0u64) => 1u64
+  └ (x, n) => x * power(x, n - 1u64).
 ```
 
 (8.6) Kind Define

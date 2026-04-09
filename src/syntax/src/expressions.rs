@@ -90,7 +90,7 @@ pub fn match_arm(input: ParseString) -> ParseResult<MatchArm> {
     list_separator,
     preceded(whitespace0, expression),
   ))(input)?;
-  let (input, _) = transition_operator(input)?;
+  let (input, _) = output_operator(input)?;
   let (input, expr) = expression(input)?;
   let (input, _) = opt(alt((whitespace1, statement_separator)))(input)?;
   Ok((input, MatchArm {

@@ -27,16 +27,16 @@ Use postfix `?` on an expression to unwrap through guarded arms. Arms use the sa
 
 ```mech:disabled
 foo := x?
-  │ x > 3u64 -> x
-  │ x == 3u64 -> 0u64
-  └ * -> 0u64.
+  │ x > 3u64 => x
+  │ x == 3u64 => 0u64
+  └ * => 0u64.
 ```
 
 Tuple patterns are supported:
 
 ```mech:disabled
 (x2,y2) := (x,y)?
-  │ (x,y) -> (x,y)
-  └ * -> (0u64,0u64).
+  │ (x,y) => (x,y)
+  └ * => (0u64,0u64).
 ```
 
