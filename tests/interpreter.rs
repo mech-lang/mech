@@ -200,6 +200,14 @@ test_interpreter!(
   Value::U64(Ref::new(30))
 );
 
+
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_match_array_pattern_rest_binding,
+  "xs := [10u64 20u64 30u64]; y := xs? | [x | rest] => x | * => 0u64.; y + 0u64",
+  Value::U64(Ref::new(10))
+);
+
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_match_tuple_pattern_with_guards,

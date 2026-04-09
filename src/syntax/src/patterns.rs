@@ -1,6 +1,5 @@
 #[macro_use]
 use crate::*;
-use nom::{multi::many0, sequence::{preceded, terminated}};
 
 // pattern := pattern_atom_struct | pattern_tuple_struct | wildcard | pattern_array | pattern_tuple | expression ;
 pub fn pattern(input: ParseString) -> ParseResult<Pattern> {
@@ -64,6 +63,7 @@ fn pattern_array_item(input: ParseString) -> ParseResult<Pattern> {
 #[derive(Clone)]
 enum PatternArrayToken {
   Spread,
+  Pipe,
   Item(Pattern),
 }
 
@@ -71,23 +71,111 @@ fn pattern_array_token(input: ParseString) -> ParseResult<PatternArrayToken> {
   if let Ok((input, _)) = spread_operator(input.clone()) {
     return Ok((input, PatternArrayToken::Spread));
   }
+  if let Ok((input, _)) = enum_separator(input.clone()) {
+    return Ok((input, PatternArrayToken::Pipe));
+  }
   let (input, item) = pattern_array_item(input)?;
   Ok((input, PatternArrayToken::Item(item)))
 }
 
 // pattern_array := "[", [pattern_array_item|spread], "]" ;
 pub fn pattern_array(input: ParseString) -> ParseResult<PatternArray> {
-  let (input, _) = left_bracket(input)?;
-  let (input, _) = whitespace0(input)?;
-  let (input, tokens) = many0(terminated(preceded(whitespace0, pattern_array_token), whitespace0))(input)?;
-  let (input, _) = right_bracket(input)?;
+  let (mut input, _) = left_bracket(input)?;
+  let (next_input, _) = whitespace0(input)?;
+  input = next_input;
+
+  let mut tokens = Vec::new();
+  loop {
+    if let Ok((next_input, _)) = right_bracket(input.clone()) {
+      input = next_input;
+      break;
+    }
+
+    let (next_input, token) = pattern_array_token(input.clone())?;
+    input = next_input;
+    tokens.push(token);
+
+    let (next_input, _) = whitespace0(input)?;
+    input = next_input;
+    if let Ok((next_input, _)) = list_separator(input.clone()) {
+      input = next_input;
+      continue;
+    }
+  }
+
+  let pipe_positions = tokens
+    .iter()
+    .enumerate()
+    .filter_map(|(ix, token)| match token {
+      PatternArrayToken::Pipe => Some(ix),
+      _ => None,
+    })
+    .collect::<Vec<usize>>();
+
+  if pipe_positions.len() > 1 {
+    return Err(nom::Err::Error(ParseError::new(
+      input,
+      "Only one | rest binding is allowed in an array pattern",
+    )));
+  }
+
+  if let Some(pipe_ix) = pipe_positions.first().copied() {
+    if tokens.iter().any(|token| matches!(token, PatternArrayToken::Spread)) {
+      return Err(nom::Err::Error(ParseError::new(
+        input,
+        "Cannot mix ... spread and | rest binding in an array pattern",
+      )));
+    }
+
+    let mut prefix = vec![];
+    for token in tokens[..pipe_ix].iter() {
+      match token {
+        PatternArrayToken::Item(pattern) => prefix.push(pattern.clone()),
+        _ => {
+          return Err(nom::Err::Error(ParseError::new(
+            input.clone(),
+            "Only patterns are allowed before | in an array pattern",
+          )));
+        }
+      }
+    }
+
+    let rest_tokens = &tokens[pipe_ix + 1..];
+    if rest_tokens.len() != 1 {
+      return Err(nom::Err::Error(ParseError::new(
+        input,
+        "Array rest binding must be exactly one pattern after |",
+      )));
+    }
+
+    let binding = match &rest_tokens[0] {
+      PatternArrayToken::Item(pattern) => pattern.clone(),
+      _ => {
+        return Err(nom::Err::Error(ParseError::new(
+          input,
+          "Array rest binding must be a pattern after |",
+        )));
+      }
+    };
+
+    return Ok((
+      input,
+      PatternArray {
+        prefix,
+        spread: Some(PatternArraySpread {
+          binding: Some(Box::new(binding)),
+        }),
+        suffix: vec![],
+      },
+    ));
+  }
 
   let spread_positions = tokens
     .iter()
     .enumerate()
     .filter_map(|(ix, token)| match token {
       PatternArrayToken::Spread => Some(ix),
-      PatternArrayToken::Item(_) => None,
+      _ => None,
     })
     .collect::<Vec<usize>>();
 
@@ -107,14 +195,14 @@ pub fn pattern_array(input: ParseString) -> ParseResult<PatternArray> {
       .iter()
       .filter_map(|token| match token {
         PatternArrayToken::Item(pattern) => Some(pattern.clone()),
-        PatternArrayToken::Spread => None,
+        _ => None,
       })
       .collect();
     suffix = tokens[ix + 1..]
       .iter()
       .filter_map(|token| match token {
         PatternArrayToken::Item(pattern) => Some(pattern.clone()),
-        PatternArrayToken::Spread => None,
+        _ => None,
       })
       .collect();
   } else {
@@ -122,7 +210,7 @@ pub fn pattern_array(input: ParseString) -> ParseResult<PatternArray> {
       .iter()
       .filter_map(|token| match token {
         PatternArrayToken::Item(pattern) => Some(pattern.clone()),
-        PatternArrayToken::Spread => None,
+        _ => None,
       })
       .collect();
   }
