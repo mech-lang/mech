@@ -1,7 +1,7 @@
 patterns
 ================================================================================
 
-%% Patterns are a single matching language shared by functions, state-machine transitions, and option-match guards.
+%% Patterns are a single matching language shared by functions, state-machine transitions, and match guards. They are used to match and destructure data in a concise and declarative way.
 
 1. Pattern forms
 -------------------------------------------------------------------------------
@@ -22,7 +22,7 @@ Mech patterns support the same core shapes in every pattern context:
 
 Function branches are evaluated top-to-bottom. The first arm whose pattern matches call arguments is selected.
 
-```mech
+```
 abs(x) -> <f64>
   ├ n if n < 0.0 -> -n
   └ n -> n.
@@ -30,69 +30,49 @@ abs(x) -> <f64>
 
 Multiple call arguments are matched with tuple-style structure:
 
-```mech
+```
 max2(a, b) -> <u64>
   ├ (x, y) if x > y -> x
   └ (_, y) -> y.
 ```
 
-3. State machine transitions
--------------------------------------------------------------------------------
-
-State-machine arms use the same pattern forms to match the current state value.
-
-```mech
-traffic() -> <atom>
-  @red -> @green
-  @green -> @yellow
-  @yellow -> @red.
-```
-
-Tuple-struct patterns are useful for richer states:
-
-```mech
-connection() -> <atom>
-  connecting(retries) ->
-    | retries < 3 -> connecting(retries + 1)
-    | _ -> failed
-  connected -> connected.
-```
-
-4. Option-match guards
+3. Match guards
 -------------------------------------------------------------------------------
 
 Option matching also reuses the same pattern syntax. A wildcard arm is required for exhaustiveness.
 
-```mech
-result := value ?
-  | x if x > 10 -> "large"
-  | x -> "small"
-  | _ -> "empty".
+```
+result := value?
+  ├ x, x > 10 -> "large"
+  ├ x -> "small"
+  └ _ -> "empty".
 ```
 
 Guard-like conditions in option arms are pattern expressions that evaluate to `bool` in the arm environment.
 
-You can also match deeply on atom-tagged values:
+You can also match atom-tagged values:
 
 ```mech
-shade := color?
-  | :red(100) -> "dark red"
-  | :red(50) -> "light red"
-  | :red(x) if x < 50 -> "pink"
-  | :red(x) if x > 100 -> "maroon"
-  | :green(100) -> "dark green"
-  | _ -> "unknown".
+<color> := :red<f64> | :green<f64> | :blue<f64>
+my-color<color> := :red(300)
+shade := my-color?
+  ├ :red(100) -> "dark red"
+  ├ :red(50) -> "light red"
+  ├ :red(x), x < 50 -> "pink"
+  ├ :red(x), x > 100 -> "maroon"
+  ├ :green(100) -> "dark green"
+  └ * -> "unknown".
 ```
 
-5. Binding behavior
--------------------------------------------------------------------------------
+Deeply nested patterns are also possible:
 
-- Repeated variable names in one pattern require equality with the previous binding.
-- Bound names are available to arm expressions and transition statements.
-- Wildcards never bind.
-- Array spread bindings capture the unmatched middle segment.
-
-6. Shared semantics notes
--------------------------------------------------------------------------------
-
-All three systems (functions, FSMs, option matches) use one interpreter pattern engine, so tuple/array/tagged-state matching and variable bindings behave consistently across contexts.
+```mech
+<result> := :ok<u64> | :err<string>
+<wrapped> := :some(<result>) | :none
+wrapped-val := :some(:ok(42))
+status := wrapped-val?
+  ├ :some(:ok(42)) -> "the answer"
+  ├ :some(:ok(x)) -> "success"
+  ├ :some(:err(msg)) -> msg
+  └ * -> "no result".
+```
