@@ -8,14 +8,15 @@ patterns
 
 Mech patterns support the same core shapes in every pattern context:
 
-- `_` wildcard: matches anything and binds nothing.
-- Variable pattern: binds a value (for example `x`).
-- Literal / expression pattern: matches when evaluated pattern equals the candidate value.
-- Atom pattern: matches exact atoms (for example `:ready`).
-- Tuple pattern: positional matching for tuples, e.g. `(head, tail)`.
-- Tuple-struct pattern: state-like tagged tuples, e.g. `ready(x)`.
-- Enum-variant pattern: matches tagged atom variants and optionally destructures payloads, e.g. `:red(x)`.
-- Array pattern: prefix/suffix matching with optional spread capture.
+| Pattern | Description | Example |
+|---------|-------------|---------|
+| Wildcard | Matches anything and binds nothing | `*` |
+| Variable pattern | Binds a value to a symbol | {{x}} |
+| Literal / expression | Matches when evaluated pattern equals the candidate value | {{42}}, {{true}}, {{"hello"}} |
+| Atom pattern | Matches exact atoms | `:ready` |
+| Tuple pattern | Positional matching for tuples | {{(first, second)}} |
+| Enum-variant pattern | Matches tagged atom variants and optionally destructures payloads | {{:out(:in(x))}} |
+| Array pattern | Prefix/suffix matching with optional spread capture | `[first ... last]` |
 
 2. Function match arms
 -------------------------------------------------------------------------------
@@ -77,3 +78,31 @@ status := wrapped-val?
   ├ :some(:err(msg)) => msg
   └ * => "no result".
 ```
+
+4. State Machines
+-------------------------------------------------------------------------------
+
+State machine transitions also use the same pattern syntax in their transition arms. Guards work the same way as in option arms, but they are named and can transition between one another.
+
+For example:
+
+```mech
+#TrafficLight(steps<u64>) => <u64>
+  ├ :Red(steps<u64>)
+  ├ :Green(steps<u64>)
+  ├ :Yellow(steps<u64>)
+  └ :Done(out<u64>).
+
+#TrafficLight(steps<u64>) -> :Red(steps)
+  :Red(steps)
+    ├ steps > 0u64 -> :Green(steps - 1u64)
+    └ steps == 0u64 -> :Done(0u64)
+  :Green(steps)
+    ├ steps > 0u64 -> :Yellow(steps - 1u64)
+    └ steps == 0u64 -> :Done(0u64)
+  :Yellow(steps)
+    ├ steps > 0u64 -> :Red(steps - 1u64)
+    └ steps == 0u64 -> :Done(0u64)
+  :Done(out) => out.
+```
+
