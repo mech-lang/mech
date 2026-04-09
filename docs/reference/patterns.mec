@@ -41,11 +41,12 @@ max2(a, b) -> <u64>
 
 Option matching also reuses the same pattern syntax. A wildcard arm is required for exhaustiveness.
 
-```
+```mech
+value<f64?> := 123.456
 result := value?
   ├ x, x > 10 -> "large"
   ├ x -> "small"
-  └ _ -> "empty".
+  └ * -> "empty".
 ```
 
 Guard-like conditions in option arms are pattern expressions that evaluate to `bool` in the arm environment.
