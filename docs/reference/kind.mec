@@ -13,7 +13,7 @@ Kinds contain information to describe:
 - Data structure e.g. matrix, set, record, table or tuple
 - Data size e.g. matrix dimensions, set size, table rows
 
-(!)> Kinds do *not* indicate whether a value is mutable or immutable. The mutability is determined by the user when the value is created, and is independent of its kind. In other words, mutability is a property of the variable or binding that holds the value, whereas a kind describes the inherent nature of the data contained within the value.
+(!)> Kinds do *not* indicate whether a value is mutable or immutable. The mutability is determined by the user when the value is created, and is independent of its kind.
 
 1. Syntax
 -------------------------------------------------------------------------------
