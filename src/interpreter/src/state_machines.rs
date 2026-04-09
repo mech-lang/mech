@@ -74,9 +74,9 @@ pub fn execute_fsm_pipe(fsm_pipe: &FsmPipe, env: Option<&Environment>, p: &Inter
         )
         .with_compiler_loc()
         .with_tokens(fsm_pipe.start.tokens()));
-        }
       }
-      call_env.insert(arg_decl.name.hash(), detach_value(arg_value));
+    }
+    call_env.insert(arg_decl.name.hash(), detach_value(arg_value));
   }
   let mut state = pattern_to_value(&fsm.start, &call_env, p)?;
   validate_fsm_state_coverage(&fsm, fsm_pipe)?;

@@ -1512,18 +1512,18 @@ impl Formatter {
           let pattern = self.pattern(&arm.pattern);
           let expression = self.expression(&arm.expression);
           if self.html {
-            format!("<div class=\"mech-function-match-arm\"><span class=\"mech-function-branch\">{}</span><span class=\"mech-function-pattern\">{}</span> <span class=\"mech-function-arrow\">-&gt;</span><span class=\"mech-function-expression\">{}</span></div>", branch, pattern, expression)
+            format!("<div class=\"mech-function-match-arm\"><span class=\"mech-function-branch\">{}</span><span class=\"mech-function-pattern\">{}</span> <span class=\"mech-function-arrow\">⇒</span><span class=\"mech-function-expression\">{}</span></div>", branch, pattern, expression)
           } else {
-            format!("  {} {} -> {}", branch, pattern, expression)
+            format!("  {} {} => {}", branch, pattern, expression)
           }
         })
         .collect::<Vec<_>>()
         .join(if self.html { "" } else { "\n" });
 
       if self.html {
-        format!("<div class=\"mech-function-define\"><div class=\"mech-function-signature\"><span class=\"mech-function-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-function-input\">{}</span><span class=\"mech-right-paren\">)</span> <span class=\"mech-function-arrow\">-&gt;</span> <span class=\"mech-function-output\">{}</span></div><div class=\"mech-function-match-arms\">{}<span class=\"mech-function-period\">.</span></div></div>", name, input, output_kind, arms)
+        format!("<div class=\"mech-function-define\"><div class=\"mech-function-signature\"><span class=\"mech-function-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-function-input\">{}</span><span class=\"mech-right-paren\">)</span> <span class=\"mech-function-arrow\">⇒</span> <span class=\"mech-function-output\">{}</span></div><div class=\"mech-function-match-arms\">{}<span class=\"mech-function-period\">.</span></div></div>", name, input, output_kind, arms)
       } else {
-        format!("{}({}) -> {}\n{}.", name, input, output_kind, arms)
+        format!("{}({}) => {}\n{}.", name, input, output_kind, arms)
       }
     } else {
       let output = if node.output.len() == 1 {
@@ -1807,7 +1807,9 @@ impl Formatter {
   pub fn match_expression(&mut self, node: &MatchExpression) -> String {
     let source = self.expression(&node.source);
     let mut lines = vec![format!("{}?", source)];
-    for arm in &node.arms {
+    for (ix, arm) in node.arms.iter().enumerate() {
+      let last_arm = ix + 1 == node.arms.len();
+      let (branch, terminal) = if last_arm {("└", ".")} else {("├", "")};
       let pattern = self.pattern(&arm.pattern);
       let guard = arm
         .guard
@@ -1815,9 +1817,32 @@ impl Formatter {
         .map(|expr| format!(", {}", self.expression(expr)))
         .unwrap_or_default();
       let expr = self.expression(&arm.expression);
-      lines.push(format!("│ {}{} -> {}", pattern, guard, expr));
+      if self.html {
+        lines.push(format!(
+          "<div class=\"mech-match-arm\">\
+            <span class=\"mech-match-branch\">{}</span> \
+            <span class=\"mech-match-pattern\">{}{}</span> \
+            <span class=\"mech-match-arrow\">⇒</span> \
+            <span class=\"mech-match-expression\">{}</span>\
+            <span class=\"mech-match-terminal\">{}</span>\
+          </div>",
+          branch, pattern, guard, expr, terminal
+        ));
+      } else {
+        lines.push(format!("{}{}{} ⇒ {}{}", branch, pattern, guard, expr, terminal));
+      }
     }
-    lines.join("\n")
+    if self.html {
+      format!(
+        "<span class=\"mech-match-expression\">\
+          <span class=\"mech-match-source\">{}?</span>{}\
+          </span>",
+        source,
+        lines.iter().skip(1).cloned().collect::<Vec<_>>().join("")
+      )
+    } else {
+      lines.join("\n")
+    }
   }
 
   pub fn fsm_instance(&mut self, node: &FsmInstance) -> String {
@@ -2188,7 +2213,14 @@ impl Formatter {
     let name = node.name.to_string();
     let value = self.expression(&node.value);
     if self.html {
-      format!("<span class=\"mech-tuple-struct\"><span class=\"mech-tuple-struct-name\">{}</span><span class=\"mech-tuple-struct-value\">{}</span></span>",name,value)
+      format!("
+        <span class=\"mech-tuple-struct\">
+        <span class=\"mech-tuple-struct-sigil\">:</span>
+        <span class=\"mech-tuple-struct-name\">{}</span>
+        <span class=\"mech-left-paren\">(</span>
+        <span class=\"mech-tuple-struct-value\">{}</span>
+        <span class=\"mech-right-paren\">)</span>
+      </span>", name, value)
     } else {
       format!("{}{}", name, value)
     }
