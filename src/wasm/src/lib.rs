@@ -864,35 +864,34 @@ pub fn attach_repl(&mut self, repl_id: &str) {
       escaped_message
     )
   }
-
+  
   #[cfg(feature = "run_program")]
   fn emit_runtime_error(&self, message: &str) {
-    let mut rendered_to_page = false;
     let formatted_error = self.format_runtime_error_html(message);
 
-    if let Some(window) = web_sys::window() {
-      if let Some(document) = window.document() {
-        if let Ok(output_blocks) = document.query_selector_all(".mech-block-output") {
-          for i in 0..output_blocks.length() {
-            if let Some(output_node) = output_blocks.item(i) {
-              if let Ok(output_el) = output_node.dyn_into::<web_sys::Element>() {
-                output_el.set_inner_html(&formatted_error);
-                rendered_to_page = true;
-              }
-            }
-          }
-        }
+    let rendered = web_sys::window()
+      .and_then(|w| w.document())
+      .map(|doc| {
+        let rendered_to_blocks = doc
+          .query_selector_all(".mech-block-output")
+          .ok()
+          .map(|nodes| {
+            (0..nodes.length())
+                .filter_map(|i| nodes.item(i))
+                .filter_map(|node| node.dyn_into::<web_sys::Element>().ok())
+                .inspect(|el| el.set_inner_html(&formatted_error))
+                .count() > 0
+          })
+          .unwrap_or(false);
 
-        if !rendered_to_page {
-          if let Some(root) = document.get_element_by_id("mech-root") {
-            root.set_inner_html(&formatted_error);
-            rendered_to_page = true;
-          }
-        }
-      }
-    }
+        rendered_to_blocks || doc
+          .get_element_by_id("mech-root")
+          .inspect(|root| root.set_inner_html(&formatted_error))
+          .is_some()
+      })
+      .unwrap_or(false);
 
-    if !rendered_to_page {
+    if !rendered {
       web_sys::console::error_1(&format!("Runtime error: {}", message).into());
     }
   }
@@ -900,44 +899,25 @@ pub fn attach_repl(&mut self, repl_id: &str) {
   #[cfg(feature = "run_program")]
   fn interpret_with_runtime_error_handling(&mut self, tree: &Program) {
     match catch_unwind(AssertUnwindSafe(|| self.interpreter.interpret(tree))) {
-      Ok(Ok(result)) => {
-        log!("{}", result.pretty_print());
-      }
-      Ok(Err(err)) => {
-        let err_message = format!("{:?}", err);
-        self.emit_runtime_error(&err_message);
-      }
-      Err(panic_payload) => {
-        let panic_message = if let Some(message) = panic_payload.downcast_ref::<&str>() {
-          (*message).to_string()
-        } else if let Some(message) = panic_payload.downcast_ref::<String>() {
-          message.clone()
-        } else {
-          "Unknown panic while running Mech program".to_string()
-        };
-        self.emit_runtime_error(&panic_message);
+      Ok(Ok(result)) => {log!("{}", result.pretty_print());},
+      Ok(Err(err)) => self.emit_runtime_error(&format!("{:?}", err)),
+      Err(payload) => {
+        let message = payload
+            .downcast_ref::<&str>()
+            .map(|s| s.to_string())
+            .or_else(|| payload.downcast_ref::<String>().cloned())
+            .unwrap_or_else(|| "Unknown panic while running Mech program".to_string());
+        self.emit_runtime_error(&message);
       }
     }
   }
 
   #[cfg(feature = "run_program")]
   #[wasm_bindgen]
-  pub fn run_program(&mut self, src: &str) { 
-    // Decompress the string into a Program
-    match decode_and_decompress(&src) {
-      Ok(tree) => {
-        self.interpret_with_runtime_error_handling(&tree);
-      },
-      Err(err) => {
-        match parse(src) {
-          Ok(tree) => {
-            self.interpret_with_runtime_error_handling(&tree);
-          },
-          Err(parse_err) => {
-            self.emit_runtime_error(&format!("Error parsing program: {:?}", parse_err));
-          }
-        }
-      }
+  pub fn run_program(&mut self, src: &str) {
+    match decode_and_decompress(src).or_else(|_| parse(src)) {
+      Ok(tree) => self.interpret_with_runtime_error_handling(&tree),
+      Err(err) => self.emit_runtime_error(&format!("Error parsing program: {:?}", err)),
     }
   }
 }

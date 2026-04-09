@@ -2604,3 +2604,8 @@ mark {
 .mech-pattern .mech-var-name {
     color: var(--pattern-color);
 }
+
+.mech-match-expression {
+    display: flex;
+    flex-direction: column;
+}
