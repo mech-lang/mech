@@ -210,17 +210,17 @@ pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -
       if let Some(spread) = &array.spread {
         if let Some(binding) = &spread.binding {
           let bound = pattern_to_value(binding, env, p)?;
-          match bound {
-            Value::MatrixValue(ref matrix) => values.extend(matrix.as_vec()),
-            ref other => values.push(other.clone()),
+          if let Some(bound_values) = matrix_like_values(&bound) {
+            values.extend(bound_values);
+          } else {
+            values.push(bound);
           }
-          values.push(bound.clone());
         }
       }
       for inner in &array.suffix {
         values.push(pattern_to_value(inner, env, p)?);
       }
-      return Ok(Value::MatrixValue(Matrix::from_vec(values.clone(), 1, values.len())));
+      return Ok(build_row_matrix_from_values(values));
     }
     #[cfg(all(feature = "tuple", feature = "atom"))]
     Pattern::TupleStruct(pattern_tuple_struct) => {
@@ -388,6 +388,23 @@ pub(crate) fn matrix_like_values(value: &Value) -> Option<Vec<Value>> {
     Value::MatrixValue(matrix) => Some(matrix.as_vec()),
     _ => None,
   }
+}
+
+#[cfg(feature = "matrix")]
+fn build_row_matrix_from_values(values: Vec<Value>) -> Value {
+  let cols = values.len();
+  #[cfg(feature = "u64")]
+  if values.iter().all(|value| matches!(value, Value::U64(_))) {
+    let data = values
+      .iter()
+      .map(|value| match value {
+        Value::U64(x) => *x.borrow(),
+        _ => unreachable!(),
+      })
+      .collect::<Vec<u64>>();
+    return Value::MatrixU64(Matrix::from_vec(data, 1, cols));
+  }
+  Value::MatrixValue(Matrix::from_vec(values, 1, cols))
 }
 
 fn extract_pattern_variable_id(expr: &Expression) -> Option<u64> {
