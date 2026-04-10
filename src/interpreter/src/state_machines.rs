@@ -113,6 +113,7 @@ fn execute_fsm_pipe_impl(fsm: &FsmImplementation, state: &mut Value, call_env: &
     let mut transitioned = false;
     for (arm_idx, arm) in fsm.arms.iter().enumerate() {
       match arm {
+        FsmArm::Comment(_) => continue,
         FsmArm::Transition(pattern, transitions) => {
           let mut arm_env = call_env.clone();
           clear_pattern_bindings(pattern, &mut arm_env);
@@ -275,6 +276,7 @@ fn validate_fsm_state_coverage(fsm: &FsmImplementation, fsm_pipe: &FsmPipe) -> M
     .filter_map(|arm| {
       let pattern = match arm {
         FsmArm::Guard(pattern, _) | FsmArm::Transition(pattern, _) => pattern,
+        FsmArm::Comment(_) => return None,
       };
       state_name_from_pattern(pattern)
     })
@@ -308,6 +310,7 @@ fn validate_fsm_state_coverage(fsm: &FsmImplementation, fsm_pipe: &FsmPipe) -> M
 
   for arm in &fsm.arms {
     let transitions = match arm {
+      FsmArm::Comment(_) => continue,
       FsmArm::Transition(_, transitions) => transitions.as_slice(),
       FsmArm::Guard(_, guards) => {
         for guard in guards {
