@@ -18,7 +18,6 @@ Bubble Sort is a simple comparison-based sorting algorithm that repeatedly steps
 - Repeat this process for each pair of adjacent elements in the list until no 
   swaps are needed.
 
-
 2. Complexity Analysis
 -------------------------------------------------------------------------------
 
