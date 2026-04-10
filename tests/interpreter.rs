@@ -200,6 +200,21 @@ test_interpreter!(
   Value::U64(Ref::new(30))
 );
 
+
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_match_array_pattern_rest_binding,
+  "xs := [10u64 20u64 30u64 40u64]; y := xs? | [a, b | rest] => rest? | [r ...] => r | * => 0u64. | * => 0u64.; y + 0u64",
+  Value::U64(Ref::new(30))
+);
+
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_match_array_pattern_rest_binding_returns_matrix,
+  "xs := [10u64 20u64 30u64 40u64]; y := xs? | [a, b | rest] => rest | * => [0u64].; z := y? | [h ... t] => h + t | * => 0u64.; z + 0u64",
+  Value::U64(Ref::new(70))
+);
+
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_match_tuple_pattern_with_guards,
