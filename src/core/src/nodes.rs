@@ -861,6 +861,7 @@ impl FsmImplementation {
 pub enum FsmArm {
   Guard(Pattern,Vec<Guard>),
   Transition(Pattern,Vec<Transition>),
+  Comment(Comment),
 }
 
 impl FsmArm {
@@ -880,6 +881,7 @@ impl FsmArm {
         }
         tokens
       }
+      FsmArm::Comment(comment) => comment.tokens(),
     }
   }
 }
