@@ -31,10 +31,9 @@ pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> 
   Ok((input, FsmImplementation{name,input: input_vars,start,arms}))
 }
 
-// fsm_arm := comment*, (fsm_transition | fsm_guard_arm), whitespace* ;
+// fsm_arm := comment*, (fsm_transition | fsm_guard_arm | fsm_comment_arm), whitespace* ;
 pub fn fsm_arm(input: ParseString) -> ParseResult<FsmArm> {
-  let (input, _) = many0(comment)(input)?;
-  let (input, arm) = alt((fsm_guard_arm,fsm_transition))(input)?;
+  let (input, arm) = alt((fsm_guard_arm,fsm_transition,fsm_comment_arm))(input)?;
   let (input, _) = whitespace0(input)?;
   Ok((input, arm))
 }
@@ -44,6 +43,11 @@ pub fn fsm_guard_arm(input: ParseString) -> ParseResult<FsmArm> {
   let (input, start) = pattern(input)?;
   let (input, grds) = many1(fsm_guard)(input)?;
   Ok((input, FsmArm::Guard(start, grds)))
+}
+
+pub fn fsm_comment_arm(input: ParseString) -> ParseResult<FsmArm> {
+  let (input, comment) = comment(input)?;
+  Ok((input, FsmArm::Comment(comment)))
 }
 
 // fsm_guard := guard_operator, pattern, (fsm_statement_transition | fsm_state_transition | fsm_output | fsm_async_transition | fsm_block_transition)+ ;

@@ -1234,6 +1234,7 @@ impl Formatter {
 
   pub fn fsm_arm(&mut self, node: &FsmArm, last: bool) -> String {
     let arm = match node {
+      FsmArm::Comment(comment) => self.comment(comment),
       FsmArm::Guard(pattern, guards) => {
         let p = self.pattern(pattern);
         let mut gs = "".to_string();
