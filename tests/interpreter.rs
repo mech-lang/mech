@@ -1186,7 +1186,7 @@ test_interpreter!(interpret_atom_inequality_false, r#"a := :status/active; b := 
 test_interpreter!(interpret_atom_inequality, r#"a := :status/active; b := :status/inactive; c := (a != b);"#, Value::Bool(Ref::new(true)));
 test_interpreter!(interpret_atom_equality_false, r#"a := :status/active; b := :status/inactive; c := (a == b);"#, Value::Bool(Ref::new(false)));
 
-test_interpreter!(interpreter_mika_micromica, r#"╭⦿╯"#, Value::Atom(Ref::new(MechAtom::from_name("╭⦿╯"))));
-test_interpreter!(interpreter_mika_micromica_gripper, r#"Ɔ∞⦿╯"#, Value::Atom(Ref::new(MechAtom::from_name("Ɔ∞⦿╯"))));
-test_interpreter!(interpreter_mika_minimika, r#"(˙◯˙)"#, Value::Atom(Ref::new(MechAtom::from_name("(˙◯˙)"))));
-test_interpreter!(interpreter_mika_micromica_mikasection, r#"╭⦿╯ ⸢Hello, I'm Mika!⸥"#, Value::Atom(Ref::new(MechAtom::from_name("╭⦿╯"))));
+test_interpreter!(interpret_mika_micromica, r#"╭⦿╯"#, Value::Atom(Ref::new(MechAtom::from_name("╭⦿╯"))));
+test_interpreter!(interpret_mika_micromica_gripper, r#"Ɔ∞⦿╯"#, Value::Atom(Ref::new(MechAtom::from_name("Ɔ∞⦿╯"))));
+test_interpreter!(interpret_mika_minimika, r#"(˙◯˙)"#, Value::Atom(Ref::new(MechAtom::from_name("(˙◯˙)"))));
+test_interpreter!(interpret_mika_micromica_mikasection, r#"╭⦿╯ ⸢Hello, I'm Mika!⸥"#, Value::Atom(Ref::new(MechAtom::from_name("╭⦿╯"))));
