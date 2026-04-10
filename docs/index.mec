@@ -125,7 +125,7 @@ v0.3.2-beta
 ```mech:hidden
 document/index := {
   name: "docs" 
-  version: "v0.3.2"
+  version: "v0.3.3"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/mech/docs"
   license: "Apache-2.0"}
