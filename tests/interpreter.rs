@@ -237,18 +237,18 @@ test_interpreter!(interpret_fsm_bubble_sort_assigns_matrix_value, "#bubble-sort(
   ├ :Reverse(arr<[u64]>, acc<[u64]>, swaps<u64>)
   └ :Done(arr<[u64]>).
 
-#bubble-sort(arr) -> :Start(arr)
-  :Start(arr) -> :Pass(arr, [], 0u64)
+#bubble-sort(arr) → :Start(arr)
+  :Start(arr) → :Pass(arr, [], 0u64)
   :Pass([a, b | tail], acc, swaps)
-    ├ a > b -> :Pass([a | tail], [b | acc], swaps + 1u64)
-    └ *     -> :Pass([b | tail], [a | acc], swaps)
-  :Pass([x], acc, swaps) -> :Next([x | acc], swaps)
-  :Pass([], acc, swaps)  -> :Next(acc, swaps)
-  :Next(arr, swaps) -> :Reverse(arr, [], swaps)
-  :Reverse([x | tail], acc, swaps) -> :Reverse(tail, [x | acc], swaps)
-  :Reverse([], acc, 0u64)     -> :Done(acc)
-  :Reverse([], acc, swaps) -> :Pass(acc, [], 0u64)
-  :Done(arr) => arr.
+    ├ a > b → :Pass([a | tail], [b | acc], swaps + 1u64)
+    └ *     → :Pass([b | tail], [a | acc], swaps)
+  :Pass([x], acc, swaps) → :Next([x | acc], swaps)
+  :Pass([], acc, swaps)  → :Next(acc, swaps)
+  :Next(arr, swaps) → :Reverse(arr, [], swaps)
+  :Reverse([x | tail], acc, swaps) → :Reverse(tail, [x | acc], swaps)
+  :Reverse([], acc, 0u64)     → :Done(acc)
+  :Reverse([], acc, swaps) → :Pass(acc, [], 0u64)
+  :Done(arr) ⇒ arr.
 
 x := [5u64 3u64 8u64 1u64]
 y := #bubble-sort(x)", Value::MatrixU64(Matrix::from_vec(vec![1, 3, 5, 8], 1, 4)));
