@@ -210,11 +210,11 @@ pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -
       if let Some(spread) = &array.spread {
         if let Some(binding) = &spread.binding {
           let bound = pattern_to_value(binding, env, p)?;
-          match bound {
-            Value::MatrixValue(ref matrix) => values.extend(matrix.as_vec()),
-            ref other => values.push(other.clone()),
+          if let Some(bound_values) = matrix_like_values(&bound) {
+            values.extend(bound_values);
+          } else {
+            values.push(bound);
           }
-          values.push(bound.clone());
         }
       }
       for inner in &array.suffix {

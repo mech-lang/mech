@@ -244,6 +244,7 @@ test_interpreter!(
 test_interpreter!(interpret_function_array_pattern_arms, "head(xs<[u64]:1,3>) => <u64>\n  | [x ...] => x\n  | * => 0u64.\nhead([10u64 20u64 30u64]) + 0u64", Value::U64(Ref::new(10)));
 test_interpreter!(interpret_fsm_array_pattern_state_arguments, "#VecFsm(n<u64>) => <u64>\n  ├ :Scan(xs<[u64]:1,3>)\n  └ :Done(out<u64>).\n\n#VecFsm(n<u64>) -> :Scan([1u64 2u64 3u64])\n  :Scan([x ... y]) -> :Done(x + y)\n  :Done(out) => out.\n\n#VecFsm(0u64)", Value::U64(Ref::new(4)));
 test_interpreter!(interpret_fsm_accepts_unsized_vector_input, "#Echo(xs<[u64]>) => <u64>\n  ├ :Start(xs<[u64]>)\n  └ :Done(out<u64>).\n\n#Echo(xs<[u64]>) -> :Start(xs)\n  :Start([x ...]) -> :Done(x)\n  :Done(out) => out.\n\n#Echo([5u64 3u64 8u64 1u64])", Value::U64(Ref::new(5)));
+test_interpreter!(interpret_fsm_array_spread_reconstruction_keeps_scalar_guards, "#Demo(arr<[u64]>) => <u64>\n  ├ :Pass(arr<[u64]>)\n  └ :Done(out<u64>).\n\n#Demo(arr<[u64]>) -> :Pass(arr)\n  :Pass([a, b | tail])\n    ├ a > b -> :Pass([a | tail])\n    └ * -> :Done(0u64)\n  :Pass([x ...]) -> :Done(x)\n  :Done(out) => out.\n\n#Demo([5u64 3u64 8u64 1u64])", Value::U64(Ref::new(0)));
 #[test]
 fn interpret_variable_define_typed_set_from_range_matrix() {
   let s = "input<{f64}> := 1..=5";
