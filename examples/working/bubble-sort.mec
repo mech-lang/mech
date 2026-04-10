@@ -46,61 +46,43 @@ complexity. It is often used as a teaching tool due to its simplicity, but it's
 rarely used in practice for real-world applications where efficiency is 
 critical.
 
-
 4. Implementation
 -------------------------------------------------------------------------------
 
 We implement bubble sort as a finite state machine with the following states:
 
-#bubble-sort(arr<[number]>,ix<usize>) => <[number]> :=
-   ├ `Start(arr,ix)
-   ├ `Comparison(arr,ix) 
-   ├ `Check(arr,ix)
-   └ `Done(arr).
+#bubble-sort(arr<[u64]>) ⇒ <[u64]> :=
+  ├ :Start(arr<[u64]>)
+  ├ :Pass(arr<[u64]>, acc<[u64]>, swaps<u64>)
+  ├ :Next(arr<[u64]>, swaps<u64>)
+  ├ :Reverse(arr<[u64]>, acc<[u64]>, swaps<u64>)
+  └ :Done(arr<[u64]>).
 
-Here's the implementation of the machine:
-
-#bubble-sort(arr) -> `Start(arr,0)
-    -- Begin the sorting process by comparing elements in the input array and 
-    -- keeping track of the number of swapsmade so far.
-    `Start(arr, swaps) -> `Comparison(arr, swaps)
-    -- If the input array is empty, move on to the next step (checking if the 
-    -- sort is done).
-    `Comparison([], swaps) -> `Check(arr, swaps)
-    -- Compare adjacent elements in the array and decide what to do based on 
-    -- the result.
-    `Comparison([a, b, tail], swaps)
-        ├ a > b -> `Comparison([b, a, tail], swaps + 1)
-        └ * -> `Comparison(tail, swaps)
-    -- If no swaps were made during the sorting process, the array is sorted, 
-    -- so signal that the sort is done.
-    `Check(arr, 0) -> `Done(arr)
-    -- If swaps were made, the array is not yet sorted, so start the comparison 
-    -- process again from the beginning.
-    `Check(arr, swaps) -> `Comparison(arr,0)
-    -- The final step: return the sorted array.
-    `Done(arr) => arr.
+#bubble-sort(arr) → :Start(arr)
+  -- Initialize first pass
+  :Start(arr) → :Pass(arr, [], 0)
+  -- Pass: compare adjacent elements and rebuild list in acc
+  :Pass([a, b | tail], acc, swaps)
+    ├ a > b → :Pass([a | tail], [b | acc], swaps + 1)
+    └ *     → :Pass([b | tail], [a | acc], swaps)
+  :Pass([x], acc, swaps) → :Next([x | acc], swaps)
+  :Pass([], acc, swaps)  → :Next(acc, swaps)
+  -- After a pass
+  :Next(arr, swaps) → :Reverse(arr, [], swaps)
+  -- Reverse helper to restore order after pass
+  :Reverse([x | tail], acc, swaps) → :Reverse(tail, [x | acc], swaps)
+  :Reverse([], acc, 0)     → :Done(acc)
+  :Reverse([], acc, swaps) → :Pass(acc, [], 0)
+  -- Return the sorted array
+  :Done(arr) ⇒ arr.
 
 5. Interface
 -------------------------------------------------------------------------------
 
 Take a list, a, that's just a list of numbers
 
-    a = [4 2 1 3]
+a<[u64]> := [4 2 1 3]
 
-We can create an instance of the bubble sort FSM
+We can run the bubble sort algorithm on it:
 
-    #b := #bubble-sort
-    #c := #bubble-sort(a)
-
-The following demonstrates 5 different ways to call a state machine.
-
-    a -> #b => a-sorted-1.
-    #b(a) => a-sorted-2.
-    #bubble-sort(a) => a-sorted-3.
-    #b([4 2 1 3]) => a-sorted-4.
-    a -> #bubble-sort => a-sorted-5.
-    #c => a-sorted-6.
-
-
-    ~ a -> #b ~> #c => a-sorted-1.
+sorted := #bubble-sort(a)
