@@ -58,12 +58,14 @@ pub fn execute_fsm_pipe(fsm_pipe: &FsmPipe, env: Option<&Environment>, p: &Inter
     .with_tokens(fsm_pipe.start.tokens()));
   }
   for (arg_decl, arg_value) in fsm.input.iter().zip(args.iter()) {
+    let detached_arg = detach_value(arg_value);
     #[cfg(feature = "kind_annotation")]
     if let Some(kind_annotation_node) = &arg_decl.kind {
       let expected_kind = kind_annotation(&kind_annotation_node.kind, p)?
           .to_value_kind(&p.state.borrow().kinds)?;
       let actual_kind = arg_value.kind();
-      if actual_kind != expected_kind {
+      let converted_arg = detached_arg.convert_to(&expected_kind);
+      if actual_kind != expected_kind && converted_arg.is_none() {
         return Err(MechError::new(
           FsmArgumentKindMismatchError {
             argument: arg_decl.name.to_string(),
@@ -75,8 +77,10 @@ pub fn execute_fsm_pipe(fsm_pipe: &FsmPipe, env: Option<&Environment>, p: &Inter
         .with_compiler_loc()
         .with_tokens(fsm_pipe.start.tokens()));
       }
+      call_env.insert(arg_decl.name.hash(), converted_arg.unwrap_or(detached_arg));
+      continue;
     }
-    call_env.insert(arg_decl.name.hash(), detach_value(arg_value));
+    call_env.insert(arg_decl.name.hash(), detached_arg);
   }
   let mut state = pattern_to_value(&fsm.start, &call_env, p)?;
   validate_fsm_state_coverage(&fsm, fsm_pipe)?;

@@ -54,27 +54,11 @@ test_interpreter!(interpret_literal_false, "false", Value::Bool(Ref::new(false))
 test_interpreter!(interpret_literal_atom, ":A", Value::Atom(Ref::new(MechAtom::new(55450514845822917))));
 test_interpreter!(interpret_literal_empty, "_", Value::Empty);
 
-#[test]
-fn interpret_fsm_counter_rejects_untyped_input() {
-  let s = "#Counter(n<u64>) => <u64>\n  ├ :Count(n<u64>)\n  └ :Done(n<u64>).\n\n#Counter(n<u64>) -> :Count(n)\n  :Count(n)\n    ├ n > 0 -> :Count(n - 1)\n    └ n == 0 -> :Done(0)\n  :Done(n) => n.\n\n#Counter(5)";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  assert!(intrp.interpret(&tree).is_err());
-}
-
 test_interpreter!(
   interpret_fsm_counter_accepts_typed_input,
   "#Counter(n<u64>) => <u64>\n  ├ :Count(n<u64>)\n  └ :Done(n<u64>).\n\n#Counter(n<u64>) -> :Count(n)\n  :Count(n)\n    ├ n > 0u64 -> :Count(n - 1u64)\n    └ n == 0u64 -> :Done(0u64)\n  :Done(n) => n.\n\n#Counter(5u64)",
   Value::U64(Ref::new(0))
 );
-
-#[test]
-fn interpret_fsm_fibonacci_rejects_untyped_input() {
-  let s = "#Fibonacci(n<u64>) => <u64>\n  ├ :Compute(n<u64>, a<u64>, b<u64>)\n  └ :Done(n<u64>).\n\n#Fibonacci(n<u64>) -> :Compute(n, 0, 1)\n  :Compute(n, a, b)\n    ├ n > 0 -> :Compute(n - 1, b, a + b)\n    └ n == 0 -> :Done(a)\n  :Done(n) => n.\n\n#Fibonacci(10)";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  assert!(intrp.interpret(&tree).is_err());
-}
 
 test_interpreter!(
   interpret_fsm_fibonacci_accepts_typed_input,
@@ -200,6 +184,21 @@ test_interpreter!(
   Value::U64(Ref::new(30))
 );
 
+
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_match_array_pattern_rest_binding,
+  "xs := [10u64 20u64 30u64 40u64]; y := xs? | [a, b | rest] => rest? | [r ...] => r | * => 0u64. | * => 0u64.; y + 0u64",
+  Value::U64(Ref::new(30))
+);
+
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_match_array_pattern_rest_binding_returns_matrix,
+  "xs := [10u64 20u64 30u64 40u64]; y := xs? | [a, b | rest] => rest | * => [0u64].; z := y? | [h ... t] => h + t | * => 0u64.; z + 0u64",
+  Value::U64(Ref::new(70))
+);
+
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_match_tuple_pattern_with_guards,
@@ -228,6 +227,31 @@ test_interpreter!(
 );
 test_interpreter!(interpret_function_array_pattern_arms, "head(xs<[u64]:1,3>) => <u64>\n  | [x ...] => x\n  | * => 0u64.\nhead([10u64 20u64 30u64]) + 0u64", Value::U64(Ref::new(10)));
 test_interpreter!(interpret_fsm_array_pattern_state_arguments, "#VecFsm(n<u64>) => <u64>\n  ├ :Scan(xs<[u64]:1,3>)\n  └ :Done(out<u64>).\n\n#VecFsm(n<u64>) -> :Scan([1u64 2u64 3u64])\n  :Scan([x ... y]) -> :Done(x + y)\n  :Done(out) => out.\n\n#VecFsm(0u64)", Value::U64(Ref::new(4)));
+test_interpreter!(interpret_fsm_accepts_unsized_vector_input, "#Echo(xs<[u64]>) => <u64>\n  ├ :Start(xs<[u64]>)\n  └ :Done(out<u64>).\n\n#Echo(xs<[u64]>) -> :Start(xs)\n  :Start([x ...]) -> :Done(x)\n  :Done(out) => out.\n\n#Echo([5u64 3u64 8u64 1u64])", Value::U64(Ref::new(5)));
+test_interpreter!(interpret_fsm_array_spread_reconstruction_keeps_scalar_guards, "#Demo(arr<[u64]>) => <u64>\n  ├ :Pass(arr<[u64]>)\n  └ :Done(out<u64>).\n\n#Demo(arr<[u64]>) -> :Pass(arr)\n  :Pass([a, b | tail])\n    ├ a > b -> :Pass([a | tail])\n    └ * -> :Done(0u64)\n  :Pass([x ...]) -> :Done(x)\n  :Done(out) => out.\n\n#Demo([5u64 3u64 8u64 1u64])", Value::U64(Ref::new(0)));
+test_interpreter!(interpret_fsm_bubble_sort_returns_typed_u64_matrix, "#bubble-sort(arr<[u64]>) => <[u64]>\n  ├ :Start(arr<[u64]>)\n  ├ :Pass(arr<[u64]>, acc<[u64]>, swaps<u64>)\n  ├ :Next(arr<[u64]>, swaps<u64>)\n  ├ :Reverse(arr<[u64]>, acc<[u64]>, swaps<u64>)\n  └ :Done(arr<[u64]>).\n\n#bubble-sort(arr) -> :Start(arr)\n  :Start(arr) -> :Pass(arr, [], 0u64)\n  :Pass([a, b | tail], acc, swaps)\n    ├ a > b -> :Pass([a | tail], [b | acc], swaps + 1u64)\n    └ *     -> :Pass([b | tail], [a | acc], swaps)\n  :Pass([x], acc, swaps) -> :Next([x | acc], swaps)\n  :Pass([], acc, swaps)  -> :Next(acc, swaps)\n  :Next(arr, swaps) -> :Reverse(arr, [], swaps)\n  :Reverse([x | tail], acc, swaps) -> :Reverse(tail, [x | acc], swaps)\n  :Reverse([], acc, 0u64)     -> :Done(acc)\n  :Reverse([], acc, swaps) -> :Pass(acc, [], 0u64)\n  :Done(arr) => arr.\n\n#bubble-sort([5u64 3u64 8u64 1u64])", Value::MatrixU64(Matrix::from_vec(vec![1, 3, 5, 8], 1, 4)));
+test_interpreter!(interpret_fsm_bubble_sort_assigns_matrix_value, "#bubble-sort(arr<[u64]>) => <[u64]>
+  ├ :Start(arr<[u64]>)
+  ├ :Pass(arr<[u64]>, acc<[u64]>, swaps<u64>)
+  ├ :Next(arr<[u64]>, swaps<u64>)
+  ├ :Reverse(arr<[u64]>, acc<[u64]>, swaps<u64>)
+  └ :Done(arr<[u64]>).
+
+#bubble-sort(arr) → :Start(arr)
+  :Start(arr) → :Pass(arr, [], 0u64)
+  :Pass([a, b | tail], acc, swaps)
+    ├ a > b → :Pass([a | tail], [b | acc], swaps + 1u64)
+    └ *     → :Pass([b | tail], [a | acc], swaps)
+  :Pass([x], acc, swaps) → :Next([x | acc], swaps)
+  :Pass([], acc, swaps)  → :Next(acc, swaps)
+  :Next(arr, swaps) → :Reverse(arr, [], swaps)
+  :Reverse([x | tail], acc, swaps) → :Reverse(tail, [x | acc], swaps)
+  :Reverse([], acc, 0u64)     → :Done(acc)
+  :Reverse([], acc, swaps) → :Pass(acc, [], 0u64)
+  :Done(arr) ⇒ arr.
+
+x := [5u64 3u64 8u64 1u64]
+y := #bubble-sort(x)", Value::MatrixU64(Matrix::from_vec(vec![1, 3, 5, 8], 1, 4)));
 #[test]
 fn interpret_variable_define_typed_set_from_range_matrix() {
   let s = "input<{f64}> := 1..=5";
@@ -1186,7 +1210,7 @@ test_interpreter!(interpret_atom_inequality_false, r#"a := :status/active; b := 
 test_interpreter!(interpret_atom_inequality, r#"a := :status/active; b := :status/inactive; c := (a != b);"#, Value::Bool(Ref::new(true)));
 test_interpreter!(interpret_atom_equality_false, r#"a := :status/active; b := :status/inactive; c := (a == b);"#, Value::Bool(Ref::new(false)));
 
-test_interpreter!(interpret_mika_micromica, r#"╭⦿╯"#, Value::Atom(Ref::new(MechAtom::from_name("╭⦿╯"))));
-test_interpreter!(interpret_mika_micromica_gripper, r#"Ɔ∞⦿╯"#, Value::Atom(Ref::new(MechAtom::from_name("Ɔ∞⦿╯"))));
-test_interpreter!(interpret_mika_minimika, r#"(˙◯˙)"#, Value::Atom(Ref::new(MechAtom::from_name("(˙◯˙)"))));
-test_interpreter!(interpret_mika_micromica_mikasection, r#"╭⦿╯ ⸢Hello, I'm Mika!⸥"#, Value::Atom(Ref::new(MechAtom::from_name("╭⦿╯"))));
+test_interpreter!(interpreter_mika_micromica, r#"╭⦿╯"#, Value::Atom(Ref::new(MechAtom::from_name("╭⦿╯"))));
+test_interpreter!(interpreter_mika_micromica_gripper, r#"Ɔ∞⦿╯"#, Value::Atom(Ref::new(MechAtom::from_name("Ɔ∞⦿╯"))));
+test_interpreter!(interpreter_mika_minimika, r#"(˙◯˙)"#, Value::Atom(Ref::new(MechAtom::from_name("(˙◯˙)"))));
+test_interpreter!(interpreter_mika_micromica_mikasection, r#"╭⦿╯ ⸢Hello, I'm Mika!⸥"#, Value::Atom(Ref::new(MechAtom::from_name("╭⦿╯"))));

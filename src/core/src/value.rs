@@ -2254,6 +2254,7 @@ impl PrettyPrint for Value {
       Value::MatrixR64(x) => {return x.pretty_print();},
       #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixC64(x) => {return x.pretty_print();},
+      Value::MatrixValue(x) => {return x.pretty_print();},
       Value::Index(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
       Value::MutableReference(x) => {return x.borrow().pretty_print();},
       Value::Empty => builder.push_record(vec!["_"]),
