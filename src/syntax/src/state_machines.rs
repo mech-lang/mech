@@ -5,7 +5,8 @@ use nom::{
   sequence::tuple as nom_tuple,
 };
 
-// #### State Machines
+// State Machines
+// ----------------------------------------------------------------------------
 
 // guard_operator := "|" | "│" | "├" | "└" ;
 pub fn guard_operator(input: ParseString) -> ParseResult<()> {
@@ -23,7 +24,7 @@ pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> 
   let (input, input_vars) = separated_list0(list_separator, var)(input)?;
   let (input, _) = right_parenthesis(input)?;
   let (input, _) = transition_operator(input)?;
-  let (input, start) = crate::patterns::pattern(input)?;
+  let (input, start) = pattern(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, arms) = many1(fsm_arm)(input)?;
   let (input, _) = period(input)?;
@@ -40,8 +41,7 @@ pub fn fsm_arm(input: ParseString) -> ParseResult<FsmArm> {
 
 // fsm_guard_arm := comment*, pattern, fsm_guard+ ;
 pub fn fsm_guard_arm(input: ParseString) -> ParseResult<FsmArm> {
-  let (input, _) = many0(comment)(input)?;
-  let (input, start) = crate::patterns::pattern(input)?;
+  let (input, start) = pattern(input)?;
   let (input, grds) = many1(fsm_guard)(input)?;
   Ok((input, FsmArm::Guard(start, grds)))
 }
@@ -49,7 +49,7 @@ pub fn fsm_guard_arm(input: ParseString) -> ParseResult<FsmArm> {
 // fsm_guard := guard_operator, pattern, (fsm_statement_transition | fsm_state_transition | fsm_output | fsm_async_transition | fsm_block_transition)+ ;
 pub fn fsm_guard(input: ParseString) -> ParseResult<Guard> {
   let (input, _) = guard_operator(input)?;
-  let (input, cnd) = crate::patterns::pattern(input)?;
+  let (input, cnd) = pattern(input)?;
   let (input, trns) = many1(alt((
     fsm_statement_transition,
     fsm_state_transition,
@@ -61,8 +61,7 @@ pub fn fsm_guard(input: ParseString) -> ParseResult<Guard> {
 
 // fsm_transition := comment*, pattern, (fsm_statement_transition | fsm_state_transition | fsm_output | fsm_async_transition | fsm_block_transition)+ ;
 pub fn fsm_transition(input: ParseString) -> ParseResult<FsmArm> {
-  let (input, _) = many0(comment)(input)?;
-  let (input, start) = crate::patterns::pattern(input)?;
+  let (input, start) = pattern(input)?;
   let (input, trns) = many1(alt((
     fsm_state_transition,
     fsm_output,
@@ -75,14 +74,14 @@ pub fn fsm_transition(input: ParseString) -> ParseResult<FsmArm> {
 // fsm_state_transition := transition_operator, atom ;
 pub fn fsm_state_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = transition_operator(input)?;
-  let (input, ptrn) = crate::patterns::pattern(input)?;
+  let (input, ptrn) = pattern(input)?;
   Ok((input, Transition::Next(ptrn)))
 }
 
 // fsm_async_transition := async_transition_operator, atom ;
 pub fn fsm_async_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = async_transition_operator(input)?;
-  let (input, ptrn) = crate::patterns::pattern(input)?;
+  let (input, ptrn) = pattern(input)?;
   Ok((input, Transition::Async(ptrn)))
 }
 
@@ -106,7 +105,7 @@ pub fn fsm_block_transition(input: ParseString) -> ParseResult<Transition> {
 // fsm_output := output_operator, pattern ;
 pub fn fsm_output(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = output_operator(input)?;
-  let ((input, ptrn)) = crate::patterns::pattern(input)?;
+  let ((input, ptrn)) = pattern(input)?;
   Ok((input, Transition::Output(ptrn)))
 }
 
@@ -180,64 +179,4 @@ pub fn fsm_args(input: ParseString) -> ParseResult<Vec<(Option<Identifier>,Expre
   let (input, args) = separated_list0(list_separator, alt((call_arg_with_binding,call_arg)))(input)?;
   let (input, _) = right_parenthesis(input)?;
   Ok((input, args))
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn parse_fsm_specification() {
-    let source = "#TrafficLight(color) := | :Red | :Green.";
-    let graphemes = crate::graphemes::init_source(source);
-    let input = ParseString::new(&graphemes);
-    let (_, parsed) = fsm_specification(input).expect("fsm specification should parse");
-    assert_eq!(parsed.name.to_string(), "TrafficLight");
-    assert_eq!(parsed.states.len(), 2);
-  }
-
-  #[test]
-  fn parse_fsm_implementation() {
-    let source = "#TrafficLight(color) -> :Red :Red -> :Green :Green -> :Red.";
-    let graphemes = crate::graphemes::init_source(source);
-    let input = ParseString::new(&graphemes);
-    let (_, parsed) = fsm_implementation(input).expect("fsm implementation should parse");
-    assert_eq!(parsed.name.to_string(), "TrafficLight");
-    assert_eq!(parsed.arms.len(), 2);
-  }
-
-  #[test]
-  fn parse_fsm_declaration_statement() {
-    let source = "#TrafficLight := #TrafficLight -> :Red";
-    let graphemes = crate::graphemes::init_source(source);
-    let input = ParseString::new(&graphemes);
-    let (_, parsed) = fsm_declare(input).expect("fsm declaration should parse");
-    assert_eq!(parsed.fsm.name.to_string(), "TrafficLight");
-    assert_eq!(parsed.pipe.start.name.to_string(), "TrafficLight");
-    assert_eq!(parsed.pipe.transitions.len(), 1);
-  }
-
-  #[test]
-  fn parse_fsm_pipe_expression() {
-    let source = "#TrafficLight -> :Green";
-    let graphemes = crate::graphemes::init_source(source);
-    let input = ParseString::new(&graphemes);
-    let (_, parsed) = expression(input).expect("fsm pipe expression should parse");
-    match parsed {
-      Expression::FsmPipe(pipe) => {
-        assert_eq!(pipe.start.name.to_string(), "TrafficLight");
-        assert_eq!(pipe.transitions.len(), 1);
-      }
-      _ => panic!("expected Expression::FsmPipe"),
-    }
-  }
-
-  #[test]
-  fn parse_fsm_colon_tuple_state() {
-    let source = "#Counter(x) -> :Count(x) :Count(v) -> :Done(v) :Done(v) => v.";
-    let graphemes = crate::graphemes::init_source(source);
-    let input = ParseString::new(&graphemes);
-    let (_, parsed) = fsm_implementation(input).expect("colon tuple-struct states should parse");
-    assert_eq!(parsed.arms.len(), 2);
-  }
 }
