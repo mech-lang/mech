@@ -970,6 +970,12 @@ a.mech-hyperlink:hover .mech-inline-code {
     cursor: pointer;
 }
 
+.mech-inline-expand {
+    color: #eedd00;
+    cursor: pointer;
+    font-weight: 700;
+}
+
 .mech-end-brace {
     color: var(--bracket-color);
 }
