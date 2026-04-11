@@ -849,40 +849,80 @@ pub fn attach_repl(&mut self, repl_id: &str) {
   }
 
   #[cfg(feature = "inline_output_values")]
-  fn inline_preview_html(&self, inline_id: u64, value: &Value) -> String {
-    let kind = value.kind();
-    let kind_str = format!("{}", kind);
-    let normalized = Self::normalize_inline_preview_text(&value.to_string());
-    let is_structured = matches!(
-      kind,
-      ValueKind::Matrix(_, _)
-        | ValueKind::Set(_, _)
-        | ValueKind::Map(_, _)
-        | ValueKind::Record(_)
-        | ValueKind::Table(_, _)
-        | ValueKind::Tuple(_)
-    );
-    let mut parts: Vec<&str> = normalized.split_whitespace().collect();
-    let has_more = parts.len() > 5 || normalized.len() > 72 || is_structured;
-    if parts.len() > 5 {
-      parts.truncate(5);
+  fn normalize_numeric_token(token: &str) -> String {
+    if let Some(stripped) = token.strip_suffix(".0") {
+      if !stripped.is_empty() {
+        return stripped.to_string();
+      }
     }
-    let mut preview = if !parts.is_empty() {
-      parts.join(" ")
-    } else {
-      normalized.chars().take(48).collect::<String>()
-    };
-    if has_more && !preview.ends_with("…") {
-      preview.push_str(" …");
-    }
+    token.to_string()
+  }
 
-    format!(
-      "<span class=\"mech-inline-output-preview\">{}</span>\
-       <button class=\"mech-inline-output-expand\" data-inline-output-id=\"{}\" title=\"Inspect {}\">🔎</button>",
-      html_escape(&preview),
-      inline_id,
-      html_escape(&kind_str),
-    )
+  #[cfg(feature = "inline_output_values")]
+  fn format_inline(&self, value: &Value) -> String {
+    let kind = value.kind();
+    let normalized = Self::normalize_inline_preview_text(&value.to_string());
+    let tokens: Vec<String> = normalized
+      .split_whitespace()
+      .map(Self::normalize_numeric_token)
+      .collect();
+
+    match kind {
+      ValueKind::Matrix(_, shape) => {
+        let matrix_text = if shape.len() == 2 && shape[0] > 1 && shape[1] > 0 && tokens.len() >= shape[0] * shape[1] {
+          let mut rows = Vec::new();
+          for row in 0..shape[0] {
+            let start = row * shape[1];
+            let end = start + shape[1];
+            rows.push(tokens[start..end].join(" "));
+          }
+          rows.join("; ")
+        } else {
+          tokens.join(" ")
+        };
+        format!("[{}]", matrix_text)
+      }
+      ValueKind::Set(_, _) => format!("{{{}}}", tokens.join(" ")),
+      ValueKind::Tuple(_) => format!("({})", tokens.join(", ")),
+      ValueKind::Map(_, _) | ValueKind::Record(_) | ValueKind::Table(_, _) => normalized,
+      _ => {
+        if tokens.is_empty() {
+          normalized
+        } else {
+          tokens.join(" ")
+        }
+      }
+    }
+  }
+
+  #[cfg(feature = "inline_output_values")]
+  fn inline_preview_html(&self, inline_id: u64, value: &Value) -> String {
+    let inline_text = self.format_inline(value);
+    let kind_str = format!("{}", value.kind());
+    let mut parts: Vec<&str> = inline_text.split_whitespace().collect();
+    let has_more = parts.len() > 5 || inline_text.len() > 72;
+
+    let preview = if has_more {
+      parts.truncate(5);
+      format!("{} …", parts.join(" "))
+    } else {
+      inline_text
+    };
+
+    if has_more {
+      format!(
+        "<span class=\"mech-inline-output-preview\">{}</span>\
+         <button class=\"mech-inline-output-expand\" data-inline-output-id=\"{}\" title=\"Inspect {}\">›</button>",
+        html_escape(&preview),
+        inline_id,
+        html_escape(&kind_str),
+      )
+    } else {
+      format!(
+        "<span class=\"mech-inline-output-preview\">{}</span>",
+        html_escape(&preview),
+      )
+    }
   }
 
   #[cfg(feature = "inline_output_values")]
