@@ -20,8 +20,8 @@ Platform Reference
     - [`table`](/reference/table.html) - collection of heterogeneous data organized into rows and columns
     - [`tuple`](/reference/tuple.html) - fixed-size, ordered grouping of heterogeneous values
 - Statements and Expressions
-    - [Defining, Assigning, and Accessing Data](/reference/define.html) `todo` - create data and change it
-    - [Data Conversion](/reference/convert.html) `todo` - convert data from one kind to another
+    - [Defining, Assigning, and Accessing Data](/reference/define.html) - create data and change it
+    - [Data Conversion](/reference/convert.html) - convert data from one kind to another
     - [Expression Broadcasting](/reference/broadcasting.html) - apply operations over data structures
     - [Indexing](/reference/indexing.html) - access elements within data structures
 
