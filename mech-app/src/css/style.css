@@ -1016,16 +1016,29 @@ ol {
 .mech-figure-table-caption {
     font-style: normal;
     color: inherit;
+    display: block;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.5;
+}
+
+.mech-figure-table-caption .mech-figure-label {
+    display: inline;
+    min-width: 0;
+    text-align: left;
+    margin-right: 0.4em;
 }
 
 .mech-figure-caption-ref {
     color: #F3B62D;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    margin-right: 0.2em;
 }
 
 .mech-figure-caption-text {
     color: inherit;
     font-family: inherit;
+    margin-right: 0.8em;
 }
 
 li {
