@@ -8,6 +8,7 @@ math/pow
 
 ```mech:disabled
 Y := math/pow(X1, X2)
+Y := X1 ^ X2
 ```
 
 2. Description
@@ -38,7 +39,7 @@ Raises `X1` to the power of `X2` using element-wise semantics. Inputs can be sca
 (a) Scalar exponentiation
 
 ```mech:ex1
-y := math/pow(2.0, 3.0)     // 8.0
+y := math/pow(2.0, 3.0)     -- 8.0
 ```
 
 (b) Vector exponentiation (same length)
@@ -46,30 +47,19 @@ y := math/pow(2.0, 3.0)     // 8.0
 ```mech:ex2
 base := [2.0, 3.0, 4.0]
 exp  := [3.0, 2.0, 0.5]
-y    := math/pow(base, exp) // [8.0, 9.0, 2.0]
+y    := math/pow(base, exp) -- [8.0, 9.0, 2.0]
 ```
 
 (c) Matrix with scalar exponent (broadcast)
 
 ```mech:ex3
 m := [1.0, 4.0; 9.0, 16.0]
-y := math/pow(m, 0.5)       // [1.0, 2.0; 3.0, 4.0]
+y := math/pow(m, 0.5)       -- [1.0, 2.0; 3.0, 4.0]
 ```
 
 (d) Rational base with integer exponent
 
 ```mech:ex4
 r := 3/2
-y := math/pow(r, 3)         // 27/8
+y := r ^ 3         -- 27/8
 ```
-
-6. Details
--------------------------------------------------------------------------------
-
-- **Element-wise semantics:** When both inputs are arrays, exponentiation is applied pairwise.
-- **Broadcasting:** Supports scalar-array broadcasting and vector-matrix row/column broadcasting.
-- **Type behavior:** Result type follows the runtime's numeric typing rules for the concrete input types.
-
-**Errors**
-- Shape mismatch that cannot be broadcast.
-- Unsupported type combinations.
