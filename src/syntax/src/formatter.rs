@@ -495,10 +495,10 @@ impl Formatter {
         _ => "".to_string(),
       };
       if block.config.disabled {
-        format!("<pre class=\"mech-code-block disabled\"{}>{}</pre>", style_attr, src)
+        format!("<div class=\"mech-code-block disabled\"{}>{}</div>", style_attr, src)
       } else if block.config.hidden {
         // Print it, but give it a hidden class so it can be toggled visible via JS
-        format!("<pre class=\"mech-code-block hidden\"{}>{}</pre>", style_attr, src)
+        format!("<div class=\"mech-code-block hidden\"{}>{}</div>", style_attr, src)
       } else {
         let namespace_str = if namespace_str.is_empty() {
           "".to_string()
@@ -1067,7 +1067,7 @@ impl Formatter {
   pub fn code_block(&mut self, node: &Token) -> String {
     let code = node.to_string();
     if self.html {
-      format!("<pre class=\"mech-code-block\">{}</pre>",code)
+      format!("<div class=\"mech-code-block\">{}</div>",code)
     } else {
       format!("{}\n",code)
     }
