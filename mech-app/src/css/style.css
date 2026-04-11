@@ -1013,6 +1013,13 @@ ol {
     display: block;
 }
 
+.mech-figure-subfigure-label {
+    display: inline-block;
+    margin-top: 0.35em;
+    color: #F3B62D;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
 .mech-figure-table-caption {
     font-style: normal;
     color: inherit;
