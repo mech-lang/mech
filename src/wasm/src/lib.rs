@@ -851,7 +851,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           continue;
         }
       };
-      let formatted_output = format!("{}", inline_output.to_string());
+      let formatted_output = inline_output.format_value_inline();
       inline_block.set_inner_html(&formatted_output.trim());
     }
   }
