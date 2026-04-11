@@ -33,8 +33,8 @@ Basic arithmetic operations defined on scalar and matrix input for multiple nume
 |`*`        | [`mul`](ops/mul.html)  | Multiplies two operands.                                 |
 |`/`        | [`div`](ops/div.html)  | Divides first operand by the second.                     |
 |`^`        | [`pow`](ops/pow.html)  | Raises first operand to the power of the second.         |
-|`%`        | [`mod`](ops/mod.html)  | Computes the modulus of the first operand by the second. |
-|`-` (unary)| [`neg`](ops/neg.html)  | Negates the operand.                                     |
+|`%`        | [`mod`](ops/modulus.html)  | Computes the modulus of the first operand by the second. |
+|`-` (unary)| [`neg`](ops/negate.html)  | Negates the operand.                                     |
 
 (2.2) op-assign
 
