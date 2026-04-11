@@ -14,7 +14,7 @@ Mech supports conversion between kinds as part of core evaluation, especially wh
 When a variable is defined with a kind annotation, the initializer is converted to the target kind if a conversion path exists.
 
 ```mech:convert-annotated
-x<f64> := 42      %% converts integer literal to f64
+x<f64> := 42      -- converts integer literal to f64
 name<string> := 123
 ```
 
@@ -30,15 +30,3 @@ Conversions apply beyond scalars when supported:
 - matrix -> matrix (element kind conversion)
 - matrix -> table and table -> matrix (shape/kind compatible)
 - empty/value <-> option kinds
-
-4. Enum-aware conversion
--------------------------------------------------------------------------------
-
-With enum kinds, values are validated/converted against declared variants and payload kinds.
-
-5. Practical guidance
--------------------------------------------------------------------------------
-
-- Prefer explicit kind annotations at boundaries (I/O, API, module interfaces).
-- Keep conversions predictable by using concrete kinds (for example `u64`, `f64`, `string`).
-- For indexing/slicing conversions in context, see [`indexing`](/reference/indexing.html).
