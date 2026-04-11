@@ -1,0 +1,86 @@
+defining, assigning, and accessing data
+===============================================================================
+
+%% Core language statements for creating bindings, mutating values, and selecting sub-values.
+
+1. Overview
+-------------------------------------------------------------------------------
+
+Mech has three core binding/update statement forms:
+
+- **Definition** (`:=`) creates a new binding.
+- **Assignment** (`=`) updates an existing mutable binding (or a slice of one).
+- **Operator-assignment** (`+=`, `-=`, `*=`, `/=`) updates in place.
+
+2. Define (`:=`)
+-------------------------------------------------------------------------------
+
+Define creates a new symbol from an expression.
+
+```mech:define-basic
+x := 10
+label := "hello"
+```
+
+You can define a **mutable** symbol by prefixing with `~`:
+
+```mech:define-mutable
+~counter := 0
+```
+
+3. Assign (`=`)
+-------------------------------------------------------------------------------
+
+Assign writes a new value into an existing mutable symbol.
+
+```mech:assign-basic
+~counter := 0
+counter = counter + 1
+```
+
+Assignment also supports indexed targets (slice refs):
+
+```mech:assign-slice
+~m := [1, 2; 3, 4]
+m[1,2] = 99
+```
+
+4. Operator-assignment
+-------------------------------------------------------------------------------
+
+In-place arithmetic updates are available as statement forms:
+
+```mech:op-assign
+~x := 5
+x += 2
+x *= 3
+```
+
+Supported operators: `+=`, `-=`, `*=`, `/=`.
+
+5. Tuple destructuring
+-------------------------------------------------------------------------------
+
+A tuple value can be unpacked into multiple bindings:
+
+```mech:tuple-destructure
+(a, b, c) := (1, 2, 3)
+```
+
+6. Accessing values
+-------------------------------------------------------------------------------
+
+Core access patterns include:
+
+- **Identifier access:** `x`
+- **Index access:** `m[1,2]`, `xs[2]`
+- **Field/column access:** `record.field`, `table.column`
+
+For full indexing behavior, see [`indexing`](/reference/indexing.html).
+
+7. Notes
+-------------------------------------------------------------------------------
+
+- Use `:=` to declare; use `=` to update.
+- Attempting to assign to an undefined or immutable symbol is an error.
+- Assignment targets may be full variables or slices of structured data.
