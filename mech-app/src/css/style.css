@@ -1007,10 +1007,17 @@ ol {
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
+    align-items: center;
+}
+
+.mech-figure-panel {
+    position: relative;
+    width: fit-content;
+    max-width: 100%;
 }
 
 .mech-figure-grid-image {
-    width: 100%;
+    width: auto;
     max-width: 100%;
     height: clamp(150px, 24vw, 260px);
     object-fit: contain;
@@ -1018,10 +1025,14 @@ ol {
 }
 
 .mech-figure-subfigure-label {
-    display: inline-block;
-    margin-top: 0.35em;
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 1;
     color: #F3B62D;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-weight: 700;
+    text-transform: uppercase;
 }
 
 .mech-figure-table-caption {
