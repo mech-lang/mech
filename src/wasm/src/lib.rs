@@ -12,6 +12,8 @@ use std::cell::RefCell;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use gloo_net::http::Request;
 use wasm_bindgen_futures::spawn_local;
+use std::fmt::Debug;
+use mech_core::matrix::Matrix as CoreMatrix;
 
 #[cfg(feature = "repl")]
 pub mod repl;
@@ -833,65 +835,210 @@ pub fn attach_repl(&mut self, repl_id: &str) {
   }
 
   #[cfg(feature = "inline_output_values")]
-  fn normalize_inline_preview_text(raw: &str) -> String {
-    let mut compact = raw
-      .replace('\n', " ")
-      .replace('\r', " ")
-      .replace('\t', " ")
-      .replace('┏', " ")
-      .replace('┓', " ")
-      .replace('┗', " ")
-      .replace('┛', " ")
-      .replace('┃', " ")
-      .replace('│', " ");
-    compact = compact.split_whitespace().collect::<Vec<&str>>().join(" ");
-    compact
+  fn format_number_inline(n: f64) -> String {
+    if n.fract() == 0.0 {
+      format!("{}", n as i64)
+    } else {
+      format!("{}", n)
+    }
   }
 
   #[cfg(feature = "inline_output_values")]
-  fn normalize_numeric_token(token: &str) -> String {
-    if let Some(stripped) = token.strip_suffix(".0") {
-      if !stripped.is_empty() {
-        return stripped.to_string();
+  fn matrix_to_inline<T, F>(mat: &CoreMatrix<T>, element_formatter: F) -> String
+  where
+    T: Debug + Clone + PartialEq + 'static,
+    F: Fn(&T) -> String,
+  {
+    let shape = mat.shape();
+    let rows = shape[0];
+    let cols = shape[1];
+    let mut row_strings = Vec::new();
+
+    for row in 1..=rows {
+      let mut row_values = Vec::new();
+      for col in 1..=cols {
+        let value = mat.index2d(row, col);
+        row_values.push(element_formatter(&value));
       }
+      row_strings.push(row_values.join(" "));
     }
-    token.to_string()
+
+    if row_strings.len() == 1 {
+      format!("[{}]", row_strings[0])
+    } else {
+      format!("[{}]", row_strings.join("; "))
+    }
   }
 
   #[cfg(feature = "inline_output_values")]
   fn format_inline(&self, value: &Value) -> String {
-    let kind = value.kind();
-    let normalized = Self::normalize_inline_preview_text(&value.to_string());
-    let tokens: Vec<String> = normalized
-      .split_whitespace()
-      .map(Self::normalize_numeric_token)
-      .collect();
-
-    match kind {
-      ValueKind::Matrix(_, shape) => {
-        let matrix_text = if shape.len() == 2 && shape[0] > 1 && shape[1] > 0 && tokens.len() >= shape[0] * shape[1] {
-          let mut rows = Vec::new();
-          for row in 0..shape[0] {
-            let start = row * shape[1];
-            let end = start + shape[1];
-            rows.push(tokens[start..end].join(" "));
+    match value {
+      #[cfg(feature = "u8")]
+      Value::U8(v) => format!("{}", v.borrow()),
+      #[cfg(feature = "u16")]
+      Value::U16(v) => format!("{}", v.borrow()),
+      #[cfg(feature = "u32")]
+      Value::U32(v) => format!("{}", v.borrow()),
+      #[cfg(feature = "u64")]
+      Value::U64(v) => format!("{}", v.borrow()),
+      #[cfg(feature = "u128")]
+      Value::U128(v) => format!("{}", v.borrow()),
+      #[cfg(feature = "i8")]
+      Value::I8(v) => format!("{}", v.borrow()),
+      #[cfg(feature = "i16")]
+      Value::I16(v) => format!("{}", v.borrow()),
+      #[cfg(feature = "i32")]
+      Value::I32(v) => format!("{}", v.borrow()),
+      #[cfg(feature = "i64")]
+      Value::I64(v) => format!("{}", v.borrow()),
+      #[cfg(feature = "i128")]
+      Value::I128(v) => format!("{}", v.borrow()),
+      #[cfg(feature = "f32")]
+      Value::F32(v) => Self::format_number_inline((*v.borrow()) as f64),
+      #[cfg(feature = "f64")]
+      Value::F64(v) => Self::format_number_inline(*v.borrow()),
+      #[cfg(any(feature = "string", feature = "variable_define"))]
+      Value::String(v) => format!("\"{}\"", v.borrow()),
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
+      Value::Bool(v) => format!("{}", v.borrow()),
+      #[cfg(feature = "atom")]
+      Value::Atom(v) => format!(":{}", v.borrow().name()),
+      #[cfg(feature = "complex")]
+      Value::C64(v) => format!("{}", v.borrow()),
+      #[cfg(feature = "rational")]
+      Value::R64(v) => format!("{}", v.borrow()),
+      #[cfg(feature = "matrix")]
+      Value::MatrixIndex(m) => Self::matrix_to_inline(m, |x| format!("{}", x)),
+      #[cfg(all(feature = "matrix", feature = "bool"))]
+      Value::MatrixBool(m) => Self::matrix_to_inline(m, |x| format!("{}", x)),
+      #[cfg(all(feature = "matrix", feature = "u8"))]
+      Value::MatrixU8(m) => Self::matrix_to_inline(m, |x| format!("{}", x)),
+      #[cfg(all(feature = "matrix", feature = "u16"))]
+      Value::MatrixU16(m) => Self::matrix_to_inline(m, |x| format!("{}", x)),
+      #[cfg(all(feature = "matrix", feature = "u32"))]
+      Value::MatrixU32(m) => Self::matrix_to_inline(m, |x| format!("{}", x)),
+      #[cfg(all(feature = "matrix", feature = "u64"))]
+      Value::MatrixU64(m) => Self::matrix_to_inline(m, |x| format!("{}", x)),
+      #[cfg(all(feature = "matrix", feature = "u128"))]
+      Value::MatrixU128(m) => Self::matrix_to_inline(m, |x| format!("{}", x)),
+      #[cfg(all(feature = "matrix", feature = "i8"))]
+      Value::MatrixI8(m) => Self::matrix_to_inline(m, |x| format!("{}", x)),
+      #[cfg(all(feature = "matrix", feature = "i16"))]
+      Value::MatrixI16(m) => Self::matrix_to_inline(m, |x| format!("{}", x)),
+      #[cfg(all(feature = "matrix", feature = "i32"))]
+      Value::MatrixI32(m) => Self::matrix_to_inline(m, |x| format!("{}", x)),
+      #[cfg(all(feature = "matrix", feature = "i64"))]
+      Value::MatrixI64(m) => Self::matrix_to_inline(m, |x| format!("{}", x)),
+      #[cfg(all(feature = "matrix", feature = "i128"))]
+      Value::MatrixI128(m) => Self::matrix_to_inline(m, |x| format!("{}", x)),
+      #[cfg(all(feature = "matrix", feature = "f32"))]
+      Value::MatrixF32(m) => Self::matrix_to_inline(m, |x| Self::format_number_inline(*x as f64)),
+      #[cfg(all(feature = "matrix", feature = "f64"))]
+      Value::MatrixF64(m) => Self::matrix_to_inline(m, |x| Self::format_number_inline(*x)),
+      #[cfg(all(feature = "matrix", feature = "string"))]
+      Value::MatrixString(m) => Self::matrix_to_inline(m, |x| format!("\"{}\"", x)),
+      #[cfg(all(feature = "matrix", feature = "rational"))]
+      Value::MatrixR64(m) => Self::matrix_to_inline(m, |x| format!("{}", x)),
+      #[cfg(all(feature = "matrix", feature = "complex"))]
+      Value::MatrixC64(m) => Self::matrix_to_inline(m, |x| format!("{}", x)),
+      #[cfg(feature = "matrix")]
+      Value::MatrixValue(m) => Self::matrix_to_inline(m, |x| self.format_inline(x)),
+      #[cfg(feature = "set")]
+      Value::Set(v) => {
+        let set_brrw = v.borrow();
+        let values = set_brrw
+          .set
+          .iter()
+          .map(|item| self.format_inline(item))
+          .collect::<Vec<String>>();
+        format!("{{{}}}", values.join(" "))
+      }
+      #[cfg(feature = "map")]
+      Value::Map(v) => {
+        let map_brrw = v.borrow();
+        let entries = map_brrw
+          .map
+          .iter()
+          .map(|(k, val)| format!("{}: {}", self.format_inline(k), self.format_inline(val)))
+          .collect::<Vec<String>>();
+        format!("{{{}}}", entries.join(", "))
+      }
+      #[cfg(feature = "record")]
+      Value::Record(v) => {
+        let record_brrw = v.borrow();
+        let entries = record_brrw
+          .data
+          .iter()
+          .map(|(id, val)| {
+            let name = record_brrw
+              .field_names
+              .get(id)
+              .cloned()
+              .unwrap_or_else(|| format!("{}", id));
+            format!("{}: {}", name, self.format_inline(val))
+          })
+          .collect::<Vec<String>>();
+        format!("{{{}}}", entries.join(", "))
+      }
+      #[cfg(feature = "table")]
+      Value::Table(v) => {
+        let table_brrw = v.borrow();
+        let column_ids = table_brrw.data.keys().cloned().collect::<Vec<u64>>();
+        let header = column_ids
+          .iter()
+          .map(|id| table_brrw.col_names.get(id).cloned().unwrap_or_else(|| format!("{}", id)))
+          .collect::<Vec<String>>()
+          .join(" ");
+        let mut rows = Vec::new();
+        for row_ix in 1..=table_brrw.rows {
+          let mut row_values = Vec::new();
+          for col_id in &column_ids {
+            if let Some((_, col_matrix)) = table_brrw.data.get(col_id) {
+              let row_value = col_matrix.index2d(row_ix, 1);
+              row_values.push(self.format_inline(&row_value));
+            }
           }
-          rows.join("; ")
-        } else {
-          tokens.join(" ")
-        };
-        format!("[{}]", matrix_text)
-      }
-      ValueKind::Set(_, _) => format!("{{{}}}", tokens.join(" ")),
-      ValueKind::Tuple(_) => format!("({})", tokens.join(", ")),
-      ValueKind::Map(_, _) | ValueKind::Record(_) | ValueKind::Table(_, _) => normalized,
-      _ => {
-        if tokens.is_empty() {
-          normalized
-        } else {
-          tokens.join(" ")
+          rows.push(format!("|{}|", row_values.join(" ")));
         }
+        format!("|{}| {}", header, rows.join(" "))
       }
+      #[cfg(feature = "tuple")]
+      Value::Tuple(v) => {
+        let tuple_brrw = v.borrow();
+        let items = tuple_brrw
+          .elements
+          .iter()
+          .map(|item| self.format_inline(item))
+          .collect::<Vec<String>>();
+        format!("({})", items.join(", "))
+      }
+      #[cfg(feature = "enum")]
+      Value::Enum(v) => {
+        let enum_brrw = v.borrow();
+        let variants = enum_brrw
+          .variants
+          .iter()
+          .map(|(id, val)| {
+            let name = enum_brrw
+              .names
+              .borrow()
+              .get(id)
+              .cloned()
+              .unwrap_or_else(|| format!("{}", id));
+            match val {
+              Some(v) => format!("{}: {}", name, self.format_inline(v)),
+              None => name,
+            }
+          })
+          .collect::<Vec<String>>();
+        format!("{}{{{}}}", enum_brrw.name(), variants.join(", "))
+      }
+      Value::MutableReference(v) => self.format_inline(&*v.borrow()),
+      Value::Id(v) => format!("{}", v),
+      Value::Index(v) => format!("{}", v.borrow()),
+      Value::Kind(v) => format!("<{}>", v),
+      Value::IndexAll => "*".to_string(),
+      Value::Empty => "_".to_string(),
     }
   }
 
