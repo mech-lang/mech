@@ -1,0 +1,32 @@
+figures
+===============================================================================
+
+%% Figures provide multi-image layouts with a single numbered caption block.
+
+Use a pipe table where each cell contains an image entry:
+
+`![image-url](caption)`
+
+Each image in the grid receives an automatic sublabel `(a)`, `(b)`, `(c)`, etc. The renderer adds one figure label for the block (for example `Fig 3.2`) and appends a combined caption line below the grid:
+
+`Fig 3.2 (a) caption a (b) caption b (c) caption c ...`
+
+1. Syntax
+-------------------------------------------------------------------------------
+
+A figures block is one or more rows:
+
+- Each row starts and ends with `|`
+- Each cell contains an image entry
+- Rows can have different numbers of columns (useful for wide middle images)
+
+2. Example
+-------------------------------------------------------------------------------
+
+```
+| ![img1.jpg](caption a) | ![img2.jpg](caption b) |
+| ![imgwide.jpg](caption c) |
+| ![img3.jpg](caption d) | ![img4.jpg](caption e) |
+```
+
+(i)> Figures are document elements only. Image captions inside a figures block are not Mech expressions and are not evaluated.
