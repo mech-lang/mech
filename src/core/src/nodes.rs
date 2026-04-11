@@ -535,6 +535,7 @@ pub enum SectionElement {
   Float((Box<SectionElement>, FloatDirection)),
   Footnote(Footnote),
   Grammar(Grammar),
+  FigureTable(FigureTable),
   Image(Image),
   List(MDList),
   MechCode(Vec<(MechCode,Option<Comment>)>),
@@ -626,6 +627,16 @@ impl SectionElement {
         }
         tokens
       }
+      SectionElement::FigureTable(figure_table) => {
+        let mut tokens = vec![];
+        for row in &figure_table.rows {
+          for figure in row {
+            tokens.push(figure.src.clone());
+            tokens.append(&mut figure.caption.tokens());
+          }
+        }
+        tokens
+      }
       SectionElement::List(list) => match list {
       MDList::Unordered(items) => {
         let mut tokens = vec![];
@@ -702,6 +713,19 @@ impl Image {
     };
     format!("![{}]({})", caption, self.src.to_string())
   }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct FigureItem {
+  pub src: Token,
+  pub caption: Paragraph,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct FigureTable {
+  pub rows: Vec<Vec<FigureItem>>,
 }
 
 pub type UnorderedList = Vec<((Option<Token>,Paragraph),Option<MDList>)>;

@@ -1502,6 +1502,7 @@ section-element := +mech-code
       | citation 
       | abstract 
       | img 
+      | figures
       | equation 
       | markdown-table 
       | float 
@@ -2000,6 +2001,19 @@ Renders the following table:
 | One         | Four         | {1 * 10}    |
 | Two         | Five         | {2 * 20}    |
 | Three       | Six          | {3 * 30}    |
+
+(10.8.2) Figures
+
+```ebnf
+figures := +figures-row ;
+figures-row := whitespace0, bar, +figure-cell, whitespace0, new-line ;
+figure-cell := whitespace0, figure-item, whitespace0, bar ;
+figure-item := img ;
+```
+
+Figures use a markdown-table-like layout where each cell contains an image item. The figures block is rendered as a single numbered figure with subfigure labels `(a)`, `(b)`, `(c)`, etc., and a combined caption line beneath the grid.
+
+Unlike inline Mech expressions, captions in a figures block are plain document content and are not evaluated.
 
 (10.9) Images
 
