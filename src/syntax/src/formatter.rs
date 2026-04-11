@@ -589,7 +589,7 @@ impl Formatter {
           row.len().max(1)
         ));
         for figure in row {
-          let label = ((b'A' + (figure_ix as u8)) as char).to_string();
+          let label = ((b'a' + (figure_ix as u8)) as char).to_string();
           let img_id = hash_str(&format!("{}-{}-{}", figure_label, figure_ix, figure.src.to_string()));
           rows_html.push_str(&format!(
             "<div class=\"mech-figure-table-cell\"><div class=\"mech-figure-panel\"><span class=\"mech-figure-subfigure-label\">{}</span><img id=\"{}\" class=\"mech-image mech-figure-grid-image\" src=\"{}\" /></div></div>",
