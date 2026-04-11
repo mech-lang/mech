@@ -286,30 +286,10 @@ pub fn img(input: ParseString) -> ParseResult<Image> {
   Ok((input, Image{src: merged_src, caption: caption_text, style}))
 }
 
-// figure-image-swapped := "![", +text, "]", "(", paragraph, ")" ;
-pub fn figure_image_swapped(input: ParseString) -> ParseResult<FigureItem> {
-  let (input, _) = img_prefix(input)?;
-  let (input, src) = many1(tuple((is_not(right_bracket), text)))(input)?;
-  let (input, _) = right_bracket(input)?;
-  let (input, _) = left_parenthesis(input)?;
-  let (input, caption_tokens) = many1(tuple((is_not(right_parenthesis), text)))(input)?;
-  let (input, _) = right_parenthesis(input)?;
-  let merged_src = Token::merge_tokens(&mut src.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>()).unwrap();
-  let mut caption_tokens = caption_tokens.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>();
-  let caption_token = Token::merge_tokens(&mut caption_tokens).unwrap();
-  let caption = Paragraph::from_tokens(vec![caption_token]);
-  Ok((input, FigureItem { src: merged_src, caption }))
-}
-
 pub fn figure_item(input: ParseString) -> ParseResult<FigureItem> {
-  if let Ok((input, swapped)) = figure_image_swapped(input.clone()) {
-    return Ok((input, swapped));
-  }
-  if let Ok((input, image)) = img(input.clone()) {
-    let caption = image.caption.unwrap_or(Paragraph { elements: vec![], error_range: None });
-    return Ok((input, FigureItem { src: image.src, caption }));
-  }
-  figure_image_swapped(input)
+  let (input, image) = img(input)?;
+  let caption = image.caption.unwrap_or(Paragraph { elements: vec![], error_range: None });
+  Ok((input, FigureItem { src: image.src, caption }))
 }
 
 // figures-row := bar, +( *(space|tab), figure-item, *(space|tab), bar ), *whitespace ;
@@ -1064,8 +1044,8 @@ mod tests {
   use super::*;
 
   #[test]
-  fn parses_figures_block_with_swapped_syntax() {
-    let src = "| ![img1.jpg](caption a) | ![img2.jpg](caption b) |\n| ![imgwide.jpg](caption c) |\n";
+  fn parses_figures_block_with_markdown_image_syntax() {
+    let src = "| ![caption a](img1.jpg) | ![caption b](img2.jpg) |\n| ![caption c](imgwide.jpg) |\n";
     let gs = graphemes::init_source(src);
     let input = ParseString::new(&gs);
     let (_, parsed) = figures(input).expect("figures block should parse");
@@ -1073,5 +1053,6 @@ mod tests {
     assert_eq!(parsed.rows[0].len(), 2);
     assert_eq!(parsed.rows[1].len(), 1);
     assert_eq!(parsed.rows[0][0].caption.to_string(), "caption a");
+    assert_eq!(parsed.rows[0][0].src.to_string(), "img1.jpg");
   }
 }

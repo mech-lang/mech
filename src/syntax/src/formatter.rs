@@ -610,7 +610,7 @@ impl Formatter {
         let mut line = String::from("|");
         for figure in row {
           line.push(' ');
-          line.push_str(&format!("![{}]({})", figure.src.to_string(), self.paragraph(&figure.caption)));
+          line.push_str(&format!("![{}]({})", self.paragraph(&figure.caption), figure.src.to_string()));
           line.push_str(" |");
           let label = ((b'a' + (figure_ix as u8)) as char).to_string();
           captions.push(format!("({}) {}", label, self.paragraph(&figure.caption)));

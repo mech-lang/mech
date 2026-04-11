@@ -5,7 +5,7 @@ figures
 
 Use a pipe table where each cell contains an image entry:
 
-`![image-url](caption)`
+`![caption](image-url)`
 
 Each image in the grid receives an automatic sublabel `(a)`, `(b)`, `(c)`, etc. The renderer adds one figure label for the block (for example `Fig 3.2`) and appends a combined caption line below the grid:
 
@@ -24,9 +24,9 @@ A figures block is one or more rows:
 -------------------------------------------------------------------------------
 
 ```
-| ![img1.jpg](caption a) | ![img2.jpg](caption b) |
-| ![imgwide.jpg](caption c) |
-| ![img3.jpg](caption d) | ![img4.jpg](caption e) |
+| ![caption a](img1.jpg) | ![caption b](img2.jpg) |
+| ![caption c](imgwide.jpg) |
+| ![caption d](img3.jpg) | ![caption e](img4.jpg) |
 ```
 
 (i)> Figures are document elements only. Image captions inside a figures block are not Mech expressions and are not evaluated.
