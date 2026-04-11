@@ -856,6 +856,21 @@ code {
     box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
 }
 
+.mech-inline-output-preview {
+    white-space: nowrap;
+}
+
+.mech-inline-output-expand {
+    margin-left: 4px;
+    border: none;
+    background: transparent;
+    color: var(--main-color-mid);
+    cursor: pointer;
+    padding: 0;
+    font-size: 0.85rem;
+    vertical-align: middle;
+}
+
 
 .mech-formula-operator {
     color: var(--op-color);

@@ -833,6 +833,142 @@ pub fn attach_repl(&mut self, repl_id: &str) {
   }
 
   #[cfg(feature = "inline_output_values")]
+  fn normalize_inline_preview_text(raw: &str) -> String {
+    let mut compact = raw
+      .replace('\n', " ")
+      .replace('\r', " ")
+      .replace('\t', " ")
+      .replace('┏', " ")
+      .replace('┓', " ")
+      .replace('┗', " ")
+      .replace('┛', " ")
+      .replace('┃', " ")
+      .replace('│', " ");
+    compact = compact.split_whitespace().collect::<Vec<&str>>().join(" ");
+    compact
+  }
+
+  #[cfg(feature = "inline_output_values")]
+  fn inline_preview_html(&self, inline_id: u64, value: &Value) -> String {
+    let kind = value.kind();
+    let kind_str = format!("{}", kind);
+    let normalized = Self::normalize_inline_preview_text(&value.to_string());
+    let is_structured = matches!(
+      kind,
+      ValueKind::Matrix(_, _)
+        | ValueKind::Set(_, _)
+        | ValueKind::Map(_, _)
+        | ValueKind::Record(_)
+        | ValueKind::Table(_, _)
+        | ValueKind::Tuple(_)
+    );
+    let mut parts: Vec<&str> = normalized.split_whitespace().collect();
+    let has_more = parts.len() > 5 || normalized.len() > 72 || is_structured;
+    if parts.len() > 5 {
+      parts.truncate(5);
+    }
+    let mut preview = if !parts.is_empty() {
+      parts.join(" ")
+    } else {
+      normalized.chars().take(48).collect::<String>()
+    };
+    if has_more && !preview.ends_with("…") {
+      preview.push_str(" …");
+    }
+
+    format!(
+      "<span class=\"mech-inline-output-preview\">{}</span>\
+       <button class=\"mech-inline-output-expand\" data-inline-output-id=\"{}\" title=\"Inspect {}\">🔎</button>",
+      html_escape(&preview),
+      inline_id,
+      html_escape(&kind_str),
+    )
+  }
+
+  #[cfg(feature = "inline_output_values")]
+  fn add_inline_output_event_listeners(&self) {
+    let window = web_sys::window().expect("global window does not exists");
+    let document = window.document().expect("expecting a document on window");
+    let inline_buttons = document.get_elements_by_class_name("mech-inline-output-expand");
+
+    for i in 0..inline_buttons.length() {
+      let button = inline_buttons.get_with_index(i).unwrap();
+      if button.get_attribute("data-inline-click-bound").is_some() {
+        continue;
+      }
+      button
+        .set_attribute("data-inline-click-bound", "true")
+        .unwrap();
+
+      let inline_id = match button.get_attribute("data-inline-output-id") {
+        Some(value) => match value.parse::<u64>() {
+          Ok(id) => id,
+          Err(_) => continue,
+        },
+        None => continue,
+      };
+
+      let out_values = self.interpreter.out_values.clone();
+      let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+        let window = web_sys::window().unwrap();
+        let document = window.document().unwrap();
+        let mech_output = document.get_element_by_id("mech-output").unwrap();
+
+        let out_values_brrw = out_values.borrow();
+        let output = match out_values_brrw.get(&inline_id) {
+          Some(value) => value,
+          None => return,
+        };
+
+        let kind_str = html_escape(&format!("{}", output.kind()));
+        let result_html = format!(
+          "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
+          kind_str,
+          output.to_html()
+        );
+
+        let repl_width = mech_output.client_width();
+        if repl_width == 0 {
+          let modal = document.create_element("div").unwrap();
+          modal.set_class_name("mech-modal");
+          modal.set_inner_html(&result_html);
+          modal
+            .set_attribute(
+              "style",
+              &format!(
+                "position:absolute; top:{}px; left:{}px;",
+                event.client_y(),
+                event.client_x()
+              ),
+            )
+            .unwrap();
+          document.body().unwrap().append_child(&modal).unwrap();
+
+          let modal_clone = modal.clone();
+          let close_closure = Closure::wrap(Box::new(move |_event: web_sys::Event| {
+            modal_clone.remove();
+          }) as Box<dyn FnMut(_)>);
+          modal
+            .add_event_listener_with_callback("click", close_closure.as_ref().unchecked_ref())
+            .unwrap();
+          close_closure.forget();
+        } else {
+          let result_line = document.create_element("div").unwrap();
+          result_line.set_class_name("repl-result");
+          result_line.set_inner_html(&result_html);
+          mech_output.append_child(&result_line).unwrap();
+          mech_output.set_scroll_top(mech_output.scroll_height());
+        }
+      }) as Box<dyn FnMut(_)>);
+
+      button
+        .add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())
+        .unwrap();
+      closure.forget();
+    }
+  }
+
+  #[cfg(feature = "inline_output_values")]
   #[wasm_bindgen]
   pub fn render_inline_values(&mut self) {
     let window = web_sys::window().expect("global window does not exists");    
@@ -851,9 +987,10 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           continue;
         }
       };
-      let formatted_output = format!("{}", inline_output.to_string());
-      inline_block.set_inner_html(&formatted_output.trim());
+      let formatted_output = self.inline_preview_html(inline_id, inline_output);
+      inline_block.set_inner_html(&formatted_output);
     }
+    self.add_inline_output_event_listeners();
   }
 
   #[cfg(feature = "run_program")]
