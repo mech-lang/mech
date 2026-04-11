@@ -514,12 +514,6 @@ A tuple is a collection of values of different data types stored in a single ent
 
 Tuples are defined using parentheses `()` with elements separated by commas.
 
-```
-(1, true)
-("Hello", 42, false)
-(1, ("Hello", false))
-```
-
 When parsed and rendered, this code will appear as:
 
 ```mech:disabled
@@ -550,13 +544,6 @@ x + y + z
 (6.4) Record
 
 Records are written using curly braces `{}` with named fields. Each field is written as `name: value` and fields are separated by commas.
-
-```
-{ x: 1, y: true }
-{ name: "Alice", age: 42, active: true }
-```
-
-When parsed and rendered, this code will appear as:
 
 ```mech:disabled
 { x: 1, y: true }
@@ -597,6 +584,34 @@ You can write tables inline as well:
 | x&ltf32&gt  y&ltbool&gt | 1.2 true | 1.3 false |
 ```
 
+(6.5.1) Coulmn Access
+
+Access table columns as vectors with the `.` operator:
+
+```mech:disabled
+t.x  -- column vector of x values
+t.y  -- column vector of y values
+
+(6.5.2) Row Access
+
+Access table rows as records using the single index operator `[]`:
+
+```mech:disabled
+t[1]  -- first row as a record
+t[2]  -- second row as a record
+```
+
+(6.5.2) Table Operators
+
+```mech:disabled
+a ⋈ b   -- inner join
+a ⟕ b   -- left outer join
+a ⟖ b   -- right outer join
+a ⟗ b   -- full outer join
+a ⋉ b   -- left semi join
+a ▷ b   -- left anti join
+```
+
 (6.6) Set
 
 A set is an unordered collection of unique elements. They are defined using curly braces `{}`.
@@ -608,6 +623,21 @@ Elements are separated by commas `,`. Duplicate elements are automatically remov
 {1, 2, 3}          -- A set of numbers
 {"a", "b", "c"}    -- A set of strings
 {1, 1, 2, 3}       -- Duplicates are removed
+{1 2 3}            -- Spaces can also separate elements
+```
+
+(6.6.1) Set Operators
+
+```mech:disabled
+A := {1,2,3}
+B := {3,4,5}
+
+A ∪ B   -- union
+A ∩ B   -- intersection
+A ∖ B   -- difference
+A Δ B   -- symmetric difference
+2 ∈ A   -- membership
+9 ∉ A   -- non-membership
 ```
 
 (6.7) Map
@@ -623,55 +653,6 @@ You can define maps using curly braces `{}` with a colon `:` to separate keys fr
   "b": 20
   "c": 30
 }                        -- Multi-line format
-```
-
-(6.8) Data Access & Operators Cheat Sheet
-
-
-
-```mech:disabled
-~v := [1 2 3 4 5 6]
-v[(v % 2) == 0] = 0   -- assign through bool mask
-```
-
-(6.8.3) Table Access
-
-```mech:disabled
-t := | id<u64>  score<f64> passed<bool> |
-     |   1       81.0      true         |
-     |   2       42.0      false        |
-     |   3       90.0      true         |
-
-t.score         -- column vector
-t.score[1]      -- first value in score
-t[2]            -- row 2 as a record
-t[1..=2]        -- row slice as a table
-t[t.passed]     -- filter rows with logical column
-```
-
-(6.8.4) Table Operators
-
-```mech:disabled
-a ⋈ b   -- inner join
-a ⟕ b   -- left outer join
-a ⟖ b   -- right outer join
-a ⟗ b   -- full outer join
-a ⋉ b   -- left semi join
-a ▷ b   -- left anti join
-```
-
-(6.8.5) Set Operators
-
-```mech:disabled
-A := {1,2,3}
-B := {3,4,5}
-
-A ∪ B   -- union
-A ∩ B   -- intersection
-A ∖ B   -- difference
-A Δ B   -- symmetric difference
-2 ∈ A   -- membership
-9 ∉ A   -- non-membership
 ```
 
 7. Functions and Patterns
@@ -698,11 +679,16 @@ Guarded branches:
 
 ```mech:disabled
 max3(t<(u64,u64,u64)>) => <u64>
-  | (a,b,c), a > b && a > c => a
-  | (a,b,c), b > a && b > c => b
-  | (a,b,c), c > a && c > b => c
   | * => 0u64.
 ```
+
+(7.1.1) Pattern Varieties
+
+- Wildcard: `*` matches any value
+- Variable: `x` matches any value and binds it to `x`
+- Tuple: `(x, y)` matches a tuple and binds its elements to `x` and `y`
+- Array: `[first ... last]` matches an array and binds its elements to `first` and `last`
+- Slice `[head | tail]` matches a non-empty array, binding the head to `head` and the tail to `tail`
 
 8. Enums and Match
 -------------------------------------------------------------------------------
