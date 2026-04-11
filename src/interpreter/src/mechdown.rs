@@ -4,6 +4,23 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 // Mechdown
 // ----------------------------------------------------------------------------
 
+#[cfg(feature = "symbol_table")]
+fn update_ans_symbol(value: &Value, p: &Interpreter) {
+  let resolved_value = match value {
+    Value::MutableReference(reference) => reference.borrow().clone(),
+    _ => value.clone(),
+  };
+  let ans_id = hash_str("ans");
+  let symbols = p.symbols();
+  let mut symbols_brrw = symbols.borrow_mut();
+  symbols_brrw.insert(ans_id, resolved_value, false);
+  symbols_brrw
+    .dictionary
+    .borrow_mut()
+    .insert(ans_id, "ans".to_string());
+  p.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
+}
+
 pub fn program(program: &Program, p: &Interpreter) -> MResult<Value> {
   body(&program.body, p)
 }
@@ -180,7 +197,7 @@ pub fn comment(cmmt: &Comment, p: &Interpreter) -> MResult<Value> {
 }
 
 pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
-  match &code {
+  let out = match &code {
     MechCode::Expression(expr) => expression(&expr, None, p),
     MechCode::Statement(stmt) => statement(&stmt, None, p),
     MechCode::FsmSpecification(_) => Ok(Value::Empty),
@@ -200,5 +217,8 @@ pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
         None
       ).with_compiler_loc().with_tokens(x.tokens())
     ),
-  }
+  }?;
+  #[cfg(feature = "symbol_table")]
+  update_ans_symbol(&out, p);
+  Ok(out)
 }

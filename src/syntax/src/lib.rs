@@ -730,20 +730,36 @@ fn extract_snippet(lines: &[&str], range: &SourceRange) -> String {
   let mut out = String::new();
 
   for row in range.start.row..=range.end.row {
-    if let Some(line) = lines.get(row) {
-      let start = if row == range.start.row { range.start.col } else { 0 };
-      let end   = if row == range.end.row   { range.end.col } else { line.len() };
+    if let Some(row_index) = row.checked_sub(1) {
+      if let Some(line) = lines.get(row_index) {
+        let start_col = if row == range.start.row { range.start.col } else { 1 };
+        let end_col = if row == range.end.row {
+          range.end.col
+        } else {
+          line.chars().count() + 1
+        };
 
-      let end = end.min(line.len());
-
-      if start <= end {
-        out.push_str(&line[start..end]);
+        out.push_str(&slice_by_char_cols(line, start_col, end_col));
+        out.push('\n');
       }
-      out.push('\n');
     }
   }
 
   out
+}
+
+fn slice_by_char_cols(line: &str, start_col: usize, end_col: usize) -> String {
+  let start_idx = start_col.saturating_sub(1);
+  let end_idx = end_col.saturating_sub(1);
+
+  if start_idx >= end_idx {
+    return String::new();
+  }
+
+  line.chars()
+    .skip(start_idx)
+    .take(end_idx - start_idx)
+    .collect()
 }
 
 fn indent(s: &str) -> String {
@@ -751,6 +767,27 @@ fn indent(s: &str) -> String {
     .map(|line| format!("  {}", line))
     .collect::<Vec<_>>()
     .join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn extract_snippet_handles_unicode_boundaries() {
+    let line = "  :Reverse([], acc, swaps) → :Pass(acc, [], 0)";
+    let lines = vec![line];
+    let range = SourceRange {
+      start: SourceLocation { row: 1, col: 1 },
+      end: SourceLocation {
+        row: 1,
+        col: line.chars().count() + 1,
+      },
+    };
+
+    let snippet = extract_snippet(&lines, &range);
+    assert_eq!(snippet, format!("{line}\n"));
+  }
 }
 
 /// Try a list of parsers in order, tracking successes, failures, and errors.

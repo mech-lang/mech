@@ -1451,6 +1451,154 @@ impl Value {
     }
   }
 
+  pub fn format_value_inline(&self) -> String {
+    match self {
+      #[cfg(feature = "u8")]
+      Value::U8(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "u16")]
+      Value::U16(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "u32")]
+      Value::U32(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "u64")]
+      Value::U64(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "u128")]
+      Value::U128(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "i8")]
+      Value::I8(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "i16")]
+      Value::I16(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "i32")]
+      Value::I32(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "i64")]
+      Value::I64(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "i128")]
+      Value::I128(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "f32")]
+      Value::F32(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "f64")]
+      Value::F64(n) => format!("{}", n.borrow()),
+      #[cfg(any(feature = "string", feature = "variable_define"))]
+      Value::String(s) => format!("\"{}\"", s.borrow()),
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
+      Value::Bool(b) => format!("{}", b.borrow()),
+      #[cfg(feature = "complex")]
+      Value::C64(c) => format!("{}", c.borrow()),
+      #[cfg(feature = "rational")]
+      Value::R64(r) => format!("{}", r.borrow()),
+      #[cfg(feature = "matrix")]
+      Value::MatrixIndex(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "bool"))]
+      Value::MatrixBool(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "u8"))]
+      Value::MatrixU8(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "u16"))]
+      Value::MatrixU16(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "u32"))]
+      Value::MatrixU32(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "u64"))]
+      Value::MatrixU64(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "u128"))]
+      Value::MatrixU128(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "i8"))]
+      Value::MatrixI8(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "i16"))]
+      Value::MatrixI16(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "i32"))]
+      Value::MatrixI32(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "i64"))]
+      Value::MatrixI64(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "i128"))]
+      Value::MatrixI128(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "f32"))]
+      Value::MatrixF32(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "f64"))]
+      Value::MatrixF64(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "string"))]
+      Value::MatrixString(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "rational"))]
+      Value::MatrixR64(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "complex"))]
+      Value::MatrixC64(m) => Self::format_matrix_inline(m),
+      #[cfg(feature = "matrix")]
+      Value::MatrixValue(m) => Self::format_matrix_inline(m),
+      #[cfg(feature = "atom")]
+      Value::Atom(a) => format!("{}", a.borrow()),
+      #[cfg(feature = "set")]
+      Value::Set(s) => {
+        let vals = s.borrow().set.iter().map(|v| v.format_value_inline()).collect::<Vec<_>>();
+        format!("{{{}}}", vals.join(", "))
+      }
+      #[cfg(feature = "map")]
+      Value::Map(m) => {
+        let vals = m.borrow().map.iter().map(|(k,v)| format!("{}: {}", k.format_value_inline(), v.format_value_inline())).collect::<Vec<_>>();
+        format!("{{{}}}", vals.join(", "))
+      }
+      #[cfg(feature = "record")]
+      Value::Record(r) => {
+        let record = r.borrow();
+        let vals = record.data.iter().map(|(k,v)| {
+          let name = record.field_names.get(k).cloned().unwrap_or_else(|| format!("{}", k));
+          format!("{}: {}", name, v.format_value_inline())
+        }).collect::<Vec<_>>();
+        format!("{{{}}}", vals.join(", "))
+      }
+      #[cfg(feature = "tuple")]
+      Value::Tuple(t) => {
+        let vals = t.borrow().elements.iter().map(|v| v.format_value_inline()).collect::<Vec<_>>();
+        format!("({})", vals.join(", "))
+      }
+      #[cfg(feature = "enum")]
+      Value::Enum(e) => {
+        let enm = e.borrow();
+        let dict = enm.names.borrow();
+        let name = dict.get(&enm.id).cloned().unwrap_or_else(|| format!("{}", enm.id));
+        let vals = enm.variants.iter().map(|(id, v)| {
+          let variant_name = dict.get(id).cloned().unwrap_or_else(|| format!("{}", id));
+          match v {
+            Some(value) => format!("{}: {}", variant_name, value.format_value_inline()),
+            None => variant_name,
+          }
+        }).collect::<Vec<_>>();
+        format!(":{}{{{}}}", name, vals.join(" | "))
+      }
+      #[cfg(feature = "table")]
+      Value::Table(t) => {
+        let table = t.borrow();
+        let headers = table.data.iter().map(|(k, (kind, _))| {
+          let name = table.col_names.get(k).cloned().unwrap_or_else(|| format!("{}", k));
+          format!("{}<{}>", name, kind)
+        }).collect::<Vec<_>>().join(" ");
+        let rows = (0..table.rows).map(|r| {
+          table.data.iter().map(|(_, (_, col))| col.index2d(r + 1, 1).format_value_inline()).collect::<Vec<_>>().join(" ")
+        }).collect::<Vec<_>>().join("; ");
+        format!("|{}| {}", headers, rows)
+      }
+      Value::Id(x) => format!("{}", humanize(x)),
+      Value::Index(x) => format!("{}", x.borrow()),
+      Value::Kind(k) => format!("<{}>", k),
+      Value::MutableReference(m) => m.borrow().format_value_inline(),
+      Value::IndexAll => ":".to_string(),
+      Value::Empty => "_".to_string(),
+    }
+  }
+
+  #[cfg(feature = "matrix")]
+  fn format_matrix_inline<T>(matrix: &Matrix<T>) -> String
+  where T: Clone + std::fmt::Display + std::fmt::Debug + PartialEq + 'static {
+    let shape = matrix.shape();
+    let rows = shape[0];
+    let cols = shape[1];
+    let elements = matrix.as_vec();
+    let row_strings = (0..rows)
+      .map(|r| {
+        let start = r * cols;
+        let end = start + cols;
+        elements[start..end].iter().map(|v| format!("{}", v)).collect::<Vec<_>>().join(" ")
+      })
+      .collect::<Vec<_>>();
+    format!("[{}]", row_strings.join("; "))
+  }
+
   pub fn shape(&self) -> Vec<usize> {
     match self {
       #[cfg(feature = "rational")]

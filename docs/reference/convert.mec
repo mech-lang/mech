@@ -1,0 +1,32 @@
+data conversion
+===============================================================================
+
+%% Core conversion behavior via kind annotations and explicit target kinds.
+
+1. Overview
+-------------------------------------------------------------------------------
+
+Mech supports conversion between kinds as part of core evaluation, especially when a binding includes a kind annotation.
+
+2. Conversion by kind annotation
+-------------------------------------------------------------------------------
+
+When a variable is defined with a kind annotation, the initializer is converted to the target kind if a conversion path exists.
+
+```mech:convert-annotated
+x<f64> := 42      %% converts integer literal to f64
+name<string> := 123
+```
+
+If no conversion exists, definition fails with a kind/conversion error.
+
+3. Structured conversions
+-------------------------------------------------------------------------------
+
+Conversions apply beyond scalars when supported:
+
+- scalar -> scalar (numeric/string/bool where defined)
+- scalar -> matrix (with target matrix kind)
+- matrix -> matrix (element kind conversion)
+- matrix -> table and table -> matrix (shape/kind compatible)
+- empty/value <-> option kinds

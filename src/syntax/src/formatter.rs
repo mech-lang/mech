@@ -573,6 +573,62 @@ impl Formatter {
     }
   }
 
+  pub fn figures(&mut self, node: &FigureTable) -> String {
+    self.figure_num += 1;
+    let figure_label = format!("Fig {}.{}", self.h2_num, self.figure_num);
+    let figure_id = hash_str(&format!("{}-{:?}", figure_label, node.rows));
+
+    let mut figure_ix = 0usize;
+    let mut captions: Vec<String> = vec![];
+
+    if self.html {
+      let mut rows_html = String::new();
+      for row in &node.rows {
+        rows_html.push_str(&format!(
+          "<div class=\"mech-figure-table-row\" style=\"grid-template-columns: repeat({}, minmax(0, 1fr));\">",
+          row.len().max(1)
+        ));
+        for figure in row {
+          let label = ((b'a' + (figure_ix as u8)) as char).to_string();
+          let img_id = hash_str(&format!("{}-{}-{}", figure_label, figure_ix, figure.src.to_string()));
+          rows_html.push_str(&format!(
+            "<div class=\"mech-figure-table-cell\"><div class=\"mech-figure-panel\"><span class=\"mech-figure-subfigure-label\">{}</span><img id=\"{}\" class=\"mech-image mech-figure-grid-image\" src=\"{}\" /></div></div>",
+            label,
+            img_id,
+            figure.src.to_string(),
+          ));
+          captions.push(format!(
+            "<span class=\"mech-figure-caption-ref\">({})</span> <span class=\"mech-figure-caption-text\">{}</span>",
+            label,
+            figure.caption.to_string()
+          ));
+          figure_ix += 1;
+        }
+        rows_html.push_str("</div>");
+      }
+      let caption_block = captions.join(" ");
+      format!(
+        "<figure id=\"{}\" class=\"mech-figure-table\"><div class=\"mech-figure-grid\">{}</div><figcaption class=\"mech-figure-caption mech-figure-table-caption\"><strong class=\"mech-figure-label\">{}</strong> {}</figcaption></figure>",
+        figure_id, rows_html, figure_label, caption_block
+      )
+    } else {
+      let mut lines: Vec<String> = vec![];
+      for row in &node.rows {
+        let mut line = String::from("|");
+        for figure in row {
+          line.push(' ');
+          line.push_str(&format!("![{}]({})", self.paragraph(&figure.caption), figure.src.to_string()));
+          line.push_str(" |");
+          let label = ((b'a' + (figure_ix as u8)) as char).to_string();
+          captions.push(format!("({}) {}", label, self.paragraph(&figure.caption)));
+          figure_ix += 1;
+        }
+        lines.push(line);
+      }
+      format!("{}\n{} {}\n", lines.join("\n"), figure_label, captions.join(" "))
+    }
+  }
+
 
   pub fn abstract_el(&mut self, node: &Vec<Paragraph>) -> String {
     let abstract_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
@@ -741,6 +797,7 @@ impl Formatter {
       SectionElement::Float((n,f)) => self.float(n,f),
       SectionElement::Footnote(n) => self.footnote(n),
       SectionElement::Grammar(n) => self.grammar(n),
+      SectionElement::FigureTable(n) => self.figures(n),
       SectionElement::Image(n) => self.image(n),
       SectionElement::List(n) => self.list(n),
       SectionElement::MechCode(n) => self.mech_code(n),
