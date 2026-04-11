@@ -584,24 +584,31 @@ impl Formatter {
     if self.html {
       let mut rows_html = String::new();
       for row in &node.rows {
-        rows_html.push_str("<tr class=\"mech-figure-table-row\">");
+        rows_html.push_str(&format!(
+          "<div class=\"mech-figure-table-row\" style=\"grid-template-columns: repeat({}, minmax(0, 1fr));\">",
+          row.len().max(1)
+        ));
         for figure in row {
           let label = ((b'a' + (figure_ix as u8)) as char).to_string();
-          let img_id = hash_str(&format!("{}-{}", figure_label, figure.src.to_string()));
+          let img_id = hash_str(&format!("{}-{}-{}", figure_label, figure_ix, figure.src.to_string()));
           rows_html.push_str(&format!(
-            "<td class=\"mech-figure-table-cell\"><img id=\"{}\" class=\"mech-image\" src=\"{}\" /><span class=\"mech-figure-subfigure-label\">({})</span></td>",
+            "<div class=\"mech-figure-table-cell\"><img id=\"{}\" class=\"mech-image mech-figure-grid-image\" src=\"{}\" /><span class=\"mech-figure-subfigure-label\">({})</span></div>",
             img_id,
             figure.src.to_string(),
             label
           ));
-          captions.push(format!("({}) {}", label, self.paragraph(&figure.caption)));
+          captions.push(format!(
+            "<span class=\"mech-figure-caption-ref\">({})</span> <span class=\"mech-figure-caption-text\">{}</span>",
+            label,
+            figure.caption.to_string()
+          ));
           figure_ix += 1;
         }
-        rows_html.push_str("</tr>");
+        rows_html.push_str("</div>");
       }
       let caption_block = captions.join(" ");
       format!(
-        "<figure id=\"{}\" class=\"mech-figure-table\"><table class=\"mech-table mech-figure-grid\"><tbody>{}</tbody></table><figcaption class=\"mech-figure-caption\"><strong class=\"mech-figure-label\">{}</strong> {}</figcaption></figure>",
+        "<figure id=\"{}\" class=\"mech-figure-table\"><div class=\"mech-figure-grid\">{}</div><figcaption class=\"mech-figure-caption mech-figure-table-caption\"><strong class=\"mech-figure-label\">{}</strong> {}</figcaption></figure>",
         figure_id, rows_html, figure_label, caption_block
       )
     } else {
