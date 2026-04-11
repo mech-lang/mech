@@ -14,7 +14,7 @@ Mech supports conversion between kinds as part of core evaluation, especially wh
 When a variable is defined with a kind annotation, the initializer is converted to the target kind if a conversion path exists.
 
 ```mech:convert-annotated
-x<f64> := 42      -- converts integer literal to f64
+x<f64> := 42      %% converts integer literal to f64
 name<string> := 123
 ```
 
