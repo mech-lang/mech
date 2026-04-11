@@ -294,6 +294,50 @@ test_interpreter!(interpret_literal_rational, "1/2", Value::R64(Ref::new(R64::ne
 test_interpreter!(interpret_comment, "123 -- comment", Value::F64(Ref::new(123.0)));
 test_interpreter!(interpret_comment2, "123 // comment", Value::F64(Ref::new(123.0)));
 
+#[test]
+fn interpret_comment_ans_uses_line_result() {
+  let s = "12 + 34 -- the answer is {ans}";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  intrp.interpret(&tree).unwrap();
+
+  let section_node = &tree.body.sections[0];
+  let SectionElement::MechCode(code) = &section_node.elements[0] else {
+    panic!("expected mech code");
+  };
+  let Some(comment_node) = &code[0].1 else {
+    panic!("expected comment");
+  };
+  let ParagraphElement::EvalInlineMechCode(expr) = &comment_node.paragraph.elements[1] else {
+    panic!("expected inline mech code");
+  };
+  let inline_id = hash_str(&format!("{:?}", expr));
+  let value = intrp.out_values.borrow().get(&inline_id).cloned();
+  assert_eq!(value, Some(Value::F64(Ref::new(46.0))));
+}
+
+#[test]
+fn interpret_comment_ans_comparison_uses_line_result() {
+  let s = "12 + 34 -- the answer is greater than 42 {ans > 42}";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  intrp.interpret(&tree).unwrap();
+
+  let section_node = &tree.body.sections[0];
+  let SectionElement::MechCode(code) = &section_node.elements[0] else {
+    panic!("expected mech code");
+  };
+  let Some(comment_node) = &code[0].1 else {
+    panic!("expected comment");
+  };
+  let ParagraphElement::EvalInlineMechCode(expr) = &comment_node.paragraph.elements[1] else {
+    panic!("expected inline mech code");
+  };
+  let inline_id = hash_str(&format!("{:?}", expr));
+  let value = intrp.out_values.borrow().get(&inline_id).cloned();
+  assert_eq!(value, Some(Value::Bool(Ref::new(true))));
+}
+
 test_interpreter!(interpret_formula_math_add, "2 + 2", Value::F64(Ref::new(4.0)));
 test_interpreter!(interpret_formula_math_sub, "2 - 2", Value::F64(Ref::new(0.0)));
 test_interpreter!(interpret_formula_math_mul, "2 * 2", Value::F64(Ref::new(4.0)));

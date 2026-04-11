@@ -45,7 +45,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
         out = mech_code(&c, p)?;
         match cmmnt {
           Some(cmmnt) => {
-            let cmmnt_value = comment(cmmnt, p)?;
+            let _cmmnt_value = comment_with_line_result(cmmnt, Some(&out), p)?;
           }
           None => {}
         }
@@ -167,16 +167,45 @@ pub fn paragraph_element(element: &ParagraphElement, p: &Interpreter) -> MResult
   Ok(result)
 }
 
-pub fn comment(cmmt: &Comment, p: &Interpreter) -> MResult<Value> {
+fn comment_with_line_result(cmmt: &Comment, line_result: Option<&Value>, p: &Interpreter) -> MResult<Value> {
+  let inline_env = line_result.map(|result| {
+    let mut env = Environment::new();
+    env.insert(hash_str("ans"), result.clone());
+    env.insert(hash_str("and"), result.clone());
+    env
+  });
+
   let par = &cmmt.paragraph;
   for el in par.elements.iter() {
-    let (code_id,value) = match paragraph_element(&el, p) {
-      Ok(val) => val,
+    let (code_id,value) = match el {
+      ParagraphElement::EvalInlineMechCode(expr) => {
+        if let Some(env) = inline_env.as_ref() {
+          match expression(expr, Some(env), p) {
+            Ok(value) => {
+              let code_id = hash_str(&format!("{:?}", expr));
+              (code_id, value)
+            }
+            Err(_) => match paragraph_element(el, p) {
+              Ok(val) => val,
+              Err(_) => continue,
+            },
+          }
+        } else {
+          match paragraph_element(el, p) {
+            Ok(val) => val,
+            Err(_) => continue,
+          }
+        }
+      }
       _ => continue,
     };
     p.out_values.borrow_mut().insert(code_id, value.clone());
   }
   Ok(Value::Empty)
+}
+
+pub fn comment(cmmt: &Comment, p: &Interpreter) -> MResult<Value> {
+  comment_with_line_result(cmmt, None, p)
 }
 
 pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
