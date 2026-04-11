@@ -1,54 +1,55 @@
 defining, assigning, and accessing data
 ===============================================================================
 
-%% Core language statements for creating bindings, mutating values, and selecting sub-values.
+%% Core language statements for creating bindings, mutating values, and declaring kinds/enums.
 
 1. Overview
 -------------------------------------------------------------------------------
 
-Mech has three core binding/update statement forms:
+The core statement forms are:
 
-- **Definition** (`:=`) creates a new binding.
-- **Assignment** (`=`) updates an existing mutable binding (or a slice of one).
-- **Operator-assignment** (`+=`, `-=`, `*=`, `/=`) updates in place.
+- **Variable define** (`:=`) to create a binding.
+- **Variable assign** (`=`) to update an existing mutable binding.
+- **Operator-assign** (`+=`, `-=`, `*=`, `/=`) for in-place arithmetic updates.
+- **Tuple destructure** (`(a,b,...) := expr`) to unpack tuple values.
+- **Enum define** (`<name> := ...`) to declare tagged variants.
+- **Kind define** (`<name> := <kind-annotation>`) to declare named kinds.
 
-2. Define (`:=`)
+2. Variable define (`:=`)
 -------------------------------------------------------------------------------
-
-Define creates a new symbol from an expression.
 
 ```mech:define-basic
 x := 10
 label := "hello"
 ```
 
-You can define a **mutable** symbol by prefixing with `~`:
+Use `~` to define a mutable binding:
 
 ```mech:define-mutable
 ~counter := 0
 ```
 
-3. Assign (`=`)
+3. Variable assign (`=`)
 -------------------------------------------------------------------------------
 
-Assign writes a new value into an existing mutable symbol.
+Assignment updates an existing mutable symbol:
 
 ```mech:assign-basic
 ~counter := 0
 counter = counter + 1
 ```
 
-Assignment also supports indexed targets (slice refs):
+Assignment also supports indexed/sliced targets:
 
 ```mech:assign-slice
 ~m := [1, 2; 3, 4]
 m[1,2] = 99
 ```
 
-4. Operator-assignment
+4. Operator-assign
 -------------------------------------------------------------------------------
 
-In-place arithmetic updates are available as statement forms:
+In-place arithmetic statement forms:
 
 ```mech:op-assign
 ~x := 5
@@ -56,31 +57,57 @@ x += 2
 x *= 3
 ```
 
-Supported operators: `+=`, `-=`, `*=`, `/=`.
+Currently implemented operators are `+=`, `-=`, `*=`, `/=` in interpreter statement execution.
+
+(i)> The grammar includes `^=` (`exp-assign-operator`), but interpreter statement dispatch currently only implements add/sub/mul/div branches.
 
 5. Tuple destructuring
 -------------------------------------------------------------------------------
 
-A tuple value can be unpacked into multiple bindings:
+Unpack tuple elements into new bindings:
 
 ```mech:tuple-destructure
 (a, b, c) := (1, 2, 3)
 ```
 
-6. Accessing values
+6. Enum define (`<name> := variants`)
+-------------------------------------------------------------------------------
+
+Declare enum variants using atom-style names, optionally with payload kinds.
+
+```mech:enum-define
+<response> := :ok<u64> | :error<string> | :timeout
+```
+
+Payload style variants are also valid:
+
+```mech:enum-define-2
+<event> := :click | :keypress(string)
+```
+
+7. Kind define (`<name> := <kind>`)
+-------------------------------------------------------------------------------
+
+Declare a named kind alias/specification:
+
+```mech:kind-define
+<distance> := <f64>
+```
+
+8. Accessing values
 -------------------------------------------------------------------------------
 
 Core access patterns include:
 
-- **Identifier access:** `x`
-- **Index access:** `m[1,2]`, `xs[2]`
-- **Field/column access:** `record.field`, `table.column`
+- Identifier access: `x`
+- Index/slice access: `m[1,2]`, `xs[2]`
+- Field/column access: `record.field`, `table.column`
 
-For full indexing behavior, see [`indexing`](/reference/indexing.html).
+For detailed indexing behavior, see [`indexing`](/reference/indexing.html).
 
-7. Notes
+9. Notes
 -------------------------------------------------------------------------------
 
-- Use `:=` to declare; use `=` to update.
-- Attempting to assign to an undefined or immutable symbol is an error.
-- Assignment targets may be full variables or slices of structured data.
+- Use `:=` to declare and `=` to update.
+- Assigning to undefined or immutable symbols is an error.
+- Mutation requires bindings declared with `~`.

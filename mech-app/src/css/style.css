@@ -993,6 +993,82 @@ ol {
     margin: 0;
 }
 
+.mech-figure-grid {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mech-figure-table-row {
+    width: 100%;
+    display: grid;
+    gap: 10px;
+    align-items: end;
+}
+
+.mech-figure-table-cell {
+    min-width: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.mech-figure-panel {
+    position: relative;
+    width: fit-content;
+    max-width: 100%;
+}
+
+.mech-figure-grid-image {
+    width: auto;
+    max-width: 100%;
+    height: clamp(150px, 24vw, 260px);
+    object-fit: contain;
+    display: block;
+}
+
+.mech-figure-subfigure-label {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 1;
+    color: #F3B62D;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-weight: 700;
+    text-transform: lowercase;
+}
+
+.mech-figure-table-caption {
+    font-style: normal;
+    color: inherit;
+    display: block;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.5;
+}
+
+.mech-figure-table-caption .mech-figure-label {
+    display: inline;
+    min-width: 0;
+    text-align: left;
+    margin-right: 0.4em;
+}
+
+.mech-figure-caption-ref {
+    color: #F3B62D;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    margin-right: 0.2em;
+}
+
+.mech-figure-caption-text {
+    color: inherit;
+    font-family: inherit;
+    margin-right: 0.8em;
+}
+
 li {
     padding-left: 3px;
 }
