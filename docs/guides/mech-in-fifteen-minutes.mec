@@ -467,6 +467,47 @@ m := [1 2 3 4 5]
 m + 10  -- Adds 10 to each element of the vector
 ```
 
+(6.1.2) Matrix Access
+
+```mech:disabled
+m := [1 2 3; 4 5 6; 7 8 9]
+
+m[2,3]         -- row/column access => 6
+m[2]           -- single index (column-major)
+m[1,:]         -- first row
+m[:,2]         -- second column
+m[1..=2,:]     -- first two rows
+m[[1,3],:]     -- rows 1 and 3
+```
+
+(6.8.2) Logical Indexing
+
+```mech:disabled
+m := [1 2 3; 4 5 6; 7 8 9]
+mask := m > 5
+m[mask]        -- [6 7 8 9]
+
+rows := [true false true]
+cols := [false true true]
+m[rows,:]      -- keep rows where mask is true
+m[:,cols]      -- keep cols where mask is true
+m[rows,cols]   -- logical row+col selection
+```
+
+(6.1.3) Operators
+
+```mech:disabled
+A + B   -- element-wise addition
+A - B   -- element-wise subtraction
+A * B   -- element-wise multiplication
+A / B   -- element-wise division
+A ** B  -- matrix multiplication
+A'      -- transpose
+A × B   -- cross product
+A ⋅ B   -- dot product
+A \ B   -- solve linear system Ax = B
+``
+
 (6.3) Tuple
 
 A tuple is a collection of values of different data types stored in a single entity, allowing for the storage and manipulation of multiple values together.
@@ -586,32 +627,7 @@ You can define maps using curly braces `{}` with a colon `:` to separate keys fr
 
 (6.8) Data Access & Operators Cheat Sheet
 
-(6.8.1) Matrix Access
 
-```mech:disabled
-m := [1 2 3; 4 5 6; 7 8 9]
-
-m[2,3]         -- row/column access => 6
-m[2]           -- single index (column-major)
-m[1,:]         -- first row
-m[:,2]         -- second column
-m[1..=2,:]     -- first two rows
-m[[1,3],:]     -- rows 1 and 3
-```
-
-(6.8.2) Matrix Logical Indexing (Bool Masks)
-
-```mech:disabled
-m := [1 2 3; 4 5 6; 7 8 9]
-mask := m > 5
-m[mask]        -- [6 7 8 9]
-
-rows := [true false true]
-cols := [false true true]
-m[rows,:]      -- keep rows where mask is true
-m[:,cols]      -- keep cols where mask is true
-m[rows,cols]   -- logical row+col selection
-```
 
 ```mech:disabled
 ~v := [1 2 3 4 5 6]
