@@ -6,10 +6,14 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 
 #[cfg(feature = "symbol_table")]
 fn update_ans_symbol(value: &Value, p: &Interpreter) {
+  let resolved_value = match value {
+    Value::MutableReference(reference) => reference.borrow().clone(),
+    _ => value.clone(),
+  };
   let ans_id = hash_str("ans");
   let symbols = p.symbols();
   let mut symbols_brrw = symbols.borrow_mut();
-  symbols_brrw.insert(ans_id, value.clone(), true);
+  symbols_brrw.insert(ans_id, resolved_value, false);
   symbols_brrw
     .dictionary
     .borrow_mut()
