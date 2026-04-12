@@ -144,7 +144,7 @@ a ⋈ b -- table/join(a,b)
 Enums and match expressions make it easy to model categorical data and branch on structured values:
 
 ```mech:enum-match
-<http-status> := :ok | :created | :not-found | :server-error(code<u16>)
+<http-status> := :ok | :created | :not-found | :server-error<u16>
 
 status<http-status> := :server-error(503u16)
 message<string> := status?
