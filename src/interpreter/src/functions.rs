@@ -9,23 +9,23 @@ use crate::*;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum FrameState {
-  Running,
-  Suspended,
-  Completed,
+    Running,
+    Suspended,
+    Completed,
 }
 
 #[derive(Clone)]
 pub struct Frame {
-  plan: Plan,
-  ip: usize,               // next instruction
-  locals: SymbolTableRef,  // for subroutine variables
-  out: Option<Value>,      // optional coroutine return
-  state: FrameState,       // Running, Suspended, Completed
+    plan: Plan,
+    ip: usize,              // next instruction
+    locals: SymbolTableRef, // for subroutine variables
+    out: Option<Value>,     // optional coroutine return
+    state: FrameState,      // Running, Suspended, Completed
 }
 
 #[derive(Clone)]
 pub struct Stack {
-  frames: Vec<Frame>,
+    frames: Vec<Frame>,
 }
 
 pub fn function_define(fxn_def: &FunctionDefine, p: &Interpreter) -> MResult<FunctionDefinition> {
@@ -195,19 +195,30 @@ fn execute_user_function(
         )
     );
 
-    let scope = FunctionScope::enter(p);
-    bind_function_inputs(fxn_def, input_arg_values, p)?;
-
     let output = if !fxn_def.code.match_arms.is_empty() {
-        execute_function_match_arms(fxn_def, input_arg_values, p)
+        let mut current_args = input_arg_values.clone();
+        loop {
+            let scope = FunctionScope::enter(p);
+            bind_function_inputs(fxn_def, &current_args, p)?;
+            let step = execute_function_match_arms(fxn_def, &current_args, p)?;
+            drop(scope);
+            match step {
+                FunctionCallStep::Return(value) => break Ok(value),
+                FunctionCallStep::TailCall(next_args) => {
+                    current_args = next_args;
+                }
+            }
+        }
     } else {
+        let scope = FunctionScope::enter(p);
+        bind_function_inputs(fxn_def, input_arg_values, p)?;
         for statement_node in &fxn_def.code.statements {
             statement(statement_node, None, p)?;
         }
-        collect_function_output(p, fxn_def)
+        let result = collect_function_output(p, fxn_def);
+        drop(scope);
+        result
     };
-
-    drop(scope);
 
     match output {
         Ok(value) => {
@@ -232,13 +243,21 @@ fn execute_user_function(
     }
 }
 
+enum FunctionCallStep {
+    Return(Value),
+    TailCall(Vec<Value>),
+}
+
 #[cfg(feature = "matrix")]
 fn try_broadcast_user_function(
     fxn_def: &FunctionDefinition,
     input_arg_values: &Vec<Value>,
     p: &Interpreter,
 ) -> MResult<Option<Value>> {
-    if input_arg_values.len() != 1 || fxn_def.code.output.len() != 1 || fxn_def.code.input.len() != 1 {
+    if input_arg_values.len() != 1
+        || fxn_def.code.output.len() != 1
+        || fxn_def.code.input.len() != 1
+    {
         return Ok(None);
     }
 
@@ -295,7 +314,13 @@ fn build_typed_matrix_from_values(
         ValueKind::F64 => Value::MatrixF64(f64::to_matrix(
             outputs
                 .into_iter()
-                .map(|value| value.as_f64().expect("Expected f64 output").borrow().clone())
+                .map(|value| {
+                    value
+                        .as_f64()
+                        .expect("Expected f64 output")
+                        .borrow()
+                        .clone()
+                })
                 .collect::<Vec<f64>>(),
             rows,
             cols,
@@ -308,7 +333,7 @@ fn execute_function_match_arms(
     fxn_def: &FunctionDefinition,
     input_arg_values: &Vec<Value>,
     p: &Interpreter,
-) -> MResult<Value> {
+) -> MResult<FunctionCallStep> {
     #[cfg(all(feature = "kind_annotation", feature = "enum"))]
     {
         let has_wildcard = fxn_def
@@ -368,8 +393,8 @@ fn execute_function_match_arms(
                                 },
                                 None,
                             )
-                                .with_compiler_loc()
-                                .with_tokens(fxn_def.code.name.tokens()));
+                            .with_compiler_loc()
+                            .with_tokens(fxn_def.code.name.tokens()));
                         }
                     }
                 }
@@ -396,6 +421,25 @@ fn execute_function_match_arms(
             )
         });
         if matched {
+            if let Expression::FunctionCall(fxn_call) = &arm.expression {
+                if fxn_call.name.hash() == fxn_def.code.name.hash() {
+                    let mut tail_args = Vec::with_capacity(fxn_call.args.len());
+                    for (_, arg_expr) in fxn_call.args.iter() {
+                        tail_args.push(expression(arg_expr, Some(&env), p)?);
+                    }
+                    if tail_args.len() == fxn_def.input.len() {
+                        trace_println!(
+                            p,
+                            "{}",
+                            format_trace(
+                                "match",
+                                format!("arm[{arm_idx}] tail-call {}", fxn_def.name)
+                            )
+                        );
+                        return Ok(FunctionCallStep::TailCall(tail_args));
+                    }
+                }
+            }
             let out = expression(&arm.expression, Some(&env), p)?;
             let coerced = coerce_function_output_kind(detach_value(&out), fxn_def, p)?;
             trace_println!(
@@ -410,7 +454,7 @@ fn execute_function_match_arms(
                     )
                 )
             );
-            return Ok(coerced);
+            return Ok(FunctionCallStep::Return(coerced));
         }
     }
     Err(MechError::new(
@@ -546,19 +590,23 @@ fn single_line_trace_text(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-// Kind coercion for function outputs, used in match arms when the output kind is annotated. 
+// Kind coercion for function outputs, used in match arms when the output kind is annotated.
 // If the function output has no kind annotation, or if coercion fails, returns the original value.
 #[cfg(feature = "kind_annotation")]
-fn coerce_function_output_kind( value: Value, fxn_def: &FunctionDefinition, p: &Interpreter) -> MResult<Value> {
-  if fxn_def.output.is_empty() {
-    return Ok(value);
-  }
-  let Some((_, output_kind_annotation)) = fxn_def.output.get_index(0) else {
-    return Ok(value);
-  };
-  let target_kind = kind_annotation(&output_kind_annotation.kind, p)?
-    .to_value_kind(&p.state.borrow().kinds)?;
-  return Ok(value.convert_to(&target_kind).unwrap_or(value))
+fn coerce_function_output_kind(
+    value: Value,
+    fxn_def: &FunctionDefinition,
+    p: &Interpreter,
+) -> MResult<Value> {
+    if fxn_def.output.is_empty() {
+        return Ok(value);
+    }
+    let Some((_, output_kind_annotation)) = fxn_def.output.get_index(0) else {
+        return Ok(value);
+    };
+    let target_kind =
+        kind_annotation(&output_kind_annotation.kind, p)?.to_value_kind(&p.state.borrow().kinds)?;
+    return Ok(value.convert_to(&target_kind).unwrap_or(value));
 }
 
 struct FunctionScope {
@@ -604,7 +652,9 @@ fn bind_function_inputs(
     p: &Interpreter,
 ) -> MResult<()> {
     let scoped_state = p.state.borrow();
-    for ((arg_id, input_kind_annotation), input_value) in fxn_def.input.iter().zip(input_arg_values.iter()) {
+    for ((arg_id, input_kind_annotation), input_value) in
+        fxn_def.input.iter().zip(input_arg_values.iter())
+    {
         let arg_name = fxn_def
             .code
             .input
@@ -637,7 +687,28 @@ fn bind_function_inputs(
                         .with_tokens(input_kind_annotation.tokens()));
                     }
                 } else {
-                    detached_input.clone().convert_to(&target_kind).ok_or_else(|| {
+                    detached_input
+                        .clone()
+                        .convert_to(&target_kind)
+                        .ok_or_else(|| {
+                            MechError::new(
+                                FunctionInputTypeMismatchError {
+                                    function_name: fxn_def.name.clone(),
+                                    argument_name: arg_name.clone(),
+                                    expected: target_kind.clone(),
+                                    found: detached_input.kind(),
+                                },
+                                None,
+                            )
+                            .with_compiler_loc()
+                            .with_tokens(input_kind_annotation.tokens())
+                        })?
+                }
+                #[cfg(not(all(feature = "enum", feature = "atom")))]
+                detached_input
+                    .clone()
+                    .convert_to(&target_kind)
+                    .ok_or_else(|| {
                         MechError::new(
                             FunctionInputTypeMismatchError {
                                 function_name: fxn_def.name.clone(),
@@ -650,21 +721,6 @@ fn bind_function_inputs(
                         .with_compiler_loc()
                         .with_tokens(input_kind_annotation.tokens())
                     })?
-                }
-                #[cfg(not(all(feature = "enum", feature = "atom")))]
-                detached_input.clone().convert_to(&target_kind).ok_or_else(|| {
-                    MechError::new(
-                        FunctionInputTypeMismatchError {
-                            function_name: fxn_def.name.clone(),
-                            argument_name: arg_name.clone(),
-                            expected: target_kind.clone(),
-                            found: detached_input.kind(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()
-                    .with_tokens(input_kind_annotation.tokens())
-                })?
             }
             #[cfg(not(feature = "kind_annotation"))]
             {
@@ -688,7 +744,9 @@ fn enum_value_matches(value: Value, enum_id: u64, state: &ProgramState) -> bool 
             enum_def
                 .variants
                 .iter()
-                .any(|(known_variant, payload_kind)| *known_variant == variant_id && payload_kind.is_none())
+                .any(|(known_variant, payload_kind)| {
+                    *known_variant == variant_id && payload_kind.is_none()
+                })
         }
         #[cfg(feature = "tuple")]
         Value::Tuple(tuple_val) => {
@@ -701,13 +759,19 @@ fn enum_value_matches(value: Value, enum_id: u64, state: &ProgramState) -> bool 
                 _ => return false,
             };
             let payload = tuple_brrw.elements[1].as_ref().clone();
-            let (_, declared_payload_kind) = match enum_def.variants.iter().find(|(known_variant, _)| *known_variant == tag) {
+            let (_, declared_payload_kind) = match enum_def
+                .variants
+                .iter()
+                .find(|(known_variant, _)| *known_variant == tag)
+            {
                 Some(entry) => entry,
                 None => return false,
             };
             match declared_payload_kind {
                 Some(Value::Kind(expected_kind)) => match expected_kind {
-                    ValueKind::Enum(inner_enum_id, _) => enum_value_matches(payload, *inner_enum_id, state),
+                    ValueKind::Enum(inner_enum_id, _) => {
+                        enum_value_matches(payload, *inner_enum_id, state)
+                    }
                     _ => {
                         payload.kind() == expected_kind.clone()
                             || payload.convert_to(expected_kind).is_some()
