@@ -84,10 +84,128 @@ fn push_json_string(out: &mut String, value: &str) {
     out.push('"');
 }
 
+pub(crate) fn format_trace(scope: &str, message: String) -> String {
+  format!("[trace][{scope}] {message}")
+}
+
+pub(crate) fn format_trace_args(values: &Vec<Value>) -> String {
+  values
+    .iter()
+    .map(summarize_function_value)
+    .collect::<Vec<_>>()
+    .join(", ")
+}
+
+pub(crate) fn summarize_function_value(value: &Value) -> String {
+  const MAX_TRACE_CHARS: usize = 96;
+  let rendered = trace_single_line_text(&summarize_function_value_compact(value, 0));
+  trace_truncate(&rendered, MAX_TRACE_CHARS)
+}
+
+fn summarize_function_value_compact(value: &Value, depth: usize) -> String {
+  if depth > 2 {
+    return format!("{}(..)", value.kind().to_string());
+  }
+  match value {
+    #[cfg(feature = "u64")]
+    Value::U64(x) => format!("u64(@{:04x}:{})", trace_short_addr(x.addr()), *x.borrow()),
+    #[cfg(feature = "i64")]
+    Value::I64(x) => format!("i64(@{:04x}:{})", trace_short_addr(x.addr()), *x.borrow()),
+    #[cfg(feature = "f64")]
+    Value::F64(x) => format!("f64(@{:04x}:{})", trace_short_addr(x.addr()), *x.borrow()),
+    #[cfg(feature = "bool")]
+    Value::Bool(x) => format!("bool(@{:04x}:{})", trace_short_addr(x.addr()), *x.borrow()),
+    #[cfg(feature = "string")]
+    Value::String(x) => format!("str(@{:04x}:\"{}\")", trace_short_addr(x.addr()), x.borrow()),
+    #[cfg(feature = "atom")]
+    Value::Atom(x) => format!("{}(@{:04x})", x.borrow().to_string(), trace_short_addr(x.addr())),
+    #[cfg(feature = "tuple")]
+    Value::Tuple(tuple_ref) => summarize_function_tuple_value(tuple_ref, depth),
+    _ => format!(
+      "{}({})",
+      value.kind().to_string(),
+      trace_truncate(&trace_single_line_text(&format!("{:?}", value)), 48)
+    ),
+  }
+}
+
+#[cfg(feature = "tuple")]
+fn summarize_function_tuple_value(tuple_ref: &Ref<MechTuple>, depth: usize) -> String {
+  let tuple = tuple_ref.borrow();
+  let mut parts = Vec::new();
+  for element in tuple.elements.iter().take(3) {
+    parts.push(summarize_function_value_compact(element, depth + 1));
+  }
+  if tuple.elements.len() > 3 {
+    parts.push("…".to_string());
+  }
+  format!(
+    "tuple(@{:04x}; len={}; [{}])",
+    trace_short_addr(tuple_ref.addr()),
+    tuple.elements.len(),
+    parts.join(", ")
+  )
+}
+
+fn trace_short_addr(addr: usize) -> u16 {
+  (addr & 0xffff) as u16
+}
+
+pub(crate) fn summarize_values_with_kinds(values: &Vec<Value>) -> String {
+  values
+    .iter()
+    .enumerate()
+    .map(|(idx, value)| {
+      format!(
+        "#{idx}={} :{}",
+        summarize_function_value(value),
+        value.kind().to_string()
+      )
+    })
+    .collect::<Vec<_>>()
+    .join(", ")
+}
+
+pub(crate) fn summarize_function_pattern(pattern: &Pattern) -> String {
+  match pattern {
+    Pattern::Wildcard => "_".to_string(),
+    Pattern::Expression(expr) => trace_truncate(&format!("{:?}", expr), 72),
+    Pattern::Tuple(tuple) => format!("tuple(len={})", tuple.0.len()),
+    Pattern::Array(array) => {
+      let spread = if array.spread.is_some() { ",spread" } else { "" };
+      format!(
+        "array(prefix={}{} ,suffix={})",
+        array.prefix.len(),
+        spread,
+        array.suffix.len()
+      )
+    }
+    Pattern::TupleStruct(tuple_struct) => format!(
+      "tuple-struct(name={},len={})",
+      tuple_struct.name.to_string(),
+      tuple_struct.patterns.len()
+    ),
+  }
+}
+
+fn trace_truncate(text: &str, max_chars: usize) -> String {
+  let text = trace_single_line_text(text);
+  if text.chars().count() <= max_chars {
+    return text;
+  }
+  let mut truncated = text.chars().take(max_chars).collect::<String>();
+  truncated.push('…');
+  truncated
+}
+
+fn trace_single_line_text(text: &str) -> String {
+  text.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
 #[cfg(feature = "state_machines")]
 pub fn summarize_value(value: &Value) -> String {
     const MAX_TRACE_CHARS: usize = 1000;
-    let rendered = single_line_trace_text(&summarize_value_compact(value, 0));
+    let rendered = trace_single_line_text(&summarize_value_compact(value, 0));
     truncate_for_trace(&rendered, MAX_TRACE_CHARS)
 }
 
@@ -114,7 +232,7 @@ fn summarize_value_compact(value: &Value, depth: usize) -> String {
         _ => format!(
             "{}({})",
             value.kind().to_string(),
-            truncate_for_trace(&single_line_trace_text(&format!("{:?}", value)), 48)
+            truncate_for_trace(&trace_single_line_text(&format!("{:?}", value)), 48)
         ),
     }
 }
@@ -283,11 +401,6 @@ fn truncate_for_trace(text: &str, max_chars: usize) -> String {
 #[cfg(feature = "state_machines")]
 pub fn format_fsm_trace(label: &str, message: String) -> String {
     format!("[trace][fsm][{label:>6}] {message}")
-}
-
-#[cfg(feature = "state_machines")]
-fn single_line_trace_text(text: &str) -> String {
-    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 #[cfg(all(feature = "state_machines", feature = "trace"))]

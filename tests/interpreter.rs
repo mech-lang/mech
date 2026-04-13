@@ -792,6 +792,24 @@ test_interpreter!(interpret_function_recursive_fib,r#"fib(x<u64>) => <u64>
   └ n => fib(n - 1<u64>) + fib(n - 2<u64>).
 fib(10<u64>)"#, Value::U64(Ref::new(55)));
 #[cfg(feature = "u64")]
+test_interpreter!(interpret_function_tail_recursive_fib,r#"fib(n<u64>) => <u64>
+  └ n => fib-acc(n, 0<u64>, 1<u64>).
+
+fib-acc(n<u64>, a<u64>, b<u64>) => <u64>
+  ├ (0<u64>, a, *) => a
+  └ (n, a, b) => fib-acc(n - 1<u64>, b, a + b).
+
+fib(50<u64>)"#, Value::U64(Ref::new(12586269025)));
+#[cfg(feature = "u64")]
+test_interpreter!(interpret_function_tail_recursive_countdown,r#"countdown(n<u64>) => <u64>
+  └ n => countdown-acc(n, 0<u64>).
+
+countdown-acc(n<u64>, acc<u64>) => <u64>
+  ├ (0<u64>, acc) => acc
+  └ (n, acc) => countdown-acc(n - 1<u64>, acc + 1<u64>).
+
+countdown(50000<u64>)"#, Value::U64(Ref::new(50000)));
+#[cfg(feature = "u64")]
 test_interpreter!(interpret_function_recursive_power,r#"power(x<u64>, y<u64>) => <u64>
   ├ (*, 0) => 1
   └ (x, y) => x * power(x, y - 1<u64>).
