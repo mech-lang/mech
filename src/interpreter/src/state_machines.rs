@@ -13,14 +13,27 @@ use std::collections::HashSet;
 /// state machine store and the human-readable dictionary (for error messages).
 pub fn register_fsm_implementation(fsm: &FsmImplementation, p: &Interpreter) -> MResult<()> {
   let fsm_id = fsm.name.hash();
-  p.user_state_machines
-    .borrow_mut()
-    .insert(fsm_id, fsm.clone());          // store the full FSM definition
+
+  let mut state_machines = p.user_state_machines.borrow_mut();
+  if state_machines.contains_key(&fsm_id) {
+    return Err(MechError::new(
+      DuplicateFsmError {
+        fsm_name: fsm.name.to_string(),
+        fsm_id,
+      },
+      None,
+    )
+    .with_compiler_loc());
+  }
+  state_machines.insert(fsm_id, fsm.clone());
+  drop(state_machines); // release before second borrow_mut
+
   p.state
     .borrow()
     .dictionary
     .borrow_mut()
-    .insert(fsm_id, fsm.name.to_string()); // store the name string for diagnostics
+    .insert(fsm_id, fsm.name.to_string());
+
   Ok(())
 }
 
@@ -168,7 +181,7 @@ fn execute_fsm_pipe_impl(fsm: &FsmImplementation, state: &mut Value, call_env: &
         // ── Guard arm ───────────────────────────────────────────────────────
         // Two-level match: the outer pattern must match the state first, then
         // each guard clause is evaluated in order and the first truthy one wins.
-        // A wildcard guard (`_`) is unconditionally true, acting as an else branch.
+        // A wildcard guard (`*`) is unconditionally true, acting as an else branch.
         FsmArm::Guard(pattern, guards) => {
           let mut arm_env = call_env.clone();
           clear_pattern_bindings(pattern, &mut arm_env);
@@ -480,6 +493,26 @@ impl MechErrorKind for FsmArgumentKindMismatchError {
     format!(
       "FSM argument '{}' expected kind '{}' but received '{}'",
       self.argument, self.expected_kind.to_string(), self.actual_kind.to_string()
+    )
+  }
+}
+
+/// Returned when an FSM definition is registered with a name that hashes to an ID
+/// already in use by another FSM, indicating a naming collision. This is unlikely
+/// but possible if two FSMs have different names that hash to the same value, or if
+/// the same FSM is registered twice.
+#[derive(Debug, Clone)]
+pub struct DuplicateFsmError {
+  pub fsm_name: String,
+  pub fsm_id: u64,
+}
+
+impl MechErrorKind for DuplicateFsmError {
+  fn name(&self) -> &str { "DuplicateFsm" }
+  fn message(&self) -> String {
+    format!(
+      "FSM '{}' (id {}) has already been registered",
+      self.fsm_name, self.fsm_id
     )
   }
 }
