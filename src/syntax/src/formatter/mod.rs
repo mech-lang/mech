@@ -15,6 +15,16 @@ mod structures;
 mod operators;
 mod literals;
 
+/// Trait-based formatter interface used by consumers that only need the
+/// top-level formatting entry points.
+pub trait MechFormatter {
+  /// Format a parsed program into source text.
+  fn format_src(&mut self, tree: &Program) -> String;
+
+  /// Format a parsed program into HTML using the provided style and page shim.
+  fn format_html(&mut self, tree: &Program, style: String, shim: String) -> String;
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Formatter{
   identifiers: HashMap<u64, String>,
@@ -128,4 +138,14 @@ impl Formatter {
   }
 
 
+}
+
+impl MechFormatter for Formatter {
+  fn format_src(&mut self, tree: &Program) -> String {
+    self.format(tree)
+  }
+
+  fn format_html(&mut self, tree: &Program, style: String, shim: String) -> String {
+    Formatter::format_html(self, tree, style, shim)
+  }
 }
