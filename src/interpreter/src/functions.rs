@@ -161,91 +161,91 @@ pub fn execute_native_function_compiler(
 }
 
 fn execute_user_function(
-    fxn_def: &FunctionDefinition,
-    input_arg_values: &Vec<Value>,
-    p: &Interpreter,
+  fxn_def: &FunctionDefinition,
+  input_arg_values: &Vec<Value>,
+  p: &Interpreter,
 ) -> MResult<Value> {
-    if input_arg_values.len() != fxn_def.input.len() {
-        return Err(MechError::new(
-            IncorrectNumberOfArguments {
-                expected: fxn_def.input.len(),
-                found: input_arg_values.len(),
-            },
-            None,
-        )
-        .with_compiler_loc()
-        .with_tokens(fxn_def.code.name.tokens()));
-    }
+  if input_arg_values.len() != fxn_def.input.len() {
+    return Err(MechError::new(
+      IncorrectNumberOfArguments {
+        expected: fxn_def.input.len(),
+        found: input_arg_values.len(),
+      },
+      None,
+    )
+    .with_compiler_loc()
+    .with_tokens(fxn_def.code.name.tokens()));
+  }
 
-    #[cfg(feature = "matrix")]
-    if let Some(result) = try_broadcast_user_function(fxn_def, input_arg_values, p)? {
-        return Ok(result);
-    }
+  #[cfg(feature = "matrix")]
+  if let Some(result) = try_broadcast_user_function(fxn_def, input_arg_values, p)? {
+    return Ok(result);
+  }
 
-    trace_println!(
+  trace_println!(
+    p,
+    "{}",
+    format_trace(
+      "fn",
+      format!(
+        "enter {}({})",
+        fxn_def.name,
+        format_trace_args(input_arg_values)
+      ),
+    )
+  );
+
+  let output = if !fxn_def.code.match_arms.is_empty() {
+    let mut current_args: Vec<Value> = input_arg_values.clone();
+    loop {
+      let scope = FunctionScope::enter(p);
+      bind_function_inputs(fxn_def, &current_args, p)?;
+      let step: FunctionCallStep = execute_function_match_arms(fxn_def, &current_args, p)?;
+      drop(scope);
+      match step {
+        FunctionCallStep::Return(value) => break Ok(value),
+        FunctionCallStep::TailCall(next_args) => {
+          current_args = next_args;
+        }
+      }
+    }
+  } else {
+    let scope = FunctionScope::enter(p);
+    bind_function_inputs(fxn_def, input_arg_values, p)?;
+    for statement_node in &fxn_def.code.statements {
+      statement(statement_node, None, p)?;
+    }
+    let result = collect_function_output(p, fxn_def);
+    drop(scope);
+    result
+  };
+
+  match output {
+    Ok(value) => {
+      trace_println!(
         p,
         "{}",
         format_trace(
-            "fn",
-            format!(
-                "enter {}({})",
-                fxn_def.name,
-                format_trace_args(input_arg_values)
-            ),
+          "fn",
+          format!("exit  {} => {}", fxn_def.name, summarize_value(&value))
         )
-    );
-
-    let output = if !fxn_def.code.match_arms.is_empty() {
-        let mut current_args = input_arg_values.clone();
-        loop {
-            let scope = FunctionScope::enter(p);
-            bind_function_inputs(fxn_def, &current_args, p)?;
-            let step = execute_function_match_arms(fxn_def, &current_args, p)?;
-            drop(scope);
-            match step {
-                FunctionCallStep::Return(value) => break Ok(value),
-                FunctionCallStep::TailCall(next_args) => {
-                    current_args = next_args;
-                }
-            }
-        }
-    } else {
-        let scope = FunctionScope::enter(p);
-        bind_function_inputs(fxn_def, input_arg_values, p)?;
-        for statement_node in &fxn_def.code.statements {
-            statement(statement_node, None, p)?;
-        }
-        let result = collect_function_output(p, fxn_def);
-        drop(scope);
-        result
-    };
-
-    match output {
-        Ok(value) => {
-            trace_println!(
-                p,
-                "{}",
-                format_trace(
-                    "fn",
-                    format!("exit  {} => {}", fxn_def.name, summarize_value(&value))
-                )
-            );
-            Ok(value)
-        }
-        Err(err) => {
-            trace_println!(
-                p,
-                "{}",
-                format_trace("fn", format!("fail  {} => {:?}", fxn_def.name, err))
-            );
-            Err(err)
-        }
+      );
+      Ok(value)
     }
+    Err(err) => {
+      trace_println!(
+        p,
+        "{}",
+        format_trace("fn", format!("fail  {} => {:?}", fxn_def.name, err))
+      );
+      Err(err)
+    }
+  }
 }
 
 enum FunctionCallStep {
-    Return(Value),
-    TailCall(Vec<Value>),
+  Return(Value),
+  TailCall(Vec<Value>),
 }
 
 #[cfg(feature = "matrix")]
@@ -401,70 +401,70 @@ fn execute_function_match_arms(
             }
         }
     }
-    for (arm_idx, arm) in fxn_def.code.match_arms.iter().enumerate() {
-        let mut env = Environment::new();
-        let matched = crate::patterns::pattern_matches_arguments(
-            &arm.pattern,
-            input_arg_values,
-            &mut env,
-            p,
-        )?;
-        trace_println!(p, "{}", {
-            let args_summary = summarize_values_with_kinds(input_arg_values);
-            let pattern_summary = summarize_pattern(&arm.pattern);
-            let marker = if matched { "✓" } else { "X" };
-            format_trace(
-                "match",
-                format!(
-                    "arm[{arm_idx}] test pattern={pattern_summary} args=[{args_summary}] {marker}"
-                ),
-            )
-        });
-        if matched {
-            if let Expression::FunctionCall(fxn_call) = &arm.expression {
-                if fxn_call.name.hash() == fxn_def.code.name.hash() {
-                    let mut tail_args = Vec::with_capacity(fxn_call.args.len());
-                    for (_, arg_expr) in fxn_call.args.iter() {
-                        tail_args.push(expression(arg_expr, Some(&env), p)?);
-                    }
-                    if tail_args.len() == fxn_def.input.len() {
-                        trace_println!(
-                            p,
-                            "{}",
-                            format_trace(
-                                "match",
-                                format!("arm[{arm_idx}] tail-call {}", fxn_def.name)
-                            )
-                        );
-                        return Ok(FunctionCallStep::TailCall(tail_args));
-                    }
-                }
-            }
-            let out = expression(&arm.expression, Some(&env), p)?;
-            let coerced = coerce_function_output_kind(detach_value(&out), fxn_def, p)?;
+  for (arm_idx, arm) in fxn_def.code.match_arms.iter().enumerate() {
+    let mut env = Environment::new();
+    let matched = crate::patterns::pattern_matches_arguments(
+      &arm.pattern,
+      input_arg_values,
+      &mut env,
+      p,
+    )?;
+    trace_println!(p, "{}", {
+      let args_summary = summarize_values_with_kinds(input_arg_values);
+      let pattern_summary = summarize_pattern(&arm.pattern);
+      let marker = if matched { "✓" } else { "X" };
+      format_trace(
+        "match",
+        format!(
+          "arm[{arm_idx}] test pattern={pattern_summary} args=[{args_summary}] {marker}"
+        ),
+      )
+    });
+    if matched {
+      if let Expression::FunctionCall(fxn_call) = &arm.expression {
+        if fxn_call.name.hash() == fxn_def.code.name.hash() {
+          let mut tail_args = Vec::with_capacity(fxn_call.args.len());
+          for (_, arg_expr) in fxn_call.args.iter() {
+            tail_args.push(expression(arg_expr, Some(&env), p)?);
+          }
+          if tail_args.len() == fxn_def.input.len() {
             trace_println!(
-                p,
-                "{}",
-                format_trace(
-                    "match",
-                    format!(
-                        "arm[{arm_idx}] out  value={} kind={}",
-                        summarize_value(&coerced),
-                        coerced.kind().to_string()
-                    )
-                )
+              p,
+              "{}",
+              format_trace(
+                "match",
+                format!("arm[{arm_idx}] tail-call {}", fxn_def.name)
+              )
             );
-            return Ok(FunctionCallStep::Return(coerced));
+            return Ok(FunctionCallStep::TailCall(tail_args));
+          }
         }
+      }
+      let out = expression(&arm.expression, Some(&env), p)?;
+      let coerced = coerce_function_output_kind(detach_value(&out), fxn_def, p)?;
+      trace_println!(
+        p,
+        "{}",
+        format_trace(
+          "match",
+          format!(
+            "arm[{arm_idx}] out  value={} kind={}",
+            summarize_value(&coerced),
+            coerced.kind().to_string()
+          )
+        )
+      );
+      return Ok(FunctionCallStep::Return(coerced));
     }
-    Err(MechError::new(
-        FunctionOutputUndefinedError {
-            output_id: fxn_def.id,
-        },
-        None,
-    )
-    .with_compiler_loc()
-    .with_tokens(fxn_def.code.name.tokens()))
+  }
+  Err(MechError::new(
+    FunctionOutputUndefinedError {
+      output_id: fxn_def.id,
+    },
+    None,
+  )
+  .with_compiler_loc()
+  .with_tokens(fxn_def.code.name.tokens()))
 }
 
 fn format_trace(scope: &str, message: String) -> String {
