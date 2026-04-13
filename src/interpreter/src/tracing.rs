@@ -189,7 +189,7 @@ pub(crate) fn summarize_function_pattern(pattern: &Pattern) -> String {
 }
 
 fn trace_truncate(text: &str, max_chars: usize) -> String {
-  let text = single_line_trace_text(text);
+  let text = trace_single_line_text(text);
   if text.chars().count() <= max_chars {
     return text;
   }
@@ -205,7 +205,7 @@ fn trace_single_line_text(text: &str) -> String {
 #[cfg(feature = "state_machines")]
 pub fn summarize_value(value: &Value) -> String {
     const MAX_TRACE_CHARS: usize = 1000;
-    let rendered = single_line_trace_text(&summarize_value_compact(value, 0));
+    let rendered = trace_single_line_text(&summarize_value_compact(value, 0));
     truncate_for_trace(&rendered, MAX_TRACE_CHARS)
 }
 
@@ -232,7 +232,7 @@ fn summarize_value_compact(value: &Value, depth: usize) -> String {
         _ => format!(
             "{}({})",
             value.kind().to_string(),
-            truncate_for_trace(&single_line_trace_text(&format!("{:?}", value)), 48)
+            truncate_for_trace(&trace_single_line_text(&format!("{:?}", value)), 48)
         ),
     }
 }
@@ -401,11 +401,6 @@ fn truncate_for_trace(text: &str, max_chars: usize) -> String {
 #[cfg(feature = "state_machines")]
 pub fn format_fsm_trace(label: &str, message: String) -> String {
     format!("[trace][fsm][{label:>6}] {message}")
-}
-
-#[cfg(feature = "state_machines")]
-fn single_line_trace_text(text: &str) -> String {
-    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 #[cfg(all(feature = "state_machines", feature = "trace"))]
