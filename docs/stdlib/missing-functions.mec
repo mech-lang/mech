@@ -1,0 +1,224 @@
+Stdlib Gap Analysis (Candidate Missing Functions)
+===============================================================================
+
+This page lists candidate functions that are common in a "typical" standard
+library but are not currently exposed by the machine crates in `/machines`
+or the interpreter stdlib shims in `src/interpreter/src/stdlib`.
+
+Notes:
+- This is an inferred gap list, not a strict language spec.
+- Some categories may be intentionally out-of-scope for Mech.
+- Names follow Mech-style path naming (`category/function-name`) with kebab-case.
+
+String & Text
+-------------------------------------------------------------------------------
+1. string/contains
+2. string/starts-with
+3. string/ends-with
+4. string/substring
+5. string/slice-str
+6. string/split
+7. string/split-once
+8. string/split-whitespace
+9. string/split-lines
+10. string/join
+11. string/trim
+12. string/trim-start
+13. string/trim-end
+14. string/replace
+15. string/replacen
+16. string/to-uppercase
+17. string/to-lowercase
+18. string/to-titlecase
+19. string/repeat
+20. string/reverse-str
+21. string/pad-left
+22. string/pad-right
+23. string/pad-center
+24. string/char-at
+25. string/chars
+26. string/bytes
+27. string/len-str
+28. string/is-empty-str
+29. string/is-ascii
+30. string/normalize-unicode
+
+Collections (List/Vector/Map/Set Helpers)
+-------------------------------------------------------------------------------
+31. collection/len
+32. collection/is-empty
+33. collection/clear
+34. collection/keys
+35. collection/values
+36. collection/items
+37. collection/get
+38. collection/get-or
+39. collection/has-key
+40. collection/push
+41. collection/pop
+42. collection/shift
+43. collection/unshift
+44. collection/append
+45. collection/extend
+46. collection/concat-lists
+47. collection/first
+48. collection/last
+49. collection/take
+50. collection/drop
+51. collection/filter
+52. collection/map-fn
+53. collection/reduce
+54. collection/fold
+55. collection/any
+56. collection/all
+57. collection/count
+58. collection/unique
+59. collection/sort
+60. collection/sort-by
+61. collection/reverse
+62. collection/find
+63. collection/find-index
+64. collection/group-by
+65. collection/partition
+66. collection/flatten
+67. collection/zip
+68. collection/unzip
+69. collection/enumerate
+70. collection/chunk
+
+Statistics & Numeric Aggregation
+-------------------------------------------------------------------------------
+71. stats/sum
+72. stats/product
+73. stats/mean
+74. stats/median
+75. stats/mode
+76. stats/variance
+77. stats/stddev
+78. stats/sample-variance
+79. stats/sample-stddev
+80. stats/quantile
+81. stats/percentile
+82. stats/covariance
+83. stats/correlation
+84. stats/histogram
+85. stats/moving-average
+86. stats/cumulative-sum
+87. stats/cumulative-product
+88. stats/argmax
+89. stats/argmin
+90. stats/clamp
+
+Math (Common Non-Specialized Gaps)
+-------------------------------------------------------------------------------
+91. math/signum
+92. math/fract
+93. math/trunc-div
+94. math/gcd
+95. math/lcm
+96. math/is-prime
+97. math/primes-up-to
+98. math/factorial
+99. math/permutations
+100. math/combinations
+101. math/deg2rad
+102. math/rad2deg
+103. math/is-nan
+104. math/is-finite
+105. math/is-infinite
+106. math/lerp
+107. math/remap
+108. math/smoothstep
+109. math/sigmoid
+110. math/relu
+
+Date/Time
+-------------------------------------------------------------------------------
+111. time/now
+112. time/today
+113. time/parse-date
+114. time/format-date
+115. time/add-days
+116. time/add-hours
+117. time/diff-days
+118. time/unix-timestamp
+119. time/from-unix-timestamp
+120. time/timezone-convert
+
+Randomness
+-------------------------------------------------------------------------------
+121. random/random
+122. random/random-int
+123. random/random-bool
+124. random/random-range
+125. random/random-choice
+126. random/random-sample
+127. random/shuffle
+128. random/seed-rng
+129. random/normal-random
+130. random/uniform-random
+
+I/O, Serialization, and File System
+-------------------------------------------------------------------------------
+131. io/read-file
+132. io/write-file
+133. io/append-file
+134. io/file-exists
+135. io/remove-file
+136. io/rename-file
+137. io/copy-file
+138. io/create-dir
+139. io/remove-dir
+140. io/list-dir
+141. io/read-csv
+142. io/write-csv
+143. io/read-json
+144. io/write-json
+145. io/parse-json
+146. io/to-json
+147. io/parse-yaml
+148. io/to-yaml
+149. io/parse-toml
+150. io/to-toml
+
+Networking / Web / Encoding
+-------------------------------------------------------------------------------
+151. net/http-get
+152. net/http-post
+153. net/url-encode
+154. net/url-decode
+155. net/base64-encode
+156. net/base64-decode
+157. net/hex-encode
+158. net/hex-decode
+159. net/sha256
+160. net/hmac
+
+Regex / Pattern Matching Utilities
+-------------------------------------------------------------------------------
+161. regex/regex-match
+162. regex/regex-find
+163. regex/regex-replace
+164. regex/glob-match
+165. regex/wildcard-match
+
+Error/Option/Result Utilities
+-------------------------------------------------------------------------------
+166. result/option-is-some
+167. result/option-is-none
+168. result/unwrap-or
+169. result/unwrap-or-else
+170. result/expect
+171. result/result-is-ok
+172. result/result-is-err
+173. result/map-err
+174. result/and-then
+175. result/or-else
+
+Concurrency / Reactive Runtime Helpers
+-------------------------------------------------------------------------------
+176. runtime/sleep
+177. runtime/debounce
+178. runtime/throttle
+179. runtime/interval
+180. runtime/timeout
