@@ -1,0 +1,163 @@
+state machines
+===============================================================================
+
+%% A `state machine` models step-by-step behavior as transitions between named states. In Mech, a machine declares its allowed states and output kind, then implements transitions and terminal outputs.
+
+A state machine definition has two parts:
+
+1. A type declaration that lists all legal states and their payload shapes.
+2. An implementation that defines the initial state and per-state behavior.
+
+General form:
+
+```text
+#MachineName(input<kind>) => <output-kind>
+  ├ :StateA(payload<kind>, ...)
+  ├ :StateB(payload<kind>, ...)
+  └ :Done(result<kind>).
+
+#MachineName(input<kind>) -> :StateA(...)
+  :StateA(...) => :StateB(...)
+  :StateB(...)
+    ├ guard -> :StateA(...)
+    └ guard -> :Done(...)
+  :Done(result) => result.
+```
+
+Notes:
+
+- `#Name(...) => <...>` declares the machine interface and the full state set.
+- Every transition target must be one of the declared states.
+- Integer kinds are strict in machine transitions, so typed literals like `0u64`
+  are often required.
+- A state arm can be a direct transition (`->`) or guarded branches.
+- Terminal states return with `=>`.
+
+1. Traffic light
+-------------------------------------------------------------------------------
+
+A traffic light cycles through three phases. This is the canonical example of a
+state machine: behavior is entirely determined by the current state, not by a
+counter or accumulator.
+
+```mech:ex state-machine-traffic-light
+#TrafficLight(steps<u64>) => <u64>
+  ├ :Red(steps<u64>)
+  ├ :Green(steps<u64>)
+  ├ :Yellow(steps<u64>)
+  └ :Done(out<u64>).
+
+#TrafficLight(steps<u64>) -> :Red(steps)
+  :Red(steps)
+    ├ steps > 0u64 -> :Green(steps - 1u64)
+    └ steps == 0u64 -> :Done(0u64)
+  :Green(steps)
+    ├ steps > 0u64 -> :Yellow(steps - 1u64)
+    └ steps == 0u64 -> :Done(0u64)
+  :Yellow(steps)
+    ├ steps > 0u64 -> :Red(steps - 1u64)
+    └ steps == 0u64 -> :Done(0u64)
+  :Done(out) => out.
+
+#TrafficLight(6u64)
+```
+
+Expected result: `0u64` after cycling Red → Green → Yellow twice.
+
+2. Fibonacci machine
+-------------------------------------------------------------------------------
+
+State payload can carry multiple values. `:Compute` stores the loop index and
+two rolling values, making the recurrence relation explicit in the transitions.
+
+```mech:ex state-machine-fibonacci
+#Fibonacci(n<u64>) => <u64>
+  ├ :Compute(n<u64>, a<u64>, b<u64>)
+  └ :Done(n<u64>).
+
+#Fibonacci(n<u64>) -> :Compute(n, 0u64, 1u64)
+  :Compute(n, a, b)
+    ├ n > 0u64 -> :Compute(n - 1u64, b, a + b)
+    └ n == 0u64 -> :Done(a)
+  :Done(n) => n.
+
+#Fibonacci(10u64)
+```
+
+Expected result: `55u64`.
+
+3. Type strictness in guards and transitions
+-------------------------------------------------------------------------------
+
+State payload kinds are strict. If a state carries `u64`, untyped numeric
+literals in guards or transitions will fail typechecking.
+
+```mech:disabled
+#Clamp(n<u64>, lo<u64>, hi<u64>) => <u64>
+  ├ :Check(n<u64>, lo<u64>, hi<u64>)
+  └ :Done(out<u64>).
+
+#Clamp(n<u64>, lo<u64>, hi<u64>) -> :Check(n, lo, hi)
+  :Check(n, lo, hi)
+    ├ n < lo -> :Done(lo)
+    ├ n > hi -> :Done(hi)
+    └ n      -> :Done(n)     %% guards must match declared kind
+  :Done(out) => out.
+```
+
+Write typed literals so guard expressions stay consistent with the state
+declaration:
+
+```mech:ex state-machine-clamp
+#Clamp(n<u64>, lo<u64>, hi<u64>) => <u64>
+  ├ :Check(n<u64>, lo<u64>, hi<u64>)
+  └ :Done(out<u64>).
+
+#Clamp(n<u64>, lo<u64>, hi<u64>) -> :Check(n, lo, hi)
+  :Check(n, lo, hi)
+    ├ n < lo -> :Done(lo)
+    ├ n > hi -> :Done(hi)
+    └ n >= lo & n <= hi -> :Done(n)
+  :Done(out) => out.
+
+#Clamp(15u64, 1u64, 10u64)
+```
+
+Expected result: `10u64`.
+
+4. Declared states must be implemented consistently
+-------------------------------------------------------------------------------
+
+Transitions to undeclared states are invalid:
+
+```mech:disabled
+#Turnstile(n<u64>) => <u64>
+  ├ :Locked(n<u64>)
+  └ :Unlocked(n<u64>).
+
+#Turnstile(n<u64>) -> :Locked(n)
+  :Locked(n) -> :Unlocked(n)
+  :Unlocked(n) -> :Spinning(n)   -- :Spinning was never declared
+```
+
+Declare and implement every state the machine can enter:
+
+```mech:ex state-machine-turnstile
+#Turnstile(coins<u64>) => <u64>
+  ├ :Locked(coins<u64>)
+  ├ :Unlocked(coins<u64>)
+  ├ :Spinning(coins<u64>)
+  └ :Done(out<u64>).
+
+#Turnstile(coins<u64>) -> :Locked(coins)
+  :Locked(coins)
+    ├ coins > 0u64 -> :Unlocked(coins - 1u64)
+    └ coins == 0u64 -> :Done(0u64)
+  :Unlocked(coins) -> :Spinning(coins)
+  :Spinning(coins) -> :Locked(coins)
+  :Done(out) => out.
+
+#Turnstile(2u64)
+```
+
+Expected result: `0u64` after inserting two coins and spinning twice.

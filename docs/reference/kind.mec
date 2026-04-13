@@ -13,7 +13,7 @@ Kinds contain information to describe:
 - Data structure e.g. matrix, set, record, table or tuple
 - Data size e.g. matrix dimensions, set size, table rows
 
-(!)> Kinds do *not* indicate whether a value is mutable or immutable. The mutability is determined by the user when the value is created, and is independent of its kind. In other words, mutability is a property of the variable or binding that holds the value, whereas a kind describes the inherent nature of the data contained within the value.
+(!)> Kinds do *not* indicate whether a value is mutable or immutable. The mutability is determined by the user when the value is created, and is independent of its kind.
 
 1. Syntax
 -------------------------------------------------------------------------------
@@ -178,29 +178,35 @@ Custom kinds introduce semantic meaning without changing runtime representation.
 Enumerations (enums) define a fixed set of named variants.
 
 ```mech:ex 8.1
-<color> := red | green | blue
+<color> := :red | :green | :blue
 ```
 
-The kind of the enum is `<color>`.  
-The possible values are:
+The kind of the enum is `<color>`, and The possible values are:
 
-- `:color/red`
-- `:color/green`
-- `:color/blue`
+- `:red`
+- `:green`
+- `:blue`
 
 Example:
 
 ```mech:ex 8.1
-example<color> := :color/green
+example<color> := :green
 ```
 
 Invalid variants are rejected:
 
 ```mech:disabled
-example2<color> := :color/yellow   -- Error, yellow not in enum
+example2<color> := :yellow   -- Error, yellow not in enum
 ```
 
-Enums are kinds and participate in all kind-based reasoning.
+Enums are kinds and participate in all kind-based reasoning. Enum variants are atoms, which are globally unique, immutable symbols, so namespace collisions are possible if another module defines the same variant name. To avoid this, you can use qualified names:
+
+```mech:ex 8.1
+<color> := :red | :green | :blue
+example<color> := :color/red
+```
+
+Which means the same thing as `:red`, but is guaranteed to be unique even if another module defines `:red` as well.
 
 (8.2) Variants with payload kinds
 
@@ -235,10 +241,10 @@ Enums participate in pattern matching like other kinds, including payload destru
 r<response> := :error("Not Found")
 
 status-code<u64> := r?
-  | :ok(code) -> code
-  | :error(msg) -> 500
-  | :timeout -> 408
-  | * -> 500.
+  | :ok(code) => code
+  | :error(msg) => 500
+  | :timeout => 408
+  | * => 500.
 ```
 
 When matching enum kinds, arms should be exhaustive (cover every variant or use `*`). Non-exhaustive matches are reported as compile-time errors.

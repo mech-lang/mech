@@ -9,12 +9,12 @@ steps through the list, compares adjacent elements, and swaps them if they are
 in the wrong order. The pass through the list is repeated until the list is 
 sorted.
 
-(a) Key Features --------------------------------------------------------------
+(1.1) Key Features
 
 - In-place, meaning it doesn't require extra space for sorting.
 - Stable, meaning the relative order of equal elements is preserved.
 
-(b) Pseudocode ----------------------------------------------------------------
+(1.2) Algorithm Steps
 
 - Start from the beginning of the list.
 - Compare adjacent elements and swap them if they are in the wrong order.
@@ -25,27 +25,22 @@ sorted.
 2. Complexity Analysis
 -------------------------------------------------------------------------------
 
-(a) Time Complexity -----------------------------------------------------------
+(2.1) Time Complexity
 
 Best-case: **O(n)** when the list is already sorted.
 
 Average-case and worst-case: **O(n^2)** comparisons and swaps, where n is the 
 number of elements in the list.
 
-(b) Space Complexity ----------------------------------------------------------
-
-In all cases, space complexity is **O(1)** because Bubble Sort is an in-place 
-sorting algorithm.
-
-
-3. Further Considerations
--------------------------------------------------------------------------------
-
-Bubble Sort is not suitable for large datasets due to its quadratic time 
+(!)> Bubble Sort is not suitable for large datasets due to its quadratic time 
 complexity. It is often used as a teaching tool due to its simplicity, but it's 
 rarely used in practice for real-world applications where efficiency is 
 critical.
 
+(2.2) Space Complexity
+
+In all cases, space complexity is **O(1)** because Bubble Sort is an in-place 
+sorting algorithm.
 
 4. Implementation
 -------------------------------------------------------------------------------

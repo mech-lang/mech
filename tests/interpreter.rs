@@ -54,27 +54,11 @@ test_interpreter!(interpret_literal_false, "false", Value::Bool(Ref::new(false))
 test_interpreter!(interpret_literal_atom, ":A", Value::Atom(Ref::new(MechAtom::new(55450514845822917))));
 test_interpreter!(interpret_literal_empty, "_", Value::Empty);
 
-#[test]
-fn interpret_fsm_counter_rejects_untyped_input() {
-  let s = "#Counter(n<u64>) => <u64>\n  ├ :Count(n<u64>)\n  └ :Done(n<u64>).\n\n#Counter(n<u64>) -> :Count(n)\n  :Count(n)\n    ├ n > 0 -> :Count(n - 1)\n    └ n == 0 -> :Done(0)\n  :Done(n) => n.\n\n#Counter(5)";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  assert!(intrp.interpret(&tree).is_err());
-}
-
 test_interpreter!(
   interpret_fsm_counter_accepts_typed_input,
   "#Counter(n<u64>) => <u64>\n  ├ :Count(n<u64>)\n  └ :Done(n<u64>).\n\n#Counter(n<u64>) -> :Count(n)\n  :Count(n)\n    ├ n > 0u64 -> :Count(n - 1u64)\n    └ n == 0u64 -> :Done(0u64)\n  :Done(n) => n.\n\n#Counter(5u64)",
   Value::U64(Ref::new(0))
 );
-
-#[test]
-fn interpret_fsm_fibonacci_rejects_untyped_input() {
-  let s = "#Fibonacci(n<u64>) => <u64>\n  ├ :Compute(n<u64>, a<u64>, b<u64>)\n  └ :Done(n<u64>).\n\n#Fibonacci(n<u64>) -> :Compute(n, 0, 1)\n  :Compute(n, a, b)\n    ├ n > 0 -> :Compute(n - 1, b, a + b)\n    └ n == 0 -> :Done(a)\n  :Done(n) => n.\n\n#Fibonacci(10)";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  assert!(intrp.interpret(&tree).is_err());
-}
 
 test_interpreter!(
   interpret_fsm_fibonacci_accepts_typed_input,
@@ -121,30 +105,30 @@ test_interpreter!(
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_option_match_scalar_some,
-  "x<u64?> := 4u64; x? | x > 3u64 -> x | * -> 0u64.",
+  "x<u64?> := 4u64; x? | x > 3u64 => x | * => 0u64.",
   Value::U64(Ref::new(4))
 );
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_option_match_literal_pattern_matches_inner_value,
-  "foo<u64?> := 0\n\nfoo?\n  | 0 -> 9\n  | * -> 10.",
+  "foo<u64?> := 0\n\nfoo?\n  | 0 => 9\n  | * => 10.",
   Value::F64(Ref::new(9.0))
 );
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_option_match_tuple_destructure,
-  "x<u64?> := 2u64; y<u64?> := _; (x2,y2) := (x,y)? | (x,y) -> (x,y) | * -> (0u64,0u64).; x2 + y2",
+  "x<u64?> := 2u64; y<u64?> := _; (x2,y2) := (x,y)? | (x,y) => (x,y) | * => (0u64,0u64).; x2 + y2",
   Value::U64(Ref::new(0))
 );
 test_interpreter!(
   interpret_match_allows_unreachable_wildcard_with_different_kind,
-  "foo<f64?> := 1234\n\nbar := foo?\n  | x -> \"One Two Three\"\n  | * -> 12.\n\nbar + \"\"",
+  "foo<f64?> := 1234\n\nbar := foo?\n  | x => \"One Two Three\"\n  | * => 12.\n\nbar + \"\"",
   Value::String(Ref::new("One Two Three".to_string()))
 );
 
 #[test]
 fn interpret_option_match_requires_wildcard_arm() {
-  let s = "foo<u64?> := 1234\n\nbar := foo?\n  | 0 -> 9.\n\nbar";
+  let s = "foo<u64?> := 1234\n\nbar := foo?\n  | 0 => 9.\n\nbar";
   let tree = parser::parse(s).unwrap();
   let mut intrp = Interpreter::new(0);
   assert!(intrp.interpret(&tree).is_err());
@@ -156,8 +140,8 @@ fn interpret_enum_match_reports_missing_variants_color() {
 <color> := :red | :green | :blue
 my-color<color> := :red
 string-color := my-color?
-  | :red   -> "red"
-  | :green -> "green".
+  | :red   => "red"
+  | :green => "green".
 "#;
   let tree = parser::parse(s).unwrap();
   let mut intrp = Interpreter::new(0);
@@ -174,8 +158,8 @@ fn interpret_enum_match_reports_missing_variants_generalized() {
 <door> := :open | :closed | :locked
 state<door> := :open
 label := state?
-  | :open   -> "open"
-  | :closed -> "closed".
+  | :open   => "open"
+  | :closed => "closed".
 "#;
   let tree = parser::parse(s).unwrap();
   let mut intrp = Interpreter::new(0);
@@ -189,25 +173,40 @@ label := state?
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_match_array_pattern_head,
-  "xs := [10u64 20u64 30u64]; y := xs? | [x ...] -> x | * -> 0u64.; y + 0u64",
+  "xs := [10u64 20u64 30u64]; y := xs? | [x ...] => x | * => 0u64.; y + 0u64",
   Value::U64(Ref::new(10))
 );
 
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_match_array_pattern_last,
-  "xs := [10u64 20u64 30u64]; y := xs? | [... x] -> x | * -> 0u64.; y + 0u64",
+  "xs := [10u64 20u64 30u64]; y := xs? | [... x] => x | * => 0u64.; y + 0u64",
+  Value::U64(Ref::new(30))
+);
+
+
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_match_array_pattern_rest_binding,
+  "xs := [10u64 20u64 30u64 40u64]; y := xs? | [a, b | rest] => rest? | [r ...] => r | * => 0u64. | * => 0u64.; y + 0u64",
   Value::U64(Ref::new(30))
 );
 
 #[cfg(feature = "u64")]
 test_interpreter!(
+  interpret_match_array_pattern_rest_binding_returns_matrix,
+  "xs := [10u64 20u64 30u64 40u64]; y := xs? | [a, b | rest] => rest | * => [0u64].; z := y? | [h ... t] => h + t | * => 0u64.; z + 0u64",
+  Value::U64(Ref::new(70))
+);
+
+#[cfg(feature = "u64")]
+test_interpreter!(
   interpret_match_tuple_pattern_with_guards,
-  "foo := (1u64, 2u64, 3u64)\n\nmax<u64> := foo?\n  | (a, b, c), a > b && a > c -> a\n  | (a, b, c), b > a && b > c -> b\n  | (a, b, c), c > a && c > b -> c\n  | * -> 0u64.\n\nmax + 0u64",
+  "foo := (1u64, 2u64, 3u64)\n\nmax<u64> := foo?\n  | (a, b, c), a > b && a > c => a\n  | (a, b, c), b > a && b > c => b\n  | (a, b, c), c > a && c > b => c\n  | * => 0u64.\n\nmax + 0u64",
   Value::U64(Ref::new(3))
 );
 
-test_interpreter!(interpret_option_match_tuple_struct_pattern, "state := (:Done, 9u64); y := state? | :Done(x) -> x | * -> 0u64.; y + 0u64", Value::U64(Ref::new(9)));
+test_interpreter!(interpret_option_match_tuple_struct_pattern, "state := (:Done, 9u64); y := state? | :Done(x) => x | * => 0u64.; y + 0u64", Value::U64(Ref::new(9)));
 #[test]
 fn interpret_tagged_union_match_requires_exhaustive_arms() {
   let s = r#"
@@ -215,7 +214,7 @@ fn interpret_tagged_union_match_requires_exhaustive_arms() {
 <option> := :some<result> | :none
 x<option> := :some(:ok(42u64))
 result := x?
-  | :some(:ok(n)) -> n.
+  | :some(:ok(n)) => n.
 "#;
   let tree = parser::parse(s).unwrap();
   let mut intrp = Interpreter::new(0);
@@ -223,11 +222,36 @@ result := x?
 }
 test_interpreter!(
   interpret_function_shorthand_match_arm_broadcasts_over_matrix_input,
-  "add-one(x<f64>) -> <f64>\n  | x + 1.\n\nadd-one([1 2 3])",
+  "add-one(x<f64>) => <f64>\n  | x + 1.\n\nadd-one([1 2 3])",
   Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, 4.0], 1, 3))
 );
-test_interpreter!(interpret_function_array_pattern_arms, "head(xs<[u64]:1,3>) -> <u64>\n  | [x ...] -> x\n  | * -> 0u64.\nhead([10u64 20u64 30u64]) + 0u64", Value::U64(Ref::new(10)));
+test_interpreter!(interpret_function_array_pattern_arms, "head(xs<[u64]:1,3>) => <u64>\n  | [x ...] => x\n  | * => 0u64.\nhead([10u64 20u64 30u64]) + 0u64", Value::U64(Ref::new(10)));
 test_interpreter!(interpret_fsm_array_pattern_state_arguments, "#VecFsm(n<u64>) => <u64>\n  ├ :Scan(xs<[u64]:1,3>)\n  └ :Done(out<u64>).\n\n#VecFsm(n<u64>) -> :Scan([1u64 2u64 3u64])\n  :Scan([x ... y]) -> :Done(x + y)\n  :Done(out) => out.\n\n#VecFsm(0u64)", Value::U64(Ref::new(4)));
+test_interpreter!(interpret_fsm_accepts_unsized_vector_input, "#Echo(xs<[u64]>) => <u64>\n  ├ :Start(xs<[u64]>)\n  └ :Done(out<u64>).\n\n#Echo(xs<[u64]>) -> :Start(xs)\n  :Start([x ...]) -> :Done(x)\n  :Done(out) => out.\n\n#Echo([5u64 3u64 8u64 1u64])", Value::U64(Ref::new(5)));
+test_interpreter!(interpret_fsm_array_spread_reconstruction_keeps_scalar_guards, "#Demo(arr<[u64]>) => <u64>\n  ├ :Pass(arr<[u64]>)\n  └ :Done(out<u64>).\n\n#Demo(arr<[u64]>) -> :Pass(arr)\n  :Pass([a, b | tail])\n    ├ a > b -> :Pass([a | tail])\n    └ * -> :Done(0u64)\n  :Pass([x ...]) -> :Done(x)\n  :Done(out) => out.\n\n#Demo([5u64 3u64 8u64 1u64])", Value::U64(Ref::new(0)));
+test_interpreter!(interpret_fsm_bubble_sort_returns_typed_u64_matrix, "#bubble-sort(arr<[u64]>) => <[u64]>\n  ├ :Start(arr<[u64]>)\n  ├ :Pass(arr<[u64]>, acc<[u64]>, swaps<u64>)\n  ├ :Next(arr<[u64]>, swaps<u64>)\n  ├ :Reverse(arr<[u64]>, acc<[u64]>, swaps<u64>)\n  └ :Done(arr<[u64]>).\n\n#bubble-sort(arr) -> :Start(arr)\n  :Start(arr) -> :Pass(arr, [], 0u64)\n  :Pass([a, b | tail], acc, swaps)\n    ├ a > b -> :Pass([a | tail], [b | acc], swaps + 1u64)\n    └ *     -> :Pass([b | tail], [a | acc], swaps)\n  :Pass([x], acc, swaps) -> :Next([x | acc], swaps)\n  :Pass([], acc, swaps)  -> :Next(acc, swaps)\n  :Next(arr, swaps) -> :Reverse(arr, [], swaps)\n  :Reverse([x | tail], acc, swaps) -> :Reverse(tail, [x | acc], swaps)\n  :Reverse([], acc, 0u64)     -> :Done(acc)\n  :Reverse([], acc, swaps) -> :Pass(acc, [], 0u64)\n  :Done(arr) => arr.\n\n#bubble-sort([5u64 3u64 8u64 1u64])", Value::MatrixU64(Matrix::from_vec(vec![1, 3, 5, 8], 1, 4)));
+test_interpreter!(interpret_fsm_bubble_sort_assigns_matrix_value, "#bubble-sort(arr<[u64]>) => <[u64]>
+  ├ :Start(arr<[u64]>)
+  ├ :Pass(arr<[u64]>, acc<[u64]>, swaps<u64>)
+  ├ :Next(arr<[u64]>, swaps<u64>)
+  ├ :Reverse(arr<[u64]>, acc<[u64]>, swaps<u64>)
+  └ :Done(arr<[u64]>).
+
+#bubble-sort(arr) → :Start(arr)
+  :Start(arr) → :Pass(arr, [], 0u64)
+  :Pass([a, b | tail], acc, swaps)
+    ├ a > b → :Pass([a | tail], [b | acc], swaps + 1u64)
+    └ *     → :Pass([b | tail], [a | acc], swaps)
+  :Pass([x], acc, swaps) → :Next([x | acc], swaps)
+  :Pass([], acc, swaps)  → :Next(acc, swaps)
+  :Next(arr, swaps) → :Reverse(arr, [], swaps)
+  :Reverse([x | tail], acc, swaps) → :Reverse(tail, [x | acc], swaps)
+  :Reverse([], acc, 0u64)     → :Done(acc)
+  :Reverse([], acc, swaps) → :Pass(acc, [], 0u64)
+  :Done(arr) ⇒ arr.
+
+x := [5u64 3u64 8u64 1u64]
+y := #bubble-sort(x)", Value::MatrixU64(Matrix::from_vec(vec![1, 3, 5, 8], 1, 4)));
 #[test]
 fn interpret_variable_define_typed_set_from_range_matrix() {
   let s = "input<{f64}> := 1..=5";
@@ -741,43 +765,43 @@ foo(x<f64>) = z<f64> :=
 z := bar(x).
 foo(10)"#, Value::F64(Ref::new(20.0)));
 #[cfg(feature = "u64")]
-test_interpreter!(interpret_function_recursive_max,r#"max(x<u64>, y<u64>) -> <u64>
-  ├ (0, y) -> y
-  ├ (x, 0) -> x
-  └ (x, y) -> max(x - 1<u64>, y - 1<u64>) + 1<u64>.
+test_interpreter!(interpret_function_recursive_max,r#"max(x<u64>, y<u64>) => <u64>
+  ├ (0, y) => y
+  ├ (x, 0) => x
+  └ (x, y) => max(x - 1<u64>, y - 1<u64>) + 1<u64>.
 max(4<u64>, 7<u64>)"#, Value::U64(Ref::new(7)));
 #[cfg(feature = "u64")]
-test_interpreter!(interpret_function_recursive_is_zero,r#"is-zero(x<u64>) -> <bool>
-  ├ 0 -> true
-  └ * -> false.
+test_interpreter!(interpret_function_recursive_is_zero,r#"is-zero(x<u64>) => <bool>
+  ├ 0 => true
+  └ * => false.
 is-zero(0<u64>)"#, Value::Bool(Ref::new(true)));
 #[cfg(feature = "u64")]
-test_interpreter!(interpret_function_recursive_factorial_tree,r#"factorial(x<u64>) -> <u64>
-  ├ 0 -> 1
-  └ n -> n * factorial(n - 1<u64>).
+test_interpreter!(interpret_function_recursive_factorial_tree,r#"factorial(x<u64>) => <u64>
+  ├ 0 => 1
+  └ n => n * factorial(n - 1<u64>).
 factorial(5<u64>)"#, Value::U64(Ref::new(120)));
 #[cfg(feature = "u64")]
-test_interpreter!(interpret_function_recursive_factorial_bar,r#"factorial(x<u64>) -> <u64>
-  | 0 -> 1
-  | n -> n * factorial(n - 1<u64>).
+test_interpreter!(interpret_function_recursive_factorial_bar,r#"factorial(x<u64>) => <u64>
+  | 0 => 1
+  | n => n * factorial(n - 1<u64>).
 factorial(6<u64>)"#, Value::U64(Ref::new(720)));
 #[cfg(feature = "u64")]
-test_interpreter!(interpret_function_recursive_fib,r#"fib(x<u64>) -> <u64>
-  ├ 0 -> 0
-  ├ 1 -> 1
-  └ n -> fib(n - 1<u64>) + fib(n - 2<u64>).
+test_interpreter!(interpret_function_recursive_fib,r#"fib(x<u64>) => <u64>
+  ├ 0 => 0
+  ├ 1 => 1
+  └ n => fib(n - 1<u64>) + fib(n - 2<u64>).
 fib(10<u64>)"#, Value::U64(Ref::new(55)));
 #[cfg(feature = "u64")]
-test_interpreter!(interpret_function_recursive_power,r#"power(x<u64>, y<u64>) -> <u64>
-  ├ (*, 0) -> 1
-  └ (x, y) -> x * power(x, y - 1<u64>).
+test_interpreter!(interpret_function_recursive_power,r#"power(x<u64>, y<u64>) => <u64>
+  ├ (*, 0) => 1
+  └ (x, y) => x * power(x, y - 1<u64>).
 power(2<u64>, 10<u64>)"#, Value::U64(Ref::new(1024)));
 test_interpreter!(interpret_function_call_native_vector, "math/sin([1.570796327 1.570796327])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
 test_interpreter!(interpret_function_call_native, r#"math/sin(1.5707963267948966)"#, Value::F64(Ref::new(1.0)));
 test_interpreter!(interpret_function_call_native_cos, r#"math/cos(0.0)"#, Value::F64(Ref::new(1.0)));
 test_interpreter!(interpret_function_call_native_vector2, "math/cos([0.0 0.0])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
-test_interpreter!(interpret_user_function_scalar_auto_broadcast, r#"add-one(x<f64>) -> <f64>
-  | * -> x + 1.
+test_interpreter!(interpret_user_function_scalar_auto_broadcast, r#"add-one(x<f64>) => <f64>
+  | * => x + 1.
 add-one([1 2 3])"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, 4.0], 1, 3)));
 
 test_interpreter!(interpret_set_value,"~x := 1.23; x = 4.56;", Value::F64(Ref::new(4.56)));
@@ -1056,10 +1080,10 @@ test_interpreter!(interpret_convert_f64_to_rational_to_string,r#"x<string> := 0.
 test_interpreter!(interpret_convert_matrix_to_optional_unsized_matrix, r#"x<[u64]?> := [1u64 2u64 3u64]; x[1]"#, Value::U64(Ref::new(1u64)));
 test_interpreter!(interpret_user_function_input_annotation_optional_promotion, r#"
 x := [1u64 2u64 3u64]
-head(x<[u64]?>) -> <u64?>
-  | [] -> _
-  | [h ...] -> h
-  | _ -> _.
+head(x<[u64]?>) => <u64?>
+  | [] => _
+  | [h ...] => h
+  | _ => _.
 head(x)
 "#, Value::U64(Ref::new(1u64)));
 
@@ -1132,10 +1156,10 @@ test_interpreter!(interpret_tagged_union_nested_match, r#"
 <option> := :some<result> | :none
 x<option> := :some(:ok(42u64))
 result := x?
-  | :some(:ok(n))  -> n
-  | :some(:err(e)) -> 0u64
-  | :none          -> 0u64
-  | *              -> 0u64.
+  | :some(:ok(n))  => n
+  | :some(:err(e)) => 0u64
+  | :none          => 0u64
+  | *              => 0u64.
 result + 0u64
 "#, Value::U64(Ref::new(42u64)));
 test_interpreter!(interpret_tagged_union_function_input_enum_kind, r#"
@@ -1143,10 +1167,10 @@ test_interpreter!(interpret_tagged_union_function_input_enum_kind, r#"
 <option> := :some<result> | :none
 x<option> := :some(:err("this sucks"))
 
-unwrap(x<option>) -> <u64>
-  | :some(:ok(n))  -> n
-  | :some(:err(e)) -> 0u64
-  | :none          -> 0u64.
+unwrap(x<option>) => <u64>
+  | :some(:ok(n))  => n
+  | :some(:err(e)) => 0u64
+  | :none          => 0u64.
 
 unwrap(x)
 "#, Value::U64(Ref::new(0u64)));
@@ -1157,9 +1181,9 @@ fn interpret_tagged_union_function_match_requires_exhaustive_arms() {
 <option> := :some<result> | :none
 x<option> := :some(:err("this sucks"))
 
-unwrap(x<option>) -> <u64>
-  | :some(:ok(n))  -> n
-  | :some(:err(e)) -> 0u64.
+unwrap(x<option>) => <u64>
+  | :some(:ok(n))  => n
+  | :some(:err(e)) => 0u64.
 
 unwrap(x)
 "#;

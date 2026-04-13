@@ -37,343 +37,346 @@ pub struct Interpreter {
 }
 
 impl Clone for Interpreter {
-    fn clone(&self) -> Self {
-        Self {
-            id: self.id,
-            ip: self.ip,
-            profile: false,
-            max_steps: self.max_steps,
-            #[cfg(feature = "trace")]
-            trace: self.trace,
-            #[cfg(feature = "trace")]
-            trace_to_stdout: self.trace_to_stdout,
-            #[cfg(feature = "trace")]
-            trace_events: self.trace_events.clone(),
-            state: Ref::new(self.state.borrow().clone()),
-            #[cfg(feature = "functions")]
-            stack: self.stack.clone(),
-            registers: self.registers.clone(),
-            constants: self.constants.clone(),
-            #[cfg(feature = "compiler")]
-            context: None,
-            code: self.code.clone(),
-            out: self.out.clone(),
-            out_values: self.out_values.clone(),
-            #[cfg(feature = "state_machines")]
-            user_state_machines: self.user_state_machines.clone(),
-            sub_interpreters: self.sub_interpreters.clone(),
-        }
+  fn clone(&self) -> Self {
+    Self {
+      id: self.id,
+      ip: self.ip,
+      profile: false,
+      max_steps: self.max_steps,
+      #[cfg(feature = "trace")]
+      trace: self.trace,
+      #[cfg(feature = "trace")]
+      trace_to_stdout: self.trace_to_stdout,
+      #[cfg(feature = "trace")]
+      trace_events: self.trace_events.clone(),
+      state: Ref::new(self.state.borrow().clone()),
+      #[cfg(feature = "functions")]
+      stack: self.stack.clone(),
+      registers: self.registers.clone(),
+      constants: self.constants.clone(),
+      #[cfg(feature = "compiler")]
+      context: None,
+      code: self.code.clone(),
+      out: self.out.clone(),
+      out_values: self.out_values.clone(),
+      #[cfg(feature = "state_machines")]
+      user_state_machines: self.user_state_machines.clone(),
+      sub_interpreters: self.sub_interpreters.clone(),
     }
+  }
 }
 
 impl Interpreter {
-    pub fn new(id: u64) -> Self {
-        let mut state = ProgramState::new();
-        load_stdkinds(&mut state.kinds);
-        #[cfg(feature = "functions")]
-        load_stdlib(&mut state.functions.borrow_mut());
-        Self {
-            id,
-            ip: 0,
-            profile: false,
-            max_steps: 10_00000, // Default maximum steps
-            #[cfg(feature = "trace")]
-            trace: false,
-            #[cfg(feature = "trace")]
-            trace_to_stdout: true,
-            #[cfg(feature = "trace")]
-            trace_events: Ref::new(Vec::new()),
-            state: Ref::new(state),
-            #[cfg(feature = "functions")]
-            stack: Vec::new(),
-            registers: Vec::new(),
-            constants: Vec::new(),
-            out: Value::Empty,
-            sub_interpreters: Ref::new(HashMap::new()),
-            out_values: Ref::new(HashMap::new()),
-            #[cfg(feature = "state_machines")]
-            user_state_machines: Ref::new(HashMap::new()),
-            code: Vec::new(),
-            #[cfg(feature = "compiler")]
-            context: None,
-        }
-    }
-
-    #[cfg(feature = "symbol_table")]
-    pub fn set_environment(&mut self, env: SymbolTableRef) {
-        self.state.borrow_mut().environment = Some(env);
-    }
-
+  pub fn new(id: u64) -> Self {
+    let mut state = ProgramState::new();
+    load_stdkinds(&mut state.kinds);
     #[cfg(feature = "functions")]
-    pub fn clear_plan(&mut self) {
-        self.state.borrow_mut().plan.borrow_mut().clear();
-    }
-
-    #[cfg(feature = "pretty_print")]
-    pub fn pretty_print(&self) -> String {
-      let mut output = String::new();
-      output.push_str(&format!("Interpreter ID: {}\n", self.id));
-      // print state
-      output.push_str(&self.state.borrow().pretty_print());
-
-      output.push_str("Registers:\n");
-      for (i, reg) in self.registers.iter().enumerate() {
-        output.push_str(&format!("  R{}: {}\n", i, reg));
-      }
-      output.push_str("Constants:\n");
-      for (i, constant) in self.constants.iter().enumerate() {
-        output.push_str(&format!("  C{}: {}\n", i, constant));
-      }
-      output.push_str(&format!("Output Value: {}\n", self.out));
-      output.push_str(&format!(
-        "Number of Sub-Interpreters: {}\n",
-        self.sub_interpreters.borrow().len()
-      ));
-      output.push_str("Output Values:\n");
-      for (key, value) in self.out_values.borrow().iter() {
-        output.push_str(&format!("  {}: {}\n", key, value));
-      }
-      output.push_str(&format!("Code Length: {}\n", self.code.len()));
-      #[cfg(feature = "compiler")]
-      if let Some(context) = &self.context {
-        output.push_str("Context: Exists\n");
-      } else {
-        output.push_str("Context: None\n");
-      }
-      output
-    }
-
-    pub fn clear(&mut self) {
-      let id = self.id;
-      *self = Interpreter::new(id);
-    }
-
-    pub fn set_trace_enabled(&mut self, enabled: bool) {
+    load_stdlib(&mut state.functions.borrow_mut());
+    Self {
+      id,
+      ip: 0,
+      profile: false,
+      max_steps: 10_00000, // Default maximum steps
       #[cfg(feature = "trace")]
-      {
-        self.trace = enabled;
-      }
-      #[cfg(not(feature = "trace"))]
-      {
-        let _ = enabled;
-      }
+      trace: false,
+      #[cfg(feature = "trace")]
+      trace_to_stdout: true,
+      #[cfg(feature = "trace")]
+      trace_events: Ref::new(Vec::new()),
+      state: Ref::new(state),
+      #[cfg(feature = "functions")]
+      stack: Vec::new(),
+      registers: Vec::new(),
+      constants: Vec::new(),
+      out: Value::Empty,
+      sub_interpreters: Ref::new(HashMap::new()),
+      out_values: Ref::new(HashMap::new()),
+      #[cfg(feature = "state_machines")]
+      user_state_machines: Ref::new(HashMap::new()),
+      code: Vec::new(),
+      #[cfg(feature = "compiler")]
+      context: None,
     }
+  }
 
+  #[cfg(feature = "symbol_table")]
+  pub fn set_environment(&mut self, env: SymbolTableRef) {
+    self.state.borrow_mut().environment = Some(env);
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn clear_plan(&mut self) {
+    self.state.borrow_mut().plan.borrow_mut().clear();
+  }
+
+  #[cfg(feature = "pretty_print")]
+  pub fn pretty_print(&self) -> String {
+    let mut output = String::new();
+    output.push_str(&format!("Interpreter ID: {}\n", self.id));
+    // print state
+    output.push_str(&self.state.borrow().pretty_print());
+
+    output.push_str("Registers:\n");
+    for (i, reg) in self.registers.iter().enumerate() {
+      output.push_str(&format!("  R{}: {}\n", i, reg));
+    }
+    output.push_str("Constants:\n");
+    for (i, constant) in self.constants.iter().enumerate() {
+      output.push_str(&format!("  C{}: {}\n", i, constant));
+    }
+    output.push_str(&format!("Output Value: {}\n", self.out));
+    output.push_str(&format!(
+      "Number of Sub-Interpreters: {}\n",
+      self.sub_interpreters.borrow().len()
+    ));
+    output.push_str("Output Values:\n");
+    for (key, value) in self.out_values.borrow().iter() {
+      output.push_str(&format!("  {}: {}\n", key, value));
+    }
+    output.push_str(&format!("Code Length: {}\n", self.code.len()));
+    #[cfg(feature = "compiler")]
+    if let Some(context) = &self.context {
+      output.push_str("Context: Exists\n");
+    } else {
+      output.push_str("Context: None\n");
+    }
+    output
+  }
+
+  pub fn clear(&mut self) {
+    let id = self.id;
+    *self = Interpreter::new(id);
+  }
+
+  pub fn set_trace_enabled(&mut self, enabled: bool) {
     #[cfg(feature = "trace")]
-    pub fn set_trace_to_stdout(&mut self, enabled: bool) {
-        self.trace_to_stdout = enabled;
+    {
+      self.trace = enabled;
+    }
+    #[cfg(not(feature = "trace"))]
+    {
+      let _ = enabled;
+    }
+  }
+
+  #[cfg(feature = "trace")]
+  pub fn set_trace_to_stdout(&mut self, enabled: bool) {
+    self.trace_to_stdout = enabled;
+  }
+
+  #[cfg(feature = "trace")]
+  pub fn clear_trace_events(&self) {
+    self.trace_events.borrow_mut().clear();
+  }
+
+  #[cfg(feature = "trace")]
+  pub fn trace_events(&self) -> Vec<TraceEvent> {
+    self.trace_events.borrow().clone()
+  }
+
+  #[cfg(feature = "trace")]
+  pub fn trace_events_to_json(&self) -> String {
+    let trace_events = self.trace_events.borrow();
+    trace_events_to_json(trace_events.as_slice())
+  }
+
+  #[cfg(feature = "trace")]
+  pub fn push_trace_line(&self, rendered: String) {
+    let (channel, label, message) = parse_trace_line(&rendered);
+    let mut trace_events = self.trace_events.borrow_mut();
+    let index = trace_events.len();
+    trace_events.push(TraceEvent {
+        index,
+        channel,
+        label,
+        message,
+        rendered,
+    });
+  }
+
+  #[cfg(all(feature = "trace", feature = "state_machines"))]
+  pub fn formatted_fsm_trace(&self) -> String {
+    format_fsm_trace_report(&self.trace_events())
+  }
+
+  #[cfg(feature = "pretty_print")]
+  pub fn pretty_print_symbols(&self) -> String {
+    let state_brrw = self.state.borrow();
+    let syms = state_brrw.symbol_table.borrow();
+    syms.pretty_print()
+  }
+
+  #[cfg(feature = "pretty_print")]
+  pub fn pretty_print_plan(&self) -> String {
+    let state_brrw = self.state.borrow();
+    let plan = state_brrw.plan.borrow();
+    let mut result = String::new();
+    for (i, step) in plan.iter().enumerate() {
+      result.push_str(&format!("Step {}:\n", i));
+      result.push_str(&format!("{}\n", step.to_string()));
+    }
+    result
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn plan(&self) -> Plan {
+    self.state.borrow().plan.clone()
+  }
+
+  #[cfg(feature = "symbol_table")]
+  pub fn symbols(&self) -> SymbolTableRef {
+    self.state.borrow().symbol_table.clone()
+  }
+
+  pub fn dictionary(&self) -> Ref<Dictionary> {
+    self.state.borrow().dictionary.clone()
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn functions(&self) -> FunctionsRef {
+    self.state.borrow().functions.clone()
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn set_functions(&mut self, functions: FunctionsRef) {
+    self.state.borrow_mut().functions = functions;
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn step(&mut self, step_id: usize, step_count: u64) -> MResult<Value> {
+    let state_brrw = self.state.borrow();
+    let mut plan_brrw = state_brrw.plan.borrow_mut(); // RefMut<Vec<Box<dyn MechFunction>>>
+
+    if plan_brrw.is_empty() {
+      return Err(MechError::new(NoStepsInPlanError, None).with_compiler_loc());
     }
 
-    #[cfg(feature = "trace")]
-    pub fn clear_trace_events(&self) {
-        self.trace_events.borrow_mut().clear();
-    }
+    let len = plan_brrw.len();
 
-    #[cfg(feature = "trace")]
-    pub fn trace_events(&self) -> Vec<TraceEvent> {
-        self.trace_events.borrow().clone()
-    }
-
-    #[cfg(feature = "trace")]
-    pub fn trace_events_to_json(&self) -> String {
-        let trace_events = self.trace_events.borrow();
-        trace_events_to_json(trace_events.as_slice())
-    }
-
-    #[cfg(feature = "trace")]
-    pub fn push_trace_line(&self, rendered: String) {
-        let (channel, label, message) = parse_trace_line(&rendered);
-        let mut trace_events = self.trace_events.borrow_mut();
-        let index = trace_events.len();
-        trace_events.push(TraceEvent {
-            index,
-            channel,
-            label,
-            message,
-            rendered,
-        });
-    }
-
-    #[cfg(all(feature = "trace", feature = "state_machines"))]
-    pub fn formatted_fsm_trace(&self) -> String {
-        format_fsm_trace_report(&self.trace_events())
-    }
-
-    #[cfg(feature = "pretty_print")]
-    pub fn pretty_print_symbols(&self) -> String {
-        let state_brrw = self.state.borrow();
-        let syms = state_brrw.symbol_table.borrow();
-        syms.pretty_print()
-    }
-
-    #[cfg(feature = "pretty_print")]
-    pub fn pretty_print_plan(&self) -> String {
-        let state_brrw = self.state.borrow();
-        let plan = state_brrw.plan.borrow();
-        let mut result = String::new();
-        for (i, step) in plan.iter().enumerate() {
-            result.push_str(&format!("Step {}:\n", i));
-            result.push_str(&format!("{}\n", step.to_string()));
-        }
-        result
-    }
-
-    #[cfg(feature = "functions")]
-    pub fn plan(&self) -> Plan {
-        self.state.borrow().plan.clone()
-    }
-
-    #[cfg(feature = "symbol_table")]
-    pub fn symbols(&self) -> SymbolTableRef {
-        self.state.borrow().symbol_table.clone()
-    }
-
-    pub fn dictionary(&self) -> Ref<Dictionary> {
-        self.state.borrow().dictionary.clone()
-    }
-
-    #[cfg(feature = "functions")]
-    pub fn functions(&self) -> FunctionsRef {
-        self.state.borrow().functions.clone()
-    }
-
-    #[cfg(feature = "functions")]
-    pub fn set_functions(&mut self, functions: FunctionsRef) {
-        self.state.borrow_mut().functions = functions;
-    }
-
-    #[cfg(feature = "functions")]
-    pub fn step(&mut self, step_id: usize, step_count: u64) -> MResult<Value> {
-        let state_brrw = self.state.borrow();
-        let mut plan_brrw = state_brrw.plan.borrow_mut(); // RefMut<Vec<Box<dyn MechFunction>>>
-
-        if plan_brrw.is_empty() {
-            return Err(MechError::new(NoStepsInPlanError, None).with_compiler_loc());
-        }
-
-        let len = plan_brrw.len();
-
-        // Case 1: step_id == 0, run entire plan step_count times
-        if step_id == 0 {
-            if self.profile {
-                // Initialize total durations per step
-                let mut total_durations = vec![Duration::ZERO; len];
-                for _ in 0..step_count {
-                    for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
-                        let start = Instant::now();
-                        fxn.solve();
-                        total_durations[idx] += start.elapsed();
-                    }
-                }
-                // Print histogram if profiling is enabled
-                if self.profile {
-                    println!("\nStep timing summary and histogram:");
-                    print_histogram(&total_durations);
-                }
-                return Ok(plan_brrw[len - 1].out().clone());
-            } else {
-                for _ in 0..step_count {
-                    for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
-                        trace_println!(self, "{}", {
-                            let fxn_header = fxn
-                                .to_string()
-                                .lines()
-                                .next()
-                                .unwrap_or("<unknown-step>")
-                                .to_string();
-                            format!("[trace][plan] step[{idx}] {fxn_header}")
-                        });
-                        fxn.solve();
-                        trace_println!(self, "{}", {
-                            let output = fxn.out().to_string();
-                            let output = if output.chars().count() > 96 {
-                                format!("{}…", output.chars().take(96).collect::<String>())
-                            } else {
-                                output
-                            };
-                            format!("[trace][plan] step[{idx}] out={output}")
-                        });
-                    }
-                }
-                return Ok(plan_brrw[len - 1].out().clone());
-            }
-        }
-
-        // Case 2: step a single function by index
-        let idx = step_id as usize;
-        if idx > len {
-            return Err(MechError::new(
-                StepIndexOutOfBoundsError {
-                    step_id,
-                    plan_length: len,
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-
-        let fxn = &mut plan_brrw[idx - 1];
-
-        let fxn_str = fxn.to_string();
-        if fxn_str.lines().count() > 30 {
-            let lines: Vec<&str> = fxn_str.lines().collect();
-            println!("Stepping function:");
-            for line in &lines[0..10] {
-                println!("{}", line);
-            }
-            println!("...");
-            for line in &lines[lines.len() - 10..] {
-                println!("{}", line);
-            }
-        } else {
-            println!("Stepping function:\n{}", fxn_str);
-        }
-
+    // Case 1: step_id == 0, run entire plan step_count times
+    if step_id == 0 {
+      if self.profile {
+        // Initialize total durations per step
+        let mut total_durations = vec![Duration::ZERO; len];
         for _ in 0..step_count {
+          for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
+            let start = Instant::now();
             fxn.solve();
+            total_durations[idx] += start.elapsed();
+          }
         }
-
-        Ok(fxn.out().clone())
+        // Print histogram if profiling is enabled
+        if self.profile {
+          println!("\nStep timing summary and histogram:");
+          print_histogram(&total_durations);
+        }
+        return Ok(plan_brrw[len - 1].out().clone());
+      } else {
+        for _ in 0..step_count {
+          for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
+            trace_println!(self, "{}", {
+              let fxn_header = fxn
+                .to_string()
+                .lines()
+                .next()
+                .unwrap_or("<unknown-step>")
+                .to_string();
+              format!("[trace][plan] step[{idx}] {fxn_header}")
+            });
+            fxn.solve();
+            trace_println!(self, "{}", {
+              let output = fxn.out().to_string();
+              let output = if output.chars().count() > 96 {
+                  format!("{}…", output.chars().take(96).collect::<String>())
+              } else {
+                  output
+              };
+              format!("[trace][plan] step[{idx}] out={output}")
+            });
+          }
+        }
+        return Ok(plan_brrw[len - 1].out().clone());
+      }
     }
 
-    #[cfg(feature = "functions")]
-    pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
-        self.code.push(MechSourceCode::Tree(tree.clone()));
-        catch_unwind(AssertUnwindSafe(|| {
-            let result = program(tree, &self);
-            if let Some(last_step) = self.state.borrow().plan.borrow().last() {
-                self.out = last_step.out().clone();
-            } else {
-                self.out = Value::Empty;
-            }
-            result
-        }))
-        .map_err(|err| {
-            if let Some(raw_msg) = err.downcast_ref::<&'static str>() {
-                if raw_msg.contains("Index out of bounds") {
-                    MechError::new(IndexOutOfBoundsError, None).with_compiler_loc()
-                } else if raw_msg.contains("attempt to subtract with overflow") {
-                    MechError::new(OverflowSubtractionError, None).with_compiler_loc()
-                } else {
-                    MechError::new(
-                        UnknownPanicError {
-                            details: raw_msg.to_string(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()
-                }
-            } else {
-                MechError::new(
-                    UnknownPanicError {
-                        details: "Non-string panic".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()
-            }
-        })?
+    // Case 2: step a single function by index
+    let idx = step_id as usize;
+    if idx > len {
+      return Err(MechError::new(
+        StepIndexOutOfBoundsError {
+            step_id,
+            plan_length: len,
+        },
+        None,
+      )
+      .with_compiler_loc());
     }
+
+    let fxn = &mut plan_brrw[idx - 1];
+
+    let fxn_str = fxn.to_string();
+    if fxn_str.lines().count() > 30 {
+      let lines: Vec<&str> = fxn_str.lines().collect();
+      println!("Stepping function:");
+      for line in &lines[0..10] {
+        println!("{}", line);
+      }
+      println!("...");
+      for line in &lines[lines.len() - 10..] {
+        println!("{}", line);
+      }
+    } else {
+      println!("Stepping function:\n{}", fxn_str);
+    }
+
+    for _ in 0..step_count {
+      fxn.solve();
+    }
+
+    Ok(fxn.out().clone())
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
+    self.code.push(MechSourceCode::Tree(tree.clone()));
+    catch_unwind(AssertUnwindSafe(|| {
+      let result = program(tree, &self);
+      match self.state.borrow().plan.borrow().last() {
+        Some(last_step) => self.out = last_step.out().clone(),
+        None => self.out = Value::Empty,
+      }
+      result
+    }))
+    .map_err(|err| {
+      match err.downcast_ref::<&'static str>() {
+         Some(raw_msg) => {
+          if raw_msg.contains("Index out of bounds") {
+              MechError::new(IndexOutOfBoundsError, None).with_compiler_loc()
+          } else if raw_msg.contains("attempt to subtract with overflow") {
+              MechError::new(OverflowSubtractionError, None).with_compiler_loc()
+          } else {
+            MechError::new(
+              UnknownPanicError {
+                details: raw_msg.to_string(),
+              },
+              None,
+            )
+            .with_compiler_loc()
+          }
+        } 
+        None => {
+          MechError::new(
+            UnknownPanicError {
+              details: "Non-string panic".to_string(),
+            },
+            None,
+          )
+          .with_compiler_loc()
+        }
+      }
+    })?
+  }
+    
 
   #[cfg(feature = "program")]
   pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {

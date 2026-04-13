@@ -176,9 +176,22 @@ ws0_leaf!(async_transition_operator, "~>", TokenKind::AsyncTransitionOperator);
 ws0_leaf!(define_operator, ":=", TokenKind::DefineOperator);
 ws0_leaf!(synth_operator, "?=", TokenKind::SynthOperator);
 ws0_leaf!(gen_operator, "@=", TokenKind::GenOperator);
-ws0_leaf!(output_operator, "=>", TokenKind::OutputOperator);
-ws0_leaf!(transition_operator, "->", TokenKind::TransitionOperator);
+ws0_leaf!(output_operator_a, "=>", TokenKind::OutputOperator);
+ws0_leaf!(output_operator_u, "⇒", TokenKind::OutputOperator);
+ws0_leaf!(transition_operator_a, "->", TokenKind::TransitionOperator);
+ws0_leaf!(transition_operator_u, "→", TokenKind::TransitionOperator);
 
+// transition_operator := "->" | "→" ;
+pub fn transition_operator(input: ParseString) -> ParseResult<Token> {
+  let (input, operator) = alt((transition_operator_a, transition_operator_u))(input)?;
+  Ok((input, operator))
+}
+
+// output_operator := "=>" | "⇒" ;
+pub fn output_operator(input: ParseString) -> ParseResult<Token> {
+  let (input, operator) = alt((output_operator_a, output_operator_u))(input)?;
+  Ok((input, operator))
+}
 
 // emoji-grapheme := ?emoji-grapheme-literal? ;
 pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {

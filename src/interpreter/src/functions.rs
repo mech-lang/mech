@@ -5,6 +5,29 @@ use std::collections::HashSet;
 // Functions
 // ----------------------------------------------------------------------------
 
+use crate::*;
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum FrameState {
+  Running,
+  Suspended,
+  Completed,
+}
+
+#[derive(Clone)]
+pub struct Frame {
+  plan: Plan,
+  ip: usize,               // next instruction
+  locals: SymbolTableRef,  // for subroutine variables
+  out: Option<Value>,      // optional coroutine return
+  state: FrameState,       // Running, Suspended, Completed
+}
+
+#[derive(Clone)]
+pub struct Stack {
+  frames: Vec<Frame>,
+}
+
 pub fn function_define(fxn_def: &FunctionDefine, p: &Interpreter) -> MResult<FunctionDefinition> {
     let fxn_name_id = fxn_def.name.hash();
     let mut new_fxn =
@@ -523,28 +546,19 @@ fn single_line_trace_text(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-fn coerce_function_output_kind(
-    value: Value,
-    fxn_def: &FunctionDefinition,
-    p: &Interpreter,
-) -> MResult<Value> {
-    if fxn_def.output.is_empty() {
-        return Ok(value);
-    }
-    let Some((_, output_kind_annotation)) = fxn_def.output.get_index(0) else {
-        return Ok(value);
-    };
-    #[cfg(feature = "kind_annotation")]
-    {
-        let target_kind = kind_annotation(&output_kind_annotation.kind, p)?
-            .to_value_kind(&p.state.borrow().kinds)?;
-        Ok(value.convert_to(&target_kind).unwrap_or(value))
-    }
-    #[cfg(not(feature = "kind_annotation"))]
-    {
-        let _ = (output_kind_annotation, p);
-        Ok(value)
-    }
+// Kind coercion for function outputs, used in match arms when the output kind is annotated. 
+// If the function output has no kind annotation, or if coercion fails, returns the original value.
+#[cfg(feature = "kind_annotation")]
+fn coerce_function_output_kind( value: Value, fxn_def: &FunctionDefinition, p: &Interpreter) -> MResult<Value> {
+  if fxn_def.output.is_empty() {
+    return Ok(value);
+  }
+  let Some((_, output_kind_annotation)) = fxn_def.output.get_index(0) else {
+    return Ok(value);
+  };
+  let target_kind = kind_annotation(&output_kind_annotation.kind, p)?
+    .to_value_kind(&p.state.borrow().kinds)?;
+  return Ok(value.convert_to(&target_kind).unwrap_or(value))
 }
 
 struct FunctionScope {

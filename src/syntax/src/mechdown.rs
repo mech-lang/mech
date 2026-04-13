@@ -286,6 +286,28 @@ pub fn img(input: ParseString) -> ParseResult<Image> {
   Ok((input, Image{src: merged_src, caption: caption_text, style}))
 }
 
+pub fn figure_item(input: ParseString) -> ParseResult<FigureItem> {
+  let (input, image) = img(input)?;
+  let caption = image.caption.unwrap_or(Paragraph { elements: vec![], error_range: None });
+  Ok((input, FigureItem { src: image.src, caption }))
+}
+
+// figures-row := bar, +( *(space|tab), figure-item, *(space|tab), bar ), *whitespace ;
+pub fn figures_row(input: ParseString) -> ParseResult<Vec<FigureItem>> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = bar(input)?;
+  let (input, cells) = many1(tuple((many0(space_tab), figure_item, many0(space_tab), bar)))(input)?;
+  let (input, _) = whitespace0(input)?;
+  let row = cells.into_iter().map(|(_, item, _, _)| item).collect();
+  Ok((input, row))
+}
+
+// figures := +figures-row ;
+pub fn figures(input: ParseString) -> ParseResult<FigureTable> {
+  let (input, rows) = many1(figures_row)(input)?;
+  Ok((input, FigureTable { rows }))
+}
+
 // paragraph-text := ¬(img-prefix | http-prefix | left-bracket | tilde | asterisk | underscore | grave | define-operator | bar), +text ;
 pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, elements) = match many1(nom_tuple((is_not(alt((section_sigil, footnote_prefix, highlight_sigil, equation_sigil, img_prefix, http_prefix, left_brace, left_bracket, left_angle, right_bracket, tilde, asterisk, underscore, grave, define_operator, bar, mika_section_open, mika_section_close))),text)))(input) {
@@ -884,7 +906,7 @@ pub fn not_mech_code(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// section-element := mech-code | question-block | info-block | list | footnote | citation | abstract-element | img | equation | table | float | quote-block | code-block | thematic-break | subtitle | paragraph ;
+// section-element := mech-code | question-block | info-block | list | footnote | citation | abstract-element | img | figures | equation | table | float | quote-block | code-block | thematic-break | subtitle | paragraph ;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let parsers: Vec<(&'static str, Box<dyn Fn(ParseString) -> ParseResult<SectionElement>>)> = vec![
     ("list",            Box::new(|i| mechdown_list(i).map(|(i, lst)| (i, SectionElement::List(lst))))),
@@ -893,6 +915,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
     ("citation",        Box::new(|i| citation(i).map(|(i, c)| (i, SectionElement::Citation(c))))),
     ("abstract",        Box::new(abstract_el)),
     ("img",             Box::new(|i| img(i).map(|(i, img)| (i, SectionElement::Image(img))))),
+    ("figures",         Box::new(|i| figures(i).map(|(i, f)| (i, SectionElement::FigureTable(f))))),
     ("equation",        Box::new(|i| equation(i).map(|(i, e)| (i, SectionElement::Equation(e))))),
     ("table",           Box::new(|i| mechdown_table(i).map(|(i, t)| (i, SectionElement::Table(t))))),
     ("float",           Box::new(|i| float(i).map(|(i, f)| (i, SectionElement::Float(f))))),
@@ -1014,4 +1037,22 @@ pub fn body(input: ParseString) -> ParseResult<Body> {
     }
   }
   Ok((new_input, Body { sections }))
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn parses_figures_block_with_markdown_image_syntax() {
+    let src = "| ![caption a](img1.jpg) | ![caption b](img2.jpg) |\n| ![caption c](imgwide.jpg) |\n";
+    let gs = graphemes::init_source(src);
+    let input = ParseString::new(&gs);
+    let (_, parsed) = figures(input).expect("figures block should parse");
+    assert_eq!(parsed.rows.len(), 2);
+    assert_eq!(parsed.rows[0].len(), 2);
+    assert_eq!(parsed.rows[1].len(), 1);
+    assert_eq!(parsed.rows[0][0].caption.to_string(), "caption a");
+    assert_eq!(parsed.rows[0][0].src.to_string(), "img1.jpg");
+  }
 }

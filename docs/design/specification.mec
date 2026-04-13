@@ -1075,7 +1075,7 @@ Records can be nested, allowing fields to contain other records:
 -------------------------------------------------------------------------------
 
 ```ebnf
-expression := range-expression | formula ;
+expression := pipe | comprehension | range | match | formula ;
 ```
 
 Expressions define computations in Mech. Most expressions operate elementwise over collections according to the rules of broadcasting.
@@ -1086,29 +1086,28 @@ Expressions define computations in Mech. Most expressions operate elementwise ov
 - Operations between collections are elementwise when shapes are compatible.
 - Higher-dimensional collections expand along singleton dimensions when necessary.
 - Tables support column-wise elementwise operations but use set-based operations (e.g., unions, joins) for whole-table manipulation.
+- Any function that takes a single value of a given kind can be lifted to operate elementwise over homogeneous collections of that kind, including sets and matrices.
 
-**Expression Categories:**
+Much supports the following expression types:
 
-- Arithmetic: Addition, subtraction, multiplication, and division over scalars, vectors, and matrices.
-- Matrix Operations: Matrix multiplication, transposition, and other matrix-specific operations.
-- Comparison: Elementwise relational comparisons (`<`, `>`, `==`, etc.).
-- Logical Operations: Boolean elementwise operations (`and`, `or`, `not`).
-- Set Operations: Union, intersection, and other set-specific operations.
-- Range Expressions: Constructing sequences of values.
-- Indexing: Accessing elements within collections using direct and computed indices.
+- **Range Expressions** - Define sequences of values with a specified start, end, and step.
+- **Finite State Machine (FSM) Expressions** - Define state transitions and behaviors.
+- **Comprehensions** - Construct collections based on generators and predicates.
+- **Match Expressions** - Pattern match on values.
+- **Formulas** - Define computations using operators with specific precedence rules.
 
-(6.1) Formula 
+(6.1) Formulas
 
 ```ebnf
 parenthetical-term := left-parenthesis, formula, right-parenthesis ;
 negate-factor := "-", factor ;
 
 formula := l1, *(range-operator, l1) ;
-l1 := l2, *(add-sub-operator, l2) ;
-l2 := l3, *(mul-div-operator | matrix-operator, l3) ;
-l3 := l4, *(power-operator, l4) ;
-l4 := l5, *(logic-operator, l5) ;
-l5 := l6, *(comparison-operator, l6) ;  
+l1 := l2, *(logic-operator, l2) ;
+l2 := l3, *(comparison-operator, l3) ;  
+l3 := l4, *(add-sub-operator, l4) ;
+l4 := l5, *(mul-div-operator | matrix-operator, l5) ;
+l5 := l6, *(power-operator, l6) ;
 l6 := l7, *(table-operator, l7) ;
 l7 := factor, *(set-operator, factor) ;
 factor := (parenthetical-term 
@@ -1123,39 +1122,29 @@ factor := (parenthetical-term
 
 A formula is an expression that follows operator precedence rules and consists of arithmetic, logical, comparison, matrix, range, table, and set expressions. Expressions in formulas are evaluated according to their precedence, with higher-precedence operations being evaluated first. Precedence rules are encoded in the structure of the formula grammar.
 
-(6.1.0) Function Calls
-
-```ebnf
-function-call := identifier
-      , "("
-      , ?[expression, list-separator]
-      , ")" ;
-```
-
-Function calls are expressions and can appear anywhere a `factor` is allowed.
-
 (6.1.1) Operator Precedence
 
 Operators in formulas are applied according to the following precedence, from highest to lowest:
 
 1. Parentheses - Explicit grouping of expressions.
-2. Negation and Logical NOT - Unary operations.
-3. Set Operations - Union, intersection, difference, etc.
-4. Table Operations - Left join, right join, full join, etc.
-5. Comparison - `==`, `!=`, `<`, `>`, `<=`, `>=`
-6. Logical Operations - `&&`, `||`, `xor`
-7. Power - `^`
-8. Matrix Operations - `**`, `·`, `⨯`, `\\`
-9. Multiplication, Division, Remainder - `*`, `/`, `%`
-10. Add, Subtract - `+`, `-`
-11. Range - `..`, `..=`
+2. Negation and Logical Not - `-`, `!`, `¬`
+3. Set Operations - `∪`, `∩`, `∖`, `∁`, `⊆`, `⊇`, `⊊`, `⊋`, `∈`, `∉`, `Δ`
+4. Table Operations - `⋈`, `⟕`, `⟖`, `⟗`, `⋉`, `▷`
+5. Power - `^`
+6. Matrix Operations - `**`, `·`, `⨯`, `\\`
+7. Multiplication, Division, Remainder - `*`, `/`, `%`
+8. Add, Subtract - `+`, `-`
+9. Comparison - `==`, `!=`, `<`, `>`, `<=`, `>=`
+10. Logical Operations - `&&`, `||`, `xor`
 
 (6.1.2) Evaluation Order and Associativity
 
 - Left-to-right associativity applies to all operators, including exponentiation.
 - Parentheses explicitly override precedence rules.
 
-(6.2) Arithmetic
+(6.1.3) Operators
+
+(6.1.3.1) Arithmetic
 
 ```ebnf
 add       := "+" ;
@@ -1166,7 +1155,7 @@ exponent  := "^" ;
 remainder := "%" ;
 ```
 
-(6.3) Matrix
+(6.1.3.2) Matrix
 
 ```ebnf
 solve           := "\" ;
@@ -1176,7 +1165,7 @@ matrix-multiply := "**" ;
 transpose       := "'" ;
 ```
 
-(6.4) Comparison
+(6.1.3.3) Comparison
 
 ```ebnf
 not-equal        := "!=" | "¬=" | "≠" ;    
@@ -1189,7 +1178,7 @@ greater-or-equal := ">=" | "≥"  ;
 less-or-equal    := "<=" | "≤"  ;       
 ```
 
-(6.5) Logical
+(6.1.3.4) Logical
 
 ```ebnf
 or           := "||" ;            
@@ -1198,7 +1187,7 @@ not          := "!" | "¬";
 exclusive-or := "xor" | "⊕" | "⊻" ;   
 ```
 
-(6.6) Table
+(6.1.3.5) Table
 
 ```ebnf
 natural-join := "⋈ " ;
@@ -1209,7 +1198,7 @@ left-semi-join := "⋉ " ;
 right-semi-join := "▷:" ;
 ```
 
-(6.7) Set
+(6.1.3.6) Set
 
 ```ebnf
 union := "∪";       
@@ -1230,12 +1219,32 @@ symmetric-difference := "Δ";
 - set membership: `x ∈ S`, `x ∉ S` where `S` is a set
 - kind membership: `x ∈ <K>`, `x ∉ <K>` where `<K>` is a kind value
 
-(6.8) Range
+(6.2) Ranges
 
 ```ebnf
 range-inclusive := "..=" ;
 range-exclusive := ".." ;
 ```
+
+(6.2) Matches
+
+```ebnf
+match-expression := expression
+      , "?"
+      , ws0
+      , +match-arm
+      , ?statement-separator ;
+match-arm := guard-operator
+      , pattern
+      , ?(list-separator, expression)
+      , transition-operator
+      , expression
+      , ?statement-separator ;
+```
+
+(6.3) Comprehensions
+
+(6.4) Pipes
 
 7. Indexing
 -------------------------------------------------------------------------------
@@ -1267,15 +1276,15 @@ select-all := ":" ;
 (7.1.1) Examples
 
 ```
-    array := [10, 20, 30, 40, 50]
-    slice_1 := array[1:]                -- Select all from index 1 to the end (select-all)
-    slice_2 := array[1, 3]              -- Range subscript (from index 1 to 3)
-    slice_3 := array[2, 4]              -- Another range from index 2 to 4
-    slice_4 := array[:4]                -- Select all up to index 4
-    slice_formula := array[(x + y), 3]  -- Formula-based subscript, with a calculated index
+array := [10, 20, 30, 40, 50]
+slice_1 := array[1:]                -- Select all from index 1 to the end (select-all)
+slice_2 := array[1, 3]              -- Range subscript (from index 1 to 3)
+slice_3 := array[2, 4]              -- Another range from index 2 to 4
+slice_4 := array[:4]                -- Select all up to index 4
+slice_formula := array[(x + y), 3]  -- Formula-based subscript, with a calculated index
 
-    matrix := { {1, 2}, {3, 4}, {5, 6} }
-    brace_index := matrix{(x * y)}      -- Formula-based indexing within braces
+matrix := { {1, 2}, {3, 4}, {5, 6} }
+brace_index := matrix{(x * y)}      -- Formula-based indexing within braces
 ```
 
 (7.2) Dot Index
@@ -1406,10 +1415,10 @@ state<status> := :status/active
 reply<response> := :ok(200)
 
 status-code<u64> := reply?
-  | :ok(code) -> code
-  | :error(message) -> 500
-  | :timeout -> 408
-  | * -> 500.
+  | :ok(code) => code
+  | :error(message) => 500
+  | :timeout => 408
+  | * => 500.
 ```
 
 Enum variant identifiers follow normal identifier rules. Underscores are not
@@ -1428,7 +1437,7 @@ function-signature := identifier
       , ?[function-argument, list-separator]
       , ")"
       , ws0
-      , "->"
+      , "=>"
       , ws0
       , kind-annotation ;
 function-argument := identifier, ?kind-annotation ;
@@ -1437,7 +1446,7 @@ function-branch := ws0
       , ws0
       , (expression | tuple)
       , ws0
-      , "->"
+      , "=>"
       , ws0
       , expression
       , ?new-line ;
@@ -1446,9 +1455,9 @@ function-branch := ws0
 Functions are declared with a signature and one or more branches. Branches are matched in order and can be recursive.
 
 ```mech:ex 8.5
-power(x<u64>, n<u64>) -> <u64>
-  ├ (*, 0u64) -> 1u64
-  └ (x, n) -> x * power(x, n - 1u64).
+power(x<u64>, n<u64>) => <u64>
+  ├ (*, 0u64) => 1u64
+  └ (x, n) => x * power(x, n - 1u64).
 ```
 
 (8.6) Kind Define
@@ -1493,6 +1502,7 @@ section-element := +mech-code
       | citation 
       | abstract 
       | img 
+      | figures
       | equation 
       | markdown-table 
       | float 
@@ -1991,6 +2001,19 @@ Renders the following table:
 | One         | Four         | {1 * 10}    |
 | Two         | Five         | {2 * 20}    |
 | Three       | Six          | {3 * 30}    |
+
+(10.8.2) Figures
+
+```ebnf
+figures := +figures-row ;
+figures-row := whitespace0, bar, +figure-cell, whitespace0, new-line ;
+figure-cell := whitespace0, figure-item, whitespace0, bar ;
+figure-item := img ;
+```
+
+Figures use a markdown-table-like layout where each cell contains an image item. The figures block is rendered as a single numbered figure with subfigure labels `(a)`, `(b)`, `(c)`, etc., and a combined caption line beneath the grid.
+
+Unlike inline Mech expressions, captions in a figures block are plain document content and are not evaluated.
 
 (10.9) Images
 

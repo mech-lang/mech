@@ -137,9 +137,9 @@ Use `?` followed by guarded arms to branch on `None`/`Some` values:
 
 ```mech:disabled
 foo := x?
-  │ x > 3u64 -> x
-  │ x == 3u64 -> 0u64
-  └ * -> 0u64.
+  │ x > 3u64 => x
+  │ x == 3u64 => 0u64
+  └ * => 0u64.
 ```
 
 The wildcard arm `*` acts as the fallback branch.

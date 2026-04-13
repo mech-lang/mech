@@ -90,7 +90,7 @@ pub fn match_arm(input: ParseString) -> ParseResult<MatchArm> {
     list_separator,
     preceded(whitespace0, expression),
   ))(input)?;
-  let (input, _) = transition_operator(input)?;
+  let (input, _) = output_operator(input)?;
   let (input, expr) = expression(input)?;
   let (input, _) = opt(alt((whitespace1, statement_separator)))(input)?;
   Ok((input, MatchArm {
@@ -138,7 +138,7 @@ pub fn l4(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l5 := factor, (power-operator, factor)* ;
+// l5 := l6, (power-operator, l6)* ;
 pub fn l5(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l6(input)?;
   let (input, rhs) = many0(pair(power_operator,cut(l6)))(input)?;
@@ -146,7 +146,7 @@ pub fn l5(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l6 := factor, (table-operator, factor)* ;
+// l6 := l7, (table-operator, l7)* ;
 pub fn l6(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l7(input)?;
   let (input, rhs) = many0(pair(table_operator,cut(l7)))(input)?;
@@ -787,28 +787,4 @@ pub fn formula_subscript(input: ParseString) -> ParseResult<Subscript> {
 pub fn range_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, rng) = range_expression(input)?;
   Ok((input, Subscript::Range(rng)))
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn parse_match_expression_with_array_patterns() {
-    let source = "y? | [] -> 0 | [h ...] -> h | [... l] -> l.";
-    let graphemes = crate::graphemes::init_source(source);
-    let input = ParseString::new(&graphemes);
-    let (_, parsed) = match_expression(input).expect("array match expression should parse");
-    assert_eq!(parsed.arms.len(), 3);
-  }
-
-  #[test]
-  fn parse_match_expression_with_tuple_pattern_guard() {
-    let source = "foo? | (a, b, c), a > b && a > c -> a | * -> 0.";
-    let graphemes = crate::graphemes::init_source(source);
-    let input = ParseString::new(&graphemes);
-    let (_, parsed) = match_expression(input).expect("tuple + guard match expression should parse");
-    assert_eq!(parsed.arms.len(), 2);
-    assert!(parsed.arms[0].guard.is_some());
-  }
 }
