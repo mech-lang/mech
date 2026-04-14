@@ -62,7 +62,7 @@ mod run;
 mod mechfs;
 
 #[cfg(feature = "compiler")]
-pub mod compiler;
+pub extern crate mech_compiler as compiler;
 
 #[cfg(feature = "repl")]
 pub use self::repl::*;

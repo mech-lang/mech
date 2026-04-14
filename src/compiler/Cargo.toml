@@ -1,0 +1,33 @@
+[package]
+name = "mech-compiler"
+version = "0.3.2"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "LLVM-oriented compiler component for the Mech language."
+documentation = "http://docs.mech-lang.org"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-lang/mech"
+keywords = ["mech", "compiler", "llvm", "bytecode"]
+categories = ["compilers", "science::robotics", "science"]
+license = "Apache-2.0"
+readme = "README.md"
+edition = "2024"
+rust-version = "1.92"
+
+[badges]
+gitlab = { repository = "mech-lang/mech", branch = "main" }
+maintenance = { status = "actively-developed" }
+
+[features]
+default = ["compiler", "program", "serde", "pretty_print", "mika", "mech-core/default", "mech-syntax/default", "mech-interpreter/default"]
+base = ["compiler", "program", "serde", "pretty_print", "mika", "mech-core/base", "mech-syntax/base", "mech-interpreter/base"]
+
+compiler = ["mech-core/compiler", "mech-interpreter/compiler", "mech-syntax/compiler"]
+program = ["mech-core/program", "mech-interpreter/program", "mech-syntax/program"]
+pretty_print = ["mech-core/pretty_print", "mech-interpreter/pretty_print", "mech-syntax/pretty_print"]
+serde = ["mech-core/serde", "mech-interpreter/serde", "mech-syntax/serde"]
+mika = ["mech-core/mika", "mech-syntax/mika"]
+
+[dependencies]
+mech-core = { version = "0.3.2", default-features = false }
+mech-syntax = { version = "0.3.2", default-features = false }
+mech-interpreter = { version = "0.3.2", default-features = false }

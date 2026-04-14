@@ -85,8 +85,6 @@ impl LlvmCompiler {
         &self.config
     }
 
-    /// Parse Mech source and compile through the existing Mech bytecode pipeline,
-    /// then lower that bytecode into LLVM IR text.
     pub fn compile_source(&self, source: &str) -> Result<CompiledModule, CompilerError> {
         if source.trim().is_empty() {
             return Err(CompilerError::EmptyInput);

@@ -79,7 +79,7 @@ baselib = ["bool", "string",
       "functions", "formulas",
     ]
 
-compiler = ["anyhow", "console", "tempfile", "zip", "mech-core/compiler", "mech-interpreter/compiler", "mech-syntax/compiler"]
+compiler = ["anyhow", "console", "tempfile", "zip", "mech-core/compiler", "mech-interpreter/compiler", "mech-syntax/compiler", "dep:mech-compiler", "mech-compiler/compiler"]
 program = ["mech-core/program", "mech-interpreter/program", "mech-syntax/program"]
 pretty_print = ["mech-core/pretty_print", "mech-interpreter/pretty_print", "mech-syntax/pretty_print"]
 serde = ["mech-core/serde", "mech-interpreter/serde", "mech-syntax/serde"]
@@ -173,6 +173,7 @@ nalgebra = "0.34.1"
 mech-core        = { version = "0.3.2", default-features = false }
 mech-syntax      = { version = "0.3.2", default-features = false }
 mech-interpreter = { version = "0.3.2", default-features = false }
+mech-compiler    = { version = "0.3.2", default-features = false, optional = true }
 
 sevenz-rust = "0.6.1"
 colored = "3.1.1"
@@ -209,6 +210,7 @@ members = [
   "src/core",
   "src/syntax",
   "src/interpreter",
+  "src/compiler",
   "src/wasm",
 ]
 
@@ -223,6 +225,7 @@ LegalCopyright = "Copyright © 2026"
 mech-core = { path = 'src/core' }
 mech-syntax = { path = 'src/syntax'}
 mech-interpreter = { path = 'src/interpreter'}
+mech-compiler = { path = 'src/compiler'}
 mech-wasm = { path = 'src/wasm'}
 #mech-utilities = { path = 'src/utilities' }
 mech-combinatorics = { path = 'machines/combinatorics' }
