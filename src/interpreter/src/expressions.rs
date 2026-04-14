@@ -963,7 +963,14 @@ pub fn match_expression(
                 None => true,
             };
             if passed_guard {
-                return expression(&arm.expression, Some(&base_env), p);
+                let output = expression(&arm.expression, Some(&base_env), p)?;
+                return coerce_wildcard_match_output_if_needed(
+                    output,
+                    &match_expr.source,
+                    &detached_source,
+                    env,
+                    p,
+                );
             }
         }
     }
@@ -994,6 +1001,15 @@ pub fn match_expression(
                 &base_env,
                 p,
             )?;
+            if matches!(arm.pattern, Pattern::Wildcard) {
+                return coerce_wildcard_match_output_if_needed(
+                    output,
+                    &match_expr.source,
+                    &detached_source,
+                    env,
+                    p,
+                );
+            }
             return Ok(output);
         }
     }
@@ -1001,6 +1017,52 @@ pub fn match_expression(
     Err(MechError::new(MatchNoArmMatchedError, None)
         .with_compiler_loc()
         .with_tokens(match_expr.source.tokens()))
+}
+
+fn coerce_wildcard_match_output_if_needed(
+    output: Value,
+    source_expr: &Expression,
+    detached_source: &Value,
+    env: Option<&Environment>,
+    p: &Interpreter,
+) -> MResult<Value> {
+    if !value_contains_empty(detached_source) {
+        return Ok(output);
+    }
+    let Some(target_kind) = infer_empty_match_source_inner_kind(source_expr, env, p)? else {
+        return Ok(output);
+    };
+    if output.kind() == target_kind {
+        return Ok(detach_value(&output));
+    }
+    let convert_fxn = ConvertKind {}.compile(&vec![output, Value::Kind(target_kind)])?;
+    convert_fxn.solve();
+    let coerced = convert_fxn.out();
+    p.state.borrow_mut().add_plan_step(convert_fxn);
+    Ok(detach_value(&coerced))
+}
+
+fn infer_empty_match_source_inner_kind(
+    source_expr: &Expression,
+    env: Option<&Environment>,
+    p: &Interpreter,
+) -> MResult<Option<ValueKind>> {
+    match source_expr {
+        Expression::Slice(slice) if !slice.subscript.is_empty() => {
+            let mut prefix = slice.clone();
+            prefix.subscript.pop();
+            let prefix_value = expression(&Expression::Slice(prefix), env, p)?;
+            match prefix_value.kind().deref_kind() {
+                ValueKind::Matrix(inner_kind, _) => match inner_kind.as_ref() {
+                    ValueKind::Option(inner) => Ok(Some(inner.as_ref().clone())),
+                    _ => Ok(None),
+                },
+                ValueKind::Option(inner) => Ok(Some((*inner).clone())),
+                _ => Ok(None),
+            }
+        }
+        _ => Ok(None),
+    }
 }
 
 #[cfg(feature = "enum")]

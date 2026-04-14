@@ -134,13 +134,13 @@ test_interpreter!(
 #[cfg(all(feature = "u8", feature = "u64"))]
 test_interpreter!(
   interpret_joined_column_option_match_with_missing_value_coerces_wildcard_arm,
-  "a := | id<u64>  hw1<u8> |\n     |   1       10    |\n     |   2       20    |\n     |   3       30    |\n\nb := | id<u64>  hw2<u8> |\n     |   2      200     |\n     |   3      300     |\n     |   4      400     |\n\nx := a ⟗ b\nc := x.hw1[4]?\n  | x => x\n  | * => 0.\n\nc",
+  "a := | id<u64>  hw1<u8> |\n     |   1       10    |\n     |   2       20    |\n     |   3       30    |\n\nb := | id<u64>  hw2<u8> |\n     |   2      200     |\n     |   3      300     |\n     |   4      400     |\n\nx := a ⟗ b\nc := x.hw1[4]?\n  | x => x\n  | * => 0.\n\nc + 0u8",
   Value::U8(Ref::new(0))
 );
 #[cfg(all(feature = "u8", feature = "u64"))]
 test_interpreter!(
   interpret_joined_column_option_match_uses_first_arm_type_for_wildcard_coercion,
-  "a := | id<u64>  hw1<u8> |\n     |   1       10    |\n     |   2       20    |\n     |   3       30    |\n\nb := | id<u64>  hw2<u8> |\n     |   2      200     |\n     |   3      300     |\n     |   4      400     |\n\nx := a ⟗ b\nw := x.hw1[4]?\n  | x => x\n  | * => 0.\n\nw",
+  "a := | id<u64>  hw1<u8> |\n     |   1       10    |\n     |   2       20    |\n     |   3       30    |\n\nb := | id<u64>  hw2<u8> |\n     |   2      200     |\n     |   3      300     |\n     |   4      400     |\n\nx := a ⟗ b\nw := x.hw1[4]?\n  | x => x\n  | * => 0.\n\nw + 0u8",
   Value::U8(Ref::new(0))
 );
 
