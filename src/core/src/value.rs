@@ -738,6 +738,39 @@ impl Hash for Value {
 }
 impl Value {
 
+  fn infer_matrix_value_kind(matrix: &Matrix<Value>) -> ValueKind {
+    let mut base_kind: Option<ValueKind> = None;
+    let mut saw_empty = false;
+
+    for value in matrix.as_vec().iter() {
+      match value {
+        Value::Empty => {
+          saw_empty = true;
+        }
+        _ => {
+          let kind = value.kind();
+          let (normalized_kind, normalized_empty) = match kind {
+            ValueKind::Option(inner) => ((*inner).clone(), true),
+            other => (other, false),
+          };
+          saw_empty |= normalized_empty;
+          match &base_kind {
+            None => base_kind = Some(normalized_kind),
+            Some(existing) if *existing == normalized_kind => {}
+            Some(_) => return ValueKind::Any,
+          }
+        }
+      }
+    }
+
+    match (base_kind, saw_empty) {
+      (Some(kind), true) => ValueKind::Option(Box::new(kind)),
+      (Some(kind), false) => kind,
+      (None, true) => ValueKind::Option(Box::new(ValueKind::Any)),
+      (None, false) => ValueKind::Any,
+    }
+  }
+
   pub fn from_kind(kind: &ValueKind) -> Self {
     todo!();
   }
@@ -1736,7 +1769,7 @@ impl Value {
       #[cfg(feature = "atom")]
       Value::Atom(x) => ValueKind::Atom(x.borrow().id(), x.borrow().name().clone()),
       #[cfg(feature = "matrix")]
-      Value::MatrixValue(x) => ValueKind::Matrix(Box::new(ValueKind::Any),x.shape()),
+      Value::MatrixValue(x) => ValueKind::Matrix(Box::new(Self::infer_matrix_value_kind(x)),x.shape()),
       #[cfg(feature = "matrix")]
       Value::MatrixIndex(x) => ValueKind::Matrix(Box::new(ValueKind::Index),x.shape()),
       #[cfg(all(feature = "matrix", feature = "bool"))]
