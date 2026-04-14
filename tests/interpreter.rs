@@ -125,6 +125,24 @@ test_interpreter!(
   "foo<f64?> := 1234\n\nbar := foo?\n  | x => \"One Two Three\"\n  | * => 12.\n\nbar + \"\"",
   Value::String(Ref::new("One Two Three".to_string()))
 );
+#[cfg(all(feature = "u8", feature = "u64"))]
+test_interpreter!(
+  interpret_joined_column_lookup_infers_option_for_present_value,
+  "a := | id<u64>  hw1<u8> |\n     |   1       10    |\n     |   2       20    |\n     |   3       30    |\n\nb := | id<u64>  hw2<u8> |\n     |   2      200     |\n     |   3      300     |\n     |   4      400     |\n\nx := a ⟗ b\ny := x.hw1[1]\ny? | x => x | * => 0u8.",
+  Value::U8(Ref::new(10))
+);
+#[cfg(all(feature = "u8", feature = "u64"))]
+test_interpreter!(
+  interpret_joined_column_lookup_infers_option_for_missing_value,
+  "a := | id<u64>  hw1<u8> |\n     |   1       10    |\n     |   2       20    |\n     |   3       30    |\n\nb := | id<u64>  hw2<u8> |\n     |   2      200     |\n     |   3      300     |\n     |   4      400     |\n\nx := a ⟗ b\nz<u8?> := x.hw1[4]\nz? | x => x | * => 0u8.",
+  Value::U8(Ref::new(0))
+);
+#[cfg(all(feature = "u8", feature = "u64"))]
+test_interpreter!(
+  interpret_joined_column_option_match_uses_first_arm_type_for_wildcard_coercion,
+  "a := | id<u64>  hw1<u8> |\n     |   1       10    |\n     |   2       20    |\n     |   3       30    |\n\nb := | id<u64>  hw2<u8> |\n     |   2      200     |\n     |   3      300     |\n     |   4      400     |\n\nx := a ⟗ b\nw := x.hw1[4]?\n  | x => x\n  | * => 0.\n\nw",
+  Value::U8(Ref::new(0))
+);
 
 #[test]
 fn interpret_option_match_requires_wildcard_arm() {
