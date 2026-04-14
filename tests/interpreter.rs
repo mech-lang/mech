@@ -1113,7 +1113,6 @@ y<u8> := x.hw1[4]? | x => x | * => 0."#,
 
 #[cfg(all(feature = "table", feature = "u64", feature = "u8"))]
 #[test]
-#[ignore = "Known limitation: scalar access from MatrixValue loses optional element kind and returns Reference(Empty)."]
 fn interpret_table_full_outer_join_optional_column_scalar_access_kind_is_u8_option() {
   let s = r#"
 a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |
@@ -1125,7 +1124,8 @@ y
   let tree = parser::parse(s).unwrap();
   let mut intrp = Interpreter::new(0);
   let result = intrp.interpret(&tree).unwrap();
-  assert_eq!(result.kind(), ValueKind::Option(Box::new(ValueKind::U8)));
+  assert_eq!(result.deref_kind(), ValueKind::Option(Box::new(ValueKind::U8)));
+  assert_eq!(result.format_value_inline(), "_");
 }
 
 #[cfg(all(feature = "table", feature = "u64"))]

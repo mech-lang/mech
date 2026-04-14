@@ -1141,7 +1141,7 @@ fn guard_expression_true(guard: &Expression, env: &Environment, p: &Interpreter)
 
 fn value_contains_empty(value: &Value) -> bool {
     match value {
-        Value::Empty => true,
+        Value::Empty | Value::EmptyKind(_) => true,
         #[cfg(feature = "tuple")]
         Value::Tuple(tuple) => tuple
             .borrow()

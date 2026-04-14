@@ -312,6 +312,7 @@ fn impl_var_define_fxn(var: Value, name: Value, mutable: Value, id: u64) -> MRes
       })));
     },
     (Value::Empty, name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineEmpty { var: Ref::new(Value::Empty), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
+    (Value::EmptyKind(kind), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineEmpty { var: Ref::new(Value::EmptyKind(kind.clone())), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
     #[cfg(feature = "matrix")]
     (Value::MatrixValue(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineEmpty { var: Ref::new(Value::MatrixValue(sink.clone())), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
     #[cfg(feature = "table")]

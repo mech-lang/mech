@@ -625,6 +625,7 @@ pub enum Value {
   MutableReference(MutableReference),
   Kind(ValueKind),
   IndexAll,
+  EmptyKind(ValueKind),
   Empty
 }
 
@@ -731,6 +732,7 @@ impl Hash for Value {
       Value::Kind(x) => x.hash(state),
       Value::Index(x)=> x.borrow().hash(state),
       Value::MutableReference(x) => x.borrow().hash(state),
+      Value::EmptyKind(k) => k.hash(state),
       Value::Empty => Value::Empty.hash(state),
       Value::IndexAll => Value::IndexAll.hash(state),
     }
@@ -745,7 +747,7 @@ impl Value {
 
     for value in matrix.as_vec().iter() {
       match value {
-        Value::Empty => {
+        Value::Empty | Value::EmptyKind(_) => {
           saw_empty = true;
         }
         _ => {
@@ -1002,6 +1004,7 @@ impl Value {
 
     match (self, other) {
     (Value::Empty, ValueKind::Option(_)) => Some(Value::Empty),
+    (Value::EmptyKind(_), ValueKind::Option(_)) => Some(Value::Empty),
     (value, ValueKind::Option(inner)) => value.convert_to(inner.as_ref()),
     (value, ValueKind::Matrix(_, target_shape))
       if target_shape.is_empty() && matches!(value.kind(), ValueKind::Matrix(_, _)) =>
@@ -1386,6 +1389,7 @@ impl Value {
       Value::Id(_) => 8,
       Value::Index(x) => 8,
       Value::Kind(_) => 0, // Kind is not a value, so it has no size
+      Value::EmptyKind(_) => 0,
       Value::Empty => 0,
       Value::IndexAll => 0, // IndexAll is a special value, so it has no size
     }
@@ -1476,7 +1480,7 @@ impl Value {
       Value::Tuple(t) => t.borrow().to_html(),
       #[cfg(feature = "enum")]
       Value::Enum(e) => e.borrow().to_html(),
-      Value::Empty => "<span class='mech-empty'>_</span>".to_string(),
+      Value::Empty | Value::EmptyKind(_) => "<span class='mech-empty'>_</span>".to_string(),
       Value::MutableReference(m) => {
         let inner = m.borrow();
         format!("<span class='mech-reference'>{}</span>", inner.to_html())
@@ -1612,6 +1616,7 @@ impl Value {
       Value::Kind(k) => format!("<{}>", k),
       Value::MutableReference(m) => m.borrow().format_value_inline(),
       Value::IndexAll => ":".to_string(),
+      Value::EmptyKind(_) => "_".to_string(),
       Value::Empty => "_".to_string(),
     }
   }
@@ -1719,7 +1724,7 @@ impl Value {
       Value::Tuple(x) => vec![1,x.borrow().size()],
       Value::Index(x) => vec![1,1],
       Value::MutableReference(x) => x.borrow().shape(),
-      Value::Empty => vec![0,0],
+      Value::Empty | Value::EmptyKind(_) => vec![0,0],
       Value::IndexAll => vec![0,0],
       Value::Kind(_) => vec![0,0],
       Value::Id(x) => vec![0,0],
@@ -1818,6 +1823,7 @@ impl Value {
       #[cfg(feature = "enum")]
       Value::Enum(x) => x.borrow().kind(),
       Value::MutableReference(x) => ValueKind::Reference(Box::new(x.borrow().kind())),
+      Value::EmptyKind(k) => k.clone(),
       Value::Empty => ValueKind::Empty,
       Value::IndexAll => ValueKind::Empty,
       Value::Id(x) => ValueKind::Id,
@@ -2439,7 +2445,7 @@ impl PrettyPrint for Value {
       Value::MatrixValue(x) => {return x.pretty_print();},
       Value::Index(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
       Value::MutableReference(x) => {return x.borrow().pretty_print();},
-      Value::Empty => builder.push_record(vec!["_"]),
+      Value::Empty | Value::EmptyKind(_) => builder.push_record(vec!["_"]),
       Value::IndexAll => builder.push_record(vec![":"]),
       Value::Id(x) => builder.push_record(vec![format!("{}",humanize(x))]),
       Value::Kind(x) => builder.push_record(vec![format!("<{}>",x)]),

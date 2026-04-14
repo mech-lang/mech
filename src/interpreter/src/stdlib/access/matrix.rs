@@ -823,12 +823,17 @@ struct MatrixAccessScalarValueF {
   source: Matrix<Value>,
   ix: Ref<usize>,
   out: Ref<Value>,
+  element_kind: ValueKind,
 }
 
 impl MechFunctionImpl for MatrixAccessScalarValueF {
   fn solve(&self) {
     let ix = *self.ix.borrow();
-    *self.out.borrow_mut() = self.source.index1d(ix);
+    let value = self.source.index1d(ix);
+    *self.out.borrow_mut() = match value {
+      Value::Empty => Value::EmptyKind(self.element_kind.clone()),
+      other => other,
+    };
   }
   fn out(&self) -> Value { self.out.borrow().clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
@@ -861,10 +866,15 @@ impl NativeFunctionCompiler for MatrixAccessScalar {
     let ixes = arguments.clone().split_off(1);
     let mat = arguments[0].clone();
     if let (Value::MatrixValue(source), [Value::Index(ix)]) = (mat.clone(), ixes.as_slice()) {
+      let element_kind = match mat.kind() {
+        ValueKind::Matrix(elem, _) => (*elem).clone(),
+        _ => ValueKind::Any,
+      };
       return Ok(Box::new(MatrixAccessScalarValueF {
         source,
         ix: ix.clone(),
-        out: Ref::new(Value::Empty),
+        out: Ref::new(Value::EmptyKind(element_kind.clone())),
+        element_kind,
       }));
     }
     match impl_access_scalar_fxn(mat.clone(), ixes.clone()) {
