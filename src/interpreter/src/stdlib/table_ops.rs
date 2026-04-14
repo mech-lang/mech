@@ -38,6 +38,7 @@ impl TableJoinFxn {
         }
 
         let common_rhs: HashSet<u64> = common_cols.iter().map(|(_, rhs_id)| *rhs_id).collect();
+        let common_lhs: HashSet<u64> = common_cols.iter().map(|(lhs_id, _)| *lhs_id).collect();
 
         let mut output_cols: Vec<(u64, ValueKind, String)> = vec![];
         for (lhs_id, (kind, _)) in lhs.data.iter() {
@@ -46,7 +47,14 @@ impl TableJoinFxn {
                 .get(lhs_id)
                 .cloned()
                 .unwrap_or_else(|| lhs_id.to_string());
-            output_cols.push((*lhs_id, kind.clone(), name));
+            let out_kind = if !common_lhs.contains(lhs_id)
+                && matches!(mode, JoinMode::RightOuter | JoinMode::FullOuter)
+            {
+                make_optional_kind(kind)
+            } else {
+                kind.clone()
+            };
+            output_cols.push((*lhs_id, out_kind, name));
         }
         for (rhs_id, (kind, _)) in rhs.data.iter() {
             if common_rhs.contains(rhs_id) {
@@ -57,7 +65,12 @@ impl TableJoinFxn {
                 .get(rhs_id)
                 .cloned()
                 .unwrap_or_else(|| rhs_id.to_string());
-            output_cols.push((*rhs_id, kind.clone(), name));
+            let out_kind = if matches!(mode, JoinMode::LeftOuter | JoinMode::FullOuter) {
+                make_optional_kind(kind)
+            } else {
+                kind.clone()
+            };
+            output_cols.push((*rhs_id, out_kind, name));
         }
 
         if matches!(mode, JoinMode::LeftSemi | JoinMode::LeftAnti) {
@@ -218,6 +231,13 @@ impl TableJoinFxn {
             data,
             col_names,
         })
+    }
+}
+
+fn make_optional_kind(kind: &ValueKind) -> ValueKind {
+    match kind {
+        ValueKind::Option(_) => kind.clone(),
+        _ => ValueKind::Option(Box::new(kind.clone())),
     }
 }
 

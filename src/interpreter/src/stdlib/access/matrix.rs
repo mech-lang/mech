@@ -818,6 +818,40 @@ fn impl_access_scalar_fxn(lhs_value: Value, ixes: Vec<Value>) -> MResult<Box<dyn
   impl_access_match_arms!(Access1DS, scalar, (lhs_value, ixes.as_slice()))
 }
 
+#[derive(Debug)]
+struct MatrixAccessScalarValueF {
+  source: Matrix<Value>,
+  ix: Ref<usize>,
+  out: Ref<Value>,
+}
+
+impl MechFunctionImpl for MatrixAccessScalarValueF {
+  fn solve(&self) {
+    let ix = *self.ix.borrow();
+    *self.out.borrow_mut() = self.source.index1d(ix);
+  }
+  fn out(&self) -> Value { self.out.borrow().clone() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for MatrixAccessScalarValueF {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let mut registers = [0,0,0];
+    registers[0] = compile_register_brrw!(self.out, ctx);
+    registers[1] = compile_register!(self.source, ctx);
+    registers[2] = compile_register_brrw!(self.ix, ctx);
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
+    ctx.emit_binop(
+      hash_str("MatrixAccessScalarValueF"),
+      registers[0],
+      registers[1],
+      registers[2],
+    );
+    Ok(registers[0])
+  }
+}
+
 pub struct MatrixAccessScalar {}
 impl NativeFunctionCompiler for MatrixAccessScalar {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -826,6 +860,13 @@ impl NativeFunctionCompiler for MatrixAccessScalar {
     }
     let ixes = arguments.clone().split_off(1);
     let mat = arguments[0].clone();
+    if let (Value::MatrixValue(source), [Value::Index(ix)]) = (mat.clone(), ixes.as_slice()) {
+      return Ok(Box::new(MatrixAccessScalarValueF {
+        source,
+        ix: ix.clone(),
+        out: Ref::new(Value::Empty),
+      }));
+    }
     match impl_access_scalar_fxn(mat.clone(), ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
