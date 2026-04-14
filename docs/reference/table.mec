@@ -258,6 +258,30 @@ Returns all rows from both sides, combining matches when available.
 a ⟗ b -- table/full-outer-join(a,b)
 ```
 
+When an outer join introduces missing values in non-key columns, those columns are promoted to optional kinds. If a column was declared as `T`, the joined column kind becomes `[T?]` (a column vector of optional `T` values).
+
+For example, `hw1<u8>` from `a` becomes `[u8?]` after a full outer join because row `id=4` has no `a.hw1` value:
+
+```mech:join-optional
+a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |
+b := |id<u64> hw2<u8>| 2 200 | 3 255 | 4 42 |
+x := a ⟗ b
+x.hw1
+```
+
+Indexing into such a column returns an optional scalar (`T?`):
+
+```mech:join-optional
+x.hw1[1] -- some(10u8)
+x.hw1[4] -- none<u8>
+```
+
+You can destructure optional values with `?` and `match` to provide a fallback:
+
+```mech:join-optional
+y<u8> := x.hw1[4]? | v => v | * => 0.
+```
+
 (6.5) Left Semi Join `⋉`
 
 Returns only left rows that have at least one match in the right table.
