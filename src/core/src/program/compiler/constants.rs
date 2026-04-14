@@ -93,6 +93,10 @@ impl CompileConst for Value {
       Value::Record(x) => x.borrow().compile_const(ctx)?,
       #[cfg(feature = "set")]
       Value::Set(x) => x.borrow().compile_const(ctx)?,
+      Value::Typed(value, kind) => match value.as_ref() {
+        Value::Empty => ctx.compile_const(&[], kind.clone())?,
+        _ => value.compile_const(ctx)?,
+      },
       Value::EmptyKind(k) => ctx.compile_const(&[], k.clone())?,
       Value::Empty => ctx.compile_const(&[], ValueKind::Empty)?,
       x => todo!("CompileConst not implemented for {:?}", x),
@@ -925,6 +929,11 @@ impl ConstElem for Value {
       Value::Empty | Value::EmptyKind(_) => { 
         // no payload for Empty 
       },
+      Value::Typed(value, _) => {
+        if !matches!(value.as_ref(), Value::Empty) {
+          unimplemented!("write_le for non-empty typed value is not implemented");
+        }
+      }
       #[cfg(feature = "bool")]
       Value::Bool(x) => x.borrow().write_le(out),
       #[cfg(feature = "string")]

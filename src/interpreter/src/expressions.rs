@@ -1148,6 +1148,7 @@ fn value_contains_empty(value: &Value) -> bool {
             .elements
             .iter()
             .any(|value| value_contains_empty(value.as_ref())),
+        Value::Typed(value, _) => value_contains_empty(value),
         Value::MutableReference(reference) => value_contains_empty(&reference.borrow()),
         _ => false,
     }

@@ -830,9 +830,9 @@ impl MechFunctionImpl for MatrixAccessScalarValueF {
   fn solve(&self) {
     let ix = *self.ix.borrow();
     let value = self.source.index1d(ix);
-    *self.out.borrow_mut() = match value {
-      Value::Empty => Value::EmptyKind(self.element_kind.clone()),
-      other => other,
+    *self.out.borrow_mut() = match &self.element_kind {
+      ValueKind::Option(_) => Value::Typed(Box::new(value), self.element_kind.clone()),
+      _ => value,
     };
   }
   fn out(&self) -> Value { self.out.borrow().clone() }
@@ -870,10 +870,14 @@ impl NativeFunctionCompiler for MatrixAccessScalar {
         ValueKind::Matrix(elem, _) => (*elem).clone(),
         _ => ValueKind::Any,
       };
+      let init = match &element_kind {
+        ValueKind::Option(_) => Value::Typed(Box::new(Value::Empty), element_kind.clone()),
+        _ => Value::Empty,
+      };
       return Ok(Box::new(MatrixAccessScalarValueF {
         source,
         ix: ix.clone(),
-        out: Ref::new(Value::EmptyKind(element_kind.clone())),
+        out: Ref::new(init),
         element_kind,
       }));
     }
