@@ -61,6 +61,9 @@ mod run;
 #[cfg(feature = "mechfs")]
 mod mechfs;
 
+#[cfg(feature = "compiler")]
+pub mod compiler;
+
 #[cfg(feature = "repl")]
 pub use self::repl::*;
 #[cfg(feature = "serve")]
