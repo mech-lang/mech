@@ -711,6 +711,14 @@ h5.toc {
     line-height: 24px;
 }
 
+.mech-match-op {
+    color: var(--op-color);
+}
+
+.mech-code-block > *:not(:last-child) {
+    margin-bottom: 5px;
+}
+
 .mech-code .mech-comment {
     margin: 0px;
     padding: 0px;
@@ -1060,10 +1068,19 @@ a.mech-hyperlink:hover .mech-inline-code {
     display: flex;
     flex-direction: column;
     margin-left: 20px;
+    line-height: 18px;
 }
 
 .mech-state-definition {
     display: inline-flex;
+}
+
+.mech-match-arms {
+    display: flex;
+    flex-direction: column;
+    margin-left: -140px;
+    line-height: 18px;
+    color: var(--op-color);
 }
 
 .mech-fsm-arms {
@@ -1114,6 +1131,7 @@ a.mech-hyperlink:hover .mech-inline-code {
     display: flex;
     flex-direction: column;
     margin-left: 20px;
+    line-height: 18px;
 }
 
 .mech-fsm-guard-arm {
@@ -1163,10 +1181,6 @@ a.mech-hyperlink:hover .mech-inline-code {
 }
 
 .mech-state-name {
-    color: #dbc3a5;
-}
-
-.mech-tuple-struct-name {
     color: #dbc3a5;
 }
 
@@ -2686,4 +2700,20 @@ mark {
 
 .mech-pattern .mech-var-name {
     color: var(--pattern-color);
+}
+
+.mech-pattern .mech-atom-name {
+    color: var(--pattern-color);
+}
+
+.mech-pattern .mech-tuple-struct {
+    color: var(--pattern-color);
+}
+
+.mech-pattern .mech-tuple-struct-name {
+    color: var(--pattern-color);
+}
+
+.mech-tuple-struct {
+    color: var(--literal-color);
 }
