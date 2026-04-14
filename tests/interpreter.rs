@@ -127,14 +127,14 @@ test_interpreter!(
 );
 #[cfg(all(feature = "u8", feature = "u64"))]
 test_interpreter!(
-  interpret_joined_column_lookup_infers_option_for_present_value,
-  "a := | id<u64>  hw1<u8> |\n     |   1       10    |\n     |   2       20    |\n     |   3       30    |\n\nb := | id<u64>  hw2<u8> |\n     |   2      200     |\n     |   3      300     |\n     |   4      400     |\n\nx := a ⟗ b\ny := x.hw1[1]\ny? | x => x | * => 0u8.",
+  interpret_joined_column_lookup_infers_option_for_missing_and_present_values,
+  "a := | id<u64>  hw1<u8> |\n     |   1       10    |\n     |   2       20    |\n     |   3       30    |\n\nb := | id<u64>  hw2<u8> |\n     |   2      200     |\n     |   3      300     |\n     |   4      400     |\n\nx := a ⟗ b\ny := x.hw1[4]\nz := x.hw1[1]\ny2<u8?> := y\nz2<u8?> := z\nleft := y2? | x => x | * => 0u8.\nright := z2? | x => x | * => 0u8.\nleft + right",
   Value::U8(Ref::new(10))
 );
 #[cfg(all(feature = "u8", feature = "u64"))]
 test_interpreter!(
-  interpret_joined_column_lookup_infers_option_for_missing_value,
-  "a := | id<u64>  hw1<u8> |\n     |   1       10    |\n     |   2       20    |\n     |   3       30    |\n\nb := | id<u64>  hw2<u8> |\n     |   2      200     |\n     |   3      300     |\n     |   4      400     |\n\nx := a ⟗ b\nz<u8?> := x.hw1[4]\nz? | x => x | * => 0u8.",
+  interpret_joined_column_option_match_with_missing_value_coerces_wildcard_arm,
+  "a := | id<u64>  hw1<u8> |\n     |   1       10    |\n     |   2       20    |\n     |   3       30    |\n\nb := | id<u64>  hw2<u8> |\n     |   2      200     |\n     |   3      300     |\n     |   4      400     |\n\nx := a ⟗ b\nc := x.hw1[4]?\n  | x => x\n  | * => 0.\n\nc",
   Value::U8(Ref::new(0))
 );
 #[cfg(all(feature = "u8", feature = "u64"))]
