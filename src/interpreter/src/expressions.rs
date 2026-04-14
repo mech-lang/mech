@@ -1141,13 +1141,14 @@ fn guard_expression_true(guard: &Expression, env: &Environment, p: &Interpreter)
 
 fn value_contains_empty(value: &Value) -> bool {
     match value {
-        Value::Empty => true,
+        Value::Empty | Value::EmptyKind(_) => true,
         #[cfg(feature = "tuple")]
         Value::Tuple(tuple) => tuple
             .borrow()
             .elements
             .iter()
             .any(|value| value_contains_empty(value.as_ref())),
+        Value::Typed(value, _) => value_contains_empty(value),
         Value::MutableReference(reference) => value_contains_empty(&reference.borrow()),
         _ => false,
     }

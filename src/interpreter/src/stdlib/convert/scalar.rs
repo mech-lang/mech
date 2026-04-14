@@ -396,6 +396,15 @@ where
 }
 
 fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {
+  if let (Value::Typed(inner, declared_kind), Value::Kind(target_vk)) = (&source_value, &target_kind) {
+    if declared_kind == target_vk {
+      return Ok(Box::new(ConvertSEmpty {
+        out: Ref::new(Value::Typed(inner.clone(), declared_kind.clone())),
+      }));
+    }
+    return impl_conversion_fxn((**inner).clone(), target_kind);
+  }
+
   match (&source_value, &target_kind) {
     #[cfg(all(feature = "matrix", feature = "set"))]
     (source, Value::Kind(ValueKind::Set(target_kind, _))) => {
