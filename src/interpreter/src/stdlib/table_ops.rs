@@ -38,6 +38,7 @@ impl TableJoinFxn {
         }
 
         let common_rhs: HashSet<u64> = common_cols.iter().map(|(_, rhs_id)| *rhs_id).collect();
+        let common_lhs: HashSet<u64> = common_cols.iter().map(|(lhs_id, _)| *lhs_id).collect();
 
         let mut output_cols: Vec<(u64, ValueKind, String)> = vec![];
         for (lhs_id, (kind, _)) in lhs.data.iter() {
@@ -46,7 +47,14 @@ impl TableJoinFxn {
                 .get(lhs_id)
                 .cloned()
                 .unwrap_or_else(|| lhs_id.to_string());
-            output_cols.push((*lhs_id, kind.clone(), name));
+            let out_kind = if !common_lhs.contains(lhs_id)
+                && matches!(mode, JoinMode::RightOuter | JoinMode::FullOuter)
+            {
+                make_optional_kind(kind)
+            } else {
+                kind.clone()
+            };
+            output_cols.push((*lhs_id, out_kind, name));
         }
         for (rhs_id, (kind, _)) in rhs.data.iter() {
             if common_rhs.contains(rhs_id) {
@@ -57,7 +65,12 @@ impl TableJoinFxn {
                 .get(rhs_id)
                 .cloned()
                 .unwrap_or_else(|| rhs_id.to_string());
-            output_cols.push((*rhs_id, kind.clone(), name));
+            let out_kind = if matches!(mode, JoinMode::LeftOuter | JoinMode::FullOuter) {
+                make_optional_kind(kind)
+            } else {
+                kind.clone()
+            };
+            output_cols.push((*rhs_id, out_kind, name));
         }
 
         if matches!(mode, JoinMode::LeftSemi | JoinMode::LeftAnti) {
@@ -218,6 +231,13 @@ impl TableJoinFxn {
             data,
             col_names,
         })
+    }
+}
+
+fn make_optional_kind(kind: &ValueKind) -> ValueKind {
+    match kind {
+        ValueKind::Option(_) => kind.clone(),
+        _ => ValueKind::Option(Box::new(kind.clone())),
     }
 }
 
@@ -471,4 +491,69 @@ register_descriptor! {
     name: "table/left-anti-join",
     ptr: &TableLeftAntiJoin{},
   }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use indexmap::map::IndexMap;
+    use std::collections::HashMap;
+
+    fn make_table(cols: Vec<(&str, ValueKind, Vec<Value>)>) -> MechTable {
+        let rows = cols.first().map(|(_, _, values)| values.len()).unwrap_or(0);
+        let mut data = IndexMap::new();
+        let mut col_names = HashMap::new();
+        for (name, kind, values) in cols {
+            let col_id = hash_str(name);
+            col_names.insert(col_id, name.to_string());
+            data.insert(
+                col_id,
+                (kind, Matrix::DVector(Ref::new(DVector::from_vec(values)))),
+            );
+        }
+        MechTable {
+            rows,
+            cols: data.len(),
+            data,
+            col_names,
+        }
+    }
+
+    #[test]
+    fn full_outer_join_marks_non_key_columns_optional() {
+        let lhs = make_table(vec![
+            (
+                "id",
+                ValueKind::U64,
+                vec![Value::U64(Ref::new(1)), Value::U64(Ref::new(2))],
+            ),
+            (
+                "hw1",
+                ValueKind::U8,
+                vec![Value::U8(Ref::new(10)), Value::U8(Ref::new(20))],
+            ),
+        ]);
+        let rhs = make_table(vec![
+            (
+                "id",
+                ValueKind::U64,
+                vec![Value::U64(Ref::new(2)), Value::U64(Ref::new(3))],
+            ),
+            (
+                "hw2",
+                ValueKind::U8,
+                vec![Value::U8(Ref::new(200u8)), Value::U8(Ref::new(255u8))],
+            ),
+        ]);
+
+        let joined = TableJoinFxn::build_joined_table(&lhs, &rhs, JoinMode::FullOuter).unwrap();
+
+        let hw1_kind = &joined.data.get(&hash_str("hw1")).unwrap().0;
+        let hw2_kind = &joined.data.get(&hash_str("hw2")).unwrap().0;
+        let id_kind = &joined.data.get(&hash_str("id")).unwrap().0;
+
+        assert_eq!(hw1_kind, &ValueKind::Option(Box::new(ValueKind::U8)));
+        assert_eq!(hw2_kind, &ValueKind::Option(Box::new(ValueKind::U8)));
+        assert_eq!(id_kind, &ValueKind::U64);
+    }
 }
