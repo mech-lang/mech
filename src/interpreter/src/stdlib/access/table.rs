@@ -125,6 +125,14 @@ macro_rules! impl_access_column_table_match_arms {
 }
 
 fn impl_access_column_table_fxn(source: Value, key: Value) -> MResult<Box<dyn MechFunction>> {
+  if let (Value::Table(tbl), Value::Id(k)) = (&source, &key) {
+    let tbl_brrw = tbl.borrow();
+    if let Some((ValueKind::Option(_), value)) = tbl_brrw.get(k) {
+      return Ok(Box::new(TableAccessSwizzle {
+        out: Value::MatrixValue(value.clone()),
+      }));
+    }
+  }
   impl_access_column_table_match_arms!(
     (source,key),
     Bool,bool::default(),"bool";

@@ -1073,6 +1073,44 @@ test_interpreter!(interpret_table_full_outer_join_symbol, r#"A := |id<u64> a<u64
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(interpret_table_full_outer_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/full-outer-join(A, B); J.id[1]"#, Value::U64(Ref::new(1)));
 
+#[cfg(all(feature = "table", feature = "u64", feature = "u8"))]
+#[test]
+fn interpret_table_full_outer_join_optional_column_kind_is_u8_option_matrix() {
+  let s = r#"
+a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |
+b := |id<u64> hw2<u8>| 2 200 | 3 255 | 4 42 |
+x := a ⟗ b
+x.hw1
+"#;
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  assert_eq!(
+    result.kind(),
+    ValueKind::Matrix(Box::new(ValueKind::Option(Box::new(ValueKind::U8))), vec![4,1])
+  );
+}
+
+#[cfg(all(feature = "table", feature = "u64", feature = "u8"))]
+test_interpreter!(
+  interpret_table_full_outer_join_optional_column_unwrap_some,
+  r#"a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |
+b := |id<u64> hw2<u8>| 2 200 | 3 255 | 4 42 |
+x := a ⟗ b
+y<u8> := x.hw1[1]? | x => x | * => 0."#,
+  Value::U8(Ref::new(10))
+);
+
+#[cfg(all(feature = "table", feature = "u64", feature = "u8"))]
+test_interpreter!(
+  interpret_table_full_outer_join_optional_column_unwrap_none,
+  r#"a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |
+b := |id<u64> hw2<u8>| 2 200 | 3 255 | 4 42 |
+x := a ⟗ b
+y<u8> := x.hw1[4]? | x => x | * => 0."#,
+  Value::U8(Ref::new(0))
+);
+
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(interpret_table_left_semi_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ⋉ B; J.a[2]"#, Value::U64(Ref::new(30)));
 #[cfg(all(feature = "table", feature = "u64"))]
