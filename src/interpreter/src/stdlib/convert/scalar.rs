@@ -132,6 +132,27 @@ where
   }
 }
 
+#[cfg(all(feature = "matrix", feature = "table"))]
+fn resolve_table_column_kinds(tbl: &Vec<(String, ValueKind)>, mat_knd: ValueKind) -> MResult<Vec<(String, ValueKind)>> {
+  tbl
+    .iter()
+    .map(|(col_name, col_kind)| {
+      if *col_kind == ValueKind::Any {
+        Ok((col_name.clone(), mat_knd.clone()))
+      } else if *col_kind == mat_knd || mat_knd.is_convertible_to(col_kind) {
+        Ok((col_name.clone(), col_kind.clone()))
+      } else {
+        Err(
+          MechError::new(
+            ColumnConvertKindMismatchError { from: mat_knd.clone(), to: col_kind.clone() },
+            None,
+          ).with_compiler_loc()
+        )
+      }
+    })
+    .collect()
+}
+
 #[cfg(all(feature = "matrix", feature = "set"))]
 fn matrix_to_values(value: &Value) -> Option<Vec<Value>> {
   match value {
@@ -249,22 +270,10 @@ macro_rules! impl_conversion_match_arms {
                 None,
               ).with_compiler_loc());
             }
-            // Verify each column of the matrix can be converted to the target type of the table
-            for (_, knd) in &tbl {
-              if *knd == mat_knd {
-                continue;
-              } else if mat_knd.is_convertible_to(knd) {
-                continue;
-              } else {
-                return Err(MechError::new(
-                  ColumnConvertKindMismatchError{from: mat_knd, to: knd.clone()},
-                  None,
-                ).with_compiler_loc());
-              }
-            }
+            let resolved_tbl = resolve_table_column_kinds(&tbl, mat_knd)?;
             // Create a blank table matching the requested size, or source rows if unspecified.
             let out_rows = if sze == 0 { in_shape[0] } else { sze };
-            let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), out_rows))?;
+            let out = MechTable::from_kind(ValueKind::Table(resolved_tbl, out_rows))?;
             Ok(Box::new(ConvertMat2Table::<$input_type>{arg: mat.clone(), out: Ref::new(out)}))
           }
           $(
@@ -290,6 +299,19 @@ macro_rules! impl_conversion_match_arms {
         }
         (Value::Empty, Value::Kind(ValueKind::Empty)) => {
           Ok(Box::new(ConvertSEmpty { out: Ref::new(Value::Empty) }))
+        }
+        (value, Value::Kind(ValueKind::Option(inner_kind))) => {
+          let converted = if value == Value::Empty {
+            Value::Empty
+          } else {
+            value
+              .convert_to(inner_kind.as_ref())
+              .ok_or_else(|| MechError::new(
+                UnsupportedConversionError { from: value.kind(), to: ValueKind::Option(inner_kind.clone()) },
+                None,
+              ).with_compiler_loc())?
+          };
+          Ok(Box::new(ConvertSEmpty { out: Ref::new(converted) }))
         }
         x => Err(MechError::new(
             UnsupportedConversionError{from: x.0.kind(), to: x.1.kind()},
@@ -374,6 +396,15 @@ where
 }
 
 fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {
+  if let (Value::Typed(inner, declared_kind), Value::Kind(target_vk)) = (&source_value, &target_kind) {
+    if declared_kind == target_vk {
+      return Ok(Box::new(ConvertSEmpty {
+        out: Ref::new(Value::Typed(inner.clone(), declared_kind.clone())),
+      }));
+    }
+    return impl_conversion_fxn((**inner).clone(), target_kind);
+  }
+
   match (&source_value, &target_kind) {
     #[cfg(all(feature = "matrix", feature = "set"))]
     (source, Value::Kind(ValueKind::Set(target_kind, _))) => {
@@ -403,9 +434,10 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
           None,
         ).with_compiler_loc());
       }
+      let resolved_tbl = resolve_table_column_kinds(tbl, ValueKind::String)?;
       // Create a blank table matching the requested size, or source rows if unspecified.
       let out_rows = if *sze == 0 { in_shape[0] } else { *sze };
-      let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), out_rows))?;
+      let out = MechTable::from_kind(ValueKind::Table(resolved_tbl, out_rows))?;
       return Ok(Box::new(ConvertMat2Table::<String>{arg: mat.clone(), out: Ref::new(out)}));
     }
     #[cfg(all(feature = "matrix", feature = "table", feature = "bool"))]
@@ -418,10 +450,48 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
           None,
         ).with_compiler_loc());
       }
+      let resolved_tbl = resolve_table_column_kinds(tbl, ValueKind::Bool)?;
       // Create a blank table matching the requested size, or source rows if unspecified.
       let out_rows = if *sze == 0 { in_shape[0] } else { *sze };
-      let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), out_rows))?;
+      let out = MechTable::from_kind(ValueKind::Table(resolved_tbl, out_rows))?;
       return Ok(Box::new(ConvertMat2Table::<bool>{arg: mat.clone(), out: Ref::new(out)}));
+    }
+    #[cfg(all(feature = "matrix", feature = "table"))]
+    (Value::Table(table), Value::Kind(ValueKind::Matrix(target_kind, dims))) => {
+      let table = table.borrow();
+      let rows = table.rows();
+      let cols = table.cols();
+
+      if !dims.is_empty() {
+        let dim_count = dims.iter().product::<usize>();
+        if dim_count != rows * cols {
+          return Err(MechError::new(
+            ConvertIncorrectNumberOfColumnsError { from: rows * cols, to: dim_count },
+            None,
+          ).with_compiler_loc());
+        }
+      }
+
+      let mut elements = Vec::with_capacity(rows * cols);
+      for (_column_id, (_kind, column_values)) in table.data.iter() {
+        elements.extend(column_values.as_vec());
+      }
+
+      if target_kind.as_ref() != &ValueKind::Any {
+        return Err(MechError::new(
+          UnhandledFunctionArgumentKind2 {
+            arg: (
+              source_value.kind(),
+              ValueKind::Matrix(target_kind.clone(), dims.clone()),
+            ),
+            fxn_name: "convert/scalar".to_string(),
+          },
+          None,
+        ).with_compiler_loc());
+      }
+
+      let matrix = Value::MatrixValue(Matrix::from_vec(elements, rows, cols));
+      return Ok(Box::new(ConvertSEmpty { out: Ref::new(matrix) }));
     }
     _ =>(),
   }

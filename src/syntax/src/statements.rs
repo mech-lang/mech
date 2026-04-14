@@ -155,6 +155,7 @@ fn tuple_destructure(input: ParseString) -> ParseResult<TupleDestructure> {
 // statement := variable-define | variable-assign | op-assign | enum-define | tuple-destructure | kind-define ;
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
   let parsers: Vec<(&'static str,Box<dyn Fn(ParseString) -> ParseResult<Statement>>)> = vec![
+    ("fsm_declare", Box::new(|i| fsm_declare(i).map(|(i, v)| (i, Statement::FsmDeclare(v))))),
     ("variable_define", Box::new(|i| variable_define(i).map(|(i, v)| (i, Statement::VariableDefine(v))))),
     ("variable_assign", Box::new(|i| variable_assign(i).map(|(i, v)| (i, Statement::VariableAssign(v))))),
     ("op_assign", Box::new(|i| op_assign(i).map(|(i, v)| (i, Statement::OpAssign(v))))),
@@ -175,11 +176,12 @@ pub fn enum_define(input: ParseString) -> ParseResult<EnumDefine> {
   Ok((input, EnumDefine{name, variants}))
 }
 
-// enum-variant := grave?, identifier, enum-variant-kind? ;
+// enum-variant := grave?, colon?, identifier, enum-variant-kind? ;
 pub fn enum_variant(input: ParseString) -> ParseResult<EnumVariant> {
   let (input, _) = opt(grave)(input)?;
+  let (input, _) = opt(colon)(input)?;
   let (input, name) = identifier(input)?;
-  let (input, value) = opt(enum_variant_kind)(input)?;
+  let (input, value) = opt(alt((enum_variant_kind, enum_variant_inline_kind)))(input)?;
   Ok((input, EnumVariant{name, value}))
 }
 
@@ -189,6 +191,12 @@ pub fn enum_variant_kind(input: ParseString) -> ParseResult<KindAnnotation> {
   let (input, annotation) = kind_annotation(input)?;
   let (input, _) = right_parenthesis(input)?;
   Ok((input, annotation))
+}
+
+// enum-variant-inline-kind := kind-annotation ;
+// Allows compact tagged-union syntax like `:ok<u64>`.
+pub fn enum_variant_inline_kind(input: ParseString) -> ParseResult<KindAnnotation> {
+  kind_annotation(input)
 }
 
 // kind-define := "<", identifier, ">", define-operator, kind-annotation ;

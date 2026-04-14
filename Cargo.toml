@@ -1,6 +1,6 @@
 [package]
 name = "mech"
-version = "0.3.2"
+version = "0.3.4"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Mech is a programming language for building reactive systems like robots, games, and animations."
 documentation = "https://docs.mech-lang.org"
@@ -29,13 +29,13 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "u8", "u16", "u32", "u64", "u128", 
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
-      "statements_default", "subscript_default",
-      "formatter", "mechfs", "serve", "run", "repl", "build", "whos", "async",
+      "statements_default", "subscript_default", "state_machines",
+      "formatter", "mechfs", "serve", "run", "repl", "build", "whos", "async", "trace",
       "mech-core/default", "mech-interpreter/default", "mech-syntax/default",
       ]
 base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
-      "statements_default", "subscript_default",
-      "formatter", "mechfs", "serve", "run", "repl", "build","whos", "async",
+      "statements_default", "subscript_default", "state_machines",
+      "formatter", "mechfs", "serve", "run", "repl", "build","whos", "async", "trace",
       "mech-core/base", "mech-interpreter/base", "mech-syntax/base",
       ]
 build = ["compiler"]
@@ -46,6 +46,7 @@ mechfs = ["formatter"]
 whos = ["pretty_print", "variables", "symbol_table"]
 formatter = ["mech-syntax/formatter"]
 async = []
+trace = ["mech-interpreter/trace"]
 
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
@@ -92,6 +93,7 @@ kind_define = ["kind_annotation", "statements", "mech-core/kind_define", "mech-i
 kind_annotation = ["functions", "mech-core/kind_annotation", "mech-interpreter/kind_annotation", "mech-syntax/kind_annotation"]
 formulas = ["mech-core/formulas", "mech-interpreter/formulas", "mech-syntax/formulas"]
 functions = ["symbol_table", "mech-core/functions", "mech-interpreter/functions", "mech-syntax/functions"]
+state_machines = ["functions", "mech-interpreter/state_machines"]
 symbol_table = ["mech-core/symbol_table", "mech-interpreter/symbol_table", "mech-syntax/symbol_table"]
 
 bool = ["mech-core/bool", "mech-interpreter/bool", "mech-syntax/bool"]
@@ -168,9 +170,9 @@ matrix_vertcat = ["matrix"]
 nalgebra = "0.34.1"
 
 [dependencies]
-mech-core        = { version = "0.3.2", default-features = false }
-mech-syntax      = { version = "0.3.2", default-features = false }
-mech-interpreter = { version = "0.3.2", default-features = false }
+mech-core        = { version = "0.3.4", default-features = false }
+mech-syntax      = { version = "0.3.4", default-features = false }
+mech-interpreter = { version = "0.3.4", default-features = false }
 
 sevenz-rust = "0.6.1"
 colored = "3.1.1"
@@ -235,13 +237,13 @@ mech-set = { path = 'machines/set' }
 mech-string = { path = 'machines/string' }
 
 [patch.'https://gitlab.com/mech-lang/core']
-mech-core = { path = 'src/core', version = '0.3.2' }
+mech-core = { path = 'src/core', version = '0.3.4' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
-mech-syntax = { path = 'src/syntax', version = '0.3.2' }
+mech-syntax = { path = 'src/syntax', version = '0.3.4' }
 
 [patch.'https://gitlab.com/mech-lang/interpreter']
-mech-interpreter = { path = 'src/interpreter', version = '0.3.2' }
+mech-interpreter = { path = 'src/interpreter', version = '0.3.4' }
 
 #[patch.'https://gitlab.com/mech-lang/wasm']
 #mech-wasm = { path = 'src/wasm', version = '0.2.44' }

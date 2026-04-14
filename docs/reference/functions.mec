@@ -9,10 +9,10 @@ functions
 Functions are defined with a signature, one or more guards, and a trailing `.`.
 
 ```
-name(arg1<kind1>, arg2<kind2>, ...) -> <return-kind>
-  ├ pattern-1 -> expression-1
-  ├ pattern-2 -> expression-2
-  └ pattern-n -> expression-n.
+name(arg1<kind1>, arg2<kind2>, ...) => <return-kind>
+  ├ pattern-1 => expression-1
+  ├ pattern-2 => expression-2
+  └ pattern-n => expression-n.
 ```
 
 A function call uses regular call syntax:
@@ -42,9 +42,9 @@ name(arg1: value1, arg2: value2)
 (3.1) Recursive Power
 
 ```mech:ex 3.1
-power(x<u64>, n<u64>) -> <u64>
-  ├ (*, 0u64) -> 1u64
-  └ (x, n) -> x * power(x, n - 1u64).
+power(x<u64>, n<u64>) => <u64>
+  ├ (*, 0u64) => 1u64
+  └ (x, n) => x * power(x, n - 1u64).
 
 power(2u64, 8u64)
 ```
@@ -52,9 +52,9 @@ power(2u64, 8u64)
 (3.2) Recursive Factorial
 
 ```mech:ex 3.2
-factorial(n<u64>) -> <u64>
-  ├ 0u64 -> 1u64
-  └ n -> n * factorial(n - 1u64).
+factorial(n<u64>) => <u64>
+  ├ 0u64 => 1u64
+  └ n => n * factorial(n - 1u64).
 
 factorial(10u64)
 ```
@@ -62,10 +62,10 @@ factorial(10u64)
 (3.3) Recursive Fibonacci
 
 ```mech:ex 3.3
-fib(n<u64>) -> <u64>
-  ├ 0u64 -> 0u64
-  ├ 1u64 -> 1u64
-  └ n -> fib(n - 1u64) + fib(n - 2u64).
+fib(n<u64>) => <u64>
+  ├ 0u64 => 0u64
+  ├ 1u64 => 1u64
+  └ n => fib(n - 1u64) + fib(n - 2u64).
 
 fib(10u64)
 ```
@@ -88,10 +88,10 @@ fxn-name(arg1: value1, arg2: value2, ...)
 Function calls can also broadcast over vectors:
 
 ```
-fib(n<u64>) -> <u64>
-  ├ 0u64 -> 0u64
-  ├ 1u64 -> 1u64
-  └ n -> fib(n - 1u64) + fib(n - 2u64).
+fib(n<u64>) => <u64>
+  ├ 0u64 => 0u64
+  ├ 1u64 => 1u64
+  └ n => fib(n - 1u64) + fib(n - 2u64).
 
 xs := 0u64..=10u64
 fib(xs)

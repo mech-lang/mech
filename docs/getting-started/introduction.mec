@@ -52,9 +52,9 @@ This example demonstrates several core Mech features:
 Here is an example of a recursive function to compute the power of a number:
 
 ```mech:power-function
-power(x<u64>, y<u64>) -> <u64>
-  ├ (*, 0) -> 1
-  └ (x, y) -> x * power(x, y - 1u64).
+power(x<u64>, y<u64>) => <u64>
+  ├ (*, 0) => 1
+  └ (x, y) => x * power(x, y - 1u64).
 power(2u64, 4u64)
 ```
 
@@ -109,6 +109,67 @@ user := 1
 - **Pattern matching**: Tuples are destructured directly in the comprehension.
 - **Relational**: Reusing variables creates natural joins across data.
 - **Declarative**: Relationships are described without explicit iteration.
+
+(1.1.6) Relational Joins
+
+Tables are a core data structure in Mech and support relational operators like joins. Here is an example that uses a join to combine data from two tables based on a shared key:
+
+```mech:join-example
+a := | id<u64>  hw1<u8> |
+     |   1       10    |
+     |   2       20    |
+     |   3       30    |
+     
+b := | id<u64>  hw2<u8> |
+     |   2      200     |
+     |   3      300     |
+     |   4      400     |
+a ⟗ b
+```
+
+The resulting table has all rows from table `a`, with matching data from table `b` where available, and empty values where there is no match.
+
+(1.1.7) Enum Match
+
+Enums and match expressions make it easy to model categorical data and branch on structured values:
+
+```mech:enum-match
+<http-status> := :ok | :created | :not-found | :server-error<u16>
+
+status<http-status> := :server-error(503u16)
+message<string> := status?
+  | :ok => "Request succeeded"
+  | :created => "Resource created"
+  | :not-found => "Resource missing"
+  | :server-error(code), code >= 500u16 => "Server failure"
+  | * => "Unhandled status".
+```
+
+- **Enums**: Sum types represent one-of-many states with optional payloads.
+- **Pattern matching**: Match arms destructure variants and branch declaratively.
+- **Guards**: Conditions on matched values (like `code >= 500u16`) refine behavior without nested conditionals.
+
+(1.1.8) State Machine
+
+State machines let you model step-by-step behavior where transitions are explicit and type checked:
+
+```mech:state-machine
+#Countdown(start<u64>) => <u64>
+  ├ :Tick(n<u64>)
+  └ :Done(out<u64>).
+
+#Countdown(start<u64>) -> :Tick(start)
+  :Tick(n)
+    ├ n > 0u64 -> :Tick(n - 1u64)
+    └ n == 0u64 -> :Done(0u64)
+  :Done(out) => out.
+
+#Countdown(3u64)
+```
+
+- **Explicit states**: Each allowed state is declared up front in the machine type.
+- **Typed transitions**: Guards and transition payloads are checked against state kinds.
+- **Deterministic flow**: Control logic is described as transitions instead of manual loop bookkeeping.
 
 (1.2) Why Mech
 
@@ -228,7 +289,7 @@ The beta phase has focused on stabilizing the core language and fixing shortcomi
 -(📍) [v0.3](https://github.com/mech-lang/mech/tree/v0.3-beta) - program specification - functions, modules, state machines
 -(☐) v0.4 - system specification - tools, distributed programs, capabilities
 
-Currently the platform version is `v0.3.2-beta`.
+Currently the platform version is `v0.3.4-beta`.
 
 Visit the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html) for more information on the current status of features.
 

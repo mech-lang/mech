@@ -454,8 +454,8 @@ impl Formatter {
       let c = match code {
         MechCode::Comment(cmnt) => self.comment(cmnt),
         MechCode::Expression(expr) => self.expression(expr),
-        //MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
-        //MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
+        MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
+        MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
         MechCode::FunctionDefine(func_def) => self.function_define(func_def),
         MechCode::Statement(stmt) => self.statement(stmt),
         x => format!("{{{:?}}}", x)
@@ -495,10 +495,10 @@ impl Formatter {
         _ => "".to_string(),
       };
       if block.config.disabled {
-        format!("<pre class=\"mech-code-block disabled\"{}>{}</pre>", style_attr, src)
+        format!("<div class=\"mech-code-block disabled\"{}>{}</div>", style_attr, src)
       } else if block.config.hidden {
         // Print it, but give it a hidden class so it can be toggled visible via JS
-        format!("<pre class=\"mech-code-block hidden\"{}>{}</pre>", style_attr, src)
+        format!("<div class=\"mech-code-block hidden\"{}>{}</div>", style_attr, src)
       } else {
         let namespace_str = if namespace_str.is_empty() {
           "".to_string()
@@ -570,6 +570,62 @@ impl Formatter {
     };
 
     format!("![{}]({}){}", caption_p, src, style_str)
+    }
+  }
+
+  pub fn figures(&mut self, node: &FigureTable) -> String {
+    self.figure_num += 1;
+    let figure_label = format!("Fig {}.{}", self.h2_num, self.figure_num);
+    let figure_id = hash_str(&format!("{}-{:?}", figure_label, node.rows));
+
+    let mut figure_ix = 0usize;
+    let mut captions: Vec<String> = vec![];
+
+    if self.html {
+      let mut rows_html = String::new();
+      for row in &node.rows {
+        rows_html.push_str(&format!(
+          "<div class=\"mech-figure-table-row\" style=\"grid-template-columns: repeat({}, minmax(0, 1fr));\">",
+          row.len().max(1)
+        ));
+        for figure in row {
+          let label = ((b'a' + (figure_ix as u8)) as char).to_string();
+          let img_id = hash_str(&format!("{}-{}-{}", figure_label, figure_ix, figure.src.to_string()));
+          rows_html.push_str(&format!(
+            "<div class=\"mech-figure-table-cell\"><div class=\"mech-figure-panel\"><span class=\"mech-figure-subfigure-label\">{}</span><img id=\"{}\" class=\"mech-image mech-figure-grid-image\" src=\"{}\" /></div></div>",
+            label,
+            img_id,
+            figure.src.to_string(),
+          ));
+          captions.push(format!(
+            "<span class=\"mech-figure-caption-ref\">({})</span> <span class=\"mech-figure-caption-text\">{}</span>",
+            label,
+            figure.caption.to_string()
+          ));
+          figure_ix += 1;
+        }
+        rows_html.push_str("</div>");
+      }
+      let caption_block = captions.join(" ");
+      format!(
+        "<figure id=\"{}\" class=\"mech-figure-table\"><div class=\"mech-figure-grid\">{}</div><figcaption class=\"mech-figure-caption mech-figure-table-caption\"><strong class=\"mech-figure-label\">{}</strong> {}</figcaption></figure>",
+        figure_id, rows_html, figure_label, caption_block
+      )
+    } else {
+      let mut lines: Vec<String> = vec![];
+      for row in &node.rows {
+        let mut line = String::from("|");
+        for figure in row {
+          line.push(' ');
+          line.push_str(&format!("![{}]({})", self.paragraph(&figure.caption), figure.src.to_string()));
+          line.push_str(" |");
+          let label = ((b'a' + (figure_ix as u8)) as char).to_string();
+          captions.push(format!("({}) {}", label, self.paragraph(&figure.caption)));
+          figure_ix += 1;
+        }
+        lines.push(line);
+      }
+      format!("{}\n{} {}\n", lines.join("\n"), figure_label, captions.join(" "))
     }
   }
 
@@ -741,6 +797,7 @@ impl Formatter {
       SectionElement::Float((n,f)) => self.float(n,f),
       SectionElement::Footnote(n) => self.footnote(n),
       SectionElement::Grammar(n) => self.grammar(n),
+      SectionElement::FigureTable(n) => self.figures(n),
       SectionElement::Image(n) => self.image(n),
       SectionElement::List(n) => self.list(n),
       SectionElement::MechCode(n) => self.mech_code(n),
@@ -1067,7 +1124,7 @@ impl Formatter {
   pub fn code_block(&mut self, node: &Token) -> String {
     let code = node.to_string();
     if self.html {
-      format!("<pre class=\"mech-code-block\">{}</pre>",code)
+      format!("<div class=\"mech-code-block\">{}</div>",code)
     } else {
       format!("{}\n",code)
     }
@@ -1168,8 +1225,8 @@ impl Formatter {
       let c = match code {
         MechCode::Comment(cmnt) => self.comment(cmnt),
         MechCode::Expression(expr) => self.expression(expr),
-        //MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
-        //MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
+        MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
+        MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
         MechCode::FunctionDefine(func_def) => self.function_define(func_def),
         MechCode::Statement(stmt) => self.statement(stmt),
         x => todo!("Unhandled MechCode: {:#?}", x),
@@ -1195,7 +1252,7 @@ impl Formatter {
     let name = node.name.to_string();
     let mut input = "".to_string();
     for (i, ident) in node.input.iter().enumerate() {
-      let v = ident.to_string();
+      let v = self.var(ident);
       if i == 0 {
         input = format!("{}", v);
       } else {
@@ -1234,6 +1291,7 @@ impl Formatter {
 
   pub fn fsm_arm(&mut self, node: &FsmArm, last: bool) -> String {
     let arm = match node {
+      FsmArm::Comment(comment) => self.comment(comment),
       FsmArm::Guard(pattern, guards) => {
         let p = self.pattern(pattern);
         let mut gs = "".to_string();
@@ -1336,6 +1394,7 @@ impl Formatter {
         }
       },
       Pattern::Tuple(tpl) => self.pattern_tuple(tpl),
+      Pattern::Array(arr) => self.pattern_array(arr),
       Pattern::Expression(expr) => self.expression(expr),
       Pattern::TupleStruct(tuple_struct) => self.pattern_tuple_struct(tuple_struct),
     };
@@ -1511,18 +1570,18 @@ impl Formatter {
           let pattern = self.pattern(&arm.pattern);
           let expression = self.expression(&arm.expression);
           if self.html {
-            format!("<div class=\"mech-function-match-arm\"><span class=\"mech-function-branch\">{}</span><span class=\"mech-function-pattern\">{}</span> <span class=\"mech-function-arrow\">-&gt;</span><span class=\"mech-function-expression\">{}</span></div>", branch, pattern, expression)
+            format!("<div class=\"mech-function-match-arm\"><span class=\"mech-function-branch\">{}</span><span class=\"mech-function-pattern\">{}</span> <span class=\"mech-function-arrow\">⇒</span><span class=\"mech-function-expression\">{}</span></div>", branch, pattern, expression)
           } else {
-            format!("  {} {} -> {}", branch, pattern, expression)
+            format!("  {} {} => {}", branch, pattern, expression)
           }
         })
         .collect::<Vec<_>>()
         .join(if self.html { "" } else { "\n" });
 
       if self.html {
-        format!("<div class=\"mech-function-define\"><div class=\"mech-function-signature\"><span class=\"mech-function-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-function-input\">{}</span><span class=\"mech-right-paren\">)</span> <span class=\"mech-function-arrow\">-&gt;</span> <span class=\"mech-function-output\">{}</span></div><div class=\"mech-function-match-arms\">{}<span class=\"mech-function-period\">.</span></div></div>", name, input, output_kind, arms)
+        format!("<div class=\"mech-function-define\"><div class=\"mech-function-signature\"><span class=\"mech-function-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-function-input\">{}</span><span class=\"mech-right-paren\">)</span> <span class=\"mech-function-arrow\">⇒</span> <span class=\"mech-function-output\">{}</span></div><div class=\"mech-function-match-arms\">{}<span class=\"mech-function-period\">.</span></div></div>", name, input, output_kind, arms)
       } else {
-        format!("{}({}) -> {}\n{}.", name, input, output_kind, arms)
+        format!("{}({}) => {}\n{}.", name, input, output_kind, arms)
       }
     } else {
       let output = if node.output.len() == 1 {
@@ -1659,7 +1718,7 @@ impl Formatter {
       None => {},
     }
     if self.html {
-      format!("<span class=\"mech-enum-variant\"><span class=\"mech-enum-variant-name\">{}</span><span class=\"mech-enum-variant-kind\">{}</span></span>",name,kind)
+      format!("<span class=\"mech-enum-variant\"><span class=\"mech-enum-variant-name\">:{}</span><span class=\"mech-enum-variant-kind\">{}</span></span>",name,kind)
     } else {
       format!("{}{}", name, kind)
     }
@@ -1775,13 +1834,133 @@ impl Formatter {
       Expression::Range(range) => self.range_expression(range),
       Expression::SetComprehension(set_comp) => self.set_comprehension(set_comp),
       Expression::MatrixComprehension(matrix_comp) => self.matrix_comprehension(matrix_comp),
-      _ => todo!(),
-      //Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe, src),
+      Expression::Match(match_expr) => self.match_expression(match_expr),
+      Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe),
+      x => todo!("Unhandled Expression: {:#?}", x),
     };
     if self.html {
       format!("<span class=\"mech-expression\">{}</span>",e)
     } else {
       format!("{}", e)
+    }
+  }
+
+  pub fn pattern_array(&mut self, node: &PatternArray) -> String {
+    let mut parts: Vec<String> = vec![];
+    for p in &node.prefix {
+      parts.push(self.pattern(p));
+    }
+    if let Some(spread) = &node.spread {
+      parts.push("...".to_string());
+      if let Some(binding) = &spread.binding {
+        parts.push(self.pattern(binding));
+      }
+    }
+    for p in &node.suffix {
+      parts.push(self.pattern(p));
+    }
+    format!("[{}]", parts.join(" "))
+  }
+
+  pub fn match_expression(&mut self, node: &MatchExpression) -> String {
+    let source = self.expression(&node.source);
+    let mut lines = vec![format!("{}?", source)];
+    lines.push(if self.html {
+      "<div class=\"mech-match-arms\">".to_string()
+    } else {
+      "".to_string()
+    });
+    for (ix, arm) in node.arms.iter().enumerate() {
+      let last_arm = ix + 1 == node.arms.len();
+      let (branch, terminal) = if last_arm {("└", ".")} else {("├", "")};
+      let pattern = self.pattern(&arm.pattern);
+      let guard = arm
+        .guard
+        .as_ref()
+        .map(|expr| format!(", {}", self.expression(expr)))
+        .unwrap_or_default();
+      let expr = self.expression(&arm.expression);
+      if self.html {
+        lines.push(format!(
+          "<div class=\"mech-match-arm\">\
+            <span class=\"mech-match-branch\">{}</span> \
+            <span class=\"mech-match-pattern\">{}{}</span> \
+            <span class=\"mech-match-arrow\">⇒</span> \
+            <span class=\"mech-match-expression\">{}</span>\
+            <span class=\"mech-match-terminal\">{}</span>\
+          </div>",
+          branch, pattern, guard, expr, terminal
+        ));
+      } else {
+        lines.push(format!("{}{}{} ⇒ {}{}", branch, pattern, guard, expr, terminal));
+      }
+    }
+    lines.push(if self.html {
+      "</div>".to_string()
+    } else {
+      "".to_string()
+    });
+    if self.html {
+      format!(
+        "<span class=\"mech-match-expression\">\
+          <span class=\"mech-match-source\">{}<span class=\"mech-match-op\">?</span></span>{}\
+          </span>",
+        source,
+        lines.iter().skip(1).cloned().collect::<Vec<_>>().join("")
+      )
+    } else {
+      lines.join("\n")
+    }
+  }
+
+  pub fn fsm_instance(&mut self, node: &FsmInstance) -> String {
+    let name = node.name.to_string();
+    let mut args = "".to_string();
+    match &node.args {
+      Some(arguments) => {
+        for (i, (ident, expr)) in arguments.iter().enumerate() {
+          let e = self.expression(expr);
+          let arg_str = match ident {
+            Some(id) => format!("{}: {}", id.to_string(), e),
+            None => e,
+          };
+          if i == 0 {
+            args = format!("{}", arg_str);
+          } else {
+            args = format!("{}, {}", args, arg_str);
+          }
+        }
+        if self.html {
+          format!("<span class=\"mech-fsm-instance\"><span class=\"mech-fsm-name\">#{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-fsm-args\">{}</span><span class=\"mech-right-paren\">)</span></span>",name,args)
+        } else {
+          format!("#{}({})", name, args)
+        }
+      },
+      None => {
+        if self.html {
+          format!("<span class=\"mech-fsm-instance\"><span class=\"mech-fsm-name\">#{}</span></span>",name)
+        } else {
+          format!("#{}", name)
+        }
+      },
+    }
+  }
+
+  pub fn fsm_pipe(&mut self, node: &FsmPipe) -> String {
+    let start = self.fsm_instance(&node.start);
+    let mut transitions = "".to_string();
+    for (i, transition) in node.transitions.iter().enumerate() {
+      let t = self.transition(transition);
+      if i == 0 {
+        transitions = format!("{}", t);
+      } else {
+        transitions = format!("{}{}", transitions, t);
+      }
+    }
+    if self.html {
+      format!("<span class=\"mech-fsm-pipe\"><span class=\"mech-fsm-pipe-start\">{}</span><span class=\"mech-fsm-pipe-transitions\">{}</span></span>",start,transitions)
+    } else {
+      format!("{}{}", start, transitions)
     }
   }
 
@@ -2102,7 +2281,14 @@ impl Formatter {
     let name = node.name.to_string();
     let value = self.expression(&node.value);
     if self.html {
-      format!("<span class=\"mech-tuple-struct\"><span class=\"mech-tuple-struct-name\">{}</span><span class=\"mech-tuple-struct-value\">{}</span></span>",name,value)
+      format!("
+        <span class=\"mech-tuple-struct\">
+        <span class=\"mech-tuple-struct-sigil\">:</span>
+        <span class=\"mech-tuple-struct-name\">{}</span>
+        <span class=\"mech-left-paren\">(</span>
+        <span class=\"mech-tuple-struct-value\">{}</span>
+        <span class=\"mech-right-paren\">)</span>
+      </span>", name, value)
     } else {
       format!("{}{}", name, value)
     }

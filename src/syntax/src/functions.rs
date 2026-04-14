@@ -47,7 +47,7 @@ fn function_define_match_arms(
   name: Identifier,
   input_args: Vec<FunctionArgument>,
 ) -> ParseResult<FunctionDefine> {
-  let (input, _) = transition_operator(input)?;
+  let (input, _) = output_operator(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, output_kind) = kind_annotation(input)?;
   let output_src_range = output_kind
@@ -77,14 +77,23 @@ fn function_match_arm(input: ParseString) -> ParseResult<FunctionMatchArm> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = alt((box_t_left, box_bl, bar))(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, pattern) = crate::state_machines::pattern(input)?;
-  let (input, _) = whitespace0(input)?;
-  let (input, _) = transition_operator(input)?;
-  let (input, _) = whitespace0(input)?;
+  if let Ok((input, pattern)) = crate::patterns::pattern(input.clone()) {
+    if let Ok((input, _)) = whitespace0(input) {
+      if let Ok((input, _)) = output_operator(input) {
+        let (input, _) = whitespace0(input)?;
+        let (input, expr) = expression(input)?;
+        let (input, _) = opt(alt((whitespace1, statement_separator)))(input)?;
+        return Ok((input, FunctionMatchArm {
+          pattern,
+          expression: expr,
+        }));
+      }
+    }
+  }
   let (input, expr) = expression(input)?;
   let (input, _) = opt(alt((whitespace1, statement_separator)))(input)?;
   Ok((input, FunctionMatchArm {
-    pattern,
+    pattern: Pattern::Wildcard,
     expression: expr,
   }))
 }

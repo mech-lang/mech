@@ -34,6 +34,7 @@ If you run the Mech command without any files or subcommands, it will start the 
 | `-d`, `--debug`       | Prints debug information.                        |
 | `-r`, `--repl`        | Starts the Mech Read-Eval-Print Loop (REPL).     |
 | `-t`, `--time`        | Measures execution time of the program.          |
+| `--trace`             | Prints runtime trace output for function calls, selected state-machine arms, and step results. |
 | `-e`, `--tree`        | Prints the parse tree of the Mech program.       |
 
 (1.5) Examples
@@ -42,6 +43,7 @@ If you run the Mech command without any files or subcommands, it will start the 
 mech file1.mec file2.mec dir1
 mech -d -e file.mec
 mech -t file.mec
+mech --trace file.mec
 mech -r file.mec
 ```
 

@@ -322,8 +322,8 @@ where
 pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
   let (input, _) = whitespace0(input)?;
   let parsers: Vec<(&str, Box<dyn Fn(ParseString) -> ParseResult<MechCode>>)> = vec![
-    // ("fsm_specification", Box::new(|i| fsm_specification(i).map(|(i, v)| (i, MechCode::FsmSpecification(v))))),
-    // ("fsm_implementation", Box::new(|i| fsm_implementation(i).map(|(i, v)| (i, MechCode::FsmImplementation(v))))),
+    ("fsm_specification", Box::new(|i| fsm_specification(i).map(|(i, v)| (i, MechCode::FsmSpecification(v))))),
+    ("fsm_implementation", Box::new(|i| fsm_implementation(i).map(|(i, v)| (i, MechCode::FsmImplementation(v))))),
     ("function_define", Box::new(|i| function_define(i).map(|(i, v)| (i, MechCode::FunctionDefine(v))))),
     ("statement",   Box::new(|i| statement(i).map(|(i, v)| (i, MechCode::Statement(v))))),
     ("expression",  Box::new(|i| expression(i).map(|(i, v)| (i, MechCode::Expression(v))))),

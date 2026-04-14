@@ -1,0 +1,113 @@
+defining, assigning, and accessing data
+===============================================================================
+
+%% Core language statements for creating bindings, mutating values, and declaring kinds/enums.
+
+1. Overview
+-------------------------------------------------------------------------------
+
+The core statement forms are:
+
+- **Variable define** (`:=`) to create a binding.
+- **Variable assign** (`=`) to update an existing mutable binding.
+- **Operator-assign** (`+=`, `-=`, `*=`, `/=`) for in-place arithmetic updates.
+- **Tuple destructure** (`(a,b,...) := expr`) to unpack tuple values.
+- **Enum define** (`<name> := ...`) to declare tagged variants.
+- **Kind define** (`<name> := <kind-annotation>`) to declare named kinds.
+
+2. Variable define (`:=`)
+-------------------------------------------------------------------------------
+
+```mech:define-basic
+x := 10
+label := "hello"
+```
+
+Use `~` to define a mutable binding:
+
+```mech:define-mutable
+~counter := 0
+```
+
+3. Variable assign (`=`)
+-------------------------------------------------------------------------------
+
+Assignment updates an existing mutable symbol:
+
+```mech:assign-basic
+~counter := 0
+counter = counter + 1
+```
+
+Assignment also supports indexed/sliced targets:
+
+```mech:assign-slice
+~m := [1, 2; 3, 4]
+m[1,2] = 99
+```
+
+4. Operator-assign
+-------------------------------------------------------------------------------
+
+In-place arithmetic statement forms:
+
+```mech:op-assign
+~x := 5
+x += 2
+x *= 3
+```
+
+Currently implemented operators are `+=`, `-=`, `*=`, `/=` in interpreter statement execution.
+
+(i)> The grammar includes `^=` (`exp-assign-operator`), but interpreter statement dispatch currently only implements add/sub/mul/div branches.
+
+5. Tuple destructuring
+-------------------------------------------------------------------------------
+
+Unpack tuple elements into new bindings:
+
+```mech:tuple-destructure
+(a, b, c) := (1, 2, 3)
+```
+
+6. Enum define (`<name> := variants`)
+-------------------------------------------------------------------------------
+
+Declare enum variants using atom-style names, optionally with payload kinds.
+
+```mech:enum-define
+<response> := :ok<u64> | :error<string> | :timeout
+```
+
+Payload style variants are also valid:
+
+```mech:enum-define-2
+<event> := :click | :keypress<string>
+```
+
+7. Kind define (`<name> := <kind>`)
+-------------------------------------------------------------------------------
+
+Declare a named kind alias/specification:
+
+```mech:kind-define
+<distance> := <f64>
+```
+
+8. Accessing values
+-------------------------------------------------------------------------------
+
+Core access patterns include:
+
+- Identifier access: `x`
+- Index/slice access: `m[1,2]`, `xs[2]`
+- Field/column access: `record.field`, `table.column`
+
+For detailed indexing behavior, see [`indexing`](/reference/indexing.html).
+
+9. Notes
+-------------------------------------------------------------------------------
+
+- Use `:=` to declare and `=` to update.
+- Assigning to undefined or immutable symbols is an error.
+- Mutation requires bindings declared with `~`.

@@ -93,6 +93,12 @@ impl CompileConst for Value {
       Value::Record(x) => x.borrow().compile_const(ctx)?,
       #[cfg(feature = "set")]
       Value::Set(x) => x.borrow().compile_const(ctx)?,
+      Value::Typed(value, kind) => match value.as_ref() {
+        Value::Empty => ctx.compile_const(&[], kind.clone())?,
+        _ => value.compile_const(ctx)?,
+      },
+      Value::EmptyKind(k) => ctx.compile_const(&[], k.clone())?,
+      Value::Empty => ctx.compile_const(&[], ValueKind::Empty)?,
       x => todo!("CompileConst not implemented for {:?}", x),
     };
     Ok(reg)
@@ -920,9 +926,14 @@ impl ConstElem for Value {
 
     // Then write the payload
     match self {
-      Value::Empty => { 
+      Value::Empty | Value::EmptyKind(_) => { 
         // no payload for Empty 
       },
+      Value::Typed(value, _) => {
+        if !matches!(value.as_ref(), Value::Empty) {
+          unimplemented!("write_le for non-empty typed value is not implemented");
+        }
+      }
       #[cfg(feature = "bool")]
       Value::Bool(x) => x.borrow().write_le(out),
       #[cfg(feature = "string")]
@@ -974,6 +985,7 @@ impl ConstElem for Value {
     // 3. dispatch based on ValueKind
     match kind {
       ValueKind::Empty => Value::Empty,
+      ValueKind::Option(inner) => Value::EmptyKind(ValueKind::Option(inner)),
       #[cfg(feature = "bool")]
       ValueKind::Bool => Value::Bool(Ref::new(<bool as ConstElem>::from_le(payload))),
       #[cfg(feature = "string")]

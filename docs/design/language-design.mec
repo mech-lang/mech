@@ -34,14 +34,11 @@ Let's deconstruct this elevator pitch:
 - **Focus on essential complexity** - The phrase "essential complexity" is a reference to the famous idea from computer science that there is a difference between the complexity that is inherent to the problem you are trying to solve (essential complexity) and the complexity that is introduced by the tools and techniques you use to solve it (accidental complexity). Mech aims to minimize accidental complexity, allowing you to focus on the essential complexity of your project. This comes from the paper "Out of the Tar Pit" by Peter J. Landin, which discusses the challenges of programming languages and how they can be designed to minimize accidental complexity.
 - **Project** - Mech isn't just for programs, it's for any kind of project.
 
-
-
-
 (1.1) Philosophy
 
 Mech subscribes to a simple philosophy:
 
-> "Make simple things simple and complex things possible." 
+> "Make simple things simple and complex things possible." - Alan Kay
 
 This means that Mech should be easy to use for simple tasks, but also powerful enough to handle complex problems. The language is designed to be expressive and flexible, allowing programmers to work with data in a way that feels natural and intuitive.
 

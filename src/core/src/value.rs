@@ -45,6 +45,7 @@ macro_rules! impl_as_type {
           #[cfg(feature = "f64")]
           Value::F64(v) => Ok(Ref::new((*v.borrow()) as $target_type)),
           Value::Id(v) => Ok(Ref::new(*v as $target_type)),
+          Value::Typed(value, _) => value.[<as_ $target_type>](),
           Value::MutableReference(val) => val.borrow().[<as_ $target_type>](),
           _ => Err(
             MechError::new(
@@ -275,10 +276,14 @@ impl ValueKind {
       (U8, Index) | (U16, Index) | (U32, Index) | (U64, Index) | (U128, Index) |
       (I8, Index) | (I16, Index) | (I32, Index) | (I64, Index) | (I128, Index) => true,
 
-      // Matrix: element type convertible and shape matches
+      // Matrix: element type convertible and shape matches.
+      // An empty target shape (`[]`) is treated as a wildcard shape.
+      (Matrix(a, _ashape), Matrix(b, bshape)) if bshape.is_empty() && a.as_ref().is_convertible_to(b.as_ref()) => true,
       (Matrix(a, ashape), Matrix(b, bshape)) if ashape.into_iter().product::<usize>() == bshape.into_iter().product::<usize>() && a.as_ref().is_convertible_to(b.as_ref()) => true,
 
       // Option conversions
+      (x, Option(b)) if x.is_convertible_to(b.as_ref()) => true,
+      (Empty, Option(_)) => true,
       (Option(a), Option(b)) if a.as_ref().is_convertible_to(b.as_ref()) => true,
 
       // Reference conversions
@@ -619,8 +624,10 @@ pub enum Value {
   Id(u64),
   Index(Ref<usize>),
   MutableReference(MutableReference),
+  Typed(Box<Value>, ValueKind),
   Kind(ValueKind),
   IndexAll,
+  EmptyKind(ValueKind),
   Empty
 }
 
@@ -725,14 +732,53 @@ impl Hash for Value {
       Value::MatrixC64(x) => x.hash(state),
       Value::Id(x)   => x.hash(state),
       Value::Kind(x) => x.hash(state),
+      Value::Typed(v, k) => {
+        v.hash(state);
+        k.hash(state);
+      }
       Value::Index(x)=> x.borrow().hash(state),
       Value::MutableReference(x) => x.borrow().hash(state),
+      Value::EmptyKind(k) => k.hash(state),
       Value::Empty => Value::Empty.hash(state),
       Value::IndexAll => Value::IndexAll.hash(state),
     }
   }
 }
 impl Value {
+
+  #[cfg(feature = "matrix")]
+  fn infer_matrix_value_kind(matrix: &Matrix<Value>) -> ValueKind {
+    let mut base_kind: Option<ValueKind> = None;
+    let mut saw_empty = false;
+
+    for value in matrix.as_vec().iter() {
+      match value {
+        Value::Empty | Value::EmptyKind(_) => {
+          saw_empty = true;
+        }
+        _ => {
+          let kind = value.kind();
+          let (normalized_kind, normalized_empty) = match kind {
+            ValueKind::Option(inner) => ((*inner).clone(), true),
+            other => (other, false),
+          };
+          saw_empty |= normalized_empty;
+          match &base_kind {
+            None => base_kind = Some(normalized_kind),
+            Some(existing) if *existing == normalized_kind => {}
+            Some(_) => return ValueKind::Any,
+          }
+        }
+      }
+    }
+
+    match (base_kind, saw_empty) {
+      (Some(kind), true) => ValueKind::Option(Box::new(kind)),
+      (Some(kind), false) => kind,
+      (None, true) => ValueKind::Option(Box::new(ValueKind::Any)),
+      (None, false) => ValueKind::Any,
+    }
+  }
 
   pub fn from_kind(kind: &ValueKind) -> Self {
     todo!();
@@ -963,6 +1009,15 @@ impl Value {
     }
 
     match (self, other) {
+    (Value::Typed(value, _), target_kind) => value.convert_to(target_kind),
+    (Value::Empty, ValueKind::Option(_)) => Some(Value::Empty),
+    (Value::EmptyKind(_), ValueKind::Option(_)) => Some(Value::Empty),
+    (value, ValueKind::Option(inner)) => value.convert_to(inner.as_ref()),
+    (value, ValueKind::Matrix(_, target_shape))
+      if target_shape.is_empty() && matches!(value.kind(), ValueKind::Matrix(_, _)) =>
+    {
+      Some(value.clone())
+    },
     // ==== Unsigned widening and narrowing ====
     #[cfg(all(feature = "u8", feature = "u16"))]
     (Value::U8(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
@@ -1341,6 +1396,8 @@ impl Value {
       Value::Id(_) => 8,
       Value::Index(x) => 8,
       Value::Kind(_) => 0, // Kind is not a value, so it has no size
+      Value::Typed(value, _) => value.size_of(),
+      Value::EmptyKind(_) => 0,
       Value::Empty => 0,
       Value::IndexAll => 0, // IndexAll is a special value, so it has no size
     }
@@ -1431,12 +1488,164 @@ impl Value {
       Value::Tuple(t) => t.borrow().to_html(),
       #[cfg(feature = "enum")]
       Value::Enum(e) => e.borrow().to_html(),
+      Value::Empty | Value::EmptyKind(_) => "<span class='mech-empty'>_</span>".to_string(),
       Value::MutableReference(m) => {
         let inner = m.borrow();
         format!("<span class='mech-reference'>{}</span>", inner.to_html())
       },
+      Value::Typed(value, _) => value.to_html(),
       _ => "???".to_string(),
     }
+  }
+
+  pub fn format_value_inline(&self) -> String {
+    match self {
+      #[cfg(feature = "u8")]
+      Value::U8(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "u16")]
+      Value::U16(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "u32")]
+      Value::U32(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "u64")]
+      Value::U64(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "u128")]
+      Value::U128(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "i8")]
+      Value::I8(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "i16")]
+      Value::I16(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "i32")]
+      Value::I32(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "i64")]
+      Value::I64(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "i128")]
+      Value::I128(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "f32")]
+      Value::F32(n) => format!("{}", n.borrow()),
+      #[cfg(feature = "f64")]
+      Value::F64(n) => format!("{}", n.borrow()),
+      #[cfg(any(feature = "string", feature = "variable_define"))]
+      Value::String(s) => format!("\"{}\"", s.borrow()),
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
+      Value::Bool(b) => format!("{}", b.borrow()),
+      #[cfg(feature = "complex")]
+      Value::C64(c) => format!("{}", c.borrow()),
+      #[cfg(feature = "rational")]
+      Value::R64(r) => format!("{}", r.borrow()),
+      #[cfg(feature = "matrix")]
+      Value::MatrixIndex(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "bool"))]
+      Value::MatrixBool(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "u8"))]
+      Value::MatrixU8(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "u16"))]
+      Value::MatrixU16(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "u32"))]
+      Value::MatrixU32(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "u64"))]
+      Value::MatrixU64(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "u128"))]
+      Value::MatrixU128(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "i8"))]
+      Value::MatrixI8(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "i16"))]
+      Value::MatrixI16(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "i32"))]
+      Value::MatrixI32(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "i64"))]
+      Value::MatrixI64(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "i128"))]
+      Value::MatrixI128(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "f32"))]
+      Value::MatrixF32(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "f64"))]
+      Value::MatrixF64(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "string"))]
+      Value::MatrixString(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "rational"))]
+      Value::MatrixR64(m) => Self::format_matrix_inline(m),
+      #[cfg(all(feature = "matrix", feature = "complex"))]
+      Value::MatrixC64(m) => Self::format_matrix_inline(m),
+      #[cfg(feature = "matrix")]
+      Value::MatrixValue(m) => Self::format_matrix_inline(m),
+      #[cfg(feature = "atom")]
+      Value::Atom(a) => format!("{}", a.borrow()),
+      #[cfg(feature = "set")]
+      Value::Set(s) => {
+        let vals = s.borrow().set.iter().map(|v| v.format_value_inline()).collect::<Vec<_>>();
+        format!("{{{}}}", vals.join(", "))
+      }
+      #[cfg(feature = "map")]
+      Value::Map(m) => {
+        let vals = m.borrow().map.iter().map(|(k,v)| format!("{}: {}", k.format_value_inline(), v.format_value_inline())).collect::<Vec<_>>();
+        format!("{{{}}}", vals.join(", "))
+      }
+      #[cfg(feature = "record")]
+      Value::Record(r) => {
+        let record = r.borrow();
+        let vals = record.data.iter().map(|(k,v)| {
+          let name = record.field_names.get(k).cloned().unwrap_or_else(|| format!("{}", k));
+          format!("{}: {}", name, v.format_value_inline())
+        }).collect::<Vec<_>>();
+        format!("{{{}}}", vals.join(", "))
+      }
+      #[cfg(feature = "tuple")]
+      Value::Tuple(t) => {
+        let vals = t.borrow().elements.iter().map(|v| v.format_value_inline()).collect::<Vec<_>>();
+        format!("({})", vals.join(", "))
+      }
+      #[cfg(feature = "enum")]
+      Value::Enum(e) => {
+        let enm = e.borrow();
+        let dict = enm.names.borrow();
+        let name = dict.get(&enm.id).cloned().unwrap_or_else(|| format!("{}", enm.id));
+        let vals = enm.variants.iter().map(|(id, v)| {
+          let variant_name = dict.get(id).cloned().unwrap_or_else(|| format!("{}", id));
+          match v {
+            Some(value) => format!("{}: {}", variant_name, value.format_value_inline()),
+            None => variant_name,
+          }
+        }).collect::<Vec<_>>();
+        format!(":{}{{{}}}", name, vals.join(" | "))
+      }
+      #[cfg(feature = "table")]
+      Value::Table(t) => {
+        let table = t.borrow();
+        let headers = table.data.iter().map(|(k, (kind, _))| {
+          let name = table.col_names.get(k).cloned().unwrap_or_else(|| format!("{}", k));
+          format!("{}<{}>", name, kind)
+        }).collect::<Vec<_>>().join(" ");
+        let rows = (0..table.rows).map(|r| {
+          table.data.iter().map(|(_, (_, col))| col.index2d(r + 1, 1).format_value_inline()).collect::<Vec<_>>().join(" ")
+        }).collect::<Vec<_>>().join("; ");
+        format!("|{}| {}", headers, rows)
+      }
+      Value::Id(x) => format!("{}", humanize(x)),
+      Value::Index(x) => format!("{}", x.borrow()),
+      Value::Kind(k) => format!("<{}>", k),
+      Value::Typed(value, _) => value.format_value_inline(),
+      Value::MutableReference(m) => m.borrow().format_value_inline(),
+      Value::IndexAll => ":".to_string(),
+      Value::EmptyKind(_) => "_".to_string(),
+      Value::Empty => "_".to_string(),
+    }
+  }
+
+  #[cfg(feature = "matrix")]
+  fn format_matrix_inline<T>(matrix: &Matrix<T>) -> String
+  where T: Clone + std::fmt::Display + std::fmt::Debug + PartialEq + 'static {
+    let shape = matrix.shape();
+    let rows = shape[0];
+    let cols = shape[1];
+    let elements = matrix.as_vec();
+    let row_strings = (0..rows)
+      .map(|r| {
+        let start = r * cols;
+        let end = start + cols;
+        elements[start..end].iter().map(|v| format!("{}", v)).collect::<Vec<_>>().join(" ")
+      })
+      .collect::<Vec<_>>();
+    format!("[{}]", row_strings.join("; "))
   }
 
   pub fn shape(&self) -> Vec<usize> {
@@ -1525,7 +1734,8 @@ impl Value {
       Value::Tuple(x) => vec![1,x.borrow().size()],
       Value::Index(x) => vec![1,1],
       Value::MutableReference(x) => x.borrow().shape(),
-      Value::Empty => vec![0,0],
+      Value::Typed(x, _) => x.shape(),
+      Value::Empty | Value::EmptyKind(_) => vec![0,0],
       Value::IndexAll => vec![0,0],
       Value::Kind(_) => vec![0,0],
       Value::Id(x) => vec![0,0],
@@ -1576,7 +1786,7 @@ impl Value {
       #[cfg(feature = "atom")]
       Value::Atom(x) => ValueKind::Atom(x.borrow().id(), x.borrow().name().clone()),
       #[cfg(feature = "matrix")]
-      Value::MatrixValue(x) => ValueKind::Matrix(Box::new(ValueKind::Any),x.shape()),
+      Value::MatrixValue(x) => ValueKind::Matrix(Box::new(Self::infer_matrix_value_kind(x)),x.shape()),
       #[cfg(feature = "matrix")]
       Value::MatrixIndex(x) => ValueKind::Matrix(Box::new(ValueKind::Index),x.shape()),
       #[cfg(all(feature = "matrix", feature = "bool"))]
@@ -1624,6 +1834,8 @@ impl Value {
       #[cfg(feature = "enum")]
       Value::Enum(x) => x.borrow().kind(),
       Value::MutableReference(x) => ValueKind::Reference(Box::new(x.borrow().kind())),
+      Value::Typed(_, kind) => kind.clone(),
+      Value::EmptyKind(k) => k.clone(),
       Value::Empty => ValueKind::Empty,
       Value::IndexAll => ValueKind::Empty,
       Value::Id(x) => ValueKind::Id,
@@ -2242,9 +2454,11 @@ impl PrettyPrint for Value {
       Value::MatrixR64(x) => {return x.pretty_print();},
       #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixC64(x) => {return x.pretty_print();},
+      Value::MatrixValue(x) => {return x.pretty_print();},
       Value::Index(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
       Value::MutableReference(x) => {return x.borrow().pretty_print();},
-      Value::Empty => builder.push_record(vec!["_"]),
+      Value::Typed(x, _) => { return x.pretty_print(); },
+      Value::Empty | Value::EmptyKind(_) => builder.push_record(vec!["_"]),
       Value::IndexAll => builder.push_record(vec![":"]),
       Value::Id(x) => builder.push_record(vec![format!("{}",humanize(x))]),
       Value::Kind(x) => builder.push_record(vec![format!("<{}>",x)]),

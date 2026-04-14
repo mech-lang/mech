@@ -1,8 +1,7 @@
-
-use mech_syntax::*;
-use mech_core::*;
-use std::time::Instant;
 use crate::*;
+use mech_core::*;
+use mech_syntax::*;
+use std::time::Instant;
 
 #[macro_export]
 macro_rules! print_tree {
@@ -18,7 +17,7 @@ macro_rules! print_tree {
 macro_rules! print_symbols {
   ($intrp:expr) => {
     #[cfg(feature = "pretty_print")]
-    println!("{}",$intrp.pretty_print_symbols());  
+    println!("{}", $intrp.pretty_print_symbols());
     #[cfg(not(feature = "pretty_print"))]
     println!("{:#?}", $intrp.symbols());
   };
@@ -34,11 +33,18 @@ macro_rules! print_plan {
   };
 }
 
-
-pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: bool, debug_flag: bool, time_flag: bool) -> MResult<Value> {
+pub fn run_mech_code(
+  intrp: &mut Interpreter,
+  code: &MechFileSystem,
+  tree_flag: bool,
+  debug_flag: bool,
+  time_flag: bool,
+  trace_flag: bool,
+) -> MResult<Value> {
+  intrp.set_trace_enabled(trace_flag);
   let sources = code.sources();
   let sources = sources.read().unwrap();
-  for (file,source) in sources.sources_iter() {
+  for (file, source) in sources.sources_iter() {
     match source {
       MechSourceCode::Program(code_vec) => {
         for c in code_vec {
@@ -60,7 +66,7 @@ pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: 
                 print_bytecode(code);
               }
               return result;
-            },
+            }
             _ => todo!(),
           }
         }
@@ -71,7 +77,7 @@ pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: 
         let elapsed_time = now.elapsed();
         let parse_duration = elapsed_time.as_nanos() as f64;
         match parse_result {
-          Ok(tree) => { 
+          Ok(tree) => {
             if tree_flag {
               print_tree!(tree);
             }
@@ -87,11 +93,11 @@ pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: 
             }
             if debug_flag {
               print_symbols!(intrp);
-              print_plan!(intrp); 
+              print_plan!(intrp);
               print_bytecode(code);
             }
             return result;
-          },
+          }
           Err(err) => return Err(err),
         }
       }
@@ -119,14 +125,14 @@ pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: 
 fn print_bytecode(fs: &MechFileSystem) {
   let sources = fs.sources();
   let sources = sources.read().unwrap();
-  for (file,source) in sources.sources_iter() {
+  for (file, source) in sources.sources_iter() {
     match source {
       MechSourceCode::ByteCode(bc_program) => {
         println!("Bytecode for file: {}", file);
         let program = ParsedProgram::from_bytes(bc_program).unwrap();
         println!("{:#?}", program);
-      },
-      _ => {},
+      }
+      _ => {}
     }
   }
 }

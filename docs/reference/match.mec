@@ -1,0 +1,100 @@
+match
+===============================================================================
+
+%% A `match` expression evaluates a source value against a series of patterns and optional guards, returning the result of the first matching arm. Used for conditional logic and destructuring values.
+
+A match expression evaluates a source value and then selects the first arm
+whose pattern (and optional guard) matches.
+
+General form:
+
+```
+result := source?
+  | pattern => expression
+  | pattern, guard => expression
+  | * => fallback.
+```
+
+Notes:
+
+- Arms are checked top-to-bottom.
+- `*` is a wildcard arm that matches anything.
+- Guards are boolean expressions evaluated after pattern binding.
+- A wildcard arm is typically included as an exhaustive fallback.
+
+1. Optional-style matching
+-------------------------------------------------------------------------------
+
+Used for optional values, which may potentially be empty and require a fallback:
+
+```mech:match optional
+x<f64?> := 2
+safe-value<f64> := x?
+  | v => v
+  | * => 0.
+safe-value
+```
+
+Patterns must be exhaustive, so a wildcard arm is required to handle the `_` case. you can match on any pattern, so you can do something like this:
+
+```mech:match optional
+string-number<string> := x?
+  | 1 => "one"
+  | 2 => "two"
+  | * => "other".
+string-number
+```
+
+2. Matrices
+-------------------------------------------------------------------------------
+
+Use array patterns with spread to pull out head/last values.
+
+```mech:match vector
+y := [10 20 30]
+head<f64> := y?
+  | [] => 0
+  | [h ...] => h
+  | * => 0.
+last<f64> := y?
+  | [] => 0
+  | [... l] => l
+  | * => 0.
+(head, last)
+```
+
+3. Tuples
+-------------------------------------------------------------------------------
+
+Each arm can have an optional guard, which is a boolean expression that must evaluate to true for the arm to match. Guards are only evaluated after pattern variables are bound, and the first one that matches the pattern and the guard is selected.
+
+```mech:match tuple
+triple := (3, 4, 2)
+max := triple?
+  | (a, b, c), a > b && a > c => a
+  | (a, b, c), b > a && b > c => b
+  | (a, b, c), c > a && c > b => c
+  | * => 0.
+max
+```
+
+4. Enums
+-------------------------------------------------------------------------------
+
+Match arms can destructure enum variants directly, including variants that carry values.
+
+```mech:match enum
+<color> := :red<f64> | :green<f64> | :blue<f64>
+my-color<color> := :red(300)
+
+string-color := my-color?
+  | :red(100) => "dark red"
+  | :red(50) => "light red"
+  | :red(x), x < 50 => "pink"
+  | :red(x), x > 100 => "maroon"
+  | :green(100) => "dark green"
+  | * => "unknown".
+string-color
+```
+
+This combines literal variant matches (for example `:red(100)`) with guarded captures (for example `:red(x), x > 100`).

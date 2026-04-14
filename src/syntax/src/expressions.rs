@@ -31,34 +31,73 @@ through increasingly tightly-binding operations, down to the basic elements
 like literals and variables.
 
 - `formula`: entry point
-- `l1`: addition and subtraction (`+`, `-`)
-- `l2`: multiplication, division, matrix operations
-- `l3`: exponentiation (`^`)
-- `l4`: logical operators (e.g., `and`, `or`)
-- `l5`: comparisons (e.g., `==`, `<`, `>`)
+- `l1`: logical operators (e.g., `and`, `or`)
+- `l2`: comparisons (e.g., `==`, `<`, `>`)
+- `l3`: addition and subtraction (`+`, `-`)
+- `l4`: multiplication, division, matrix operations
+- `l5`: exponentiation (`^`)
 - `l6`: table operations (e.g., joins)
 - `l7`: set operations (e.g., union, intersection)
 - `factor`: atomic units (literals, function calls, variables, etc.)
 */
 
-// expression := set-comprehension | matrix-comprehension | range-expression | formula ;
+// expression := fsm-pipe | set-comprehension | matrix-comprehension | range-expression | formula ;
 pub fn expression(input: ParseString) -> ParseResult<Expression> {
-  let (input, expr) = match set_comprehension(input.clone()) {
-    Ok((input, sc)) => (input, Expression::SetComprehension(Box::new(sc))),
-    Err(_) => match matrix_comprehension(input.clone()) {
-      Ok((input, mc)) => (input, Expression::MatrixComprehension(Box::new(mc))),
-      Err(_) => match range_expression(input.clone()) {
-      Ok((input, rng)) => (input, Expression::Range(Box::new(rng))),
-      Err(_) => match formula(input.clone()) {
-        Ok((input, Factor::Expression(expr))) => (input, *expr),
-        Ok((input, fctr)) => (input, Expression::Formula(fctr)),
-        Err(err) => {
-          return Err(err);},
-      } 
-    }
+  let (input, expr) = match fsm_pipe(input.clone()) {
+    Ok((input, pipe)) => (input, Expression::FsmPipe(pipe)),
+    Err(_) => match set_comprehension(input.clone()) {
+      Ok((input, sc)) => (input, Expression::SetComprehension(Box::new(sc))),
+      Err(_) => match matrix_comprehension(input.clone()) {
+        Ok((input, mc)) => (input, Expression::MatrixComprehension(Box::new(mc))),
+        Err(_) => match range_expression(input.clone()) {
+          Ok((input, rng)) => (input, Expression::Range(Box::new(rng))),
+          Err(_) => match match_expression(input.clone()) {
+            Ok((input, expr)) => (input, Expression::Match(Box::new(expr))),
+            Err(_) => match formula(input.clone()) {
+              Ok((input, Factor::Expression(expr))) => (input, *expr),
+              Ok((input, fctr)) => (input, Expression::Formula(fctr)),
+              Err(err) => {
+                return Err(err);
+              }
+            }
+          },
+        }
+      }
     }
   };
   Ok((input, expr))
+}
+
+// match-expression := expression, "?", whitespace*, match-arm+, period? ;
+pub fn match_expression(input: ParseString) -> ParseResult<MatchExpression> {
+  let (input, source) = factor(input)?;
+  let source = match source {
+    Factor::Expression(expr) => *expr,
+    fctr => Expression::Formula(fctr),
+  };
+  let (input, _) = question(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, arms) = many1(match_arm)(input)?;
+  let (input, _) = opt(period)(input)?;
+  Ok((input, MatchExpression { source, arms }))
+}
+
+// match-arm := guard-operator, pattern, [",", expression], transition-operator, expression, statement-separator? ;
+pub fn match_arm(input: ParseString) -> ParseResult<MatchArm> {
+  let (input, _) = crate::state_machines::guard_operator(input)?;
+  let (input, pattern) = crate::patterns::pattern(input)?;
+  let (input, guard) = opt(preceded(
+    list_separator,
+    preceded(whitespace0, expression),
+  ))(input)?;
+  let (input, _) = output_operator(input)?;
+  let (input, expr) = expression(input)?;
+  let (input, _) = opt(alt((whitespace1, statement_separator)))(input)?;
+  Ok((input, MatchArm {
+    pattern,
+    guard,
+    expression: expr,
+  }))
 }
 
 // formula := l1 ;
@@ -67,47 +106,47 @@ pub fn formula(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l1 := l2, (add-sub-operator, l2)* ;
+// l1 := l2, (logic-operator, l2)* ;
 pub fn l1(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l2(input)?;
-  let (input, rhs) = many0(pair(add_sub_operator,cut(l2)))(input)?;
+  let (input, rhs) = many0(pair(logic_operator,cut(l2)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
 
-// l2 := l3, (mul-div-operator | matrix-operator, l3)* ;
+// l2 := l3, (comparison-operator, l3)* ;
 pub fn l2(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l3(input)?;
-  let (input, rhs) = many0(pair(alt((mul_div_operator, matrix_operator)),cut(l3)))(input)?;
+  let (input, rhs) = many0(pair(comparison_operator,cut(l3)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
 
-// l3 := l4, (power-operator, l4)* ;
+// l3 := l4, (add-sub-operator, l4)* ;
 pub fn l3(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l4(input)?;
-  let (input, rhs) = many0(pair(power_operator,cut(l4)))(input)?;
+  let (input, rhs) = many0(pair(add_sub_operator,cut(l4)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
 
-// l4 := l5, (logic-operator, l5)* ;
+// l4 := l5, (mul-div-operator | matrix-operator, l5)* ;
 pub fn l4(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l5(input)?;
-  let (input, rhs) = many0(pair(logic_operator,cut(l5)))(input)?;
+  let (input, rhs) = many0(pair(alt((mul_div_operator, matrix_operator)),cut(l5)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
 
-// l5 := factor, (comparison-operator, factor)* ;
+// l5 := l6, (power-operator, l6)* ;
 pub fn l5(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l6(input)?;
-  let (input, rhs) = many0(pair(comparison_operator,cut(l6)))(input)?;
+  let (input, rhs) = many0(pair(power_operator,cut(l6)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
 
-// l6 := factor, (table-operator, factor)* ;
+// l6 := l7, (table-operator, l7)* ;
 pub fn l6(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l7(input)?;
   let (input, rhs) = many0(pair(table_operator,cut(l7)))(input)?;

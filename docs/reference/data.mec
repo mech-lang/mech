@@ -17,6 +17,7 @@ Data in Mech is represented using one of the following primitive data types:
 | [`atom`](/reference/atom.html)     | Represents symbolic constants.                   |
 | [`kind`](/reference/kind.html)     | Represents types or categories of values.        |
 | [`empty`](/reference/empty.html)   | Represents an empty value or placeholder.        |
+| [`option`](/reference/option.html) | Represents either an empty value or a value.     |
 
 (1.1) Number
 
@@ -108,6 +109,40 @@ y<_> := _     -- An empty value of kind `_`
 ```
 
 For more, see [`empty`](/reference/empty.html).
+
+(1.6) Option
+
+Represents a value that may either be present (`Some`) or absent (`None`/empty).
+
+(1.6.1) Kind
+
+Option kinds are written with a `?` suffix:
+
+```mech:disabled
+<u64?>
+<string?>
+<([u8],bool)?>
+```
+
+(1.6.2) Examples
+
+```mech:disabled
+x<u64?> := 123u64
+y<u64?> := _
+```
+
+(1.6.3) Unwrapping with guards
+
+Use `?` followed by guarded arms to branch on `None`/`Some` values:
+
+```mech:disabled
+foo := x?
+  │ x > 3u64 => x
+  │ x == 3u64 => 0u64
+  └ * => 0u64.
+```
+
+The wildcard arm `*` acts as the fallback branch.
 
 2. Data Structures
 -------------------------------------------------------------------------------

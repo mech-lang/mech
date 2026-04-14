@@ -535,6 +535,7 @@ pub enum SectionElement {
   Float((Box<SectionElement>, FloatDirection)),
   Footnote(Footnote),
   Grammar(Grammar),
+  FigureTable(FigureTable),
   Image(Image),
   List(MDList),
   MechCode(Vec<(MechCode,Option<Comment>)>),
@@ -626,6 +627,16 @@ impl SectionElement {
         }
         tokens
       }
+      SectionElement::FigureTable(figure_table) => {
+        let mut tokens = vec![];
+        for row in &figure_table.rows {
+          for figure in row {
+            tokens.push(figure.src.clone());
+            tokens.append(&mut figure.caption.tokens());
+          }
+        }
+        tokens
+      }
       SectionElement::List(list) => match list {
       MDList::Unordered(items) => {
         let mut tokens = vec![];
@@ -704,6 +715,19 @@ impl Image {
   }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct FigureItem {
+  pub src: Token,
+  pub caption: Paragraph,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct FigureTable {
+  pub rows: Vec<Vec<FigureItem>>,
+}
+
 pub type UnorderedList = Vec<((Option<Token>,Paragraph),Option<MDList>)>;
 pub type CheckList = Vec<((bool,Paragraph),Option<MDList>)>;
 
@@ -766,8 +790,8 @@ impl MDList {
 pub enum MechCode {
   Comment(Comment),
   Expression(Expression),
-  //FsmImplementation(FsmImplementation),
-  //FsmSpecification(FsmSpecification),
+  FsmImplementation(FsmImplementation),
+  FsmSpecification(FsmSpecification),
   FunctionDefine(FunctionDefine),
   Statement(Statement),
   Error(Token, SourceRange),
@@ -785,11 +809,10 @@ impl MechCode {
       MechCode::Expression(x) => x.tokens(),
       MechCode::Statement(x) => x.tokens(),
       MechCode::Comment(x) => x.tokens(),
+      MechCode::FsmSpecification(x) => x.tokens(),
+      MechCode::FsmImplementation(x) => x.tokens(),
+      MechCode::FunctionDefine(_) => vec![],
       MechCode::Error(t,_) => vec![t.clone()],
-      _ => todo!(),
-      //FunctionDefine(x) => x.tokens(),
-      //FsmSpecification(x) => x.tokens(),
-      //FsmImplementation(x) => x.tokens(),
     }
   }
 }
@@ -813,6 +836,14 @@ pub struct FunctionMatchArm {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct MatchArm {
+  pub pattern: Pattern,
+  pub guard: Option<Expression>,
+  pub expression: Expression,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FunctionArgument {
   pub name: Identifier,
   pub kind: KindAnnotation,
@@ -830,9 +861,23 @@ impl FunctionArgument {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FsmImplementation {
   pub name: Identifier,
-  pub input: Vec<Identifier>,
+  pub input: Vec<Var>,
   pub start: Pattern,
   pub arms: Vec<FsmArm>,
+}
+
+impl FsmImplementation {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.name.tokens();
+    for input in &self.input {
+      tokens.append(&mut input.tokens());
+    }
+    tokens.append(&mut self.start.tokens());
+    for arm in &self.arms {
+      tokens.append(&mut arm.tokens());
+    }
+    tokens
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -840,6 +885,29 @@ pub struct FsmImplementation {
 pub enum FsmArm {
   Guard(Pattern,Vec<Guard>),
   Transition(Pattern,Vec<Transition>),
+  Comment(Comment),
+}
+
+impl FsmArm {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      FsmArm::Guard(pattern, guards) => {
+        let mut tokens = pattern.tokens();
+        for guard in guards {
+          tokens.append(&mut guard.tokens());
+        }
+        tokens
+      }
+      FsmArm::Transition(pattern, transitions) => {
+        let mut tokens = pattern.tokens();
+        for transition in transitions {
+          tokens.append(&mut transition.tokens());
+        }
+        tokens
+      }
+      FsmArm::Comment(comment) => comment.tokens(),
+    }
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -847,6 +915,16 @@ pub enum FsmArm {
 pub struct Guard { 
   pub condition: Pattern,
   pub transitions: Vec<Transition>,
+}
+
+impl Guard {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.condition.tokens();
+    for transition in &self.transitions {
+      tokens.append(&mut transition.tokens());
+    }
+    tokens
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -859,12 +937,31 @@ pub enum Transition {
   Statement(Statement),
 }
 
+impl Transition {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Transition::Async(pattern) => pattern.tokens(),
+      Transition::CodeBlock(code) => code.iter().flat_map(|(mech_code, comment)| {
+        let mut tokens = mech_code.tokens();
+        if let Some(comment) = comment {
+          tokens.append(&mut comment.tokens());
+        }
+        tokens
+      }).collect(),
+      Transition::Next(pattern) => pattern.tokens(),
+      Transition::Output(pattern) => pattern.tokens(),
+      Transition::Statement(statement) => statement.tokens(),
+    }
+  }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Pattern {
   Expression(Expression),
   TupleStruct(PatternTupleStruct),
   Tuple(PatternTuple),
+  Array(PatternArray),
   Wildcard,
 }
 
@@ -874,9 +971,42 @@ impl Pattern {
       Pattern::Expression(e) => e.tokens(),
       Pattern::TupleStruct(ts) => ts.tokens(),
       Pattern::Tuple(t) => t.tokens(),
+      Pattern::Array(a) => a.tokens(),
       Pattern::Wildcard => vec![],
     }
   }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct PatternArray {
+  pub prefix: Vec<Pattern>,
+  pub spread: Option<PatternArraySpread>,
+  pub suffix: Vec<Pattern>,
+}
+
+impl PatternArray {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = vec![];
+    for p in &self.prefix {
+      tokens.append(&mut p.tokens());
+    }
+    if let Some(spread) = &self.spread {
+      if let Some(binding) = &spread.binding {
+        tokens.append(&mut binding.tokens());
+      }
+    }
+    for p in &self.suffix {
+      tokens.append(&mut p.tokens());
+    }
+    tokens
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct PatternArraySpread {
+  pub binding: Option<Box<Pattern>>,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -919,6 +1049,22 @@ pub struct FsmSpecification {
   pub states: Vec<StateDefinition>,
 }
 
+impl FsmSpecification {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.name.tokens();
+    for var in &self.input {
+      tokens.append(&mut var.tokens());
+    }
+    if let Some(output) = &self.output {
+      tokens.append(&mut output.tokens());
+    }
+    for state in &self.states {
+      tokens.append(&mut state.tokens());
+    }
+    tokens
+  }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct StateDefinition {
@@ -926,11 +1072,23 @@ pub struct StateDefinition {
   pub state_variables: Option<Vec<Var>>,
 }
 
+impl StateDefinition {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.name.tokens();
+    if let Some(vars) = &self.state_variables {
+      for var in vars {
+        tokens.append(&mut var.tokens());
+      }
+    }
+    tokens
+  }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Statement {
   EnumDefine(EnumDefine),
-  //FsmDeclare(FsmDeclare),
+  FsmDeclare(FsmDeclare),
   KindDefine(KindDefine),
   OpAssign(OpAssign),
   VariableAssign(VariableAssign),
@@ -944,7 +1102,7 @@ impl Statement {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
       Statement::EnumDefine(x) => x.tokens(),
-      //Statement::FsmDeclare(x) => x.tokens(),
+      Statement::FsmDeclare(x) => x.tokens(),
       Statement::KindDefine(x) => x.tokens(),
       Statement::OpAssign(x) => x.tokens(),
       Statement::VariableAssign(x) => x.tokens(),
@@ -981,6 +1139,16 @@ pub struct FsmPipe {
   pub transitions: Vec<Transition>
 }
 
+impl FsmPipe {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.start.tokens();
+    for transition in &self.transitions {
+      tokens.append(&mut transition.tokens());
+    }
+    tokens
+  }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum PipeElement {
@@ -996,12 +1164,38 @@ pub struct FsmDeclare {
   pub pipe: FsmPipe,
 }
 
+impl FsmDeclare {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.fsm.tokens();
+    tokens.append(&mut self.pipe.tokens());
+    tokens
+  }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Fsm {
   pub name: Identifier,
   pub args: Option<ArgumentList>,
   pub kind: Option<KindAnnotation>
+}
+
+impl Fsm {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.name.tokens();
+    if let Some(args) = &self.args {
+      for (binding, expression) in args {
+        if let Some(binding) = binding {
+          tokens.append(&mut binding.tokens());
+        }
+        tokens.append(&mut expression.tokens());
+      }
+    }
+    if let Some(kind) = &self.kind {
+      tokens.append(&mut kind.tokens());
+    }
+    tokens
+  }
 }
 
 pub type FsmArgs = Vec<(Option<Identifier>,Expression)>;
@@ -1011,6 +1205,21 @@ pub type FsmArgs = Vec<(Option<Identifier>,Expression)>;
 pub struct FsmInstance {
   pub name: Identifier,
   pub args: Option<FsmArgs>,
+}
+
+impl FsmInstance {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.name.tokens();
+    if let Some(args) = &self.args {
+      for (binding, expression) in args {
+        if let Some(binding) = binding {
+          tokens.append(&mut binding.tokens());
+        }
+        tokens.append(&mut expression.tokens());
+      }
+    }
+    tokens
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -1490,8 +1699,9 @@ impl Subscript {
 pub enum Expression {
   Formula(Factor),
   FunctionCall(FunctionCall),
-  //FsmPipe(FsmPipe),
+  FsmPipe(FsmPipe),
   Literal(Literal),
+  Match(Box<MatchExpression>),
   Range(Box<RangeExpression>),
   Slice(Slice),
   Structure(Structure),
@@ -1507,12 +1717,35 @@ impl Expression {
       Expression::Literal(ltrl) => ltrl.tokens(),
       Expression::Structure(strct) => strct.tokens(),
       Expression::Formula(fctr) => fctr.tokens(),
+      Expression::Match(match_expr) => match_expr.tokens(),
       Expression::Range(range) => range.tokens(),
       Expression::Slice(slice) => slice.tokens(),
       Expression::SetComprehension(sc) => sc.tokens(),
+      Expression::FsmPipe(pipe) => pipe.tokens(),
       Expression::MatrixComprehension(mc) => mc.tokens(),
       _ => todo!(),
     }
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct MatchExpression {
+  pub source: Expression,
+  pub arms: Vec<MatchArm>,
+}
+
+impl MatchExpression {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.source.tokens();
+    for arm in &self.arms {
+      tokens.append(&mut arm.pattern.tokens());
+      if let Some(guard) = &arm.guard {
+        tokens.append(&mut guard.tokens());
+      }
+      tokens.append(&mut arm.expression.tokens());
+    }
+    tokens
   }
 }
 

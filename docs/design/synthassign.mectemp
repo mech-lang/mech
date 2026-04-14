@@ -126,6 +126,6 @@ What features really make this work?
 
 
 
+Linux has a standard we should support the ideas they have about recordkeeping.
 
-
-
+https://github.com/torvalds/linux/blob/master/Documentation/process/coding-assistants.rst

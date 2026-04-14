@@ -1,19 +1,26 @@
 use crate::*;
-use std::rc::Rc;
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::collections::HashMap;
-use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::io::{Cursor, Read, Write};
-use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
-use std::time::Instant;
+use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::rc::Rc;
 use std::time::Duration;
+use std::time::Instant;
 
-// Interpreter 
+// Interpreter
 // ----------------------------------------------------------------------------
 
 pub struct Interpreter {
   pub id: u64,
   pub profile: bool,
-  ip: usize,  // instruction pointer
+  pub max_steps: usize,
+  #[cfg(feature = "trace")]
+  pub trace: bool,
+  #[cfg(feature = "trace")]
+  pub trace_to_stdout: bool,
+  #[cfg(feature = "trace")]
+  pub trace_events: Ref<Vec<TraceEvent>>,
+  ip: usize, // instruction pointer
   pub state: Ref<ProgramState>,
   #[cfg(feature = "functions")]
   pub stack: Vec<Frame>,
@@ -24,6 +31,8 @@ pub struct Interpreter {
   pub code: Vec<MechSourceCode>,
   pub out: Value,
   pub out_values: Ref<HashMap<u64, Value>>,
+  #[cfg(feature = "state_machines")]
+  pub user_state_machines: Ref<HashMap<u64, FsmImplementation>>,
   pub sub_interpreters: Ref<HashMap<u64, Box<Interpreter>>>,
 }
 
@@ -33,6 +42,13 @@ impl Clone for Interpreter {
       id: self.id,
       ip: self.ip,
       profile: false,
+      max_steps: self.max_steps,
+      #[cfg(feature = "trace")]
+      trace: self.trace,
+      #[cfg(feature = "trace")]
+      trace_to_stdout: self.trace_to_stdout,
+      #[cfg(feature = "trace")]
+      trace_events: self.trace_events.clone(),
       state: Ref::new(self.state.borrow().clone()),
       #[cfg(feature = "functions")]
       stack: self.stack.clone(),
@@ -43,6 +59,8 @@ impl Clone for Interpreter {
       code: self.code.clone(),
       out: self.out.clone(),
       out_values: self.out_values.clone(),
+      #[cfg(feature = "state_machines")]
+      user_state_machines: self.user_state_machines.clone(),
       sub_interpreters: self.sub_interpreters.clone(),
     }
   }
@@ -58,6 +76,13 @@ impl Interpreter {
       id,
       ip: 0,
       profile: false,
+      max_steps: 10_00000, // Default maximum steps
+      #[cfg(feature = "trace")]
+      trace: false,
+      #[cfg(feature = "trace")]
+      trace_to_stdout: true,
+      #[cfg(feature = "trace")]
+      trace_events: Ref::new(Vec::new()),
       state: Ref::new(state),
       #[cfg(feature = "functions")]
       stack: Vec::new(),
@@ -66,6 +91,8 @@ impl Interpreter {
       out: Value::Empty,
       sub_interpreters: Ref::new(HashMap::new()),
       out_values: Ref::new(HashMap::new()),
+      #[cfg(feature = "state_machines")]
+      user_state_machines: Ref::new(HashMap::new()),
       code: Vec::new(),
       #[cfg(feature = "compiler")]
       context: None,
@@ -121,6 +148,57 @@ impl Interpreter {
     *self = Interpreter::new(id);
   }
 
+  pub fn set_trace_enabled(&mut self, enabled: bool) {
+    #[cfg(feature = "trace")]
+    {
+      self.trace = enabled;
+    }
+    #[cfg(not(feature = "trace"))]
+    {
+      let _ = enabled;
+    }
+  }
+
+  #[cfg(feature = "trace")]
+  pub fn set_trace_to_stdout(&mut self, enabled: bool) {
+    self.trace_to_stdout = enabled;
+  }
+
+  #[cfg(feature = "trace")]
+  pub fn clear_trace_events(&self) {
+    self.trace_events.borrow_mut().clear();
+  }
+
+  #[cfg(feature = "trace")]
+  pub fn trace_events(&self) -> Vec<TraceEvent> {
+    self.trace_events.borrow().clone()
+  }
+
+  #[cfg(feature = "trace")]
+  pub fn trace_events_to_json(&self) -> String {
+    let trace_events = self.trace_events.borrow();
+    trace_events_to_json(trace_events.as_slice())
+  }
+
+  #[cfg(feature = "trace")]
+  pub fn push_trace_line(&self, rendered: String) {
+    let (channel, label, message) = parse_trace_line(&rendered);
+    let mut trace_events = self.trace_events.borrow_mut();
+    let index = trace_events.len();
+    trace_events.push(TraceEvent {
+        index,
+        channel,
+        label,
+        message,
+        rendered,
+    });
+  }
+
+  #[cfg(all(feature = "trace", feature = "state_machines"))]
+  pub fn formatted_fsm_trace(&self) -> String {
+    format_fsm_trace_report(&self.trace_events())
+  }
+
   #[cfg(feature = "pretty_print")]
   pub fn pretty_print_symbols(&self) -> String {
     let state_brrw = self.state.borrow();
@@ -170,11 +248,7 @@ impl Interpreter {
     let mut plan_brrw = state_brrw.plan.borrow_mut(); // RefMut<Vec<Box<dyn MechFunction>>>
 
     if plan_brrw.is_empty() {
-      return Err(MechError::new(
-          NoStepsInPlanError,
-          None
-        ).with_compiler_loc()
-      );
+      return Err(MechError::new(NoStepsInPlanError, None).with_compiler_loc());
     }
 
     let len = plan_brrw.len();
@@ -199,25 +273,43 @@ impl Interpreter {
         return Ok(plan_brrw[len - 1].out().clone());
       } else {
         for _ in 0..step_count {
-          for fxn in plan_brrw.iter_mut() {
+          for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
+            trace_println!(self, "{}", {
+              let fxn_header = fxn
+                .to_string()
+                .lines()
+                .next()
+                .unwrap_or("<unknown-step>")
+                .to_string();
+              format!("[trace][plan] step[{idx}] {fxn_header}")
+            });
             fxn.solve();
+            trace_println!(self, "{}", {
+              let output = fxn.out().to_string();
+              let output = if output.chars().count() > 96 {
+                  format!("{}…", output.chars().take(96).collect::<String>())
+              } else {
+                  output
+              };
+              format!("[trace][plan] step[{idx}] out={output}")
+            });
           }
         }
         return Ok(plan_brrw[len - 1].out().clone());
       }
     }
 
-
     // Case 2: step a single function by index
     let idx = step_id as usize;
     if idx > len {
       return Err(MechError::new(
         StepIndexOutOfBoundsError {
-          step_id,
-          plan_length: len,
+            step_id,
+            plan_length: len,
         },
-        None
-      ).with_compiler_loc());
+        None,
+      )
+      .with_compiler_loc());
     }
 
     let fxn = &mut plan_brrw[idx - 1];
@@ -244,52 +336,48 @@ impl Interpreter {
     Ok(fxn.out().clone())
   }
 
-
-
   #[cfg(feature = "functions")]
   pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
     self.code.push(MechSourceCode::Tree(tree.clone()));
     catch_unwind(AssertUnwindSafe(|| {
       let result = program(tree, &self);
-      if let Some(last_step) = self.state.borrow().plan.borrow().last() {
-        self.out = last_step.out().clone();
-      } else {
-        self.out = Value::Empty;
+      match self.state.borrow().plan.borrow().last() {
+        Some(last_step) => self.out = last_step.out().clone(),
+        None => self.out = Value::Empty,
       }
       result
     }))
     .map_err(|err| {
-      if let Some(raw_msg) = err.downcast_ref::<&'static str>() {
-        if raw_msg.contains("Index out of bounds") {
-          MechError::new(
-            IndexOutOfBoundsError,
-            None,
-          ).with_compiler_loc()
-        } else if raw_msg.contains("attempt to subtract with overflow") {
-          MechError::new(
-            OverflowSubtractionError,
-            None,
-          ).with_compiler_loc()
-        } else {
+      match err.downcast_ref::<&'static str>() {
+         Some(raw_msg) => {
+          if raw_msg.contains("Index out of bounds") {
+              MechError::new(IndexOutOfBoundsError, None).with_compiler_loc()
+          } else if raw_msg.contains("attempt to subtract with overflow") {
+              MechError::new(OverflowSubtractionError, None).with_compiler_loc()
+          } else {
+            MechError::new(
+              UnknownPanicError {
+                details: raw_msg.to_string(),
+              },
+              None,
+            )
+            .with_compiler_loc()
+          }
+        } 
+        None => {
           MechError::new(
             UnknownPanicError {
-              details: raw_msg.to_string(),
+              details: "Non-string panic".to_string(),
             },
             None,
-          ).with_compiler_loc()
+          )
+          .with_compiler_loc()
         }
-      } else {
-        MechError::new(
-          UnknownPanicError {
-            details: "Non-string panic".to_string(),
-          },
-          None,
-        ).with_compiler_loc()
       }
     })?
-}
+  }
+    
 
-  
   #[cfg(feature = "program")]
   pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
     // Reset the instruction pointer
@@ -320,78 +408,86 @@ impl Interpreter {
           DecodedInstr::ConstLoad { dst, const_id } => {
             let value = self.constants[*const_id as usize].clone();
             self.registers[*dst as usize] = value;
-          },
-          DecodedInstr::NullOp{ fxn_id, dst } => {
+          }
+          DecodedInstr::NullOp { fxn_id, dst } => {
             match functions_table.functions.get(fxn_id) {
               Some(fxn_factory) => {
                 let out = &self.registers[*dst as usize];
                 let fxn = fxn_factory(FunctionArgs::Nullary(out.clone()))?;
                 self.out = fxn.out().clone();
                 state_brrw.add_plan_step(fxn);
-              },
+              }
               None => {
                 return Err(MechError::new(
                   UnknownNullaryFunctionError { fxn_id: *fxn_id },
-                  None
-                ).with_compiler_loc());
+                  None,
+                )
+                .with_compiler_loc());
               }
             }
-          },
-          DecodedInstr::UnOp{ fxn_id, dst, src } => {
+          }
+          DecodedInstr::UnOp { fxn_id, dst, src } => {
             match functions_table.functions.get(fxn_id) {
               Some(fxn_factory) => {
                 let src = &self.registers[*src as usize];
                 let out = &self.registers[*dst as usize];
-                let fxn = fxn_factory(FunctionArgs::Unary(out.clone(), src.clone()))?;
+                let fxn =
+                    fxn_factory(FunctionArgs::Unary(out.clone(), src.clone()))?;
                 self.out = fxn.out().clone();
                 state_brrw.add_plan_step(fxn);
-              },
+              }
               None => {
                 return Err(MechError::new(
                   UnknownUnaryFunctionError { fxn_id: *fxn_id },
-                  None
-                ).with_compiler_loc());
+                  None,
+                )
+                .with_compiler_loc());
               }
             }
-          },
-          DecodedInstr::BinOp{ fxn_id, dst, lhs, rhs } => {
-            match functions_table.functions.get(fxn_id) {
-              Some(fxn_factory) => {
-                let lhs = &self.registers[*lhs as usize];
-                let rhs = &self.registers[*rhs as usize];
-                let out = &self.registers[*dst as usize];
-                let fxn = fxn_factory(FunctionArgs::Binary(out.clone(), lhs.clone(), rhs.clone()))?;
-                self.out = fxn.out().clone();
-                state_brrw.add_plan_step(fxn);
-              },
-              None => {
-                return Err(MechError::new(
-                  UnknownBinaryFunctionError { fxn_id: *fxn_id },
-                  None
-                ).with_compiler_loc());
-              }
+          }
+          DecodedInstr::BinOp { fxn_id, dst, lhs, rhs } => 
+          match functions_table.functions.get(fxn_id) {
+            Some(fxn_factory) => {
+              let lhs = &self.registers[*lhs as usize];
+              let rhs = &self.registers[*rhs as usize];
+              let out = &self.registers[*dst as usize];
+              let fxn = fxn_factory(FunctionArgs::Binary(out.clone(),lhs.clone(),rhs.clone()))?;
+              self.out = fxn.out().clone();
+              state_brrw.add_plan_step(fxn);
+            }
+            None => {
+              return Err(MechError::new(
+                UnknownBinaryFunctionError { fxn_id: *fxn_id },
+                None,
+              )
+              .with_compiler_loc());
             }
           },
-          DecodedInstr::TernOp{ fxn_id, dst, a, b, c } => {
-            match functions_table.functions.get(fxn_id) {
-              Some(fxn_factory) => {
-                let arg1 = &self.registers[*a as usize];
-                let arg2 = &self.registers[*b as usize];
-                let arg3 = &self.registers[*c as usize];
-                let out = &self.registers[*dst as usize];
-                let fxn = fxn_factory(FunctionArgs::Ternary(out.clone(), arg1.clone(), arg2.clone(), arg3.clone()))?;
-                self.out = fxn.out().clone();
-                state_brrw.add_plan_step(fxn);
-              },
-              None => {
-                return Err(MechError::new(
-                  UnknownTernaryFunctionError { fxn_id: *fxn_id },
-                  None
-                ).with_compiler_loc());
-              }
+          DecodedInstr::TernOp {fxn_id,dst,a,b,c} => 
+          match functions_table.functions.get(fxn_id) {
+            Some(fxn_factory) => {
+              let arg1 = &self.registers[*a as usize];
+              let arg2 = &self.registers[*b as usize];
+              let arg3 = &self.registers[*c as usize];
+              let out = &self.registers[*dst as usize];
+              let fxn = fxn_factory(FunctionArgs::Ternary(
+                out.clone(),
+                arg1.clone(),
+                arg2.clone(),
+                arg3.clone(),
+              ))?;
+              self.out = fxn.out().clone();
+              state_brrw.add_plan_step(fxn);
+            }
+            None => {
+              return Err(MechError::new(
+                UnknownTernaryFunctionError { fxn_id: *fxn_id },
+                None,
+              )
+              .with_compiler_loc());
             }
           },
-          DecodedInstr::QuadOp{ fxn_id, dst, a, b, c, d } => {
+          DecodedInstr::QuadOp {fxn_id,dst,a,b,c,d } => 
             match functions_table.functions.get(fxn_id) {
               Some(fxn_factory) => {
                 let arg1 = &self.registers[*a as usize];
@@ -399,43 +495,56 @@ impl Interpreter {
                 let arg3 = &self.registers[*c as usize];
                 let arg4 = &self.registers[*d as usize];
                 let out = &self.registers[*dst as usize];
-                let fxn = fxn_factory(FunctionArgs::Quaternary(out.clone(), arg1.clone(), arg2.clone(), arg3.clone(), arg4.clone()))?;
+                let fxn = fxn_factory(FunctionArgs::Quaternary(
+                    out.clone(),
+                    arg1.clone(),
+                    arg2.clone(),
+                    arg3.clone(),
+                    arg4.clone(),
+                ))?;
                 self.out = fxn.out().clone();
                 state_brrw.add_plan_step(fxn);
-              },
+              }
               None => {
                 return Err(MechError::new(
                   UnknownQuadFunctionError { fxn_id: *fxn_id },
-                  None
-                ).with_compiler_loc());
+                  None,
+                )
+                .with_compiler_loc());
               }
-            }
           },
-          DecodedInstr::VarArg{ fxn_id, dst, args } => {
+          DecodedInstr::VarArg { fxn_id, dst, args } => {
             match functions_table.functions.get(fxn_id) {
               Some(fxn_factory) => {
-                let arg_values: Vec<Value> = args.iter().map(|r| self.registers[*r as usize].clone()).collect();
+                let arg_values: Vec<Value> = args
+                  .iter()
+                  .map(|r| self.registers[*r as usize].clone())
+                  .collect();
                 let out = &self.registers[*dst as usize];
                 let fxn = fxn_factory(FunctionArgs::Variadic(out.clone(), arg_values))?;
                 self.out = fxn.out().clone();
                 state_brrw.add_plan_step(fxn);
-              },
+              }
               None => {
                 return Err(MechError::new(
                   UnknownVariadicFunctionError { fxn_id: *fxn_id },
-                  None
-                ).with_compiler_loc());
+                  None,
+                )
+                .with_compiler_loc());
               }
             }
-          },
-          DecodedInstr::Ret{ src } => {
+          }
+          DecodedInstr::Ret { src } => {
             todo!();
-          },
+          }
           x => {
             return Err(MechError::new(
-              UnknownInstructionError { instr: format!("{:?}", x) },
-              None
-            ).with_compiler_loc());
+              UnknownInstructionError {
+                instr: format!("{:?}", x),
+              },
+              None,
+            )
+            .with_compiler_loc());
           }
         }
         self.ip += 1;
@@ -446,9 +555,12 @@ impl Interpreter {
       let mut state_brrw = self.state.borrow_mut();
       let mut symbol_table = state_brrw.symbol_table.borrow_mut();
       for (id, name) in &program.dictionary {
-        symbol_table.dictionary.borrow_mut().insert(*id, name.clone());
+        symbol_table
+            .dictionary
+            .borrow_mut()
+            .insert(*id, name.clone());
         state_brrw.dictionary.borrow_mut().insert(*id, name.clone());
-      } 
+      }
     }
     Ok(self.out.clone())
   }
@@ -459,14 +571,16 @@ impl Interpreter {
     let mut plan_brrw = state_brrw.plan.borrow_mut();
     let mut ctx = CompileCtx::new();
     for step in plan_brrw.iter() {
-      step.compile(&mut ctx)?;
+        step.compile(&mut ctx)?;
     }
     let bytes = ctx.compile()?;
     self.context = Some(ctx);
     Ok(bytes)
   }
-
 }
+
+// Interpreter Errors
+// ----------------------------------------------------------------------------
 
 #[derive(Debug, Clone)]
 pub struct UnknownInstructionError {
@@ -564,75 +678,62 @@ impl MechErrorKind for UnknownNullaryFunctionError {
 #[derive(Debug, Clone)]
 pub struct IndexOutOfBoundsError;
 impl MechErrorKind for IndexOutOfBoundsError {
-  fn name(&self) -> &str { "IndexOutOfBounds" }
-  fn message(&self) -> String { "Index out of bounds".to_string() }
+  fn name(&self) -> &str {
+    "IndexOutOfBounds"
+  }
+  fn message(&self) -> String {
+    "Index out of bounds".to_string()
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct OverflowSubtractionError;
 impl MechErrorKind for OverflowSubtractionError {
-  fn name(&self) -> &str { "OverflowSubtraction" }
-  fn message(&self) -> String { "Attempted subtraction overflow".to_string() }
+  fn name(&self) -> &str {
+    "OverflowSubtraction"
+  }
+  fn message(&self) -> String {
+    "Attempted subtraction overflow".to_string()
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct UnknownPanicError {
-  pub details: String
+  pub details: String,
 }
 impl MechErrorKind for UnknownPanicError {
-  fn name(&self) -> &str { "UnknownPanic" }
-  fn message(&self) -> String { self.details.clone() }
+  fn name(&self) -> &str {
+    "UnknownPanic"
+  }
+  fn message(&self) -> String {
+    self.details.clone()
+  }
 }
 
 #[derive(Debug, Clone)]
-struct StepIndexOutOfBoundsError{
+struct StepIndexOutOfBoundsError {
   pub step_id: usize,
   pub plan_length: usize,
 }
 impl MechErrorKind for StepIndexOutOfBoundsError {
-  fn name(&self) -> &str { "StepIndexOutOfBounds" }
+  fn name(&self) -> &str {
+    "StepIndexOutOfBounds"
+  }
   fn message(&self) -> String {
-    format!("Step id {} out of range (plan has {} steps)", self.step_id, self.plan_length)
+    format!(
+      "Step id {} out of range (plan has {} steps)",
+      self.step_id, self.plan_length
+    )
   }
 }
 
 #[derive(Debug, Clone)]
 struct NoStepsInPlanError;
 impl MechErrorKind for NoStepsInPlanError {
-  fn name(&self) -> &str { "NoStepsInPlan" }
+  fn name(&self) -> &str {
+    "NoStepsInPlan"
+  }
   fn message(&self) -> String {
     "Plan contains no steps. This program doesn't do anything.".to_string()
-  }
-}
-
-fn format_duration(d: Duration) -> String {
-  let ns = d.as_nanos();
-  if ns < 1_000 {
-    format!("{}ns", ns)
-  } else if ns < 1_000_000 {
-    format!("{:.2}µs", ns as f64 / 1_000.0)
-  } else if ns < 1_000_000_000 {
-    format!("{:.2}ms", ns as f64 / 1_000_000.0)
-  } else {
-    format!("{:.2}s", ns as f64 / 1_000_000_000.0)
-  }
-}
-
-fn print_histogram(total_durations: &[Duration]) {
-  let max_duration = total_durations.iter().cloned().max().unwrap_or(Duration::ZERO);
-  let max_bar_len = 50; // max characters for the bar
-
-  println!("{:>5}  {:>10}  {}", "#", "Time", "Histogram");
-  println!("-----------------------------------------------");
-
-  for (idx, dur) in total_durations.iter().enumerate() {
-    let bar_len = if max_duration.as_nanos() == 0 {
-      0
-    } else {
-      ((dur.as_nanos() * max_bar_len as u128) / max_duration.as_nanos()) as usize
-    };
-    let bar = std::iter::repeat('░').take(bar_len).collect::<String>();
-
-    println!("{:>5}  {:>10}  {}", idx, format_duration(*dur), bar);
   }
 }

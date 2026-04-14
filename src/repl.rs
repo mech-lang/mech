@@ -155,7 +155,7 @@ impl MechRepl {
         for source in paths {
           mechfs.watch_source(&source)?;
         }
-        match run_mech_code(&mut intrp, &mechfs, false,false,false) {
+        match run_mech_code(&mut intrp, &mechfs, false,false,false,false) {
           Ok(r) => {
             #[cfg(feature = "pretty_print")]
             let out = r.pretty_print();
@@ -170,7 +170,7 @@ impl MechRepl {
         for (_,src) in code {
           mechfs.add_code(&src)?;
         }
-        match run_mech_code(&mut intrp, &mechfs, false,false,false)  {
+        match run_mech_code(&mut intrp, &mechfs, false,false,false,false)  {
           Ok(r) => { 
             #[cfg(feature = "pretty_print")]
             let out = r.pretty_print();

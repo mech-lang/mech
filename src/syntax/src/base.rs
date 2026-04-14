@@ -147,8 +147,8 @@ leaf!(abstract_sigil, "%%", TokenKind::AbstractSigil);
 leaf!(emphasis_sigil, "*", TokenKind::EmphasisSigil);
 leaf!(equation_sigil, "$$", TokenKind::EquationSigil);
 leaf!(footnote_prefix, "[^", TokenKind::FootnotePrefix);
-leaf!(float_left, "<<", TokenKind::FloatLeft);
-leaf!(float_right, ">>", TokenKind::FloatRight);
+leaf!(float_left, "<<:", TokenKind::FloatLeft);
+leaf!(float_right, ":>>", TokenKind::FloatRight);
 leaf!(http_prefix, "http", TokenKind::HttpPrefix);
 leaf!(highlight_sigil, "!!", TokenKind::HighlightSigil);
 leaf!(img_prefix, "![", TokenKind::ImgPrefix);
@@ -176,9 +176,22 @@ ws0_leaf!(async_transition_operator, "~>", TokenKind::AsyncTransitionOperator);
 ws0_leaf!(define_operator, ":=", TokenKind::DefineOperator);
 ws0_leaf!(synth_operator, "?=", TokenKind::SynthOperator);
 ws0_leaf!(gen_operator, "@=", TokenKind::GenOperator);
-ws0_leaf!(output_operator, "=>", TokenKind::OutputOperator);
-ws0_leaf!(transition_operator, "->", TokenKind::TransitionOperator);
+ws0_leaf!(output_operator_a, "=>", TokenKind::OutputOperator);
+ws0_leaf!(output_operator_u, "⇒", TokenKind::OutputOperator);
+ws0_leaf!(transition_operator_a, "->", TokenKind::TransitionOperator);
+ws0_leaf!(transition_operator_u, "→", TokenKind::TransitionOperator);
 
+// transition_operator := "->" | "→" ;
+pub fn transition_operator(input: ParseString) -> ParseResult<Token> {
+  let (input, operator) = alt((transition_operator_a, transition_operator_u))(input)?;
+  Ok((input, operator))
+}
+
+// output_operator := "=>" | "⇒" ;
+pub fn output_operator(input: ParseString) -> ParseResult<Token> {
+  let (input, operator) = alt((output_operator_a, output_operator_u))(input)?;
+  Ok((input, operator))
+}
 
 // emoji-grapheme := ?emoji-grapheme-literal? ;
 pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
