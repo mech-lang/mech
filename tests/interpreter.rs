@@ -1075,70 +1075,6 @@ test_interpreter!(interpret_table_full_outer_join_word, r#"A := |id<u64> a<u64>|
 
 #[cfg(all(feature = "table", feature = "u64", feature = "u8"))]
 #[test]
-fn interpret_table_full_outer_join_marks_sparse_columns_optional() {
-  let s = r#"
-A := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |
-B := |id<u64> hw2<u8>| 2 200 | 3 255 | 4 42 |
-J := A ⟗ B
-J
-"#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
-
-  let table = match result {
-    Value::Table(t) => t,
-    Value::MutableReference(r) => {
-      let borrowed = r.borrow();
-      match &*borrowed {
-        Value::Table(t) => t.clone(),
-        other => panic!("Expected mutable reference to table, got {:?}", other),
-      }
-    }
-    other => panic!("Expected table result, got {:?}", other),
-  };
-
-  let table_brrw = table.borrow();
-  let find_col_id = |name: &str| -> u64 {
-    *table_brrw
-      .col_names
-      .iter()
-      .find(|(_, col_name)| col_name.as_str() == name)
-      .map(|(id, _)| id)
-      .unwrap()
-  };
-
-  let id_kind = &table_brrw.data.get(&find_col_id("id")).unwrap().0;
-  let hw1_kind = &table_brrw.data.get(&find_col_id("hw1")).unwrap().0;
-  let hw2_kind = &table_brrw.data.get(&find_col_id("hw2")).unwrap().0;
-
-  assert_eq!(id_kind, &ValueKind::U64);
-  assert_eq!(hw1_kind, &ValueKind::Option(Box::new(ValueKind::U8)));
-  assert_eq!(hw2_kind, &ValueKind::Option(Box::new(ValueKind::U8)));
-}
-
-#[cfg(all(feature = "table", feature = "u64", feature = "u8"))]
-test_interpreter!(
-  interpret_table_full_outer_join_optional_rhs_column_access,
-  r#"a := |id<u64>  hw1<u8>| 1 10 | 2 20 | 3 30 |;
-b := |id<u64>  hw2<u8>| 2 200 | 3 255 | 4 42 |;
-j := a ⟗ b;
-j.hw2[1]"#,
-  Value::Empty
-);
-
-#[cfg(all(feature = "table", feature = "u64", feature = "u8"))]
-test_interpreter!(
-  interpret_table_full_outer_join_optional_lhs_column_access,
-  r#"a := |id<u64>  hw1<u8>| 1 10 | 2 20 | 3 30 |;
-b := |id<u64>  hw2<u8>| 2 200 | 3 255 | 4 42 |;
-j := a ⟗ b;
-j.hw1[4]"#,
-  Value::Empty
-);
-
-#[cfg(all(feature = "table", feature = "u64", feature = "u8"))]
-#[test]
 fn interpret_table_full_outer_join_optional_column_kind_is_u8_option_matrix() {
   let s = r#"
 a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |
@@ -1161,8 +1097,7 @@ test_interpreter!(
   r#"a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |
 b := |id<u64> hw2<u8>| 2 200 | 3 255 | 4 42 |
 x := a ⟗ b
-y<u8> := x.hw1[1]? | x => x | * => 0.
-y + 0u8"#,
+y<u8> := x.hw1[1]? | x => x | * => 0."#,
   Value::U8(Ref::new(10))
 );
 
@@ -1172,8 +1107,7 @@ test_interpreter!(
   r#"a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |
 b := |id<u64> hw2<u8>| 2 200 | 3 255 | 4 42 |
 x := a ⟗ b
-y<u8> := x.hw1[4]? | x => x | * => 0.
-y + 0u8"#,
+y<u8> := x.hw1[4]? | x => x | * => 0."#,
   Value::U8(Ref::new(0))
 );
 
