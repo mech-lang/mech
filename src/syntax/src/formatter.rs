@@ -1718,7 +1718,7 @@ impl Formatter {
       None => {},
     }
     if self.html {
-      format!("<span class=\"mech-enum-variant\"><span class=\"mech-enum-variant-name\">{}</span><span class=\"mech-enum-variant-kind\">{}</span></span>",name,kind)
+      format!("<span class=\"mech-enum-variant\"><span class=\"mech-enum-variant-name\">:{}</span><span class=\"mech-enum-variant-kind\">{}</span></span>",name,kind)
     } else {
       format!("{}{}", name, kind)
     }
@@ -1865,6 +1865,11 @@ impl Formatter {
   pub fn match_expression(&mut self, node: &MatchExpression) -> String {
     let source = self.expression(&node.source);
     let mut lines = vec![format!("{}?", source)];
+    lines.push(if self.html {
+      "<div class=\"mech-match-arms\">".to_string()
+    } else {
+      "".to_string()
+    });
     for (ix, arm) in node.arms.iter().enumerate() {
       let last_arm = ix + 1 == node.arms.len();
       let (branch, terminal) = if last_arm {("└", ".")} else {("├", "")};
@@ -1890,10 +1895,15 @@ impl Formatter {
         lines.push(format!("{}{}{} ⇒ {}{}", branch, pattern, guard, expr, terminal));
       }
     }
+    lines.push(if self.html {
+      "</div>".to_string()
+    } else {
+      "".to_string()
+    });
     if self.html {
       format!(
         "<span class=\"mech-match-expression\">\
-          <span class=\"mech-match-source\">{}?</span>{}\
+          <span class=\"mech-match-source\">{}<span class=\"mech-match-op\">?</span></span>{}\
           </span>",
         source,
         lines.iter().skip(1).cloned().collect::<Vec<_>>().join("")
