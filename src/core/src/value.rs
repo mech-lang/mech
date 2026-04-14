@@ -738,6 +738,7 @@ impl Hash for Value {
 }
 impl Value {
 
+  #[cfg(feature = "matrix")]
   fn infer_matrix_value_kind(matrix: &Matrix<Value>) -> ValueKind {
     let mut base_kind: Option<ValueKind> = None;
     let mut saw_empty = false;
