@@ -708,15 +708,30 @@ fn enum_value_matches(value: Value, enum_id: u64, state: &ProgramState) -> bool 
     Some(enm) => enm,
     None => return false,
   };
+  let names_brrw = enum_def.names.borrow();
+  let atom_matches_variant = |variant_id: u64, atom_id: u64, atom_name: &str| {
+    if variant_id == atom_id {
+      return true;
+    }
+    let variant_name = match names_brrw.get(&variant_id) {
+      Some(name) => name.as_str(),
+      None => return false,
+    };
+    let short_variant = variant_name.rsplit('/').next().unwrap_or(variant_name);
+    let short_atom = atom_name.rsplit('/').next().unwrap_or(atom_name);
+    short_variant == short_atom
+  };
   match value {
     // Bare atom: check that the atom's id is a known payload-less variant.
     Value::Atom(atom) => {
-      let variant_id = atom.borrow().id();
+      let atom_brrw = atom.borrow();
+      let variant_id = atom_brrw.id();
+      let atom_name = atom_brrw.name();
       enum_def
         .variants
         .iter()
         .any(|(known_variant, payload_kind)| {
-          *known_variant == variant_id && payload_kind.is_none()
+          atom_matches_variant(*known_variant, variant_id, &atom_name) && payload_kind.is_none()
         })
     }
     // Tuple-struct variant: a 2-element tuple of (atom-tag, payload).
@@ -728,15 +743,18 @@ fn enum_value_matches(value: Value, enum_id: u64, state: &ProgramState) -> bool 
       if tuple_brrw.elements.len() != 2 {
         return false;
       }
-      let tag = match tuple_brrw.elements[0].as_ref() {
-        Value::Atom(atom) => atom.borrow().id(),
+      let (tag, tag_name) = match tuple_brrw.elements[0].as_ref() {
+        Value::Atom(atom) => {
+          let atom_brrw = atom.borrow();
+          (atom_brrw.id(), atom_brrw.name())
+        }
         _ => return false,
       };
       let payload = tuple_brrw.elements[1].as_ref().clone();
       let (_, declared_payload_kind) = match enum_def
         .variants
         .iter()
-        .find(|(known_variant, _)| *known_variant == tag)
+        .find(|(known_variant, _)| atom_matches_variant(*known_variant, tag, &tag_name))
       {
         Some(entry) => entry,
         None => return false,
