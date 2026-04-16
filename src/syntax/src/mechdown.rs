@@ -643,19 +643,27 @@ pub fn mechdown_list(input: ParseString) -> ParseResult<MDList> {
   Ok((input, list))
 }
 
+pub fn unordered_list_bullet(input: ParseString) -> ParseResult<Token> {
+  let (input, (_, (mut bullet_text, _), _)) = tuple((
+    left_parenthesis,
+    range(many1(tuple((is_not(right_parenthesis), raw_text)))),
+    right_parenthesis
+  ))(input)?;
+  let mut bullet_tokens = bullet_text.into_iter().map(|(_, tkn)| tkn).collect::<Vec<Token>>();
+  let mut merged = Token::merge_tokens(&mut bullet_tokens).unwrap_or_default();
+  merged.kind = TokenKind::Emoji;
+  Ok((input, merged))
+}
+
 // list_item := dash, <space+>, <paragraph>, new_line* ;
 pub fn unordered_list_item(input: ParseString) -> ParseResult<(Option<Token>,Paragraph)> {
   let msg1 = "Expects space after dash";
   let msg2 = "Expects paragraph as list item";
   let (input, _) = dash(input)?;
-  let (input, bullet) = opt(tuple((left_parenthesis, emoji, right_parenthesis)))(input)?;
+  let (input, bullet) = opt(unordered_list_bullet)(input)?;
   let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
   let (input, list_item) = labelr!(paragraph_newline, |input| recover::<Paragraph, _>(input, skip_till_eol), msg2)(input)?;
   let (input, _) = many0(new_line)(input)?;
-  let bullet = match bullet {
-    Some((_,b,_)) => Some(b),
-    None => None,
-  };
   Ok((input,  (bullet, list_item)))
 }
 
@@ -1054,5 +1062,37 @@ mod tests {
     assert_eq!(parsed.rows[1].len(), 1);
     assert_eq!(parsed.rows[0][0].caption.to_string(), "caption a");
     assert_eq!(parsed.rows[0][0].src.to_string(), "img1.jpg");
+  }
+
+  #[test]
+  fn parses_unordered_list_items_with_trailing_dash_after_strong_text() {
+    let src = "-(☑️) **v0.1** - proof of concept system - minimum viable language implementation\n-(☑️) **v0.2** - data specification - formulas, defining and manipulating data\n-(📍) **v0.3** - program specification - functions, modules, state machines, Mika\n-(☐) **v0.4** - system specification - tools, distributed programs, capabilities\n";
+    let gs = graphemes::init_source(src);
+    let input = ParseString::new(&gs);
+    mechdown_list(input).expect("list with strong version labels followed by a dash should parse");
+  }
+
+  #[test]
+  fn parses_body_containing_list_items_with_trailing_dash_after_strong_text() {
+    let src = "-(☑️) **v0.1** - proof of concept system - minimum viable language implementation\n-(☑️) **v0.2** - data specification - formulas, defining and manipulating data\n-(📍) **v0.3** - program specification - functions, modules, state machines, Mika\n-(☐) **v0.4** - system specification - tools, distributed programs, capabilities\n";
+    let gs = graphemes::init_source(src);
+    let input = ParseString::new(&gs);
+    body(input).expect("body should parse when list items contain a trailing dash after strong text");
+  }
+
+  #[test]
+  fn parses_list_item_that_ends_with_a_dash_after_strong_text() {
+    let src = "-(☑️) **v0.1** -\n";
+    let gs = graphemes::init_source(src);
+    let input = ParseString::new(&gs);
+    mechdown_list(input).expect("list item ending in a dash should parse");
+  }
+
+  #[test]
+  fn parses_body_list_with_crlf_and_trailing_dash_after_strong_text() {
+    let src = "-(☑️) **v0.1** - proof of concept system - minimum viable language implementation\r\n-(☑️) **v0.2** - data specification - formulas, defining and manipulating data\r\n-(📍) **v0.3** - program specification - functions, modules, state machines, Mika\r\n-(☐) **v0.4** - system specification - tools, distributed programs, capabilities\r\n";
+    let gs = graphemes::init_source(src);
+    let input = ParseString::new(&gs);
+    body(input).expect("CRLF-terminated list items should parse");
   }
 }
