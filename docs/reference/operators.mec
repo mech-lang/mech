@@ -1,0 +1,88 @@
+operators
+===============================================================================
+
+%% Quick reference of binary operators and assignment operators used with math, string, matrix, set, and table data.
+
+1. Binary Operators (Math)
+-------------------------------------------------------------------------------
+
+| Operator | Meaning | Example |
+|:--:|---|---|
+| `+` | addition | `sum := 3 + 4` |
+| `-` | subtraction | `diff := 10 - 3` |
+| `*` or `×` | multiplication | `prod := 6 * 7` |
+| `/` or `÷` | division | `q := 22 / 7` |
+| `%` | modulus (remainder) | `r := 17 % 5` |
+| `^` | exponentiation | `p := 2 ^ 8` |
+
+2. Binary Operators (String)
+-------------------------------------------------------------------------------
+
+| Operator | Meaning | Example |
+|:--:|---|---|
+| `+` | concatenation | `label := "user-" + "42"` |
+
+3. Binary Operators (Matrix)
+-------------------------------------------------------------------------------
+
+| Operator | Meaning | Example |
+|:--:|---|---|
+| `+` | element-wise addition | `c := a + b` |
+| `-` | element-wise subtraction | `d := a - b` |
+| `*` or `×` | element-wise multiplication | `e := a * b` |
+| `/` or `÷` | element-wise division | `f := a / b` |
+| `%` | element-wise modulus | `g := a % b` |
+| `^` | element-wise power | `h := a ^ b` |
+| `**` | matrix multiplication | `m := a ** b` |
+| `\\` | linear solve (`A \\ b`) | `x := a \\ b` |
+| `·` or `•` | dot product | `dp := u · v` |
+| `⨯` | cross product | `cp := u ⨯ v` |
+
+4. Binary Operators (Set)
+-------------------------------------------------------------------------------
+
+| Operator | Meaning | Example |
+|:--:|---|---|
+| `∪` | union | `u := a ∪ b` |
+| `∩` | intersection | `i := a ∩ b` |
+| `∖` | difference | `d := a ∖ b` |
+| `∁` | complement | `c := a ∁ b` |
+| `Δ` (or `∆`) | symmetric difference | `s := a Δ b` |
+| `⊆` | subset | `ok := a ⊆ b` |
+| `⊊` (or `⊂`) | proper subset | `ok := a ⊊ b` |
+| `⊇` | superset | `ok := a ⊇ b` |
+| `⊋` (or `⊃`) | proper superset | `ok := a ⊋ b` |
+| `∈` | element of | `ok := 2 ∈ a` |
+| `∉` | not element of | `ok := 9 ∉ a` |
+
+5. Binary Operators (Table)
+-------------------------------------------------------------------------------
+
+| Operator | Meaning | Example |
+|:--:|---|---|
+| `⋈` | inner join | `j := a ⋈ b` |
+| `⟕` | left outer join | `j := a ⟕ b` |
+| `⟖` | right outer join | `j := a ⟖ b` |
+| `⟗` | full outer join | `j := a ⟗ b` |
+| `⋉` | left semi join | `j := a ⋉ b` |
+| `▷` | left anti join | `j := a ▷ b` |
+
+6. Assignment Operators
+-------------------------------------------------------------------------------
+
+| Operator | Meaning | Example |
+|:--:|---|---|
+| `:=` | define a new binding | `x := 10` |
+| `=` | assign/update an existing mutable binding | `x = 11` |
+| `+=` | add-assign (in-place update) | `x += 1` |
+| `-=` | subtract-assign | `x -= 1` |
+| `*=` | multiply-assign | `x *= 2` |
+| `/=` | divide-assign | `x /= 2` |
+| `^=` | exponent-assign (grammar form) | `x ^= 3` |
+
+(6.1) Notes by data family
+
+- Math and matrix expressions use `+=`, `-=`, `*=`, `/=` for in-place updates.
+- Strings use `+` for concatenation; use `=` to assign concatenation results.
+- Sets are immutable; create new sets with set binary operators and assign the result.
+- Tables support relational operators (`⋈`, `⟕`, `⟖`, `⟗`, `⋉`, `▷`) and may use `+=` to append a record/table into a mutable table.
