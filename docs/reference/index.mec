@@ -23,6 +23,7 @@ Platform Reference
     - [Defining, Assigning, and Accessing Data](/reference/define.html) - create data and change it
     - [Data Conversion](/reference/convert.html) - convert data from one kind to another
     - [Expression Broadcasting](/reference/broadcasting.html) - apply operations over data structures
+    - [Operators](/reference/operators.html) - binary and assignment operator quick reference
     - [Indexing](/reference/indexing.html) - access elements within data structures
 
 2. Programming Model
