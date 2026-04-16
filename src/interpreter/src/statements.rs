@@ -244,10 +244,27 @@ fn value_matches_enum_variant(value: &Value, enum_id: u64, state: &ProgramState)
     Some(enm) => enm,
     None => return false,
   };
+  let names_brrw = my_enum.names.borrow();
+  let atom_matches_variant = |variant_id: u64, atom_id: u64, atom_name: &str| {
+    if variant_id == atom_id {
+      return true;
+    }
+    let variant_name = match names_brrw.get(&variant_id) {
+      Some(name) => name.as_str(),
+      None => return false,
+    };
+    let short_variant = variant_name.rsplit('/').next().unwrap_or(variant_name);
+    let short_atom = atom_name.rsplit('/').next().unwrap_or(atom_name);
+    short_variant == short_atom
+  };
   match value {
     Value::Atom(atom_variant) => {
-      let variant_id = atom_variant.borrow().id();
-      my_enum.variants.iter().any(|(known_variant, payload_kind)| *known_variant == variant_id && payload_kind.is_none())
+      let atom_brrw = atom_variant.borrow();
+      let variant_id = atom_brrw.id();
+      let atom_name = atom_brrw.name();
+      my_enum.variants.iter().any(|(known_variant, payload_kind)| {
+        atom_matches_variant(*known_variant, variant_id, &atom_name) && payload_kind.is_none()
+      })
     }
     #[cfg(feature = "tuple")]
     Value::Tuple(tuple_val) => {
@@ -260,8 +277,11 @@ fn value_matches_enum_variant(value: &Value, enum_id: u64, state: &ProgramState)
         _ => return false,
       };
       let variant_id = variant_atom.id();
+      let atom_name = variant_atom.name();
       let payload = tuple_brrw.elements[1].as_ref();
-      let (_, declared_payload_kind) = match my_enum.variants.iter().find(|(known_variant, _)| *known_variant == variant_id) {
+      let (_, declared_payload_kind) = match my_enum.variants.iter().find(|(known_variant, _)| {
+        atom_matches_variant(*known_variant, variant_id, &atom_name)
+      }) {
         Some(v) => v,
         None => return false,
       };
