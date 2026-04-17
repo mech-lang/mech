@@ -1600,7 +1600,10 @@ impl Value {
         let dict = enm.names.borrow();
         if enm.variants.len() == 1 {
           let (variant_id, payload) = &enm.variants[0];
-          let variant_name = dict.get(variant_id).cloned().unwrap_or_else(|| format!("{}", variant_id));
+          let variant_name = dict
+            .get(variant_id)
+            .map(|name| name.rsplit('/').next().unwrap_or(name).to_string())
+            .unwrap_or_else(|| format!("{}", variant_id));
           return match payload {
             Some(value) => format!(":{}({})", variant_name, value.format_value_inline()),
             None => format!(":{}", variant_name),
