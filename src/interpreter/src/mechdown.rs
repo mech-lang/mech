@@ -76,8 +76,11 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       }
       let code_id = block.config.namespace;
       if code_id == 0 {
-        for (c,_) in &block.code {
+        for (c,cmmnt) in &block.code {
           out = mech_code(&c, &p)?;
+          if let Some(cmmnt) = cmmnt {
+            let _ = comment(cmmnt, p)?;
+          }
         }
         // Save the output of the last code block in the parent interpreter
         // so we can reference it later.
@@ -94,8 +97,11 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
           .entry(code_id)
           .or_insert(Box::new(new_sub_interpreter))
           .as_mut();
-        for (c,_) in &block.code {
+        for (c,cmmnt) in &block.code {
           out = mech_code(&c, &pp)?;
+          if let Some(cmmnt) = cmmnt {
+            let _ = comment(cmmnt, pp)?;
+          }
         }
         // Save the output of the last code block in the parent interpreter
         // so we can reference it later.
