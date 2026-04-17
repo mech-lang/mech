@@ -31,6 +31,7 @@ pub struct Interpreter {
   pub code: Vec<MechSourceCode>,
   pub out: Value,
   pub out_values: Ref<HashMap<u64, Value>>,
+  pub inline_eval_counter: Ref<u64>,
   #[cfg(feature = "state_machines")]
   pub user_state_machines: Ref<HashMap<u64, FsmImplementation>>,
   pub sub_interpreters: Ref<HashMap<u64, Box<Interpreter>>>,
@@ -59,6 +60,7 @@ impl Clone for Interpreter {
       code: self.code.clone(),
       out: self.out.clone(),
       out_values: self.out_values.clone(),
+      inline_eval_counter: self.inline_eval_counter.clone(),
       #[cfg(feature = "state_machines")]
       user_state_machines: self.user_state_machines.clone(),
       sub_interpreters: self.sub_interpreters.clone(),
@@ -91,6 +93,7 @@ impl Interpreter {
       out: Value::Empty,
       sub_interpreters: Ref::new(HashMap::new()),
       out_values: Ref::new(HashMap::new()),
+      inline_eval_counter: Ref::new(0),
       #[cfg(feature = "state_machines")]
       user_state_machines: Ref::new(HashMap::new()),
       code: Vec::new(),
