@@ -229,7 +229,6 @@ impl MechServer {
     let mut headers = HeaderMap::new();
     headers.insert("accept-ranges", HeaderValue::from_static("bytes"));
     headers.insert("content-type", HeaderValue::from_static("application/javascript"));
-    headers.insert("cache-control", HeaderValue::from_static("no-store, no-cache, must-revalidate, max-age=0"));
     let nb = warp::path!("pkg" / "mech_wasm.js")
               .map(move || {
                 mech_js.clone()
@@ -241,7 +240,6 @@ impl MechServer {
     headers.insert("accept-ranges", HeaderValue::from_static("bytes"));
     headers.insert("content-type", HeaderValue::from_static("application/wasm"));
     headers.insert("content-encoding", HeaderValue::from_static("br"));
-    headers.insert("cache-control", HeaderValue::from_static("no-store, no-cache, must-revalidate, max-age=0"));
     let pkg = warp::path!("pkg" / "mech_wasm_bg.wasm")
               .map(move || {
                 mech_wasm.clone()
