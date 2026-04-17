@@ -1703,18 +1703,36 @@ This is a paragraph with a footnote reference.[^1] Here is a citation reference.
 ```ebnf
 unordered-list := +list-item, ?new-line, ws0 ;
 ordered-list := +ordered-list-item, ?new-line, ws0 ;
+check-list := +check-list-item, ?new-line, ws0 ;
 ordered-list-item := integer-literal
       , "."
       , *space
       , paragraph
       , *new-line ;
+check-list-item := checked-item | unchecked-item ;
+checked-item := "-"
+      , "["
+      , ("x" | "✓" | "✗")
+      , "]"
+      , paragraph
+      , *new-line ;
+unchecked-item := "-"
+      , "["
+      , *space
+      , "]"
+      , paragraph
+      , *new-line ;
+unordered-list-bullet := "("
+      , +raw-text
+      , ")" ;
 list-item := dash
+      , ?unordered-list-bullet
       , +space
       , paragraph
       , *new-line ;
 ```
 
-There are two varities of lists, unordered, which are delinated with a `-` or a graphicl and ordered list, which are delinated with a numeral like `1.`, and are numbered in order automatically when formatted.
+There are three primary varieties of lists: unordered lists delimited with `-`, ordered lists delimited with a numeral like `1.`, and checklist items delimited with `-[ ]` / `-[x]`. Unordered lists can also use a parenthesized custom bullet like `-(📍)` before the item paragraph.
 
 **Example:**
 
@@ -1763,9 +1781,17 @@ Here's a list of some of the features of lists:
     8. Two
     9. Three
 5. Check lists
-    -[ ] One
-    -[x] Two
-    -[ ] Three
+    -[ ] Todo
+    -[x] Done
+
+Custom bullets can be used with emphasized labels and explicit separators:
+
+```
+-(☑️) **v0.1** - proof of concept system - minimum viable language implementation
+-(☑️) **v0.2** - data specification - formulas, defining and manipulating data
+-(📍) **v0.3** - program specification - functions, modules, state machines, Mika
+-(☐) **v0.4** - system specification - tools, distributed programs, capabilities
+```
 
 (10.6) Thematic Breaks
 

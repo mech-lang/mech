@@ -68,6 +68,17 @@ Mechdown supports custom bullet symbols using the syntax `-(symbol)`, where the 
 -(🏴‍☠️) Pirate
 -(🐷) Pig
 
+(2.3.1) Custom Bullets with Separator Text
+
+Custom bullets also support emphasized labels followed by a separator dash.
+
+```
+-(☑️) **v0.1** - proof of concept system - minimum viable language implementation
+-(☑️) **v0.2** - data specification - formulas, defining and manipulating data
+-(📍) **v0.3** - program specification - functions, modules, state machines, Mika
+-(☐) **v0.4** - system specification - tools, distributed programs, capabilities
+```
+
 (2.4) Nested Lists
 
 Lists can be nested to any depth by indenting child items with at least two spaces. Sub lists can be any valid list type.

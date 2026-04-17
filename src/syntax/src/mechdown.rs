@@ -419,7 +419,7 @@ pub fn ordered_list_item(input: ParseString) -> ParseResult<(Number,Paragraph)> 
   Ok((input, (number,list_item)))
 }
 
-// checked-item := "-", ("[", "x", "]"), paragraph ;
+// checked-item := "-", ("[", ("x" | "✓" | "✗"), "]"), paragraph ;
 pub fn checked_item(input: ParseString) -> ParseResult<(bool,Paragraph)> {
   let (input, _) = dash(input)?;
   let (input, _) = left_bracket(input)?;
@@ -643,6 +643,7 @@ pub fn mechdown_list(input: ParseString) -> ParseResult<MDList> {
   Ok((input, list))
 }
 
+// unordered-list-bullet := "(", +raw-text, ")" ;
 pub fn unordered_list_bullet(input: ParseString) -> ParseResult<Token> {
   let (input, (_, (mut bullet_text, _), _)) = tuple((
     left_parenthesis,
@@ -655,7 +656,7 @@ pub fn unordered_list_bullet(input: ParseString) -> ParseResult<Token> {
   Ok((input, merged))
 }
 
-// list_item := dash, <space+>, <paragraph>, new_line* ;
+// list_item := dash, ?unordered-list-bullet, <space+>, <paragraph>, new_line* ;
 pub fn unordered_list_item(input: ParseString) -> ParseResult<(Option<Token>,Paragraph)> {
   let msg1 = "Expects space after dash";
   let msg2 = "Expects paragraph as list item";
