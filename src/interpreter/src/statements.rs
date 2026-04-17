@@ -8,85 +8,107 @@ use crate::stdlib::define::*;
 // ----------------------------------------------------------------------------
 
 pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
-  match stmt {
-    #[cfg(feature = "tuple")]
-    Statement::TupleDestructure(tpl_dstrct) => tuple_destructure(&tpl_dstrct, p),
-    #[cfg(feature = "variable_define")]
-    Statement::VariableDefine(var_def) => variable_define(&var_def, p),
-    #[cfg(feature = "variable_assign")]
-    Statement::VariableAssign(var_assgn) => variable_assign(&var_assgn, env, p),
-    #[cfg(feature = "kind_define")]
-    Statement::KindDefine(knd_def) => kind_define(&knd_def, p),
-    #[cfg(feature = "enum")]
-    Statement::EnumDefine(enm_def) => {
-      enum_define(&enm_def, p)?;
-      Ok(Value::Empty)
+    match stmt {
+        #[cfg(feature = "tuple")]
+        Statement::TupleDestructure(tpl_dstrct) => tuple_destructure(&tpl_dstrct, p),
+        #[cfg(feature = "variable_define")]
+        Statement::VariableDefine(var_def) => variable_define(&var_def, p),
+        #[cfg(feature = "variable_assign")]
+        Statement::VariableAssign(var_assgn) => variable_assign(&var_assgn, env, p),
+        #[cfg(feature = "kind_define")]
+        Statement::KindDefine(knd_def) => kind_define(&knd_def, p),
+        #[cfg(feature = "enum")]
+        Statement::EnumDefine(enm_def) => {
+            enum_define(&enm_def, p)?;
+            Ok(Value::Empty)
+        }
+        #[cfg(feature = "math")]
+        Statement::OpAssign(op_assgn) => op_assign(&op_assgn, env, p),
+        #[cfg(feature = "state_machines")]
+        Statement::FsmDeclare(fsm_decl) => fsm_declare(fsm_decl, env, p),
+        //Statement::SplitTable => todo!(),
+        //Statement::FlattenTable => todo!(),
+        x => {
+            return Err(MechError::new(FeatureNotEnabledError, None)
+                .with_compiler_loc()
+                .with_tokens(x.tokens()));
+        }
     }
-    #[cfg(feature = "math")]
-    Statement::OpAssign(op_assgn) => op_assign(&op_assgn, env, p),
-    #[cfg(feature = "state_machines")]
-    Statement::FsmDeclare(fsm_decl) => fsm_declare(fsm_decl, env, p),
-    //Statement::SplitTable => todo!(),
-    //Statement::FlattenTable => todo!(),
-    x => return Err(MechError::new(
-        FeatureNotEnabledError,
-        None
-      ).with_compiler_loc().with_tokens(x.tokens())
-    ),
-  }
 }
 
 #[cfg(feature = "tuple")]
 pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MResult<Value> {
-  let source = expression(&tpl_dstrct.expression, None, p)?;
-  let tpl = match &source {
-    Value::Tuple(tpl) => tpl,
-    Value::MutableReference(r) => {
-      let r_brrw = r.borrow();
-      &match &*r_brrw {
-        Value::Tuple(tpl) => tpl.clone(),
-        _ => return Err(MechError::new(
-          DestructureExpectedTupleError{ value: source.kind() },
-          None
-        ).with_compiler_loc().with_tokens(tpl_dstrct.expression.tokens())),
-      }
-    },
-    _ => return Err(MechError::new(
-      DestructureExpectedTupleError{ value: source.kind() },
-      None
-    ).with_compiler_loc().with_tokens(tpl_dstrct.expression.tokens())),
-  };
-  let symbols = p.symbols();
-  let mut symbols_brrw = symbols.borrow_mut();
-  for (i, var) in tpl_dstrct.vars.iter().enumerate() {
-    let id = var.hash();
-    if symbols_brrw.contains(id) {
-      return Err(MechError::new(
-        VariableAlreadyDefinedError { id },
-        None
-      ).with_compiler_loc().with_tokens(var.tokens()));
+    let source = expression(&tpl_dstrct.expression, None, p)?;
+    let tpl = match &source {
+        Value::Tuple(tpl) => tpl,
+        Value::MutableReference(r) => {
+            let r_brrw = r.borrow();
+            &match &*r_brrw {
+                Value::Tuple(tpl) => tpl.clone(),
+                _ => {
+                    return Err(MechError::new(
+                        DestructureExpectedTupleError {
+                            value: source.kind(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                    .with_tokens(tpl_dstrct.expression.tokens()));
+                }
+            }
+        }
+        _ => {
+            return Err(MechError::new(
+                DestructureExpectedTupleError {
+                    value: source.kind(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+            .with_tokens(tpl_dstrct.expression.tokens()));
+        }
+    };
+    let symbols = p.symbols();
+    let mut symbols_brrw = symbols.borrow_mut();
+    for (i, var) in tpl_dstrct.vars.iter().enumerate() {
+        let id = var.hash();
+        if symbols_brrw.contains(id) {
+            return Err(MechError::new(VariableAlreadyDefinedError { id }, None)
+                .with_compiler_loc()
+                .with_tokens(var.tokens()));
+        }
+        if let Some(element) = tpl.borrow().get(i) {
+            symbols_brrw.insert(id, element.clone(), true);
+            symbols_brrw
+                .dictionary
+                .borrow_mut()
+                .insert(id, var.name.to_string());
+        } else {
+            return Err(MechError::new(
+                TupleDestructureTooManyVarsError {
+                    value: source.kind(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+            .with_tokens(var.tokens()));
+        }
     }
-    if let Some(element) = tpl.borrow().get(i) {
-      symbols_brrw.insert(id, element.clone(), true);
-      symbols_brrw.dictionary.borrow_mut().insert(id, var.name.to_string());
-    } else {
-      return Err(MechError::new(
-        TupleDestructureTooManyVarsError{ value: source.kind() },
-        None
-      ).with_compiler_loc().with_tokens(var.tokens()));
-    }
-  }
-  Ok(source)
+    Ok(source)
 }
 
 #[cfg(feature = "math")]
-pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
-  let mut source = expression(&op_assgn.expression, env, p)?;
-  let slc = &op_assgn.target;
-  let id = slc.name.hash();
-  let sink = { 
-    let mut state_brrw = p.state.borrow_mut();
-    match state_brrw.get_mutable_symbol(id) {
+pub fn op_assign(
+    op_assgn: &OpAssign,
+    env: Option<&Environment>,
+    p: &Interpreter,
+) -> MResult<Value> {
+    let mut source = expression(&op_assgn.expression, env, p)?;
+    let slc = &op_assgn.target;
+    let id = slc.name.hash();
+    let sink = {
+        let mut state_brrw = p.state.borrow_mut();
+        match state_brrw.get_mutable_symbol(id) {
       Some(val) => val.borrow().clone(),
       None => {
         match state_brrw.contains_symbol(id) {
@@ -101,362 +123,535 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
         }
       }
     }
-  };
-  match &slc.subscript {
-    Some(sbscrpt) => {
-      // todo: this only works for the first subscript, it needs to work for multiple subscripts
-      for s in sbscrpt {
-        let fxn = match op_assgn.op {
-          #[cfg(feature = "math_add_assign")]
-          OpAssignOp::Add => add_assign(&s, &sink, &source, env, p)?,
-          #[cfg(feature = "math_sub_assign")]
-          OpAssignOp::Sub => sub_assign(&s, &sink, &source, env, p)?,
-          #[cfg(feature = "math_div_assign")]
-          OpAssignOp::Div => div_assign(&s, &sink, &source, env, p)?,
-          #[cfg(feature = "math_mul_assign")]
-          OpAssignOp::Mul => mul_assign(&s, &sink, &source, env, p)?,
-          _ => todo!(),
-        };
-        return Ok(fxn);
-      }
+    };
+    match &slc.subscript {
+        Some(sbscrpt) => {
+            // todo: this only works for the first subscript, it needs to work for multiple subscripts
+            for s in sbscrpt {
+                let fxn = match op_assgn.op {
+                    #[cfg(feature = "math_add_assign")]
+                    OpAssignOp::Add => add_assign(&s, &sink, &source, env, p)?,
+                    #[cfg(feature = "math_sub_assign")]
+                    OpAssignOp::Sub => sub_assign(&s, &sink, &source, env, p)?,
+                    #[cfg(feature = "math_div_assign")]
+                    OpAssignOp::Div => div_assign(&s, &sink, &source, env, p)?,
+                    #[cfg(feature = "math_mul_assign")]
+                    OpAssignOp::Mul => mul_assign(&s, &sink, &source, env, p)?,
+                    _ => todo!(),
+                };
+                return Ok(fxn);
+            }
+        }
+        None => {
+            let args = vec![sink, source];
+            let fxn: Box<dyn MechFunction> = match op_assgn.op {
+                #[cfg(feature = "math_add_assign")]
+                OpAssignOp::Add => AddAssignValue {}.compile(&args)?,
+                #[cfg(feature = "math_sub_assign")]
+                OpAssignOp::Sub => SubAssignValue {}.compile(&args)?,
+                #[cfg(feature = "math_div_assign")]
+                OpAssignOp::Div => DivAssignValue {}.compile(&args)?,
+                #[cfg(feature = "math_mul_assign")]
+                OpAssignOp::Mul => MulAssignValue {}.compile(&args)?,
+                _ => todo!(),
+            };
+            fxn.solve();
+            let res = fxn.out();
+            p.state.borrow_mut().add_plan_step(fxn);
+            return Ok(res);
+        }
     }
-    None => {
-      let args = vec![sink,source];
-      let fxn: Box<dyn MechFunction> = match op_assgn.op {
-        #[cfg(feature = "math_add_assign")]
-        OpAssignOp::Add => AddAssignValue{}.compile(&args)?,
-        #[cfg(feature = "math_sub_assign")]
-        OpAssignOp::Sub => SubAssignValue{}.compile(&args)?,
-        #[cfg(feature = "math_div_assign")]
-        OpAssignOp::Div => DivAssignValue{}.compile(&args)?,
-        #[cfg(feature = "math_mul_assign")]
-        OpAssignOp::Mul => MulAssignValue{}.compile(&args)?,
-        _ => todo!(),
-      };
-      fxn.solve();
-      let res = fxn.out();
-      p.state.borrow_mut().add_plan_step(fxn);
-      return Ok(res);
-    }
-  }
-  unreachable!(); // subscript should have thrown an error if we can't access an element
+    unreachable!(); // subscript should have thrown an error if we can't access an element
 }
 
 #[cfg(feature = "variable_assign")]
-pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
-  let mut source = expression(&var_assgn.expression, env, p)?;
-  let slc = &var_assgn.target;
-  let id = slc.name.hash();
-  let sink = {
-    let symbols = p.symbols();
-    let symbols_brrw = symbols.borrow();
-    match symbols_brrw.get_mutable(id) {
-      Some(val) => val.borrow().clone(),
-      None => {
-        if !symbols_brrw.contains(id) {
-          return Err(MechError::new(
+pub fn variable_assign(
+    var_assgn: &VariableAssign,
+    env: Option<&Environment>,
+    p: &Interpreter,
+) -> MResult<Value> {
+    let mut source = expression(&var_assgn.expression, env, p)?;
+    let slc = &var_assgn.target;
+    let id = slc.name.hash();
+    let sink = {
+        let symbols = p.symbols();
+        let symbols_brrw = symbols.borrow();
+        match symbols_brrw.get_mutable(id) {
+            Some(val) => val.borrow().clone(),
+            None => {
+                if !symbols_brrw.contains(id) {
+                    return Err(MechError::new(
             UndefinedVariableError { id },
             Some("(!)> Variables are defined with the `:=` operator. *e.g.*: {{x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens()));
-        } else { 
-          return Err(MechError::new(
+                } else {
+                    return Err(MechError::new(
             NotMutableError { id },
             Some("(!)> Mutable variables are defined with the `~` operator. *e.g.*: {{~x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens()));
+                }
+            }
         }
-      }
+    };
+    match &slc.subscript {
+        Some(sbscrpt) =>
+        {
+            #[cfg(feature = "subscript")]
+            for s in sbscrpt {
+                let s_result = subscript_ref(&s, &sink, &source, env, p)?;
+                return Ok(s_result);
+            }
+        }
+        #[cfg(feature = "assign")]
+        None => {
+            let args = vec![sink, source];
+            let fxn = AssignValue {}.compile(&args)?;
+            fxn.solve();
+            let res = fxn.out();
+            p.state.borrow_mut().add_plan_step(fxn);
+            return Ok(res);
+        }
+        _ => {
+            return Err(MechError::new(FeatureNotEnabledError, None)
+                .with_compiler_loc()
+                .with_tokens(var_assgn.target.tokens()));
+        }
     }
-  };
-  match &slc.subscript {
-    Some(sbscrpt) => {
-      #[cfg(feature = "subscript")]
-      for s in sbscrpt {
-        let s_result = subscript_ref(&s, &sink, &source, env, p)?;
-        return Ok(s_result);
-      }
-    }
-    #[cfg(feature = "assign")]
-    None => {
-      let args = vec![sink,source];
-      let fxn = AssignValue{}.compile(&args)?;
-      fxn.solve();
-      let res = fxn.out();
-      p.state.borrow_mut().add_plan_step(fxn);
-      return Ok(res);
-    }
-    _ => return Err(MechError::new(
-      FeatureNotEnabledError,
-      None
-    ).with_compiler_loc().with_tokens(var_assgn.target.tokens())),
-  }
-  unreachable!(); // subscript should have thrown an error if we can't access an element
+    unreachable!(); // subscript should have thrown an error if we can't access an element
 }
 
 #[cfg(feature = "enum")]
 pub fn enum_define(enm_def: &EnumDefine, p: &Interpreter) -> MResult<()> {
-  let id = enm_def.name.hash();
-  let mut variants: Vec<(u64, Option<Value>)> = Vec::new();
-  {
-    let mut state_brrw = p.state.borrow_mut();
-    for v in &enm_def.variants {
-      let payload = match &v.value {
-        Some(kind_annotation_node) => {
-          let knd = kind_annotation(&kind_annotation_node.kind, p)?;
-          let vk = knd.to_value_kind(&mut state_brrw.kinds)?;
-          Some(Value::Kind(vk))
+    let id = enm_def.name.hash();
+    let mut variants: Vec<(u64, Option<Value>)> = Vec::new();
+    {
+        let mut state_brrw = p.state.borrow_mut();
+        for v in &enm_def.variants {
+            let payload = match &v.value {
+                Some(kind_annotation_node) => {
+                    let knd = kind_annotation(&kind_annotation_node.kind, p)?;
+                    let vk = knd.to_value_kind(&mut state_brrw.kinds)?;
+                    Some(Value::Kind(vk))
+                }
+                None => None,
+            };
+            variants.push((v.name.hash(), payload));
         }
-        None => None,
-      };
-      variants.push((v.name.hash(), payload));
     }
-  }
-  let state = &p.state;
-  let mut state_brrw = state.borrow_mut();
-  let dictionary = state_brrw.dictionary.clone();
-  {
-    let mut dictionary_brrw = dictionary.borrow_mut();
-    dictionary_brrw.insert(enm_def.name.hash(), enm_def.name.to_string());
-    for variant in &enm_def.variants {
-      dictionary_brrw.insert(variant.name.hash(), variant.name.to_string());
+    let state = &p.state;
+    let mut state_brrw = state.borrow_mut();
+    let dictionary = state_brrw.dictionary.clone();
+    {
+        let mut dictionary_brrw = dictionary.borrow_mut();
+        dictionary_brrw.insert(enm_def.name.hash(), enm_def.name.to_string());
+        for variant in &enm_def.variants {
+            dictionary_brrw.insert(variant.name.hash(), variant.name.to_string());
+        }
     }
-  }
-  let enm = MechEnum{id, variants, names: dictionary};
-  let val = Value::Enum(Ref::new(enm.clone()));
-  state_brrw.enums.insert(id, enm.clone());
-  state_brrw.kinds.insert(id, val.kind());
-  Ok(())
+    let enm = MechEnum {
+        id,
+        variants,
+        names: dictionary,
+    };
+    let val = Value::Enum(Ref::new(enm.clone()));
+    state_brrw.enums.insert(id, enm.clone());
+    state_brrw.kinds.insert(id, val.kind());
+    Ok(())
 }
 
 #[cfg(feature = "kind_define")]
 pub fn kind_define(knd_def: &KindDefine, p: &Interpreter) -> MResult<Value> {
-  let id = knd_def.name.hash();
-  let kind = kind_annotation(&knd_def.kind.kind, p)?;
-  let value_kind = kind.to_value_kind(&p.state.borrow().kinds)?;
-  let functions = p.functions();
-  let mut kinds = &mut p.state.borrow_mut().kinds;
-  kinds.insert(id, value_kind.clone());
-  Ok(Value::Kind(value_kind))
+    let id = knd_def.name.hash();
+    let kind = kind_annotation(&knd_def.kind.kind, p)?;
+    let value_kind = kind.to_value_kind(&p.state.borrow().kinds)?;
+    let functions = p.functions();
+    let mut kinds = &mut p.state.borrow_mut().kinds;
+    kinds.insert(id, value_kind.clone());
+    Ok(Value::Kind(value_kind))
 }
 
 #[cfg(all(feature = "enum", feature = "atom"))]
 fn value_matches_enum_variant(value: &Value, enum_id: u64, state: &ProgramState) -> bool {
-  let my_enum = match state.enums.get(&enum_id) {
-    Some(enm) => enm,
-    None => return false,
-  };
-  let names_brrw = my_enum.names.borrow();
-  let atom_matches_variant = |variant_id: u64, atom_id: u64, atom_name: &str| {
-    if variant_id == atom_id {
-      return true;
-    }
-    let variant_name = match names_brrw.get(&variant_id) {
-      Some(name) => name.as_str(),
-      None => return false,
-    };
-    let short_variant = variant_name.rsplit('/').next().unwrap_or(variant_name);
-    let short_atom = atom_name.rsplit('/').next().unwrap_or(atom_name);
-    short_variant == short_atom
-  };
-  match value {
-    Value::Atom(atom_variant) => {
-      let atom_brrw = atom_variant.borrow();
-      let variant_id = atom_brrw.id();
-      let atom_name = atom_brrw.name();
-      my_enum.variants.iter().any(|(known_variant, payload_kind)| {
-        atom_matches_variant(*known_variant, variant_id, &atom_name) && payload_kind.is_none()
-      })
-    }
-    #[cfg(feature = "tuple")]
-    Value::Tuple(tuple_val) => {
-      let tuple_brrw = tuple_val.borrow();
-      if tuple_brrw.elements.len() != 2 {
-        return false;
-      }
-      let variant_atom = match tuple_brrw.elements[0].as_ref() {
-        Value::Atom(atom) => atom.borrow(),
-        _ => return false,
-      };
-      let variant_id = variant_atom.id();
-      let atom_name = variant_atom.name();
-      let payload = tuple_brrw.elements[1].as_ref();
-      let (_, declared_payload_kind) = match my_enum.variants.iter().find(|(known_variant, _)| {
-        atom_matches_variant(*known_variant, variant_id, &atom_name)
-      }) {
-        Some(v) => v,
+    let my_enum = match state.enums.get(&enum_id) {
+        Some(enm) => enm,
         None => return false,
-      };
-      match declared_payload_kind {
-        Some(Value::Kind(expected_kind)) => match expected_kind {
-          ValueKind::Enum(inner_enum_id, _) => value_matches_enum_variant(payload, *inner_enum_id, state),
-          _ => {
-            payload.kind() == expected_kind.clone() ||
-            ConvertKind{}.compile(&vec![payload.clone(), Value::Kind(expected_kind.clone())]).is_ok()
-          }
-        },
+    };
+    let names_brrw = my_enum.names.borrow();
+    let atom_matches_variant = |variant_id: u64, atom_id: u64, atom_name: &str| {
+        if variant_id == atom_id {
+            return true;
+        }
+        let variant_name = match names_brrw.get(&variant_id) {
+            Some(name) => name.as_str(),
+            None => return false,
+        };
+        let short_variant = variant_name.rsplit('/').next().unwrap_or(variant_name);
+        let short_atom = atom_name.rsplit('/').next().unwrap_or(atom_name);
+        short_variant == short_atom
+    };
+    match value {
+        Value::Atom(atom_variant) => {
+            let atom_brrw = atom_variant.borrow();
+            let variant_id = atom_brrw.id();
+            let atom_name = atom_brrw.name();
+            my_enum
+                .variants
+                .iter()
+                .any(|(known_variant, payload_kind)| {
+                    atom_matches_variant(*known_variant, variant_id, &atom_name)
+                        && payload_kind.is_none()
+                })
+        }
+        #[cfg(feature = "tuple")]
+        Value::Tuple(tuple_val) => {
+            let tuple_brrw = tuple_val.borrow();
+            if tuple_brrw.elements.len() != 2 {
+                return false;
+            }
+            let variant_atom = match tuple_brrw.elements[0].as_ref() {
+                Value::Atom(atom) => atom.borrow(),
+                _ => return false,
+            };
+            let variant_id = variant_atom.id();
+            let atom_name = variant_atom.name();
+            let payload = tuple_brrw.elements[1].as_ref();
+            let (_, declared_payload_kind) =
+                match my_enum.variants.iter().find(|(known_variant, _)| {
+                    atom_matches_variant(*known_variant, variant_id, &atom_name)
+                }) {
+                    Some(v) => v,
+                    None => return false,
+                };
+            match declared_payload_kind {
+                Some(Value::Kind(expected_kind)) => match expected_kind {
+                    ValueKind::Enum(inner_enum_id, _) => {
+                        value_matches_enum_variant(payload, *inner_enum_id, state)
+                    }
+                    _ => {
+                        payload.kind() == expected_kind.clone()
+                            || ConvertKind {}
+                                .compile(&vec![payload.clone(), Value::Kind(expected_kind.clone())])
+                                .is_ok()
+                    }
+                },
+                _ => false,
+            }
+        }
         _ => false,
-      }
     }
-    _ => false,
-  }
+}
+
+#[cfg(all(feature = "enum", feature = "atom"))]
+fn qualify_enum_variant_value(value: &Value, enum_id: u64, state: &ProgramState) -> Value {
+    let my_enum = match state.enums.get(&enum_id) {
+        Some(enm) => enm,
+        None => return value.clone(),
+    };
+    let names_brrw = my_enum.names.borrow();
+    let find_variant = |atom_id: u64, atom_name: &str| {
+        my_enum.variants.iter().find(|(variant_id, _)| {
+            if *variant_id == atom_id {
+                return true;
+            }
+            let variant_name = match names_brrw.get(variant_id) {
+                Some(name) => name.as_str(),
+                None => return false,
+            };
+            let short_variant = variant_name.rsplit('/').next().unwrap_or(variant_name);
+            let short_atom = atom_name.rsplit('/').next().unwrap_or(atom_name);
+            short_variant == short_atom
+        })
+    };
+
+    match value {
+        Value::Atom(atom_variant) => {
+            let atom_brrw = atom_variant.borrow();
+            let atom_id = atom_brrw.id();
+            let atom_name = atom_brrw.name();
+            let (variant_id, payload_kind) = match find_variant(atom_id, &atom_name) {
+                Some(v) => v,
+                None => return value.clone(),
+            };
+            if payload_kind.is_some() {
+                return value.clone();
+            }
+            let qualified = names_brrw
+                .get(variant_id)
+                .cloned()
+                .unwrap_or_else(|| atom_name.clone());
+            Value::Atom(Ref::new(MechAtom::from_name(&qualified)))
+        }
+        #[cfg(feature = "tuple")]
+        Value::Tuple(tuple_val) => {
+            let tuple_brrw = tuple_val.borrow();
+            if tuple_brrw.elements.len() != 2 {
+                return value.clone();
+            }
+            let (atom_id, atom_name) = match tuple_brrw.elements[0].as_ref() {
+                Value::Atom(atom) => {
+                    let atom_brrw = atom.borrow();
+                    (atom_brrw.id(), atom_brrw.name())
+                }
+                _ => return value.clone(),
+            };
+            let payload = tuple_brrw.elements[1].as_ref().clone();
+            let (variant_id, payload_kind) = match find_variant(atom_id, atom_name.as_str()) {
+                Some(v) => v,
+                None => return value.clone(),
+            };
+            let qualified = names_brrw
+                .get(variant_id)
+                .cloned()
+                .unwrap_or_else(|| atom_name.clone());
+            drop(tuple_brrw);
+            let qualified_payload = match payload_kind {
+                Some(Value::Kind(ValueKind::Enum(inner_enum_id, _))) => {
+                    qualify_enum_variant_value(&payload, *inner_enum_id, state)
+                }
+                _ => payload,
+            };
+            Value::Tuple(Ref::new(MechTuple::from_vec(vec![
+                Value::Atom(Ref::new(MechAtom::from_name(&qualified))),
+                qualified_payload,
+            ])))
+        }
+        _ => value.clone(),
+    }
 }
 
 #[cfg(feature = "variable_define")]
 pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Value> {
-  let var_id = var_def.var.name.hash();
-  let var_name = var_def.var.name.to_string();
-  {
-    let symbols = p.symbols();
-    if symbols.borrow().contains(var_id) {
-      return Err(MechError::new(
-        VariableAlreadyDefinedError { id: var_id },
-        None
-      ).with_compiler_loc().with_tokens(var_def.var.name.tokens()));
+    let var_id = var_def.var.name.hash();
+    let var_name = var_def.var.name.to_string();
+    {
+        let symbols = p.symbols();
+        if symbols.borrow().contains(var_id) {
+            return Err(
+                MechError::new(VariableAlreadyDefinedError { id: var_id }, None)
+                    .with_compiler_loc()
+                    .with_tokens(var_def.var.name.tokens()),
+            );
+        }
     }
-  }
-  let mut result = expression(&var_def.expression, None, p)?;
-  #[cfg(all(feature = "kind_annotation", feature = "convert"))]
-  if let Some(knd_anntn) =  &var_def.var.kind {
-    let knd = kind_annotation(&knd_anntn.kind,p)?;
-    let mut state_brrw = &mut p.state.borrow_mut();
-    let target_knd = knd.to_value_kind(&mut state_brrw.kinds)?;
-    // Do kind checking
-    match (&result, &target_knd) {
-      // Atom is a variant of an enum
-      #[cfg(all(feature = "atom", feature = "enum"))]
-      (Value::Atom(atom_variant), ValueKind::Enum(enum_id, target_enum_variant_name)) => {
-        let atom_name = atom_variant.borrow().name();
-        if !value_matches_enum_variant(&result, *enum_id, &*state_brrw) {
-          return Err(MechError::new(
-            UnableToConvertAtomToEnumVariantError { atom_name: atom_name.clone(), target_enum_variant_name: target_enum_variant_name.clone() },
-            None
-          ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
-        }
-      }
-      #[cfg(all(feature = "tuple", feature = "atom", feature = "enum"))]
-      (Value::Tuple(tuple_val), ValueKind::Enum(enum_id, target_enum_variant_name)) => {
-        let atom_name = format!("{:?}", tuple_val);
-        if !value_matches_enum_variant(&result, *enum_id, &*state_brrw) {
-          return Err(MechError::new(
-            UnableToConvertAtomToEnumVariantError { atom_name, target_enum_variant_name: target_enum_variant_name.clone() },
-            None
-          ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
-        }
-      }
-      // Atoms can't convert into anything else.
-      #[cfg(feature = "atom")]
-      (Value::Atom(given_variant_id), target_kind) => {
-        return Err(MechError::new(
-          UnableToConvertAtomError { atom_id: given_variant_id.borrow().0.0},
-          None
-        ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
-      }
-      #[cfg(feature = "record")]
-      (Value::Record(rec), ref target_kind @ ValueKind::Record(target_rec_knd)) => {
-        let rec_brrw = rec.borrow();
-        let rec_knd = rec_brrw.kind();
-        if &rec_knd != *target_kind {
-          return Err(MechError::new(
-            UnableToConvertRecordError { source_record_kind: rec_knd.clone(), target_record_kind: (*target_kind).clone() },
-            None
-          ).with_compiler_loc().with_tokens(var_def.expression.tokens()));
-        }
-      }
-      #[cfg(feature = "matrix")]
-      (Value::MutableReference(v), ValueKind::Matrix(target_matrix_knd,_)) => {
-        let value = v.borrow().clone();
-        if value.is_matrix() {
-          let convert_fxn = ConvertMatToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
-          convert_fxn.solve();
-          let converted_result = convert_fxn.out();
-          state_brrw.add_plan_step(convert_fxn);
-          result = converted_result;
-        } else {
-          let value_kind = value.kind();
-          if value_kind.deref_kind() != target_matrix_knd.as_ref().clone() && value_kind != *target_matrix_knd.clone() {
-            let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
-            convert_fxn.solve();
-            let converted_result = convert_fxn.out();
-            state_brrw.add_plan_step(convert_fxn);
-            result = converted_result;
-          };
-          let convert_fxn = ConvertScalarToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
-          convert_fxn.solve();
-          let converted_result = convert_fxn.out();
-          state_brrw.add_plan_step(convert_fxn);
-          result = converted_result;          
-        }
-      }
-      #[cfg(feature = "matrix")]
-      (value, ValueKind::Matrix(target_matrix_knd,_)) => {
-        if value.is_matrix() {
-          let convert_fxn = ConvertMatToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
-          convert_fxn.solve();
-          let converted_result = convert_fxn.out();
-          state_brrw.add_plan_step(convert_fxn);
-          result = converted_result;
-        } else {
-          let value_kind = value.kind();
-          if value_kind.deref_kind() != target_matrix_knd.as_ref().clone() && value_kind != *target_matrix_knd.clone() {
-            let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
-            convert_fxn.solve();
-            let converted_result = convert_fxn.out();
-            state_brrw.add_plan_step(convert_fxn);
-            result = converted_result;
-          };
-          let convert_fxn = ConvertScalarToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
-          convert_fxn.solve();
-          let converted_result = convert_fxn.out();
-          state_brrw.add_plan_step(convert_fxn);
-          result = converted_result;
-        }
-      }
-      // Kind isn't checked
-      x => {
-        let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_knd)])?;
-        convert_fxn.solve();
-        let converted_result = convert_fxn.out();
-        state_brrw.add_plan_step(convert_fxn);
-        result = converted_result;
-      },
-    };
+    let mut result = expression(&var_def.expression, None, p)?;
+    #[cfg(all(feature = "kind_annotation", feature = "convert"))]
+    if let Some(knd_anntn) = &var_def.var.kind {
+        let knd = kind_annotation(&knd_anntn.kind, p)?;
+        let mut state_brrw = &mut p.state.borrow_mut();
+        let target_knd = knd.to_value_kind(&mut state_brrw.kinds)?;
+        // Do kind checking
+        match (&result, &target_knd) {
+            #[cfg(all(feature = "tuple", feature = "atom", feature = "enum"))]
+            (Value::MutableReference(v), ValueKind::Enum(enum_id, target_enum_variant_name)) => {
+                let detached = v.borrow().clone();
+                let atom_name = format!("{:?}", detached);
+                if !value_matches_enum_variant(&detached, *enum_id, &*state_brrw) {
+                    return Err(MechError::new(
+                        UnableToConvertAtomToEnumVariantError {
+                            atom_name,
+                            target_enum_variant_name: target_enum_variant_name.clone(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                    .with_tokens(var_def.expression.tokens()));
+                }
+                result = qualify_enum_variant_value(&detached, *enum_id, &*state_brrw);
+            }
+            // Atom is a variant of an enum
+            #[cfg(all(feature = "atom", feature = "enum"))]
+            (Value::Atom(atom_variant), ValueKind::Enum(enum_id, target_enum_variant_name)) => {
+                let atom_name = atom_variant.borrow().name();
+                if !value_matches_enum_variant(&result, *enum_id, &*state_brrw) {
+                    return Err(MechError::new(
+                        UnableToConvertAtomToEnumVariantError {
+                            atom_name: atom_name.clone(),
+                            target_enum_variant_name: target_enum_variant_name.clone(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                    .with_tokens(var_def.expression.tokens()));
+                }
+                result = qualify_enum_variant_value(&result, *enum_id, &*state_brrw);
+            }
+            #[cfg(all(feature = "tuple", feature = "atom", feature = "enum"))]
+            (Value::Tuple(tuple_val), ValueKind::Enum(enum_id, target_enum_variant_name)) => {
+                let atom_name = format!("{:?}", tuple_val);
+                if !value_matches_enum_variant(&result, *enum_id, &*state_brrw) {
+                    return Err(MechError::new(
+                        UnableToConvertAtomToEnumVariantError {
+                            atom_name,
+                            target_enum_variant_name: target_enum_variant_name.clone(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                    .with_tokens(var_def.expression.tokens()));
+                }
+                result = qualify_enum_variant_value(&result, *enum_id, &*state_brrw);
+            }
+            // Atoms can't convert into anything else.
+            #[cfg(feature = "atom")]
+            (Value::Atom(given_variant_id), target_kind) => {
+                return Err(MechError::new(
+                    UnableToConvertAtomError {
+                        atom_id: given_variant_id.borrow().0.0,
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+                .with_tokens(var_def.expression.tokens()));
+            }
+            #[cfg(feature = "record")]
+            (Value::Record(rec), ref target_kind @ ValueKind::Record(target_rec_knd)) => {
+                let rec_brrw = rec.borrow();
+                let rec_knd = rec_brrw.kind();
+                if &rec_knd != *target_kind {
+                    return Err(MechError::new(
+                        UnableToConvertRecordError {
+                            source_record_kind: rec_knd.clone(),
+                            target_record_kind: (*target_kind).clone(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                    .with_tokens(var_def.expression.tokens()));
+                }
+            }
+            #[cfg(feature = "matrix")]
+            (Value::MutableReference(v), ValueKind::Matrix(target_matrix_knd, _)) => {
+                let value = v.borrow().clone();
+                if value.is_matrix() {
+                    let convert_fxn = ConvertMatToMat {}
+                        .compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
+                    convert_fxn.solve();
+                    let converted_result = convert_fxn.out();
+                    state_brrw.add_plan_step(convert_fxn);
+                    result = converted_result;
+                } else {
+                    let value_kind = value.kind();
+                    if value_kind.deref_kind() != target_matrix_knd.as_ref().clone()
+                        && value_kind != *target_matrix_knd.clone()
+                    {
+                        let convert_fxn = ConvertKind {}.compile(&vec![
+                            result.clone(),
+                            Value::Kind(target_matrix_knd.as_ref().clone()),
+                        ])?;
+                        convert_fxn.solve();
+                        let converted_result = convert_fxn.out();
+                        state_brrw.add_plan_step(convert_fxn);
+                        result = converted_result;
+                    };
+                    let convert_fxn = ConvertScalarToMat {}
+                        .compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
+                    convert_fxn.solve();
+                    let converted_result = convert_fxn.out();
+                    state_brrw.add_plan_step(convert_fxn);
+                    result = converted_result;
+                }
+            }
+            #[cfg(feature = "matrix")]
+            (value, ValueKind::Matrix(target_matrix_knd, _)) => {
+                if value.is_matrix() {
+                    let convert_fxn = ConvertMatToMat {}
+                        .compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
+                    convert_fxn.solve();
+                    let converted_result = convert_fxn.out();
+                    state_brrw.add_plan_step(convert_fxn);
+                    result = converted_result;
+                } else {
+                    let value_kind = value.kind();
+                    if value_kind.deref_kind() != target_matrix_knd.as_ref().clone()
+                        && value_kind != *target_matrix_knd.clone()
+                    {
+                        let convert_fxn = ConvertKind {}.compile(&vec![
+                            result.clone(),
+                            Value::Kind(target_matrix_knd.as_ref().clone()),
+                        ])?;
+                        convert_fxn.solve();
+                        let converted_result = convert_fxn.out();
+                        state_brrw.add_plan_step(convert_fxn);
+                        result = converted_result;
+                    };
+                    let convert_fxn = ConvertScalarToMat {}
+                        .compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
+                    convert_fxn.solve();
+                    let converted_result = convert_fxn.out();
+                    state_brrw.add_plan_step(convert_fxn);
+                    result = converted_result;
+                }
+            }
+            // Kind isn't checked
+            x => {
+                let convert_fxn =
+                    ConvertKind {}.compile(&vec![result.clone(), Value::Kind(target_knd)])?;
+                convert_fxn.solve();
+                let converted_result = convert_fxn.out();
+                state_brrw.add_plan_step(convert_fxn);
+                result = converted_result;
+            }
+        };
+        let detached_result = detach_variable_value(&result);
+        // Save symbol to interpreter
+        let val_ref = state_brrw.save_symbol(
+            var_id,
+            var_name.clone(),
+            detached_result.clone(),
+            var_def.mutable,
+        );
+        // Add variable define step to plan
+        let var_def_fxn = VarDefine {}.compile(&vec![
+            detached_result.clone(),
+            Value::String(Ref::new(var_name.clone())),
+            Value::Bool(Ref::new(var_def.mutable)),
+        ])?;
+        state_brrw.add_plan_step(var_def_fxn);
+        return Ok(detached_result);
+    }
+    let mut state_brrw = p.state.borrow_mut();
     let detached_result = detach_variable_value(&result);
     // Save symbol to interpreter
-    let val_ref = state_brrw.save_symbol(var_id, var_name.clone(), detached_result.clone(), var_def.mutable);
+    let val_ref = state_brrw.save_symbol(
+        var_id,
+        var_name.clone(),
+        detached_result.clone(),
+        var_def.mutable,
+    );
     // Add variable define step to plan
-    let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
+    let var_def_fxn = VarDefine {}.compile(&vec![
+        detached_result.clone(),
+        Value::String(Ref::new(var_name.clone())),
+        Value::Bool(Ref::new(var_def.mutable)),
+    ])?;
     state_brrw.add_plan_step(var_def_fxn);
     return Ok(detached_result);
-  } 
-  let mut state_brrw = p.state.borrow_mut();
-  let detached_result = detach_variable_value(&result);
-  // Save symbol to interpreter
-  let val_ref = state_brrw.save_symbol(var_id,var_name.clone(),detached_result.clone(),var_def.mutable);
-  // Add variable define step to plan
-  let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
-  state_brrw.add_plan_step(var_def_fxn);
-  return Ok(detached_result);
 }
 
 #[cfg(feature = "state_machines")]
-pub fn fsm_declare(fsm_decl: &FsmDeclare, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
-  let result = crate::state_machines::execute_fsm_pipe(&fsm_decl.pipe, env, p)?;
-  let id = fsm_decl.fsm.name.hash();
-  let name = fsm_decl.fsm.name.to_string();
-  #[cfg(feature = "symbol_table")]
-  {
-    let symbols = p.symbols();
-    let mut symbols_brrw = symbols.borrow_mut();
-    symbols_brrw.insert(id, detach_variable_value(&result), false);
-    symbols_brrw.dictionary.borrow_mut().insert(id, name);
-  }
-  Ok(result)
+pub fn fsm_declare(
+    fsm_decl: &FsmDeclare,
+    env: Option<&Environment>,
+    p: &Interpreter,
+) -> MResult<Value> {
+    let result = crate::state_machines::execute_fsm_pipe(&fsm_decl.pipe, env, p)?;
+    let id = fsm_decl.fsm.name.hash();
+    let name = fsm_decl.fsm.name.to_string();
+    #[cfg(feature = "symbol_table")]
+    {
+        let symbols = p.symbols();
+        let mut symbols_brrw = symbols.borrow_mut();
+        symbols_brrw.insert(id, detach_variable_value(&result), false);
+        symbols_brrw.dictionary.borrow_mut().insert(id, name);
+    }
+    Ok(result)
 }
 
 fn detach_variable_value(value: &Value) -> Value {
-  match value {
-    Value::MutableReference(reference) => detach_variable_value(&reference.borrow()),
-    _ => value.clone(),
-  }
+    match value {
+        Value::MutableReference(reference) => detach_variable_value(&reference.borrow()),
+        _ => value.clone(),
+    }
 }
 
 macro_rules! op_assign {
@@ -541,310 +736,380 @@ op_assign!(div_assign, Div);
 //op_assign!(pow_assign, Pow);
 
 #[cfg(all(feature = "subscript", feature = "assign"))]
-pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
-  let plan = p.plan();
-  let symbols = p.symbols();
-  let functions = p.functions();
-  match sbscrpt {
-    Subscript::Dot(x) => {
-      let key = x.hash();
-      let fxn_input: Vec<Value> = vec![sink.clone(), source.clone(), Value::Id(key)];
-      let new_fxn = AssignColumn{}.compile(&fxn_input)?;
-      new_fxn.solve();
-      let res = new_fxn.out();
-      plan.borrow_mut().push(new_fxn);
-      return Ok(res);
-    },
-    #[cfg(feature = "tuple")]
-    Subscript::DotInt(x) => {
-      let ix = real(x, p)?.as_index()?;
-      let mut fxn_input: Vec<Value> = vec![sink.clone(), source.clone(), ix.clone()];
-      let new_fxn = TupleAssignScalar{}.compile(&fxn_input)?;
-      new_fxn.solve();
-      let res = new_fxn.out();
-      plan.borrow_mut().push(new_fxn);
-      return Ok(res);
-    },
-    Subscript::Swizzle(x) => {
-      unreachable!()
-    },
-    Subscript::Bracket(subs) => {
-      let mut fxn_input = vec![sink.clone()];
-      match &subs[..] {
-        #[cfg(feature = "subscript_formula")]
-        [Subscript::Formula(ix)] => {
-          fxn_input.push(source.clone());
-          let ixes = subscript_formula_ix(&subs[0], env, p)?;
-          let shape = ixes.shape();
-          fxn_input.push(ixes);
-          match shape[..] {
-            #[cfg(feature = "matrix")]
-            [1,1] => plan.borrow_mut().push(MatrixAssignScalar{}.compile(&fxn_input)?),
-            #[cfg(all(feature = "matrix", feature = "subscript_range", feature = "assign"))]
-            [1,n] => plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?),
-            #[cfg(all(feature = "matrix", feature = "subscript_range", feature = "assign"))]
-            [n,1] => plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?),
-            _ => todo!(),
-          }
-        },
-        #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-        [Subscript::Range(ix)] => {
-          fxn_input.push(source.clone());
-          let ixes = subscript_range(&subs[0], env, p)?;
-          fxn_input.push(ixes);
-          plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?);
-        },
-        #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-        [Subscript::All] => {
-          fxn_input.push(source.clone());
-          fxn_input.push(Value::IndexAll);
-          plan.borrow_mut().push(MatrixAssignAll{}.compile(&fxn_input)?);
-        },
-        [Subscript::All,Subscript::All] => todo!(),
-        #[cfg(feature = "subscript_formula")]
-        [Subscript::Formula(ix1),Subscript::Formula(ix2)] => {
-          fxn_input.push(source.clone());
-          let result1 = subscript_formula_ix(&subs[0], env, p)?;
-          let result2 = subscript_formula_ix(&subs[1], env, p)?;
-          let shape1 = result1.shape();
-          let shape2 = result2.shape();
-          fxn_input.push(result1);
-          fxn_input.push(result2);
-          match ((shape1[0],shape1[1]),(shape2[0],shape2[1])) {
-            #[cfg(feature = "matrix")]
-            ((1,1),(1,1)) => plan.borrow_mut().push(MatrixAssignScalarScalar{}.compile(&fxn_input)?),
-            #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            ((1,1),(m,1)) => plan.borrow_mut().push(MatrixAssignScalarRange{}.compile(&fxn_input)?),
-            #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            ((n,1),(1,1)) => plan.borrow_mut().push(MatrixAssignRangeScalar{}.compile(&fxn_input)?),
-            #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            ((n,1),(m,1)) => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
-            _ => unreachable!(),
-          }          
-        },
-        #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-        [Subscript::Range(ix1),Subscript::Range(ix2)] => {
-          fxn_input.push(source.clone());
-          let result = subscript_range(&subs[0], env, p)?;
-          fxn_input.push(result);
-          let result = subscript_range(&subs[1], env, p)?;
-          fxn_input.push(result);
-          plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?);
-        },
-        #[cfg(all(feature = "matrix", feature = "subscript_formula"))]
-        [Subscript::All,Subscript::Formula(ix2)] => {
-          fxn_input.push(source.clone());
-          fxn_input.push(Value::IndexAll);
-          let ix = subscript_formula_ix(&subs[1], env, p)?;
-          let shape = ix.shape();
-          fxn_input.push(ix);
-          match shape[..] {
-            #[cfg(feature = "matrix")]
-            [1,1] => plan.borrow_mut().push(MatrixAssignAllScalar{}.compile(&fxn_input)?),
-            #[cfg(feature = "matrix")]
-            [1,n] => plan.borrow_mut().push(MatrixAssignAllRange{}.compile(&fxn_input)?),
-            #[cfg(feature = "matrix")]
-            [n,1] => plan.borrow_mut().push(MatrixAssignAllRange{}.compile(&fxn_input)?),
-            _ => todo!(),
-          }
+pub fn subscript_ref(
+    sbscrpt: &Subscript,
+    sink: &Value,
+    source: &Value,
+    env: Option<&Environment>,
+    p: &Interpreter,
+) -> MResult<Value> {
+    let plan = p.plan();
+    let symbols = p.symbols();
+    let functions = p.functions();
+    match sbscrpt {
+        Subscript::Dot(x) => {
+            let key = x.hash();
+            let fxn_input: Vec<Value> = vec![sink.clone(), source.clone(), Value::Id(key)];
+            let new_fxn = AssignColumn {}.compile(&fxn_input)?;
+            new_fxn.solve();
+            let res = new_fxn.out();
+            plan.borrow_mut().push(new_fxn);
+            return Ok(res);
         }
-        #[cfg(feature = "subscript_formula")]
-        [Subscript::Formula(ix1),Subscript::All] => {
-          fxn_input.push(source.clone());
-          let ix = subscript_formula_ix(&subs[0], env, p)?;
-          let shape = ix.shape();
-          fxn_input.push(ix);
-          fxn_input.push(Value::IndexAll);
-          match shape[..] {
-            #[cfg(feature = "matrix")]
-            [1,1] => plan.borrow_mut().push(MatrixAssignScalarAll{}.compile(&fxn_input)?),
-            #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            [1,n] => plan.borrow_mut().push(MatrixAssignRangeAll{}.compile(&fxn_input)?),
-            #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            [n,1] => plan.borrow_mut().push(MatrixAssignRangeAll{}.compile(&fxn_input)?),
-            _ => todo!(),
-          }
-        },
-        #[cfg(all(feature = "subscript_formula", feature = "subscript_range"))]
-        [Subscript::Range(ix1),Subscript::Formula(ix2)] => {
-          fxn_input.push(source.clone());
-          let result = subscript_range(&subs[0], env, p)?;
-          fxn_input.push(result);
-          let result = subscript_formula_ix(&subs[1], env, p)?;
-          let shape = result.shape();
-          fxn_input.push(result);
-          match &shape[..] {
-            #[cfg(feature = "matrix")]
-            [1,1] => plan.borrow_mut().push(MatrixAssignRangeScalar{}.compile(&fxn_input)?),
-            #[cfg(feature = "matrix")]
-            [1,n] => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
-            #[cfg(feature = "matrix")]
-            [n,1] => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
-            _ => todo!(),
-          }
-        },
-        #[cfg(all(feature = "subscript_formula", feature = "subscript_range"))]
-        [Subscript::Formula(ix1),Subscript::Range(ix2)] => {
-          fxn_input.push(source.clone());
-          let result = subscript_formula_ix(&subs[0], env, p)?;
-          let shape = result.shape();
-          fxn_input.push(result);
-          let result = subscript_range(&subs[1], env, p)?;
-          fxn_input.push(result);
-          match &shape[..] {
-            #[cfg(feature = "matrix")]
-            [1,1] => plan.borrow_mut().push(MatrixAssignScalarRange{}.compile(&fxn_input)?),
-            #[cfg(feature = "matrix")]
-            [1,n] => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
-            #[cfg(feature = "matrix")]
-            [n,1] => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
-            _ => todo!(),
-          }
-        },
-        #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-        [Subscript::All,Subscript::Range(ix2)] => {
-          fxn_input.push(source.clone());
-          fxn_input.push(Value::IndexAll);
-          let result = subscript_range(&subs[1], env, p)?;
-          fxn_input.push(result);
-          plan.borrow_mut().push(MatrixAssignAllRange{}.compile(&fxn_input)?);
-        },
-        #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-        [Subscript::Range(ix1),Subscript::All] => {
-          fxn_input.push(source.clone());
-          let result = subscript_range(&subs[0], env, p)?;
-          fxn_input.push(result);
-          fxn_input.push(Value::IndexAll);
-          plan.borrow_mut().push(MatrixAssignRangeAll{}.compile(&fxn_input)?);
-        },
+        #[cfg(feature = "tuple")]
+        Subscript::DotInt(x) => {
+            let ix = real(x, p)?.as_index()?;
+            let mut fxn_input: Vec<Value> = vec![sink.clone(), source.clone(), ix.clone()];
+            let new_fxn = TupleAssignScalar {}.compile(&fxn_input)?;
+            new_fxn.solve();
+            let res = new_fxn.out();
+            plan.borrow_mut().push(new_fxn);
+            return Ok(res);
+        }
+        Subscript::Swizzle(x) => {
+            unreachable!()
+        }
+        Subscript::Bracket(subs) => {
+            let mut fxn_input = vec![sink.clone()];
+            match &subs[..] {
+                #[cfg(feature = "subscript_formula")]
+                [Subscript::Formula(ix)] => {
+                    fxn_input.push(source.clone());
+                    let ixes = subscript_formula_ix(&subs[0], env, p)?;
+                    let shape = ixes.shape();
+                    fxn_input.push(ixes);
+                    match shape[..] {
+                        #[cfg(feature = "matrix")]
+                        [1, 1] => plan
+                            .borrow_mut()
+                            .push(MatrixAssignScalar {}.compile(&fxn_input)?),
+                        #[cfg(all(
+                            feature = "matrix",
+                            feature = "subscript_range",
+                            feature = "assign"
+                        ))]
+                        [1, n] => plan
+                            .borrow_mut()
+                            .push(MatrixAssignRange {}.compile(&fxn_input)?),
+                        #[cfg(all(
+                            feature = "matrix",
+                            feature = "subscript_range",
+                            feature = "assign"
+                        ))]
+                        [n, 1] => plan
+                            .borrow_mut()
+                            .push(MatrixAssignRange {}.compile(&fxn_input)?),
+                        _ => todo!(),
+                    }
+                }
+                #[cfg(all(feature = "matrix", feature = "subscript_range"))]
+                [Subscript::Range(ix)] => {
+                    fxn_input.push(source.clone());
+                    let ixes = subscript_range(&subs[0], env, p)?;
+                    fxn_input.push(ixes);
+                    plan.borrow_mut()
+                        .push(MatrixAssignRange {}.compile(&fxn_input)?);
+                }
+                #[cfg(all(feature = "matrix", feature = "subscript_range"))]
+                [Subscript::All] => {
+                    fxn_input.push(source.clone());
+                    fxn_input.push(Value::IndexAll);
+                    plan.borrow_mut()
+                        .push(MatrixAssignAll {}.compile(&fxn_input)?);
+                }
+                [Subscript::All, Subscript::All] => todo!(),
+                #[cfg(feature = "subscript_formula")]
+                [Subscript::Formula(ix1), Subscript::Formula(ix2)] => {
+                    fxn_input.push(source.clone());
+                    let result1 = subscript_formula_ix(&subs[0], env, p)?;
+                    let result2 = subscript_formula_ix(&subs[1], env, p)?;
+                    let shape1 = result1.shape();
+                    let shape2 = result2.shape();
+                    fxn_input.push(result1);
+                    fxn_input.push(result2);
+                    match ((shape1[0], shape1[1]), (shape2[0], shape2[1])) {
+                        #[cfg(feature = "matrix")]
+                        ((1, 1), (1, 1)) => plan
+                            .borrow_mut()
+                            .push(MatrixAssignScalarScalar {}.compile(&fxn_input)?),
+                        #[cfg(all(feature = "matrix", feature = "subscript_range"))]
+                        ((1, 1), (m, 1)) => plan
+                            .borrow_mut()
+                            .push(MatrixAssignScalarRange {}.compile(&fxn_input)?),
+                        #[cfg(all(feature = "matrix", feature = "subscript_range"))]
+                        ((n, 1), (1, 1)) => plan
+                            .borrow_mut()
+                            .push(MatrixAssignRangeScalar {}.compile(&fxn_input)?),
+                        #[cfg(all(feature = "matrix", feature = "subscript_range"))]
+                        ((n, 1), (m, 1)) => plan
+                            .borrow_mut()
+                            .push(MatrixAssignRangeRange {}.compile(&fxn_input)?),
+                        _ => unreachable!(),
+                    }
+                }
+                #[cfg(all(feature = "matrix", feature = "subscript_range"))]
+                [Subscript::Range(ix1), Subscript::Range(ix2)] => {
+                    fxn_input.push(source.clone());
+                    let result = subscript_range(&subs[0], env, p)?;
+                    fxn_input.push(result);
+                    let result = subscript_range(&subs[1], env, p)?;
+                    fxn_input.push(result);
+                    plan.borrow_mut()
+                        .push(MatrixAssignRangeRange {}.compile(&fxn_input)?);
+                }
+                #[cfg(all(feature = "matrix", feature = "subscript_formula"))]
+                [Subscript::All, Subscript::Formula(ix2)] => {
+                    fxn_input.push(source.clone());
+                    fxn_input.push(Value::IndexAll);
+                    let ix = subscript_formula_ix(&subs[1], env, p)?;
+                    let shape = ix.shape();
+                    fxn_input.push(ix);
+                    match shape[..] {
+                        #[cfg(feature = "matrix")]
+                        [1, 1] => plan
+                            .borrow_mut()
+                            .push(MatrixAssignAllScalar {}.compile(&fxn_input)?),
+                        #[cfg(feature = "matrix")]
+                        [1, n] => plan
+                            .borrow_mut()
+                            .push(MatrixAssignAllRange {}.compile(&fxn_input)?),
+                        #[cfg(feature = "matrix")]
+                        [n, 1] => plan
+                            .borrow_mut()
+                            .push(MatrixAssignAllRange {}.compile(&fxn_input)?),
+                        _ => todo!(),
+                    }
+                }
+                #[cfg(feature = "subscript_formula")]
+                [Subscript::Formula(ix1), Subscript::All] => {
+                    fxn_input.push(source.clone());
+                    let ix = subscript_formula_ix(&subs[0], env, p)?;
+                    let shape = ix.shape();
+                    fxn_input.push(ix);
+                    fxn_input.push(Value::IndexAll);
+                    match shape[..] {
+                        #[cfg(feature = "matrix")]
+                        [1, 1] => plan
+                            .borrow_mut()
+                            .push(MatrixAssignScalarAll {}.compile(&fxn_input)?),
+                        #[cfg(all(feature = "matrix", feature = "subscript_range"))]
+                        [1, n] => plan
+                            .borrow_mut()
+                            .push(MatrixAssignRangeAll {}.compile(&fxn_input)?),
+                        #[cfg(all(feature = "matrix", feature = "subscript_range"))]
+                        [n, 1] => plan
+                            .borrow_mut()
+                            .push(MatrixAssignRangeAll {}.compile(&fxn_input)?),
+                        _ => todo!(),
+                    }
+                }
+                #[cfg(all(feature = "subscript_formula", feature = "subscript_range"))]
+                [Subscript::Range(ix1), Subscript::Formula(ix2)] => {
+                    fxn_input.push(source.clone());
+                    let result = subscript_range(&subs[0], env, p)?;
+                    fxn_input.push(result);
+                    let result = subscript_formula_ix(&subs[1], env, p)?;
+                    let shape = result.shape();
+                    fxn_input.push(result);
+                    match &shape[..] {
+                        #[cfg(feature = "matrix")]
+                        [1, 1] => plan
+                            .borrow_mut()
+                            .push(MatrixAssignRangeScalar {}.compile(&fxn_input)?),
+                        #[cfg(feature = "matrix")]
+                        [1, n] => plan
+                            .borrow_mut()
+                            .push(MatrixAssignRangeRange {}.compile(&fxn_input)?),
+                        #[cfg(feature = "matrix")]
+                        [n, 1] => plan
+                            .borrow_mut()
+                            .push(MatrixAssignRangeRange {}.compile(&fxn_input)?),
+                        _ => todo!(),
+                    }
+                }
+                #[cfg(all(feature = "subscript_formula", feature = "subscript_range"))]
+                [Subscript::Formula(ix1), Subscript::Range(ix2)] => {
+                    fxn_input.push(source.clone());
+                    let result = subscript_formula_ix(&subs[0], env, p)?;
+                    let shape = result.shape();
+                    fxn_input.push(result);
+                    let result = subscript_range(&subs[1], env, p)?;
+                    fxn_input.push(result);
+                    match &shape[..] {
+                        #[cfg(feature = "matrix")]
+                        [1, 1] => plan
+                            .borrow_mut()
+                            .push(MatrixAssignScalarRange {}.compile(&fxn_input)?),
+                        #[cfg(feature = "matrix")]
+                        [1, n] => plan
+                            .borrow_mut()
+                            .push(MatrixAssignRangeRange {}.compile(&fxn_input)?),
+                        #[cfg(feature = "matrix")]
+                        [n, 1] => plan
+                            .borrow_mut()
+                            .push(MatrixAssignRangeRange {}.compile(&fxn_input)?),
+                        _ => todo!(),
+                    }
+                }
+                #[cfg(all(feature = "matrix", feature = "subscript_range"))]
+                [Subscript::All, Subscript::Range(ix2)] => {
+                    fxn_input.push(source.clone());
+                    fxn_input.push(Value::IndexAll);
+                    let result = subscript_range(&subs[1], env, p)?;
+                    fxn_input.push(result);
+                    plan.borrow_mut()
+                        .push(MatrixAssignAllRange {}.compile(&fxn_input)?);
+                }
+                #[cfg(all(feature = "matrix", feature = "subscript_range"))]
+                [Subscript::Range(ix1), Subscript::All] => {
+                    fxn_input.push(source.clone());
+                    let result = subscript_range(&subs[0], env, p)?;
+                    fxn_input.push(result);
+                    fxn_input.push(Value::IndexAll);
+                    plan.borrow_mut()
+                        .push(MatrixAssignRangeAll {}.compile(&fxn_input)?);
+                }
+                _ => unreachable!(),
+            };
+            let plan_brrw = plan.borrow();
+            let mut new_fxn = &plan_brrw.last().unwrap();
+            new_fxn.solve();
+            let res = new_fxn.out();
+            return Ok(res);
+        }
+        Subscript::Brace(subs) => {
+            let mut fxn_input = vec![sink.clone()];
+            match &subs[..] {
+                #[cfg(feature = "subscript_formula")]
+                [Subscript::Formula(ix)] => {
+                    fxn_input.push(source.clone());
+                    let ixes = subscript_formula(&subs[0], env, p)?;
+                    let shape = ixes.shape();
+                    fxn_input.push(ixes);
+                    match shape[..] {
+                        #[cfg(feature = "map")]
+                        [1, 1] => plan
+                            .borrow_mut()
+                            .push(MapAssignScalar {}.compile(&fxn_input)?),
+                        //#[cfg(all(feature = "matrix", feature = "subscript_range", feature = "assign"))]
+                        //[1,n] => plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?),
+                        //#[cfg(all(feature = "matrix", feature = "subscript_range", feature = "assign"))]
+                        //[n,1] => plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?),
+                        _ => todo!(),
+                    }
+                }
+                #[cfg(all(feature = "matrix", feature = "subscript_range"))]
+                [Subscript::Range(ix)] => {
+                    todo!();
+                    //fxn_input.push(source.clone());
+                    //let ixes = subscript_range(&subs[0], env, p)?;
+                    //fxn_input.push(ixes);
+                    //plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?);
+                }
+                #[cfg(all(feature = "matrix", feature = "subscript_range"))]
+                [Subscript::All] => {
+                    todo!();
+                    //fxn_input.push(source.clone());
+                    //fxn_input.push(Value::IndexAll);
+                    //plan.borrow_mut().push(MatrixAssignAll{}.compile(&fxn_input)?);
+                }
+                _ => unreachable!(),
+            };
+            let plan_brrw = plan.borrow();
+            let mut new_fxn = &plan_brrw.last().unwrap();
+            new_fxn.solve();
+            let res = new_fxn.out();
+            return Ok(res);
+        }
         _ => unreachable!(),
-      };
-      let plan_brrw = plan.borrow();
-      let mut new_fxn = &plan_brrw.last().unwrap();
-      new_fxn.solve();
-      let res = new_fxn.out();
-      return Ok(res);
-    },
-    Subscript::Brace(subs) => {
-      let mut fxn_input = vec![sink.clone()];
-      match &subs[..] {
-        #[cfg(feature = "subscript_formula")]
-        [Subscript::Formula(ix)] => {
-          fxn_input.push(source.clone());
-          let ixes = subscript_formula(&subs[0], env, p)?;
-          let shape = ixes.shape();
-          fxn_input.push(ixes);
-          match shape[..] {
-            #[cfg(feature = "map")]
-            [1,1] => plan.borrow_mut().push(MapAssignScalar{}.compile(&fxn_input)?),
-            //#[cfg(all(feature = "matrix", feature = "subscript_range", feature = "assign"))]
-            //[1,n] => plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?),
-            //#[cfg(all(feature = "matrix", feature = "subscript_range", feature = "assign"))]
-            //[n,1] => plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?),
-            _ => todo!(),
-          }
-        },
-        #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-        [Subscript::Range(ix)] => {
-          todo!();
-          //fxn_input.push(source.clone());
-          //let ixes = subscript_range(&subs[0], env, p)?;
-          //fxn_input.push(ixes);
-          //plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?);
-        },
-        #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-        [Subscript::All] => {
-          todo!();
-          //fxn_input.push(source.clone());
-          //fxn_input.push(Value::IndexAll);
-          //plan.borrow_mut().push(MatrixAssignAll{}.compile(&fxn_input)?);
-        },
-        _ => unreachable!(),
-      };
-      let plan_brrw = plan.borrow();
-      let mut new_fxn = &plan_brrw.last().unwrap();
-      new_fxn.solve();
-      let res = new_fxn.out();
-      return Ok(res);      
     }
-    _ => unreachable!(),
-  }
 }
 
 #[derive(Debug, Clone)]
 pub struct UnableToConvertAtomToEnumVariantError {
-  pub atom_name: String,
-  pub target_enum_variant_name: String,
+    pub atom_name: String,
+    pub target_enum_variant_name: String,
 }
 impl MechErrorKind for UnableToConvertAtomToEnumVariantError {
-  fn name(&self) -> &str {
-    "UnableToConvertAtomToEnumVariant"
-  }
-  fn message(&self) -> String {
-    format!("Unable to convert atom variant `{} to enum <{}>", self.atom_name, self.target_enum_variant_name)
-  }
+    fn name(&self) -> &str {
+        "UnableToConvertAtomToEnumVariant"
+    }
+    fn message(&self) -> String {
+        format!(
+            "Unable to convert atom variant `{} to enum <{}>",
+            self.atom_name, self.target_enum_variant_name
+        )
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct UnableToConvertAtomError {
-  pub atom_id: u64,
+    pub atom_id: u64,
 }
 impl MechErrorKind for UnableToConvertAtomError {
-  fn name(&self) -> &str {
-    "UnableToConvertAtom"
-  }
-  fn message(&self) -> String {
-    format!("Unable to atom  {}", self.atom_id)
-  }
+    fn name(&self) -> &str {
+        "UnableToConvertAtom"
+    }
+    fn message(&self) -> String {
+        format!("Unable to atom  {}", self.atom_id)
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct VariableAlreadyDefinedError {
-  pub id: u64,
+    pub id: u64,
 }
 impl MechErrorKind for VariableAlreadyDefinedError {
-  fn name(&self) -> &str { "VariableAlreadyDefined" }
-  fn message(&self) -> String {
-    format!("Variable already defined: {}", self.id)
-  }
+    fn name(&self) -> &str {
+        "VariableAlreadyDefined"
+    }
+    fn message(&self) -> String {
+        format!("Variable already defined: {}", self.id)
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct UndefinedVariableError {
-  pub id: u64,
+    pub id: u64,
 }
 impl MechErrorKind for UndefinedVariableError {
-  fn name(&self) -> &str { "UndefinedVariable" }
+    fn name(&self) -> &str {
+        "UndefinedVariable"
+    }
 
-  fn message(&self) -> String {
-    format!("Undefined variable: {}", self.id)
-  }
+    fn message(&self) -> String {
+        format!("Undefined variable: {}", self.id)
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct NotMutableError {
-  pub id: u64,
+    pub id: u64,
 }
 impl MechErrorKind for NotMutableError {
-  fn name(&self) -> &str { "NotMutable" }
-  fn message(&self) -> String {
-    format!("Variable is not mutable: {}", self.id)
-  }
+    fn name(&self) -> &str {
+        "NotMutable"
+    }
+    fn message(&self) -> String {
+        format!("Variable is not mutable: {}", self.id)
+    }
 }
 
 #[cfg(feature = "record")]
 #[derive(Debug, Clone)]
 pub struct UnableToConvertRecordError {
-  pub source_record_kind: ValueKind,
-  pub target_record_kind: ValueKind,
+    pub source_record_kind: ValueKind,
+    pub target_record_kind: ValueKind,
 }
 #[cfg(feature = "record")]
 impl MechErrorKind for UnableToConvertRecordError {
-  fn name(&self) -> &str {
-    "UnableToConvertRecord"
-  }
-  fn message(&self) -> String {
-    format!("Unable to convert record of kind `{:?}` to record of kind `{:?}`", self.source_record_kind, self.target_record_kind)
-  }
+    fn name(&self) -> &str {
+        "UnableToConvertRecord"
+    }
+    fn message(&self) -> String {
+        format!(
+            "Unable to convert record of kind `{:?}` to record of kind `{:?}`",
+            self.source_record_kind, self.target_record_kind
+        )
+    }
 }
-
