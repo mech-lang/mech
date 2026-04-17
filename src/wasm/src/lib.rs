@@ -838,22 +838,41 @@ pub fn attach_repl(&mut self, repl_id: &str) {
     let window = web_sys::window().expect("global window does not exists");    
 		let document = window.document().expect("expecting a document on window"); 
     let inline_elements = document.get_elements_by_class_name("mech-inline-mech-code");
-    let out_values_brrw = self.interpreter.out_values.borrow();
     for j in 0..inline_elements.length() {
       let inline_block = inline_elements.get_with_index(j).unwrap();
       let inline_id = inline_block.id();
-      let inline_id: u64 = inline_id.parse().unwrap();
+      let (inline_output_id, interpreter_id) = match inline_id.split_once(":") {
+        Some((out_id, intrp_id)) => (
+          out_id.parse::<u64>().unwrap(),
+          intrp_id.parse::<u64>().unwrap(),
+        ),
+        None => (inline_id.parse::<u64>().unwrap(), 0u64),
+      };
       
-      let inline_output = match out_values_brrw.get(&inline_id) {
+      let inline_output = match interpreter_id {
+        0 => self.interpreter.out_values.borrow().get(&inline_output_id).cloned(),
+        id => self
+          .interpreter
+          .sub_interpreters
+          .borrow()
+          .get(&id)
+          .and_then(|sub| sub.out_values.borrow().get(&inline_output_id).cloned()),
+      };
+
+      let inline_output = match inline_output {
         Some(value) => value,
         None => {
-          log!("No value found for inline output id: {}", inline_id);
+          log!(
+            "No value found for inline output id: {} in interpreter {}",
+            inline_output_id,
+            interpreter_id
+          );
           continue;
         }
       };
       let formatted_output = inline_output.format_value_inline();
       let is_scalar = matches!(
-        inline_output,
+        &inline_output,
         Value::U8(_)
           | Value::U16(_)
           | Value::U32(_)
@@ -888,8 +907,8 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         let inline_html = format!(
           "<span>{}</span><span class=\"mech-inline-expand\" id=\"{}:{}\">›</span>",
           compact,
-          inline_id,
-          0
+          inline_output_id,
+          interpreter_id
         );
         inline_block.set_inner_html(&inline_html);
       }

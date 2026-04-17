@@ -435,9 +435,10 @@ impl Formatter {
       },
       ParagraphElement::EvalInlineMechCode(expr) => {
         let code_id = hash_str(&format!("{:?}", expr));
+        let inline_id = format!("{}:{}", code_id, self.interpreter_id);
         let result = self.expression(expr);
         if self.html {
-          format!("<code id=\"{}\" class=\"mech-inline-mech-code\">{}</code>", code_id, result)
+          format!("<code id=\"{}\" class=\"mech-inline-mech-code\">{}</code>", inline_id, result)
         } else {
           format!("{{{}}}", result)
         }
