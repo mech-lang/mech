@@ -18,15 +18,27 @@ impl MechEnum {
 
   #[cfg(feature = "pretty_print")]
   pub fn to_html(&self) -> String {
+    let dict_brrw = self.names.borrow();
     let mut variants = Vec::new();
     for (id, value) in &self.variants {
-      let value_html = match value {
-        Some(v) => v.to_html(),
-        None => "None".to_string(),
+      let variant_name = dict_brrw
+        .get(id)
+        .map(|name| name.rsplit('/').next().unwrap_or(name).to_string())
+        .unwrap_or_else(|| format!("{}", id));
+      let variant_html = match value {
+        Some(v) => format!(
+          "<span class=\"mech-enum-variant-name\">:{}</span><span class=\"mech-enum-variant-payload\">(<span class=\"mech-enum-variant-value\">{}</span>)</span>",
+          variant_name,
+          v.to_html()
+        ),
+        None => format!("<span class=\"mech-enum-variant-name\">:{}</span>", variant_name),
       };
-      variants.push(format!("<span class=\"mech-enum-variant\">{}: {}</span>", id, value_html));
+      variants.push(format!("<span class=\"mech-enum-variant\">{}</span>", variant_html));
     }
-    format!("<span class=\"mech-enum\"><span class=\"mech-start-brace\">{{</span>{}<span class=\"mech-end-brace\">}}</span></span>", variants.join(", "))
+    format!(
+      "<span class=\"mech-enum\">{}</span>",
+      variants.join("<span class=\"mech-enum-variant-sep\"> | </span>")
+    )
   }
 
   pub fn kind(&self) -> ValueKind {
