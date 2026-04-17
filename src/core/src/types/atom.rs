@@ -52,7 +52,7 @@ impl MechAtom {
     MechAtom((id, dict))
   }
   pub fn to_html(&self) -> String {
-    format!("<span class=\"mech-atom\"><span class=\"mech-atom-name\">{}</span></span>",self.name())
+    format!("<span class=\"mech-atom\"><span class=\"mech-atom-name\">:{}</span></span>",self.name())
   }
 
 }

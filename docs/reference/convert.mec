@@ -29,4 +29,3 @@ Conversions apply beyond scalars when supported:
 - scalar -> matrix (with target matrix kind)
 - matrix -> matrix (element kind conversion)
 - matrix -> table and table -> matrix (shape/kind compatible)
-- empty/value <-> option kinds

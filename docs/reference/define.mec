@@ -82,7 +82,7 @@ Declare enum variants using atom-style names, optionally with payload kinds.
 Payload style variants are also valid:
 
 ```mech:enum-define-2
-<event> := :click | :keypress(string)
+<event> := :click | :keypress<string>
 ```
 
 7. Kind define (`<name> := <kind>`)

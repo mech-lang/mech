@@ -1720,7 +1720,7 @@ impl Formatter {
     if self.html {
       format!("<span class=\"mech-enum-variant\"><span class=\"mech-enum-variant-name\">:{}</span><span class=\"mech-enum-variant-kind\">{}</span></span>",name,kind)
     } else {
-      format!("{}{}", name, kind)
+      format!(":{}{}", name, kind)
     }
   }
 
