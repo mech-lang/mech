@@ -421,7 +421,7 @@ pub fn kind_empty(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Empty))
 }
 
-// kind-atom := "`", identifier ;
+// kind-atom := ":", identifier ;
 pub fn kind_atom(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = colon(input)?;
   let (input, atm) = identifier(input)?;

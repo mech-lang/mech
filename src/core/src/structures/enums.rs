@@ -61,10 +61,6 @@ impl MechEnum {
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for MechEnum {
   fn pretty_print(&self) -> String {
-    println!("Pretty printing enum...");
-    println!("Enum ID: {}", self.id);
-    println!("Variants: {:?}", self.variants);
-    println!("Names: {:?}", self.names.borrow());
     let mut variants = Vec::new();
     let dict_brrw = self.names.borrow();
     let enum_name = dict_brrw.get(&self.id).unwrap();
@@ -74,9 +70,9 @@ impl PrettyPrint for MechEnum {
         None => "None".to_string(),
       };
       let variant_name = dict_brrw.get(id).unwrap();
-      variants.push(format!("{}: {}", variant_name, value_str));
+      variants.push(format!("{}(\n{})", variant_name, value_str));
     }
-    format!("`{} {{ {} }}", enum_name, variants.join(" | "))
+    format!(":{}/{}", enum_name, variants.join(" | "))
   }
 }
 
