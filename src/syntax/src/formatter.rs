@@ -1124,7 +1124,7 @@ impl Formatter {
   pub fn code_block(&mut self, node: &Token) -> String {
     let code = node.to_string();
     if self.html {
-      format!("<pre class=\"code-block\">{}</pre>",code)
+      format!("<pre class=\"mech-code-block\">{}</pre>",code)
     } else {
       format!("```\n{}\n```",code)
     }
