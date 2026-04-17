@@ -147,6 +147,35 @@ pub fn pattern_matches_value_with_semantics(pattern: &Pattern, value: &Value, en
     #[cfg(all(feature = "tuple", feature = "atom"))]
     Pattern::TupleStruct(pat_struct) => {
       match detached_value {
+        #[cfg(feature = "enum")]
+        Value::Enum(enum_value) => {
+          let enum_brrw = enum_value.borrow();
+          if enum_brrw.variants.len() != 1 {
+            return Ok(false);
+          }
+          let (variant_id, payload) = &enum_brrw.variants[0];
+          let expected_variant_id = pat_struct.name.hash();
+          if *variant_id != expected_variant_id {
+            return Ok(false);
+          }
+          match payload {
+            Some(payload_value) => {
+              if pat_struct.patterns.len() != 1 {
+                return Ok(false);
+              }
+              return pattern_matches_value_with_semantics(
+                &pat_struct.patterns[0],
+                payload_value,
+                env,
+                p,
+                semantics,
+              );
+            }
+            None => {
+              return Ok(pat_struct.patterns.is_empty());
+            }
+          }
+        }
         Value::Tuple(tuple) => {
           let tuple_brrw = tuple.borrow();
           if tuple_brrw.elements.len() != pat_struct.patterns.len() + 1 {
@@ -224,6 +253,31 @@ pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -
     }
     #[cfg(all(feature = "tuple", feature = "atom"))]
     Pattern::TupleStruct(pattern_tuple_struct) => {
+      #[cfg(feature = "enum")]
+      {
+        let variant_id = pattern_tuple_struct.name.hash();
+        if let Some((enum_id, enum_def)) = p
+          .state
+          .borrow()
+          .enums
+          .iter()
+          .find(|(_, enm)| enm.variants.iter().any(|(known_variant, _)| *known_variant == variant_id))
+        {
+          let payload = if pattern_tuple_struct.patterns.len() == 1 {
+            Some(pattern_to_value(&pattern_tuple_struct.patterns[0], env, p)?)
+          } else if pattern_tuple_struct.patterns.is_empty() {
+            None
+          } else {
+            return Err(MechError::new(FeatureNotEnabledError, Some("Enum tuple-struct patterns currently support zero or one payload value.".to_string())).with_compiler_loc());
+          };
+          let enm = MechEnum {
+            id: *enum_id,
+            variants: vec![(variant_id, payload)],
+            names: enum_def.names.clone(),
+          };
+          return Ok(Value::Enum(Ref::new(enm)));
+        }
+      }
       let mut values = Vec::with_capacity(pattern_tuple_struct.patterns.len() + 1);
       values.push(atom(&Atom {name: pattern_tuple_struct.name.clone()}, p));
       for inner in &pattern_tuple_struct.patterns {
