@@ -14,8 +14,49 @@ pub fn comment_sigil(input: ParseString) -> ParseResult<()> {
 pub fn comment(input: ParseString) -> ParseResult<Comment> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = comment_sigil(input)?;
-  let (input, p) = paragraph(input)?;
-  Ok((input, Comment{paragraph: p}))
+  let (input, line_token) = skip_till_eol(input)?;
+  let comment_text = line_token.to_string();
+
+  if comment_text.is_empty() {
+    return Ok((input, Comment { paragraph: Paragraph { elements: vec![], error_range: None } }));
+  }
+
+  let line_graphemes = graphemes::init_source(&comment_text);
+  let line_input = ParseString::new(&line_graphemes);
+
+  match inline_paragraph(line_input) {
+    Ok((remaining, paragraph)) => {
+      // A rich comment must parse the full line.
+      if new_line(remaining.clone()).is_ok() {
+        Ok((input, Comment { paragraph }))
+      } else {
+        let mut recovered_input = input;
+        let start = line_token.src_range.start;
+        let end = line_token.src_range.end;
+        recovered_input.error_log.push((
+          SourceRange { start, end },
+          ParseErrorDetail {
+            message: "Invalid rich comment syntax, preserving raw comment text",
+            annotation_rngs: vec![],
+          },
+        ));
+        Ok((recovered_input, Comment { paragraph: Paragraph::from_tokens(vec![line_token]) }))
+      }
+    }
+    Err(_) => {
+      let mut recovered_input = input;
+      let start = line_token.src_range.start;
+      let end = line_token.src_range.end;
+      recovered_input.error_log.push((
+        SourceRange { start, end },
+        ParseErrorDetail {
+          message: "Invalid rich comment syntax, preserving raw comment text",
+          annotation_rngs: vec![],
+        },
+      ));
+      Ok((recovered_input, Comment { paragraph: Paragraph::from_tokens(vec![line_token]) }))
+    }
+  }
 }
 
 // op-assign-operator := add-assign-operator | sub-assign-operator | mul-assign-operator | div-assign-operator | exp-assign-operator ;
@@ -207,4 +248,32 @@ pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {
   let (input, _) = define_operator(input)?;
   let (input, knd) = kind_annotation(input)?;
   Ok((input, KindDefine{name,kind:knd}))
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn comment_accepts_rich_markup() {
+    let src = "-- This is a [link](foo.html) with **bold** and `foo := 123`";
+    let graphemes = graphemes::init_source(src);
+    let input = ParseString::new(&graphemes);
+    let (_, comment) = comment(input).expect("comment should parse");
+
+    assert!(!comment.paragraph.elements.is_empty());
+    assert!(comment.paragraph.to_string().contains("[link](foo.html)"));
+  }
+
+  #[test]
+  fn comment_recovers_to_raw_text_for_invalid_markup() {
+    let src = "-- [1 2 3 4]";
+    let graphemes = graphemes::init_source(src);
+    let input = ParseString::new(&graphemes);
+    let (remaining, comment) = comment(input).expect("comment should recover");
+
+    assert_eq!(comment.paragraph.to_string(), " [1 2 3 4]");
+    assert_eq!(remaining.error_log.len(), 1);
+    assert_eq!(remaining.error_log[0].1.message, "Invalid rich comment syntax, preserving raw comment text");
+  }
 }
