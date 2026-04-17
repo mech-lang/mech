@@ -434,7 +434,9 @@ impl Formatter {
         }
       },
       ParagraphElement::EvalInlineMechCode(expr) => {
-        let code_id = hash_str(&format!("{:?}", expr));
+        // Include token locations in the hash so identical inline expressions
+        // on different lines receive distinct DOM ids.
+        let code_id = hash_str(&format!("{:?}:{:?}", expr, expr.tokens()));
         let result = self.expression(expr);
         if self.html {
           format!("<code id=\"{}\" class=\"mech-inline-mech-code\">{}</code>", code_id, result)
