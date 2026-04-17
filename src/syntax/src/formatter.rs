@@ -24,10 +24,21 @@ pub struct Formatter{
   citation_map: HashMap<u64, usize>,
   citations: Vec<String>,
   interpreter_id: u64,
+  inline_eval_counters: HashMap<u64, u64>,
 }
 
 
 impl Formatter {
+
+  fn inline_eval_id(&mut self) -> u64 {
+    let next_ix = {
+      let counter = self.inline_eval_counters.entry(self.interpreter_id).or_insert(0);
+      let current = *counter;
+      *counter += 1;
+      current
+    };
+    hash_str(&format!("inline-eval:{}:{}", self.interpreter_id, next_ix))
+  }
 
   pub fn new() -> Formatter {
     Formatter {
@@ -48,11 +59,13 @@ impl Formatter {
       nested: false,
       toc: false,
       interpreter_id: 0,
+      inline_eval_counters: HashMap::new(),
     }
   }
 
   pub fn format(&mut self, tree: &Program) -> String {
     self.html = false;
+    self.inline_eval_counters.clear();
     self.program(tree)
   }
 
@@ -91,6 +104,7 @@ impl Formatter {
 
   pub fn format_html(&mut self, tree: &Program, style: String, shim: String) -> String {
     self.html = true;
+    self.inline_eval_counters.clear();
 
     let toc = tree.table_of_contents();
     let formatted_src = self.program(tree);
@@ -434,7 +448,7 @@ impl Formatter {
         }
       },
       ParagraphElement::EvalInlineMechCode(expr) => {
-        let code_id = hash_str(&format!("{:?}", expr));
+        let code_id = self.inline_eval_id();
         let result = self.expression(expr);
         if self.html {
           format!("<code id=\"{}\" class=\"mech-inline-mech-code\">{}</code>", code_id, result)

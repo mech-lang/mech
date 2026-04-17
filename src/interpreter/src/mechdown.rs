@@ -170,10 +170,20 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
   Ok(Value::Id(hash))
 }
 
+fn inline_eval_id(p: &Interpreter) -> u64 {
+  let next_ix = {
+    let mut counter = p.inline_eval_counter.borrow_mut();
+    let current = *counter;
+    *counter += 1;
+    current
+  };
+  hash_str(&format!("inline-eval:{}:{}", p.id, next_ix))
+}
+
 pub fn paragraph_element(element: &ParagraphElement, p: &Interpreter) -> MResult<(u64,Value)> {
   let result = match element {
     ParagraphElement::EvalInlineMechCode(expr) => {
-      let code_id = hash_str(&format!("{:?}", expr));
+      let code_id = inline_eval_id(p);
       match expression(&expr, None, p) {
         Ok(val) => (code_id,val),
         Err(e) => (code_id,Value::Empty), // the expression failed perhaps because the value isn't defined yet.
