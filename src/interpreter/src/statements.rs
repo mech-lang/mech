@@ -412,13 +412,16 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       }
       // Kind isn't checked
       x => {
-        let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_knd)])?;
+        let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
         convert_fxn.solve();
         let converted_result = convert_fxn.out();
         state_brrw.add_plan_step(convert_fxn);
         result = converted_result;
       },
     };
+    if matches!(target_knd, ValueKind::Enum(_, _)) && result.kind() != target_knd {
+      result = Value::Typed(Box::new(result), target_knd.clone());
+    }
     let detached_result = detach_variable_value(&result);
     // Save symbol to interpreter
     let val_ref = state_brrw.save_symbol(var_id, var_name.clone(), detached_result.clone(), var_def.mutable);

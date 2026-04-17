@@ -1260,6 +1260,28 @@ result := x?
   | *              => 0u64.
 result + 0u64
 "#, Value::U64(Ref::new(42u64)));
+
+#[test]
+fn interpret_tagged_union_variable_preserves_declared_kind_and_inline_display() {
+  let s = r#"
+<result> := :ok<u64> | :err<string>
+<option> := :some<result> | :none
+x<option> := :some(:ok(42u64))
+x
+"#;
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  let x_id = hash_str("x");
+  let x_value = intrp.symbols().borrow().get(x_id).unwrap();
+  let x_brrw = x_value.borrow();
+  assert!(matches!(x_brrw.kind(), ValueKind::Enum(_, _)));
+  let printed = x_brrw.pretty_print();
+  assert!(printed.contains(":some("));
+  assert!(printed.contains(":ok("));
+  assert_eq!(result.pretty_print(), printed);
+}
+
 test_interpreter!(interpret_tagged_union_function_input_enum_kind, r#"
 <result> := :ok<u64> | :err<string>
 <option> := :some<result> | :none

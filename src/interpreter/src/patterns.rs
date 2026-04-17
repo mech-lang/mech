@@ -241,6 +241,7 @@ pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -
 fn deep_detach_value(value: &Value) -> Value {
   match value {
     Value::MutableReference(reference) => deep_detach_value(&reference.borrow()),
+    Value::Typed(inner, _) => deep_detach_value(inner),
     _ => value.clone(),
   }
 }

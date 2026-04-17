@@ -1591,7 +1591,15 @@ impl Value {
       }
       #[cfg(feature = "tuple")]
       Value::Tuple(t) => {
-        let vals = t.borrow().elements.iter().map(|v| v.format_value_inline()).collect::<Vec<_>>();
+        let tuple = t.borrow();
+        if tuple.elements.len() == 2 {
+          if let Value::Atom(tag) = tuple.elements[0].as_ref() {
+            let tag = format!("{}", tag.borrow());
+            let payload = tuple.elements[1].format_value_inline();
+            return format!("{}({})", tag, payload);
+          }
+        }
+        let vals = tuple.elements.iter().map(|v| v.format_value_inline()).collect::<Vec<_>>();
         format!("({})", vals.join(", "))
       }
       #[cfg(feature = "enum")]
@@ -2413,7 +2421,7 @@ impl PrettyPrint for Value {
       #[cfg(feature = "table")]
       Value::Table(x)  => {return x.borrow().pretty_print();},
       #[cfg(feature = "tuple")]
-      Value::Tuple(x)  => {return x.borrow().pretty_print();},
+      Value::Tuple(_)  => {return self.format_value_inline();},
       #[cfg(feature = "record")]
       Value::Record(x) => {return x.borrow().pretty_print();},
       #[cfg(feature = "enum")]

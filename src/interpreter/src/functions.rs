@@ -813,6 +813,7 @@ fn collect_function_output(p: &Interpreter, fxn_def: &FunctionDefinition) -> MRe
 pub(crate) fn detach_value(value: &Value) -> Value {
   match value {
     Value::MutableReference(reference) => detach_value(&reference.borrow()),
+    Value::Typed(inner, _) => detach_value(inner),
     _ => value.clone(),
   }
 }

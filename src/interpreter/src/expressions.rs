@@ -923,6 +923,7 @@ pub fn match_expression(
     let source = expression(&match_expr.source, env, p)?;
     let detached_source = match &source {
         Value::MutableReference(reference) => reference.borrow().clone(),
+        Value::Typed(inner, _) => inner.as_ref().clone(),
         _ => source.clone(),
     };
     if !match_expr
