@@ -244,6 +244,34 @@ impl WasmMech {
     self.interpreter = new_interpreter(0);
   }
 
+  fn bind_ans_symbol_for_interpreter(&mut self, interpreter_id: u64, value: &Value) {
+    #[cfg(feature = "symbol_table")]
+    {
+      let resolved_value = match value {
+        Value::MutableReference(reference) => reference.borrow().clone(),
+        _ => value.clone(),
+      };
+      let ans_id = hash_str("ans");
+
+      if interpreter_id == 0 {
+        let symbols = self.interpreter.symbols();
+        let mut symbols_brrw = symbols.borrow_mut();
+        symbols_brrw.insert(ans_id, resolved_value, false);
+        symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
+        self.interpreter.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
+      } else {
+        let mut sub_interpreters = self.interpreter.sub_interpreters.borrow_mut();
+        if let Some(sub) = sub_interpreters.get_mut(&interpreter_id) {
+          let symbols = sub.symbols();
+          let mut symbols_brrw = symbols.borrow_mut();
+          symbols_brrw.insert(ans_id, resolved_value, false);
+          symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
+          sub.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
+        }
+      }
+    }
+  }
+
 #[cfg(feature = "repl")]
 #[wasm_bindgen]
 pub fn attach_repl(&mut self, repl_id: &str) {
@@ -974,7 +1002,10 @@ pub fn attach_repl(&mut self, repl_id: &str) {
 
           CURRENT_MECH.with(|mech_ref| {
             if let Some(ptr) = *mech_ref.borrow() {
-              unsafe { (*ptr).repl_history.push(repl_text.clone()); }
+              unsafe {
+                (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output_value);
+                (*ptr).repl_history.push(repl_text.clone());
+              }
             }
           });
 
