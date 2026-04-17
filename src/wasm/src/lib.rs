@@ -244,30 +244,6 @@ impl WasmMech {
     self.interpreter = new_interpreter(0);
   }
 
-  #[cfg(feature = "symbol_table")]
-  fn set_repl_ans(&mut self, value: &Value) {
-    let resolved_value = match value {
-      Value::MutableReference(reference) => reference.borrow().clone(),
-      _ => value.clone(),
-    };
-    let ans_id = hash_str("ans");
-    let symbols = self.interpreter.symbols();
-    let mut symbols_brrw = symbols.borrow_mut();
-    symbols_brrw.insert(ans_id, resolved_value, false);
-    symbols_brrw
-      .dictionary
-      .borrow_mut()
-      .insert(ans_id, "ans".to_string());
-    self
-      .interpreter
-      .dictionary()
-      .borrow_mut()
-      .insert(ans_id, "ans".to_string());
-  }
-
-  #[cfg(not(feature = "symbol_table"))]
-  fn set_repl_ans(&mut self, _value: &Value) {}
-
 #[cfg(feature = "repl")]
 #[wasm_bindgen]
 pub fn attach_repl(&mut self, repl_id: &str) {
@@ -673,17 +649,13 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             );
 
             let symbol_name = symbols_brrw.get_symbol_name_by_id(element_id).unwrap();
-            let ans_value = match &*output_brrw {
-              Value::MutableReference(reference) => reference.borrow().clone(),
-              _ => output_brrw.clone(),
-            };
 
             // Add prompt line
             let prompt_line = document.create_element("div").unwrap();
             prompt_line.set_class_name("repl-line");
             let input_span = document.create_element("span").unwrap();
             input_span.set_class_name("repl-code");
-            input_span.set_inner_html("ans");
+            input_span.set_inner_html(&symbol_name);
             prompt_line.append_child(&input_span).unwrap();
             if let Some(last_child) = last_child.clone() {
               mech_output.insert_before(&prompt_line, Some(&last_child)).unwrap();
@@ -704,11 +676,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             // Update REPL history
             CURRENT_MECH.with(|mech_ref| {
               if let Some(ptr) = *mech_ref.borrow() {
-                unsafe {
-                  let mech = &mut *ptr;
-                  mech.set_repl_ans(&ans_value);
-                  mech.repl_history.push("ans".to_string());
-                }
+                unsafe { (*ptr).repl_history.push(symbol_name.clone()); }
               }
             });
 
@@ -994,7 +962,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         });
 
         if let Some(output_value) = output {
-          let repl_text = "ans".to_string();
+          let repl_text = output_value.format_value_inline();
           let kind_str = html_escape(&format!("{}", output_value.kind()));
           let result_html = format!(
             "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
@@ -1025,11 +993,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
 
           CURRENT_MECH.with(|mech_ref| {
             if let Some(ptr) = *mech_ref.borrow() {
-              unsafe {
-                let mech = &mut *ptr;
-                mech.set_repl_ans(&output_value);
-                mech.repl_history.push(repl_text.clone());
-              }
+              unsafe { (*ptr).repl_history.push(repl_text.clone()); }
             }
           });
 
