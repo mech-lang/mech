@@ -258,6 +258,33 @@ fn value_matches_enum_variant(value: &Value, enum_id: u64, state: &ProgramState)
     short_variant == short_atom
   };
   match value {
+    Value::Enum(enum_value) => {
+      let enum_value_brrw = enum_value.borrow();
+      if enum_value_brrw.id != enum_id {
+        return false;
+      }
+      if enum_value_brrw.variants.len() != 1 {
+        return false;
+      }
+      let (variant_id, payload) = &enum_value_brrw.variants[0];
+      let (_, declared_payload_kind) = match my_enum.variants.iter().find(|(known_variant, _)| {
+        *known_variant == *variant_id
+      }) {
+        Some(v) => v,
+        None => return false,
+      };
+      match (payload, declared_payload_kind) {
+        (None, None) => true,
+        (Some(payload_value), Some(Value::Kind(expected_kind))) => match expected_kind {
+          ValueKind::Enum(inner_enum_id, _) => value_matches_enum_variant(payload_value, *inner_enum_id, state),
+          _ => {
+            payload_value.kind() == expected_kind.clone() ||
+            ConvertKind{}.compile(&vec![payload_value.clone(), Value::Kind(expected_kind.clone())]).is_ok()
+          }
+        },
+        _ => false,
+      }
+    }
     Value::Atom(atom_variant) => {
       let atom_brrw = atom_variant.borrow();
       let variant_id = atom_brrw.id();

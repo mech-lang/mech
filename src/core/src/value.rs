@@ -1598,6 +1598,17 @@ impl Value {
       Value::Enum(e) => {
         let enm = e.borrow();
         let dict = enm.names.borrow();
+        if enm.variants.len() == 1 {
+          let (variant_id, payload) = &enm.variants[0];
+          let variant_name = dict
+            .get(variant_id)
+            .map(|name| name.rsplit('/').next().unwrap_or(name).to_string())
+            .unwrap_or_else(|| format!("{}", variant_id));
+          return match payload {
+            Some(value) => format!(":{}({})", variant_name, value.format_value_inline()),
+            None => format!(":{}", variant_name),
+          };
+        }
         let name = dict.get(&enm.id).cloned().unwrap_or_else(|| format!("{}", enm.id));
         let vals = enm.variants.iter().map(|(id, v)| {
           let variant_name = dict.get(id).cloned().unwrap_or_else(|| format!("{}", id));
@@ -2548,6 +2559,8 @@ impl ToValue for Ref<R64> { fn to_value(&self) -> Value { Value::R64(self.clone(
 impl ToValue for Ref<C64> { fn to_value(&self) -> Value { Value::C64(self.clone()) } }
 #[cfg(feature = "atom")]
 impl ToValue for Ref<MechAtom> { fn to_value(&self) -> Value { Value::Atom(self.clone()) } }
+#[cfg(feature = "enum")]
+impl ToValue for Ref<MechEnum> { fn to_value(&self) -> Value { Value::Enum(self.clone()) } }
 
 impl ToValue for Ref<Value> { fn to_value(&self) -> Value { (*self.borrow()).clone() } }
 
