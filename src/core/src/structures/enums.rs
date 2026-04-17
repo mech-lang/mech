@@ -30,6 +30,13 @@ impl MechEnum {
   }
 
   pub fn kind(&self) -> ValueKind {
+    if self.variants.len() == 1 {
+      let variant_id = self.variants[0].0;
+      let names_brrw = self.names.borrow();
+      if let Some(variant_name) = names_brrw.get(&variant_id) {
+        return ValueKind::Enum(self.id, variant_name.clone());
+      }
+    }
     ValueKind::Enum(self.id, self.name())
   }
 
