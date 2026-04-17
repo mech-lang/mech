@@ -29,6 +29,15 @@ pub struct Formatter{
 
 impl Formatter {
 
+  fn inline_eval_id(expr: &Expression) -> u64 {
+    let mut tokens = expr.tokens();
+    if let Some(merged_token) = Token::merge_tokens(&mut tokens) {
+      hash_str(&format!("{:?}:{:?}", expr, merged_token.src_range))
+    } else {
+      hash_str(&format!("{:?}", expr))
+    }
+  }
+
   pub fn new() -> Formatter {
     Formatter {
       identifiers: HashMap::new(),
@@ -434,7 +443,7 @@ impl Formatter {
         }
       },
       ParagraphElement::EvalInlineMechCode(expr) => {
-        let code_id = hash_str(&format!("{:?}", expr));
+        let code_id = Formatter::inline_eval_id(expr);
         let result = self.expression(expr);
         if self.html {
           format!("<code id=\"{}\" class=\"mech-inline-mech-code\">{}</code>", code_id, result)

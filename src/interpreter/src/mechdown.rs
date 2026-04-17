@@ -170,10 +170,19 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
   Ok(Value::Id(hash))
 }
 
+fn inline_eval_id(expr: &Expression) -> u64 {
+  let mut tokens = expr.tokens();
+  if let Some(merged_token) = Token::merge_tokens(&mut tokens) {
+    hash_str(&format!("{:?}:{:?}", expr, merged_token.src_range))
+  } else {
+    hash_str(&format!("{:?}", expr))
+  }
+}
+
 pub fn paragraph_element(element: &ParagraphElement, p: &Interpreter) -> MResult<(u64,Value)> {
   let result = match element {
     ParagraphElement::EvalInlineMechCode(expr) => {
-      let code_id = hash_str(&format!("{:?}", expr));
+      let code_id = inline_eval_id(expr);
       match expression(&expr, None, p) {
         Ok(val) => (code_id,val),
         Err(e) => (code_id,Value::Empty), // the expression failed perhaps because the value isn't defined yet.
