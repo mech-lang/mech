@@ -1078,9 +1078,9 @@ a.mech-hyperlink:hover .mech-inline-code {
 .mech-match-arms {
     display: flex;
     flex-direction: column;
-    margin-left: -140px;
-    line-height: 18px;
+    margin-left: -6ch;
     color: var(--op-color);
+    line-height: 18px;
 }
 
 .mech-fsm-arms {
