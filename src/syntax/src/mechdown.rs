@@ -266,11 +266,21 @@ pub fn option_mapping(input: ParseString) -> ParseResult<(Identifier, MechString
   let (input, _) = whitespace0(input)?;
   let (input, _) = colon(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, value) = string(input)?;
+  let (input, value) = option_value(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = opt(comma)(input)?;
   let (input, _) = whitespace0(input)?;
   Ok((input, (key, value)))
+}
+
+// option-value := string | identifier ;
+pub fn option_value(input: ParseString) -> ParseResult<MechString> {
+  if let Ok((input, value)) = string(input.clone()) {
+    return Ok((input, value));
+  }
+  let (input, mut identifier_value) = identifier(input)?;
+  identifier_value.name.kind = TokenKind::String;
+  Ok((input, MechString { text: identifier_value.name }))
 }
 
 // img := "![", *text, "]", "(", +text, ")" , ?option-map ;
@@ -710,10 +720,19 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
         // get rid of the prefix and then treat the rest of the string after : as an identifier
         let rest = tag.trim_start_matches("mech").trim_start_matches("mec").trim_start_matches("🤖").trim_start_matches(":");
         
-        let config = if rest == "" {BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: false, hidden: false}}
-        else if rest == "disabled" { BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: true, hidden: false} }
-        else if rest == "hidden" { BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: false, hidden: true} }
-        else { BlockConfig { namespace_str: rest.to_string(), namespace: hash_str(rest), disabled: false, hidden: false} };
+        let mut config = if rest == "" {BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: false, hidden: false, output: true}}
+        else if rest == "disabled" { BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: true, hidden: false, output: true} }
+        else if rest == "hidden" { BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: false, hidden: true, output: true} }
+        else { BlockConfig { namespace_str: rest.to_string(), namespace: hash_str(rest), disabled: false, hidden: false, output: true} };
+
+        if let Some(options_map) = &options {
+          for (key, value) in &options_map.elements {
+            if key.to_string() == "output" {
+              let output_value = value.to_string().trim().trim_matches('"').to_ascii_lowercase();
+              config.output = !matches!(output_value.as_str(), "false" | "no" | "off" | "0");
+            }
+          }
+        }
 
         let mech_src = block_src.iter().collect::<String>();
         let graphemes = graphemes::init_source(&mech_src);
