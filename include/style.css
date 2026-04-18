@@ -379,6 +379,30 @@ h5.toc::before {
     display: inline-flex;
 }
 
+.mech-comp-bar {
+    color: var(--op-color);
+}
+
+.mech-generator-arrow {
+    color: var(--op-color);
+}
+
+.mech-matrix-comprehension {
+    display: inline-flex;
+    align-items: flex-end;
+    white-space: nowrap;
+    color: var(--op-color);
+}
+
+.mech-matrix-comprehension .mech-comp-expr,
+.mech-matrix-comprehension .mech-comp-quals {
+    display: inline-flex;
+}
+
+.mech-matrix-comprehension .mech-bracket.end {
+    margin-left: 0;
+}
+
 .mech-bracket.end {
     align-self: flex-end;
     margin-left: -10px;
