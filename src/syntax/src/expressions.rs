@@ -701,7 +701,7 @@ pub fn comprehension_qualifier(input: ParseString) -> ParseResult<ComprehensionQ
 pub fn generator(input: ParseString) -> ParseResult<ComprehensionQualifier> {
   let (input, ptrn) = pattern(input)?;
   let (input, _) = space_tab0(input)?;
-  let (input, _) = cut(tag("<-"))(input)?;
+  let (input, _) = cut(alt((generator_arrow, generator_arrow_u)))(input)?;
   let (input, _) = space_tab0(input)?;
   let (input, expr) = expression(input)?;
   Ok((input, ComprehensionQualifier::Generator((ptrn, expr))))

@@ -180,6 +180,8 @@ ws0_leaf!(output_operator_a, "=>", TokenKind::OutputOperator);
 ws0_leaf!(output_operator_u, "⇒", TokenKind::OutputOperator);
 ws0_leaf!(transition_operator_a, "->", TokenKind::TransitionOperator);
 ws0_leaf!(transition_operator_u, "→", TokenKind::TransitionOperator);
+ws0_leaf!(generator_arrow, "<-", TokenKind::GeneratorArrow);
+ws0_leaf!(generator_arrow_u, "←", TokenKind::GeneratorArrow);
 
 // transition_operator := "->" | "→" ;
 pub fn transition_operator(input: ParseString) -> ParseResult<Token> {
