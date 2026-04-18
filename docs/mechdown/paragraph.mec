@@ -20,6 +20,7 @@ Paragraphs support inline markup such as:
 - Inline elements
   - `Inline code`
   - {{inline-mech := syntax + "highlighting"}}
+  - {include/path.mec}
   - $$\pm\sqrt{inline^2 + equation^2}$$
 - Links and references
   - [Hyperlinks](https://mech-lang.org)
@@ -36,6 +37,21 @@ Mechdown supports references for footnotes, citations, and sections.
 - **Footnotes** use `[^label]` inline and `[^label]: definition` where defined.
 - **Citations** use `[LABEL]` inline and `[LABEL]: citation text` in definitions.
 - **Section references** use `§` followed by a section number or section label.
+
+3. Include disambiguation in `{...}`
+-------------------------------------------------------------------------------
+
+`{...}` can mean either an inline expression or a source include.
+
+- If the content contains `/` or ends with `.mec`, it is treated as include composition.
+- Otherwise it is treated as a normal inline Mech expression.
+
+Examples:
+
+```
+{1 + 1}            %% expression
+{parts/header.mec} %% include
+```
 
 (2.1) Example
 
