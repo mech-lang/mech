@@ -866,16 +866,56 @@ pub fn attach_repl(&mut self, repl_id: &str) {
     let window = web_sys::window().expect("global window does not exists");    
 		let document = window.document().expect("expecting a document on window"); 
     let inline_elements = document.get_elements_by_class_name("mech-inline-mech-code");
-    let out_values_brrw = self.interpreter.out_values.borrow();
     for j in 0..inline_elements.length() {
       let inline_block = inline_elements.get_with_index(j).unwrap();
       let inline_id = inline_block.id();
-      let inline_id: u64 = inline_id.parse().unwrap();
-      
-      let inline_output = match out_values_brrw.get(&inline_id) {
+      let parsed_id: Vec<&str> = inline_id.split(":").collect();
+      let (inline_output_id, inline_interpreter_id) = match parsed_id.as_slice() {
+        [output_id, interpreter_id] => {
+          match (output_id.parse::<u64>(), interpreter_id.parse::<u64>()) {
+            (Ok(output_id), Ok(interpreter_id)) => (output_id, interpreter_id),
+            _ => {
+              log!("Invalid inline output id format: {}", inline_id);
+              continue;
+            }
+          }
+        }
+        [output_id] => {
+          match output_id.parse::<u64>() {
+            Ok(output_id) => (output_id, 0),
+            Err(_) => {
+              log!("Invalid inline output id format: {}", inline_id);
+              continue;
+            }
+          }
+        }
+        _ => {
+          log!("Invalid inline output id format: {}", inline_id);
+          continue;
+        }
+      };
+      let out_values = match inline_interpreter_id {
+        0 => self.interpreter.out_values.clone(),
+        id => {
+          match self.interpreter.sub_interpreters.borrow().get(&id) {
+            Some(sub_interpreter) => sub_interpreter.out_values.clone(),
+            None => {
+              log!("No sub interpreter found for inline id: {}", id);
+              continue;
+            }
+          }
+        }
+      };
+      let out_values_brrw = out_values.borrow();
+
+      let inline_output = match out_values_brrw.get(&inline_output_id) {
         Some(value) => value,
         None => {
-          log!("No value found for inline output id: {}", inline_id);
+          log!(
+            "No value found for inline output id: {} in interpreter {}",
+            inline_output_id,
+            inline_interpreter_id
+          );
           continue;
         }
       };
@@ -916,8 +956,8 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         let inline_html = format!(
           "<span>{}</span><span class=\"mech-inline-expand\" id=\"{}:{}\">›</span>",
           compact,
-          inline_id,
-          0
+          inline_output_id,
+          inline_interpreter_id
         );
         inline_block.set_inner_html(&inline_html);
       }
