@@ -61,7 +61,7 @@ impl Functions {
 impl fmt::Debug for Functions {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f,"Functions...")?;
+    write!(f,"Functions…")?;
     Ok(())
   }
 }

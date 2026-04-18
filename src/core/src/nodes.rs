@@ -111,7 +111,7 @@ pub enum TokenKind {
   Percent, Period, Plus, PromptSigil,
   Question, QuestionSigil, Quote, QuoteSigil,
   RightAngle, RightBrace, RightBracket, RightParenthesis,
-  SectionSigil, Semicolon, Space, Slash, String, StrikeSigil, StrongSigil, SuccessSigil, SynthOperator,
+  SectionSigil, Semicolon, Space, SpreadOperator, Slash, String, StrikeSigil, StrongSigil, SuccessSigil, SynthOperator,
   Tab, Text, Tilde, TildeCodeBlockSigil, Title, TransitionOperator, True,
   UnderlineSigil, Underscore,
   WarningSigil,

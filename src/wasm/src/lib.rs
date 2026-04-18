@@ -909,7 +909,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
       } else {
         let compact = if formatted_output.chars().count() > 40 {
           let prefix = formatted_output.chars().take(40).collect::<String>();
-          format!("{} ... ", prefix.trim_end())
+          format!("{} … ", prefix.trim_end())
         } else {
           format!("{} ", formatted_output.trim())
         };

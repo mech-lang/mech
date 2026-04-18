@@ -47,8 +47,9 @@ pub fn pattern_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruc
   Ok((input, PatternTupleStruct{name: id, patterns}))
 }
 
+// spread-operator := "..." | "…" ;
 fn spread_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = alt((tag("..."), tag("…")))(input)?;
+  let (input, _) = alt((spread_operator_a, spread_operator_u))(input)?;
   Ok((input, ()))
 }
 
@@ -123,7 +124,7 @@ pub fn pattern_array(input: ParseString) -> ParseResult<PatternArray> {
     if tokens.iter().any(|token| matches!(token, PatternArrayToken::Spread)) {
       return Err(nom::Err::Error(ParseError::new(
         input,
-        "Cannot mix ... spread and | rest binding in an array pattern",
+        "Cannot mix … spread and | rest binding in an array pattern",
       )));
     }
 

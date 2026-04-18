@@ -460,7 +460,7 @@ pub fn kind_record(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_brace(input)?;
   let (input, _) = space_tab0(input)?;
   let (input, elements) = separated_list1(alt((list_separator,space_tab1)), nom_tuple((identifier, kind_annotation)))(input)?;
-  let (input, _) = opt(tag(",..."))(input)?;
+  let (input, _) = opt(tag(",…"))(input)?;
   let (input, _) = space_tab0(input)?;
   let (input, _) = right_brace(input)?;
   let elements = elements.into_iter().map(|(id, knd)| (id, knd.kind)).collect();

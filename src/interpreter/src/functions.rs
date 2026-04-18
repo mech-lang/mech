@@ -446,7 +446,7 @@ fn execute_function_match_arms(
                     .cloned()
                     .unwrap_or_else(|| variant_id.to_string());
                   if payload_kind.is_some() {
-                    format!(":{}(...)", variant_name)
+                    format!(":{}(…)", variant_name)
                   } else {
                     format!(":{}", variant_name)
                   }

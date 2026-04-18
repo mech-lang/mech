@@ -342,7 +342,7 @@ impl BuildProcess {
   pub fn start(&mut self) {
     self.start_time = Some(Instant::now());
     self.build_status = StepStatus::Running;
-    self.status_bar.set_message("Starting build...");
+    self.status_bar.set_message("Starting build…");
   }
 
   pub fn finish(&mut self) {
@@ -693,12 +693,12 @@ pub fn main() -> anyhow::Result<()> {
     build.add_build_stage(package_artifacts, 3);
     
     // Stage 1 - Prepare the build environment
-    status.set_message("Preparing environment...");
+    status.set_message("Preparing environment…");
     let mut prepare_environment_stage = build.stages.pop_front().unwrap();
     prepare_environment_stage.start();
 
     // Stage 2 and 3 - Download and build packages
-    status.set_message("Downloading and building packages...");
+    status.set_message("Downloading and building packages…");
     let mut download_stage = build.stages.pop_front().unwrap();
     let jh1 = thread::spawn(move || {
       download_stage.start();
@@ -712,17 +712,17 @@ pub fn main() -> anyhow::Result<()> {
     jh2.join();
 
     // Stage 4 - Build the project
-    status.set_message("Building project...");
+    status.set_message("Building project…");
     let mut build_stage_2 = build.stages.pop_front().unwrap();
     build_stage_2.start();
 
     // Stage 5 - Compile the Rust shim
-    status.set_message("Compiling shim...");
+    status.set_message("Compiling shim…");
     let mut compile_shim_stage = build.stages.pop_front().unwrap();
     compile_shim_stage.start();
 
     // Stage 6 - Package the executable (shim + zipped bytecode)
-    status.set_message("Packaging executable...");
+    status.set_message("Packaging executable…");
     let mut packaging_stage = build.stages.pop_front().unwrap();
     packaging_stage.start();
     if is_cancelled() {
@@ -823,7 +823,7 @@ fn prepare_build(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
   let step = steps.pop_front().unwrap();
   step.set_style(build_style());
   step.enable_steady_tick(Duration::from_millis(100));
-  step.set_message("Gathering source files...");
+  step.set_message("Gathering source files…");
 
   let exts = ["mec", "mpkg", "mecb", "mdoc", "mdb", "dll", "rlib", "m", "md", "🤖"];
   let sources = get_sources();
@@ -846,7 +846,7 @@ fn prepare_build(stage: &mut BuildStage, tx: mpsc::Sender<Vec<PathBuf>>) {
           all_files.push(file.to_path_buf());
           let n = count_clone.fetch_add(1, Ordering::SeqCst) + 1;
           if n % 25 == 0 {
-            step_thread.set_message(format!("Discovered {} files...", n));
+            step_thread.set_message(format!("Discovered {} files…", n));
           }
         };
 
@@ -976,7 +976,7 @@ fn parse_packages(stage: &mut BuildStage, rx: mpsc::Receiver<Vec<PathBuf>>, tx: 
     build_progress.inc_length(1);
     let pb = m.insert_after(&stage.header, ProgressBar::new_spinner());
     pb.set_style(build_style());
-    pb.set_message("Building project:...");
+    pb.set_message("Building project:…");
     pb.enable_steady_tick(Duration::from_millis(100));
     
     let build_progress = build_progress.clone();
@@ -1040,7 +1040,7 @@ fn build_project(stage: &mut BuildStage, rx: mpsc::Receiver<Program>) {
   build_progress.inc_length(1);
   let pb = m.insert_after(&stage.header, ProgressBar::new_spinner());
   pb.set_style(build_style());
-  pb.set_message("Building project:...");
+  pb.set_message("Building project:…");
   pb.enable_steady_tick(Duration::from_millis(100));
   
   let mut intrp = Interpreter::new(0);
@@ -1282,7 +1282,7 @@ fn main() -> Result<()> {
     let result = run_bytecode(&name, &data);
     println!("[shim] result: {:?}", result);
   }
-  println!("[shim] Press Enter to exit...");
+  println!("[shim] Press Enter to exit…");
   std::io::stdin().read_line(&mut String::new()).unwrap();
   Ok(())
 }
@@ -1306,7 +1306,7 @@ pub fn cargo_build(
   let pb = m.insert_after(&stage.last_step,ProgressBar::new_spinner());
   stage.last_step = pb.clone();
   pb.set_style(build_style());
-  pb.set_message("Running shim build...");
+  pb.set_message("Running shim build…");
   pb.enable_steady_tick(Duration::from_millis(100));
 
   let mut cmd = ProcessCommand::new("cargo");
@@ -1456,7 +1456,7 @@ fn package_artifacts(stage: &mut BuildStage, release: bool) {
       // Create the zip
       let pb = steps.pop_front().unwrap();
       pb.set_style(build_style());
-      pb.set_message("Compressing bytecode...");
+      pb.set_message("Compressing bytecode…");
       pb.enable_steady_tick(Duration::from_millis(100));
       let zip_bytes = match create_zip_from_pairs(&pairs) {
         Ok(b) => {
@@ -1475,7 +1475,7 @@ fn package_artifacts(stage: &mut BuildStage, release: bool) {
       // Find the built exe
       let pb = steps.pop_front().unwrap();
       pb.set_style(build_style());
-      pb.set_message("Locating built shim executable...");
+      pb.set_message("Locating built shim executable…");
       pb.enable_steady_tick(Duration::from_millis(100));
       let build_project_dir = get_build_project_dir();
 
@@ -1499,7 +1499,7 @@ fn package_artifacts(stage: &mut BuildStage, release: bool) {
       // Write the final exe
       let pb = steps.pop_front().unwrap();
       pb.set_style(build_style());
-      pb.set_message("Writing final executable...");
+      pb.set_message("Writing final executable…");
       pb.enable_steady_tick(Duration::from_millis(100));
       let output_name = get_output_name().unwrap_or("mech_app".to_string());
       let mode = if release { "release" } else { "debug" };

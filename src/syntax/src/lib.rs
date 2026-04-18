@@ -563,7 +563,7 @@ impl<'a> TextFormatter<'a> {
     }
 
     // other data for printing
-    let dots = "...";
+    let dots = "…";
     let indentation = " ";
     let vert_split1 = " │";
     let vert_split2 = "  ";
@@ -645,7 +645,7 @@ impl<'a> TextFormatter<'a> {
   }
 
   fn err_ending(d: usize) -> String {
-    let s = format!("... and {} other error{} not shown\n", d, if d == 1 {""} else {"s"});
+    let s = format!("… and {} other error{} not shown\n", d, if d == 1 {""} else {"s"});
     Self::heading_color(&s)
   }
 

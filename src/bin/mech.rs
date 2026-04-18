@@ -244,27 +244,27 @@ async fn main() -> Result<(), MechError> {
     let js_path = format!("{}/mech_wasm.js", wasm_pkg);
 
     // Load stylesheet
-    println!("{} Loading resources...", badge);
-    print!("{} Loading stylesheet...", badge);
+    println!("{} Loading resources…", badge);
+    print!("{} Loading stylesheet…", badge);
     let stylesheet = read_or_download(&stylesheet_path, &stylesheet_backup_url, Some(STYLESHEET.as_bytes()))
         .await?;
     let stylesheet_str = String::from_utf8(stylesheet)
         .map_err(|e| MechError::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
 
     // Load shim HTML
-    print!("{} Loading HTML shim...", badge);
+    print!("{} Loading HTML shim…", badge);
     let shim = read_or_download(&shim_path, &shim_backup_url, Some(SHIMHTML.as_bytes()))
         .await?;
     let shim_str = String::from_utf8(shim)
         .map_err(|e| MechError::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
 
     // Load WASM
-    print!("{} Loading WASM...", badge);
+    print!("{} Loading WASM…", badge);
     let wasm = read_or_download(&wasm_path, &wasm_backup_url, Some(MECHWASM))
         .await?;
 
     // Load JS shim
-    print!("{} Loading JS...", badge);
+    print!("{} Loading JS…", badge);
     let js = read_or_download(&js_path, &js_backup_url, Some(MECHJS))
         .await?;
 
@@ -377,10 +377,10 @@ async fn main() -> Result<(), MechError> {
     }
     let mut mechfs = MechFileSystem::new();
 
-    println!("{} Loading resources...", badge);
+    println!("{} Loading resources…", badge);
 
     // Load stylesheet
-    print!("{} Loading stylesheet...", badge);
+    print!("{} Loading stylesheet…", badge);
     let stylesheet = read_or_download(&stylesheet_path, &stylesheet_backup_url, Some(STYLESHEET.as_bytes()))
             .await?;
     let stylesheet_str = String::from_utf8(stylesheet).map_err(|e| {
@@ -394,7 +394,7 @@ async fn main() -> Result<(), MechError> {
     })?;
 
     // Load shim HTML
-    print!("{} Loading HTML shim...", badge);
+    print!("{} Loading HTML shim…", badge);
     let shim = read_or_download(&shim_path, &shim_backup_url, Some(SHIMHTML.as_bytes())).await?;
     let shim_str = String::from_utf8(shim).map_err(|e| {
       MechError::new(

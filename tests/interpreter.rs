@@ -173,14 +173,14 @@ label := state?
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_match_array_pattern_head,
-  "xs := [10u64 20u64 30u64]; y := xs? | [x ...] => x | * => 0u64.; y + 0u64",
+  "xs := [10u64 20u64 30u64]; y := xs? | [x …] => x | * => 0u64.; y + 0u64",
   Value::U64(Ref::new(10))
 );
 
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_match_array_pattern_last,
-  "xs := [10u64 20u64 30u64]; y := xs? | [... x] => x | * => 0u64.; y + 0u64",
+  "xs := [10u64 20u64 30u64]; y := xs? | [… x] => x | * => 0u64.; y + 0u64",
   Value::U64(Ref::new(30))
 );
 
@@ -225,10 +225,10 @@ test_interpreter!(
   "add-one(x<f64>) => <f64>\n  | x + 1.\n\nadd-one([1 2 3])",
   Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, 4.0], 1, 3))
 );
-test_interpreter!(interpret_function_array_pattern_arms, "head(xs<[u64]:1,3>) => <u64>\n  | [x ...] => x\n  | * => 0u64.\nhead([10u64 20u64 30u64]) + 0u64", Value::U64(Ref::new(10)));
-test_interpreter!(interpret_fsm_array_pattern_state_arguments, "#VecFsm(n<u64>) => <u64>\n  ├ :Scan(xs<[u64]:1,3>)\n  └ :Done(out<u64>).\n\n#VecFsm(n<u64>) -> :Scan([1u64 2u64 3u64])\n  :Scan([x ... y]) -> :Done(x + y)\n  :Done(out) => out.\n\n#VecFsm(0u64)", Value::U64(Ref::new(4)));
+test_interpreter!(interpret_function_array_pattern_arms, "head(xs<[u64]:1,3>) => <u64>\n  | [x …] => x\n  | * => 0u64.\nhead([10u64 20u64 30u64]) + 0u64", Value::U64(Ref::new(10)));
+test_interpreter!(interpret_fsm_array_pattern_state_arguments, "#VecFsm(n<u64>) => <u64>\n  ├ :Scan(xs<[u64]:1,3>)\n  └ :Done(out<u64>).\n\n#VecFsm(n<u64>) -> :Scan([1u64 2u64 3u64])\n  :Scan([x … y]) -> :Done(x + y)\n  :Done(out) => out.\n\n#VecFsm(0u64)", Value::U64(Ref::new(4)));
 test_interpreter!(interpret_fsm_accepts_unsized_vector_input, "#Echo(xs<[u64]>) => <u64>\n  ├ :Start(xs<[u64]>)\n  └ :Done(out<u64>).\n\n#Echo(xs<[u64]>) -> :Start(xs)\n  :Start([x ...]) -> :Done(x)\n  :Done(out) => out.\n\n#Echo([5u64 3u64 8u64 1u64])", Value::U64(Ref::new(5)));
-test_interpreter!(interpret_fsm_array_spread_reconstruction_keeps_scalar_guards, "#Demo(arr<[u64]>) => <u64>\n  ├ :Pass(arr<[u64]>)\n  └ :Done(out<u64>).\n\n#Demo(arr<[u64]>) -> :Pass(arr)\n  :Pass([a, b | tail])\n    ├ a > b -> :Pass([a | tail])\n    └ * -> :Done(0u64)\n  :Pass([x ...]) -> :Done(x)\n  :Done(out) => out.\n\n#Demo([5u64 3u64 8u64 1u64])", Value::U64(Ref::new(0)));
+test_interpreter!(interpret_fsm_array_spread_reconstruction_keeps_scalar_guards, "#Demo(arr<[u64]>) => <u64>\n  ├ :Pass(arr<[u64]>)\n  └ :Done(out<u64>).\n\n#Demo(arr<[u64]>) -> :Pass(arr)\n  :Pass([a, b | tail])\n    ├ a > b -> :Pass([a | tail])\n    └ * -> :Done(0u64)\n  :Pass([x …]) -> :Done(x)\n  :Done(out) => out.\n\n#Demo([5u64 3u64 8u64 1u64])", Value::U64(Ref::new(0)));
 test_interpreter!(interpret_fsm_bubble_sort_returns_typed_u64_matrix, "#bubble-sort(arr<[u64]>) => <[u64]>\n  ├ :Start(arr<[u64]>)\n  ├ :Pass(arr<[u64]>, acc<[u64]>, swaps<u64>)\n  ├ :Next(arr<[u64]>, swaps<u64>)\n  ├ :Reverse(arr<[u64]>, acc<[u64]>, swaps<u64>)\n  └ :Done(arr<[u64]>).\n\n#bubble-sort(arr) -> :Start(arr)\n  :Start(arr) -> :Pass(arr, [], 0u64)\n  :Pass([a, b | tail], acc, swaps)\n    ├ a > b -> :Pass([a | tail], [b | acc], swaps + 1u64)\n    └ *     -> :Pass([b | tail], [a | acc], swaps)\n  :Pass([x], acc, swaps) -> :Next([x | acc], swaps)\n  :Pass([], acc, swaps)  -> :Next(acc, swaps)\n  :Next(arr, swaps) -> :Reverse(arr, [], swaps)\n  :Reverse([x | tail], acc, swaps) -> :Reverse(tail, [x | acc], swaps)\n  :Reverse([], acc, 0u64)     -> :Done(acc)\n  :Reverse([], acc, swaps) -> :Pass(acc, [], 0u64)\n  :Done(arr) => arr.\n\n#bubble-sort([5u64 3u64 8u64 1u64])", Value::MatrixU64(Matrix::from_vec(vec![1, 3, 5, 8], 1, 4)));
 test_interpreter!(interpret_fsm_bubble_sort_assigns_matrix_value, "#bubble-sort(arr<[u64]>) => <[u64]>
   ├ :Start(arr<[u64]>)
@@ -1169,7 +1169,7 @@ test_interpreter!(interpret_user_function_input_annotation_optional_promotion, r
 x := [1u64 2u64 3u64]
 head(x<[u64]?>) => <u64?>
   | [] => _
-  | [h ...] => h
+  | [h …] => h
   | _ => _.
 head(x)
 "#, Value::U64(Ref::new(1u64)));

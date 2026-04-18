@@ -324,7 +324,7 @@ impl Interpreter {
       for line in &lines[0..10] {
         println!("{}", line);
       }
-      println!("...");
+      println!("…");
       for line in &lines[lines.len() - 10..] {
         println!("{}", line);
       }

@@ -47,7 +47,7 @@ pub fn pattern_matches_value(pattern: &Pattern, value: &Value, env: &mut Environ
 // Takes a semantics mode. Dispatches on pattern kind:
 // Wildcard - always succeeds, binds nothing.
 // - Tuple - recursively matches element-wise against a Value::Tuple, requiring equal arity.
-// - Array - matches prefix and suffix element-wise against any matrix-like value, with optional spread binding (...) for the middle slice.
+// - Array - matches prefix and suffix element-wise against any matrix-like value, with optional spread binding (…) for the middle slice.
 // - Expression(Var()) - if the variable is already in the environment, checks equality (used for repeated variable patterns).
 // - Expression(other) - attempts to extract a variable id from more complex expression wrappers (parentheticals, single-term formulas) and handles them like Var.
 // - TupleStruct - matches a tagged tuple

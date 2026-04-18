@@ -301,7 +301,7 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
         let vec_brrw = vec.borrow();
         let vec_str = if vec_brrw.ncols() > 20 {
           let mut vec_str = vec_brrw.row(0).iter().take(10).chain(vec_brrw.row(0).iter().rev().take(9).rev()).map(|x| x.pretty_print()).collect::<Vec<_>>();
-          vec_str.insert(10,"...".to_string());
+          vec_str.insert(10,"…".to_string());
           vec_str
         } else {
           vec_brrw.row(0).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()
@@ -319,7 +319,7 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
         let vec_brrw = vec.borrow();
         let vec_str = if vec_brrw.nrows() > 20 {
           let mut vec_str = vec_brrw.column(0).iter().take(10).chain(vec_brrw.column(0).iter().rev().take(9).rev()).map(|x| x.pretty_print()).collect::<Vec<_>>();
-          vec_str.insert(10,"...".to_string());
+          vec_str.insert(10,"…".to_string());
           vec_str
         } else {
           vec_brrw.column(0).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()
