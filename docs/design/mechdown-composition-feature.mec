@@ -1,0 +1,80 @@
+# Mechdown Source Composition Design
+
+This design introduces source-level composition for Mechdown using `{...}` include syntax.
+
+## Goals
+
+- Allow a `.mec` file to include other `.mec` files as source, before parsing/evaluation.
+- Preserve current runtime/evaluator behavior by feeding one expanded source string into existing `parser::parse`.
+- Resolve include paths relative to the file that contains the include.
+- Support nested includes and detect circular include chains.
+
+## Current Pipeline (Codebase-Specific)
+
+Today, local `.mec` files are loaded through:
+
+- `MechSources::add_source` -> `read_mech_source_file` in `src/mechfs.rs`.
+- `read_mech_source_file` returns `MechSourceCode::String(buffer)` for `.mec`.
+- Parsing happens later in `to_tree_and_html` / `reload_source` via `parser::parse(...)`.
+
+This means the cleanest integration point is **inside `read_mech_source_file` for `.mec` files**, so all existing parse/eval call sites automatically receive expanded source without changing parser or interpreter interfaces.
+
+## Syntax and Disambiguation
+
+Within `{...}`:
+
+- Treat as include if content ends with `.mec`.
+- Otherwise treat as a normal Mech expression and keep unchanged.
+
+Examples:
+
+- `{foo/bar.mec}` -> include.
+- `{foo/bar}` -> expression (valid Mech path variable form).
+- `{1+1}` -> expression (unchanged).
+
+## Include Resolution Rules
+
+- For an include found in file `A`, resolve path relative to `A`’s parent directory.
+- If included file `B` contains includes, resolve those relative to `B`.
+- Expansion is recursive depth-first.
+
+## Error Behavior
+
+- Circular include chain (e.g. `a -> b -> a`) -> error message:
+  - `Circular include detected`
+- Include cannot be loaded/opened -> error message:
+  - `Include failed: <path-from-braces>`
+
+Implementation will use `GenericError` via `MechError` to keep behavior consistent with existing error propagation in loader code.
+
+## Proposed Implementation
+
+Add helper functions in `src/mechfs.rs`:
+
+1. `looks_like_mech_include(content: &str) -> bool`
+2. `expand_mechdown_includes(path: &Path) -> MResult<String>`
+3. Recursive helper:
+   - tracks active include stack (`Vec<PathBuf>`) of canonical file paths.
+   - scans source for balanced `{...}` segments.
+   - replaces include segments with recursively expanded source.
+
+Then modify `.mec` branch in `read_mech_source_file`:
+
+- Replace direct `read_to_string` return with `expand_mechdown_includes(path)`.
+- Return `MechSourceCode::String(expanded_source)`.
+
+## Why This Placement
+
+- Works for CLI/project loads and watch reloads because both flow through `read_mech_source_file`.
+- No parser grammar churn required.
+- Keeps composition as a pre-parse build step, exactly matching requested semantics.
+
+## Test Plan
+
+Add unit tests in `src/mechfs.rs` for:
+
+- basic include expansion
+- nested include resolution with per-file relative paths
+- disambiguation (`{1+1}` should stay unchanged)
+- circular include detection message
+- missing include failure message

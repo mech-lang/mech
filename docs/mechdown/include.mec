@@ -1,0 +1,77 @@
+include-composition
+===============================================================================
+
+%% Source-level composition allows a Mechdown document to splice other `.mec` files into itself before parsing.
+
+1. Syntax
+-------------------------------------------------------------------------------
+
+Use `{...}` with a file-like target:
+
+```
+{foo/bar.mec}
+```
+
+Inside `{...}`:
+
+- If content ends in `.mec`, it is treated as an include.
+- Otherwise, it is treated as normal inline Mech code.
+
+Examples:
+
+```
+{6 * 7}          %% Inline expression (evaluated normally)
+{foo/bar}        %% Inline expression (variable/operator path form)
+{chapter.mec}    %% Include (ends with .mec)
+```
+
+2. Semantics
+-------------------------------------------------------------------------------
+
+Includes are **composition-time** source splices:
+
+- Included files are loaded as raw Mechdown source.
+- Their source is inserted in place of the include token.
+- Includes are expanded recursively until no include tokens remain.
+- The final combined source is parsed/evaluated once.
+
+This is not runtime evaluation of included files and not rendered-output injection.
+
+3. Path resolution
+-------------------------------------------------------------------------------
+
+- Include paths are resolved relative to the file that contains the include.
+- Nested includes resolve relative to their own containing file.
+
+4. Safety and errors
+-------------------------------------------------------------------------------
+
+- Circular include chains fail with:
+  - `Circular include detected`
+- Missing/unreadable includes fail with:
+  - `Include failed: <path>`
+
+5. Example
+-------------------------------------------------------------------------------
+
+`main.mec`:
+
+```
+Hello
+{foo/bar.mec}
+World
+```
+
+`foo/bar.mec`:
+
+```
+This is included.
+```
+
+Expanded source:
+
+```
+Hello
+This is included.
+World
+```
