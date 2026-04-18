@@ -1192,6 +1192,11 @@ li p {
     margin-bottom: 0px;
 }
 
+.mech-fenced-mech-block.no-output .mech-code-block {
+    border-radius: 10px;
+    border-bottom: 1px solid #888f92;
+}
+
 .mech-block-output {
     margin-top: 0px;
     background-color: #222A30; 

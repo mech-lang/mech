@@ -529,11 +529,16 @@ impl Formatter {
         } else {
           "".to_string()
         };
-        format!("<div id=\"{}\" class=\"mech-fenced-mech-block\"{}>
+        let block_class = if block.config.output {
+          "mech-fenced-mech-block"
+        } else {
+          "mech-fenced-mech-block no-output"
+        };
+        format!("<div id=\"{}\" class=\"{}\"{}>
           {}
           <div class=\"mech-code-block\">{}</div>
           {}
-        </div>", block_id, style_attr, namespace_str, src, output_node)
+        </div>", block_id, block_class, style_attr, namespace_str, src, output_node)
       }
     } else {
       format!("```mech{}\n{}\n```", src, format!(":{}", disabled_tag))
