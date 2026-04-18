@@ -852,6 +852,11 @@ code {
     box-shadow: none;
 }
 
+.mech-fenced-mech-block.no-output .mech-code-block {
+    border-radius: 10px;
+    border-bottom: 1px solid var(--code-border-color);
+}
+
 .mech-inline-mech-code {
     background-color: var(--code-background-color);
     border: 1px solid var(--inline-code-border-color);
