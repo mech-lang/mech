@@ -498,13 +498,18 @@ impl Formatter {
           let style_str = option_map
             .elements
             .iter()
+            .filter(|(k, _)| k.to_string() != "output")
             .map(|(k, v)| {
               let clean_value = v.to_string().trim_matches('"').to_string();
               format!("{}: {}", k.to_string(), clean_value)
             })
             .collect::<Vec<_>>()
             .join("; ");
-          format!(" style=\"{}\"", style_str)
+          if style_str.is_empty() {
+            "".to_string()
+          } else {
+            format!(" style=\"{}\"", style_str)
+          }
         }
         _ => "".to_string(),
       };
@@ -519,11 +524,16 @@ impl Formatter {
         } else {
           format!("<div class=\"mech-code-block-namespace\"><a href=\"#{}\">{}</a></div>", block_id, namespace_str)
         };
+        let output_node = if block.config.output {
+          format!("<div class=\"mech-block-output\" id=\"{}:{}\"></div>", output_id, intrp_id)
+        } else {
+          "".to_string()
+        };
         format!("<div id=\"{}\" class=\"mech-fenced-mech-block\"{}>
           {}
           <div class=\"mech-code-block\">{}</div>
-          <div class=\"mech-block-output\" id=\"{}:{}\"></div>
-        </div>", block_id, style_attr, namespace_str, src, output_id, intrp_id)
+          {}
+        </div>", block_id, style_attr, namespace_str, src, output_node)
       }
     } else {
       format!("```mech{}\n{}\n```", src, format!(":{}", disabled_tag))

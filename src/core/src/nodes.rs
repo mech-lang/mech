@@ -496,6 +496,7 @@ pub struct BlockConfig {
   pub namespace: u64,
   pub disabled: bool,
   pub hidden: bool,
+  pub output: bool,
 }
 
 pub type Footnote = (Token, Vec<Paragraph>);
