@@ -451,7 +451,8 @@ impl Formatter {
         let code_id = self.inline_eval_id();
         let result = self.expression(expr);
         if self.html {
-          format!("<code id=\"{}\" class=\"mech-inline-mech-code\">{}</code>", code_id, result)
+          let element_id = format!("{}:{}", code_id, self.interpreter_id);
+          format!("<code id=\"{}\" class=\"mech-inline-mech-code\">{}</code>", element_id, result)
         } else {
           format!("{{{}}}", result)
         }

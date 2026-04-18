@@ -866,16 +866,56 @@ pub fn attach_repl(&mut self, repl_id: &str) {
     let window = web_sys::window().expect("global window does not exists");    
 		let document = window.document().expect("expecting a document on window"); 
     let inline_elements = document.get_elements_by_class_name("mech-inline-mech-code");
-    let out_values_brrw = self.interpreter.out_values.borrow();
     for j in 0..inline_elements.length() {
       let inline_block = inline_elements.get_with_index(j).unwrap();
       let inline_id = inline_block.id();
-      let inline_id: u64 = inline_id.parse().unwrap();
-      
-      let inline_output = match out_values_brrw.get(&inline_id) {
+      let parsed_id: Vec<&str> = inline_id.split(":").collect();
+      let (inline_output_id, inline_interpreter_id) = match parsed_id.as_slice() {
+        [output_id, interpreter_id] => {
+          match (output_id.parse::<u64>(), interpreter_id.parse::<u64>()) {
+            (Ok(output_id), Ok(interpreter_id)) => (output_id, interpreter_id),
+            _ => {
+              log!("Invalid inline output id format: {}", inline_id);
+              continue;
+            }
+          }
+        }
+        [output_id] => {
+          match output_id.parse::<u64>() {
+            Ok(output_id) => (output_id, 0),
+            Err(_) => {
+              log!("Invalid inline output id format: {}", inline_id);
+              continue;
+            }
+          }
+        }
+        _ => {
+          log!("Invalid inline output id format: {}", inline_id);
+          continue;
+        }
+      };
+      let out_values = match inline_interpreter_id {
+        0 => self.interpreter.out_values.clone(),
+        id => {
+          match self.interpreter.sub_interpreters.borrow().get(&id) {
+            Some(sub_interpreter) => sub_interpreter.out_values.clone(),
+            None => {
+              log!("No sub interpreter found for inline id: {}", id);
+              continue;
+            }
+          }
+        }
+      };
+      let out_values_brrw = out_values.borrow();
+
+      let inline_output = match out_values_brrw.get(&inline_output_id) {
         Some(value) => value,
         None => {
-          log!("No value found for inline output id: {}", inline_id);
+          log!(
+            "No value found for inline output id: {} in interpreter {}",
+            inline_output_id,
+            inline_interpreter_id
+          );
           continue;
         }
       };
@@ -909,21 +949,135 @@ pub fn attach_repl(&mut self, repl_id: &str) {
       } else {
         let compact = if formatted_output.chars().count() > 40 {
           let prefix = formatted_output.chars().take(40).collect::<String>();
-          format!("{} … ", prefix.trim_end())
+          format!("{} ... ", prefix.trim_end())
         } else {
           format!("{} ", formatted_output.trim())
         };
         let inline_html = format!(
           "<span>{}</span><span class=\"mech-inline-expand\" id=\"{}:{}\">›</span>",
           compact,
-          inline_id,
-          0
+          inline_output_id,
+          inline_interpreter_id
         );
         inline_block.set_inner_html(&inline_html);
       }
     }
     #[cfg(feature = "clickable_symbol_listeners")]
     self.add_inline_value_clickable_listeners();
+  }
+
+  #[cfg(all(feature = "inline_output_values", feature = "clickable_symbol_listeners"))]
+  #[wasm_bindgen]
+  pub fn add_inline_value_clickable_listeners(&self) {
+    let window = web_sys::window().expect("global window does not exist");
+    let document = window.document().expect("expecting a document on window");
+    let clickable_elements = document.get_elements_by_class_name("mech-inline-expand");
+
+    for i in 0..clickable_elements.length() {
+      let element = clickable_elements.get_with_index(i).unwrap();
+      if element.get_attribute("data-click-bound").is_some() {
+        continue;
+      }
+      element.set_attribute("data-click-bound", "true").unwrap();
+      let id = element.id();
+      let parsed_id: Vec<&str> = id.split(":").collect();
+      if parsed_id.len() != 2 {
+        continue;
+      }
+      let output_id = parsed_id[0].parse::<u64>().unwrap();
+      let interpreter_id = parsed_id[1].parse::<u64>().unwrap();
+
+      let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+        let window = web_sys::window().unwrap();
+        let document = window.document().unwrap();
+        let mech_output = document.get_element_by_id("mech-output").unwrap();
+        let last_child = mech_output.last_child();
+
+        let output = CURRENT_MECH.with(|mech_ref| {
+          if let Some(ptr) = *mech_ref.borrow() {
+            unsafe {
+              let mech = &*ptr;
+              let out_values = match interpreter_id {
+                0 => mech.interpreter.out_values.clone(),
+                id => match mech.interpreter.sub_interpreters.borrow().get(&id) {
+                  Some(sub) => sub.out_values.clone(),
+                  None => return None,
+                },
+              };
+              return out_values.borrow().get(&output_id).cloned();
+            }
+          }
+          None
+        });
+
+        if let Some(output_value) = output {
+          let repl_text = output_value.format_value_inline();
+          let kind_str = html_escape(&format!("{}", output_value.kind()));
+          let result_html = format!(
+            "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
+            kind_str,
+            output_value.to_html()
+          );
+
+          let prompt_line = document.create_element("div").unwrap();
+          prompt_line.set_class_name("repl-line");
+          let input_span = document.create_element("span").unwrap();
+          input_span.set_class_name("repl-code");
+          input_span.set_inner_html(&repl_text);
+          prompt_line.append_child(&input_span).unwrap();
+          if let Some(last_child) = last_child.clone() {
+            mech_output.insert_before(&prompt_line, Some(&last_child)).unwrap();
+          } else {
+            mech_output.append_child(&prompt_line).unwrap();
+          }
+
+          let result_line = document.create_element("div").unwrap();
+          result_line.set_class_name("repl-result");
+          result_line.set_inner_html(&result_html);
+          if let Some(last_child) = last_child {
+            mech_output.insert_before(&result_line, Some(&last_child)).unwrap();
+          } else {
+            mech_output.append_child(&result_line).unwrap();
+          }
+
+          CURRENT_MECH.with(|mech_ref| {
+            if let Some(ptr) = *mech_ref.borrow() {
+              unsafe {
+                (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output_value);
+                (*ptr).repl_history.push(repl_text.clone());
+              }
+            }
+          });
+
+          let repl_width = mech_output.client_width();
+          if repl_width == 0 {
+            let modal = document.create_element("div").unwrap();
+            modal.set_class_name("mech-modal");
+            modal.set_inner_html(&result_html);
+            let x = event.client_x();
+            let y = event.client_y();
+            modal
+              .set_attribute("style", &format!("position:absolute; top:{}px; left:{}px;", y, x))
+              .unwrap();
+            document.body().unwrap().append_child(&modal).unwrap();
+            let modal_clone = modal.clone();
+            let close_closure = Closure::wrap(Box::new(move |_event: web_sys::Event| {
+              modal_clone.remove();
+            }) as Box<dyn FnMut(_)>);
+            modal
+              .add_event_listener_with_callback("click", close_closure.as_ref().unchecked_ref())
+              .unwrap();
+            close_closure.forget();
+          }
+          mech_output.set_scroll_top(mech_output.scroll_height());
+        }
+      }) as Box<dyn FnMut(_)>);
+
+      element
+        .add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())
+        .unwrap();
+      closure.forget();
+    }
   }
 
   #[cfg(all(feature = "inline_output_values", feature = "clickable_symbol_listeners"))]
