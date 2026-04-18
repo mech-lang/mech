@@ -2014,12 +2014,12 @@ impl Formatter {
 
     if self.html {
       format!(
-        "<span class=\"mech-matrix-comprehension\">\\
-          <span class=\"mech-bracket start\">[</span>\\
-          <span class=\"mech-comp-expr\">{}</span> \\
-          <span class=\"mech-comp-bar\">|</span> \\
-          <span class=\"mech-comp-quals\">{}</span>\\
-          <span class=\"mech-bracket end\">]</span>\\
+        "<span class=\"mech-matrix-comprehension\">
+          <span class=\"mech-bracket start\">[</span>
+          <span class=\"mech-comp-expr\">{}</span>
+          <span class=\"mech-comp-bar\">|</span>
+          <span class=\"mech-comp-quals\">{}</span>
+          <span class=\"mech-bracket end\">]</span>
         </span>",
         expr, quals
       )
@@ -2050,13 +2050,13 @@ impl Formatter {
       format!(
         "<span class=\"mech-generator\">\
           <span class=\"mech-generator-pattern\">{}</span>\
-          <span class=\"mech-generator-arrow\"> &lt;- </span>\
+          <span class=\"mech-generator-arrow\"> ← </span>\
           <span class=\"mech-generator-expression\">{}</span>\
         </span>",
         p, e
       )
     } else {
-      format!("{} <- {}", p, e)
+      format!("{} ← {}", p, e)
     }
   }
 
