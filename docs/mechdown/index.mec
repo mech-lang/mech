@@ -46,6 +46,7 @@ Mechdown syntax is composed of:
 - **Structural elements**: titles, sections, subsections
 - **Block elements**: paragraphs, lists, code blocks, tables, figures, images, thematic breaks, equations, callouts, diagrams
 - **Inline elements**: emphasis, inline code, links, inline equations, references
+- **Composition**: source-level `.mec` includes using `{path/to/file.mec}`
 
 Most elements are line-oriented and intentionally readable in raw form.
 
@@ -73,3 +74,4 @@ Most elements are line-oriented and intentionally readable in raw form.
 - [Equation](/mechdown/equation.html)
 - [Callout Block](/mechdown/callout-block.html)
 - [Diagram](/mechdown/diagram.html)
+- [Include Composition](/mechdown/include.html)
