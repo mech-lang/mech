@@ -99,7 +99,7 @@ pub enum TokenKind {
   Dash, DefineOperator, Digit, Dollar,
   Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Error, ErrorSigil, EscapedChar, Exclamation, 
   False, FloatLeft, FloatRight, FootnotePrefix,
-  GenOperator, Grave, GraveCodeBlockSigil,
+  GenOperator, GeneratorArrow, Grave, GraveCodeBlockSigil,
   HashTag, HighlightSigil, HttpPrefix,
   IdeaSigil, Identifier, ImgPrefix, InfoSigil, InlineCode, 
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
