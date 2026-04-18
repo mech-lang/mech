@@ -1622,6 +1622,8 @@ hyperlink := "[", +text, "]", "(", +text, ")" ;
 raw-hyperlink := http-prefix, +text ;
 eval-inline-mech-cdoe := "{", expression, "}" ;
 inline-mech-cdoe := "{{", expression, "}}" ;
+include-inline-mech-source := "{", include-target, "}" ;
+include-target := +text ;
 ```
 
 Beyond raw text, paragraphs also can contain various markup which indicates inline elements. Mechdown supports the following inline markup:
@@ -2046,6 +2048,8 @@ This renders as:
 ```ebnf
 eval-inline-mech-cdoe := "{", ws0, expression, ws0, "}" ;
 inline-mech-cdoe := "{{", ws0, expression, ws0, "}}" ;
+include-inline-mech-source := "{", ws0, include-target, ws0, "}" ;
+include-target := +text ;
 mech-code := mech-code-alt, ("\n" | ";" | comment) ;
 mech-code-alt := fsm-specification | fsm-implementation | function-define | statement | expression | comment ;
 ```
@@ -2122,6 +2126,13 @@ Mechdown supports inline Mech code, which can be used to embed Mech expressions 
 
 - `{{expression}}`: This syntax is used for inline Mech code that should be syntax highlighted but not evaluated. It is useful for documentation purposes where you want to show Mech code without executing it.
 - `{expression}`: This syntax is used for inline Mech code that should be evaluated and its result displayed within the paragraph. It allows for dynamic content generation based on Mech expressions. If an interpreter is not available, the code will be displayed as-if it were a syntax-highlighted block.
+
+When parsing `{...}`, Mechdown applies include disambiguation before evaluation:
+
+- If the content ends with `.mec`, `{...}` is treated as a source include target.
+- Otherwise, `{...}` is treated as an inline expression.
+
+Include targets are resolved relative to the including file. Expansion is recursive, and nested includes resolve relative to their own containing files. Circular chains are rejected with `Circular include detected`, and missing includes are rejected with `Include failed: <path>`.
 
 (10.9.2.1) Examples
 
