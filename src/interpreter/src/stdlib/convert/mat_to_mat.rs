@@ -312,18 +312,34 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
               let out = Value::MatrixU64(Matrix::from_vec(converted, shape[0], shape[1]));
               return Ok(Box::new(ConvertMatPassthrough { out: Ref::new(out) }));
             }
+            #[cfg(feature = "f64")]
+            ValueKind::F64 => {
+              let converted = source_matrix
+                .as_vec()
+                .into_iter()
+                .map(|value| match value {
+                  Value::Empty | Value::EmptyKind(_) => Ok(0.0f64),
+                  Value::F64(v) => Ok(*v.borrow()),
+                  other => other
+                    .convert_to(&ValueKind::F64)
+                    .and_then(|v| match v { Value::F64(x) => Some(*x.borrow()), _ => None })
+                    .ok_or_else(|| MechError::new(UnhandledFunctionArgumentKind2 { arg: (source_value.kind(), target_kind.clone()), fxn_name: "convert/mat-to-mat".to_string() }, None).with_compiler_loc()),
+                })
+                .collect::<MResult<Vec<f64>>>()?;
+              let shape = source_matrix.shape();
+              let out = Value::MatrixF64(Matrix::from_vec(converted, shape[0], shape[1]));
+              return Ok(Box::new(ConvertMatPassthrough { out: Ref::new(out) }));
+            }
             _ => {}
           }
         }
       }
       if let ValueKind::Matrix(target_element_kind, target_dims) = &target_kind {
         if let ValueKind::Matrix(source_element_kind, _) = source_value.kind() {
-          let source_matches_target = source_element_kind.is_convertible_to(target_element_kind.as_ref())
-            || matches!(
-              (source_element_kind.as_ref(), target_element_kind.as_ref()),
-              (ValueKind::Option(inner_kind), target_kind) if inner_kind.as_ref().is_convertible_to(target_kind)
-            );
-          if target_dims.is_empty() && source_matches_target {
+          if target_dims.is_empty()
+            && source_element_kind == *target_element_kind
+            && !matches!(source_value, Value::MatrixValue(_))
+          {
             return Ok(Box::new(ConvertMatPassthrough { out: Ref::new(source_value.clone()) }));
           }
         }

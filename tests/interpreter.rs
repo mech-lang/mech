@@ -150,6 +150,32 @@ fn interpret_option_matrix_literal_unwraps_to_u64_defaults() {
     Value::MatrixU64(Matrix::from_vec(vec![0, 2, 0, 3, 0, 4], 1, 6))
   );
 }
+#[test]
+fn interpret_option_matrix_literal_unwraps_to_typed_f64_defaults() {
+  let s = "x<[f64?]> := [_ 2 _ 3 _ 4]\n\nunwrapped<[f64]> := x?\n  | x => x\n  | * => 0.\n\nunwrapped";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  let detached = match result {
+    Value::MutableReference(v) => v.borrow().clone(),
+    value => value,
+  };
+  assert_eq!(
+    detached,
+    Value::MatrixF64(Matrix::from_vec(vec![0.0, 2.0, 0.0, 3.0, 0.0, 4.0], 1, 6))
+  );
+}
+#[test]
+fn interpret_option_matrix_literal_unwraps_to_inferred_f64_defaults() {
+  let s = "x<[f64?]> := [_ 2 _ 3 _ 4]\n\nunwrapped := x?\n  | x => x\n  | * => 0.\n\nunwrapped";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  assert_eq!(
+    result.deref_kind(),
+    ValueKind::Matrix(Box::new(ValueKind::F64), vec![1, 6])
+  );
+}
 test_interpreter!(
   interpret_match_allows_unreachable_wildcard_with_different_kind,
   "foo<f64?> := 1234\n\nbar := foo?\n  | x => \"One Two Three\"\n  | * => 12.\n\nbar + \"\"",
