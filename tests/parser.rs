@@ -1,7 +1,7 @@
 use mech_syntax::{parse, ParserErrorReport};
 
 #[test]
-fn match_arm_reports_transition_arrow_mismatch() {
+fn parser_match_arm_reports_transition_arrow_mismatch() {
   let source = "y := x?\n  | * -> a\n  | * => 0.";
   let result = parse(source);
   assert!(result.is_err());
@@ -24,14 +24,14 @@ fn match_arm_reports_transition_arrow_mismatch() {
 }
 
 #[test]
-fn match_arm_accepts_output_arrow() {
+fn parser_match_arm_accepts_output_arrow() {
   let source = "y := x?\n  | * => a\n  | * => 0.";
   let result = parse(source);
   assert!(result.is_ok(), "valid match arms should parse");
 }
 
 #[test]
-fn match_arm_error_does_not_fall_back_to_paragraph_noise() {
+fn parser_match_arm_error_does_not_fall_back_to_paragraph_noise() {
   let source = "x := [1 2 3 4]\n\ny := x?\n  | [h a ... t] -> a\n  | * => 0.";
   let err = parse(source).unwrap_err();
   let report = err
@@ -45,7 +45,7 @@ fn match_arm_error_does_not_fall_back_to_paragraph_noise() {
 }
 
 #[test]
-fn match_expression_requires_terminating_period() {
+fn parser_match_expression_requires_terminating_period() {
   let source = "x := [2 2 3 4]\n\ny := x?\n  | [h | t] => t\n  | * => 0\n\nz := [7 8 9]";
   let err = parse(source).unwrap_err();
   let report = err
