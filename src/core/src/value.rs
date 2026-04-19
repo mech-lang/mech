@@ -1746,7 +1746,7 @@ impl Value {
       Value::Index(x) => vec![1,1],
       Value::MutableReference(x) => x.borrow().shape(),
       Value::Typed(x, _) => x.shape(),
-      Value::Empty | Value::EmptyKind(_) => vec![0,0],
+      Value::Empty | Value::EmptyKind(_) => vec![1,1],
       Value::IndexAll => vec![0,0],
       Value::Kind(_) => vec![0,0],
       Value::Id(x) => vec![0,0],

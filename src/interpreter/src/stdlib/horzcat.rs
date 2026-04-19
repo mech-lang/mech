@@ -4139,7 +4139,22 @@ macro_rules! impl_horzcat_arms {
       #[cfg(not(feature = "matrix4"))]
       fn get_m4(_value: &Value) -> Option<()> { None }
 
-      fn get_s(value: &Value) -> Option<Ref<$kind>> { match value { Value::[<$kind:camel>](v) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<$kind:camel>](v) => Some(v.clone()), _ => None, }, _ => None, } }
+      fn get_s(value: &Value) -> Option<Ref<$kind>> {
+        match value {
+          Value::[<$kind:camel>](v) => Some(v.clone()),
+          Value::Empty | Value::EmptyKind(_) => Some(Ref::new($kind::default())),
+          Value::Typed(inner, kind) => match (&**inner, kind) {
+            (Value::Empty, ValueKind::Option(option_kind))
+              if ValueKind::is_compatible((**option_kind).clone(), ValueKind::[<$kind:camel>]) =>
+            {
+              Some(Ref::new($kind::default()))
+            }
+            _ => None,
+          },
+          Value::MutableReference(inner) => get_s(&inner.borrow()),
+          _ => None,
+        }
+      }
 
       let arguments = $args;
       let rows = arguments[0].shape()[0];
@@ -4401,6 +4416,21 @@ macro_rules! impl_horzcat_arms {
                 Value::[<$kind:camel>](e0) => {
                   scalar_args.push((e0.clone(),i));
                   i += 1;
+                }
+                Value::Empty | Value::EmptyKind(_) => {
+                  scalar_args.push((Ref::new($kind::default()), i));
+                  i += 1;
+                }
+                Value::Typed(inner, kind) => {
+                  match (&**inner, kind) {
+                    (Value::Empty, ValueKind::Option(option_kind))
+                      if ValueKind::is_compatible((**option_kind).clone(), ValueKind::[<$kind:camel>]) =>
+                    {
+                      scalar_args.push((Ref::new($kind::default()), i));
+                      i += 1;
+                    }
+                    x => return Err(MechError::new(UnhandledFunctionArgumentKind1{arg: arg.kind(), fxn_name: "matrix/horzcat".to_string()}, None).with_compiler_loc()),
+                  }
                 }
                 Value::[<Matrix $kind:camel>](e0) => {
                   matrix_args.push((e0.get_copyable_matrix(),i));
@@ -4669,7 +4699,14 @@ fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   // are they all the same?
   //let same = kinds.iter().all(|x| *x == target_kind);
   let kinds: Vec<ValueKind> = arguments.iter().map(|x| x.kind()).collect::<Vec<ValueKind>>();
-  let target_kind = kinds[0].clone();
+  let target_kind = kinds
+    .iter()
+    .find_map(|kind| match kind {
+      ValueKind::Empty => None,
+      ValueKind::Option(inner_kind) => Some((**inner_kind).clone()),
+      other => Some(other.clone()),
+    })
+    .unwrap_or_else(|| kinds[0].clone());
 
   #[cfg(feature = "f64")]
   { if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64) { return impl_horzcat_arms!(f64, arguments, f64::default()) } }

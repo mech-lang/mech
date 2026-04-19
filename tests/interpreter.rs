@@ -120,6 +120,36 @@ test_interpreter!(
   "x<u64?> := 2u64; y<u64?> := _; (x2,y2) := (x,y)? | (x,y) => (x,y) | * => (0u64,0u64).; x2 + y2",
   Value::U64(Ref::new(0))
 );
+#[test]
+fn interpret_matrix_literal_with_empty_infers_optional_f64_elements() {
+  let s = "x := [1 2 _ 5]\n\nx";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  assert_eq!(
+    result.deref_kind(),
+    ValueKind::Matrix(
+      Box::new(ValueKind::Option(Box::new(ValueKind::F64))),
+      vec![1, 4]
+    )
+  );
+}
+#[cfg(feature = "u64")]
+#[test]
+fn interpret_option_matrix_literal_unwraps_to_u64_defaults() {
+  let s = "x<[u64?]> := [_ 2u64 _ 3u64 _ 4u64]\n\nunwrapped<[u64]> := x?\n  | x => x\n  | * => 0u64.\n\nunwrapped";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  let detached = match result {
+    Value::MutableReference(v) => v.borrow().clone(),
+    value => value,
+  };
+  assert_eq!(
+    detached,
+    Value::MatrixU64(Matrix::from_vec(vec![0, 2, 0, 3, 0, 4], 1, 6))
+  );
+}
 test_interpreter!(
   interpret_match_allows_unreachable_wildcard_with_different_kind,
   "foo<f64?> := 1234\n\nbar := foo?\n  | x => \"One Two Three\"\n  | * => 12.\n\nbar + \"\"",

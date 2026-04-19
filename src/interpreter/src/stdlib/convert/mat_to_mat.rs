@@ -7,6 +7,24 @@ use std::ops::{Index, IndexMut};
 use std::marker::PhantomData;
 
 #[derive(Debug)]
+pub struct ConvertMatPassthrough {
+  pub out: Ref<Value>,
+}
+
+impl MechFunctionImpl for ConvertMatPassthrough {
+  fn solve(&self) {}
+  fn out(&self) -> Value { self.out.borrow().clone() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for ConvertMatPassthrough {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let name = format!("ConvertMatPassthrough");
+    compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
+  }
+}
+
+#[derive(Debug)]
 pub struct ConvertMatToMat2<TFrom, TTo, FromMat, ToMat> {
     pub arg: Ref<FromMat>,
     pub out: Ref<ToMat>,
@@ -270,6 +288,46 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
       source_value: Value,
       target_kind: ValueKind
     ) -> MResult<Box<dyn MechFunction>> {
+      if let (Value::MatrixValue(source_matrix), ValueKind::Matrix(target_element_kind, target_dims)) = (&source_value, &target_kind) {
+        if target_dims.is_empty() {
+          match target_element_kind.as_ref() {
+            ValueKind::Option(_) => {
+              return Ok(Box::new(ConvertMatPassthrough { out: Ref::new(source_value.clone()) }));
+            }
+            #[cfg(feature = "u64")]
+            ValueKind::U64 => {
+              let converted = source_matrix
+                .as_vec()
+                .into_iter()
+                .map(|value| match value {
+                  Value::Empty | Value::EmptyKind(_) => Ok(0u64),
+                  Value::U64(v) => Ok(*v.borrow()),
+                  other => other
+                    .convert_to(&ValueKind::U64)
+                    .and_then(|v| match v { Value::U64(x) => Some(*x.borrow()), _ => None })
+                    .ok_or_else(|| MechError::new(UnhandledFunctionArgumentKind2 { arg: (source_value.kind(), target_kind.clone()), fxn_name: "convert/mat-to-mat".to_string() }, None).with_compiler_loc()),
+                })
+                .collect::<MResult<Vec<u64>>>()?;
+              let shape = source_matrix.shape();
+              let out = Value::MatrixU64(Matrix::from_vec(converted, shape[0], shape[1]));
+              return Ok(Box::new(ConvertMatPassthrough { out: Ref::new(out) }));
+            }
+            _ => {}
+          }
+        }
+      }
+      if let ValueKind::Matrix(target_element_kind, target_dims) = &target_kind {
+        if let ValueKind::Matrix(source_element_kind, _) = source_value.kind() {
+          let source_matches_target = source_element_kind.is_convertible_to(target_element_kind.as_ref())
+            || matches!(
+              (source_element_kind.as_ref(), target_element_kind.as_ref()),
+              (ValueKind::Option(inner_kind), target_kind) if inner_kind.as_ref().is_convertible_to(target_kind)
+            );
+          if target_dims.is_empty() && source_matches_target {
+            return Ok(Box::new(ConvertMatPassthrough { out: Ref::new(source_value.clone()) }));
+          }
+        }
+      }
       let shape = source_value.shape();
 
       paste::paste! {
