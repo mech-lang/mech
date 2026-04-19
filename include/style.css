@@ -14,6 +14,9 @@
   --main-color-high: hsl(42, 89%, 80%);
   --main-color-mid:  hsl(42, 89%, 70%);
   --main-color-low:  hsl(42, 89%, 60%);
+  --state-color-high: hsl(33, 43%, 80%);
+  --state-color-mid: hsl(33, 43%, 70%);
+  --state-color-low: hsl(33, 43%, 60%);
   --out-bracket-color: hsl(288, 30%, 85%);
   --sidebar-width: 300px;
   --text-color-light: hsl(40, 100%, 95%);
@@ -1102,6 +1105,15 @@ a.mech-hyperlink:hover .mech-inline-code {
 
 .mech-state-definition {
     display: inline-flex;
+    color: var(--state-color-mid);
+}
+
+.mech-state-definition .mech-left-paren {
+    color: var(--state-color-low);
+}
+
+.mech-state-definition .mech-right-paren {
+    color: var(--state-color-low);
 }
 
 .mech-match-arms {
@@ -1210,7 +1222,7 @@ a.mech-hyperlink:hover .mech-inline-code {
 }
 
 .mech-state-name {
-    color: #dbc3a5;
+    color: var(--state-color-mid);
 }
 
 .mech-code-block .mech-code:first-child .mech-comment {
@@ -2739,8 +2751,20 @@ mark {
     color: var(--pattern-color);
 }
 
-.mech-pattern .mech-tuple-struct-name {
-    color: var(--pattern-color);
+.mech-tuple-struct .mech-right-paren {
+    color: var(--state-color-low);
+}
+
+.mech-tuple-struct .mech-left-paren {
+    color: var(--state-color-low);
+}
+
+.mech-tuple-struct .mech-tuple-struct-sigil {
+    color: var(--state-color-low);
+}
+
+.mech-tuple-struct .mech-tuple-struct-name {
+    color: var(--state-color-mid);
 }
 
 .mech-tuple-struct {
