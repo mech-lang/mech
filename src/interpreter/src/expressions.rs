@@ -985,9 +985,8 @@ pub fn match_expression(
             None => true,
         };
         if matched && passed_guard {
-            if value_contains_empty(&detached_source)
-                && is_identity_option_matrix_arm(arm)
-            {
+            #[cfg(feature = "matrix")]
+            if value_contains_empty(&detached_source) && is_identity_option_matrix_arm(arm) {
                 if let Some(wildcard_arm) = match_expr
                     .arms
                     .iter()
@@ -1177,6 +1176,7 @@ fn has_identity_wildcard_coalesce_arms(match_expr: &MatchExpression) -> bool {
     has_identity && has_wildcard
 }
 
+#[cfg(feature = "matrix")]
 fn coalesce_option_matrix_with_fallback(source: &Value, fallback: &Value) -> MResult<Value> {
     let source_kind = source.kind();
     if let ValueKind::Option(inner_kind) = source_kind.clone() {
