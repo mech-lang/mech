@@ -619,7 +619,7 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
             }
           })
           .collect::<MResult<Vec<Value>>>()?;
-        let out = Value::MatrixValue(Matrix::from_vec(converted, output_shape[0], output_shape[1]));
+        let out = matrix_value_to_concrete_matrix(converted, target_element_kind.as_ref(), &output_shape)?;
         return Ok(Box::new(ConvertMatPassthrough { out: Ref::new(out) }));
       }
       if let ValueKind::Matrix(target_element_kind, target_dims) = &target_kind {
@@ -669,6 +669,76 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
       }
     }
   };
+}
+
+fn matrix_value_to_concrete_matrix(
+    converted: Vec<Value>,
+    target_element_kind: &ValueKind,
+    output_shape: &[usize],
+) -> MResult<Value> {
+    macro_rules! cast_matrix_values {
+        ($values:expr, $shape:expr, $scalar_variant:ident, $scalar_ty:ty, $matrix_variant:ident) => {{
+            let values = $values
+                .into_iter()
+                .map(|value| match value {
+                    Value::$scalar_variant(v) => Ok((*v.borrow()).clone()),
+                    other => Err(MechError::new(
+                        UnsupportedConversionError {
+                            from: other.kind(),
+                            to: target_element_kind.clone(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()),
+                })
+                .collect::<MResult<Vec<$scalar_ty>>>()?;
+            Ok(Value::$matrix_variant(Matrix::from_vec(
+                values, $shape[0], $shape[1],
+            )))
+        }};
+    }
+
+    match target_element_kind {
+        #[cfg(feature = "bool")]
+        ValueKind::Bool => cast_matrix_values!(converted, output_shape, Bool, bool, MatrixBool),
+        #[cfg(feature = "u8")]
+        ValueKind::U8 => cast_matrix_values!(converted, output_shape, U8, u8, MatrixU8),
+        #[cfg(feature = "u16")]
+        ValueKind::U16 => cast_matrix_values!(converted, output_shape, U16, u16, MatrixU16),
+        #[cfg(feature = "u32")]
+        ValueKind::U32 => cast_matrix_values!(converted, output_shape, U32, u32, MatrixU32),
+        #[cfg(feature = "u64")]
+        ValueKind::U64 => cast_matrix_values!(converted, output_shape, U64, u64, MatrixU64),
+        #[cfg(feature = "u128")]
+        ValueKind::U128 => cast_matrix_values!(converted, output_shape, U128, u128, MatrixU128),
+        #[cfg(feature = "i8")]
+        ValueKind::I8 => cast_matrix_values!(converted, output_shape, I8, i8, MatrixI8),
+        #[cfg(feature = "i16")]
+        ValueKind::I16 => cast_matrix_values!(converted, output_shape, I16, i16, MatrixI16),
+        #[cfg(feature = "i32")]
+        ValueKind::I32 => cast_matrix_values!(converted, output_shape, I32, i32, MatrixI32),
+        #[cfg(feature = "i64")]
+        ValueKind::I64 => cast_matrix_values!(converted, output_shape, I64, i64, MatrixI64),
+        #[cfg(feature = "i128")]
+        ValueKind::I128 => cast_matrix_values!(converted, output_shape, I128, i128, MatrixI128),
+        #[cfg(feature = "f32")]
+        ValueKind::F32 => cast_matrix_values!(converted, output_shape, F32, f32, MatrixF32),
+        #[cfg(feature = "f64")]
+        ValueKind::F64 => cast_matrix_values!(converted, output_shape, F64, f64, MatrixF64),
+        #[cfg(feature = "string")]
+        ValueKind::String => {
+            cast_matrix_values!(converted, output_shape, String, String, MatrixString)
+        }
+        #[cfg(feature = "rational")]
+        ValueKind::R64 => cast_matrix_values!(converted, output_shape, R64, R64, MatrixR64),
+        #[cfg(feature = "complex")]
+        ValueKind::C64 => cast_matrix_values!(converted, output_shape, C64, C64, MatrixC64),
+        _ => Ok(Value::MatrixValue(Matrix::from_vec(
+            converted,
+            output_shape[0],
+            output_shape[1],
+        ))),
+    }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -724,7 +794,6 @@ impl NativeFunctionCompiler for ConvertMatToMat {
             .with_compiler_loc());
         }
         let source_value = arguments[0].clone();
-        let source_kind = source_value.kind();
         let target_kind = arguments[1].kind();
         match impl_conversion_mat_to_mat_fxn(source_value.clone(), target_kind.clone()) {
             Ok(fxn) => Ok(fxn),
