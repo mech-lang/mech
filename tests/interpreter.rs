@@ -150,6 +150,25 @@ fn interpret_option_matrix_literal_unwraps_to_u64_defaults() {
     Value::MatrixU64(Matrix::from_vec(vec![0, 2, 0, 3, 0, 4], 1, 6))
   );
 }
+#[cfg(all(feature = "u64", feature = "u8", feature = "table"))]
+#[test]
+fn interpret_option_match_after_outer_join_column_access_converts_option_to_scalar() {
+  let s = "a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |\n\
+   b := |id<u64> hw2<u8>| 2 200 | 3 255 | 4 42 |\n\
+   x := a ⟗ b\n\
+   y<u8> := x.hw1[4]?\n\
+     | x => x\n\
+     | * => 0.\n\
+   y";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  let detached = match result {
+    Value::MutableReference(v) => v.borrow().clone(),
+    value => value,
+  };
+  assert_eq!(detached, Value::U8(Ref::new(0)));
+}
 #[test]
 fn interpret_option_matrix_literal_unwraps_to_typed_f64_defaults() {
   let s = "x<[f64?]> := [_ 2 _ 3 _ 4]\n\nunwrapped<[f64]> := x?\n  | x => x\n  | * => 0.\n\nunwrapped";

@@ -1179,6 +1179,25 @@ fn has_identity_wildcard_coalesce_arms(match_expr: &MatchExpression) -> bool {
 
 fn coalesce_option_matrix_with_fallback(source: &Value, fallback: &Value) -> MResult<Value> {
     let source_kind = source.kind();
+    if let ValueKind::Option(inner_kind) = source_kind.clone() {
+        let raw = match source {
+            Value::Typed(inner, _) => inner.as_ref().clone(),
+            value => value.clone(),
+        };
+        let candidate = match raw {
+            Value::Empty | Value::EmptyKind(_) => fallback.clone(),
+            value => value,
+        };
+        return candidate.convert_to(inner_kind.as_ref()).ok_or_else(|| {
+            MechError::new(
+                CannotConvertToTypeError {
+                    target_type: "requested type",
+                },
+                None,
+            )
+            .with_compiler_loc()
+        });
+    }
     let (inner_kind, shape) = match source_kind {
         ValueKind::Matrix(element_kind, shape) => match *element_kind {
             ValueKind::Option(inner) => (*inner, shape),

@@ -257,6 +257,31 @@ macro_rules! impl_conversion_match_arms {
   ($arg:expr, $($input_type:ident, $input_type_string:tt => $($target_type:ident, $target_type_string:tt),+);+ $(;)?) => {
     paste!{
       match $arg {
+        (Value::Typed(inner, option_kind), Value::Kind(target_kind))
+          if matches!(&option_kind, ValueKind::Option(inner_kind) if inner_kind.as_ref().is_convertible_to(&target_kind)) =>
+        {
+          let converted = match inner.as_ref() {
+            Value::Empty | Value::EmptyKind(_) => {
+              return Err(MechError::new(
+                UnsupportedConversionError {
+                  from: option_kind.clone(),
+                  to: target_kind.clone(),
+                },
+                None,
+              ).with_compiler_loc());
+            }
+            value => value
+              .convert_to(&target_kind)
+              .ok_or_else(|| MechError::new(
+                UnsupportedConversionError {
+                  from: option_kind.clone(),
+                  to: target_kind.clone(),
+                },
+                None,
+              ).with_compiler_loc())?,
+          };
+          Ok(Box::new(ConvertSEmpty { out: Ref::new(converted) }))
+        }
         $(
           #[cfg(all(feature = "matrix", feature = "table", feature = $input_type_string))]
           (Value::[<Matrix $input_type:camel>](mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
