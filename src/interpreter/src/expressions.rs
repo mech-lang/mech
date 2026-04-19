@@ -952,7 +952,7 @@ pub fn match_expression(
     if let Expression::Var(var) = &match_expr.source {
         base_env.insert(var.name.hash(), detached_source.clone());
     }
-    if value_contains_empty(&detached_source) {
+    if value_contains_empty(&detached_source) && !has_identity_wildcard_coalesce_arms(match_expr) {
         if let Some(arm) = match_expr
             .arms
             .iter()
@@ -985,6 +985,25 @@ pub fn match_expression(
             None => true,
         };
         if matched && passed_guard {
+            #[cfg(feature = "matrix")]
+            if value_contains_empty(&detached_source) && is_identity_option_matrix_arm(arm) {
+                if let Some(wildcard_arm) = match_expr
+                    .arms
+                    .iter()
+                    .find(|arm| matches!(arm.pattern, Pattern::Wildcard))
+                {
+                    let wildcard_passed = match &wildcard_arm.guard {
+                        Some(guard) => guard_expression_true(guard, &base_env, p)?,
+                        None => true,
+                    };
+                    if wildcard_passed {
+                        let fallback = expression(&wildcard_arm.expression, Some(&base_env), p)?;
+                        let coalesced =
+                            coalesce_option_matrix_with_fallback(&detached_source, &fallback)?;
+                        return Ok(coalesced);
+                    }
+                }
+            }
             let output = expression(&arm.expression, Some(&guard_env), p)?;
             match_validate_arm_kinds(
                 match_expr,
@@ -1139,9 +1158,101 @@ fn guard_expression_true(guard: &Expression, env: &Environment, p: &Interpreter)
     Ok(false)
 }
 
+fn is_identity_option_matrix_arm(arm: &MatchArm) -> bool {
+    match (&arm.pattern, &arm.expression) {
+        (Pattern::Expression(Expression::Var(pattern_var)), Expression::Var(expr_var)) => {
+            pattern_var.name.hash() == expr_var.name.hash()
+        }
+        _ => false,
+    }
+}
+
+fn has_identity_wildcard_coalesce_arms(match_expr: &MatchExpression) -> bool {
+    let has_identity = match_expr.arms.iter().any(is_identity_option_matrix_arm);
+    let has_wildcard = match_expr
+        .arms
+        .iter()
+        .any(|arm| matches!(arm.pattern, Pattern::Wildcard));
+    has_identity && has_wildcard
+}
+
+#[cfg(feature = "matrix")]
+fn coalesce_option_matrix_with_fallback(source: &Value, fallback: &Value) -> MResult<Value> {
+    let source_kind = source.kind();
+    if let ValueKind::Option(inner_kind) = source_kind.clone() {
+        let raw = match source {
+            Value::Typed(inner, _) => inner.as_ref().clone(),
+            value => value.clone(),
+        };
+        let candidate = match raw {
+            Value::Empty | Value::EmptyKind(_) => fallback.clone(),
+            value => value,
+        };
+        return candidate.convert_to(inner_kind.as_ref()).ok_or_else(|| {
+            MechError::new(
+                CannotConvertToTypeError {
+                    target_type: "requested type",
+                },
+                None,
+            )
+            .with_compiler_loc()
+        });
+    }
+    let (inner_kind, shape) = match source_kind {
+        ValueKind::Matrix(element_kind, shape) => match *element_kind {
+            ValueKind::Option(inner) => (*inner, shape),
+            _ => return Ok(source.clone()),
+        },
+        _ => return Ok(source.clone()),
+    };
+    let values = match crate::patterns::matrix_like_values(source) {
+        Some(values) => values,
+        None => return Ok(source.clone()),
+    };
+    let fill_value = fallback
+        .convert_to(&inner_kind)
+        .ok_or_else(|| {
+            MechError::new(
+                CannotConvertToTypeError {
+                    target_type: "requested type",
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+    let converted_values = values
+        .into_iter()
+        .map(|value| {
+            let raw = match value {
+                Value::Empty | Value::EmptyKind(_) => fill_value.clone(),
+                other => other,
+            };
+            raw.convert_to(&inner_kind).ok_or_else(|| {
+                MechError::new(
+                    CannotConvertToTypeError {
+                        target_type: "requested type",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })
+        })
+        .collect::<MResult<Vec<Value>>>()?;
+    Ok(Value::MatrixValue(Matrix::from_vec(
+        converted_values,
+        shape[0],
+        shape[1],
+    )))
+}
+
 fn value_contains_empty(value: &Value) -> bool {
     match value {
         Value::Empty | Value::EmptyKind(_) => true,
+        #[cfg(feature = "matrix")]
+        Value::MatrixValue(matrix) => matrix
+            .as_vec()
+            .iter()
+            .any(|value| value_contains_empty(value)),
         #[cfg(feature = "tuple")]
         Value::Tuple(tuple) => tuple
             .borrow()

@@ -496,8 +496,10 @@ pub fn matrix_row(r: &MatrixRow, env: Option<&Environment>, p: &Interpreter) -> 
   let mut row: Vec<Value> = Vec::new();
   let mut shape = vec![0, 0];
   let mut kind = ValueKind::Empty;
+  let mut saw_empty = false;
   for col in &r.columns {
     let result = matrix_column(col, env, p)?;
+    saw_empty |= matches!(result.kind(), ValueKind::Empty);
     if shape == vec![0,0] {
       shape = result.shape();
       kind = result.kind();
@@ -511,6 +513,9 @@ pub fn matrix_row(r: &MatrixRow, env: Option<&Environment>, p: &Interpreter) -> 
         ).with_compiler_loc()
       );
     }
+  }
+  if saw_empty && row.iter().all(|value| value.shape() == vec![1, 1]) {
+    return Ok(Value::MatrixValue(Matrix::from_vec(row, 1, r.columns.len())));
   }
   let new_fxn = MatrixHorzCat{}.compile(&row)?;
   new_fxn.solve();
