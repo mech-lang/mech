@@ -82,7 +82,7 @@ pub fn match_expression(input: ParseString) -> ParseResult<MatchExpression> {
   let (input, _) = question(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, arms) = many1(match_arm)(input)?;
-  let (input, _) = opt(period)(input)?;
+  let (input, _) = label!(period, "Match expression expects terminating period `.`")(input)?;
   Ok((input, MatchExpression { source, arms }))
 }
 
@@ -112,7 +112,7 @@ pub fn match_arm(input: ParseString) -> ParseResult<MatchArm> {
   ))(input)?;
   let (input, _) = match_output_operator(input)?;
   let (input, expr) = expression(input)?;
-  let (input, _) = opt(alt((whitespace1, statement_separator)))(input)?;
+  let (input, _) = opt(statement_separator)(input)?;
   Ok((input, MatchArm {
     pattern,
     guard,
@@ -856,5 +856,24 @@ mod tests {
       .iter()
       .any(|ctx| ctx.err_message.contains("Unexpected paragraph element"));
     assert!(!has_paragraph_noise, "should stay in mech parser context");
+  }
+
+  #[test]
+  fn match_expression_requires_terminating_period() {
+    let source = "x := [2 2 3 4]\n\ny := x?\n  | [h | t] => t\n  | * => 0\n\nz := [7 8 9]";
+    let err = parse(source).unwrap_err();
+    let report = err
+      .kind_as::<ParserErrorReport>()
+      .expect("expected parser error report");
+    let has_period_message = report
+      .1
+      .iter()
+      .any(|ctx| ctx.err_message.contains("Match expression expects terminating period `.`"));
+    assert!(has_period_message, "missing-period error should be explicit");
+    let has_unexpected_char = report
+      .1
+      .iter()
+      .any(|ctx| ctx.err_message == "Unexpected character");
+    assert!(!has_unexpected_char, "missing-period case should avoid generic unexpected-character noise");
   }
 }
