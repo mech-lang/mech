@@ -365,6 +365,21 @@ fn build_typed_matrix_from_values(
   cols: usize,
 ) -> Value {
   match output_kind {
+    #[cfg(feature = "u64")]
+    ValueKind::U64 => Value::MatrixU64(u64::to_matrix(
+      outputs
+        .into_iter()
+        .map(|value| {
+          value
+            .as_u64()
+            .expect("Expected u64 output")
+            .borrow()
+            .clone()
+        })
+        .collect::<Vec<u64>>(),
+      rows,
+      cols,
+    )),
     #[cfg(feature = "f64")]
     ValueKind::F64 => Value::MatrixF64(f64::to_matrix(
       outputs

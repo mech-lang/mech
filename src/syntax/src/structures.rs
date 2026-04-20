@@ -108,10 +108,8 @@ pub fn matrix_column(input: ParseString) -> ParseResult<MatrixColumn> {
   Ok((input, MatrixColumn{element}))
 }
 
-// matrix-row := table-separator?, (space | tab)*, matrix-column+, semicolon?, new-line?, (box-drawing-char+, new-line)? ;
+// matrix-row := (space | tab)*, matrix-column+, semicolon?, new-line?, (box-drawing-char+, new-line)? ;
 pub fn matrix_row(input: ParseString) -> ParseResult<MatrixRow> {
-  let (input, _) = space_tab0(input)?;
-  let (input, _) = opt(table_separator)(input)?;
   let (input, _) = space_tab0(input)?;
   let (input, columns) = match many1(matrix_column)(input) {
     Ok(result) => result,

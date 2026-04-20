@@ -1013,10 +1013,15 @@ impl Value {
     (Value::Empty, ValueKind::Option(_)) => Some(Value::Empty),
     (Value::EmptyKind(_), ValueKind::Option(_)) => Some(Value::Empty),
     (value, ValueKind::Option(inner)) => value.convert_to(inner.as_ref()),
-    (value, ValueKind::Matrix(_, target_shape))
-      if target_shape.is_empty() && matches!(value.kind(), ValueKind::Matrix(_, _)) =>
+    (value, ValueKind::Matrix(target_elem_kind, target_shape))
+      if target_shape.is_empty() =>
     {
-      Some(value.clone())
+      match value.kind() {
+        ValueKind::Matrix(source_elem_kind, _) if source_elem_kind == target_elem_kind.clone() => {
+          Some(value.clone())
+        }
+        _ => None,
+      }
     },
     // ==== Unsigned widening and narrowing ====
     #[cfg(all(feature = "u8", feature = "u16"))]
