@@ -8,6 +8,27 @@ use std::collections::HashSet;
 // Finite State Machines
 // ----------------------------------------------------------------------------
 
+fn fsm_argument_kind_matches(expected: &ValueKind, actual: &ValueKind) -> bool {
+  fn strip_references<'a>(kind: &'a ValueKind) -> &'a ValueKind {
+    match kind {
+      ValueKind::Reference(inner) => strip_references(inner.as_ref()),
+      _ => kind,
+    }
+  }
+
+  let expected = strip_references(expected);
+  let actual = strip_references(actual);
+
+  match (expected, actual) {
+    (ValueKind::Matrix(expected_element, expected_dims), ValueKind::Matrix(actual_element, _actual_dims))
+      if expected_dims.is_empty() =>
+    {
+      expected_element.as_ref() == actual_element.as_ref()
+    }
+    _ => expected == actual,
+  }
+}
+
 // Review: how does this fail?
 pub fn register_fsm_implementation(fsm: &FsmImplementation, p: &Interpreter) -> MResult<()> {
   let fsm_id = fsm.name.hash();
@@ -19,6 +40,14 @@ pub fn register_fsm_implementation(fsm: &FsmImplementation, p: &Interpreter) -> 
     .dictionary
     .borrow_mut()
     .insert(fsm_id, fsm.name.to_string());
+  Ok(())
+}
+
+pub fn register_fsm_specification(fsm: &FsmSpecification, p: &Interpreter) -> MResult<()> {
+  let fsm_id = fsm.name.hash();
+  p.user_state_machine_specs
+    .borrow_mut()
+    .insert(fsm_id, fsm.clone());
   Ok(())
 }
 
@@ -46,10 +75,19 @@ pub fn execute_fsm_pipe(fsm_pipe: &FsmPipe, env: Option<&Environment>, p: &Inter
       args.push(expression(arg_expr, env, p)?);
     }
   }
-  if fsm.input.len() != args.len() {
+  let input_decls = {
+    let specs = p.user_state_machine_specs.borrow();
+    if let Some(spec) = specs.get(&fsm_id) {
+      spec.input.clone()
+    } else {
+      fsm.input.clone()
+    }
+  };
+
+  if input_decls.len() != args.len() {
     return Err(MechError::new(
       IncorrectNumberOfArguments {
-        expected: fsm.input.len(),
+        expected: input_decls.len(),
         found: args.len(),
       },
       None,
@@ -57,15 +95,14 @@ pub fn execute_fsm_pipe(fsm_pipe: &FsmPipe, env: Option<&Environment>, p: &Inter
     .with_compiler_loc()
     .with_tokens(fsm_pipe.start.tokens()));
   }
-  for (arg_decl, arg_value) in fsm.input.iter().zip(args.iter()) {
+  for (arg_decl, arg_value) in input_decls.iter().zip(args.iter()) {
     let detached_arg = detach_value(arg_value);
     #[cfg(feature = "kind_annotation")]
     if let Some(kind_annotation_node) = &arg_decl.kind {
       let expected_kind = kind_annotation(&kind_annotation_node.kind, p)?
           .to_value_kind(&p.state.borrow().kinds)?;
       let actual_kind = arg_value.kind();
-      let converted_arg = detached_arg.convert_to(&expected_kind);
-      if actual_kind != expected_kind && converted_arg.is_none() {
+      if !fsm_argument_kind_matches(&expected_kind, &actual_kind) {
         return Err(MechError::new(
           FsmArgumentKindMismatchError {
             argument: arg_decl.name.to_string(),
@@ -77,7 +114,7 @@ pub fn execute_fsm_pipe(fsm_pipe: &FsmPipe, env: Option<&Environment>, p: &Inter
         .with_compiler_loc()
         .with_tokens(fsm_pipe.start.tokens()));
       }
-      call_env.insert(arg_decl.name.hash(), converted_arg.unwrap_or(detached_arg));
+      call_env.insert(arg_decl.name.hash(), detached_arg);
       continue;
     }
     call_env.insert(arg_decl.name.hash(), detached_arg);

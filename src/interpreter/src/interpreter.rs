@@ -34,6 +34,8 @@ pub struct Interpreter {
   pub inline_eval_counter: Ref<u64>,
   #[cfg(feature = "state_machines")]
   pub user_state_machines: Ref<HashMap<u64, FsmImplementation>>,
+  #[cfg(feature = "state_machines")]
+  pub user_state_machine_specs: Ref<HashMap<u64, FsmSpecification>>,
   pub sub_interpreters: Ref<HashMap<u64, Box<Interpreter>>>,
 }
 
@@ -63,6 +65,8 @@ impl Clone for Interpreter {
       inline_eval_counter: self.inline_eval_counter.clone(),
       #[cfg(feature = "state_machines")]
       user_state_machines: self.user_state_machines.clone(),
+      #[cfg(feature = "state_machines")]
+      user_state_machine_specs: self.user_state_machine_specs.clone(),
       sub_interpreters: self.sub_interpreters.clone(),
     }
   }
@@ -96,6 +100,8 @@ impl Interpreter {
       inline_eval_counter: Ref::new(0),
       #[cfg(feature = "state_machines")]
       user_state_machines: Ref::new(HashMap::new()),
+      #[cfg(feature = "state_machines")]
+      user_state_machine_specs: Ref::new(HashMap::new()),
       code: Vec::new(),
       #[cfg(feature = "compiler")]
       context: None,
