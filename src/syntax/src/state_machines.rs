@@ -5,12 +5,44 @@ use nom::{
   sequence::tuple as nom_tuple,
 };
 
-fn validate_fsm_value_pattern(ptrn: &Pattern) -> Result<(), &'static str> {
+#[derive(Debug, Clone)]
+struct InvalidFsmValuePatternError {
+  message: String,
+}
+
+impl MechErrorKind for InvalidFsmValuePatternError {
+  fn name(&self) -> &str {
+    "InvalidFsmValuePattern"
+  }
+
+  fn message(&self) -> String {
+    self.message.clone()
+  }
+}
+
+fn invalid_fsm_value_pattern(msg: &str, ptrn: &Pattern) -> MechError {
+  MechError::new(
+    InvalidFsmValuePatternError {
+      message: msg.to_string(),
+    },
+    None,
+  )
+  .with_compiler_loc()
+  .with_tokens(ptrn.tokens())
+}
+
+fn validate_fsm_value_pattern(ptrn: &Pattern) -> MResult<()> {
   match ptrn {
-    Pattern::Wildcard => Err("Wildcard `*` is only valid in pattern-matching positions"),
+    Pattern::Wildcard => Err(invalid_fsm_value_pattern(
+      "Wildcard `*` is only valid in pattern-matching positions",
+      ptrn,
+    )),
     Pattern::Array(arr) => {
       if arr.spread.is_some() {
-        return Err("Array spread/rest syntax (`...` or `|`) is only valid in pattern-matching positions");
+        return Err(invalid_fsm_value_pattern(
+          "Array spread/rest syntax (`...` or `|`) is only valid in pattern-matching positions",
+          ptrn,
+        ));
       }
       for item in arr.prefix.iter().chain(arr.suffix.iter()) {
         validate_fsm_value_pattern(item)?;
@@ -35,8 +67,11 @@ fn validate_fsm_value_pattern(ptrn: &Pattern) -> Result<(), &'static str> {
 
 fn fsm_value(input: ParseString) -> ParseResult<Pattern> {
   let (input, ptrn) = pattern(input)?;
-  if let Err(msg) = validate_fsm_value_pattern(&ptrn) {
-    return Err(nom::Err::Error(ParseError::new(input, msg)));
+  if validate_fsm_value_pattern(&ptrn).is_err() {
+    return Err(nom::Err::Error(ParseError::new(
+      input,
+      "FSM RHS expects value syntax; wildcard and array spread/rest are only allowed in match patterns",
+    )));
   }
   Ok((input, ptrn))
 }
