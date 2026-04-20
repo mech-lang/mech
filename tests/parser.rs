@@ -69,3 +69,10 @@ fn parser_rejects_pattern_rest_syntax_on_rhs_matrix_construction() {
   let result = parse(source);
   assert!(result.is_err(), "RHS [x | tail] should not parse as matrix construction");
 }
+
+#[test]
+fn parser_accepts_mech_fenced_code_block_as_program_source() {
+  let source = "```mech:pattern-matching\n<result> := :ok<u64> | :err<u64>\n<option> := :some<result> | :none\nx<option> := :some(:ok(42u64))\n```";
+  let result = parse(source);
+  assert!(result.is_ok(), "fenced mech code block should parse as mech program source");
+}

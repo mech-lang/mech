@@ -639,8 +639,39 @@ pub fn parse_grammar(text: &str) -> MResult<Grammar> {
   }
 }
 
+fn extract_fenced_mech_source(text: &str) -> Option<String> {
+  let trimmed = text.trim();
+  let mut lines = trimmed.lines();
+  let first_line = lines.next()?.trim();
+  let starts_with_mech_fence = first_line.starts_with("```mech")
+    || first_line.starts_with("```mec")
+    || first_line.starts_with("```🤖");
+  if !starts_with_mech_fence {
+    return None;
+  }
 
-pub fn parse(text: &str) -> MResult<Program> {
+  let mut body = Vec::new();
+  let mut saw_closing_fence = false;
+  for line in lines {
+    if line.trim() == "```" {
+      saw_closing_fence = true;
+      break;
+    }
+    body.push(line);
+  }
+
+  if !saw_closing_fence {
+    return None;
+  }
+
+  let mut extracted = body.join("\n");
+  if !extracted.ends_with('\n') {
+    extracted.push('\n');
+  }
+  Some(extracted)
+}
+
+fn parse_program_text(text: &str) -> MResult<Program> {
   let graphemes = graphemes::init_source(text);
   let mut result_node = None;
   let mut error_log: Vec<(SourceRange, ParseErrorDetail)> = vec![];
@@ -685,5 +716,18 @@ pub fn parse(text: &str) -> MResult<Program> {
       ParserErrorReport(text.to_string(), report),
       None
     ).with_compiler_loc())
+  }
+}
+
+
+pub fn parse(text: &str) -> MResult<Program> {
+  match parse_program_text(text) {
+    Ok(program) => Ok(program),
+    Err(err) => {
+      if let Some(extracted) = extract_fenced_mech_source(text) {
+        return parse_program_text(&extracted);
+      }
+      Err(err)
+    }
   }
 }
