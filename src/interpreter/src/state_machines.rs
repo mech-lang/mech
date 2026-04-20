@@ -9,6 +9,16 @@ use std::collections::HashSet;
 // ----------------------------------------------------------------------------
 
 fn fsm_argument_kind_matches(expected: &ValueKind, actual: &ValueKind) -> bool {
+  fn strip_references<'a>(kind: &'a ValueKind) -> &'a ValueKind {
+    match kind {
+      ValueKind::Reference(inner) => strip_references(inner.as_ref()),
+      _ => kind,
+    }
+  }
+
+  let expected = strip_references(expected);
+  let actual = strip_references(actual);
+
   match (expected, actual) {
     (ValueKind::Matrix(expected_element, expected_dims), ValueKind::Matrix(actual_element, _actual_dims))
       if expected_dims.is_empty() =>
