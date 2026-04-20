@@ -1,61 +1,244 @@
 {
-	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-	"name": "mech",
-	"patterns": [
-		{
-      		"match": "^=+$",
-      		"name": "markup.heading.underline.mech"
-		},
-		{
-			"match": "^-+$",
-			"name": "markup.heading.underline.mech"
-    	},
-		{
-			"match": "^(\\d+\\. )",
-			"name": "markup.heading.mech"
-		},
-		{
-			"match": "^\\(\\d+(?:\\.\\d+)+\\)",
-			"name": "markup.heading.mech"
-		},
-		{
-			"begin": "\\$\\$",
-			"end": "\\$\\$|\\n",
-			"name": "string"
-		},
-		{
-		    "match": "\\b\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?\\b",
-  		    "name": "constant.numeric"
-		},
-		{
-			"begin": "^\\s*([^\\s\\+\\-\\*\\/\\^]+(?:\\[[^\\]]*\\])?)\\s*([\\+\\-\\*\\/\\^]=|:=)",
-			"end": "$",
-			"beginCaptures": {
-				"1": {
-				"name": "variable.name"
-				},
-				"2": {
-				"name": "string"
-				}
-			},
-			"patterns": [
-				{
-				"match": "[^\\s\\d\\.\\^\\*\\+\\-\\/\\(\\)]+(?:\\/[\\w\\/]+)*(?:\\[[^\\]]*\\])?",
-				"name": "variable.name"
-				},
-				{
-				"match": "\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?",
-				"name": "constant.numeric"
-				},
-				{
-				"match": "[\\+\\-\\*\\/\\^]",
-				"name": "string"
-				}
-			]
-		}
-	],
-	"repository": {
-		
-	},
-	"scopeName": "source.mech"
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "mech",
+  "scopeName": "source.mech",
+  "patterns": [
+    { "include": "#mechdown" },
+    { "include": "#code-lines" }
+  ],
+  "repository": {
+    "mechdown": {
+      "patterns": [
+        {
+          "begin": "^```(?:mech(?::[^\\s`]*)?)?\\s*$",
+          "beginCaptures": {
+            "0": { "name": "markup.fenced_code.block.begin.mech" }
+          },
+          "end": "^```\\s*$",
+          "endCaptures": {
+            "0": { "name": "markup.fenced_code.block.end.mech" }
+          },
+          "name": "markup.fenced_code.block.mech",
+          "patterns": [
+            { "include": "#code" }
+          ]
+        },
+        {
+          "match": "^={3,}\\s*$",
+          "name": "markup.heading.underline.mech"
+        },
+        {
+          "match": "^-{3,}\\s*$",
+          "name": "markup.heading.underline.mech"
+        },
+        {
+          "match": "^\\(?\\d+(?:\\.\\d+)*\\)?(?:\\.[^\\s)]*)?\\s+.*$",
+          "name": "markup.heading.numbered.mech"
+        },
+        {
+          "begin": "\\{\\{",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.inline-code.begin.mech" }
+          },
+          "end": "\\}\\}",
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.inline-code.end.mech" }
+          },
+          "name": "markup.inline.raw.mech",
+          "patterns": [
+            { "include": "#code" }
+          ]
+        },
+        {
+          "begin": "`",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.raw.begin.mech" }
+          },
+          "end": "`",
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.raw.end.mech" }
+          },
+          "name": "markup.inline.raw.backtick.mech"
+        },
+        {
+          "include": "#code-lines"
+        }
+      ]
+    },
+    "code-lines": {
+      "patterns": [
+        {
+          "begin": "^(?=\\s*(?:#|[├└│]|\\||:?\\w[\\w\\-*/+^/]*\\s*(?::=|=>|->|\\?)|<\\w+>|\\w[\\w\\-*/+^/]*\\s*\\(|\\*\\s*=>))",
+          "end": "$",
+          "patterns": [
+            { "include": "#code" }
+          ]
+        }
+      ]
+    },
+    "code": {
+      "patterns": [
+        { "include": "#comments" },
+        { "include": "#strings" },
+        { "include": "#kinds" },
+        { "include": "#atoms" },
+        { "include": "#booleans-empty" },
+        { "include": "#numbers" },
+        { "include": "#operators" },
+        { "include": "#functions" },
+        { "include": "#states" },
+        { "include": "#branches" },
+        { "include": "#tables" },
+        { "include": "#identifiers" }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "match": "(?<!:)--.*$",
+          "name": "comment.line.double-dash.mech"
+        },
+        {
+          "match": "//.*$",
+          "name": "comment.line.double-slash.mech"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "begin": "\"\"\"",
+          "end": "\"\"\"",
+          "name": "string.quoted.triple.mech"
+        },
+        {
+          "begin": "\"",
+          "end": "\"",
+          "name": "string.quoted.double.mech",
+          "patterns": [
+            {
+              "match": "\\\\(?:[\\\"nrt0]|u[0-9A-Fa-f]{4})",
+              "name": "constant.character.escape.mech"
+            }
+          ]
+        }
+      ]
+    },
+    "kinds": {
+      "patterns": [
+        {
+          "match": "<[^<>\\n]*(?:<[^<>\\n]*>[^<>\\n]*)*>",
+          "name": "storage.type.kind.mech"
+        }
+      ]
+    },
+    "atoms": {
+      "patterns": [
+        {
+          "match": ":[^\\s\\]\\[\\{\\}\\(\\),;]+(?:/[^\\s\\]\\[\\{\\}\\(\\),;]+)*",
+          "name": "constant.language.atom.mech"
+        }
+      ]
+    },
+    "booleans-empty": {
+      "patterns": [
+        {
+          "match": "\\b(?:true|false)\\b|[✓✗]",
+          "name": "constant.language.boolean.mech"
+        },
+        {
+          "match": "\\b_+\\b",
+          "name": "constant.language.empty.mech"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "match": "\\b0[xX][0-9A-Fa-f]+(?:<[A-Za-z][A-Za-z0-9]*>|[iu](?:8|16|32|64|128))?\\b",
+          "name": "constant.numeric.hex.mech"
+        },
+        {
+          "match": "\\b0[oO][0-7]+(?:<[A-Za-z][A-Za-z0-9]*>|[iu](?:8|16|32|64|128))?\\b",
+          "name": "constant.numeric.octal.mech"
+        },
+        {
+          "match": "\\b0[bB][01]+(?:<[A-Za-z][A-Za-z0-9]*>|[iu](?:8|16|32|64|128))?\\b",
+          "name": "constant.numeric.binary.mech"
+        },
+        {
+          "match": "(?<![\\w.])[-+]?\\d+\\/\\d+(?:<r(?:64|s64)>)?(?![\\w/])",
+          "name": "constant.numeric.rational.mech"
+        },
+        {
+          "match": "(?<![\\w.])[-+]?(?:\\d+\\.\\d*|\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?(?:<[A-Za-z][A-Za-z0-9]*>|(?:[ifuc](?:8|16|32|64|128)))?(?![\\w.])",
+          "name": "constant.numeric.float.mech"
+        },
+        {
+          "match": "(?<![\\w.])[-+]?(?:\\d+\\.\\d*|\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?[ij](?![\\w.])",
+          "name": "constant.numeric.complex.mech"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "match": "\\b(?:and|or|not)\\b",
+          "name": "keyword.operator.logical.word.mech"
+        },
+        {
+          "match": "(?::=|\\+=|-=|\\*=|/=|\\^=|==|!=|<=|>=|&&|\\|\\||\\.\\.|\\.\\.=|->|=>|\\?|=|[+\\-*/^!<>~])",
+          "name": "keyword.operator.mech"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "match": "(?<![:#])\\b[\\p{L}][\\p{L}\\p{N}\\-*/+^/]*(?=\\s*\\()",
+          "name": "entity.name.function.mech"
+        }
+      ]
+    },
+    "states": {
+      "patterns": [
+        {
+          "match": "#[\\p{L}][\\p{L}\\p{N}\\-*/+^/]*",
+          "name": "entity.name.type.state-machine.mech"
+        }
+      ]
+    },
+    "branches": {
+      "patterns": [
+        {
+          "match": "^\\s*[├└│]\\s*",
+          "name": "punctuation.definition.branch.tree.mech"
+        },
+        {
+          "match": "^\\s*\\|\\s*",
+          "name": "punctuation.definition.branch.match.mech"
+        },
+        {
+          "match": "(?<=\\|\\s)\\*\\b",
+          "name": "variable.language.wildcard.mech"
+        }
+      ]
+    },
+    "tables": {
+      "patterns": [
+        {
+          "match": "^\\s*\\|.*\\|\\s*$",
+          "name": "meta.structure.table.mech"
+        }
+      ]
+    },
+    "identifiers": {
+      "patterns": [
+        {
+          "match": "(?:(?<=^)|(?<=[\\s\\(\\[,]))~?[\\p{L}][\\p{L}\\p{N}*/+\\-^]*(?:/[\\p{L}\\p{N}*/+\\-^]+)*(?:\\[[^\\]\\n]*\\])?(?=\\s*(?:[:=,\\)\\]\\|]|$))",
+          "name": "variable.other.mech"
+        }
+      ]
+    }
+  }
 }
