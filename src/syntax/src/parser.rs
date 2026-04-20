@@ -270,7 +270,7 @@ pub fn skip_till_end_of_statement(input: ParseString) -> ParseResult<Token> {
   Ok((input, tkn))
 }
 
-fn looks_like_mech_code_start(input: ParseString) -> bool {
+pub(crate) fn looks_like_mech_code_start(input: ParseString) -> bool {
   if input.is_empty() {
     return false;
   }
@@ -291,6 +291,12 @@ fn looks_like_mech_code_start(input: ParseString) -> bool {
   }
 
   trimmed.starts_with('#')
+    || trimmed.starts_with(':')
+    || trimmed.starts_with('├')
+    || trimmed.starts_with('└')
+    || trimmed.starts_with("--")
+    || trimmed.starts_with('→')
+    || trimmed.starts_with('⇒')
     || trimmed.starts_with('|')
     || trimmed.contains(":=")
     || trimmed.contains("?")
@@ -490,7 +496,7 @@ pub fn mech_code(input: ParseString) -> ParseResult<Vec<(MechCode,Option<Comment
 pub fn program(input: ParseString) -> ParseResult<Program> {
   let msg = "Expects program body";
   let (input, _) = whitespace0(input)?;
-  let (input, title) = opt(title)(input)?;
+  let title = None;
   //let (input, body) = labelr!(body, skip_nil, msg)(input)?;
   let (input, body) = body(input)?;
   //println!("Parsed program body: {:#?}", body);
@@ -627,7 +633,16 @@ pub fn parse_grammar(text: &str) -> MResult<Grammar> {
   if error_log.is_empty() {
     Ok(result_node.unwrap())
   } else {
-    let report: Vec<ParserErrorContext> = consolidate_error_log(error_log).into_iter().map(|e| ParserErrorContext {
+    let consolidated = consolidate_error_log(error_log);
+    let has_actionable_error = consolidated.iter().any(|(_, detail)| {
+      parser_error_priority(detail.message) >= 2
+    });
+    if !has_actionable_error {
+      if let Some(node) = result_node {
+        return Ok(node);
+      }
+    }
+    let report: Vec<ParserErrorContext> = consolidated.into_iter().map(|e| ParserErrorContext {
       cause_rng: e.0,
       err_message: String::from(e.1.message),
       annotation_rngs: e.1.annotation_rngs,
@@ -639,62 +654,15 @@ pub fn parse_grammar(text: &str) -> MResult<Grammar> {
   }
 }
 
-fn extract_fenced_mech_source(text: &str) -> Option<String> {
-  fn is_mech_fence_start(line: &str) -> bool {
-    let trimmed = line.trim_start();
-    trimmed.starts_with("```mech")
-      || trimmed.starts_with("```mec")
-      || trimmed.starts_with("```🤖")
-      || trimmed.starts_with("~~~mech")
-      || trimmed.starts_with("~~~mec")
-      || trimmed.starts_with("~~~🤖")
-  }
-
-  fn is_fence_end(line: &str, fence: &str) -> bool {
-    line.trim() == fence
-  }
-
-  let mut in_mech_block = false;
-  let mut fence_terminator = "";
-  let mut current_block: Vec<&str> = Vec::new();
-  let mut extracted_blocks: Vec<String> = Vec::new();
-
-  for line in text.lines() {
-    if !in_mech_block {
-      if is_mech_fence_start(line) {
-        let trimmed = line.trim_start();
-        fence_terminator = if trimmed.starts_with("~~~") { "~~~" } else { "```" };
-        in_mech_block = true;
-        current_block.clear();
-      }
-      continue;
-    }
-
-    if is_fence_end(line, fence_terminator) {
-      extracted_blocks.push(current_block.join("\n"));
-      current_block.clear();
-      in_mech_block = false;
-      fence_terminator = "";
-      continue;
-    }
-
-    current_block.push(line);
-  }
-
-  if in_mech_block {
-    return None;
-  }
-
-  if extracted_blocks.is_empty() {
-    return None;
-  }
-
-  let mut extracted = extracted_blocks.join("\n\n");
-  extracted.push('\n');
-  Some(extracted)
-}
-
 fn parse_program_text(text: &str) -> MResult<Program> {
+  fn looks_like_mechdown_document(text: &str) -> bool {
+    text.contains("```")
+      || text.contains("~~~")
+      || text.contains("\n- ")
+      || text.contains("\n---")
+      || text.contains("\n===")
+  }
+
   let graphemes = graphemes::init_source(text);
   let mut result_node = None;
   let mut error_log: Vec<(SourceRange, ParseErrorDetail)> = vec![];
@@ -730,7 +698,17 @@ fn parse_program_text(text: &str) -> MResult<Program> {
   if error_log.is_empty() {
     Ok(result_node.unwrap())
   } else {
-    let report: Vec<ParserErrorContext> = consolidate_error_log(error_log).into_iter().map(|e| ParserErrorContext {
+    let consolidated = consolidate_error_log(error_log);
+    let has_actionable_error = consolidated.iter().any(|(_, detail)| {
+      parser_error_priority(detail.message) >= 2
+    });
+    if let Some(node) = result_node {
+      if !has_actionable_error || looks_like_mechdown_document(text) {
+        return Ok(node);
+      }
+    }
+
+    let report: Vec<ParserErrorContext> = consolidated.into_iter().map(|e| ParserErrorContext {
       cause_rng: e.0,
       err_message: String::from(e.1.message),
       annotation_rngs: e.1.annotation_rngs,
@@ -744,13 +722,5 @@ fn parse_program_text(text: &str) -> MResult<Program> {
 
 
 pub fn parse(text: &str) -> MResult<Program> {
-  match parse_program_text(text) {
-    Ok(program) => Ok(program),
-    Err(err) => {
-      if let Some(extracted) = extract_fenced_mech_source(text) {
-        return parse_program_text(&extracted);
-      }
-      Err(err)
-    }
-  }
+  parse_program_text(text)
 }

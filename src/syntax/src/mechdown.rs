@@ -1003,21 +1003,33 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
       }
     }
   
-    // check if it's mech_code first, we'll prioritize that
-    match mech_code(new_input.clone()) {
-      Ok((input, mech_tree)) => {
-        elements.push(SectionElement::MechCode(mech_tree));
-        new_input = input;
-        continue;
-      }
-      Err(e) => {
-        // not mech code, try section_element
-        //return Err(e);
+    // Attempt raw mech code only when the next line looks code-like.
+    // This prevents speculative mech parsing from stealing prose/list lines.
+    let mut mech_code_err = None;
+    if crate::parser::looks_like_mech_code_start(new_input.clone()) {
+      match mech_code(new_input.clone()) {
+        Ok((input, mech_tree)) => {
+          elements.push(SectionElement::MechCode(mech_tree));
+          new_input = input;
+          continue;
+        }
+        Err(e) => {
+          mech_code_err = Some(e);
+          // not mech code, try section_element
+        }
       }
     }
 
+    let pre_section_error_len = new_input.error_log.len();
     match section_element(new_input.clone()) {
-      Ok((input, element)) => {
+      Ok((mut input, element)) => {
+        if let Some(code_err) = mech_code_err {
+          return Err(code_err);
+        }
+        let preserve_error_log = matches!(element, SectionElement::FencedMechCode(_));
+        if !preserve_error_log {
+          input.error_log.truncate(pre_section_error_len);
+        }
 
         elements.push(element);
 
@@ -1026,8 +1038,19 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
         new_input = input;
       }
       Err(err) => {
-        // Propagate hard errors
-        return Err(err);
+        if let Some(code_err) = mech_code_err {
+          // If a line looked like Mech code and failed as Mech code, surface that.
+          return Err(code_err);
+        }
+        // Otherwise, tolerate unsupported markdown/prose constructs by skipping one line.
+        match skip_past_eol(new_input.clone()) {
+          Ok((input, _)) => {
+            new_input = input;
+          }
+          Err(_) => {
+            return Err(err);
+          }
+        }
       }
     }
   }

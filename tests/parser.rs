@@ -83,3 +83,10 @@ fn parser_accepts_mech_fenced_code_blocks_embedded_in_markdown() {
   let result = parse(source);
   assert!(result.is_ok(), "embedded fenced mech code block should parse even with surrounding markdown");
 }
+
+#[test]
+fn parser_accepts_markdown_with_bullets_links_and_fenced_mech() {
+  let source = "Mech v0.3 — Program Specification\n\n- **Enums and tagged unions** for modeling categorical data and optional values (§2)\n- [Expression broadcasting](https://docs.mech-lang.org/reference/broadcasting.html): applying operations.\n\n```mech:enums\n<color> := :red | :green | :blue\nx<color> := :red\n```\n";
+  let result = parse(source);
+  assert!(result.is_ok(), "markdown prose and list content should parse around fenced mech blocks");
+}
