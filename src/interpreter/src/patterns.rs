@@ -234,7 +234,12 @@ pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -
     Pattern::Array(array) => {
       let mut values = Vec::new();
       for inner in &array.prefix {
-        values.push(pattern_to_value(inner, env, p)?);
+        let inner_value = pattern_to_value(inner, env, p)?;
+        if let Some(inner_values) = matrix_like_values(&inner_value) {
+          values.extend(inner_values);
+        } else {
+          values.push(inner_value);
+        }
       }
       if let Some(spread) = &array.spread {
         if let Some(binding) = &spread.binding {
@@ -247,7 +252,12 @@ pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -
         }
       }
       for inner in &array.suffix {
-        values.push(pattern_to_value(inner, env, p)?);
+        let inner_value = pattern_to_value(inner, env, p)?;
+        if let Some(inner_values) = matrix_like_values(&inner_value) {
+          values.extend(inner_values);
+        } else {
+          values.push(inner_value);
+        }
       }
       return Ok(build_row_matrix_from_values(values));
     }

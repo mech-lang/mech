@@ -62,3 +62,10 @@ fn parser_match_expression_requires_terminating_period() {
     .any(|ctx| ctx.err_message == "Unexpected character");
   assert!(!has_unexpected_char, "missing-period case should avoid generic unexpected-character noise");
 }
+
+#[test]
+fn parser_rejects_pattern_rest_syntax_on_rhs_matrix_construction() {
+  let source = "#demo(xs<[u64]>) => <[u64]>\n  ├ :Pass(xs<[u64]>)\n  └ :Done(out<[u64]>).\n\n#demo(xs) -> :Pass(xs)\n  :Pass([x | tail]) -> :Done([x | tail])\n  :Done(out) => out.\n\n#demo([1u64 2u64])";
+  let result = parse(source);
+  assert!(result.is_err(), "RHS [x | tail] should not parse as matrix construction");
+}
