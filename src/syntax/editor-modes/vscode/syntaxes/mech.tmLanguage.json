@@ -4,7 +4,7 @@
   "scopeName": "source.mech",
   "patterns": [
     { "include": "#mechdown" },
-    { "include": "#code" }
+    { "include": "#code-lines" }
   ],
   "repository": {
     "mechdown": {
@@ -48,6 +48,20 @@
           "patterns": [
             { "include": "#code" }
           ]
+        },
+        {
+          "include": "#code-lines"
+        }
+      ]
+    },
+    "code-lines": {
+      "patterns": [
+        {
+          "begin": "^(?=\\s*(?:#|[├└│]|\\||:?\\w[\\w\\-*/+^/]*\\s*(?::=|=>|->|\\?)|<\\w+>|\\w[\\w\\-*/+^/]*\\s*\\(|\\*\\s*=>))",
+          "end": "$",
+          "patterns": [
+            { "include": "#code" }
+          ]
         }
       ]
     },
@@ -60,6 +74,9 @@
         { "include": "#booleans-empty" },
         { "include": "#numbers" },
         { "include": "#operators" },
+        { "include": "#functions" },
+        { "include": "#states" },
+        { "include": "#branches" },
         { "include": "#tables" },
         { "include": "#identifiers" }
       ]
@@ -159,8 +176,40 @@
           "name": "keyword.operator.logical.word.mech"
         },
         {
-          "match": "(?::=|\\+=|-=|\\*=|/=|\\^=|==|!=|<=|>=|&&|\\|\\||\\.\\.|\\.\\.=|->|=>|=|[+\\-*/^!<>~])",
+          "match": "(?::=|\\+=|-=|\\*=|/=|\\^=|==|!=|<=|>=|&&|\\|\\||\\.\\.|\\.\\.=|->|=>|\\?|=|[+\\-*/^!<>~])",
           "name": "keyword.operator.mech"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "match": "(?<![:#])\\b[\\p{L}][\\p{L}\\p{N}\\-*/+^/]*(?=\\s*\\()",
+          "name": "entity.name.function.mech"
+        }
+      ]
+    },
+    "states": {
+      "patterns": [
+        {
+          "match": "#[\\p{L}][\\p{L}\\p{N}\\-*/+^/]*",
+          "name": "entity.name.type.state-machine.mech"
+        }
+      ]
+    },
+    "branches": {
+      "patterns": [
+        {
+          "match": "^\\s*[├└│]\\s*",
+          "name": "punctuation.definition.branch.tree.mech"
+        },
+        {
+          "match": "^\\s*\\|\\s*",
+          "name": "punctuation.definition.branch.match.mech"
+        },
+        {
+          "match": "(?<=\\|\\s)\\*\\b",
+          "name": "variable.language.wildcard.mech"
         }
       ]
     },
@@ -175,7 +224,7 @@
     "identifiers": {
       "patterns": [
         {
-          "match": "\\b~?[\\p{L}\\p{N}][\\p{L}\\p{N}*/+\\-^]*(?:/[\\p{L}\\p{N}*/+\\-^]+)*(?:\\[[^\\]\\n]*\\])?",
+          "match": "(?:(?<=^)|(?<=[\\s\\(\\[,]))~?[\\p{L}][\\p{L}\\p{N}*/+\\-^]*(?:/[\\p{L}\\p{N}*/+\\-^]+)*(?:\\[[^\\]\\n]*\\])?(?=\\s*(?:[:=,\\)\\]\\|]|$))",
           "name": "variable.other.mech"
         }
       ]
