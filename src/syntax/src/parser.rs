@@ -640,34 +640,57 @@ pub fn parse_grammar(text: &str) -> MResult<Grammar> {
 }
 
 fn extract_fenced_mech_source(text: &str) -> Option<String> {
-  let trimmed = text.trim();
-  let mut lines = trimmed.lines();
-  let first_line = lines.next()?.trim();
-  let starts_with_mech_fence = first_line.starts_with("```mech")
-    || first_line.starts_with("```mec")
-    || first_line.starts_with("```🤖");
-  if !starts_with_mech_fence {
-    return None;
+  fn is_mech_fence_start(line: &str) -> bool {
+    let trimmed = line.trim_start();
+    trimmed.starts_with("```mech")
+      || trimmed.starts_with("```mec")
+      || trimmed.starts_with("```🤖")
+      || trimmed.starts_with("~~~mech")
+      || trimmed.starts_with("~~~mec")
+      || trimmed.starts_with("~~~🤖")
   }
 
-  let mut body = Vec::new();
-  let mut saw_closing_fence = false;
-  for line in lines {
-    if line.trim() == "```" {
-      saw_closing_fence = true;
-      break;
+  fn is_fence_end(line: &str, fence: &str) -> bool {
+    line.trim() == fence
+  }
+
+  let mut in_mech_block = false;
+  let mut fence_terminator = "";
+  let mut current_block: Vec<&str> = Vec::new();
+  let mut extracted_blocks: Vec<String> = Vec::new();
+
+  for line in text.lines() {
+    if !in_mech_block {
+      if is_mech_fence_start(line) {
+        let trimmed = line.trim_start();
+        fence_terminator = if trimmed.starts_with("~~~") { "~~~" } else { "```" };
+        in_mech_block = true;
+        current_block.clear();
+      }
+      continue;
     }
-    body.push(line);
+
+    if is_fence_end(line, fence_terminator) {
+      extracted_blocks.push(current_block.join("\n"));
+      current_block.clear();
+      in_mech_block = false;
+      fence_terminator = "";
+      continue;
+    }
+
+    current_block.push(line);
   }
 
-  if !saw_closing_fence {
+  if in_mech_block {
     return None;
   }
 
-  let mut extracted = body.join("\n");
-  if !extracted.ends_with('\n') {
-    extracted.push('\n');
+  if extracted_blocks.is_empty() {
+    return None;
   }
+
+  let mut extracted = extracted_blocks.join("\n\n");
+  extracted.push('\n');
   Some(extracted)
 }
 

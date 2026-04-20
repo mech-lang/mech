@@ -76,3 +76,10 @@ fn parser_accepts_mech_fenced_code_block_as_program_source() {
   let result = parse(source);
   assert!(result.is_ok(), "fenced mech code block should parse as mech program source");
 }
+
+#[test]
+fn parser_accepts_mech_fenced_code_blocks_embedded_in_markdown() {
+  let source = "Mech v0.3 — Program Specification\n\n- Item one\n- Item two\n\n```mech:enums\n<color> := :red | :green | :blue\nx<color> := :red\n```\n";
+  let result = parse(source);
+  assert!(result.is_ok(), "embedded fenced mech code block should parse even with surrounding markdown");
+}
