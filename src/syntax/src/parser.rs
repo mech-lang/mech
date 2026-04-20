@@ -121,20 +121,12 @@ pub fn label_without_recovery<'a, F, O>(
 where
   F: FnMut(ParseString<'a>) -> ParseResult<O>
 {
-  fn is_generic_error_message(message: &str) -> bool {
-    message.starts_with("Unexpected character")
-      || message.starts_with("Unexpected eof")
-      || message.starts_with("NomErrorKind:")
-  }
-
   move |mut input: ParseString| {
     let start = input.loc();
     match parser(input) {
       Err(Err::Error(mut e)) => {
         e.cause_range = SourceRange { start, end: e.cause_range.end };
-        if is_generic_error_message(e.error_detail.message) {
-          e.error_detail = error_detail.clone();
-        }
+        e.error_detail = error_detail.clone();
         Err(Err::Failure(e))
       }
       x => x,
@@ -159,12 +151,7 @@ where
     match parser(input) {
       Err(Err::Error(mut e)) => {
         e.cause_range = SourceRange { start, end: e.cause_range.end };
-        if e.error_detail.message.starts_with("Unexpected character")
-          || e.error_detail.message.starts_with("Unexpected eof")
-          || e.error_detail.message.starts_with("NomErrorKind:")
-        {
-          e.error_detail = error_detail.clone();
-        }
+        e.error_detail = error_detail.clone();
         e.log();
         recovery_fn(e.remaining_input)
       }
@@ -268,32 +255,6 @@ pub fn skip_till_end_of_statement(input: ParseString) -> ParseResult<Token> {
   let tkn = Token::merge_tokens(&mut matched).unwrap_or(Token::default());
 
   Ok((input, tkn))
-}
-
-fn looks_like_mech_code_start(input: ParseString) -> bool {
-  if input.is_empty() {
-    return false;
-  }
-
-  let mut cursor = input.cursor;
-  let mut line = String::new();
-  while cursor < input.graphemes.len() {
-    let ch = input.graphemes[cursor];
-    if ch == "\n" || ch == "\r" {
-      break;
-    }
-    line.push_str(ch);
-    cursor += 1;
-  }
-  let trimmed = line.trim_start();
-  if trimmed.is_empty() {
-    return false;
-  }
-
-  trimmed.starts_with('#')
-    || trimmed.starts_with('|')
-    || trimmed.contains(":=")
-    || trimmed.contains("?")
 }
 
 // skip_till_section_element := skip_past_eol, (!section_element, skip_past_eol)* ;
@@ -412,29 +373,27 @@ pub fn mech_code(input: ParseString) -> ParseResult<Vec<(MechCode,Option<Comment
     let (input, code) = match mech_code_alt(new_input.clone()) {
       Err(Err::Error(mut e)) => {
         // if the error is just "Unexpected character", we will just fail.
-        if e.error_detail.message == "Unexpected character"
-          && output.is_empty()
-          && !looks_like_mech_code_start(new_input.clone())
-        {
-          return Err(Err::Error(e));
-        } else if e.error_detail.message == "Unexpected character" && output.len() > 0 {
+        if e.error_detail.message == "Unexpected character" {
           if output.len() > 0 {
             return Ok((new_input, output));
+          } else {
+            return Err(Err::Error(e));
           }
+        } else {
+          e.cause_range = SourceRange { start, end: e.cause_range.end };
+          e.log();
+          // skip till the end of the statement
+          let (input, skipped) = skip_till_end_of_statement(e.remaining_input)?;
+          // get tokens from start_cursor to input.cursor
+          let skipped_input = input.slice(start_cursor, input.cursor);
+          let skipped_token = Token {
+            kind: TokenKind::Error,
+            chars: skipped_input.chars().collect(),
+            src_range: SourceRange { start, end: input.loc() },
+          };
+          let mech_error = MechCode::Error(skipped_token, e.cause_range);
+          (input, mech_error)
         }
-        e.cause_range = SourceRange { start, end: e.cause_range.end };
-        e.log();
-        // skip till the end of the statement
-        let (input, skipped) = skip_till_end_of_statement(e.remaining_input)?;
-        // get tokens from start_cursor to input.cursor
-        let skipped_input = input.slice(start_cursor, input.cursor);
-        let skipped_token = Token {
-          kind: TokenKind::Error,
-          chars: skipped_input.chars().collect(),
-          src_range: SourceRange { start, end: input.loc() },
-        };
-        let mech_error = MechCode::Error(skipped_token, e.cause_range);
-        (input, mech_error)
       }
       Err(Err::Failure(mut e)) => {
         // Check if this thing matches a section element:
@@ -515,81 +474,6 @@ pub fn print_err_report(text: &str, report: &ParserErrorReport) {
   println!("{}", msg);
 }
 
-fn parser_error_priority(message: &str) -> u8 {
-  if message.contains("expected `") {
-    return 4;
-  }
-  if message.starts_with("Expects ") {
-    return 3;
-  }
-  if message.starts_with("Unexpected paragraph element") || message.starts_with("NomErrorKind:") {
-    return 0;
-  }
-  if message.starts_with("Unexpected character") || message.starts_with("Unexpected eof") {
-    return 1;
-  }
-  2
-}
-
-fn should_suppress_cascade(
-  range: &SourceRange,
-  message: &str,
-  primary: &(SourceRange, ParseErrorDetail),
-) -> bool {
-  if parser_error_priority(message) > 1 {
-    return false;
-  }
-  let primary_row = primary.0.start.row as isize;
-  let row = range.start.row as isize;
-  let near_primary = (primary_row - row).abs() <= 1;
-  near_primary
-}
-
-fn consolidate_error_log(
-  mut error_log: Vec<(SourceRange, ParseErrorDetail)>,
-) -> Vec<(SourceRange, ParseErrorDetail)> {
-  if error_log.len() <= 1 {
-    return error_log;
-  }
-
-  error_log.sort_by(|a, b| {
-    let pa = parser_error_priority(a.1.message);
-    let pb = parser_error_priority(b.1.message);
-    pb.cmp(&pa)
-      .then_with(|| a.0.start.row.cmp(&b.0.start.row))
-      .then_with(|| a.0.start.col.cmp(&b.0.start.col))
-  });
-
-  let mut deduped: Vec<(SourceRange, ParseErrorDetail)> = vec![];
-  for (range, detail) in error_log {
-    let exists = deduped.iter().any(|(rng, d)| {
-      rng.start == range.start && rng.end == range.end && d.message == detail.message
-    });
-    if !exists {
-      deduped.push((range, detail));
-    }
-  }
-
-  let mut filtered: Vec<(SourceRange, ParseErrorDetail)> = vec![];
-  let primary = deduped.first().cloned();
-  for entry in deduped {
-    if let Some(ref top) = primary {
-      if should_suppress_cascade(&entry.0, entry.1.message, top) && entry.1.message != top.1.message {
-        continue;
-      }
-    }
-    filtered.push(entry);
-  }
-
-  filtered.sort_by(|a, b| {
-    a.0.start.row
-      .cmp(&b.0.start.row)
-      .then_with(|| a.0.start.col.cmp(&b.0.start.col))
-  });
-
-  filtered
-}
-
 pub fn parse_grammar(text: &str) -> MResult<Grammar> {
   // remove all whitespace from the input string
   let text_no_Ws = &text.replace(" ", "").replace("\n", "").replace("\r", "").replace("\t", "");
@@ -627,7 +511,7 @@ pub fn parse_grammar(text: &str) -> MResult<Grammar> {
   if error_log.is_empty() {
     Ok(result_node.unwrap())
   } else {
-    let report: Vec<ParserErrorContext> = consolidate_error_log(error_log).into_iter().map(|e| ParserErrorContext {
+    let report: Vec<ParserErrorContext> = error_log.into_iter().map(|e| ParserErrorContext {
       cause_rng: e.0,
       err_message: String::from(e.1.message),
       annotation_rngs: e.1.annotation_rngs,
@@ -676,7 +560,7 @@ pub fn parse(text: &str) -> MResult<Program> {
   if error_log.is_empty() {
     Ok(result_node.unwrap())
   } else {
-    let report: Vec<ParserErrorContext> = consolidate_error_log(error_log).into_iter().map(|e| ParserErrorContext {
+    let report: Vec<ParserErrorContext> = error_log.into_iter().map(|e| ParserErrorContext {
       cause_rng: e.0,
       err_message: String::from(e.1.message),
       annotation_rngs: e.1.annotation_rngs,
