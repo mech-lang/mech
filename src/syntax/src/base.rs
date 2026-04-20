@@ -197,47 +197,6 @@ pub fn output_operator(input: ParseString) -> ParseResult<Token> {
   Ok((input, operator))
 }
 
-pub type TokenParser = fn(ParseString) -> ParseResult<Token>;
-
-#[derive(Copy, Clone)]
-pub struct UnexpectedOperator {
-  pub parser: TokenParser,
-  pub found: &'static str,
-  pub help: &'static str,
-}
-
-pub fn parse_operator_with_diagnostics<'a>(
-  input: ParseString<'a>,
-  expected: TokenParser,
-  expected_name: &'static str,
-  context: &'static str,
-  unexpected: &[UnexpectedOperator],
-) -> ParseResult<'a, Token> {
-  if let Ok((input, token)) = expected(input.clone()) {
-    return Ok((input, token));
-  }
-
-  for candidate in unexpected {
-    if let Ok((remaining_input, wrong_token)) = (candidate.parser)(input.clone()) {
-      let message = format!(
-        "{context}: expected `{expected_name}` but found `{}`. {}",
-        candidate.found,
-        candidate.help
-      );
-      return Err(nom::Err::Error(ParseError {
-        cause_range: wrong_token.src_range.clone(),
-        remaining_input,
-        error_detail: ParseErrorDetail {
-          message: message.leak(),
-          annotation_rngs: vec![wrong_token.src_range],
-        },
-      }));
-    }
-  }
-
-  Err(nom::Err::Error(ParseError::new(input, "Unexpected character")))
-}
-
 // emoji-grapheme := ?emoji-grapheme-literal? ;
 pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_emoji() {
