@@ -104,7 +104,7 @@ pub fn matrix_column(input: ParseString) -> ParseResult<MatrixColumn> {
       return Err(err);
     }
   };
-  let (input, _) = nom_tuple((space_tab0,opt(comma), space_tab0))(input)?;
+  let (input, _) = nom_tuple((space_tab0,opt(alt((comma, box_vert, box_vert_bold))), space_tab0))(input)?;
   Ok((input, MatrixColumn{element}))
 }
 
