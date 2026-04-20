@@ -43,13 +43,6 @@ like literals and variables.
 
 // expression := fsm-pipe | set-comprehension | matrix-comprehension | range-expression | formula ;
 pub fn expression(input: ParseString) -> ParseResult<Expression> {
-  if let Ok((after_source, _)) = factor(input.clone()) {
-    if question(after_source).is_ok() {
-      let (input, mtch) = match_expression(input)?;
-      return Ok((input, Expression::Match(Box::new(mtch))));
-    }
-  }
-
   let (input, expr) = match fsm_pipe(input.clone()) {
     Ok((input, pipe)) => (input, Expression::FsmPipe(pipe)),
     Err(_) => match set_comprehension(input.clone()) {
@@ -58,11 +51,14 @@ pub fn expression(input: ParseString) -> ParseResult<Expression> {
         Ok((input, mc)) => (input, Expression::MatrixComprehension(Box::new(mc))),
         Err(_) => match range_expression(input.clone()) {
           Ok((input, rng)) => (input, Expression::Range(Box::new(rng))),
-          Err(_) => match formula(input.clone()) {
-            Ok((input, Factor::Expression(expr))) => (input, *expr),
-            Ok((input, fctr)) => (input, Expression::Formula(fctr)),
-            Err(err) => {
-              return Err(err);
+          Err(_) => match match_expression(input.clone()) {
+            Ok((input, expr)) => (input, Expression::Match(Box::new(expr))),
+            Err(_) => match formula(input.clone()) {
+              Ok((input, Factor::Expression(expr))) => (input, *expr),
+              Ok((input, fctr)) => (input, Expression::Formula(fctr)),
+              Err(err) => {
+                return Err(err);
+              }
             }
           },
         }
@@ -82,24 +78,8 @@ pub fn match_expression(input: ParseString) -> ParseResult<MatchExpression> {
   let (input, _) = question(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, arms) = many1(match_arm)(input)?;
-  let (input, _) = label!(period, "Match expression expects terminating period `.`")(input)?;
+  let (input, _) = opt(period)(input)?;
   Ok((input, MatchExpression { source, arms }))
-}
-
-pub fn match_output_operator(input: ParseString) -> ParseResult<Token> {
-  parse_operator_with_diagnostics(
-    input,
-    output_operator,
-    "=>",
-    "Match arm",
-    &[
-      UnexpectedOperator {
-        parser: transition_operator,
-        found: "->",
-        help: "Use `=>` in match arms. `->` is reserved for FSM transitions.",
-      },
-    ],
-  )
 }
 
 // match-arm := guard-operator, pattern, [",", expression], transition-operator, expression, statement-separator? ;
@@ -110,9 +90,9 @@ pub fn match_arm(input: ParseString) -> ParseResult<MatchArm> {
     list_separator,
     preceded(whitespace0, expression),
   ))(input)?;
-  let (input, _) = match_output_operator(input)?;
+  let (input, _) = output_operator(input)?;
   let (input, expr) = expression(input)?;
-  let (input, _) = opt(statement_separator)(input)?;
+  let (input, _) = opt(alt((whitespace1, statement_separator)))(input)?;
   Ok((input, MatchArm {
     pattern,
     guard,
