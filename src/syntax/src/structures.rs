@@ -95,7 +95,7 @@ pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
   Ok((input, Matrix{rows}))
 }
 
-// matrix-column := (space | tab)*, expression, ((space | tab)*, ("," | table-separator)?, (space | tab)*) ;
+// matrix-column := (space | tab)*, expression, ((space | tab)*, ","?, (space | tab)*) ;
 pub fn matrix_column(input: ParseString) -> ParseResult<MatrixColumn> {
   let (input, _) = space_tab0(input)?;
   let (input, element) = match expression(input) {
@@ -104,7 +104,7 @@ pub fn matrix_column(input: ParseString) -> ParseResult<MatrixColumn> {
       return Err(err);
     }
   };
-  let (input, _) = nom_tuple((space_tab0,opt(alt((comma,table_separator))), space_tab0))(input)?;
+  let (input, _) = nom_tuple((space_tab0,opt(comma), space_tab0))(input)?;
   Ok((input, MatrixColumn{element}))
 }
 

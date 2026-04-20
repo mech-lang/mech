@@ -5,6 +5,42 @@ use nom::{
   sequence::tuple as nom_tuple,
 };
 
+fn validate_fsm_value_pattern(ptrn: &Pattern) -> Result<(), &'static str> {
+  match ptrn {
+    Pattern::Wildcard => Err("Wildcard `*` is only valid in pattern-matching positions"),
+    Pattern::Array(arr) => {
+      if arr.spread.is_some() {
+        return Err("Array spread/rest syntax (`...` or `|`) is only valid in pattern-matching positions");
+      }
+      for item in arr.prefix.iter().chain(arr.suffix.iter()) {
+        validate_fsm_value_pattern(item)?;
+      }
+      Ok(())
+    }
+    Pattern::Tuple(tpl) => {
+      for item in tpl.0.iter() {
+        validate_fsm_value_pattern(item)?;
+      }
+      Ok(())
+    }
+    Pattern::TupleStruct(tpl) => {
+      for item in tpl.patterns.iter() {
+        validate_fsm_value_pattern(item)?;
+      }
+      Ok(())
+    }
+    Pattern::Expression(_) => Ok(()),
+  }
+}
+
+fn fsm_value(input: ParseString) -> ParseResult<Pattern> {
+  let (input, ptrn) = pattern(input)?;
+  if let Err(msg) = validate_fsm_value_pattern(&ptrn) {
+    return Err(nom::Err::Error(ParseError::new(input, msg)));
+  }
+  Ok((input, ptrn))
+}
+
 // State Machines
 // ----------------------------------------------------------------------------
 
@@ -24,7 +60,7 @@ pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> 
   let (input, input_vars) = separated_list0(list_separator, var)(input)?;
   let (input, _) = right_parenthesis(input)?;
   let (input, _) = transition_operator(input)?;
-  let (input, start) = pattern(input)?;
+  let (input, start) = fsm_value(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, arms) = many1(fsm_arm)(input)?;
   let (input, _) = period(input)?;
@@ -78,14 +114,14 @@ pub fn fsm_transition(input: ParseString) -> ParseResult<FsmArm> {
 // fsm_state_transition := transition_operator, atom ;
 pub fn fsm_state_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = transition_operator(input)?;
-  let (input, ptrn) = pattern(input)?;
+  let (input, ptrn) = fsm_value(input)?;
   Ok((input, Transition::Next(ptrn)))
 }
 
 // fsm_async_transition := async_transition_operator, atom ;
 pub fn fsm_async_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = async_transition_operator(input)?;
-  let (input, ptrn) = pattern(input)?;
+  let (input, ptrn) = fsm_value(input)?;
   Ok((input, Transition::Async(ptrn)))
 }
 
@@ -109,7 +145,7 @@ pub fn fsm_block_transition(input: ParseString) -> ParseResult<Transition> {
 // fsm_output := output_operator, pattern ;
 pub fn fsm_output(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = output_operator(input)?;
-  let ((input, ptrn)) = pattern(input)?;
+  let ((input, ptrn)) = fsm_value(input)?;
   Ok((input, Transition::Output(ptrn)))
 }
 
