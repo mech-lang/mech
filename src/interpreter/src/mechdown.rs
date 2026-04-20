@@ -216,6 +216,12 @@ pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
   let out = match &code {
     MechCode::Expression(expr) => expression(&expr, None, p),
     MechCode::Statement(stmt) => statement(&stmt, None, p),
+    #[cfg(feature = "state_machines")]
+    MechCode::FsmSpecification(fsm_spec) => {
+      crate::state_machines::register_fsm_specification(fsm_spec, p)?;
+      Ok(Value::Empty)
+    },
+    #[cfg(not(feature = "state_machines"))]
     MechCode::FsmSpecification(_) => Ok(Value::Empty),
     #[cfg(feature = "state_machines")]
     MechCode::FsmImplementation(fsm_impl) => {

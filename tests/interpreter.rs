@@ -327,6 +327,70 @@ test_interpreter!(interpret_fsm_bubble_sort_assigns_matrix_value, "#bubble-sort(
 
 x := [5u64 3u64 8u64 1u64]
 y := #bubble-sort(x)", Value::MatrixU64(Matrix::from_vec(vec![1, 3, 5, 8], 1, 4)));
+#[test]
+fn interpret_fsm_bubble_sort_rejects_f64_argument_kind() {
+  let s = r#"
+#bubble-sort(arr<[u64]>) => <[u64]>
+  ├ :Start(arr<[u64]>)
+  ├ :Pass(arr<[u64]>, acc<[u64]>, swaps<u64>)
+  ├ :Next(arr<[u64]>, swaps<u64>)
+  ├ :Reverse(arr<[u64]>, acc<[u64]>, swaps<u64>)
+  └ :Done(arr<[u64]>).
+
+#bubble-sort(arr) -> :Start(arr)
+  :Start(arr) -> :Pass(arr, [], 0u64)
+  :Pass([a, b | tail], acc, swaps)
+    ├ a > b -> :Pass([a tail], [b acc], swaps + 1u64)
+    └ *     -> :Pass([b tail], [a acc], swaps)
+  :Pass([x], acc, swaps) -> :Next([x acc], swaps)
+  :Pass([], acc, swaps)  -> :Next(acc, swaps)
+  :Next(arr, swaps) -> :Reverse(arr, [], swaps)
+  :Reverse([x | tail], acc, swaps) -> :Reverse(tail, [x acc], swaps)
+  :Reverse([], acc, 0u64)     -> :Done(acc)
+  :Reverse([], acc, swaps) -> :Pass(acc, [], 0u64)
+  :Done(arr) => arr.
+
+x<[f64]> := [3 5 4 1 2]
+#bubble-sort(x)
+"#;
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let err = intrp.interpret(&tree).unwrap_err();
+  let msg = format!("{:?}", err);
+  assert!(msg.contains("FsmArgumentKindMismatch"));
+}
+#[test]
+fn interpret_fsm_bubble_sort_rejects_untyped_numeric_matrix_argument_kind() {
+  let s = r#"
+#bubble-sort(arr<[u64]>) => <[u64]>
+  ├ :Start(arr<[u64]>)
+  ├ :Pass(arr<[u64]>, acc<[u64]>, swaps<u64>)
+  ├ :Next(arr<[u64]>, swaps<u64>)
+  ├ :Reverse(arr<[u64]>, acc<[u64]>, swaps<u64>)
+  └ :Done(arr<[u64]>).
+
+#bubble-sort(arr) -> :Start(arr)
+  :Start(arr) -> :Pass(arr, [], 0u64)
+  :Pass([a, b | tail], acc, swaps)
+    ├ a > b -> :Pass([a tail], [b acc], swaps + 1u64)
+    └ *     -> :Pass([b tail], [a acc], swaps)
+  :Pass([x], acc, swaps) -> :Next([x acc], swaps)
+  :Pass([], acc, swaps)  -> :Next(acc, swaps)
+  :Next(arr, swaps) -> :Reverse(arr, [], swaps)
+  :Reverse([x | tail], acc, swaps) -> :Reverse(tail, [x acc], swaps)
+  :Reverse([], acc, 0u64)     -> :Done(acc)
+  :Reverse([], acc, swaps) -> :Pass(acc, [], 0u64)
+  :Done(arr) => arr.
+
+y := [3 5 4 1 2]
+#bubble-sort(y)
+"#;
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let err = intrp.interpret(&tree).unwrap_err();
+  let msg = format!("{:?}", err);
+  assert!(msg.contains("FsmArgumentKindMismatch"));
+}
 test_interpreter!(
   interpret_variable_define_typed_set_from_range_matrix,
   "input<{f64}> := 1..=5",
