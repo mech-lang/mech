@@ -20,9 +20,9 @@ Inside `{...}`:
 Examples:
 
 ```
-{6 * 7}          %% Inline expression (evaluated normally)
-{foo/bar}        %% Inline expression (variable/operator path form)
-{chapter.mec}    %% Include (ends with .mec)
+{6 * 7}          -- Inline expression (evaluated normally)
+{foo/bar}        -- Inline expression (variable/operator path form)
+{chapter.mec}    -- Include (ends with .mec)
 ```
 
 2. Semantics

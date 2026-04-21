@@ -1028,14 +1028,14 @@ A `record` is a collection of named fields. Each field consists of a key-value p
 A record's kind describes the types of its fields:
 
 ```mech:disabled
-<{field1<kind1>, field2<kind2>,...}>
+<{field1<kind1>, field2<kind2>,…}>
 ```
 
 This denotes a record with fields:
 
 - `field1<kind1>`: A field named `field1` of type `kind1`.
 - `field2<kind2>`: A field named `field2` of type `kind2`.
-- `...`: Additional fields as needed.
+- `…`: Additional fields as needed.
 
 (5.6.2) Examples
 
@@ -2034,14 +2034,14 @@ Images can be floated to the left or right by prefixing with `<<:` or `:>>`, res
 (10.9.1) Example
 
 ```
-![Mika running to get the job done!](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/running.png?ref_type=heads)
-![A smaller version of Mika](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/running.png?ref_type=heads){width: "200px"}
+![Mika running to get the job done!](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/mika-pose-running.png?ref_type=heads)
+![A smaller version of Mika](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/mika-pose-running.png?ref_type=heads){width: "200px"}
 ```
 
 This renders as:
 
-![Mika running to get the job done!](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/running.png?ref_type=heads)
-![A smaller version of Mika](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/running.png?ref_type=heads){width: "200px"}
+![Mika running to get the job done!](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/mika-pose-running.png?ref_type=heads)
+![A smaller version of Mika](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/mika-pose-running.png?ref_type=heads){width: "200px"}
 
 (10.10) Mech Extensions 
 
