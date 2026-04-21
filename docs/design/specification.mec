@@ -1028,7 +1028,7 @@ A `record` is a collection of named fields. Each field consists of a key-value p
 A record's kind describes the types of its fields:
 
 ```mech:disabled
-<{field1<kind1>, field2<kind2>,...}>
+<{field1<kind1>, field2<kind2>}>
 ```
 
 This denotes a record with fields:
