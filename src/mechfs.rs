@@ -934,64 +934,50 @@ fn is_code_fence_close(line: &str, marker: char, min_len: usize) -> bool {
   line[after..].trim_matches(|c| c == ' ' || c == '\t' || c == '\r' || c == '\n').is_empty()
 }
 
+fn standalone_braced_content(line_without_newline: &str) -> Option<&str> {
+  let trimmed = line_without_newline.trim();
+  if !(trimmed.starts_with('{') && trimmed.ends_with('}')) {
+    return None;
+  }
+  let inner = &trimmed[1..trimmed.len() - 1];
+  Some(inner)
+}
+
 fn expand_mechdown_include_tokens(
   source: &str,
   canonical_path: &Path,
   active_set: &mut HashSet<PathBuf>,
 ) -> MResult<String> {
-  let chars: Vec<char> = source.chars().collect();
   let mut result = String::new();
-  let mut i = 0;
 
-  while i < chars.len() {
-    if chars[i] != '{' {
-      result.push(chars[i]);
-      i += 1;
-      continue;
-    }
+  for line in source.split_inclusive('\n') {
+    let (line_without_newline, newline) = match line.strip_suffix('\n') {
+      Some(prefix) => (prefix, "\n"),
+      None => (line, ""),
+    };
 
-    let start = i;
-    i += 1;
-    let mut depth = 1usize;
-    while i < chars.len() && depth > 0 {
-      match chars[i] {
-        '{' => depth += 1,
-        '}' => depth -= 1,
-        _ => {}
+    if let Some(inner) = standalone_braced_content(line_without_newline) {
+      if looks_like_mech_include(inner) {
+        let include_raw = inner.trim();
+        let parent = canonical_path.parent().unwrap_or(Path::new("."));
+        let include_path = parent.join(include_raw);
+        let include_canonical = include_path.canonicalize().map_err(|_| {
+          MechError::new(
+            GenericError {
+              msg: format!("Include failed: {}", include_raw),
+            },
+            None,
+          )
+          .with_compiler_loc()
+        })?;
+        let expanded = expand_mechdown_includes_recursive(&include_canonical, active_set)?;
+        result.push_str(&expanded);
+        result.push_str(newline);
+        continue;
       }
-      i += 1;
     }
 
-    if depth != 0 {
-      for c in &chars[start..] {
-        result.push(*c);
-      }
-      break;
-    }
-
-    let end = i - 1;
-    let inner: String = chars[start + 1..end].iter().collect();
-
-    if looks_like_mech_include(&inner) {
-      let include_raw = inner.trim();
-      let parent = canonical_path.parent().unwrap_or(Path::new("."));
-      let include_path = parent.join(include_raw);
-      let include_canonical = include_path.canonicalize().map_err(|_| {
-        MechError::new(
-          GenericError {
-            msg: format!("Include failed: {}", include_raw),
-          },
-          None,
-        )
-        .with_compiler_loc()
-      })?;
-      let expanded = expand_mechdown_includes_recursive(&include_canonical, active_set)?;
-      result.push_str(&expanded);
-    } else {
-      result.push('{');
-      result.push_str(&inner);
-      result.push('}');
-    }
+    result.push_str(line);
   }
 
   Ok(result)
@@ -1195,6 +1181,26 @@ mod tests {
     assert_eq!(
       expanded,
       "Before\n```mech\n{foo/bar.mec}\n```\nIncluded\nAfter\n~~~\n{also/not-real.mec}\n~~~\n"
+    );
+  }
+
+  #[test]
+  fn ignores_include_syntax_inside_paragraph_inline_code() {
+    let dir = make_temp_dir("inline-code-ignore");
+    let main = dir.join("main.mec");
+    let inc = dir.join("inc.mec");
+
+    std::fs::write(
+      &main,
+      "This is an inline thing: `{path/to/file.mec}` and this should stay literal.\n{inc.mec}\n",
+    )
+    .unwrap();
+    std::fs::write(&inc, "Included").unwrap();
+
+    let expanded = expand_mechdown_includes(&main).unwrap();
+    assert_eq!(
+      expanded,
+      "This is an inline thing: `{path/to/file.mec}` and this should stay literal.\nIncluded\n"
     );
   }
 }
