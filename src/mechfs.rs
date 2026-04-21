@@ -893,6 +893,110 @@ fn looks_like_mech_include(content: &str) -> bool {
   trimmed.ends_with(".mec")
 }
 
+fn code_fence_delimiter(line: &str) -> Option<(char, usize, usize)> {
+  let bytes = line.as_bytes();
+  let mut i = 0usize;
+  while i < bytes.len() && bytes[i] == b' ' && i < 4 {
+    i += 1;
+  }
+
+  if i > 3 || i >= bytes.len() {
+    return None;
+  }
+
+  let marker = bytes[i] as char;
+  if marker != '`' && marker != '~' {
+    return None;
+  }
+
+  let mut j = i;
+  while j < bytes.len() && bytes[j] as char == marker {
+    j += 1;
+  }
+
+  let count = j - i;
+  if count < 3 {
+    return None;
+  }
+
+  Some((marker, count, j))
+}
+
+fn is_code_fence_close(line: &str, marker: char, min_len: usize) -> bool {
+  let Some((line_marker, count, after)) = code_fence_delimiter(line) else {
+    return false;
+  };
+
+  if line_marker != marker || count < min_len {
+    return false;
+  }
+
+  line[after..].trim_matches(|c| c == ' ' || c == '\t' || c == '\r' || c == '\n').is_empty()
+}
+
+fn expand_mechdown_include_tokens(
+  source: &str,
+  canonical_path: &Path,
+  active_set: &mut HashSet<PathBuf>,
+) -> MResult<String> {
+  let chars: Vec<char> = source.chars().collect();
+  let mut result = String::new();
+  let mut i = 0;
+
+  while i < chars.len() {
+    if chars[i] != '{' {
+      result.push(chars[i]);
+      i += 1;
+      continue;
+    }
+
+    let start = i;
+    i += 1;
+    let mut depth = 1usize;
+    while i < chars.len() && depth > 0 {
+      match chars[i] {
+        '{' => depth += 1,
+        '}' => depth -= 1,
+        _ => {}
+      }
+      i += 1;
+    }
+
+    if depth != 0 {
+      for c in &chars[start..] {
+        result.push(*c);
+      }
+      break;
+    }
+
+    let end = i - 1;
+    let inner: String = chars[start + 1..end].iter().collect();
+
+    if looks_like_mech_include(&inner) {
+      let include_raw = inner.trim();
+      let parent = canonical_path.parent().unwrap_or(Path::new("."));
+      let include_path = parent.join(include_raw);
+      let include_canonical = include_path.canonicalize().map_err(|_| {
+        MechError::new(
+          GenericError {
+            msg: format!("Include failed: {}", include_raw),
+          },
+          None,
+        )
+        .with_compiler_loc()
+      })?;
+      let expanded = expand_mechdown_includes_recursive(&include_canonical, active_set)?;
+      result.push_str(&expanded);
+    } else {
+      result.push('{');
+      result.push_str(&inner);
+      result.push('}');
+    }
+  }
+
+  Ok(result)
+}
+
 fn expand_mechdown_includes(path: &Path) -> MResult<String> {
   let canonical = path.canonicalize().map_err(|_| {
     MechError::new(
@@ -957,59 +1061,37 @@ fn expand_mechdown_includes_recursive(
       .with_compiler_loc()
     })?;
 
-  let chars: Vec<char> = source.chars().collect();
   let mut result = String::new();
-  let mut i = 0;
+  let mut outside_fence_buffer = String::new();
+  let mut active_fence: Option<(char, usize)> = None;
 
-  while i < chars.len() {
-    if chars[i] != '{' {
-      result.push(chars[i]);
-      i += 1;
+  for line in source.split_inclusive('\n') {
+    if let Some((marker, min_len)) = active_fence {
+      result.push_str(line);
+      if is_code_fence_close(line, marker, min_len) {
+        active_fence = None;
+      }
       continue;
     }
 
-    let start = i;
-    i += 1;
-    let mut depth = 1usize;
-    while i < chars.len() && depth > 0 {
-      match chars[i] {
-        '{' => depth += 1,
-        '}' => depth -= 1,
-        _ => {}
+    if let Some((marker, len, _)) = code_fence_delimiter(line) {
+      if !outside_fence_buffer.is_empty() {
+        let expanded =
+          expand_mechdown_include_tokens(&outside_fence_buffer, &canonical_path, active_set)?;
+        result.push_str(&expanded);
+        outside_fence_buffer.clear();
       }
-      i += 1;
+      active_fence = Some((marker, len));
+      result.push_str(line);
+      continue;
     }
 
-    if depth != 0 {
-      for c in &chars[start..] {
-        result.push(*c);
-      }
-      break;
-    }
+    outside_fence_buffer.push_str(line);
+  }
 
-    let end = i - 1;
-    let inner: String = chars[start + 1..end].iter().collect();
-
-    if looks_like_mech_include(&inner) {
-      let include_raw = inner.trim();
-      let parent = canonical_path.parent().unwrap_or(Path::new("."));
-      let include_path = parent.join(include_raw);
-      let include_canonical = include_path.canonicalize().map_err(|_| {
-        MechError::new(
-          GenericError {
-            msg: format!("Include failed: {}", include_raw),
-          },
-          None,
-        )
-        .with_compiler_loc()
-      })?;
-      let expanded = expand_mechdown_includes_recursive(&include_canonical, active_set)?;
-      result.push_str(&expanded);
-    } else {
-      result.push('{');
-      result.push_str(&inner);
-      result.push('}');
-    }
+  if !outside_fence_buffer.is_empty() {
+    let expanded = expand_mechdown_include_tokens(&outside_fence_buffer, &canonical_path, active_set)?;
+    result.push_str(&expanded);
   }
 
   active_set.remove(&canonical_path);
@@ -1094,6 +1176,26 @@ mod tests {
 
     let expanded = expand_mechdown_includes(&root).unwrap();
     assert_eq!(expanded, "Top\nChapter\nNested\nBottom");
+  }
+
+  #[test]
+  fn ignores_include_syntax_inside_code_fences() {
+    let dir = make_temp_dir("fence-ignore");
+    let main = dir.join("main.mec");
+    let inc = dir.join("inc.mec");
+
+    std::fs::write(
+      &main,
+      "Before\n```mech\n{foo/bar.mec}\n```\n{inc.mec}\nAfter\n~~~\n{also/not-real.mec}\n~~~\n",
+    )
+    .unwrap();
+    std::fs::write(&inc, "Included").unwrap();
+
+    let expanded = expand_mechdown_includes(&main).unwrap();
+    assert_eq!(
+      expanded,
+      "Before\n```mech\n{foo/bar.mec}\n```\nIncluded\nAfter\n~~~\n{also/not-real.mec}\n~~~\n"
+    );
   }
 }
 
