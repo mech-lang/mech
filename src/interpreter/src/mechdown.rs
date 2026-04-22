@@ -173,7 +173,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     #[cfg(feature = "mika")]
     SectionElement::Mika((m,s)) => {
       if let Some(mika_section) = s {
-        let mika_interp_id = hash_str(&format!("mika:{}:{:?}", p.id, (m, s)));
+        let mika_interp_id = mika_interpreter_id(p.id, m, s);
         let mut sub_interpreters = p.sub_interpreters.borrow_mut();
         let mut new_sub_interpreter = Interpreter::new(mika_interp_id);
         new_sub_interpreter.set_functions(p.functions().clone());
@@ -203,6 +203,15 @@ fn inline_eval_id(p: &Interpreter) -> u64 {
     current
   };
   hash_str(&format!("inline-eval:{}:{}", p.id, next_ix))
+}
+
+#[cfg(feature = "mika")]
+fn mika_interpreter_id(parent_id: u64, mika: &Mika, section: &Option<MikaSection>) -> u64 {
+  let mut hasher = DefaultHasher::new();
+  parent_id.hash(&mut hasher);
+  mika.hash(&mut hasher);
+  section.hash(&mut hasher);
+  hasher.finish()
 }
 
 pub fn paragraph_element(element: &ParagraphElement, p: &Interpreter) -> MResult<(u64,Value)> {
