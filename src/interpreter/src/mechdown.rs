@@ -172,6 +172,17 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     },
     #[cfg(feature = "mika")]
     SectionElement::Mika((m,s)) => {
+      if let Some(mika_section) = s {
+        let mika_interp_id = hash_str(&format!("mika:{}:{:?}", p.id, (m, s)));
+        let mut sub_interpreters = p.sub_interpreters.borrow_mut();
+        let mut new_sub_interpreter = Interpreter::new(mika_interp_id);
+        new_sub_interpreter.set_functions(p.functions().clone());
+        let pp = sub_interpreters
+          .entry(mika_interp_id)
+          .or_insert(Box::new(new_sub_interpreter))
+          .as_mut();
+        let _ = section(&mika_section.elements, pp)?;
+      }
       return Ok(Value::Atom(Ref::new(MechAtom::from_name(&m.to_string()))));
     },
     x => {return Err(MechError::new(
