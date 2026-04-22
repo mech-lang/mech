@@ -1011,7 +1011,6 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         });
 
         if let Some(output_value) = output {
-          let repl_text = output_value.format_value_inline();
           let kind_str = html_escape(&format!("{}", output_value.kind()));
           let result_html = format!(
             "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
@@ -1023,7 +1022,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           prompt_line.set_class_name("repl-line");
           let input_span = document.create_element("span").unwrap();
           input_span.set_class_name("repl-code");
-          input_span.set_inner_html(&repl_text);
+          input_span.set_inner_html("ans");
           prompt_line.append_child(&input_span).unwrap();
           if let Some(last_child) = last_child.clone() {
             mech_output.insert_before(&prompt_line, Some(&last_child)).unwrap();
@@ -1044,7 +1043,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             if let Some(ptr) = *mech_ref.borrow() {
               unsafe {
                 (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output_value);
-                (*ptr).repl_history.push(repl_text.clone());
+                (*ptr).repl_history.push("ans".to_string());
               }
             }
           });
