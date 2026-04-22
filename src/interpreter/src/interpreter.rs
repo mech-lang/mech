@@ -76,6 +76,21 @@ impl Interpreter {
   pub fn new(id: u64) -> Self {
     let mut state = ProgramState::new();
     load_stdkinds(&mut state.kinds);
+    #[cfg(feature = "symbol_table")]
+    {
+      let ans_id = hash_str("ans");
+      state
+        .symbol_table
+        .borrow_mut()
+        .insert(ans_id, Value::Empty, false);
+      state
+        .symbol_table
+        .borrow_mut()
+        .dictionary
+        .borrow_mut()
+        .insert(ans_id, "ans".to_string());
+      state.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
+    }
     #[cfg(feature = "functions")]
     load_stdlib(&mut state.functions.borrow_mut());
     Self {
