@@ -1,7 +1,6 @@
 use mech_core::*;
 use mech_core::nodes::{Kind, Matrix};
 use std::collections::{HashMap, HashSet};
-use std::hash::{DefaultHasher, Hash, Hasher};
 use colored::Colorize;
 use std::io::{Read, Write, Cursor};
 use crate::*;
@@ -32,11 +31,7 @@ pub struct Formatter{
 impl Formatter {
 
   fn mika_interpreter_id(parent_id: u64, node: &(Mika, Option<MikaSection>)) -> u64 {
-    let mut hasher = DefaultHasher::new();
-    parent_id.hash(&mut hasher);
-    node.0.hash(&mut hasher);
-    node.1.hash(&mut hasher);
-    hasher.finish()
+    hash_str(&format!("mika:{}:{:?}", parent_id, (&node.0, &node.1)))
   }
 
   fn inline_eval_id(&mut self) -> u64 {

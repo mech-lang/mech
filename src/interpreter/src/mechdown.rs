@@ -207,11 +207,7 @@ fn inline_eval_id(p: &Interpreter) -> u64 {
 
 #[cfg(feature = "mika")]
 fn mika_interpreter_id(parent_id: u64, mika: &Mika, section: &Option<MikaSection>) -> u64 {
-  let mut hasher = DefaultHasher::new();
-  parent_id.hash(&mut hasher);
-  mika.hash(&mut hasher);
-  section.hash(&mut hasher);
-  hasher.finish()
+  hash_str(&format!("mika:{}:{:?}", parent_id, (mika, section)))
 }
 
 pub fn paragraph_element(element: &ParagraphElement, p: &Interpreter) -> MResult<(u64,Value)> {
