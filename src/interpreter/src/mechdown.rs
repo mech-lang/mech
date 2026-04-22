@@ -156,8 +156,33 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     SectionElement::WarningBlock(x) => x.hash(&mut hasher),
     SectionElement::InfoBlock(x) => x.hash(&mut hasher),
     SectionElement::IdeaBlock(x) => x.hash(&mut hasher),
+    SectionElement::FigureTable(x) => {
+      for row in &x.rows {
+        for figure in row {
+          for el in &figure.caption.elements {
+            let (code_id, value) = match paragraph_element(el, p) {
+              Ok(val) => val,
+              _ => continue,
+            };
+            p.out_values.borrow_mut().insert(code_id, value.clone());
+          }
+        }
+      }
+      x.hash(&mut hasher);
+    },
     #[cfg(feature = "mika")]
     SectionElement::Mika((m,s)) => {
+      if let Some(mika_section) = s {
+        let mika_interp_id = mika_interpreter_id(p.id, m, s);
+        let mut sub_interpreters = p.sub_interpreters.borrow_mut();
+        let mut new_sub_interpreter = Interpreter::new(mika_interp_id);
+        new_sub_interpreter.set_functions(p.functions().clone());
+        let pp = sub_interpreters
+          .entry(mika_interp_id)
+          .or_insert(Box::new(new_sub_interpreter))
+          .as_mut();
+        let _ = section(&mika_section.elements, pp)?;
+      }
       return Ok(Value::Atom(Ref::new(MechAtom::from_name(&m.to_string()))));
     },
     x => {return Err(MechError::new(
@@ -178,6 +203,11 @@ fn inline_eval_id(p: &Interpreter) -> u64 {
     current
   };
   hash_str(&format!("inline-eval:{}:{}", p.id, next_ix))
+}
+
+#[cfg(feature = "mika")]
+fn mika_interpreter_id(parent_id: u64, mika: &Mika, section: &Option<MikaSection>) -> u64 {
+  hash_str(&format!("mika:{}:{:?}", parent_id, (mika, section)))
 }
 
 pub fn paragraph_element(element: &ParagraphElement, p: &Interpreter) -> MResult<(u64,Value)> {
