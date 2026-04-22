@@ -20,7 +20,7 @@ pub enum PatternMatchSemantics {
 // Entry point for multi-argument dispatch. When a function is called with 
 // multiple arguments, this wraps them as if they were a tuple and delegates 
 // to pattern_matches_value.
-pub fn pattern_matches_arguments(pattern: &Pattern, args: &Vec<Value>, env: &mut Environment, p: &Interpreter) -> MResult<bool> {
+pub fn pattern_matches_arguments(pattern: &Pattern, args: &[Value], env: &mut Environment, p: &Interpreter) -> MResult<bool> {
   if args.len() == 1 {
     return pattern_matches_value(pattern, &args[0], env, p);
   }

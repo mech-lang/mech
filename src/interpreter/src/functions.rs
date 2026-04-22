@@ -93,11 +93,8 @@ pub fn function_call(fxn_call: &FunctionCall, env: Option<&Environment>, p: &Int
 
   // User-defined function: evaluate arguments then run the interpreted body.
   if let Some(user_fxn) = { functions.borrow().user_functions.get(&fxn_name_id).cloned() } {
-    let mut input_arg_values = vec![];
-    for (_, arg_expr) in fxn_call.args.iter() {
-      input_arg_values.push(expression(arg_expr, env, p)?);
-    }
-    return execute_user_function(&user_fxn, &input_arg_values, p);
+    let input_arg_values = evaluate_call_arguments(fxn_call, env, p)?;
+    return execute_user_function(&user_fxn, input_arg_values.as_slice(), p);
   }
 
   // Pre-compiled built-in functions.
@@ -116,10 +113,7 @@ pub fn function_call(fxn_call: &FunctionCall, env: Option<&Environment>, p: &Int
   };
   match fxn_compiler {
     Some(fxn_compiler) => {
-      let mut input_arg_values = vec![];
-      for (_, arg_expr) in fxn_call.args.iter() {
-        input_arg_values.push(expression(arg_expr, env, p)?);
-      }
+      let input_arg_values = evaluate_call_arguments(fxn_call, env, p)?;
       trace_println!(
         p,
         "{}",
@@ -144,6 +138,18 @@ pub fn function_call(fxn_call: &FunctionCall, env: Option<&Environment>, p: &Int
     .with_compiler_loc()
     .with_tokens(fxn_call.name.tokens())),
   }
+}
+
+fn evaluate_call_arguments(
+  fxn_call: &FunctionCall,
+  env: Option<&Environment>,
+  p: &Interpreter,
+) -> MResult<Vec<Value>> {
+  let mut input_arg_values = Vec::with_capacity(fxn_call.args.len());
+  for (_, arg_expr) in fxn_call.args.iter() {
+    input_arg_values.push(expression(arg_expr, env, p)?);
+  }
+  Ok(input_arg_values)
 }
 
 // Asks a native function compiler to select the right concrete implementation
@@ -193,7 +199,7 @@ pub fn execute_native_function_compiler(
 // Logs entry/exit (or failure) via the trace machinery.
 fn execute_user_function(
   fxn_def: &FunctionDefinition,
-  input_arg_values: &Vec<Value>,
+  input_arg_values: &[Value],
   p: &Interpreter,
 ) -> MResult<Value> {
   // Reject calls with the wrong number of arguments before doing anything else.
@@ -234,11 +240,11 @@ fn execute_user_function(
     // Match-arm body: loop to support tail-call optimisation. Each iteration
     // opens a fresh scope, binds the current arguments, runs the arms, then
     // either returns the result or loops with a new argument set.
-    let mut current_args: Vec<Value> = input_arg_values.clone();
+    let mut current_args: Vec<Value> = input_arg_values.to_vec();
     loop {
       let scope = FunctionScope::enter(p);
-      bind_function_inputs(fxn_def, &current_args, p)?;
-      let step: FunctionCallStep = execute_function_match_arms(fxn_def, &current_args, p)?;
+      bind_function_inputs(fxn_def, current_args.as_slice(), p)?;
+      let step: FunctionCallStep = execute_function_match_arms(fxn_def, current_args.as_slice(), p)?;
       drop(scope);
       match step {
         FunctionCallStep::Return(value) => break Ok(value),
@@ -299,7 +305,7 @@ enum FunctionCallStep {
 #[cfg(feature = "matrix")]
 fn try_broadcast_user_function(
   fxn_def: &FunctionDefinition,
-  input_arg_values: &Vec<Value>,
+  input_arg_values: &[Value],
   p: &Interpreter,
 ) -> MResult<Option<Value>> {
   if input_arg_values.len() != 1
@@ -343,7 +349,7 @@ fn try_broadcast_user_function(
   // Apply the function element-wise, then reassemble into the original shape.
   let mut outputs = Vec::with_capacity(elements.len());
   for element in elements {
-    outputs.push(execute_user_function(fxn_def, &vec![element], p)?);
+    outputs.push(execute_user_function(fxn_def, std::slice::from_ref(&element), p)?);
   }
 
   let shape = source.shape();
@@ -391,7 +397,7 @@ fn build_typed_matrix_from_values(
 // Returns an error if no arm matched.
 fn execute_function_match_arms(
   fxn_def: &FunctionDefinition,
-  input_arg_values: &Vec<Value>,
+  input_arg_values: &[Value],
   p: &Interpreter,
 ) -> MResult<FunctionCallStep> {
 
@@ -609,7 +615,7 @@ impl Drop for FunctionScope {
 // special handling for enum types where coercion rules differ.
 fn bind_function_inputs(
   fxn_def: &FunctionDefinition,
-  input_arg_values: &Vec<Value>,
+  input_arg_values: &[Value],
   p: &Interpreter,
 ) -> MResult<()> {
   let scoped_state = p.state.borrow();
@@ -925,5 +931,32 @@ impl MechErrorKind for FunctionInputTypeMismatchError {
       "Function '{}' argument '{}' expected {}, found {}",
       self.function_name, self.argument_name, self.expected, self.found
     )
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn detach_value_unwraps_nested_mutable_references() {
+    let base = Value::Empty;
+    let wrapped_once = Value::MutableReference(Ref::new(base.clone()));
+    let wrapped_twice = Value::MutableReference(Ref::new(wrapped_once));
+
+    let detached = detach_value(&wrapped_twice);
+    assert_eq!(detached, base);
+  }
+
+  #[test]
+  fn pattern_matches_arguments_accepts_single_argument_slice() {
+    let mut env = Environment::new();
+    let interp = Interpreter::new(1);
+    let pat = Pattern::Wildcard;
+    let args = vec![Value::Empty];
+
+    let matched = crate::patterns::pattern_matches_arguments(&pat, args.as_slice(), &mut env, &interp)
+      .expect("pattern matching should succeed");
+    assert!(matched);
   }
 }
