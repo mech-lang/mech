@@ -1414,6 +1414,8 @@ impl Value {
       Value::U32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       #[cfg(feature = "u64")]
       Value::U64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      #[cfg(feature = "u128")]
+      Value::U128(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       #[cfg(feature = "i8")]
       Value::I8(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       #[cfg(feature = "i128")]
