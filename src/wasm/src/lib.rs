@@ -7,6 +7,7 @@ use mech_interpreter::*;
 use wasm_bindgen::JsCast;
 use web_sys::{window, HtmlElement, HtmlInputElement, Node, Element, HashChangeEvent, HtmlTextAreaElement, Url};
 use js_sys::decode_uri_component;
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::panic::{catch_unwind, AssertUnwindSafe};
@@ -180,6 +181,33 @@ fn new_interpreter(id: u64) -> Interpreter {
 
   intrp
 
+}
+
+fn find_out_values(interpreter: &Interpreter, interpreter_id: u64) -> Option<Ref<HashMap<u64, Value>>> {
+  if interpreter.id == interpreter_id {
+    return Some(interpreter.out_values.clone());
+  }
+  let sub_interpreters = interpreter.sub_interpreters.borrow();
+  for sub_interpreter in sub_interpreters.values() {
+    if let Some(out_values) = find_out_values(sub_interpreter, interpreter_id) {
+      return Some(out_values);
+    }
+  }
+  None
+}
+
+#[cfg(feature = "symbol_table")]
+fn find_symbols(interpreter: &Interpreter, interpreter_id: u64) -> Option<SymbolTableRef> {
+  if interpreter.id == interpreter_id {
+    return Some(interpreter.symbols());
+  }
+  let sub_interpreters = interpreter.sub_interpreters.borrow();
+  for sub_interpreter in sub_interpreters.values() {
+    if let Some(symbols) = find_symbols(sub_interpreter, interpreter_id) {
+      return Some(symbols);
+    }
+  }
+  None
 }
 
 #[wasm_bindgen(start)]
@@ -645,14 +673,11 @@ pub fn attach_repl(&mut self, repl_id: &str) {
       let element_id = parsed_id[0].parse::<u64>().unwrap();
       let interpreter_id = parsed_id[1].parse::<u64>().unwrap();
 
-      let symbols = match interpreter_id {
-        0 => self.interpreter.symbols(),
-        id => match self.interpreter.sub_interpreters.borrow().get(&id) {
-          Some(sub_interpreter) => sub_interpreter.symbols(),
-          None => {
-            log!("No sub interpreter found for id: {}", id);
-            continue;
-          }
+      let symbols = match find_symbols(&self.interpreter, interpreter_id) {
+        Some(symbols) => symbols,
+        None => {
+          log!("No sub interpreter found for id: {}", interpreter_id);
+          continue;
         }
       };
 
@@ -795,19 +820,15 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         // Get the mech-interpreter-id attribute from the element
         let interpreter_id: String = program_el.get_attribute("mech-interpreter-id").unwrap();
         let interpreter_id: u64 = interpreter_id.parse().unwrap();
-        let sub_interpreter_brrw = self.interpreter.sub_interpreters.borrow();
-        let intrp = match interpreter_id {
-          0 => &self.interpreter, 
-          id => {
-            match sub_interpreter_brrw.get(&id) {
-              Some(sub_interpreter) => sub_interpreter,
-              None => {
-                log!("No sub interpreter found for id: {}", id);
-                continue;
-              }
-            }
-          }
+        let root_interpreter_id = if interpreter_id == 0 {
+          self.interpreter.id
+        } else {
+          interpreter_id
         };
+        if find_out_values(&self.interpreter, root_interpreter_id).is_none() {
+          log!("No sub interpreter found for id: {}", root_interpreter_id);
+          continue;
+        }
 
         // Get all elements with the class "mech-block-output" that are children of the program element
         let output_elements = program_el.query_selector_all(".mech-block-output");
@@ -826,18 +847,16 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             let output_id = parsed_id[0].parse::<u64>().unwrap();
             let interpreter_id = parsed_id[1].parse::<u64>().unwrap();
             // get the interpreter id from the block id
-            let out_values = match interpreter_id {
-              // if the interpreter id is 0, we are in the main interpreter
-              0 => intrp.out_values.clone(), 
-              // if the interpreter id is not 0, we are in a sub interpreter
-              id => {
-                match intrp.sub_interpreters.borrow().get(&id) {
-                  Some(sub_interpreter) => sub_interpreter.out_values.clone(),
-                  None => {
-                    log!("No sub interpreter found for id: {}", id);
-                    continue;
-                  }
-                }
+            let effective_interpreter_id = if interpreter_id == 0 {
+              root_interpreter_id
+            } else {
+              interpreter_id
+            };
+            let out_values = match find_out_values(&self.interpreter, effective_interpreter_id) {
+              Some(out_values) => out_values,
+              None => {
+                log!("No sub interpreter found for id: {}", effective_interpreter_id);
+                continue;
               }
             };
 
@@ -894,16 +913,11 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           continue;
         }
       };
-      let out_values = match inline_interpreter_id {
-        0 => self.interpreter.out_values.clone(),
-        id => {
-          match self.interpreter.sub_interpreters.borrow().get(&id) {
-            Some(sub_interpreter) => sub_interpreter.out_values.clone(),
-            None => {
-              log!("No sub interpreter found for inline id: {}", id);
-              continue;
-            }
-          }
+      let out_values = match find_out_values(&self.interpreter, inline_interpreter_id) {
+        Some(out_values) => out_values,
+        None => {
+          log!("No sub interpreter found for inline id: {}", inline_interpreter_id);
+          continue;
         }
       };
       let out_values_brrw = out_values.borrow();
@@ -997,12 +1011,9 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           if let Some(ptr) = *mech_ref.borrow() {
             unsafe {
               let mech = &*ptr;
-              let out_values = match interpreter_id {
-                0 => mech.interpreter.out_values.clone(),
-                id => match mech.interpreter.sub_interpreters.borrow().get(&id) {
-                  Some(sub) => sub.out_values.clone(),
-                  None => return None,
-                },
+              let out_values = match find_out_values(&mech.interpreter, interpreter_id) {
+                Some(out_values) => out_values,
+                None => return None,
               };
               return out_values.borrow().get(&output_id).cloned();
             }

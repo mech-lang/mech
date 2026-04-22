@@ -30,6 +30,10 @@ pub struct Formatter{
 
 impl Formatter {
 
+  fn mika_interpreter_id(parent_id: u64, node: &(Mika, Option<MikaSection>)) -> u64 {
+    hash_str(&format!("mika:{}:{:?}", parent_id, (&node.0, &node.1)))
+  }
+
   fn inline_eval_id(&mut self) -> u64 {
     let next_ix = {
       let counter = self.inline_eval_counters.entry(self.interpreter_id).or_insert(0);
@@ -461,7 +465,10 @@ impl Formatter {
   }
 
   pub fn fenced_mech_code(&mut self, block: &FencedMechCode) -> String {
-    self.interpreter_id = block.config.namespace;
+    let parent_interpreter_id = self.interpreter_id;
+    if block.config.namespace != 0 {
+      self.interpreter_id = block.config.namespace;
+    }
     let block_id = hash_str(&format!("{:?}",block));
     let namespace_str = &block.config.namespace_str;
     let mut src = String::new();
@@ -486,7 +493,7 @@ impl Formatter {
       }
     }
     let intrp_id = self.interpreter_id;
-    self.interpreter_id = 0;
+    self.interpreter_id = parent_interpreter_id;
     let disabled_tag = match block.config.disabled {
       true => "disabled".to_string(),
       false => "".to_string(),
@@ -784,11 +791,15 @@ impl Formatter {
     if self.html {
       match section {
         Some(sec) => {
+          let parent_interpreter_id = self.interpreter_id;
+          let mika_interp_id = Self::mika_interpreter_id(parent_interpreter_id, node);
+          self.interpreter_id = mika_interp_id;
           let mut sec_str = "".to_string();
           for el in &sec.elements.elements {
             let section_element = self.section_element(el);
             sec_str.push_str(&section_element);
           }
+          self.interpreter_id = parent_interpreter_id;
           format!("<div class=\"mech-mika-section\">{} {}</div>", mika_str, sec_str)
         },
         None => mika_str,
