@@ -638,7 +638,12 @@ pub fn attach_repl(&mut self, repl_id: &str) {
                 let kind_str = html_escape(&format!("{}",output.kind()));
                 return format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html());
               },
-              Err(err) => { return format!("{:?}",err); }
+              Err(err) => {
+                return format!(
+                  "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
+                  err.to_html()
+                );
+              }
             }
           }
         }
