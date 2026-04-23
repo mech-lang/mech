@@ -164,6 +164,7 @@ pub fn pattern_array(input: ParseString) -> ParseResult<PatternArray> {
       PatternArray {
         prefix,
         spread: Some(PatternArraySpread {
+          kind: PatternArraySpreadKind::Rest,
           binding: Some(Box::new(binding)),
         }),
         suffix: vec![],
@@ -226,10 +227,36 @@ pub fn pattern_array(input: ParseString) -> ParseResult<PatternArray> {
         spread_binding = Some(Box::new(suffix.remove(0)));
       }
     }
-    PatternArraySpread { binding: spread_binding }
+    PatternArraySpread {
+      kind: PatternArraySpreadKind::Spread,
+      binding: spread_binding,
+    }
   });
 
   Ok((input, PatternArray { prefix, spread, suffix }))
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn parses_pipe_rest_array_pattern_as_rest_kind() {
+    let gs = graphemes::init_source("[head | tail]");
+    let input = ParseString::new(&gs);
+    let (_, parsed) = pattern_array(input).expect("pipe rest array pattern should parse");
+    let spread = parsed.spread.expect("spread/rest should be present");
+    assert_eq!(spread.kind, PatternArraySpreadKind::Rest);
+  }
+
+  #[test]
+  fn parses_ellipsis_array_pattern_as_spread_kind() {
+    let gs = graphemes::init_source("[first ... last]");
+    let input = ParseString::new(&gs);
+    let (_, parsed) = pattern_array(input).expect("ellipsis array pattern should parse");
+    let spread = parsed.spread.expect("spread/rest should be present");
+    assert_eq!(spread.kind, PatternArraySpreadKind::Spread);
+  }
 }
 
 // pattern_atom_struct := ":", identifier, "(", list1(",", pattern), ")" ;
