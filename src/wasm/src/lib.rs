@@ -1091,18 +1091,17 @@ pub fn attach_repl(&mut self, repl_id: &str) {
   }
 
   #[cfg(feature = "run_program")]
-  fn format_runtime_error_html(&self, message: &str) -> String {
-    let escaped_message = html_escape(message);
+  fn format_runtime_error_html(&self, error: &MechError) -> String {
     format!(
-      "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\"><pre>{}</pre></div>",
-      escaped_message
+      "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
+      error.to_html()
     )
   }
 
   #[cfg(feature = "run_program")]
-  fn emit_runtime_error(&self, message: &str) {
+  fn emit_runtime_error(&self, error: &MechError) {
     let mut rendered_to_page = false;
-    let formatted_error = self.format_runtime_error_html(message);
+    let formatted_error = self.format_runtime_error_html(error);
 
     if let Some(window) = web_sys::window() {
       if let Some(document) = window.document() {
@@ -1127,7 +1126,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
     }
 
     if !rendered_to_page {
-      web_sys::console::error_1(&format!("Runtime error: {}", message).into());
+      web_sys::console::error_1(&format!("Runtime error: {}", error.full_chain_message()).into());
     }
   }
 
@@ -1138,8 +1137,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         log!("{}", result.pretty_print());
       }
       Ok(Err(err)) => {
-        let err_message = format!("{:?}", err);
-        self.emit_runtime_error(&err_message);
+        self.emit_runtime_error(&err);
       }
       Err(panic_payload) => {
         let panic_message = if let Some(message) = panic_payload.downcast_ref::<&str>() {
@@ -1149,7 +1147,9 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         } else {
           "Unknown panic while running Mech program".to_string()
         };
-        self.emit_runtime_error(&panic_message);
+        self.emit_runtime_error(
+          &MechError::new(GenericError { msg: panic_message }, None).with_compiler_loc()
+        );
       }
     }
   }
@@ -1168,7 +1168,13 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             self.interpret_with_runtime_error_handling(&tree);
           },
           Err(parse_err) => {
-            self.emit_runtime_error(&format!("Error parsing program: {:?}", parse_err));
+            self.emit_runtime_error(
+              &MechError::new(
+                GenericError { msg: format!("Error parsing program: {:?}", parse_err) },
+                None,
+              )
+              .with_compiler_loc()
+            );
           }
         }
       }

@@ -216,6 +216,36 @@ impl MechError {
   pub fn boxed(self) -> Box<Self> {
     Box::new(self)
   }
+
+  #[cfg(feature = "pretty_print")]
+  pub fn to_html(&self) -> String {
+    fn escape_html(input: &str) -> String {
+      input
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+    }
+
+    let mut lines = vec![format!("{}: {}", self.kind_name(), self.display_message())];
+
+    let mut current = &self.source;
+    while let Some(err) = current {
+      lines.push(format!("Caused by: {}", err.simple_message()));
+      current = &err.source;
+    }
+
+    if let Some(loc) = &self.compiler_location {
+      lines.push(format!("Compiler location: {}:{}", loc.file, loc.line));
+    }
+
+    let message = lines.join("\n");
+    format!(
+      "<pre class=\"mech-code-block mech-error-block\">{}</pre>",
+      escape_html(&message)
+    )
+  }
 }
 
 #[derive(Debug, Clone)]
