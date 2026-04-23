@@ -10,7 +10,7 @@ A state machine definition has two parts:
 
 General form:
 
-```text
+```
 #MachineName(input<kind>) => <output-kind>
   ├ :StateA(payload<kind>, ...)
   ├ :StateB(payload<kind>, ...)
@@ -40,7 +40,7 @@ A traffic light cycles through three phases. This is the canonical example of a
 state machine: behavior is entirely determined by the current state, not by a
 counter or accumulator.
 
-```mech:ex state-machine-traffic-light
+```
 #TrafficLight(steps<u64>) => <u64>
   ├ :Red(steps<u64>)
   ├ :Green(steps<u64>)
@@ -70,7 +70,7 @@ Expected result: `0u64` after cycling Red → Green → Yellow twice.
 State payload can carry multiple values. `:Compute` stores the loop index and
 two rolling values, making the recurrence relation explicit in the transitions.
 
-```mech:ex state-machine-fibonacci
+```
 #Fibonacci(n<u64>) => <u64>
   ├ :Compute(n<u64>, a<u64>, b<u64>)
   └ :Done(n<u64>).
@@ -92,7 +92,7 @@ Expected result: `55u64`.
 State payload kinds are strict. If a state carries `u64`, untyped numeric
 literals in guards or transitions will fail typechecking.
 
-```mech:disabled
+```
 #Clamp(n<u64>, lo<u64>, hi<u64>) => <u64>
   ├ :Check(n<u64>, lo<u64>, hi<u64>)
   └ :Done(out<u64>).
@@ -108,7 +108,7 @@ literals in guards or transitions will fail typechecking.
 Write typed literals so guard expressions stay consistent with the state
 declaration:
 
-```mech:ex state-machine-clamp
+```
 #Clamp(n<u64>, lo<u64>, hi<u64>) => <u64>
   ├ :Check(n<u64>, lo<u64>, hi<u64>)
   └ :Done(out<u64>).
@@ -130,7 +130,7 @@ Expected result: `10u64`.
 
 Transitions to undeclared states are invalid:
 
-```mech:disabled
+```
 #Turnstile(n<u64>) => <u64>
   ├ :Locked(n<u64>)
   └ :Unlocked(n<u64>).
@@ -142,7 +142,7 @@ Transitions to undeclared states are invalid:
 
 Declare and implement every state the machine can enter:
 
-```mech:ex state-machine-turnstile
+```
 #Turnstile(coins<u64>) => <u64>
   ├ :Locked(coins<u64>)
   ├ :Unlocked(coins<u64>)

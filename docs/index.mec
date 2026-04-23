@@ -35,7 +35,7 @@ v0.3.4-beta
   - [`tuple`](/reference/tuple.html) - fixed-size, ordered grouping of heterogeneous values
 - [Defining, Assigning, and Accessing Data](/reference/define.html) `todo` - create data and change it
 - [Indexing](/reference/indexing.html) - access elements within data structures
-- [Data Conversion](/reference/convert.html) `todo` - convert data from one kind to another
+- [Conversion](/reference/convert.html) `todo` - convert data from one kind to another
 - [Broadcasting](/reference/broadcasting.html) - apply operations over data structures
 
 (2.2) Program Model
@@ -43,14 +43,14 @@ v0.3.4-beta
 - [`function`](/reference/function.html) - reusable block of code that performs a specific task
 - [`state machine`](/reference/state-machine.html) - defines a set of states and transitions between them
 - [`match`](/reference/match.html) - construct for branching logic based on pattern matching
-- [`comprehension`](/reference/comprehension.html)
-- [`pattern`](/reference/patterns.html) - match and destructure data
-- Error Handling `todo`
+- [`comprehension`](/reference/comprehension.html) - for constructing sets and matrices from predicates
+- [`pattern`](/reference/pattern.html) - match and destructure data
 - Synth `todo`
 - Gen `todo`
-- Tests `todo`
-- Programs `todo`
 - Modules `todo`
+- Programs `todo`
+- Error Handling `todo`
+- Tests `todo`
 
 (2.3) System Model
 

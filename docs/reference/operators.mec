@@ -3,26 +3,26 @@ operators
 
 %% Quick reference of binary operators and assignment operators used with math, string, matrix, set, and table data.
 
-1. Binary Operators (Math)
+1. Math Operators
 -------------------------------------------------------------------------------
 
 | Operator | Meaning | Example |
 |:--:|---|---|
 | `+` | addition | `sum := 3 + 4` |
-| `-` | subtraction | `diff := 10 - 3` |
+| `-` | subtraction or negation| `diff := 10 - 3; -diff` |
 | `*` or `×` | multiplication | `prod := 6 * 7` |
 | `/` or `÷` | division | `q := 22 / 7` |
 | `%` | modulus (remainder) | `r := 17 % 5` |
 | `^` | exponentiation | `p := 2 ^ 8` |
 
-2. Binary Operators (String)
+2. String Operators
 -------------------------------------------------------------------------------
 
 | Operator | Meaning | Example |
 |:--:|---|---|
 | `+` | concatenation | `label := "user-" + "42"` |
 
-3. Binary Operators (Matrix)
+3. Matrix Operators
 -------------------------------------------------------------------------------
 
 | Operator | Meaning | Example |
@@ -38,7 +38,7 @@ operators
 | `·` or `•` | dot product | `dp := u · v` |
 | `⨯` | cross product | `cp := u ⨯ v` |
 
-4. Binary Operators (Set)
+4. Set Operators
 -------------------------------------------------------------------------------
 
 | Operator | Meaning | Example |
@@ -55,7 +55,7 @@ operators
 | `∈` | element of | `ok := 2 ∈ a` |
 | `∉` | not element of | `ok := 9 ∉ a` |
 
-5. Binary Operators (Table)
+5. Table Operators
 -------------------------------------------------------------------------------
 
 | Operator | Meaning | Example |
@@ -79,10 +79,3 @@ operators
 | `*=` | multiply-assign | `x *= 2` |
 | `/=` | divide-assign | `x /= 2` |
 | `^=` | exponent-assign (grammar form) | `x ^= 3` |
-
-(6.1) Notes by data family
-
-- Math and matrix expressions use `+=`, `-=`, `*=`, `/=` for in-place updates.
-- Strings use `+` for concatenation; use `=` to assign concatenation results.
-- Sets are immutable; create new sets with set binary operators and assign the result.
-- Tables support relational operators (`⋈`, `⟕`, `⟖`, `⟗`, `⋉`, `▷`) and may use `+=` to append a record/table into a mutable table.
