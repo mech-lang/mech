@@ -1007,7 +1007,15 @@ impl PatternArray {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct PatternArraySpread {
+  pub kind: PatternArraySpreadKind,
   pub binding: Option<Box<Pattern>>,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum PatternArraySpreadKind {
+  Spread,
+  Rest,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
