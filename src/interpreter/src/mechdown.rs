@@ -76,12 +76,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       }
       let code_id = block.config.namespace;
       if code_id == 0 {
-        for (c,cmmnt) in &block.code {
-          out = mech_code(&c, &p)?;
-          if let Some(cmmnt) = cmmnt {
-            let _ = comment(cmmnt, p)?;
-          }
-        }
+        out = eval_fenced_code_block(&block.code, p, false)?;
         // Save the output of the last code block in the parent interpreter
         // so we can reference it later.
         let (last_code, _) = block.code.last().unwrap();
@@ -97,12 +92,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
           .entry(code_id)
           .or_insert(Box::new(new_sub_interpreter))
           .as_mut();
-        for (c,cmmnt) in &block.code {
-          out = mech_code(&c, &pp)?;
-          if let Some(cmmnt) = cmmnt {
-            let _ = comment(cmmnt, pp)?;
-          }
-        }
+        out = eval_fenced_code_block(&block.code, pp, true)?;
         // Save the output of the last code block in the parent interpreter
         // so we can reference it later.
         let (last_code,_) = block.code.last().unwrap();
@@ -193,6 +183,38 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
   };
   let hash = hasher.finish();
   Ok(Value::Id(hash))
+}
+
+#[cfg(feature = "functions")]
+fn eval_fenced_code_block(
+  code: &Vec<(MechCode, Option<Comment>)>,
+  interpreter: &Interpreter,
+  isolate_errors: bool,
+) -> MResult<Value> {
+  let mut out = Value::Empty;
+  for (c, cmmnt) in code {
+    match mech_code(c, interpreter) {
+      Ok(value) => out = value,
+      Err(err) => {
+        if isolate_errors {
+          return Ok(Value::String(Ref::new(format!("{:?}", err))));
+        }
+        return Err(err);
+      }
+    }
+    if let Some(cmmnt) = cmmnt {
+      match comment(cmmnt, interpreter) {
+        Ok(_) => {}
+        Err(err) => {
+          if isolate_errors {
+            return Ok(Value::String(Ref::new(format!("{:?}", err))));
+          }
+          return Err(err);
+        }
+      }
+    }
+  }
+  Ok(out)
 }
 
 fn inline_eval_id(p: &Interpreter) -> u64 {
