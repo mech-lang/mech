@@ -22,6 +22,9 @@ name = "mechc"
 path = "src/bin/mechc.rs"
 required-features = ["compiler"]
 
+[profile.release]
+debug = false
+
 [features]
 no_std = ["mech-core/no_std", "mech-interpreter/no_std", "mech-syntax/no_std"]
 
