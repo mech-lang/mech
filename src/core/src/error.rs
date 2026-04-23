@@ -228,22 +228,76 @@ impl MechError {
         .replace('\'', "&#39;")
     }
 
-    let mut lines = vec![format!("{}: {}", self.kind_name(), self.display_message())];
+    let source_range = self
+      .program_range
+      .clone()
+      .or_else(|| self.tokens.first().map(|token| token.src_range.clone()));
 
+    let source_location_html = match source_range {
+      Some(range) => format!(
+        "<div class=\"mech-runtime-error-meta-row\"><span class=\"mech-runtime-error-meta-label\">Source range</span><span class=\"mech-runtime-error-meta-value\">line {}, col {} to line {}, col {}</span></div>",
+        range.start.row, range.start.col, range.end.row, range.end.col
+      ),
+      None => "<div class=\"mech-runtime-error-meta-row\"><span class=\"mech-runtime-error-meta-label\">Source range</span><span class=\"mech-runtime-error-meta-value\">Unknown</span></div>".to_string(),
+    };
+
+    let token_html = if self.tokens.is_empty() {
+      String::new()
+    } else {
+      let token_list = self
+        .tokens
+        .iter()
+        .map(|token| format!(
+          "<li><span class=\"mech-runtime-error-token\">{}</span> <span class=\"mech-runtime-error-token-range\">[{}:{}, {}:{})</span></li>",
+          escape_html(&token.to_string()),
+          token.src_range.start.row,
+          token.src_range.start.col,
+          token.src_range.end.row,
+          token.src_range.end.col
+        ))
+        .collect::<Vec<String>>()
+        .join("");
+      format!(
+        "<div class=\"mech-runtime-error-section\"><div class=\"mech-runtime-error-section-title\">Source tokens</div><ul class=\"mech-runtime-error-list\">{}</ul></div>",
+        token_list
+      )
+    };
+
+    let mut causes = vec![];
     let mut current = &self.source;
     while let Some(err) = current {
-      lines.push(format!("Caused by: {}", err.simple_message()));
+      causes.push(format!(
+        "<li>{}</li>",
+        escape_html(&format!("{}: {}", err.kind_name(), err.display_message()))
+      ));
       current = &err.source;
     }
+    let causes_html = if causes.is_empty() {
+      String::new()
+    } else {
+      format!(
+        "<div class=\"mech-runtime-error-section\"><div class=\"mech-runtime-error-section-title\">Caused by</div><ul class=\"mech-runtime-error-list\">{}</ul></div>",
+        causes.join("")
+      )
+    };
 
-    if let Some(loc) = &self.compiler_location {
-      lines.push(format!("Compiler location: {}:{}", loc.file, loc.line));
-    }
+    let compiler_location_html = match &self.compiler_location {
+      Some(loc) => format!(
+        "<div class=\"mech-runtime-error-meta-row\"><span class=\"mech-runtime-error-meta-label\">Compiler location</span><span class=\"mech-runtime-error-meta-value\">{}:{}</span></div>",
+        escape_html(loc.file),
+        loc.line
+      ),
+      None => String::new(),
+    };
 
-    let message = lines.join("\n");
     format!(
-      "<pre class=\"mech-code-block mech-error-block\">{}</pre>",
-      escape_html(&message)
+      "<div class=\"mech-runtime-error\"><div class=\"mech-runtime-error-header\"><span class=\"mech-runtime-error-icon\" aria-hidden=\"true\"></span><div><div class=\"mech-runtime-error-title\">{}</div><div class=\"mech-runtime-error-message\">{}</div></div></div><div class=\"mech-runtime-error-meta\">{}{}</div>{}{}</div>",
+      escape_html(&self.kind_name()),
+      escape_html(&self.display_message()),
+      source_location_html,
+      compiler_location_html,
+      token_html,
+      causes_html
     )
   }
 }
