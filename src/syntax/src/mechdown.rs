@@ -938,7 +938,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
     ("equation",        Box::new(|i| equation(i).map(|(i, e)| (i, SectionElement::Equation(e))))),
     ("table",           Box::new(|i| mechdown_table(i).map(|(i, t)| (i, SectionElement::Table(t))))),
     ("float",           Box::new(|i| float(i).map(|(i, f)| (i, SectionElement::Float(f))))),
-    //("quote_block",     Box::new(quote_block)),
+    ("quote_block",     Box::new(quote_block)),
     ("code_block",      Box::new(code_block)),
     ("thematic_break",  Box::new(|i| thematic_break(i).map(|(i, _)| (i, SectionElement::ThematicBreak)))),
     ("subtitle",        Box::new(|i| subtitle(i).map(|(i, s)| (i, SectionElement::Subtitle(s))))),
