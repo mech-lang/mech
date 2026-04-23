@@ -40,11 +40,11 @@ v0.3.4-beta
 
 (2.2) Program Model
 
-- [`function`](/reference/function.html) - reusable block of code that performs a specific task
-- [`state machine`](/reference/state-machine.html) - defines a set of states and transitions between them
-- [`match`](/reference/match.html) - construct for branching logic based on pattern matching
 - [`comprehension`](/reference/comprehension.html) - for constructing sets and matrices from predicates
+- [`function`](/reference/function.html) - reusable block of code that performs a specific task
+- [`match`](/reference/match.html) - construct for branching logic based on pattern matching
 - [`pattern`](/reference/pattern.html) - match and destructure data
+- [`state machine`](/reference/state-machine.html) - defines a set of states and transitions between them
 - Synth `todo`
 - Gen `todo`
 - Modules `todo`
