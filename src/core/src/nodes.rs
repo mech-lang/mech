@@ -1732,7 +1732,7 @@ impl Expression {
       Expression::SetComprehension(sc) => sc.tokens(),
       Expression::FsmPipe(pipe) => pipe.tokens(),
       Expression::MatrixComprehension(mc) => mc.tokens(),
-      _ => todo!(),
+      Expression::FunctionCall(func_call) => func_call.tokens(),
     }
   }
 }
