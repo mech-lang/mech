@@ -42,6 +42,28 @@ impl NativeFunctionCompiler for AccessScalar {
       ValueKind::Table(tble,_) => TableAccessScalar{}.compile(&arguments),
       #[cfg(feature = "map")]
       ValueKind::Map(..) => MapAccess{}.compile(&arguments),
+      #[cfg(feature = "string")]
+      ValueKind::String => {
+        match (src.clone(), index.clone()) {
+          (Value::String(s), Value::Index(ix)) => {
+            let fxn = AccessScalarString { source: s, ix, out: Ref::new(String::new()) };
+            fxn.solve();
+            Ok(Box::new(fxn))
+          }
+          (Value::MutableReference(r), Value::Index(ix)) => {
+            let inner = r.borrow().clone();
+            match inner {
+              Value::String(s) => {
+                let fxn = AccessScalarString { source: s, ix, out: Ref::new(String::new()) };
+                fxn.solve();
+                Ok(Box::new(fxn))
+              }
+              _ => Err(MechError::new(UnhandledFunctionArgumentKind2 { arg: (src.kind(), index.kind()), fxn_name: "access/scalar".to_string() }, None).with_compiler_loc()),
+            }
+          }
+          _ => Err(MechError::new(UnhandledFunctionArgumentKind2 { arg: (src.kind(), index.kind()), fxn_name: "access/scalar".to_string() }, None).with_compiler_loc()),
+        }
+      }
       _ => Err(MechError::new(UnhandledFunctionArgumentKind2 { arg: (src.kind(), index.kind()), fxn_name: "access/scalar".to_string() }, None).with_compiler_loc()),
     }
   }
@@ -154,6 +176,46 @@ impl NativeFunctionCompiler for AccessSwizzle {
       }
       _ => todo!(),
     }
+  }
+}
+
+// String scalar access -------------------------------------------------------
+
+#[cfg(feature = "string")]
+#[derive(Debug)]
+pub struct AccessScalarString {
+  source: Ref<String>,
+  ix: Ref<usize>,
+  out: Ref<String>,
+}
+
+#[cfg(feature = "string")]
+impl MechFunctionImpl for AccessScalarString {
+  fn solve(&self) {
+    let ix = *self.ix.borrow();
+    let s = self.source.borrow();
+    let ch = s.chars().nth(ix - 1).map(|c| c.to_string()).unwrap_or_default();
+    *self.out.borrow_mut() = ch;
+  }
+  fn out(&self) -> Value { Value::String(self.out.clone()) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(all(feature = "string", feature = "compiler"))]
+impl MechFunctionCompiler for AccessScalarString {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let mut registers = [0, 0, 0];
+    registers[0] = compile_register_brrw!(self.out, ctx);
+    registers[1] = compile_register_brrw!(self.source, ctx);
+    registers[2] = compile_register_brrw!(self.ix, ctx);
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
+    ctx.emit_binop(
+      hash_str("AccessScalarString"),
+      registers[0],
+      registers[1],
+      registers[2],
+    );
+    Ok(registers[0])
   }
 }
 
