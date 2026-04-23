@@ -27,6 +27,8 @@ thread_local! {
   pub static CURRENT_MECH: RefCell<Option<*mut WasmMech>> = RefCell::new(None);
 }
 
+const MECH_ERROR_HTML_PREFIX: &str = "__MECH_ERROR_HTML__:";
+
 #[macro_export]
 macro_rules! log {
   ( $( $t:tt )* ) => {
@@ -208,6 +210,24 @@ fn find_symbols(interpreter: &Interpreter, interpreter_id: u64) -> Option<Symbol
     }
   }
   None
+}
+
+fn format_output_value_html(output: &Value) -> String {
+  #[cfg(any(feature = "string", feature = "variable_define"))]
+  if let Value::String(text) = output {
+    if let Some(error_html) = text.borrow().strip_prefix(MECH_ERROR_HTML_PREFIX) {
+      return format!(
+        "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
+        error_html
+      );
+    }
+  }
+  let kind_str = html_escape(&format!("{}",output.kind()));
+  format!(
+    "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
+    kind_str,
+    output.to_html()
+  )
 }
 
 #[wasm_bindgen(start)]
@@ -699,12 +719,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           Some(output) => {
             let output_brrw = output.borrow();
 
-            let kind_str = html_escape(&format!("{}", output_brrw.kind()));
-            let result_html = format!(
-              "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
-              kind_str,
-              output_brrw.to_html()
-            );
+            let result_html = format_output_value_html(&output_brrw);
 
             let symbol_name = symbols_brrw.get_symbol_name_by_id(element_id).unwrap();
 
@@ -743,11 +758,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             if repl_width == 0 {
               let modal = document.create_element("div").unwrap();
               modal.set_class_name("mech-modal");
-              modal.set_inner_html(&format!(
-                "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
-                kind_str,
-                output_brrw.to_html()
-              ));
+              modal.set_inner_html(&format_output_value_html(&output_brrw));
 
               let x = event.client_x();
               let y = event.client_y();
@@ -875,9 +886,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
               }
             };
             // set the inner html of the block to the output value html
-            let kind_str = html_escape(&format!("{}",output.kind()));
-            let formatted_output = format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html());
-            block.set_inner_html(&formatted_output);
+            block.set_inner_html(&format_output_value_html(output));
           }
         }
       }
@@ -1027,12 +1036,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         });
 
         if let Some(output_value) = output {
-          let kind_str = html_escape(&format!("{}", output_value.kind()));
-          let result_html = format!(
-            "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
-            kind_str,
-            output_value.to_html()
-          );
+          let result_html = format_output_value_html(&output_value);
 
           let prompt_line = document.create_element("div").unwrap();
           prompt_line.set_class_name("repl-line");
