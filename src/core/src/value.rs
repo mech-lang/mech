@@ -308,6 +308,12 @@ impl ValueKind {
         afields.iter().any(|(ak, av)| ak == bk && av.is_convertible_to(bv))
       ) => true,
 
+      // Numeric and bool types to String
+      #[cfg(feature = "string")]
+      (U8, String) | (U16, String) | (U32, String) | (U64, String) | (U128, String) |
+      (I8, String) | (I16, String) | (I32, String) | (I64, String) | (I128, String) |
+      (F32, String) | (F64, String) | (Bool, String) => true,
+
       // Direct match
       _ => self == other,
     }
@@ -1303,6 +1309,33 @@ impl Value {
       (Value::IndexAll, IndexAll) => Some(Value::IndexAll),
       (Value::Empty, Empty) => Some(Value::Empty),
       */
+    // ==== Numeric/bool to String ====
+    #[cfg(all(feature = "u8", feature = "string"))]
+    (Value::U8(v), ValueKind::String) => Some(Value::String(Ref::new(v.borrow().to_string()))),
+    #[cfg(all(feature = "u16", feature = "string"))]
+    (Value::U16(v), ValueKind::String) => Some(Value::String(Ref::new(v.borrow().to_string()))),
+    #[cfg(all(feature = "u32", feature = "string"))]
+    (Value::U32(v), ValueKind::String) => Some(Value::String(Ref::new(v.borrow().to_string()))),
+    #[cfg(all(feature = "u64", feature = "string"))]
+    (Value::U64(v), ValueKind::String) => Some(Value::String(Ref::new(v.borrow().to_string()))),
+    #[cfg(all(feature = "u128", feature = "string"))]
+    (Value::U128(v), ValueKind::String) => Some(Value::String(Ref::new(v.borrow().to_string()))),
+    #[cfg(all(feature = "i8", feature = "string"))]
+    (Value::I8(v), ValueKind::String) => Some(Value::String(Ref::new(v.borrow().to_string()))),
+    #[cfg(all(feature = "i16", feature = "string"))]
+    (Value::I16(v), ValueKind::String) => Some(Value::String(Ref::new(v.borrow().to_string()))),
+    #[cfg(all(feature = "i32", feature = "string"))]
+    (Value::I32(v), ValueKind::String) => Some(Value::String(Ref::new(v.borrow().to_string()))),
+    #[cfg(all(feature = "i64", feature = "string"))]
+    (Value::I64(v), ValueKind::String) => Some(Value::String(Ref::new(v.borrow().to_string()))),
+    #[cfg(all(feature = "i128", feature = "string"))]
+    (Value::I128(v), ValueKind::String) => Some(Value::String(Ref::new(v.borrow().to_string()))),
+    #[cfg(all(feature = "f32", feature = "string"))]
+    (Value::F32(v), ValueKind::String) => Some(Value::String(Ref::new(v.borrow().to_string()))),
+    #[cfg(all(feature = "f64", feature = "string"))]
+    (Value::F64(v), ValueKind::String) => Some(Value::String(Ref::new(v.borrow().to_string()))),
+    #[cfg(all(feature = "bool", feature = "string"))]
+    (Value::Bool(v), ValueKind::String) => Some(Value::String(Ref::new(v.borrow().to_string()))),
       // ==== FALLBACK ====
       _ => None,
     }
