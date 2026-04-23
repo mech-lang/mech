@@ -1892,9 +1892,19 @@ impl Formatter {
       parts.push(self.pattern(p));
     }
     if let Some(spread) = &node.spread {
-      parts.push("…".to_string());
-      if let Some(binding) = &spread.binding {
-        parts.push(self.pattern(binding));
+      match spread.kind {
+        PatternArraySpreadKind::Spread => {
+          parts.push("…".to_string());
+          if let Some(binding) = &spread.binding {
+            parts.push(self.pattern(binding));
+          }
+        }
+        PatternArraySpreadKind::Rest => {
+          parts.push("|".to_string());
+          if let Some(binding) = &spread.binding {
+            parts.push(self.pattern(binding));
+          }
+        }
       }
     }
     for p in &node.suffix {
