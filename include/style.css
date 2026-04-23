@@ -14,9 +14,9 @@
   --main-color-high: hsl(42, 89%, 80%);
   --main-color-mid:  hsl(42, 89%, 70%);
   --main-color-low:  hsl(42, 89%, 60%);
-  --state-color-high: hsl(33, 43%, 80%);
-  --state-color-mid: hsl(33, 43%, 70%);
-  --state-color-low: hsl(33, 43%, 60%);
+  --atom-color-high: hsl(33, 43%, 80%);
+  --atom-color-mid: hsl(33, 43%, 70%);
+  --atom-color-low: hsl(33, 43%, 60%);
   --out-bracket-color: hsl(288, 30%, 85%);
   --sidebar-width: 300px;
   --text-color-light: hsl(40, 100%, 95%);
@@ -27,7 +27,7 @@
   --code-background-color: #090d11;
   --code-output-background-color: #020303;
   --var-name-color: hsl(290, 45%, 90%);
-  --field-name-color: #efd8aa;
+  --field-name-color: #63abb7;
   --kind-annotation-color: #f09fca;
   --kind-annotation-color-dark: #d574a8;
   --body-background-color: hsl(216, 28%, 7%);
@@ -1105,15 +1105,15 @@ a.mech-hyperlink:hover .mech-inline-code {
 
 .mech-state-definition {
     display: inline-flex;
-    color: var(--state-color-mid);
+    color: var(--atom-color-mid);
 }
 
 .mech-state-definition .mech-left-paren {
-    color: var(--state-color-low);
+    color: var(--atom-color-low);
 }
 
 .mech-state-definition .mech-right-paren {
-    color: var(--state-color-low);
+    color: var(--atom-color-low);
 }
 
 .mech-match-arms {
@@ -1222,7 +1222,7 @@ a.mech-hyperlink:hover .mech-inline-code {
 }
 
 .mech-state-name {
-    color: var(--state-color-mid);
+    color: var(--atom-color-mid);
 }
 
 .mech-code-block .mech-code:first-child .mech-comment {
@@ -2744,7 +2744,19 @@ mark {
 }
 
 .mech-pattern .mech-atom-name {
-    color: var(--pattern-color);
+    color: var(--atom-color-mid);
+}
+
+.mech-atom-name {
+    color: var(--atom-color-mid);
+}
+
+.mech-enum-variant-name {
+    color: var(--atom-color-mid);
+}
+
+.mech-enum-variant-payload {
+    color: var(--atom-color-low);
 }
 
 .mech-pattern .mech-tuple-struct {
@@ -2752,19 +2764,19 @@ mark {
 }
 
 .mech-tuple-struct .mech-right-paren {
-    color: var(--state-color-low);
+    color: var(--atom-color-low);
 }
 
 .mech-tuple-struct .mech-left-paren {
-    color: var(--state-color-low);
+    color: var(--atom-color-low);
 }
 
 .mech-tuple-struct .mech-tuple-struct-sigil {
-    color: var(--state-color-low);
+    color: var(--atom-color-low);
 }
 
 .mech-tuple-struct .mech-tuple-struct-name {
-    color: var(--state-color-mid);
+    color: var(--atom-color-mid);
 }
 
 .mech-tuple-struct {
