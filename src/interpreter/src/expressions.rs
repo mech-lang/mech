@@ -1028,21 +1028,30 @@ fn infer_missing_enum_match_patterns(
     source: &Value,
     p: &Interpreter,
 ) -> Option<(String, Vec<String>)> {
-    let source_tag = match source {
-        Value::Atom(atom) => Some(atom.borrow().id()),
+    let (source_enum_id, source_tag) = match source {
+        Value::Enum(enum_value) => {
+            let enum_brrw = enum_value.borrow();
+            if enum_brrw.variants.len() != 1 {
+                (Some(enum_brrw.id), None)
+            } else {
+                (Some(enum_brrw.id), Some(enum_brrw.variants[0].0))
+            }
+        }
+        Value::Atom(atom) => (None, Some(atom.borrow().id())),
         #[cfg(feature = "tuple")]
         Value::Tuple(tuple_val) => {
             let tuple_brrw = tuple_val.borrow();
             match tuple_brrw.elements.first() {
                 Some(tag) => match tag.as_ref() {
-                    Value::Atom(atom) => Some(atom.borrow().id()),
-                    _ => None,
+                    Value::Atom(atom) => (None, Some(atom.borrow().id())),
+                    _ => (None, None),
                 },
-                None => None,
+                None => (None, None),
             }
         }
-        _ => None,
-    }?;
+        _ => (None, None),
+    };
+    let source_tag = source_tag?;
 
     let mut arm_tags: HashSet<u64> = HashSet::new();
     for arm in &match_expr.arms {
@@ -1062,18 +1071,22 @@ fn infer_missing_enum_match_patterns(
     }
 
     let state_brrw = p.state.borrow();
-    let candidates: Vec<&MechEnum> = state_brrw
-        .enums
-        .values()
-        .filter(|enm| {
-            let variant_ids: HashSet<u64> = enm.variants.iter().map(|(id, _)| *id).collect();
-            variant_ids.contains(&source_tag) && arm_tags.is_subset(&variant_ids)
-        })
-        .collect();
-    if candidates.len() != 1 {
-        return None;
-    }
-    let enum_def = candidates[0];
+    let enum_def = if let Some(enum_id) = source_enum_id {
+        state_brrw.enums.get(&enum_id)?
+    } else {
+        let candidates: Vec<&MechEnum> = state_brrw
+            .enums
+            .values()
+            .filter(|enm| {
+                let variant_ids: HashSet<u64> = enm.variants.iter().map(|(id, _)| *id).collect();
+                variant_ids.contains(&source_tag) && arm_tags.is_subset(&variant_ids)
+            })
+            .collect();
+        if candidates.len() != 1 {
+            return None;
+        }
+        candidates[0]
+    };
     let variant_ids: HashSet<u64> = enum_def.variants.iter().map(|(id, _)| *id).collect();
     let missing_ids: Vec<u64> = variant_ids.difference(&arm_tags).copied().collect();
     if missing_ids.is_empty() {
