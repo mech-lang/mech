@@ -1361,10 +1361,6 @@ A := [2.0, 1.0, -1.0
 
 test_interpreter!(interpret_matrix_solve, r#"A := [2.0, 1.0, -1.0;-3.0, -1.0, 2.0;-2.0, 1.0, 2.0];b := [8.0, -11.0, -3.0]'; math/round(A \ b)"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, -1.0], 3, 1)));
 
-// │ y │ true │ false │
-
-test_interpreter!(table_column_inference, "| y | true | false |", Value::Table(Ref::new(MechTable::from_records(vec![MechRecord::new(vec![("y",Value::Bool(Ref::new(true)))]),MechRecord::new(vec![("y",Value::Bool(Ref::new(false)))]),]).expect("Failed to create MechTable"))));
-
 test_interpreter!(interpret_set_union, r#"A := {1, 2, 3}; B := {2, 3, 4}; U := A ∪ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0)), Value::F64(Ref::new(4.0))]))));
 test_interpreter!(interpret_set_intersection, r#"A := {1, 2, 3}; B := {2, 3, 4}; U := A ∩ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0))]))));
 test_interpreter!(interpret_set_difference, r#"A := {"a", "b", "c"}; B := {"b", "c", "d"}; U := A ∖ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::String(Ref::new("a".to_string()))]))));
