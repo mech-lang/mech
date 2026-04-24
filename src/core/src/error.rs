@@ -5,8 +5,6 @@ use std::any::Any;
 // Errors
 // ----------------------------------------------------------------------------
 
-// Defines a struct for errors and an enum which enumerates the error types
-
 type Rows = usize;
 type Cols = usize;
 
@@ -233,14 +231,6 @@ impl MechError {
       .clone()
       .or_else(|| self.tokens.first().map(|token| token.src_range.clone()));
 
-    let source_location_html = match source_range {
-      Some(range) => format!(
-        "<div class=\"mech-runtime-error-meta-row\"><span class=\"mech-runtime-error-meta-label\">Source range</span><span class=\"mech-runtime-error-meta-value\">line {}, col {} to line {}, col {}</span></div>",
-        range.start.row, range.start.col, range.end.row, range.end.col
-      ),
-      None => "<div class=\"mech-runtime-error-meta-row\"><span class=\"mech-runtime-error-meta-label\">Source range</span><span class=\"mech-runtime-error-meta-value\">Unknown</span></div>".to_string(),
-    };
-
     let token_html = if self.tokens.is_empty() {
       String::new()
     } else {
@@ -291,12 +281,21 @@ impl MechError {
     };
 
     format!(
-      "<div class=\"mech-runtime-error\"><div class=\"mech-runtime-error-header\"><span class=\"mech-runtime-error-icon\" aria-hidden=\"true\"></span><div><div class=\"mech-runtime-error-title\">{}</div><div class=\"mech-runtime-error-message\">{}</div></div></div><div class=\"mech-runtime-error-meta\">{}{}</div>{}{}</div>",
+      "<div class=\"mech-runtime-error\">
+        <div class=\"mech-runtime-error-header\">
+          <span class=\"mech-runtime-error-icon\" aria-hidden=\"true\"></span>
+          <div>
+            <div class=\"mech-runtime-error-title\">{}</div>
+            <div class=\"mech-runtime-error-message\">{}</div>
+          </div>
+        </div>
+      <div class=\"mech-runtime-error-meta\">{}{}</div>
+      {}
+      </div>",
       escape_html(&self.kind_name()),
       escape_html(&self.display_message()),
-      source_location_html,
-      compiler_location_html,
       token_html,
+      compiler_location_html,
       causes_html
     )
   }
@@ -377,14 +376,3 @@ impl MechErrorKind for IoErrorWrapper {
     format!("IO error: {}", self.msg)
   }
 }
-
-/*
-impl fmt::Debug for MechErrorKind {
-  #[inline]
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match self {
-      _ => write!(f,"No Format")?;
-    }
-    Ok(())
-  }
-}*/
