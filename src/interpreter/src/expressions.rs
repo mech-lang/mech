@@ -1354,439 +1354,407 @@ pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &Interpreter) -> MRes
 
 #[cfg(feature = "formulas")]
 pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
-    let plan = p.plan();
-    let mut lhs = factor(&trm.lhs, env, p)?;
-    let mut term_plan: Vec<Box<dyn MechFunction>> = vec![];
-    for (op, rhs) in &trm.rhs {
-        let rhs = factor(&rhs, env, p)?;
-        let new_fxn: Box<dyn MechFunction> = match op {
-            // Math
-            FormulaOperator::AddSub(AddSubOp::Add) => match (&lhs, &rhs) {
-                #[cfg(feature = "string_concat")]
-                (_, value) | (value, _) if value.is_string() => {
-                    StringConcat {}.compile(&vec![lhs, rhs])?
-                }
-                #[cfg(feature = "math_add")]
-                _ => MathAdd {}.compile(&vec![lhs, rhs])?,
-            },
-            #[cfg(feature = "math_sub")]
-            FormulaOperator::AddSub(AddSubOp::Sub) => MathSub {}.compile(&vec![lhs, rhs])?,
-            #[cfg(feature = "math_mul")]
-            FormulaOperator::MulDiv(MulDivOp::Mul) => MathMul {}.compile(&vec![lhs, rhs])?,
-            #[cfg(feature = "math_div")]
-            FormulaOperator::MulDiv(MulDivOp::Div) => MathDiv {}.compile(&vec![lhs, rhs])?,
-            #[cfg(feature = "math_mod")]
-            FormulaOperator::MulDiv(MulDivOp::Mod) => MathMod {}.compile(&vec![lhs, rhs])?,
-            #[cfg(feature = "math_pow")]
-            FormulaOperator::Power(PowerOp::Pow) => MathPow {}.compile(&vec![lhs, rhs])?,
+  let plan = p.plan();
+  let mut lhs = factor(&trm.lhs, env, p)?;
+  let mut term_plan: Vec<Box<dyn MechFunction>> = vec![];
+  for (op, rhs) in &trm.rhs {
+    let rhs = factor(&rhs, env, p)?;
+    let new_fxn: Box<dyn MechFunction> = match op {
+      // Math
+      FormulaOperator::AddSub(AddSubOp::Add) => match (&lhs, &rhs) {
+        #[cfg(feature = "string_concat")]
+        (_, value) | (value, _) if value.is_string() => {
+          StringConcat {}.compile(&vec![lhs, rhs])?
+        }
+        #[cfg(feature = "math_add")]
+        _ => MathAdd {}.compile(&vec![lhs, rhs])?,
+      },
+      #[cfg(feature = "math_sub")]
+      FormulaOperator::AddSub(AddSubOp::Sub) => MathSub {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "math_mul")]
+      FormulaOperator::MulDiv(MulDivOp::Mul) => MathMul {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "math_div")]
+      FormulaOperator::MulDiv(MulDivOp::Div) => MathDiv {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "math_mod")]
+      FormulaOperator::MulDiv(MulDivOp::Mod) => MathMod {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "math_pow")]
+      FormulaOperator::Power(PowerOp::Pow) => MathPow {}.compile(&vec![lhs, rhs])?,
 
-            // Matrix
-            #[cfg(feature = "matrix_matmul")]
-            FormulaOperator::Vec(VecOp::MatMul) => {
-                use mech_matrix::MatrixMatMul;
-                MatrixMatMul {}.compile(&vec![lhs, rhs])?
-            }
-            #[cfg(feature = "matrix_solve")]
-            FormulaOperator::Vec(VecOp::Solve) => MatrixSolve {}.compile(&vec![lhs, rhs])?,
-            #[cfg(feature = "matrix_cross")]
-            FormulaOperator::Vec(VecOp::Cross) => todo!(),
-            #[cfg(feature = "matrix_dot")]
-            FormulaOperator::Vec(VecOp::Dot) => MatrixDot {}.compile(&vec![lhs, rhs])?,
+      // Matrix
+      #[cfg(feature = "matrix_matmul")]
+      FormulaOperator::Vec(VecOp::MatMul) => MatrixMatMul {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "matrix_solve")]
+      FormulaOperator::Vec(VecOp::Solve) => MatrixSolve {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "matrix_cross")]
+      FormulaOperator::Vec(VecOp::Cross) => todo!(),
+      #[cfg(feature = "matrix_dot")]
+      FormulaOperator::Vec(VecOp::Dot) => MatrixDot {}.compile(&vec![lhs, rhs])?,
 
-            // Compare
-            #[cfg(feature = "compare_eq")]
-            FormulaOperator::Comparison(ComparisonOp::Equal) => {
-                CompareEqual {}.compile(&vec![lhs, rhs])?
-            }
-            #[cfg(feature = "compare_seq")]
-            FormulaOperator::Comparison(ComparisonOp::StrictEqual) => todo!(), //CompareStrictEqual{}.compile(&vec![lhs,rhs])?,
-            #[cfg(feature = "compare_neq")]
-            FormulaOperator::Comparison(ComparisonOp::NotEqual) => {
-                CompareNotEqual {}.compile(&vec![lhs, rhs])?
-            }
-            #[cfg(feature = "compare_sneq")]
-            FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => todo!(), //CompareStrictNotEqual{}.compile(&vec![lhs,rhs])?,
-            #[cfg(feature = "compare_lte")]
-            FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => {
-                CompareLessThanEqual {}.compile(&vec![lhs, rhs])?
-            }
-            #[cfg(feature = "compare_gte")]
-            FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual) => {
-                CompareGreaterThanEqual {}.compile(&vec![lhs, rhs])?
-            }
-            #[cfg(feature = "compare_lt")]
-            FormulaOperator::Comparison(ComparisonOp::LessThan) => {
-                CompareLessThan {}.compile(&vec![lhs, rhs])?
-            }
-            #[cfg(feature = "compare_gt")]
-            FormulaOperator::Comparison(ComparisonOp::GreaterThan) => {
-                CompareGreaterThan {}.compile(&vec![lhs, rhs])?
-            }
+      // Compare
+      #[cfg(feature = "compare_eq")]
+      FormulaOperator::Comparison(ComparisonOp::Equal) => CompareEqual {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "compare_seq")]
+      FormulaOperator::Comparison(ComparisonOp::StrictEqual) => todo!(), //CompareStrictEqual{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "compare_neq")]
+      FormulaOperator::Comparison(ComparisonOp::NotEqual) => CompareNotEqual {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "compare_sneq")]
+      FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => todo!(), //CompareStrictNotEqual{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "compare_lte")]
+      FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => CompareLessThanEqual {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "compare_gte")]
+      FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual) => CompareGreaterThanEqual {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "compare_lt")]
+      FormulaOperator::Comparison(ComparisonOp::LessThan) => CompareLessThan {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "compare_gt")]
+      FormulaOperator::Comparison(ComparisonOp::GreaterThan) => CompareGreaterThan {}.compile(&vec![lhs, rhs])?,
 
-            // Logic
-            #[cfg(feature = "logic_and")]
-            FormulaOperator::Logic(LogicOp::And) => LogicAnd {}.compile(&vec![lhs, rhs])?,
-            #[cfg(feature = "logic_or")]
-            FormulaOperator::Logic(LogicOp::Or) => LogicOr {}.compile(&vec![lhs, rhs])?,
-            #[cfg(feature = "logic_not")]
-            FormulaOperator::Logic(LogicOp::Not) => LogicNot {}.compile(&vec![lhs, rhs])?,
-            #[cfg(feature = "logic_xor")]
-            FormulaOperator::Logic(LogicOp::Xor) => LogicXor {}.compile(&vec![lhs, rhs])?,
+      // Logic
+      #[cfg(feature = "logic_and")]
+      FormulaOperator::Logic(LogicOp::And) => LogicAnd {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "logic_or")]
+      FormulaOperator::Logic(LogicOp::Or) => LogicOr {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "logic_not")]
+      FormulaOperator::Logic(LogicOp::Not) => LogicNot {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "logic_xor")]
+      FormulaOperator::Logic(LogicOp::Xor) => LogicXor {}.compile(&vec![lhs, rhs])?,
 
-            // Table
-            #[cfg(feature = "table")]
-            FormulaOperator::Table(TableOp::InnerJoin) => {
-                TableInnerJoin {}.compile(&vec![lhs, rhs])?
-            }
-            #[cfg(feature = "table")]
-            FormulaOperator::Table(TableOp::LeftOuterJoin) => {
-                TableLeftOuterJoin {}.compile(&vec![lhs, rhs])?
-            }
-            #[cfg(feature = "table")]
-            FormulaOperator::Table(TableOp::RightOuterJoin) => {
-                TableRightOuterJoin {}.compile(&vec![lhs, rhs])?
-            }
-            #[cfg(feature = "table")]
-            FormulaOperator::Table(TableOp::FullOuterJoin) => {
-                TableFullOuterJoin {}.compile(&vec![lhs, rhs])?
-            }
-            #[cfg(feature = "table")]
-            FormulaOperator::Table(TableOp::LeftSemiJoin) => {
-                TableLeftSemiJoin {}.compile(&vec![lhs, rhs])?
-            }
-            #[cfg(feature = "table")]
-            FormulaOperator::Table(TableOp::LeftAntiJoin) => {
-                TableLeftAntiJoin {}.compile(&vec![lhs, rhs])?
-            }
+      // Table
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::InnerJoin) => TableInnerJoin {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::LeftOuterJoin) => TableLeftOuterJoin {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::RightOuterJoin) => TableRightOuterJoin {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::FullOuterJoin) => TableFullOuterJoin {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::LeftSemiJoin) => TableLeftSemiJoin {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "table")]
+      FormulaOperator::Table(TableOp::LeftAntiJoin) => TableLeftAntiJoin {}.compile(&vec![lhs, rhs])?,
 
-            // Set
-            #[cfg(feature = "set_union")]
-            FormulaOperator::Set(SetOp::Union) => SetUnion {}.compile(&vec![lhs, rhs])?,
-            #[cfg(feature = "set_intersection")]
-            FormulaOperator::Set(SetOp::Intersection) => {
-                SetIntersection {}.compile(&vec![lhs, rhs])?
-            }
-            #[cfg(feature = "set_difference")]
-            FormulaOperator::Set(SetOp::Difference) => SetDifference {}.compile(&vec![lhs, rhs])?,
-            #[cfg(feature = "set_symmetric_difference")]
-            FormulaOperator::Set(SetOp::SymmetricDifference) => {
-                SetSymmetricDifference {}.compile(&vec![lhs, rhs])?
-            }
-            #[cfg(feature = "set_complement")]
-            FormulaOperator::Set(SetOp::Complement) => todo!(),
-            #[cfg(feature = "set_subset")]
-            FormulaOperator::Set(SetOp::Subset) => SetSubset {}.compile(&vec![lhs, rhs])?,
-            #[cfg(feature = "set_superset")]
-            FormulaOperator::Set(SetOp::Superset) => SetSuperset {}.compile(&vec![lhs, rhs])?,
-            #[cfg(feature = "set_proper_subset")]
-            FormulaOperator::Set(SetOp::ProperSubset) => {
-                SetProperSubset {}.compile(&vec![lhs, rhs])?
-            }
-            #[cfg(feature = "set_proper_superset")]
-            FormulaOperator::Set(SetOp::ProperSuperset) => {
-                SetProperSuperset {}.compile(&vec![lhs, rhs])?
-            }
-            #[cfg(feature = "set_element_of")]
-            FormulaOperator::Set(SetOp::ElementOf) => {
-                #[cfg(feature = "kind_annotation")]
-                if let Value::Kind(kind) = &rhs {
-                    lhs = Value::Bool(Ref::new(value_in_kind(&lhs, kind, p)));
-                    continue;
-                }
-                SetElementOf {}.compile(&vec![lhs, rhs])?
-            }
-            #[cfg(feature = "set_not_element_of")]
-            FormulaOperator::Set(SetOp::NotElementOf) => {
-                #[cfg(feature = "kind_annotation")]
-                if let Value::Kind(kind) = &rhs {
-                    lhs = Value::Bool(Ref::new(!value_in_kind(&lhs, kind, p)));
-                    continue;
-                }
-                SetNotElementOf {}.compile(&vec![lhs, rhs])?
-            }
-            x => {
-                return Err(MechError::new(
-                    UnhandledFormulaOperatorError {
-                        operator: x.clone(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()
-                .with_tokens(trm.tokens()));
-            }
-        };
-        new_fxn.solve();
-        let res = new_fxn.out();
-        term_plan.push(new_fxn);
-        lhs = res;
-    }
-    let mut plan_brrw = plan.borrow_mut();
-    plan_brrw.append(&mut term_plan);
-    return Ok(lhs);
+      // Set
+      #[cfg(feature = "set_union")]
+      FormulaOperator::Set(SetOp::Union) => SetUnion {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "set_intersection")]
+      FormulaOperator::Set(SetOp::Intersection) => SetIntersection {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "set_difference")]
+      FormulaOperator::Set(SetOp::Difference) => SetDifference {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "set_symmetric_difference")]
+      FormulaOperator::Set(SetOp::SymmetricDifference) => SetSymmetricDifference {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "set_complement")]
+      FormulaOperator::Set(SetOp::Complement) => todo!(),
+      #[cfg(feature = "set_subset")]
+      FormulaOperator::Set(SetOp::Subset) => SetSubset {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "set_superset")]
+      FormulaOperator::Set(SetOp::Superset) => SetSuperset {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "set_proper_subset")]
+      FormulaOperator::Set(SetOp::ProperSubset) => SetProperSubset {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "set_proper_superset")]
+      FormulaOperator::Set(SetOp::ProperSuperset) => SetProperSuperset {}.compile(&vec![lhs, rhs])?,
+      #[cfg(feature = "set_element_of")]
+      FormulaOperator::Set(SetOp::ElementOf) => {
+        #[cfg(feature = "kind_annotation")]
+        if let Value::Kind(kind) = &rhs {
+          lhs = Value::Bool(Ref::new(value_in_kind(&lhs, kind, p)));
+          continue;
+        }
+        SetElementOf {}.compile(&vec![lhs, rhs])?
+      }
+      #[cfg(feature = "set_not_element_of")]
+      FormulaOperator::Set(SetOp::NotElementOf) => {
+        #[cfg(feature = "kind_annotation")]
+        if let Value::Kind(kind) = &rhs {
+          lhs = Value::Bool(Ref::new(!value_in_kind(&lhs, kind, p)));
+          continue;
+        }
+        SetNotElementOf {}.compile(&vec![lhs, rhs])?
+      }
+      x => {
+        return Err(MechError::new(
+          UnhandledFormulaOperatorError {
+            operator: x.clone(),
+          },
+          None,
+        )
+        .with_compiler_loc()
+        .with_tokens(trm.tokens()));
+      }
+    };
+    new_fxn.solve();
+    let res = new_fxn.out();
+    term_plan.push(new_fxn);
+    lhs = res;
+  }
+  let mut plan_brrw = plan.borrow_mut();
+  plan_brrw.append(&mut term_plan);
+  return Ok(lhs);
 }
 
 #[cfg(all(feature = "kind_annotation", feature = "enum", feature = "atom"))]
-fn enum_value_matches_kind(value: &Value, enum_id: u64, state: &ProgramState) -> bool {
-    let enum_def = match state.enums.get(&enum_id) {
-        Some(enm) => enm,
-        None => return false,
-    };
-    let names_brrw = enum_def.names.borrow();
-    let atom_matches_variant = |variant_id: u64, atom_id: u64, atom_name: &str| {
-        if variant_id == atom_id {
-            return true;
-        }
-        let variant_name = match names_brrw.get(&variant_id) {
-            Some(name) => name.as_str(),
-            None => return false,
-        };
-        let short_variant = variant_name.rsplit('/').next().unwrap_or(variant_name);
-        let short_atom = atom_name.rsplit('/').next().unwrap_or(atom_name);
-        short_variant == short_atom
-    };
-    match value {
-        Value::Enum(enum_value) => {
-            let enum_value_brrw = enum_value.borrow();
-            if enum_value_brrw.id != enum_id {
-                return false;
-            }
-            if enum_value_brrw.variants.len() != 1 {
-                return false;
-            }
-            let (variant_id, payload) = &enum_value_brrw.variants[0];
-            let (_, declared_payload_kind) = match enum_def
-                .variants
-                .iter()
-                .find(|(known_variant, _)| *known_variant == *variant_id)
-            {
-                Some(entry) => entry,
-                None => return false,
-            };
-            match (payload, declared_payload_kind) {
-                (None, None) => true,
-                (Some(payload_value), Some(Value::Kind(expected_kind))) => match expected_kind {
-                    ValueKind::Enum(inner_enum_id, _) => {
-                        enum_value_matches_kind(payload_value, *inner_enum_id, state)
-                    }
-                    _ => payload_value.kind() == expected_kind.clone() || payload_value.convert_to(expected_kind).is_some(),
-                },
-                _ => false,
-            }
-        }
-        Value::Atom(atom) => {
-            let atom_brrw = atom.borrow();
-            let variant_id = atom_brrw.id();
-            let atom_name = atom_brrw.name();
-            enum_def
-                .variants
-                .iter()
-                .any(|(known_variant, payload_kind)| atom_matches_variant(*known_variant, variant_id, &atom_name) && payload_kind.is_none())
-        }
-        #[cfg(feature = "tuple")]
-        Value::Tuple(tuple_val) => {
-            let tuple_brrw = tuple_val.borrow();
-            if tuple_brrw.elements.len() != 2 {
-                return false;
-            }
-            let (tag, tag_name) = match tuple_brrw.elements[0].as_ref() {
-                Value::Atom(atom) => {
-                    let atom_brrw = atom.borrow();
-                    (atom_brrw.id(), atom_brrw.name())
-                }
-                _ => return false,
-            };
-            let payload = tuple_brrw.elements[1].as_ref();
-            let (_, declared_payload_kind) = match enum_def
-                .variants
-                .iter()
-                .find(|(known_variant, _)| atom_matches_variant(*known_variant, tag, &tag_name))
-            {
-                Some(entry) => entry,
-                None => return false,
-            };
-            match declared_payload_kind {
-                Some(Value::Kind(expected_kind)) => match expected_kind {
-                    ValueKind::Enum(inner_enum_id, _) => {
-                        enum_value_matches_kind(payload, *inner_enum_id, state)
-                    }
-                    _ => payload.kind() == expected_kind.clone() || payload.convert_to(expected_kind).is_some(),
-                },
-                _ => false,
-            }
-        }
-        _ => false,
+  fn enum_value_matches_kind(value: &Value, enum_id: u64, state: &ProgramState) -> bool {
+  let enum_def = match state.enums.get(&enum_id) {
+    Some(enm) => enm,
+    None => return false,
+  };
+  let names_brrw = enum_def.names.borrow();
+  let atom_matches_variant = |variant_id: u64, atom_id: u64, atom_name: &str| {
+    if variant_id == atom_id {
+      return true;
     }
+    let variant_name = match names_brrw.get(&variant_id) {
+      Some(name) => name.as_str(),
+      None => return false,
+    };
+    let short_variant = variant_name.rsplit('/').next().unwrap_or(variant_name);
+    let short_atom = atom_name.rsplit('/').next().unwrap_or(atom_name);
+    short_variant == short_atom
+  };
+  match value {
+    Value::Enum(enum_value) => {
+      let enum_value_brrw = enum_value.borrow();
+      if enum_value_brrw.id != enum_id {
+        return false;
+      }
+      if enum_value_brrw.variants.len() != 1 {
+        return false;
+      }
+      let (variant_id, payload) = &enum_value_brrw.variants[0];
+      let (_, declared_payload_kind) = match enum_def
+        .variants
+        .iter()
+        .find(|(known_variant, _)| *known_variant == *variant_id)
+      {
+        Some(entry) => entry,
+        None => return false,
+      };
+      match (payload, declared_payload_kind) {
+        (None, None) => true,
+        (Some(payload_value), Some(Value::Kind(expected_kind))) => match expected_kind {
+          ValueKind::Enum(inner_enum_id, _) => {
+            enum_value_matches_kind(payload_value, *inner_enum_id, state)
+          }
+          _ => payload_value.kind() == expected_kind.clone() || payload_value.convert_to(expected_kind).is_some(),
+        },
+        _ => false,
+      }
+    }
+    Value::Atom(atom) => {
+      let atom_brrw = atom.borrow();
+      let variant_id = atom_brrw.id();
+      let atom_name = atom_brrw.name();
+      enum_def
+        .variants
+        .iter()
+        .any(|(known_variant, payload_kind)| atom_matches_variant(*known_variant, variant_id, &atom_name) && payload_kind.is_none())
+    }
+    #[cfg(feature = "tuple")]
+    Value::Tuple(tuple_val) => {
+      let tuple_brrw = tuple_val.borrow();
+      if tuple_brrw.elements.len() != 2 {
+        return false;
+      }
+      let (tag, tag_name) = match tuple_brrw.elements[0].as_ref() {
+        Value::Atom(atom) => {
+          let atom_brrw = atom.borrow();
+          (atom_brrw.id(), atom_brrw.name())
+        }
+        _ => return false,
+      };
+      let payload = tuple_brrw.elements[1].as_ref();
+      let (_, declared_payload_kind) = match enum_def
+        .variants
+        .iter()
+        .find(|(known_variant, _)| atom_matches_variant(*known_variant, tag, &tag_name))
+      {
+        Some(entry) => entry,
+        None => return false,
+      };
+      match declared_payload_kind {
+        Some(Value::Kind(expected_kind)) => match expected_kind {
+          ValueKind::Enum(inner_enum_id, _) => {
+            enum_value_matches_kind(payload, *inner_enum_id, state)
+          }
+          _ => payload.kind() == expected_kind.clone() || payload.convert_to(expected_kind).is_some(),
+        },
+        _ => false,
+      }
+    }
+    _ => false,
+  }
 }
 
 #[cfg(feature = "kind_annotation")]
 fn value_in_kind(value: &Value, kind: &ValueKind, p: &Interpreter) -> bool {
-    let detached = detach_value(value);
-    #[cfg(all(feature = "enum", feature = "atom"))]
-    if let ValueKind::Enum(enum_id, _) = kind {
-        let state_brrw = p.state.borrow();
-        return enum_value_matches_kind(&detached, *enum_id, &state_brrw);
-    }
-    detached.convert_to(kind).is_some()
+  let detached = detach_value(value);
+  #[cfg(all(feature = "enum", feature = "atom"))]
+  if let ValueKind::Enum(enum_id, _) = kind {
+    let state_brrw = p.state.borrow();
+    return enum_value_matches_kind(&detached, *enum_id, &state_brrw);
+  }
+  detached.convert_to(kind).is_some()
 }
+
+// Errors
+// ----------------------------------------------------------------------------
 
 #[derive(Debug, Clone)]
 pub struct UnhandledFormulaOperatorError {
-    pub operator: FormulaOperator,
+  pub operator: FormulaOperator,
 }
 impl MechErrorKind for UnhandledFormulaOperatorError {
-    fn name(&self) -> &str {
-        "UnhandledFormulaOperator"
-    }
-    fn message(&self) -> String {
-        format!("Unhandled formula operator: {:#?}", self.operator)
-    }
+  fn name(&self) -> &str {
+    "UnhandledFormulaOperator"
+  }
+  fn message(&self) -> String {
+    format!("Unhandled formula operator: {:#?}", self.operator)
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct UndefinedVariableError {
-    pub id: u64,
+  pub id: u64,
 }
 impl MechErrorKind for UndefinedVariableError {
-    fn name(&self) -> &str {
-        "UndefinedVariable"
-    }
+  fn name(&self) -> &str {
+    "UndefinedVariable"
+  }
 
-    fn message(&self) -> String {
-        format!("Undefined variable: {}", self.id)
-    }
+  fn message(&self) -> String {
+    format!("Undefined variable: {}", self.id)
+  }
 }
 #[derive(Debug, Clone)]
 pub struct InvalidIndexKindError {
-    kind: ValueKind,
+  kind: ValueKind,
 }
 impl MechErrorKind for InvalidIndexKindError {
-    fn name(&self) -> &str {
-        "InvalidIndexKind"
-    }
-    fn message(&self) -> String {
-        "Invalid index kind".to_string()
-    }
+  fn name(&self) -> &str {
+    "InvalidIndexKind"
+  }
+  fn message(&self) -> String {
+    "Invalid index kind".to_string()
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct ComprehensionGeneratorError {
-    found: ValueKind,
+  found: ValueKind,
 }
 
 impl MechErrorKind for ComprehensionGeneratorError {
-    fn name(&self) -> &str {
-        "ComprehensionGenerator"
-    }
-    fn message(&self) -> String {
-        format!(
-            "Comprehension generator must produce a set or matrix, found kind: {:?}",
-            self.found
-        )
-    }
+  fn name(&self) -> &str {
+    "ComprehensionGenerator"
+  }
+  fn message(&self) -> String {
+      format!(
+        "Comprehension generator must produce a set or matrix, found kind: {:?}",
+        self.found
+      )
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct PatternExpectedTupleError {
-    found: ValueKind,
+  found: ValueKind,
 }
 impl MechErrorKind for PatternExpectedTupleError {
-    fn name(&self) -> &str {
-        "PatternExpectedTuple"
-    }
-    fn message(&self) -> String {
-        format!("Pattern expected a tuple, found kind: {:?}", self.found)
-    }
+  fn name(&self) -> &str {
+    "PatternExpectedTuple"
+  }
+  fn message(&self) -> String {
+    format!("Pattern expected a tuple, found kind: {:?}", self.found)
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct ArityMismatchError {
-    expected: usize,
-    found: usize,
+  expected: usize,
+  found: usize,
 }
 impl MechErrorKind for ArityMismatchError {
-    fn name(&self) -> &str {
-        "ArityMismatch"
-    }
-    fn message(&self) -> String {
-        format!(
-            "Arity mismatch: expected {}, found {}",
-            self.expected, self.found
-        )
-    }
+  fn name(&self) -> &str {
+    "ArityMismatch"
+  }
+  fn message(&self) -> String {
+    format!(
+      "Arity mismatch: expected {}, found {}",
+      self.expected, self.found
+    )
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct PatternMatchError {
-    pub var: String,
-    pub expected: String,
-    pub found: String,
+  pub var: String,
+  pub expected: String,
+  pub found: String,
 }
 
 #[derive(Debug, Clone)]
 pub struct MatchNoArmMatchedError;
 impl MechErrorKind for MatchNoArmMatchedError {
-    fn name(&self) -> &str {
-        "MatchNoArmMatched"
-    }
-    fn message(&self) -> String {
-        format!("No match arm matched the provided value.")
-    }
+  fn name(&self) -> &str {
+    "MatchNoArmMatched"
+  }
+  fn message(&self) -> String {
+    format!("No match arm matched the provided value.")
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct MatchArmKindMismatchError {
-    expected: ValueKind,
-    found: ValueKind,
+  expected: ValueKind,
+  found: ValueKind,
 }
 impl MechErrorKind for MatchArmKindMismatchError {
-    fn name(&self) -> &str {
-        "MatchArmKindMismatch"
-    }
-    fn message(&self) -> String {
-        format!(
-            "Match arm kind mismatch: expected {:?}, found {:?}",
-            self.expected, self.found
-        )
-    }
+  fn name(&self) -> &str {
+    "MatchArmKindMismatch"
+  }
+  fn message(&self) -> String {
+    format!(
+      "Expected {:?}, found {:?}",
+      self.expected, self.found
+    )
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct MatchNonExhaustiveError;
 impl MechErrorKind for MatchNonExhaustiveError {
-    fn name(&self) -> &str {
-        "MatchNonExhaustive"
-    }
-    fn message(&self) -> String {
-        "Match expression must include a wildcard (`*`) arm.".to_string()
-    }
+  fn name(&self) -> &str {
+    "MatchNonExhaustive"
+  }
+  fn message(&self) -> String {
+    "Match expression must include a wildcard (`*`) arm.".to_string()
+  }
 }
 
 #[derive(Debug, Clone)]
 pub struct MatchNonExhaustiveVariantsError {
-    pub enum_name: String,
-    pub missing_patterns: Vec<String>,
+  pub enum_name: String,
+  pub missing_patterns: Vec<String>,
 }
 impl MechErrorKind for MatchNonExhaustiveVariantsError {
-    fn name(&self) -> &str {
-        "MatchNonExhaustive"
-    }
-    fn message(&self) -> String {
-        format!(
-            "Match over enum '{}' is non-exhaustive. Missing variants: {}. Handle the missing variants or add a wildcard (`*`) arm to catch all cases.",
-            self.enum_name,
-            self.missing_patterns.join(", ")
-        )
-    }
+  fn name(&self) -> &str {
+    "MatchNonExhaustive"
+  }
+  fn message(&self) -> String {
+    format!(
+      "Match over enum '{}' is non-exhaustive. Missing variants: {}. Handle the missing variants or add a wildcard (`*`) arm to catch all cases.",
+      self.enum_name,
+      self.missing_patterns.join(", ")
+    )
+  }
 }
 
 impl MechErrorKind for PatternMatchError {
-    fn name(&self) -> &str {
-        "PatternMatchError"
-    }
-    fn message(&self) -> String {
-        format!(
-            "Pattern match error for variable '{}': expected value {}, found value {}",
-            self.var, self.expected, self.found
-        )
-    }
+  fn name(&self) -> &str {
+    "PatternMatchError"
+  }
+  fn message(&self) -> String {
+    format!(
+      "Pattern match error for variable '{}': expected value {}, found value {}",
+      self.var, self.expected, self.found
+    )
+  }
 }
