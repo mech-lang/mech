@@ -925,6 +925,10 @@ pub fn match_expression(
         Value::MutableReference(reference) => reference.borrow().clone(),
         _ => source.clone(),
     };
+    let mut base_env = env.cloned().unwrap_or_default();
+    if let Expression::Var(var) = &match_expr.source {
+        base_env.insert(var.name.hash(), detached_source.clone());
+    }
     if !match_expr
         .arms
         .iter()
@@ -934,23 +938,25 @@ pub fn match_expression(
         if let Some((enum_name, missing_patterns)) =
             infer_missing_enum_match_patterns(match_expr, &detached_source, p)
         {
-            return Err(MechError::new(
-                MatchNonExhaustiveVariantsError {
-                    enum_name,
-                    missing_patterns,
-                },
-                None,
-            )
-            .with_compiler_loc()
-            .with_tokens(match_expr.source.tokens()));
+            if missing_patterns.is_empty() {
+                // Exhaustive enum matches do not require a wildcard arm.
+                validate_match_arm_output_kinds(match_expr, &base_env, p)?;
+            } else {
+                return Err(MechError::new(
+                    MatchNonExhaustiveVariantsError {
+                        enum_name,
+                        missing_patterns,
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+                .with_tokens(match_expr.source.tokens()));
+            }
+        } else {
+            return Err(MechError::new(MatchNonExhaustiveError, None)
+                .with_compiler_loc()
+                .with_tokens(match_expr.source.tokens()));
         }
-        return Err(MechError::new(MatchNonExhaustiveError, None)
-            .with_compiler_loc()
-            .with_tokens(match_expr.source.tokens()));
-    }
-    let mut base_env = env.cloned().unwrap_or_default();
-    if let Expression::Var(var) = &match_expr.source {
-        base_env.insert(var.name.hash(), detached_source.clone());
     }
     if value_contains_empty(&detached_source) && !has_identity_wildcard_coalesce_arms(match_expr) {
         if let Some(arm) = match_expr
@@ -1089,9 +1095,6 @@ fn infer_missing_enum_match_patterns(
     };
     let variant_ids: HashSet<u64> = enum_def.variants.iter().map(|(id, _)| *id).collect();
     let missing_ids: Vec<u64> = variant_ids.difference(&arm_tags).copied().collect();
-    if missing_ids.is_empty() {
-        return None;
-    }
     let names_brrw = enum_def.names.borrow();
     let missing_patterns = enum_def
         .variants
@@ -1157,6 +1160,36 @@ fn match_validate_arm_kinds(
             )
             .with_compiler_loc()
             .with_tokens(arm.expression.tokens()));
+        }
+    }
+    Ok(())
+}
+
+fn validate_match_arm_output_kinds(
+    match_expr: &MatchExpression,
+    env: &Environment,
+    p: &Interpreter,
+) -> MResult<()> {
+    let mut expected: Option<ValueKind> = None;
+    for arm in &match_expr.arms {
+        let arm_kind = match expression(&arm.expression, Some(env), p) {
+            Ok(value) => value.kind(),
+            Err(_) => continue,
+        };
+        if let Some(expected_kind) = &expected {
+            if *expected_kind != arm_kind {
+                return Err(MechError::new(
+                    MatchArmKindMismatchError {
+                        expected: expected_kind.clone(),
+                        found: arm_kind,
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+                .with_tokens(arm.expression.tokens()));
+            }
+        } else {
+            expected = Some(arm_kind);
         }
     }
     Ok(())
