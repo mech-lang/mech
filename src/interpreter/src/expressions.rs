@@ -1739,7 +1739,7 @@ impl MechErrorKind for MatchNonExhaustiveVariantsError {
     }
     fn message(&self) -> String {
         format!(
-            "Match over enum '{}' is non-exhaustive. Missing patterns: {}. Add the missing patterns or add a wildcard (`*`) arm.",
+            "Match over enum '{}' is non-exhaustive. Missing variants: {}. Handle the missing variants or add a wildcard (`*`) arm to catch all cases.",
             self.enum_name,
             self.missing_patterns.join(", ")
         )
