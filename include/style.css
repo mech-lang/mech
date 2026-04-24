@@ -186,7 +186,7 @@ body {
 }
 
 .repl-result .mech-output-value {
-    margin-top: 10px;
+    margin-top: 10px !important;
 }
 
 .repl-result .mech-output-value {
@@ -1728,6 +1728,10 @@ li p {
     background: color-mix(in srgb, var(--code-background-color) 90%, var(--error-color) 10%);
     padding: 14px 16px;
     color: var(--text-color);
+}
+
+.mech-output-value:has(.mech-runtime-error) {
+  padding-left: 0px;
 }
 
 .mech-runtime-error-header {
