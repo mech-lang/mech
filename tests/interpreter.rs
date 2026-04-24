@@ -245,6 +245,39 @@ label := state?
   assert!(msg.contains("wildcard"));
 }
 
+#[test]
+fn interpret_enum_match_all_variants_without_wildcard_is_exhaustive() {
+  let s = r#"
+<status> := :running | :pending | :stopped
+x<status> := :running
+code := x?
+  | :running => 1
+  | :pending => 2
+  | :stopped => 0.
+"#;
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  assert_eq!(result, Value::F64(Ref::new(1.0)));
+}
+
+#[test]
+fn interpret_enum_match_all_variants_without_wildcard_still_checks_arm_kinds() {
+  let s = r#"
+<status> := :running | :pending | :stopped
+x<status> := :running
+code := x?
+  | :running => 1
+  | :pending => "pending"
+  | :stopped => 0.
+"#;
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let err = intrp.interpret(&tree).unwrap_err();
+  let msg = format!("{:?}", err);
+  assert!(msg.contains("MatchArmKindMismatch"));
+}
+
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_match_array_pattern_head,
