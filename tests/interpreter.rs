@@ -47,6 +47,8 @@ test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String(Ref::new
 test_interpreter!(interpret_literal_string_empty, r#""""#, Value::String(Ref::new("".to_string())));
 test_interpreter!(interpret_literal_string_multiline, r#""Hello 
  World""#, Value::String(Ref::new("Hello \n World".to_string())));
+test_interpreter!(interpret_string_access_uses_grapheme_clusters, r#"s := "é👩‍🚀z"
+s[2]"#, Value::String(Ref::new("👩‍🚀".to_string())));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(Ref::new(true)));
 test_interpreter!(interpret_literal_true2, "✓ ", Value::Bool(Ref::new(true)));
 test_interpreter!(interpret_literal_false2, "✗ ", Value::Bool(Ref::new(false)));

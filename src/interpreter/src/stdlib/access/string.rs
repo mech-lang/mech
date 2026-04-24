@@ -1,7 +1,19 @@
 #[macro_use]
 use crate::stdlib::*;
+use grapheme::Graphemes;
 
 // String Access -------------------------------------------------------------
+
+fn access_grapheme(s: &str, ix: usize) -> MResult<String> {
+  if ix < 1 {
+    return Err(MechError::new(IndexOutOfBoundsError, None).with_compiler_loc());
+  }
+  Graphemes::from_usvs(s)
+    .iter()
+    .nth(ix - 1)
+    .map(|g| g.as_str().to_string())
+    .ok_or_else(|| MechError::new(IndexOutOfBoundsError, None).with_compiler_loc())
+}
 
 #[derive(Debug)]
 struct StringAccessElement {
@@ -42,12 +54,8 @@ impl NativeFunctionCompiler for StringAccessScalar {
       (Value::String(s), Value::Index(ix)) => {
         let s_brrw = s.borrow();
         let ix_brrw = ix.borrow();
-        let len = s_brrw.chars().count();
-        if *ix_brrw < 1 || *ix_brrw > len {
-          return Err(MechError::new(IndexOutOfBoundsError, None).with_compiler_loc());
-        }
-        let ch = s_brrw.chars().nth(*ix_brrw - 1).unwrap();
-        let new_fxn = StringAccessElement { out: Value::String(Ref::new(ch.to_string())) };
+        let grapheme = access_grapheme(&s_brrw, *ix_brrw)?;
+        let new_fxn = StringAccessElement { out: Value::String(Ref::new(grapheme)) };
         Ok(Box::new(new_fxn))
       },
       (Value::MutableReference(r), Value::Index(ix)) => {
@@ -55,12 +63,8 @@ impl NativeFunctionCompiler for StringAccessScalar {
           Value::String(s) => {
             let s_brrw = s.borrow();
             let ix_brrw = ix.borrow();
-            let len = s_brrw.chars().count();
-            if *ix_brrw < 1 || *ix_brrw > len {
-              return Err(MechError::new(IndexOutOfBoundsError, None).with_compiler_loc());
-            }
-            let ch = s_brrw.chars().nth(*ix_brrw - 1).unwrap();
-            let new_fxn = StringAccessElement { out: Value::String(Ref::new(ch.to_string())) };
+            let grapheme = access_grapheme(&s_brrw, *ix_brrw)?;
+            let new_fxn = StringAccessElement { out: Value::String(Ref::new(grapheme)) };
             Ok(Box::new(new_fxn))
           },
           _ => Err(MechError::new(
