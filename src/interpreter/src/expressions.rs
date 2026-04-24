@@ -934,19 +934,24 @@ pub fn match_expression(
         if let Some((enum_name, missing_patterns)) =
             infer_missing_enum_match_patterns(match_expr, &detached_source, p)
         {
-            return Err(MechError::new(
-                MatchNonExhaustiveVariantsError {
-                    enum_name,
-                    missing_patterns,
-                },
-                None,
-            )
-            .with_compiler_loc()
-            .with_tokens(match_expr.source.tokens()));
+            if missing_patterns.is_empty() {
+                // Exhaustive enum matches do not require a wildcard arm.
+            } else {
+                return Err(MechError::new(
+                    MatchNonExhaustiveVariantsError {
+                        enum_name,
+                        missing_patterns,
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+                .with_tokens(match_expr.source.tokens()));
+            }
+        } else {
+            return Err(MechError::new(MatchNonExhaustiveError, None)
+                .with_compiler_loc()
+                .with_tokens(match_expr.source.tokens()));
         }
-        return Err(MechError::new(MatchNonExhaustiveError, None)
-            .with_compiler_loc()
-            .with_tokens(match_expr.source.tokens()));
     }
     let mut base_env = env.cloned().unwrap_or_default();
     if let Expression::Var(var) = &match_expr.source {
@@ -1089,9 +1094,6 @@ fn infer_missing_enum_match_patterns(
     };
     let variant_ids: HashSet<u64> = enum_def.variants.iter().map(|(id, _)| *id).collect();
     let missing_ids: Vec<u64> = variant_ids.difference(&arm_tags).copied().collect();
-    if missing_ids.is_empty() {
-        return None;
-    }
     let names_brrw = enum_def.names.borrow();
     let missing_patterns = enum_def
         .variants
