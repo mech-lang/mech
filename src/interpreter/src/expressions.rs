@@ -1195,69 +1195,92 @@ fn validate_match_arm_output_kinds(
     Ok(())
 }
 
+#[cfg(feature = "bool")]
 fn guard_expression_true(guard: &Expression, env: &Environment, p: &Interpreter) -> MResult<bool> {
-    let guard_result = expression(guard, Some(env), p)?;
-    #[cfg(feature = "bool")]
-    if let Value::Bool(flag) = guard_result {
-        return Ok(*flag.borrow());
-    }
-    Ok(false)
+  let guard_result = expression(guard, Some(env), p)?;
+  match guard_result {
+    Value::Bool(flag) => Ok(*flag.borrow()),
+    _ => Err(MechError::new(
+      InvalidGuardExpressionError {
+        found: guard_result.kind(),
+      },
+      None,
+    )
+    .with_compiler_loc()
+    .with_tokens(guard.tokens())),
+  }
 }
 
 fn is_identity_option_matrix_arm(arm: &MatchArm) -> bool {
-    match (&arm.pattern, &arm.expression) {
-        (Pattern::Expression(Expression::Var(pattern_var)), Expression::Var(expr_var)) => {
-            pattern_var.name.hash() == expr_var.name.hash()
-        }
-        _ => false,
-    }
+  match (&arm.pattern, &arm.expression) {
+      (Pattern::Expression(Expression::Var(pattern_var)), Expression::Var(expr_var)) => {
+        pattern_var.name.hash() == expr_var.name.hash()
+      }
+      _ => false,
+  }
 }
 
 fn has_identity_wildcard_coalesce_arms(match_expr: &MatchExpression) -> bool {
-    let has_identity = match_expr.arms.iter().any(is_identity_option_matrix_arm);
-    let has_wildcard = match_expr
-        .arms
-        .iter()
-        .any(|arm| matches!(arm.pattern, Pattern::Wildcard));
-    has_identity && has_wildcard
+  let has_identity = match_expr.arms.iter().any(is_identity_option_matrix_arm);
+  let has_wildcard = match_expr
+      .arms
+      .iter()
+      .any(|arm| matches!(arm.pattern, Pattern::Wildcard));
+  has_identity && has_wildcard
 }
 
 #[cfg(feature = "matrix")]
 fn coalesce_option_matrix_with_fallback(source: &Value, fallback: &Value) -> MResult<Value> {
-    let source_kind = source.kind();
-    if let ValueKind::Option(inner_kind) = source_kind.clone() {
-        let raw = match source {
-            Value::Typed(inner, _) => inner.as_ref().clone(),
-            value => value.clone(),
-        };
-        let candidate = match raw {
-            Value::Empty | Value::EmptyKind(_) => fallback.clone(),
-            value => value,
-        };
-        return candidate.convert_to(inner_kind.as_ref()).ok_or_else(|| {
-            MechError::new(
-                CannotConvertToTypeError {
-                    target_type: "requested type",
-                },
-                None,
-            )
-            .with_compiler_loc()
-        });
-    }
-    let (inner_kind, shape) = match source_kind {
-        ValueKind::Matrix(element_kind, shape) => match *element_kind {
-            ValueKind::Option(inner) => (*inner, shape),
-            _ => return Ok(source.clone()),
-        },
+  let source_kind = source.kind();
+  if let ValueKind::Option(inner_kind) = source_kind.clone() {
+    let raw = match source {
+        Value::Typed(inner, _) => inner.as_ref().clone(),
+        value => value.clone(),
+    };
+    let candidate = match raw {
+        Value::Empty | Value::EmptyKind(_) => fallback.clone(),
+        value => value,
+    };
+    return candidate.convert_to(inner_kind.as_ref()).ok_or_else(|| {
+        MechError::new(
+            CannotConvertToTypeError {
+                target_type: "requested type",
+            },
+            None,
+        )
+        .with_compiler_loc()
+    });
+  }
+  let (inner_kind, shape) = match source_kind {
+    ValueKind::Matrix(element_kind, shape) => match *element_kind {
+        ValueKind::Option(inner) => (*inner, shape),
         _ => return Ok(source.clone()),
-    };
-    let values = match crate::patterns::matrix_like_values(source) {
-        Some(values) => values,
-        None => return Ok(source.clone()),
-    };
-    let fill_value = fallback
-        .convert_to(&inner_kind)
-        .ok_or_else(|| {
+    },
+    _ => return Ok(source.clone()),
+  };
+  let values = match crate::patterns::matrix_like_values(source) {
+    Some(values) => values,
+    None => return Ok(source.clone()),
+  };
+  let fill_value = fallback
+    .convert_to(&inner_kind)
+    .ok_or_else(|| {
+        MechError::new(
+            CannotConvertToTypeError {
+                target_type: "requested type",
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+  let converted_values = values
+    .into_iter()
+    .map(|value| {
+        let raw = match value {
+            Value::Empty | Value::EmptyKind(_) => fill_value.clone(),
+            other => other,
+        };
+        raw.convert_to(&inner_kind).ok_or_else(|| {
             MechError::new(
                 CannotConvertToTypeError {
                     target_type: "requested type",
@@ -1265,91 +1288,75 @@ fn coalesce_option_matrix_with_fallback(source: &Value, fallback: &Value) -> MRe
                 None,
             )
             .with_compiler_loc()
-        })?;
-    let converted_values = values
-        .into_iter()
-        .map(|value| {
-            let raw = match value {
-                Value::Empty | Value::EmptyKind(_) => fill_value.clone(),
-                other => other,
-            };
-            raw.convert_to(&inner_kind).ok_or_else(|| {
-                MechError::new(
-                    CannotConvertToTypeError {
-                        target_type: "requested type",
-                    },
-                    None,
-                )
-                .with_compiler_loc()
-            })
         })
-        .collect::<MResult<Vec<Value>>>()?;
-    Ok(Value::MatrixValue(Matrix::from_vec(
-        converted_values,
-        shape[0],
-        shape[1],
-    )))
+    })
+    .collect::<MResult<Vec<Value>>>()?;
+  Ok(Value::MatrixValue(Matrix::from_vec(
+    converted_values,
+    shape[0],
+    shape[1],
+  )))
 }
 
 fn value_contains_empty(value: &Value) -> bool {
-    match value {
-        Value::Empty | Value::EmptyKind(_) => true,
-        #[cfg(feature = "matrix")]
-        Value::MatrixValue(matrix) => matrix
-            .as_vec()
-            .iter()
-            .any(|value| value_contains_empty(value)),
-        #[cfg(feature = "tuple")]
-        Value::Tuple(tuple) => tuple
-            .borrow()
-            .elements
-            .iter()
-            .any(|value| value_contains_empty(value.as_ref())),
-        Value::Typed(value, _) => value_contains_empty(value),
-        Value::MutableReference(reference) => value_contains_empty(&reference.borrow()),
-        _ => false,
-    }
+  match value {
+    Value::Empty | Value::EmptyKind(_) => true,
+    #[cfg(feature = "matrix")]
+    Value::MatrixValue(matrix) => matrix
+        .as_vec()
+        .iter()
+        .any(|value| value_contains_empty(value)),
+    #[cfg(feature = "tuple")]
+    Value::Tuple(tuple) => tuple
+        .borrow()
+        .elements
+        .iter()
+        .any(|value| value_contains_empty(value.as_ref())),
+    Value::Typed(value, _) => value_contains_empty(value),
+    Value::MutableReference(reference) => value_contains_empty(&reference.borrow()),
+    _ => false,
+  }
 }
 
 #[cfg(feature = "formulas")]
 pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
-    match fctr {
-        Factor::Term(trm) => {
-            let result = term(trm, env, p)?;
-            Ok(result)
-        }
-        Factor::Parenthetical(paren) => factor(&*paren, env, p),
-        Factor::Expression(expr) => expression(expr, env, p),
-        #[cfg(feature = "math_neg")]
-        Factor::Negate(neg) => {
-            let value = factor(neg, env, p)?;
-            let new_fxn = MathNegate {}.compile(&vec![value])?;
-            new_fxn.solve();
-            let out = new_fxn.out();
-            p.state.borrow_mut().add_plan_step(new_fxn);
-            Ok(out)
-        }
-        #[cfg(feature = "logic_not")]
-        Factor::Not(neg) => {
-            let value = factor(neg, env, p)?;
-            let new_fxn = LogicNot {}.compile(&vec![value])?;
-            new_fxn.solve();
-            let out = new_fxn.out();
-            p.state.borrow_mut().add_plan_step(new_fxn);
-            Ok(out)
-        }
-        #[cfg(feature = "matrix_transpose")]
-        Factor::Transpose(fctr) => {
-            use mech_matrix::MatrixTranspose;
-            let value = factor(fctr, env, p)?;
-            let new_fxn = MatrixTranspose {}.compile(&vec![value])?;
-            new_fxn.solve();
-            let out = new_fxn.out();
-            p.state.borrow_mut().add_plan_step(new_fxn);
-            Ok(out)
-        }
-        _ => todo!(),
+  match fctr {
+    Factor::Term(trm) => {
+      let result = term(trm, env, p)?;
+      Ok(result)
     }
+    Factor::Parenthetical(paren) => factor(&*paren, env, p),
+    Factor::Expression(expr) => expression(expr, env, p),
+    #[cfg(feature = "math_neg")]
+    Factor::Negate(neg) => {
+      let value = factor(neg, env, p)?;
+      let new_fxn = MathNegate {}.compile(&vec![value])?;
+      new_fxn.solve();
+      let out = new_fxn.out();
+      p.state.borrow_mut().add_plan_step(new_fxn);
+      Ok(out)
+    }
+    #[cfg(feature = "logic_not")]
+    Factor::Not(neg) => {
+      let value = factor(neg, env, p)?;
+      let new_fxn = LogicNot {}.compile(&vec![value])?;
+      new_fxn.solve();
+      let out = new_fxn.out();
+      p.state.borrow_mut().add_plan_step(new_fxn);
+      Ok(out)
+    }
+    #[cfg(feature = "matrix_transpose")]
+    Factor::Transpose(fctr) => {
+      use mech_matrix::MatrixTranspose;
+      let value = factor(fctr, env, p)?;
+      let new_fxn = MatrixTranspose {}.compile(&vec![value])?;
+      new_fxn.solve();
+      let out = new_fxn.out();
+      p.state.borrow_mut().add_plan_step(new_fxn);
+      Ok(out)
+    }
+    _ => todo!(),
+  }
 }
 
 #[cfg(feature = "formulas")]
@@ -1755,6 +1762,23 @@ impl MechErrorKind for PatternMatchError {
     format!(
       "Pattern match error for variable '{}': expected value {}, found value {}",
       self.var, self.expected, self.found
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct InvalidGuardExpressionError {
+  found: ValueKind,
+}
+
+impl MechErrorKind for InvalidGuardExpressionError {
+  fn name(&self) -> &str {
+    "InvalidGuardExpression"
+  }
+  fn message(&self) -> String {
+    format!(
+      "Guard expressions must evaluate to a boolean value. Found kind: {:?}",
+      self.found
     )
   }
 }
