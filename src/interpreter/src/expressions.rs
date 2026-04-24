@@ -1029,6 +1029,14 @@ fn infer_missing_enum_match_patterns(
     p: &Interpreter,
 ) -> Option<(String, Vec<String>)> {
     let source_tag = match source {
+        Value::Enum(enum_value) => {
+            let enum_brrw = enum_value.borrow();
+            if enum_brrw.variants.len() != 1 {
+                None
+            } else {
+                Some(enum_brrw.variants[0].0)
+            }
+        }
         Value::Atom(atom) => Some(atom.borrow().id()),
         #[cfg(feature = "tuple")]
         Value::Tuple(tuple_val) => {
