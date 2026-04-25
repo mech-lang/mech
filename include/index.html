@@ -1,1065 +1,266 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous">
-  <script defer src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"
-  onload="renderMathInElement(document.body);"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
-
-  <title>{{TITLE}}</title>
-  <link rel="icon" href="https://gitlab.com/mech-lang/assets/-/raw/main/images/icons/favicon.ico?ref_type=heads" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mech v0.3 Announcement</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
-  </style>
-  <style>
-    {{STYLESHEET}}
-  </style>
-
-
-  <style>
-    html, body {
-      margin: 0;
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
-      box-sizing: border-box;
+    :root {
+      --bg: var(--body-background-color);
+      --surface: #0c1119;
+      --surface-2: #0b0f15;
+      --line: #242c39;
+      --text: var(--text-color);
+      --muted: var(--contrast-color-low);
+      --accent: var(--main-color-mid);
     }
 
-    *, *::before, *::after {
-      box-sizing: inherit;
-    }
-
-    .container {
-      display: flex;
-      height: calc(100vh - 60px);  /* Change from height: 100% */
-      width: 100%;
-    }
-
-    .content {
-      min-width: 0px;
-      width: 0%;  
-      color: #f2ead9;
-      padding: 0px;
-      margin: 0px;
-      flex-grow: 1;
-      min-height: 0;
-      overflow-y: auto;  /* Make sure this is here */
-
-    }
-
-    .resizer {
-      width: 3px;
-      margin-left:10px;
-      background: #35393d;
-      cursor: col-resize;
-      position: relative;
-      flex-shrink: 0;
-    }
-
-    .toggle-button {
-      position: absolute;
-      top: 50%;
-      height: 50px;
-      width: 11px;
-      left: -4px;
-      transform: translateY(-50%);
-      background: rgb(246,192,78);
-      border: 2px solid rgb(195, 146, 39);
-      color: #35393d;
-      padding: 2px 6px;
-      cursor: pointer;
-      font-size: 20px;
-      font-weight: bold;
-      border-radius: 2px;
-      padding: 0px;
-      user-select: none;
-      box-shadow: 0 0px 4px rgba(0, 0, 0, 0.8);
-    }
-
-    .toggle-button:focus {
-      outline: none;
-    }
-
-    .sidebar {
-      font-family: 'FiraCodeLight', monospace;
-      font-size: 1rem;
-      color: #f2ead9;
-      padding: 1rem;
-      overflow: auto;
-      height: 100%;
-      flex-shrink: 0;
-      transition: width 0.2s ease;
-      width: clamp(300px, 33%, 100%);
-    }
-
-    .sidebar.hidden {
-      transform: translateX(100%);
-      width: 0 !important;
-      padding: 0;
-      overflow: hidden;
-    }
-
-    body.resizing .sidebar {
-      transition: none !important; 
-    }
-
-    body.resizing {
-      cursor: col-resize;
-      user-select: none;
-    }
-
-    body::-webkit-scrollbar {
-      height: 8px;
-    }
-
-    body::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    body::-webkit-scrollbar-thumb {
-        background: rgba(128, 128, 128, 0.7);
-        border-radius: 10px;
-    }
-
-    body::-webkit-scrollbar-thumb:hover {
-        background: rgba(128, 128, 128, 0.7);
-    }
-
+    * { box-sizing: border-box; }
     body {
-        scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
-        scrollbar-width: thin;
+      margin: 0;
+      font-family: Inter, sans-serif;
+      background: var(--bg);
+      color: var(--text);
     }
-    .toggle-button.edge-left:hover,
-    .toggle-button.edge-right:hover {
 
-    }
-    #footer {
-      padding: 30px;
-      height: 300px;
-      width: 100%;
-      margin-top: 50px;
-      background-color: #06070a;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23797979' fill-opacity='0.55'%3E%3Cpath opacity='.5' d='M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z'/%3E%3Cpath d='M6 5V0H5v5H0v1h5v94h1V6h94V5H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-      /* box shadow parameters are: horizontal offset, vertical offset, blur radius, spread radius, color */
-      box-shadow:inset 0 7px 10px rgba(0,0,0,1);
-    }
-    #header {
-      display: flex;
-      align-items: center;
-      justify-content: left;
-      background-color: #0d1117;
-      background: linear-gradient(90deg, #090d11, #171c26); /* Add gradient */
-      padding: 0 3rem; /* Bring content in from edges */
-      height: 60px;
-      border-bottom: 1px solid #35393d;
-      font-family: 'FiraCodeLight', monospace;
-      color: #f2ead9;
+    .container { width: min(1200px, 95vw); margin: 0 auto; }
+
+    .topbar {
+      border-bottom: 1px solid var(--line);
+      background: #070b10;
       position: sticky;
       top: 0;
-      z-index: 9999;
-      box-shadow: 0 4px 10px rgba(0,0,0,1);
+      z-index: 9;
+    }
+
+    .topbar .container { display: flex; align-items: center; justify-content: space-between; min-height: 70px; }
+
+    .logo { font-family: Oswald, sans-serif; letter-spacing: 2px; color: var(--accent); font-size: 2rem; }
+
+    .nav { display: flex; gap: 2rem; text-transform: uppercase; font-weight: 600; font-size: .9rem; }
+    .nav a { color: var(--text); text-decoration: none; opacity: .85; }
+    .nav a.active { color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 20px; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
       gap: 2rem;
+      margin-top: 2rem;
+      padding: 2rem 0;
+      border-bottom: 1px solid var(--line);
     }
 
-  #logo {
-    padding-left: 1rem; /* Extra space on logo side */
-  }
+    .eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
 
-  /* Logo */
-  #logo img {
-    height: 35px; /* scale to fit header */
-  }
+    h1 {
+      font-family: Oswald, sans-serif;
+      font-size: clamp(2.2rem, 4vw, 4.4rem);
+      line-height: 1.05;
+      margin: .8rem 0;
+      color: var(--text-color-light);
+    }
 
-  /* Nav container */
-  #nav {
-    display: flex;
-    align-items: center;
-    gap: 2rem; /* spacing between nav items */
-    font-size: 1rem;
-    text-transform: uppercase;
-    padding-right: 1rem;
-  }
+    .meta { color: var(--muted); margin-bottom: 1rem; }
+    .intro { font-size: 1.1rem; line-height: 1.7; color: var(--contrast-color-mid); }
 
-  /* Nav links */
-  #nav a {
-    color: #f2ead9;
-    text-decoration: none;
-    transition: color 0.2s ease;
-  }
-
-  #nav a:hover {
-    color: rgb(246,192,78); /* highlight hover in yellow like logo */
-  }
-
-  /* Optional: add colon motif before links for terminal feel */
-  #nav span::before {
-    content: ":";
-    margin-right: 0.25rem;
-    letter-spacing: -0.5ch;
-    color: rgb(246,192,78);
-    font-size: 1.2rem;
-    font-weight: bold;
-  }
-
-  #nav span.active::before {
-    content: ">:";
-    margin-right: 0.25rem;
-    letter-spacing: -0.5ch;
-    color: rgb(246,192,78);
-    font-size: 1.2rem;
-    font-weight: bold;
-  }
-  #github {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-  }
-  /* compress the header if the view is small */
-  @media (max-width: 840px) {
-    #header {
-      flex-direction: row;
-      align-items: flex-start;
-      padding: 0px 1rem;
-      height: auto;
-      padding-top: 3px;
-      gap: 1rem;
-    }
-    #logo img {
-      height: 25px;
-    }
-    #nav {
-      flex-wrap: wrap;
-      gap: 1rem;
-      font-size: 0.9rem;
-      padding-top: 0px;
-    }
-    #github {
-      position: absolute;
-      top: 2px;
-      right: 1rem;
-    }
-  }
-  @media (max-width: 650px) {
-    #header {
-      flex-direction: column;
-      align-items: center; /* Center items horizontally */
-      padding: 0px 1rem;
-      height: auto;
-      padding-top: 3px;
-      gap: 1rem;
-    }
-    #logo img {
-      height: 25px;
-      margin: auto;
-    }
-    #nav {
-      flex-wrap: wrap;
-      gap: 1rem;
-      font-size: 0.9rem;
-      padding-top: 0px;
-      justify-content: center; /* Center navigation links */
-    }
-    #github {
+    .hero-image {
+      border-radius: 14px;
+      border: 1px solid #42516a;
+      min-height: 430px;
+      background: linear-gradient(145deg, #59a2e7 10%, #30557e 48%, #1a2534 100%);
       position: relative;
-      top: inherit;
-      right: inherit;
-      margin: auto; /* Center GitHub button */
+      overflow: hidden;
     }
-  }
+    .hero-image:before {
+      content: "V0.3";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: Oswald, sans-serif;
+      font-size: clamp(4rem, 14vw, 11rem);
+      color: rgba(255,255,255,.6);
+      letter-spacing: .08em;
+      text-shadow: 0 8px 32px rgba(0,0,0,.55);
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0,1fr));
+      gap: 0;
+      border: 1px solid var(--line);
+      margin: 2rem 0;
+    }
+
+    .feature {
+      padding: 1rem;
+      min-height: 145px;
+      border-right: 1px solid var(--line);
+      background: var(--surface-2);
+    }
+    .feature:last-child { border-right: 0; }
+    .feature h4 { margin: 0 0 .5rem; font-size: 1rem; }
+    .feature p { margin: 0; color: var(--contrast-color-mid); font-size: .95rem; line-height: 1.4; }
+    .feature .id { color: var(--accent); margin-top: .6rem; font-weight: 700; }
+
+    .main {
+      display: grid;
+      grid-template-columns: 290px 1fr;
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .toc {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+      padding: 1.2rem;
+      position: sticky;
+      top: 90px;
+      height: fit-content;
+    }
+
+    .toc h3 {
+      margin: 0 0 1rem;
+      color: var(--accent);
+      letter-spacing: .08em;
+      font-size: .9rem;
+      text-transform: uppercase;
+    }
+
+    .toc ol { margin: 0; padding-left: 1.25rem; line-height: 1.9; color: var(--contrast-color-mid); }
+
+    .article section { border-top: 1px solid var(--line); padding-top: 1.2rem; margin-bottom: 2.5rem; }
+    .article h2 {
+      margin: 0 0 1rem;
+      font-family: Oswald, sans-serif;
+      font-size: 2.2rem;
+      color: var(--text-color-light);
+    }
+    .article p { color: var(--contrast-color-mid); line-height: 1.7; font-size: 1.08rem; }
+
+    .callout {
+      border: 1px solid #38445b;
+      background: #111a26;
+      border-radius: 8px;
+      padding: 1rem 1.1rem;
+      color: var(--text);
+    }
+
+    .codebox {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 1rem 0;
+    }
+
+    .codebox .head {
+      background: #111722;
+      border-bottom: 1px solid var(--line);
+      padding: .6rem .9rem;
+      color: var(--accent);
+      text-align: right;
+      font-family: "FiraCodeLight", monospace;
+      font-size: .85rem;
+    }
+
+    pre {
+      margin: 0;
+      background: #090d14;
+      padding: 1rem;
+      color: #d7e2f1;
+      font-size: 1rem;
+      overflow-x: auto;
+    }
+
+    .error { border-top: 1px solid #6d2732; background: rgba(107, 17, 30, .18); color: #ffb6bf; padding: .9rem 1rem; }
+
+    @media (max-width: 1024px) {
+      .features { grid-template-columns: repeat(3, minmax(0,1fr)); }
+      .main, .hero { grid-template-columns: 1fr; }
+      .toc { position: static; }
+    }
+
+    @media (max-width: 700px) {
+      .nav { display: none; }
+      .features { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
   </style>
-  <script async defer src="https://buttons.github.io/buttons.js"></script>
 </head>
 <body>
-  <header id="header">
-    <div id="logo">
-      <a href="https://mech-lang.org">
-        <img src="https://mech-lang.org/img/logo.png" alt="MECH Logo" height="40">
-      </a>
-    </div>
-    <div id="nav">
-      <span><a href="https://about.mech-lang.org">About</a></span>
-      <span ><a href="https://mech-lang.org/blog">Blog</a></span>
-      <span><a href="https://mech-lang.org/community">Community</a></span>
-      <span class="active"><a href="https://docs.mech-lang.org">Docs</a></span>
-      <span><a href="https://try.mech-lang.org">Explore</a></span>
-    </div>
-    <div id="github">
-      <a class="github-button" href="https://github.com/mech-lang/mech" data-color-scheme="no-preference: light; light: light; dark: dark;" data-size="large" data-show-count="true" aria-label="Star mech-lang/mech on GitHub">Star</a>
+  <header class="topbar">
+    <div class="container">
+      <div class="logo">MECH</div>
+      <nav class="nav">
+        <a href="#">About</a>
+        <a class="active" href="#">Blog</a>
+        <a href="#">Community</a>
+        <a href="#">Docs</a>
+        <a href="#">Explore</a>
+      </nav>
     </div>
   </header>
-  <div class="container mech-root" mech-interpreter-id=0>
-    {{TOC}}
-    <div class="content" id="left-pane">
-      <div id="breadcrumb" class="mech-breadcrumb"></div>
-        {{CONTENT}}
-    </div>
-    <div class="resizer hidden" id="resizer">
-      <button class="toggle-button" id="toggle-repl">|</button>
-    </div>
-    <div class="sidebar mech-repl hidden" id="mech-output"></div>
-  </div>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const contentPane = document.getElementById('left-pane');
-      const tocLinks = document.querySelectorAll('a.toc[href^="#"]');
-      const contentLinks = document.querySelectorAll('.content a[href^="#"]'); // Add this
 
-      // Handle TOC links
-      tocLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-          const href = link.getAttribute('href');
-          
-          // If it's a REPL command (starts with #:), don't prevent default
-          if (href && href.startsWith('#:')) {
-            return; // Let the browser handle it normally, will trigger hashchange
-          }
-          
-          e.preventDefault();
-          
-          const targetId = href.substring(1);
-          const targetElement = document.getElementById(targetId);
-          
-          if (targetElement && contentPane.contains(targetElement)) {
-            const contentRect = contentPane.getBoundingClientRect();
-            const targetRect = targetElement.getBoundingClientRect();
-            const scrollOffset = targetRect.top - contentRect.top + contentPane.scrollTop;
-            
-            contentPane.scrollTop = scrollOffset;
-          }
-        });
-      });
-
-      // Handle content links
-      contentLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-          const href = link.getAttribute('href');
-          
-          // If it's a REPL command (starts with #:), don't prevent default
-          if (href && href.startsWith('#:')) {
-            return; // Let the browser handle it normally, will trigger hashchange
-          }
-          
-          e.preventDefault();
-          
-          const targetId = href.substring(1);
-          const targetElement = document.getElementById(targetId);
-          
-          if (targetElement && contentPane.contains(targetElement)) {
-            const contentRect = contentPane.getBoundingClientRect();
-            const targetRect = targetElement.getBoundingClientRect();
-            const scrollOffset = targetRect.top - contentRect.top + contentPane.scrollTop;
-            
-            contentPane.scrollTop = scrollOffset;
-          }
-        });
-      });
-    });
-  </script>
-  <script>
-    const left_pane = document.getElementById('left-pane');
-    const resizer = document.getElementById('resizer');
-    const sidebar = document.getElementById('mech-output');
-    const toggleButton = document.getElementById('toggle-repl');
-    const toc = document.querySelector('.mech-toc');
-
-    let isDragging = false;
-    let replVisible = true;
-    let replFull = false;
-    let lastSidebarWidth = Math.max(sidebar.offsetWidth, 300);
-
-    const updateTocMargin = (toc_width) => {
-      if (!content || !sidebar || !toc) return;
-      const contentRect = content.getBoundingClientRect();
-      const offset = 350 + toc_width + 150;
-      const left = contentRect.left + contentRect.width / 2 - offset;
-      if (left < 0) {
-        toc.style.marginLeft = `0px`;
-      } else {
-        toc.style.marginLeft = `${left}px`;
-      }
-    };
-
-
-    // Add an observer to monitor sidebar width changes
-    const resize_observer = new ResizeObserver(entries => {
-      const sidebarWidth = entries[0].contentRect.width;
-
-      // count the number of children the TOC has. Zero h2 means zero toc
-      const h2Count = toc.querySelectorAll('h2').length;
-      const empty_toc = h2Count == 0;
-
-      const content_width = window.innerWidth - sidebarWidth;
-      const toc_width = toc.offsetWidth + 50;
-
-      if (content_width < 1400) {
-        left_pane.classList.add('compact');
-        if (!empty_toc) {
-          left_pane.style.marginLeft = `${toc_width}px`;
-        }
-      } else {
-        left_pane.classList.remove('compact');
-        left_pane.style.marginLeft = `auto`;
-      }
-
-      if (content_width < 900) {
-        left_pane.classList.add('super');
-        if (!empty_toc) {
-          left_pane.style.marginLeft = `auto`;
-        }
-      } else {
-        left_pane.classList.remove('super');
-      }
-
-      if (!empty_toc) {
-        if (window.innerWidth - sidebarWidth < 900) {
-          toc.classList.add('hidden');
-        } else {
-          toc.classList.remove('hidden');
-        }
-      }
-
-      const remainingSpace = window.innerWidth - sidebarWidth - toc_width;
-
-    if (!empty_toc) {
-      if (remainingSpace < 700) {
-        toc.classList.add('fixed');
-      } else {
-        updateTocMargin(toc_width);
-        toc.classList.remove('fixed');
-      }
-    }
-    });
-    resize_observer.observe(sidebar);
-
-    const content = document.querySelector('.mech-content');
-
-    function focusContent() {
-      content.classList.add('focused');
-    }
-    function blurContent() {
-      content.classList.remove('focused');
-    }
-
-    // focus when clicked, scrolled, or hovered
-    content.addEventListener('mouseenter', focusContent);
-    content.addEventListener('mousemove', focusContent);
-    content.addEventListener('wheel', focusContent);
-    content.addEventListener('focusin', focusContent);
-
-    // blur when user moves outside
-    content.addEventListener('mouseleave', blurContent);
-    content.addEventListener('focusout', blurContent);
-
-    resizer.addEventListener('mousedown', () => {
-      if (!replVisible) return;
-      isDragging = true;
-      document.body.classList.add('resizing');
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-
-      const container = document.querySelector('.container');
-      const containerWidth = container.offsetWidth;
-      const minWidth = 370;
-      const edgeThreshold = 2; // px near screen edges
-
-      const newWidth = containerWidth - e.clientX;
-
-      const nearLeftEdge = e.clientX <= edgeThreshold;
-      const nearRightEdge = e.clientX >= containerWidth - edgeThreshold;
-
-      if (nearLeftEdge) {
-        fullscreen_repl()
-        return;
-      }
-
-      if (nearRightEdge) {
-        fullscreen_content()
-        return;
-      }
-      // Normal drag within range
-      const maxWidth = containerWidth * 0.8;
-      const clampedWidth = Math.min(Math.max(newWidth, minWidth), maxWidth);
-
-      sidebar.style.width = clampedWidth + 'px';
-      lastSidebarWidth = clampedWidth;
-      sidebar.classList.remove('hidden');
-      replVisible = true;
-      replFull = false;
-
-      left_pane.style.display = 'block';
-      resizer.style.marginLeft = '10px';
-      resizer.style.width = '3px';
-      toggleButton.style.left = `-4px`;
-      sidebar.style.width = lastSidebarWidth + 'px';
-      sidebar.style.marginLeft = `0px`;
-    });
-
-    function fullscreen_repl() {
-      replFull = true;
-      replVisible = true;
-      sidebar.style.width = "100%";
-      left_pane.style.display = 'none';
-      resizer.style.marginLeft = '0px';
-      resizer.style.width = '0px';
-      toggleButton.style.left = `-8px`;
-      toggleButton.classList.add('edge-left');
-      toggleButton.classList.remove('edge-right');
-    } 
-
-    function fullscreen_content() {
-      replVisible = false;
-      replFull = false;
-      sidebar.classList.add('hidden');
-      left_pane.style.display = 'block';
-      sidebar.style.width = '0';
-      sidebar.style.marginLeft = `-4px`;
-      toggleButton.classList.add('edge-right');
-      toggleButton.classList.remove('edge-left');
-    }
-
-
-    document.addEventListener('mouseup', () => {
-      if (isDragging) {
-        isDragging = false;
-        document.body.classList.remove('resizing');
-      }
-    });
-
-    toggleButton.addEventListener('click', () => {
-      if (!replVisible) {
-        replVisible = true;
-        sidebar.classList.remove('hidden');
-        const restoredWidth = Math.max(lastSidebarWidth, 300); // Ensure minimum 300px
-        sidebar.style.width = restoredWidth + 'px';
-        sidebar.style.marginLeft = `0px`;
-        toggleButton.innerHTML = '|';
-        toggleButton.style.left = `-4px`;
-        toggleButton.style.width = `11px`;
-        toggleButton.style.textAlign = `center`;
-        toggleButton.classList.remove('edge-left', 'edge-right');
-      }
-    });
-
-    toggleButton.addEventListener('dblclick', () => {
-      if (replVisible && !replFull) {
-        fullscreen_content()
-      }
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === '`' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        e.preventDefault();
-
-        if (replVisible) {
-          fullscreen_content();
-        } else {
-          toggleButton.click();
-        }
-      }
-    });
-
-    window.addEventListener("DOMContentLoaded", () => {
-
-      function renderEquations(root = document) {
-        const blockElements = root.querySelectorAll(".mech-equation");
-        blockElements.forEach(el => {
-          if (!el.getAttribute("data-rendered")) {
-            const eq = el.getAttribute("equation");
-            if (eq) {
-              katex.render(eq, el, { throwOnError: false });
-              el.setAttribute("data-rendered", "true");
-            }
-          }
-        });
-
-        const inlineElements = root.querySelectorAll(".mech-inline-equation");
-        inlineElements.forEach(el => {
-          if (!el.getAttribute("data-rendered")) {
-            const eq = el.getAttribute("equation");
-            if (eq) {
-              katex.render(eq, el, { throwOnError: false });
-              el.setAttribute("data-rendered", "true");
-            }
-          }
-        });
-      }
-
-      renderEquations();
-
-      // Set up a MutationObserver to watch for new elements
-      const mutationobserver = new MutationObserver(mutations => {
-        for (const mutation of mutations) {
-          for (const node of mutation.addedNodes) {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              renderEquations(node);
-            }
-          }
-        }
-      });
-      mutationobserver.observe(document.body, { childList: true, subtree: true });
-
-    });
-    
-  </script>
-  <script>
-    let observer = null;
-    let userScrolling = false;
-    let scrollTimeout = null;
-    let scrollLock = false;
-
-    function isFullyVisible(el) {
-      const rect = el.getBoundingClientRect();
-      return (
-        rect.top >= 0 &&
-        rect.left >= 0 &&
-        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-      );
-    }
-
-    document.querySelectorAll('.mech-program-subtitle.toc').forEach(entry => {
-    entry.addEventListener('click', () => {
-      scrollLock = true; // prevent observer from firing during this scroll
-
-      const tag = entry.tagName; // H1, H2, H3, etc.
-      const navItems = document.querySelectorAll(".mech-program-subtitle.toc");
-      const sections = document.querySelectorAll(".mech-program-section.toc");
-      const all_headers = Array.from(document.querySelectorAll('[section]'));
-
-      // Clear previous active states
-      navItems.forEach(item => item.classList.remove("active"));
-      sections.forEach(item => item.classList.remove("active"));
-
-      const section = entry.closest("section");
-      if (section) {
-        // Scroll the section into view if not fully visible
-        //if (!isFullyVisible(section)) {
-        //  section.scrollIntoView({ behavior: "smooth" });
-        //}
-
-        // Activate matching TOC section
-        const matchingTocSection = Array.from(sections).find(item => item.id === section.id);
-        if (matchingTocSection) matchingTocSection.classList.add("active");
-
-        // Grab subheadings
-        const h3s = Array.from(section.querySelectorAll('h3'));
-        const h4s = Array.from(section.querySelectorAll('h4'));
-        const h5s = Array.from(section.querySelectorAll('h5'));
-
-        // Handle H5 → activate closest H4
-        if (tag === "H5") {
-          const closestH4 = h4s.reverse().find(h4 => h4.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
-          if (closestH4) closestH4.classList.add("active");
-        }
-
-        // Handle H4 or H5 → activate closest H3
-        if (tag === "H4" || tag === "H5") {
-          const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
-          if (closestH3) closestH3.classList.add("active");
-        }
-
-        // H3 → mark visible H4s within this section
-        if (tag === "H3") {
-          const h3_id = entry.getAttribute("section");
-          all_headers.forEach(item => {
-            const item_id = item.getAttribute("section");
-            if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {
-              item.classList.add("visible");
-            } else {
-              item.classList.remove("visible");
-            }
-          });
-        }
-
-        // Activate top-level H2
-        const topLevelHeading = section.querySelector("h2");
-        if (topLevelHeading) topLevelHeading.classList.add("active");
-      }
-
-      // Activate clicked TOC entry
-      entry.classList.add("active");
-      currentActiveTag = tag;
-
-      // Update URL without triggering hashchange
-      const link = entry.querySelector('a[href]');
-      if (link) {
-        history.replaceState(null, '', link.getAttribute('href'));
-      }
-
-      // Release the scroll lock after smooth scrolling finishes
-      setTimeout(() => {
-        scrollLock = false;
-      }, 300); // adjust timing if needed
-    });
-    });
-
-    function createObserver(rootMarginValue,scrolling_down) {
-      if (observer) observer.disconnect(); // Clean up old observer
-      const headings = document.querySelectorAll(".mech-program-subtitle:not(.toc)");
-      const navItems = document.querySelectorAll(".mech-program-subtitle.toc");
-      const sections = document.querySelectorAll(".mech-program-section.toc");
-      const all_the_headers = Array.from(document.querySelectorAll('[section]'));
-      observer = new IntersectionObserver((entries) => {
-        if (scrollLock) return;
-        entries
-          .slice() // Create a shallow copy to avoid mutating the original entries array
-          .sort((a, b) => {
-            // Sort entries based on scroll direction
-            return scrolling_down
-              ? a.boundingClientRect.top - b.boundingClientRect.top // Ascending for scrolling down
-              : b.boundingClientRect.top - a.boundingClientRect.top; // Descending for scrolling up
-          })
-          .forEach(entry => {
-            if (entry.isIntersecting) {
-                const id = entry.target.id;
-                const tag = entry.target.tagName; // H1, H2, H3, etc.
-
-                const activeNav = Array.from(navItems).find(item => {
-                  const link = item.querySelector("a[href]");
-                  return link && link.getAttribute("href") === `#${id}`;
-                });
-
-                if (!activeNav) return;
-
-                // Deactivate all TOC items
-                navItems.forEach(item => item.classList.remove("active"));
-                sections.forEach(item => item.classList.remove("active"));
-
-                // Activate the current section's top-level H2
-                const section = entry.target.closest("section");
-                if (section) {
-                  const matchingTocSection = Array.from(sections).find(item => {
-                    const toc_section_id = item.getAttribute("section");
-                    const section_id = section.getAttribute("section");
-                    if (toc_section_id && section_id) {
-                      return toc_section_id === section_id;
-                    }
-                  });
-                  if (matchingTocSection) {
-                    matchingTocSection.classList.add("active");
-                    const toc = document.querySelector(".mech-toc");
-
-                    if (toc && matchingTocSection) {
-                      const itemOffsetTop = matchingTocSection.offsetTop;
-                      const itemHeight = matchingTocSection.offsetHeight;
-                      const tocHeight = toc.clientHeight;
-                      const scrollTop = toc.scrollTop;
-
-                      // Center the item manually if it's out of view
-                      const visibleTop = scrollTop;
-                      const visibleBottom = scrollTop + tocHeight;
-
-                      if (itemOffsetTop < visibleTop || itemOffsetTop + itemHeight > visibleBottom) {
-                        toc.scrollTo({
-                          top: itemOffsetTop - tocHeight / 2 + itemHeight / 2,
-                          behavior: "smooth"
-                        });
-                      }
-                    }
-                  }
-
-                  // Now grab the h3, h4, h5 elements within that section
-                  const h3s = Array.from(section.querySelectorAll('h3'));
-                  const h4s = Array.from(section.querySelectorAll('h4'));
-                  const h5s = Array.from(section.querySelectorAll('h5'));
-
-                  if (tag === "H5") {
-                    const closestH4 = h4s.reverse().find(h4 => h4.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
-                    const H4Nav = Array.from(navItems).find(item => {
-                        const link = item.querySelector("a[href]");
-                        return link && link.getAttribute("href") === `#${closestH4.id}`;
-                    });
-                    if (H4Nav) {
-                      H4Nav.classList.add("active");
-                      const h4_id = H4Nav.getAttribute("section");
-                      all_the_headers.forEach(item => {
-                        const item_id = item.getAttribute("section");
-                        if (item_id && item_id.startsWith(h4_id) && item.tagName === "H4") {
-                        } else {
-                          item.classList.remove("visible");
-                        }
-                      });
-                    }
-                  }
-
-                  if (tag === "H4" || tag == "H5") {
-                    const entry_section = entry.target.getAttribute("section");
-                    const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
-                    const H3Nav = Array.from(navItems).find(item => {
-                      const link = item.querySelector("a[href]");
-                      return link && link.getAttribute("href") === `#${closestH3.id}`;
-                    });
-                    if (H3Nav) {
-                      H3Nav.classList.add("active");
-                      const h3_id = H3Nav.getAttribute("section");
-                      all_the_headers.forEach(item => {
-                        const item_id = item.getAttribute("section");
-                        // Check if the item_id starts with the h3_id and is an H4, if so, add "visible", if not, remove "visible"
-                        if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {
-                          item.classList.add("visible");
-                        } else {
-                          item.classList.remove("visible");
-                        }
-                      });
-                    }
-                  }
-
-                  // if tag is h3 then we want to add a "visible" class to all of the headings with the same section
-                  if (tag === "H3") {
-                    const h3_id = entry.target.getAttribute("section");
-                    all_the_headers.forEach(item => {
-                      const item_id = item.getAttribute("section");
-                      // Check if the item_id starts with the h3_id and is an H4, if so, add "visible", if not, remove "visible"
-                      if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {
-                        item.classList.add("visible");
-                      } else {
-                        item.classList.remove("visible");
-                      }
-                    });
-                  }
-
-                  const topLevelHeading = section.querySelector("h2");
-                  if (topLevelHeading) {
-                    const topLevelNav = Array.from(navItems).find(item => {
-                      const link = item.querySelector("a[href]");
-                      return link && link.getAttribute("href") === `#${topLevelHeading.id}`;
-                    });
-                    if (topLevelNav) {
-                      topLevelNav.classList.add("active");
-                    }
-                  }
-                }
-                activeNav.classList.add("active");
-                currentActiveTag = tag;
-            }
-          });
-      }, {
-        root: null,
-        rootMargin: rootMarginValue,
-        threshold: 0
-      });
-      headings.forEach(heading => observer.observe(heading));
-    }
-
-
-    window.addEventListener("DOMContentLoaded", () => {
-      createObserver("0px 0px 0px 0px");
-
-      function renderEquations(root = document) {
-        const blockElements = root.querySelectorAll(".mech-equation");
-        blockElements.forEach(el => {
-          if (!el.getAttribute("data-rendered")) {
-            const eq = el.getAttribute("equation");
-            if (eq) {
-              katex.render(eq, el, { throwOnError: false });
-              el.setAttribute("data-rendered", "true");
-            }
-          }
-        });
-
-        const inlineElements = root.querySelectorAll(".mech-inline-equation");
-        inlineElements.forEach(el => {
-          if (!el.getAttribute("data-rendered")) {
-            const eq = el.getAttribute("equation");
-            if (eq) {
-              katex.render(eq, el, { throwOnError: false });
-              el.setAttribute("data-rendered", "true");
-            }
-          }
-        });
-
-        document.querySelectorAll(".mermaid svg").forEach(svg => {
-          const labels = svg.querySelector(".node-labels");
-          if (labels && svg.lastElementChild !== labels) {
-            svg.appendChild(labels); // Move labels to end = on top
-          }
-        });
-      }
-
-      renderEquations();
-
-      // Set up a MutationObserver to watch for new elements
-      const observer = new MutationObserver(mutations => {
-        for (const mutation of mutations) {
-          for (const node of mutation.addedNodes) {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              renderEquations(node);
-            }
-          }
-        }
-      });
-
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-      });
-    });
-
-
-  let lastScrollY = window.scrollY;
-  let scrolling_down = true;
-  let margin = 10;
-
-  function getScrollPercentage() {
-    const contentPane = document.getElementById('left-pane');
-    const scrollTop = contentPane.scrollTop;
-    const docHeight = contentPane.scrollHeight - contentPane.clientHeight;
-
-    if (docHeight === 0) return 0;
-    return scrollTop / docHeight;
-  }
-
-  document.getElementById('left-pane').addEventListener("scroll", () => {
-    if (scrollLock) {
-      scrollLock = false;
-      return;
-    }
-    
-    const percent = getScrollPercentage();
-    const currentScrollY = window.scrollY;
-    scrolling_down = currentScrollY > lastScrollY;
-
-    if (currentScrollY !== lastScrollY) {
-      lastScrollY = currentScrollY;
-    }
-
-    if (percent < 0.05) {
-      createObserver("0px 0px -90% 0px", scrolling_down);
-    } else if (percent < 0.2) {
-      createObserver("-0% 0px -90% 0px", scrolling_down);
-    } else if (percent < 0.3) {
-      createObserver("-10% 0px -80% 0px", scrolling_down);
-    } else if (percent < 0.4) {
-      createObserver("-20% 0px -70% 0px", scrolling_down);
-    } else if (percent < 0.5) {
-      createObserver("-30% 0px -60% 0px", scrolling_down);
-    } else if (percent < 0.6) {
-      createObserver("-40% 0px -50% 0px", scrolling_down);
-    } else if (percent < 0.7) {
-      createObserver("-50% 0px -40% 0px", scrolling_down);
-    } else if (percent < 0.8) {
-      createObserver("-60% 0px -30% 0px", scrolling_down);
-    } else if (percent < 0.9) {
-      createObserver("-70% 0px -20% 0px", scrolling_down);
-    } else if (percent <= 0.95) {
-      createObserver("-80% 0px 0% 0px", scrolling_down);
-    }
-  });
-
-  </script>
-  <script type="module">
-    /*import init, { WasmMech, help_html } from '/pkg/mech_wasm.js';
-
-    let wasm_core;
-
-    async function initializeWasm() {
-      await init();
-      wasm_core = new WasmMech();
-      wasm_core.init();
-      wasm_core.attach_repl("sidebar");
-      let help = help_html();
-      document.getElementById("left-pane").innerHTML = help;
-      const sidebar = document.getElementById('sidebar');
-    }
-    initializeWasm();*/
-  </script>
-  <script type="module">
-    import init, {WasmMech} from '/pkg/mech_wasm.js';
-    let wasm_core;
-    async function run() {
-      await init();
-      var code = `{{CODE}}`;
-      wasm_core = new WasmMech();
-      var xhr = new XMLHttpRequest();
-      var codeUrl = `/code${window.location.pathname}`;
-      xhr.open('GET', codeUrl, true);
-      xhr.onload = function (e) {
-        if (xhr.readyState === 4) {
-          if (xhr.status === 200) {
-            var src = xhr.responseText;
-            wasm_core.run_program(src);
-            wasm_core.init();
-            wasm_core.render_inline_values();
-            wasm_core.render_codeblock_output_values();
-            wasm_core.attach_repl("mech-output");
-          } else {
-            console.error("Defaulting to included program");
-            wasm_core.run_program(code);
-            wasm_core.init();
-            wasm_core.render_inline_values();
-            wasm_core.render_codeblock_output_values();
-            wasm_core.attach_repl("mech-output");
-          }
-        }
-      };
-      xhr.onerror = function (e) {
-        console.error("I've been waiting for this error. Look me up in formatter.rs");
-        console.error(xhr.statusText);
-      };
-      xhr.send(null);        
-    }
-    run();
-  </script>
-
-  <script>
-    function buildBreadcrumb(containerId) {
-      const container = document.getElementById(containerId);
-      if (!container) return;
-
-      const { origin, pathname } = window.location;
-      const parts = pathname.split('/').filter(Boolean);
-
-      // if we are at the root, don't build breadcrumb
-      if (parts.length === 0) {
-        container.innerHTML = '';
-        return;
-      }
-
-      let pathSoFar = origin;
-      const crumbs = [];
-
-      // Home icon (data URL)
-      crumbs.push(`
-        <a href="/" class="mech-breadcrumb-home" aria-label="Home">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house-icon lucide-house">
-            <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>
-            <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          </svg>
-        </a>
-      `);
-
-      parts.forEach((part, index) => {
-        pathSoFar += `/${part}`;
-
-        const label = part.replace(/\.[^/.]+$/, '');
-        const text = label.charAt(0).toUpperCase() + label.slice(1);
-
-        if (index === parts.length - 1) {
-          crumbs.push(`<span class="mech-breadcrumb-current">${text}</span>`);
-        } else {
-          crumbs.push(`<a href="${pathSoFar}/index.html">${text}</a>`);
-        }
-      });
-
-      container.innerHTML = crumbs.join('<span class="mech-breadcrumb-sep">⟩</span>');
-    }
-
-    buildBreadcrumb('breadcrumb');
-
-
-  </script>
-
-
+  <main class="container">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Announcement</div>
+        <h1>Mech v0.3 —<br>State Machines, Match,<br>and Mika the Mech</h1>
+        <div class="meta">Corey Montella • April 27, 2026</div>
+        <p class="intro">Today, we’re excited to announce Mech v0.3, introducing powerful new features for data modeling, computation, and control flow—along with everyone’s favorite mascot, Mika the Mech.</p>
+      </div>
+      <div class="hero-image" aria-label="Stylized construction image for Mech v0.3"></div>
+    </section>
+
+    <section class="features">
+      <article class="feature"><h4>Enums & Tagged Unions</h4><p>Model categorical data with optional values.</p><div class="id">§2</div></article>
+      <article class="feature"><h4>User-Defined Functions</h4><p>Pattern matching and recursion.</p><div class="id">§3</div></article>
+      <article class="feature"><h4>State Machines</h4><p>Ordered computation and process control with phases.</p><div class="id">§4</div></article>
+      <article class="feature"><h4>Comprehensions</h4><p>Build matrices and sets from existing ones.</p><div class="id">§5</div></article>
+      <article class="feature"><h4>Table Joins</h4><p>Combine tables based on common keys.</p><div class="id">§6</div></article>
+      <article class="feature"><h4>Mika the Mech</h4><p>Meet the mascot of the Mech community.</p><div class="id">§7</div></article>
+    </section>
+
+    <section class="main">
+      <aside class="toc">
+        <h3>On This Page</h3>
+        <ol>
+          <li>Version 0.2 Wrap-Up</li>
+          <li>Enums, Tagged Unions, and Pattern Matching</li>
+          <li>User-Defined Functions</li>
+          <li>State Machines</li>
+          <li>Comprehensions</li>
+          <li>Table Joins</li>
+          <li>Mika the Mech</li>
+          <li>Roadmap to v0.4</li>
+        </ol>
+      </aside>
+
+      <article class="article">
+        <section>
+          <h2>1. Version 0.2 Wrap-Up</h2>
+          <p>Version <strong>v0.2</strong> was completed at the end of January 2025. We spent significant effort on improving the data model so new control-flow primitives could be introduced in <strong>v0.3</strong>.</p>
+          <p>The declarative model now includes improved data structures, expression broadcasting, indexing/slicing mechanics, and richer operators across matrix and set data.</p>
+          <div class="callout">Of course there are strict limitations on the kinds of programs you can write with those features, so today we are launching Mech <strong>v0.3</strong> with a whole new set of control-flow mechanisms that make Mech more capable.</div>
+        </section>
+
+        <section>
+          <h2>2. Enums, Tagged Unions, and Pattern Matching</h2>
+          <p>Mech now has an enum and tagged-union system:</p>
+          <div class="codebox">
+            <div class="head">enum.m</div>
+            <pre>&lt;color&gt; ::= red | green | blue
+&lt;xcolor&gt; ::= red</pre>
+            <div class="error">Error: GenericError</div>
+          </div>
+          <p>Enums and tagged unions model categorical data and optional values with strong type safety and clarity.</p>
+        </section>
+      </article>
+    </section>
+  </main>
 </body>
 </html>
