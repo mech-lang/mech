@@ -306,6 +306,7 @@ fn pretty_print(&self) -> String {
 pub struct Title {
   pub text: Token,
   pub byline: Option<Paragraph>,
+  pub hero_image: Option<Image>,
 }
 
 impl Title {

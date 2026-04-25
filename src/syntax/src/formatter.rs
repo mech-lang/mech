@@ -184,16 +184,47 @@ impl Formatter {
     let title = node.text.to_string();
 
     if self.html {
-      if let Some(byline) = &node.byline {
-        let formatted_byline = self.paragraph(byline);
-        format!(
-          "<h1 class=\"mech-program-title\">{}</h1>\n<div class=\"mech-program-byline\">{}</div>",
-          title,
-          formatted_byline
-        )
-      } else {
-        format!("<h1 class=\"mech-program-title\">{}</h1>", title)
-      }
+      let hero = match &node.hero_image {
+        Some(image) => {
+          let style_attr = match &image.style {
+            Some(option_map) if !option_map.elements.is_empty() => {
+              let style_str = option_map
+                .elements
+                .iter()
+                .map(|(k, v)| {
+                  let clean_value = v.to_string().trim_matches('"').to_string();
+                  format!("{}: {}", k.to_string(), clean_value)
+                })
+                .collect::<Vec<_>>()
+                .join("; ");
+              format!(" style=\"{}\"", style_str)
+            }
+            _ => "".to_string(),
+          };
+          let alt = image
+            .caption
+            .as_ref()
+            .map(|caption| self.paragraph(caption))
+            .unwrap_or_default();
+          format!(
+            "<div class=\"mech-program-hero\"><img class=\"mech-program-hero-image\" src=\"{}\" alt=\"{}\"{} /></div>",
+            image.src.to_string(),
+            alt,
+            style_attr
+          )
+        }
+        None => "".to_string(),
+      };
+
+      let byline = match &node.byline {
+        Some(byline) => format!("<div class=\"mech-program-byline\">{}</div>", self.paragraph(byline)),
+        None => "".to_string(),
+      };
+
+      format!(
+        "{}<div class=\"mech-program-header\"><h1 class=\"mech-program-title\">{}</h1>{}</div>",
+        hero, title, byline
+      )
     } else {
       let mut out = format!(
         "{}\n===============================================================================\n",
@@ -202,10 +233,34 @@ impl Formatter {
 
       if let Some(byline) = &node.byline {
         let byline_str = self.paragraph(byline);
-        out.push_str(&format!(
-          "{}\n===============================================================================\n",
-          byline_str
-        ));
+        out.push_str(&format!("{}\n", byline_str));
+      }
+      if let Some(hero_image) = &node.hero_image {
+        let caption = hero_image
+          .caption
+          .as_ref()
+          .map(|p| self.paragraph(p))
+          .unwrap_or_default();
+        let style_str = match &hero_image.style {
+          Some(option_map) if !option_map.elements.is_empty() => {
+            let inner = option_map
+              .elements
+              .iter()
+              .map(|(k, v)| {
+                let clean_value = v.to_string().trim_matches('"').to_string();
+                format!("{}: \"{}\"", k.to_string(), clean_value)
+              })
+              .collect::<Vec<_>>()
+              .join(", ");
+            format!("{{{}}}", inner)
+          }
+          _ => "".to_string(),
+        };
+        let image_str = format!("![{}]({}){}", caption, hero_image.src.to_string(), style_str);
+        out.push_str(&format!("{}\n", image_str));
+      }
+      if node.byline.is_some() || node.hero_image.is_some() {
+        out.push_str("===============================================================================\n");
       }
 
       out

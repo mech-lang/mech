@@ -303,9 +303,42 @@ h4.toc::before {
     margin-left: -100px;
 }
 
+.mech-program-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.mech-program-hero {
+    width: 900px;
+    margin-left: -100px;
+    margin-bottom: 1rem;
+}
+
+.mech-program-hero-image {
+    display: block;
+    width: 100%;
+    max-height: 360px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid #d19710;
+}
+
 .mech-program h2 a {
     color: #f2ead9;
     text-decoration: none;
+}
+
+.mech-program-byline {
+    font-size: 1em;
+    font-weight: normal;
+    color: #ada594;
+    margin-top: 0;
+    margin-bottom: 1em;
+    line-height: 1.2;
+    font-style: italic;
+    text-align: center;
 }
 
 .mech-program h2 {

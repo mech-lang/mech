@@ -30,16 +30,28 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
   let (input, _) = new_line(input)?;
   let (input, _) = many1(equal)(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, byline) = opt(byline)(input)?;
+  let (input, top_matter) = opt(title_top_matter)(input)?;
   let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
-  Ok((input, Title{text: title, byline}))
+  let (byline, hero_image) = match top_matter {
+    Some((byline, hero_image)) => (byline, hero_image),
+    None => (None, None),
+  };
+  Ok((input, Title{text: title, byline, hero_image}))
 }
 
-pub fn byline(input: ParseString) -> ParseResult<Paragraph> {
-  let (input, byline) = paragraph_newline(input)?;
+pub fn title_top_matter(input: ParseString) -> ParseResult<(Option<Paragraph>, Option<Image>)> {
+  let (input, _) = whitespace0(input)?;
+  if let Ok((input, byline)) = paragraph_newline(input.clone()) {
+    let (input, hero_image) = opt(tuple((whitespace0, img, whitespace0)))(input)?;
+    let (input, _) = many1(equal)(input)?;
+    return Ok((input, (Some(byline), hero_image.map(|(_, image, _)| image))));
+  }
+
+  let (input, hero_image) = img(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = many1(equal)(input)?;
-  Ok((input, byline))
+  Ok((input, (None, Some(hero_image))))
 }
 
 pub struct MarkdownTableHeader {
