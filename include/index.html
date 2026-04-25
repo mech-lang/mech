@@ -3,199 +3,370 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mech v0.3 Announcement</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <title>Mech v0.3 — Announcement</title>
+  <link rel="stylesheet" href="./style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;800&family=Oswald:wght@400;500;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: var(--body-background-color);
-      --surface: #0c1119;
-      --surface-2: #0b0f15;
-      --line: #242c39;
-      --text: var(--text-color);
-      --muted: var(--contrast-color-low);
-      --accent: var(--main-color-mid);
+      --bg: var(--body-background-color, #070d15);
+      --bg-soft: #0a111b;
+      --panel: #0b1320;
+      --panel-2: #0d1624;
+      --line: #243346;
+      --text: var(--text-color, #d9e0ea);
+      --muted: #96a4b8;
+      --accent: var(--main-color-mid, #f6bf4d);
+      --accent-soft: #c89227;
+      --title: #e4e8ef;
+      --pill-bg: #101a27;
+      --code-bg: #050a12;
+      --danger: #ff8f9d;
     }
 
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      font-family: Inter, sans-serif;
-      background: var(--bg);
+      background: radial-gradient(circle at 20% -30%, #162337 0, var(--bg) 38%);
       color: var(--text);
+      font-family: Inter, sans-serif;
     }
 
-    .container { width: min(1200px, 95vw); margin: 0 auto; }
+    .wrap {
+      width: min(1460px, 95vw);
+      margin: 0 auto;
+    }
 
     .topbar {
-      border-bottom: 1px solid var(--line);
-      background: #070b10;
+      border-bottom: 1px solid #1d2b3d;
+      background: #050c16;
       position: sticky;
       top: 0;
-      z-index: 9;
+      z-index: 30;
+      backdrop-filter: blur(6px);
     }
 
-    .topbar .container { display: flex; align-items: center; justify-content: space-between; min-height: 70px; }
+    .topbar-row {
+      min-height: 86px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-    .logo { font-family: Oswald, sans-serif; letter-spacing: 2px; color: var(--accent); font-size: 2rem; }
+    .brand {
+      font-family: Oswald, sans-serif;
+      font-size: 3.1rem;
+      letter-spacing: 1.5px;
+      color: var(--accent);
+      line-height: 1;
+    }
 
-    .nav { display: flex; gap: 2rem; text-transform: uppercase; font-weight: 600; font-size: .9rem; }
-    .nav a { color: var(--text); text-decoration: none; opacity: .85; }
-    .nav a.active { color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 20px; }
+    .nav {
+      display: flex;
+      gap: 40px;
+      text-transform: uppercase;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+
+    .nav a {
+      color: #b4bfcd;
+      text-decoration: none;
+      padding: 34px 0 30px;
+      border-bottom: 2px solid transparent;
+    }
+
+    .nav a.active {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .crumbs {
+      margin-top: 40px;
+      color: #71839a;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: .08em;
+      font-size: .8rem;
+    }
+
+    .crumbs span { color: var(--accent-soft); }
 
     .hero {
       display: grid;
-      grid-template-columns: 1fr 1.4fr;
-      gap: 2rem;
-      margin-top: 2rem;
-      padding: 2rem 0;
+      grid-template-columns: 1.03fr 1.6fr;
+      gap: 48px;
+      margin-top: 26px;
       border-bottom: 1px solid var(--line);
+      padding-bottom: 30px;
     }
 
-    .eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+    .eyebrow {
+      color: var(--accent);
+      font-size: 1.65rem;
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: .05em;
+      margin-bottom: 24px;
+    }
 
     h1 {
+      margin: 0;
       font-family: Oswald, sans-serif;
-      font-size: clamp(2.2rem, 4vw, 4.4rem);
-      line-height: 1.05;
-      margin: .8rem 0;
-      color: var(--text-color-light);
+      font-size: clamp(3rem, 5.6vw, 6.9rem);
+      line-height: .98;
+      color: var(--title);
+      letter-spacing: .01em;
     }
 
-    .meta { color: var(--muted); margin-bottom: 1rem; }
-    .intro { font-size: 1.1rem; line-height: 1.7; color: var(--contrast-color-mid); }
-
-    .hero-image {
-      border-radius: 14px;
-      border: 1px solid #42516a;
-      min-height: 430px;
-      background: linear-gradient(145deg, #59a2e7 10%, #30557e 48%, #1a2534 100%);
-      position: relative;
-      overflow: hidden;
+    .meta {
+      margin-top: 28px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #a8b4c4;
+      font-size: 2rem;
     }
-    .hero-image:before {
-      content: "V0.3";
-      position: absolute;
-      inset: 0;
+
+    .meta .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent-soft);
       display: grid;
       place-items: center;
-      font-family: Oswald, sans-serif;
-      font-size: clamp(4rem, 14vw, 11rem);
-      color: rgba(255,255,255,.6);
-      letter-spacing: .08em;
-      text-shadow: 0 8px 32px rgba(0,0,0,.55);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.2rem;
     }
 
-    .features {
+    .meta-text {
+      font-size: 2rem;
+      color: #9aa7b9;
+    }
+
+    .intro {
+      margin-top: 24px;
+      color: #a7b2c2;
+      font-size: 2rem;
+      line-height: 1.55;
+      max-width: 60ch;
+    }
+
+    .hero-image {
+      min-height: 745px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid #39516c;
+      position: relative;
+      background:
+        radial-gradient(circle at 18% 14%, rgba(188, 224, 255, .65), transparent 24%),
+        linear-gradient(145deg, #7fc0ff 5%, #335781 51%, #1b2738 100%);
+    }
+
+    .hero-image::before {
+      content: "V0.3";
+      position: absolute;
+      right: 8%;
+      top: 24%;
+      font-family: Oswald, sans-serif;
+      font-size: clamp(6rem, 18vw, 17rem);
+      color: rgba(246, 248, 252, .72);
+      text-shadow: 0 22px 48px rgba(0, 0, 0, .4);
+      letter-spacing: .04em;
+      transform: perspective(600px) rotateY(-8deg);
+    }
+
+    .hero-image::after {
+      content: "Mech Under Construction";
+      position: absolute;
+      right: 22px;
+      bottom: 22px;
+      background: #d39b2d;
+      color: #1b1610;
+      font-size: 1.1rem;
+      font-weight: 800;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 2px solid #6b4a0c;
+    }
+
+    .feature-grid {
+      margin-top: 24px;
       display: grid;
-      grid-template-columns: repeat(6, minmax(0,1fr));
-      gap: 0;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       border: 1px solid var(--line);
-      margin: 2rem 0;
+      border-left: 0;
+      border-right: 0;
     }
 
     .feature {
-      padding: 1rem;
-      min-height: 145px;
+      padding: 20px 16px 22px;
       border-right: 1px solid var(--line);
-      background: var(--surface-2);
+      min-height: 172px;
+      background: #09111d;
     }
-    .feature:last-child { border-right: 0; }
-    .feature h4 { margin: 0 0 .5rem; font-size: 1rem; }
-    .feature p { margin: 0; color: var(--contrast-color-mid); font-size: .95rem; line-height: 1.4; }
-    .feature .id { color: var(--accent); margin-top: .6rem; font-weight: 700; }
 
-    .main {
+    .feature:first-child { border-left: 1px solid var(--line); }
+
+    .feature h3 {
+      margin: 0;
+      font-size: 1.45rem;
+      line-height: 1.3;
+      color: #cfd8e5;
+    }
+
+    .feature p {
+      color: #8fa0b5;
+      font-size: 1.18rem;
+      line-height: 1.45;
+      margin: 10px 0 0;
+    }
+
+    .feature .num {
+      margin-top: 12px;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 1.22rem;
+    }
+
+    .content {
       display: grid;
-      grid-template-columns: 290px 1fr;
-      gap: 2rem;
-      margin-bottom: 3rem;
+      grid-template-columns: 300px 1fr;
+      gap: 36px;
+      margin-top: 36px;
+      padding-bottom: 80px;
     }
 
-    .toc {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--surface-2);
-      padding: 1.2rem;
+    .sidebar {
       position: sticky;
-      top: 90px;
+      top: 110px;
+      background: #0a121f;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 22px 20px;
       height: fit-content;
     }
 
-    .toc h3 {
-      margin: 0 0 1rem;
+    .sidebar h4 {
+      margin: 0 0 14px;
       color: var(--accent);
-      letter-spacing: .08em;
-      font-size: .9rem;
       text-transform: uppercase;
+      letter-spacing: .12em;
+      font-size: .95rem;
     }
 
-    .toc ol { margin: 0; padding-left: 1.25rem; line-height: 1.9; color: var(--contrast-color-mid); }
+    .sidebar ol {
+      margin: 0;
+      padding-left: 20px;
+      color: #a5b0bf;
+      line-height: 1.8;
+    }
 
-    .article section { border-top: 1px solid var(--line); padding-top: 1.2rem; margin-bottom: 2.5rem; }
-    .article h2 {
-      margin: 0 0 1rem;
+    .sidebar li { margin-bottom: 3px; }
+    .sidebar li:first-child { color: var(--accent); }
+
+    .section {
+      border-top: 1px solid var(--line);
+      padding-top: 22px;
+      margin-bottom: 44px;
+    }
+
+    .section h2 {
+      margin: 0 0 18px;
       font-family: Oswald, sans-serif;
-      font-size: 2.2rem;
-      color: var(--text-color-light);
+      font-size: clamp(2.4rem, 4.2vw, 4.2rem);
+      color: #e0e5ee;
+      letter-spacing: .02em;
     }
-    .article p { color: var(--contrast-color-mid); line-height: 1.7; font-size: 1.08rem; }
+
+    .section p {
+      margin: 0 0 18px;
+      color: #a6b2c4;
+      line-height: 1.7;
+      font-size: 1.85rem;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 0 .36rem;
+      border-radius: 6px;
+      border: 1px solid #615b6f;
+      background: var(--pill-bg);
+      color: #ff99be;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .87em;
+      vertical-align: baseline;
+    }
 
     .callout {
-      border: 1px solid #38445b;
-      background: #111a26;
-      border-radius: 8px;
-      padding: 1rem 1.1rem;
-      color: var(--text);
+      border: 1px solid #2f435e;
+      border-radius: 10px;
+      padding: 18px 20px;
+      background: #111d2d;
+      color: #b4c0d0;
+      font-size: 1.65rem;
     }
 
-    .codebox {
-      border: 1px solid var(--line);
-      border-radius: 8px;
+    .code-wrap {
+      margin: 16px 0 18px;
+      border: 1px solid #394b62;
+      border-radius: 10px;
       overflow: hidden;
-      margin: 1rem 0;
     }
 
-    .codebox .head {
-      background: #111722;
-      border-bottom: 1px solid var(--line);
-      padding: .6rem .9rem;
-      color: var(--accent);
+    .code-head {
+      padding: 8px 12px;
       text-align: right;
-      font-family: "FiraCodeLight", monospace;
-      font-size: .85rem;
+      color: #9db1c8;
+      background: #0f1826;
+      border-bottom: 1px solid #2a3d53;
+      font-size: .95rem;
     }
 
     pre {
       margin: 0;
-      background: #090d14;
-      padding: 1rem;
-      color: #d7e2f1;
-      font-size: 1rem;
+      padding: 16px;
+      background: var(--code-bg);
+      color: #dce8f9;
+      line-height: 1.55;
+      font-size: 1.5rem;
       overflow-x: auto;
     }
 
-    .error { border-top: 1px solid #6d2732; background: rgba(107, 17, 30, .18); color: #ffb6bf; padding: .9rem 1rem; }
-
-    @media (max-width: 1024px) {
-      .features { grid-template-columns: repeat(3, minmax(0,1fr)); }
-      .main, .hero { grid-template-columns: 1fr; }
-      .toc { position: static; }
+    .error {
+      padding: 12px 16px;
+      border-top: 1px solid #7c2f3b;
+      color: var(--danger);
+      background: rgba(135, 34, 47, .2);
+      font-size: 1.3rem;
     }
 
-    @media (max-width: 700px) {
+    @media (max-width: 1200px) {
+      html { font-size: 14px; }
+      .hero { grid-template-columns: 1fr; }
+      .hero-image { min-height: 520px; }
+      .content { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .feature-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 760px) {
       .nav { display: none; }
-      .features { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .brand { font-size: 2.3rem; }
+      .hero-image { min-height: 390px; }
     }
   </style>
 </head>
 <body>
   <header class="topbar">
-    <div class="container">
-      <div class="logo">MECH</div>
-      <nav class="nav">
+    <div class="wrap topbar-row">
+      <div class="brand">MECH</div>
+      <nav class="nav" aria-label="Main">
         <a href="#">About</a>
         <a class="active" href="#">Blog</a>
         <a href="#">Community</a>
@@ -205,29 +376,34 @@
     </div>
   </header>
 
-  <main class="container">
+  <main class="wrap">
+    <div class="crumbs">Blog &nbsp;›&nbsp; <span>Announcements</span> &nbsp;›&nbsp; Mech v0.3</div>
+
     <section class="hero">
       <div>
         <div class="eyebrow">Announcement</div>
-        <h1>Mech v0.3 —<br>State Machines, Match,<br>and Mika the Mech</h1>
-        <div class="meta">Corey Montella • April 27, 2026</div>
-        <p class="intro">Today, we’re excited to announce Mech v0.3, introducing powerful new features for data modeling, computation, and control flow—along with everyone’s favorite mascot, Mika the Mech.</p>
+        <h1>Mech v0.3 —<br>State Machines,<br>Match, and<br>Mika the Mech</h1>
+        <div class="meta">
+          <div class="avatar">M</div>
+          <div class="meta-text">Corey Montella &nbsp;•&nbsp; April 27, 2026</div>
+        </div>
+        <p class="intro">Today, we're excited to announce Mech v0.3, introducing powerful new features for data modeling, computation, and control flow—along with everyone's favorite mascot, Mika the Mech.</p>
       </div>
-      <div class="hero-image" aria-label="Stylized construction image for Mech v0.3"></div>
+      <div class="hero-image" role="img" aria-label="Mech v0.3 construction hero art"></div>
     </section>
 
-    <section class="features">
-      <article class="feature"><h4>Enums & Tagged Unions</h4><p>Model categorical data with optional values.</p><div class="id">§2</div></article>
-      <article class="feature"><h4>User-Defined Functions</h4><p>Pattern matching and recursion.</p><div class="id">§3</div></article>
-      <article class="feature"><h4>State Machines</h4><p>Ordered computation and process control with phases.</p><div class="id">§4</div></article>
-      <article class="feature"><h4>Comprehensions</h4><p>Build matrices and sets from existing ones.</p><div class="id">§5</div></article>
-      <article class="feature"><h4>Table Joins</h4><p>Combine tables based on common keys.</p><div class="id">§6</div></article>
-      <article class="feature"><h4>Mika the Mech</h4><p>Meet the mascot of the Mech community.</p><div class="id">§7</div></article>
+    <section class="feature-grid" aria-label="Release features">
+      <article class="feature"><h3>Enums &amp; Tagged Unions</h3><p>Model categorical data with optional values.</p><div class="num">§2</div></article>
+      <article class="feature"><h3>User-Defined Functions</h3><p>Pattern matching and recursion.</p><div class="num">§3</div></article>
+      <article class="feature"><h3>State Machines</h3><p>Ordered computation and process control with phases.</p><div class="num">§4</div></article>
+      <article class="feature"><h3>Comprehensions</h3><p>Build new matrices and sets from existing ones.</p><div class="num">§5</div></article>
+      <article class="feature"><h3>Table Joins</h3><p>Combine tables based on common keys.</p><div class="num">§6</div></article>
+      <article class="feature"><h3>Mika the Mech</h3><p>Meet the mascot of the Mech community.</p><div class="num">§7</div></article>
     </section>
 
-    <section class="main">
-      <aside class="toc">
-        <h3>On This Page</h3>
+    <section class="content">
+      <aside class="sidebar">
+        <h4>On This Page</h4>
         <ol>
           <li>Version 0.2 Wrap-Up</li>
           <li>Enums, Tagged Unions, and Pattern Matching</li>
@@ -237,27 +413,29 @@
           <li>Table Joins</li>
           <li>Mika the Mech</li>
           <li>Roadmap to v0.4</li>
+          <li>Conclusion</li>
         </ol>
       </aside>
 
-      <article class="article">
-        <section>
+      <article>
+        <section class="section">
           <h2>1. Version 0.2 Wrap-Up</h2>
-          <p>Version <strong>v0.2</strong> was completed at the end of January 2025. We spent significant effort on improving the data model so new control-flow primitives could be introduced in <strong>v0.3</strong>.</p>
-          <p>The declarative model now includes improved data structures, expression broadcasting, indexing/slicing mechanics, and richer operators across matrix and set data.</p>
-          <div class="callout">Of course there are strict limitations on the kinds of programs you can write with those features, so today we are launching Mech <strong>v0.3</strong> with a whole new set of control-flow mechanisms that make Mech more capable.</div>
+          <p>Version <span class="pill">v0.2</span> was completed at the end of January 2025. We didn't post a formal announcement at the time since we immediately moved on to <span class="pill">v0.3</span> development.</p>
+          <p>We spent an inordinate amount of time on the <span class="pill">v0.2</span> data model. By refusing to add more features until it became painful, we were forced to stretch the model as far as it could go.</p>
+          <p>The declarative model now includes improved data structures, expression broadcasting, indexing and slicing, and richer operators across matrix and set data.</p>
+          <div class="callout">Of course there are strict limitations on the kinds of programs you can write with that set of features, so today we are launching Mech <span class="pill">v0.3</span> with a whole new set of control-flow mechanisms that make Mech more capable.</div>
         </section>
 
-        <section>
+        <section class="section">
           <h2>2. Enums, Tagged Unions, and Pattern Matching</h2>
-          <p>Mech now has an enum and tagged-union system:</p>
-          <div class="codebox">
-            <div class="head">enum.m</div>
+          <p>Mech now has an <span class="pill">enum</span> and tagged-union system:</p>
+          <div class="code-wrap">
+            <div class="code-head">enum.m</div>
             <pre>&lt;color&gt; ::= red | green | blue
 &lt;xcolor&gt; ::= red</pre>
             <div class="error">Error: GenericError</div>
           </div>
-          <p>Enums and tagged unions model categorical data and optional values with strong type safety and clarity.</p>
+          <p>Enums and tagged unions allow for modeling categorical data and optional values with type safety and clarity.</p>
         </section>
       </article>
     </section>
