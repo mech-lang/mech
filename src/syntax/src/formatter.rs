@@ -204,7 +204,14 @@ impl Formatter {
           let alt = image
             .caption
             .as_ref()
-            .map(|caption| self.paragraph(caption))
+            .map(|caption| {
+              caption
+                .to_string()
+                .replace('&', "&amp;")
+                .replace('"', "&quot;")
+                .replace('<', "&lt;")
+                .replace('>', "&gt;")
+            })
             .unwrap_or_default();
           format!(
             "<div class=\"mech-program-hero\"><img class=\"mech-program-hero-image\" src=\"{}\" alt=\"{}\"{} /></div>",
