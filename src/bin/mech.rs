@@ -47,7 +47,7 @@ static MECHJS: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm.js");
 static MECHJS: &[u8] = b"No Embedded JS";
 
 #[cfg(has_file_shim)]
-static SHIMHTML: &str = include_str!("../../include/index.html");
+static SHIMHTML: &str = include_str!("../../include/shim.html");
 #[cfg(not(has_file_shim))]
 static SHIMHTML: &str = "No Embedded Shim";
 

@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{TITLE}}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap');
+  </style>
+  <style>{{STYLESHEET}}</style>
+  <style>
+    :root {
+      --header-height: 64px;
+      --left-width: 308px;
+      --console-width: clamp(320px, 33vw, 520px);
+      --surface-1: var(--body-background-color);
+      --surface-2: var(--abstract-background-color);
+      --surface-3: var(--code-background-color);
+      --line: var(--h2-underline-color);
+      --ink: var(--text-color);
+      --ink-muted: var(--contrast-color-low);
+      --accent: var(--main-color-mid);
+      --accent-strong: var(--main-color-high);
+      --focus: var(--info-color);
+      --left-accent: var(--main-color-mid);
+    }
+
+    [data-theme="light"] {
+      --surface-1: var(--text-color-light);
+      --surface-2: color-mix(in hsl, var(--text-color-light) 80%, var(--contrast-color-mid) 20%);
+      --surface-3: color-mix(in hsl, var(--text-color-light) 70%, var(--body-background-color) 30%);
+      --line: color-mix(in hsl, var(--contrast-color-low) 70%, black 30%);
+      --ink: var(--text-color-dark);
+      --ink-muted: color-mix(in hsl, var(--text-color-dark) 70%, var(--contrast-color-low) 30%);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; }
+    body {
+      font-family: 'Lato', sans-serif;
+      background: var(--surface-1);
+      color: var(--ink);
+    }
+
+    .blueprint-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.14;
+      background:
+        linear-gradient(to right, transparent calc(var(--left-width)), color-mix(in hsl, var(--accent) 70%, transparent) calc(var(--left-width)), transparent calc(var(--left-width) + 1px)),
+        linear-gradient(to right, transparent calc(100% - var(--console-width)), color-mix(in hsl, var(--accent) 70%, transparent) calc(100% - var(--console-width)), transparent calc(100% - var(--console-width) + 1px)),
+        repeating-linear-gradient(to right, color-mix(in hsl, var(--contrast-color-mid) 20%, transparent) 0 1px, transparent 1px 40px),
+        repeating-linear-gradient(to bottom, color-mix(in hsl, var(--contrast-color-mid) 20%, transparent) 0 1px, transparent 1px 48px);
+      z-index: 1;
+    }
+
+    .marker {
+      position: fixed;
+      color: var(--contrast-color-low);
+      font-family: 'FiraCodeLight', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      z-index: 2;
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    .marker-a { top: calc(var(--header-height) + 8px); left: 10px; }
+    .marker-b { top: calc(var(--header-height) + 8px); left: calc(var(--left-width) + 10px); }
+    .marker-c { top: calc(var(--header-height) + 8px); right: calc(var(--console-width) + 10px); }
+    .marker-d { top: calc(var(--header-height) + 8px); right: 10px; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 18px;
+      height: var(--header-height);
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, color-mix(in hsl, var(--surface-1) 92%, black 8%), var(--surface-1));
+    }
+
+    .logo {
+      font-family: 'FiraCodeLight', monospace;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: var(--accent-strong);
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 24px;
+      text-transform: uppercase;
+      font-family: 'FiraCodeLight', monospace;
+      font-size: 0.94rem;
+      align-items: center;
+    }
+
+    .tabs a {
+      color: var(--ink);
+      text-decoration: none;
+      padding: 2px 0;
+      border-bottom: 2px solid transparent;
+    }
+
+    .tabs a.active {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+      overflow: hidden;
+      transition: transform 140ms ease;
+    }
+
+    .search:focus-within { transform: scale(1.03); border-color: var(--focus); }
+    .search input {
+      width: 160px;
+      background: transparent;
+      border: 0;
+      color: var(--ink);
+      padding: 8px 10px;
+      outline: none;
+    }
+
+    .icon-btn {
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      color: var(--ink);
+      border-radius: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'FiraCodeLight', monospace;
+    }
+
+    .layout {
+      height: calc(100vh - var(--header-height));
+      display: grid;
+      grid-template-columns: var(--left-width) minmax(480px, 1fr) var(--console-width);
+      position: relative;
+      z-index: 3;
+    }
+
+    .sidebar, .main, .console {
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: thin;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      background: color-mix(in hsl, var(--surface-1) 88%, black 12%);
+      padding: 14px 16px 18px;
+    }
+
+    .version {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      color: var(--ink);
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 18px;
+    }
+
+    .group-title {
+      color: var(--ink-muted);
+      font-family: 'FiraCodeLight', monospace;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      margin: 18px 0 8px;
+      letter-spacing: 0.08em;
+    }
+
+    .toc-list { list-style: none; margin: 0; padding: 0; }
+    .toc-item a {
+      display: block;
+      color: var(--ink);
+      text-decoration: none;
+      padding: 7px 10px;
+      border-left: 2px solid transparent;
+      border-radius: 0 6px 6px 0;
+      margin-left: 4px;
+    }
+
+    .toc-item.child a { padding-left: 22px; font-size: 0.95rem; }
+    .toc-item a.active {
+      border-left-color: var(--left-accent);
+      color: var(--accent);
+      background: color-mix(in hsl, var(--surface-2) 70%, transparent);
+    }
+
+    .promo {
+      margin-top: 20px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      background: var(--surface-2);
+    }
+
+    .promo h4 { margin: 0 0 8px; color: var(--accent); }
+
+    .main {
+      padding: 22px 34px 80px;
+      background: color-mix(in hsl, var(--surface-1) 90%, black 10%);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(400px, 1.4fr) minmax(280px, 1fr);
+      gap: 24px;
+      align-items: stretch;
+      margin-bottom: 26px;
+    }
+
+    .eyebrow {
+      font-family: 'FiraCodeLight', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--contrast-color-mid);
+      font-size: 0.84rem;
+    }
+
+    .hero h1 {
+      margin: 10px 0 12px;
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      line-height: 1.05;
+    }
+
+    .meta {
+      display: flex;
+      gap: 10px;
+      color: var(--ink-muted);
+      font-family: 'FiraCodeLight', monospace;
+      margin-bottom: 12px;
+    }
+
+    .hero-image {
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      min-height: 280px;
+      aspect-ratio: 4 / 3;
+      background:
+        linear-gradient(160deg, color-mix(in hsl, var(--main-color-low) 45%, transparent), transparent 42%),
+        linear-gradient(0deg, color-mix(in hsl, var(--surface-2) 70%, transparent), color-mix(in hsl, var(--surface-3) 80%, black 20%));
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-image::after {
+      content: "Blueprint 03";
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      font-size: 0.75rem;
+      color: var(--contrast-color-mid);
+      font-family: 'FiraCodeLight', monospace;
+    }
+
+    .feature-row {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    .feature {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      background: var(--surface-2);
+      transition: border-color 130ms ease, transform 130ms ease;
+    }
+
+    .feature:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .feature h4 { margin: 6px 0; font-size: 0.95rem; }
+    .feature p { margin: 0; font-size: 0.84rem; color: var(--ink-muted); }
+
+    .article {
+      max-width: 900px;
+      line-height: 1.72;
+    }
+
+    .article h2 {
+      font-size: 1.65rem;
+      margin: 34px 0 10px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 6px;
+    }
+
+    .token-inline {
+      display: inline-block;
+      padding: 0 7px;
+      border-radius: 99px;
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      font-family: 'FiraCodeLight', monospace;
+      color: var(--kind-annotation-color);
+      font-size: 0.94em;
+    }
+
+    .code-block {
+      margin: 18px 0;
+      border: 1px solid var(--code-border-color);
+      border-radius: 12px;
+      background: var(--surface-3);
+      overflow: hidden;
+      font-family: 'FiraCodeLight', monospace;
+    }
+
+    .code-top {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .badge {
+      color: var(--code-namespace-label-color);
+      border: 1px solid color-mix(in hsl, var(--code-namespace-label-color) 65%, transparent);
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.73rem;
+    }
+
+    .code-block pre { margin: 0; padding: 14px; white-space: pre-wrap; }
+    .kw { color: var(--main-color-mid); }
+    .lit { color: var(--literal-color); }
+    .type { color: var(--kind-annotation-color); }
+
+    .error {
+      border-top: 1px solid color-mix(in hsl, var(--error-color) 50%, transparent);
+      margin: 0 14px 14px;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid color-mix(in hsl, var(--error-color) 65%, transparent);
+      background: color-mix(in hsl, var(--error-color) 7%, transparent);
+    }
+
+    .callout {
+      border: 1px solid var(--line);
+      border-left-width: 3px;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin: 12px 0;
+      background: var(--callout-background-color);
+    }
+
+    .callout.info { border-left-color: var(--info-color); }
+    .callout.warn { border-left-color: var(--warning-color); }
+    .callout.note { border-left-color: var(--main-color-mid); }
+
+    .resizer {
+      position: absolute;
+      right: var(--console-width);
+      top: 0;
+      height: 100%;
+      width: 10px;
+      transform: translateX(50%);
+      cursor: col-resize;
+      z-index: 8;
+      display: grid;
+      place-items: center;
+    }
+
+    .resizer i {
+      display: inline-block;
+      width: 6px;
+      height: 62px;
+      border-radius: 6px;
+      background: var(--main-color-mid);
+      box-shadow: 0 0 0 1px color-mix(in hsl, var(--main-color-low) 60%, black 40%);
+    }
+
+    .console {
+      border-left: 1px solid var(--line);
+      background: color-mix(in hsl, var(--surface-1) 94%, black 6%);
+      font-family: 'FiraCodeLight', monospace;
+      padding: 10px 14px 24px;
+      position: relative;
+    }
+
+    .console-head {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      padding: 6px 0 8px;
+      background: inherit;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 12px;
+    }
+
+    .console-tabs {
+      display: flex;
+      gap: 18px;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+    }
+
+    .console-tabs span.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+    .repl-line { color: var(--main-color-mid); margin: 0 0 8px; }
+    .repl-out { margin: 0 0 20px; color: var(--ink); }
+    .repl-out em { color: var(--contrast-color-mid); }
+    .repl-form { display: flex; gap: 8px; align-items: center; }
+
+    .repl-form label { color: var(--main-color-mid); }
+    .repl-form input {
+      flex: 1;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--ink);
+      font-family: inherit;
+      padding: 6px 2px;
+      outline: none;
+    }
+
+    .cursor {
+      width: 8px;
+      height: 1em;
+      background: var(--ink);
+      display: inline-block;
+      animation: blink 1s steps(2, end) infinite;
+      vertical-align: text-bottom;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .tablet-toggle { display: none; }
+
+    @media (max-width: 1140px) {
+      .feature-row { grid-template-columns: repeat(3, minmax(140px, 1fr)); }
+      .hero { grid-template-columns: 1fr; }
+      .layout { grid-template-columns: 0 minmax(420px,1fr) var(--console-width); }
+      .sidebar { display: none; }
+      .tablet-toggle { display: inline-flex; }
+      body.sidebar-open .layout { grid-template-columns: minmax(260px,320px) minmax(380px,1fr) var(--console-width); }
+      body.sidebar-open .sidebar { display: block; }
+    }
+
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+      .console {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: min(48vh, 420px);
+        border-top: 1px solid var(--line);
+        border-left: 0;
+        transform: translateY(calc(100% - 44px));
+        transition: transform 180ms ease;
+      }
+      body.console-open .console { transform: translateY(0); }
+      .main { padding-bottom: 52vh; }
+      .resizer { display: none; }
+      .marker-c, .marker-d { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="blueprint-overlay" aria-hidden="true"></div>
+  <span class="marker marker-a">A</span>
+  <span class="marker marker-b">B</span>
+  <span class="marker marker-c">C</span>
+  <span class="marker marker-d">D</span>
+
+  <header class="topbar">
+    <div class="logo">MECH</div>
+    <nav class="tabs">
+      <a href="#">ABOUT</a>
+      <a href="#">BLOG</a>
+      <a href="#">COMMUNITY</a>
+      <a href="#" class="active">DOCS</a>
+      <a href="#">EXPLORE</a>
+    </nav>
+    <div class="top-actions">
+      <button class="icon-btn tablet-toggle" id="sidebar-toggle" type="button">☰</button>
+      <label class="search">
+        <input type="search" placeholder="Search docs..." aria-label="Search docs" />
+      </label>
+      <button class="icon-btn" type="button">★ <span>277</span></button>
+      <button class="icon-btn" id="theme-toggle" type="button">☼</button>
+      <button class="icon-btn tablet-toggle" id="console-toggle" type="button">Console</button>
+    </div>
+  </header>
+
+  <main class="layout" id="layout">
+    <aside class="sidebar" id="sidebar">
+      <select class="version" aria-label="Version selector">
+        <option>v0.3</option>
+        <option>v0.2</option>
+      </select>
+
+      <div class="group-title">Getting Started</div>
+      <ul class="toc-list" id="shim-toc">
+        <li class="toc-item"><a href="#sec-wrap">1. Version 0.2 Wrap-Up</a></li>
+      </ul>
+
+      <div class="group-title">Core Features</div>
+      <ul class="toc-list">
+        <li class="toc-item"><a href="#sec-enums">2. Enums, Tagged Unions, and Pattern Matching</a></li>
+        <li class="toc-item child"><a href="#sec-tagged">2.1 Tagged Unions</a></li>
+        <li class="toc-item child"><a href="#sec-patterns">2.2 Pattern Matching</a></li>
+        <li class="toc-item child"><a href="#sec-validation">2.3 Validation</a></li>
+      </ul>
+
+      <div class="group-title">Document TOC</div>
+      {{TOC}}
+
+      <section class="promo">
+        <h4>Mech Under Construction</h4>
+        <p>Building tools for reasoning about data and systems.</p>
+      </section>
+    </aside>
+
+    <section class="main" id="main-content">
+      <section class="hero" id="sec-validation" data-scrollspy>
+        <div>
+          <div class="eyebrow">Announcement</div>
+          <h1>Validation for Tagged Unions and Pattern Matching</h1>
+          <div class="meta"><span>By Mech Team</span><span>April 25, 2026</span></div>
+          <p>If patterns are non-exhaustive, the compiler reports missing variants and blocks compilation to protect correctness.</p>
+        </div>
+        <div class="hero-image" role="img" aria-label="Abstract hero image with blueprint styling"></div>
+      </section>
+
+      <section class="feature-row">
+        <article class="feature"><h4>Typed Enums</h4><p>Track finite states with strict variants.</p></article>
+        <article class="feature"><h4>Pattern Arms</h4><p>Validate shape and exhaustiveness.</p></article>
+        <article class="feature"><h4>Compiler Hints</h4><p>Actionable diagnostics with source spans.</p></article>
+        <article class="feature"><h4>Inline Eval</h4><p>Explore results while writing docs.</p></article>
+        <article class="feature"><h4>Error Tokens</h4><p>Structured output for editor tooling.</p></article>
+        <article class="feature"><h4>Learn More →</h4><p>Browse docs and playground examples.</p></article>
+      </section>
+
+      <article class="article">
+        <h2 id="sec-enums" data-scrollspy>1. Validation Rules</h2>
+        <p>Pattern matching must cover all variants. If one branch is missing, compilation fails with a diagnostic that names the uncovered variants and location.</p>
+
+        <div class="code-block">
+          <div class="code-top"><span class="badge">enums</span></div>
+          <pre><span class="kw">result</span> := x?
+  | <span class="kw">.red</span>  =&gt; <span class="lit">0xFF0000</span>
+-- Forgot to cover: <span class="type">.blue</span> and <span class="type">.green</span>.</pre>
+          <div class="error">
+            <strong>Error · MatchNonExhaustive</strong>
+            <p>Match over enum <span class="token-inline">color</span> is non-exhaustive. Add missing variants or a wildcard branch.</p>
+          </div>
+        </div>
+
+        <div class="callout info"><strong>Info:</strong> Use <span class="token-inline">_</span> when explicit fallback behavior is intentional.</div>
+        <div class="callout warn"><strong>Warning:</strong> Returning mixed kinds across branches causes typed mismatch errors.</div>
+
+        <h2 id="sec-tagged" data-scrollspy>2. Tagged Unions</h2>
+        <p>Tagged unions encode alternatives cleanly. They make state transitions visible and help derive predictable control flow.</p>
+
+        <h2 id="sec-patterns" data-scrollspy>3. Pattern Matching</h2>
+        <p>Use nested patterns to destructure deeply while preserving type guarantees. Inline tokens like <span class="token-inline">:running</span> and <span class="token-inline">f64</span> are highlighted for scanability.</p>
+
+        <h2 id="sec-wrap" data-scrollspy>4. Embedded Document Content</h2>
+        {{CONTENT}}
+      </article>
+    </section>
+
+    <div class="resizer" id="resizer" aria-hidden="true"><i></i></div>
+
+    <aside class="console" id="console-panel">
+      <div class="console-head">
+        <div class="console-tabs"><span class="active">Console</span><span>Output</span></div>
+      </div>
+      <div id="repl-output">
+        <p class="repl-line">&gt; :docs math/sin</p>
+        <p class="repl-out"><strong>math/sin</strong><br><em>Sine of argument in radians</em></p>
+        <p class="repl-line">&gt; y := math/sin(3.14)</p>
+        <p class="repl-out">f64<br>0.0015926529</p>
+      </div>
+      <form class="repl-form" id="repl-form">
+        <label for="repl-input">&gt;</label>
+        <input id="repl-input" autocomplete="off" spellcheck="false" placeholder="type command" />
+        <span class="cursor" aria-hidden="true"></span>
+      </form>
+    </aside>
+  </main>
+
+  <script type="module">
+    import init, { WasmMech } from '/pkg/mech_wasm.js';
+
+    const root = document.body;
+    const layout = document.getElementById('layout');
+    const consolePanel = document.getElementById('console-panel');
+    const resizer = document.getElementById('resizer');
+
+    let consoleWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--console-width')) || 420;
+
+    const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
+    const setConsoleWidth = (px) => {
+      const max = Math.floor(window.innerWidth * 0.5);
+      const width = clamp(px, 320, max);
+      document.documentElement.style.setProperty('--console-width', `${width}px`);
+      consoleWidth = width;
+    };
+
+    let dragging = false;
+    resizer?.addEventListener('mousedown', () => dragging = true);
+    window.addEventListener('mouseup', () => dragging = false);
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging || window.innerWidth <= 860) return;
+      setConsoleWidth(window.innerWidth - e.clientX);
+    });
+
+    document.getElementById('theme-toggle')?.addEventListener('click', () => {
+      root.dataset.theme = root.dataset.theme === 'light' ? 'dark' : 'light';
+    });
+
+    document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
+      root.classList.toggle('sidebar-open');
+    });
+
+    document.getElementById('console-toggle')?.addEventListener('click', () => {
+      root.classList.toggle('console-open');
+    });
+
+    const output = document.getElementById('repl-output');
+    const replForm = document.getElementById('repl-form');
+    const replInput = document.getElementById('repl-input');
+
+    const appendRepl = (line, result = 'ok') => {
+      const cmd = document.createElement('p');
+      cmd.className = 'repl-line';
+      cmd.textContent = `> ${line}`;
+      const out = document.createElement('p');
+      out.className = 'repl-out';
+      out.innerHTML = result;
+      output.append(cmd, out);
+      consolePanel.scrollTop = consolePanel.scrollHeight;
+    };
+
+    replForm?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const line = replInput.value.trim();
+      if (!line) return;
+      appendRepl(line, line.startsWith(':type') ? 'f64' : 'ok: command executed');
+      replInput.value = '';
+    });
+
+    const links = [...document.querySelectorAll('.toc-item a[href^="#"]')];
+    links.forEach((link) => {
+      link.addEventListener('click', (event) => {
+        const id = link.getAttribute('href');
+        const section = id ? document.querySelector(id) : null;
+        if (!section) return;
+        event.preventDefault();
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    const targets = [...document.querySelectorAll('[data-scrollspy]')];
+    const obs = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        links.forEach((a) => a.classList.remove('active'));
+        const match = links.find((a) => a.getAttribute('href') === `#${entry.target.id}`);
+        if (match) match.classList.add('active');
+      }
+    }, { root: document.getElementById('main-content'), threshold: 0.45 });
+    targets.forEach((el) => obs.observe(el));
+
+    // Optional hydration for existing code payload.
+    try {
+      await init();
+      const code = `{{CODE}}`;
+      if (code.length > 0) {
+        const wasm = new WasmMech();
+        wasm.init(code);
+      }
+    } catch (_err) {
+      // Graceful fallback in static contexts.
+    }
+  </script>
+</body>
+</html>
