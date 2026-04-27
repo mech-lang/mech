@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mech v0.3</title>
+<link rel="icon" href="https://gitlab.com/mech-lang/assets/-/raw/main/images/icons/favicon.ico?ref_type=heads" type="image/x-icon">
+<style>
+  {{STYLESHEET}}
+</style>
+<link rel="stylesheet" href="blog.css">
+
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <a href="https://mech-lang.org">
+        <img src="https://mech-lang.org/img/logo.png" alt="Mech Programming Language" height="40">
+      </a>
+    </div>
+    <nav class="top-nav" aria-label="Primary">
+      <a href="/docs">Docs</a>
+      <a href="/guides" class="active" aria-current="page">Guides</a>
+      <a href="/api">API Reference</a>
+      <a href="/changelog">Changelog</a>
+      <a href="/support">Support</a>
+    </nav>
+    <div class="header-actions">
+      <div class="widget widget-lg">
+        <a class="btn" href="https://github.com/mech-lang/mech" rel="noopener" target="_blank" aria-label="Star mech-lang/mech on GitHub">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+            <path fill="currentColor" d="M6.766 11.328c-2.063-.25-3.516-1.734-3.516-3.656 0-.781.281-1.625.75-2.188-.203-.515-.172-1.609.063-2.062.625-.078 1.468.25 1.968.703.594-.187 1.219-.281 1.985-.281.765 0 1.39.094 1.953.265.484-.437 1.344-.765 1.969-.687.218.422.25 1.515.046 2.047.5.593.766 1.39.766 2.203 0 1.922-1.453 3.375-3.547 3.64.531.344.89 1.094.89 1.954v1.625c0 .468.391.734.86.547C13.781 14.359 16 11.53 16 8.03 16 3.61 12.406 0 7.984 0 3.563 0 0 3.61 0 8.031a7.88 7.88 0 0 0 5.172 7.422c.422.156.828-.125.828-.547v-1.25c-.219.094-.5.156-.75.156-1.031 0-1.64-.562-2.078-1.609-.172-.422-.36-.672-.719-.719-.187-.015-.25-.093-.25-.187 0-.188.313-.328.625-.328.453 0 .844.281 1.25.86.313.452.64.655 1.031.655s.641-.14 1-.5c.266-.265.47-.5.657-.656"></path>
+          </svg>
+          <span>Star</span>
+        </a>
+        <a class="social-count" href="https://github.com/mech-lang/mech/stargazers" rel="noopener" target="_blank" aria-label="279 stargazers on GitHub">279</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="workspace" id="workspace">
+
+  <section class="content-shell" id="contentShell">
+    <div class="content-column">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/docs">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline; width:11px; height:11px; margin-top: -1px; vertical-align:middle;"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        </a>
+        <span class="sep">⟩</span>
+        <a href="/guides">Guides</a>
+        <span class="sep">⟩</span>
+        <span aria-current="page">Architecture Overview</span>
+      </nav>
+      <div class="hero">
+        <div class="hero-panel">
+          <div>
+            <p class="hero-kicker">Announcement</p>
+            <h1>Mech v0.3 —<br>State Machines, Match,<br>and Mika the Mech</h1>
+            <div class="hero-meta">
+              <span class="hero-avatar">CM</span>
+              <span>Corey Montella</span>
+              <span>•</span>
+              <span>April 27, 2026</span>
+            </div>
+          </div>
+          <p class="hero-summary">
+            Today, we're excited to announce Mech v0.3, introducing powerful new
+            features for data modeling, computation, and control flow—along with
+            everyone's favorite mascot, Mika the Mech.
+          </p>
+        </div>
+        <div class="hero-visual">
+          <img src="images/hero-square.png" alt="Mech v0.3 announcement visual">
+        </div>
+      </div>
+      <div class="article-intro" id="articleIntro">
+        <p>Mech v0.3 introduces a cleaner, more composable way to build data-oriented software with state machines, pattern matching, and richer authoring ergonomics across the toolchain. It's the culmination of months of work and feedback from our amazing early users, and we can't wait to see what you build with it. Whether you're building a microservice, a data pipeline, or an embedded system, Mech v0.3 gives you the tools to model complex logic with clarity and confidence.</p>
+        <p>This introductory abstract intentionally runs full width under the hero to establish context before navigation appears. Once the first structured section begins, the split layout and sticky table of contents take over naturally. And of course, the console pane on the right scrolls independently so you can keep an eye on logs while reading without losing your place in the content.</p>
+      </div>
+      <div class="article-layout" id="articleLayout">
+        <aside class="toc">
+          <div class="toc-title">Contents</div>
+          <ul>
+            <li>
+              <a href="#architecture">Architecture</a>
+              <ul class="toc-sub">
+                <li>
+                  <a href="#architecture-overview">System Overview</a>
+                  <ul class="toc-sub">
+                    <li><a href="#architecture-edge">Edge & Gateway Layer</a></li>
+                    <li><a href="#architecture-services">Service Mesh & RPC</a></li>
+                  </ul>
+                </li>
+                <li><a href="#architecture-data">Data Plane & Storage</a></li>
+                <li><a href="#architecture-observability">Observability Topology</a></li>
+              </ul>
+            </li>
+            <li><a href="#workflow">Authoring Workflow</a></li>
+            <li><a href="#api-reference">API Reference</a></li>
+            <li><a href="#operations">Operations & Monitoring</a></li>
+            <li><a href="#security">Security Checklist</a></li>
+            <li>
+              <a href="#faq">FAQ</a>
+              <ul class="toc-sub">
+                <li><a href="#faq-deployments">Deployments</a></li>
+                <li><a href="#faq-rollbacks">Rollbacks</a></li>
+                <li><a href="#faq-access">Access & Approvals</a></li>
+              </ul>
+            </li>
+          </ul>
+        </aside>
+        <article class="main-content">
+          <section id="architecture">
+          </section>
+          {{CONTENT}}
+
+        </article>
+      <footer class="footer">
+        <div class="footer-inner">
+
+          <div class="footer-main">
+
+            <!-- Left: Robot -->
+            <div class="footer-robot">
+              <img src="images/mika-pose-point.png" alt="Mika the Mech">
+              <div class="mika-glyph" aria-hidden="true">
+                <div class="mika-glyph-art-wrap">
+                  <pre class="mika-glyph-art mika-glyph-art--mini">╭(˙◯˙)─</pre>
+                  <pre class="mika-glyph-art mika-glyph-art--micro">╭⦿─</pre>
+                </div>
+              </div>
+            </div>
+
+            <!-- Middle: Links -->
+            <div class="footer-links">
+              <div class="footer-group">
+                <h4><svg xmlns="http://www.w3.org/2000/svg" class="footer-icon lucide lucide-package-icon lucide-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg>Product</h4>
+                <a href="#">Architecture</a>
+                <a href="#">Workflow</a>
+                <a href="#">API Reference</a>
+                <a href="#">Runbooks</a>
+              </div>
+
+              <div class="footer-group">
+                <h4><svg xmlns="http://www.w3.org/2000/svg" class="footer-icon lucide lucide-users-icon lucide-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>Community</h4>
+                <a href="#">Discord</a>
+                <a href="#">GitHub</a>
+                <a href="#">Blog</a>
+                <a href="#">Changelog</a>
+              </div>
+
+              <div class="footer-group">
+                <h4><svg xmlns="http://www.w3.org/2000/svg" class="footer-icon lucide lucide-book-text-icon lucide-book-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M8 11h8"/><path d="M8 7h6"/></svg>Resources</h4>
+                <a href="#">Getting Started</a>
+                <a href="#">Specification</a>
+                <a href="#">REPL Guide</a>
+                <a href="#">Build & Run</a>
+              </div>
+            </div>
+
+            <!-- Right: Latest release info -->
+            <div class="footer-release">
+              <div class="release-ack">
+                <svg xmlns="http://www.w3.org/2000/svg" class="footer-icon lucide lucide-rocket-icon lucide-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/></svg>
+                <a href="#">Latest Release</a>
+              </div>
+              <div class="release-grid-row">
+                <div class="release-grid-label">Version:</div>
+                <div class="release-grid-value"><a href="https://github.com/mech-lang/mech/releases/latest">v0.3.5-BETA</a></div>
+              </div>
+              <div class="release-grid-row">
+                <div class="release-grid-label">Date:</div>
+                <div class="release-grid-value">2026-04-26</div>
+              </div>
+              <div class="release-grid-row">
+                <div class="release-grid-label">License:</div>
+                <div class="release-grid-value"><a href="https://github.com/mech-lang/mech?tab=Apache-2.0-1-ov-file#readme">Apache 2.0</a></div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="footer-meta">
+            <div>© 2026 Mech Systems Lab</div>
+            <div>Built with ♡ in Pennsylvania</div>
+            <div class="footer-meta-links">
+              <a href="#">Privacy</a>
+              <a href="#">Terms</a>
+              <a href="#">Code of Conduct</a>
+            </div>
+          </div>
+
+        </div>
+      </footer>
+      </div>
+    </div>
+  </section>
+
+  <div class="resize-handle" id="resizeHandle"></div>
+  <div class="edge-handle" id="edgeHandle" aria-hidden="true"></div>
+
+  <aside class="console-pane">
+    <div class="console-topbar">
+      <div class="console-tabs" role="tablist" aria-label="Console sections">
+        <button class="console-tab active" type="button" role="tab" aria-selected="true" data-tab="console">console</button>
+        <button class="console-tab" type="button" role="tab" aria-selected="false" data-tab="output">output</button>
+        <button class="console-tab" type="button" role="tab" aria-selected="false" data-tab="errors">errors</button>
+      </div>
+      <button class="console-fullscreen-toggle" id="consoleFullscreenToggle" type="button" aria-pressed="false" aria-label="Enter fullscreen">
+        <svg class="icon-enter" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+          <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+          <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+          <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+          <rect width="10" height="8" x="7" y="8" rx="1"></rect>
+        </svg>
+        <svg class="icon-exit" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+          <path d="M15 3v18"></path>
+          <path d="m8 9 3 3-3 3"></path>
+        </svg>
+      </button>
+    </div>
+    <div class="console-panels">
+      <div class="console-panel is-active" data-panel="console">
+        <div class="console-scroll">
+[09:12:04] INFO  docs-ci: pipeline=7421 branch=feature/layout-refresh commit=4eee406
+[09:12:05] INFO  checkout: cloning repository
+[09:12:06] INFO  install: npm ci --prefer-offline
+[09:12:18] INFO  lint: eslint src/**/*.ts
+[09:12:24] PASS  lint: 0 errors, 2 warnings
+[09:12:24] INFO  test: vitest run --coverage
+[09:12:41] PASS  test: 128 passed, 0 failed, coverage=91.8%
+[09:12:42] INFO  build: vite build
+[09:12:53] PASS  build: output=dist/, size=1.9MB
+[09:12:54] INFO  preview: running smoke checks
+[09:12:58] PASS  smoke: homepage renders
+[09:12:59] PASS  smoke: docs sidebar links valid
+[09:13:00] PASS  smoke: console resize interaction stable
+[09:13:01] INFO  deploy: target=staging region=us-east-1
+[09:13:08] INFO  deploy: waiting for health checks
+[09:13:11] PASS  deploy: service=docs-web revision=2026.04.26.1
+[09:13:12] INFO  observability: creating deployment marker
+[09:13:13] INFO  audit: writing release metadata
+[09:13:15] PASS  release: completed successfully
+
+$ tail -n 20 /var/log/docs-web/access.log
+200 GET /docs/getting-started
+200 GET /docs/architecture
+200 GET /docs/api
+200 GET /docs/operations
+200 GET /assets/app-4f2d9e.js
+304 GET /assets/styles-87d1aa.css
+200 GET /api/status
+200 GET /api/search?q=deployments
+200 GET /api/search?q=rollbacks
+200 GET /api/search?q=runbook
+200 GET /favicon.ico
+200 GET /manifest.json
+200 GET /docs/security
+200 GET /docs/faq
+
+notes:
+- console pane intentionally scrolls independently
+- drag handle to resize between reading and focus modes
+- TOC hides first when space is constrained so content remains readable
+- fullscreen snap enters at ~92% viewport width
+        </div>
+      </div>
+      <div class="console-panel" data-panel="output">
+        <div class="console-scroll">$ npm run docs:build
+
+vite v6.1.2 building for production...
+✓ 1782 modules transformed.
+dist/index.html                     1.24 kB │ gzip:   0.63 kB
+dist/assets/index-18d97.css       98.31 kB │ gzip:  16.88 kB
+dist/assets/docs-9f22e.js        412.54 kB │ gzip: 125.03 kB
+dist/assets/vendor-f22c1.js      593.77 kB │ gzip: 194.22 kB
+✓ built in 4.78s
+
+$ npm run docs:preview
+➜  Local:   http://localhost:4173/
+➜  Network: use --host to expose
+
+smoke summary:
+- homepage render: pass
+- nav links: pass
+- docs search request: pass
+- static asset cache hit: pass</div>
+      </div>
+      <div class="console-panel" data-panel="errors">
+        <div class="console-scroll">[09:10:42] WARN  markdown-lint: docs/api/spec.md line 188 exceeds 100 chars
+[09:10:44] WARN  markdown-lint: docs/operations/runbook.md line 241 trailing spaces
+[09:12:24] WARN  eslint: src/components/ConsolePane.tsx:211 unexpected any (ts-eslint/no-explicit-any)
+[09:12:24] WARN  eslint: src/components/ResizeHandle.tsx:88 React Hook useEffect has missing dependency
+
+No critical runtime errors reported.
+Health checks stayed green during deploy.</div>
+      </div>
+    </div>
+  </aside>
+
+</main>
+
+<script>
+const handle        = document.getElementById("resizeHandle");
+const workspace     = document.getElementById("workspace");
+const articleLayout = document.getElementById("articleLayout");
+const contentShell  = document.getElementById("contentShell");
+const consolePane   = document.querySelector(".console-pane");
+const edgeHandle    = document.getElementById("edgeHandle");
+const tabButtons    = Array.from(document.querySelectorAll(".console-tab"));
+const tabPanels     = Array.from(document.querySelectorAll(".console-panel"));
+const fullscreenToggle = document.getElementById("consoleFullscreenToggle");
+
+const MIN_CONSOLE_WIDTH  = 320;
+const COLLAPSE_THRESHOLD = 80;
+const HANDLE_WIDTH       = 8;
+const TOC_WIDTH          = 260;
+const TOC_GAP            = 48;
+const MIN_MAIN_CONTENT   = 640;
+const MIN_MAIN_WITH_TOC  = 760;
+const MIN_LEFT_WITH_TOC  = TOC_WIDTH + TOC_GAP + MIN_MAIN_WITH_TOC;
+const DEFAULT_OPEN_WIDTH = 575;
+const HEADER_HEIGHT = parseInt(
+  getComputedStyle(document.documentElement).getPropertyValue("--header-height"),
+  10
+);
+
+let resizing = false;
+let lastNormalWidth = DEFAULT_OPEN_WIDTH;
+let dragStartX = 0;
+let didDrag = false;
+let currentConsoleWidth = parseFloat(
+  document.documentElement.style.getPropertyValue("--console-width")
+) || DEFAULT_OPEN_WIDTH;
+
+function setActiveConsoleTab(tabName) {
+  tabButtons.forEach((button) => {
+    const isActive = button.dataset.tab === tabName;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
+  tabPanels.forEach((panel) => {
+    panel.classList.toggle("is-active", panel.dataset.panel === tabName);
+  });
+}
+
+function updateFullscreenToggleLabel() {
+  if (!fullscreenToggle) return;
+  const isFullscreen = document.body.classList.contains("console-fullscreen");
+  fullscreenToggle.setAttribute("aria-label", isFullscreen ? "Exit fullscreen" : "Enter fullscreen");
+  fullscreenToggle.setAttribute("aria-pressed", String(isFullscreen));
+}
+
+function setConsoleWidth(width) {
+  currentConsoleWidth = width;
+  document.documentElement.style.setProperty("--console-width", `${width}px`);
+}
+
+function setEdgeHandle(mode) {
+  if (!edgeHandle) return;
+  document.body.classList.remove("edge-left", "edge-right");
+  edgeHandle.classList.remove("left");
+
+  if (mode === "left") {
+    edgeHandle.style.display = "block";
+    edgeHandle.classList.add("left");
+    document.body.classList.add("edge-left");
+    handle.style.display = "none";
+  } else if (mode === "right") {
+    edgeHandle.style.display = "block";
+    document.body.classList.add("edge-right");
+    handle.style.display = "none";
+  } else {
+    edgeHandle.style.display = "none";
+    if (!document.body.classList.contains("console-fullscreen") && consolePane.style.display !== "none") {
+      handle.style.display = "";
+    }
+  }
+}
+
+function syncEdgeHandleOnLoad() {
+  if (window.innerWidth <= 900) { setEdgeHandle("none"); return; }
+  if (document.body.classList.contains("console-fullscreen")) {
+    setEdgeHandle("left");
+  } else if (consolePane.style.display === "none" || currentConsoleWidth <= COLLAPSE_THRESHOLD) {
+    setEdgeHandle("right");
+  } else {
+    setEdgeHandle("none");
+  }
+}
+
+function syncTocVisibility(availableWidth) {
+  articleLayout.classList.toggle("hide-toc", availableWidth < MIN_LEFT_WITH_TOC);
+}
+
+function applyNonFullscreenLayout(viewport, consoleWidth) {
+  const maxConsoleForContent = Math.max(0, viewport - HANDLE_WIDTH - MIN_MAIN_CONTENT);
+  if (consoleWidth > maxConsoleForContent) consoleWidth = maxConsoleForContent;
+
+  const leftPaneWidth = viewport - HANDLE_WIDTH - consoleWidth;
+  syncTocVisibility(leftPaneWidth);
+
+  contentShell.classList.remove("hidden");
+  handle.style.display = "";
+  workspace.style.gridTemplateColumns = "";
+  setEdgeHandle("none");
+  lastNormalWidth = consoleWidth;
+  return consoleWidth;
+}
+
+function closeConsole() {
+  document.body.classList.remove("console-fullscreen");
+  consolePane.style.display = "none";
+  handle.style.display = "none";
+  contentShell.classList.remove("hidden");
+  syncTocVisibility(window.innerWidth);
+  setEdgeHandle("right");
+  setConsoleWidth(0);
+  updateFullscreenToggleLabel();
+}
+
+function openConsoleNormal() {
+  const viewport = window.innerWidth;
+  document.body.classList.remove("console-fullscreen");
+  consolePane.style.display = "";
+  contentShell.classList.remove("hidden");
+  handle.style.display = "";
+  let openWidth = Math.min(lastNormalWidth || DEFAULT_OPEN_WIDTH, viewport - HANDLE_WIDTH);
+  if (openWidth < MIN_CONSOLE_WIDTH) {
+    openWidth = Math.min(DEFAULT_OPEN_WIDTH, Math.max(MIN_CONSOLE_WIDTH, viewport * 0.36));
+  }
+  openWidth = applyNonFullscreenLayout(viewport, openWidth);
+  setConsoleWidth(openWidth);
+  updateFullscreenToggleLabel();
+}
+
+function enterConsoleFullscreen() {
+  if (window.innerWidth <= 900) return;
+  const viewport = window.innerWidth;
+  if (currentConsoleWidth > COLLAPSE_THRESHOLD) {
+    lastNormalWidth = currentConsoleWidth;
+  }
+  consolePane.style.display = "";
+  document.body.classList.add("console-fullscreen");
+  articleLayout.classList.add("hide-toc");
+  contentShell.classList.add("hidden");
+  handle.style.display = "none";
+  workspace.style.gridTemplateColumns = "";
+  setEdgeHandle("left");
+  setConsoleWidth(viewport);
+  updateFullscreenToggleLabel();
+}
+
+function cycleConsoleMode() {
+  const isFullscreen = document.body.classList.contains("console-fullscreen");
+  const isClosed = consolePane.style.display === "none" || currentConsoleWidth <= COLLAPSE_THRESHOLD;
+  if (isFullscreen || isClosed) {
+    openConsoleNormal();
+  } else {
+    lastNormalWidth = currentConsoleWidth;
+    closeConsole();
+  }
+}
+
+handle.addEventListener("mousedown", (e) => {
+  resizing = true; dragStartX = e.clientX; didDrag = false;
+  document.body.classList.add("is-resizing");
+  document.body.style.userSelect = "none";
+});
+
+edgeHandle.addEventListener("mousedown", (e) => {
+  resizing = true; dragStartX = e.clientX; didDrag = false;
+  document.body.classList.add("is-resizing");
+  document.body.style.userSelect = "none";
+});
+
+function onHandleClick(event) {
+  if (didDrag) { didDrag = false; return; }
+  const state = document.body.classList.contains("console-fullscreen") ? "fullscreen"
+    : (consolePane.style.display === "none" || currentConsoleWidth <= COLLAPSE_THRESHOLD) ? "closed" : "open";
+  if (state === "open" && event.type !== "dblclick") return;
+  cycleConsoleMode();
+}
+
+handle.addEventListener("click", onHandleClick);
+handle.addEventListener("dblclick", onHandleClick);
+edgeHandle.addEventListener("click", onHandleClick);
+
+window.addEventListener("mousemove", (e) => {
+  if (!resizing) return;
+  if (Math.abs(e.clientX - dragStartX) > 3) didDrag = true;
+
+  const viewport = window.innerWidth;
+  let consoleWidth = viewport - e.clientX;
+  const fullSnap = viewport * 0.92;
+
+  if (consoleWidth <= COLLAPSE_THRESHOLD) {
+    consoleWidth = 0;
+    document.body.classList.remove("console-fullscreen");
+    consolePane.style.display = "none";
+    handle.style.display = "none";
+    workspace.style.gridTemplateColumns = "";
+    syncTocVisibility(viewport);
+    contentShell.classList.remove("hidden");
+    setEdgeHandle("right");
+  } else {
+    document.body.classList.remove("console-fullscreen");
+    consolePane.style.display = "";
+    if (consoleWidth < MIN_CONSOLE_WIDTH) consoleWidth = MIN_CONSOLE_WIDTH;
+
+    if (consoleWidth >= fullSnap) {
+      articleLayout.classList.add("hide-toc");
+      consoleWidth = viewport;
+      contentShell.classList.add("hidden");
+      handle.style.display = "none";
+      workspace.style.gridTemplateColumns = "";
+      document.body.classList.add("console-fullscreen");
+      setEdgeHandle("left");
+    } else {
+      consoleWidth = applyNonFullscreenLayout(viewport, consoleWidth);
+    }
+  }
+
+  setConsoleWidth(consoleWidth);
+  updateFullscreenToggleLabel();
+});
+
+window.addEventListener("mouseup", () => {
+  resizing = false;
+  document.body.classList.remove("is-resizing");
+  document.body.style.userSelect = "";
+});
+
+window.addEventListener("resize", () => {
+  if (window.innerWidth <= 900) return;
+  const viewport = window.innerWidth;
+  let consoleWidth = currentConsoleWidth;
+
+  if (document.body.classList.contains("console-fullscreen")) {
+    setEdgeHandle("left");
+    setConsoleWidth(viewport);
+    updateFullscreenToggleLabel();
+    return;
+  }
+  if (consolePane.style.display === "none" || consoleWidth <= COLLAPSE_THRESHOLD) {
+    syncTocVisibility(viewport);
+    contentShell.classList.remove("hidden");
+    setEdgeHandle("right");
+    updateFullscreenToggleLabel();
+    return;
+  }
+
+  if (consoleWidth > viewport - HANDLE_WIDTH) consoleWidth = viewport - HANDLE_WIDTH;
+  if (consoleWidth < MIN_CONSOLE_WIDTH) consoleWidth = MIN_CONSOLE_WIDTH;
+  consoleWidth = applyNonFullscreenLayout(viewport, consoleWidth);
+  setConsoleWidth(consoleWidth);
+  updateFullscreenToggleLabel();
+});
+
+window.addEventListener("keydown", (e) => {
+  if (e.key !== "`") return;
+  const tag = document.activeElement?.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || document.activeElement?.isContentEditable) return;
+  e.preventDefault();
+  cycleConsoleMode();
+});
+
+tabButtons.forEach((button) => {
+  button.addEventListener("click", () => setActiveConsoleTab(button.dataset.tab));
+});
+
+fullscreenToggle?.addEventListener("click", () => {
+  if (document.body.classList.contains("console-fullscreen")) {
+    openConsoleNormal();
+  } else {
+    enterConsoleFullscreen();
+  }
+});
+
+updateFullscreenToggleLabel();
+
+/* ── Scrollspy ── */
+const tocRoot = document.querySelector(".toc > ul");
+const topTocItems = tocRoot ? Array.from(tocRoot.querySelectorAll(":scope > li")) : [];
+const topTocLinks = topTocItems.map((item) => item.querySelector(":scope > a")).filter(Boolean);
+const topSections = topTocLinks
+  .map((link) => {
+    const id = link.getAttribute("href")?.replace("#", "");
+    return { link, section: id ? document.getElementById(id) : null };
+  })
+  .filter((e) => e.section);
+
+const contentSections = Array.from(document.querySelectorAll(".main-content > section"));
+if (!contentSections.length) {
+  articleLayout.classList.add("no-sections", "hide-toc");
+}
+
+function setActiveTocSection(activeLink, { nearBottom = false, activationLine = HEADER_HEIGHT + 28 } = {}) {
+  const allTocLinks = tocRoot ? Array.from(tocRoot.querySelectorAll("a")) : [];
+  allTocLinks.forEach((l) => l.classList.remove("active", "active-path"));
+  topTocItems.forEach((item) => item.classList.remove("expanded"));
+  if (!activeLink) return;
+
+  activeLink.classList.add("active", "active-path");
+  const activeItem = activeLink.closest("li");
+  if (activeItem) activeItem.classList.add("expanded");
+
+  const nestedLinks = activeItem ? Array.from(activeItem.querySelectorAll(".toc-sub a")) : [];
+  nestedLinks.forEach((l) => l.classList.remove("active"));
+  if (activeItem) activeItem.querySelectorAll(".toc-sub li").forEach((li) => li.classList.remove("expanded"));
+
+  let activeNestedLink = null;
+  nestedLinks.forEach((link) => {
+    const id = link.getAttribute("href")?.replace("#", "");
+    const target = id ? document.getElementById(id) : null;
+    if (!target) return;
+    const rect = target.getBoundingClientRect();
+    if (nearBottom) {
+      if (rect.top <= window.innerHeight - 40) activeNestedLink = link;
+      return;
+    }
+    if (rect.top <= activationLine) activeNestedLink = link;
+  });
+
+  if (nearBottom && !activeNestedLink && nestedLinks.length) {
+    activeNestedLink = nestedLinks[nestedLinks.length - 1];
+  }
+
+  if (!activeNestedLink) return;
+  activeNestedLink.classList.add("active");
+  let pathLink = activeNestedLink;
+  while (pathLink && activeItem) {
+    pathLink.classList.add("active-path");
+    const parentLi = pathLink.closest("li");
+    if (!parentLi || parentLi === activeItem) break;
+    pathLink = parentLi.parentElement?.closest("li")?.querySelector(":scope > a") || null;
+  }
+  let parentLi = activeNestedLink.closest("li");
+  while (parentLi && activeItem && parentLi !== activeItem) {
+    parentLi.classList.add("expanded");
+    parentLi = parentLi.parentElement?.closest("li") || null;
+  }
+}
+
+function updateTocOnScroll() {
+  if (document.visibilityState !== "visible") return;
+  if (contentShell.classList.contains("hidden")) return;
+  if (!topSections.length) return;
+
+  const activationLine = HEADER_HEIGHT + Math.min(window.innerHeight * 0.35, 280);
+  let active = topSections[0];
+  const nearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+
+  if (nearBottom) {
+    active = topSections[topSections.length - 1];
+  } else {
+    topSections.forEach((entry) => {
+      if (entry.section.getBoundingClientRect().top <= activationLine) active = entry;
+    });
+  }
+
+  topSections.forEach((e) => e.section.classList.remove("active-section"));
+  if (active.section) active.section.classList.add("active-section");
+  const nestedActivationLine = HEADER_HEIGHT + Math.min(window.innerHeight * 0.30, 220);
+  setActiveTocSection(active.link, { nearBottom, activationLine: nestedActivationLine });
+}
+
+let tocTicking = false;
+function requestTocUpdate() {
+  if (tocTicking) return;
+  tocTicking = true;
+  requestAnimationFrame(() => { tocTicking = false; updateTocOnScroll(); });
+}
+
+function deferPostPaint(fn) {
+  requestAnimationFrame(() => requestAnimationFrame(fn));
+}
+
+window.addEventListener("scroll", requestTocUpdate, { passive: true });
+window.addEventListener("resize", requestTocUpdate);
+
+function syncInitialResponsiveLayout() {
+  if (window.innerWidth > 900) {
+    const initialWidth = Math.max(MIN_CONSOLE_WIDTH, Math.min(currentConsoleWidth, window.innerWidth - HANDLE_WIDTH));
+    setConsoleWidth(applyNonFullscreenLayout(window.innerWidth, initialWidth));
+  }
+  syncEdgeHandleOnLoad();
+  requestTocUpdate();
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") deferPostPaint(syncInitialResponsiveLayout);
+});
+
+deferPostPaint(syncInitialResponsiveLayout);
+</script>
+
+</body>
+</html>
