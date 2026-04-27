@@ -102,6 +102,7 @@ Core access patterns include:
 - Identifier access: `x`
 - Index/slice access: `m[1,2]`, `xs[2]`
 - Field/column access: `record.field`, `table.column`
+- String scalar access: `s[1]`
 
 For detailed indexing behavior, see [`indexing`](/reference/indexing.html).
 
