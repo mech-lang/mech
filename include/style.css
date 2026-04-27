@@ -84,10 +84,6 @@ body {
     margin-top: 50px;
 }
 
-.mech-toc.hidden {
-  display: none;
-}
-
 .mech-toc.hidden ~ .mech-content {
   margin-left: 0;
 }
@@ -95,21 +91,6 @@ body {
 .super.compact .mech-content {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;
-}
-
-.mech-toc {
-    max-width: 250px;
-    position: absolute;
-    counter-reset: h2;
-    color: var(--text-color);
-    overflow-y: auto;
-    overflow-x: hidden;
-    top: 150px;
-    margin-left: calc(50% - 350px - 250px - 150px);
-    overflow: auto;
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;     /* Firefox */         
-    height: calc(100vh - 60px);   
 }
 
 .mech-program {
@@ -232,126 +213,6 @@ body {
     margin-left: -25px;
     position: absolute;
     pointer-events: none;
-}
-
-.mech-toc-sections {
-
-}
-
-.mech-toc h2 {
-    line-height: 23px;
-}
-
-.mech-toc::-webkit-scrollbar {
-  display: none;               /* Chrome, Safari, Edge */
-}
-
-.mech-toc h1 {
-    visibility: hidden;
-    font-size: 1rem;
-}
-
-.mech-toc h2 {
-    font-size: 1rem;
-    padding-left: 13px;
-}
-
-h2.toc::before {
-    padding-right: 3px;
-}
-
-.mech-toc h2 a {
-    color: var(--text-color);
-    text-decoration: none;
-}
-
-.mech-toc h2:hover::before {
-    color: var(--contrast-color-low);
-}
-
-.mech-toc h2 a:hover {
-    color: var(--contrast-color-low);
-    text-decoration: none;
-}
-
-h3.toc::before {
-    font-size: 1rem;
-    padding-right: 3px;
-    color: var(--toc-heading-number-color);
-}
-.mech-toc h3 {
-    line-height: 23px;
-}
-
-.mech-toc h3 {
-    font-size: 1rem;
-    padding-left: 30px;
-}
-
-.mech-toc h3 a {
-    color: var(--text-color);
-    text-decoration: none;
-}
-
-.mech-toc h3:hover::before {
-    color: var(--contrast-color-low);
-}
-
-.mech-toc h3 a:hover {
-    color: var(--contrast-color-low);
-    text-decoration: none;
-}
-
-h4.toc::before {
-    font-size: 1rem;
-    padding-right: 3px;
-    color: var(--toc-heading-number-color);
-}
-.mech-toc h4 {
-    line-height: 23px;
-    font-size: 1rem;
-    padding-left: 60px;
-    margin: 10px;
-}
-
-.mech-toc h4 a {
-    color: var(--text-color);
-    text-decoration: none;
-}
-
-.mech-toc h4:hover::before {
-    color: var(--contrast-color-low);
-}
-
-.mech-toc h4 a:hover {
-    color: var(--contrast-color-low);
-    text-decoration: none;
-}
-
-h5.toc::before {
-    font-size: 1rem;
-    padding-right: 3px;
-    color: var(--toc-heading-number-color);
-}
-.mech-toc h5 {
-    line-height: 23px;
-    font-size: 1rem;
-    padding-left: 90px;
-    margin: 10px;
-}
-
-.mech-toc h5 a {
-    color: var(--text-color);
-    text-decoration: none;
-}
-
-.mech-toc h5:hover::before {
-    color: var(--contrast-color-low);
-}
-
-.mech-toc h5 a:hover {
-    color: var(--contrast-color-low);
-    text-decoration: none;
 }
 
 .mech-map {
@@ -578,15 +439,6 @@ h5.toc::before {
     font-weight: bold;
     margin-bottom: 10px;
     letter-spacing: 1px;
-}
-
-
-h4.toc {
-    display: none;
-}
-
-h5.toc {
-    display: none;
 }
 
 .mech-variable-mutable {
@@ -2040,19 +1892,6 @@ a.mech-footnote-reference {
     counter-reset: h5;
 }
 
-.mech-toc h2 {
-    counter-reset: h3;
-}
-
-.mech-toc h3 {
-    counter-reset: h4;
-}
-
-.mech-toc h4 {
-    counter-reset: h5;
-}
-
-
 h2::before {
     color: var(--main-color-mid);
     counter-increment: h2;
@@ -2077,73 +1916,29 @@ h5::before {
     content: counter(h2) "." counter(h3) "." counter(h4) "." counter(h5) " ";
 }
 
-
-.mech-program-subtitle.toc.active::before{
-    color: var(--contrast-color-low);
-}
-
-.mech-program-subtitle.toc.active a:hover {
-    color: var(--contrast-color-low);
-}
-
-.mech-program-subtitle.toc.active a {
-    color: var(--contrast-color-high);
-}
-
-.mech-program-section.toc.active{
-    padding-top: 10px;
-    padding-bottom: 10px;
-    border-left: 4px solid var(--contrast-color-high);
-}
-
 h2:hover a {
     color: var(--main-color-low);
-}
-
-.toc h2:hover a {
-    color: var(--contrast-color-low);
 }
 
 h3:hover a {
     color: var(--main-color-low);
 }
 
-.toc h3:hover a {
-    color: var(--contrast-color-low);
-}
-
 h4:hover a {
     color: var(--main-color-low);
-}
-
-.toc h4:hover a {
-    color: var(--contrast-color-low);
 }
 
 h5:hover a {
     color: var(--main-color-low);
 }
 
-.toc h5:hover a {
-    color: var(--contrast-color-low);
-}
-
 h6:hover a {
     color: var(--main-color-low);
-}
-
-.toc h6:hover a {
-    color: var(--contrast-color-low);
 }
 
 .mech-program-section {
     padding-left: 10px;
     padding-right: 10px;
-}
-
-.mech-program-subtitle.toc.visible {
-    display: block;
-    visibility: visible;
 }
 
 .mech-equation {
