@@ -79,6 +79,17 @@ mod tests {
     let html_without_cited = formatter_without_cited.format_html(&tree, "".to_string(), "{{CONTENTS}}".to_string());
     assert!(!html_without_cited.contains("mech-works-cited"));
   }
+
+  #[test]
+  fn wraps_front_matter_slots_with_dedicated_classes() {
+    let src = "Doc\n===\nBy Author\n![hero](hero.png)\nShort synopsis.\n===\n1. First\n---\nBody.\n";
+    let tree = crate::parser::parse(src).expect("program should parse");
+    let mut formatter = Formatter::new();
+    let html = formatter.format_html(&tree, "".to_string(), "{{BYLINE}}{{HERO}}{{SYNOPSIS}}".to_string());
+    assert!(html.contains("class=\"mech-byline\""));
+    assert!(html.contains("class=\"mech-hero\""));
+    assert!(html.contains("class=\"mech-synopsis\""));
+  }
 }
 
 
@@ -229,13 +240,13 @@ impl Formatter {
       for el in &section.elements {
         match el {
           SectionElement::Byline(paragraph) => {
-            byline_src.push_str(&intro_formatter.paragraph(paragraph));
+            byline_src.push_str(&intro_formatter.byline_el(paragraph));
           }
           SectionElement::Hero(hero) => {
-            hero_src.push_str(&intro_formatter.section_element(hero));
+            hero_src.push_str(&intro_formatter.hero_el(hero));
           }
           SectionElement::Synopsis(paragraph) => {
-            synopsis_src.push_str(&intro_formatter.paragraph(paragraph));
+            synopsis_src.push_str(&intro_formatter.synopsis_el(paragraph));
           }
           SectionElement::Abstract(paragraphs) => {
             abstract_src.push_str(&abstract_formatter.abstract_el(paragraphs));
@@ -981,12 +992,39 @@ impl Formatter {
       format!(">: {}\n", prompt_str)
     }
   }
+
+  pub fn byline_el(&mut self, node: &Paragraph) -> String {
+    let byline = self.paragraph(node);
+    if self.html {
+      format!("<div class=\"mech-byline\">{}</div>", byline)
+    } else {
+      byline
+    }
+  }
+
+  pub fn synopsis_el(&mut self, node: &Paragraph) -> String {
+    let synopsis = self.paragraph(node);
+    if self.html {
+      format!("<div class=\"mech-synopsis\">{}</div>", synopsis)
+    } else {
+      synopsis
+    }
+  }
+
+  pub fn hero_el(&mut self, node: &SectionElement) -> String {
+    let hero = self.section_element(node);
+    if self.html {
+      format!("<div class=\"mech-hero\">{}</div>", hero)
+    } else {
+      hero
+    }
+  }
     
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     match node {
-      SectionElement::Byline(n) => self.paragraph(n),
-      SectionElement::Hero(n) => self.section_element(n),
-      SectionElement::Synopsis(n) => self.paragraph(n),
+      SectionElement::Byline(n) => self.byline_el(n),
+      SectionElement::Hero(n) => self.hero_el(n),
+      SectionElement::Synopsis(n) => self.synopsis_el(n),
       SectionElement::Abstract(n) => self.abstract_el(n),
       SectionElement::QuoteBlock(n) => self.quote_block(n),
       SectionElement::SuccessBlock(n) => self.success_block(n),

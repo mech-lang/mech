@@ -149,6 +149,12 @@ body {
     margin-bottom: 16px;
 }
 
+.mech-byline,
+.mech-synopsis,
+.mech-hero {
+    margin-bottom: 12px;
+}
+
 .mech-program {
     max-width: 700px;
     margin: auto;
