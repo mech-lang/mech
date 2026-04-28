@@ -90,6 +90,15 @@ mod tests {
     assert!(html.contains("class=\"mech-hero\""));
     assert!(html.contains("class=\"mech-synopsis\""));
   }
+
+  #[test]
+  fn does_not_emit_missing_citation_map_error_text() {
+    let src = "Doc\n===\n1. Refs\n---\nUses [FOO].\n[FOO]: https://example.com\n";
+    let tree = crate::parser::parse(src).expect("program should parse");
+    let mut formatter = Formatter::new();
+    let html = formatter.format_html(&tree, "".to_string(), "{{CONTENTS}}".to_string());
+    assert!(!html.contains("Citation FOO not found in citation map."));
+  }
 }
 
 
@@ -872,14 +881,17 @@ impl Formatter {
 
   pub fn citation(&mut self, node: &Citation) -> String {
     let id = hash_str(&format!("{}",node.id.to_string()));
-    self.citations.resize(self.citation_num, String::new());
     let citation_text = self.paragraph(&node.text);
     let citation_num = match self.citation_map.get(&id) {
       Some(&num) => num,
       None => {
-        return format!("Citation {} not found in citation map.", node.id.to_string());
+        self.citation_num += 1;
+        let next_num = self.citation_num;
+        self.citation_map.insert(id, next_num);
+        next_num
       }
     };
+    self.citations.resize(self.citation_num, String::new());
     let formatted_citation = if self.html {
       format!("<div id=\"{}\" class=\"mech-citation\">
       <div class=\"mech-citation-id\">[{}]:</div>
