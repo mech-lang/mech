@@ -329,20 +329,21 @@ body.console-fullscreen .workspace {
   /* remove any height: 100% if present */
 }
 
-.mech-hero-img figure img {
-  display: block;
-  width: 560px;      /* fixed — tweak to taste */
-  max-width: none;   /* this is the key: kills fluid scaling */
-  height: auto;
-  object-fit: cover;
-}
-
 .mech-hero-img figure {
   display: block;
+  width: 100%;
+  height: 100%;
   margin-block-start: 0px;
   margin-block-end: 0px;
   margin-inline-start: 0px;
   margin-inline-end: 0px;
+}
+
+.mech-hero-img figure img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .mech-hero-img figure figcaption {
@@ -1088,7 +1089,7 @@ body.console-fullscreen .console-fullscreen-toggle .icon-exit {
   }
 
   .mech-hero-img figure img {
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 5 / 3;
   }
 
   .footer-main {
