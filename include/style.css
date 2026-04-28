@@ -1188,7 +1188,6 @@ ol {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 20px auto;
 }
 
 .mech-image {
@@ -1225,6 +1224,10 @@ ol {
 .mech-float .mech-figure {
     margin-top: 10px;
     margin-bottom: 10px;
+}
+
+.mech-figure-caption .mech-paragraph {
+    color: var(--text-color-light)
 }
 
 .mech-figure-caption p {
@@ -1290,6 +1293,8 @@ ol {
 }
 
 .mech-figure-table-caption .mech-figure-label {
+    font-style: italic;
+    font-size: 12pt;
     display: inline;
     min-width: 0;
     text-align: left;
@@ -2351,7 +2356,7 @@ mark {
     }    
     .mech-figure-label {
         color: var(--main-color-mid); 
-        font-size: 1rem;
+        font-size: 12pt;
         min-width: 60px;
         text-align: right;
     }
