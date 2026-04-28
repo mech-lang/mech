@@ -42,6 +42,19 @@ mod tests {
     assert!(html.contains("Second"));
     assert!(html.contains("{{SECTION3}}"));
   }
+
+  #[test]
+  fn renders_toc_as_nested_list_aside() {
+    let src = "Doc\n===\n1. Architecture\n---\n(1.1) System Overview\n(1.1.1) Edge Layer\n2. Workflow\n---\n";
+    let tree = crate::parser::parse(src).expect("program should parse");
+    let mut formatter = Formatter::new();
+    let html = formatter.format_html(&tree, "".to_string(), "{{TOC}}".to_string());
+    assert!(html.contains("<aside class=\"toc\">"));
+    assert!(html.contains("<h3>Contents</h3>"));
+    assert!(html.contains("<ul class=\"toc-sub\">"));
+    assert!(html.contains("Architecture"));
+    assert!(html.contains("System Overview"));
+  }
 }
 
 
@@ -226,24 +239,72 @@ impl Formatter {
   }
 
   pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
-    self.toc = true;
-    let sections = self.sections(&toc.sections);
-    self.toc = false;
-    let section_id = hash_str(&format!("section-{}", self.h2_num + 1));
-    let formatted_works_cited = if self.html && self.citation_num > 0 && !self.citations.is_empty() {
-      format!(
-        "<section id=\"\" section=\"{}\" class=\"mech-program-section toc\">
-  <h2 id=\"\" section=\"{}\" class=\"mech-program-subtitle toc active\">
-    <a class=\"mech-program-subtitle-link toc\" href=\"#67320967384727436\">Works Cited</a>
-  </h2>
-</section>",
-        section_id,
-        self.h2_num + 1
-      )
-    } else {
-      "".to_string()
-    };
-    format!("<div class=\"mech-toc\">{}{}</div>", sections, formatted_works_cited)
+    let mut h2_num = 0usize;
+    let mut toc_items = String::new();
+    for section in &toc.sections {
+      let subtitle = match &section.subtitle {
+        Some(s) => s,
+        None => continue,
+      };
+      h2_num += 1;
+      let mut h3_num = 0usize;
+      let mut h4_num = 0usize;
+      let mut h5_num = 0usize;
+      let mut h6_num = 0usize;
+      let section_link_id = hash_str(&format!("{}.{}.{}.{}.{}", h2_num, h3_num, h4_num, h5_num, h6_num));
+      let mut nested = String::new();
+      let mut stack_depth = 0usize;
+
+      for element in &section.elements {
+        let subtitle = match element {
+          SectionElement::Subtitle(s) => s,
+          _ => continue,
+        };
+        match subtitle.level {
+          3 => { h3_num += 1; h4_num = 0; h5_num = 0; h6_num = 0; }
+          4 => { h4_num += 1; h5_num = 0; h6_num = 0; }
+          5 => { h5_num += 1; h6_num = 0; }
+          6 => { h6_num += 1; }
+          _ => {}
+        }
+        let target_depth = subtitle.level.saturating_sub(2) as usize;
+        while stack_depth < target_depth {
+          nested.push_str("<ul class=\"toc-sub\">");
+          stack_depth += 1;
+        }
+        while stack_depth > target_depth {
+          nested.push_str("</li></ul>");
+          stack_depth -= 1;
+        }
+        if target_depth > 0 {
+          nested.push_str("</li>");
+        }
+        let link_id = hash_str(&format!("{}.{}.{}.{}.{}", h2_num, h3_num, h4_num, h5_num, h6_num));
+        nested.push_str(&format!(
+          "<li><a href=\"#{}\">{}</a>",
+          link_id,
+          subtitle.to_string()
+        ));
+      }
+      while stack_depth > 0 {
+        nested.push_str("</li></ul>");
+        stack_depth -= 1;
+      }
+      if !nested.is_empty() {
+        nested.push_str("</li>");
+      }
+
+      toc_items.push_str(&format!(
+        "<li><a href=\"#{}\">{}</a>{}</li>",
+        section_link_id,
+        subtitle.to_string(),
+        nested
+      ));
+    }
+    if self.html && self.citation_num > 0 && !self.citations.is_empty() {
+      toc_items.push_str("<li><a href=\"#67320967384727436\">Works Cited</a></li>");
+    }
+    format!("<aside class=\"toc\"><h3>Contents</h3><ul>{}</ul></aside>", toc_items)
   }
 
   pub fn sections(&mut self, sections: &Vec<Section>) -> String {
