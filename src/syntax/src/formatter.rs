@@ -176,7 +176,8 @@ impl Formatter {
     self.inline_eval_counters.clear();
 
     let include_cited = shim.contains("{{CITED}}");
-    let (formatted_byline, formatted_hero, formatted_synopsis, formatted_abstract, formatted_intro, formatted_contents, formatted_cited) = self.document_slots(tree);
+    let (formatted_byline, formatted_hero, formatted_synopsis) = self.title_slots(&tree.title);
+    let (formatted_abstract, formatted_intro, formatted_contents, formatted_cited) = self.document_slots(tree);
     let formatted_src = formatted_contents.clone();
     self.reset_numbering();
     let toc = tree.table_of_contents();
@@ -215,7 +216,19 @@ impl Formatter {
     rendered
   }
 
-  fn document_slots(&self, tree: &Program) -> (String, String, String, String, String, String, String) {
+  fn title_slots(&mut self, title: &Option<Title>) -> (String, String, String) {
+    match title {
+      Some(title) => {
+        let byline = title.byline.as_ref().map(|p| self.byline_el(p)).unwrap_or_default();
+        let hero = title.hero.as_ref().map(|h| self.hero_el(h)).unwrap_or_default();
+        let synopsis = title.synopsis.as_ref().map(|p| self.synopsis_el(p)).unwrap_or_default();
+        (byline, hero, synopsis)
+      }
+      None => (String::new(), String::new(), String::new()),
+    }
+  }
+
+  fn document_slots(&self, tree: &Program) -> (String, String, String, String) {
     let first_section_ix = tree.body.sections.iter()
       .position(|s| s.subtitle.is_some())
       .unwrap_or(tree.body.sections.len());
@@ -229,9 +242,6 @@ impl Formatter {
     let mut contents_formatter = Formatter::new();
     contents_formatter.html = true;
 
-    let mut byline_src = String::new();
-    let mut hero_src = String::new();
-    let mut synopsis_src = String::new();
     let mut abstract_src = String::new();
     let mut intro_src = String::new();
     let mut contents_src = String::new();
@@ -239,15 +249,6 @@ impl Formatter {
     for section in intro_sections {
       for el in &section.elements {
         match el {
-          SectionElement::Byline(paragraph) => {
-            byline_src.push_str(&intro_formatter.byline_el(paragraph));
-          }
-          SectionElement::Hero(hero) => {
-            hero_src.push_str(&intro_formatter.hero_el(hero));
-          }
-          SectionElement::Synopsis(paragraph) => {
-            synopsis_src.push_str(&intro_formatter.synopsis_el(paragraph));
-          }
           SectionElement::Abstract(paragraphs) => {
             abstract_src.push_str(&abstract_formatter.abstract_el(paragraphs));
           }
@@ -268,7 +269,7 @@ impl Formatter {
 
     let cited_src = contents_formatter.works_cited();
 
-    (byline_src, hero_src, synopsis_src, abstract_src, intro_src, contents_src, cited_src)
+    (abstract_src, intro_src, contents_src, cited_src)
   }
 
   fn section_slots(&self, tree: &Program) -> Vec<String> {
@@ -1022,9 +1023,6 @@ impl Formatter {
     
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     match node {
-      SectionElement::Byline(n) => self.byline_el(n),
-      SectionElement::Hero(n) => self.hero_el(n),
-      SectionElement::Synopsis(n) => self.synopsis_el(n),
       SectionElement::Abstract(n) => self.abstract_el(n),
       SectionElement::QuoteBlock(n) => self.quote_block(n),
       SectionElement::SuccessBlock(n) => self.success_block(n),

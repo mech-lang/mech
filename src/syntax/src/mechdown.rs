@@ -30,9 +30,14 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
   let (input, _) = new_line(input)?;
   let (input, _) = many1(equal)(input)?;
   let (input, _) = whitespace0(input)?;
+  let (input, front_matter) = opt(title_front_matter)(input)?;
   let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
-  Ok((input, Title{text: title}))
+  let (byline, hero, synopsis) = match front_matter {
+    Some((byline, hero, synopsis)) => (byline, hero, synopsis),
+    None => (None, None, None),
+  };
+  Ok((input, Title{text: title, byline, hero, synopsis}))
 }
 
 pub fn byline(input: ParseString) -> ParseResult<Paragraph> {
@@ -1100,23 +1105,11 @@ mod tests {
     let (_, parsed) = crate::parser::program(input).expect("program should parse");
     let title = parsed.title.expect("title should be present");
     assert_eq!(title.text.to_string(), "My Title");
-    let front_matter_section = parsed.body.sections.first().expect("front matter section");
-    assert_eq!(front_matter_section.subtitle, None);
-    assert_eq!(front_matter_section.elements.len(), 3);
-    match &front_matter_section.elements[0] {
-      SectionElement::Byline(byline) => assert_eq!(byline.to_string(), "Byline"),
-      other => panic!("unexpected byline type: {:?}", other),
-    }
-    match &front_matter_section.elements[1] {
-      SectionElement::Hero(hero) => match hero.as_ref() {
-        SectionElement::Image(img) => assert_eq!(img.src.to_string(), "hero.png"),
-        other => panic!("unexpected hero payload: {:?}", other),
-      }
-      other => panic!("unexpected hero wrapper type: {:?}", other),
-    }
-    match &front_matter_section.elements[2] {
-      SectionElement::Synopsis(synopsis) => assert_eq!(synopsis.to_string(), "A short synopsis."),
-      other => panic!("unexpected synopsis type: {:?}", other),
+    assert_eq!(title.byline.expect("byline").to_string(), "Byline");
+    assert_eq!(title.synopsis.expect("synopsis").to_string(), "A short synopsis.");
+    match title.hero.expect("hero") {
+      SectionElement::Image(img) => assert_eq!(img.src.to_string(), "hero.png"),
+      other => panic!("unexpected hero type: {:?}", other),
     }
   }
 
