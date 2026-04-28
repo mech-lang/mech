@@ -27,7 +27,6 @@ pub struct Formatter{
   inline_eval_counters: HashMap<u64, u64>,
 }
 
-
 impl Formatter {
 
   fn mika_interpreter_id(parent_id: u64, node: &(Mika, Option<MikaSection>)) -> u64 {
@@ -110,16 +109,19 @@ impl Formatter {
     self.html = true;
     self.inline_eval_counters.clear();
 
-    let toc = tree.table_of_contents();
-    let formatted_src = self.program(tree);
+    let include_cited = shim.contains("{{CITED}}");
+    let (formatted_byline, formatted_hero, formatted_synopsis) = self.title_slots(&tree.title);
+    let (formatted_abstract, formatted_intro, formatted_contents, formatted_cited) = self.document_slots(tree);
+    let formatted_src = formatted_contents.clone();
     self.reset_numbering();
-    let formatted_toc = self.table_of_contents(&toc);
+    let toc = tree.table_of_contents();
+    let formatted_toc = self.table_of_contents(&toc, include_cited && !formatted_cited.is_empty());
 
     let title = match toc.title {
       Some(title) => title.to_string(),
       None => "Mech Program".to_string(),
     };
-    
+
     #[cfg(feature = "serde")]
     let encoded_tree = match compress_and_encode(&tree) {
         Ok(encoded) => encoded,
@@ -128,32 +130,159 @@ impl Formatter {
     #[cfg(not(feature = "serde"))]
     let encoded_tree = String::new();
 
-    shim.replace("{{STYLESHEET}}", &style)
+    let mut rendered = shim.replace("{{STYLESHEET}}", &style)
         .replace("{{TOC}}", &formatted_toc)
         .replace("{{CONTENT}}", &formatted_src)
+        .replace("{{CONTENTS}}", &formatted_contents)
+        .replace("{{BYLINE}}", &formatted_byline)
+        .replace("{{HERO}}", &formatted_hero)
+        .replace("{{SYNOPSIS}}", &formatted_synopsis)
+        .replace("{{ABSTRACT}}", &formatted_abstract)
+        .replace("{{INTRO}}", &formatted_intro)
+        .replace("{{CITED}}", &formatted_cited)
         .replace("{{CODE}}", &encoded_tree)
-        .replace("{{TITLE}}", &title)
+        .replace("{{TITLE}}", &title);
+
+    for (ix, section_html) in self.section_slots(tree).iter().enumerate() {
+      rendered = rendered.replace(&format!("{{{{SECTION{}}}}}", ix + 1), section_html);
+    }
+
+    rendered
   }
 
-  pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
-    self.toc = true;
-    let sections = self.sections(&toc.sections);
-    self.toc = false;
-    let section_id = hash_str(&format!("section-{}", self.h2_num + 1));
-    let formatted_works_cited = if self.html && self.citation_num > 0 && !self.citations.is_empty() {
-      format!(
-        "<section id=\"\" section=\"{}\" class=\"mech-program-section toc\">
-  <h2 id=\"\" section=\"{}\" class=\"mech-program-subtitle toc active\">
-    <a class=\"mech-program-subtitle-link toc\" href=\"#67320967384727436\">Works Cited</a>
-  </h2>
-</section>",
-        section_id,
-        self.h2_num + 1
-      )
-    } else {
-      "".to_string()
-    };
-    format!("<div class=\"mech-toc\">{}{}</div>", sections, formatted_works_cited)
+  fn title_slots(&mut self, title: &Option<Title>) -> (String, String, String) {
+    match title {
+      Some(title) => {
+        let byline = title.byline.as_ref().map(|p| self.byline_el(p)).unwrap_or_default();
+        let hero = title.hero.as_ref().map(|h| self.hero_el(h)).unwrap_or_default();
+        let synopsis = title.synopsis.as_ref().map(|p| self.synopsis_el(p)).unwrap_or_default();
+        (byline, hero, synopsis)
+      }
+      None => (String::new(), String::new(), String::new()),
+    }
+  }
+
+  fn document_slots(&self, tree: &Program) -> (String, String, String, String) {
+    let first_section_ix = tree.body.sections.iter()
+      .position(|s| s.subtitle.is_some())
+      .unwrap_or(tree.body.sections.len());
+    let intro_sections = &tree.body.sections[..first_section_ix];
+    let content_sections = &tree.body.sections[first_section_ix..];
+
+    let mut abstract_formatter = Formatter::new();
+    abstract_formatter.html = true;
+    let mut intro_formatter = Formatter::new();
+    intro_formatter.html = true;
+    let mut contents_formatter = Formatter::new();
+    contents_formatter.html = true;
+
+    let mut abstract_src = String::new();
+    let mut intro_src = String::new();
+    let mut contents_src = String::new();
+
+    for section in intro_sections {
+      for el in &section.elements {
+        match el {
+          SectionElement::Abstract(paragraphs) => {
+            abstract_src.push_str(&abstract_formatter.abstract_el(paragraphs));
+          }
+          _ => {
+            intro_src.push_str(&intro_formatter.section_element(el));
+          }
+        }
+      }
+    }
+
+    for section in content_sections {
+      contents_src.push_str(&contents_formatter.section(section));
+    }
+
+    if !intro_src.is_empty() {
+      intro_src = format!("<section class=\"mech-intro\">{}</section>", intro_src);
+    }
+
+    let cited_src = contents_formatter.works_cited();
+
+    (abstract_src, intro_src, contents_src, cited_src)
+  }
+
+  fn section_slots(&self, tree: &Program) -> Vec<String> {
+    let first_section_ix = tree.body.sections.iter()
+      .position(|s| s.subtitle.is_some())
+      .unwrap_or(tree.body.sections.len());
+    let content_sections = &tree.body.sections[first_section_ix..];
+    let mut section_formatter = Formatter::new();
+    section_formatter.html = true;
+    content_sections.iter().map(|section| section_formatter.section(section)).collect()
+  }
+
+  pub fn table_of_contents(&mut self, toc: &TableOfContents, include_cited: bool) -> String {
+    let mut h2_num = 0usize;
+    let mut toc_items = String::new();
+    for section in &toc.sections {
+      let subtitle = match &section.subtitle {
+        Some(s) => s,
+        None => continue,
+      };
+      h2_num += 1;
+      let mut h3_num = 0usize;
+      let mut h4_num = 0usize;
+      let mut h5_num = 0usize;
+      let mut h6_num = 0usize;
+      let section_link_id = hash_str(&format!("{}.{}.{}.{}.{}", h2_num, h3_num, h4_num, h5_num, h6_num));
+      let mut nested = String::new();
+      let mut stack_depth = 0usize;
+
+      for element in &section.elements {
+        let subtitle = match element {
+          SectionElement::Subtitle(s) => s,
+          _ => continue,
+        };
+        match subtitle.level {
+          3 => { h3_num += 1; h4_num = 0; h5_num = 0; h6_num = 0; }
+          4 => { h4_num += 1; h5_num = 0; h6_num = 0; }
+          5 => { h5_num += 1; h6_num = 0; }
+          6 => { h6_num += 1; }
+          _ => {}
+        }
+        let target_depth = subtitle.level.saturating_sub(2) as usize;
+        while stack_depth < target_depth {
+          nested.push_str("<ul class=\"toc-sub\">");
+          stack_depth += 1;
+        }
+        while stack_depth > target_depth {
+          nested.push_str("</li></ul>");
+          stack_depth -= 1;
+        }
+        if target_depth > 0 {
+          nested.push_str("</li>");
+        }
+        let link_id = hash_str(&format!("{}.{}.{}.{}.{}", h2_num, h3_num, h4_num, h5_num, h6_num));
+        nested.push_str(&format!(
+          "<li><a href=\"#{}\">{}</a>",
+          link_id,
+          subtitle.to_string()
+        ));
+      }
+      while stack_depth > 0 {
+        nested.push_str("</li></ul>");
+        stack_depth -= 1;
+      }
+      if !nested.is_empty() {
+        nested.push_str("</li>");
+      }
+
+      toc_items.push_str(&format!(
+        "<li><a href=\"#{}\">{}</a>{}</li>",
+        section_link_id,
+        subtitle.to_string(),
+        nested
+      ));
+    }
+    if include_cited {
+      toc_items.push_str("<li><a href=\"#67320967384727436\">Works Cited</a></li>");
+    }
+    format!("<aside class=\"toc mech-toc\"><div class=\"toc-title\">Contents</div><ul>{}</ul></aside>", toc_items)
   }
 
   pub fn sections(&mut self, sections: &Vec<Section>) -> String {
@@ -184,31 +313,12 @@ impl Formatter {
     let title = node.text.to_string();
 
     if self.html {
-      if let Some(byline) = &node.byline {
-        let formatted_byline = self.paragraph(byline);
-        format!(
-          "<h1 class=\"mech-program-title\">{}</h1>\n<div class=\"mech-program-byline\">{}</div>",
-          title,
-          formatted_byline
-        )
-      } else {
-        format!("<h1 class=\"mech-program-title\">{}</h1>", title)
-      }
+      format!("<h1 class=\"mech-program-title\">{}</h1>", title)
     } else {
-      let mut out = format!(
+      format!(
         "{}\n===============================================================================\n",
         title
-      );
-
-      if let Some(byline) = &node.byline {
-        let byline_str = self.paragraph(byline);
-        out.push_str(&format!(
-          "{}\n===============================================================================\n",
-          byline_str
-        ));
-      }
-
-      out
+      )
     }
   }
 
@@ -696,14 +806,17 @@ impl Formatter {
 
   pub fn citation(&mut self, node: &Citation) -> String {
     let id = hash_str(&format!("{}",node.id.to_string()));
-    self.citations.resize(self.citation_num, String::new());
     let citation_text = self.paragraph(&node.text);
     let citation_num = match self.citation_map.get(&id) {
       Some(&num) => num,
       None => {
-        return format!("Citation {} not found in citation map.", node.id.to_string());
+        self.citation_num += 1;
+        let next_num = self.citation_num;
+        self.citation_map.insert(id, next_num);
+        next_num
       }
     };
+    self.citations.resize(self.citation_num, String::new());
     let formatted_citation = if self.html {
       format!("<div id=\"{}\" class=\"mech-citation\">
       <div class=\"mech-citation-id\">[{}]:</div>
@@ -815,6 +928,33 @@ impl Formatter {
       format!("<div class=\"mech-prompt\"><span class=\"mech-prompt-sigil\">>:</span>{}</div>", prompt_str)
     } else {
       format!(">: {}\n", prompt_str)
+    }
+  }
+
+  pub fn byline_el(&mut self, node: &Paragraph) -> String {
+    let byline = self.paragraph(node);
+    if self.html {
+      format!("<div class=\"mech-byline\">{}</div>", byline)
+    } else {
+      byline
+    }
+  }
+
+  pub fn synopsis_el(&mut self, node: &Paragraph) -> String {
+    let synopsis = self.paragraph(node);
+    if self.html {
+      format!("<div class=\"mech-synopsis\">{}</div>", synopsis)
+    } else {
+      synopsis
+    }
+  }
+
+  pub fn hero_el(&mut self, node: &SectionElement) -> String {
+    let hero = self.section_element(node);
+    if self.html {
+      format!("<div class=\"mech-hero\">{}</div>", hero)
+    } else {
+      hero
     }
   }
     

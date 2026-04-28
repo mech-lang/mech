@@ -10,6 +10,12 @@ Mechdown supports hierarchical titles:
 - **Subsection titles**: headings such as `(1.1) Subsection`
 - **Sub-subsection titles**: headings such as `(1.1.1) Topic`
 
+It also supports optional **front matter** directly beneath the document title. Front matter ends with a second `===` separator and can include:
+
+- optional byline (first line)
+- optional hero media (`![caption](src)` or a `| ... |` figures row/table)
+- optional synopsis paragraph
+
 1. Rules and conventions
 -------------------------------------------------------------------------------
 
@@ -44,3 +50,34 @@ My Document
 By Mika the Mech
 ===============================================================================
 ```
+
+Front matter with byline, hero, and synopsis:
+
+```
+This is my title
+===============================================================================
+Foo Bar January 1 2026
+![my hero](hero.png)
+This is my blog and it's good.
+===============================================================================
+```
+
+`%%` abstract blocks and unsectioned introduction content can appear before the first numbered section. The generated **contents** begin at the first numbered section (for example, `1. Section`), while pre-section material can be rendered separately via template placeholders.
+
+3. Template placeholders
+-------------------------------------------------------------------------------
+
+In HTML shims, these placeholders are available:
+
+- `{{STYLESHEET}}`
+- `{{TITLE}}`
+- `{{BYLINE}}`
+- `{{HERO}}`
+- `{{SYNOPSIS}}`
+- `{{TOC}}`
+- `{{ABSTRACT}}`
+- `{{INTRO}}`
+- `{{CONTENTS}}`
+- `{{CONTENT}}` (alias for sectioned contents)
+- `{{CITED}}` (renders Works Cited only where this placeholder appears)
+- `{{SECTION#}}` where `#` is the 1-indexed numbered section (for example, `{{SECTION1}}`, `{{SECTION2}}`)

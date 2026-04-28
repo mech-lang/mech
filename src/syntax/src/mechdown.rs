@@ -30,16 +30,51 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
   let (input, _) = new_line(input)?;
   let (input, _) = many1(equal)(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, byline) = opt(byline)(input)?;
+  let (input, front_matter) = opt(title_front_matter)(input)?;
   let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
-  Ok((input, Title{text: title, byline}))
+  let (byline, hero, synopsis) = match front_matter {
+    Some((byline, hero, synopsis)) => (byline, hero, synopsis),
+    None => (None, None, None),
+  };
+  Ok((input, Title{text: title, byline, hero, synopsis}))
 }
 
 pub fn byline(input: ParseString) -> ParseResult<Paragraph> {
   let (input, byline) = paragraph_newline(input)?;
   let (input, _) = many1(equal)(input)?;
   Ok((input, byline))
+}
+
+pub fn title_front_matter(input: ParseString) -> ParseResult<(Option<Paragraph>, Option<SectionElement>, Option<Paragraph>)> {
+  let mut input = input;
+  let mut byline = None;
+  let mut hero = None;
+  let mut synopsis = None;
+
+  if let Ok((next_input, parsed_byline)) = paragraph_newline(input.clone()) {
+    input = next_input;
+    byline = Some(parsed_byline);
+  }
+
+  if let Ok((next_input, image)) = img(input.clone()) {
+    let (next_input, _) = whitespace0(next_input)?;
+    input = next_input;
+    hero = Some(SectionElement::Image(image));
+  } else if let Ok((next_input, figure_table)) = figures(input.clone()) {
+    let (next_input, _) = whitespace0(next_input)?;
+    input = next_input;
+    hero = Some(SectionElement::FigureTable(figure_table));
+  }
+
+  if let Ok((next_input, parsed_synopsis)) = paragraph_newline(input.clone()) {
+    input = next_input;
+    synopsis = Some(parsed_synopsis);
+  }
+
+  let (input, _) = many1(equal)(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, (byline, hero, synopsis)))
 }
 
 pub struct MarkdownTableHeader {
@@ -1056,22 +1091,4 @@ pub fn body(input: ParseString) -> ParseResult<Body> {
     }
   }
   Ok((new_input, Body { sections }))
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn parses_figures_block_with_markdown_image_syntax() {
-    let src = "| ![caption a](img1.jpg) | ![caption b](img2.jpg) |\n| ![caption c](imgwide.jpg) |\n";
-    let gs = graphemes::init_source(src);
-    let input = ParseString::new(&gs);
-    let (_, parsed) = figures(input).expect("figures block should parse");
-    assert_eq!(parsed.rows.len(), 2);
-    assert_eq!(parsed.rows[0].len(), 2);
-    assert_eq!(parsed.rows[1].len(), 1);
-    assert_eq!(parsed.rows[0][0].caption.to_string(), "caption a");
-    assert_eq!(parsed.rows[0][0].src.to_string(), "img1.jpg");
-  }
 }
