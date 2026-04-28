@@ -41,7 +41,7 @@
   </div>
 </header>
 
-<main class="workspace" id="workspace">
+<main class="workspace mech-root" id="workspace" mech-interpreter-id="0">
 
   <section class="content-shell" id="contentShell">
     <div class="content-column">
@@ -184,49 +184,7 @@
     </div>
     <div class="console-panels">
       <div class="console-panel is-active" data-panel="console">
-        <div class="console-scroll">
-[09:12:04] INFO  docs-ci: pipeline=7421 branch=feature/layout-refresh commit=4eee406
-[09:12:05] INFO  checkout: cloning repository
-[09:12:06] INFO  install: npm ci --prefer-offline
-[09:12:18] INFO  lint: eslint src/**/*.ts
-[09:12:24] PASS  lint: 0 errors, 2 warnings
-[09:12:24] INFO  test: vitest run --coverage
-[09:12:41] PASS  test: 128 passed, 0 failed, coverage=91.8%
-[09:12:42] INFO  build: vite build
-[09:12:53] PASS  build: output=dist/, size=1.9MB
-[09:12:54] INFO  preview: running smoke checks
-[09:12:58] PASS  smoke: homepage renders
-[09:12:59] PASS  smoke: docs sidebar links valid
-[09:13:00] PASS  smoke: console resize interaction stable
-[09:13:01] INFO  deploy: target=staging region=us-east-1
-[09:13:08] INFO  deploy: waiting for health checks
-[09:13:11] PASS  deploy: service=docs-web revision=2026.04.26.1
-[09:13:12] INFO  observability: creating deployment marker
-[09:13:13] INFO  audit: writing release metadata
-[09:13:15] PASS  release: completed successfully
-
-$ tail -n 20 /var/log/docs-web/access.log
-200 GET /docs/getting-started
-200 GET /docs/architecture
-200 GET /docs/api
-200 GET /docs/operations
-200 GET /assets/app-4f2d9e.js
-304 GET /assets/styles-87d1aa.css
-200 GET /api/status
-200 GET /api/search?q=deployments
-200 GET /api/search?q=rollbacks
-200 GET /api/search?q=runbook
-200 GET /favicon.ico
-200 GET /manifest.json
-200 GET /docs/security
-200 GET /docs/faq
-
-notes:
-- console pane intentionally scrolls independently
-- drag handle to resize between reading and focus modes
-- TOC hides first when space is constrained so content remains readable
-- fullscreen snap enters at ~92% viewport width
-        </div>
+        <div class="console-scroll" id="mech-output"></div>
       </div>
       <div class="console-panel" data-panel="output">
         <div class="console-scroll">$ npm run docs:build
@@ -262,6 +220,41 @@ Health checks stayed green during deploy.</div>
   </aside>
 
 </main>
+
+<script type="module">
+import init, {WasmMech} from '/pkg/mech_wasm.js';
+let wasm_core;
+
+async function run() {
+  await init();
+  const code = `{{CODE}}`;
+  wasm_core = new WasmMech();
+  const xhr = new XMLHttpRequest();
+  const codeUrl = `/code${window.location.pathname}`;
+  xhr.open('GET', codeUrl, true);
+  xhr.onload = function () {
+    if (xhr.readyState === 4) {
+      if (xhr.status === 200) {
+        wasm_core.run_program(xhr.responseText);
+      } else {
+        console.error('Defaulting to included program');
+        wasm_core.run_program(code);
+      }
+      wasm_core.init();
+      wasm_core.render_inline_values();
+      wasm_core.render_codeblock_output_values();
+      wasm_core.attach_repl('mech-output');
+    }
+  };
+  xhr.onerror = function () {
+    console.error("I've been waiting for this error. Look me up in formatter.rs");
+    console.error(xhr.statusText);
+  };
+  xhr.send(null);
+}
+
+run();
+</script>
 
 <script>
 const handle        = document.getElementById("resizeHandle");
