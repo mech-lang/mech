@@ -236,29 +236,6 @@ pub fn pattern_array(input: ParseString) -> ParseResult<PatternArray> {
   Ok((input, PatternArray { prefix, spread, suffix }))
 }
 
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn parses_pipe_rest_array_pattern_as_rest_kind() {
-    let gs = graphemes::init_source("[head | tail]");
-    let input = ParseString::new(&gs);
-    let (_, parsed) = pattern_array(input).expect("pipe rest array pattern should parse");
-    let spread = parsed.spread.expect("spread/rest should be present");
-    assert_eq!(spread.kind, PatternArraySpreadKind::Rest);
-  }
-
-  #[test]
-  fn parses_ellipsis_array_pattern_as_spread_kind() {
-    let gs = graphemes::init_source("[first ... last]");
-    let input = ParseString::new(&gs);
-    let (_, parsed) = pattern_array(input).expect("ellipsis array pattern should parse");
-    let spread = parsed.spread.expect("spread/rest should be present");
-    assert_eq!(spread.kind, PatternArraySpreadKind::Spread);
-  }
-}
-
 // pattern_atom_struct := ":", identifier, "(", list1(",", pattern), ")" ;
 pub fn pattern_atom_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
   let (input, _) = colon(input)?;

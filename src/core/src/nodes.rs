@@ -197,7 +197,9 @@ impl Program {
   pub fn table_of_contents(&self) -> TableOfContents {
     let mut sections = vec![];
     for s in &self.body.sections {
-      sections.push(s.table_of_contents());
+      if s.subtitle.is_some() {
+        sections.push(s.table_of_contents());
+      }
     }
     TableOfContents {
       title: self.title.clone(),
@@ -306,6 +308,8 @@ fn pretty_print(&self) -> String {
 pub struct Title {
   pub text: Token,
   pub byline: Option<Paragraph>,
+  pub hero: Option<SectionElement>,
+  pub synopsis: Option<Paragraph>,
 }
 
 impl Title {
