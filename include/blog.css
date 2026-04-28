@@ -653,7 +653,7 @@ section.active-section {
   align-content: start; /* FIX */
 }
 
-.footer-group h4 {
+.footer-heading {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -664,6 +664,21 @@ section.active-section {
   font-size: 13px;
 }
 
+.footer-heading-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-primary);
+  border-bottom: 1px solid var(--accent-primary);
+  padding-bottom: 2px;
+}
+
+.footer-heading-text {
+  display: inline-block;
+  border-bottom: 1px solid #7f7f7f;
+  padding-bottom: 2px;
+}
+
 .footer-icon {
   width: 16px;
   height: 16px;
@@ -671,13 +686,27 @@ section.active-section {
 }
 
 .footer-group a {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   margin-bottom: 10px;
   font-size: 15px;
   color: var(--text-secondary);
 }
 
+.footer-group a::after {
+  content: "›";
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-left: auto;
+}
+
 .footer-group a:hover {
+  color: var(--accent-hover);
+}
+
+.footer-group a:hover::after {
   color: var(--accent-hover);
 }
 
