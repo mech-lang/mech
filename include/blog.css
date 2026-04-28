@@ -6,8 +6,9 @@
   --content-max-width: 1200px;
 
   /* ── Base palette ── */
-  --bg-primary:    rgb(11, 15, 18);
-  --bg-secondary:  rgb(15, 20, 24);
+  --bg-primary:    hsl(206, 24%, 6%);
+  --bg-secondary:  hsl(207, 23%, 8%);
+  --bg-dark:       hsl(206, 24%, 3%);
   --bg-elevated:   #151B21;
   --accent-primary:#F2B63D;
   --accent-hover:  #ecd7ad;
@@ -19,6 +20,7 @@
   --text-primary:  #f3f3e6;
   --text-secondary:#bebcaa;
   --text-muted:    #827f6b;
+  --body-primary:  hsl(206, 24%, 90%);
   --success:       #3FB950;
   --error:         #F85149;
   --console-bg:    rgb(2, 3, 3);
@@ -60,6 +62,7 @@
   --kicker-accent: var(--accent-teal);
   --hero-accent: var(--accent-teal);
   --hero-text-secondary: #aabebe;
+  --hero-text-primary: hsl(168 97% 95% / 1);  
   --toc-accent: hsl(308, 42%, 69%);
   --toc-accent-soft: hsl(308, 42%, 59%);
   --toc-text-secondary: hsl(308, 17%, 73%);
@@ -360,8 +363,18 @@ body.console-fullscreen .workspace {
 .article-intro p {
   margin: 0 0 18px;
   line-height: 1.85;
-  color: var(--text-primary);
+  color: var(--body-primary);
   font-size: 1.06rem;
+}
+
+.mech-paragraph {
+  color: var(--body-primary);
+  font-size: 1.06rem;
+  line-height: 1.85;
+}
+
+.article-intro li p {
+  margin: 0 0 5px;
 }
 
 .article-intro  > .mech-intro >  p:first-of-type::first-letter {
@@ -539,7 +552,7 @@ section.active-section {
   grid-column: 1 / -1;
   margin-top: 64px;
   border-top: 1px dotted var(--border);
-  background: linear-gradient(90deg, var(--bg-primary), var(--bg-secondary), var(--bg-primary));
+  background: linear-gradient(90deg, var(--bg-primary), var(--bg-dark), var(--bg-primary));
   color: var(--text-secondary);
 }
 
