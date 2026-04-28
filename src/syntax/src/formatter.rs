@@ -49,11 +49,21 @@ mod tests {
     let tree = crate::parser::parse(src).expect("program should parse");
     let mut formatter = Formatter::new();
     let html = formatter.format_html(&tree, "".to_string(), "{{TOC}}".to_string());
-    assert!(html.contains("<aside class=\"toc\">"));
-    assert!(html.contains("<h3>Contents</h3>"));
+    assert!(html.contains("<aside class=\"toc mech-toc\">"));
+    assert!(html.contains("<div class=\"toc-title\">Contents</div>"));
     assert!(html.contains("<ul class=\"toc-sub\">"));
     assert!(html.contains("Architecture"));
     assert!(html.contains("System Overview"));
+  }
+
+  #[test]
+  fn wraps_intro_slot_in_mech_intro_section() {
+    let src = "Doc\n===\nIntro paragraph.\n1. First\n---\nBody.\n";
+    let tree = crate::parser::parse(src).expect("program should parse");
+    let mut formatter = Formatter::new();
+    let html = formatter.format_html(&tree, "".to_string(), "{{INTRO}}".to_string());
+    assert!(html.contains("<section class=\"mech-intro\">"));
+    assert!(html.contains("Intro paragraph."));
   }
 }
 
@@ -225,6 +235,10 @@ impl Formatter {
       contents_src.push_str(&contents_formatter.section(section));
     }
 
+    if !intro_src.is_empty() {
+      intro_src = format!("<section class=\"mech-intro\">{}</section>", intro_src);
+    }
+
     (byline_src, hero_src, synopsis_src, abstract_src, intro_src, contents_src)
   }
 
@@ -304,7 +318,7 @@ impl Formatter {
     if self.html && self.citation_num > 0 && !self.citations.is_empty() {
       toc_items.push_str("<li><a href=\"#67320967384727436\">Works Cited</a></li>");
     }
-    format!("<aside class=\"toc\"><h3>Contents</h3><ul>{}</ul></aside>", toc_items)
+    format!("<aside class=\"toc mech-toc\"><div class=\"toc-title\">Contents</div><ul>{}</ul></aside>", toc_items)
   }
 
   pub fn sections(&mut self, sections: &Vec<Section>) -> String {

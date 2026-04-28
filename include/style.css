@@ -112,6 +112,43 @@ body {
     height: calc(100vh - 60px);   
 }
 
+.mech-toc .toc-title {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 23px;
+    color: var(--text-color);
+    margin: 0 0 8px 0;
+    padding-left: 13px;
+}
+
+.mech-toc ul {
+    list-style: none;
+    margin: 0;
+    padding-left: 13px;
+}
+
+.mech-toc ul.toc-sub {
+    padding-left: 17px;
+}
+
+.mech-toc li {
+    margin: 5px 0;
+}
+
+.mech-toc li a {
+    color: var(--text-color);
+    text-decoration: none;
+}
+
+.mech-toc li a:hover {
+    color: var(--contrast-color-low);
+    text-decoration: none;
+}
+
+.mech-intro {
+    margin-bottom: 16px;
+}
+
 .mech-program {
     max-width: 700px;
     margin: auto;
