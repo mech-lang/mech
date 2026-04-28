@@ -309,7 +309,7 @@ pub struct Title {
   pub text: Token,
   pub byline: Option<Paragraph>,
   pub hero: Option<SectionElement>,
-  pub synopsis: Option<Paragraph>,
+  pub summary: Option<Paragraph>,
 }
 
 impl Title {

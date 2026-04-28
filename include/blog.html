@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mech v0.3</title>
+<title>{{TITLE}}</title>
 <link rel="icon" href="https://gitlab.com/mech-lang/assets/-/raw/main/images/icons/favicon.ico?ref_type=heads" type="image/x-icon">
 <style>
-  {{STYLESHEET}}
+
 </style>
-<link rel="stylesheet" href="blog.css">
+<link rel="stylesheet" href="include/blog.css">
 
 </head>
 <body>
@@ -21,11 +21,11 @@
       </a>
     </div>
     <nav class="top-nav" aria-label="Primary">
-      <a href="/docs">Docs</a>
-      <a href="/guides" class="active" aria-current="page">Guides</a>
-      <a href="/api">API Reference</a>
-      <a href="/changelog">Changelog</a>
-      <a href="/support">Support</a>
+      <a href="/about">About</a>
+      <a href="/blog" class="active" aria-current="page">Blog</a>
+      <a href="/community">Community</a>
+      <a href="/Docs">Docs</a>
+      <a href="/Explore">Explore</a>
     </nav>
     <div class="header-actions">
       <div class="widget widget-lg">
@@ -58,65 +58,23 @@
         <div class="hero-panel">
           <div>
             <p class="hero-kicker">Announcement</p>
-            <h1>Mech v0.3 —<br>State Machines, Match,<br>and Mika the Mech</h1>
-            <div class="hero-meta">
-              <span class="hero-avatar">CM</span>
-              <span>Corey Montella</span>
-              <span>•</span>
-              <span>April 27, 2026</span>
-            </div>
+            <h1>{{TITLE}}</h1>
+            {{BYLINE}}
           </div>
-          <p class="hero-summary">
-            Today, we're excited to announce Mech v0.3, introducing powerful new
-            features for data modeling, computation, and control flow—along with
-            everyone's favorite mascot, Mika the Mech.
-          </p>
+          {{SUMMARY}}
         </div>
-        <div class="hero-visual">
-          <img src="images/hero-square.png" alt="Mech v0.3 announcement visual">
-        </div>
+        {{HERO}}
       </div>
       <div class="article-intro" id="articleIntro">
         <p>Mech v0.3 introduces a cleaner, more composable way to build data-oriented software with state machines, pattern matching, and richer authoring ergonomics across the toolchain. It's the culmination of months of work and feedback from our amazing early users, and we can't wait to see what you build with it. Whether you're building a microservice, a data pipeline, or an embedded system, Mech v0.3 gives you the tools to model complex logic with clarity and confidence.</p>
         <p>This introductory abstract intentionally runs full width under the hero to establish context before navigation appears. Once the first structured section begins, the split layout and sticky table of contents take over naturally. And of course, the console pane on the right scrolls independently so you can keep an eye on logs while reading without losing your place in the content.</p>
       </div>
       <div class="article-layout" id="articleLayout">
-        <aside class="toc">
-          <div class="toc-title">Contents</div>
-          <ul>
-            <li>
-              <a href="#architecture">Architecture</a>
-              <ul class="toc-sub">
-                <li>
-                  <a href="#architecture-overview">System Overview</a>
-                  <ul class="toc-sub">
-                    <li><a href="#architecture-edge">Edge & Gateway Layer</a></li>
-                    <li><a href="#architecture-services">Service Mesh & RPC</a></li>
-                  </ul>
-                </li>
-                <li><a href="#architecture-data">Data Plane & Storage</a></li>
-                <li><a href="#architecture-observability">Observability Topology</a></li>
-              </ul>
-            </li>
-            <li><a href="#workflow">Authoring Workflow</a></li>
-            <li><a href="#api-reference">API Reference</a></li>
-            <li><a href="#operations">Operations & Monitoring</a></li>
-            <li><a href="#security">Security Checklist</a></li>
-            <li>
-              <a href="#faq">FAQ</a>
-              <ul class="toc-sub">
-                <li><a href="#faq-deployments">Deployments</a></li>
-                <li><a href="#faq-rollbacks">Rollbacks</a></li>
-                <li><a href="#faq-access">Access & Approvals</a></li>
-              </ul>
-            </li>
-          </ul>
-        </aside>
+        {{TOC}}
         <article class="main-content">
           <section id="architecture">
           </section>
           {{CONTENT}}
-
         </article>
       <footer class="footer">
         <div class="footer-inner">
@@ -125,7 +83,7 @@
 
             <!-- Left: Robot -->
             <div class="footer-robot">
-              <img src="images/mika-pose-point.png" alt="Mika the Mech">
+              <img src="https://gitlab.com/mech-lang/assets/-/raw/main/images/mika/mika-pose-point.png?ref_type=heads" alt="Mika the Mech">
               <div class="mika-glyph" aria-hidden="true">
                 <div class="mika-glyph-art-wrap">
                   <pre class="mika-glyph-art mika-glyph-art--mini">╭(˙◯˙)─</pre>

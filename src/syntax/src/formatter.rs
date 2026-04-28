@@ -136,7 +136,7 @@ impl Formatter {
         .replace("{{CONTENTS}}", &formatted_contents)
         .replace("{{BYLINE}}", &formatted_byline)
         .replace("{{HERO}}", &formatted_hero)
-        .replace("{{SYNOPSIS}}", &formatted_synopsis)
+        .replace("{{SUMMARY}}", &formatted_synopsis)
         .replace("{{ABSTRACT}}", &formatted_abstract)
         .replace("{{INTRO}}", &formatted_intro)
         .replace("{{CITED}}", &formatted_cited)
@@ -155,8 +155,8 @@ impl Formatter {
       Some(title) => {
         let byline = title.byline.as_ref().map(|p| self.byline_el(p)).unwrap_or_default();
         let hero = title.hero.as_ref().map(|h| self.hero_el(h)).unwrap_or_default();
-        let synopsis = title.synopsis.as_ref().map(|p| self.synopsis_el(p)).unwrap_or_default();
-        (byline, hero, synopsis)
+        let summary = title.summary.as_ref().map(|p| self.synopsis_el(p)).unwrap_or_default();
+        (byline, hero, summary)
       }
       None => (String::new(), String::new(), String::new()),
     }
@@ -941,18 +941,18 @@ impl Formatter {
   }
 
   pub fn synopsis_el(&mut self, node: &Paragraph) -> String {
-    let synopsis = self.paragraph(node);
+    let summary = self.paragraph(node);
     if self.html {
-      format!("<div class=\"mech-synopsis\">{}</div>", synopsis)
+      format!("<div class=\"mech-summary\">{}</div>", summary)
     } else {
-      synopsis
+      summary
     }
   }
 
   pub fn hero_el(&mut self, node: &SectionElement) -> String {
     let hero = self.section_element(node);
     if self.html {
-      format!("<div class=\"mech-hero\">{}</div>", hero)
+      format!("<div class=\"mech-hero-img\">{}</div>", hero)
     } else {
       hero
     }

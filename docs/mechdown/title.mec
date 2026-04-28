@@ -14,7 +14,7 @@ It also supports optional **front matter** directly beneath the document title. 
 
 - optional byline (first line)
 - optional hero media (`![caption](src)` or a `| ... |` figures row/table)
-- optional synopsis paragraph
+- optional summary paragraph
 
 1. Rules and conventions
 -------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ By Mika the Mech
 ===============================================================================
 ```
 
-Front matter with byline, hero, and synopsis:
+Front matter with byline, hero, and summary:
 
 ```
 This is my title
@@ -73,7 +73,7 @@ In HTML shims, these placeholders are available:
 - `{{TITLE}}`
 - `{{BYLINE}}`
 - `{{HERO}}`
-- `{{SYNOPSIS}}`
+- `{{SUMMARY}}`
 - `{{TOC}}`
 - `{{ABSTRACT}}`
 - `{{INTRO}}`

@@ -278,7 +278,7 @@ body.console-fullscreen .workspace {
   letter-spacing: 0.01em;
 }
 
-.hero-meta {
+.mech-byline {
   margin-top: 22px;
   color: var(--hero-text-secondary);
   font-size: 14px;
@@ -287,12 +287,25 @@ body.console-fullscreen .workspace {
   gap: 10px;
 }
 
-.hero-summary {
+.mech-byline p {
+  color: inherit;
+  margin: 0px;
+  font-weight: 400;
+}
+
+.mech-summary {
   margin-top: 22px;
   padding-top: 18px;
   border-top: 1px dotted var(--hero-accent);
   color: var(--hero-text-secondary);
   line-height: 1.75;
+}
+
+.mech-summary p {
+  margin-top: 0px;
+  line-height: inherit;
+  color: inherit;
+  font-weight: 400;
 }
 
 .hero-avatar {
@@ -308,17 +321,33 @@ body.console-fullscreen .workspace {
   font-weight: 700;
 }
 
-.hero-visual {
+.mech-hero-img {
   overflow: hidden;
   border-radius: 12px;
   min-height: 320px;
   border: 1px solid var(--border);
+  /* remove any height: 100% if present */
 }
 
-.hero-visual img {
-  width: 100%;
-  height: 100%;
+.mech-hero-img figure img {
+  display: block;
+  width: 560px;      /* fixed — tweak to taste */
+  max-width: none;   /* this is the key: kills fluid scaling */
+  height: auto;
   object-fit: cover;
+}
+
+.mech-hero-img figure {
+  display: block;
+  margin-block-start: 0px;
+  margin-block-end: 0px;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+}
+
+.mech-hero-img figure figcaption {
+  visibility: hidden;
+  display: none;
 }
 
 /* ── Intro / abstract (full-width) ── */
@@ -1056,6 +1085,10 @@ body.console-fullscreen .console-fullscreen-toggle .icon-exit {
   .hero {
     grid-template-columns: 1fr;
     gap: 14px;
+  }
+
+  .mech-hero-img figure img {
+    aspect-ratio: 4 / 3;
   }
 
   .footer-main {

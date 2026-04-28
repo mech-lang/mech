@@ -33,11 +33,11 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
   let (input, front_matter) = opt(title_front_matter)(input)?;
   let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
-  let (byline, hero, synopsis) = match front_matter {
-    Some((byline, hero, synopsis)) => (byline, hero, synopsis),
+  let (byline, hero, summary) = match front_matter {
+    Some((byline, hero, summary)) => (byline, hero, summary),
     None => (None, None, None),
   };
-  Ok((input, Title{text: title, byline, hero, synopsis}))
+  Ok((input, Title{text: title, byline, hero, summary}))
 }
 
 pub fn byline(input: ParseString) -> ParseResult<Paragraph> {
@@ -50,7 +50,7 @@ pub fn title_front_matter(input: ParseString) -> ParseResult<(Option<Paragraph>,
   let mut input = input;
   let mut byline = None;
   let mut hero = None;
-  let mut synopsis = None;
+  let mut summary = None;
 
   if let Ok((next_input, parsed_byline)) = paragraph_newline(input.clone()) {
     input = next_input;
@@ -69,12 +69,12 @@ pub fn title_front_matter(input: ParseString) -> ParseResult<(Option<Paragraph>,
 
   if let Ok((next_input, parsed_synopsis)) = paragraph_newline(input.clone()) {
     input = next_input;
-    synopsis = Some(parsed_synopsis);
+    summary = Some(parsed_synopsis);
   }
 
   let (input, _) = many1(equal)(input)?;
   let (input, _) = whitespace0(input)?;
-  Ok((input, (byline, hero, synopsis)))
+  Ok((input, (byline, hero, summary)))
 }
 
 pub struct MarkdownTableHeader {
