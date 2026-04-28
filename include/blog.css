@@ -364,7 +364,7 @@ body.console-fullscreen .workspace {
   font-size: 1.06rem;
 }
 
-.article-intro p:first-of-type::first-letter {
+.article-intro  > .mech-intro >  p:first-of-type::first-letter {
   float: left;
   font-size: 4.5em;
   line-height: 0.84;
