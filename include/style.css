@@ -725,10 +725,10 @@ code {
 
 .mech-inline-mech-code-formatted .mech-code-block {
     background-color: var(--code-background-color);
-    border-radius: 10px 10px 10px 10px !important;
+    border-radius: 5px 5px 5px 5px !important;
     border-bottom: 1px solid var(--code-border-color) !important;
     margin-bottom: 0px;
-    box-shadow: none;
+    box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
 }
 
 .mech-fenced-mech-block .mech-code-block {
