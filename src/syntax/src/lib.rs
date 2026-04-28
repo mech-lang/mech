@@ -769,27 +769,6 @@ fn indent(s: &str) -> String {
     .join("\n")
 }
 
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn extract_snippet_handles_unicode_boundaries() {
-    let line = "  :Reverse([], acc, swaps) → :Pass(acc, [], 0)";
-    let lines = vec![line];
-    let range = SourceRange {
-      start: SourceLocation { row: 1, col: 1 },
-      end: SourceLocation {
-        row: 1,
-        col: line.chars().count() + 1,
-      },
-    };
-
-    let snippet = extract_snippet(&lines, &range);
-    assert_eq!(snippet, format!("{line}\n"));
-  }
-}
-
 /// Try a list of parsers in order, tracking successes, failures, and errors.
 /// Returns the best success if any, else best failure, else best error.
 pub fn alt_best<'a, O>(

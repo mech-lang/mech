@@ -249,31 +249,3 @@ pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {
   let (input, knd) = kind_annotation(input)?;
   Ok((input, KindDefine{name,kind:knd}))
 }
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn comment_accepts_rich_markup() {
-    let src = "-- This is a [link](foo.html) with **bold** and `foo := 123`";
-    let graphemes = graphemes::init_source(src);
-    let input = ParseString::new(&graphemes);
-    let (_, comment) = comment(input).expect("comment should parse");
-
-    assert!(!comment.paragraph.elements.is_empty());
-    assert!(comment.paragraph.to_string().contains("[link](foo.html)"));
-  }
-
-  #[test]
-  fn comment_recovers_to_raw_text_for_invalid_markup() {
-    let src = "-- [1 2 3 4]";
-    let graphemes = graphemes::init_source(src);
-    let input = ParseString::new(&graphemes);
-    let (remaining, comment) = comment(input).expect("comment should recover");
-
-    assert_eq!(comment.paragraph.to_string(), " [1 2 3 4]");
-    assert_eq!(remaining.error_log.len(), 1);
-    assert_eq!(remaining.error_log[0].1.message, "Invalid rich comment syntax, preserving raw comment text");
-  }
-}

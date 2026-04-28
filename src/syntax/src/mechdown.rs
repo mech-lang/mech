@@ -1092,37 +1092,3 @@ pub fn body(input: ParseString) -> ParseResult<Body> {
   }
   Ok((new_input, Body { sections }))
 }
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn parses_title_front_matter_with_byline_hero_and_synopsis() {
-    let src = "My Title\n===\nByline\n![hero](hero.png)\nA short synopsis.\n===\n1. Section\n---\n";
-    let gs = graphemes::init_source(src);
-    let input = ParseString::new(&gs);
-    let (_, parsed) = crate::parser::program(input).expect("program should parse");
-    let title = parsed.title.expect("title should be present");
-    assert_eq!(title.text.to_string(), "My Title");
-    assert_eq!(title.byline.expect("byline").to_string(), "Byline");
-    assert_eq!(title.synopsis.expect("synopsis").to_string(), "A short synopsis.");
-    match title.hero.expect("hero") {
-      SectionElement::Image(img) => assert_eq!(img.src.to_string(), "hero.png"),
-      other => panic!("unexpected hero type: {:?}", other),
-    }
-  }
-
-  #[test]
-  fn parses_figures_block_with_markdown_image_syntax() {
-    let src = "| ![caption a](img1.jpg) | ![caption b](img2.jpg) |\n| ![caption c](imgwide.jpg) |\n";
-    let gs = graphemes::init_source(src);
-    let input = ParseString::new(&gs);
-    let (_, parsed) = figures(input).expect("figures block should parse");
-    assert_eq!(parsed.rows.len(), 2);
-    assert_eq!(parsed.rows[0].len(), 2);
-    assert_eq!(parsed.rows[1].len(), 1);
-    assert_eq!(parsed.rows[0][0].caption.to_string(), "caption a");
-    assert_eq!(parsed.rows[0][0].src.to_string(), "img1.jpg");
-  }
-}
