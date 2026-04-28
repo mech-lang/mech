@@ -30,16 +30,46 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
   let (input, _) = new_line(input)?;
   let (input, _) = many1(equal)(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, byline) = opt(byline)(input)?;
   let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
-  Ok((input, Title{text: title, byline}))
+  Ok((input, Title{text: title}))
 }
 
 pub fn byline(input: ParseString) -> ParseResult<Paragraph> {
   let (input, byline) = paragraph_newline(input)?;
   let (input, _) = many1(equal)(input)?;
   Ok((input, byline))
+}
+
+pub fn title_front_matter(input: ParseString) -> ParseResult<(Option<Paragraph>, Option<SectionElement>, Option<Paragraph>)> {
+  let mut input = input;
+  let mut byline = None;
+  let mut hero = None;
+  let mut synopsis = None;
+
+  if let Ok((next_input, parsed_byline)) = paragraph_newline(input.clone()) {
+    input = next_input;
+    byline = Some(parsed_byline);
+  }
+
+  if let Ok((next_input, image)) = img(input.clone()) {
+    let (next_input, _) = whitespace0(next_input)?;
+    input = next_input;
+    hero = Some(SectionElement::Image(image));
+  } else if let Ok((next_input, figure_table)) = figures(input.clone()) {
+    let (next_input, _) = whitespace0(next_input)?;
+    input = next_input;
+    hero = Some(SectionElement::FigureTable(figure_table));
+  }
+
+  if let Ok((next_input, parsed_synopsis)) = paragraph_newline(input.clone()) {
+    input = next_input;
+    synopsis = Some(parsed_synopsis);
+  }
+
+  let (input, _) = many1(equal)(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, (byline, hero, synopsis)))
 }
 
 pub struct MarkdownTableHeader {
@@ -1061,6 +1091,34 @@ pub fn body(input: ParseString) -> ParseResult<Body> {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn parses_title_front_matter_with_byline_hero_and_synopsis() {
+    let src = "My Title\n===\nByline\n![hero](hero.png)\nA short synopsis.\n===\n1. Section\n---\n";
+    let gs = graphemes::init_source(src);
+    let input = ParseString::new(&gs);
+    let (_, parsed) = crate::parser::program(input).expect("program should parse");
+    let title = parsed.title.expect("title should be present");
+    assert_eq!(title.text.to_string(), "My Title");
+    let front_matter_section = parsed.body.sections.first().expect("front matter section");
+    assert_eq!(front_matter_section.subtitle, None);
+    assert_eq!(front_matter_section.elements.len(), 3);
+    match &front_matter_section.elements[0] {
+      SectionElement::Byline(byline) => assert_eq!(byline.to_string(), "Byline"),
+      other => panic!("unexpected byline type: {:?}", other),
+    }
+    match &front_matter_section.elements[1] {
+      SectionElement::Hero(hero) => match hero.as_ref() {
+        SectionElement::Image(img) => assert_eq!(img.src.to_string(), "hero.png"),
+        other => panic!("unexpected hero payload: {:?}", other),
+      }
+      other => panic!("unexpected hero wrapper type: {:?}", other),
+    }
+    match &front_matter_section.elements[2] {
+      SectionElement::Synopsis(synopsis) => assert_eq!(synopsis.to_string(), "A short synopsis."),
+      other => panic!("unexpected synopsis type: {:?}", other),
+    }
+  }
 
   #[test]
   fn parses_figures_block_with_markdown_image_syntax() {

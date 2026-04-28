@@ -27,6 +27,23 @@ pub struct Formatter{
   inline_eval_counters: HashMap<u64, u64>,
 }
 
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn replaces_section_number_placeholders() {
+    let src = "Doc\n===\n1. First\n---\nFirst body.\n2. Second\n---\nSecond body.\n";
+    let tree = crate::parser::parse(src).expect("program should parse");
+    let shim = "{{SECTION1}}|{{SECTION2}}|{{SECTION3}}".to_string();
+    let mut formatter = Formatter::new();
+    let html = formatter.format_html(&tree, "".to_string(), shim);
+    assert!(html.contains("First"));
+    assert!(html.contains("Second"));
+    assert!(html.contains("{{SECTION3}}"));
+  }
+}
+
 
 impl Formatter {
 
@@ -111,7 +128,8 @@ impl Formatter {
     self.inline_eval_counters.clear();
 
     let toc = tree.table_of_contents();
-    let formatted_src = self.program(tree);
+    let (formatted_byline, formatted_hero, formatted_synopsis, formatted_abstract, formatted_intro, formatted_contents) = self.document_slots(tree);
+    let formatted_src = formatted_contents.clone();
     self.reset_numbering();
     let formatted_toc = self.table_of_contents(&toc);
 
@@ -119,7 +137,7 @@ impl Formatter {
       Some(title) => title.to_string(),
       None => "Mech Program".to_string(),
     };
-    
+
     #[cfg(feature = "serde")]
     let encoded_tree = match compress_and_encode(&tree) {
         Ok(encoded) => encoded,
@@ -128,11 +146,83 @@ impl Formatter {
     #[cfg(not(feature = "serde"))]
     let encoded_tree = String::new();
 
-    shim.replace("{{STYLESHEET}}", &style)
+    let mut rendered = shim.replace("{{STYLESHEET}}", &style)
         .replace("{{TOC}}", &formatted_toc)
         .replace("{{CONTENT}}", &formatted_src)
+        .replace("{{CONTENTS}}", &formatted_contents)
+        .replace("{{BYLINE}}", &formatted_byline)
+        .replace("{{HERO}}", &formatted_hero)
+        .replace("{{SYNOPSIS}}", &formatted_synopsis)
+        .replace("{{ABSTRACT}}", &formatted_abstract)
+        .replace("{{INTRO}}", &formatted_intro)
         .replace("{{CODE}}", &encoded_tree)
-        .replace("{{TITLE}}", &title)
+        .replace("{{TITLE}}", &title);
+
+    for (ix, section_html) in self.section_slots(tree).iter().enumerate() {
+      rendered = rendered.replace(&format!("{{{{SECTION{}}}}}", ix + 1), section_html);
+    }
+
+    rendered
+  }
+
+  fn document_slots(&self, tree: &Program) -> (String, String, String, String, String, String) {
+    let first_section_ix = tree.body.sections.iter()
+      .position(|s| s.subtitle.is_some())
+      .unwrap_or(tree.body.sections.len());
+    let intro_sections = &tree.body.sections[..first_section_ix];
+    let content_sections = &tree.body.sections[first_section_ix..];
+
+    let mut abstract_formatter = Formatter::new();
+    abstract_formatter.html = true;
+    let mut intro_formatter = Formatter::new();
+    intro_formatter.html = true;
+    let mut contents_formatter = Formatter::new();
+    contents_formatter.html = true;
+
+    let mut byline_src = String::new();
+    let mut hero_src = String::new();
+    let mut synopsis_src = String::new();
+    let mut abstract_src = String::new();
+    let mut intro_src = String::new();
+    let mut contents_src = String::new();
+
+    for section in intro_sections {
+      for el in &section.elements {
+        match el {
+          SectionElement::Byline(paragraph) => {
+            byline_src.push_str(&intro_formatter.paragraph(paragraph));
+          }
+          SectionElement::Hero(hero) => {
+            hero_src.push_str(&intro_formatter.section_element(hero));
+          }
+          SectionElement::Synopsis(paragraph) => {
+            synopsis_src.push_str(&intro_formatter.paragraph(paragraph));
+          }
+          SectionElement::Abstract(paragraphs) => {
+            abstract_src.push_str(&abstract_formatter.abstract_el(paragraphs));
+          }
+          _ => {
+            intro_src.push_str(&intro_formatter.section_element(el));
+          }
+        }
+      }
+    }
+
+    for section in content_sections {
+      contents_src.push_str(&contents_formatter.section(section));
+    }
+
+    (byline_src, hero_src, synopsis_src, abstract_src, intro_src, contents_src)
+  }
+
+  fn section_slots(&self, tree: &Program) -> Vec<String> {
+    let first_section_ix = tree.body.sections.iter()
+      .position(|s| s.subtitle.is_some())
+      .unwrap_or(tree.body.sections.len());
+    let content_sections = &tree.body.sections[first_section_ix..];
+    let mut section_formatter = Formatter::new();
+    section_formatter.html = true;
+    content_sections.iter().map(|section| section_formatter.section(section)).collect()
   }
 
   pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
@@ -184,31 +274,12 @@ impl Formatter {
     let title = node.text.to_string();
 
     if self.html {
-      if let Some(byline) = &node.byline {
-        let formatted_byline = self.paragraph(byline);
-        format!(
-          "<h1 class=\"mech-program-title\">{}</h1>\n<div class=\"mech-program-byline\">{}</div>",
-          title,
-          formatted_byline
-        )
-      } else {
-        format!("<h1 class=\"mech-program-title\">{}</h1>", title)
-      }
+      format!("<h1 class=\"mech-program-title\">{}</h1>", title)
     } else {
-      let mut out = format!(
+      format!(
         "{}\n===============================================================================\n",
         title
-      );
-
-      if let Some(byline) = &node.byline {
-        let byline_str = self.paragraph(byline);
-        out.push_str(&format!(
-          "{}\n===============================================================================\n",
-          byline_str
-        ));
-      }
-
-      out
+      )
     }
   }
 
@@ -820,6 +891,9 @@ impl Formatter {
     
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     match node {
+      SectionElement::Byline(n) => self.paragraph(n),
+      SectionElement::Hero(n) => self.section_element(n),
+      SectionElement::Synopsis(n) => self.paragraph(n),
       SectionElement::Abstract(n) => self.abstract_el(n),
       SectionElement::QuoteBlock(n) => self.quote_block(n),
       SectionElement::SuccessBlock(n) => self.success_block(n),

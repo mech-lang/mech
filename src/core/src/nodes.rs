@@ -197,7 +197,9 @@ impl Program {
   pub fn table_of_contents(&self) -> TableOfContents {
     let mut sections = vec![];
     for s in &self.body.sections {
-      sections.push(s.table_of_contents());
+      if s.subtitle.is_some() {
+        sections.push(s.table_of_contents());
+      }
     }
     TableOfContents {
       title: self.title.clone(),
@@ -305,7 +307,6 @@ fn pretty_print(&self) -> String {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Title {
   pub text: Token,
-  pub byline: Option<Paragraph>,
 }
 
 impl Title {
@@ -519,6 +520,9 @@ pub struct FencedMechCode {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum SectionElement {
+  Byline(Paragraph),
+  Hero(Box<SectionElement>),
+  Synopsis(Paragraph),
   Abstract(Vec<Paragraph>),
   QuoteBlock(Vec<Paragraph>),
   InfoBlock(Vec<Paragraph>),
@@ -572,6 +576,8 @@ impl SectionElement {
         }
         tokens
       },
+      SectionElement::Byline(paragraph) | SectionElement::Synopsis(paragraph) => paragraph.tokens(),
+      SectionElement::Hero(hero) => hero.tokens(),
       SectionElement::FencedMechCode(c) => {
         let mut tokens = vec![];
         for (c, _) in &c.code {
