@@ -477,30 +477,49 @@ section h2 {
   margin-left: -20px;
 }
 /* ── Editorial numbered headings ── */
-.main-content section { counter-reset: subsection-index; }
+.main-content section {
+  counter-reset: subsection-index subsubsection-index subsubsubsection-index;
+}
 
 .main-content section > h2,
-.main-content section > h3 {
+.main-content section > h3,
+.main-content section > h4,
+.main-content section > h5 {
   display: flex;
   flex-direction: column; 
   align-items: flex-start;
   gap: 0.25em; 
 
-  counter-increment: section-index;
   margin-bottom: 14px;
   padding-bottom: 10px;
   border-bottom: 0px dotted var(--title-underline-color);
 }
 
+.main-content section > h2 {
+  counter-increment: section-index;
+}
+
 .main-content section > h3 {
   counter-increment: subsection-index;
+  counter-reset: subsubsection-index subsubsubsection-index;
   margin-top: 30px;
   margin-bottom: 12px;
   font-size: 24px;
 }
 
+.main-content section > h4 {
+  counter-increment: subsubsection-index;
+  counter-reset: subsubsubsection-index;
+}
+
+.main-content section > h5 {
+  counter-increment: subsubsubsection-index;
+}
+
 .main-content section > h2::before,
-.main-content section > h3::before {
+.main-content section > h3::before,
+.main-content section > h4::before,
+.main-content section > h5::before {
   flex-shrink: 0;
   font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 0.40em;
@@ -519,7 +538,19 @@ section h2 {
 .main-content section > h3::before {
   display: block;
   font-size: 12px;
-  content: counter(section-index) "." counter(subsection-index, decimal-leading-zero);
+  content: counter(section-index, decimal) "." counter(subsection-index, decimal);
+}
+
+.main-content section > h4::before {
+  display: block;
+  font-size: 12px;
+  content: counter(section-index, decimal) "." counter(subsection-index, decimal) "." counter(subsubsection-index, decimal);
+}
+
+.main-content section > h5::before {
+  display: block;
+  font-size: 12px;
+  content: counter(section-index, decimal) "." counter(subsection-index, decimal) "." counter(subsubsection-index, decimal) "." counter(subsubsubsection-index, decimal);
 }
 
 section p {
