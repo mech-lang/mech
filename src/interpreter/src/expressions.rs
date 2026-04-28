@@ -1195,10 +1195,10 @@ fn validate_match_arm_output_kinds(
     Ok(())
 }
 
-#[cfg(feature = "bool")]
 fn guard_expression_true(guard: &Expression, env: &Environment, p: &Interpreter) -> MResult<bool> {
   let guard_result = expression(guard, Some(env), p)?;
   match guard_result {
+      #[cfg(feature = "bool")]
     Value::Bool(flag) => Ok(*flag.borrow()),
     _ => Err(MechError::new(
       InvalidGuardExpressionError {
