@@ -245,6 +245,9 @@ impl Formatter {
           6 => { h6_num += 1; }
           _ => {}
         }
+        if subtitle.level < 3 || subtitle.level > 4 {
+          continue;
+        }
         let target_depth = subtitle.level.saturating_sub(2) as usize;
         while stack_depth < target_depth {
           nested.push_str("<ul class=\"toc-sub\">");
@@ -333,10 +336,16 @@ impl Formatter {
       self.figure_num = 0;
     } else if level == 3 {
       self.h3_num += 1;
+      self.h4_num = 0;
+      self.h5_num = 0;
+      self.h6_num = 0;
     } else if level == 4 {
       self.h4_num += 1;
+      self.h5_num = 0;
+      self.h6_num = 0;
     } else if level == 5 {
       self.h5_num += 1;
+      self.h6_num = 0;
     } else if level == 6 {
       self.h6_num += 1;
     }

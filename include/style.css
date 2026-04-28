@@ -1893,6 +1893,10 @@ a.mech-footnote-reference {
     counter-reset: h5;
 }
 
+.mech-content h5 {
+    counter-reset: h6;
+}
+
 h2::before {
     color: var(--main-color-mid);
     counter-increment: h2;
@@ -1915,6 +1919,12 @@ h5::before {
     color: var(--main-color-mid);
     counter-increment: h5;
     content: counter(h2) "." counter(h3) "." counter(h4) "." counter(h5) " ";
+}
+
+h6::before {
+    color: var(--main-color-mid);
+    counter-increment: h6;
+    content: counter(h2) "." counter(h3) "." counter(h4) "." counter(h5) "." counter(h6) " ";
 }
 
 h2:hover a {
