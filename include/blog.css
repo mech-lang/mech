@@ -10,6 +10,7 @@
   --bg-secondary:  hsl(207, 23%, 8%);
   --bg-dark:       hsl(206, 24%, 3%);
   --bg-elevated:   #151B21;
+  --mika-primary:  #f3c15c;
   --accent-primary:#F2B63D;
   --accent-hover:  #ecd7ad;
   --accent-soft:   #ffefc9;
@@ -517,8 +518,8 @@ section h2 {
 
 .main-content section > h3::before {
   display: block;
-  font-size: 10px;
-  content: counter(section-index, decimal-leading-zero) "." counter(subsection-index, decimal-leading-zero);
+  font-size: 12px;
+  content: counter(section-index) "." counter(subsection-index, decimal-leading-zero);
 }
 
 section p {
@@ -566,8 +567,8 @@ section.active-section {
 /* Main layout */
 .footer-main {
   display: grid;
-  grid-template-columns: 170px minmax(320px, 420px) minmax(280px, 1fr);
-  column-gap: 50px;
+  grid-template-columns: 170px minmax(280px, 360px) minmax(340px, 1fr);
+  column-gap: 30px;
   row-gap: 18px;
   padding: 54px 0 36px;
   align-items: start;
