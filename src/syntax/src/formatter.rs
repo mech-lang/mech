@@ -65,6 +65,20 @@ mod tests {
     assert!(html.contains("<section class=\"mech-intro\">"));
     assert!(html.contains("Intro paragraph."));
   }
+
+  #[test]
+  fn renders_works_cited_only_when_cited_placeholder_is_present() {
+    let src = "Doc\n===\n1. Refs\n---\nUses [a].\n[a]: Source Entry\n";
+    let tree = crate::parser::parse(src).expect("program should parse");
+
+    let mut formatter_with_cited = Formatter::new();
+    let html_with_cited = formatter_with_cited.format_html(&tree, "".to_string(), "{{CONTENTS}}{{CITED}}".to_string());
+    assert!(html_with_cited.contains("mech-works-cited"));
+
+    let mut formatter_without_cited = Formatter::new();
+    let html_without_cited = formatter_without_cited.format_html(&tree, "".to_string(), "{{CONTENTS}}".to_string());
+    assert!(!html_without_cited.contains("mech-works-cited"));
+  }
 }
 
 
@@ -150,11 +164,12 @@ impl Formatter {
     self.html = true;
     self.inline_eval_counters.clear();
 
-    let toc = tree.table_of_contents();
-    let (formatted_byline, formatted_hero, formatted_synopsis, formatted_abstract, formatted_intro, formatted_contents) = self.document_slots(tree);
+    let include_cited = shim.contains("{{CITED}}");
+    let (formatted_byline, formatted_hero, formatted_synopsis, formatted_abstract, formatted_intro, formatted_contents, formatted_cited) = self.document_slots(tree);
     let formatted_src = formatted_contents.clone();
     self.reset_numbering();
-    let formatted_toc = self.table_of_contents(&toc);
+    let toc = tree.table_of_contents();
+    let formatted_toc = self.table_of_contents(&toc, include_cited && !formatted_cited.is_empty());
 
     let title = match toc.title {
       Some(title) => title.to_string(),
@@ -178,6 +193,7 @@ impl Formatter {
         .replace("{{SYNOPSIS}}", &formatted_synopsis)
         .replace("{{ABSTRACT}}", &formatted_abstract)
         .replace("{{INTRO}}", &formatted_intro)
+        .replace("{{CITED}}", &formatted_cited)
         .replace("{{CODE}}", &encoded_tree)
         .replace("{{TITLE}}", &title);
 
@@ -188,7 +204,7 @@ impl Formatter {
     rendered
   }
 
-  fn document_slots(&self, tree: &Program) -> (String, String, String, String, String, String) {
+  fn document_slots(&self, tree: &Program) -> (String, String, String, String, String, String, String) {
     let first_section_ix = tree.body.sections.iter()
       .position(|s| s.subtitle.is_some())
       .unwrap_or(tree.body.sections.len());
@@ -239,7 +255,9 @@ impl Formatter {
       intro_src = format!("<section class=\"mech-intro\">{}</section>", intro_src);
     }
 
-    (byline_src, hero_src, synopsis_src, abstract_src, intro_src, contents_src)
+    let cited_src = contents_formatter.works_cited();
+
+    (byline_src, hero_src, synopsis_src, abstract_src, intro_src, contents_src, cited_src)
   }
 
   fn section_slots(&self, tree: &Program) -> Vec<String> {
@@ -252,7 +270,7 @@ impl Formatter {
     content_sections.iter().map(|section| section_formatter.section(section)).collect()
   }
 
-  pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
+  pub fn table_of_contents(&mut self, toc: &TableOfContents, include_cited: bool) -> String {
     let mut h2_num = 0usize;
     let mut toc_items = String::new();
     for section in &toc.sections {
@@ -315,7 +333,7 @@ impl Formatter {
         nested
       ));
     }
-    if self.html && self.citation_num > 0 && !self.citations.is_empty() {
+    if include_cited {
       toc_items.push_str("<li><a href=\"#67320967384727436\">Works Cited</a></li>");
     }
     format!("<aside class=\"toc mech-toc\"><div class=\"toc-title\">Contents</div><ul>{}</ul></aside>", toc_items)

@@ -79,4 +79,5 @@ In HTML shims, these placeholders are available:
 - `{{INTRO}}`
 - `{{CONTENTS}}`
 - `{{CONTENT}}` (alias for sectioned contents)
+- `{{CITED}}` (renders Works Cited only where this placeholder appears)
 - `{{SECTION#}}` where `#` is the 1-indexed numbered section (for example, `{{SECTION1}}`, `{{SECTION2}}`)
