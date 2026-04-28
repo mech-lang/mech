@@ -222,10 +222,29 @@ Health checks stayed green during deploy.</div>
 </main>
 
 <script type="module">
-import init, {WasmMech} from '/pkg/mech_wasm.js';
 let wasm_core;
 
+async function loadMechModule() {
+  const moduleCandidates = [
+    "/pkg/mech_wasm.js",
+    "https://docs.mech-lang.org/pkg/mech_wasm.js",
+  ];
+
+  let lastError = null;
+  for (const moduleUrl of moduleCandidates) {
+    try {
+      const mod = await import(moduleUrl);
+      return mod;
+    } catch (err) {
+      lastError = err;
+      console.error(`Failed to import ${moduleUrl}`, err);
+    }
+  }
+  throw lastError || new Error("Unable to load mech_wasm.js");
+}
+
 async function run() {
+  const { default: init, WasmMech } = await loadMechModule();
   await init();
   const code = `{{CODE}}`;
   wasm_core = new WasmMech();
