@@ -654,7 +654,8 @@ section.active-section {
 }
 
 .footer-heading {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   align-items: center;
   gap: 8px;
   margin: 0 0 14px;
@@ -674,7 +675,8 @@ section.active-section {
 }
 
 .footer-heading-text {
-  display: inline-block;
+  display: block;
+  flex: 1;
   border-bottom: 1px solid #7f7f7f;
   padding-bottom: 2px;
 }
@@ -771,6 +773,12 @@ section.active-section {
   letter-spacing: 0.05em;
   font-size: 14px;
   
+}
+
+.release-ack .footer-icon {
+  color: var(--accent-primary);
+  border-bottom: 1px solid var(--accent-primary);
+  padding-bottom: 2px;
 }
 
 /* Bottom bar */
