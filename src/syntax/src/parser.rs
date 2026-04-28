@@ -450,8 +450,28 @@ pub fn program(input: ParseString) -> ParseResult<Program> {
   let msg = "Expects program body";
   let (input, _) = whitespace0(input)?;
   let (input, title) = opt(title)(input)?;
+  let (input, front_matter) = if title.is_some() {
+    opt(title_front_matter)(input)?
+  } else {
+    (input, None)
+  };
   //let (input, body) = labelr!(body, skip_nil, msg)(input)?;
-  let (input, body) = body(input)?;
+  let (input, mut body) = body(input)?;
+  if let Some((byline, hero, synopsis)) = front_matter {
+    let mut elements = vec![];
+    if let Some(byline) = byline {
+      elements.push(SectionElement::Byline(byline));
+    }
+    if let Some(hero) = hero {
+      elements.push(SectionElement::Hero(Box::new(hero)));
+    }
+    if let Some(synopsis) = synopsis {
+      elements.push(SectionElement::Synopsis(synopsis));
+    }
+    if !elements.is_empty() {
+      body.sections.insert(0, Section { subtitle: None, elements });
+    }
+  }
   //println!("Parsed program body: {:#?}", body);
   let (input, _) = whitespace0(input)?;
   Ok((input, Program{title, body}))

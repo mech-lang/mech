@@ -307,9 +307,6 @@ fn pretty_print(&self) -> String {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Title {
   pub text: Token,
-  pub byline: Option<Paragraph>,
-  pub hero: Option<SectionElement>,
-  pub synopsis: Option<Paragraph>,
 }
 
 impl Title {
@@ -523,6 +520,9 @@ pub struct FencedMechCode {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum SectionElement {
+  Byline(Paragraph),
+  Hero(Box<SectionElement>),
+  Synopsis(Paragraph),
   Abstract(Vec<Paragraph>),
   QuoteBlock(Vec<Paragraph>),
   InfoBlock(Vec<Paragraph>),
@@ -576,6 +576,8 @@ impl SectionElement {
         }
         tokens
       },
+      SectionElement::Byline(paragraph) | SectionElement::Synopsis(paragraph) => paragraph.tokens(),
+      SectionElement::Hero(hero) => hero.tokens(),
       SectionElement::FencedMechCode(c) => {
         let mut tokens = vec![];
         for (c, _) in &c.code {

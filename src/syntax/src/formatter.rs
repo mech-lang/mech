@@ -111,7 +111,7 @@ impl Formatter {
     self.inline_eval_counters.clear();
 
     let toc = tree.table_of_contents();
-    let (formatted_abstract, formatted_intro, formatted_contents) = self.document_slots(tree);
+    let (formatted_byline, formatted_hero, formatted_synopsis, formatted_abstract, formatted_intro, formatted_contents) = self.document_slots(tree);
     let formatted_src = formatted_contents.clone();
     self.reset_numbering();
     let formatted_toc = self.table_of_contents(&toc);
@@ -120,16 +120,7 @@ impl Formatter {
       Some(title) => title.to_string(),
       None => "Mech Program".to_string(),
     };
-    let (byline, hero, synopsis) = match &tree.title {
-      Some(title) => {
-        let byline = title.byline.as_ref().map(|b| self.paragraph(b)).unwrap_or_default();
-        let hero = title.hero.as_ref().map(|h| self.section_element(h)).unwrap_or_default();
-        let synopsis = title.synopsis.as_ref().map(|s| self.paragraph(s)).unwrap_or_default();
-        (byline, hero, synopsis)
-      }
-      None => (String::new(), String::new(), String::new()),
-    };
-    
+
     #[cfg(feature = "serde")]
     let encoded_tree = match compress_and_encode(&tree) {
         Ok(encoded) => encoded,
@@ -142,16 +133,16 @@ impl Formatter {
         .replace("{{TOC}}", &formatted_toc)
         .replace("{{CONTENT}}", &formatted_src)
         .replace("{{CONTENTS}}", &formatted_contents)
-        .replace("{{BYLINE}}", &byline)
-        .replace("{{HERO}}", &hero)
-        .replace("{{SYNOPSIS}}", &synopsis)
+        .replace("{{BYLINE}}", &formatted_byline)
+        .replace("{{HERO}}", &formatted_hero)
+        .replace("{{SYNOPSIS}}", &formatted_synopsis)
         .replace("{{ABSTRACT}}", &formatted_abstract)
         .replace("{{INTRO}}", &formatted_intro)
         .replace("{{CODE}}", &encoded_tree)
         .replace("{{TITLE}}", &title)
   }
 
-  fn document_slots(&self, tree: &Program) -> (String, String, String) {
+  fn document_slots(&self, tree: &Program) -> (String, String, String, String, String, String) {
     let first_section_ix = tree.body.sections.iter()
       .position(|s| s.subtitle.is_some())
       .unwrap_or(tree.body.sections.len());
@@ -165,6 +156,9 @@ impl Formatter {
     let mut contents_formatter = Formatter::new();
     contents_formatter.html = true;
 
+    let mut byline_src = String::new();
+    let mut hero_src = String::new();
+    let mut synopsis_src = String::new();
     let mut abstract_src = String::new();
     let mut intro_src = String::new();
     let mut contents_src = String::new();
@@ -172,6 +166,15 @@ impl Formatter {
     for section in intro_sections {
       for el in &section.elements {
         match el {
+          SectionElement::Byline(paragraph) => {
+            byline_src.push_str(&intro_formatter.paragraph(paragraph));
+          }
+          SectionElement::Hero(hero) => {
+            hero_src.push_str(&intro_formatter.section_element(hero));
+          }
+          SectionElement::Synopsis(paragraph) => {
+            synopsis_src.push_str(&intro_formatter.paragraph(paragraph));
+          }
           SectionElement::Abstract(paragraphs) => {
             abstract_src.push_str(&abstract_formatter.abstract_el(paragraphs));
           }
@@ -186,7 +189,7 @@ impl Formatter {
       contents_src.push_str(&contents_formatter.section(section));
     }
 
-    (abstract_src, intro_src, contents_src)
+    (byline_src, hero_src, synopsis_src, abstract_src, intro_src, contents_src)
   }
 
   pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
@@ -238,39 +241,12 @@ impl Formatter {
     let title = node.text.to_string();
 
     if self.html {
-      let byline = node.byline.as_ref()
-        .map(|b| format!("\n<div class=\"mech-program-byline\">{}</div>", self.paragraph(b)))
-        .unwrap_or_default();
-      let hero = node.hero.as_ref()
-        .map(|h| format!("\n<div class=\"mech-program-hero\">{}</div>", self.section_element(h)))
-        .unwrap_or_default();
-      let synopsis = node.synopsis.as_ref()
-        .map(|s| format!("\n<div class=\"mech-program-synopsis\">{}</div>", self.paragraph(s)))
-        .unwrap_or_default();
-      format!("<h1 class=\"mech-program-title\">{}</h1>{}{}{}", title, byline, hero, synopsis)
+      format!("<h1 class=\"mech-program-title\">{}</h1>", title)
     } else {
-      let mut out = format!(
+      format!(
         "{}\n===============================================================================\n",
         title
-      );
-
-      if let Some(byline) = &node.byline {
-        let byline_str = self.paragraph(byline);
-        out.push_str(&byline_str);
-      }
-      if let Some(hero) = &node.hero {
-        let hero_str = self.section_element(hero);
-        out.push_str(&hero_str);
-      }
-      if let Some(synopsis) = &node.synopsis {
-        let synopsis_str = self.paragraph(synopsis);
-        out.push_str(&synopsis_str);
-      }
-      if node.byline.is_some() || node.hero.is_some() || node.synopsis.is_some() {
-        out.push_str("===============================================================================\n");
-      }
-
-      out
+      )
     }
   }
 
@@ -882,6 +858,9 @@ impl Formatter {
     
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     match node {
+      SectionElement::Byline(n) => self.paragraph(n),
+      SectionElement::Hero(n) => self.section_element(n),
+      SectionElement::Synopsis(n) => self.paragraph(n),
       SectionElement::Abstract(n) => self.abstract_el(n),
       SectionElement::QuoteBlock(n) => self.quote_block(n),
       SectionElement::SuccessBlock(n) => self.success_block(n),
