@@ -129,6 +129,7 @@ impl Formatter {
     };
     #[cfg(not(feature = "serde"))]
     let encoded_tree = String::new();
+    let repl_html = "<div class=\"console-scroll mech-repl hidden\" id=\"mech-output\"></div>";
 
     let mut rendered = shim.replace("{{STYLESHEET}}", &style)
         .replace("{{TOC}}", &formatted_toc)
@@ -141,6 +142,7 @@ impl Formatter {
         .replace("{{INTRO}}", &formatted_intro)
         .replace("{{CITED}}", &formatted_cited)
         .replace("{{CODE}}", &encoded_tree)
+        .replace("{{REPL}}", repl_html)
         .replace("{{TITLE}}", &title);
 
     for (ix, section_html) in self.section_slots(tree).iter().enumerate() {

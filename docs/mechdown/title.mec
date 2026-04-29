@@ -81,3 +81,5 @@ In HTML shims, these placeholders are available:
 - `{{CONTENT}}` (alias for sectioned contents)
 - `{{CITED}}` (renders Works Cited only where this placeholder appears)
 - `{{SECTION#}}` where `#` is the 1-indexed numbered section (for example, `{{SECTION1}}`, `{{SECTION2}}`)
+
+See [Template Placeholders](/mechdown/template-placeholders.html) for the complete placeholder reference, including interactive placeholders such as `{{CODE}}` and `{{REPL}}`.
