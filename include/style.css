@@ -1857,6 +1857,16 @@ a.mech-footnote-reference {
     text-decoration: underline;
 }
 
+a.mech-footnote-back {
+    margin-left: 0.35em;
+    text-decoration: none;
+    color: var(--main-color-high);
+}
+
+a.mech-footnote-back:hover {
+    text-decoration: underline;
+}
+
 .mech-abstract {
     background-color: var(--abstract-background-color);
     border: 1px solid var(--main-color-mid);
