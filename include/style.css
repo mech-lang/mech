@@ -48,6 +48,7 @@
   --code-namespace-label-color: #f5a7d3;
   --pattern-color: hsl(133, 33%, 70%);
   --pattern-parent-color: hsl(133, 33%, 70%);
+  --logo-color: rgb(246,192,78);
 }
 
 html {
@@ -2158,9 +2159,10 @@ mark {
 
 .mech-text-logo {
     white-space: pre;
-    color: rgb(246,192,78);
+    color: var(--logo-color);
     text-align: center;
     margin: 20px auto;
+    line-height: 1.1em;
 }
 
 #mech-output a {
