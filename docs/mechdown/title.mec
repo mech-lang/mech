@@ -80,6 +80,6 @@ In HTML shims, these placeholders are available:
 - `{{CONTENTS}}`
 - `{{CONTENT}}` (alias for sectioned contents)
 - `{{CITED}}` (renders Works Cited only where this placeholder appears)
-- `{{CODE}}` (base64+compressed serialized program when built with `serde`)
-- `{{REPL}}` (default Web REPL mount markup: `<div class="console-scroll mech-repl hidden" id="mech-output"></div>`)
 - `{{SECTION#}}` where `#` is the 1-indexed numbered section (for example, `{{SECTION1}}`, `{{SECTION2}}`)
+
+See [Template Placeholders](/mechdown/template-placeholders.html) for the complete placeholder reference, including interactive placeholders such as `{{CODE}}` and `{{REPL}}`.
