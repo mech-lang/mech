@@ -21,7 +21,7 @@ use std::fmt;
 pub type FunctionsRef = Ref<Functions>;
 pub type FunctionTable = HashMap<u64, fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>>;
 pub type FunctionCompilerTable = HashMap<u64, &'static dyn NativeFunctionCompiler>;
-pub type UserFunctionTable = HashMap<u64, FunctionDefinition>;
+pub type UserFunctionTable = HashMap<u64, Vec<FunctionDefinition>>;
 
 #[derive(Clone,Debug)]
 pub enum FunctionArgs {

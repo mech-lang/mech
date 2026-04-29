@@ -67,7 +67,9 @@ pub fn function_define(fxn_def: &FunctionDefine, p: &Interpreter) -> MResult<Fun
   let mut functions_brrw = functions.borrow_mut();
   functions_brrw
     .user_functions
-    .insert(fxn_name_id, new_fxn.clone());
+    .entry(fxn_name_id)
+    .or_insert_with(Vec::new)
+    .push(new_fxn.clone());
   functions_brrw
     .dictionary
     .borrow_mut()
@@ -91,12 +93,18 @@ pub fn function_call(fxn_call: &FunctionCall, env: Option<&Environment>, p: &Int
   let functions = p.functions();
   let fxn_name_id = fxn_call.name.hash();
 
-  // User-defined function: evaluate arguments then run the interpreted body.
-  if let Some(user_fxn) = { functions.borrow().user_functions.get(&fxn_name_id).cloned() } {
+  // User-defined function: evaluate arguments then dispatch to the overload
+  // whose declared input kinds best match the actual argument types.
+  if let Some(definitions) = { functions.borrow().user_functions.get(&fxn_name_id).cloned() } {
     let mut input_arg_values = vec![];
     for (_, arg_expr) in fxn_call.args.iter() {
       input_arg_values.push(expression(arg_expr, env, p)?);
     }
+    let user_fxn = select_overload(&definitions, &input_arg_values, p)
+      .ok_or_else(|| MechError::new(
+        MissingFunctionError { function_id: fxn_name_id },
+        None,
+      ).with_compiler_loc().with_tokens(fxn_call.name.tokens()))?;
     return execute_user_function(&user_fxn, &input_arg_values, p);
   }
 
@@ -846,6 +854,78 @@ pub(crate) fn detach_value(value: &Value) -> Value {
     Value::MutableReference(reference) => detach_value(&reference.borrow()),
     _ => value.clone(),
   }
+}
+
+// Overload Selection
+// ----------------------------------------------------------------------------
+
+// Picks the best matching overload for a given set of argument values.
+// Pass 1: exact kind match for every argument.
+// Pass 2: every argument is at least convertible to the declared kind.
+// Returns None only if no definition passes either check.
+fn select_overload<'a>(
+  definitions: &'a [FunctionDefinition],
+  arg_values: &[Value],
+  p: &Interpreter,
+) -> Option<FunctionDefinition> {
+  // Pass 1 — exact kind match.
+  'exact: for def in definitions {
+    if def.input.len() != arg_values.len() {
+      continue;
+    }
+    for ((_, kind_annot), arg_val) in def.input.iter().zip(arg_values.iter()) {
+      #[cfg(feature = "kind_annotation")]
+      {
+        let Ok(target) = kind_annotation(&kind_annot.kind, p)
+          .and_then(|k| k.to_value_kind(&p.state.borrow().kinds))
+        else {
+          continue 'exact;
+        };
+        if detach_value(arg_val).kind() != target {
+          continue 'exact;
+        }
+      }
+      #[cfg(not(feature = "kind_annotation"))]
+      {
+        // Without type info we cannot distinguish overloads; fall through.
+        let _ = (kind_annot, arg_val);
+      }
+    }
+    return Some(def.clone());
+  }
+
+  // Pass 2 — convertible kinds (allows implicit coercion).
+  'conv: for def in definitions {
+    if def.input.len() != arg_values.len() {
+      continue;
+    }
+    for ((_, kind_annot), arg_val) in def.input.iter().zip(arg_values.iter()) {
+      #[cfg(feature = "kind_annotation")]
+      {
+        let Ok(target) = kind_annotation(&kind_annot.kind, p)
+          .and_then(|k| k.to_value_kind(&p.state.borrow().kinds))
+        else {
+          continue 'conv;
+        };
+        if !detach_value(arg_val).kind().is_convertible_to(&target) {
+          continue 'conv;
+        }
+      }
+      #[cfg(not(feature = "kind_annotation"))]
+      {
+        let _ = (kind_annot, arg_val);
+      }
+    }
+    return Some(def.clone());
+  }
+
+  // Last resort: if there is exactly one definition (no actual overloading),
+  // return it so existing single-definition functions always work.
+  if definitions.len() == 1 {
+    return Some(definitions[0].clone());
+  }
+
+  None
 }
 
 // Function Errors
