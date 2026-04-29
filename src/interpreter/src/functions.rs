@@ -93,10 +93,61 @@ pub fn function_call(fxn_call: &FunctionCall, env: Option<&Environment>, p: &Int
 
   // User-defined function: evaluate arguments then run the interpreted body.
   if let Some(user_fxn) = { functions.borrow().user_functions.get(&fxn_name_id).cloned() } {
-    let mut input_arg_values = vec![];
-    for (_, arg_expr) in fxn_call.args.iter() {
-      input_arg_values.push(expression(arg_expr, env, p)?);
-    }
+    let all_named = !fxn_call.args.is_empty() && fxn_call.args.iter().all(|(name, _)| name.is_some());
+    let input_arg_values = if all_named {
+      // Build name_hash → value map from the call site.
+      let mut named_values: std::collections::HashMap<u64, Value> = std::collections::HashMap::new();
+      for (maybe_name, arg_expr) in fxn_call.args.iter() {
+        let name_id = maybe_name.as_ref().unwrap().hash();
+        let val = expression(arg_expr, env, p)?;
+        named_values.insert(name_id, val);
+      }
+      // Reject names that don't match any declared parameter.
+      for name_id in named_values.keys() {
+        if !user_fxn.input.contains_key(name_id) {
+          let arg_name = fxn_call.args.iter()
+            .find(|(n, _)| n.as_ref().map(|n| n.hash()) == Some(*name_id))
+            .and_then(|(n, _)| n.as_ref())
+            .map(|n| n.to_string())
+            .unwrap_or_else(|| name_id.to_string());
+          return Err(MechError::new(
+            UnknownNamedArgumentError {
+              function_name: user_fxn.name.clone(),
+              argument_name: arg_name,
+            },
+            None,
+          ).with_compiler_loc());
+        }
+      }
+      // Reorder values to match the declaration order.
+      let mut ordered = vec![];
+      for (param_id, _) in user_fxn.input.iter() {
+        match named_values.remove(param_id) {
+          Some(val) => ordered.push(val),
+          None => {
+            let param_name = user_fxn.code.input.iter()
+              .find(|arg| arg.name.hash() == *param_id)
+              .map(|arg| arg.name.to_string())
+              .unwrap_or_else(|| param_id.to_string());
+            return Err(MechError::new(
+              MissingNamedArgumentError {
+                function_name: user_fxn.name.clone(),
+                argument_name: param_name,
+              },
+              None,
+            ).with_compiler_loc());
+          }
+        }
+      }
+      ordered
+    } else {
+      // Positional: evaluate left to right in call order.
+      let mut vals = vec![];
+      for (_, arg_expr) in fxn_call.args.iter() {
+        vals.push(expression(arg_expr, env, p)?);
+      }
+      vals
+    };
     return execute_user_function(&user_fxn, &input_arg_values, p);
   }
 
@@ -924,6 +975,44 @@ impl MechErrorKind for FunctionInputTypeMismatchError {
     format!(
       "Function '{}' argument '{}' expected {}, found {}",
       self.function_name, self.argument_name, self.expected, self.found
+    )
+  }
+}
+
+// A named argument in a call doesn't match any declared parameter name.
+#[derive(Debug, Clone)]
+pub struct UnknownNamedArgumentError {
+  pub function_name: String,
+  pub argument_name: String,
+}
+
+impl MechErrorKind for UnknownNamedArgumentError {
+  fn name(&self) -> &str {
+    "UnknownNamedArgument"
+  }
+  fn message(&self) -> String {
+    format!(
+      "Function '{}' has no parameter named '{}'",
+      self.function_name, self.argument_name
+    )
+  }
+}
+
+// A named call omits a parameter that the function requires.
+#[derive(Debug, Clone)]
+pub struct MissingNamedArgumentError {
+  pub function_name: String,
+  pub argument_name: String,
+}
+
+impl MechErrorKind for MissingNamedArgumentError {
+  fn name(&self) -> &str {
+    "MissingNamedArgument"
+  }
+  fn message(&self) -> String {
+    format!(
+      "Function '{}' call is missing required argument '{}'",
+      self.function_name, self.argument_name
     )
   }
 }
