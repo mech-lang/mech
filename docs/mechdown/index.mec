@@ -64,6 +64,7 @@ Most elements are line-oriented and intentionally readable in raw form.
 -------------------------------------------------------------------------------
 
 - [Title](/mechdown/title.html)
+- [Template Placeholders](/mechdown/template-placeholders.html)
 - [Paragraph](/mechdown/paragraph.html)
 - [List](/mechdown/list.html)
 - [Code Block](/mechdown/code-block.html)

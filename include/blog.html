@@ -8,7 +8,7 @@
 <style>
   {{STYLESHEET}}
 </style>
-<link rel="stylesheet" href="include/blog.css">
+<link rel="stylesheet" href="https://mech-lang.org/css/blog.css">
 
 </head>
 <body>
@@ -21,11 +21,11 @@
       </a>
     </div>
     <nav class="top-nav" aria-label="Primary">
-      <a href="/about">About</a>
+      <a href="https://about.mech-lang.org">About</a>
       <a href="/blog" class="active" aria-current="page">Blog</a>
       <a href="/community">Community</a>
-      <a href="/Docs">Docs</a>
-      <a href="/Explore">Explore</a>
+      <a href="https://docs.mech-lang.org">Docs</a>
+      <a href="https://try.mech-lang.org">Explore</a>
     </nav>
     <div class="header-actions">
       <div class="widget widget-lg">
@@ -41,7 +41,7 @@
   </div>
 </header>
 
-<main class="workspace" id="workspace">
+<main class="workspace mech-root" id="workspace" mech-interpreter-id="0">
 
   <section class="content-shell" id="contentShell">
     <div class="content-column">
@@ -50,9 +50,11 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline; width:11px; height:11px; margin-top: -1px; vertical-align:middle;"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
         </a>
         <span class="sep">⟩</span>
-        <a href="/guides">Guides</a>
+        <a href="/blog">Blog</a>
         <span class="sep">⟩</span>
-        <span aria-current="page">Architecture Overview</span>
+        <a href="/blog/announcements">Announcements</a>
+        <span class="sep">⟩</span>
+        <span aria-current="page">Mech Version 0.3-Beta</span>
       </nav>
       <div class="hero">
         <div class="hero-panel">
@@ -93,26 +95,26 @@
             <div class="footer-links">
               <div class="footer-group">
                 <div class="footer-heading"><span class="footer-heading-icon"><svg xmlns="http://www.w3.org/2000/svg" class="footer-icon lucide lucide-package-icon lucide-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span><span class="footer-heading-text">Product</span></div>
-                <a href="#">Architecture</a>
-                <a href="#">Workflow</a>
-                <a href="#">API Reference</a>
-                <a href="#">Runbooks</a>
+                <a href="#">Mech</a>
+                <a href="#">Mechdown</a>
+                <a href="#">Mika</a>
+                <a href="#">Standard Library</a>
               </div>
 
               <div class="footer-group">
                 <div class="footer-heading"><span class="footer-heading-icon"><svg xmlns="http://www.w3.org/2000/svg" class="footer-icon lucide lucide-users-icon lucide-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg></span><span class="footer-heading-text">Community</span></div>
-                <a href="#">Discord</a>
-                <a href="#">GitHub</a>
-                <a href="#">Blog</a>
-                <a href="#">Changelog</a>
+                <a href="https://groups.google.com/g/mechtalk">Mailing List</a>
+                <a href="https://discord.gg/asqP25NNTH">Discord</a>
+                <a href="https://github.com/mech-lang">GitHub</a>
+                <a href="https://www.youtube.com/@MechLang">YouTube</a>
               </div>
 
               <div class="footer-group">
-                <div class="footer-heading"><span class="footer-heading-icon"><svg xmlns="http://www.w3.org/2000/svg" class="footer-icon lucide lucide-book-text-icon lucide-book-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M8 11h8"/><path d="M8 7h6"/></svg></span><span class="footer-heading-text">Resources</span></div>
-                <a href="#">Getting Started</a>
-                <a href="#">Specification</a>
-                <a href="#">REPL Guide</a>
-                <a href="#">Build & Run</a>
+                <div class="footer-heading"><span class="footer-heading-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="footer-icon lucide lucide-book-open-text-icon lucide-book-open-text"><path d="M12 7v14"/><path d="M16 12h2"/><path d="M16 8h2"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/><path d="M6 12h2"/><path d="M6 8h2"/></svg></span><span class="footer-heading-text">Resources</span></div>
+                <a href="https://docs.mech-lang.org/getting-started/index.html">Getting Started</a>
+                <a href="https://docs.mech-lang.org/reference/index.html">Reference</a>
+                <a href="https://docs.mech-lang.org/design/index.html">Design</a>
+                <a href="https://docs.mech-lang.org/guides/index.html">Guides</a>
               </div>
             </div>
 
@@ -141,7 +143,7 @@
 
           <div class="footer-meta">
             <div>© 2026 Mech Systems Lab</div>
-            <div>Built with ♡ in Pennsylvania</div>
+            <div>Built with <span><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-brain-icon lucide-brain" style="display:inline; width:15px; height:15px; margin-top: -2px; vertical-align:middle; color: var(--accent-rose)"><path d="M12 18V5"/><path d="M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4"/><path d="M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5"/><path d="M17.997 5.125a4 4 0 0 1 2.526 5.77"/><path d="M18 18a4 4 0 0 0 2-7.464"/><path d="M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517"/><path d="M6 18a4 4 0 0 1-2-7.464"/><path d="M6.003 5.125a4 4 0 0 0-2.526 5.77"/></svg></span> in Pennsylvania</div>
             <div class="footer-meta-links">
               <a href="#">Privacy</a>
               <a href="#">Terms</a>
@@ -155,7 +157,7 @@
     </div>
   </section>
 
-  <div class="resize-handle" id="resizeHandle"></div>
+  <div class="resize-handle" id="resizer"></div>
   <div class="edge-handle" id="edgeHandle" aria-hidden="true"></div>
 
   <aside class="console-pane">
@@ -182,49 +184,7 @@
     </div>
     <div class="console-panels">
       <div class="console-panel is-active" data-panel="console">
-        <div class="console-scroll">
-[09:12:04] INFO  docs-ci: pipeline=7421 branch=feature/layout-refresh commit=4eee406
-[09:12:05] INFO  checkout: cloning repository
-[09:12:06] INFO  install: npm ci --prefer-offline
-[09:12:18] INFO  lint: eslint src/**/*.ts
-[09:12:24] PASS  lint: 0 errors, 2 warnings
-[09:12:24] INFO  test: vitest run --coverage
-[09:12:41] PASS  test: 128 passed, 0 failed, coverage=91.8%
-[09:12:42] INFO  build: vite build
-[09:12:53] PASS  build: output=dist/, size=1.9MB
-[09:12:54] INFO  preview: running smoke checks
-[09:12:58] PASS  smoke: homepage renders
-[09:12:59] PASS  smoke: docs sidebar links valid
-[09:13:00] PASS  smoke: console resize interaction stable
-[09:13:01] INFO  deploy: target=staging region=us-east-1
-[09:13:08] INFO  deploy: waiting for health checks
-[09:13:11] PASS  deploy: service=docs-web revision=2026.04.26.1
-[09:13:12] INFO  observability: creating deployment marker
-[09:13:13] INFO  audit: writing release metadata
-[09:13:15] PASS  release: completed successfully
-
-$ tail -n 20 /var/log/docs-web/access.log
-200 GET /docs/getting-started
-200 GET /docs/architecture
-200 GET /docs/api
-200 GET /docs/operations
-200 GET /assets/app-4f2d9e.js
-304 GET /assets/styles-87d1aa.css
-200 GET /api/status
-200 GET /api/search?q=deployments
-200 GET /api/search?q=rollbacks
-200 GET /api/search?q=runbook
-200 GET /favicon.ico
-200 GET /manifest.json
-200 GET /docs/security
-200 GET /docs/faq
-
-notes:
-- console pane intentionally scrolls independently
-- drag handle to resize between reading and focus modes
-- TOC hides first when space is constrained so content remains readable
-- fullscreen snap enters at ~92% viewport width
-        </div>
+        {{REPL}}
       </div>
       <div class="console-panel" data-panel="output">
         <div class="console-scroll">$ npm run docs:build
@@ -261,8 +221,62 @@ Health checks stayed green during deploy.</div>
 
 </main>
 
+<script type="module">
+let wasm_core;
+
+async function loadMechModule() {
+  const moduleCandidates = [
+    "/pkg/mech_wasm.js",
+    "https://docs.mech-lang.org/pkg/mech_wasm.js",
+  ];
+
+  let lastError = null;
+  for (const moduleUrl of moduleCandidates) {
+    try {
+      const mod = await import(moduleUrl);
+      return mod;
+    } catch (err) {
+      lastError = err;
+      console.error(`Failed to import ${moduleUrl}`, err);
+    }
+  }
+  throw lastError || new Error("Unable to load mech_wasm.js");
+}
+
+async function run() {
+  const { default: init, WasmMech } = await loadMechModule();
+  await init();
+  const code = `{{CODE}}`;
+  wasm_core = new WasmMech();
+  const xhr = new XMLHttpRequest();
+  const codeUrl = `/code${window.location.pathname}`;
+  xhr.open('GET', codeUrl, true);
+  xhr.onload = function () {
+    if (xhr.readyState === 4) {
+      if (xhr.status === 200) {
+        wasm_core.run_program(xhr.responseText);
+      } else {
+        console.error('Defaulting to included program');
+        wasm_core.run_program(code);
+      }
+      wasm_core.init();
+      wasm_core.render_inline_values();
+      wasm_core.render_codeblock_output_values();
+      wasm_core.attach_repl('mech-output');
+    }
+  };
+  xhr.onerror = function () {
+    console.error("I've been waiting for this error. Look me up in formatter.rs");
+    console.error(xhr.statusText);
+  };
+  xhr.send(null);
+}
+
+run();
+</script>
+
 <script>
-const handle        = document.getElementById("resizeHandle");
+const handle        = document.getElementById("resizeHandle") || document.getElementById("resizer");
 const workspace     = document.getElementById("workspace");
 const articleLayout = document.getElementById("articleLayout");
 const contentShell  = document.getElementById("contentShell");

@@ -1,0 +1,55 @@
+Template placeholders
+===============================================================================
+
+%% Template placeholders are tokens in HTML shims that Mech replaces at render time. Use them to control where metadata, structured content, and interactive runtime mounts are inserted.
+
+1. Overview
+-------------------------------------------------------------------------------
+
+A placeholder is written as `{{NAME}}` and is replaced during HTML rendering.
+
+This allows one Mechdown source document to be rendered into different layouts by swapping shims while keeping content semantics the same.
+
+2. Core placeholders
+-------------------------------------------------------------------------------
+
+- `{{STYLESHEET}}` — Injected CSS content.
+- `{{TITLE}}` — Document title text.
+- `{{BYLINE}}` — Formatted byline content from the title block.
+- `{{HERO}}` — Hero media/content from the title block.
+- `{{SUMMARY}}` — Synopsis content from the title block.
+- `{{TOC}}` — Generated table of contents.
+- `{{ABSTRACT}}` — Content from `%%` abstract blocks.
+- `{{INTRO}}` — Unsectioned intro content before the first numbered section.
+- `{{CONTENTS}}` — Sectioned document body contents.
+- `{{CONTENT}}` — Alias for `{{CONTENTS}}`.
+- `{{CITED}}` — Works Cited markup (when citations are present).
+- `{{SECTION#}}` — Specific numbered section slot (`{{SECTION1}}`, `{{SECTION2}}`, ...).
+
+3. Interactive placeholders
+-------------------------------------------------------------------------------
+
+These placeholders support browser-side Mech runtime integration.
+
+- `{{CODE}}` — Base64+compressed serialized program payload (when built with `serde` support). This is used by web runtime bootstrap code to reconstruct and run the page program.
+- `{{REPL}}` — Default REPL mount markup:
+
+```
+<div class="console-scroll mech-repl hidden" id="mech-output"></div>
+```
+
+The web runtime expects a mount with id `mech-output` when calling `attach_repl`.
+
+4. Placement guidance
+-------------------------------------------------------------------------------
+
+- Place `{{TOC}}`, `{{INTRO}}`, and `{{CONTENT}}` where readers should see navigation and primary content.
+- Place `{{CITED}}` only where references should appear.
+- Place `{{REPL}}` inside your console/pane container where the interactive prompt should appear.
+- Keep runtime bootstrap script placement near the end of `<body>` so DOM targets exist before attach.
+
+5. Related docs
+-------------------------------------------------------------------------------
+
+- [Title](/mechdown/title.html)
+- [Mechdown Index](/mechdown/index.html)
