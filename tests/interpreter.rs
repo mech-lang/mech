@@ -983,6 +983,22 @@ test_interpreter!(interpret_user_function_scalar_auto_broadcast, r#"add-one(x<f6
   | * => x + 1.
 add-one([1 2 3])"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, 4.0], 1, 3)));
 
+// Multi-argument broadcast: two same-shape vectors, constant body.
+// Issue #278 case 1: body returns 1.0 regardless of inputs — should give [1 1 1].
+test_interpreter!(interpret_broadcast_multi_arg_constant, r#"const-one(x<f64>, y<f64>) => <f64>
+  | (*, *) => 1.0.
+const-one([1 2 3], [1 2 3])"#, Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0, 1.0], 1, 3)));
+
+// Multi-argument broadcast: element-wise product of two same-shape vectors.
+test_interpreter!(interpret_broadcast_multi_arg_mul, r#"mul(x<f64>, y<f64>) => <f64>
+  | (*, *) => x * y.
+mul([1 2 3], [4 5 6])"#, Value::MatrixF64(Matrix::from_vec(vec![4.0, 10.0, 18.0], 1, 3)));
+
+// Multi-argument broadcast: one matrix arg, one scalar arg (scalar repeats).
+test_interpreter!(interpret_broadcast_multi_arg_scalar_repeat, r#"scale(x<f64>, y<f64>) => <f64>
+  | (*, *) => x * y.
+scale([1 2 3], 2.0)"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 4.0, 6.0], 1, 3)));
+
 test_interpreter!(interpret_set_value,"~x := 1.23; x = 4.56;", Value::F64(Ref::new(4.56)));
 test_interpreter!(interpret_set_value_row_vector,"~x := [6,2]; x[1] = 4;", Value::MatrixF64(Matrix::from_vec(vec![4.0, 2.0], 1, 2)));
 test_interpreter!(interpret_set_value_col_vector,"~x := [false false true true]'; x[1] = true; x[1]", Value::Bool(Ref::new(true)));

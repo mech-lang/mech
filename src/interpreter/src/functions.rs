@@ -291,62 +291,151 @@ enum FunctionCallStep {
   TailCall(Vec<Value>),
 }
 
-// If the function is single-input / single-output with matching scalar kinds,
-// and the actual argument is a matrix, run the function on each element and
-// reassemble the result into a matrix of the same shape.
-// Returns None if any condition for broadcasting isn't met, so the caller can
-// fall through to normal execution.
+// Attempts element-wise broadcasting for user functions whose declared
+// parameter kinds are all scalar but are called with matrix arguments.
+//
+// Single-argument path: unchanged original behaviour — requires input and
+// output kinds to match (e.g. f64→f64).
+//
+// Multi-argument path: if every matrix argument shares the same shape, zip
+// corresponding elements from each argument and call the function once per
+// position, then reassemble into a matrix of that shape. Scalar arguments are
+// repeated at every position. Input/output kinds may differ (e.g. f64,f64→bool).
+//
+// Returns None if any precondition is not met so the caller falls through to
+// normal (non-broadcasting) execution.
 #[cfg(feature = "matrix")]
 fn try_broadcast_user_function(
   fxn_def: &FunctionDefinition,
   input_arg_values: &Vec<Value>,
   p: &Interpreter,
 ) -> MResult<Option<Value>> {
-  if input_arg_values.len() != 1
+  let n_args = input_arg_values.len();
+
+  if n_args == 0
     || fxn_def.code.output.len() != 1
-    || fxn_def.code.input.len() != 1
+    || fxn_def.code.input.len() != n_args
   {
     return Ok(None);
   }
 
-  let source = detach_value(&input_arg_values[0]);
-  if !source.is_matrix() {
+  // ── Single-argument path (original behaviour, unchanged) ──────────────────
+  if n_args == 1 {
+    let source = detach_value(&input_arg_values[0]);
+    if !source.is_matrix() {
+      return Ok(None);
+    }
+
+    #[cfg(feature = "kind_annotation")]
+    let (input_kind, output_kind) = {
+      let input_kind = kind_annotation(&fxn_def.code.input[0].kind.kind, p)?
+        .to_value_kind(&p.state.borrow().kinds)?;
+      let output_kind = kind_annotation(&fxn_def.code.output[0].kind.kind, p)?
+        .to_value_kind(&p.state.borrow().kinds)?;
+      (input_kind, output_kind)
+    };
+
+    #[cfg(not(feature = "kind_annotation"))]
+    let (input_kind, output_kind) = {
+      return Ok(None);
+    };
+
+    if input_kind != output_kind || matches!(input_kind, ValueKind::Matrix(_, _)) {
+      return Ok(None);
+    }
+
+    let Some(elements) = crate::patterns::matrix_like_values(&source) else {
+      return Ok(None);
+    };
+
+    let mut outputs = Vec::with_capacity(elements.len());
+    for element in elements {
+      outputs.push(execute_user_function(fxn_def, &vec![element], p)?);
+    }
+
+    let shape = source.shape();
+    return Ok(Some(build_typed_matrix_from_values(
+      &output_kind,
+      outputs,
+      shape[0],
+      shape[1],
+    )));
+  }
+
+  // ── Multi-argument path ───────────────────────────────────────────────────
+  // At least one argument must be a matrix, otherwise there is nothing to broadcast.
+  let has_matrix = input_arg_values.iter().any(|v| detach_value(v).is_matrix());
+  if !has_matrix {
     return Ok(None);
   }
 
-  // Resolve the declared input and output kinds from their annotations.
-  // Without kind_annotation feature we can't know the element type, so bail.
+  // Resolve declared input and output kinds. Bail if kind_annotation is absent.
   #[cfg(feature = "kind_annotation")]
-  let (input_kind, output_kind) = {
-    let input_kind = kind_annotation(&fxn_def.code.input[0].kind.kind, p)?
+  let (input_kinds, output_kind) = {
+    let mut iks: Vec<ValueKind> = Vec::with_capacity(n_args);
+    for input_arg in &fxn_def.code.input {
+      iks.push(
+        kind_annotation(&input_arg.kind.kind, p)?
+          .to_value_kind(&p.state.borrow().kinds)?,
+      );
+    }
+    let ok = kind_annotation(&fxn_def.code.output[0].kind.kind, p)?
       .to_value_kind(&p.state.borrow().kinds)?;
-    let output_kind = kind_annotation(&fxn_def.code.output[0].kind.kind, p)?
-      .to_value_kind(&p.state.borrow().kinds)?;
-    (input_kind, output_kind)
+    (iks, ok)
   };
 
   #[cfg(not(feature = "kind_annotation"))]
-  let (input_kind, output_kind) = {
+  let (input_kinds, output_kind) = {
     return Ok(None);
   };
 
-  // Only broadcast when input and output kinds are the same scalar kind.
-  // If the input is already a matrix kind, don't recurse.
-  if input_kind != output_kind || matches!(input_kind, ValueKind::Matrix(_, _)) {
+  // All declared parameter kinds and the output kind must be scalar — if any
+  // is already a matrix type, this function is designed to receive matrices
+  // directly and should not broadcast.
+  if input_kinds.iter().any(|k| matches!(k, ValueKind::Matrix(_, _)))
+    || matches!(output_kind, ValueKind::Matrix(_, _))
+  {
     return Ok(None);
   }
 
-  let Some(elements) = crate::patterns::matrix_like_values(&source) else {
-    return Ok(None);
-  };
+  // All matrix arguments must share the same shape; mixed shapes are not supported.
+  let mut broadcast_shape: Option<Vec<usize>> = None;
+  for v in input_arg_values {
+    let dv = detach_value(v);
+    if dv.is_matrix() {
+      let s = dv.shape();
+      if let Some(ref existing) = broadcast_shape {
+        if existing != &s {
+          return Ok(None);
+        }
+      } else {
+        broadcast_shape = Some(s);
+      }
+    }
+  }
+  let shape = broadcast_shape.unwrap(); // safe: has_matrix was true above
+  let n = shape[0] * shape[1];
 
-  // Apply the function element-wise, then reassemble into the original shape.
-  let mut outputs = Vec::with_capacity(elements.len());
-  for element in elements {
-    outputs.push(execute_user_function(fxn_def, &vec![element], p)?);
+  // Flatten each argument into a list of scalars; scalar arguments are repeated.
+  let all_elements: Vec<Vec<Value>> = input_arg_values
+    .iter()
+    .map(|v| {
+      let dv = detach_value(v);
+      if dv.is_matrix() {
+        crate::patterns::matrix_like_values(&dv).unwrap_or_default()
+      } else {
+        vec![dv; n]
+      }
+    })
+    .collect();
+
+  // Call the function once per element position.
+  let mut outputs = Vec::with_capacity(n);
+  for i in 0..n {
+    let args: Vec<Value> = all_elements.iter().map(|col| col[i].clone()).collect();
+    outputs.push(execute_user_function(fxn_def, &args, p)?);
   }
 
-  let shape = source.shape();
   Ok(Some(build_typed_matrix_from_values(
     &output_kind,
     outputs,
