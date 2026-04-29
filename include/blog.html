@@ -157,8 +157,7 @@
     </div>
   </section>
 
-  <div class="resize-handle hidden" id="resizer" aria-hidden="true"></div>
-  <div class="resize-handle" id="resizeHandle"></div>
+  <div class="resize-handle" id="resizer"></div>
   <div class="edge-handle" id="edgeHandle" aria-hidden="true"></div>
 
   <aside class="console-pane">
@@ -277,7 +276,7 @@ run();
 </script>
 
 <script>
-const handle        = document.getElementById("resizeHandle");
+const handle        = document.getElementById("resizeHandle") || document.getElementById("resizer");
 const workspace     = document.getElementById("workspace");
 const articleLayout = document.getElementById("articleLayout");
 const contentShell  = document.getElementById("contentShell");
