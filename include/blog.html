@@ -58,9 +58,7 @@
   padding:10px;
   max-height:40vh;
   overflow:auto;
-  white-space:pre-wrap;
   word-break:break-word;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size:13px;
 }
 </style>
@@ -734,7 +732,7 @@ deferPostPaint(syncInitialResponsiveLayout);
       <span class="mech-inline-popup__title">Inline Value</span>
       <button type="button" class="mech-inline-popup__close" aria-label="Close popup">×</button>
     </div>
-    <pre class="mech-inline-popup__content"></pre>
+    <div class="mech-inline-popup__content"></div>
   `;
   document.body.appendChild(popup);
 
@@ -768,9 +766,13 @@ deferPostPaint(syncInitialResponsiveLayout);
     return { varName, value };
   }
 
-  function showPopup(varName, value, x, y) {
+  function showPopup(varName, value, x, y, { isHtml = false } = {}) {
     title.textContent = varName;
-    content.textContent = value;
+    if (isHtml) {
+      content.innerHTML = value;
+    } else {
+      content.textContent = value;
+    }
     popup.hidden = false;
     const pad = 12;
     const width = popup.offsetWidth || 320;
@@ -801,27 +803,31 @@ deferPostPaint(syncInitialResponsiveLayout);
     const { varName } = resolvePopupData(source);
 
     if (clickedAns) {
-      const value = (target.textContent || "(no value)").trim();
-      showPopup(varName, value, event.clientX + 12, event.clientY + 12);
+      const value = (target.innerHTML || target.textContent || "(no value)").trim();
+      showPopup(varName, value, event.clientX + 12, event.clientY + 12, { isHtml: true });
       return;
     }
 
     window.setTimeout(() => {
       const wasmModal = document.querySelector(".mech-modal:last-of-type");
-      let value = "";
+      let valueHtml = "";
 
       if (wasmModal) {
-        value = (wasmModal.textContent || "").trim();
+        valueHtml = (wasmModal.querySelector(".mech-output-value")?.innerHTML
+          || wasmModal.innerHTML
+          || "").trim();
         wasmModal.remove();
       }
 
-      if (!value) {
+      if (!valueHtml) {
         const replResults = document.querySelectorAll("#mech-output .repl-result");
         const lastResult = replResults[replResults.length - 1];
-        value = (lastResult?.textContent || "").trim();
+        valueHtml = (lastResult?.querySelector(".mech-output-value")?.innerHTML
+          || lastResult?.innerHTML
+          || "").trim();
       }
 
-      showPopup(varName, value || "(no value)", event.clientX + 12, event.clientY + 12);
+      showPopup(varName, valueHtml || "(no value)", event.clientX + 12, event.clientY + 12, { isHtml: true });
     }, 0);
   }, true);
 
