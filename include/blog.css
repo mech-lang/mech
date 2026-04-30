@@ -837,26 +837,20 @@ section.active-section {
 .footer-meta {
   border-top: 1px dotted var(--border);
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
   padding: 20px 0;
   font-size: 14px;
+  width: 100%;
+  text-align: center;
 }
 
-.footer-meta-links {
-  display: flex;
-}
-
-.footer-meta-links a {
+.footer-pride {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-}
-
-.footer-meta-links a:hover {
-  color: var(--text-primary);
+  justify-content: center;
+  gap: 4px;
+  margin-inline: auto;
 }
 
 /* ── Resize handle ── */
