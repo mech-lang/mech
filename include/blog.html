@@ -9,61 +9,6 @@
   {{STYLESHEET}}
 </style>
 <link rel="stylesheet" href="https://mech-lang.org/css/blog.css">
-
-<style>
-.mech-inline-popup {
-  position: fixed;
-  top: 96px;
-  left: 24px;
-  z-index: 12000;
-  min-width: 220px;
-  max-width: min(460px, calc(100vw - 24px));
-  background: #111827;
-  color: #f9fafb;
-  border: 1px solid #374151;
-  border-radius: 8px;
-  box-shadow: 0 12px 28px rgba(0,0,0,.45);
-  overflow: hidden;
-}
-.mech-inline-popup[hidden] { display:none !important; }
-.mech-inline-popup__header {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  padding:8px 10px;
-  border-bottom:1px solid #374151;
-  cursor:grab;
-  user-select:none;
-}
-.mech-inline-popup__header:active { cursor:grabbing; }
-.mech-inline-popup__title { font-size:22px; letter-spacing:0; text-transform:none; color:inherit; }
-.mech-inline-popup__content .mech-output-value { padding: 8px 6px 4px; }
-.mech-inline-popup__close {
-  border:1px solid #4b5563;
-  background:#1f2937;
-  color:#f9fafb;
-  border-radius:5px;
-  width:24px;
-  height:24px;
-  line-height:20px;
-  cursor:pointer;
-  transition: background .15s ease, border-color .15s ease, color .15s ease;
-}
-.mech-inline-popup__close:hover {
-  background: #2d3a4f;
-  border-color: #fbbf24;
-  color: #fbbf24;
-}
-.mech-inline-popup__content {
-  margin:0;
-  padding:10px;
-  max-height:40vh;
-  overflow:auto;
-  border-radius: 0 0 8px 8px;
-}
-</style>
-
 </head>
 <body>
 
@@ -198,51 +143,38 @@
           <div class="footer-meta">
             <div>© 2026 Mech Systems Lab</div>
             <div>Built with <span>
-              
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline; width:18px; height:18px; margin-top: -2px; vertical-align:middle;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline; width:18px; height:18px; margin-top: -2px; vertical-align:middle;">
 
-  <defs>
-    <radialGradient id="rainbowRadial" cx="12" cy="17" r="11" gradientUnits="userSpaceOnUse">
+              <defs>
+                <radialGradient id="rainbowRadial" cx="12" cy="17" r="11" gradientUnits="userSpaceOnUse">
+                 <!-- pastel purple -->
+                <stop offset="0%" stop-color="#8b6fd8"></stop>
+                <stop offset="18%" stop-color="#8b6fd8"></stop>
+                <!-- pastel blue -->
+                <stop offset="18%" stop-color="#6fa8ff"></stop>
+                <stop offset="38%" stop-color="#6fa8ff"></stop>
+                <!-- pastel green -->
+                <stop offset="38%" stop-color="#5DCF8D"></stop>
+                <stop offset="53%" stop-color="#5DCF8D"></stop>
+                <!-- pastel yellow -->
+                <stop offset="53%" stop-color="#ffe873"></stop>
+                <stop offset="72%" stop-color="#ffe873"></stop>
+                <!-- pastel orange -->
+                <stop offset="72%" stop-color="#ff9f5f"></stop>
+                <stop offset="90%" stop-color="#ff9f5f"></stop>
+                <!-- pastel red -->
+                <stop offset="90%" stop-color="#ff6666"></stop>
+                <stop offset="100%" stop-color="#ff6666"></stop>
+                </radialGradient>
+              </defs>
 
-<!-- pastel purple -->
-<stop offset="0%" stop-color="#8b6fd8"></stop>
-<stop offset="18%" stop-color="#8b6fd8"></stop>
-
-<!-- pastel blue -->
-<stop offset="18%" stop-color="#6fa8ff"></stop>
-<stop offset="38%" stop-color="#6fa8ff"></stop>
-
-<!-- pastel green -->
-<stop offset="38%" stop-color="#5DCF8D"></stop>
-<stop offset="53%" stop-color="#5DCF8D"></stop>
-
-<!-- pastel yellow -->
-<stop offset="53%" stop-color="#ffe873"></stop>
-<stop offset="72%" stop-color="#ffe873"></stop>
-
-<!-- pastel orange -->
-<stop offset="72%" stop-color="#ff9f5f"></stop>
-<stop offset="90%" stop-color="#ff9f5f"></stop>
-
-<!-- pastel red -->
-<stop offset="90%" stop-color="#ff6666"></stop>
-<stop offset="100%" stop-color="#ff6666"></stop>
-
-    </radialGradient>
-  </defs>
-
-  <path d="M22 17a10 10 0 0 0-20 0" stroke="url(#rainbowRadial)"></path>
-  <path d="M6 17a6 6 0 0 1 12 0" stroke="url(#rainbowRadial)"></path>
-  <path d="M10 17a2 2 0 0 1 4 0" stroke="url(#rainbowRadial)"></path>
-</svg>
+              <path d="M22 17a10 10 0 0 0-20 0" stroke="url(#rainbowRadial)"></path>
+              <path d="M6 17a6 6 0 0 1 12 0" stroke="url(#rainbowRadial)"></path>
+              <path d="M10 17a2 2 0 0 1 4 0" stroke="url(#rainbowRadial)"></path>
+            </svg>
 
             </span> in Pennsylvania</div>
-            <div class="footer-meta-links">
-              <a href="https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/LICENSE" target="_blank" rel="noopener noreferrer">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="footer-icon lucide lucide-scale-icon lucide-scale" aria-hidden="true"><path d="M12 3v18"/><path d="m19 8 3 8a5 5 0 0 1-6 0zV7"/><path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1"/><path d="m5 8 3 8a5 5 0 0 1-6 0zV7"/><path d="M7 21h10"/></svg>
-                <span>Apache 2.0</span>
-              </a>
-            </div>
+
           </div>
 
         </div>
