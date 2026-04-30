@@ -1595,6 +1595,7 @@ li p {
     background: color-mix(in srgb, var(--code-background-color) 90%, var(--error-color) 10%);
     padding: 14px 16px;
     color: var(--text-color);
+    white-space: normal;
 }
 
 .mech-output-value:has(.mech-runtime-error) {
@@ -1605,6 +1606,13 @@ li p {
     display: flex;
     gap: 12px;
     align-items: flex-start;
+}
+
+.mech-runtime-error-header > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
 }
 
 .mech-runtime-error-icon {
@@ -1623,7 +1631,7 @@ li p {
 }
 
 .mech-runtime-error-message {
-    margin-top: 2px;
+    margin-top: 0px;
     line-height: 1.4;
     word-break: break-word;
 }
