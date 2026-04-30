@@ -37,7 +37,8 @@
   user-select:none;
 }
 .mech-inline-popup__header:active { cursor:grabbing; }
-.mech-inline-popup__title { font-size:12px; letter-spacing:.04em; text-transform:uppercase; color:#fbbf24; }
+.mech-inline-popup__title { font-size:22px; letter-spacing:0; text-transform:none; color:inherit; }
+.mech-inline-popup__content .mech-output-value { padding: 8px 6px 4px; }
 .mech-inline-popup__close {
   border:1px solid #4b5563;
   background:#1f2937;
@@ -729,7 +730,7 @@ deferPostPaint(syncInitialResponsiveLayout);
   popup.hidden = true;
   popup.innerHTML = `
     <div class="mech-inline-popup__header">
-      <span class="mech-inline-popup__title">Inline Value</span>
+      <span class="mech-inline-popup__title mech-var-name">inline_value</span>
       <button type="button" class="mech-inline-popup__close" aria-label="Close popup">×</button>
     </div>
     <div class="mech-inline-popup__content mech-block-output"></div>
