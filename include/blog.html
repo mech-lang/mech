@@ -834,13 +834,6 @@ deferPostPaint(syncInitialResponsiveLayout);
         wasmModal.remove();
       }
 
-      if (consoleIsClosed()) {
-        const lines = document.querySelectorAll("#mech-output .repl-line");
-        const results = document.querySelectorAll("#mech-output .repl-result");
-        lines[lines.length - 1]?.remove();
-        results[results.length - 1]?.remove();
-      }
-
       if (!valueHtml) {
         const replResults = document.querySelectorAll("#mech-output .repl-result");
         const lastResult = replResults[replResults.length - 1];
