@@ -300,23 +300,11 @@ impl WasmMech {
         _ => value.clone(),
       };
       let ans_id = hash_str("ans");
-
-      if interpreter_id == 0 {
-        let symbols = self.interpreter.symbols();
-        let mut symbols_brrw = symbols.borrow_mut();
-        symbols_brrw.insert(ans_id, resolved_value, false);
-        symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
-        self.interpreter.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
-      } else {
-        let mut sub_interpreters = self.interpreter.sub_interpreters.borrow_mut();
-        if let Some(sub) = sub_interpreters.get_mut(&interpreter_id) {
-          let symbols = sub.symbols();
-          let mut symbols_brrw = symbols.borrow_mut();
-          symbols_brrw.insert(ans_id, resolved_value, false);
-          symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
-          sub.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
-        }
-      }
+      let symbols = self.interpreter.symbols();
+      let mut symbols_brrw = symbols.borrow_mut();
+      symbols_brrw.insert(ans_id, resolved_value, false);
+      symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
+      self.interpreter.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
     }
   }
 
@@ -805,6 +793,13 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             CURRENT_MECH.with(|mech_ref| {
               if let Some(ptr) = *mech_ref.borrow() {
                 unsafe { (*ptr).repl_history.push(symbol_name.clone()); }
+              }
+            });
+
+            // Update variable "ans" with the value of the clicked symbol
+            CURRENT_MECH.with(|mech_ref| {
+              if let Some(ptr) = *mech_ref.borrow() {
+                unsafe { (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output_brrw); }
               }
             });
 
