@@ -754,24 +754,30 @@ pub fn attach_repl(&mut self, repl_id: &str) {
               return;
             }
 
-            let result_html = CURRENT_MECH.with(|mech_ref| {
-              if let Some(ptr) = *mech_ref.borrow() {
-                unsafe {
-                  let cmd = vec![("repl".to_string(), MechSourceCode::String(symbol_name.clone()))];
-                  match run_mech_code(&mut (*ptr).interpreter, &cmd) {
-                    Ok(output) => {
-                      let kind_str = html_escape(&format!("{}", output.kind()));
-                      format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html())
-                    }
-                    Err(err) => {
-                      format!("<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>", err.to_html())
+            let can_eval_symbol = symbol_name
+              .chars()
+              .any(|c| c.is_alphabetic() || c == '_' || c == ':');
+
+            let result_html = if can_eval_symbol {
+              CURRENT_MECH.with(|mech_ref| {
+                if let Some(ptr) = *mech_ref.borrow() {
+                  unsafe {
+                    let cmd = vec![("repl".to_string(), MechSourceCode::String(symbol_name.clone()))];
+                    match run_mech_code(&mut (*ptr).interpreter, &cmd) {
+                      Ok(output) => {
+                        let kind_str = html_escape(&format!("{}", output.kind()));
+                        format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html())
+                      }
+                      Err(_) => format_output_value_html(&output_brrw),
                     }
                   }
+                } else {
+                  format_output_value_html(&output_brrw)
                 }
-              } else {
-                "Error: No interpreter found.".to_string()
-              }
-            });
+              })
+            } else {
+              format_output_value_html(&output_brrw)
+            };
 
             // Add prompt line
             let prompt_line = document.create_element("div").unwrap();
