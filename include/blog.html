@@ -46,6 +46,12 @@
   height:24px;
   line-height:20px;
   cursor:pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.mech-inline-popup__close:hover {
+  background: #2d3a4f;
+  border-color: #fbbf24;
+  color: #fbbf24;
 }
 .mech-inline-popup__content {
   margin:0;
@@ -733,6 +739,7 @@ deferPostPaint(syncInitialResponsiveLayout);
   document.body.appendChild(popup);
 
   const header = popup.querySelector(".mech-inline-popup__header");
+  const title = popup.querySelector(".mech-inline-popup__title");
   const closeBtn = popup.querySelector(".mech-inline-popup__close");
   const content = popup.querySelector(".mech-inline-popup__content");
 
@@ -740,17 +747,30 @@ deferPostPaint(syncInitialResponsiveLayout);
     return consolePane.style.display === "none" || currentConsoleWidth <= COLLAPSE_THRESHOLD;
   }
 
-  function getPopupText(source) {
-    return source.getAttribute("data-value")
+  function resolvePopupData(source) {
+    const varName = (source.getAttribute("data-var")
+      || source.getAttribute("data-name")
+      || source.getAttribute("data-symbol")
+      || source.textContent
+      || "Inline Value").trim();
+
+    const nearbyValue = source.nextElementSibling?.classList?.contains("ans")
+      ? source.nextElementSibling.textContent
+      : source.closest(".mech-code")?.querySelector(".ans")?.textContent;
+
+    const value = (source.getAttribute("data-value")
       || source.getAttribute("data-popup")
       || source.getAttribute("title")
       || source.getAttribute("aria-label")
-      || source.textContent
-      || "(no value)";
+      || nearbyValue
+      || "(no value)").trim();
+
+    return { varName, value };
   }
 
-  function showPopup(text, x, y) {
-    content.textContent = text.trim();
+  function showPopup(varName, value, x, y) {
+    title.textContent = varName;
+    content.textContent = value;
     popup.hidden = false;
     const pad = 12;
     const width = popup.offsetWidth || 320;
@@ -774,8 +794,12 @@ deferPostPaint(syncInitialResponsiveLayout);
     if (!consoleIsClosed()) return;
     event.preventDefault();
     event.stopPropagation();
-    const rect = target.getBoundingClientRect();
-    showPopup(getPopupText(target), rect.left + window.scrollX + 8, rect.bottom + window.scrollY + 8);
+    const clickedAns = target.classList.contains("ans");
+    const source = clickedAns
+      ? target.previousElementSibling?.classList?.contains("mech-clickable") ? target.previousElementSibling : target
+      : target;
+    const { varName, value } = resolvePopupData(source);
+    showPopup(varName, value, event.clientX + 12, event.clientY + 12);
   }, true);
 
   let dragging = false;
