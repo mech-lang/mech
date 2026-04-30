@@ -23,6 +23,7 @@
   border: 1px solid #374151;
   border-radius: 8px;
   box-shadow: 0 12px 28px rgba(0,0,0,.45);
+  overflow: hidden;
 }
 .mech-inline-popup[hidden] { display:none !important; }
 .mech-inline-popup__header {
@@ -58,17 +59,7 @@
   padding:10px;
   max-height:40vh;
   overflow:auto;
-  word-break:break-word;
-  font-size:13px;
-  background: #05080d;
-  color: #f2ead9;
-}
-.mech-inline-popup__content .mech-output-kind {
-  color: #f6c04e;
-  margin-bottom: 6px;
-}
-.mech-inline-popup__content .mech-output-value {
-  color: #f2ead9;
+  border-radius: 0 0 8px 8px;
 }
 </style>
 
@@ -741,7 +732,7 @@ deferPostPaint(syncInitialResponsiveLayout);
       <span class="mech-inline-popup__title">Inline Value</span>
       <button type="button" class="mech-inline-popup__close" aria-label="Close popup">×</button>
     </div>
-    <div class="mech-inline-popup__content"></div>
+    <div class="mech-inline-popup__content mech-block-output"></div>
   `;
   document.body.appendChild(popup);
 
