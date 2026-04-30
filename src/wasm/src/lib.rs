@@ -722,6 +722,8 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             let output_value = output_brrw.clone();
             let symbol_name = if symbol_text.trim().is_empty() {
               symbols_brrw.get_symbol_name_by_id(element_id).unwrap()
+            } else if symbol_text.trim() == ">" {
+              "ans".to_string()
             } else {
               symbol_text.clone()
             };
