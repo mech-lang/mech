@@ -727,7 +727,9 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             let repl_width = mech_output.client_width();
             CURRENT_MECH.with(|mech_ref| {
               if let Some(ptr) = *mech_ref.borrow() {
-                unsafe { (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output_brrw); }
+                unsafe { (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output_brrw);
+                  let root_id = (*ptr).interpreter.id;
+                  (*ptr).bind_ans_symbol_for_interpreter(root_id, &output_brrw); }
               }
             });
 
@@ -1076,6 +1078,8 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             if let Some(ptr) = *mech_ref.borrow() {
               unsafe {
                 (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output_value);
+                let root_id = (*ptr).interpreter.id;
+                (*ptr).bind_ans_symbol_for_interpreter(root_id, &output_value);
               }
             }
           });
