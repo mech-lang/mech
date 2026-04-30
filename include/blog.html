@@ -725,23 +725,57 @@ deferPostPaint(syncInitialResponsiveLayout);
 
 
 (function setupInlineValuePopups() {
-  const popup = document.createElement("section");
-  popup.className = "mech-inline-popup";
-  popup.hidden = true;
-  popup.innerHTML = `
-    <div class="mech-inline-popup__header">
-      <span class="mech-inline-popup__title mech-var-name">inline_value</span>
-      <button type="button" class="mech-inline-popup__close" aria-label="Close popup">×</button>
-    </div>
-    <div class="mech-inline-popup__content mech-block-output"></div>
-  `;
-  document.body.appendChild(popup);
 
-  const header = popup.querySelector(".mech-inline-popup__header");
-  const title = popup.querySelector(".mech-inline-popup__title");
-  const closeBtn = popup.querySelector(".mech-inline-popup__close");
-  const content = popup.querySelector(".mech-inline-popup__content");
+  function createPopup(varName, value, x, y, { isHtml = false } = {}) {
+    const popup = document.createElement("section");
+    popup.className = "mech-inline-popup";
+    popup.innerHTML = `
+      <div class="mech-inline-popup__header">
+        <span class="mech-inline-popup__title mech-var-name"></span>
+        <button type="button" class="mech-inline-popup__close" aria-label="Close popup">×</button>
+      </div>
+      <div class="mech-inline-popup__content mech-block-output"></div>
+    `;
+    document.body.appendChild(popup);
 
+    const header = popup.querySelector(".mech-inline-popup__header");
+    const title = popup.querySelector(".mech-inline-popup__title");
+    const closeBtn = popup.querySelector(".mech-inline-popup__close");
+    const content = popup.querySelector(".mech-inline-popup__content");
+
+    title.textContent = varName;
+    if (isHtml) content.innerHTML = value;
+    else content.textContent = value;
+
+    const pad = 12;
+    const width = popup.offsetWidth || 320;
+    const height = popup.offsetHeight || 120;
+    popup.style.left = `${Math.max(pad, Math.min(x, window.innerWidth - width - pad))}px`;
+    popup.style.top = `${Math.max(70, Math.min(y, window.innerHeight - height - pad))}px`;
+
+    closeBtn.addEventListener("click", () => popup.remove());
+
+    let dragging = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+    header.addEventListener("mousedown", (event) => {
+      dragging = true;
+      const rect = popup.getBoundingClientRect();
+      dragOffsetX = event.clientX - rect.left;
+      dragOffsetY = event.clientY - rect.top;
+      event.preventDefault();
+    });
+    const moveHandler = (event) => {
+      if (!dragging || !document.body.contains(popup)) return;
+      const maxX = window.innerWidth - popup.offsetWidth - 8;
+      const maxY = window.innerHeight - popup.offsetHeight - 8;
+      popup.style.left = `${Math.max(8, Math.min(event.clientX - dragOffsetX, maxX))}px`;
+      popup.style.top = `${Math.max(8, Math.min(event.clientY - dragOffsetY, maxY))}px`;
+    };
+    const upHandler = () => { dragging = false; };
+    window.addEventListener("mousemove", moveHandler);
+    window.addEventListener("mouseup", upHandler);
+  }
   function consoleIsClosed() {
     return consolePane.style.display === "none" || currentConsoleWidth <= COLLAPSE_THRESHOLD;
   }
@@ -767,28 +801,10 @@ deferPostPaint(syncInitialResponsiveLayout);
     return { varName, value };
   }
 
-  function showPopup(varName, value, x, y, { isHtml = false } = {}) {
-    title.textContent = varName;
-    if (isHtml) {
-      content.innerHTML = value;
-    } else {
-      content.textContent = value;
-    }
-    popup.hidden = false;
-    const pad = 12;
-    const width = popup.offsetWidth || 320;
-    const height = popup.offsetHeight || 120;
-    const left = Math.max(pad, Math.min(x, window.innerWidth - width - pad));
-    const top = Math.max(70, Math.min(y, window.innerHeight - height - pad));
-    popup.style.left = `${left}px`;
-    popup.style.top = `${top}px`;
-  }
-
-  function closePopup() { popup.hidden = true; }
-  closeBtn.addEventListener("click", closePopup);
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closePopup();
+    if (event.key !== "Escape") return;
+    document.querySelectorAll(".mech-inline-popup").forEach((el) => el.remove());
   });
 
   document.addEventListener("click", (event) => {
@@ -805,7 +821,7 @@ deferPostPaint(syncInitialResponsiveLayout);
 
     if (clickedAns) {
       const value = (target.innerHTML || target.textContent || "(no value)").trim();
-      showPopup(varName, value, event.clientX + 12, event.clientY + 12, { isHtml: true });
+      createPopup(varName, value, event.clientX + 12, event.clientY + 12, { isHtml: true });
       return;
     }
 
@@ -818,6 +834,13 @@ deferPostPaint(syncInitialResponsiveLayout);
         wasmModal.remove();
       }
 
+      if (consoleIsClosed()) {
+        const lines = document.querySelectorAll("#mech-output .repl-line");
+        const results = document.querySelectorAll("#mech-output .repl-result");
+        lines[lines.length - 1]?.remove();
+        results[results.length - 1]?.remove();
+      }
+
       if (!valueHtml) {
         const replResults = document.querySelectorAll("#mech-output .repl-result");
         const lastResult = replResults[replResults.length - 1];
@@ -826,32 +849,10 @@ deferPostPaint(syncInitialResponsiveLayout);
         valueHtml = `${kindHtml}${bodyHtml}`.trim();
       }
 
-      showPopup(varName, valueHtml || "(no value)", event.clientX + 12, event.clientY + 12, { isHtml: true });
+      createPopup(varName, valueHtml || "(no value)", event.clientX + 12, event.clientY + 12, { isHtml: true });
     }, 0);
-  }, true);
-
-  let dragging = false;
-  let dragOffsetX = 0;
-  let dragOffsetY = 0;
-
-  header.addEventListener("mousedown", (event) => {
-    dragging = true;
-    const rect = popup.getBoundingClientRect();
-    dragOffsetX = event.clientX - rect.left;
-    dragOffsetY = event.clientY - rect.top;
-    event.preventDefault();
   });
 
-  window.addEventListener("mousemove", (event) => {
-    if (!dragging || popup.hidden) return;
-    const pad = 8;
-    const maxX = window.innerWidth - popup.offsetWidth - pad;
-    const maxY = window.innerHeight - popup.offsetHeight - pad;
-    popup.style.left = `${Math.max(pad, Math.min(event.clientX - dragOffsetX, maxX))}px`;
-    popup.style.top = `${Math.max(pad, Math.min(event.clientY - dragOffsetY, maxY))}px`;
-  });
-
-  window.addEventListener("mouseup", () => { dragging = false; });
 })();
 
 </script>
