@@ -754,22 +754,23 @@ pub fn attach_repl(&mut self, repl_id: &str) {
               return;
             }
 
-            let result_html = CURRENT_MECH.with(|mech_ref| {
+            let result_html = {
+              let kind_str = html_escape(&format!("{}", output_brrw.kind()));
+              format!(
+                "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
+                kind_str,
+                output_brrw.to_html()
+              )
+            };
+
+            CURRENT_MECH.with(|mech_ref| {
               if let Some(ptr) = *mech_ref.borrow() {
                 unsafe {
-                  let cmd = vec![("repl".to_string(), MechSourceCode::String(symbol_name.clone()))];
-                  match run_mech_code(&mut (*ptr).interpreter, &cmd) {
-                    Ok(output) => {
-                      let kind_str = html_escape(&format!("{}", output.kind()));
-                      format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html())
-                    }
-                    Err(err) => {
-                      format!("<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>", err.to_html())
-                    }
-                  }
+                  // Keep ans in the clicked interpreter for local context.
+                  (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output_brrw);
+                  // Also mirror ans into REPL/main interpreter so follow-up commands can use `ans`.
+                  (*ptr).bind_ans_symbol_for_interpreter(0, &output_brrw);
                 }
-              } else {
-                "Error: No interpreter found.".to_string()
               }
             });
 
@@ -1060,36 +1061,6 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         if let Some(output_value) = output {
           let result_html = format_output_value_html(&output_value);
 
-          let prompt_line = document.create_element("div").unwrap();
-          prompt_line.set_class_name("repl-line");
-          let input_span = document.create_element("span").unwrap();
-          input_span.set_class_name("repl-code");
-          input_span.set_inner_html("ans");
-          prompt_line.append_child(&input_span).unwrap();
-          if let Some(last_child) = last_child.clone() {
-            mech_output.insert_before(&prompt_line, Some(&last_child)).unwrap();
-          } else {
-            mech_output.append_child(&prompt_line).unwrap();
-          }
-
-          let result_line = document.create_element("div").unwrap();
-          result_line.set_class_name("repl-result");
-          result_line.set_inner_html(&result_html);
-          if let Some(last_child) = last_child {
-            mech_output.insert_before(&result_line, Some(&last_child)).unwrap();
-          } else {
-            mech_output.append_child(&result_line).unwrap();
-          }
-
-          CURRENT_MECH.with(|mech_ref| {
-            if let Some(ptr) = *mech_ref.borrow() {
-              unsafe {
-                (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output_value);
-                (*ptr).repl_history.push("ans".to_string());
-              }
-            }
-          });
-
           let repl_width = mech_output.client_width();
           if repl_width == 0 {
             let modal = document.create_element("div").unwrap();
@@ -1109,7 +1080,46 @@ pub fn attach_repl(&mut self, repl_id: &str) {
               .add_event_listener_with_callback("click", close_closure.as_ref().unchecked_ref())
               .unwrap();
             close_closure.forget();
+          } else {
+            let prompt_line = document.create_element("div").unwrap();
+            prompt_line.set_class_name("repl-line");
+            let input_span = document.create_element("span").unwrap();
+            input_span.set_class_name("repl-code");
+            input_span.set_inner_html("ans");
+            prompt_line.append_child(&input_span).unwrap();
+            if let Some(last_child) = last_child.clone() {
+              mech_output.insert_before(&prompt_line, Some(&last_child)).unwrap();
+            } else {
+              mech_output.append_child(&prompt_line).unwrap();
+            }
+
+            let result_line = document.create_element("div").unwrap();
+            result_line.set_class_name("repl-result");
+            result_line.set_inner_html(&result_html);
+            if let Some(last_child) = last_child {
+              mech_output.insert_before(&result_line, Some(&last_child)).unwrap();
+            } else {
+              mech_output.append_child(&result_line).unwrap();
+            }
+
+            CURRENT_MECH.with(|mech_ref| {
+              if let Some(ptr) = *mech_ref.borrow() {
+                unsafe {
+                  (*ptr).repl_history.push("ans".to_string());
+                }
+              }
+            });
           }
+
+          CURRENT_MECH.with(|mech_ref| {
+            if let Some(ptr) = *mech_ref.borrow() {
+              unsafe {
+                // Keep ans in both source and REPL interpreters.
+                (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output_value);
+                (*ptr).bind_ans_symbol_for_interpreter(0, &output_value);
+              }
+            }
+          });
           mech_output.set_scroll_top(mech_output.scroll_height());
         }
       }) as Box<dyn FnMut(_)>);
