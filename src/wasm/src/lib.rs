@@ -778,6 +778,14 @@ pub fn attach_repl(&mut self, repl_id: &str) {
               format_output_value_html(&output_brrw)
             };
 
+            CURRENT_MECH.with(|mech_ref| {
+              if let Some(ptr) = *mech_ref.borrow() {
+                unsafe {
+                  (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output_brrw);
+                }
+              }
+            });
+
             // Add prompt line
             let prompt_line = document.create_element("div").unwrap();
             prompt_line.set_class_name("repl-line");
