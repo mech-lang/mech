@@ -60,6 +60,15 @@
   overflow:auto;
   word-break:break-word;
   font-size:13px;
+  background: #05080d;
+  color: #f2ead9;
+}
+.mech-inline-popup__content .mech-output-kind {
+  color: #f6c04e;
+  margin-bottom: 6px;
+}
+.mech-inline-popup__content .mech-output-value {
+  color: #f2ead9;
 }
 </style>
 
@@ -813,18 +822,16 @@ deferPostPaint(syncInitialResponsiveLayout);
       let valueHtml = "";
 
       if (wasmModal) {
-        valueHtml = (wasmModal.querySelector(".mech-output-value")?.innerHTML
-          || wasmModal.innerHTML
-          || "").trim();
+        valueHtml = (wasmModal.innerHTML || "").trim();
         wasmModal.remove();
       }
 
       if (!valueHtml) {
         const replResults = document.querySelectorAll("#mech-output .repl-result");
         const lastResult = replResults[replResults.length - 1];
-        valueHtml = (lastResult?.querySelector(".mech-output-value")?.innerHTML
-          || lastResult?.innerHTML
-          || "").trim();
+        const kindHtml = lastResult?.querySelector(".mech-output-kind")?.outerHTML || "";
+        const bodyHtml = lastResult?.querySelector(".mech-output-value")?.outerHTML || lastResult?.innerHTML || "";
+        valueHtml = `${kindHtml}${bodyHtml}`.trim();
       }
 
       showPopup(varName, valueHtml || "(no value)", event.clientX + 12, event.clientY + 12, { isHtml: true });
