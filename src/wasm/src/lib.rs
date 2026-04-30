@@ -718,10 +718,55 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         match symbols_brrw.get(element_id) {
           Some(output) => {
             let output_brrw = output.borrow();
-
-            let result_html = format_output_value_html(&output_brrw);
-
             let symbol_name = symbols_brrw.get_symbol_name_by_id(element_id).unwrap();
+            let repl_width = mech_output.client_width();
+
+            // If REPL is "closed", show modal only (do not write to REPL).
+            if repl_width == 0 {
+              let modal = document.create_element("div").unwrap();
+              modal.set_class_name("mech-modal");
+              modal.set_inner_html(&format_output_value_html(&output_brrw));
+
+              let x = event.client_x();
+              let y = event.client_y();
+              modal.set_attribute(
+                "style",
+                &format!(
+                  "position:absolute; top:{}px; left:{}px;",
+                  y, x
+                )
+              ).unwrap();
+
+              document.body().unwrap().append_child(&modal).unwrap();
+
+              // Click to close modal
+              let modal_clone = modal.clone();
+              let close_closure = Closure::wrap(Box::new(move |_event: web_sys::Event| {
+                modal_clone.remove();
+              }) as Box<dyn FnMut(_)>);
+              modal.add_event_listener_with_callback("click", close_closure.as_ref().unchecked_ref()).unwrap();
+              close_closure.forget();
+              return;
+            }
+
+            let result_html = CURRENT_MECH.with(|mech_ref| {
+              if let Some(ptr) = *mech_ref.borrow() {
+                unsafe {
+                  let cmd = vec![("repl".to_string(), MechSourceCode::String(symbol_name.clone()))];
+                  match run_mech_code(&mut (*ptr).interpreter, &cmd) {
+                    Ok(output) => {
+                      let kind_str = html_escape(&format!("{}", output.kind()));
+                      format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html())
+                    }
+                    Err(err) => {
+                      format!("<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>", err.to_html())
+                    }
+                  }
+                }
+              } else {
+                "Error: No interpreter found.".to_string()
+              }
+            });
 
             // Add prompt line
             let prompt_line = document.create_element("div").unwrap();
@@ -752,34 +797,6 @@ pub fn attach_repl(&mut self, repl_id: &str) {
                 unsafe { (*ptr).repl_history.push(symbol_name.clone()); }
               }
             });
-
-            // If REPL is "closed", show modal at click location
-            let repl_width = mech_output.client_width();
-            if repl_width == 0 {
-              let modal = document.create_element("div").unwrap();
-              modal.set_class_name("mech-modal");
-              modal.set_inner_html(&format_output_value_html(&output_brrw));
-
-              let x = event.client_x();
-              let y = event.client_y();
-              modal.set_attribute(
-                "style",
-                &format!(
-                  "position:absolute; top:{}px; left:{}px;",
-                  y, x
-                )
-              ).unwrap();
-
-              document.body().unwrap().append_child(&modal).unwrap();
-
-              // Click to close modal
-              let modal_clone = modal.clone();
-              let close_closure = Closure::wrap(Box::new(move |_event: web_sys::Event| {
-                modal_clone.remove();
-              }) as Box<dyn FnMut(_)>);
-              modal.add_event_listener_with_callback("click", close_closure.as_ref().unchecked_ref()).unwrap();
-              close_closure.forget();
-            }
 
           },
           None => {
