@@ -719,6 +719,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         match symbols_brrw.get(element_id) {
           Some(output) => {
             let output_brrw = output.borrow();
+            let output_value = output_brrw.clone();
             let symbol_name = if symbol_text.trim().is_empty() {
               symbols_brrw.get_symbol_name_by_id(element_id).unwrap()
             } else {
@@ -729,7 +730,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             if repl_width == 0 {
               let modal = document.create_element("div").unwrap();
               modal.set_class_name("mech-modal");
-              modal.set_inner_html(&format_output_value_html(&output_brrw));
+              modal.set_inner_html(&format_output_value_html(&output_value));
 
               let x = event.client_x();
               let y = event.client_y();
@@ -767,21 +768,22 @@ pub fn attach_repl(&mut self, repl_id: &str) {
                         let kind_str = html_escape(&format!("{}", output.kind()));
                         format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html())
                       }
-                      Err(_) => format_output_value_html(&output_brrw),
+                      Err(_) => format_output_value_html(&output_value),
                     }
                   }
                 } else {
-                  format_output_value_html(&output_brrw)
+                  format_output_value_html(&output_value)
                 }
               })
             } else {
-              format_output_value_html(&output_brrw)
+              format_output_value_html(&output_value)
             };
+            drop(output_brrw);
 
             CURRENT_MECH.with(|mech_ref| {
               if let Some(ptr) = *mech_ref.borrow() {
                 unsafe {
-                  (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output_brrw);
+                  (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output_value);
                 }
               }
             });
