@@ -437,7 +437,7 @@ impl Formatter {
     let id_string = node.to_string();
     let id_hash = hash_str(&format!("footnote-{}",id_string));
     if self.html {
-      format!("<a id=\"footnote-ref-{}\" href=\"#{}\" class=\"mech-footnote-reference\">{}</a>",id_hash,id_hash,id_string)
+      format!("<a id=\"footnote-ref-{}\" href=\"#{}\" class=\"mech-footnote-reference\" onclick=\"event.preventDefault();document.getElementById('{}')?.scrollIntoView({{behavior:'auto',block:'start'}});history.replaceState(null,'','#{}');\">{}</a>",id_hash,id_hash,id_hash,id_hash,id_string)
     } else {
       format!("[^{}]",id_string)
     }
@@ -1025,9 +1025,9 @@ impl Formatter {
     let id: u64 = hash_str(&format!("footnote-{}",id_name.to_string()));
     if self.html {
       format!("<div class=\"mech-footnote\" id=\"{}\">
-        <div class=\"mech-footnote-id\">{}: <a href=\"#footnote-ref-{}\" class=\"mech-footnote-back\" aria-label=\"Back to footnote reference\">↩</a></div>
+        <div class=\"mech-footnote-id\">{}: <a href=\"#footnote-ref-{}\" class=\"mech-footnote-back\" aria-label=\"Back to footnote reference\" onclick=\"event.preventDefault();document.getElementById('footnote-ref-{}')?.scrollIntoView({{behavior:'auto',block:'nearest'}});history.replaceState(null,'','#footnote-ref-{}');\">↩</a></div>
         {}
-      </div>",id, id_name.to_string(), id, note_paragraph)  
+      </div>",id, id_name.to_string(), id, id, id, note_paragraph)  
     } else {
       format!("[^{}]: {}\n",id_name.to_string(), note_paragraph)
     }
