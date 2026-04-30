@@ -697,6 +697,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
       let parsed_id: Vec<&str> = id.split(":").collect();
       let element_id = parsed_id[0].parse::<u64>().unwrap();
       let interpreter_id = parsed_id[1].parse::<u64>().unwrap();
+      let symbol_text = element.text_content().unwrap_or_default();
 
       let symbols = match find_symbols(&self.interpreter, interpreter_id) {
         Some(symbols) => symbols,
@@ -718,7 +719,11 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         match symbols_brrw.get(element_id) {
           Some(output) => {
             let output_brrw = output.borrow();
-            let symbol_name = symbols_brrw.get_symbol_name_by_id(element_id).unwrap();
+            let symbol_name = if symbol_text.trim().is_empty() {
+              symbols_brrw.get_symbol_name_by_id(element_id).unwrap()
+            } else {
+              symbol_text.clone()
+            };
             let repl_width = mech_output.client_width();
 
             // If REPL is "closed", show modal only (do not write to REPL).
