@@ -792,14 +792,37 @@ deferPostPaint(syncInitialResponsiveLayout);
     const target = event.target.closest(".mech-clickable, .ans");
     if (!target) return;
     if (!consoleIsClosed()) return;
-    event.preventDefault();
-    event.stopPropagation();
+
     const clickedAns = target.classList.contains("ans");
     const source = clickedAns
       ? target.previousElementSibling?.classList?.contains("mech-clickable") ? target.previousElementSibling : target
       : target;
-    const { varName, value } = resolvePopupData(source);
-    showPopup(varName, value, event.clientX + 12, event.clientY + 12);
+
+    const { varName } = resolvePopupData(source);
+
+    if (clickedAns) {
+      const value = (target.textContent || "(no value)").trim();
+      showPopup(varName, value, event.clientX + 12, event.clientY + 12);
+      return;
+    }
+
+    window.setTimeout(() => {
+      const wasmModal = document.querySelector(".mech-modal:last-of-type");
+      let value = "";
+
+      if (wasmModal) {
+        value = (wasmModal.textContent || "").trim();
+        wasmModal.remove();
+      }
+
+      if (!value) {
+        const replResults = document.querySelectorAll("#mech-output .repl-result");
+        const lastResult = replResults[replResults.length - 1];
+        value = (lastResult?.textContent || "").trim();
+      }
+
+      showPopup(varName, value || "(no value)", event.clientX + 12, event.clientY + 12);
+    }, 0);
   }, true);
 
   let dragging = false;
