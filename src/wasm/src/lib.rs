@@ -720,13 +720,9 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           Some(output) => {
             let output_brrw = output.borrow();
             let output_value = output_brrw.clone();
-            let symbol_name = if symbol_text.trim().is_empty() {
-              symbols_brrw.get_symbol_name_by_id(element_id).unwrap()
-            } else if symbol_text.trim() == ">" {
-              "ans".to_string()
-            } else {
-              symbol_text.clone()
-            };
+            let symbol_name = symbols_brrw
+              .get_symbol_name_by_id(element_id)
+              .unwrap_or_else(|| symbol_text.clone());
             let repl_width = mech_output.client_width();
             // If REPL is "closed", show modal only (do not write to REPL).
             if repl_width == 0 {
