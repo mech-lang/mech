@@ -847,7 +847,12 @@ section.active-section {
 
 .footer-meta-links {
   display: flex;
-  gap: 24px;
+}
+
+.footer-meta-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .footer-meta-links a:hover {
