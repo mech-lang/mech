@@ -808,7 +808,7 @@ deferPostPaint(syncInitialResponsiveLayout);
   });
 
   document.addEventListener("click", (event) => {
-    const target = event.target.closest(".mech-clickable, .ans");
+    const target = event.target.closest(".mech-clickable, .ans, .mech-inline-expand");
     if (!target) return;
     if (!consoleIsClosed()) return;
 
