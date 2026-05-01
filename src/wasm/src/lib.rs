@@ -635,7 +635,19 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           execute_repl_command(repl_command)
         }
         Err(x) => {
-          format!("Unrecognized command: {}", x)
+          let message = html_escape(&format!("Unrecognized command: {}", x));
+          format!(
+            "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\"><div class=\"mech-runtime-error\">\
+              <div class=\"mech-runtime-error-header\">\
+                <span class=\"mech-runtime-error-icon\" aria-hidden=\"true\"></span>\
+                <div>\
+                  <div class=\"mech-runtime-error-title\">UnrecognizedCommand</div>\
+                  <div class=\"mech-runtime-error-message\">{}</div>\
+                </div>\
+              </div>\
+            </div></div>",
+            message
+          )
         }
       }
       #[cfg(not(feature = "repl"))]
