@@ -106,26 +106,39 @@
       user-select: none;
     }
 
+    /* Disable global scrollbars */
+    html, body {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    html::-webkit-scrollbar,
     body::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Custom main-content scrollbar (console-like) */
+    .content {
+      scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+      scrollbar-width: thin;
+    }
+
+    .content::-webkit-scrollbar {
+      width: 8px;
       height: 8px;
     }
 
-    body::-webkit-scrollbar-track {
-        background: transparent;
+    .content::-webkit-scrollbar-track {
+      background: transparent;
     }
 
-    body::-webkit-scrollbar-thumb {
-        background: rgba(128, 128, 128, 0.7);
-        border-radius: 10px;
+    .content::-webkit-scrollbar-thumb {
+      background: rgba(128, 128, 128, 0.7);
+      border-radius: 10px;
     }
 
-    body::-webkit-scrollbar-thumb:hover {
-        background: rgba(128, 128, 128, 0.7);
-    }
-
-    body {
-        scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
-        scrollbar-width: thin;
+    .content::-webkit-scrollbar-thumb:hover {
+      background: rgba(128, 128, 128, 0.85);
     }
     .toggle-button.edge-left:hover,
     .toggle-button.edge-right:hover {
