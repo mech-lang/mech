@@ -88,7 +88,6 @@ html, body {
   color: var(--text-primary);
   background: var(--bg-primary);
   scroll-behavior: smooth;
-  overflow: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
