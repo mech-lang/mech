@@ -908,7 +908,7 @@ section.active-section {
   transform: translate(-50%, -50%);
   border-radius: var(--grip-radius);
   background: var(--accent-primary);
-  border: 1px solid var(--accent-hover);
+  border: 1px solid var(--accent-shadow);
   z-index: 0;
 }
 
