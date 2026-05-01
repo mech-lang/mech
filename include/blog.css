@@ -232,30 +232,6 @@ body.console-fullscreen .workspace {
   justify-content: center;
   padding: 32px;
   padding-bottom: 0px;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--accent-secondary-purple-soft) transparent;
-}
-
-.content-shell::-webkit-scrollbar {
-  width: 8px;
-}
-
-.content-shell::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.content-shell::-webkit-scrollbar-thumb {
-  background: var(--accent-secondary-purple-soft);
-  border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: content-box;
-}
-
-.content-shell::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-secondary-purple-soft);
-  background-clip: content-box;
 }
 
 .content-column {
