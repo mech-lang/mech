@@ -648,9 +648,10 @@ function updateTocOnScroll() {
   if (contentShell.classList.contains("hidden")) return;
   if (!topSections.length) return;
 
-  const activationLine = HEADER_HEIGHT + Math.min(window.innerHeight * 0.35, 280);
+  const viewportHeight = contentShell.clientHeight || window.innerHeight;
+  const activationLine = HEADER_HEIGHT + Math.min(viewportHeight * 0.35, 280);
   let active = topSections[0];
-  const nearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+  const nearBottom = contentShell.scrollTop + contentShell.clientHeight >= contentShell.scrollHeight - 2;
 
   if (nearBottom) {
     active = topSections[topSections.length - 1];
@@ -662,7 +663,7 @@ function updateTocOnScroll() {
 
   topSections.forEach((e) => e.section.classList.remove("active-section"));
   if (active.section) active.section.classList.add("active-section");
-  const nestedActivationLine = HEADER_HEIGHT + Math.min(window.innerHeight * 0.30, 220);
+  const nestedActivationLine = HEADER_HEIGHT + Math.min(viewportHeight * 0.30, 220);
   setActiveTocSection(active.link, { nearBottom, activationLine: nestedActivationLine });
 }
 
@@ -678,6 +679,7 @@ function deferPostPaint(fn) {
 }
 
 window.addEventListener("scroll", requestTocUpdate, { passive: true });
+contentShell.addEventListener("scroll", requestTocUpdate, { passive: true });
 window.addEventListener("resize", requestTocUpdate);
 
 function syncInitialResponsiveLayout() {
