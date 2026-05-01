@@ -1,6 +1,6 @@
-  :root {
+:root {
   /* ── Layout ── */
-  --header-height: 72px;
+  --header-height: 52px;
   --console-width: 575px;
   --toc-width: 260px;
   --content-max-width: 1200px;
@@ -146,7 +146,7 @@ a { color: inherit; text-decoration: none; }
 .top-nav a {
   display: inline-flex;
   align-items: center;
-  padding: 29px 2px 25px;
+  padding: 17px 2px 17px;
   border-bottom: 2px solid transparent;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -182,7 +182,7 @@ a { color: inherit; text-decoration: none; }
 .widget .social-count {
   display: inline-flex;
   align-items: center;
-  height: 34px;
+  height: 30px;
   border: 1px solid var(--border);
   font-size: 13px;
   font-weight: 600;
