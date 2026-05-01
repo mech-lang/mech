@@ -538,6 +538,13 @@ pub fn attach_repl(&mut self, repl_id: &str) {
     closure.forget();
   }));
 
+  let intro_line = document.create_element("div").unwrap();
+  intro_line.set_class_name("repl-result");
+  intro_line.set_inner_html(
+    "<div class=\"mech-output-value\">Enter <code>:help</code> for a list of all commands.</div>",
+  );
+  container.append_child(&intro_line).unwrap();
+
   // Initial prompt
   if let Some(cb) = &*create_prompt.borrow() {
     cb();
