@@ -1072,14 +1072,14 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           continue;
         }
       };
-      let formatted = output.format_value_inline();
+      let formatted = output.to_html();
       log!(
         "VAR placeholder resolved: {} -> {} (interpreter: {})",
         var_name,
         formatted,
         interpreter_id
       );
-      var_element.set_text_content(Some(formatted.trim()));
+      var_element.set_inner_html(formatted.trim());
     }
     #[cfg(not(feature = "symbol_table"))]
     log!("VAR placeholders require feature 'symbol_table' to resolve values.");
