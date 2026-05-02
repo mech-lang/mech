@@ -706,8 +706,28 @@ pub fn attach_repl(&mut self, repl_id: &str) {
       // Parse element id
       let id = element.id();
       let parsed_id: Vec<&str> = id.split(":").collect();
-      let element_id = parsed_id[0].parse::<u64>().unwrap();
-      let interpreter_id = parsed_id[1].parse::<u64>().unwrap();
+      let (element_id, interpreter_id) = match parsed_id.as_slice() {
+        [output_id, interpreter_id] => {
+          match (output_id.parse::<u64>(), interpreter_id.parse::<u64>()) {
+            (Ok(output_id), Ok(interpreter_id)) => (output_id, interpreter_id),
+            _ => {
+              log!("Invalid clickable symbol id format: {}", id);
+              continue;
+            }
+          }
+        }
+        [output_id] => match output_id.parse::<u64>() {
+          Ok(output_id) => (output_id, 0),
+          Err(_) => {
+            log!("Invalid clickable symbol id format: {}", id);
+            continue;
+          }
+        },
+        _ => {
+          log!("Invalid clickable symbol id format: {}", id);
+          continue;
+        }
+      };
       let symbol_text = element.text_content().unwrap_or_default();
 
       let symbols = match find_symbols(&self.interpreter, interpreter_id) {
