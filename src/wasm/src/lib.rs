@@ -295,16 +295,24 @@ impl WasmMech {
   fn bind_ans_symbol_for_interpreter(&mut self, interpreter_id: u64, value: &Value) {
     #[cfg(feature = "symbol_table")]
     {
+      log!(
+        "bind_ans start: interpreter_id={} value_kind={}",
+        interpreter_id,
+        value.kind()
+      );
       let resolved_value = match value {
         Value::MutableReference(reference) => reference.borrow().clone(),
         _ => value.clone(),
       };
+      log!("bind_ans resolved value_kind={}", resolved_value.kind());
       let ans_id = hash_str("ans");
       let symbols = self.interpreter.symbols();
+      log!("bind_ans borrowing symbols mut for ans_id={}", ans_id);
       let mut symbols_brrw = symbols.borrow_mut();
       symbols_brrw.insert(ans_id, resolved_value, false);
       symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
       self.interpreter.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
+      log!("bind_ans complete: ans inserted");
     }
   }
 
@@ -758,6 +766,11 @@ pub fn attach_repl(&mut self, repl_id: &str) {
 
         match symbols.borrow().get(element_id).map(|output| output.borrow().clone()) {
           Some(output) => {
+            log!(
+              "Clickable click step 1: have output for element_id={} interpreter_id={}",
+              element_id,
+              interpreter_id
+            );
             let symbol_name = if symbol_text.trim().is_empty() {
               symbols
                 .borrow()
@@ -787,9 +800,11 @@ pub fn attach_repl(&mut self, repl_id: &str) {
               symbol_name_hint,
               symbol_text
             );
+            log!("Clickable click step 2: computing repl width");
             let repl_width = mech_output.client_width();
             // If REPL is "closed", show modal only (do not write to REPL).
             if repl_width == 0 {
+              log!("Clickable click step 3: REPL closed -> modal path");
               let modal = document.create_element("div").unwrap();
               modal.set_class_name("mech-modal");
               modal.set_inner_html(&format_output_value_html(&output));
@@ -816,6 +831,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
               return;
             }
 
+            log!("Clickable click step 4: REPL open -> writing prompt/result");
             let result_html = format_output_value_html(&output);
 
             // Add prompt line
@@ -843,6 +859,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
 
             // Update REPL history
             CURRENT_MECH.with(|mech_ref| {
+              log!("Clickable click step 5: pushing repl history");
               if let Some(ptr) = *mech_ref.borrow() {
                 unsafe { (*ptr).repl_history.push(symbol_name.clone()); }
               }
@@ -850,10 +867,12 @@ pub fn attach_repl(&mut self, repl_id: &str) {
 
             // Update variable "ans" with the value of the clicked symbol
             CURRENT_MECH.with(|mech_ref| {
+              log!("Clickable click step 6: binding ans symbol");
               if let Some(ptr) = *mech_ref.borrow() {
                 unsafe { (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output); }
               }
             });
+            log!("Clickable click step 7: click handling complete");
 
           },
           None => {
