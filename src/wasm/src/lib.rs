@@ -1043,17 +1043,32 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         Some(value) => hash_str(&value),
         None => match var_element.get_attribute("data-interpreter-id") {
           Some(value) => value.parse::<u64>().unwrap_or(0),
-          None => 0,
+          None => self.interpreter.id,
         },
       };
       let out_values = match find_out_values(&self.interpreter, interpreter_id) {
         Some(out_values) => out_values,
-        None => continue,
+        None => {
+          log!(
+            "VAR placeholder unresolved interpreter: {} (variable: {})",
+            interpreter_id,
+            var_name
+          );
+          continue;
+        }
       };
       let out_values_brrw = out_values.borrow();
       let output = match out_values_brrw.get(&var_id) {
         Some(value) => value,
-        None => continue,
+        None => {
+          log!(
+            "VAR placeholder unresolved variable: {} (hash: {}, interpreter: {})",
+            var_name,
+            var_id,
+            interpreter_id
+          );
+          continue;
+        }
       };
       var_element.set_text_content(Some(output.format_value_inline().trim()));
     }
