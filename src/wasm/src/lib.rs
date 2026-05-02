@@ -408,6 +408,8 @@ pub fn attach_repl(&mut self, repl_id: &str) {
                 result_line.set_inner_html(&output);
                 container_inner.append_child(&result_line).unwrap();
                 mech.init();
+                mech.render_inline_values();
+                mech.render_codeblock_output_values();
               }
             }
           });
@@ -599,6 +601,8 @@ pub fn attach_repl(&mut self, repl_id: &str) {
                   container.append_child(&result_line).unwrap();
 
                   mech.init();
+                  mech.render_inline_values();
+                  mech.render_codeblock_output_values();
 
                   // Replace previous prompt with a span
                   if let Some(old_input) = doc.get_element_by_id("repl-active-input") {
@@ -1031,6 +1035,58 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         inline_block.set_inner_html(&inline_html);
       }
     }
+    #[cfg(feature = "symbol_table")]
+    let var_elements = document.get_elements_by_class_name("mech-var-placeholder");
+    #[cfg(feature = "symbol_table")]
+    for j in 0..var_elements.length() {
+      let var_element = var_elements.get_with_index(j).unwrap();
+      let var_name = match var_element.get_attribute("data-var-name") {
+        Some(value) => value,
+        None => continue,
+      };
+      let var_id = hash_str(&var_name);
+      let interpreter_id = match var_element.get_attribute("data-interpreter-name") {
+        Some(value) => hash_str(&value),
+        None => match var_element.get_attribute("data-interpreter-id") {
+          Some(value) => value.parse::<u64>().unwrap_or(0),
+          None => self.interpreter.id,
+        },
+      };
+      let symbols = match find_symbols(&self.interpreter, interpreter_id) {
+        Some(symbols) => symbols,
+        None => {
+          log!(
+            "VAR placeholder unresolved interpreter: {} (variable: {})",
+            interpreter_id,
+            var_name
+          );
+          continue;
+        }
+      };
+      let symbols_brrw = symbols.borrow();
+      let output = match symbols_brrw.get(var_id) {
+        Some(value) => value.borrow().clone(),
+        None => {
+          log!(
+            "VAR placeholder unresolved variable (yet?): {} (hash: {}, interpreter: {})",
+            var_name,
+            var_id,
+            interpreter_id
+          );
+          continue;
+        }
+      };
+      let formatted = output.to_html();
+      log!(
+        "VAR placeholder resolved: {} -> {} (interpreter: {})",
+        var_name,
+        formatted,
+        interpreter_id
+      );
+      var_element.set_inner_html(formatted.trim());
+    }
+    #[cfg(not(feature = "symbol_table"))]
+    log!("VAR placeholders require feature 'symbol_table' to resolve values.");
     #[cfg(feature = "clickable_symbol_listeners")]
     self.add_inline_value_clickable_listeners();
   }

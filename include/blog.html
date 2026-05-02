@@ -248,6 +248,48 @@ async function loadMechModule() {
 async function run() {
   const { default: init, WasmMech } = await loadMechModule();
   await init();
+  const prepareVarPlaceholders = () => {
+  const pattern = /\{\{VAR:([A-Za-z0-9\-_\/]+)(?:@([A-Za-z0-9\-_\/]+))?\}\}/g;
+  document.querySelectorAll("script, style, code, pre, textarea").forEach((el) => el.setAttribute("data-var-skip", "1"));
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const updates = [];
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (!node || !node.nodeValue || !pattern.test(node.nodeValue)) {
+      pattern.lastIndex = 0;
+      continue;
+    }
+    pattern.lastIndex = 0;
+    const parent = node.parentElement;
+    if (!parent || parent.closest("[data-var-skip='1']")) continue;
+    const nearestMechRoot = parent.closest(".mech-root");
+    const rootInterpreterId = Number(nearestMechRoot?.getAttribute("mech-interpreter-id") || "0");
+    const fragment = document.createDocumentFragment();
+    let lastIndex = 0;
+    node.nodeValue.replace(pattern, (match, varName, interpreterName, offset) => {
+      if (offset > lastIndex) {
+        fragment.appendChild(document.createTextNode(node.nodeValue.slice(lastIndex, offset)));
+      }
+      const span = document.createElement("span");
+      span.className = "mech-var-placeholder";
+      span.setAttribute("data-var-name", varName);
+      if (interpreterName) {
+        span.setAttribute("data-interpreter-name", interpreterName);
+      } else {
+        span.setAttribute("data-interpreter-id", String(rootInterpreterId));
+      }
+      span.textContent = "";
+      fragment.appendChild(span);
+      lastIndex = offset + match.length;
+      return match;
+    });
+    if (lastIndex < node.nodeValue.length) {
+      fragment.appendChild(document.createTextNode(node.nodeValue.slice(lastIndex)));
+    }
+    updates.push([node, fragment]);
+  }
+  updates.forEach(([node, fragment]) => node.parentNode.replaceChild(fragment, node));
+  };
   const code = `{{CODE}}`;
   wasm_core = new WasmMech();
   const xhr = new XMLHttpRequest();
@@ -261,6 +303,7 @@ async function run() {
         console.error('Defaulting to included program');
         wasm_core.run_program(code);
       }
+      prepareVarPlaceholders();
       wasm_core.init();
       wasm_core.render_inline_values();
       wasm_core.render_codeblock_output_values();
