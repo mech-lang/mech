@@ -308,11 +308,17 @@ impl WasmMech {
       let ans_id = hash_str("ans");
       let symbols = self.interpreter.symbols();
       log!("bind_ans borrowing symbols mut for ans_id={}", ans_id);
-      let mut symbols_brrw = symbols.borrow_mut();
-      symbols_brrw.insert(ans_id, resolved_value, false);
-      symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
-      self.interpreter.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
-      log!("bind_ans complete: ans inserted");
+      match symbols.0.try_borrow_mut() {
+        Ok(mut symbols_brrw) => {
+          symbols_brrw.insert(ans_id, resolved_value, false);
+          symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
+          self.interpreter.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
+          log!("bind_ans complete: ans inserted");
+        }
+        Err(err) => {
+          log!("bind_ans skipped: symbols already borrowed ({:?})", err);
+        }
+      }
     }
   }
 
