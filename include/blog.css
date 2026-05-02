@@ -1044,6 +1044,16 @@ body.console-fullscreen .console-pane {
   border-bottom-color: var(--nav-accent-active);
 }
 
+.console-tab-count {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 18px;
+  background: var(--error);
+  color: var(--text-primary);
+}
+
 .console-fullscreen-toggle {
   display: inline-flex;
   align-items: center;
@@ -1132,6 +1142,26 @@ body.console-fullscreen .console-fullscreen-toggle .icon-exit {
 .console-scroll::-webkit-scrollbar-thumb:hover {
   background: var(--accent-secondary-purple-soft);
   background-clip: content-box;
+}
+
+.console-errors-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.console-errors-list li {
+  margin: 0 0 12px;
+}
+
+.console-error-preview {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.mech-error-target-flash {
+  outline: 2px solid var(--error);
+  outline-offset: 4px;
 }
 
 /* ── Responsive ── */

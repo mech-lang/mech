@@ -191,7 +191,7 @@
       <div class="console-tabs" role="tablist" aria-label="Console sections">
         <button class="console-tab active" type="button" role="tab" aria-selected="true" data-tab="console">console</button>
         <button class="console-tab" type="button" role="tab" aria-selected="false" data-tab="output">output</button>
-        <button class="console-tab" type="button" role="tab" aria-selected="false" data-tab="errors">errors</button>
+        <button class="console-tab" type="button" role="tab" aria-selected="false" data-tab="errors">errors <span class="console-tab-count" data-errors-count hidden>0</span></button>
       </div>
       <button class="console-fullscreen-toggle" id="consoleFullscreenToggle" type="button" aria-pressed="false" aria-label="Enter fullscreen">
         <svg class="icon-enter" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -216,7 +216,7 @@
         <div class="console-scroll">under construction</div>
       </div>
       <div class="console-panel" data-panel="errors">
-        <div class="console-scroll">under construction</div>
+        <div class="console-scroll" id="console-errors-list">No block errors found.</div>
       </div>
     </div>
   </aside>
@@ -330,6 +330,8 @@ const edgeHandle    = document.getElementById("edgeHandle");
 const tabButtons    = Array.from(document.querySelectorAll(".console-tab"));
 const tabPanels     = Array.from(document.querySelectorAll(".console-panel"));
 const fullscreenToggle = document.getElementById("consoleFullscreenToggle");
+const errorsPanel = document.getElementById("console-errors-list");
+const errorsTabCount = document.querySelector("[data-errors-count]");
 
 const MIN_CONSOLE_WIDTH  = 320;
 const COLLAPSE_THRESHOLD = 80;
@@ -363,6 +365,65 @@ function setActiveConsoleTab(tabName) {
     panel.classList.toggle("is-active", panel.dataset.panel === tabName);
   });
 }
+
+function buildErrorSummaryHtml(errorItems) {
+  if (!errorItems.length) return "<p>No block errors found.</p>";
+  const links = errorItems.map((item, ix) => {
+    const label = item.label || `Code block ${ix + 1}`;
+    return `
+      <li>
+        <a href="#" data-error-target="${item.id}">${label}</a>
+        <div class="console-error-preview">${item.preview}</div>
+      </li>
+    `;
+  }).join("");
+  return `<ol class="console-errors-list">${links}</ol>`;
+}
+
+function refreshErrorsPanel() {
+  if (!errorsPanel) return;
+  const outputNodes = Array.from(document.querySelectorAll(".mech-block-output"));
+  const errorNodes = outputNodes
+    .map((node, ix) => ({ node, ix }))
+    .filter(({ node }) => {
+      const kind = node.querySelector(".mech-output-kind");
+      return kind && kind.textContent && kind.textContent.trim().toLowerCase() === "error";
+    })
+    .map(({ node, ix }) => {
+      const blockContainer = node.closest(".mech-codeblock, .mech-code, .mech-fenced-code") || node;
+      const id = blockContainer.id || node.id || `mech-error-block-${ix}`;
+      if (!blockContainer.id) blockContainer.id = id;
+      const preview = (node.querySelector(".mech-output-value")?.textContent || "Error")
+        .trim()
+        .replace(/\s+/g, " ")
+        .slice(0, 220);
+      return { id, label: `Code block ${ix + 1}`, preview };
+    });
+
+  errorsPanel.innerHTML = buildErrorSummaryHtml(errorNodes);
+  if (errorsTabCount) {
+    errorsTabCount.textContent = String(errorNodes.length);
+    errorsTabCount.hidden = errorNodes.length === 0;
+  }
+}
+
+document.addEventListener("click", (event) => {
+  const link = event.target.closest("[data-error-target]");
+  if (!link) return;
+  event.preventDefault();
+  const targetId = link.getAttribute("data-error-target");
+  const target = targetId ? document.getElementById(targetId) : null;
+  if (!target) return;
+  target.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+  target.classList.add("mech-error-target-flash");
+  setTimeout(() => target.classList.remove("mech-error-target-flash"), 1200);
+});
+
+window.addEventListener("load", () => {
+  refreshErrorsPanel();
+  const observer = new MutationObserver(() => refreshErrorsPanel());
+  observer.observe(document.body, { childList: true, subtree: true });
+});
 
 function updateFullscreenToggleLabel() {
   if (!fullscreenToggle) return;
