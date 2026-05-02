@@ -308,17 +308,11 @@ impl WasmMech {
       let ans_id = hash_str("ans");
       let symbols = self.interpreter.symbols();
       log!("bind_ans borrowing symbols mut for ans_id={}", ans_id);
-      match symbols.0.try_borrow_mut() {
-        Ok(mut symbols_brrw) => {
-          symbols_brrw.insert(ans_id, resolved_value, false);
-          symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
-          self.interpreter.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
-          log!("bind_ans complete: ans inserted");
-        }
-        Err(err) => {
-          log!("bind_ans skipped: symbols already borrowed ({:?})", err);
-        }
-      }
+      let mut symbols_brrw = symbols.borrow_mut();
+      symbols_brrw.insert(ans_id, resolved_value, false);
+      symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
+      self.interpreter.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
+      log!("bind_ans complete: ans inserted");
     }
   }
 
@@ -770,7 +764,11 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         let mech_output = document.get_element_by_id("mech-output").unwrap();
         let last_child = mech_output.last_child();
 
-        match symbols.borrow().get(element_id).map(|output| output.borrow().clone()) {
+        let output = {
+          let symbols_brrw = symbols.borrow();
+          symbols_brrw.get(element_id).map(|output| output.borrow().clone())
+        };
+        match output {
           Some(output) => {
             log!(
               "Clickable click step 1: have output for element_id={} interpreter_id={}",
@@ -778,9 +776,10 @@ pub fn attach_repl(&mut self, repl_id: &str) {
               interpreter_id
             );
             let symbol_name = if symbol_text.trim().is_empty() {
-              symbols
-                .borrow()
-                .get_symbol_name_by_id(element_id)
+              {
+                let symbols_brrw = symbols.borrow();
+                symbols_brrw.get_symbol_name_by_id(element_id)
+              }
                 .or_else(|| {
                   let trimmed = symbol_name_hint.trim();
                   if trimmed.is_empty() {
