@@ -408,6 +408,8 @@ pub fn attach_repl(&mut self, repl_id: &str) {
                 result_line.set_inner_html(&output);
                 container_inner.append_child(&result_line).unwrap();
                 mech.init();
+                mech.render_inline_values();
+                mech.render_codeblock_output_values();
               }
             }
           });
@@ -599,6 +601,8 @@ pub fn attach_repl(&mut self, repl_id: &str) {
                   container.append_child(&result_line).unwrap();
 
                   mech.init();
+                  mech.render_inline_values();
+                  mech.render_codeblock_output_values();
 
                   // Replace previous prompt with a span
                   if let Some(old_input) = doc.get_element_by_id("repl-active-input") {
