@@ -729,6 +729,9 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         }
       };
       let symbol_text = element.text_content().unwrap_or_default();
+      let symbol_name_hint = element
+        .get_attribute("data-var")
+        .unwrap_or_else(|| symbol_text.clone());
 
       let symbols = match find_symbols(&self.interpreter, interpreter_id) {
         Some(symbols) => symbols,
@@ -751,9 +754,24 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           Some(output) => {
             let output_brrw = output.borrow();
             let symbol_name = if symbol_text.trim().is_empty() {
-              symbols_brrw.get_symbol_name_by_id(element_id).unwrap()
+              symbols_brrw
+                .get_symbol_name_by_id(element_id)
+                .or_else(|| {
+                  let trimmed = symbol_name_hint.trim();
+                  if trimmed.is_empty() {
+                    None
+                  } else {
+                    Some(trimmed.to_string())
+                  }
+                })
+                .unwrap_or_else(|| format!("symbol_{}", element_id))
             } else {
-              symbol_text.clone()
+              let trimmed_hint = symbol_name_hint.trim();
+              if !trimmed_hint.is_empty() && trimmed_hint != symbol_text.trim() {
+                trimmed_hint.to_string()
+              } else {
+                symbol_text.clone()
+              }
             };
             let repl_width = mech_output.client_width();
             // If REPL is "closed", show modal only (do not write to REPL).
