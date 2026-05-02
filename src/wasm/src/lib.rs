@@ -1083,6 +1083,17 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         formatted,
         interpreter_id
       );
+      let existing_class = var_element.get_attribute("class").unwrap_or_default();
+      let clickable_class = if existing_class.is_empty() {
+        "mech-clickable".to_string()
+      } else if existing_class.split_whitespace().any(|name| name == "mech-clickable") {
+        existing_class
+      } else {
+        format!("{} mech-clickable", existing_class)
+      };
+      let _ = var_element.set_attribute("class", &clickable_class);
+      let _ = var_element.set_attribute("id", &format!("{}:{}", var_id, interpreter_id));
+      let _ = var_element.set_attribute("data-var", &var_name);
       var_element.set_inner_html(formatted.trim());
     }
     #[cfg(not(feature = "symbol_table"))]
