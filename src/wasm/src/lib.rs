@@ -756,13 +756,11 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         let mech_output = document.get_element_by_id("mech-output").unwrap();
         let last_child = mech_output.last_child();
 
-        let symbols_brrw = symbols.borrow();
-
-        match symbols_brrw.get(element_id) {
+        match symbols.borrow().get(element_id).map(|output| output.borrow().clone()) {
           Some(output) => {
-            let output_brrw = output.borrow();
             let symbol_name = if symbol_text.trim().is_empty() {
-              symbols_brrw
+              symbols
+                .borrow()
                 .get_symbol_name_by_id(element_id)
                 .or_else(|| {
                   let trimmed = symbol_name_hint.trim();
@@ -794,7 +792,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             if repl_width == 0 {
               let modal = document.create_element("div").unwrap();
               modal.set_class_name("mech-modal");
-              modal.set_inner_html(&format_output_value_html(&output_brrw));
+              modal.set_inner_html(&format_output_value_html(&output));
 
               let x = event.client_x();
               let y = event.client_y();
@@ -818,7 +816,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
               return;
             }
 
-            let result_html = format_output_value_html(&output_brrw);
+            let result_html = format_output_value_html(&output);
 
             // Add prompt line
             let prompt_line = document.create_element("div").unwrap();
@@ -853,7 +851,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             // Update variable "ans" with the value of the clicked symbol
             CURRENT_MECH.with(|mech_ref| {
               if let Some(ptr) = *mech_ref.borrow() {
-                unsafe { (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output_brrw); }
+                unsafe { (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output); }
               }
             });
 
