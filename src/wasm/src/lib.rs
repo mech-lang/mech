@@ -732,6 +732,14 @@ pub fn attach_repl(&mut self, repl_id: &str) {
       let symbol_name_hint = element
         .get_attribute("data-var")
         .unwrap_or_else(|| symbol_text.clone());
+      log!(
+        "Clickable bind: id='{}' element_id={} interpreter_id={} symbol_text='{}' symbol_hint='{}'",
+        id,
+        element_id,
+        interpreter_id,
+        symbol_text,
+        symbol_name_hint
+      );
 
       let symbols = match find_symbols(&self.interpreter, interpreter_id) {
         Some(symbols) => symbols,
@@ -773,6 +781,14 @@ pub fn attach_repl(&mut self, repl_id: &str) {
                 symbol_text.clone()
               }
             };
+            log!(
+              "Clickable click: element_id={} interpreter_id={} resolved_symbol='{}' hint='{}' text='{}'",
+              element_id,
+              interpreter_id,
+              symbol_name,
+              symbol_name_hint,
+              symbol_text
+            );
             let repl_width = mech_output.client_width();
             // If REPL is "closed", show modal only (do not write to REPL).
             if repl_width == 0 {
@@ -867,6 +883,12 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           },
           None => {
             let error_message = format!("No value found for element id: {}", element_id);
+            log!(
+              "Clickable click: missing symbol output for element_id={} interpreter_id={} id='{}'",
+              element_id,
+              interpreter_id,
+              id
+            );
             let result_line = document.create_element("div").unwrap();
             result_line.set_class_name("repl-result");
             result_line.set_inner_html(&error_message);
