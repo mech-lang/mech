@@ -1039,6 +1039,7 @@
           if (xhr.status === 200) {
             var src = xhr.responseText;
             wasm_core.run_program(src);
+            prepareVarPlaceholders();
             wasm_core.init();
             wasm_core.render_inline_values();
             wasm_core.render_codeblock_output_values();
@@ -1046,6 +1047,7 @@
           } else {
             console.error("Defaulting to included program");
             wasm_core.run_program(code);
+            prepareVarPlaceholders();
             wasm_core.init();
             wasm_core.render_inline_values();
             wasm_core.render_codeblock_output_values();
