@@ -1028,7 +1028,6 @@
     }
     async function run() {
       await init();
-      prepareVarPlaceholders();
       var code = `{{CODE}}`;
       wasm_core = new WasmMech();
       var xhr = new XMLHttpRequest();

@@ -290,7 +290,6 @@ async function run() {
   }
   updates.forEach(([node, fragment]) => node.parentNode.replaceChild(fragment, node));
   };
-  prepareVarPlaceholders();
   const code = `{{CODE}}`;
   wasm_core = new WasmMech();
   const xhr = new XMLHttpRequest();
