@@ -706,9 +706,32 @@ pub fn attach_repl(&mut self, repl_id: &str) {
       // Parse element id
       let id = element.id();
       let parsed_id: Vec<&str> = id.split(":").collect();
-      let element_id = parsed_id[0].parse::<u64>().unwrap();
-      let interpreter_id = parsed_id[1].parse::<u64>().unwrap();
+      let (element_id, interpreter_id) = match parsed_id.as_slice() {
+        [output_id, interpreter_id] => {
+          match (output_id.parse::<u64>(), interpreter_id.parse::<u64>()) {
+            (Ok(output_id), Ok(interpreter_id)) => (output_id, interpreter_id),
+            _ => {
+              log!("Invalid clickable symbol id format: {}", id);
+              continue;
+            }
+          }
+        }
+        [output_id] => match output_id.parse::<u64>() {
+          Ok(output_id) => (output_id, 0),
+          Err(_) => {
+            log!("Invalid clickable symbol id format: {}", id);
+            continue;
+          }
+        },
+        _ => {
+          log!("Invalid clickable symbol id format: {}", id);
+          continue;
+        }
+      };
       let symbol_text = element.text_content().unwrap_or_default();
+      let symbol_name_hint = element
+        .get_attribute("data-var")
+        .unwrap_or_else(|| symbol_text.clone());
 
       let symbols = match find_symbols(&self.interpreter, interpreter_id) {
         Some(symbols) => symbols,
@@ -725,22 +748,40 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         let mech_output = document.get_element_by_id("mech-output").unwrap();
         let last_child = mech_output.last_child();
 
-        let symbols_brrw = symbols.borrow();
-
-        match symbols_brrw.get(element_id) {
+        let output = {
+          let symbols_brrw = symbols.borrow();
+          symbols_brrw.get(element_id).map(|output| output.borrow().clone())
+        };
+        match output {
           Some(output) => {
-            let output_brrw = output.borrow();
             let symbol_name = if symbol_text.trim().is_empty() {
-              symbols_brrw.get_symbol_name_by_id(element_id).unwrap()
+              {
+                let symbols_brrw = symbols.borrow();
+                symbols_brrw.get_symbol_name_by_id(element_id)
+              }
+                .or_else(|| {
+                  let trimmed = symbol_name_hint.trim();
+                  if trimmed.is_empty() {
+                    None
+                  } else {
+                    Some(trimmed.to_string())
+                  }
+                })
+                .unwrap_or_else(|| format!("symbol_{}", element_id))
             } else {
-              symbol_text.clone()
+              let trimmed_hint = symbol_name_hint.trim();
+              if !trimmed_hint.is_empty() && trimmed_hint != symbol_text.trim() {
+                trimmed_hint.to_string()
+              } else {
+                symbol_text.clone()
+              }
             };
             let repl_width = mech_output.client_width();
             // If REPL is "closed", show modal only (do not write to REPL).
             if repl_width == 0 {
               let modal = document.create_element("div").unwrap();
               modal.set_class_name("mech-modal");
-              modal.set_inner_html(&format_output_value_html(&output_brrw));
+              modal.set_inner_html(&format_output_value_html(&output));
 
               let x = event.client_x();
               let y = event.client_y();
@@ -764,30 +805,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
               return;
             }
 
-            let can_eval_symbol = symbol_name
-              .chars()
-              .any(|c| c.is_alphabetic() || c == '_' || c == ':');
-
-            let result_html = if can_eval_symbol {
-              CURRENT_MECH.with(|mech_ref| {
-                if let Some(ptr) = *mech_ref.borrow() {
-                  unsafe {
-                    let cmd = vec![("repl".to_string(), MechSourceCode::String(symbol_name.clone()))];
-                    match run_mech_code(&mut (*ptr).interpreter, &cmd) {
-                      Ok(output) => {
-                        let kind_str = html_escape(&format!("{}", output.kind()));
-                        format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html())
-                      }
-                      Err(_) => format_output_value_html(&output_brrw),
-                    }
-                  }
-                } else {
-                  format_output_value_html(&output_brrw)
-                }
-              })
-            } else {
-              format_output_value_html(&output_brrw)
-            };
+            let result_html = format_output_value_html(&output);
 
             // Add prompt line
             let prompt_line = document.create_element("div").unwrap();
@@ -822,13 +840,19 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             // Update variable "ans" with the value of the clicked symbol
             CURRENT_MECH.with(|mech_ref| {
               if let Some(ptr) = *mech_ref.borrow() {
-                unsafe { (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output_brrw); }
+                unsafe { (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output); }
               }
             });
 
           },
           None => {
             let error_message = format!("No value found for element id: {}", element_id);
+            log!(
+              "Clickable click: missing symbol output for element_id={} interpreter_id={} id='{}'",
+              element_id,
+              interpreter_id,
+              id
+            );
             let result_line = document.create_element("div").unwrap();
             result_line.set_class_name("repl-result");
             result_line.set_inner_html(&error_message);
@@ -1077,12 +1101,17 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         }
       };
       let formatted = output.to_html();
-      log!(
-        "VAR placeholder resolved: {} -> {} (interpreter: {})",
-        var_name,
-        formatted,
-        interpreter_id
-      );
+      let existing_class = var_element.get_attribute("class").unwrap_or_default();
+      let clickable_class = if existing_class.is_empty() {
+        "mech-clickable".to_string()
+      } else if existing_class.split_whitespace().any(|name| name == "mech-clickable") {
+        existing_class
+      } else {
+        format!("{} mech-clickable", existing_class)
+      };
+      let _ = var_element.set_attribute("class", &clickable_class);
+      let _ = var_element.set_attribute("id", &format!("{}:{}", var_id, interpreter_id));
+      let _ = var_element.set_attribute("data-var", &var_name);
       var_element.set_inner_html(formatted.trim());
     }
     #[cfg(not(feature = "symbol_table"))]
