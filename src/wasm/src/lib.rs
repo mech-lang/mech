@@ -1031,7 +1031,9 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         inline_block.set_inner_html(&inline_html);
       }
     }
+    #[cfg(feature = "symbol_table")]
     let var_elements = document.get_elements_by_class_name("mech-var-placeholder");
+    #[cfg(feature = "symbol_table")]
     for j in 0..var_elements.length() {
       let var_element = var_elements.get_with_index(j).unwrap();
       let var_name = match var_element.get_attribute("data-var-name") {
@@ -1046,8 +1048,8 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           None => self.interpreter.id,
         },
       };
-      let out_values = match find_out_values(&self.interpreter, interpreter_id) {
-        Some(out_values) => out_values,
+      let symbols = match find_symbols(&self.interpreter, interpreter_id) {
+        Some(symbols) => symbols,
         None => {
           log!(
             "VAR placeholder unresolved interpreter: {} (variable: {})",
@@ -1057,12 +1059,12 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           continue;
         }
       };
-      let out_values_brrw = out_values.borrow();
-      let output = match out_values_brrw.get(&var_id) {
-        Some(value) => value,
+      let symbols_brrw = symbols.borrow();
+      let output = match symbols_brrw.get(var_id) {
+        Some(value) => value.borrow().clone(),
         None => {
           log!(
-            "VAR placeholder unresolved variable: {} (hash: {}, interpreter: {})",
+            "VAR placeholder unresolved variable (yet?): {} (hash: {}, interpreter: {})",
             var_name,
             var_id,
             interpreter_id
@@ -1070,8 +1072,17 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           continue;
         }
       };
-      var_element.set_text_content(Some(output.format_value_inline().trim()));
+      let formatted = output.format_value_inline();
+      log!(
+        "VAR placeholder resolved: {} -> {} (interpreter: {})",
+        var_name,
+        formatted,
+        interpreter_id
+      );
+      var_element.set_text_content(Some(formatted.trim()));
     }
+    #[cfg(not(feature = "symbol_table"))]
+    log!("VAR placeholders require feature 'symbol_table' to resolve values.");
     #[cfg(feature = "clickable_symbol_listeners")]
     self.add_inline_value_clickable_listeners();
   }
