@@ -1031,6 +1031,32 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         inline_block.set_inner_html(&inline_html);
       }
     }
+    let var_elements = document.get_elements_by_class_name("mech-var-placeholder");
+    for j in 0..var_elements.length() {
+      let var_element = var_elements.get_with_index(j).unwrap();
+      let var_name = match var_element.get_attribute("data-var-name") {
+        Some(value) => value,
+        None => continue,
+      };
+      let var_id = hash_str(&var_name);
+      let interpreter_id = match var_element.get_attribute("data-interpreter-name") {
+        Some(value) => hash_str(&value),
+        None => match var_element.get_attribute("data-interpreter-id") {
+          Some(value) => value.parse::<u64>().unwrap_or(0),
+          None => 0,
+        },
+      };
+      let out_values = match find_out_values(&self.interpreter, interpreter_id) {
+        Some(out_values) => out_values,
+        None => continue,
+      };
+      let out_values_brrw = out_values.borrow();
+      let output = match out_values_brrw.get(&var_id) {
+        Some(value) => value,
+        None => continue,
+      };
+      var_element.set_text_content(Some(output.format_value_inline().trim()));
+    }
     #[cfg(feature = "clickable_symbol_listeners")]
     self.add_inline_value_clickable_listeners();
   }
