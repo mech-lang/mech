@@ -40,12 +40,24 @@ These placeholders support browser-side Mech runtime integration.
 
 The web runtime expects a mount with id `mech-output` when calling `attach_repl`.
 
+### Reactive variable placeholders
+
+You can embed live interpreter variables directly in a template placeholder:
+
+- `{{VAR:x}}` — Reads variable `x` from the default interpreter.
+- `{{VAR:x@foo}}` — Reads variable `x` from interpreter `foo`.
+
+These bindings are reactive. If `x` changes in Mech, the rendered value in the
+document updates automatically.
+
 4. Placement guidance
 -------------------------------------------------------------------------------
 
 - Place `{{TOC}}`, `{{INTRO}}`, and `{{CONTENT}}` where readers should see navigation and primary content.
 - Place `{{CITED}}` only where references should appear.
 - Place `{{REPL}}` inside your console/pane container where the interactive prompt should appear.
+- Use `{{VAR:...}}` placeholders inline anywhere you want live values to appear
+  (for example, in headings, callouts, or narrative text).
 - Keep runtime bootstrap script placement near the end of `<body>` so DOM targets exist before attach.
 
 5. Related docs
