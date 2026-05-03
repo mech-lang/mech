@@ -133,8 +133,6 @@ impl Formatter {
 
     let mut rendered = shim.replace("{{STYLESHEET}}", &style)
         .replace("{{TOC}}", &formatted_toc)
-        .replace("{{CONTENT}}", &formatted_src)
-        .replace("{{CONTENTS}}", &formatted_contents)
         .replace("{{BYLINE}}", &formatted_byline)
         .replace("{{HERO}}", &formatted_hero)
         .replace("{{SUMMARY}}", &formatted_synopsis)
@@ -150,6 +148,8 @@ impl Formatter {
     }
 
     rendered
+      .replace("{{CONTENT}}", &formatted_src)
+      .replace("{{CONTENTS}}", &formatted_contents)
   }
 
   fn title_slots(&mut self, title: &Option<Title>) -> (String, String, String) {
@@ -1316,7 +1316,11 @@ impl Formatter {
   pub fn code_block(&mut self, node: &Token) -> String {
     let code = node.to_string();
     if self.html {
-      format!("<pre class=\"mech-code-block\">{}</pre>",code)
+      let escaped_code = code
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;");
+      format!("<pre class=\"mech-code-block\">{}</pre>",escaped_code)
     } else {
       format!("```\n{}\n```",code)
     }
