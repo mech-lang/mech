@@ -37,6 +37,10 @@
   --mechdown-table-row-hover-background-color: hsl(222, 25%, 17%);
   --h2-underline-color: #343b46;
   --toc-heading-number-color: rgba(255, 255, 255, 0.55);
+  --toc-accent: hsl(308, 42%, 69%);
+  --toc-accent-soft: hsl(308, 42%, 59%);
+  --toc-text-secondary: hsl(308, 17%, 73%);
+  --toc-border: hsl(308, 17%, 73%);
   --title-underline-color: hsl(42, 89%, 70%);
   --callout-background-color: #1f2533;
   --warning-color: hsl(20, 100%, 75%);
@@ -83,6 +87,51 @@ body {
 .mech-content {
     counter-reset: h2 equation;
     margin-top: 50px;
+}
+
+.mech-toc {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    max-height: 100vh;
+    overflow: auto;
+    padding: 20px 16px;
+    border-right: 1px solid var(--toc-border);
+}
+
+.mech-toc ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mech-toc li {
+    margin-bottom: 8px;
+}
+
+.mech-toc a {
+    display: block;
+    position: relative;
+    color: var(--toc-text-secondary);
+    text-decoration: none;
+    padding-left: 10px;
+    line-height: 1.4;
+}
+
+.mech-toc a.active,
+.mech-toc a.active-path {
+    color: var(--toc-accent);
+    font-weight: 650;
+}
+
+.mech-toc > ul > li > a.active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--toc-accent-soft);
 }
 
 .mech-toc.hidden ~ .mech-content {
@@ -345,7 +394,8 @@ body {
 }
 
 .mech-program h1 {
-    width: 900px;
+    width: 100%;
+    max-width: 900px;
     font-family: 'FiraCodeRegular', monospace;
     padding-bottom: 10px;
     color: var(--text-color);
@@ -354,7 +404,7 @@ body {
     font-weight: bold;
     text-align: center;
     margin-bottom: 16px;
-    margin-left: -100px;
+    margin-left: 0px;
     position: relative; 
 }
 
@@ -386,7 +436,8 @@ body {
 }
 
 .mech-program h2 {
-    width: 850px;
+    width: 100%;
+    max-width: 850px;
     font-family: 'FiraCodeRegular', monospace;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--h2-underline-color);
@@ -395,7 +446,7 @@ body {
     letter-spacing: 2px;
     margin-bottom: 30px;
     margin-top: 80px;
-    margin-left: -73px;
+    margin-left: 0px;
 }
 
 .mech-program h3 a {
