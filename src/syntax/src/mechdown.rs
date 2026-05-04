@@ -723,7 +723,10 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
   let (input, (end_sgl,r)) = range(codeblock_sigil)(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, code_id) = many0(tuple((is_not(left_brace),text)))(input)?;
-  let code_id = code_id.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>();
+  let code_id = code_id.into_iter()
+    .map(|(_,tkn)| tkn)
+    .filter(|tkn| !matches!(tkn.kind, TokenKind::FloatLeft | TokenKind::FloatRight))
+    .collect::<Vec<Token>>();
   let (input, options) = opt(option_map)(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = label!(new_line, msg2)(input)?;
@@ -737,7 +740,7 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
   let code_token = Token::new(TokenKind::CodeBlock, src_range, block_src.clone());
 
   let code_id = code_id.iter().flat_map(|tkn| tkn.chars.clone().into_iter().collect::<Vec<char>>()).collect::<String>();
-  match code_id.as_str() {
+  match code_id.trim() {
     "ebnf" => {
       let ebnf_text = block_src.iter().collect::<String>();
       match parse_grammar(&ebnf_text) {
