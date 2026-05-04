@@ -54,7 +54,11 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     SectionElement::ErrorBlock(x) => x.hash(&mut hasher),
     SectionElement::IdeaBlock(x) => x.hash(&mut hasher),
     SectionElement::Image(x) => x.hash(&mut hasher),
-    SectionElement::Float(x) => x.hash(&mut hasher),
+    SectionElement::Float((el, _direction)) => {
+      // Floated nodes should still be interpreted just like their wrapped
+      // section element (e.g. fenced Mech code, inline eval in captions, etc).
+      return section_element(el, p);
+    },
     SectionElement::Citation(x) => x.hash(&mut hasher),
     SectionElement::Equation(x) => x.hash(&mut hasher),
     SectionElement::Abstract(x) => x.hash(&mut hasher),
