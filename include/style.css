@@ -96,7 +96,6 @@ body {
     max-height: 100vh;
     overflow: auto;
     padding: 20px 16px;
-    border-right: 1px solid var(--toc-border);
 }
 
 .mech-toc ul {
@@ -637,9 +636,7 @@ body {
 .mech-code {
     display: flex;
     flex-direction: row;
-    align-items: center;
     gap: 20px;
-    line-height: 24px;
 }
 
 .mech-match-op {
@@ -1258,7 +1255,8 @@ ol {
 }
 
 .mech-float .mech-figure-caption {
-    width: 350px;
+    width: 100%;
+    max-width: 350px;
 }
 
 .mech-figure-caption {
@@ -1274,8 +1272,24 @@ ol {
 }
 
 .mech-float .mech-figure {
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin: 0;
+    align-items: stretch;
+}
+
+.mech-float .mech-image {
+    max-width: 100%;
+}
+
+.mech-float .mech-figure-caption {
+    margin-top: 0.5em;
+    line-height: 1.3;
+    display: block;
+}
+
+.mech-float .mech-figure-label {
+    display: inline;
+    min-width: 0;
+    margin-right: 0.35em;
 }
 
 .mech-figure-caption .mech-paragraph {
@@ -2106,13 +2120,11 @@ mark {
 .mech-float.left {
     float: left;
     margin-right: 20px;
-    margin-left: -73px;
 }
 
 .mech-float.right {
     float: right;
     margin-left: 20px;
-    margin-right: -73px;
 }
 
 .mech-output-value .mech-matrix {
@@ -2421,15 +2433,14 @@ mark {
         min-width: 60px;
         text-align: right;
     }
-    .mech-float.left {
-        float: left;
-        margin-right: 20px;
-        margin-left: 0px;
-    }
+    .mech-float.left,
     .mech-float.right {
-        float: right;
-        margin-left: 20px;
-        margin-right: 0px;
+        float: none;
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        margin: 12px 0;
+        clear: both;
     }
 }
 

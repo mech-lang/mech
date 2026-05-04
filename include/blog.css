@@ -439,6 +439,16 @@ body.console-fullscreen .workspace {
 .article-layout.no-sections .toc { display: none; }
 .content-shell.hidden { display: none; }
 
+body.narrow-content .mech-float.left,
+body.narrow-content .mech-float.right {
+  float: none;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 12px 0;
+  clear: both;
+}
+
 /* ── TOC ── */
 .toc {
   position: sticky;

@@ -339,6 +339,7 @@ const TOC_GAP            = 48;
 const MIN_MAIN_CONTENT   = 640;
 const MIN_MAIN_WITH_TOC  = 760;
 const MIN_LEFT_WITH_TOC  = TOC_WIDTH + TOC_GAP + MIN_MAIN_WITH_TOC;
+const MIN_LEFT_WITH_FLOATS = 980;
 const DEFAULT_OPEN_WIDTH = 575;
 const HEADER_HEIGHT = parseInt(
   getComputedStyle(document.documentElement).getPropertyValue("--header-height"),
@@ -411,6 +412,7 @@ function syncEdgeHandleOnLoad() {
 
 function syncTocVisibility(availableWidth) {
   articleLayout.classList.toggle("hide-toc", availableWidth < MIN_LEFT_WITH_TOC);
+  document.body.classList.toggle("narrow-content", availableWidth < MIN_LEFT_WITH_FLOATS);
 }
 
 function applyNonFullscreenLayout(viewport, consoleWidth) {
