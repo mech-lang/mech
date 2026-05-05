@@ -444,8 +444,11 @@ body.console-fullscreen .workspace {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 28px;
   border-top: 1px solid var(--border);
-  padding-top: 20px;
+  padding: 20px 32px 0;
   margin-top: 8px;
+  width: 100vw;
+  margin-left: 50%;
+  transform: translateX(-50%);
 }
 
 .backmatter-column {
@@ -486,6 +489,23 @@ body.console-fullscreen .workspace {
 
 .backmatter-body li + li {
   margin-top: 8px;
+}
+
+
+.backmatter-cited .backmatter-body ol,
+.backmatter-cited .backmatter-body ul {
+  column-count: 2;
+  column-gap: 28px;
+  column-fill: balance;
+}
+
+.backmatter-cited .backmatter-body li {
+  break-inside: avoid;
+}
+
+.backmatter-body h2::before,
+.footer-heading::before {
+  content: none !important;
 }
 
 
@@ -1225,7 +1245,9 @@ body.console-fullscreen .console-fullscreen-toggle .icon-exit {
   .console-pane, .resize-handle, .edge-handle { display: none; }
   .workspace { grid-template-columns: 1fr; }
   .article-layout { grid-template-columns: 1fr; }
-  .article-backmatter { grid-template-columns: 1fr; }
+  .article-backmatter { grid-template-columns: 1fr; padding-left: 16px; padding-right: 16px; }
+  .backmatter-cited .backmatter-body ol,
+  .backmatter-cited .backmatter-body ul { column-count: 1; }
   .toc { display: none; }
   .footer-main {
     grid-template-columns: max-content minmax(0, 1fr);
