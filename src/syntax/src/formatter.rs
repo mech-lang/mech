@@ -62,10 +62,6 @@ impl Formatter {
     Ok((rendered, link))
   }
 
-  fn citation_external_link_icon(&self) -> &'static str {
-    r#"<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-external-link-icon mech-citation-link-icon"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>"#
-  }
-
   fn mika_interpreter_id(parent_id: u64, node: &(Mika, Option<MikaSection>)) -> u64 {
     hash_str(&format!("mika:{}:{:?}", parent_id, (&node.0, &node.1)))
   }
@@ -895,10 +891,9 @@ impl Formatter {
     let formatted_citation = if self.html {
       let citation_body = match parsed_citation {
         Ok((citation_text, Some(link))) => format!(
-          "<a href=\"{}\" class=\"mech-citation-external-link\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"mech-citation-link-text\">{}</span><span class=\"mech-citation-link-icon-wrap\" aria-hidden=\"true\">&nbsp;{}</span></a>",
+          "<a href=\"{}\" class=\"mech-citation-external-link\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"mech-citation-link-text\">{}</span><span class=\"mech-citation-link-icon-wrap\" aria-hidden=\"true\">&nbsp;<span class=\"mech-citation-link-icon\"></span></span></a>",
           link,
           citation_text,
-          self.citation_external_link_icon(),
         ),
         Ok((citation_text, None)) => format!("<span class=\"mech-citation-text\">{}</span>", citation_text),
         Err(err) => format!("<span class=\"mech-error\">{}</span>", err.display_message()),
