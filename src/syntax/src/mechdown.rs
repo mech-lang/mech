@@ -62,26 +62,37 @@ pub fn title_front_matter(input: ParseString) -> ParseResult<TitleFrontMatter> {
   let mut front_matter = TitleFrontMatter::default();
 
   while many1(equal)(input.clone()).is_err() {
-    let (next_input, line) = paragraph_newline(input.clone())?;
-    input = next_input;
-    if let Some((k, v)) = line.to_string().split_once(':') {
-      let key = k.trim().to_lowercase();
-      let value = v.trim();
-      if value.is_empty() {
+    let (next_input, key) = identifier(input.clone())?;
+    let (next_input, _) = many0(space_tab)(next_input)?;
+    let (next_input, _) = colon(next_input)?;
+    let (next_input, _) = many0(space_tab)(next_input)?;
+    let key_name = key.to_string().to_lowercase();
+
+    if key_name == "hero" {
+      if let Ok((next_input, image)) = img(next_input.clone()) {
+        let (next_input, _) = whitespace0(next_input)?;
+        input = next_input;
+        front_matter.hero = Some(SectionElement::Image(image));
+        continue;
+      } else if let Ok((next_input, figure_table)) = figures(next_input.clone()) {
+        let (next_input, _) = whitespace0(next_input)?;
+        input = next_input;
+        front_matter.hero = Some(SectionElement::FigureTable(figure_table));
         continue;
       }
-      let token = Token::new(TokenKind::Text, SourceRange::default(), value.chars().collect());
-      let value_paragraph = Paragraph::from_tokens(vec![token.clone()]);
-      match key.as_str() {
-        "author" => front_matter.author = Some(value_paragraph),
-        "date" => front_matter.date = Some(value_paragraph),
-        "kicker" => front_matter.kicker = Some(value_paragraph),
-        "summary" => front_matter.summary = Some(value_paragraph),
-        "next" => front_matter.next = Some(value_paragraph),
-        "previous" => front_matter.previous = Some(value_paragraph),
-        "hero" => front_matter.hero = Some(SectionElement::Paragraph(Paragraph::from_tokens(vec![token]))),
-        _ => (),
-      }
+    }
+
+    let (next_input, paragraph) = inline_paragraph(next_input)?;
+    let (next_input, _) = new_line(next_input)?;
+    input = next_input;
+    match key_name.as_str() {
+      "author" => front_matter.author = Some(paragraph),
+      "date" => front_matter.date = Some(paragraph),
+      "kicker" => front_matter.kicker = Some(paragraph),
+      "summary" => front_matter.summary = Some(paragraph),
+      "next" => front_matter.next = Some(paragraph),
+      "previous" => front_matter.previous = Some(paragraph),
+      _ => (),
     }
   }
 
