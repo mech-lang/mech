@@ -69,24 +69,24 @@
       <div class="article-intro" id="articleIntro">
         {{INTRO}}
       </div>
-      <div class="article-layout hide-toc" id="articleLayout">
+      <div class="article-layout" id="articleLayout">
+        {{TOC}}
         <article class="main-content">
           {{CONTENT}}
         </article>
-        <section class="article-backmatter" aria-label="Notes and Works Cited">
-          <div class="backmatter-column backmatter-notes">
-            <h2>Notes</h2>
-            <div class="backmatter-body">
-              {{FOOTNOTES}}
-            </div>
+      </div>
+      <section class="article-backmatter" aria-label="Notes and Works Cited">
+        <div class="backmatter-column backmatter-notes">
+          <div class="backmatter-body">
+            {{FOOTNOTES}}
           </div>
-          <div class="backmatter-column backmatter-cited">
-            <h2>Works Cited</h2>
-            <div class="backmatter-body">
-              {{CITED}}
-            </div>
+        </div>
+        <div class="backmatter-column backmatter-cited">
+          <div class="backmatter-body">
+            {{CITED}}
           </div>
-        </section>
+        </div>
+      </section>
       <footer class="footer">
         <div class="footer-inner">
 
@@ -192,7 +192,6 @@
 
         </div>
       </footer>
-      </div>
     </div>
   </section>
 
