@@ -449,8 +449,6 @@ body.console-fullscreen .workspace {
 }
 
 .backmatter-column {
-  border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg-elevated) 78%, transparent);
 }
 
 .backmatter-column h2 {
@@ -460,7 +458,7 @@ body.console-fullscreen .workspace {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--accent-hover);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px dotted var(--border);
 }
 
 .backmatter-body {
