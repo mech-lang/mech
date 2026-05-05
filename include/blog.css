@@ -442,16 +442,24 @@ body.console-fullscreen .workspace {
 .article-backmatter {
   display: block;
   width: 100%;
-  border-top: 1px solid var(--border);
   padding-top: 20px;
   margin-top: 20px;
+  position: relative;
+}
+
+.article-backmatter::before {
+  content: "";
+  display: block;
+  width: 33.333%;
+  border-top: 1px solid var(--border);
+  margin-bottom: 20px;
 }
 
 .backmatter-row + .backmatter-row {
   margin-top: 18px;
 }
 
-.backmatter-row h2 {
+.backmatter-body .mech-backmatter-heading {
   margin: 0;
   padding: 10px 14px;
   font-size: 12px;
