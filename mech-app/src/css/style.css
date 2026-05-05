@@ -1416,6 +1416,27 @@ mark {
     padding: 3px 10px 3px 10px;
 }
 
+.mech-citation-text {
+    display: inline;
+}
+
+.mech-citation-external-link {
+    color: #F3B62D;
+    margin-left: 6px;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.mech-citation-external-link:hover {
+    color: #F8D07A;
+}
+
+.mech-citation-link-icon {
+    width: 0.9em;
+    height: 0.9em;
+}
+
 .mech-citation-link {
     color: #F8D07A;
     text-decoration: none;
