@@ -1422,19 +1422,43 @@ mark {
 
 .mech-citation-external-link {
     color: #F3B62D;
-    margin-left: 6px;
-    display: inline-flex;
-    align-items: center;
+    display: inline;
     text-decoration: none;
 }
 
-.mech-citation-external-link:hover {
+.mech-citation-link-text {
+    color: #f2ead9;
+}
+
+.mech-citation-link-icon-wrap {
+    display: inline-block;
+    margin-left: 0.25em;
+    vertical-align: -0.08em;
+    line-height: 1;
+}
+
+.mech-citation-external-link:hover .mech-citation-link-text,
+.mech-citation-external-link:focus-visible .mech-citation-link-text {
+    text-decoration: underline;
+    text-decoration-color: #F3B62D;
+    text-underline-offset: 0.12em;
+}
+
+.mech-citation-external-link:hover .mech-citation-link-icon,
+.mech-citation-external-link:focus-visible .mech-citation-link-icon {
     color: #F8D07A;
 }
 
+.mech-citation-external-link:focus-visible {
+    outline: 2px solid #F3B62D;
+    outline-offset: 2px;
+    border-radius: 3px;
+}
+
 .mech-citation-link-icon {
-    width: 0.9em;
-    height: 0.9em;
+    width: 13px;
+    height: 13px;
+    color: #F3B62D;
 }
 
 .mech-citation-link {
