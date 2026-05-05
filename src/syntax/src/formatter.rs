@@ -5,6 +5,19 @@ use colored::Colorize;
 use std::io::{Read, Write, Cursor};
 use crate::*;
 
+#[derive(Debug, Clone)]
+struct InvalidCitationLinkCountError;
+
+impl MechErrorKind for InvalidCitationLinkCountError {
+  fn name(&self) -> &str {
+    "InvalidCitationLinkCount"
+  }
+
+  fn message(&self) -> String {
+    "Citations may contain at most one link.".to_string()
+  }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Formatter{
   identifiers: HashMap<u64, String>,
@@ -31,6 +44,23 @@ pub struct Formatter{
 }
 
 impl Formatter {
+  fn citation_paragraph_with_optional_link(&mut self, paragraph: &Paragraph) -> MResult<(String, Option<String>)> {
+    let mut link: Option<String> = None;
+    let mut rendered = String::new();
+    for element in &paragraph.elements {
+      match element {
+        ParagraphElement::Hyperlink((text, url)) => {
+          if link.is_some() {
+            return Err(MechError::new(InvalidCitationLinkCountError, None).with_compiler_loc());
+          }
+          link = Some(url.to_string());
+          rendered.push_str(&self.inline_paragraph(text));
+        }
+        _ => rendered.push_str(&self.paragraph_element(element)),
+      }
+    }
+    Ok((rendered, link))
+  }
 
   fn mika_interpreter_id(parent_id: u64, node: &(Mika, Option<MikaSection>)) -> u64 {
     hash_str(&format!("mika:{}:{:?}", parent_id, (&node.0, &node.1)))
@@ -847,7 +877,7 @@ impl Formatter {
 
   pub fn citation(&mut self, node: &Citation) -> String {
     let id = hash_str(&format!("{}",node.id.to_string()));
-    let citation_text = self.paragraph(&node.text);
+    let parsed_citation = self.citation_paragraph_with_optional_link(&node.text);
     let citation_num = match self.citation_map.get(&id) {
       Some(&num) => num,
       None => {
@@ -859,11 +889,25 @@ impl Formatter {
     };
     self.citations.resize(self.citation_num, String::new());
     let formatted_citation = if self.html {
+      let citation_body = match parsed_citation {
+        Ok((citation_text, Some(link))) => format!(
+          "<a href=\"{}\" class=\"mech-citation-external-link\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"mech-citation-link-text\">{}</span><span class=\"mech-citation-link-icon-wrap\" aria-hidden=\"true\">&nbsp;<span class=\"mech-citation-link-icon\"></span></span></a>",
+          link,
+          citation_text,
+        ),
+        Ok((citation_text, None)) => format!("<span class=\"mech-citation-text\">{}</span>", citation_text),
+        Err(err) => format!("<span class=\"mech-error\">{}</span>", err.display_message()),
+      };
       format!("<div id=\"{}\" class=\"mech-citation\">
       <div class=\"mech-citation-id\">[{}]:</div>
       {}
-    </div>",id, citation_num, citation_text)
+    </div>",id, citation_num, citation_body)
     } else {
+      let citation_text = match parsed_citation {
+        Ok((citation_text, Some(link))) => format!("{} {}", citation_text, link),
+        Ok((citation_text, None)) => citation_text,
+        Err(err) => format!("ERROR: {}", err.display_message()),
+      };
       format!("[{}]: {}",node.id.to_string(), citation_text)
     };
     self.citations[citation_num - 1] = formatted_citation;
