@@ -440,18 +440,18 @@ body.console-fullscreen .workspace {
 .content-shell.hidden { display: none; }
 
 .article-backmatter {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 28px;
+  display: block;
+  width: 100%;
   border-top: 1px solid var(--border);
   padding-top: 20px;
-  margin-top: 8px;
+  margin-top: 20px;
 }
 
-.backmatter-column {
+.backmatter-row + .backmatter-row {
+  margin-top: 18px;
 }
 
-.backmatter-column h2 {
+.backmatter-row h2 {
   margin: 0;
   padding: 10px 14px;
   font-size: 12px;
@@ -466,6 +466,11 @@ body.console-fullscreen .workspace {
   color: var(--text-secondary);
   line-height: 1.65;
   font-size: 14px;
+}
+
+.backmatter-cited .backmatter-body {
+  column-count: 2;
+  column-gap: 2rem;
 }
 
 .backmatter-body h1,
@@ -1225,7 +1230,6 @@ body.console-fullscreen .console-fullscreen-toggle .icon-exit {
   .console-pane, .resize-handle, .edge-handle { display: none; }
   .workspace { grid-template-columns: 1fr; }
   .article-layout { grid-template-columns: 1fr; }
-  .article-backmatter { grid-template-columns: 1fr; }
   .toc { display: none; }
   .footer-main {
     grid-template-columns: max-content minmax(0, 1fr);
