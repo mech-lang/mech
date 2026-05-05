@@ -21,6 +21,17 @@ use colored::*;
 
 use crate::*;
 
+#[derive(Default)]
+pub struct TitleFrontMatter {
+  pub author: Option<Paragraph>,
+  pub date: Option<Paragraph>,
+  pub hero: Option<SectionElement>,
+  pub kicker: Option<Paragraph>,
+  pub summary: Option<Paragraph>,
+  pub next: Option<Paragraph>,
+  pub previous: Option<Paragraph>,
+}
+
 // Mechdown
 // ============================================================================
 
@@ -33,22 +44,22 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
   let (input, front_matter) = opt(title_front_matter)(input)?;
   let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
-  let (author, date, hero, kicker, summary, next, previous) = match front_matter {
-    Some((author, date, hero, kicker, summary, next, previous)) => (author, date, hero, kicker, summary, next, previous),
-    None => (None, None, None, None, None, None, None),
-  };
-  Ok((input, Title{text: title, author, date, hero, kicker, summary, next, previous}))
+  let front_matter = front_matter.unwrap_or_default();
+  Ok((input, Title{
+    text: title,
+    author: front_matter.author,
+    date: front_matter.date,
+    hero: front_matter.hero,
+    kicker: front_matter.kicker,
+    summary: front_matter.summary,
+    next: front_matter.next,
+    previous: front_matter.previous,
+  }))
 }
 
-pub fn title_front_matter(input: ParseString) -> ParseResult<(Option<Paragraph>, Option<Paragraph>, Option<SectionElement>, Option<Paragraph>, Option<Paragraph>, Option<Paragraph>, Option<Paragraph>)> {
+pub fn title_front_matter(input: ParseString) -> ParseResult<TitleFrontMatter> {
   let mut input = input;
-  let mut author = None;
-  let mut date = None;
-  let mut hero = None;
-  let mut kicker = None;
-  let mut summary = None;
-  let mut next = None;
-  let mut previous = None;
+  let mut front_matter = TitleFrontMatter::default();
 
   while many1(equal)(input.clone()).is_err() {
     let (next_input, line) = paragraph_newline(input.clone())?;
@@ -62,13 +73,13 @@ pub fn title_front_matter(input: ParseString) -> ParseResult<(Option<Paragraph>,
       let token = Token::new(TokenKind::Text, SourceRange::default(), value.chars().collect());
       let value_paragraph = Paragraph::from_tokens(vec![token.clone()]);
       match key.as_str() {
-        "author" => author = Some(value_paragraph),
-        "date" => date = Some(value_paragraph),
-        "kicker" => kicker = Some(value_paragraph),
-        "summary" => summary = Some(value_paragraph),
-        "next" => next = Some(value_paragraph),
-        "previous" => previous = Some(value_paragraph),
-        "hero" => hero = Some(SectionElement::Paragraph(Paragraph::from_tokens(vec![token]))),
+        "author" => front_matter.author = Some(value_paragraph),
+        "date" => front_matter.date = Some(value_paragraph),
+        "kicker" => front_matter.kicker = Some(value_paragraph),
+        "summary" => front_matter.summary = Some(value_paragraph),
+        "next" => front_matter.next = Some(value_paragraph),
+        "previous" => front_matter.previous = Some(value_paragraph),
+        "hero" => front_matter.hero = Some(SectionElement::Paragraph(Paragraph::from_tokens(vec![token]))),
         _ => (),
       }
     }
@@ -76,7 +87,7 @@ pub fn title_front_matter(input: ParseString) -> ParseResult<(Option<Paragraph>,
 
   let (input, _) = many1(equal)(input)?;
   let (input, _) = whitespace0(input)?;
-  Ok((input, (author, date, hero, kicker, summary, next, previous)))
+  Ok((input, front_matter))
 }
 
 pub struct MarkdownTableHeader {

@@ -5,6 +5,17 @@ use colored::Colorize;
 use std::io::{Read, Write, Cursor};
 use crate::*;
 
+#[derive(Default)]
+struct TitleSlots {
+  author: String,
+  date: String,
+  hero: String,
+  kicker: String,
+  summary: String,
+  next: String,
+  previous: String,
+}
+
 #[derive(Debug, Clone)]
 struct InvalidCitationLinkCountError;
 
@@ -162,7 +173,7 @@ impl Formatter {
     self.html = true;
     self.inline_eval_counters.clear();
 
-    let (formatted_author, formatted_date, formatted_hero, formatted_kicker, formatted_synopsis, formatted_next, formatted_previous) = self.title_slots(&tree.title);
+    let title_slots = self.title_slots(&tree.title);
     let (formatted_abstract, formatted_intro, formatted_contents, formatted_cited, formatted_footnotes) = self.document_slots(tree);
     let formatted_src = formatted_contents.clone();
     self.reset_numbering();
@@ -185,13 +196,13 @@ impl Formatter {
 
     let mut rendered = shim.replace("{{STYLESHEET}}", &style)
         .replace("{{TOC}}", &formatted_toc)
-        .replace("{{AUTHOR}}", &formatted_author)
-        .replace("{{DATE}}", &formatted_date)
-        .replace("{{KICKER}}", &formatted_kicker)
-        .replace("{{NEXT}}", &formatted_next)
-        .replace("{{PREVIOUS}}", &formatted_previous)
-        .replace("{{HERO}}", &formatted_hero)
-        .replace("{{SUMMARY}}", &formatted_synopsis)
+        .replace("{{AUTHOR}}", &title_slots.author)
+        .replace("{{DATE}}", &title_slots.date)
+        .replace("{{KICKER}}", &title_slots.kicker)
+        .replace("{{NEXT}}", &title_slots.next)
+        .replace("{{PREVIOUS}}", &title_slots.previous)
+        .replace("{{HERO}}", &title_slots.hero)
+        .replace("{{SUMMARY}}", &title_slots.summary)
         .replace("{{ABSTRACT}}", &formatted_abstract)
         .replace("{{INTRO}}", &formatted_intro)
         .replace("{{CITED}}", &formatted_cited)
@@ -209,19 +220,20 @@ impl Formatter {
       .replace("{{CONTENTS}}", &formatted_contents)
   }
 
-  fn title_slots(&mut self, title: &Option<Title>) -> (String, String, String, String, String, String, String) {
+  fn title_slots(&mut self, title: &Option<Title>) -> TitleSlots {
     match title {
       Some(title) => {
-        let author = title.author.as_ref().map(|p| self.inline_para_el(p, "mech-author")).unwrap_or_default();
-        let date = title.date.as_ref().map(|p| self.inline_para_el(p, "mech-date")).unwrap_or_default();
-        let hero = title.hero.as_ref().map(|h| self.hero_el(h)).unwrap_or_default();
-        let kicker = title.kicker.as_ref().map(|p| self.inline_para_el(p, "hero-kicker")).unwrap_or_default();
-        let summary = title.summary.as_ref().map(|p| self.synopsis_el(p)).unwrap_or_default();
-        let next = title.next.as_ref().map(|p| self.inline_para_el(p, "mech-next")).unwrap_or_default();
-        let previous = title.previous.as_ref().map(|p| self.inline_para_el(p, "mech-previous")).unwrap_or_default();
-        (author, date, hero, kicker, summary, next, previous)
+        TitleSlots {
+          author: title.author.as_ref().map(|p| self.inline_para_el(p, "mech-author")).unwrap_or_default(),
+          date: title.date.as_ref().map(|p| self.inline_para_el(p, "mech-date")).unwrap_or_default(),
+          hero: title.hero.as_ref().map(|h| self.hero_el(h)).unwrap_or_default(),
+          kicker: title.kicker.as_ref().map(|p| self.inline_para_el(p, "hero-kicker")).unwrap_or_default(),
+          summary: title.summary.as_ref().map(|p| self.synopsis_el(p)).unwrap_or_default(),
+          next: title.next.as_ref().map(|p| self.inline_para_el(p, "mech-next")).unwrap_or_default(),
+          previous: title.previous.as_ref().map(|p| self.inline_para_el(p, "mech-previous")).unwrap_or_default(),
+        }
       }
-      None => (String::new(), String::new(), String::new(), String::new(), String::new(), String::new(), String::new()),
+      None => TitleSlots::default(),
     }
   }
 
