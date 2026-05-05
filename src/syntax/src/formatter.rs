@@ -882,7 +882,7 @@ impl Formatter {
     let formatted_citation = if self.html {
       let citation_body = match parsed_citation {
         Ok((citation_text, Some(link))) => format!(
-          "<a href=\"{}\" class=\"mech-citation-external-link\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"mech-citation-link-text\">{}</span><span class=\"mech-citation-link-icon-wrap\" aria-hidden=\"true\">{}</span></a>",
+          "<a href=\"{}\" class=\"mech-citation-external-link\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"mech-citation-link-text\">{}</span><span class=\"mech-citation-link-icon-wrap\" aria-hidden=\"true\">&nbsp;{}</span></a>",
           link,
           citation_text,
           self.citation_external_link_icon(),

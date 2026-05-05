@@ -1421,7 +1421,7 @@ mark {
 }
 
 .mech-citation-external-link {
-    color: #F3B62D;
+    color: var(--accent-primary, #F3B62D);
     display: inline;
     text-decoration: none;
 }
@@ -1431,10 +1431,11 @@ mark {
 }
 
 .mech-citation-link-icon-wrap {
-    display: inline-block;
-    margin-left: 0.25em;
+    display: inline-flex;
+    align-items: baseline;
     vertical-align: -0.08em;
     line-height: 1;
+    white-space: nowrap;
 }
 
 .mech-citation-external-link:hover .mech-citation-link-text,
@@ -1446,11 +1447,11 @@ mark {
 
 .mech-citation-external-link:hover .mech-citation-link-icon,
 .mech-citation-external-link:focus-visible .mech-citation-link-icon {
-    color: #F8D07A;
+    color: var(--accent-hover, #F8D07A);
 }
 
 .mech-citation-external-link:focus-visible {
-    outline: 2px solid #F3B62D;
+    outline: 2px solid var(--accent-primary, #F3B62D);
     outline-offset: 2px;
     border-radius: 3px;
 }
@@ -1458,7 +1459,7 @@ mark {
 .mech-citation-link-icon {
     width: 13px;
     height: 13px;
-    color: #F3B62D;
+    color: var(--accent-primary, #F3B62D);
 }
 
 .mech-citation-link {
