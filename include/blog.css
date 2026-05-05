@@ -428,8 +428,8 @@ body.console-fullscreen .workspace {
 .article-layout {
   min-width: 0;
   display: grid;
-  grid-template-columns: var(--toc-width) minmax(0, 1fr);
-  gap: 48px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 40px;
   align-items: start;
 }
 
@@ -447,6 +447,60 @@ body.console-fullscreen .workspace {
 .main-content .mech-float .mech-image {
   width: 100%;
   height: auto;
+}
+
+.article-backmatter {
+  display: block;
+  width: 100%;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+  margin-top: 20px;
+}
+
+.backmatter-row + .backmatter-row {
+  margin-top: 18px;
+}
+
+.backmatter-row h2 {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-hover);
+  border-bottom: 1px dotted var(--border);
+}
+
+.backmatter-body {
+  padding: 12px 14px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  font-size: 14px;
+}
+
+.backmatter-cited .backmatter-body {
+  column-count: 2;
+  column-gap: 2rem;
+}
+
+.backmatter-body h1,
+.backmatter-body h2,
+.backmatter-body h3,
+.backmatter-body h4,
+.backmatter-body h5,
+.backmatter-body h6 {
+  all: unset;
+  display: block;
+}
+
+.backmatter-body ol,
+.backmatter-body ul {
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.backmatter-body li + li {
+  margin-top: 8px;
 }
 
 body.narrow-content .mech-float,

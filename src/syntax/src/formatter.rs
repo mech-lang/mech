@@ -23,6 +23,9 @@ pub struct Formatter{
   citation_num: usize,
   citation_map: HashMap<u64, usize>,
   citations: Vec<String>,
+  footnote_num: usize,
+  footnote_map: HashMap<u64, usize>,
+  footnotes: Vec<String>,
   interpreter_id: u64,
   inline_eval_counters: HashMap<u64, u64>,
 }
@@ -57,6 +60,9 @@ impl Formatter {
       citation_num: 0,
       citation_map: HashMap::new(),
       citations: Vec::new(),
+      footnote_num: 0,
+      footnote_map: HashMap::new(),
+      footnotes: Vec::new(),
       figure_num: 0,
       html: false,
       nested: false,
@@ -105,13 +111,32 @@ impl Formatter {
     src
   }
 
+
+  pub fn footnotes(&mut self) -> String {
+    if self.footnotes.is_empty() {
+      return "".to_string();
+    }
+
+    let gs = graphemes::init_source("Footnotes"); 
+    let (_,text) = paragraph(ParseString::new(&gs)).unwrap();
+    let h2 = self.subtitle(&Subtitle { level: 2, text });
+
+    let mut src = format!(r#"<section id="{}" class="mech-footnotes">"#, hash_str("footnotes"));
+    src.push_str(&h2);
+    for footnote in &self.footnotes {
+      src.push_str(footnote);
+    }
+    src.push_str("</section>\n");
+    src
+  }
+
   pub fn format_html(&mut self, tree: &Program, style: String, shim: String) -> String {
     self.html = true;
     self.inline_eval_counters.clear();
 
     let include_cited = shim.contains("{{CITED}}");
     let (formatted_byline, formatted_hero, formatted_synopsis) = self.title_slots(&tree.title);
-    let (formatted_abstract, formatted_intro, formatted_contents, formatted_cited) = self.document_slots(tree);
+    let (formatted_abstract, formatted_intro, formatted_contents, formatted_cited, formatted_footnotes) = self.document_slots(tree);
     let formatted_src = formatted_contents.clone();
     self.reset_numbering();
     let toc = tree.table_of_contents();
@@ -139,6 +164,7 @@ impl Formatter {
         .replace("{{ABSTRACT}}", &formatted_abstract)
         .replace("{{INTRO}}", &formatted_intro)
         .replace("{{CITED}}", &formatted_cited)
+        .replace("{{FOOTNOTES}}", &formatted_footnotes)
         .replace("{{CODE}}", &encoded_tree)
         .replace("{{REPL}}", repl_html)
         .replace("{{TITLE}}", &title);
@@ -164,7 +190,7 @@ impl Formatter {
     }
   }
 
-  fn document_slots(&self, tree: &Program) -> (String, String, String, String) {
+  fn document_slots(&self, tree: &Program) -> (String, String, String, String, String) {
     let first_section_ix = tree.body.sections.iter()
       .position(|s| s.subtitle.is_some())
       .unwrap_or(tree.body.sections.len());
@@ -204,8 +230,9 @@ impl Formatter {
     }
 
     let cited_src = contents_formatter.works_cited();
+    let footnotes_src = contents_formatter.footnotes();
 
-    (abstract_src, intro_src, contents_src, cited_src)
+    (abstract_src, intro_src, contents_src, cited_src, footnotes_src)
   }
 
   fn section_slots(&self, tree: &Program) -> Vec<String> {
@@ -1024,10 +1051,21 @@ impl Formatter {
     let note_paragraph = paragraphs.iter().map(|p| self.paragraph(p)).collect::<String>();
     let id: u64 = hash_str(&format!("footnote-{}",id_name.to_string()));
     if self.html {
-      format!("<div class=\"mech-footnote\" id=\"{}\">
+      let footnote_num = match self.footnote_map.get(&id) {
+        Some(existing_num) => *existing_num,
+        None => {
+          self.footnote_num += 1;
+          let next_num = self.footnote_num;
+          self.footnote_map.insert(id, next_num);
+          next_num
+        },
+      };
+      self.footnotes.resize(self.footnote_num, String::new());
+      self.footnotes[footnote_num - 1] = format!("<div class=\"mech-footnote\" id=\"{}\">
         <div class=\"mech-footnote-id\">{}:</div>
         {}
-      </div>",id, id_name.to_string(), note_paragraph)  
+      </div>",id, id_name.to_string(), note_paragraph);
+      String::new()
     } else {
       format!("[^{}]: {}\n",id_name.to_string(), note_paragraph)
     }

@@ -56,6 +56,19 @@ static STYLESHEET: &str = include_str!("../../include/style.css");
 #[cfg(not(has_file_stylesheet))]
 static STYLESHEET: &str = "No Embedded Stylesheet";
 
+#[derive(Debug, Clone)]
+pub struct Utf8ConversionError {
+  pub source_error: String
+}
+impl MechErrorKind for Utf8ConversionError {
+  fn name(&self) -> &str {
+    "Utf8ConversionError"
+  }
+  fn message(&self) -> String {
+    format!("Failed to convert bytes into UTF-8 string: {}", self.source_error)
+  }
+}
+
 async fn load_stylesheets(paths: &[String], fallback_url: &str) -> Result<String, MechError> {
   if paths.is_empty() {
     let stylesheet = read_or_download("", fallback_url, Some(STYLESHEET.as_bytes())).await?;
