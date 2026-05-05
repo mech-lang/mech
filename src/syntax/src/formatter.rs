@@ -5,6 +5,19 @@ use colored::Colorize;
 use std::io::{Read, Write, Cursor};
 use crate::*;
 
+#[derive(Debug, Clone)]
+struct InvalidCitationLinkCountError;
+
+impl MechErrorKind for InvalidCitationLinkCountError {
+  fn name(&self) -> &str {
+    "InvalidCitationLinkCount"
+  }
+
+  fn message(&self) -> String {
+    "Citations may contain at most one link.".to_string()
+  }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Formatter{
   identifiers: HashMap<u64, String>,
@@ -31,14 +44,14 @@ pub struct Formatter{
 }
 
 impl Formatter {
-  fn citation_paragraph_with_optional_link(&mut self, paragraph: &Paragraph) -> Result<(String, Option<String>), String> {
+  fn citation_paragraph_with_optional_link(&mut self, paragraph: &Paragraph) -> MResult<(String, Option<String>)> {
     let mut link: Option<String> = None;
     let mut rendered = String::new();
     for element in &paragraph.elements {
       match element {
         ParagraphElement::Hyperlink((text, url)) => {
           if link.is_some() {
-            return Err("Citations may contain at most one link.".to_string());
+            return Err(MechError::new(InvalidCitationLinkCountError, None).with_compiler_loc());
           }
           link = Some(url.to_string());
           rendered.push_str(&self.inline_paragraph(text));
@@ -888,7 +901,7 @@ impl Formatter {
           self.citation_external_link_icon(),
         ),
         Ok((citation_text, None)) => format!("<span class=\"mech-citation-text\">{}</span>", citation_text),
-        Err(err) => format!("<span class=\"mech-error\">{}</span>", err),
+        Err(err) => format!("<span class=\"mech-error\">{}</span>", err.display_message()),
       };
       format!("<div id=\"{}\" class=\"mech-citation\">
       <div class=\"mech-citation-id\">[{}]:</div>
@@ -898,7 +911,7 @@ impl Formatter {
       let citation_text = match parsed_citation {
         Ok((citation_text, Some(link))) => format!("{} {}", citation_text, link),
         Ok((citation_text, None)) => citation_text,
-        Err(err) => format!("ERROR: {}", err),
+        Err(err) => format!("ERROR: {}", err.display_message()),
       };
       format!("[{}]: {}",node.id.to_string(), citation_text)
     };
