@@ -1237,6 +1237,7 @@ ol {
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding-bottom: 10px;
 }
 
 .mech-image {
@@ -1256,7 +1257,7 @@ ol {
 
 .mech-float .mech-figure-caption {
     width: 100%;
-    max-width: 350px;
+    max-width: none;
 }
 
 .mech-figure-caption {

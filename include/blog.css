@@ -439,14 +439,31 @@ body.console-fullscreen .workspace {
 .article-layout.no-sections .toc { display: none; }
 .content-shell.hidden { display: none; }
 
+.main-content .mech-float {
+  width: min(48%, 520px);
+  max-width: 100%;
+}
+
+.main-content .mech-float .mech-image {
+  width: 100%;
+  height: auto;
+}
+
+body.narrow-content .mech-float,
 body.narrow-content .mech-float.left,
 body.narrow-content .mech-float.right {
-  float: none;
+  float: none !important;
   display: block;
   width: 100%;
   max-width: 100%;
   margin: 12px 0;
   clear: both;
+}
+
+body.narrow-content .mech-float .mech-image {
+  max-height: min(60vh, 560px);
+  width: auto;
+  object-fit: contain;
 }
 
 /* ── TOC ── */
