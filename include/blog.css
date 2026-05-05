@@ -318,7 +318,7 @@ body.console-fullscreen .workspace {
   letter-spacing: 0.01em;
 }
 
-.mech-byline {
+.mech-meta {
   margin-top: 22px;
   color: var(--hero-text-secondary);
   font-size: 14px;
@@ -327,10 +327,21 @@ body.console-fullscreen .workspace {
   gap: 10px;
 }
 
-.mech-byline p {
+.mech-meta p {
   color: inherit;
   margin: 0px;
   font-weight: 400;
+}
+
+.mech-prev-next {
+  display: flex;
+  justify-content: space-between;
+  margin: 24px 0;
+}
+
+.mech-next,
+.mech-previous {
+  display: inline-block;
 }
 
 .mech-summary {

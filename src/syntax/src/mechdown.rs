@@ -33,48 +33,50 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
   let (input, front_matter) = opt(title_front_matter)(input)?;
   let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
-  let (byline, hero, summary) = match front_matter {
-    Some((byline, hero, summary)) => (byline, hero, summary),
-    None => (None, None, None),
+  let (author, date, hero, kicker, summary, next, previous) = match front_matter {
+    Some((author, date, hero, kicker, summary, next, previous)) => (author, date, hero, kicker, summary, next, previous),
+    None => (None, None, None, None, None, None, None),
   };
-  Ok((input, Title{text: title, byline, hero, summary}))
+  Ok((input, Title{text: title, author, date, hero, kicker, summary, next, previous}))
 }
 
-pub fn byline(input: ParseString) -> ParseResult<Paragraph> {
-  let (input, byline) = paragraph_newline(input)?;
-  let (input, _) = many1(equal)(input)?;
-  Ok((input, byline))
-}
-
-pub fn title_front_matter(input: ParseString) -> ParseResult<(Option<Paragraph>, Option<SectionElement>, Option<Paragraph>)> {
+pub fn title_front_matter(input: ParseString) -> ParseResult<(Option<Paragraph>, Option<Paragraph>, Option<SectionElement>, Option<Paragraph>, Option<Paragraph>, Option<Paragraph>, Option<Paragraph>)> {
   let mut input = input;
-  let mut byline = None;
+  let mut author = None;
+  let mut date = None;
   let mut hero = None;
+  let mut kicker = None;
   let mut summary = None;
+  let mut next = None;
+  let mut previous = None;
 
-  if let Ok((next_input, parsed_byline)) = paragraph_newline(input.clone()) {
+  while many1(equal)(input.clone()).is_err() {
+    let (next_input, line) = paragraph_newline(input.clone())?;
     input = next_input;
-    byline = Some(parsed_byline);
-  }
-
-  if let Ok((next_input, image)) = img(input.clone()) {
-    let (next_input, _) = whitespace0(next_input)?;
-    input = next_input;
-    hero = Some(SectionElement::Image(image));
-  } else if let Ok((next_input, figure_table)) = figures(input.clone()) {
-    let (next_input, _) = whitespace0(next_input)?;
-    input = next_input;
-    hero = Some(SectionElement::FigureTable(figure_table));
-  }
-
-  if let Ok((next_input, parsed_synopsis)) = paragraph_newline(input.clone()) {
-    input = next_input;
-    summary = Some(parsed_synopsis);
+    if let Some((k, v)) = line.to_string().split_once(':') {
+      let key = k.trim().to_lowercase();
+      let value = v.trim();
+      if value.is_empty() {
+        continue;
+      }
+      let token = Token::new(TokenKind::Text, SourceRange::default(), value.chars().collect());
+      let value_paragraph = Paragraph::from_tokens(vec![token.clone()]);
+      match key.as_str() {
+        "author" => author = Some(value_paragraph),
+        "date" => date = Some(value_paragraph),
+        "kicker" => kicker = Some(value_paragraph),
+        "summary" => summary = Some(value_paragraph),
+        "next" => next = Some(value_paragraph),
+        "previous" => previous = Some(value_paragraph),
+        "hero" => hero = Some(SectionElement::Paragraph(Paragraph::from_tokens(vec![token]))),
+        _ => (),
+      }
+    }
   }
 
   let (input, _) = many1(equal)(input)?;
   let (input, _) = whitespace0(input)?;
-  Ok((input, (byline, hero, summary)))
+  Ok((input, (author, date, hero, kicker, summary, next, previous)))
 }
 
 pub struct MarkdownTableHeader {
