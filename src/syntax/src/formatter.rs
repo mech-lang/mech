@@ -92,18 +92,20 @@ impl Formatter {
     self.figure_num = 0;
   }
 
+  fn backmatter_heading(&self, text: &str) -> String {
+    let id = hash_str(text);
+    format!(
+      "<h3 id=\"{}\" class=\"mech-program-subtitle mech-backmatter-heading\">{}</h3>",
+      id, text
+    )
+  }
+
   pub fn works_cited(&mut self) -> String {
     if self.citations.is_empty() {
       return "".to_string();
     }
-    let id = hash_str("works-cited");
-
-    let gs = graphemes::init_source("Works Cited"); 
-    let (_,text) = paragraph(ParseString::new(&gs)).unwrap();
-    let h2 = self.subtitle(&Subtitle { level: 2, text });
-
     let mut src = format!(r#"<section id="67320967384727436" class="mech-works-cited">"#);
-    src.push_str(&h2);
+    src.push_str(&self.backmatter_heading("Works Cited"));
     for citation in &self.citations {
       src.push_str(citation);
     }
@@ -117,12 +119,8 @@ impl Formatter {
       return "".to_string();
     }
 
-    let gs = graphemes::init_source("Footnotes"); 
-    let (_,text) = paragraph(ParseString::new(&gs)).unwrap();
-    let h2 = self.subtitle(&Subtitle { level: 2, text });
-
     let mut src = format!(r#"<section id="{}" class="mech-footnotes">"#, hash_str("footnotes"));
-    src.push_str(&h2);
+    src.push_str(&self.backmatter_heading("Footnotes"));
     for footnote in &self.footnotes {
       src.push_str(footnote);
     }
@@ -134,13 +132,12 @@ impl Formatter {
     self.html = true;
     self.inline_eval_counters.clear();
 
-    let include_cited = shim.contains("{{CITED}}");
     let (formatted_byline, formatted_hero, formatted_synopsis) = self.title_slots(&tree.title);
     let (formatted_abstract, formatted_intro, formatted_contents, formatted_cited, formatted_footnotes) = self.document_slots(tree);
     let formatted_src = formatted_contents.clone();
     self.reset_numbering();
     let toc = tree.table_of_contents();
-    let formatted_toc = self.table_of_contents(&toc, include_cited && !formatted_cited.is_empty());
+    let formatted_toc = self.table_of_contents(&toc);
 
     let title = match toc.title {
       Some(title) => title.to_string(),
@@ -245,7 +242,7 @@ impl Formatter {
     content_sections.iter().map(|section| section_formatter.section(section)).collect()
   }
 
-  pub fn table_of_contents(&mut self, toc: &TableOfContents, include_cited: bool) -> String {
+  pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
     let mut h2_num = 0usize;
     let mut toc_items = String::new();
     for section in &toc.sections {
@@ -310,9 +307,6 @@ impl Formatter {
         subtitle.to_string(),
         nested
       ));
-    }
-    if include_cited {
-      toc_items.push_str("<li><a href=\"#67320967384727436\">Works Cited</a></li>");
     }
     format!("<aside class=\"toc mech-toc\"><div class=\"toc-title\">Contents</div><ul>{}</ul></aside>", toc_items)
   }
@@ -464,7 +458,16 @@ impl Formatter {
     let id_string = node.to_string();
     let id_hash = hash_str(&format!("footnote-{}",id_string));
     if self.html {
-      format!("<a href=\"#{}\" class=\"mech-footnote-reference\">{}</a>",id_hash, id_string)
+      let footnote_num = match self.footnote_map.get(&id_hash) {
+        Some(existing_num) => *existing_num,
+        None => {
+          self.footnote_num += 1;
+          let next_num = self.footnote_num;
+          self.footnote_map.insert(id_hash, next_num);
+          next_num
+        },
+      };
+      format!("<a href=\"#{}\" class=\"mech-footnote-reference\">{}</a>",id_hash, footnote_num)
     } else {
       format!("[^{}]",id_string)
     }
@@ -1064,7 +1067,7 @@ impl Formatter {
       self.footnotes[footnote_num - 1] = format!("<div class=\"mech-footnote\" id=\"{}\">
         <div class=\"mech-footnote-id\">{}:</div>
         {}
-      </div>",id, id_name.to_string(), note_paragraph);
+      </div>",id, footnote_num, note_paragraph);
       String::new()
     } else {
       format!("[^{}]: {}\n",id_name.to_string(), note_paragraph)

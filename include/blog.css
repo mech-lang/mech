@@ -452,23 +452,44 @@ body.console-fullscreen .workspace {
 .article-backmatter {
   display: block;
   width: 100%;
-  border-top: 1px solid var(--border);
   padding-top: 20px;
   margin-top: 20px;
+  position: relative;
+}
+
+.article-backmatter::before {
+  content: "";
+  display: block;
+  width: 240px;
+  border-top: 1px dotted var(--accent-primary);
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 20px;
 }
 
 .backmatter-row + .backmatter-row {
   margin-top: 18px;
 }
 
-.backmatter-row h2 {
-  margin: 0;
-  padding: 10px 14px;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--accent-hover);
-  border-bottom: 1px dotted var(--border);
+.backmatter-body .mech-backmatter-heading {
+  margin: 30px 0 12px;
+  padding: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text-primary);
+  border-bottom: 0;
+  counter-increment: none;
+  counter-reset: none;
+}
+
+.backmatter-body .mech-backmatter-heading::before {
+  content: none !important;
+}
+
+.backmatter-cited .mech-backmatter-heading {
+  column-span: all;
 }
 
 .backmatter-body {
