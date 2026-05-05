@@ -43,6 +43,17 @@ pub struct Formatter{
   inline_eval_counters: HashMap<u64, u64>,
 }
 
+#[derive(Debug, Clone, Default, PartialEq)]
+struct TitleSlots {
+  author: Option<String>,
+  date: Option<String>,
+  hero: Option<String>,
+  kicker: Option<String>,
+  summary: Option<String>,
+  next: Option<String>,
+  previous: Option<String>,
+}
+
 impl Formatter {
   fn citation_paragraph_with_optional_link(&mut self, paragraph: &Paragraph) -> MResult<(String, Option<String>)> {
     let mut link: Option<String> = None;
@@ -162,7 +173,7 @@ impl Formatter {
     self.html = true;
     self.inline_eval_counters.clear();
 
-    let (formatted_byline, formatted_hero, formatted_synopsis) = self.title_slots(&tree.title);
+    let title_slots = self.title_slots(&tree.title);
     let (formatted_abstract, formatted_intro, formatted_contents, formatted_cited, formatted_footnotes) = self.document_slots(tree);
     let formatted_src = formatted_contents.clone();
     self.reset_numbering();
@@ -185,9 +196,13 @@ impl Formatter {
 
     let mut rendered = shim.replace("{{STYLESHEET}}", &style)
         .replace("{{TOC}}", &formatted_toc)
-        .replace("{{BYLINE}}", &formatted_byline)
-        .replace("{{HERO}}", &formatted_hero)
-        .replace("{{SUMMARY}}", &formatted_synopsis)
+        .replace("{{AUTHOR}}", title_slots.author.as_deref().unwrap_or_default())
+        .replace("{{DATE}}", title_slots.date.as_deref().unwrap_or_default())
+        .replace("{{HERO}}", title_slots.hero.as_deref().unwrap_or_default())
+        .replace("{{KICKER}}", title_slots.kicker.as_deref().unwrap_or_default())
+        .replace("{{SUMMARY}}", title_slots.summary.as_deref().unwrap_or_default())
+        .replace("{{NEXT}}", title_slots.next.as_deref().unwrap_or_default())
+        .replace("{{PREVIOUS}}", title_slots.previous.as_deref().unwrap_or_default())
         .replace("{{ABSTRACT}}", &formatted_abstract)
         .replace("{{INTRO}}", &formatted_intro)
         .replace("{{CITED}}", &formatted_cited)
@@ -205,15 +220,18 @@ impl Formatter {
       .replace("{{CONTENTS}}", &formatted_contents)
   }
 
-  fn title_slots(&mut self, title: &Option<Title>) -> (String, String, String) {
+  fn title_slots(&mut self, title: &Option<Title>) -> TitleSlots {
     match title {
-      Some(title) => {
-        let byline = title.byline.as_ref().map(|p| self.byline_el(p)).unwrap_or_default();
-        let hero = title.hero.as_ref().map(|h| self.hero_el(h)).unwrap_or_default();
-        let summary = title.summary.as_ref().map(|p| self.synopsis_el(p)).unwrap_or_default();
-        (byline, hero, summary)
-      }
-      None => (String::new(), String::new(), String::new()),
+      Some(title) => TitleSlots {
+        author: title.author.as_ref().map(|p| self.inline_title_meta_el(p, "mech-author")),
+        date: title.date.as_ref().map(|p| self.inline_title_meta_el(p, "mech-date")),
+        hero: title.hero.as_ref().map(|h| self.hero_el(h)),
+        kicker: title.kicker.as_ref().map(|p| self.inline_title_meta_el(p, "mech-kicker")),
+        summary: title.summary.as_ref().map(|p| self.synopsis_el(p)),
+        next: title.next.as_ref().map(|p| self.inline_title_meta_el(p, "mech-next")),
+        previous: title.previous.as_ref().map(|p| self.inline_title_meta_el(p, "mech-previous")),
+      },
+      None => TitleSlots::default(),
     }
   }
 
@@ -1016,12 +1034,12 @@ impl Formatter {
     }
   }
 
-  pub fn byline_el(&mut self, node: &Paragraph) -> String {
-    let byline = self.paragraph(node);
+  pub fn inline_title_meta_el(&mut self, node: &Paragraph, class_name: &str) -> String {
+    let content = self.paragraph(node);
     if self.html {
-      format!("<div class=\"mech-byline\">{}</div>", byline)
+      format!("<p class=\"{}\">{}</p>", class_name, content)
     } else {
-      byline
+      content
     }
   }
 

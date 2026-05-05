@@ -12,14 +12,12 @@ Mechdown supports hierarchical titles:
 
 It also supports optional **front matter** directly beneath the document title. Front matter ends with a second `===` separator and can include:
 
-- optional byline (first line)
-- optional hero media (`![caption](src)` or a `| ... |` figures row/table)
-- optional summary paragraph
+- optional key/value front matter entries: `author`, `date`, `hero`, `kicker`, `summary`, `next`, `previous`
 
 1. Rules and conventions
 -------------------------------------------------------------------------------
 
-- Use one document title per file. The document can have an optional byline (author, date, etc.) immediately following the title.
+- Use one document title per file. Optional title front matter is written as key/value pairs beneath the title.
 - Keep section numbering sequential.
 - Keep subsection numbering aligned with the parent section.
 - Prefer short, descriptive titles so generated navigation remains readable.
@@ -42,23 +40,18 @@ Mechdown Title Guide
 
 Section and first-level subsection titles are included in the generated table of contents.
 
-To add a byline, place it immediately after the title and conclude with a second `===` separator:
+Front matter uses key/value pairs and ends with a second `===` separator:
 
 ```
-My Document
+Fall 2025 Progress Report - Mechdown Beta
 ===============================================================================
-By Mika the Mech
-===============================================================================
-```
-
-Front matter with byline, hero, and summary:
-
-```
-This is my title
-===============================================================================
-Foo Bar January 1 2026
-![my hero](hero.png)
-This is my blog and it's good.
+author: Corey Montella
+date: November 12, 2025
+hero: ![Mika operating a printing press.](images/mika-press.png)
+kicker: Announcements
+summary: In this post, we review our progress on Mech so far this year.
+next: [How to Start](/posts/2025-12-13/index.html)
+previous: [Mascots of Mech](/posts/2025-10-14/index.html)
 ===============================================================================
 ```
 
@@ -71,7 +64,11 @@ In HTML shims, these placeholders are available:
 
 - `{{STYLESHEET}}`
 - `{{TITLE}}`
-- `{{BYLINE}}`
+- `{{AUTHOR}}`
+- `{{DATE}}`
+- `{{KICKER}}`
+- `{{NEXT}}`
+- `{{PREVIOUS}}`
 - `{{HERO}}`
 - `{{SUMMARY}}`
 - `{{TOC}}`

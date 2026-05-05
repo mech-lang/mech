@@ -15,7 +15,11 @@ This allows one Mechdown source document to be rendered into different layouts b
 
 - `{{STYLESHEET}}` — Injected CSS content.
 - `{{TITLE}}` — Document title text.
-- `{{BYLINE}}` — Formatted byline content from the title block.
+- `{{AUTHOR}}` — Author paragraph from title front matter.
+- `{{DATE}}` — Date paragraph from title front matter.
+- `{{KICKER}}` — Inline kicker paragraph from title front matter.
+- `{{NEXT}}` — Next-post link paragraph from title front matter.
+- `{{PREVIOUS}}` — Previous-post link paragraph from title front matter.
 - `{{HERO}}` — Hero media/content from the title block.
 - `{{SUMMARY}}` — Synopsis content from the title block.
 - `{{TOC}}` — Generated table of contents.

@@ -58,9 +58,9 @@
       <div class="hero">
         <div class="hero-panel">
           <div>
-            <p class="hero-kicker">Announcement</p>
+            {{KICKER}}
             <h1>{{TITLE}}</h1>
-            {{BYLINE}}
+            <div class="hero-meta">{{AUTHOR}}{{DATE}}</div>
           </div>
           {{SUMMARY}}
         </div>
@@ -75,6 +75,10 @@
           {{CONTENT}}
         </article>
       </div>
+      <nav class="post-pagination" aria-label="Post navigation">
+        <div class="post-pagination-prev">{{PREVIOUS}}</div>
+        <div class="post-pagination-next">{{NEXT}}</div>
+      </nav>
       <section class="article-backmatter" aria-label="Notes and Works Cited">
         <div class="backmatter-row backmatter-notes">
           <div class="backmatter-body">

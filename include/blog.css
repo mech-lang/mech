@@ -318,7 +318,7 @@ body.console-fullscreen .workspace {
   letter-spacing: 0.01em;
 }
 
-.mech-byline {
+.hero-meta {
   margin-top: 22px;
   color: var(--hero-text-secondary);
   font-size: 14px;
@@ -327,11 +327,19 @@ body.console-fullscreen .workspace {
   gap: 10px;
 }
 
-.mech-byline p {
+.hero-meta p {
   color: inherit;
   margin: 0px;
   font-weight: 400;
 }
+
+.mech-kicker{margin:0 0 8px 0; color: var(--kicker-accent); text-transform: uppercase; letter-spacing: .08em; font-weight:700; font-size:12px;}
+.mech-author,.mech-date{margin:0; color:var(--hero-text-secondary);}
+.mech-summary{margin-top:14px;}
+.post-pagination{display:flex; justify-content:space-between; gap:16px; margin:28px 0;}
+.post-pagination-prev,.post-pagination-next{flex:1;}
+.post-pagination-next{text-align:right;}
+.post-pagination a{color:var(--accent-secondary-teal-soft); text-decoration:underline;}
 
 .mech-summary {
   margin-top: 22px;
