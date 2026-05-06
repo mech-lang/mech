@@ -8,7 +8,6 @@
 <style>
   {{STYLESHEET}}
 </style>
-<link rel="stylesheet" href="https://mech-lang.org/css/blog.css">
 </head>
 <body>
 
@@ -51,16 +50,16 @@
         <span class="sep">⟩</span>
         <a href="/blog">Blog</a>
         <span class="sep">⟩</span>
-        <a href="/blog/announcements">Announcements</a>
+        <a href="/blog/announcements">{{KICKER}}</a>
         <span class="sep">⟩</span>
         <span aria-current="page">Mech Version 0.3-Beta</span>
       </nav>
       <div class="hero">
         <div class="hero-panel">
           <div>
-            <p class="hero-kicker">Announcement</p>
+            {{KICKER}}
             <h1>{{TITLE}}</h1>
-            {{BYLINE}}
+            <p class="mech-meta">{{AUTHOR}} • {{DATE}}</p>
           </div>
           {{SUMMARY}}
         </div>
@@ -75,6 +74,7 @@
           {{CONTENT}}
         </article>
       </div>
+      <div class="mika-separator"></div>
       <section class="article-backmatter" aria-label="Notes and Works Cited">
         <div class="backmatter-row backmatter-notes">
           <div class="backmatter-body">
@@ -87,6 +87,16 @@
           </div>
         </div>
       </section>
+      <nav class="post-pagination" aria-label="Post navigation">
+        <div class="post-pagination-prev">
+          <span class="post-pagination-label">Previous post</span>
+          {{PREVIOUS}}
+        </div>
+        <div class="post-pagination-next">
+          <span class="post-pagination-label">Next post</span>
+          {{NEXT}}
+        </div>
+      </nav>
       <footer class="footer">
         <div class="footer-inner">
 

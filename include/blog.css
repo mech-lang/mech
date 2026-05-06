@@ -280,6 +280,18 @@ body.console-fullscreen .workspace {
   gap: 8px;
 }
 
+.breadcrumbs .hero-kicker {
+  margin-bottom: inherit !important;
+  display: inherit !important;
+  flex-wrap: inherit !important;
+  gap: inherit !important;
+  text-transform: inherit !important;
+  letter-spacing: inherit !important;
+  color: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+}
+
 .breadcrumbs .sep { color: var(--accent-primary); }
 .breadcrumbs a:hover { color: var(--accent-primary); }
 
@@ -318,7 +330,7 @@ body.console-fullscreen .workspace {
   letter-spacing: 0.01em;
 }
 
-.mech-byline {
+.mech-meta {
   margin-top: 22px;
   color: var(--hero-text-secondary);
   font-size: 14px;
@@ -327,10 +339,82 @@ body.console-fullscreen .workspace {
   gap: 10px;
 }
 
-.mech-byline p {
+.mech-meta p {
   color: inherit;
   margin: 0px;
   font-weight: 400;
+}
+
+.post-pagination{
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  margin:32px 0 20px;
+  padding-top:14px;
+  border-top:1px dotted var(--border);
+}
+
+.post-pagination-prev,.post-pagination-next{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.post-pagination-next{
+  text-align:right;
+  align-items:flex-end;
+}
+
+.post-pagination-label{
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--text-secondary);
+}
+
+.post-pagination-next .post-pagination-label {
+  margin-right: 25px;
+}
+
+.post-pagination-prev .post-pagination-label {
+  margin-left: 25px;
+}
+
+.post-pagination .mech-previous,
+.post-pagination .mech-next{
+  margin:0;
+}
+
+.post-pagination a{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  color:var(--text-primary);
+  font-size:16px;
+  text-decoration:none;
+}
+
+.post-pagination-prev a::before{
+  content:"⟨";
+  color:var(--accent-primary);
+  font-size:35px;
+  line-height:1;
+  margin-right:4px;
+  transform: translateY(-15px);
+}
+
+.post-pagination-next a::after{
+  content:"⟩";
+  color:var(--accent-primary);
+  font-size:35px;
+  line-height:1;
+  margin-left:4px;
+  transform: translateY(-15px);
+}
+
+.post-pagination a:hover{
+  color:var(--accent-soft);
 }
 
 .mech-summary {
@@ -377,6 +461,7 @@ body.console-fullscreen .workspace {
   margin-block-end: 0px;
   margin-inline-start: 0px;
   margin-inline-end: 0px;
+  padding-bottom: 0px;
 }
 
 .mech-hero-img figure img {
@@ -428,8 +513,8 @@ body.console-fullscreen .workspace {
 .article-layout {
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 40px;
+  grid-template-columns: var(--toc-width) minmax(0, 1fr);
+  gap: 48px;
   align-items: start;
 }
 
@@ -455,16 +540,6 @@ body.console-fullscreen .workspace {
   padding-top: 20px;
   margin-top: 20px;
   position: relative;
-}
-
-.article-backmatter::before {
-  content: "";
-  display: block;
-  width: 240px;
-  border-top: 1px dotted var(--accent-primary);
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 20px;
 }
 
 .backmatter-row + .backmatter-row {
@@ -742,7 +817,7 @@ section.active-section {
 /* ── Footer ── */
 .footer {
   grid-column: 1 / -1;
-  margin-top: 64px;
+  margin-top: 0px;
   border-top: 1px dotted var(--border);
   background: linear-gradient(90deg, var(--bg-primary), var(--bg-dark), var(--bg-primary));
   color: var(--text-secondary);
@@ -997,7 +1072,7 @@ section.active-section {
   top: var(--header-height);
   height: calc(100vh - var(--header-height));
   align-self: start;
-  cursor: grab;
+  cursor: ew-resize;
   z-index: 50;
 }
 
@@ -1054,7 +1129,7 @@ section.active-section {
   border-radius: var(--grip-radius) 0 0 var(--grip-radius);
   background: var(--accent-primary);
   border: 1px solid var(--accent-hover);
-  cursor: grab;
+  cursor: ew-resize;
   z-index: 1100;
   display: none;
   transition: right 140ms ease, left 140ms ease;
@@ -1078,7 +1153,7 @@ body.edge-right .resize-handle {
 
 body.is-resizing,
 body.is-resizing * {
-  cursor: grabbing !important;
+  cursor: ew-resize !important;
 }
 
 /* ── Console pane ── */
@@ -1464,3 +1539,26 @@ body.console-fullscreen .console-fullscreen-toggle .icon-exit {
     overflow:auto;
     border-radius: 0 0 8px 8px;
   } 
+
+.mika-separator {
+  position: relative;
+  display: block;
+  width: 55%;
+  height: 0;
+  margin: 64px auto;
+  border-top: 1px dotted #d29a2e;
+}
+
+.mika-separator::before {
+  content: "⦿";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -50%);
+  font-family: SF Mono, SF Mono Regular, Consolas, "Liberation Mono", "Courier New", monospace;
+  color: #d29a2e;
+  background: var(--bg-primary);
+  padding: 0 12px;
+  font-size: 22px;
+  line-height: 1;
+}
