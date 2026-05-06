@@ -1,8 +1,5 @@
 Mech Documentation
 ===============================================================================
-v0.3.4-beta
-===============================================================================
-
 
 1. Getting Started
 -------------------------------------------------------------------------------
@@ -126,7 +123,7 @@ v0.3.4-beta
 ```mech:hidden
 document/index := {
   name: "docs" 
-  version: "v0.3.4"
+  version: "v0.3.5"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/mech/docs"
   license: "Apache-2.0"}
