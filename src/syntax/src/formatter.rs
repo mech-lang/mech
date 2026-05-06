@@ -1139,7 +1139,9 @@ impl Formatter {
       self.footnotes.resize(self.footnote_num, String::new());
       self.footnotes[footnote_num - 1] = format!("<div class=\"mech-footnote\" id=\"{}\">
         <div class=\"mech-footnote-id\">{}:</div>
-        {}
+        <div class=\"mech-footnote-body\">
+          {}
+        </div>
       </div>",id, footnote_num, note_paragraph);
       String::new()
     } else {

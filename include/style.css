@@ -1899,6 +1899,10 @@ li p {
     color: #ada594;
 }
 
+.mech-footnote-body .mech-paragraph + .mech-paragraph {
+    margin-top: 10px !important;
+}
+
 .mech-footnote-id {
     color: var(--main-color-mid);
     font-weight: bold;
