@@ -1518,6 +1518,8 @@ li p {
     margin: 0;
     line-height: 1.6;
     font-size: 14pt;
+    margin-top: 10px;
+    text-indent: 25px;
 }
 
 
