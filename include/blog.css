@@ -1449,6 +1449,7 @@ body.console-fullscreen .console-fullscreen-toggle .icon-exit {
     overflow-x: hidden;
     overflow-y: visible;
     padding: 18px;
+    padding-bottom: 0px;
   }
 
   .content-column,
@@ -1739,7 +1740,7 @@ body.console-fullscreen .console-fullscreen-toggle .icon-exit {
   }
 }
 
-@media (max-width: 450px) {
+@media (max-width: 500px) {
   .backmatter-cited .backmatter-body {
     column-count: 1;
     column-gap: 0;
