@@ -482,11 +482,17 @@ body.console-fullscreen .workspace {
   margin: 0 0 52px;
 }
 
-.article-intro p {
+.article-intro > .mech-intro > p {
   margin: 0 0 18px;
   line-height: 1.85;
   color: var(--body-primary);
   font-size: 1.06rem;
+}
+
+.article-intro .mech-code .mech-comment p {
+  margin: 0;
+  line-height: inherit;
+  font-size: inherit;
 }
 
 .mech-paragraph {
