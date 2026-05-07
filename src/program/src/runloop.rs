@@ -140,7 +140,7 @@ impl ProgramRunner {
     let changes = persister.get_changes();
 
     // Load database
-    ////println!("{} Applying {} stored changes...", BrightCyan.paint(format!("[{}]", name)), changes.len());    
+    ////println!("{} Applying {} stored changes…", BrightCyan.paint(format!("[{}]", name)), changes.len());    
     for change in changes {
       program.mech.process_transaction(&Transaction::from_change(change));
     }*/

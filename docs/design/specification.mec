@@ -1028,14 +1028,14 @@ A `record` is a collection of named fields. Each field consists of a key-value p
 A record's kind describes the types of its fields:
 
 ```mech:disabled
-<{field1<kind1>, field2<kind2>,...}>
+<{field1<kind1>, field2<kind2>,…}>
 ```
 
 This denotes a record with fields:
 
 - `field1<kind1>`: A field named `field1` of type `kind1`.
 - `field2<kind2>`: A field named `field2` of type `kind2`.
-- `...`: Additional fields as needed.
+- `…`: Additional fields as needed.
 
 (5.6.2) Examples
 
@@ -1622,6 +1622,8 @@ hyperlink := "[", +text, "]", "(", +text, ")" ;
 raw-hyperlink := http-prefix, +text ;
 eval-inline-mech-cdoe := "{", expression, "}" ;
 inline-mech-cdoe := "{{", expression, "}}" ;
+include-inline-mech-source := "{", include-target, "}" ;
+include-target := +text ;
 ```
 
 Beyond raw text, paragraphs also can contain various markup which indicates inline elements. Mechdown supports the following inline markup:
@@ -2032,20 +2034,22 @@ Images can be floated to the left or right by prefixing with `<<:` or `:>>`, res
 (10.9.1) Example
 
 ```
-![Mika running to get the job done!](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/running.png?ref_type=heads)
-![A smaller version of Mika](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/running.png?ref_type=heads){width: "200px"}
+![Mika running to get the job done!](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/mika-pose-running.png?ref_type=heads)
+![A smaller version of Mika](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/mika-pose-running.png?ref_type=heads){width: "200px"}
 ```
 
 This renders as:
 
-![Mika running to get the job done!](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/running.png?ref_type=heads)
-![A smaller version of Mika](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/running.png?ref_type=heads){width: "200px"}
+![Mika running to get the job done!](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/mika-pose-running.png?ref_type=heads)
+![A smaller version of Mika](https://gitlab.com/mech-lang/assets/-/raw/v0.2-beta/images/mika/mika-pose-running.png?ref_type=heads){width: "200px"}
 
 (10.10) Mech Extensions 
 
 ```ebnf
 eval-inline-mech-cdoe := "{", ws0, expression, ws0, "}" ;
 inline-mech-cdoe := "{{", ws0, expression, ws0, "}}" ;
+include-inline-mech-source := "{", ws0, include-target, ws0, "}" ;
+include-target := +text ;
 mech-code := mech-code-alt, ("\n" | ";" | comment) ;
 mech-code-alt := fsm-specification | fsm-implementation | function-define | statement | expression | comment ;
 ```
@@ -2123,6 +2127,13 @@ Mechdown supports inline Mech code, which can be used to embed Mech expressions 
 - `{{expression}}`: This syntax is used for inline Mech code that should be syntax highlighted but not evaluated. It is useful for documentation purposes where you want to show Mech code without executing it.
 - `{expression}`: This syntax is used for inline Mech code that should be evaluated and its result displayed within the paragraph. It allows for dynamic content generation based on Mech expressions. If an interpreter is not available, the code will be displayed as-if it were a syntax-highlighted block.
 
+When parsing `{...}`, Mechdown applies include disambiguation before evaluation:
+
+- If the content ends with `.mec`, `{...}` is treated as a source include target.
+- Otherwise, `{...}` is treated as an inline expression.
+
+Include targets are resolved relative to the including file. Expansion is recursive, and nested includes resolve relative to their own containing files. Circular chains are rejected with `Circular include detected`, and missing includes are rejected with `Include failed: <path>`.
+
 (10.9.2.1) Examples
 
 ```
@@ -2135,7 +2146,181 @@ This renders as:
 The result of 6 times 7 is {6 * 7}.
 The syntax for defining a variable in Mech is {{var-name := value}}.
 
-11. Notation
+(11) Mika
+-------------------------------------------------------------------------------
+
+Mika is a first-class syntactic construct in Mech. The syntax parser supports both compact body forms (*MicroMika* / `micromika`) and parenthesized facial-expression forms (*MiniMika* / `minimika`), plus optional speech-bubble sections.
+
+(11.1) Grammar
+
+```ebnf
+mika := (mini-mika | micro-mika), ws0, ?mika-section, ws0 ;
+
+micro-mika := mika-arm-left, mika-nose, mika-arm-right ;
+mini-mika := ?mika-arm-left
+           , "("
+           , ?mika-arm-right
+           , mika-expression-inner
+           , ?mika-arm-left
+           , ")"
+           , ?mika-arm-right ;
+
+mika-section := "⸢", +section-element, "⸥" ;
+```
+
+The parser attempts `mini-mika` first, then `micro-mika`, and finally an optional `mika-section`.
+
+(11.2) MicroMika
+
+MicroMika is the compact 3-part form:
+
+```ebnf
+micro-mika := mika-arm-left, mika-nose, mika-arm-right ;
+```
+
+(11.2.1) Arm terminals
+
+```ebnf
+mika-arm-left := "Ɔ∞" | "›─" | "›⌣" | "·¬" | "-◡" | "ᗑ" | "ᕦ" | "~" | "⌣"
+               | "╭" | "⸌" | "⸸" | "─" | "ᓂ" | "ᓇ" | "╰" ;
+
+mika-arm-right := "∞C" | "─‹" | "⌣‹" | "⌐·" | "◡-" | "ᗑ" | "ᕤ" | "~" | "⌣"
+                | "╮" | "⸍" | "ᗢ" | "─" | "ᓀ" | "ᓄ" | "╯" ;
+```
+
+(11.2.2) Nose terminals
+
+```ebnf
+mika-nose := "⦿" | "◯" | "⊕" | "∘" | "⦾" | "⊖" | "⦵"
+           | "⊗" | "⏺" | "⍜" | "⬢" | "⬟" | "⬣" | "⎔" ;
+```
+
+(11.2.3) Named MicroMika forms
+
+The platform includes the following canonical MicroMika forms:
+
+- `ᗑ⦿ᗑ` (Bat)
+- `›⌣⦿⌣‹` (BigHug)
+- `⸌⦿⸍` (Cheer)
+- `~⦿~` (Dance)
+- `╰⦿╯` (Goal)
+- `›─⦿╮` (GripperLeft)
+- `╭⦿─‹` (GripperRight)
+- `⌣⦿╮` (GestureLeft)
+- `╭⦿⌣` (GestureRight)
+- `╭⦿╮` (Idle)
+- `⸸⦿ᗢ` (Knight)
+- `·¬⦿⌐·` (Matrix)
+- `⸸⦿ᗑ` (OneWing)
+- `─⦿╮` (PointLeft)
+- `╭⦿─` (PointRight)
+- `ᓂ⦿ᓄ` (Punch)
+- `·¬⦿╮` (ShootLeft)
+- `╭⦿⌐·` (ShootRight)
+- `-◡⦿◡-` (Shrug)
+- `-◡⦿╮` (ServeLeft)
+- `╭⦿◡-` (ServeRight)
+- `╰⦿╮` (WaveLeft)
+- `╭⦿╯` (WaveRight)
+
+(11.3) MiniMika
+
+MiniMika is the expression form using eyes + nose:
+
+```ebnf
+mini-mika := ?mika-arm-left
+           , "("
+           , ?mika-arm-right
+           , mika-expression-inner
+           , ?mika-arm-left
+           , ")"
+           , ?mika-arm-right ;
+
+mika-expression-inner := mika-eye-left, mika-nose, mika-eye-right ;
+```
+
+(11.3.1) Eye terminals
+
+```ebnf
+mika-eye-left := "⌐▰" | "ˆ" | "ಠ" | "╥" | "⋇" | "✖" | "≻" | "ᗒ" | "ㆆ" | "◜"
+               | "˙" | "⚆" | "☉" | "◠" | "◡̀" | "◕" | "◞" | "Ͼ" | "⹇" | "ᗣ"
+               | "≖" | "°" | "ᗩ" | "¬" | "◉" ;
+
+mika-eye-right := "ˆ" | "ಠ" | "╥" | "⋇" | "✖" | "≺" | "ᗕ" | "ㆆ" | "◝" | "˙"
+                | "⚆" | "☉" | "◠" | "◡́" | "◕" | "◟" | "Ͽ" | "▰" | "⹇" | "ᗣ"
+                | "≖" | "°" | "ᗩ" | "¬" | "◉" ;
+```
+
+(11.3.2) Canonical MiniMika expressions
+
+The syntax layer recognizes canonical eye/nose/right-eye combinations (e.g. `(˙◯˙)`, `(ㆆ⍜ㆆ)`, `(⌐▰◯▰)`), represented internally as expression variants such as `Normal`, `Glaring`, `Shades`, `Resolved`, `Sleeping`, etc.
+
+(11.3.3) Named MiniMika forms
+
+Canonical MiniMika expressions include:
+
+- `(ˆ◯ˆ)` (Content)
+- `(ಠ◯ಠ)` (Confused)
+- `(╥◯╥)` (Crying)
+- `(⋇◯⋇)` (Dazed)
+- `(✖◯✖)` (Dead)
+- `(≻◯≺)` (EyesSqueezed)
+- `(ᗒ◯ᗕ)` (SuperSqueezed)
+- `(ㆆ⍜ㆆ)` (Glaring)
+- `(◜◯◝)` (Happy)
+- `(˙◯˙)` (Normal)
+- `(⚆◯⚆)` (PeerRight)
+- `(☉◯☉)` (PeerStraight)
+- `(◠◯◠)` (Pleased)
+- `(◡̀◯◡́)` (Resolved)
+- `(◕◯◕)` (RollingEyes)
+- `(◞◯◟)` (Sad)
+- `(Ͼ◯Ͽ)` (Scared)
+- `(⌐▰◯▰)` (Shades)
+- `(⹇◯⹇)` (Sleeping)
+- `(ᗣ◯ᗣ)` (Smiling)
+- `(≖◯≖)` (Squinting)
+- `(°◯°)` (Surprised)
+- `(ᗩ◯ᗩ)` (TearingUp)
+- `(¬◯¬)` (Unimpressed)
+- `(◉◯◉)` (Wired)
+
+Additional legacy/design forms used in documentation examples include:
+
+- `(❛◯❛)` (Scowl-style variant)
+- `(-◯-)` (sleeping-style variant)
+
+(11.4) Mika sections (speech bubbles / blocks)
+
+Mika can attach an inline block payload:
+
+```ebnf
+mika-section := "⸢", +section-element, "⸥" ;
+```
+
+`mika-section` is parsed as part of `mika` and supports normal section elements inside the delimiters, enabling rich speech-bubble content.
+
+(11.5) Examples
+
+```
+╭⦿╯
+╭⦿╯ ⸢Hello, I'm Mika!⸥
+(˙◯˙)
+ᕦ(◡̀◯◡́)ᕤ
+```
+
+(11.6) Common animation form sequences
+
+In practice, Mika animations are written as frame sequences over MicroMika or MiniMika forms. Common documented sequences include:
+
+```ebnf
+sleep-sequence := "╭⦿╮", "->", "╭⦾╮", "->", "╭⊚╮", "->", "╭⊙╮", "->", "╭◯╮" ;
+wake-sequence := "╭◯╮", "->", "╭⊙╮", "->", "╭⊚╮", "->", "╭⦾╮", "->", "╭⦿╮" ;
+blink-sequence := "╭⦿╮", "->", "╭⊖╮", "->", "╭⦿╮" ;
+pulse-sequence := "╭⦿╮", "->", "╭⦾╮", "->", "╭⊚╮", "->", "╭⊙╮", "->", "╭⊚╮", "->", "╭⦾╮", "->", "╭⦿╮" ;
+```
+
+12. Notation
 -------------------------------------------------------------------------------
 
 The grammar is specified using extended Extended Backus-Naur Form (EBNF):

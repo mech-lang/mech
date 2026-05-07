@@ -38,10 +38,26 @@ pub fn tuple(tpl: &Tuple, env: Option<&Environment>, p: &Interpreter) -> MResult
 
 #[cfg(all(feature = "tuple", feature = "atom"))]
 pub fn tuple_struct(tpl: &TupleStruct, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+  let payload = expression(&tpl.value, env, p)?;
+  let variant_id = tpl.name.hash();
+  let state_brrw = p.state.borrow();
+  if let Some((enum_id, enum_def)) = state_brrw
+    .enums
+    .iter()
+    .find(|(_, enm)| enm.variants.iter().any(|(known_variant, _)| *known_variant == variant_id))
+  {
+    let variants = vec![(variant_id, Some(payload))];
+    let enm = MechEnum {
+      id: *enum_id,
+      variants,
+      names: enum_def.names.clone(),
+    };
+    return Ok(Value::Enum(Ref::new(enm)));
+  }
+  drop(state_brrw);
   let mut elements = vec![];
   let atom_value = atom(&Atom { name: tpl.name.clone() }, p);
   elements.push(Box::new(atom_value));
-  let payload = expression(&tpl.value, env, p)?;
   elements.push(Box::new(payload));
   Ok(Value::Tuple(Ref::new(MechTuple { elements })))
 }
@@ -480,8 +496,10 @@ pub fn matrix_row(r: &MatrixRow, env: Option<&Environment>, p: &Interpreter) -> 
   let mut row: Vec<Value> = Vec::new();
   let mut shape = vec![0, 0];
   let mut kind = ValueKind::Empty;
+  let mut saw_empty = false;
   for col in &r.columns {
     let result = matrix_column(col, env, p)?;
+    saw_empty |= matches!(result.kind(), ValueKind::Empty);
     if shape == vec![0,0] {
       shape = result.shape();
       kind = result.kind();
@@ -495,6 +513,9 @@ pub fn matrix_row(r: &MatrixRow, env: Option<&Environment>, p: &Interpreter) -> 
         ).with_compiler_loc()
       );
     }
+  }
+  if saw_empty && row.iter().all(|value| value.shape() == vec![1, 1]) {
+    return Ok(Value::MatrixValue(Matrix::from_vec(row, 1, r.columns.len())));
   }
   let new_fxn = MatrixHorzCat{}.compile(&row)?;
   new_fxn.solve();

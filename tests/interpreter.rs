@@ -120,6 +120,81 @@ test_interpreter!(
   "x<u64?> := 2u64; y<u64?> := _; (x2,y2) := (x,y)? | (x,y) => (x,y) | * => (0u64,0u64).; x2 + y2",
   Value::U64(Ref::new(0))
 );
+#[test]
+fn interpret_matrix_literal_with_empty_infers_optional_f64_elements() {
+  let s = "x := [1 2 _ 5]\n\nx";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  assert_eq!(
+    result.deref_kind(),
+    ValueKind::Matrix(
+      Box::new(ValueKind::Option(Box::new(ValueKind::F64))),
+      vec![1, 4]
+    )
+  );
+}
+#[cfg(feature = "u64")]
+#[test]
+fn interpret_option_matrix_literal_unwraps_to_u64_defaults() {
+  let s = "x<[u64?]> := [_ 2u64 _ 3u64 _ 4u64]\n\nunwrapped<[u64]> := x?\n  | x => x\n  | * => 0u64.\n\nunwrapped";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  let detached = match result {
+    Value::MutableReference(v) => v.borrow().clone(),
+    value => value,
+  };
+  assert_eq!(
+    detached,
+    Value::MatrixU64(Matrix::from_vec(vec![0, 2, 0, 3, 0, 4], 1, 6))
+  );
+}
+#[cfg(all(feature = "u64", feature = "u8", feature = "table"))]
+#[test]
+fn interpret_option_match_after_outer_join_column_access_converts_option_to_scalar() {
+  let s = "a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |\n\
+   b := |id<u64> hw2<u8>| 2 200 | 3 255 | 4 42 |\n\
+   x := a ⟗ b\n\
+   y<u8> := x.hw1[4]?\n\
+     | x => x\n\
+     | * => 0.\n\
+   y";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  let detached = match result {
+    Value::MutableReference(v) => v.borrow().clone(),
+    value => value,
+  };
+  assert_eq!(detached, Value::U8(Ref::new(0)));
+}
+#[test]
+fn interpret_option_matrix_literal_unwraps_to_typed_f64_defaults() {
+  let s = "x<[f64?]> := [_ 2 _ 3 _ 4]\n\nunwrapped<[f64]> := x?\n  | x => x\n  | * => 0.\n\nunwrapped";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  let detached = match result {
+    Value::MutableReference(v) => v.borrow().clone(),
+    value => value,
+  };
+  assert_eq!(
+    detached,
+    Value::MatrixF64(Matrix::from_vec(vec![0.0, 2.0, 0.0, 3.0, 0.0, 4.0], 1, 6))
+  );
+}
+#[test]
+fn interpret_option_matrix_literal_unwraps_to_inferred_f64_defaults() {
+  let s = "x<[f64?]> := [_ 2 _ 3 _ 4]\n\nunwrapped := x?\n  | x => x\n  | * => 0.\n\nunwrapped";
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  assert_eq!(
+    result.deref_kind(),
+    ValueKind::Matrix(Box::new(ValueKind::F64), vec![1, 6])
+  );
+}
 test_interpreter!(
   interpret_match_allows_unreachable_wildcard_with_different_kind,
   "foo<f64?> := 1234\n\nbar := foo?\n  | x => \"One Two Three\"\n  | * => 12.\n\nbar + \"\"",
@@ -170,17 +245,50 @@ label := state?
   assert!(msg.contains("wildcard"));
 }
 
+#[test]
+fn interpret_enum_match_all_variants_without_wildcard_is_exhaustive() {
+  let s = r#"
+<status> := :running | :pending | :stopped
+x<status> := :running
+code := x?
+  | :running => 1
+  | :pending => 2
+  | :stopped => 0.
+"#;
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  assert_eq!(result, Value::F64(Ref::new(1.0)));
+}
+
+#[test]
+fn interpret_enum_match_all_variants_without_wildcard_still_checks_arm_kinds() {
+  let s = r#"
+<status> := :running | :pending | :stopped
+x<status> := :running
+code := x?
+  | :running => 1
+  | :pending => "pending"
+  | :stopped => 0.
+"#;
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let err = intrp.interpret(&tree).unwrap_err();
+  let msg = format!("{:?}", err);
+  assert!(msg.contains("MatchArmKindMismatch"));
+}
+
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_match_array_pattern_head,
-  "xs := [10u64 20u64 30u64]; y := xs? | [x ...] => x | * => 0u64.; y + 0u64",
+  "xs := [10u64 20u64 30u64]; y := xs? | [x …] => x | * => 0u64.; y + 0u64",
   Value::U64(Ref::new(10))
 );
 
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_match_array_pattern_last,
-  "xs := [10u64 20u64 30u64]; y := xs? | [... x] => x | * => 0u64.; y + 0u64",
+  "xs := [10u64 20u64 30u64]; y := xs? | [… x] => x | * => 0u64.; y + 0u64",
   Value::U64(Ref::new(30))
 );
 
@@ -225,11 +333,11 @@ test_interpreter!(
   "add-one(x<f64>) => <f64>\n  | x + 1.\n\nadd-one([1 2 3])",
   Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, 4.0], 1, 3))
 );
-test_interpreter!(interpret_function_array_pattern_arms, "head(xs<[u64]:1,3>) => <u64>\n  | [x ...] => x\n  | * => 0u64.\nhead([10u64 20u64 30u64]) + 0u64", Value::U64(Ref::new(10)));
-test_interpreter!(interpret_fsm_array_pattern_state_arguments, "#VecFsm(n<u64>) => <u64>\n  ├ :Scan(xs<[u64]:1,3>)\n  └ :Done(out<u64>).\n\n#VecFsm(n<u64>) -> :Scan([1u64 2u64 3u64])\n  :Scan([x ... y]) -> :Done(x + y)\n  :Done(out) => out.\n\n#VecFsm(0u64)", Value::U64(Ref::new(4)));
+test_interpreter!(interpret_function_array_pattern_arms, "head(xs<[u64]:1,3>) => <u64>\n  | [x …] => x\n  | * => 0u64.\nhead([10u64 20u64 30u64]) + 0u64", Value::U64(Ref::new(10)));
+test_interpreter!(interpret_fsm_array_pattern_state_arguments, "#VecFsm(n<u64>) => <u64>\n  ├ :Scan(xs<[u64]:1,3>)\n  └ :Done(out<u64>).\n\n#VecFsm(n<u64>) -> :Scan([1u64 2u64 3u64])\n  :Scan([x … y]) -> :Done(x + y)\n  :Done(out) => out.\n\n#VecFsm(0u64)", Value::U64(Ref::new(4)));
 test_interpreter!(interpret_fsm_accepts_unsized_vector_input, "#Echo(xs<[u64]>) => <u64>\n  ├ :Start(xs<[u64]>)\n  └ :Done(out<u64>).\n\n#Echo(xs<[u64]>) -> :Start(xs)\n  :Start([x ...]) -> :Done(x)\n  :Done(out) => out.\n\n#Echo([5u64 3u64 8u64 1u64])", Value::U64(Ref::new(5)));
-test_interpreter!(interpret_fsm_array_spread_reconstruction_keeps_scalar_guards, "#Demo(arr<[u64]>) => <u64>\n  ├ :Pass(arr<[u64]>)\n  └ :Done(out<u64>).\n\n#Demo(arr<[u64]>) -> :Pass(arr)\n  :Pass([a, b | tail])\n    ├ a > b -> :Pass([a | tail])\n    └ * -> :Done(0u64)\n  :Pass([x ...]) -> :Done(x)\n  :Done(out) => out.\n\n#Demo([5u64 3u64 8u64 1u64])", Value::U64(Ref::new(0)));
-test_interpreter!(interpret_fsm_bubble_sort_returns_typed_u64_matrix, "#bubble-sort(arr<[u64]>) => <[u64]>\n  ├ :Start(arr<[u64]>)\n  ├ :Pass(arr<[u64]>, acc<[u64]>, swaps<u64>)\n  ├ :Next(arr<[u64]>, swaps<u64>)\n  ├ :Reverse(arr<[u64]>, acc<[u64]>, swaps<u64>)\n  └ :Done(arr<[u64]>).\n\n#bubble-sort(arr) -> :Start(arr)\n  :Start(arr) -> :Pass(arr, [], 0u64)\n  :Pass([a, b | tail], acc, swaps)\n    ├ a > b -> :Pass([a | tail], [b | acc], swaps + 1u64)\n    └ *     -> :Pass([b | tail], [a | acc], swaps)\n  :Pass([x], acc, swaps) -> :Next([x | acc], swaps)\n  :Pass([], acc, swaps)  -> :Next(acc, swaps)\n  :Next(arr, swaps) -> :Reverse(arr, [], swaps)\n  :Reverse([x | tail], acc, swaps) -> :Reverse(tail, [x | acc], swaps)\n  :Reverse([], acc, 0u64)     -> :Done(acc)\n  :Reverse([], acc, swaps) -> :Pass(acc, [], 0u64)\n  :Done(arr) => arr.\n\n#bubble-sort([5u64 3u64 8u64 1u64])", Value::MatrixU64(Matrix::from_vec(vec![1, 3, 5, 8], 1, 4)));
+test_interpreter!(interpret_fsm_array_spread_reconstruction_keeps_scalar_guards, "#Demo(arr<[u64]>) => <u64>\n  ├ :Pass(arr<[u64]>)\n  └ :Done(out<u64>).\n\n#Demo(arr<[u64]>) -> :Pass(arr)\n  :Pass([a, b | tail])\n    ├ a > b -> :Pass([a tail])\n    └ * -> :Done(0u64)\n  :Pass([x …]) -> :Done(x)\n  :Done(out) => out.\n\n#Demo([5u64 3u64 8u64 1u64])", Value::U64(Ref::new(0)));
+test_interpreter!(interpret_fsm_bubble_sort_returns_typed_u64_matrix, "#bubble-sort(arr<[u64]>) => <[u64]>\n  ├ :Start(arr<[u64]>)\n  ├ :Pass(arr<[u64]>, acc<[u64]>, swaps<u64>)\n  ├ :Next(arr<[u64]>, swaps<u64>)\n  ├ :Reverse(arr<[u64]>, acc<[u64]>, swaps<u64>)\n  └ :Done(arr<[u64]>).\n\n#bubble-sort(arr) -> :Start(arr)\n  :Start(arr) -> :Pass(arr, [], 0u64)\n  :Pass([a, b | tail], acc, swaps)\n    ├ a > b -> :Pass([a tail], [b acc], swaps + 1u64)\n    └ *     -> :Pass([b tail], [a acc], swaps)\n  :Pass([x], acc, swaps) -> :Next([x acc], swaps)\n  :Pass([], acc, swaps)  -> :Next(acc, swaps)\n  :Next(arr, swaps) -> :Reverse(arr, [], swaps)\n  :Reverse([x | tail], acc, swaps) -> :Reverse(tail, [x acc], swaps)\n  :Reverse([], acc, 0u64)     -> :Done(acc)\n  :Reverse([], acc, swaps) -> :Pass(acc, [], 0u64)\n  :Done(arr) => arr.\n\n#bubble-sort([5u64 3u64 8u64 1u64])", Value::MatrixU64(Matrix::from_vec(vec![1, 3, 5, 8], 1, 4)));
 test_interpreter!(interpret_fsm_bubble_sort_assigns_matrix_value, "#bubble-sort(arr<[u64]>) => <[u64]>
   ├ :Start(arr<[u64]>)
   ├ :Pass(arr<[u64]>, acc<[u64]>, swaps<u64>)
@@ -240,12 +348,12 @@ test_interpreter!(interpret_fsm_bubble_sort_assigns_matrix_value, "#bubble-sort(
 #bubble-sort(arr) → :Start(arr)
   :Start(arr) → :Pass(arr, [], 0u64)
   :Pass([a, b | tail], acc, swaps)
-    ├ a > b → :Pass([a | tail], [b | acc], swaps + 1u64)
-    └ *     → :Pass([b | tail], [a | acc], swaps)
-  :Pass([x], acc, swaps) → :Next([x | acc], swaps)
+    ├ a > b → :Pass([a tail], [b acc], swaps + 1u64)
+    └ *     → :Pass([b tail], [a acc], swaps)
+  :Pass([x], acc, swaps) → :Next([x acc], swaps)
   :Pass([], acc, swaps)  → :Next(acc, swaps)
   :Next(arr, swaps) → :Reverse(arr, [], swaps)
-  :Reverse([x | tail], acc, swaps) → :Reverse(tail, [x | acc], swaps)
+  :Reverse([x | tail], acc, swaps) → :Reverse(tail, [x acc], swaps)
   :Reverse([], acc, 0u64)     → :Done(acc)
   :Reverse([], acc, swaps) → :Pass(acc, [], 0u64)
   :Done(arr) ⇒ arr.
@@ -253,39 +361,92 @@ test_interpreter!(interpret_fsm_bubble_sort_assigns_matrix_value, "#bubble-sort(
 x := [5u64 3u64 8u64 1u64]
 y := #bubble-sort(x)", Value::MatrixU64(Matrix::from_vec(vec![1, 3, 5, 8], 1, 4)));
 #[test]
-fn interpret_variable_define_typed_set_from_range_matrix() {
-  let s = "input<{f64}> := 1..=5";
+fn interpret_fsm_bubble_sort_rejects_f64_argument_kind() {
+  let s = r#"
+#bubble-sort(arr<[u64]>) => <[u64]>
+  ├ :Start(arr<[u64]>)
+  ├ :Pass(arr<[u64]>, acc<[u64]>, swaps<u64>)
+  ├ :Next(arr<[u64]>, swaps<u64>)
+  ├ :Reverse(arr<[u64]>, acc<[u64]>, swaps<u64>)
+  └ :Done(arr<[u64]>).
+
+#bubble-sort(arr) -> :Start(arr)
+  :Start(arr) -> :Pass(arr, [], 0u64)
+  :Pass([a, b | tail], acc, swaps)
+    ├ a > b -> :Pass([a tail], [b acc], swaps + 1u64)
+    └ *     -> :Pass([b tail], [a acc], swaps)
+  :Pass([x], acc, swaps) -> :Next([x acc], swaps)
+  :Pass([], acc, swaps)  -> :Next(acc, swaps)
+  :Next(arr, swaps) -> :Reverse(arr, [], swaps)
+  :Reverse([x | tail], acc, swaps) -> :Reverse(tail, [x acc], swaps)
+  :Reverse([], acc, 0u64)     -> :Done(acc)
+  :Reverse([], acc, swaps) -> :Pass(acc, [], 0u64)
+  :Done(arr) => arr.
+
+x<[f64]> := [3 5 4 1 2]
+#bubble-sort(x)
+"#;
   let tree = parser::parse(s).unwrap();
   let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
-  match result {
-    Value::Set(mset) => {
-      let mset = mset.borrow();
-      assert_eq!(mset.set.len(), 5);
-      for value in [1.0, 2.0, 3.0, 4.0, 5.0] {
-        assert!(mset.set.contains(&Value::F64(Ref::new(value))));
-      }
-    }
-    _ => panic!("Expected set output"),
-  }
+  let err = intrp.interpret(&tree).unwrap_err();
+  let msg = format!("{:?}", err);
+  assert!(msg.contains("FsmArgumentKindMismatch"));
 }
 #[test]
-fn interpret_variable_define_typed_set_from_matrix() {
-  let s = "input<{f64}> := [1 2; 3 4; 5 6]";
+fn interpret_fsm_bubble_sort_rejects_untyped_numeric_matrix_argument_kind() {
+  let s = r#"
+#bubble-sort(arr<[u64]>) => <[u64]>
+  ├ :Start(arr<[u64]>)
+  ├ :Pass(arr<[u64]>, acc<[u64]>, swaps<u64>)
+  ├ :Next(arr<[u64]>, swaps<u64>)
+  ├ :Reverse(arr<[u64]>, acc<[u64]>, swaps<u64>)
+  └ :Done(arr<[u64]>).
+
+#bubble-sort(arr) -> :Start(arr)
+  :Start(arr) -> :Pass(arr, [], 0u64)
+  :Pass([a, b | tail], acc, swaps)
+    ├ a > b -> :Pass([a tail], [b acc], swaps + 1u64)
+    └ *     -> :Pass([b tail], [a acc], swaps)
+  :Pass([x], acc, swaps) -> :Next([x acc], swaps)
+  :Pass([], acc, swaps)  -> :Next(acc, swaps)
+  :Next(arr, swaps) -> :Reverse(arr, [], swaps)
+  :Reverse([x | tail], acc, swaps) -> :Reverse(tail, [x acc], swaps)
+  :Reverse([], acc, 0u64)     -> :Done(acc)
+  :Reverse([], acc, swaps) -> :Pass(acc, [], 0u64)
+  :Done(arr) => arr.
+
+y := [3 5 4 1 2]
+#bubble-sort(y)
+"#;
   let tree = parser::parse(s).unwrap();
   let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
-  match result {
-    Value::Set(mset) => {
-      let mset = mset.borrow();
-      assert_eq!(mset.set.len(), 6);
-      for value in [1.0, 2.0, 3.0, 4.0, 5.0, 6.0] {
-        assert!(mset.set.contains(&Value::F64(Ref::new(value))));
-      }
-    }
-    _ => panic!("Expected set output"),
-  }
+  let err = intrp.interpret(&tree).unwrap_err();
+  let msg = format!("{:?}", err);
+  assert!(msg.contains("FsmArgumentKindMismatch"));
 }
+test_interpreter!(
+  interpret_variable_define_typed_set_from_range_matrix,
+  "input<{f64}> := 1..=5",
+  Value::Set(Ref::new(MechSet::from_vec(vec![
+    Value::F64(Ref::new(1.0)),
+    Value::F64(Ref::new(2.0)),
+    Value::F64(Ref::new(3.0)),
+    Value::F64(Ref::new(4.0)),
+    Value::F64(Ref::new(5.0)),
+  ])))
+);
+test_interpreter!(
+  interpret_variable_define_typed_set_from_matrix,
+  "input<{f64}> := [1 2; 3 4; 5 6]",
+  Value::Set(Ref::new(MechSet::from_vec(vec![
+    Value::F64(Ref::new(1.0)),
+    Value::F64(Ref::new(2.0)),
+    Value::F64(Ref::new(3.0)),
+    Value::F64(Ref::new(4.0)),
+    Value::F64(Ref::new(5.0)),
+    Value::F64(Ref::new(6.0)),
+  ])))
+);
 test_interpreter!(interpret_literal_complex, "5+4i", Value::C64(Ref::new(C64::new(5.0, 4.0))));
 test_interpreter!(interpret_literal_complex2, "5-4i", Value::C64(Ref::new(C64::new(5.0, -4.0))));
 test_interpreter!(interpret_literal_complex3, "5-4j", Value::C64(Ref::new(C64::new(5.0, -4.0))));
@@ -1180,7 +1341,7 @@ test_interpreter!(interpret_user_function_input_annotation_optional_promotion, r
 x := [1u64 2u64 3u64]
 head(x<[u64]?>) => <u64?>
   | [] => _
-  | [h ...] => h
+  | [h …] => h
   | _ => _.
 head(x)
 "#, Value::U64(Ref::new(1u64)));
@@ -1199,10 +1360,6 @@ A := [2.0, 1.0, -1.0
       -2.0, 1.0, 2.0]"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, -3.0, -2.0, 1.0, -1.0, 1.0, -1.0, 2.0, 2.0], 3, 3)));
 
 test_interpreter!(interpret_matrix_solve, r#"A := [2.0, 1.0, -1.0;-3.0, -1.0, 2.0;-2.0, 1.0, 2.0];b := [8.0, -11.0, -3.0]'; math/round(A \ b)"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, -1.0], 3, 1)));
-
-// │ y │ true │ false │
-
-test_interpreter!(table_column_inference, "| y | true | false |", Value::Table(Ref::new(MechTable::from_records(vec![MechRecord::new(vec![("y",Value::Bool(Ref::new(true)))]),MechRecord::new(vec![("y",Value::Bool(Ref::new(false)))]),]).expect("Failed to create MechTable"))));
 
 test_interpreter!(interpret_set_union, r#"A := {1, 2, 3}; B := {2, 3, 4}; U := A ∪ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0)), Value::F64(Ref::new(4.0))]))));
 test_interpreter!(interpret_set_intersection, r#"A := {1, 2, 3}; B := {2, 3, 4}; U := A ∩ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0))]))));
@@ -1293,6 +1450,10 @@ unwrap(x)
   assert!(msg.contains(":none"));
   assert!(msg.contains("wildcard"));
 }
+test_interpreter!(interpret_enum_qualified_name, r#"
+<color> := :red | :green | :blue; 
+x<color> := :red; 
+y := :color/red"#, Value::Atom(Ref::new(MechAtom::new(hash_str("color/red")))));
 test_interpreter!(interpret_string_concatenation, r#"x := "Hello, " + "world!""#, Value::String(Ref::new("Hello, world!".to_string())));
 test_interpreter!(interpret_string_concatenation2, r#""a" + "b" + "c""#, Value::String(Ref::new("abc".to_string())));
 test_interpreter!(interpret_string_concatenation_var, r#"greeting := "Hello"; name := "Alice"; message := greeting + ", " + name + "!""#, Value::String(Ref::new("Hello, Alice!".to_string())));

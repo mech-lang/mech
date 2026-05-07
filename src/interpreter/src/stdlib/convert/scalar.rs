@@ -257,6 +257,31 @@ macro_rules! impl_conversion_match_arms {
   ($arg:expr, $($input_type:ident, $input_type_string:tt => $($target_type:ident, $target_type_string:tt),+);+ $(;)?) => {
     paste!{
       match $arg {
+        (Value::Typed(inner, option_kind), Value::Kind(target_kind))
+          if matches!(&option_kind, ValueKind::Option(inner_kind) if inner_kind.as_ref().is_convertible_to(&target_kind)) =>
+        {
+          let converted = match inner.as_ref() {
+            Value::Empty | Value::EmptyKind(_) => {
+              return Err(MechError::new(
+                UnsupportedConversionError {
+                  from: option_kind.clone(),
+                  to: target_kind.clone(),
+                },
+                None,
+              ).with_compiler_loc());
+            }
+            value => value
+              .convert_to(&target_kind)
+              .ok_or_else(|| MechError::new(
+                UnsupportedConversionError {
+                  from: option_kind.clone(),
+                  to: target_kind.clone(),
+                },
+                None,
+              ).with_compiler_loc())?,
+          };
+          Ok(Box::new(ConvertSEmpty { out: Ref::new(converted) }))
+        }
         $(
           #[cfg(all(feature = "matrix", feature = "table", feature = $input_type_string))]
           (Value::[<Matrix $input_type:camel>](mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
@@ -286,16 +311,28 @@ macro_rules! impl_conversion_match_arms {
           Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: Ref::new(f64::default())}))
         }
         #[cfg(all(feature = "atom", feature = "enum"))]
-        (Value::Atom(atom), Value::Kind(ValueKind::Enum(enum_id, enum_variant_name))) => {
+        (Value::Atom(atom), Value::Kind(ValueKind::Enum(enum_id, _))) => {
           let atom_brrw = atom.borrow();
           let variant_id = atom_brrw.id();
-          let atom_name = atom_brrw.name();
           let variants = vec![(variant_id,None)];
           let dictionary = (*atom_brrw).dictionary();
           let enm = MechEnum{id: enum_id, variants, names: dictionary};
           let val = Ref::new(enm.clone());
-          todo!("This isn't finished yet");
           Ok(Box::new(ConvertSEnum{out: val}))
+        }
+        #[cfg(feature = "enum")]
+        (Value::Enum(enm), Value::Kind(ValueKind::Enum(enum_id, _))) => {
+          let enum_brrw = enm.borrow();
+          if enum_brrw.id != enum_id {
+            return Err(MechError::new(
+              UnsupportedConversionError {
+                from: ValueKind::Enum(enum_brrw.id, enum_brrw.name()),
+                to: ValueKind::Enum(enum_id, "".to_string()),
+              },
+              None,
+            ).with_compiler_loc());
+          }
+          Ok(Box::new(ConvertSEnum{out: enm.clone()}))
         }
         (Value::Empty, Value::Kind(ValueKind::Empty)) => {
           Ok(Box::new(ConvertSEmpty { out: Ref::new(Value::Empty) }))

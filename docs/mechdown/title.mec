@@ -10,10 +10,16 @@ Mechdown supports hierarchical titles:
 - **Subsection titles**: headings such as `(1.1) Subsection`
 - **Sub-subsection titles**: headings such as `(1.1.1) Topic`
 
+It also supports optional **front matter** directly beneath the document title. Front matter ends with a second `===` separator and can include:
+
+- optional K:V front matter fields (`author`, `date`, `hero`, `kicker`, `summary`, `next`, `previous`)
+- optional hero media (`![caption](src)` or a `| ... |` figures row/table)
+- optional summary paragraph
+
 1. Rules and conventions
 -------------------------------------------------------------------------------
 
-- Use one document title per file. The document can have an optional byline (author, date, etc.) immediately following the title.
+- Use one document title per file. The document can have optional K:V front matter immediately following the title.
 - Keep section numbering sequential.
 - Keep subsection numbering aligned with the parent section.
 - Prefer short, descriptive titles so generated navigation remains readable.
@@ -44,3 +50,40 @@ My Document
 By Mika the Mech
 ===============================================================================
 ```
+
+Front matter with byline, hero, and summary:
+
+```
+This is my title
+===============================================================================
+Foo Bar January 1 2026
+![my hero](hero.png)
+This is my blog and it's good.
+===============================================================================
+```
+
+`%%` abstract blocks and unsectioned introduction content can appear before the first numbered section. The generated **contents** begin at the first numbered section (for example, `1. Section`), while pre-section material can be rendered separately via template placeholders.
+
+3. Template placeholders
+-------------------------------------------------------------------------------
+
+In HTML shims, these placeholders are available:
+
+- `{{STYLESHEET}}`
+- `{{TITLE}}`
+- `{{AUTHOR}}`
+- `{{DATE}}`
+- `{{KICKER}}`
+- `{{NEXT}}`
+- `{{PREVIOUS}}`
+- `{{HERO}}`
+- `{{SUMMARY}}`
+- `{{TOC}}`
+- `{{ABSTRACT}}`
+- `{{INTRO}}`
+- `{{CONTENTS}}`
+- `{{CONTENT}}` (alias for sectioned contents)
+- `{{CITED}}` (renders Works Cited only where this placeholder appears)
+- `{{SECTION#}}` where `#` is the 1-indexed numbered section (for example, `{{SECTION1}}`, `{{SECTION2}}`)
+
+See [Template Placeholders](/mechdown/template-placeholders.html) for the complete placeholder reference, including interactive placeholders such as `{{CODE}}` and `{{REPL}}`.

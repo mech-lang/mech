@@ -1,4 +1,4 @@
-figures
+figure
 ===============================================================================
 
 %% Figures provide multi-image layouts with a single numbered caption block.
@@ -23,10 +23,16 @@ A figures block is one or more rows:
 2. Example
 -------------------------------------------------------------------------------
 
+The following example would create a figure with 5 images arranged in a 2-row grid, with a wide image in the middle:
+
 ```
 | ![caption a](img1.jpg) | ![caption b](img2.jpg) |
-| ![caption c](imgwide.jpg) |
+| ![caption c](imgwide.jpg)                       |
 | ![caption d](img3.jpg) | ![caption e](img4.jpg) |
 ```
 
-(i)> Figures are document elements only. Image captions inside a figures block are not Mech expressions and are not evaluated.
+With real images, this renders as:
+
+| ![Mika the mech idle pose.](https://gitlab.com/mech-lang/assets/-/raw/v0.3-beta/images/mika/mika-pose-idle.png?ref_type=heads) | ![Back detail](https://gitlab.com/mech-lang/assets/-/raw/v0.3-beta/images/mika/mika-pose-back.png?ref_type=heads) |
+| ![A winter scene featuring Mika building a snowman.](https://gitlab.com/mech-lang/assets/-/raw/v0.3-beta/images/mika/mika-scene-winter.png?ref_type=heads) |
+| ![Pointing at something.](https://gitlab.com/mech-lang/assets/-/raw/v0.3-beta/images/mika/mika-pose-point.png?ref_type=heads) | ![Running somewhere.](https://gitlab.com/mech-lang/assets/-/raw/v0.3-beta/images/mika/mika-pose-running.png?ref_type=heads) |

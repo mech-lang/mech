@@ -18,18 +18,50 @@ impl MechEnum {
 
   #[cfg(feature = "pretty_print")]
   pub fn to_html(&self) -> String {
+    let dict_brrw = self.names.borrow();
     let mut variants = Vec::new();
     for (id, value) in &self.variants {
-      let value_html = match value {
-        Some(v) => v.to_html(),
-        None => "None".to_string(),
+      let variant_name = dict_brrw
+        .get(id)
+        .map(|name| name.rsplit('/').next().unwrap_or(name).to_string())
+        .unwrap_or_else(|| format!("{}", id));
+      let variant_html = match value {
+        Some(v) => format!(
+          "<span class=\"mech-enum-variant-name\">:{}</span><span class=\"mech-enum-variant-payload\">(<span class=\"mech-enum-variant-value\">{}</span>)</span>",
+          variant_name,
+          v.to_html()
+        ),
+        None => format!("<span class=\"mech-enum-variant-name\">:{}</span>", variant_name),
       };
-      variants.push(format!("<span class=\"mech-enum-variant\">{}: {}</span>", id, value_html));
+      variants.push(format!("<span class=\"mech-enum-variant\">{}</span>", variant_html));
     }
-    format!("<span class=\"mech-enum\"><span class=\"mech-start-brace\">{{</span>{}<span class=\"mech-end-brace\">}}</span></span>", variants.join(", "))
+    format!(
+      "<span class=\"mech-enum\">{}</span>",
+      variants.join("<span class=\"mech-enum-variant-sep\"> | </span>")
+    )
   }
 
   pub fn kind(&self) -> ValueKind {
+    if self.variants.len() == 1 {
+      let (variant_id, payload) = &self.variants[0];
+      let names_brrw = self.names.borrow();
+      if let Some(variant_name) = names_brrw.get(variant_id) {
+        let short_variant_name = variant_name
+          .rsplit('/')
+          .next()
+          .unwrap_or(variant_name)
+          .to_string();
+        if let Some(value) = payload {
+          if !matches!(value, Value::Kind(_)) {
+            return ValueKind::Enum(
+              self.id,
+              format!("{}({})", short_variant_name, enum_payload_kind(value)),
+            );
+          }
+        }
+        return ValueKind::Enum(self.id, short_variant_name);
+      }
+    }
     ValueKind::Enum(self.id, self.name())
   }
 
@@ -41,10 +73,6 @@ impl MechEnum {
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for MechEnum {
   fn pretty_print(&self) -> String {
-    println!("Pretty printing enum...");
-    println!("Enum ID: {}", self.id);
-    println!("Variants: {:?}", self.variants);
-    println!("Names: {:?}", self.names.borrow());
     let mut variants = Vec::new();
     let dict_brrw = self.names.borrow();
     let enum_name = dict_brrw.get(&self.id).unwrap();
@@ -54,9 +82,9 @@ impl PrettyPrint for MechEnum {
         None => "None".to_string(),
       };
       let variant_name = dict_brrw.get(id).unwrap();
-      variants.push(format!("{}: {}", variant_name, value_str));
+      variants.push(format!("{}(\n{})", variant_name, value_str));
     }
-    format!("`{} {{ {} }}", enum_name, variants.join(" | "))
+    format!(":{}/{}", enum_name, variants.join(" | "))
   }
 }
 
@@ -79,5 +107,27 @@ impl MechErrorKind for UnknownEnumVariantError {
       "Unknown variant {} for enum {}",
       self.given_variant_id, self.enum_id
     )
+  }
+}
+
+fn enum_payload_kind(value: &Value) -> String {
+  match value {
+    Value::Enum(enum_value) => {
+      let enum_brrw = enum_value.borrow();
+      if enum_brrw.variants.len() == 1 {
+        let (variant_id, payload) = &enum_brrw.variants[0];
+        let names_brrw = enum_brrw.names.borrow();
+        let variant_name = names_brrw
+          .get(variant_id)
+          .map(|name| name.rsplit('/').next().unwrap_or(name).to_string())
+          .unwrap_or_else(|| format!("{}", variant_id));
+        return match payload {
+          Some(inner_payload) => format!(":{}({})", variant_name, enum_payload_kind(inner_payload)),
+          None => format!(":{}", variant_name),
+        };
+      }
+      format!("{}", enum_brrw.kind())
+    }
+    _ => format!("{}", value.kind()),
   }
 }

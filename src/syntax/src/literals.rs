@@ -343,16 +343,10 @@ pub fn empty(input: ParseString) -> ParseResult<Token> {
 
 // kind_annotation := left_angle, kind, ?question, right_angle ;
 pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
-  let msg2 = "Expects at least one unit in kind annotation";
   let msg3 = "Expects right angle";
   let (input, (_, r)) = range(left_angle)(input)?;
-  let (input, kind) = kind(input)?;
-  let (input, optional) = opt(question)(input)?;
+  let (input, kind) = kind_with_option(input)?;
   let (input, _) = label!(right_angle, msg3, r)(input)?;
-  let kind = match optional {
-    Some(_) => Kind::Option(Box::new(kind)),
-    None => kind,
-  };
   Ok((input, KindAnnotation{ kind }))
 }
 
@@ -374,19 +368,23 @@ pub fn kind(input: ParseString) -> ParseResult<Kind> {
   Ok((input, kind))
 }
 
-// kind-kind := "<", kind, ">" ;
-pub fn kind_kind(input: ParseString) -> ParseResult<Kind> {
-  let msg2 = "Expects at least one unit in kind annotation";
-  let msg3 = "Expects right angle";
-  let (input, (_, r)) = range(left_angle)(input)?;
-
+pub fn kind_with_option(input: ParseString) -> ParseResult<Kind> {
   let (input, kind) = kind(input)?;
   let (input, optional) = opt(question)(input)?;
-  let (input, _) = label!(right_angle, msg3, r)(input)?;
   let kind = match optional {
     Some(_) => Kind::Option(Box::new(kind)),
     None => kind,
   };
+  Ok((input, kind))
+}
+
+// kind-kind := "<", kind, ">" ;
+pub fn kind_kind(input: ParseString) -> ParseResult<Kind> {
+  let msg3 = "Expects right angle";
+  let (input, (_, r)) = range(left_angle)(input)?;
+
+  let (input, kind) = kind_with_option(input)?;
+  let (input, _) = label!(right_angle, msg3, r)(input)?;
   Ok((input, Kind::Kind(Box::new(kind))))
 }
 
@@ -421,7 +419,7 @@ pub fn kind_empty(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Empty))
 }
 
-// kind-atom := "`", identifier ;
+// kind-atom := ":", identifier ;
 pub fn kind_atom(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = colon(input)?;
   let (input, atm) = identifier(input)?;
@@ -460,7 +458,7 @@ pub fn kind_record(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_brace(input)?;
   let (input, _) = space_tab0(input)?;
   let (input, elements) = separated_list1(alt((list_separator,space_tab1)), nom_tuple((identifier, kind_annotation)))(input)?;
-  let (input, _) = opt(tag(",..."))(input)?;
+  let (input, _) = opt(tag(",…"))(input)?;
   let (input, _) = space_tab0(input)?;
   let (input, _) = right_brace(input)?;
   let elements = elements.into_iter().map(|(id, knd)| (id, knd.kind)).collect();
@@ -482,7 +480,7 @@ pub fn kind_record(input: ParseString) -> ParseResult<Kind> {
 // kind-matrox := "[", list1(",",kind), "]", ":"?, list0(",", literal) ;
 pub fn kind_matrix(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_bracket(input)?;
-  let (input, kind) = kind(input)?;
+  let (input, kind) = kind_with_option(input)?;
   let (input, _) = right_bracket(input)?;
   let (input, _) = opt(colon)(input)?;
   let (input, size) = separated_list0(list_separator,literal)(input)?;

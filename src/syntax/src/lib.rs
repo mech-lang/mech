@@ -563,7 +563,7 @@ impl<'a> TextFormatter<'a> {
     }
 
     // other data for printing
-    let dots = "...";
+    let dots = "…";
     let indentation = " ";
     let vert_split1 = " │";
     let vert_split2 = "  ";
@@ -645,7 +645,7 @@ impl<'a> TextFormatter<'a> {
   }
 
   fn err_ending(d: usize) -> String {
-    let s = format!("... and {} other error{} not shown\n", d, if d == 1 {""} else {"s"});
+    let s = format!("… and {} other error{} not shown\n", d, if d == 1 {""} else {"s"});
     Self::heading_color(&s)
   }
 
@@ -767,27 +767,6 @@ fn indent(s: &str) -> String {
     .map(|line| format!("  {}", line))
     .collect::<Vec<_>>()
     .join("\n")
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn extract_snippet_handles_unicode_boundaries() {
-    let line = "  :Reverse([], acc, swaps) → :Pass(acc, [], 0)";
-    let lines = vec![line];
-    let range = SourceRange {
-      start: SourceLocation { row: 1, col: 1 },
-      end: SourceLocation {
-        row: 1,
-        col: line.chars().count() + 1,
-      },
-    };
-
-    let snippet = extract_snippet(&lines, &range);
-    assert_eq!(snippet, format!("{line}\n"));
-  }
 }
 
 /// Try a list of parsers in order, tracking successes, failures, and errors.

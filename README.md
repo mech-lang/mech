@@ -1,5 +1,5 @@
 <p align="center">
-    <img width="300px" src="https://gitlab.com/mech-lang/assets/-/raw/v0.3-beta/images/mika/hello.png?ref_type=heads">
+    <img width="300px" src="https://gitlab.com/mech-lang/assets/-/raw/v0.3-beta/images/mika/mika-pose-hello.png?ref_type=heads">
 </p>
 <p align="center">
   <img width="500px" src="https://mech-lang.org/img/logo.png" alt="Mech Logo">
@@ -18,7 +18,7 @@
 The following code implements FizzBuzz in Mech:
 
 <p align="center">
-  <img width="680px" src="https://mech-lang.org/img/fizzbuzzblock.png" alt='The classic FizzBuzz program expressed in Mech: x:=1..=10; ~out<[string]>:=x; ix2:=(x % 2) == 0; ix3:=(x % 3) == 0; out[ix2]="✨"; out[ix3]="🐝"; out[ix2 && ix3]="✨🐝";'>
+  <img width="600px" src="https://gitlab.com/mech-lang/assets/-/raw/ea310ad7a32025d34e6a60dc155a520266bd42b0/images/code/fizzbuzz.png" alt='The classic FizzBuzz program expressed in Mech.'>
 </p>
 
 See the docs for an [extended version](https://docs.mech-lang.org/examples/fizzbuzz.html) that runs live in your browser.
@@ -31,6 +31,32 @@ Some notable features of Mech are demonstrated in this short program:
 - **Type Inference**: Variable and expression types are inferred, so explicit type declarations are often unnecessary.
 - **Immutable**: Variables are immutable unless specified, promoting safer code and easier reasoning.
 - **Rich Text**: Mech programs support rich formatting and literate programming through Mechdown, a Markdown dialect.
+
+Mech also supports a number of other features, such as pattern matching,state machines, comprehensions, and relational joins.
+
+Here are a few more examples of Mech code to give you a sense of the language. First, the classic factorial program expressed in Mech:
+
+<p align="center">
+  <img width="500px" src="https://gitlab.com/mech-lang/assets/-/raw/ea310ad7a32025d34e6a60dc155a520266bd42b0/images/code/factorial.png" alt='The classic factorial program expressed in Mech.'>
+</p>
+
+Pattern matching is a prominent feature throughout Mech. Here is an example of pattern matching on arrays:
+
+<p align="center">
+  <img width="500px" src="https://gitlab.com/mech-lang/assets/-/raw/ea310ad7a32025d34e6a60dc155a520266bd42b0/images/code/pattern-array.png" alt='A pattern match on arrays.'>
+</p>
+
+State machines are Mech's way of expressing protocols, processes, and asynchronous computations. Here is an example of a simple state machine that counts down from a given number:
+
+<p align="center">
+  <img width="500px" src="https://gitlab.com/mech-lang/assets/-/raw/ea310ad7a32025d34e6a60dc155a520266bd42b0/images/code/countdown.png" alt='A simple state machine that counts down from a given number.'>
+</p>
+
+Mech also supports comprehensions and relational joins. Here is an example of a comprehension that finds the friends of friends in a social graph by joining two generators over a common variable:
+
+<p align="center">
+  <img width="500px" src="https://gitlab.com/mech-lang/assets/-/raw/ea310ad7a32025d34e6a60dc155a520266bd42b0/images/code/friends-of-friends.png" alt='A comprehension that finds the friends of friends in a social graph.'>
+</p>
 
 ## Run Mech
 
@@ -56,7 +82,7 @@ Feel free to stop by and introduce yourself -- we're happy to meet new users and
 
 ## Project Roadmap
 
-Mech v0.3 is currently **beta** status, meaning while many intended features are implemented and working well, other features are incomplete, not tested, or undocumented.
+Mech `v0.3` is currently **beta** status, meaning while many intended features are implemented and working well, other features are incomplete, not tested, or undocumented.
 
 A Brief Roadmap:
 
@@ -69,7 +95,7 @@ For more details, read the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.h
 
 ## Notice
 
-Mech should be considered unstable and therefore unfit for use in critical systems until v1.0 is released.
+Mech should be considered unstable and therefore unfit for use in critical systems until `v1.0` is released.
 
 ## License
 

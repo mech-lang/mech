@@ -7,6 +7,7 @@ use mech_interpreter::*;
 use wasm_bindgen::JsCast;
 use web_sys::{window, HtmlElement, HtmlInputElement, Node, Element, HashChangeEvent, HtmlTextAreaElement, Url};
 use js_sys::decode_uri_component;
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::panic::{catch_unwind, AssertUnwindSafe};
@@ -25,6 +26,8 @@ pub use crate::repl::*;
 thread_local! {
   pub static CURRENT_MECH: RefCell<Option<*mut WasmMech>> = RefCell::new(None);
 }
+
+const MECH_ERROR_HTML_PREFIX: &str = "__MECH_ERROR_HTML__:";
 
 #[macro_export]
 macro_rules! log {
@@ -182,6 +185,51 @@ fn new_interpreter(id: u64) -> Interpreter {
 
 }
 
+fn find_out_values(interpreter: &Interpreter, interpreter_id: u64) -> Option<Ref<HashMap<u64, Value>>> {
+  if interpreter.id == interpreter_id {
+    return Some(interpreter.out_values.clone());
+  }
+  let sub_interpreters = interpreter.sub_interpreters.borrow();
+  for sub_interpreter in sub_interpreters.values() {
+    if let Some(out_values) = find_out_values(sub_interpreter, interpreter_id) {
+      return Some(out_values);
+    }
+  }
+  None
+}
+
+#[cfg(feature = "symbol_table")]
+fn find_symbols(interpreter: &Interpreter, interpreter_id: u64) -> Option<SymbolTableRef> {
+  if interpreter.id == interpreter_id {
+    return Some(interpreter.symbols());
+  }
+  let sub_interpreters = interpreter.sub_interpreters.borrow();
+  for sub_interpreter in sub_interpreters.values() {
+    if let Some(symbols) = find_symbols(sub_interpreter, interpreter_id) {
+      return Some(symbols);
+    }
+  }
+  None
+}
+
+fn format_output_value_html(output: &Value) -> String {
+  #[cfg(any(feature = "string", feature = "variable_define"))]
+  if let Value::String(text) = output {
+    if let Some(error_html) = text.borrow().strip_prefix(MECH_ERROR_HTML_PREFIX) {
+      return format!(
+        "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
+        error_html
+      );
+    }
+  }
+  let kind_str = html_escape(&format!("{}",output.kind()));
+  format!(
+    "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
+    kind_str,
+    output.to_html()
+  )
+}
+
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
   //let mut wasm_mech = WasmMech::new();
@@ -242,6 +290,22 @@ impl WasmMech {
   #[wasm_bindgen]
   pub fn clear(&mut self) {
     self.interpreter = new_interpreter(0);
+  }
+
+  fn bind_ans_symbol_for_interpreter(&mut self, interpreter_id: u64, value: &Value) {
+    #[cfg(feature = "symbol_table")]
+    {
+      let resolved_value = match value {
+        Value::MutableReference(reference) => reference.borrow().clone(),
+        _ => value.clone(),
+      };
+      let ans_id = hash_str("ans");
+      let symbols = self.interpreter.symbols();
+      let mut symbols_brrw = symbols.borrow_mut();
+      symbols_brrw.insert(ans_id, resolved_value, false);
+      symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
+      self.interpreter.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
+    }
   }
 
 #[cfg(feature = "repl")]
@@ -344,6 +408,8 @@ pub fn attach_repl(&mut self, repl_id: &str) {
                 result_line.set_inner_html(&output);
                 container_inner.append_child(&result_line).unwrap();
                 mech.init();
+                mech.render_inline_values();
+                mech.render_codeblock_output_values();
               }
             }
           });
@@ -474,6 +540,13 @@ pub fn attach_repl(&mut self, repl_id: &str) {
     closure.forget();
   }));
 
+  let intro_line = document.create_element("div").unwrap();
+  intro_line.set_class_name("repl-result");
+  intro_line.set_inner_html(
+    "<div class=\"mech-output-value\">Enter <code class=\"mech-inline-code\">:help</code> for a list of all commands.</div>",
+  );
+  container.append_child(&intro_line).unwrap();
+
   // Initial prompt
   if let Some(cb) = &*create_prompt.borrow() {
     cb();
@@ -528,6 +601,8 @@ pub fn attach_repl(&mut self, repl_id: &str) {
                   container.append_child(&result_line).unwrap();
 
                   mech.init();
+                  mech.render_inline_values();
+                  mech.render_codeblock_output_values();
 
                   // Replace previous prompt with a span
                   if let Some(old_input) = doc.get_element_by_id("repl-active-input") {
@@ -564,7 +639,19 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           execute_repl_command(repl_command)
         }
         Err(x) => {
-          format!("Unrecognized command: {}", x)
+          let message = html_escape(&format!("Unrecognized command: {}", x));
+          format!(
+            "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\"><div class=\"mech-runtime-error\">\
+              <div class=\"mech-runtime-error-header\">\
+                <span class=\"mech-runtime-error-icon\" aria-hidden=\"true\"></span>\
+                <div>\
+                  <div class=\"mech-runtime-error-title\">UnrecognizedCommand</div>\
+                  <div class=\"mech-runtime-error-message\">{}</div>\
+                </div>\
+              </div>\
+            </div></div>",
+            message
+          )
         }
       }
       #[cfg(not(feature = "repl"))]
@@ -582,7 +669,12 @@ pub fn attach_repl(&mut self, repl_id: &str) {
                 let kind_str = html_escape(&format!("{}",output.kind()));
                 return format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html());
               },
-              Err(err) => { return format!("{:?}",err); }
+              Err(err) => {
+                return format!(
+                  "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
+                  err.to_html()
+                );
+              }
             }
           }
         }
@@ -614,17 +706,38 @@ pub fn attach_repl(&mut self, repl_id: &str) {
       // Parse element id
       let id = element.id();
       let parsed_id: Vec<&str> = id.split(":").collect();
-      let element_id = parsed_id[0].parse::<u64>().unwrap();
-      let interpreter_id = parsed_id[1].parse::<u64>().unwrap();
-
-      let symbols = match interpreter_id {
-        0 => self.interpreter.symbols(),
-        id => match self.interpreter.sub_interpreters.borrow().get(&id) {
-          Some(sub_interpreter) => sub_interpreter.symbols(),
-          None => {
-            log!("No sub interpreter found for id: {}", id);
+      let (element_id, interpreter_id) = match parsed_id.as_slice() {
+        [output_id, interpreter_id] => {
+          match (output_id.parse::<u64>(), interpreter_id.parse::<u64>()) {
+            (Ok(output_id), Ok(interpreter_id)) => (output_id, interpreter_id),
+            _ => {
+              log!("Invalid clickable symbol id format: {}", id);
+              continue;
+            }
+          }
+        }
+        [output_id] => match output_id.parse::<u64>() {
+          Ok(output_id) => (output_id, 0),
+          Err(_) => {
+            log!("Invalid clickable symbol id format: {}", id);
             continue;
           }
+        },
+        _ => {
+          log!("Invalid clickable symbol id format: {}", id);
+          continue;
+        }
+      };
+      let symbol_text = element.text_content().unwrap_or_default();
+      let symbol_name_hint = element
+        .get_attribute("data-var")
+        .unwrap_or_else(|| symbol_text.clone());
+
+      let symbols = match find_symbols(&self.interpreter, interpreter_id) {
+        Some(symbols) => symbols,
+        None => {
+          log!("No sub interpreter found for id: {}", interpreter_id);
+          continue;
         }
       };
 
@@ -635,20 +748,64 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         let mech_output = document.get_element_by_id("mech-output").unwrap();
         let last_child = mech_output.last_child();
 
-        let symbols_brrw = symbols.borrow();
-
-        match symbols_brrw.get(element_id) {
+        let output = {
+          let symbols_brrw = symbols.borrow();
+          symbols_brrw.get(element_id).map(|output| output.borrow().clone())
+        };
+        match output {
           Some(output) => {
-            let output_brrw = output.borrow();
+            let symbol_name = if symbol_text.trim().is_empty() {
+              {
+                let symbols_brrw = symbols.borrow();
+                symbols_brrw.get_symbol_name_by_id(element_id)
+              }
+                .or_else(|| {
+                  let trimmed = symbol_name_hint.trim();
+                  if trimmed.is_empty() {
+                    None
+                  } else {
+                    Some(trimmed.to_string())
+                  }
+                })
+                .unwrap_or_else(|| format!("symbol_{}", element_id))
+            } else {
+              let trimmed_hint = symbol_name_hint.trim();
+              if !trimmed_hint.is_empty() && trimmed_hint != symbol_text.trim() {
+                trimmed_hint.to_string()
+              } else {
+                symbol_text.clone()
+              }
+            };
+            let repl_width = mech_output.client_width();
+            // If REPL is "closed", show modal only (do not write to REPL).
+            if repl_width == 0 {
+              let modal = document.create_element("div").unwrap();
+              modal.set_class_name("mech-modal");
+              modal.set_inner_html(&format_output_value_html(&output));
 
-            let kind_str = html_escape(&format!("{}", output_brrw.kind()));
-            let result_html = format!(
-              "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
-              kind_str,
-              output_brrw.to_html()
-            );
+              let x = event.client_x();
+              let y = event.client_y();
+              modal.set_attribute(
+                "style",
+                &format!(
+                  "position:absolute; top:{}px; left:{}px;",
+                  y, x
+                )
+              ).unwrap();
 
-            let symbol_name = symbols_brrw.get_symbol_name_by_id(element_id).unwrap();
+              document.body().unwrap().append_child(&modal).unwrap();
+
+              // Click to close modal
+              let modal_clone = modal.clone();
+              let close_closure = Closure::wrap(Box::new(move |_event: web_sys::Event| {
+                modal_clone.remove();
+              }) as Box<dyn FnMut(_)>);
+              modal.add_event_listener_with_callback("click", close_closure.as_ref().unchecked_ref()).unwrap();
+              close_closure.forget();
+              return;
+            }
+
+            let result_html = format_output_value_html(&output);
 
             // Add prompt line
             let prompt_line = document.create_element("div").unwrap();
@@ -680,41 +837,22 @@ pub fn attach_repl(&mut self, repl_id: &str) {
               }
             });
 
-            // If REPL is "closed", show modal at click location
-            let repl_width = mech_output.client_width();
-            if repl_width == 0 {
-              let modal = document.create_element("div").unwrap();
-              modal.set_class_name("mech-modal");
-              modal.set_inner_html(&format!(
-                "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
-                kind_str,
-                output_brrw.to_html()
-              ));
-
-              let x = event.client_x();
-              let y = event.client_y();
-              modal.set_attribute(
-                "style",
-                &format!(
-                  "position:absolute; top:{}px; left:{}px;",
-                  y, x
-                )
-              ).unwrap();
-
-              document.body().unwrap().append_child(&modal).unwrap();
-
-              // Click to close modal
-              let modal_clone = modal.clone();
-              let close_closure = Closure::wrap(Box::new(move |_event: web_sys::Event| {
-                modal_clone.remove();
-              }) as Box<dyn FnMut(_)>);
-              modal.add_event_listener_with_callback("click", close_closure.as_ref().unchecked_ref()).unwrap();
-              close_closure.forget();
-            }
+            // Update variable "ans" with the value of the clicked symbol
+            CURRENT_MECH.with(|mech_ref| {
+              if let Some(ptr) = *mech_ref.borrow() {
+                unsafe { (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output); }
+              }
+            });
 
           },
           None => {
             let error_message = format!("No value found for element id: {}", element_id);
+            log!(
+              "Clickable click: missing symbol output for element_id={} interpreter_id={} id='{}'",
+              element_id,
+              interpreter_id,
+              id
+            );
             let result_line = document.create_element("div").unwrap();
             result_line.set_class_name("repl-result");
             result_line.set_inner_html(&error_message);
@@ -767,19 +905,15 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         // Get the mech-interpreter-id attribute from the element
         let interpreter_id: String = program_el.get_attribute("mech-interpreter-id").unwrap();
         let interpreter_id: u64 = interpreter_id.parse().unwrap();
-        let sub_interpreter_brrw = self.interpreter.sub_interpreters.borrow();
-        let intrp = match interpreter_id {
-          0 => &self.interpreter, 
-          id => {
-            match sub_interpreter_brrw.get(&id) {
-              Some(sub_interpreter) => sub_interpreter,
-              None => {
-                log!("No sub interpreter found for id: {}", id);
-                continue;
-              }
-            }
-          }
+        let root_interpreter_id = if interpreter_id == 0 {
+          self.interpreter.id
+        } else {
+          interpreter_id
         };
+        if find_out_values(&self.interpreter, root_interpreter_id).is_none() {
+          log!("No sub interpreter found for id: {}", root_interpreter_id);
+          continue;
+        }
 
         // Get all elements with the class "mech-block-output" that are children of the program element
         let output_elements = program_el.query_selector_all(".mech-block-output");
@@ -798,18 +932,16 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             let output_id = parsed_id[0].parse::<u64>().unwrap();
             let interpreter_id = parsed_id[1].parse::<u64>().unwrap();
             // get the interpreter id from the block id
-            let out_values = match interpreter_id {
-              // if the interpreter id is 0, we are in the main interpreter
-              0 => intrp.out_values.clone(), 
-              // if the interpreter id is not 0, we are in a sub interpreter
-              id => {
-                match intrp.sub_interpreters.borrow().get(&id) {
-                  Some(sub_interpreter) => sub_interpreter.out_values.clone(),
-                  None => {
-                    log!("No sub interpreter found for id: {}", id);
-                    continue;
-                  }
-                }
+            let effective_interpreter_id = if interpreter_id == 0 {
+              root_interpreter_id
+            } else {
+              interpreter_id
+            };
+            let out_values = match find_out_values(&self.interpreter, effective_interpreter_id) {
+              Some(out_values) => out_values,
+              None => {
+                log!("No sub interpreter found for id: {}", effective_interpreter_id);
+                continue;
               }
             };
 
@@ -823,9 +955,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
               }
             };
             // set the inner html of the block to the output value html
-            let kind_str = html_escape(&format!("{}",output.kind()));
-            let formatted_output = format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html());
-            block.set_inner_html(&formatted_output);
+            block.set_inner_html(&format_output_value_html(output));
           }
         }
       }
@@ -838,16 +968,51 @@ pub fn attach_repl(&mut self, repl_id: &str) {
     let window = web_sys::window().expect("global window does not exists");    
 		let document = window.document().expect("expecting a document on window"); 
     let inline_elements = document.get_elements_by_class_name("mech-inline-mech-code");
-    let out_values_brrw = self.interpreter.out_values.borrow();
     for j in 0..inline_elements.length() {
       let inline_block = inline_elements.get_with_index(j).unwrap();
       let inline_id = inline_block.id();
-      let inline_id: u64 = inline_id.parse().unwrap();
-      
-      let inline_output = match out_values_brrw.get(&inline_id) {
+      let parsed_id: Vec<&str> = inline_id.split(":").collect();
+      let (inline_output_id, inline_interpreter_id) = match parsed_id.as_slice() {
+        [output_id, interpreter_id] => {
+          match (output_id.parse::<u64>(), interpreter_id.parse::<u64>()) {
+            (Ok(output_id), Ok(interpreter_id)) => (output_id, interpreter_id),
+            _ => {
+              log!("Invalid inline output id format: {}", inline_id);
+              continue;
+            }
+          }
+        }
+        [output_id] => {
+          match output_id.parse::<u64>() {
+            Ok(output_id) => (output_id, 0),
+            Err(_) => {
+              log!("Invalid inline output id format: {}", inline_id);
+              continue;
+            }
+          }
+        }
+        _ => {
+          log!("Invalid inline output id format: {}", inline_id);
+          continue;
+        }
+      };
+      let out_values = match find_out_values(&self.interpreter, inline_interpreter_id) {
+        Some(out_values) => out_values,
+        None => {
+          log!("No sub interpreter found for inline id: {}", inline_interpreter_id);
+          continue;
+        }
+      };
+      let out_values_brrw = out_values.borrow();
+
+      let inline_output = match out_values_brrw.get(&inline_output_id) {
         Some(value) => value,
         None => {
-          log!("No value found for inline output id: {}", inline_id);
+          log!(
+            "No value found for inline output id: {} in interpreter {}",
+            inline_output_id,
+            inline_interpreter_id
+          );
           continue;
         }
       };
@@ -888,12 +1053,69 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         let inline_html = format!(
           "<span>{}</span><span class=\"mech-inline-expand\" id=\"{}:{}\">›</span>",
           compact,
-          inline_id,
-          0
+          inline_output_id,
+          inline_interpreter_id
         );
         inline_block.set_inner_html(&inline_html);
       }
     }
+    #[cfg(feature = "symbol_table")]
+    let var_elements = document.get_elements_by_class_name("mech-var-placeholder");
+    #[cfg(feature = "symbol_table")]
+    for j in 0..var_elements.length() {
+      let var_element = var_elements.get_with_index(j).unwrap();
+      let var_name = match var_element.get_attribute("data-var-name") {
+        Some(value) => value,
+        None => continue,
+      };
+      let var_id = hash_str(&var_name);
+      let interpreter_id = match var_element.get_attribute("data-interpreter-name") {
+        Some(value) => hash_str(&value),
+        None => match var_element.get_attribute("data-interpreter-id") {
+          Some(value) => value.parse::<u64>().unwrap_or(0),
+          None => self.interpreter.id,
+        },
+      };
+      let symbols = match find_symbols(&self.interpreter, interpreter_id) {
+        Some(symbols) => symbols,
+        None => {
+          log!(
+            "VAR placeholder unresolved interpreter: {} (variable: {})",
+            interpreter_id,
+            var_name
+          );
+          continue;
+        }
+      };
+      let symbols_brrw = symbols.borrow();
+      let output = match symbols_brrw.get(var_id) {
+        Some(value) => value.borrow().clone(),
+        None => {
+          log!(
+            "VAR placeholder unresolved variable (yet?): {} (hash: {}, interpreter: {})",
+            var_name,
+            var_id,
+            interpreter_id
+          );
+          continue;
+        }
+      };
+      let formatted = output.to_html();
+      let existing_class = var_element.get_attribute("class").unwrap_or_default();
+      let clickable_class = if existing_class.is_empty() {
+        "mech-clickable".to_string()
+      } else if existing_class.split_whitespace().any(|name| name == "mech-clickable") {
+        existing_class
+      } else {
+        format!("{} mech-clickable", existing_class)
+      };
+      let _ = var_element.set_attribute("class", &clickable_class);
+      let _ = var_element.set_attribute("id", &format!("{}:{}", var_id, interpreter_id));
+      let _ = var_element.set_attribute("data-var", &var_name);
+      var_element.set_inner_html(formatted.trim());
+    }
+    #[cfg(not(feature = "symbol_table"))]
+    log!("VAR placeholders require feature 'symbol_table' to resolve values.");
     #[cfg(feature = "clickable_symbol_listeners")]
     self.add_inline_value_clickable_listeners();
   }
@@ -929,12 +1151,9 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           if let Some(ptr) = *mech_ref.borrow() {
             unsafe {
               let mech = &*ptr;
-              let out_values = match interpreter_id {
-                0 => mech.interpreter.out_values.clone(),
-                id => match mech.interpreter.sub_interpreters.borrow().get(&id) {
-                  Some(sub) => sub.out_values.clone(),
-                  None => return None,
-                },
+              let out_values = match find_out_values(&mech.interpreter, interpreter_id) {
+                Some(out_values) => out_values,
+                None => return None,
               };
               return out_values.borrow().get(&output_id).cloned();
             }
@@ -943,42 +1162,17 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         });
 
         if let Some(output_value) = output {
-          let repl_text = output_value.format_value_inline();
-          let kind_str = html_escape(&format!("{}", output_value.kind()));
-          let result_html = format!(
-            "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
-            kind_str,
-            output_value.to_html()
-          );
-
-          let prompt_line = document.create_element("div").unwrap();
-          prompt_line.set_class_name("repl-line");
-          let input_span = document.create_element("span").unwrap();
-          input_span.set_class_name("repl-code");
-          input_span.set_inner_html(&repl_text);
-          prompt_line.append_child(&input_span).unwrap();
-          if let Some(last_child) = last_child.clone() {
-            mech_output.insert_before(&prompt_line, Some(&last_child)).unwrap();
-          } else {
-            mech_output.append_child(&prompt_line).unwrap();
-          }
-
-          let result_line = document.create_element("div").unwrap();
-          result_line.set_class_name("repl-result");
-          result_line.set_inner_html(&result_html);
-          if let Some(last_child) = last_child {
-            mech_output.insert_before(&result_line, Some(&last_child)).unwrap();
-          } else {
-            mech_output.append_child(&result_line).unwrap();
-          }
+          let result_html = format_output_value_html(&output_value);
+          let repl_width = mech_output.client_width();
 
           CURRENT_MECH.with(|mech_ref| {
             if let Some(ptr) = *mech_ref.borrow() {
-              unsafe { (*ptr).repl_history.push(repl_text.clone()); }
+              unsafe {
+                (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output_value);
+              }
             }
           });
 
-          let repl_width = mech_output.client_width();
           if repl_width == 0 {
             let modal = document.create_element("div").unwrap();
             modal.set_class_name("mech-modal");
@@ -997,7 +1191,38 @@ pub fn attach_repl(&mut self, repl_id: &str) {
               .add_event_listener_with_callback("click", close_closure.as_ref().unchecked_ref())
               .unwrap();
             close_closure.forget();
+            return;
           }
+
+          let prompt_line = document.create_element("div").unwrap();
+          prompt_line.set_class_name("repl-line");
+          let input_span = document.create_element("span").unwrap();
+          input_span.set_class_name("repl-code");
+          input_span.set_inner_html("ans");
+          prompt_line.append_child(&input_span).unwrap();
+          if let Some(last_child) = last_child.clone() {
+            mech_output.insert_before(&prompt_line, Some(&last_child)).unwrap();
+          } else {
+            mech_output.append_child(&prompt_line).unwrap();
+          }
+
+          let result_line = document.create_element("div").unwrap();
+          result_line.set_class_name("repl-result");
+          result_line.set_inner_html(&result_html);
+          if let Some(last_child) = last_child {
+            mech_output.insert_before(&result_line, Some(&last_child)).unwrap();
+          } else {
+            mech_output.append_child(&result_line).unwrap();
+          }
+
+          CURRENT_MECH.with(|mech_ref| {
+            if let Some(ptr) = *mech_ref.borrow() {
+              unsafe {
+                (*ptr).repl_history.push("ans".to_string());
+              }
+            }
+          });
+
           mech_output.set_scroll_top(mech_output.scroll_height());
         }
       }) as Box<dyn FnMut(_)>);
@@ -1010,18 +1235,17 @@ pub fn attach_repl(&mut self, repl_id: &str) {
   }
 
   #[cfg(feature = "run_program")]
-  fn format_runtime_error_html(&self, message: &str) -> String {
-    let escaped_message = html_escape(message);
+  fn format_runtime_error_html(&self, error: &MechError) -> String {
     format!(
-      "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\"><pre>{}</pre></div>",
-      escaped_message
+      "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
+      error.to_html()
     )
   }
 
   #[cfg(feature = "run_program")]
-  fn emit_runtime_error(&self, message: &str) {
+  fn emit_runtime_error(&self, error: &MechError) {
     let mut rendered_to_page = false;
-    let formatted_error = self.format_runtime_error_html(message);
+    let formatted_error = self.format_runtime_error_html(error);
 
     if let Some(window) = web_sys::window() {
       if let Some(document) = window.document() {
@@ -1046,7 +1270,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
     }
 
     if !rendered_to_page {
-      web_sys::console::error_1(&format!("Runtime error: {}", message).into());
+      web_sys::console::error_1(&format!("Runtime error: {}", error.full_chain_message()).into());
     }
   }
 
@@ -1057,8 +1281,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         log!("{}", result.pretty_print());
       }
       Ok(Err(err)) => {
-        let err_message = format!("{:?}", err);
-        self.emit_runtime_error(&err_message);
+        self.emit_runtime_error(&err);
       }
       Err(panic_payload) => {
         let panic_message = if let Some(message) = panic_payload.downcast_ref::<&str>() {
@@ -1068,7 +1291,9 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         } else {
           "Unknown panic while running Mech program".to_string()
         };
-        self.emit_runtime_error(&panic_message);
+        self.emit_runtime_error(
+          &MechError::new(GenericError { msg: panic_message }, None).with_compiler_loc()
+        );
       }
     }
   }
@@ -1087,7 +1312,13 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             self.interpret_with_runtime_error_handling(&tree);
           },
           Err(parse_err) => {
-            self.emit_runtime_error(&format!("Error parsing program: {:?}", parse_err));
+            self.emit_runtime_error(
+              &MechError::new(
+                GenericError { msg: format!("Error parsing program: {:?}", parse_err) },
+                None,
+              )
+              .with_compiler_loc()
+            );
           }
         }
       }

@@ -446,7 +446,7 @@ fn execute_function_match_arms(
                     .cloned()
                     .unwrap_or_else(|| variant_id.to_string());
                   if payload_kind.is_some() {
-                    format!(":{}(...)", variant_name)
+                    format!(":{}(…)", variant_name)
                   } else {
                     format!(":{}", variant_name)
                   }
@@ -708,15 +708,61 @@ fn enum_value_matches(value: Value, enum_id: u64, state: &ProgramState) -> bool 
     Some(enm) => enm,
     None => return false,
   };
+  let names_brrw = enum_def.names.borrow();
+  let atom_matches_variant = |variant_id: u64, atom_id: u64, atom_name: &str| {
+    if variant_id == atom_id {
+      return true;
+    }
+    let variant_name = match names_brrw.get(&variant_id) {
+      Some(name) => name.as_str(),
+      None => return false,
+    };
+    let short_variant = variant_name.rsplit('/').next().unwrap_or(variant_name);
+    let short_atom = atom_name.rsplit('/').next().unwrap_or(atom_name);
+    short_variant == short_atom
+  };
   match value {
+    Value::Enum(enum_value) => {
+      let enum_value_brrw = enum_value.borrow();
+      if enum_value_brrw.id != enum_id {
+        return false;
+      }
+      if enum_value_brrw.variants.len() != 1 {
+        return false;
+      }
+      let (variant_id, payload) = &enum_value_brrw.variants[0];
+      let (_, declared_payload_kind) = match enum_def
+        .variants
+        .iter()
+        .find(|(known_variant, _)| *known_variant == *variant_id)
+      {
+        Some(entry) => entry,
+        None => return false,
+      };
+      match (payload, declared_payload_kind) {
+        (None, None) => true,
+        (Some(payload_value), Some(Value::Kind(expected_kind))) => match expected_kind {
+          ValueKind::Enum(inner_enum_id, _) => {
+            enum_value_matches(payload_value.clone(), *inner_enum_id, state)
+          }
+          _ => {
+            payload_value.kind() == expected_kind.clone()
+              || payload_value.convert_to(expected_kind).is_some()
+          }
+        },
+        _ => false,
+      }
+    }
     // Bare atom: check that the atom's id is a known payload-less variant.
     Value::Atom(atom) => {
-      let variant_id = atom.borrow().id();
+      let atom_brrw = atom.borrow();
+      let variant_id = atom_brrw.id();
+      let atom_name = atom_brrw.name();
       enum_def
         .variants
         .iter()
         .any(|(known_variant, payload_kind)| {
-          *known_variant == variant_id && payload_kind.is_none()
+          atom_matches_variant(*known_variant, variant_id, &atom_name) && payload_kind.is_none()
         })
     }
     // Tuple-struct variant: a 2-element tuple of (atom-tag, payload).
@@ -728,15 +774,18 @@ fn enum_value_matches(value: Value, enum_id: u64, state: &ProgramState) -> bool 
       if tuple_brrw.elements.len() != 2 {
         return false;
       }
-      let tag = match tuple_brrw.elements[0].as_ref() {
-        Value::Atom(atom) => atom.borrow().id(),
+      let (tag, tag_name) = match tuple_brrw.elements[0].as_ref() {
+        Value::Atom(atom) => {
+          let atom_brrw = atom.borrow();
+          (atom_brrw.id(), atom_brrw.name())
+        }
         _ => return false,
       };
       let payload = tuple_brrw.elements[1].as_ref().clone();
       let (_, declared_payload_kind) = match enum_def
         .variants
         .iter()
-        .find(|(known_variant, _)| *known_variant == tag)
+        .find(|(known_variant, _)| atom_matches_variant(*known_variant, tag, &tag_name))
       {
         Some(entry) => entry,
         None => return false,

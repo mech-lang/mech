@@ -81,6 +81,9 @@ Lists can be nested to any depth by indenting child items with at least two spac
 - Another Parent
    -(⭐) Starred Child
    -(🌟) Another Starred Child
+-[ ] Write docs
+   -[x] Add examples
+   -[ ] Review   
 ```
 
 3. Interactive Lists

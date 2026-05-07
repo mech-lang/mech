@@ -31,8 +31,11 @@ pub struct Interpreter {
   pub code: Vec<MechSourceCode>,
   pub out: Value,
   pub out_values: Ref<HashMap<u64, Value>>,
+  pub inline_eval_counter: Ref<u64>,
   #[cfg(feature = "state_machines")]
   pub user_state_machines: Ref<HashMap<u64, FsmImplementation>>,
+  #[cfg(feature = "state_machines")]
+  pub user_state_machine_specs: Ref<HashMap<u64, FsmSpecification>>,
   pub sub_interpreters: Ref<HashMap<u64, Box<Interpreter>>>,
 }
 
@@ -59,8 +62,11 @@ impl Clone for Interpreter {
       code: self.code.clone(),
       out: self.out.clone(),
       out_values: self.out_values.clone(),
+      inline_eval_counter: self.inline_eval_counter.clone(),
       #[cfg(feature = "state_machines")]
       user_state_machines: self.user_state_machines.clone(),
+      #[cfg(feature = "state_machines")]
+      user_state_machine_specs: self.user_state_machine_specs.clone(),
       sub_interpreters: self.sub_interpreters.clone(),
     }
   }
@@ -70,6 +76,21 @@ impl Interpreter {
   pub fn new(id: u64) -> Self {
     let mut state = ProgramState::new();
     load_stdkinds(&mut state.kinds);
+    #[cfg(feature = "symbol_table")]
+    {
+      let ans_id = hash_str("ans");
+      state
+        .symbol_table
+        .borrow_mut()
+        .insert(ans_id, Value::Empty, false);
+      state
+        .symbol_table
+        .borrow_mut()
+        .dictionary
+        .borrow_mut()
+        .insert(ans_id, "ans".to_string());
+      state.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
+    }
     #[cfg(feature = "functions")]
     load_stdlib(&mut state.functions.borrow_mut());
     Self {
@@ -91,8 +112,11 @@ impl Interpreter {
       out: Value::Empty,
       sub_interpreters: Ref::new(HashMap::new()),
       out_values: Ref::new(HashMap::new()),
+      inline_eval_counter: Ref::new(0),
       #[cfg(feature = "state_machines")]
       user_state_machines: Ref::new(HashMap::new()),
+      #[cfg(feature = "state_machines")]
+      user_state_machine_specs: Ref::new(HashMap::new()),
       code: Vec::new(),
       #[cfg(feature = "compiler")]
       context: None,
@@ -321,7 +345,7 @@ impl Interpreter {
       for line in &lines[0..10] {
         println!("{}", line);
       }
-      println!("...");
+      println!("…");
       for line in &lines[lines.len() - 10..] {
         println!("{}", line);
       }

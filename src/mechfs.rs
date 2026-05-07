@@ -1,13 +1,14 @@
 use crate::*;
-use std::ffi::OsStr;
 use bincode::config::standard;
+use std::collections::HashSet;
+use std::ffi::OsStr;
 
 fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
   if !path.is_dir() {
     // If it's a file, return a vector containing just this path
     return Ok(vec![path.to_path_buf()]);
   }
-  
+
   let mut files = Vec::new();
   for entry in fs::read_dir(path)? {
     let entry = entry?;
@@ -20,16 +21,15 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
   }
   Ok(files)
 }
-  
+
 pub struct MechFileSystem {
   sources: Arc<RwLock<MechSources>>,
-  tx: Sender<Event>,                     
-  watchers: Vec<Box<dyn Watcher>>,                 
-  reload_thread: JoinHandle<()>,                     
+  tx: Sender<Event>,
+  watchers: Vec<Box<dyn Watcher>>,
+  reload_thread: JoinHandle<()>,
 }
 
 impl MechFileSystem {
-
   pub fn new() -> Self {
     let sources = Arc::new(RwLock::new(MechSources::new()));
     let (tx, rx) = unbounded::<Event>();
@@ -42,12 +42,16 @@ impl MechFileSystem {
               match worker_sources.write() {
                 Ok(mut sources) => {
                   let canonical_path = event_path.canonicalize().unwrap();
-                  println!("{} Loaded: {}", "[Reload]".truecolor(153,221,85), canonical_path.display());
+                  println!(
+                    "{} Loaded: {}",
+                    "[Reload]".truecolor(153, 221, 85),
+                    canonical_path.display()
+                  );
                   sources.reload_source(&canonical_path);
-                },
+                }
                 Err(e) => {
                   println!("watch error: {:?}", e);
-                },
+                }
               }
             }
           }
@@ -70,13 +74,14 @@ impl MechFileSystem {
       Ok(mut sources) => {
         sources.set_stylesheet(stylesheet);
         Ok(())
-      },
-      Err(e) => {
-        Err(MechError::new(
-          RwLockWriteError {source_err: format!("{}",e)},
-          Some("Could not set stylesheet.".to_string())
-        ).with_compiler_loc())
-      },
+      }
+      Err(e) => Err(MechError::new(
+        RwLockWriteError {
+          source_err: format!("{}", e),
+        },
+        Some("Could not set stylesheet.".to_string()),
+      )
+      .with_compiler_loc()),
     }
   }
 
@@ -85,13 +90,14 @@ impl MechFileSystem {
       Ok(mut sources) => {
         sources.set_shim(shim);
         Ok(())
-      },
-      Err(e) => {
-        Err(MechError::new(
-          RwLockWriteError {source_err: format!("{}",e)},
-          Some("Could not set shim.".to_string())
-        ).with_compiler_loc())
-      },
+      }
+      Err(e) => Err(MechError::new(
+        RwLockWriteError {
+          source_err: format!("{}", e),
+        },
+        Some("Could not set shim.".to_string()),
+      )
+      .with_compiler_loc()),
     }
   }
 
@@ -102,15 +108,14 @@ impl MechFileSystem {
   pub fn add_code(&mut self, code: &MechSourceCode) -> MResult<()> {
     {
       match self.sources.write() {
-        Ok(mut sources) => {
-          sources.add_code(&code)
-        },
-        Err(e) => {
-          Err(MechError::new(
-            RwLockWriteError {source_err: format!("{}",e)},
-            Some("Failed to add Mech code.".to_string())
-          ).with_compiler_loc())
-        },
+        Ok(mut sources) => sources.add_code(&code),
+        Err(e) => Err(MechError::new(
+          RwLockWriteError {
+            source_err: format!("{}", e),
+          },
+          Some("Failed to add Mech code.".to_string()),
+        )
+        .with_compiler_loc()),
       }
     }
   }
@@ -126,114 +131,167 @@ impl MechFileSystem {
         Ok(mut sources) => {
           for f in files {
             // load mech source code
-            if f.extension() == Some(OsStr::new("mec")) || f.extension() == Some(OsStr::new("🤖")) {
-              match sources.add_source(&f.display().to_string(),src) {
+            if f.extension() == Some(OsStr::new("mec"))
+              || f.extension() == Some(OsStr::new("🤖"))
+            {
+              match sources.add_source(&f.display().to_string(), src) {
                 Ok(_) => {
-                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
-                },
+                  println!(
+                    "{} Loaded: {}",
+                    "[Load]".truecolor(153, 221, 85),
+                    f.display()
+                  );
+                }
                 Err(e) => {
-                  println!("{} Failed to load: {}", "[File Error]".truecolor(246,98,78), f.display());
+                  println!(
+                    "{} Failed to load: {}",
+                    "[File Error]".truecolor(246, 98, 78),
+                    f.display()
+                  );
                   return Err(MechError::new(
-                    WatchPathFailed { file_path: f.display().to_string(), source_err: format!("{:#?}",e) },
-                    None
-                  ).with_compiler_loc().with_source(e));
-                },
+                    WatchPathFailed {
+                      file_path: f.display().to_string(),
+                      source_err: format!("{:#?}", e),
+                    },
+                    None,
+                  )
+                  .with_compiler_loc()
+                  .with_source(e));
+                }
               }
             // load mech bytecode
-            } else if f.extension() == Some(OsStr::new("mecb"))  {
-              match sources.add_source(&f.display().to_string(),src) {
+            } else if f.extension() == Some(OsStr::new("mecb")) {
+              match sources.add_source(&f.display().to_string(), src) {
                 Ok(_) => {
-                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
-                },
+                  println!(
+                    "{} Loaded: {}",
+                    "[Load]".truecolor(153, 221, 85),
+                    f.display()
+                  );
+                }
                 Err(e) => {
                   return Err(e);
-                },
+                }
               }
             // load mech docs
             } else if f.extension() == Some(OsStr::new("mdoc")) {
-              match sources.add_source(&f.display().to_string(),src) {
+              match sources.add_source(&f.display().to_string(), src) {
                 Ok(_) => {
-                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
-                },
+                  println!(
+                    "{} Loaded: {}",
+                    "[Load]".truecolor(153, 221, 85),
+                    f.display()
+                  );
+                }
                 Err(e) => {
                   return Err(e);
-                },
-              }   
+                }
+              }
             // load mech config file
             } else if f.extension() == Some(OsStr::new("mpkg")) {
-              match sources.add_source(&f.display().to_string(),src) {
+              match sources.add_source(&f.display().to_string(), src) {
                 Ok(_) => {
-                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
-                },
+                  println!(
+                    "{} Loaded: {}",
+                    "[Load]".truecolor(153, 221, 85),
+                    f.display()
+                  );
+                }
                 Err(e) => {
                   return Err(e);
-                },
-              }              
-            // load matlab file           
+                }
+              }
+            // load matlab file
             } else if f.extension() == Some(OsStr::new("m")) {
-              match sources.add_source(&f.display().to_string(),src) {
+              match sources.add_source(&f.display().to_string(), src) {
                 Ok(_) => {
-                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
-                },
+                  println!(
+                    "{} Loaded: {}",
+                    "[Load]".truecolor(153, 221, 85),
+                    f.display()
+                  );
+                }
                 Err(e) => {
                   return Err(e);
-                },
-              }       
-            // load html/css files                  
-            } else if f.extension() == Some(OsStr::new("html")) 
-                    || f.extension() == Some(OsStr::new("htm"))
-                    || f.extension() == Some(OsStr::new("css")) {
-              match sources.add_source(&f.display().to_string(),src) {
+                }
+              }
+            // load html/css files
+            } else if f.extension() == Some(OsStr::new("html"))
+              || f.extension() == Some(OsStr::new("htm"))
+              || f.extension() == Some(OsStr::new("css"))
+            {
+              match sources.add_source(&f.display().to_string(), src) {
                 Ok(_) => {
-                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
-                },
+                  println!(
+                    "{} Loaded: {}",
+                    "[Load]".truecolor(153, 221, 85),
+                    f.display()
+                  );
+                }
                 Err(e) => {
                   return Err(e);
-                },
+                }
               }
             // load markdown files
             } else if f.extension() == Some(OsStr::new("md")) {
-              match sources.add_source(&f.display().to_string(),src) {
+              match sources.add_source(&f.display().to_string(), src) {
                 Ok(_) => {
-                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
-                },
+                  println!(
+                    "{} Loaded: {}",
+                    "[Load]".truecolor(153, 221, 85),
+                    f.display()
+                  );
+                }
                 Err(e) => {
                   return Err(e);
-                },
+                }
               }
             // load comma-separated values (csv) files
             } else if f.extension() == Some(OsStr::new("csv")) {
-              match sources.add_source(&f.display().to_string(),src) {
+              match sources.add_source(&f.display().to_string(), src) {
                 Ok(_) => {
-                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
-                },
+                  println!(
+                    "{} Loaded: {}",
+                    "[Load]".truecolor(153, 221, 85),
+                    f.display()
+                  );
+                }
                 Err(e) => {
                   return Err(e);
-                },
+                }
               }
             // load js files
             } else if f.extension() == Some(OsStr::new("js")) {
-              match sources.add_source(&f.display().to_string(),src) {
+              match sources.add_source(&f.display().to_string(), src) {
                 Ok(_) => {
-                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
-                },
+                  println!(
+                    "{} Loaded: {}",
+                    "[Load]".truecolor(153, 221, 85),
+                    f.display()
+                  );
+                }
                 Err(e) => {
                   return Err(e);
-                },
+                }
               }
             // load images
-            } else if f.extension() == Some(OsStr::new("png")) 
-                    || f.extension() == Some(OsStr::new("jpg")) 
-                    || f.extension() == Some(OsStr::new("jpeg")) 
-                    || f.extension() == Some(OsStr::new("gif")) 
-                    || f.extension() == Some(OsStr::new("svg")) {
-              match sources.add_source(&f.display().to_string(),src) {
+            } else if f.extension() == Some(OsStr::new("png"))
+              || f.extension() == Some(OsStr::new("jpg"))
+              || f.extension() == Some(OsStr::new("jpeg"))
+              || f.extension() == Some(OsStr::new("gif"))
+              || f.extension() == Some(OsStr::new("svg"))
+            {
+              match sources.add_source(&f.display().to_string(), src) {
                 Ok(_) => {
-                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
-                },
+                  println!(
+                    "{} Loaded: {}",
+                    "[Load]".truecolor(153, 221, 85),
+                    f.display()
+                  );
+                }
                 Err(e) => {
                   return Err(e);
-                },
+                }
               }
             } else {
               //println!("{} Skipping: {}", "[Skip]".truecolor(153,221,85), f.display());
@@ -242,10 +300,14 @@ impl MechFileSystem {
         }
         Err(e) => {
           return Err(MechError::new(
-            FileWriteFailed { file_path: src.to_string(), source: format!("{}",e) },
-            None
-          ).with_compiler_loc())
-        },
+            FileWriteFailed {
+              file_path: src.to_string(),
+              source: format!("{}", e),
+            },
+            None,
+          )
+          .with_compiler_loc());
+        }
       }
     }
 
@@ -255,52 +317,55 @@ impl MechFileSystem {
       if let Ok(event) = res {
         tx.send(event).unwrap();
       }
-    }) 
-    {
-      Ok(mut watcher) => {
-        match watcher.watch(&src_path, RecursiveMode::Recursive) {
-          Ok(_) => {
-            println!("{} Watching: {}", "[Watch]".truecolor(153,221,85), src_path.display());
-            self.watchers.push(Box::new(watcher));
-          }
-          Err(err) => {
-            return Err(MechError::new(
-              WatchPathFailed { file_path: src_path.display().to_string(), source_err: format!("{}",err) },
-              None
-            ).with_compiler_loc())
-          },
-        }       
-      }
+    }) {
+      Ok(mut watcher) => match watcher.watch(&src_path, RecursiveMode::Recursive) {
+        Ok(_) => {
+          println!(
+            "{} Watching: {}",
+            "[Watch]".truecolor(153, 221, 85),
+            src_path.display()
+          );
+          self.watchers.push(Box::new(watcher));
+        }
+        Err(err) => {
+          return Err(MechError::new(
+            WatchPathFailed {
+              file_path: src_path.display().to_string(),
+              source_err: format!("{}", err),
+            },
+            None,
+          )
+          .with_compiler_loc());
+        }
+      },
       Err(err) => println!("[Watch] Error creating watcher: {}", err),
     }
     Ok(())
   }
-
 }
 
 pub struct MechSources {
   index: u64,
   stylesheet: String,
   shim: String,
-  sources: HashMap<u64,MechSourceCode>,             // u64 is the hash of the relative source 
-  trees: HashMap<u64,MechSourceCode>,               // stores the ast for the sources
-  errors: HashMap<u64,Vec<MechError>>,              // stores the errors for the sources
-  html: HashMap<u64,MechSourceCode>,                // stores the html for the sources
-  pub directory: HashMap<PathBuf, PathBuf>,             // relative source -> absolute source
-  reverse_lookup: HashMap<PathBuf, PathBuf>,        // absolute source -> relative source
-  id_map: HashMap<u64,PathBuf>,                     // hash -> path
+  sources: HashMap<u64, MechSourceCode>, // u64 is the hash of the relative source
+  trees: HashMap<u64, MechSourceCode>,   // stores the ast for the sources
+  errors: HashMap<u64, Vec<MechError>>,  // stores the errors for the sources
+  html: HashMap<u64, MechSourceCode>,    // stores the html for the sources
+  pub directory: HashMap<PathBuf, PathBuf>, // relative source -> absolute source
+  reverse_lookup: HashMap<PathBuf, PathBuf>, // absolute source -> relative source
+  id_map: HashMap<u64, PathBuf>,         // hash -> path
 }
 
 impl std::fmt::Debug for MechSources {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     f.debug_struct("MechSources")
-    .field("sources", &self.sources)
-    .finish()
+      .field("sources", &self.sources)
+      .finish()
   }
 }
-    
-impl MechSources {
 
+impl MechSources {
   pub fn new() -> Self {
     MechSources {
       index: 0,
@@ -316,15 +381,15 @@ impl MechSources {
     }
   }
 
-  pub fn html_iter(&self) -> impl Iterator<Item = (&u64,&MechSourceCode)> {
+  pub fn html_iter(&self) -> impl Iterator<Item = (&u64, &MechSourceCode)> {
     self.html.iter()
   }
-  
-  pub fn sources_iter(&self) -> impl Iterator<Item = (&u64,&MechSourceCode)> {
+
+  pub fn sources_iter(&self) -> impl Iterator<Item = (&u64, &MechSourceCode)> {
     self.sources.iter()
   }
 
-  pub fn trees_iter(&self) -> impl Iterator<Item = (&u64,&MechSourceCode)> {
+  pub fn trees_iter(&self) -> impl Iterator<Item = (&u64, &MechSourceCode)> {
     self.trees.iter()
   }
 
@@ -333,7 +398,6 @@ impl MechSources {
   }
 
   pub fn reload_source(&mut self, path: &PathBuf) -> MResult<()> {
-
     let file_id = hash_str(&path.display().to_string());
     let new_source = read_mech_source_file(&path)?;
 
@@ -342,33 +406,37 @@ impl MechSources {
     let mut tree = self.trees.get_mut(&file_id).unwrap();
     let mut html = self.html.get_mut(&file_id).unwrap();
 
-    
     // update the tree
     let (new_tree, new_html) = match source {
       MechSourceCode::String(source) => match parser::parse(&source) {
         Ok(tree) => {
           let mut formatter = Formatter::new();
-          let mech_html = formatter.format_html(&tree,self.stylesheet.clone(),self.shim.clone());
-          (MechSourceCode::Tree(tree), 
-            MechSourceCode::Html(mech_html))
+          let mech_html =
+            formatter.format_html(&tree, self.stylesheet.clone(), self.shim.clone());
+          (MechSourceCode::Tree(tree), MechSourceCode::Html(mech_html))
         }
-        Err(err) => {return Err(err)},
+        Err(err) => return Err(err),
       },
       MechSourceCode::Html(html) => {
         // TODO If it's HTML, we can parse it as a Mech source code.
-        (MechSourceCode::Tree(core::Program{title: None, body: core::Body{sections: vec![]}}), 
-          MechSourceCode::Html(html.clone()))
-      },
+        (
+          MechSourceCode::Tree(core::Program {
+            title: None,
+            body: core::Body { sections: vec![] },
+          }),
+          MechSourceCode::Html(html.clone()),
+        )
+      }
       _ => {
         todo!("Handle other source formats?");
       }
     };
-          
+
     // update
     *source = new_source;
     *html = new_html;
     *tree = new_tree;
-    
+
     Ok(())
   }
 
@@ -381,12 +449,12 @@ impl MechSources {
   }
 
   pub fn add_code(&mut self, code: &MechSourceCode) -> MResult<()> {
-    
     match code {
       MechSourceCode::String(source) => {
         let tree = parser::parse(&source)?;
         let mut formatter = Formatter::new();
-        let mech_html = formatter.format_html(&tree,self.stylesheet.clone(),self.shim.clone());
+        let mech_html =
+          formatter.format_html(&tree, self.stylesheet.clone(), self.shim.clone());
         //let mech_html = Formatter::humanize_html(mech_html);
 
         // Save all this so we don't have to do it later.
@@ -394,11 +462,12 @@ impl MechSources {
         self.sources.insert(file_id, code.clone());
         self.trees.insert(file_id, MechSourceCode::Tree(tree));
         self.html.insert(file_id, MechSourceCode::Html(mech_html));
-        self.id_map.insert(file_id,PathBuf::new());
-      },
+        self.id_map.insert(file_id, PathBuf::new());
+      }
       MechSourceCode::Tree(tree) => {
         let mut formatter = Formatter::new();
-        let mech_html = formatter.format_html(&tree,self.stylesheet.clone(),self.shim.clone());
+        let mech_html =
+          formatter.format_html(&tree, self.stylesheet.clone(), self.shim.clone());
         //let mech_html = Formatter::humanize_html(mech_html);
 
         // Save all this so we don't have to do it later.
@@ -406,8 +475,8 @@ impl MechSources {
         self.sources.insert(file_id, code.clone());
         self.trees.insert(file_id, code.clone());
         self.html.insert(file_id, MechSourceCode::Html(mech_html));
-        self.id_map.insert(file_id,PathBuf::new());
-      },
+        self.id_map.insert(file_id, PathBuf::new());
+      }
       _ => {
         todo!("Handle other source formats?");
       }
@@ -415,7 +484,10 @@ impl MechSources {
     Ok(())
   }
 
-  fn to_tree_and_html(&mut self, node: &MechSourceCode) -> MResult<(MechSourceCode, MechSourceCode)> {
+  fn to_tree_and_html(
+    &mut self,
+    node: &MechSourceCode,
+  ) -> MResult<(MechSourceCode, MechSourceCode)> {
     match node {
       // Raw source text: parse it and format HTML
       MechSourceCode::String(source) => {
@@ -424,7 +496,8 @@ impl MechSources {
           Err(err) => return Err(err),
         };
         let mut formatter = Formatter::new();
-        let mech_html = formatter.format_html(&tree, self.stylesheet.clone(),self.shim.clone());
+        let mech_html =
+          formatter.format_html(&tree, self.stylesheet.clone(), self.shim.clone());
         Ok((MechSourceCode::Tree(tree), MechSourceCode::Html(mech_html)))
       }
       MechSourceCode::Program(code_vec) => {
@@ -436,21 +509,43 @@ impl MechSources {
         for child in code_vec {
           let (child_tree_sc, child_html_sc) = self.to_tree_and_html(child)?;
           if let MechSourceCode::Tree(child_prog) = child_tree_sc {
-            combined.body.sections.extend(child_prog.body.sections.into_iter());
+            combined
+              .body
+              .sections
+              .extend(child_prog.body.sections.into_iter());
           }
           if let MechSourceCode::Html(h) = child_html_sc {
             combined_html.push_str(&h);
           }
         }
-        Ok((MechSourceCode::Tree(combined), MechSourceCode::Html(combined_html)))
+        Ok((
+          MechSourceCode::Tree(combined),
+          MechSourceCode::Html(combined_html),
+        ))
       }
-      MechSourceCode::Html(html) => Ok((MechSourceCode::Tree(core::Program {title: None,body: core::Body { sections: vec![] },}),MechSourceCode::Html(html.clone()))),
+      MechSourceCode::Html(html) => Ok((
+        MechSourceCode::Tree(core::Program {
+          title: None,
+          body: core::Body { sections: vec![] },
+        }),
+        MechSourceCode::Html(html.clone()),
+      )),
       MechSourceCode::Tree(t) => {
         let mut formatter = Formatter::new();
-        let mech_html = formatter.format_html(t, self.stylesheet.clone(),self.shim.clone());
-        Ok((MechSourceCode::Tree(t.clone()), MechSourceCode::Html(mech_html)))
+        let mech_html =
+          formatter.format_html(t, self.stylesheet.clone(), self.shim.clone());
+        Ok((
+          MechSourceCode::Tree(t.clone()),
+          MechSourceCode::Html(mech_html),
+        ))
       }
-      _ => Ok((MechSourceCode::Tree(core::Program {title: None,body: core::Body { sections: vec![] },}),MechSourceCode::Html("".to_string()))),
+      _ => Ok((
+        MechSourceCode::Tree(core::Program {
+          title: None,
+          body: core::Body { sections: vec![] },
+        }),
+        MechSourceCode::Html("".to_string()),
+      )),
     }
   }
 
@@ -471,14 +566,17 @@ impl MechSources {
           .insert(relative_path.to_path_buf(), canonical_path.clone());
         self.reverse_lookup
           .insert(canonical_path.clone(), relative_path.to_path_buf());
-        self.sources.insert(file_id, MechSourceCode::Image(extension.clone(), img_bytes.clone()));
+        self.sources.insert(
+          file_id,
+          MechSourceCode::Image(extension.clone(), img_bytes.clone()),
+        );
         self.id_map.insert(file_id, relative_path.to_path_buf());
 
         let relative_path_str = relative_path.display().to_string();
         let src_path_hash = hash_str(&relative_path_str);
 
         Ok(MechSourceCode::Image(extension, img_bytes))
-      } 
+      }
       Ok(src) => {
         let (tree_sc, html_sc) = self.to_tree_and_html(&src)?;
         let file_id = hash_str(&canonical_path.display().to_string());
@@ -536,14 +634,14 @@ impl MechSources {
           Some(code) => Some(code.clone()),
           None => None,
         }
-      },
+      }
       None => {
         let file_id = hash_str(&src);
         match self.sources.get(&file_id) {
           Some(code) => Some(code.clone()),
           None => None,
         }
-      },
+      }
     }
   }
 
@@ -563,14 +661,14 @@ impl MechSources {
           Some(code) => Some(code.clone()),
           None => None,
         }
-      },
+      }
       None => {
         let file_id = hash_str(&src);
         match self.trees.get(&file_id) {
           Some(code) => Some(code.clone()),
           None => None,
         }
-      },
+      }
     }
   }
 
@@ -579,15 +677,13 @@ impl MechSources {
       Some(path) => {
         let file_id = hash_str(&path.display().to_string());
         match self.sources.get(&file_id) {
-          Some(code) => {
-            match code {
-              MechSourceCode::Image(_, _) => Some(code.clone()),
-              _ => None,
-            }
+          Some(code) => match code {
+            MechSourceCode::Image(_, _) => Some(code.clone()),
+            _ => None,
           },
           None => None,
         }
-      },
+      }
       None => None,
     }
   }
@@ -607,7 +703,7 @@ impl MechSources {
           Some(code) => Some(code.clone()),
           None => None,
         }
-      },
+      }
       None => {
         let file_id = hash_str(&src);
         match self.html.get(&file_id) {
@@ -625,54 +721,56 @@ impl MechSources {
               }
               None => None,
             }
-          },
+          }
         }
-      },
+      }
     }
   }
 
   pub fn read_mech_files(
     &mut self,
-    mech_paths: &Vec<String>
-  ) -> MResult<Vec<(String,MechSourceCode)>> 
-  {
-    let mut code: Vec<(String,MechSourceCode)> = Vec::new();
+    mech_paths: &Vec<String>,
+  ) -> MResult<Vec<(String, MechSourceCode)>> {
+    let mut code: Vec<(String, MechSourceCode)> = Vec::new();
 
     for path_str in mech_paths {
       let path = Path::new(path_str);
 
       if path_str.starts_with("https") || path_str.starts_with("http") {
-        println!("{} {}", "[Downloading]".truecolor(153,221,85), path.display());
+        println!(
+          "{} {}",
+          "[Downloading]".truecolor(153, 221, 85),
+          path.display()
+        );
 
         match reqwest::blocking::get(path_str) {
-          Ok(response) => {
-            match response.text() {
-              Ok(text) => {
-                let src = MechSourceCode::String(text);
-                code.push((path_str.to_owned(), src));
-              }
-              Err(err) => {
-                return Err(MechError::new(
-                  HttpTextDecodeFailed {
-                    url: path_str.clone(),
-                    source: err.to_string(),
-                  },
-                  None
-                ).with_compiler_loc());
-              }
+          Ok(response) => match response.text() {
+            Ok(text) => {
+              let src = MechSourceCode::String(text);
+              code.push((path_str.to_owned(), src));
             }
-          }
+            Err(err) => {
+              return Err(MechError::new(
+                HttpTextDecodeFailed {
+                  url: path_str.clone(),
+                  source: err.to_string(),
+                },
+                None,
+              )
+              .with_compiler_loc());
+            }
+          },
           Err(err) => {
-                return Err(MechError::new(
-                  HttpRequestFailed {
-                    url: path_str.clone(),
-                    source: err.to_string(),
-                  },
-                  None
-                ).with_compiler_loc());
+            return Err(MechError::new(
+              HttpRequestFailed {
+                url: path_str.clone(),
+                source: err.to_string(),
+              },
+              None,
+            )
+            .with_compiler_loc());
           }
         }
-
       } else {
         match read_mech_source_file(path) {
           Ok(src) => {
@@ -687,10 +785,8 @@ impl MechSources {
 
     Ok(code)
   }
-
-  
 }
-  
+
 pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
   match path.extension() {
     Some(extension) => {
@@ -698,22 +794,12 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
         Some("mecb") => {
           let path = PathBuf::from(path);
           let data = std::fs::read(&path)?;
-          let program = load_program_from_file(path)?;   
+          let program = load_program_from_file(path)?;
           Ok(MechSourceCode::ByteCode(program.to_bytes()?))
         }
         Some("mec") | Some("🤖") => {
-          match File::open(path) {
-            Ok(mut file) => {
-              //println!("{} {}", "[Loading]".truecolor(153,221,85), path.display());
-              let mut buffer = String::new();
-              file.read_to_string(&mut buffer);
-              Ok(MechSourceCode::String(buffer))
-            }
-            Err(err) => return Err(MechError::new(
-              FileOpenFailed { file_path: path.to_string_lossy().to_string(), source: err.to_string() },
-              None
-            ).with_compiler_loc()),
-          }
+          let expanded = expand_mechdown_includes(path)?;
+          Ok(MechSourceCode::String(expanded))
         }
         Some("html") | Some("htm") | Some("md") | Some("css") => {
           match File::open(path) {
@@ -723,10 +809,16 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
               file.read_to_string(&mut buffer);
               Ok(MechSourceCode::Html(buffer))
             }
-            Err(err) => return Err(MechError::new(
-              FileOpenFailed { file_path: path.to_string_lossy().to_string(), source: err.to_string() },
-              None
-            ).with_compiler_loc()),
+            Err(err) => {
+              return Err(MechError::new(
+                FileOpenFailed {
+                  file_path: path.to_string_lossy().to_string(),
+                  source: err.to_string(),
+                },
+                None,
+              )
+              .with_compiler_loc());
+            }
           }
         }
         // handle images
@@ -737,13 +829,23 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
               let mut buffer = Vec::new();
               file.read_to_end(&mut buffer);
               // store extension and bytes
-              let extension = path.extension().and_then(OsStr::to_str).unwrap_or("").to_string();
+              let extension = path
+                .extension()
+                .and_then(OsStr::to_str)
+                .unwrap_or("")
+                .to_string();
               Ok(MechSourceCode::Image(extension, buffer))
             }
-            Err(err) => return Err(MechError::new(
-              FileOpenFailed { file_path: path.to_string_lossy().to_string(), source: err.to_string() },
-              None
-            ).with_compiler_loc()),
+            Err(err) => {
+              return Err(MechError::new(
+                FileOpenFailed {
+                  file_path: path.to_string_lossy().to_string(),
+                  source: err.to_string(),
+                },
+                None,
+              )
+              .with_compiler_loc());
+            }
           }
         }
         Some("csv") => {
@@ -758,34 +860,359 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
               todo!();
             }
             Err(err) => Err(MechError::new(
-              FileOpenFailed { file_path: path.to_string_lossy().to_string(), source: err.to_string() },
-              None
-            ).with_compiler_loc()),
+              FileOpenFailed {
+                file_path: path.to_string_lossy().to_string(),
+                source: err.to_string(),
+              },
+              None,
+            )
+            .with_compiler_loc()),
           }
         }
-        x => {
-          Err(MechError::new(
-            UnknownFileExtensionError {
-              extension: x.unwrap_or("unknown").to_string(),
-            },
-            None
-          ).with_compiler_loc())
-        },
+        x => Err(MechError::new(
+          UnknownFileExtensionError {
+            extension: x.unwrap_or("unknown").to_string(),
+          },
+          None,
+        )
+        .with_compiler_loc()),
       }
-    },
+    }
     err => Err(MechError::new(
-      ExtensionDecodeFailed {path: path.display().to_string()},
-      None
-    ).with_compiler_loc()),
+      ExtensionDecodeFailed {
+        path: path.display().to_string(),
+      },
+      None,
+    )
+    .with_compiler_loc()),
+  }
+}
+
+fn looks_like_mech_include(content: &str) -> bool {
+  let trimmed = content.trim();
+  trimmed.ends_with(".mec")
+}
+
+fn code_fence_delimiter(line: &str) -> Option<(char, usize, usize)> {
+  let bytes = line.as_bytes();
+  let mut i = 0usize;
+  while i < bytes.len() && bytes[i] == b' ' && i < 4 {
+    i += 1;
+  }
+
+  if i > 3 || i >= bytes.len() {
+    return None;
+  }
+
+  let marker = bytes[i] as char;
+  if marker != '`' && marker != '~' {
+    return None;
+  }
+
+  let mut j = i;
+  while j < bytes.len() && bytes[j] as char == marker {
+    j += 1;
+  }
+
+  let count = j - i;
+  if count < 3 {
+    return None;
+  }
+
+  Some((marker, count, j))
+}
+
+fn is_code_fence_close(line: &str, marker: char, min_len: usize) -> bool {
+  let Some((line_marker, count, after)) = code_fence_delimiter(line) else {
+    return false;
+  };
+
+  if line_marker != marker || count < min_len {
+    return false;
+  }
+
+  line[after..].trim_matches(|c| c == ' ' || c == '\t' || c == '\r' || c == '\n').is_empty()
+}
+
+fn standalone_braced_content(line_without_newline: &str) -> Option<&str> {
+  let trimmed = line_without_newline.trim();
+  if !(trimmed.starts_with('{') && trimmed.ends_with('}')) {
+    return None;
+  }
+  let inner = &trimmed[1..trimmed.len() - 1];
+  Some(inner)
+}
+
+fn expand_mechdown_include_tokens(
+  source: &str,
+  canonical_path: &Path,
+  active_set: &mut HashSet<PathBuf>,
+) -> MResult<String> {
+  let mut result = String::new();
+
+  for line in source.split_inclusive('\n') {
+    let (line_without_newline, newline) = match line.strip_suffix('\n') {
+      Some(prefix) => (prefix, "\n"),
+      None => (line, ""),
+    };
+
+    if let Some(inner) = standalone_braced_content(line_without_newline) {
+      if looks_like_mech_include(inner) {
+        let include_raw = inner.trim();
+        let parent = canonical_path.parent().unwrap_or(Path::new("."));
+        let include_path = parent.join(include_raw);
+        let include_canonical = include_path.canonicalize().map_err(|_| {
+          MechError::new(
+            GenericError {
+              msg: format!("Include failed: {}", include_raw),
+            },
+            None,
+          )
+          .with_compiler_loc()
+        })?;
+        let expanded = expand_mechdown_includes_recursive(&include_canonical, active_set)?;
+        result.push_str(&expanded);
+        result.push_str(newline);
+        continue;
+      }
+    }
+
+    result.push_str(line);
+  }
+
+  Ok(result)
+}
+
+fn expand_mechdown_includes(path: &Path) -> MResult<String> {
+  let canonical = path.canonicalize().map_err(|_| {
+    MechError::new(
+      GenericError {
+        msg: format!("Include failed: {}", path.display()),
+      },
+      None,
+    )
+    .with_compiler_loc()
+  })?;
+  let mut active_set: HashSet<PathBuf> = HashSet::new();
+  expand_mechdown_includes_recursive(&canonical, &mut active_set)
+}
+
+fn expand_mechdown_includes_recursive(
+  path: &Path,
+  active_set: &mut HashSet<PathBuf>,
+) -> MResult<String> {
+  let canonical_path = path.canonicalize().map_err(|_| {
+    MechError::new(
+      GenericError {
+        msg: format!("Include failed: {}", path.display()),
+      },
+      None,
+    )
+    .with_compiler_loc()
+  })?;
+
+  if active_set.contains(&canonical_path) {
+    return Err(
+      MechError::new(
+        GenericError {
+          msg: "Circular include detected".to_string(),
+        },
+        None,
+      )
+      .with_compiler_loc(),
+    );
+  }
+
+  active_set.insert(canonical_path.clone());
+
+  let mut source = String::new();
+  File::open(&canonical_path)
+    .map_err(|_| {
+      MechError::new(
+        GenericError {
+          msg: format!("Include failed: {}", canonical_path.display()),
+        },
+        None,
+      )
+      .with_compiler_loc()
+    })?
+    .read_to_string(&mut source)
+    .map_err(|_| {
+      MechError::new(
+        GenericError {
+          msg: format!("Include failed: {}", canonical_path.display()),
+        },
+        None,
+      )
+      .with_compiler_loc()
+    })?;
+
+  let mut result = String::new();
+  let mut outside_fence_buffer = String::new();
+  let mut active_fence: Option<(char, usize)> = None;
+
+  for line in source.split_inclusive('\n') {
+    if let Some((marker, min_len)) = active_fence {
+      result.push_str(line);
+      if is_code_fence_close(line, marker, min_len) {
+        active_fence = None;
+      }
+      continue;
+    }
+
+    if let Some((marker, len, _)) = code_fence_delimiter(line) {
+      if !outside_fence_buffer.is_empty() {
+        let expanded =
+          expand_mechdown_include_tokens(&outside_fence_buffer, &canonical_path, active_set)?;
+        result.push_str(&expanded);
+        outside_fence_buffer.clear();
+      }
+      active_fence = Some((marker, len));
+      result.push_str(line);
+      continue;
+    }
+
+    outside_fence_buffer.push_str(line);
+  }
+
+  if !outside_fence_buffer.is_empty() {
+    let expanded = expand_mechdown_include_tokens(&outside_fence_buffer, &canonical_path, active_set)?;
+    result.push_str(&expanded);
+  }
+
+  active_set.remove(&canonical_path);
+  Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use std::time::{SystemTime, UNIX_EPOCH};
+
+  fn make_temp_dir(name: &str) -> PathBuf {
+    let mut dir = std::env::temp_dir();
+    let nanos = SystemTime::now()
+      .duration_since(UNIX_EPOCH)
+      .unwrap()
+      .as_nanos();
+    dir.push(format!("mech-include-test-{}-{}", name, nanos));
+    std::fs::create_dir_all(&dir).unwrap();
+    dir
+  }
+
+  #[test]
+  fn expands_basic_include() {
+    let dir = make_temp_dir("basic");
+    let main = dir.join("main.mec");
+    let inc_dir = dir.join("foo");
+    std::fs::create_dir_all(&inc_dir).unwrap();
+    let inc = inc_dir.join("bar.mec");
+    std::fs::write(&main, "Hello\n{foo/bar.mec}\nWorld").unwrap();
+    std::fs::write(&inc, "This is included.").unwrap();
+
+    let expanded = expand_mechdown_includes(&main).unwrap();
+    assert_eq!(expanded, "Hello\nThis is included.\nWorld");
+  }
+
+  #[test]
+  fn keeps_normal_expressions() {
+    let dir = make_temp_dir("expression");
+    let main = dir.join("main.mec");
+    std::fs::write(&main, "A {1+1} and {foo/bar} B").unwrap();
+
+    let expanded = expand_mechdown_includes(&main).unwrap();
+    assert_eq!(expanded, "A {1+1} and {foo/bar} B");
+  }
+
+  #[test]
+  fn detects_circular_include() {
+    let dir = make_temp_dir("circular");
+    let a = dir.join("a.mec");
+    let b = dir.join("b.mec");
+    std::fs::write(&a, "{b.mec}").unwrap();
+    std::fs::write(&b, "{a.mec}").unwrap();
+
+    let err = expand_mechdown_includes(&a).unwrap_err();
+    assert!(err.kind_message().contains("Circular include detected"));
+  }
+
+  #[test]
+  fn reports_missing_include() {
+    let dir = make_temp_dir("missing");
+    let main = dir.join("main.mec");
+    std::fs::write(&main, "{foo/bar.mec}").unwrap();
+
+    let err = expand_mechdown_includes(&main).unwrap_err();
+    assert!(err.kind_message().contains("Include failed: foo/bar.mec"));
+  }
+
+  #[test]
+  fn nested_includes_resolve_relative_to_each_file() {
+    let dir = make_temp_dir("nested");
+    let root = dir.join("main.mec");
+    let section = dir.join("sections");
+    let partials = section.join("partials");
+    std::fs::create_dir_all(&partials).unwrap();
+    let chapter = section.join("chapter.mec");
+    let bit = partials.join("bit.mec");
+
+    std::fs::write(&root, "Top\n{sections/chapter.mec}\nBottom").unwrap();
+    std::fs::write(&chapter, "Chapter\n{partials/bit.mec}").unwrap();
+    std::fs::write(&bit, "Nested").unwrap();
+
+    let expanded = expand_mechdown_includes(&root).unwrap();
+    assert_eq!(expanded, "Top\nChapter\nNested\nBottom");
+  }
+
+  #[test]
+  fn ignores_include_syntax_inside_code_fences() {
+    let dir = make_temp_dir("fence-ignore");
+    let main = dir.join("main.mec");
+    let inc = dir.join("inc.mec");
+
+    std::fs::write(
+      &main,
+      "Before\n```mech\n{foo/bar.mec}\n```\n{inc.mec}\nAfter\n~~~\n{also/not-real.mec}\n~~~\n",
+    )
+    .unwrap();
+    std::fs::write(&inc, "Included").unwrap();
+
+    let expanded = expand_mechdown_includes(&main).unwrap();
+    assert_eq!(
+      expanded,
+      "Before\n```mech\n{foo/bar.mec}\n```\nIncluded\nAfter\n~~~\n{also/not-real.mec}\n~~~\n"
+    );
+  }
+
+  #[test]
+  fn ignores_include_syntax_inside_paragraph_inline_code() {
+    let dir = make_temp_dir("inline-code-ignore");
+    let main = dir.join("main.mec");
+    let inc = dir.join("inc.mec");
+
+    std::fs::write(
+      &main,
+      "This is an inline thing: `{path/to/file.mec}` and this should stay literal.\n{inc.mec}\n",
+    )
+    .unwrap();
+    std::fs::write(&inc, "Included").unwrap();
+
+    let expanded = expand_mechdown_includes(&main).unwrap();
+    assert_eq!(
+      expanded,
+      "This is an inline thing: `{path/to/file.mec}` and this should stay literal.\nIncluded\n"
+    );
   }
 }
 
 #[derive(Debug, Clone)]
 pub struct UnknownFileExtensionError {
-    pub extension: String,
+  pub extension: String,
 }
 impl MechErrorKind for UnknownFileExtensionError {
-  fn name(&self) -> &str { "UnknownFileExtensionError" }
+  fn name(&self) -> &str {
+    "UnknownFileExtensionError"
+  }
   fn message(&self) -> String {
     format!("Unknown file extension: {}", self.extension)
   }
@@ -793,10 +1220,12 @@ impl MechErrorKind for UnknownFileExtensionError {
 
 #[derive(Debug, Clone)]
 pub struct ExtensionDecodeFailed {
-    pub path: String,
+  pub path: String,
 }
 impl MechErrorKind for ExtensionDecodeFailed {
-  fn name(&self) -> &str { "ExtensionDecodeFailed" }
+  fn name(&self) -> &str {
+    "ExtensionDecodeFailed"
+  }
   fn message(&self) -> String {
     format!("Failed to decode extension for path: {}", self.path)
   }
@@ -807,7 +1236,9 @@ pub struct RwLockWriteError {
   pub source_err: String,
 }
 impl MechErrorKind for RwLockWriteError {
-  fn name(&self) -> &str { "RwLockWriteError" }
+  fn name(&self) -> &str {
+    "RwLockWriteError"
+  }
 
   fn message(&self) -> String {
     format!("Failed to acquire write lock: {}", self.source_err)

@@ -16,7 +16,7 @@
   <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
 
   <title>{{TITLE}}</title>
-  <link rel="icon" href="https://gitlab.com/mech-lang/assets/-/raw/main/images/favicon.ico" type="image/x-icon" />
+  <link rel="icon" href="https://gitlab.com/mech-lang/assets/-/raw/main/images/icons/favicon.ico?ref_type=heads" type="image/x-icon" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
   </style>
@@ -300,7 +300,14 @@
     {{TOC}}
     <div class="content" id="left-pane">
       <div id="breadcrumb" class="mech-breadcrumb"></div>
-        {{CONTENT}}
+        <h1>{{TITLE}}</h1>
+        {{HERO}}
+        {{BYLINE}}
+        {{SUMMARY}}
+        {{ABSTRACT}}
+        {{INTRO}}
+        {{CONTENTS}}
+        {{CITED}}
     </div>
     <div class="resizer hidden" id="resizer">
       <button class="toggle-button" id="toggle-repl">|</button>
@@ -977,6 +984,48 @@
   <script type="module">
     import init, {WasmMech} from '/pkg/mech_wasm.js';
     let wasm_core;
+    function prepareVarPlaceholders() {
+      const pattern = /\{\{VAR:([A-Za-z0-9\-_\/]+)(?:@([A-Za-z0-9\-_\/]+))?\}\}/g;
+      document.querySelectorAll("script, style, code, pre, textarea").forEach((el) => el.setAttribute("data-var-skip", "1"));
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      const updates = [];
+      while (walker.nextNode()) {
+        const node = walker.currentNode;
+        if (!node || !node.nodeValue || !pattern.test(node.nodeValue)) {
+          pattern.lastIndex = 0;
+          continue;
+        }
+        pattern.lastIndex = 0;
+        const parent = node.parentElement;
+        if (!parent || parent.closest("[data-var-skip='1']")) continue;
+        const nearestMechRoot = parent.closest(".mech-root");
+        const rootInterpreterId = Number(nearestMechRoot?.getAttribute("mech-interpreter-id") || "0");
+        const fragment = document.createDocumentFragment();
+        let lastIndex = 0;
+        node.nodeValue.replace(pattern, (match, varName, interpreterName, offset) => {
+          if (offset > lastIndex) {
+            fragment.appendChild(document.createTextNode(node.nodeValue.slice(lastIndex, offset)));
+          }
+          const span = document.createElement("span");
+          span.className = "mech-var-placeholder";
+          span.setAttribute("data-var-name", varName);
+          if (interpreterName) {
+            span.setAttribute("data-interpreter-name", interpreterName);
+          } else {
+            span.setAttribute("data-interpreter-id", String(rootInterpreterId));
+          }
+          span.textContent = "";
+          fragment.appendChild(span);
+          lastIndex = offset + match.length;
+          return match;
+        });
+        if (lastIndex < node.nodeValue.length) {
+          fragment.appendChild(document.createTextNode(node.nodeValue.slice(lastIndex)));
+        }
+        updates.push([node, fragment]);
+      }
+      updates.forEach(([node, fragment]) => node.parentNode.replaceChild(fragment, node));
+    }
     async function run() {
       await init();
       var code = `{{CODE}}`;
@@ -989,6 +1038,7 @@
           if (xhr.status === 200) {
             var src = xhr.responseText;
             wasm_core.run_program(src);
+            prepareVarPlaceholders();
             wasm_core.init();
             wasm_core.render_inline_values();
             wasm_core.render_codeblock_output_values();
@@ -996,6 +1046,7 @@
           } else {
             console.error("Defaulting to included program");
             wasm_core.run_program(code);
+            prepareVarPlaceholders();
             wasm_core.init();
             wasm_core.render_inline_values();
             wasm_core.render_codeblock_output_values();

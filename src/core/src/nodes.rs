@@ -99,7 +99,7 @@ pub enum TokenKind {
   Dash, DefineOperator, Digit, Dollar,
   Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Error, ErrorSigil, EscapedChar, Exclamation, 
   False, FloatLeft, FloatRight, FootnotePrefix,
-  GenOperator, Grave, GraveCodeBlockSigil,
+  GenOperator, GeneratorArrow, Grave, GraveCodeBlockSigil,
   HashTag, HighlightSigil, HttpPrefix,
   IdeaSigil, Identifier, ImgPrefix, InfoSigil, InlineCode, 
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
@@ -111,7 +111,7 @@ pub enum TokenKind {
   Percent, Period, Plus, PromptSigil,
   Question, QuestionSigil, Quote, QuoteSigil,
   RightAngle, RightBrace, RightBracket, RightParenthesis,
-  SectionSigil, Semicolon, Space, Slash, String, StrikeSigil, StrongSigil, SuccessSigil, SynthOperator,
+  SectionSigil, Semicolon, Space, SpreadOperator, Slash, String, StrikeSigil, StrongSigil, SuccessSigil, SynthOperator,
   Tab, Text, Tilde, TildeCodeBlockSigil, Title, TransitionOperator, True,
   UnderlineSigil, Underscore,
   WarningSigil,
@@ -197,7 +197,9 @@ impl Program {
   pub fn table_of_contents(&self) -> TableOfContents {
     let mut sections = vec![];
     for s in &self.body.sections {
-      sections.push(s.table_of_contents());
+      if s.subtitle.is_some() {
+        sections.push(s.table_of_contents());
+      }
     }
     TableOfContents {
       title: self.title.clone(),
@@ -305,7 +307,13 @@ fn pretty_print(&self) -> String {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Title {
   pub text: Token,
-  pub byline: Option<Paragraph>,
+  pub author: Option<Paragraph>,
+  pub date: Option<Paragraph>,
+  pub hero: Option<SectionElement>,
+  pub kicker: Option<Paragraph>,
+  pub summary: Option<Paragraph>,
+  pub next: Option<Paragraph>,
+  pub previous: Option<Paragraph>,
 }
 
 impl Title {
@@ -496,6 +504,7 @@ pub struct BlockConfig {
   pub namespace: u64,
   pub disabled: bool,
   pub hidden: bool,
+  pub output: bool,
 }
 
 pub type Footnote = (Token, Vec<Paragraph>);
@@ -1006,7 +1015,15 @@ impl PatternArray {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct PatternArraySpread {
+  pub kind: PatternArraySpreadKind,
   pub binding: Option<Box<Pattern>>,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum PatternArraySpreadKind {
+  Spread,
+  Rest,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -1723,7 +1740,7 @@ impl Expression {
       Expression::SetComprehension(sc) => sc.tokens(),
       Expression::FsmPipe(pipe) => pipe.tokens(),
       Expression::MatrixComprehension(mc) => mc.tokens(),
-      _ => todo!(),
+      Expression::FunctionCall(func_call) => func_call.tokens(),
     }
   }
 }

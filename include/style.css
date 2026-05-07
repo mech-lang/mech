@@ -14,6 +14,9 @@
   --main-color-high: hsl(42, 89%, 80%);
   --main-color-mid:  hsl(42, 89%, 70%);
   --main-color-low:  hsl(42, 89%, 60%);
+  --atom-color-high: hsl(33, 43%, 80%);
+  --atom-color-mid: hsl(33, 43%, 70%);
+  --atom-color-low: hsl(33, 43%, 60%);
   --out-bracket-color: hsl(288, 30%, 85%);
   --sidebar-width: 300px;
   --text-color-light: hsl(40, 100%, 95%);
@@ -24,7 +27,7 @@
   --code-background-color: #090d11;
   --code-output-background-color: #020303;
   --var-name-color: hsl(290, 45%, 90%);
-  --field-name-color: #efd8aa;
+  --field-name-color: #63abb7;
   --kind-annotation-color: #f09fca;
   --kind-annotation-color-dark: #d574a8;
   --body-background-color: hsl(216, 28%, 7%);
@@ -34,6 +37,10 @@
   --mechdown-table-row-hover-background-color: hsl(222, 25%, 17%);
   --h2-underline-color: #343b46;
   --toc-heading-number-color: rgba(255, 255, 255, 0.55);
+  --toc-accent: hsl(308, 42%, 69%);
+  --toc-accent-soft: hsl(308, 42%, 59%);
+  --toc-text-secondary: hsl(308, 17%, 73%);
+  --toc-border: hsl(308, 17%, 73%);
   --title-underline-color: hsl(42, 89%, 70%);
   --callout-background-color: #1f2533;
   --warning-color: hsl(20, 100%, 75%);
@@ -45,6 +52,7 @@
   --code-namespace-label-color: #f5a7d3;
   --pattern-color: hsl(133, 33%, 70%);
   --pattern-parent-color: hsl(133, 33%, 70%);
+  --logo-color: rgb(246,192,78);
 }
 
 html {
@@ -54,8 +62,8 @@ html {
 body {
     font-family: 'Lato', sans-serif;
     background-color: var(--body-background-color);
-    font-weight:300;
     margin: 0;
+    font-weight: 400;
     padding: 0;
     font-size: 1rem;
 }
@@ -81,8 +89,48 @@ body {
     margin-top: 50px;
 }
 
-.mech-toc.hidden {
-  display: none;
+.mech-toc {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    max-height: 100vh;
+    overflow: auto;
+    padding: 20px 16px;
+}
+
+.mech-toc ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mech-toc li {
+    margin-bottom: 8px;
+}
+
+.mech-toc a {
+    display: block;
+    position: relative;
+    color: var(--toc-text-secondary);
+    text-decoration: none;
+    padding-left: 10px;
+    line-height: 1.4;
+}
+
+.mech-toc a.active,
+.mech-toc a.active-path {
+    color: var(--toc-accent);
+    font-weight: 650;
+}
+
+.mech-toc > ul > li > a.active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--toc-accent-soft);
 }
 
 .mech-toc.hidden ~ .mech-content {
@@ -92,21 +140,6 @@ body {
 .super.compact .mech-content {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;
-}
-
-.mech-toc {
-    max-width: 250px;
-    position: absolute;
-    counter-reset: h2;
-    color: var(--text-color);
-    overflow-y: auto;
-    overflow-x: hidden;
-    top: 150px;
-    margin-left: calc(50% - 350px - 250px - 150px);
-    overflow: auto;
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;     /* Firefox */         
-    height: calc(100vh - 60px);   
 }
 
 .mech-program {
@@ -183,7 +216,7 @@ body {
 }
 
 .repl-result .mech-output-value {
-    margin-top: 10px;
+    margin-top: 10px !important;
 }
 
 .repl-result .mech-output-value {
@@ -231,126 +264,6 @@ body {
     pointer-events: none;
 }
 
-.mech-toc-sections {
-
-}
-
-.mech-toc h2 {
-    line-height: 23px;
-}
-
-.mech-toc::-webkit-scrollbar {
-  display: none;               /* Chrome, Safari, Edge */
-}
-
-.mech-toc h1 {
-    visibility: hidden;
-    font-size: 1rem;
-}
-
-.mech-toc h2 {
-    font-size: 1rem;
-    padding-left: 13px;
-}
-
-h2.toc::before {
-    padding-right: 3px;
-}
-
-.mech-toc h2 a {
-    color: var(--text-color);
-    text-decoration: none;
-}
-
-.mech-toc h2:hover::before {
-    color: var(--contrast-color-low);
-}
-
-.mech-toc h2 a:hover {
-    color: var(--contrast-color-low);
-    text-decoration: none;
-}
-
-h3.toc::before {
-    font-size: 1rem;
-    padding-right: 3px;
-    color: var(--toc-heading-number-color);
-}
-.mech-toc h3 {
-    line-height: 23px;
-}
-
-.mech-toc h3 {
-    font-size: 1rem;
-    padding-left: 30px;
-}
-
-.mech-toc h3 a {
-    color: var(--text-color);
-    text-decoration: none;
-}
-
-.mech-toc h3:hover::before {
-    color: var(--contrast-color-low);
-}
-
-.mech-toc h3 a:hover {
-    color: var(--contrast-color-low);
-    text-decoration: none;
-}
-
-h4.toc::before {
-    font-size: 1rem;
-    padding-right: 3px;
-    color: var(--toc-heading-number-color);
-}
-.mech-toc h4 {
-    line-height: 23px;
-    font-size: 1rem;
-    padding-left: 60px;
-    margin: 10px;
-}
-
-.mech-toc h4 a {
-    color: var(--text-color);
-    text-decoration: none;
-}
-
-.mech-toc h4:hover::before {
-    color: var(--contrast-color-low);
-}
-
-.mech-toc h4 a:hover {
-    color: var(--contrast-color-low);
-    text-decoration: none;
-}
-
-h5.toc::before {
-    font-size: 1rem;
-    padding-right: 3px;
-    color: var(--toc-heading-number-color);
-}
-.mech-toc h5 {
-    line-height: 23px;
-    font-size: 1rem;
-    padding-left: 90px;
-    margin: 10px;
-}
-
-.mech-toc h5 a {
-    color: var(--text-color);
-    text-decoration: none;
-}
-
-.mech-toc h5:hover::before {
-    color: var(--contrast-color-low);
-}
-
-.mech-toc h5 a:hover {
-    color: var(--contrast-color-low);
-    text-decoration: none;
-}
-
 .mech-map {
     color: var(--op-color);
 }
@@ -377,6 +290,30 @@ h5.toc::before {
 
 .mech-matrix {
     display: inline-flex;
+}
+
+.mech-comp-bar {
+    color: var(--op-color);
+}
+
+.mech-generator-arrow {
+    color: var(--op-color);
+}
+
+.mech-matrix-comprehension {
+    display: inline-flex;
+    align-items: flex-end;
+    white-space: nowrap;
+    color: var(--op-color);
+}
+
+.mech-matrix-comprehension .mech-comp-expr,
+.mech-matrix-comprehension .mech-comp-quals {
+    display: inline-flex;
+}
+
+.mech-matrix-comprehension .mech-bracket.end {
+    margin-left: 0;
 }
 
 .mech-bracket.end {
@@ -456,7 +393,8 @@ h5.toc::before {
 }
 
 .mech-program h1 {
-    width: 900px;
+    width: 100%;
+    max-width: 900px;
     font-family: 'FiraCodeRegular', monospace;
     padding-bottom: 10px;
     color: var(--text-color);
@@ -465,7 +403,7 @@ h5.toc::before {
     font-weight: bold;
     text-align: center;
     margin-bottom: 16px;
-    margin-left: -100px;
+    margin-left: 0px;
     position: relative; 
 }
 
@@ -497,7 +435,8 @@ h5.toc::before {
 }
 
 .mech-program h2 {
-    width: 850px;
+    width: 100%;
+    max-width: 850px;
     font-family: 'FiraCodeRegular', monospace;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--h2-underline-color);
@@ -506,7 +445,7 @@ h5.toc::before {
     letter-spacing: 2px;
     margin-bottom: 30px;
     margin-top: 80px;
-    margin-left: -73px;
+    margin-left: 0px;
 }
 
 .mech-program h3 a {
@@ -551,15 +490,6 @@ h5.toc::before {
     font-weight: bold;
     margin-bottom: 10px;
     letter-spacing: 1px;
-}
-
-
-h4.toc {
-    display: none;
-}
-
-h5.toc {
-    display: none;
 }
 
 .mech-variable-mutable {
@@ -706,9 +636,7 @@ h5.toc {
 .mech-code {
     display: flex;
     flex-direction: row;
-    align-items: center;
     gap: 20px;
-    line-height: 24px;
 }
 
 .mech-match-op {
@@ -844,12 +772,25 @@ code {
     box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
 }
 
+.mech-inline-mech-code-formatted .mech-code-block {
+    background-color: var(--code-background-color);
+    border-radius: 5px 5px 5px 5px !important;
+    border-bottom: 1px solid var(--code-border-color) !important;
+    margin-bottom: 0px;
+    box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
+}
+
 .mech-fenced-mech-block .mech-code-block {
     background-color: var(--code-background-color);
     border-radius: 10px 10px 0px 0px;  
     border-bottom: 0px solid var(--code-border-color);
     margin-bottom: 0px;
     box-shadow: none;
+}
+
+.mech-fenced-mech-block.no-output .mech-code-block {
+    border-radius: 10px;
+    border-bottom: 1px solid var(--code-border-color);
 }
 
 .mech-inline-mech-code {
@@ -882,6 +823,7 @@ code {
 .mech-paragraph {
     color: var(--text-color-light);
     line-height: 25px;
+    font-weight: 400;
 }
 
 .mech-paragraph a {
@@ -1073,14 +1015,23 @@ a.mech-hyperlink:hover .mech-inline-code {
 
 .mech-state-definition {
     display: inline-flex;
+    color: var(--atom-color-mid);
+}
+
+.mech-state-definition .mech-left-paren {
+    color: var(--atom-color-low);
+}
+
+.mech-state-definition .mech-right-paren {
+    color: var(--atom-color-low);
 }
 
 .mech-match-arms {
     display: flex;
     flex-direction: column;
-    margin-left: -140px;
-    line-height: 18px;
+    margin-left: -6ch;
     color: var(--op-color);
+    line-height: 18px;
 }
 
 .mech-fsm-arms {
@@ -1181,7 +1132,7 @@ a.mech-hyperlink:hover .mech-inline-code {
 }
 
 .mech-state-name {
-    color: #dbc3a5;
+    color: var(--atom-color-mid);
 }
 
 .mech-code-block .mech-code:first-child .mech-comment {
@@ -1286,7 +1237,7 @@ ol {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 20px auto;
+    padding-bottom: 10px;
 }
 
 .mech-image {
@@ -1305,7 +1256,8 @@ ol {
 }
 
 .mech-float .mech-figure-caption {
-    width: 350px;
+    width: 100%;
+    max-width: none;
 }
 
 .mech-figure-caption {
@@ -1321,8 +1273,28 @@ ol {
 }
 
 .mech-float .mech-figure {
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin: 0;
+    align-items: stretch;
+}
+
+.mech-float .mech-image {
+    max-width: 100%;
+}
+
+.mech-float .mech-figure-caption {
+    margin-top: 0.5em;
+    line-height: 1.3;
+    display: block;
+}
+
+.mech-float .mech-figure-label {
+    display: inline;
+    min-width: 0;
+    margin-right: 0.35em;
+}
+
+.mech-figure-caption .mech-paragraph {
+    color: var(--text-color-light)
 }
 
 .mech-figure-caption p {
@@ -1388,6 +1360,8 @@ ol {
 }
 
 .mech-figure-table-caption .mech-figure-label {
+    font-style: italic;
+    font-size: 12pt;
     display: inline;
     min-width: 0;
     text-align: left;
@@ -1679,6 +1653,103 @@ li p {
     font-size: 12pt;
 }
 
+.mech-runtime-error {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid color-mix(in srgb, var(--error-color) 65%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--code-background-color) 90%, var(--error-color) 10%);
+    padding: 14px 16px;
+    color: var(--text-color);
+    white-space: normal;
+}
+
+.mech-output-value:has(.mech-runtime-error) {
+  padding-left: 0px;
+}
+
+.mech-runtime-error-header {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.mech-runtime-error-header > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.mech-runtime-error-icon {
+    flex: 0 0 22px;
+    width: 22px;
+    height: 22px;
+    background-color: var(--error-color);
+    mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xMiAxNmguMDEiLz48cGF0aCBkPSJNMTIgOHY0Ii8+PHBhdGggZD0iTTE1LjMxMiAyYTIgMiAwIDAgMSAxLjQxNC41ODZsNC42ODggNC42ODhBMiAyIDAgMCAxIDIyIDguNjg4djYuNjI0YTIgMiAwIDAgMS0uNTg2IDEuNDE0bC00LjY4OCA0LjY4OGEyIDIgMCAwIDEtMS40MTQuNTg2SDguNjg4YTIgMiAwIDAgMS0xLjQxNC0uNTg2bC00LjY4OC00LjY4OEEyIDIgMCAwIDEgMiAxNS4zMTJWOC42ODhhMiAyIDAgMCAxIC41ODYtMS40MTRsNC42ODgtNC42ODhBMiAyIDAgMCAxIDguNjg4IDJ6Ii8+PC9zdmc+") center/100% no-repeat;
+    -webkit-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xMiAxNmguMDEiLz48cGF0aCBkPSJNMTIgOHY0Ii8+PHBhdGggZD0iTTE1LjMxMiAyYTIgMiAwIDAgMSAxLjQxNC41ODZsNC42ODggNC42ODhBMiAyIDAgMCAxIDIyIDguNjg4djYuNjI0YTIgMiAwIDAgMS0uNTg2IDEuNDE0bC00LjY4OCA0LjY4OGEyIDIgMCAwIDEtMS40MTQuNTg2SDguNjg4YTIgMiAwIDAgMS0xLjQxNC0uNTg2bC00LjY4OC00LjY4OEEyIDIgMCAwIDEgMiAxNS4zMTJWOC42ODhhMiAyIDAgMCAxIC41ODYtMS40MTRsNC42ODgtNC42ODhBMiAyIDAgMCAxIDguNjg4IDJ6Ii8+PC9zdmc+") center/100% no-repeat;
+}
+
+.mech-runtime-error-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--error-color);
+}
+
+.mech-runtime-error-message {
+    margin-top: 0px;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.mech-runtime-error-meta {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid color-mix(in srgb, var(--error-color) 35%, transparent);
+}
+
+.mech-runtime-error-meta-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+}
+
+.mech-runtime-error-meta-row + .mech-runtime-error-meta-row {
+    margin-top: 4px;
+}
+
+.mech-runtime-error-meta-label {
+    color: var(--text-color-light);
+}
+
+.mech-runtime-error-meta-value {
+    font-family: "Fira Code", "JetBrains Mono", monospace;
+}
+
+.mech-runtime-error-section {
+    margin-top: 12px;
+}
+
+.mech-runtime-error-section-title {
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.mech-runtime-error-list {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.mech-runtime-error-token {
+    font-family: "Fira Code", "JetBrains Mono", monospace;
+}
+
+.mech-runtime-error-token-range {
+    color: var(--text-color-light);
+    font-family: "Fira Code", "JetBrains Mono", monospace;
+}
+
 .mech-success-block {
     width: 80%;
     background-color: var(--callout-background-color);
@@ -1828,6 +1899,10 @@ li p {
     color: #ada594;
 }
 
+.mech-footnote-body .mech-paragraph + .mech-paragraph {
+    margin-top: 10px !important;
+}
+
 .mech-footnote-id {
     color: var(--main-color-mid);
     font-weight: bold;
@@ -1902,18 +1977,9 @@ a.mech-footnote-reference {
     counter-reset: h5;
 }
 
-.mech-toc h2 {
-    counter-reset: h3;
+.mech-content h5 {
+    counter-reset: h6;
 }
-
-.mech-toc h3 {
-    counter-reset: h4;
-}
-
-.mech-toc h4 {
-    counter-reset: h5;
-}
-
 
 h2::before {
     color: var(--main-color-mid);
@@ -1939,73 +2005,35 @@ h5::before {
     content: counter(h2) "." counter(h3) "." counter(h4) "." counter(h5) " ";
 }
 
-
-.mech-program-subtitle.toc.active::before{
-    color: var(--contrast-color-low);
-}
-
-.mech-program-subtitle.toc.active a:hover {
-    color: var(--contrast-color-low);
-}
-
-.mech-program-subtitle.toc.active a {
-    color: var(--contrast-color-high);
-}
-
-.mech-program-section.toc.active{
-    padding-top: 10px;
-    padding-bottom: 10px;
-    border-left: 4px solid var(--contrast-color-high);
+h6::before {
+    color: var(--main-color-mid);
+    counter-increment: h6;
+    content: counter(h2) "." counter(h3) "." counter(h4) "." counter(h5) "." counter(h6) " ";
 }
 
 h2:hover a {
     color: var(--main-color-low);
 }
 
-.toc h2:hover a {
-    color: var(--contrast-color-low);
-}
-
 h3:hover a {
     color: var(--main-color-low);
-}
-
-.toc h3:hover a {
-    color: var(--contrast-color-low);
 }
 
 h4:hover a {
     color: var(--main-color-low);
 }
 
-.toc h4:hover a {
-    color: var(--contrast-color-low);
-}
-
 h5:hover a {
     color: var(--main-color-low);
-}
-
-.toc h5:hover a {
-    color: var(--contrast-color-low);
 }
 
 h6:hover a {
     color: var(--main-color-low);
 }
 
-.toc h6:hover a {
-    color: var(--contrast-color-low);
-}
-
 .mech-program-section {
     padding-left: 10px;
     padding-right: 10px;
-}
-
-.mech-program-subtitle.toc.visible {
-    display: block;
-    visibility: visible;
 }
 
 .mech-equation {
@@ -2070,9 +2098,24 @@ mark {
     transition: color 0.2s ease;
 }
 
-.mech-citation-link:hover {
+.mech-citation-link-icon {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
     color: var(--main-color-low);
-    text-decoration: underline;
+    background-color: currentColor;
+    -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE1IDNoNnY2Ii8+PHBhdGggZD0iTTEwIDE0IDIxIDMiLz48cGF0aCBkPSJNMTggMTN2NmEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMlY4YTIgMiAwIDAgMSAyLTJoNiIvPjwvc3ZnPg==");
+    mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE1IDNoNnY2Ii8+PHBhdGggZD0iTTEwIDE0IDIxIDMiLz48cGF0aCBkPSJNMTggMTN2NmEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMlY4YTIgMiAwIDAgMSAyLTJoNiIvPjwvc3ZnPg==");
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-position: center;
+    mask-position: center;
+}
+
+.mech-citation-link-icon:hover {
+    color: var(--main-color-high);
 }
 
 .mech-repl {
@@ -2097,13 +2140,11 @@ mark {
 .mech-float.left {
     float: left;
     margin-right: 20px;
-    margin-left: -73px;
 }
 
 .mech-float.right {
     float: right;
     margin-left: 20px;
-    margin-right: -73px;
 }
 
 .mech-output-value .mech-matrix {
@@ -2209,9 +2250,10 @@ mark {
 
 .mech-text-logo {
     white-space: pre;
-    color: rgb(246,192,78);
+    color: var(--logo-color);
     text-align: center;
     margin: 20px auto;
+    line-height: 1.1em;
 }
 
 #mech-output a {
@@ -2407,19 +2449,18 @@ mark {
     }    
     .mech-figure-label {
         color: var(--main-color-mid); 
-        font-size: 1rem;
+        font-size: 12pt;
         min-width: 60px;
         text-align: right;
     }
-    .mech-float.left {
-        float: left;
-        margin-right: 20px;
-        margin-left: 0px;
-    }
+    .mech-float.left,
     .mech-float.right {
-        float: right;
-        margin-left: 20px;
-        margin-right: 0px;
+        float: none;
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        margin: 12px 0;
+        clear: both;
     }
 }
 
@@ -2703,15 +2744,39 @@ mark {
 }
 
 .mech-pattern .mech-atom-name {
-    color: var(--pattern-color);
+    color: var(--atom-color-mid);
+}
+
+.mech-atom-name {
+    color: var(--atom-color-mid);
+}
+
+.mech-enum-variant-name {
+    color: var(--atom-color-mid);
+}
+
+.mech-enum-variant-payload {
+    color: var(--atom-color-low);
 }
 
 .mech-pattern .mech-tuple-struct {
     color: var(--pattern-color);
 }
 
-.mech-pattern .mech-tuple-struct-name {
-    color: var(--pattern-color);
+.mech-tuple-struct .mech-right-paren {
+    color: var(--atom-color-low);
+}
+
+.mech-tuple-struct .mech-left-paren {
+    color: var(--atom-color-low);
+}
+
+.mech-tuple-struct .mech-tuple-struct-sigil {
+    color: var(--atom-color-low);
+}
+
+.mech-tuple-struct .mech-tuple-struct-name {
+    color: var(--atom-color-mid);
 }
 
 .mech-tuple-struct {

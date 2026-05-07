@@ -12,7 +12,7 @@ Implementation: started 2018
 (1.2) Stage 2 - Beta `v0.1.0` - `v0.4+` (???)
 
 Started: December 2022
-Currently: `v0.3.4` (Spring 2026)
+Currently: `v0.3.5` (Spring 2026)
 
 - `v0.1` proof of concept `Concluded 2023`
 - `v0.2` data specification    `Concluded 2025`
@@ -125,10 +125,74 @@ Version `v0.3` incorporates all the features of `v0.2`, in addition to the follo
 -(🐣) distributed programs
 -(🐣) concurrent programming
 
-3. Roadmap History
+3. Next Steps for v0.3
+--------------------------------------------------------------------------------
+
+(3.1) Enums, Tagged Unions, and Pattern Matching
+
+The current implementation of enums, tagged unions, and pattern matching is just a starting point, and we have a number of improvements planned for the future, including:
+
+- String patterns, which would allow you to match on string prefixes and substrings.
+- Table patterns, which would allow you to match on the presence or absence of keys in a table, and to destructure values from tables.
+- Set patterns, which would allow you to match on element membership in a set, and to destructure values from sets.
+- Map patterns, which would allow you to match on the presence or absence of keys in a map, or to match maps with particular key-value pairs.
+
+(3.2) Functions
+
+The current implementation of functions is just a starting point, and we have a number of improvements planned for the future, including:
+
+- Named arguments: allowing you to call functions with named parameters for improved readability and flexibility.
+- Function overloading: allowing you to define multiple functions with the same name but different parameter types or counts, and having the compiler resolve which one to call based on the arguments.
+- Where clauses: allowing you to add additional guards and constraints to function definitions for more complex pattern matching.
+
+
+(3.3) State Machines
+
+State machines are probably the lest developed area of the language right now, so there's a lot left to do. The main thing we'll look at next is adding support for asynchronous state machines, which would allow you to model processes that interact with external systems, or that have some notion of time or waiting. This would involve adding new syntax for defining asynchronous transitions (we have `~>` planned for that), and new semantics for how those transitions are executed and traced.
+
+
+(3.4) Comprehensions
+
+In a future release, we plan on adding support for record and table comprehensions, which would allow you to generate new records and tables from existing ones using a similar syntax.
+
+(3.5) Table Joins
+
+The current implementation of table joins is just a starting point, and we have a number of improvements planned for the future, including:
+
+- Joining on multiple keys, which would allow you to perform more complex joins based on multiple columns.
+- Non-equi joins, which would allow you to join tables based on conditions other than equality, such as greater than or less than.
+
+(3.6) Mechdown
+
+In a future release next release you will be able to embed Mech within an HTML document and feed that directly into the Mechdown compiler, which will allow you to use Mech components and features within your own custom web pages. Maybe something like this:
+
+```html
+<mech>
+  years := [2010 2025 2020 2025]
+  population := [2.5 2.6 2.7 2.8 2.9]
+  population-growth-chart := chart/line{
+    title: "Population Growth"
+    x-label: "Year"
+    y-label: "Population (billions)"
+    x: [2010, 2025, 2020, 2025]
+    y: [2.5, 2.6, 2.7, 2.8, 2.9]
+  }
+</mech>
+<html>
+  <body>
+    <h1>Population Growth</h1>
+    <p>Here is a chart about population growth over the years:</p>
+    {{VAR:population-growth-chart}}
+  </body>
+</html>
+```
+
+It would work by first compiling the Mech code to generate the chart component, and then replacing the `{{VAR:population-growth-chart}}` placeholder in the HTML with the rendered output of that component, which could be an SVG or a canvas element or something like that. This will allow you to use Mech and JavaScript together in a more seamless way for building interactive web content. Or if you want to, completely replace JavaScript with Mech for building interactive web content.
+
+4. Roadmap History
 -------------------------------------------------------------------------------
 
-(3.1) Version `v0.0.6-alpha` (unreleased)
+(4.1) Version `v0.0.6-alpha` (unreleased)
 
 -[x] Testing
 -[x] Machines 
@@ -152,7 +216,7 @@ Version `v0.3` incorporates all the features of `v0.2`, in addition to the follo
   -[x] Mech Compiler
   -[x] Table
 
-(3.2) Version `v0.1.0` (December 2022)
+(4.2) Version `v0.1.0` (December 2022)
 
 -[x] User defined functions
 -[x] Errors
@@ -169,7 +233,7 @@ Version `v0.3` incorporates all the features of `v0.2`, in addition to the follo
   -[x] Matrix
   -[x] GUI
 
-(3.3) Version `v0.1.1` (Spring 2023)
+(4.3) Version `v0.1.1` (Spring 2023)
 
 - Core
   -[x] Automatic differentiation

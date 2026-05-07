@@ -14,8 +14,49 @@ pub fn comment_sigil(input: ParseString) -> ParseResult<()> {
 pub fn comment(input: ParseString) -> ParseResult<Comment> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = comment_sigil(input)?;
-  let (input, p) = paragraph(input)?;
-  Ok((input, Comment{paragraph: p}))
+  let (input, line_token) = skip_till_eol(input)?;
+  let comment_text = line_token.to_string();
+
+  if comment_text.is_empty() {
+    return Ok((input, Comment { paragraph: Paragraph { elements: vec![], error_range: None } }));
+  }
+
+  let line_graphemes = graphemes::init_source(&comment_text);
+  let line_input = ParseString::new(&line_graphemes);
+
+  match inline_paragraph(line_input) {
+    Ok((remaining, paragraph)) => {
+      // A rich comment must parse the full line.
+      if new_line(remaining.clone()).is_ok() {
+        Ok((input, Comment { paragraph }))
+      } else {
+        let mut recovered_input = input;
+        let start = line_token.src_range.start;
+        let end = line_token.src_range.end;
+        recovered_input.error_log.push((
+          SourceRange { start, end },
+          ParseErrorDetail {
+            message: "Invalid rich comment syntax, preserving raw comment text",
+            annotation_rngs: vec![],
+          },
+        ));
+        Ok((recovered_input, Comment { paragraph: Paragraph::from_tokens(vec![line_token]) }))
+      }
+    }
+    Err(_) => {
+      let mut recovered_input = input;
+      let start = line_token.src_range.start;
+      let end = line_token.src_range.end;
+      recovered_input.error_log.push((
+        SourceRange { start, end },
+        ParseErrorDetail {
+          message: "Invalid rich comment syntax, preserving raw comment text",
+          annotation_rngs: vec![],
+        },
+      ));
+      Ok((recovered_input, Comment { paragraph: Paragraph::from_tokens(vec![line_token]) }))
+    }
+  }
 }
 
 // op-assign-operator := add-assign-operator | sub-assign-operator | mul-assign-operator | div-assign-operator | exp-assign-operator ;

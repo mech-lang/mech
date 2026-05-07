@@ -1,6 +1,6 @@
 [package]
 name = "mech"
-version = "0.3.4"
+version = "0.3.5"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Mech is a programming language for building reactive systems like robots, games, and animations."
 documentation = "https://docs.mech-lang.org"
@@ -21,6 +21,9 @@ maintenance = { status = "actively-developed" }
 name = "mechc"
 path = "src/bin/mechc.rs"
 required-features = ["compiler"]
+
+[profile.release]
+debug = false
 
 [features]
 no_std = ["mech-core/no_std", "mech-interpreter/no_std", "mech-syntax/no_std"]
@@ -170,9 +173,9 @@ matrix_vertcat = ["matrix"]
 nalgebra = "0.34.1"
 
 [dependencies]
-mech-core        = { version = "0.3.4", default-features = false }
-mech-syntax      = { version = "0.3.4", default-features = false }
-mech-interpreter = { version = "0.3.4", default-features = false }
+mech-core        = { version = "0.3.5", default-features = false }
+mech-syntax      = { version = "0.3.5", default-features = false }
+mech-interpreter = { version = "0.3.5", default-features = false }
 
 sevenz-rust = "0.6.1"
 colored = "3.1.1"
@@ -237,13 +240,13 @@ mech-set = { path = 'machines/set' }
 mech-string = { path = 'machines/string' }
 
 [patch.'https://gitlab.com/mech-lang/core']
-mech-core = { path = 'src/core', version = '0.3.4' }
+mech-core = { path = 'src/core', version = '0.3.5' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
-mech-syntax = { path = 'src/syntax', version = '0.3.4' }
+mech-syntax = { path = 'src/syntax', version = '0.3.5' }
 
 [patch.'https://gitlab.com/mech-lang/interpreter']
-mech-interpreter = { path = 'src/interpreter', version = '0.3.4' }
+mech-interpreter = { path = 'src/interpreter', version = '0.3.5' }
 
 #[patch.'https://gitlab.com/mech-lang/wasm']
 #mech-wasm = { path = 'src/wasm', version = '0.2.44' }

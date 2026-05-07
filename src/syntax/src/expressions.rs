@@ -678,6 +678,12 @@ pub fn matrix_comprehension(input: ParseString) -> ParseResult<MatrixComprehensi
   let (input, _) = bar(input)?;
   let (input, _) = space_tab0(input)?;
   let (input, quals) = separated_list1(list_separator, comprehension_qualifier)(input)?;
+  if !quals.iter().any(|q| matches!(q, ComprehensionQualifier::Generator(_) | ComprehensionQualifier::Let(_))) {
+    return Err(nom::Err::Error(ParseError::new(
+      input,
+      "Matrix comprehension requires at least one generator (<-) or let (:=) qualifier",
+    )));
+  }
   let (input, _) = space_tab0(input)?;
   let (input, _) = right_bracket(input)?;
   Ok((input, MatrixComprehension{ expression: expr, qualifiers: quals }))
@@ -701,7 +707,7 @@ pub fn comprehension_qualifier(input: ParseString) -> ParseResult<ComprehensionQ
 pub fn generator(input: ParseString) -> ParseResult<ComprehensionQualifier> {
   let (input, ptrn) = pattern(input)?;
   let (input, _) = space_tab0(input)?;
-  let (input, _) = cut(tag("<-"))(input)?;
+  let (input, _) = cut(alt((generator_arrow, generator_arrow_u)))(input)?;
   let (input, _) = space_tab0(input)?;
   let (input, expr) = expression(input)?;
   Ok((input, ComprehensionQualifier::Generator((ptrn, expr))))

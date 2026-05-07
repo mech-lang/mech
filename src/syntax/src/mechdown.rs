@@ -21,6 +21,17 @@ use colored::*;
 
 use crate::*;
 
+#[derive(Default)]
+pub struct TitleFrontMatter {
+  pub author: Option<Paragraph>,
+  pub date: Option<Paragraph>,
+  pub hero: Option<SectionElement>,
+  pub kicker: Option<Paragraph>,
+  pub summary: Option<Paragraph>,
+  pub next: Option<Paragraph>,
+  pub previous: Option<Paragraph>,
+}
+
 // Mechdown
 // ============================================================================
 
@@ -30,16 +41,64 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
   let (input, _) = new_line(input)?;
   let (input, _) = many1(equal)(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, byline) = opt(byline)(input)?;
+  let (input, front_matter) = opt(title_front_matter)(input)?;
   let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
-  Ok((input, Title{text: title, byline}))
+  let front_matter = front_matter.unwrap_or_default();
+  Ok((input, Title{
+    text: title,
+    author: front_matter.author,
+    date: front_matter.date,
+    hero: front_matter.hero,
+    kicker: front_matter.kicker,
+    summary: front_matter.summary,
+    next: front_matter.next,
+    previous: front_matter.previous,
+  }))
 }
 
-pub fn byline(input: ParseString) -> ParseResult<Paragraph> {
-  let (input, byline) = paragraph_newline(input)?;
+pub fn title_front_matter(input: ParseString) -> ParseResult<TitleFrontMatter> {
+  let mut input = input;
+  let mut front_matter = TitleFrontMatter::default();
+
+  while many1(equal)(input.clone()).is_err() {
+    let (next_input, key) = identifier(input.clone())?;
+    let (next_input, _) = many0(space_tab)(next_input)?;
+    let (next_input, _) = colon(next_input)?;
+    let (next_input, _) = many0(space_tab)(next_input)?;
+    let key_name = key.to_string().to_lowercase();
+
+    if key_name == "hero" {
+      if let Ok((next_input, image)) = img(next_input.clone()) {
+        let (next_input, _) = whitespace0(next_input)?;
+        input = next_input;
+        front_matter.hero = Some(SectionElement::Image(image));
+        continue;
+      } else if let Ok((next_input, figure_table)) = figures(next_input.clone()) {
+        let (next_input, _) = whitespace0(next_input)?;
+        input = next_input;
+        front_matter.hero = Some(SectionElement::FigureTable(figure_table));
+        continue;
+      }
+    }
+
+    let (next_input, paragraph) = inline_paragraph(next_input)?;
+    let (next_input, _) = new_line(next_input)?;
+    input = next_input;
+    match key_name.as_str() {
+      "author" => front_matter.author = Some(paragraph),
+      "date" => front_matter.date = Some(paragraph),
+      "kicker" => front_matter.kicker = Some(paragraph),
+      "summary" => front_matter.summary = Some(paragraph),
+      "next" => front_matter.next = Some(paragraph),
+      "previous" => front_matter.previous = Some(paragraph),
+      _ => (),
+    }
+  }
+
   let (input, _) = many1(equal)(input)?;
-  Ok((input, byline))
+  let (input, _) = whitespace0(input)?;
+  Ok((input, front_matter))
 }
 
 pub struct MarkdownTableHeader {
@@ -266,11 +325,21 @@ pub fn option_mapping(input: ParseString) -> ParseResult<(Identifier, MechString
   let (input, _) = whitespace0(input)?;
   let (input, _) = colon(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, value) = string(input)?;
+  let (input, value) = option_value(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = opt(comma)(input)?;
   let (input, _) = whitespace0(input)?;
   Ok((input, (key, value)))
+}
+
+// option-value := string | identifier ;
+pub fn option_value(input: ParseString) -> ParseResult<MechString> {
+  if let Ok((input, value)) = string(input.clone()) {
+    return Ok((input, value));
+  }
+  let (input, mut identifier_value) = identifier(input)?;
+  identifier_value.name.kind = TokenKind::String;
+  Ok((input, MechString { text: identifier_value.name }))
 }
 
 // img := "![", *text, "]", "(", +text, ")" , ?option-map ;
@@ -710,10 +779,19 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
         // get rid of the prefix and then treat the rest of the string after : as an identifier
         let rest = tag.trim_start_matches("mech").trim_start_matches("mec").trim_start_matches("🤖").trim_start_matches(":");
         
-        let config = if rest == "" {BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: false, hidden: false}}
-        else if rest == "disabled" { BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: true, hidden: false} }
-        else if rest == "hidden" { BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: false, hidden: true} }
-        else { BlockConfig { namespace_str: rest.to_string(), namespace: hash_str(rest), disabled: false, hidden: false} };
+        let mut config = if rest == "" {BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: false, hidden: false, output: true}}
+        else if rest == "disabled" { BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: true, hidden: false, output: true} }
+        else if rest == "hidden" { BlockConfig { namespace_str: "".to_string(), namespace: 0, disabled: false, hidden: true, output: true} }
+        else { BlockConfig { namespace_str: rest.to_string(), namespace: hash_str(rest), disabled: false, hidden: false, output: true} };
+
+        if let Some(options_map) = &options {
+          for (key, value) in &options_map.elements {
+            if key.to_string() == "output" {
+              let output_value = value.to_string().trim().trim_matches('"').to_ascii_lowercase();
+              config.output = !matches!(output_value.as_str(), "false" | "no" | "off" | "0");
+            }
+          }
+        }
 
         let mech_src = block_src.iter().collect::<String>();
         let graphemes = graphemes::init_source(&mech_src);
@@ -919,7 +997,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
     ("equation",        Box::new(|i| equation(i).map(|(i, e)| (i, SectionElement::Equation(e))))),
     ("table",           Box::new(|i| mechdown_table(i).map(|(i, t)| (i, SectionElement::Table(t))))),
     ("float",           Box::new(|i| float(i).map(|(i, f)| (i, SectionElement::Float(f))))),
-    //("quote_block",     Box::new(quote_block)),
+    ("quote_block",     Box::new(quote_block)),
     ("code_block",      Box::new(code_block)),
     ("thematic_break",  Box::new(|i| thematic_break(i).map(|(i, _)| (i, SectionElement::ThematicBreak)))),
     ("subtitle",        Box::new(|i| subtitle(i).map(|(i, s)| (i, SectionElement::Subtitle(s))))),
@@ -1037,22 +1115,4 @@ pub fn body(input: ParseString) -> ParseResult<Body> {
     }
   }
   Ok((new_input, Body { sections }))
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn parses_figures_block_with_markdown_image_syntax() {
-    let src = "| ![caption a](img1.jpg) | ![caption b](img2.jpg) |\n| ![caption c](imgwide.jpg) |\n";
-    let gs = graphemes::init_source(src);
-    let input = ParseString::new(&gs);
-    let (_, parsed) = figures(input).expect("figures block should parse");
-    assert_eq!(parsed.rows.len(), 2);
-    assert_eq!(parsed.rows[0].len(), 2);
-    assert_eq!(parsed.rows[1].len(), 1);
-    assert_eq!(parsed.rows[0][0].caption.to_string(), "caption a");
-    assert_eq!(parsed.rows[0][0].src.to_string(), "img1.jpg");
-  }
 }

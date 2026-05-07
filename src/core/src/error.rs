@@ -5,8 +5,6 @@ use std::any::Any;
 // Errors
 // ----------------------------------------------------------------------------
 
-// Defines a struct for errors and an enum which enumerates the error types
-
 type Rows = usize;
 type Cols = usize;
 
@@ -216,6 +214,91 @@ impl MechError {
   pub fn boxed(self) -> Box<Self> {
     Box::new(self)
   }
+
+  #[cfg(feature = "pretty_print")]
+  pub fn to_html(&self) -> String {
+    fn escape_html(input: &str) -> String {
+      input
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+    }
+
+    let source_range = self
+      .program_range
+      .clone()
+      .or_else(|| self.tokens.first().map(|token| token.src_range.clone()));
+
+    let token_html = if self.tokens.is_empty() {
+      String::new()
+    } else {
+      let token_list = self
+        .tokens
+        .iter()
+        .map(|token| format!(
+          "<li><span class=\"mech-runtime-error-token\">{}</span> <span class=\"mech-runtime-error-token-range\">[{}:{}, {}:{})</span></li>",
+          escape_html(&token.to_string()),
+          token.src_range.start.row,
+          token.src_range.start.col,
+          token.src_range.end.row,
+          token.src_range.end.col
+        ))
+        .collect::<Vec<String>>()
+        .join("");
+      format!(
+        "<div class=\"mech-runtime-error-section\"><div class=\"mech-runtime-error-section-title\">Source tokens</div><ul class=\"mech-runtime-error-list\">{}</ul></div>",
+        token_list
+      )
+    };
+
+    let mut causes = vec![];
+    let mut current = &self.source;
+    while let Some(err) = current {
+      causes.push(format!(
+        "<li>{}</li>",
+        escape_html(&format!("{}: {}", err.kind_name(), err.display_message()))
+      ));
+      current = &err.source;
+    }
+    let causes_html = if causes.is_empty() {
+      String::new()
+    } else {
+      format!(
+        "<div class=\"mech-runtime-error-section\"><div class=\"mech-runtime-error-section-title\">Caused by</div><ul class=\"mech-runtime-error-list\">{}</ul></div>",
+        causes.join("")
+      )
+    };
+
+    let compiler_location_html = match &self.compiler_location {
+      Some(loc) => format!(
+        "<div class=\"mech-runtime-error-meta-row\"><span class=\"mech-runtime-error-meta-label\">Compiler location</span><span class=\"mech-runtime-error-meta-value\">{}:{}</span></div>",
+        escape_html(loc.file),
+        loc.line
+      ),
+      None => String::new(),
+    };
+
+    format!(
+      "<div class=\"mech-runtime-error\">
+        <div class=\"mech-runtime-error-header\">
+          <span class=\"mech-runtime-error-icon\" aria-hidden=\"true\"></span>
+          <div>
+            <div class=\"mech-runtime-error-title\">{}</div>
+            <div class=\"mech-runtime-error-message\">{}</div>
+          </div>
+        </div>
+      <div class=\"mech-runtime-error-meta\">{}{}</div>
+      {}
+      </div>",
+      escape_html(&self.kind_name()),
+      escape_html(&self.display_message()),
+      token_html,
+      compiler_location_html,
+      causes_html
+    )
+  }
 }
 
 #[derive(Debug, Clone)]
@@ -293,14 +376,3 @@ impl MechErrorKind for IoErrorWrapper {
     format!("IO error: {}", self.msg)
   }
 }
-
-/*
-impl fmt::Debug for MechErrorKind {
-  #[inline]
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match self {
-      _ => write!(f,"No Format")?;
-    }
-    Ok(())
-  }
-}*/

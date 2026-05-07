@@ -200,7 +200,7 @@ pub fn save_to_file(mut path: PathBuf, content: &str) -> MResult<()> {
     path.push("output.html");
   }
 
-  print!("{} Saving file to {}...", "[Save]".truecolor(153,221,85), path.display());
+  print!("{} Saving file to {}…", "[Save]".truecolor(153,221,85), path.display());
   stdout().flush()?;
 
   if let Some(parent) = path.parent() {

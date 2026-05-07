@@ -56,6 +56,39 @@ static STYLESHEET: &str = include_str!("../../include/style.css");
 #[cfg(not(has_file_stylesheet))]
 static STYLESHEET: &str = "No Embedded Stylesheet";
 
+#[derive(Debug, Clone)]
+pub struct Utf8ConversionError {
+  pub source_error: String
+}
+impl MechErrorKind for Utf8ConversionError {
+  fn name(&self) -> &str {
+    "Utf8ConversionError"
+  }
+  fn message(&self) -> String {
+    format!("Failed to convert bytes into UTF-8 string: {}", self.source_error)
+  }
+}
+
+async fn load_stylesheets(paths: &[String], fallback_url: &str) -> Result<String, MechError> {
+  if paths.is_empty() {
+    let stylesheet = read_or_download("", fallback_url, Some(STYLESHEET.as_bytes())).await?;
+    return String::from_utf8(stylesheet)
+      .map_err(|e| MechError::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc());
+  }
+
+  let mut combined = String::new();
+  for path in paths {
+    let stylesheet = read_or_download(path, fallback_url, Some(STYLESHEET.as_bytes())).await?;
+    let stylesheet_str = String::from_utf8(stylesheet)
+      .map_err(|e| MechError::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
+    if !combined.is_empty() {
+      combined.push('\n');
+    }
+    combined.push_str(&stylesheet_str);
+  }
+  Ok(combined)
+}
+
 #[tokio::main]
 async fn main() -> Result<(), MechError> {
   /*panic::set_hook(Box::new(|panic_info| {
@@ -134,6 +167,8 @@ async fn main() -> Result<(), MechError> {
         .short('s')
         .long("stylesheet")
         .value_name("STYLESHEET")
+        .num_args(1..)
+        .action(ArgAction::Append)
         .help("Sets the stylesheet for the HTML output"))
       .arg(Arg::new("shim")
         .short('m')
@@ -177,6 +212,8 @@ async fn main() -> Result<(), MechError> {
         .short('s')
         .long("stylesheet")
         .value_name("STYLESHEET")
+        .num_args(1..)
+        .action(ArgAction::Append)
         .help("Sets the stylesheet for the HTML output"))
       .arg(Arg::new("shim")
         .short('m')
@@ -236,7 +273,9 @@ async fn main() -> Result<(), MechError> {
     let address = matches.get_one::<String>("address").cloned().unwrap_or("127.0.0.1".to_string());
     let full_address: String = format!("{}:{}",address,port);
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let stylesheet_path = matches.get_one::<String>("stylesheet").cloned().unwrap_or("".to_string());
+    let stylesheet_paths: Vec<String> = matches.get_many::<String>("stylesheet").map_or(vec![], |paths| {
+      paths.map(|path| path.to_string()).collect()
+    });
     let wasm_pkg = matches.get_one::<String>("wasm").cloned().unwrap_or("".to_string());
     let shim_path = matches.get_one::<String>("shim").cloned().unwrap_or("".to_string());
 
@@ -244,27 +283,24 @@ async fn main() -> Result<(), MechError> {
     let js_path = format!("{}/mech_wasm.js", wasm_pkg);
 
     // Load stylesheet
-    println!("{} Loading resources...", badge);
-    print!("{} Loading stylesheet...", badge);
-    let stylesheet = read_or_download(&stylesheet_path, &stylesheet_backup_url, Some(STYLESHEET.as_bytes()))
-        .await?;
-    let stylesheet_str = String::from_utf8(stylesheet)
-        .map_err(|e| MechError::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
+    println!("{} Loading resources…", badge);
+    print!("{} Loading stylesheet…", badge);
+    let stylesheet_str = load_stylesheets(&stylesheet_paths, &stylesheet_backup_url).await?;
 
     // Load shim HTML
-    print!("{} Loading HTML shim...", badge);
+    print!("{} Loading HTML shim…", badge);
     let shim = read_or_download(&shim_path, &shim_backup_url, Some(SHIMHTML.as_bytes()))
         .await?;
     let shim_str = String::from_utf8(shim)
         .map_err(|e| MechError::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
 
     // Load WASM
-    print!("{} Loading WASM...", badge);
+    print!("{} Loading WASM…", badge);
     let wasm = read_or_download(&wasm_path, &wasm_backup_url, Some(MECHWASM))
         .await?;
 
     // Load JS shim
-    print!("{} Loading JS...", badge);
+    print!("{} Loading JS…", badge);
     let js = read_or_download(&js_path, &js_backup_url, Some(MECHJS))
         .await?;
 
@@ -344,10 +380,9 @@ async fn main() -> Result<(), MechError> {
   if let Some(matches) = matches.subcommand_matches("format") {
     let badge = "[Mech Formatter]".truecolor(34, 204, 187);
     let html_flag = matches.get_flag("html");
-    let stylesheet_path = matches
-        .get_one::<String>("stylesheet")
-        .cloned()
-        .unwrap_or("".to_string());
+    let stylesheet_paths: Vec<String> = matches
+        .get_many::<String>("stylesheet")
+        .map_or(vec![], |paths| paths.map(|path| path.to_string()).collect());
 
     let shim_path = matches
         .get_one::<String>("shim")
@@ -377,24 +412,14 @@ async fn main() -> Result<(), MechError> {
     }
     let mut mechfs = MechFileSystem::new();
 
-    println!("{} Loading resources...", badge);
+    println!("{} Loading resources…", badge);
 
     // Load stylesheet
-    print!("{} Loading stylesheet...", badge);
-    let stylesheet = read_or_download(&stylesheet_path, &stylesheet_backup_url, Some(STYLESHEET.as_bytes()))
-            .await?;
-    let stylesheet_str = String::from_utf8(stylesheet).map_err(|e| {
-      MechError::new(
-        Utf8ConversionError {
-          source_error: e.to_string(),
-        },
-        None,
-      )
-      .with_compiler_loc()
-    })?;
+    print!("{} Loading stylesheet…", badge);
+    let stylesheet_str = load_stylesheets(&stylesheet_paths, &stylesheet_backup_url).await?;
 
     // Load shim HTML
-    print!("{} Loading HTML shim...", badge);
+    print!("{} Loading HTML shim…", badge);
     let shim = read_or_download(&shim_path, &shim_backup_url, Some(SHIMHTML.as_bytes())).await?;
     let shim_str = String::from_utf8(shim).map_err(|e| {
       MechError::new(

@@ -36,7 +36,7 @@ Records may be written inline or across multiple lines for readability:
 In general, a record has the kind:
 
 ```mech:disabled
-<{field1<kind1>, field2<kind2>,...}>
+<{field1<kind1>, field2<kind2>,…}>
 ```
 
 The kind of a record is determined by the names and kinds of its fields. The kind of a filed is inferred from its value, but can also be specified explicitly. For example, the following record has two fields, `x` of kind `f64` and `y` of kind `bool`. Therefore the kind is `{x<f64> y<bool>}`.
