@@ -92,6 +92,12 @@ html, body {
   scroll-behavior: smooth;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+body {
+  position: relative;
 }
 
 html::-webkit-scrollbar,
@@ -100,7 +106,16 @@ body::-webkit-scrollbar {
 }
 
 body { min-height: 100vh; }
-img { display: block; width: 100%; }
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.brand img {
+  width: auto;
+  height: 35px;
+}
 a { color: inherit; text-decoration: none; }
 
 /* ── Header ── */
@@ -262,6 +277,13 @@ body.console-fullscreen .workspace {
   background: var(--accent-hover);
   background-clip: content-box;
 }
+
+.content-shell {
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
+}
+
 
 .content-column {
   width: min(100%, var(--content-max-width));
@@ -443,6 +465,14 @@ body.console-fullscreen .workspace {
   color: var(--bg-primary);
   font-size: 12px;
   font-weight: 700;
+}
+
+
+.mech-hero-img img,
+.mech-figure img,
+.mech-image {
+  width: 100%;
+  height: auto;
 }
 
 .mech-hero-img {
@@ -1398,6 +1428,44 @@ body.console-fullscreen .console-fullscreen-toggle .icon-exit {
   }
   .footer-cta p {
     font-size: 28px;
+  }
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-height: auto;
+    overflow-x: hidden;
+  }
+
+  .content-shell {
+    position: static;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-height: auto;
+    overflow-x: hidden;
+    overflow-y: visible;
+    padding: 18px;
+  }
+
+  .content-column,
+  .article-layout,
+  .main-content,
+  .article-intro,
+  .article-backmatter {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .toc,
+  .console-pane,
+  .resize-handle,
+  .edge-handle {
+    display: none !important;
   }
 }
 
