@@ -1748,4 +1748,81 @@ body.console-fullscreen .console-fullscreen-toggle .icon-exit {
   .mika-separator {
     margin: 0px auto;
   }
+  .footer-inner {
+    padding: 0px;
+  }
+}
+@media (max-width: 400px) {
+  .footer-inner {
+    padding: 0 16px;
+  }
+
+  .footer-main {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding-top: 28px;
+  }
+
+  .footer-robot {
+    display: none;
+  }
+
+  .footer-release {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .footer-links {
+    grid-column: 1;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 22px;
+    width: 100%;
+  }
+
+  .footer-group {
+    min-width: 0;
+  }
+
+  .footer-heading {
+    width: 100%;
+  }
+
+  .footer-group a {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .release-grid-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .release-grid-label {
+    border-right: 0;
+    border-bottom: 1px solid var(--border-strong);
+    padding-bottom: 4px;
+  }
+
+  .release-grid-value {
+    padding-top: 6px;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+
+  .release-ack {
+    justify-content: center;
+  }
+
+  .footer-meta {
+    padding: 18px 0;
+  }
+
+  .footer-pride {
+    flex-wrap: wrap;
+  }
 }
