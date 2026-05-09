@@ -2712,6 +2712,7 @@ mark {
 }
 
 .mech-function-branch {
+    padding-right: 5px;
     color: var(--function-arrow-color);
 }
 
