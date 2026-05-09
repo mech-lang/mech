@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"
+onload="renderMathInElement(document.body);"></script>
+
 <title>{{TITLE}}</title>
 <link rel="icon" href="https://gitlab.com/mech-lang/assets/-/raw/main/images/icons/favicon.ico?ref_type=heads" type="image/x-icon">
 <style>
@@ -52,7 +59,7 @@
         <span class="sep">⟩</span>
         <a href="/blog/announcements">{{KICKER}}</a>
         <span class="sep">⟩</span>
-        <span aria-current="page">Mechdown Beta</span>
+        <span aria-current="page">Version 0.3-beta</span>
       </nav>
       <div class="hero">
         <div class="hero-panel">
@@ -864,7 +871,47 @@ deferPostPaint(syncInitialResponsiveLayout);
   });
 
 })();
+window.addEventListener("DOMContentLoaded", () => {
 
+  function renderEquations(root = document) {
+    const blockElements = root.querySelectorAll(".mech-equation");
+    blockElements.forEach(el => {
+      if (!el.getAttribute("data-rendered")) {
+        const eq = el.getAttribute("equation");
+        if (eq) {
+          katex.render(eq, el, { throwOnError: false });
+          el.setAttribute("data-rendered", "true");
+        }
+      }
+    });
+
+    const inlineElements = root.querySelectorAll(".mech-inline-equation");
+    inlineElements.forEach(el => {
+      if (!el.getAttribute("data-rendered")) {
+        const eq = el.getAttribute("equation");
+        if (eq) {
+          katex.render(eq, el, { throwOnError: false });
+          el.setAttribute("data-rendered", "true");
+        }
+      }
+    });
+  }
+
+  renderEquations();
+
+  // Set up a MutationObserver to watch for new elements
+  const mutationobserver = new MutationObserver(mutations => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          renderEquations(node);
+        }
+      }
+    }
+  });
+  mutationobserver.observe(document.body, { childList: true, subtree: true });
+
+});
 </script>
 
 </body>
