@@ -1729,13 +1729,7 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<span class=\"mech-tuple-struct\">
-        <span class=\"mech-tuple-struct-sigil\">:</span>
-        <span class=\"mech-tuple-struct-name\">{}</span>
-        <span class=\"mech-left-paren\">(</span>
-        <span class=\"mech-tuple-struct-patterns\">{}</span>
-        <span class=\"mech-right-paren\">)</span>
-      </span>",name,patterns)
+      format!(r#"<span class="mech-tuple-struct"><span class="mech-tuple-struct-sigil">:</span><span class="mech-tuple-struct-name">{}</span><span class="mech-left-paren">(</span><span class="mech-tuple-struct-patterns">{}</span><span class="mech-right-paren">)</span></span>"#,name,patterns)
     } else {
       format!(":{}({})", name, patterns)
     }
@@ -1752,11 +1746,7 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<span class=\"mech-pattern-tuple\">
-        <span class=\"mech-left-paren\">(</span>
-        <span class=\"mech-patterns\">{}</span>
-        <span class=\"mech-right-paren\">)</span>
-      </span>",patterns)
+      format!(r#"<span class="mech-pattern-tuple"><span class="mech-left-paren">(</span><span class="mech-patterns">{}</span><span class="mech-right-paren">)</span></span>"#,patterns)
     } else {
       format!("({})", patterns)
     }
@@ -1840,18 +1830,12 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<div class=\"mech-fsm-specification\">
-      <div class=\"mech-fsm-specification-header\">
-        <span class=\"mech-fsm-sigil\">#</span>
-        <span class=\"mech-fsm-name\">{}</span>
-        <span class=\"mech-left-paren\">(</span>
-        <span class=\"mech-fsm-input\">{}</span>
-        <span class=\"mech-right-paren\">)</span>
-        <span class=\"mech-fsm-output\">{}</span>
-        <span class=\"mech-fsm-define-op\">:=</span>
+      format!(r#"<div class="mech-fsm-specification">
+      <div class="mech-fsm-specification-header">
+        <span class="mech-fsm-sigil">#</span><span class="mech-fsm-name">{}</span><span class="mech-left-paren">(</span><span class="mech-fsm-input">{}</span><span class="mech-right-paren">)</span><span class="mech-fsm-output">{}</span><span class="mech-fsm-define-op">:=</span>
       </div>
-      <div class=\"mech-fsm-states\">{}</div>
-      </div>",name,input,output,states)
+      <div class="mech-fsm-states">{}</div>
+      </div>"#,name,input,output,states)
     } else {
       format!("#{}({}){} {}\n{}", name, input, output, ":=", states)
     }
@@ -1951,12 +1935,9 @@ impl Formatter {
       None => {}
     }
     if self.html {
-      format!("<div class=\"mech-state-definition\">
-      <span class=\"mech-state-name\"><span class=\"mech-state-name-sigil\">:</span>{}</span>
-      <span class=\"mech-left-paren\">(</span>
-      <span class=\"mech-state-variables\">{}</span>
-      <span class=\"mech-right-paren\">)</span>
-      </div>",name,state_variables)
+      format!(r#"<div class="mech-state-definition">
+        <span class="mech-state-name"><span class="mech-state-name-sigil">:</span>{}</span><span class="mech-left-paren">(</span><span class="mech-state-variables">{}</span><span class="mech-right-paren">)</span>
+      </div>"#,name,state_variables)
     } else {
       format!("{}({})", name, state_variables)
     }
@@ -2297,14 +2278,7 @@ impl Formatter {
       .join(", ");
 
     if self.html {
-      format!(
-        "<span class=\"mech-set-comprehension\">\
-          <span class=\"mech-set-open\">{{</span>\
-          <span class=\"mech-set-expression\">{}</span>\
-          <span class=\"mech-set-bar\"> | </span>\
-          <span class=\"mech-set-qualifiers\">{}</span>\
-          <span class=\"mech-set-close\">}}</span>\
-        </span>",
+      format!(r#"<span class="mech-set-comprehension"><span class="mech-set-open">{{</span><span class="mech-set-expression">{}</span><span class="mech-set-bar"> | </span><span class="mech-set-qualifiers">{}</span><span class="mech-set-close">}}</span></span>"#,
         expr, qualifiers
       )
     } else {
@@ -2322,13 +2296,7 @@ impl Formatter {
 
     if self.html {
       format!(
-        "<span class=\"mech-matrix-comprehension\">
-          <span class=\"mech-bracket start\">[</span>
-          <span class=\"mech-comp-expr\">{}</span>
-          <span class=\"mech-comp-bar\">|</span>
-          <span class=\"mech-comp-quals\">{}</span>
-          <span class=\"mech-bracket end\">]</span>
-        </span>",
+        r#"<span class="mech-matrix-comprehension"><span class="mech-bracket start">[</span><span class="mech-comp-expr">{}</span><span class="mech-comp-bar">|</span><span class="mech-comp-quals">{}</span><span class="mech-bracket end">]</span></span>"#,
         expr, quals
       )
     } else {
@@ -2355,12 +2323,7 @@ impl Formatter {
     let e = self.expression(expr);
 
     if self.html {
-      format!(
-        "<span class=\"mech-generator\">\
-          <span class=\"mech-generator-pattern\">{}</span>\
-          <span class=\"mech-generator-arrow\"> ← </span>\
-          <span class=\"mech-generator-expression\">{}</span>\
-        </span>",
+      format!(r#"<span class="mech-generator"><span class="mech-generator-pattern">{}</span><span class="mech-generator-arrow"> ← </span><span class="mech-generator-expression">{}</span></span>"#,
         p, e
       )
     } else {
@@ -2603,14 +2566,7 @@ impl Formatter {
     let name = node.name.to_string();
     let value = self.expression(&node.value);
     if self.html {
-      format!("
-        <span class=\"mech-tuple-struct\">
-        <span class=\"mech-tuple-struct-sigil\">:</span>
-        <span class=\"mech-tuple-struct-name\">{}</span>
-        <span class=\"mech-left-paren\">(</span>
-        <span class=\"mech-tuple-struct-value\">{}</span>
-        <span class=\"mech-right-paren\">)</span>
-      </span>", name, value)
+      format!(r#"<span class="mech-tuple-struct"><span class="mech-tuple-struct-sigil">:</span><span class="mech-tuple-struct-name">{}</span><span class="mech-left-paren">(</span><span class="mech-tuple-struct-value">{}</span><span class="mech-right-paren">)</span></span>"#, name, value)
     } else {
       format!("{}{}", name, value)
     }
