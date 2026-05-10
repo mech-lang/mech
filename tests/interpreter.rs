@@ -47,6 +47,8 @@ test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String(Ref::new
 test_interpreter!(interpret_literal_string_empty, r#""""#, Value::String(Ref::new("".to_string())));
 test_interpreter!(interpret_literal_string_multiline, r#""Hello 
  World""#, Value::String(Ref::new("Hello \n World".to_string())));
+test_interpreter!(interpret_string_access_uses_grapheme_clusters, r#"s := "é👩‍🚀z"
+s[2]"#, Value::String(Ref::new("👩‍🚀".to_string())));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(Ref::new(true)));
 test_interpreter!(interpret_literal_true2, "✓ ", Value::Bool(Ref::new(true)));
 test_interpreter!(interpret_literal_false2, "✗ ", Value::Bool(Ref::new(false)));
@@ -762,6 +764,9 @@ test_interpreter!(interpret_matrixmatmul_r3m3, "a := [1.0 2.0 3.0]; b := [4.0 5.
 test_interpreter!(interpret_matrixmatmul_m3v3, "b := [4.0 5.0 6.0; 7.0 8.0 9.0; 10 11 12]; a := [1.0 2.0 3.0]'; c := b ** a", Value::MatrixF64(Matrix::from_vec(vec![32.0, 50.0, 68.0], 3, 1)));
 test_interpreter!(interpret_matrix_string, r#"["Hello" "World"]"#, Value::MatrixString(Matrix::from_vec(vec!["Hello".to_string(), "World".to_string()], 1, 2)));
 test_interpreter!(interpret_matrix_string_access, r#"x:=["Hello" "World"];x[2]"#, Value::String(Ref::new("World".to_string())));
+test_interpreter!(interpret_string_access_first, r#"a := "Hello"; a[1]"#, Value::String(Ref::new("H".to_string())));
+test_interpreter!(interpret_string_access_last, r#"a := "Hello"; a[5]"#, Value::String(Ref::new("o".to_string())));
+test_interpreter!(interpret_string_access_mutable, r#"~a := "Hello"; a[1]"#, Value::String(Ref::new("H".to_string())));
 test_interpreter!(interpret_matrix_string_assign, r#"~x:=["Hello" "World"];x[1]="Foo";[x[1] x[2]]"#, Value::MatrixString(Matrix::from_vec(vec!["Foo".to_string(), "World".to_string()], 1, 2)));
 test_interpreter!(interpret_matrix_string_assign_logical, r#"~x := ["Hello", "World", "!"]; x[[true false true]] = "Foo";"#, Value::MatrixString(Matrix::from_vec(vec!["Foo".to_string(), "World".to_string(), "Foo".to_string()], 1, 3)));
 test_interpreter!(interpret_table_string_access, r#"x:=|x<string> y<string> | "a" "b" | "c" "d" |; x.y"#, Value::MatrixString(Matrix::from_vec(vec!["b".to_string(), "d".to_string()], 2, 1)));
