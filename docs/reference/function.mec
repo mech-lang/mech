@@ -96,3 +96,32 @@ fib(n<u64>) => <u64>
 xs := 0u64..=10u64
 fib(xs)
 ```
+
+5. Overloading
+-------------------------------------------------------------------------------
+
+Multiple definitions of the same function name can coexist as long as their
+parameter kinds differ. When the function is called, the runtime picks the
+definition whose declared parameter kinds best match the actual argument types.
+
+(5.1) Calling the f64 overload
+
+```mech:ex 5.1
+inc(x<f64>) => <f64>
+  | * => x + 2.
+inc(x<u64>) => <u64>
+  | * => x + 4u64.
+
+inc(1)
+```
+
+(5.2) Calling the u64 overload
+
+```mech:ex 5.2
+inc(x<f64>) => <f64>
+  | * => x + 2.
+inc(x<u64>) => <u64>
+  | * => x + 4u64.
+
+inc(1u64)
+```

@@ -988,6 +988,27 @@ test_interpreter!(interpret_user_function_scalar_auto_broadcast, r#"add-one(x<f6
   | * => x + 1.
 add-one([1 2 3])"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, 4.0], 1, 3)));
 
+// Overloading: two definitions of the same name, called with f64 picks f64 version.
+#[cfg(feature = "u64")]
+test_interpreter!(interpret_overload_f64_wins, r#"inc(x<f64>) => <f64>
+  | * => x + 2.
+inc(x<u64>) => <u64>
+  | * => x + 4u64.
+inc(1)"#, Value::F64(Ref::new(3.0)));
+
+// Overloading: same two definitions, called with u64 picks u64 version.
+#[cfg(feature = "u64")]
+test_interpreter!(interpret_overload_u64_wins, r#"inc(x<f64>) => <f64>
+  | * => x + 2.
+inc(x<u64>) => <u64>
+  | * => x + 4u64.
+inc(1u64)"#, Value::U64(Ref::new(5)));
+
+// Non-overloaded single definition still works as before.
+test_interpreter!(interpret_overload_single_def, r#"double(x<f64>) => <f64>
+  | * => x * 2.
+double(3)"#, Value::F64(Ref::new(6.0)));
+
 test_interpreter!(interpret_set_value,"~x := 1.23; x = 4.56;", Value::F64(Ref::new(4.56)));
 test_interpreter!(interpret_set_value_row_vector,"~x := [6,2]; x[1] = 4;", Value::MatrixF64(Matrix::from_vec(vec![4.0, 2.0], 1, 2)));
 test_interpreter!(interpret_set_value_col_vector,"~x := [false false true true]'; x[1] = true; x[1]", Value::Bool(Ref::new(true)));
