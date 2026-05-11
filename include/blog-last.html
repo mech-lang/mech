@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"
+onload="renderMathInElement(document.body);"></script>
+
+<title>{{TITLE}}</title>
+<link rel="icon" href="https://gitlab.com/mech-lang/assets/-/raw/main/images/icons/favicon.ico?ref_type=heads" type="image/x-icon">
+<style>
+  {{STYLESHEET}}
+</style>
+<script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <a href="https://mech-lang.org">
+        <img src="https://mech-lang.org/img/logo.png" alt="Mech Programming Language" height="35">
+      </a>
+    </div>
+    <nav class="top-nav" aria-label="Primary">
+      <a href="https://about.mech-lang.org">About</a>
+      <a href="/blog" class="active" aria-current="page">Blog</a>
+      <a href="/community">Community</a>
+      <a href="https://docs.mech-lang.org">Docs</a>
+      <a href="https://try.mech-lang.org">Explore</a>
+    </nav>
+    <div class="header-actions">
+      <div id="github">
+        <a class="github-button" href="https://github.com/mech-lang/mech" data-color-scheme="no-preference: light; light: light; dark: dark;" data-size="large" data-show-count="true" aria-label="Star mech-lang/mech on GitHub">Star</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="workspace mech-root" id="workspace" mech-interpreter-id="0" aria-label="Blog workspace">
+
+  <section class="content-shell" id="contentShell">
+    <div class="content-column">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/docs">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline; width:11px; height:11px; margin-top: -1px; vertical-align:middle;"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        </a>
+        <span class="sep">⟩</span>
+        <a href="/blog">Blog</a>
+        <span class="sep">⟩</span>
+        <a href="/blog/announcements">{{KICKER}}</a>
+        <span class="sep">⟩</span>
+        <span aria-current="page">Version 0.3-beta</span>
+      </nav>
+      <div class="hero">
+        <div class="hero-panel">
+          <div>
+            {{KICKER}}
+            <h1>{{TITLE}}</h1>
+            <p class="mech-meta">{{AUTHOR}} • {{DATE}}</p>
+          </div>
+          {{SUMMARY}}
+        </div>
+        {{HERO}}
+      </div>
+      <div class="article-intro" id="articleIntro">
+        {{INTRO}}
+      </div>
+      <div class="article-layout" id="articleLayout">
+        {{TOC}}
+        <article class="main-content">
+          {{CONTENT}}
+        </article>
+      </div>
+      <div class="mika-separator"></div>
+      <section class="article-backmatter" aria-label="Notes and Works Cited">
+        <div class="backmatter-row backmatter-notes">
+          <div class="backmatter-body">
+            {{FOOTNOTES}}
+          </div>
+        </div>
+        <div class="backmatter-row backmatter-cited">
+          <div class="backmatter-body">
+            {{CITED}}
+          </div>
+        </div>
+      </section>
+      <nav class="post-pagination" aria-label="Post navigation">
+        <div class="post-pagination-prev">
+          <span class="post-pagination-label">Previous post</span>
+          {{PREVIOUS}}
+        </div>
+
+      </nav>
+      <footer class="footer">
+        <div class="footer-inner">
+
+          <div class="footer-main">
+
+            <!-- Left: Robot -->
+            <div class="footer-robot">
+              <img src="https://gitlab.com/mech-lang/assets/-/raw/main/images/mika/mika-pose-point.png?ref_type=heads" alt="Mika the Mech">
+              <div class="mika-glyph" aria-hidden="true">
+                <div class="mika-glyph-art-wrap">
+                  <pre class="mika-glyph-art mika-glyph-art--mini">╭(˙◯˙)─</pre>
+                  <pre class="mika-glyph-art mika-glyph-art--micro">╭⦿─</pre>
+                </div>
+              </div>
+            </div>
+
+            <!-- Middle: Links -->
+            <div class="footer-links">
+              <div class="footer-group">
+                <div class="footer-heading"><span class="footer-heading-icon"><svg xmlns="http://www.w3.org/2000/svg" class="footer-icon lucide lucide-package-icon lucide-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span><span class="footer-heading-text">Platform</span></div>
+                <a href="#">Mech</a>
+                <a href="#">Mechdown</a>
+                <a href="#">Mika</a>
+                <a href="#">Standard Library</a>
+              </div>
+
+              <div class="footer-group">
+                <div class="footer-heading"><span class="footer-heading-icon"><svg xmlns="http://www.w3.org/2000/svg" class="footer-icon lucide lucide-users-icon lucide-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg></span><span class="footer-heading-text">Community</span></div>
+                <a href="https://groups.google.com/g/mechtalk">Mailing List</a>
+                <a href="https://discord.gg/asqP25NNTH">Discord</a>
+                <a href="https://github.com/mech-lang">GitHub</a>
+                <a href="https://www.youtube.com/@MechLang">YouTube</a>
+              </div>
+
+              <div class="footer-group">
+                <div class="footer-heading"><span class="footer-heading-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="footer-icon lucide lucide-book-open-text-icon lucide-book-open-text"><path d="M12 7v14"/><path d="M16 12h2"/><path d="M16 8h2"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/><path d="M6 12h2"/><path d="M6 8h2"/></svg></span><span class="footer-heading-text">Resources</span></div>
+                <a href="https://docs.mech-lang.org/getting-started/index.html">Getting Started</a>
+                <a href="https://docs.mech-lang.org/reference/index.html">Reference</a>
+                <a href="https://docs.mech-lang.org/design/index.html">Design</a>
+                <a href="https://docs.mech-lang.org/guides/index.html">Guides</a>
+              </div>
+            </div>
+
+            <!-- Right: Latest release info -->
+            <div class="footer-release">
+              <div class="release-ack">
+                <svg xmlns="http://www.w3.org/2000/svg" class="footer-icon lucide lucide-rocket-icon lucide-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/></svg>
+                <a href="https://github.com/mech-lang/mech/releases/latest">Latest Release</a>
+              </div>
+              <div class="release-grid-row">
+                <div class="release-grid-label">Version:</div>
+                <div class="release-grid-value"><a href="https://github.com/mech-lang/mech/releases/latest">v0.3.5-beta</a></div>
+              </div>
+              <div class="release-grid-row">
+                <div class="release-grid-label">Date:</div>
+                <div class="release-grid-value">2026-05-06</div>
+              </div>
+              <div class="release-grid-row">
+                <div class="release-grid-label">License:</div>
+                <div class="release-grid-value"><a href="https://github.com/mech-lang/mech?tab=Apache-2.0-1-ov-file#readme">Apache 2.0</a></div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="footer-meta">
+            <div class="footer-pride">
+              Built with 
+              <span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline; width:18px; height:18px; margin-top: -2px; vertical-align:middle;">
+
+                  <defs>
+                    <radialGradient id="rainbowRadial" cx="12" cy="17" r="11" gradientUnits="userSpaceOnUse">
+                    <!-- pastel purple -->
+                    <stop offset="0%" stop-color="#8b6fd8"></stop>
+                    <stop offset="18%" stop-color="#8b6fd8"></stop>
+                    <!-- pastel blue -->
+                    <stop offset="18%" stop-color="#6fa8ff"></stop>
+                    <stop offset="38%" stop-color="#6fa8ff"></stop>
+                    <!-- pastel green -->
+                    <stop offset="38%" stop-color="#5DCF8D"></stop>
+                    <stop offset="53%" stop-color="#5DCF8D"></stop>
+                    <!-- pastel yellow -->
+                    <stop offset="53%" stop-color="#ffe873"></stop>
+                    <stop offset="72%" stop-color="#ffe873"></stop>
+                    <!-- pastel orange -->
+                    <stop offset="72%" stop-color="#ff9f5f"></stop>
+                    <stop offset="90%" stop-color="#ff9f5f"></stop>
+                    <!-- pastel red -->
+                    <stop offset="90%" stop-color="#ff6666"></stop>
+                    <stop offset="100%" stop-color="#ff6666"></stop>
+                    </radialGradient>
+                  </defs>
+
+                  <path d="M22 17a10 10 0 0 0-20 0" stroke="url(#rainbowRadial)"></path>
+                  <path d="M6 17a6 6 0 0 1 12 0" stroke="url(#rainbowRadial)"></path>
+                  <path d="M10 17a2 2 0 0 1 4 0" stroke="url(#rainbowRadial)"></path>
+                </svg>
+              </span> in Pennsylvania
+            </div>
+          </div>
+
+        </div>
+      </footer>
+    </div>
+  </section>
+
+  <div class="resize-handle" id="resizer"></div>
+  <div class="edge-handle" id="edgeHandle" aria-hidden="true"></div>
+
+  <aside class="console-pane">
+    <div class="console-topbar">
+      <div class="console-tabs" role="tablist" aria-label="Console sections">
+        <button class="console-tab active" type="button" role="tab" aria-selected="true" data-tab="console">console</button>
+        <button class="console-tab" type="button" role="tab" aria-selected="false" data-tab="output">output</button>
+        <button class="console-tab" type="button" role="tab" aria-selected="false" data-tab="errors">errors</button>
+      </div>
+      <button class="console-fullscreen-toggle" id="consoleFullscreenToggle" type="button" aria-pressed="false" aria-label="Enter fullscreen">
+        <svg class="icon-enter" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+          <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+          <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+          <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+          <rect width="10" height="8" x="7" y="8" rx="1"></rect>
+        </svg>
+        <svg class="icon-exit" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+          <path d="M15 3v18"></path>
+          <path d="m8 9 3 3-3 3"></path>
+        </svg>
+      </button>
+    </div>
+    <div class="console-panels">
+      <div class="console-panel is-active" data-panel="console">
+        {{REPL}}
+      </div>
+      <div class="console-panel" data-panel="output">
+        <div class="console-scroll">under construction</div>
+      </div>
+      <div class="console-panel" data-panel="errors">
+        <div class="console-scroll">under construction</div>
+      </div>
+    </div>
+  </aside>
+
+</main>
+
+<script type="module">
+let wasm_core;
+
+async function loadMechModule() {
+  const moduleCandidates = [
+    "/pkg/mech_wasm.js",
+    "https://docs.mech-lang.org/pkg/mech_wasm.js",
+  ];
+
+  let lastError = null;
+  for (const moduleUrl of moduleCandidates) {
+    try {
+      const mod = await import(moduleUrl);
+      return mod;
+    } catch (err) {
+      lastError = err;
+      console.error(`Failed to import ${moduleUrl}`, err);
+    }
+  }
+  throw lastError || new Error("Unable to load mech_wasm.js");
+}
+
+async function run() {
+  const { default: init, WasmMech } = await loadMechModule();
+  await init();
+  const prepareVarPlaceholders = () => {
+  const pattern = /\{\{VAR:([A-Za-z0-9\-_\/]+)(?:@([A-Za-z0-9\-_\/]+))?\}\}/g;
+  document.querySelectorAll("script, style, code, pre, textarea").forEach((el) => el.setAttribute("data-var-skip", "1"));
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const updates = [];
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (!node || !node.nodeValue || !pattern.test(node.nodeValue)) {
+      pattern.lastIndex = 0;
+      continue;
+    }
+    pattern.lastIndex = 0;
+    const parent = node.parentElement;
+    if (!parent || parent.closest("[data-var-skip='1']")) continue;
+    const nearestMechRoot = parent.closest(".mech-root");
+    const rootInterpreterId = Number(nearestMechRoot?.getAttribute("mech-interpreter-id") || "0");
+    const fragment = document.createDocumentFragment();
+    let lastIndex = 0;
+    node.nodeValue.replace(pattern, (match, varName, interpreterName, offset) => {
+      if (offset > lastIndex) {
+        fragment.appendChild(document.createTextNode(node.nodeValue.slice(lastIndex, offset)));
+      }
+      const span = document.createElement("span");
+      span.className = "mech-var-placeholder";
+      span.setAttribute("data-var-name", varName);
+      if (interpreterName) {
+        span.setAttribute("data-interpreter-name", interpreterName);
+      } else {
+        span.setAttribute("data-interpreter-id", String(rootInterpreterId));
+      }
+      span.textContent = "";
+      fragment.appendChild(span);
+      lastIndex = offset + match.length;
+      return match;
+    });
+    if (lastIndex < node.nodeValue.length) {
+      fragment.appendChild(document.createTextNode(node.nodeValue.slice(lastIndex)));
+    }
+    updates.push([node, fragment]);
+  }
+  updates.forEach(([node, fragment]) => node.parentNode.replaceChild(fragment, node));
+  };
+  const code = `{{CODE}}`;
+  wasm_core = new WasmMech();
+  const xhr = new XMLHttpRequest();
+  const codeUrl = `/code${window.location.pathname}`;
+  xhr.open('GET', codeUrl, true);
+  xhr.onload = function () {
+    if (xhr.readyState === 4) {
+      if (xhr.status === 200) {
+        wasm_core.run_program(xhr.responseText);
+      } else {
+        console.error('Defaulting to included program');
+        wasm_core.run_program(code);
+      }
+      prepareVarPlaceholders();
+      wasm_core.init();
+      wasm_core.render_inline_values();
+      wasm_core.render_codeblock_output_values();
+      wasm_core.attach_repl('mech-output');
+    }
+  };
+  xhr.onerror = function () {
+    console.error("I've been waiting for this error. Look me up in formatter.rs");
+    console.error(xhr.statusText);
+  };
+  xhr.send(null);
+}
+
+run();
+</script>
+
+<script>
+const handle        = document.getElementById("resizeHandle") || document.getElementById("resizer");
+const workspace     = document.getElementById("workspace");
+const articleLayout = document.getElementById("articleLayout");
+const contentShell  = document.getElementById("contentShell");
+const consolePane   = document.querySelector(".console-pane");
+const edgeHandle    = document.getElementById("edgeHandle");
+const tabButtons    = Array.from(document.querySelectorAll(".console-tab"));
+const tabPanels     = Array.from(document.querySelectorAll(".console-panel"));
+const fullscreenToggle = document.getElementById("consoleFullscreenToggle");
+
+const MIN_CONSOLE_WIDTH  = 320;
+const COLLAPSE_THRESHOLD = 80;
+const HANDLE_WIDTH       = 8;
+const TOC_WIDTH          = 260;
+const TOC_GAP            = 48;
+const MIN_MAIN_CONTENT   = 640;
+const MIN_MAIN_WITH_TOC  = 760;
+const MIN_LEFT_WITH_TOC  = TOC_WIDTH + TOC_GAP + MIN_MAIN_WITH_TOC;
+const MIN_LEFT_WITH_FLOATS = 980;
+const DEFAULT_OPEN_WIDTH = 575;
+const HEADER_HEIGHT = parseInt(
+  getComputedStyle(document.documentElement).getPropertyValue("--header-height"),
+  10
+);
+
+let resizing = false;
+let lastNormalWidth = DEFAULT_OPEN_WIDTH;
+let dragStartX = 0;
+let didDrag = false;
+let currentConsoleWidth = parseFloat(
+  document.documentElement.style.getPropertyValue("--console-width")
+) || DEFAULT_OPEN_WIDTH;
+
+function setActiveConsoleTab(tabName) {
+  tabButtons.forEach((button) => {
+    const isActive = button.dataset.tab === tabName;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
+  tabPanels.forEach((panel) => {
+    panel.classList.toggle("is-active", panel.dataset.panel === tabName);
+  });
+}
+
+function updateFullscreenToggleLabel() {
+  if (!fullscreenToggle) return;
+  const isFullscreen = document.body.classList.contains("console-fullscreen");
+  fullscreenToggle.setAttribute("aria-label", isFullscreen ? "Exit fullscreen" : "Enter fullscreen");
+  fullscreenToggle.setAttribute("aria-pressed", String(isFullscreen));
+}
+
+function setConsoleWidth(width) {
+  currentConsoleWidth = width;
+  document.documentElement.style.setProperty("--console-width", `${width}px`);
+}
+
+function setEdgeHandle(mode) {
+  if (!edgeHandle) return;
+  document.body.classList.remove("edge-left", "edge-right");
+  edgeHandle.classList.remove("left");
+
+  if (mode === "left") {
+    edgeHandle.style.display = "block";
+    edgeHandle.classList.add("left");
+    document.body.classList.add("edge-left");
+    handle.style.display = "none";
+  } else if (mode === "right") {
+    edgeHandle.style.display = "block";
+    document.body.classList.add("edge-right");
+    handle.style.display = "none";
+  } else {
+    edgeHandle.style.display = "none";
+    if (!document.body.classList.contains("console-fullscreen") && consolePane.style.display !== "none") {
+      handle.style.display = "";
+    }
+  }
+}
+
+function syncEdgeHandleOnLoad() {
+  if (window.innerWidth <= 900) { setEdgeHandle("none"); return; }
+  if (document.body.classList.contains("console-fullscreen")) {
+    setEdgeHandle("left");
+  } else if (consolePane.style.display === "none" || currentConsoleWidth <= COLLAPSE_THRESHOLD) {
+    setEdgeHandle("right");
+  } else {
+    setEdgeHandle("none");
+  }
+}
+
+function syncTocVisibility(availableWidth) {
+  articleLayout.classList.toggle("hide-toc", availableWidth < MIN_LEFT_WITH_TOC);
+  document.body.classList.toggle("narrow-content", availableWidth < MIN_LEFT_WITH_FLOATS);
+}
+
+function applyNonFullscreenLayout(viewport, consoleWidth) {
+  const maxConsoleForContent = Math.max(0, viewport - HANDLE_WIDTH - MIN_MAIN_CONTENT);
+  if (consoleWidth > maxConsoleForContent) consoleWidth = maxConsoleForContent;
+
+  const leftPaneWidth = viewport - HANDLE_WIDTH - consoleWidth;
+  syncTocVisibility(leftPaneWidth);
+
+  contentShell.classList.remove("hidden");
+  handle.style.display = "";
+  workspace.style.gridTemplateColumns = "";
+  setEdgeHandle("none");
+  lastNormalWidth = consoleWidth;
+  return consoleWidth;
+}
+
+function closeConsole() {
+  document.body.classList.remove("console-fullscreen");
+  consolePane.style.display = "none";
+  handle.style.display = "none";
+  contentShell.classList.remove("hidden");
+  syncTocVisibility(window.innerWidth);
+  setEdgeHandle("right");
+  setConsoleWidth(0);
+  updateFullscreenToggleLabel();
+}
+
+function openConsoleNormal() {
+  const viewport = window.innerWidth;
+  document.body.classList.remove("console-fullscreen");
+  consolePane.style.display = "";
+  contentShell.classList.remove("hidden");
+  handle.style.display = "";
+  let openWidth = Math.min(lastNormalWidth || DEFAULT_OPEN_WIDTH, viewport - HANDLE_WIDTH);
+  if (openWidth < MIN_CONSOLE_WIDTH) {
+    openWidth = Math.min(DEFAULT_OPEN_WIDTH, Math.max(MIN_CONSOLE_WIDTH, viewport * 0.36));
+  }
+  openWidth = applyNonFullscreenLayout(viewport, openWidth);
+  setConsoleWidth(openWidth);
+  updateFullscreenToggleLabel();
+}
+
+function enterConsoleFullscreen() {
+  if (window.innerWidth <= 900) return;
+  const viewport = window.innerWidth;
+  if (currentConsoleWidth > COLLAPSE_THRESHOLD) {
+    lastNormalWidth = currentConsoleWidth;
+  }
+  consolePane.style.display = "";
+  document.body.classList.add("console-fullscreen");
+  articleLayout.classList.add("hide-toc");
+  contentShell.classList.add("hidden");
+  handle.style.display = "none";
+  workspace.style.gridTemplateColumns = "";
+  setEdgeHandle("left");
+  setConsoleWidth(viewport);
+  updateFullscreenToggleLabel();
+}
+
+function cycleConsoleMode() {
+  const isFullscreen = document.body.classList.contains("console-fullscreen");
+  const isClosed = consolePane.style.display === "none" || currentConsoleWidth <= COLLAPSE_THRESHOLD;
+  if (isFullscreen || isClosed) {
+    openConsoleNormal();
+  } else {
+    lastNormalWidth = currentConsoleWidth;
+    closeConsole();
+  }
+}
+
+handle.addEventListener("mousedown", (e) => {
+  resizing = true; dragStartX = e.clientX; didDrag = false;
+  document.body.classList.add("is-resizing");
+  document.body.style.userSelect = "none";
+});
+
+edgeHandle.addEventListener("mousedown", (e) => {
+  resizing = true; dragStartX = e.clientX; didDrag = false;
+  document.body.classList.add("is-resizing");
+  document.body.style.userSelect = "none";
+});
+
+function onHandleClick(event) {
+  if (didDrag) { didDrag = false; return; }
+  const state = document.body.classList.contains("console-fullscreen") ? "fullscreen"
+    : (consolePane.style.display === "none" || currentConsoleWidth <= COLLAPSE_THRESHOLD) ? "closed" : "open";
+  if (state === "open" && event.type !== "dblclick") return;
+  cycleConsoleMode();
+}
+
+handle.addEventListener("click", onHandleClick);
+handle.addEventListener("dblclick", onHandleClick);
+edgeHandle.addEventListener("click", onHandleClick);
+
+window.addEventListener("mousemove", (e) => {
+  if (!resizing) return;
+  if (Math.abs(e.clientX - dragStartX) > 3) didDrag = true;
+
+  const viewport = window.innerWidth;
+  let consoleWidth = viewport - e.clientX;
+  const fullSnap = viewport * 0.92;
+
+  if (consoleWidth <= COLLAPSE_THRESHOLD) {
+    consoleWidth = 0;
+    document.body.classList.remove("console-fullscreen");
+    consolePane.style.display = "none";
+    handle.style.display = "none";
+    workspace.style.gridTemplateColumns = "";
+    syncTocVisibility(viewport);
+    contentShell.classList.remove("hidden");
+    setEdgeHandle("right");
+  } else {
+    document.body.classList.remove("console-fullscreen");
+    consolePane.style.display = "";
+    if (consoleWidth < MIN_CONSOLE_WIDTH) consoleWidth = MIN_CONSOLE_WIDTH;
+
+    if (consoleWidth >= fullSnap) {
+      articleLayout.classList.add("hide-toc");
+      consoleWidth = viewport;
+      contentShell.classList.add("hidden");
+      handle.style.display = "none";
+      workspace.style.gridTemplateColumns = "";
+      document.body.classList.add("console-fullscreen");
+      setEdgeHandle("left");
+    } else {
+      consoleWidth = applyNonFullscreenLayout(viewport, consoleWidth);
+    }
+  }
+
+  setConsoleWidth(consoleWidth);
+  updateFullscreenToggleLabel();
+});
+
+window.addEventListener("mouseup", () => {
+  resizing = false;
+  document.body.classList.remove("is-resizing");
+  document.body.style.userSelect = "";
+});
+
+window.addEventListener("resize", () => {
+  if (window.innerWidth <= 900) return;
+  const viewport = window.innerWidth;
+  let consoleWidth = currentConsoleWidth;
+
+  if (document.body.classList.contains("console-fullscreen")) {
+    setEdgeHandle("left");
+    setConsoleWidth(viewport);
+    updateFullscreenToggleLabel();
+    return;
+  }
+  if (consolePane.style.display === "none" || consoleWidth <= COLLAPSE_THRESHOLD) {
+    syncTocVisibility(viewport);
+    contentShell.classList.remove("hidden");
+    setEdgeHandle("right");
+    updateFullscreenToggleLabel();
+    return;
+  }
+
+  if (consoleWidth > viewport - HANDLE_WIDTH) consoleWidth = viewport - HANDLE_WIDTH;
+  if (consoleWidth < MIN_CONSOLE_WIDTH) consoleWidth = MIN_CONSOLE_WIDTH;
+  consoleWidth = applyNonFullscreenLayout(viewport, consoleWidth);
+  setConsoleWidth(consoleWidth);
+  updateFullscreenToggleLabel();
+});
+
+window.addEventListener("keydown", (e) => {
+  if (e.key !== "`") return;
+  const tag = document.activeElement?.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || document.activeElement?.isContentEditable) return;
+  e.preventDefault();
+  cycleConsoleMode();
+});
+
+tabButtons.forEach((button) => {
+  button.addEventListener("click", () => setActiveConsoleTab(button.dataset.tab));
+});
+
+fullscreenToggle?.addEventListener("click", () => {
+  if (document.body.classList.contains("console-fullscreen")) {
+    openConsoleNormal();
+  } else {
+    enterConsoleFullscreen();
+  }
+});
+
+updateFullscreenToggleLabel();
+
+/* ── Scrollspy ── */
+const tocRoot = document.querySelector(".toc > ul");
+const topTocItems = tocRoot ? Array.from(tocRoot.querySelectorAll(":scope > li")) : [];
+const topTocLinks = topTocItems.map((item) => item.querySelector(":scope > a")).filter(Boolean);
+const topSections = topTocLinks
+  .map((link) => {
+    const id = link.getAttribute("href")?.replace("#", "");
+    return { link, section: id ? document.getElementById(id) : null };
+  })
+  .filter((e) => e.section);
+
+const contentSections = Array.from(document.querySelectorAll(".main-content > section"));
+if (!contentSections.length) {
+  articleLayout.classList.add("no-sections", "hide-toc");
+}
+
+function setActiveTocSection(activeLink, { nearBottom = false, activationLine = HEADER_HEIGHT + 28 } = {}) {
+  const allTocLinks = tocRoot ? Array.from(tocRoot.querySelectorAll("a")) : [];
+  allTocLinks.forEach((l) => l.classList.remove("active", "active-path"));
+  topTocItems.forEach((item) => item.classList.remove("expanded"));
+  if (!activeLink) return;
+
+  activeLink.classList.add("active", "active-path");
+  const activeItem = activeLink.closest("li");
+  if (activeItem) activeItem.classList.add("expanded");
+
+  const nestedLinks = activeItem ? Array.from(activeItem.querySelectorAll(".toc-sub a")) : [];
+  nestedLinks.forEach((l) => l.classList.remove("active"));
+  if (activeItem) activeItem.querySelectorAll(".toc-sub li").forEach((li) => li.classList.remove("expanded"));
+
+  let activeNestedLink = null;
+  nestedLinks.forEach((link) => {
+    const id = link.getAttribute("href")?.replace("#", "");
+    const target = id ? document.getElementById(id) : null;
+    if (!target) return;
+    const rect = target.getBoundingClientRect();
+    if (nearBottom) {
+      if (rect.top <= window.innerHeight - 40) activeNestedLink = link;
+      return;
+    }
+    if (rect.top <= activationLine) activeNestedLink = link;
+  });
+
+  if (nearBottom && !activeNestedLink && nestedLinks.length) {
+    activeNestedLink = nestedLinks[nestedLinks.length - 1];
+  }
+
+  if (!activeNestedLink) return;
+  activeNestedLink.classList.add("active");
+  let pathLink = activeNestedLink;
+  while (pathLink && activeItem) {
+    pathLink.classList.add("active-path");
+    const parentLi = pathLink.closest("li");
+    if (!parentLi || parentLi === activeItem) break;
+    pathLink = parentLi.parentElement?.closest("li")?.querySelector(":scope > a") || null;
+  }
+  let parentLi = activeNestedLink.closest("li");
+  while (parentLi && activeItem && parentLi !== activeItem) {
+    parentLi.classList.add("expanded");
+    parentLi = parentLi.parentElement?.closest("li") || null;
+  }
+}
+
+function updateTocOnScroll() {
+  if (document.visibilityState !== "visible") return;
+  if (contentShell.classList.contains("hidden")) return;
+  if (!topSections.length) return;
+
+  const viewportHeight = contentShell.clientHeight || window.innerHeight;
+  const activationLine = HEADER_HEIGHT + Math.min(viewportHeight * 0.35, 20);
+  let active = topSections[0];
+  const nearBottom = contentShell.scrollTop + contentShell.clientHeight >= contentShell.scrollHeight - 2;
+
+  if (nearBottom) {
+    active = topSections[topSections.length - 1];
+  } else {
+    topSections.forEach((entry) => {
+      if (entry.section.getBoundingClientRect().top <= activationLine) active = entry;
+    });
+  }
+
+  topSections.forEach((e) => e.section.classList.remove("active-section"));
+  if (active.section) active.section.classList.add("active-section");
+  const nestedActivationLine = HEADER_HEIGHT + Math.min(viewportHeight * 0.30, 220);
+  setActiveTocSection(active.link, { nearBottom, activationLine: nestedActivationLine });
+}
+
+let tocTicking = false;
+function requestTocUpdate() {
+  if (tocTicking) return;
+  tocTicking = true;
+  requestAnimationFrame(() => { tocTicking = false; updateTocOnScroll(); });
+}
+
+function deferPostPaint(fn) {
+  requestAnimationFrame(() => requestAnimationFrame(fn));
+}
+
+window.addEventListener("scroll", requestTocUpdate, { passive: true });
+contentShell.addEventListener("scroll", requestTocUpdate, { passive: true });
+window.addEventListener("resize", requestTocUpdate);
+
+function syncInitialResponsiveLayout() {
+  if (window.innerWidth > 900) {
+    const initialWidth = Math.max(MIN_CONSOLE_WIDTH, Math.min(currentConsoleWidth, window.innerWidth - HANDLE_WIDTH));
+    setConsoleWidth(applyNonFullscreenLayout(window.innerWidth, initialWidth));
+  }
+  syncEdgeHandleOnLoad();
+  requestTocUpdate();
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") deferPostPaint(syncInitialResponsiveLayout);
+});
+
+deferPostPaint(syncInitialResponsiveLayout);
+
+
+(function setupInlineValuePopups() {
+
+  function createPopup(varName, value, x, y, { isHtml = false } = {}) {
+    const popup = document.createElement("section");
+    popup.className = "mech-inline-popup";
+    popup.innerHTML = `
+      <div class="mech-inline-popup__header">
+        <span class="mech-inline-popup__title mech-var-name"></span>
+        <button type="button" class="mech-inline-popup__close" aria-label="Close popup">×</button>
+      </div>
+      <div class="mech-inline-popup__content mech-block-output"></div>
+    `;
+    document.body.appendChild(popup);
+
+    const header = popup.querySelector(".mech-inline-popup__header");
+    const title = popup.querySelector(".mech-inline-popup__title");
+    const closeBtn = popup.querySelector(".mech-inline-popup__close");
+    const content = popup.querySelector(".mech-inline-popup__content");
+
+    title.textContent = varName;
+    if (isHtml) content.innerHTML = value;
+    else content.textContent = value;
+
+    const pad = 12;
+    const width = popup.offsetWidth || 320;
+    const height = popup.offsetHeight || 120;
+    popup.style.left = `${Math.max(pad, Math.min(x, window.innerWidth - width - pad))}px`;
+    popup.style.top = `${Math.max(70, Math.min(y, window.innerHeight - height - pad))}px`;
+
+    closeBtn.addEventListener("click", () => popup.remove());
+
+    let dragging = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+    header.addEventListener("mousedown", (event) => {
+      dragging = true;
+      const rect = popup.getBoundingClientRect();
+      dragOffsetX = event.clientX - rect.left;
+      dragOffsetY = event.clientY - rect.top;
+      event.preventDefault();
+    });
+    const moveHandler = (event) => {
+      if (!dragging || !document.body.contains(popup)) return;
+      const maxX = window.innerWidth - popup.offsetWidth - 8;
+      const maxY = window.innerHeight - popup.offsetHeight - 8;
+      popup.style.left = `${Math.max(8, Math.min(event.clientX - dragOffsetX, maxX))}px`;
+      popup.style.top = `${Math.max(8, Math.min(event.clientY - dragOffsetY, maxY))}px`;
+    };
+    const upHandler = () => { dragging = false; };
+    window.addEventListener("mousemove", moveHandler);
+    window.addEventListener("mouseup", upHandler);
+  }
+  function consoleIsClosed() {
+    return consolePane.style.display === "none" || currentConsoleWidth <= COLLAPSE_THRESHOLD;
+  }
+
+  function resolvePopupData(source) {
+    const varName = (source.getAttribute("data-var")
+      || source.getAttribute("data-name")
+      || source.getAttribute("data-symbol")
+      || source.textContent
+      || "Inline Value").trim();
+
+    const nearbyValue = source.nextElementSibling?.classList?.contains("ans")
+      ? source.nextElementSibling.textContent
+      : source.closest(".mech-code")?.querySelector(".ans")?.textContent;
+
+    const value = (source.getAttribute("data-value")
+      || source.getAttribute("data-popup")
+      || source.getAttribute("title")
+      || source.getAttribute("aria-label")
+      || nearbyValue
+      || "(no value)").trim();
+
+    return { varName, value };
+  }
+
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    document.querySelectorAll(".mech-inline-popup").forEach((el) => el.remove());
+  });
+
+  document.addEventListener("click", (event) => {
+    const target = event.target.closest(".mech-clickable, .ans, .mech-inline-expand");
+    if (!target) return;
+    if (!consoleIsClosed()) return;
+
+    const clickedAns = target.classList.contains("ans");
+    const source = clickedAns
+      ? target.previousElementSibling?.classList?.contains("mech-clickable") ? target.previousElementSibling : target
+      : target;
+
+    const { varName } = resolvePopupData(source);
+
+    if (clickedAns) {
+      const value = (target.innerHTML || target.textContent || "(no value)").trim();
+      createPopup(varName, value, event.clientX + 12, event.clientY + 12, { isHtml: true });
+      return;
+    }
+
+    window.setTimeout(() => {
+      const wasmModal = document.querySelector(".mech-modal:last-of-type");
+      let valueHtml = "";
+
+      if (wasmModal) {
+        valueHtml = (wasmModal.innerHTML || "").trim();
+        wasmModal.remove();
+      }
+
+      if (!valueHtml) {
+        const replResults = document.querySelectorAll("#mech-output .repl-result");
+        const lastResult = replResults[replResults.length - 1];
+        const kindHtml = lastResult?.querySelector(".mech-output-kind")?.outerHTML || "";
+        const bodyHtml = lastResult?.querySelector(".mech-output-value")?.outerHTML || lastResult?.innerHTML || "";
+        valueHtml = `${kindHtml}${bodyHtml}`.trim();
+      }
+
+      createPopup(varName, valueHtml || "(no value)", event.clientX + 12, event.clientY + 12, { isHtml: true });
+    }, 0);
+  });
+
+})();
+window.addEventListener("DOMContentLoaded", () => {
+
+  function renderEquations(root = document) {
+    const blockElements = root.querySelectorAll(".mech-equation");
+    blockElements.forEach(el => {
+      if (!el.getAttribute("data-rendered")) {
+        const eq = el.getAttribute("equation");
+        if (eq) {
+          katex.render(eq, el, { throwOnError: false });
+          el.setAttribute("data-rendered", "true");
+        }
+      }
+    });
+
+    const inlineElements = root.querySelectorAll(".mech-inline-equation");
+    inlineElements.forEach(el => {
+      if (!el.getAttribute("data-rendered")) {
+        const eq = el.getAttribute("equation");
+        if (eq) {
+          katex.render(eq, el, { throwOnError: false });
+          el.setAttribute("data-rendered", "true");
+        }
+      }
+    });
+  }
+
+  renderEquations();
+
+  // Set up a MutationObserver to watch for new elements
+  const mutationobserver = new MutationObserver(mutations => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          renderEquations(node);
+        }
+      }
+    }
+  });
+  mutationobserver.observe(document.body, { childList: true, subtree: true });
+
+});
+</script>
+
+</body>
+</html>
