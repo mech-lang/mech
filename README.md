@@ -38,7 +38,7 @@ Here are a few more examples of Mech code to give you a sense of the language. F
 
 <p align="center">
   <img width="500px" src="https://gitlab.com/mech-lang/assets/-/raw/ea310ad7a32025d34e6a60dc155a520266bd42b0/images/code/factorial.png" alt='The classic factorial program expressed in Mech.'>
-  <p><a href="https://mech-lang.org/post/2026-05-11-version-0.3/#48174767513779710">Working Example</a><p>
+  <p align="center"><a href="https://mech-lang.org/post/2026-05-11-version-0.3/#48174767513779710">Working Example</a><p>
 </p>
 
 Pattern matching is a prominent feature throughout Mech. Here is an example of pattern matching on arrays:
