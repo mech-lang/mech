@@ -838,6 +838,12 @@ code {
     text-underline-offset: 3px;
 }
 
+.mech-program-subtitle a {
+    color: var(--text-color);
+    cursor: pointer;
+    text-decoration: none;
+}
+
 .mech-program-subtitle:hover {
     color: var(--contrast-color-low);
     cursor: pointer;
