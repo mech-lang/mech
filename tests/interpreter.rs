@@ -988,6 +988,21 @@ test_interpreter!(interpret_user_function_scalar_auto_broadcast, r#"add-one(x<f6
   | * => x + 1.
 add-one([1 2 3])"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, 4.0], 1, 3)));
 
+// Named arguments: args passed in reversed order should be reordered by name.
+test_interpreter!(interpret_named_args_basic, r#"sub(a<f64>, b<f64>) => <f64>
+  | (*, *) => a - b.
+sub(b: 3.0, a: 10.0)"#, Value::F64(Ref::new(7.0)));
+
+// Named arguments: same order as declaration should still work.
+test_interpreter!(interpret_named_args_same_order, r#"sub(a<f64>, b<f64>) => <f64>
+  | (*, *) => a - b.
+sub(a: 10.0, b: 3.0)"#, Value::F64(Ref::new(7.0)));
+
+// Named arguments: three-parameter function called in a different order.
+test_interpreter!(interpret_named_args_three_params, r#"triple(x<f64>, y<f64>, z<f64>) => <f64>
+  | (*, *, *) => x - y - z.
+triple(z: 1.0, x: 10.0, y: 2.0)"#, Value::F64(Ref::new(7.0)));
+
 test_interpreter!(interpret_set_value,"~x := 1.23; x = 4.56;", Value::F64(Ref::new(4.56)));
 test_interpreter!(interpret_set_value_row_vector,"~x := [6,2]; x[1] = 4;", Value::MatrixF64(Matrix::from_vec(vec![4.0, 2.0], 1, 2)));
 test_interpreter!(interpret_set_value_col_vector,"~x := [false false true true]'; x[1] = true; x[1]", Value::Bool(Ref::new(true)));
