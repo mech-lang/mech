@@ -60,6 +60,7 @@ State machines are Mech's way of expressing protocols, processes, and asynchrono
   <img width="500px" src="https://gitlab.com/mech-lang/assets/-/raw/ea310ad7a32025d34e6a60dc155a520266bd42b0/images/code/countdown.png" alt='A simple state machine that counts down from a given number.'>
     <p align="center"><a href="https://mech-lang.org/post/2026-05-11-version-0.3/#17511385190939228">Live Example</a><p>
 </p>
+
 ***
 
 Mech also supports comprehensions and relational joins. Here is an example of a comprehension that finds the friends of friends in a social graph by joining two generators over a common variable:
