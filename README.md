@@ -41,6 +41,8 @@ Here are a few more examples of Mech code to give you a sense of the language. F
   <p align="center"><a href="https://mech-lang.org/post/2026-05-11-version-0.3/#48174767513779710">Live Example</a><p>
 </p>
 
+***
+
 Pattern matching is a prominent feature throughout Mech. Here is an example of pattern matching on arrays:
 
 <p align="center">
