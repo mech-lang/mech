@@ -20,3 +20,16 @@ mech test .
 mech test foo
 mech test foo/bar.mec
 ```
+
+Examples:
+
+```mech
+-- Basic invariant
+positive! := x > 0
+
+-- Derived invariant over structures
+within-budget! := total-cost <= budget
+
+-- Another boolean integrity check
+ready! := count >= min-count
+```

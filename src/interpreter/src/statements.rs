@@ -11,7 +11,7 @@ pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -
   match stmt {
     #[cfg(feature = "tuple")]
     Statement::TupleDestructure(tpl_dstrct) => tuple_destructure(&tpl_dstrct, p),
-    #[cfg(feature = "variable_define")]
+    #[cfg(feature = "invariant_define")]
     Statement::InvariantDefine(var_def) => invariant_define(&var_def, p),
     #[cfg(feature = "variable_define")]
     Statement::VariableDefine(var_def) => variable_define(&var_def, p),
@@ -240,7 +240,7 @@ pub fn kind_define(knd_def: &KindDefine, p: &Interpreter) -> MResult<Value> {
   Ok(Value::Kind(value_kind))
 }
 
-#[cfg(feature = "variable_define")]
+#[cfg(feature = "invariant_define")]
 pub fn invariant_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Value> {
   let result = variable_define(var_def, p)?;
   match result {

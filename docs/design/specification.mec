@@ -230,7 +230,7 @@ identifier-symbol := ¬(equal | underscore) , symbol ;
 (3.2.3.1) Examples
 
 ```
-& $ | % / # = \ ~ + - * ^ _
+& $ | % @ / # = \ ~ + - * ^ _
 ```
 
 (3.2.4) Grouping Symbols

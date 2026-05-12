@@ -1110,6 +1110,7 @@ pub enum Statement {
   OpAssign(OpAssign),
   VariableAssign(VariableAssign),
   VariableDefine(VariableDefine),
+  #[cfg(feature = "invariant_define")]
   InvariantDefine(VariableDefine),
   TupleDestructure(TupleDestructure),
   SplitTable,     // todo
@@ -1125,6 +1126,7 @@ impl Statement {
       Statement::OpAssign(x) => x.tokens(),
       Statement::VariableAssign(x) => x.tokens(),
       Statement::VariableDefine(x) => x.tokens(),
+      #[cfg(feature = "invariant_define")]
       Statement::InvariantDefine(x) => x.tokens(),
       Statement::TupleDestructure(x) => x.tokens(),
       Statement::SplitTable => vec![], // todo
