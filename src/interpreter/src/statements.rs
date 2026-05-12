@@ -12,6 +12,8 @@ pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -
     #[cfg(feature = "tuple")]
     Statement::TupleDestructure(tpl_dstrct) => tuple_destructure(&tpl_dstrct, p),
     #[cfg(feature = "variable_define")]
+    Statement::InvariantDefine(var_def) => invariant_define(&var_def, p),
+    #[cfg(feature = "variable_define")]
     Statement::VariableDefine(var_def) => variable_define(&var_def, p),
     #[cfg(feature = "variable_assign")]
     Statement::VariableAssign(var_assgn) => variable_assign(&var_assgn, env, p),
@@ -236,6 +238,27 @@ pub fn kind_define(knd_def: &KindDefine, p: &Interpreter) -> MResult<Value> {
   let mut kinds = &mut p.state.borrow_mut().kinds;
   kinds.insert(id, value_kind.clone());
   Ok(Value::Kind(value_kind))
+}
+
+#[cfg(feature = "variable_define")]
+pub fn invariant_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Value> {
+  let result = variable_define(var_def, p)?;
+  match result {
+    Value::Bool(b) => {
+      if *b.borrow() {
+        Ok(Value::Bool(b))
+      } else {
+        Err(MechError::new(
+          GenericError{msg: format!("Invariant `{}` failed", var_def.var.name.to_string())},
+          None
+        ).with_compiler_loc().with_tokens(var_def.var.name.tokens()))
+      }
+    },
+    other => Err(MechError::new(
+      GenericError{msg: format!("Invariant `{}` must evaluate to bool, got {}", var_def.var.name.to_string(), other.kind())},
+      None
+    ).with_compiler_loc().with_tokens(var_def.expression.tokens())),
+  }
 }
 
 #[cfg(all(feature = "enum", feature = "atom"))]

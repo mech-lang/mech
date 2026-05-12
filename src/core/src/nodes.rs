@@ -1110,6 +1110,7 @@ pub enum Statement {
   OpAssign(OpAssign),
   VariableAssign(VariableAssign),
   VariableDefine(VariableDefine),
+  InvariantDefine(VariableDefine),
   TupleDestructure(TupleDestructure),
   SplitTable,     // todo
   FlattenTable,   // todo
@@ -1124,6 +1125,7 @@ impl Statement {
       Statement::OpAssign(x) => x.tokens(),
       Statement::VariableAssign(x) => x.tokens(),
       Statement::VariableDefine(x) => x.tokens(),
+      Statement::InvariantDefine(x) => x.tokens(),
       Statement::TupleDestructure(x) => x.tokens(),
       Statement::SplitTable => vec![], // todo
       Statement::FlattenTable => vec![], // todo

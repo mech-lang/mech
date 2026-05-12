@@ -45,6 +45,7 @@ v0.3.4-beta
 - [`match`](/reference/match.html) - construct for branching logic based on pattern matching
 - [`pattern`](/reference/pattern.html) - match and destructure data
 - [`state machine`](/reference/state-machine.html) - defines a set of states and transitions between them
+- [`validation`](/reference/validation.html) - runtime invariants and integrity constraints
 - Synth `todo`
 - Gen `todo`
 - Modules `todo`

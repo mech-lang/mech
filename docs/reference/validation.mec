@@ -1,0 +1,22 @@
+Validation
+===============================================================================
+
+Integrity constraints (invariants) are statements that must evaluate to `true`.
+
+```mech
+foo! := EXPRESSION
+```
+
+Rules:
+- The identifier ends with `!`.
+- The expression must evaluate to `bool`.
+- Invariants are checked at runtime and must stay true.
+- Invariants are not valid on the right-hand side of other expressions.
+
+Use `mech test` to run and validate them:
+
+```sh
+mech test .
+mech test foo
+mech test foo/bar.mec
+```

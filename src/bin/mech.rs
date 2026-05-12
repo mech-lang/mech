@@ -197,6 +197,12 @@ async fn main() -> Result<(), MechError> {
         .long("out")
         .help("Destination folder.")
         .required(false)))            
+    .subcommand(Command::new("test")
+      .about("Run and validate Mech invariants.")
+      .arg(Arg::new("mech_test_file_paths")
+        .help("Source .mec and .mecb files")
+        .required(false)
+        .action(ArgAction::Append)))
     .subcommand(Command::new("serve")
       .about("Serve Mech program over an HTTP server.")
       .arg(Arg::new("mech_serve_file_paths")
@@ -322,6 +328,44 @@ async fn main() -> Result<(), MechError> {
     }    
   }
   
+  // --------------------------------------------------------------------------
+  // Test
+  // --------------------------------------------------------------------------
+  if let Some(matches) = matches.subcommand_matches("test") {
+    let mech_paths: Vec<String> = matches
+      .get_many::<String>("mech_test_file_paths")
+      .map_or(vec![".".to_string()], |files| files.map(|file| file.to_string()).collect());
+    let mut mechfs = MechFileSystem::new();
+    for path in mech_paths {
+      mechfs.watch_source(&path)?;
+    }
+    let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag, trace_flag);
+    if let Err(err) = result {
+      print_mech_error(&err);
+      std::process::exit(1);
+    }
+    let symbols = intrp.symbols();
+    let symbols_brrw = symbols.borrow();
+    let mut failed: Vec<String> = vec![];
+    for (id, value) in symbols_brrw.symbols.iter() {
+      if let Some(name) = symbols_brrw.dictionary.borrow().get(id) {
+        if name.ends_with('!') {
+          match &*value.borrow() {
+            Value::Bool(b) if *b.borrow() => (),
+            _ => failed.push(name.clone()),
+          }
+        }
+      }
+    }
+    if failed.is_empty() {
+      println!("[Test] All invariants passed.");
+      std::process::exit(0);
+    } else {
+      eprintln!("[Test] Failed invariants: {}", failed.join(", "));
+      std::process::exit(1);
+    }
+  }
+
   // --------------------------------------------------------------------------
   // Build
   // --------------------------------------------------------------------------
