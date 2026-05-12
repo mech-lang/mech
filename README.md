@@ -34,6 +34,8 @@ Some notable features of Mech are demonstrated in this short program:
 
 Mech also supports a number of other features, such as pattern matching,state machines, comprehensions, and relational joins.
 
+***
+
 Here are a few more examples of Mech code to give you a sense of the language. First, the classic factorial program expressed in Mech:
 
 <p align="center">
@@ -50,12 +52,15 @@ Pattern matching is a prominent feature throughout Mech. Here is an example of p
   <p align="center"><a href="https://mech-lang.org/post/2026-05-11-version-0.3/#23498838807498402">Live Example</a><p>
 </p>
 
+***
+
 State machines are Mech's way of expressing protocols, processes, and asynchronous computations. Here is an example of a simple state machine that counts down from a given number:
 
 <p align="center">
   <img width="500px" src="https://gitlab.com/mech-lang/assets/-/raw/ea310ad7a32025d34e6a60dc155a520266bd42b0/images/code/countdown.png" alt='A simple state machine that counts down from a given number.'>
     <p align="center"><a href="https://mech-lang.org/post/2026-05-11-version-0.3/#17511385190939228">Live Example</a><p>
 </p>
+***
 
 Mech also supports comprehensions and relational joins. Here is an example of a comprehension that finds the friends of friends in a social graph by joining two generators over a common variable:
 
