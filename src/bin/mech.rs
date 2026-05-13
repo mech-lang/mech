@@ -197,6 +197,7 @@ async fn main() -> Result<(), MechError> {
         .long("out")
         .help("Destination folder.")
         .required(false)))            
+    #[cfg(all(feature = "run", feature = "variable_define", feature = "symbol_table", feature = "bool"))]
     .subcommand(Command::new("test")
       .about("Run and validate Mech invariants.")
       .arg(Arg::new("mech_test_file_paths")
@@ -331,6 +332,7 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   // Test
   // --------------------------------------------------------------------------
+  #[cfg(all(feature = "run", feature = "variable_define", feature = "symbol_table", feature = "bool"))]
   if let Some(matches) = matches.subcommand_matches("test") {
     let uuid = generate_uuid();
     let mut intrp = Interpreter::new(uuid);
