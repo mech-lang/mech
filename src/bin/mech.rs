@@ -331,7 +331,7 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   // Test
   // --------------------------------------------------------------------------
-  #[cfg(all(feature = "run", feature = "variable_define", feature = "symbol_table", feature = "bool"))]
+  #[cfg(all(feature = "run", feature = "variable_define", feature = "invariant_define", feature = "symbol_table", feature = "bool"))]
   if let Some(matches) = matches.subcommand_matches("test") {
     let uuid = generate_uuid();
     let mut intrp = Interpreter::new(uuid);
@@ -347,17 +347,13 @@ async fn main() -> Result<(), MechError> {
       print_mech_error(&err);
       std::process::exit(1);
     }
-    let symbols = intrp.symbols();
-    let symbols_brrw = symbols.borrow();
     let mut failed: Vec<String> = vec![];
-    for (id, value) in symbols_brrw.symbols.iter() {
-      if let Some(name) = symbols_brrw.dictionary.borrow().get(id) {
-        if name.ends_with('!') {
-          match &*value.borrow() {
-            Value::Bool(b) if *b.borrow() => (),
-            _ => failed.push(name.clone()),
-          }
-        }
+    let state_brrw = intrp.state.borrow();
+    for (id, value) in state_brrw.invariants.iter() {
+      let name = state_brrw.dictionary.borrow().get(id).cloned().unwrap_or_else(|| format!("#{}", id));
+      match &*value.borrow() {
+        Value::Bool(b) if *b.borrow() => (),
+        _ => failed.push(name),
       }
     }
     if failed.is_empty() {

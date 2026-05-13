@@ -26,6 +26,8 @@ pub type Dictionary = HashMap<u64,String>;
 pub type KindTable = HashMap<u64, ValueKind>;
 #[cfg(feature = "enum")]
 pub type EnumTable = HashMap<u64, MechEnum>;
+#[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
+pub type InvariantTable = HashMap<u64, ValRef>;
 
 pub struct ProgramState {
   #[cfg(feature = "symbol_table")]
@@ -39,6 +41,8 @@ pub struct ProgramState {
   pub kinds: KindTable,
   #[cfg(feature = "enum")]
   pub enums: EnumTable,
+  #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
+  pub invariants: InvariantTable,
   pub dictionary: Ref<Dictionary>,
 }
 
@@ -56,6 +60,8 @@ impl Clone for ProgramState {
       kinds: self.kinds.clone(),
       #[cfg(feature = "enum")]
       enums: self.enums.clone(),
+      #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
+      invariants: self.invariants.clone(),
       dictionary: self.dictionary.clone(),
     }
   }
@@ -75,6 +81,8 @@ impl ProgramState {
       kinds: KindTable::new(),
       #[cfg(feature = "enum")]
       enums: EnumTable::new(),
+      #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
+      invariants: InvariantTable::new(),
       dictionary: Ref::new(Dictionary::new()),
     }
   }

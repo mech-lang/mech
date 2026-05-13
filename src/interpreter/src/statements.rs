@@ -242,7 +242,12 @@ pub fn kind_define(knd_def: &KindDefine, p: &Interpreter) -> MResult<Value> {
 
 #[cfg(feature = "invariant_define")]
 pub fn invariant_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Value> {
+  let invariant_id = var_def.var.name.hash();
   let result = variable_define(var_def, p)?;
+  #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
+  if let Some(invariant_value) = p.state.borrow().get_symbol(invariant_id) {
+    p.state.borrow_mut().invariants.insert(invariant_id, invariant_value);
+  }
   match result {
     Value::Bool(b) => {
       if *b.borrow() {
