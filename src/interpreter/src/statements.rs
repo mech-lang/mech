@@ -245,8 +245,14 @@ pub fn invariant_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Va
   let invariant_id = var_def.var.name.hash();
   let result = variable_define(var_def, p)?;
   #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
-  if let Some(invariant_value) = p.state.borrow().get_symbol(invariant_id) {
-    p.state.borrow_mut().invariants.insert(invariant_id, invariant_value);
+  {
+    let invariant_value = {
+      let state_brrw = p.state.borrow();
+      state_brrw.get_symbol(invariant_id)
+    };
+    if let Some(invariant_value) = invariant_value {
+      p.state.borrow_mut().invariants.insert(invariant_id, invariant_value);
+    }
   }
   match result {
     Value::Bool(b) => {
