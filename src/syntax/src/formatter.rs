@@ -1978,6 +1978,8 @@ impl Formatter {
   pub fn statement(&mut self, node: &Statement) -> String {
     let s = match node {
       Statement::VariableDefine(var_def) => self.variable_define(var_def),
+      #[cfg(feature = "invariant_define")]
+      Statement::InvariantDefine(var_def) => self.variable_define(var_def),
       Statement::OpAssign(op_asgn) => self.op_assign(op_asgn),
       Statement::VariableAssign(var_asgn) => self.variable_assign(var_asgn),
       Statement::TupleDestructure(tpl_dstrct) => self.tuple_destructure(tpl_dstrct),

@@ -332,6 +332,8 @@ async fn main() -> Result<(), MechError> {
   // Test
   // --------------------------------------------------------------------------
   if let Some(matches) = matches.subcommand_matches("test") {
+    let uuid = generate_uuid();
+    let mut intrp = Interpreter::new(uuid);
     let mech_paths: Vec<String> = matches
       .get_many::<String>("mech_test_file_paths")
       .map_or(vec![".".to_string()], |files| files.map(|file| file.to_string()).collect());
