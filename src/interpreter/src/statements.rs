@@ -243,13 +243,23 @@ pub fn kind_define(knd_def: &KindDefine, p: &Interpreter) -> MResult<Value> {
 #[derive(Clone, Debug)]
 pub struct InvariantViolationError {
   pub invariant_name: String,
-  pub rhs_addr: u64,
+  pub expression: String,
+  pub lhs_addr: Option<u64>,
+  pub lhs_value: Option<String>,
+  pub operator: Option<FormulaOperator>,
+  pub rhs_addr: Option<u64>,
+  pub rhs_value: Option<String>,
   pub reason: String,
 }
 impl MechErrorKind for InvariantViolationError {
   fn name(&self) -> &str { "InvariantViolationError" }
   fn message(&self) -> String {
-    format!("Invariant `{}` violation: {} (rhs_ref=@{:x})", self.invariant_name, self.reason, self.rhs_addr)
+    let details = match (&self.lhs_addr, &self.lhs_value, &self.operator, &self.rhs_addr, &self.rhs_value) {
+      (Some(la), Some(lv), Some(op), Some(ra), Some(rv)) =>
+        format!(" | expr: {} | lhs(@{:x})={} op={:?} rhs(@{:x})={}", self.expression, la, lv, op, ra, rv),
+      _ => format!(" | expr: {}", self.expression),
+    };
+    format!("Invariant `{}` violation: {}{}", self.invariant_name, self.reason, details)
   }
 }
 
@@ -288,14 +298,38 @@ pub fn invariant_define(inv_def: &InvariantDefine, p: &Interpreter) -> MResult<V
     other => Some(format!("must evaluate to bool, got {}", other.kind())),
   };
   if let Some(error) = violation_error {
+    let operand_detail = invariant_operand_refs(inv_def, p);
+    let (lhs_addr, lhs_value, operator, rhs_addr, rhs_value) = match operand_detail {
+      Some((lhs, op, rhs)) => {
+        let lhs_addr = lhs.as_ref().map(|v| v.addr() as u64);
+        let lhs_value = lhs.as_ref().map(|v| format!("{:?}", v.borrow()));
+        let rhs_addr = rhs.as_ref().map(|v| v.addr() as u64);
+        let rhs_value = rhs.as_ref().map(|v| format!("{:?}", v.borrow()));
+        (lhs_addr, lhs_value, op, rhs_addr, rhs_value)
+      }
+      None => (None, None, None, Some(rhs_ref.addr() as u64), Some(format!("{:?}", rhs_ref.borrow()))),
+    };
     let err = MechError::new(
-      InvariantViolationError{ invariant_name: invariant_name.clone(), rhs_addr: rhs_ref.addr() as u64, reason: error },
+      InvariantViolationError{
+        invariant_name: invariant_name.clone(),
+        expression: tokens_to_string(&inv_def.expression.tokens()),
+        lhs_addr,
+        lhs_value,
+        operator,
+        rhs_addr,
+        rhs_value,
+        reason: error
+      },
       None
     ).with_compiler_loc().with_tokens(inv_def.expression.tokens());
-    let (lhs, operator, rhs) = invariant_operand_refs(inv_def, p).unwrap_or((None, None, None));
-    p.state.borrow_mut().invariant_violations.push(InvariantViolation { id: invariant_id, error: err, lhs, operator, rhs });
+    p.state.borrow_mut().invariant_violations.push(InvariantViolation { id: invariant_id, error: err });
   }
   Ok(result)
+}
+
+#[cfg(feature = "invariant_define")]
+fn tokens_to_string(tokens: &[Token]) -> String {
+  tokens.iter().flat_map(|t| t.chars.clone()).collect::<String>()
 }
 
 #[cfg(feature = "invariant_define")]

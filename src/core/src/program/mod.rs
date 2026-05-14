@@ -33,9 +33,6 @@ pub type InvariantTable = HashMap<u64, (String, ValRef)>;
 pub struct InvariantViolation {
   pub id: u64,
   pub error: MechError,
-  pub lhs: Option<ValRef>,
-  pub operator: Option<FormulaOperator>,
-  pub rhs: Option<ValRef>,
 }
 
 pub struct ProgramState {
