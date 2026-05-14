@@ -262,9 +262,38 @@ pub fn invariant_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Va
     other => Some(format!("Invariant `{}` must evaluate to bool, got {}", invariant_name, other.kind())),
   };
   if let Some(message) = violation_message {
+    let detail = invariant_failure_detail(var_def, p).unwrap_or_default();
+    let message = if detail.is_empty() { message } else { format!("{} ({})", message, detail) };
     p.state.borrow_mut().invariant_violations.push(InvariantViolation { id: invariant_id, message });
   }
   Ok(result)
+}
+
+#[cfg(feature = "invariant_define")]
+fn invariant_failure_detail(var_def: &VariableDefine, p: &Interpreter) -> Option<String> {
+  let factor = match &var_def.expression {
+    Expression::Formula(f) => f,
+    _ => return None,
+  };
+  let term = match factor {
+    Factor::Term(t) => t,
+    _ => return None,
+  };
+  let (op, rhs_factor) = term.rhs.first()?;
+  let lhs_value = expression(&Expression::Formula(term.lhs.clone()), None, p).ok()?;
+  let rhs_value = expression(&Expression::Formula(rhs_factor.clone()), None, p).ok()?;
+  let op_str = match op {
+    FormulaOperator::Comparison(ComparisonOp::Equal) => "==",
+    FormulaOperator::Comparison(ComparisonOp::NotEqual) => "!=",
+    FormulaOperator::Comparison(ComparisonOp::StrictEqual) => "===",
+    FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => "!==",
+    FormulaOperator::Comparison(ComparisonOp::LessThan) => "<",
+    FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => "<=",
+    FormulaOperator::Comparison(ComparisonOp::GreaterThan) => ">",
+    FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual) => ">=",
+    _ => "?",
+  };
+  Some(format!("lhs={} {} rhs={}", lhs_value, op_str, rhs_value))
 }
 
 #[cfg(all(feature = "enum", feature = "atom"))]
