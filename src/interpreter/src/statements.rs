@@ -674,7 +674,9 @@ macro_rules! op_assign {
           x => todo!("{:?}", x),
         }
       }
-    }}}
+    }
+  };
+}
 
 #[cfg(feature = "math_add_assign")]
 op_assign!(add_assign, Add);
