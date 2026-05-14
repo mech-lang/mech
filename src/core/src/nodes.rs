@@ -2445,6 +2445,11 @@ pub struct RangeExpression {
 impl RangeExpression {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tokens = self.start.tokens();
+    if let Some((inc_op, inc)) = &self.increment {
+      tokens.push(inc_op.token());
+      tokens.append(&mut inc.tokens());
+    }
+    tokens.push(self.operator.token());
     tokens.append(&mut self.terminal.tokens());
     tokens
   }
@@ -2462,11 +2467,69 @@ impl Term {
     let mut lhs_tkns = self.lhs.tokens();
     let mut rhs_tkns = vec![];
     for (op, r) in &self.rhs {
+      rhs_tkns.push(op.token());
       let mut tkns = r.tokens();
       rhs_tkns.append(&mut tkns);
     }
     lhs_tkns.append(&mut rhs_tkns);
     lhs_tkns
+  }
+}
+
+impl RangeOp {
+  pub fn token(&self) -> Token {
+    let chars = match self {
+      RangeOp::Exclusive => "..".chars().collect(),
+      RangeOp::Inclusive => "..=".chars().collect(),
+    };
+    Token::new(TokenKind::Text, SourceRange::default(), chars)
+  }
+}
+
+impl FormulaOperator {
+  pub fn token(&self) -> Token {
+    let chars = match self {
+      FormulaOperator::AddSub(AddSubOp::Add) => "+",
+      FormulaOperator::AddSub(AddSubOp::Sub) => "-",
+      FormulaOperator::Comparison(ComparisonOp::Equal) => "==",
+      FormulaOperator::Comparison(ComparisonOp::NotEqual) => "!=",
+      FormulaOperator::Comparison(ComparisonOp::LessThan) => "<",
+      FormulaOperator::Comparison(ComparisonOp::GreaterThan) => ">",
+      FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => "<=",
+      FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual) => ">=",
+      FormulaOperator::Comparison(ComparisonOp::StrictEqual) => "===",
+      FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => "!==",
+      FormulaOperator::Power(PowerOp::Pow) => "^",
+      FormulaOperator::Logic(LogicOp::And) => "&&",
+      FormulaOperator::Logic(LogicOp::Or) => "||",
+      FormulaOperator::Logic(LogicOp::Xor) => "^",
+      FormulaOperator::Logic(LogicOp::Not) => "!",
+      FormulaOperator::MulDiv(MulDivOp::Div) => "/",
+      FormulaOperator::MulDiv(MulDivOp::Mod) => "%",
+      FormulaOperator::MulDiv(MulDivOp::Mul) => "*",
+      FormulaOperator::Vec(VecOp::Cross) => "×",
+      FormulaOperator::Vec(VecOp::Dot) => ".*",
+      FormulaOperator::Vec(VecOp::MatMul) => "**",
+      FormulaOperator::Vec(VecOp::Solve) => "\\",
+      FormulaOperator::Table(TableOp::InnerJoin) => "<*>",
+      FormulaOperator::Table(TableOp::LeftOuterJoin) => "<+",
+      FormulaOperator::Table(TableOp::RightOuterJoin) => "+>",
+      FormulaOperator::Table(TableOp::FullOuterJoin) => "<+>",
+      FormulaOperator::Table(TableOp::LeftSemiJoin) => "<*",
+      FormulaOperator::Table(TableOp::LeftAntiJoin) => "<!",
+      FormulaOperator::Set(SetOp::Union) => "∪",
+      FormulaOperator::Set(SetOp::Intersection) => "∩",
+      FormulaOperator::Set(SetOp::Difference) => "\\",
+      FormulaOperator::Set(SetOp::Complement) => "ᶜ",
+      FormulaOperator::Set(SetOp::ElementOf) => "∈",
+      FormulaOperator::Set(SetOp::NotElementOf) => "∉",
+      FormulaOperator::Set(SetOp::ProperSubset) => "⊂",
+      FormulaOperator::Set(SetOp::ProperSuperset) => "⊃",
+      FormulaOperator::Set(SetOp::Subset) => "⊆",
+      FormulaOperator::Set(SetOp::Superset) => "⊇",
+      FormulaOperator::Set(SetOp::SymmetricDifference) => "∆",
+    };
+    Token::new(TokenKind::Text, SourceRange::default(), chars.chars().collect())
   }
 }
 
