@@ -347,20 +347,34 @@ async fn main() -> Result<(), MechError> {
       print_mech_error(&err);
       std::process::exit(1);
     }
-    let mut failed: Vec<String> = vec![];
+    let mut passed = 0usize;
+    let mut failed = 0usize;
     let state_brrw = intrp.state.borrow();
     for (id, value) in state_brrw.invariants.iter() {
       let name = state_brrw.dictionary.borrow().get(id).cloned().unwrap_or_else(|| format!("#{}", id));
       match &*value.borrow() {
-        Value::Bool(b) if *b.borrow() => (),
-        _ => failed.push(name),
+        Value::Bool(b) if *b.borrow() => {
+          println!("test {} ... ok", name);
+          passed += 1;
+        },
+        _ => {
+          println!("test {} ... FAILED", name);
+          failed += 1;
+        },
       }
     }
-    if failed.is_empty() {
-      println!("[Test] All invariants passed.");
+    if failed == 0 {
+      println!("\ntest result: ok. {} passed; {} failed; 0 ignored; 0 measured; 0 filtered out", passed, failed);
       std::process::exit(0);
     } else {
-      eprintln!("[Test] Failed invariants: {}", failed.join(", "));
+      println!("\ntest result: FAILED. {} passed; {} failed; 0 ignored; 0 measured; 0 filtered out", passed, failed);
+      if !state_brrw.invariant_violations.is_empty() {
+        println!("\nfailures:");
+        for violation in &state_brrw.invariant_violations {
+          let name = state_brrw.dictionary.borrow().get(&violation.id).cloned().unwrap_or_else(|| format!("#{}", violation.id));
+          println!("    {}: {}", name, violation.message);
+        }
+      }
       std::process::exit(1);
     }
   }
