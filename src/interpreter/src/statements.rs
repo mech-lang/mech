@@ -330,87 +330,6 @@ pub fn invariant_define(inv_def: &InvariantDefine, p: &Interpreter) -> MResult<V
 }
 
 #[cfg(feature = "invariant_define")]
-fn expression_to_string(expr: &Expression) -> String {
-  match expr {
-    Expression::Formula(f) => factor_to_string(f),
-    Expression::Var(v) => v.name.to_string(),
-    Expression::Literal(l) => tokens_to_string(&l.tokens()),
-    Expression::Slice(s) => slice_to_string(s),
-    _ => tokens_to_string(&expr.tokens()),
-  }
-}
-
-#[cfg(feature = "invariant_define")]
-fn factor_to_string(factor: &Factor) -> String {
-  match factor {
-    Factor::Expression(expr) => expression_to_string(expr),
-    Factor::Negate(inner) => format!("-{}", factor_to_string(inner)),
-    Factor::Not(inner) => format!("!{}", factor_to_string(inner)),
-    Factor::Parenthetical(inner) => format!("({})", factor_to_string(inner)),
-    Factor::Term(term) => {
-      let mut out = factor_to_string(&term.lhs);
-      for (op, rhs) in &term.rhs {
-        out.push(' ');
-        out.push_str(formula_operator_symbol(op));
-        out.push(' ');
-        out.push_str(&factor_to_string(rhs));
-      }
-      out
-    }
-    Factor::Transpose(inner) => format!("{}'", factor_to_string(inner)),
-  }
-}
-
-#[cfg(feature = "invariant_define")]
-fn formula_operator_symbol(op: &FormulaOperator) -> &'static str {
-  match op {
-    FormulaOperator::Comparison(ComparisonOp::Equal) => "==",
-    FormulaOperator::Comparison(ComparisonOp::NotEqual) => "!=",
-    FormulaOperator::Comparison(ComparisonOp::LessThan) => "<",
-    FormulaOperator::Comparison(ComparisonOp::GreaterThan) => ">",
-    FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => "<=",
-    FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual) => ">=",
-    FormulaOperator::Comparison(ComparisonOp::StrictEqual) => "===",
-    FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => "!==",
-    FormulaOperator::Logic(LogicOp::And) => "&&",
-    FormulaOperator::Logic(LogicOp::Or) => "||",
-    FormulaOperator::Logic(LogicOp::Xor) => "^",
-    FormulaOperator::AddSub(AddSubOp::Add) => "+",
-    FormulaOperator::AddSub(AddSubOp::Sub) => "-",
-    FormulaOperator::MulDiv(MulDivOp::Mul) => "*",
-    FormulaOperator::MulDiv(MulDivOp::Div) => "/",
-    FormulaOperator::MulDiv(MulDivOp::Mod) => "%",
-    FormulaOperator::Vec(VecOp::Dot) => ".*",
-    FormulaOperator::Vec(VecOp::Cross) => "x",
-    FormulaOperator::Vec(VecOp::MatMul) => "**",
-    FormulaOperator::Vec(VecOp::Solve) => "\\",
-    FormulaOperator::Power(PowerOp::Pow) => "^",
-    _ => "?",
-  }
-}
-
-#[cfg(feature = "invariant_define")]
-fn slice_to_string(slice_ref: &Slice) -> String {
-  let mut out = slice_ref.name.to_string();
-  for sub in &slice_ref.subscript {
-    out.push('[');
-    out.push_str(&subscript_to_string(sub));
-    out.push(']');
-  }
-  out
-}
-
-#[cfg(feature = "invariant_define")]
-fn subscript_to_string(sub: &Subscript) -> String {
-  match sub {
-    Subscript::Formula(f) => factor_to_string(f),
-    Subscript::All => ":".to_string(),
-    Subscript::Range(r) => tokens_to_string(&r.tokens()),
-    _ => tokens_to_string(&sub.tokens()),
-  }
-}
-
-#[cfg(feature = "invariant_define")]
 fn tokens_to_string(tokens: &[Token]) -> String {
   tokens.iter().flat_map(|t| t.chars.clone()).collect::<String>()
 }
@@ -1073,6 +992,87 @@ impl MechErrorKind for UnableToConvertRecordError {
   }
   fn message(&self) -> String {
     format!("Unable to convert record of kind `{:?}` to record of kind `{:?}`", self.source_record_kind, self.target_record_kind)
+  }
+}
+
+#[cfg(feature = "invariant_define")]
+fn expression_to_string(expr: &Expression) -> String {
+  match expr {
+    Expression::Formula(f) => factor_to_string(f),
+    Expression::Var(v) => v.name.to_string(),
+    Expression::Literal(l) => tokens_to_string(&l.tokens()),
+    Expression::Slice(s) => slice_to_string(s),
+    _ => tokens_to_string(&expr.tokens()),
+  }
+}
+
+#[cfg(feature = "invariant_define")]
+fn factor_to_string(factor: &Factor) -> String {
+  match factor {
+    Factor::Expression(expr) => expression_to_string(expr),
+    Factor::Negate(inner) => format!("-{}", factor_to_string(inner)),
+    Factor::Not(inner) => format!("!{}", factor_to_string(inner)),
+    Factor::Parenthetical(inner) => format!("({})", factor_to_string(inner)),
+    Factor::Term(term) => {
+      let mut out = factor_to_string(&term.lhs);
+      for (op, rhs) in &term.rhs {
+        out.push(' ');
+        out.push_str(formula_operator_symbol(op));
+        out.push(' ');
+        out.push_str(&factor_to_string(rhs));
+      }
+      out
+    }
+    Factor::Transpose(inner) => format!("{}'", factor_to_string(inner)),
+  }
+}
+
+#[cfg(feature = "invariant_define")]
+fn formula_operator_symbol(op: &FormulaOperator) -> &'static str {
+  match op {
+    FormulaOperator::Comparison(ComparisonOp::Equal) => "==",
+    FormulaOperator::Comparison(ComparisonOp::NotEqual) => "!=",
+    FormulaOperator::Comparison(ComparisonOp::LessThan) => "<",
+    FormulaOperator::Comparison(ComparisonOp::GreaterThan) => ">",
+    FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => "<=",
+    FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual) => ">=",
+    FormulaOperator::Comparison(ComparisonOp::StrictEqual) => "===",
+    FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => "!==",
+    FormulaOperator::Logic(LogicOp::And) => "&&",
+    FormulaOperator::Logic(LogicOp::Or) => "||",
+    FormulaOperator::Logic(LogicOp::Xor) => "^",
+    FormulaOperator::AddSub(AddSubOp::Add) => "+",
+    FormulaOperator::AddSub(AddSubOp::Sub) => "-",
+    FormulaOperator::MulDiv(MulDivOp::Mul) => "*",
+    FormulaOperator::MulDiv(MulDivOp::Div) => "/",
+    FormulaOperator::MulDiv(MulDivOp::Mod) => "%",
+    FormulaOperator::Vec(VecOp::Dot) => ".*",
+    FormulaOperator::Vec(VecOp::Cross) => "x",
+    FormulaOperator::Vec(VecOp::MatMul) => "**",
+    FormulaOperator::Vec(VecOp::Solve) => "\\",
+    FormulaOperator::Power(PowerOp::Pow) => "^",
+    _ => "?",
+  }
+}
+
+#[cfg(feature = "invariant_define")]
+fn slice_to_string(slice_ref: &Slice) -> String {
+  let mut out = slice_ref.name.to_string();
+  for sub in &slice_ref.subscript {
+    out.push('[');
+    out.push_str(&subscript_to_string(sub));
+    out.push(']');
+  }
+  out
+}
+
+#[cfg(feature = "invariant_define")]
+fn subscript_to_string(sub: &Subscript) -> String {
+  match sub {
+    Subscript::Formula(f) => factor_to_string(f),
+    Subscript::All => ":".to_string(),
+    Subscript::Range(r) => tokens_to_string(&r.tokens()),
+    _ => tokens_to_string(&sub.tokens()),
   }
 }
 
