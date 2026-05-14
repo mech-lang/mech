@@ -371,7 +371,7 @@ async fn main() -> Result<(), MechError> {
         println!("\nfailures:");
         for violation in &state_brrw.invariant_violations {
           let name = state_brrw.invariants.get(&violation.id).map(|(n, _)| n.clone()).unwrap_or_else(|| format!("#{}", violation.id));
-          println!("    {}: {}", name, violation.error.kind.message());
+          println!("    {}: {}", name, violation.error.display_message());
           if let (Some(lhs), Some(op), Some(rhs)) = (&violation.lhs, &violation.operator, &violation.rhs) {
             println!("      operands: lhs={:?} op={:?} rhs={:?}", lhs.borrow(), op, rhs.borrow());
           }
