@@ -12,7 +12,7 @@ pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -
     #[cfg(feature = "tuple")]
     Statement::TupleDestructure(tpl_dstrct) => tuple_destructure(&tpl_dstrct, p),
     #[cfg(feature = "invariant_define")]
-    Statement::InvariantDefine(var_def) => invariant_define(&var_def, p),
+    Statement::InvariantDefine(inv_def) => invariant_define(&inv_def, p),
     #[cfg(feature = "variable_define")]
     Statement::VariableDefine(var_def) => variable_define(&var_def, p),
     #[cfg(feature = "variable_assign")]
@@ -240,11 +240,39 @@ pub fn kind_define(knd_def: &KindDefine, p: &Interpreter) -> MResult<Value> {
   Ok(Value::Kind(value_kind))
 }
 
+#[derive(Clone, Debug)]
+pub struct InvariantViolationError {
+  pub invariant_name: String,
+  pub rhs_addr: u64,
+  pub reason: String,
+}
+impl MechErrorKind for InvariantViolationError {
+  fn name(&self) -> &str { "InvariantViolationError" }
+  fn message(&self) -> String {
+    format!("Invariant `{}` violation: {} (rhs_ref=@{:x})", self.invariant_name, self.reason, self.rhs_addr)
+  }
+}
+
 #[cfg(feature = "invariant_define")]
-pub fn invariant_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Value> {
-  let invariant_id = var_def.var.name.hash();
-  let invariant_name = var_def.var.name.to_string();
-  let result = variable_define(var_def, p)?;
+pub fn invariant_define(inv_def: &InvariantDefine, p: &Interpreter) -> MResult<Value> {
+  let invariant_id = inv_def.name.hash();
+  let invariant_name = inv_def.name.to_string();
+  {
+    let symbols = p.symbols();
+    if symbols.borrow().contains(invariant_id) {
+      return Err(MechError::new(
+        VariableAlreadyDefinedError { id: invariant_id },
+        None
+      ).with_compiler_loc().with_tokens(inv_def.name.tokens()));
+    }
+  }
+  let result = expression(&inv_def.expression, None, p)?;
+  let rhs_ref = value_to_ref(result.clone());
+  let detached_result = detach_variable_value(&result);
+  let mut state_brrw = p.state.borrow_mut();
+  state_brrw.save_symbol(invariant_id, invariant_name.clone(), detached_result.clone(), false);
+  let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(invariant_name.clone())), Value::Bool(Ref::new(false))])?;
+  state_brrw.add_plan_step(var_def_fxn);
   #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
   {
     let invariant_value = {
@@ -256,24 +284,16 @@ pub fn invariant_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Va
     }
   }
   let violation_error = match &result {
-    Value::Bool(b) => {
-      if *b.borrow() {
-        None
-      } else {
-        Some(MechError::new(
-          GenericError{msg: format!("Invariant `{}` evaluated to false", invariant_name)},
-          None
-        ).with_compiler_loc().with_tokens(var_def.expression.tokens()))
-      }
-    },
-    other => Some(MechError::new(
-      GenericError{msg: format!("Invariant `{}` must evaluate to bool, got {}", invariant_name, other.kind())},
-      None
-    ).with_compiler_loc().with_tokens(var_def.expression.tokens())),
+    Value::Bool(b) => if *b.borrow() { None } else { Some("evaluated to false".to_string()) },
+    other => Some(format!("must evaluate to bool, got {}", other.kind())),
   };
   if let Some(error) = violation_error {
-    let (lhs, operator, rhs) = invariant_operand_refs(var_def, p).unwrap_or((None, None, None));
-    p.state.borrow_mut().invariant_violations.push(InvariantViolation { id: invariant_id, error, lhs, operator, rhs });
+    let err = MechError::new(
+      InvariantViolationError{ invariant_name: invariant_name.clone(), rhs_addr: rhs_ref.addr() as u64, reason: error },
+      None
+    ).with_compiler_loc().with_tokens(inv_def.expression.tokens());
+    let (lhs, operator, rhs) = invariant_operand_refs(inv_def, p).unwrap_or((None, None, None));
+    p.state.borrow_mut().invariant_violations.push(InvariantViolation { id: invariant_id, error: err, lhs, operator, rhs });
   }
   Ok(result)
 }
@@ -287,8 +307,8 @@ fn value_to_ref(value: Value) -> ValRef {
 }
 
 #[cfg(feature = "invariant_define")]
-fn invariant_operand_refs(var_def: &VariableDefine, p: &Interpreter) -> Option<(Option<ValRef>, Option<FormulaOperator>, Option<ValRef>)> {
-  let factor = match &var_def.expression {
+fn invariant_operand_refs(inv_def: &InvariantDefine, p: &Interpreter) -> Option<(Option<ValRef>, Option<FormulaOperator>, Option<ValRef>)> {
+  let factor = match &inv_def.expression {
     Expression::Formula(f) => f,
     _ => return None,
   };

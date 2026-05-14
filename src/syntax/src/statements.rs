@@ -147,7 +147,7 @@ pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
 
 #[cfg(feature = "invariant_define")]
 // invariant-define := identifier, "!", define-operator, expression ;
-pub fn invariant_define(input: ParseString) -> ParseResult<VariableDefine> {
+pub fn invariant_define(input: ParseString) -> ParseResult<InvariantDefine> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
   let (input, mut name) = identifier(input)?;
@@ -156,7 +156,7 @@ pub fn invariant_define(input: ParseString) -> ParseResult<VariableDefine> {
   let (input, _) = labelr!(null(is_not(assign_operator)), skip_nil, msg1)(input)?;
   let (input, _) = define_operator(input)?;
   let (input, expression) = label!(expression, msg2)(input)?;
-  Ok((input, VariableDefine{mutable: false, var: Var{name, kind: None}, expression}))
+  Ok((input, InvariantDefine{name, expression}))
 }
 
 // variable-assign := slice-ref, !define-operator, assign-operator, expression ;

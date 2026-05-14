@@ -1111,7 +1111,7 @@ pub enum Statement {
   VariableAssign(VariableAssign),
   VariableDefine(VariableDefine),
   #[cfg(feature = "invariant_define")]
-  InvariantDefine(VariableDefine),
+  InvariantDefine(InvariantDefine),
   TupleDestructure(TupleDestructure),
   SplitTable,     // todo
   FlattenTable,   // todo
@@ -1552,6 +1552,21 @@ pub struct VariableDefine {
   pub mutable: bool,
   pub var: Var,
   pub expression: Expression,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct InvariantDefine {
+  pub name: Identifier,
+  pub expression: Expression,
+}
+
+impl InvariantDefine {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.name.tokens();
+    tkns.append(&mut self.expression.tokens());
+    tkns
+  }
 }
 
 impl VariableDefine {
