@@ -20,6 +20,7 @@ mech [OPTIONS] [mech_paths]... [SUBCOMMAND]
 | `format`  | Format Mech source code into standard format. |
 | `help`    | Print help message.                           |
 | `serve`   | Serve Mech program over an HTTP server.       |
+| `test`    | Run program checks and validate invariants.   |
 
 (1.3) Arguments
 
@@ -114,6 +115,16 @@ mech serve [OPTIONS] [FILES]
 
 ```sh
 mech serve -p 3000 -a 0.0.0.0 my_script.mec
+```
+
+(2.4) test
+
+Runs a program and validates invariants defined as `foo! := <expression>`.
+
+```sh
+mech test .
+mech test foo
+mech test foo/bar.mec
 ```
 
 4. Additional Help

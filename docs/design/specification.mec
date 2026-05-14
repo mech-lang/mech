@@ -322,7 +322,7 @@ See the [Syntax Design Document](design/syntax-design.html) for a discussion on 
 identifier := (alpha | emoji), *(alpha | digit | identifier-symbol | emoji) ;
 ```
 
-Identifiers start with letters or most UTF-8 encoded emoji characters, and can contain alphanumeric, most emojis, `/`, `*`, `+`, `-`, and `^` characters.
+Identifiers start with letters or most UTF-8 encoded emoji characters, and can contain alphanumeric, most emojis, `/`, `*`, `+`, `-`, and `^` characters. The `@` character is not valid in identifiers.
 
 (3.5.1) Examples
 

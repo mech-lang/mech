@@ -1110,6 +1110,8 @@ pub enum Statement {
   OpAssign(OpAssign),
   VariableAssign(VariableAssign),
   VariableDefine(VariableDefine),
+  #[cfg(feature = "invariant_define")]
+  InvariantDefine(InvariantDefine),
   TupleDestructure(TupleDestructure),
   SplitTable,     // todo
   FlattenTable,   // todo
@@ -1124,6 +1126,8 @@ impl Statement {
       Statement::OpAssign(x) => x.tokens(),
       Statement::VariableAssign(x) => x.tokens(),
       Statement::VariableDefine(x) => x.tokens(),
+      #[cfg(feature = "invariant_define")]
+      Statement::InvariantDefine(x) => x.tokens(),
       Statement::TupleDestructure(x) => x.tokens(),
       Statement::SplitTable => vec![], // todo
       Statement::FlattenTable => vec![], // todo
@@ -1548,6 +1552,21 @@ pub struct VariableDefine {
   pub mutable: bool,
   pub var: Var,
   pub expression: Expression,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct InvariantDefine {
+  pub name: Identifier,
+  pub expression: Expression,
+}
+
+impl InvariantDefine {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.name.tokens();
+    tkns.append(&mut self.expression.tokens());
+    tkns
+  }
 }
 
 impl VariableDefine {

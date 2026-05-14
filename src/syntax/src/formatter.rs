@@ -1978,6 +1978,15 @@ impl Formatter {
   pub fn statement(&mut self, node: &Statement) -> String {
     let s = match node {
       Statement::VariableDefine(var_def) => self.variable_define(var_def),
+      #[cfg(feature = "invariant_define")]
+      Statement::InvariantDefine(inv_def) => {
+        let mut name = inv_def.name.to_string();
+        if self.html {
+          format!("<span class=\"mech-variable-define\">{}<span class=\"mech-variable-assign-op\">:=</span>{}</span>", name, self.expression(&inv_def.expression))
+        } else {
+          format!("{} {} {}", name, ":=", self.expression(&inv_def.expression))
+        }
+      },
       Statement::OpAssign(op_asgn) => self.op_assign(op_asgn),
       Statement::VariableAssign(var_asgn) => self.variable_assign(var_asgn),
       Statement::TupleDestructure(tpl_dstrct) => self.tuple_destructure(tpl_dstrct),

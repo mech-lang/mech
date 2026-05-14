@@ -6,6 +6,8 @@ use mech_syntax::parser;
 #[cfg(feature = "formatter")]
 use mech_syntax::formatter::*;
 use mech_interpreter::interpreter::*;
+#[cfg(feature = "invariant_define")]
+use mech_interpreter::InvariantViolationError;
 use std::time::Instant;
 use std::fs;
 use std::env;
@@ -197,6 +199,12 @@ async fn main() -> Result<(), MechError> {
         .long("out")
         .help("Destination folder.")
         .required(false)))            
+    .subcommand(Command::new("test")
+      .about("Run and validate Mech invariants.")
+      .arg(Arg::new("mech_test_file_paths")
+        .help("Source .mec and .mecb files")
+        .required(false)
+        .action(ArgAction::Append)))
     .subcommand(Command::new("serve")
       .about("Serve Mech program over an HTTP server.")
       .arg(Arg::new("mech_serve_file_paths")
@@ -322,6 +330,62 @@ async fn main() -> Result<(), MechError> {
     }    
   }
   
+  // --------------------------------------------------------------------------
+  // Test
+  // --------------------------------------------------------------------------
+  #[cfg(all(feature = "run", feature = "variable_define", feature = "invariant_define", feature = "symbol_table", feature = "bool"))]
+  if let Some(matches) = matches.subcommand_matches("test") {
+    let uuid = generate_uuid();
+    let mut intrp = Interpreter::new(uuid);
+    let mech_paths: Vec<String> = matches
+      .get_many::<String>("mech_test_file_paths")
+      .map_or(vec![".".to_string()], |files| files.map(|file| file.to_string()).collect());
+    let mut mechfs = MechFileSystem::new();
+    for path in mech_paths {
+      mechfs.watch_source(&path)?;
+    }
+    let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag, trace_flag);
+    if let Err(err) = result {
+      print_mech_error(&err);
+      std::process::exit(1);
+    }
+    let mut passed = 0usize;
+    let mut failed = 0usize;
+    let state_brrw = intrp.state.borrow();
+    for (_id, (name, value)) in state_brrw.invariants.iter() {
+      match &*value.borrow() {
+        Value::Bool(b) if *b.borrow() => {
+          println!("test {} ... ok", name);
+          passed += 1;
+        },
+        _ => {
+          println!("test {} ... FAILED", name);
+          failed += 1;
+        },
+      }
+    }
+    if failed == 0 {
+      println!("\ntest result: ok. {} passed; {} failed; 0 ignored; 0 measured; 0 filtered out", passed, failed);
+      std::process::exit(0);
+    } else {
+      println!("\ntest result: FAILED. {} passed; {} failed; 0 ignored; 0 measured; 0 filtered out", passed, failed);
+      if !state_brrw.invariant_violations.is_empty() {
+        println!("\nfailures:");
+        for violation in &state_brrw.invariant_violations {
+          let name = state_brrw.invariants.get(&violation.id).map(|(n, _)| n.clone()).unwrap_or_else(|| format!("#{}", violation.id));
+          if let Some(inv_err) = violation.error.kind_as::<InvariantViolationError>() {
+            let lhs = inv_err.lhs_value.clone().unwrap_or_else(|| "?".to_string());
+            let rhs = inv_err.rhs_value.clone().unwrap_or_else(|| "?".to_string());
+            println!("    {}: expr={} | lhs={} | rhs={}", name, inv_err.expression, lhs, rhs);
+          } else {
+            println!("    {}: {}", name, violation.error.display_message());
+          }
+        }
+      }
+      std::process::exit(1);
+    }
+  }
+
   // --------------------------------------------------------------------------
   // Build
   // --------------------------------------------------------------------------
