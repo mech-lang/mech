@@ -6,6 +6,8 @@ use mech_syntax::parser;
 #[cfg(feature = "formatter")]
 use mech_syntax::formatter::*;
 use mech_interpreter::interpreter::*;
+#[cfg(feature = "invariant_define")]
+use mech_interpreter::InvariantViolationError;
 use std::time::Instant;
 use std::fs;
 use std::env;
