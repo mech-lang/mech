@@ -32,7 +32,10 @@ pub type InvariantTable = HashMap<u64, (String, ValRef)>;
 #[derive(Clone, Debug)]
 pub struct InvariantViolation {
   pub id: u64,
-  pub message: String,
+  pub error: MechError,
+  pub lhs: Option<ValRef>,
+  pub operator: Option<FormulaOperator>,
+  pub rhs: Option<ValRef>,
 }
 
 pub struct ProgramState {

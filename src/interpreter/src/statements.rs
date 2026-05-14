@@ -255,22 +255,39 @@ pub fn invariant_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Va
       p.state.borrow_mut().invariants.insert(invariant_id, (invariant_name.clone(), invariant_value));
     }
   }
-  let violation_message = match &result {
+  let violation_error = match &result {
     Value::Bool(b) => {
-      if *b.borrow() { None } else { Some(format!("Invariant `{}` evaluated to false", invariant_name)) }
+      if *b.borrow() {
+        None
+      } else {
+        Some(MechError::new(
+          GenericError{msg: format!("Invariant `{}` evaluated to false", invariant_name)},
+          None
+        ).with_compiler_loc().with_tokens(var_def.expression.tokens()))
+      }
     },
-    other => Some(format!("Invariant `{}` must evaluate to bool, got {}", invariant_name, other.kind())),
+    other => Some(MechError::new(
+      GenericError{msg: format!("Invariant `{}` must evaluate to bool, got {}", invariant_name, other.kind())},
+      None
+    ).with_compiler_loc().with_tokens(var_def.expression.tokens())),
   };
-  if let Some(message) = violation_message {
-    let detail = invariant_failure_detail(var_def, p).unwrap_or_default();
-    let message = if detail.is_empty() { message } else { format!("{} ({})", message, detail) };
-    p.state.borrow_mut().invariant_violations.push(InvariantViolation { id: invariant_id, message });
+  if let Some(error) = violation_error {
+    let (lhs, operator, rhs) = invariant_operand_refs(var_def, p).unwrap_or((None, None, None));
+    p.state.borrow_mut().invariant_violations.push(InvariantViolation { id: invariant_id, error, lhs, operator, rhs });
   }
   Ok(result)
 }
 
 #[cfg(feature = "invariant_define")]
-fn invariant_failure_detail(var_def: &VariableDefine, p: &Interpreter) -> Option<String> {
+fn value_to_ref(value: Value) -> ValRef {
+  match value {
+    Value::MutableReference(r) => r.clone(),
+    other => Ref::new(other),
+  }
+}
+
+#[cfg(feature = "invariant_define")]
+fn invariant_operand_refs(var_def: &VariableDefine, p: &Interpreter) -> Option<(Option<ValRef>, Option<FormulaOperator>, Option<ValRef>)> {
   let factor = match &var_def.expression {
     Expression::Formula(f) => f,
     _ => return None,
@@ -280,20 +297,9 @@ fn invariant_failure_detail(var_def: &VariableDefine, p: &Interpreter) -> Option
     _ => return None,
   };
   let (op, rhs_factor) = term.rhs.first()?;
-  let lhs_value = expression(&Expression::Formula(term.lhs.clone()), None, p).ok()?;
-  let rhs_value = expression(&Expression::Formula(rhs_factor.clone()), None, p).ok()?;
-  let op_str = match op {
-    FormulaOperator::Comparison(ComparisonOp::Equal) => "==",
-    FormulaOperator::Comparison(ComparisonOp::NotEqual) => "!=",
-    FormulaOperator::Comparison(ComparisonOp::StrictEqual) => "===",
-    FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => "!==",
-    FormulaOperator::Comparison(ComparisonOp::LessThan) => "<",
-    FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => "<=",
-    FormulaOperator::Comparison(ComparisonOp::GreaterThan) => ">",
-    FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual) => ">=",
-    _ => "?",
-  };
-  Some(format!("lhs={} {} rhs={}", lhs_value, op_str, rhs_value))
+  let lhs_value = expression(&Expression::Formula(term.lhs.clone()), None, p).ok().map(value_to_ref);
+  let rhs_value = expression(&Expression::Formula(rhs_factor.clone()), None, p).ok().map(value_to_ref);
+  Some((lhs_value, Some(op.clone()), rhs_value))
 }
 
 #[cfg(all(feature = "enum", feature = "atom"))]
