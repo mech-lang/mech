@@ -279,10 +279,12 @@ pub fn invariant_define(inv_def: &InvariantDefine, p: &Interpreter) -> MResult<V
   let result = expression(&inv_def.expression, None, p)?;
   let rhs_ref = value_to_ref(result.clone());
   let detached_result = detach_variable_value(&result);
-  let mut state_brrw = p.state.borrow_mut();
-  state_brrw.save_symbol(invariant_id, invariant_name.clone(), detached_result.clone(), false);
-  let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(invariant_name.clone())), Value::Bool(Ref::new(false))])?;
-  state_brrw.add_plan_step(var_def_fxn);
+  {
+    let mut state_brrw = p.state.borrow_mut();
+    state_brrw.save_symbol(invariant_id, invariant_name.clone(), detached_result.clone(), false);
+    let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(invariant_name.clone())), Value::Bool(Ref::new(false))])?;
+    state_brrw.add_plan_step(var_def_fxn);
+  }
   #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
   {
     let invariant_value = {
