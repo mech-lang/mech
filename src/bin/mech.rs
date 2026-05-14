@@ -371,14 +371,17 @@ async fn main() -> Result<(), MechError> {
       println!("\ntest result: FAILED. {} passed; {} failed; 0 ignored; 0 measured; 0 filtered out", passed, failed);
       if !state_brrw.invariant_violations.is_empty() {
         println!("\nfailures:");
+        let width = state_brrw.invariant_violations.iter().map(|v| {
+          state_brrw.invariants.get(&v.id).map(|(n, _)| n.len()).unwrap_or_else(|| format!("#{}", v.id).len())
+        }).max().unwrap_or(0);
         for violation in &state_brrw.invariant_violations {
           let name = state_brrw.invariants.get(&violation.id).map(|(n, _)| n.clone()).unwrap_or_else(|| format!("#{}", violation.id));
           if let Some(inv_err) = violation.error.kind_as::<InvariantViolationError>() {
             let lhs = inv_err.lhs_value.clone().unwrap_or_else(|| "?".to_string());
             let rhs = inv_err.rhs_value.clone().unwrap_or_else(|| "?".to_string());
-            println!("    {}: expr={} | lhs={} | rhs={}", name, inv_err.expression, lhs, rhs);
+            println!("    {:width$}: expr={} | lhs={} | rhs={}", name, inv_err.expression, lhs, rhs, width=width);
           } else {
-            println!("    {}: {}", name, violation.error.display_message());
+            println!("    {:width$}: {}", name, violation.error.display_message(), width=width);
           }
         }
       }
