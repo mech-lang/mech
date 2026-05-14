@@ -252,7 +252,7 @@ pub fn invariant_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Va
       state_brrw.get_symbol(invariant_id)
     };
     if let Some(invariant_value) = invariant_value {
-      p.state.borrow_mut().invariants.insert(invariant_id, invariant_value);
+      p.state.borrow_mut().invariants.insert(invariant_id, (invariant_name.clone(), invariant_value));
     }
   }
   let violation_message = match &result {

@@ -350,8 +350,7 @@ async fn main() -> Result<(), MechError> {
     let mut passed = 0usize;
     let mut failed = 0usize;
     let state_brrw = intrp.state.borrow();
-    for (id, value) in state_brrw.invariants.iter() {
-      let name = state_brrw.dictionary.borrow().get(id).cloned().unwrap_or_else(|| format!("#{}", id));
+    for (_id, (name, value)) in state_brrw.invariants.iter() {
       match &*value.borrow() {
         Value::Bool(b) if *b.borrow() => {
           println!("test {} ... ok", name);
@@ -371,7 +370,7 @@ async fn main() -> Result<(), MechError> {
       if !state_brrw.invariant_violations.is_empty() {
         println!("\nfailures:");
         for violation in &state_brrw.invariant_violations {
-          let name = state_brrw.dictionary.borrow().get(&violation.id).cloned().unwrap_or_else(|| format!("#{}", violation.id));
+          let name = state_brrw.invariants.get(&violation.id).map(|(n, _)| n.clone()).unwrap_or_else(|| format!("#{}", violation.id));
           println!("    {}: {}", name, violation.message);
         }
       }

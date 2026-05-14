@@ -27,7 +27,7 @@ pub type KindTable = HashMap<u64, ValueKind>;
 #[cfg(feature = "enum")]
 pub type EnumTable = HashMap<u64, MechEnum>;
 #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
-pub type InvariantTable = HashMap<u64, ValRef>;
+pub type InvariantTable = HashMap<u64, (String, ValRef)>;
 #[cfg(feature = "invariant_define")]
 #[derive(Clone, Debug)]
 pub struct InvariantViolation {
