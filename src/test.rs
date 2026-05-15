@@ -106,8 +106,8 @@ fn file_to_mech(file: &FileReport, verbose: bool) -> String {
     run_error
   )
 }
-fn report_to_mech(report: &TestReport) -> String {
-  let files = report.files.iter().map(|f| file_to_mech(f, false)).collect::<Vec<_>>().join("\n");
+fn report_to_mech(report: &TestReport, verbose: bool) -> String {
+  let files = report.files.iter().map(|f| file_to_mech(f, verbose)).collect::<Vec<_>>().join("\n");
   format!(
     "{{\n  result: {{\n    files-total: {}\n    files-passed: {}\n    files-failed: {}\n    tests-total: {}\n    tests-passed: {}\n    tests-failed: {}\n  }}\n  files: {{\n{}\n  }}\n}}",
     report.result.files_total, report.result.files_passed, report.result.files_failed, report.result.tests_total, report.result.tests_passed, report.result.tests_failed,
@@ -276,7 +276,7 @@ pub fn run_mech_tests(
     let extension = path.extension().and_then(OsStr::to_str).unwrap_or("");
     match extension {
       "json" => save_to_file(path, &report_to_json(&report, verbose)?)?,
-      "mec" => save_to_file(path, &report_to_mech(&report))?,
+      "mec" => save_to_file(path, &report_to_mech(&report, verbose))?,
       _ => { eprintln!("{} Unsupported --out extension `.{}`. Use .json or .mec.", "[Error]".truecolor(246,98,78), extension); return Ok(1); }
     }
   }
