@@ -152,11 +152,11 @@ pub fn run_mech_tests(
           }
           passed_cases.push(CaseDetail {
             name: name.clone(),
-            expression: name.clone(),
+            expression: state.invariant_expressions.get(id).cloned().unwrap_or_else(|| name.clone()),
             reason: "evaluated to true".to_string(),
             evaluated_kind: "bool".to_string(),
-            actual: "✓".to_string(),
-            expected: "✓".to_string(),
+            actual: "true".to_string(),
+            expected: "true".to_string(),
           });
         }
         _ => {
@@ -164,7 +164,12 @@ pub fn run_mech_tests(
             println!("{}   ✗", name);
           }
           failed_cases.push(violations.remove(id).unwrap_or(CaseDetail {
-            name: name.clone(), expression: "".to_string(), reason: "Invariant evaluated to false or non-bool value".to_string(), evaluated_kind: "bool".to_string(), actual: "?".to_string(), expected: "?".to_string()
+            name: name.clone(),
+            expression: state.invariant_expressions.get(id).cloned().unwrap_or_default(),
+            reason: "Invariant evaluated to false or non-bool value".to_string(),
+            evaluated_kind: "bool".to_string(),
+            actual: "?".to_string(),
+            expected: "?".to_string()
           }));
         }
       }

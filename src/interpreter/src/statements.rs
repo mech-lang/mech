@@ -268,6 +268,7 @@ impl MechErrorKind for InvariantViolationError {
 pub fn invariant_define(inv_def: &InvariantDefine, p: &Interpreter) -> MResult<Value> {
   let invariant_id = inv_def.name.hash();
   let invariant_name = inv_def.name.to_string();
+  let invariant_expression = tokens_to_string(&inv_def.expression.tokens());
   {
     let symbols = p.symbols();
     if symbols.borrow().contains(invariant_id) {
@@ -286,6 +287,7 @@ pub fn invariant_define(inv_def: &InvariantDefine, p: &Interpreter) -> MResult<V
     let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(invariant_name.clone())), Value::Bool(Ref::new(false))])?;
     state_brrw.add_plan_step(var_def_fxn);
   }
+  p.state.borrow_mut().invariant_expressions.insert(invariant_id, invariant_expression.clone());
   #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
   {
     let invariant_value = {
@@ -315,7 +317,7 @@ pub fn invariant_define(inv_def: &InvariantDefine, p: &Interpreter) -> MResult<V
     let err = MechError::new(
       InvariantViolationError{
         invariant_name: invariant_name.clone(),
-        expression: tokens_to_string(&inv_def.expression.tokens()),
+        expression: invariant_expression,
         lhs_addr,
         lhs_value,
         operator,
