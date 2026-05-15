@@ -8,6 +8,9 @@ use std::ffi::OsStr;
 use std::io;
 use std::path::PathBuf;
 
+// Test
+// -----------------------------------------------------------------------------
+
 #[derive(Debug, Serialize, Clone)]
 struct CaseDetail {
   name: String,
