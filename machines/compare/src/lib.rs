@@ -53,6 +53,10 @@ pub mod gte;
 pub mod eq;
 #[cfg(feature = "neq")]
 pub mod neq;
+#[cfg(feature = "seq")]
+pub mod seq;
+#[cfg(feature = "sneq")]
+pub mod sneq;
 #[cfg(feature = "min")]
 pub mod min;
 #[cfg(feature = "max")]
@@ -70,6 +74,10 @@ pub use self::gte::*;
 pub use self::eq::*;
 #[cfg(feature = "neq")]
 pub use self::neq::*;
+#[cfg(feature = "seq")]
+pub use self::seq::*;
+#[cfg(feature = "sneq")]
+pub use self::sneq::*;
 #[cfg(feature = "min")]
 pub use self::min::*;
 #[cfg(feature = "max")]
