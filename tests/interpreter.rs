@@ -1353,6 +1353,9 @@ head(x)
 
 test_interpreter!(interpret_matrix_power_and_addition,"~μ := [1 2 3]; K := [0.1 0.2 0.3; 0.4 0.5 0.6; 0.7 0.8 0.9]; Ẑ := [0.01; 0.02; 0.03]; μ = μ + (K ** Ẑ)'", Value::MatrixF64(Matrix::from_vec(vec![1.014, 2.032, 3.05], 1, 3)));
 test_interpreter!(interpret_assign_scalar_no_space, "~z:=10;z=20", Value::F64(Ref::new(20.0)));
+test_interpreter!(interpret_assign_scalar_extra_whitespace_and_comment, "~z := 10 ; -- init\nz = 20", Value::F64(Ref::new(20.0)));
+test_interpreter!(interpret_assign_vector_with_semicolon_comment_terminal, "x  :=  [1, 2, 3] ; -- keep terminal trivia\nx[2]", Value::F64(Ref::new(2.0)));
+test_interpreter!(interpret_assign_vector_no_whitespace_terminal, "x:=[1,2,3];x[3]", Value::F64(Ref::new(3.0)));
 
 
 test_interpreter!(interpret_paren_term_whitespace, "fahrenheit := ( 25 * 9 / 5 ) + 32", Value::F64(Ref::new(77.0)));

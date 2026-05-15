@@ -9,9 +9,10 @@ The parser currently **recognizes** whitespace/newlines/comments in many places,
 - `whitespace0`, `whitespace1`, `space_tab0`, `space_tab1`, `list_separator`, `enum_separator`, `ws0e`, `ws1e`, and `newline_indent` all parse whitespace/separators and return `ParseResult<()>`, so parsed whitespace is immediately dropped. (`src/syntax/src/base.rs`)
 - This is the foundational loss point used all over grammar combinators.
 
-### 2) Operator leaf macros consume surrounding whitespace but only keep operator glyph
-- `ws0_leaf!` and `ws1_leaf!` call `whitespace0/whitespace1` before/after the operator and then emit one operator token with `chars` equal only to the operator text.
-- Any spaces/newlines around `=`, `:=`, `->`, `=>`, `...`, etc. are consumed and unrecoverable.
+### 2) Operator leaf macros (partially addressed)
+- `ws0_leaf!` and `ws1_leaf!` previously dropped surrounding whitespace when emitting operator tokens.
+- This has now been addressed by slicing from parse start cursor to end cursor so operator tokens can carry surrounding trivia text/range.
+- Remaining work is to decide whether this should remain in `Token.chars` long-term or move into an explicit trivia channel for cleaner token semantics.
 
 ### 3) Statement/code framing consumes terminal whitespace/comments separately from code item
 - `mech_code_alt` consumes leading `whitespace0` before code parse.
