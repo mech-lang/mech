@@ -338,16 +338,24 @@ async fn main() -> Result<(), MechError> {
     let mech_paths: Vec<String> = matches
       .get_many::<String>("mech_test_file_paths")
       .map_or(vec![".".to_string()], |files| files.map(|file| file.to_string()).collect());
+    let uuid = generate_uuid();
+    let mut intrp = Interpreter::new(uuid);
+    let mut mechfs = MechFileSystem::new();
     let mut any_failed = false;
+    let mut run_errors = false;
     for path in &mech_paths {
-      let uuid = generate_uuid();
-      let mut intrp = Interpreter::new(uuid);
-      let mut mechfs = MechFileSystem::new();
-      mechfs.watch_source(path)?;
+      if let Err(err) = mechfs.watch_source(path) {
+        print_mech_error(&err);
+        run_errors = true;
+        any_failed = true;
+        continue;
+      }
       let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag, trace_flag);
       if let Err(err) = result {
         print_mech_error(&err);
-        std::process::exit(1);
+        run_errors = true;
+        any_failed = true;
+        continue;
       }
       let mut passed = 0usize;
       let mut failed = 0usize;
@@ -391,6 +399,9 @@ async fn main() -> Result<(), MechError> {
         }
         println!();
       }
+    }
+    if run_errors {
+      println!("{} One or more files failed to load/execute, but all requested files were attempted.", "[Warn]".truecolor(255,210,77));
     }
     std::process::exit(if any_failed { 1 } else { 0 });
   }
