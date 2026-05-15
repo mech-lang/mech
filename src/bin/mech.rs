@@ -197,6 +197,23 @@ async fn main() -> Result<(), MechError> {
         .long("out")
         .help("Destination folder.")
         .required(false)))            
+    .subcommand(Command::new("test")
+      .about("Run and validate Mech invariants.")
+      .arg(Arg::new("mech_test_file_paths")
+        .help("Source .mec and .mecb files")
+        .required(false)
+        .action(ArgAction::Append))
+      .arg(Arg::new("output_path")
+        .short('o')
+        .long("out")
+        .help("Write test output to .json or .mec.")
+        .required(false))
+      .arg(Arg::new("verbose")
+        .short('v')
+        .long("verbose")
+        .help("Print verbose pass/fail details.")
+        .action(ArgAction::SetTrue)
+        .required(false)))
     .subcommand(Command::new("serve")
       .about("Serve Mech program over an HTTP server.")
       .arg(Arg::new("mech_serve_file_paths")
@@ -322,6 +339,20 @@ async fn main() -> Result<(), MechError> {
     }    
   }
   
+  // --------------------------------------------------------------------------
+  // Test
+  // --------------------------------------------------------------------------
+  #[cfg(all(feature = "run", feature = "variable_define", feature = "invariant_define", feature = "symbol_table", feature = "bool"))]
+  if let Some(matches) = matches.subcommand_matches("test") {
+    let mech_paths: Vec<String> = matches
+      .get_many::<String>("mech_test_file_paths")
+      .map_or(vec![".".to_string()], |files| files.map(|file| file.to_string()).collect());
+    let output_path = matches.get_one::<String>("output_path").cloned();
+    let verbose = matches.get_flag("verbose");
+    let exit_code = run_mech_tests(mech_paths, tree_flag, debug_flag, time_flag, trace_flag, output_path, verbose)?;
+    std::process::exit(exit_code);
+  }
+
   // --------------------------------------------------------------------------
   // Build
   // --------------------------------------------------------------------------

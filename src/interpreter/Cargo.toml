@@ -39,7 +39,7 @@ base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
 
 trace = []
   
-statements_default = ["variable_assign","variable_define","kind_define",
+statements_default = ["variable_assign","variable_define","invariant_define","kind_define",
     "mech-core/statements_default", "mech-set/statements_default", "mech-math/statements_default", "mech-compare/statements_default", "mech-combinatorics/statements_default", "mech-logic/statements_default", "mech-matrix/statements_default", "mech-io/statements_default", "mech-stats/statements_default", "mech-range/statements_default", "mech-string/statements_default"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing",
     "mech-core/subscript_default", "mech-set/subscript_default", "mech-math/subscript_default", "mech-compare/subscript_default", "mech-combinatorics/subscript_default", "mech-logic/subscript_default", "mech-matrix/subscript_default", "mech-io/subscript_default", "mech-stats/subscript_default", "mech-range/subscript_default", "mech-string/subscript_default"]
@@ -85,6 +85,7 @@ mika = ["mech-core/mika"]
 statements = ["mech-core/statements", "mech-set/statements", "mech-math/statements", "mech-compare/statements", "mech-combinatorics/statements", "mech-logic/statements", "mech-matrix/statements", "mech-io/statements", "mech-stats/statements", "mech-range/statements", "mech-string/statements"]
 variables = ["variable_define", "symbol_table", "mech-core/variables", "mech-set/variables", "mech-math/variables", "mech-compare/variables", "mech-combinatorics/variables", "mech-logic/variables", "mech-matrix/variables", "mech-io/variables", "mech-stats/variables", "mech-range/variables", "mech-string/variables"]
 variable_define = ["statements", "functions", "mech-core/variable_define", "mech-set/variable_define", "mech-math/variable_define", "mech-compare/variable_define", "mech-combinatorics/variable_define", "mech-logic/variable_define", "mech-matrix/variable_define", "mech-io/variable_define", "mech-stats/variable_define", "mech-range/variable_define", "mech-string/variable_define"]
+invariant_define = ["variable_define", "mech-core/invariant_define"]
 variable_assign = ["assign", "statements", "mech-core/variable_assign", "mech-set/variable_assign", "mech-math/variable_assign", "mech-compare/variable_assign", "mech-combinatorics/variable_assign", "mech-logic/variable_assign", "mech-matrix/variable_assign", "mech-io/variable_assign", "mech-stats/variable_assign", "mech-range/variable_assign", "mech-string/variable_assign"]
 kind_define = ["kind_annotation", "functions", "statements", "mech-core/kind_define", "mech-set/kind_define", "mech-math/kind_define", "mech-compare/kind_define", "mech-combinatorics/kind_define", "mech-logic/kind_define", "mech-matrix/kind_define", "mech-io/kind_define", "mech-stats/kind_define", "mech-range/kind_define", "mech-string/kind_define"]
 kind_annotation = ["functions", "mech-core/kind_annotation", "mech-set/kind_annotation", "mech-math/kind_annotation", "mech-compare/kind_annotation", "mech-combinatorics/kind_annotation", "mech-logic/kind_annotation", "mech-matrix/kind_annotation", "mech-io/kind_annotation", "mech-stats/kind_annotation", "mech-range/kind_annotation", "mech-string/kind_annotation"]
@@ -200,10 +201,12 @@ combinatorics = ["num-traits", "functions", "mech-combinatorics/combinatorics"]
 combinatorics_n_choose_k = ["combinatorics", "mech-combinatorics/n_choose_k"]
 
 # Compare
-compare_default = ["compare_lt", "compare_gt", "compare_lte", "compare_gte", "compare_eq", "compare_neq", "mech-compare/compare_default"]
+compare_default = ["compare_lt", "compare_gt", "compare_lte", "compare_gte", "compare_eq", "compare_neq", "compare_seq", "compare_sneq", "mech-compare/compare_default"]
 compare = ["functions", "bool", "mech-compare/compare"]
 compare_eq = ["compare", "mech-compare/eq"]
 compare_neq = ["compare", "mech-compare/neq"]
+compare_seq = ["compare", "mech-compare/seq"]
+compare_sneq = ["compare", "mech-compare/sneq"]
 compare_lt = ["compare", "mech-compare/lt"]
 compare_gt = ["compare", "mech-compare/gt"]
 compare_lte = ["compare", "mech-compare/lte"]
@@ -307,6 +310,7 @@ mech-string = { version = "0.3.5", default-features = false, optional = true }
 paste = "1.0.15"
 byteorder = "1.5.0"
 inventory = "0.3.22"
+grapheme = "1.3.0"
 nalgebra = {version = "0.34.1", optional = true}
 indexmap = {version = "2.13.0", optional = true}
 bincode = {version = "2.0.1", optional = true}

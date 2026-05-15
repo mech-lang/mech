@@ -1,0 +1,173 @@
+Validation
+===============================================================================
+
+%% Integrity constraints (invariants) are statements that must evaluate to `true`.
+
+```mech
+foo! := EXPRESSION
+```
+
+Rules:
+- The identifier ends with `!`.
+- The expression must evaluate to `bool`.
+- Invariants are checked at runtime and must stay true.
+- Invariants are not valid on the right-hand side of other expressions.
+
+Use `mech test` to run and validate them:
+
+```sh
+mech test .
+mech test foo
+mech test foo/bar.mec
+mech test foo/bar.mec -o report.json
+mech test foo/bar.mec -o report.mec
+mech test foo/bar.mec --verbose
+```
+
+1. Examples
+-------------------------------------------------------------------------------
+
+Examples:
+
+```mech:disabled
+-- Basic invariant
+positive! := x > 0
+
+-- Derived invariant over structures
+within-budget! := total-cost <= budget
+
+-- Another boolean integrity check
+ready! := state == :ready
+```
+
+Data structures can also be used in invariants:
+
+```mech:disabled
+my-list := 1 + [1 2 3]
+sorted! := my-list === [2 3 4]
+```
+
+The strict equality operator (`===`) checks for deep equality, so `sorted!` will evaluate to `true` if `my-list` is exactly `[2 3 4]`. Using the regular equality operator (`==`) would check for element-wise equality, which doesn't satisfy the requirement that the right-hand side of an invariant must evaluate to a single boolean value.
+
+```mech:disabled
+my-list := 1 + [1 2 3]
+-- Invalid because it evaluates to {{<[bool]>}}, expected {{<bool>}}.
+sorted! := my-list == [2 3 4]
+```
+
+
+2. Output Formats (`-o`, `--out`)
+-------------------------------------------------------------------------------
+
+`mech test -o <path>` writes structured output in one of two formats:
+
+- `.json` emits JSON
+- `.mec` emits a Mech record
+
+Pass/fail detail level depends on `--verbose`:
+
+- non-verbose: failed invariants are detailed, passed invariants are summarized by name
+- verbose: failed and passed invariants are both detailed
+
+(2.1) Mech Record Schema
+
+The Mech record output has the following kind shape:
+
+```mech:disabled
+<test-summary> := <{
+  files-total<u64>
+  files-passed<u64>
+  files-failed<u64>
+  tests-total<u64>
+  tests-passed<u64>
+  tests-failed<u64>
+}>
+
+<test-case-detail> := <{
+  name<string>
+  expression<string>
+  reason<string>
+  evaluated-kind<string>
+  actual<string>
+  expected<string>
+}>
+
+<test-case-name> := <{
+  name<string>
+}>
+
+<test-file-result> := <{
+  total<u64>
+  passed<u64>
+  failed<u64>
+}>
+
+-- non-verbose output shape
+<test-file-report> := <{
+  path<string>
+  result<test-file-result>
+  failed<[test-case-detail]>
+  passed<[test-case-name]>
+  run-error<string?>
+}>
+
+-- verbose output shape (passed has same detail as failed)
+<test-file-report/verbose> := <{
+  path<string>
+  result<test-file-result>
+  failed<[test-case-detail]>
+  passed<[test-case-detail]>
+  run-error<string?>
+}>
+
+-- overall report shape
+<test-report> := <{
+  result<test-summary>
+  files<[test-file-report]>
+}>
+
+-- overall report shape (verbose)
+<test-report/verbose> := <{
+  result<test-summary>
+  files<[test-file-report/verbose]>
+}>
+```
+
+(2.2) JSON Schema
+
+The JSON output follows the same structure as the Mech record. The main difference is that the JSON schema uses standard JSON types and nesting, while the Mech record uses Mech's kind system to define the shape of the data. Thus in the JSON output, we have objects and arrays instead of Mech's record and set kinds, but the overall structure and field names is:
+
+```json
+{
+  "result": {
+    "files-total": 0,
+    "files-passed": 0,
+    "files-failed": 0,
+    "tests-total": 0,
+    "tests-passed": 0,
+    "tests-failed": 0
+  },
+  "files": [
+    {
+      "path": "test.mec",
+      "result": { "total": 0, "passed": 0, "failed": 0 },
+      "failed": [
+        {
+          "name": "invariant!",
+          "expression": "x==1",
+          "reason": "evaluated to false",
+          "evaluated-kind": "bool",
+          "actual": "U64(@0x...: 2)",
+          "expected": "F64(@0x...: 1.0)"
+        }
+      ],
+      "passed": [
+        { "name": "other!" }
+      ],
+      "run-error": null
+    }
+  ]
+}
+```
+
+In verbose mode, `passed` entries include the same detailed fields as `failed`.

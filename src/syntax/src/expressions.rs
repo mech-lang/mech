@@ -409,18 +409,18 @@ pub fn equal_to(input: ParseString) -> ParseResult<ComparisonOp> {
   Ok((input, ComparisonOp::Equal))
 }
 
-// strict-not-equal := "=!=" | "=¬=" ;
+// strict-not-equal := "!==" | "!≡" | "=!=" | "=¬=" ;
 pub fn strict_not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = ws0e(input)?;
-  let (input, _) = alt((tag("=!="),tag("=¬=")))(input)?;
+  let (input, _) = alt((tag("!=="),tag("!≡"),tag("=!="),tag("=¬=")))(input)?;
   let (input, _) = ws0e(input)?;
   Ok((input, ComparisonOp::StrictNotEqual))
 }
 
-// strict-equal := "=:=" | "≡" ;
+// strict-equal := "===" | "≡" | "=:=" ;
 pub fn strict_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = ws0e(input)?;
-  let (input, _) = alt((tag("=:="),tag("≡")))(input)?;
+  let (input, _) = alt((tag("==="),tag("≡"),tag("=:=")))(input)?;
   let (input, _) = ws0e(input)?;
   Ok((input, ComparisonOp::StrictEqual))
 }

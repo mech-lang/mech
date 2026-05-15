@@ -48,10 +48,12 @@ baselib = ["bool", "string",
       "mech-core/baselib",
     ]
 
-compare_default = ["eq", "neq", "lt", "gt", "lte", "gte", "min", "max"]
+compare_default = ["eq", "neq", "seq", "sneq", "lt", "gt", "lte", "gte", "min", "max"]
 compare = ["functions", "bool"]
 eq = ["compare"]
 neq = ["compare"]
+seq = ["compare"]
+sneq = ["compare"]
 lt = ["compare"]
 gt = ["compare"]
 lte = ["compare"]

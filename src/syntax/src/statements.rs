@@ -145,6 +145,20 @@ pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   Ok((input, VariableDefine{mutable, var, expression}))
 }
 
+#[cfg(feature = "invariant_define")]
+// invariant-define := identifier, "!", define-operator, expression ;
+pub fn invariant_define(input: ParseString) -> ParseResult<InvariantDefine> {
+  let msg1 = "Expects spaces around operator";
+  let msg2 = "Expects expression";
+  let (input, mut name) = identifier(input)?;
+  let (input, exclam) = exclamation(input)?;
+  name.name.chars.extend(exclam.chars.clone());
+  let (input, _) = labelr!(null(is_not(assign_operator)), skip_nil, msg1)(input)?;
+  let (input, _) = define_operator(input)?;
+  let (input, expression) = label!(expression, msg2)(input)?;
+  Ok((input, InvariantDefine{name, expression}))
+}
+
 // variable-assign := slice-ref, !define-operator, assign-operator, expression ;
 pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   let msg1 = "Expects spaces around operator";
@@ -197,6 +211,8 @@ fn tuple_destructure(input: ParseString) -> ParseResult<TupleDestructure> {
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
   let parsers: Vec<(&'static str,Box<dyn Fn(ParseString) -> ParseResult<Statement>>)> = vec![
     ("fsm_declare", Box::new(|i| fsm_declare(i).map(|(i, v)| (i, Statement::FsmDeclare(v))))),
+    #[cfg(feature = "invariant_define")]
+    ("invariant_define", Box::new(|i| invariant_define(i).map(|(i, v)| (i, Statement::InvariantDefine(v))))),
     ("variable_define", Box::new(|i| variable_define(i).map(|(i, v)| (i, Statement::VariableDefine(v))))),
     ("variable_assign", Box::new(|i| variable_assign(i).map(|(i, v)| (i, Statement::VariableAssign(v))))),
     ("op_assign", Box::new(|i| op_assign(i).map(|(i, v)| (i, Statement::OpAssign(v))))),

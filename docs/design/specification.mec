@@ -322,7 +322,7 @@ See the [Syntax Design Document](design/syntax-design.html) for a discussion on 
 identifier := (alpha | emoji), *(alpha | digit | identifier-symbol | emoji) ;
 ```
 
-Identifiers start with letters or most UTF-8 encoded emoji characters, and can contain alphanumeric, most emojis, `/`, `*`, `+`, `-`, and `^` characters.
+Identifiers start with letters or most UTF-8 encoded emoji characters, and can contain alphanumeric, most emojis, `/`, `*`, `+`, `-`, and `^` characters. The `@` character is not valid in identifiers.
 
 (3.5.1) Examples
 
@@ -1134,7 +1134,7 @@ Operators in formulas are applied according to the following precedence, from hi
 6. Matrix Operations - `**`, `·`, `⨯`, `\\`
 7. Multiplication, Division, Remainder - `*`, `/`, `%`
 8. Add, Subtract - `+`, `-`
-9. Comparison - `==`, `!=`, `<`, `>`, `<=`, `>=`
+9. Comparison - `==`, `!=`, `===`, `!==`, `<`, `>`, `<=`, `>=`
 10. Logical Operations - `&&`, `||`, `xor`
 
 (6.1.2) Evaluation Order and Associativity
@@ -1170,8 +1170,8 @@ transpose       := "'" ;
 ```ebnf
 not-equal        := "!=" | "¬=" | "≠" ;    
 equal            := "==" ;  
-strict-equal     := "=:=" , "≡" ;          
-not-strict-equal := "=!=", "=¬=";           
+strict-equal     := "===" | "≡" | "=:=" ;          
+not-strict-equal := "!==" | "!≡" | "=!=" | "=¬=" ;           
 greater          := ">" ;            
 less             := "<" ;            
 greater-or-equal := ">=" | "≥"  ;       
