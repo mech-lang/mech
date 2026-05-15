@@ -494,6 +494,8 @@ test_interpreter!(interpret_matrix_eq_rational, "[1/2 3/4] == [1/2 3/4]", Value:
 test_interpreter!(interpret_matrix_eq_complex, "[1+2i 3+4i] == [1+2i 3+4i]", Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2)));
 test_interpreter!(interpret_matrix_strict_eq, "x := 1 + [4 5 6]\nx === [5 6 7]", Value::Bool(Ref::new(true)));
 test_interpreter!(interpret_matrix_strict_neq, "x := 1 + [4 5 6]\nx !== [5 6 8]", Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_matrix_strict_eq_symbol, "x := 1 + [4 5 6]\nx ≡ [5 6 7]", Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_matrix_strict_neq_symbol, "x := 1 + [4 5 6]\nx !≡ [5 6 8]", Value::Bool(Ref::new(true)));
 test_interpreter!(interpret_matrix_neq_rational, "[1/2 3/4] != [1/2 3/5]", Value::MatrixBool(Matrix::from_vec(vec![false, true], 1, 2)));
 test_interpreter!(interpret_matrix_neq_complex, "[1+2i 3+4i] != [1+2i 3+5i]", Value::MatrixBool(Matrix::from_vec(vec![false, true], 1, 2)));
 test_interpreter!(interpret_matrix_gt_rational, "[1/2 3/4] > [1/4 1/2]", Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2)));

@@ -1170,8 +1170,8 @@ transpose       := "'" ;
 ```ebnf
 not-equal        := "!=" | "¬=" | "≠" ;    
 equal            := "==" ;  
-strict-equal     := "===" ;          
-not-strict-equal := "!==" ;           
+strict-equal     := "===" | "≡" | "=:=" ;          
+not-strict-equal := "!==" | "!≡" | "=!=" | "=¬=" ;           
 greater          := ">" ;            
 less             := "<" ;            
 greater-or-equal := ">=" | "≥"  ;       
