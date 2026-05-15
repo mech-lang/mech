@@ -998,5 +998,4 @@ impl MechErrorKind for UnableToConvertRecordError {
     format!("Unable to convert record of kind `{:?}` to record of kind `{:?}`", self.source_record_kind, self.target_record_kind)
   }
 }
-}
 

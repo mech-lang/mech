@@ -344,7 +344,7 @@ async fn main() -> Result<(), MechError> {
     let mut mechfs = MechFileSystem::new();
     let mut any_failed = false;
     let mut run_errors = false;
-    println!("{} Testing\n", "[Test]".truecolor(255,210,77));
+    println!("{} Running tests...\n", "[Test]".truecolor(153, 221, 85));
     for path in &mech_paths {
       let (existing_invariant_ids, existing_violation_count) = {
         let state_brrw = intrp.state.borrow();
@@ -375,7 +375,7 @@ async fn main() -> Result<(), MechError> {
         .filter(|(id, _)| !existing_invariant_ids.contains(id))
         .collect();
       let test_name_width = file_invariants.iter().map(|(_, (n, _))| n.len()).max().unwrap_or(0);
-      println!("[File] {}\n", path);
+      println!("{} {}\n", "[Test]".truecolor(153, 221, 85), path);
       for (_id, (name, value)) in file_invariants {
         match &*value.borrow() {
           Value::Bool(b) if *b.borrow() => {
