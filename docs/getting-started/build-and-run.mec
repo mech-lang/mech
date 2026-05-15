@@ -121,10 +121,19 @@ mech serve -p 3000 -a 0.0.0.0 my_script.mec
 
 Runs a program and validates invariants defined as `foo! := <expression>`.
 
+| Flag                | Value    | Description                                                                 |
+|---------------------|----------|-----------------------------------------------------------------------------|
+| `-o`, `--out`       | `PATH`   | Write test report to `PATH` as `.json` or `.mec` based on file extension. |
+| `-v`, `--verbose`   | (none)   | Print detailed diagnostics for passed invariants in addition to failures.  |
+
 ```sh
 mech test .
 mech test foo
 mech test foo/bar.mec
+mech test foo/bar.mec -o report.json
+mech test foo/bar.mec -o report.mec
+mech test foo/bar.mec --verbose
+mech test foo/bar.mec --verbose -o report.json
 ```
 
 4. Additional Help
