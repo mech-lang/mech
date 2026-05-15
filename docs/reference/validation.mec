@@ -37,7 +37,7 @@ Pass/fail detail level depends on `--verbose`:
 - non-verbose: failed invariants are detailed, passed invariants are summarized by name
 - verbose: failed and passed invariants are both detailed
 
-JSON schema (conceptual):
+JSON schema (current):
 
 ```json
 {
@@ -74,7 +74,7 @@ JSON schema (conceptual):
 
 In verbose mode, `passed` entries include the same detailed fields as `failed`.
 
-Mech kind definitions (conceptual):
+Mech kind definitions (current):
 
 ```mech:disabled
 <test-summary> := <{
