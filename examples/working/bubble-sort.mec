@@ -70,3 +70,7 @@ We can run the bubble sort algorithm on it:
 ```mech
 sorted := #bubble-sort(a)
 ```
+
+Check that it's actually sorted:
+
+sorted! := sorted === [1 2 3 4]
