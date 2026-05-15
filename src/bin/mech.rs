@@ -335,55 +335,76 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   #[cfg(all(feature = "run", feature = "variable_define", feature = "invariant_define", feature = "symbol_table", feature = "bool"))]
   if let Some(matches) = matches.subcommand_matches("test") {
-    let uuid = generate_uuid();
-    let mut intrp = Interpreter::new(uuid);
     let mech_paths: Vec<String> = matches
       .get_many::<String>("mech_test_file_paths")
       .map_or(vec![".".to_string()], |files| files.map(|file| file.to_string()).collect());
-    let mut mechfs = MechFileSystem::new();
-    for path in mech_paths {
-      mechfs.watch_source(&path)?;
-    }
-    let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag, trace_flag);
-    if let Err(err) = result {
-      print_mech_error(&err);
-      std::process::exit(1);
-    }
-    let mut passed = 0usize;
-    let mut failed = 0usize;
-    let state_brrw = intrp.state.borrow();
-    for (_id, (name, value)) in state_brrw.invariants.iter() {
-      match &*value.borrow() {
-        Value::Bool(b) if *b.borrow() => {
-          println!("test {} ... ok", name);
-          passed += 1;
-        },
-        _ => {
-          println!("test {} ... FAILED", name);
-          failed += 1;
-        },
+    let mut any_failed = false;
+    let mut run_errors = false;
+    println!("{} Running tests...\n", "[Test]".truecolor(153, 221, 85));
+    for path in &mech_paths {
+      let uuid = generate_uuid();
+      let mut intrp = Interpreter::new(uuid);
+      let mut mechfs = MechFileSystem::new();
+      if let Err(err) = mechfs.watch_source(path) {
+        print_mech_error(&err);
+        run_errors = true;
+        any_failed = true;
+        continue;
       }
-    }
-    if failed == 0 {
-      println!("\ntest result: ok. {} passed; {} failed; 0 ignored; 0 measured; 0 filtered out", passed, failed);
-      std::process::exit(0);
-    } else {
-      println!("\ntest result: FAILED. {} passed; {} failed; 0 ignored; 0 measured; 0 filtered out", passed, failed);
-      if !state_brrw.invariant_violations.is_empty() {
-        println!("\nfailures:");
-        for violation in &state_brrw.invariant_violations {
-          let name = state_brrw.invariants.get(&violation.id).map(|(n, _)| n.clone()).unwrap_or_else(|| format!("#{}", violation.id));
-          if let Some(inv_err) = violation.error.kind_as::<InvariantViolationError>() {
-            let lhs = inv_err.lhs_value.clone().unwrap_or_else(|| "?".to_string());
-            let rhs = inv_err.rhs_value.clone().unwrap_or_else(|| "?".to_string());
-            println!("    {}: expr={} | lhs={} | rhs={}", name, inv_err.expression, lhs, rhs);
-          } else {
-            println!("    {}: {}", name, violation.error.display_message());
-          }
+      let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag, trace_flag);
+      if let Err(err) = result {
+        print_mech_error(&err);
+        run_errors = true;
+        any_failed = true;
+        continue;
+      }
+      let mut passed = 0usize;
+      let mut failed = 0usize;
+      let state_brrw = intrp.state.borrow();
+      let test_name_width = state_brrw.invariants.values().map(|(n, _)| n.len()).max().unwrap_or(0);
+      println!("{} {}\n", "[Test]".truecolor(153, 221, 85), path);
+      for (_id, (name, value)) in state_brrw.invariants.iter() {
+        match &*value.borrow() {
+          Value::Bool(b) if *b.borrow() => {
+            println!("{:<width$}   ✓", name, width=test_name_width);
+            passed += 1;
+          },
+          _ => {
+            println!("{:<width$}   ✗", name, width=test_name_width);
+            failed += 1;
+          },
         }
       }
-      std::process::exit(1);
+      let total = passed + failed;
+      if failed == 0 {
+        println!("\n{} SUCCESS: {} total | {} passed | {} failed\n", "[Test]".truecolor(153, 221, 85), total, passed, failed);
+      } else {
+        any_failed = true;
+        println!("\n{} FAILURE: {} total | {} passed | {} failed", "[Test]".truecolor(153, 221, 85), total, passed, failed);
+        if !state_brrw.invariant_violations.is_empty() {
+          println!("\nfailures:\n");
+          for violation in &state_brrw.invariant_violations {
+            let name = state_brrw.invariants.get(&violation.id).map(|(n, _)| n.clone()).unwrap_or_else(|| format!("#{}", violation.id));
+            if let Some(inv_err) = violation.error.kind_as::<InvariantViolationError>() {
+              let lhs = inv_err.lhs_value.clone().unwrap_or_else(|| "?".to_string());
+              let rhs = inv_err.rhs_value.clone().unwrap_or_else(|| "?".to_string());
+              println!("  {}: {}", name, inv_err.expression);
+              println!("    reason = {}", inv_err.reason);
+              println!("    evaluated_kind = {}", inv_err.evaluated_kind);
+              println!("    actual = {}", lhs);
+              println!("    expected = {}", rhs);
+            } else {
+              println!("  {}: {}", name, violation.error.display_message());
+            }
+          }
+        }
+        println!();
+      }
     }
+    if run_errors {
+      println!("{} One or more files failed to load/execute, but all requested files were attempted.", "[Warn]".truecolor(255,210,77));
+    }
+    std::process::exit(if any_failed { 1 } else { 0 });
   }
 
   // --------------------------------------------------------------------------

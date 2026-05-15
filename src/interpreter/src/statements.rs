@@ -250,6 +250,7 @@ pub struct InvariantViolationError {
   pub rhs_addr: Option<u64>,
   pub rhs_value: Option<String>,
   pub reason: String,
+  pub evaluated_kind: String,
 }
 impl MechErrorKind for InvariantViolationError {
   fn name(&self) -> &str { "InvariantViolationError" }
@@ -259,7 +260,7 @@ impl MechErrorKind for InvariantViolationError {
         format!(" | expr: {} | lhs(@{:x})={} op={:?} rhs(@{:x})={}", self.expression, la, lv, op, ra, rv),
       _ => format!(" | expr: {}", self.expression),
     };
-    format!("Invariant `{}` violation: {}{}", self.invariant_name, self.reason, details)
+    format!("Invariant `{}` violation: {} | evaluated kind: {}{}", self.invariant_name, self.reason, self.evaluated_kind, details)
   }
 }
 
@@ -320,7 +321,8 @@ pub fn invariant_define(inv_def: &InvariantDefine, p: &Interpreter) -> MResult<V
         operator,
         rhs_addr,
         rhs_value,
-        reason: error
+        reason: error,
+        evaluated_kind: result.kind().to_string(),
       },
       None
     ).with_compiler_loc().with_tokens(inv_def.expression.tokens());
@@ -674,7 +676,9 @@ macro_rules! op_assign {
           x => todo!("{:?}", x),
         }
       }
-    }}}
+    }
+  };
+}
 
 #[cfg(feature = "math_add_assign")]
 op_assign!(add_assign, Add);
