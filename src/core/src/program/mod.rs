@@ -29,6 +29,18 @@ pub type EnumTable = HashMap<u64, MechEnum>;
 #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
 pub type InvariantTable = HashMap<u64, (String, ValRef)>;
 #[cfg(feature = "invariant_define")]
+pub type InvariantExpressionTable = HashMap<u64, String>;
+#[cfg(feature = "invariant_define")]
+#[derive(Clone, Debug)]
+pub struct InvariantEvaluation {
+  pub reason: String,
+  pub evaluated_kind: String,
+  pub actual: String,
+  pub expected: String,
+}
+#[cfg(feature = "invariant_define")]
+pub type InvariantEvaluationTable = HashMap<u64, InvariantEvaluation>;
+#[cfg(feature = "invariant_define")]
 #[derive(Clone, Debug)]
 pub struct InvariantViolation {
   pub id: u64,
@@ -51,6 +63,10 @@ pub struct ProgramState {
   pub invariants: InvariantTable,
   #[cfg(feature = "invariant_define")]
   pub invariant_violations: Vec<InvariantViolation>,
+  #[cfg(feature = "invariant_define")]
+  pub invariant_expressions: InvariantExpressionTable,
+  #[cfg(feature = "invariant_define")]
+  pub invariant_evaluations: InvariantEvaluationTable,
   pub dictionary: Ref<Dictionary>,
 }
 
@@ -72,6 +88,10 @@ impl Clone for ProgramState {
       invariants: self.invariants.clone(),
       #[cfg(feature = "invariant_define")]
       invariant_violations: self.invariant_violations.clone(),
+      #[cfg(feature = "invariant_define")]
+      invariant_expressions: self.invariant_expressions.clone(),
+      #[cfg(feature = "invariant_define")]
+      invariant_evaluations: self.invariant_evaluations.clone(),
       dictionary: self.dictionary.clone(),
     }
   }
@@ -95,6 +115,10 @@ impl ProgramState {
       invariants: InvariantTable::new(),
       #[cfg(feature = "invariant_define")]
       invariant_violations: vec![],
+      #[cfg(feature = "invariant_define")]
+      invariant_expressions: InvariantExpressionTable::new(),
+      #[cfg(feature = "invariant_define")]
+      invariant_evaluations: InvariantEvaluationTable::new(),
       dictionary: Ref::new(Dictionary::new()),
     }
   }
