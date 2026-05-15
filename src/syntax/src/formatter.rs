@@ -1511,32 +1511,14 @@ impl Formatter {
   }
 
   pub fn mech_code(&mut self, node: &Vec<(MechCode,Option<Comment>)>) -> String {
-    let mut src = String::new();
-    for (code,cmmnt) in node {
-      let c = match code {
-        MechCode::Comment(cmnt) => self.comment(cmnt),
-        MechCode::Expression(expr) => self.expression(expr),
-        MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
-        MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
-        MechCode::FunctionDefine(func_def) => self.function_define(func_def),
-        MechCode::Statement(stmt) => self.statement(stmt),
-        x => todo!("Unhandled MechCode: {:#?}", x),
-      };
-      let formatted_comment = match cmmnt {
-        Some(cmmt) => self.comment(cmmt),
-        None => String::new(),
-      };
-      if self.html {
-        src.push_str(&format!("<span class=\"mech-code\">{}{}</span>", c, formatted_comment));
-      } else {
-        src.push_str(&format!("{}{}\n", c, formatted_comment));
-      }
-    }
-    if self.html {
-      format!("<span class=\"mech-code-block\">{}</span>",src)
-    } else {
-      src
-    }
+    let node_full = node.iter().map(|(code, cmmnt)| MechCodeLine {
+      code: code.clone(),
+      terminal: CodeTerminal {
+        comment: cmmnt.clone(),
+        ..CodeTerminal::default()
+      },
+    }).collect::<Vec<MechCodeLine>>();
+    self.mech_code_full(&node_full)
   }
 
   pub fn mech_code_full(&mut self, node: &Vec<MechCodeLine>) -> String {
@@ -1556,9 +1538,9 @@ impl Formatter {
       let cmmt = line.terminal.comment.as_ref().map(|c| self.comment(c)).unwrap_or_default();
       let terminator = line.terminal.terminator.as_ref().map(|t| t.to_string()).unwrap_or_default();
       if self.html {
-        src.push_str(&format!("<span class=\"mech-code\">{}{}{}{}{} </span>", c, leading, cmmt, terminator, trailing));
+        src.push_str(&format!("<span class=\"mech-code\">{}{}{}{}{}</span>", leading, c, cmmt, terminator, trailing));
       } else {
-        src.push_str(&format!("{}{}{}{}{}", c, leading, cmmt, terminator, trailing));
+        src.push_str(&format!("{}{}{}{}{}", leading, c, cmmt, terminator, trailing));
       }
     }
     if self.html {

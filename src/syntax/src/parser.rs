@@ -342,15 +342,8 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
 
 /// code-terminal := *space-tab, ?(?semicolon, *space-tab, comment), (new-line | ";" | eof), *whitespace ;
 pub fn code_terminal(input: ParseString) -> ParseResult<Option<Comment>> {
-  let (input, _) = many0(space_tab)(input)?;
-  let (input, cmmnt) = opt(tuple((opt(semicolon), many0(space_tab), comment)))(input)?;
-  let (input, _) = alt((null(new_line), null(semicolon), null(eof), null(peek(mika_section_close))))(input)?;
-  let (input, _) = whitespace0(input)?;
-  let cmmt = match cmmnt {
-    Some((_, _, cmnt)) => Some(cmnt),
-    None => None,
-  };
-  Ok((input, cmmt))
+  let (input, terminal) = code_terminal_full(input)?;
+  Ok((input, terminal.comment))
 }
 
 /// code-terminal-full := *space-tab, ?(?semicolon, *space-tab, comment), (new-line | ";" | eof), *whitespace ;
@@ -376,94 +369,9 @@ pub fn code_terminal_full(input: ParseString) -> ParseResult<CodeTerminal> {
 
 // mech-code-block := +(mech-code, code-terminal) ;
 pub fn mech_code(input: ParseString) -> ParseResult<Vec<(MechCode,Option<Comment>)>> {
-  let mut output = vec![];
-  let mut new_input = input.clone();
-  loop {
-
-    if peek(not_mech_code)(new_input.clone()).is_ok() {
-      if output.len() > 0 {
-        return Ok((new_input, output));
-      } else {
-        let e = ParseError::new(new_input, "Unexpected character");
-        return Err(Err::Error(e));
-      }
-    }
-
-    let start = new_input.loc();
-    let start_cursor = new_input.cursor;
-    let (input, code) = match mech_code_alt(new_input.clone()) {
-      Err(Err::Error(mut e)) => {
-        // if the error is just "Unexpected character", we will just fail.
-        if e.error_detail.message == "Unexpected character" {
-          if output.len() > 0 {
-            return Ok((new_input, output));
-          } else {
-            return Err(Err::Error(e));
-          }
-        } else {
-          e.cause_range = SourceRange { start, end: e.cause_range.end };
-          e.log();
-          // skip till the end of the statement
-          let (input, skipped) = skip_till_end_of_statement(e.remaining_input)?;
-          // get tokens from start_cursor to input.cursor
-          let skipped_input = input.slice(start_cursor, input.cursor);
-          let skipped_token = Token {
-            kind: TokenKind::Error,
-            chars: skipped_input.chars().collect(),
-            src_range: SourceRange { start, end: input.loc() },
-          };
-          let mech_error = MechCode::Error(skipped_token, e.cause_range);
-          (input, mech_error)
-        }
-      }
-      Err(Err::Failure(mut e)) => {
-        // Check if this thing matches a section element:
-        match subtitle(new_input.clone()) {
-          Ok((_, _)) => {
-            // if it does, and we have already parsed something, return what we have.
-            if output.len() > 0 {
-              return Ok((new_input, output));
-            } else {
-              return Err(Err::Failure(e));
-            }
-          }
-          Err(_) => { /* continue with error recovery */ }
-        }
-        e.cause_range = SourceRange { start, end: e.cause_range.end };
-        e.log();
-        // skip till the end of the statement
-        let (input, skipped) = skip_till_end_of_statement(e.remaining_input)?;
-        // get tokens from start_cursor to input.cursor
-        let skipped_input = input.slice(start_cursor, input.cursor);
-        let skipped_token = Token {
-          kind: TokenKind::Error,
-          chars: skipped_input.chars().collect(),
-          src_range: SourceRange { start, end: input.loc() },
-        };
-        let mech_error = MechCode::Error(skipped_token, e.cause_range);
-        (input, mech_error)
-      },
-      Ok(x) => x,
-      _ => unreachable!(),
-    };
-    let (input, cmmt) = match code_terminal(input) {
-      Ok((input, cmmt)) => (input, cmmt),
-      Err(e) => {
-        // if we didn't parse a terminal, just return what we've got so far.
-        if output.len() > 0 {
-          return Ok((new_input, output));
-        }
-        // otherwise, return the error.
-        return Err(e);
-      }
-    };
-    output.push((code, cmmt));
-    new_input = input;
-    if new_input.is_empty() {
-      break;
-    }
-  }
-  Ok((new_input, output))
+  let (input, lines) = mech_code_full(input)?;
+  let code = lines.into_iter().map(|line| (line.code, line.terminal.comment)).collect();
+  Ok((input, code))
 }
 
 /// mech-code-block-full := +(mech-code, code-terminal-full) ;
