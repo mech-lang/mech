@@ -645,7 +645,7 @@ impl Formatter {
         }
       },
       ParagraphElement::InlineMechCode(code) => {
-        let result = self.mech_code(&vec![(code.clone(),None)]);
+        let result = self.mech_code_full(&vec![MechCodeLine{code: code.clone(), terminal: CodeTerminal::default()}]);
         if self.html {
           format!("<span class=\"mech-inline-mech-code-formatted\">{}</span>", result)
         } else {
@@ -673,26 +673,7 @@ impl Formatter {
     let block_id = hash_str(&format!("{:?}",block));
     let namespace_str = &block.config.namespace_str;
     let mut src = String::new();
-    for (code,cmmnt) in &block.code {
-      let c = match code {
-        MechCode::Comment(cmnt) => self.comment(cmnt),
-        MechCode::Expression(expr) => self.expression(expr),
-        MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
-        MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
-        MechCode::FunctionDefine(func_def) => self.function_define(func_def),
-        MechCode::Statement(stmt) => self.statement(stmt),
-        x => format!("{{{:?}}}", x)
-      };
-      let formatted_comment = match cmmnt {
-        Some(cmmt) => self.comment(cmmt),
-        None => String::new(),
-      };
-      if self.html {
-        src.push_str(&format!("<span class=\"mech-code\">{}{}</span>", c, formatted_comment));
-      } else {
-        src.push_str(&format!("{}{}\n", c, formatted_comment));
-      }
-    }
+    src.push_str(&self.mech_code_full(&block.code));
     let intrp_id = self.interpreter_id;
     self.interpreter_id = parent_interpreter_id;
     let disabled_tag = match block.config.disabled {
@@ -700,7 +681,7 @@ impl Formatter {
       false => "".to_string(),
     };
     if self.html {
-      let (out_node,_) = block.code.last().unwrap();
+      let out_node = &block.code.last().unwrap().code;
       let output_id = hash_str(&format!("{:?}", out_node));
       let style_attr = match &block.options {
         Some(option_map) if !option_map.elements.is_empty() => {
@@ -1095,7 +1076,7 @@ impl Formatter {
       SectionElement::FigureTable(n) => self.figures(n),
       SectionElement::Image(n) => self.image(n),
       SectionElement::List(n) => self.list(n),
-      SectionElement::MechCode(n) => self.mech_code(n),
+      SectionElement::MechCode(n) => self.mech_code_full(n),
       SectionElement::Mika(n) => self.mika(n),
       SectionElement::Paragraph(n) => self.paragraph(n),
       SectionElement::Subtitle(n) => self.subtitle(n),
@@ -1822,7 +1803,7 @@ impl Formatter {
       }
       Transition::CodeBlock(code) => {
         let mut code_str = "".to_string();
-        let formatted = self.mech_code(code);
+        let formatted = self.mech_code_full(code);
         if self.html {
           code_str.push_str(&format!("<span class=\"mech-transition-code\">→ {}</span>", formatted));
         } else {

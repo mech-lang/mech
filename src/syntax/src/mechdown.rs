@@ -797,7 +797,7 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
         let graphemes = graphemes::init_source(&mech_src);
         let parse_string = ParseString::new(&graphemes);
 
-        match mech_code(parse_string) {
+        match mech_code_full(parse_string) {
           Ok((_, mech_tree)) => {
             // TODO what if not all the input is parsed? Is that handled?
             return Ok((input, SectionElement::FencedMechCode(FencedMechCode{code: mech_tree, config, options})));
@@ -1063,7 +1063,7 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
     }
   
     // check if it's mech_code first, we'll prioritize that
-    match mech_code(new_input.clone()) {
+    match mech_code_full(new_input.clone()) {
       Ok((input, mech_tree)) => {
         elements.push(SectionElement::MechCode(mech_tree));
         new_input = input;

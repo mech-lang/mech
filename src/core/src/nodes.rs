@@ -519,7 +519,7 @@ pub enum FloatDirection {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FencedMechCode {
-  pub code: Vec<(MechCode,Option<Comment>)>,
+  pub code: Vec<MechCodeLine>,
   pub config: BlockConfig,
   pub options: Option<OptionMap>,
 }
@@ -563,7 +563,7 @@ pub enum SectionElement {
   FigureTable(FigureTable),
   Image(Image),
   List(MDList),
-  MechCode(Vec<(MechCode,Option<Comment>)>),
+  MechCode(Vec<MechCodeLine>),
   #[cfg(feature = "mika")]
   Mika((Mika, Option<MikaSection>)),
   Paragraph(Paragraph),
@@ -598,15 +598,31 @@ impl SectionElement {
       },
       SectionElement::FencedMechCode(c) => {
         let mut tokens = vec![];
-        for (c, _) in &c.code {
-          tokens.append(&mut c.tokens());
+        for line in &c.code {
+          tokens.append(&mut line.code.tokens());
+          tokens.append(&mut line.terminal.leading.clone());
+          if let Some(comment) = &line.terminal.comment {
+            tokens.append(&mut comment.tokens());
+          }
+          if let Some(terminator) = &line.terminal.terminator {
+            tokens.push(terminator.clone());
+          }
+          tokens.append(&mut line.terminal.trailing.clone());
         }
         tokens
       }
       SectionElement::MechCode(codes) => {
         let mut tokens = vec![];
-        for (code, _) in codes {
-          tokens.append(&mut code.tokens());
+        for line in codes {
+          tokens.append(&mut line.code.tokens());
+          tokens.append(&mut line.terminal.leading.clone());
+          if let Some(comment) = &line.terminal.comment {
+            tokens.append(&mut comment.tokens());
+          }
+          if let Some(terminator) = &line.terminal.terminator {
+            tokens.push(terminator.clone());
+          }
+          tokens.append(&mut line.terminal.trailing.clone());
         }
         tokens
       }
@@ -956,7 +972,7 @@ impl Guard {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Transition {
   Async(Pattern),
-  CodeBlock(Vec<(MechCode, Option<Comment>)>),
+  CodeBlock(Vec<MechCodeLine>),
   Next(Pattern),
   Output(Pattern),
   Statement(Statement),
@@ -966,11 +982,16 @@ impl Transition {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
       Transition::Async(pattern) => pattern.tokens(),
-      Transition::CodeBlock(code) => code.iter().flat_map(|(mech_code, comment)| {
-        let mut tokens = mech_code.tokens();
-        if let Some(comment) = comment {
+      Transition::CodeBlock(code) => code.iter().flat_map(|line| {
+        let mut tokens = line.code.tokens();
+        tokens.append(&mut line.terminal.leading.clone());
+        if let Some(comment) = &line.terminal.comment {
           tokens.append(&mut comment.tokens());
         }
+        if let Some(terminator) = &line.terminal.terminator {
+          tokens.push(terminator.clone());
+        }
+        tokens.append(&mut line.terminal.trailing.clone());
         tokens
       }).collect(),
       Transition::Next(pattern) => pattern.tokens(),
