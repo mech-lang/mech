@@ -6,7 +6,29 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+fn collect_test_targets(path: &Path) -> io::Result<Vec<PathBuf>> {
+  if !path.is_dir() {
+    return Ok(vec![path.to_path_buf()]);
+  }
+
+  let mut files = Vec::new();
+  for entry in std::fs::read_dir(path)? {
+    let entry = entry?;
+    let entry_path = entry.path();
+    if entry_path.is_dir() {
+      files.extend(collect_test_targets(&entry_path)?);
+    } else if matches!(
+      entry_path.extension().and_then(OsStr::to_str),
+      Some("mec" | "🤖" | "mecb")
+    ) {
+      files.push(entry_path);
+    }
+  }
+  files.sort();
+  Ok(files)
+}
 
 // Test
 // -----------------------------------------------------------------------------
@@ -152,11 +174,28 @@ pub fn run_mech_tests(
   output_path: Option<String>,
   verbose: bool,
 ) -> Result<i32, MechError> {
+  let mut expanded_paths = Vec::new();
+  for input in mech_paths {
+    let input_path = Path::new(&input);
+    let targets = collect_test_targets(input_path).map_err(|e| {
+      MechError::new(
+        GenericError {
+          msg: format!("Unable to collect test targets for `{}`: {}", input, e),
+        },
+        None,
+      )
+      .with_compiler_loc()
+    })?;
+    for target in targets {
+      expanded_paths.push(target.display().to_string());
+    }
+  }
+
   let mut any_failed = false;
   let mut run_errors = false;
   let mut file_reports = Vec::new();
   println!("{} Running tests...\n", "[Test]".truecolor(153, 221, 85));
-  for path in &mech_paths {
+  for path in &expanded_paths {
     let uuid = generate_uuid();
     let mut intrp = Interpreter::new(uuid);
     let mut mechfs = MechFileSystem::new();
