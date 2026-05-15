@@ -1996,7 +1996,13 @@ impl Literal {
       Literal::Atom(atm) => atm.name.tokens(),
       Literal::Boolean(tkn) => vec![tkn.clone()],
       Literal::Number(x) => x.tokens(),
-      Literal::String(strng) => vec![strng.text.clone()],
+      Literal::String(strng) => {
+        vec![
+          Token::new(TokenKind::Quote, SourceRange::default(), vec!['"']),
+          strng.text.clone(),
+          Token::new(TokenKind::Quote, SourceRange::default(), vec!['"']),
+        ]
+      },
       Literal::Empty(tkn) => vec![tkn.clone()],
       Literal::Kind(knd) => knd.tokens(),
       Literal::TypedLiteral((lit, knd)) => {
