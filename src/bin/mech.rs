@@ -341,8 +341,9 @@ async fn main() -> Result<(), MechError> {
       .get_many::<String>("mech_test_file_paths")
       .map_or(vec![".".to_string()], |files| files.map(|file| file.to_string()).collect());
     let mut mechfs = MechFileSystem::new();
-    for path in mech_paths {
-      mechfs.watch_source(&path)?;
+    let test_target = mech_paths.first().cloned().unwrap_or_else(|| "test.mec".to_string());
+    for path in &mech_paths {
+      mechfs.watch_source(path)?;
     }
     let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag, trace_flag);
     if let Err(err) = result {
@@ -352,36 +353,37 @@ async fn main() -> Result<(), MechError> {
     let mut passed = 0usize;
     let mut failed = 0usize;
     let state_brrw = intrp.state.borrow();
+    let test_name_width = state_brrw.invariants.values().map(|(n, _)| n.len()).max().unwrap_or(0);
+    println!("{} Testing: {}\n", "[Test]".truecolor(255,210,77), test_target);
     for (_id, (name, value)) in state_brrw.invariants.iter() {
       match &*value.borrow() {
         Value::Bool(b) if *b.borrow() => {
-          println!("test {} ... ok", name);
+          println!("{:<width$}   ✓", name, width=test_name_width);
           passed += 1;
         },
         _ => {
-          println!("test {} ... FAILED", name);
+          println!("{:<width$}   ✗", name, width=test_name_width);
           failed += 1;
         },
       }
     }
     if failed == 0 {
-      println!("\ntest result: ok. {} passed; {} failed; 0 ignored; 0 measured; 0 filtered out", passed, failed);
+      println!("\nResult: SUCCESS: {} passed | {} failed | 0 ignored | 0 filtered out", passed, failed);
       std::process::exit(0);
     } else {
-      println!("\ntest result: FAILED. {} passed; {} failed; 0 ignored; 0 measured; 0 filtered out", passed, failed);
+      println!("\nResult: FAILURE: {} passed | {} failed | 0 ignored | 0 filtered out", passed, failed);
       if !state_brrw.invariant_violations.is_empty() {
-        println!("\nfailures:");
-        let width = state_brrw.invariant_violations.iter().map(|v| {
-          state_brrw.invariants.get(&v.id).map(|(n, _)| n.len()).unwrap_or_else(|| format!("#{}", v.id).len())
-        }).max().unwrap_or(0);
+        println!("\nfailures:\n");
         for violation in &state_brrw.invariant_violations {
           let name = state_brrw.invariants.get(&violation.id).map(|(n, _)| n.clone()).unwrap_or_else(|| format!("#{}", violation.id));
           if let Some(inv_err) = violation.error.kind_as::<InvariantViolationError>() {
             let lhs = inv_err.lhs_value.clone().unwrap_or_else(|| "?".to_string());
             let rhs = inv_err.rhs_value.clone().unwrap_or_else(|| "?".to_string());
-            println!("    {:width$}: expr={} | lhs={} | rhs={}", name, inv_err.expression, lhs, rhs, width=width);
+            println!("  {}: {}", name, inv_err.expression);
+            println!("    actual = {}", lhs);
+            println!("    expected = {}", rhs);
           } else {
-            println!("    {:width$}: {}", name, violation.error.display_message(), width=width);
+            println!("  {}: {}", name, violation.error.display_message());
           }
         }
       }
