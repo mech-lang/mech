@@ -153,10 +153,10 @@ pub fn run_mech_tests(
           passed_cases.push(CaseDetail {
             name: name.clone(),
             expression: state.invariant_expressions.get(id).cloned().unwrap_or_else(|| name.clone()),
-            reason: "evaluated to true".to_string(),
-            evaluated_kind: "bool".to_string(),
-            actual: "true".to_string(),
-            expected: "true".to_string(),
+            reason: state.invariant_evaluations.get(id).map(|e| e.reason.clone()).unwrap_or_else(|| "evaluated to true".to_string()),
+            evaluated_kind: state.invariant_evaluations.get(id).map(|e| e.evaluated_kind.clone()).unwrap_or_else(|| "bool".to_string()),
+            actual: state.invariant_evaluations.get(id).map(|e| e.actual.clone()).unwrap_or_else(|| "true".to_string()),
+            expected: state.invariant_evaluations.get(id).map(|e| e.expected.clone()).unwrap_or_else(|| "true".to_string()),
           });
         }
         _ => {

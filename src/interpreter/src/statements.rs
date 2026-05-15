@@ -302,18 +302,29 @@ pub fn invariant_define(inv_def: &InvariantDefine, p: &Interpreter) -> MResult<V
     Value::Bool(b) => if *b.borrow() { None } else { Some("evaluated to false".to_string()) },
     other => Some(format!("must evaluate to bool, got {}", other.kind())),
   };
+  let operand_detail = invariant_operand_refs(inv_def, p);
+  let (lhs_addr, lhs_value, operator, rhs_addr, rhs_value) = match operand_detail {
+    Some((lhs, op, rhs)) => {
+      let lhs_addr = lhs.as_ref().map(|v| v.addr() as u64);
+      let lhs_value = lhs.as_ref().map(|v| format!("{:?}", v.borrow()));
+      let rhs_addr = rhs.as_ref().map(|v| v.addr() as u64);
+      let rhs_value = rhs.as_ref().map(|v| format!("{:?}", v.borrow()));
+      (lhs_addr, lhs_value, op, rhs_addr, rhs_value)
+    }
+    None => (None, None, None, Some(rhs_ref.addr() as u64), Some(format!("{:?}", rhs_ref.borrow()))),
+  };
+  {
+    let reason = violation_error.clone().unwrap_or_else(|| "evaluated to true".to_string());
+    let actual = lhs_value.clone().unwrap_or_else(|| format!("{:?}", rhs_ref.borrow()));
+    let expected = rhs_value.clone().unwrap_or_else(|| format!("{:?}", rhs_ref.borrow()));
+    p.state.borrow_mut().invariant_evaluations.insert(invariant_id, InvariantEvaluation {
+      reason,
+      evaluated_kind: result.kind().to_string(),
+      actual,
+      expected,
+    });
+  }
   if let Some(error) = violation_error {
-    let operand_detail = invariant_operand_refs(inv_def, p);
-    let (lhs_addr, lhs_value, operator, rhs_addr, rhs_value) = match operand_detail {
-      Some((lhs, op, rhs)) => {
-        let lhs_addr = lhs.as_ref().map(|v| v.addr() as u64);
-        let lhs_value = lhs.as_ref().map(|v| format!("{:?}", v.borrow()));
-        let rhs_addr = rhs.as_ref().map(|v| v.addr() as u64);
-        let rhs_value = rhs.as_ref().map(|v| format!("{:?}", v.borrow()));
-        (lhs_addr, lhs_value, op, rhs_addr, rhs_value)
-      }
-      None => (None, None, None, Some(rhs_ref.addr() as u64), Some(format!("{:?}", rhs_ref.borrow()))),
-    };
     let err = MechError::new(
       InvariantViolationError{
         invariant_name: invariant_name.clone(),
