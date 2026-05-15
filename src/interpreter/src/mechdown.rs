@@ -64,9 +64,9 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     SectionElement::Abstract(x) => x.hash(&mut hasher),
     SectionElement::Diagram(x) => x.hash(&mut hasher),
     SectionElement::MechCode(code) => {
-      for (c,cmmnt) in code {
-        out = mech_code(&c, p)?;
-        match cmmnt {
+      for line in code {
+        out = mech_code(&line.code, p)?;
+        match &line.terminal.comment {
           Some(cmmnt) => {
             let cmmnt_value = comment(cmmnt, p)?;
           }
@@ -85,7 +85,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
         out = eval_fenced_code_block(&block.code, p, false)?;
         // Save the output of the last code block in the parent interpreter
         // so we can reference it later.
-        let (last_code, _) = block.code.last().unwrap();
+        let last_code = &block.code.last().unwrap().code;
         let out_id = hash_str(&format!("{:?}", last_code));
         p.out_values.borrow_mut().insert(out_id, out.clone());
       } else {
@@ -101,7 +101,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
         out = eval_fenced_code_block(&block.code, pp, true)?;
         // Save the output of the last code block in the parent interpreter
         // so we can reference it later.
-        let (last_code,_) = block.code.last().unwrap();
+        let last_code = &block.code.last().unwrap().code;
         let out_id = hash_str(&format!("{:?}", last_code));
         pp.out_values.borrow_mut().insert(out_id, out.clone());
       }
@@ -193,13 +193,13 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
 
 #[cfg(feature = "functions")]
 fn eval_fenced_code_block(
-  code: &Vec<(MechCode, Option<Comment>)>,
+  code: &Vec<MechCodeLine>,
   interpreter: &Interpreter,
   isolate_errors: bool,
 ) -> MResult<Value> {
   let mut out = Value::Empty;
-  for (c, cmmnt) in code {
-    match mech_code(c, interpreter) {
+  for line in code {
+    match mech_code(&line.code, interpreter) {
       Ok(value) => out = value,
       Err(err) => {
         if isolate_errors {
@@ -217,7 +217,7 @@ fn eval_fenced_code_block(
         return Err(err);
       }
     }
-    if let Some(cmmnt) = cmmnt {
+    if let Some(cmmnt) = &line.terminal.comment {
       match comment(cmmnt, interpreter) {
         Ok(_) => {}
         Err(err) => {

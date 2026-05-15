@@ -413,8 +413,8 @@ fn apply_transitions(transitions: &[Transition], state: &mut Value, env: &mut En
         statement(stmt, Some(env), p)?;
       }
       Transition::CodeBlock(code) => {
-        for (line, _) in code {
-          mech_code(line, p)?;
+        for line in code {
+          mech_code(&line.code, p)?;
         }
       }
     }
