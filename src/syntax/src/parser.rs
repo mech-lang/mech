@@ -360,7 +360,16 @@ pub fn code_terminal_full(input: ParseString) -> ParseResult<CodeTerminal> {
     terminal.comment = Some(cmnt);
   }
 
-  let (input, terminator) = opt(alt((new_line, semicolon)))(input)?;
+  let (input, terminator) = match new_line(input.clone()) {
+    Ok((next_input, token)) => (next_input, Some(token)),
+    Err(_) => match semicolon(input.clone()) {
+      Ok((next_input, token)) => (next_input, Some(token)),
+      Err(_) => {
+        let (next_input, _) = alt((null(eof), null(peek(mika_section_close))))(input)?;
+        (next_input, None)
+      }
+    }
+  };
   terminal.terminator = terminator;
   let (input, trailing) = many0(whitespace)(input)?;
   terminal.trailing = trailing;
