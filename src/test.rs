@@ -50,7 +50,14 @@ fn mech_str(v: &str) -> String {
 fn mech_opt_str(name: &str, v: &Option<String>) -> String {
   match v {
     Some(s) => format!("{name}: {}", mech_str(s)),
-    None => format!("{name}: empty"),
+    None => format!("{name}: _"),
+  }
+}
+
+fn mech_opt_kind(name: &str, v: &Option<String>) -> String {
+  match v {
+    Some(s) => format!("{name}: <{}>", s),
+    None => format!("{name}: _"),
   }
 }
 
@@ -61,7 +68,7 @@ fn test_case_to_mech(test_case: &TestCaseResult) -> String {
     mech_bool(test_case.passed),
     mech_opt_str("expression", &test_case.expression),
     mech_opt_str("reason", &test_case.reason),
-    mech_opt_str("evaluated-kind", &test_case.evaluated_kind),
+    mech_opt_kind("evaluated_kind", &test_case.evaluated_kind),
     mech_opt_str("actual", &test_case.actual),
     mech_opt_str("expected", &test_case.expected),
   )
@@ -76,14 +83,14 @@ fn test_file_to_mech(file: &TestFileResult) -> String {
     file.passed,
     file.failed,
     cases,
-    mech_opt_str("run-error", &file.run_error),
+    mech_opt_str("run_error", &file.run_error),
   )
 }
 
 fn report_to_mech(report: &TestReport) -> String {
   let files = report.files.iter().map(test_file_to_mech).collect::<Vec<_>>().join(" ");
   format!(
-    "test-output := {{ total-files: {}, files-passed: {}, files-failed: {}, total-tests: {}, passed-tests: {}, failed-tests: {}, files: [{}] }}",
+    "test_output := {{ total_files: {}, files_passed: {}, files_failed: {}, total_tests: {}, passed_tests: {}, failed_tests: {}, files: [{}] }}",
     report.total_files,
     report.files_passed,
     report.files_failed,
