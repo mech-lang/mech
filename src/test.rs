@@ -11,7 +11,6 @@ use std::path::PathBuf;
 #[derive(Debug, Serialize, Clone)]
 struct FailedCase {
   name: String,
-  passed: bool,
   expression: String,
   reason: String,
   #[serde(rename = "evaluated-kind")]
@@ -68,8 +67,8 @@ fn indent_block(block: &str, spaces: usize) -> String {
 }
 fn failed_case_to_mech(c: &FailedCase) -> String {
   format!(
-    "{{\n  name: {}\n  passed: {}\n  expression: {}\n  reason: {}\n  evaluated-kind: {}\n  actual: {}\n  expected: {}\n}}",
-    mech_str(&c.name), mech_bool(c.passed), mech_str(&c.expression), mech_str(&c.reason), mech_kind(&c.evaluated_kind), mech_str(&c.actual), mech_str(&c.expected)
+    "{{\n  name: {}\n  expression: {}\n  reason: {}\n  evaluated-kind: {}\n  actual: {}\n  expected: {}\n}}",
+    mech_str(&c.name), mech_str(&c.expression), mech_str(&c.reason), mech_kind(&c.evaluated_kind), mech_str(&c.actual), mech_str(&c.expected)
   )
 }
 fn file_to_mech(file: &FileReport) -> String {
@@ -101,6 +100,7 @@ pub fn run_mech_tests(
   time_flag: bool,
   trace_flag: bool,
   output_path: Option<String>,
+  verbose: bool,
 ) -> Result<i32, MechError> {
   let mut any_failed = false;
   let mut run_errors = false;
@@ -126,7 +126,6 @@ pub fn run_mech_tests(
     }
 
     let state = intrp.state.borrow();
-    let width = state.invariants.values().map(|(n, _)| n.len()).max().unwrap_or(0);
     println!("{} {}\n", "[Test]".truecolor(153, 221, 85), path);
 
     let mut violations: HashMap<u64, FailedCase> = HashMap::new();
@@ -134,7 +133,6 @@ pub fn run_mech_tests(
       if let Some(inv) = v.error.kind_as::<InvariantViolationError>() {
         violations.insert(v.id, FailedCase {
           name: state.invariants.get(&v.id).map(|(n, _)| n.clone()).unwrap_or_else(|| format!("#{}", v.id)),
-          passed: false,
           expression: inv.expression.clone(),
           reason: inv.reason.clone(),
           evaluated_kind: inv.evaluated_kind.clone(),
@@ -149,13 +147,17 @@ pub fn run_mech_tests(
     for (id, (name, value)) in state.invariants.iter() {
       match &*value.borrow() {
         Value::Bool(b) if *b.borrow() => {
-          println!("{:<width$}   ✓", name, width=width);
+          if verbose {
+            println!("{}   ✓", name);
+          }
           passed_names.push(name.clone());
         }
         _ => {
-          println!("{:<width$}   ✗", name, width=width);
+          if verbose {
+            println!("{}   ✗", name);
+          }
           failed_cases.push(violations.remove(id).unwrap_or(FailedCase {
-            name: name.clone(), passed: false, expression: "".to_string(), reason: "Invariant evaluated to false or non-bool value".to_string(), evaluated_kind: "bool".to_string(), actual: "?".to_string(), expected: "?".to_string()
+            name: name.clone(), expression: "".to_string(), reason: "Invariant evaluated to false or non-bool value".to_string(), evaluated_kind: "bool".to_string(), actual: "?".to_string(), expected: "?".to_string()
           }));
         }
       }
@@ -166,9 +168,31 @@ pub fn run_mech_tests(
     let total = passed + failed;
     if failed == 0 {
       println!("\n{} SUCCESS: {} total | {} passed | {} failed\n", "[Test]".truecolor(153, 221, 85), total, passed, failed);
+      if verbose {
+        println!("passed:\n");
+        for p in &passed_names {
+          println!("  {}", p);
+        }
+        println!();
+      }
     } else {
       any_failed = true;
       println!("\n{} FAILURE: {} total | {} passed | {} failed\n", "[Test]".truecolor(153, 221, 85), total, passed, failed);
+      if verbose {
+        println!("failures:\n");
+        for f in &failed_cases {
+          println!("  {}: {}", f.name, f.expression);
+          println!("    reason = {}", f.reason);
+          println!("    evaluated_kind = {}", f.evaluated_kind);
+          println!("    actual = {}", f.actual);
+          println!("    expected = {}", f.expected);
+        }
+        println!("\npassed:\n");
+        for p in &passed_names {
+          println!("  {}", p);
+        }
+        println!();
+      }
     }
     file_reports.push(FileReport { path: path.clone(), result: FileResult { total, passed, failed }, failed: failed_cases, passed: passed_names, run_error: None });
   }
