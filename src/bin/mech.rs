@@ -198,7 +198,7 @@ async fn main() -> Result<(), MechError> {
         .help("Destination folder.")
         .required(false)))            
     .subcommand(Command::new("test")
-      .about("Run and validate Mech invariants.")
+      .about("Validate program invariants.")
       .arg(Arg::new("mech_test_file_paths")
         .help("Source .mec and .mecb files")
         .required(false)
