@@ -58,8 +58,6 @@ mod repl;
 mod serve;
 #[cfg(feature = "run")]
 mod run;
-#[cfg(all(feature = "run", feature = "variable_define", feature = "invariant_define", feature = "symbol_table", feature = "bool"))]
-mod test;
 #[cfg(feature = "mechfs")]
 mod mechfs;
 
@@ -69,8 +67,6 @@ pub use self::repl::*;
 pub use self::serve::*;
 #[cfg(feature = "run")]
 pub use self::run::*;
-#[cfg(all(feature = "run", feature = "variable_define", feature = "invariant_define", feature = "symbol_table", feature = "bool"))]
-pub use self::test::*;
 #[cfg(feature = "mechfs")]
 pub use self::mechfs::*;
 
