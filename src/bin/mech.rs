@@ -362,7 +362,7 @@ async fn main() -> Result<(), MechError> {
       let mut failed = 0usize;
       let state_brrw = intrp.state.borrow();
       let test_name_width = state_brrw.invariants.values().map(|(n, _)| n.len()).max().unwrap_or(0);
-      println!("[File] {}\n", path);
+      println!("{} {}\n", "[Test]".truecolor(153, 221, 85), path);
       for (_id, (name, value)) in state_brrw.invariants.iter() {
         match &*value.borrow() {
           Value::Bool(b) if *b.borrow() => {
@@ -377,10 +377,10 @@ async fn main() -> Result<(), MechError> {
       }
       let total = passed + failed;
       if failed == 0 {
-        println!("\nResult: SUCCESS: {} total | {} passed | {} failed\n", total, passed, failed);
+        println!("\n{} SUCCESS: {} total | {} passed | {} failed\n", "[Test]".truecolor(153, 221, 85), total, passed, failed);
       } else {
         any_failed = true;
-        println!("\nResult: FAILURE: {} total | {} passed | {} failed", total, passed, failed);
+        println!("\n{} FAILURE: {} total | {} passed | {} failed", "[Test]".truecolor(153, 221, 85), total, passed, failed);
         if !state_brrw.invariant_violations.is_empty() {
           println!("\nfailures:\n");
           for violation in &state_brrw.invariant_violations {
