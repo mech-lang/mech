@@ -1366,6 +1366,14 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
   let mut term_plan: Vec<Box<dyn MechFunction>> = vec![];
   for (op, rhs) in &trm.rhs {
     let rhs = factor(&rhs, env, p)?;
+    let detached_lhs = match &lhs {
+      Value::MutableReference(reference) => reference.borrow().clone(),
+      _ => lhs.clone(),
+    };
+    let detached_rhs = match &rhs {
+      Value::MutableReference(reference) => reference.borrow().clone(),
+      _ => rhs.clone(),
+    };
     let new_fxn: Box<dyn MechFunction> = match op {
       // Math
       FormulaOperator::AddSub(AddSubOp::Add) => match (&lhs, &rhs) {
@@ -1401,11 +1409,17 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
       #[cfg(feature = "compare_eq")]
       FormulaOperator::Comparison(ComparisonOp::Equal) => CompareEqual {}.compile(&vec![lhs, rhs])?,
       #[cfg(feature = "compare_seq")]
-      FormulaOperator::Comparison(ComparisonOp::StrictEqual) => todo!(), //CompareStrictEqual{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::Comparison(ComparisonOp::StrictEqual) => {
+        lhs = Value::Bool(Ref::new(detached_lhs == detached_rhs));
+        continue;
+      }
       #[cfg(feature = "compare_neq")]
       FormulaOperator::Comparison(ComparisonOp::NotEqual) => CompareNotEqual {}.compile(&vec![lhs, rhs])?,
       #[cfg(feature = "compare_sneq")]
-      FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => todo!(), //CompareStrictNotEqual{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => {
+        lhs = Value::Bool(Ref::new(detached_lhs != detached_rhs));
+        continue;
+      }
       #[cfg(feature = "compare_lte")]
       FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => CompareLessThanEqual {}.compile(&vec![lhs, rhs])?,
       #[cfg(feature = "compare_gte")]

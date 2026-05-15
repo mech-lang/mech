@@ -79,3 +79,13 @@ operators
 | `*=` | multiply-assign | `x *= 2` |
 | `/=` | divide-assign | `x /= 2` |
 | `^=` | exponent-assign (grammar form) | `x ^= 3` |
+
+7. Comparison Operators
+-------------------------------------------------------------------------------
+
+| Operator | Meaning | Example |
+|:--:|---|---|
+| `==` | element-wise equality for collections (scalar equality for scalars) | `[1 2] == [1 3]` → `[true false]` |
+| `!=` | element-wise inequality for collections (scalar inequality for scalars) | `[1 2] != [1 3]` → `[false true]` |
+| `===` | strict equality (single boolean; full value/shape match) | `[1 2] === [1 2]` → `true` |
+| `!==` | strict inequality (single boolean) | `[1 2] !== [1 3]` → `true` |
