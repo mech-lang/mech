@@ -525,6 +525,22 @@ pub struct FencedMechCode {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Default)]
+pub struct CodeTerminal {
+  pub leading: Vec<Token>,
+  pub comment: Option<Comment>,
+  pub terminator: Option<Token>,
+  pub trailing: Vec<Token>,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct MechCodeLine {
+  pub code: MechCode,
+  pub terminal: CodeTerminal,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum SectionElement {
   Abstract(Vec<Paragraph>),
