@@ -27,7 +27,7 @@ impl MechFunctionImpl for StrictNotEqValue {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for StrictNotEqValue {
   fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
-    Err(MechError::new(GenericError{message: "StrictNotEqValue compiler path is not supported".to_string()}, None).with_compiler_loc())
+    todo!()
   }
 }
 
