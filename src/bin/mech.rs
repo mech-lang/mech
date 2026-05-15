@@ -12,7 +12,6 @@ use std::time::Instant;
 use std::fs;
 use std::env;
 use std::io;
-use std::collections::HashSet;
 
 use colored::*;
 use std::io::{Write, BufReader, BufWriter, stdout};
@@ -339,20 +338,13 @@ async fn main() -> Result<(), MechError> {
     let mech_paths: Vec<String> = matches
       .get_many::<String>("mech_test_file_paths")
       .map_or(vec![".".to_string()], |files| files.map(|file| file.to_string()).collect());
-    let uuid = generate_uuid();
-    let mut intrp = Interpreter::new(uuid);
-    let mut mechfs = MechFileSystem::new();
     let mut any_failed = false;
     let mut run_errors = false;
     println!("{} Testing\n", "[Test]".truecolor(255,210,77));
     for path in &mech_paths {
-      let (existing_invariant_ids, existing_violation_count) = {
-        let state_brrw = intrp.state.borrow();
-        (
-          state_brrw.invariants.keys().copied().collect::<HashSet<u64>>(),
-          state_brrw.invariant_violations.len(),
-        )
-      };
+      let uuid = generate_uuid();
+      let mut intrp = Interpreter::new(uuid);
+      let mut mechfs = MechFileSystem::new();
       if let Err(err) = mechfs.watch_source(path) {
         print_mech_error(&err);
         run_errors = true;
@@ -369,14 +361,9 @@ async fn main() -> Result<(), MechError> {
       let mut passed = 0usize;
       let mut failed = 0usize;
       let state_brrw = intrp.state.borrow();
-      let file_invariants: Vec<_> = state_brrw
-        .invariants
-        .iter()
-        .filter(|(id, _)| !existing_invariant_ids.contains(id))
-        .collect();
-      let test_name_width = file_invariants.iter().map(|(_, (n, _))| n.len()).max().unwrap_or(0);
+      let test_name_width = state_brrw.invariants.values().map(|(n, _)| n.len()).max().unwrap_or(0);
       println!("[File] {}\n", path);
-      for (_id, (name, value)) in file_invariants {
+      for (_id, (name, value)) in state_brrw.invariants.iter() {
         match &*value.borrow() {
           Value::Bool(b) if *b.borrow() => {
             println!("{:<width$}   ✓", name, width=test_name_width);
@@ -394,9 +381,9 @@ async fn main() -> Result<(), MechError> {
       } else {
         any_failed = true;
         println!("\nResult: FAILURE: {} total | {} passed | {} failed", total, passed, failed);
-        if state_brrw.invariant_violations.len() > existing_violation_count {
+        if !state_brrw.invariant_violations.is_empty() {
           println!("\nfailures:\n");
-          for violation in state_brrw.invariant_violations.iter().skip(existing_violation_count) {
+          for violation in &state_brrw.invariant_violations {
             let name = state_brrw.invariants.get(&violation.id).map(|(n, _)| n.clone()).unwrap_or_else(|| format!("#{}", violation.id));
             if let Some(inv_err) = violation.error.kind_as::<InvariantViolationError>() {
               let lhs = inv_err.lhs_value.clone().unwrap_or_else(|| "?".to_string());
