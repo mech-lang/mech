@@ -9,7 +9,7 @@ use std::io;
 use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Clone)]
-struct FailedCase {
+struct CaseDetail {
   name: String,
   expression: String,
   reason: String,
@@ -30,8 +30,8 @@ struct FileResult {
 struct FileReport {
   path: String,
   result: FileResult,
-  failed: Vec<FailedCase>,
-  passed: Vec<String>,
+  failed: Vec<CaseDetail>,
+  passed: Vec<CaseDetail>,
   #[serde(rename = "run-error")]
   run_error: Option<String>,
 }
@@ -65,22 +65,22 @@ fn indent_block(block: &str, spaces: usize) -> String {
   let pad = " ".repeat(spaces);
   block.lines().map(|line| format!("{pad}{line}")).collect::<Vec<_>>().join("\n")
 }
-fn failed_case_to_mech(c: &FailedCase) -> String {
+fn case_to_mech(c: &CaseDetail) -> String {
   format!(
     "{{\n  name: {}\n  expression: {}\n  reason: {}\n  evaluated-kind: {}\n  actual: {}\n  expected: {}\n}}",
     mech_str(&c.name), mech_str(&c.expression), mech_str(&c.reason), mech_kind(&c.evaluated_kind), mech_str(&c.actual), mech_str(&c.expected)
   )
 }
 fn file_to_mech(file: &FileReport) -> String {
-  let failed_items = file.failed.iter().map(failed_case_to_mech).collect::<Vec<_>>().join("\n");
-  let passed_items = file.passed.iter().map(|p| mech_str(p)).collect::<Vec<_>>().join(" ");
+  let failed_items = file.failed.iter().map(case_to_mech).collect::<Vec<_>>().join("\n");
+  let passed_items = file.passed.iter().map(case_to_mech).collect::<Vec<_>>().join("\n");
   let run_error = file.run_error.as_ref().map(|e| mech_str(e)).unwrap_or("_".to_string());
   format!(
-    "{{\n  path: {}\n  result: {{\n    total: {}\n    passed: {}\n    failed: {}\n  }}\n  failed: {{\n{}\n  }}\n  passed: {{{}}}\n  run-error: {}\n}}",
+    "{{\n  path: {}\n  result: {{\n    total: {}\n    passed: {}\n    failed: {}\n  }}\n  failed: {{\n{}\n  }}\n  passed: {{\n{}\n  }}\n  run-error: {}\n}}",
     mech_str(&file.path),
     file.result.total, file.result.passed, file.result.failed,
     if failed_items.is_empty() { "".to_string() } else { indent_block(&failed_items, 4) },
-    passed_items,
+    if passed_items.is_empty() { "".to_string() } else { indent_block(&passed_items, 4) },
     run_error
   )
 }
@@ -128,10 +128,10 @@ pub fn run_mech_tests(
     let state = intrp.state.borrow();
     println!("{} {}\n", "[Test]".truecolor(153, 221, 85), path);
 
-    let mut violations: HashMap<u64, FailedCase> = HashMap::new();
+    let mut violations: HashMap<u64, CaseDetail> = HashMap::new();
     for v in &state.invariant_violations {
       if let Some(inv) = v.error.kind_as::<InvariantViolationError>() {
-        violations.insert(v.id, FailedCase {
+        violations.insert(v.id, CaseDetail {
           name: state.invariants.get(&v.id).map(|(n, _)| n.clone()).unwrap_or_else(|| format!("#{}", v.id)),
           expression: inv.expression.clone(),
           reason: inv.reason.clone(),
@@ -142,7 +142,7 @@ pub fn run_mech_tests(
       }
     }
 
-    let mut passed_names = Vec::new();
+    let mut passed_cases = Vec::new();
     let mut failed_cases = Vec::new();
     for (id, (name, value)) in state.invariants.iter() {
       match &*value.borrow() {
@@ -150,28 +150,39 @@ pub fn run_mech_tests(
           if verbose {
             println!("{}   ✓", name);
           }
-          passed_names.push(name.clone());
+          passed_cases.push(CaseDetail {
+            name: name.clone(),
+            expression: name.clone(),
+            reason: "evaluated to true".to_string(),
+            evaluated_kind: "bool".to_string(),
+            actual: "✓".to_string(),
+            expected: "✓".to_string(),
+          });
         }
         _ => {
           if verbose {
             println!("{}   ✗", name);
           }
-          failed_cases.push(violations.remove(id).unwrap_or(FailedCase {
+          failed_cases.push(violations.remove(id).unwrap_or(CaseDetail {
             name: name.clone(), expression: "".to_string(), reason: "Invariant evaluated to false or non-bool value".to_string(), evaluated_kind: "bool".to_string(), actual: "?".to_string(), expected: "?".to_string()
           }));
         }
       }
     }
 
-    let passed = passed_names.len();
+    let passed = passed_cases.len();
     let failed = failed_cases.len();
     let total = passed + failed;
     if failed == 0 {
       println!("\n{} SUCCESS: {} total | {} passed | {} failed\n", "[Test]".truecolor(153, 221, 85), total, passed, failed);
       if verbose {
         println!("passed:\n");
-        for p in &passed_names {
-          println!("  {}", p);
+        for p in &passed_cases {
+          println!("  {}: {}", p.name, p.expression);
+          println!("    reason = {}", p.reason);
+          println!("    evaluated_kind = {}", p.evaluated_kind);
+          println!("    actual = {}", p.actual);
+          println!("    expected = {}", p.expected);
         }
         println!();
       }
@@ -188,13 +199,17 @@ pub fn run_mech_tests(
           println!("    expected = {}", f.expected);
         }
         println!("\npassed:\n");
-        for p in &passed_names {
-          println!("  {}", p);
+        for p in &passed_cases {
+          println!("  {}: {}", p.name, p.expression);
+          println!("    reason = {}", p.reason);
+          println!("    evaluated_kind = {}", p.evaluated_kind);
+          println!("    actual = {}", p.actual);
+          println!("    expected = {}", p.expected);
         }
         println!();
       }
     }
-    file_reports.push(FileReport { path: path.clone(), result: FileResult { total, passed, failed }, failed: failed_cases, passed: passed_names, run_error: None });
+    file_reports.push(FileReport { path: path.clone(), result: FileResult { total, passed, failed }, failed: failed_cases, passed: passed_cases, run_error: None });
   }
 
   let files_passed = file_reports.iter().filter(|f| f.run_error.is_none() && f.result.failed == 0).count();
