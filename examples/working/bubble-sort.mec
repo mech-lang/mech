@@ -73,4 +73,4 @@ sorted := #bubble-sort(a)
 
 Check that it's actually sorted:
 
-sorted! := sorted === [1 2 3 4]
+sorted! := sorted === [1u64 2u64 3u64 4u64]
