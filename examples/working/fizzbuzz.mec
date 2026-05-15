@@ -50,3 +50,10 @@ Then we can print them all out at once:
 ```mech
   y
 ```
+
+Before we are done, we can also verify that the first 15 elements of `y` are correct:
+
+fizz! := y[3] == "✨"
+buzz! := y[5] == "🐝"
+fizzbuzz! := y[15] == "✨🐝"
+first-ten! := y[1..=15]' === ["1", "2", "✨", "4", "🐝", "✨", "7", "8", "✨", "🐝", "11", "✨", "13", "14", "✨🐝"]
