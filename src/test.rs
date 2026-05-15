@@ -57,6 +57,24 @@ struct TestReport {
   result: SummaryResult,
   files: Vec<FileReport>,
 }
+#[derive(Debug, Serialize)]
+struct NamedCase {
+  name: String,
+}
+#[derive(Debug, Serialize)]
+struct FileReportOut {
+  path: String,
+  result: FileResult,
+  failed: Vec<CaseDetail>,
+  passed: Vec<NamedCase>,
+  #[serde(rename = "run-error")]
+  run_error: Option<String>,
+}
+#[derive(Debug, Serialize)]
+struct TestReportOut {
+  result: SummaryResult,
+  files: Vec<FileReportOut>,
+}
 
 fn mech_bool(v: bool) -> &'static str { if v { "✓" } else { "✗" } }
 fn mech_str(v: &str) -> String { format!("{:?}", v) }
@@ -71,9 +89,13 @@ fn case_to_mech(c: &CaseDetail) -> String {
     mech_str(&c.name), mech_str(&c.expression), mech_str(&c.reason), mech_kind(&c.evaluated_kind), mech_str(&c.actual), mech_str(&c.expected)
   )
 }
-fn file_to_mech(file: &FileReport) -> String {
+fn file_to_mech(file: &FileReport, verbose: bool) -> String {
   let failed_items = file.failed.iter().map(case_to_mech).collect::<Vec<_>>().join("\n");
-  let passed_items = file.passed.iter().map(case_to_mech).collect::<Vec<_>>().join("\n");
+  let passed_items = if verbose {
+    file.passed.iter().map(case_to_mech).collect::<Vec<_>>().join("\n")
+  } else {
+    file.passed.iter().map(|p| format!("{{\n  name: {}\n}}", mech_str(&p.name))).collect::<Vec<_>>().join("\n")
+  };
   let run_error = file.run_error.as_ref().map(|e| mech_str(e)).unwrap_or("_".to_string());
   format!(
     "{{\n  path: {}\n  result: {{\n    total: {}\n    passed: {}\n    failed: {}\n  }}\n  failed: {{\n{}\n  }}\n  passed: {{\n{}\n  }}\n  run-error: {}\n}}",
@@ -85,12 +107,37 @@ fn file_to_mech(file: &FileReport) -> String {
   )
 }
 fn report_to_mech(report: &TestReport) -> String {
-  let files = report.files.iter().map(file_to_mech).collect::<Vec<_>>().join("\n");
+  let files = report.files.iter().map(|f| file_to_mech(f, false)).collect::<Vec<_>>().join("\n");
   format!(
     "{{\n  result: {{\n    files-total: {}\n    files-passed: {}\n    files-failed: {}\n    tests-total: {}\n    tests-passed: {}\n    tests-failed: {}\n  }}\n  files: {{\n{}\n  }}\n}}",
     report.result.files_total, report.result.files_passed, report.result.files_failed, report.result.tests_total, report.result.tests_passed, report.result.tests_failed,
     indent_block(&files, 4)
   )
+}
+
+fn report_to_json(report: &TestReport, verbose: bool) -> Result<String, io::Error> {
+  if verbose {
+    serde_json::to_string_pretty(report).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))
+  } else {
+    let out = TestReportOut {
+      result: SummaryResult {
+        files_total: report.result.files_total,
+        files_passed: report.result.files_passed,
+        files_failed: report.result.files_failed,
+        tests_total: report.result.tests_total,
+        tests_passed: report.result.tests_passed,
+        tests_failed: report.result.tests_failed,
+      },
+      files: report.files.iter().map(|f| FileReportOut {
+        path: f.path.clone(),
+        result: FileResult { total: f.result.total, passed: f.result.passed, failed: f.result.failed },
+        failed: f.failed.clone(),
+        passed: f.passed.iter().map(|p| NamedCase { name: p.name.clone() }).collect(),
+        run_error: f.run_error.clone(),
+      }).collect(),
+    };
+    serde_json::to_string_pretty(&out).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))
+  }
 }
 
 pub fn run_mech_tests(
@@ -144,12 +191,11 @@ pub fn run_mech_tests(
 
     let mut passed_cases = Vec::new();
     let mut failed_cases = Vec::new();
+    let width = state.invariants.values().map(|(n, _)| n.len()).max().unwrap_or(0);
     for (id, (name, value)) in state.invariants.iter() {
       match &*value.borrow() {
         Value::Bool(b) if *b.borrow() => {
-          if verbose {
-            println!("{}   ✓", name);
-          }
+          println!("{:<width$}   ✓", name, width=width);
           passed_cases.push(CaseDetail {
             name: name.clone(),
             expression: state.invariant_expressions.get(id).cloned().unwrap_or_else(|| name.clone()),
@@ -160,9 +206,7 @@ pub fn run_mech_tests(
           });
         }
         _ => {
-          if verbose {
-            println!("{}   ✗", name);
-          }
+          println!("{:<width$}   ✗", name, width=width);
           failed_cases.push(violations.remove(id).unwrap_or(CaseDetail {
             name: name.clone(),
             expression: state.invariant_expressions.get(id).cloned().unwrap_or_default(),
@@ -194,15 +238,15 @@ pub fn run_mech_tests(
     } else {
       any_failed = true;
       println!("\n{} FAILURE: {} total | {} passed | {} failed\n", "[Test]".truecolor(153, 221, 85), total, passed, failed);
+      println!("failures:\n");
+      for f in &failed_cases {
+        println!("  {}: {}", f.name, f.expression);
+        println!("    reason = {}", f.reason);
+        println!("    evaluated_kind = {}", f.evaluated_kind);
+        println!("    actual = {}", f.actual);
+        println!("    expected = {}", f.expected);
+      }
       if verbose {
-        println!("failures:\n");
-        for f in &failed_cases {
-          println!("  {}: {}", f.name, f.expression);
-          println!("    reason = {}", f.reason);
-          println!("    evaluated_kind = {}", f.evaluated_kind);
-          println!("    actual = {}", f.actual);
-          println!("    expected = {}", f.expected);
-        }
         println!("\npassed:\n");
         for p in &passed_cases {
           println!("  {}: {}", p.name, p.expression);
@@ -231,7 +275,7 @@ pub fn run_mech_tests(
     let path = PathBuf::from(&output_path);
     let extension = path.extension().and_then(OsStr::to_str).unwrap_or("");
     match extension {
-      "json" => save_to_file(path, &serde_json::to_string_pretty(&report).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?)?,
+      "json" => save_to_file(path, &report_to_json(&report, verbose)?)?,
       "mec" => save_to_file(path, &report_to_mech(&report))?,
       _ => { eprintln!("{} Unsupported --out extension `.{}`. Use .json or .mec.", "[Error]".truecolor(246,98,78), extension); return Ok(1); }
     }
