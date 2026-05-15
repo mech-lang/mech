@@ -353,6 +353,27 @@ pub fn code_terminal(input: ParseString) -> ParseResult<Option<Comment>> {
   Ok((input, cmmt))
 }
 
+/// code-terminal-full := *space-tab, ?(?semicolon, *space-tab, comment), (new-line | ";" | eof), *whitespace ;
+pub fn code_terminal_full(input: ParseString) -> ParseResult<CodeTerminal> {
+  let mut terminal = CodeTerminal::default();
+  let (input, leading) = many0(space_tab)(input)?;
+  terminal.leading = leading;
+  let (input, cmmnt) = opt(tuple((opt(semicolon), many0(space_tab), comment)))(input)?;
+  if let Some((semicolon_token, mut spaces, cmnt)) = cmmnt {
+    if let Some(token) = semicolon_token {
+      terminal.leading.push(token);
+    }
+    terminal.leading.append(&mut spaces);
+    terminal.comment = Some(cmnt);
+  }
+
+  let (input, terminator) = opt(alt((new_line, semicolon)))(input)?;
+  terminal.terminator = terminator;
+  let (input, trailing) = many0(whitespace)(input)?;
+  terminal.trailing = trailing;
+  Ok((input, terminal))
+}
+
 // mech-code-block := +(mech-code, code-terminal) ;
 pub fn mech_code(input: ParseString) -> ParseResult<Vec<(MechCode,Option<Comment>)>> {
   let mut output = vec![];
@@ -443,6 +464,19 @@ pub fn mech_code(input: ParseString) -> ParseResult<Vec<(MechCode,Option<Comment
     }
   }
   Ok((new_input, output))
+}
+
+/// mech-code-block-full := +(mech-code, code-terminal-full) ;
+pub fn mech_code_full(input: ParseString) -> ParseResult<Vec<MechCodeLine>> {
+  let (input, parsed) = mech_code(input)?;
+  let lines = parsed.into_iter().map(|(code, comment)| {
+    let terminal = CodeTerminal {
+      comment,
+      ..CodeTerminal::default()
+    };
+    MechCodeLine { code, terminal }
+  }).collect::<Vec<MechCodeLine>>();
+  Ok((input, lines))
 }
 
 // program := ws0, ?title, body, ws0 ;
