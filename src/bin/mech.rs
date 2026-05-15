@@ -367,11 +367,12 @@ async fn main() -> Result<(), MechError> {
         },
       }
     }
+    let total = passed + failed;
     if failed == 0 {
-      println!("\nResult: SUCCESS: {} passed | {} failed | 0 ignored | 0 filtered out", passed, failed);
+      println!("\nResult: SUCCESS: {} total | {} passed | {} failed", total, passed, failed);
       std::process::exit(0);
     } else {
-      println!("\nResult: FAILURE: {} passed | {} failed | 0 ignored | 0 filtered out", passed, failed);
+      println!("\nResult: FAILURE: {} total | {} passed | {} failed", total, passed, failed);
       if !state_brrw.invariant_violations.is_empty() {
         println!("\nfailures:\n");
         for violation in &state_brrw.invariant_violations {
