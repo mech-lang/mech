@@ -36,13 +36,17 @@ macro_rules! ws0_leaf {
         return Err(nom::Err::Error(ParseError::new(input, "Unexpected eof")))
       }
       let start = input.loc();
-      let byte = input.graphemes[input.cursor];
+      let start_cursor = input.cursor;
       let (input, _) = whitespace0(input)?;
       let (input, _) = tag($byte)(input)?;
       let (input, _) = whitespace0(input)?;
       let end = input.loc();
+      let chars = input
+        .slice(start_cursor, input.cursor)
+        .chars()
+        .collect::<Vec<char>>();
       let src_range = SourceRange { start, end };
-      Ok((input, Token{kind: $token, chars: $byte.chars().collect::<Vec<char>>(), src_range}))
+      Ok((input, Token{kind: $token, chars, src_range}))
     }
   )
 }
@@ -53,14 +57,18 @@ macro_rules! ws1_leaf {
       if input.is_empty() {
         return Err(nom::Err::Error(ParseError::new(input, "Unexpected eof")))
       }
-      let (input, _) = whitespace1(input)?;
       let start = input.loc();
-      let byte = input.graphemes[input.cursor];
-      let (input, _) = tag($byte)(input)?;
-      let end = input.loc();
+      let start_cursor = input.cursor;
       let (input, _) = whitespace1(input)?;
+      let (input, _) = tag($byte)(input)?;
+      let (input, _) = whitespace1(input)?;
+      let end = input.loc();
+      let chars = input
+        .slice(start_cursor, input.cursor)
+        .chars()
+        .collect::<Vec<char>>();
       let src_range = SourceRange { start, end };
-      Ok((input, Token{kind: $token, chars: $byte.chars().collect::<Vec<char>>(), src_range}))
+      Ok((input, Token{kind: $token, chars, src_range}))
     }
   )
 }
