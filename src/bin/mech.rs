@@ -341,7 +341,7 @@ async fn main() -> Result<(), MechError> {
       .get_many::<String>("mech_test_file_paths")
       .map_or(vec![".".to_string()], |files| files.map(|file| file.to_string()).collect());
     let mut mechfs = MechFileSystem::new();
-    let test_target = mech_paths.first().cloned().unwrap_or_else(|| "test.mec".to_string());
+    let test_target = if mech_paths.is_empty() { "test.mec".to_string() } else { mech_paths.join(", ") };
     for path in &mech_paths {
       mechfs.watch_source(path)?;
     }
@@ -380,6 +380,8 @@ async fn main() -> Result<(), MechError> {
             let lhs = inv_err.lhs_value.clone().unwrap_or_else(|| "?".to_string());
             let rhs = inv_err.rhs_value.clone().unwrap_or_else(|| "?".to_string());
             println!("  {}: {}", name, inv_err.expression);
+            println!("    reason = {}", inv_err.reason);
+            println!("    evaluated_kind = {}", inv_err.evaluated_kind);
             println!("    actual = {}", lhs);
             println!("    expected = {}", rhs);
           } else {
