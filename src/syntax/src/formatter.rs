@@ -1558,6 +1558,35 @@ impl Formatter {
     }
   }
 
+  pub fn mech_code_full(&mut self, node: &Vec<MechCodeLine>) -> String {
+    let mut src = String::new();
+    for line in node {
+      let c = match &line.code {
+        MechCode::Comment(cmnt) => self.comment(cmnt),
+        MechCode::Expression(expr) => self.expression(expr),
+        MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
+        MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
+        MechCode::FunctionDefine(func_def) => self.function_define(func_def),
+        MechCode::Statement(stmt) => self.statement(stmt),
+        x => todo!("Unhandled MechCode: {:#?}", x),
+      };
+      let leading = line.terminal.leading.iter().map(|t| t.to_string()).collect::<String>();
+      let trailing = line.terminal.trailing.iter().map(|t| t.to_string()).collect::<String>();
+      let cmmt = line.terminal.comment.as_ref().map(|c| self.comment(c)).unwrap_or_default();
+      let terminator = line.terminal.terminator.as_ref().map(|t| t.to_string()).unwrap_or_default();
+      if self.html {
+        src.push_str(&format!("<span class=\"mech-code\">{}{}{}{}{} </span>", c, leading, cmmt, terminator, trailing));
+      } else {
+        src.push_str(&format!("{}{}{}{}{}", c, leading, cmmt, terminator, trailing));
+      }
+    }
+    if self.html {
+      format!("<span class=\"mech-code-block\">{}</span>",src)
+    } else {
+      src
+    }
+  }
+
   pub fn fsm_implementation(&mut self, node: &FsmImplementation) -> String {
     let name = node.name.to_string();
     let mut input = "".to_string();

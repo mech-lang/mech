@@ -468,15 +468,80 @@ pub fn mech_code(input: ParseString) -> ParseResult<Vec<(MechCode,Option<Comment
 
 /// mech-code-block-full := +(mech-code, code-terminal-full) ;
 pub fn mech_code_full(input: ParseString) -> ParseResult<Vec<MechCodeLine>> {
-  let (input, parsed) = mech_code(input)?;
-  let lines = parsed.into_iter().map(|(code, comment)| {
-    let terminal = CodeTerminal {
-      comment,
-      ..CodeTerminal::default()
+  let mut output = vec![];
+  let mut new_input = input.clone();
+  loop {
+    if peek(not_mech_code)(new_input.clone()).is_ok() {
+      if output.is_empty() {
+        let e = ParseError::new(new_input, "Unexpected character");
+        return Err(Err::Error(e));
+      }
+      return Ok((new_input, output));
+    }
+
+    let start = new_input.loc();
+    let start_cursor = new_input.cursor;
+    let (input, code) = match mech_code_alt(new_input.clone()) {
+      Err(Err::Error(mut e)) => {
+        if e.error_detail.message == "Unexpected character" {
+          if output.is_empty() {
+            return Err(Err::Error(e));
+          }
+          return Ok((new_input, output));
+        }
+        e.cause_range = SourceRange { start, end: e.cause_range.end };
+        e.log();
+        let (input, _) = skip_till_end_of_statement(e.remaining_input)?;
+        let skipped_input = input.slice(start_cursor, input.cursor);
+        let skipped_token = Token {
+          kind: TokenKind::Error,
+          chars: skipped_input.chars().collect(),
+          src_range: SourceRange { start, end: input.loc() },
+        };
+        (input, MechCode::Error(skipped_token, e.cause_range))
+      }
+      Err(Err::Failure(mut e)) => {
+        match subtitle(new_input.clone()) {
+          Ok((_, _)) => {
+            if output.is_empty() {
+              return Err(Err::Failure(e));
+            }
+            return Ok((new_input, output));
+          }
+          Err(_) => {}
+        }
+        e.cause_range = SourceRange { start, end: e.cause_range.end };
+        e.log();
+        let (input, _) = skip_till_end_of_statement(e.remaining_input)?;
+        let skipped_input = input.slice(start_cursor, input.cursor);
+        let skipped_token = Token {
+          kind: TokenKind::Error,
+          chars: skipped_input.chars().collect(),
+          src_range: SourceRange { start, end: input.loc() },
+        };
+        (input, MechCode::Error(skipped_token, e.cause_range))
+      }
+      Ok(x) => x,
+      _ => unreachable!(),
     };
-    MechCodeLine { code, terminal }
-  }).collect::<Vec<MechCodeLine>>();
-  Ok((input, lines))
+
+    let (input, terminal) = match code_terminal_full(input) {
+      Ok((input, terminal)) => (input, terminal),
+      Err(e) => {
+        if output.is_empty() {
+          return Err(e);
+        }
+        return Ok((new_input, output));
+      }
+    };
+
+    output.push(MechCodeLine { code, terminal });
+    new_input = input;
+    if new_input.is_empty() {
+      break;
+    }
+  }
+  Ok((new_input, output))
 }
 
 // program := ws0, ?title, body, ws0 ;
