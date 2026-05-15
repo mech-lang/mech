@@ -63,7 +63,7 @@ fn mech_opt_kind(name: &str, v: &Option<String>) -> String {
 
 fn test_case_to_mech(test_case: &TestCaseResult) -> String {
   format!(
-    "{{ name: {}, passed: {}, {}, {}, {}, {}, {} }}",
+    "{{\n  name: {}\n  passed: {}\n  {}\n  {}\n  {}\n  {}\n  {}\n}}",
     mech_str(&test_case.name),
     mech_bool(test_case.passed),
     mech_opt_str("expression", &test_case.expression),
@@ -75,29 +75,38 @@ fn test_case_to_mech(test_case: &TestCaseResult) -> String {
 }
 
 fn test_file_to_mech(file: &TestFileResult) -> String {
-  let cases = file.cases.iter().map(test_case_to_mech).collect::<Vec<_>>().join(" ");
+  let cases = file.cases.iter().map(test_case_to_mech).collect::<Vec<_>>().join("\n");
   format!(
-    "{{ path: {}, total: {}, passed: {}, failed: {}, cases: [{}], {} }}",
+    "{{\n  path: {}\n  total: {}\n  passed: {}\n  failed: {}\n  cases: [\n{}\n  ]\n  {}\n}}",
     mech_str(&file.path),
     file.total,
     file.passed,
     file.failed,
-    cases,
+    indent_block(&cases, 4),
     mech_opt_str("run_error", &file.run_error),
   )
 }
 
+fn indent_block(block: &str, spaces: usize) -> String {
+  let pad = " ".repeat(spaces);
+  block
+    .lines()
+    .map(|line| format!("{pad}{line}"))
+    .collect::<Vec<_>>()
+    .join("\n")
+}
+
 fn report_to_mech(report: &TestReport) -> String {
-  let files = report.files.iter().map(test_file_to_mech).collect::<Vec<_>>().join(" ");
+  let files = report.files.iter().map(test_file_to_mech).collect::<Vec<_>>().join("\n");
   format!(
-    "test_output := {{ total_files: {}, files_passed: {}, files_failed: {}, total_tests: {}, passed_tests: {}, failed_tests: {}, files: [{}] }}",
+    "test-report := {{\n  totalFiles: {}\n  filesPassed: {}\n  filesFailed: {}\n  totalTests: {}\n  passedTests: {}\n  failedTests: {}\n  files: [\n{}\n  ]\n}}",
     report.total_files,
     report.files_passed,
     report.files_failed,
     report.total_tests,
     report.passed_tests,
     report.failed_tests,
-    files
+    indent_block(&files, 4)
   )
 }
 
