@@ -130,10 +130,12 @@ Runs a program and validates invariants defined as `foo! := <expression>`.
 mech test .
 mech test foo
 mech test foo/bar.mec
+mech test test1.mec test2.mec test3.mec
 mech test foo/bar.mec -o report.json
 mech test foo/bar.mec -o report.mec
 mech test foo/bar.mec --verbose
 mech test foo/bar.mec --verbose -o report.json
+mech test test1.mec test2.mec --verbose -o combined-report.mec
 ```
 
 4. Additional Help
