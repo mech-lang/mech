@@ -322,6 +322,18 @@ pub fn run_mech_tests(
       _ => { eprintln!("{} Unsupported --out extension `.{}`. Use .json or .mec.", "[Error]".truecolor(246,98,78), extension); return Ok(1); }
     }
   }
+  if report.result.files_total > 1 {
+    println!(
+      "\n{} TOTAL AGGREGATE SUMMARY: {} files | {} passed | {} failed || {} tests | {} passed | {} failed\n",
+      "[Test]".truecolor(153, 221, 85),
+      report.result.files_total,
+      report.result.files_passed,
+      report.result.files_failed,
+      report.result.tests_total,
+      report.result.tests_passed,
+      report.result.tests_failed,
+    );
+  }
   if run_errors {
     println!("{} One or more files failed to load/execute, but all requested files were attempted.", "[Warn]".truecolor(255,210,77));
   }
