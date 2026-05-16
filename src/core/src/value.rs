@@ -293,6 +293,11 @@ impl ValueKind {
       (Tuple(a), Tuple(b)) if a.len() == b.len() && a.iter().zip(b.iter()).all(|(x, y)| x.is_convertible_to(y)) => true,
 
       // Set conversions
+      // Set conversions
+      // Treat empty element kinds as wildcards so empty sets can unify with
+      // populated sets during schema inference.
+      (Set(a, _), Set(_, _)) if matches!(a.as_ref(), Empty) => true,
+      (Set(_, _), Set(b, _)) if matches!(b.as_ref(), Empty) => true,
       (Set(a, _), Set(b, _)) if a.as_ref().is_convertible_to(b.as_ref()) => true,
 
       // Map conversions
