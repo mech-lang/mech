@@ -212,6 +212,37 @@ fn interpret_option_match_requires_wildcard_arm() {
 }
 
 #[test]
+fn interpret_set_literal_mixed_empty_and_string_infers_optional_string_kind() {
+  let s = r#"
+x := {
+  {
+    failed: {
+    }
+  }
+  {
+    failed: {
+      "foo"
+    }
+  }
+}
+x
+"#;
+  let tree = parser::parse(s).unwrap();
+  let mut intrp = Interpreter::new(0);
+  let result = intrp.interpret(&tree).unwrap();
+  assert_eq!(
+    result.deref_kind(),
+    ValueKind::Set(
+      Box::new(ValueKind::Record(vec![(
+        "failed".to_string(),
+        ValueKind::Set(Box::new(ValueKind::Option(Box::new(ValueKind::String))), None),
+      )])),
+      Some(2)
+    )
+  );
+}
+
+#[test]
 fn interpret_enum_match_reports_missing_variants_color() {
   let s = r#"
 <color> := :red | :green | :blue
