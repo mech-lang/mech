@@ -6,11 +6,24 @@ use std::collections::HashMap;
 
 #[cfg(feature = "set")]
 fn join_set_element_kinds(expected: &ValueKind, actual: &ValueKind) -> Option<ValueKind> {
+  fn optionalize(kind: ValueKind) -> ValueKind {
+    match kind {
+      ValueKind::Option(_) => kind,
+      other => ValueKind::Option(Box::new(other)),
+    }
+  }
+
   match (expected, actual) {
     (a, b) if a == b => Some(a.clone()),
-    (ValueKind::Empty, other) | (other, ValueKind::Empty) => Some(ValueKind::Option(Box::new(other.clone()))),
-    (ValueKind::Option(a), ValueKind::Option(b)) => join_set_element_kinds(a, b).map(|k| ValueKind::Option(Box::new(k))),
-    (ValueKind::Option(a), b) | (b, ValueKind::Option(a)) => join_set_element_kinds(a, b).map(|k| ValueKind::Option(Box::new(k))),
+    (ValueKind::Empty, other) | (other, ValueKind::Empty) => Some(optionalize(other.clone())),
+    (ValueKind::Option(a), ValueKind::Option(b)) => join_set_element_kinds(a, b).map(optionalize),
+    (ValueKind::Option(a), b) | (b, ValueKind::Option(a)) => {
+      if matches!(b, ValueKind::Empty) {
+        Some(ValueKind::Option(a.clone()))
+      } else {
+        join_set_element_kinds(a, b).map(optionalize)
+      }
+    }
     (ValueKind::Set(a, _), ValueKind::Set(b, _)) => join_set_element_kinds(a, b).map(|k| ValueKind::Set(Box::new(k), None)),
     (ValueKind::Record(a_fields), ValueKind::Record(b_fields)) => {
       let mut out = Vec::new();
