@@ -16,8 +16,13 @@ fn join_set_element_kinds(expected: &ValueKind, actual: &ValueKind) -> Option<Va
   match (expected, actual) {
     (a, b) if a == b => Some(a.clone()),
     (ValueKind::Empty, other) | (other, ValueKind::Empty) => Some(optionalize(other.clone())),
+    (ValueKind::Option(a), ValueKind::Option(b)) if a == b => Some(ValueKind::Option(a.clone())),
     (ValueKind::Option(a), ValueKind::Option(b)) => join_set_element_kinds(a, b).map(optionalize),
+    (ValueKind::Option(a), ValueKind::Empty) | (ValueKind::Empty, ValueKind::Option(a)) => Some(ValueKind::Option(a.clone())),
     (ValueKind::Option(a), b) | (b, ValueKind::Option(a)) => {
+      if a.as_ref() == b {
+        return Some(ValueKind::Option(a.clone()));
+      }
       if matches!(b, ValueKind::Empty) {
         Some(ValueKind::Option(a.clone()))
       } else {
