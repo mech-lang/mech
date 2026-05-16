@@ -1,0 +1,164 @@
+# Optional kind inference for heterogeneous set literals
+
+## Problem statement
+
+Today set literal kind inference fails when one element contains `_` for a field and another element contains a concrete value for that same field.
+
+In the failing example, three `files` entries have:
+
+- `passed: { }` (empty set, inferred as `passed<{_}>`)
+
+while one entry has:
+
+- `passed: { { name: "first-fifteen!" } ... }` (inferred as `passed<{{name<string>}}:4>`)
+
+Set unification currently requires exact element-kind equality, so evaluation raises `SetKindMismatch` instead of promoting the shared field to an optional/generalized kind.
+
+## Design goals
+
+1. Preserve static typing and deterministic inference.
+2. Allow `_` to represent “unknown/empty now, concrete later” during literal inference.
+3. Keep runtime behavior unchanged; this is a compile-time kind-join improvement.
+4. Produce actionable diagnostics when kinds are truly incompatible.
+
+## Non-goals
+
+- Introducing implicit numeric widening rules beyond existing behavior.
+- Changing map/record assignment semantics outside literal/set kind inference.
+- Making `_` a universal top type in all contexts.
+
+## Core idea
+
+Replace strict pairwise equality checks during set literal kind synthesis with a **least-upper-bound kind join** (`join_kind`).
+
+For each element `e` in a set literal:
+
+- infer `k_e`
+- accumulate `k_acc = join_kind(k_acc, k_e)`
+
+A set is valid iff all joins succeed.
+
+## Kind lattice additions
+
+Introduce explicit join rules for empty/optional cases:
+
+1. `join(_, T) = T?`
+2. `join(T, _) = T?`
+3. `join(T?, T) = T?`
+4. `join(T, T?) = T?`
+5. `join(T?, U?) = join(T, U)?` if `join(T, U)` exists
+6. `join(record{f_i}, record{g_j})` joins by field name:
+   - missing field on one side is treated as `_` then optionalized
+   - shared field types are recursively joined
+7. `join(set<A>, set<B>) = set<join(A,B)>`
+8. `join(tuple[a_i], tuple[b_i])` requires equal arity; join each slot
+9. otherwise: fail with mismatch diagnostic
+
+Notes:
+
+- `_` is only special during inference/join; final inferred field kinds should be concrete optional kinds (`T?`) whenever `T` is discoverable.
+- If both sides are `_`, preserve `_` until a concrete witness appears; finalize to `option<unknown>` only if the literal closes with no witness.
+
+## Two-phase inference for set literals
+
+### Phase 1: collect element kinds
+
+- Infer each element independently (existing behavior).
+- Preserve source span for each inferred field/element for diagnostics.
+
+### Phase 2: fold with join
+
+- Start with first element kind.
+- For each next element, call `join_kind`.
+- If join fails, emit mismatch that includes:
+  - path to mismatched subfield (`files[].passed`)
+  - left and right participating kinds
+  - first conflicting element spans
+
+## Application to the reported case
+
+For `files` element kind field `passed`:
+
+- Elements 1/2/4 contribute `set<_>` (from `{}`)
+- Element 3 contributes `set<record{name: string}>`
+
+Join result:
+
+- `join(set<_>, set<record{name:string}>)`
+- `= set<join(_, record{name:string})>`
+- `= set<record{name:string}?>`
+
+Thus full element kind becomes compatible across all entries, and evaluation proceeds.
+
+## Empty literal disambiguation rules
+
+To avoid over-permissive inference:
+
+1. `{}` inside a position with expected kind `set<T>` is typed as `set<T>` directly.
+2. `{}` without context is `set<_>` (placeholder) and must be resolved by join or annotation.
+3. If unresolved at end of inference:
+   - either emit “cannot infer element kind for empty set literal”
+   - or keep `set<_>` only in explicitly dynamic contexts (existing policy).
+
+## Implementation sketch
+
+### 1) Core kind join helper
+
+Add a helper in core kind utilities:
+
+- `fn join_kind(a: &ValueKind, b: &ValueKind) -> Result<ValueKind, KindJoinError>`
+
+`KindJoinError` should store:
+
+- `path: Vec<FieldOrIndex>`
+- `left: ValueKind`
+- `right: ValueKind`
+
+### 2) Set construction path
+
+In set literal construction (currently where `SetKindMismatch` is emitted), replace strict comparison with `join_kind` fold.
+
+Likely touchpoints:
+
+- `src/interpreter/src/structures.rs` around current set insertion/type check path.
+- underlying set kind validation in `src/core/src/structures/set.rs` if it also enforces equality-only checks.
+
+### 3) Record field alignment
+
+When joining record kinds:
+
+- build union of keys
+- for missing side use `_`
+- recurse
+
+### 4) Diagnostics
+
+Map `KindJoinError` into `MechError`:
+
+- preserve existing `SetKindMismatch` name for compatibility
+- enrich message with field path and both inferred subkinds
+
+## Backward compatibility
+
+- Programs that currently type-check continue to type-check.
+- Some programs that previously failed with `SetKindMismatch` now succeed (intended relaxation).
+- No runtime layout changes required if optional kinds are already represented.
+
+## Test plan
+
+1. **Regression (reported input):** mixed empty/non-empty `passed` and `failed`, `run-error: _`.
+2. Empty + concrete scalar in set: `{ _, 1 } -> set<i64?>`.
+3. Empty + record payload: `{ _, {name: "x"} } -> set<{name<string>}?>`.
+4. Record with missing field:
+   - `{ {a:1}, {a:2,b:3} } -> set<{a<i64>, b<i64?>}>`
+5. True mismatch still fails:
+   - `{ {a:1}, {a:"x"} }` should error with path `[].a`.
+6. Nested mismatch path reporting:
+   - `files[].passed[].name` style path in diagnostics.
+
+## Rollout plan
+
+1. Implement `join_kind` with unit tests at core kind layer.
+2. Switch set literal inference to join-fold.
+3. Improve mismatch diagnostics to include subpath.
+4. Add interpreter-level regression tests using validation output shape.
