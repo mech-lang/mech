@@ -38,25 +38,21 @@ In all cases, space complexity is **O(1)** because Bubble Sort is an in-place so
 We implement bubble sort as a finite state machine with the following states:
 
 #bubble-sort(arr<[u64]>) ⇒ <[u64]> :=
-  ├ :Start(arr<[u64]>)
   ├ :Pass(arr<[u64]>, acc<[u64]>, swaps<u64>)
   ├ :Next(arr<[u64]>, swaps<u64>)
   ├ :Reverse(arr<[u64]>, acc<[u64]>, swaps<u64>)
   └ :Done(arr<[u64]>).
 
-#bubble-sort(arr) → :Start(arr)
-  -- Initialize first pass
-  :Start(arr) → :Pass(arr, [], 0)
+#bubble-sort(arr) → :Pass(arr, [], 0)
   -- Pass: compare adjacent elements and rebuild list in acc
   :Pass([a, b | tail], acc, swaps)
-    ├ a > b → :Pass([a | tail], [b | acc], swaps + 1)
-    └ *     → :Pass([b | tail], [a | acc], swaps)
-  :Pass([x], acc, swaps) → :Next([x | acc], swaps)
+    ├ a > b → :Pass([a tail], [b acc], swaps + 1)
+    └ *     → :Pass([b tail], [a acc], swaps)
+  :Pass([x], acc, swaps) → :Next([x acc], swaps)
   :Pass([], acc, swaps)  → :Next(acc, swaps)
-  -- After a pass
+  -- After a pass, reverse the accumulator to restore order
   :Next(arr, swaps) → :Reverse(arr, [], swaps)
-  -- Reverse helper to restore order after pass
-  :Reverse([x | tail], acc, swaps) → :Reverse(tail, [x | acc], swaps)
+  :Reverse([x | tail], acc, swaps) → :Reverse(tail, [x acc], swaps)
   :Reverse([], acc, 0)     → :Done(acc)
   :Reverse([], acc, swaps) → :Pass(acc, [], 0)
   -- Return the sorted array
@@ -74,3 +70,7 @@ We can run the bubble sort algorithm on it:
 ```mech
 sorted := #bubble-sort(a)
 ```
+
+Check that it's actually sorted:
+
+sorted! := sorted === [1u64 2u64 3u64 4u64]

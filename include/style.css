@@ -838,6 +838,12 @@ code {
     text-underline-offset: 3px;
 }
 
+.mech-program-subtitle a {
+    color: var(--text-color);
+    cursor: pointer;
+    text-decoration: none;
+}
+
 .mech-program-subtitle:hover {
     color: var(--contrast-color-low);
     cursor: pointer;
@@ -1518,6 +1524,8 @@ li p {
     margin: 0;
     line-height: 1.6;
     font-size: 14pt;
+    margin-top: 10px;
+    text-indent: 25px;
 }
 
 
@@ -1897,6 +1905,10 @@ li p {
     margin-top: 1em;
     font-size: 0.9em;
     color: #ada594;
+}
+
+.mech-footnote-body .mech-paragraph + .mech-paragraph {
+    margin-top: 10px !important;
 }
 
 .mech-footnote-id {
@@ -2706,6 +2718,7 @@ mark {
 }
 
 .mech-function-branch {
+    padding-right: 5px;
     color: var(--function-arrow-color);
 }
 

@@ -1,8 +1,5 @@
 Mech Documentation
 ===============================================================================
-v0.3.4-beta
-===============================================================================
-
 
 1. Getting Started
 -------------------------------------------------------------------------------
@@ -123,11 +120,12 @@ v0.3.4-beta
 - [Fizz Buzz](/examples/fizzbuzz.html) - a classic programming exercise that demonstrates the use of Mech's data model and operators.
 - [N-Body Simulation](/examples/n-body.html) - a simulation of gravitational interactions between multiple bodies.
 - [Extended Kalman Filter](/examples/ekf.html) - an implementation of the Extended Kalman Filter algorithm for state estimation.
+- [Bubble Sort](/examples/bubble-sort.html) - the classic bubble sort algorithm implemented with state machines.
 
 ```mech:hidden
 document/index := {
   name: "docs" 
-  version: "v0.3.4"
+  version: "v0.3.5"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/mech/docs"
   license: "Apache-2.0"}
