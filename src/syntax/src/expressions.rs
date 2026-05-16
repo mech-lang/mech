@@ -164,18 +164,28 @@ pub fn l7(input: ParseString) -> ParseResult<Factor> {
 
 // factor := parenthetical-term | negate-factor | not-factor | structure | function-call | literal | slice | var ;
 pub fn factor(input: ParseString) -> ParseResult<Factor> {
-  let parsers: Vec<(&str, Box<dyn Fn(ParseString) -> ParseResult<Factor>>)> = vec![
-    ("parenthetical_term", Box::new(|i| parenthetical_term(i))),
-    ("negate_factor", Box::new(|i| negate_factor(i))),
-    ("not_factor", Box::new(|i| not_factor(i))),
-    ("matrix_comprehension", Box::new(|i| matrix_comprehension(i).map(|(i, m)| (i, Factor::Expression(Box::new(Expression::MatrixComprehension(Box::new(m)))))))),
-    ("structure", Box::new(|i| structure(i).map(|(i, s)| (i, Factor::Expression(Box::new(Expression::Structure(s))))))),
-    ("function_call", Box::new(|i| function_call(i).map(|(i, f)| (i, Factor::Expression(Box::new(Expression::FunctionCall(f))))))),
-    ("literal", Box::new(|i| literal(i).map(|(i, l)| (i, Factor::Expression(Box::new(Expression::Literal(l))))))),
-    ("slice", Box::new(|i| slice(i).map(|(i, s)| (i, Factor::Expression(Box::new(Expression::Slice(s))))))),
-    ("var", Box::new(|i| var(i).map(|(i, v)| (i, Factor::Expression(Box::new(Expression::Var(v))))))),
-  ];
-  let (input, fctr) = alt_best(input, &parsers)?;
+  let (input, fctr) = if let Ok((input, fctr)) = parenthetical_term(input.clone()) {
+    (input, fctr)
+  } else if let Ok((input, fctr)) = negate_factor(input.clone()) {
+    (input, fctr)
+  } else if let Ok((input, fctr)) = not_factor(input.clone()) {
+    (input, fctr)
+  } else if let Ok((input, m)) = matrix_comprehension(input.clone()) {
+    (input, Factor::Expression(Box::new(Expression::MatrixComprehension(Box::new(m)))))
+  } else if let Ok((input, s)) = structure(input.clone()) {
+    (input, Factor::Expression(Box::new(Expression::Structure(s))))
+  } else if let Ok((input, f)) = function_call(input.clone()) {
+    (input, Factor::Expression(Box::new(Expression::FunctionCall(f))))
+  } else if let Ok((input, l)) = literal(input.clone()) {
+    (input, Factor::Expression(Box::new(Expression::Literal(l))))
+  } else if let Ok((input, s)) = slice(input.clone()) {
+    (input, Factor::Expression(Box::new(Expression::Slice(s))))
+  } else {
+    match var(input.clone()) {
+      Ok((input, v)) => (input, Factor::Expression(Box::new(Expression::Var(v)))),
+      Err(err) => return Err(err),
+    }
+  };
   let (input, transpose) = opt(transpose)(input)?;
   let fctr = match transpose {
     Some(_) => Factor::Transpose(Box::new(fctr)),
