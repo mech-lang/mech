@@ -383,12 +383,22 @@ pub fn set(m: &Set, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
   }
   #[cfg(feature = "functions")]
   {
+    #[cfg(debug_assertions)]
+    eprintln!("[set-kind-join] building SetDefine with kind={}", element_kind);
     let new_fxn = SetDefine { kind: element_kind.clone() }.compile(&elements)?;
+    #[cfg(debug_assertions)]
+    eprintln!("[set-kind-join] compiled SetDefine");
     new_fxn.solve();
+    #[cfg(debug_assertions)]
+    eprintln!("[set-kind-join] solved SetDefine");
     let out = new_fxn.out();
+    #[cfg(debug_assertions)]
+    eprintln!("[set-kind-join] produced output kind={}", out.kind());
     let plan = p.plan();
     let mut plan_brrw = plan.borrow_mut();
     plan_brrw.push(new_fxn);
+    #[cfg(debug_assertions)]
+    eprintln!("[set-kind-join] pushed function plan");
     Ok(out)
   }
   #[cfg(not(feature = "functions"))]
