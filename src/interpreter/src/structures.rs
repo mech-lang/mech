@@ -242,7 +242,6 @@ pub fn set(m: &Set, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
   for el in &elements {
     let el_kind = el.kind();
     if el_kind != element_kind
-      && !el_kind.is_convertible_to(&element_kind)
       && !element_kind.is_convertible_to(&el_kind) {
       return Err(MechError::new(
         SetKindMismatchError{expected_kind: element_kind.clone(), actual_kind: el_kind},

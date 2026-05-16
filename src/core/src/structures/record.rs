@@ -30,8 +30,7 @@ impl MechRecord {
       // Compare kinds. Allow schema unification when one side is still
       // underspecified (e.g. empty sets that later become populated).
       if expected_kind != actual_kind
-        && !expected_kind.is_convertible_to(actual_kind)
-        && !actual_kind.is_convertible_to(expected_kind) {
+        && !expected_kind.is_convertible_to(actual_kind) {
         return Err(MechError::new(
           RecordFieldKindMismatchError {
             field_id,
