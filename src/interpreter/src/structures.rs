@@ -8,6 +8,7 @@ use std::collections::HashMap;
 fn join_set_element_kinds(expected: &ValueKind, actual: &ValueKind) -> Option<ValueKind> {
   fn optionalize(kind: ValueKind) -> ValueKind {
     match kind {
+      ValueKind::Empty => ValueKind::Empty,
       ValueKind::Option(_) => kind,
       other => ValueKind::Option(Box::new(other)),
     }
@@ -15,6 +16,7 @@ fn join_set_element_kinds(expected: &ValueKind, actual: &ValueKind) -> Option<Va
 
   match (expected, actual) {
     (a, b) if a == b => Some(a.clone()),
+    (ValueKind::Empty, ValueKind::Empty) => Some(ValueKind::Empty),
     (ValueKind::Empty, other) | (other, ValueKind::Empty) => Some(optionalize(other.clone())),
     (ValueKind::Option(a), ValueKind::Option(b)) if a == b => Some(ValueKind::Option(a.clone())),
     (ValueKind::Option(a), ValueKind::Option(b)) => join_set_element_kinds(a, b).map(optionalize),
