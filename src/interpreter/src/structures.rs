@@ -254,13 +254,17 @@ register_descriptor!{
 }
 
 #[cfg(feature = "set")]
-pub struct SetDefine {}
+pub struct SetDefine {
+  pub kind: ValueKind,
+}
 #[cfg(feature = "set")]
 #[cfg(feature = "functions")]
 impl NativeFunctionCompiler for SetDefine {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    let mut set = MechSet::from_vec(arguments.clone());
+    set.kind = self.kind.clone();
     Ok(Box::new(ValueSet {
-      out: Ref::new(MechSet::from_vec(arguments.clone())),
+      out: Ref::new(set),
     }))
   }
 }
@@ -269,7 +273,7 @@ impl NativeFunctionCompiler for SetDefine {
 register_descriptor!{
   FunctionCompilerDescriptor {
     name: "set/define",
-    ptr: &SetDefine{},
+    ptr: &SetDefine{ kind: ValueKind::Empty },
   }
 }
 
@@ -302,7 +306,7 @@ pub fn set(m: &Set, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
   }
   #[cfg(feature = "functions")]
   {
-    let new_fxn = SetDefine {}.compile(&elements)?;
+    let new_fxn = SetDefine { kind: element_kind.clone() }.compile(&elements)?;
     new_fxn.solve();
     let out = new_fxn.out();
     let plan = p.plan();
@@ -312,7 +316,9 @@ pub fn set(m: &Set, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
   }
   #[cfg(not(feature = "functions"))]
   {
-    Ok(Value::Set(Ref::new(MechSet::from_vec(elements))))
+    let mut set = MechSet::from_vec(elements);
+    set.kind = element_kind;
+    Ok(Value::Set(Ref::new(set)))
   }
 }
 
