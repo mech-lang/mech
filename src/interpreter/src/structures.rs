@@ -6,8 +6,6 @@ use std::collections::{HashMap, HashSet};
 
 #[cfg(feature = "set")]
 fn join_set_element_kinds(expected: &ValueKind, actual: &ValueKind) -> Option<ValueKind> {
-  #[cfg(debug_assertions)]
-  eprintln!("[set-kind-join] start expected={} actual={}", expected, actual);
   fn optionalize(kind: ValueKind) -> ValueKind {
     match kind {
       ValueKind::Empty => ValueKind::Empty,
@@ -21,23 +19,9 @@ fn join_set_element_kinds(expected: &ValueKind, actual: &ValueKind) -> Option<Va
     actual: &ValueKind,
     seen: &mut HashSet<(ValueKind, ValueKind)>,
   ) -> Option<ValueKind> {
-    #[cfg(debug_assertions)]
-    eprintln!(
-      "[set-kind-join] inner expected={} actual={} seen={}",
-      expected,
-      actual,
-      seen.len()
-    );
     // Guard against recursive/cyclic revisits for empty/optional normalization.
     let key = (expected.clone(), actual.clone());
     if !seen.insert(key.clone()) {
-      #[cfg(debug_assertions)]
-      eprintln!(
-        "[set-kind-join] cycle-detected expected={} actual={} => {}",
-        expected,
-        actual,
-        if expected == actual { "reuse-equal" } else { "fail" }
-      );
       return if expected == actual { Some(expected.clone()) } else { None };
     }
 
@@ -87,25 +71,11 @@ fn join_set_element_kinds(expected: &ValueKind, actual: &ValueKind) -> Option<Va
     };
 
     seen.remove(&key);
-    #[cfg(debug_assertions)]
-    eprintln!(
-      "[set-kind-join] return expected={} actual={} => {:?}",
-      expected,
-      actual,
-      out
-    );
     out
   }
 
   let mut seen: HashSet<(ValueKind, ValueKind)> = HashSet::new();
   let out = join_set_element_kinds_inner(expected, actual, &mut seen);
-  #[cfg(debug_assertions)]
-  eprintln!(
-    "[set-kind-join] done expected={} actual={} => {:?}",
-    expected,
-    actual,
-    out
-  );
   out
 }
 
@@ -341,38 +311,20 @@ pub fn set(m: &Set, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
     let result = expression(el, env, p)?;
     elements.push(result.clone());
   }
-  #[cfg(debug_assertions)]
-  eprintln!("[set-kind-join] set literal elements={}", elements.len());
   let mut element_kind = if elements.len() > 0 {
     elements[0].kind()
   } else {
     ValueKind::Empty
   };
-  #[cfg(debug_assertions)]
-  eprintln!("[set-kind-join] initial element_kind={}", element_kind);
   // Join element kinds so empty placeholders (`_`) can coexist with concrete values.
   for el in &elements {
     let actual_kind = el.kind();
-    #[cfg(debug_assertions)]
-    eprintln!(
-      "[set-kind-join] fold step current={} incoming={}",
-      element_kind,
-      actual_kind
-    );
     if actual_kind != element_kind {
       match join_set_element_kinds(&element_kind, &actual_kind) {
         Some(joined_kind) => {
-          #[cfg(debug_assertions)]
-          eprintln!("[set-kind-join] fold joined => {}", joined_kind);
           element_kind = joined_kind
         }
         None => {
-          #[cfg(debug_assertions)]
-          eprintln!(
-            "[set-kind-join] fold mismatch current={} incoming={}",
-            element_kind,
-            actual_kind
-          );
           return Err(MechError::new(
             SetKindMismatchError{expected_kind: element_kind.clone(), actual_kind},
             None
