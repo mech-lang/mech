@@ -51,16 +51,26 @@ pub fn expression(input: ParseString) -> ParseResult<Expression> {
         Ok((input, mc)) => (input, Expression::MatrixComprehension(Box::new(mc))),
         Err(_) => match range_expression(input.clone()) {
           Ok((input, rng)) => (input, Expression::Range(Box::new(rng))),
-          Err(_) => match match_expression(input.clone()) {
-            Ok((input, expr)) => (input, Expression::Match(Box::new(expr))),
-            Err(_) => match formula(input.clone()) {
-              Ok((input, Factor::Expression(expr))) => (input, *expr),
-              Ok((input, fctr)) => (input, Expression::Formula(fctr)),
-              Err(err) => {
-                return Err(err);
+          Err(_) => match formula(input.clone()) {
+            Ok((input, source_factor)) => {
+              let source_expression = match source_factor.clone() {
+                Factor::Expression(expr) => *expr,
+                fctr => Expression::Formula(fctr),
+              };
+              if let Ok((input, _)) = question(input.clone()) {
+                let (input, _) = whitespace0(input)?;
+                let (input, arms) = many1(match_arm)(input)?;
+                let (input, _) = opt(period)(input)?;
+                (input, Expression::Match(Box::new(MatchExpression { source: source_expression, arms })))
+              } else {
+                match source_factor {
+                  Factor::Expression(expr) => (input, *expr),
+                  fctr => (input, Expression::Formula(fctr)),
+                }
               }
             }
-          },
+            Err(err) => return Err(err),
+          }
         }
       }
     }
