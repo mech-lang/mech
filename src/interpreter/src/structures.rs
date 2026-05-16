@@ -237,11 +237,15 @@ pub fn set(m: &Set, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
   } else {
     ValueKind::Empty
   };
-  // Make sure all elements have the same kind
+  // Make sure all elements have compatible kinds (supports underspecified
+  // kinds like empty set elements during schema inference).
   for el in &elements {
-    if el.kind() != element_kind {
+    let el_kind = el.kind();
+    if el_kind != element_kind
+      && !el_kind.is_convertible_to(&element_kind)
+      && !element_kind.is_convertible_to(&el_kind) {
       return Err(MechError::new(
-        SetKindMismatchError{expected_kind: element_kind.clone(), actual_kind: el.kind().clone()},
+        SetKindMismatchError{expected_kind: element_kind.clone(), actual_kind: el_kind},
         None
       ).with_compiler_loc());
     }
