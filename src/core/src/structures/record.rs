@@ -27,8 +27,11 @@ impl MechRecord {
       // Get actual kind
       let actual_kind = record.kinds.get(record.key_index(field_id)?)
         .ok_or_else(|| MechError::new(MissingKindInComparedRecordError { field_id }, None).with_compiler_loc())?;
-      // Compare kinds
-      if expected_kind != actual_kind {
+      // Compare kinds. Allow schema unification when one side is still
+      // underspecified (e.g. empty sets that later become populated).
+      if expected_kind != actual_kind
+        && !expected_kind.is_convertible_to(actual_kind)
+        && !actual_kind.is_convertible_to(expected_kind) {
         return Err(MechError::new(
           RecordFieldKindMismatchError {
             field_id,
