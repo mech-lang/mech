@@ -382,11 +382,11 @@ async fn main() -> Result<(), MechError> {
     }
 
     let uuid = generate_uuid();
-    let mut intrp = Interpreter::new(uuid);
+    let mut program = MechProgram::new(uuid);
 
-    let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag, trace_flag); 
+    let result = run_mech_code(program.interpreter_mut(), &mechfs, tree_flag, debug_flag, time_flag, trace_flag); 
 
-    let bytecode = intrp.compile()?;
+    let bytecode = program.interpreter_mut().compile()?;
 
     let mut output_file = output_path.join("output.mecb");
 
@@ -396,7 +396,7 @@ async fn main() -> Result<(), MechError> {
 
     // print debug info for the context
     if debug_flag {
-      println!("{} Bytecode Size: {:#?} bytes", "[Debug]".truecolor(246,192,78), intrp.context);
+      println!("{} Bytecode Size: {:#?} bytes", "[Debug]".truecolor(246,192,78), program.interpreter().context);
     }
 
     println!("{} Mech bytecode written to: {}", "[Output]".truecolor(153,221,85), output_file.display());
@@ -527,7 +527,7 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   let mut caught_inturrupts = Arc::new(Mutex::new(0));
   let uuid = generate_uuid();
-  let mut intrp = Interpreter::new(uuid);
+  let mut program = MechProgram::new(uuid);
   #[cfg(feature = "run")]
   {
     let mut paths = if let Some(m) = matches.get_many::<String>("mech_paths") {
@@ -559,32 +559,20 @@ async fn main() -> Result<(), MechError> {
         }
       } else {
         // ---------- 4. Treat the inputs as Mech code ----------
-        intrp.clear();
+        program.interpreter_mut().clear();
         let joined = paths.join(" ");
-        let parse_result = parser::parse(joined.trim());
-
-        match parse_result {
-          Ok(tree) => match intrp.interpret(&tree) {
-            Ok(r) => {
-              println!("{}", r.kind());
-              #[cfg(feature = "pretty_print")]
-              println!("{}", r.pretty_print());
-              #[cfg(not(feature = "pretty_print"))]
-              println!("{:#?}", r);
-              std::process::exit(0);
-            }
-            Err(err) => {
-              println!("{} {:#?}",
-                "[Error]".truecolor(246,98,78),
-                err
-              );
-              std::process::exit(1);
-            }
-          },
-
+        match program.run_string(joined.trim()) {
+          Ok(r) => {
+            println!("{}", r.kind());
+            #[cfg(feature = "pretty_print")]
+            println!("{}", r.pretty_print());
+            #[cfg(not(feature = "pretty_print"))]
+            println!("{:#?}", r);
+            std::process::exit(0);
+          }
           Err(err) => {
             println!("{} {:#?}",
-              "[Parse Error]".truecolor(246,98,78),
+              "[Error]".truecolor(246,98,78),
               err
             );
             std::process::exit(1);
@@ -593,7 +581,7 @@ async fn main() -> Result<(), MechError> {
       }
     }
 
-    let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag, trace_flag); 
+    let result = run_mech_code(program.interpreter_mut(), &mechfs, tree_flag, debug_flag, time_flag, trace_flag); 
     if !repl_flag {
       match &result {
         Ok(r) => {
@@ -650,7 +638,7 @@ async fn main() -> Result<(), MechError> {
   // REPL
   // --------------------------------------------------------------------------
   #[cfg(feature = "repl")]
-  let mut repl = MechRepl::from(intrp);
+  let mut repl = MechRepl::from(program.into_interpreter());
   #[cfg(feature = "repl")]
   'REPL: loop {
     {
