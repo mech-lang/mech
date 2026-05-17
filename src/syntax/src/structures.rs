@@ -33,6 +33,36 @@ pub fn max_err<'a>(x: Option<ParseError<'a>>, y: ParseError<'a>) -> ParseError<'
 
 // structure := empty-set | empty-table | table | matrix | tuple | tuple-struct | record | map | set ;
 pub fn structure(input: ParseString) -> ParseResult<Structure> {
+  if let Some(current) = input.current() {
+    match current {
+      "{" => {
+        if let Ok((input, set)) = empty_set(input.clone()) {
+          return Ok((input, Structure::Set(set)));
+        }
+        if let Ok((input, map)) = empty_map(input.clone()) {
+          return Ok((input, Structure::Map(map)));
+        }
+        if let Ok((input, map)) = map(input.clone()) {
+          return Ok((input, Structure::Map(map)));
+        }
+        return set(input).map(|(input, set)| (input, Structure::Set(set)));
+      }
+      "[" => {
+        return matrix(input).map(|(input, mtrx)| (input, Structure::Matrix(mtrx)));
+      }
+      "(" => {
+        return tuple(input).map(|(input, tpl)| (input, Structure::Tuple(tpl)));
+      }
+      ":" => {
+        return tuple_struct(input).map(|(input, tpl)| (input, Structure::TupleStruct(tpl)));
+      }
+      "|" => {
+        return table(input).map(|(input, tbl)| (input, Structure::Table(tbl)));
+      }
+      _ => {}
+    }
+  }
+
   match empty_set(input.clone()) {
     Ok((input, set)) => {return Ok((input, Structure::Set(set)));},
     _ => (),
