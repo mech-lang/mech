@@ -2383,116 +2383,101 @@ impl Value {
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for Value {
   fn pretty_print(&self) -> String {
-    let mut builder = Builder::default();
     match self {
       #[cfg(feature = "u8")]
-      Value::U8(x)   => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      Value::U8(x)   => format!("{}",x.borrow()),
       #[cfg(feature = "u16")]
-      Value::U16(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      Value::U16(x)  => format!("{}",x.borrow()),
       #[cfg(feature = "u32")]
-      Value::U32(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      Value::U32(x)  => format!("{}",x.borrow()),
       #[cfg(feature = "u64")]
-      Value::U64(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      Value::U64(x)  => format!("{}",x.borrow()),
       #[cfg(feature = "u128")]
-      Value::U128(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      Value::U128(x) => format!("{}",x.borrow()),
       #[cfg(feature = "i8")]
-      Value::I8(x)   => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      Value::I8(x)   => format!("{}",x.borrow()),
       #[cfg(feature = "i16")]
-      Value::I16(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      Value::I16(x)  => format!("{}",x.borrow()),
       #[cfg(feature = "i32")]
-      Value::I32(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      Value::I32(x)  => format!("{}",x.borrow()),
       #[cfg(feature = "i64")]
-      Value::I64(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      Value::I64(x)  => format!("{}",x.borrow()),
       #[cfg(feature = "i128")]
-      Value::I128(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      Value::I128(x) => format!("{}",x.borrow()),
       #[cfg(feature = "f32")]
-      Value::F32(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      Value::F32(x)  => format!("{}",x.borrow()),
       #[cfg(feature = "f64")]
-      Value::F64(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      Value::F64(x)  => format!("{}",x.borrow()),
       #[cfg(any(feature = "bool", feature = "variable_define"))]
-      Value::Bool(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      Value::Bool(x) => format!("{}",x.borrow()),
       #[cfg(feature = "complex")]
-      Value::C64(x) => {builder.push_record(vec![x.borrow().pretty_print()]);},
+      Value::C64(x) => x.borrow().pretty_print(),
       #[cfg(feature = "rational")]
-      Value::R64(x) => {builder.push_record(vec![format!("{}",x.borrow().pretty_print())]);},
+      Value::R64(x) => format!("{}",x.borrow().pretty_print()),
       #[cfg(feature = "atom")]
-      Value::Atom(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      Value::Atom(x) => format!("{}",x.borrow()),
       #[cfg(feature = "set")]
-      Value::Set(x)  => {return x.borrow().pretty_print();}
+      Value::Set(x)  => x.borrow().pretty_print(),
       #[cfg(feature = "map")]
-      Value::Map(x)  => {return x.borrow().pretty_print();}
+      Value::Map(x)  => x.borrow().pretty_print(),
       #[cfg(any(feature = "string", feature = "variable_define"))]
-      Value::String(x) => {return format!("\"{}\"",x.borrow().clone());},
+      Value::String(x) => format!("\"{}\"",x.borrow().clone()),
       #[cfg(feature = "table")]
-      Value::Table(x)  => {return x.borrow().pretty_print();},
+      Value::Table(x)  => x.borrow().pretty_print(),
       #[cfg(feature = "tuple")]
-      Value::Tuple(x)  => {return x.borrow().pretty_print();},
+      Value::Tuple(x)  => x.borrow().pretty_print(),
       #[cfg(feature = "record")]
-      Value::Record(x) => {return x.borrow().pretty_print();},
+      Value::Record(x) => x.borrow().pretty_print(),
       #[cfg(feature = "enum")]
-      Value::Enum(x) => {return x.borrow().pretty_print();},
+      Value::Enum(x) => x.borrow().pretty_print(),
       #[cfg(feature = "matrix")]
-      Value::MatrixIndex(x) => {return x.pretty_print();},
+      Value::MatrixIndex(x) => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "bool"))]
-      Value::MatrixBool(x) => {return x.pretty_print();},
+      Value::MatrixBool(x) => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "u8"))]
-      Value::MatrixU8(x)   => {return x.pretty_print();},
+      Value::MatrixU8(x)   => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "u16"))]
-      Value::MatrixU16(x)  => {return x.pretty_print();},
+      Value::MatrixU16(x)  => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "u32"))]
-      Value::MatrixU32(x)  => {return x.pretty_print();},
+      Value::MatrixU32(x)  => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "u64"))]
-      Value::MatrixU64(x)  => {return x.pretty_print();},
+      Value::MatrixU64(x)  => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "u128"))]
-      Value::MatrixU128(x) => {return x.pretty_print();},
+      Value::MatrixU128(x) => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "i8"))]
-      Value::MatrixI8(x)   => {return x.pretty_print();},
+      Value::MatrixI8(x)   => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "i16"))]
-      Value::MatrixI16(x)  => {return x.pretty_print();},
+      Value::MatrixI16(x)  => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "i32"))]
-      Value::MatrixI32(x)  => {return x.pretty_print();},
+      Value::MatrixI32(x)  => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "i64"))]
-      Value::MatrixI64(x)  => {return x.pretty_print();},
+      Value::MatrixI64(x)  => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "i128"))]
-      Value::MatrixI128(x) => {return x.pretty_print();},
+      Value::MatrixI128(x) => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "f32"))]
-      Value::MatrixF32(x)  => {return x.pretty_print();},
+      Value::MatrixF32(x)  => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "f64"))]
-      Value::MatrixF64(x)  => {return x.pretty_print();},
+      Value::MatrixF64(x)  => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "any"))]
-      Value::MatrixValue(x)  => {return x.pretty_print();},
+      Value::MatrixValue(x)  => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "string"))]
-      Value::MatrixString(x)  => {return x.pretty_print();},
+      Value::MatrixString(x)  => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "rational"))]
-      Value::MatrixR64(x) => {return x.pretty_print();},
+      Value::MatrixR64(x) => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "complex"))]
-      Value::MatrixC64(x) => {return x.pretty_print();},
-      Value::MatrixValue(x) => {return x.pretty_print();},
-      Value::Index(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
-      Value::MutableReference(x) => {return x.borrow().pretty_print();},
-      Value::Typed(x, _) => { return x.pretty_print(); },
-      Value::Empty | Value::EmptyKind(_) => builder.push_record(vec!["_"]),
-      Value::IndexAll => builder.push_record(vec![":"]),
-      Value::Id(x) => builder.push_record(vec![format!("{}",humanize(x))]),
-      Value::Kind(x) => builder.push_record(vec![format!("<{}>",x)]),
+      Value::MatrixC64(x) => x.pretty_print(),
+      Value::MatrixValue(x) => x.pretty_print(),
+      Value::Index(x)  => format!("{}",x.borrow()),
+      Value::MutableReference(x) => x.borrow().pretty_print(),
+      Value::Typed(x, _) => x.pretty_print(),
+      Value::Empty | Value::EmptyKind(_) => "_".to_string(),
+      Value::IndexAll => ":".to_string(),
+      Value::Id(x) => format!("{}",humanize(x)),
+      Value::Kind(x) => format!("<{}>",x),
       x => {
         todo!("{x:#?}");
       },
-    };
-    let value_style = Style::empty()
-      .top(' ')
-      .left(' ')
-      .right(' ')
-      .bottom(' ')
-      .vertical(' ')
-      .intersection_bottom(' ')
-      .corner_top_left(' ')
-      .corner_top_right(' ')
-      .corner_bottom_left(' ')
-      .corner_bottom_right(' ');
-    let mut table = builder.build();
-    table.with(value_style);
-    format!("{table}")
+    }
   }
 }
 

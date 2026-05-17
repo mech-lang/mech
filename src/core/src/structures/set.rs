@@ -68,27 +68,16 @@ impl MechSet {
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for MechSet {
   fn pretty_print(&self) -> String {
-    let mut builder = Builder::default();
-    let mut element_strings = vec![];
-    for x in self.set.iter() {
-      element_strings.push(x.pretty_print());
+    let mut src = String::new();
+    for (i, element) in self.set.iter().enumerate() {
+      let e = element.pretty_print();
+      if i == 0 {
+        src = format!("{}", e);
+      } else {
+        src = format!("{}, {}", src, e);
+      }
     }
-    builder.push_record(element_strings);
-
-    let style = Style::empty()
-      .top(' ')
-      .left('║')
-      .right('║')
-      .bottom(' ')
-      .vertical(' ')
-      .intersection_bottom(' ')
-      .corner_top_left('╔')
-      .corner_top_right('╗')
-      .corner_bottom_left('╚')
-      .corner_bottom_right('╝');
-    let mut table = builder.build();
-    table.with(style);
-    format!("{table}")
+    format!("{{\n{}\n}}", src)
   }
 }
 

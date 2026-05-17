@@ -167,9 +167,8 @@ impl PrettyPrint for MechRecord {
     for (k, v) in &self.data {
       let field_name = self.field_names.get(k).unwrap();
       lines.push(format!(
-        "  {}<{}>: {}",
+        "  {}: {}",
         field_name,
-        v.kind(),
         v.pretty_print()
       ));
     }
