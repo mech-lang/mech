@@ -386,7 +386,7 @@ async fn main() -> Result<(), MechError> {
 
     let result = run_mech_code(program.interpreter_mut(), &mechfs, tree_flag, debug_flag, time_flag, trace_flag); 
 
-    let bytecode = program.interpreter().compile()?;
+    let bytecode = program.interpreter_mut().compile()?;
 
     let mut output_file = output_path.join("output.mecb");
 
