@@ -284,10 +284,33 @@ where T: Hash + nalgebra::Scalar
 }
 
 #[cfg(feature = "pretty_print")]
+const SMALL_SCALAR_MATRIX_CELLS_LIMIT: usize = 36;
+
+#[cfg(feature = "pretty_print")]
+fn is_scalar_type<T>() -> bool {
+  let t = std::any::type_name::<T>();
+  matches!(t, "u8" | "u16" | "u32" | "u64" | "u128" | "i8" | "i16" | "i32" | "i64" | "i128" | "f32" | "f64" | "bool")
+}
+
+#[cfg(feature = "pretty_print")]
 impl<T> PrettyPrint for Matrix<T>
 where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 {
   fn pretty_print(&self) -> String {
+    let shape = self.shape();
+    let num_cells = shape[0] * shape[1];
+    if is_scalar_type::<T>() && num_cells <= SMALL_SCALAR_MATRIX_CELLS_LIMIT {
+      let mut rows = Vec::with_capacity(shape[0]);
+      for i in 0..shape[0] {
+        let row = (0..shape[1])
+          .map(|j| self.index2d(i + 1, j + 1).pretty_print())
+          .collect::<Vec<_>>()
+          .join(", ");
+        rows.push(format!("[{}]", row));
+      }
+      return format!("[{}]", rows.join(", "));
+    }
+
     let mut builder = Builder::default();
     match self {
       #[cfg(feature = "row_vector4")]

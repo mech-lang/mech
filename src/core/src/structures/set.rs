@@ -66,8 +66,50 @@ impl MechSet {
 }
 
 #[cfg(feature = "pretty_print")]
+const SMALL_SCALAR_SET_LIMIT: usize = 16;
+
+#[cfg(feature = "pretty_print")]
+fn is_scalar_kind(kind: &ValueKind) -> bool {
+  match kind {
+    #[cfg(feature = "u8")]
+    ValueKind::U8 => true,
+    #[cfg(feature = "u16")]
+    ValueKind::U16 => true,
+    #[cfg(feature = "u32")]
+    ValueKind::U32 => true,
+    #[cfg(feature = "u64")]
+    ValueKind::U64 => true,
+    #[cfg(feature = "u128")]
+    ValueKind::U128 => true,
+    #[cfg(feature = "i8")]
+    ValueKind::I8 => true,
+    #[cfg(feature = "i16")]
+    ValueKind::I16 => true,
+    #[cfg(feature = "i32")]
+    ValueKind::I32 => true,
+    #[cfg(feature = "i64")]
+    ValueKind::I64 => true,
+    #[cfg(feature = "i128")]
+    ValueKind::I128 => true,
+    #[cfg(feature = "f32")]
+    ValueKind::F32 => true,
+    #[cfg(feature = "f64")]
+    ValueKind::F64 => true,
+    #[cfg(any(feature = "bool", feature = "variable_define"))]
+    ValueKind::Bool => true,
+    ValueKind::Index => true,
+    _ => false,
+  }
+}
+
+#[cfg(feature = "pretty_print")]
 impl PrettyPrint for MechSet {
   fn pretty_print(&self) -> String {
+    if is_scalar_kind(&self.kind) && self.set.len() <= SMALL_SCALAR_SET_LIMIT {
+      let elements = self.set.iter().map(|x| x.pretty_print()).collect::<Vec<_>>().join(", ");
+      return format!("{{{}}}", elements);
+    }
+
     let mut builder = Builder::default();
     let mut element_strings = vec![];
     for x in self.set.iter() {
