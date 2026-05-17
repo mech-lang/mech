@@ -526,7 +526,9 @@ async fn main() -> Result<(), MechError> {
   // Run
   // --------------------------------------------------------------------------
   let mut caught_inturrupts = Arc::new(Mutex::new(0));
+  #[cfg(feature = "run")]
   let uuid = generate_uuid();
+  #[cfg(feature = "run")]
   let mut program = MechProgram::new(uuid);
   #[cfg(feature = "run")]
   {
@@ -637,8 +639,12 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   // REPL
   // --------------------------------------------------------------------------
-  #[cfg(feature = "repl")]
+  #[cfg(all(feature = "repl", not(feature = "run")))]
+  let intrp = Interpreter::new(generate_uuid());
+  #[cfg(all(feature = "repl", feature = "run"))]
   let mut repl = MechRepl::from(program.into_interpreter());
+  #[cfg(all(feature = "repl", not(feature = "run")))]
+  let mut repl = MechRepl::from(intrp);
   #[cfg(feature = "repl")]
   'REPL: loop {
     {
