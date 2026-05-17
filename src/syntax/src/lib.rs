@@ -17,6 +17,7 @@ use mech_core::nodes::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 use num_traits::*;
+use unicode_segmentation::UnicodeSegmentation;
 
 #[cfg(feature = "serde")] use serde::{Serialize, Deserialize};
 
@@ -181,22 +182,16 @@ impl<'a> ParseString<'a> {
     if self.is_empty() {
       return None;
     }
-    let current = self.graphemes[self.cursor];
-
-    let gs = graphemes::init_tag(tag); 
-    let gs_len = gs.len();
-
-    // Must have enough remaining characters
-    if self.len() < gs_len {
-      return None;
-    }
-
-    // Try to match the tag
+    // Try to match the tag without allocating a temporary grapheme vector.
     let mut tmp_location = self.location;
-    for i in 0..gs_len {
+    let mut matched_len = 0usize;
+    for (i, expected) in UnicodeSegmentation::graphemes(tag, true).enumerate() {
       let c = self.cursor + i;
-      let g = self.graphemes[c];
-      if g != gs[i] {
+      let g = match self.graphemes.get(c) {
+        Some(g) => *g,
+        None => return None,
+      };
+      if g != expected {
         return None;
       }
       if graphemes::is_new_line(g) {
@@ -207,9 +202,13 @@ impl<'a> ParseString<'a> {
       } else {
         tmp_location.col += graphemes::width(g);
       }
+      matched_len += 1;
+    }
+    if matched_len == 0 {
+      return None;
     }
     // Tag matched, commit change
-    self.cursor += gs_len;
+    self.cursor += matched_len;
     self.location = tmp_location;
     Some(tag.to_string())
   }

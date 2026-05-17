@@ -43,37 +43,82 @@ like literals and variables.
 
 // expression := fsm-pipe | set-comprehension | matrix-comprehension | range-expression | formula ;
 pub fn expression(input: ParseString) -> ParseResult<Expression> {
-  let (input, expr) = match fsm_pipe(input.clone()) {
-    Ok((input, pipe)) => (input, Expression::FsmPipe(pipe)),
-    Err(_) => match set_comprehension(input.clone()) {
-      Ok((input, sc)) => (input, Expression::SetComprehension(Box::new(sc))),
-      Err(_) => match matrix_comprehension(input.clone()) {
-        Ok((input, mc)) => (input, Expression::MatrixComprehension(Box::new(mc))),
-        Err(_) => match range_expression(input.clone()) {
-          Ok((input, rng)) => (input, Expression::Range(Box::new(rng))),
-          Err(_) => match formula(input.clone()) {
-            Ok((input, source_factor)) => {
-              let source_expression = match source_factor.clone() {
-                Factor::Expression(expr) => *expr,
-                fctr => Expression::Formula(fctr),
-              };
-              if let Ok((input, _)) = question(input.clone()) {
-                let (input, _) = whitespace0(input)?;
-                let (input, arms) = many1(match_arm)(input)?;
-                let (input, _) = opt(period)(input)?;
-                (input, Expression::Match(Box::new(MatchExpression { source: source_expression, arms })))
-              } else {
-                match source_factor {
-                  Factor::Expression(expr) => (input, *expr),
-                  fctr => (input, Expression::Formula(fctr)),
-                }
+  let (input, expr) = if let Some(g) = input.current() {
+    if g == "{" {
+      match set_comprehension(input.clone()) {
+        Ok((input, sc)) => (input, Expression::SetComprehension(Box::new(sc))),
+        Err(_) => match formula(input.clone()) {
+          Ok((input, source_factor)) => {
+            let source_expression = match source_factor.clone() {
+              Factor::Expression(expr) => *expr,
+              fctr => Expression::Formula(fctr),
+            };
+            if let Ok((input, _)) = question(input.clone()) {
+              let (input, _) = whitespace0(input)?;
+              let (input, arms) = many1(match_arm)(input)?;
+              let (input, _) = opt(period)(input)?;
+              (input, Expression::Match(Box::new(MatchExpression { source: source_expression, arms })))
+            } else {
+              match source_factor {
+                Factor::Expression(expr) => (input, *expr),
+                fctr => (input, Expression::Formula(fctr)),
               }
             }
-            Err(err) => return Err(err),
+          }
+          Err(err) => return Err(err),
+        },
+      }
+    } else if g == "[" {
+      if let Ok((input, mc)) = matrix_comprehension(input.clone()) {
+        (input, Expression::MatrixComprehension(Box::new(mc)))
+      } else if let Ok((input, rng)) = range_expression(input.clone()) {
+        (input, Expression::Range(Box::new(rng)))
+      } else {
+        let (input, source_factor) = formula(input.clone())?;
+        let source_expression = match source_factor.clone() {
+          Factor::Expression(expr) => *expr,
+          fctr => Expression::Formula(fctr),
+        };
+        if let Ok((input, _)) = question(input.clone()) {
+          let (input, _) = whitespace0(input)?;
+          let (input, arms) = many1(match_arm)(input)?;
+          let (input, _) = opt(period)(input)?;
+          (input, Expression::Match(Box::new(MatchExpression { source: source_expression, arms })))
+        } else {
+          match source_factor {
+            Factor::Expression(expr) => (input, *expr),
+            fctr => (input, Expression::Formula(fctr)),
           }
         }
       }
+    } else if g == "|" {
+      let (input, pipe) = fsm_pipe(input.clone())?;
+      (input, Expression::FsmPipe(pipe))
+    } else {
+      let (input, source_factor) = formula(input.clone())?;
+      let source_expression = match source_factor.clone() {
+        Factor::Expression(expr) => *expr,
+        fctr => Expression::Formula(fctr),
+      };
+      if let Ok((input, _)) = question(input.clone()) {
+        let (input, _) = whitespace0(input)?;
+        let (input, arms) = many1(match_arm)(input)?;
+        let (input, _) = opt(period)(input)?;
+        (input, Expression::Match(Box::new(MatchExpression { source: source_expression, arms })))
+      } else {
+        match source_factor {
+          Factor::Expression(expr) => (input, *expr),
+          fctr => (input, Expression::Formula(fctr)),
+        }
+      }
     }
+  } else {
+    let (input, source_factor) = formula(input.clone())?;
+    let expr = match source_factor {
+      Factor::Expression(expr) => *expr,
+      fctr => Expression::Formula(fctr),
+    };
+    (input, expr)
   };
   Ok((input, expr))
 }
@@ -174,7 +219,26 @@ pub fn l7(input: ParseString) -> ParseResult<Factor> {
 
 // factor := parenthetical-term | negate-factor | not-factor | structure | function-call | literal | slice | var ;
 pub fn factor(input: ParseString) -> ParseResult<Factor> {
-  let (input, fctr) = if let Ok((input, fctr)) = parenthetical_term(input.clone()) {
+  let (input, fctr) = if input.current() == Some("(") {
+    parenthetical_term(input.clone())?
+  } else if input.current() == Some("-") {
+    negate_factor(input.clone())?
+  } else if input.current() == Some("¬") || input.current() == Some("!") {
+    not_factor(input.clone())?
+  } else if input.current() == Some("[") {
+    if let Ok((input, m)) = matrix_comprehension(input.clone()) {
+      (input, Factor::Expression(Box::new(Expression::MatrixComprehension(Box::new(m)))))
+    } else if let Ok((input, s)) = structure(input.clone()) {
+      (input, Factor::Expression(Box::new(Expression::Structure(s))))
+    } else if let Ok((input, s)) = slice(input.clone()) {
+      (input, Factor::Expression(Box::new(Expression::Slice(s))))
+    } else {
+      match var(input.clone()) {
+        Ok((input, v)) => (input, Factor::Expression(Box::new(Expression::Var(v)))),
+        Err(err) => return Err(err),
+      }
+    }
+  } else if let Ok((input, fctr)) = parenthetical_term(input.clone()) {
     (input, fctr)
   } else if let Ok((input, fctr)) = negate_factor(input.clone()) {
     (input, fctr)
