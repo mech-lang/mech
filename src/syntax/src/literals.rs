@@ -1,6 +1,8 @@
 #[macro_use]
 use crate::*;
 use nom::{
+  branch::alt,
+  combinator::{map, opt},
   multi::separated_list0,
   sequence::tuple as nom_tuple,
 };
@@ -11,31 +13,18 @@ use crate::nodes::Kind;
 
 // literal := (number | string | atom | boolean | empty | kind-annotation), kind-annotation? ;
 pub fn literal(input: ParseString) -> ParseResult<Literal> {
-  let (input, result) = match number(input.clone()) {
-    Ok((input, num)) => (input, Literal::Number(num)),
-    _ => match string(input.clone()) {
-      Ok((input, s)) => (input, Literal::String(s)),
-      _ => match atom(input.clone()) {
-        Ok((input, atm)) => (input, Literal::Atom(atm)),
-        _ => match boolean(input.clone()) {
-          Ok((input, boolean)) => (input, Literal::Boolean(boolean)),
-          _ => match empty(input.clone()) {
-            Ok((input, empty)) => (input, Literal::Empty(empty)), 
-            Err(err) => match kind_annotation(input.clone()) {
-              Ok((input, knd)) => {
-                (input, Literal::Kind(knd.kind))
-              }
-              Err(err) => return Err(err),
-            }
-          }
-        }
-      }
-    }
-  };
-  let (input, result) = match opt(kind_annotation)(input.clone()) {
-    Ok((input, Some(knd))) => ((input, Literal::TypedLiteral((Box::new(result),knd)))),
-    Ok((input, None)) => (input,result),
-    Err(err) => {return Err(err);}
+  let (input, result) = alt((
+    map(number, |num| Literal::Number(num)),
+    map(string, |s| Literal::String(s)),
+    map(atom, |atm| Literal::Atom(atm)),
+    map(boolean, |boolean| Literal::Boolean(boolean)),
+    map(empty, |empty| Literal::Empty(empty)),
+    map(kind_annotation, |knd| Literal::Kind(knd.kind)),
+  ))(input)?;
+  let (input, typed_kind) = opt(kind_annotation)(input)?;
+  let result = match typed_kind {
+    Some(knd) => Literal::TypedLiteral((Box::new(result), knd)),
+    None => result,
   };
   Ok((input, result))
 }
@@ -49,13 +38,7 @@ pub fn atom(input: ParseString) -> ParseResult<Atom> {
 
 // string := raw-string | utf8-string ;
 pub fn string(input: ParseString) -> ParseResult<MechString> {
-  match raw_string(input.clone()) {
-    Ok((input, s)) => Ok((input, s)),
-    _ => match utf8_string(input.clone()) {
-      Ok((input, s)) => Ok((input, s)),
-      Err(err) => return Err(err),
-    },
-  }
+  alt((raw_string, utf8_string))(input)
 }
 
 // utf8-string := quote, *(¬quote, (text | new-line)), quote ;
@@ -114,13 +97,10 @@ pub fn false_literal(input: ParseString) -> ParseResult<Token> {
 
 // number := complex-number | real-number ;
 pub fn number(input: ParseString) -> ParseResult<Number> {
-  match complex_number(input.clone()) {
-    Ok((input, complex_num)) => Ok((input, Number::Complex(complex_num))),
-    _ => match real_number(input.clone()) {
-      Ok((input, real_num)) => Ok((input, Number::Real(real_num))),
-      Err(err) => return Err(err),
-    },
-  }
+  alt((
+    map(complex_number, |complex_num| Number::Complex(complex_num)),
+    map(real_number, |real_num| Number::Real(real_num)),
+  ))(input)
 }
 
 // complex-number := real-number, ("i"|"j")? | (("+"|"-"), real-number, ("i"|"j")) ;
