@@ -39,7 +39,7 @@ impl ProgramRunner {
       while let Ok(msg) = rx_cmd.recv() {
         match msg {
           RunLoopMessage::Load(source) => {
-            if let Err(err) = program.compile_program(&source) {
+            if let Err(err) = program.run_program(&source) {
               let _ = tx_evt.send(ClientMessage::Error(err.to_string()));
             } else {
               let _ = tx_evt.send(ClientMessage::StepDone);
