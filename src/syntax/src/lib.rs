@@ -182,39 +182,7 @@ impl<'a> ParseString<'a> {
     if self.is_empty() {
       return None;
     }
-    // Fast path for ASCII tags (most parser tokens): avoid unicode segmentation.
-    if tag.is_ascii() {
-      let tag_bytes = tag.as_bytes();
-      let tag_len = tag_bytes.len();
-      if self.len() < tag_len {
-        return None;
-      }
-      let mut tmp_location = self.location;
-      for (i, b) in tag_bytes.iter().enumerate() {
-        let c = self.cursor + i;
-        let g = match self.graphemes.get(c) {
-          Some(g) => *g,
-          None => return None,
-        };
-        // ASCII tag bytes only match single-byte graphemes.
-        if g.len() != 1 || g.as_bytes()[0] != *b {
-          return None;
-        }
-        if graphemes::is_new_line(g) {
-          if !self.is_last_grapheme(c) {
-            tmp_location.row += 1;
-            tmp_location.col = 1;
-          }
-        } else {
-          tmp_location.col += graphemes::width(g);
-        }
-      }
-      self.cursor += tag_len;
-      self.location = tmp_location;
-      return Some(tag.to_string());
-    }
-
-    // Unicode path: match without allocating a temporary grapheme vector.
+    // Try to match the tag without allocating a temporary grapheme vector.
     let mut tmp_location = self.location;
     let mut matched_len = 0usize;
     for (i, expected) in UnicodeSegmentation::graphemes(tag, true).enumerate() {

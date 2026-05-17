@@ -229,11 +229,8 @@ pub fn skip_till_eol(input: ParseString) -> ParseResult<Token> {
 pub fn skip_past_eol(input: ParseString) -> ParseResult<Token> {
   let (input, matched) = skip_till_eol(input)?;
   let (input, nl) = new_line(input)?;
-  let mut tokens = Vec::with_capacity(2);
-  tokens.push(matched);
-  tokens.push(nl);
-  let merged = Token::merge_tokens(&mut tokens).unwrap_or(Token::default());
-  Ok((input, merged))
+  let matched = Token::merge_tokens(&mut vec![matched, nl]).unwrap_or(Token::default());
+  Ok((input, matched))
 }
 
 // skip-till-end-of-statement := *((!new-line, !";"), any) ;

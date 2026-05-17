@@ -106,8 +106,7 @@ pub fn number(input: ParseString) -> ParseResult<Number> {
 // complex-number := real-number, ("i"|"j")? | (("+"|"-"), real-number, ("i"|"j")) ;
 pub fn complex_number(input: ParseString) -> ParseResult<C64Node> {
   let (input, real_num) = untyped_real_number(input)?;
-  if matches!(input.current(), Some("i") | Some("j")) {
-    let (input, _) = any_token(input)?;
+  if let Ok((input, _)) = alt((tag("i"), tag("j")))(input.clone()) {
     return Ok((
       input,
       C64Node {
