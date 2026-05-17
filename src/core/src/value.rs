@@ -2421,7 +2421,7 @@ impl PrettyPrint for Value {
       #[cfg(feature = "map")]
       Value::Map(x)  => x.borrow().pretty_print(),
       #[cfg(any(feature = "string", feature = "variable_define"))]
-      Value::String(x) => format!("\"{}\"",x.borrow().clone()),
+      Value::String(x) => format!("\"{}\"", x.borrow().escape_default()),
       #[cfg(feature = "table")]
       Value::Table(x)  => x.borrow().pretty_print(),
       #[cfg(feature = "tuple")]
