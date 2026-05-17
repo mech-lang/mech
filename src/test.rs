@@ -108,13 +108,6 @@ fn indent_block(block: &str, spaces: usize) -> String {
   let pad = " ".repeat(spaces);
   block.lines().map(|line| format!("{pad}{line}")).collect::<Vec<_>>().join("\n")
 }
-fn format_mech_collection(items: &[String], spaces: usize) -> String {
-  if items.is_empty() {
-    return String::new();
-  }
-  let joined = items.join(",\n");
-  indent_block(&joined, spaces)
-}
 fn case_to_mech(c: &CaseDetail) -> String {
   format!(
     "{{\n  name: {}\n  expression: {}\n  reason: {}\n  evaluated-kind: {}\n  actual: {}\n  expected: {}\n}}",
@@ -122,28 +115,28 @@ fn case_to_mech(c: &CaseDetail) -> String {
   )
 }
 fn file_to_mech(file: &FileReport, verbose: bool) -> String {
-  let failed_items = file.failed.iter().map(case_to_mech).collect::<Vec<_>>();
+  let failed_items = file.failed.iter().map(case_to_mech).collect::<Vec<_>>().join("\n");
   let passed_items = if verbose {
-    file.passed.iter().map(case_to_mech).collect::<Vec<_>>()
+    file.passed.iter().map(case_to_mech).collect::<Vec<_>>().join("\n")
   } else {
-    file.passed.iter().map(|p| format!("{{\n  name: {}\n}}", mech_str(&p.name))).collect::<Vec<_>>()
+    file.passed.iter().map(|p| format!("{{\n  name: {}\n}}", mech_str(&p.name))).collect::<Vec<_>>().join("\n")
   };
   let run_error = file.run_error.as_ref().map(|e| mech_str(e)).unwrap_or("_".to_string());
   format!(
     "{{\n  path: {}\n  result: {{\n    total: {}\n    passed: {}\n    failed: {}\n  }}\n  failed: {{\n{}\n  }}\n  passed: {{\n{}\n  }}\n  run-error: {}\n}}",
     mech_str(&file.path),
     file.result.total, file.result.passed, file.result.failed,
-    format_mech_collection(&failed_items, 4),
-    format_mech_collection(&passed_items, 4),
+    if failed_items.is_empty() { "".to_string() } else { indent_block(&failed_items, 4) },
+    if passed_items.is_empty() { "".to_string() } else { indent_block(&passed_items, 4) },
     run_error
   )
 }
 fn report_to_mech(report: &TestReport, verbose: bool) -> String {
-  let files = report.files.iter().map(|f| file_to_mech(f, verbose)).collect::<Vec<_>>();
+  let files = report.files.iter().map(|f| file_to_mech(f, verbose)).collect::<Vec<_>>().join("\n");
   format!(
     "{{\n  result: {{\n    files-total: {}\n    files-passed: {}\n    files-failed: {}\n    tests-total: {}\n    tests-passed: {}\n    tests-failed: {}\n  }}\n  files: {{\n{}\n  }}\n}}",
     report.result.files_total, report.result.files_passed, report.result.files_failed, report.result.tests_total, report.result.tests_passed, report.result.tests_failed,
-    format_mech_collection(&files, 4)
+    indent_block(&files, 4)
   )
 }
 

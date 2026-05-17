@@ -162,14 +162,30 @@ impl MechRecord {
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for MechRecord {
   fn pretty_print(&self) -> String {
+    fn indent_multiline(value: &str, spaces: usize) -> String {
+      let pad = " ".repeat(spaces);
+      value.lines().map(|line| format!("{pad}{line}")).collect::<Vec<_>>().join("\n")
+    }
+
     let mut lines = Vec::new();
 
     for (k, v) in &self.data {
       let field_name = self.field_names.get(k).unwrap();
+      let field_indent = format!("  {}: ", field_name);
+      let continuation_indent = " ".repeat(field_indent.len());
+      let value = v.pretty_print();
+      let mut value_lines = value.lines();
+      let first_line = value_lines.next().unwrap_or("");
+      let rest = value_lines.collect::<Vec<_>>().join("\n");
+      let rendered_value = if rest.is_empty() {
+        first_line.to_string()
+      } else {
+        format!("{}\n{}", first_line, indent_multiline(&rest, continuation_indent.len()))
+      };
       lines.push(format!(
-        "  {}: {}",
-        field_name,
-        v.pretty_print()
+        "{}{}",
+        field_indent,
+        rendered_value
       ));
     }
 
