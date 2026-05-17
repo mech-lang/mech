@@ -1,9 +1,12 @@
 use crate::program::{Program, ProgramConfig, ProgramEnvironment};
 use crossbeam_channel::{Receiver, Sender};
+use mech_core::Value;
 
 #[derive(Debug, Clone)]
 pub enum ClientMessage {
   Ready,
+  Ack(String),
+  Data(Value),
   StepDone,
   Stopped,
   Error(String),
@@ -21,6 +24,16 @@ pub enum RunLoopMessage {
 pub struct RunLoop {
   pub outgoing: Sender<RunLoopMessage>,
   pub incoming: Receiver<ClientMessage>,
+}
+
+impl RunLoop {
+  pub fn send(&self, message: RunLoopMessage) -> Result<(), String> {
+    self.outgoing.send(message).map_err(|e| e.to_string())
+  }
+
+  pub fn recv(&self) -> Result<ClientMessage, String> {
+    self.incoming.recv().map_err(|e| e.to_string())
+  }
 }
 
 pub struct ProgramRunner {
@@ -44,24 +57,33 @@ impl ProgramRunner {
             if let Err(err) = program.compile_program(&source) {
               let _ = tx_evt.send(ClientMessage::Error(err.to_string()));
             } else {
+              let _ = tx_evt.send(ClientMessage::Ack("Loaded source".to_string()));
               let _ = tx_evt.send(ClientMessage::StepDone);
             }
           }
           RunLoopMessage::Eval(source) => {
-            if let Err(err) = program.run_program(&source) {
-              let _ = tx_evt.send(ClientMessage::Error(err.to_string()));
-            } else {
-              let _ = tx_evt.send(ClientMessage::StepDone);
+            match program.run_program(&source) {
+              Ok(value) => {
+                let _ = tx_evt.send(ClientMessage::Data(value));
+                let _ = tx_evt.send(ClientMessage::StepDone);
+              }
+              Err(err) => {
+                let _ = tx_evt.send(ClientMessage::Error(err.to_string()));
+              }
             }
           }
           RunLoopMessage::Configure(environment) => {
             program.set_environment(environment);
+            let _ = tx_evt.send(ClientMessage::Ack("Configured environment".to_string()));
             let _ = tx_evt.send(ClientMessage::StepDone);
           }
           RunLoopMessage::Step => {
+            let _ = tx_evt.send(ClientMessage::Ack("Stepped".to_string()));
             let _ = tx_evt.send(ClientMessage::StepDone);
           }
           RunLoopMessage::Stop => {
+            let _ = tx_evt.send(ClientMessage::Ack("Stopping".to_string()));
+            let _ = tx_evt.send(ClientMessage::StepDone);
             let _ = tx_evt.send(ClientMessage::Stopped);
             break;
           }
