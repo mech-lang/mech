@@ -214,6 +214,7 @@ members = [
   "src/syntax",
   "src/interpreter",
   "src/wasm",
+  "src/program",
 ]
 
 [build-dependencies]

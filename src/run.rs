@@ -1,6 +1,7 @@
 use crate::*;
 use mech_core::*;
 use mech_syntax::*;
+use mech_interpreter::Interpreter;
 use std::time::Instant;
 
 #[macro_export]
@@ -120,6 +121,33 @@ pub fn run_mech_code(
     }
   }
   Ok(Value::Empty)
+}
+
+pub struct MechProgram {
+  interpreter: Interpreter,
+}
+
+impl MechProgram {
+  pub fn new(id: u64) -> Self {
+    MechProgram { interpreter: Interpreter::new(id) }
+  }
+
+  pub fn interpreter(&self) -> &Interpreter {
+    &self.interpreter
+  }
+
+  pub fn interpreter_mut(&mut self) -> &mut Interpreter {
+    &mut self.interpreter
+  }
+
+  pub fn into_interpreter(self) -> Interpreter {
+    self.interpreter
+  }
+
+  pub fn run_string(&mut self, source: &str) -> MResult<Value> {
+    let tree = parser::parse(source.trim())?;
+    self.interpreter.interpret(&tree)
+  }
 }
 
 fn print_bytecode(fs: &MechFileSystem) {
