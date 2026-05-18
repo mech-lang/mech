@@ -1,12 +1,11 @@
 use crate::program::{Program, ProgramConfig, ProgramEnvironment};
 use crossbeam_channel::{Receiver, Sender};
-use mech_core::Value;
 
 #[derive(Debug, Clone)]
 pub enum ClientMessage {
   Ready,
   Ack(String),
-  Data(Value),
+  Data(String),
   StepDone,
   Stopped,
   Error(String),
@@ -55,7 +54,7 @@ impl ProgramRunner {
         match msg {
           RunLoopMessage::Load(source) => {
             if let Err(err) = program.compile_program(&source) {
-              let _ = tx_evt.send(ClientMessage::Error(err.to_string()));
+              let _ = tx_evt.send(ClientMessage::Error(err.display_message()));
             } else {
               let _ = tx_evt.send(ClientMessage::Ack("Loaded source".to_string()));
               let _ = tx_evt.send(ClientMessage::StepDone);
@@ -64,11 +63,11 @@ impl ProgramRunner {
           RunLoopMessage::Eval(source) => {
             match program.run_program(&source) {
               Ok(value) => {
-                let _ = tx_evt.send(ClientMessage::Data(value));
+                let _ = tx_evt.send(ClientMessage::Data(value.pretty_print()));
                 let _ = tx_evt.send(ClientMessage::StepDone);
               }
               Err(err) => {
-                let _ = tx_evt.send(ClientMessage::Error(err.to_string()));
+                let _ = tx_evt.send(ClientMessage::Error(err.display_message()));
               }
             }
           }
