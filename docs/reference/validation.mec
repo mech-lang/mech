@@ -73,7 +73,7 @@ Pass/fail detail level depends on `--verbose`:
 
 The Mech record output has the following kind shape:
 
-```mech:disabled
+```mech
 <test-summary> := <{
   files-total<u64>
   files-passed<u64>
@@ -92,9 +92,9 @@ The Mech record output has the following kind shape:
   expected<string>
 }>
 
-<test-case-name> := <{
-  name<string>
-}>
+-- a single field just to match the failure schema. If more detail, is needed 
+-- use /verbose
+<test-case-name> := <{name<string>}>
 
 <test-file-result> := <{
   total<u64>
@@ -102,21 +102,12 @@ The Mech record output has the following kind shape:
   failed<u64>
 }>
 
--- non-verbose output shape
+-- output shape
 <test-file-report> := <{
   path<string>
   result<test-file-result>
   failed<[test-case-detail]>
   passed<[test-case-name]>
-  run-error<string?>
-}>
-
--- verbose output shape (passed has same detail as failed)
-<test-file-report/verbose> := <{
-  path<string>
-  result<test-file-result>
-  failed<[test-case-detail]>
-  passed<[test-case-detail]>
   run-error<string?>
 }>
 
@@ -126,7 +117,16 @@ The Mech record output has the following kind shape:
   files<[test-file-report]>
 }>
 
--- overall report shape (verbose)
+-- verbose output shape
+<test-file-report/verbose> := <{
+  path<string>
+  result<test-file-result>
+  failed<[test-case-detail]>
+  passed<[test-case-detail]>
+  run-error<string?>
+}>
+
+-- overall report shape
 <test-report/verbose> := <{
   result<test-summary>
   files<[test-file-report/verbose]>
