@@ -2010,7 +2010,7 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<span class=\"mech-enum-define\"><span class=\"mech-kind-annotation\">&lt;<span class=\"mech-enum-name\">{}</span>&gt;</span><span class=\"mech-enum-define-op\">:=</span><span class=\"mech-enum-variants\">{}</span></span>",name,variants)
+      format!("<span class=\"mech-enum-define\"><span class=\"mech-kind-annotation\"><span class=\"mech-kind-annotation-open\">&lt;</span><span class=\"mech-enum-name\">{}</span><span class=\"mech-kind-annotation-close\">&gt;</span></span><span class=\"mech-enum-define-op\">:=</span><span class=\"mech-enum-variants\">{}</span></span>",name,variants)
     } else {
       format!("<{}> := {}", name, variants)
     }
@@ -2029,16 +2029,6 @@ impl Formatter {
       format!("<span class=\"mech-enum-variant\"><span class=\"mech-enum-variant-name\">:{}</span><span class=\"mech-enum-variant-kind\">{}</span></span>",name,kind)
     } else {
       format!(":{}{}", name, kind)
-    }
-  }
-
-  pub fn kind_define(&mut self, node: &KindDefine) -> String {
-    let name = node.name.to_string();
-    let kind = self.kind_annotation(&node.kind.kind);
-    if self.html {
-      format!("<span class=\"mech-kind-define\"><span class=\"mech-kind-annotation\">&lt;<span class=\"mech-kind\">{}</span>&gt;</span><span class=\"mech-kind-define-op\">:=</span><span class=\"mech-kind-annotation\">{}</span></span>",name,kind)
-    } else {
-      format!("<{}> := {}", name, kind)
     }
   }
 
@@ -2802,10 +2792,30 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
     }
   }
 
+  pub fn kind_define(&mut self, node: &KindDefine) -> String {
+    let name = node.name.to_string();
+    let kind = self.kind_annotation(&node.kind.kind);
+    if self.html {
+      format!("
+      <span class=\"mech-kind-define\">
+        <span class=\"mech-kind-annotation\">
+          <span class=\"mech-kind\">{}</span>
+        </span>
+        <span class=\"mech-kind-define-op\">:=</span>
+        <span class=\"mech-kind-annotation\">{}</span>
+      </span>",name,kind)
+    } else {
+      format!("<{}> := {}", name, kind)
+    }
+  }
+
   pub fn kind_annotation(&mut self, node: &Kind) -> String {
     let kind = self.kind(node);
     if self.html {
-      format!("<span class=\"mech-kind-annotation\">&lt;{}&gt;</span>",kind)
+      format!("
+      <span class=\"mech-kind-annotation\">
+        <span class=\"mech-kind\">{}</span>
+      </span>",kind)
     } else {
       format!("<{}>", kind)
     }
@@ -2834,16 +2844,48 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
         let size_str = match size{
           Some(size) => {
             let size_ltrl = self.literal(size);
-            format!(":{}", size_ltrl)
+            if self.html {
+              format!("<span class=\"mech-set-size\">:{}</span>", size_ltrl)
+            } else {
+              format!(":{}", size_ltrl)
+            }
           }
           None => "".to_string(),
         };
-        format!("{{{}}}{}", k, size_str)
+        if self.html {
+          format!("<span class=\"mech-set-kind\"><span class=\"mech-set-kind-open\">{{</span><span class=\"mech-set-kind-inner\">{}</span><span class=\"mech-set-kind-close\">}}</span>{}</span>", k, size_str)
+        } else {
+          format!("{{{}}}{}", k, size_str)
+        }
       },
-      Kind::Any => "*".to_string(),
-      Kind::Scalar(ident) => ident.to_string(),
-      Kind::Empty => "_".to_string(),
-      Kind::Atom(ident) => format!(":{}",ident.to_string()),
+      Kind::Any => {
+        if self.html {
+          format!("<span class=\"mech-any-kind\">*</span>")
+        } else {
+          "*".to_string()
+        }
+      },
+      Kind::Scalar(ident) => {
+        if self.html {
+          format!("<span class=\"mech-scalar-kind\">{}</span>", ident.to_string())
+        } else {
+          ident.to_string()
+        }
+      }
+      Kind::Empty => {
+        if self.html {
+          format!("<span class=\"mech-empty-kind\">_</span>")
+        } else {
+          "_".to_string()
+        }
+      }
+      Kind::Atom(ident) => {
+        if self.html {
+          format!("<span class=\"mech-atom-kind\">{}</span>", ident.to_string())
+        } else {
+          format!(":{}",ident.to_string())
+        }
+      }
       Kind::Tuple(kinds) => {
         let mut src = "".to_string();
         for (i, kind) in kinds.iter().enumerate() {
@@ -2854,7 +2896,11 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
             src = format!("{},{}", src, k);
           }
         }
-        format!("({})", src)
+        if self.html {
+          format!("<span class=\"mech-tuple-kind\"><span class=\"mech-tuple-kind-open\">(</span><span class=\"mech-tuple-kind-inner\">{}</span><span class=\"mech-tuple-kind-close\">)</span></span>", src)
+        } else {
+          format!("({})", src)
+        }
       },
       Kind::Matrix((kind, literals)) => {
         let mut src = "".to_string();
@@ -2864,34 +2910,47 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
         for (i, literal) in literals.iter().enumerate() {
           let l = self.literal(literal);
           if i == 0 {
-            src2 = format!(":{}", l);
+            src2 = if self.html {
+              format!("<span class=\"mech-matrix-literal\">:{}</span>", l)
+            } else {
+              format!(":{}", l)
+            };
           } else {
-            src2 = format!("{},{}", src2, l);
+            src2 = if self.html {
+              format!("{}<span class=\"mech-matrix-literal\">:{}</span>", src2, l)
+            } else {
+              format!("{},:{}", src2, l)
+            };
           }
         }
-        format!("[{}]{}", src, src2)
+        if self.html {
+          format!("<span class=\"mech-matrix-kind\"><span class=\"mech-matrix-kind-open\">[</span><span class=\"mech-matrix-kind-inner\">{}</span><span class=\"mech-matrix-kind-close\">]</span>{}</span>", src, src2)
+        } else {
+          format!("[{}]{}", src, src2)
+        }
       },
       Kind::Record(kinds) => {
-        const VERTICAL_RECORD_KIND_THRESHOLD: usize = 4;
-        if kinds.len() >= VERTICAL_RECORD_KIND_THRESHOLD {
-          let mut rows: Vec<String> = Vec::new();
-          for (ident, kind) in kinds.iter() {
-            let k = self.kind(kind);
-            let ident_s = ident.to_string();
-            rows.push(format!("  {}&lt;{}&gt;", ident_s, k));
-          }
-          format!("{{\n{}\n}}", rows.join("\n"))
-        } else {
-          let mut src = "".to_string();
-          for (i, (ident, kind)) in kinds.iter().enumerate() {
-            let k = self.kind(kind);
-            let ident_s = ident.to_string();
-            if i == 0 {
-              src = format!("{}&lt;{}&gt;", ident_s, k);
+        let mut src = "".to_string();
+        for (i, (ident, kind)) in kinds.iter().enumerate() {
+          let k = self.kind(kind);
+          let ident_s = ident.to_string();
+          if i == 0 {
+            if self.html {
+              src = format!("<span class=\"mech-record-field\"><span class=\"mech-record-field-name\">{}</span><span class=\"mech-record-field-kind\">{}</span></span>", ident_s, k);
             } else {
-              src = format!("{},{}&lt;{}&gt;", src, ident_s, k);
+              src = format!("{}<{}>", ident_s, k);
+            }
+          } else {
+            if self.html {
+              src = format!("{}<span class=\"mech-record-field\"><span class=\"mech-record-field-name\">{}</span><span class=\"mech-record-field-kind\">{}</span></span>", src, ident_s, k);
+            } else {
+              src = format!("{},{}<{}>", src, ident_s, k);
             }
           }
+        }
+        if self.html {
+          format!("<span class=\"mech-record-kind\"><span class=\"mech-record-kind-open\">{{</span>{}<span class=\"mech-record-kind-close\">}}</span></span>", src)
+        } else {
           format!("{{{}}}", src)
         }
       },
@@ -2901,22 +2960,41 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
           let k = self.kind(kind);
           let ident_s = ident.to_string();
           if i == 0 {
-            src = format!("{}&lt;{}&gt;", ident_s, k);
+            if self.html {
+              src = format!("<span class=\"mech-record-field-name\">{}</span><span class=\"mech-record-field-kind\"><span class=\"mech-record-field-kind-open\">&lt;</span>{}<span class=\"mech-record-field-kind-close\">&gt;</span></span>", ident_s, k);
+            } else {
+              src = format!("{}&lt;{}&gt;", ident_s, k);
+            }
           } else {
-            src = format!("{},{}&lt;{}&gt;", src, ident_s, k);
+            if self.html {
+              src = format!("{},<span class=\"mech-record-field-name\">{}</span><span class=\"mech-record-field-kind\"><span class=\"mech-record-field-kind-open\">&lt;</span>{}<span class=\"mech-record-field-kind-close\">&gt;</span></span>", src, ident_s, k);
+            } else {
+              src = format!("{},{}&lt;{}&gt;", src, ident_s, k);
+            }
           }
         }
-        let mut src2 = "".to_string();
         let sz = match &**literal {
           Literal::Empty(_) => "".to_string(),
-          _ => format!(":{}", self.literal(literal)),
+          _ => if self.html {
+            format!("<span class=\"mech-table-kind-size\">:{}</span>", self.literal(literal))
+          } else {
+            format!(":{}", self.literal(literal))
+          },
         };
-        format!("|{}|{}", src, sz)
+        if self.html {
+          format!("<span class=\"mech-table-kind\"><span class=\"mech-table-kind-open\">|</span>{}<span class=\"mech-table-kind-close\">|</span>{}</span>", src, sz)
+        } else {
+          format!("|{}|{}", src, sz)
+        }
       },
       Kind::Map(kind1, kind2) => {
         let k1 = self.kind(kind1);
         let k2 = self.kind(kind2);
-        format!("{{{}:{}}}", k1, k2)
+        if self.html {
+          format!("<span class=\"mech-map-kind\"><span class=\"mech-map-kind-open\">{{</span>{}<span class=\"mech-map-kind-sep\">:</span>{}<span class=\"mech-map-kind-close\">}}</span></span>", k1, k2)
+        } else {
+          format!("{{{}:{}}}", k1, k2)
+        }
       },
     };
     if self.html {
