@@ -1943,6 +1943,7 @@ impl Formatter {
     }
   }
 
+  #[cfg(feature = "variable_define")]
   pub fn variable_define(&mut self, node: &VariableDefine) -> String {
     let mut mutable = if node.mutable {
       "~".to_string()
@@ -1952,24 +1953,29 @@ impl Formatter {
     let var = self.var(&node.var);
     let expression = self.expression(&node.expression);
     if self.html {
-      format!("<span class=\"mech-variable-define\"><span class=\"mech-variable-mutable\">{}</span>{}<span class=\"mech-variable-assign-op\">:=</span>{}</span>",mutable, var, expression)
+      format!("<span class=\"mech-variable-define\"><span class=\"mech-variable-mutable\">{}</span>{}<span class=\"mech-variable-define-op\">:=</span>{}</span>",mutable, var, expression)
     } else {
       format!("{}{} {} {}", mutable, var, ":=", expression)
     }
   }
 
+  #[cfg(feature = "invariant_define")]
+  pub fn invariant_define(&mut self, node: &InvariantDefine) -> String {
+    let name = node.name.to_string();
+    let expression = self.expression(&node.expression);
+    if self.html {
+      format!("<span class=\"mech-invariant-define\"><span class=\"mech-invariant-name\">{}</span><span class=\"mech-invariant-define-op\">:=</span><span class=\"mech-invariant-expression\">{}</span></span>", name, expression)
+    } else {
+      format!("{} {} {}", name, ":=", expression)
+    }
+  }
+
   pub fn statement(&mut self, node: &Statement) -> String {
     let s = match node {
+      #[cfg(feature = "variable_define")]
       Statement::VariableDefine(var_def) => self.variable_define(var_def),
       #[cfg(feature = "invariant_define")]
-      Statement::InvariantDefine(inv_def) => {
-        let mut name = inv_def.name.to_string();
-        if self.html {
-          format!("<span class=\"mech-variable-define\">{}<span class=\"mech-variable-assign-op\">:=</span>{}</span>", name, self.expression(&inv_def.expression))
-        } else {
-          format!("{} {} {}", name, ":=", self.expression(&inv_def.expression))
-        }
-      },
+      Statement::InvariantDefine(inv_def) => self.invariant_define(inv_def),
       Statement::OpAssign(op_asgn) => self.op_assign(op_asgn),
       Statement::VariableAssign(var_asgn) => self.variable_assign(var_asgn),
       Statement::TupleDestructure(tpl_dstrct) => self.tuple_destructure(tpl_dstrct),
@@ -3041,8 +3047,8 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
   pub fn comparison_op(&mut self, node: &ComparisonOp) -> String {
     match node {
       ComparisonOp::Equal => "⩵".to_string(),
-      ComparisonOp::StrictEqual => "=:=".to_string(),
-      ComparisonOp::StrictNotEqual => "=/=".to_string(),
+      ComparisonOp::StrictEqual => "≡".to_string(),
+      ComparisonOp::StrictNotEqual => "¬≡".to_string(),
       ComparisonOp::NotEqual => "≠".to_string(),
       ComparisonOp::GreaterThan => ">".to_string(),
       ComparisonOp::GreaterThanEqual => "≥".to_string(),
