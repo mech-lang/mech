@@ -1,5 +1,6 @@
 use crate::program::{Program, ProgramConfig, ProgramEnvironment};
 use crossbeam_channel::{Receiver, Sender};
+use mech_core::PrettyPrint;
 
 #[derive(Debug, Clone)]
 pub enum ClientMessage {
