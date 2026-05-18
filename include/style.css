@@ -28,6 +28,7 @@
   --code-output-background-color: #020303;
   --var-name-color: hsl(290, 45%, 90%);
   --field-name-color: #63abb7;
+  --invariant-name-color: hsl(130, 100%, 75%);
   --kind-annotation-color: #f09fca;
   --kind-annotation-color-dark: #d574a8;
   --body-background-color: hsl(216, 28%, 7%);
@@ -53,6 +54,20 @@
   --pattern-color: hsl(133, 33%, 70%);
   --pattern-parent-color: hsl(133, 33%, 70%);
   --logo-color: rgb(246,192,78);
+}
+
+.mech-invariant-define {
+    color: var(--op-color);
+}
+
+.mech-invariant-name {
+    color: var(--warning-color);
+}
+
+.mech-invariant-define-op {
+    padding-left: 6px;
+    padding-right: 6px;
+    color: var(--op-color);
 }
 
 html {
@@ -331,7 +346,7 @@ body {
     padding-right: 10px;
 }
 
-.mech-variable-assign-op {
+.mech-variable-define-op {
     padding-left:  6px;
     padding-right: 6px;
     color: var(--op-color);
