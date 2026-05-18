@@ -225,9 +225,9 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
 
 // enum-define := "<", identifier, ">", define-operator, list1(enum-separator, enum-variant);
 pub fn enum_define(input: ParseString) -> ParseResult<EnumDefine> {
-  let (input, _) = left_angle(input)?;
+  let (input, (_, r)) = range(left_angle)(input)?;
   let (input, name) = identifier(input)?;
-  let (input, _) = right_angle(input)?;
+  let (input, _) = label!(right_angle, "Expects right angle", r)(input)?;
   let (input, _) = define_operator(input)?;
   let (input, variants) = separated_list1(enum_separator, enum_variant)(input)?;
   Ok((input, EnumDefine{name, variants}))
@@ -258,9 +258,9 @@ pub fn enum_variant_inline_kind(input: ParseString) -> ParseResult<KindAnnotatio
 
 // kind-define := "<", identifier, ">", define-operator, kind-annotation ;
 pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {
-  let (input, _) = left_angle(input)?;
+  let (input, (_, r)) = range(left_angle)(input)?;
   let (input, name) = identifier(input)?;
-  let (input, _) = right_angle(input)?;
+  let (input, _) = label!(right_angle, "Expects right angle", r)(input)?;
   let (input, _) = define_operator(input)?;
   let (input, knd) = kind_annotation(input)?;
   Ok((input, KindDefine{name,kind:knd}))

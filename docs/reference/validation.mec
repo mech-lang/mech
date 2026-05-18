@@ -3,7 +3,7 @@ Validation
 
 %% Integrity constraints (invariants) are statements that must evaluate to `true`.
 
-```mech
+```mech:disabled
 foo! := EXPRESSION
 ```
 
@@ -42,7 +42,7 @@ ready! := state == :ready
 
 Data structures can also be used in invariants:
 
-```mech:disabled
+```mech:ex-1
 my-list := 1 + [1 2 3]
 sorted! := my-list === [2 3 4]
 ```
@@ -54,7 +54,6 @@ my-list := 1 + [1 2 3]
 -- Invalid because it evaluates to {{<[bool]>}}, expected {{<bool>}}.
 sorted! := my-list == [2 3 4]
 ```
-
 
 2. Output Formats (`-o`, `--out`)
 -------------------------------------------------------------------------------

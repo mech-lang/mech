@@ -1,6 +1,8 @@
 #[macro_use]
 use crate::*;
 use nom::{
+  branch::alt,
+  combinator::{map, opt},
   multi::separated_list0,
   sequence::tuple as nom_tuple,
 };
@@ -11,31 +13,18 @@ use crate::nodes::Kind;
 
 // literal := (number | string | atom | boolean | empty | kind-annotation), kind-annotation? ;
 pub fn literal(input: ParseString) -> ParseResult<Literal> {
-  let (input, result) = match number(input.clone()) {
-    Ok((input, num)) => (input, Literal::Number(num)),
-    _ => match string(input.clone()) {
-      Ok((input, s)) => (input, Literal::String(s)),
-      _ => match atom(input.clone()) {
-        Ok((input, atm)) => (input, Literal::Atom(atm)),
-        _ => match boolean(input.clone()) {
-          Ok((input, boolean)) => (input, Literal::Boolean(boolean)),
-          _ => match empty(input.clone()) {
-            Ok((input, empty)) => (input, Literal::Empty(empty)), 
-            Err(err) => match kind_annotation(input.clone()) {
-              Ok((input, knd)) => {
-                (input, Literal::Kind(knd.kind))
-              }
-              Err(err) => return Err(err),
-            }
-          }
-        }
-      }
-    }
-  };
-  let (input, result) = match opt(kind_annotation)(input.clone()) {
-    Ok((input, Some(knd))) => ((input, Literal::TypedLiteral((Box::new(result),knd)))),
-    Ok((input, None)) => (input,result),
-    Err(err) => {return Err(err);}
+  let (input, result) = alt((
+    map(number, |num| Literal::Number(num)),
+    map(string, |s| Literal::String(s)),
+    map(atom, |atm| Literal::Atom(atm)),
+    map(boolean, |boolean| Literal::Boolean(boolean)),
+    map(empty, |empty| Literal::Empty(empty)),
+    map(kind_annotation, |knd| Literal::Kind(knd.kind)),
+  ))(input)?;
+  let (input, typed_kind) = opt(kind_annotation)(input)?;
+  let result = match typed_kind {
+    Some(knd) => Literal::TypedLiteral((Box::new(result), knd)),
+    None => result,
   };
   Ok((input, result))
 }
@@ -49,13 +38,7 @@ pub fn atom(input: ParseString) -> ParseResult<Atom> {
 
 // string := raw-string | utf8-string ;
 pub fn string(input: ParseString) -> ParseResult<MechString> {
-  match raw_string(input.clone()) {
-    Ok((input, s)) => Ok((input, s)),
-    _ => match utf8_string(input.clone()) {
-      Ok((input, s)) => Ok((input, s)),
-      Err(err) => return Err(err),
-    },
-  }
+  alt((raw_string, utf8_string))(input)
 }
 
 // utf8-string := quote, *(¬quote, (text | new-line)), quote ;
@@ -114,13 +97,10 @@ pub fn false_literal(input: ParseString) -> ParseResult<Token> {
 
 // number := complex-number | real-number ;
 pub fn number(input: ParseString) -> ParseResult<Number> {
-  match complex_number(input.clone()) {
-    Ok((input, complex_num)) => Ok((input, Number::Complex(complex_num))),
-    _ => match real_number(input.clone()) {
-      Ok((input, real_num)) => Ok((input, Number::Real(real_num))),
-      Err(err) => return Err(err),
-    },
-  }
+  alt((
+    map(complex_number, |complex_num| Number::Complex(complex_num)),
+    map(real_number, |real_num| Number::Real(real_num)),
+  ))(input)
 }
 
 // complex-number := real-number, ("i"|"j")? | (("+"|"-"), real-number, ("i"|"j")) ;
@@ -341,6 +321,17 @@ pub fn empty(input: ParseString) -> ParseResult<Token> {
 // Kind Annotations
 // ----------------------------------------------------------------------------
 
+pub fn left_angle(input: ParseString) -> ParseResult<Token> {
+  let (input, token) = alt((left_angle1, left_angle2))(input)?;
+  Ok((input, token))
+}
+
+pub fn right_angle(input: ParseString) -> ParseResult<Token> {
+  let (input, token) = alt((right_angle1, right_angle2))(input)?;
+  Ok((input, token))
+}
+
+
 // kind_annotation := left_angle, kind, ?question, right_angle ;
 pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
   let msg3 = "Expects right angle";
@@ -456,10 +447,13 @@ pub fn kind_map(input: ParseString) -> ParseResult<Kind> {
 // kind-record := "{", list1(",", (identifier, kind)), "}" ;
 pub fn kind_record(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_brace(input)?;
-  let (input, _) = space_tab0(input)?;
-  let (input, elements) = separated_list1(alt((list_separator,space_tab1)), nom_tuple((identifier, kind_annotation)))(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, elements) = separated_list1(
+    alt((null(list_separator), null(whitespace1))),
+    nom_tuple((identifier, kind_annotation))
+  )(input)?;
   let (input, _) = opt(tag(",…"))(input)?;
-  let (input, _) = space_tab0(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = right_brace(input)?;
   let elements = elements.into_iter().map(|(id, knd)| (id, knd.kind)).collect();
   Ok((input, Kind::Record(elements)))
@@ -500,4 +494,37 @@ pub fn kind_scalar(input: ParseString) -> ParseResult<Kind> {
   let (input, kind) = identifier(input)?;
   let (input, range) = opt(tuple((colon,range_expression)))(input)?;
   Ok((input, Kind::Scalar(kind)))
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn kind_annotation_parses_multiline_record_fields() {
+    let src = "<{\n  files-total<u64>\n  files-passed<u64>\n  files-failed<u64>\n}>";
+    let graphemes = crate::graphemes::init_source(src);
+    let input = ParseString::new(&graphemes);
+
+    let (_, annotation) = kind_annotation(input).expect("expected multiline record kind annotation to parse");
+
+    match annotation.kind {
+      Kind::Record(fields) => assert_eq!(fields.len(), 3),
+      other => panic!("expected Kind::Record, got {:?}", other),
+    }
+  }
+
+  #[test]
+  fn kind_annotation_parses_multiline_record_with_nested_kinds() {
+    let src = "<{\n  path<string>\n  result<test-file-result>\n  failed<[test-case-detail]>\n  run-error<string?>\n}>";
+    let graphemes = crate::graphemes::init_source(src);
+    let input = ParseString::new(&graphemes);
+
+    let (_, annotation) = kind_annotation(input).expect("expected nested multiline record kind annotation to parse");
+
+    match annotation.kind {
+      Kind::Record(fields) => assert_eq!(fields.len(), 4),
+      other => panic!("expected Kind::Record, got {:?}", other),
+    }
+  }
 }
