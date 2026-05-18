@@ -1,6 +1,6 @@
-use mech_core::{hash_str, Core, MResult, MechSourceCode, ParsedProgram, Value};
+use mech_core::{hash_str, MResult, MechSourceCode, ParsedProgram, Value};
 use mech_interpreter::Interpreter;
-use mech_syntax::{compiler::Compiler, parser};
+use mech_syntax::parser;
 
 #[derive(Debug, Clone)]
 pub struct ProgramEnvironment {
@@ -37,7 +37,6 @@ impl Default for ProgramConfig {
 
 pub struct Program {
   pub config: ProgramConfig,
-  pub core: Core,
   pub interpreter: Interpreter,
 }
 
@@ -46,13 +45,12 @@ impl Program {
     let id = hash_str(&format!("program/{}", config.name));
     let mut interpreter = Interpreter::new(id);
     interpreter.set_trace_enabled(config.environment.trace_enabled);
-    Self { config, core: Core::new(), interpreter }
+    Self { config, interpreter }
   }
 
   pub fn compile_program(&mut self, source: &str) -> MResult<()> {
-    let mut compiler = Compiler::new();
-    let sections = compiler.compile_str(source)?;
-    self.core.load_sections(sections)?;
+    // Validate source parses successfully before it is run.
+    let _ = parser::parse(source.trim())?;
     Ok(())
   }
 

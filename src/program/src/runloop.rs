@@ -55,7 +55,7 @@ impl ProgramRunner {
         match msg {
           RunLoopMessage::Load(source) => {
             if let Err(err) = program.compile_program(&source) {
-              let _ = tx_evt.send(ClientMessage::Error(err.to_string()));
+              let _ = tx_evt.send(ClientMessage::Error(err.display_message()));
             } else {
               let _ = tx_evt.send(ClientMessage::Ack("Loaded source".to_string()));
               let _ = tx_evt.send(ClientMessage::StepDone);
@@ -68,7 +68,7 @@ impl ProgramRunner {
                 let _ = tx_evt.send(ClientMessage::StepDone);
               }
               Err(err) => {
-                let _ = tx_evt.send(ClientMessage::Error(err.to_string()));
+                let _ = tx_evt.send(ClientMessage::Error(err.display_message()));
               }
             }
           }
