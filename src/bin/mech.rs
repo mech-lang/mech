@@ -383,8 +383,14 @@ async fn main() -> Result<(), MechError> {
 
     let uuid = generate_uuid();
     let mut program = MechProgram::new(uuid);
+    program.configure_environment(MechProgramEnvironment {
+      tree_flag,
+      debug_flag,
+      time_flag,
+      trace_flag,
+    });
 
-    let result = run_mech_code(program.interpreter_mut(), &mechfs, tree_flag, debug_flag, time_flag, trace_flag); 
+    let result = program.run_mech_code(&mechfs); 
 
     let bytecode = program.interpreter_mut().compile()?;
 
@@ -531,6 +537,13 @@ async fn main() -> Result<(), MechError> {
   #[cfg(feature = "run")]
   let mut program = MechProgram::new(uuid);
   #[cfg(feature = "run")]
+  program.configure_environment(MechProgramEnvironment {
+    tree_flag,
+    debug_flag,
+    time_flag,
+    trace_flag,
+  });
+  #[cfg(feature = "run")]
   {
     let mut paths = if let Some(m) = matches.get_many::<String>("mech_paths") {
       m.map(|s| s.to_string()).collect()
@@ -583,7 +596,7 @@ async fn main() -> Result<(), MechError> {
       }
     }
 
-    let result = run_mech_code(program.interpreter_mut(), &mechfs, tree_flag, debug_flag, time_flag, trace_flag); 
+    let result = program.run_mech_code(&mechfs); 
     if !repl_flag {
       match &result {
         Ok(r) => {

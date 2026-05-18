@@ -172,6 +172,17 @@ impl MechProgram {
     self.environment = environment;
     self.interpreter.set_trace_enabled(self.environment.trace_flag);
   }
+
+  pub fn run_mech_code(&mut self, code: &MechFileSystem) -> MResult<Value> {
+    run_mech_code(
+      &mut self.interpreter,
+      code,
+      self.environment.tree_flag,
+      self.environment.debug_flag,
+      self.environment.time_flag,
+      self.environment.trace_flag,
+    )
+  }
 }
 
 fn print_bytecode(fs: &MechFileSystem) {
