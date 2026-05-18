@@ -112,13 +112,13 @@ leaf!{tab, "\t", TokenKind::Tab}
 leaf!{left_bracket, "[", TokenKind::LeftBracket}
 leaf!{left_parenthesis, "(", TokenKind::LeftParenthesis}
 leaf!{left_brace, "{", TokenKind::LeftBrace}
-leaf!{left_angle, "<", TokenKind::LeftAngle}
+leaf!{left_angle1, "<", TokenKind::LeftAngle}
 leaf!{left_angle2, "⟨", TokenKind::LeftAngle}
 
 leaf!{right_bracket, "]", TokenKind::RightBracket}
 leaf!{right_parenthesis, ")", TokenKind::RightParenthesis}
 leaf!{right_brace, "}", TokenKind::RightBrace}
-leaf!{right_angle, ">", TokenKind::RightAngle}
+leaf!{right_angle1, ">", TokenKind::RightAngle}
 leaf!{right_angle2, "⟩", TokenKind::RightAngle}
 
 leaf!{box_tl_round, "╭", TokenKind::BoxDrawing}
