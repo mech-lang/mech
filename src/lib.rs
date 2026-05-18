@@ -68,6 +68,7 @@ mod run;
 #[cfg(all(feature = "run", feature = "variable_define", feature = "invariant_define", feature = "symbol_table", feature = "bool"))]
 mod test;
 #[cfg(feature = "mechfs")]
+#[path = "program/src/mechfs.rs"]
 mod mechfs;
 
 #[cfg(feature = "repl")]
