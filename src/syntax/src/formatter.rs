@@ -2010,9 +2010,9 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<span class=\"mech-enum-define\"><span class=\"mech-kind-annotation\"><span class=\"mech-kind-annotation-open\">&lt;</span><span class=\"mech-enum-name\">{}</span><span class=\"mech-kind-annotation-close\">&gt;</span></span><span class=\"mech-enum-define-op\">:=</span><span class=\"mech-enum-variants\">{}</span></span>",name,variants)
+      format!("<span class=\"mech-enum-define\"><span class=\"mech-kind-annotation\"><span class=\"mech-enum-name\">{}</span></span><span class=\"mech-enum-define-op\">:=</span><span class=\"mech-enum-variants\">{}</span></span>",name,variants)
     } else {
-      format!("<{}> := {}", name, variants)
+      format!("⟨{}⟩ := {}", name, variants)
     }
   }
 
@@ -2805,7 +2805,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
         <span class=\"mech-kind-annotation\">{}</span>
       </span>",name,kind)
     } else {
-      format!("<{}> := {}", name, kind)
+      format!("⟨{}⟩ := {}", name, kind)
     }
   }
 
@@ -2817,7 +2817,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
         <span class=\"mech-kind\">{}</span>
       </span>",kind)
     } else {
-      format!("<{}>", kind)
+      format!("⟨{}⟩", kind)
     }
   }
 
@@ -2826,9 +2826,9 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       Kind::Kind(kind) => {
         let kind_kind = self.kind(kind);
         if self.html {
-          format!("<span class=\"mech-kind-annotation\">&lt;{}&gt;</span>",kind_kind)
+          format!("<span class=\"mech-kind-annotation\">{}</span>",kind_kind)
         } else {
-          format!("<{}>", kind_kind)
+          format!("⟨{}⟩", kind_kind)
         }
       },
       Kind::Option(kind) => {
@@ -2938,13 +2938,13 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
             if self.html {
               src = format!("<span class=\"mech-record-field\"><span class=\"mech-record-field-name\">{}</span><span class=\"mech-record-field-kind\">{}</span></span>", ident_s, k);
             } else {
-              src = format!("{}<{}>", ident_s, k);
+              src = format!("{}⟨{}⟩", ident_s, k);
             }
           } else {
             if self.html {
               src = format!("{}<span class=\"mech-record-field\"><span class=\"mech-record-field-name\">{}</span><span class=\"mech-record-field-kind\">{}</span></span>", src, ident_s, k);
             } else {
-              src = format!("{},{}<{}>", src, ident_s, k);
+              src = format!("{},{}⟨{}⟩", src, ident_s, k);
             }
           }
         }

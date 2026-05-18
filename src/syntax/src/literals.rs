@@ -324,9 +324,9 @@ pub fn empty(input: ParseString) -> ParseResult<Token> {
 // kind_annotation := left_angle, kind, ?question, right_angle ;
 pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
   let msg3 = "Expects right angle";
-  let (input, (_, r)) = range(left_angle)(input)?;
+  let (input, (_, r)) = range(alt((left_angle, left_angle2)))(input)?;
   let (input, kind) = kind_with_option(input)?;
-  let (input, _) = label!(right_angle, msg3, r)(input)?;
+  let (input, _) = label!(alt((right_angle, right_angle2)), msg3, r)(input)?;
   Ok((input, KindAnnotation{ kind }))
 }
 
@@ -361,10 +361,10 @@ pub fn kind_with_option(input: ParseString) -> ParseResult<Kind> {
 // kind-kind := "<", kind, ">" ;
 pub fn kind_kind(input: ParseString) -> ParseResult<Kind> {
   let msg3 = "Expects right angle";
-  let (input, (_, r)) = range(left_angle)(input)?;
+  let (input, (_, r)) = range(alt((left_angle, left_angle2)))(input)?;
 
   let (input, kind) = kind_with_option(input)?;
-  let (input, _) = label!(right_angle, msg3, r)(input)?;
+  let (input, _) = label!(alt((right_angle, right_angle2)), msg3, r)(input)?;
   Ok((input, Kind::Kind(Box::new(kind))))
 }
 
