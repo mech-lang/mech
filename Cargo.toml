@@ -177,6 +177,7 @@ nalgebra = "0.34.1"
 mech-core        = { version = "0.3.5", default-features = false }
 mech-syntax      = { version = "0.3.5", default-features = false }
 mech-interpreter = { version = "0.3.5", default-features = false }
+mech-program     = { version = "0.3.5", default-features = false }
 
 sevenz-rust = "0.6.1"
 colored = "3.1.1"
@@ -228,6 +229,7 @@ LegalCopyright = "Copyright © 2026"
 mech-core = { path = 'src/core' }
 mech-syntax = { path = 'src/syntax'}
 mech-interpreter = { path = 'src/interpreter'}
+mech-program = { path = 'src/program'}
 mech-wasm = { path = 'src/wasm'}
 #mech-utilities = { path = 'src/utilities' }
 mech-combinatorics = { path = 'machines/combinatorics' }

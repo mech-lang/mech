@@ -21,7 +21,7 @@ macro_rules! test_interpreter {
       match parser::parse(&s) {
           Ok(tree) => { 
             let mut program = MechProgram::new(0);
-            let result = program.interpreter_mut().interpret(&tree).unwrap();
+            let result = program.interpreter.interpret(&tree).unwrap();
             assert_eq!(result, $expected);
           },
           Err(err) => {panic!("{:?}", err);}

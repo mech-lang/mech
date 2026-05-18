@@ -7,8 +7,10 @@
 
 pub extern crate mech_core as core;
 pub extern crate mech_syntax as syntax;
+pub extern crate mech_program as program;
 
 pub use mech_core::*;
+pub use mech_program::*;
 use mech_core::nodes::Program;
 pub use mech_interpreter::Interpreter;
 

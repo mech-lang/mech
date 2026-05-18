@@ -123,66 +123,27 @@ pub fn run_mech_code(
   Ok(Value::Empty)
 }
 
-pub struct MechProgram {
-  interpreter: Interpreter,
-  environment: MechProgramEnvironment,
+pub use mech_program::{Program as MechProgram, ProgramConfig as MechProgramConfig, ProgramEnvironment as MechProgramEnvironment};
+
+pub fn configure_mech_program(program: &mut MechProgram, tree_flag: bool, debug_flag: bool, time_flag: bool, trace_flag: bool) {
+  program.set_environment(MechProgramEnvironment {
+    trace_enabled: trace_flag,
+    debug_enabled: debug_flag,
+    time_enabled: time_flag,
+    print_tree: tree_flag,
+    rounds_per_step: program.environment().rounds_per_step,
+  });
 }
 
-#[derive(Clone, Debug)]
-pub struct MechProgramEnvironment {
-  pub tree_flag: bool,
-  pub debug_flag: bool,
-  pub time_flag: bool,
-  pub trace_flag: bool,
-}
-
-impl Default for MechProgramEnvironment {
-  fn default() -> Self {
-    Self { tree_flag: false, debug_flag: false, time_flag: false, trace_flag: false }
-  }
-}
-
-impl MechProgram {
-  pub fn new(id: u64) -> Self {
-    MechProgram { interpreter: Interpreter::new(id), environment: MechProgramEnvironment::default() }
-  }
-
-  pub fn interpreter(&self) -> &Interpreter {
-    &self.interpreter
-  }
-
-  pub fn interpreter_mut(&mut self) -> &mut Interpreter {
-    &mut self.interpreter
-  }
-
-  pub fn into_interpreter(self) -> Interpreter {
-    self.interpreter
-  }
-
-  pub fn run_string(&mut self, source: &str) -> MResult<Value> {
-    self.interpreter.set_trace_enabled(self.environment.trace_flag);
-    let tree = parser::parse(source.trim())?;
-    if self.environment.tree_flag {
-      print_tree!(tree);
-    }
-    self.interpreter.interpret(&tree)
-  }
-
-  pub fn configure_environment(&mut self, environment: MechProgramEnvironment) {
-    self.environment = environment;
-    self.interpreter.set_trace_enabled(self.environment.trace_flag);
-  }
-
-  pub fn run_mech_code(&mut self, code: &MechFileSystem) -> MResult<Value> {
-    run_mech_code(
-      &mut self.interpreter,
-      code,
-      self.environment.tree_flag,
-      self.environment.debug_flag,
-      self.environment.time_flag,
-      self.environment.trace_flag,
-    )
-  }
+pub fn run_mech_program_code(program: &mut MechProgram, code: &MechFileSystem) -> MResult<Value> {
+  run_mech_code(
+    &mut program.interpreter,
+    code,
+    program.environment().print_tree,
+    program.environment().debug_enabled,
+    program.environment().time_enabled,
+    program.environment().trace_enabled,
+  )
 }
 
 fn print_bytecode(fs: &MechFileSystem) {

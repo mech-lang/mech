@@ -383,16 +383,11 @@ async fn main() -> Result<(), MechError> {
 
     let uuid = generate_uuid();
     let mut program = MechProgram::new(uuid);
-    program.configure_environment(MechProgramEnvironment {
-      tree_flag,
-      debug_flag,
-      time_flag,
-      trace_flag,
-    });
+    configure_mech_program(&mut program, tree_flag, debug_flag, time_flag, trace_flag);
 
-    let result = program.run_mech_code(&mechfs); 
+    let result = run_mech_program_code(&mut program, &mechfs); 
 
-    let bytecode = program.interpreter_mut().compile()?;
+    let bytecode = program.interpreter.compile()?;
 
     let mut output_file = output_path.join("output.mecb");
 
@@ -402,7 +397,7 @@ async fn main() -> Result<(), MechError> {
 
     // print debug info for the context
     if debug_flag {
-      println!("{} Bytecode Size: {:#?} bytes", "[Debug]".truecolor(246,192,78), program.interpreter().context);
+      println!("{} Bytecode Size: {:#?} bytes", "[Debug]".truecolor(246,192,78), &program.interpreter.context);
     }
 
     println!("{} Mech bytecode written to: {}", "[Output]".truecolor(153,221,85), output_file.display());
@@ -537,12 +532,7 @@ async fn main() -> Result<(), MechError> {
   #[cfg(feature = "run")]
   let mut program = MechProgram::new(uuid);
   #[cfg(feature = "run")]
-  program.configure_environment(MechProgramEnvironment {
-    tree_flag,
-    debug_flag,
-    time_flag,
-    trace_flag,
-  });
+  configure_mech_program(&mut program, tree_flag, debug_flag, time_flag, trace_flag);
   #[cfg(feature = "run")]
   {
     let mut paths = if let Some(m) = matches.get_many::<String>("mech_paths") {
@@ -574,7 +564,7 @@ async fn main() -> Result<(), MechError> {
         }
       } else {
         // ---------- 4. Treat the inputs as Mech code ----------
-        program.interpreter_mut().clear();
+        program.interpreter.clear();
         let joined = paths.join(" ");
         match program.run_string(joined.trim()) {
           Ok(r) => {
@@ -596,7 +586,7 @@ async fn main() -> Result<(), MechError> {
       }
     }
 
-    let result = program.run_mech_code(&mechfs); 
+    let result = run_mech_program_code(&mut program, &mechfs); 
     if !repl_flag {
       match &result {
         Ok(r) => {

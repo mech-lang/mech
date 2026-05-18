@@ -198,12 +198,7 @@ pub fn run_mech_tests(
   for path in &expanded_paths {
     let uuid = generate_uuid();
     let mut program = MechProgram::new(uuid);
-    program.configure_environment(MechProgramEnvironment {
-      tree_flag,
-      debug_flag,
-      time_flag,
-      trace_flag,
-    });
+    configure_mech_program(&mut program, tree_flag, debug_flag, time_flag, trace_flag);
     let mut mechfs = MechFileSystem::new();
     if let Err(err) = mechfs.watch_source(path) {
       eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
@@ -212,7 +207,7 @@ pub fn run_mech_tests(
       file_reports.push(FileReport { path: path.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
       continue;
     }
-    if let Err(err) = program.run_mech_code(&mechfs) {
+    if let Err(err) = run_mech_program_code(&mut program, &mechfs) {
       eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
       run_errors = true;
       any_failed = true;
@@ -220,7 +215,7 @@ pub fn run_mech_tests(
       continue;
     }
 
-    let state = program.interpreter().state.borrow();
+    let state = &program.interpreter.state.borrow();
     println!("{} {}\n", "[Test]".truecolor(153, 221, 85), path);
 
     let mut violations: HashMap<u64, CaseDetail> = HashMap::new();

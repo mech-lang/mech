@@ -70,4 +70,8 @@ impl Program {
   pub fn environment(&self) -> &ProgramEnvironment {
     &self.config.environment
   }
+
+  pub fn into_interpreter(self) -> Interpreter {
+    self.interpreter
+  }
 }
