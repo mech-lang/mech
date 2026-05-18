@@ -7,8 +7,15 @@
 
 pub extern crate mech_core as core;
 pub extern crate mech_syntax as syntax;
+pub extern crate mech_program;
 
 pub use mech_core::*;
+pub use mech_program::*;
+
+pub mod program {
+  pub use mech_program::*;
+  pub use crate::mechfs::MechFileSystem;
+}
 use mech_core::nodes::Program;
 pub use mech_interpreter::Interpreter;
 
@@ -61,6 +68,7 @@ mod run;
 #[cfg(all(feature = "run", feature = "variable_define", feature = "invariant_define", feature = "symbol_table", feature = "bool"))]
 mod test;
 #[cfg(feature = "mechfs")]
+#[path = "program/src/mechfs.rs"]
 mod mechfs;
 
 #[cfg(feature = "repl")]

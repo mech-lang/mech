@@ -1,6 +1,7 @@
 #![allow(warnings)]
 extern crate mech_syntax;
 extern crate mech_core;
+extern crate mech;
 extern crate nalgebra as na;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -8,6 +9,7 @@ use mech_core::matrix::Matrix;
 use mech_syntax::*;
 use mech_core::*;
 use mech_interpreter::*;
+use mech::{MechProgram};
 use indexmap::set::IndexSet;
 
 /// Compare interpreter output to expected value
@@ -18,8 +20,8 @@ macro_rules! test_interpreter {
       let s = $input;
       match parser::parse(&s) {
           Ok(tree) => { 
-            let mut intrp = Interpreter::new(0);
-            let result = intrp.interpret(&tree).unwrap();
+            let mut program = MechProgram::new(0);
+            let result = program.interpreter.interpret(&tree).unwrap();
             assert_eq!(result, $expected);
           },
           Err(err) => {panic!("{:?}", err);}
@@ -72,7 +74,8 @@ test_interpreter!(
 fn interpret_fsm_fails_when_transition_targets_undefined_state() {
   let s = "#Door(n<u64>) => <u64>\n  ├ :Closed(n<u64>)\n  └ :Open(n<u64>).\n\n#Door(n<u64>) -> :Closed(n)\n  :Closed(n) -> :Locked(n)\n  :Open(n) => n.\n\n#Door(1u64)";
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   assert!(intrp.interpret(&tree).is_err());
 }
 
@@ -88,7 +91,8 @@ test_interpreter!(interpret_variable_define_kind_literal, "x := <u8>;", Value::K
 fn interpret_variable_define_undefined_kind_literal_error() {
   let s = "x := <foo>;";
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   assert!(intrp.interpret(&tree).is_err());
 }
 test_interpreter!(interpret_variable_define_typed_empty, "emp<_> := _", Value::Empty);
@@ -126,7 +130,8 @@ test_interpreter!(
 fn interpret_matrix_literal_with_empty_infers_optional_f64_elements() {
   let s = "x := [1 2 _ 5]\n\nx";
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   let result = intrp.interpret(&tree).unwrap();
   assert_eq!(
     result.deref_kind(),
@@ -141,7 +146,8 @@ fn interpret_matrix_literal_with_empty_infers_optional_f64_elements() {
 fn interpret_option_matrix_literal_unwraps_to_u64_defaults() {
   let s = "x<[u64?]> := [_ 2u64 _ 3u64 _ 4u64]\n\nunwrapped<[u64]> := x?\n  | x => x\n  | * => 0u64.\n\nunwrapped";
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   let result = intrp.interpret(&tree).unwrap();
   let detached = match result {
     Value::MutableReference(v) => v.borrow().clone(),
@@ -163,7 +169,8 @@ fn interpret_option_match_after_outer_join_column_access_converts_option_to_scal
      | * => 0.\n\
    y";
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   let result = intrp.interpret(&tree).unwrap();
   let detached = match result {
     Value::MutableReference(v) => v.borrow().clone(),
@@ -175,7 +182,8 @@ fn interpret_option_match_after_outer_join_column_access_converts_option_to_scal
 fn interpret_option_matrix_literal_unwraps_to_typed_f64_defaults() {
   let s = "x<[f64?]> := [_ 2 _ 3 _ 4]\n\nunwrapped<[f64]> := x?\n  | x => x\n  | * => 0.\n\nunwrapped";
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   let result = intrp.interpret(&tree).unwrap();
   let detached = match result {
     Value::MutableReference(v) => v.borrow().clone(),
@@ -190,7 +198,8 @@ fn interpret_option_matrix_literal_unwraps_to_typed_f64_defaults() {
 fn interpret_option_matrix_literal_unwraps_to_inferred_f64_defaults() {
   let s = "x<[f64?]> := [_ 2 _ 3 _ 4]\n\nunwrapped := x?\n  | x => x\n  | * => 0.\n\nunwrapped";
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   let result = intrp.interpret(&tree).unwrap();
   assert_eq!(
     result.deref_kind(),
@@ -207,7 +216,8 @@ test_interpreter!(
 fn interpret_option_match_requires_wildcard_arm() {
   let s = "foo<u64?> := 1234\n\nbar := foo?\n  | 0 => 9.\n\nbar";
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   assert!(intrp.interpret(&tree).is_err());
 }
 
@@ -228,7 +238,8 @@ x := {
 x
 "#;
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   let result = intrp.interpret(&tree).unwrap();
   assert_eq!(
     result.deref_kind(),
@@ -252,7 +263,8 @@ string-color := my-color?
   | :green => "green".
 "#;
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   let err = intrp.interpret(&tree).unwrap_err();
   let msg = format!("{:?}", err);
   assert!(msg.contains("MatchNonExhaustive"));
@@ -270,7 +282,8 @@ label := state?
   | :closed => "closed".
 "#;
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   let err = intrp.interpret(&tree).unwrap_err();
   let msg = format!("{:?}", err);
   assert!(msg.contains("MatchNonExhaustive"));
@@ -289,7 +302,8 @@ code := x?
   | :stopped => 0.
 "#;
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   let result = intrp.interpret(&tree).unwrap();
   assert_eq!(result, Value::F64(Ref::new(1.0)));
 }
@@ -305,7 +319,8 @@ code := x?
   | :stopped => 0.
 "#;
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   let err = intrp.interpret(&tree).unwrap_err();
   let msg = format!("{:?}", err);
   assert!(msg.contains("MatchArmKindMismatch"));
@@ -358,7 +373,8 @@ result := x?
   | :some(:ok(n)) => n.
 "#;
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   assert!(intrp.interpret(&tree).is_err());
 }
 test_interpreter!(
@@ -420,7 +436,8 @@ x<[f64]> := [3 5 4 1 2]
 #bubble-sort(x)
 "#;
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   let err = intrp.interpret(&tree).unwrap_err();
   let msg = format!("{:?}", err);
   assert!(msg.contains("FsmArgumentKindMismatch"));
@@ -452,7 +469,8 @@ y := [3 5 4 1 2]
 #bubble-sort(y)
 "#;
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   let err = intrp.interpret(&tree).unwrap_err();
   let msg = format!("{:?}", err);
   assert!(msg.contains("FsmArgumentKindMismatch"));
@@ -1284,7 +1302,8 @@ x := a ⟗ b
 x.hw1
 "#;
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   let result = intrp.interpret(&tree).unwrap();
   assert_eq!(
     result.kind(),
@@ -1483,7 +1502,8 @@ unwrap(x<option>) => <u64>
 unwrap(x)
 "#;
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(0);
+  let mut intrp = program.into_interpreter();
   let err = intrp.interpret(&tree).unwrap_err();
   let msg = format!("{:?}", err);
   assert!(msg.contains("FunctionMatchNonExhaustive"));

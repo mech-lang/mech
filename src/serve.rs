@@ -22,7 +22,7 @@ pub struct MechServer {
 impl MechServer {
 
   pub fn new(name: String, full_address: String, stylesheet: String, html_shim: String, wasm: Vec<u8>, js: Vec<u8>) -> Self {
-    let mut mechfs = MechFileSystem::new();
+    let mut mechfs = program::MechFileSystem::new();
 
     Self {
       badge: format!("[{}] Server", name).truecolor(34, 204, 187),

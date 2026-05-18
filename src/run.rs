@@ -1,6 +1,7 @@
 use crate::*;
 use mech_core::*;
 use mech_syntax::*;
+use mech_interpreter::Interpreter;
 use std::time::Instant;
 
 #[macro_export]
@@ -35,7 +36,7 @@ macro_rules! print_plan {
 
 pub fn run_mech_code(
   intrp: &mut Interpreter,
-  code: &MechFileSystem,
+  code: &program::MechFileSystem,
   tree_flag: bool,
   debug_flag: bool,
   time_flag: bool,
@@ -122,7 +123,37 @@ pub fn run_mech_code(
   Ok(Value::Empty)
 }
 
-fn print_bytecode(fs: &MechFileSystem) {
+pub use mech_program::{Program as MechProgram, ProgramConfig as MechProgramConfig, ProgramEnvironment as MechProgramEnvironment};
+
+pub fn configure_mech_program(program: &mut MechProgram, tree_flag: bool, debug_flag: bool, time_flag: bool, trace_flag: bool) {
+  program.set_environment(MechProgramEnvironment {
+    trace_enabled: trace_flag,
+    debug_enabled: debug_flag,
+    time_enabled: time_flag,
+    print_tree: tree_flag,
+    rounds_per_step: program.environment().rounds_per_step,
+  });
+}
+
+pub fn run_mech_program_code(program: &mut MechProgram, code: &program::MechFileSystem) -> MResult<Value> {
+  let sources = code.sources();
+  let sources = sources.read().unwrap();
+  for (_, source) in sources.sources_iter() {
+    let now = Instant::now();
+    let result = program.run_source(source);
+    if program.environment().time_enabled {
+      let cycle_duration = now.elapsed().as_nanos() as f64;
+      println!("Cycle Time: {} ns", cycle_duration);
+    }
+    match result {
+      Ok(value) => return Ok(value),
+      Err(err) => return Err(err),
+    }
+  }
+  Ok(Value::Empty)
+}
+
+fn print_bytecode(fs: &program::MechFileSystem) {
   let sources = fs.sources();
   let sources = sources.read().unwrap();
   for (file, source) in sources.sources_iter() {
