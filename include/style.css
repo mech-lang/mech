@@ -2808,67 +2808,108 @@ mark {
 }
 
 /* Record kinds with 3+ fields */
-.mech-record-kind:has(.mech-record-field ~ .mech-record-field ~ .mech-record-field) {
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field) {
   display: block;
   white-space: pre;
   margin-left: 2ch; 
 }
 
 /* newline after { */
-.mech-record-kind:has(.mech-record-field ~ .mech-record-field ~ .mech-record-field)
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field)
   > .mech-record-kind-open::after {
   content: "\A  ";
 }
 
 /* newline before every field except the first one */
-.mech-record-kind:has(.mech-record-field ~ .mech-record-field ~ .mech-record-field)
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field)
   > .mech-record-field + .mech-record-field::before {
   content: "\A  ";
 }
 
 /* newline before } */
-.mech-record-kind:has(.mech-record-field ~ .mech-record-field ~ .mech-record-field)
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field)
   > .mech-record-kind-close::before {
   content: "\A";
 }
 
 /* when the previous field had a nested record-kind (already a block),
    skip the \A and just add the indent */
-.mech-record-kind:has(.mech-record-field ~ .mech-record-field ~ .mech-record-field)
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field)
   > .mech-record-field:has(.mech-record-kind) + .mech-record-field::before {
   content: "  ";
 }
 
-.mech-record-kind::before { 
-    content: "<"; 
+.mech-matrix-kind::before { 
+    content: "⟨";
     color: var(--kind-annotation-color-dark);
 }
+
+.mech-matrix-kind::after  { 
+    content: "⟩"; 
+    color: var(--kind-annotation-color-dark);
+}
+
+
+.mech-record-kind::before { 
+    content: "⟨";
+    color: var(--kind-annotation-color-dark);
+}
+
 .mech-record-kind::after  { 
-    content: ">"; 
+    content: "⟩"; 
     color: var(--kind-annotation-color-dark);
 }
 
 .mech-kind-define > .mech-kind-annotation:first-child::before {
-    content: "<";
+    content: "⟨";
     color: var(--kind-annotation-color-dark);
 }
 
 .mech-kind-define > .mech-kind-annotation:first-child::after {
-    content: ">";
+    content: "⟩";
     color: var(--kind-annotation-color-dark);
 }
 
-.mech-scalar-kind::before { 
-    content: "<"; 
-    color: var(--kind-annotation-color-dark);
+/* Optional scalar: string? -> ⟨string?⟩ */
+.mech-kind:has(> .mech-kind > .mech-scalar-kind):has(> .mech-option-question)::before {
+  content: "⟨";
+  color: var(--kind-annotation-color-dark);
 }
 
-.mech-scalar-kind::after  { 
-    content: ">"; 
-    color: var(--kind-annotation-color-dark);
+.mech-kind:has(> .mech-kind > .mech-scalar-kind):has(> .mech-option-question)::after {
+  content: "⟩";
+  color: var(--kind-annotation-color-dark);
+}
+
+/* Plain scalar: string -> ⟨string⟩
+   But NOT inside matrix inner, and NOT when followed by ? */
+.mech-kind:has(> .mech-scalar-kind):not(.mech-matrix-kind-inner > .mech-kind):not(:has(+ .mech-option-question))::before {
+  content: "⟨";
+  color: var(--kind-annotation-color-dark);
+}
+
+.mech-kind:has(> .mech-scalar-kind):not(.mech-matrix-kind-inner > .mech-kind):not(:has(+ .mech-option-question))::after {
+  content: "⟩";
+  color: var(--kind-annotation-color-dark);
 }
 
 .mech-kind:has(.mech-record-kind),
 .mech-kind-annotation:has(.mech-record-kind) {
   display: contents;
+}
+
+.mech-record-kind-open {
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-record-kind-close {
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-matrix-kind-open {
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-matrix-kind-close {
+    color: var(--kind-annotation-color-dark);
 }
