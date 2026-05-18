@@ -2806,3 +2806,69 @@ mark {
 .mech-tuple-struct {
     color: var(--literal-color);
 }
+
+/* Record kinds with 3+ fields */
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field ~ .mech-record-field) {
+  display: block;
+  white-space: pre;
+  margin-left: 2ch; 
+}
+
+/* newline after { */
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field ~ .mech-record-field)
+  > .mech-record-kind-open::after {
+  content: "\A  ";
+}
+
+/* newline before every field except the first one */
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field ~ .mech-record-field)
+  > .mech-record-field + .mech-record-field::before {
+  content: "\A  ";
+}
+
+/* newline before } */
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field ~ .mech-record-field)
+  > .mech-record-kind-close::before {
+  content: "\A";
+}
+
+/* when the previous field had a nested record-kind (already a block),
+   skip the \A and just add the indent */
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field ~ .mech-record-field)
+  > .mech-record-field:has(.mech-record-kind) + .mech-record-field::before {
+  content: "  ";
+}
+
+.mech-record-kind::before { 
+    content: "<"; 
+    color: var(--kind-annotation-color-dark);
+}
+.mech-record-kind::after  { 
+    content: ">"; 
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-kind-define > .mech-kind-annotation:first-child::before {
+    content: "<";
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-kind-define > .mech-kind-annotation:first-child::after {
+    content: ">";
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-scalar-kind::before { 
+    content: "<"; 
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-scalar-kind::after  { 
+    content: ">"; 
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-kind:has(.mech-record-kind),
+.mech-kind-annotation:has(.mech-record-kind) {
+  display: contents;
+}
