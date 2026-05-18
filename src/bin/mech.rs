@@ -361,7 +361,7 @@ async fn main() -> Result<(), MechError> {
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let output_path = PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
     let debug_flag = matches.get_flag("debug");
-    let mut mechfs = MechFileSystem::new();
+    let mut mechfs = program::MechFileSystem::new();
 
     for path in mech_paths {
       mechfs.watch_source(&path)?;
@@ -442,7 +442,7 @@ async fn main() -> Result<(), MechError> {
         return Ok(());
       }
     }
-    let mut mechfs = MechFileSystem::new();
+    let mut mechfs = program::MechFileSystem::new();
 
     println!("{} Loading resources…", badge);
 
@@ -539,7 +539,7 @@ async fn main() -> Result<(), MechError> {
       m.map(|s| s.to_string()).collect()
     } else { repl_flag = true; vec![] };
 
-    let mut mechfs = MechFileSystem::new();
+    let mut mechfs = program::MechFileSystem::new();
 
     let any_look_like_paths = paths.iter().any(|p| {
       is_intended_path(p)

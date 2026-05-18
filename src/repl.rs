@@ -59,7 +59,7 @@ impl MechRepl {
   pub fn execute_repl_command(&mut self, repl_cmd: ReplCommand) -> MResult<String> {
 
     let mut intrp = self.interpreters.get_mut(&self.active).unwrap();
-    let mut mechfs = MechFileSystem::new();
+    let mut mechfs = program::MechFileSystem::new();
 
     match repl_cmd {
       ReplCommand::Help => {

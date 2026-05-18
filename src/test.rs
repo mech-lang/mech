@@ -199,7 +199,7 @@ pub fn run_mech_tests(
     let uuid = generate_uuid();
     let mut program = MechProgram::new(uuid);
     configure_mech_program(&mut program, tree_flag, debug_flag, time_flag, trace_flag);
-    let mut mechfs = MechFileSystem::new();
+    let mut mechfs = program::MechFileSystem::new();
     if let Err(err) = mechfs.watch_source(path) {
       eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
       run_errors = true;
