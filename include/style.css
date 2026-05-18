@@ -28,6 +28,7 @@
   --code-output-background-color: #020303;
   --var-name-color: hsl(290, 45%, 90%);
   --field-name-color: #63abb7;
+  --invariant-name-color: hsl(130, 100%, 75%);
   --kind-annotation-color: #f09fca;
   --kind-annotation-color-dark: #d574a8;
   --body-background-color: hsl(216, 28%, 7%);
@@ -53,6 +54,20 @@
   --pattern-color: hsl(133, 33%, 70%);
   --pattern-parent-color: hsl(133, 33%, 70%);
   --logo-color: rgb(246,192,78);
+}
+
+.mech-invariant-define {
+    color: var(--op-color);
+}
+
+.mech-invariant-name {
+    color: var(--warning-color);
+}
+
+.mech-invariant-define-op {
+    padding-left: 6px;
+    padding-right: 6px;
+    color: var(--op-color);
 }
 
 html {
@@ -331,7 +346,7 @@ body {
     padding-right: 10px;
 }
 
-.mech-variable-assign-op {
+.mech-variable-define-op {
     padding-left:  6px;
     padding-right: 6px;
     color: var(--op-color);
@@ -2790,4 +2805,111 @@ mark {
 
 .mech-tuple-struct {
     color: var(--literal-color);
+}
+
+/* Record kinds with 3+ fields */
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field) {
+  display: block;
+  white-space: pre;
+  margin-left: 2ch; 
+}
+
+/* newline after { */
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field)
+  > .mech-record-kind-open::after {
+  content: "\A  ";
+}
+
+/* newline before every field except the first one */
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field)
+  > .mech-record-field + .mech-record-field::before {
+  content: "\A  ";
+}
+
+/* newline before } */
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field)
+  > .mech-record-kind-close::before {
+  content: "\A";
+}
+
+/* when the previous field had a nested record-kind (already a block),
+   skip the \A and just add the indent */
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field)
+  > .mech-record-field:has(.mech-record-kind) + .mech-record-field::before {
+  content: "  ";
+}
+
+.mech-matrix-kind::before { 
+    content: "⟨";
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-matrix-kind::after  { 
+    content: "⟩"; 
+    color: var(--kind-annotation-color-dark);
+}
+
+
+.mech-record-kind::before { 
+    content: "⟨";
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-record-kind::after  { 
+    content: "⟩"; 
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-kind-define > .mech-kind-annotation:first-child::before {
+    content: "⟨";
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-kind-define > .mech-kind-annotation:first-child::after {
+    content: "⟩";
+    color: var(--kind-annotation-color-dark);
+}
+
+/* Optional scalar: string? -> ⟨string?⟩ */
+.mech-kind:has(> .mech-kind > .mech-scalar-kind):has(> .mech-option-question)::before {
+  content: "⟨";
+  color: var(--kind-annotation-color-dark);
+}
+
+.mech-kind:has(> .mech-kind > .mech-scalar-kind):has(> .mech-option-question)::after {
+  content: "⟩";
+  color: var(--kind-annotation-color-dark);
+}
+
+/* Plain scalar: string -> ⟨string⟩
+   But NOT inside matrix inner, and NOT when followed by ? */
+.mech-kind:has(> .mech-scalar-kind):not(.mech-matrix-kind-inner > .mech-kind):not(:has(+ .mech-option-question))::before {
+  content: "⟨";
+  color: var(--kind-annotation-color-dark);
+}
+
+.mech-kind:has(> .mech-scalar-kind):not(.mech-matrix-kind-inner > .mech-kind):not(:has(+ .mech-option-question))::after {
+  content: "⟩";
+  color: var(--kind-annotation-color-dark);
+}
+
+.mech-kind:has(.mech-record-kind),
+.mech-kind-annotation:has(.mech-record-kind) {
+  display: contents;
+}
+
+.mech-record-kind-open {
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-record-kind-close {
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-matrix-kind-open {
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-matrix-kind-close {
+    color: var(--kind-annotation-color-dark);
 }
