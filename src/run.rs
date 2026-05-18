@@ -136,14 +136,21 @@ pub fn configure_mech_program(program: &mut MechProgram, tree_flag: bool, debug_
 }
 
 pub fn run_mech_program_code(program: &mut MechProgram, code: &MechFileSystem) -> MResult<Value> {
-  run_mech_code(
-    &mut program.interpreter,
-    code,
-    program.environment().print_tree,
-    program.environment().debug_enabled,
-    program.environment().time_enabled,
-    program.environment().trace_enabled,
-  )
+  let sources = code.sources();
+  let sources = sources.read().unwrap();
+  for (_, source) in sources.sources_iter() {
+    let now = Instant::now();
+    let result = program.run_source(source);
+    if program.environment().time_enabled {
+      let cycle_duration = now.elapsed().as_nanos() as f64;
+      println!("Cycle Time: {} ns", cycle_duration);
+    }
+    match result {
+      Ok(value) => return Ok(value),
+      Err(err) => return Err(err),
+    }
+  }
+  Ok(Value::Empty)
 }
 
 fn print_bytecode(fs: &MechFileSystem) {

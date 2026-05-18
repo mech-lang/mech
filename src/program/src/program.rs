@@ -1,4 +1,4 @@
-use mech_core::{hash_str, Core, MResult, Value};
+use mech_core::{hash_str, Core, MResult, MechSourceCode, ParsedProgram, Value};
 use mech_interpreter::Interpreter;
 use mech_syntax::{compiler::Compiler, parser};
 
@@ -60,6 +60,25 @@ impl Program {
     self.interpreter.set_trace_enabled(self.config.environment.trace_enabled);
     let tree = parser::parse(source.trim())?;
     self.interpreter.interpret(&tree)
+  }
+
+  pub fn run_source(&mut self, source: &MechSourceCode) -> MResult<Value> {
+    self.interpreter.set_trace_enabled(self.config.environment.trace_enabled);
+    match source {
+      MechSourceCode::String(s) => self.run_program(s),
+      MechSourceCode::ByteCode(bc_program) => {
+        self.interpreter.run_program(&ParsedProgram::from_bytes(bc_program)?)
+      }
+      MechSourceCode::Program(code_vec) => {
+        for c in code_vec {
+          if let MechSourceCode::Tree(tree) = c {
+            return self.interpreter.interpret(tree);
+          }
+        }
+        Ok(Value::Empty)
+      }
+      _ => Ok(Value::Empty),
+    }
   }
 
   pub fn set_environment(&mut self, environment: ProgramEnvironment) {
