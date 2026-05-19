@@ -363,7 +363,7 @@ async fn main() -> Result<(), MechError> {
     let debug_flag = matches.get_flag("debug");
     let mut mechfs = MechFileSystem::new();
 
-    for path in mech_paths {
+    for path in &mech_paths {
       mechfs.watch_source(&path)?;
     }
     let sources = mechfs.sources();
@@ -385,7 +385,7 @@ async fn main() -> Result<(), MechError> {
     let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
     configure_mech_program(&mut program, tree_flag, debug_flag, time_flag, trace_flag);
 
-    let result = run_mech_program_code(&mut program, &mechfs); 
+    let result = run_mech_program_paths(&mut program, &mech_paths); 
 
     let bytecode = program.interpreter.compile()?;
 
@@ -586,7 +586,7 @@ async fn main() -> Result<(), MechError> {
       }
     }
 
-    let result = run_mech_program_code(&mut program, &mechfs); 
+    let result = run_mech_program_paths(&mut program, &paths); 
     if !repl_flag {
       match &result {
         Ok(r) => {

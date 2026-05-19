@@ -202,15 +202,7 @@ pub fn run_mech_tests(
       environment: MechProgramEnvironment::default(),
     });
     configure_mech_program(&mut program, tree_flag, debug_flag, time_flag, trace_flag);
-    let mut mechfs = MechFileSystem::new();
-    if let Err(err) = mechfs.watch_source(path) {
-      eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
-      run_errors = true;
-      any_failed = true;
-      file_reports.push(FileReport { path: path.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
-      continue;
-    }
-    if let Err(err) = run_mech_program_code(&mut program, &mechfs) {
+    if let Err(err) = run_mech_program_paths(&mut program, &vec![path.clone()]) {
       eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
       run_errors = true;
       any_failed = true;

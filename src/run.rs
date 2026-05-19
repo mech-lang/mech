@@ -135,7 +135,7 @@ pub fn configure_mech_program(program: &mut MechProgram, tree_flag: bool, debug_
   });
 }
 
-pub fn run_mech_program_code(program: &mut MechProgram, code: &MechFileSystem) -> MResult<Value> {
+fn run_mech_program_code_with_fs(program: &mut MechProgram, code: &MechFileSystem) -> MResult<Value> {
   let sources = code.sources();
   let sources = sources.read().unwrap();
   for (_, source) in sources.sources_iter() {
@@ -151,6 +151,20 @@ pub fn run_mech_program_code(program: &mut MechProgram, code: &MechFileSystem) -
     }
   }
   Ok(Value::Empty)
+}
+
+pub fn run_mech_program_code(program: &mut MechProgram, source_code: &MechSourceCode) -> MResult<Value> {
+  let mut mechfs = MechFileSystem::new();
+  mechfs.add_code(source_code)?;
+  run_mech_program_code_with_fs(program, &mechfs)
+}
+
+pub fn run_mech_program_paths(program: &mut MechProgram, paths: &[String]) -> MResult<Value> {
+  let mut mechfs = MechFileSystem::new();
+  for path in paths {
+    mechfs.watch_source(path)?;
+  }
+  run_mech_program_code_with_fs(program, &mechfs)
 }
 
 fn print_bytecode(fs: &MechFileSystem) {
