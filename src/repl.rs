@@ -25,39 +25,42 @@ pub struct MechRepl {
   pub docs: Dir<'static>,
   pub examples: Dir<'static>,
   pub active: u64,
-  pub interpreters: HashMap<u64,Interpreter>,
+  pub programs: HashMap<u64,Program>,
 }
 
 impl MechRepl {
 
   pub fn new() -> MechRepl {
     let intrp_id = generate_uuid();
-    let intrp = Interpreter::new(intrp_id);
-    let mut interpreters = HashMap::new();
-    interpreters.insert(intrp_id,intrp);
+    let program = Program::new(ProgramConfig{
+      name: format!("repl-{}", intrp_id),
+      environment: ProgramEnvironment::default(),
+    });
+    let mut programs = HashMap::new();
+    programs.insert(intrp_id,program);
     MechRepl {
       active: intrp_id,
-      interpreters,
+      programs,
       docs: DOCS_DIR.clone(),
       examples: EXAMPLES_DIR.clone(),
     }
   }
 
-  pub fn from(interpreter: Interpreter) -> MechRepl {
+  pub fn from(program: Program) -> MechRepl {
     let intrp_id = generate_uuid();
-    let mut interpreters = HashMap::new();
-    interpreters.insert(intrp_id,interpreter);
+    let mut programs = HashMap::new();
+    programs.insert(intrp_id,program);
     MechRepl {
       docs: DOCS_DIR.clone(),
       examples: EXAMPLES_DIR.clone(),
       active: intrp_id,
-      interpreters,
+      programs,
     }
   }
 
   pub fn execute_repl_command(&mut self, repl_cmd: ReplCommand) -> MResult<String> {
 
-    let mut intrp = self.interpreters.get_mut(&self.active).unwrap();
+    let mut prgrm = self.programs.get_mut(&self.active).unwrap();
     let mut mechfs = MechFileSystem::new();
 
     match repl_cmd {
@@ -97,23 +100,26 @@ impl MechRepl {
       }
       ReplCommand::Symbols(name) => {
         #[cfg(feature = "pretty_print")]
-        let out = intrp.pretty_print_symbols();
+        let out = prgrm.pretty_print_symbols();
         #[cfg(not(feature = "pretty_print"))]
-        let out = format!("{:#?}", intrp.state.borrow().symbols());
+        let out = format!("{:#?}", prgrm.state.borrow().symbols());
         return Ok(out);
       }
       ReplCommand::Plan => {
         #[cfg(feature = "pretty_print")]
-        let out = intrp.plan().pretty_print();
+        let out = prgrm.plan().pretty_print();
         #[cfg(not(feature = "pretty_print"))]
-        let out = format!("{:#?}", intrp.plan());
+        let out = format!("{:#?}", prgrm.plan());
         return Ok(out);
       }
-      ReplCommand::Whos(names) => {return Ok(whos(&intrp,names));}
+      ReplCommand::Whos(names) => {return Ok(whos(&prgrm,names));}
       ReplCommand::Clear(name) => {
-        // Drop the old interpreter replace it with a new one
-        let id = intrp.id;
-        *intrp = Interpreter::new(id);
+        // Drop the old program and replace it with a new one
+        let id = prgrm.id;
+        *prgrm = Program::new(ProgramConfig{
+          name: format!("repl-{}", id),
+          environment: ProgramEnvironment::default(),
+        });
         return Ok("".to_string());
       }
       ReplCommand::Ls => {
@@ -140,11 +146,11 @@ impl MechRepl {
       #[cfg(feature = "serde")]
       ReplCommand::Save(path) => {
         let path = PathBuf::from(path);
-        let intrp = self.interpreters.get(&self.active).unwrap();
+        let intrp = self.programs.get(&self.active).unwrap();
         let encoded = encode_to_vec(&MechSourceCode::Program(intrp.code.clone()), standard()).unwrap();
         let mut file = File::create(&path)?;
         file.write_all(&encoded)?;
-        return Ok(format!("Saved interpreter state to {}", path.display()));
+        return Ok(format!("Saved program state to {}", path.display()));
       }
       ReplCommand::Clc => {
         clc();
@@ -154,7 +160,7 @@ impl MechRepl {
         for source in paths {
           mechfs.watch_source(&source)?;
         }
-        match run_mech_code(&mut intrp, &mechfs, false,false,false,false) {
+        match run_mech_code(&mut prgrm, &mechfs, false,false,false,false) {
           Ok(r) => {
             #[cfg(feature = "pretty_print")]
             let out = r.pretty_print();
@@ -169,7 +175,7 @@ impl MechRepl {
         for (_,src) in code {
           mechfs.add_code(&src)?;
         }
-        match run_mech_code(&mut intrp, &mechfs, false,false,false,false)  {
+        match run_mech_code(&mut prgrm, &mechfs, false,false,false,false)  {
           Ok(r) => { 
             #[cfg(feature = "pretty_print")]
             let out = r.pretty_print();
@@ -182,7 +188,7 @@ impl MechRepl {
         }
       }
       ReplCommand::Profile(on) => {
-        intrp.profile = on;
+        prgrm.profile = on;
         if on {
           Ok("Profiling enabled.".to_string())
         } else {
@@ -199,7 +205,7 @@ impl MechRepl {
           None => 0,
         };
         let now = Instant::now();
-        intrp.step(step_id, n)?;
+        prgrm.step(step_id, n)?;
         let elapsed_time = now.elapsed();
         return Ok(format_cycles(n, elapsed_time));      
       }
