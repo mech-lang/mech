@@ -578,7 +578,6 @@ impl ConstElem for C64 {
   fn align() -> u8 { 16 }
 }
 
-#[cfg(feature = "string")]
 impl ConstElem for String {
   fn write_le(&self, out: &mut Vec<u8>) {
     use byteorder::{LittleEndian, WriteBytesExt};
