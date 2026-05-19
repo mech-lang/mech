@@ -3,6 +3,8 @@ use mech_core::*;
 use mech_syntax::*;
 use mech_interpreter::Interpreter;
 use std::time::Instant;
+use std::ffi::OsStr;
+use std::path::Path;
 
 #[macro_export]
 macro_rules! print_tree {
@@ -165,6 +167,41 @@ pub fn run_mech_program_paths(program: &mut MechProgram, paths: &[String]) -> MR
     mechfs.watch_source(path)?;
   }
   run_mech_program_code_with_fs(program, &mechfs)
+}
+
+pub fn run_paths_or_inline(program: &mut MechProgram, paths: &[String]) -> MResult<Value> {
+  let any_look_like_paths = paths.iter().any(|p| is_intended_path(p));
+  if paths.is_empty() {
+    return Ok(Value::Empty);
+  }
+  if any_look_like_paths {
+    run_mech_program_paths(program, paths)
+  } else {
+    program.interpreter.clear();
+    let joined = paths.join(" ");
+    program.run_program(joined.trim())
+  }
+}
+
+fn is_intended_path(s: &str) -> bool {
+  if s.trim().is_empty() { return false; }
+  let path = Path::new(s);
+  if s.starts_with("./") || s.starts_with(".\\") ||
+    s.starts_with("../") || s.starts_with("..\\") ||
+    s.starts_with('/') || s.starts_with('\\') {
+    return true;
+  }
+  if s.len() > 2 && s.as_bytes()[1] == b':' {
+    return true;
+  }
+  if s.contains('/') || s.contains('\\') {
+    return true;
+  }
+  if let Some(ext) = path.extension().and_then(OsStr::to_str) {
+    matches!(ext, "mec" | "🤖" | "mecb" | "mdoc" | "mpkg" | "m" | "csv" | "tsv" | "txt" | "md" | "json" | "toml" | "yaml" | "html" | "htm" | "css" | "js" | "wasm" | "png" | "jpg" | "jpeg" | "gif" | "svg" | "bmp" | "ico")
+  } else {
+    false
+  }
 }
 
 fn print_bytecode(fs: &MechFileSystem) {

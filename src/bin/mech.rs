@@ -539,54 +539,7 @@ async fn main() -> Result<(), MechError> {
       m.map(|s| s.to_string()).collect()
     } else { repl_flag = true; vec![] };
 
-    let mut mechfs = MechFileSystem::new();
-
-    let any_look_like_paths = paths.iter().any(|p| {
-      is_intended_path(p)
-    });
-
-    if !paths.is_empty() {
-      if any_look_like_paths {
-        let mut watch_errors = Vec::new();
-        for p in &paths {
-          match mechfs.watch_source(p) {
-            Ok(r) => {}
-            Err(err) => watch_errors.push(err),
-          }
-        }
-        if !watch_errors.is_empty() {
-          // These looked like paths but failed to watch
-          // Print errors
-          for err in &watch_errors {
-            print_mech_error(err);
-          }
-          std::process::exit(1);
-        }
-      } else {
-        // ---------- 4. Treat the inputs as Mech code ----------
-        program.interpreter.clear();
-        let joined = paths.join(" ");
-        match program.run_program(joined.trim()) {
-          Ok(r) => {
-            println!("{}", r.kind());
-            #[cfg(feature = "pretty_print")]
-            println!("{}", r.pretty_print());
-            #[cfg(not(feature = "pretty_print"))]
-            println!("{:#?}", r);
-            std::process::exit(0);
-          }
-          Err(err) => {
-            println!("{} {:#?}",
-              "[Error]".truecolor(246,98,78),
-              err
-            );
-            std::process::exit(1);
-          }
-        }
-      }
-    }
-
-    let result = run_mech_program_paths(&mut program, &paths); 
+    let result = run_paths_or_inline(&mut program, &paths);
     if !repl_flag {
       match &result {
         Ok(r) => {
