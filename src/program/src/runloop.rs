@@ -64,7 +64,10 @@ impl ProgramRunner {
           RunLoopMessage::Eval(source) => {
             match program.run_program(&source) {
               Ok(value) => {
+                #[cfg(feature = "pretty_print")]
                 let _ = tx_evt.send(ClientMessage::Data(value.pretty_print()));
+                #[cfg(not(feature = "pretty_print"))]
+                let _ = tx_evt.send(ClientMessage::Data(format!("{:#?}", value)));
                 let _ = tx_evt.send(ClientMessage::StepDone);
               }
               Err(err) => {

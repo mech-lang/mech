@@ -1,7 +1,23 @@
+pub extern crate mech_core as core;
+pub extern crate mech_syntax as syntax;
 use crate::*;
 use bincode::config::standard;
 use std::collections::HashSet;
 use std::ffi::OsStr;
+use std::path::{Path, PathBuf};
+use std::{fs,env};
+use std::fs::{OpenOptions, File, canonicalize, create_dir};
+use std::io::{Write, Read, BufReader, BufWriter, stdout};
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::RwLock;
+use crossbeam_channel::Sender;
+use crossbeam_channel::{unbounded, Receiver};
+use std::thread::{self, JoinHandle};
+use notify::{recommended_watcher, Event, RecursiveMode, Result as NResult, Watcher};
+use colored::*;
+use core::*;
+use syntax::*;
 
 fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
   if !path.is_dir() {
@@ -1242,5 +1258,70 @@ impl MechErrorKind for RwLockWriteError {
 
   fn message(&self) -> String {
     format!("Failed to acquire write lock: {}", self.source_err)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct FileOpenFailed {
+  pub file_path: String,
+  pub source: String,
+}
+impl MechErrorKind for FileOpenFailed {
+  fn name(&self) -> &str { "FileOpenFailed" }
+
+  fn message(&self) -> String {
+    format!("Failed to open file {}: {}", self.file_path, self.source)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct HttpTextDecodeFailed {
+  pub url: String,
+  pub source: String,
+}
+impl MechErrorKind for HttpTextDecodeFailed {
+  fn name(&self) -> &str { "HttpTextDecodeFailed" }
+  fn message(&self) -> String {
+  format!("Failed to read response text {}: {}", self.url, self.source)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct HttpRequestFailed {
+  pub url: String,
+  pub source: String,
+}
+impl MechErrorKind for HttpRequestFailed {
+  fn name(&self) -> &str { "HttpRequestFailed" }
+  fn message(&self) -> String {
+  format!("Failed to GET {}: {}", self.url, self.source)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct WatchPathFailed {
+  pub file_path: String,
+  pub source_err: String,
+}
+impl MechErrorKind for WatchPathFailed {
+  fn name(&self) -> &str { "WatchPathFailed" }
+
+  fn message(&self) -> String {
+    format!("Failed to watch file path {}: {}", self.file_path, self.source_err)
+  }
+}
+
+
+
+#[derive(Debug, Clone)]
+pub struct FileWriteFailed {
+  pub file_path: String,
+  pub source: String
+}
+impl MechErrorKind for FileWriteFailed {
+  fn name(&self) -> &str { "FileWriteFailed" }
+
+  fn message(&self) -> String {
+    format!("Failed to write file {}: {}", self.file_path, self.source)
   }
 }

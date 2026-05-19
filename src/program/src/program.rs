@@ -1,4 +1,4 @@
-use mech_core::{hash_str, MResult, MechSourceCode, ParsedProgram, Value};
+use mech_core::{hash_str, MResult, MechSourceCode, Value};
 use mech_interpreter::Interpreter;
 use mech_syntax::parser;
 
@@ -55,13 +55,12 @@ impl Program {
   }
 
   pub fn run_program(&mut self, source: &str) -> MResult<Value> {
-    self.interpreter.set_trace_enabled(self.config.environment.trace_enabled);
     let tree = parser::parse(source.trim())?;
-    self.interpreter.interpret(&tree)
+    //self.interpreter.interpret(&tree)
+    todo!();
   }
 
-  pub fn run_source(&mut self, source: &MechSourceCode) -> MResult<Value> {
-    self.interpreter.set_trace_enabled(self.config.environment.trace_enabled);
+  /*pub fn run_source(&mut self, source: &MechSourceCode) -> MResult<Value> {
     match source {
       MechSourceCode::String(s) => self.run_program(s),
       MechSourceCode::ByteCode(bc_program) => {
@@ -70,14 +69,14 @@ impl Program {
       MechSourceCode::Program(code_vec) => {
         for c in code_vec {
           if let MechSourceCode::Tree(tree) = c {
-            return self.interpreter.interpret(tree);
+            todo!();//return self.interpreter.interpret(tree);
           }
         }
         Ok(Value::Empty)
       }
       _ => Ok(Value::Empty),
     }
-  }
+  }*/
 
   pub fn set_environment(&mut self, environment: ProgramEnvironment) {
     self.config.environment = environment;
