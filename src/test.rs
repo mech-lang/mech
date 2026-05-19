@@ -197,9 +197,12 @@ pub fn run_mech_tests(
   println!("{} Running tests...\n", "[Test]".truecolor(153, 221, 85));
   for path in &expanded_paths {
     let uuid = generate_uuid();
-    let mut program = MechProgram::new(uuid);
+    let mut program = MechProgram::new(MechProgramConfig {
+      name: format!("test-{}", uuid),
+      environment: MechProgramEnvironment::default(),
+    });
     configure_mech_program(&mut program, tree_flag, debug_flag, time_flag, trace_flag);
-    let mut mechfs = program::MechFileSystem::new();
+    let mut mechfs = MechFileSystem::new();
     if let Err(err) = mechfs.watch_source(path) {
       eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
       run_errors = true;

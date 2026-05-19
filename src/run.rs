@@ -36,7 +36,7 @@ macro_rules! print_plan {
 
 pub fn run_mech_code(
   intrp: &mut Interpreter,
-  code: &program::MechFileSystem,
+  code: &MechFileSystem,
   tree_flag: bool,
   debug_flag: bool,
   time_flag: bool,
@@ -135,7 +135,7 @@ pub fn configure_mech_program(program: &mut MechProgram, tree_flag: bool, debug_
   });
 }
 
-pub fn run_mech_program_code(program: &mut MechProgram, code: &program::MechFileSystem) -> MResult<Value> {
+pub fn run_mech_program_code(program: &mut MechProgram, code: &MechFileSystem) -> MResult<Value> {
   let sources = code.sources();
   let sources = sources.read().unwrap();
   for (_, source) in sources.sources_iter() {
@@ -153,7 +153,7 @@ pub fn run_mech_program_code(program: &mut MechProgram, code: &program::MechFile
   Ok(Value::Empty)
 }
 
-fn print_bytecode(fs: &program::MechFileSystem) {
+fn print_bytecode(fs: &MechFileSystem) {
   let sources = fs.sources();
   let sources = sources.read().unwrap();
   for (file, source) in sources.sources_iter() {

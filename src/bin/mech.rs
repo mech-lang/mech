@@ -361,7 +361,7 @@ async fn main() -> Result<(), MechError> {
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let output_path = PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
     let debug_flag = matches.get_flag("debug");
-    let mut mechfs = program::MechFileSystem::new();
+    let mut mechfs = MechFileSystem::new();
 
     for path in mech_paths {
       mechfs.watch_source(&path)?;
@@ -382,7 +382,7 @@ async fn main() -> Result<(), MechError> {
     }
 
     let uuid = generate_uuid();
-    let mut program = MechProgram::new(uuid);
+    let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
     configure_mech_program(&mut program, tree_flag, debug_flag, time_flag, trace_flag);
 
     let result = run_mech_program_code(&mut program, &mechfs); 
@@ -442,7 +442,7 @@ async fn main() -> Result<(), MechError> {
         return Ok(());
       }
     }
-    let mut mechfs = program::MechFileSystem::new();
+    let mut mechfs = MechFileSystem::new();
 
     println!("{} Loading resources…", badge);
 
@@ -530,7 +530,7 @@ async fn main() -> Result<(), MechError> {
   #[cfg(feature = "run")]
   let uuid = generate_uuid();
   #[cfg(feature = "run")]
-  let mut program = MechProgram::new(uuid);
+  let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
   #[cfg(feature = "run")]
   configure_mech_program(&mut program, tree_flag, debug_flag, time_flag, trace_flag);
   #[cfg(feature = "run")]
@@ -539,7 +539,7 @@ async fn main() -> Result<(), MechError> {
       m.map(|s| s.to_string()).collect()
     } else { repl_flag = true; vec![] };
 
-    let mut mechfs = program::MechFileSystem::new();
+    let mut mechfs = MechFileSystem::new();
 
     let any_look_like_paths = paths.iter().any(|p| {
       is_intended_path(p)
@@ -566,7 +566,7 @@ async fn main() -> Result<(), MechError> {
         // ---------- 4. Treat the inputs as Mech code ----------
         program.interpreter.clear();
         let joined = paths.join(" ");
-        match program.run_string(joined.trim()) {
+        match program.run_program(joined.trim()) {
           Ok(r) => {
             println!("{}", r.kind());
             #[cfg(feature = "pretty_print")]
