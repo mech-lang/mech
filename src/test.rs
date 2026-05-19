@@ -1,7 +1,5 @@
 use crate::*;
-use mech_interpreter::interpreter::*;
-#[cfg(feature = "invariant_define")]
-use mech_interpreter::InvariantViolationError;
+use mech_program::*;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::ffi::OsStr;

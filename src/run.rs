@@ -1,7 +1,6 @@
 use crate::*;
 use mech_core::*;
-use mech_syntax::*;
-use mech_interpreter::Interpreter;
+use mech_program::*;
 use std::time::Instant;
 
 #[macro_export]

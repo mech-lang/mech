@@ -1,7 +1,6 @@
 use crate::*;
-use mech_syntax::*;
 use mech_core::*;
-use mech_interpreter::*;
+use mech_program::*;
 use std::collections::HashMap;
 use std::process;
 use nom::{
