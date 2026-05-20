@@ -595,7 +595,7 @@ impl Interpreter {
     let mut plan_brrw = state_brrw.plan.borrow_mut();
     let mut ctx = CompileCtx::new();
     for step in plan_brrw.iter() {
-        step.compile(&mut ctx)?;
+      step.compile(&mut ctx)?;
     }
     let bytes = ctx.compile()?;
     self.context = Some(ctx);
