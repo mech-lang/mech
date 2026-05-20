@@ -49,6 +49,7 @@ impl ProgramRunner {
     let (tx_cmd, rx_cmd) = crossbeam_channel::unbounded();
     let (tx_evt, rx_evt) = crossbeam_channel::unbounded();
     std::thread::spawn(move || {
+      // Create a new program instance for this run loop
       let mut program = Program::new(self.config);
       let _ = tx_evt.send(ClientMessage::Ready);
       while let Ok(msg) = rx_cmd.recv() {
