@@ -16,14 +16,13 @@ The organization of this document is as follows:
 - Section 2. Key Syntax Features: highlights the main features of the Mech syntax.
 - Section 3. Mechdown and Mech: provides an overview of the Mechdown syntax used for documentation and how that influenced the design of Mech (and vice versa).
 - Section 5. Matlab adjacency: discusses similarities and differences between Mech syntax and Matlab syntax, given their shared focus on mathematical computation.
-- Section 6. Literate Programming: explores how Mech supports literate programming practices through its syntax and documentation capabilities.
-- Section 7. The case for kebab-case: explains the choice of kebab-case for naming conventions in Mech and why this tradeoff was made.
-- Section 8. No Keywords: discusses the decision to avoid reserved keywords in Mech syntax to enhance flexibility and reduce conflicts.
-- Section 9. Numbers: Discusses how Mech represents numeric literals in its syntax.
-- Section 10. Kinds: Kinds are a kind of sub language withing brackets that allow for concise representation of types and data structures.
-- Section 11. Matrix Syntax: Details the syntax used for defining and manipulating matrices in Mech.
-- Section 12. Table Syntax: Details the syntax used for defining and manipulating tables in Mech.
-- Section 13. State Machines: Explores the syntax used for defining state machines in Mech.
+- Section 6. The case for kebab-case: explains the choice of kebab-case for naming conventions in Mech and why this tradeoff was made.
+- Section 7. No Keywords: discusses the decision to avoid reserved keywords in Mech syntax to enhance flexibility and reduce conflicts.
+- Section 8. Numbers: Discusses how Mech represents numeric literals in its syntax.
+- Section 9. Kinds: Kinds are a kind of sub language withing brackets that allow for concise representation of types and data structures.
+- Section 10. Matrix Syntax: Details the syntax used for defining and manipulating matrices in Mech.
+- Section 11. Table Syntax: Details the syntax used for defining and manipulating tables in Mech.
+- Section 12. State Machines: Explores the syntax used for defining state machines in Mech.
 
 
 1. Design Goals and Non Goals
@@ -119,42 +118,42 @@ Which may be confusing but I think it's worth it for the following reasons.
 3. It opens up a syntax for scoped namespacing without having to introduce new syntax for that. So instead of `foo::bar` to represented `bar` scoped to the `foo` namespace, we can just use the standard identifier syntax and say `foo/bar`.
 4. It opens up the possibility for `_` to have semantic meaning. We're not using this yet, but I've reserved it as a possibility in the future. Python already has this but can't enforce it because `_` is also a valid identifier character, so they leave it up to convention. By going kebab case we have an opportunity to say like `foo_bar` is something other than an identifier. So for this reason we've actually made `_` an invalid identifier character rather than supporting is and just preferring kebab case as a convention.
 
-7. No Keywords
+6. No Keywords
 -------------------------------------------------------------------------------
 
 - **Flexibility**: By avoiding reserved keywords, Mech allows users to define identifiers without worrying about conflicts with language constructs. This enhances flexibility and reduces the likelihood of naming collisions.
 - **Simplicity**: The absence of keywords simplifies the syntax and reduces the cognitive load for users, as they do not need to remember a list of reserved words.
 - **Contextual Understanding**: Mech relies on context to determine the meaning of identifiers, allowing for more natural and intuitive code.
 
-8. Numbers
+7. Numbers
 -------------------------------------------------------------------------------
 
 - **Numeric Literals**: Mech supports a variety of numeric literals, including integers, floating-point numbers, and complex numbers. The syntax for these literals is designed to be clear and unambiguous.
 - **Scientific Notation**: Mech allows for scientific notation in floating-point literals, enabling users to express very large or very small numbers concisely.
 - **Type Suffixes**: Mech supports type suffixes for numeric literals, allowing users to specify the desired type explicitly (e.g., `42i32` for a 32-bit integer).
 
-9. Kinds
+8. Kinds
 -------------------------------------------------------------------------------
 
 - **Kind Syntax**: Kinds in Mech are represented using brackets, allowing users to define types and data structures concisely. For example, `[i32]` represents an array of 32-bit integers.
 - **Type Definitions**: Kinds can be used to define complex types, such as arrays of sets or maps, enabling users to express their data structures clearly.
 - **Type Inference**: Mech supports type inference for kinds, allowing users to omit explicit type annotations in many cases while still benefiting from strong typing.
 
-10. Matrix Syntax
+9. Matrix Syntax
 ------------------------------------------------------------------------------- 
 
 - **Matrix Definition**: Mech provides a straightforward syntax for defining matrices using semicolons to separate rows and commas to separate columns. For example, `[1, 2; 3, 4]` defines a 2x2 matrix.
 - **Element Access**: Mech allows users to access matrix elements using parentheses, similar to mathematical notation. For example, `A(1, 2)` accesses the element in the first row and second column of matrix `A`.
 - **Matrix Operations**: Mech supports a variety of matrix operations, such as addition, multiplication, and transposition, using familiar mathematical symbols.
 
-11. Table Syntax
+10. Table Syntax
 -------------------------------------------------------------------------------
 
 - **Table Definition**: Mech provides syntax for defining tables, which are collections of heterogeneous data organized into rows and columns. Users can define tables using a combination of braces and brackets.
 - **Column Access**: Mech allows users to access table columns using dot notation, enabling easy retrieval of specific data.
 - **Row Operations**: Mech supports operations on table rows, such as filtering and aggregation, allowing users to manipulate tabular data effectively.
 
-12. State Machines
+11. State Machines
 -------------------------------------------------------------------------------
 
 - **State Machine Definition**: Mech provides syntax for defining state machines, allowing users to specify states, transitions, and actions in a clear and structured manner.
