@@ -21,7 +21,7 @@ impl Default for MechProgramEnvironment {
       debug_enabled: false,
       time_enabled: false,
       print_tree: false,
-      rounds_per_step: 1,
+      rounds_per_step: 10_000,
     }
   }
 }
@@ -47,7 +47,7 @@ pub struct MechProgram {
 impl MechProgram {
   pub fn new(config: MechProgramConfig) -> Self {
     let id = hash_str(&format!("program/{}", config.name));
-    let mut interpreter = Interpreter::new(id);
+    let mut interpreter = Interpreter::new(id, config.environment.rounds_per_step);
     interpreter.set_trace_enabled(config.environment.trace_enabled);
     Self { config, interpreter, fs: MechFileSystem::new() }
   }
@@ -244,14 +244,15 @@ impl MechProgram {
         self.interpreter.run_program(&ParsedProgram::from_bytes(bc_program)?)
       }
       MechSourceCode::Program(code_vec) => {
+        let mut value = Value::Empty;
         for c in code_vec {
           if let MechSourceCode::Tree(tree) = c {
-            return self.interpreter.interpret(tree);
+            value = self.interpreter.interpret(tree)?;
           }
         }
-        Ok(Value::Empty)
+        Ok(value)
       }
-      _ => Ok(Value::Empty),
+      x => todo!("Todo: support source code type: {:?}", x),
     }
   }
 
@@ -275,27 +276,38 @@ impl MechProgram {
   pub fn into_interpreter(self) -> Interpreter {
     self.interpreter
   }
+
+  pub fn watch_source(&mut self, path: &str) -> MResult<()> {
+    self.fs.watch_source(path)?;
+    Ok(())
+  }
+
+  pub fn run_paths(&mut self, paths: &[String]) -> MResult<Value> {
+    for path in paths {
+      self.fs.watch_source(path)?;
+    }
+    self.run()
+  }
+
+  pub fn run(&mut self) -> MResult<Value> {
+    let sources = self.fs.sources();
+    let sources = sources.read().unwrap();
+    let mut result = Value::Empty;
+    for (_, source) in sources.sources_iter() {
+      result = self.run_source(source)?;
+    }
+    Ok(result)
+  }
+
+  pub fn configure(&mut self, tree_flag: bool, debug_flag: bool, time_flag: bool, trace_flag: bool, rounds_per_step: usize) {
+    self.set_environment(MechProgramEnvironment {
+      trace_enabled: trace_flag,
+      debug_enabled: debug_flag,
+      time_enabled: time_flag,
+      print_tree: tree_flag,
+      rounds_per_step: rounds_per_step,
+    });
+  }
+
 }
 
-pub fn configure_mech_program(program: &mut MechProgram, tree_flag: bool, debug_flag: bool, time_flag: bool, trace_flag: bool) {
-  program.set_environment(MechProgramEnvironment {
-    trace_enabled: trace_flag,
-    debug_enabled: debug_flag,
-    time_enabled: time_flag,
-    print_tree: tree_flag,
-    rounds_per_step: program.environment().rounds_per_step,
-  });
-}
-
-pub fn run_mech_program_paths(program: &mut MechProgram, paths: &[String]) -> MResult<Value> {
-  let mut mechfs = MechFileSystem::new();
-  for path in paths {
-    mechfs.watch_source(path)?;
-  }
-  let sources = mechfs.sources();
-  let sources = sources.read().unwrap();
-  for (_, source) in sources.sources_iter() {
-    return program.run_source(source);
-  }
-  Ok(Value::Empty)
-}
