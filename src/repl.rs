@@ -1,6 +1,6 @@
 use crate::*;
 use mech_core::*;
-use mech_program::{Program as RuntimeProgram, ProgramConfig, ProgramEnvironment, MechFileSystem};
+use mech_program::{MechProgram, MechProgramConfig, MechProgramEnvironment, MechFileSystem};
 use std::collections::HashMap;
 use std::process;
 use nom::{
@@ -25,16 +25,16 @@ pub struct MechRepl {
   pub docs: Dir<'static>,
   pub examples: Dir<'static>,
   pub active: u64,
-  pub programs: HashMap<u64,RuntimeProgram>,
+  pub programs: HashMap<u64,MechProgram>,
 }
 
 impl MechRepl {
 
   pub fn new() -> MechRepl {
     let intrp_id = generate_uuid();
-    let program = RuntimeProgram::new(ProgramConfig{
+    let program = MechProgram::new(MechProgramConfig{
       name: format!("repl-{}", intrp_id),
-      environment: ProgramEnvironment::default(),
+      environment: MechProgramEnvironment::default(),
     });
     let mut programs = HashMap::new();
     programs.insert(intrp_id,program);
@@ -46,7 +46,7 @@ impl MechRepl {
     }
   }
 
-  pub fn from(program: RuntimeProgram) -> MechRepl {
+  pub fn from(program: MechProgram) -> MechRepl {
     let intrp_id = generate_uuid();
     let mut programs = HashMap::new();
     programs.insert(intrp_id,program);
@@ -116,9 +116,9 @@ impl MechRepl {
       ReplCommand::Clear(name) => {
         // Drop the old program and replace it with a new one
         let id = self.active;
-        *prgrm = RuntimeProgram::new(ProgramConfig{
+        *prgrm = MechProgram::new(MechProgramConfig{
           name: format!("repl-{}", id),
-          environment: ProgramEnvironment::default(),
+          environment: MechProgramEnvironment::default(),
         });
         return Ok("".to_string());
       }

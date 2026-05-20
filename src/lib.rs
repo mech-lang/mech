@@ -251,7 +251,7 @@ fn pretty_print_tree(tree: &Program) -> String {
 }
 
 #[cfg(feature = "whos")]
-pub fn whos(program: &mech_program::Program, names: Vec<String>) -> String {
+pub fn whos(program: &MechProgram, names: Vec<String>) -> String {
   let mut builder = Builder::default();
   builder.push_record(vec!["Name", "Size", "Bytes", "Kind"]);
   let state = program.interpreter().state.borrow();
@@ -300,7 +300,7 @@ pub fn whos(program: &mech_program::Program, names: Vec<String>) -> String {
 }
 
 #[cfg(feature = "pretty_print")]            
-fn pretty_print_symbols(program: &mech_program::Program) -> String {
+fn pretty_print_symbols(program: &MechProgram) -> String {
   let mut builder = Builder::default();
   let symbol_table = program.interpreter().pretty_print_symbols();
   builder.push_record(vec![

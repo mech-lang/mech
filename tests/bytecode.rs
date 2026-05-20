@@ -6,14 +6,14 @@ use std::rc::Rc;
 use mech_core::matrix::Matrix;
 use mech_syntax::*;
 use mech_core::*;
-use mech_program::{Program, ProgramConfig, ProgramEnvironment};
+use mech_program::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 use indexmap::set::IndexSet;
 
 macro_rules! bytecode_test {
   ($name:ident, $code:expr, $expected:expr) => {
     #[test]
     fn $name() {
-      let mut prgrm = Program::new(ProgramConfig { name: stringify!($name).to_string(), environment: ProgramEnvironment::default() });
+      let mut prgrm = MechProgram::new(MechProgramConfig { name: stringify!($name).to_string(), environment: MechProgramEnvironment::default() });
 
       prgrm.run_string($code)
         .unwrap_or_else(|err| panic!("Runtime error: {:?}", err));
