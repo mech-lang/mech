@@ -43,6 +43,10 @@ pub struct Program {
   pub interpreter: Interpreter,
 }
 
+pub type MechProgram = Program;
+pub type MechProgramConfig = ProgramConfig;
+pub type MechProgramEnvironment = ProgramEnvironment;
+
 impl Program {
   pub fn new(config: ProgramConfig) -> Self {
     let id = hash_str(&format!("program/{}", config.name));
@@ -257,4 +261,27 @@ impl Program {
   pub fn into_interpreter(self) -> Interpreter {
     self.interpreter
   }
+}
+
+pub fn configure_mech_program(program: &mut Program, tree_flag: bool, debug_flag: bool, time_flag: bool, trace_flag: bool) {
+  program.set_environment(ProgramEnvironment {
+    trace_enabled: trace_flag,
+    debug_enabled: debug_flag,
+    time_enabled: time_flag,
+    print_tree: tree_flag,
+    rounds_per_step: program.environment().rounds_per_step,
+  });
+}
+
+pub fn run_mech_program_paths(program: &mut Program, paths: &[String]) -> MResult<Value> {
+  let mut mechfs = MechFileSystem::new();
+  for path in paths {
+    mechfs.watch_source(path)?;
+  }
+  let sources = mechfs.sources();
+  let sources = sources.read().unwrap();
+  for (_, source) in sources.sources_iter() {
+    return program.run_source(source);
+  }
+  Ok(Value::Empty)
 }

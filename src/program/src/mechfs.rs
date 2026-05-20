@@ -843,7 +843,7 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
             Ok(mut file) => {
               //println!("{} {}", "[Loading]".truecolor(153,221,85), path.display());
               let mut buffer = Vec::new();
-              file.read_to_end(&mut buffer);
+              file.read_to_end(&mut buffer)?;
               // store extension and bytes
               let extension = path
                 .extension()
