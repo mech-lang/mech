@@ -8,7 +8,7 @@ use std::rc::Rc;
 use mech_core::matrix::Matrix;
 use mech_syntax::*;
 use mech_core::*;
-use mech::{MechProgram, ProgramConfig, ProgramEnvironment};
+use mech::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 use indexmap::set::IndexSet;
 
 /// Compare interpreter output to expected value
@@ -17,7 +17,7 @@ macro_rules! test_interpreter {
     #[test]
     fn $func() {
       let s = $input;
-      let mut program = MechProgram::new(ProgramConfig{name: "test".to_string(), environment: ProgramEnvironment::default()});
+      let mut program = MechProgram::new(MechProgramConfig{name: "test".to_string(), environment: MechProgramEnvironment::default()});
       match program.run_string(s) {
         Ok(result) => assert_eq!(result, $expected),
         Err(err) => panic!("{:?}", err),
@@ -69,7 +69,7 @@ test_interpreter!(
 #[test]
 fn interpret_fsm_fails_when_transition_targets_undefined_state() {
   let s = "#Door(n<u64>) => <u64>\n  ├ :Closed(n<u64>)\n  └ :Open(n<u64>).\n\n#Door(n<u64>) -> :Closed(n)\n  :Closed(n) -> :Locked(n)\n  :Open(n) => n.\n\n#Door(1u64)";
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_fsm_fails_when_transition_targets_undefined_state".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_fsm_fails_when_transition_targets_undefined_state".to_string(), environment: MechProgramEnvironment::default()});
   assert!(program.run_string(s).is_err());
 }
 
@@ -84,7 +84,7 @@ test_interpreter!(interpret_variable_define_kind_literal, "x := <u8>;", Value::K
 #[test]
 fn interpret_variable_define_undefined_kind_literal_error() {
   let s = "x := <foo>;";
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_variable_define_undefined_kind_literal_error".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_variable_define_undefined_kind_literal_error".to_string(), environment: MechProgramEnvironment::default()});
   assert!(program.run_string(s).is_err());
 }
 test_interpreter!(interpret_variable_define_typed_empty, "emp<_> := _", Value::Empty);
@@ -121,7 +121,7 @@ test_interpreter!(
 #[test]
 fn interpret_matrix_literal_with_empty_infers_optional_f64_elements() {
   let s = "x := [1 2 _ 5]\n\nx";
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_matrix_literal_with_empty_infers_optional_f64_elements".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_matrix_literal_with_empty_infers_optional_f64_elements".to_string(), environment: MechProgramEnvironment::default()});
   let result = program.run_string(s).unwrap();
   assert_eq!(
     result.deref_kind(),
@@ -135,7 +135,7 @@ fn interpret_matrix_literal_with_empty_infers_optional_f64_elements() {
 #[test]
 fn interpret_option_matrix_literal_unwraps_to_u64_defaults() {
   let s = "x<[u64?]> := [_ 2u64 _ 3u64 _ 4u64]\n\nunwrapped<[u64]> := x?\n  | x => x\n  | * => 0u64.\n\nunwrapped";
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_option_matrix_literal_unwraps_to_u64_defaults".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_matrix_literal_unwraps_to_u64_defaults".to_string(), environment: MechProgramEnvironment::default()});
   let result = program.run_string(s).unwrap();
   let detached = match result {
     Value::MutableReference(v) => v.borrow().clone(),
@@ -158,7 +158,7 @@ fn interpret_option_match_after_outer_join_column_access_converts_option_to_scal
    y";
 
   let tree = parser::parse(s).unwrap();
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_option_match_after_outer_join_column_access_converts_option_to_scalar".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_match_after_outer_join_column_access_converts_option_to_scalar".to_string(), environment: MechProgramEnvironment::default()});
   let result = program.run_string(s).unwrap();
   let detached = match result {
     Value::MutableReference(v) => v.borrow().clone(),
@@ -169,7 +169,7 @@ fn interpret_option_match_after_outer_join_column_access_converts_option_to_scal
 #[test]
 fn interpret_option_matrix_literal_unwraps_to_typed_f64_defaults() {
   let s = "x<[f64?]> := [_ 2 _ 3 _ 4]\n\nunwrapped<[f64]> := x?\n  | x => x\n  | * => 0.\n\nunwrapped";
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_option_matrix_literal_unwraps_to_typed_f64_defaults".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_matrix_literal_unwraps_to_typed_f64_defaults".to_string(), environment: MechProgramEnvironment::default()});
   let result = program.run_string(s).unwrap();
   let detached = match result {
     Value::MutableReference(v) => v.borrow().clone(),
@@ -183,7 +183,7 @@ fn interpret_option_matrix_literal_unwraps_to_typed_f64_defaults() {
 #[test]
 fn interpret_option_matrix_literal_unwraps_to_inferred_f64_defaults() {
   let s = "x<[f64?]> := [_ 2 _ 3 _ 4]\n\nunwrapped := x?\n  | x => x\n  | * => 0.\n\nunwrapped";
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_option_matrix_literal_unwraps_to_inferred_f64_defaults".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_matrix_literal_unwraps_to_inferred_f64_defaults".to_string(), environment: MechProgramEnvironment::default()});
   let result = program.run_string(s).unwrap();
   assert_eq!(
     result.deref_kind(),
@@ -199,7 +199,7 @@ test_interpreter!(
 #[test]
 fn interpret_option_match_requires_wildcard_arm() {
   let s = "foo<u64?> := 1234\n\nbar := foo?\n  | 0 => 9.\n\nbar";
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_option_match_requires_wildcard_arm".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_match_requires_wildcard_arm".to_string(), environment: MechProgramEnvironment::default()});
   assert!(program.run_string(s).is_err());
 }
 
@@ -219,7 +219,7 @@ x := {
 }
 x
 "#;
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_set_literal_mixed_empty_and_string_infers_optional_string_kind".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_set_literal_mixed_empty_and_string_infers_optional_string_kind".to_string(), environment: MechProgramEnvironment::default()});
   let result = program.run_string(s).unwrap();
   assert_eq!(
     result.deref_kind(),
@@ -242,7 +242,7 @@ string-color := my-color?
   | :red   => "red"
   | :green => "green".
 "#;
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_enum_match_reports_missing_variants_color".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_enum_match_reports_missing_variants_color".to_string(), environment: MechProgramEnvironment::default()});
   let err = program.run_string(s).unwrap_err();
   let msg = format!("{:?}", err);
   assert!(msg.contains("MatchNonExhaustive"));
@@ -259,7 +259,7 @@ label := state?
   | :open   => "open"
   | :closed => "closed".
 "#;
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_enum_match_reports_missing_variants_generalized".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_enum_match_reports_missing_variants_generalized".to_string(), environment: MechProgramEnvironment::default()});
   let err = program.run_string(s).unwrap_err();
   let msg = format!("{:?}", err);
   assert!(msg.contains("MatchNonExhaustive"));
@@ -277,7 +277,7 @@ code := x?
   | :pending => 2
   | :stopped => 0.
 "#;
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_enum_match_all_variants_without_wildcard_is_exhaustive".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_enum_match_all_variants_without_wildcard_is_exhaustive".to_string(), environment: MechProgramEnvironment::default()});
   let result = program.run_string(s).unwrap();
   assert_eq!(result, Value::F64(Ref::new(1.0)));
 }
@@ -292,7 +292,7 @@ code := x?
   | :pending => "pending"
   | :stopped => 0.
 "#;
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_enum_match_all_variants_without_wildcard_still_checks_arm_kinds".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_enum_match_all_variants_without_wildcard_still_checks_arm_kinds".to_string(), environment: MechProgramEnvironment::default()});
   match program.run_string(s) {
     Ok(result) => panic!("Expected error but got result: {:?}", result),
     Err(err) => {
@@ -348,7 +348,7 @@ x<option> := :some(:ok(42u64))
 result := x?
   | :some(:ok(n)) => n.
 "#;
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_option_match_tuple_struct_pattern".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_match_tuple_struct_pattern".to_string(), environment: MechProgramEnvironment::default()});
   match program.run_string(s) {
     Ok(result) => panic!("Expected error but got result: {:?}", result),
     Err(err) => {
@@ -415,7 +415,7 @@ fn interpret_fsm_bubble_sort_rejects_f64_argument_kind() {
 x<[f64]> := [3 5 4 1 2]
 #bubble-sort(x)
 "#;
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_fsm_bubble_sort_rejects_f64_argument_kind".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_fsm_bubble_sort_rejects_f64_argument_kind".to_string(), environment: MechProgramEnvironment::default()});
   match program.run_string(s) {
     Ok(result) => panic!("Expected error but got result: {:?}", result),
     Err(err) => {
@@ -450,7 +450,7 @@ fn interpret_fsm_bubble_sort_rejects_untyped_numeric_matrix_argument_kind() {
 y := [3 5 4 1 2]
 #bubble-sort(y)
 "#;
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_tagged_union_function_match_requires_exhaustive_arms".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_tagged_union_function_match_requires_exhaustive_arms".to_string(), environment: MechProgramEnvironment::default()});
   match program.run_string(s) {
     Ok(result) => panic!("Expected error but got result: {:?}", result),
     Err(err) => {
@@ -1285,7 +1285,7 @@ b := |id<u64> hw2<u8>| 2 200 | 3 255 | 4 42 |
 x := a ⟗ b
 x.hw1
 "#;
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_table_full_outer_join_optional_column_kind_is_u8_option_matrix".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_table_full_outer_join_optional_column_kind_is_u8_option_matrix".to_string(), environment: MechProgramEnvironment::default()});
   match program.run_string(s) {
     Ok(result) => {
       assert_eq!(
@@ -1488,7 +1488,7 @@ unwrap(x<option>) => <u64>
 
 unwrap(x)
 "#;
-  let mut program = MechProgram::new(ProgramConfig{name: "interpret_tagged_union_function_match_requires_exhaustive_arms".to_string(), environment: ProgramEnvironment::default()});
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_tagged_union_function_match_requires_exhaustive_arms".to_string(), environment: MechProgramEnvironment::default()});
   match program.run_string(s) {
     Ok(result) => panic!("Expected error but got result: {:?}", result),
     Err(err) => {

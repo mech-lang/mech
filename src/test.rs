@@ -200,8 +200,8 @@ pub fn run_mech_tests(
       name: format!("test-{}", uuid),
       environment: MechProgramEnvironment::default(),
     });
-    configure_mech_program(&mut program, tree_flag, debug_flag, time_flag, trace_flag);
-    if let Err(err) = run_mech_program_paths(&mut program, &vec![path.clone()]) {
+    program.configure(tree_flag, debug_flag, time_flag, trace_flag, 10_000);
+    if let Err(err) = program.run_paths(&vec![path.clone()]) {
       eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
       run_errors = true;
       any_failed = true;
