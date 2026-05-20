@@ -40,7 +40,7 @@ impl Default for ProgramConfig {
 
 pub struct Program {
   pub config: ProgramConfig,
-  pub interpreter: Interpreter,
+  interpreter: Interpreter,
 }
 
 pub type MechProgram = Program;
@@ -256,6 +256,14 @@ impl Program {
 
   pub fn environment(&self) -> &ProgramEnvironment {
     &self.config.environment
+  }
+
+  pub fn interpreter(&self) -> &Interpreter {
+    &self.interpreter
+  }
+
+  pub fn interpreter_mut(&mut self) -> &mut Interpreter {
+    &mut self.interpreter
   }
 
   pub fn into_interpreter(self) -> Interpreter {

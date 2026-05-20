@@ -100,16 +100,16 @@ impl MechRepl {
       }
       ReplCommand::Symbols(name) => {
         #[cfg(feature = "pretty_print")]
-        let out = prgrm.interpreter.pretty_print_symbols();
+        let out = prgrm.interpreter().pretty_print_symbols();
         #[cfg(not(feature = "pretty_print"))]
         let out = format!("{:#?}", prgrm.state.borrow().symbols());
         return Ok(out);
       }
       ReplCommand::Plan => {
         #[cfg(feature = "pretty_print")]
-        let out = prgrm.interpreter.plan().pretty_print();
+        let out = prgrm.interpreter().plan().pretty_print();
         #[cfg(not(feature = "pretty_print"))]
-        let out = format!("{:#?}", prgrm.interpreter.plan());
+        let out = format!("{:#?}", prgrm.interpreter().plan());
         return Ok(out);
       }
       ReplCommand::Whos(names) => {return Ok(whos(prgrm,names));}
@@ -147,7 +147,7 @@ impl MechRepl {
       ReplCommand::Save(path) => {
         let path = PathBuf::from(path);
         let intrp = self.programs.get(&self.active).unwrap();
-        let encoded = encode_to_vec(&MechSourceCode::String(format!("{:#?}", intrp.interpreter.plan())), standard()).unwrap();
+        let encoded = encode_to_vec(&MechSourceCode::String(format!("{:#?}", intrp.interpreter().plan())), standard()).unwrap();
         let mut file = File::create(&path)?;
         file.write_all(&encoded)?;
         return Ok(format!("Saved program state to {}", path.display()));

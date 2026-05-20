@@ -387,7 +387,7 @@ async fn main() -> Result<(), MechError> {
 
     let result = run_mech_program_paths(&mut program, &mech_paths); 
 
-    let bytecode = program.interpreter.compile()?;
+    let bytecode = program.interpreter_mut().compile()?;
 
     let mut output_file = output_path.join("output.mecb");
 
@@ -397,7 +397,7 @@ async fn main() -> Result<(), MechError> {
 
     // print debug info for the context
     if debug_flag {
-      println!("{} Bytecode Size: {:#?} bytes", "[Debug]".truecolor(246,192,78), &program.interpreter.context);
+      println!("{} Bytecode Size: {:#?} bytes", "[Debug]".truecolor(246,192,78), &program.interpreter().context);
     }
 
     println!("{} Mech bytecode written to: {}", "[Output]".truecolor(153,221,85), output_file.display());
@@ -564,7 +564,7 @@ async fn main() -> Result<(), MechError> {
         }
       } else {
         // ---------- 4. Treat the inputs as Mech code ----------
-        program.interpreter.clear();
+        program.interpreter_mut().clear();
         let joined = paths.join(" ");
         match program.run_program(joined.trim()) {
           Ok(r) => {
