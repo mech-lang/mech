@@ -1,4 +1,5 @@
-// # Syntax
+// Syntax
+// =============================================================================
 
 #![cfg_attr(feature = "no-std", no_std)]
 #![cfg_attr(feature = "no-std", alloc)]
