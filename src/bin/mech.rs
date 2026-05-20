@@ -5,7 +5,6 @@ use mech_core::*;
 use mech_syntax::parser;
 #[cfg(feature = "formatter")]
 use mech_syntax::formatter::*;
-use mech_interpreter::interpreter::*;
 use std::time::Instant;
 use std::fs;
 use std::env;
