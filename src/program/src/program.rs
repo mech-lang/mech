@@ -1,9 +1,8 @@
 
 use crate::*;
-use mech_core::{hash_str, MResult, MechSourceCode, Value, ParsedProgram};
+use mech_core::{hash_str, MResult, MechSourceCode, Value, ParsedProgram, PrettyPrint};
 use mech_interpreter::Interpreter;
 use mech_syntax::parser;
-use std::time::Instant;
 
 
 #[derive(Debug, Clone)]
@@ -204,8 +203,28 @@ impl Program {
 
   pub fn run_string(&mut self, source: &str) -> MResult<Value> {
     let tree = parser::parse(source.trim())?;
+    if self.config.environment.print_tree {
+      print_tree!(tree);
+    }
     self.interpreter.interpret(&tree)
-    todo!();
+  }
+
+  pub fn compile_program(&mut self, source: &str) -> MResult<Value> {
+    let tree = parser::parse(source.trim())?;
+    if self.config.environment.print_tree {
+      print_tree!(tree);
+    }
+    self.interpreter.interpret(&tree)
+  }
+
+  pub fn run_program(&mut self, source: &str) -> MResult<Value> {
+    let now = std::time::Instant::now();
+    let result = self.run_string(source);
+    if self.config.environment.time_enabled {
+      let cycle_duration = now.elapsed().as_nanos() as f64;
+      println!("Cycle Time: {} ns", cycle_duration);
+    }
+    result
   }
 
   pub fn run_source(&mut self, source: &MechSourceCode) -> MResult<Value> {
