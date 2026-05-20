@@ -65,7 +65,7 @@ We want this syntax to be extensible, even by users. So that means we are talkin
 
 Widespread adoption of this syntax is not a goal, therefore we will not be bound by popular conventions.
 
-Parser simplicity. We don't care if there are multiple implementations of this syntax -- as this may be one of many, it's not important to make sure it's replicable but rathar that it demonstrates all the featuers of Mech. Therefore we will not choose features based on whether they make the parser simpler or harder to implement.
+Parser simplicity. We don't care if there are multiple implementations of this syntax -- as this may be one of many syntaxes for Mech, it's not important to make sure it's replicable but rathar that it demonstrates all the featuers of the Mech platform. Therefore we will not choose features based on whether they make the parser simpler or harder to implement.
 
 Although it's a goal the user should be able to express every feature using the standard ASCII character set, it's not a goal that every program be limited to the ASCII character set and standard keyboard. One assumption we are making is that AI will write most Mech code that will ever exist, and where humans do write Mech manually, they do so with the assistance of tooling that can easily provide special characters and autocomplete where physical keyboards are lacking. Therefore it might be the case that humans and AI write mech in different ways with different characters.
 
@@ -78,17 +78,19 @@ Although it's a goal the user should be able to express every feature using the 
 
 - No Keywords: Mech avoids reserved keywords, allowing users to define identifiers without worrying about conflicts with language constructs. This enhances flexibility and reduces naming collisions.
 
-- Numbers: Mech supports a variety of numeric literals, including integers, floating-point numbers, and complex numbers. The syntax for these literals is designed to be clear and unambiguous.
+- Numbers: Mech supports a variety of numeric literals, including integers, floating-point numbers, and complex numbers, and rational numbers. The syntax for these literals is designed to be clear and unambiguous.
 
-- Kinds: Kinds in Mech are represented using brackets, allowing users to define types and data structures concisely. For example, `[i32]` represents an array of 32-bit integers.
+- Kinds: Kinds in Mech are represented using brackets, allowing users to define types and data structures concisely. For example, {<[i32]>} represents an array of 32-bit integers.
 
 - Matrix Syntax: Mech provides a straightforward syntax for defining matrices using semicolons to separate rows and commas to separate columns. For example, `[1, 2; 3, 4]` defines a 2x2 matrix.
 
 - Table Syntax: Mech provides syntax for defining tables, which are collections of heterogeneous data organized into rows and columns. Users can define tables using a combination of braces and brackets.
 
+- Pattern Matching: Mech uses pattern matching throughout the language including in match expressions, function definitions, and state machine implementations.
+
 - State Machines: Mech provides syntax for defining state machines, allowing users to specify states, transitions, and actions in a clear and structured manner.
 
-3. Mechdown and Mech
+3. Literate Programming
 -------------------------------------------------------------------------------
 
 - **Mechdown**: Mechdown is a markup language used for writing documentation in Mech. It supports features such as code blocks, headings, lists, and links, allowing users to create rich documentation for their Mech code.
@@ -101,19 +103,21 @@ Although it's a goal the user should be able to express every feature using the 
 - **Familiarity**: Mech's syntax draws inspiration from Matlab, particularly in its handling of matrices and mathematical operations. This familiarity can help users who are already accustomed to Matlab transition to Mech more easily.
 - **Differences**: While Mech shares some similarities with Matlab, it also introduces unique features and constructs that differentiate it from Matlab. For example, Mech's support for state machines and its emphasis on distributed computation set it apart from Matlab's primarily single-machine focus.
 
-5. Literate Programming
+5. The Case for Kebab-Case
 -------------------------------------------------------------------------------
 
-- **Documentation Integration**: Mech encourages literate programming by allowing users to interleave code and documentation seamlessly. This helps users explain their code and its purpose alongside the implementation.
-- **Code Blocks**: Mechdown supports code blocks that can contain Mech code, enabling users to provide examples and explanations directly within their documentation.
-- **Clarity and Understanding**: By promoting literate programming practices, Mech aims to enhance the clarity and understanding of code, making it easier for users to learn and collaborate.
+Kebab case is when hyphens are used as word separators in identifiers instead of underscores or capitilization. e.g. `foo-bar`. This is a convention often deployed in lisp-descendant languages, but usually avoided in most mainstream languages for a good reason: it make identifiers and subtraction of identifiers ambiguous. i.e. is `foo-bar` an identifier or `foo` minus `bar`? Lisp descended languages or langauges which otherwise use pre- or postfix notation are free to adopt kebab case without running into this ambuguity, and so for that reason you'll usually only find kebab case in languages with that notation. Mech employs infix operators, and so `foo-bar` would be considered ambiguous but for some further rules we deploy.
 
-6. The Case for Kebab-Case
--------------------------------------------------------------------------------
+Before we talk about those, why use kebab case at all when other cases are there and more popular? First of all I find kebab more readable. That's opinion. But secondly I find it easier to write `foo-bar` rather than `foo_bar` becaues the latter requires chording to type `_`, whereas (on my keyboard at least) `-` is a single unchorded keypress.
 
-- **Readability**: Kebab-case (using hyphens to separate words) is often considered more readable than other naming conventions, such as camelCase or snake_case. The use of hyphens can make it easier to distinguish individual words in identifiers.
-- **Consistency**: Kebab-case provides a consistent naming convention across the language, reducing confusion and making it easier for users to remember and use identifiers.
-- **Avoiding Conflicts**: By using kebab-case, Mech can avoid potential conflicts with reserved keywords or built-in functions that may use other naming conventions.
+But now the syntax is ambiguous if we have infix math! The way we can solve this is by enforcing whitespace around operators, so that `foo-bar` parses as an identifier, and subtraction would be written `foo - bar`. Again, I think that is more readable anyway, especially in expression with a lot of terms. Now, once we stipulate this requirement, we've opened up the possiblitiy for more symbols to be included into valid identifiers such as `/`, so now we can write fully qualified names like `foo-bar/baz`, and understand that's different from `foo - bar / baz`. This makes `foo-bar / baz` and `foo - bar/baz` all valid and different. You see these kinds of qualified identifiers in languages like Erlang. 
+
+Which may be confusing but I think it's worth it for the following reasons.
+
+1. I find it makes things more readable. I don't know if that's true for most people though, so that's an opinion
+2. We get to write more expressive identifiers. For example we can write {{A*}} to represent the `A*` algorithm if we want. Or {{t^2 := t ^ 2}} instead of `t_squared`.
+3. It opens up a syntax for scoped namespacing without having to introduce new syntax for that. So instead of `foo::bar` to represented `bar` scoped to the `foo` namespace, we can just use the standard identifier syntax and say `foo/bar`.
+4. It opens up the possibility for `_` to have semantic meaning. We're not using this yet, but I've reserved it as a possibility in the future. Python already has this but can't enforce it because `_` is also a valid identifier character, so they leave it up to convention. By going kebab case we have an opportunity to say like `foo_bar` is something other than an identifier. So for this reason we've actually made `_` an invalid identifier character rather than supporting is and just preferring kebab case as a convention.
 
 7. No Keywords
 -------------------------------------------------------------------------------
