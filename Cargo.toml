@@ -43,7 +43,7 @@ base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       ]
 build = ["compiler"]
 repl = []
-run = ["mechfs", "mech-program/run"]
+run = ["mech-program/program"]
 serve = ["mechfs"]
 mechfs = ["formatter", "mech-program/mechfs"]
 whos = ["pretty_print", "variables", "symbol_table"]
