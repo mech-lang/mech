@@ -544,6 +544,7 @@ async fn main() -> Result<(), MechError> {
   let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
   #[cfg(feature = "run")]
   let cli_adapter = MechCliAdapter { options: MechCliOptions { print_tree: tree_flag, print_symbols: debug_flag, print_plan: debug_flag, print_timing: time_flag } };
+  #[cfg(feature = "run")]
   program.set_environment(MechProgramEnvironment { trace_enabled: trace_flag, debug_enabled: debug_flag, time_enabled: time_flag, print_tree: tree_flag, rounds_per_step });
   #[cfg(feature = "run")]
   {
