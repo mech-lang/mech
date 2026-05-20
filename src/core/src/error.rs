@@ -400,3 +400,27 @@ impl MechErrorKind for InvariantViolationError {
     format!("Invariant `{}` violation: {} | evaluated kind: {}{}", self.invariant_name, self.reason, self.evaluated_kind, details)
   }
 }
+
+#[derive(Debug, Clone)]
+pub struct HttpTextDecodeFailed {
+  pub url: String,
+  pub source: String,
+}
+impl MechErrorKind for HttpTextDecodeFailed {
+  fn name(&self) -> &str { "HttpTextDecodeFailed" }
+  fn message(&self) -> String {
+  format!("Failed to read response text {}: {}", self.url, self.source)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct HttpRequestFailed {
+  pub url: String,
+  pub source: String,
+}
+impl MechErrorKind for HttpRequestFailed {
+  fn name(&self) -> &str { "HttpRequestFailed" }
+  fn message(&self) -> String {
+  format!("Failed to GET {}: {}", self.url, self.source)
+  }
+}

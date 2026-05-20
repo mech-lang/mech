@@ -1275,30 +1275,6 @@ impl MechErrorKind for FileOpenFailed {
 }
 
 #[derive(Debug, Clone)]
-pub struct HttpTextDecodeFailed {
-  pub url: String,
-  pub source: String,
-}
-impl MechErrorKind for HttpTextDecodeFailed {
-  fn name(&self) -> &str { "HttpTextDecodeFailed" }
-  fn message(&self) -> String {
-  format!("Failed to read response text {}: {}", self.url, self.source)
-  }
-}
-
-#[derive(Debug, Clone)]
-pub struct HttpRequestFailed {
-  pub url: String,
-  pub source: String,
-}
-impl MechErrorKind for HttpRequestFailed {
-  fn name(&self) -> &str { "HttpRequestFailed" }
-  fn message(&self) -> String {
-  format!("Failed to GET {}: {}", self.url, self.source)
-  }
-}
-
-#[derive(Debug, Clone)]
 pub struct WatchPathFailed {
   pub file_path: String,
   pub source_err: String,
