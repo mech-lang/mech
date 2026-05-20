@@ -308,45 +308,49 @@ pub fn run_mech_tests(
     files: file_reports,
   };
 
-  if expanded_paths.len() > 1 {
-    println!("\n{} SUMMARY", "[Test]".truecolor(153, 221, 85));
-    println!("  files-total: {}", report.result.files_total);
-    println!("  files-passed: {}", report.result.files_passed);
-    println!("  files-failed: {}", report.result.files_failed);
-    println!("  tests-total: {}", report.result.tests_total);
-    println!("  tests-passed: {}", report.result.tests_passed);
-    println!("  tests-failed: {}", report.result.tests_failed);
+  println!("\n{} SUMMARY", "[Test]".truecolor(153, 221, 85));
+  println!("  files-total: {}", report.result.files_total);
+  println!("  files-passed: {}", report.result.files_passed);
+  println!("  files-failed: {}", report.result.files_failed);
+  println!("  tests-total: {}", report.result.tests_total);
+  println!("  tests-passed: {}", report.result.tests_passed);
+  println!("  tests-failed: {}", report.result.tests_failed);
 
-    let failing_files = report
-      .files
-      .iter()
-      .filter(|f| f.run_error.is_some() || f.result.failed > 0)
-      .map(|f| f.path.clone())
-      .collect::<Vec<_>>();
+  let failing_files = report
+    .files
+    .iter()
+    .filter(|f| f.run_error.is_some() || f.result.failed > 0)
+    .collect::<Vec<_>>();
 
-    if !failing_files.is_empty() {
-      println!("\n  failing-files:");
-      for path in failing_files {
-        println!("    - {}", path);
-      }
-    }
-
-    if verbose {
-      let passing_files = report
-        .files
-        .iter()
-        .filter(|f| f.run_error.is_none() && f.result.failed == 0)
-        .map(|f| f.path.clone())
-        .collect::<Vec<_>>();
-      if !passing_files.is_empty() {
-        println!("\n  passing-files:");
-        for path in passing_files {
-          println!("    - {}", path);
+  if !failing_files.is_empty() {
+    println!("\n  failing-files:");
+    for file in failing_files {
+      println!("    - {}", file.path);
+      if let Some(run_error) = &file.run_error {
+        println!("      reason: {}", run_error);
+      } else {
+        for failed_case in &file.failed {
+          println!("      {}: {}", failed_case.name, failed_case.reason);
         }
       }
     }
-    println!();
   }
+
+  if verbose {
+    let passing_files = report
+      .files
+      .iter()
+      .filter(|f| f.run_error.is_none() && f.result.failed == 0)
+      .map(|f| f.path.clone())
+      .collect::<Vec<_>>();
+    if !passing_files.is_empty() {
+      println!("\n  passing-files:");
+      for path in passing_files {
+        println!("    - {}", path);
+      }
+    }
+  }
+  println!();
 
   if let Some(output_path) = output_path {
     let path = PathBuf::from(&output_path);
