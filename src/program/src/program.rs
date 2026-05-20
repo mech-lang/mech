@@ -1,6 +1,6 @@
 
 use crate::*;
-use mech_core::{hash_str, MResult, MechSourceCode, Value, ParsedProgram, PrettyPrint};
+use mech_core::{hash_str, MResult, MechSourceCode, Value, ParsedProgram, PrettyPrint, CompileCtx};
 use mech_interpreter::Interpreter;
 use mech_syntax::parser;
 
@@ -53,6 +53,19 @@ impl Program {
     let mut interpreter = Interpreter::new(id);
     interpreter.set_trace_enabled(config.environment.trace_enabled);
     Self { config, interpreter }
+  }
+
+  #[cfg(feature = "compiler")]
+  pub fn compile_bytecode(&mut self) -> MResult<Vec<u8>> {
+    let state_brrw = self.interpreter.state.borrow();
+    let mut plan_brrw = state_brrw.plan.borrow_mut();
+    let mut ctx = CompileCtx::new();
+    for step in plan_brrw.iter() {
+      step.compile(&mut ctx)?;
+    }
+    let bytes = ctx.compile()?;
+    self.interpreter.context = Some(ctx);
+    Ok(bytes)
   }
 
 
@@ -213,12 +226,8 @@ impl Program {
     self.interpreter.interpret(&tree)
   }
 
-  pub fn compile_program(&mut self, source: &str) -> MResult<Value> {
-    let tree = parser::parse(source.trim())?;
-    if self.config.environment.print_tree {
-      print_tree!(tree);
-    }
-    self.interpreter.interpret(&tree)
+  pub fn run_bytecode_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
+    self.interpreter.run_program(program)
   }
 
   pub fn run_program(&mut self, source: &str) -> MResult<Value> {
