@@ -1,4 +1,12 @@
-In 2007, DARPA[^1] hosted a "Grand Urban Challenge" in which researchers were tasked with building autonomous vehicles that could navigate a city environment. The competition was structured in two phases: first, a qualifying round where teams had to demonstrate their vehicles could navigate a simple course, and then a final round where they had to navigate a more complex urban environment. 
+Project History
+===============================================================================
+
+This document contains a history of the Mech project.
+
+1. Historical Foundation
+--------------------------------------------------------------------------------
+
+In 2007, DARPA[^DARPA] hosted a "Grand Urban Challenge" in which researchers were tasked with building autonomous vehicles that could navigate a city environment. The competition was structured in two phases: first, a qualifying round where teams had to demonstrate their vehicles could navigate a simple course, and then a final round where they had to navigate a more complex urban environment. 
 
 ```diagram
 ---
@@ -22,7 +30,7 @@ Track B Finalists,Did Not Finish,3
 
 Qualifying teams were sorted into two groups: Track A teams were granted $1 million each to fund their competition entry; while Track B teams were invited to compete without any direct funding support from DARPA. 
 
-Of the 35 semifinalist teams, 11 advanced to the final event -- with 7 from Track A and 4 from Track B. It's not a surprise that of the 6 teams that finished the race, 5 were Track A. Just one team from Track B, the Ben Franklin Racing Team[^2], managed against all odds to finish the race. How did they do it?
+Of the 35 semifinalist teams, 11 advanced to the final event -- with 7 from Track A and 4 from Track B. It's not a surprise that of the 6 teams that finished the race, 5 were Track A. Just one team from Track B, the Ben Franklin Racing Team[^BFRT], managed against all odds to finish the race. How did they do it?
 
 | Place | Team Name                              | Robot Name  | Team Size | Tech Stack                | Funding |
 |-------|----------------------------------------|:-----------:|:---------:|:-------------------------:|--------:|
@@ -57,9 +65,9 @@ So why Mech? If you're looking to build a complex system, something on the order
 
 ***
 
-[^1]: The United States Defense Advanced Research Projects Agency, formerly ARPA, which is responsible for developing emerging technologies for the United States military. Its most famous project is the ARPANET, which was the precursor to the modern Internet.
+[^DARPA]: The United States Defense Advanced Research Projects Agency, formerly ARPA, which is responsible for developing emerging technologies for the United States military. Its most famous project is the ARPANET, which was the precursor to the modern Internet.
 
-[^2]: The Ben Franklin Racing Team was a partnership between University of Pennsylvania, Lehigh University, and Lockheed Martin. Lehigh University is the author's graduate alma mater.
+[^BFRT]: The Ben Franklin Racing Team was a partnership between University of Pennsylvania, Lehigh University, and Lockheed Martin. Lehigh University is the author's graduate alma mater.
 
 
 [CMU1]: CMU: http://www.tartanracing.org/team.html
@@ -80,4 +88,4 @@ So why Mech? If you're looking to build a complex system, something on the order
 [BFRT2]: BFRT: https://onlinelibrary.wiley.com/doi/abs/10.1002/rob.20260
 
 [CU1]: Cornell: https://onlinelibrary.wiley.com/doi/abs/10.1002/rob.20253
-[CU2]: Corenell: http://www.coep.ufrj.br/~ramon/COE-841/robotics/book%202009%20-%20The%20DARPA%20Urban%20Challenge%20-%20Buehler,%20Iagnemma%20&%20Singh.pdf
+[CU2]: Cornell: http://www.coep.ufrj.br/~ramon/COE-841/robotics/book%202009%20-%20The%20DARPA%20Urban%20Challenge%20-%20Buehler,%20Iagnemma%20&%20Singh.pdf
