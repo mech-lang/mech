@@ -73,7 +73,7 @@ impl Clone for Interpreter {
 }
 
 impl Interpreter {
-  pub fn new(id: u64) -> Self {
+  pub fn new(id: u64, max_steps: usize) -> Self {
     let mut state = ProgramState::new();
     load_stdkinds(&mut state.kinds);
     #[cfg(feature = "symbol_table")]
@@ -97,7 +97,7 @@ impl Interpreter {
       id,
       ip: 0,
       profile: false,
-      max_steps: 10_00000, // Default maximum steps
+      max_steps, // Default maximum steps
       #[cfg(feature = "trace")]
       trace: false,
       #[cfg(feature = "trace")]
@@ -121,6 +121,10 @@ impl Interpreter {
       #[cfg(feature = "compiler")]
       context: None,
     }
+  }
+
+  pub fn default() -> Self {
+    Self::new(0, 10_000)
   }
 
   #[cfg(feature = "symbol_table")]
@@ -169,7 +173,7 @@ impl Interpreter {
 
   pub fn clear(&mut self) {
     let id = self.id;
-    *self = Interpreter::new(id);
+    *self = Interpreter::new(id, self.max_steps);
   }
 
   pub fn set_trace_enabled(&mut self, enabled: bool) {
