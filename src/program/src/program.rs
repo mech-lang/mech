@@ -6,7 +6,7 @@ use mech_syntax::parser;
 
 
 #[derive(Debug, Clone)]
-pub struct ProgramEnvironment {
+pub struct MechProgramEnvironment {
   pub trace_enabled: bool,
   pub debug_enabled: bool,
   pub time_enabled: bool,
@@ -14,7 +14,7 @@ pub struct ProgramEnvironment {
   pub rounds_per_step: usize,
 }
 
-impl Default for ProgramEnvironment {
+impl Default for MechProgramEnvironment {
   fn default() -> Self {
     Self {
       trace_enabled: false,
@@ -27,32 +27,29 @@ impl Default for ProgramEnvironment {
 }
 
 #[derive(Debug, Clone)]
-pub struct ProgramConfig {
+pub struct MechProgramConfig {
   pub name: String,
-  pub environment: ProgramEnvironment,
+  pub environment: MechProgramEnvironment,
 }
 
-impl Default for ProgramConfig {
+impl Default for MechProgramConfig {
   fn default() -> Self {
-    Self { name: "program".into(), environment: ProgramEnvironment::default() }
+    Self { name: "program".into(), environment: MechProgramEnvironment::default() }
   }
 }
 
-pub struct Program {
-  pub config: ProgramConfig,
+pub struct MechProgram {
+  pub config: MechProgramConfig,
   interpreter: Interpreter,
+  fs: MechFileSystem,
 }
 
-pub type MechProgram = Program;
-pub type MechProgramConfig = ProgramConfig;
-pub type MechProgramEnvironment = ProgramEnvironment;
-
-impl Program {
-  pub fn new(config: ProgramConfig) -> Self {
+impl MechProgram {
+  pub fn new(config: MechProgramConfig) -> Self {
     let id = hash_str(&format!("program/{}", config.name));
     let mut interpreter = Interpreter::new(id);
     interpreter.set_trace_enabled(config.environment.trace_enabled);
-    Self { config, interpreter }
+    Self { config, interpreter, fs: MechFileSystem::new() }
   }
 
   #[cfg(feature = "compiler")]
@@ -258,12 +255,12 @@ impl Program {
     }
   }
 
-  pub fn set_environment(&mut self, environment: ProgramEnvironment) {
+  pub fn set_environment(&mut self, environment: MechProgramEnvironment) {
     self.config.environment = environment;
     self.interpreter.set_trace_enabled(self.config.environment.trace_enabled);
   }
 
-  pub fn environment(&self) -> &ProgramEnvironment {
+  pub fn environment(&self) -> &MechProgramEnvironment {
     &self.config.environment
   }
 
@@ -280,8 +277,8 @@ impl Program {
   }
 }
 
-pub fn configure_mech_program(program: &mut Program, tree_flag: bool, debug_flag: bool, time_flag: bool, trace_flag: bool) {
-  program.set_environment(ProgramEnvironment {
+pub fn configure_mech_program(program: &mut MechProgram, tree_flag: bool, debug_flag: bool, time_flag: bool, trace_flag: bool) {
+  program.set_environment(MechProgramEnvironment {
     trace_enabled: trace_flag,
     debug_enabled: debug_flag,
     time_enabled: time_flag,
@@ -290,7 +287,7 @@ pub fn configure_mech_program(program: &mut Program, tree_flag: bool, debug_flag
   });
 }
 
-pub fn run_mech_program_paths(program: &mut Program, paths: &[String]) -> MResult<Value> {
+pub fn run_mech_program_paths(program: &mut MechProgram, paths: &[String]) -> MResult<Value> {
   let mut mechfs = MechFileSystem::new();
   for path in paths {
     mechfs.watch_source(path)?;
