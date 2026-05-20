@@ -22,17 +22,17 @@ default = ["baselib", "pretty_print", "serde", "program", "compiler", "mika",
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
       "statements_default", "subscript_default", "state_machines",
-      "mechfs", "run", "async", "trace", "profile", "persister",
+      "mechfs", "async", "trace", "profile", "persister", "runloop",
       "mech-core/default", "mech-interpreter/default", "mech-syntax/default",
       ]
 base = ["baselib", "pretty_print", "serde", "program", "compiler", "mika",
       "statements_default", "subscript_default", "state_machines",
-      "mechfs", "run", "async", "trace", "profile", "persister",
+      "mechfs", "async", "trace", "profile", "persister", "runloop",
       "mech-core/base", "mech-interpreter/base", "mech-syntax/base",
       ]
 
-run = ["mechfs", "program"]
 persister = ["mechfs"]
+runloop = ["program"]
 mechfs = ["bincode", "notify", "csv", "reqwest", "mech-syntax/formatter", "colored"]
 async = []
 trace = []
@@ -70,7 +70,7 @@ baselib = ["bool", "string",
     ]
 
 compiler = ["program", "mech-core/compiler", "mech-interpreter/compiler", "mech-syntax/compiler"]
-program = ["mech-core/program", "mech-interpreter/program", "mech-syntax/program"]
+program = ["mechfs", "mech-core/program", "mech-interpreter/program", "mech-syntax/program"]
 pretty_print = ["mech-core/pretty_print", "mech-interpreter/pretty_print", "mech-syntax/pretty_print"]
 serde = ["mech-core/serde", "mech-interpreter/serde", "mech-syntax/serde"]
 mika = ["mech-syntax/mika", "mech-core/mika"]
