@@ -256,6 +256,11 @@ async fn main() -> Result<(), MechError> {
         .long("time")
         .help("Measure how long the programs takes to execute.")
         .action(ArgAction::SetTrue))
+    .arg(Arg::new("rounds-per-step")
+        .long("rounds-per-step")
+        .value_name("ROUNDS")
+        .help("Sets the number of rounds per step (10_000)")
+        .required(false))
     .arg(Arg::new("trace")
         .long("trace")
         .help("Print trace output for state-machine arms and function calls")
@@ -272,6 +277,7 @@ async fn main() -> Result<(), MechError> {
   let mut repl_flag = matches.get_flag("repl");
   let time_flag = matches.get_flag("time");
   let trace_flag = matches.get_flag("trace");
+  let rounds_per_step = matches.get_one::<String>("rounds-per-step").and_then(|s| s.parse::<usize>().ok()).unwrap_or(10_000);
 
   let shim_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/shim.html".to_string();
   let stylesheet_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/style.css".to_string();
@@ -360,6 +366,7 @@ async fn main() -> Result<(), MechError> {
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let output_path = PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
     let debug_flag = matches.get_flag("debug");
+    let rounds_per_step = matches.get_one::<String>("rounds-per-step").and_then(|s| s.parse::<usize>().ok()).unwrap_or(10_000);
     let mut mechfs = MechFileSystem::new();
 
     for path in &mech_paths {
@@ -382,9 +389,13 @@ async fn main() -> Result<(), MechError> {
 
     let uuid = generate_uuid();
     let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
-    configure_mech_program(&mut program, tree_flag, debug_flag, time_flag, trace_flag);
+    program.configure(tree_flag, debug_flag, time_flag, trace_flag, rounds_per_step);
 
-    let result = run_mech_program_paths(&mut program, &mech_paths); 
+    for path in mech_paths {
+      program.watch_source(&path)?;
+    }
+    
+    let result = program.run(); 
 
     let bytecode = program.interpreter_mut().compile()?;
 
@@ -531,7 +542,7 @@ async fn main() -> Result<(), MechError> {
   #[cfg(feature = "run")]
   let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
   #[cfg(feature = "run")]
-  configure_mech_program(&mut program, tree_flag, debug_flag, time_flag, trace_flag);
+  program.configure(tree_flag, debug_flag, time_flag, trace_flag, rounds_per_step);
   #[cfg(feature = "run")]
   {
     let mut paths = if let Some(m) = matches.get_many::<String>("mech_paths") {
@@ -585,7 +596,7 @@ async fn main() -> Result<(), MechError> {
       }
     }
 
-    let result = run_mech_program_paths(&mut program, &paths); 
+    let result = program.run_paths(&paths);
     if !repl_flag {
       match &result {
         Ok(r) => {
