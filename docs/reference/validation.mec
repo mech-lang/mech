@@ -42,14 +42,14 @@ ready! := state == :ready
 
 Data structures can also be used in invariants:
 
-```mech:ex-1
+```mech:ex 1
 my-list := 1 + [1 2 3]
 sorted! := my-list === [2 3 4]
 ```
 
 The strict equality operator (`===`) checks for deep equality, so `sorted!` will evaluate to `true` if `my-list` is exactly `[2 3 4]`. Using the regular equality operator (`==`) would check for element-wise equality, which doesn't satisfy the requirement that the right-hand side of an invariant must evaluate to a single boolean value.
 
-```mech:disabled
+```mech:ex 2
 my-list := 1 + [1 2 3]
 -- Invalid because it evaluates to {{<[bool]>}}, expected {{<bool>}}.
 sorted! := my-list == [2 3 4]
