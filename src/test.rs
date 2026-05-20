@@ -209,7 +209,7 @@ pub fn run_mech_tests(
       continue;
     }
 
-    let state = &program.interpreter.state.borrow();
+    let state = &program.interpreter().state.borrow();
     println!("{} {}\n", "[Test]".truecolor(153, 221, 85), path);
 
     let mut violations: HashMap<u64, CaseDetail> = HashMap::new();

@@ -6,28 +6,25 @@ use std::rc::Rc;
 use mech_core::matrix::Matrix;
 use mech_syntax::*;
 use mech_core::*;
-use mech_interpreter::*;
+use mech_program::{Program, ProgramConfig, ProgramEnvironment};
 use indexmap::set::IndexSet;
 
 macro_rules! bytecode_test {
   ($name:ident, $code:expr, $expected:expr) => {
     #[test]
     fn $name() {
-      let mut intrp = Interpreter::new(0);
+      let mut prgrm = Program::new(ProgramConfig { name: stringify!($name).to_string(), environment: ProgramEnvironment::default() });
 
-      let tree = parser::parse($code)
-        .unwrap_or_else(|err| panic!("Parse error: {:?}", err));
+      prgrm.run_string($code)
+        .unwrap_or_else(|err| panic!("Runtime error: {:?}", err));
 
-      let _ = intrp.interpret(&tree)
-        .unwrap_or_else(|err| panic!("Interpret error: {:?}", err));
-
-      let bytecode = intrp.compile()
+      let bytecode = prgrm.compile_bytecode()
         .unwrap_or_else(|err| panic!("Compile error: {:?}", err));
 
       let prog = ParsedProgram::from_bytes(&bytecode)
         .unwrap_or_else(|err| panic!("Deserialize error: {:?}", err));
 
-      let result = intrp.run_program(&prog)
+      let result = prgrm.run_bytecode_program(&prog)
         .unwrap_or_else(|err| panic!("Runtime error: {:?}", err));
 
       assert_eq!(result, $expected);

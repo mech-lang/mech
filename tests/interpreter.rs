@@ -8,7 +8,6 @@ use std::rc::Rc;
 use mech_core::matrix::Matrix;
 use mech_syntax::*;
 use mech_core::*;
-use mech_interpreter::*;
 use mech::{MechProgram, ProgramConfig, ProgramEnvironment};
 use indexmap::set::IndexSet;
 

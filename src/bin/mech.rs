@@ -5,7 +5,6 @@ use mech_core::*;
 use mech_syntax::parser;
 #[cfg(feature = "formatter")]
 use mech_syntax::formatter::*;
-use mech_interpreter::interpreter::*;
 use std::time::Instant;
 use std::fs;
 use std::env;
@@ -387,7 +386,7 @@ async fn main() -> Result<(), MechError> {
 
     let result = run_mech_program_paths(&mut program, &mech_paths); 
 
-    let bytecode = program.interpreter.compile()?;
+    let bytecode = program.interpreter_mut().compile()?;
 
     let mut output_file = output_path.join("output.mecb");
 
@@ -397,7 +396,7 @@ async fn main() -> Result<(), MechError> {
 
     // print debug info for the context
     if debug_flag {
-      println!("{} Bytecode Size: {:#?} bytes", "[Debug]".truecolor(246,192,78), &program.interpreter.context);
+      println!("{} Bytecode Size: {:#?} bytes", "[Debug]".truecolor(246,192,78), &program.interpreter().context);
     }
 
     println!("{} Mech bytecode written to: {}", "[Output]".truecolor(153,221,85), output_file.display());
@@ -564,7 +563,7 @@ async fn main() -> Result<(), MechError> {
         }
       } else {
         // ---------- 4. Treat the inputs as Mech code ----------
-        program.interpreter.clear();
+        program.interpreter_mut().clear();
         let joined = paths.join(" ");
         match program.run_program(joined.trim()) {
           Ok(r) => {
@@ -642,12 +641,13 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   // REPL
   // --------------------------------------------------------------------------
-  #[cfg(all(feature = "repl", not(feature = "run")))]
-  let intrp = Interpreter::new(generate_uuid());
   #[cfg(all(feature = "repl", feature = "run"))]
-  let mut repl = MechRepl::from(program.into_interpreter());
+  let mut repl = MechRepl::from(program);
   #[cfg(all(feature = "repl", not(feature = "run")))]
-  let mut repl = MechRepl::from(intrp);
+  let mut repl = MechRepl::from(MechProgram::new(MechProgramConfig {
+    name: format!("repl-{}", generate_uuid()),
+    environment: MechProgramEnvironment::default(),
+  }));
   #[cfg(feature = "repl")]
   'REPL: loop {
     {

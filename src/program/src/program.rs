@@ -1,9 +1,8 @@
 
 use crate::*;
-use mech_core::{hash_str, MResult, MechSourceCode, Value, ParsedProgram};
+use mech_core::{hash_str, MResult, MechSourceCode, Value, ParsedProgram, PrettyPrint, CompileCtx};
 use mech_interpreter::Interpreter;
 use mech_syntax::parser;
-use std::time::Instant;
 
 
 #[derive(Debug, Clone)]
@@ -41,8 +40,12 @@ impl Default for ProgramConfig {
 
 pub struct Program {
   pub config: ProgramConfig,
-  pub interpreter: Interpreter,
+  interpreter: Interpreter,
 }
+
+pub type MechProgram = Program;
+pub type MechProgramConfig = ProgramConfig;
+pub type MechProgramEnvironment = ProgramEnvironment;
 
 impl Program {
   pub fn new(config: ProgramConfig) -> Self {
@@ -50,6 +53,19 @@ impl Program {
     let mut interpreter = Interpreter::new(id);
     interpreter.set_trace_enabled(config.environment.trace_enabled);
     Self { config, interpreter }
+  }
+
+  #[cfg(feature = "compiler")]
+  pub fn compile_bytecode(&mut self) -> MResult<Vec<u8>> {
+    let state_brrw = self.interpreter.state.borrow();
+    let mut plan_brrw = state_brrw.plan.borrow_mut();
+    let mut ctx = CompileCtx::new();
+    for step in plan_brrw.iter() {
+      step.compile(&mut ctx)?;
+    }
+    let bytes = ctx.compile()?;
+    self.interpreter.context = Some(ctx);
+    Ok(bytes)
   }
 
 
@@ -204,8 +220,24 @@ impl Program {
 
   pub fn run_string(&mut self, source: &str) -> MResult<Value> {
     let tree = parser::parse(source.trim())?;
+    if self.config.environment.print_tree {
+      print_tree!(tree);
+    }
     self.interpreter.interpret(&tree)
-    todo!();
+  }
+
+  pub fn run_bytecode_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
+    self.interpreter.run_program(program)
+  }
+
+  pub fn run_program(&mut self, source: &str) -> MResult<Value> {
+    let now = std::time::Instant::now();
+    let result = self.run_string(source);
+    if self.config.environment.time_enabled {
+      let cycle_duration = now.elapsed().as_nanos() as f64;
+      println!("Cycle Time: {} ns", cycle_duration);
+    }
+    result
   }
 
   pub fn run_source(&mut self, source: &MechSourceCode) -> MResult<Value> {
@@ -235,7 +267,38 @@ impl Program {
     &self.config.environment
   }
 
+  pub fn interpreter(&self) -> &Interpreter {
+    &self.interpreter
+  }
+
+  pub fn interpreter_mut(&mut self) -> &mut Interpreter {
+    &mut self.interpreter
+  }
+
   pub fn into_interpreter(self) -> Interpreter {
     self.interpreter
   }
+}
+
+pub fn configure_mech_program(program: &mut Program, tree_flag: bool, debug_flag: bool, time_flag: bool, trace_flag: bool) {
+  program.set_environment(ProgramEnvironment {
+    trace_enabled: trace_flag,
+    debug_enabled: debug_flag,
+    time_enabled: time_flag,
+    print_tree: tree_flag,
+    rounds_per_step: program.environment().rounds_per_step,
+  });
+}
+
+pub fn run_mech_program_paths(program: &mut Program, paths: &[String]) -> MResult<Value> {
+  let mut mechfs = MechFileSystem::new();
+  for path in paths {
+    mechfs.watch_source(path)?;
+  }
+  let sources = mechfs.sources();
+  let sources = sources.read().unwrap();
+  for (_, source) in sources.sources_iter() {
+    return program.run_source(source);
+  }
+  Ok(Value::Empty)
 }

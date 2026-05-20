@@ -822,7 +822,7 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
             Ok(mut file) => {
               //println!("{} {}", "[Loading]".truecolor(153,221,85), path.display());
               let mut buffer = String::new();
-              file.read_to_string(&mut buffer);
+              file.read_to_string(&mut buffer)?;
               Ok(MechSourceCode::Html(buffer))
             }
             Err(err) => {
@@ -843,7 +843,7 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
             Ok(mut file) => {
               //println!("{} {}", "[Loading]".truecolor(153,221,85), path.display());
               let mut buffer = Vec::new();
-              file.read_to_end(&mut buffer);
+              file.read_to_end(&mut buffer)?;
               // store extension and bytes
               let extension = path
                 .extension()
@@ -1271,30 +1271,6 @@ impl MechErrorKind for FileOpenFailed {
 
   fn message(&self) -> String {
     format!("Failed to open file {}: {}", self.file_path, self.source)
-  }
-}
-
-#[derive(Debug, Clone)]
-pub struct HttpTextDecodeFailed {
-  pub url: String,
-  pub source: String,
-}
-impl MechErrorKind for HttpTextDecodeFailed {
-  fn name(&self) -> &str { "HttpTextDecodeFailed" }
-  fn message(&self) -> String {
-  format!("Failed to read response text {}: {}", self.url, self.source)
-  }
-}
-
-#[derive(Debug, Clone)]
-pub struct HttpRequestFailed {
-  pub url: String,
-  pub source: String,
-}
-impl MechErrorKind for HttpRequestFailed {
-  fn name(&self) -> &str { "HttpRequestFailed" }
-  fn message(&self) -> String {
-  format!("Failed to GET {}: {}", self.url, self.source)
   }
 }
 
