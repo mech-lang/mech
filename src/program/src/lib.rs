@@ -1,4 +1,6 @@
 #[cfg(feature = "program")]
+pub mod api;
+#[cfg(feature = "program")]
 pub mod program;
 #[cfg(feature = "mechfs")]
 pub mod mechfs;
@@ -7,6 +9,8 @@ pub mod mechfs;
 //#[cfg(feature = "persister")]
 //pub mod persister;
 
+#[cfg(feature = "program")]
+pub use crate::api::*;
 #[cfg(feature = "program")]
 pub use crate::program::*;
 #[cfg(feature = "mechfs")]

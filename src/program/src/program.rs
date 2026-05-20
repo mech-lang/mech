@@ -1,6 +1,7 @@
 
 use crate::*;
-use mech_core::{hash_str, MResult, MechSourceCode, Value, ParsedProgram, PrettyPrint, CompileCtx};
+use crate::api::{ProgramDiagnostics, ProgramEngine, ProgramEngineConfig, ProgramResult};
+use mech_core::{MResult, MechSourceCode, Value, ParsedProgram, PrettyPrint, CompileCtx};
 use mech_interpreter::Interpreter;
 use mech_syntax::parser;
 
@@ -40,28 +41,31 @@ impl Default for MechProgramConfig {
 
 pub struct MechProgram {
   pub config: MechProgramConfig,
-  interpreter: Interpreter,
-  fs: MechFileSystem,
+  engine: ProgramEngine,
 }
 
 impl MechProgram {
   pub fn new(config: MechProgramConfig) -> Self {
-    let id = hash_str(&format!("program/{}", config.name));
-    let mut interpreter = Interpreter::new(id, config.environment.rounds_per_step);
-    interpreter.set_trace_enabled(config.environment.trace_enabled);
-    Self { config, interpreter, fs: MechFileSystem::new() }
+    let engine = ProgramEngine::new(ProgramEngineConfig {
+      name: config.name.clone(),
+      rounds_per_step: config.environment.rounds_per_step,
+      trace_enabled: config.environment.trace_enabled,
+    });
+    Self { config, engine }
   }
 
   #[cfg(feature = "compiler")]
   pub fn compile_bytecode(&mut self) -> MResult<Vec<u8>> {
-    let state_brrw = self.interpreter.state.borrow();
-    let mut plan_brrw = state_brrw.plan.borrow_mut();
     let mut ctx = CompileCtx::new();
-    for step in plan_brrw.iter() {
-      step.compile(&mut ctx)?;
+    {
+      let state_brrw = self.engine.interpreter().state.borrow();
+      let plan_brrw = state_brrw.plan.borrow_mut();
+      for step in plan_brrw.iter() {
+        step.compile(&mut ctx)?;
+      }
     }
     let bytes = ctx.compile()?;
-    self.interpreter.context = Some(ctx);
+    self.engine.interpreter_mut().context = Some(ctx);
     Ok(bytes)
   }
 
@@ -220,13 +224,14 @@ impl MechProgram {
     if self.config.environment.print_tree {
       print_tree!(tree);
     }
-    self.interpreter.interpret(&tree)
+    self.engine.interpreter_mut().interpret(&tree)
   }
 
   pub fn run_bytecode_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
-    self.interpreter.run_program(program)
+    self.engine.run_bytecode_program(program).map(|r| r.value)
   }
 
+  #[deprecated(note = "Use ProgramEngine::run_string and inspect diagnostics instead of CLI printing concerns.")]
   pub fn run_program(&mut self, source: &str) -> MResult<Value> {
     let now = std::time::Instant::now();
     let result = self.run_string(source);
@@ -241,13 +246,13 @@ impl MechProgram {
     match source {
       MechSourceCode::String(s) => self.run_string(s),
       MechSourceCode::ByteCode(bc_program) => {
-        self.interpreter.run_program(&ParsedProgram::from_bytes(bc_program)?)
+        self.engine.run_bytecode_program(&ParsedProgram::from_bytes(bc_program)?).map(|r| r.value)
       }
       MechSourceCode::Program(code_vec) => {
         let mut value = Value::Empty;
         for c in code_vec {
           if let MechSourceCode::Tree(tree) = c {
-            value = self.interpreter.interpret(tree)?;
+            value = self.engine.interpreter_mut().interpret(tree)?;
           }
         }
         Ok(value)
@@ -258,7 +263,7 @@ impl MechProgram {
 
   pub fn set_environment(&mut self, environment: MechProgramEnvironment) {
     self.config.environment = environment;
-    self.interpreter.set_trace_enabled(self.config.environment.trace_enabled);
+    self.engine.set_trace_enabled(self.config.environment.trace_enabled);
   }
 
   pub fn environment(&self) -> &MechProgramEnvironment {
@@ -266,39 +271,34 @@ impl MechProgram {
   }
 
   pub fn interpreter(&self) -> &Interpreter {
-    &self.interpreter
+    self.engine.interpreter()
   }
 
   pub fn interpreter_mut(&mut self) -> &mut Interpreter {
-    &mut self.interpreter
+    self.engine.interpreter_mut()
   }
 
   pub fn into_interpreter(self) -> Interpreter {
-    self.interpreter
+    self.engine.into_interpreter()
   }
 
   pub fn watch_source(&mut self, path: &str) -> MResult<()> {
-    self.fs.watch_source(path)?;
+    self.engine.watch_source(path)?;
     Ok(())
   }
 
   pub fn run_paths(&mut self, paths: &[String]) -> MResult<Value> {
     for path in paths {
-      self.fs.watch_source(path)?;
+      self.engine.watch_source(path)?;
     }
     self.run()
   }
 
   pub fn run(&mut self) -> MResult<Value> {
-    let sources = self.fs.sources();
-    let sources = sources.read().unwrap();
-    let mut result = Value::Empty;
-    for (_, source) in sources.sources_iter() {
-      result = self.run_source(source)?;
-    }
-    Ok(result)
+    self.engine.run().map(|r| r.value)
   }
 
+  #[deprecated(note = "Use ProgramEngine and a CLI adapter for presentation concerns.")]
   pub fn configure(&mut self, tree_flag: bool, debug_flag: bool, time_flag: bool, trace_flag: bool, rounds_per_step: usize) {
     self.set_environment(MechProgramEnvironment {
       trace_enabled: trace_flag,
@@ -311,3 +311,43 @@ impl MechProgram {
 
 }
 
+
+
+#[derive(Debug, Clone, Default)]
+pub struct MechCliOptions {
+  pub print_tree: bool,
+  pub print_symbols: bool,
+  pub print_plan: bool,
+  pub print_timing: bool,
+}
+
+pub struct MechCliAdapter {
+  pub options: MechCliOptions,
+}
+
+impl MechCliAdapter {
+  pub fn run_string(&self, program: &mut MechProgram, source: &str) -> MResult<ProgramResult> {
+    if self.options.print_tree {
+      let tree = parser::parse(source.trim())?;
+      print_tree!(tree);
+    }
+    let result = program.engine.run_string(source)?;
+    self.print_diagnostics(program, &result.diagnostics);
+    Ok(result)
+  }
+
+  pub fn run_paths(&self, program: &mut MechProgram, paths: &[String]) -> MResult<ProgramResult> {
+    let result = program.engine.run_paths(paths)?;
+    self.print_diagnostics(program, &result.diagnostics);
+    Ok(result)
+  }
+
+  fn print_diagnostics(&self, program: &MechProgram, diagnostics: &ProgramDiagnostics) {
+    if self.options.print_timing {
+      if let Some(parse) = diagnostics.parse_time_ns { println!("Parse Time: {} ns", parse); }
+      if let Some(exec) = diagnostics.execution_time_ns { println!("Cycle Time: {} ns", exec); }
+    }
+    if self.options.print_symbols { print_symbols!(program.interpreter()); }
+    if self.options.print_plan { print_plan!(program.interpreter()); }
+  }
+}

@@ -389,7 +389,8 @@ async fn main() -> Result<(), MechError> {
 
     let uuid = generate_uuid();
     let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
-    program.configure(tree_flag, debug_flag, time_flag, trace_flag, rounds_per_step);
+    let cli_adapter = MechCliAdapter { options: MechCliOptions { print_tree: tree_flag, print_symbols: debug_flag, print_plan: debug_flag, print_timing: time_flag } };
+  program.set_environment(MechProgramEnvironment { trace_enabled: trace_flag, debug_enabled: debug_flag, time_enabled: time_flag, print_tree: tree_flag, rounds_per_step });
 
     for path in mech_paths {
       program.watch_source(&path)?;
@@ -542,7 +543,8 @@ async fn main() -> Result<(), MechError> {
   #[cfg(feature = "run")]
   let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
   #[cfg(feature = "run")]
-  program.configure(tree_flag, debug_flag, time_flag, trace_flag, rounds_per_step);
+  let cli_adapter = MechCliAdapter { options: MechCliOptions { print_tree: tree_flag, print_symbols: debug_flag, print_plan: debug_flag, print_timing: time_flag } };
+  program.set_environment(MechProgramEnvironment { trace_enabled: trace_flag, debug_enabled: debug_flag, time_enabled: time_flag, print_tree: tree_flag, rounds_per_step });
   #[cfg(feature = "run")]
   {
     let mut paths = if let Some(m) = matches.get_many::<String>("mech_paths") {
@@ -576,7 +578,7 @@ async fn main() -> Result<(), MechError> {
         // ---------- 4. Treat the inputs as Mech code ----------
         program.interpreter_mut().clear();
         let joined = paths.join(" ");
-        match program.run_program(joined.trim()) {
+        match cli_adapter.run_string(&mut program, joined.trim()).map(|r| r.value) {
           Ok(r) => {
             println!("{}", r.kind());
             #[cfg(feature = "pretty_print")]
@@ -596,7 +598,7 @@ async fn main() -> Result<(), MechError> {
       }
     }
 
-    let result = program.run_paths(&paths);
+    let result = cli_adapter.run_paths(&mut program, &paths).map(|r| r.value);
     if !repl_flag {
       match &result {
         Ok(r) => {
