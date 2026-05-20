@@ -185,6 +185,17 @@ fn new_interpreter(id: u64) -> Interpreter {
 
 }
 
+struct WasmProgram<'a> {
+  interpreter: &'a mut Interpreter,
+}
+
+impl<'a> WasmProgram<'a> {
+  fn run_string(&mut self, source: &str) -> MResult<Value> {
+    let tree = parser::parse(source.trim())?;
+    self.interpreter.interpret(&tree)
+  }
+}
+
 fn find_out_values(interpreter: &Interpreter, interpreter_id: u64) -> Option<Ref<HashMap<u64, Value>>> {
   if interpreter.id == interpreter_id {
     return Some(interpreter.out_values.clone());
@@ -240,17 +251,11 @@ pub fn main() -> Result<(), JsValue> {
 
 #[cfg(feature = "eval")]
 fn run_mech_code(intrp: &mut Interpreter, code: &Vec<(String,MechSourceCode)>) -> MResult<Value> {
+  let mut program = WasmProgram { interpreter: intrp };
   for (file, source) in code {
     match source {
       MechSourceCode::String(s) => {
-        let parse_result = parser::parse(&s.trim());
-        match parse_result {
-          Ok(tree) => { 
-            let result = intrp.interpret(&tree);
-            return result;
-          },
-          Err(err) => return Err(err),
-        }
+        return program.run_string(s);
       }
       x => {
         log!("Unsupported source code type: {:?}", x);

@@ -240,30 +240,6 @@ pub fn kind_define(knd_def: &KindDefine, p: &Interpreter) -> MResult<Value> {
   Ok(Value::Kind(value_kind))
 }
 
-#[derive(Clone, Debug)]
-pub struct InvariantViolationError {
-  pub invariant_name: String,
-  pub expression: String,
-  pub lhs_addr: Option<u64>,
-  pub lhs_value: Option<String>,
-  pub operator: Option<FormulaOperator>,
-  pub rhs_addr: Option<u64>,
-  pub rhs_value: Option<String>,
-  pub reason: String,
-  pub evaluated_kind: String,
-}
-impl MechErrorKind for InvariantViolationError {
-  fn name(&self) -> &str { "InvariantViolationError" }
-  fn message(&self) -> String {
-    let details = match (&self.lhs_addr, &self.lhs_value, &self.operator, &self.rhs_addr, &self.rhs_value) {
-      (Some(la), Some(lv), Some(op), Some(ra), Some(rv)) =>
-        format!(" | expr: {} | lhs(@{:x})={} op={:?} rhs(@{:x})={}", self.expression, la, lv, op, ra, rv),
-      _ => format!(" | expr: {}", self.expression),
-    };
-    format!("Invariant `{}` violation: {} | evaluated kind: {}{}", self.invariant_name, self.reason, self.evaluated_kind, details)
-  }
-}
-
 #[cfg(feature = "invariant_define")]
 pub fn invariant_define(inv_def: &InvariantDefine, p: &Interpreter) -> MResult<Value> {
   let invariant_id = inv_def.name.hash();
