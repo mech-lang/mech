@@ -642,12 +642,13 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   // REPL
   // --------------------------------------------------------------------------
-  #[cfg(all(feature = "repl", not(feature = "run")))]
-  let intrp = Interpreter::new(generate_uuid());
   #[cfg(all(feature = "repl", feature = "run"))]
-  let mut repl = MechRepl::from(program.into_interpreter());
+  let mut repl = MechRepl::from(program);
   #[cfg(all(feature = "repl", not(feature = "run")))]
-  let mut repl = MechRepl::from(intrp);
+  let mut repl = MechRepl::from(MechProgram::new(MechProgramConfig {
+    name: format!("repl-{}", generate_uuid()),
+    environment: MechProgramEnvironment::default(),
+  }));
   #[cfg(feature = "repl")]
   'REPL: loop {
     {

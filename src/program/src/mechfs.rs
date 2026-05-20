@@ -822,7 +822,7 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
             Ok(mut file) => {
               //println!("{} {}", "[Loading]".truecolor(153,221,85), path.display());
               let mut buffer = String::new();
-              file.read_to_string(&mut buffer);
+              file.read_to_string(&mut buffer)?;
               Ok(MechSourceCode::Html(buffer))
             }
             Err(err) => {
