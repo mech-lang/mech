@@ -5,7 +5,6 @@ use mech_core::*;
 use mech_syntax::parser;
 #[cfg(feature = "formatter")]
 use mech_syntax::formatter::*;
-use mech_interpreter::interpreter::*;
 use std::time::Instant;
 use std::fs;
 use std::env;
@@ -257,6 +256,11 @@ async fn main() -> Result<(), MechError> {
         .long("time")
         .help("Measure how long the programs takes to execute.")
         .action(ArgAction::SetTrue))
+    .arg(Arg::new("rounds-per-step")
+        .long("rounds-per-step")
+        .value_name("ROUNDS")
+        .help("Sets the number of rounds per step (10_000)")
+        .required(false))
     .arg(Arg::new("trace")
         .long("trace")
         .help("Print trace output for state-machine arms and function calls")
@@ -273,6 +277,7 @@ async fn main() -> Result<(), MechError> {
   let mut repl_flag = matches.get_flag("repl");
   let time_flag = matches.get_flag("time");
   let trace_flag = matches.get_flag("trace");
+  let rounds_per_step = matches.get_one::<String>("rounds-per-step").and_then(|s| s.parse::<usize>().ok()).unwrap_or(10_000);
 
   let shim_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/shim.html".to_string();
   let stylesheet_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/style.css".to_string();
@@ -361,9 +366,10 @@ async fn main() -> Result<(), MechError> {
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let output_path = PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
     let debug_flag = matches.get_flag("debug");
+    let rounds_per_step = matches.get_one::<String>("rounds-per-step").and_then(|s| s.parse::<usize>().ok()).unwrap_or(10_000);
     let mut mechfs = MechFileSystem::new();
 
-    for path in mech_paths {
+    for path in &mech_paths {
       mechfs.watch_source(&path)?;
     }
     let sources = mechfs.sources();
@@ -382,11 +388,16 @@ async fn main() -> Result<(), MechError> {
     }
 
     let uuid = generate_uuid();
-    let mut intrp = Interpreter::new(uuid);
+    let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
+    program.configure(tree_flag, debug_flag, time_flag, trace_flag, rounds_per_step);
 
-    let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag, trace_flag); 
+    for path in mech_paths {
+      program.watch_source(&path)?;
+    }
+    
+    let result = program.run(); 
 
-    let bytecode = intrp.compile()?;
+    let bytecode = program.interpreter_mut().compile()?;
 
     let mut output_file = output_path.join("output.mecb");
 
@@ -396,7 +407,7 @@ async fn main() -> Result<(), MechError> {
 
     // print debug info for the context
     if debug_flag {
-      println!("{} Bytecode Size: {:#?} bytes", "[Debug]".truecolor(246,192,78), intrp.context);
+      println!("{} Bytecode Size: {:#?} bytes", "[Debug]".truecolor(246,192,78), &program.interpreter().context);
     }
 
     println!("{} Mech bytecode written to: {}", "[Output]".truecolor(153,221,85), output_file.display());
@@ -526,8 +537,12 @@ async fn main() -> Result<(), MechError> {
   // Run
   // --------------------------------------------------------------------------
   let mut caught_inturrupts = Arc::new(Mutex::new(0));
+  #[cfg(feature = "run")]
   let uuid = generate_uuid();
-  let mut intrp = Interpreter::new(uuid);
+  #[cfg(feature = "run")]
+  let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
+  #[cfg(feature = "run")]
+  program.configure(tree_flag, debug_flag, time_flag, trace_flag, rounds_per_step);
   #[cfg(feature = "run")]
   {
     let mut paths = if let Some(m) = matches.get_many::<String>("mech_paths") {
@@ -559,32 +574,20 @@ async fn main() -> Result<(), MechError> {
         }
       } else {
         // ---------- 4. Treat the inputs as Mech code ----------
-        intrp.clear();
+        program.interpreter_mut().clear();
         let joined = paths.join(" ");
-        let parse_result = parser::parse(joined.trim());
-
-        match parse_result {
-          Ok(tree) => match intrp.interpret(&tree) {
-            Ok(r) => {
-              println!("{}", r.kind());
-              #[cfg(feature = "pretty_print")]
-              println!("{}", r.pretty_print());
-              #[cfg(not(feature = "pretty_print"))]
-              println!("{:#?}", r);
-              std::process::exit(0);
-            }
-            Err(err) => {
-              println!("{} {:#?}",
-                "[Error]".truecolor(246,98,78),
-                err
-              );
-              std::process::exit(1);
-            }
-          },
-
+        match program.run_program(joined.trim()) {
+          Ok(r) => {
+            println!("{}", r.kind());
+            #[cfg(feature = "pretty_print")]
+            println!("{}", r.pretty_print());
+            #[cfg(not(feature = "pretty_print"))]
+            println!("{:#?}", r);
+            std::process::exit(0);
+          }
           Err(err) => {
             println!("{} {:#?}",
-              "[Parse Error]".truecolor(246,98,78),
+              "[Error]".truecolor(246,98,78),
               err
             );
             std::process::exit(1);
@@ -593,7 +596,7 @@ async fn main() -> Result<(), MechError> {
       }
     }
 
-    let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag, trace_flag); 
+    let result = program.run_paths(&paths);
     if !repl_flag {
       match &result {
         Ok(r) => {
@@ -649,8 +652,13 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   // REPL
   // --------------------------------------------------------------------------
-  #[cfg(feature = "repl")]
-  let mut repl = MechRepl::from(intrp);
+  #[cfg(all(feature = "repl", feature = "run"))]
+  let mut repl = MechRepl::from(program);
+  #[cfg(all(feature = "repl", not(feature = "run")))]
+  let mut repl = MechRepl::from(MechProgram::new(MechProgramConfig {
+    name: format!("repl-{}", generate_uuid()),
+    environment: MechProgramEnvironment::default(),
+  }));
   #[cfg(feature = "repl")]
   'REPL: loop {
     {

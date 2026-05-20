@@ -1,7 +1,6 @@
 use crate::*;
-use mech_interpreter::interpreter::*;
-#[cfg(feature = "invariant_define")]
-use mech_interpreter::InvariantViolationError;
+use mech_core::*;
+use mech_program::*;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::ffi::OsStr;
@@ -197,16 +196,12 @@ pub fn run_mech_tests(
   println!("{} Running tests...\n", "[Test]".truecolor(153, 221, 85));
   for path in &expanded_paths {
     let uuid = generate_uuid();
-    let mut intrp = Interpreter::new(uuid);
-    let mut mechfs = MechFileSystem::new();
-    if let Err(err) = mechfs.watch_source(path) {
-      eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
-      run_errors = true;
-      any_failed = true;
-      file_reports.push(FileReport { path: path.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
-      continue;
-    }
-    if let Err(err) = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag, trace_flag) {
+    let mut program = MechProgram::new(MechProgramConfig {
+      name: format!("test-{}", uuid),
+      environment: MechProgramEnvironment::default(),
+    });
+    program.configure(tree_flag, debug_flag, time_flag, trace_flag, 10_000);
+    if let Err(err) = program.run_paths(&vec![path.clone()]) {
       eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
       run_errors = true;
       any_failed = true;
@@ -214,7 +209,7 @@ pub fn run_mech_tests(
       continue;
     }
 
-    let state = intrp.state.borrow();
+    let state = &program.interpreter().state.borrow();
     println!("{} {}\n", "[Test]".truecolor(153, 221, 85), path);
 
     let mut violations: HashMap<u64, CaseDetail> = HashMap::new();
