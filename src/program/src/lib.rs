@@ -1,3 +1,12 @@
+
+// Program
+// =============================================================================
+
+#![cfg_attr(feature = "no-std", no_std)]
+#![cfg_attr(feature = "no-std", alloc)]
+#![allow(dead_code)]
+#![allow(warnings)]
+
 #[cfg(feature = "program")]
 pub mod program;
 #[cfg(feature = "mechfs")]
@@ -15,9 +24,6 @@ pub use crate::mechfs::*;
 //pub use crate::runloop::*;
 //#[cfg(feature = "persister")]
 //pub use crate::persister::*;
-
-// Program
-// =============================================================================
 
 #[macro_export]
 macro_rules! print_tree {
