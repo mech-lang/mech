@@ -309,13 +309,18 @@ pub fn run_mech_tests(
   };
 
   if expanded_paths.len() > 1 {
-    println!("\n{} SUMMARY", "[Test]".truecolor(153, 221, 85));
-    println!("  files-total: {}", report.result.files_total);
-    println!("  files-passed: {}", report.result.files_passed);
-    println!("  files-failed: {}", report.result.files_failed);
-    println!("  tests-total: {}", report.result.tests_total);
-    println!("  tests-passed: {}", report.result.tests_passed);
-    println!("  tests-failed: {}", report.result.tests_failed);
+    let summary_status = if report.result.tests_failed == 0 { "SUCCESS" } else { "FAILED" };
+    println!(
+      "\n{} {}: files {} total | {} passed | {} failed || tests {} total | {} passed | {} failed",
+      "[Test]".truecolor(153, 221, 85),
+      summary_status,
+      report.result.files_total,
+      report.result.files_passed,
+      report.result.files_failed,
+      report.result.tests_total,
+      report.result.tests_passed,
+      report.result.tests_failed
+    );
 
     let failing_files = report
       .files
@@ -347,7 +352,6 @@ pub fn run_mech_tests(
     }
     println!();
   }
-
   if let Some(output_path) = output_path {
     let path = PathBuf::from(&output_path);
     let extension = path.extension().and_then(OsStr::to_str).unwrap_or("");
@@ -356,9 +360,6 @@ pub fn run_mech_tests(
       "mec" => save_to_file(path, &report_to_mech(&report, verbose))?,
       _ => { eprintln!("{} Unsupported --out extension `.{}`. Use .json or .mec.", "[Error]".truecolor(246,98,78), extension); return Ok(1); }
     }
-  }
-  if run_errors {
-    println!("{} One or more files failed to load/execute, but all requested files were attempted.", "[Warn]".truecolor(255,210,77));
   }
   Ok(if any_failed { 1 } else { 0 })
 }
