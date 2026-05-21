@@ -252,7 +252,7 @@ pub fn any_token(mut input: ParseString) -> ParseResult<Token> {
 
 // forbidden-emoji := box-drawing | other-forbidden-shapes ;
 pub fn forbidden_emoji(input: ParseString) -> ParseResult<Token> {
-  alt((box_drawing_emoji, nbsp, thin_space, mika_section_open, mika_section_close))(input)
+  alt((box_drawing_emoji, nbsp, thin_space, mika_section_open, mika_section_close, left_angle2, right_angle2))(input)
 }
 
 // emoji := (!forbidden-emoji, emoji-grapheme) ;
