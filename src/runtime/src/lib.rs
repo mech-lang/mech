@@ -1,16 +1,11 @@
 #![cfg_attr(feature = "no_std", no_std)]
 
-#[cfg(feature = "serde")]
-use serde_derive::{Deserialize, Serialize};
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RuntimeInfo {
-  pub name: &'static str,
-}
-
-impl RuntimeInfo {
-  pub const fn new(name: &'static str) -> Self {
-    Self { name }
-  }
-}
+pub mod runtime;
+pub mod id.rs
+//pub mod store.rs
+// pub mod config.rs
+// pub mod error.rs
+// pub mod event.rs
+// pub mod host.rs
+// pub mod capability.rs
+// pub mod scheduler.rs

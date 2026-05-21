@@ -116,3 +116,4 @@ mech-program = { version = "0.3.5", default-features = false }
 serde = { version = "1.0.228", optional = true }
 serde_derive = { version = "1.0.228", optional = true }
 tracing = { version = "0.1.41", optional = true }
+uuid = { version = "1.23.1", features = ["v7", "serde"] }
