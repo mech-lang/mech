@@ -23,6 +23,36 @@ Currently: `v0.3.5` (Spring 2026)
 
 No target release date yet.
 
+(1.4) Architecture Direction
+
+The next major step is to evolve Mech from a reactive language implementation into a database-backed, embeddable, live, distributed, capability-oriented runtime.
+
+The `v0.2` data specification and `v0.3` program specification remain the foundation. The `v0.4` system specification should define how Mech programs are hosted, permissioned, persisted, updated, distributed, inspected, and recovered.
+
+The guiding architecture is:
+
+```text
+Host Application
+  -> Embedding API
+  -> Runtime Kernel
+      -> Mech language engine
+      -> Capability kernel
+      -> Scheduler / actors / tasks
+      -> Live programming system
+      -> Database runtime layer
+      -> Distributed runtime layer
+  -> Database / event log / object store
+```
+
+Core principles:
+
+- Code runs with explicit capabilities.
+- State changes happen through transactions.
+- Long-lived computation is represented as actors, tasks, or state machines.
+- Live changes are versioned and migrated.
+- Distribution moves messages and capabilities, not raw memory.
+- The database records identity, state, authority, and history.
+
 2. Feature Progress
 -------------------------------------------------------------------------------
 
@@ -35,11 +65,13 @@ No target release date yet.
 | 🐓 | Feature Complete | Fully implemented, tested, documented |
 | 🍗 | Deprecated | Removed from specification, should not be used |
 
+The chicken scale is used throughout the roadmap. Items should not be promoted to 🐓 until they have a stable specification, implementation, tests, examples, documentation, and compatibility expectations.
+
 (2.1) Data Specification (`v0.2`)
 
-Now that all `v0.2` work items are at the beta implementation stage, we will prepare to move on to `v0.3`. This will mean wrapping up documentation, tests, and any remaining bugs. 
+Now that all `v0.2` work items are at the beta implementation stage, we will prepare to move on to `v0.3`. This will mean wrapping up documentation, tests, and any remaining bugs.
 
-As beta features, these are are still not complete and are subject to change in `v0.3`.
+As beta features, these are still not complete and are subject to change in `v0.3`.
 
 -(🐤) repl
 -(🐤) error system
@@ -118,17 +150,205 @@ Version `v0.3` incorporates all the features of `v0.2`, in addition to the follo
 -(🐣) gui
 -(🐣) live coding
 
-(2.3) System specification (v0.4)
+(2.3) System Specification (`v0.4`)
+
+(i)> `v0.4` is the system specification. Its purpose is to define the runtime substrate that hosts Mech programs: embedding, capabilities, live programming, database persistence, concurrency, and distribution.
+
+`v0.4` should not be treated as a bag of separate features. The database layer, capability system, live programming system, distributed runtime, and embedding interface should be designed together.
 
 -(💭) gpgpu
+-(🥚) runtime kernel
+  -(🥚) `MechRuntime` as the host-facing runtime object
+  -(🥚) runtime configuration and lifecycle
+  -(🥚) runtime identifiers
+  -(🥚) runtime diagnostics
+  -(🥚) runtime event stream
+-(🥚) embedding architecture
+  -(🥚) stable host API boundary
+  -(🥚) host-owned module resolver
+  -(🥚) host-owned policy hooks
+  -(🥚) host object handles
+  -(🥚) structured runtime errors
+  -(🥚) multiple independent runtime instances
+  -(🥚) Rust embedding API
+  -(💭) Python embedding API
+  -(💭) C/C++ embedding API
+  -(💭) Godot embedding API
+  -(🐣) Javascript / WASM embedding API
 -(🐣) capability permissions
--(🐣) distributed programs
+  -(🐣) capability references
+  -(🥚) capability records
+  -(🥚) capability constraints
+  -(🥚) capability attenuation
+  -(🥚) capability delegation
+  -(🥚) capability revocation
+  -(🥚) capability audit logging
+  -(🥚) capability-aware module loading
+  -(🥚) capability-aware standard library
+  -(🥚) capability-checked host functions
+-(🥚) database runtime layer
+  -(🥚) `MechStore` abstraction
+  -(🥚) in-memory store backend
+  -(🥚) durable object identifiers
+  -(🥚) durable object records
+  -(🥚) module version records
+  -(🥚) capability records
+  -(🥚) actor/task records
+  -(🥚) event log
+  -(🥚) transaction records
+  -(🥚) snapshots
+  -(🥚) schema versions
+  -(🥚) migration history
+  -(💭) SQL store backend
+  -(💭) embedded local database backend
+  -(💭) distributed database backend
+-(🥚) transaction system
+  -(🥚) bounded transactional turns
+  -(🥚) read sets and write sets
+  -(🥚) state patches
+  -(🥚) conflict detection
+  -(🥚) retry policy
+  -(🥚) transaction-local capability checks
+  -(🥚) transaction audit records
 -(🐣) concurrent programming
+  -(🐣) asynchronous state machines
+  -(🥚) tasks
+  -(🥚) actors
+  -(🥚) actor mailboxes
+  -(🥚) task cancellation
+  -(🥚) resource budgets
+  -(🥚) scheduling policy
+  -(🥚) actor leases
+  -(🥚) durable actor turns
+-(🐣) live programming
+  -(🐣) source watching
+  -(🥚) module versioning
+  -(🥚) code identity
+  -(🥚) live reload boundary
+  -(🥚) safe update points
+  -(🥚) state migration functions
+  -(🥚) schema migration functions
+  -(🥚) dependency invalidation
+  -(🥚) shadow execution
+  -(🥚) event replay
+  -(🥚) rollback metadata
+  -(🥚) live introspection hooks
+-(🐣) distributed programs
+  -(🐣) distributed runtime prototype
+  -(🥚) node identity
+  -(🥚) node registry
+  -(🥚) message router
+  -(🥚) remote capability proxies
+  -(🥚) actor placement
+  -(🥚) durable messages
+  -(🥚) direct messages
+  -(🥚) lease-based actor execution
+  -(🥚) distributed tracing
+  -(💭) replication
+  -(💭) partition recovery
+-(🥚) introspection and debugging
+  -(🥚) runtime inspector
+  -(🥚) database explorer
+  -(🥚) capability graph explorer
+  -(🥚) actor/task inspector
+  -(🥚) module version browser
+  -(🥚) event log browser
+  -(🥚) transaction trace viewer
+  -(🥚) time travel debugging over event logs
+  -(🥚) profiler integration
 
-3. Next Steps for v0.3
+3. Architecture Plan
+-------------------------------------------------------------------------------
+
+(3.1) Current Architecture
+
+The current `v0.3` architecture is centered on program execution:
+
+```text
+mech-core        values, kinds, symbols, bytecode, program state
+mech-syntax      parser, formatter, Mechdown
+mech-interpreter AST interpreter, bytecode runner, stdlib dispatch
+mech-program     program wrapper, source loading, MechFS integration
+mech-wasm        browser / WASM integration
+```
+
+This structure should remain intact. The system architecture should wrap the current language engine rather than forcing the interpreter to become the whole runtime.
+
+(3.2) Target Architecture
+
+The target `v0.4+` architecture is:
+
+```text
+Host Application
+  |
+  v
+Embedding API
+  |
+  v
+Runtime Kernel
+  |-- Language Engine
+  |-- Capability Kernel
+  |-- Scheduler
+  |-- Live System
+  |-- Database Runtime Layer
+  |-- Distributed Runtime Layer
+```
+
+(3.3) Runtime Kernel
+
+The runtime kernel should be introduced as a new architectural boundary. Initially, it may wrap `MechProgram` and `Interpreter` with minimal behavior. Over time, it should become the host-facing API for creating, configuring, running, inspecting, and shutting down Mech systems.
+
+(3.4) Database Runtime Layer
+
+The database should be treated as part of the runtime substrate, not merely as application storage.
+
+The database layer should store module source, module bytecode, module versions, dependency graphs, durable objects, actor state, task state, mailboxes, capability grants, event logs, snapshots, transaction records, schema versions, migration history, and audit metadata.
+
+The first implementation should be a `MechStore` trait with an in-memory backend. Durable backends should come after the interface stabilizes.
+
+(3.5) Capability Kernel
+
+Capabilities should be explicit references that carry authority.
+
+A capability should describe what resource it authorizes, which operations are allowed, which constraints apply, whether it can be delegated or attenuated, whether it can be revoked, who issued it, and how its use is audited.
+
+Capabilities should govern access to host APIs, database resources, modules, remote nodes, workers, files, network resources, clocks, random sources, UI surfaces, and other sensitive resources.
+
+(3.6) Live Programming
+
+Live programming should be based on code identity, module versions, durable state, and safe update points.
+
+The preferred strategy is to update durable actors, tasks, and objects at turn boundaries rather than migrating arbitrary interpreter stacks.
+
+(3.7) Distributed Computation
+
+Distributed computation should move messages, immutable data, and capabilities. It should not depend on a single shared mutable heap across machines.
+
+The first distributed model should be actor-based:
+
+```text
+Node claims actor lease
+  -> reads next message
+  -> loads actor state
+  -> executes bounded turn
+  -> writes state patch
+  -> appends events
+  -> emits messages
+  -> commits transaction
+```
+
+This model supports crash recovery, live upgrades, auditability, and placement control.
+
+(3.8) Embedding
+
+Embedding should be a first-class design target. A host should be able to create a runtime, grant capabilities, provide modules, run code, receive diagnostics, and shut the runtime down without exposing ambient authority.
+
+The embedding API should prefer explicit host capabilities over global host functions.
+
+4. Next Steps for v0.3
 --------------------------------------------------------------------------------
 
-(3.1) Enums, Tagged Unions, and Pattern Matching
+(4.1) Enums, Tagged Unions, and Pattern Matching
 
 The current implementation of enums, tagged unions, and pattern matching is just a starting point, and we have a number of improvements planned for the future, including:
 
@@ -137,7 +357,7 @@ The current implementation of enums, tagged unions, and pattern matching is just
 - Set patterns, which would allow you to match on element membership in a set, and to destructure values from sets.
 - Map patterns, which would allow you to match on the presence or absence of keys in a map, or to match maps with particular key-value pairs.
 
-(3.2) Functions
+(4.2) Functions
 
 The current implementation of functions is just a starting point, and we have a number of improvements planned for the future, including:
 
@@ -145,26 +365,26 @@ The current implementation of functions is just a starting point, and we have a 
 - Function overloading: allowing you to define multiple functions with the same name but different parameter types or counts, and having the compiler resolve which one to call based on the arguments.
 - Where clauses: allowing you to add additional guards and constraints to function definitions for more complex pattern matching.
 
+(4.3) State Machines
 
-(3.3) State Machines
+State machines are probably the least developed area of the language right now, so there is a lot left to do. The main thing we will look at next is adding support for asynchronous state machines, which would allow you to model processes that interact with external systems, or that have some notion of time or waiting. This would involve adding new syntax for defining asynchronous transitions, such as the planned `~>` transition, and new semantics for how those transitions are executed and traced.
 
-State machines are probably the lest developed area of the language right now, so there's a lot left to do. The main thing we'll look at next is adding support for asynchronous state machines, which would allow you to model processes that interact with external systems, or that have some notion of time or waiting. This would involve adding new syntax for defining asynchronous transitions (we have `~>` planned for that), and new semantics for how those transitions are executed and traced.
+State machines are also the likely bridge to `v0.4` actors and durable tasks. Work done here should avoid assumptions that prevent later persistence, scheduling, or distributed execution.
 
-
-(3.4) Comprehensions
+(4.4) Comprehensions
 
 In a future release, we plan on adding support for record and table comprehensions, which would allow you to generate new records and tables from existing ones using a similar syntax.
 
-(3.5) Table Joins
+(4.5) Table Joins
 
 The current implementation of table joins is just a starting point, and we have a number of improvements planned for the future, including:
 
 - Joining on multiple keys, which would allow you to perform more complex joins based on multiple columns.
 - Non-equi joins, which would allow you to join tables based on conditions other than equality, such as greater than or less than.
 
-(3.6) Mechdown
+(4.6) Mechdown
 
-In a future release next release you will be able to embed Mech within an HTML document and feed that directly into the Mechdown compiler, which will allow you to use Mech components and features within your own custom web pages. Maybe something like this:
+In a future release you will be able to embed Mech within an HTML document and feed that directly into the Mechdown compiler, which will allow you to use Mech components and features within your own custom web pages. Maybe something like this:
 
 ```html
 <mech>
@@ -187,15 +407,31 @@ In a future release next release you will be able to embed Mech within an HTML d
 </html>
 ```
 
-It would work by first compiling the Mech code to generate the chart component, and then replacing the `{{VAR:population-growth-chart}}` placeholder in the HTML with the rendered output of that component, which could be an SVG or a canvas element or something like that. This will allow you to use Mech and JavaScript together in a more seamless way for building interactive web content. Or if you want to, completely replace JavaScript with Mech for building interactive web content.
+It would work by first compiling the Mech code to generate the chart component, and then replacing the `{{VAR:population-growth-chart}}` placeholder in the HTML with the rendered output of that component, which could be an SVG or a canvas element. This will allow you to use Mech and JavaScript together in a more seamless way for building interactive web content. Or, if you want to, completely replace JavaScript with Mech for building interactive web content.
 
-4. Roadmap History
+(4.7) Runtime Preparation
+
+The following `v0.3` work should be done with the `v0.4` runtime architecture in mind:
+
+-(🥚) define `MechRuntime` shell crate or module
+-(🥚) define `MechStore` trait
+-(🥚) define in-memory store backend
+-(🥚) define capability record data structures
+-(🥚) define runtime event data structures
+-(🥚) define actor/task identifiers
+-(🥚) define module version identifiers
+-(🥚) make state machine traces compatible with event logs
+-(🥚) separate host-facing API from interpreter internals
+-(🥚) keep database access behind a trait boundary
+-(🥚) keep capability checks explicit and auditable
+
+5. Roadmap History
 -------------------------------------------------------------------------------
 
-(4.1) Version `v0.0.6-alpha` (unreleased)
+(5.1) Version `v0.0.6-alpha` (unreleased)
 
 -[x] Testing
--[x] Machines 
+-[x] Machines
   -[x]HTML
     -[x] Mouse
     -[x] Keyboard
@@ -216,7 +452,7 @@ It would work by first compiling the Mech code to generate the chart component, 
   -[x] Mech Compiler
   -[x] Table
 
-(4.2) Version `v0.1.0` (December 2022)
+(5.2) Version `v0.1.0` (December 2022)
 
 -[x] User defined functions
 -[x] Errors
@@ -233,7 +469,7 @@ It would work by first compiling the Mech code to generate the chart component, 
   -[x] Matrix
   -[x] GUI
 
-(4.3) Version `v0.1.1` (Spring 2023)
+(5.3) Version `v0.1.1` (Spring 2023)
 
 - Core
   -[x] Automatic differentiation
