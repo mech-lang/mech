@@ -496,7 +496,7 @@ pub fn slice(slc: &Slice, env: Option<&Environment>, p: &Interpreter) -> MResult
             match p.symbols().borrow().get(id) {
                 Some(val) => Value::MutableReference(val.clone()),
                 None => {
-                    return Err(MechError::new(UndefinedVariableError { id }, None)
+                    return Err(MechError::new(UndefinedVariableError { id, name: slc.name.to_string() }, None)
                         .with_compiler_loc()
                         .with_tokens(slc.tokens()));
                 }
@@ -506,7 +506,7 @@ pub fn slice(slc: &Slice, env: Option<&Environment>, p: &Interpreter) -> MResult
         match p.symbols().borrow().get(id) {
             Some(val) => Value::MutableReference(val.clone()),
             None => {
-                return Err(MechError::new(UndefinedVariableError { id }, None)
+                return Err(MechError::new(UndefinedVariableError { id, name: slc.name.to_string() }, None)
                     .with_compiler_loc()
                     .with_tokens(slc.tokens()));
             }
@@ -893,7 +893,7 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
                 drop(state_brrw);
                 match symbol_value {
                     Some(value) => maybe_cast_to_kind(Value::MutableReference(value)),
-                    None => Err(MechError::new(UndefinedVariableError { id }, None)
+                    None => Err(MechError::new(UndefinedVariableError { id, name: v.name.to_string() }, None)
                         .with_compiler_loc()
                         .with_tokens(v.tokens())),
                 }
@@ -907,7 +907,7 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
             drop(state_brrw);
             match symbol_value {
                 Some(value) => maybe_cast_to_kind(Value::MutableReference(value)),
-                None => Err(MechError::new(UndefinedVariableError { id }, None)
+                None => Err(MechError::new(UndefinedVariableError { id, name: v.name.to_string() }, None)
                     .with_compiler_loc()
                     .with_tokens(v.tokens())),
             }
@@ -1620,6 +1620,7 @@ impl MechErrorKind for UnhandledFormulaOperatorError {
 #[derive(Debug, Clone)]
 pub struct UndefinedVariableError {
   pub id: u64,
+  pub name: String,
 }
 impl MechErrorKind for UndefinedVariableError {
   fn name(&self) -> &str {
@@ -1627,7 +1628,7 @@ impl MechErrorKind for UndefinedVariableError {
   }
 
   fn message(&self) -> String {
-    format!("Undefined variable: {}", self.id)
+    format!("Undefined variable `{}` (id: {})", self.name, self.id)
   }
 }
 #[derive(Debug, Clone)]

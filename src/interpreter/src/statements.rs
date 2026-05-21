@@ -97,7 +97,7 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
             Some("(!)> Mutable variables are defined with the `~` operator. *e.g.*: {{~x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens())),
           false => return Err(MechError::new(
-            UndefinedVariableError { id },
+            UndefinedVariableError { id, name: slc.name.to_string() },
             Some("(!)> Variables are defined with the `:=` operator. *e.g.*: {{x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens())),
         }
@@ -157,7 +157,7 @@ pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p:
       None => {
         if !symbols_brrw.contains(id) {
           return Err(MechError::new(
-            UndefinedVariableError { id },
+            UndefinedVariableError { id, name: slc.name.to_string() },
             Some("(!)> Variables are defined with the `:=` operator. *e.g.*: {{x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens()));
         } else { 
@@ -952,12 +952,13 @@ impl MechErrorKind for VariableAlreadyDefinedError {
 #[derive(Debug, Clone)]
 pub struct UndefinedVariableError {
   pub id: u64,
+  pub name: String,
 }
 impl MechErrorKind for UndefinedVariableError {
   fn name(&self) -> &str { "UndefinedVariable" }
 
   fn message(&self) -> String {
-    format!("Undefined variable: {}", self.id)
+    format!("Undefined variable `{}` (id: {})", self.name, self.id)
   }
 }
 
