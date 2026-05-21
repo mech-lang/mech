@@ -308,17 +308,65 @@ pub fn run_mech_tests(
     files: file_reports,
   };
 
-  if let Some(output_path) = output_path {
-    let path = PathBuf::from(&output_path);
-    let extension = path.extension().and_then(OsStr::to_str).unwrap_or("");
-    match extension {
-      "json" => save_to_file(path, &report_to_json(&report, verbose)?)?,
-      "mec" => save_to_file(path, &report_to_mech(&report, verbose))?,
-      _ => { eprintln!("{} Unsupported --out extension `.{}`. Use .json or .mec.", "[Error]".truecolor(246,98,78), extension); return Ok(1); }
+  if expanded_paths.len() > 1 {
+    let summary_status = if report.result.tests_failed == 0 { "SUCCESS" } else { "FAILED" };
+    println!(
+      "\n{} {}: files {} total | {} passed | {} failed || tests {} total | {} passed | {} failed",
+      "[Test]".truecolor(153, 221, 85),
+      summary_status,
+      report.result.files_total,
+      report.result.files_passed,
+      report.result.files_failed,
+      report.result.tests_total,
+      report.result.tests_passed,
+      report.result.tests_failed
+    );
+
+    let failing_files = report
+      .files
+      .iter()
+      .filter(|f| f.run_error.is_some() || f.result.failed > 0)
+      .collect::<Vec<_>>();
+
+    if !failing_files.is_empty() {
+      println!("\n  failing-files:");
+      for file in failing_files {
+        println!("    - {}", file.path);
+        if let Some(run_error) = &file.run_error {
+          println!("      reason: {}", run_error);
+        } else {
+          for failed_case in &file.failed {
+            println!("      {}: {}", failed_case.name, failed_case.reason);
+          }
+        }
+      }
     }
-  }
-  if run_errors {
-    println!("{} One or more files failed to load/execute, but all requested files were attempted.", "[Warn]".truecolor(255,210,77));
+
+    if verbose {
+      let passing_files = report
+        .files
+        .iter()
+        .filter(|f| f.run_error.is_none() && f.result.failed == 0)
+        .map(|f| f.path.clone())
+        .collect::<Vec<_>>();
+      if !passing_files.is_empty() {
+        println!("\n  passing-files:");
+        for path in passing_files {
+          println!("    - {}", path);
+        }
+      }
+    }
+    println!();
+
+    if let Some(output_path) = output_path {
+      let path = PathBuf::from(&output_path);
+      let extension = path.extension().and_then(OsStr::to_str).unwrap_or("");
+      match extension {
+        "json" => save_to_file(path, &report_to_json(&report, verbose)?)?,
+        "mec" => save_to_file(path, &report_to_mech(&report, verbose))?,
+        _ => { eprintln!("{} Unsupported --out extension `.{}`. Use .json or .mec.", "[Error]".truecolor(246,98,78), extension); return Ok(1); }
+      }
+    }
   }
   Ok(if any_failed { 1 } else { 0 })
 }
