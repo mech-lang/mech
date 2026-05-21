@@ -326,13 +326,19 @@ pub fn run_mech_tests(
       .files
       .iter()
       .filter(|f| f.run_error.is_some() || f.result.failed > 0)
-      .map(|f| f.path.clone())
       .collect::<Vec<_>>();
 
     if !failing_files.is_empty() {
       println!("\n  failing-files:");
-      for path in failing_files {
-        println!("    - {}", path);
+      for file in failing_files {
+        println!("    - {}", file.path);
+        if let Some(run_error) = &file.run_error {
+          println!("      reason: {}", run_error);
+        } else {
+          for failed_case in &file.failed {
+            println!("      {}: {}", failed_case.name, failed_case.reason);
+          }
+        }
       }
     }
 
@@ -351,14 +357,15 @@ pub fn run_mech_tests(
       }
     }
     println!();
-  }
-  if let Some(output_path) = output_path {
-    let path = PathBuf::from(&output_path);
-    let extension = path.extension().and_then(OsStr::to_str).unwrap_or("");
-    match extension {
-      "json" => save_to_file(path, &report_to_json(&report, verbose)?)?,
-      "mec" => save_to_file(path, &report_to_mech(&report, verbose))?,
-      _ => { eprintln!("{} Unsupported --out extension `.{}`. Use .json or .mec.", "[Error]".truecolor(246,98,78), extension); return Ok(1); }
+
+    if let Some(output_path) = output_path {
+      let path = PathBuf::from(&output_path);
+      let extension = path.extension().and_then(OsStr::to_str).unwrap_or("");
+      match extension {
+        "json" => save_to_file(path, &report_to_json(&report, verbose)?)?,
+        "mec" => save_to_file(path, &report_to_mech(&report, verbose))?,
+        _ => { eprintln!("{} Unsupported --out extension `.{}`. Use .json or .mec.", "[Error]".truecolor(246,98,78), extension); return Ok(1); }
+      }
     }
   }
   Ok(if any_failed { 1 } else { 0 })
