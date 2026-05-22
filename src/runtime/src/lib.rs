@@ -6,8 +6,8 @@ pub mod capability;
 pub mod config;
 pub mod store;
 pub mod resolver;
+pub mod event;
 // pub mod error;
-// pub mod event;
 // pub mod host;
 // pub mod scheduler;
 
@@ -17,3 +17,4 @@ pub use self::config::*;
 pub use self::capability::*;
 pub use self::store::*;
 pub use self::resolver::*;
+pub use self::event::*;

@@ -27,6 +27,7 @@ use crate::id::{
   ActorId, CapabilityId, EventId, ModuleId, ModuleVersionId, ObjectId, TaskId,
   TransactionId,
 };
+use crate::event::RuntimeEvent;
 
 // -----------------------------------------------------------------------------
 // Message IDs
@@ -534,57 +535,8 @@ impl MessageRecord {
 }
 
 // -----------------------------------------------------------------------------
-// Events and Transactions
+// Transactions
 // -----------------------------------------------------------------------------
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RuntimeEvent {
-  pub id: EventId,
-  pub kind: String,
-  pub subject: Option<String>,
-  pub message: Option<String>,
-  pub data: Vec<u8>,
-}
-
-impl RuntimeEvent {
-  pub fn new(id: EventId, kind: impl Into<String>) -> Self {
-    Self {
-      id,
-      kind: kind.into(),
-      subject: None,
-      message: None,
-      data: Vec::new(),
-    }
-  }
-
-  pub fn with_subject(mut self, subject: impl Into<String>) -> Self {
-    self.subject = Some(subject.into());
-    self
-  }
-
-  pub fn with_message(mut self, message: impl Into<String>) -> Self {
-    self.message = Some(message.into());
-    self
-  }
-
-  pub fn with_data(mut self, data: Vec<u8>) -> Self {
-    self.data = data;
-    self
-  }
-
-  pub fn validate(&self) -> MResult<()> {
-    if self.id.is_zero() {
-      return invalid_store_record("event.id", "must not be zero");
-    }
-
-    if self.kind.trim().is_empty() {
-      return invalid_store_record("event.kind", "must not be empty");
-    }
-
-    Ok(())
-  }
-}
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
