@@ -21,7 +21,6 @@ use core::fmt;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use blake3::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -153,7 +152,6 @@ impl fmt::Display for IdParseError {
   }
 }
 
-#[cfg(feature = "std")]
 impl std::error::Error for IdParseError {}
 
 fn parse_u128_hex(input: &str) -> Result<u128, IdParseError> {
