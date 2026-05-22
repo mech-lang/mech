@@ -9,8 +9,7 @@ use mech_syntax::parser;
 pub struct MechProgramEnvironment {
   pub trace_enabled: bool,
   pub debug_enabled: bool,
-  pub time_enabled: bool,
-  pub print_tree: bool,
+  pub profile_enabled: bool,
   pub rounds_per_step: usize,
 }
 
@@ -19,8 +18,7 @@ impl Default for MechProgramEnvironment {
     Self {
       trace_enabled: false,
       debug_enabled: false,
-      time_enabled: false,
-      print_tree: false,
+      profile_enabled: false,
       rounds_per_step: 10_000,
     }
   }
@@ -217,9 +215,6 @@ impl MechProgram {
 
   pub fn run_string(&mut self, source: &str) -> MResult<Value> {
     let tree = parser::parse(source.trim())?;
-    if self.config.environment.print_tree {
-      print_tree!(tree);
-    }
     self.interpreter.interpret(&tree)
   }
 
@@ -230,7 +225,7 @@ impl MechProgram {
   pub fn run_program(&mut self, source: &str) -> MResult<Value> {
     let now = std::time::Instant::now();
     let result = self.run_string(source);
-    if self.config.environment.time_enabled {
+    if self.config.environment.trace_enabled {
       let cycle_duration = now.elapsed().as_nanos() as f64;
       println!("Cycle Time: {} ns", cycle_duration);
     }
@@ -299,12 +294,11 @@ impl MechProgram {
     Ok(result)
   }
 
-  pub fn configure(&mut self, tree_flag: bool, debug_flag: bool, time_flag: bool, trace_flag: bool, rounds_per_step: usize) {
+  pub fn configure(&mut self, tree_flag: bool, debug_flag: bool, profile_flag: bool, trace_flag: bool, rounds_per_step: usize) {
     self.set_environment(MechProgramEnvironment {
       trace_enabled: trace_flag,
       debug_enabled: debug_flag,
-      time_enabled: time_flag,
-      print_tree: tree_flag,
+      profile_enabled: profile_flag,
       rounds_per_step: rounds_per_step,
     });
   }
