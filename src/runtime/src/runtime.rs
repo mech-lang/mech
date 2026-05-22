@@ -5,7 +5,7 @@ pub struct MechRuntime {
   id: RuntimeId,
   config: RuntimeConfig,
   program: MechProgram,
-  //capabilities: CapabilityKernel,
+  capabilities: dyn CapabilityKernel,
   //store: Box<dyn MechStore>,
   //scheduler: Scheduler,
 }
