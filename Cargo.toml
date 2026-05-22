@@ -214,7 +214,6 @@ members = [
   "src/syntax",
   "src/interpreter",
   "src/program",
-  "src/resolver",
   "src/runtime",
   "src/wasm", 
 ]

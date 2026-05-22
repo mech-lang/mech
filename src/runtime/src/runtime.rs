@@ -42,74 +42,12 @@ use crate::store::{
   TaskStatus, TransactionRecord,
 };
 
-// -----------------------------------------------------------------------------
-// Module Resolution
-// -----------------------------------------------------------------------------
-
-/// Runtime module resolver.
-///
-/// This is trait-based because module loading is host policy:
-///
-/// - filesystem
-/// - database
-/// - memory
-/// - embedded resources
-/// - network bundle
-/// - editor buffer
-/// - host application callback
-pub trait ModuleResolver: std::fmt::Debug + Send {
-  fn resolve(&self, name: &str) -> MResult<Option<ResolvedModule>>;
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ResolvedModule {
-  pub name: String,
-  pub source: String,
-}
-
-impl ResolvedModule {
-  pub fn new(name: impl Into<String>, source: impl Into<String>) -> Self {
-    Self {
-      name: name.into(),
-      source: source.into(),
-    }
-  }
-
-  pub fn validate(&self) -> MResult<()> {
-    if self.name.trim().is_empty() {
-      return invalid_runtime("module.name", "must not be empty");
-    }
-
-    Ok(())
-  }
-}
-
-/// Simple in-memory resolver for tests, examples, and the first runtime shell.
-#[derive(Clone, Debug, Default)]
-pub struct InMemoryModuleResolver {
-  modules: HashMap<String, String>,
-}
-
-impl InMemoryModuleResolver {
-  pub fn new() -> Self {
-    Self::default()
-  }
-
-  pub fn insert(&mut self, name: impl Into<String>, source: impl Into<String>) {
-    self.modules.insert(name.into(), source.into());
-  }
-}
-
-impl ModuleResolver for InMemoryModuleResolver {
-  fn resolve(&self, name: &str) -> MResult<Option<ResolvedModule>> {
-    Ok(
-      self
-        .modules
-        .get(name)
-        .map(|source| ResolvedModule::new(name, source.clone())),
-    )
-  }
-}
+use crate::resolver::{
+  SourceResolver,
+  SourceRequest,
+  ResolvedSource,
+  InMemorySourceResolver,
+};
 
 // -----------------------------------------------------------------------------
 // Runtime Builder
@@ -123,7 +61,7 @@ pub struct RuntimeBuilder {
   id_generator: Box<dyn IdGenerator>,
   store: Box<dyn MechStore>,
   capability_kernel: Box<dyn CapabilityKernel>,
-  module_resolver: Box<dyn ModuleResolver>,
+  source_resolver: Box<dyn SourceResolver>,
 }
 
 impl std::fmt::Debug for RuntimeBuilder {
@@ -133,7 +71,7 @@ impl std::fmt::Debug for RuntimeBuilder {
       .field("id_generator", &"<dyn IdGenerator>")
       .field("store", &"<dyn MechStore>")
       .field("capability_kernel", &"<dyn CapabilityKernel>")
-      .field("module_resolver", &"<dyn ModuleResolver>")
+      .field("source_resolver", &"<dyn SourceResolver>")
       .finish()
   }
 }
@@ -145,7 +83,7 @@ impl Default for RuntimeBuilder {
       id_generator: Box::new(DefaultIdGenerator::new()),
       store: Box::new(InMemoryStore::new()),
       capability_kernel: Box::new(BasicCapabilityKernel::new()),
-      module_resolver: Box::new(InMemoryModuleResolver::new()),
+      source_resolver: Box::new(InMemorySourceResolver::new()),
     }
   }
 }
@@ -178,11 +116,11 @@ impl RuntimeBuilder {
     self
   }
 
-  pub fn module_resolver(
+  pub fn source_resolver(
     mut self,
-    module_resolver: impl ModuleResolver + 'static,
+    source_resolver: impl SourceResolver + 'static,
   ) -> Self {
-    self.module_resolver = Box::new(module_resolver);
+    self.source_resolver = Box::new(source_resolver);
     self
   }
 
@@ -212,7 +150,7 @@ impl RuntimeBuilder {
       id_generator: self.id_generator,
       store: self.store,
       capability_kernel: self.capability_kernel,
-      module_resolver: self.module_resolver,
+      source_resolver: self.source_resolver,
     };
 
     let event_id = runtime.next_event_id();
@@ -233,7 +171,7 @@ pub struct MechRuntime {
   id_generator: Box<dyn IdGenerator>,
   store: Box<dyn MechStore>,
   capability_kernel: Box<dyn CapabilityKernel>,
-  module_resolver: Box<dyn ModuleResolver>,
+  source_resolver: Box<dyn SourceResolver>,
 }
 
 impl std::fmt::Debug for MechRuntime {
@@ -245,7 +183,7 @@ impl std::fmt::Debug for MechRuntime {
       .field("id_generator", &"<dyn IdGenerator>")
       .field("store", &"<dyn MechStore>")
       .field("capability_kernel", &"<dyn CapabilityKernel>")
-      .field("module_resolver", &"<dyn ModuleResolver>")
+      .field("source_resolver", &"<dyn SourceResolver>")
       .finish()
   }
 }
@@ -291,12 +229,12 @@ impl MechRuntime {
     self.capability_kernel.as_mut()
   }
 
-  pub fn module_resolver(&self) -> &dyn ModuleResolver {
-    self.module_resolver.as_ref()
+  pub fn source_resolver(&self) -> &dyn SourceResolver {
+    self.source_resolver.as_ref()
   }
 
-  pub fn module_resolver_mut(&mut self) -> &mut dyn ModuleResolver {
-    self.module_resolver.as_mut()
+  pub fn source_resolver_mut(&mut self) -> &mut dyn SourceResolver {
+    self.source_resolver.as_mut()
   }
 
   // ---------------------------------------------------------------------------
@@ -396,44 +334,82 @@ impl MechRuntime {
   }
 
   // ---------------------------------------------------------------------------
-  // Modules
+  // Sources and Modules
   // ---------------------------------------------------------------------------
 
   /// Store a module record if it does not exist yet.
-  pub fn ensure_module(&mut self, name: &str) -> MResult<ModuleId> {
-    if let Some(module) = self.store.find_module_by_name(name)? {
+  ///
+  /// Module identity is based on the canonical source URI, not just the display
+  /// name. This matters because different specifiers can point to the same source.
+  pub fn ensure_module(
+    &mut self,
+    name: &str,
+    canonical_uri: &str,
+  ) -> MResult<ModuleId> {
+    if let Some(module) = self.store.find_module_by_name(canonical_uri)? {
       return Ok(module.id);
     }
 
-    let id = module_id(name);
-    let module = ModuleRecord::new(id, name);
+    let id = module_id(canonical_uri);
+    let module = ModuleRecord::new(id, name)
+      .with_description(canonical_uri.to_string());
+
     self.store.put_module(module)
   }
 
-  /// Compile/store a source module version.
+  /// Resolve an arbitrary source through the runtime source resolver.
+  pub fn resolve_source(
+    &self,
+    request: impl Into<SourceRequest>,
+  ) -> MResult<Option<ResolvedSource>> {
+    let request = request.into();
+    request.validate()?;
+
+    self.source_resolver.resolve(&request)
+  }
+
+  /// Store a resolved executable source as a module version.
   ///
-  /// This does not yet run the full compiler. It creates a version record using
-  /// deterministic module version identity.
-  pub fn put_source_module(
+  /// Non-executable assets such as images, CSS, HTML, markdown, and arbitrary data
+  /// should not be stored as module versions. They should become object/source
+  /// asset records instead.
+  pub fn store_resolved_module_source(
     &mut self,
-    name: &str,
-    source: &str,
+    resolved: ResolvedSource,
     compiler_version: &str,
     language_edition: &str,
+    target: &str,
     feature_flags: &[&str],
     capability_requirements: &[&str],
   ) -> MResult<ModuleVersionId> {
-    let module = self.ensure_module(name)?;
+    resolved.validate()?;
 
-    let target = format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH);
+    if !resolved.is_executable_mech_source() {
+      return Err(MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "store_resolved_module_source",
+          reason: format!(
+            "resolved source `{}` is not executable Mech source",
+            resolved.canonical_uri
+          ),
+        },
+        None,
+      ));
+    }
+
+    let module = self.ensure_module(&resolved.name, &resolved.canonical_uri)?;
+
+    let source_fingerprint = source_fingerprint(&resolved.source)?;
+
+    let dependency_versions: Vec<ModuleVersionId> = Vec::new();
 
     let version_id = module_version_id(
-      source,
+      &source_fingerprint,
       compiler_version,
       language_edition,
-      &target,
+      target,
       feature_flags,
-      &[],
+      &dependency_versions,
       capability_requirements,
     );
 
@@ -441,8 +417,12 @@ impl MechRuntime {
       return Ok(version_id);
     }
 
+    let capability_requests = resolved.capability_requirements.clone();
+
     let version = ModuleVersionRecord::new(version_id, module, 1)
-      .with_source(MechSourceCode::String(source.to_string()));
+      .with_source(resolved.source)
+      .with_dependencies(dependency_versions)
+      .with_capability_requirements(capability_requests);
 
     self.store.put_module_version(version)?;
 
@@ -450,46 +430,69 @@ impl MechRuntime {
     self.append_event(
       RuntimeEvent::new(event_id, "module.version.created")
         .with_subject(format!("runtime:{}", self.id))
-        .with_message(name.to_string()),
+        .with_message(resolved.canonical_uri),
     )?;
 
     Ok(version_id)
   }
 
-  pub fn resolve_and_put_module(
+  /// Resolve a source request and, if it is executable Mech source, store it as a
+  /// module version.
+  pub fn resolve_and_store_module_source(
     &mut self,
-    name: &str,
+    request: impl Into<SourceRequest>,
     compiler_version: &str,
     language_edition: &str,
     feature_flags: &[&str],
     capability_requirements: &[&str],
   ) -> MResult<Option<ModuleVersionId>> {
-    let Some(resolved) = self.module_resolver.resolve(name)? else {
+    let request = request.into();
+
+    let Some(resolved) = self.resolve_source(request)? else {
       return Ok(None);
     };
 
-    resolved.validate()?;
+    let target = runtime_target();
 
-/*
+    Ok(Some(self.store_resolved_module_source(
+      resolved,
+      compiler_version,
+      language_edition,
+      &target,
+      feature_flags,
+      capability_requirements,
+    )?))
+  }
+
+  /// Store a raw source string as a module version without using the resolver.
+  ///
+  /// This is useful for tests, REPLs, generated code, and direct embedding.
+  pub fn put_source_module(
     &mut self,
     name: &str,
+    canonical_uri: &str,
     source: &str,
     compiler_version: &str,
     language_edition: &str,
     feature_flags: &[&str],
     capability_requirements: &[&str],
+  ) -> MResult<ModuleVersionId> {
+    let resolved = ResolvedSource::new(
+      name,
+      canonical_uri,
+      MechSourceCode::String(source.to_string()),
+    );
 
-*/
+    let target = runtime_target();
 
-
-    Ok(Some(self.put_source_module(
-      &resolved.name,
-      &resolved.source,
+    self.store_resolved_module_source(
+      resolved,
       compiler_version,
       language_edition,
+      &target,
       feature_flags,
       capability_requirements,
-    )?))
+    )
   }
 
   pub fn activate_module_version(
@@ -902,6 +905,51 @@ impl MechErrorKind for RuntimeInvalidOperationError {
     format!("Invalid runtime operation `{}`: {}", self.operation, self.reason)
   }
 }
+
+fn runtime_target() -> String {
+  format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH)
+}
+
+fn source_fingerprint(source: &MechSourceCode) -> MResult<String> {
+  match source {
+    MechSourceCode::String(source) => Ok(source.clone()),
+
+    MechSourceCode::ByteCode(bytes) => Ok(hex_bytes(bytes)),
+
+    MechSourceCode::Tree(tree) => Ok(format!("{:?}", tree)),
+
+    MechSourceCode::Program(sources) => {
+      let mut out = String::new();
+
+      for source in sources {
+        out.push_str(&source_fingerprint(source)?);
+        out.push('\n');
+      }
+
+      Ok(out)
+    }
+
+    other => Err(MechError::new(
+      RuntimeInvalidOperationError {
+        operation: "source_fingerprint",
+        reason: format!("cannot fingerprint non-executable source: {:?}", other),
+      },
+      None,
+    )),
+  }
+}
+
+fn hex_bytes(bytes: &[u8]) -> String {
+  let mut out = String::with_capacity(bytes.len() * 2);
+
+  for byte in bytes {
+    use std::fmt::Write;
+    let _ = write!(&mut out, "{:02x}", byte);
+  }
+
+  out
+}
+
 
 // -----------------------------------------------------------------------------
 // Tests
