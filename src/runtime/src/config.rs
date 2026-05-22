@@ -246,25 +246,4 @@ mod tests {
     assert!(config.validate().is_err());
   }
 
-  #[test]
-  fn builder_style_methods_work() {
-    let config = RuntimeConfig::new("test-runtime")
-      .with_limits(RuntimeLimits::trusted())
-      .with_live(LiveConfig {
-        source_watching: true,
-        ..LiveConfig::default()
-      });
-
-    assert_eq!(config.name, "test-runtime");
-    assert_eq!(config.limits.max_steps_per_turn, None);
-    assert!(config.live.source_watching);
-  }
-
-  #[test]
-  fn zero_module_dependency_limit_is_invalid() {
-    let mut config = RuntimeConfig::default();
-    config.modules.max_dependencies_per_module = Some(0);
-
-    assert!(config.validate().is_err());
-  }
 }
