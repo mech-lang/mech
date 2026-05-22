@@ -187,6 +187,7 @@ pub trait IdGenerator {
   fn transaction_id(&mut self) -> TransactionId;
   fn event_id(&mut self) -> EventId;
   fn node_id(&mut self) -> NodeId;
+  fn message_id(&mut self) -> MessageId;
 }
 
 #[derive(Clone, Debug, Default)]
@@ -233,6 +234,10 @@ impl IdGenerator for DefaultIdGenerator {
 
   fn node_id(&mut self) -> NodeId {
     NodeId(Self::uuid_v7_u128())
+  }
+
+  fn message_id(&mut self) -> MessageId {
+    MessageId(Self::uuid_v7_u128())
   }
 }
 
@@ -298,6 +303,48 @@ impl IdGenerator for SequentialIdGenerator {
 
   fn node_id(&mut self) -> NodeId {
     NodeId(self.next_raw())
+  }
+
+  fn message_id(&mut self) -> MessageId {
+    MessageId(self.next_raw())
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct MessageId(pub u128);
+
+impl MessageId {
+  pub const ZERO: Self = Self(0);
+
+  pub const fn new(raw: u128) -> Self {
+    Self(raw)
+  }
+
+  pub const fn as_u128(self) -> u128 {
+    self.0
+  }
+
+  pub const fn is_zero(self) -> bool {
+    self.0 == 0
+  }
+}
+
+impl From<u128> for MessageId {
+  fn from(value: u128) -> Self {
+    Self(value)
+  }
+}
+
+impl From<MessageId> for u128 {
+  fn from(value: MessageId) -> Self {
+    value.0
+  }
+}
+
+impl std::fmt::Display for MessageId {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{:032x}", self.0)
   }
 }
 

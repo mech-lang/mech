@@ -25,55 +25,9 @@ use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 use crate::capability::{Capability, CapabilityRequest};
 use crate::id::{
   ActorId, CapabilityId, EventId, ModuleId, ModuleVersionId, ObjectId, TaskId,
-  TransactionId,
+  TransactionId, MessageId,
 };
 use crate::event::RuntimeEvent;
-
-// -----------------------------------------------------------------------------
-// Message IDs
-// -----------------------------------------------------------------------------
-
-/// MessageId is local to the store layer for now.
-///
-/// If message identity becomes a cross-runtime primitive, move this into
-/// `id.rs` and add `fn message_id(&mut self) -> MessageId` to `IdGenerator`.
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct MessageId(pub u128);
-
-impl MessageId {
-  pub const ZERO: Self = Self(0);
-
-  pub const fn new(raw: u128) -> Self {
-    Self(raw)
-  }
-
-  pub const fn as_u128(self) -> u128 {
-    self.0
-  }
-
-  pub const fn is_zero(self) -> bool {
-    self.0 == 0
-  }
-}
-
-impl From<u128> for MessageId {
-  fn from(value: u128) -> Self {
-    Self(value)
-  }
-}
-
-impl From<MessageId> for u128 {
-  fn from(value: MessageId) -> Self {
-    value.0
-  }
-}
-
-impl std::fmt::Display for MessageId {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:032x}", self.0)
-  }
-}
 
 // -----------------------------------------------------------------------------
 // Store Trait
@@ -1165,8 +1119,15 @@ impl MechErrorKind for StoreCapabilityNotRevocableError {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  use std::sync::Arc;
+
   use crate::capability::{
     BasicCapability, BasicOperation, BasicResource, BasicSubject,
+  };
+
+  use crate::event::{
+    RuntimeEvent, RuntimeEventKind,
   };
 
   #[test]
@@ -1307,15 +1268,33 @@ mod tests {
     let mut store = InMemoryStore::new();
 
     store
-      .append_event(RuntimeEvent::new(EventId(1), "first"))
+      .append_event(RuntimeEvent::new(
+        EventId(1),
+        0,
+        RuntimeEventKind::RuntimeError {
+          message: "first".to_string(),
+        },
+      ))
       .unwrap();
 
     store
-      .append_event(RuntimeEvent::new(EventId(2), "second"))
+      .append_event(RuntimeEvent::new(
+        EventId(2),
+        1,
+        RuntimeEventKind::RuntimeError {
+          message: "second".to_string(),
+        },
+      ))
       .unwrap();
 
     store
-      .append_event(RuntimeEvent::new(EventId(3), "third"))
+      .append_event(RuntimeEvent::new(
+        EventId(3),
+        2,
+        RuntimeEventKind::RuntimeError {
+          message: "third".to_string(),
+        },
+      ))
       .unwrap();
 
     let events = store.list_events(Some(2)).unwrap();
@@ -1323,6 +1302,8 @@ mod tests {
     assert_eq!(events.len(), 2);
     assert_eq!(events[0].id, EventId(2));
     assert_eq!(events[1].id, EventId(3));
+    assert_eq!(events[0].sequence, 1);
+    assert_eq!(events[1].sequence, 2);
   }
 
   #[test]

@@ -13,7 +13,7 @@ use mech_core::{MResult, MechError, MechErrorKind};
 
 use crate::id::{
   ActorId, CapabilityId, EventId, ModuleVersionId, ObjectId, RuntimeId, TaskId,
-  TransactionId,
+  TransactionId, MessageId
 };
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -34,7 +34,7 @@ pub enum RuntimeEventKind {
   TaskCompleted { task_id: TaskId },
   TaskFailed { task_id: TaskId, message: String },
   ActorCreated { actor_id: ActorId },
-  ActorMessageSent { actor_id: ActorId },
+  ActorMessageSent { actor_id: ActorId, message_id: MessageId },
   ActorTurnCompleted { actor_id: ActorId },
   ObjectCreated { object_id: ObjectId },
   ObjectUpdated { object_id: ObjectId },

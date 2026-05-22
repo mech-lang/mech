@@ -29,10 +29,14 @@ use crate::capability::{
 
 use crate::config::RuntimeConfig;
 
+use crate::event::{
+  RuntimeEvent, RuntimeEventKind,
+};
+
 use crate::id::{
   module_id, module_version_id, ActorId, CapabilityId, DefaultIdGenerator,
   EventId, IdGenerator, ModuleId, ModuleVersionId, ObjectId, RuntimeId,
-  TaskId, TransactionId,
+  TaskId, TransactionId, MessageId
 };
 
 use crate::resolver::{
@@ -40,12 +44,10 @@ use crate::resolver::{
 };
 
 use crate::store::{
-  ActorRecord, InMemoryStore, MechStore, MessageId, MessageRecord,
-  ModuleRecord, ModuleVersionRecord, ObjectRecord, TaskRecord,
-  TaskStatus, TransactionRecord,
+  ActorRecord, InMemoryStore, MechStore, MessageRecord,
+  ModuleRecord, ModuleVersionRecord, ObjectRecord, TaskRecord, TaskStatus,
+  TransactionRecord,
 };
-
-use crate::event::RuntimeEvent;
 
 // -----------------------------------------------------------------------------
 // Runtime Builder
@@ -143,6 +145,7 @@ impl RuntimeBuilder {
 
     let mut runtime = MechRuntime {
       id: runtime_id,
+      event_sequence: 0,
       config: self.config,
       program: MechProgram::new(program_config),
       id_generator: self.id_generator,
@@ -151,8 +154,9 @@ impl RuntimeBuilder {
       source_resolver: self.source_resolver,
     };
 
-    let event_id = runtime.next_event_id();
-    runtime.append_event(RuntimeEvent::new(event_id, "runtime.created"))?;
+    runtime.emit_event(RuntimeEventKind::RuntimeCreated {
+      runtime_id: runtime.id,
+    })?;
 
     Ok(runtime)
   }
@@ -164,6 +168,7 @@ impl RuntimeBuilder {
 
 pub struct MechRuntime {
   id: RuntimeId,
+  event_sequence: u64,
   config: RuntimeConfig,
   program: MechProgram,
   id_generator: Box<dyn IdGenerator>,
@@ -176,6 +181,7 @@ impl std::fmt::Debug for MechRuntime {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     f.debug_struct("MechRuntime")
       .field("id", &self.id)
+      .field("event_sequence", &self.event_sequence)
       .field("config", &self.config)
       .field("program", &"<MechProgram>")
       .field("id_generator", &"<dyn IdGenerator>")
@@ -235,6 +241,25 @@ impl MechRuntime {
     self.source_resolver.as_mut()
   }
 
+  pub fn next_event_sequence(&mut self) -> u64 {
+    let sequence = self.event_sequence;
+    self.event_sequence = self.event_sequence.saturating_add(1);
+    sequence
+  }
+
+  fn make_event(&mut self, kind: RuntimeEventKind) -> RuntimeEvent {
+    RuntimeEvent::new(
+      self.next_event_id(),
+      self.next_event_sequence(),
+      kind,
+    )
+  }
+
+  fn emit_event(&mut self, kind: RuntimeEventKind) -> MResult<EventId> {
+    let event = self.make_event(kind);
+    self.append_event(event)
+  }
+
   // ---------------------------------------------------------------------------
   // ID helpers
   // ---------------------------------------------------------------------------
@@ -275,29 +300,24 @@ impl MechRuntime {
   // ---------------------------------------------------------------------------
 
   pub fn run_string(&mut self, source: &str) -> MResult<Value> {
-    let event_id = self.next_event_id();
-    self.append_event(
-      RuntimeEvent::new(event_id, "program.started")
-        .with_subject(format!("runtime:{}", self.id)),
-    )?;
+    let id = self.next_task_id();
+    self.emit_event(RuntimeEventKind::ProgramStarted {
+      task_id: id,
+    })?;
 
     let result = self.program.run_string(source);
 
     match &result {
       Ok(_) => {
-        let event_id = self.next_event_id();
-        self.append_event(
-          RuntimeEvent::new(event_id, "program.completed")
-            .with_subject(format!("runtime:{}", self.id)),
-        )?;
+        self.emit_event(RuntimeEventKind::ProgramCompleted {
+          task_id: id,
+        })?;
       }
       Err(error) => {
-        let event_id = self.next_event_id();
-        self.append_event(
-          RuntimeEvent::new(event_id, "program.failed")
-            .with_subject(format!("runtime:{}", self.id))
-            .with_message(format!("{:?}", error)),
-        )?;
+        self.emit_event(RuntimeEventKind::ProgramFailed {
+          task_id: Some(id),
+          message: format!("{:?}", error),
+        })?;
       }
     }
 
@@ -327,7 +347,30 @@ impl MechRuntime {
 
     match source {
       MechSourceCode::String(source) => self.run_string(&source),
-      other => self.program.run_source(&other),
+      other => {
+        let id= self.next_task_id();
+        self.emit_event(RuntimeEventKind::ProgramStarted {
+          task_id: id,
+        })?;
+
+        let result = self.program.run_source(&other);
+
+        match &result {
+          Ok(_) => {
+            self.emit_event(RuntimeEventKind::ProgramCompleted {
+              task_id: id,
+            })?;
+          }
+          Err(error) => {
+            self.emit_event(RuntimeEventKind::ProgramFailed {
+              task_id: Some(id),
+              message: format!("{:?}", error),
+            })?;
+          }
+        }
+
+        result
+      }
     }
   }
 
@@ -364,6 +407,23 @@ impl MechRuntime {
     request.validate()?;
 
     self.source_resolver.resolve(&request)
+  }
+
+  /// Resolve an arbitrary source and emit a `source.resolved` event when found.
+  pub fn resolve_source_evented(
+    &mut self,
+    request: impl Into<SourceRequest>,
+  ) -> MResult<Option<ResolvedSource>> {
+    let request = request.into();
+    let resolved = self.resolve_source(request)?;
+
+    if let Some(source) = &resolved {
+      self.emit_event(RuntimeEventKind::SourceResolved {
+        canonical_uri: source.canonical_uri.clone(),
+      })?;
+    }
+
+    Ok(resolved)
   }
 
   /// Store a resolved executable source as a module version.
@@ -420,12 +480,9 @@ impl MechRuntime {
 
     self.store.put_module_version(version)?;
 
-    let event_id = self.next_event_id();
-    self.append_event(
-      RuntimeEvent::new(event_id, "module.version.created")
-        .with_subject(format!("runtime:{}", self.id))
-        .with_message(resolved.canonical_uri),
-    )?;
+    self.emit_event(RuntimeEventKind::ModuleCompiled {
+      module_version: version_id,
+    })?;
 
     Ok(version_id)
   }
@@ -442,7 +499,7 @@ impl MechRuntime {
   ) -> MResult<Option<ModuleVersionId>> {
     let request = request.into();
 
-    let Some(resolved) = self.resolve_source(request)? else {
+    let Some(resolved) = self.resolve_source_evented(request)? else {
       return Ok(None);
     };
 
@@ -496,12 +553,9 @@ impl MechRuntime {
   ) -> MResult<()> {
     self.store.set_active_module_version(module, version)?;
 
-    let event_id = self.next_event_id();
-    self.append_event(
-      RuntimeEvent::new(event_id, "module.version.activated")
-        .with_subject(format!("runtime:{}", self.id))
-        .with_message(version.to_string()),
-    )?;
+    self.emit_event(RuntimeEventKind::ModuleActivated {
+      module_version: version,
+    })?;
 
     Ok(())
   }
@@ -528,12 +582,9 @@ impl MechRuntime {
 
     self.store.grant_capability(id, capability)?;
 
-    let event_id = self.next_event_id();
-    self.append_event(
-      RuntimeEvent::new(event_id, "capability.granted")
-        .with_subject(format!("runtime:{}", self.id))
-        .with_message(id.to_string()),
-    )?;
+    self.emit_event(RuntimeEventKind::CapabilityGranted {
+      capability_id: id,
+    })?;
 
     Ok(id)
   }
@@ -545,12 +596,9 @@ impl MechRuntime {
 
     self.store.revoke_capability(capability)?;
 
-    let event_id = self.next_event_id();
-    self.append_event(
-      RuntimeEvent::new(event_id, "capability.revoked")
-        .with_subject(format!("runtime:{}", self.id))
-        .with_message(capability.to_string()),
-    )?;
+    self.emit_event(RuntimeEventKind::CapabilityRevoked {
+      capability_id: capability,
+    })?;
 
     Ok(())
   }
@@ -576,12 +624,9 @@ impl MechRuntime {
   pub fn put_object(&mut self, object: ObjectRecord) -> MResult<ObjectId> {
     let id = self.store.put_object(object)?;
 
-    let event_id = self.next_event_id();
-    self.append_event(
-      RuntimeEvent::new(event_id, "object.created")
-        .with_subject(format!("runtime:{}", self.id))
-        .with_message(id.to_string()),
-    )?;
+    self.emit_event(RuntimeEventKind::ObjectCreated {
+      object_id: id,
+    })?;
 
     Ok(id)
   }
@@ -593,12 +638,9 @@ impl MechRuntime {
   pub fn update_object(&mut self, object: ObjectRecord) -> MResult<ObjectId> {
     let id = self.store.update_object(object)?;
 
-    let event_id = self.next_event_id();
-    self.append_event(
-      RuntimeEvent::new(event_id, "object.updated")
-        .with_subject(format!("runtime:{}", self.id))
-        .with_message(id.to_string()),
-    )?;
+    self.emit_event(RuntimeEventKind::ObjectUpdated {
+      object_id: id,
+    })?;
 
     Ok(id)
   }
@@ -610,12 +652,9 @@ impl MechRuntime {
   pub fn put_task(&mut self, task: TaskRecord) -> MResult<TaskId> {
     let id = self.store.put_task(task)?;
 
-    let event_id = self.next_event_id();
-    self.append_event(
-      RuntimeEvent::new(event_id, "task.created")
-        .with_subject(format!("runtime:{}", self.id))
-        .with_message(id.to_string()),
-    )?;
+    self.emit_event(RuntimeEventKind::TaskCreated {
+      task_id: id,
+    })?;
 
     Ok(id)
   }
@@ -638,11 +677,9 @@ impl MechRuntime {
 
     self.put_task(task)?;
 
-    let event_id = self.next_event_id();
-    self.append_event(
-      RuntimeEvent::new(event_id, "task.started")
-        .with_subject(format!("task:{}", id)),
-    )?;
+    self.emit_event(RuntimeEventKind::TaskStarted {
+      task_id: id,
+    })?;
 
     Ok(id)
   }
@@ -669,16 +706,16 @@ impl MechRuntime {
     task.status = TaskStatus::completed();
     self.store.update_task(task)?;
 
-    let event_id = self.next_event_id();
-    self.append_event(
-      RuntimeEvent::new(event_id, "task.completed")
-        .with_subject(format!("task:{}", id)),
-    )?;
+    self.emit_event(RuntimeEventKind::TaskCompleted {
+      task_id: id,
+    })?;
 
     Ok(())
   }
 
   pub fn fail_task(&mut self, id: TaskId, reason: impl Into<String>) -> MResult<()> {
+    let reason = reason.into();
+
     let Some(mut task) = self.store.get_task(id)? else {
       return Err(MechError::new(
         RuntimeRecordNotFoundError {
@@ -692,12 +729,10 @@ impl MechRuntime {
     task.status = TaskStatus::failed();
     self.store.update_task(task)?;
 
-    let event_id = self.next_event_id();
-    self.append_event(
-      RuntimeEvent::new(event_id, "task.failed")
-        .with_subject(format!("task:{}", id))
-        .with_message(reason.into()),
-    )?;
+    self.emit_event(RuntimeEventKind::TaskFailed {
+      task_id: id,
+      message: reason,
+    })?;
 
     Ok(())
   }
@@ -709,12 +744,9 @@ impl MechRuntime {
   pub fn put_actor(&mut self, actor: ActorRecord) -> MResult<ActorId> {
     let id = self.store.put_actor(actor)?;
 
-    let event_id = self.next_event_id();
-    self.append_event(
-      RuntimeEvent::new(event_id, "actor.created")
-        .with_subject(format!("runtime:{}", self.id))
-        .with_message(id.to_string()),
-    )?;
+    self.emit_event(RuntimeEventKind::ActorCreated {
+      actor_id: id,
+    })?;
 
     Ok(id)
   }
@@ -756,19 +788,17 @@ impl MechRuntime {
     kind: impl Into<String>,
     payload: Vec<u8>,
   ) -> MResult<MessageId> {
-    let id = self.next_message_id();
-    let message = MessageRecord::new(id, actor, kind, payload);
+    let mid = self.next_message_id();
+    let message = MessageRecord::new(mid, actor, kind, payload);
 
     self.store.enqueue_message(actor, message)?;
 
-    let event_id = self.next_event_id();
-    self.append_event(
-      RuntimeEvent::new(event_id, "actor.message.sent")
-        .with_subject(format!("actor:{}", actor))
-        .with_message(id.to_string()),
-    )?;
+    self.emit_event(RuntimeEventKind::ActorMessageSent {
+      actor_id: actor,
+      message_id: mid,
+    })?;
 
-    Ok(id)
+    Ok(mid)
   }
 
   pub fn pop_message(&mut self, actor: ActorId) -> MResult<Option<MessageRecord>> {
@@ -789,12 +819,9 @@ impl MechRuntime {
   ) -> MResult<TransactionId> {
     let id = self.store.commit_transaction(transaction)?;
 
-    let event_id = self.next_event_id();
-    self.append_event(
-      RuntimeEvent::new(event_id, "transaction.committed")
-        .with_subject(format!("runtime:{}", self.id))
-        .with_message(id.to_string()),
-    )?;
+    self.emit_event(RuntimeEventKind::TransactionCommitted {
+      transaction_id: id,
+    })?;
 
     Ok(id)
   }
@@ -830,12 +857,9 @@ impl MechRuntime {
   // ---------------------------------------------------------------------------
 
   pub fn shutdown(&mut self) -> MResult<()> {
-    let event_id = self.next_event_id();
-
-    self.append_event(
-      RuntimeEvent::new(event_id, "runtime.shutdown")
-        .with_subject(format!("runtime:{}", self.id)),
-    )?;
+    self.emit_event(RuntimeEventKind::RuntimeShutdown {
+      runtime_id: self.id,
+    })?;
 
     Ok(())
   }
@@ -944,12 +968,39 @@ mod tests {
   }
 
   #[test]
+  fn runtime_emits_created_event() {
+    let runtime = RuntimeBuilder::new().build().unwrap();
+
+    let events = runtime.list_events(None).unwrap();
+
+    assert!(
+      events
+        .iter()
+        .any(|event| event.name() == "runtime.created")
+    );
+  }
+
+  #[test]
   fn runtime_runs_string() {
     let mut runtime = RuntimeBuilder::new().build().unwrap();
 
     let result = runtime.run_string("x := 1");
 
     assert!(result.is_ok());
+
+    let events = runtime.list_events(None).unwrap();
+
+    assert!(
+      events
+        .iter()
+        .any(|event| event.name() == "program.started")
+    );
+
+    assert!(
+      events
+        .iter()
+        .any(|event| event.name() == "program.completed")
+    );
   }
 
   #[test]
@@ -975,6 +1026,14 @@ mod tests {
       .unwrap();
 
     assert_eq!(loaded.id, version);
+
+    let events = runtime.list_events(None).unwrap();
+
+    assert!(
+      events
+        .iter()
+        .any(|event| event.name() == "module.compiled")
+    );
   }
 
   #[test]
@@ -1002,6 +1061,14 @@ mod tests {
       .unwrap();
 
     assert!(!version.is_zero());
+
+    let events = runtime.list_events(None).unwrap();
+
+    assert!(
+      events
+        .iter()
+        .any(|event| event.name() == "source.resolved")
+    );
   }
 
   #[test]
@@ -1055,6 +1122,14 @@ mod tests {
       runtime.check_capability(&request).unwrap(),
       CapabilityId(1),
     );
+
+    let events = runtime.list_events(None).unwrap();
+
+    assert!(
+      events
+        .iter()
+        .any(|event| event.name() == "capability.granted")
+    );
   }
 
   #[test]
@@ -1075,6 +1150,20 @@ mod tests {
 
     assert_eq!(popped.kind, "ping");
     assert_eq!(popped.payload, b"hello");
+
+    let events = runtime.list_events(None).unwrap();
+
+    assert!(
+      events
+        .iter()
+        .any(|event| event.name() == "actor.created")
+    );
+
+    assert!(
+      events
+        .iter()
+        .any(|event| event.name() == "actor.message.sent")
+    );
   }
 
   #[test]
@@ -1095,7 +1184,7 @@ mod tests {
     assert!(
       events
         .iter()
-        .any(|event| event.kind == "transaction.committed")
+        .any(|event| event.name() == "transaction.committed")
     );
   }
 
@@ -1110,7 +1199,7 @@ mod tests {
     assert!(
       events
         .iter()
-        .any(|event| event.kind == "runtime.shutdown")
+        .any(|event| event.name() == "runtime.shutdown")
     );
   }
 }
