@@ -419,9 +419,23 @@ impl MechRuntime {
     name: &str,
     source: &str,
     compiler_version: &str,
+    language_edition: &str,
+    feature_flags: &[&str],
+    capability_requirements: &[&str],
   ) -> MResult<ModuleVersionId> {
     let module = self.ensure_module(name)?;
-    let version_id = module_version_id(source, compiler_version, &[]);
+
+    let target = format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH);
+
+    let version_id = module_version_id(
+      source,
+      compiler_version,
+      language_edition,
+      &target,
+      feature_flags,
+      &[],
+      capability_requirements,
+    );
 
     if self.store.get_module_version(version_id)?.is_some() {
       return Ok(version_id);
@@ -446,6 +460,9 @@ impl MechRuntime {
     &mut self,
     name: &str,
     compiler_version: &str,
+    language_edition: &str,
+    feature_flags: &[&str],
+    capability_requirements: &[&str],
   ) -> MResult<Option<ModuleVersionId>> {
     let Some(resolved) = self.module_resolver.resolve(name)? else {
       return Ok(None);
@@ -453,10 +470,25 @@ impl MechRuntime {
 
     resolved.validate()?;
 
+/*
+    &mut self,
+    name: &str,
+    source: &str,
+    compiler_version: &str,
+    language_edition: &str,
+    feature_flags: &[&str],
+    capability_requirements: &[&str],
+
+*/
+
+
     Ok(Some(self.put_source_module(
       &resolved.name,
       &resolved.source,
       compiler_version,
+      language_edition,
+      feature_flags,
+      capability_requirements,
     )?))
   }
 
@@ -901,9 +933,14 @@ mod tests {
   fn source_module_round_trip() {
     let mut runtime = RuntimeBuilder::new().build().unwrap();
 
-    let version = runtime
-      .put_source_module("main", "x := 1", "0.3.5")
-      .unwrap();
+    let version = runtime.put_source_module(
+      "main",
+      "x := 1",
+      env!("CARGO_PKG_VERSION"),
+      "mech-current",
+      &[],
+      &[],
+    ).unwrap();
 
     let loaded = runtime
       .store()
@@ -925,7 +962,7 @@ mod tests {
       .unwrap();
 
     let version = runtime
-      .resolve_and_put_module("main", "0.3.5")
+      .resolve_and_put_module("main", "0.3.5", "mech-current", &[], &[])
       .unwrap()
       .unwrap();
 
