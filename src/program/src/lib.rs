@@ -9,8 +9,6 @@
 
 #[cfg(feature = "program")]
 pub mod program;
-#[cfg(feature = "mechfs")]
-pub mod mechfs;
 //#[cfg(feature = "runloop")]
 //pub mod runloop;
 //#[cfg(feature = "persister")]
@@ -18,8 +16,6 @@ pub mod mechfs;
 
 #[cfg(feature = "program")]
 pub use crate::program::*;
-#[cfg(feature = "mechfs")]
-pub use crate::mechfs::*;
 //#[cfg(feature = "runloop")]
 //pub use crate::runloop::*;
 //#[cfg(feature = "persister")]

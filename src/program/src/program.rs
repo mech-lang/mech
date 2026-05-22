@@ -1,9 +1,12 @@
-
 use crate::*;
-use mech_core::{hash_str, MResult, MechSourceCode, Value, ParsedProgram, PrettyPrint, CompileCtx};
+
+use mech_core::{
+  hash_str, CompileCtx, MResult, MechError, MechErrorKind, MechSourceCode,
+  ParsedProgram, Value,
+};
+
 use mech_interpreter::Interpreter;
 use mech_syntax::parser;
-
 
 #[derive(Debug, Clone)]
 pub struct MechProgramEnvironment {
@@ -32,232 +35,69 @@ pub struct MechProgramConfig {
 
 impl Default for MechProgramConfig {
   fn default() -> Self {
-    Self { name: "program".into(), environment: MechProgramEnvironment::default() }
+    Self {
+      name: "program".into(),
+      environment: MechProgramEnvironment::default(),
+    }
   }
 }
 
 pub struct MechProgram {
   pub config: MechProgramConfig,
   interpreter: Interpreter,
-  fs: MechFileSystem,
 }
 
 impl MechProgram {
   pub fn new(config: MechProgramConfig) -> Self {
     let id = hash_str(&format!("program/{}", config.name));
     let mut interpreter = Interpreter::new(id, config.environment.rounds_per_step);
+
     interpreter.set_trace_enabled(config.environment.trace_enabled);
-    Self { config, interpreter, fs: MechFileSystem::new() }
-  }
 
-  #[cfg(feature = "compiler")]
-  pub fn compile_bytecode(&mut self) -> MResult<Vec<u8>> {
-    let state_brrw = self.interpreter.state.borrow();
-    let mut plan_brrw = state_brrw.plan.borrow_mut();
-    let mut ctx = CompileCtx::new();
-    for step in plan_brrw.iter() {
-      step.compile(&mut ctx)?;
-    }
-    let bytes = ctx.compile()?;
-    self.interpreter.context = Some(ctx);
-    Ok(bytes)
-  }
-
-
-/*
-  pub fn run_mech_code(
-    intrp: &mut Interpreter,
-    code: &MechFileSystem,
-    tree_flag: bool,
-    debug_flag: bool,
-    time_flag: bool,
-    trace_flag: bool,
-  ) -> MResult<Value> {
-    intrp.set_trace_enabled(trace_flag);
-    let sources = code.sources();
-    let sources = sources.read().unwrap();
-    for (file, source) in sources.sources_iter() {
-      match source {
-        MechSourceCode::Program(code_vec) => {
-          for c in code_vec {
-            match c {
-              MechSourceCode::Tree(tree) => {
-                if tree_flag {
-                  print_tree!(tree);
-                }
-                let now = Instant::now();
-                let result = intrp.interpret(tree);
-                let elapsed_time = now.elapsed();
-                let cycle_duration = elapsed_time.as_nanos() as f64;
-                if time_flag {
-                  println!("Cycle Time: {} ns", cycle_duration);
-                }
-                if debug_flag {
-                  print_symbols!(intrp);
-                  print_plan!(intrp);
-                  print_bytecode(code);
-                }
-                return result;
-              }
-              _ => todo!(),
-            }
-          }
-        }
-        MechSourceCode::String(s) => {
-          let now = Instant::now();
-          let parse_result = parser::parse(&s.trim());
-          let elapsed_time = now.elapsed();
-          let parse_duration = elapsed_time.as_nanos() as f64;
-          match parse_result {
-            Ok(tree) => {
-              if tree_flag {
-                print_tree!(tree);
-              }
-              let now = Instant::now();
-              let result = intrp.interpret(&tree);
-              let elapsed_time = now.elapsed();
-              let cycle_duration = elapsed_time.as_nanos() as f64;
-              if time_flag {
-                println!("Parse Time: {} ns", parse_duration);
-              }
-              if time_flag {
-                println!("Cycle Time: {} ns", cycle_duration);
-              }
-              if debug_flag {
-                print_symbols!(intrp);
-                print_plan!(intrp);
-                print_bytecode(code);
-              }
-              return result;
-            }
-            Err(err) => return Err(err),
-          }
-        }
-        MechSourceCode::ByteCode(bc_program) => {
-          let now = Instant::now();
-          let result = intrp.run_program(&ParsedProgram::from_bytes(bc_program)?);
-          let elapsed_time = now.elapsed();
-          let cycle_duration = elapsed_time.as_nanos() as f64;
-          if time_flag {
-            println!("Cycle Time: {} ns", cycle_duration);
-          }
-          if debug_flag {
-            print_symbols!(intrp);
-            print_plan!(intrp);
-            print_bytecode(code);
-          }
-          return result;
-        }
-        x => todo!("Unsupported source code type: {:?}", x),
-      }
-    }
-    Ok(Value::Empty)
-  }
-
-
-  pub fn configure_mech_program(program: &mut MechProgram, tree_flag: bool, debug_flag: bool, time_flag: bool, trace_flag: bool) {
-    program.set_environment(MechProgramEnvironment {
-      trace_enabled: trace_flag,
-      debug_enabled: debug_flag,
-      time_enabled: time_flag,
-      print_tree: tree_flag,
-      rounds_per_step: program.environment().rounds_per_step,
-    });
-  }*/
-
-  /*fn run(&mut self) -> MResult<Value> {
-    let sources = self.fs.sources();
-    let sources = sources.read().unwrap();
-    for (_, source) in sources.sources_iter() {
-      let now = Instant::now();
-      let result = self.run_source(source);
-      if self.config.environment.time_enabled {
-        let cycle_duration = now.elapsed().as_nanos() as f64;
-        println!("Cycle Time: {} ns", cycle_duration);
-      }
-      match result {
-        Ok(value) => return Ok(value),
-        Err(err) => return Err(err),
-      }
-    }
-    Ok(Value::Empty)
-  }*/
-/*
-  pub fn run_mech_program_code(program: &mut MechProgram, source_code: &MechSourceCode) -> MResult<Value> {
-    let mut mechfs = MechFileSystem::new();
-    mechfs.add_code(source_code)?;
-    run_mech_program_code_with_fs(program, &mechfs)
-  }
-
-  pub fn run_mech_program_paths(program: &mut MechProgram, paths: &[String]) -> MResult<Value> {
-    let mut mechfs = MechFileSystem::new();
-    for path in paths {
-      mechfs.watch_source(path)?;
-    }
-    run_mech_program_code_with_fs(program, &mechfs)
-  }
-
-  fn print_bytecode(fs: &MechFileSystem) {
-    let sources = fs.sources();
-    let sources = sources.read().unwrap();
-    for (file, source) in sources.sources_iter() {
-      match source {
-        MechSourceCode::ByteCode(bc_program) => {
-          println!("Bytecode for file: {}", file);
-          let program = ParsedProgram::from_bytes(bc_program).unwrap();
-          println!("{:#?}", program);
-        }
-        _ => {}
-      }
-    }
-  }*/
-
-
-  pub fn run_string(&mut self, source: &str) -> MResult<Value> {
-    let tree = parser::parse(source.trim())?;
-    self.interpreter.interpret(&tree)
-  }
-
-  pub fn run_bytecode_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
-    self.interpreter.run_program(program)
-  }
-
-  pub fn run_program(&mut self, source: &str) -> MResult<Value> {
-    let now = std::time::Instant::now();
-    let result = self.run_string(source);
-    if self.config.environment.trace_enabled {
-      let cycle_duration = now.elapsed().as_nanos() as f64;
-      println!("Cycle Time: {} ns", cycle_duration);
-    }
-    result
-  }
-
-  pub fn run_source(&mut self, source: &MechSourceCode) -> MResult<Value> {
-    match source {
-      MechSourceCode::String(s) => self.run_string(s),
-      MechSourceCode::ByteCode(bc_program) => {
-        self.interpreter.run_program(&ParsedProgram::from_bytes(bc_program)?)
-      }
-      MechSourceCode::Program(code_vec) => {
-        let mut value = Value::Empty;
-        for c in code_vec {
-          if let MechSourceCode::Tree(tree) = c {
-            value = self.interpreter.interpret(tree)?;
-          }
-        }
-        Ok(value)
-      }
-      x => todo!("Todo: support source code type: {:?}", x),
+    Self {
+      config,
+      interpreter,
     }
   }
 
-  pub fn set_environment(&mut self, environment: MechProgramEnvironment) {
-    self.config.environment = environment;
-    self.interpreter.set_trace_enabled(self.config.environment.trace_enabled);
+  pub fn from_environment(
+    name: impl Into<String>,
+    environment: MechProgramEnvironment,
+  ) -> Self {
+    Self::new(MechProgramConfig {
+      name: name.into(),
+      environment,
+    })
   }
 
   pub fn environment(&self) -> &MechProgramEnvironment {
     &self.config.environment
+  }
+
+  pub fn set_environment(&mut self, environment: MechProgramEnvironment) {
+    self.config.environment = environment;
+    self.apply_environment();
+  }
+
+  pub fn configure(
+    &mut self,
+    debug_enabled: bool,
+    trace_enabled: bool,
+    profile_enabled: bool,
+    rounds_per_step: usize,
+  ) {
+    self.set_environment(MechProgramEnvironment {
+      trace_enabled,
+      debug_enabled,
+      profile_enabled,
+      rounds_per_step,
+    });
+  }
+
+  fn apply_environment(&mut self) {
+    self
+      .interpreter
+      .set_trace_enabled(self.config.environment.trace_enabled);
   }
 
   pub fn interpreter(&self) -> &Interpreter {
@@ -272,36 +112,94 @@ impl MechProgram {
     self.interpreter
   }
 
-  pub fn watch_source(&mut self, path: &str) -> MResult<()> {
-    self.fs.watch_source(path)?;
-    Ok(())
+  pub fn run_string(&mut self, source: &str) -> MResult<Value> {
+    let tree = parser::parse(source.trim())?;
+    self.run_tree(&tree)
   }
 
-  pub fn run_paths(&mut self, paths: &[String]) -> MResult<Value> {
-    for path in paths {
-      self.fs.watch_source(path)?;
+  pub fn run_tree(&mut self, tree: &mech_core::Program) -> MResult<Value> {
+    self.interpreter.interpret(tree)
+  }
+
+  pub fn run_bytecode(&mut self, bytecode: &[u8]) -> MResult<Value> {
+    let parsed = ParsedProgram::from_bytes(&bytecode.to_vec())?;
+    self.run_bytecode_program(&parsed)
+  }
+
+  pub fn run_bytecode_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
+    self.interpreter.run_program(program)
+  }
+
+  pub fn run_program(&mut self, source: &str) -> MResult<Value> {
+    self.run_profiled_string(source)
+  }
+
+  pub fn run_profiled_string(&mut self, source: &str) -> MResult<Value> {
+    let now = std::time::Instant::now();
+    let result = self.run_string(source);
+
+    if self.config.environment.profile_enabled {
+      let cycle_duration = now.elapsed().as_nanos() as f64;
+      println!("Cycle Time: {} ns", cycle_duration);
     }
-    self.run()
+
+    result
   }
 
-  pub fn run(&mut self) -> MResult<Value> {
-    let sources = self.fs.sources();
-    let sources = sources.read().unwrap();
-    let mut result = Value::Empty;
-    for (_, source) in sources.sources_iter() {
-      result = self.run_source(source)?;
+  pub fn run_source(&mut self, source: &MechSourceCode) -> MResult<Value> {
+    match source {
+      MechSourceCode::String(source) => self.run_string(source),
+      MechSourceCode::Tree(tree) => self.run_tree(tree),
+      MechSourceCode::ByteCode(bytecode) => self.run_bytecode(bytecode),
+      MechSourceCode::Program(sources) => self.run_sources(sources),
+      unsupported => Err(MechError::new(
+        UnsupportedProgramSourceError {
+          source_kind: format!("{:?}", unsupported),
+        },
+        None,
+      )),
     }
-    Ok(result)
   }
 
-  pub fn configure(&mut self, tree_flag: bool, debug_flag: bool, profile_flag: bool, trace_flag: bool, rounds_per_step: usize) {
-    self.set_environment(MechProgramEnvironment {
-      trace_enabled: trace_flag,
-      debug_enabled: debug_flag,
-      profile_enabled: profile_flag,
-      rounds_per_step: rounds_per_step,
-    });
+  pub fn run_sources(&mut self, sources: &[MechSourceCode]) -> MResult<Value> {
+    let mut value = Value::Empty;
+
+    for source in sources {
+      value = self.run_source(source)?;
+    }
+
+    Ok(value)
   }
 
+  #[cfg(feature = "compiler")]
+  pub fn compile_bytecode(&mut self) -> MResult<Vec<u8>> {
+    let state_brrw = self.interpreter.state.borrow();
+    let mut plan_brrw = state_brrw.plan.borrow_mut();
+
+    let mut ctx = CompileCtx::new();
+
+    for step in plan_brrw.iter() {
+      step.compile(&mut ctx)?;
+    }
+
+    let bytes = ctx.compile()?;
+    self.interpreter.context = Some(ctx);
+
+    Ok(bytes)
+  }
 }
 
+#[derive(Debug, Clone)]
+pub struct UnsupportedProgramSourceError {
+  pub source_kind: String,
+}
+
+impl MechErrorKind for UnsupportedProgramSourceError {
+  fn name(&self) -> &str {
+    "UnsupportedProgramSource"
+  }
+
+  fn message(&self) -> String {
+    format!("Unsupported program source: {}", self.source_kind)
+  }
+}
