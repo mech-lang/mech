@@ -1,11 +1,15 @@
 #![cfg_attr(feature = "no_std", no_std)]
 
 pub mod runtime;
-pub mod id.rs
-//pub mod store.rs
-// pub mod config.rs
-// pub mod error.rs
-// pub mod event.rs
-// pub mod host.rs
-// pub mod capability.rs
-// pub mod scheduler.rs
+pub mod id;
+//pub mod store;
+pub mod config;
+// pub mod error;
+// pub mod event;
+// pub mod host;
+// pub mod capability;
+// pub mod scheduler;
+
+pub use self::id::*;
+pub use self::runtime::*;
+pub use self::config::*;

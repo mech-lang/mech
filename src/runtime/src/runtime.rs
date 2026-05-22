@@ -1,12 +1,15 @@
+use crate::*;
+use mech_program::*;
+
 pub struct MechRuntime {
   id: RuntimeId,
   config: RuntimeConfig,
   program: MechProgram,
-  capabilities: CapabilityKernel,
-  store: Box<dyn MechStore>,
-  scheduler: Scheduler,
+  //capabilities: CapabilityKernel,
+  //store: Box<dyn MechStore>,
+  //scheduler: Scheduler,
 }
-
+/*
 impl MechRuntime {
   pub fn new(config: RuntimeConfig) -> MResult<Self>;
 
@@ -21,4 +24,4 @@ impl MechRuntime {
   pub fn events(&self) -> Vec<RuntimeEvent>;
 
   pub fn shutdown(&mut self) -> MResult<()>;
-}
+}*/

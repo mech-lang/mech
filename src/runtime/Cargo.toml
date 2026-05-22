@@ -114,6 +114,7 @@ matrix_vertcat = ["mech-program/matrix_vertcat"]
 [dependencies]
 blake3 = "1.8.5"
 mech-program = { version = "0.3.5", default-features = false }
+mech-core = { version = "0.3.5", default-features = false }
 serde = { version = "1.0.228", optional = true }
 serde_derive = { version = "1.0.228", optional = true }
 tracing = { version = "0.1.41", optional = true }
