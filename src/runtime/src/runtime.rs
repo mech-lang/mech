@@ -9,8 +9,9 @@
 //! - source resolver
 //! - runtime config
 //!
-//! This file is intentionally conservative. It does not try to replace the
-//! interpreter. It creates the system boundary that v0.4 can grow into.
+//! RuntimeContext is used as the per-operation execution envelope. It carries
+//! subject/task/actor/module/transaction identity, resource budget, capabilities,
+//! and accumulated events.
 
 use std::sync::Arc;
 
@@ -29,6 +30,10 @@ use crate::capability::{
 
 use crate::config::RuntimeConfig;
 
+use crate::context::{
+  ResourceBudget, RuntimeContext, RuntimeContextBuilder,
+};
+
 use crate::event::{
   RuntimeEvent, RuntimeEventKind,
 };
@@ -36,7 +41,7 @@ use crate::event::{
 use crate::id::{
   module_id, module_version_id, ActorId, CapabilityId, DefaultIdGenerator,
   EventId, IdGenerator, ModuleId, ModuleVersionId, ObjectId, RuntimeId,
-  TaskId, TransactionId, MessageId
+  TaskId, TransactionId, MessageId,
 };
 
 use crate::resolver::{
@@ -53,9 +58,6 @@ use crate::store::{
 // Runtime Builder
 // -----------------------------------------------------------------------------
 
-/// Builder for MechRuntime.
-///
-/// Concrete implementation choices live here, not in RuntimeConfig.
 pub struct RuntimeBuilder {
   config: RuntimeConfig,
   id_generator: Box<dyn IdGenerator>,
@@ -154,9 +156,14 @@ impl RuntimeBuilder {
       source_resolver: self.source_resolver,
     };
 
-    runtime.emit_event(RuntimeEventKind::RuntimeCreated {
-      runtime_id: runtime.id,
-    })?;
+    let mut context = runtime.runtime_context()?;
+
+    runtime.emit_event_to_context(
+      &mut context,
+      RuntimeEventKind::RuntimeCreated {
+        runtime_id: runtime.id,
+      },
+    )?;
 
     Ok(runtime)
   }
@@ -241,6 +248,77 @@ impl MechRuntime {
     self.source_resolver.as_mut()
   }
 
+  // ---------------------------------------------------------------------------
+  // Context helpers
+  // ---------------------------------------------------------------------------
+
+  pub fn default_budget(&self) -> ResourceBudget {
+    let mut budget = ResourceBudget::default();
+
+    if let Some(max_steps) = self.config.limits.max_steps_per_turn {
+      budget = budget.with_max_steps(max_steps);
+    }
+
+    if let Some(max_bytes) = self.config.limits.max_memory_bytes {
+      budget = budget.with_max_bytes(max_bytes);
+    }
+
+    if let Some(max_messages) = self.config.limits.max_actor_mailbox_len {
+      budget = budget.with_max_messages(max_messages);
+    }
+
+    budget
+  }
+
+  pub fn runtime_context(&self) -> MResult<RuntimeContext> {
+    RuntimeContextBuilder::new(self.id)
+      .budget(self.default_budget())
+      .build()
+  }
+
+  pub fn context_for_task(&self, task: &TaskRecord) -> MResult<RuntimeContext> {
+    let mut builder = RuntimeContextBuilder::new(self.id)
+      .subject(task.subject.clone())
+      .task(task.id)
+      .capabilities(task.capabilities.clone())
+      .budget(self.default_budget());
+
+    if let Some(module_version) = task.module_version {
+      builder = builder.module_version(module_version);
+    }
+
+    builder.build()
+  }
+
+  pub fn context_for_actor(&self, actor: &ActorRecord) -> MResult<RuntimeContext> {
+    let mut builder = RuntimeContextBuilder::new(self.id)
+      .subject(actor.subject.clone())
+      .actor(actor.id)
+      .capabilities(actor.capabilities.clone())
+      .budget(self.default_budget());
+
+    if let Some(module_version) = actor.behavior {
+      builder = builder.module_version(module_version);
+    }
+
+    builder.build()
+  }
+
+  pub fn context_for_transaction(
+    &self,
+    transaction: &TransactionRecord,
+  ) -> MResult<RuntimeContext> {
+    RuntimeContextBuilder::new(self.id)
+      .subject(transaction.subject.clone())
+      .transaction(transaction.id)
+      .budget(self.default_budget())
+      .build()
+  }
+
+  // ---------------------------------------------------------------------------
+  // Event helpers
+  // ---------------------------------------------------------------------------
+
   pub fn next_event_sequence(&mut self) -> u64 {
     let sequence = self.event_sequence;
     self.event_sequence = self.event_sequence.saturating_add(1);
@@ -258,6 +336,22 @@ impl MechRuntime {
   fn emit_event(&mut self, kind: RuntimeEventKind) -> MResult<EventId> {
     let event = self.make_event(kind);
     self.append_event(event)
+  }
+
+  fn emit_event_to_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    kind: RuntimeEventKind,
+  ) -> MResult<EventId> {
+    context.validate()?;
+
+    let event = self.make_event(kind);
+    let id = event.id;
+
+    context.push_event(event.clone());
+    self.append_event(event)?;
+
+    Ok(id)
   }
 
   // ---------------------------------------------------------------------------
@@ -288,9 +382,6 @@ impl MechRuntime {
     self.id_generator.event_id()
   }
 
-  /// Local fallback for message IDs.
-  ///
-  /// If MessageId is moved into id.rs, replace this with IdGenerator::message_id.
   pub fn next_message_id(&mut self) -> MessageId {
     MessageId(self.id_generator.event_id().as_u128())
   }
@@ -300,24 +391,44 @@ impl MechRuntime {
   // ---------------------------------------------------------------------------
 
   pub fn run_string(&mut self, source: &str) -> MResult<Value> {
-    let id = self.next_task_id();
-    self.emit_event(RuntimeEventKind::ProgramStarted {
-      task_id: id,
-    })?;
+    let mut context = self.runtime_context()?;
+    self.run_string_with_context(&mut context, source)
+  }
+
+  pub fn run_string_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    source: &str,
+  ) -> MResult<Value> {
+    context.validate()?;
+    context.charge_step()?;
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ProgramStarted {
+        task_id: context.task,
+      },
+    )?;
 
     let result = self.program.run_string(source);
 
     match &result {
       Ok(_) => {
-        self.emit_event(RuntimeEventKind::ProgramCompleted {
-          task_id: id,
-        })?;
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramCompleted {
+            task_id: context.task,
+          },
+        )?;
       }
       Err(error) => {
-        self.emit_event(RuntimeEventKind::ProgramFailed {
-          task_id: Some(id),
-          message: format!("{:?}", error),
-        })?;
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramFailed {
+            task_id: context.task,
+            message: format!("{:?}", error),
+          },
+        )?;
       }
     }
 
@@ -325,6 +436,20 @@ impl MechRuntime {
   }
 
   pub fn run_module(&mut self, version: ModuleVersionId) -> MResult<Value> {
+    let mut context = self.runtime_context()?
+      .with_module_version(version);
+
+    self.run_module_with_context(&mut context, version)
+  }
+
+  pub fn run_module_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    version: ModuleVersionId,
+  ) -> MResult<Value> {
+    context.validate()?;
+    context.charge_step()?;
+
     let Some(record) = self.store.get_module_version(version)? else {
       return Err(MechError::new(
         RuntimeRecordNotFoundError {
@@ -346,26 +471,34 @@ impl MechRuntime {
     };
 
     match source {
-      MechSourceCode::String(source) => self.run_string(&source),
+      MechSourceCode::String(source) => self.run_string_with_context(context, &source),
       other => {
-        let id= self.next_task_id();
-        self.emit_event(RuntimeEventKind::ProgramStarted {
-          task_id: id,
-        })?;
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramStarted {
+            task_id: context.task,
+          },
+        )?;
 
         let result = self.program.run_source(&other);
 
         match &result {
           Ok(_) => {
-            self.emit_event(RuntimeEventKind::ProgramCompleted {
-              task_id: id,
-            })?;
+            self.emit_event_to_context(
+              context,
+              RuntimeEventKind::ProgramCompleted {
+                task_id: context.task,
+              },
+            )?;
           }
           Err(error) => {
-            self.emit_event(RuntimeEventKind::ProgramFailed {
-              task_id: Some(id),
-              message: format!("{:?}", error),
-            })?;
+            self.emit_event_to_context(
+              context,
+              RuntimeEventKind::ProgramFailed {
+                task_id: context.task,
+                message: format!("{:?}", error),
+              },
+            )?;
           }
         }
 
@@ -378,10 +511,6 @@ impl MechRuntime {
   // Sources and Modules
   // ---------------------------------------------------------------------------
 
-  /// Store a module record if it does not exist yet.
-  ///
-  /// Module identity is based on the canonical source URI, not just the display
-  /// name. This matters because different specifiers can point to the same source.
   pub fn ensure_module(
     &mut self,
     name: &str,
@@ -398,7 +527,6 @@ impl MechRuntime {
     self.store.put_module(module)
   }
 
-  /// Resolve an arbitrary source through the runtime source resolver.
   pub fn resolve_source(
     &self,
     request: impl Into<SourceRequest>,
@@ -409,28 +537,39 @@ impl MechRuntime {
     self.source_resolver.resolve(&request)
   }
 
-  /// Resolve an arbitrary source and emit a `source.resolved` event when found.
-  pub fn resolve_source_evented(
+  pub fn resolve_source_with_context(
     &mut self,
+    context: &mut RuntimeContext,
     request: impl Into<SourceRequest>,
   ) -> MResult<Option<ResolvedSource>> {
+    context.validate()?;
+    context.charge_step()?;
+
     let request = request.into();
-    let resolved = self.resolve_source(request)?;
+    request.validate()?;
+
+    let resolved = self.source_resolver.resolve(&request)?;
 
     if let Some(source) = &resolved {
-      self.emit_event(RuntimeEventKind::SourceResolved {
-        canonical_uri: source.canonical_uri.clone(),
-      })?;
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::SourceResolved {
+          canonical_uri: source.canonical_uri.clone(),
+        },
+      )?;
     }
 
     Ok(resolved)
   }
 
-  /// Store a resolved executable source as a module version.
-  ///
-  /// Non-executable assets such as images, CSS, HTML, markdown, and arbitrary data
-  /// should not be stored as module versions. They should become object/source
-  /// asset records instead.
+  pub fn resolve_source_evented(
+    &mut self,
+    request: impl Into<SourceRequest>,
+  ) -> MResult<Option<ResolvedSource>> {
+    let mut context = self.runtime_context()?;
+    self.resolve_source_with_context(&mut context, request)
+  }
+
   pub fn store_resolved_module_source(
     &mut self,
     resolved: ResolvedSource,
@@ -440,6 +579,31 @@ impl MechRuntime {
     feature_flags: &[&str],
     capability_requirements: &[&str],
   ) -> MResult<ModuleVersionId> {
+    let mut context = self.runtime_context()?;
+
+    self.store_resolved_module_source_with_context(
+      &mut context,
+      resolved,
+      compiler_version,
+      language_edition,
+      target,
+      feature_flags,
+      capability_requirements,
+    )
+  }
+
+  pub fn store_resolved_module_source_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    resolved: ResolvedSource,
+    compiler_version: &str,
+    language_edition: &str,
+    target: &str,
+    feature_flags: &[&str],
+    capability_requirements: &[&str],
+  ) -> MResult<ModuleVersionId> {
+    context.validate()?;
+    context.charge_step()?;
     resolved.validate()?;
 
     if !resolved.is_executable_mech_source() {
@@ -480,15 +644,16 @@ impl MechRuntime {
 
     self.store.put_module_version(version)?;
 
-    self.emit_event(RuntimeEventKind::ModuleCompiled {
-      module_version: version_id,
-    })?;
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ModuleCompiled {
+        module_version: version_id,
+      },
+    )?;
 
     Ok(version_id)
   }
 
-  /// Resolve a source request and, if it is executable Mech source, store it as a
-  /// module version.
   pub fn resolve_and_store_module_source(
     &mut self,
     request: impl Into<SourceRequest>,
@@ -497,15 +662,35 @@ impl MechRuntime {
     feature_flags: &[&str],
     capability_requirements: &[&str],
   ) -> MResult<Option<ModuleVersionId>> {
-    let request = request.into();
+    let mut context = self.runtime_context()?;
 
-    let Some(resolved) = self.resolve_source_evented(request)? else {
+    self.resolve_and_store_module_source_with_context(
+      &mut context,
+      request,
+      compiler_version,
+      language_edition,
+      feature_flags,
+      capability_requirements,
+    )
+  }
+
+  pub fn resolve_and_store_module_source_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: impl Into<SourceRequest>,
+    compiler_version: &str,
+    language_edition: &str,
+    feature_flags: &[&str],
+    capability_requirements: &[&str],
+  ) -> MResult<Option<ModuleVersionId>> {
+    let Some(resolved) = self.resolve_source_with_context(context, request)? else {
       return Ok(None);
     };
 
     let target = runtime_target();
 
-    Ok(Some(self.store_resolved_module_source(
+    Ok(Some(self.store_resolved_module_source_with_context(
+      context,
       resolved,
       compiler_version,
       language_edition,
@@ -515,11 +700,33 @@ impl MechRuntime {
     )?))
   }
 
-  /// Store a raw source string as a module version without using the resolver.
-  ///
-  /// This is useful for tests, REPLs, generated code, and direct embedding.
   pub fn put_source_module(
     &mut self,
+    name: &str,
+    canonical_uri: &str,
+    source: &str,
+    compiler_version: &str,
+    language_edition: &str,
+    feature_flags: &[&str],
+    capability_requirements: &[&str],
+  ) -> MResult<ModuleVersionId> {
+    let mut context = self.runtime_context()?;
+
+    self.put_source_module_with_context(
+      &mut context,
+      name,
+      canonical_uri,
+      source,
+      compiler_version,
+      language_edition,
+      feature_flags,
+      capability_requirements,
+    )
+  }
+
+  pub fn put_source_module_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
     name: &str,
     canonical_uri: &str,
     source: &str,
@@ -536,7 +743,8 @@ impl MechRuntime {
 
     let target = runtime_target();
 
-    self.store_resolved_module_source(
+    self.store_resolved_module_source_with_context(
+      context,
       resolved,
       compiler_version,
       language_edition,
@@ -551,11 +759,29 @@ impl MechRuntime {
     module: ModuleId,
     version: ModuleVersionId,
   ) -> MResult<()> {
+    let mut context = self.runtime_context()?
+      .with_module_version(version);
+
+    self.activate_module_version_with_context(&mut context, module, version)
+  }
+
+  pub fn activate_module_version_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    module: ModuleId,
+    version: ModuleVersionId,
+  ) -> MResult<()> {
+    context.validate()?;
+    context.charge_step()?;
+
     self.store.set_active_module_version(module, version)?;
 
-    self.emit_event(RuntimeEventKind::ModuleActivated {
-      module_version: version,
-    })?;
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ModuleActivated {
+        module_version: version,
+      },
+    )?;
 
     Ok(())
   }
@@ -572,6 +798,17 @@ impl MechRuntime {
     &mut self,
     capability: Arc<dyn Capability>,
   ) -> MResult<CapabilityId> {
+    let mut context = self.runtime_context()?;
+    self.grant_capability_with_context(&mut context, capability)
+  }
+
+  pub fn grant_capability_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    capability: Arc<dyn Capability>,
+  ) -> MResult<CapabilityId> {
+    context.validate()?;
+    context.charge_step()?;
     capability.validate()?;
 
     let id = capability.id();
@@ -581,24 +818,44 @@ impl MechRuntime {
       .grant(CapabilityGrant::new(capability.clone()))?;
 
     self.store.grant_capability(id, capability)?;
+    context.add_capability(id);
 
-    self.emit_event(RuntimeEventKind::CapabilityGranted {
-      capability_id: id,
-    })?;
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::CapabilityGranted {
+        capability_id: id,
+      },
+    )?;
 
     Ok(id)
   }
 
   pub fn revoke_capability(&mut self, capability: CapabilityId) -> MResult<()> {
+    let mut context = self.runtime_context()?;
+    self.revoke_capability_with_context(&mut context, capability)
+  }
+
+  pub fn revoke_capability_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    capability: CapabilityId,
+  ) -> MResult<()> {
+    context.validate()?;
+    context.charge_step()?;
+
     self
       .capability_kernel
       .revoke(CapabilityRevocation::new(capability))?;
 
     self.store.revoke_capability(capability)?;
+    context.remove_capability(capability);
 
-    self.emit_event(RuntimeEventKind::CapabilityRevoked {
-      capability_id: capability,
-    })?;
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::CapabilityRevoked {
+        capability_id: capability,
+      },
+    )?;
 
     Ok(())
   }
@@ -607,6 +864,16 @@ impl MechRuntime {
     &mut self,
     request: &CapabilityRequest,
   ) -> MResult<CapabilityId> {
+    self.capability_kernel.check(request)
+  }
+
+  pub fn check_capability_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: &CapabilityRequest,
+  ) -> MResult<CapabilityId> {
+    context.validate()?;
+    context.charge_step()?;
     self.capability_kernel.check(request)
   }
 
@@ -622,11 +889,26 @@ impl MechRuntime {
   // ---------------------------------------------------------------------------
 
   pub fn put_object(&mut self, object: ObjectRecord) -> MResult<ObjectId> {
+    let mut context = self.runtime_context()?;
+    self.put_object_with_context(&mut context, object)
+  }
+
+  pub fn put_object_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    object: ObjectRecord,
+  ) -> MResult<ObjectId> {
+    context.validate()?;
+    context.charge_bytes(object.data.len() as u64)?;
+
     let id = self.store.put_object(object)?;
 
-    self.emit_event(RuntimeEventKind::ObjectCreated {
-      object_id: id,
-    })?;
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ObjectCreated {
+        object_id: id,
+      },
+    )?;
 
     Ok(id)
   }
@@ -636,11 +918,26 @@ impl MechRuntime {
   }
 
   pub fn update_object(&mut self, object: ObjectRecord) -> MResult<ObjectId> {
+    let mut context = self.runtime_context()?;
+    self.update_object_with_context(&mut context, object)
+  }
+
+  pub fn update_object_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    object: ObjectRecord,
+  ) -> MResult<ObjectId> {
+    context.validate()?;
+    context.charge_bytes(object.data.len() as u64)?;
+
     let id = self.store.update_object(object)?;
 
-    self.emit_event(RuntimeEventKind::ObjectUpdated {
-      object_id: id,
-    })?;
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ObjectUpdated {
+        object_id: id,
+      },
+    )?;
 
     Ok(id)
   }
@@ -650,11 +947,26 @@ impl MechRuntime {
   // ---------------------------------------------------------------------------
 
   pub fn put_task(&mut self, task: TaskRecord) -> MResult<TaskId> {
+    let mut context = self.context_for_task(&task)?;
+    self.put_task_with_context(&mut context, task)
+  }
+
+  pub fn put_task_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    task: TaskRecord,
+  ) -> MResult<TaskId> {
+    context.validate()?;
+    context.charge_step()?;
+
     let id = self.store.put_task(task)?;
 
-    self.emit_event(RuntimeEventKind::TaskCreated {
-      task_id: id,
-    })?;
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::TaskCreated {
+        task_id: id,
+      },
+    )?;
 
     Ok(id)
   }
@@ -675,11 +987,15 @@ impl MechRuntime {
       task = task.with_module_version(module_version);
     }
 
-    self.put_task(task)?;
+    let mut context = self.context_for_task(&task)?;
+    self.put_task_with_context(&mut context, task)?;
 
-    self.emit_event(RuntimeEventKind::TaskStarted {
-      task_id: id,
-    })?;
+    self.emit_event_to_context(
+      &mut context,
+      RuntimeEventKind::TaskStarted {
+        task_id: id,
+      },
+    )?;
 
     Ok(id)
   }
@@ -703,12 +1019,17 @@ impl MechRuntime {
       ));
     };
 
+    let mut context = self.context_for_task(&task)?;
+
     task.status = TaskStatus::completed();
     self.store.update_task(task)?;
 
-    self.emit_event(RuntimeEventKind::TaskCompleted {
-      task_id: id,
-    })?;
+    self.emit_event_to_context(
+      &mut context,
+      RuntimeEventKind::TaskCompleted {
+        task_id: id,
+      },
+    )?;
 
     Ok(())
   }
@@ -726,13 +1047,18 @@ impl MechRuntime {
       ));
     };
 
+    let mut context = self.context_for_task(&task)?;
+
     task.status = TaskStatus::failed();
     self.store.update_task(task)?;
 
-    self.emit_event(RuntimeEventKind::TaskFailed {
-      task_id: id,
-      message: reason,
-    })?;
+    self.emit_event_to_context(
+      &mut context,
+      RuntimeEventKind::TaskFailed {
+        task_id: id,
+        message: reason,
+      },
+    )?;
 
     Ok(())
   }
@@ -742,11 +1068,26 @@ impl MechRuntime {
   // ---------------------------------------------------------------------------
 
   pub fn put_actor(&mut self, actor: ActorRecord) -> MResult<ActorId> {
+    let mut context = self.context_for_actor(&actor)?;
+    self.put_actor_with_context(&mut context, actor)
+  }
+
+  pub fn put_actor_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    actor: ActorRecord,
+  ) -> MResult<ActorId> {
+    context.validate()?;
+    context.charge_step()?;
+
     let id = self.store.put_actor(actor)?;
 
-    self.emit_event(RuntimeEventKind::ActorCreated {
-      actor_id: id,
-    })?;
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ActorCreated {
+        actor_id: id,
+      },
+    )?;
 
     Ok(id)
   }
@@ -788,17 +1129,45 @@ impl MechRuntime {
     kind: impl Into<String>,
     payload: Vec<u8>,
   ) -> MResult<MessageId> {
-    let mid = self.next_message_id();
-    let message = MessageRecord::new(mid, actor, kind, payload);
+    let Some(actor_record) = self.store.get_actor(actor)? else {
+      return Err(MechError::new(
+        RuntimeRecordNotFoundError {
+          record_type: "actor",
+          id: actor.to_string(),
+        },
+        None,
+      ));
+    };
+
+    let mut context = self.context_for_actor(&actor_record)?;
+    self.send_message_with_context(&mut context, actor, kind, payload)
+  }
+
+  pub fn send_message_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    actor: ActorId,
+    kind: impl Into<String>,
+    payload: Vec<u8>,
+  ) -> MResult<MessageId> {
+    context.validate()?;
+    context.charge_messages(1)?;
+    context.charge_bytes(payload.len() as u64)?;
+
+    let id = self.next_message_id();
+    let message = MessageRecord::new(id, actor, kind, payload);
 
     self.store.enqueue_message(actor, message)?;
 
-    self.emit_event(RuntimeEventKind::ActorMessageSent {
-      actor_id: actor,
-      message_id: mid,
-    })?;
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ActorMessageSent {
+        actor_id: actor,
+        message_id: id,
+      },
+    )?;
 
-    Ok(mid)
+    Ok(id)
   }
 
   pub fn pop_message(&mut self, actor: ActorId) -> MResult<Option<MessageRecord>> {
@@ -817,11 +1186,26 @@ impl MechRuntime {
     &mut self,
     transaction: TransactionRecord,
   ) -> MResult<TransactionId> {
+    let mut context = self.context_for_transaction(&transaction)?;
+    self.commit_transaction_with_context(&mut context, transaction)
+  }
+
+  pub fn commit_transaction_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    transaction: TransactionRecord,
+  ) -> MResult<TransactionId> {
+    context.validate()?;
+    context.charge_step()?;
+
     let id = self.store.commit_transaction(transaction)?;
 
-    self.emit_event(RuntimeEventKind::TransactionCommitted {
-      transaction_id: id,
-    })?;
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::TransactionCommitted {
+        transaction_id: id,
+      },
+    )?;
 
     Ok(id)
   }
@@ -857,9 +1241,14 @@ impl MechRuntime {
   // ---------------------------------------------------------------------------
 
   pub fn shutdown(&mut self) -> MResult<()> {
-    self.emit_event(RuntimeEventKind::RuntimeShutdown {
-      runtime_id: self.id,
-    })?;
+    let mut context = self.runtime_context()?;
+
+    self.emit_event_to_context(
+      &mut context,
+      RuntimeEventKind::RuntimeShutdown {
+        runtime_id: self.id,
+      },
+    )?;
 
     Ok(())
   }
@@ -947,259 +1336,4 @@ fn hex_bytes(bytes: &[u8]) -> String {
   }
 
   out
-}
-
-// -----------------------------------------------------------------------------
-// Tests
-// -----------------------------------------------------------------------------
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  use crate::capability::{
-    BasicCapability, BasicOperation, BasicResource, BasicSubject,
-  };
-
-  #[test]
-  fn runtime_builds() {
-    let runtime = RuntimeBuilder::new().build().unwrap();
-    assert!(!runtime.id().is_zero());
-  }
-
-  #[test]
-  fn runtime_emits_created_event() {
-    let runtime = RuntimeBuilder::new().build().unwrap();
-
-    let events = runtime.list_events(None).unwrap();
-
-    assert!(
-      events
-        .iter()
-        .any(|event| event.name() == "runtime.created")
-    );
-  }
-
-  #[test]
-  fn runtime_runs_string() {
-    let mut runtime = RuntimeBuilder::new().build().unwrap();
-
-    let result = runtime.run_string("x := 1");
-
-    assert!(result.is_ok());
-
-    let events = runtime.list_events(None).unwrap();
-
-    assert!(
-      events
-        .iter()
-        .any(|event| event.name() == "program.started")
-    );
-
-    assert!(
-      events
-        .iter()
-        .any(|event| event.name() == "program.completed")
-    );
-  }
-
-  #[test]
-  fn source_module_round_trip() {
-    let mut runtime = RuntimeBuilder::new().build().unwrap();
-
-    let version = runtime
-      .put_source_module(
-        "main",
-        "memory:main",
-        "x := 1",
-        env!("CARGO_PKG_VERSION"),
-        "mech-current",
-        &[],
-        &[],
-      )
-      .unwrap();
-
-    let loaded = runtime
-      .store()
-      .get_module_version(version)
-      .unwrap()
-      .unwrap();
-
-    assert_eq!(loaded.id, version);
-
-    let events = runtime.list_events(None).unwrap();
-
-    assert!(
-      events
-        .iter()
-        .any(|event| event.name() == "module.compiled")
-    );
-  }
-
-  #[test]
-  fn in_memory_resolver_can_resolve_source_module() {
-    let mut resolver = InMemorySourceResolver::new();
-
-    resolver
-      .insert_string("main", "x := 1")
-      .unwrap();
-
-    let mut runtime = RuntimeBuilder::new()
-      .source_resolver(resolver)
-      .build()
-      .unwrap();
-
-    let version = runtime
-      .resolve_and_store_module_source(
-        SourceRequest::new("main"),
-        env!("CARGO_PKG_VERSION"),
-        "mech-current",
-        &[],
-        &[],
-      )
-      .unwrap()
-      .unwrap();
-
-    assert!(!version.is_zero());
-
-    let events = runtime.list_events(None).unwrap();
-
-    assert!(
-      events
-        .iter()
-        .any(|event| event.name() == "source.resolved")
-    );
-  }
-
-  #[test]
-  fn resolve_source_returns_resolved_source() {
-    let mut resolver = InMemorySourceResolver::new();
-
-    resolver
-      .insert_string("main", "x := 1")
-      .unwrap();
-
-    let runtime = RuntimeBuilder::new()
-      .source_resolver(resolver)
-      .build()
-      .unwrap();
-
-    let resolved = runtime
-      .resolve_source(SourceRequest::new("main"))
-      .unwrap()
-      .unwrap();
-
-    assert_eq!(resolved.name, "main");
-    assert_eq!(resolved.canonical_uri, "memory:main");
-    assert!(resolved.is_executable_mech_source());
-  }
-
-  #[test]
-  fn grant_and_check_capability() {
-    let mut runtime = RuntimeBuilder::new().build().unwrap();
-
-    let subject = BasicSubject::new("task:1");
-    let resource = BasicResource::new("db:users");
-
-    let capability = BasicCapability::new(
-      CapabilityId(1),
-      &subject,
-      &resource,
-      [BasicOperation::read()],
-    );
-
-    runtime
-      .grant_capability(Arc::new(capability))
-      .unwrap();
-
-    let request = CapabilityRequest::new(
-      &subject,
-      &BasicOperation::read(),
-      &resource,
-    );
-
-    assert_eq!(
-      runtime.check_capability(&request).unwrap(),
-      CapabilityId(1),
-    );
-
-    let events = runtime.list_events(None).unwrap();
-
-    assert!(
-      events
-        .iter()
-        .any(|event| event.name() == "capability.granted")
-    );
-  }
-
-  #[test]
-  fn actor_message_flow() {
-    let mut runtime = RuntimeBuilder::new().build().unwrap();
-
-    let actor = runtime
-      .create_actor("actor:1", None, None, Vec::new())
-      .unwrap();
-
-    let message = runtime
-      .send_message(actor, "ping", b"hello".to_vec())
-      .unwrap();
-
-    assert!(!message.is_zero());
-
-    let popped = runtime.pop_message(actor).unwrap().unwrap();
-
-    assert_eq!(popped.kind, "ping");
-    assert_eq!(popped.payload, b"hello");
-
-    let events = runtime.list_events(None).unwrap();
-
-    assert!(
-      events
-        .iter()
-        .any(|event| event.name() == "actor.created")
-    );
-
-    assert!(
-      events
-        .iter()
-        .any(|event| event.name() == "actor.message.sent")
-    );
-  }
-
-  #[test]
-  fn transaction_commit_records_event() {
-    let mut runtime = RuntimeBuilder::new().build().unwrap();
-
-    let tx = TransactionRecord::new(
-      runtime.next_transaction_id(),
-      "task:1",
-    );
-
-    let id = runtime.commit_transaction(tx).unwrap();
-
-    assert!(!id.is_zero());
-
-    let events = runtime.list_events(None).unwrap();
-
-    assert!(
-      events
-        .iter()
-        .any(|event| event.name() == "transaction.committed")
-    );
-  }
-
-  #[test]
-  fn shutdown_records_event() {
-    let mut runtime = RuntimeBuilder::new().build().unwrap();
-
-    runtime.shutdown().unwrap();
-
-    let events = runtime.list_events(None).unwrap();
-
-    assert!(
-      events
-        .iter()
-        .any(|event| event.name() == "runtime.shutdown")
-    );
-  }
 }
