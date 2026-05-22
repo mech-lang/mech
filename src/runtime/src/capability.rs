@@ -2574,15 +2574,26 @@ mod tests {
       CapabilityId(2),
     );
 
-    let attenuated_subject = BasicSubject::new("task:1");
+    let derived = kernel
+      .get(CapabilityId(2))
+      .unwrap()
+      .expect("derived capability should exist");
 
     let read_request = CapabilityRequest::new(
-      &attenuated_subject,
+      &subject,
       &BasicOperation::read(),
       &resource,
     );
 
-    assert_eq!(kernel.check(&read_request).unwrap(), CapabilityId(1));
+    assert!(derived.check(&read_request).unwrap().allowed);
+
+    let write_request = CapabilityRequest::new(
+      &subject,
+      &BasicOperation::write(),
+      &resource,
+    );
+
+    assert!(!derived.check(&write_request).unwrap().allowed);
   }
 
   #[test]
