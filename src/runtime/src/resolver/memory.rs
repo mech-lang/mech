@@ -31,21 +31,41 @@ impl InMemorySourceResolver {
     Self::default()
   }
 
+  pub fn insert_source(
+    &mut self,
+    specifier: impl Into<String>,
+    source: ResolvedSource,
+  ) -> MResult<()> {
+    let specifier = specifier.into();
+
+    source.validate()?;
+
+    self.sources.insert(specifier, source);
+    Ok(())
+  }
+
+  pub fn insert_string(
+    &mut self,
+    specifier: impl Into<String>,
+    source: impl Into<String>,
+  ) -> MResult<()> {
+    let specifier = specifier.into();
+
+    let resolved = ResolvedSource::new(
+      specifier.clone(),
+      Self::default_canonical_uri(&specifier),
+      MechSourceCode::String(source.into()),
+    );
+
+    self.insert_source(specifier, resolved)
+  }
+
   pub fn with_string(
     mut self,
     specifier: impl Into<String>,
     source: impl Into<String>,
   ) -> Self {
-    let specifier = specifier.into();
-    let source = source.into();
-
-    let resolved = ResolvedSource::new(
-      specifier.clone(),
-      format!("memory:{}", specifier),
-      MechSourceCode::String(source),
-    );
-
-    self.sources.insert(specifier, resolved);
+    let _ = self.insert_string(specifier, source);
     self
   }
 
@@ -54,7 +74,7 @@ impl InMemorySourceResolver {
     specifier: impl Into<String>,
     source: ResolvedSource,
   ) -> Self {
-    self.sources.insert(specifier.into(), source);
+    let _ = self.insert_source(specifier, source);
     self
   }
 
@@ -127,12 +147,7 @@ impl MutableSourceResolver for InMemorySourceResolver {
     specifier: impl Into<String>,
     source: ResolvedSource,
   ) -> MResult<()> {
-    let specifier = specifier.into();
-
-    source.validate()?;
-
-    self.sources.insert(specifier, source);
-    Ok(())
+    InMemorySourceResolver::insert_source(self, specifier, source)
   }
 
   fn insert_string(
@@ -140,15 +155,7 @@ impl MutableSourceResolver for InMemorySourceResolver {
     specifier: impl Into<String>,
     source: impl Into<String>,
   ) -> MResult<()> {
-    let specifier = specifier.into();
-
-    let resolved = ResolvedSource::new(
-      specifier.clone(),
-      Self::default_canonical_uri(&specifier),
-      MechSourceCode::String(source.into()),
-    );
-
-    self.insert_source(specifier, resolved)
+    InMemorySourceResolver::insert_string(self, specifier, source)
   }
 }
 
