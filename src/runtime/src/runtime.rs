@@ -6,13 +6,12 @@
 //! - ID generator
 //! - store
 //! - capability kernel
-//! - module resolver
+//! - source resolver
 //! - runtime config
 //!
 //! This file is intentionally conservative. It does not try to replace the
 //! interpreter. It creates the system boundary that v0.4 can grow into.
 
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use mech_core::{
@@ -24,8 +23,8 @@ use mech_program::{
 };
 
 use crate::capability::{
-  Capability, CapabilityGrant, CapabilityKernel, CapabilityRequest,
-  CapabilityRevocation, BasicCapabilityKernel,
+  BasicCapabilityKernel, Capability, CapabilityGrant, CapabilityKernel,
+  CapabilityRequest, CapabilityRevocation,
 };
 
 use crate::config::RuntimeConfig;
@@ -36,18 +35,17 @@ use crate::id::{
   TaskId, TransactionId,
 };
 
+use crate::resolver::{
+  InMemorySourceResolver, ResolvedSource, SourceRequest, SourceResolver,
+};
+
 use crate::store::{
   ActorRecord, InMemoryStore, MechStore, MessageId, MessageRecord,
-  ModuleRecord, ModuleVersionRecord, ObjectRecord, RuntimeEvent, TaskRecord,
+  ModuleRecord, ModuleVersionRecord, ObjectRecord, TaskRecord,
   TaskStatus, TransactionRecord,
 };
 
-use crate::resolver::{
-  SourceResolver,
-  SourceRequest,
-  ResolvedSource,
-  InMemorySourceResolver,
-};
+use crate::event::RuntimeEvent;
 
 // -----------------------------------------------------------------------------
 // Runtime Builder
@@ -351,8 +349,8 @@ impl MechRuntime {
     }
 
     let id = module_id(canonical_uri);
-    let module = ModuleRecord::new(id, name)
-      .with_description(canonical_uri.to_string());
+    let module = ModuleRecord::new(id, canonical_uri)
+      .with_description(name.to_string());
 
     self.store.put_module(module)
   }
@@ -398,9 +396,7 @@ impl MechRuntime {
     }
 
     let module = self.ensure_module(&resolved.name, &resolved.canonical_uri)?;
-
     let source_fingerprint = source_fingerprint(&resolved.source)?;
-
     let dependency_versions: Vec<ModuleVersionId> = Vec::new();
 
     let version_id = module_version_id(
@@ -417,12 +413,10 @@ impl MechRuntime {
       return Ok(version_id);
     }
 
-    let capability_requests = resolved.capability_requirements.clone();
-
     let version = ModuleVersionRecord::new(version_id, module, 1)
       .with_source(resolved.source)
       .with_dependencies(dependency_versions)
-      .with_capability_requirements(capability_requests);
+      .with_capability_requirements(resolved.capability_requirements);
 
     self.store.put_module_version(version)?;
 
@@ -852,29 +846,6 @@ impl MechRuntime {
 // -----------------------------------------------------------------------------
 
 #[derive(Debug, Clone)]
-pub struct InvalidRuntimeRecordError {
-  pub field: &'static str,
-  pub reason: &'static str,
-}
-
-impl MechErrorKind for InvalidRuntimeRecordError {
-  fn name(&self) -> &str {
-    "InvalidRuntimeRecord"
-  }
-
-  fn message(&self) -> String {
-    format!("Invalid runtime record field `{}`: {}", self.field, self.reason)
-  }
-}
-
-fn invalid_runtime<T>(field: &'static str, reason: &'static str) -> MResult<T> {
-  Err(MechError::new(
-    InvalidRuntimeRecordError { field, reason },
-    None,
-  ))
-}
-
-#[derive(Debug, Clone)]
 pub struct RuntimeRecordNotFoundError {
   pub record_type: &'static str,
   pub id: String,
@@ -905,6 +876,10 @@ impl MechErrorKind for RuntimeInvalidOperationError {
     format!("Invalid runtime operation `{}`: {}", self.operation, self.reason)
   }
 }
+
+// -----------------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------------
 
 fn runtime_target() -> String {
   format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH)
@@ -950,7 +925,6 @@ fn hex_bytes(bytes: &[u8]) -> String {
   out
 }
 
-
 // -----------------------------------------------------------------------------
 // Tests
 // -----------------------------------------------------------------------------
@@ -958,6 +932,7 @@ fn hex_bytes(bytes: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
   use super::*;
+
   use crate::capability::{
     BasicCapability, BasicOperation, BasicResource, BasicSubject,
   };
@@ -981,14 +956,17 @@ mod tests {
   fn source_module_round_trip() {
     let mut runtime = RuntimeBuilder::new().build().unwrap();
 
-    let version = runtime.put_source_module(
-      "main",
-      "x := 1",
-      env!("CARGO_PKG_VERSION"),
-      "mech-current",
-      &[],
-      &[],
-    ).unwrap();
+    let version = runtime
+      .put_source_module(
+        "main",
+        "memory:main",
+        "x := 1",
+        env!("CARGO_PKG_VERSION"),
+        "mech-current",
+        &[],
+        &[],
+      )
+      .unwrap();
 
     let loaded = runtime
       .store()
@@ -1000,21 +978,53 @@ mod tests {
   }
 
   #[test]
-  fn in_memory_resolver_can_resolve_module() {
-    let mut resolver = InMemoryModuleResolver::new();
-    resolver.insert("main", "x := 1");
+  fn in_memory_resolver_can_resolve_source_module() {
+    let mut resolver = InMemorySourceResolver::new();
+
+    resolver
+      .insert_string("main", "x := 1")
+      .unwrap();
 
     let mut runtime = RuntimeBuilder::new()
-      .module_resolver(resolver)
+      .source_resolver(resolver)
       .build()
       .unwrap();
 
     let version = runtime
-      .resolve_and_put_module("main", "0.3.5", "mech-current", &[], &[])
+      .resolve_and_store_module_source(
+        SourceRequest::new("main"),
+        env!("CARGO_PKG_VERSION"),
+        "mech-current",
+        &[],
+        &[],
+      )
       .unwrap()
       .unwrap();
 
     assert!(!version.is_zero());
+  }
+
+  #[test]
+  fn resolve_source_returns_resolved_source() {
+    let mut resolver = InMemorySourceResolver::new();
+
+    resolver
+      .insert_string("main", "x := 1")
+      .unwrap();
+
+    let runtime = RuntimeBuilder::new()
+      .source_resolver(resolver)
+      .build()
+      .unwrap();
+
+    let resolved = runtime
+      .resolve_source(SourceRequest::new("main"))
+      .unwrap()
+      .unwrap();
+
+    assert_eq!(resolved.name, "main");
+    assert_eq!(resolved.canonical_uri, "memory:main");
+    assert!(resolved.is_executable_mech_source());
   }
 
   #[test]
@@ -1081,6 +1091,7 @@ mod tests {
     assert!(!id.is_zero());
 
     let events = runtime.list_events(None).unwrap();
+
     assert!(
       events
         .iter()
@@ -1095,6 +1106,7 @@ mod tests {
     runtime.shutdown().unwrap();
 
     let events = runtime.list_events(None).unwrap();
+
     assert!(
       events
         .iter()
