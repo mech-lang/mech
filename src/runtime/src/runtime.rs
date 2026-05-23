@@ -1021,8 +1021,27 @@ impl MechRuntime {
     context.validate()?;
     context.charge_bytes(object.data.len() as u64)?;
 
-    let id = self.store.put_object(object)?;
+    if self.has_active_context_transaction(context) {
+      let transaction_id = Self::context_transaction_id(context)?;
+      let id = object.id;
 
+      self
+        .active_transaction_mut(transaction_id)?
+        .stage_put_object(object)?;
+
+      context.record_write(id);
+
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ObjectCreated {
+          object_id: id,
+        },
+      )?;
+
+      return Ok(id);
+    }
+
+    let id = self.store.put_object(object)?;
     context.record_write(id);
 
     self.emit_event_to_context(
@@ -1047,6 +1066,14 @@ impl MechRuntime {
     context.validate()?;
     context.record_read(id);
 
+    if let Some(transaction_id) = context.transaction {
+      if let Some(transaction) = self.active_transactions.get(&transaction_id) {
+        if let Some(object) = transaction.get_staged_object(id) {
+          return Ok(Some(object));
+        }
+      }
+    }
+
     self.store.get_object(id)
   }
 
@@ -1063,8 +1090,27 @@ impl MechRuntime {
     context.validate()?;
     context.charge_bytes(object.data.len() as u64)?;
 
-    let id = self.store.update_object(object)?;
+    if self.has_active_context_transaction(context) {
+      let transaction_id = Self::context_transaction_id(context)?;
+      let id = object.id;
 
+      self
+        .active_transaction_mut(transaction_id)?
+        .stage_update_object(object)?;
+
+      context.record_write(id);
+
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ObjectUpdated {
+          object_id: id,
+        },
+      )?;
+
+      return Ok(id);
+    }
+
+    let id = self.store.update_object(object)?;
     context.record_write(id);
 
     self.emit_event_to_context(
@@ -1442,7 +1488,7 @@ impl MechRuntime {
     };
 
     let mut context = self.context_for_task(&task)?;
-    let transaction = self.begin_transaction(&mut context)?;
+    self.begin_transaction(&mut context)?;
 
     let result = (|| -> MResult<()> {
       let Some(module_version) = task.module_version else {
@@ -1457,10 +1503,7 @@ impl MechRuntime {
 
     match result {
       Ok(()) => {
-        let transaction_id = self.commit_runtime_transaction(
-          &mut context,
-          transaction,
-        )?;
+        let transaction_id = self.commit_runtime_transaction(&mut context)?;
 
         let outcome = RuntimeTurnOutcome::new()
           .with_task(task_id)
@@ -1480,7 +1523,6 @@ impl MechRuntime {
 
         self.abort_runtime_transaction(
           &mut context,
-          transaction,
           message.clone(),
         )?;
 
@@ -1511,7 +1553,7 @@ impl MechRuntime {
     };
 
     let mut context = self.context_for_actor(&actor)?;
-    let transaction = self.begin_transaction(&mut context)?;
+    self.begin_transaction(&mut context)?;
 
     self.emit_event_to_context(
       &mut context,
@@ -1541,10 +1583,7 @@ impl MechRuntime {
           },
         )?;
 
-        let transaction_id = self.commit_runtime_transaction(
-          &mut context,
-          transaction,
-        )?;
+        let transaction_id = self.commit_runtime_transaction(&mut context)?;
 
         let outcome = RuntimeTurnOutcome::new()
           .with_actor(actor_id)
@@ -1572,7 +1611,6 @@ impl MechRuntime {
 
         self.abort_runtime_transaction(
           &mut context,
-          transaction,
           message.clone(),
         )?;
 
@@ -1745,11 +1783,24 @@ impl MechRuntime {
   pub fn begin_transaction(
     &mut self,
     context: &mut RuntimeContext,
-  ) -> MResult<RuntimeTransaction> {
+  ) -> MResult<TransactionId> {
     context.validate()?;
+
+    if context.transaction.is_some() {
+      return Err(MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "begin_transaction",
+          reason: "context already has an active transaction".to_string(),
+        },
+        None,
+      ));
+    }
 
     let id = self.next_transaction_id();
     context.transaction = Some(id);
+
+    let transaction = RuntimeTransaction::new(id, context.subject.clone());
+    self.active_transactions.insert(id, transaction);
 
     self.emit_event_to_context(
       context,
@@ -1758,29 +1809,43 @@ impl MechRuntime {
       },
     )?;
 
-    Ok(RuntimeTransaction::new(id, context.subject.clone()))
+    Ok(id)
   }
 
   pub fn commit_runtime_transaction(
     &mut self,
     context: &mut RuntimeContext,
-    mut transaction: RuntimeTransaction,
   ) -> MResult<TransactionId> {
     context.validate()?;
 
-    for object in &context.access.reads {
-      transaction.record_read(*object)?;
+    let transaction_id = Self::context_transaction_id(context)?;
+
+    let mut transaction = self
+      .active_transactions
+      .remove(&transaction_id)
+      .ok_or_else(|| {
+        MechError::new(
+          RuntimeTransactionNotFoundError { transaction_id },
+          None,
+        )
+      })?;
+
+    transaction.merge_read_set(&context.access.reads)?;
+    transaction.merge_write_set(&context.access.writes)?;
+    transaction.merge_events(&context.emitted_event_ids())?;
+
+    let staged_puts: Vec<ObjectRecord> = transaction.staged_puts().cloned().collect();
+    let staged_updates: Vec<ObjectRecord> = transaction.staged_updates().cloned().collect();
+
+    for object in staged_puts {
+      self.store.put_object(object)?;
     }
 
-    for object in &context.access.writes {
-      transaction.record_write(*object)?;
+    for object in staged_updates {
+      self.store.update_object(object)?;
     }
 
-    for event in context.emitted_event_ids() {
-      transaction.record_event(event)?;
-    }
-
-    let record = transaction.commit()?;
+    let record = transaction.into_record()?;
     let id = record.id;
 
     self.store.commit_transaction(record)?;
@@ -1800,20 +1865,29 @@ impl MechRuntime {
   pub fn abort_runtime_transaction(
     &mut self,
     context: &mut RuntimeContext,
-    transaction: RuntimeTransaction,
     reason: impl Into<String>,
   ) -> MResult<()> {
     context.validate()?;
 
+    let transaction_id = Self::context_transaction_id(context)?;
     let reason = reason.into();
-    let id = transaction.id;
+
+    let transaction = self
+      .active_transactions
+      .remove(&transaction_id)
+      .ok_or_else(|| {
+        MechError::new(
+          RuntimeTransactionNotFoundError { transaction_id },
+          None,
+        )
+      })?;
 
     let _ = transaction.abort(reason.clone())?;
 
     self.emit_event_to_context(
       context,
       RuntimeEventKind::TransactionAborted {
-        transaction_id: id,
+        transaction_id,
         message: reason,
       },
     )?;
