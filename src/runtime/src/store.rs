@@ -23,11 +23,11 @@ use std::sync::Arc;
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
 use crate::capability::{Capability, CapabilityRequest};
-use crate::id::{
-  ActorId, CapabilityId, EventId, ModuleId, ModuleVersionId, ObjectId, TaskId,
-  TransactionId, MessageId,
-};
 use crate::event::RuntimeEvent;
+use crate::id::{
+  ActorId, CapabilityId, EventId, MessageId, ModuleId, ModuleVersionId,
+  ObjectId, TaskId, TransactionId,
+};
 
 // -----------------------------------------------------------------------------
 // Store Trait
@@ -40,13 +40,26 @@ pub trait MechStore: std::fmt::Debug + Send {
 
   fn find_module_by_name(&self, name: &str) -> MResult<Option<ModuleRecord>>;
 
-  fn put_module_version(&mut self, version: ModuleVersionRecord) -> MResult<ModuleVersionId>;
+  fn put_module_version(
+    &mut self,
+    version: ModuleVersionRecord,
+  ) -> MResult<ModuleVersionId>;
 
-  fn get_module_version(&self, id: ModuleVersionId) -> MResult<Option<ModuleVersionRecord>>;
+  fn get_module_version(
+    &self,
+    id: ModuleVersionId,
+  ) -> MResult<Option<ModuleVersionRecord>>;
 
-  fn set_active_module_version(&mut self, module: ModuleId, version: ModuleVersionId) -> MResult<()>;
+  fn set_active_module_version(
+    &mut self,
+    module: ModuleId,
+    version: ModuleVersionId,
+  ) -> MResult<()>;
 
-  fn get_active_module_version(&self, module: ModuleId) -> MResult<Option<ModuleVersionId>>;
+  fn get_active_module_version(
+    &self,
+    module: ModuleId,
+  ) -> MResult<Option<ModuleVersionId>>;
 
   fn put_object(&mut self, object: ObjectRecord) -> MResult<ObjectId>;
 
@@ -66,7 +79,19 @@ pub trait MechStore: std::fmt::Debug + Send {
 
   fn update_actor(&mut self, actor: ActorRecord) -> MResult<ActorId>;
 
-  fn enqueue_message(&mut self, actor: ActorId, message: MessageRecord) -> MResult<MessageId>;
+  fn enqueue_message(
+    &mut self,
+    actor: ActorId,
+    message: MessageRecord,
+  ) -> MResult<MessageId>;
+
+  fn peek_message(&self, actor: ActorId) -> MResult<Option<MessageRecord>>;
+
+  fn ack_message(
+    &mut self,
+    actor: ActorId,
+    message: MessageId,
+  ) -> MResult<()>;
 
   fn pop_message(
     &mut self,
@@ -78,17 +103,23 @@ pub trait MechStore: std::fmt::Debug + Send {
 
     self.ack_message(actor, message.id)?;
     Ok(Some(message))
-  }  
-  
-  fn peek_message(&self, actor: ActorId) -> MResult<Option<MessageRecord>>;
-  
-  fn ack_message(&mut self, actor: ActorId, message: MessageId) -> MResult<()>;
+  }
 
-  fn grant_capability(&mut self,id: CapabilityId,capability: Arc<dyn Capability>) -> MResult<CapabilityId>;
+  fn grant_capability(
+    &mut self,
+    id: CapabilityId,
+    capability: Arc<dyn Capability>,
+  ) -> MResult<CapabilityId>;
 
-  fn get_capability(&self, id: CapabilityId) -> MResult<Option<Arc<dyn Capability>>>;
+  fn get_capability(
+    &self,
+    id: CapabilityId,
+  ) -> MResult<Option<Arc<dyn Capability>>>;
 
-  fn list_capabilities_for_subject(&self, subject_key: &str) -> MResult<Vec<CapabilityId>>;
+  fn list_capabilities_for_subject(
+    &self,
+    subject_key: &str,
+  ) -> MResult<Vec<CapabilityId>>;
 
   fn revoke_capability(&mut self, id: CapabilityId) -> MResult<()>;
 
@@ -212,11 +243,6 @@ impl ModuleVersionRecord {
 // Object Records
 // -----------------------------------------------------------------------------
 
-/// Store-friendly object record.
-///
-/// This intentionally stores bytes plus an encoding label instead of trying to
-/// make every Mech runtime value directly persistent at this layer. Higher
-/// layers can decide how to encode/decode records.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ObjectRecord {
@@ -501,12 +527,16 @@ impl MessageRecord {
 pub struct TransactionRecord {
   pub id: TransactionId,
   pub subject: String,
+
   pub read_set: Vec<ObjectId>,
   pub write_set: Vec<ObjectId>,
+
   pub message_acks: Vec<MessageId>,
   pub message_sends: Vec<MessageId>,
+
   pub task_updates: Vec<TaskId>,
   pub actor_updates: Vec<ActorId>,
+
   pub events: Vec<EventId>,
 }
 
@@ -515,8 +545,16 @@ impl TransactionRecord {
     Self {
       id,
       subject: subject.into(),
+
       read_set: Vec::new(),
       write_set: Vec::new(),
+
+      message_acks: Vec::new(),
+      message_sends: Vec::new(),
+
+      task_updates: Vec::new(),
+      actor_updates: Vec::new(),
+
       events: Vec::new(),
     }
   }
@@ -528,6 +566,26 @@ impl TransactionRecord {
 
   pub fn with_write_set(mut self, write_set: Vec<ObjectId>) -> Self {
     self.write_set = write_set;
+    self
+  }
+
+  pub fn with_message_acks(mut self, message_acks: Vec<MessageId>) -> Self {
+    self.message_acks = message_acks;
+    self
+  }
+
+  pub fn with_message_sends(mut self, message_sends: Vec<MessageId>) -> Self {
+    self.message_sends = message_sends;
+    self
+  }
+
+  pub fn with_task_updates(mut self, task_updates: Vec<TaskId>) -> Self {
+    self.task_updates = task_updates;
+    self
+  }
+
+  pub fn with_actor_updates(mut self, actor_updates: Vec<ActorId>) -> Self {
+    self.actor_updates = actor_updates;
     self
   }
 
@@ -668,7 +726,10 @@ impl MechStore for InMemoryStore {
     Ok(self.modules.get(id).cloned())
   }
 
-  fn put_module_version(&mut self, version: ModuleVersionRecord) -> MResult<ModuleVersionId> {
+  fn put_module_version(
+    &mut self,
+    version: ModuleVersionRecord,
+  ) -> MResult<ModuleVersionId> {
     version.validate()?;
     self.ensure_module_exists(version.module)?;
 
@@ -687,7 +748,10 @@ impl MechStore for InMemoryStore {
     Ok(id)
   }
 
-  fn get_module_version(&self, id: ModuleVersionId) -> MResult<Option<ModuleVersionRecord>> {
+  fn get_module_version(
+    &self,
+    id: ModuleVersionId,
+  ) -> MResult<Option<ModuleVersionRecord>> {
     Ok(self.module_versions.get(&id).cloned())
   }
 
@@ -715,7 +779,10 @@ impl MechStore for InMemoryStore {
     Ok(())
   }
 
-  fn get_active_module_version(&self, module: ModuleId) -> MResult<Option<ModuleVersionId>> {
+  fn get_active_module_version(
+    &self,
+    module: ModuleId,
+  ) -> MResult<Option<ModuleVersionId>> {
     Ok(self.active_module_versions.get(&module).copied())
   }
 
@@ -841,7 +908,11 @@ impl MechStore for InMemoryStore {
     Ok(id)
   }
 
-  fn enqueue_message(&mut self, actor: ActorId, message: MessageRecord) -> MResult<MessageId> {
+  fn enqueue_message(
+    &mut self,
+    actor: ActorId,
+    message: MessageRecord,
+  ) -> MResult<MessageId> {
     self.ensure_actor_exists(actor)?;
     message.validate()?;
 
@@ -862,7 +933,13 @@ impl MechStore for InMemoryStore {
 
   fn peek_message(&self, actor: ActorId) -> MResult<Option<MessageRecord>> {
     self.ensure_actor_exists(actor)?;
-    Ok(self.mailboxes.get(&actor).and_then(|mailbox| mailbox.front().cloned()))
+
+    Ok(
+      self
+        .mailboxes
+        .get(&actor)
+        .and_then(|mailbox| mailbox.front().cloned()),
+    )
   }
 
   fn ack_message(
@@ -928,11 +1005,17 @@ impl MechStore for InMemoryStore {
     Ok(id)
   }
 
-  fn get_capability(&self, id: CapabilityId) -> MResult<Option<Arc<dyn Capability>>> {
+  fn get_capability(
+    &self,
+    id: CapabilityId,
+  ) -> MResult<Option<Arc<dyn Capability>>> {
     Ok(self.capabilities.get(&id).cloned())
   }
 
-  fn list_capabilities_for_subject(&self, subject_key: &str) -> MResult<Vec<CapabilityId>> {
+  fn list_capabilities_for_subject(
+    &self,
+    subject_key: &str,
+  ) -> MResult<Vec<CapabilityId>> {
     Ok(
       self
         .capabilities_by_subject
@@ -1037,11 +1120,17 @@ impl MechStore for InMemoryStore {
     Ok(id)
   }
 
-  fn get_transaction(&self, id: TransactionId) -> MResult<Option<TransactionRecord>> {
+  fn get_transaction(
+    &self,
+    id: TransactionId,
+  ) -> MResult<Option<TransactionRecord>> {
     Ok(self.transactions.get(&id).cloned())
   }
 
-  fn list_transactions(&self, limit: Option<usize>) -> MResult<Vec<TransactionRecord>> {
+  fn list_transactions(
+    &self,
+    limit: Option<usize>,
+  ) -> MResult<Vec<TransactionRecord>> {
     let iter = self.transaction_order.iter().rev();
 
     let ids: Vec<TransactionId> = match limit {
@@ -1144,8 +1233,6 @@ impl MechErrorKind for StoreCapabilityNotRevocableError {
 mod tests {
   use super::*;
 
-  use std::sync::Arc;
-
   use crate::capability::{
     BasicCapability, BasicOperation, BasicResource, BasicSubject,
   };
@@ -1235,17 +1322,21 @@ mod tests {
   fn actor_message_queue() {
     let mut store = InMemoryStore::new();
 
-    let actor = ActorRecord::new(ActorId(1), "actor:1");
-    store.put_actor(actor).unwrap();
+    store
+      .put_actor(ActorRecord::new(ActorId(1), "actor:1"))
+      .unwrap();
 
-    let message = MessageRecord::new(
-      MessageId(1),
-      ActorId(1),
-      "ping",
-      b"hello".to_vec(),
-    );
-
-    store.enqueue_message(ActorId(1), message).unwrap();
+    store
+      .enqueue_message(
+        ActorId(1),
+        MessageRecord::new(
+          MessageId(1),
+          ActorId(1),
+          "ping",
+          b"hello".to_vec(),
+        ),
+      )
+      .unwrap();
 
     let peeked = store.peek_message(ActorId(1)).unwrap().unwrap();
     assert_eq!(peeked.kind, "ping");
@@ -1254,6 +1345,52 @@ mod tests {
     assert_eq!(popped.payload, b"hello");
 
     assert!(store.pop_message(ActorId(1)).unwrap().is_none());
+  }
+
+  #[test]
+  fn actor_message_ack_removes_specific_message() {
+    let mut store = InMemoryStore::new();
+
+    store
+      .put_actor(ActorRecord::new(ActorId(1), "actor:1"))
+      .unwrap();
+
+    let first = MessageRecord::new(
+      MessageId(1),
+      ActorId(1),
+      "first",
+      b"one".to_vec(),
+    );
+
+    let second = MessageRecord::new(
+      MessageId(2),
+      ActorId(1),
+      "second",
+      b"two".to_vec(),
+    );
+
+    store.enqueue_message(ActorId(1), first).unwrap();
+    store.enqueue_message(ActorId(1), second).unwrap();
+
+    assert_eq!(
+      store.peek_message(ActorId(1)).unwrap().unwrap().id,
+      MessageId(1),
+    );
+
+    store
+      .ack_message(ActorId(1), MessageId(1))
+      .unwrap();
+
+    assert_eq!(
+      store.peek_message(ActorId(1)).unwrap().unwrap().id,
+      MessageId(2),
+    );
+
+    store
+      .ack_message(ActorId(1), MessageId(2))
+      .unwrap();
+
+    assert!(store.peek_message(ActorId(1)).unwrap().is_none());
   }
 
   #[test]
@@ -1337,7 +1474,11 @@ mod tests {
     let tx = TransactionRecord::new(TransactionId(1), "task:1")
       .with_read_set(vec![ObjectId(1)])
       .with_write_set(vec![ObjectId(2)])
-      .with_events(vec![EventId(1)]);
+      .with_message_acks(vec![MessageId(3)])
+      .with_message_sends(vec![MessageId(4)])
+      .with_task_updates(vec![TaskId(5)])
+      .with_actor_updates(vec![ActorId(6)])
+      .with_events(vec![EventId(7)]);
 
     store.commit_transaction(tx).unwrap();
 
@@ -1349,52 +1490,10 @@ mod tests {
     assert_eq!(loaded.subject, "task:1");
     assert_eq!(loaded.read_set, vec![ObjectId(1)]);
     assert_eq!(loaded.write_set, vec![ObjectId(2)]);
-    assert_eq!(loaded.events, vec![EventId(1)]);
-  }
-
-  #[test]
-  fn actor_message_ack_removes_specific_message() {
-    let mut store = InMemoryStore::new();
-
-    store
-      .put_actor(ActorRecord::new(ActorId(1), "actor:1"))
-      .unwrap();
-
-    let first = MessageRecord::new(
-      MessageId(1),
-      ActorId(1),
-      "first",
-      b"one".to_vec(),
-    );
-
-    let second = MessageRecord::new(
-      MessageId(2),
-      ActorId(1),
-      "second",
-      b"two".to_vec(),
-    );
-
-    store.enqueue_message(ActorId(1), first).unwrap();
-    store.enqueue_message(ActorId(1), second).unwrap();
-
-    assert_eq!(
-      store.peek_message(ActorId(1)).unwrap().unwrap().id,
-      MessageId(1),
-    );
-
-    store
-      .ack_message(ActorId(1), MessageId(1))
-      .unwrap();
-
-    assert_eq!(
-      store.peek_message(ActorId(1)).unwrap().unwrap().id,
-      MessageId(2),
-    );
-
-    store
-      .ack_message(ActorId(1), MessageId(2))
-      .unwrap();
-
-    assert!(store.peek_message(ActorId(1)).unwrap().is_none());
+    assert_eq!(loaded.message_acks, vec![MessageId(3)]);
+    assert_eq!(loaded.message_sends, vec![MessageId(4)]);
+    assert_eq!(loaded.task_updates, vec![TaskId(5)]);
+    assert_eq!(loaded.actor_updates, vec![ActorId(6)]);
+    assert_eq!(loaded.events, vec![EventId(7)]);
   }
 }

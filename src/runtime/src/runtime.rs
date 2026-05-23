@@ -2030,15 +2030,15 @@ impl MechRuntime {
     let staged_actor_updates: Vec<ActorRecord> =
       transaction.staged_actor_updates().cloned().collect();
 
-    let staged_message_enqueues: Vec<(ActorId, Vec<MessageRecord>)> = transaction
-      .staged_message_enqueues()
-      .map(|(actor, messages)| (*actor, messages.clone()))
-      .collect();
-
     let staged_message_acks: Vec<(ActorId, Vec<MessageId>)> = transaction
       .staged_message_acks()
       .map(|(actor, messages)| (*actor, messages.clone()))
-      .collect();      
+      .collect();
+
+    let staged_message_enqueues: Vec<(ActorId, Vec<MessageRecord>)> = transaction
+      .staged_message_enqueues()
+      .map(|(actor, messages)| (*actor, messages.clone()))
+      .collect();    
 
     for object in staged_puts {
       self.store.put_object(object)?;

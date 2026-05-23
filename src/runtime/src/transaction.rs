@@ -61,6 +61,10 @@ pub struct RuntimeTransaction {
   pub staged_actor_updates: HashMap<ActorId, ActorRecord>,
   pub staged_message_enqueues: HashMap<ActorId, Vec<MessageRecord>>,
   pub staged_message_acks: HashMap<ActorId, Vec<MessageId>>,
+  pub message_acks: Vec<MessageId>,
+  pub message_sends: Vec<MessageId>,
+  pub task_updates: Vec<TaskId>,
+  pub actor_updates: Vec<ActorId>,
 }
 
 impl RuntimeTransaction {
@@ -81,7 +85,67 @@ impl RuntimeTransaction {
       staged_actor_updates: HashMap::new(),
       staged_message_enqueues: HashMap::new(),
       staged_message_acks: HashMap::new(),
+      message_acks: Vec::new(),
+      message_sends: Vec::new(),
+      task_updates: Vec::new(),
+      actor_updates: Vec::new(),
     }
+  }
+
+  pub fn record_message_ack(&mut self, message: MessageId) -> MResult<()> {
+  self.ensure_open()?;
+
+  if message.is_zero() {
+    return invalid_runtime_transaction("message", "must not be zero");
+  }
+
+  if !self.message_acks.contains(&message) {
+    self.message_acks.push(message);
+  }
+
+  Ok(())
+}
+
+  pub fn record_message_send(&mut self, message: MessageId) -> MResult<()> {
+    self.ensure_open()?;
+
+    if message.is_zero() {
+      return invalid_runtime_transaction("message", "must not be zero");
+    }
+
+    if !self.message_sends.contains(&message) {
+      self.message_sends.push(message);
+    }
+
+    Ok(())
+  }
+
+  pub fn record_task_update(&mut self, task: TaskId) -> MResult<()> {
+    self.ensure_open()?;
+
+    if task.is_zero() {
+      return invalid_runtime_transaction("task", "must not be zero");
+    }
+
+    if !self.task_updates.contains(&task) {
+      self.task_updates.push(task);
+    }
+
+    Ok(())
+  }
+
+  pub fn record_actor_update(&mut self, actor: ActorId) -> MResult<()> {
+    self.ensure_open()?;
+
+    if actor.is_zero() {
+      return invalid_runtime_transaction("actor", "must not be zero");
+    }
+
+    if !self.actor_updates.contains(&actor) {
+      self.actor_updates.push(actor);
+    }
+
+    Ok(())
   }
 
   pub fn validate(&self) -> MResult<()> {
@@ -251,6 +315,10 @@ impl RuntimeTransaction {
     Ok(TransactionRecord::new(self.id, self.subject)
       .with_read_set(self.read_set)
       .with_write_set(self.write_set)
+      .with_message_acks(self.message_acks)
+      .with_message_sends(self.message_sends)
+      .with_task_updates(self.task_updates)
+      .with_actor_updates(self.actor_updates)
       .with_events(self.events))
   }
 
@@ -280,6 +348,7 @@ impl RuntimeTransaction {
       return invalid_runtime_transaction("task.id", "must not be zero");
     }
 
+    self.record_task_update(id)?;
     self.staged_task_updates.insert(id, task);
 
     Ok(id)
@@ -298,6 +367,7 @@ impl RuntimeTransaction {
       return invalid_runtime_transaction("actor.id", "must not be zero");
     }
 
+    self.record_actor_update(id)?;
     self.staged_actor_updates.insert(id, actor);
 
     Ok(id)
@@ -324,6 +394,8 @@ impl RuntimeTransaction {
 
     let id = message.id;
 
+    self.record_message_send(id)?;
+
     self
       .staged_message_enqueues
       .entry(actor)
@@ -347,6 +419,8 @@ impl RuntimeTransaction {
     if message.is_zero() {
       return invalid_runtime_transaction("message", "must not be zero");
     }
+
+    self.record_message_ack(message)?;
 
     let messages = self
       .staged_message_acks

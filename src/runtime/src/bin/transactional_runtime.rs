@@ -319,11 +319,15 @@ fn main() -> MResult<()> {
 
   for transaction in runtime.list_transactions(None)? {
     println!(
-      "  {} subject={} reads={:?} writes={:?} events={:?}",
+      "  {} subject={} reads={:?} writes={:?} message_acks={:?} message_sends={:?} task_updates={:?} actor_updates={:?} events={:?}",
       transaction.id,
       transaction.subject,
       transaction.read_set,
       transaction.write_set,
+      transaction.message_acks,
+      transaction.message_sends,
+      transaction.task_updates,
+      transaction.actor_updates,
       transaction.events,
     );
   }
