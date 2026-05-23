@@ -12,6 +12,7 @@ pub mod host;
 pub mod scheduler;
 pub mod transaction;
 pub mod actor;
+pub mod services;
 
 pub use self::id::*;
 pub use self::runtime::*;
@@ -25,3 +26,4 @@ pub use self::host::*;
 pub use self::scheduler::*;
 pub use self::transaction::*;
 pub use self::actor::*;
+pub use self::services::*;
