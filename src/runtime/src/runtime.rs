@@ -71,6 +71,8 @@ use crate::transaction::{
   RuntimeTransaction, RuntimeTransactionNotFoundError,
 };
 
+use crate::actor::ActorTurn;
+
 // -----------------------------------------------------------------------------
 // Runtime Builder
 // -----------------------------------------------------------------------------
@@ -1543,6 +1545,59 @@ impl MechRuntime {
     self.store.peek_message(actor)
   }
 
+  pub fn next_actor_turn_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    actor_id: ActorId,
+  ) -> MResult<Option<ActorTurn>> {
+    context.validate()?;
+
+    let Some(actor) = self.get_actor_with_context(context, actor_id)? else {
+      return Err(MechError::new(
+        RuntimeRecordNotFoundError {
+          record_type: "actor",
+          id: actor_id.to_string(),
+        },
+        None,
+      ));
+    };
+
+    let Some(message) = self.pop_message_with_context(context, actor_id)? else {
+      return Ok(None);
+    };
+
+    Ok(Some(ActorTurn::new(actor, message)?))
+  }
+
+  pub fn run_actor_turn_envelope(
+    &mut self,
+    context: &mut RuntimeContext,
+    turn: &ActorTurn,
+  ) -> MResult<()> {
+    context.validate()?;
+    turn.validate()?;
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ActorTurnStarted {
+        actor_id: turn.actor_id(),
+      },
+    )?;
+
+    if let Some(behavior) = turn.behavior {
+      self.run_module_with_context(context, behavior)?;
+    }
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ActorTurnCompleted {
+        actor_id: turn.actor_id(),
+      },
+    )?;
+
+    Ok(())
+  }
+
   // ---------------------------------------------------------------------------
   // Scheduling
   // ---------------------------------------------------------------------------
@@ -1739,34 +1794,37 @@ impl MechRuntime {
     let mut context = self.context_for_actor(&actor)?;
     self.begin_transaction(&mut context)?;
 
-    self.emit_event_to_context(
-      &mut context,
-      RuntimeEventKind::ActorTurnStarted {
+    let result = (|| -> MResult<Option<ActorTurn>> {
+      let Some(turn) = self.next_actor_turn_with_context(
+        &mut context,
         actor_id,
-      },
-    )?;
-
-    let result = (|| -> MResult<()> {
-      let Some(_message) = self.pop_message_with_context(&mut context, actor_id)? else {
-        return Ok(());
+      )? else {
+        return Ok(None);
       };
 
-      if let Some(behavior) = actor.behavior {
-        self.run_module_with_context(&mut context, behavior)?;
-      }
+      self.run_actor_turn_envelope(&mut context, &turn)?;
 
-      Ok(())
+      Ok(Some(turn))
     })();
 
     match result {
-      Ok(()) => {
-        self.emit_event_to_context(
-          &mut context,
-          RuntimeEventKind::ActorTurnCompleted {
-            actor_id,
-          },
+      Ok(Some(_turn)) => {
+        let transaction_id = self.commit_runtime_transaction(&mut context)?;
+
+        let outcome = RuntimeTurnOutcome::new()
+          .with_actor(actor_id)
+          .with_transaction(transaction_id)
+          .with_events(context.emitted_event_ids())
+          .with_access(context.access.clone());
+
+        self.complete_scheduled_work(
+          ScheduledWork::actor(actor_id),
+          outcome.clone(),
         )?;
 
+        Ok(outcome)
+      }
+      Ok(None) => {
         let transaction_id = self.commit_runtime_transaction(&mut context)?;
 
         let outcome = RuntimeTurnOutcome::new()
