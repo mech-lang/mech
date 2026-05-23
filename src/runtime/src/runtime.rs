@@ -1240,31 +1240,72 @@ impl MechRuntime {
     context.validate()?;
     call.validate()?;
 
+    let name = call.name.clone();
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::HostCallStarted {
+        name: name.clone(),
+      },
+    )?;
+
     let Some(function) = self.host_registry.get_function(&call.name)? else {
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::HostCallFailed {
+          name: name.clone(),
+          message: "host function not found".to_string(),
+        },
+      )?;
+
       return Err(MechError::new(
         HostFunctionNotFoundError {
-          name: call.name,
+          name,
         },
         None,
       ));
     };
 
-    self
-      .host_policy
-      .validate_call(context, function.as_ref(), &call.args)?;
+    let result = (|| -> MResult<Value> {
+      self
+        .host_policy
+        .validate_call(context, function.as_ref(), &call.args)?;
 
-    context.charge_items(function.estimated_cost_items(&call.args))?;
-    context.charge_bytes(function.estimated_cost_bytes(&call.args))?;
+      context.charge_items(function.estimated_cost_items(&call.args))?;
+      context.charge_bytes(function.estimated_cost_bytes(&call.args))?;
 
-    let capability_request = function
-      .required_capability(context)
-      .unwrap_or_else(|| {
-        default_host_capability_request(context, function.name())
-      });
+      let capability_request = function
+        .required_capability(context)
+        .unwrap_or_else(|| {
+          default_host_capability_request(context, function.name())
+        });
 
-    self.check_capability_with_context(context, &capability_request)?;
+      self.check_capability_with_context(context, &capability_request)?;
 
-    function.call(context, call.args)
+      function.call(context, call.args)
+    })();
+
+    match &result {
+      Ok(_) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::HostCallCompleted {
+            name,
+          },
+        )?;
+      }
+      Err(error) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::HostCallFailed {
+            name,
+            message: format!("{:?}", error),
+          },
+        )?;
+      }
+    }
+
+    result
   }
 
   // ---------------------------------------------------------------------------

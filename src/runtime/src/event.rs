@@ -40,6 +40,9 @@ pub enum RuntimeEventKind {
   ObjectUpdated { object_id: ObjectId },
   TransactionCommitted { transaction_id: TransactionId },
   RuntimeError { message: String },
+  HostCallStarted { name: String },
+  HostCallCompleted { name: String },
+  HostCallFailed { name: String, message: String },
 }
 
 impl RuntimeEventKind {
@@ -66,6 +69,9 @@ impl RuntimeEventKind {
       RuntimeEventKind::ObjectUpdated { .. } => "object.updated",
       RuntimeEventKind::TransactionCommitted { .. } => "transaction.committed",
       RuntimeEventKind::RuntimeError { .. } => "runtime.error",
+      RuntimeEventKind::HostCallStarted { .. } => "host.call.started",
+      RuntimeEventKind::HostCallCompleted { .. } => "host.call.completed",
+      RuntimeEventKind::HostCallFailed { .. } => "host.call.failed",
     }
   }
 }
