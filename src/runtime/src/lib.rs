@@ -8,8 +8,8 @@ pub mod store;
 pub mod resolver;
 pub mod event;
 pub mod context;
+pub mod host;
 // pub mod error;
-// pub mod host;
 // pub mod scheduler;
 
 pub use self::id::*;
@@ -20,3 +20,4 @@ pub use self::store::*;
 pub use self::resolver::*;
 pub use self::event::*;
 pub use self::context::*;
+pub use self::host::*;

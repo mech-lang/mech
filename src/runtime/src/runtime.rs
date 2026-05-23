@@ -7,6 +7,8 @@
 //! - store
 //! - capability kernel
 //! - source resolver
+//! - host registry
+//! - host call policy
 //! - runtime config
 //!
 //! RuntimeContext is used as the per-operation execution envelope. It carries
@@ -38,10 +40,15 @@ use crate::event::{
   RuntimeEvent, RuntimeEventKind,
 };
 
+use crate::host::{
+  default_host_capability_request, DefaultHostCallPolicy, HostCall,
+  HostCallPolicy, HostFunctionNotFoundError, HostRegistry, InMemoryHostRegistry,
+};
+
 use crate::id::{
   module_id, module_version_id, ActorId, CapabilityId, DefaultIdGenerator,
-  EventId, IdGenerator, ModuleId, ModuleVersionId, ObjectId, RuntimeId,
-  TaskId, TransactionId, MessageId,
+  EventId, IdGenerator, MessageId, ModuleId, ModuleVersionId, ObjectId,
+  RuntimeId, TaskId, TransactionId,
 };
 
 use crate::resolver::{
@@ -49,9 +56,8 @@ use crate::resolver::{
 };
 
 use crate::store::{
-  ActorRecord, InMemoryStore, MechStore, MessageRecord,
-  ModuleRecord, ModuleVersionRecord, ObjectRecord, TaskRecord, TaskStatus,
-  TransactionRecord,
+  ActorRecord, InMemoryStore, MechStore, MessageRecord, ModuleRecord,
+  ModuleVersionRecord, ObjectRecord, TaskRecord, TaskStatus, TransactionRecord,
 };
 
 // -----------------------------------------------------------------------------
@@ -64,6 +70,8 @@ pub struct RuntimeBuilder {
   store: Box<dyn MechStore>,
   capability_kernel: Box<dyn CapabilityKernel>,
   source_resolver: Box<dyn SourceResolver>,
+  host_registry: Box<dyn HostRegistry>,
+  host_policy: Box<dyn HostCallPolicy>,
 }
 
 impl std::fmt::Debug for RuntimeBuilder {
@@ -74,6 +82,8 @@ impl std::fmt::Debug for RuntimeBuilder {
       .field("store", &"<dyn MechStore>")
       .field("capability_kernel", &"<dyn CapabilityKernel>")
       .field("source_resolver", &"<dyn SourceResolver>")
+      .field("host_registry", &"<dyn HostRegistry>")
+      .field("host_policy", &"<dyn HostCallPolicy>")
       .finish()
   }
 }
@@ -86,6 +96,8 @@ impl Default for RuntimeBuilder {
       store: Box::new(InMemoryStore::new()),
       capability_kernel: Box::new(BasicCapabilityKernel::new()),
       source_resolver: Box::new(InMemorySourceResolver::new()),
+      host_registry: Box::new(InMemoryHostRegistry::new()),
+      host_policy: Box::new(DefaultHostCallPolicy),
     }
   }
 }
@@ -126,6 +138,22 @@ impl RuntimeBuilder {
     self
   }
 
+  pub fn host_registry(
+    mut self,
+    host_registry: impl HostRegistry + 'static,
+  ) -> Self {
+    self.host_registry = Box::new(host_registry);
+    self
+  }
+
+  pub fn host_policy(
+    mut self,
+    host_policy: impl HostCallPolicy + 'static,
+  ) -> Self {
+    self.host_policy = Box::new(host_policy);
+    self
+  }
+
   pub fn build(mut self) -> MResult<MechRuntime> {
     self.config.validate()?;
 
@@ -154,6 +182,8 @@ impl RuntimeBuilder {
       store: self.store,
       capability_kernel: self.capability_kernel,
       source_resolver: self.source_resolver,
+      host_registry: self.host_registry,
+      host_policy: self.host_policy,
     };
 
     let mut context = runtime.runtime_context()?;
@@ -182,6 +212,8 @@ pub struct MechRuntime {
   store: Box<dyn MechStore>,
   capability_kernel: Box<dyn CapabilityKernel>,
   source_resolver: Box<dyn SourceResolver>,
+  host_registry: Box<dyn HostRegistry>,
+  host_policy: Box<dyn HostCallPolicy>,
 }
 
 impl std::fmt::Debug for MechRuntime {
@@ -195,6 +227,8 @@ impl std::fmt::Debug for MechRuntime {
       .field("store", &"<dyn MechStore>")
       .field("capability_kernel", &"<dyn CapabilityKernel>")
       .field("source_resolver", &"<dyn SourceResolver>")
+      .field("host_registry", &"<dyn HostRegistry>")
+      .field("host_policy", &"<dyn HostCallPolicy>")
       .finish()
   }
 }
@@ -246,6 +280,22 @@ impl MechRuntime {
 
   pub fn source_resolver_mut(&mut self) -> &mut dyn SourceResolver {
     self.source_resolver.as_mut()
+  }
+
+  pub fn host_registry(&self) -> &dyn HostRegistry {
+    self.host_registry.as_ref()
+  }
+
+  pub fn host_registry_mut(&mut self) -> &mut dyn HostRegistry {
+    self.host_registry.as_mut()
+  }
+
+  pub fn host_policy(&self) -> &dyn HostCallPolicy {
+    self.host_policy.as_ref()
+  }
+
+  pub fn host_policy_mut(&mut self) -> &mut dyn HostCallPolicy {
+    self.host_policy.as_mut()
   }
 
   // ---------------------------------------------------------------------------
@@ -331,11 +381,6 @@ impl MechRuntime {
       self.next_event_sequence(),
       kind,
     )
-  }
-
-  fn emit_event(&mut self, kind: RuntimeEventKind) -> MResult<EventId> {
-    let event = self.make_event(kind);
-    self.append_event(event)
   }
 
   fn emit_event_to_context(
@@ -1176,6 +1221,50 @@ impl MechRuntime {
 
   pub fn peek_message(&self, actor: ActorId) -> MResult<Option<MessageRecord>> {
     self.store.peek_message(actor)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Host Calls
+  // ---------------------------------------------------------------------------
+
+  pub fn call_host(&mut self, call: HostCall) -> MResult<Value> {
+    let mut context = self.runtime_context()?;
+    self.call_host_with_context(&mut context, call)
+  }
+
+  pub fn call_host_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    call: HostCall,
+  ) -> MResult<Value> {
+    context.validate()?;
+    call.validate()?;
+
+    let Some(function) = self.host_registry.get_function(&call.name)? else {
+      return Err(MechError::new(
+        HostFunctionNotFoundError {
+          name: call.name,
+        },
+        None,
+      ));
+    };
+
+    self
+      .host_policy
+      .validate_call(context, function.as_ref(), &call.args)?;
+
+    context.charge_items(function.estimated_cost_items(&call.args))?;
+    context.charge_bytes(function.estimated_cost_bytes(&call.args))?;
+
+    let capability_request = function
+      .required_capability(context)
+      .unwrap_or_else(|| {
+        default_host_capability_request(context, function.name())
+      });
+
+    self.check_capability_with_context(context, &capability_request)?;
+
+    function.call(context, call.args)
   }
 
   // ---------------------------------------------------------------------------
