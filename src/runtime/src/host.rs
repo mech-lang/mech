@@ -22,7 +22,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use mech_core::{MResult, MechError, MechErrorKind, Value};
+use mech_core::{Ref, MResult, MechError, MechErrorKind, Value};
 
 use crate::capability::{
   CapabilityRequest, Operation, Resource,
@@ -420,6 +420,200 @@ pub fn default_host_capability_request(
   let operation = HostOperation::call();
 
   context.capability_request(&operation, &resource)
+}
+
+// -----------------------------------------------------------------------------
+// Actor Context Host Functions
+// -----------------------------------------------------------------------------
+
+#[derive(Clone, Debug)]
+pub struct ActorMessageKindHostFunction;
+
+impl ActorMessageKindHostFunction {
+  pub fn new() -> Self {
+    Self
+  }
+}
+
+impl Default for ActorMessageKindHostFunction {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
+impl HostFunction for ActorMessageKindHostFunction {
+  fn name(&self) -> &str {
+    "actor.message.kind"
+  }
+
+  fn call(
+    &self,
+    context: &mut RuntimeContext,
+    _args: Vec<Value>,
+  ) -> MResult<Value> {
+    let Some(kind) = context.actor_message_kind() else {
+      return Err(MechError::new(
+        HostInvalidContextError {
+          function: self.name().to_string(),
+          reason: "no actor message is bound to the runtime context".to_string(),
+        },
+        None,
+      ));
+    };
+
+    Ok(Value::String(Ref::new(kind.to_string())))
+  }
+
+  fn estimated_cost_items(&self, _args: &[Value]) -> u64 {
+    1
+  }
+
+  fn estimated_cost_bytes(&self, _args: &[Value]) -> u64 {
+    0
+  }
+
+  fn required_capability(
+    &self,
+    context: &RuntimeContext,
+  ) -> Option<CapabilityRequest> {
+    Some(default_host_capability_request(context, self.name()))
+  }
+}
+
+#[derive(Clone, Debug)]
+pub struct ActorMessagePayloadHostFunction;
+
+impl ActorMessagePayloadHostFunction {
+  pub fn new() -> Self {
+    Self
+  }
+}
+
+impl Default for ActorMessagePayloadHostFunction {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
+impl HostFunction for ActorMessagePayloadHostFunction {
+  fn name(&self) -> &str {
+    "actor.message.payload"
+  }
+
+  fn call(
+    &self,
+    context: &mut RuntimeContext,
+    _args: Vec<Value>,
+  ) -> MResult<Value> {
+    let Some(payload) = context.actor_message_payload() else {
+      return Err(MechError::new(
+        HostInvalidContextError {
+          function: self.name().to_string(),
+          reason: "no actor message is bound to the runtime context".to_string(),
+        },
+        None,
+      ));
+    };
+
+    Ok(Value::String(Ref::new(String::from_utf8_lossy(payload).to_string())))
+  }
+
+  fn estimated_cost_items(&self, _args: &[Value]) -> u64 {
+    1
+  }
+
+  fn estimated_cost_bytes(&self, _args: &[Value]) -> u64 {
+    context_payload_cost_unavailable()
+  }
+
+  fn required_capability(
+    &self,
+    context: &RuntimeContext,
+  ) -> Option<CapabilityRequest> {
+    Some(default_host_capability_request(context, self.name()))
+  }
+}
+
+#[derive(Clone, Debug)]
+pub struct ActorStateIdHostFunction;
+
+impl ActorStateIdHostFunction {
+  pub fn new() -> Self {
+    Self
+  }
+}
+
+impl Default for ActorStateIdHostFunction {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
+impl HostFunction for ActorStateIdHostFunction {
+  fn name(&self) -> &str {
+    "actor.state.id"
+  }
+
+  fn call(
+    &self,
+    context: &mut RuntimeContext,
+    _args: Vec<Value>,
+  ) -> MResult<Value> {
+    let Some(state) = context.actor_state() else {
+      return Ok(Value::Empty);
+    };
+
+    Ok(Value::String(Ref::new(state.to_string())))
+  }
+
+  fn estimated_cost_items(&self, _args: &[Value]) -> u64 {
+    1
+  }
+
+  fn estimated_cost_bytes(&self, _args: &[Value]) -> u64 {
+    0
+  }
+
+  fn required_capability(
+    &self,
+    context: &RuntimeContext,
+  ) -> Option<CapabilityRequest> {
+    Some(default_host_capability_request(context, self.name()))
+  }
+}
+
+fn context_payload_cost_unavailable() -> u64 {
+  0
+}
+
+#[derive(Debug, Clone)]
+pub struct HostInvalidContextError {
+  pub function: String,
+  pub reason: String,
+}
+
+impl MechErrorKind for HostInvalidContextError {
+  fn name(&self) -> &str {
+    "HostInvalidContext"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Host function `{}` cannot run in this context: {}",
+      self.function,
+      self.reason
+    )
+  }
+}
+
+pub fn register_actor_context_host_functions(
+  registry: &mut InMemoryHostRegistry,
+) -> MResult<()> {
+  registry.insert(ActorMessageKindHostFunction::new())?;
+  registry.insert(ActorMessagePayloadHostFunction::new())?;
+  registry.insert(ActorStateIdHostFunction::new())?;
+
+  Ok(())
 }
 
 // -----------------------------------------------------------------------------

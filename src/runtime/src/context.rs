@@ -33,6 +33,10 @@ use crate::id::{
   TransactionId,
 };
 
+use crate::actor::ActorTurn;
+
+use crate::store::MessageRecord;
+
 // -----------------------------------------------------------------------------
 // Runtime Context
 // -----------------------------------------------------------------------------
@@ -231,6 +235,10 @@ impl RuntimeContext {
 
   pub fn actor_message_payload(&self) -> Option<&[u8]> {
     self.actor_message.as_ref().map(|message| message.payload.as_slice())
+  }
+
+  pub fn actor_state(&self) -> Option<ObjectId> {
+    self.actor_state
   }
 
 }
