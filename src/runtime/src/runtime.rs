@@ -33,7 +33,7 @@ use crate::capability::{
 use crate::config::RuntimeConfig;
 
 use crate::context::{
-  ResourceBudget, RuntimeContext, RuntimeContextBuilder,
+  ResourceBudget, RuntimeContext, RuntimeContextBuilder, RuntimeTurnOutcome,
 };
 
 use crate::event::{
@@ -60,6 +60,11 @@ use crate::store::{
   ModuleVersionRecord, ObjectRecord, TaskRecord, TaskStatus, TransactionRecord,
 };
 
+use crate::scheduler::{
+  collect_tick, InMemoryScheduler, ScheduledWork, Scheduler, SchedulerPolicy,
+  SchedulerTick,
+};
+
 // -----------------------------------------------------------------------------
 // Runtime Builder
 // -----------------------------------------------------------------------------
@@ -72,6 +77,8 @@ pub struct RuntimeBuilder {
   source_resolver: Box<dyn SourceResolver>,
   host_registry: Box<dyn HostRegistry>,
   host_policy: Box<dyn HostCallPolicy>,
+  scheduler: Box<dyn Scheduler>,
+  scheduler_policy: SchedulerPolicy,
 }
 
 impl std::fmt::Debug for RuntimeBuilder {
@@ -84,6 +91,8 @@ impl std::fmt::Debug for RuntimeBuilder {
       .field("source_resolver", &"<dyn SourceResolver>")
       .field("host_registry", &"<dyn HostRegistry>")
       .field("host_policy", &"<dyn HostCallPolicy>")
+      .field("scheduler", &"<dyn Scheduler>")
+      .field("scheduler_policy", &self.scheduler_policy)
       .finish()
   }
 }
@@ -98,6 +107,8 @@ impl Default for RuntimeBuilder {
       source_resolver: Box::new(InMemorySourceResolver::new()),
       host_registry: Box::new(InMemoryHostRegistry::new()),
       host_policy: Box::new(DefaultHostCallPolicy),
+      scheduler: Box::new(InMemoryScheduler::new()),
+      scheduler_policy: SchedulerPolicy::default(),
     }
   }
 }
@@ -154,6 +165,19 @@ impl RuntimeBuilder {
     self
   }
 
+  pub fn scheduler(
+    mut self,
+    scheduler: impl Scheduler + 'static,
+  ) -> Self {
+    self.scheduler = Box::new(scheduler);
+    self
+  }
+
+  pub fn scheduler_policy(mut self, scheduler_policy: SchedulerPolicy) -> Self {
+    self.scheduler_policy = scheduler_policy;
+    self
+  }
+
   pub fn build(mut self) -> MResult<MechRuntime> {
     self.config.validate()?;
 
@@ -184,6 +208,8 @@ impl RuntimeBuilder {
       source_resolver: self.source_resolver,
       host_registry: self.host_registry,
       host_policy: self.host_policy,
+      scheduler: self.scheduler,
+      scheduler_policy: self.scheduler_policy,
     };
 
     let mut context = runtime.runtime_context()?;
@@ -214,6 +240,8 @@ pub struct MechRuntime {
   source_resolver: Box<dyn SourceResolver>,
   host_registry: Box<dyn HostRegistry>,
   host_policy: Box<dyn HostCallPolicy>,
+  scheduler: Box<dyn Scheduler>,
+  scheduler_policy: SchedulerPolicy,
 }
 
 impl std::fmt::Debug for MechRuntime {
@@ -229,6 +257,8 @@ impl std::fmt::Debug for MechRuntime {
       .field("source_resolver", &"<dyn SourceResolver>")
       .field("host_registry", &"<dyn HostRegistry>")
       .field("host_policy", &"<dyn HostCallPolicy>")
+      .field("scheduler", &"<dyn Scheduler>")
+      .field("scheduler_policy", &self.scheduler_policy)
       .finish()
   }
 }
@@ -296,6 +326,28 @@ impl MechRuntime {
 
   pub fn host_policy_mut(&mut self) -> &mut dyn HostCallPolicy {
     self.host_policy.as_mut()
+  }
+
+  pub fn scheduler(&self) -> &dyn Scheduler {
+    self.scheduler.as_ref()
+  }
+
+  pub fn scheduler_mut(&mut self) -> &mut dyn Scheduler {
+    self.scheduler.as_mut()
+  }
+
+  pub fn scheduler_policy(&self) -> &SchedulerPolicy {
+    &self.scheduler_policy
+  }
+
+  pub fn scheduler_policy_mut(&mut self) -> &mut SchedulerPolicy {
+    &mut self.scheduler_policy
+  }
+
+  pub fn set_scheduler_policy(&mut self, scheduler_policy: SchedulerPolicy) -> MResult<()> {
+    scheduler_policy.validate()?;
+    self.scheduler_policy = scheduler_policy;
+    Ok(())
   }
 
   // ---------------------------------------------------------------------------
@@ -1221,6 +1273,150 @@ impl MechRuntime {
 
   pub fn peek_message(&self, actor: ActorId) -> MResult<Option<MessageRecord>> {
     self.store.peek_message(actor)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Scheduling
+  // ---------------------------------------------------------------------------
+
+  pub fn enqueue_work(&mut self, work: ScheduledWork) -> MResult<()> {
+    let mut context = self.runtime_context()?;
+    self.enqueue_work_with_context(&mut context, work)
+  }
+
+  pub fn enqueue_work_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    work: ScheduledWork,
+  ) -> MResult<()> {
+    context.validate()?;
+    context.charge_step()?;
+    work.validate()?;
+
+    self.scheduler.enqueue_work(work)?;
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::SchedulerWorkQueued {
+        work: work.label(),
+      },
+    )?;
+
+    Ok(())
+  }
+
+  pub fn enqueue_task(&mut self, task_id: TaskId) -> MResult<()> {
+    self.enqueue_work(ScheduledWork::task(task_id))
+  }
+
+  pub fn enqueue_actor(&mut self, actor_id: ActorId) -> MResult<()> {
+    self.enqueue_work(ScheduledWork::actor(actor_id))
+  }
+
+  pub fn collect_tick(&mut self) -> MResult<SchedulerTick> {
+    let mut context = self.runtime_context()?;
+    self.collect_tick_with_context(&mut context)
+  }
+
+  pub fn collect_tick_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+  ) -> MResult<SchedulerTick> {
+    context.validate()?;
+    context.charge_step()?;
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::RuntimeTickStarted,
+    )?;
+
+    let tick = collect_tick(
+      self.scheduler.as_mut(),
+      &self.scheduler_policy,
+    )?;
+
+    for work in &tick.work {
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::SchedulerWorkStarted {
+          work: work.label(),
+        },
+      )?;
+    }
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::RuntimeTickCompleted {
+        work_count: tick.len() as u64,
+      },
+    )?;
+
+    Ok(tick)
+  }
+
+  pub fn complete_scheduled_work(
+    &mut self,
+    work: ScheduledWork,
+    outcome: RuntimeTurnOutcome,
+  ) -> MResult<()> {
+    let mut context = self.runtime_context()?;
+    self.complete_scheduled_work_with_context(&mut context, work, outcome)
+  }
+
+  pub fn complete_scheduled_work_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    work: ScheduledWork,
+    outcome: RuntimeTurnOutcome,
+  ) -> MResult<()> {
+    context.validate()?;
+    context.charge_step()?;
+    work.validate()?;
+
+    self.scheduler.complete_work(outcome)?;
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::SchedulerWorkCompleted {
+        work: work.label(),
+      },
+    )?;
+
+    Ok(())
+  }
+
+  pub fn fail_scheduled_work(
+    &mut self,
+    work: ScheduledWork,
+    message: impl Into<String>,
+  ) -> MResult<()> {
+    let mut context = self.runtime_context()?;
+    self.fail_scheduled_work_with_context(&mut context, work, message)
+  }
+
+  pub fn fail_scheduled_work_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    work: ScheduledWork,
+    message: impl Into<String>,
+  ) -> MResult<()> {
+    context.validate()?;
+    context.charge_step()?;
+    work.validate()?;
+
+    let message = message.into();
+
+    self.scheduler.fail_work(work, message.clone())?;
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::SchedulerWorkFailed {
+        work: work.label(),
+        message,
+      },
+    )?;
+
+    Ok(())
   }
 
   // ---------------------------------------------------------------------------
