@@ -1577,6 +1577,8 @@ impl MechRuntime {
     context.validate()?;
     turn.validate()?;
 
+    context.bind_actor_turn(turn);
+
     self.emit_event_to_context(
       context,
       RuntimeEventKind::ActorTurnStarted {

@@ -49,6 +49,8 @@ pub struct RuntimeContext {
   pub capabilities: Vec<CapabilityId>,
   pub budget: ResourceBudget,
   pub events: Vec<RuntimeEvent>,
+  pub actor_message: Option<MessageRecord>,
+  pub actor_state: Option<ObjectId>,
 }
 
 impl RuntimeContext {
@@ -64,6 +66,8 @@ impl RuntimeContext {
       capabilities: Vec::new(),
       budget: ResourceBudget::default(),
       events: Vec::new(),
+      actor_message: None,
+      actor_state: None,
     }
   }
 
@@ -199,15 +203,34 @@ impl RuntimeContext {
   }
 
   pub fn record_read(&mut self, object: ObjectId) {
-  self.access.read(object);
+    self.access.read(object);
   }
 
   pub fn record_write(&mut self, object: ObjectId) {
-  self.access.write(object);
+    self.access.write(object);
   }
 
   pub fn emitted_event_ids(&self) -> Vec<EventId> {
-  self.events.iter().map(|event| event.id).collect()
+    self.events.iter().map(|event| event.id).collect()
+  }
+
+  pub fn bind_actor_turn(&mut self, turn: &ActorTurn) {
+    self.actor = Some(turn.actor);
+    self.subject = turn.subject.clone();
+    self.actor_message = Some(turn.message.clone());
+    self.actor_state = turn.state;
+  }
+
+  pub fn actor_message(&self) -> Option<&MessageRecord> {
+    self.actor_message.as_ref()
+  }
+
+  pub fn actor_message_kind(&self) -> Option<&str> {
+    self.actor_message.as_ref().map(|message| message.kind.as_str())
+  }
+
+  pub fn actor_message_payload(&self) -> Option<&[u8]> {
+    self.actor_message.as_ref().map(|message| message.payload.as_slice())
   }
 
 }
@@ -227,6 +250,8 @@ pub struct RuntimeContextBuilder {
   capabilities: Vec<CapabilityId>,
   budget: ResourceBudget,
   access: AccessSet,
+  actor_message: Option<MessageRecord>,
+  actor_state: Option<ObjectId>,
 }
 
 impl RuntimeContextBuilder {
@@ -241,7 +266,19 @@ impl RuntimeContextBuilder {
       capabilities: Vec::new(),
       budget: ResourceBudget::default(),
       access: AccessSet::new(),
+      actor_message: None,
+      actor_state: None,
     }
+  }
+
+  pub fn actor_message(mut self, message: MessageRecord) -> Self {
+    self.actor_message = Some(message);
+    self
+  }
+
+  pub fn actor_state(mut self, state: ObjectId) -> Self {
+    self.actor_state = Some(state);
+    self
   }
 
   pub fn subject(mut self, subject: impl Into<String>) -> Self {
@@ -306,6 +343,8 @@ impl RuntimeContextBuilder {
       budget: self.budget,
       access: self.access,
       events: Vec::new(),
+      actor_message: self.actor_message,
+      actor_state: self.actor_state,
     };
 
     context.validate()?;
