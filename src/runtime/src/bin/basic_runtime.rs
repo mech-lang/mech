@@ -23,9 +23,10 @@ fn main() -> MResult<()> {
   source_resolver.insert_string("main", "x := 1")?;
 
   let mut host_registry = InMemoryHostRegistry::new();
-  host_registry.insert(ClosureHostFunction::new("host.empty", |_ctx, _args| {
-    Ok(Value::Empty)
-  }))?;
+  host_registry.insert(ClosureHostFunction::new(
+    "host.empty",
+    |_services, _ctx, _args| Ok(Value::Empty),
+  ))?;
 
   let mut runtime = RuntimeBuilder::new()
     .config(RuntimeConfig::default())

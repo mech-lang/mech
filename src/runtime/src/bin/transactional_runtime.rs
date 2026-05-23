@@ -2,7 +2,6 @@ use mech_core::MResult;
 
 use mech_runtime::{
   InMemorySourceResolver,
-  MessageRecord,
   RuntimeBuilder,
   RuntimeContextBuilder,
 };
