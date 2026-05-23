@@ -13,9 +13,11 @@
 //! - optional deduplication of queued work
 //! - completed turn outcomes
 //! - failed work records
+//! - scheduler event intents
 //! - tick collection
 //!
-//! Actual execution should happen in `runtime.rs` or a later executor layer.
+//! The scheduler emits `RuntimeEventKind`, not `RuntimeEvent`. The runtime owns
+//! EventId generation, sequencing, storage, and event persistence.
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -25,7 +27,7 @@ use std::collections::{HashSet, VecDeque};
 use mech_core::{MResult, MechError, MechErrorKind};
 
 use crate::context::RuntimeTurnOutcome;
-
+use crate::event::RuntimeEventKind;
 use crate::id::{ActorId, TaskId};
 
 // -----------------------------------------------------------------------------
@@ -84,6 +86,31 @@ impl ScheduledWork {
   pub fn is_actor(&self) -> bool {
     matches!(self, ScheduledWork::Actor { .. })
   }
+
+  pub fn queued_event(&self) -> RuntimeEventKind {
+    RuntimeEventKind::SchedulerWorkQueued {
+      work: self.label(),
+    }
+  }
+
+  pub fn started_event(&self) -> RuntimeEventKind {
+    RuntimeEventKind::SchedulerWorkStarted {
+      work: self.label(),
+    }
+  }
+
+  pub fn completed_event(&self) -> RuntimeEventKind {
+    RuntimeEventKind::SchedulerWorkCompleted {
+      work: self.label(),
+    }
+  }
+
+  pub fn failed_event(&self, message: impl Into<String>) -> RuntimeEventKind {
+    RuntimeEventKind::SchedulerWorkFailed {
+      work: self.label(),
+      message: message.into(),
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -107,9 +134,21 @@ pub trait Scheduler: std::fmt::Debug + Send {
 
   fn next_work(&mut self) -> MResult<Option<ScheduledWork>>;
 
-  fn complete_work(&mut self, outcome: RuntimeTurnOutcome) -> MResult<()>;
+  fn complete_work(
+    &mut self,
+    work: ScheduledWork,
+    outcome: RuntimeTurnOutcome,
+  ) -> MResult<()>;
 
-  fn fail_work(&mut self, work: ScheduledWork, message: String) -> MResult<()>;
+  fn fail_work(
+    &mut self,
+    work: ScheduledWork,
+    message: String,
+  ) -> MResult<()>;
+
+  fn begin_tick(&mut self) -> MResult<()>;
+
+  fn complete_tick(&mut self, work_count: u64) -> MResult<()>;
 
   fn len(&self) -> usize;
 
@@ -119,9 +158,13 @@ pub trait Scheduler: std::fmt::Debug + Send {
 
   fn queued_work(&self) -> Vec<ScheduledWork>;
 
-  fn completed(&self) -> &[RuntimeTurnOutcome];
+  fn completed(&self) -> &[ScheduledWorkOutcome];
 
   fn failures(&self) -> &[ScheduledWorkFailure];
+
+  fn pending_events(&self) -> &[RuntimeEventKind];
+
+  fn drain_events(&mut self) -> Vec<RuntimeEventKind>;
 }
 
 // -----------------------------------------------------------------------------
@@ -132,8 +175,9 @@ pub trait Scheduler: std::fmt::Debug + Send {
 pub struct InMemoryScheduler {
   queue: VecDeque<ScheduledWork>,
   queued: HashSet<ScheduledWork>,
-  completed: Vec<RuntimeTurnOutcome>,
+  completed: Vec<ScheduledWorkOutcome>,
   failures: Vec<ScheduledWorkFailure>,
+  pending_events: Vec<RuntimeEventKind>,
   deduplicate: bool,
 }
 
@@ -144,6 +188,7 @@ impl Default for InMemoryScheduler {
       queued: HashSet::new(),
       completed: Vec::new(),
       failures: Vec::new(),
+      pending_events: Vec::new(),
       deduplicate: true,
     }
   }
@@ -178,6 +223,7 @@ impl InMemoryScheduler {
     self.queued.clear();
     self.completed.clear();
     self.failures.clear();
+    self.pending_events.clear();
   }
 
   pub fn contains(&self, work: ScheduledWork) -> bool {
@@ -186,6 +232,10 @@ impl InMemoryScheduler {
     } else {
       self.queue.iter().any(|queued| *queued == work)
     }
+  }
+
+  fn push_event(&mut self, event: RuntimeEventKind) {
+    self.pending_events.push(event);
   }
 }
 
@@ -203,6 +253,8 @@ impl Scheduler for InMemoryScheduler {
       self.queued.insert(work);
     }
 
+    self.push_event(work.queued_event());
+
     Ok(())
   }
 
@@ -215,20 +267,53 @@ impl Scheduler for InMemoryScheduler {
       self.queued.remove(&work);
     }
 
+    self.push_event(work.started_event());
+
     Ok(Some(work))
   }
 
-  fn complete_work(&mut self, outcome: RuntimeTurnOutcome) -> MResult<()> {
-    self.completed.push(outcome);
+  fn complete_work(
+    &mut self,
+    work: ScheduledWork,
+    outcome: RuntimeTurnOutcome,
+  ) -> MResult<()> {
+    work.validate()?;
+
+    self.completed.push(ScheduledWorkOutcome {
+      work,
+      outcome,
+    });
+
+    self.push_event(work.completed_event());
+
     Ok(())
   }
 
-  fn fail_work(&mut self, work: ScheduledWork, message: String) -> MResult<()> {
+  fn fail_work(
+    &mut self,
+    work: ScheduledWork,
+    message: String,
+  ) -> MResult<()> {
     work.validate()?;
 
     self.failures.push(ScheduledWorkFailure {
       work,
-      message,
+      message: message.clone(),
+    });
+
+    self.push_event(work.failed_event(message));
+
+    Ok(())
+  }
+
+  fn begin_tick(&mut self) -> MResult<()> {
+    self.push_event(RuntimeEventKind::RuntimeTickStarted);
+    Ok(())
+  }
+
+  fn complete_tick(&mut self, work_count: u64) -> MResult<()> {
+    self.push_event(RuntimeEventKind::RuntimeTickCompleted {
+      work_count,
     });
 
     Ok(())
@@ -242,12 +327,20 @@ impl Scheduler for InMemoryScheduler {
     self.queue.iter().copied().collect()
   }
 
-  fn completed(&self) -> &[RuntimeTurnOutcome] {
+  fn completed(&self) -> &[ScheduledWorkOutcome] {
     &self.completed
   }
 
   fn failures(&self) -> &[ScheduledWorkFailure] {
     &self.failures
+  }
+
+  fn pending_events(&self) -> &[RuntimeEventKind] {
+    &self.pending_events
+  }
+
+  fn drain_events(&mut self) -> Vec<RuntimeEventKind> {
+    std::mem::take(&mut self.pending_events)
   }
 }
 
@@ -346,11 +439,16 @@ impl SchedulerTick {
 ///
 /// This helper does not execute work. Runtime code should execute each returned
 /// item and then report completion or failure back to the scheduler.
+///
+/// The scheduler records event intents for tick start, each work-start, and
+/// tick completion. The runtime should drain and persist those events.
 pub fn collect_tick(
   scheduler: &mut dyn Scheduler,
   policy: &SchedulerPolicy,
 ) -> MResult<SchedulerTick> {
   policy.validate()?;
+
+  scheduler.begin_tick()?;
 
   let limit = policy.max_turns_per_tick.unwrap_or(u64::MAX);
   let mut work = Vec::new();
@@ -363,12 +461,26 @@ pub fn collect_tick(
     work.push(item);
   }
 
+  scheduler.complete_tick(work.len() as u64)?;
+
   Ok(SchedulerTick::new(work))
 }
 
 // -----------------------------------------------------------------------------
 // Scheduler Results
 // -----------------------------------------------------------------------------
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ScheduledWorkOutcome {
+  pub work: ScheduledWork,
+  pub outcome: RuntimeTurnOutcome,
+}
+
+impl ScheduledWorkOutcome {
+  pub fn new(work: ScheduledWork, outcome: RuntimeTurnOutcome) -> Self {
+    Self { work, outcome }
+  }
+}
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -472,6 +584,19 @@ mod tests {
   }
 
   #[test]
+  fn scheduler_records_queue_and_start_events() {
+    let mut scheduler = InMemoryScheduler::new();
+
+    scheduler.enqueue_task(TaskId(1)).unwrap();
+    scheduler.next_work().unwrap();
+
+    let events = scheduler.pending_events();
+
+    assert_eq!(events[0].name(), "scheduler.work.queued");
+    assert_eq!(events[1].name(), "scheduler.work.started");
+  }
+
+  #[test]
   fn scheduler_deduplicates_work() {
     let mut scheduler = InMemoryScheduler::new();
 
@@ -479,6 +604,7 @@ mod tests {
     scheduler.enqueue_task(TaskId(1)).unwrap();
 
     assert_eq!(scheduler.len(), 1);
+    assert_eq!(scheduler.pending_events().len(), 1);
   }
 
   #[test]
@@ -489,6 +615,7 @@ mod tests {
     scheduler.enqueue_task(TaskId(1)).unwrap();
 
     assert_eq!(scheduler.len(), 2);
+    assert_eq!(scheduler.pending_events().len(), 2);
   }
 
   #[test]
@@ -520,7 +647,7 @@ mod tests {
   }
 
   #[test]
-  fn scheduler_records_completed_work() {
+  fn scheduler_records_completed_work_and_event() {
     let mut scheduler = InMemoryScheduler::new();
 
     let mut access = AccessSet::new();
@@ -532,17 +659,24 @@ mod tests {
       .with_events(vec![EventId(1)])
       .with_access(access);
 
-    scheduler.complete_work(outcome).unwrap();
+    let work = ScheduledWork::task(TaskId(1));
+
+    scheduler.complete_work(work, outcome).unwrap();
 
     assert_eq!(scheduler.completed().len(), 1);
+    assert_eq!(scheduler.completed()[0].work, work);
     assert_eq!(
-      scheduler.completed()[0].transaction,
+      scheduler.completed()[0].outcome.transaction,
       Some(TransactionId(1)),
+    );
+    assert_eq!(
+      scheduler.pending_events().last().unwrap().name(),
+      "scheduler.work.completed",
     );
   }
 
   #[test]
-  fn scheduler_records_failed_work() {
+  fn scheduler_records_failed_work_and_event() {
     let mut scheduler = InMemoryScheduler::new();
 
     scheduler
@@ -551,6 +685,10 @@ mod tests {
 
     assert_eq!(scheduler.failures().len(), 1);
     assert_eq!(scheduler.failures()[0].message, "boom");
+    assert_eq!(
+      scheduler.pending_events().last().unwrap().name(),
+      "scheduler.work.failed",
+    );
   }
 
   #[test]
@@ -570,12 +708,14 @@ mod tests {
   }
 
   #[test]
-  fn collect_tick_respects_limit() {
+  fn collect_tick_respects_limit_and_records_events() {
     let mut scheduler = InMemoryScheduler::new();
 
     scheduler.enqueue_task(TaskId(1)).unwrap();
     scheduler.enqueue_task(TaskId(2)).unwrap();
     scheduler.enqueue_actor(ActorId(3)).unwrap();
+
+    scheduler.drain_events();
 
     let policy = SchedulerPolicy::default()
       .with_max_turns_per_tick(2);
@@ -584,6 +724,13 @@ mod tests {
 
     assert_eq!(tick.len(), 2);
     assert_eq!(scheduler.len(), 1);
+
+    let events = scheduler.pending_events();
+
+    assert_eq!(events[0].name(), "runtime.tick.started");
+    assert_eq!(events[1].name(), "scheduler.work.started");
+    assert_eq!(events[2].name(), "scheduler.work.started");
+    assert_eq!(events[3].name(), "runtime.tick.completed");
   }
 
   #[test]
@@ -622,5 +769,17 @@ mod tests {
       ScheduledWork::actor(ActorId(2)).label(),
       "actor:00000000000000000000000000000002",
     );
+  }
+
+  #[test]
+  fn drain_events_clears_pending_events() {
+    let mut scheduler = InMemoryScheduler::new();
+
+    scheduler.enqueue_task(TaskId(1)).unwrap();
+
+    let events = scheduler.drain_events();
+
+    assert_eq!(events.len(), 1);
+    assert!(scheduler.pending_events().is_empty());
   }
 }

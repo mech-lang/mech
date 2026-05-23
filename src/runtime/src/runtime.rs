@@ -9,6 +9,7 @@
 //! - source resolver
 //! - host registry
 //! - host call policy
+//! - scheduler
 //! - runtime config
 //!
 //! RuntimeContext is used as the per-operation execution envelope. It carries
@@ -55,14 +56,14 @@ use crate::resolver::{
   InMemorySourceResolver, ResolvedSource, SourceRequest, SourceResolver,
 };
 
-use crate::store::{
-  ActorRecord, InMemoryStore, MechStore, MessageRecord, ModuleRecord,
-  ModuleVersionRecord, ObjectRecord, TaskRecord, TaskStatus, TransactionRecord,
-};
-
 use crate::scheduler::{
   collect_tick, InMemoryScheduler, ScheduledWork, Scheduler, SchedulerPolicy,
   SchedulerTick,
+};
+
+use crate::store::{
+  ActorRecord, InMemoryStore, MechStore, MessageRecord, ModuleRecord,
+  ModuleVersionRecord, ObjectRecord, TaskRecord, TaskStatus, TransactionRecord,
 };
 
 // -----------------------------------------------------------------------------
@@ -180,6 +181,7 @@ impl RuntimeBuilder {
 
   pub fn build(mut self) -> MResult<MechRuntime> {
     self.config.validate()?;
+    self.scheduler_policy.validate()?;
 
     let runtime_id = self.id_generator.runtime_id();
 
@@ -449,6 +451,19 @@ impl MechRuntime {
     self.append_event(event)?;
 
     Ok(id)
+  }
+
+  fn drain_scheduler_events(
+    &mut self,
+    context: &mut RuntimeContext,
+  ) -> MResult<()> {
+    let events = self.scheduler.drain_events();
+
+    for event in events {
+      self.emit_event_to_context(context, event)?;
+    }
+
+    Ok(())
   }
 
   // ---------------------------------------------------------------------------
@@ -1294,13 +1309,7 @@ impl MechRuntime {
     work.validate()?;
 
     self.scheduler.enqueue_work(work)?;
-
-    self.emit_event_to_context(
-      context,
-      RuntimeEventKind::SchedulerWorkQueued {
-        work: work.label(),
-      },
-    )?;
+    self.drain_scheduler_events(context)?;
 
     Ok(())
   }
@@ -1325,31 +1334,12 @@ impl MechRuntime {
     context.validate()?;
     context.charge_step()?;
 
-    self.emit_event_to_context(
-      context,
-      RuntimeEventKind::RuntimeTickStarted,
-    )?;
-
     let tick = collect_tick(
       self.scheduler.as_mut(),
       &self.scheduler_policy,
     )?;
 
-    for work in &tick.work {
-      self.emit_event_to_context(
-        context,
-        RuntimeEventKind::SchedulerWorkStarted {
-          work: work.label(),
-        },
-      )?;
-    }
-
-    self.emit_event_to_context(
-      context,
-      RuntimeEventKind::RuntimeTickCompleted {
-        work_count: tick.len() as u64,
-      },
-    )?;
+    self.drain_scheduler_events(context)?;
 
     Ok(tick)
   }
@@ -1373,14 +1363,8 @@ impl MechRuntime {
     context.charge_step()?;
     work.validate()?;
 
-    self.scheduler.complete_work(outcome)?;
-
-    self.emit_event_to_context(
-      context,
-      RuntimeEventKind::SchedulerWorkCompleted {
-        work: work.label(),
-      },
-    )?;
+    self.scheduler.complete_work(work, outcome)?;
+    self.drain_scheduler_events(context)?;
 
     Ok(())
   }
@@ -1404,17 +1388,8 @@ impl MechRuntime {
     context.charge_step()?;
     work.validate()?;
 
-    let message = message.into();
-
-    self.scheduler.fail_work(work, message.clone())?;
-
-    self.emit_event_to_context(
-      context,
-      RuntimeEventKind::SchedulerWorkFailed {
-        work: work.label(),
-        message,
-      },
-    )?;
+    self.scheduler.fail_work(work, message.into())?;
+    self.drain_scheduler_events(context)?;
 
     Ok(())
   }
