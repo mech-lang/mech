@@ -32,6 +32,8 @@ use crate::context::RuntimeContext;
 
 use crate::services::RuntimeServices;
 
+use crate::store::ObjectRecord;
+
 // -----------------------------------------------------------------------------
 // Host Function
 // -----------------------------------------------------------------------------
@@ -361,7 +363,7 @@ impl HostCall {
   pub fn validate(&self) -> MResult<()> {
     if self.name.trim().is_empty() {
       return Err(MechError::new(
-        InvalidHostCallError {
+        InvalidHostCallFieldError {
           field: "name",
           reason: "must not be empty",
         },
@@ -592,9 +594,192 @@ impl HostFunction for ActorStateIdHostFunction {
   }
 }
 
+#[derive(Clone, Debug)]
+pub struct ActorStateGetHostFunction;
+
+impl ActorStateGetHostFunction {
+  pub fn new() -> Self {
+    Self
+  }
+}
+
+impl Default for ActorStateGetHostFunction {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
+impl HostFunction for ActorStateGetHostFunction {
+  fn name(&self) -> &str {
+    "actor.state.get"
+  }
+
+  fn call(
+    &self,
+    services: &mut dyn RuntimeServices,
+    context: &mut RuntimeContext,
+    _args: Vec<Value>,
+  ) -> MResult<Value> {
+    let Some(state) = context.actor_state() else {
+      return Ok(Value::Empty);
+    };
+
+    let Some(object) = services.get_object_with_context(context, state)? else {
+      return Ok(Value::Empty);
+    };
+
+    Ok(Value::String(Ref::new(String::from_utf8_lossy(&object.data).to_string())))
+  }
+
+  fn estimated_cost_items(&self, _args: &[Value]) -> u64 {
+    1
+  }
+
+  fn estimated_cost_bytes(&self, _args: &[Value]) -> u64 {
+    0
+  }
+
+  fn required_capability(
+    &self,
+    context: &RuntimeContext,
+  ) -> Option<CapabilityRequest> {
+    Some(default_host_capability_request(context, self.name()))
+  }
+}
+
+#[derive(Clone, Debug)]
+pub struct ActorStatePutHostFunction;
+
+impl ActorStatePutHostFunction {
+  pub fn new() -> Self {
+    Self
+  }
+}
+
+impl Default for ActorStatePutHostFunction {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
+impl HostFunction for ActorStatePutHostFunction {
+  fn name(&self) -> &str {
+    "actor.state.put"
+  }
+
+  fn call(
+    &self,
+    services: &mut dyn RuntimeServices,
+    context: &mut RuntimeContext,
+    args: Vec<Value>,
+  ) -> MResult<Value> {
+    let Some(actor_id) = context.actor else {
+      return Err(MechError::new(
+        HostInvalidContextError {
+          function: self.name().to_string(),
+          reason: "no actor is bound to the runtime context".to_string(),
+        },
+        None,
+      ));
+    };
+
+    let text = host_arg_string(self.name(), &args, 0)?;
+
+    let object_id = services.next_object_id();
+
+    let object = ObjectRecord::text(
+      object_id,
+      "actor-state",
+      text,
+    );
+
+    services.put_object_with_context(context, object)?;
+
+    let Some(mut actor) = services.get_actor_with_context(context, actor_id)? else {
+      return Err(MechError::new(
+        HostInvalidContextError {
+          function: self.name().to_string(),
+          reason: "actor record was not found".to_string(),
+        },
+        None,
+      ));
+    };
+
+    actor.state = Some(object_id);
+
+    services.update_actor_with_context(context, actor)?;
+
+    context.actor_state = Some(object_id);
+
+    Ok(Value::String(Ref::new(object_id.to_string())))
+  }
+
+  fn estimated_cost_items(&self, _args: &[Value]) -> u64 {
+    1
+  }
+
+  fn estimated_cost_bytes(&self, args: &[Value]) -> u64 {
+    args.len() as u64
+  }
+
+  fn required_capability(
+    &self,
+    context: &RuntimeContext,
+  ) -> Option<CapabilityRequest> {
+    Some(default_host_capability_request(context, self.name()))
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------------
+
+fn host_arg_string(
+  function: &str,
+  args: &[Value],
+  index: usize,
+) -> MResult<String> {
+  let Some(value) = args.get(index) else {
+    return Err(MechError::new(
+      InvalidHostCallError {
+        function: function.to_string(),
+        reason: format!("missing argument {}", index),
+      },
+      None,
+    ));
+  };
+
+  match value {
+    Value::String(value) => Ok(value.borrow().clone()),
+    other => Err(MechError::new(
+      InvalidHostCallError {
+        function: function.to_string(),
+        reason: format!("expected string argument {}, got {:?}", index, other),
+      },
+      None,
+    )),
+  }
+}
+
 fn context_payload_cost_unavailable() -> u64 {
   0
 }
+
+pub fn register_actor_context_host_functions(
+  registry: &mut dyn HostRegistry,
+) -> MResult<()> {
+  registry.register_function(Arc::new(ActorMessageKindHostFunction::new()))?;
+  registry.register_function(Arc::new(ActorMessagePayloadHostFunction::new()))?;
+  registry.register_function(Arc::new(ActorStateIdHostFunction::new()))?;
+  registry.register_function(Arc::new(ActorStateGetHostFunction::new()))?;
+  registry.register_function(Arc::new(ActorStatePutHostFunction::new()))?;
+
+  Ok(())
+}
+
+// -----------------------------------------------------------------------------
+// Errors
+// -----------------------------------------------------------------------------
 
 #[derive(Debug, Clone)]
 pub struct HostInvalidContextError {
@@ -616,20 +801,6 @@ impl MechErrorKind for HostInvalidContextError {
   }
 }
 
-pub fn register_actor_context_host_functions(
-  registry: &mut InMemoryHostRegistry,
-) -> MResult<()> {
-  registry.insert(ActorMessageKindHostFunction::new())?;
-  registry.insert(ActorMessagePayloadHostFunction::new())?;
-  registry.insert(ActorStateIdHostFunction::new())?;
-
-  Ok(())
-}
-
-// -----------------------------------------------------------------------------
-// Errors
-// -----------------------------------------------------------------------------
-
 #[derive(Debug, Clone)]
 pub struct InvalidHostFunctionError {
   pub field: &'static str,
@@ -648,11 +819,27 @@ impl MechErrorKind for InvalidHostFunctionError {
 
 #[derive(Debug, Clone)]
 pub struct InvalidHostCallError {
+  pub function: String,
+  pub reason: String,
+}
+
+impl MechErrorKind for InvalidHostCallError {
+  fn name(&self) -> &str {
+    "InvalidHostCall"
+  }
+
+  fn message(&self) -> String {
+    format!("Invalid host call `{}`: {}", self.function, self.reason)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct InvalidHostCallFieldError {
   pub field: &'static str,
   pub reason: &'static str,
 }
 
-impl MechErrorKind for InvalidHostCallError {
+impl MechErrorKind for InvalidHostCallFieldError {
   fn name(&self) -> &str {
     "InvalidHostCall"
   }
