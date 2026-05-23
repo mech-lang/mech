@@ -17,6 +17,7 @@
 //! and accumulated events.
 
 use std::sync::Arc;
+use std::collections::HashMap;
 
 use mech_core::{
   MResult, MechError, MechErrorKind, MechSourceCode, Value,
@@ -66,7 +67,9 @@ use crate::store::{
   ModuleVersionRecord, ObjectRecord, TaskRecord, TaskStatus, TransactionRecord,
 };
 
-use crate::transaction::RuntimeTransaction;
+use crate::transaction::{
+  RuntimeTransaction, RuntimeTransactionNotFoundError,
+};
 
 // -----------------------------------------------------------------------------
 // Runtime Builder
@@ -214,6 +217,7 @@ impl RuntimeBuilder {
       host_policy: self.host_policy,
       scheduler: self.scheduler,
       scheduler_policy: self.scheduler_policy,
+      active_transactions: HashMap::new(),
     };
 
     let mut context = runtime.runtime_context()?;
@@ -246,6 +250,7 @@ pub struct MechRuntime {
   host_policy: Box<dyn HostCallPolicy>,
   scheduler: Box<dyn Scheduler>,
   scheduler_policy: SchedulerPolicy,
+  active_transactions: HashMap<TransactionId, RuntimeTransaction>,
 }
 
 impl std::fmt::Debug for MechRuntime {
@@ -263,6 +268,7 @@ impl std::fmt::Debug for MechRuntime {
       .field("host_policy", &"<dyn HostCallPolicy>")
       .field("scheduler", &"<dyn Scheduler>")
       .field("scheduler_policy", &self.scheduler_policy)
+      .field("active_transactions", &self.active_transactions.len())
       .finish()
   }
 }
@@ -619,91 +625,6 @@ impl MechRuntime {
         result
       }
     }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Transactions
-  // ---------------------------------------------------------------------------
-
-  pub fn begin_transaction(
-    &mut self,
-    context: &mut RuntimeContext,
-  ) -> MResult<RuntimeTransaction> {
-    context.validate()?;
-
-    let id = self.next_transaction_id();
-    context.transaction = Some(id);
-
-    self.emit_event_to_context(
-      context,
-      RuntimeEventKind::TransactionStarted {
-        transaction_id: id,
-      },
-    )?;
-
-    Ok(RuntimeTransaction::new(id, context.subject.clone()))
-  }
-
-  pub fn commit_runtime_transaction(
-    &mut self,
-    context: &mut RuntimeContext,
-    mut transaction: RuntimeTransaction,
-  ) -> MResult<TransactionId> {
-    context.validate()?;
-
-    for object in &context.access.reads {
-      transaction.record_read(*object)?;
-    }
-
-    for object in &context.access.writes {
-      transaction.record_write(*object)?;
-    }
-
-    for event in context.emitted_event_ids() {
-      transaction.record_event(event)?;
-    }
-
-    let record = transaction.commit()?;
-    let id = record.id;
-
-    self.store.commit_transaction(record)?;
-
-    self.emit_event_to_context(
-      context,
-      RuntimeEventKind::TransactionCommitted {
-        transaction_id: id,
-      },
-    )?;
-
-    context.transaction = None;
-
-    Ok(id)
-  }
-
-  pub fn abort_runtime_transaction(
-    &mut self,
-    context: &mut RuntimeContext,
-    transaction: RuntimeTransaction,
-    reason: impl Into<String>,
-  ) -> MResult<()> {
-    context.validate()?;
-
-    let reason = reason.into();
-    let id = transaction.id;
-
-    let _ = transaction.abort(reason.clone())?;
-
-    self.emit_event_to_context(
-      context,
-      RuntimeEventKind::TransactionAborted {
-        transaction_id: id,
-        message: reason,
-      },
-    )?;
-
-    context.transaction = None;
-
-    Ok(())
   }
 
   // ---------------------------------------------------------------------------
@@ -1664,7 +1585,7 @@ impl MechRuntime {
       }
     }
   }
-  
+
   pub fn run_tick(&mut self) -> MResult<Vec<RuntimeTurnOutcome>> {
     let tick = self.collect_tick()?;
     let mut outcomes = Vec::new();
@@ -1764,7 +1685,7 @@ impl MechRuntime {
   }
 
   // ---------------------------------------------------------------------------
-  // Transactions and Events
+  // Events
   // ---------------------------------------------------------------------------
 
   pub fn commit_transaction(
@@ -1819,6 +1740,136 @@ impl MechRuntime {
 
   pub fn list_events(&self, limit: Option<usize>) -> MResult<Vec<RuntimeEvent>> {
     self.store.list_events(limit)
+  }
+
+  pub fn begin_transaction(
+    &mut self,
+    context: &mut RuntimeContext,
+  ) -> MResult<RuntimeTransaction> {
+    context.validate()?;
+
+    let id = self.next_transaction_id();
+    context.transaction = Some(id);
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::TransactionStarted {
+        transaction_id: id,
+      },
+    )?;
+
+    Ok(RuntimeTransaction::new(id, context.subject.clone()))
+  }
+
+  pub fn commit_runtime_transaction(
+    &mut self,
+    context: &mut RuntimeContext,
+    mut transaction: RuntimeTransaction,
+  ) -> MResult<TransactionId> {
+    context.validate()?;
+
+    for object in &context.access.reads {
+      transaction.record_read(*object)?;
+    }
+
+    for object in &context.access.writes {
+      transaction.record_write(*object)?;
+    }
+
+    for event in context.emitted_event_ids() {
+      transaction.record_event(event)?;
+    }
+
+    let record = transaction.commit()?;
+    let id = record.id;
+
+    self.store.commit_transaction(record)?;
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::TransactionCommitted {
+        transaction_id: id,
+      },
+    )?;
+
+    context.transaction = None;
+
+    Ok(id)
+  }
+
+  pub fn abort_runtime_transaction(
+    &mut self,
+    context: &mut RuntimeContext,
+    transaction: RuntimeTransaction,
+    reason: impl Into<String>,
+  ) -> MResult<()> {
+    context.validate()?;
+
+    let reason = reason.into();
+    let id = transaction.id;
+
+    let _ = transaction.abort(reason.clone())?;
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::TransactionAborted {
+        transaction_id: id,
+        message: reason,
+      },
+    )?;
+
+    context.transaction = None;
+
+    Ok(())
+  }
+
+  fn active_transaction_mut(
+    &mut self,
+    transaction_id: TransactionId,
+  ) -> MResult<&mut RuntimeTransaction> {
+    self
+      .active_transactions
+      .get_mut(&transaction_id)
+      .ok_or_else(|| {
+        MechError::new(
+          RuntimeTransactionNotFoundError { transaction_id },
+          None,
+        )
+      })
+  }
+
+  fn active_transaction(
+    &self,
+    transaction_id: TransactionId,
+  ) -> MResult<&RuntimeTransaction> {
+    self
+      .active_transactions
+      .get(&transaction_id)
+      .ok_or_else(|| {
+        MechError::new(
+          RuntimeTransactionNotFoundError { transaction_id },
+          None,
+        )
+      })
+  }
+
+  fn context_transaction_id(context: &RuntimeContext) -> MResult<TransactionId> {
+    context.transaction.ok_or_else(|| {
+      MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "context_transaction_id",
+          reason: "context has no active transaction".to_string(),
+        },
+        None,
+      )
+    })
+  }
+
+  fn has_active_context_transaction(&self, context: &RuntimeContext) -> bool {
+    context
+      .transaction
+      .map(|id| self.active_transactions.contains_key(&id))
+      .unwrap_or(false)
   }
 
   // ---------------------------------------------------------------------------
