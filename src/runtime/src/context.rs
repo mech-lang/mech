@@ -43,6 +43,7 @@ pub struct RuntimeContext {
   pub subject: String,
   pub task: Option<TaskId>,
   pub actor: Option<ActorId>,
+  pub access: AccessSet,
   pub module_version: Option<ModuleVersionId>,
   pub transaction: Option<TransactionId>,
   pub capabilities: Vec<CapabilityId>,
@@ -57,6 +58,7 @@ impl RuntimeContext {
       subject: subject.into(),
       task: None,
       actor: None,
+      access: AccessSet::new(),
       module_version: None,
       transaction: None,
       capabilities: Vec::new(),
@@ -195,6 +197,19 @@ impl RuntimeContext {
   pub fn charge_messages(&mut self, messages: u64) -> MResult<()> {
     self.budget.charge_messages(messages)
   }
+
+  pub fn record_read(&mut self, object: ObjectId) {
+  self.access.read(object);
+  }
+
+  pub fn record_write(&mut self, object: ObjectId) {
+  self.access.write(object);
+  }
+
+  pub fn emitted_event_ids(&self) -> Vec<EventId> {
+  self.events.iter().map(|event| event.id).collect()
+  }
+
 }
 
 // -----------------------------------------------------------------------------
@@ -211,6 +226,7 @@ pub struct RuntimeContextBuilder {
   transaction: Option<TransactionId>,
   capabilities: Vec<CapabilityId>,
   budget: ResourceBudget,
+  access: AccessSet,
 }
 
 impl RuntimeContextBuilder {
@@ -224,6 +240,7 @@ impl RuntimeContextBuilder {
       transaction: None,
       capabilities: Vec::new(),
       budget: ResourceBudget::default(),
+      access: AccessSet::new(),
     }
   }
 
@@ -262,6 +279,11 @@ impl RuntimeContextBuilder {
     self
   }
 
+  pub fn access(mut self, access: AccessSet) -> Self {
+    self.access = access;
+    self
+  }
+
   pub fn build(self) -> MResult<RuntimeContext> {
     let subject = self.subject.unwrap_or_else(|| {
       if let Some(actor) = self.actor {
@@ -282,6 +304,7 @@ impl RuntimeContextBuilder {
       transaction: self.transaction,
       capabilities: self.capabilities,
       budget: self.budget,
+      access: self.access,
       events: Vec::new(),
     };
 

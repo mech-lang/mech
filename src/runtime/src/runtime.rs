@@ -66,6 +66,8 @@ use crate::store::{
   ModuleVersionRecord, ObjectRecord, TaskRecord, TaskStatus, TransactionRecord,
 };
 
+use crate::transaction::RuntimeTransaction;
+
 // -----------------------------------------------------------------------------
 // Runtime Builder
 // -----------------------------------------------------------------------------
@@ -620,6 +622,91 @@ impl MechRuntime {
   }
 
   // ---------------------------------------------------------------------------
+  // Transactions
+  // ---------------------------------------------------------------------------
+
+  pub fn begin_transaction(
+    &mut self,
+    context: &mut RuntimeContext,
+  ) -> MResult<RuntimeTransaction> {
+    context.validate()?;
+
+    let id = self.next_transaction_id();
+    context.transaction = Some(id);
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::TransactionStarted {
+        transaction_id: id,
+      },
+    )?;
+
+    Ok(RuntimeTransaction::new(id, context.subject.clone()))
+  }
+
+  pub fn commit_runtime_transaction(
+    &mut self,
+    context: &mut RuntimeContext,
+    mut transaction: RuntimeTransaction,
+  ) -> MResult<TransactionId> {
+    context.validate()?;
+
+    for object in &context.access.reads {
+      transaction.record_read(*object)?;
+    }
+
+    for object in &context.access.writes {
+      transaction.record_write(*object)?;
+    }
+
+    for event in context.emitted_event_ids() {
+      transaction.record_event(event)?;
+    }
+
+    let record = transaction.commit()?;
+    let id = record.id;
+
+    self.store.commit_transaction(record)?;
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::TransactionCommitted {
+        transaction_id: id,
+      },
+    )?;
+
+    context.transaction = None;
+
+    Ok(id)
+  }
+
+  pub fn abort_runtime_transaction(
+    &mut self,
+    context: &mut RuntimeContext,
+    transaction: RuntimeTransaction,
+    reason: impl Into<String>,
+  ) -> MResult<()> {
+    context.validate()?;
+
+    let reason = reason.into();
+    let id = transaction.id;
+
+    let _ = transaction.abort(reason.clone())?;
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::TransactionAborted {
+        transaction_id: id,
+        message: reason,
+      },
+    )?;
+
+    context.transaction = None;
+
+    Ok(())
+  }
+
+  // ---------------------------------------------------------------------------
   // Sources and Modules
   // ---------------------------------------------------------------------------
 
@@ -1015,6 +1102,8 @@ impl MechRuntime {
 
     let id = self.store.put_object(object)?;
 
+    context.record_write(id);
+
     self.emit_event_to_context(
       context,
       RuntimeEventKind::ObjectCreated {
@@ -1026,6 +1115,17 @@ impl MechRuntime {
   }
 
   pub fn get_object(&self, id: ObjectId) -> MResult<Option<ObjectRecord>> {
+    self.store.get_object(id)
+  }
+
+  pub fn get_object_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    id: ObjectId,
+  ) -> MResult<Option<ObjectRecord>> {
+    context.validate()?;
+    context.record_read(id);
+
     self.store.get_object(id)
   }
 
@@ -1043,6 +1143,8 @@ impl MechRuntime {
     context.charge_bytes(object.data.len() as u64)?;
 
     let id = self.store.update_object(object)?;
+
+    context.record_write(id);
 
     self.emit_event_to_context(
       context,
@@ -1392,6 +1494,188 @@ impl MechRuntime {
     self.drain_scheduler_events(context)?;
 
     Ok(())
+  }
+
+  pub fn run_scheduled_work(
+    &mut self,
+    work: ScheduledWork,
+  ) -> MResult<RuntimeTurnOutcome> {
+    match work {
+      ScheduledWork::Task { task_id } => self.run_scheduled_task(task_id),
+      ScheduledWork::Actor { actor_id } => self.run_actor_turn(actor_id),
+    }
+  }
+
+  pub fn run_scheduled_task(
+    &mut self,
+    task_id: TaskId,
+  ) -> MResult<RuntimeTurnOutcome> {
+    let Some(task) = self.store.get_task(task_id)? else {
+      return Err(MechError::new(
+        RuntimeRecordNotFoundError {
+          record_type: "task",
+          id: task_id.to_string(),
+        },
+        None,
+      ));
+    };
+
+    let mut context = self.context_for_task(&task)?;
+    let transaction = self.begin_transaction(&mut context)?;
+
+    let result = (|| -> MResult<()> {
+      let Some(module_version) = task.module_version else {
+        return Ok(());
+      };
+
+      self.run_module_with_context(&mut context, module_version)?;
+      self.complete_task(task_id)?;
+
+      Ok(())
+    })();
+
+    match result {
+      Ok(()) => {
+        let transaction_id = self.commit_runtime_transaction(
+          &mut context,
+          transaction,
+        )?;
+
+        let outcome = RuntimeTurnOutcome::new()
+          .with_task(task_id)
+          .with_transaction(transaction_id)
+          .with_events(context.emitted_event_ids())
+          .with_access(context.access.clone());
+
+        self.complete_scheduled_work(
+          ScheduledWork::task(task_id),
+          outcome.clone(),
+        )?;
+
+        Ok(outcome)
+      }
+      Err(error) => {
+        let message = format!("{:?}", error);
+
+        self.abort_runtime_transaction(
+          &mut context,
+          transaction,
+          message.clone(),
+        )?;
+
+        let _ = self.fail_task(task_id, message.clone());
+
+        self.fail_scheduled_work(
+          ScheduledWork::task(task_id),
+          message,
+        )?;
+
+        Err(error)
+      }
+    }
+  }
+
+  pub fn run_actor_turn(
+    &mut self,
+    actor_id: ActorId,
+  ) -> MResult<RuntimeTurnOutcome> {
+    let Some(actor) = self.store.get_actor(actor_id)? else {
+      return Err(MechError::new(
+        RuntimeRecordNotFoundError {
+          record_type: "actor",
+          id: actor_id.to_string(),
+        },
+        None,
+      ));
+    };
+
+    let mut context = self.context_for_actor(&actor)?;
+    let transaction = self.begin_transaction(&mut context)?;
+
+    self.emit_event_to_context(
+      &mut context,
+      RuntimeEventKind::ActorTurnStarted {
+        actor_id,
+      },
+    )?;
+
+    let result = (|| -> MResult<()> {
+      let Some(_message) = self.pop_message(actor_id)? else {
+        return Ok(());
+      };
+
+      if let Some(behavior) = actor.behavior {
+        self.run_module_with_context(&mut context, behavior)?;
+      }
+
+      Ok(())
+    })();
+
+    match result {
+      Ok(()) => {
+        self.emit_event_to_context(
+          &mut context,
+          RuntimeEventKind::ActorTurnCompleted {
+            actor_id,
+          },
+        )?;
+
+        let transaction_id = self.commit_runtime_transaction(
+          &mut context,
+          transaction,
+        )?;
+
+        let outcome = RuntimeTurnOutcome::new()
+          .with_actor(actor_id)
+          .with_transaction(transaction_id)
+          .with_events(context.emitted_event_ids())
+          .with_access(context.access.clone());
+
+        self.complete_scheduled_work(
+          ScheduledWork::actor(actor_id),
+          outcome.clone(),
+        )?;
+
+        Ok(outcome)
+      }
+      Err(error) => {
+        let message = format!("{:?}", error);
+
+        self.emit_event_to_context(
+          &mut context,
+          RuntimeEventKind::ActorTurnFailed {
+            actor_id,
+            message: message.clone(),
+          },
+        )?;
+
+        self.abort_runtime_transaction(
+          &mut context,
+          transaction,
+          message.clone(),
+        )?;
+
+        self.fail_scheduled_work(
+          ScheduledWork::actor(actor_id),
+          message,
+        )?;
+
+        Err(error)
+      }
+    }
+  }
+  
+  pub fn run_tick(&mut self) -> MResult<Vec<RuntimeTurnOutcome>> {
+    let tick = self.collect_tick()?;
+    let mut outcomes = Vec::new();
+
+    for work in tick.work {
+      if let Ok(outcome) = self.run_scheduled_work(work) {
+        outcomes.push(outcome);
+      }
+    }
+
+    Ok(outcomes)
   }
 
   // ---------------------------------------------------------------------------
