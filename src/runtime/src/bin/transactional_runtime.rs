@@ -1,308 +1,303 @@
-use std::sync::Arc;
-
-use mech_core::{MResult, Value};
+use mech_core::MResult;
 
 use mech_runtime::{
-  BasicCapability,
-  BasicCapabilityKernel,
-  BasicOperation,
-  BasicResource,
-  BasicSubject,
-  CapabilityId,
-  ClosureHostFunction,
-  HostCall,
-  InMemoryHostRegistry,
   InMemorySourceResolver,
-  ObjectRecord,
+  MessageRecord,
   RuntimeBuilder,
   RuntimeContextBuilder,
-  RuntimeTurnOutcome,
-  ScheduledWork,
-  SourceRequest,
 };
 
 fn main() -> MResult<()> {
-  let mut source_resolver = InMemorySourceResolver::new();
-
-  source_resolver.insert_string(
-    "main",
-    "x := 1",
-  )?;
-
-  source_resolver.insert_string(
-    "actor.behavior",
-    "y := 2",
-  )?;
-
-  let mut host_registry = InMemoryHostRegistry::new();
-
-  host_registry.insert(ClosureHostFunction::new(
-    "host.empty",
-    |_ctx, _args| Ok(Value::Empty),
-  ))?;
+  let source_resolver = InMemorySourceResolver::new();
 
   let mut runtime = RuntimeBuilder::new()
     .source_resolver(source_resolver)
-    .host_registry(host_registry)
-    .capability_kernel(BasicCapabilityKernel::new())
     .build()?;
 
   println!("runtime: {}", runtime.id());
 
   // ---------------------------------------------------------------------------
-  // Resolve and store executable source as module versions.
-  // ---------------------------------------------------------------------------
-
-  let main_version = runtime
-    .resolve_and_store_module_source(
-      SourceRequest::new("main"),
-      env!("CARGO_PKG_VERSION"),
-      "mech-current",
-      &[],
-      &[],
-    )?
-    .expect("expected `main` to resolve");
-
-  let actor_version = runtime
-    .resolve_and_store_module_source(
-      SourceRequest::new("actor.behavior"),
-      env!("CARGO_PKG_VERSION"),
-      "mech-current",
-      &[],
-      &[],
-    )?
-    .expect("expected `actor.behavior` to resolve");
-
-  println!("main module version: {}", main_version);
-  println!("actor module version: {}", actor_version);
-
-  // ---------------------------------------------------------------------------
-  // Task scheduling path.
-  // ---------------------------------------------------------------------------
-
-  let task = runtime.start_task(
-    "task:transactional-main",
-    Some(main_version),
-    Vec::new(),
-  )?;
-
-  println!("task: {}", task);
-
-  runtime.enqueue_task(task)?;
-
-  let tick = runtime.collect_tick()?;
-
-  println!("tick selected {} item(s)", tick.len());
-
-  for work in tick.work {
-    println!("running scheduled work: {}", work.label());
-
-    match runtime.run_scheduled_work(work) {
-      Ok(outcome) => {
-        println!("scheduled work completed: {:?}", outcome);
-      }
-      Err(error) => {
-        println!("scheduled work failed: {:?}", error);
-      }
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Actor scheduling path.
+  // Setup: create an actor and send it two durable messages.
   // ---------------------------------------------------------------------------
 
   let actor = runtime.create_actor(
-    "actor:transactional-worker",
-    Some(actor_version),
+    "actor:transactional-mailbox",
+    None,
     None,
     Vec::new(),
   )?;
 
   println!("actor: {}", actor);
 
-  let message = runtime.send_message(
+  let first_message = runtime.send_message(
     actor,
-    "ping",
-    b"hello actor".to_vec(),
+    "first",
+    b"keep me after abort".to_vec(),
   )?;
 
-  println!("actor message: {}", message);
-
-  runtime.enqueue_actor(actor)?;
-
-  let actor_tick = runtime.collect_tick()?;
-
-  println!("actor tick selected {} item(s)", actor_tick.len());
-
-  for work in actor_tick.work {
-    println!("running scheduled work: {}", work.label());
-
-    match runtime.run_scheduled_work(work) {
-      Ok(outcome) => {
-        println!("actor work completed: {:?}", outcome);
-      }
-      Err(error) => {
-        println!("actor work failed: {:?}", error);
-      }
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Manual staged transaction path for object writes.
-  // ---------------------------------------------------------------------------
-
-  let mut context = RuntimeContextBuilder::new(runtime.id())
-    .subject("task:manual-transaction")
-    .build()?;
-
-  let transaction = runtime.begin_transaction(&mut context)?;
-
-  println!("manual transaction started: {}", transaction);
-
-  let object_id = runtime.next_object_id();
-
-  let object = ObjectRecord::text(
-    object_id,
-    "note",
-    "hello from a staged transactional context",
-  );
-
-  let staged_object = runtime.put_object_with_context(
-    &mut context,
-    object,
+  let second_message = runtime.send_message(
+    actor,
+    "second",
+    b"remove me after commit".to_vec(),
   )?;
 
-  println!("staged object: {}", staged_object);
+  println!("first message: {}", first_message);
+  println!("second message: {}", second_message);
 
-  assert!(
-    runtime.get_object(object_id)?.is_none(),
-    "object should not be visible outside the transaction before commit",
-  );
+  let initial_peek = runtime
+    .peek_message(actor)?
+    .expect("expected first message in mailbox");
 
-  let visible_inside_transaction = runtime
-    .get_object_with_context(&mut context, object_id)?
-    .expect("object should be visible inside the active transaction");
-
-  println!(
-    "staged object visible inside transaction: kind={} encoding={} data={:?}",
-    visible_inside_transaction.kind,
-    visible_inside_transaction.encoding,
-    String::from_utf8_lossy(&visible_inside_transaction.data),
-  );
-
-  let committed = runtime.commit_runtime_transaction(&mut context)?;
-
-  println!("manual transaction committed: {}", committed);
-
-  assert!(
-    runtime.get_object(object_id)?.is_some(),
-    "object should be visible outside the transaction after commit",
-  );
-
-  let committed_object = runtime
-    .get_object(object_id)?
-    .expect("object should exist after commit");
+  assert_eq!(initial_peek.id, first_message);
+  assert_eq!(initial_peek.kind, "first");
 
   println!(
-    "committed object visible outside transaction: kind={} encoding={} data={:?}",
-    committed_object.kind,
-    committed_object.encoding,
-    String::from_utf8_lossy(&committed_object.data),
+    "initial mailbox front: id={} kind={} payload={:?}",
+    initial_peek.id,
+    initial_peek.kind,
+    String::from_utf8_lossy(&initial_peek.payload),
   );
 
   // ---------------------------------------------------------------------------
-  // Aborted staged transaction path.
+  // Abort path.
+  //
+  // We pop inside a transaction. The runtime should stage an ack, not remove the
+  // message from the durable mailbox. Aborting should discard the staged ack.
   // ---------------------------------------------------------------------------
 
   let mut abort_context = RuntimeContextBuilder::new(runtime.id())
-    .subject("task:aborted-transaction")
+    .subject("actor:transactional-mailbox")
+    .actor(actor)
     .build()?;
 
-  let aborted_transaction = runtime.begin_transaction(&mut abort_context)?;
+  let abort_transaction = runtime.begin_transaction(&mut abort_context)?;
 
-  println!("abort transaction started: {}", aborted_transaction);
+  println!("abort transaction started: {}", abort_transaction);
 
-  let aborted_object_id = runtime.next_object_id();
+  let popped_inside_abort = runtime
+    .pop_message_with_context(&mut abort_context, actor)?
+    .expect("expected first message inside abort transaction");
 
-  runtime.put_object_with_context(
-    &mut abort_context,
-    ObjectRecord::text(
-      aborted_object_id,
-      "note",
-      "this should be discarded",
-    ),
-  )?;
+  assert_eq!(popped_inside_abort.id, first_message);
 
-  assert!(
-    runtime.get_object(aborted_object_id)?.is_none(),
-    "aborted object should not be visible outside the transaction before abort",
-  );
-
-  assert!(
-    runtime
-      .get_object_with_context(&mut abort_context, aborted_object_id)?
-      .is_some(),
-    "aborted object should be visible inside the transaction before abort",
+  println!(
+    "popped inside abort transaction: id={} kind={} payload={:?}",
+    popped_inside_abort.id,
+    popped_inside_abort.kind,
+    String::from_utf8_lossy(&popped_inside_abort.payload),
   );
 
   runtime.abort_runtime_transaction(
     &mut abort_context,
-    "discard staged object",
+    "rollback staged mailbox ack",
+  )?;
+
+  let after_abort_peek = runtime
+    .peek_message(actor)?
+    .expect("message should remain after abort");
+
+  assert_eq!(after_abort_peek.id, first_message);
+
+  println!(
+    "after abort mailbox front is still: id={} kind={} payload={:?}",
+    after_abort_peek.id,
+    after_abort_peek.kind,
+    String::from_utf8_lossy(&after_abort_peek.payload),
+  );
+
+  // ---------------------------------------------------------------------------
+  // Commit path for the first message.
+  //
+  // This time the staged ack should be applied at commit.
+  // ---------------------------------------------------------------------------
+
+  let mut commit_context = RuntimeContextBuilder::new(runtime.id())
+    .subject("actor:transactional-mailbox")
+    .actor(actor)
+    .build()?;
+
+  let commit_transaction = runtime.begin_transaction(&mut commit_context)?;
+
+  println!("commit transaction started: {}", commit_transaction);
+
+  let popped_inside_commit = runtime
+    .pop_message_with_context(&mut commit_context, actor)?
+    .expect("expected first message inside commit transaction");
+
+  assert_eq!(popped_inside_commit.id, first_message);
+
+  println!(
+    "popped inside commit transaction: id={} kind={} payload={:?}",
+    popped_inside_commit.id,
+    popped_inside_commit.kind,
+    String::from_utf8_lossy(&popped_inside_commit.payload),
+  );
+
+  let committed = runtime.commit_runtime_transaction(&mut commit_context)?;
+
+  println!("commit transaction committed: {}", committed);
+
+  let after_commit_peek = runtime
+    .peek_message(actor)?
+    .expect("expected second message after first ack commit");
+
+  assert_eq!(after_commit_peek.id, second_message);
+  assert_eq!(after_commit_peek.kind, "second");
+
+  println!(
+    "after first commit mailbox front advanced to: id={} kind={} payload={:?}",
+    after_commit_peek.id,
+    after_commit_peek.kind,
+    String::from_utf8_lossy(&after_commit_peek.payload),
+  );
+
+  // ---------------------------------------------------------------------------
+  // Commit path for the second message.
+  //
+  // This proves the mailbox can be drained through staged acks.
+  // ---------------------------------------------------------------------------
+
+  let mut final_context = RuntimeContextBuilder::new(runtime.id())
+    .subject("actor:transactional-mailbox")
+    .actor(actor)
+    .build()?;
+
+  let final_transaction = runtime.begin_transaction(&mut final_context)?;
+
+  println!("final transaction started: {}", final_transaction);
+
+  let popped_second = runtime
+    .pop_message_with_context(&mut final_context, actor)?
+    .expect("expected second message inside final transaction");
+
+  assert_eq!(popped_second.id, second_message);
+
+  println!(
+    "popped second message: id={} kind={} payload={:?}",
+    popped_second.id,
+    popped_second.kind,
+    String::from_utf8_lossy(&popped_second.payload),
+  );
+
+  let final_committed = runtime.commit_runtime_transaction(&mut final_context)?;
+
+  println!("final transaction committed: {}", final_committed);
+
+  assert!(
+    runtime.peek_message(actor)?.is_none(),
+    "mailbox should be empty after both staged acks commit",
+  );
+
+  println!("mailbox is empty after committed staged acks");
+
+  // ---------------------------------------------------------------------------
+  // Also prove staged enqueues are invisible until commit.
+  // ---------------------------------------------------------------------------
+
+  let mut enqueue_abort_context = RuntimeContextBuilder::new(runtime.id())
+    .subject("actor:transactional-mailbox")
+    .actor(actor)
+    .build()?;
+
+  let enqueue_abort_transaction =
+    runtime.begin_transaction(&mut enqueue_abort_context)?;
+
+  println!(
+    "staged enqueue abort transaction started: {}",
+    enqueue_abort_transaction,
+  );
+
+  let staged_aborted_message = runtime.send_message_with_context(
+    &mut enqueue_abort_context,
+    actor,
+    "staged-abort",
+    b"discard me".to_vec(),
+  )?;
+
+  println!(
+    "staged enqueue inside abort transaction: {}",
+    staged_aborted_message,
+  );
+
+  assert!(
+    runtime.peek_message(actor)?.is_none(),
+    "staged enqueue should not be visible outside transaction before abort",
+  );
+
+  let staged_inside_abort = runtime
+    .peek_message_with_context(&mut enqueue_abort_context, actor)?
+    .expect("staged enqueue should be visible inside transaction");
+
+  assert_eq!(staged_inside_abort.id, staged_aborted_message);
+
+  runtime.abort_runtime_transaction(
+    &mut enqueue_abort_context,
+    "discard staged enqueue",
   )?;
 
   assert!(
-    runtime.get_object(aborted_object_id)?.is_none(),
-    "aborted object should not be visible after abort",
+    runtime.peek_message(actor)?.is_none(),
+    "staged enqueue should be discarded after abort",
   );
 
-  println!("abort transaction discarded object: {}", aborted_object_id);
-
-  // ---------------------------------------------------------------------------
-  // Host call path.
-  // ---------------------------------------------------------------------------
-
-  let subject = BasicSubject::new("task:host-example");
-  let resource = BasicResource::new("host:host.empty");
-
-  let capability = BasicCapability::new(
-    CapabilityId(1),
-    &subject,
-    &resource,
-    [BasicOperation::new("call")],
+  println!(
+    "staged enqueue discarded after abort: {}",
+    staged_aborted_message,
   );
 
-  runtime.grant_capability(Arc::new(capability))?;
-
-  let mut host_context = RuntimeContextBuilder::new(runtime.id())
-    .subject("task:host-example")
+  let mut enqueue_commit_context = RuntimeContextBuilder::new(runtime.id())
+    .subject("actor:transactional-mailbox")
+    .actor(actor)
     .build()?;
 
-  let host_result = runtime.call_host_with_context(
-    &mut host_context,
-    HostCall::new("host.empty", Vec::new()),
+  let enqueue_commit_transaction =
+    runtime.begin_transaction(&mut enqueue_commit_context)?;
+
+  println!(
+    "staged enqueue commit transaction started: {}",
+    enqueue_commit_transaction,
+  );
+
+  let staged_committed_message = runtime.send_message_with_context(
+    &mut enqueue_commit_context,
+    actor,
+    "staged-commit",
+    b"persist me".to_vec(),
   )?;
 
-  println!("host call result: {:?}", host_result);
+  println!(
+    "staged enqueue inside commit transaction: {}",
+    staged_committed_message,
+  );
+
+  assert!(
+    runtime.peek_message(actor)?.is_none(),
+    "staged enqueue should not be visible outside transaction before commit",
+  );
+
+  let staged_inside_commit = runtime
+    .peek_message_with_context(&mut enqueue_commit_context, actor)?
+    .expect("staged enqueue should be visible inside transaction");
+
+  assert_eq!(staged_inside_commit.id, staged_committed_message);
+
+  runtime.commit_runtime_transaction(&mut enqueue_commit_context)?;
+
+  let committed_staged_message = runtime
+    .peek_message(actor)?
+    .expect("staged enqueue should be visible outside transaction after commit");
+
+  assert_eq!(committed_staged_message.id, staged_committed_message);
+
+  println!(
+    "staged enqueue persisted after commit: id={} kind={} payload={:?}",
+    committed_staged_message.id,
+    committed_staged_message.kind,
+    String::from_utf8_lossy(&committed_staged_message.payload),
+  );
 
   // ---------------------------------------------------------------------------
-  // Direct scheduler completion API.
-  //
-  // This is just a direct API smoke test. It does not execute work.
-  // ---------------------------------------------------------------------------
-
-  let synthetic_work = ScheduledWork::task(runtime.next_task_id());
-
-  runtime.enqueue_work(synthetic_work)?;
-
-  let synthetic_outcome = RuntimeTurnOutcome::new();
-
-  runtime.complete_scheduled_work(
-    synthetic_work,
-    synthetic_outcome,
-  )?;
-
-  // ---------------------------------------------------------------------------
-  // Shutdown and inspect durable event/transaction streams.
+  // Shutdown and inspect the event/transaction streams.
   // ---------------------------------------------------------------------------
 
   runtime.shutdown()?;

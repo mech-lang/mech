@@ -44,11 +44,7 @@ pub trait MechStore: std::fmt::Debug + Send {
 
   fn get_module_version(&self, id: ModuleVersionId) -> MResult<Option<ModuleVersionRecord>>;
 
-  fn set_active_module_version(
-    &mut self,
-    module: ModuleId,
-    version: ModuleVersionId,
-  ) -> MResult<()>;
+  fn set_active_module_version(&mut self, module: ModuleId, version: ModuleVersionId) -> MResult<()>;
 
   fn get_active_module_version(&self, module: ModuleId) -> MResult<Option<ModuleVersionId>>;
 
@@ -72,15 +68,23 @@ pub trait MechStore: std::fmt::Debug + Send {
 
   fn enqueue_message(&mut self, actor: ActorId, message: MessageRecord) -> MResult<MessageId>;
 
-  fn pop_message(&mut self, actor: ActorId) -> MResult<Option<MessageRecord>>;
-
-  fn peek_message(&self, actor: ActorId) -> MResult<Option<MessageRecord>>;
-
-  fn grant_capability(
+  fn pop_message(
     &mut self,
-    id: CapabilityId,
-    capability: Arc<dyn Capability>,
-  ) -> MResult<CapabilityId>;
+    actor: ActorId,
+  ) -> MResult<Option<MessageRecord>> {
+    let Some(message) = self.peek_message(actor)? else {
+      return Ok(None);
+    };
+
+    self.ack_message(actor, message.id)?;
+    Ok(Some(message))
+  }  
+  
+  fn peek_message(&self, actor: ActorId) -> MResult<Option<MessageRecord>>;
+  
+  fn ack_message(&mut self, actor: ActorId, message: MessageId) -> MResult<()>;
+
+  fn grant_capability(&mut self,id: CapabilityId,capability: Arc<dyn Capability>) -> MResult<CapabilityId>;
 
   fn get_capability(&self, id: CapabilityId) -> MResult<Option<Arc<dyn Capability>>>;
 
@@ -499,6 +503,10 @@ pub struct TransactionRecord {
   pub subject: String,
   pub read_set: Vec<ObjectId>,
   pub write_set: Vec<ObjectId>,
+  pub message_acks: Vec<MessageId>,
+  pub message_sends: Vec<MessageId>,
+  pub task_updates: Vec<TaskId>,
+  pub actor_updates: Vec<ActorId>,
   pub events: Vec<EventId>,
 }
 
@@ -852,14 +860,30 @@ impl MechStore for InMemoryStore {
     Ok(id)
   }
 
-  fn pop_message(&mut self, actor: ActorId) -> MResult<Option<MessageRecord>> {
-    self.ensure_actor_exists(actor)?;
-    Ok(self.mailboxes.entry(actor).or_default().pop_front())
-  }
-
   fn peek_message(&self, actor: ActorId) -> MResult<Option<MessageRecord>> {
     self.ensure_actor_exists(actor)?;
     Ok(self.mailboxes.get(&actor).and_then(|mailbox| mailbox.front().cloned()))
+  }
+
+  fn ack_message(
+    &mut self,
+    actor: ActorId,
+    message: MessageId,
+  ) -> MResult<()> {
+    self.ensure_actor_exists(actor)?;
+
+    let Some(mailbox) = self.mailboxes.get_mut(&actor) else {
+      return Ok(());
+    };
+
+    if let Some(index) = mailbox
+      .iter()
+      .position(|queued| queued.id == message)
+    {
+      mailbox.remove(index);
+    }
+
+    Ok(())
   }
 
   fn grant_capability(
@@ -1326,5 +1350,51 @@ mod tests {
     assert_eq!(loaded.read_set, vec![ObjectId(1)]);
     assert_eq!(loaded.write_set, vec![ObjectId(2)]);
     assert_eq!(loaded.events, vec![EventId(1)]);
+  }
+
+  #[test]
+  fn actor_message_ack_removes_specific_message() {
+    let mut store = InMemoryStore::new();
+
+    store
+      .put_actor(ActorRecord::new(ActorId(1), "actor:1"))
+      .unwrap();
+
+    let first = MessageRecord::new(
+      MessageId(1),
+      ActorId(1),
+      "first",
+      b"one".to_vec(),
+    );
+
+    let second = MessageRecord::new(
+      MessageId(2),
+      ActorId(1),
+      "second",
+      b"two".to_vec(),
+    );
+
+    store.enqueue_message(ActorId(1), first).unwrap();
+    store.enqueue_message(ActorId(1), second).unwrap();
+
+    assert_eq!(
+      store.peek_message(ActorId(1)).unwrap().unwrap().id,
+      MessageId(1),
+    );
+
+    store
+      .ack_message(ActorId(1), MessageId(1))
+      .unwrap();
+
+    assert_eq!(
+      store.peek_message(ActorId(1)).unwrap().unwrap().id,
+      MessageId(2),
+    );
+
+    store
+      .ack_message(ActorId(1), MessageId(2))
+      .unwrap();
+
+    assert!(store.peek_message(ActorId(1)).unwrap().is_none());
   }
 }

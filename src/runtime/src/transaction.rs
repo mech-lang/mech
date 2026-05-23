@@ -60,7 +60,7 @@ pub struct RuntimeTransaction {
   pub staged_task_updates: HashMap<TaskId, TaskRecord>,
   pub staged_actor_updates: HashMap<ActorId, ActorRecord>,
   pub staged_message_enqueues: HashMap<ActorId, Vec<MessageRecord>>,
-  pub staged_message_dequeues: HashMap<ActorId, Vec<MessageRecord>>,
+  pub staged_message_acks: HashMap<ActorId, Vec<MessageId>>,
 }
 
 impl RuntimeTransaction {
@@ -80,7 +80,7 @@ impl RuntimeTransaction {
       staged_task_updates: HashMap::new(),
       staged_actor_updates: HashMap::new(),
       staged_message_enqueues: HashMap::new(),
-      staged_message_dequeues: HashMap::new(),
+      staged_message_acks: HashMap::new(),
     }
   }
 
@@ -267,7 +267,7 @@ impl RuntimeTransaction {
     self.staged_task_updates.clear();
     self.staged_actor_updates.clear();
     self.staged_message_enqueues.clear();
-    self.staged_message_dequeues.clear();
+    self.staged_message_acks.clear();
     Ok(self)
   }
 
@@ -333,30 +333,49 @@ impl RuntimeTransaction {
     Ok(id)
   }
 
-  pub fn stage_message_dequeue(
+  pub fn stage_message_ack(
     &mut self,
     actor: ActorId,
-    message: MessageRecord,
-  ) -> MResult<MessageId> {
+    message: MessageId,
+  ) -> MResult<()> {
     self.ensure_open()?;
 
     if actor.is_zero() {
       return invalid_runtime_transaction("actor", "must not be zero");
     }
 
-    if message.id.is_zero() {
-      return invalid_runtime_transaction("message.id", "must not be zero");
+    if message.is_zero() {
+      return invalid_runtime_transaction("message", "must not be zero");
     }
 
-    let id = message.id;
-
-    self
-      .staged_message_dequeues
+    let messages = self
+      .staged_message_acks
       .entry(actor)
-      .or_default()
-      .push(message);
+      .or_default();
 
-    Ok(id)
+    if !messages.contains(&message) {
+      messages.push(message);
+    }
+
+    Ok(())
+  }
+
+  pub fn is_message_ack_staged(
+    &self,
+    actor: ActorId,
+    message: MessageId,
+  ) -> bool {
+    self
+      .staged_message_acks
+      .get(&actor)
+      .map(|messages| messages.contains(&message))
+      .unwrap_or(false)
+  }
+
+  pub fn staged_message_acks(
+    &self,
+  ) -> impl Iterator<Item = (&ActorId, &Vec<MessageId>)> {
+    self.staged_message_acks.iter()
   }
 
   pub fn pop_staged_enqueued_message(
@@ -396,11 +415,6 @@ impl RuntimeTransaction {
     self.staged_message_enqueues.iter()
   }
 
-  pub fn staged_message_dequeues(
-    &self,
-  ) -> impl Iterator<Item = (&ActorId, &Vec<MessageRecord>)> {
-    self.staged_message_dequeues.iter()
-  }
 }
 
 #[derive(Debug, Clone)]

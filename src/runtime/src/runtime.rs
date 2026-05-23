@@ -1507,13 +1507,13 @@ impl MechRuntime {
         return Ok(Some(message));
       }
 
-      let Some(message) = self.store.pop_message(actor)? else {
+      let Some(message) = self.store.peek_message(actor)? else {
         return Ok(None);
       };
 
       self
         .active_transaction_mut(transaction_id)?
-        .stage_message_dequeue(actor, message.clone())?;
+        .stage_message_ack(actor, message.id)?;
 
       return Ok(Some(message));
     }
@@ -2035,6 +2035,11 @@ impl MechRuntime {
       .map(|(actor, messages)| (*actor, messages.clone()))
       .collect();
 
+    let staged_message_acks: Vec<(ActorId, Vec<MessageId>)> = transaction
+      .staged_message_acks()
+      .map(|(actor, messages)| (*actor, messages.clone()))
+      .collect();      
+
     for object in staged_puts {
       self.store.put_object(object)?;
     }
@@ -2049,6 +2054,12 @@ impl MechRuntime {
 
     for actor in staged_actor_updates {
       self.store.update_actor(actor)?;
+    }
+
+    for (actor, messages) in staged_message_acks {
+      for message in messages {
+        self.store.ack_message(actor, message)?;
+      }
     }
 
     for (actor, messages) in staged_message_enqueues {
