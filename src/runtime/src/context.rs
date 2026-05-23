@@ -21,11 +21,11 @@ use serde::{Deserialize, Serialize};
 use mech_core::{MResult, MechError, MechErrorKind};
 
 use crate::capability::{
-  CapabilityContext, CapabilityRequest, Operation, Resource, Subject,
+  CapabilityContext, CapabilityRequest, Operation, Resource,
 };
 
 use crate::event::{
-  RuntimeEvent, RuntimeEventKind,
+  RuntimeEvent,
 };
 
 use crate::id::{
@@ -682,6 +682,7 @@ mod tests {
 
   #[test]
   fn context_drains_events() {
+    use crate::event::RuntimeEventKind;
     let mut context = RuntimeContext::new(RuntimeId(1), "task:1");
 
     context.push_event(RuntimeEvent::new(
