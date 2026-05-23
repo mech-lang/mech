@@ -16,11 +16,11 @@ use std::collections::HashMap;
 use mech_core::{MResult, MechError, MechErrorKind};
 
 use crate::id::{
-  EventId, ObjectId, TransactionId,
+  ActorId, EventId, MessageId, ObjectId, TaskId, TransactionId,
 };
 
 use crate::store::{
-  ObjectRecord, TransactionRecord,
+  ActorRecord, MessageRecord, ObjectRecord, TaskRecord, TransactionRecord,
 };
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -57,6 +57,10 @@ pub struct RuntimeTransaction {
   pub staged_puts: HashMap<ObjectId, ObjectRecord>,
   pub staged_updates: HashMap<ObjectId, ObjectRecord>,
   pub status: TransactionStatus,
+  pub staged_task_updates: HashMap<TaskId, TaskRecord>,
+  pub staged_actor_updates: HashMap<ActorId, ActorRecord>,
+  pub staged_message_enqueues: HashMap<ActorId, Vec<MessageRecord>>,
+  pub staged_message_dequeues: HashMap<ActorId, Vec<MessageRecord>>,
 }
 
 impl RuntimeTransaction {
@@ -73,6 +77,10 @@ impl RuntimeTransaction {
       staged_puts: HashMap::new(),
       staged_updates: HashMap::new(),
       status: TransactionStatus::Open,
+      staged_task_updates: HashMap::new(),
+      staged_actor_updates: HashMap::new(),
+      staged_message_enqueues: HashMap::new(),
+      staged_message_dequeues: HashMap::new(),
     }
   }
 
@@ -256,8 +264,142 @@ impl RuntimeTransaction {
     self.status = TransactionStatus::Aborted {
       reason: reason.into(),
     };
-
+    self.staged_task_updates.clear();
+    self.staged_actor_updates.clear();
+    self.staged_message_enqueues.clear();
+    self.staged_message_dequeues.clear();
     Ok(self)
+  }
+
+  pub fn stage_task_update(&mut self, task: TaskRecord) -> MResult<TaskId> {
+    self.ensure_open()?;
+
+    let id = task.id;
+
+    if id.is_zero() {
+      return invalid_runtime_transaction("task.id", "must not be zero");
+    }
+
+    self.staged_task_updates.insert(id, task);
+
+    Ok(id)
+  }
+
+  pub fn get_staged_task(&self, id: TaskId) -> Option<TaskRecord> {
+    self.staged_task_updates.get(&id).cloned()
+  }
+
+  pub fn stage_actor_update(&mut self, actor: ActorRecord) -> MResult<ActorId> {
+    self.ensure_open()?;
+
+    let id = actor.id;
+
+    if id.is_zero() {
+      return invalid_runtime_transaction("actor.id", "must not be zero");
+    }
+
+    self.staged_actor_updates.insert(id, actor);
+
+    Ok(id)
+  }
+
+  pub fn get_staged_actor(&self, id: ActorId) -> Option<ActorRecord> {
+    self.staged_actor_updates.get(&id).cloned()
+  }
+
+  pub fn stage_message_enqueue(
+    &mut self,
+    actor: ActorId,
+    message: MessageRecord,
+  ) -> MResult<MessageId> {
+    self.ensure_open()?;
+
+    if actor.is_zero() {
+      return invalid_runtime_transaction("actor", "must not be zero");
+    }
+
+    if message.id.is_zero() {
+      return invalid_runtime_transaction("message.id", "must not be zero");
+    }
+
+    let id = message.id;
+
+    self
+      .staged_message_enqueues
+      .entry(actor)
+      .or_default()
+      .push(message);
+
+    Ok(id)
+  }
+
+  pub fn stage_message_dequeue(
+    &mut self,
+    actor: ActorId,
+    message: MessageRecord,
+  ) -> MResult<MessageId> {
+    self.ensure_open()?;
+
+    if actor.is_zero() {
+      return invalid_runtime_transaction("actor", "must not be zero");
+    }
+
+    if message.id.is_zero() {
+      return invalid_runtime_transaction("message.id", "must not be zero");
+    }
+
+    let id = message.id;
+
+    self
+      .staged_message_dequeues
+      .entry(actor)
+      .or_default()
+      .push(message);
+
+    Ok(id)
+  }
+
+  pub fn pop_staged_enqueued_message(
+    &mut self,
+    actor: ActorId,
+  ) -> Option<MessageRecord> {
+    let queue = self.staged_message_enqueues.get_mut(&actor)?;
+    if queue.is_empty() {
+      None
+    } else {
+      Some(queue.remove(0))
+    }
+  }
+
+  pub fn peek_staged_enqueued_message(
+    &self,
+    actor: ActorId,
+  ) -> Option<MessageRecord> {
+    self
+      .staged_message_enqueues
+      .get(&actor)
+      .and_then(|queue| queue.first())
+      .cloned()
+  }
+
+  pub fn staged_task_updates(&self) -> impl Iterator<Item = &TaskRecord> {
+    self.staged_task_updates.values()
+  }
+
+  pub fn staged_actor_updates(&self) -> impl Iterator<Item = &ActorRecord> {
+    self.staged_actor_updates.values()
+  }
+
+  pub fn staged_message_enqueues(
+    &self,
+  ) -> impl Iterator<Item = (&ActorId, &Vec<MessageRecord>)> {
+    self.staged_message_enqueues.iter()
+  }
+
+  pub fn staged_message_dequeues(
+    &self,
+  ) -> impl Iterator<Item = (&ActorId, &Vec<MessageRecord>)> {
+    self.staged_message_dequeues.iter()
   }
 }
 

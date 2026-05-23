@@ -1185,12 +1185,51 @@ impl MechRuntime {
     self.store.get_task(id)
   }
 
+  pub fn get_task_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    id: TaskId,
+  ) -> MResult<Option<TaskRecord>> {
+    context.validate()?;
+
+    if let Some(transaction_id) = context.transaction {
+      if let Some(transaction) = self.active_transactions.get(&transaction_id) {
+        if let Some(task) = transaction.get_staged_task(id) {
+          return Ok(Some(task));
+        }
+      }
+    }
+
+    self.store.get_task(id)
+  }    
+
   pub fn update_task(&mut self, task: TaskRecord) -> MResult<TaskId> {
     self.store.update_task(task)
   }
 
+  pub fn update_task_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    task: TaskRecord,
+  ) -> MResult<TaskId> {
+    context.validate()?;
+
+    if self.has_active_context_transaction(context) {
+      let transaction_id = Self::context_transaction_id(context)?;
+      let id = task.id;
+
+      self
+        .active_transaction_mut(transaction_id)?
+        .stage_task_update(task)?;
+
+      return Ok(id);
+    }
+
+    self.store.update_task(task)
+  }
+
   pub fn complete_task(&mut self, id: TaskId) -> MResult<()> {
-    let Some(mut task) = self.store.get_task(id)? else {
+    let Some(task) = self.store.get_task(id)? else {
       return Err(MechError::new(
         RuntimeRecordNotFoundError {
           record_type: "task",
@@ -1201,12 +1240,30 @@ impl MechRuntime {
     };
 
     let mut context = self.context_for_task(&task)?;
+    self.complete_task_with_context(&mut context, id)
+  }
+
+  pub fn complete_task_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    id: TaskId,
+  ) -> MResult<()> {
+    let Some(mut task) = self.get_task_with_context(context, id)? else {
+      return Err(MechError::new(
+        RuntimeRecordNotFoundError {
+          record_type: "task",
+          id: id.to_string(),
+        },
+        None,
+      ));
+    };
 
     task.status = TaskStatus::completed();
-    self.store.update_task(task)?;
+
+    self.update_task_with_context(context, task)?;
 
     self.emit_event_to_context(
-      &mut context,
+      context,
       RuntimeEventKind::TaskCompleted {
         task_id: id,
       },
@@ -1218,7 +1275,7 @@ impl MechRuntime {
   pub fn fail_task(&mut self, id: TaskId, reason: impl Into<String>) -> MResult<()> {
     let reason = reason.into();
 
-    let Some(mut task) = self.store.get_task(id)? else {
+    let Some(task) = self.store.get_task(id)? else {
       return Err(MechError::new(
         RuntimeRecordNotFoundError {
           record_type: "task",
@@ -1229,12 +1286,33 @@ impl MechRuntime {
     };
 
     let mut context = self.context_for_task(&task)?;
+    self.fail_task_with_context(&mut context, id, reason)
+  }
+
+  pub fn fail_task_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    id: TaskId,
+    reason: impl Into<String>,
+  ) -> MResult<()> {
+    let reason = reason.into();
+
+    let Some(mut task) = self.get_task_with_context(context, id)? else {
+      return Err(MechError::new(
+        RuntimeRecordNotFoundError {
+          record_type: "task",
+          id: id.to_string(),
+        },
+        None,
+      ));
+    };
 
     task.status = TaskStatus::failed();
-    self.store.update_task(task)?;
+
+    self.update_task_with_context(context, task)?;
 
     self.emit_event_to_context(
-      &mut context,
+      context,
       RuntimeEventKind::TaskFailed {
         task_id: id,
         message: reason,
@@ -1300,7 +1378,46 @@ impl MechRuntime {
     self.store.get_actor(id)
   }
 
+  pub fn get_actor_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    id: ActorId,
+  ) -> MResult<Option<ActorRecord>> {
+    context.validate()?;
+
+    if let Some(transaction_id) = context.transaction {
+      if let Some(transaction) = self.active_transactions.get(&transaction_id) {
+        if let Some(actor) = transaction.get_staged_actor(id) {
+          return Ok(Some(actor));
+        }
+      }
+    }
+
+    self.store.get_actor(id)
+  }
+
   pub fn update_actor(&mut self, actor: ActorRecord) -> MResult<ActorId> {
+    self.store.update_actor(actor)
+  }
+
+  pub fn update_actor_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    actor: ActorRecord,
+  ) -> MResult<ActorId> {
+    context.validate()?;
+
+    if self.has_active_context_transaction(context) {
+      let transaction_id = Self::context_transaction_id(context)?;
+      let id = actor.id;
+
+      self
+        .active_transaction_mut(transaction_id)?
+        .stage_actor_update(actor)?;
+
+      return Ok(id);
+    }
+
     self.store.update_actor(actor)
   }
 
@@ -1338,6 +1455,24 @@ impl MechRuntime {
     let id = self.next_message_id();
     let message = MessageRecord::new(id, actor, kind, payload);
 
+    if self.has_active_context_transaction(context) {
+      let transaction_id = Self::context_transaction_id(context)?;
+
+      self
+        .active_transaction_mut(transaction_id)?
+        .stage_message_enqueue(actor, message)?;
+
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ActorMessageSent {
+          actor_id: actor,
+          message_id: id,
+        },
+      )?;
+
+      return Ok(id);
+    }
+
     self.store.enqueue_message(actor, message)?;
 
     self.emit_event_to_context(
@@ -1355,7 +1490,56 @@ impl MechRuntime {
     self.store.pop_message(actor)
   }
 
+  pub fn pop_message_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    actor: ActorId,
+  ) -> MResult<Option<MessageRecord>> {
+    context.validate()?;
+
+    if self.has_active_context_transaction(context) {
+      let transaction_id = Self::context_transaction_id(context)?;
+
+      if let Some(message) = self
+        .active_transaction_mut(transaction_id)?
+        .pop_staged_enqueued_message(actor)
+      {
+        return Ok(Some(message));
+      }
+
+      let Some(message) = self.store.pop_message(actor)? else {
+        return Ok(None);
+      };
+
+      self
+        .active_transaction_mut(transaction_id)?
+        .stage_message_dequeue(actor, message.clone())?;
+
+      return Ok(Some(message));
+    }
+
+    self.store.pop_message(actor)
+  }
+
   pub fn peek_message(&self, actor: ActorId) -> MResult<Option<MessageRecord>> {
+    self.store.peek_message(actor)
+  }
+
+  pub fn peek_message_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    actor: ActorId,
+  ) -> MResult<Option<MessageRecord>> {
+    context.validate()?;
+
+    if let Some(transaction_id) = context.transaction {
+      if let Some(transaction) = self.active_transactions.get(&transaction_id) {
+        if let Some(message) = transaction.peek_staged_enqueued_message(actor) {
+          return Ok(Some(message));
+        }
+      }
+    }
+
     self.store.peek_message(actor)
   }
 
@@ -1496,7 +1680,7 @@ impl MechRuntime {
       };
 
       self.run_module_with_context(&mut context, module_version)?;
-      self.complete_task(task_id)?;
+      self.complete_task_with_context(&mut context, task_id)?;
 
       Ok(())
     })();
@@ -1526,7 +1710,7 @@ impl MechRuntime {
           message.clone(),
         )?;
 
-        let _ = self.fail_task(task_id, message.clone());
+        let _ = self.fail_task_with_context(&mut context, task_id, message.clone());
 
         self.fail_scheduled_work(
           ScheduledWork::task(task_id),
@@ -1563,7 +1747,7 @@ impl MechRuntime {
     )?;
 
     let result = (|| -> MResult<()> {
-      let Some(_message) = self.pop_message(actor_id)? else {
+      let Some(_message) = self.pop_message_with_context(&mut context, actor_id)? else {
         return Ok(());
       };
 
@@ -1834,8 +2018,22 @@ impl MechRuntime {
     transaction.merge_write_set(&context.access.writes)?;
     transaction.merge_events(&context.emitted_event_ids())?;
 
-    let staged_puts: Vec<ObjectRecord> = transaction.staged_puts().cloned().collect();
-    let staged_updates: Vec<ObjectRecord> = transaction.staged_updates().cloned().collect();
+    let staged_puts: Vec<ObjectRecord> =
+      transaction.staged_puts().cloned().collect();
+
+    let staged_updates: Vec<ObjectRecord> =
+      transaction.staged_updates().cloned().collect();
+
+    let staged_task_updates: Vec<TaskRecord> =
+      transaction.staged_task_updates().cloned().collect();
+
+    let staged_actor_updates: Vec<ActorRecord> =
+      transaction.staged_actor_updates().cloned().collect();
+
+    let staged_message_enqueues: Vec<(ActorId, Vec<MessageRecord>)> = transaction
+      .staged_message_enqueues()
+      .map(|(actor, messages)| (*actor, messages.clone()))
+      .collect();
 
     for object in staged_puts {
       self.store.put_object(object)?;
@@ -1843,6 +2041,20 @@ impl MechRuntime {
 
     for object in staged_updates {
       self.store.update_object(object)?;
+    }
+
+    for task in staged_task_updates {
+      self.store.update_task(task)?;
+    }
+
+    for actor in staged_actor_updates {
+      self.store.update_actor(actor)?;
+    }
+
+    for (actor, messages) in staged_message_enqueues {
+      for message in messages {
+        self.store.enqueue_message(actor, message)?;
+      }
     }
 
     let record = transaction.into_record()?;
