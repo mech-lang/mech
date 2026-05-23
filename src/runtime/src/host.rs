@@ -30,6 +30,8 @@ use crate::capability::{
 
 use crate::context::RuntimeContext;
 
+use crate::services::RuntimeServices;
+
 // -----------------------------------------------------------------------------
 // Host Function
 // -----------------------------------------------------------------------------
@@ -89,7 +91,12 @@ pub trait HostFunction: std::fmt::Debug + Send + Sync {
   }
 
   /// Invoke the host function.
-  fn call(&self, context: &mut RuntimeContext, args: Vec<Value>) -> MResult<Value>;
+  fn call(
+    &self,
+    services: &mut dyn RuntimeServices,
+    context: &mut RuntimeContext,
+    args: Vec<Value>,
+  ) -> MResult<Value>;
 }
 
 // -----------------------------------------------------------------------------
@@ -101,7 +108,7 @@ pub trait HostFunction: std::fmt::Debug + Send + Sync {
 /// Useful for tests and embedding small APIs.
 pub struct ClosureHostFunction<F>
 where
-  F: Fn(&mut RuntimeContext, Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
+  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
 {
   name: String,
   capability: Option<CapabilityRequest>,
@@ -110,7 +117,7 @@ where
 
 impl<F> std::fmt::Debug for ClosureHostFunction<F>
 where
-  F: Fn(&mut RuntimeContext, Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
+  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
 {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     f.debug_struct("ClosureHostFunction")
@@ -123,7 +130,7 @@ where
 
 impl<F> ClosureHostFunction<F>
 where
-  F: Fn(&mut RuntimeContext, Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
+  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
 {
   pub fn new(
     name: impl Into<String>,
@@ -147,7 +154,7 @@ where
 
 impl<F> HostFunction for ClosureHostFunction<F>
 where
-  F: Fn(&mut RuntimeContext, Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
+  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
 {
   fn name(&self) -> &str {
     &self.name
@@ -158,8 +165,8 @@ where
     self.capability.clone()
   }
 
-  fn call(&self, context: &mut RuntimeContext, args: Vec<Value>) -> MResult<Value> {
-    (self.function)(context, args)
+  fn call(&self, services: &mut dyn RuntimeServices, context: &mut RuntimeContext, args: Vec<Value>) -> MResult<Value> {
+    (self.function)(services, context, args)
   }
 }
 
@@ -448,6 +455,7 @@ impl HostFunction for ActorMessageKindHostFunction {
 
   fn call(
     &self,
+    services: &mut dyn RuntimeServices,
     context: &mut RuntimeContext,
     _args: Vec<Value>,
   ) -> MResult<Value> {
@@ -502,6 +510,7 @@ impl HostFunction for ActorMessagePayloadHostFunction {
 
   fn call(
     &self,
+    services: &mut dyn RuntimeServices,
     context: &mut RuntimeContext,
     _args: Vec<Value>,
   ) -> MResult<Value> {
@@ -556,6 +565,7 @@ impl HostFunction for ActorStateIdHostFunction {
 
   fn call(
     &self,
+    services: &mut dyn RuntimeServices,
     context: &mut RuntimeContext,
     _args: Vec<Value>,
   ) -> MResult<Value> {
@@ -691,15 +701,19 @@ mod tests {
   use super::*;
 
   use crate::id::RuntimeId;
+  use crate::services::NoRuntimeServices;
 
   #[test]
   fn registry_registers_and_lists_functions() {
     let mut registry = InMemoryHostRegistry::new();
 
     registry
-      .insert(ClosureHostFunction::new("host.echo", |_ctx, args| {
-        Ok(args.into_iter().next().unwrap_or(Value::Empty))
-      }))
+      .insert(ClosureHostFunction::new(
+        "host.echo",
+        |_services, _ctx, args| {
+          Ok(args.into_iter().next().unwrap_or(Value::Empty))
+        },
+      ))
       .unwrap();
 
     let names = registry.list_functions().unwrap();
@@ -713,16 +727,16 @@ mod tests {
     let mut registry = InMemoryHostRegistry::new();
 
     registry
-      .insert(ClosureHostFunction::new("host.echo", |_ctx, _args| {
-        Ok(Value::Empty)
-      }))
+      .insert(ClosureHostFunction::new(
+        "host.echo",
+        |_services, _ctx, _args| Ok(Value::Empty),
+      ))
       .unwrap();
 
-    let result = registry.insert(
-      ClosureHostFunction::new("host.echo", |_ctx, _args| {
-        Ok(Value::Empty)
-      }),
-    );
+    let result = registry.insert(ClosureHostFunction::new(
+      "host.echo",
+      |_services, _ctx, _args| Ok(Value::Empty),
+    ));
 
     assert!(result.is_err());
   }
@@ -749,13 +763,17 @@ mod tests {
 
   #[test]
   fn closure_function_calls() {
-    let function = ClosureHostFunction::new("host.empty", |_ctx, _args| {
-      Ok(Value::Empty)
-    });
+    let function = ClosureHostFunction::new(
+      "host.empty",
+      |_services, _ctx, _args| Ok(Value::Empty),
+    );
 
+    let mut services = NoRuntimeServices;
     let mut context = RuntimeContext::new(RuntimeId(1), "task:1");
 
-    let result = function.call(&mut context, Vec::new()).unwrap();
+    let result = function
+      .call(&mut services, &mut context, Vec::new())
+      .unwrap();
 
     assert_eq!(result, Value::Empty);
   }
