@@ -346,7 +346,7 @@ impl HostCallPolicy for DefaultHostCallPolicy {
 ///
 /// This object does not own the registry or capability kernel. `MechRuntime` can
 /// use these helpers while keeping ownership of the actual runtime state.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HostCall {
   pub name: String,
   pub args: Vec<Value>,
