@@ -100,6 +100,18 @@ pub fn host_arg_cloned(
   Ok(host_arg(function, args, index)?.clone())
 }
 
+pub fn host_arg_resolved(
+  function: &str,
+  args: &[Value],
+  index: usize,
+) -> MResult<Value> {
+  match host_arg(function, args, index)? {
+    Value::MutableReference(value) => Ok(value.borrow().clone()),
+    Value::Typed(value, _) => todo!(),
+    other => Ok(other.clone()),
+  }
+}
+
 pub fn host_args_tail(
   function: &str,
   args: &[Value],
