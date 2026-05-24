@@ -27,6 +27,20 @@ impl Default for MechProgramEnvironment {
   }
 }
 
+pub trait ProgramHostBridge {
+  fn call_host(
+    &mut self,
+    name: &str,
+    args: Vec<Value>,
+  ) -> MResult<Value>;
+}
+
+#[derive(Debug, Clone)]
+pub struct ProgramHostCall {
+  pub name: String,
+  pub args: Vec<Value>,
+}
+
 #[derive(Debug, Clone)]
 pub struct MechProgramConfig {
   pub name: String,
@@ -57,6 +71,37 @@ impl MechProgram {
     Self {
       config,
       interpreter,
+    }
+  }
+  
+  pub fn run_string_with_host(
+    &mut self,
+    source: &str,
+    host: &mut dyn ProgramHostBridge,
+  ) -> MResult<Value> {
+    if let Some(calls) = parse_program_host_calls(source)? {
+      let mut value = Value::Empty;
+
+      for call in calls {
+        value = host.call_host(&call.name, call.args)?;
+      }
+
+      return Ok(value);
+    }
+
+    self.run_string(source)
+  }
+
+  pub fn run_source_with_host(
+    &mut self,
+    source: &MechSourceCode,
+    host: &mut dyn ProgramHostBridge,
+  ) -> MResult<Value> {
+    match source {
+      MechSourceCode::String(source) => {
+        self.run_string_with_host(source, host)
+      }
+      other => self.run_source(other),
     }
   }
 

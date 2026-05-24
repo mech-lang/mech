@@ -210,6 +210,14 @@ impl ProgramState {
     self.dictionary.borrow_mut().insert(id, fxn.name.to_string());
   }
 
+  pub fn register_native_function_compiler(&mut self, name: impl Into<String>, compiler: Arc<dyn NativeFunctionCompiler>) {
+    self
+      .interpreter
+      .functions()
+      .borrow_mut()
+      .insert_function_compiler(name, compiler);
+  }
+
   #[cfg(feature = "symbol_table")]
   pub fn save_symbol(&self, id: u64, name: String, value: Value, mutable: bool) -> ValRef {
     let mut symbols_brrw = self.symbol_table.borrow_mut();
