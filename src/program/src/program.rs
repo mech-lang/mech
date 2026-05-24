@@ -73,7 +73,15 @@ impl MechProgram {
       interpreter,
     }
   }
-  
+
+  pub fn register_native_function_compiler(&mut self, name: impl Into<String>, compiler: Arc<dyn NativeFunctionCompiler>) {
+    self
+      .interpreter
+      .functions()
+      .borrow_mut()
+      .insert_function_compiler(name, compiler);
+  }
+
   pub fn run_string_with_host(
     &mut self,
     source: &str,
