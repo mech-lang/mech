@@ -15,12 +15,13 @@ use tabled::{
   Tabled,
 };
 use std::fmt;
+use std::sync::Arc;
 
 // Functions ------------------------------------------------------------------
 
 pub type FunctionsRef = Ref<Functions>;
 pub type FunctionTable = HashMap<u64, fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>>;
-pub type FunctionCompilerTable = HashMap<u64, &'static dyn NativeFunctionCompiler>;
+pub type FunctionCompilerTable = HashMap<u64, Arc<dyn NativeFunctionCompiler>>;
 pub type UserFunctionTable = HashMap<u64, FunctionDefinition>;
 
 #[derive(Clone,Debug)]
@@ -102,6 +103,21 @@ impl<T> MechFunction for T where T: MechFunctionImpl {}
 
 pub trait NativeFunctionCompiler {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>>;
+}
+
+
+pub struct StaticNativeFunctionCompiler {
+  inner: &'static dyn NativeFunctionCompiler,
+}
+
+impl StaticNativeFunctionCompiler {
+  pub fn new(inner: &'static dyn NativeFunctionCompiler) -> Self { Self { inner } }
+}
+
+impl NativeFunctionCompiler for StaticNativeFunctionCompiler {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    self.inner.compile(arguments)
+  }
 }
 
 #[derive(Clone)]
