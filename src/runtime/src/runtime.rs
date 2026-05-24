@@ -46,7 +46,8 @@ use crate::event::{
 
 use crate::host::{
   default_host_capability_request, DefaultHostCallPolicy, HostCall,
-  HostCallPolicy, HostFunctionNotFoundError, HostRegistry, InMemoryHostRegistry,
+  HostCallPolicy, HostFunction, HostFunctionNotFoundError, HostRegistry,
+  InMemoryHostRegistry,
 };
 
 use crate::id::{
@@ -2096,18 +2097,36 @@ impl MechRuntime {
     _context: &mut RuntimeContext,
     program: &mut MechProgram,
   ) -> MResult<()> {
-    for name in [
-      "actor/message/kind",
-      "actor/message/payload",
-      "actor/state/id",
-      "actor/state/get",
-      "actor/state/put",
-    ] {
+    for name in self.host_registry.list_functions()? {
       program.register_native_function_compiler(
-        name,
-        Arc::new(RuntimeHostNativeFunctionCompiler::new(name, name)),
+        name.clone(),
+        Arc::new(RuntimeHostNativeFunctionCompiler::new(
+          name.clone(),
+          name,
+        )),
       );
     }
+
+    Ok(())
+  }
+
+  pub fn register_mech_host_function(
+    &mut self,
+    function: impl HostFunction + 'static,
+  ) -> MResult<()> {
+    let name = function.name().to_string();
+
+    self
+      .host_registry
+      .register_function(Arc::new(function))?;
+
+    self.program.register_native_function_compiler(
+      name.clone(),
+      Arc::new(RuntimeHostNativeFunctionCompiler::new(
+        name.clone(),
+        name,
+      )),
+    );
 
     Ok(())
   }
