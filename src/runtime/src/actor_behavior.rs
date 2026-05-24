@@ -16,7 +16,7 @@ use mech_core::{
 use crate::actor::ActorTurn;
 use crate::context::RuntimeContext;
 use crate::host::HostCall;
-use crate::services::RuntimeServices;
+use crate::service::RuntimeServices;
 
 // -----------------------------------------------------------------------------
 // Runtime surface exposed to actor behavior drivers
