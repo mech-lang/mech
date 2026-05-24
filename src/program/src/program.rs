@@ -9,6 +9,8 @@ use mech_core::{
 use mech_interpreter::Interpreter;
 use mech_syntax::parser;
 
+use crate::ClosureNativeFunctionCompiler;
+
 #[derive(Debug, Clone)]
 pub struct MechProgramEnvironment {
   pub trace_enabled: bool,
@@ -71,6 +73,19 @@ impl MechProgram {
       .functions()
       .borrow_mut()
       .insert_function_compiler(name, compiler);
+  }
+
+  pub fn register_native_closure(
+    &mut self,
+    name: impl Into<String>,
+    function: impl Fn(Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
+  ) {
+    let name = name.into();
+
+    self.register_native_function_compiler(
+      name.clone(),
+      Arc::new(ClosureNativeFunctionCompiler::new(name, function)),
+    );
   }
 
   pub fn from_environment(
