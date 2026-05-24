@@ -30,7 +30,7 @@ use crate::capability::{
 
 use crate::context::RuntimeContext;
 
-use crate::services::RuntimeServices;
+use crate::service::RuntimeServices;
 
 use crate::store::ObjectRecord;
 
@@ -888,7 +888,7 @@ mod tests {
   use super::*;
 
   use crate::id::RuntimeId;
-  use crate::services::NoRuntimeServices;
+  use crate::service::NoRuntimeServices;
 
   #[test]
   fn registry_registers_and_lists_functions() {
