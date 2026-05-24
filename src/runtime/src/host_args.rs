@@ -416,6 +416,7 @@ pub fn host_arg_optional_i64(
 // Floats
 // -----------------------------------------------------------------------------
 
+#[cfg(feature = "f32")]
 pub fn host_arg_f32(
   function: &str,
   args: &[Value],
@@ -424,6 +425,7 @@ pub fn host_arg_f32(
   Ok(*host_arg(function, args, index)?.as_f32()?.borrow())
 }
 
+#[cfg(feature = "f64")]
 pub fn host_arg_f64(
   function: &str,
   args: &[Value],
@@ -432,6 +434,7 @@ pub fn host_arg_f64(
   Ok(*host_arg(function, args, index)?.as_f64()?.borrow())
 }
 
+#[cfg(feature = "f64")]
 pub fn host_arg_optional_f64(
   function: &str,
   args: &[Value],
@@ -522,81 +525,255 @@ pub fn host_arg_deref_cloned(
   }
 }
 
+#[cfg(feature = "tuple")]
 pub fn host_arg_tuple(
   function: &str,
   args: &[Value],
   index: usize,
-) -> MResult<Value> {
-  let value = host_arg(function, args, index)?;
-
-  match value.kind().deref_kind() {
-    ValueKind::Tuple(_) => Ok(value.clone()),
-    _ => Err(wrong_type_error(function, index, "tuple", value)),
+) -> MResult<mech_core::MechTuple> {
+  match host_arg(function, args, index)? {
+    Value::Tuple(value) => Ok(value.borrow().clone()),
+    other => Err(wrong_type_error(function, index, "tuple", other)),
   }
 }
 
+#[cfg(feature = "record")]
 pub fn host_arg_record(
   function: &str,
   args: &[Value],
   index: usize,
-) -> MResult<Value> {
-  let value = host_arg(function, args, index)?;
-
-  match value.kind().deref_kind() {
-    ValueKind::Record(_) => Ok(value.clone()),
-    _ => Err(wrong_type_error(function, index, "record", value)),
+) -> MResult<mech_core::MechRecord> {
+  match host_arg(function, args, index)? {
+    Value::Record(value) => Ok(value.borrow().clone()),
+    other => Err(wrong_type_error(function, index, "record", other)),
   }
 }
 
+#[cfg(feature = "table")]
 pub fn host_arg_table(
   function: &str,
   args: &[Value],
   index: usize,
-) -> MResult<Value> {
-  let value = host_arg(function, args, index)?;
-
-  match value.kind().deref_kind() {
-    ValueKind::Table(_, _) => Ok(value.clone()),
-    _ => Err(wrong_type_error(function, index, "table", value)),
+) -> MResult<mech_core::MechTable> {
+  match host_arg(function, args, index)? {
+    Value::Table(value) => Ok(value.borrow().clone()),
+    other => Err(wrong_type_error(function, index, "table", other)),
   }
 }
 
+#[cfg(feature = "map")]
 pub fn host_arg_map(
   function: &str,
   args: &[Value],
   index: usize,
-) -> MResult<Value> {
-  let value = host_arg(function, args, index)?;
-
-  match value.kind().deref_kind() {
-    ValueKind::Map(_, _) => Ok(value.clone()),
-    _ => Err(wrong_type_error(function, index, "map", value)),
+) -> MResult<mech_core::MechMap> {
+  match host_arg(function, args, index)? {
+    Value::Map(value) => Ok(value.borrow().clone()),
+    other => Err(wrong_type_error(function, index, "map", other)),
   }
 }
 
+#[cfg(feature = "set")]
 pub fn host_arg_set(
   function: &str,
   args: &[Value],
   index: usize,
-) -> MResult<Value> {
-  let value = host_arg(function, args, index)?;
-
-  match value.kind().deref_kind() {
-    ValueKind::Set(_, _) => Ok(value.clone()),
-    _ => Err(wrong_type_error(function, index, "set", value)),
+) -> MResult<mech_core::MechSet> {
+  match host_arg(function, args, index)? {
+    Value::Set(value) => Ok(value.borrow().clone()),
+    other => Err(wrong_type_error(function, index, "set", other)),
   }
 }
 
-pub fn host_arg_matrix(
+#[cfg(feature = "matrix")]
+pub fn host_arg_matrix_index(
   function: &str,
   args: &[Value],
   index: usize,
-) -> MResult<Value> {
-  let value = host_arg(function, args, index)?;
+) -> MResult<mech_core::Matrix<usize>> {
+  match host_arg(function, args, index)? {
+    Value::MatrixIndex(value) => Ok(value.clone()),
+    other => Err(wrong_type_error(function, index, "matrix<index>", other)),
+  }
+}
 
-  match value.kind().deref_kind() {
-    ValueKind::Matrix(_, _) => Ok(value.clone()),
-    _ => Err(wrong_type_error(function, index, "matrix", value)),
+#[cfg(all(feature = "matrix", feature = "bool"))]
+pub fn host_arg_matrix_bool(
+  function: &str,
+  args: &[Value],
+  index: usize,
+) -> MResult<mech_core::Matrix<bool>> {
+  match host_arg(function, args, index)? {
+    Value::MatrixBool(value) => Ok(value.clone()),
+    other => Err(wrong_type_error(function, index, "matrix<bool>", other)),
+  }
+}
+
+#[cfg(all(feature = "matrix", feature = "u8"))]
+pub fn host_arg_matrix_u8(
+  function: &str,
+  args: &[Value],
+  index: usize,
+) -> MResult<mech_core::Matrix<u8>> {
+  match host_arg(function, args, index)? {
+    Value::MatrixU8(value) => Ok(value.clone()),
+    other => Err(wrong_type_error(function, index, "matrix<u8>", other)),
+  }
+}
+
+#[cfg(all(feature = "matrix", feature = "u16"))]
+pub fn host_arg_matrix_u16(
+  function: &str,
+  args: &[Value],
+  index: usize,
+) -> MResult<mech_core::Matrix<u16>> {
+  match host_arg(function, args, index)? {
+    Value::MatrixU16(value) => Ok(value.clone()),
+    other => Err(wrong_type_error(function, index, "matrix<u16>", other)),
+  }
+}
+
+#[cfg(all(feature = "matrix", feature = "u32"))]
+pub fn host_arg_matrix_u32(
+  function: &str,
+  args: &[Value],
+  index: usize,
+) -> MResult<mech_core::Matrix<u32>> {
+  match host_arg(function, args, index)? {
+    Value::MatrixU32(value) => Ok(value.clone()),
+    other => Err(wrong_type_error(function, index, "matrix<u32>", other)),
+  }
+}
+
+#[cfg(all(feature = "matrix", feature = "u64"))]
+pub fn host_arg_matrix_u64(
+  function: &str,
+  args: &[Value],
+  index: usize,
+) -> MResult<mech_core::Matrix<u64>> {
+  match host_arg(function, args, index)? {
+    Value::MatrixU64(value) => Ok(value.clone()),
+    other => Err(wrong_type_error(function, index, "matrix<u64>", other)),
+  }
+}
+
+#[cfg(all(feature = "matrix", feature = "u128"))]
+pub fn host_arg_matrix_u128(
+  function: &str,
+  args: &[Value],
+  index: usize,
+) -> MResult<mech_core::Matrix<u128>> {
+  match host_arg(function, args, index)? {
+    Value::MatrixU128(value) => Ok(value.clone()),
+    other => Err(wrong_type_error(function, index, "matrix<u128>", other)),
+  }
+}
+
+#[cfg(all(feature = "matrix", feature = "i8"))]
+pub fn host_arg_matrix_i8(
+  function: &str,
+  args: &[Value],
+  index: usize,
+) -> MResult<mech_core::Matrix<i8>> {
+  match host_arg(function, args, index)? {
+    Value::MatrixI8(value) => Ok(value.clone()),
+    other => Err(wrong_type_error(function, index, "matrix<i8>", other)),
+  }
+}
+
+#[cfg(all(feature = "matrix", feature = "i16"))]
+pub fn host_arg_matrix_i16(
+  function: &str,
+  args: &[Value],
+  index: usize,
+) -> MResult<mech_core::Matrix<i16>> {
+  match host_arg(function, args, index)? {
+    Value::MatrixI16(value) => Ok(value.clone()),
+    other => Err(wrong_type_error(function, index, "matrix<i16>", other)),
+  }
+}
+
+#[cfg(all(feature = "matrix", feature = "i32"))]
+pub fn host_arg_matrix_i32(
+  function: &str,
+  args: &[Value],
+  index: usize,
+) -> MResult<mech_core::Matrix<i32>> {
+  match host_arg(function, args, index)? {
+    Value::MatrixI32(value) => Ok(value.clone()),
+    other => Err(wrong_type_error(function, index, "matrix<i32>", other)),
+  }
+}
+
+#[cfg(all(feature = "matrix", feature = "i64"))]
+pub fn host_arg_matrix_i64(
+  function: &str,
+  args: &[Value],
+  index: usize,
+) -> MResult<mech_core::Matrix<i64>> {
+  match host_arg(function, args, index)? {
+    Value::MatrixI64(value) => Ok(value.clone()),
+    other => Err(wrong_type_error(function, index, "matrix<i64>", other)),
+  }
+}
+
+#[cfg(all(feature = "matrix", feature = "i128"))]
+pub fn host_arg_matrix_i128(
+  function: &str,
+  args: &[Value],
+  index: usize,
+) -> MResult<mech_core::Matrix<i128>> {
+  match host_arg(function, args, index)? {
+    Value::MatrixI128(value) => Ok(value.clone()),
+    other => Err(wrong_type_error(function, index, "matrix<i128>", other)),
+  }
+}
+
+#[cfg(all(feature = "matrix", feature = "f32"))]
+pub fn host_arg_matrix_f32(
+  function: &str,
+  args: &[Value],
+  index: usize,
+) -> MResult<mech_core::Matrix<f32>> {
+  match host_arg(function, args, index)? {
+    Value::MatrixF32(value) => Ok(value.clone()),
+    other => Err(wrong_type_error(function, index, "matrix<f32>", other)),
+  }
+}
+
+#[cfg(all(feature = "matrix", feature = "f64"))]
+pub fn host_arg_matrix_f64(
+  function: &str,
+  args: &[Value],
+  index: usize,
+) -> MResult<mech_core::Matrix<f64>> {
+  match host_arg(function, args, index)? {
+    Value::MatrixF64(value) => Ok(value.clone()),
+    other => Err(wrong_type_error(function, index, "matrix<f64>", other)),
+  }
+}
+
+#[cfg(all(feature = "matrix", feature = "string"))]
+pub fn host_arg_matrix_string(
+  function: &str,
+  args: &[Value],
+  index: usize,
+) -> MResult<mech_core::Matrix<String>> {
+  match host_arg(function, args, index)? {
+    Value::MatrixString(value) => Ok(value.clone()),
+    other => Err(wrong_type_error(function, index, "matrix<string>", other)),
+  }
+}
+
+#[cfg(feature = "matrix")]
+pub fn host_arg_matrix_value_matrix(
+  function: &str,
+  args: &[Value],
+  index: usize,
+) -> MResult<mech_core::Matrix<Value>> {
+  match host_arg(function, args, index)? {
+    Value::MatrixValue(value) => Ok(value.clone()),
+    other => Err(wrong_type_error(function, index, "matrix<value>", other)),
   }
 }
 
@@ -626,58 +803,72 @@ pub fn value_empty() -> Value {
   Value::Empty
 }
 
+#[cfg(feature = "string")]
 pub fn value_string(value: impl Into<String>) -> Value {
   Value::String(Ref::new(value.into()))
 }
 
+#[cfg(feature = "bool")]
 pub fn value_bool(value: bool) -> Value {
   Value::Bool(Ref::new(value))
 }
 
+#[cfg(feature = "u8")]
 pub fn value_u8(value: u8) -> Value {
   Value::U8(Ref::new(value))
 }
 
+#[cfg(feature = "u16")]
 pub fn value_u16(value: u16) -> Value {
   Value::U16(Ref::new(value))
 }
 
+#[cfg(feature = "u32")]
 pub fn value_u32(value: u32) -> Value {
   Value::U32(Ref::new(value))
 }
 
+#[cfg(feature = "u64")]
 pub fn value_u64(value: u64) -> Value {
   Value::U64(Ref::new(value))
 }
 
+#[cfg(feature = "u128")]
 pub fn value_u128(value: u128) -> Value {
   Value::U128(Ref::new(value))
 }
 
+#[cfg(feature = "i8")]
 pub fn value_i8(value: i8) -> Value {
   Value::I8(Ref::new(value))
 }
 
+#[cfg(feature = "i16")]
 pub fn value_i16(value: i16) -> Value {
   Value::I16(Ref::new(value))
 }
 
+#[cfg(feature = "i32")]
 pub fn value_i32(value: i32) -> Value {
   Value::I32(Ref::new(value))
 }
 
+#[cfg(feature = "i64")]
 pub fn value_i64(value: i64) -> Value {
   Value::I64(Ref::new(value))
 }
 
+#[cfg(feature = "i128")]
 pub fn value_i128(value: i128) -> Value {
   Value::I128(Ref::new(value))
 }
 
+#[cfg(feature = "f32")]
 pub fn value_f32(value: f32) -> Value {
   Value::F32(Ref::new(value))
 }
 
+#[cfg(feature = "f64")]
 pub fn value_f64(value: f64) -> Value {
   Value::F64(Ref::new(value))
 }
@@ -738,6 +929,7 @@ impl IntoHostValue for Value {
   }
 }
 
+#[cfg(feature = "string")]
 impl FromHostValue for String {
   fn from_host_value(
     function: &str,
@@ -748,18 +940,21 @@ impl FromHostValue for String {
   }
 }
 
+#[cfg(feature = "string")]
 impl IntoHostValue for String {
   fn into_host_value(self) -> Value {
     value_string(self)
   }
 }
 
+#[cfg(feature = "string")]
 impl IntoHostValue for &str {
   fn into_host_value(self) -> Value {
     value_string(self)
   }
 }
 
+#[cfg(feature = "bool")]
 impl FromHostValue for bool {
   fn from_host_value(
     function: &str,
@@ -770,6 +965,7 @@ impl FromHostValue for bool {
   }
 }
 
+#[cfg(feature = "bool")]
 impl IntoHostValue for bool {
   fn into_host_value(self) -> Value {
     value_bool(self)
@@ -796,17 +992,29 @@ macro_rules! impl_host_numeric {
   };
 }
 
+#[cfg(feature = "u8")]
 impl_host_numeric!(u8, host_arg_u8, value_u8);
+#[cfg(feature = "u16")]
 impl_host_numeric!(u16, host_arg_u16, value_u16);
+#[cfg(feature = "u32")]
 impl_host_numeric!(u32, host_arg_u32, value_u32);
+#[cfg(feature = "u64")]
 impl_host_numeric!(u64, host_arg_u64, value_u64);
+#[cfg(feature = "u128")]
 impl_host_numeric!(u128, host_arg_u128, value_u128);
+#[cfg(feature = "i8")]
 impl_host_numeric!(i8, host_arg_i8, value_i8);
+#[cfg(feature = "i16")]
 impl_host_numeric!(i16, host_arg_i16, value_i16);
+#[cfg(feature = "i32")]
 impl_host_numeric!(i32, host_arg_i32, value_i32);
+#[cfg(feature = "i64")]
 impl_host_numeric!(i64, host_arg_i64, value_i64);
+#[cfg(feature = "i128")]
 impl_host_numeric!(i128, host_arg_i128, value_i128);
+#[cfg(feature = "f32")]
 impl_host_numeric!(f32, host_arg_f32, value_f32);
+#[cfg(feature = "f64")]
 impl_host_numeric!(f64, host_arg_f64, value_f64);
 
 impl<T> FromHostValue for Option<T>

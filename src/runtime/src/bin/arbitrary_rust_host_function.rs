@@ -4,6 +4,7 @@ use std::sync::Arc;
 use mech_core::{MResult, Ref, Value};
 
 use mech_runtime::{
+  host_arg_string,
   BasicCapability,
   BasicCapabilityKernel,
   BasicOperation,
@@ -11,9 +12,7 @@ use mech_runtime::{
   BasicSubject,
   CapabilityId,
   ClosureHostFunction,
-  InMemorySourceResolver,
   RuntimeBuilder,
-  SourceRequest,
 };
 
 fn short_text(text: &str) -> String {
@@ -28,18 +27,33 @@ fn short(id: impl Display) -> String {
   short_text(&id.to_string())
 }
 
+fn fmt_value(value: &Value) -> String {
+  match value {
+    Value::String(text) => {
+      format!("String({:?})", short_text(&text.borrow()))
+    }
+    other => format!("{:?}", other),
+  }
+}
+
+#[derive(Debug, Clone)]
+struct DemoHostArgumentError {
+  function: String,
+  reason: String,
+}
+
+impl mech_core::MechErrorKind for DemoHostArgumentError {
+  fn name(&self) -> &str {
+    "DemoHostArgument"
+  }
+
+  fn message(&self) -> String {
+    format!("Invalid arguments for `{}`: {}", self.function, self.reason)
+  }
+}
+
 fn main() -> MResult<()> {
-  let mut source_resolver = InMemorySourceResolver::new();
-
-  source_resolver.insert_string(
-    "main",
-    r#"
-      demo/echo("hello from rust")
-    "#,
-  )?;
-
   let mut runtime = RuntimeBuilder::new()
-    .source_resolver(source_resolver)
     .capability_kernel(BasicCapabilityKernel::new())
     .build()?;
 
@@ -48,19 +62,42 @@ fn main() -> MResult<()> {
   runtime.register_mech_host_function(ClosureHostFunction::new(
     "demo/echo",
     |_services, _context, args| {
-      Ok(args
-        .into_iter()
-        .next()
-        .unwrap_or(Value::Empty))
+      let text = host_arg_string("demo/echo", &args, 0)?;
+
+      Ok(Value::String(Ref::new(format!(
+        "rust echoed: {}",
+        text,
+      ))))
     },
   ))?;
 
-  runtime.grant_capability(Arc::new(BasicCapability::new(
-    CapabilityId(1),
-    &BasicSubject::new("program:arbitrary-rust-host"),
-    &BasicResource::new("host:demo/echo"),
-    [BasicOperation::new("call")],
-  )))?;
+  runtime.register_mech_host_function(ClosureHostFunction::new(
+    "demo/join",
+    |_services, _context, args| {
+      let left = host_arg_string("demo/join", &args, 0)?;
+      let right = host_arg_string("demo/join", &args, 1)?;
+
+      Ok(Value::String(Ref::new(format!(
+        "{} + {}",
+        left,
+        right,
+      ))))
+    },
+  ))?;
+
+  let subject = BasicSubject::new("program:arbitrary-rust-host");
+
+  for (id, name) in [
+    (1, "demo/echo"),
+    (2, "demo/join"),
+  ] {
+    runtime.grant_capability(Arc::new(BasicCapability::new(
+      CapabilityId(id),
+      &subject,
+      &BasicResource::new(format!("host:{}", name)),
+      [BasicOperation::new("call")],
+    )))?;
+  }
 
   let mut context = runtime
     .runtime_context()?
@@ -68,14 +105,38 @@ fn main() -> MResult<()> {
 
   let value = runtime.run_string_with_context(
     &mut context,
-    r#"demo/echo("hello from rust")"#,
+    r#"
+      demo/echo("in rust")
+    "#,
   )?;
-  
-  println!("result: {:?}", value);
+
+  println!("echo result: {}", fmt_value(&value));
 
   match value {
     Value::String(text) => {
-      assert_eq!(&*text.borrow(), "hello from rust");
+      assert_eq!(&*text.borrow(), "rust echoed: in rust");
+    }
+    other => {
+      panic!("expected string result, got {:?}", other);
+    }
+  }
+
+  let mut context = runtime
+    .runtime_context()?
+    .with_subject("program:arbitrary-rust-host");
+
+  let value = runtime.run_string_with_context(
+    &mut context,
+    r#"
+      demo/join("left", "right")
+    "#,
+  )?;
+
+  println!("join result: {}", fmt_value(&value));
+
+  match value {
+    Value::String(text) => {
+      assert_eq!(&*text.borrow(), "left + right");
     }
     other => {
       panic!("expected string result, got {:?}", other);
@@ -89,10 +150,10 @@ fn main() -> MResult<()> {
 
   for event in runtime.list_events(None)? {
     println!(
-      "  #{:03} {:24} {:?}",
+      "  #{:03} {:24} {}",
       event.sequence,
       event.name(),
-      event.kind,
+      format!("{:?}", &event.kind),
     );
   }
 
