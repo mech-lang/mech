@@ -22,12 +22,12 @@ default = ["baselib", "pretty_print", "serde", "program", "compiler", "mika",
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
       "statements_default", "subscript_default", "state_machines",
-      "mechfs", "async", "trace", "profile", "persister", "runloop",
+      "mechfs", "async", "trace", "profile", "persister", "runloop", "native",
       "mech-core/default", "mech-interpreter/default", "mech-syntax/default",
       ]
 base = ["baselib", "pretty_print", "serde", "program", "compiler", "mika",
       "statements_default", "subscript_default", "state_machines",
-      "mechfs", "async", "trace", "profile", "persister", "runloop",
+      "mechfs", "async", "trace", "profile", "persister", "runloop", "native",
       "mech-core/base", "mech-interpreter/base", "mech-syntax/base",
       ]
 
@@ -37,6 +37,7 @@ mechfs = ["bincode", "notify", "csv", "reqwest", "mech-syntax/formatter", "color
 async = []
 trace = []
 profile = []
+native = []
 
 statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]

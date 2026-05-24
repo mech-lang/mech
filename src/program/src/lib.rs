@@ -11,6 +11,8 @@ use mech_core::*;
 
 #[cfg(feature = "program")]
 pub mod program;
+#[cfg(feature = "native")]
+pub mod native;
 //#[cfg(feature = "runloop")]
 //pub mod runloop;
 //#[cfg(feature = "persister")]
@@ -18,6 +20,8 @@ pub mod program;
 
 #[cfg(feature = "program")]
 pub use crate::program::*;
+#[cfg(feature = "native")]
+pub use crate::native::*;
 //#[cfg(feature = "runloop")]
 //pub use crate::runloop::*;
 //#[cfg(feature = "persister")]
