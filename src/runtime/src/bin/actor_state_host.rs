@@ -86,7 +86,7 @@ fn main() -> MResult<()> {
   runtime.grant_capability(Arc::new(BasicCapability::new(
     CapabilityId(2),
     &subject,
-    &BasicResource::new("host:actor.message.payload"),
+    &BasicResource::new("host:actor/message/payload"),
     [BasicOperation::new("call")],
   )))?;
 
@@ -112,22 +112,22 @@ fn main() -> MResult<()> {
 
   let kind = runtime.call_host_with_context(
     &mut context,
-    HostCall::new("actor.message.kind", Vec::new()),
+    HostCall::new("actor/message/kind", Vec::new()),
   )?;
 
   let payload = runtime.call_host_with_context(
     &mut context,
-    HostCall::new("actor.message.payload", Vec::new()),
+    HostCall::new("actor/message/payload", Vec::new()),
   )?;
 
   let state = runtime.call_host_with_context(
     &mut context,
-    HostCall::new("actor.state.id", Vec::new()),
+    HostCall::new("actor/state/id", Vec::new()),
   )?;
 
-  println!("actor.message.kind -> {:?}", kind);
-  println!("actor.message.payload -> {:?}", payload);
-  println!("actor.state.id -> {:?}", state);
+  println!("actor/message/kind -> {:?}", kind);
+  println!("actor/message/payload -> {:?}", payload);
+  println!("actor/state/id -> {:?}", state);
 
   assert!(
     runtime.peek_message(actor)?.is_some(),

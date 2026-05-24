@@ -24,7 +24,7 @@ use mech_core::{
 };
 
 use mech_program::{
-  MechProgram, MechProgramConfig, MechProgramEnvironment, ProgramHostBridge
+  MechProgram, MechProgramConfig, MechProgramEnvironment
 };
 
 use crate::capability::{
@@ -571,7 +571,7 @@ impl MechRuntime {
         context,
       };
 
-      program.run_string_with_host(source, &mut bridge)
+      program.run_string(source)
     };
 
     self.program = program;

@@ -88,11 +88,11 @@ fn main() -> MResult<()> {
   let subject = BasicSubject::new("actor:services-host");
 
   for (id, name) in [
-    (1, "actor.message.kind"),
-    (2, "actor.message.payload"),
-    (3, "actor.state.id"),
-    (4, "actor.state.get"),
-    (5, "actor.state.put"),
+    (1, "actor/message/kind"),
+    (2, "actor/message/payload"),
+    (3, "actor/state/id"),
+    (4, "actor/state/get"),
+    (5, "actor/state/put"),
   ] {
     runtime.grant_capability(Arc::new(BasicCapability::new(
       CapabilityId(id),
@@ -117,39 +117,39 @@ fn main() -> MResult<()> {
 
   let kind = runtime.call_host_with_context(
     &mut context,
-    HostCall::new("actor.message.kind", Vec::new()),
+    HostCall::new("actor/message/kind", Vec::new()),
   )?;
 
   let payload = runtime.call_host_with_context(
     &mut context,
-    HostCall::new("actor.message.payload", Vec::new()),
+    HostCall::new("actor/message/payload", Vec::new()),
   )?;
 
   let state_id = runtime.call_host_with_context(
     &mut context,
-    HostCall::new("actor.state.id", Vec::new()),
+    HostCall::new("actor/state/id", Vec::new()),
   )?;
 
   let old_state = runtime.call_host_with_context(
     &mut context,
-    HostCall::new("actor.state.get", Vec::new()),
+    HostCall::new("actor/state/get", Vec::new()),
   )?;
 
   let new_state = runtime.call_host_with_context(
     &mut context,
     HostCall::new(
-      "actor.state.put",
+      "actor/state/put",
       vec![Value::String(Ref::new("count=1".to_string()))],
     ),
   )?;
 
   println!();
   println!("host calls:");
-  println!("  actor.message.kind    -> {:?}", kind);
-  println!("  actor.message.payload -> {:?}", payload);
-  println!("  actor.state.id        -> {:?}", state_id);
-  println!("  actor.state.get       -> {:?}", old_state);
-  println!("  actor.state.put       -> {:?}", new_state);
+  println!("  actor/message/kind    -> {:?}", kind);
+  println!("  actor/message/payload -> {:?}", payload);
+  println!("  actor/state/id        -> {:?}", state_id);
+  println!("  actor/state/get       -> {:?}", old_state);
+  println!("  actor/state/put       -> {:?}", new_state);
 
   assert!(
     runtime.peek_message(actor)?.is_some(),
@@ -177,7 +177,7 @@ fn main() -> MResult<()> {
   assert_ne!(
     updated_state,
     initial_state,
-    "actor.state.put should update actor state pointer",
+    "actor/state/put should update actor state pointer",
   );
 
   let updated_state_object = runtime
@@ -258,22 +258,22 @@ fn main() -> MResult<()> {
 
   assert!(
     transaction.read_set.contains(&initial_state),
-    "actor.state.get should record a read of the initial actor state",
+    "actor/state/get should record a read of the initial actor state",
   );
 
   assert!(
     transaction.write_set.contains(&updated_state),
-    "actor.state.put should record a write of the updated actor state",
+    "actor/state/put should record a write of the updated actor state",
   );
 
   assert!(
     transaction.message_acks.contains(&message),
-    "actor turn should record message ack",
+    "actor/state/put should record message ack",
   );
 
   assert!(
     transaction.actor_updates.contains(&actor),
-    "actor.state.put should record actor update",
+    "actor/state/put should record actor update",
   );
 
   println!();

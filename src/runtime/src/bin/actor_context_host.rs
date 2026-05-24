@@ -79,21 +79,21 @@ fn main() -> MResult<()> {
   let capability_kind = BasicCapability::new(
     CapabilityId(1),
     &subject,
-    &BasicResource::new("host:actor.message.kind"),
+    &BasicResource::new("host:actor/message/kind"),
     [BasicOperation::new("call")],
   );
 
   let capability_payload = BasicCapability::new(
     CapabilityId(2),
     &subject,
-    &BasicResource::new("host:actor.message.payload"),
+    &BasicResource::new("host:actor/message/payload"),
     [BasicOperation::new("call")],
   );
 
   let capability_state = BasicCapability::new(
     CapabilityId(3),
     &subject,
-    &BasicResource::new("host:actor.state.id"),
+    &BasicResource::new("host:actor/state/id"),
     [BasicOperation::new("call")],
   );
 
@@ -116,22 +116,22 @@ fn main() -> MResult<()> {
 
   let kind = runtime.call_host_with_context(
     &mut context,
-    HostCall::new("actor.message.kind", Vec::new()),
+    HostCall::new("actor/message/kind", Vec::new()),
   )?;
 
   let payload = runtime.call_host_with_context(
     &mut context,
-    HostCall::new("actor.message.payload", Vec::new()),
+    HostCall::new("actor/message/payload", Vec::new()),
   )?;
 
   let state = runtime.call_host_with_context(
     &mut context,
-    HostCall::new("actor.state.id", Vec::new()),
+    HostCall::new("actor/state/id", Vec::new()),
   )?;
 
-  println!("actor.message.kind -> {:?}", kind);
-  println!("actor.message.payload -> {:?}", payload);
-  println!("actor.state.id -> {:?}", state);
+  println!("actor/message/kind -> {:?}", kind);
+  println!("actor/message/payload -> {:?}", payload);
+  println!("actor/state/id -> {:?}", state);
 
   runtime.commit_runtime_transaction(&mut context)?;
 

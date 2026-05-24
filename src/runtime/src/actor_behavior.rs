@@ -76,10 +76,10 @@ impl ActorBehaviorDriver for NoActorBehaviorDriver {
 ///
 /// It performs:
 ///
-/// - `actor.message.kind`
-/// - `actor.message.payload`
-/// - `actor.state.get`
-/// - `actor.state.put(new_state)`
+/// - `actor/message/kind`
+/// - `actor/message/payload`
+/// - `actor/state/get`
+/// - `actor/state/put(new_state)`
 ///
 /// The returned values are intentionally ignored here. The event stream and
 /// transaction record are the proof.
@@ -129,19 +129,19 @@ impl ActorBehaviorDriver for HostCallActorBehaviorDriver {
     if self.read_message {
       runtime.call_host_with_context(
         context,
-        HostCall::new("actor.message.kind", Vec::new()),
+        HostCall::new("actor/message/kind", Vec::new()),
       )?;
 
       runtime.call_host_with_context(
         context,
-        HostCall::new("actor.message.payload", Vec::new()),
+        HostCall::new("actor/message/payload", Vec::new()),
       )?;
     }
 
     if self.read_state {
       runtime.call_host_with_context(
         context,
-        HostCall::new("actor.state.get", Vec::new()),
+        HostCall::new("actor/state/get", Vec::new()),
       )?;
     }
 
@@ -149,7 +149,7 @@ impl ActorBehaviorDriver for HostCallActorBehaviorDriver {
       runtime.call_host_with_context(
         context,
         HostCall::new(
-          "actor.state.put",
+          "actor/state/put",
           vec![Value::String(Ref::new(self.new_state.clone()))],
         ),
       )?;

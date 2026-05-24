@@ -90,11 +90,11 @@ fn main() -> MResult<()> {
   let subject = BasicSubject::new("actor:scheduled-services-host");
 
   for (id, name) in [
-    (1, "actor.message.kind"),
-    (2, "actor.message.payload"),
-    (3, "actor.state.id"),
-    (4, "actor.state.get"),
-    (5, "actor.state.put"),
+    (1, "actor/message/kind"),
+    (2, "actor/message/payload"),
+    (3, "actor/state/id"),
+    (4, "actor/state/get"),
+    (5, "actor/state/put"),
   ] {
     runtime.grant_capability(Arc::new(BasicCapability::new(
       CapabilityId(id),
@@ -235,12 +235,12 @@ fn main() -> MResult<()> {
 
   assert!(
     transaction.read_set.contains(&initial_state),
-    "actor.state.get should record a read of the initial actor state",
+    "actor/state/get should record a read of the initial actor state",
   );
 
   assert!(
     transaction.write_set.contains(&updated_state),
-    "actor.state.put should record a write of the updated actor state",
+    "actor/state/put should record a write of the updated actor state",
   );
 
   assert!(
@@ -250,7 +250,7 @@ fn main() -> MResult<()> {
 
   assert!(
     transaction.actor_updates.contains(&actor),
-    "actor.state.put should record actor update",
+    "actor/state/put should record actor update",
   );
 
   println!();

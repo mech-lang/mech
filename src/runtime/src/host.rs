@@ -507,7 +507,7 @@ impl Default for ActorMessagePayloadHostFunction {
 
 impl HostFunction for ActorMessagePayloadHostFunction {
   fn name(&self) -> &str {
-    "actor.message.payload"
+    "actor/message/payload"
   }
 
   fn call(
