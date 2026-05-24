@@ -14,6 +14,7 @@ pub mod transaction;
 pub mod actor;
 pub mod services;
 pub mod actor_behavior;
+pub mod host_args;
 
 pub use self::id::*;
 pub use self::runtime::*;
@@ -29,3 +30,4 @@ pub use self::transaction::*;
 pub use self::actor::*;
 pub use self::services::*;
 pub use self::actor_behavior::*;
+pub use self::host_args::*;
