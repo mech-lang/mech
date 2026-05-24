@@ -74,6 +74,10 @@ use crate::transaction::{
 use crate::actor::ActorTurn;
 use crate::{RuntimeServices, NoRuntimeServices};
 
+use crate::actor_behavior::{
+  ActorBehaviorDriver, ActorBehaviorRuntime, NoActorBehaviorDriver,
+};
+
 // -----------------------------------------------------------------------------
 // Runtime Builder
 // -----------------------------------------------------------------------------
@@ -88,6 +92,7 @@ pub struct RuntimeBuilder {
   host_policy: Box<dyn HostCallPolicy>,
   scheduler: Box<dyn Scheduler>,
   scheduler_policy: SchedulerPolicy,
+  actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
 }
 
 impl std::fmt::Debug for RuntimeBuilder {
@@ -102,6 +107,7 @@ impl std::fmt::Debug for RuntimeBuilder {
       .field("host_policy", &"<dyn HostCallPolicy>")
       .field("scheduler", &"<dyn Scheduler>")
       .field("scheduler_policy", &self.scheduler_policy)
+      .field("actor_behavior_driver", &"<dyn ActorBehaviorDriver>")
       .finish()
   }
 }
@@ -118,6 +124,7 @@ impl Default for RuntimeBuilder {
       host_policy: Box::new(DefaultHostCallPolicy),
       scheduler: Box::new(InMemoryScheduler::new()),
       scheduler_policy: SchedulerPolicy::default(),
+      actor_behavior_driver: Box::new(NoActorBehaviorDriver::new()),
     }
   }
 }
@@ -187,6 +194,14 @@ impl RuntimeBuilder {
     self
   }
 
+  pub fn actor_behavior_driver(
+    mut self,
+    actor_behavior_driver: impl ActorBehaviorDriver + 'static,
+  ) -> Self {
+    self.actor_behavior_driver = Box::new(actor_behavior_driver);
+    self
+  }
+
   pub fn build(mut self) -> MResult<MechRuntime> {
     self.config.validate()?;
     self.scheduler_policy.validate()?;
@@ -221,6 +236,7 @@ impl RuntimeBuilder {
       scheduler: self.scheduler,
       scheduler_policy: self.scheduler_policy,
       active_transactions: HashMap::new(),
+      actor_behavior_driver: self.actor_behavior_driver,
     };
 
     let mut context = runtime.runtime_context()?;
@@ -254,6 +270,7 @@ pub struct MechRuntime {
   scheduler: Box<dyn Scheduler>,
   scheduler_policy: SchedulerPolicy,
   active_transactions: HashMap<TransactionId, RuntimeTransaction>,
+  actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
 }
 
 impl std::fmt::Debug for MechRuntime {
@@ -272,6 +289,7 @@ impl std::fmt::Debug for MechRuntime {
       .field("scheduler", &"<dyn Scheduler>")
       .field("scheduler_policy", &self.scheduler_policy)
       .field("active_transactions", &self.active_transactions.len())
+      .field("actor_behavior_driver", &"<dyn ActorBehaviorDriver>")
       .finish()
   }
 }
@@ -355,6 +373,14 @@ impl MechRuntime {
 
   pub fn scheduler_policy_mut(&mut self) -> &mut SchedulerPolicy {
     &mut self.scheduler_policy
+  }
+
+  pub fn actor_behavior_driver(&self) -> &dyn ActorBehaviorDriver {
+    self.actor_behavior_driver.as_ref()
+  }
+
+  pub fn actor_behavior_driver_mut(&mut self) -> &mut dyn ActorBehaviorDriver {
+    self.actor_behavior_driver.as_mut()
   }
 
   pub fn set_scheduler_policy(&mut self, scheduler_policy: SchedulerPolicy) -> MResult<()> {
@@ -1591,6 +1617,17 @@ impl MechRuntime {
       self.run_module_with_context(context, behavior)?;
     }
 
+    let mut driver = std::mem::replace(
+      &mut self.actor_behavior_driver,
+      Box::new(NoActorBehaviorDriver::new()),
+    );
+
+    let driver_result = driver.run_actor_turn(self, context, turn);
+
+    self.actor_behavior_driver = driver;
+
+    driver_result?;
+
     self.emit_event_to_context(
       context,
       RuntimeEventKind::ActorTurnCompleted {
@@ -2280,6 +2317,16 @@ impl RuntimeServices for MechRuntime {
     actor: ActorRecord,
   ) -> MResult<ActorId> {
     MechRuntime::update_actor_with_context(self, context, actor)
+  }
+}
+
+impl ActorBehaviorRuntime for MechRuntime {
+  fn call_host_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    call: HostCall,
+  ) -> MResult<Value> {
+    MechRuntime::call_host_with_context(self, context, call)
   }
 }
 
