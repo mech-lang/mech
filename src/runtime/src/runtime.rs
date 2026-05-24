@@ -24,7 +24,7 @@ use mech_core::{
 };
 
 use mech_program::{
-  MechProgram, MechProgramConfig, MechProgramEnvironment,
+  MechProgram, MechProgramConfig, MechProgramEnvironment, ProgramHostBridge
 };
 
 use crate::capability::{
@@ -72,7 +72,7 @@ use crate::transaction::{
 };
 
 use crate::actor::ActorTurn;
-use crate::{RuntimeServices, NoRuntimeServices};
+use crate::{RuntimeServices};
 
 use crate::actor_behavior::{
   ActorBehaviorDriver, ActorBehaviorRuntime, NoActorBehaviorDriver,
@@ -559,7 +559,22 @@ impl MechRuntime {
       },
     )?;
 
-    let result = self.program.run_string(source);
+    let program_config = self.program.config.clone();
+    let mut program = std::mem::replace(
+      &mut self.program,
+      MechProgram::new(program_config),
+    );
+
+    let result = {
+      let mut bridge = RuntimeProgramHostBridge {
+        runtime: self,
+        context,
+      };
+
+      program.run_string_with_host(source, &mut bridge)
+    };
+
+    self.program = program;
 
     match &result {
       Ok(_) => {
@@ -620,7 +635,9 @@ impl MechRuntime {
     };
 
     match source {
-      MechSourceCode::String(source) => self.run_string_with_context(context, &source),
+      MechSourceCode::String(source) => {
+        self.run_string_with_context(context, &source)
+      }
       other => {
         self.emit_event_to_context(
           context,
@@ -2317,6 +2334,24 @@ impl RuntimeServices for MechRuntime {
     actor: ActorRecord,
   ) -> MResult<ActorId> {
     MechRuntime::update_actor_with_context(self, context, actor)
+  }
+}
+
+struct RuntimeProgramHostBridge<'a> {
+  runtime: &'a mut MechRuntime,
+  context: &'a mut RuntimeContext,
+}
+
+impl<'a> ProgramHostBridge for RuntimeProgramHostBridge<'a> {
+  fn call_host(
+    &mut self,
+    name: &str,
+    args: Vec<Value>,
+  ) -> MResult<Value> {
+    self.runtime.call_host_with_context(
+      self.context,
+      HostCall::new(name, args),
+    )
   }
 }
 
