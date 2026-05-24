@@ -4,7 +4,6 @@ use std::sync::Arc;
 use mech_core::{MResult, Ref, Value};
 
 use mech_runtime::{
-  host_arg_string,
   BasicCapability,
   BasicCapabilityKernel,
   BasicOperation,
@@ -14,6 +13,8 @@ use mech_runtime::{
   ClosureHostFunction,
   RuntimeBuilder,
 };
+
+use mech_runtime::arg::host_arg_string;
 
 fn short_text(text: &str) -> String {
   if text.len() <= 18 {
@@ -33,22 +34,6 @@ fn fmt_value(value: &Value) -> String {
       format!("String({:?})", short_text(&text.borrow()))
     }
     other => format!("{:?}", other),
-  }
-}
-
-#[derive(Debug, Clone)]
-struct DemoHostArgumentError {
-  function: String,
-  reason: String,
-}
-
-impl mech_core::MechErrorKind for DemoHostArgumentError {
-  fn name(&self) -> &str {
-    "DemoHostArgument"
-  }
-
-  fn message(&self) -> String {
-    format!("Invalid arguments for `{}`: {}", self.function, self.reason)
   }
 }
 

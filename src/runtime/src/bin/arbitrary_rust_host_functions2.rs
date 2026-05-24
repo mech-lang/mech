@@ -4,13 +4,6 @@ use std::sync::Arc;
 use mech_core::{MResult, Value};
 
 use mech_runtime::{
-  host_arg_cloned,
-  host_arg_optional_string,
-  host_call1,
-  host_call2,
-  host_call3,
-  host_call_result1,
-  value_string,
   BasicCapability,
   BasicCapabilityKernel,
   BasicOperation,
@@ -20,6 +13,8 @@ use mech_runtime::{
   ClosureHostFunction,
   RuntimeBuilder,
 };
+
+use mech_runtime::host::*;
 
 fn short_text(text: &str) -> String {
   if text.len() <= 18 {
