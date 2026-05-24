@@ -452,7 +452,7 @@ impl Default for ActorMessageKindHostFunction {
 
 impl HostFunction for ActorMessageKindHostFunction {
   fn name(&self) -> &str {
-    "actor.message.kind"
+    "actor/message/kind"
   }
 
   fn call(
@@ -562,7 +562,7 @@ impl Default for ActorStateIdHostFunction {
 
 impl HostFunction for ActorStateIdHostFunction {
   fn name(&self) -> &str {
-    "actor.state.id"
+    "actor/state/id"
   }
 
   fn call(
@@ -611,7 +611,7 @@ impl Default for ActorStateGetHostFunction {
 
 impl HostFunction for ActorStateGetHostFunction {
   fn name(&self) -> &str {
-    "actor.state.get"
+    "actor/state/get"
   }
 
   fn call(
@@ -664,7 +664,7 @@ impl Default for ActorStatePutHostFunction {
 
 impl HostFunction for ActorStatePutHostFunction {
   fn name(&self) -> &str {
-    "actor.state.put"
+    "actor/state/put"
   }
 
   fn call(

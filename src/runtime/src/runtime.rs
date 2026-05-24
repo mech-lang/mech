@@ -17,10 +17,12 @@
 //! and accumulated events.
 
 use std::sync::Arc;
+use std::cell::RefCell;
 use std::collections::HashMap;
 
 use mech_core::{
-  MResult, MechError, MechErrorKind, MechSourceCode, Value,
+  MResult, MechError, MechErrorKind, MechSourceCode, Value, NativeFunctionCompiler, MechFunctionImpl,
+  Register, CompileCtx, MechFunctionCompiler,
 };
 
 use mech_program::{
@@ -77,6 +79,143 @@ use crate::{RuntimeServices};
 use crate::actor_behavior::{
   ActorBehaviorDriver, ActorBehaviorRuntime, NoActorBehaviorDriver,
 };
+
+// -----------------------------------------------------------------------------
+// Runtime Program Host Functions
+// ----------------------------------------------------------------------------
+
+thread_local! {
+  static ACTIVE_RUNTIME_PROGRAM_HOST: RefCell<Option<RuntimeProgramHostTarget>> =
+    RefCell::new(None);
+}
+
+#[derive(Clone, Copy)]
+struct RuntimeProgramHostTarget {
+  runtime: *mut MechRuntime,
+  context: *mut RuntimeContext,
+}
+
+#[derive(Clone, Debug)]
+pub struct RuntimeHostNativeFunctionCompiler {
+  pub mech_name: String,
+  pub host_name: String,
+}
+
+impl RuntimeHostNativeFunctionCompiler {
+  pub fn new(
+    mech_name: impl Into<String>,
+    host_name: impl Into<String>,
+  ) -> Self {
+    Self {
+      mech_name: mech_name.into(),
+      host_name: host_name.into(),
+    }
+  }
+}
+
+impl NativeFunctionCompiler for RuntimeHostNativeFunctionCompiler {
+  fn compile(
+    &self,
+    arguments: &Vec<Value>,
+  ) -> MResult<Box<dyn mech_core::MechFunction>> {
+    let value = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      let target = slot.borrow().ok_or_else(|| {
+        MechError::new(
+          RuntimeProgramHostNotActiveError {
+            function: self.mech_name.clone(),
+          },
+          None,
+        )
+      })?;
+
+      // Safety: this target is installed only around `program.run_string(...)`
+      // in `run_string_with_context`. During that call the `MechProgram` has
+      // been moved out of `self`, so calling back into the runtime does not
+      // alias `self.program`.
+      unsafe {
+        (&mut *target.runtime).call_host_with_context(
+          &mut *target.context,
+          HostCall::new(&self.host_name, arguments.clone()),
+        )
+      }
+    })?;
+
+    Ok(Box::new(RuntimeHostNativeFunction {
+      name: self.mech_name.clone(),
+      value,
+    }))
+  }
+}
+
+#[derive(Clone, Debug)]
+pub struct RuntimeHostNativeFunction {
+  pub name: String,
+  pub value: Value,
+}
+
+impl MechFunctionImpl for RuntimeHostNativeFunction {
+  fn solve(&self) {
+    // The runtime host call already ran during native function compilation.
+  }
+
+  fn out(&self) -> Value {
+    self.value.clone()
+  }
+
+  fn to_string(&self) -> String {
+    format!("RuntimeHostNativeFunction::{}", self.name)
+  }
+}
+
+impl MechFunctionCompiler for RuntimeHostNativeFunction {
+  fn compile(
+    &self,
+    _ctx: &mut CompileCtx,
+  ) -> MResult<Register> {
+    Err(MechError::new(
+      RuntimeHostFunctionNotBytecodeCompilableError {
+        function: self.name.clone(),
+      },
+      None,
+    ))
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeProgramHostNotActiveError {
+  pub function: String,
+}
+
+impl MechErrorKind for RuntimeProgramHostNotActiveError {
+  fn name(&self) -> &str {
+    "RuntimeProgramHostNotActive"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Runtime host function `{}` was called without an active runtime context",
+      self.function,
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeHostFunctionNotBytecodeCompilableError {
+  pub function: String,
+}
+
+impl MechErrorKind for RuntimeHostFunctionNotBytecodeCompilableError {
+  fn name(&self) -> &str {
+    "RuntimeHostFunctionNotBytecodeCompilable"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Runtime host function `{}` cannot be compiled to bytecode yet",
+      self.function,
+    )
+  }
+}
 
 // -----------------------------------------------------------------------------
 // Runtime Builder
@@ -565,14 +704,26 @@ impl MechRuntime {
       MechProgram::new(program_config),
     );
 
-    let result = {
-      let mut bridge = RuntimeProgramHostBridge {
-        runtime: self,
-        context,
-      };
+    self.register_runtime_program_host_functions(
+      context,
+      &mut program,
+    )?;
 
-      program.run_string(source)
-    };
+    let runtime_ptr: *mut MechRuntime = self;
+    let context_ptr: *mut RuntimeContext = context;
+
+    let previous_target = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      slot.replace(Some(RuntimeProgramHostTarget {
+        runtime: runtime_ptr,
+        context: context_ptr,
+      }))
+    });
+
+    let result = program.run_string(source);
+
+    ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      slot.replace(previous_target);
+    });
 
     self.program = program;
 
@@ -1940,6 +2091,27 @@ impl MechRuntime {
   // Host Calls
   // ---------------------------------------------------------------------------
 
+  fn register_runtime_program_host_functions(
+    &mut self,
+    _context: &mut RuntimeContext,
+    program: &mut MechProgram,
+  ) -> MResult<()> {
+    for name in [
+      "actor/message/kind",
+      "actor/message/payload",
+      "actor/state/id",
+      "actor/state/get",
+      "actor/state/put",
+    ] {
+      program.register_native_function_compiler(
+        name,
+        Arc::new(RuntimeHostNativeFunctionCompiler::new(name, name)),
+      );
+    }
+
+    Ok(())
+  }
+
   pub fn call_host(&mut self, call: HostCall) -> MResult<Value> {
     let mut context = self.runtime_context()?;
     self.call_host_with_context(&mut context, call)
@@ -2334,24 +2506,6 @@ impl RuntimeServices for MechRuntime {
     actor: ActorRecord,
   ) -> MResult<ActorId> {
     MechRuntime::update_actor_with_context(self, context, actor)
-  }
-}
-
-struct RuntimeProgramHostBridge<'a> {
-  runtime: &'a mut MechRuntime,
-  context: &'a mut RuntimeContext,
-}
-
-impl<'a> ProgramHostBridge for RuntimeProgramHostBridge<'a> {
-  fn call_host(
-    &mut self,
-    name: &str,
-    args: Vec<Value>,
-  ) -> MResult<Value> {
-    self.runtime.call_host_with_context(
-      self.context,
-      HostCall::new(name, args),
-    )
   }
 }
 
