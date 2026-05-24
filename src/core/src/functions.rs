@@ -128,6 +128,13 @@ impl Functions {
     self.dictionary.borrow_mut().insert(id, fxn.name.to_string());
   }
 
+  pub fn insert_function_compiler(&mut self, name: impl Into<String>, compiler: Arc<dyn NativeFunctionCompiler>) {
+    let name = name.into();
+    let id = hash_str(&name);
+    self.function_compilers.insert(id, compiler);
+    self.dictionary.borrow_mut().insert(id, name);
+  }
+
   #[cfg(feature = "pretty_print")]
   pub fn pretty_print(&self) -> String {
     let mut output = String::new();
