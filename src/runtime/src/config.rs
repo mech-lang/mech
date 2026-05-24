@@ -153,6 +153,7 @@ impl RuntimeLimits {
   }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LogLevel {
   Error,

@@ -14,20 +14,54 @@ edition = "2024"
 rust-version = "1.92"
 
 [features]
-no_std = ["mech-program/no_std"]
-default = ["mech-program/default"]
-base = ["mech-program/base"]
-persister = ["mech-program/persister"]
-runloop = ["mech-program/runloop"]
-mechfs = ["mech-program/mechfs"]
-async = ["mech-program/async"]
-trace = ["dep:tracing", "mech-program/trace"]
-profile = ["mech-program/profile"]
-statements_default = ["mech-program/statements_default"]
-subscript_default = ["mech-program/subscript_default"]
+no_std = ["mech-core/no_std", "mech-program/no_std"]
 
-stdlib = ["mech-program/stdlib"]
-baselib = ["mech-program/baselib"]
+default = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
+      "u8", "u16", "u32", "u64", "u128", 
+      "i8", "i16", "i32", "i64", "i128", 
+      "f32", "f64", "c64", "r64",
+      "statements_default", "subscript_default", "state_machines",
+
+      "mech-core/default", "mech-program/default"
+      ]
+base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
+      "statements_default", "subscript_default", "state_machines",
+      
+      "mech-core/base", "mech-program/base"
+      ]
+
+async = ["mech-program/async"]
+
+statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
+subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
+
+stdlib = ["bool", "string", 
+      "u8", "u16", "u32", "u64", "u128", 
+      "i8", "i16", "i32", "i64", "i128", 
+      "f32", "f64", "c64", "r64", 
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
+      "row_vector2", "row_vector3", "row_vector4",
+      "vector2", "vector3", "vector4",
+      "row_vectord", "vectord", "matrixd",
+      "subscript_range", "logical_indexing", "swizzle",
+      "subscript_formula", "dot_indexing",
+      "variable_define", "variable_assign", "kind_define",
+      "kind_annotation", "variables",
+      "functions", "formulas"
+    ]
+
+baselib = ["bool", "string", 
+      "f64", "c64", "r64",
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "row_vectord", "vectord", "matrixd",
+      "subscript_range", "logical_indexing", 
+      "subscript_formula",
+      "variable_define", "variable_assign", 
+      "kind_define",
+      "kind_annotation", "variables",
+      "functions", "formulas",
+    ]
 
 compiler = ["mech-program/compiler"]
 program = ["mech-program/program"]
