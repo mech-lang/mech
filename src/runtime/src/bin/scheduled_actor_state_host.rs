@@ -19,14 +19,16 @@ use mech_runtime::{
   SourceRequest,
 };
 
-fn short(id: impl Display) -> String {
-  let id = id.to_string();
-
-  if id.len() <= 12 {
-    return id;
+fn short_text(text: &str) -> String {
+  if text.len() <= 18 {
+    return text.to_string();
   }
 
-  format!("{}…{}", &id[..6], &id[id.len() - 6..])
+  format!("{}…{}", &text[..8], &text[text.len() - 8..])
+}
+
+fn short(id: impl Display) -> String {
+  short_text(&id.to_string())
 }
 
 fn main() -> MResult<()> {
@@ -81,9 +83,9 @@ fn main() -> MResult<()> {
     b"count by 1".to_vec(),
   )?;
 
-  println!("actor: {}", short(actor));
+  println!("actor:         {}", short(actor));
   println!("initial state: {}", short(initial_state));
-  println!("message: {}", short(message));
+  println!("message:       {}", short(message));
 
   let subject = BasicSubject::new("actor:scheduled-services-host");
 
@@ -113,8 +115,17 @@ fn main() -> MResult<()> {
     println!("  {:?}", outcome);
   }
 
-  assert_eq!(outcomes.len(), 1, "expected one actor turn outcome");
-  assert_eq!(outcomes[0].actor, Some(actor));
+  assert_eq!(
+    outcomes.len(),
+    1,
+    "expected one scheduled actor turn outcome",
+  );
+
+  assert_eq!(
+    outcomes[0].actor,
+    Some(actor),
+    "expected scheduled outcome to belong to actor",
+  );
 
   assert!(
     runtime.peek_message(actor)?.is_none(),
@@ -123,11 +134,11 @@ fn main() -> MResult<()> {
 
   let actor_after = runtime
     .get_actor(actor)?
-    .expect("actor should exist after scheduled turn");
+    .expect("actor should exist after scheduled actor turn");
 
   let updated_state = actor_after
     .state
-    .expect("actor should have state after scheduled turn");
+    .expect("actor should have state after scheduled actor turn");
 
   assert_ne!(
     updated_state,
@@ -137,12 +148,21 @@ fn main() -> MResult<()> {
 
   let updated_state_object = runtime
     .get_object(updated_state)?
-    .expect("updated actor state object should exist");
+    .expect("updated actor state object should exist after commit");
 
   assert_eq!(
     updated_state_object.data,
     b"count=1",
     "updated actor state object should contain written state",
+  );
+
+  println!();
+  println!("state update:");
+  println!("  old state: {}", short(initial_state));
+  println!("  new state: {}", short(updated_state));
+  println!(
+    "  data:      {:?}",
+    String::from_utf8_lossy(&updated_state_object.data),
   );
 
   runtime.shutdown()?;
@@ -171,8 +191,26 @@ fn main() -> MResult<()> {
       .map(|id| short(*id))
       .collect();
 
+    let message_sends: Vec<String> = transaction
+      .message_sends
+      .iter()
+      .map(|id| short(*id))
+      .collect();
+
+    let task_updates: Vec<String> = transaction
+      .task_updates
+      .iter()
+      .map(|id| short(*id))
+      .collect();
+
     let actor_updates: Vec<String> = transaction
       .actor_updates
+      .iter()
+      .map(|id| short(*id))
+      .collect();
+
+    let events: Vec<String> = transaction
+      .events
       .iter()
       .map(|id| short(*id))
       .collect();
@@ -182,8 +220,10 @@ fn main() -> MResult<()> {
     println!("    reads:         {:?}", reads);
     println!("    writes:        {:?}", writes);
     println!("    message_acks:  {:?}", message_acks);
+    println!("    message_sends: {:?}", message_sends);
+    println!("    task_updates:  {:?}", task_updates);
     println!("    actor_updates: {:?}", actor_updates);
-    println!("    events:        {}", transaction.events.len());
+    println!("    events:        {:?}", events);
   }
 
   let transaction = transactions
@@ -191,21 +231,21 @@ fn main() -> MResult<()> {
     .find(|transaction| {
       transaction.subject == "actor:scheduled-services-host"
     })
-    .expect("expected scheduled actor transaction");
+    .expect("expected scheduled actor services transaction");
 
   assert!(
     transaction.read_set.contains(&initial_state),
-    "actor.state.get should record initial state read",
+    "actor.state.get should record a read of the initial actor state",
   );
 
   assert!(
     transaction.write_set.contains(&updated_state),
-    "actor.state.put should record updated state write",
+    "actor.state.put should record a write of the updated actor state",
   );
 
   assert!(
     transaction.message_acks.contains(&message),
-    "actor turn should record message ack",
+    "scheduled actor turn should record message ack",
   );
 
   assert!(
