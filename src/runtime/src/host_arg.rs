@@ -97,7 +97,15 @@ pub fn host_arg_cloned(
   args: &[Value],
   index: usize,
 ) -> MResult<Value> {
-  Ok(host_arg(function, args, index)?.clone())
+  Ok(host_arg_resolved(function, args, index)?.clone())
+}
+
+pub fn host_arg_raw<'a>(
+  function: &str,
+  args: &'a [Value],
+  index: usize,
+) -> MResult<&'a Value> {
+  host_arg(function, args, index)
 }
 
 pub fn host_arg_resolved(
@@ -229,9 +237,9 @@ pub fn host_arg_optional(
     return Ok(None);
   }
 
-  let value = host_arg(function, args, index)?;
+  let value = host_arg_resolved(function, args, index)?;
 
-  if is_empty_value(value) {
+  if is_empty_value(&value) {
     return Ok(None);
   }
 
@@ -247,9 +255,9 @@ pub fn host_arg_string(
   args: &[Value],
   index: usize,
 ) -> MResult<String> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::String(value) => Ok(value.borrow().clone()),
-    other => Err(wrong_type_error(function, index, "string", other)),
+    other => Err(wrong_type_error(function, index, "string", &other)),
   }
 }
 
@@ -282,9 +290,9 @@ pub fn host_arg_bool(
   args: &[Value],
   index: usize,
 ) -> MResult<bool> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::Bool(value) => Ok(*value.borrow()),
-    other => Err(wrong_type_error(function, index, "bool", other)),
+    other => Err(wrong_type_error(function, index, "bool", &other)),
   }
 }
 
@@ -434,7 +442,7 @@ pub fn host_arg_f32(
   args: &[Value],
   index: usize,
 ) -> MResult<f32> {
-  Ok(*host_arg(function, args, index)?.as_f32()?.borrow())
+  Ok(*host_arg_resolved(function, args, index)?.as_f32()?.borrow())
 }
 
 #[cfg(feature = "f64")]
@@ -443,7 +451,7 @@ pub fn host_arg_f64(
   args: &[Value],
   index: usize,
 ) -> MResult<f64> {
-  Ok(*host_arg(function, args, index)?.as_f64()?.borrow())
+  Ok(*host_arg_resolved(function, args, index)?.as_f64()?.borrow())
 }
 
 #[cfg(feature = "f64")]
@@ -456,7 +464,7 @@ pub fn host_arg_optional_f64(
     return Ok(None);
   }
 
-  if is_empty_value(host_arg(function, args, index)?) {
+  if is_empty_value(&host_arg_resolved(function, args, index)?) {
     return Ok(None);
   }
 
