@@ -406,7 +406,7 @@ pub fn set_comprehension(set_comp: &SetComprehension, p: &Interpreter) -> MResul
             .borrow()
             .function_compilers
             .get(&set_define_id)
-            .copied()
+            .cloned()
     };
     match set_define {
         Some(compiler) => execute_native_function_compiler(compiler, &values, p),
@@ -435,7 +435,7 @@ pub fn matrix_comprehension(matrix_comp: &MatrixComprehension, p: &Interpreter) 
             .borrow()
             .function_compilers
             .get(&horzcat_id)
-            .copied()
+            .cloned()
     };
     match horzcat {
         Some(compiler) => execute_native_function_compiler(compiler, &values, p),
@@ -1094,7 +1094,7 @@ fn infer_missing_enum_match_patterns(
         candidates[0]
     };
     let variant_ids: HashSet<u64> = enum_def.variants.iter().map(|(id, _)| *id).collect();
-    let missing_ids: Vec<u64> = variant_ids.difference(&arm_tags).copied().collect();
+    let missing_ids: Vec<u64> = variant_ids.difference(&arm_tags).cloned().collect();
     let names_brrw = enum_def.names.borrow();
     let missing_patterns = enum_def
         .variants

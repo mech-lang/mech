@@ -150,6 +150,7 @@ pub use mech_matrix::*;
 pub use mech_set::*;
 #[cfg(feature = "stats")]
 pub use mech_stats::*;
+use std::sync::Arc;
 
 pub fn load_stdkinds(kinds: &mut KindTable) {
   #[cfg(feature = "u8")]
@@ -194,7 +195,7 @@ pub fn load_stdlib(fxns: &mut Functions) {
 
   for fxn_comp in inventory::iter::<FunctionCompilerDescriptor> {
     fxns.function_compilers
-      .insert(hash_str(fxn_comp.name), fxn_comp.ptr);
+      .insert(hash_str(fxn_comp.name), Arc::new(StaticNativeFunctionCompiler::new(fxn_comp.ptr)));
   }
 }
 
