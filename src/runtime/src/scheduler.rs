@@ -592,8 +592,8 @@ mod tests {
 
     let events = scheduler.pending_events();
 
-    assert_eq!(events[0].name(), "scheduler.work.queued");
-    assert_eq!(events[1].name(), "scheduler.work.started");
+    assert_eq!(events[0].name(), ":scheduler/work/queued");
+    assert_eq!(events[1].name(), ":scheduler/work/started");
   }
 
   #[test]
@@ -671,7 +671,7 @@ mod tests {
     );
     assert_eq!(
       scheduler.pending_events().last().unwrap().name(),
-      "scheduler.work.completed",
+      ":scheduler/work/completed",
     );
   }
 
@@ -687,7 +687,7 @@ mod tests {
     assert_eq!(scheduler.failures()[0].message, "boom");
     assert_eq!(
       scheduler.pending_events().last().unwrap().name(),
-      "scheduler.work.failed",
+      ":scheduler/work/failed",
     );
   }
 
@@ -727,10 +727,10 @@ mod tests {
 
     let events = scheduler.pending_events();
 
-    assert_eq!(events[0].name(), "runtime.tick.started");
-    assert_eq!(events[1].name(), "scheduler.work.started");
-    assert_eq!(events[2].name(), "scheduler.work.started");
-    assert_eq!(events[3].name(), "runtime.tick.completed");
+    assert_eq!(events[0].name(), ":runtime/tick/started");
+    assert_eq!(events[1].name(), ":scheduler/work/started");
+    assert_eq!(events[2].name(), ":scheduler/work/started");
+    assert_eq!(events[3].name(), ":runtime/tick/completed");
   }
 
   #[test]
