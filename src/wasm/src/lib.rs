@@ -11,6 +11,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::sync::Arc;
 use gloo_net::http::Request;
 use wasm_bindgen_futures::spawn_local;
 
@@ -46,140 +47,140 @@ fn new_interpreter(id: u64) -> Interpreter {
       
   // Preload combinatorics functions
   #[cfg(feature = "combinatorics_n_choose_k")]
-  fxns.function_compilers.insert(hash_str("combinatorics/n-choose-k"), &CombinatoricsNChooseK{});
+  fxns.function_compilers.insert(hash_str("combinatorics/n-choose-k"), Arc::new(CombinatoricsNChooseK{}));
 
   
   // Preload stats functions
   #[cfg(feature = "stats_sum")]
-  fxns.function_compilers.insert(hash_str("stats/sum/row"), &StatsSumRow{});
+  fxns.function_compilers.insert(hash_str("stats/sum/row"), Arc::new(StatsSumRow{}));
   #[cfg(feature = "stats_sum")]
-  fxns.function_compilers.insert(hash_str("stats/sum/column"), &StatsSumColumn{});
+  fxns.function_compilers.insert(hash_str("stats/sum/column"), Arc::new(StatsSumColumn{}));
 
   // Preload ops functions
   #[cfg(feature = "math_add")]
-  fxns.function_compilers.insert(hash_str("math/add"), &MathAdd{});
+  fxns.function_compilers.insert(hash_str("math/add"), Arc::new(MathAdd{}));
   #[cfg(feature = "math_sub")]
-  fxns.function_compilers.insert(hash_str("math/sub"), &MathSub{});
+  fxns.function_compilers.insert(hash_str("math/sub"), Arc::new(MathSub{}));
   #[cfg(feature = "math_mul")]
-  fxns.function_compilers.insert(hash_str("math/mul"), &MathMul{});
+  fxns.function_compilers.insert(hash_str("math/mul"), Arc::new(MathMul{}));
   #[cfg(feature = "math_div")]
-  fxns.function_compilers.insert(hash_str("math/div"), &MathDiv{});
+  fxns.function_compilers.insert(hash_str("math/div"), Arc::new(MathDiv{}));
   #[cfg(feature = "math_mod")]
-  fxns.function_compilers.insert(hash_str("math/mod"), &MathMod{});
+  fxns.function_compilers.insert(hash_str("math/mod"), Arc::new(MathMod{}));
   #[cfg(feature = "math_pow")]
-  fxns.function_compilers.insert(hash_str("math/pow"), &MathPow{});
+  fxns.function_compilers.insert(hash_str("math/pow"), Arc::new(MathPow{}));
   #[cfg(feature = "math_neg")]
-  fxns.function_compilers.insert(hash_str("math/neg"), &MathNegate{});
+  fxns.function_compilers.insert(hash_str("math/neg"), Arc::new(MathNegate{}));
   
   // Preload math functions
   #[cfg(feature = "math_sqrt")]
-  fxns.function_compilers.insert(hash_str("math/sqrt"), &MathSqrt{});
+  fxns.function_compilers.insert(hash_str("math/sqrt"), Arc::new(MathSqrt{}));
   
   // Preload trig functions
   #[cfg(feature = "math_sin")]
-  fxns.function_compilers.insert(hash_str("math/sin"), &MathSin{});
+  fxns.function_compilers.insert(hash_str("math/sin"), Arc::new(MathSin{}));
   #[cfg(feature = "math_cos")]
-  fxns.function_compilers.insert(hash_str("math/cos"), &MathCos{});
+  fxns.function_compilers.insert(hash_str("math/cos"), Arc::new(MathCos{}));
   #[cfg(feature = "math_atan2")]
-  fxns.function_compilers.insert(hash_str("math/atan2"), &MathAtan2{});
+  fxns.function_compilers.insert(hash_str("math/atan2"), Arc::new(MathAtan2{}));
   #[cfg(feature = "math_atan")]
-  fxns.function_compilers.insert(hash_str("math/atan"), &MathAtan{});
+  fxns.function_compilers.insert(hash_str("math/atan"), Arc::new(MathAtan{}));
   #[cfg(feature = "math_acos")]
-  fxns.function_compilers.insert(hash_str("math/acos"), &MathAcos{});
+  fxns.function_compilers.insert(hash_str("math/acos"), Arc::new(MathAcos{}));
   #[cfg(feature = "math_acosh")]
-  fxns.function_compilers.insert(hash_str("math/acosh"), &MathAcosh{});
+  fxns.function_compilers.insert(hash_str("math/acosh"), Arc::new(MathAcosh{}));
   #[cfg(feature = "math_acot")]
-  fxns.function_compilers.insert(hash_str("math/acot"), &MathAcot{});
+  fxns.function_compilers.insert(hash_str("math/acot"), Arc::new(MathAcot{}));
   #[cfg(feature = "math_acsc")]
-  fxns.function_compilers.insert(hash_str("math/acsc"), &MathAcsc{});
+  fxns.function_compilers.insert(hash_str("math/acsc"), Arc::new(MathAcsc{}));
   #[cfg(feature = "math_asec")]
-  fxns.function_compilers.insert(hash_str("math/asec"), &MathAsec{});
+  fxns.function_compilers.insert(hash_str("math/asec"), Arc::new(MathAsec{}));
   #[cfg(feature = "math_asin")]
-  fxns.function_compilers.insert(hash_str("math/asin"), &MathAsin{});
+  fxns.function_compilers.insert(hash_str("math/asin"), Arc::new(MathAsin{}));
   #[cfg(feature = "math_sinh")]
-  fxns.function_compilers.insert(hash_str("math/sinh"), &MathSinh{});
+  fxns.function_compilers.insert(hash_str("math/sinh"), Arc::new(MathSinh{}));
   #[cfg(feature = "math_cosh")]
-  fxns.function_compilers.insert(hash_str("math/cosh"), &MathCosh{});
+  fxns.function_compilers.insert(hash_str("math/cosh"), Arc::new(MathCosh{}));
   #[cfg(feature = "math_tanh")]
-  fxns.function_compilers.insert(hash_str("math/tanh"), &MathTanh{});
+  fxns.function_compilers.insert(hash_str("math/tanh"), Arc::new(MathTanh{}));
   #[cfg(feature = "math_atanh")]
-  fxns.function_compilers.insert(hash_str("math/atanh"), &MathAtanh{});
+  fxns.function_compilers.insert(hash_str("math/atanh"), Arc::new(MathAtanh{}));
   #[cfg(feature = "math_cot")]
-  fxns.function_compilers.insert(hash_str("math/cot"), &MathCot{});
+  fxns.function_compilers.insert(hash_str("math/cot"), Arc::new(MathCot{}));
   #[cfg(feature = "math_csc")]
-  fxns.function_compilers.insert(hash_str("math/csc"), &MathCsc{});
+  fxns.function_compilers.insert(hash_str("math/csc"), Arc::new(MathCsc{}));
   #[cfg(feature = "math_sec")]
-  fxns.function_compilers.insert(hash_str("math/sec"), &MathSec{});
+  fxns.function_compilers.insert(hash_str("math/sec"), Arc::new(MathSec{}));
   #[cfg(feature = "math_tan")]
-  fxns.function_compilers.insert(hash_str("math/tan"), &MathTan{});
+  fxns.function_compilers.insert(hash_str("math/tan"), Arc::new(MathTan{}));
 
   // Preload io functions
   //#[cfg(feature = "io_print")]
-  //fxns.function_compilers.insert(hash_str("io/print"), &IoPrint{});
+  //fxns.function_compilers.insert(hash_str("io/print"), Arc::new(IoPrint{}));
   //#[cfg(feature = "io_println")]
-  //fxns.function_compilers.insert(hash_str("io/println"), &IoPrintln{});
+  //fxns.function_compilers.insert(hash_str("io/println"), Arc::new(IoPrintln{}));
 
   // Matrix functions
   #[cfg(feature = "matrix_horzcat")]
-  fxns.function_compilers.insert(hash_str("matrix/horzcat"), &MatrixHorzCat{});
+  fxns.function_compilers.insert(hash_str("matrix/horzcat"), Arc::new(MatrixHorzCat{}));
   #[cfg(feature = "matrix_vertcat")]
-  fxns.function_compilers.insert(hash_str("matrix/vertcat"), &MatrixVertCat{});
+  fxns.function_compilers.insert(hash_str("matrix/vertcat"), Arc::new(MatrixVertCat{}));
   #[cfg(feature = "matrix_transpose")]
-  fxns.function_compilers.insert(hash_str("matrix/transpose"), &MatrixTranspose{});
+  fxns.function_compilers.insert(hash_str("matrix/transpose"), Arc::new(MatrixTranspose{}));
   #[cfg(feature = "matrix_matmul")]
-  fxns.function_compilers.insert(hash_str("matrix/matmul"), &MatrixMatMul{});
+  fxns.function_compilers.insert(hash_str("matrix/matmul"), Arc::new(MatrixMatMul{}));
   #[cfg(feature = "matrix_dot")]
-  fxns.function_compilers.insert(hash_str("matrix/dot"), &MatrixDot{});
+  fxns.function_compilers.insert(hash_str("matrix/dot"), Arc::new(MatrixDot{}));
   #[cfg(feature = "matrix_solve")]
-  fxns.function_compilers.insert(hash_str("matrix/solve"), &MatrixSolve{});
+  fxns.function_compilers.insert(hash_str("matrix/solve"), Arc::new(MatrixSolve{}));
   #[cfg(feature = "matrix_comprehensions")]
-  fxns.function_compilers.insert(hash_str("matrix/comprehension"), &MatrixComprehensionDefine{});
+  fxns.function_compilers.insert(hash_str("matrix/comprehension"), Arc::new(MatrixComprehensionDefine{}));
 
   // Compare functions
   #[cfg(feature = "compare_eq")]
-  fxns.function_compilers.insert(hash_str("compare/eq"), &CompareEqual{});
+  fxns.function_compilers.insert(hash_str("compare/eq"), Arc::new(CompareEqual{}));
   #[cfg(feature = "compare_neq")]
-  fxns.function_compilers.insert(hash_str("compare/neq"), &CompareNotEqual{});
+  fxns.function_compilers.insert(hash_str("compare/neq"), Arc::new(CompareNotEqual{}));
   #[cfg(feature = "compare_lte")]
-  fxns.function_compilers.insert(hash_str("compare/lte"), &CompareLessThanEqual{});
+  fxns.function_compilers.insert(hash_str("compare/lte"), Arc::new(CompareLessThanEqual{}));
   #[cfg(feature = "compare_gte")]
-  fxns.function_compilers.insert(hash_str("compare/gte"), &CompareGreaterThanEqual{});
+  fxns.function_compilers.insert(hash_str("compare/gte"), Arc::new(CompareGreaterThanEqual{}));
   #[cfg(feature = "compare_lt")]
-  fxns.function_compilers.insert(hash_str("compare/lt"), &CompareLessThan{});
+  fxns.function_compilers.insert(hash_str("compare/lt"), Arc::new(CompareLessThan{}));
   #[cfg(feature = "compare_gt")]
-  fxns.function_compilers.insert(hash_str("compare/gt"), &CompareGreaterThan{});
+  fxns.function_compilers.insert(hash_str("compare/gt"), Arc::new(CompareGreaterThan{}));
 
   // Logic functions
   #[cfg(feature = "logic_and")]
-  fxns.function_compilers.insert(hash_str("logic/and"), &LogicAnd{});
+  fxns.function_compilers.insert(hash_str("logic/and"), Arc::new(LogicAnd{}));
   #[cfg(feature = "logic_or")]
-  fxns.function_compilers.insert(hash_str("logic/or"), &LogicOr{});
+  fxns.function_compilers.insert(hash_str("logic/or"), Arc::new(LogicOr{}));
   #[cfg(feature = "logic_not")]
-  fxns.function_compilers.insert(hash_str("logic/not"), &LogicNot{});
+  fxns.function_compilers.insert(hash_str("logic/not"), Arc::new(LogicNot{}));
   #[cfg(feature = "logic_xor")]
-  fxns.function_compilers.insert(hash_str("logic/xor"), &LogicXor{});
+  fxns.function_compilers.insert(hash_str("logic/xor"), Arc::new(LogicXor{}));
 
   // Set Functions
   #[cfg(feature = "set_union")]
-  fxns.function_compilers.insert(hash_str("set/union"), &SetUnion{});
+  fxns.function_compilers.insert(hash_str("set/union"), Arc::new(SetUnion{}));
   #[cfg(feature = "set_intersection")]
-  fxns.function_compilers.insert(hash_str("set/intersection"), &SetIntersection{});
+  fxns.function_compilers.insert(hash_str("set/intersection"), Arc::new(SetIntersection{}));
   #[cfg(feature = "set_difference")]
-  fxns.function_compilers.insert(hash_str("set/difference"), &SetDifference{});
+  fxns.function_compilers.insert(hash_str("set/difference"), Arc::new(SetDifference{}));
   #[cfg(feature = "set_subset")]
-  fxns.function_compilers.insert(hash_str("set/subset"), &SetSubset{});
+  fxns.function_compilers.insert(hash_str("set/subset"), Arc::new(SetSubset{}));
   #[cfg(feature = "set_superset")]
-  fxns.function_compilers.insert(hash_str("set/superset"), &SetSuperset{});
+  fxns.function_compilers.insert(hash_str("set/superset"), Arc::new(SetSuperset{}));
   #[cfg(feature = "set_proper_subset")]
-  fxns.function_compilers.insert(hash_str("set/proper-subset"), &SetProperSubset{});
+  fxns.function_compilers.insert(hash_str("set/proper-subset"), Arc::new(SetProperSubset{}));
   #[cfg(feature = "set_proper_superset")]
-  fxns.function_compilers.insert(hash_str("set/proper-superset"), &SetProperSuperset{});
+  fxns.function_compilers.insert(hash_str("set/proper-superset"), Arc::new(SetProperSuperset{}));
   #[cfg(feature = "set_element_of")]
-  fxns.function_compilers.insert(hash_str("set/element-of"), &SetElementOf{});
+  fxns.function_compilers.insert(hash_str("set/element-of"), Arc::new(SetElementOf{}));
   #[cfg(feature = "set_not_element_of")]
-  fxns.function_compilers.insert(hash_str("set/not-element-of"), &SetNotElementOf{});
+  fxns.function_compilers.insert(hash_str("set/not-element-of"), Arc::new(SetNotElementOf{}));
   #[cfg(feature = "set_comprehensions")]
-  fxns.function_compilers.insert(hash_str("set/comprehension"), &SetComprehensionDefine{});
+  fxns.function_compilers.insert(hash_str("set/comprehension"), Arc::new(SetComprehensionDefine{}));
 
   intrp
 
