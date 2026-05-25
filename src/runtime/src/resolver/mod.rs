@@ -37,27 +37,12 @@ use crate::capability::CapabilityRequest;
 // -----------------------------------------------------------------------------
 
 pub mod memory;
-//pub mod composite;
-
-// Keep filesystem code out of mech-program. The filesystem resolver should live
-// under runtime::resolver::filesystem.
-//pub mod filesystem;
-
-// Store-backed source resolution can be added once the store has source lookup
-// by canonical URI, module name, or active module version.
-//pub mod store;
-
-// Later:
-//
-// pub mod package;
-// pub mod embedded;
-// pub mod network;
-// pub mod workspace;
+pub mod source;
+pub mod file;
 
 pub use memory::*;
-//pub use composite::*;
-//pub use filesystem::*;
-//pub use store::*;
+pub use source::*;
+pub use file::*;
 
 // -----------------------------------------------------------------------------
 // Source Request
@@ -168,6 +153,7 @@ pub struct ResolvedSource {
   pub name: String,
   pub canonical_uri: String,
   pub source: MechSourceCode,
+  pub kind: SourceKind,
   pub dependencies: Vec<SourceRequest>,
   pub capability_requirements: Vec<CapabilityRequest>,
 }
@@ -182,9 +168,15 @@ impl ResolvedSource {
       name: name.into(),
       canonical_uri: canonical_uri.into(),
       source,
+      kind: SourceKind::Unknown("".to_string()),
       dependencies: Vec::new(),
       capability_requirements: Vec::new(),
     }
+  }
+
+  pub fn with_kind(mut self, kind: SourceKind) -> Self {
+    self.kind = kind;
+    self
   }
 
   pub fn with_dependencies(mut self, dependencies: Vec<SourceRequest>) -> Self {
