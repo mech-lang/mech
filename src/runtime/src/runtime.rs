@@ -939,6 +939,7 @@ impl MechRuntime {
   ) -> MResult<ModuleVersionId> {
     let mut dependency_stack = Vec::new();
     let mut dependency_seen = HashSet::new();
+    let mut dependency_cache = HashMap::new();
 
     self.build_module_from_resolved_source_with_context_and_stack(
       context,
@@ -950,6 +951,7 @@ impl MechRuntime {
       capability_requirements,
       &mut dependency_stack,
       &mut dependency_seen,
+      &mut dependency_cache,
     )
   }
 
@@ -964,11 +966,16 @@ impl MechRuntime {
     capability_requirements: &[&str],
     dependency_stack: &mut Vec<String>,
     dependency_seen: &mut HashSet<String>,
+    dependency_cache: &mut HashMap<String, ModuleVersionId>,
   ) -> MResult<ModuleVersionId> {
     context.validate()?;
     context.charge_step()?;
 
     let canonical_uri = resolved.canonical_uri.clone();
+
+    if let Some(module_version) = dependency_cache.get(&canonical_uri) {
+      return Ok(*module_version);
+    }
 
     if dependency_seen.contains(&canonical_uri) {
       let mut cycle = dependency_stack.clone();
@@ -1024,6 +1031,7 @@ impl MechRuntime {
           capability_requirements,
           dependency_stack,
           dependency_seen,
+          dependency_cache,
         )? {
           dependency_versions.push(dependency_version);
         }
@@ -1055,6 +1063,7 @@ impl MechRuntime {
         .get_module_version(record.module_version)?
         .is_some()
       {
+        dependency_cache.insert(canonical_uri.clone(), record.module_version);
         return Ok(record.module_version);
       }
 
@@ -1068,6 +1077,8 @@ impl MechRuntime {
       .with_capability_requirements(record.capability_requirements);
 
       self.store.put_module_version(version)?;
+
+      dependency_cache.insert(canonical_uri.clone(), record.module_version);
 
       self.emit_event_to_context(
         context,
@@ -1096,6 +1107,7 @@ impl MechRuntime {
     capability_requirements: &[&str],
     dependency_stack: &mut Vec<String>,
     dependency_seen: &mut HashSet<String>,
+    dependency_cache: &mut HashMap<String, ModuleVersionId>,
   ) -> MResult<Option<ModuleVersionId>> {
     let Some(resolved) = self.resolve_source_with_context(context, request)? else {
       return Ok(None);
@@ -1112,6 +1124,7 @@ impl MechRuntime {
         capability_requirements,
         dependency_stack,
         dependency_seen,
+        dependency_cache,
       )?,
     ))
   }
@@ -1148,19 +1161,22 @@ impl MechRuntime {
     feature_flags: &[&str],
     capability_requirements: &[&str],
   ) -> MResult<Option<ModuleVersionId>> {
-    let Some(resolved) = self.resolve_source_with_context(context, request)? else {
-      return Ok(None);
-    };
+    let mut dependency_stack = Vec::new();
+    let mut dependency_seen = HashSet::new();
+    let mut dependency_cache = HashMap::new();
 
-    Ok(Some(self.build_module_from_resolved_source_with_context(
+    self.build_module_from_request_with_context_and_stack(
       context,
-      resolved,
+      request,
       compiler_version,
       language_edition,
       target,
       feature_flags,
       capability_requirements,
-    )?))
+      &mut dependency_stack,
+      &mut dependency_seen,
+      &mut dependency_cache,
+    )
   }
 
   pub fn put_source_module(
