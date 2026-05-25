@@ -18,7 +18,7 @@
 
 use std::sync::Arc;
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use mech_core::{
   MResult, MechError, MechErrorKind, MechSourceCode, Value, NativeFunctionCompiler, MechFunctionImpl,
@@ -937,98 +937,183 @@ impl MechRuntime {
     feature_flags: &[&str],
     capability_requirements: &[&str],
   ) -> MResult<ModuleVersionId> {
+    let mut dependency_stack = Vec::new();
+    let mut dependency_seen = HashSet::new();
+
+    self.build_module_from_resolved_source_with_context_and_stack(
+      context,
+      resolved,
+      compiler_version,
+      language_edition,
+      target,
+      feature_flags,
+      capability_requirements,
+      &mut dependency_stack,
+      &mut dependency_seen,
+    )
+  }
+
+  fn build_module_from_resolved_source_with_context_and_stack(
+    &mut self,
+    context: &mut RuntimeContext,
+    resolved: ResolvedSource,
+    compiler_version: &str,
+    language_edition: &str,
+    target: &str,
+    feature_flags: &[&str],
+    capability_requirements: &[&str],
+    dependency_stack: &mut Vec<String>,
+    dependency_seen: &mut HashSet<String>,
+  ) -> MResult<ModuleVersionId> {
     context.validate()?;
     context.charge_step()?;
 
-    let feature_flags_owned = feature_flags
-      .iter()
-      .map(|flag| (*flag).to_string())
-      .collect::<Vec<_>>();
+    let canonical_uri = resolved.canonical_uri.clone();
 
-    let mut resolved = resolved;
+    if dependency_seen.contains(&canonical_uri) {
+      let mut cycle = dependency_stack.clone();
+      cycle.push(canonical_uri);
 
-    let explicit_capability_requirements = capability_requirements
-      .iter()
-      .map(|resource| {
-        CapabilityRequest::from_keys(
-          context.subject.clone(),
-          "use",
-          (*resource).to_string(),
-        )
-      })
-      .collect::<Vec<_>>();
+      return Err(MechError::new(
+        RuntimeModuleDependencyCycleError {
+          cycle,
+        },
+        None,
+      ));
+    }
 
-    resolved
-      .capability_requirements
-      .extend(explicit_capability_requirements);
+    dependency_seen.insert(canonical_uri.clone());
+    dependency_stack.push(canonical_uri.clone());
 
-    let concrete_capability_requirements =
-      resolved.capability_requirements.clone();
+    let result = (|| -> MResult<ModuleVersionId> {
+      let feature_flags_owned = feature_flags
+        .iter()
+        .map(|flag| (*flag).to_string())
+        .collect::<Vec<_>>();
 
-    let mut dependency_versions = Vec::new();
+      let mut resolved = resolved;
 
-    for dependency in resolved.dependencies.iter() {
-      if let Some(dependency_version) = self.build_module_from_request_with_context(
+      let explicit_capability_requirements = capability_requirements
+        .iter()
+        .map(|resource| {
+          CapabilityRequest::from_keys(
+            context.subject.clone(),
+            "use",
+            (*resource).to_string(),
+          )
+        })
+        .collect::<Vec<_>>();
+
+      resolved
+        .capability_requirements
+        .extend(explicit_capability_requirements);
+
+      let concrete_capability_requirements =
+        resolved.capability_requirements.clone();
+
+      let mut dependency_versions = Vec::new();
+
+      for dependency in resolved.dependencies.iter() {
+        if let Some(dependency_version) = self.build_module_from_request_with_context_and_stack(
+          context,
+          dependency.clone(),
+          compiler_version,
+          language_edition,
+          target,
+          feature_flags,
+          capability_requirements,
+          dependency_stack,
+          dependency_seen,
+        )? {
+          dependency_versions.push(dependency_version);
+        }
+      }
+
+      let record = self.module_builder.build_resolved_source(
+        resolved,
+        compiler_version.to_string(),
+        language_edition.to_string(),
+        target.to_string(),
+        &feature_flags_owned,
+        &dependency_versions,
+        &concrete_capability_requirements,
+      )?;
+
+      let module = self.ensure_module(
+        &record.name,
+        &record.canonical_uri,
+      )?;
+
+      debug_assert_eq!(
+        module,
+        record.module_id,
+        "ModuleBuilder and runtime module store derived different ModuleId values",
+      );
+
+      if self
+        .store
+        .get_module_version(record.module_version)?
+        .is_some()
+      {
+        return Ok(record.module_version);
+      }
+
+      let version = ModuleVersionRecord::new(
+        record.module_version,
+        module,
+        1,
+      )
+      .with_source(record.source)
+      .with_dependencies(record.dependency_versions)
+      .with_capability_requirements(record.capability_requirements);
+
+      self.store.put_module_version(version)?;
+
+      self.emit_event_to_context(
         context,
-        dependency.clone(),
+        RuntimeEventKind::ModuleCompiled {
+          module_version: record.module_version,
+        },
+      )?;
+
+      Ok(record.module_version)
+    })();
+
+    dependency_stack.pop();
+    dependency_seen.remove(&canonical_uri);
+
+    result
+  }
+
+  fn build_module_from_request_with_context_and_stack(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: impl Into<SourceRequest>,
+    compiler_version: &str,
+    language_edition: &str,
+    target: &str,
+    feature_flags: &[&str],
+    capability_requirements: &[&str],
+    dependency_stack: &mut Vec<String>,
+    dependency_seen: &mut HashSet<String>,
+  ) -> MResult<Option<ModuleVersionId>> {
+    let Some(resolved) = self.resolve_source_with_context(context, request)? else {
+      return Ok(None);
+    };
+
+    Ok(Some(
+      self.build_module_from_resolved_source_with_context_and_stack(
+        context,
+        resolved,
         compiler_version,
         language_edition,
         target,
         feature_flags,
         capability_requirements,
-      )? {
-        dependency_versions.push(dependency_version);
-      }
-    }
-
-    let record = self.module_builder.build_resolved_source(
-      resolved,
-      compiler_version.to_string(),
-      language_edition.to_string(),
-      target.to_string(),
-      &feature_flags_owned,
-      &dependency_versions,
-      &concrete_capability_requirements,
-    )?;
-
-    let module = self.ensure_module(
-      &record.name,
-      &record.canonical_uri,
-    )?;
-
-    debug_assert_eq!(
-      module,
-      record.module_id,
-      "ModuleBuilder and runtime module store derived different ModuleId values",
-    );
-
-    if self
-      .store
-      .get_module_version(record.module_version)?
-      .is_some()
-    {
-      return Ok(record.module_version);
-    }
-
-    let version = ModuleVersionRecord::new(
-      record.module_version,
-      module,
-      1,
-    )
-    .with_source(record.source)
-    .with_dependencies(record.dependency_versions)
-    .with_capability_requirements(record.capability_requirements);
-
-    self.store.put_module_version(version)?;
-
-    self.emit_event_to_context(
-      context,
-      RuntimeEventKind::ModuleCompiled {
-        module_version: record.module_version,
-      },
-    )?;
-
-    Ok(record.module_version)
+        dependency_stack,
+        dependency_seen,
+      )?,
+    ))
   }
 
   pub fn resolve_and_store_module_source(
@@ -2601,6 +2686,24 @@ impl ActorBehaviorRuntime for MechRuntime {
 // -----------------------------------------------------------------------------
 // Runtime Errors
 // -----------------------------------------------------------------------------
+
+#[derive(Debug, Clone)]
+pub struct RuntimeModuleDependencyCycleError {
+  pub cycle: Vec<String>,
+}
+
+impl MechErrorKind for RuntimeModuleDependencyCycleError {
+  fn name(&self) -> &str {
+    "RuntimeModuleDependencyCycle"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "module dependency cycle detected: {}",
+      self.cycle.join(" -> "),
+    )
+  }
+}
 
 #[derive(Debug, Clone)]
 pub struct RuntimeRecordNotFoundError {
