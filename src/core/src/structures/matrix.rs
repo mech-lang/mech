@@ -109,6 +109,8 @@ pub trait ToIndex: Clone {
   fn to_index(elements: Vec<Self>) -> Matrix<Self>;
 }
 
+pub type MechMatrix<T> = Matrix<T>;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Matrix<T> {
   #[cfg(feature = "row_vector4")]
