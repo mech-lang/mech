@@ -81,6 +81,8 @@ use crate::actor_behavior::{
   ActorBehaviorDriver, ActorBehaviorRuntime, NoActorBehaviorDriver,
 };
 
+use crate::module::ModuleBuilder;
+
 // -----------------------------------------------------------------------------
 // Runtime Program Host Functions
 // ----------------------------------------------------------------------------
@@ -233,6 +235,7 @@ pub struct RuntimeBuilder {
   scheduler: Box<dyn Scheduler>,
   scheduler_policy: SchedulerPolicy,
   actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
+  module_builder: ModuleBuilder,
 }
 
 impl std::fmt::Debug for RuntimeBuilder {
@@ -248,6 +251,7 @@ impl std::fmt::Debug for RuntimeBuilder {
       .field("scheduler", &"<dyn Scheduler>")
       .field("scheduler_policy", &self.scheduler_policy)
       .field("actor_behavior_driver", &"<dyn ActorBehaviorDriver>")
+      .field("module_builder", &self.module_builder)
       .finish()
   }
 }
@@ -265,6 +269,7 @@ impl Default for RuntimeBuilder {
       scheduler: Box::new(InMemoryScheduler::new()),
       scheduler_policy: SchedulerPolicy::default(),
       actor_behavior_driver: Box::new(NoActorBehaviorDriver::new()),
+      module_builder: ModuleBuilder::new(),
     }
   }
 }
@@ -342,6 +347,11 @@ impl RuntimeBuilder {
     self
   }
 
+  pub fn module_builder(mut self, module_builder: ModuleBuilder) -> Self {
+    self.module_builder = module_builder;
+    self
+  }
+
   pub fn build(mut self) -> MResult<MechRuntime> {
     self.config.validate()?;
     self.scheduler_policy.validate()?;
@@ -377,6 +387,7 @@ impl RuntimeBuilder {
       scheduler_policy: self.scheduler_policy,
       active_transactions: HashMap::new(),
       actor_behavior_driver: self.actor_behavior_driver,
+      module_builder: self.module_builder,
     };
 
     let mut context = runtime.runtime_context()?;
@@ -411,6 +422,7 @@ pub struct MechRuntime {
   scheduler_policy: SchedulerPolicy,
   active_transactions: HashMap<TransactionId, RuntimeTransaction>,
   actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
+  module_builder: ModuleBuilder,
 }
 
 impl std::fmt::Debug for MechRuntime {
@@ -430,6 +442,7 @@ impl std::fmt::Debug for MechRuntime {
       .field("scheduler_policy", &self.scheduler_policy)
       .field("active_transactions", &self.active_transactions.len())
       .field("actor_behavior_driver", &"<dyn ActorBehaviorDriver>")
+      .field("module_builder", &self.module_builder)
       .finish()
   }
 }
@@ -521,6 +534,10 @@ impl MechRuntime {
 
   pub fn actor_behavior_driver_mut(&mut self) -> &mut dyn ActorBehaviorDriver {
     self.actor_behavior_driver.as_mut()
+  }
+
+  pub fn module_builder(&self) -> &ModuleBuilder {
+    &self.module_builder
   }
 
   pub fn set_scheduler_policy(&mut self, scheduler_policy: SchedulerPolicy) -> MResult<()> {
@@ -899,7 +916,7 @@ impl MechRuntime {
   ) -> MResult<ModuleVersionId> {
     let mut context = self.runtime_context()?;
 
-    self.store_resolved_module_source_with_context(
+    self.build_module_from_resolved_source_with_context(
       &mut context,
       resolved,
       compiler_version,
@@ -910,7 +927,7 @@ impl MechRuntime {
     )
   }
 
-  pub fn store_resolved_module_source_with_context(
+  pub fn build_module_from_resolved_source_with_context(
     &mut self,
     context: &mut RuntimeContext,
     resolved: ResolvedSource,
@@ -922,54 +939,82 @@ impl MechRuntime {
   ) -> MResult<ModuleVersionId> {
     context.validate()?;
     context.charge_step()?;
-    resolved.validate()?;
 
-    if !resolved.is_executable_mech_source() {
-      return Err(MechError::new(
-        RuntimeInvalidOperationError {
-          operation: "store_resolved_module_source",
-          reason: format!(
-            "resolved source `{}` is not executable Mech source",
-            resolved.canonical_uri
-          ),
-        },
-        None,
-      ));
-    }
+    let feature_flags_owned = feature_flags
+      .iter()
+      .map(|flag| (*flag).to_string())
+      .collect::<Vec<_>>();
 
-    let module = self.ensure_module(&resolved.name, &resolved.canonical_uri)?;
-    let source_fingerprint = source_fingerprint(&resolved.source)?;
     let dependency_versions: Vec<ModuleVersionId> = Vec::new();
 
-    let version_id = module_version_id(
-      &source_fingerprint,
-      compiler_version,
-      language_edition,
-      target,
-      feature_flags,
+    let mut resolved = resolved;
+
+    let explicit_capability_requirements = capability_requirements
+      .iter()
+      .map(|resource| {
+        CapabilityRequest::from_keys(
+          context.subject.clone(),
+          "use",
+          (*resource).to_string(),
+        )
+      })
+      .collect::<Vec<_>>();
+
+    resolved
+      .capability_requirements
+      .extend(explicit_capability_requirements);
+
+    let concrete_capability_requirements =
+      resolved.capability_requirements.clone();
+
+    let record = self.module_builder.build_resolved_source(
+      resolved,
+      compiler_version.to_string(),
+      language_edition.to_string(),
+      target.to_string(),
+      &feature_flags_owned,
       &dependency_versions,
-      capability_requirements,
+      &concrete_capability_requirements,
+    )?;
+
+    let module = self.ensure_module(
+      &record.name,
+      &record.canonical_uri,
+    )?;
+
+    debug_assert_eq!(
+      module,
+      record.module_id,
+      "ModuleBuilder and runtime module store derived different ModuleId values",
     );
 
-    if self.store.get_module_version(version_id)?.is_some() {
-      return Ok(version_id);
+    if self
+      .store
+      .get_module_version(record.module_version)?
+      .is_some()
+    {
+      return Ok(record.module_version);
     }
 
-    let version = ModuleVersionRecord::new(version_id, module, 1)
-      .with_source(resolved.source)
-      .with_dependencies(dependency_versions)
-      .with_capability_requirements(resolved.capability_requirements);
+    let version = ModuleVersionRecord::new(
+      record.module_version,
+      module,
+      1,
+    )
+    .with_source(record.source)
+    .with_dependencies(record.dependency_versions)
+    .with_capability_requirements(record.capability_requirements);
 
     self.store.put_module_version(version)?;
 
     self.emit_event_to_context(
       context,
       RuntimeEventKind::ModuleCompiled {
-        module_version: version_id,
+        module_version: record.module_version,
       },
     )?;
 
-    Ok(version_id)
+    Ok(record.module_version)
   }
 
   pub fn resolve_and_store_module_source(
@@ -982,7 +1027,7 @@ impl MechRuntime {
   ) -> MResult<Option<ModuleVersionId>> {
     let mut context = self.runtime_context()?;
 
-    self.resolve_and_store_module_source_with_context(
+    self.build_module_from_request_with_context(
       &mut context,
       request,
       compiler_version,
@@ -992,7 +1037,7 @@ impl MechRuntime {
     )
   }
 
-  pub fn resolve_and_store_module_source_with_context(
+  pub fn build_module_from_request_with_context(
     &mut self,
     context: &mut RuntimeContext,
     request: impl Into<SourceRequest>,
@@ -1007,7 +1052,7 @@ impl MechRuntime {
 
     let target = runtime_target();
 
-    Ok(Some(self.store_resolved_module_source_with_context(
+    Ok(Some(self.build_module_from_resolved_source_with_context(
       context,
       resolved,
       compiler_version,
@@ -1061,7 +1106,7 @@ impl MechRuntime {
 
     let target = runtime_target();
 
-    self.store_resolved_module_source_with_context(
+    self.build_module_from_resolved_source_with_context(
       context,
       resolved,
       compiler_version,
