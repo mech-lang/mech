@@ -945,8 +945,6 @@ impl MechRuntime {
       .map(|flag| (*flag).to_string())
       .collect::<Vec<_>>();
 
-    let dependency_versions: Vec<ModuleVersionId> = Vec::new();
-
     let mut resolved = resolved;
 
     let explicit_capability_requirements = capability_requirements
@@ -966,6 +964,22 @@ impl MechRuntime {
 
     let concrete_capability_requirements =
       resolved.capability_requirements.clone();
+
+    let mut dependency_versions = Vec::new();
+
+    for dependency in resolved.dependencies.iter() {
+      if let Some(dependency_version) = self.build_module_from_request_with_context(
+        context,
+        dependency.clone(),
+        compiler_version,
+        language_edition,
+        target,
+        feature_flags,
+        capability_requirements,
+      )? {
+        dependency_versions.push(dependency_version);
+      }
+    }
 
     let record = self.module_builder.build_resolved_source(
       resolved,
@@ -1026,12 +1040,14 @@ impl MechRuntime {
     capability_requirements: &[&str],
   ) -> MResult<Option<ModuleVersionId>> {
     let mut context = self.runtime_context()?;
+    let target = runtime_target();
 
     self.build_module_from_request_with_context(
       &mut context,
       request,
       compiler_version,
       language_edition,
+      &target,
       feature_flags,
       capability_requirements,
     )
@@ -1043,6 +1059,7 @@ impl MechRuntime {
     request: impl Into<SourceRequest>,
     compiler_version: &str,
     language_edition: &str,
+    target: &str,
     feature_flags: &[&str],
     capability_requirements: &[&str],
   ) -> MResult<Option<ModuleVersionId>> {
@@ -1050,14 +1067,12 @@ impl MechRuntime {
       return Ok(None);
     };
 
-    let target = runtime_target();
-
     Ok(Some(self.build_module_from_resolved_source_with_context(
       context,
       resolved,
       compiler_version,
       language_edition,
-      &target,
+      target,
       feature_flags,
       capability_requirements,
     )?))
