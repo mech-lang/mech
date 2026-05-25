@@ -106,7 +106,7 @@ pub mod value;
 pub mod functions;
 #[cfg(feature = "mika")]
 pub mod mika;
-pub mod program;
+pub mod compiler;
 pub mod stdlib;
 pub mod types;
 
@@ -119,7 +119,7 @@ pub use self::value::*;
 pub use self::functions::*;
 #[cfg(feature = "mika")]
 pub use self::mika::*;
-pub use self::program::*;
+pub use self::compiler::*;
 pub use self::stdlib::*;
 pub use self::types::*;
 
