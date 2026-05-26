@@ -1,5 +1,7 @@
 use crate::*;
 use super::*;
+use std::io::{Cursor, Read};
+use crate::context::CompileCtx;
 #[cfg(feature = "matrix")]
 use crate::structures::Matrix;
 
@@ -587,6 +589,7 @@ impl ConstElem for String {
   fn from_le(bytes: &[u8]) -> Self {
     use byteorder::{LittleEndian, ReadBytesExt};
     use std::io::{Cursor, Read};
+use crate::context::CompileCtx;
     let mut cursor = Cursor::new(bytes);
     // read length safely
     let len = match cursor.read_u32::<LittleEndian>() {

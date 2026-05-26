@@ -3,6 +3,7 @@
 
 use mech_core::*;
 use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
+use crate::sections::TypeTag;
 
 #[cfg(not(feature = "no_std"))]
 use std::collections::HashSet;
@@ -43,22 +44,22 @@ pub fn encode_value_kind(ts: &mut crate::sections::TypeSection, vk: &ValueKind) 
     ValueKind::Kind(kind) => {
       let kind_id = ts.get_or_intern(kind);
       b.write_u32::<LittleEndian>(kind_id).unwrap();
-      TypeTag::Kind
+      crate::sections::TypeTag::Kind
     },
-    ValueKind::U8 => TypeTag::U8, ValueKind::U16 => TypeTag::U16, ValueKind::U32 => TypeTag::U32,
-    ValueKind::U64 => TypeTag::U64, ValueKind::U128 => TypeTag::U128,
-    ValueKind::I8 => TypeTag::I8, ValueKind::I16 => TypeTag::I16, ValueKind::I32 => TypeTag::I32,
-    ValueKind::I64 => TypeTag::I64, ValueKind::I128 => TypeTag::I128,
-    ValueKind::F32 => TypeTag::F32, ValueKind::F64 => TypeTag::F64,
-    ValueKind::C64 => TypeTag::C64,
-    ValueKind::R64 => TypeTag::R64,
-    ValueKind::String => TypeTag::String,
-    ValueKind::Bool => TypeTag::Bool,
-    ValueKind::Id => TypeTag::Id,
-    ValueKind::Index => TypeTag::Index,
-    ValueKind::Empty => TypeTag::Empty,
-    ValueKind::Any => TypeTag::Any,
-    ValueKind::None => TypeTag::None,
+    ValueKind::U8 => crate::sections::TypeTag::U8, ValueKind::U16 => crate::sections::TypeTag::U16, ValueKind::U32 => crate::sections::TypeTag::U32,
+    ValueKind::U64 => crate::sections::TypeTag::U64, ValueKind::U128 => crate::sections::TypeTag::U128,
+    ValueKind::I8 => crate::sections::TypeTag::I8, ValueKind::I16 => crate::sections::TypeTag::I16, ValueKind::I32 => crate::sections::TypeTag::I32,
+    ValueKind::I64 => crate::sections::TypeTag::I64, ValueKind::I128 => crate::sections::TypeTag::I128,
+    ValueKind::F32 => crate::sections::TypeTag::F32, ValueKind::F64 => crate::sections::TypeTag::F64,
+    ValueKind::C64 => crate::sections::TypeTag::C64,
+    ValueKind::R64 => crate::sections::TypeTag::R64,
+    ValueKind::String => crate::sections::TypeTag::String,
+    ValueKind::Bool => crate::sections::TypeTag::Bool,
+    ValueKind::Id => crate::sections::TypeTag::Id,
+    ValueKind::Index => crate::sections::TypeTag::Index,
+    ValueKind::Empty => crate::sections::TypeTag::Empty,
+    ValueKind::Any => crate::sections::TypeTag::Any,
+    ValueKind::None => crate::sections::TypeTag::None,
 
     ValueKind::Matrix(elem, dims) => {
       let elem_id = ts.get_or_intern(elem);
@@ -66,23 +67,23 @@ pub fn encode_value_kind(ts: &mut crate::sections::TypeSection, vk: &ValueKind) 
       b.write_u32::<LittleEndian>(dims.len() as u32).unwrap();
       for &d in dims { b.write_u32::<LittleEndian>(d as u32).unwrap(); }
       match &**elem {
-        ValueKind::U8 => TypeTag::MatrixU8,
-        ValueKind::U16 => TypeTag::MatrixU16,
-        ValueKind::U32 => TypeTag::MatrixU32,
-        ValueKind::U64 => TypeTag::MatrixU64,
-        ValueKind::U128 => TypeTag::MatrixU128,
-        ValueKind::I8 => TypeTag::MatrixI8,
-        ValueKind::I16 => TypeTag::MatrixI16,
-        ValueKind::I32 => TypeTag::MatrixI32,
-        ValueKind::I64 => TypeTag::MatrixI64,
-        ValueKind::I128 => TypeTag::MatrixI128,
-        ValueKind::F32 => TypeTag::MatrixF32,
-        ValueKind::F64 => TypeTag::MatrixF64,
-        ValueKind::C64 => TypeTag::MatrixC64,
-        ValueKind::R64 => TypeTag::MatrixR64,
-        ValueKind::String => TypeTag::MatrixString,
-        ValueKind::Bool => TypeTag::MatrixBool,
-        ValueKind::Index => TypeTag::MatrixIndex,
+        ValueKind::U8 => crate::sections::TypeTag::MatrixU8,
+        ValueKind::U16 => crate::sections::TypeTag::MatrixU16,
+        ValueKind::U32 => crate::sections::TypeTag::MatrixU32,
+        ValueKind::U64 => crate::sections::TypeTag::MatrixU64,
+        ValueKind::U128 => crate::sections::TypeTag::MatrixU128,
+        ValueKind::I8 => crate::sections::TypeTag::MatrixI8,
+        ValueKind::I16 => crate::sections::TypeTag::MatrixI16,
+        ValueKind::I32 => crate::sections::TypeTag::MatrixI32,
+        ValueKind::I64 => crate::sections::TypeTag::MatrixI64,
+        ValueKind::I128 => crate::sections::TypeTag::MatrixI128,
+        ValueKind::F32 => crate::sections::TypeTag::MatrixF32,
+        ValueKind::F64 => crate::sections::TypeTag::MatrixF64,
+        ValueKind::C64 => crate::sections::TypeTag::MatrixC64,
+        ValueKind::R64 => crate::sections::TypeTag::MatrixR64,
+        ValueKind::String => crate::sections::TypeTag::MatrixString,
+        ValueKind::Bool => crate::sections::TypeTag::MatrixBool,
+        ValueKind::Index => crate::sections::TypeTag::MatrixIndex,
         _ => panic!("Unsupported matrix element type {:?}", elem),
       }
     }
@@ -92,7 +93,7 @@ pub fn encode_value_kind(ts: &mut crate::sections::TypeSection, vk: &ValueKind) 
       let name_bytes = name.as_bytes();
       b.write_u32::<LittleEndian>(name_bytes.len() as u32).unwrap();
       b.extend_from_slice(name_bytes);
-      TypeTag::EnumTag
+      crate::sections::TypeTag::EnumTag
     }
 
     ValueKind::Record(fields) => {
@@ -104,7 +105,7 @@ pub fn encode_value_kind(ts: &mut crate::sections::TypeSection, vk: &ValueKind) 
         let tid = ts.get_or_intern(ty);
         b.write_u32::<LittleEndian>(tid).unwrap();
       }
-      TypeTag::Record
+      crate::sections::TypeTag::Record
     }
 
     ValueKind::Map(k,v) => {
@@ -112,7 +113,7 @@ pub fn encode_value_kind(ts: &mut crate::sections::TypeSection, vk: &ValueKind) 
       let vid = ts.get_or_intern(v);
       b.write_u32::<LittleEndian>(kid).unwrap();
       b.write_u32::<LittleEndian>(vid).unwrap();
-      TypeTag::Map
+      crate::sections::TypeTag::Map
     }
 
     ValueKind::Atom(id, name) => {
@@ -120,7 +121,7 @@ pub fn encode_value_kind(ts: &mut crate::sections::TypeSection, vk: &ValueKind) 
       let name_bytes = name.as_bytes();
       b.write_u32::<LittleEndian>(name_bytes.len() as u32).unwrap();
       b.extend_from_slice(name_bytes);
-      TypeTag::Atom
+      crate::sections::TypeTag::Atom
     }
 
     ValueKind::Table(cols, pk_col) => {
@@ -133,7 +134,7 @@ pub fn encode_value_kind(ts: &mut crate::sections::TypeSection, vk: &ValueKind) 
         b.write_u32::<LittleEndian>(tid).unwrap();
       }
       b.write_u32::<LittleEndian>(*pk_col as u32).unwrap();
-      TypeTag::Table
+      crate::sections::TypeTag::Table
     }
 
     ValueKind::Tuple(elems) => {
@@ -142,13 +143,13 @@ pub fn encode_value_kind(ts: &mut crate::sections::TypeSection, vk: &ValueKind) 
         let tid = ts.get_or_intern(t);
         b.write_u32::<LittleEndian>(tid).unwrap();
       }
-      TypeTag::Tuple
+      crate::sections::TypeTag::Tuple
     }
 
     ValueKind::Reference(inner) => {
       let id = ts.get_or_intern(inner);
       b.write_u32::<LittleEndian>(id).unwrap();
-      TypeTag::Reference
+      crate::sections::TypeTag::Reference
     }
 
     ValueKind::Set(elem, max) => {
@@ -158,13 +159,13 @@ pub fn encode_value_kind(ts: &mut crate::sections::TypeSection, vk: &ValueKind) 
         Some(m) => { b.push(1); use byteorder::WriteBytesExt; b.write_u32::<LittleEndian>(*m as u32).unwrap(); }
         None => { b.push(0); }
       }
-      TypeTag::Set
+      crate::sections::TypeTag::Set
     }
 
     ValueKind::Option(inner) => {
       let id = ts.get_or_intern(inner);
       b.write_u32::<LittleEndian>(id).unwrap();
-      TypeTag::OptionT
+      crate::sections::TypeTag::OptionT
     }
   };
   (tag, b)
