@@ -34,30 +34,28 @@ Mech Documentation
 - [Indexing](/reference/indexing.html) - access elements within data structures
 - [Conversion](/reference/convert.html) `todo` - convert data from one kind to another
 - [Broadcasting](/reference/broadcasting.html) - apply operations over data structures
-- [Module Declarations](/reference/module-declarations.html) - declare imports (`+>`) and exports (`<+`)
 
 (2.2) Program Model
 
 - [`comprehension`](/reference/comprehension.html) - for constructing sets and matrices from predicates
-- [`function`](/reference/function.html) - reusable block of code that performs a specific task
+- [`function`](/reference/function.html) - reusable computations that match input arguments against patterns and produce output values
 - [`match`](/reference/match.html) - construct for branching logic based on pattern matching
 - [`pattern`](/reference/pattern.html) - match and destructure data
 - [`state machine`](/reference/state-machine.html) - defines a set of states and transitions between them
-- [`validation`](/reference/validation.html) - runtime invariants and integrity constraints
+- [Modules](/reference/module-declarations.html) - organize code into reusable components
+- [Validation](/reference/validation.html) - runtime invariants and integrity constraints
 - Synth `todo`
 - Gen `todo`
-- Modules `todo`
 - Programs `todo`
 - Error Handling `todo`
-- Tests `todo`
+- Capabilities `todo`
+- Concurrency `todo`
 
 (2.3) System Model
 
 (i)> Coming `v0.4`
 
-- Capabilities `todo`
 - Distributed Computation `todo`
-- Concurrency `todo`
 
 3. Mechdown Reference
 -------------------------------------------------------------------------------
