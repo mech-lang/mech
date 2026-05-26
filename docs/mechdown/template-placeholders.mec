@@ -15,7 +15,11 @@ This allows one Mechdown source document to be rendered into different layouts b
 
 - `{{STYLESHEET}}` — Injected CSS content.
 - `{{TITLE}}` — Document title text.
-- `{{BYLINE}}` — Formatted byline content from the title block.
+- `{{AUTHOR}}` — Inline author paragraph from title front matter.
+- `{{DATE}}` — Inline date paragraph from title front matter.
+- `{{KICKER}}` — Inline kicker paragraph from title front matter.
+- `{{NEXT}}` — Inline next-link paragraph from title front matter.
+- `{{PREVIOUS}}` — Inline previous-link paragraph from title front matter.
 - `{{HERO}}` — Hero media/content from the title block.
 - `{{SUMMARY}}` — Synopsis content from the title block.
 - `{{TOC}}` — Generated table of contents.
@@ -40,16 +44,12 @@ These placeholders support browser-side Mech runtime integration.
 
 The web runtime expects a mount with id `mech-output` when calling `attach_repl`.
 
-4. Placement guidance
--------------------------------------------------------------------------------
+### Reactive variable placeholders
 
-- Place `{{TOC}}`, `{{INTRO}}`, and `{{CONTENT}}` where readers should see navigation and primary content.
-- Place `{{CITED}}` only where references should appear.
-- Place `{{REPL}}` inside your console/pane container where the interactive prompt should appear.
-- Keep runtime bootstrap script placement near the end of `<body>` so DOM targets exist before attach.
+You can embed live interpreter variables directly in a template placeholder:
 
-5. Related docs
--------------------------------------------------------------------------------
+- `{{VAR:x}}` — Reads variable `x` from the default interpreter.
+- `{{VAR:x@foo}}` — Reads variable `x` from interpreter `foo`.
 
-- [Title](/mechdown/title.html)
-- [Mechdown Index](/mechdown/index.html)
+These bindings are reactive. If `x` changes in Mech, the rendered value in the
+document updates automatically.

@@ -3,67 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"
+onload="renderMathInElement(document.body);"></script>
+
 <title>{{TITLE}}</title>
 <link rel="icon" href="https://gitlab.com/mech-lang/assets/-/raw/main/images/icons/favicon.ico?ref_type=heads" type="image/x-icon">
 <style>
   {{STYLESHEET}}
 </style>
-<link rel="stylesheet" href="https://mech-lang.org/css/blog.css">
-
-<style>
-.mech-inline-popup {
-  position: fixed;
-  top: 96px;
-  left: 24px;
-  z-index: 12000;
-  min-width: 220px;
-  max-width: min(460px, calc(100vw - 24px));
-  background: #111827;
-  color: #f9fafb;
-  border: 1px solid #374151;
-  border-radius: 8px;
-  box-shadow: 0 12px 28px rgba(0,0,0,.45);
-  overflow: hidden;
-}
-.mech-inline-popup[hidden] { display:none !important; }
-.mech-inline-popup__header {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  padding:8px 10px;
-  border-bottom:1px solid #374151;
-  cursor:grab;
-  user-select:none;
-}
-.mech-inline-popup__header:active { cursor:grabbing; }
-.mech-inline-popup__title { font-size:22px; letter-spacing:0; text-transform:none; color:inherit; }
-.mech-inline-popup__content .mech-output-value { padding: 8px 6px 4px; }
-.mech-inline-popup__close {
-  border:1px solid #4b5563;
-  background:#1f2937;
-  color:#f9fafb;
-  border-radius:5px;
-  width:24px;
-  height:24px;
-  line-height:20px;
-  cursor:pointer;
-  transition: background .15s ease, border-color .15s ease, color .15s ease;
-}
-.mech-inline-popup__close:hover {
-  background: #2d3a4f;
-  border-color: #fbbf24;
-  color: #fbbf24;
-}
-.mech-inline-popup__content {
-  margin:0;
-  padding:10px;
-  max-height:40vh;
-  overflow:auto;
-  border-radius: 0 0 8px 8px;
-}
-</style>
-
+<script async defer src="https://buttons.github.io/buttons.js"></script>
 </head>
 <body>
 
@@ -71,7 +23,7 @@
   <div class="header-inner">
     <div class="brand">
       <a href="https://mech-lang.org">
-        <img src="https://mech-lang.org/img/logo.png" alt="Mech Programming Language" height="40">
+        <img src="https://mech-lang.org/img/logo.png" alt="Mech Programming Language" height="35">
       </a>
     </div>
     <nav class="top-nav" aria-label="Primary">
@@ -82,20 +34,14 @@
       <a href="https://try.mech-lang.org">Explore</a>
     </nav>
     <div class="header-actions">
-      <div class="widget widget-lg">
-        <a class="btn" href="https://github.com/mech-lang/mech" rel="noopener" target="_blank" aria-label="Star mech-lang/mech on GitHub">
-          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-            <path fill="currentColor" d="M6.766 11.328c-2.063-.25-3.516-1.734-3.516-3.656 0-.781.281-1.625.75-2.188-.203-.515-.172-1.609.063-2.062.625-.078 1.468.25 1.968.703.594-.187 1.219-.281 1.985-.281.765 0 1.39.094 1.953.265.484-.437 1.344-.765 1.969-.687.218.422.25 1.515.046 2.047.5.593.766 1.39.766 2.203 0 1.922-1.453 3.375-3.547 3.64.531.344.89 1.094.89 1.954v1.625c0 .468.391.734.86.547C13.781 14.359 16 11.53 16 8.03 16 3.61 12.406 0 7.984 0 3.563 0 0 3.61 0 8.031a7.88 7.88 0 0 0 5.172 7.422c.422.156.828-.125.828-.547v-1.25c-.219.094-.5.156-.75.156-1.031 0-1.64-.562-2.078-1.609-.172-.422-.36-.672-.719-.719-.187-.015-.25-.093-.25-.187 0-.188.313-.328.625-.328.453 0 .844.281 1.25.86.313.452.64.655 1.031.655s.641-.14 1-.5c.266-.265.47-.5.657-.656"></path>
-          </svg>
-          <span>Star</span>
-        </a>
-        <a class="social-count" href="https://github.com/mech-lang/mech/stargazers" rel="noopener" target="_blank" aria-label="279 stargazers on GitHub">279</a>
+      <div id="github">
+        <a class="github-button" href="https://github.com/mech-lang/mech" data-color-scheme="no-preference: light; light: light; dark: dark;" data-size="large" data-show-count="true" aria-label="Star mech-lang/mech on GitHub">Star</a>
       </div>
     </div>
   </div>
 </header>
 
-<main class="workspace mech-root" id="workspace" mech-interpreter-id="0">
+<main class="workspace mech-root" id="workspace" mech-interpreter-id="0" aria-label="Blog workspace">
 
   <section class="content-shell" id="contentShell">
     <div class="content-column">
@@ -106,16 +52,16 @@
         <span class="sep">⟩</span>
         <a href="/blog">Blog</a>
         <span class="sep">⟩</span>
-        <a href="/blog/announcements">Announcements</a>
+        <a href="/blog/announcements">{{KICKER}}</a>
         <span class="sep">⟩</span>
-        <span aria-current="page">Mech Version 0.3-Beta</span>
+        <span aria-current="page">Version 0.3-beta</span>
       </nav>
       <div class="hero">
         <div class="hero-panel">
           <div>
-            <p class="hero-kicker">Announcement</p>
+            {{KICKER}}
             <h1>{{TITLE}}</h1>
-            {{BYLINE}}
+            <p class="mech-meta">{{AUTHOR}} • {{DATE}}</p>
           </div>
           {{SUMMARY}}
         </div>
@@ -129,6 +75,30 @@
         <article class="main-content">
           {{CONTENT}}
         </article>
+      </div>
+      <div class="mika-separator"></div>
+      <section class="article-backmatter" aria-label="Notes and Works Cited">
+        <div class="backmatter-row backmatter-notes">
+          <div class="backmatter-body">
+            {{FOOTNOTES}}
+          </div>
+        </div>
+        <div class="backmatter-row backmatter-cited">
+          <div class="backmatter-body">
+            {{CITED}}
+          </div>
+        </div>
+      </section>
+      <nav class="post-pagination" aria-label="Post navigation">
+        <div class="post-pagination-prev">
+          <span class="post-pagination-label">Previous post</span>
+          {{PREVIOUS}}
+        </div>
+        <div class="post-pagination-next">
+          <span class="post-pagination-label">Next post</span>
+          {{NEXT}}
+        </div>
+      </nav>
       <footer class="footer">
         <div class="footer-inner">
 
@@ -148,7 +118,7 @@
             <!-- Middle: Links -->
             <div class="footer-links">
               <div class="footer-group">
-                <div class="footer-heading"><span class="footer-heading-icon"><svg xmlns="http://www.w3.org/2000/svg" class="footer-icon lucide lucide-package-icon lucide-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span><span class="footer-heading-text">Product</span></div>
+                <div class="footer-heading"><span class="footer-heading-icon"><svg xmlns="http://www.w3.org/2000/svg" class="footer-icon lucide lucide-package-icon lucide-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span><span class="footer-heading-text">Platform</span></div>
                 <a href="#">Mech</a>
                 <a href="#">Mechdown</a>
                 <a href="#">Mika</a>
@@ -176,15 +146,15 @@
             <div class="footer-release">
               <div class="release-ack">
                 <svg xmlns="http://www.w3.org/2000/svg" class="footer-icon lucide lucide-rocket-icon lucide-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/></svg>
-                <a href="#">Latest Release</a>
+                <a href="https://github.com/mech-lang/mech/releases/latest">Latest Release</a>
               </div>
               <div class="release-grid-row">
                 <div class="release-grid-label">Version:</div>
-                <div class="release-grid-value"><a href="https://github.com/mech-lang/mech/releases/latest">v0.3.5-BETA</a></div>
+                <div class="release-grid-value"><a href="https://github.com/mech-lang/mech/releases/latest">v0.3.5-beta</a></div>
               </div>
               <div class="release-grid-row">
                 <div class="release-grid-label">Date:</div>
-                <div class="release-grid-value">2026-04-26</div>
+                <div class="release-grid-value">2026-05-06</div>
               </div>
               <div class="release-grid-row">
                 <div class="release-grid-label">License:</div>
@@ -196,18 +166,44 @@
           </div>
 
           <div class="footer-meta">
-            <div>© 2026 Mech Systems Lab</div>
-            <div>Built with <span><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-brain-icon lucide-brain" style="display:inline; width:15px; height:15px; margin-top: -2px; vertical-align:middle; color: var(--accent-rose)"><path d="M12 18V5"/><path d="M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4"/><path d="M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5"/><path d="M17.997 5.125a4 4 0 0 1 2.526 5.77"/><path d="M18 18a4 4 0 0 0 2-7.464"/><path d="M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517"/><path d="M6 18a4 4 0 0 1-2-7.464"/><path d="M6.003 5.125a4 4 0 0 0-2.526 5.77"/></svg></span> in Pennsylvania</div>
-            <div class="footer-meta-links">
-              <a href="#">Privacy</a>
-              <a href="#">Terms</a>
-              <a href="#">Code of Conduct</a>
+            <div class="footer-pride">
+              Built with 
+              <span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline; width:18px; height:18px; margin-top: -2px; vertical-align:middle;">
+
+                  <defs>
+                    <radialGradient id="rainbowRadial" cx="12" cy="17" r="11" gradientUnits="userSpaceOnUse">
+                    <!-- pastel purple -->
+                    <stop offset="0%" stop-color="#8b6fd8"></stop>
+                    <stop offset="18%" stop-color="#8b6fd8"></stop>
+                    <!-- pastel blue -->
+                    <stop offset="18%" stop-color="#6fa8ff"></stop>
+                    <stop offset="38%" stop-color="#6fa8ff"></stop>
+                    <!-- pastel green -->
+                    <stop offset="38%" stop-color="#5DCF8D"></stop>
+                    <stop offset="53%" stop-color="#5DCF8D"></stop>
+                    <!-- pastel yellow -->
+                    <stop offset="53%" stop-color="#ffe873"></stop>
+                    <stop offset="72%" stop-color="#ffe873"></stop>
+                    <!-- pastel orange -->
+                    <stop offset="72%" stop-color="#ff9f5f"></stop>
+                    <stop offset="90%" stop-color="#ff9f5f"></stop>
+                    <!-- pastel red -->
+                    <stop offset="90%" stop-color="#ff6666"></stop>
+                    <stop offset="100%" stop-color="#ff6666"></stop>
+                    </radialGradient>
+                  </defs>
+
+                  <path d="M22 17a10 10 0 0 0-20 0" stroke="url(#rainbowRadial)"></path>
+                  <path d="M6 17a6 6 0 0 1 12 0" stroke="url(#rainbowRadial)"></path>
+                  <path d="M10 17a2 2 0 0 1 4 0" stroke="url(#rainbowRadial)"></path>
+                </svg>
+              </span> in Pennsylvania
             </div>
           </div>
 
         </div>
       </footer>
-      </div>
     </div>
   </section>
 
@@ -241,34 +237,10 @@
         {{REPL}}
       </div>
       <div class="console-panel" data-panel="output">
-        <div class="console-scroll">$ npm run docs:build
-
-vite v6.1.2 building for production...
-✓ 1782 modules transformed.
-dist/index.html                     1.24 kB │ gzip:   0.63 kB
-dist/assets/index-18d97.css       98.31 kB │ gzip:  16.88 kB
-dist/assets/docs-9f22e.js        412.54 kB │ gzip: 125.03 kB
-dist/assets/vendor-f22c1.js      593.77 kB │ gzip: 194.22 kB
-✓ built in 4.78s
-
-$ npm run docs:preview
-➜  Local:   http://localhost:4173/
-➜  Network: use --host to expose
-
-smoke summary:
-- homepage render: pass
-- nav links: pass
-- docs search request: pass
-- static asset cache hit: pass</div>
+        <div class="console-scroll">under construction</div>
       </div>
       <div class="console-panel" data-panel="errors">
-        <div class="console-scroll">[09:10:42] WARN  markdown-lint: docs/api/spec.md line 188 exceeds 100 chars
-[09:10:44] WARN  markdown-lint: docs/operations/runbook.md line 241 trailing spaces
-[09:12:24] WARN  eslint: src/components/ConsolePane.tsx:211 unexpected any (ts-eslint/no-explicit-any)
-[09:12:24] WARN  eslint: src/components/ResizeHandle.tsx:88 React Hook useEffect has missing dependency
-
-No critical runtime errors reported.
-Health checks stayed green during deploy.</div>
+        <div class="console-scroll">under construction</div>
       </div>
     </div>
   </aside>
@@ -300,6 +272,48 @@ async function loadMechModule() {
 async function run() {
   const { default: init, WasmMech } = await loadMechModule();
   await init();
+  const prepareVarPlaceholders = () => {
+  const pattern = /\{\{VAR:([A-Za-z0-9\-_\/]+)(?:@([A-Za-z0-9\-_\/]+))?\}\}/g;
+  document.querySelectorAll("script, style, code, pre, textarea").forEach((el) => el.setAttribute("data-var-skip", "1"));
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const updates = [];
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (!node || !node.nodeValue || !pattern.test(node.nodeValue)) {
+      pattern.lastIndex = 0;
+      continue;
+    }
+    pattern.lastIndex = 0;
+    const parent = node.parentElement;
+    if (!parent || parent.closest("[data-var-skip='1']")) continue;
+    const nearestMechRoot = parent.closest(".mech-root");
+    const rootInterpreterId = Number(nearestMechRoot?.getAttribute("mech-interpreter-id") || "0");
+    const fragment = document.createDocumentFragment();
+    let lastIndex = 0;
+    node.nodeValue.replace(pattern, (match, varName, interpreterName, offset) => {
+      if (offset > lastIndex) {
+        fragment.appendChild(document.createTextNode(node.nodeValue.slice(lastIndex, offset)));
+      }
+      const span = document.createElement("span");
+      span.className = "mech-var-placeholder";
+      span.setAttribute("data-var-name", varName);
+      if (interpreterName) {
+        span.setAttribute("data-interpreter-name", interpreterName);
+      } else {
+        span.setAttribute("data-interpreter-id", String(rootInterpreterId));
+      }
+      span.textContent = "";
+      fragment.appendChild(span);
+      lastIndex = offset + match.length;
+      return match;
+    });
+    if (lastIndex < node.nodeValue.length) {
+      fragment.appendChild(document.createTextNode(node.nodeValue.slice(lastIndex)));
+    }
+    updates.push([node, fragment]);
+  }
+  updates.forEach(([node, fragment]) => node.parentNode.replaceChild(fragment, node));
+  };
   const code = `{{CODE}}`;
   wasm_core = new WasmMech();
   const xhr = new XMLHttpRequest();
@@ -313,6 +327,7 @@ async function run() {
         console.error('Defaulting to included program');
         wasm_core.run_program(code);
       }
+      prepareVarPlaceholders();
       wasm_core.init();
       wasm_core.render_inline_values();
       wasm_core.render_codeblock_output_values();
@@ -348,6 +363,7 @@ const TOC_GAP            = 48;
 const MIN_MAIN_CONTENT   = 640;
 const MIN_MAIN_WITH_TOC  = 760;
 const MIN_LEFT_WITH_TOC  = TOC_WIDTH + TOC_GAP + MIN_MAIN_WITH_TOC;
+const MIN_LEFT_WITH_FLOATS = 980;
 const DEFAULT_OPEN_WIDTH = 575;
 const HEADER_HEIGHT = parseInt(
   getComputedStyle(document.documentElement).getPropertyValue("--header-height"),
@@ -420,6 +436,7 @@ function syncEdgeHandleOnLoad() {
 
 function syncTocVisibility(availableWidth) {
   articleLayout.classList.toggle("hide-toc", availableWidth < MIN_LEFT_WITH_TOC);
+  document.body.classList.toggle("narrow-content", availableWidth < MIN_LEFT_WITH_FLOATS);
 }
 
 function applyNonFullscreenLayout(viewport, consoleWidth) {
@@ -676,9 +693,10 @@ function updateTocOnScroll() {
   if (contentShell.classList.contains("hidden")) return;
   if (!topSections.length) return;
 
-  const activationLine = HEADER_HEIGHT + Math.min(window.innerHeight * 0.35, 280);
+  const viewportHeight = contentShell.clientHeight || window.innerHeight;
+  const activationLine = HEADER_HEIGHT + Math.min(viewportHeight * 0.35, 20);
   let active = topSections[0];
-  const nearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+  const nearBottom = contentShell.scrollTop + contentShell.clientHeight >= contentShell.scrollHeight - 2;
 
   if (nearBottom) {
     active = topSections[topSections.length - 1];
@@ -690,7 +708,7 @@ function updateTocOnScroll() {
 
   topSections.forEach((e) => e.section.classList.remove("active-section"));
   if (active.section) active.section.classList.add("active-section");
-  const nestedActivationLine = HEADER_HEIGHT + Math.min(window.innerHeight * 0.30, 220);
+  const nestedActivationLine = HEADER_HEIGHT + Math.min(viewportHeight * 0.30, 220);
   setActiveTocSection(active.link, { nearBottom, activationLine: nestedActivationLine });
 }
 
@@ -706,6 +724,7 @@ function deferPostPaint(fn) {
 }
 
 window.addEventListener("scroll", requestTocUpdate, { passive: true });
+contentShell.addEventListener("scroll", requestTocUpdate, { passive: true });
 window.addEventListener("resize", requestTocUpdate);
 
 function syncInitialResponsiveLayout() {
@@ -847,7 +866,47 @@ deferPostPaint(syncInitialResponsiveLayout);
   });
 
 })();
+window.addEventListener("DOMContentLoaded", () => {
 
+  function renderEquations(root = document) {
+    const blockElements = root.querySelectorAll(".mech-equation");
+    blockElements.forEach(el => {
+      if (!el.getAttribute("data-rendered")) {
+        const eq = el.getAttribute("equation");
+        if (eq) {
+          katex.render(eq, el, { throwOnError: false });
+          el.setAttribute("data-rendered", "true");
+        }
+      }
+    });
+
+    const inlineElements = root.querySelectorAll(".mech-inline-equation");
+    inlineElements.forEach(el => {
+      if (!el.getAttribute("data-rendered")) {
+        const eq = el.getAttribute("equation");
+        if (eq) {
+          katex.render(eq, el, { throwOnError: false });
+          el.setAttribute("data-rendered", "true");
+        }
+      }
+    });
+  }
+
+  renderEquations();
+
+  // Set up a MutationObserver to watch for new elements
+  const mutationobserver = new MutationObserver(mutations => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          renderEquations(node);
+        }
+      }
+    }
+  });
+  mutationobserver.observe(document.body, { childList: true, subtree: true });
+
+});
 </script>
 
 </body>

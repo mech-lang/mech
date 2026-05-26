@@ -105,7 +105,7 @@ pub enum TokenKind {
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
   #[cfg(feature = "mika")]
   Mika(Mika), 
-  MikaSection, MikaSectionOpen, MikaSectionClose,
+  MikaSection, MikaSectionOpen, MikaSectionClose, ModuleExportSigil, ModuleImportSigil,
   Newline, Not, Number,
   OutputOperator,
   Percent, Period, Plus, PromptSigil,
@@ -307,9 +307,13 @@ fn pretty_print(&self) -> String {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Title {
   pub text: Token,
-  pub byline: Option<Paragraph>,
+  pub author: Option<Paragraph>,
+  pub date: Option<Paragraph>,
   pub hero: Option<SectionElement>,
+  pub kicker: Option<Paragraph>,
   pub summary: Option<Paragraph>,
+  pub next: Option<Paragraph>,
+  pub previous: Option<Paragraph>,
 }
 
 impl Title {
@@ -514,8 +518,18 @@ pub enum FloatDirection {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ParsedMechCode {
+  pub code: Vec<(MechCode,Option<Comment>)>,
+  pub imports: Vec<ImportDeclaration>,
+  pub exports: Vec<ExportDeclaration>,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FencedMechCode {
   pub code: Vec<(MechCode,Option<Comment>)>,
+  pub imports: Vec<ImportDeclaration>,
+  pub exports: Vec<ExportDeclaration>,
   pub config: BlockConfig,
   pub options: Option<OptionMap>,
 }
@@ -1100,12 +1114,16 @@ impl StateDefinition {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Statement {
+  ImportDeclaration(ImportDeclaration),
+  ExportDeclaration(ExportDeclaration),
   EnumDefine(EnumDefine),
   FsmDeclare(FsmDeclare),
   KindDefine(KindDefine),
   OpAssign(OpAssign),
   VariableAssign(VariableAssign),
   VariableDefine(VariableDefine),
+  #[cfg(feature = "invariant_define")]
+  InvariantDefine(InvariantDefine),
   TupleDestructure(TupleDestructure),
   SplitTable,     // todo
   FlattenTable,   // todo
@@ -1114,16 +1132,44 @@ pub enum Statement {
 impl Statement {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
+      Statement::ImportDeclaration(x) => x.tokens(),
+      Statement::ExportDeclaration(x) => x.tokens(),
       Statement::EnumDefine(x) => x.tokens(),
       Statement::FsmDeclare(x) => x.tokens(),
       Statement::KindDefine(x) => x.tokens(),
       Statement::OpAssign(x) => x.tokens(),
       Statement::VariableAssign(x) => x.tokens(),
       Statement::VariableDefine(x) => x.tokens(),
+      #[cfg(feature = "invariant_define")]
+      Statement::InvariantDefine(x) => x.tokens(),
       Statement::TupleDestructure(x) => x.tokens(),
       Statement::SplitTable => vec![], // todo
       Statement::FlattenTable => vec![], // todo
     }
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ImportDeclaration {
+  pub specifier: MechString,
+}
+
+impl ImportDeclaration {
+  pub fn tokens(&self) -> Vec<Token> {
+    vec![self.specifier.text.clone()]
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ExportDeclaration {
+  pub name: Identifier,
+}
+
+impl ExportDeclaration {
+  pub fn tokens(&self) -> Vec<Token> {
+    self.name.tokens()
   }
 }
 
@@ -1544,6 +1590,21 @@ pub struct VariableDefine {
   pub mutable: bool,
   pub var: Var,
   pub expression: Expression,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct InvariantDefine {
+  pub name: Identifier,
+  pub expression: Expression,
+}
+
+impl InvariantDefine {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.name.tokens();
+    tkns.append(&mut self.expression.tokens());
+    tkns
+  }
 }
 
 impl VariableDefine {
@@ -1973,7 +2034,13 @@ impl Literal {
       Literal::Atom(atm) => atm.name.tokens(),
       Literal::Boolean(tkn) => vec![tkn.clone()],
       Literal::Number(x) => x.tokens(),
-      Literal::String(strng) => vec![strng.text.clone()],
+      Literal::String(strng) => {
+        vec![
+          Token::new(TokenKind::Quote, SourceRange::default(), vec!['"']),
+          strng.text.clone(),
+          Token::new(TokenKind::Quote, SourceRange::default(), vec!['"']),
+        ]
+      },
       Literal::Empty(tkn) => vec![tkn.clone()],
       Literal::Kind(knd) => knd.tokens(),
       Literal::TypedLiteral((lit, knd)) => {
@@ -2422,6 +2489,11 @@ pub struct RangeExpression {
 impl RangeExpression {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tokens = self.start.tokens();
+    if let Some((inc_op, inc)) = &self.increment {
+      tokens.push(inc_op.token());
+      tokens.append(&mut inc.tokens());
+    }
+    tokens.push(self.operator.token());
     tokens.append(&mut self.terminal.tokens());
     tokens
   }
@@ -2439,11 +2511,69 @@ impl Term {
     let mut lhs_tkns = self.lhs.tokens();
     let mut rhs_tkns = vec![];
     for (op, r) in &self.rhs {
+      rhs_tkns.push(op.token());
       let mut tkns = r.tokens();
       rhs_tkns.append(&mut tkns);
     }
     lhs_tkns.append(&mut rhs_tkns);
     lhs_tkns
+  }
+}
+
+impl RangeOp {
+  pub fn token(&self) -> Token {
+    let chars = match self {
+      RangeOp::Exclusive => "..".chars().collect(),
+      RangeOp::Inclusive => "..=".chars().collect(),
+    };
+    Token::new(TokenKind::Text, SourceRange::default(), chars)
+  }
+}
+
+impl FormulaOperator {
+  pub fn token(&self) -> Token {
+    let chars = match self {
+      FormulaOperator::AddSub(AddSubOp::Add) => "+",
+      FormulaOperator::AddSub(AddSubOp::Sub) => "-",
+      FormulaOperator::Comparison(ComparisonOp::Equal) => "==",
+      FormulaOperator::Comparison(ComparisonOp::NotEqual) => "!=",
+      FormulaOperator::Comparison(ComparisonOp::LessThan) => "<",
+      FormulaOperator::Comparison(ComparisonOp::GreaterThan) => ">",
+      FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => "<=",
+      FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual) => ">=",
+      FormulaOperator::Comparison(ComparisonOp::StrictEqual) => "≡",
+      FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => "!≡",
+      FormulaOperator::Power(PowerOp::Pow) => "^",
+      FormulaOperator::Logic(LogicOp::And) => "&&",
+      FormulaOperator::Logic(LogicOp::Or) => "||",
+      FormulaOperator::Logic(LogicOp::Xor) => "^",
+      FormulaOperator::Logic(LogicOp::Not) => "!",
+      FormulaOperator::MulDiv(MulDivOp::Div) => "/",
+      FormulaOperator::MulDiv(MulDivOp::Mod) => "%",
+      FormulaOperator::MulDiv(MulDivOp::Mul) => "*",
+      FormulaOperator::Vec(VecOp::Cross) => "×",
+      FormulaOperator::Vec(VecOp::Dot) => ".*",
+      FormulaOperator::Vec(VecOp::MatMul) => "**",
+      FormulaOperator::Vec(VecOp::Solve) => "\\",
+      FormulaOperator::Table(TableOp::InnerJoin) => "⋈",
+      FormulaOperator::Table(TableOp::LeftOuterJoin) => "⟕",
+      FormulaOperator::Table(TableOp::RightOuterJoin) => "⟖",
+      FormulaOperator::Table(TableOp::FullOuterJoin) => "⟗",
+      FormulaOperator::Table(TableOp::LeftSemiJoin) => "⋉",
+      FormulaOperator::Table(TableOp::LeftAntiJoin) => "▷",
+      FormulaOperator::Set(SetOp::Union) => "∪",
+      FormulaOperator::Set(SetOp::Intersection) => "∩",
+      FormulaOperator::Set(SetOp::Difference) => "\\",
+      FormulaOperator::Set(SetOp::Complement) => "ᶜ",
+      FormulaOperator::Set(SetOp::ElementOf) => "∈",
+      FormulaOperator::Set(SetOp::NotElementOf) => "∉",
+      FormulaOperator::Set(SetOp::ProperSubset) => "⊂",
+      FormulaOperator::Set(SetOp::ProperSuperset) => "⊃",
+      FormulaOperator::Set(SetOp::Subset) => "⊆",
+      FormulaOperator::Set(SetOp::Superset) => "⊇",
+      FormulaOperator::Set(SetOp::SymmetricDifference) => "∆",
+    };
+    Token::new(TokenKind::Text, SourceRange::default(), chars.chars().collect())
   }
 }
 

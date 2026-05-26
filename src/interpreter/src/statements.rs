@@ -9,8 +9,12 @@ use crate::stdlib::define::*;
 
 pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   match stmt {
+    Statement::ImportDeclaration(_) => Ok(Value::Empty),
+    Statement::ExportDeclaration(_) => Ok(Value::Empty),
     #[cfg(feature = "tuple")]
     Statement::TupleDestructure(tpl_dstrct) => tuple_destructure(&tpl_dstrct, p),
+    #[cfg(feature = "invariant_define")]
+    Statement::InvariantDefine(inv_def) => invariant_define(&inv_def, p),
     #[cfg(feature = "variable_define")]
     Statement::VariableDefine(var_def) => variable_define(&var_def, p),
     #[cfg(feature = "variable_assign")]
@@ -95,7 +99,7 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
             Some("(!)> Mutable variables are defined with the `~` operator. *e.g.*: {{~x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens())),
           false => return Err(MechError::new(
-            UndefinedVariableError { id },
+            UndefinedVariableError { id, name: slc.name.to_string() },
             Some("(!)> Variables are defined with the `:=` operator. *e.g.*: {{x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens())),
         }
@@ -155,7 +159,7 @@ pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p:
       None => {
         if !symbols_brrw.contains(id) {
           return Err(MechError::new(
-            UndefinedVariableError { id },
+            UndefinedVariableError { id, name: slc.name.to_string() },
             Some("(!)> Variables are defined with the `:=` operator. *e.g.*: {{x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens()));
         } else { 
@@ -236,6 +240,115 @@ pub fn kind_define(knd_def: &KindDefine, p: &Interpreter) -> MResult<Value> {
   let mut kinds = &mut p.state.borrow_mut().kinds;
   kinds.insert(id, value_kind.clone());
   Ok(Value::Kind(value_kind))
+}
+
+#[cfg(feature = "invariant_define")]
+pub fn invariant_define(inv_def: &InvariantDefine, p: &Interpreter) -> MResult<Value> {
+  let invariant_id = inv_def.name.hash();
+  let invariant_name = inv_def.name.to_string();
+  let invariant_expression = tokens_to_string(&inv_def.expression.tokens());
+  {
+    let symbols = p.symbols();
+    if symbols.borrow().contains(invariant_id) {
+      return Err(MechError::new(
+        VariableAlreadyDefinedError { id: invariant_id },
+        None
+      ).with_compiler_loc().with_tokens(inv_def.name.tokens()));
+    }
+  }
+  let result = expression(&inv_def.expression, None, p)?;
+  let rhs_ref = value_to_ref(result.clone());
+  let detached_result = detach_variable_value(&result);
+  {
+    let mut state_brrw = p.state.borrow_mut();
+    state_brrw.save_symbol(invariant_id, invariant_name.clone(), detached_result.clone(), false);
+    let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(invariant_name.clone())), Value::Bool(Ref::new(false))])?;
+    state_brrw.add_plan_step(var_def_fxn);
+  }
+  p.state.borrow_mut().invariant_expressions.insert(invariant_id, invariant_expression.clone());
+  #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
+  {
+    let invariant_value = {
+      let state_brrw = p.state.borrow();
+      state_brrw.get_symbol(invariant_id)
+    };
+    if let Some(invariant_value) = invariant_value {
+      p.state.borrow_mut().invariants.insert(invariant_id, (invariant_name.clone(), invariant_value));
+    }
+  }
+  let violation_error = match &result {
+    Value::Bool(b) => if *b.borrow() { None } else { Some("evaluated to false".to_string()) },
+    other => Some(format!("must evaluate to bool, got {}", other.kind())),
+  };
+  let operand_detail = invariant_operand_refs(inv_def, p);
+  let (lhs_addr, lhs_value, operator, rhs_addr, rhs_value) = match operand_detail {
+    Some((lhs, op, rhs)) => {
+      let lhs_addr = lhs.as_ref().map(|v| v.addr() as u64);
+      let lhs_value = lhs.as_ref().map(|v| format!("{:?}", v.borrow()));
+      let rhs_addr = rhs.as_ref().map(|v| v.addr() as u64);
+      let rhs_value = rhs.as_ref().map(|v| format!("{:?}", v.borrow()));
+      (lhs_addr, lhs_value, op, rhs_addr, rhs_value)
+    }
+    None => (None, None, None, Some(rhs_ref.addr() as u64), Some(format!("{:?}", rhs_ref.borrow()))),
+  };
+  {
+    let reason = violation_error.clone().unwrap_or_else(|| "evaluated to true".to_string());
+    let actual = lhs_value.clone().unwrap_or_else(|| format!("{:?}", rhs_ref.borrow()));
+    let expected = rhs_value.clone().unwrap_or_else(|| format!("{:?}", rhs_ref.borrow()));
+    p.state.borrow_mut().invariant_evaluations.insert(invariant_id, InvariantEvaluation {
+      reason,
+      evaluated_kind: result.kind().to_string(),
+      actual,
+      expected,
+    });
+  }
+  if let Some(error) = violation_error {
+    let err = MechError::new(
+      InvariantViolationError{
+        invariant_name: invariant_name.clone(),
+        expression: invariant_expression,
+        lhs_addr,
+        lhs_value,
+        operator,
+        rhs_addr,
+        rhs_value,
+        reason: error,
+        evaluated_kind: result.kind().to_string(),
+      },
+      None
+    ).with_compiler_loc().with_tokens(inv_def.expression.tokens());
+    p.state.borrow_mut().invariant_violations.push(InvariantViolation { id: invariant_id, error: err });
+  }
+  Ok(result)
+}
+
+#[cfg(feature = "invariant_define")]
+fn tokens_to_string(tokens: &[Token]) -> String {
+  tokens.iter().flat_map(|t| t.chars.clone()).collect::<String>()
+}
+
+#[cfg(feature = "invariant_define")]
+fn value_to_ref(value: Value) -> ValRef {
+  match value {
+    Value::MutableReference(r) => r.clone(),
+    other => Ref::new(other),
+  }
+}
+
+#[cfg(feature = "invariant_define")]
+fn invariant_operand_refs(inv_def: &InvariantDefine, p: &Interpreter) -> Option<(Option<ValRef>, Option<FormulaOperator>, Option<ValRef>)> {
+  let factor = match &inv_def.expression {
+    Expression::Formula(f) => f,
+    _ => return None,
+  };
+  let term = match factor {
+    Factor::Term(t) => t,
+    _ => return None,
+  };
+  let (op, rhs_factor) = term.rhs.first()?;
+  let lhs_value = expression(&Expression::Formula(term.lhs.clone()), None, p).ok().map(value_to_ref);
+  let rhs_value = expression(&Expression::Formula(rhs_factor.clone()), None, p).ok().map(value_to_ref);
+  Some((lhs_value, Some(op.clone()), rhs_value))
 }
 
 #[cfg(all(feature = "enum", feature = "atom"))]
@@ -554,7 +667,9 @@ macro_rules! op_assign {
           x => todo!("{:?}", x),
         }
       }
-    }}}
+    }
+  };
+}
 
 #[cfg(feature = "math_add_assign")]
 op_assign!(add_assign, Add);
@@ -839,12 +954,13 @@ impl MechErrorKind for VariableAlreadyDefinedError {
 #[derive(Debug, Clone)]
 pub struct UndefinedVariableError {
   pub id: u64,
+  pub name: String,
 }
 impl MechErrorKind for UndefinedVariableError {
   fn name(&self) -> &str { "UndefinedVariable" }
 
   fn message(&self) -> String {
-    format!("Undefined variable: {}", self.id)
+    format!("Undefined variable `{}` (id: {})", self.name, self.id)
   }
 }
 
@@ -874,4 +990,3 @@ impl MechErrorKind for UnableToConvertRecordError {
     format!("Unable to convert record of kind `{:?}` to record of kind `{:?}`", self.source_record_kind, self.target_record_kind)
   }
 }
-

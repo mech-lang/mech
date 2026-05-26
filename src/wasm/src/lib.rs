@@ -11,6 +11,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::sync::Arc;
 use gloo_net::http::Request;
 use wasm_bindgen_futures::spawn_local;
 
@@ -46,143 +47,154 @@ fn new_interpreter(id: u64) -> Interpreter {
       
   // Preload combinatorics functions
   #[cfg(feature = "combinatorics_n_choose_k")]
-  fxns.function_compilers.insert(hash_str("combinatorics/n-choose-k"), &CombinatoricsNChooseK{});
+  fxns.function_compilers.insert(hash_str("combinatorics/n-choose-k"), Arc::new(CombinatoricsNChooseK{}));
 
   
   // Preload stats functions
   #[cfg(feature = "stats_sum")]
-  fxns.function_compilers.insert(hash_str("stats/sum/row"), &StatsSumRow{});
+  fxns.function_compilers.insert(hash_str("stats/sum/row"), Arc::new(StatsSumRow{}));
   #[cfg(feature = "stats_sum")]
-  fxns.function_compilers.insert(hash_str("stats/sum/column"), &StatsSumColumn{});
+  fxns.function_compilers.insert(hash_str("stats/sum/column"), Arc::new(StatsSumColumn{}));
 
   // Preload ops functions
   #[cfg(feature = "math_add")]
-  fxns.function_compilers.insert(hash_str("math/add"), &MathAdd{});
+  fxns.function_compilers.insert(hash_str("math/add"), Arc::new(MathAdd{}));
   #[cfg(feature = "math_sub")]
-  fxns.function_compilers.insert(hash_str("math/sub"), &MathSub{});
+  fxns.function_compilers.insert(hash_str("math/sub"), Arc::new(MathSub{}));
   #[cfg(feature = "math_mul")]
-  fxns.function_compilers.insert(hash_str("math/mul"), &MathMul{});
+  fxns.function_compilers.insert(hash_str("math/mul"), Arc::new(MathMul{}));
   #[cfg(feature = "math_div")]
-  fxns.function_compilers.insert(hash_str("math/div"), &MathDiv{});
+  fxns.function_compilers.insert(hash_str("math/div"), Arc::new(MathDiv{}));
   #[cfg(feature = "math_mod")]
-  fxns.function_compilers.insert(hash_str("math/mod"), &MathMod{});
+  fxns.function_compilers.insert(hash_str("math/mod"), Arc::new(MathMod{}));
   #[cfg(feature = "math_pow")]
-  fxns.function_compilers.insert(hash_str("math/pow"), &MathPow{});
+  fxns.function_compilers.insert(hash_str("math/pow"), Arc::new(MathPow{}));
   #[cfg(feature = "math_neg")]
-  fxns.function_compilers.insert(hash_str("math/neg"), &MathNegate{});
+  fxns.function_compilers.insert(hash_str("math/neg"), Arc::new(MathNegate{}));
   
   // Preload math functions
   #[cfg(feature = "math_sqrt")]
-  fxns.function_compilers.insert(hash_str("math/sqrt"), &MathSqrt{});
+  fxns.function_compilers.insert(hash_str("math/sqrt"), Arc::new(MathSqrt{}));
   
   // Preload trig functions
   #[cfg(feature = "math_sin")]
-  fxns.function_compilers.insert(hash_str("math/sin"), &MathSin{});
+  fxns.function_compilers.insert(hash_str("math/sin"), Arc::new(MathSin{}));
   #[cfg(feature = "math_cos")]
-  fxns.function_compilers.insert(hash_str("math/cos"), &MathCos{});
+  fxns.function_compilers.insert(hash_str("math/cos"), Arc::new(MathCos{}));
   #[cfg(feature = "math_atan2")]
-  fxns.function_compilers.insert(hash_str("math/atan2"), &MathAtan2{});
+  fxns.function_compilers.insert(hash_str("math/atan2"), Arc::new(MathAtan2{}));
   #[cfg(feature = "math_atan")]
-  fxns.function_compilers.insert(hash_str("math/atan"), &MathAtan{});
+  fxns.function_compilers.insert(hash_str("math/atan"), Arc::new(MathAtan{}));
   #[cfg(feature = "math_acos")]
-  fxns.function_compilers.insert(hash_str("math/acos"), &MathAcos{});
+  fxns.function_compilers.insert(hash_str("math/acos"), Arc::new(MathAcos{}));
   #[cfg(feature = "math_acosh")]
-  fxns.function_compilers.insert(hash_str("math/acosh"), &MathAcosh{});
+  fxns.function_compilers.insert(hash_str("math/acosh"), Arc::new(MathAcosh{}));
   #[cfg(feature = "math_acot")]
-  fxns.function_compilers.insert(hash_str("math/acot"), &MathAcot{});
+  fxns.function_compilers.insert(hash_str("math/acot"), Arc::new(MathAcot{}));
   #[cfg(feature = "math_acsc")]
-  fxns.function_compilers.insert(hash_str("math/acsc"), &MathAcsc{});
+  fxns.function_compilers.insert(hash_str("math/acsc"), Arc::new(MathAcsc{}));
   #[cfg(feature = "math_asec")]
-  fxns.function_compilers.insert(hash_str("math/asec"), &MathAsec{});
+  fxns.function_compilers.insert(hash_str("math/asec"), Arc::new(MathAsec{}));
   #[cfg(feature = "math_asin")]
-  fxns.function_compilers.insert(hash_str("math/asin"), &MathAsin{});
+  fxns.function_compilers.insert(hash_str("math/asin"), Arc::new(MathAsin{}));
   #[cfg(feature = "math_sinh")]
-  fxns.function_compilers.insert(hash_str("math/sinh"), &MathSinh{});
+  fxns.function_compilers.insert(hash_str("math/sinh"), Arc::new(MathSinh{}));
   #[cfg(feature = "math_cosh")]
-  fxns.function_compilers.insert(hash_str("math/cosh"), &MathCosh{});
+  fxns.function_compilers.insert(hash_str("math/cosh"), Arc::new(MathCosh{}));
   #[cfg(feature = "math_tanh")]
-  fxns.function_compilers.insert(hash_str("math/tanh"), &MathTanh{});
+  fxns.function_compilers.insert(hash_str("math/tanh"), Arc::new(MathTanh{}));
   #[cfg(feature = "math_atanh")]
-  fxns.function_compilers.insert(hash_str("math/atanh"), &MathAtanh{});
+  fxns.function_compilers.insert(hash_str("math/atanh"), Arc::new(MathAtanh{}));
   #[cfg(feature = "math_cot")]
-  fxns.function_compilers.insert(hash_str("math/cot"), &MathCot{});
+  fxns.function_compilers.insert(hash_str("math/cot"), Arc::new(MathCot{}));
   #[cfg(feature = "math_csc")]
-  fxns.function_compilers.insert(hash_str("math/csc"), &MathCsc{});
+  fxns.function_compilers.insert(hash_str("math/csc"), Arc::new(MathCsc{}));
   #[cfg(feature = "math_sec")]
-  fxns.function_compilers.insert(hash_str("math/sec"), &MathSec{});
+  fxns.function_compilers.insert(hash_str("math/sec"), Arc::new(MathSec{}));
   #[cfg(feature = "math_tan")]
-  fxns.function_compilers.insert(hash_str("math/tan"), &MathTan{});
+  fxns.function_compilers.insert(hash_str("math/tan"), Arc::new(MathTan{}));
 
   // Preload io functions
   //#[cfg(feature = "io_print")]
-  //fxns.function_compilers.insert(hash_str("io/print"), &IoPrint{});
+  //fxns.function_compilers.insert(hash_str("io/print"), Arc::new(IoPrint{}));
   //#[cfg(feature = "io_println")]
-  //fxns.function_compilers.insert(hash_str("io/println"), &IoPrintln{});
+  //fxns.function_compilers.insert(hash_str("io/println"), Arc::new(IoPrintln{}));
 
   // Matrix functions
   #[cfg(feature = "matrix_horzcat")]
-  fxns.function_compilers.insert(hash_str("matrix/horzcat"), &MatrixHorzCat{});
+  fxns.function_compilers.insert(hash_str("matrix/horzcat"), Arc::new(MatrixHorzCat{}));
   #[cfg(feature = "matrix_vertcat")]
-  fxns.function_compilers.insert(hash_str("matrix/vertcat"), &MatrixVertCat{});
+  fxns.function_compilers.insert(hash_str("matrix/vertcat"), Arc::new(MatrixVertCat{}));
   #[cfg(feature = "matrix_transpose")]
-  fxns.function_compilers.insert(hash_str("matrix/transpose"), &MatrixTranspose{});
+  fxns.function_compilers.insert(hash_str("matrix/transpose"), Arc::new(MatrixTranspose{}));
   #[cfg(feature = "matrix_matmul")]
-  fxns.function_compilers.insert(hash_str("matrix/matmul"), &MatrixMatMul{});
+  fxns.function_compilers.insert(hash_str("matrix/matmul"), Arc::new(MatrixMatMul{}));
   #[cfg(feature = "matrix_dot")]
-  fxns.function_compilers.insert(hash_str("matrix/dot"), &MatrixDot{});
+  fxns.function_compilers.insert(hash_str("matrix/dot"), Arc::new(MatrixDot{}));
   #[cfg(feature = "matrix_solve")]
-  fxns.function_compilers.insert(hash_str("matrix/solve"), &MatrixSolve{});
+  fxns.function_compilers.insert(hash_str("matrix/solve"), Arc::new(MatrixSolve{}));
   #[cfg(feature = "matrix_comprehensions")]
-  fxns.function_compilers.insert(hash_str("matrix/comprehension"), &MatrixComprehensionDefine{});
+  fxns.function_compilers.insert(hash_str("matrix/comprehension"), Arc::new(MatrixComprehensionDefine{}));
 
   // Compare functions
   #[cfg(feature = "compare_eq")]
-  fxns.function_compilers.insert(hash_str("compare/eq"), &CompareEqual{});
+  fxns.function_compilers.insert(hash_str("compare/eq"), Arc::new(CompareEqual{}));
   #[cfg(feature = "compare_neq")]
-  fxns.function_compilers.insert(hash_str("compare/neq"), &CompareNotEqual{});
+  fxns.function_compilers.insert(hash_str("compare/neq"), Arc::new(CompareNotEqual{}));
   #[cfg(feature = "compare_lte")]
-  fxns.function_compilers.insert(hash_str("compare/lte"), &CompareLessThanEqual{});
+  fxns.function_compilers.insert(hash_str("compare/lte"), Arc::new(CompareLessThanEqual{}));
   #[cfg(feature = "compare_gte")]
-  fxns.function_compilers.insert(hash_str("compare/gte"), &CompareGreaterThanEqual{});
+  fxns.function_compilers.insert(hash_str("compare/gte"), Arc::new(CompareGreaterThanEqual{}));
   #[cfg(feature = "compare_lt")]
-  fxns.function_compilers.insert(hash_str("compare/lt"), &CompareLessThan{});
+  fxns.function_compilers.insert(hash_str("compare/lt"), Arc::new(CompareLessThan{}));
   #[cfg(feature = "compare_gt")]
-  fxns.function_compilers.insert(hash_str("compare/gt"), &CompareGreaterThan{});
+  fxns.function_compilers.insert(hash_str("compare/gt"), Arc::new(CompareGreaterThan{}));
 
   // Logic functions
   #[cfg(feature = "logic_and")]
-  fxns.function_compilers.insert(hash_str("logic/and"), &LogicAnd{});
+  fxns.function_compilers.insert(hash_str("logic/and"), Arc::new(LogicAnd{}));
   #[cfg(feature = "logic_or")]
-  fxns.function_compilers.insert(hash_str("logic/or"), &LogicOr{});
+  fxns.function_compilers.insert(hash_str("logic/or"), Arc::new(LogicOr{}));
   #[cfg(feature = "logic_not")]
-  fxns.function_compilers.insert(hash_str("logic/not"), &LogicNot{});
+  fxns.function_compilers.insert(hash_str("logic/not"), Arc::new(LogicNot{}));
   #[cfg(feature = "logic_xor")]
-  fxns.function_compilers.insert(hash_str("logic/xor"), &LogicXor{});
+  fxns.function_compilers.insert(hash_str("logic/xor"), Arc::new(LogicXor{}));
 
   // Set Functions
   #[cfg(feature = "set_union")]
-  fxns.function_compilers.insert(hash_str("set/union"), &SetUnion{});
+  fxns.function_compilers.insert(hash_str("set/union"), Arc::new(SetUnion{}));
   #[cfg(feature = "set_intersection")]
-  fxns.function_compilers.insert(hash_str("set/intersection"), &SetIntersection{});
+  fxns.function_compilers.insert(hash_str("set/intersection"), Arc::new(SetIntersection{}));
   #[cfg(feature = "set_difference")]
-  fxns.function_compilers.insert(hash_str("set/difference"), &SetDifference{});
+  fxns.function_compilers.insert(hash_str("set/difference"), Arc::new(SetDifference{}));
   #[cfg(feature = "set_subset")]
-  fxns.function_compilers.insert(hash_str("set/subset"), &SetSubset{});
+  fxns.function_compilers.insert(hash_str("set/subset"), Arc::new(SetSubset{}));
   #[cfg(feature = "set_superset")]
-  fxns.function_compilers.insert(hash_str("set/superset"), &SetSuperset{});
+  fxns.function_compilers.insert(hash_str("set/superset"), Arc::new(SetSuperset{}));
   #[cfg(feature = "set_proper_subset")]
-  fxns.function_compilers.insert(hash_str("set/proper-subset"), &SetProperSubset{});
+  fxns.function_compilers.insert(hash_str("set/proper-subset"), Arc::new(SetProperSubset{}));
   #[cfg(feature = "set_proper_superset")]
-  fxns.function_compilers.insert(hash_str("set/proper-superset"), &SetProperSuperset{});
+  fxns.function_compilers.insert(hash_str("set/proper-superset"), Arc::new(SetProperSuperset{}));
   #[cfg(feature = "set_element_of")]
-  fxns.function_compilers.insert(hash_str("set/element-of"), &SetElementOf{});
+  fxns.function_compilers.insert(hash_str("set/element-of"), Arc::new(SetElementOf{}));
   #[cfg(feature = "set_not_element_of")]
-  fxns.function_compilers.insert(hash_str("set/not-element-of"), &SetNotElementOf{});
+  fxns.function_compilers.insert(hash_str("set/not-element-of"), Arc::new(SetNotElementOf{}));
   #[cfg(feature = "set_comprehensions")]
-  fxns.function_compilers.insert(hash_str("set/comprehension"), &SetComprehensionDefine{});
+  fxns.function_compilers.insert(hash_str("set/comprehension"), Arc::new(SetComprehensionDefine{}));
 
   intrp
 
+}
+
+struct WasmProgram<'a> {
+  interpreter: &'a mut Interpreter,
+}
+
+impl<'a> WasmProgram<'a> {
+  fn run_string(&mut self, source: &str) -> MResult<Value> {
+    let tree = parser::parse(source.trim())?;
+    self.interpreter.interpret(&tree)
+  }
 }
 
 fn find_out_values(interpreter: &Interpreter, interpreter_id: u64) -> Option<Ref<HashMap<u64, Value>>> {
@@ -240,17 +252,11 @@ pub fn main() -> Result<(), JsValue> {
 
 #[cfg(feature = "eval")]
 fn run_mech_code(intrp: &mut Interpreter, code: &Vec<(String,MechSourceCode)>) -> MResult<Value> {
+  let mut program = WasmProgram { interpreter: intrp };
   for (file, source) in code {
     match source {
       MechSourceCode::String(s) => {
-        let parse_result = parser::parse(&s.trim());
-        match parse_result {
-          Ok(tree) => { 
-            let result = intrp.interpret(&tree);
-            return result;
-          },
-          Err(err) => return Err(err),
-        }
+        return program.run_string(s);
       }
       x => {
         log!("Unsupported source code type: {:?}", x);
@@ -300,23 +306,11 @@ impl WasmMech {
         _ => value.clone(),
       };
       let ans_id = hash_str("ans");
-
-      if interpreter_id == 0 {
-        let symbols = self.interpreter.symbols();
-        let mut symbols_brrw = symbols.borrow_mut();
-        symbols_brrw.insert(ans_id, resolved_value, false);
-        symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
-        self.interpreter.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
-      } else {
-        let mut sub_interpreters = self.interpreter.sub_interpreters.borrow_mut();
-        if let Some(sub) = sub_interpreters.get_mut(&interpreter_id) {
-          let symbols = sub.symbols();
-          let mut symbols_brrw = symbols.borrow_mut();
-          symbols_brrw.insert(ans_id, resolved_value, false);
-          symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
-          sub.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
-        }
-      }
+      let symbols = self.interpreter.symbols();
+      let mut symbols_brrw = symbols.borrow_mut();
+      symbols_brrw.insert(ans_id, resolved_value, false);
+      symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
+      self.interpreter.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
     }
   }
 
@@ -420,6 +414,8 @@ pub fn attach_repl(&mut self, repl_id: &str) {
                 result_line.set_inner_html(&output);
                 container_inner.append_child(&result_line).unwrap();
                 mech.init();
+                mech.render_inline_values();
+                mech.render_codeblock_output_values();
               }
             }
           });
@@ -550,6 +546,13 @@ pub fn attach_repl(&mut self, repl_id: &str) {
     closure.forget();
   }));
 
+  let intro_line = document.create_element("div").unwrap();
+  intro_line.set_class_name("repl-result");
+  intro_line.set_inner_html(
+    "<div class=\"mech-output-value\">Enter <code class=\"mech-inline-code\">:help</code> for a list of all commands.</div>",
+  );
+  container.append_child(&intro_line).unwrap();
+
   // Initial prompt
   if let Some(cb) = &*create_prompt.borrow() {
     cb();
@@ -604,6 +607,8 @@ pub fn attach_repl(&mut self, repl_id: &str) {
                   container.append_child(&result_line).unwrap();
 
                   mech.init();
+                  mech.render_inline_values();
+                  mech.render_codeblock_output_values();
 
                   // Replace previous prompt with a span
                   if let Some(old_input) = doc.get_element_by_id("repl-active-input") {
@@ -640,7 +645,19 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           execute_repl_command(repl_command)
         }
         Err(x) => {
-          format!("Unrecognized command: {}", x)
+          let message = html_escape(&format!("Unrecognized command: {}", x));
+          format!(
+            "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\"><div class=\"mech-runtime-error\">\
+              <div class=\"mech-runtime-error-header\">\
+                <span class=\"mech-runtime-error-icon\" aria-hidden=\"true\"></span>\
+                <div>\
+                  <div class=\"mech-runtime-error-title\">UnrecognizedCommand</div>\
+                  <div class=\"mech-runtime-error-message\">{}</div>\
+                </div>\
+              </div>\
+            </div></div>",
+            message
+          )
         }
       }
       #[cfg(not(feature = "repl"))]
@@ -695,9 +712,32 @@ pub fn attach_repl(&mut self, repl_id: &str) {
       // Parse element id
       let id = element.id();
       let parsed_id: Vec<&str> = id.split(":").collect();
-      let element_id = parsed_id[0].parse::<u64>().unwrap();
-      let interpreter_id = parsed_id[1].parse::<u64>().unwrap();
+      let (element_id, interpreter_id) = match parsed_id.as_slice() {
+        [output_id, interpreter_id] => {
+          match (output_id.parse::<u64>(), interpreter_id.parse::<u64>()) {
+            (Ok(output_id), Ok(interpreter_id)) => (output_id, interpreter_id),
+            _ => {
+              log!("Invalid clickable symbol id format: {}", id);
+              continue;
+            }
+          }
+        }
+        [output_id] => match output_id.parse::<u64>() {
+          Ok(output_id) => (output_id, 0),
+          Err(_) => {
+            log!("Invalid clickable symbol id format: {}", id);
+            continue;
+          }
+        },
+        _ => {
+          log!("Invalid clickable symbol id format: {}", id);
+          continue;
+        }
+      };
       let symbol_text = element.text_content().unwrap_or_default();
+      let symbol_name_hint = element
+        .get_attribute("data-var")
+        .unwrap_or_else(|| symbol_text.clone());
 
       let symbols = match find_symbols(&self.interpreter, interpreter_id) {
         Some(symbols) => symbols,
@@ -714,22 +754,40 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         let mech_output = document.get_element_by_id("mech-output").unwrap();
         let last_child = mech_output.last_child();
 
-        let symbols_brrw = symbols.borrow();
-
-        match symbols_brrw.get(element_id) {
+        let output = {
+          let symbols_brrw = symbols.borrow();
+          symbols_brrw.get(element_id).map(|output| output.borrow().clone())
+        };
+        match output {
           Some(output) => {
-            let output_brrw = output.borrow();
             let symbol_name = if symbol_text.trim().is_empty() {
-              symbols_brrw.get_symbol_name_by_id(element_id).unwrap()
+              {
+                let symbols_brrw = symbols.borrow();
+                symbols_brrw.get_symbol_name_by_id(element_id)
+              }
+                .or_else(|| {
+                  let trimmed = symbol_name_hint.trim();
+                  if trimmed.is_empty() {
+                    None
+                  } else {
+                    Some(trimmed.to_string())
+                  }
+                })
+                .unwrap_or_else(|| format!("symbol_{}", element_id))
             } else {
-              symbol_text.clone()
+              let trimmed_hint = symbol_name_hint.trim();
+              if !trimmed_hint.is_empty() && trimmed_hint != symbol_text.trim() {
+                trimmed_hint.to_string()
+              } else {
+                symbol_text.clone()
+              }
             };
             let repl_width = mech_output.client_width();
             // If REPL is "closed", show modal only (do not write to REPL).
             if repl_width == 0 {
               let modal = document.create_element("div").unwrap();
               modal.set_class_name("mech-modal");
-              modal.set_inner_html(&format_output_value_html(&output_brrw));
+              modal.set_inner_html(&format_output_value_html(&output));
 
               let x = event.client_x();
               let y = event.client_y();
@@ -753,30 +811,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
               return;
             }
 
-            let can_eval_symbol = symbol_name
-              .chars()
-              .any(|c| c.is_alphabetic() || c == '_' || c == ':');
-
-            let result_html = if can_eval_symbol {
-              CURRENT_MECH.with(|mech_ref| {
-                if let Some(ptr) = *mech_ref.borrow() {
-                  unsafe {
-                    let cmd = vec![("repl".to_string(), MechSourceCode::String(symbol_name.clone()))];
-                    match run_mech_code(&mut (*ptr).interpreter, &cmd) {
-                      Ok(output) => {
-                        let kind_str = html_escape(&format!("{}", output.kind()));
-                        format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html())
-                      }
-                      Err(_) => format_output_value_html(&output_brrw),
-                    }
-                  }
-                } else {
-                  format_output_value_html(&output_brrw)
-                }
-              })
-            } else {
-              format_output_value_html(&output_brrw)
-            };
+            let result_html = format_output_value_html(&output);
 
             // Add prompt line
             let prompt_line = document.create_element("div").unwrap();
@@ -808,9 +843,22 @@ pub fn attach_repl(&mut self, repl_id: &str) {
               }
             });
 
+            // Update variable "ans" with the value of the clicked symbol
+            CURRENT_MECH.with(|mech_ref| {
+              if let Some(ptr) = *mech_ref.borrow() {
+                unsafe { (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output); }
+              }
+            });
+
           },
           None => {
             let error_message = format!("No value found for element id: {}", element_id);
+            log!(
+              "Clickable click: missing symbol output for element_id={} interpreter_id={} id='{}'",
+              element_id,
+              interpreter_id,
+              id
+            );
             let result_line = document.create_element("div").unwrap();
             result_line.set_class_name("repl-result");
             result_line.set_inner_html(&error_message);
@@ -1017,6 +1065,63 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         inline_block.set_inner_html(&inline_html);
       }
     }
+    #[cfg(feature = "symbol_table")]
+    let var_elements = document.get_elements_by_class_name("mech-var-placeholder");
+    #[cfg(feature = "symbol_table")]
+    for j in 0..var_elements.length() {
+      let var_element = var_elements.get_with_index(j).unwrap();
+      let var_name = match var_element.get_attribute("data-var-name") {
+        Some(value) => value,
+        None => continue,
+      };
+      let var_id = hash_str(&var_name);
+      let interpreter_id = match var_element.get_attribute("data-interpreter-name") {
+        Some(value) => hash_str(&value),
+        None => match var_element.get_attribute("data-interpreter-id") {
+          Some(value) => value.parse::<u64>().unwrap_or(0),
+          None => self.interpreter.id,
+        },
+      };
+      let symbols = match find_symbols(&self.interpreter, interpreter_id) {
+        Some(symbols) => symbols,
+        None => {
+          log!(
+            "VAR placeholder unresolved interpreter: {} (variable: {})",
+            interpreter_id,
+            var_name
+          );
+          continue;
+        }
+      };
+      let symbols_brrw = symbols.borrow();
+      let output = match symbols_brrw.get(var_id) {
+        Some(value) => value.borrow().clone(),
+        None => {
+          log!(
+            "VAR placeholder unresolved variable (yet?): {} (hash: {}, interpreter: {})",
+            var_name,
+            var_id,
+            interpreter_id
+          );
+          continue;
+        }
+      };
+      let formatted = output.to_html();
+      let existing_class = var_element.get_attribute("class").unwrap_or_default();
+      let clickable_class = if existing_class.is_empty() {
+        "mech-clickable".to_string()
+      } else if existing_class.split_whitespace().any(|name| name == "mech-clickable") {
+        existing_class
+      } else {
+        format!("{} mech-clickable", existing_class)
+      };
+      let _ = var_element.set_attribute("class", &clickable_class);
+      let _ = var_element.set_attribute("id", &format!("{}:{}", var_id, interpreter_id));
+      let _ = var_element.set_attribute("data-var", &var_name);
+      var_element.set_inner_html(formatted.trim());
+    }
+    #[cfg(not(feature = "symbol_table"))]
+    log!("VAR placeholders require feature 'symbol_table' to resolve values.");
     #[cfg(feature = "clickable_symbol_listeners")]
     self.add_inline_value_clickable_listeners();
   }

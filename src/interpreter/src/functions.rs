@@ -9,6 +9,7 @@ use crate::tracing::{
 #[cfg(all(feature = "kind_annotation", feature = "enum"))]
 use std::collections::HashSet;
 use crate::*;
+use std::sync::Arc;
 
 // Functions
 // ============================================================================
@@ -120,7 +121,7 @@ pub fn function_call(fxn_call: &FunctionCall, env: Option<&Environment>, p: &Int
       .borrow()
       .function_compilers
       .get(&fxn_name_id)
-      .copied()
+      .cloned()
   };
   match fxn_compiler {
     Some(fxn_compiler) => {
@@ -158,7 +159,7 @@ pub fn function_call(fxn_call: &FunctionCall, env: Option<&Environment>, p: &Int
 // for the given argument types, runs it once to produce an initial value, then
 // pushes it onto the reactive plan so it re-runs when its inputs change.
 pub fn execute_native_function_compiler(
-  fxn_compiler: &'static dyn NativeFunctionCompiler,
+  fxn_compiler: Arc<dyn NativeFunctionCompiler>,
   input_arg_values: &Vec<Value>,
   p: &Interpreter,
 ) -> MResult<Value> {

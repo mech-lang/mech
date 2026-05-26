@@ -12,14 +12,14 @@ Mechdown supports hierarchical titles:
 
 It also supports optional **front matter** directly beneath the document title. Front matter ends with a second `===` separator and can include:
 
-- optional byline (first line)
+- optional K:V front matter fields (`author`, `date`, `hero`, `kicker`, `summary`, `next`, `previous`)
 - optional hero media (`![caption](src)` or a `| ... |` figures row/table)
 - optional summary paragraph
 
 1. Rules and conventions
 -------------------------------------------------------------------------------
 
-- Use one document title per file. The document can have an optional byline (author, date, etc.) immediately following the title.
+- Use one document title per file. The document can have optional K:V front matter immediately following the title.
 - Keep section numbering sequential.
 - Keep subsection numbering aligned with the parent section.
 - Prefer short, descriptive titles so generated navigation remains readable.
@@ -71,7 +71,11 @@ In HTML shims, these placeholders are available:
 
 - `{{STYLESHEET}}`
 - `{{TITLE}}`
-- `{{BYLINE}}`
+- `{{AUTHOR}}`
+- `{{DATE}}`
+- `{{KICKER}}`
+- `{{NEXT}}`
+- `{{PREVIOUS}}`
 - `{{HERO}}`
 - `{{SUMMARY}}`
 - `{{TOC}}`

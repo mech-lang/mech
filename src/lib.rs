@@ -7,10 +7,12 @@
 
 pub extern crate mech_core as core;
 pub extern crate mech_syntax as syntax;
+pub extern crate mech_program as program;
 
 pub use mech_core::*;
+pub use mech_program::*;
+
 use mech_core::nodes::Program;
-pub use mech_interpreter::Interpreter;
 
 extern crate colored;
 use colored::*;
@@ -56,19 +58,15 @@ use std::collections::HashSet;
 mod repl;
 #[cfg(feature = "serve")]
 mod serve;
-#[cfg(feature = "run")]
-mod run;
-#[cfg(feature = "mechfs")]
-mod mechfs;
+#[cfg(feature = "test")]
+mod test;
 
 #[cfg(feature = "repl")]
 pub use self::repl::*;
 #[cfg(feature = "serve")]
 pub use self::serve::*;
-#[cfg(feature = "run")]
-pub use self::run::*;
-#[cfg(feature = "mechfs")]
-pub use self::mechfs::*;
+#[cfg(feature = "test")]
+pub use self::test::*;
 
 pub use mech_core::*;
 pub use mech_syntax::*;
@@ -249,10 +247,10 @@ fn pretty_print_tree(tree: &Program) -> String {
 }
 
 #[cfg(feature = "whos")]
-pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
+pub fn whos(program: &MechProgram, names: Vec<String>) -> String {
   let mut builder = Builder::default();
   builder.push_record(vec!["Name", "Size", "Bytes", "Kind"]);
-  let state = intrp.state.borrow();
+  let state = program.interpreter().state.borrow();
   let symbol_table = state.symbol_table.borrow();
   let dictionary = symbol_table.dictionary.borrow();
   if names.is_empty() {
@@ -298,9 +296,9 @@ pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
 }
 
 #[cfg(feature = "pretty_print")]            
-fn pretty_print_symbols(intrp: &Interpreter) -> String {
+fn pretty_print_symbols(program: &MechProgram) -> String {
   let mut builder = Builder::default();
-  let symbol_table = intrp.pretty_print_symbols();
+  let symbol_table = program.interpreter().pretty_print_symbols();
   builder.push_record(vec![
     format!("{}",symbol_table),
   ]);
@@ -381,29 +379,9 @@ pub async fn read_or_download(path: &str,backup_url: &str, embedded: Option<&[u8
   Ok(bytes.to_vec())
 }
 
-#[derive(Debug, Clone)]
-pub struct HttpRequestFailed {
-  pub url: String,
-  pub source: String,
-}
-impl MechErrorKind for HttpRequestFailed {
-  fn name(&self) -> &str { "HttpRequestFailed" }
-  fn message(&self) -> String {
-  format!("Failed to GET {}: {}", self.url, self.source)
-  }
-}
 
-#[derive(Debug, Clone)]
-pub struct HttpTextDecodeFailed {
-  pub url: String,
-  pub source: String,
-}
-impl MechErrorKind for HttpTextDecodeFailed {
-  fn name(&self) -> &str { "HttpTextDecodeFailed" }
-  fn message(&self) -> String {
-  format!("Failed to read response text {}: {}", self.url, self.source)
-  }
-}
+
+
 
 #[derive(Debug, Clone)]
 pub struct HttpRequestStatusFailed {
@@ -417,18 +395,7 @@ impl MechErrorKind for HttpRequestStatusFailed {
   }
 }
 
-#[derive(Debug, Clone)]
-pub struct FileOpenFailed {
-  pub file_path: String,
-  pub source: String,
-}
-impl MechErrorKind for FileOpenFailed {
-  fn name(&self) -> &str { "FileOpenFailed" }
 
-  fn message(&self) -> String {
-    format!("Failed to open file {}: {}", self.file_path, self.source)
-  }
-}
 
 #[derive(Debug, Clone)]
 pub struct FileWriteFailed {

@@ -1416,6 +1416,62 @@ mark {
     padding: 3px 10px 3px 10px;
 }
 
+.mech-citation-text {
+    display: inline;
+}
+
+.mech-citation-external-link {
+    color: var(--accent-primary, #F3B62D);
+    display: inline;
+    text-decoration: none;
+}
+
+.mech-citation-link-text {
+    color: #f2ead9;
+}
+
+.mech-citation-link-icon-wrap {
+    display: inline-flex;
+    align-items: baseline;
+    vertical-align: -0.08em;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.mech-citation-external-link:hover .mech-citation-link-text,
+.mech-citation-external-link:focus-visible .mech-citation-link-text {
+    text-decoration: underline;
+    text-decoration-color: #F3B62D;
+    text-underline-offset: 0.12em;
+}
+
+.mech-citation-external-link:hover .mech-citation-link-icon,
+.mech-citation-external-link:focus-visible .mech-citation-link-icon {
+    color: var(--accent-hover, #F8D07A);
+}
+
+.mech-citation-external-link:focus-visible {
+    outline: 2px solid var(--accent-primary, #F3B62D);
+    outline-offset: 2px;
+    border-radius: 3px;
+}
+
+.mech-citation-link-icon {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    color: var(--accent-primary, #F3B62D);
+    background-color: currentColor;
+    -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE1IDNoNnY2Ii8+PHBhdGggZD0iTTEwIDE0IDIxIDMiLz48cGF0aCBkPSJNMTggMTN2NmEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMlY4YTIgMiAwIDAgMSAyLTJoNiIvPjwvc3ZnPg==");
+    mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE1IDNoNnY2Ii8+PHBhdGggZD0iTTEwIDE0IDIxIDMiLz48cGF0aCBkPSJNMTggMTN2NmEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMlY4YTIgMiAwIDAgMSAyLTJoNiIvPjwvc3ZnPg==");
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-position: center;
+    mask-position: center;
+}
+
 .mech-citation-link {
     color: #F8D07A;
     text-decoration: none;

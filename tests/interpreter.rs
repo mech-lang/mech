@@ -1,13 +1,14 @@
 #![allow(warnings)]
 extern crate mech_syntax;
 extern crate mech_core;
+extern crate mech;
 extern crate nalgebra as na;
 use std::cell::RefCell;
 use std::rc::Rc;
 use mech_core::matrix::Matrix;
 use mech_syntax::*;
 use mech_core::*;
-use mech_interpreter::*;
+use mech::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 use indexmap::set::IndexSet;
 
 /// Compare interpreter output to expected value
@@ -16,14 +17,11 @@ macro_rules! test_interpreter {
     #[test]
     fn $func() {
       let s = $input;
-      match parser::parse(&s) {
-          Ok(tree) => { 
-            let mut intrp = Interpreter::new(0);
-            let result = intrp.interpret(&tree).unwrap();
-            assert_eq!(result, $expected);
-          },
-          Err(err) => {panic!("{:?}", err);}
-      }   
+      let mut program = MechProgram::new(MechProgramConfig{name: "test".to_string(), environment: MechProgramEnvironment::default()});
+      match program.run_string(s) {
+        Ok(result) => assert_eq!(result, $expected),
+        Err(err) => panic!("{:?}", err),
+      }
     }
   )
 }
@@ -47,6 +45,8 @@ test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String(Ref::new
 test_interpreter!(interpret_literal_string_empty, r#""""#, Value::String(Ref::new("".to_string())));
 test_interpreter!(interpret_literal_string_multiline, r#""Hello 
  World""#, Value::String(Ref::new("Hello \n World".to_string())));
+test_interpreter!(interpret_string_access_uses_grapheme_clusters, r#"s := "é👩‍🚀z"
+s[2]"#, Value::String(Ref::new("👩‍🚀".to_string())));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(Ref::new(true)));
 test_interpreter!(interpret_literal_true2, "✓ ", Value::Bool(Ref::new(true)));
 test_interpreter!(interpret_literal_false2, "✗ ", Value::Bool(Ref::new(false)));
@@ -69,9 +69,8 @@ test_interpreter!(
 #[test]
 fn interpret_fsm_fails_when_transition_targets_undefined_state() {
   let s = "#Door(n<u64>) => <u64>\n  ├ :Closed(n<u64>)\n  └ :Open(n<u64>).\n\n#Door(n<u64>) -> :Closed(n)\n  :Closed(n) -> :Locked(n)\n  :Open(n) => n.\n\n#Door(1u64)";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  assert!(intrp.interpret(&tree).is_err());
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_fsm_fails_when_transition_targets_undefined_state".to_string(), environment: MechProgramEnvironment::default()});
+  assert!(program.run_string(s).is_err());
 }
 
 test_interpreter!(
@@ -85,9 +84,8 @@ test_interpreter!(interpret_variable_define_kind_literal, "x := <u8>;", Value::K
 #[test]
 fn interpret_variable_define_undefined_kind_literal_error() {
   let s = "x := <foo>;";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  assert!(intrp.interpret(&tree).is_err());
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_variable_define_undefined_kind_literal_error".to_string(), environment: MechProgramEnvironment::default()});
+  assert!(program.run_string(s).is_err());
 }
 test_interpreter!(interpret_variable_define_typed_empty, "emp<_> := _", Value::Empty);
 #[cfg(feature = "u64")]
@@ -123,9 +121,8 @@ test_interpreter!(
 #[test]
 fn interpret_matrix_literal_with_empty_infers_optional_f64_elements() {
   let s = "x := [1 2 _ 5]\n\nx";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_matrix_literal_with_empty_infers_optional_f64_elements".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
   assert_eq!(
     result.deref_kind(),
     ValueKind::Matrix(
@@ -138,9 +135,8 @@ fn interpret_matrix_literal_with_empty_infers_optional_f64_elements() {
 #[test]
 fn interpret_option_matrix_literal_unwraps_to_u64_defaults() {
   let s = "x<[u64?]> := [_ 2u64 _ 3u64 _ 4u64]\n\nunwrapped<[u64]> := x?\n  | x => x\n  | * => 0u64.\n\nunwrapped";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_matrix_literal_unwraps_to_u64_defaults".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
   let detached = match result {
     Value::MutableReference(v) => v.borrow().clone(),
     value => value,
@@ -160,9 +156,10 @@ fn interpret_option_match_after_outer_join_column_access_converts_option_to_scal
      | x => x\n\
      | * => 0.\n\
    y";
+
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_match_after_outer_join_column_access_converts_option_to_scalar".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
   let detached = match result {
     Value::MutableReference(v) => v.borrow().clone(),
     value => value,
@@ -172,9 +169,8 @@ fn interpret_option_match_after_outer_join_column_access_converts_option_to_scal
 #[test]
 fn interpret_option_matrix_literal_unwraps_to_typed_f64_defaults() {
   let s = "x<[f64?]> := [_ 2 _ 3 _ 4]\n\nunwrapped<[f64]> := x?\n  | x => x\n  | * => 0.\n\nunwrapped";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_matrix_literal_unwraps_to_typed_f64_defaults".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
   let detached = match result {
     Value::MutableReference(v) => v.borrow().clone(),
     value => value,
@@ -187,9 +183,8 @@ fn interpret_option_matrix_literal_unwraps_to_typed_f64_defaults() {
 #[test]
 fn interpret_option_matrix_literal_unwraps_to_inferred_f64_defaults() {
   let s = "x<[f64?]> := [_ 2 _ 3 _ 4]\n\nunwrapped := x?\n  | x => x\n  | * => 0.\n\nunwrapped";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_matrix_literal_unwraps_to_inferred_f64_defaults".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
   assert_eq!(
     result.deref_kind(),
     ValueKind::Matrix(Box::new(ValueKind::F64), vec![1, 6])
@@ -204,9 +199,38 @@ test_interpreter!(
 #[test]
 fn interpret_option_match_requires_wildcard_arm() {
   let s = "foo<u64?> := 1234\n\nbar := foo?\n  | 0 => 9.\n\nbar";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  assert!(intrp.interpret(&tree).is_err());
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_match_requires_wildcard_arm".to_string(), environment: MechProgramEnvironment::default()});
+  assert!(program.run_string(s).is_err());
+}
+
+#[test]
+fn interpret_set_literal_mixed_empty_and_string_infers_optional_string_kind() {
+  let s = r#"
+x := {
+  {
+    failed: {
+    }
+  }
+  {
+    failed: {
+      "foo"
+    }
+  }
+}
+x
+"#;
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_set_literal_mixed_empty_and_string_infers_optional_string_kind".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
+  assert_eq!(
+    result.deref_kind(),
+    ValueKind::Set(
+      Box::new(ValueKind::Record(vec![(
+        "failed".to_string(),
+        ValueKind::Set(Box::new(ValueKind::Option(Box::new(ValueKind::String))), None),
+      )])),
+      Some(2)
+    )
+  );
 }
 
 #[test]
@@ -218,9 +242,8 @@ string-color := my-color?
   | :red   => "red"
   | :green => "green".
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let err = intrp.interpret(&tree).unwrap_err();
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_enum_match_reports_missing_variants_color".to_string(), environment: MechProgramEnvironment::default()});
+  let err = program.run_string(s).unwrap_err();
   let msg = format!("{:?}", err);
   assert!(msg.contains("MatchNonExhaustive"));
   assert!(msg.contains(":blue"));
@@ -236,9 +259,8 @@ label := state?
   | :open   => "open"
   | :closed => "closed".
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let err = intrp.interpret(&tree).unwrap_err();
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_enum_match_reports_missing_variants_generalized".to_string(), environment: MechProgramEnvironment::default()});
+  let err = program.run_string(s).unwrap_err();
   let msg = format!("{:?}", err);
   assert!(msg.contains("MatchNonExhaustive"));
   assert!(msg.contains(":locked"));
@@ -255,9 +277,8 @@ code := x?
   | :pending => 2
   | :stopped => 0.
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_enum_match_all_variants_without_wildcard_is_exhaustive".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
   assert_eq!(result, Value::F64(Ref::new(1.0)));
 }
 
@@ -271,11 +292,14 @@ code := x?
   | :pending => "pending"
   | :stopped => 0.
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let err = intrp.interpret(&tree).unwrap_err();
-  let msg = format!("{:?}", err);
-  assert!(msg.contains("MatchArmKindMismatch"));
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_enum_match_all_variants_without_wildcard_still_checks_arm_kinds".to_string(), environment: MechProgramEnvironment::default()});
+  match program.run_string(s) {
+    Ok(result) => panic!("Expected error but got result: {:?}", result),
+    Err(err) => {
+      let msg = format!("{:?}", err);
+      assert!(msg.contains("MatchArmKindMismatch"));
+    }
+  }
 }
 
 #[cfg(feature = "u64")]
@@ -324,9 +348,14 @@ x<option> := :some(:ok(42u64))
 result := x?
   | :some(:ok(n)) => n.
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  assert!(intrp.interpret(&tree).is_err());
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_match_tuple_struct_pattern".to_string(), environment: MechProgramEnvironment::default()});
+  match program.run_string(s) {
+    Ok(result) => panic!("Expected error but got result: {:?}", result),
+    Err(err) => {
+      let msg = format!("{:?}", err);
+      assert!(msg.contains("MatchNonExhaustive"));
+    }
+  }
 }
 test_interpreter!(
   interpret_function_shorthand_match_arm_broadcasts_over_matrix_input,
@@ -386,11 +415,14 @@ fn interpret_fsm_bubble_sort_rejects_f64_argument_kind() {
 x<[f64]> := [3 5 4 1 2]
 #bubble-sort(x)
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let err = intrp.interpret(&tree).unwrap_err();
-  let msg = format!("{:?}", err);
-  assert!(msg.contains("FsmArgumentKindMismatch"));
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_fsm_bubble_sort_rejects_f64_argument_kind".to_string(), environment: MechProgramEnvironment::default()});
+  match program.run_string(s) {
+    Ok(result) => panic!("Expected error but got result: {:?}", result),
+    Err(err) => {
+      let msg = format!("{:?}", err);
+      assert!(msg.contains("FsmArgumentKindMismatch"));
+    }
+  }
 }
 #[test]
 fn interpret_fsm_bubble_sort_rejects_untyped_numeric_matrix_argument_kind() {
@@ -418,11 +450,14 @@ fn interpret_fsm_bubble_sort_rejects_untyped_numeric_matrix_argument_kind() {
 y := [3 5 4 1 2]
 #bubble-sort(y)
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let err = intrp.interpret(&tree).unwrap_err();
-  let msg = format!("{:?}", err);
-  assert!(msg.contains("FsmArgumentKindMismatch"));
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_tagged_union_function_match_requires_exhaustive_arms".to_string(), environment: MechProgramEnvironment::default()});
+  match program.run_string(s) {
+    Ok(result) => panic!("Expected error but got result: {:?}", result),
+    Err(err) => {
+      let msg = format!("{:?}", err);
+      assert!(msg.contains("FsmArgumentKindMismatch"));
+    }
+  }
 }
 test_interpreter!(
   interpret_variable_define_typed_set_from_range_matrix,
@@ -490,6 +525,10 @@ test_interpreter!(interpret_matrix_div_complex, "[1+2i 3+4i] / [5+6i 7+8i]", Val
 
 test_interpreter!(interpret_matrix_eq_rational, "[1/2 3/4] == [1/2 3/4]", Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2)));
 test_interpreter!(interpret_matrix_eq_complex, "[1+2i 3+4i] == [1+2i 3+4i]", Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2)));
+test_interpreter!(interpret_matrix_strict_eq, "x := 1 + [4 5 6]\nx === [5 6 7]", Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_matrix_strict_neq, "x := 1 + [4 5 6]\nx !== [5 6 8]", Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_matrix_strict_eq_symbol, "x := 1 + [4 5 6]\nx ≡ [5 6 7]", Value::Bool(Ref::new(true)));
+test_interpreter!(interpret_matrix_strict_neq_symbol, "x := 1 + [4 5 6]\nx !≡ [5 6 8]", Value::Bool(Ref::new(true)));
 test_interpreter!(interpret_matrix_neq_rational, "[1/2 3/4] != [1/2 3/5]", Value::MatrixBool(Matrix::from_vec(vec![false, true], 1, 2)));
 test_interpreter!(interpret_matrix_neq_complex, "[1+2i 3+4i] != [1+2i 3+5i]", Value::MatrixBool(Matrix::from_vec(vec![false, true], 1, 2)));
 test_interpreter!(interpret_matrix_gt_rational, "[1/2 3/4] > [1/4 1/2]", Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2)));
@@ -762,6 +801,9 @@ test_interpreter!(interpret_matrixmatmul_r3m3, "a := [1.0 2.0 3.0]; b := [4.0 5.
 test_interpreter!(interpret_matrixmatmul_m3v3, "b := [4.0 5.0 6.0; 7.0 8.0 9.0; 10 11 12]; a := [1.0 2.0 3.0]'; c := b ** a", Value::MatrixF64(Matrix::from_vec(vec![32.0, 50.0, 68.0], 3, 1)));
 test_interpreter!(interpret_matrix_string, r#"["Hello" "World"]"#, Value::MatrixString(Matrix::from_vec(vec!["Hello".to_string(), "World".to_string()], 1, 2)));
 test_interpreter!(interpret_matrix_string_access, r#"x:=["Hello" "World"];x[2]"#, Value::String(Ref::new("World".to_string())));
+test_interpreter!(interpret_string_access_first, r#"a := "Hello"; a[1]"#, Value::String(Ref::new("H".to_string())));
+test_interpreter!(interpret_string_access_last, r#"a := "Hello"; a[5]"#, Value::String(Ref::new("o".to_string())));
+test_interpreter!(interpret_string_access_mutable, r#"~a := "Hello"; a[1]"#, Value::String(Ref::new("H".to_string())));
 test_interpreter!(interpret_matrix_string_assign, r#"~x:=["Hello" "World"];x[1]="Foo";[x[1] x[2]]"#, Value::MatrixString(Matrix::from_vec(vec!["Foo".to_string(), "World".to_string()], 1, 2)));
 test_interpreter!(interpret_matrix_string_assign_logical, r#"~x := ["Hello", "World", "!"]; x[[true false true]] = "Foo";"#, Value::MatrixString(Matrix::from_vec(vec!["Foo".to_string(), "World".to_string(), "Foo".to_string()], 1, 3)));
 test_interpreter!(interpret_table_string_access, r#"x:=|x<string> y<string> | "a" "b" | "c" "d" |; x.y"#, Value::MatrixString(Matrix::from_vec(vec!["b".to_string(), "d".to_string()], 2, 1)));
@@ -979,6 +1021,15 @@ test_interpreter!(interpret_function_call_native_vector, "math/sin([1.570796327 
 test_interpreter!(interpret_function_call_native, r#"math/sin(1.5707963267948966)"#, Value::F64(Ref::new(1.0)));
 test_interpreter!(interpret_function_call_native_cos, r#"math/cos(0.0)"#, Value::F64(Ref::new(1.0)));
 test_interpreter!(interpret_function_call_native_vector2, "math/cos([0.0 0.0])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
+
+test_interpreter!(interpret_function_shorthand_with_wildcard_arm, r#"hi() => <string>
+  | * => "hi".
+
+hi()"#, Value::String(Ref::new("hi".to_string())));
+test_interpreter!(interpret_function_single_shorthand_arm_without_arrow, r#"hi() => <string>
+  | "hi".
+
+hi()"#, Value::String(Ref::new("hi".to_string())));
 test_interpreter!(interpret_user_function_scalar_auto_broadcast, r#"add-one(x<f64>) => <f64>
   | * => x + 1.
 add-one([1 2 3])"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, 4.0], 1, 3)));
@@ -1264,13 +1315,16 @@ b := |id<u64> hw2<u8>| 2 200 | 3 255 | 4 42 |
 x := a ⟗ b
 x.hw1
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
-  assert_eq!(
-    result.kind(),
-    ValueKind::Matrix(Box::new(ValueKind::Option(Box::new(ValueKind::U8))), vec![4,1])
-  );
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_table_full_outer_join_optional_column_kind_is_u8_option_matrix".to_string(), environment: MechProgramEnvironment::default()});
+  match program.run_string(s) {
+    Ok(result) => {
+      assert_eq!(
+        result.kind(),
+        ValueKind::Matrix(Box::new(ValueKind::Option(Box::new(ValueKind::U8))), vec![4,1])
+      );
+    } 
+    Err(err) => panic!("Program execution failed: {:?}", err),
+  }
 }
 
 #[cfg(all(feature = "table", feature = "u64", feature = "u8"))]
@@ -1450,6 +1504,7 @@ unwrap(x<option>) => <u64>
 
 unwrap(x)
 "#, Value::U64(Ref::new(0u64)));
+
 #[test]
 fn interpret_tagged_union_function_match_requires_exhaustive_arms() {
   let s = r#"
@@ -1463,13 +1518,16 @@ unwrap(x<option>) => <u64>
 
 unwrap(x)
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let err = intrp.interpret(&tree).unwrap_err();
-  let msg = format!("{:?}", err);
-  assert!(msg.contains("FunctionMatchNonExhaustive"));
-  assert!(msg.contains(":none"));
-  assert!(msg.contains("wildcard"));
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_tagged_union_function_match_requires_exhaustive_arms".to_string(), environment: MechProgramEnvironment::default()});
+  match program.run_string(s) {
+    Ok(result) => panic!("Expected error but got result: {:?}", result),
+    Err(err) => {
+      let msg = format!("{:?}", err);
+      assert!(msg.contains("FunctionMatchNonExhaustive"));
+      assert!(msg.contains(":none"));
+      assert!(msg.contains("wildcard"));
+    }
+  }
 }
 test_interpreter!(interpret_enum_qualified_name, r#"
 <color> := :red | :green | :blue; 

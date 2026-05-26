@@ -28,6 +28,7 @@
   --code-output-background-color: #020303;
   --var-name-color: hsl(290, 45%, 90%);
   --field-name-color: #63abb7;
+  --invariant-name-color: hsl(130, 100%, 75%);
   --kind-annotation-color: #f09fca;
   --kind-annotation-color-dark: #d574a8;
   --body-background-color: hsl(216, 28%, 7%);
@@ -37,6 +38,10 @@
   --mechdown-table-row-hover-background-color: hsl(222, 25%, 17%);
   --h2-underline-color: #343b46;
   --toc-heading-number-color: rgba(255, 255, 255, 0.55);
+  --toc-accent: hsl(308, 42%, 69%);
+  --toc-accent-soft: hsl(308, 42%, 59%);
+  --toc-text-secondary: hsl(308, 17%, 73%);
+  --toc-border: hsl(308, 17%, 73%);
   --title-underline-color: hsl(42, 89%, 70%);
   --callout-background-color: #1f2533;
   --warning-color: hsl(20, 100%, 75%);
@@ -48,6 +53,21 @@
   --code-namespace-label-color: #f5a7d3;
   --pattern-color: hsl(133, 33%, 70%);
   --pattern-parent-color: hsl(133, 33%, 70%);
+  --logo-color: rgb(246,192,78);
+}
+
+.mech-invariant-define {
+    color: var(--op-color);
+}
+
+.mech-invariant-name {
+    color: var(--warning-color);
+}
+
+.mech-invariant-define-op {
+    padding-left: 6px;
+    padding-right: 6px;
+    color: var(--op-color);
 }
 
 html {
@@ -82,6 +102,50 @@ body {
 .mech-content {
     counter-reset: h2 equation;
     margin-top: 50px;
+}
+
+.mech-toc {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    max-height: 100vh;
+    overflow: auto;
+    padding: 20px 16px;
+}
+
+.mech-toc ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mech-toc li {
+    margin-bottom: 8px;
+}
+
+.mech-toc a {
+    display: block;
+    position: relative;
+    color: var(--toc-text-secondary);
+    text-decoration: none;
+    padding-left: 10px;
+    line-height: 1.4;
+}
+
+.mech-toc a.active,
+.mech-toc a.active-path {
+    color: var(--toc-accent);
+    font-weight: 650;
+}
+
+.mech-toc > ul > li > a.active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--toc-accent-soft);
 }
 
 .mech-toc.hidden ~ .mech-content {
@@ -282,7 +346,7 @@ body {
     padding-right: 10px;
 }
 
-.mech-variable-assign-op {
+.mech-variable-define-op {
     padding-left:  6px;
     padding-right: 6px;
     color: var(--op-color);
@@ -344,7 +408,8 @@ body {
 }
 
 .mech-program h1 {
-    width: 900px;
+    width: 100%;
+    max-width: 900px;
     font-family: 'FiraCodeRegular', monospace;
     padding-bottom: 10px;
     color: var(--text-color);
@@ -353,7 +418,7 @@ body {
     font-weight: bold;
     text-align: center;
     margin-bottom: 16px;
-    margin-left: -100px;
+    margin-left: 0px;
     position: relative; 
 }
 
@@ -385,7 +450,8 @@ body {
 }
 
 .mech-program h2 {
-    width: 850px;
+    width: 100%;
+    max-width: 850px;
     font-family: 'FiraCodeRegular', monospace;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--h2-underline-color);
@@ -394,7 +460,7 @@ body {
     letter-spacing: 2px;
     margin-bottom: 30px;
     margin-top: 80px;
-    margin-left: -73px;
+    margin-left: 0px;
 }
 
 .mech-program h3 a {
@@ -585,9 +651,7 @@ body {
 .mech-code {
     display: flex;
     flex-direction: row;
-    align-items: center;
     gap: 20px;
-    line-height: 24px;
 }
 
 .mech-match-op {
@@ -787,6 +851,12 @@ code {
     color: var(--main-color-high);
     text-decoration: underline dotted;
     text-underline-offset: 3px;
+}
+
+.mech-program-subtitle a {
+    color: var(--text-color);
+    cursor: pointer;
+    text-decoration: none;
 }
 
 .mech-program-subtitle:hover {
@@ -1188,6 +1258,7 @@ ol {
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding-bottom: 10px;
 }
 
 .mech-image {
@@ -1206,7 +1277,8 @@ ol {
 }
 
 .mech-float .mech-figure-caption {
-    width: 350px;
+    width: 100%;
+    max-width: none;
 }
 
 .mech-figure-caption {
@@ -1222,8 +1294,24 @@ ol {
 }
 
 .mech-float .mech-figure {
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin: 0;
+    align-items: stretch;
+}
+
+.mech-float .mech-image {
+    max-width: 100%;
+}
+
+.mech-float .mech-figure-caption {
+    margin-top: 0.5em;
+    line-height: 1.3;
+    display: block;
+}
+
+.mech-float .mech-figure-label {
+    display: inline;
+    min-width: 0;
+    margin-right: 0.35em;
 }
 
 .mech-figure-caption .mech-paragraph {
@@ -1451,6 +1539,8 @@ li p {
     margin: 0;
     line-height: 1.6;
     font-size: 14pt;
+    margin-top: 10px;
+    text-indent: 25px;
 }
 
 
@@ -1594,6 +1684,7 @@ li p {
     background: color-mix(in srgb, var(--code-background-color) 90%, var(--error-color) 10%);
     padding: 14px 16px;
     color: var(--text-color);
+    white-space: normal;
 }
 
 .mech-output-value:has(.mech-runtime-error) {
@@ -1604,6 +1695,13 @@ li p {
     display: flex;
     gap: 12px;
     align-items: flex-start;
+}
+
+.mech-runtime-error-header > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
 }
 
 .mech-runtime-error-icon {
@@ -1622,7 +1720,7 @@ li p {
 }
 
 .mech-runtime-error-message {
-    margin-top: 2px;
+    margin-top: 0px;
     line-height: 1.4;
     word-break: break-word;
 }
@@ -1824,6 +1922,10 @@ li p {
     color: #ada594;
 }
 
+.mech-footnote-body .mech-paragraph + .mech-paragraph {
+    margin-top: 10px !important;
+}
+
 .mech-footnote-id {
     color: var(--main-color-mid);
     font-weight: bold;
@@ -2019,9 +2121,24 @@ mark {
     transition: color 0.2s ease;
 }
 
-.mech-citation-link:hover {
+.mech-citation-link-icon {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
     color: var(--main-color-low);
-    text-decoration: underline;
+    background-color: currentColor;
+    -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE1IDNoNnY2Ii8+PHBhdGggZD0iTTEwIDE0IDIxIDMiLz48cGF0aCBkPSJNMTggMTN2NmEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMlY4YTIgMiAwIDAgMSAyLTJoNiIvPjwvc3ZnPg==");
+    mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE1IDNoNnY2Ii8+PHBhdGggZD0iTTEwIDE0IDIxIDMiLz48cGF0aCBkPSJNMTggMTN2NmEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMlY4YTIgMiAwIDAgMSAyLTJoNiIvPjwvc3ZnPg==");
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-position: center;
+    mask-position: center;
+}
+
+.mech-citation-link-icon:hover {
+    color: var(--main-color-high);
 }
 
 .mech-repl {
@@ -2046,13 +2163,11 @@ mark {
 .mech-float.left {
     float: left;
     margin-right: 20px;
-    margin-left: -73px;
 }
 
 .mech-float.right {
     float: right;
     margin-left: 20px;
-    margin-right: -73px;
 }
 
 .mech-output-value .mech-matrix {
@@ -2158,9 +2273,10 @@ mark {
 
 .mech-text-logo {
     white-space: pre;
-    color: rgb(246,192,78);
+    color: var(--logo-color);
     text-align: center;
     margin: 20px auto;
+    line-height: 1.1em;
 }
 
 #mech-output a {
@@ -2360,15 +2476,14 @@ mark {
         min-width: 60px;
         text-align: right;
     }
-    .mech-float.left {
-        float: left;
-        margin-right: 20px;
-        margin-left: 0px;
-    }
+    .mech-float.left,
     .mech-float.right {
-        float: right;
-        margin-left: 20px;
-        margin-right: 0px;
+        float: none;
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        margin: 12px 0;
+        clear: both;
     }
 }
 
@@ -2618,6 +2733,7 @@ mark {
 }
 
 .mech-function-branch {
+    padding-right: 5px;
     color: var(--function-arrow-color);
 }
 
@@ -2689,4 +2805,111 @@ mark {
 
 .mech-tuple-struct {
     color: var(--literal-color);
+}
+
+/* Record kinds with 3+ fields */
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field) {
+  display: block;
+  white-space: pre;
+  margin-left: 2ch; 
+}
+
+/* newline after { */
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field)
+  > .mech-record-kind-open::after {
+  content: "\A  ";
+}
+
+/* newline before every field except the first one */
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field)
+  > .mech-record-field + .mech-record-field::before {
+  content: "\A  ";
+}
+
+/* newline before } */
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field)
+  > .mech-record-kind-close::before {
+  content: "\A";
+}
+
+/* when the previous field had a nested record-kind (already a block),
+   skip the \A and just add the indent */
+.mech-record-kind:has(.mech-record-field ~ .mech-record-field)
+  > .mech-record-field:has(.mech-record-kind) + .mech-record-field::before {
+  content: "  ";
+}
+
+.mech-matrix-kind::before { 
+    content: "⟨";
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-matrix-kind::after  { 
+    content: "⟩"; 
+    color: var(--kind-annotation-color-dark);
+}
+
+
+.mech-record-kind::before { 
+    content: "⟨";
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-record-kind::after  { 
+    content: "⟩"; 
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-kind-define > .mech-kind-annotation:first-child::before {
+    content: "⟨";
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-kind-define > .mech-kind-annotation:first-child::after {
+    content: "⟩";
+    color: var(--kind-annotation-color-dark);
+}
+
+/* Optional scalar: string? -> ⟨string?⟩ */
+.mech-kind:has(> .mech-kind > .mech-scalar-kind):has(> .mech-option-question)::before {
+  content: "⟨";
+  color: var(--kind-annotation-color-dark);
+}
+
+.mech-kind:has(> .mech-kind > .mech-scalar-kind):has(> .mech-option-question)::after {
+  content: "⟩";
+  color: var(--kind-annotation-color-dark);
+}
+
+/* Plain scalar: string -> ⟨string⟩
+   But NOT inside matrix inner, and NOT when followed by ? */
+.mech-kind:has(> .mech-scalar-kind):not(.mech-matrix-kind-inner > .mech-kind):not(:has(+ .mech-option-question))::before {
+  content: "⟨";
+  color: var(--kind-annotation-color-dark);
+}
+
+.mech-kind:has(> .mech-scalar-kind):not(.mech-matrix-kind-inner > .mech-kind):not(:has(+ .mech-option-question))::after {
+  content: "⟩";
+  color: var(--kind-annotation-color-dark);
+}
+
+.mech-kind:has(.mech-record-kind),
+.mech-kind-annotation:has(.mech-record-kind) {
+  display: contents;
+}
+
+.mech-record-kind-open {
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-record-kind-close {
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-matrix-kind-open {
+    color: var(--kind-annotation-color-dark);
+}
+
+.mech-matrix-kind-close {
+    color: var(--kind-annotation-color-dark);
 }

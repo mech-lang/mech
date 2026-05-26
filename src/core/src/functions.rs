@@ -15,13 +15,14 @@ use tabled::{
   Tabled,
 };
 use std::fmt;
+use std::sync::Arc;
 
 // Functions ------------------------------------------------------------------
 
 pub type FunctionsRef = Ref<Functions>;
 pub type FunctionTable = HashMap<u64, fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>>;
-pub type FunctionCompilerTable = HashMap<u64, &'static dyn NativeFunctionCompiler>;
-pub type UserFunctionTable = HashMap<u64, Vec<FunctionDefinition>>;
+pub type FunctionCompilerTable = HashMap<u64, Arc<dyn NativeFunctionCompiler>>;
+pub type UserFunctionTable = HashMap<u64, FunctionDefinition>;
 
 #[derive(Clone,Debug)]
 pub enum FunctionArgs {
@@ -104,6 +105,21 @@ pub trait NativeFunctionCompiler {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>>;
 }
 
+
+pub struct StaticNativeFunctionCompiler {
+  inner: &'static dyn NativeFunctionCompiler,
+}
+
+impl StaticNativeFunctionCompiler {
+  pub fn new(inner: &'static dyn NativeFunctionCompiler) -> Self { Self { inner } }
+}
+
+impl NativeFunctionCompiler for StaticNativeFunctionCompiler {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    self.inner.compile(arguments)
+  }
+}
+
 #[derive(Clone)]
 pub struct Functions {
   pub functions: FunctionTable,
@@ -126,6 +142,13 @@ impl Functions {
     let id = hash_str(&fxn.name);
     self.functions.insert(id.clone(), fxn.ptr);
     self.dictionary.borrow_mut().insert(id, fxn.name.to_string());
+  }
+
+  pub fn insert_function_compiler(&mut self, name: impl Into<String>, compiler: Arc<dyn NativeFunctionCompiler>) {
+    let name = name.into();
+    let id = hash_str(&name);
+    self.function_compilers.insert(id, compiler);
+    self.dictionary.borrow_mut().insert(id, name);
   }
 
   #[cfg(feature = "pretty_print")]

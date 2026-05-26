@@ -28,7 +28,7 @@ use zip::ZipWriter;
 
 use mech_syntax::*;
 use mech_core::*;
-use mech_interpreter::*;
+use mech_program::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -1043,10 +1043,13 @@ fn build_project(stage: &mut BuildStage, rx: mpsc::Receiver<Program>) {
   pb.set_message("Building project:…");
   pb.enable_steady_tick(Duration::from_millis(100));
   
-  let mut intrp = Interpreter::new(0);
+  let mut program = MechProgram::new(MechProgramConfig {
+    name: "build".to_string(),
+    environment: MechProgramEnvironment::default(),
+  });
 
   for tree in rx {
-    let result = intrp.interpret(&tree);
+    let result = program.interpreter_mut().interpret(&tree);
     match result {
       Ok(_) => {
         pb.set_message(format!("Build succeeded: {:#?}.", tree.pretty_print()));
@@ -1060,10 +1063,11 @@ fn build_project(stage: &mut BuildStage, rx: mpsc::Receiver<Program>) {
     }
   }
 
-  match intrp.compile() {
+  match program.interpreter_mut().compile() {
     Ok(bytecode) => {
-      let features = intrp.context.unwrap().features;
-      set_features(features);
+      if let Some(ctx) = program.interpreter().context.as_ref() {
+        set_features(ctx.features.clone());
+      }
       pb.set_message(format!("Compiled {} bytes.", bytecode.len()));
       set_bytecode(bytecode);
     }
