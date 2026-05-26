@@ -55,14 +55,14 @@ pub trait Subject: std::fmt::Debug + Send + Sync {
 ///
 /// Examples:
 ///
-/// - `db:main`
-/// - `table:users`
-/// - `object:<id>`
-/// - `actor:<id>`
-/// - `host-api:render`
-/// - `fs:/tmp/foo`
-/// - `net:api.example.com`
-/// - `worker:gpu-pool`
+/// - `db://main`
+/// - `table://users`
+/// - `object://<id>`
+/// - `actor://<id>`
+/// - `host-api://render`
+/// - `fs://tmp/foo`
+/// - `net://api.example.com`
+/// - `worker://gpu-pool`
 pub trait Resource: std::fmt::Debug + Send + Sync {
   fn key(&self) -> &str;
 }
@@ -157,47 +157,47 @@ impl BasicResource {
   }
 
   pub fn runtime(id: RuntimeId) -> Self {
-    Self::new(format!("runtime/{}", id))
+    Self::new(format!("runtime://{}", id))
   }
 
   pub fn node(id: NodeId) -> Self {
-    Self::new(format!("node/{}", id))
+    Self::new(format!("node://{}", id))
   }
 
   pub fn module(id: ModuleId) -> Self {
-    Self::new(format!("module/{}", id))
+    Self::new(format!("module://{}", id))
   }
 
   pub fn object(id: ObjectId) -> Self {
-    Self::new(format!("object/{}", id))
+    Self::new(format!("object://{}", id))
   }
 
   pub fn actor(id: ActorId) -> Self {
-    Self::new(format!("actor/{}", id))
+    Self::new(format!("actor://{}", id))
   }
 
   pub fn task(id: TaskId) -> Self {
-    Self::new(format!("task/{}", id))
+    Self::new(format!("task://{}", id))
   }
 
   pub fn database(name: impl AsRef<str>) -> Self {
-    Self::new(format!("db/{}", name.as_ref()))
+    Self::new(format!("db://{}", name.as_ref()))
   }
 
   pub fn table(name: impl AsRef<str>) -> Self {
-    Self::new(format!("table/{}", name.as_ref()))
+    Self::new(format!("table://{}", name.as_ref()))
   }
 
   pub fn host_api(name: impl AsRef<str>) -> Self {
-    Self::new(format!("host-api/{}", name.as_ref()))
+    Self::new(format!("host-api://{}", name.as_ref()))
   }
 
   pub fn file(path: impl AsRef<str>) -> Self {
-    Self::new(format!("fs/{}", path.as_ref()))
+    Self::new(format!("fs://{}", path.as_ref()))
   }
 
   pub fn network(endpoint: impl AsRef<str>) -> Self {
-    Self::new(format!("net/{}", endpoint.as_ref()))
+    Self::new(format!("net://{}", endpoint.as_ref()))
   }
 }
 
