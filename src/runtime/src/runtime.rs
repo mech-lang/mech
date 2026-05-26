@@ -1010,14 +1010,24 @@ impl MechRuntime {
       let mut dependency_versions = Vec::new();
 
       for dependency in resolved.dependencies.iter() {
-        if let Some(dependency_version) = self.build_module_from_request_with_context_and_graph(
-          context,
-          dependency.clone(),
-          options,
-          dependency_graph,
-        )? {
-          dependency_versions.push(dependency_version);
-        }
+        let dependency_version = self
+          .build_module_from_request_with_context_and_graph(
+            context,
+            dependency.clone(),
+            options,
+            dependency_graph,
+          )?
+          .ok_or_else(|| {
+            MechError::new(
+              RuntimeModuleDependencyMissingError {
+                module: canonical_uri.clone(),
+                specifier: dependency.specifier.clone(),
+                referrer: dependency.referrer.clone(),
+              },
+              None,
+            )
+          })?;
+        dependency_versions.push(dependency_version);
       }
 
       let record = self.module_builder.build_resolved_source(
@@ -2731,6 +2741,35 @@ fn hex_bytes(bytes: &[u8]) -> String {
   }
 
   out
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeModuleDependencyMissingError {
+  pub module: String,
+  pub specifier: String,
+  pub referrer: Option<String>,
+}
+
+impl MechErrorKind for RuntimeModuleDependencyMissingError {
+  fn name(&self) -> &str {
+    "RuntimeModuleDependencyMissing"
+  }
+
+  fn message(&self) -> String {
+    match &self.referrer {
+      Some(referrer) => format!(
+        "module `{}` declared dependency `{}` (referrer `{}`) but it could not be resolved",
+        self.module,
+        self.specifier,
+        referrer,
+      ),
+      None => format!(
+        "module `{}` declared dependency `{}` but it could not be resolved",
+        self.module,
+        self.specifier,
+      ),
+    }
+  }
 }
 
 pub fn strip_module_declarations_for_execution(source: &str) -> String {

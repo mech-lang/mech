@@ -1,3 +1,4 @@
+use mech_core::Value;
 use mech_runtime::{FileSourceResolver, ModuleBuildOptions, RuntimeBuilder, SourceRequest, SourceResolver};
 
 fn setup_modules() -> std::path::PathBuf {
@@ -42,4 +43,22 @@ fn run_module() {
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
   let result = runtime.run_module(version);
   assert!(result.is_ok());
+  match result.unwrap() {
+    Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected bool result from module run, got {:?}", other),
+  }
+}
+
+#[test]
+fn missing_dependency_fails_module_build() {
+  let root = std::env::temp_dir().join(format!("mech-runtime-module-missing-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+  std::fs::create_dir_all(&root).unwrap();
+  std::fs::write(root.join("main.mec"), "+> ./missing.mec\nok := 1\n").unwrap();
+
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let result = runtime.resolve_and_store_module_source("main.mec", options);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeModuleDependencyMissing"));
 }
