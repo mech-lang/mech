@@ -1021,6 +1021,15 @@ test_interpreter!(interpret_function_call_native_vector, "math/sin([1.570796327 
 test_interpreter!(interpret_function_call_native, r#"math/sin(1.5707963267948966)"#, Value::F64(Ref::new(1.0)));
 test_interpreter!(interpret_function_call_native_cos, r#"math/cos(0.0)"#, Value::F64(Ref::new(1.0)));
 test_interpreter!(interpret_function_call_native_vector2, "math/cos([0.0 0.0])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
+
+test_interpreter!(interpret_function_shorthand_with_wildcard_arm, r#"hi() => <string>
+  | * => "hi".
+
+hi()"#, Value::String(Ref::new("hi".to_string())));
+test_interpreter!(interpret_function_single_shorthand_arm_without_arrow, r#"hi() => <string>
+  | "hi".
+
+hi()"#, Value::String(Ref::new("hi".to_string())));
 test_interpreter!(interpret_user_function_scalar_auto_broadcast, r#"add-one(x<f64>) => <f64>
   | * => x + 1.
 add-one([1 2 3])"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, 4.0], 1, 3)));
