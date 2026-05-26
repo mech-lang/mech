@@ -210,7 +210,7 @@ fn tuple_destructure(input: ParseString) -> ParseResult<TupleDestructure> {
 // import-declaration := "+>", module-import-specifier ;
 pub fn import_declaration(input: ParseString) -> ParseResult<ImportDeclaration> {
   let (input, _) = whitespace0(input)?;
-  let (input, _) = tag("+>")(input)?;
+  let (input, _) = module_import_sigil(input)?;
   let (input, _) = whitespace1(input)?;
   let start = input.loc();
   let spec_start = input.cursor;
@@ -232,7 +232,7 @@ pub fn import_declaration(input: ParseString) -> ParseResult<ImportDeclaration> 
 // export-declaration := "<+", export-name ;
 pub fn export_declaration(input: ParseString) -> ParseResult<ExportDeclaration> {
   let (input, _) = whitespace0(input)?;
-  let (input, _) = tag("<+")(input)?;
+  let (input, _) = module_export_sigil(input)?;
   let (input, _) = whitespace1(input)?;
   let (input, name) = identifier(input)?;
   Ok((input, ExportDeclaration { name }))
