@@ -58,18 +58,14 @@ use std::collections::HashSet;
 mod repl;
 #[cfg(feature = "serve")]
 mod serve;
-#[cfg(feature = "run")]
-mod run;
-#[cfg(all(feature = "run", feature = "variable_define", feature = "invariant_define", feature = "symbol_table", feature = "bool"))]
+#[cfg(feature = "test")]
 mod test;
 
 #[cfg(feature = "repl")]
 pub use self::repl::*;
 #[cfg(feature = "serve")]
 pub use self::serve::*;
-#[cfg(feature = "run")]
-pub use self::run::*;
-#[cfg(all(feature = "run", feature = "variable_define", feature = "invariant_define", feature = "symbol_table", feature = "bool"))]
+#[cfg(feature = "test")]
 pub use self::test::*;
 
 pub use mech_core::*;
