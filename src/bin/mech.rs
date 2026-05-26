@@ -367,14 +367,6 @@ async fn main() -> Result<(), MechError> {
     let output_path = PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
     let debug_flag = matches.get_flag("debug");
     let rounds_per_step = matches.get_one::<String>("rounds-per-step").and_then(|s| s.parse::<usize>().ok()).unwrap_or(10_000);
-    let mut mechfs = MechFileSystem::new();
-
-    for path in &mech_paths {
-      mechfs.watch_source(&path)?;
-    }
-    let sources = mechfs.sources();
-    let read_sources = sources.read().unwrap();
-
     // Create the directory html_output_path
     if output_path != PathBuf::from(".") {
       match fs::create_dir_all(&output_path) {
@@ -389,13 +381,13 @@ async fn main() -> Result<(), MechError> {
 
     let uuid = generate_uuid();
     let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
-    program.configure(tree_flag, debug_flag, time_flag, trace_flag, rounds_per_step);
-
+    let _ = tree_flag;
+    let _ = trace_flag;
+    program.configure(debug_flag, trace_flag, time_flag, rounds_per_step);
     for path in mech_paths {
-      program.watch_source(&path)?;
+      let source = std::fs::read_to_string(&path)?;
+      let _ = program.run_string(&source)?;
     }
-    
-    let result = program.run(); 
 
     let bytecode = program.interpreter_mut().compile()?;
 
@@ -452,8 +444,6 @@ async fn main() -> Result<(), MechError> {
         return Ok(());
       }
     }
-    let mut mechfs = MechFileSystem::new();
-
     println!("{} Loading resources…", badge);
 
     // Load stylesheet
@@ -473,15 +463,16 @@ async fn main() -> Result<(), MechError> {
       .with_compiler_loc()
     })?;
 
-    mechfs.set_stylesheet(&stylesheet_str);
-    mechfs.set_shim(&shim_str);
-
+    let mut loaded_sources: Vec<(PathBuf, MechSourceCode)> = Vec::new();
     for path in mech_paths {
-      mechfs.watch_source(&path)?;
+      let pb = PathBuf::from(&path);
+      let source = std::fs::read_to_string(&pb)?;
+      let code = match pb.extension().and_then(|e| e.to_str()) {
+        Some("html") => MechSourceCode::Html(source),
+        _ => MechSourceCode::String(source),
+      };
+      loaded_sources.push((pb, code));
     }
-
-    let sources = mechfs.sources();
-    let read_sources = sources.read().unwrap();
 
     // Only create directory if output_path is not a file
     if !is_output_file && output_path != PathBuf::from(".") {
@@ -497,32 +488,32 @@ async fn main() -> Result<(), MechError> {
 
     // HTML mode
     if html_flag {
-      let html_items: Vec<_> = read_sources.html_iter().collect();
+      let html_items: Vec<_> = loaded_sources.iter().filter_map(|(p, src)| {
+        if let MechSourceCode::Html(content) = src {
+          Some((p, content))
+        } else {
+          None
+        }
+      }).collect();
       let is_single_html = html_items.len() == 1;
 
       if is_output_file && is_single_html {
         // write ONLY HTML result to output file
-        let (_, mech_src) = html_items[0];
-        if let MechSourceCode::Html(content) = mech_src {
-          save_to_file(output_path, content)?;
-        }
+        let (_, content) = html_items[0];
+        save_to_file(output_path, content)?;
       } else {
         // otherwise produce multiple output files
-        for (fid, mech_src) in html_items {
-          if let MechSourceCode::Html(content) = mech_src {
-            let mut filename = read_sources.get_path_from_id(*fid).unwrap().clone();
-            filename = filename.with_extension("html");
-            let output_file = if is_output_file { output_path.clone() } 
-                              else { output_path.join(filename) };
-            save_to_file(output_file, content)?;
-          }
+        for (path, content) in html_items {
+          let filename = path.with_extension("html");
+          let output_file = if is_output_file { output_path.clone() } 
+                            else { output_path.join(filename) };
+          save_to_file(output_file, content)?;
         }
       }
     } else {
       // Raw source mode
-      for (fid, mech_src) in read_sources.sources_iter() {
+      for (filename, mech_src) in loaded_sources {
         let content = mech_src.to_string();
-        let filename = read_sources.get_path_from_id(*fid).unwrap().clone();
         let output_file = if is_output_file { output_path.clone() } 
                           else { output_path.join(filename) };
         save_to_file(output_file, &content)?;
@@ -542,14 +533,13 @@ async fn main() -> Result<(), MechError> {
   #[cfg(feature = "run")]
   let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
   #[cfg(feature = "run")]
-  program.configure(tree_flag, debug_flag, time_flag, trace_flag, rounds_per_step);
+  let _ = tree_flag;
+  program.configure(debug_flag, trace_flag, time_flag, rounds_per_step);
   #[cfg(feature = "run")]
   {
     let mut paths = if let Some(m) = matches.get_many::<String>("mech_paths") {
       m.map(|s| s.to_string()).collect()
     } else { repl_flag = true; vec![] };
-
-    let mut mechfs = MechFileSystem::new();
 
     let any_look_like_paths = paths.iter().any(|p| {
       is_intended_path(p)
@@ -557,17 +547,21 @@ async fn main() -> Result<(), MechError> {
 
     if !paths.is_empty() {
       if any_look_like_paths {
-        let mut watch_errors = Vec::new();
+        let mut run_errors = Vec::new();
         for p in &paths {
-          match mechfs.watch_source(p) {
-            Ok(r) => {}
-            Err(err) => watch_errors.push(err),
+          match std::fs::read_to_string(p) {
+            Ok(src) => {
+              if let Err(err) = program.run_string(&src) {
+                run_errors.push(err);
+              }
+            }
+            Err(err) => run_errors.push(MechError::new(GenericError{msg: format!("Unable to read source `{}`: {}", p, err)}, None).with_compiler_loc()),
           }
         }
-        if !watch_errors.is_empty() {
+        if !run_errors.is_empty() {
           // These looked like paths but failed to watch
           // Print errors
-          for err in &watch_errors {
+          for err in &run_errors {
             print_mech_error(err);
           }
           std::process::exit(1);
@@ -596,7 +590,14 @@ async fn main() -> Result<(), MechError> {
       }
     }
 
-    let result = program.run_paths(&paths);
+    let result: MResult<Value> = if paths.is_empty() { Ok(Value::Empty) } else {
+      let mut last = Value::Empty;
+      for p in &paths {
+        let src = std::fs::read_to_string(p)?;
+        last = program.run_string(&src)?;
+      }
+      Ok(last)
+    };
     if !repl_flag {
       match &result {
         Ok(r) => {
