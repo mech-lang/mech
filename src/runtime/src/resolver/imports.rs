@@ -1,12 +1,6 @@
-use mech_core::{MResult, Program, SectionElement, MechCode, Statement};
-use mech_syntax::parser;
+use mech_core::FencedMechCode;
 
-use super::{SourceImportDeclaration, SourceImportKind, SourceRequest};
-
-pub fn extract_mech_imports(source: &str) -> MResult<Vec<SourceImportDeclaration>> {
-  let program = parser::parse(source)?;
-  Ok(extract_imports_from_program(&program))
-}
+use super::{SourceExportDeclaration, SourceImportDeclaration, SourceImportKind, SourceRequest};
 
 pub fn import_dependencies(imports: &[SourceImportDeclaration]) -> Vec<SourceRequest> {
   imports
@@ -16,143 +10,84 @@ pub fn import_dependencies(imports: &[SourceImportDeclaration]) -> Vec<SourceReq
     .collect()
 }
 
-fn extract_imports_from_program(program: &Program) -> Vec<SourceImportDeclaration> {
-  let mut imports = Vec::new();
-
-  for section in &program.body.sections {
-    for element in &section.elements {
-      let SectionElement::MechCode(lines) = element else {
-        continue;
-      };
-
-      for (code, _) in lines {
-        let MechCode::Statement(statement) = code else {
-          continue;
-        };
-
-        let Statement::ImportDeclaration(import) = statement else {
-          continue;
-        };
-
-        let specifier = import.specifier.to_string();
-
-        if let Some(prefix) = specifier.strip_suffix("/*") {
-          imports.push(SourceImportDeclaration {
-            specifier: prefix.to_string(),
-            alias: None,
-            kind: SourceImportKind::Wildcard,
-          });
-        } else if specifier.contains("://")
-          || specifier.starts_with("./")
-          || specifier.starts_with("../")
-          || specifier.ends_with(".mec")
-        {
-          imports.push(SourceImportDeclaration {
-            specifier: specifier.to_string(),
-            alias: None,
-            kind: SourceImportKind::DependencyOnly,
-          });
-        } else if let Some((module, name)) = specifier.rsplit_once('/') {
-          imports.push(SourceImportDeclaration {
-            specifier: module.to_string(),
-            alias: None,
-            kind: SourceImportKind::Single {
-              name: name.to_string(),
-            },
-          });
-        } else {
-          imports.push(SourceImportDeclaration {
-            specifier: specifier.to_string(),
-            alias: None,
-            kind: SourceImportKind::Namespace,
-          });
-        }
-      }
+pub fn imports_from_fenced_code(code: &FencedMechCode) -> Vec<SourceImportDeclaration> {
+  code.imports.iter().map(|import| {
+    let specifier = import.specifier.to_string();
+    if let Some(prefix) = specifier.strip_suffix("/*") {
+      SourceImportDeclaration { specifier: prefix.to_string(), alias: None, kind: SourceImportKind::Wildcard }
+    } else if specifier.contains("://")
+      || specifier.starts_with("./")
+      || specifier.starts_with("../")
+      || specifier.ends_with(".mec")
+    {
+      SourceImportDeclaration { specifier, alias: None, kind: SourceImportKind::DependencyOnly }
+    } else if let Some((module, name)) = specifier.rsplit_once('/') {
+      SourceImportDeclaration { specifier: module.to_string(), alias: None, kind: SourceImportKind::Single { name: name.to_string() } }
+    } else {
+      SourceImportDeclaration { specifier, alias: None, kind: SourceImportKind::Namespace }
     }
-  }
+  }).collect()
+}
 
-  imports
+pub fn exports_from_fenced_code(code: &FencedMechCode) -> Vec<SourceExportDeclaration> {
+  code.exports.iter().map(|export| SourceExportDeclaration {
+    name: export.name.to_string(),
+  }).collect()
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
-  use mech_core::{MechCode, SectionElement, Statement, Value};
-  use mech_program::MechProgram;
-  use mech_syntax::Formatter;
   use mech_syntax::parser;
 
-  #[test]
-  fn extracts_namespace_import() {
-    let imports = extract_mech_imports("+> math\nx := 1").unwrap();
-    assert_eq!(imports[0].specifier, "math");
-  }
-
-  #[test]
-  fn extracts_single_import() {
-    let imports = extract_mech_imports("+> math/sin\n").unwrap();
-    assert_eq!(imports[0].specifier, "math");
-  }
-
-  #[test]
-  fn extracts_uri_dependency_import() {
-    let imports = extract_mech_imports("+> fs://foo/bar.mec\n+> memory://foo/bar\n").unwrap();
-    assert_eq!(imports[0].kind, SourceImportKind::DependencyOnly);
-    assert_eq!(imports[0].specifier, "fs://foo/bar.mec");
-    assert_eq!(imports[1].kind, SourceImportKind::DependencyOnly);
-    assert_eq!(imports[1].specifier, "memory://foo/bar");
-  }
-
-  #[test]
-  fn creates_dependency_for_relative_file_import_only() {
-    let imports = extract_mech_imports("+> ./dep.mec\n").unwrap();
-    let dependencies = import_dependencies(&imports);
-    assert_eq!(dependencies.len(), 1);
-    assert_eq!(dependencies[0].specifier, "./dep.mec");
-  }
-
-  #[test]
-  fn non_dependency_imports_do_not_create_dependency_edges() {
-    let imports = extract_mech_imports("+> math\n+> math/sin\n+> math/*\n").unwrap();
-    let dependencies = import_dependencies(&imports);
-    assert_eq!(imports.len(), 3);
-    assert_eq!(dependencies.len(), 0);
-  }
-
-  #[test]
-  fn invalid_wildcard_placements_are_rejected() {
-    assert!(extract_mech_imports("+> module/*/x\n").is_err());
-    assert!(extract_mech_imports("+> module/s*\n").is_err());
-    assert!(extract_mech_imports("+> *\n").is_err());
-  }
-
-  #[test]
-  fn export_declaration_parses_and_executes_as_noop() {
-    let tree = parser::parse("<+ foo\nx := 1\nx\n").unwrap();
-    let mut saw_export = false;
+  fn parse_fenced(source: &str) -> FencedMechCode {
+    let tree = parser::parse(source).unwrap();
     for section in &tree.body.sections {
       for element in &section.elements {
-        if let SectionElement::MechCode(lines) = element {
-          for (code, _) in lines {
-            if let MechCode::Statement(Statement::ExportDeclaration(_)) = code {
-              saw_export = true;
-            }
-          }
+        if let mech_core::SectionElement::FencedMechCode(code) = element {
+          return code.clone();
         }
       }
     }
-    assert!(saw_export);
-    let mut program = MechProgram::new(Default::default());
-    let value = program.run_string("<+ foo\nx := 1\nx\n").unwrap();
-    assert_ne!(value, Value::Empty);
+    panic!("expected fenced code block");
   }
 
   #[test]
-  fn formatter_renders_import_and_export_declarations() {
-    let tree = parser::parse("+> math/sin\n<+ foo\n").unwrap();
-    let mut formatter = Formatter::new();
-    let rendered = formatter.format(&tree);
-    assert!(rendered.contains("+> math/sin"));
-    assert!(rendered.contains("<+ foo"));
+  fn classifies_single_import() {
+    let fenced = parse_fenced("~~~mech\n+> math/sin\n~~~\n");
+    let imports = imports_from_fenced_code(&fenced);
+    assert_eq!(imports[0].specifier, "math");
+    assert_eq!(imports[0].kind, SourceImportKind::Single { name: "sin".to_string() });
+  }
+
+  #[test]
+  fn classifies_wildcard_import() {
+    let fenced = parse_fenced("~~~mech\n+> math/*\n~~~\n");
+    let imports = imports_from_fenced_code(&fenced);
+    assert_eq!(imports[0].specifier, "math");
+    assert_eq!(imports[0].kind, SourceImportKind::Wildcard);
+  }
+
+  #[test]
+  fn classifies_dependency_only_imports() {
+    let fenced = parse_fenced("~~~mech\n+> ./dep.mec\n+> fs://lib/dep.mec\n+> file:///tmp/dep.mec\n+> memory://scratch/dep\n+> https://example.com/dep.mec\n~~~\n");
+    let imports = imports_from_fenced_code(&fenced);
+    assert!(imports.iter().all(|imp| imp.kind == SourceImportKind::DependencyOnly));
+  }
+
+  #[test]
+  fn exports_are_extracted() {
+    let fenced = parse_fenced("~~~mech\n<+ area\n~~~\n");
+    let exports = exports_from_fenced_code(&fenced);
+    assert_eq!(exports[0].name, "area");
+  }
+
+  #[test]
+  fn dependency_edges_only_for_dependency_only_imports() {
+    let fenced = parse_fenced("~~~mech\n+> math\n+> math/sin\n+> math/*\n+> ./dep.mec\n~~~\n");
+    let imports = imports_from_fenced_code(&fenced);
+    let dependencies = import_dependencies(&imports);
+    assert_eq!(dependencies.len(), 1);
+    assert_eq!(dependencies[0].specifier, "./dep.mec");
   }
 }

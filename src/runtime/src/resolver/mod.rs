@@ -168,6 +168,12 @@ pub struct SourceImportDeclaration {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SourceExportDeclaration {
+  pub name: String,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ResolvedSource {
   pub name: String,
   pub canonical_uri: String,
