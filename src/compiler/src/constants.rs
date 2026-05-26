@@ -586,7 +586,7 @@ impl ConstElem for String {
   }
   fn from_le(bytes: &[u8]) -> Self {
     use byteorder::{LittleEndian, ReadBytesExt};
-    use std::io::Cursor;
+    use std::io::{Cursor, Read};
     let mut cursor = Cursor::new(bytes);
     // read length safely
     let len = match cursor.read_u32::<LittleEndian>() {

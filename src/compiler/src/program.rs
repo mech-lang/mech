@@ -1,5 +1,10 @@
 use crate::*;
 use super::*;
+#[cfg(not(feature = "no_std"))]
+use std::collections::HashMap;
+#[cfg(feature = "no_std")]
+use hashbrown::HashMap;
+use std::io::Read;
 use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
 use std::io::Write;
 use std::io::{self, SeekFrom, Seek, Cursor};

@@ -1,5 +1,11 @@
 use crate::*;
 use super::*;
+use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
+use std::io::{Read, Write};
+#[cfg(not(feature = "no_std"))]
+use std::collections::HashMap;
+#[cfg(feature = "no_std")]
+use hashbrown::HashMap;
 
 // Byetecode Compiler
 // ============================================================================

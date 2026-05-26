@@ -1,6 +1,10 @@
 [package]
 name = "mech-compiler"
 version = "0.3.5"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "Mech compiler and bytecode infrastructure."
+readme = "README.md"
+repository = "https://github.com/mech-lang/mech"
 edition = "2024"
 rust-version = "1.92"
 license = "Apache-2.0"
@@ -15,6 +19,7 @@ no_std = ["mech-core/no_std", "dep:hashbrown"]
 [dependencies]
 mech-core = { version = "0.3.5", default-features = false }
 byteorder = "1.5.0"
+crc32fast = "1.5.0"
 serde = {version = "1.0.228", default-features = false, features = ["alloc", "derive"], optional = true}
 serde_derive = {version = "1.0.219", optional = true}
 hashbrown = {version = "0.16.1", optional = true, default-features = false}

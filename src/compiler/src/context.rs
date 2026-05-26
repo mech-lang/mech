@@ -1,5 +1,10 @@
 use crate::*;
 use super::*;
+use std::io::{Cursor, Write};
+#[cfg(not(feature = "no_std"))]
+use std::collections::HashMap;
+#[cfg(feature = "no_std")]
+use hashbrown::HashMap;
 
 #[derive(Debug)]
 pub struct CompileCtx {
