@@ -132,23 +132,6 @@ impl From<String> for SourceRequest {
 // Resolved Source
 // -----------------------------------------------------------------------------
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum SourceImportKind {
-  Namespace,
-  Single { name: String },
-  Wildcard,
-  DependencyOnly,
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SourceImportDeclaration {
-  pub specifier: String,
-  pub alias: Option<String>,
-  pub kind: SourceImportKind,
-}
-
 /// Source returned by a SourceResolver.
 ///
 /// `name` is a human-readable name used in diagnostics and module records.
@@ -166,6 +149,23 @@ pub struct SourceImportDeclaration {
 ///
 /// The runtime should prefer `canonical_uri` over the original request
 /// specifier when computing stable source/module identity.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SourceImportKind {
+  Namespace,
+  Single { name: String },
+  Wildcard,
+  DependencyOnly,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SourceImportDeclaration {
+  pub specifier: String,
+  pub alias: Option<String>,
+  pub kind: SourceImportKind,
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ResolvedSource {
@@ -200,13 +200,13 @@ impl ResolvedSource {
     self
   }
 
-  pub fn with_imports(mut self, imports: Vec<SourceImportDeclaration>) -> Self {
-    self.imports = imports;
+  pub fn with_dependencies(mut self, dependencies: Vec<SourceRequest>) -> Self {
+    self.dependencies = dependencies;
     self
   }
 
-  pub fn with_dependencies(mut self, dependencies: Vec<SourceRequest>) -> Self {
-    self.dependencies = dependencies;
+  pub fn with_imports(mut self, imports: Vec<SourceImportDeclaration>) -> Self {
+    self.imports = imports;
     self
   }
 

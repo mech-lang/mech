@@ -51,10 +51,10 @@ impl InMemorySourceResolver {
     source: impl Into<String>,
   ) -> MResult<()> {
     let specifier = specifier.into();
-
     let source = source.into();
     let imports = extract_mech_imports(&source)?;
     let dependencies = import_dependencies(&imports);
+
     let resolved = ResolvedSource::new(
       specifier.clone(),
       Self::default_canonical_uri(&specifier),

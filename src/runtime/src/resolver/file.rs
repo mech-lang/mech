@@ -102,7 +102,6 @@ impl SourceResolver for FileSourceResolver {
     let source = read_runtime_source_file(&path)?;
     let mut imports = Vec::new();
     let mut dependencies = Vec::new();
-
     let source = if matches!(kind, SourceKind::Mech) {
       match source {
         MechSourceCode::String(text) => {
