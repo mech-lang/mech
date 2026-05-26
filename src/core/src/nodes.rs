@@ -105,7 +105,7 @@ pub enum TokenKind {
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
   #[cfg(feature = "mika")]
   Mika(Mika), 
-  MikaSection, MikaSectionOpen, MikaSectionClose,
+  MikaSection, MikaSectionOpen, MikaSectionClose, ModuleExportSigil, ModuleImportSigil,
   Newline, Not, Number,
   OutputOperator,
   Percent, Period, Plus, PromptSigil,
