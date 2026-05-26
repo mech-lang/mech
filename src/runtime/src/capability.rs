@@ -105,27 +105,27 @@ impl BasicSubject {
   }
 
   pub fn runtime(id: RuntimeId) -> Self {
-    Self::new(format!("runtime:{}", id))
+    Self::new(format!("runtime://{}", id))
   }
 
   pub fn node(id: NodeId) -> Self {
-    Self::new(format!("node:{}", id))
+    Self::new(format!("node://{}", id))
   }
 
   pub fn module(id: ModuleId) -> Self {
-    Self::new(format!("module:{}", id))
+    Self::new(format!("module://{}", id))
   }
 
   pub fn actor(id: ActorId) -> Self {
-    Self::new(format!("actor:{}", id))
+    Self::new(format!("actor://{}", id))
   }
 
   pub fn task(id: TaskId) -> Self {
-    Self::new(format!("task:{}", id))
+    Self::new(format!("task://{}", id))
   }
 
   pub fn host(name: impl AsRef<str>) -> Self {
-    Self::new(format!("host:{}", name.as_ref()))
+    Self::new(format!("host://{}", name.as_ref()))
   }
 }
 
@@ -229,51 +229,51 @@ impl BasicOperation {
   }
 
   pub fn read() -> Self {
-    Self::new("read")
+    Self::new(":read")
   }
 
   pub fn write() -> Self {
-    Self::new("write")
+    Self::new(":write")
   }
 
   pub fn execute() -> Self {
-    Self::new("execute")
+    Self::new(":execute")
   }
 
   pub fn import() -> Self {
-    Self::new("import")
+    Self::new(":import")
   }
 
   pub fn spawn() -> Self {
-    Self::new("spawn")
+    Self::new(":spawn")
   }
 
   pub fn send() -> Self {
-    Self::new("send")
+    Self::new(":send")
   }
 
   pub fn receive() -> Self {
-    Self::new("receive")
+    Self::new(":receive")
   }
 
   pub fn query() -> Self {
-    Self::new("query")
+    Self::new(":query")
   }
 
   pub fn grant() -> Self {
-    Self::new("grant")
+    Self::new(":grant")
   }
 
   pub fn revoke() -> Self {
-    Self::new("revoke")
+    Self::new(":revoke")
   }
 
   pub fn attenuate() -> Self {
-    Self::new("attenuate")
+    Self::new(":attenuate")
   }
 
   pub fn delegate() -> Self {
-    Self::new("delegate")
+    Self::new(":delegate")
   }
 }
 
@@ -2367,8 +2367,8 @@ mod tests {
 
   #[test]
   fn basic_capability_grant_and_check() {
-    let subject = BasicSubject::new("task:1");
-    let resource = BasicResource::new("db:users");
+    let subject = BasicSubject::new("task://1");
+    let resource = BasicResource::new("db://users");
 
     let cap = BasicCapability::new(
       CapabilityId(1),
@@ -2394,8 +2394,8 @@ mod tests {
 
   #[test]
   fn basic_capability_denies_wrong_operation() {
-    let subject = BasicSubject::new("task:1");
-    let resource = BasicResource::new("db:users");
+    let subject = BasicSubject::new("task://1");
+    let resource = BasicResource::new("db://users");
 
     let cap = BasicCapability::new(
       CapabilityId(1),
@@ -2421,9 +2421,9 @@ mod tests {
 
   #[test]
   fn basic_capability_resource_prefix_allows_nested_resource() {
-    let subject = BasicSubject::new("task:1");
+    let subject = BasicSubject::new("task://1");
     let root = BasicResource::new("db");
-    let users = BasicResource::new("db:users");
+    let users = BasicResource::new("db://users");
 
     let cap = BasicCapability::new(
       CapabilityId(1),
@@ -2433,7 +2433,7 @@ mod tests {
     )
     .with_constraints(
       BasicConstraints::default()
-        .with_resource_prefix("db:"),
+        .with_resource_prefix("db://"),
     );
 
     let mut kernel = BasicCapabilityKernel::new();
@@ -2453,8 +2453,8 @@ mod tests {
 
   #[test]
   fn revocation_blocks_use() {
-    let subject = BasicSubject::new("task:1");
-    let resource = BasicResource::new("db:users");
+    let subject = BasicSubject::new("task://1");
+    let resource = BasicResource::new("db://users");
 
     let cap = BasicCapability::new(
       CapabilityId(1),
@@ -2484,9 +2484,9 @@ mod tests {
 
   #[test]
   fn delegation_requires_delegable_source() {
-    let subject = BasicSubject::new("task:1");
-    let next_subject = BasicSubject::new("task:2");
-    let resource = BasicResource::new("db:users");
+    let subject = BasicSubject::new("task://1");
+    let next_subject = BasicSubject::new("task://2");
+    let resource = BasicResource::new("db://users");
 
     let cap = BasicCapability::new(
       CapabilityId(1),
@@ -2513,9 +2513,9 @@ mod tests {
 
   #[test]
   fn delegable_source_can_be_delegated() {
-    let subject = BasicSubject::new("task:1");
-    let next_subject = BasicSubject::new("task:2");
-    let resource = BasicResource::new("db:users");
+    let subject = BasicSubject::new("task://1");
+    let next_subject = BasicSubject::new("task://2");
+    let resource = BasicResource::new("db://users");
 
     let cap = BasicCapability::new(
       CapabilityId(1),
@@ -2546,8 +2546,8 @@ mod tests {
 
   #[test]
   fn attenuation_can_reduce_operations() {
-    let subject = BasicSubject::new("task:1");
-    let resource = BasicResource::new("db:users");
+    let subject = BasicSubject::new("task://1");
+    let resource = BasicResource::new("db://users");
 
     let cap = BasicCapability::new(
       CapabilityId(1),
@@ -2567,7 +2567,7 @@ mod tests {
       CapabilityId(2),
       &subject,
     )
-    .with_operations(["read"]);
+    .with_operations([":read"]);
 
     assert_eq!(
       kernel.derive_capability(derivation).unwrap(),
@@ -2598,8 +2598,8 @@ mod tests {
 
   #[test]
   fn token_payload_is_deterministic() {
-    let subject = BasicSubject::new("task:1");
-    let issuer = BasicSubject::new("host:root");
+    let subject = BasicSubject::new("task://1");
+    let issuer = BasicSubject::new("host://root");
 
     let a = BasicCapabilityToken::new(
       CapabilityId(10),
@@ -2624,8 +2624,8 @@ mod tests {
 
   #[test]
   fn max_uses_is_enforced_by_default_kernel() {
-    let subject = BasicSubject::new("task:1");
-    let resource = BasicResource::new("db:users");
+    let subject = BasicSubject::new("task://1");
+    let resource = BasicResource::new("db://users");
 
     let cap = BasicCapability::new(
       CapabilityId(1),
@@ -2646,8 +2646,8 @@ mod tests {
 
   #[test]
   fn attenuation_cannot_relax_local_only() {
-    let subject = BasicSubject::new("task:1");
-    let resource = BasicResource::new("db:users");
+    let subject = BasicSubject::new("task://1");
+    let resource = BasicResource::new("db://users");
 
     let cap = BasicCapability::new(
       CapabilityId(1),
@@ -2672,8 +2672,8 @@ mod tests {
 
   #[test]
   fn attenuation_cannot_increase_limits() {
-    let subject = BasicSubject::new("task:1");
-    let resource = BasicResource::new("db:users");
+    let subject = BasicSubject::new("task://1");
+    let resource = BasicResource::new("db://users");
 
     let cap = BasicCapability::new(
       CapabilityId(1),
@@ -2698,9 +2698,9 @@ mod tests {
 
   #[test]
   fn parent_revocation_revokes_descendant_by_default() {
-    let subject = BasicSubject::new("task:1");
-    let next_subject = BasicSubject::new("task:2");
-    let resource = BasicResource::new("db:users");
+    let subject = BasicSubject::new("task://1");
+    let next_subject = BasicSubject::new("task://2");
+    let resource = BasicResource::new("db://users");
 
     let cap = BasicCapability::new(
       CapabilityId(1),
