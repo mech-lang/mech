@@ -168,12 +168,19 @@ pub struct SourceImportDeclaration {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SourceExportDeclaration {
+  pub name: String,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ResolvedSource {
   pub name: String,
   pub canonical_uri: String,
   pub source: MechSourceCode,
   pub kind: SourceKind,
   pub imports: Vec<SourceImportDeclaration>,
+  pub exports: Vec<SourceExportDeclaration>,
   pub dependencies: Vec<SourceRequest>,
   pub capability_requirements: Vec<CapabilityRequest>,
 }
@@ -190,6 +197,7 @@ impl ResolvedSource {
       source,
       kind: SourceKind::Unknown("".to_string()),
       imports: Vec::new(),
+      exports: Vec::new(),
       dependencies: Vec::new(),
       capability_requirements: Vec::new(),
     }
@@ -207,6 +215,11 @@ impl ResolvedSource {
 
   pub fn with_imports(mut self, imports: Vec<SourceImportDeclaration>) -> Self {
     self.imports = imports;
+    self
+  }
+
+  pub fn with_exports(mut self, exports: Vec<SourceExportDeclaration>) -> Self {
+    self.exports = exports;
     self
   }
 

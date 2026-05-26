@@ -518,8 +518,18 @@ pub enum FloatDirection {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ParsedMechCode {
+  pub code: Vec<(MechCode,Option<Comment>)>,
+  pub imports: Vec<ImportDeclaration>,
+  pub exports: Vec<ExportDeclaration>,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FencedMechCode {
   pub code: Vec<(MechCode,Option<Comment>)>,
+  pub imports: Vec<ImportDeclaration>,
+  pub exports: Vec<ExportDeclaration>,
   pub config: BlockConfig,
   pub options: Option<OptionMap>,
 }

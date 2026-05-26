@@ -798,9 +798,9 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
         let parse_string = ParseString::new(&graphemes);
 
         match mech_code(parse_string) {
-          Ok((_, mech_tree)) => {
+          Ok((_, parsed)) => {
             // TODO what if not all the input is parsed? Is that handled?
-            return Ok((input, SectionElement::FencedMechCode(FencedMechCode{code: mech_tree, config, options})));
+            return Ok((input, SectionElement::FencedMechCode(FencedMechCode{code: parsed.code, imports: parsed.imports, exports: parsed.exports, config, options})));
           },
           Err(err) => {
             return Err(nom::Err::Error(ParseError {
@@ -1064,8 +1064,8 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
   
     // check if it's mech_code first, we'll prioritize that
     match mech_code(new_input.clone()) {
-      Ok((input, mech_tree)) => {
-        elements.push(SectionElement::MechCode(mech_tree));
+      Ok((input, parsed)) => {
+        elements.push(SectionElement::MechCode(parsed.code));
         new_input = input;
         continue;
       }
@@ -1115,4 +1115,42 @@ pub fn body(input: ParseString) -> ParseResult<Body> {
     }
   }
   Ok((new_input, Body { sections }))
+}
+
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::{parser, Formatter};
+
+  #[test]
+  fn fenced_block_stores_imports_exports_separately() {
+    let src = "~~~mech:foo\n+> math/*\nx := 1.23\nsin(x)\n~~~\n\n~~~mech:bar\n+> geometry/triangle-area\narea := triangle-area(3, 4, 1.5708)\n<+ area\n~~~\n";
+    let tree = parser::parse(src).unwrap();
+    let mut fenced = vec![];
+    for section in tree.body.sections {
+      for el in section.elements {
+        if let SectionElement::FencedMechCode(code) = el { fenced.push(code); }
+      }
+    }
+    assert_eq!(fenced[0].config.namespace_str, "foo");
+    assert_eq!(fenced[0].imports.len(), 1);
+    assert_eq!(fenced[0].exports.len(), 0);
+    assert_eq!(fenced[0].imports[0].specifier.to_string(), "math/*");
+    assert_eq!(fenced[1].config.namespace_str, "bar");
+    assert_eq!(fenced[1].imports.len(), 1);
+    assert_eq!(fenced[1].exports.len(), 1);
+    assert_eq!(fenced[1].imports[0].specifier.to_string(), "geometry/triangle-area");
+    assert_eq!(fenced[1].exports[0].name.to_string(), "area");
+  }
+
+  #[test]
+  fn formatter_renders_fenced_import_export_declarations() {
+    let src = "~~~mech:foo\n+> math/sin\n<+ area\n~~~\n";
+    let tree = parser::parse(src).unwrap();
+    let mut formatter = Formatter::new();
+    let rendered = formatter.format(&tree);
+    assert!(rendered.contains("+> math/sin"));
+    assert!(rendered.contains("<+ area"));
+  }
 }

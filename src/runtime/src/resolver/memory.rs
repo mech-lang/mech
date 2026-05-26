@@ -17,7 +17,6 @@ use std::collections::HashMap;
 use mech_core::{MResult, MechSourceCode};
 
 use super::{
-  extract_mech_imports, import_dependencies,
   MutableSourceResolver, ResolvedSource, SourceKind, SourceRequest, SourceResolver,
 };
 
@@ -52,17 +51,12 @@ impl InMemorySourceResolver {
   ) -> MResult<()> {
     let specifier = specifier.into();
     let source = source.into();
-    let imports = extract_mech_imports(&source)?;
-    let dependencies = import_dependencies(&imports);
-
     let resolved = ResolvedSource::new(
       specifier.clone(),
       Self::default_canonical_uri(&specifier),
       MechSourceCode::String(source),
     )
-    .with_kind(SourceKind::Mech)
-    .with_imports(imports)
-    .with_dependencies(dependencies);
+    .with_kind(SourceKind::Mech);
 
     self.insert_source(specifier, resolved)
   }

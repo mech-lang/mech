@@ -10,7 +10,6 @@ use crate::resolver::{
 };
 
 use super::{
-  extract_mech_imports, import_dependencies,
   SourceExtensionDecodeFailed, SourceFileOpenFailed, SourceFileReadFailed,
   SourceIncludeCycle, SourceIncludeReadFailed, SourceKind,
   SourceUnknownFileExtension,
@@ -100,23 +99,7 @@ impl SourceResolver for FileSourceResolver {
 
     let kind = SourceKind::from_path(&path);
     let source = read_runtime_source_file(&path)?;
-    let mut imports = Vec::new();
-    let mut dependencies = Vec::new();
-    let source = if matches!(kind, SourceKind::Mech) {
-      match source {
-        MechSourceCode::String(text) => {
-          imports = extract_mech_imports(&text)?;
-          dependencies = import_dependencies(&imports)
-            .into_iter()
-            .map(|request| request.with_referrer(path.display().to_string()))
-            .collect();
-          MechSourceCode::String(text)
-        }
-        other => other,
-      }
-    } else {
-      source
-    };
+    let source = source;
 
     let name = path
       .file_name()
@@ -130,9 +113,7 @@ impl SourceResolver for FileSourceResolver {
         file_uri(&path),
         source,
       )
-      .with_kind(kind)
-      .with_imports(imports)
-      .with_dependencies(dependencies),
+      .with_kind(kind),
     ))
   }
 }
