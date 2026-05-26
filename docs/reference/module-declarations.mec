@@ -1,0 +1,47 @@
+Module Declarations
+===============================================================================
+
+`+>` Imports
+-------------------------------------------------------------------------------
+
+Use `+>` to declare module dependencies from source text.
+
+Examples:
+
+```mech
++> math
++> math/sin
++> math/v1.2.3/sin
++> fs:foo/bar
++> fs:foo/bar/mec.mec
++> ./dep.mec
++> ../dep.mec
++> math/*
+```
+
+Notes:
+
+- `+> math` declares a namespace-style module import.
+- `+> math/sin` declares a single-item import path.
+- `+> math/*` declares a wildcard import path.
+- Filesystem or URL-like specifiers (for example `./dep.mec` or `fs:foo/bar`) are dependency-oriented imports.
+
+`<+` Exports
+-------------------------------------------------------------------------------
+
+Use `<+` to declare exported names from a module.
+
+Examples:
+
+```mech
+<+ bar
+<+ sin
+<+ Point
+```
+
+Current Behavior (v0.3 beta)
+-------------------------------------------------------------------------------
+
+- Import and export declarations are parsed as grammar-level statements.
+- Runtime dependency extraction reads parsed import declarations and populates module dependency edges.
+- Name binding and wildcard collision resolution are intentionally deferred.

@@ -34,6 +34,7 @@ Mech Documentation
 - [Indexing](/reference/indexing.html) - access elements within data structures
 - [Conversion](/reference/convert.html) `todo` - convert data from one kind to another
 - [Broadcasting](/reference/broadcasting.html) - apply operations over data structures
+- [Module Declarations](/reference/module-declarations.html) - declare imports (`+>`) and exports (`<+`)
 
 (2.2) Program Model
 
