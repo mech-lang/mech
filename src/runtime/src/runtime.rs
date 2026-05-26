@@ -1086,14 +1086,6 @@ impl MechRuntime {
     options: ModuleBuildOptions<'_>,
   ) -> MResult<Option<ModuleVersionId>> {
     let mut context = self.runtime_context()?;
-    let target = runtime_target();
-    let options = ModuleBuildOptions::new(
-      options.compiler_version,
-      options.language_edition,
-      &target,
-      options.feature_flags,
-      options.capability_requirements,
-    );
 
     self.build_module_from_request_with_context(
       &mut context,
@@ -1148,15 +1140,6 @@ impl MechRuntime {
       name,
       canonical_uri,
       MechSourceCode::String(source.to_string()),
-    );
-
-    let target = runtime_target();
-    let options = ModuleBuildOptions::new(
-      options.compiler_version,
-      options.language_edition,
-      &target,
-      options.feature_flags,
-      options.capability_requirements,
     );
 
     self.build_module_from_resolved_source_with_context(
@@ -2689,10 +2672,6 @@ impl MechErrorKind for RuntimeInvalidOperationError {
 // -----------------------------------------------------------------------------
 // Helpers
 // -----------------------------------------------------------------------------
-
-fn runtime_target() -> String {
-  format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH)
-}
 
 fn source_fingerprint(source: &MechSourceCode) -> MResult<String> {
   match source {
