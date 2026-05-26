@@ -533,7 +533,6 @@ async fn main() -> Result<(), MechError> {
   #[cfg(feature = "run")]
   let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
   #[cfg(feature = "run")]
-  let _ = tree_flag;
   program.configure(debug_flag, trace_flag, time_flag, rounds_per_step);
   #[cfg(feature = "run")]
   {
