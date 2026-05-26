@@ -1,5 +1,6 @@
 use crate::*;
 use super::*;
+use crate::sections::{OpCode as LocalOpCode, TypeTag as LocalTypeTag};
 #[cfg(not(feature = "no_std"))]
 use std::collections::HashMap;
 #[cfg(feature = "no_std")]
@@ -442,7 +443,7 @@ impl ParsedProgram {
           let matrix = Matrix::<usize>::from_le(&data);
           Value::MatrixIndex(matrix)
         },
-        TypeTag::Index => {
+        mech_core::TypeTag::Index => {
           if data.len() != 8 {
             return Err(MechError::new(ConstantWrongSizeError { expected: 8, found: data.len(), type_name: "Index" }, None).with_compiler_loc());
           }
@@ -468,7 +469,7 @@ impl ParsedProgram {
         _ => {
           return Err(
             MechError::new(
-              UnsupportedConstantTypeError { type_tag: ty.tag },
+              UnsupportedConstantTypeError { type_tag: LocalTypeTag::from_u16(ty.tag.to_u16()).unwrap_or(LocalTypeTag::Any) },
               None,
             )
             .with_compiler_loc()
@@ -558,7 +559,7 @@ fn load_program_from_reader<R: Read + Seek>(r: &mut R, total_len: u64) -> MResul
       let bytes_len = r.read_u32::<LittleEndian>()? as usize;
       let mut bytes = vec![0u8; bytes_len];
       r.read_exact(&mut bytes)?;
-      if let Some(tag) = TypeTag::from_u16(tag) {
+      if let Some(tag) = LocalTypeTag::from_u16(tag) {
         types.entries.push(TypeEntry { tag, bytes });
       } else {
         return Err(
@@ -742,15 +743,15 @@ pub enum DecodedInstr {
 
 impl DecodedInstr {
  pub fn from_u8(num: u8) -> Option<DecodedInstr> {
-    match OpCode::from_u8(num) {
-      Some(OpCode::ConstLoad) => Some(DecodedInstr::ConstLoad { dst: 0, const_id: 0 }),
-      Some(OpCode::NullOp) => Some(DecodedInstr::NullOp { fxn_id: 0, dst: 0 }),
-      Some(OpCode::Unop) => Some(DecodedInstr::UnOp { fxn_id: 0, dst: 0, src: 0 }),
-      Some(OpCode::Binop) => Some(DecodedInstr::BinOp { fxn_id: 0, dst: 0, lhs: 0, rhs: 0 }),
-      Some(OpCode::Ternop) => Some(DecodedInstr::TernOp { fxn_id: 0, dst: 0, a: 0, b: 0, c: 0 }),
-      Some(OpCode::Quadop) => Some(DecodedInstr::QuadOp { fxn_id: 0, dst: 0, a: 0, b: 0, c: 0, d: 0 }),
-      Some(OpCode::VarArg) => Some(DecodedInstr::VarArg { fxn_id: 0, dst: 0, args: vec![] }),
-      Some(OpCode::Return) => Some(DecodedInstr::Ret { src: 0 }),
+    match LocalOpCode::from_u8(num) {
+      Some(LocalOpCode::ConstLoad) => Some(DecodedInstr::ConstLoad { dst: 0, const_id: 0 }),
+      Some(LocalOpCode::NullOp) => Some(DecodedInstr::NullOp { fxn_id: 0, dst: 0 }),
+      Some(LocalOpCode::Unop) => Some(DecodedInstr::UnOp { fxn_id: 0, dst: 0, src: 0 }),
+      Some(LocalOpCode::Binop) => Some(DecodedInstr::BinOp { fxn_id: 0, dst: 0, lhs: 0, rhs: 0 }),
+      Some(LocalOpCode::Ternop) => Some(DecodedInstr::TernOp { fxn_id: 0, dst: 0, a: 0, b: 0, c: 0 }),
+      Some(LocalOpCode::Quadop) => Some(DecodedInstr::QuadOp { fxn_id: 0, dst: 0, a: 0, b: 0, c: 0, d: 0 }),
+      Some(LocalOpCode::VarArg) => Some(DecodedInstr::VarArg { fxn_id: 0, dst: 0, args: vec![] }),
+      Some(LocalOpCode::Return) => Some(DecodedInstr::Ret { src: 0 }),
       _ => None,
     }
   }
@@ -770,31 +771,31 @@ fn decode_instructions(mut cur: Cursor<&[u8]>) -> MResult<Vec<DecodedInstr>> {
       ).with_compiler_loc());
     }
     let opcode_byte = cur.read_u8()?;
-    match OpCode::from_u8(opcode_byte) {
-      Some(OpCode::ConstLoad) => {
+    match LocalOpCode::from_u8(opcode_byte) {
+      Some(LocalOpCode::ConstLoad) => {
         // need 4+4 bytes
         let dst = cur.read_u32::<LittleEndian>()?;
         let const_id = cur.read_u32::<LittleEndian>()?;
         out.push(DecodedInstr::ConstLoad { dst, const_id });
       }
-      Some(OpCode::Return) => {
+      Some(LocalOpCode::Return) => {
         let src = cur.read_u32::<LittleEndian>()?;
         out.push(DecodedInstr::Ret { src });
       }
-      Some(OpCode::NullOp) => {
+      Some(LocalOpCode::NullOp) => {
         // need 8+4 bytes
         let fxn_id = cur.read_u64::<LittleEndian>()?;
         let dst = cur.read_u32::<LittleEndian>()?;
         out.push(DecodedInstr::NullOp { fxn_id: fxn_id, dst });
       }
-      Some(OpCode::Unop) => {
+      Some(LocalOpCode::Unop) => {
         // need 8+4+4 bytes
         let fxn_id = cur.read_u64::<LittleEndian>()?;
         let dst = cur.read_u32::<LittleEndian>()?;
         let src = cur.read_u32::<LittleEndian>()?;
         out.push(DecodedInstr::UnOp { fxn_id: fxn_id, dst, src });
       }
-      Some(OpCode::Binop) => {
+      Some(LocalOpCode::Binop) => {
         // need 8+4+4+4 bytes
         let fxn_id = cur.read_u64::<LittleEndian>()?;
         let dst = cur.read_u32::<LittleEndian>()?;
@@ -802,7 +803,7 @@ fn decode_instructions(mut cur: Cursor<&[u8]>) -> MResult<Vec<DecodedInstr>> {
         let rhs = cur.read_u32::<LittleEndian>()?;
         out.push(DecodedInstr::BinOp { fxn_id: fxn_id, dst, lhs, rhs });
       }
-      Some(OpCode::Ternop) => {
+      Some(LocalOpCode::Ternop) => {
         // need 8+4+4+4+4 bytes
         let fxn_id = cur.read_u64::<LittleEndian>()?;
         let dst = cur.read_u32::<LittleEndian>()?;
@@ -811,7 +812,7 @@ fn decode_instructions(mut cur: Cursor<&[u8]>) -> MResult<Vec<DecodedInstr>> {
         let c = cur.read_u32::<LittleEndian>()?;
         out.push(DecodedInstr::TernOp { fxn_id: fxn_id, dst, a, b, c });
       }
-      Some(OpCode::Quadop) => {
+      Some(LocalOpCode::Quadop) => {
         // need 8+4+4+4+4+4 bytes
         let fxn_id = cur.read_u64::<LittleEndian>()?;
         let dst = cur.read_u32::<LittleEndian>()?;
@@ -821,7 +822,7 @@ fn decode_instructions(mut cur: Cursor<&[u8]>) -> MResult<Vec<DecodedInstr>> {
         let d = cur.read_u32::<LittleEndian>()?;
         out.push(DecodedInstr::QuadOp { fxn_id: fxn_id, dst, a, b, c, d });
       }
-      Some(OpCode::VarArg) => {
+      Some(LocalOpCode::VarArg) => {
         // need at least 8+4+4 bytes
         let fxn_id = cur.read_u64::<LittleEndian>()?;
         let dst = cur.read_u32::<LittleEndian>()?;
@@ -854,30 +855,30 @@ impl DecodedInstr {
   pub fn write_to<W: Write>(&self, w: &mut W) -> MResult<()> {
     match self {
       DecodedInstr::ConstLoad { dst, const_id } => {
-        w.write_u8(OpCode::ConstLoad as u8)?;
+        w.write_u8(LocalOpCode::ConstLoad as u8)?;
         w.write_u32::<LittleEndian>(*dst)?;
         w.write_u32::<LittleEndian>(*const_id)?;
       }
       DecodedInstr::NullOp { fxn_id, dst } => {
-        w.write_u8(OpCode::NullOp as u8)?;
+        w.write_u8(LocalOpCode::NullOp as u8)?;
         w.write_u64::<LittleEndian>(*fxn_id)?;
         w.write_u32::<LittleEndian>(*dst)?;
       }
       DecodedInstr::UnOp { fxn_id, dst, src } => {
-        w.write_u8(OpCode::Unop as u8)?;
+        w.write_u8(LocalOpCode::Unop as u8)?;
         w.write_u64::<LittleEndian>(*fxn_id)?;
         w.write_u32::<LittleEndian>(*dst)?;
         w.write_u32::<LittleEndian>(*src)?;
       }
       DecodedInstr::BinOp { fxn_id, dst, lhs, rhs } => {
-        w.write_u8(OpCode::Binop as u8)?;
+        w.write_u8(LocalOpCode::Binop as u8)?;
         w.write_u64::<LittleEndian>(*fxn_id)?;
         w.write_u32::<LittleEndian>(*dst)?;
         w.write_u32::<LittleEndian>(*lhs)?;
         w.write_u32::<LittleEndian>(*rhs)?;
       }
       DecodedInstr::TernOp { fxn_id, dst, a, b, c } => {
-        w.write_u8(OpCode::Ternop as u8)?;
+        w.write_u8(LocalOpCode::Ternop as u8)?;
         w.write_u64::<LittleEndian>(*fxn_id)?;
         w.write_u32::<LittleEndian>(*dst)?;
         w.write_u32::<LittleEndian>(*a)?;
@@ -885,7 +886,7 @@ impl DecodedInstr {
         w.write_u32::<LittleEndian>(*c)?;
       }
       DecodedInstr::QuadOp { fxn_id, dst, a, b, c, d } => {
-        w.write_u8(OpCode::Quadop as u8)?;
+        w.write_u8(LocalOpCode::Quadop as u8)?;
         w.write_u64::<LittleEndian>(*fxn_id)?;
         w.write_u32::<LittleEndian>(*dst)?;
         w.write_u32::<LittleEndian>(*a)?;
@@ -894,7 +895,7 @@ impl DecodedInstr {
         w.write_u32::<LittleEndian>(*d)?;
       }
       DecodedInstr::VarArg { fxn_id, dst, args } => {
-        w.write_u8(OpCode::VarArg as u8)?;
+        w.write_u8(LocalOpCode::VarArg as u8)?;
         w.write_u64::<LittleEndian>(*fxn_id)?;
         w.write_u32::<LittleEndian>(*dst)?;
         w.write_u32::<LittleEndian>(args.len() as u32)?;
@@ -903,7 +904,7 @@ impl DecodedInstr {
         }
       }
       DecodedInstr::Ret { src } => {
-        w.write_u8(OpCode::Return as u8)?;
+        w.write_u8(LocalOpCode::Return as u8)?;
         w.write_u32::<LittleEndian>(*src)?;
       }
       DecodedInstr::Unknown { opcode, rest } => {
@@ -1012,7 +1013,7 @@ impl MechErrorKind for TruncatedInstructionError {
 
 #[derive(Debug, Clone)]
 pub struct UnknownOpcodeError {
-  pub opcode: OpCode,
+  pub opcode: LocalOpCode,
 }
 impl MechErrorKind for UnknownOpcodeError {
   fn name(&self) -> &str { "UnknownOpcode" }
