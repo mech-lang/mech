@@ -1,93 +1,108 @@
-operators
-===============================================================================
+Operators
+================================================================================
 
-%% Quick reference of binary operators and assignment operators used with math, string, matrix, set, and table data.
+%% Quick reference of all the operators in Mech, organized by category. 
+
+For detailed information on each operator, see the corresponding reference page.
 
 1. Math Operators
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
-| Operator | Meaning | Example |
-|:--:|---|---|
-| `+` | addition | `sum := 3 + 4` |
-| `-` | subtraction or negation| `diff := 10 - 3; -diff` |
-| `*` or `×` | multiplication | `prod := 6 * 7` |
-| `/` or `÷` | division | `q := 22 / 7` |
-| `%` | modulus (remainder) | `r := 17 % 5` |
-| `^` | exponentiation | `p := 2 ^ 8` |
+| Operator   | Meaning                 | Example         |
+|:----------:|-------------------------|-----------------|
+| `+`        | addition                | {{3 + 4}}       |
+| `-`        | subtraction or negation | `10 - 3; -10`  |
+| `*` or `×` | multiplication          | {{6 * 7}}       |
+| `/` or `÷` | division                | {{22 / 7}}      |
+| `%`        | modulus (remainder)     | {{17 % 5}}      |
+| `^`        | exponentiation          | {{2 ^ 8}}       |
 
 2. String Operators
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 | Operator | Meaning | Example |
 |:--:|---|---|
-| `+` | concatenation | `label := "user-" + "42"` |
+| `+` | concatenation | {{label := "user-" + "42"}} |
 
 3. Matrix Operators
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
-| Operator | Meaning | Example |
-|:--:|---|---|
-| `+` | element-wise addition | `c := a + b` |
-| `-` | element-wise subtraction | `d := a - b` |
-| `*` or `×` | element-wise multiplication | `e := a * b` |
-| `/` or `÷` | element-wise division | `f := a / b` |
-| `%` | element-wise modulus | `g := a % b` |
-| `^` | element-wise power | `h := a ^ b` |
-| `**` | matrix multiplication | `m := a ** b` |
-| `\\` | linear solve (`A \\ b`) | `x := a \\ b` |
-| `·` or `•` | dot product | `dp := u · v` |
-| `⨯` | cross product | `cp := u ⨯ v` |
+| Operator     | Meaning                     | Example      |
+|:------------:|-----------------------------|--------------|
+| `+`          | broadcast addition       | {{a + b}}    |
+| `-`          | broadcast subtraction    | {{a - b}}    |
+| `*` or `×`   | broadcast multiplication | {{a * b}}    |
+| `/` or `÷`   | broadcast division       | {{a / b}}    |
+| `%`          | broadcast modulus        | {{a % b}}    |
+| `^`          | broadcast power          | {{a ^ b}}    |
+| `**`         | matrix multiplication       | {{a ** b}}   |
+| `'`          | matrix transpose            | {{a'}}       |
+| `\\`         | linear solve `A \\ b`     | `a \\ b`    |
+| `·` or `•`   | dot product                 | {{ u · v}}   |
+| `⨯`          | cross product               | {{ u ⨯ v}}   |
 
 4. Set Operators
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
-| Operator | Meaning | Example |
-|:--:|---|---|
-| `∪` | union | `u := a ∪ b` |
-| `∩` | intersection | `i := a ∩ b` |
-| `∖` | difference | `d := a ∖ b` |
-| `∁` | complement | `c := a ∁ b` |
-| `Δ` (or `∆`) | symmetric difference | `s := a Δ b` |
-| `⊆` | subset | `ok := a ⊆ b` |
-| `⊊` (or `⊂`) | proper subset | `ok := a ⊊ b` |
-| `⊇` | superset | `ok := a ⊇ b` |
-| `⊋` (or `⊃`) | proper superset | `ok := a ⊋ b` |
-| `∈` | element of | `ok := 2 ∈ a` |
-| `∉` | not element of | `ok := 9 ∉ a` |
+| Operator     | Meaning              | Example      |
+|:------------:|----------------------|--------------|
+| `∪`          | union                | {{a ∪ b}}    |
+| `∩`          | intersection         | {{a ∩ b}}    |
+| `∖`          | difference           | {{a ∖ b}}    |
+| `∁`          | complement           | {{a ∁ b}}    |
+| `Δ` (or `∆`) | symmetric difference | {{a Δ b}}    |
+| `⊆`          | subset               | {{a ⊆ b}}    |
+| `⊊` (or `⊂`) | proper subset        | {{a ⊊ b}}    |
+| `⊇`          | superset             | {{a ⊇ b}}    |
+| `⊋` (or `⊃`) | proper superset      | {{a ⊋ b}}    |
+| `∈`          | element of           | {{2 ∈ a}}    |
+| `∉`          | not element of       | {{9 ∉ a}}    |
 
 5. Table Operators
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
-| Operator | Meaning | Example |
-|:--:|---|---|
-| `⋈` | inner join | `j := a ⋈ b` |
-| `⟕` | left outer join | `j := a ⟕ b` |
-| `⟖` | right outer join | `j := a ⟖ b` |
-| `⟗` | full outer join | `j := a ⟗ b` |
-| `⋉` | left semi join | `j := a ⋉ b` |
-| `▷` | left anti join | `j := a ▷ b` |
+| Operator | Meaning          | Example          |
+|:--------:|------------------|------------------|
+| `⋈`     | inner join        | {{j := a ⋈ b}}   |
+| `⟕`     | left outer join   | {{j := a ⟕ b}}   |
+| `⟖`     | right outer join  | {{j := a ⟖ b}}   |
+| `⟗`     | full outer join   | {{j := a ⟗ b}}   |
+| `⋉`     | left semi join    | {{j := a ⋉ b}}   |
+| `▷`     | left anti join    | {{j := a ▷ b}}   |
 
 6. Assignment Operators
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
-| Operator | Meaning | Example |
-|:--:|---|---|
-| `:=` | define a new binding | `x := 10` |
-| `=` | assign/update an existing mutable binding | `x = 11` |
-| `+=` | add-assign (in-place update) | `x += 1` |
-| `-=` | subtract-assign | `x -= 1` |
-| `*=` | multiply-assign | `x *= 2` |
-| `/=` | divide-assign | `x /= 2` |
-| `^=` | exponent-assign (grammar form) | `x ^= 3` |
+| Operator | Meaning                                      | Example    |
+|:--------:|----------------------------------------------|------------|
+| `:=`     | define a new binding                         | {{x := 10}}  |
+| `=`      | assign/update an existing mutable binding    | {{x = 11}}   |
+| `+=`     | add-assign=                                  | {{x += 1}}   |
+| `-=`     | subtract-assign                              | {{x -= 1}}   |
+| `*=`     | multiply-assign                              | {{x *= 2}}   |
+| `/=`     | divide-assign                                | {{x /= 2}}   |
+| `^=`     | exponent-assign                              | {{x ^= 3}}   |
 
 7. Comparison Operators
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
-| Operator | Meaning | Example |
-|:--:|---|---|
-| `==` | element-wise equality for collections (scalar equality for scalars) | `[1 2] == [1 3]` → `[true false]` |
-| `!=` | element-wise inequality for collections (scalar inequality for scalars) | `[1 2] != [1 3]` → `[false true]` |
-| `===` | strict equality (single boolean; full value/shape match) | `[1 2] === [1 2]` → `true` |
-| `!==` | strict inequality (single boolean) | `[1 2] !== [1 3]` → `true` |
-| `≡` | strict equality alias | `[1 2] ≡ [1 2]` → `true` |
-| `!≡` | strict inequality alias | `[1 2] !≡ [1 3]` → `true` |
+| Operator     | Meaning               | Example               |
+|:------------:|-----------------------|-----------------------|
+| `==` or `⩵` | equality               |  {{[1 2] == [1 3]}}   |
+| `!=` or `≠`  | inequality            |  {{[1 2] != [1 3]}}   |
+| `===` or `≡` | strict equality       | {{[1 2] === [1 2]}}   |
+| `!==` or `!≡`| strict inequality     | {{[1 2] !== [1 3]}}   |
+| `<`          | less than             | {{3 < 5}}               |
+| `<=` or `⩽`  | less than or equal    | {{3 <= 3}}              |
+| `>`          | greater than          | {{5 > 3}}               |
+| `>=` or `⩾`  | greater than or equal | {{5 >= 5}}              |
+
+8. Logical Operators
+--------------------------------------------------------------------------------
+
+| Operator            | Meaning     | Example                             |
+|:-------------------:|-------------|-------------------------------------|
+| `&&` or `∧`         | logical AND | {{true && false}}, {{true ∧ false}} | 
+| `||` or `∨`         | logical OR  | {{true || false}}, {{true ∨ false}} |
+| `^^` or `⊕` or `⊻` | logical XOR | `true ^^ false`                   |
+| `!` or `¬`          | logical NOT | {{!true}}                           |

@@ -29,6 +29,12 @@ pub fn literal(input: ParseString) -> ParseResult<Literal> {
   Ok((input, result))
 }
 
+// empty := +underscore ;
+pub fn empty(input: ParseString) -> ParseResult<Token> {
+  let (input, (g, src_range)) = range(many1(tag("_")))(input)?;
+  Ok((input, Token{kind: TokenKind::Empty, chars: g.join("").chars().collect(), src_range}))
+}
+
 // atom := ":", identifier ;
 pub fn atom(input: ParseString) -> ParseResult<Atom> {
   let (input, _) = colon(input)?;
@@ -237,18 +243,18 @@ pub fn float_full(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Float((whole,part))))
 }
 
-// float-literal := float-decimal-start | float-full;
+// float-literal := float-decimal-start | float-full ;
 pub fn float_literal(input: ParseString) -> ParseResult<RealNumber> {
   let (input, result) = alt((float_decimal_start,float_full))(input)?;
   Ok((input, result))
 }
 
-// integer := digit1, ?suffix ;
+// integer := typed-integer | untyped-integer ;
 pub fn integer_literal(input: ParseString) -> ParseResult<RealNumber> {
   alt((typed_integer, untyped_integer))(input)
 }
 
-// typed_integer := digit1, suffix ;
+// typed-integer := digit-sequence, identifier ;
 pub fn typed_integer(input: ParseString) -> ParseResult<RealNumber> {
   let (input, mut digits) = digit_sequence(input)?;
   let mut merged = Token::merge_tokens(&mut digits).unwrap();
@@ -260,7 +266,7 @@ pub fn typed_integer(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::TypedInteger((merged, kind_annotation))))
 }
 
-// untyped_integer := digit1 ;
+// untyped_integer := digit-sequence ;
 pub fn untyped_integer(input: ParseString) -> ParseResult<RealNumber> {
   let (input, mut digits) = digit_sequence(input)?;
   let mut merged = Token::merge_tokens(&mut digits).unwrap();
@@ -268,7 +274,7 @@ pub fn untyped_integer(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Integer(merged)))
 }
 
-// decimal_literal := "0d", <digit1> ;
+// decimal_literal := "0d", +digit-sequence ;
 pub fn decimal_literal(input: ParseString) -> ParseResult<RealNumber> {
   let msg = "Expects decimal digits after \"0d\"";
   let input = tag("0d")(input);
@@ -279,7 +285,7 @@ pub fn decimal_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Decimal(merged)))
 }
 
-// hexadecimal_literal := "0x", <hex_digit+> ;
+// hexadecimal_literal := "0x", +(digit-token | underscore | alpha-token) ;
 pub fn hexadecimal_literal(input: ParseString) -> ParseResult<RealNumber> {
   let msg = "Expects hexadecimal digits after \"0x\"";
   let input = tag("0x")(input);
@@ -290,32 +296,26 @@ pub fn hexadecimal_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Hexadecimal(merged)))
 }
 
-// octal_literal := "0o", <oct_digit+> ;
+// octal_literal := "0o", +digit-sequence;
 pub fn octal_literal(input: ParseString) -> ParseResult<RealNumber> {
   let msg = "Expects octal digits after \"0o\"";
   let input = tag("0o")(input);
   let (input, _) = input?;
-  let (input, mut tokens) = label!(many1(alt((digit_token,underscore,alpha_token))), msg)(input)?;
+  let (input, mut tokens) = label!(digit_sequence, msg)(input)?;
   let mut merged = Token::merge_tokens(&mut tokens).unwrap();
   merged.kind = TokenKind::Number; 
   Ok((input, RealNumber::Octal(merged)))
 }
 
-// binary_literal := "0b", <bin_digit+> ;
+// binary_literal := "0b", +digit-sequence; ;
 pub fn binary_literal(input: ParseString) -> ParseResult<RealNumber> {
   let msg = "Expects binary digits after \"0b\"";
   let input = tag("0b")(input);
   let (input, _) = input?;
-  let (input, mut tokens) = label!(many1(alt((digit_token,underscore,alpha_token))), msg)(input)?;
+  let (input, mut tokens) = label!(digit_sequence, msg)(input)?;
   let mut merged = Token::merge_tokens(&mut tokens).unwrap();
   merged.kind = TokenKind::Number; 
   Ok((input, RealNumber::Binary(merged)))
-}
-
-// empty := underscore+ ;
-pub fn empty(input: ParseString) -> ParseResult<Token> {
-  let (input, (g, src_range)) = range(many1(tag("_")))(input)?;
-  Ok((input, Token{kind: TokenKind::Empty, chars: g.join("").chars().collect(), src_range}))
 }
 
 // Kind Annotations

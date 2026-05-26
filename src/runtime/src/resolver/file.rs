@@ -99,7 +99,6 @@ impl SourceResolver for FileSourceResolver {
 
     let kind = SourceKind::from_path(&path);
     let source = read_runtime_source_file(&path)?;
-
     let name = path
       .file_name()
       .and_then(|name| name.to_str())

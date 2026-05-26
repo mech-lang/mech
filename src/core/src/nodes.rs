@@ -105,7 +105,7 @@ pub enum TokenKind {
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
   #[cfg(feature = "mika")]
   Mika(Mika), 
-  MikaSection, MikaSectionOpen, MikaSectionClose,
+  MikaSection, MikaSectionOpen, MikaSectionClose, ModuleExportSigil, ModuleImportSigil,
   Newline, Not, Number,
   OutputOperator,
   Percent, Period, Plus, PromptSigil,
@@ -518,8 +518,18 @@ pub enum FloatDirection {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ParsedMechCode {
+  pub code: Vec<(MechCode,Option<Comment>)>,
+  pub imports: Vec<ImportDeclaration>,
+  pub exports: Vec<ExportDeclaration>,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FencedMechCode {
   pub code: Vec<(MechCode,Option<Comment>)>,
+  pub imports: Vec<ImportDeclaration>,
+  pub exports: Vec<ExportDeclaration>,
   pub config: BlockConfig,
   pub options: Option<OptionMap>,
 }
@@ -1104,6 +1114,8 @@ impl StateDefinition {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Statement {
+  ImportDeclaration(ImportDeclaration),
+  ExportDeclaration(ExportDeclaration),
   EnumDefine(EnumDefine),
   FsmDeclare(FsmDeclare),
   KindDefine(KindDefine),
@@ -1120,6 +1132,8 @@ pub enum Statement {
 impl Statement {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
+      Statement::ImportDeclaration(x) => x.tokens(),
+      Statement::ExportDeclaration(x) => x.tokens(),
       Statement::EnumDefine(x) => x.tokens(),
       Statement::FsmDeclare(x) => x.tokens(),
       Statement::KindDefine(x) => x.tokens(),
@@ -1132,6 +1146,30 @@ impl Statement {
       Statement::SplitTable => vec![], // todo
       Statement::FlattenTable => vec![], // todo
     }
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ImportDeclaration {
+  pub specifier: MechString,
+}
+
+impl ImportDeclaration {
+  pub fn tokens(&self) -> Vec<Token> {
+    vec![self.specifier.text.clone()]
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ExportDeclaration {
+  pub name: Identifier,
+}
+
+impl ExportDeclaration {
+  pub fn tokens(&self) -> Vec<Token> {
+    self.name.tokens()
   }
 }
 
@@ -2503,8 +2541,8 @@ impl FormulaOperator {
       FormulaOperator::Comparison(ComparisonOp::GreaterThan) => ">",
       FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => "<=",
       FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual) => ">=",
-      FormulaOperator::Comparison(ComparisonOp::StrictEqual) => "===",
-      FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => "!==",
+      FormulaOperator::Comparison(ComparisonOp::StrictEqual) => "≡",
+      FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => "!≡",
       FormulaOperator::Power(PowerOp::Pow) => "^",
       FormulaOperator::Logic(LogicOp::And) => "&&",
       FormulaOperator::Logic(LogicOp::Or) => "||",
@@ -2517,12 +2555,12 @@ impl FormulaOperator {
       FormulaOperator::Vec(VecOp::Dot) => ".*",
       FormulaOperator::Vec(VecOp::MatMul) => "**",
       FormulaOperator::Vec(VecOp::Solve) => "\\",
-      FormulaOperator::Table(TableOp::InnerJoin) => "<*>",
-      FormulaOperator::Table(TableOp::LeftOuterJoin) => "<+",
-      FormulaOperator::Table(TableOp::RightOuterJoin) => "+>",
-      FormulaOperator::Table(TableOp::FullOuterJoin) => "<+>",
-      FormulaOperator::Table(TableOp::LeftSemiJoin) => "<*",
-      FormulaOperator::Table(TableOp::LeftAntiJoin) => "<!",
+      FormulaOperator::Table(TableOp::InnerJoin) => "⋈",
+      FormulaOperator::Table(TableOp::LeftOuterJoin) => "⟕",
+      FormulaOperator::Table(TableOp::RightOuterJoin) => "⟖",
+      FormulaOperator::Table(TableOp::FullOuterJoin) => "⟗",
+      FormulaOperator::Table(TableOp::LeftSemiJoin) => "⋉",
+      FormulaOperator::Table(TableOp::LeftAntiJoin) => "▷",
       FormulaOperator::Set(SetOp::Union) => "∪",
       FormulaOperator::Set(SetOp::Intersection) => "∩",
       FormulaOperator::Set(SetOp::Difference) => "\\",

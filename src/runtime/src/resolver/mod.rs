@@ -39,10 +39,12 @@ use crate::capability::CapabilityRequest;
 pub mod memory;
 pub mod source;
 pub mod file;
+pub mod imports;
 
 pub use memory::*;
 pub use source::*;
 pub use file::*;
+pub use imports::*;
 
 // -----------------------------------------------------------------------------
 // Source Request
@@ -149,11 +151,35 @@ impl From<String> for SourceRequest {
 /// specifier when computing stable source/module identity.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SourceImportKind {
+  Namespace,
+  Single { name: String },
+  Wildcard,
+  DependencyOnly,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SourceImportDeclaration {
+  pub specifier: String,
+  pub alias: Option<String>,
+  pub kind: SourceImportKind,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SourceExportDeclaration {
+  pub name: String,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ResolvedSource {
   pub name: String,
   pub canonical_uri: String,
   pub source: MechSourceCode,
   pub kind: SourceKind,
+  pub imports: Vec<SourceImportDeclaration>,
   pub dependencies: Vec<SourceRequest>,
   pub capability_requirements: Vec<CapabilityRequest>,
 }
@@ -169,6 +195,7 @@ impl ResolvedSource {
       canonical_uri: canonical_uri.into(),
       source,
       kind: SourceKind::Unknown("".to_string()),
+      imports: Vec::new(),
       dependencies: Vec::new(),
       capability_requirements: Vec::new(),
     }
@@ -181,6 +208,11 @@ impl ResolvedSource {
 
   pub fn with_dependencies(mut self, dependencies: Vec<SourceRequest>) -> Self {
     self.dependencies = dependencies;
+    self
+  }
+
+  pub fn with_imports(mut self, imports: Vec<SourceImportDeclaration>) -> Self {
+    self.imports = imports;
     self
   }
 

@@ -172,6 +172,8 @@ leaf!(section_sigil, "§", TokenKind::SectionSigil);
 leaf!(mika_section_open, "⸢", TokenKind::MikaSectionOpen);
 leaf!(mika_section_close, "⸥", TokenKind::MikaSectionClose);
 leaf!(prompt_sigil, ">:", TokenKind::PromptSigil);
+leaf!(module_import_sigil, "+>", TokenKind::ModuleImportSigil);
+leaf!(module_export_sigil, "<+", TokenKind::ModuleExportSigil);
 
 ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);
 ws0_leaf!(async_transition_operator, "~>", TokenKind::AsyncTransitionOperator);
