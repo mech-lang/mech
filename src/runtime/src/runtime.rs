@@ -875,7 +875,7 @@ impl MechRuntime {
     ) -> MResult<ModuleVersionId> {
         let mut dependency_graph = ModuleDependencyGraph::new();
 
-        self.build_module_from_resolved_source_with_context_and_stack(
+        self.build_module_from_resolved_source_with_context_and_graph(
             context,
             resolved,
             compiler_version,
@@ -887,7 +887,7 @@ impl MechRuntime {
         )
     }
 
-    fn build_module_from_resolved_source_with_context_and_stack(
+    fn build_module_from_resolved_source_with_context_and_graph(
         &mut self,
         context: &mut RuntimeContext,
         resolved: ResolvedSource,
@@ -943,7 +943,7 @@ impl MechRuntime {
 
             for dependency in resolved.dependencies.iter() {
                 if let Some(dependency_version) = self
-                    .build_module_from_request_with_context_and_stack(
+                    .build_module_from_request_with_context_and_graph(
                         context,
                         dependency.clone(),
                         compiler_version,
@@ -1008,7 +1008,7 @@ impl MechRuntime {
         result
     }
 
-    fn build_module_from_request_with_context_and_stack(
+    fn build_module_from_request_with_context_and_graph(
         &mut self,
         context: &mut RuntimeContext,
         request: impl Into<SourceRequest>,
@@ -1024,7 +1024,7 @@ impl MechRuntime {
         };
 
         Ok(Some(
-            self.build_module_from_resolved_source_with_context_and_stack(
+            self.build_module_from_resolved_source_with_context_and_graph(
                 context,
                 resolved,
                 compiler_version,
@@ -1071,7 +1071,7 @@ impl MechRuntime {
     ) -> MResult<Option<ModuleVersionId>> {
         let mut dependency_graph = ModuleDependencyGraph::new();
 
-        self.build_module_from_request_with_context_and_stack(
+        self.build_module_from_request_with_context_and_graph(
             context,
             request,
             compiler_version,

@@ -31,7 +31,14 @@ impl ModuleDependencyGraph {
     }
 
     pub fn leave(&mut self, canonical_uri: &str) {
-        self.stack.pop();
+        let popped = self.stack.pop();
+
+        debug_assert_eq!(
+            popped.as_deref(),
+            Some(canonical_uri),
+            "module dependency graph leave order mismatch",
+        );
+
         self.seen.remove(canonical_uri);
     }
 
