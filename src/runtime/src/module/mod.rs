@@ -5,6 +5,8 @@
 
 pub mod record;
 pub mod builder;
+pub mod graph;
 
 pub use record::*;
 pub use builder::*;
+pub use graph::*;

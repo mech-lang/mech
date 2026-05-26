@@ -7,6 +7,7 @@ use mech_runtime::{
   FileSourceResolver,
   ResolvedSource,
   RuntimeBuilder,
+  ModuleBuildOptions,
   SourceRequest,
 };
 
@@ -72,15 +73,18 @@ fn main() -> MResult<()> {
   resolved.dependencies.push(SourceRequest::new("dep.mec"));
 
   let target = runtime_target();
-
-  let module_version = runtime.build_module_from_resolved_source_with_context(
-    &mut context,
-    resolved,
+  let options = ModuleBuildOptions::new(
     env!("CARGO_PKG_VERSION"),
     "mech-current",
     &target,
     &[],
     &[],
+  );
+
+  let module_version = runtime.build_module_from_resolved_source_with_context(
+    &mut context,
+    resolved,
+    options,
   )?;
 
   println!("module version: {}", short(module_version));

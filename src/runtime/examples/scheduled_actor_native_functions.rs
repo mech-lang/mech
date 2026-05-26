@@ -15,6 +15,7 @@ use mech_runtime::{
   InMemorySourceResolver,
   ObjectRecord,
   RuntimeBuilder,
+  ModuleBuildOptions,
   SourceRequest,
 };
 
@@ -66,10 +67,13 @@ fn main() -> MResult<()> {
   let actor_version = runtime
     .resolve_and_store_module_source(
       SourceRequest::new("actor.behavior"),
-      env!("CARGO_PKG_VERSION"),
-      "mech-current",
-      &[],
-      &[],
+      ModuleBuildOptions::new(
+        env!("CARGO_PKG_VERSION"),
+        "mech-current",
+        "runtime",
+        &[],
+        &[],
+      ),
     )?
     .expect("expected actor behavior to resolve");
 
