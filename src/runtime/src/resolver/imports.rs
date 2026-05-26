@@ -11,12 +11,9 @@ pub fn extract_mech_imports(source: &str) -> MResult<Vec<SourceImportDeclaration
 pub fn import_dependencies(imports: &[SourceImportDeclaration]) -> Vec<SourceRequest> {
   imports
     .iter()
+    .filter(|import| matches!(import.kind, SourceImportKind::DependencyOnly))
     .map(|import| SourceRequest::new(import.specifier.clone()))
     .collect()
-}
-
-pub fn strip_mech_import_declarations(source: &str) -> String {
-  source.to_string()
 }
 
 fn extract_imports_from_program(program: &Program) -> Vec<SourceImportDeclaration> {
@@ -37,8 +34,7 @@ fn extract_imports_from_program(program: &Program) -> Vec<SourceImportDeclaratio
           continue;
         };
 
-        let raw = import.module.to_string();
-        let specifier = raw.trim_start_matches("+>").trim();
+        let specifier = import.specifier.to_string();
 
         if let Some(prefix) = specifier.strip_suffix("/*") {
           imports.push(SourceImportDeclaration {
@@ -81,6 +77,10 @@ fn extract_imports_from_program(program: &Program) -> Vec<SourceImportDeclaratio
 #[cfg(test)]
 mod tests {
   use super::*;
+  use mech_core::{MechCode, SectionElement, Statement, Value};
+  use mech_program::MechProgram;
+  use mech_syntax::Formatter;
+  use mech_syntax::parser;
 
   #[test]
   fn extracts_namespace_import() {
@@ -101,5 +101,58 @@ mod tests {
     assert_eq!(imports[0].specifier, "fs://foo/bar.mec");
     assert_eq!(imports[1].kind, SourceImportKind::DependencyOnly);
     assert_eq!(imports[1].specifier, "memory://foo/bar");
+  }
+
+  #[test]
+  fn creates_dependency_for_relative_file_import_only() {
+    let imports = extract_mech_imports("+> ./dep.mec\n").unwrap();
+    let dependencies = import_dependencies(&imports);
+    assert_eq!(dependencies.len(), 1);
+    assert_eq!(dependencies[0].specifier, "./dep.mec");
+  }
+
+  #[test]
+  fn non_dependency_imports_do_not_create_dependency_edges() {
+    let imports = extract_mech_imports("+> math\n+> math/sin\n+> math/*\n").unwrap();
+    let dependencies = import_dependencies(&imports);
+    assert_eq!(imports.len(), 3);
+    assert_eq!(dependencies.len(), 0);
+  }
+
+  #[test]
+  fn invalid_wildcard_placements_are_rejected() {
+    assert!(extract_mech_imports("+> module/*/x\n").is_err());
+    assert!(extract_mech_imports("+> module/s*\n").is_err());
+    assert!(extract_mech_imports("+> *\n").is_err());
+  }
+
+  #[test]
+  fn export_declaration_parses_and_executes_as_noop() {
+    let tree = parser::parse("<+ foo\nx := 1\nx\n").unwrap();
+    let mut saw_export = false;
+    for section in &tree.body.sections {
+      for element in &section.elements {
+        if let SectionElement::MechCode(lines) = element {
+          for (code, _) in lines {
+            if let MechCode::Statement(Statement::ExportDeclaration(_)) = code {
+              saw_export = true;
+            }
+          }
+        }
+      }
+    }
+    assert!(saw_export);
+    let mut program = MechProgram::new(Default::default());
+    let value = program.run_string("<+ foo\nx := 1\nx\n").unwrap();
+    assert_ne!(value, Value::Empty);
+  }
+
+  #[test]
+  fn formatter_renders_import_and_export_declarations() {
+    let tree = parser::parse("+> math/sin\n<+ foo\n").unwrap();
+    let mut formatter = Formatter::new();
+    let rendered = formatter.format(&tree);
+    assert!(rendered.contains("+> math/sin"));
+    assert!(rendered.contains("<+ foo"));
   }
 }

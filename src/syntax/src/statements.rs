@@ -210,22 +210,23 @@ fn tuple_destructure(input: ParseString) -> ParseResult<TupleDestructure> {
 // import-declaration := "+>", module-import-specifier ;
 pub fn import_declaration(input: ParseString) -> ParseResult<ImportDeclaration> {
   let (input, _) = whitespace0(input)?;
-  let start = input.loc();
-  let start_cursor = input.cursor;
   let (input, _) = tag("+>")(input)?;
   let (input, _) = whitespace1(input)?;
+  let start = input.loc();
   let spec_start = input.cursor;
   let (input, _) = many1(nom_tuple((is_not(alt((new_line, semicolon))), any_token)))(input)?;
   let specifier = input.slice(spec_start, input.cursor).trim().to_string();
+  if specifier == "*" || specifier.contains("/*/") || specifier.contains('*') && !specifier.ends_with("/*") {
+    return Err(nom::Err::Failure(ParseError::new(input, "Invalid wildcard placement in import specifier")));
+  }
   let end = input.loc();
   let src_range = SourceRange { start, end };
   let token = Token {
     kind: TokenKind::Any,
-    chars: input.slice(start_cursor, input.cursor).trim().chars().collect(),
+    chars: specifier.chars().collect(),
     src_range,
   };
-  let _ = specifier; // stored in token text for now
-  Ok((input, ImportDeclaration { module: MechString { text: token } }))
+  Ok((input, ImportDeclaration { specifier: MechString { text: token } }))
 }
 
 // export-declaration := "<+", export-name ;

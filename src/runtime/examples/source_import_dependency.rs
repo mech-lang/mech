@@ -21,7 +21,7 @@ fn main() -> MResult<()> {
 
   fs::write(
     root.join("index.mec"),
-    "++ ./dep.mec\n\nx := 42\nx\n",
+    "+> ./dep.mec\n\nx := 42\nx\n",
   )?;
   fs::write(root.join("dep.mec"), "y := 1\ny\n")?;
 

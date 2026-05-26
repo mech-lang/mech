@@ -1142,12 +1142,12 @@ impl Statement {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ImportDeclaration {
-  pub module: MechString,
+  pub specifier: MechString,
 }
 
 impl ImportDeclaration {
   pub fn tokens(&self) -> Vec<Token> {
-    vec![self.module.text.clone()]
+    vec![self.specifier.text.clone()]
   }
 }
 

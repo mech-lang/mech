@@ -10,7 +10,7 @@ use crate::resolver::{
 };
 
 use super::{
-  extract_mech_imports, import_dependencies, strip_mech_import_declarations,
+  extract_mech_imports, import_dependencies,
   SourceExtensionDecodeFailed, SourceFileOpenFailed, SourceFileReadFailed,
   SourceIncludeCycle, SourceIncludeReadFailed, SourceKind,
   SourceUnknownFileExtension,
@@ -110,7 +110,7 @@ impl SourceResolver for FileSourceResolver {
             .into_iter()
             .map(|request| request.with_referrer(path.display().to_string()))
             .collect();
-          MechSourceCode::String(strip_mech_import_declarations(&text))
+          MechSourceCode::String(text)
         }
         other => other,
       }
