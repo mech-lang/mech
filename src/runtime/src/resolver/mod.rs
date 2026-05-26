@@ -40,11 +40,13 @@ pub mod memory;
 pub mod source;
 pub mod file;
 pub mod imports;
+pub mod ast;
 
 pub use memory::*;
 pub use source::*;
 pub use file::*;
 pub use imports::*;
+pub use ast::*;
 
 // -----------------------------------------------------------------------------
 // Source Request
@@ -180,6 +182,7 @@ pub struct ResolvedSource {
   pub source: MechSourceCode,
   pub kind: SourceKind,
   pub imports: Vec<SourceImportDeclaration>,
+  pub exports: Vec<SourceExportDeclaration>,
   pub dependencies: Vec<SourceRequest>,
   pub capability_requirements: Vec<CapabilityRequest>,
 }
@@ -196,6 +199,7 @@ impl ResolvedSource {
       source,
       kind: SourceKind::Unknown("".to_string()),
       imports: Vec::new(),
+      exports: Vec::new(),
       dependencies: Vec::new(),
       capability_requirements: Vec::new(),
     }
@@ -216,6 +220,11 @@ impl ResolvedSource {
     self
   }
 
+  pub fn with_exports(mut self, exports: Vec<SourceExportDeclaration>) -> Self {
+    self.exports = exports;
+    self
+  }
+
   pub fn with_capability_requirements(
     mut self,
     capability_requirements: Vec<CapabilityRequest>,
@@ -231,6 +240,18 @@ impl ResolvedSource {
 
     if self.canonical_uri.trim().is_empty() {
       return invalid_resolved_source("canonical_uri", "must not be empty");
+    }
+
+    for import in &self.imports {
+      if import.specifier.trim().is_empty() {
+        return invalid_resolved_source("imports.specifier", "must not be empty");
+      }
+    }
+
+    for export in &self.exports {
+      if export.name.trim().is_empty() {
+        return invalid_resolved_source("exports.name", "must not be empty");
+      }
     }
 
     for dependency in &self.dependencies {

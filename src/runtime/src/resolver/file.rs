@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use mech_core::{MResult, MechError, MechSourceCode};
 
 use crate::resolver::{
+  exports_from_program, imports_from_program, source_request_for_import,
   ResolvedSource, SourceRequest, SourceResolver,
 };
 
@@ -66,19 +67,19 @@ impl FileSourceResolver {
       };
 
       if let Some(parent) = parent {
-        let candidate = parent.join(specifier);
-
-        if candidate.exists() {
-          return Ok(Some(canonicalize_source_path(&candidate)?));
+        for candidate in path_candidates(parent, specifier) {
+          if candidate.is_file() {
+            return Ok(Some(canonicalize_source_path(&candidate)?));
+          }
         }
       }
     }
 
     for root in &self.roots {
-      let candidate = root.join(specifier);
-
-      if candidate.exists() {
-        return Ok(Some(canonicalize_source_path(&candidate)?));
+      for candidate in path_candidates(root, specifier) {
+        if candidate.is_file() {
+          return Ok(Some(canonicalize_source_path(&candidate)?));
+        }
       }
     }
 
@@ -105,15 +106,36 @@ impl SourceResolver for FileSourceResolver {
       .unwrap_or("source")
       .to_string();
 
-    Ok(Some(
-      ResolvedSource::new(
-        name,
-        file_uri(&path),
-        source,
-      )
-      .with_kind(kind),
-    ))
+    let mut resolved = ResolvedSource::new(name, file_uri(&path), source).with_kind(kind);
+
+    if resolved.kind == SourceKind::Mech {
+      if let MechSourceCode::String(source_text) = &resolved.source {
+        let tree = mech_syntax::parser::parse(source_text.trim())?;
+        let referrer = path.to_string_lossy().to_string();
+        let imports = imports_from_program(&tree);
+        let exports = exports_from_program(&tree);
+        let dependencies = imports
+          .iter()
+          .map(|import| source_request_for_import(import, Some(&referrer)))
+          .collect::<Vec<_>>();
+
+        resolved = resolved
+          .with_imports(imports)
+          .with_exports(exports)
+          .with_dependencies(dependencies);
+      }
+    }
+
+    Ok(Some(resolved))
   }
+}
+
+fn path_candidates(base: &Path, specifier: &Path) -> Vec<PathBuf> {
+  vec![
+    base.join(specifier),
+    base.join(format!("{}.mec", specifier.to_string_lossy())),
+    base.join(specifier).join("index.mec"),
+  ]
 }
 
 pub fn read_runtime_source_file(path: &Path) -> MResult<MechSourceCode> {
@@ -333,6 +355,12 @@ fn file_uri(path: &Path) -> String {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use std::time::{SystemTime, UNIX_EPOCH};
+
+  fn temp_root(name: &str) -> PathBuf {
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+    std::env::temp_dir().join(format!("{}-{}", name, nanos))
+  }
 
   #[test]
   fn source_kind_classifies_mech_files() {
@@ -349,7 +377,7 @@ mod tests {
 
   #[test]
   fn file_resolver_resolves_mec_file() {
-    let root = std::env::temp_dir().join("mech-runtime-file-resolver-test");
+    let root = temp_root("mech-runtime-file-resolver-test");
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(&root).unwrap();
 
@@ -365,6 +393,49 @@ mod tests {
     assert_eq!(resolved.kind, SourceKind::Mech);
     assert!(resolved.canonical_uri.starts_with("file://"));
     assert!(resolved.is_executable_mech_source());
+  }
+
+  #[test]
+  fn resolves_math_to_math_mec() {
+    let root = temp_root("resolve-math-mec");
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(root.join("math.mec"), "x := 1").unwrap();
+    let resolver = FileSourceResolver::new(&root);
+    let resolved = resolver.resolve(&SourceRequest::new("math")).unwrap().unwrap();
+    assert_eq!(resolved.name, "math.mec");
+  }
+
+  #[test]
+  fn resolves_math_to_math_index_mec_when_no_math_mec() {
+    let root = temp_root("resolve-math-index");
+    std::fs::create_dir_all(root.join("math")).unwrap();
+    std::fs::write(root.join("math/index.mec"), "x := 1").unwrap();
+    let resolver = FileSourceResolver::new(&root);
+    let resolved = resolver.resolve(&SourceRequest::new("math")).unwrap().unwrap();
+    assert_eq!(resolved.name, "index.mec");
+  }
+
+  #[test]
+  fn resolves_math_sin_to_math_sin_mec() {
+    let root = temp_root("resolve-math-sin");
+    std::fs::create_dir_all(root.join("math")).unwrap();
+    std::fs::write(root.join("math/sin.mec"), "x := 1").unwrap();
+    let resolver = FileSourceResolver::new(&root);
+    let resolved = resolver.resolve(&SourceRequest::new("math/sin")).unwrap().unwrap();
+    assert_eq!(resolved.name, "sin.mec");
+  }
+
+  #[test]
+  fn resolves_relative_import_from_referrer_parent() {
+    let root = temp_root("resolve-referrer-parent");
+    std::fs::create_dir_all(root.join("sub")).unwrap();
+    let referrer = root.join("sub/main.mec");
+    std::fs::write(root.join("sub/math.mec"), "x := 1").unwrap();
+    std::fs::write(&referrer, "+> ./math.mec").unwrap();
+    let resolver = FileSourceResolver::new(&root);
+    let request = SourceRequest::new("./math.mec").with_referrer(referrer.to_string_lossy().to_string());
+    let resolved = resolver.resolve(&request).unwrap().unwrap();
+    assert_eq!(resolved.name, "math.mec");
   }
 
 }

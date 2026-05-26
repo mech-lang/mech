@@ -28,6 +28,7 @@ use crate::id::{
   ActorId, CapabilityId, EventId, MessageId, ModuleId, ModuleVersionId,
   ObjectId, TaskId, TransactionId,
 };
+use crate::resolver::SourceExportDeclaration;
 
 // -----------------------------------------------------------------------------
 // Store Trait
@@ -185,6 +186,7 @@ pub struct ModuleVersionRecord {
   pub version: u64,
   pub source: Option<MechSourceCode>,
   pub bytecode: Option<Vec<u8>>,
+  pub exports: Vec<SourceExportDeclaration>,
   pub dependencies: Vec<ModuleVersionId>,
   pub capability_requirements: Vec<CapabilityRequest>,
 }
@@ -197,6 +199,7 @@ impl ModuleVersionRecord {
       version,
       source: None,
       bytecode: None,
+      exports: Vec::new(),
       dependencies: Vec::new(),
       capability_requirements: Vec::new(),
     }
@@ -214,6 +217,11 @@ impl ModuleVersionRecord {
 
   pub fn with_dependencies(mut self, dependencies: Vec<ModuleVersionId>) -> Self {
     self.dependencies = dependencies;
+    self
+  }
+
+  pub fn with_exports(mut self, exports: Vec<SourceExportDeclaration>) -> Self {
+    self.exports = exports;
     self
   }
 
