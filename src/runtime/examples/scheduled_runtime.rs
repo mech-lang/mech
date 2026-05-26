@@ -3,6 +3,7 @@ use mech_core::MResult;
 use mech_runtime::{
   InMemorySourceResolver,
   RuntimeBuilder,
+  ModuleBuildOptions,
   SourceRequest,
 };
 
@@ -32,20 +33,26 @@ fn main() -> MResult<()> {
   let main_version = runtime
     .resolve_and_store_module_source(
       SourceRequest::new("main"),
-      env!("CARGO_PKG_VERSION"),
-      "mech-current",
-      &[],
-      &[],
+      ModuleBuildOptions::new(
+        env!("CARGO_PKG_VERSION"),
+        "mech-current",
+        "runtime",
+        &[],
+        &[],
+      ),
     )?
     .expect("expected `main` to resolve");
 
   let actor_version = runtime
     .resolve_and_store_module_source(
       SourceRequest::new("actor.behavior"),
-      env!("CARGO_PKG_VERSION"),
-      "mech-current",
-      &[],
-      &[],
+      ModuleBuildOptions::new(
+        env!("CARGO_PKG_VERSION"),
+        "mech-current",
+        "runtime",
+        &[],
+        &[],
+      ),
     )?
     .expect("expected `actor.behavior` to resolve");
 

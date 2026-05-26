@@ -13,6 +13,7 @@ use mech_runtime::{
   InMemoryHostRegistry,
   InMemorySourceResolver,
   RuntimeBuilder,
+  ModuleBuildOptions,
   RuntimeConfig,
   RuntimeContextBuilder,
   SourceRequest,
@@ -43,10 +44,13 @@ fn main() -> MResult<()> {
   let version = runtime
     .resolve_and_store_module_source(
       SourceRequest::new("main"),
-      env!("CARGO_PKG_VERSION"),
-      "mech-current",
-      &[],
-      &[],
+      ModuleBuildOptions::new(
+        env!("CARGO_PKG_VERSION"),
+        "mech-current",
+        "runtime",
+        &[],
+        &[],
+      ),
     )?
     .expect("expected in-memory source to resolve");
 
