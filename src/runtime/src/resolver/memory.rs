@@ -16,9 +16,7 @@ use std::collections::HashMap;
 
 use mech_core::{MResult, MechSourceCode};
 
-use super::{
-  MutableSourceResolver, ResolvedSource, SourceKind, SourceRequest, SourceResolver,
-};
+use super::{MutableSourceResolver, ResolvedSource, SourceKind, SourceRequest, SourceResolver};
 
 #[derive(Clone, Debug, Default)]
 pub struct InMemorySourceResolver {
@@ -51,6 +49,7 @@ impl InMemorySourceResolver {
   ) -> MResult<()> {
     let specifier = specifier.into();
     let source = source.into();
+
     let resolved = ResolvedSource::new(
       specifier.clone(),
       Self::default_canonical_uri(&specifier),

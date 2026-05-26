@@ -1,59 +1,6 @@
 use mech_core::FencedMechCode;
 
-use super::{
-  SourceExportDeclaration, SourceImportDeclaration, SourceImportKind, SourceRequest,
-};
-
-pub fn imports_from_fenced_code(code: &FencedMechCode) -> Vec<SourceImportDeclaration> {
-  code
-    .imports
-    .iter()
-    .map(|import| {
-      let specifier = import.specifier.to_string();
-      if let Some(prefix) = specifier.strip_suffix("/*") {
-        SourceImportDeclaration {
-          specifier: prefix.to_string(),
-          alias: None,
-          kind: SourceImportKind::Wildcard,
-        }
-      } else if specifier.contains("://")
-        || specifier.starts_with("./")
-        || specifier.starts_with("../")
-        || specifier.ends_with(".mec")
-      {
-        SourceImportDeclaration {
-          specifier,
-          alias: None,
-          kind: SourceImportKind::DependencyOnly,
-        }
-      } else if let Some((module, name)) = specifier.rsplit_once('/') {
-        SourceImportDeclaration {
-          specifier: module.to_string(),
-          alias: None,
-          kind: SourceImportKind::Single {
-            name: name.to_string(),
-          },
-        }
-      } else {
-        SourceImportDeclaration {
-          specifier,
-          alias: None,
-          kind: SourceImportKind::Namespace,
-        }
-      }
-    })
-    .collect()
-}
-
-pub fn exports_from_fenced_code(code: &FencedMechCode) -> Vec<SourceExportDeclaration> {
-  code
-    .exports
-    .iter()
-    .map(|export| SourceExportDeclaration {
-      name: export.name.to_string(),
-    })
-    .collect()
-}
+use super::{SourceExportDeclaration, SourceImportDeclaration, SourceImportKind, SourceRequest};
 
 pub fn import_dependencies(imports: &[SourceImportDeclaration]) -> Vec<SourceRequest> {
   imports
@@ -63,10 +10,34 @@ pub fn import_dependencies(imports: &[SourceImportDeclaration]) -> Vec<SourceReq
     .collect()
 }
 
+pub fn imports_from_fenced_code(code: &FencedMechCode) -> Vec<SourceImportDeclaration> {
+  code.imports.iter().map(|import| {
+    let specifier = import.specifier.to_string();
+    if let Some(prefix) = specifier.strip_suffix("/*") {
+      SourceImportDeclaration { specifier: prefix.to_string(), alias: None, kind: SourceImportKind::Wildcard }
+    } else if specifier.contains("://")
+      || specifier.starts_with("./")
+      || specifier.starts_with("../")
+      || specifier.ends_with(".mec")
+    {
+      SourceImportDeclaration { specifier, alias: None, kind: SourceImportKind::DependencyOnly }
+    } else if let Some((module, name)) = specifier.rsplit_once('/') {
+      SourceImportDeclaration { specifier: module.to_string(), alias: None, kind: SourceImportKind::Single { name: name.to_string() } }
+    } else {
+      SourceImportDeclaration { specifier, alias: None, kind: SourceImportKind::Namespace }
+    }
+  }).collect()
+}
+
+pub fn exports_from_fenced_code(code: &FencedMechCode) -> Vec<SourceExportDeclaration> {
+  code.exports.iter().map(|export| SourceExportDeclaration {
+    name: export.name.to_string(),
+  }).collect()
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
-  use mech_core::{BlockConfig, FencedMechCode};
   use mech_syntax::parser;
 
   fn parse_fenced(source: &str) -> FencedMechCode {
@@ -78,13 +49,15 @@ mod tests {
         }
       }
     }
-    FencedMechCode {
-      code: vec![],
-      imports: vec![],
-      exports: vec![],
-      config: BlockConfig { namespace_str: "".into(), namespace: 0, disabled: false, hidden: false, output: true },
-      options: None,
-    }
+    panic!("expected fenced code block");
+  }
+
+  #[test]
+  fn classifies_single_import() {
+    let fenced = parse_fenced("~~~mech\n+> math/sin\n~~~\n");
+    let imports = imports_from_fenced_code(&fenced);
+    assert_eq!(imports[0].specifier, "math");
+    assert_eq!(imports[0].kind, SourceImportKind::Single { name: "sin".to_string() });
   }
 
   #[test]
@@ -96,18 +69,10 @@ mod tests {
   }
 
   #[test]
-  fn classifies_single_import() {
-    let fenced = parse_fenced("~~~mech\n+> math/sin\n~~~\n");
-    let imports = imports_from_fenced_code(&fenced);
-    assert_eq!(imports[0].specifier, "math");
-    assert_eq!(imports[0].kind, SourceImportKind::Single { name: "sin".into() });
-  }
-
-  #[test]
   fn classifies_dependency_only_imports() {
     let fenced = parse_fenced("~~~mech\n+> ./dep.mec\n+> fs://lib/dep.mec\n+> file:///tmp/dep.mec\n+> memory://scratch/dep\n+> https://example.com/dep.mec\n~~~\n");
     let imports = imports_from_fenced_code(&fenced);
-    assert!(imports.iter().all(|i| i.kind == SourceImportKind::DependencyOnly));
+    assert!(imports.iter().all(|imp| imp.kind == SourceImportKind::DependencyOnly));
   }
 
   #[test]

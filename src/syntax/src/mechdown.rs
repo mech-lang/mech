@@ -800,7 +800,13 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
         match mech_code(parse_string) {
           Ok((_, parsed)) => {
             // TODO what if not all the input is parsed? Is that handled?
-            return Ok((input, SectionElement::FencedMechCode(FencedMechCode{code: parsed.code, imports: parsed.imports, exports: parsed.exports, config, options})));
+            return Ok((input, SectionElement::FencedMechCode(FencedMechCode{
+              code: parsed.code,
+              imports: parsed.imports,
+              exports: parsed.exports,
+              config,
+              options
+            })));
           },
           Err(err) => {
             return Err(nom::Err::Error(ParseError {
@@ -1117,22 +1123,22 @@ pub fn body(input: ParseString) -> ParseResult<Body> {
   Ok((new_input, Body { sections }))
 }
 
-
 #[cfg(test)]
 mod tests {
   use super::*;
   use crate::{parser, Formatter};
 
   #[test]
-  fn fenced_block_stores_imports_exports_separately() {
+  fn fenced_block_scopes_imports_and_exports() {
     let src = "~~~mech:foo\n+> math/*\nx := 1.23\nsin(x)\n~~~\n\n~~~mech:bar\n+> geometry/triangle-area\narea := triangle-area(3, 4, 1.5708)\n<+ area\n~~~\n";
     let tree = parser::parse(src).unwrap();
-    let mut fenced = vec![];
-    for section in tree.body.sections {
-      for el in section.elements {
-        if let SectionElement::FencedMechCode(code) = el { fenced.push(code); }
-      }
-    }
+    let fenced: Vec<_> = tree
+      .body
+      .sections
+      .iter()
+      .flat_map(|section| section.elements.iter())
+      .filter_map(|el| match el { SectionElement::FencedMechCode(code) => Some(code), _ => None })
+      .collect();
     assert_eq!(fenced[0].config.namespace_str, "foo");
     assert_eq!(fenced[0].imports.len(), 1);
     assert_eq!(fenced[0].exports.len(), 0);
@@ -1145,12 +1151,12 @@ mod tests {
   }
 
   #[test]
-  fn formatter_renders_fenced_import_export_declarations() {
+  fn formatter_keeps_declarations() {
     let src = "~~~mech:foo\n+> math/sin\n<+ area\n~~~\n";
     let tree = parser::parse(src).unwrap();
     let mut formatter = Formatter::new();
-    let rendered = formatter.format(&tree);
-    assert!(rendered.contains("+> math/sin"));
-    assert!(rendered.contains("<+ area"));
+    let formatted = formatter.format(&tree);
+    assert!(formatted.contains("+> math/sin"));
+    assert!(formatted.contains("<+ area"));
   }
 }
