@@ -207,9 +207,41 @@ fn tuple_destructure(input: ParseString) -> ParseResult<TupleDestructure> {
   Ok((input, TupleDestructure{vars, expression}))
 }
 
+// import-declaration := "+>", module-import-specifier ;
+pub fn import_declaration(input: ParseString) -> ParseResult<ImportDeclaration> {
+  let (input, _) = whitespace0(input)?;
+  let start = input.loc();
+  let start_cursor = input.cursor;
+  let (input, _) = tag("+>")(input)?;
+  let (input, _) = whitespace1(input)?;
+  let spec_start = input.cursor;
+  let (input, _) = many1(nom_tuple((is_not(alt((new_line, semicolon))), any_token)))(input)?;
+  let specifier = input.slice(spec_start, input.cursor).trim().to_string();
+  let end = input.loc();
+  let src_range = SourceRange { start, end };
+  let token = Token {
+    kind: TokenKind::Any,
+    chars: input.slice(start_cursor, input.cursor).trim().chars().collect(),
+    src_range,
+  };
+  let _ = specifier; // stored in token text for now
+  Ok((input, ImportDeclaration { module: MechString { text: token } }))
+}
+
+// export-declaration := "<+", export-name ;
+pub fn export_declaration(input: ParseString) -> ParseResult<ExportDeclaration> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = tag("<+")(input)?;
+  let (input, _) = whitespace1(input)?;
+  let (input, name) = identifier(input)?;
+  Ok((input, ExportDeclaration { name }))
+}
+
 // statement := variable-define | variable-assign | op-assign | enum-define | tuple-destructure | kind-define ;
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
   let parsers: Vec<(&'static str,Box<dyn Fn(ParseString) -> ParseResult<Statement>>)> = vec![
+    ("import_declaration", Box::new(|i| import_declaration(i).map(|(i, v)| (i, Statement::ImportDeclaration(v))))),
+    ("export_declaration", Box::new(|i| export_declaration(i).map(|(i, v)| (i, Statement::ExportDeclaration(v))))),
     ("fsm_declare", Box::new(|i| fsm_declare(i).map(|(i, v)| (i, Statement::FsmDeclare(v))))),
     #[cfg(feature = "invariant_define")]
     ("invariant_define", Box::new(|i| invariant_define(i).map(|(i, v)| (i, Statement::InvariantDefine(v))))),

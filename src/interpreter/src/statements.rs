@@ -9,6 +9,8 @@ use crate::stdlib::define::*;
 
 pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   match stmt {
+    Statement::ImportDeclaration(_) => Ok(Value::Empty),
+    Statement::ExportDeclaration(_) => Ok(Value::Empty),
     #[cfg(feature = "tuple")]
     Statement::TupleDestructure(tpl_dstrct) => tuple_destructure(&tpl_dstrct, p),
     #[cfg(feature = "invariant_define")]
@@ -988,4 +990,3 @@ impl MechErrorKind for UnableToConvertRecordError {
     format!("Unable to convert record of kind `{:?}` to record of kind `{:?}`", self.source_record_kind, self.target_record_kind)
   }
 }
-

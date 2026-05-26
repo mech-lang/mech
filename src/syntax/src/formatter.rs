@@ -1973,6 +1973,8 @@ impl Formatter {
   pub fn statement(&mut self, node: &Statement) -> String {
     let s = match node {
       #[cfg(feature = "variable_define")]
+      Statement::ImportDeclaration(import) => import.module.to_string(),
+      Statement::ExportDeclaration(export) => format!("<+ {}", export.name.to_string()),
       Statement::VariableDefine(var_def) => self.variable_define(var_def),
       #[cfg(feature = "invariant_define")]
       Statement::InvariantDefine(inv_def) => self.invariant_define(inv_def),

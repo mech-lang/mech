@@ -1104,6 +1104,8 @@ impl StateDefinition {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Statement {
+  ImportDeclaration(ImportDeclaration),
+  ExportDeclaration(ExportDeclaration),
   EnumDefine(EnumDefine),
   FsmDeclare(FsmDeclare),
   KindDefine(KindDefine),
@@ -1120,6 +1122,8 @@ pub enum Statement {
 impl Statement {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
+      Statement::ImportDeclaration(x) => x.tokens(),
+      Statement::ExportDeclaration(x) => x.tokens(),
       Statement::EnumDefine(x) => x.tokens(),
       Statement::FsmDeclare(x) => x.tokens(),
       Statement::KindDefine(x) => x.tokens(),
@@ -1132,6 +1136,30 @@ impl Statement {
       Statement::SplitTable => vec![], // todo
       Statement::FlattenTable => vec![], // todo
     }
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ImportDeclaration {
+  pub module: MechString,
+}
+
+impl ImportDeclaration {
+  pub fn tokens(&self) -> Vec<Token> {
+    vec![self.module.text.clone()]
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ExportDeclaration {
+  pub name: Identifier,
+}
+
+impl ExportDeclaration {
+  pub fn tokens(&self) -> Vec<Token> {
+    self.name.tokens()
   }
 }
 
