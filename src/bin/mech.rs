@@ -548,13 +548,8 @@ async fn main() -> Result<(), MechError> {
       if any_look_like_paths {
         let mut run_errors = Vec::new();
         for p in &paths {
-          match std::fs::read_to_string(p) {
-            Ok(src) => {
-              if let Err(err) = program.run_string(&src) {
-                run_errors.push(err);
-              }
-            }
-            Err(err) => run_errors.push(MechError::new(GenericError{msg: format!("Unable to read source `{}`: {}", p, err)}, None).with_compiler_loc()),
+          if let Err(err) = std::fs::read_to_string(p) {
+            run_errors.push(MechError::new(GenericError{msg: format!("Unable to read source `{}`: {}", p, err)}, None).with_compiler_loc());
           }
         }
         if !run_errors.is_empty() {
