@@ -18,7 +18,7 @@
 
 use std::sync::Arc;
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use mech_core::{
   MResult, MechError, MechErrorKind, MechSourceCode, Value, NativeFunctionCompiler, MechFunctionImpl,
@@ -780,8 +780,23 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     version: ModuleVersionId,
   ) -> MResult<Value> {
+    let mut seen = HashSet::new();
+    self.run_module_with_context_and_seen(context, version, &mut seen)
+  }
+
+  fn run_module_with_context_and_seen(
+    &mut self,
+    context: &mut RuntimeContext,
+    version: ModuleVersionId,
+    seen: &mut HashSet<ModuleVersionId>,
+  ) -> MResult<Value> {
     context.validate()?;
     context.charge_step()?;
+
+    if seen.contains(&version) {
+      return Ok(Value::Empty);
+    }
+    seen.insert(version);
 
     let Some(record) = self.store.get_module_version(version)? else {
       return Err(MechError::new(
@@ -803,9 +818,13 @@ impl MechRuntime {
       ));
     };
 
+    for dependency_version in record.dependencies.clone() {
+      self.run_module_with_context_and_seen(context, dependency_version, seen)?;
+    }
+
     match source {
       MechSourceCode::String(source) => {
-        self.run_string_with_context(context, &source)
+        self.run_string_with_context(context, &strip_module_declarations_for_execution(&source))
       }
       other => {
         self.emit_event_to_context(
@@ -1037,6 +1056,7 @@ impl MechRuntime {
         1,
       )
       .with_source(record.source)
+      .with_exports(record.exports)
       .with_dependencies(record.dependency_versions)
       .with_capability_requirements(record.capability_requirements);
 
@@ -2711,4 +2731,15 @@ fn hex_bytes(bytes: &[u8]) -> String {
   }
 
   out
+}
+
+pub fn strip_module_declarations_for_execution(source: &str) -> String {
+  source
+    .lines()
+    .filter(|line| {
+      let trimmed = line.trim_start();
+      !(trimmed.starts_with("+>") || trimmed.starts_with("<+"))
+    })
+    .collect::<Vec<_>>()
+    .join("\n")
 }

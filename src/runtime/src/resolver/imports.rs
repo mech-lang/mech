@@ -2,31 +2,47 @@ use mech_core::FencedMechCode;
 
 use super::{SourceExportDeclaration, SourceImportDeclaration, SourceImportKind, SourceRequest};
 
+pub fn classify_import_specifier(specifier: impl Into<String>) -> SourceImportDeclaration {
+  let specifier = specifier.into();
+  if let Some(prefix) = specifier.strip_suffix("/*") {
+    SourceImportDeclaration { specifier: prefix.to_string(), alias: None, kind: SourceImportKind::Wildcard }
+  } else if specifier.contains("://")
+    || specifier.starts_with("./")
+    || specifier.starts_with("../")
+    || specifier.ends_with(".mec")
+  {
+    SourceImportDeclaration { specifier, alias: None, kind: SourceImportKind::DependencyOnly }
+  } else if let Some((module, name)) = specifier.rsplit_once('/') {
+    SourceImportDeclaration { specifier: module.to_string(), alias: None, kind: SourceImportKind::Single { name: name.to_string() } }
+  } else {
+    SourceImportDeclaration { specifier, alias: None, kind: SourceImportKind::Namespace }
+  }
+}
+
+pub fn normalize_import_specifier(raw: &str) -> String {
+  raw.trim().strip_suffix("/*").unwrap_or(raw.trim()).to_string()
+}
+
+pub fn source_request_for_import(
+  import: &SourceImportDeclaration,
+  referrer: Option<&str>,
+) -> SourceRequest {
+  let mut request = SourceRequest::new(normalize_import_specifier(&import.specifier));
+  if let Some(referrer) = referrer {
+    request = request.with_referrer(referrer.to_string());
+  }
+  request
+}
+
 pub fn import_dependencies(imports: &[SourceImportDeclaration]) -> Vec<SourceRequest> {
   imports
     .iter()
-    .filter(|import| matches!(import.kind, SourceImportKind::DependencyOnly))
-    .map(|import| SourceRequest::new(import.specifier.clone()))
+    .map(|import| source_request_for_import(import, None))
     .collect()
 }
 
 pub fn imports_from_fenced_code(code: &FencedMechCode) -> Vec<SourceImportDeclaration> {
-  code.imports.iter().map(|import| {
-    let specifier = import.specifier.to_string();
-    if let Some(prefix) = specifier.strip_suffix("/*") {
-      SourceImportDeclaration { specifier: prefix.to_string(), alias: None, kind: SourceImportKind::Wildcard }
-    } else if specifier.contains("://")
-      || specifier.starts_with("./")
-      || specifier.starts_with("../")
-      || specifier.ends_with(".mec")
-    {
-      SourceImportDeclaration { specifier, alias: None, kind: SourceImportKind::DependencyOnly }
-    } else if let Some((module, name)) = specifier.rsplit_once('/') {
-      SourceImportDeclaration { specifier: module.to_string(), alias: None, kind: SourceImportKind::Single { name: name.to_string() } }
-    } else {
-      SourceImportDeclaration { specifier, alias: None, kind: SourceImportKind::Namespace }
-    }
-  }).collect()
+  code.imports.iter().map(|import| classify_import_specifier(import.specifier.to_string())).collect()
 }
 
 pub fn exports_from_fenced_code(code: &FencedMechCode) -> Vec<SourceExportDeclaration> {
@@ -83,11 +99,14 @@ mod tests {
   }
 
   #[test]
-  fn dependency_edges_only_for_dependency_only_imports() {
+  fn all_imports_create_dependency_edges() {
     let fenced = parse_fenced("~~~mech\n+> math\n+> math/sin\n+> math/*\n+> ./dep.mec\n~~~\n");
     let imports = imports_from_fenced_code(&fenced);
     let dependencies = import_dependencies(&imports);
-    assert_eq!(dependencies.len(), 1);
-    assert_eq!(dependencies[0].specifier, "./dep.mec");
+    assert_eq!(dependencies.len(), 4);
+    assert_eq!(dependencies[0].specifier, "math");
+    assert_eq!(dependencies[1].specifier, "math");
+    assert_eq!(dependencies[2].specifier, "math");
+    assert_eq!(dependencies[3].specifier, "./dep.mec");
   }
 }

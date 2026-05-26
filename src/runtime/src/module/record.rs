@@ -3,6 +3,7 @@ use mech_core::MechSourceCode;
 use crate::{
   ModuleId,
   ModuleVersionId,
+  SourceExportDeclaration,
   SourceKind,
   CapabilityRequest
 };
@@ -19,6 +20,7 @@ pub struct RuntimeModuleRecord {
   pub language_edition: String,
   pub target: String,
   pub feature_flags: Vec<String>,
+  pub exports: Vec<SourceExportDeclaration>,
   pub dependency_versions: Vec<ModuleVersionId>,
   pub capability_requirements: Vec<CapabilityRequest>,
   pub capability_requirement_keys: Vec<String>,
@@ -36,6 +38,7 @@ impl RuntimeModuleRecord {
     language_edition: impl Into<String>,
     target: impl Into<String>,
     feature_flags: Vec<String>,
+    exports: Vec<SourceExportDeclaration>,
     dependency_versions: Vec<ModuleVersionId>,
     capability_requirements: Vec<CapabilityRequest>,
     capability_requirement_keys: Vec<String>,
@@ -51,6 +54,7 @@ impl RuntimeModuleRecord {
       language_edition: language_edition.into(),
       target: target.into(),
       feature_flags,
+      exports,
       dependency_versions,
       capability_requirements,
       capability_requirement_keys,
