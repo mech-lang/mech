@@ -1,5 +1,6 @@
 #![allow(warnings)]
 use mech_core::*;
+use mech_compiler::ParsedProgram;
 use mech_syntax::*;
 fn main() {
   /*let mut intrp = Interpreter::new(0);

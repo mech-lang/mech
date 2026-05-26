@@ -2,9 +2,10 @@ use crate::*;
 use std::sync::Arc;
 
 use mech_core::{
-  hash_str, CompileCtx, MResult, MechError, MechErrorKind, MechSourceCode,
-  NativeFunctionCompiler, ParsedProgram, Value,
+  hash_str, MResult, MechError, MechErrorKind, MechSourceCode,
+  NativeFunctionCompiler, Value,
 };
+use mech_compiler::{CompileCtx, ParsedProgram};
 
 use mech_interpreter::Interpreter;
 use mech_syntax::parser;
