@@ -3,6 +3,17 @@ Table
 
 %% A `table` is a collection of heterogeneous data organized into rows and columns. Each column has a name and a kind, which describes the type of data it holds. Tables are useful for representing structured data, similar to database tables or spreadsheets.
 
+***
+
+| Operator | Function                                                | Description                                                              | 
+|:--------:|--------------------------------------------------------:|--------------------------------------------------------------------------|
+|`⋈`       | [`inner-join`](ops/inner-join.html)                     | Returns rows where keys exist in both tables.                            |
+|`⟕`       | [`left-outer-join`](ops/left-outer-join.html)           | Returns all left rows plus matching right data when present.             |
+|`⟖`       | [`right-outer-join`](ops/right-outer-join.html)         | Returns all right rows plus matching left data when present.             |
+|`⟗`       | [`full-outer-join`](ops/full-outer-join.html)           | Returns all rows from both sides, combining matches when available.      |
+|`⋉`       | [`left-semi-join`](ops/left-semi-join.html)             | Returns only left rows that have at least one match in the right table.  |
+|`▷`       | [`left-anti-join`](ops/left-anti-join.html)             | Returns only left rows that have no match in the right table.            |
+
 1. Syntax
 -------------------------------------------------------------------------------
 
@@ -11,7 +22,7 @@ Table
 Tables are defined using the pipe `|` character. Each column is defined with a name and a kind, which describes the type of data it holds.
 
 ```
-| x&ltf32&gt  y&ltbool&gt | 
+| x<f32>  y<bool> | 
 |  1.2     true   |
 |  1.3     false  |
 ```
@@ -29,7 +40,7 @@ This creates a table with two columns, `x` of kind `f32` and `y` of kind `bool`:
 You can write tables inline as well:
 
 ```
-| x&ltf32&gt  y&ltbool&gt | 1.2 true | 1.3 false |
+| x<f32>  y<bool> | 1.2 true | 1.3 false |
 ```
 
 (1.3) Fancy Syntax
@@ -38,7 +49,7 @@ The Mech REPL formats matrix output using fancy box drawing characters for bette
 
 ```
 ╭────────┬─────────╮
-│ x&ltf32&gt │ y&ltbool&gt │
+│ x<f32> │ y<bool> │
 ├────────┼─────────┤
 │  1.2   │  true   │
 │  1.3   │  false  │
@@ -60,7 +71,7 @@ Fancy tables can be formatted in a variety of ways:
 
 ```
 ╭────────┬────────╮
-│ x&ltu64&gt │ y&ltf32&gt │
+│ x<u64> │ y<f32> │
 ├────────┼────────┤
 │   1    │   2    │
 ├────────┼────────┤
@@ -72,7 +83,7 @@ This one has no horizontal lines between rows, making it more compact:
 
 ```
 ╭────────┬────────╮
-│ x&ltu64&gt │ y&ltf32&gt │
+│ x<u64> │ y<f32> │
 │   1    │   2    │
 │   3    │   4    │
 ╰────────┴────────╯
