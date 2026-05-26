@@ -1,0 +1,20 @@
+[package]
+name = "mech-compiler"
+version = "0.3.5"
+edition = "2024"
+rust-version = "1.92"
+license = "Apache-2.0"
+
+[features]
+default = ["compiler", "program"]
+compiler = ["mech-core/compiler"]
+program = ["mech-core/program"]
+serde = ["dep:serde", "dep:serde_derive", "mech-core/serde"]
+no_std = ["mech-core/no_std", "dep:hashbrown"]
+
+[dependencies]
+mech-core = { version = "0.3.5", default-features = false }
+byteorder = "1.5.0"
+serde = {version = "1.0.228", default-features = false, features = ["alloc", "derive"], optional = true}
+serde_derive = {version = "1.0.219", optional = true}
+hashbrown = {version = "0.16.1", optional = true, default-features = false}
