@@ -4,6 +4,7 @@
 use mech_core::*;
 use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
 use crate::sections::TypeTag;
+use crate::sections::OpCode as CompilerOpCode;
 
 #[cfg(not(feature = "no_std"))]
 use std::collections::HashSet;
