@@ -1,6 +1,6 @@
 use crate::*;
 use mech_core::*;
-use mech_program::{MechProgram, MechProgramConfig, MechProgramEnvironment, MechFileSystem};
+use mech_program::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 use std::collections::HashMap;
 use std::process;
 use nom::{
@@ -61,7 +61,6 @@ impl MechRepl {
   pub fn execute_repl_command(&mut self, repl_cmd: ReplCommand) -> MResult<String> {
 
     let mut prgrm = self.programs.get_mut(&self.active).unwrap();
-    let mut mechfs = MechFileSystem::new();
 
     match repl_cmd {
       ReplCommand::Help => {
@@ -157,41 +156,30 @@ impl MechRepl {
         Ok("".to_string())
       },
       ReplCommand::Load(paths) => {
-        for source in paths {
-          mechfs.watch_source(&source)?;
+        let mut result = Value::Empty;
+        for source_path in paths {
+          let source = std::fs::read_to_string(&source_path)?;
+          result = prgrm.run_string(&source)?;
         }
-        let sources = mechfs.sources();
-        let sources = sources.read().unwrap();
-        let result = sources.sources_iter().next().map(|(_, src)| prgrm.run_source(src)).unwrap_or(Ok(Value::Empty));
-        match result {
-          Ok(r) => {
-            #[cfg(feature = "pretty_print")]
-            let out = r.pretty_print();
-            #[cfg(not(feature = "pretty_print"))]
-            let out = format!("{:#?}", r);
-            return Ok(format!("\n{}\n{}\n", r.kind(), r));
-          },
-          Err(err) => {return Err(err);}
-        }
+        let r = result;
+        #[cfg(feature = "pretty_print")]
+        let out = r.pretty_print();
+        #[cfg(not(feature = "pretty_print"))]
+        let out = format!("{:#?}", r);
+        return Ok(format!("\n{}\n{}\n", r.kind(), r));
       }
       ReplCommand::Code(code) => {
+        let mut result = Value::Empty;
         for (_,src) in code {
-          mechfs.add_code(&src)?;
+          result = prgrm.run_string(&src.to_string())?;
         }
-        let sources = mechfs.sources();
-        let sources = sources.read().unwrap();
-        let result = sources.sources_iter().next().map(|(_, src)| prgrm.run_source(src)).unwrap_or(Ok(Value::Empty));
-        match result  {
-          Ok(r) => { 
-            #[cfg(feature = "pretty_print")]
-            let out = r.pretty_print();
-            #[cfg(not(feature = "pretty_print"))]
-            let out = format!("{:#?}", r);
-            let kind_formatted = format!("{}", r.kind()).ansi_color(218);
-            return Ok(format!("\n{}\n{}\n", kind_formatted, r));
-          },
-          Err(err) => { return Err(err); }
-        }
+        let r = result;
+        #[cfg(feature = "pretty_print")]
+        let out = r.pretty_print();
+        #[cfg(not(feature = "pretty_print"))]
+        let out = format!("{:#?}", r);
+        let kind_formatted = format!("{}", r.kind()).ansi_color(218);
+        return Ok(format!("\n{}\n{}\n", kind_formatted, r));
       }
       ReplCommand::Profile(on) => {
         let _ = on;

@@ -200,8 +200,26 @@ pub fn run_mech_tests(
       name: format!("test-{}", uuid),
       environment: MechProgramEnvironment::default(),
     });
-    program.configure(tree_flag, debug_flag, time_flag, trace_flag, 10_000);
-    if let Err(err) = program.run_paths(&vec![path.clone()]) {
+    let _ = tree_flag;
+    program.configure(debug_flag, trace_flag, time_flag, 10_000);
+    let source = match std::fs::read_to_string(path) {
+      Ok(source) => source,
+      Err(err) => {
+        let err = MechError::new(
+          GenericError {
+            msg: format!("Unable to read test source `{}`: {}", path, err),
+          },
+          None,
+        )
+        .with_compiler_loc();
+        eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
+        run_errors = true;
+        any_failed = true;
+        file_reports.push(FileReport { path: path.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
+        continue;
+      }
+    };
+    if let Err(err) = program.run_string(&source) {
       eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
       run_errors = true;
       any_failed = true;
