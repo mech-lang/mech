@@ -180,7 +180,6 @@ pub struct ResolvedSource {
   pub source: MechSourceCode,
   pub kind: SourceKind,
   pub imports: Vec<SourceImportDeclaration>,
-  pub exports: Vec<SourceExportDeclaration>,
   pub dependencies: Vec<SourceRequest>,
   pub capability_requirements: Vec<CapabilityRequest>,
 }
@@ -197,7 +196,6 @@ impl ResolvedSource {
       source,
       kind: SourceKind::Unknown("".to_string()),
       imports: Vec::new(),
-      exports: Vec::new(),
       dependencies: Vec::new(),
       capability_requirements: Vec::new(),
     }
@@ -215,11 +213,6 @@ impl ResolvedSource {
 
   pub fn with_imports(mut self, imports: Vec<SourceImportDeclaration>) -> Self {
     self.imports = imports;
-    self
-  }
-
-  pub fn with_exports(mut self, exports: Vec<SourceExportDeclaration>) -> Self {
-    self.exports = exports;
     self
   }
 
