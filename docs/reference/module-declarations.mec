@@ -12,8 +12,9 @@ Examples:
 +> math
 +> math/sin
 +> math/v1.2.3/sin
-+> fs:foo/bar
-+> fs:foo/bar/mec.mec
++> fs://foo/bar
++> fs://foo/bar.mec
++> memory://foo/bar
 +> ./dep.mec
 +> ../dep.mec
 +> math/*
@@ -24,7 +25,7 @@ Notes:
 - `+> math` declares a namespace-style module import.
 - `+> math/sin` declares a single-item import path.
 - `+> math/*` declares a wildcard import path.
-- Filesystem or URL-like specifiers (for example `./dep.mec` or `fs:foo/bar`) are dependency-oriented imports.
+- Filesystem or URI-like specifiers (for example `./dep.mec`, `fs://foo/bar.mec`, or `memory://foo/bar`) are dependency-oriented imports.
 
 `<+` Exports
 -------------------------------------------------------------------------------

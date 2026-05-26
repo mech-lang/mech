@@ -50,7 +50,6 @@ fn extract_imports_from_program(program: &Program) -> Vec<SourceImportDeclaratio
           || specifier.starts_with("./")
           || specifier.starts_with("../")
           || specifier.ends_with(".mec")
-          || specifier.starts_with("fs:")
         {
           imports.push(SourceImportDeclaration {
             specifier: specifier.to_string(),
@@ -93,5 +92,14 @@ mod tests {
   fn extracts_single_import() {
     let imports = extract_mech_imports("+> math/sin\n").unwrap();
     assert_eq!(imports[0].specifier, "math");
+  }
+
+  #[test]
+  fn extracts_uri_dependency_import() {
+    let imports = extract_mech_imports("+> fs://foo/bar.mec\n+> memory://foo/bar\n").unwrap();
+    assert_eq!(imports[0].kind, SourceImportKind::DependencyOnly);
+    assert_eq!(imports[0].specifier, "fs://foo/bar.mec");
+    assert_eq!(imports[1].kind, SourceImportKind::DependencyOnly);
+    assert_eq!(imports[1].specifier, "memory://foo/bar");
   }
 }
