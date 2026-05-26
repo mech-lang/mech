@@ -81,7 +81,7 @@ use crate::actor_behavior::{
   ActorBehaviorDriver, ActorBehaviorRuntime, NoActorBehaviorDriver,
 };
 
-use crate::module::{ModuleBuilder, ModuleDependencyGraph};
+use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
 // -----------------------------------------------------------------------------
 // Runtime Program Host Functions
@@ -908,22 +908,14 @@ impl MechRuntime {
   pub fn store_resolved_module_source(
     &mut self,
     resolved: ResolvedSource,
-    compiler_version: &str,
-    language_edition: &str,
-    target: &str,
-    feature_flags: &[&str],
-    capability_requirements: &[&str],
+    options: ModuleBuildOptions<'_>,
   ) -> MResult<ModuleVersionId> {
     let mut context = self.runtime_context()?;
 
     self.build_module_from_resolved_source_with_context(
       &mut context,
       resolved,
-      compiler_version,
-      language_edition,
-      target,
-      feature_flags,
-      capability_requirements,
+      options,
     )
   }
 
@@ -931,22 +923,14 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
     resolved: ResolvedSource,
-    compiler_version: &str,
-    language_edition: &str,
-    target: &str,
-    feature_flags: &[&str],
-    capability_requirements: &[&str],
+    options: ModuleBuildOptions<'_>,
   ) -> MResult<ModuleVersionId> {
     let mut dependency_graph = ModuleDependencyGraph::new();
 
     self.build_module_from_resolved_source_with_context_and_graph(
       context,
       resolved,
-      compiler_version,
-      language_edition,
-      target,
-      feature_flags,
-      capability_requirements,
+      options,
       &mut dependency_graph,
     )
   }
@@ -955,11 +939,7 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
     resolved: ResolvedSource,
-    compiler_version: &str,
-    language_edition: &str,
-    target: &str,
-    feature_flags: &[&str],
-    capability_requirements: &[&str],
+    options: ModuleBuildOptions<'_>,
     dependency_graph: &mut ModuleDependencyGraph,
   ) -> MResult<ModuleVersionId> {
     context.validate()?;
@@ -981,14 +961,16 @@ impl MechRuntime {
     }
 
     let result = (|| -> MResult<ModuleVersionId> {
-      let feature_flags_owned = feature_flags
+      let feature_flags_owned = options
+        .feature_flags
         .iter()
         .map(|flag| (*flag).to_string())
         .collect::<Vec<_>>();
 
       let mut resolved = resolved;
 
-      let explicit_capability_requirements = capability_requirements
+      let explicit_capability_requirements = options
+        .capability_requirements
         .iter()
         .map(|resource| {
           CapabilityRequest::from_keys(
@@ -1012,11 +994,7 @@ impl MechRuntime {
         if let Some(dependency_version) = self.build_module_from_request_with_context_and_graph(
           context,
           dependency.clone(),
-          compiler_version,
-          language_edition,
-          target,
-          feature_flags,
-          capability_requirements,
+          options,
           dependency_graph,
         )? {
           dependency_versions.push(dependency_version);
@@ -1025,9 +1003,9 @@ impl MechRuntime {
 
       let record = self.module_builder.build_resolved_source(
         resolved,
-        compiler_version.to_string(),
-        language_edition.to_string(),
-        target.to_string(),
+        options.compiler_version.to_string(),
+        options.language_edition.to_string(),
+        options.target.to_string(),
         &feature_flags_owned,
         &dependency_versions,
         &concrete_capability_requirements,
@@ -1085,11 +1063,7 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
     request: impl Into<SourceRequest>,
-    compiler_version: &str,
-    language_edition: &str,
-    target: &str,
-    feature_flags: &[&str],
-    capability_requirements: &[&str],
+    options: ModuleBuildOptions<'_>,
     dependency_graph: &mut ModuleDependencyGraph,
   ) -> MResult<Option<ModuleVersionId>> {
     let Some(resolved) = self.resolve_source_with_context(context, request)? else {
@@ -1100,11 +1074,7 @@ impl MechRuntime {
       self.build_module_from_resolved_source_with_context_and_graph(
         context,
         resolved,
-        compiler_version,
-        language_edition,
-        target,
-        feature_flags,
-        capability_requirements,
+        options,
         dependency_graph,
       )?,
     ))
@@ -1113,22 +1083,23 @@ impl MechRuntime {
   pub fn resolve_and_store_module_source(
     &mut self,
     request: impl Into<SourceRequest>,
-    compiler_version: &str,
-    language_edition: &str,
-    feature_flags: &[&str],
-    capability_requirements: &[&str],
+    options: ModuleBuildOptions<'_>,
   ) -> MResult<Option<ModuleVersionId>> {
     let mut context = self.runtime_context()?;
     let target = runtime_target();
 
+    let options = ModuleBuildOptions::new(
+      options.compiler_version,
+      options.language_edition,
+      &target,
+      options.feature_flags,
+      options.capability_requirements,
+    );
+
     self.build_module_from_request_with_context(
       &mut context,
       request,
-      compiler_version,
-      language_edition,
-      &target,
-      feature_flags,
-      capability_requirements,
+      options,
     )
   }
 
@@ -1136,22 +1107,14 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
     request: impl Into<SourceRequest>,
-    compiler_version: &str,
-    language_edition: &str,
-    target: &str,
-    feature_flags: &[&str],
-    capability_requirements: &[&str],
+    options: ModuleBuildOptions<'_>,
   ) -> MResult<Option<ModuleVersionId>> {
     let mut dependency_graph = ModuleDependencyGraph::new();
 
     self.build_module_from_request_with_context_and_graph(
       context,
       request,
-      compiler_version,
-      language_edition,
-      target,
-      feature_flags,
-      capability_requirements,
+      options,
       &mut dependency_graph,
     )
   }
@@ -1161,10 +1124,7 @@ impl MechRuntime {
     name: &str,
     canonical_uri: &str,
     source: &str,
-    compiler_version: &str,
-    language_edition: &str,
-    feature_flags: &[&str],
-    capability_requirements: &[&str],
+    options: ModuleBuildOptions<'_>,
   ) -> MResult<ModuleVersionId> {
     let mut context = self.runtime_context()?;
 
@@ -1173,10 +1133,7 @@ impl MechRuntime {
       name,
       canonical_uri,
       source,
-      compiler_version,
-      language_edition,
-      feature_flags,
-      capability_requirements,
+      options,
     )
   }
 
@@ -1186,10 +1143,7 @@ impl MechRuntime {
     name: &str,
     canonical_uri: &str,
     source: &str,
-    compiler_version: &str,
-    language_edition: &str,
-    feature_flags: &[&str],
-    capability_requirements: &[&str],
+    options: ModuleBuildOptions<'_>,
   ) -> MResult<ModuleVersionId> {
     let resolved = ResolvedSource::new(
       name,
@@ -1199,14 +1153,18 @@ impl MechRuntime {
 
     let target = runtime_target();
 
+    let options = ModuleBuildOptions::new(
+      options.compiler_version,
+      options.language_edition,
+      &target,
+      options.feature_flags,
+      options.capability_requirements,
+    );
+
     self.build_module_from_resolved_source_with_context(
       context,
       resolved,
-      compiler_version,
-      language_edition,
-      &target,
-      feature_flags,
-      capability_requirements,
+      options,
     )
   }
 

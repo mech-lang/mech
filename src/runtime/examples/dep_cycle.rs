@@ -6,6 +6,7 @@ use mech_core::{MResult, MechSourceCode};
 use mech_runtime::{
   ResolvedSource,
   RuntimeBuilder,
+  ModuleBuildOptions,
   SourceRequest,
   SourceResolver,
 };
@@ -80,14 +81,18 @@ fn main() -> MResult<()> {
 
   let target = runtime_target();
 
-  let result = runtime.build_module_from_request_with_context(
-    &mut context,
-    SourceRequest::new("a.mec"),
+  let options = ModuleBuildOptions::new(
     env!("CARGO_PKG_VERSION"),
     "mech-current",
     &target,
     &[],
     &[],
+  );
+
+  let result = runtime.build_module_from_request_with_context(
+    &mut context,
+    SourceRequest::new("a.mec"),
+    options,
   );
 
   match result {

@@ -12,6 +12,33 @@ use crate::{
 #[derive(Clone, Debug, Default)]
 pub struct ModuleBuilder;
 
+#[derive(Clone, Copy, Debug)]
+pub struct ModuleBuildOptions<'a> {
+  pub compiler_version: &'a str,
+  pub language_edition: &'a str,
+  pub target: &'a str,
+  pub feature_flags: &'a [&'a str],
+  pub capability_requirements: &'a [&'a str],
+}
+
+impl<'a> ModuleBuildOptions<'a> {
+  pub fn new(
+    compiler_version: &'a str,
+    language_edition: &'a str,
+    target: &'a str,
+    feature_flags: &'a [&'a str],
+    capability_requirements: &'a [&'a str],
+  ) -> Self {
+    Self {
+      compiler_version,
+      language_edition,
+      target,
+      feature_flags,
+      capability_requirements,
+    }
+  }
+}
+
 impl ModuleBuilder {
   pub fn new() -> Self {
     Self
