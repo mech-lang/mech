@@ -238,11 +238,59 @@ pub fn export_declaration(input: ParseString) -> ParseResult<ExportDeclaration> 
   Ok((input, ExportDeclaration { name }))
 }
 
+pub fn context_declaration(input: ParseString) -> ParseResult<ContextDeclaration> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = at(input)?;
+  let (input, name) = identifier(input)?;
+  let (input, _) = define_operator(input)?;
+  let (input, base) = alt((context_base_resource_uri, context_base_context))(input)?;
+  let (input, _) = left_brace(input)?;
+  let (input, capabilities) = separated_list1(list_separator, context_capability_declaration)(input)?;
+  let (input, _) = opt(list_separator)(input)?;
+  let (input, _) = right_brace(input)?;
+  Ok((input, ContextDeclaration { name, base, capabilities }))
+}
+
+fn context_base_context(input: ParseString) -> ParseResult<ContextBase> {
+  let (input, _) = at(input)?;
+  let (input, name) = identifier(input)?;
+  Ok((input, ContextBase::Context(name)))
+}
+
+fn context_base_resource_uri(input: ParseString) -> ParseResult<ContextBase> {
+  let start = input.cursor;
+  let (input, _) = many1(alt((alpha_token, digit_token, dash, period)))(input)?;
+  let (input, _) = tag("://")(input)?;
+  let (input, _) = many1(alt((alpha_token, digit_token, dash, period, slash, underscore)))(input)?;
+  let uri = input.slice(start, input.cursor).trim().to_string();
+  let token = Token::new(TokenKind::Any, SourceRange::default(), uri.chars().collect());
+  Ok((input, ContextBase::ResourceUri(token)))
+}
+
+fn context_capability_declaration(input: ParseString) -> ParseResult<ContextCapabilityDeclaration> {
+  let (input, _) = colon(input)?;
+  let (input, operation) = identifier(input)?;
+  let (input, _) = left_parenthesis(input)?;
+  let (input, scope) = context_capability_scope(input)?;
+  let (input, _) = right_parenthesis(input)?;
+  Ok((input, ContextCapabilityDeclaration { operation, scope }))
+}
+
+fn context_capability_scope(input: ParseString) -> ParseResult<ContextCapabilityScope> {
+  if let Ok((input, wildcard)) = asterisk(input.clone()) {
+    Ok((input, ContextCapabilityScope::Wildcard(wildcard)))
+  } else {
+    let (input, path) = identifier(input)?;
+    Ok((input, ContextCapabilityScope::Path(path)))
+  }
+}
+
 // statement := variable-define | variable-assign | op-assign | enum-define | tuple-destructure | kind-define ;
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
   let parsers: Vec<(&'static str,Box<dyn Fn(ParseString) -> ParseResult<Statement>>)> = vec![
     ("import_declaration", Box::new(|i| import_declaration(i).map(|(i, v)| (i, Statement::ImportDeclaration(v))))),
     ("export_declaration", Box::new(|i| export_declaration(i).map(|(i, v)| (i, Statement::ExportDeclaration(v))))),
+    ("context_declaration", Box::new(|i| context_declaration(i).map(|(i, v)| (i, Statement::ContextDeclaration(v))))),
     ("fsm_declare", Box::new(|i| fsm_declare(i).map(|(i, v)| (i, Statement::FsmDeclare(v))))),
     #[cfg(feature = "invariant_define")]
     ("invariant_define", Box::new(|i| invariant_define(i).map(|(i, v)| (i, Statement::InvariantDefine(v))))),
