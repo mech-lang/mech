@@ -1,2 +1,2 @@
 +> ./math.mec
-ok := tau > 6.0
+ok := math/tau > 6.0
