@@ -19,6 +19,33 @@ pub fn classify_import_specifier(specifier: impl Into<String>) -> SourceImportDe
   }
 }
 
+pub fn module_namespace_for_import(import: &SourceImportDeclaration) -> Option<String> {
+  fn stem_from_specifier(specifier: &str) -> Option<String> {
+    let trimmed = specifier.trim_end_matches('/');
+    let candidate = trimmed.rsplit('/').next().unwrap_or(trimmed);
+    let candidate = candidate.strip_suffix(".mec").unwrap_or(candidate);
+    if candidate.is_empty() { None } else { Some(candidate.to_string()) }
+  }
+
+  if import.specifier.trim().is_empty() {
+    return None;
+  }
+
+  match &import.kind {
+    SourceImportKind::Single { .. } | SourceImportKind::Wildcard | SourceImportKind::Namespace => {
+      stem_from_specifier(&import.specifier)
+    }
+    SourceImportKind::DependencyOnly => {
+      let spec = import.specifier.trim();
+      if let Some((_, path_part)) = spec.rsplit_once("://") {
+        stem_from_specifier(path_part)
+      } else {
+        stem_from_specifier(spec)
+      }
+    }
+  }
+}
+
 pub fn normalize_import_specifier(raw: &str) -> String {
   raw.trim().strip_suffix("/*").unwrap_or(raw.trim()).to_string()
 }
@@ -108,5 +135,35 @@ mod tests {
     assert_eq!(dependencies[1].specifier, "math");
     assert_eq!(dependencies[2].specifier, "math");
     assert_eq!(dependencies[3].specifier, "./dep.mec");
+  }
+
+  #[test]
+  fn namespace_for_relative_file_import() {
+    let import = classify_import_specifier("./math.mec");
+    assert_eq!(module_namespace_for_import(&import), Some("math".to_string()));
+  }
+
+  #[test]
+  fn namespace_for_parent_relative_file_import() {
+    let import = classify_import_specifier("../lib/math.mec");
+    assert_eq!(module_namespace_for_import(&import), Some("math".to_string()));
+  }
+
+  #[test]
+  fn namespace_for_namespace_import() {
+    let import = classify_import_specifier("math");
+    assert_eq!(module_namespace_for_import(&import), Some("math".to_string()));
+  }
+
+  #[test]
+  fn namespace_for_single_import() {
+    let import = classify_import_specifier("math/tau");
+    assert_eq!(module_namespace_for_import(&import), Some("math".to_string()));
+  }
+
+  #[test]
+  fn namespace_for_wildcard_import() {
+    let import = classify_import_specifier("math/*");
+    assert_eq!(module_namespace_for_import(&import), Some("math".to_string()));
   }
 }
