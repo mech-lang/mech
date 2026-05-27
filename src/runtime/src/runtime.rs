@@ -52,7 +52,7 @@ use crate::host::{
 };
 
 use crate::id::{
-  module_id, module_version_id, ActorId, CapabilityId, DefaultIdGenerator,
+  module_id, ActorId, CapabilityId, DefaultIdGenerator,
   EventId, IdGenerator, MessageId, ModuleId, ModuleVersionId, ObjectId,
   RuntimeId, TaskId, TransactionId,
 };
@@ -69,7 +69,7 @@ use crate::scheduler::{
 
 use crate::store::{
   ActorRecord, InMemoryStore, MechStore, MessageRecord, ModuleRecord,
-  ModuleVersionRecord, ObjectRecord, TaskRecord, TaskStatus, TransactionRecord,
+  ModuleImportEdge, ModuleVersionRecord, ObjectRecord, TaskRecord, TaskStatus, TransactionRecord,
 };
 
 use crate::transaction::{
@@ -449,6 +449,13 @@ impl std::fmt::Debug for MechRuntime {
   }
 }
 
+#[derive(Clone, Debug)]
+pub struct ModuleInstance {
+  pub version: ModuleVersionId,
+  pub exports: HashMap<String, mech_core::ValRef>,
+  pub result: Value,
+}
+
 impl MechRuntime {
   pub fn builder() -> RuntimeBuilder {
     RuntimeBuilder::new()
@@ -777,180 +784,194 @@ impl MechRuntime {
     self.run_module_with_context(&mut context, version)
   }
 
+  fn run_module_source_on_program(
+    &mut self,
+    context: &mut RuntimeContext,
+    program: &mut MechProgram,
+    source: &MechSourceCode,
+  ) -> MResult<Value> {
+    self.register_runtime_program_host_functions(context, program)?;
+
+    let runtime_ptr: *mut MechRuntime = self;
+    let context_ptr: *mut RuntimeContext = context;
+
+    let previous_target = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      slot.replace(Some(RuntimeProgramHostTarget {
+        runtime: runtime_ptr,
+        context: context_ptr,
+      }))
+    });
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ProgramStarted {
+        task_id: context.task,
+      },
+    )?;
+
+    let result = match source {
+      MechSourceCode::String(source) => {
+        let stripped = strip_module_declarations_for_execution(source);
+        program.run_source(&MechSourceCode::String(stripped))
+      }
+      other => program.run_source(other),
+    };
+
+    ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      slot.replace(previous_target);
+    });
+
+    match &result {
+      Ok(_) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramCompleted {
+            task_id: context.task,
+          },
+        )?;
+      }
+      Err(error) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramFailed {
+            task_id: context.task,
+            message: format!("{:?}", error),
+          },
+        )?;
+      }
+    }
+
+    result
+  }
+
   pub fn run_module_with_context(
     &mut self,
     context: &mut RuntimeContext,
     version: ModuleVersionId,
   ) -> MResult<Value> {
     let mut seen = HashSet::new();
-    self.run_module_with_context_and_seen(context, version, &mut seen)
+    let mut module_instances = HashMap::new();
+    let instance = self.execute_module_isolated(context, version, &mut seen, &mut module_instances)?;
+    Ok(instance.result)
   }
 
-  fn run_module_with_context_and_seen(
+  fn execute_module_isolated(
     &mut self,
     context: &mut RuntimeContext,
     version: ModuleVersionId,
     seen: &mut HashSet<ModuleVersionId>,
-  ) -> MResult<Value> {
+    module_instances: &mut HashMap<ModuleVersionId, ModuleInstance>,
+  ) -> MResult<ModuleInstance> {
     context.validate()?;
     context.charge_step()?;
 
+    if let Some(instance) = module_instances.get(&version).cloned() {
+      return Ok(instance);
+    }
+
     if seen.contains(&version) {
-      return Ok(Value::Empty);
+      return Ok(ModuleInstance { version, exports: HashMap::new(), result: Value::Empty });
     }
     seen.insert(version);
 
     let Some(record) = self.store.get_module_version(version)? else {
-      return Err(MechError::new(
-        RuntimeRecordNotFoundError {
-          record_type: "module_version",
-          id: version.to_string(),
-        },
-        None,
-      ));
+      return Err(MechError::new(RuntimeRecordNotFoundError { record_type: "module_version", id: version.to_string() }, None));
     };
-
     let Some(source) = record.source.clone() else {
-      return Err(MechError::new(
-        RuntimeInvalidOperationError {
-          operation: "run_module",
-          reason: "module version has no source".to_string(),
-        },
-        None,
-      ));
+      return Err(MechError::new(RuntimeInvalidOperationError { operation: "run_module", reason: "module version has no source".to_string() }, None));
     };
 
-    // First linker pass: alias dependency exports into the shared interpreter
-    // before importer execution. This still does not isolate dependency internals.
-    // Unqualified leaked dependency names may still exist because dependency and
-    // importer currently share one interpreter state. A future pass should isolate
-    // modules or snapshot/remove non-imported dependency bindings.
-    for dependency_version in record.dependencies.clone() {
-      self.run_module_with_context_and_seen(context, dependency_version, seen)?;
-      let Some(dependency_record) = self.store.get_module_version(dependency_version)? else {
-        return Err(MechError::new(
-          RuntimeRecordNotFoundError {
-            record_type: "module_version",
-            id: dependency_version.to_string(),
-          },
-          None,
-        ));
-      };
-      self.link_dependency_exports_for_importer(&record, &dependency_record)?;
+    for edge in &record.import_edges {
+      self.execute_module_isolated(context, edge.dependency, seen, module_instances)?;
     }
 
-    match source {
-      MechSourceCode::String(source) => {
-        self.run_string_with_context(context, &strip_module_declarations_for_execution(&source))
-      }
-      other => {
-        self.emit_event_to_context(
-          context,
-          RuntimeEventKind::ProgramStarted {
-            task_id: context.task,
-          },
-        )?;
+    let import_environment = self.build_import_environment(&record, module_instances)?;
+    let mut module_program = MechProgram::new(MechProgramConfig {
+      name: self.config.name.clone(),
+      environment: MechProgramEnvironment {
+        trace_enabled: self.config.diagnostics.trace_enabled,
+        debug_enabled: self.config.diagnostics.debug_enabled,
+        profile_enabled: self.config.diagnostics.profile_enabled,
+        rounds_per_step: self.config.limits.max_steps_per_turn.unwrap_or(10_000) as usize,
+      },
+    });
 
-        let result = self.program.run_source(&other);
-
-        match &result {
-          Ok(_) => {
-            self.emit_event_to_context(
-              context,
-              RuntimeEventKind::ProgramCompleted {
-                task_id: context.task,
-              },
-            )?;
-          }
-          Err(error) => {
-            self.emit_event_to_context(
-              context,
-              RuntimeEventKind::ProgramFailed {
-                task_id: context.task,
-                message: format!("{:?}", error),
-              },
-            )?;
-          }
-        }
-
-        result
+    {
+      let symbols = module_program.interpreter_mut().symbols();
+      let mut symbols_brrw = symbols.borrow_mut();
+      for (name, value_ref) in import_environment {
+        let id = hash_str(&name);
+        symbols_brrw.symbols.insert(id, value_ref);
+        symbols_brrw.dictionary.borrow_mut().insert(id, name);
       }
     }
+
+    let result = self.run_module_source_on_program(context, &mut module_program, &source);
+
+    let result = result?;
+    let mut exports = HashMap::new();
+    {
+      let symbols = module_program.interpreter_mut().symbols();
+      let symbols_brrw = symbols.borrow();
+      for export in &record.exports {
+        let id = hash_str(&export.name);
+        let Some(value_ref) = symbols_brrw.get(id) else {
+          return Err(MechError::new(RuntimeModuleExportNotFound { dependency: record.id.to_string(), export: export.name.clone() }, None));
+        };
+        exports.insert(export.name.clone(), value_ref.clone());
+      }
+    }
+
+    let instance = ModuleInstance { version, exports, result };
+    module_instances.insert(version, instance.clone());
+    Ok(instance)
   }
 
-  fn link_dependency_exports_for_importer(
-    &mut self,
+  fn build_import_environment(
+    &self,
     importer: &ModuleVersionRecord,
-    dependency: &ModuleVersionRecord,
-  ) -> MResult<()> {
-    // TODO(module-linker): store explicit import-to-dependency edges instead of
-    // relying on positional import/dependency ordering.
-    for (import, dependency_version) in importer.imports.iter().zip(importer.dependencies.iter()) {
-      if *dependency_version != dependency.id {
-        continue;
-      }
+    module_instances: &HashMap<ModuleVersionId, ModuleInstance>,
+  ) -> MResult<HashMap<String, mech_core::ValRef>> {
+    let mut bindings = HashMap::new();
+    let mut ownership: HashMap<String, String> = HashMap::new();
+
+    for ModuleImportEdge { import, dependency } in &importer.import_edges {
+      let Some(dependency_instance) = module_instances.get(dependency) else {
+        return Err(MechError::new(RuntimeInvalidOperationError { operation: "build_import_environment", reason: format!("dependency instance missing for {}", dependency) }, None));
+      };
 
       match &import.kind {
         SourceImportKind::DependencyOnly | SourceImportKind::Namespace => {
-          let Some(namespace) = module_namespace_for_import(import) else {
-            continue;
-          };
-          for export in &dependency.exports {
-            self.link_export_alias(&export.name, &format!("{}/{}", namespace, export.name))?;
+          let Some(namespace) = module_namespace_for_import(import) else { continue; };
+          for (export_name, export_value) in &dependency_instance.exports {
+            let binding = format!("{}/{}", namespace, export_name);
+            if let Some(first) = ownership.insert(binding.clone(), import.specifier.clone()) {
+              return Err(MechError::new(RuntimeModuleImportConflict { binding, first_import: first, second_import: import.specifier.clone() }, None));
+            }
+            bindings.insert(format!("{}/{}", namespace, export_name), export_value.clone());
           }
         }
         SourceImportKind::Single { name } => {
-          if !dependency.exports.iter().any(|export| export.name == *name) {
-            return Err(MechError::new(
-              RuntimeModuleExportLinkError {
-                source: name.clone(),
-                alias: name.clone(),
-                reason: "single import requested a non-exported symbol".to_string(),
-              },
-              None,
-            ));
+          let Some(export_value) = dependency_instance.exports.get(name) else {
+            return Err(MechError::new(RuntimeModuleExportNotFound { dependency: import.specifier.clone(), export: name.clone() }, None));
+          };
+          if let Some(first) = ownership.insert(name.clone(), import.specifier.clone()) {
+            return Err(MechError::new(RuntimeModuleImportConflict { binding: name.clone(), first_import: first, second_import: import.specifier.clone() }, None));
           }
-          self.link_export_alias(name, name)?;
+          bindings.insert(name.clone(), export_value.clone());
         }
         SourceImportKind::Wildcard => {
-          for export in &dependency.exports {
-            self.link_export_alias(&export.name, &export.name)?;
+          for (export_name, export_value) in &dependency_instance.exports {
+            if let Some(first) = ownership.insert(export_name.clone(), import.specifier.clone()) {
+              return Err(MechError::new(RuntimeModuleImportConflict { binding: export_name.clone(), first_import: first, second_import: import.specifier.clone() }, None));
+            }
+            bindings.insert(export_name.clone(), export_value.clone());
           }
         }
       }
     }
-    Ok(())
-  }
 
-  fn link_export_alias(
-    &mut self,
-    source_name: &str,
-    alias_name: &str,
-  ) -> MResult<()> {
-    let source_id = hash_str(source_name);
-    let alias_id = hash_str(alias_name);
-    let symbols = self.program.interpreter_mut().symbols();
-    let mut symbols_brrw = symbols.borrow_mut();
-
-    let Some(value_ref) = symbols_brrw.get(source_id) else {
-      return Err(MechError::new(
-        RuntimeModuleExportLinkError {
-          source: source_name.to_string(),
-          alias: alias_name.to_string(),
-          reason: "exported source binding was not found after dependency execution".to_string(),
-        },
-        None,
-      ));
-    };
-
-    symbols_brrw.symbols.insert(alias_id, value_ref.clone());
-    symbols_brrw.dictionary.borrow_mut().insert(alias_id, alias_name.to_string());
-
-    if let Some(mutable_value_ref) = symbols_brrw.mutable_variables.get(&source_id).cloned() {
-      symbols_brrw.mutable_variables.insert(alias_id, mutable_value_ref);
-    }
-
-    Ok(())
+    Ok(bindings)
   }
 
   // ---------------------------------------------------------------------------
@@ -1100,12 +1121,14 @@ impl MechRuntime {
         resolved.capability_requirements.clone();
 
       let mut dependency_versions = Vec::new();
+      let mut import_edges = Vec::new();
 
-      for dependency in resolved.dependencies.iter() {
+      for import in &resolved.imports {
+        let dependency_request = crate::resolver::source_request_for_import(import, Some(&canonical_uri));
         let dependency_version = self
           .build_module_from_request_with_context_and_graph(
             context,
-            dependency.clone(),
+            dependency_request.clone(),
             options,
             dependency_graph,
           )?
@@ -1113,13 +1136,17 @@ impl MechRuntime {
             MechError::new(
               RuntimeModuleDependencyMissingError {
                 module: canonical_uri.clone(),
-                specifier: dependency.specifier.clone(),
-                referrer: dependency.referrer.clone(),
+                specifier: dependency_request.specifier.clone(),
+                referrer: dependency_request.referrer.clone(),
               },
               None,
             )
           })?;
         dependency_versions.push(dependency_version);
+        import_edges.push(ModuleImportEdge {
+          import: import.clone(),
+          dependency: dependency_version,
+        });
       }
 
       let record = self.module_builder.build_resolved_source(
@@ -1161,6 +1188,7 @@ impl MechRuntime {
       .with_exports(record.exports)
       .with_imports(record.imports)
       .with_dependencies(record.dependency_versions)
+      .with_import_edges(import_edges)
       .with_capability_requirements(record.capability_requirements);
 
       self.store.put_module_version(version)?;
@@ -2810,6 +2838,42 @@ impl MechErrorKind for RuntimeModuleExportLinkError {
       self.source,
       self.alias,
       self.reason,
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeModuleExportNotFound {
+  pub dependency: String,
+  pub export: String,
+}
+
+impl MechErrorKind for RuntimeModuleExportNotFound {
+  fn name(&self) -> &str {
+    "RuntimeModuleExportNotFound"
+  }
+
+  fn message(&self) -> String {
+    format!("module `{}` does not export `{}`", self.dependency, self.export)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeModuleImportConflict {
+  pub binding: String,
+  pub first_import: String,
+  pub second_import: String,
+}
+
+impl MechErrorKind for RuntimeModuleImportConflict {
+  fn name(&self) -> &str {
+    "RuntimeModuleImportConflict"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "import binding conflict for `{}` between `{}` and `{}`",
+      self.binding, self.first_import, self.second_import
     )
   }
 }

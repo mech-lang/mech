@@ -180,6 +180,13 @@ impl ModuleRecord {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ModuleImportEdge {
+  pub import: SourceImportDeclaration,
+  pub dependency: ModuleVersionId,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModuleVersionRecord {
   pub id: ModuleVersionId,
   pub module: ModuleId,
@@ -189,6 +196,7 @@ pub struct ModuleVersionRecord {
   pub exports: Vec<SourceExportDeclaration>,
   pub imports: Vec<SourceImportDeclaration>,
   pub dependencies: Vec<ModuleVersionId>,
+  pub import_edges: Vec<ModuleImportEdge>,
   pub capability_requirements: Vec<CapabilityRequest>,
 }
 
@@ -203,6 +211,7 @@ impl ModuleVersionRecord {
       exports: Vec::new(),
       imports: Vec::new(),
       dependencies: Vec::new(),
+      import_edges: Vec::new(),
       capability_requirements: Vec::new(),
     }
   }
@@ -229,6 +238,11 @@ impl ModuleVersionRecord {
 
   pub fn with_imports(mut self, imports: Vec<SourceImportDeclaration>) -> Self {
     self.imports = imports;
+    self
+  }
+
+  pub fn with_import_edges(mut self, import_edges: Vec<ModuleImportEdge>) -> Self {
+    self.import_edges = import_edges;
     self
   }
 
