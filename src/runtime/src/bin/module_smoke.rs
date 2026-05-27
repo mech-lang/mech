@@ -24,9 +24,6 @@ fn main() {
   }
   let result = runtime.run_module(version);
   println!("run result: {:?}", result);
-  if result.is_ok() {
-    println!("module smoke passed");
-  } else {
-    println!("module smoke run currently requires module namespace linker support");
-  }
+  result.unwrap();
+  println!("module smoke passed");
 }
