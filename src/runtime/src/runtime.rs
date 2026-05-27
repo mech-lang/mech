@@ -877,6 +877,7 @@ impl MechRuntime {
     let Some(record) = self.store.get_module_version(version)? else {
       return Err(MechError::new(RuntimeRecordNotFoundError { record_type: "module_version", id: version.to_string() }, None));
     };
+    validate_module_import_edges(&record)?;
     let Some(source) = record.source.clone() else {
       return Err(MechError::new(RuntimeInvalidOperationError { operation: "run_module", reason: "module version has no source".to_string() }, None));
     };
@@ -885,7 +886,7 @@ impl MechRuntime {
       self.execute_module_isolated(context, edge.dependency, seen, module_instances)?;
     }
 
-    let import_environment = self.build_import_environment(&record, module_instances)?;
+    let import_environment = self.build_import_environment(context, &record, module_instances)?;
     let mut module_program = MechProgram::new(MechProgramConfig {
       name: self.config.name.clone(),
       environment: MechProgramEnvironment {
@@ -906,9 +907,24 @@ impl MechRuntime {
       }
     }
 
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ModuleExecutionStarted { module_version: version },
+    )?;
     let result = self.run_module_source_on_program(context, &mut module_program, &source);
-
-    let result = result?;
+    let result = match result {
+      Ok(value) => value,
+      Err(error) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ModuleExecutionFailed {
+            module_version: version,
+            message: format!("{:?}", error),
+          },
+        )?;
+        return Err(error);
+      }
+    };
     let mut exports = HashMap::new();
     {
       let symbols = module_program.interpreter_mut().symbols();
@@ -916,7 +932,15 @@ impl MechRuntime {
       for export in &record.exports {
         let id = hash_str(&export.name);
         let Some(value_ref) = symbols_brrw.get(id) else {
-          return Err(MechError::new(RuntimeModuleExportNotFound { dependency: record.id.to_string(), export: export.name.clone() }, None));
+          let error = MechError::new(RuntimeModuleExportNotFound { dependency: record.id.to_string(), export: export.name.clone() }, None);
+          self.emit_event_to_context(
+            context,
+            RuntimeEventKind::ModuleExecutionFailed {
+              module_version: version,
+              message: format!("{:?}", error),
+            },
+          )?;
+          return Err(error);
         };
         exports.insert(export.name.clone(), value_ref.clone());
       }
@@ -924,11 +948,16 @@ impl MechRuntime {
 
     let instance = ModuleInstance { version, exports, result };
     module_instances.insert(version, instance.clone());
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ModuleExecutionCompleted { module_version: version },
+    )?;
     Ok(instance)
   }
 
   fn build_import_environment(
-    &self,
+    &mut self,
+    context: &mut RuntimeContext,
     importer: &ModuleVersionRecord,
     module_instances: &HashMap<ModuleVersionId, ModuleInstance>,
   ) -> MResult<HashMap<String, mech_core::ValRef>> {
@@ -969,6 +998,15 @@ impl MechRuntime {
           }
         }
       }
+
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ModuleImportLinked {
+          importer: importer.id,
+          dependency: *dependency,
+          specifier: import.specifier.clone(),
+        },
+      )?;
     }
 
     Ok(bindings)
@@ -1190,6 +1228,7 @@ impl MechRuntime {
       .with_dependencies(record.dependency_versions)
       .with_import_edges(import_edges)
       .with_capability_requirements(record.capability_requirements);
+      validate_module_import_edges(&version)?;
 
       self.store.put_module_version(version)?;
 
@@ -2878,6 +2917,26 @@ impl MechErrorKind for RuntimeModuleImportConflict {
   }
 }
 
+#[derive(Debug, Clone)]
+pub struct RuntimeModuleImportEdgeInvalid {
+  pub module: ModuleVersionId,
+  pub reason: String,
+}
+
+impl MechErrorKind for RuntimeModuleImportEdgeInvalid {
+  fn name(&self) -> &str {
+    "RuntimeModuleImportEdgeInvalid"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "module `{}` has invalid import edges: {}",
+      self.module,
+      self.reason,
+    )
+  }
+}
+
 // -----------------------------------------------------------------------------
 // Helpers
 // -----------------------------------------------------------------------------
@@ -2909,6 +2968,18 @@ fn source_fingerprint(source: &MechSourceCode) -> MResult<String> {
       None,
     )),
   }
+}
+
+fn validate_module_import_edges(record: &ModuleVersionRecord) -> MResult<()> {
+  record.validate_import_edges().map_err(|error| {
+    MechError::new(
+      RuntimeModuleImportEdgeInvalid {
+        module: record.id,
+        reason: format!("{:?}", error),
+      },
+      None,
+    )
+  })
 }
 
 fn hex_bytes(bytes: &[u8]) -> String {

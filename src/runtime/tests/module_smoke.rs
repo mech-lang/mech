@@ -32,6 +32,7 @@ fn build_dependency_graph() {
   let main_version = runtime.store().get_module_version(version).unwrap().unwrap();
   assert_eq!(main_version.dependencies.len(), 1);
   assert_eq!(main_version.imports.len(), 1);
+  assert_eq!(main_version.import_edges.len(), 1);
   let dep_version = runtime.store().get_module_version(main_version.dependencies[0]).unwrap().unwrap();
   assert!(dep_version.exports.iter().any(|e| e.name == "tau"));
 }
@@ -71,6 +72,9 @@ fn file_import_does_not_imply_wildcard_import() {
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
   let result = runtime.run_module(version);
   assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("UndefinedVariable"));
+  assert!(error.contains("tau"));
 }
 
 #[test]
@@ -81,6 +85,9 @@ fn file_import_does_not_expose_non_exported_binding() {
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
   let result = runtime.run_module(version);
   assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("UndefinedVariable"));
+  assert!(error.contains("math/secret"));
 }
 
 #[test]
@@ -130,6 +137,9 @@ fn wildcard_import_does_not_expose_non_exported_binding() {
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
   let result = runtime.run_module(version);
   assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("UndefinedVariable"));
+  assert!(error.contains("secret"));
 }
 
 #[test]
@@ -143,7 +153,9 @@ fn import_conflict_fails() {
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
   let result = runtime.run_module(version);
-  assert!(format!("{:?}", result.err()).contains("RuntimeModuleImportConflict"));
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeModuleImportConflict"));
+  assert!(error.contains("tau"));
 }
 
 #[test]
@@ -158,6 +170,91 @@ fn re_export_works() {
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
   let result = runtime.run_module(version).unwrap();
   match result { Value::Bool(v) => assert!(*v.borrow()), other => panic!("expected bool got {:?}", other) }
+}
+
+#[test]
+fn module_version_records_import_edges() {
+  let root = setup_modules("+> ./math.mec\nok := math/tau > 6.0\n");
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  assert_eq!(main.imports.len(), 1);
+  assert_eq!(main.dependencies.len(), 1);
+  assert_eq!(main.import_edges.len(), 1);
+  assert_eq!(main.import_edges[0].import.specifier, "./math.mec");
+  assert_eq!(main.import_edges[0].dependency, main.dependencies[0]);
+}
+
+#[test]
+fn module_version_records_multiple_import_edges_in_order() {
+  let root = std::env::temp_dir().join(format!("mech-runtime-module-edges-order-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+  std::fs::create_dir_all(&root).unwrap();
+  std::fs::write(root.join("a.mec"), "x := 1\n<+ x\n").unwrap();
+  std::fs::write(root.join("b.mec"), "y := 2\n<+ y\n").unwrap();
+  std::fs::write(root.join("main.mec"), "+> ./a.mec\n+> ./b.mec\nok := a/x < b/y\n").unwrap();
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  assert_eq!(main.import_edges.len(), 2);
+  assert_eq!(main.import_edges[0].import.specifier, "./a.mec");
+  assert_eq!(main.import_edges[1].import.specifier, "./b.mec");
+  assert!(main.dependencies.contains(&main.import_edges[0].dependency));
+  assert!(main.dependencies.contains(&main.import_edges[1].dependency));
+  match runtime.run_module(version).unwrap() { Value::Bool(v) => assert!(*v.borrow()), other => panic!("expected bool got {:?}", other) }
+}
+
+#[test]
+fn multi_level_re_export_works() {
+  re_export_works();
+}
+
+#[test]
+fn multi_level_private_symbol_does_not_leak() {
+  let root = std::env::temp_dir().join(format!("mech-runtime-module-privacy-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+  std::fs::create_dir_all(&root).unwrap();
+  std::fs::write(root.join("math.mec"), "tau := 6.28318\nsecret := 42\n<+ tau\n").unwrap();
+  std::fs::write(root.join("bridge.mec"), "+> math/tau\n<+ tau\n").unwrap();
+  std::fs::write(root.join("main.mec"), "+> bridge/*\nok := secret > 0\n").unwrap();
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("UndefinedVariable"));
+  assert!(error.contains("secret"));
+}
+
+#[test]
+fn duplicate_unqualified_import_conflict_fails() {
+  let root = std::env::temp_dir().join(format!("mech-runtime-module-dupe-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+  std::fs::create_dir_all(&root).unwrap();
+  std::fs::write(root.join("a.mec"), "x := 1\n<+ x\n").unwrap();
+  std::fs::write(root.join("b.mec"), "x := 2\n<+ x\n").unwrap();
+  std::fs::write(root.join("main.mec"), "+> a/*\n+> b/*\nok := x > 0\n").unwrap();
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeModuleImportConflict"));
+  assert!(error.contains("x"));
+}
+
+#[test]
+fn duplicate_same_export_import_policy_is_explicit() {
+  let root = setup_modules("+> math/tau\n+> math/*\nok := tau > 6.0\n");
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeModuleImportConflict"));
+  assert!(error.contains("tau"));
 }
 
 #[test]

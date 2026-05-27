@@ -266,6 +266,81 @@ impl ModuleVersionRecord {
 
     Ok(())
   }
+
+  pub fn validate_import_edges(&self) -> MResult<()> {
+    if self.import_edges.len() != self.imports.len() {
+      return Err(MechError::new(
+        InvalidModuleImportEdgesError {
+          module: self.id,
+          reason: format!(
+            "import edge count {} does not match imports count {}",
+            self.import_edges.len(),
+            self.imports.len()
+          ),
+        },
+        None,
+      ));
+    }
+
+    for edge in &self.import_edges {
+      if edge.import.specifier.trim().is_empty() {
+        return Err(MechError::new(
+          InvalidModuleImportEdgesError {
+            module: self.id,
+            reason: "import edge has empty specifier".to_string(),
+          },
+          None,
+        ));
+      }
+
+      if !self.dependencies.contains(&edge.dependency) {
+        return Err(MechError::new(
+          InvalidModuleImportEdgesError {
+            module: self.id,
+            reason: format!(
+              "import edge dependency {} is not listed in dependencies",
+              edge.dependency
+            ),
+          },
+          None,
+        ));
+      }
+
+      if !self.imports.iter().any(|import| {
+        import.specifier == edge.import.specifier && import.kind == edge.import.kind
+      }) {
+        return Err(MechError::new(
+          InvalidModuleImportEdgesError {
+            module: self.id,
+            reason: format!(
+              "import edge specifier `{}` kind {:?} not found in imports",
+              edge.import.specifier,
+              edge.import.kind
+            ),
+          },
+          None,
+        ));
+      }
+    }
+
+    Ok(())
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct InvalidModuleImportEdgesError {
+  pub module: ModuleVersionId,
+  pub reason: String,
+}
+
+impl MechErrorKind for InvalidModuleImportEdgesError {
+  fn name(&self) -> &str {
+    "InvalidModuleImportEdges"
+  }
+
+  fn message(&self) -> String {
+    format!("invalid import edges for module version `{}`: {}", self.module, self.reason)
+  }
 }
 
 // -----------------------------------------------------------------------------
