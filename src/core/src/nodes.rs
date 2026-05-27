@@ -1116,6 +1116,7 @@ impl StateDefinition {
 pub enum Statement {
   ImportDeclaration(ImportDeclaration),
   ExportDeclaration(ExportDeclaration),
+  ContextDeclaration(ContextDeclaration),
   EnumDefine(EnumDefine),
   FsmDeclare(FsmDeclare),
   KindDefine(KindDefine),
@@ -1134,6 +1135,7 @@ impl Statement {
     match self {
       Statement::ImportDeclaration(x) => x.tokens(),
       Statement::ExportDeclaration(x) => x.tokens(),
+      Statement::ContextDeclaration(x) => x.tokens(),
       Statement::EnumDefine(x) => x.tokens(),
       Statement::FsmDeclare(x) => x.tokens(),
       Statement::KindDefine(x) => x.tokens(),
@@ -1170,6 +1172,72 @@ pub struct ExportDeclaration {
 impl ExportDeclaration {
   pub fn tokens(&self) -> Vec<Token> {
     self.name.tokens()
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ContextDeclaration {
+  pub name: Identifier,
+  pub base: ContextBase,
+  pub capabilities: Vec<ContextCapabilityDeclaration>,
+}
+
+impl ContextDeclaration {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.name.tokens();
+    tkns.append(&mut self.base.tokens());
+    for cap in &self.capabilities {
+      tkns.append(&mut cap.tokens());
+    }
+    tkns
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ContextBase {
+  ResourceUri(Token),
+  Context(Identifier),
+}
+
+impl ContextBase {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      ContextBase::ResourceUri(uri) => vec![uri.clone()],
+      ContextBase::Context(name) => name.tokens(),
+    }
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ContextCapabilityDeclaration {
+  pub operation: Identifier,
+  pub scope: ContextCapabilityScope,
+}
+
+impl ContextCapabilityDeclaration {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.operation.tokens();
+    tkns.append(&mut self.scope.tokens());
+    tkns
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ContextCapabilityScope {
+  Path(Identifier),
+  Wildcard(Token),
+}
+
+impl ContextCapabilityScope {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      ContextCapabilityScope::Path(path) => path.tokens(),
+      ContextCapabilityScope::Wildcard(wildcard) => vec![wildcard.clone()],
+    }
   }
 }
 
@@ -1619,12 +1687,16 @@ impl VariableDefine {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Var {
   pub name: Identifier,
+  pub context: Option<Identifier>,
   pub kind: Option<KindAnnotation>,
 }
 
 impl Var {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tkns = self.name.tokens();
+    if let Some(context) = &self.context {
+      tkns.append(&mut context.tokens());
+    }
     if let Some(knd) = &self.kind {
       let mut t = knd.tokens();
       tkns.append(&mut t);
@@ -1687,12 +1759,16 @@ pub struct Word {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Slice {
   pub name: Identifier,
+  pub context: Option<Identifier>,
   pub subscript: Vec<Subscript>
 }
 
 impl Slice {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tkns = self.name.tokens();
+    if let Some(context) = &self.context {
+      tkns.append(&mut context.tokens());
+    }
     for sub in &self.subscript {
       let mut sub_tkns = sub.tokens();
       tkns.append(&mut sub_tkns);
@@ -1705,12 +1781,16 @@ impl Slice {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct SliceRef {
   pub name: Identifier,
+  pub context: Option<Identifier>,
   pub subscript: Option<Vec<Subscript>>
 }
 
 impl SliceRef {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tkns = self.name.tokens();
+    if let Some(context) = &self.context {
+      tkns.append(&mut context.tokens());
+    }
     if let Some(subs) = &self.subscript {
       for sub in subs {
         let mut sub_tkns = sub.tokens();
