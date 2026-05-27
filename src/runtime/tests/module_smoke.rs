@@ -37,7 +37,6 @@ fn build_dependency_graph() {
 }
 
 #[test]
-#[ignore = "requires module namespace linker: +> ./math.mec should expose exports as math/<name>"]
 fn run_module() {
   let root = setup_modules("+> ./math.mec\nok := math/tau > 6.0\n");
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
@@ -52,7 +51,6 @@ fn run_module() {
 }
 
 #[test]
-#[ignore = "requires module namespace linker"]
 fn file_import_exposes_exports_under_file_stem_namespace() {
   let root = setup_modules("+> ./math.mec\nok := math/tau > 6.0\n");
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
@@ -66,7 +64,7 @@ fn file_import_exposes_exports_under_file_stem_namespace() {
 }
 
 #[test]
-#[ignore = "runtime currently leaks dependency names into shared interpreter state"]
+#[ignore = "requires module isolation or cleanup of non-imported dependency bindings"]
 fn file_import_does_not_imply_wildcard_import() {
   let root = setup_modules("+> ./math.mec\nok := tau > 6.0\n");
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
@@ -74,6 +72,45 @@ fn file_import_does_not_imply_wildcard_import() {
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
   let result = runtime.run_module(version);
   assert!(result.is_err());
+}
+
+#[test]
+fn namespace_import_exposes_exports_under_module_namespace() {
+  let root = setup_modules("+> math\nok := math/tau > 6.0\n");
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+  match result {
+    Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected bool result from module run, got {:?}", other),
+  }
+}
+
+#[test]
+fn single_import_exposes_export_unqualified() {
+  let root = setup_modules("+> math/tau\nok := tau > 6.0\n");
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+  match result {
+    Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected bool result from module run, got {:?}", other),
+  }
+}
+
+#[test]
+fn wildcard_import_exposes_all_exports_unqualified() {
+  let root = setup_modules("+> math/*\nok := tau > 6.0\n");
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+  match result {
+    Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected bool result from module run, got {:?}", other),
+  }
 }
 
 #[test]

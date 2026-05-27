@@ -23,6 +23,7 @@ use std::collections::{HashMap, HashSet};
 use mech_core::{
   MResult, MechError, MechErrorKind, MechSourceCode, Value, NativeFunctionCompiler, MechFunctionImpl,
   Register, CompileCtx, MechFunctionCompiler,
+  hash_str,
 };
 
 use mech_program::{
@@ -58,6 +59,7 @@ use crate::id::{
 
 use crate::resolver::{
   InMemorySourceResolver, ResolvedSource, SourceRequest, SourceResolver,
+  SourceImportKind, module_namespace_for_import,
 };
 
 use crate::scheduler::{
@@ -808,7 +810,7 @@ impl MechRuntime {
       ));
     };
 
-    let Some(source) = record.source else {
+    let Some(source) = record.source.clone() else {
       return Err(MechError::new(
         RuntimeInvalidOperationError {
           operation: "run_module",
@@ -818,15 +820,23 @@ impl MechRuntime {
       ));
     };
 
-    // TODO(module-linker): Dependency modules currently execute into the shared
-    // interpreter state, which leaks bindings into importer modules.
-    // Next pass should use stored imports/exports to expose only:
-    // - Namespace and file DependencyOnly imports as <namespace>/<export>
-    // - Single imports as the imported name unqualified
-    // - Wildcard imports as all exported names unqualified
-    // - No exposure for non-exported names
+    // First linker pass: alias dependency exports into the shared interpreter
+    // before importer execution. This still does not isolate dependency internals.
+    // Unqualified leaked dependency names may still exist because dependency and
+    // importer currently share one interpreter state. A future pass should isolate
+    // modules or snapshot/remove non-imported dependency bindings.
     for dependency_version in record.dependencies.clone() {
       self.run_module_with_context_and_seen(context, dependency_version, seen)?;
+      let Some(dependency_record) = self.store.get_module_version(dependency_version)? else {
+        return Err(MechError::new(
+          RuntimeRecordNotFoundError {
+            record_type: "module_version",
+            id: dependency_version.to_string(),
+          },
+          None,
+        ));
+      };
+      self.link_dependency_exports_for_importer(&record, &dependency_record)?;
     }
 
     match source {
@@ -866,6 +876,81 @@ impl MechRuntime {
         result
       }
     }
+  }
+
+  fn link_dependency_exports_for_importer(
+    &mut self,
+    importer: &ModuleVersionRecord,
+    dependency: &ModuleVersionRecord,
+  ) -> MResult<()> {
+    // TODO(module-linker): store explicit import-to-dependency edges instead of
+    // relying on positional import/dependency ordering.
+    for (import, dependency_version) in importer.imports.iter().zip(importer.dependencies.iter()) {
+      if *dependency_version != dependency.id {
+        continue;
+      }
+
+      match &import.kind {
+        SourceImportKind::DependencyOnly | SourceImportKind::Namespace => {
+          let Some(namespace) = module_namespace_for_import(import) else {
+            continue;
+          };
+          for export in &dependency.exports {
+            self.link_export_alias(&export.name, &format!("{}/{}", namespace, export.name))?;
+          }
+        }
+        SourceImportKind::Single { name } => {
+          if !dependency.exports.iter().any(|export| export.name == *name) {
+            return Err(MechError::new(
+              RuntimeModuleExportLinkError {
+                source: name.clone(),
+                alias: name.clone(),
+                reason: "single import requested a non-exported symbol".to_string(),
+              },
+              None,
+            ));
+          }
+          self.link_export_alias(name, name)?;
+        }
+        SourceImportKind::Wildcard => {
+          for export in &dependency.exports {
+            self.link_export_alias(&export.name, &export.name)?;
+          }
+        }
+      }
+    }
+    Ok(())
+  }
+
+  fn link_export_alias(
+    &mut self,
+    source_name: &str,
+    alias_name: &str,
+  ) -> MResult<()> {
+    let source_id = hash_str(source_name);
+    let alias_id = hash_str(alias_name);
+    let symbols = self.program.interpreter_mut().symbols();
+    let mut symbols_brrw = symbols.borrow_mut();
+
+    let Some(value_ref) = symbols_brrw.get(source_id) else {
+      return Err(MechError::new(
+        RuntimeModuleExportLinkError {
+          source: source_name.to_string(),
+          alias: alias_name.to_string(),
+          reason: "exported source binding was not found after dependency execution".to_string(),
+        },
+        None,
+      ));
+    };
+
+    symbols_brrw.symbols.insert(alias_id, value_ref.clone());
+    symbols_brrw.dictionary.borrow_mut().insert(alias_id, alias_name.to_string());
+
+    if let Some(mutable_value_ref) = symbols_brrw.mutable_variables.get(&source_id).cloned() {
+      symbols_brrw.mutable_variables.insert(alias_id, mutable_value_ref);
+    }
+
+    Ok(())
   }
 
   // ---------------------------------------------------------------------------
@@ -2704,6 +2789,28 @@ impl MechErrorKind for RuntimeInvalidOperationError {
 
   fn message(&self) -> String {
     format!("Invalid runtime operation `{}`: {}", self.operation, self.reason)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeModuleExportLinkError {
+  pub source: String,
+  pub alias: String,
+  pub reason: String,
+}
+
+impl MechErrorKind for RuntimeModuleExportLinkError {
+  fn name(&self) -> &str {
+    "RuntimeModuleExportLink"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "failed to link module export `{}` as `{}`: {}",
+      self.source,
+      self.alias,
+      self.reason,
+    )
   }
 }
 
