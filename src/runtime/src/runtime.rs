@@ -390,7 +390,6 @@ impl RuntimeBuilder {
       active_transactions: HashMap::new(),
       actor_behavior_driver: self.actor_behavior_driver,
       module_builder: self.module_builder,
-      module_instances: HashMap::new(),
     };
 
     let mut context = runtime.runtime_context()?;
@@ -426,7 +425,6 @@ pub struct MechRuntime {
   active_transactions: HashMap<TransactionId, RuntimeTransaction>,
   actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
   module_builder: ModuleBuilder,
-  module_instances: HashMap<ModuleVersionId, ModuleInstance>,
 }
 
 impl std::fmt::Debug for MechRuntime {
@@ -786,13 +784,74 @@ impl MechRuntime {
     self.run_module_with_context(&mut context, version)
   }
 
+  fn run_module_source_on_program(
+    &mut self,
+    context: &mut RuntimeContext,
+    program: &mut MechProgram,
+    source: &MechSourceCode,
+  ) -> MResult<Value> {
+    self.register_runtime_program_host_functions(context, program)?;
+
+    let runtime_ptr: *mut MechRuntime = self;
+    let context_ptr: *mut RuntimeContext = context;
+
+    let previous_target = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      slot.replace(Some(RuntimeProgramHostTarget {
+        runtime: runtime_ptr,
+        context: context_ptr,
+      }))
+    });
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ProgramStarted {
+        task_id: context.task,
+      },
+    )?;
+
+    let result = match source {
+      MechSourceCode::String(source) => {
+        let stripped = strip_module_declarations_for_execution(source);
+        program.run_source(&MechSourceCode::String(stripped))
+      }
+      other => program.run_source(other),
+    };
+
+    ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      slot.replace(previous_target);
+    });
+
+    match &result {
+      Ok(_) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramCompleted {
+            task_id: context.task,
+          },
+        )?;
+      }
+      Err(error) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramFailed {
+            task_id: context.task,
+            message: format!("{:?}", error),
+          },
+        )?;
+      }
+    }
+
+    result
+  }
+
   pub fn run_module_with_context(
     &mut self,
     context: &mut RuntimeContext,
     version: ModuleVersionId,
   ) -> MResult<Value> {
     let mut seen = HashSet::new();
-    let instance = self.execute_module_isolated(context, version, &mut seen)?;
+    let mut module_instances = HashMap::new();
+    let instance = self.execute_module_isolated(context, version, &mut seen, &mut module_instances)?;
     Ok(instance.result)
   }
 
@@ -801,11 +860,12 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     version: ModuleVersionId,
     seen: &mut HashSet<ModuleVersionId>,
+    module_instances: &mut HashMap<ModuleVersionId, ModuleInstance>,
   ) -> MResult<ModuleInstance> {
     context.validate()?;
     context.charge_step()?;
 
-    if let Some(instance) = self.module_instances.get(&version).cloned() {
+    if let Some(instance) = module_instances.get(&version).cloned() {
       return Ok(instance);
     }
 
@@ -822,10 +882,10 @@ impl MechRuntime {
     };
 
     for edge in &record.import_edges {
-      self.execute_module_isolated(context, edge.dependency, seen)?;
+      self.execute_module_isolated(context, edge.dependency, seen, module_instances)?;
     }
 
-    let import_environment = self.build_import_environment(&record)?;
+    let import_environment = self.build_import_environment(&record, module_instances)?;
     let mut module_program = MechProgram::new(MechProgramConfig {
       name: self.config.name.clone(),
       environment: MechProgramEnvironment {
@@ -846,17 +906,7 @@ impl MechRuntime {
       }
     }
 
-    self.emit_event_to_context(context, RuntimeEventKind::ProgramStarted { task_id: context.task })?;
-
-    let result = match source {
-      MechSourceCode::String(source) => module_program.run_source(&MechSourceCode::String(strip_module_declarations_for_execution(&source))),
-      other => module_program.run_source(&other),
-    };
-
-    match &result {
-      Ok(_) => { self.emit_event_to_context(context, RuntimeEventKind::ProgramCompleted { task_id: context.task })?; }
-      Err(error) => { self.emit_event_to_context(context, RuntimeEventKind::ProgramFailed { task_id: context.task, message: format!("{:?}", error) })?; }
-    }
+    let result = self.run_module_source_on_program(context, &mut module_program, &source);
 
     let result = result?;
     let mut exports = HashMap::new();
@@ -873,19 +923,20 @@ impl MechRuntime {
     }
 
     let instance = ModuleInstance { version, exports, result };
-    self.module_instances.insert(version, instance.clone());
+    module_instances.insert(version, instance.clone());
     Ok(instance)
   }
 
   fn build_import_environment(
     &self,
     importer: &ModuleVersionRecord,
+    module_instances: &HashMap<ModuleVersionId, ModuleInstance>,
   ) -> MResult<HashMap<String, mech_core::ValRef>> {
     let mut bindings = HashMap::new();
     let mut ownership: HashMap<String, String> = HashMap::new();
 
     for ModuleImportEdge { import, dependency } in &importer.import_edges {
-      let Some(dependency_instance) = self.module_instances.get(dependency) else {
+      let Some(dependency_instance) = module_instances.get(dependency) else {
         return Err(MechError::new(RuntimeInvalidOperationError { operation: "build_import_environment", reason: format!("dependency instance missing for {}", dependency) }, None));
       };
 
