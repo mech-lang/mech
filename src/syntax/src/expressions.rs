@@ -216,7 +216,7 @@ pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
   Ok((input, Factor::Parenthetical(Box::new(frmla))))
 }
 
-// var := identifier, ?kind-annotation ;
+// var := identifier, ("@", identifier)?, ?kind-annotation ;
 pub fn var(input: ParseString) -> ParseResult<Var> {
   let ((input, name)) = identifier(input)?;
   let ((input, context)) = opt(preceded(at, identifier))(input)?;
@@ -743,19 +743,19 @@ pub fn subscript(input: ParseString) -> ParseResult<Vec<Subscript>> {
   Ok((input, subscripts))
 }
 
-// slice := identifier, subscript ;
+// slice := identifier, subscript, ("@", identifier)? ;
 pub fn slice(input: ParseString) -> ParseResult<Slice> {
   let (input, name) = identifier(input)?;
-  let (input, context) = opt(preceded(at, identifier))(input)?;
   let (input, ixes) = subscript(input)?;
+  let (input, context) = opt(preceded(at, identifier))(input)?;
   Ok((input, Slice{name, context, subscript: ixes}))
 }
 
-// slice-ref := identifier, subscript? ;
+// slice-ref := identifier, subscript?, ("@", identifier)? ;
 pub fn slice_ref(input: ParseString) -> ParseResult<SliceRef> {
   let (input, name) = identifier(input)?;
-  let (input, context) = opt(preceded(at, identifier))(input)?;
   let (input, ixes) = opt(subscript)(input)?;
+  let (input, context) = opt(preceded(at, identifier))(input)?;
   Ok((input, SliceRef{name, context, subscript: ixes}))
 }
 

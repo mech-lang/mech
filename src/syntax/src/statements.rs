@@ -238,6 +238,7 @@ pub fn export_declaration(input: ParseString) -> ParseResult<ExportDeclaration> 
   Ok((input, ExportDeclaration { name }))
 }
 
+// context-declaration := "@", identifier, define-operator, context-base, "{", list1(list-separator, context-capability-declaration), list-separator?, "}" ;
 pub fn context_declaration(input: ParseString) -> ParseResult<ContextDeclaration> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = at(input)?;
@@ -251,22 +252,28 @@ pub fn context_declaration(input: ParseString) -> ParseResult<ContextDeclaration
   Ok((input, ContextDeclaration { name, base, capabilities }))
 }
 
+// context-base-context := "@", identifier ;
 fn context_base_context(input: ParseString) -> ParseResult<ContextBase> {
   let (input, _) = at(input)?;
   let (input, name) = identifier(input)?;
   Ok((input, ContextBase::Context(name)))
 }
 
+// context-base-resource-uri := (alpha-token | digit-token | "-" | ".")+, "://", (alpha-token | digit-token | "-" | "." | "/" | "_")+ ;
 fn context_base_resource_uri(input: ParseString) -> ParseResult<ContextBase> {
   let start = input.cursor;
+  let src_start = input.loc();
   let (input, _) = many1(alt((alpha_token, digit_token, dash, period)))(input)?;
   let (input, _) = tag("://")(input)?;
   let (input, _) = many1(alt((alpha_token, digit_token, dash, period, slash, underscore)))(input)?;
   let uri = input.slice(start, input.cursor).trim().to_string();
-  let token = Token::new(TokenKind::Any, SourceRange::default(), uri.chars().collect());
+  let src_end = input.loc();
+  let src_range = SourceRange { start: src_start, end: src_end };
+  let token = Token::new(TokenKind::Any, src_range, uri.chars().collect());
   Ok((input, ContextBase::ResourceUri(token)))
 }
 
+// context-capability-declaration := ":", identifier, "(", context-capability-scope, ")" ;
 fn context_capability_declaration(input: ParseString) -> ParseResult<ContextCapabilityDeclaration> {
   let (input, _) = colon(input)?;
   let (input, operation) = identifier(input)?;
@@ -276,6 +283,7 @@ fn context_capability_declaration(input: ParseString) -> ParseResult<ContextCapa
   Ok((input, ContextCapabilityDeclaration { operation, scope }))
 }
 
+// context-capability-scope := "*" | identifier ;
 fn context_capability_scope(input: ParseString) -> ParseResult<ContextCapabilityScope> {
   if let Ok((input, wildcard)) = asterisk(input.clone()) {
     Ok((input, ContextCapabilityScope::Wildcard(wildcard)))
