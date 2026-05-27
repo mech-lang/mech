@@ -115,6 +115,7 @@ impl ModuleBuilder {
       target,
       feature_flags.to_vec(),
       resolved.exports,
+      resolved.imports,
       dependency_versions.to_vec(),
       capability_requirements.to_vec(),
       capability_requirement_keys,

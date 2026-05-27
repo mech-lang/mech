@@ -818,6 +818,13 @@ impl MechRuntime {
       ));
     };
 
+    // TODO(module-linker): Dependency modules currently execute into the shared
+    // interpreter state, which leaks bindings into importer modules.
+    // Next pass should use stored imports/exports to expose only:
+    // - Namespace and file DependencyOnly imports as <namespace>/<export>
+    // - Single imports as the imported name unqualified
+    // - Wildcard imports as all exported names unqualified
+    // - No exposure for non-exported names
     for dependency_version in record.dependencies.clone() {
       self.run_module_with_context_and_seen(context, dependency_version, seen)?;
     }
@@ -1067,6 +1074,7 @@ impl MechRuntime {
       )
       .with_source(record.source)
       .with_exports(record.exports)
+      .with_imports(record.imports)
       .with_dependencies(record.dependency_versions)
       .with_capability_requirements(record.capability_requirements);
 
