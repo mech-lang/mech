@@ -1,0 +1,97 @@
+// Capability methods
+// ---------------------------------------------------------------------------
+
+use super::*;
+
+impl MechRuntime {
+
+  pub fn grant_capability(
+    &mut self,
+    capability: Arc<dyn Capability>,
+  ) -> MResult<CapabilityId> {
+    let mut context = self.runtime_context()?;
+    self.grant_capability_with_context(&mut context, capability)
+  }
+
+  pub fn grant_capability_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    capability: Arc<dyn Capability>,
+  ) -> MResult<CapabilityId> {
+    context.validate()?;
+    context.charge_step()?;
+    capability.validate()?;
+
+    let id = capability.id();
+
+    self
+      .capability_kernel
+      .grant(CapabilityGrant::new(capability.clone()))?;
+
+    self.store.grant_capability(id, capability)?;
+    context.add_capability(id);
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::CapabilityGranted {
+        capability_id: id,
+      },
+    )?;
+
+    Ok(id)
+  }
+
+  pub fn revoke_capability(&mut self, capability: CapabilityId) -> MResult<()> {
+    let mut context = self.runtime_context()?;
+    self.revoke_capability_with_context(&mut context, capability)
+  }
+
+  pub fn revoke_capability_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    capability: CapabilityId,
+  ) -> MResult<()> {
+    context.validate()?;
+    context.charge_step()?;
+
+    self
+      .capability_kernel
+      .revoke(CapabilityRevocation::new(capability))?;
+
+    self.store.revoke_capability(capability)?;
+    context.remove_capability(capability);
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::CapabilityRevoked {
+        capability_id: capability,
+      },
+    )?;
+
+    Ok(())
+  }
+
+  pub fn check_capability(
+    &mut self,
+    request: &CapabilityRequest,
+  ) -> MResult<CapabilityId> {
+    self.capability_kernel.check(request)
+  }
+
+  pub fn check_capability_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: &CapabilityRequest,
+  ) -> MResult<CapabilityId> {
+    context.validate()?;
+    context.charge_step()?;
+    self.capability_kernel.check(request)
+  }
+
+  pub fn get_capability(
+    &self,
+    id: CapabilityId,
+  ) -> MResult<Option<Arc<dyn Capability>>> {
+    self.store.get_capability(id)
+  }
+}
