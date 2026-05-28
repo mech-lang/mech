@@ -11,7 +11,12 @@ fn main() {
   println!("dependency versions: {:?}", main.dependencies);
   println!("import edges:");
   for edge in &main.import_edges {
-    println!("  - specifier={} dependency={}", edge.import.specifier, edge.dependency);
+    println!(
+      "  - scope={:?} specifier={} dependency={}",
+      edge.scope,
+      edge.import.specifier,
+      edge.dependency
+    );
   }
   println!("flat imports:");
   for import in &main.imports {

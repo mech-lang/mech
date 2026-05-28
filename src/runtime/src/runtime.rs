@@ -59,7 +59,7 @@ use crate::id::{
 
 use crate::resolver::{
   InMemorySourceResolver, ResolvedSource, SourceRequest, SourceResolver,
-  SourceImportDeclaration, SourceImportKind, SourceScope, module_namespace_for_import,
+  SourceImportKind, SourceScope, module_namespace_for_import,
 };
 
 use crate::scheduler::{
@@ -969,16 +969,16 @@ impl MechRuntime {
   ) -> MResult<HashMap<String, mech_core::ValRef>> {
     let mut bindings = HashMap::new();
     let mut ownership: HashMap<String, String> = HashMap::new();
-    let scoped_imports = imports_for_scope(importer, scope);
 
-    for ModuleImportEdge { import, dependency } in &importer.import_edges {
-      // TODO(scoped-imports): carry SourceScope directly on ModuleImportEdge so duplicate
-      // specifiers in different scopes do not require declaration matching.
-      if !scoped_imports.iter().any(|scoped_import| scoped_import == import) {
+    for edge in &importer.import_edges {
+      if &edge.scope != scope {
         continue;
       }
 
-      let Some(dependency_instance) = module_instances.get(dependency) else {
+      let import = &edge.import;
+      let dependency = edge.dependency;
+
+      let Some(dependency_instance) = module_instances.get(&dependency) else {
         return Err(MechError::new(RuntimeInvalidOperationError { operation: "build_import_environment", reason: format!("dependency instance missing for {}", dependency) }, None));
       };
 
@@ -1016,7 +1016,7 @@ impl MechRuntime {
         context,
         RuntimeEventKind::ModuleImportLinked {
           importer: importer.id,
-          dependency: *dependency,
+          dependency,
           specifier: import.specifier.clone(),
         },
       )?;
@@ -1172,7 +1172,7 @@ impl MechRuntime {
         resolved.capability_requirements.clone();
 
       let mut dependency_versions = Vec::new();
-      let mut import_edges = Vec::new();
+      let mut flat_import_dependencies = Vec::new();
 
       for import in &resolved.imports {
         let dependency_request = crate::resolver::source_request_for_import(import, Some(&canonical_uri));
@@ -1194,10 +1194,28 @@ impl MechRuntime {
             )
           })?;
         dependency_versions.push(dependency_version);
-        import_edges.push(ModuleImportEdge {
-          import: import.clone(),
-          dependency: dependency_version,
-        });
+        flat_import_dependencies.push((import.clone(), dependency_version));
+      }
+
+      let mut import_edges = Vec::new();
+      let mut matched_flat_imports = vec![false; flat_import_dependencies.len()];
+      for scope_metadata in &resolved.scopes {
+        for import in &scope_metadata.imports {
+          let Some((index, (_, dependency_version))) = flat_import_dependencies
+            .iter()
+            .enumerate()
+            .find(|(index, (flat_import, _))| {
+              !matched_flat_imports[*index] && flat_import == import
+            }) else {
+              return Err(MechError::new(RuntimeInvalidOperationError { operation: "resolve_and_store_module_source", reason: format!("scoped import `{}` was not found in flat imports", import.specifier) }, None));
+            };
+          matched_flat_imports[index] = true;
+          import_edges.push(ModuleImportEdge {
+            scope: scope_metadata.scope.clone(),
+            import: import.clone(),
+            dependency: *dependency_version,
+          });
+        }
       }
 
       let record = self.module_builder.build_resolved_source(
@@ -2955,27 +2973,6 @@ impl MechErrorKind for RuntimeModuleImportEdgeInvalid {
 // -----------------------------------------------------------------------------
 // Helpers
 // -----------------------------------------------------------------------------
-
-fn program_scope_metadata(record: &ModuleVersionRecord) -> Option<&crate::resolver::ModuleScopeMetadata> {
-  record.scopes.iter().find(|scope| scope.scope == SourceScope::Program)
-}
-
-fn imports_for_scope<'a>(
-  record: &'a ModuleVersionRecord,
-  scope: &SourceScope,
-) -> &'a [SourceImportDeclaration] {
-  match scope {
-    SourceScope::Program => program_scope_metadata(record)
-      .map(|scope| scope.imports.as_slice())
-      .unwrap_or(&[]),
-    _ => record
-      .scopes
-      .iter()
-      .find(|metadata| &metadata.scope == scope)
-      .map(|metadata| metadata.imports.as_slice())
-      .unwrap_or(&[]),
-  }
-}
 
 fn source_fingerprint(source: &MechSourceCode) -> MResult<String> {
   match source {

@@ -30,7 +30,7 @@ use crate::id::{
 };
 use crate::resolver::{
   ModuleScopeMetadata, SourceContextDeclaration, SourceExportDeclaration,
-  SourceImportDeclaration,
+  SourceImportDeclaration, SourceScope,
 };
 
 // -----------------------------------------------------------------------------
@@ -184,6 +184,7 @@ impl ModuleRecord {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModuleImportEdge {
+  pub scope: SourceScope,
   pub import: SourceImportDeclaration,
   pub dependency: ModuleVersionId,
 }
@@ -338,10 +339,38 @@ impl ModuleVersionRecord {
           None,
         ));
       }
+
+      if !import_exists_in_scope(self, &edge.scope, &edge.import) {
+        return Err(MechError::new(
+          InvalidModuleImportEdgesError {
+            module: self.id,
+            reason: format!(
+              "import edge specifier `{}` kind {:?} not found in scope {:?}",
+              edge.import.specifier,
+              edge.import.kind,
+              edge.scope
+            ),
+          },
+          None,
+        ));
+      }
     }
 
     Ok(())
   }
+}
+
+fn import_exists_in_scope(
+  record: &ModuleVersionRecord,
+  scope: &SourceScope,
+  import: &SourceImportDeclaration,
+) -> bool {
+  record
+    .scopes
+    .iter()
+    .find(|metadata| &metadata.scope == scope)
+    .map(|metadata| metadata.imports.iter().any(|candidate| candidate == import))
+    .unwrap_or(false)
 }
 
 #[derive(Debug, Clone)]
