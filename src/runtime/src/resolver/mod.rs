@@ -41,12 +41,14 @@ pub mod source;
 pub mod file;
 pub mod imports;
 pub mod ast;
+pub mod index;
 
 pub use memory::*;
 pub use source::*;
 pub use file::*;
 pub use imports::*;
 pub use ast::*;
+pub use index::*;
 
 // -----------------------------------------------------------------------------
 // Source Request

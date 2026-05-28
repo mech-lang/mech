@@ -6,8 +6,7 @@ use std::path::{Path, PathBuf};
 use mech_core::{MResult, MechError, MechSourceCode};
 
 use crate::resolver::{
-  contexts_from_program, exports_from_program, imports_from_program, source_request_for_import,
-  ResolvedSource, SourceRequest, SourceResolver,
+  source_request_for_import, ResolvedSource, SourceIndex, SourceRequest, SourceResolver,
 };
 
 use super::{
@@ -112,9 +111,10 @@ impl SourceResolver for FileSourceResolver {
       if let MechSourceCode::String(source_text) = &resolved.source {
         let tree = mech_syntax::parser::parse(source_text.trim())?;
         let referrer = path.to_string_lossy().to_string();
-        let imports = imports_from_program(&tree);
-        let exports = exports_from_program(&tree);
-        let contexts = contexts_from_program(&tree);
+        let index = SourceIndex::from_program(&tree);
+        let imports = index.all_imports();
+        let exports = index.all_exports();
+        let contexts = index.all_contexts();
         let dependencies = imports
           .iter()
           .map(|import| source_request_for_import(import, Some(&referrer)))
