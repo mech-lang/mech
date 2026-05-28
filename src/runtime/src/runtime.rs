@@ -59,7 +59,7 @@ use crate::id::{
 
 use crate::resolver::{
   InMemorySourceResolver, ResolvedSource, SourceRequest, SourceResolver,
-  SourceImportKind, module_namespace_for_import,
+  SourceImportKind, SourceScope, module_namespace_for_import,
 };
 
 use crate::scheduler::{
@@ -886,7 +886,12 @@ impl MechRuntime {
       self.execute_module_isolated(context, edge.dependency, seen, module_instances)?;
     }
 
-    let import_environment = self.build_import_environment(context, &record, module_instances)?;
+    let import_environment = self.build_import_environment_for_scope(
+      context,
+      &record,
+      &SourceScope::Program,
+      module_instances,
+    )?;
     let mut module_program = MechProgram::new(MechProgramConfig {
       name: self.config.name.clone(),
       environment: MechProgramEnvironment {
@@ -955,17 +960,25 @@ impl MechRuntime {
     Ok(instance)
   }
 
-  fn build_import_environment(
+  fn build_import_environment_for_scope(
     &mut self,
     context: &mut RuntimeContext,
     importer: &ModuleVersionRecord,
+    scope: &SourceScope,
     module_instances: &HashMap<ModuleVersionId, ModuleInstance>,
   ) -> MResult<HashMap<String, mech_core::ValRef>> {
     let mut bindings = HashMap::new();
     let mut ownership: HashMap<String, String> = HashMap::new();
 
-    for ModuleImportEdge { import, dependency } in &importer.import_edges {
-      let Some(dependency_instance) = module_instances.get(dependency) else {
+    for edge in &importer.import_edges {
+      if &edge.scope != scope {
+        continue;
+      }
+
+      let import = &edge.import;
+      let dependency = edge.dependency;
+
+      let Some(dependency_instance) = module_instances.get(&dependency) else {
         return Err(MechError::new(RuntimeInvalidOperationError { operation: "build_import_environment", reason: format!("dependency instance missing for {}", dependency) }, None));
       };
 
@@ -1003,7 +1016,7 @@ impl MechRuntime {
         context,
         RuntimeEventKind::ModuleImportLinked {
           importer: importer.id,
-          dependency: *dependency,
+          dependency,
           specifier: import.specifier.clone(),
         },
       )?;
@@ -1159,7 +1172,7 @@ impl MechRuntime {
         resolved.capability_requirements.clone();
 
       let mut dependency_versions = Vec::new();
-      let mut import_edges = Vec::new();
+      let mut flat_import_dependencies = Vec::new();
 
       for import in &resolved.imports {
         let dependency_request = crate::resolver::source_request_for_import(import, Some(&canonical_uri));
@@ -1181,10 +1194,28 @@ impl MechRuntime {
             )
           })?;
         dependency_versions.push(dependency_version);
-        import_edges.push(ModuleImportEdge {
-          import: import.clone(),
-          dependency: dependency_version,
-        });
+        flat_import_dependencies.push((import.clone(), dependency_version));
+      }
+
+      let mut import_edges = Vec::new();
+      let mut matched_flat_imports = vec![false; flat_import_dependencies.len()];
+      for scope_metadata in &resolved.scopes {
+        for import in &scope_metadata.imports {
+          let Some((index, (_, dependency_version))) = flat_import_dependencies
+            .iter()
+            .enumerate()
+            .find(|(index, (flat_import, _))| {
+              !matched_flat_imports[*index] && flat_import == import
+            }) else {
+              return Err(MechError::new(RuntimeInvalidOperationError { operation: "resolve_and_store_module_source", reason: format!("scoped import `{}` was not found in flat imports", import.specifier) }, None));
+            };
+          matched_flat_imports[index] = true;
+          import_edges.push(ModuleImportEdge {
+            scope: scope_metadata.scope.clone(),
+            import: import.clone(),
+            dependency: *dependency_version,
+          });
+        }
       }
 
       let record = self.module_builder.build_resolved_source(
