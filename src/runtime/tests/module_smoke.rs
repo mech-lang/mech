@@ -1,5 +1,5 @@
-use mech_core::{Ref, Value};
-use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, ModuleBuildOptions, RuntimeBuilder, SourceRequest, SourceResolver, SourceScope};
+use mech_core::{hash_str, Ref, Value};
+use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, ModuleBuildOptions, RuntimeBuilder, SourceInterpreterId, SourceRequest, SourceResolver, SourceScope};
 
 fn setup_modules(main_source: &str) -> std::path::PathBuf {
   let root = std::env::temp_dir().join(format!("mech-runtime-module-smoke-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
@@ -7,6 +7,123 @@ fn setup_modules(main_source: &str) -> std::path::PathBuf {
   std::fs::write(root.join("math.mec"), "tau := 6.28318\nsecret := 42\n<+ tau\n").unwrap();
   std::fs::write(root.join("main.mec"), main_source).unwrap();
   root
+}
+
+
+fn foo_scope(runtime: &mech_runtime::MechRuntime, version: mech_runtime::ModuleVersionId) -> SourceScope {
+  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  main.scopes.iter().find_map(|metadata| match &metadata.scope {
+    SourceScope::Interpreter(interpreter) if interpreter.namespace_str == "foo" => Some(metadata.scope.clone()),
+    SourceScope::Interpreter(_) | SourceScope::Program => None,
+  }).unwrap()
+}
+
+#[test]
+fn interpreter_scope_imports_work() {
+  let root = std::env::temp_dir().join(format!("mech-runtime-module-interpreter-imports-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+  std::fs::create_dir_all(&root).unwrap();
+  std::fs::write(root.join("math.mec"), "tau := 6.28318\n<+ tau\n").unwrap();
+  std::fs::write(root.join("main.mec"), "~~~mech:foo\n+> ./math.mec\nok := math/tau > 6.0\n<+ ok\n~~~\n").unwrap();
+
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let scope = foo_scope(&runtime, version);
+  let result = runtime.run_module_scope(version, scope).unwrap();
+  match result {
+    Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected bool result from module scope run, got {:?}", other),
+  }
+}
+
+#[test]
+fn program_cannot_see_fenced_import_but_interpreter_can() {
+  let root = std::env::temp_dir().join(format!("mech-runtime-module-interpreter-import-privacy-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+  std::fs::create_dir_all(&root).unwrap();
+  std::fs::write(root.join("math.mec"), "tau := 6.28318\n<+ tau\n").unwrap();
+  std::fs::write(root.join("main.mec"), "~~~mech:foo\n+> ./math.mec\nok := math/tau > 6.0\n<+ ok\n~~~\n\ntop := math/tau > 6.0\n").unwrap();
+
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let scope = foo_scope(&runtime, version);
+
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("UndefinedVariable"));
+  assert!(error.contains("math/tau"));
+
+  let result = runtime.run_module_scope(version, scope).unwrap();
+  match result {
+    Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected bool result from module scope run, got {:?}", other),
+  }
+}
+
+#[test]
+fn interpreter_scope_exports_only_interpreter_exports() {
+  let root = std::env::temp_dir().join(format!("mech-runtime-module-interpreter-exports-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+  std::fs::create_dir_all(&root).unwrap();
+  std::fs::write(root.join("main.mec"), "~~~mech:foo\nfoo-value := true\n<+ foo-value\n~~~\n\nprogram-value := false\n<+ program-value\n").unwrap();
+
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let scope = foo_scope(&runtime, version);
+  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  let foo = main.scopes.iter().find(|metadata| metadata.scope == scope).unwrap();
+  assert!(foo.exports.iter().any(|export| export.name == "foo-value"));
+  assert!(!foo.exports.iter().any(|export| export.name == "program-value"));
+
+  let result = runtime.run_module(version).unwrap();
+  match result {
+    Value::Bool(value) => assert!(!*value.borrow()),
+    other => panic!("expected bool result from module run, got {:?}", other),
+  }
+
+  let result = runtime.run_module_scope(version, scope).unwrap();
+  match result {
+    Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected bool result from module scope run, got {:?}", other),
+  }
+}
+
+#[test]
+fn interpreter_scope_executes_only_matching_import_edges() {
+  let root = std::env::temp_dir().join(format!("mech-runtime-module-interpreter-edge-filter-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+  std::fs::create_dir_all(&root).unwrap();
+  std::fs::write(root.join("good.mec"), "value := true\n<+ value\n").unwrap();
+  std::fs::write(root.join("bad.mec"), "missing := bad/value\n").unwrap();
+  std::fs::write(root.join("main.mec"), "~~~mech:foo\n+> ./good.mec\nok := good/value\n<+ ok\n~~~\n\n~~~mech:bar\n+> ./bad.mec\n~~~\n").unwrap();
+
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let scope = foo_scope(&runtime, version);
+  let result = runtime.run_module_scope(version, scope).unwrap();
+  match result {
+    Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected bool result from module scope run, got {:?}", other),
+  }
+}
+
+#[test]
+fn missing_interpreter_scope_returns_error() {
+  let root = std::env::temp_dir().join(format!("mech-runtime-module-missing-interpreter-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+  std::fs::create_dir_all(&root).unwrap();
+  std::fs::write(root.join("main.mec"), "~~~mech:foo\nfoo-value := true\n<+ foo-value\n~~~\n").unwrap();
+
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let missing = SourceScope::Interpreter(SourceInterpreterId {
+    namespace: hash_str("missing"),
+    namespace_str: "missing".to_string(),
+  });
+
+  let result = runtime.run_module_scope(version, missing);
+  assert!(result.is_err());
 }
 
 #[test]

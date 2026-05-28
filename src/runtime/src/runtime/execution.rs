@@ -94,21 +94,52 @@ impl MechRuntime {
     self.run_module_with_context(&mut context, version)
   }
 
+  pub fn run_module_scope(
+    &mut self,
+    version: ModuleVersionId,
+    scope: SourceScope,
+  ) -> MResult<Value> {
+    let mut context = self.runtime_context()?
+      .with_module_version(version);
+
+    self.run_module_scope_with_context(&mut context, version, scope)
+  }
+
   pub fn run_module_with_context(
     &mut self,
     context: &mut RuntimeContext,
     version: ModuleVersionId,
   ) -> MResult<Value> {
-    let mut seen = HashSet::new();
-    let mut module_instances = HashMap::new();
-    let instance = self.execute_module_isolated(context, version, &mut seen, &mut module_instances)?;
-    Ok(instance.result)
+    self.run_module_scope_with_context(context, version, SourceScope::Program)
   }
 
-  fn execute_module_isolated(
+  pub fn run_module_scope_with_context(
     &mut self,
     context: &mut RuntimeContext,
     version: ModuleVersionId,
+    scope: SourceScope,
+  ) -> MResult<Value> {
+    // TODO: if dependency interpreter scopes become executable, key these by
+    // (ModuleVersionId, SourceScope) instead of only ModuleVersionId.
+    let mut seen = HashSet::new();
+    let mut module_instances = HashMap::new();
+
+    let instance = self.execute_module_isolated_for_scope(
+      context,
+      version,
+      &scope,
+      &mut seen,
+      &mut module_instances,
+    )?;
+
+    Ok(instance.result)
+  }
+
+  fn execute_module_isolated_for_scope(
+    &mut self,
+    context: &mut RuntimeContext,
+    version: ModuleVersionId,
+    scope: &SourceScope,
     seen: &mut HashSet<ModuleVersionId>,
     module_instances: &mut HashMap<ModuleVersionId, ModuleInstance>,
   ) -> MResult<ModuleInstance> {
@@ -133,13 +164,23 @@ impl MechRuntime {
     };
 
     for edge in &record.import_edges {
-      self.execute_module_isolated(context, edge.dependency, seen, module_instances)?;
+      if &edge.scope != scope {
+        continue;
+      }
+
+      self.execute_module_isolated_for_scope(
+        context,
+        edge.dependency,
+        &SourceScope::Program,
+        seen,
+        module_instances,
+      )?;
     }
 
     let import_environment = self.build_import_environment_for_scope(
       context,
       &record,
-      &SourceScope::Program,
+      scope,
       module_instances,
     )?;
     let mut module_program = MechProgram::new(MechProgramConfig {
@@ -166,7 +207,8 @@ impl MechRuntime {
       context,
       RuntimeEventKind::ModuleExecutionStarted { module_version: version },
     )?;
-    let result = self.run_module_source_on_program(context, &mut module_program, &source);
+    let scoped_source = module_source_for_scope(&source, scope)?;
+    let result = self.run_module_source_on_program(context, &mut module_program, &scoped_source);
     let result = match result {
       Ok(value) => value,
       Err(error) => {
@@ -184,7 +226,7 @@ impl MechRuntime {
     {
       let symbols = module_program.interpreter_mut().symbols();
       let symbols_brrw = symbols.borrow();
-      for export in &record.exports {
+      for export in exports_for_scope(&record, scope) {
         let id = hash_str(&export.name);
         let Some(value_ref) = symbols_brrw.get(id) else {
           let error = MechError::new(RuntimeModuleExportNotFound { dependency: record.id.to_string(), export: export.name.clone() }, None);
@@ -334,6 +376,126 @@ impl MechRuntime {
 
     Ok(bindings)
   }
+}
+
+fn module_source_for_scope(
+  source: &MechSourceCode,
+  scope: &SourceScope,
+) -> MResult<MechSourceCode> {
+  match scope {
+    SourceScope::Program => Ok(source.clone()),
+    SourceScope::Interpreter(interpreter) => {
+      let MechSourceCode::String(source_text) = source else {
+        return Err(MechError::new(
+          RuntimeInvalidOperationError {
+            operation: "run_module_scope",
+            reason: "interpreter scope execution requires string source".to_string(),
+          },
+          None,
+        ));
+      };
+
+      let tree = mech_syntax::parser::parse(source_text.trim())?;
+
+      for section in &tree.body.sections {
+        for element in &section.elements {
+          if let mech_core::SectionElement::FencedMechCode(fenced) = element {
+            if fenced.config.namespace == interpreter.namespace {
+              return Ok(MechSourceCode::String(source_from_fenced_block(source_text, &interpreter.namespace_str)?));
+            }
+          }
+        }
+      }
+
+      Err(MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "run_module_scope",
+          reason: format!("interpreter scope `{}` not found", interpreter.namespace_str),
+        },
+        None,
+      ))
+    }
+  }
+}
+
+fn source_from_fenced_block(
+  source_text: &str,
+  namespace: &str,
+) -> MResult<String> {
+  let mut in_block = false;
+  let mut lines = Vec::new();
+
+  for line in source_text.lines() {
+    let trimmed = line.trim();
+    if !in_block && (trimmed == format!("~~~mech:{}", namespace) || trimmed == format!("```mech:{}", namespace)) {
+      in_block = true;
+      continue;
+    }
+    if in_block && (trimmed == "~~~" || trimmed == "```") {
+      return Ok(lines.join("\n"));
+    }
+    if in_block {
+      lines.push(line);
+    }
+  }
+
+  Ok(lines.join("\n"))
+}
+
+#[allow(dead_code)]
+fn source_from_tokens(
+  _source_text: &str,
+  tokens: &[mech_core::Token],
+) -> MResult<String> {
+  if tokens.is_empty() {
+    return Ok(String::new());
+  }
+
+  if tokens.iter().any(|token| token.src_range.start.row == 0 || token.src_range.start.col == 0) {
+    return Ok(tokens.iter().map(|token| token.to_string()).collect::<Vec<_>>().join(" "));
+  }
+
+  let mut source = String::new();
+  let mut row = tokens[0].src_range.start.row;
+  let mut col = tokens[0].src_range.start.col;
+
+  for token in tokens {
+    let start = &token.src_range.start;
+    while row < start.row {
+      source.push('\n');
+      row += 1;
+      col = 1;
+    }
+    while col < start.col {
+      source.push(' ');
+      col += 1;
+    }
+
+    let token_text = token.to_string();
+    for ch in token_text.chars() {
+      source.push(ch);
+      if ch == '\n' {
+        row += 1;
+        col = 1;
+      } else {
+        col += 1;
+      }
+    }
+  }
+
+  Ok(source)
+}
+
+fn exports_for_scope<'a>(
+  record: &'a ModuleVersionRecord,
+  scope: &SourceScope,
+) -> &'a [SourceExportDeclaration] {
+  record
+    .scopes
+    .iter()
+    .find(|metadata| &metadata.scope == scope)
+    .map(|metadata| metadata.exports.as_slice())
+    .unwrap_or(&[])
 }
 
 pub fn strip_module_declarations_for_execution(source: &str) -> String {
