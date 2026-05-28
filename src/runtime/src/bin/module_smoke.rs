@@ -13,7 +13,7 @@ fn main() {
   for edge in &main.import_edges {
     println!("  - specifier={} dependency={}", edge.import.specifier, edge.dependency);
   }
-  println!("stored imports:");
+  println!("flat imports:");
   for import in &main.imports {
     println!(
       "  - specifier={} kind={:?} namespace={:?}",
@@ -21,6 +21,18 @@ fn main() {
       import.kind,
       module_namespace_for_import(import)
     );
+  }
+  println!("scoped imports by scope:");
+  for scope in &main.scopes {
+    println!("  - scope={:?}", scope.scope);
+    for import in &scope.imports {
+      println!(
+        "      specifier={} kind={:?} namespace={:?}",
+        import.specifier,
+        import.kind,
+        module_namespace_for_import(import)
+      );
+    }
   }
   println!("stored exports:");
   for export in &main.exports {
