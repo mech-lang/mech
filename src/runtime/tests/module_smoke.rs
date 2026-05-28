@@ -1,5 +1,5 @@
 use mech_core::{Ref, Value};
-use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, ModuleBuildOptions, RuntimeBuilder, SourceRequest, SourceResolver};
+use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, ModuleBuildOptions, RuntimeBuilder, SourceRequest, SourceResolver, SourceScope};
 
 fn setup_modules(main_source: &str) -> std::path::PathBuf {
   let root = std::env::temp_dir().join(format!("mech-runtime-module-smoke-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
@@ -22,6 +22,87 @@ fn resolver_metadata() {
 
   let dep = resolver.resolve(&main.dependencies[0]).unwrap().unwrap();
   assert!(dep.exports.iter().any(|e| e.name == "tau"));
+}
+
+#[test]
+fn module_records_store_scoped_source_declarations_without_execution_changes() {
+  let root = std::env::temp_dir().join(format!("mech-runtime-module-scopes-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+  std::fs::create_dir_all(&root).unwrap();
+  std::fs::write(root.join("math.mec"), "tau := 6.28318\n<+ tau\n").unwrap();
+  std::fs::write(root.join("foo.mec"), "foo-result := 1\n<+ foo-result\n").unwrap();
+  std::fs::write(root.join("bar.mec"), "bar-result := 2\n<+ bar-result\n").unwrap();
+  std::fs::write(
+    root.join("main.mec"),
+    "@program-db := db://program{:read(*)}\n+> ./math.mec\nok := math/tau > 6.0\n<+ ok\n\n~~~mech:foo\n@foo-db := db://foo{:read(*)}\n+> ./foo.mec\n<+ foo-result\n~~~\n\n~~~mech:bar\n@bar-db := db://bar{:read(*)}\n+> ./bar.mec\n<+ bar-result\n~~~\n",
+  ).unwrap();
+
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+
+  assert_eq!(main.imports.len(), 3);
+  assert_eq!(main.exports.len(), 3);
+  assert_eq!(main.contexts.len(), 3);
+  assert_eq!(main.import_edges.len(), 3);
+
+  let program = main.scopes.iter().find(|scope| scope.scope == SourceScope::Program).unwrap();
+  assert_eq!(program.imports.len(), 1);
+  assert_eq!(program.imports[0].specifier, "./math.mec");
+  assert_eq!(program.exports.len(), 1);
+  assert_eq!(program.exports[0].name, "ok");
+  assert_eq!(program.contexts.len(), 1);
+  assert_eq!(program.contexts[0].name, "program-db");
+
+  let foo = main.scopes.iter().find(|scope| match &scope.scope {
+    SourceScope::Interpreter(interpreter) => interpreter.namespace_str == "foo",
+    SourceScope::Program => false,
+  }).unwrap();
+  assert_eq!(foo.imports.len(), 1);
+  assert_eq!(foo.imports[0].specifier, "./foo.mec");
+  assert_eq!(foo.exports.len(), 1);
+  assert_eq!(foo.exports[0].name, "foo-result");
+  assert_eq!(foo.contexts.len(), 1);
+  assert_eq!(foo.contexts[0].name, "foo-db");
+
+  let bar = main.scopes.iter().find(|scope| match &scope.scope {
+    SourceScope::Interpreter(interpreter) => interpreter.namespace_str == "bar",
+    SourceScope::Program => false,
+  }).unwrap();
+  assert_eq!(bar.imports.len(), 1);
+  assert_eq!(bar.imports[0].specifier, "./bar.mec");
+  assert_eq!(bar.exports.len(), 1);
+  assert_eq!(bar.exports[0].name, "bar-result");
+  assert_eq!(bar.contexts.len(), 1);
+  assert_eq!(bar.contexts[0].name, "bar-db");
+
+  assert!(!foo.imports.iter().any(|import| import.specifier == "./bar.mec"));
+  assert!(!foo.exports.iter().any(|export| export.name == "bar-result"));
+  assert!(!foo.contexts.iter().any(|context| context.name == "bar-db"));
+}
+
+#[test]
+fn run_module_keeps_flat_import_behavior_for_fenced_imports() {
+  let root = std::env::temp_dir().join(format!("mech-runtime-module-flat-fenced-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+  std::fs::create_dir_all(&root).unwrap();
+  std::fs::write(root.join("math.mec"), "tau := 6.28318\n<+ tau\n").unwrap();
+  std::fs::write(root.join("main.mec"), "~~~mech:foo\n+> ./math.mec\n~~~\nok := math/tau > 6.0\n").unwrap();
+
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  assert_eq!(main.imports.len(), 1);
+  assert!(main.scopes.iter().any(|scope| match &scope.scope {
+    SourceScope::Interpreter(interpreter) => interpreter.namespace_str == "foo" && scope.imports.len() == 1 && scope.imports[0].specifier == "./math.mec",
+    SourceScope::Program => false,
+  }));
+
+  let result = runtime.run_module(version).unwrap();
+  match result {
+    Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected bool result from module run, got {:?}", other),
+  }
 }
 
 #[test]

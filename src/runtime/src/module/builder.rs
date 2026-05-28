@@ -117,6 +117,7 @@ impl ModuleBuilder {
       resolved.exports,
       resolved.imports,
       resolved.contexts,
+      resolved.scopes,
       dependency_versions.to_vec(),
       capability_requirements.to_vec(),
       capability_requirement_keys,

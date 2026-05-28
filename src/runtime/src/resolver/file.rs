@@ -115,6 +115,7 @@ impl SourceResolver for FileSourceResolver {
         let imports = index.all_imports();
         let exports = index.all_exports();
         let contexts = index.all_contexts();
+        let scopes = index.module_scopes();
         let dependencies = imports
           .iter()
           .map(|import| source_request_for_import(import, Some(&referrer)))
@@ -124,7 +125,8 @@ impl SourceResolver for FileSourceResolver {
           .with_imports(imports)
           .with_exports(exports)
           .with_contexts(contexts)
-          .with_dependencies(dependencies);
+          .with_dependencies(dependencies)
+          .with_scopes(scopes);
       }
     }
 

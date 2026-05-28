@@ -7,6 +7,7 @@ use crate::{
   SourceExportDeclaration,
   SourceImportDeclaration,
   SourceKind,
+  ModuleScopeMetadata,
   CapabilityRequest
 };
 
@@ -25,6 +26,7 @@ pub struct RuntimeModuleRecord {
   pub exports: Vec<SourceExportDeclaration>,
   pub imports: Vec<SourceImportDeclaration>,
   pub contexts: Vec<SourceContextDeclaration>,
+  pub scopes: Vec<ModuleScopeMetadata>,
   pub dependency_versions: Vec<ModuleVersionId>,
   pub capability_requirements: Vec<CapabilityRequest>,
   pub capability_requirement_keys: Vec<String>,
@@ -45,6 +47,7 @@ impl RuntimeModuleRecord {
     exports: Vec<SourceExportDeclaration>,
     imports: Vec<SourceImportDeclaration>,
     contexts: Vec<SourceContextDeclaration>,
+    scopes: Vec<ModuleScopeMetadata>,
     dependency_versions: Vec<ModuleVersionId>,
     capability_requirements: Vec<CapabilityRequest>,
     capability_requirement_keys: Vec<String>,
@@ -63,6 +66,7 @@ impl RuntimeModuleRecord {
       exports,
       imports,
       contexts,
+      scopes,
       dependency_versions,
       capability_requirements,
       capability_requirement_keys,

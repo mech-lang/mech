@@ -61,6 +61,15 @@ pub enum SourceDeclaration {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ModuleScopeMetadata {
+    pub scope: SourceScope,
+    pub imports: Vec<SourceImportDeclaration>,
+    pub exports: Vec<SourceExportDeclaration>,
+    pub contexts: Vec<SourceContextDeclaration>,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SourceIndex {
     pub declarations: Vec<SourceDeclaration>,
@@ -166,6 +175,31 @@ impl SourceIndex {
 
         // TODO: index addressed paths from statements/expressions in a future PR.
         index
+    }
+
+    pub fn module_scopes(&self) -> Vec<ModuleScopeMetadata> {
+        let mut scopes: Vec<SourceScope> = Vec::new();
+
+        for declaration in &self.declarations {
+            let scope = match declaration {
+                SourceDeclaration::Import(import) => &import.occurrence.scope,
+                SourceDeclaration::Export(export) => &export.occurrence.scope,
+                SourceDeclaration::Context(context) => &context.occurrence.scope,
+            };
+            if !scopes.contains(scope) {
+                scopes.push(scope.clone());
+            }
+        }
+
+        scopes
+            .into_iter()
+            .map(|scope| ModuleScopeMetadata {
+                imports: self.imports_for_scope(&scope),
+                exports: self.exports_for_scope(&scope),
+                contexts: self.contexts_for_scope(&scope),
+                scope,
+            })
+            .collect()
     }
 
     pub fn all_imports(&self) -> Vec<SourceImportDeclaration> {
