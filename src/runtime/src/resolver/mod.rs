@@ -215,6 +215,7 @@ pub struct ResolvedSource {
   pub imports: Vec<SourceImportDeclaration>,
   pub exports: Vec<SourceExportDeclaration>,
   pub contexts: Vec<SourceContextDeclaration>,
+  pub scopes: Vec<ModuleScopeMetadata>,
   pub dependencies: Vec<SourceRequest>,
   pub capability_requirements: Vec<CapabilityRequest>,
 }
@@ -233,6 +234,7 @@ impl ResolvedSource {
       imports: Vec::new(),
       exports: Vec::new(),
       contexts: Vec::new(),
+      scopes: Vec::new(),
       dependencies: Vec::new(),
       capability_requirements: Vec::new(),
     }
@@ -260,6 +262,11 @@ impl ResolvedSource {
 
   pub fn with_contexts(mut self, contexts: Vec<SourceContextDeclaration>) -> Self {
     self.contexts = contexts;
+    self
+  }
+
+  pub fn with_scopes(mut self, scopes: Vec<ModuleScopeMetadata>) -> Self {
+    self.scopes = scopes;
     self
   }
 
