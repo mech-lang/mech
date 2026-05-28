@@ -29,7 +29,10 @@ pub fn contexts_from_program(tree: &Program) -> Vec<SourceContextDeclaration> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::resolver::{FileSourceResolver, SourceDeclaration, SourceRequest, SourceResolver, SourceScope};
+  use crate::resolver::{
+    FileSourceResolver, SourceContextBase, SourceContextCapabilityScope, SourceDeclaration,
+    SourceRequest, SourceResolver, SourceScope,
+  };
 
   fn parse_program(source: &str) -> Program {
     mech_syntax::parser::parse(source).unwrap()
