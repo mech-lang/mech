@@ -59,7 +59,7 @@ use crate::id::{
 
 use crate::resolver::{
   InMemorySourceResolver, ResolvedSource, SourceRequest, SourceResolver,
-  SourceImportKind, module_namespace_for_import,
+  SourceImportDeclaration, SourceImportKind, SourceScope, module_namespace_for_import,
 };
 
 use crate::scheduler::{
@@ -886,7 +886,12 @@ impl MechRuntime {
       self.execute_module_isolated(context, edge.dependency, seen, module_instances)?;
     }
 
-    let import_environment = self.build_import_environment(context, &record, module_instances)?;
+    let import_environment = self.build_import_environment_for_scope(
+      context,
+      &record,
+      &SourceScope::Program,
+      module_instances,
+    )?;
     let mut module_program = MechProgram::new(MechProgramConfig {
       name: self.config.name.clone(),
       environment: MechProgramEnvironment {
@@ -955,16 +960,24 @@ impl MechRuntime {
     Ok(instance)
   }
 
-  fn build_import_environment(
+  fn build_import_environment_for_scope(
     &mut self,
     context: &mut RuntimeContext,
     importer: &ModuleVersionRecord,
+    scope: &SourceScope,
     module_instances: &HashMap<ModuleVersionId, ModuleInstance>,
   ) -> MResult<HashMap<String, mech_core::ValRef>> {
     let mut bindings = HashMap::new();
     let mut ownership: HashMap<String, String> = HashMap::new();
+    let scoped_imports = imports_for_scope(importer, scope);
 
     for ModuleImportEdge { import, dependency } in &importer.import_edges {
+      // TODO(scoped-imports): carry SourceScope directly on ModuleImportEdge so duplicate
+      // specifiers in different scopes do not require declaration matching.
+      if !scoped_imports.iter().any(|scoped_import| scoped_import == import) {
+        continue;
+      }
+
       let Some(dependency_instance) = module_instances.get(dependency) else {
         return Err(MechError::new(RuntimeInvalidOperationError { operation: "build_import_environment", reason: format!("dependency instance missing for {}", dependency) }, None));
       };
@@ -2942,6 +2955,27 @@ impl MechErrorKind for RuntimeModuleImportEdgeInvalid {
 // -----------------------------------------------------------------------------
 // Helpers
 // -----------------------------------------------------------------------------
+
+fn program_scope_metadata(record: &ModuleVersionRecord) -> Option<&crate::resolver::ModuleScopeMetadata> {
+  record.scopes.iter().find(|scope| scope.scope == SourceScope::Program)
+}
+
+fn imports_for_scope<'a>(
+  record: &'a ModuleVersionRecord,
+  scope: &SourceScope,
+) -> &'a [SourceImportDeclaration] {
+  match scope {
+    SourceScope::Program => program_scope_metadata(record)
+      .map(|scope| scope.imports.as_slice())
+      .unwrap_or(&[]),
+    _ => record
+      .scopes
+      .iter()
+      .find(|metadata| &metadata.scope == scope)
+      .map(|metadata| metadata.imports.as_slice())
+      .unwrap_or(&[]),
+  }
+}
 
 fn source_fingerprint(source: &MechSourceCode) -> MResult<String> {
   match source {
