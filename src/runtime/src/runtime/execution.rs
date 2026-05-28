@@ -119,6 +119,8 @@ impl MechRuntime {
     version: ModuleVersionId,
     scope: SourceScope,
   ) -> MResult<Value> {
+    // TODO: if dependency interpreter scopes become executable, key these by
+    // (ModuleVersionId, SourceScope) instead of only ModuleVersionId.
     let mut seen = HashSet::new();
     let mut module_instances = HashMap::new();
 
@@ -162,6 +164,10 @@ impl MechRuntime {
     };
 
     for edge in &record.import_edges {
+      if &edge.scope != scope {
+        continue;
+      }
+
       self.execute_module_isolated_for_scope(
         context,
         edge.dependency,
@@ -395,7 +401,7 @@ fn module_source_for_scope(
         for element in &section.elements {
           if let mech_core::SectionElement::FencedMechCode(fenced) = element {
             if fenced.config.namespace == interpreter.namespace {
-              return Ok(MechSourceCode::String(source_from_tokens(source_text, &fenced_mech_tokens(fenced))?));
+              return Ok(MechSourceCode::String(source_from_fenced_block(source_text, &interpreter.namespace_str)?));
             }
           }
         }
@@ -412,20 +418,31 @@ fn module_source_for_scope(
   }
 }
 
-fn fenced_mech_tokens(fenced: &mech_core::FencedMechCode) -> Vec<mech_core::Token> {
-  let mut tokens = Vec::new();
-  for import in &fenced.imports {
-    tokens.append(&mut import.tokens());
+fn source_from_fenced_block(
+  source_text: &str,
+  namespace: &str,
+) -> MResult<String> {
+  let mut in_block = false;
+  let mut lines = Vec::new();
+
+  for line in source_text.lines() {
+    let trimmed = line.trim();
+    if !in_block && (trimmed == format!("~~~mech:{}", namespace) || trimmed == format!("```mech:{}", namespace)) {
+      in_block = true;
+      continue;
+    }
+    if in_block && (trimmed == "~~~" || trimmed == "```") {
+      return Ok(lines.join("\n"));
+    }
+    if in_block {
+      lines.push(line);
+    }
   }
-  for (code, _) in &fenced.code {
-    tokens.append(&mut code.tokens());
-  }
-  for export in &fenced.exports {
-    tokens.append(&mut export.tokens());
-  }
-  tokens
+
+  Ok(lines.join("\n"))
 }
 
+#[allow(dead_code)]
 fn source_from_tokens(
   _source_text: &str,
   tokens: &[mech_core::Token],
