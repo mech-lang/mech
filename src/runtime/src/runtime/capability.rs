@@ -1,6 +1,16 @@
 // Capability methods
 // ---------------------------------------------------------------------------
 
+// These methods manage capabilities within the runtime, allowing for granting, revoking, and checking capabilities. A capability represents a permission or access right to perform certain actions or access certain resources. In Mech, they are used to control access to various runtime features and resources, ensuring that actors and tasks can only perform actions they are authorized for, granting fine-grained control over resources and actions in the runtime, etc.
+// 
+// The methods include:
+// - `grant_capability`: Grants a capability to the runtime and emits a CapabilityGranted event.
+// - `revoke_capability`: Revokes a capability from the runtime and emits a CapabilityRevoked event.
+// - `check_capability`: Checks if a capability request is valid and returns the corresponding CapabilityId if it is.
+// - `get_capability`: Retrieves a capability by its ID.
+
+// Like with actors, there is a _with_context version of each method, allowing for transactional operations and proper event emission within the context of an active transaction.
+
 use super::*;
 
 impl MechRuntime {

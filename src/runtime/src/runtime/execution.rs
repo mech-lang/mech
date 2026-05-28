@@ -2,6 +2,15 @@
 // Program execution
 // ---------------------------------------------------------------------------
 
+// These are the main methods responsible for executing Mech programs within the runtime. They handle the orchestration of program execution, including setting up the execution context, managing module imports and dependencies, emitting events for diagnostics, and ensuring that execution adheres to the runtime's limits and policies.
+
+// There are two main entry points for execution:
+
+// - `run_string`: Executes a string of Mech source code directly. This is for lightweight execution of ad-hoc code snippets, scripts, documents, configuration files, etc.
+// - `run_module`: Executes a module by its version ID, handling the resolution of dependencies and the construction of the import environment. This is for executing more complex, modular code that depends on other modules and is part of the larger program structure.
+
+// Both methods have corresponding _with_context versions that accept a mutable reference to a RuntimeContext, allowing for execution within the context of an active transaction. This ensures that any changes made during execution are properly staged within the transaction that if an error occurs, the transaction can be rolled back to maintain consistency.
+
 use super::*;
 
 impl MechRuntime {
@@ -83,66 +92,6 @@ impl MechRuntime {
       .with_module_version(version);
 
     self.run_module_with_context(&mut context, version)
-  }
-
-  fn run_module_source_on_program(
-    &mut self,
-    context: &mut RuntimeContext,
-    program: &mut MechProgram,
-    source: &MechSourceCode,
-  ) -> MResult<Value> {
-    self.register_runtime_program_host_functions(context, program)?;
-
-    let runtime_ptr: *mut MechRuntime = self;
-    let context_ptr: *mut RuntimeContext = context;
-
-    let previous_target = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
-      slot.replace(Some(RuntimeProgramHostTarget {
-        runtime: runtime_ptr,
-        context: context_ptr,
-      }))
-    });
-
-    self.emit_event_to_context(
-      context,
-      RuntimeEventKind::ProgramStarted {
-        task_id: context.task,
-      },
-    )?;
-
-    let result = match source {
-      MechSourceCode::String(source) => {
-        let stripped = strip_module_declarations_for_execution(source);
-        program.run_source(&MechSourceCode::String(stripped))
-      }
-      other => program.run_source(other),
-    };
-
-    ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
-      slot.replace(previous_target);
-    });
-
-    match &result {
-      Ok(_) => {
-        self.emit_event_to_context(
-          context,
-          RuntimeEventKind::ProgramCompleted {
-            task_id: context.task,
-          },
-        )?;
-      }
-      Err(error) => {
-        self.emit_event_to_context(
-          context,
-          RuntimeEventKind::ProgramFailed {
-            task_id: context.task,
-            message: format!("{:?}", error),
-          },
-        )?;
-      }
-    }
-
-    result
   }
 
   pub fn run_module_with_context(
@@ -259,6 +208,66 @@ impl MechRuntime {
       RuntimeEventKind::ModuleExecutionCompleted { module_version: version },
     )?;
     Ok(instance)
+  }
+
+  fn run_module_source_on_program(
+    &mut self,
+    context: &mut RuntimeContext,
+    program: &mut MechProgram,
+    source: &MechSourceCode,
+  ) -> MResult<Value> {
+    self.register_runtime_program_host_functions(context, program)?;
+
+    let runtime_ptr: *mut MechRuntime = self;
+    let context_ptr: *mut RuntimeContext = context;
+
+    let previous_target = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      slot.replace(Some(RuntimeProgramHostTarget {
+        runtime: runtime_ptr,
+        context: context_ptr,
+      }))
+    });
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ProgramStarted {
+        task_id: context.task,
+      },
+    )?;
+
+    let result = match source {
+      MechSourceCode::String(source) => {
+        let stripped = strip_module_declarations_for_execution(source);
+        program.run_source(&MechSourceCode::String(stripped))
+      }
+      other => program.run_source(other),
+    };
+
+    ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      slot.replace(previous_target);
+    });
+
+    match &result {
+      Ok(_) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramCompleted {
+            task_id: context.task,
+          },
+        )?;
+      }
+      Err(error) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramFailed {
+            task_id: context.task,
+            message: format!("{:?}", error),
+          },
+        )?;
+      }
+    }
+
+    result
   }
 
   fn build_import_environment_for_scope(

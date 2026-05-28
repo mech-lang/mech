@@ -2,6 +2,8 @@
 // Actor methods
 // ---------------------------------------------------------------------------
 
+// Actors are the primary entities in the Mech runtime that encapsulate state and behavior. They can receive messages, execute turns, and interact with other actors. The methods in this section allow you to create, retrieve, update, and manage actors, as well as send messages to them and run their turns.
+
 use super::*;
 
 impl MechRuntime {

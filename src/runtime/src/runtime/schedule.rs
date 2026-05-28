@@ -2,6 +2,19 @@
 // Scheduling methods
 // ---------------------------------------------------------------------------
 
+// These methods manage the scheduling of work within the runtime, allowing for enqueuing tasks and actors for execution, collecting scheduled work for execution in ticks, and marking scheduled work as complete or failed. The scheduling system is responsible for determining the order of execution for tasks and actors based on the defined scheduling policy, ensuring that work is executed efficiently and fairly across the runtime.
+
+// The mehods include:
+
+// - `enqueue_work`: Adds a piece of scheduled work (either a task or an actor turn) to the scheduler's queue and emits any resulting events.
+// - `collect_tick`: Collects a batch of scheduled work from the scheduler according to the scheduling policy, returning a SchedulerTick that contains the work to be executed and any associated metadata.
+// - `complete_scheduled_work`: Marks a piece of scheduled work as completed with a given outcome, allowing the scheduler to update its state and emit any resulting events.
+// - `fail_scheduled_work`: Marks a piece of scheduled work as failed with a given message, allowing the scheduler to update its state and emit any resulting events.
+// - `run_scheduled_work`: Executes a piece of scheduled work, handling the logic for running tasks and actor turns, managing transactions, and emitting events based on the outcome of the execution.
+// - `run_scheduled_task`: Executes a scheduled task, handling the retrieval of the task record, execution of its associated module (if any), and completion of the task, while managing transactions and emitting events based on the outcome.
+// - `run_actor_turn`: Executes a turn for a scheduled actor, handling the retrieval of the actor record, execution of the turn envelope, and management of transactions and events based on the outcome.
+// - `run_tick`: Executes all scheduled work collected in a tick, returning the outcomes of each piece of work executed in the tick.
+
 use super::*;
 
 impl MechRuntime {

@@ -1,6 +1,13 @@
-// ---------------------------------------------------------------------------
 // Object methods
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+
+// These methods manage objects within the runtime, allowing for creating, retrieving, and updating objects. An object in Mech is a data structure that can hold arbitrary data and is identified by a unique ObjectId. Objects can be used to represent state, resources, or any other kind of data that actors and tasks may need to interact with. 
+
+// The methods include:
+
+// - `put_object`: Adds a new object record to the store and emits an ObjectCreated event.
+// - `get_object`: Retrieves an object record by its ID.
+// - `update_object`: Updates an existing object record in the store and emits an ObjectUpdated event.
 
 use super::*;
 

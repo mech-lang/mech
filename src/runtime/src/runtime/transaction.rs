@@ -2,7 +2,20 @@
 // Transaction methods
 // ---------------------------------------------------------------------------
 
-// These methods handle the creation, retrieval, and management of transactions within the runtime. Transactions are used to group a set of operations together, allowing for atomic commits or rollbacks in case of errors. The methods include starting a transaction, committing it, aborting it, and retrieving transaction records and events.
+// These methods handle the creation, retrieval, and management of transactions within the runtime. Transactions are used to group a set of operations together, allowing for atomic commits or rollbacks in case of errors. The methods:
+
+// - `commit_transaction`: Commits a transaction record to the store and emits a TransactionCommitted event.
+// - `get_transaction`: Retrieves a transaction record by its ID.
+// - `list_transactions`: Lists transaction records with an optional limit.
+// - `append_event`: Appends a runtime event to the store and returns its ID.
+// - `get_event`: Retrieves a runtime event by its ID.
+// - `list_events`: Lists runtime events with an optional limit.
+// - `begin_transaction`: Starts a new transaction in the context and emits a TransactionStarted event.
+// - `commit_runtime_transaction`: Commits the active transaction in the context, applying all staged changes to the store, and emits a TransactionCommitted event.
+// - `abort_runtime_transaction`: Aborts the active transaction in the context with a given reason and emits a TransactionAborted event.
+// - `active_transaction_mut`: Retrieves a mutable reference to an active transaction by its ID.
+// - `context_transaction_id`: Retrieves the active transaction ID from the context.
+// - `has_active_context_transaction`: Checks if the context has an active transaction.
 
 use super::*;
 

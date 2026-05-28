@@ -1,6 +1,18 @@
-// ---------------------------------------------------------------------------
 // Module methods
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+
+// Modules represent a unit of code that can be compiled and executed within the runtime. They are versioned, allowing for updates and changes over time while maintaining references to specific versions. The module methods handle the resolution, compilation, storage, and activation of modules within the runtime. They also manage the dependencies between modules, ensuring that imports are correctly resolved and that circular dependencies are handled gracefully.
+
+// The included methods are:
+
+// - `ensure_module`: Ensures that a module with the given canonical URI exists in the store, creating it if it doesn't.
+// - `resolve_source`: Resolves a source request to a resolved source, which includes the canonical URI and the source code. This method does not emit any events.
+// - `resolve_source_evented`: A convenience method that creates a runtime context and resolves a source request, emitting events as needed.
+// - `store_resolved_module_source`: Stores a resolved module source in the runtime, compiling it and its dependencies as needed, and returns the ModuleVersionId of the stored module.
+// - `resolve_and_store_module_source`: Resolves a source request and stores the resulting module source in the runtime, compiling it and its dependencies as needed, and returns the ModuleVersionId of the stored module.
+// - `put_source_module`: A convenience method that takes raw source code, constructs a resolved source, and stores it as a module in the runtime, returning the ModuleVersionId of the stored module.
+// - `activate_module_version`: Activates a specific version of a module, making it the active version for that module.
+// - `active_module_version`: Retrieves the active version of a module, if any.
 
 use super::*;
 

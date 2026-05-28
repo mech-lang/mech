@@ -2,6 +2,8 @@
 // Runtime Services Implementation
 // -----------------------------------------------------------------------------
 
+// Services are how the runtime provides functionality to actors and tasks. They are the public API of the runtime that allows for interaction with objects, actors, capabilities, transactions, and other runtime features. The methods in this section implement the RuntimeServices trait for the MechRuntime struct, providing the actual logic for each service method.
+
 use super::*;
 
 impl RuntimeServices for MechRuntime {

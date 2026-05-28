@@ -1,6 +1,37 @@
-// ---------------------------------------------------------------------------
 // Host Calls
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+
+// This file defines the logic for handling host calls in the Mech runtime. Host calls are a mechanism for Mech programs to interact with the host environment, allowing them to call functions that are implemented outside of the Mech program itself, typically in Rust. This is a crucial part of the runtime, as it enables Mech to be extended and embedded in other programming environments. 
+
+// The runtime provides the following host methods:
+
+// - `register_mech_host_function`: Registers a new host function that can be called from Mech programs. The function must implement the `HostFunction` trait, which defines how the function is called and what arguments it accepts.
+// - `call_host`: Executes a host call by name with the provided arguments. It emits events for the start, completion, and failure of the host call, allowing for observability of host interactions. It also checks the host policy to ensure that the call is allowed and charges the appropriate costs based on the function's estimated cost. A version of the function that accepts a MechRuntimeContext is also provided.
+
+// Furthermore, this file defines two structs:
+
+// `RuntimeHostNativeFunctionCompiler`, which allows for host functions to be registered as native function compilers in the Mech program, enabling them to be called directly from Mech code. The `RuntimeHostNativeFunction` struct represents a compiled host function that can be executed within the Mech program.
+
+// For example, a function to compute an affine transformation could be registered as a host function, and then called from Mech code like this:
+/*
+  runtime.register_mech_host_function(ClosureHostFunction::new(
+    "demo/math/affine",
+    |_services, _context, args| {
+      host_call3(
+        "demo/math/affine",
+        &args,
+        |x: f64, scale: f64, offset: f64| {
+          (x * scale) + offset
+        },
+      )
+    },
+  ))?;
+*/
+// Then in Mech:
+/*
+  result := demo/math/affine(2.0, 3.0, 4.0);
+*/
+
 
 use super::*;
 
