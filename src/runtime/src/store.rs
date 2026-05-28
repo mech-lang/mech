@@ -28,7 +28,10 @@ use crate::id::{
   ActorId, CapabilityId, EventId, MessageId, ModuleId, ModuleVersionId,
   ObjectId, TaskId, TransactionId,
 };
-use crate::resolver::{SourceExportDeclaration, SourceImportDeclaration};
+use crate::resolver::{
+  ModuleScopeMetadata, SourceContextDeclaration, SourceExportDeclaration,
+  SourceImportDeclaration, SourceScope,
+};
 
 // -----------------------------------------------------------------------------
 // Store Trait
@@ -181,6 +184,7 @@ impl ModuleRecord {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModuleImportEdge {
+  pub scope: SourceScope,
   pub import: SourceImportDeclaration,
   pub dependency: ModuleVersionId,
 }
@@ -195,6 +199,8 @@ pub struct ModuleVersionRecord {
   pub bytecode: Option<Vec<u8>>,
   pub exports: Vec<SourceExportDeclaration>,
   pub imports: Vec<SourceImportDeclaration>,
+  pub contexts: Vec<SourceContextDeclaration>,
+  pub scopes: Vec<ModuleScopeMetadata>,
   pub dependencies: Vec<ModuleVersionId>,
   pub import_edges: Vec<ModuleImportEdge>,
   pub capability_requirements: Vec<CapabilityRequest>,
@@ -210,6 +216,8 @@ impl ModuleVersionRecord {
       bytecode: None,
       exports: Vec::new(),
       imports: Vec::new(),
+      contexts: Vec::new(),
+      scopes: Vec::new(),
       dependencies: Vec::new(),
       import_edges: Vec::new(),
       capability_requirements: Vec::new(),
@@ -238,6 +246,16 @@ impl ModuleVersionRecord {
 
   pub fn with_imports(mut self, imports: Vec<SourceImportDeclaration>) -> Self {
     self.imports = imports;
+    self
+  }
+
+  pub fn with_contexts(mut self, contexts: Vec<SourceContextDeclaration>) -> Self {
+    self.contexts = contexts;
+    self
+  }
+
+  pub fn with_scopes(mut self, scopes: Vec<ModuleScopeMetadata>) -> Self {
+    self.scopes = scopes;
     self
   }
 
@@ -321,10 +339,38 @@ impl ModuleVersionRecord {
           None,
         ));
       }
+
+      if !import_exists_in_scope(self, &edge.scope, &edge.import) {
+        return Err(MechError::new(
+          InvalidModuleImportEdgesError {
+            module: self.id,
+            reason: format!(
+              "import edge specifier `{}` kind {:?} not found in scope {:?}",
+              edge.import.specifier,
+              edge.import.kind,
+              edge.scope
+            ),
+          },
+          None,
+        ));
+      }
     }
 
     Ok(())
   }
+}
+
+fn import_exists_in_scope(
+  record: &ModuleVersionRecord,
+  scope: &SourceScope,
+  import: &SourceImportDeclaration,
+) -> bool {
+  record
+    .scopes
+    .iter()
+    .find(|metadata| &metadata.scope == scope)
+    .map(|metadata| metadata.imports.iter().any(|candidate| candidate == import))
+    .unwrap_or(false)
 }
 
 #[derive(Debug, Clone)]
