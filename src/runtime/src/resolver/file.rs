@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use mech_core::{MResult, MechError, MechSourceCode};
 
 use crate::resolver::{
-  exports_from_program, imports_from_program, source_request_for_import,
+  contexts_from_program, exports_from_program, imports_from_program, source_request_for_import,
   ResolvedSource, SourceRequest, SourceResolver,
 };
 
@@ -114,6 +114,7 @@ impl SourceResolver for FileSourceResolver {
         let referrer = path.to_string_lossy().to_string();
         let imports = imports_from_program(&tree);
         let exports = exports_from_program(&tree);
+        let contexts = contexts_from_program(&tree);
         let dependencies = imports
           .iter()
           .map(|import| source_request_for_import(import, Some(&referrer)))
@@ -122,6 +123,7 @@ impl SourceResolver for FileSourceResolver {
         resolved = resolved
           .with_imports(imports)
           .with_exports(exports)
+          .with_contexts(contexts)
           .with_dependencies(dependencies);
       }
     }

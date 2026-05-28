@@ -15,6 +15,7 @@ fn resolver_metadata() {
   let resolver = FileSourceResolver::new(&root);
   let main = resolver.resolve(&SourceRequest::new("main.mec")).unwrap().unwrap();
   assert_eq!(main.imports.len(), 1);
+  assert_eq!(main.contexts.len(), 0);
   assert_eq!(main.dependencies.len(), 1);
   assert!(main.dependencies[0].specifier == "./math.mec" || main.dependencies[0].specifier == "./math.mec".trim());
   assert!(main.dependencies[0].referrer.is_some());
@@ -180,6 +181,7 @@ fn module_version_records_import_edges() {
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
   let main = runtime.store().get_module_version(version).unwrap().unwrap();
   assert_eq!(main.imports.len(), 1);
+  assert_eq!(main.contexts.len(), 0);
   assert_eq!(main.dependencies.len(), 1);
   assert_eq!(main.import_edges.len(), 1);
   assert_eq!(main.import_edges[0].import.specifier, "./math.mec");
@@ -203,6 +205,18 @@ fn module_version_records_multiple_import_edges_in_order() {
   assert!(main.dependencies.contains(&main.import_edges[0].dependency));
   assert!(main.dependencies.contains(&main.import_edges[1].dependency));
   match runtime.run_module(version).unwrap() { Value::Bool(v) => assert!(*v.borrow()), other => panic!("expected bool got {:?}", other) }
+}
+
+#[test]
+fn module_version_records_contexts() {
+  let root = setup_modules("@main := db://main{:read(users/*), :write(users/name)}\n+> ./math.mec\nok := math/tau > 6.0\n");
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  assert_eq!(main.contexts.len(), 1);
+  assert_eq!(main.contexts[0].name, "main");
+  assert_eq!(main.contexts[0].capabilities.len(), 2);
 }
 
 #[test]

@@ -176,6 +176,35 @@ pub struct SourceExportDeclaration {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SourceContextDeclaration {
+  pub name: String,
+  pub base: SourceContextBase,
+  pub capabilities: Vec<SourceContextCapability>,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SourceContextBase {
+  ResourceUri(String),
+  Context(String),
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SourceContextCapability {
+  pub operation: String,
+  pub scope: SourceContextCapabilityScope,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SourceContextCapabilityScope {
+  Path(String),
+  Wildcard,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ResolvedSource {
   pub name: String,
   pub canonical_uri: String,
@@ -183,6 +212,7 @@ pub struct ResolvedSource {
   pub kind: SourceKind,
   pub imports: Vec<SourceImportDeclaration>,
   pub exports: Vec<SourceExportDeclaration>,
+  pub contexts: Vec<SourceContextDeclaration>,
   pub dependencies: Vec<SourceRequest>,
   pub capability_requirements: Vec<CapabilityRequest>,
 }
@@ -200,6 +230,7 @@ impl ResolvedSource {
       kind: SourceKind::Unknown("".to_string()),
       imports: Vec::new(),
       exports: Vec::new(),
+      contexts: Vec::new(),
       dependencies: Vec::new(),
       capability_requirements: Vec::new(),
     }
@@ -222,6 +253,11 @@ impl ResolvedSource {
 
   pub fn with_exports(mut self, exports: Vec<SourceExportDeclaration>) -> Self {
     self.exports = exports;
+    self
+  }
+
+  pub fn with_contexts(mut self, contexts: Vec<SourceContextDeclaration>) -> Self {
+    self.contexts = contexts;
     self
   }
 

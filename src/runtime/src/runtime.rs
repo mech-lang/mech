@@ -1225,6 +1225,7 @@ impl MechRuntime {
       .with_source(record.source)
       .with_exports(record.exports)
       .with_imports(record.imports)
+      .with_contexts(record.contexts)
       .with_dependencies(record.dependency_versions)
       .with_import_edges(import_edges)
       .with_capability_requirements(record.capability_requirements);

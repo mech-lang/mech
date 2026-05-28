@@ -116,6 +116,7 @@ impl ModuleBuilder {
       feature_flags.to_vec(),
       resolved.exports,
       resolved.imports,
+      resolved.contexts,
       dependency_versions.to_vec(),
       capability_requirements.to_vec(),
       capability_requirement_keys,
@@ -127,10 +128,11 @@ fn source_version_input(resolved: &ResolvedSource) -> String {
   // For now this makes version identity depend on source content shape.
   // Later this should probably become a ContentHash over normalized source bytes.
   format!(
-    "{:?}\nimports={:?}\nexports={:?}",
+    "{:?}\nimports={:?}\nexports={:?}\ncontexts={:?}",
     resolved.source,
     resolved.imports,
     resolved.exports,
+    resolved.contexts,
   )
 }
 
