@@ -100,6 +100,39 @@ mod tests {
     assert_eq!(imports_from_program(&tree), index.all_imports());
     assert_eq!(exports_from_program(&tree), index.all_exports());
     assert_eq!(contexts_from_program(&tree), index.all_contexts());
+    assert_eq!(index.all_address_references().len(), 0);
+  }
+
+
+  #[test]
+  fn source_index_collects_program_address_reference() {
+    let tree = parse_program("result := ok@foo\n");
+    let index = SourceIndex::from_program(&tree);
+    let refs = index.program_address_references();
+    assert_eq!(refs.len(), 1);
+    assert_eq!(refs[0].name, "ok");
+    assert_eq!(refs[0].target, "foo");
+  }
+
+  #[test]
+  fn source_index_collects_fenced_address_reference() {
+    let tree = parse_program("~~~mech:foo\nresult := ok@bar\n~~~\n");
+    let index = SourceIndex::from_program(&tree);
+    assert_eq!(index.program_address_references().len(), 0);
+    let foo_scope = index.module_scopes().into_iter().find(|metadata| match &metadata.scope {
+      SourceScope::Interpreter(interpreter) => interpreter.namespace_str == "foo",
+      SourceScope::Program => false,
+    }).unwrap();
+    assert_eq!(foo_scope.address_references.len(), 1);
+    assert_eq!(foo_scope.address_references[0].name, "ok");
+    assert_eq!(foo_scope.address_references[0].target, "bar");
+  }
+
+  #[test]
+  fn source_index_does_not_collect_string_address_text() {
+    let tree = parse_program("text := \"@foo\"\n");
+    let index = SourceIndex::from_program(&tree);
+    assert_eq!(index.all_address_references().len(), 0);
   }
 
   #[test]
@@ -115,5 +148,6 @@ mod tests {
     assert_eq!(resolved.imports, index.all_imports());
     assert_eq!(resolved.exports, index.all_exports());
     assert_eq!(resolved.contexts, index.all_contexts());
+    assert_eq!(resolved.address_references, index.all_address_references());
   }
 }

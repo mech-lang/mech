@@ -485,9 +485,24 @@ pub fn range(rng: &RangeExpression, env: Option<&Environment>, p: &Interpreter) 
     Ok(res)
 }
 
+fn addressed_identifier_name(name: &Identifier, context: &Option<Identifier>) -> String {
+    match context {
+        Some(context) => format!("{}@{}", name.to_string(), context.to_string()),
+        None => name.to_string(),
+    }
+}
+
+fn addressed_identifier_hash(name: &Identifier, context: &Option<Identifier>) -> u64 {
+    match context {
+        Some(_) => hash_str(&addressed_identifier_name(name, context)),
+        None => name.hash(),
+    }
+}
+
 #[cfg(all(feature = "subscript_slice", feature = "access"))]
 pub fn slice(slc: &Slice, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
-    let id = slc.name.hash();
+    let id = addressed_identifier_hash(&slc.name, &slc.context);
+    let name = addressed_identifier_name(&slc.name, &slc.context);
     let val: Value = if let Some(env) = env {
         if let Some(val) = env.get(&id) {
             val.clone()
@@ -496,7 +511,7 @@ pub fn slice(slc: &Slice, env: Option<&Environment>, p: &Interpreter) -> MResult
             match p.symbols().borrow().get(id) {
                 Some(val) => Value::MutableReference(val.clone()),
                 None => {
-                    return Err(MechError::new(UndefinedVariableError { id, name: slc.name.to_string() }, None)
+                    return Err(MechError::new(UndefinedVariableError { id, name: name.clone() }, None)
                         .with_compiler_loc()
                         .with_tokens(slc.tokens()));
                 }
@@ -506,7 +521,7 @@ pub fn slice(slc: &Slice, env: Option<&Environment>, p: &Interpreter) -> MResult
         match p.symbols().borrow().get(id) {
             Some(val) => Value::MutableReference(val.clone()),
             None => {
-                return Err(MechError::new(UndefinedVariableError { id, name: slc.name.to_string() }, None)
+                return Err(MechError::new(UndefinedVariableError { id, name: name.clone() }, None)
                     .with_compiler_loc()
                     .with_tokens(slc.tokens()));
             }
@@ -881,7 +896,8 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
         }
     };
 
-    let id = v.name.hash();
+    let id = addressed_identifier_hash(&v.name, &v.context);
+    let name = addressed_identifier_name(&v.name, &v.context);
     match env {
         Some(env) => match env.get(&id) {
             Some(value) => maybe_cast_to_kind(value.clone()),
@@ -893,7 +909,7 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
                 drop(state_brrw);
                 match symbol_value {
                     Some(value) => maybe_cast_to_kind(Value::MutableReference(value)),
-                    None => Err(MechError::new(UndefinedVariableError { id, name: v.name.to_string() }, None)
+                    None => Err(MechError::new(UndefinedVariableError { id, name: name.clone() }, None)
                         .with_compiler_loc()
                         .with_tokens(v.tokens())),
                 }
@@ -907,7 +923,7 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
             drop(state_brrw);
             match symbol_value {
                 Some(value) => maybe_cast_to_kind(Value::MutableReference(value)),
-                None => Err(MechError::new(UndefinedVariableError { id, name: v.name.to_string() }, None)
+                None => Err(MechError::new(UndefinedVariableError { id, name: name.clone() }, None)
                     .with_compiler_loc()
                     .with_tokens(v.tokens())),
             }

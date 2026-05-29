@@ -14,7 +14,7 @@
 use super::*;
 
 impl MechRuntime {
-	
+
   pub fn run_string(&mut self, source: &str) -> MResult<Value> {
     let mut context = self.runtime_context()?;
     self.run_string_with_context(&mut context, source)
@@ -119,8 +119,6 @@ impl MechRuntime {
     version: ModuleVersionId,
     scope: SourceScope,
   ) -> MResult<Value> {
-    // TODO: if dependency interpreter scopes become executable, key these by
-    // (ModuleVersionId, SourceScope) instead of only ModuleVersionId.
     let mut seen = HashSet::new();
     let mut module_instances = HashMap::new();
 
@@ -140,20 +138,22 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     version: ModuleVersionId,
     scope: &SourceScope,
-    seen: &mut HashSet<ModuleVersionId>,
-    module_instances: &mut HashMap<ModuleVersionId, ModuleInstance>,
+    seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
+    module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
   ) -> MResult<ModuleInstance> {
     context.validate()?;
     context.charge_step()?;
 
-    if let Some(instance) = module_instances.get(&version).cloned() {
+    let instance_key = (version, scope.clone());
+
+    if let Some(instance) = module_instances.get(&instance_key).cloned() {
       return Ok(instance);
     }
 
-    if seen.contains(&version) {
+    if seen.contains(&instance_key) {
       return Ok(ModuleInstance { version, exports: HashMap::new(), result: Value::Empty });
     }
-    seen.insert(version);
+    seen.insert(instance_key.clone());
 
     let Some(record) = self.store.get_module_version(version)? else {
       return Err(MechError::new(RuntimeRecordNotFoundError { record_type: "module_version", id: version.to_string() }, None));
@@ -177,12 +177,23 @@ impl MechRuntime {
       )?;
     }
 
-    let import_environment = self.build_import_environment_for_scope(
+    let mut import_environment = self.build_import_environment_for_scope(
       context,
       &record,
       scope,
       module_instances,
     )?;
+
+    if matches!(scope, SourceScope::Program) {
+      let local_interpreter_environment = self.build_local_interpreter_address_environment(
+        context,
+        version,
+        &record,
+        seen,
+        module_instances,
+      )?;
+      import_environment.extend(local_interpreter_environment);
+    }
     let mut module_program = MechProgram::new(MechProgramConfig {
       name: self.config.name.clone(),
       environment: MechProgramEnvironment {
@@ -244,7 +255,7 @@ impl MechRuntime {
     }
 
     let instance = ModuleInstance { version, exports, result };
-    module_instances.insert(version, instance.clone());
+    module_instances.insert(instance_key, instance.clone());
     self.emit_event_to_context(
       context,
       RuntimeEventKind::ModuleExecutionCompleted { module_version: version },
@@ -312,12 +323,61 @@ impl MechRuntime {
     result
   }
 
+  fn build_local_interpreter_address_environment(
+    &mut self,
+    context: &mut RuntimeContext,
+    version: ModuleVersionId,
+    record: &ModuleVersionRecord,
+    seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
+    module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
+  ) -> MResult<HashMap<String, mech_core::ValRef>> {
+    let program_refs = record
+      .scopes
+      .iter()
+      .find(|metadata| metadata.scope == SourceScope::Program)
+      .map(|metadata| metadata.address_references.as_slice())
+      .unwrap_or(&[]);
+
+    let mut bindings = HashMap::new();
+    for metadata in &record.scopes {
+      let SourceScope::Interpreter(interpreter) = &metadata.scope else {
+        continue;
+      };
+
+      let requested_refs = program_refs
+        .iter()
+        .filter(|reference| reference.target == interpreter.namespace_str)
+        .collect::<Vec<_>>();
+      if requested_refs.is_empty() {
+        continue;
+      }
+
+      let interpreter_scope = SourceScope::Interpreter(interpreter.clone());
+      let instance = self.execute_module_isolated_for_scope(
+        context,
+        version,
+        &interpreter_scope,
+        seen,
+        module_instances,
+      )?;
+
+      for reference in requested_refs {
+        let Some(export_value) = instance.exports.get(&reference.name) else {
+          return Err(MechError::new(RuntimeModuleExportNotFound { dependency: record.id.to_string(), export: reference.name.clone() }, None));
+        };
+        bindings.insert(format!("{}@{}", reference.name, reference.target), export_value.clone());
+      }
+    }
+
+    Ok(bindings)
+  }
+
   fn build_import_environment_for_scope(
     &mut self,
     context: &mut RuntimeContext,
     importer: &ModuleVersionRecord,
     scope: &SourceScope,
-    module_instances: &HashMap<ModuleVersionId, ModuleInstance>,
+    module_instances: &HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
   ) -> MResult<HashMap<String, mech_core::ValRef>> {
     let mut bindings = HashMap::new();
     let mut ownership: HashMap<String, String> = HashMap::new();
@@ -330,7 +390,8 @@ impl MechRuntime {
       let import = &edge.import;
       let dependency = edge.dependency;
 
-      let Some(dependency_instance) = module_instances.get(&dependency) else {
+      let dependency_key = (dependency, SourceScope::Program);
+      let Some(dependency_instance) = module_instances.get(&dependency_key) else {
         return Err(MechError::new(RuntimeInvalidOperationError { operation: "build_import_environment", reason: format!("dependency instance missing for {}", dependency) }, None));
       };
 
