@@ -75,7 +75,7 @@ use crate::id::{
 
 use crate::resolver::{
   InMemorySourceResolver, ResolvedSource, SourceRequest, SourceResolver,
-  SourceExportDeclaration, SourceImportKind, SourceScope, module_namespace_for_import,
+  SourceAddressReference, SourceContextDeclaration, SourceExportDeclaration, SourceImportKind, SourceScope, module_namespace_for_import,
 };
 
 use crate::scheduler::{

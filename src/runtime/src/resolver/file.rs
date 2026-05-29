@@ -112,6 +112,7 @@ impl SourceResolver for FileSourceResolver {
         let tree = mech_syntax::parser::parse(source_text.trim())?;
         let referrer = path.to_string_lossy().to_string();
         let index = SourceIndex::from_program(&tree);
+        index.validate_address_targets()?;
         let imports = index.all_imports();
         let exports = index.all_exports();
         let contexts = index.all_contexts();

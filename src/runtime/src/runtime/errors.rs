@@ -97,6 +97,41 @@ impl MechErrorKind for RuntimeModuleExportNotFound {
 }
 
 #[derive(Debug, Clone)]
+pub struct UnknownAddressTarget {
+  pub target: String,
+}
+
+impl MechErrorKind for UnknownAddressTarget {
+  fn name(&self) -> &str {
+    "UnknownAddressTarget"
+  }
+
+  fn message(&self) -> String {
+    format!("unknown address target `{}`", self.target)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct ContextAddressReadUnsupported {
+  pub target: String,
+  pub name: String,
+}
+
+impl MechErrorKind for ContextAddressReadUnsupported {
+  fn name(&self) -> &str {
+    "ContextAddressReadUnsupported"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "context-addressed read `{}@{}` is not supported yet",
+      self.name,
+      self.target,
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
 pub struct RuntimeModuleImportConflict {
   pub binding: String,
   pub first_import: String,
