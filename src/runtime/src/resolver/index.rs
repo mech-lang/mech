@@ -1,13 +1,13 @@
 use mech_core::{
     ComprehensionQualifier, ContextBase, ContextCapabilityScope, Expression, Factor, MechCode,
-    Pattern, Program, RangeExpression, SectionElement, SourceRange, Statement, Structure, Subscript,
-    Term, Token,
+    MResult, MechError, Pattern, Program, RangeExpression, SectionElement, SourceRange, Statement,
+    Structure, Subscript, Term, Token,
 };
 
 use super::{
-    classify_import_specifier, SourceAddressReference, SourceContextBase, SourceContextCapability,
-    SourceContextCapabilityScope, SourceContextDeclaration, SourceExportDeclaration,
-    SourceImportDeclaration,
+    classify_import_specifier, AddressTargetNameConflict, SourceAddressReference, SourceContextBase,
+    SourceContextCapability, SourceContextCapabilityScope, SourceContextDeclaration,
+    SourceExportDeclaration, SourceImportDeclaration,
 };
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -88,6 +88,7 @@ pub struct SourceIndex {
     pub contexts: Vec<ScopedSourceContextDeclaration>,
     pub address_references: Vec<ScopedSourceAddressReference>,
     pub scopes: Vec<SourceScope>,
+    pub address_target_interpreters: Vec<SourceInterpreterId>,
 }
 
 impl SourceIndex {
@@ -153,10 +154,12 @@ impl SourceIndex {
                         }
                     }
                     SectionElement::FencedMechCode(fenced) => {
-                        let scope = SourceScope::Interpreter(SourceInterpreterId {
+                        let interpreter = SourceInterpreterId {
                             namespace: fenced.config.namespace,
                             namespace_str: fenced.config.namespace_str.clone(),
-                        });
+                        };
+                        index.address_target_interpreters.push(interpreter.clone());
+                        let scope = SourceScope::Interpreter(interpreter);
                         index.push_scope(scope.clone());
 
                         // TODO: Interleaving imports/exports/statements exactly as written in fenced code
@@ -216,6 +219,38 @@ impl SourceIndex {
         }
 
         index
+    }
+
+    pub fn validate_address_targets(&self) -> MResult<()> {
+        let mut targets: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+
+        for interpreter in &self.address_target_interpreters {
+            if let Some(first_kind) = targets.insert(interpreter.namespace_str.clone(), "interpreter".to_string()) {
+                return Err(MechError::new(
+                    AddressTargetNameConflict {
+                        name: interpreter.namespace_str.clone(),
+                        first_kind,
+                        second_kind: "interpreter".to_string(),
+                    },
+                    None,
+                ));
+            }
+        }
+
+        for context in &self.contexts {
+            if let Some(first_kind) = targets.insert(context.declaration.name.clone(), "context".to_string()) {
+                return Err(MechError::new(
+                    AddressTargetNameConflict {
+                        name: context.declaration.name.clone(),
+                        first_kind,
+                        second_kind: "context".to_string(),
+                    },
+                    None,
+                ));
+            }
+        }
+
+        Ok(())
     }
 
     pub fn module_scopes(&self) -> Vec<ModuleScopeMetadata> {

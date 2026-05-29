@@ -383,6 +383,28 @@ pub trait WatchableSourceResolver: SourceResolver {
 // -----------------------------------------------------------------------------
 
 #[derive(Debug, Clone)]
+pub struct AddressTargetNameConflict {
+  pub name: String,
+  pub first_kind: String,
+  pub second_kind: String,
+}
+
+impl MechErrorKind for AddressTargetNameConflict {
+  fn name(&self) -> &str {
+    "AddressTargetNameConflict"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "address target `{}` is declared more than once as `{}` and `{}`",
+      self.name,
+      self.first_kind,
+      self.second_kind,
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
 pub struct InvalidSourceRequestError {
   pub field: &'static str,
   pub reason: &'static str,

@@ -10,6 +10,110 @@ fn setup_modules(main_source: &str) -> std::path::PathBuf {
 }
 
 
+
+fn runtime_with_root(root: &std::path::Path) -> mech_runtime::MechRuntime {
+  RuntimeBuilder::new().source_resolver(FileSourceResolver::new(root)).build().unwrap()
+}
+
+fn module_options() -> ModuleBuildOptions<'static> {
+  ModuleBuildOptions::new("test", "v0.3", "native", &[], &[])
+}
+
+fn assert_bool_true(result: Value, label: &str) {
+  match result {
+    Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected bool result from {label}, got {:?}", other),
+  }
+}
+
+#[test]
+fn interpreter_context_name_conflict_fails_resolution() {
+  let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\n@foo := docs://foo{:read(ok)}\n");
+  let mut runtime = runtime_with_root(&root);
+  let result = runtime.resolve_and_store_module_source("main.mec", module_options());
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("AddressTargetNameConflict"), "expected address target conflict, got {error}");
+  assert!(error.contains("foo"), "expected conflicting target in error, got {error}");
+}
+
+#[test]
+fn duplicate_context_address_target_fails_resolution() {
+  let root = setup_modules("@foo := docs://a{:read(*)}\n@foo := docs://b{:read(*)}\n");
+  let mut runtime = runtime_with_root(&root);
+  let result = runtime.resolve_and_store_module_source("main.mec", module_options());
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("AddressTargetNameConflict"), "expected address target conflict, got {error}");
+  assert!(error.contains("foo"), "expected conflicting target in error, got {error}");
+}
+
+#[test]
+fn duplicate_interpreter_address_target_fails_resolution() {
+  let root = setup_modules("~~~mech:foo\n~~~\n\n~~~mech:foo\n~~~\n");
+  let mut runtime = runtime_with_root(&root);
+  let result = runtime.resolve_and_store_module_source("main.mec", module_options());
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("AddressTargetNameConflict"), "expected address target conflict, got {error}");
+  assert!(error.contains("foo"), "expected conflicting target in error, got {error}");
+}
+
+#[test]
+fn distinct_interpreter_and_context_names_pass() {
+  let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\n@manual := docs://foo{:read(ok)}\n\nresult := ok@foo\n");
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+  assert_bool_true(result, "distinct interpreter/context names");
+}
+
+#[test]
+fn context_address_read_is_explicitly_unsupported() {
+  let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("ContextAddressReadUnsupported"), "expected context address error, got {error}");
+  assert!(error.contains("manual"), "expected context target in error, got {error}");
+  assert!(error.contains("intro/title"), "expected addressed name in error, got {error}");
+}
+
+#[test]
+fn unknown_address_target_is_explicit() {
+  let root = setup_modules("result := ok@missing\n");
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("UnknownAddressTarget"), "expected unknown address target error, got {error}");
+  assert!(error.contains("missing"), "expected missing target in error, got {error}");
+}
+
+#[test]
+fn interpreter_address_still_works() {
+  let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\nresult := ok@foo\n");
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+  assert_bool_true(result, "interpreter address");
+}
+
+#[test]
+fn string_and_comment_address_text_are_not_targets() {
+  let root = setup_modules("~~~mech:bar\nbroken := missing\n<+ broken\n~~~\n\ntext := \"@bar\"\n-- @bar\n\nok := true\n");
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  let program = main.scopes.iter().find(|scope| scope.scope == SourceScope::Program).unwrap();
+  assert!(program.address_references.is_empty(), "expected no program address references, got {:?}", program.address_references);
+  let result = runtime.run_module(version);
+  assert!(result.is_ok(), "expected string/comment @bar not to execute interpreter, got {result:?}");
+}
+
 fn foo_scope(runtime: &mech_runtime::MechRuntime, version: mech_runtime::ModuleVersionId) -> SourceScope {
   let main = runtime.store().get_module_version(version).unwrap().unwrap();
   main.scopes.iter().find_map(|metadata| match &metadata.scope {
@@ -216,8 +320,8 @@ fn program_unknown_interpreter_address_returns_error() {
   let result = runtime.run_module(version);
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("UndefinedVariable"), "expected undefined variable error, got {error}");
-  assert!(error.contains("ok@missing"), "expected addressed symbol in error, got {error}");
+  assert!(error.contains("UnknownAddressTarget"), "expected unknown address target error, got {error}");
+  assert!(error.contains("missing"), "expected missing target in error, got {error}");
 }
 
 #[test]

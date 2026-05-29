@@ -13,6 +13,36 @@
 
 use super::*;
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum RuntimeAddressTarget {
+  Interpreter(SourceScope),
+  Context(SourceContextDeclaration),
+  Unknown,
+}
+
+fn resolve_runtime_address_target(
+  record: &ModuleVersionRecord,
+  target: &str,
+) -> RuntimeAddressTarget {
+  for metadata in &record.scopes {
+    if let SourceScope::Interpreter(interpreter) = &metadata.scope {
+      if interpreter.namespace_str == target {
+        return RuntimeAddressTarget::Interpreter(metadata.scope.clone());
+      }
+    }
+  }
+
+  if let Some(program_scope) = record.scopes.iter().find(|metadata| metadata.scope == SourceScope::Program) {
+    for context in &program_scope.contexts {
+      if context.name == target {
+        return RuntimeAddressTarget::Context(context.clone());
+      }
+    }
+  }
+
+  RuntimeAddressTarget::Unknown
+}
+
 impl MechRuntime {
 
   pub fn run_string(&mut self, source: &str) -> MResult<Value> {
@@ -338,21 +368,23 @@ impl MechRuntime {
       .map(|metadata| metadata.address_references.as_slice())
       .unwrap_or(&[]);
 
-    let mut bindings = HashMap::new();
-    for metadata in &record.scopes {
-      let SourceScope::Interpreter(interpreter) = &metadata.scope else {
-        continue;
-      };
-
-      let requested_refs = program_refs
-        .iter()
-        .filter(|reference| reference.target == interpreter.namespace_str)
-        .collect::<Vec<_>>();
-      if requested_refs.is_empty() {
-        continue;
+    let mut requested_by_scope: HashMap<SourceScope, Vec<SourceAddressReference>> = HashMap::new();
+    for reference in program_refs {
+      match resolve_runtime_address_target(record, &reference.target) {
+        RuntimeAddressTarget::Interpreter(scope) => {
+          requested_by_scope.entry(scope).or_default().push(reference.clone());
+        }
+        RuntimeAddressTarget::Context(_context) => {
+          return Err(MechError::new(ContextAddressReadUnsupported { target: reference.target.clone(), name: reference.name.clone() }, None));
+        }
+        RuntimeAddressTarget::Unknown => {
+          return Err(MechError::new(UnknownAddressTarget { target: reference.target.clone() }, None));
+        }
       }
+    }
 
-      let interpreter_scope = SourceScope::Interpreter(interpreter.clone());
+    let mut bindings = HashMap::new();
+    for (interpreter_scope, requested_refs) in requested_by_scope {
       let instance = self.execute_module_isolated_for_scope(
         context,
         version,
@@ -564,7 +596,7 @@ pub fn strip_module_declarations_for_execution(source: &str) -> String {
     .lines()
     .filter(|line| {
       let trimmed = line.trim_start();
-      !(trimmed.starts_with("+>") || trimmed.starts_with("<+"))
+      !(trimmed.starts_with("+>") || trimmed.starts_with("<+") || trimmed.starts_with("@"))
     })
     .collect::<Vec<_>>()
     .join("\n")
