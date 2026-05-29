@@ -1,5 +1,5 @@
-use mech_core::{hash_str, Ref, Value};
-use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, ModuleBuildOptions, RuntimeBuilder, SourceInterpreterId, SourceRequest, SourceResolver, SourceScope};
+use mech_core::{hash_str, MechSourceCode, Ref, Value};
+use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, ModuleScopeMetadata, ModuleBuildOptions, ResolvedSource, RuntimeBuilder, SourceContextBase, SourceContextDeclaration, SourceInterpreterId, SourceKind, SourceRequest, SourceResolver, SourceScope};
 
 fn setup_modules(main_source: &str) -> std::path::PathBuf {
   let root = std::env::temp_dir().join(format!("mech-runtime-module-smoke-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
@@ -53,6 +53,46 @@ fn duplicate_interpreter_address_target_fails_resolution() {
   let root = setup_modules("~~~mech:foo\n~~~\n\n~~~mech:foo\n~~~\n");
   let mut runtime = runtime_with_root(&root);
   let result = runtime.resolve_and_store_module_source("main.mec", module_options());
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("AddressTargetNameConflict"), "expected address target conflict, got {error}");
+  assert!(error.contains("foo"), "expected conflicting target in error, got {error}");
+}
+
+#[test]
+fn resolved_source_scope_address_target_conflict_fails_validation() {
+  let foo = SourceInterpreterId {
+    namespace: hash_str("foo"),
+    namespace_str: "foo".to_string(),
+  };
+  let resolved = ResolvedSource::new(
+    "main.mec",
+    "memory:main.mec",
+    MechSourceCode::String("ok := true\n".to_string()),
+  )
+  .with_kind(SourceKind::Mech)
+  .with_scopes(vec![
+    ModuleScopeMetadata {
+      scope: SourceScope::Interpreter(foo),
+      imports: Vec::new(),
+      exports: Vec::new(),
+      contexts: Vec::new(),
+      address_references: Vec::new(),
+    },
+    ModuleScopeMetadata {
+      scope: SourceScope::Program,
+      imports: Vec::new(),
+      exports: Vec::new(),
+      contexts: vec![SourceContextDeclaration {
+        name: "foo".to_string(),
+        base: SourceContextBase::ResourceUri("docs://foo".to_string()),
+        capabilities: Vec::new(),
+      }],
+      address_references: Vec::new(),
+    },
+  ]);
+
+  let result = resolved.validate();
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("AddressTargetNameConflict"), "expected address target conflict, got {error}");

@@ -326,6 +326,42 @@ impl ResolvedSource {
       dependency.validate()?;
     }
 
+    self.validate_address_targets()?;
+
+    Ok(())
+  }
+
+  fn validate_address_targets(&self) -> MResult<()> {
+    let mut targets: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+
+    for metadata in &self.scopes {
+      if let ModuleScopeMetadata { scope: SourceScope::Interpreter(interpreter), .. } = metadata {
+        if let Some(first_kind) = targets.insert(interpreter.namespace_str.clone(), "interpreter".to_string()) {
+          return Err(MechError::new(
+            AddressTargetNameConflict {
+              name: interpreter.namespace_str.clone(),
+              first_kind,
+              second_kind: "interpreter".to_string(),
+            },
+            None,
+          ));
+        }
+      }
+
+      for context in &metadata.contexts {
+        if let Some(first_kind) = targets.insert(context.name.clone(), "context".to_string()) {
+          return Err(MechError::new(
+            AddressTargetNameConflict {
+              name: context.name.clone(),
+              first_kind,
+              second_kind: "context".to_string(),
+            },
+            None,
+          ));
+        }
+      }
+    }
+
     Ok(())
   }
 
