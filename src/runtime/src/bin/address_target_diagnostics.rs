@@ -1,4 +1,4 @@
-use mech_runtime::{FileSourceResolver, ModuleBuildOptions, RuntimeBuilder};
+use mech_runtime::{FileSourceResolver, ModuleBuildOptions, RuntimeBuilder, SourceScope};
 
 fn write_case(root: &std::path::Path, name: &str, source: &str) -> std::path::PathBuf {
   let case_root = root.join(name);
@@ -36,6 +36,11 @@ fn run_case(root: &std::path::Path, name: &str, source: &str) {
         }
       }
       println!("run result: {:?}", runtime.run_module(version));
+      for scope_metadata in &record.scopes {
+        if matches!(scope_metadata.scope, SourceScope::Interpreter(_)) {
+          println!("run {:?} result: {:?}", scope_metadata.scope, runtime.run_module_scope(version, scope_metadata.scope.clone()));
+        }
+      }
     }
     Ok(None) => {
       println!("main module version: <none>");
@@ -74,6 +79,11 @@ fn main() {
     &root,
     "context target returns ContextAddressReadUnsupported",
     "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
+  );
+  run_case(
+    &root,
+    "interpreter-scoped context resolves only in interpreter scope",
+    "~~~mech:foo\n@manual := docs://manual{:read(intro/title)}\nresult := intro/title@manual\n~~~\n",
   );
   run_case(
     &root,

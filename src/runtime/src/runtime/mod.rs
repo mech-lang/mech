@@ -18,6 +18,7 @@
 
 mod actor;
 mod capability;
+mod context_registry;
 mod errors;
 mod execution;
 mod host;
@@ -28,6 +29,8 @@ mod schedule;
 mod service;
 mod task;
 mod transaction;
+
+pub use context_registry::*;
 
 use crate::runtime::errors::*;
 use crate::runtime::host::*;
@@ -75,7 +78,7 @@ use crate::id::{
 
 use crate::resolver::{
   InMemorySourceResolver, ResolvedSource, SourceRequest, SourceResolver,
-  SourceAddressReference, SourceContextDeclaration, SourceExportDeclaration, SourceImportKind, SourceScope, module_namespace_for_import,
+  SourceAddressReference, SourceExportDeclaration, SourceImportKind, SourceScope, module_namespace_for_import,
 };
 
 use crate::scheduler::{

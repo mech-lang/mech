@@ -16,12 +16,14 @@ use super::*;
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum RuntimeAddressTarget {
   Interpreter(SourceScope),
-  Context(SourceContextDeclaration),
+  Context(RuntimeContextBinding),
   Unknown,
 }
 
 fn resolve_runtime_address_target(
   record: &ModuleVersionRecord,
+  _scope: &SourceScope,
+  context_registry: &RuntimeContextRegistry,
   target: &str,
 ) -> RuntimeAddressTarget {
   for metadata in &record.scopes {
@@ -32,15 +34,30 @@ fn resolve_runtime_address_target(
     }
   }
 
-  if let Some(program_scope) = record.scopes.iter().find(|metadata| metadata.scope == SourceScope::Program) {
-    for context in &program_scope.contexts {
-      if context.name == target {
-        return RuntimeAddressTarget::Context(context.clone());
-      }
-    }
+  if let Some(binding) = context_registry.get(target) {
+    return RuntimeAddressTarget::Context(binding.clone());
   }
 
   RuntimeAddressTarget::Unknown
+}
+
+fn context_registry_for_scope(
+  record: &ModuleVersionRecord,
+  scope: &SourceScope,
+) -> MResult<RuntimeContextRegistry> {
+  let declarations = record
+    .scopes
+    .iter()
+    .find(|metadata| &metadata.scope == scope)
+    .map(|metadata| metadata.contexts.as_slice())
+    .unwrap_or(&[]);
+  RuntimeContextRegistry::from_declarations(scope.clone(), declarations)
+}
+
+fn runtime_context_base_label(base: &RuntimeContextBase) -> String {
+  match base {
+    RuntimeContextBase::ResourceUri(uri) => uri.clone(),
+  }
 }
 
 impl MechRuntime {
@@ -193,6 +210,8 @@ impl MechRuntime {
       return Err(MechError::new(RuntimeInvalidOperationError { operation: "run_module", reason: "module version has no source".to_string() }, None));
     };
 
+    let context_registry = context_registry_for_scope(&record, scope)?;
+
     for edge in &record.import_edges {
       if &edge.scope != scope {
         continue;
@@ -214,16 +233,16 @@ impl MechRuntime {
       module_instances,
     )?;
 
-    if matches!(scope, SourceScope::Program) {
-      let local_interpreter_environment = self.build_local_interpreter_address_environment(
-        context,
-        version,
-        &record,
-        seen,
-        module_instances,
-      )?;
-      import_environment.extend(local_interpreter_environment);
-    }
+    let address_environment = self.build_address_environment_for_scope(
+      context,
+      version,
+      &record,
+      scope,
+      &context_registry,
+      seen,
+      module_instances,
+    )?;
+    import_environment.extend(address_environment);
     let mut module_program = MechProgram::new(MechProgramConfig {
       name: self.config.name.clone(),
       environment: MechProgramEnvironment {
@@ -353,29 +372,41 @@ impl MechRuntime {
     result
   }
 
-  fn build_local_interpreter_address_environment(
+  fn build_address_environment_for_scope(
     &mut self,
     context: &mut RuntimeContext,
     version: ModuleVersionId,
     record: &ModuleVersionRecord,
+    scope: &SourceScope,
+    context_registry: &RuntimeContextRegistry,
     seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
     module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
   ) -> MResult<HashMap<String, mech_core::ValRef>> {
-    let program_refs = record
+    let scoped_refs = record
       .scopes
       .iter()
-      .find(|metadata| metadata.scope == SourceScope::Program)
+      .find(|metadata| &metadata.scope == scope)
       .map(|metadata| metadata.address_references.as_slice())
       .unwrap_or(&[]);
 
     let mut requested_by_scope: HashMap<SourceScope, Vec<SourceAddressReference>> = HashMap::new();
-    for reference in program_refs {
-      match resolve_runtime_address_target(record, &reference.target) {
-        RuntimeAddressTarget::Interpreter(scope) => {
-          requested_by_scope.entry(scope).or_default().push(reference.clone());
+    for reference in scoped_refs {
+      match resolve_runtime_address_target(record, scope, context_registry, &reference.target) {
+        RuntimeAddressTarget::Interpreter(interpreter_scope) => {
+          if !matches!(scope, SourceScope::Program) {
+            return Err(MechError::new(UnknownAddressTarget { target: reference.target.clone() }, None));
+          }
+          requested_by_scope.entry(interpreter_scope).or_default().push(reference.clone());
         }
-        RuntimeAddressTarget::Context(_context) => {
-          return Err(MechError::new(ContextAddressReadUnsupported { target: reference.target.clone(), name: reference.name.clone() }, None));
+        RuntimeAddressTarget::Context(binding) => {
+          return Err(MechError::new(
+            ContextAddressReadUnsupported {
+              target: reference.target.clone(),
+              name: reference.name.clone(),
+              base: runtime_context_base_label(&binding.base),
+            },
+            None,
+          ));
         }
         RuntimeAddressTarget::Unknown => {
           return Err(MechError::new(UnknownAddressTarget { target: reference.target.clone() }, None));
