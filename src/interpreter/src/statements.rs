@@ -87,7 +87,14 @@ pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MRes
 pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   let mut source = expression(&op_assgn.expression, env, p)?;
   let slc = &op_assgn.target;
-  let id = slc.name.hash();
+  let name = match &slc.context {
+    Some(context) => format!("{}@{}", slc.name.to_string(), context.to_string()),
+    None => slc.name.to_string(),
+  };
+  let id = match &slc.context {
+    Some(_) => hash_str(&name),
+    None => slc.name.hash(),
+  };
   let sink = { 
     let mut state_brrw = p.state.borrow_mut();
     match state_brrw.get_mutable_symbol(id) {
@@ -99,7 +106,7 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
             Some("(!)> Mutable variables are defined with the `~` operator. *e.g.*: {{~x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens())),
           false => return Err(MechError::new(
-            UndefinedVariableError { id, name: slc.name.to_string() },
+            UndefinedVariableError { id, name: name.clone() },
             Some("(!)> Variables are defined with the `:=` operator. *e.g.*: {{x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens())),
         }
@@ -150,7 +157,14 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
 pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   let mut source = expression(&var_assgn.expression, env, p)?;
   let slc = &var_assgn.target;
-  let id = slc.name.hash();
+  let name = match &slc.context {
+    Some(context) => format!("{}@{}", slc.name.to_string(), context.to_string()),
+    None => slc.name.to_string(),
+  };
+  let id = match &slc.context {
+    Some(_) => hash_str(&name),
+    None => slc.name.hash(),
+  };
   let sink = {
     let symbols = p.symbols();
     let symbols_brrw = symbols.borrow();
@@ -159,7 +173,7 @@ pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p:
       None => {
         if !symbols_brrw.contains(id) {
           return Err(MechError::new(
-            UndefinedVariableError { id, name: slc.name.to_string() },
+            UndefinedVariableError { id, name: name.clone() },
             Some("(!)> Variables are defined with the `:=` operator. *e.g.*: {{x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens()));
         } else { 

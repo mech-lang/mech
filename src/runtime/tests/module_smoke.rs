@@ -126,6 +126,63 @@ fn missing_interpreter_scope_returns_error() {
   assert!(result.is_err());
 }
 
+
+#[test]
+fn program_reads_interpreter_export_by_address() {
+  let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\nresult := ok@foo\n");
+
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+  match result {
+    Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected bool result from addressed interpreter export, got {:?}", other),
+  }
+}
+
+#[test]
+fn program_reads_interpreter_export_by_address_with_interpreter_import() {
+  let root = setup_modules("~~~mech:foo\n+> ./math.mec\nok := math/tau > 6.0\n<+ ok\n~~~\n\nresult := ok@foo\n");
+
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+  match result {
+    Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected bool result from addressed interpreter export with import, got {:?}", other),
+  }
+}
+
+#[test]
+fn program_cannot_read_non_exported_interpreter_symbol_by_address() {
+  let root = setup_modules("~~~mech:foo\nhidden := true\n~~~\n\nresult := hidden@foo\n");
+
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("UndefinedVariable"), "expected undefined variable error, got {error}");
+  assert!(error.contains("hidden@foo"), "expected addressed symbol in error, got {error}");
+}
+
+#[test]
+fn program_unknown_interpreter_address_returns_error() {
+  let root = setup_modules("result := ok@missing\n");
+
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("UndefinedVariable"), "expected undefined variable error, got {error}");
+  assert!(error.contains("ok@missing"), "expected addressed symbol in error, got {error}");
+}
+
 #[test]
 fn resolver_metadata() {
   let root = setup_modules("+> ./math.mec\nok := math/tau > 6.0\n");
