@@ -14,7 +14,7 @@
 use super::*;
 
 impl MechRuntime {
-	
+
   pub fn run_string(&mut self, source: &str) -> MResult<Value> {
     let mut context = self.runtime_context()?;
     self.run_string_with_context(&mut context, source)
@@ -189,7 +189,6 @@ impl MechRuntime {
         context,
         version,
         &record,
-        &source,
         seen,
         module_instances,
       )?;
@@ -329,13 +328,15 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     version: ModuleVersionId,
     record: &ModuleVersionRecord,
-    source: &MechSourceCode,
     seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
     module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
   ) -> MResult<HashMap<String, mech_core::ValRef>> {
-    let MechSourceCode::String(source_text) = source else {
-      return Ok(HashMap::new());
-    };
+    let program_refs = record
+      .scopes
+      .iter()
+      .find(|metadata| metadata.scope == SourceScope::Program)
+      .map(|metadata| metadata.address_references.as_slice())
+      .unwrap_or(&[]);
 
     let mut bindings = HashMap::new();
     for metadata in &record.scopes {
@@ -343,7 +344,11 @@ impl MechRuntime {
         continue;
       };
 
-      if !program_source_references_interpreter(source_text, &interpreter.namespace_str) {
+      let requested_refs = program_refs
+        .iter()
+        .filter(|reference| reference.target == interpreter.namespace_str)
+        .collect::<Vec<_>>();
+      if requested_refs.is_empty() {
         continue;
       }
 
@@ -356,11 +361,11 @@ impl MechRuntime {
         module_instances,
       )?;
 
-      for export in &metadata.exports {
-        let Some(export_value) = instance.exports.get(&export.name) else {
-          return Err(MechError::new(RuntimeModuleExportNotFound { dependency: record.id.to_string(), export: export.name.clone() }, None));
+      for reference in requested_refs {
+        let Some(export_value) = instance.exports.get(&reference.name) else {
+          return Err(MechError::new(RuntimeModuleExportNotFound { dependency: record.id.to_string(), export: reference.name.clone() }, None));
         };
-        bindings.insert(format!("{}@{}", export.name, interpreter.namespace_str), export_value.clone());
+        bindings.insert(format!("{}@{}", reference.name, reference.target), export_value.clone());
       }
     }
 
@@ -563,26 +568,4 @@ pub fn strip_module_declarations_for_execution(source: &str) -> String {
     })
     .collect::<Vec<_>>()
     .join("\n")
-}
-
-fn program_source_references_interpreter(source: &str, interpreter: &str) -> bool {
-  let needle = format!("@{}", interpreter);
-  let mut in_fenced_block = false;
-
-  for line in source.lines() {
-    let trimmed = line.trim_start();
-    if !in_fenced_block && (trimmed.starts_with("~~~mech") || trimmed.starts_with("```mech")) {
-      in_fenced_block = true;
-      continue;
-    }
-    if in_fenced_block && (trimmed.starts_with("~~~") || trimmed.starts_with("```")) {
-      in_fenced_block = false;
-      continue;
-    }
-    if !in_fenced_block && line.contains(&needle) {
-      return true;
-    }
-  }
-
-  false
 }

@@ -29,7 +29,7 @@ use crate::id::{
   ObjectId, TaskId, TransactionId,
 };
 use crate::resolver::{
-  ModuleScopeMetadata, SourceContextDeclaration, SourceExportDeclaration,
+  ModuleScopeMetadata, SourceAddressReference, SourceContextDeclaration, SourceExportDeclaration,
   SourceImportDeclaration, SourceScope,
 };
 
@@ -200,6 +200,7 @@ pub struct ModuleVersionRecord {
   pub exports: Vec<SourceExportDeclaration>,
   pub imports: Vec<SourceImportDeclaration>,
   pub contexts: Vec<SourceContextDeclaration>,
+  pub address_references: Vec<SourceAddressReference>,
   pub scopes: Vec<ModuleScopeMetadata>,
   pub dependencies: Vec<ModuleVersionId>,
   pub import_edges: Vec<ModuleImportEdge>,
@@ -217,6 +218,7 @@ impl ModuleVersionRecord {
       exports: Vec::new(),
       imports: Vec::new(),
       contexts: Vec::new(),
+      address_references: Vec::new(),
       scopes: Vec::new(),
       dependencies: Vec::new(),
       import_edges: Vec::new(),
@@ -251,6 +253,11 @@ impl ModuleVersionRecord {
 
   pub fn with_contexts(mut self, contexts: Vec<SourceContextDeclaration>) -> Self {
     self.contexts = contexts;
+    self
+  }
+
+  pub fn with_address_references(mut self, address_references: Vec<SourceAddressReference>) -> Self {
+    self.address_references = address_references;
     self
   }
 

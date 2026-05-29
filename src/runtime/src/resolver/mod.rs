@@ -178,6 +178,13 @@ pub struct SourceExportDeclaration {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SourceAddressReference {
+  pub name: String,
+  pub target: String,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SourceContextDeclaration {
   pub name: String,
   pub base: SourceContextBase,
@@ -215,6 +222,7 @@ pub struct ResolvedSource {
   pub imports: Vec<SourceImportDeclaration>,
   pub exports: Vec<SourceExportDeclaration>,
   pub contexts: Vec<SourceContextDeclaration>,
+  pub address_references: Vec<SourceAddressReference>,
   pub scopes: Vec<ModuleScopeMetadata>,
   pub dependencies: Vec<SourceRequest>,
   pub capability_requirements: Vec<CapabilityRequest>,
@@ -234,6 +242,7 @@ impl ResolvedSource {
       imports: Vec::new(),
       exports: Vec::new(),
       contexts: Vec::new(),
+      address_references: Vec::new(),
       scopes: Vec::new(),
       dependencies: Vec::new(),
       capability_requirements: Vec::new(),
@@ -262,6 +271,11 @@ impl ResolvedSource {
 
   pub fn with_contexts(mut self, contexts: Vec<SourceContextDeclaration>) -> Self {
     self.contexts = contexts;
+    self
+  }
+
+  pub fn with_address_references(mut self, address_references: Vec<SourceAddressReference>) -> Self {
+    self.address_references = address_references;
     self
   }
 
@@ -296,6 +310,15 @@ impl ResolvedSource {
     for export in &self.exports {
       if export.name.trim().is_empty() {
         return invalid_resolved_source("exports.name", "must not be empty");
+      }
+    }
+
+    for reference in &self.address_references {
+      if reference.name.trim().is_empty() {
+        return invalid_resolved_source("address_references.name", "must not be empty");
+      }
+      if reference.target.trim().is_empty() {
+        return invalid_resolved_source("address_references.target", "must not be empty");
       }
     }
 

@@ -87,14 +87,12 @@ pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MRes
 pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   let mut source = expression(&op_assgn.expression, env, p)?;
   let slc = &op_assgn.target;
-  let name = match &slc.context {
-    Some(context) => format!("{}@{}", slc.name.to_string(), context.to_string()),
-    None => slc.name.to_string(),
-  };
-  let id = match &slc.context {
-    Some(_) => hash_str(&name),
-    None => slc.name.hash(),
-  };
+  if slc.context.is_some() {
+    return Err(MechError::new(AddressedAssignmentUnsupported, None)
+      .with_compiler_loc()
+      .with_tokens(slc.tokens()));
+  }
+  let id = slc.name.hash();
   let sink = { 
     let mut state_brrw = p.state.borrow_mut();
     match state_brrw.get_mutable_symbol(id) {
@@ -106,7 +104,7 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
             Some("(!)> Mutable variables are defined with the `~` operator. *e.g.*: {{~x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens())),
           false => return Err(MechError::new(
-            UndefinedVariableError { id, name: name.clone() },
+            UndefinedVariableError { id, name: slc.name.to_string() },
             Some("(!)> Variables are defined with the `:=` operator. *e.g.*: {{x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens())),
         }
@@ -157,14 +155,12 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
 pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   let mut source = expression(&var_assgn.expression, env, p)?;
   let slc = &var_assgn.target;
-  let name = match &slc.context {
-    Some(context) => format!("{}@{}", slc.name.to_string(), context.to_string()),
-    None => slc.name.to_string(),
-  };
-  let id = match &slc.context {
-    Some(_) => hash_str(&name),
-    None => slc.name.hash(),
-  };
+  if slc.context.is_some() {
+    return Err(MechError::new(AddressedAssignmentUnsupported, None)
+      .with_compiler_loc()
+      .with_tokens(slc.tokens()));
+  }
+  let id = slc.name.hash();
   let sink = {
     let symbols = p.symbols();
     let symbols_brrw = symbols.borrow();
@@ -173,7 +169,7 @@ pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p:
       None => {
         if !symbols_brrw.contains(id) {
           return Err(MechError::new(
-            UndefinedVariableError { id, name: name.clone() },
+            UndefinedVariableError { id, name: slc.name.to_string() },
             Some("(!)> Variables are defined with the `:=` operator. *e.g.*: {{x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens()));
         } else { 
@@ -456,6 +452,11 @@ fn value_matches_enum_variant(value: &Value, enum_id: u64, state: &ProgramState)
 
 #[cfg(feature = "variable_define")]
 pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Value> {
+  if var_def.var.context.is_some() {
+    return Err(MechError::new(AddressedAssignmentUnsupported, None)
+      .with_compiler_loc()
+      .with_tokens(var_def.var.tokens()));
+  }
   let var_id = var_def.var.name.hash();
   let var_name = var_def.var.name.to_string();
   {
@@ -924,6 +925,16 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
       return Ok(res);      
     }
     _ => unreachable!(),
+  }
+}
+
+
+#[derive(Debug, Clone)]
+pub struct AddressedAssignmentUnsupported;
+impl MechErrorKind for AddressedAssignmentUnsupported {
+  fn name(&self) -> &str { "AddressedAssignmentUnsupported" }
+  fn message(&self) -> String {
+    "addressed assignment is not supported yet".to_string()
   }
 }
 
