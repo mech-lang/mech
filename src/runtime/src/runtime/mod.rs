@@ -54,7 +54,8 @@ use crate::capability::{
 use crate::config::RuntimeConfig;
 
 use crate::context::{
-  ResourceBudget, RuntimeContext, RuntimeContextBuilder, RuntimeTurnOutcome,
+  ResourceBudget, RuntimeContext, RuntimeContextBuilder, RuntimeTurnOutcome, RuntimeContextRegistry,
+  RuntimeContextBase, RuntimeContextBinding
 };
 
 use crate::event::{
@@ -75,7 +76,7 @@ use crate::id::{
 
 use crate::resolver::{
   InMemorySourceResolver, ResolvedSource, SourceRequest, SourceResolver,
-  SourceAddressReference, SourceContextDeclaration, SourceExportDeclaration, SourceImportKind, SourceScope, module_namespace_for_import,
+  SourceAddressReference, SourceExportDeclaration, SourceImportKind, SourceScope, module_namespace_for_import,
 };
 
 use crate::scheduler::{

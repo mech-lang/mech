@@ -115,6 +115,7 @@ impl MechErrorKind for UnknownAddressTarget {
 pub struct ContextAddressReadUnsupported {
   pub target: String,
   pub name: String,
+  pub base: String,
 }
 
 impl MechErrorKind for ContextAddressReadUnsupported {
@@ -124,9 +125,10 @@ impl MechErrorKind for ContextAddressReadUnsupported {
 
   fn message(&self) -> String {
     format!(
-      "context-addressed read `{}@{}` is not supported yet",
+      "context-addressed read `{}@{}` resolved to `{}`, but context reads are not supported yet",
       self.name,
       self.target,
+      self.base,
     )
   }
 }

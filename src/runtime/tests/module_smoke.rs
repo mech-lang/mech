@@ -1,5 +1,5 @@
 use mech_core::{hash_str, MechSourceCode, Ref, Value};
-use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, ModuleScopeMetadata, ModuleBuildOptions, ResolvedSource, RuntimeBuilder, SourceContextBase, SourceContextDeclaration, SourceInterpreterId, SourceKind, SourceRequest, SourceResolver, SourceScope};
+use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, ModuleScopeMetadata, ModuleBuildOptions, ResolvedSource, RuntimeBuilder, RuntimeContextRegistry, SourceContextBase, SourceContextCapability, SourceContextCapabilityScope, SourceContextDeclaration, SourceInterpreterId, SourceKind, SourceRequest, SourceResolver, SourceScope};
 
 fn setup_modules(main_source: &str) -> std::path::PathBuf {
   let root = std::env::temp_dir().join(format!("mech-runtime-module-smoke-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
@@ -119,6 +119,7 @@ fn context_address_read_is_explicitly_unsupported() {
   assert!(error.contains("ContextAddressReadUnsupported"), "expected context address error, got {error}");
   assert!(error.contains("manual"), "expected context target in error, got {error}");
   assert!(error.contains("intro/title"), "expected addressed name in error, got {error}");
+  assert!(error.contains("docs://manual"), "expected resolved context base in error, got {error}");
 }
 
 #[test]
@@ -160,6 +161,123 @@ fn foo_scope(runtime: &mech_runtime::MechRuntime, version: mech_runtime::ModuleV
     SourceScope::Interpreter(interpreter) if interpreter.namespace_str == "foo" => Some(metadata.scope.clone()),
     SourceScope::Interpreter(_) | SourceScope::Program => None,
   }).unwrap()
+}
+
+fn interpreter_scope_named(runtime: &mech_runtime::MechRuntime, version: mech_runtime::ModuleVersionId, name: &str) -> SourceScope {
+  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  main.scopes.iter().find_map(|metadata| match &metadata.scope {
+    SourceScope::Interpreter(interpreter) if interpreter.namespace_str == name => Some(metadata.scope.clone()),
+    SourceScope::Interpreter(_) | SourceScope::Program => None,
+  }).unwrap()
+}
+
+
+#[test]
+fn context_address_read_error_includes_resolved_base() {
+  let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("ContextAddressReadUnsupported"), "expected context address error, got {error}");
+  assert!(error.contains("manual"), "expected context target in error, got {error}");
+  assert!(error.contains("intro/title"), "expected addressed name in error, got {error}");
+  assert!(error.contains("docs://manual"), "expected resolved context base in error, got {error}");
+}
+
+#[test]
+fn program_scope_does_not_see_interpreter_context() {
+  let root = setup_modules("~~~mech:foo\n@manual := docs://manual{:read(intro/title)}\nunused := true\n~~~\n\nresult := intro/title@manual\n");
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("UnknownAddressTarget"), "expected unknown address target, got {error}");
+  assert!(error.contains("manual"), "expected target in error, got {error}");
+  assert!(!error.contains("ContextAddressReadUnsupported"), "program scope should not resolve interpreter context, got {error}");
+}
+
+#[test]
+fn interpreter_scope_context_registry_resolves_context() {
+  let root = setup_modules("~~~mech:foo\n@manual := docs://manual{:read(intro/title)}\nresult := intro/title@manual\n~~~\n");
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let foo = foo_scope(&runtime, version);
+  let result = runtime.run_module_scope(version, foo);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("ContextAddressReadUnsupported"), "expected context address error, got {error}");
+  assert!(error.contains("manual"), "expected context target in error, got {error}");
+  assert!(error.contains("intro/title"), "expected addressed name in error, got {error}");
+  assert!(error.contains("docs://manual"), "expected resolved context base in error, got {error}");
+}
+
+#[test]
+fn interpreter_scope_does_not_resolve_interpreter_target() {
+  let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\n~~~mech:bar\nresult := ok@foo\n~~~\n");
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let bar = interpreter_scope_named(&runtime, version, "bar");
+  let result = runtime.run_module_scope(version, bar);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("UnknownAddressTarget"), "expected unknown address target, got {error}");
+  assert!(error.contains("foo"), "expected interpreter target in error, got {error}");
+}
+
+#[test]
+fn interpreter_address_still_works_from_program() {
+  let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\nresult := ok@foo\n");
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+  assert_bool_true(result, "interpreter address from program");
+}
+
+#[test]
+fn duplicate_context_registry_binding_rejected() {
+  let first = SourceContextDeclaration {
+    name: "manual".to_string(),
+    base: SourceContextBase::ResourceUri("docs://manual".to_string()),
+    capabilities: vec![SourceContextCapability {
+      operation: "read".to_string(),
+      scope: SourceContextCapabilityScope::Path("intro/title".to_string()),
+    }],
+  };
+  let second = SourceContextDeclaration {
+    name: "manual".to_string(),
+    base: SourceContextBase::ResourceUri("docs://other".to_string()),
+    capabilities: vec![SourceContextCapability {
+      operation: "read".to_string(),
+      scope: SourceContextCapabilityScope::Wildcard,
+    }],
+  };
+
+  let result = RuntimeContextRegistry::from_declarations(SourceScope::Program, &[first, second]);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeContextDuplicateBinding"), "expected duplicate binding error, got {error}");
+  assert!(error.contains("manual"), "expected duplicate context name in error, got {error}");
+}
+
+#[test]
+fn derived_context_base_is_unsupported() {
+  let declaration = SourceContextDeclaration {
+    name: "manual".to_string(),
+    base: SourceContextBase::Context("base".to_string()),
+    capabilities: vec![SourceContextCapability {
+      operation: "read".to_string(),
+      scope: SourceContextCapabilityScope::Wildcard,
+    }],
+  };
+
+  let result = RuntimeContextRegistry::from_declarations(SourceScope::Program, &[declaration]);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeContextDerivedBaseUnsupported"), "expected derived base error, got {error}");
+  assert!(error.contains("base"), "expected base context name in error, got {error}");
 }
 
 #[test]

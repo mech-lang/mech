@@ -24,14 +24,12 @@ use crate::*;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::HashSet;
 use std::sync::Arc;
 
-use mech_core::{MResult, MechError, MechErrorKind};
+use mech_core::{MResult, MechError};
 
-use crate::id::{
-  ActorId, CapabilityId, ModuleId, NodeId, ObjectId, RuntimeId, TaskId,
-};
+use crate::id::CapabilityId;
 
 // -----------------------------------------------------------------------------
 // Key Traits
