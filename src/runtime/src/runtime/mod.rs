@@ -18,7 +18,6 @@
 
 mod actor;
 mod capability;
-mod context_registry;
 mod errors;
 mod execution;
 mod host;
@@ -29,8 +28,6 @@ mod schedule;
 mod service;
 mod task;
 mod transaction;
-
-pub use context_registry::*;
 
 use crate::runtime::errors::*;
 use crate::runtime::host::*;
@@ -57,7 +54,8 @@ use crate::capability::{
 use crate::config::RuntimeConfig;
 
 use crate::context::{
-  ResourceBudget, RuntimeContext, RuntimeContextBuilder, RuntimeTurnOutcome,
+  ResourceBudget, RuntimeContext, RuntimeContextBuilder, RuntimeTurnOutcome, RuntimeContextRegistry,
+  RuntimeContextBase, RuntimeContextBinding
 };
 
 use crate::event::{
