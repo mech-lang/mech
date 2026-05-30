@@ -113,16 +113,16 @@ impl MechErrorKind for RuntimeCapabilityGrantInvalid {
 }
 
 #[derive(Debug, Clone)]
-pub struct RuntimeResourceGrantDenied {
+pub struct RuntimeCapabilityGrantDenied {
     pub subject: String,
     pub resource: String,
     pub operation: String,
     pub path: String,
 }
 
-impl MechErrorKind for RuntimeResourceGrantDenied {
+impl MechErrorKind for RuntimeCapabilityGrantDenied {
     fn name(&self) -> &str {
-        "RuntimeResourceGrantDenied"
+        "RuntimeCapabilityGrantDenied"
     }
 
     fn message(&self) -> String {

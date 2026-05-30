@@ -115,7 +115,7 @@ fn main() {
   );
   run_case(
     &root,
-    "docs read without host grant fails RuntimeResourceGrantDenied",
+    "docs read without host grant fails RuntimeCapabilityGrantDenied",
     "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
     Some(docs_provider_with("intro/title", Value::Bool(Ref::new(true)))),
     None,

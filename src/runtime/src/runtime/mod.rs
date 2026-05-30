@@ -103,7 +103,7 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
-use crate::{register_config_spec_grants, register_config_spec_resources, InMemoryDocsProvider, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeConfigSpec, RuntimeResourceCapabilityDenied, RuntimeResourceGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest};
+use crate::{register_config_spec_grants, register_config_spec_resources, InMemoryDocsProvider, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeConfigSpec, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest};
 
 thread_local! {
   static ACTIVE_RUNTIME_PROGRAM_HOST: RefCell<Option<RuntimeProgramHostTarget>> =

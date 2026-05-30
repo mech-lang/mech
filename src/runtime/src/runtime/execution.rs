@@ -471,7 +471,7 @@ impl MechRuntime {
             &reference.name,
           ) {
             return Err(MechError::new(
-              RuntimeResourceGrantDenied {
+              RuntimeCapabilityGrantDenied {
                 subject: DEFAULT_RESOURCE_SUBJECT.to_string(),
                 resource: base_uri,
                 operation: "read".to_string(),

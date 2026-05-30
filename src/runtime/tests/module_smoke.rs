@@ -1415,18 +1415,160 @@ fn missing_dependency_fails_module_build() {
 }
 
 
-fn docs_config(path: &str, value: Value) -> RuntimeConfigSpec { RuntimeConfigSpec::new().with_resource(RuntimeResourceConfigSpec::InMemoryDocs(RuntimeInMemoryDocsResourceSpec::new("docs://manual").with_entry(path, value))) }
-fn run_docs_config_read(spec: RuntimeConfigSpec) -> Result<Value, mech_core::MechError> { let root=setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n"); let mut runtime=RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).config_spec(spec).build().unwrap(); let version=runtime.resolve_and_store_module_source("main.mec",module_options()).unwrap().unwrap(); runtime.run_module(version) }
-#[test] fn config_spec_docs_read_requires_host_grant() { let error=format!("{:?}",run_docs_config_read(docs_config("intro/title",bool_value(true))).err().unwrap()); assert!(error.contains("RuntimeResourceGrantDenied")); assert!(error.contains("task://main")); assert!(error.contains("docs://manual")); assert!(error.contains("intro/title")); }
-#[test] fn config_spec_docs_read_with_matching_grant_returns_value() { assert_bool_true(run_docs_config_read(docs_config("intro/title",bool_value(true)).with_capability_grant(read_grant("docs://manual","intro/title"))).unwrap(),"matching grant"); }
-#[test] fn host_grant_path_prefix_allows_nested_read() { assert_bool_true(run_docs_config_read(docs_config("intro/title",bool_value(true)).with_capability_grant(read_grant("docs://manual","intro/*"))).unwrap(),"prefix grant"); }
-#[test] fn host_grant_path_prefix_does_not_match_sibling() { assert!(format!("{:?}",run_docs_config_read(docs_config("intro/title",bool_value(true)).with_capability_grant(read_grant("docs://manual","introduction/*"))).err().unwrap()).contains("RuntimeResourceGrantDenied")); }
-#[test] fn host_grant_wrong_operation_denies_read() { let g=RuntimeCapabilityGrantSpec::new("task://main","docs://manual").with_operation("write").with_path("intro/title"); assert!(format!("{:?}",run_docs_config_read(docs_config("intro/title",bool_value(true)).with_capability_grant(g)).err().unwrap()).contains("RuntimeResourceGrantDenied")); }
-#[test] fn host_grant_wrong_resource_denies_read() { assert!(format!("{:?}",run_docs_config_read(docs_config("intro/title",bool_value(true)).with_capability_grant(read_grant("docs://other","intro/title"))).err().unwrap()).contains("RuntimeResourceGrantDenied")); }
-#[test] fn context_denial_still_uses_context_capability_error() { let root=setup_modules("@manual := docs://manual{:read(other/path)}\n\nresult := intro/title@manual\n"); let mut runtime=RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).config_spec(docs_config("intro/title",bool_value(true)).with_capability_grant(read_grant("docs://manual","intro/title"))).build().unwrap(); let v=runtime.resolve_and_store_module_source("main.mec",module_options()).unwrap().unwrap(); let e=format!("{:?}",runtime.run_module(v).err().unwrap()); assert!(e.contains("RuntimeResourceCapabilityDenied")); assert!(!e.contains("RuntimeResourceGrantDenied")); }
-#[test] fn host_grant_wildcard_path_allows_read() { assert_bool_true(run_docs_config_read(docs_config("intro/title",bool_value(true)).with_capability_grant(read_grant("docs://manual","*"))).unwrap(),"wildcard grant"); }
-#[test] fn direct_provider_read_with_runtime_grant_still_works() { let root=setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n"); let mut runtime=RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).in_memory_docs(docs_provider_with("docs://manual","intro/title",bool_value(true))).build().unwrap(); runtime.grant_capability(runtime_read_grant("docs://manual","intro/title")).unwrap(); assert!(runtime.has_capability_grant("task://main","docs://manual","read","intro/title")); let v=runtime.resolve_and_store_module_source("main.mec",module_options()).unwrap().unwrap(); assert_bool_true(runtime.run_module(v).unwrap(),"runtime grant"); }
-#[test] fn apply_config_spec_after_build_registers_resources_and_grants() { let root=setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n"); let mut runtime=RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap(); runtime.apply_config_spec(docs_config("intro/title",bool_value(true)).with_capability_grant(read_grant("docs://manual","intro/title"))).unwrap(); let v=runtime.resolve_and_store_module_source("main.mec",module_options()).unwrap().unwrap(); assert_bool_true(runtime.run_module(v).unwrap(),"apply spec"); }
-#[test] fn invalid_grant_empty_subject_fails_build() { let s=RuntimeConfigSpec::new().with_capability_grant(RuntimeCapabilityGrantSpec::new("","docs://manual").with_operation("read").with_path("intro/title")); let e=format!("{:?}",RuntimeBuilder::new().config_spec(s).build().err().unwrap()); assert!(e.contains("RuntimeCapabilityGrantInvalid")); assert!(e.contains("subject")); }
-#[test] fn invalid_grant_empty_operation_fails_build() { let s=RuntimeConfigSpec::new().with_capability_grant(RuntimeCapabilityGrantSpec::new("task://main","docs://manual").with_operation("").with_path("intro/title")); let e=format!("{:?}",RuntimeBuilder::new().config_spec(s).build().err().unwrap()); assert!(e.contains("RuntimeCapabilityGrantInvalid")); assert!(e.contains("operation")); }
-#[test] fn invalid_grant_empty_path_fails_build() { let s=RuntimeConfigSpec::new().with_capability_grant(RuntimeCapabilityGrantSpec::new("task://main","docs://manual").with_operation("read").with_path("")); let e=format!("{:?}",RuntimeBuilder::new().config_spec(s).build().err().unwrap()); assert!(e.contains("RuntimeCapabilityGrantInvalid")); assert!(e.contains("path")); }
+fn docs_config(path: &str, value: Value) -> RuntimeConfigSpec {
+  RuntimeConfigSpec::new().with_resource(RuntimeResourceConfigSpec::InMemoryDocs(
+    RuntimeInMemoryDocsResourceSpec::new("docs://manual")
+      .with_entry(path, value),
+  ))
+}
+
+fn run_docs_config_read(spec: RuntimeConfigSpec) -> Result<Value, mech_core::MechError> {
+  let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .config_spec(spec)
+    .build()
+    .unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  runtime.run_module(version)
+}
+
+#[test]
+fn config_spec_docs_read_requires_host_grant() {
+  let result = run_docs_config_read(docs_config("intro/title", bool_value(true)));
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeCapabilityGrantDenied"));
+  assert!(error.contains("task://main"));
+  assert!(error.contains("docs://manual"));
+  assert!(error.contains("intro/title"));
+}
+
+#[test]
+fn config_spec_docs_read_with_matching_grant_returns_value() {
+  let spec = docs_config("intro/title", bool_value(true))
+    .with_capability_grant(read_grant("docs://manual", "intro/title"));
+  assert_bool_true(run_docs_config_read(spec).unwrap(), "matching grant");
+}
+
+#[test]
+fn host_grant_path_prefix_allows_nested_read() {
+  let spec = docs_config("intro/title", bool_value(true))
+    .with_capability_grant(read_grant("docs://manual", "intro/*"));
+  assert_bool_true(run_docs_config_read(spec).unwrap(), "prefix grant");
+}
+
+#[test]
+fn host_grant_path_prefix_does_not_match_sibling() {
+  let spec = docs_config("intro/title", bool_value(true))
+    .with_capability_grant(read_grant("docs://manual", "introduction/*"));
+  let error = format!("{:?}", run_docs_config_read(spec).err().unwrap());
+  assert!(error.contains("RuntimeCapabilityGrantDenied"));
+}
+
+#[test]
+fn host_grant_wrong_operation_denies_read() {
+  let grant = RuntimeCapabilityGrantSpec::new("task://main", "docs://manual")
+    .with_operation("write")
+    .with_path("intro/title");
+  let spec = docs_config("intro/title", bool_value(true))
+    .with_capability_grant(grant);
+  let error = format!("{:?}", run_docs_config_read(spec).err().unwrap());
+  assert!(error.contains("RuntimeCapabilityGrantDenied"));
+}
+
+#[test]
+fn host_grant_wrong_resource_denies_read() {
+  let spec = docs_config("intro/title", bool_value(true))
+    .with_capability_grant(read_grant("docs://other", "intro/title"));
+  let error = format!("{:?}", run_docs_config_read(spec).err().unwrap());
+  assert!(error.contains("RuntimeCapabilityGrantDenied"));
+}
+
+#[test]
+fn context_denial_still_uses_context_capability_error() {
+  let root = setup_modules("@manual := docs://manual{:read(other/path)}\n\nresult := intro/title@manual\n");
+  let spec = docs_config("intro/title", bool_value(true))
+    .with_capability_grant(read_grant("docs://manual", "intro/title"));
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .config_spec(spec)
+    .build()
+    .unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let error = format!("{:?}", runtime.run_module(version).err().unwrap());
+  assert!(error.contains("RuntimeResourceCapabilityDenied"));
+  assert!(!error.contains("RuntimeCapabilityGrantDenied"));
+}
+
+#[test]
+fn host_grant_wildcard_path_allows_read() {
+  let spec = docs_config("intro/title", bool_value(true))
+    .with_capability_grant(read_grant("docs://manual", "*"));
+  assert_bool_true(run_docs_config_read(spec).unwrap(), "wildcard grant");
+}
+
+#[test]
+fn direct_provider_read_with_runtime_grant_still_works() {
+  let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
+  let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .in_memory_docs(provider)
+    .build()
+    .unwrap();
+  runtime.grant_capability(runtime_read_grant("docs://manual", "intro/title")).unwrap();
+  assert!(runtime.has_capability_grant("task://main", "docs://manual", "read", "intro/title"));
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  assert_bool_true(runtime.run_module(version).unwrap(), "runtime grant");
+}
+
+#[test]
+fn apply_config_spec_after_build_registers_resources_and_grants() {
+  let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
+  let spec = docs_config("intro/title", bool_value(true))
+    .with_capability_grant(read_grant("docs://manual", "intro/title"));
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .build()
+    .unwrap();
+  runtime.apply_config_spec(spec).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  assert_bool_true(runtime.run_module(version).unwrap(), "apply spec");
+}
+
+#[test]
+fn invalid_grant_empty_subject_fails_build() {
+  let spec = RuntimeConfigSpec::new().with_capability_grant(
+    RuntimeCapabilityGrantSpec::new("", "docs://manual")
+      .with_operation("read")
+      .with_path("intro/title"),
+  );
+  let error = format!("{:?}", RuntimeBuilder::new().config_spec(spec).build().err().unwrap());
+  assert!(error.contains("RuntimeCapabilityGrantInvalid"));
+  assert!(error.contains("subject"));
+}
+
+#[test]
+fn invalid_grant_empty_operation_fails_build() {
+  let spec = RuntimeConfigSpec::new().with_capability_grant(
+    RuntimeCapabilityGrantSpec::new("task://main", "docs://manual")
+      .with_operation("")
+      .with_path("intro/title"),
+  );
+  let error = format!("{:?}", RuntimeBuilder::new().config_spec(spec).build().err().unwrap());
+  assert!(error.contains("RuntimeCapabilityGrantInvalid"));
+  assert!(error.contains("operation"));
+}
+
+#[test]
+fn invalid_grant_empty_path_fails_build() {
+  let spec = RuntimeConfigSpec::new().with_capability_grant(
+    RuntimeCapabilityGrantSpec::new("task://main", "docs://manual")
+      .with_operation("read")
+      .with_path(""),
+  );
+  let error = format!("{:?}", RuntimeBuilder::new().config_spec(spec).build().err().unwrap());
+  assert!(error.contains("RuntimeCapabilityGrantInvalid"));
+  assert!(error.contains("path"));
+}
