@@ -421,9 +421,7 @@ function syncTocVisibility(availableWidth) {
 }
 
 function applyNonFullscreenLayout(viewport, consoleWidth) {
-  const tocIsHidden = articleLayout.classList.contains("hide-toc");
-  const preferredLeftMin = tocIsHidden ? 420 : 560;
-  const minLeftPane = Math.min(preferredLeftMin, viewport * 0.50);
+  const minLeftPane = Math.min(560, viewport * 0.50);
   const maxConsoleForContent = Math.max(
     MIN_CONSOLE_WIDTH,
     viewport - HANDLE_WIDTH - minLeftPane
@@ -560,6 +558,16 @@ window.addEventListener("mousemove", (e) => {
 
   setConsoleWidth(consoleWidth);
   updateFullscreenToggleLabel();
+
+  console.log({
+    rawConsoleWidth: viewport - e.clientX,
+    appliedConsoleWidth: consoleWidth,
+    cssConsoleWidth: getComputedStyle(document.documentElement).getPropertyValue("--console-width"),
+    paneWidth: consolePane.getBoundingClientRect().width,
+    leftPaneWidth: viewport - HANDLE_WIDTH - consoleWidth,
+    hideToc: articleLayout.classList.contains("hide-toc"),
+    grid: getComputedStyle(workspace).gridTemplateColumns
+  });
 });
 
 window.addEventListener("mouseup", () => {
