@@ -1,6 +1,6 @@
 use mech_core::{MResult, MechErrorKind, Value};
 
-use crate::{InMemoryDocsProvider, RuntimeCapabilityGrantRegistry, RuntimeResourceRegistry};
+use crate::{InMemoryDocsProvider, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeResourceRegistry};
 
 #[derive(Clone, Debug, Default)]
 pub struct RuntimeConfigSpec {
@@ -34,7 +34,7 @@ impl RuntimeConfigSpec {
 pub struct RuntimeCapabilityGrantSpec {
   pub subject: String,
   pub resource: String,
-  pub operations: Vec<String>,
+  pub operations: Vec<RuntimeCapabilityOperation>,
   pub paths: Vec<String>,
 }
 
@@ -53,10 +53,18 @@ impl RuntimeCapabilityGrantSpec {
 
   pub fn with_operation(
     mut self,
-    operation: impl Into<String>,
+    operation: RuntimeCapabilityOperation,
   ) -> Self {
-    self.operations.push(operation.into());
+    self.operations.push(operation);
     self
+  }
+
+  pub fn with_operation_name(
+    mut self,
+    operation: impl Into<String>,
+  ) -> MResult<Self> {
+    self.operations.push(RuntimeCapabilityOperation::from_name(operation)?);
+    Ok(self)
   }
 
   pub fn with_path(

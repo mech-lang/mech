@@ -1,5 +1,5 @@
 use mech_core::{hash_str, MechSourceCode, Ref, Value};
-use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, InMemoryDocsProvider, ModuleScopeMetadata, ModuleBuildOptions, ResolvedSource, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeCapabilityGrantSpec, RuntimeConfigSpec, RuntimeContextRegistry, RuntimeDocsEntrySpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, SourceContextBase, SourceContextCapability, SourceContextCapabilityScope, SourceContextDeclaration, SourceInterpreterId, SourceKind, SourceRequest, SourceResolver, SourceScope, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest};
+use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, InMemoryDocsProvider, ModuleScopeMetadata, ModuleBuildOptions, ResolvedSource, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeCapabilityGrantSpec, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeContextRegistry, RuntimeDocsEntrySpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, SourceContextBase, SourceContextCapability, SourceContextCapabilityScope, SourceContextDeclaration, SourceInterpreterId, SourceKind, SourceRequest, SourceResolver, SourceScope, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest};
 
 fn setup_modules(main_source: &str) -> std::path::PathBuf {
   let root = std::env::temp_dir().join(format!("mech-runtime-module-smoke-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
@@ -26,10 +26,18 @@ fn docs_provider_with(
 }
 
 fn read_grant(resource: &str, path: &str) -> RuntimeCapabilityGrantSpec {
-  RuntimeCapabilityGrantSpec::new("task://main", resource).with_operation("read").with_path(path)
+  RuntimeCapabilityGrantSpec::new("task://main", resource)
+    .with_operation(RuntimeCapabilityOperation::Read)
+    .with_path(path)
 }
+
 fn runtime_read_grant(resource: &str, path: &str) -> RuntimeCapabilityGrant {
-  RuntimeCapabilityGrant { subject: "task://main".to_string(), resource: resource.to_string(), operations: vec!["read".to_string()], paths: vec![path.to_string()] }
+  RuntimeCapabilityGrant {
+    subject: "task://main".to_string(),
+    resource: resource.to_string(),
+    operations: vec![RuntimeCapabilityOperation::Read],
+    paths: vec![path.to_string()],
+  }
 }
 
 fn bool_value(value: bool) -> Value {
@@ -1469,7 +1477,7 @@ fn host_grant_path_prefix_does_not_match_sibling() {
 #[test]
 fn host_grant_wrong_operation_denies_read() {
   let grant = RuntimeCapabilityGrantSpec::new("task://main", "docs://manual")
-    .with_operation("write")
+    .with_operation(RuntimeCapabilityOperation::Write)
     .with_path("intro/title");
   let spec = docs_config("intro/title", bool_value(true))
     .with_capability_grant(grant);
@@ -1518,7 +1526,7 @@ fn direct_provider_read_with_runtime_grant_still_works() {
     .build()
     .unwrap();
   runtime.grant_capability(runtime_read_grant("docs://manual", "intro/title")).unwrap();
-  assert!(runtime.has_capability_grant("task://main", "docs://manual", "read", "intro/title"));
+  assert!(runtime.has_capability_grant("task://main", "docs://manual", &RuntimeCapabilityOperation::Read, "intro/title"));
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   assert_bool_true(runtime.run_module(version).unwrap(), "runtime grant");
 }
@@ -1541,7 +1549,7 @@ fn apply_config_spec_after_build_registers_resources_and_grants() {
 fn invalid_grant_empty_subject_fails_build() {
   let spec = RuntimeConfigSpec::new().with_capability_grant(
     RuntimeCapabilityGrantSpec::new("", "docs://manual")
-      .with_operation("read")
+      .with_operation(RuntimeCapabilityOperation::Read)
       .with_path("intro/title"),
   );
   let error = format!("{:?}", RuntimeBuilder::new().config_spec(spec).build().err().unwrap());
@@ -1553,7 +1561,7 @@ fn invalid_grant_empty_subject_fails_build() {
 fn invalid_grant_empty_operation_fails_build() {
   let spec = RuntimeConfigSpec::new().with_capability_grant(
     RuntimeCapabilityGrantSpec::new("task://main", "docs://manual")
-      .with_operation("")
+      .with_operation(RuntimeCapabilityOperation::Custom(String::new()))
       .with_path("intro/title"),
   );
   let error = format!("{:?}", RuntimeBuilder::new().config_spec(spec).build().err().unwrap());
@@ -1565,7 +1573,7 @@ fn invalid_grant_empty_operation_fails_build() {
 fn invalid_grant_empty_path_fails_build() {
   let spec = RuntimeConfigSpec::new().with_capability_grant(
     RuntimeCapabilityGrantSpec::new("task://main", "docs://manual")
-      .with_operation("read")
+      .with_operation(RuntimeCapabilityOperation::Read)
       .with_path(""),
   );
   let error = format!("{:?}", RuntimeBuilder::new().config_spec(spec).build().err().unwrap());

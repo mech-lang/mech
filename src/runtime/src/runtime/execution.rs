@@ -467,14 +467,14 @@ impl MechRuntime {
           if !self.grants.allows(
             DEFAULT_RESOURCE_SUBJECT,
             &base_uri,
-            "read",
+            &RuntimeCapabilityOperation::Read,
             &reference.name,
           ) {
             return Err(MechError::new(
               RuntimeCapabilityGrantDenied {
                 subject: DEFAULT_RESOURCE_SUBJECT.to_string(),
                 resource: base_uri,
-                operation: "read".to_string(),
+                operation: RuntimeCapabilityOperation::Read,
                 path: reference.name.clone(),
               },
               None,

@@ -1,5 +1,5 @@
 use mech_core::{Ref, Value};
-use mech_runtime::{FileSourceResolver, InMemoryDocsProvider, ModuleBuildOptions, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeConfigSpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteRequest, SourceScope};
+use mech_runtime::{FileSourceResolver, InMemoryDocsProvider, ModuleBuildOptions, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteRequest, SourceScope};
 
 fn write_case(root: &std::path::Path, name: &str, source: &str) -> std::path::PathBuf {
   let case_root = root.join(name);
@@ -31,7 +31,7 @@ fn run_case(root: &std::path::Path, name: &str, source: &str, docs: Option<InMem
     runtime.grant_capability(RuntimeCapabilityGrant {
       subject: "task://main".to_string(),
       resource: "docs://manual".to_string(),
-      operations: vec!["read".to_string()],
+      operations: vec![RuntimeCapabilityOperation::Read],
       paths: vec!["intro/title".to_string()],
     }).unwrap();
   }
