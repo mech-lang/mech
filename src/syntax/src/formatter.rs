@@ -11,6 +11,7 @@ struct TitleSlots {
   date: String,
   hero: String,
   kicker: String,
+  section: String,
   summary: String,
   next: String,
   previous: String,
@@ -199,6 +200,8 @@ impl Formatter {
         .replace("{{AUTHOR}}", &title_slots.author)
         .replace("{{DATE}}", &title_slots.date)
         .replace("{{KICKER}}", &title_slots.kicker)
+        .replace("{{SECTION}}", &title_slots.section)
+        .replace("{{VERSION}}", env!("CARGO_PKG_VERSION"))
         .replace("{{NEXT}}", &title_slots.next)
         .replace("{{PREVIOUS}}", &title_slots.previous)
         .replace("{{HERO}}", &title_slots.hero)
@@ -228,6 +231,7 @@ impl Formatter {
           date: title.date.as_ref().map(|p| self.inline_para_el(p, "mech-date")).unwrap_or_default(),
           hero: title.hero.as_ref().map(|h| self.hero_el(h)).unwrap_or_default(),
           kicker: title.kicker.as_ref().map(|p| self.inline_para_el(p, "hero-kicker")).unwrap_or_default(),
+          section: title.section.as_ref().map(|p| self.inline_para_el(p, "mech-section")).unwrap_or_default(),
           summary: title.summary.as_ref().map(|p| self.synopsis_el(p)).unwrap_or_default(),
           next: title.next.as_ref().map(|p| self.inline_para_el(p, "mech-next")).unwrap_or_default(),
           previous: title.previous.as_ref().map(|p| self.inline_para_el(p, "mech-previous")).unwrap_or_default(),

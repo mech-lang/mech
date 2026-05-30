@@ -350,14 +350,17 @@ const TOC_GAP            = 48;
 const MIN_MAIN_WITH_TOC  = 760;
 const MIN_LEFT_WITH_TOC  = TOC_WIDTH + TOC_GAP + MIN_MAIN_WITH_TOC;
 const MIN_LEFT_WITH_FLOATS = 980;
-const DEFAULT_OPEN_WIDTH = 575;
+const DEFAULT_OPEN_RATIO = 0.50;
+function defaultOpenWidth(viewport = window.innerWidth) {
+  return Math.max(MIN_CONSOLE_WIDTH, Math.round(viewport * DEFAULT_OPEN_RATIO));
+}
 let resizing = false;
-let lastNormalWidth = DEFAULT_OPEN_WIDTH;
+let lastNormalWidth = defaultOpenWidth();
 let dragStartX = 0;
 let didDrag = false;
 let currentConsoleWidth = parseFloat(
   document.documentElement.style.getPropertyValue("--console-width")
-) || DEFAULT_OPEN_WIDTH;
+) || lastNormalWidth;
 
 function setActiveConsoleTab(tabName) {
   tabButtons.forEach((button) => {
@@ -460,9 +463,10 @@ function openConsoleNormal() {
   consolePane.style.display = "";
   contentShell.classList.remove("hidden");
   handle.style.display = "";
-  let openWidth = Math.min(lastNormalWidth || DEFAULT_OPEN_WIDTH, viewport - HANDLE_WIDTH);
+  const defaultWidth = defaultOpenWidth(viewport);
+  let openWidth = Math.min(lastNormalWidth || defaultWidth, viewport - HANDLE_WIDTH);
   if (openWidth < MIN_CONSOLE_WIDTH) {
-    openWidth = Math.min(DEFAULT_OPEN_WIDTH, Math.max(MIN_CONSOLE_WIDTH, viewport * 0.36));
+    openWidth = Math.min(defaultWidth, Math.max(MIN_CONSOLE_WIDTH, viewport * DEFAULT_OPEN_RATIO));
   }
   openWidth = applyNonFullscreenLayout(viewport, openWidth);
   setConsoleWidth(openWidth);

@@ -1,7 +1,7 @@
 :root {
   /* ── Layout ── */
   --header-height: 52px;
-  --console-width: 575px;
+  --console-width: 50vw;
   --toc-width: 260px;
   --content-max-width: 1200px;
 

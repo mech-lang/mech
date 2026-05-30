@@ -311,6 +311,7 @@ pub struct Title {
   pub date: Option<Paragraph>,
   pub hero: Option<SectionElement>,
   pub kicker: Option<Paragraph>,
+  pub section: Option<Paragraph>,
   pub summary: Option<Paragraph>,
   pub next: Option<Paragraph>,
   pub previous: Option<Paragraph>,
