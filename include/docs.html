@@ -563,15 +563,6 @@ window.addEventListener("mousemove", (e) => {
   setConsoleWidth(consoleWidth);
   updateFullscreenToggleLabel();
 
-  console.log({
-    rawConsoleWidth: viewport - e.clientX,
-    appliedConsoleWidth: consoleWidth,
-    cssConsoleWidth: getComputedStyle(document.documentElement).getPropertyValue("--console-width"),
-    paneWidth: consolePane.getBoundingClientRect().width,
-    leftPaneWidth: viewport - HANDLE_WIDTH - consoleWidth,
-    hideToc: articleLayout.classList.contains("hide-toc"),
-    grid: getComputedStyle(workspace).gridTemplateColumns
-  });
 });
 
 window.addEventListener("mouseup", () => {
