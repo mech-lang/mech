@@ -347,16 +347,10 @@ const COLLAPSE_THRESHOLD = 80;
 const HANDLE_WIDTH       = 8;
 const TOC_WIDTH          = 260;
 const TOC_GAP            = 48;
-const MIN_MAIN_CONTENT   = 640;
 const MIN_MAIN_WITH_TOC  = 760;
 const MIN_LEFT_WITH_TOC  = TOC_WIDTH + TOC_GAP + MIN_MAIN_WITH_TOC;
 const MIN_LEFT_WITH_FLOATS = 980;
 const DEFAULT_OPEN_WIDTH = 575;
-const HEADER_HEIGHT = parseInt(
-  getComputedStyle(document.documentElement).getPropertyValue("--header-height"),
-  10
-);
-
 let resizing = false;
 let lastNormalWidth = DEFAULT_OPEN_WIDTH;
 let dragStartX = 0;
@@ -427,8 +421,18 @@ function syncTocVisibility(availableWidth) {
 }
 
 function applyNonFullscreenLayout(viewport, consoleWidth) {
-  const maxConsoleForContent = Math.max(0, viewport - HANDLE_WIDTH - MIN_MAIN_CONTENT);
-  if (consoleWidth > maxConsoleForContent) consoleWidth = maxConsoleForContent;
+  const tocIsHidden = articleLayout.classList.contains("hide-toc");
+  const preferredLeftMin = tocIsHidden ? 420 : 560;
+  const minLeftPane = Math.min(preferredLeftMin, viewport * 0.50);
+  const maxConsoleForContent = Math.max(
+    MIN_CONSOLE_WIDTH,
+    viewport - HANDLE_WIDTH - minLeftPane
+  );
+
+  consoleWidth = Math.max(
+    MIN_CONSOLE_WIDTH,
+    Math.min(consoleWidth, maxConsoleForContent)
+  );
 
   const leftPaneWidth = viewport - HANDLE_WIDTH - consoleWidth;
   syncTocVisibility(leftPaneWidth);
@@ -627,8 +631,17 @@ if (!contentSections.length) {
   articleLayout.classList.add("no-sections", "hide-toc");
 }
 
+const sectionContainers = new Set(
+  tocTargets.map((entry) => entry.section.closest("section") || entry.section)
+);
+let lastActiveTocLink = null;
+let lastActiveSectionContainer = null;
+
 function setActiveTocSection(activeLink) {
   if (!tocRoot) return;
+  if (activeLink === lastActiveTocLink) return;
+  lastActiveTocLink = activeLink;
+
   tocRoot.querySelectorAll("a").forEach((link) => link.classList.remove("active", "active-path"));
   tocRoot.querySelectorAll("li").forEach((item) => item.classList.remove("expanded", "active-path"));
   if (!activeLink) return;
@@ -649,8 +662,8 @@ function updateTocOnScroll() {
   if (contentShell.classList.contains("hidden")) return;
   if (!tocTargets.length) return;
 
-  const viewportHeight = contentShell.clientHeight || window.innerHeight;
-  const activationLine = HEADER_HEIGHT + Math.min(viewportHeight * 0.30, 220);
+  const shellRect = contentShell.getBoundingClientRect();
+  const activationLine = shellRect.top + Math.min(contentShell.clientHeight * 0.30, 220);
   const nearBottom = contentShell.scrollTop + contentShell.clientHeight >= contentShell.scrollHeight - 2;
   let active = tocTargets[0];
 
@@ -662,8 +675,12 @@ function updateTocOnScroll() {
     });
   }
 
-  tocTargets.forEach((entry) => entry.section.classList.remove("active-section"));
-  active.section.classList.add("active-section");
+  const activeContainer = active.section.closest("section") || active.section;
+  if (activeContainer !== lastActiveSectionContainer) {
+    sectionContainers.forEach((container) => container.classList.remove("active-section"));
+    activeContainer.classList.add("active-section");
+    lastActiveSectionContainer = activeContainer;
+  }
   setActiveTocSection(active.link);
 }
 
@@ -678,7 +695,6 @@ function deferPostPaint(fn) {
   requestAnimationFrame(() => requestAnimationFrame(fn));
 }
 
-window.addEventListener("scroll", requestTocUpdate, { passive: true });
 contentShell.addEventListener("scroll", requestTocUpdate, { passive: true });
 window.addEventListener("resize", requestTocUpdate);
 

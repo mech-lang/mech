@@ -687,11 +687,9 @@ body.narrow-content .mech-float .mech-image {
 }
 .toc a.active {
   color: var(--toc-accent);
-  font-weight: 700;
 }
 .toc a.active-path {
   color: var(--toc-accent);
-  font-weight: 650;
 }
 .toc > ul > li > a.active::before {
   content: "";
