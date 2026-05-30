@@ -691,7 +691,8 @@ body.narrow-content .mech-float .mech-image {
 .toc a.active-path {
   color: var(--toc-accent);
 }
-.toc > ul > li > a.active::before {
+.toc > ul > li > a.active::before,
+.toc > ul > li > a.active-path::before {
   content: "";
   position: absolute;
   left: 0;
