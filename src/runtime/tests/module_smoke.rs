@@ -1,5 +1,5 @@
 use mech_core::{hash_str, MechSourceCode, Ref, Value};
-use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, InMemoryDocsProvider, ModuleScopeMetadata, ModuleBuildOptions, ResolvedSource, RuntimeBuilder, RuntimeContextRegistry, SourceContextBase, SourceContextCapability, SourceContextCapabilityScope, SourceContextDeclaration, SourceInterpreterId, SourceKind, SourceRequest, SourceResolver, SourceScope, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest};
+use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, InMemoryDocsProvider, ModuleScopeMetadata, ModuleBuildOptions, ResolvedSource, RuntimeBuilder, RuntimeConfigSpec, RuntimeContextRegistry, RuntimeDocsEntrySpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, SourceContextBase, SourceContextCapability, SourceContextCapabilityScope, SourceContextDeclaration, SourceInterpreterId, SourceKind, SourceRequest, SourceResolver, SourceScope, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest};
 
 fn setup_modules(main_source: &str) -> std::path::PathBuf {
   let root = std::env::temp_dir().join(format!("mech-runtime-module-smoke-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
@@ -27,6 +27,13 @@ fn docs_provider_with(
 
 fn bool_value(value: bool) -> Value {
   Value::Bool(Ref::new(value))
+}
+
+fn docs_entry(path: &str, value: Value) -> RuntimeDocsEntrySpec {
+  RuntimeDocsEntrySpec {
+    path: path.to_string(),
+    value,
+  }
 }
 
 fn module_options() -> ModuleBuildOptions<'static> {
@@ -203,6 +210,183 @@ fn context_docs_read_returns_value() {
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version).unwrap();
   assert_bool_true(result, "context docs read");
+}
+
+#[test]
+fn config_spec_registers_in_memory_docs_resource() {
+  let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
+  let spec = RuntimeConfigSpec::new().with_resource(
+    RuntimeResourceConfigSpec::InMemoryDocs(
+      RuntimeInMemoryDocsResourceSpec::new("docs://manual")
+        .with_entry("intro/title", bool_value(true)),
+    ),
+  );
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .config_spec(spec)
+    .build()
+    .unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  assert_bool_true(runtime.run_module(version).unwrap(), "config spec docs read");
+}
+
+#[test]
+fn config_spec_merges_multiple_docs_bases_into_one_provider() {
+  let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n@guide := docs://guide{:read(start/title)}\n\nmanual-ok := intro/title@manual\nguide-ok := start/title@guide\n\nresult := manual-ok && guide-ok\n");
+  let spec = RuntimeConfigSpec::new()
+    .with_resource(RuntimeResourceConfigSpec::InMemoryDocs(
+      RuntimeInMemoryDocsResourceSpec::new("docs://manual")
+        .with_entry("intro/title", bool_value(true)),
+    ))
+    .with_resource(RuntimeResourceConfigSpec::InMemoryDocs(
+      RuntimeInMemoryDocsResourceSpec::new("docs://guide")
+        .with_entry("start/title", bool_value(true)),
+    ));
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .config_spec(spec)
+    .build()
+    .unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  assert_bool_true(runtime.run_module(version).unwrap(), "merged config spec docs bases");
+}
+
+#[test]
+fn config_spec_multiple_entries_same_base() {
+  let root = setup_modules("@manual := docs://manual{:read(intro/*)}\n\na := intro/title@manual\nb := intro/subtitle@manual\n\nresult := a && b\n");
+  let spec = RuntimeConfigSpec::new().with_resource(
+    RuntimeResourceConfigSpec::InMemoryDocs(RuntimeInMemoryDocsResourceSpec {
+      base_uri: "docs://manual".to_string(),
+      entries: vec![
+        docs_entry("intro/title", bool_value(true)),
+        docs_entry("intro/subtitle", bool_value(true)),
+      ],
+    }),
+  );
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .config_spec(spec)
+    .build()
+    .unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  assert_bool_true(runtime.run_module(version).unwrap(), "config spec docs entries under one base");
+}
+
+#[test]
+fn config_spec_later_duplicate_path_overwrites_earlier() {
+  let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
+  let spec = RuntimeConfigSpec::new().with_resource(
+    RuntimeResourceConfigSpec::InMemoryDocs(
+      RuntimeInMemoryDocsResourceSpec::new("docs://manual")
+        .with_entry("intro/title", bool_value(false))
+        .with_entry("intro/title", bool_value(true)),
+    ),
+  );
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .config_spec(spec)
+    .build()
+    .unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  assert_bool_true(runtime.run_module(version).unwrap(), "later duplicate config spec docs path");
+}
+
+#[test]
+fn config_spec_invalid_docs_uri_fails_build() {
+  let spec = RuntimeConfigSpec::new().with_resource(
+    RuntimeResourceConfigSpec::InMemoryDocs(
+      RuntimeInMemoryDocsResourceSpec::new("db://manual")
+        .with_entry("intro/title", bool_value(true)),
+    ),
+  );
+  let result = RuntimeBuilder::new().config_spec(spec).build();
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeResourceInvalidUri"), "expected invalid URI error, got {error}");
+  assert!(error.contains("docs"), "expected docs scheme requirement, got {error}");
+}
+
+#[test]
+fn config_spec_invalid_empty_path_fails_build() {
+  let spec = RuntimeConfigSpec::new().with_resource(
+    RuntimeResourceConfigSpec::InMemoryDocs(
+      RuntimeInMemoryDocsResourceSpec::new("docs://manual")
+        .with_entry("", bool_value(true)),
+    ),
+  );
+  let result = RuntimeBuilder::new().config_spec(spec).build();
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeResourceInvalidUri"), "expected invalid URI error, got {error}");
+  assert!(error.contains("resource path cannot be empty"), "expected empty path error, got {error}");
+}
+
+#[test]
+fn config_spec_and_direct_docs_provider_conflict() {
+  let spec = RuntimeConfigSpec::new().with_resource(
+    RuntimeResourceConfigSpec::InMemoryDocs(
+      RuntimeInMemoryDocsResourceSpec::new("docs://manual")
+        .with_entry("intro/title", bool_value(true)),
+    ),
+  );
+  let result = RuntimeBuilder::new()
+    .config_spec(spec)
+    .in_memory_docs(InMemoryDocsProvider::new())
+    .build();
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeResourceProviderConflict"), "expected provider conflict, got {error}");
+  assert!(error.contains("docs"), "expected docs scheme in conflict, got {error}");
+}
+
+#[test]
+fn direct_provider_registration_still_works() {
+  let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
+  let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .in_memory_docs(provider)
+    .build()
+    .unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  assert_bool_true(runtime.run_module(version).unwrap(), "direct docs provider registration");
+}
+
+#[test]
+fn apply_config_spec_after_build_registers_docs() {
+  let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
+  let spec = RuntimeConfigSpec::new().with_resource(
+    RuntimeResourceConfigSpec::InMemoryDocs(
+      RuntimeInMemoryDocsResourceSpec::new("docs://manual")
+        .with_entry("intro/title", bool_value(true)),
+    ),
+  );
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .build()
+    .unwrap();
+  runtime.apply_config_spec(spec).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  assert_bool_true(runtime.run_module(version).unwrap(), "applied config spec docs read");
+}
+
+#[test]
+fn apply_config_spec_conflicts_with_existing_docs_provider() {
+  let spec = RuntimeConfigSpec::new().with_resource(
+    RuntimeResourceConfigSpec::InMemoryDocs(
+      RuntimeInMemoryDocsResourceSpec::new("docs://manual")
+        .with_entry("intro/title", bool_value(true)),
+    ),
+  );
+  let mut runtime = RuntimeBuilder::new()
+    .in_memory_docs(InMemoryDocsProvider::new())
+    .build()
+    .unwrap();
+  let result = runtime.apply_config_spec(spec);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeResourceProviderConflict"), "expected provider conflict, got {error}");
+  assert!(error.contains("docs"), "expected docs scheme in conflict, got {error}");
 }
 
 #[test]

@@ -103,7 +103,7 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
-use crate::{InMemoryDocsProvider, RuntimeResourceCapabilityDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest};
+use crate::{register_config_spec_resources, InMemoryDocsProvider, RuntimeConfigSpec, RuntimeResourceCapabilityDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest};
 
 thread_local! {
   static ACTIVE_RUNTIME_PROGRAM_HOST: RefCell<Option<RuntimeProgramHostTarget>> =
@@ -126,6 +126,7 @@ pub struct RuntimeBuilder {
   scheduler_policy: SchedulerPolicy,
   actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
   module_builder: ModuleBuilder,
+  config_specs: Vec<RuntimeConfigSpec>,
   resource_providers: Vec<Box<dyn RuntimeResourceProvider>>,
 }
 
@@ -143,6 +144,7 @@ impl std::fmt::Debug for RuntimeBuilder {
       .field("scheduler_policy", &self.scheduler_policy)
       .field("actor_behavior_driver", &"<dyn ActorBehaviorDriver>")
       .field("module_builder", &self.module_builder)
+      .field("config_specs", &self.config_specs)
       .field("resource_providers", &self.resource_providers.len())
       .finish()
   }
@@ -162,6 +164,7 @@ impl Default for RuntimeBuilder {
       scheduler_policy: SchedulerPolicy::default(),
       actor_behavior_driver: Box::new(NoActorBehaviorDriver::new()),
       module_builder: ModuleBuilder::new(),
+      config_specs: Vec::new(),
       resource_providers: Vec::new(),
     }
   }
@@ -245,6 +248,14 @@ impl RuntimeBuilder {
     self
   }
 
+  pub fn config_spec(
+    mut self,
+    spec: RuntimeConfigSpec,
+  ) -> Self {
+    self.config_specs.push(spec);
+    self
+  }
+
   pub fn resource_provider(
     mut self,
     provider: Box<dyn RuntimeResourceProvider>,
@@ -299,6 +310,10 @@ impl RuntimeBuilder {
       module_builder: self.module_builder,
       resources: RuntimeResourceRegistry::new(),
     };
+
+    for spec in self.config_specs {
+      register_config_spec_resources(&mut runtime.resources, spec)?;
+    }
 
     for provider in self.resource_providers {
       runtime.register_resource_provider(provider)?;
@@ -393,6 +408,13 @@ impl MechRuntime {
 
   pub fn program_mut(&mut self) -> &mut MechProgram {
     &mut self.program
+  }
+
+  pub fn apply_config_spec(
+    &mut self,
+    spec: RuntimeConfigSpec,
+  ) -> MResult<()> {
+    register_config_spec_resources(&mut self.resources, spec)
   }
 
   pub fn register_resource_provider(

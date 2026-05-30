@@ -1,5 +1,5 @@
 use mech_core::{Ref, Value};
-use mech_runtime::{FileSourceResolver, InMemoryDocsProvider, ModuleBuildOptions, RuntimeBuilder, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteRequest, SourceScope};
+use mech_runtime::{FileSourceResolver, InMemoryDocsProvider, ModuleBuildOptions, RuntimeBuilder, RuntimeConfigSpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteRequest, SourceScope};
 
 fn write_case(root: &std::path::Path, name: &str, source: &str) -> std::path::PathBuf {
   let case_root = root.join(name);
@@ -14,7 +14,7 @@ fn docs_provider_with(path: &str, value: Value) -> InMemoryDocsProvider {
     .unwrap()
 }
 
-fn run_case(root: &std::path::Path, name: &str, source: &str, docs: Option<InMemoryDocsProvider>) {
+fn run_case(root: &std::path::Path, name: &str, source: &str, docs: Option<InMemoryDocsProvider>, config_spec: Option<RuntimeConfigSpec>) {
   let case_root = write_case(root, name, source);
   println!("case: {name}");
   println!("root path: {}", case_root.display());
@@ -22,6 +22,9 @@ fn run_case(root: &std::path::Path, name: &str, source: &str, docs: Option<InMem
   let mut builder = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&case_root));
   if let Some(provider) = docs {
     builder = builder.in_memory_docs(provider);
+  }
+  if let Some(spec) = config_spec {
+    builder = builder.config_spec(spec);
   }
   let mut runtime = builder.build().unwrap();
   let options = ModuleBuildOptions::new("diagnostics", "v0.3", "native", &[], &[]);
@@ -78,17 +81,32 @@ fn main() {
     "ok@foo works",
     "~~~mech:foo\nok := true\n<+ ok\n~~~\n\nresult := ok@foo\n",
     None,
+    None,
   );
   run_case(
     &root,
     "docs://manual intro/title read returns true",
     "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
     Some(docs_provider_with("intro/title", Value::Bool(Ref::new(true)))),
+    None,
+  );
+  run_case(
+    &root,
+    "config spec docs://manual intro/title read returns true",
+    "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
+    None,
+    Some(RuntimeConfigSpec::new().with_resource(
+      RuntimeResourceConfigSpec::InMemoryDocs(
+        RuntimeInMemoryDocsResourceSpec::new("docs://manual")
+          .with_entry("intro/title", Value::Bool(Ref::new(true))),
+      ),
+    )),
   );
   run_case(
     &root,
     "missing docs provider fails",
     "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
+    None,
     None,
   );
   run_case(
@@ -96,23 +114,27 @@ fn main() {
     "missing docs path fails",
     "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
     Some(InMemoryDocsProvider::new()),
+    None,
   );
   run_case(
     &root,
     "denied docs capability fails",
     "@manual := docs://manual{:read(other/path)}\n\nresult := intro/title@manual\n",
     Some(docs_provider_with("intro/title", Value::Bool(Ref::new(true)))),
+    None,
   );
   run_case(
     &root,
     "interpreter-scoped docs context works when running interpreter scope",
     "~~~mech:foo\n@manual := docs://manual{:read(intro/title)}\nresult := intro/title@manual\n~~~\n",
     Some(docs_provider_with("intro/title", Value::Bool(Ref::new(true)))),
+    None,
   );
   run_case(
     &root,
     "interpreter/context conflict fails resolution",
     "~~~mech:foo\nok := true\n<+ ok\n~~~\n\n@foo := docs://foo{:read(ok)}\n",
+    None,
     None,
   );
   run_case(
@@ -120,11 +142,13 @@ fn main() {
     "unknown target returns UnknownAddressTarget",
     "result := ok@missing\n",
     None,
+    None,
   );
   run_case(
     &root,
     "string/comment @bar does not execute bar",
     "~~~mech:bar\nbroken := missing\n<+ broken\n~~~\n\ntext := \"@bar\"\n-- @bar\n\nok := true\n",
+    None,
     None,
   );
 }
