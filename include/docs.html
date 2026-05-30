@@ -52,6 +52,8 @@ onload="renderMathInElement(document.body);"></script>
         <span class="sep">⟩</span>
         <a href="https://docs.mech-lang.org">Docs</a>
         <span class="sep">⟩</span>
+        <span aria-current="page">{{SECTION}}</span>
+        <span class="sep">⟩</span>
         <span aria-current="page">{{TITLE}}</span>
       </nav>
       <div class="docs-layout article-layout" id="articleLayout">
@@ -63,6 +65,7 @@ onload="renderMathInElement(document.body);"></script>
             <p class="docs-version">Version {{VERSION}}</p>
           </header>
           <div class="article-intro docs-intro" id="articleIntro">
+            {{ABSTRACT}}
             {{INTRO}}
           </div>
           {{CONTENT}}
