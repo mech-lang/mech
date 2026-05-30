@@ -37,7 +37,7 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 
 use mech_core::{
-  MResult, MechError, MechErrorKind, MechSourceCode, Value, NativeFunctionCompiler, MechFunctionImpl,
+  MResult, MechError, MechErrorKind, MechSourceCode, Ref, Value, NativeFunctionCompiler, MechFunctionImpl,
   Register, CompileCtx, MechFunctionCompiler,
   hash_str,
 };
@@ -55,7 +55,7 @@ use crate::config::RuntimeConfig;
 
 use crate::context::{
   ResourceBudget, RuntimeContext, RuntimeContextBuilder, RuntimeTurnOutcome, RuntimeContextRegistry,
-  RuntimeContextBase, RuntimeContextBinding
+  RuntimeContextBase, RuntimeContextBinding, RuntimeContextCapabilityScope
 };
 
 use crate::event::{
@@ -103,6 +103,8 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
+use crate::{InMemoryDocsProvider, RuntimeResourceCapabilityDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry};
+
 thread_local! {
   static ACTIVE_RUNTIME_PROGRAM_HOST: RefCell<Option<RuntimeProgramHostTarget>> =
     RefCell::new(None);
@@ -124,6 +126,7 @@ pub struct RuntimeBuilder {
   scheduler_policy: SchedulerPolicy,
   actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
   module_builder: ModuleBuilder,
+  resource_providers: Vec<Box<dyn RuntimeResourceProvider>>,
 }
 
 impl std::fmt::Debug for RuntimeBuilder {
@@ -140,6 +143,7 @@ impl std::fmt::Debug for RuntimeBuilder {
       .field("scheduler_policy", &self.scheduler_policy)
       .field("actor_behavior_driver", &"<dyn ActorBehaviorDriver>")
       .field("module_builder", &self.module_builder)
+      .field("resource_providers", &self.resource_providers.len())
       .finish()
   }
 }
@@ -158,6 +162,7 @@ impl Default for RuntimeBuilder {
       scheduler_policy: SchedulerPolicy::default(),
       actor_behavior_driver: Box::new(NoActorBehaviorDriver::new()),
       module_builder: ModuleBuilder::new(),
+      resource_providers: Vec::new(),
     }
   }
 }
@@ -240,6 +245,22 @@ impl RuntimeBuilder {
     self
   }
 
+  pub fn resource_provider(
+    mut self,
+    provider: Box<dyn RuntimeResourceProvider>,
+  ) -> Self {
+    self.resource_providers.push(provider);
+    self
+  }
+
+  pub fn in_memory_docs(
+    mut self,
+    provider: InMemoryDocsProvider,
+  ) -> Self {
+    self.resource_providers.push(Box::new(provider));
+    self
+  }
+
   pub fn build(mut self) -> MResult<MechRuntime> {
     self.config.validate()?;
     self.scheduler_policy.validate()?;
@@ -276,7 +297,12 @@ impl RuntimeBuilder {
       active_transactions: HashMap::new(),
       actor_behavior_driver: self.actor_behavior_driver,
       module_builder: self.module_builder,
+      resources: RuntimeResourceRegistry::new(),
     };
+
+    for provider in self.resource_providers {
+      runtime.register_resource_provider(provider)?;
+    }
 
     let mut context = runtime.runtime_context()?;
 
@@ -311,6 +337,7 @@ pub struct MechRuntime {
   active_transactions: HashMap<TransactionId, RuntimeTransaction>,
   actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
   module_builder: ModuleBuilder,
+  resources: RuntimeResourceRegistry,
 }
 
 impl std::fmt::Debug for MechRuntime {
@@ -331,6 +358,7 @@ impl std::fmt::Debug for MechRuntime {
       .field("active_transactions", &self.active_transactions.len())
       .field("actor_behavior_driver", &"<dyn ActorBehaviorDriver>")
       .field("module_builder", &self.module_builder)
+      .field("resources", &self.resources)
       .finish()
   }
 }
@@ -365,6 +393,17 @@ impl MechRuntime {
 
   pub fn program_mut(&mut self) -> &mut MechProgram {
     &mut self.program
+  }
+
+  pub fn register_resource_provider(
+    &mut self,
+    provider: Box<dyn RuntimeResourceProvider>,
+  ) -> MResult<()> {
+    self.resources.register_provider(provider)
+  }
+
+  pub fn has_resource_provider(&self, scheme: &str) -> bool {
+    self.resources.has_provider(scheme)
   }
 
   pub fn store(&self) -> &dyn MechStore {

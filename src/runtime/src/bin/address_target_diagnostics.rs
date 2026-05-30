@@ -1,4 +1,5 @@
-use mech_runtime::{FileSourceResolver, ModuleBuildOptions, RuntimeBuilder, SourceScope};
+use mech_core::{Ref, Value};
+use mech_runtime::{FileSourceResolver, InMemoryDocsProvider, ModuleBuildOptions, RuntimeBuilder, SourceScope};
 
 fn write_case(root: &std::path::Path, name: &str, source: &str) -> std::path::PathBuf {
   let case_root = root.join(name);
@@ -7,28 +8,28 @@ fn write_case(root: &std::path::Path, name: &str, source: &str) -> std::path::Pa
   case_root
 }
 
-fn run_case(root: &std::path::Path, name: &str, source: &str) {
+fn docs_provider_with(path: &str, value: Value) -> InMemoryDocsProvider {
+  InMemoryDocsProvider::new()
+    .with_value("docs://manual", path, value)
+    .unwrap()
+}
+
+fn run_case(root: &std::path::Path, name: &str, source: &str, docs: Option<InMemoryDocsProvider>) {
   let case_root = write_case(root, name, source);
   println!("case: {name}");
   println!("root path: {}", case_root.display());
 
-  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&case_root)).build().unwrap();
+  let mut builder = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&case_root));
+  if let Some(provider) = docs {
+    builder = builder.in_memory_docs(provider);
+  }
+  let mut runtime = builder.build().unwrap();
   let options = ModuleBuildOptions::new("diagnostics", "v0.3", "native", &[], &[]);
 
   match runtime.resolve_and_store_module_source("main.mec", options) {
     Ok(Some(version)) => {
       println!("main module version: {version}");
       let record = runtime.store().get_module_version(version).unwrap().unwrap();
-      println!("scopes:");
-      for scope in &record.scopes {
-        println!("  - {:?}", scope.scope);
-      }
-      println!("scoped context declarations:");
-      for scope in &record.scopes {
-        for context in &scope.contexts {
-          println!("  - {:?}: {}", scope.scope, context.name);
-        }
-      }
       println!("scoped address references:");
       for scope in &record.scopes {
         for reference in &scope.address_references {
@@ -44,15 +45,11 @@ fn run_case(root: &std::path::Path, name: &str, source: &str) {
     }
     Ok(None) => {
       println!("main module version: <none>");
-      println!("scopes: []");
-      println!("scoped context declarations: []");
       println!("scoped address references: []");
       println!("run result: no module resolved");
     }
     Err(error) => {
       println!("main module version: <resolution failed>");
-      println!("scopes: <unavailable>");
-      println!("scoped context declarations: <unavailable>");
       println!("scoped address references: <unavailable>");
       println!("run result: resolution error: {:?}", error);
     }
@@ -69,30 +66,54 @@ fn main() {
     &root,
     "ok@foo works",
     "~~~mech:foo\nok := true\n<+ ok\n~~~\n\nresult := ok@foo\n",
+    None,
+  );
+  run_case(
+    &root,
+    "docs://manual intro/title read returns true",
+    "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
+    Some(docs_provider_with("intro/title", Value::Bool(Ref::new(true)))),
+  );
+  run_case(
+    &root,
+    "missing docs provider fails",
+    "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
+    None,
+  );
+  run_case(
+    &root,
+    "missing docs path fails",
+    "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
+    Some(InMemoryDocsProvider::new()),
+  );
+  run_case(
+    &root,
+    "denied docs capability fails",
+    "@manual := docs://manual{:read(other/path)}\n\nresult := intro/title@manual\n",
+    Some(docs_provider_with("intro/title", Value::Bool(Ref::new(true)))),
+  );
+  run_case(
+    &root,
+    "interpreter-scoped docs context works when running interpreter scope",
+    "~~~mech:foo\n@manual := docs://manual{:read(intro/title)}\nresult := intro/title@manual\n~~~\n",
+    Some(docs_provider_with("intro/title", Value::Bool(Ref::new(true)))),
   );
   run_case(
     &root,
     "interpreter/context conflict fails resolution",
     "~~~mech:foo\nok := true\n<+ ok\n~~~\n\n@foo := docs://foo{:read(ok)}\n",
-  );
-  run_case(
-    &root,
-    "context target returns ContextAddressReadUnsupported",
-    "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
-  );
-  run_case(
-    &root,
-    "interpreter-scoped context resolves only in interpreter scope",
-    "~~~mech:foo\n@manual := docs://manual{:read(intro/title)}\nresult := intro/title@manual\n~~~\n",
+    None,
   );
   run_case(
     &root,
     "unknown target returns UnknownAddressTarget",
     "result := ok@missing\n",
+    None,
   );
   run_case(
     &root,
     "string/comment @bar does not execute bar",
     "~~~mech:bar\nbroken := missing\n<+ broken\n~~~\n\ntext := \"@bar\"\n-- @bar\n\nok := true\n",
+    None,
   );
 }

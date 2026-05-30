@@ -54,10 +54,35 @@ fn context_registry_for_scope(
   RuntimeContextRegistry::from_declarations(scope.clone(), declarations)
 }
 
-fn runtime_context_base_label(base: &RuntimeContextBase) -> String {
-  match base {
+fn runtime_context_base_uri(binding: &RuntimeContextBinding) -> String {
+  match &binding.base {
     RuntimeContextBase::ResourceUri(uri) => uri.clone(),
   }
+}
+
+fn runtime_context_allows_read(
+  binding: &RuntimeContextBinding,
+  path: &str,
+) -> bool {
+  binding.capabilities.iter().any(|capability| {
+    if capability.operation != "read" {
+      return false;
+    }
+
+    match &capability.scope {
+      RuntimeContextCapabilityScope::Wildcard => true,
+      RuntimeContextCapabilityScope::Path(exact) => {
+        if exact == path {
+          return true;
+        }
+        if let Some(prefix) = exact.strip_suffix("/*") {
+          let required_prefix = format!("{}/", prefix);
+          return path.starts_with(&required_prefix);
+        }
+        false
+      }
+    }
+  })
 }
 
 impl MechRuntime {
@@ -390,6 +415,7 @@ impl MechRuntime {
       .unwrap_or(&[]);
 
     let mut requested_by_scope: HashMap<SourceScope, Vec<SourceAddressReference>> = HashMap::new();
+    let mut bindings = HashMap::new();
     for reference in scoped_refs {
       match resolve_runtime_address_target(record, scope, context_registry, &reference.target) {
         RuntimeAddressTarget::Interpreter(interpreter_scope) => {
@@ -399,14 +425,26 @@ impl MechRuntime {
           requested_by_scope.entry(interpreter_scope).or_default().push(reference.clone());
         }
         RuntimeAddressTarget::Context(binding) => {
-          return Err(MechError::new(
-            ContextAddressReadUnsupported {
-              target: reference.target.clone(),
-              name: reference.name.clone(),
-              base: runtime_context_base_label(&binding.base),
-            },
-            None,
-          ));
+          let base_uri = runtime_context_base_uri(&binding);
+          if !runtime_context_allows_read(&binding, &reference.name) {
+            return Err(MechError::new(
+              RuntimeResourceCapabilityDenied {
+                context_name: binding.name.clone(),
+                operation: "read".to_string(),
+                path: reference.name.clone(),
+              },
+              None,
+            ));
+          }
+          let value = self.resources.read(RuntimeResourceReadRequest {
+            base_uri,
+            path: reference.name.clone(),
+            context_name: binding.name.clone(),
+          })?;
+          bindings.insert(
+            format!("{}@{}", reference.name, reference.target),
+            Ref::new(value),
+          );
         }
         RuntimeAddressTarget::Unknown => {
           return Err(MechError::new(UnknownAddressTarget { target: reference.target.clone() }, None));
@@ -414,7 +452,6 @@ impl MechRuntime {
       }
     }
 
-    let mut bindings = HashMap::new();
     for (interpreter_scope, requested_refs) in requested_by_scope {
       let instance = self.execute_module_isolated_for_scope(
         context,

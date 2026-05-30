@@ -1,5 +1,5 @@
 use mech_core::{hash_str, MechSourceCode, Ref, Value};
-use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, ModuleScopeMetadata, ModuleBuildOptions, ResolvedSource, RuntimeBuilder, RuntimeContextRegistry, SourceContextBase, SourceContextCapability, SourceContextCapabilityScope, SourceContextDeclaration, SourceInterpreterId, SourceKind, SourceRequest, SourceResolver, SourceScope};
+use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, InMemoryDocsProvider, ModuleScopeMetadata, ModuleBuildOptions, ResolvedSource, RuntimeBuilder, RuntimeContextRegistry, SourceContextBase, SourceContextCapability, SourceContextCapabilityScope, SourceContextDeclaration, SourceInterpreterId, SourceKind, SourceRequest, SourceResolver, SourceScope};
 
 fn setup_modules(main_source: &str) -> std::path::PathBuf {
   let root = std::env::temp_dir().join(format!("mech-runtime-module-smoke-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
@@ -13,6 +13,20 @@ fn setup_modules(main_source: &str) -> std::path::PathBuf {
 
 fn runtime_with_root(root: &std::path::Path) -> mech_runtime::MechRuntime {
   RuntimeBuilder::new().source_resolver(FileSourceResolver::new(root)).build().unwrap()
+}
+
+fn docs_provider_with(
+  base_uri: &str,
+  path: &str,
+  value: Value,
+) -> InMemoryDocsProvider {
+  InMemoryDocsProvider::new()
+    .with_value(base_uri, path, value)
+    .unwrap()
+}
+
+fn bool_value(value: bool) -> Value {
+  Value::Bool(Ref::new(value))
 }
 
 fn module_options() -> ModuleBuildOptions<'static> {
@@ -109,17 +123,17 @@ fn distinct_interpreter_and_context_names_pass() {
 }
 
 #[test]
-fn context_address_read_is_explicitly_unsupported() {
+fn context_docs_read_returns_value() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
-  let mut runtime = runtime_with_root(&root);
+  let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .in_memory_docs(provider)
+    .build()
+    .unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let result = runtime.run_module(version);
-  assert!(result.is_err());
-  let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("ContextAddressReadUnsupported"), "expected context address error, got {error}");
-  assert!(error.contains("manual"), "expected context target in error, got {error}");
-  assert!(error.contains("intro/title"), "expected addressed name in error, got {error}");
-  assert!(error.contains("docs://manual"), "expected resolved context base in error, got {error}");
+  let result = runtime.run_module(version).unwrap();
+  assert_bool_true(result, "context docs read");
 }
 
 #[test]
@@ -173,17 +187,82 @@ fn interpreter_scope_named(runtime: &mech_runtime::MechRuntime, version: mech_ru
 
 
 #[test]
-fn context_address_read_error_includes_resolved_base() {
+fn context_docs_read_without_provider_fails() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
   let mut runtime = runtime_with_root(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version);
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("ContextAddressReadUnsupported"), "expected context address error, got {error}");
-  assert!(error.contains("manual"), "expected context target in error, got {error}");
-  assert!(error.contains("intro/title"), "expected addressed name in error, got {error}");
-  assert!(error.contains("docs://manual"), "expected resolved context base in error, got {error}");
+  assert!(error.contains("RuntimeResourceProviderNotFound"), "expected missing provider error, got {error}");
+  assert!(error.contains("docs"), "expected scheme in error, got {error}");
+  assert!(error.contains("docs://manual"), "expected base URI in error, got {error}");
+}
+
+#[test]
+fn context_docs_read_missing_path_fails() {
+  let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .in_memory_docs(InMemoryDocsProvider::new())
+    .build()
+    .unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeResourcePathNotFound"), "expected missing path error, got {error}");
+  assert!(error.contains("intro/title"), "expected path in error, got {error}");
+  assert!(error.contains("docs://manual"), "expected base URI in error, got {error}");
+}
+
+#[test]
+fn context_docs_read_denied_by_capability_fails() {
+  let root = setup_modules("@manual := docs://manual{:read(other/path)}\n\nresult := intro/title@manual\n");
+  let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .in_memory_docs(provider)
+    .build()
+    .unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeResourceCapabilityDenied"), "expected capability error, got {error}");
+  assert!(error.contains("manual"), "expected context name in error, got {error}");
+  assert!(error.contains("read"), "expected operation in error, got {error}");
+  assert!(error.contains("intro/title"), "expected path in error, got {error}");
+}
+
+#[test]
+fn context_docs_read_prefix_wildcard_allows_nested_path() {
+  let root = setup_modules("@manual := docs://manual{:read(intro/*)}\n\nresult := intro/title@manual\n");
+  let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .in_memory_docs(provider)
+    .build()
+    .unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+  assert_bool_true(result, "context docs prefix wildcard");
+}
+
+#[test]
+fn context_docs_read_prefix_wildcard_does_not_match_sibling() {
+  let root = setup_modules("@manual := docs://manual{:read(introduction/*)}\n\nresult := intro/title@manual\n");
+  let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .in_memory_docs(provider)
+    .build()
+    .unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeResourceCapabilityDenied"), "expected capability error, got {error}");
 }
 
 #[test]
@@ -200,18 +279,18 @@ fn program_scope_does_not_see_interpreter_context() {
 }
 
 #[test]
-fn interpreter_scope_context_registry_resolves_context() {
+fn interpreter_scope_context_docs_read_returns_value() {
   let root = setup_modules("~~~mech:foo\n@manual := docs://manual{:read(intro/title)}\nresult := intro/title@manual\n~~~\n");
-  let mut runtime = runtime_with_root(&root);
+  let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .in_memory_docs(provider)
+    .build()
+    .unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let foo = foo_scope(&runtime, version);
-  let result = runtime.run_module_scope(version, foo);
-  assert!(result.is_err());
-  let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("ContextAddressReadUnsupported"), "expected context address error, got {error}");
-  assert!(error.contains("manual"), "expected context target in error, got {error}");
-  assert!(error.contains("intro/title"), "expected addressed name in error, got {error}");
-  assert!(error.contains("docs://manual"), "expected resolved context base in error, got {error}");
+  let result = runtime.run_module_scope(version, foo).unwrap();
+  assert_bool_true(result, "interpreter scope context docs read");
 }
 
 #[test]
@@ -493,6 +572,18 @@ fn addressed_assignment_is_unsupported() {
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("AddressedAssignmentUnsupported") || error.contains("addressed assignment"), "expected addressed assignment error, got {error}");
+}
+
+#[test]
+fn addressed_assignment_to_context_is_still_unsupported() {
+  let root = setup_modules("@manual := docs://manual{:write(intro/title)}\n\nintro/title@manual := true\n");
+
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("AddressedAssignmentUnsupported"), "expected addressed assignment error, got {error}");
 }
 
 #[test]
