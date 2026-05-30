@@ -9,9 +9,29 @@ pub struct RuntimeResourceReadRequest {
   pub context_name: String,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeResourceWriteRequest {
+  pub base_uri: String,
+  pub path: String,
+  pub context_name: String,
+  pub value: Value,
+}
+
 pub trait RuntimeResourceProvider: std::fmt::Debug {
   fn scheme(&self) -> &str;
+
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value>;
+
+  fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    Err(MechError::new(
+      RuntimeResourceWriteUnsupported {
+        scheme: self.scheme().to_string(),
+        base_uri: request.base_uri,
+        path: request.path,
+      },
+      None,
+    ))
+  }
 }
 
 #[derive(Debug, Default)]
@@ -64,6 +84,20 @@ impl RuntimeResourceRegistry {
       ));
     };
     provider.read(request)
+  }
+
+  pub fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
+    let Some(provider) = self.providers.get_mut(&scheme) else {
+      return Err(MechError::new(
+        RuntimeResourceProviderNotFound {
+          scheme,
+          uri: request.base_uri,
+        },
+        None,
+      ));
+    };
+    provider.write(request)
   }
 }
 
@@ -145,6 +179,36 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
     };
     Ok(value.clone())
   }
+
+  fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    let scheme = resource_uri_scheme(&request.base_uri)?;
+    if scheme != "docs" {
+      return Err(MechError::new(
+        RuntimeResourceInvalidUri {
+          uri: request.base_uri,
+          reason: "in-memory docs resources require the `docs` scheme".to_string(),
+        },
+        None,
+      ));
+    }
+
+    if request.path.is_empty() {
+      return Err(MechError::new(
+        RuntimeResourceInvalidUri {
+          uri: request.base_uri,
+          reason: "resource path cannot be empty".to_string(),
+        },
+        None,
+      ));
+    }
+
+    self.documents
+      .entry(request.base_uri)
+      .or_default()
+      .insert(request.path, request.value);
+
+    Ok(())
+  }
 }
 
 fn resource_uri_scheme(uri: &str) -> MResult<&str> {
@@ -201,6 +265,28 @@ impl MechErrorKind for RuntimeResourceProviderNotFound {
       "no runtime resource provider registered for scheme `{}` while reading `{}`",
       self.scheme,
       self.uri,
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeResourceWriteUnsupported {
+  pub scheme: String,
+  pub base_uri: String,
+  pub path: String,
+}
+
+impl MechErrorKind for RuntimeResourceWriteUnsupported {
+  fn name(&self) -> &str {
+    "RuntimeResourceWriteUnsupported"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "runtime resource provider for scheme `{}` does not support writes to `{}` under `{}`",
+      self.scheme,
+      self.path,
+      self.base_uri,
     )
   }
 }

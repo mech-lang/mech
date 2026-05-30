@@ -85,6 +85,32 @@ fn runtime_context_allows_read(
   })
 }
 
+#[allow(dead_code)]
+fn runtime_context_allows_write(
+  binding: &RuntimeContextBinding,
+  path: &str,
+) -> bool {
+  binding.capabilities.iter().any(|capability| {
+    if capability.operation != "write" {
+      return false;
+    }
+
+    match &capability.scope {
+      RuntimeContextCapabilityScope::Wildcard => true,
+      RuntimeContextCapabilityScope::Path(exact) => {
+        if exact == path {
+          return true;
+        }
+        if let Some(prefix) = exact.strip_suffix("/*") {
+          let required_prefix = format!("{}/", prefix);
+          return path.starts_with(&required_prefix);
+        }
+        false
+      }
+    }
+  })
+}
+
 impl MechRuntime {
 
   pub fn run_string(&mut self, source: &str) -> MResult<Value> {

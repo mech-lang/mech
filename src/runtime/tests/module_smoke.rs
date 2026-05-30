@@ -1,5 +1,5 @@
 use mech_core::{hash_str, MechSourceCode, Ref, Value};
-use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, InMemoryDocsProvider, ModuleScopeMetadata, ModuleBuildOptions, ResolvedSource, RuntimeBuilder, RuntimeContextRegistry, SourceContextBase, SourceContextCapability, SourceContextCapabilityScope, SourceContextDeclaration, SourceInterpreterId, SourceKind, SourceRequest, SourceResolver, SourceScope};
+use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, InMemoryDocsProvider, ModuleScopeMetadata, ModuleBuildOptions, ResolvedSource, RuntimeBuilder, RuntimeContextRegistry, SourceContextBase, SourceContextCapability, SourceContextCapabilityScope, SourceContextDeclaration, SourceInterpreterId, SourceKind, SourceRequest, SourceResolver, SourceScope, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest};
 
 fn setup_modules(main_source: &str) -> std::path::PathBuf {
   let root = std::env::temp_dir().join(format!("mech-runtime-module-smoke-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
@@ -38,6 +38,75 @@ fn assert_bool_true(result: Value, label: &str) {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from {label}, got {:?}", other),
   }
+}
+
+
+#[test]
+fn in_memory_docs_provider_write_then_read_returns_value() {
+  let mut provider = InMemoryDocsProvider::new();
+  provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: bool_value(true) }).unwrap();
+  let value = provider.read(RuntimeResourceReadRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string() }).unwrap();
+  assert_bool_true(value, "provider write then read");
+}
+
+#[test]
+fn resource_registry_write_then_read_returns_value() {
+  let mut registry = RuntimeResourceRegistry::new();
+  registry.register_provider(Box::new(InMemoryDocsProvider::new())).unwrap();
+  registry.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: bool_value(true) }).unwrap();
+  let value = registry.read(RuntimeResourceReadRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string() }).unwrap();
+  assert_bool_true(value, "registry write then read");
+}
+
+#[test]
+fn resource_registry_write_missing_provider_fails() {
+  let mut registry = RuntimeResourceRegistry::new();
+  let result = registry.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: bool_value(true) });
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeResourceProviderNotFound"), "expected missing provider error, got {error}");
+  assert!(error.contains("docs"), "expected scheme in error, got {error}");
+  assert!(error.contains("docs://manual"), "expected base URI in error, got {error}");
+}
+
+#[test]
+fn in_memory_docs_write_invalid_scheme_fails() {
+  let mut provider = InMemoryDocsProvider::new();
+  let result = provider.write(RuntimeResourceWriteRequest { base_uri: "db://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: bool_value(true) });
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeResourceInvalidUri"), "expected invalid URI error, got {error}");
+  assert!(error.contains("docs"), "expected docs scheme requirement, got {error}");
+}
+
+#[test]
+fn in_memory_docs_write_empty_path_fails() {
+  let mut provider = InMemoryDocsProvider::new();
+  let result = provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: String::new(), context_name: "manual".to_string(), value: bool_value(true) });
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeResourceInvalidUri"), "expected invalid URI error, got {error}");
+  assert!(error.contains("resource path cannot be empty"), "expected empty path error, got {error}");
+}
+
+#[derive(Debug)]
+struct ReadOnlyDocsProvider;
+
+impl RuntimeResourceProvider for ReadOnlyDocsProvider {
+  fn scheme(&self) -> &str { "docs" }
+  fn read(&self, _request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> { unreachable!("read is not needed for the default write behavior test") }
+}
+
+#[test]
+fn provider_default_write_is_unsupported() {
+  let mut provider = ReadOnlyDocsProvider;
+  let result = provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: bool_value(true) });
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeResourceWriteUnsupported"), "expected unsupported write error, got {error}");
+  assert!(error.contains("docs"), "expected provider scheme in error, got {error}");
+  assert!(error.contains("docs://manual"), "expected base URI in error, got {error}");
+  assert!(error.contains("intro/title"), "expected path in error, got {error}");
 }
 
 #[test]
@@ -579,6 +648,18 @@ fn addressed_assignment_to_context_is_still_unsupported() {
   let root = setup_modules("@manual := docs://manual{:write(intro/title)}\n\nintro/title@manual := true\n");
 
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("AddressedAssignmentUnsupported"), "expected addressed assignment error, got {error}");
+}
+
+#[test]
+fn addressed_assignment_with_docs_provider_is_still_unsupported() {
+  let root = setup_modules("@manual := docs://manual{:write(intro/title)}\n\nintro/title@manual := true\n");
+
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).in_memory_docs(InMemoryDocsProvider::new()).build().unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version);
   assert!(result.is_err());

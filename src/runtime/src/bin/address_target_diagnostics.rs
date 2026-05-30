@@ -1,5 +1,5 @@
 use mech_core::{Ref, Value};
-use mech_runtime::{FileSourceResolver, InMemoryDocsProvider, ModuleBuildOptions, RuntimeBuilder, SourceScope};
+use mech_runtime::{FileSourceResolver, InMemoryDocsProvider, ModuleBuildOptions, RuntimeBuilder, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteRequest, SourceScope};
 
 fn write_case(root: &std::path::Path, name: &str, source: &str) -> std::path::PathBuf {
   let case_root = root.join(name);
@@ -61,6 +61,17 @@ fn main() {
   let root = std::env::temp_dir().join(format!("mech-address-target-diagnostics-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
   std::fs::create_dir_all(&root).unwrap();
   println!("root path: {}", root.display());
+
+  let mut provider = InMemoryDocsProvider::new();
+  println!("provider write/read:");
+  println!("  write docs://manual intro/title = true");
+  provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: Value::Bool(Ref::new(true)) }).unwrap();
+  let value = provider.read(RuntimeResourceReadRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string() }).unwrap();
+  match value {
+    Value::Bool(value) => println!("  read result: Bool({})", value.borrow()),
+    other => println!("  read result: {:?}", other),
+  }
+  println!();
 
   run_case(
     &root,
