@@ -27,6 +27,7 @@ pub struct TitleFrontMatter {
   pub date: Option<Paragraph>,
   pub hero: Option<SectionElement>,
   pub kicker: Option<Paragraph>,
+  pub section: Option<Paragraph>,
   pub summary: Option<Paragraph>,
   pub next: Option<Paragraph>,
   pub previous: Option<Paragraph>,
@@ -51,6 +52,7 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
     date: front_matter.date,
     hero: front_matter.hero,
     kicker: front_matter.kicker,
+    section: front_matter.section,
     summary: front_matter.summary,
     next: front_matter.next,
     previous: front_matter.previous,
@@ -89,6 +91,7 @@ pub fn title_front_matter(input: ParseString) -> ParseResult<TitleFrontMatter> {
       "author" => front_matter.author = Some(paragraph),
       "date" => front_matter.date = Some(paragraph),
       "kicker" => front_matter.kicker = Some(paragraph),
+      "section" => front_matter.section = Some(paragraph),
       "summary" => front_matter.summary = Some(paragraph),
       "next" => front_matter.next = Some(paragraph),
       "previous" => front_matter.previous = Some(paragraph),
@@ -1148,6 +1151,23 @@ mod tests {
     assert_eq!(fenced[1].exports.len(), 1);
     assert_eq!(fenced[1].imports[0].specifier.to_string(), "geometry/triangle-area");
     assert_eq!(fenced[1].exports[0].name.to_string(), "area");
+  }
+
+  #[test]
+  fn formatter_replaces_version_and_section_placeholders() {
+    let src = "Template Test\n==============\nsection: Guides\n==============\n\nIntro text.\n";
+    let tree = parser::parse(src).unwrap();
+    let mut formatter = Formatter::new();
+    let html = formatter.format_html(
+      &tree,
+      "".to_string(),
+      "<main>{{SECTION}} {{VERSION}} {{TITLE}}</main>".to_string(),
+    );
+    assert!(html.contains("mech-section"));
+    assert!(html.contains("Guides"));
+    assert!(html.contains(env!("CARGO_PKG_VERSION")));
+    assert!(!html.contains("{{SECTION}}"));
+    assert!(!html.contains("{{VERSION}}"));
   }
 
   #[test]
