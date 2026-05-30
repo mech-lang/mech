@@ -103,7 +103,7 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
-use crate::{InMemoryDocsProvider, RuntimeResourceCapabilityDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry};
+use crate::{InMemoryDocsProvider, RuntimeResourceCapabilityDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest};
 
 thread_local! {
   static ACTIVE_RUNTIME_PROGRAM_HOST: RefCell<Option<RuntimeProgramHostTarget>> =
@@ -404,6 +404,20 @@ impl MechRuntime {
 
   pub fn has_resource_provider(&self, scheme: &str) -> bool {
     self.resources.has_provider(scheme)
+  }
+
+  pub fn write_resource(
+    &mut self,
+    request: RuntimeResourceWriteRequest,
+  ) -> MResult<()> {
+    self.resources.write(request)
+  }
+
+  pub fn read_resource(
+    &self,
+    request: RuntimeResourceReadRequest,
+  ) -> MResult<Value> {
+    self.resources.read(request)
   }
 
   pub fn store(&self) -> &dyn MechStore {
