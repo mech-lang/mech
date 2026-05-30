@@ -9,7 +9,7 @@ pub struct RuntimeResourceReadRequest {
   pub context_name: String,
 }
 
-pub trait RuntimeResourceProvider: std::fmt::Debug + Send {
+pub trait RuntimeResourceProvider: std::fmt::Debug {
   fn scheme(&self) -> &str;
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value>;
 }
@@ -71,11 +71,6 @@ impl RuntimeResourceRegistry {
 pub struct InMemoryDocsProvider {
   documents: HashMap<String, HashMap<String, Value>>,
 }
-
-// Mech `Value` is currently backed by single-threaded references. Runtime resource
-// providers are registered and read synchronously by `MechRuntime`; this impl
-// satisfies the provider trait bound without introducing shared concurrent access.
-unsafe impl Send for InMemoryDocsProvider {}
 
 impl InMemoryDocsProvider {
   pub fn new() -> Self {
