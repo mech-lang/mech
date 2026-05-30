@@ -13,6 +13,8 @@
 
 use super::*;
 
+const DEFAULT_RESOURCE_SUBJECT: &str = "task://main";
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum RuntimeAddressTarget {
   Interpreter(SourceScope),
@@ -457,6 +459,22 @@ impl MechRuntime {
               RuntimeResourceCapabilityDenied {
                 context_name: binding.name.clone(),
                 operation: "read".to_string(),
+                path: reference.name.clone(),
+              },
+              None,
+            ));
+          }
+          if !self.grants.allows(
+            DEFAULT_RESOURCE_SUBJECT,
+            &base_uri,
+            &RuntimeCapabilityOperation::Read,
+            &reference.name,
+          ) {
+            return Err(MechError::new(
+              RuntimeCapabilityGrantDenied {
+                subject: DEFAULT_RESOURCE_SUBJECT.to_string(),
+                resource: base_uri,
+                operation: RuntimeCapabilityOperation::Read,
                 path: reference.name.clone(),
               },
               None,

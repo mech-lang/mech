@@ -15,14 +15,6 @@ use super::*;
 
 impl MechRuntime {
 
-  pub fn grant_capability(
-    &mut self,
-    capability: Arc<dyn Capability>,
-  ) -> MResult<CapabilityId> {
-    let mut context = self.runtime_context()?;
-    self.grant_capability_with_context(&mut context, capability)
-  }
-
   pub fn grant_capability_with_context(
     &mut self,
     context: &mut RuntimeContext,

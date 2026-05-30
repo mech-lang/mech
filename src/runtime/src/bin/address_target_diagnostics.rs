@@ -1,5 +1,5 @@
 use mech_core::{Ref, Value};
-use mech_runtime::{FileSourceResolver, InMemoryDocsProvider, ModuleBuildOptions, RuntimeBuilder, RuntimeConfigSpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteRequest, SourceScope};
+use mech_runtime::{FileSourceResolver, InMemoryDocsProvider, ModuleBuildOptions, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteRequest, SourceScope};
 
 fn write_case(root: &std::path::Path, name: &str, source: &str) -> std::path::PathBuf {
   let case_root = root.join(name);
@@ -14,7 +14,7 @@ fn docs_provider_with(path: &str, value: Value) -> InMemoryDocsProvider {
     .unwrap()
 }
 
-fn run_case(root: &std::path::Path, name: &str, source: &str, docs: Option<InMemoryDocsProvider>, config_spec: Option<RuntimeConfigSpec>) {
+fn run_case(root: &std::path::Path, name: &str, source: &str, docs: Option<InMemoryDocsProvider>, config_spec: Option<RuntimeConfigSpec>, grant_read: bool) {
   let case_root = write_case(root, name, source);
   println!("case: {name}");
   println!("root path: {}", case_root.display());
@@ -27,6 +27,14 @@ fn run_case(root: &std::path::Path, name: &str, source: &str, docs: Option<InMem
     builder = builder.config_spec(spec);
   }
   let mut runtime = builder.build().unwrap();
+  if grant_read {
+    runtime.grant_capability(RuntimeCapabilityGrant {
+      subject: "task://main".to_string(),
+      resource: "docs://manual".to_string(),
+      operations: vec![RuntimeCapabilityOperation::Read],
+      paths: vec!["intro/title".to_string()],
+    }).unwrap();
+  }
   let options = ModuleBuildOptions::new("diagnostics", "v0.3", "native", &[], &[]);
 
   match runtime.resolve_and_store_module_source("main.mec", options) {
@@ -82,6 +90,7 @@ fn main() {
     "~~~mech:foo\nok := true\n<+ ok\n~~~\n\nresult := ok@foo\n",
     None,
     None,
+    false,
   );
   run_case(
     &root,
@@ -89,6 +98,7 @@ fn main() {
     "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
     Some(docs_provider_with("intro/title", Value::Bool(Ref::new(true)))),
     None,
+    true,
   );
   run_case(
     &root,
@@ -101,6 +111,15 @@ fn main() {
           .with_entry("intro/title", Value::Bool(Ref::new(true))),
       ),
     )),
+    true,
+  );
+  run_case(
+    &root,
+    "docs read without host grant fails RuntimeCapabilityGrantDenied",
+    "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
+    Some(docs_provider_with("intro/title", Value::Bool(Ref::new(true)))),
+    None,
+    false,
   );
   run_case(
     &root,
@@ -108,6 +127,7 @@ fn main() {
     "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
     None,
     None,
+    true,
   );
   run_case(
     &root,
@@ -115,6 +135,7 @@ fn main() {
     "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
     Some(InMemoryDocsProvider::new()),
     None,
+    true,
   );
   run_case(
     &root,
@@ -122,6 +143,7 @@ fn main() {
     "@manual := docs://manual{:read(other/path)}\n\nresult := intro/title@manual\n",
     Some(docs_provider_with("intro/title", Value::Bool(Ref::new(true)))),
     None,
+    true,
   );
   run_case(
     &root,
@@ -129,6 +151,7 @@ fn main() {
     "~~~mech:foo\n@manual := docs://manual{:read(intro/title)}\nresult := intro/title@manual\n~~~\n",
     Some(docs_provider_with("intro/title", Value::Bool(Ref::new(true)))),
     None,
+    true,
   );
   run_case(
     &root,
@@ -136,6 +159,7 @@ fn main() {
     "~~~mech:foo\nok := true\n<+ ok\n~~~\n\n@foo := docs://foo{:read(ok)}\n",
     None,
     None,
+    false,
   );
   run_case(
     &root,
@@ -143,6 +167,7 @@ fn main() {
     "result := ok@missing\n",
     None,
     None,
+    false,
   );
   run_case(
     &root,
@@ -150,5 +175,6 @@ fn main() {
     "~~~mech:bar\nbroken := missing\n<+ broken\n~~~\n\ntext := \"@bar\"\n-- @bar\n\nok := true\n",
     None,
     None,
+    false,
   );
 }

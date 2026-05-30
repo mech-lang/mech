@@ -103,7 +103,7 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
-use crate::{register_config_spec_resources, InMemoryDocsProvider, RuntimeConfigSpec, RuntimeResourceCapabilityDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest};
+use crate::{register_config_spec_grants, register_config_spec_resources, InMemoryDocsProvider, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest};
 
 thread_local! {
   static ACTIVE_RUNTIME_PROGRAM_HOST: RefCell<Option<RuntimeProgramHostTarget>> =
@@ -309,10 +309,12 @@ impl RuntimeBuilder {
       actor_behavior_driver: self.actor_behavior_driver,
       module_builder: self.module_builder,
       resources: RuntimeResourceRegistry::new(),
+      grants: RuntimeCapabilityGrantRegistry::new(),
     };
 
-    for spec in self.config_specs {
+    for spec in &self.config_specs {
       register_config_spec_resources(&mut runtime.resources, spec)?;
+      register_config_spec_grants(&mut runtime.grants, spec)?;
     }
 
     for provider in self.resource_providers {
@@ -353,6 +355,7 @@ pub struct MechRuntime {
   actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
   module_builder: ModuleBuilder,
   resources: RuntimeResourceRegistry,
+  grants: RuntimeCapabilityGrantRegistry,
 }
 
 impl std::fmt::Debug for MechRuntime {
@@ -374,6 +377,7 @@ impl std::fmt::Debug for MechRuntime {
       .field("actor_behavior_driver", &"<dyn ActorBehaviorDriver>")
       .field("module_builder", &self.module_builder)
       .field("resources", &self.resources)
+      .field("grants", &self.grants)
       .finish()
   }
 }
@@ -414,7 +418,33 @@ impl MechRuntime {
     &mut self,
     spec: RuntimeConfigSpec,
   ) -> MResult<()> {
-    register_config_spec_resources(&mut self.resources, spec)
+    register_config_spec_resources(&mut self.resources, &spec)?;
+    register_config_spec_grants(&mut self.grants, &spec)?;
+    Ok(())
+  }
+
+  pub fn grant_capability<G>(&mut self, grant: G) -> MResult<G::Output>
+  where
+    G: RuntimeCapabilityGrantInput,
+  {
+    grant.apply(self)
+  }
+
+  pub(crate) fn add_resource_capability_grant(
+    &mut self,
+    grant: RuntimeCapabilityGrant,
+  ) -> MResult<()> {
+    self.grants.add_grant(grant)
+  }
+
+  pub fn has_capability_grant(
+    &self,
+    subject: &str,
+    resource: &str,
+    operation: &RuntimeCapabilityOperation,
+    path: &str,
+  ) -> bool {
+    self.grants.allows(subject, resource, operation, path)
   }
 
   pub fn register_resource_provider(
