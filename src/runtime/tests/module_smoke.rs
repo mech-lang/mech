@@ -1632,6 +1632,7 @@ fn workspace_load_target_without_imports() {
 fn workspace_load_target_with_local_import() {
   let root = setup_modules("+> ./math.mec\n\nresult := math/value\n");
   std::fs::write(root.join("math.mec"), "value := true\n<+ value\n").unwrap();
+
   let mut runtime = runtime_with_root(&root);
   let mut workspace = RuntimeWorkspace::open(
     RuntimeWorkspaceConfig::new(&root).target("main", "main.mec"),
@@ -1639,6 +1640,7 @@ fn workspace_load_target_with_local_import() {
 
   let snapshot = workspace.load(&mut runtime, module_options()).unwrap();
   assert!(snapshot.diagnostics.is_empty());
+
   let target = snapshot.targets.get("main").unwrap();
   let main_path = root.join("main.mec").canonicalize().unwrap();
   let math_path = root.join("math.mec").canonicalize().unwrap();
@@ -1657,6 +1659,15 @@ fn workspace_load_target_with_local_import() {
     }),
     "workspace snapshot should contain math.mec source; sources: {:?}",
     snapshot.sources,
+  );
+
+  assert!(snapshot.import_edges.iter().any(|edge| {
+    edge.specifier == "./math.mec"
+  }));
+
+  assert_bool_true(
+    runtime.run_module(target.module_version).unwrap(),
+    "workspace imported target",
   );
 }
 
@@ -1817,9 +1828,11 @@ fn workspace_refresh_modified_dependency_reloads_target() {
 }
 
 #[test]
+#[test]
 fn workspace_refresh_removed_dependency_records_diagnostic() {
   let root = setup_modules("+> ./math.mec\n\nresult := math/value\n");
   std::fs::write(root.join("math.mec"), "value := false\n<+ value\n").unwrap();
+
   let mut runtime = runtime_with_root(&root);
   let mut workspace = RuntimeWorkspace::open(
     RuntimeWorkspaceConfig::new(&root).target("main", "main.mec"),
@@ -1829,13 +1842,27 @@ fn workspace_refresh_removed_dependency_records_diagnostic() {
   std::fs::remove_file(root.join("math.mec")).unwrap();
 
   let refresh = workspace.refresh(&mut runtime, module_options()).unwrap();
+
   assert_eq!(refresh.changes.len(), 1);
   assert_eq!(refresh.changes[0].kind, RuntimeWorkspaceChangeKind::Removed);
   assert!(refresh.changes[0].canonical_uri.ends_with("/math.mec"));
   assert_eq!(refresh.affected_targets, vec!["main"]);
+
   assert_eq!(refresh.refresh_diagnostics.len(), 1);
-  assert_eq!(refresh.refresh_diagnostics[0].severity, RuntimeWorkspaceDiagnosticSeverity::Error);
-  assert_eq!(refresh.refresh_diagnostics[0].target.as_deref(), Some("main"));
+  assert_eq!(
+    refresh.refresh_diagnostics[0].severity,
+    RuntimeWorkspaceDiagnosticSeverity::Error,
+  );
+  assert_eq!(
+    refresh.refresh_diagnostics[0].target.as_deref(),
+    Some("main"),
+  );
+
+  assert_eq!(refresh.snapshot.diagnostics.len(), 1);
+  assert_eq!(
+    refresh.snapshot.diagnostics[0].target.as_deref(),
+    Some("main"),
+  );
   assert!(!refresh.snapshot.targets.contains_key("main"));
 }
 
@@ -1858,4 +1885,41 @@ fn workspace_refresh_modified_target_reloads_target() {
   assert_eq!(refresh.affected_targets, vec!["main"]);
   assert!(refresh.refresh_diagnostics.is_empty());
   assert_bool_true(runtime.run_module(refresh.snapshot.targets["main"].module_version).unwrap(), "refreshed workspace target");
+}
+
+#[test]
+fn workspace_refresh_preserves_unaffected_diagnostics() {
+  let root = setup_modules("result := false\n");
+
+  let mut runtime = runtime_with_root(&root);
+  let mut workspace = RuntimeWorkspace::open(
+    RuntimeWorkspaceConfig::new(&root)
+      .target("missing", "missing.mec")
+      .target("main", "main.mec"),
+  ).unwrap();
+
+  let initial = workspace.load(&mut runtime, module_options()).unwrap();
+
+  assert_eq!(initial.diagnostics.len(), 1);
+  assert_eq!(initial.diagnostics[0].target.as_deref(), Some("missing"));
+  assert!(initial.targets.contains_key("main"));
+
+  std::fs::write(root.join("main.mec"), "result := true\n").unwrap();
+
+  let refresh = workspace.refresh(&mut runtime, module_options()).unwrap();
+
+  assert_eq!(refresh.affected_targets, vec!["main"]);
+  assert!(refresh.refresh_diagnostics.is_empty());
+
+  assert_eq!(refresh.snapshot.diagnostics.len(), 1);
+  assert_eq!(
+    refresh.snapshot.diagnostics[0].target.as_deref(),
+    Some("missing"),
+  );
+
+  let target = refresh.snapshot.targets.get("main").unwrap();
+  assert_bool_true(
+    runtime.run_module(target.module_version).unwrap(),
+    "refreshed workspace target with retained diagnostic",
+  );
 }
