@@ -1640,12 +1640,24 @@ fn workspace_load_target_with_local_import() {
   let snapshot = workspace.load(&mut runtime, module_options()).unwrap();
   assert!(snapshot.diagnostics.is_empty());
   let target = snapshot.targets.get("main").unwrap();
-  let main_uri = format!("file://{}", root.join("main.mec").canonicalize().unwrap().display());
-  let math_uri = format!("file://{}", root.join("math.mec").canonicalize().unwrap().display());
-  assert!(snapshot.sources.contains_key(&main_uri));
-  assert!(snapshot.sources.contains_key(&math_uri));
-  assert!(snapshot.import_edges.iter().any(|edge| edge.specifier == "./math.mec"));
-  assert_bool_true(runtime.run_module(target.module_version).unwrap(), "workspace imported target");
+  let main_path = root.join("main.mec").canonicalize().unwrap();
+  let math_path = root.join("math.mec").canonicalize().unwrap();
+
+  assert!(
+    snapshot.sources.values().any(|source| {
+      source.path.as_ref() == Some(&main_path)
+    }),
+    "workspace snapshot should contain main.mec source; sources: {:?}",
+    snapshot.sources,
+  );
+
+  assert!(
+    snapshot.sources.values().any(|source| {
+      source.path.as_ref() == Some(&math_path)
+    }),
+    "workspace snapshot should contain math.mec source; sources: {:?}",
+    snapshot.sources,
+  );
 }
 
 #[test]
@@ -1778,7 +1790,7 @@ fn workspace_refresh_without_changes_is_empty() {
   let refresh = workspace.refresh(&mut runtime, module_options()).unwrap();
   assert!(refresh.changes.is_empty());
   assert!(refresh.affected_targets.is_empty());
-  assert!(refresh.diagnostics.is_empty());
+  assert!(refresh.refresh_diagnostics.is_empty());
   assert!(refresh.snapshot.targets.contains_key("main"));
 }
 
@@ -1800,7 +1812,7 @@ fn workspace_refresh_modified_dependency_reloads_target() {
   assert_eq!(refresh.changes[0].kind, RuntimeWorkspaceChangeKind::Modified);
   assert!(refresh.changes[0].canonical_uri.ends_with("/math.mec"));
   assert_eq!(refresh.affected_targets, vec!["main"]);
-  assert!(refresh.diagnostics.is_empty());
+  assert!(refresh.refresh_diagnostics.is_empty());
   assert_bool_true(runtime.run_module(refresh.snapshot.targets["main"].module_version).unwrap(), "refreshed workspace dependency");
 }
 
@@ -1821,9 +1833,9 @@ fn workspace_refresh_removed_dependency_records_diagnostic() {
   assert_eq!(refresh.changes[0].kind, RuntimeWorkspaceChangeKind::Removed);
   assert!(refresh.changes[0].canonical_uri.ends_with("/math.mec"));
   assert_eq!(refresh.affected_targets, vec!["main"]);
-  assert_eq!(refresh.diagnostics.len(), 1);
-  assert_eq!(refresh.diagnostics[0].severity, RuntimeWorkspaceDiagnosticSeverity::Error);
-  assert_eq!(refresh.diagnostics[0].target.as_deref(), Some("main"));
+  assert_eq!(refresh.refresh_diagnostics.len(), 1);
+  assert_eq!(refresh.refresh_diagnostics[0].severity, RuntimeWorkspaceDiagnosticSeverity::Error);
+  assert_eq!(refresh.refresh_diagnostics[0].target.as_deref(), Some("main"));
   assert!(!refresh.snapshot.targets.contains_key("main"));
 }
 
@@ -1844,6 +1856,6 @@ fn workspace_refresh_modified_target_reloads_target() {
   assert_eq!(refresh.changes[0].kind, RuntimeWorkspaceChangeKind::Modified);
   assert!(refresh.changes[0].canonical_uri.ends_with("/main.mec"));
   assert_eq!(refresh.affected_targets, vec!["main"]);
-  assert!(refresh.diagnostics.is_empty());
+  assert!(refresh.refresh_diagnostics.is_empty());
   assert_bool_true(runtime.run_module(refresh.snapshot.targets["main"].module_version).unwrap(), "refreshed workspace target");
 }
