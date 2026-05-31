@@ -1,6 +1,6 @@
 use super::*;
 
-pub fn load_target(
+pub(super) fn load_target(
   root: &Path,
   runtime: &mut MechRuntime,
   target: &RuntimeWorkspaceTarget,
@@ -217,7 +217,7 @@ pub(super) fn file_uri_path(canonical_uri: &str) -> Option<PathBuf> {
 }
 
 #[cfg(not(windows))]
-pub(super)fn file_uri_path_unix(rest: &str) -> Option<PathBuf> {
+pub(super) fn file_uri_path_unix(rest: &str) -> Option<PathBuf> {
   if rest.is_empty() {
     return None;
   }

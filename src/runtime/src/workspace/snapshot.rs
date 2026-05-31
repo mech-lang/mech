@@ -41,7 +41,7 @@ pub struct RuntimeWorkspaceSnapshot {
   pub diagnostics: Vec<RuntimeWorkspaceDiagnostic>,
 }
 
-impl RuntimeWorkspaceSnapshot{
+impl RuntimeWorkspaceSnapshot {
 
   pub fn changed_sources(&self) -> Vec<RuntimeWorkspaceChange> {
     self

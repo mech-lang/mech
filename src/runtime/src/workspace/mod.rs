@@ -7,7 +7,7 @@ mod workspace;
 
 pub use self::errors::*;
 pub use self::config::*;
-pub use self::load::*;
+use self::load::*;
 pub use self::snapshot::*;
 pub use self::refresh::*;
 pub use self::workspace::*;
