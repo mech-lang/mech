@@ -1642,6 +1642,78 @@ fn workspace_load_target_with_local_import() {
 }
 
 #[test]
+fn workspace_load_relative_target_uses_workspace_root() {
+  let root_a = std::env::temp_dir().join(format!(
+    "mech-runtime-workspace-root-a-{}",
+    std::time::SystemTime::now()
+      .duration_since(std::time::UNIX_EPOCH)
+      .unwrap()
+      .as_nanos()
+  ));
+  let root_b = std::env::temp_dir().join(format!(
+    "mech-runtime-workspace-root-b-{}",
+    std::time::SystemTime::now()
+      .duration_since(std::time::UNIX_EPOCH)
+      .unwrap()
+      .as_nanos()
+  ));
+  std::fs::create_dir_all(&root_a).unwrap();
+  std::fs::create_dir_all(&root_b).unwrap();
+
+  std::fs::write(root_a.join("main.mec"), "result := false\n").unwrap();
+  std::fs::write(root_b.join("main.mec"), "result := true\n").unwrap();
+
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root_b))
+    .build()
+    .unwrap();
+  let mut workspace = RuntimeWorkspace::open(
+    RuntimeWorkspaceConfig::new(&root_a)
+      .target("main", "main.mec"),
+  ).unwrap();
+
+  let snapshot = workspace.load(&mut runtime, module_options()).unwrap();
+  assert!(snapshot.diagnostics.is_empty());
+
+  let target = snapshot.targets.get("main").unwrap();
+  assert_eq!(target.specifier, "main.mec");
+  let result = runtime.run_module(target.module_version).unwrap();
+  match result {
+    Value::Bool(value) => assert!(!*value.borrow()),
+    other => panic!("expected false bool result from workspace root target, got {:?}", other),
+  }
+}
+
+#[test]
+fn workspace_load_target_outside_root_records_diagnostic() {
+  let parent = std::env::temp_dir().join(format!(
+    "mech-runtime-workspace-outside-root-{}",
+    std::time::SystemTime::now()
+      .duration_since(std::time::UNIX_EPOCH)
+      .unwrap()
+      .as_nanos()
+  ));
+  let root = parent.join("workspace");
+  let outside = parent.join("outside");
+  std::fs::create_dir_all(&root).unwrap();
+  std::fs::create_dir_all(&outside).unwrap();
+  std::fs::write(outside.join("main.mec"), "result := true\n").unwrap();
+
+  let mut runtime = runtime_with_root(&root);
+  let mut workspace = RuntimeWorkspace::open(
+    RuntimeWorkspaceConfig::new(&root)
+      .target("outside", "../outside/main.mec"),
+  ).unwrap();
+
+  let snapshot = workspace.load(&mut runtime, module_options()).unwrap();
+  assert_eq!(snapshot.diagnostics.len(), 1);
+  assert_eq!(snapshot.diagnostics[0].severity, RuntimeWorkspaceDiagnosticSeverity::Error);
+  assert_eq!(snapshot.diagnostics[0].target.as_deref(), Some("outside"));
+  assert!(snapshot.diagnostics[0].message.contains("outside workspace root"));
+  assert!(!snapshot.targets.contains_key("outside"));
+}
+
+#[test]
 fn workspace_load_missing_target_records_diagnostic() {
   let root = setup_modules("result := true\n");
   let mut runtime = runtime_with_root(&root);

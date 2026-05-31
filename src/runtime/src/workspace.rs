@@ -173,7 +173,27 @@ impl RuntimeWorkspace {
     let mut loaded_versions = Vec::new();
 
     for target in &self.config.targets {
-      match runtime.resolve_and_store_module_source(target.specifier.as_str(), options.clone()) {
+      let resolved_specifier = match workspace_target_specifier(
+        &self.config.root,
+        &target.specifier,
+      ) {
+        Ok(specifier) => specifier,
+        Err(error) => {
+          snapshot.diagnostics.push(target_diagnostic(
+            target,
+            format!(
+              "workspace target `{}` failed to resolve `{}` against root `{}`: {:?}",
+              target.name,
+              target.specifier,
+              self.config.root.display(),
+              error,
+            ),
+          ));
+          continue;
+        }
+      };
+
+      match runtime.resolve_and_store_module_source(resolved_specifier.as_str(), options.clone()) {
         Ok(Some(module_version)) => {
           let Some((module, _)) = runtime.workspace_module_records(module_version)? else {
             snapshot.diagnostics.push(target_diagnostic(
@@ -213,6 +233,51 @@ impl RuntimeWorkspace {
   ) -> Option<&RuntimeWorkspaceTargetSnapshot> {
     self.snapshot.as_ref()?.targets.get(name)
   }
+}
+
+fn workspace_target_specifier(
+  root: &Path,
+  specifier: &str,
+) -> MResult<String> {
+  if specifier.contains("://") {
+    return Ok(specifier.to_string());
+  }
+
+  let path = PathBuf::from(specifier);
+  let joined = if path.is_absolute() {
+    path
+  } else {
+    root.join(path)
+  };
+
+  let canonical = joined.canonicalize().map_err(|error| {
+    MechError::new(
+      RuntimeWorkspaceInvalidConfig {
+        reason: format!(
+          "workspace target `{}` could not be canonicalized against root `{}`: {}",
+          specifier,
+          root.display(),
+          error,
+        ),
+      },
+      None,
+    )
+  })?;
+
+  if !canonical.starts_with(root) {
+    return Err(MechError::new(
+      RuntimeWorkspaceInvalidConfig {
+        reason: format!(
+          "workspace target `{}` resolves outside workspace root `{}`",
+          specifier,
+          root.display(),
+        ),
+      },
+      None,
+    ));
+  }
+
+  Ok(canonical.to_string_lossy().to_string())
 }
 
 fn canonicalize_workspace_root(root: &Path) -> MResult<PathBuf> {
@@ -390,5 +455,34 @@ mod tests {
   #[test]
   fn file_uri_path_rejects_non_file_uri() {
     assert!(file_uri_path("http://example.com/main.mec").is_none());
+  }
+
+  #[test]
+  fn workspace_target_specifier_canonicalizes_absolute_local_path() {
+    let root = std::env::temp_dir().join(format!(
+      "mech-runtime-workspace-absolute-target-{}",
+      SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos()
+    ));
+    std::fs::create_dir_all(&root).unwrap();
+    let target = root.join("main.mec");
+    std::fs::write(&target, "result := true\n").unwrap();
+    let canonical_root = root.canonicalize().unwrap();
+    let canonical_target = target.canonicalize().unwrap();
+
+    assert_eq!(
+      workspace_target_specifier(&canonical_root, target.to_string_lossy().as_ref()).unwrap(),
+      canonical_target.to_string_lossy(),
+    );
+  }
+
+  #[test]
+  fn workspace_target_specifier_passes_through_uri() {
+    assert_eq!(
+      workspace_target_specifier(Path::new("unused"), "memory://main.mec").unwrap(),
+      "memory://main.mec",
+    );
   }
 }
