@@ -161,6 +161,38 @@ impl RuntimeWorkspace {
       }
     }
 
+    let mut extra_module_versions = Vec::new();
+
+    for file in discover_workspace_files(&self.config.root, &self.config.folders)? {
+      match runtime.resolve_and_store_module_source(
+        file.specifier.as_str(),
+        options.clone(),
+      ) {
+        Ok(Some(module_version)) => {
+          extra_module_versions.push(module_version);
+        }
+        Ok(None) => refresh_diagnostics.push(RuntimeWorkspaceDiagnostic {
+          severity: RuntimeWorkspaceDiagnosticSeverity::Error,
+          target: None,
+          canonical_uri: Some(file.canonical_path.to_string_lossy().to_string()),
+          message: format!(
+            "workspace discovered file `{}` could not resolve",
+            file.canonical_path.display(),
+          ),
+        }),
+        Err(error) => refresh_diagnostics.push(RuntimeWorkspaceDiagnostic {
+          severity: RuntimeWorkspaceDiagnosticSeverity::Error,
+          target: None,
+          canonical_uri: Some(file.canonical_path.to_string_lossy().to_string()),
+          message: format!(
+            "workspace discovered file `{}` failed to load: {:?}",
+            file.canonical_path.display(),
+            error,
+          ),
+        }),
+      }
+    }    
+
     let mut snapshot_diagnostics = retained_diagnostics;
     snapshot_diagnostics.extend(refresh_diagnostics.clone());
 
@@ -168,7 +200,7 @@ impl RuntimeWorkspace {
       runtime,
       self.config.root.clone(),
       targets,
-      Vec::new(),
+      extra_module_versions,
       snapshot_diagnostics,
     )?;
 

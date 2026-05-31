@@ -21,17 +21,17 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
       "statements_default", "subscript_default", "state_machines",
-
+      "watcher",
       "mech-core/default", "mech-program/default"
       ]
 base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "statements_default", "subscript_default", "state_machines",
-      
+      "watcher",
       "mech-core/base", "mech-program/base"
       ]
 
 async = ["mech-program/async"]
-
+watcher = ["ignore"]
 statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
 
@@ -154,4 +154,5 @@ mech-syntax = { version = "0.3.5", default-features = false }
 serde = { version = "1.0.228", optional = true }
 serde_derive = { version = "1.0.228", optional = true }
 tracing = { version = "0.1.41", optional = true }
+ignore = {version = "0.4.24", optional = true }
 uuid = { version = "1.23.1", features = ["v7", "serde"] }

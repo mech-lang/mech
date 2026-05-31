@@ -1956,3 +1956,34 @@ fn workspace_load_folder_discovers_non_target_sources() {
     snapshot.sources,
   );
 }
+
+#[test]
+fn workspace_refresh_preserves_folder_discovered_sources() {
+  let root = setup_modules("result := true\n");
+  std::fs::create_dir_all(root.join("src")).unwrap();
+  std::fs::write(root.join("src/lib.mec"), "value := false\n").unwrap();
+
+  let mut runtime = runtime_with_root(&root);
+  let mut workspace = RuntimeWorkspace::open(
+    RuntimeWorkspaceConfig::new(&root)
+      .target("main", "main.mec")
+      .folder("src"),
+  ).unwrap();
+
+  let initial = workspace.load(&mut runtime, module_options()).unwrap();
+  assert!(initial.diagnostics.is_empty());
+
+  let discovered_path = root.join("src/lib.mec").canonicalize().unwrap();
+  assert!(initial.sources.values().any(|source| {
+    source.path.as_ref() == Some(&discovered_path)
+  }));
+
+  std::fs::write(root.join("main.mec"), "result := false\n").unwrap();
+
+  let refresh = workspace.refresh(&mut runtime, module_options()).unwrap();
+  assert!(refresh.refresh_diagnostics.is_empty());
+
+  assert!(refresh.snapshot.sources.values().any(|source| {
+    source.path.as_ref() == Some(&discovered_path)
+  }));
+}
