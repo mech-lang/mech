@@ -19,6 +19,7 @@ pub struct RuntimeWorkspaceChange {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RuntimeWorkspaceChangeKind {
+  Added,
   Modified,
   Removed,
 }
