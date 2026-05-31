@@ -43,6 +43,21 @@ impl MechErrorKind for RuntimeWorkspaceNotLoaded {
   }
 }
 
+#[derive(Debug, Clone)]
+pub struct RuntimeWorkspaceWatchError {
+  pub reason: String,
+}
+
+impl MechErrorKind for RuntimeWorkspaceWatchError {
+  fn name(&self) -> &str {
+    "RuntimeWorkspaceWatchError"
+  }
+
+  fn message(&self) -> String {
+    format!("runtime workspace watcher error: {}", self.reason)
+  }
+}
+
 pub(super) fn invalid_config<T>(reason: impl Into<String>) -> MResult<T> {
   Err(MechError::new(
     RuntimeWorkspaceInvalidConfig {

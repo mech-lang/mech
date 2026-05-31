@@ -175,6 +175,7 @@ impl RuntimeWorkspace {
   ) -> Option<&RuntimeWorkspaceTargetSnapshot> {
     self.snapshot.as_ref()?.targets.get(name)
   }
+
 }
 
 fn canonicalize_workspace_root(root: &Path) -> MResult<PathBuf> {

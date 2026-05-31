@@ -5,6 +5,7 @@ mod snapshot;
 mod refresh;
 mod workspace;
 mod discovery;
+mod watch;
 
 pub use self::errors::*;
 pub use self::config::*;
@@ -13,6 +14,7 @@ pub use self::snapshot::*;
 pub use self::refresh::*;
 pub use self::workspace::*;
 pub use self::discovery::*;
+pub use self::watch::*;
 
 use std::{
   collections::{BTreeMap, BTreeSet, VecDeque},
@@ -105,4 +107,5 @@ mod tests {
       "memory://main.mec",
     );
   }
+
 }
