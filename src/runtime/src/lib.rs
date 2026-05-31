@@ -17,6 +17,7 @@ pub mod actor;
 pub mod service;
 pub mod actor_behavior;
 pub mod module;
+mod workspace;
 
 pub use self::id::*;
 pub use self::runtime::*;
@@ -35,3 +36,4 @@ pub use self::actor::*;
 pub use self::service::*;
 pub use self::actor_behavior::*;
 pub use self::module::*;
+pub use self::workspace::*;
