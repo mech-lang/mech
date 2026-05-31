@@ -152,6 +152,19 @@ impl RuntimeWorkspaceWatcher {
       .map(|watched| watched.path.clone())
       .collect()
   }
+
+  #[cfg(test)]
+  fn from_parts(
+    watcher: RecommendedWatcher,
+    receiver: Receiver<notify::Result<Event>>,
+  ) -> Self {
+    Self {
+      watcher,
+      receiver,
+      watched_paths: BTreeSet::new(),
+    }
+  }
+
 }
 
 fn desired_watch_paths(

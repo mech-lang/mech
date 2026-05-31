@@ -1,5 +1,5 @@
 use mech_core::{hash_str, MechSourceCode, Ref, Value};
-use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, InMemoryDocsProvider, ModuleScopeMetadata, ModuleBuildOptions, ResolvedSource, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeCapabilityGrantSpec, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeContextRegistry, RuntimeDocsEntrySpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, SourceContextBase, SourceContextCapability, SourceContextCapabilityScope, SourceContextDeclaration, SourceInterpreterId, SourceKind, SourceRequest, SourceResolver, SourceScope, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest, RuntimeWorkspace, RuntimeWorkspaceChangeKind, RuntimeWorkspaceConfig, RuntimeWorkspaceDiagnosticSeverity};
+use mech_runtime::*;
 
 fn setup_modules(main_source: &str) -> std::path::PathBuf {
   let root = std::env::temp_dir().join(format!("mech-runtime-module-smoke-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
@@ -1986,4 +1986,21 @@ fn workspace_refresh_preserves_folder_discovered_sources() {
   assert!(refresh.snapshot.sources.values().any(|source| {
     source.path.as_ref() == Some(&discovered_path)
   }));
+}
+
+#[test]
+fn workspace_watcher_watches_configured_folder() {
+  let root = setup_modules("result := true\n");
+  std::fs::create_dir_all(root.join("src")).unwrap();
+
+  let workspace = RuntimeWorkspace::open(
+    RuntimeWorkspaceConfig::new(&root)
+      .target("main", "main.mec")
+      .folder("src"),
+  ).unwrap();
+
+  let watcher = RuntimeWorkspaceWatcher::open(&workspace).unwrap();
+  let watched_paths = watcher.watched_paths();
+
+  assert!(watched_paths.contains(&root.join("src").canonicalize().unwrap()));
 }
