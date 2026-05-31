@@ -398,4 +398,18 @@ impl MechRuntime {
     self.store.get_active_module_version(module)
   }
 
+  pub(crate) fn workspace_module_records(
+    &self,
+    version: ModuleVersionId,
+  ) -> MResult<Option<(ModuleRecord, ModuleVersionRecord)>> {
+    let Some(version_record) = self.store.get_module_version(version)? else {
+      return Ok(None);
+    };
+    let Some(module_record) = self.store.get_module(version_record.module)? else {
+      return Ok(None);
+    };
+
+    Ok(Some((module_record, version_record)))
+  }
+
 }
