@@ -23,6 +23,12 @@ impl RuntimeWorkspace {
       }
     }
 
+    for folder in &config.folders {
+      if folder.specifier.trim().is_empty() {
+        return invalid_config("workspace folder specifier must not be empty");
+      }
+    }
+
     Ok(Self {
       config,
       snapshot: None,
@@ -54,10 +60,43 @@ impl RuntimeWorkspace {
       }
     }
 
+    let mut extra_module_versions = Vec::new();
+
+    for file in discover_workspace_files(&self.config.root, &self.config.folders)? {
+      match runtime.resolve_and_store_module_source(
+        file.specifier.as_str(),
+        options.clone(),
+      ) {
+        Ok(Some(module_version)) => {
+          extra_module_versions.push(module_version);
+        }
+        Ok(None) => diagnostics.push(RuntimeWorkspaceDiagnostic {
+          severity: RuntimeWorkspaceDiagnosticSeverity::Error,
+          target: None,
+          canonical_uri: Some(file.canonical_path.to_string_lossy().to_string()),
+          message: format!(
+            "workspace discovered file `{}` could not resolve",
+            file.canonical_path.display(),
+          ),
+        }),
+        Err(error) => diagnostics.push(RuntimeWorkspaceDiagnostic {
+          severity: RuntimeWorkspaceDiagnosticSeverity::Error,
+          target: None,
+          canonical_uri: Some(file.canonical_path.to_string_lossy().to_string()),
+          message: format!(
+            "workspace discovered file `{}` failed to load: {:?}",
+            file.canonical_path.display(),
+            error,
+          ),
+        }),
+      }
+    }    
+
     let snapshot = collect_snapshot(
       runtime,
       self.config.root.clone(),
       targets,
+      extra_module_versions,
       diagnostics,
     )?;
     self.snapshot = Some(snapshot.clone());
@@ -129,6 +168,7 @@ impl RuntimeWorkspace {
       runtime,
       self.config.root.clone(),
       targets,
+      Vec::new(),
       snapshot_diagnostics,
     )?;
 

@@ -1923,3 +1923,36 @@ fn workspace_refresh_preserves_unaffected_diagnostics() {
     "refreshed workspace target with retained diagnostic",
   );
 }
+
+#[test]
+fn workspace_load_folder_discovers_non_target_sources() {
+  let root = setup_modules("result := true\n");
+  std::fs::create_dir_all(root.join("src/nested")).unwrap();
+  std::fs::write(root.join("src/nested/lib.mec"), "value := true\n").unwrap();
+
+  let mut runtime = runtime_with_root(&root);
+  let mut workspace = RuntimeWorkspace::open(
+    RuntimeWorkspaceConfig::new(&root)
+      .target("main", "main.mec")
+      .folder("src"),
+  ).unwrap();
+
+  let snapshot = workspace.load(&mut runtime, module_options()).unwrap();
+
+  assert!(snapshot.diagnostics.is_empty());
+  assert!(snapshot.targets.contains_key("main"));
+  assert_eq!(snapshot.targets.len(), 1);
+
+  let discovered_path = root
+    .join("src/nested/lib.mec")
+    .canonicalize()
+    .unwrap();
+
+  assert!(
+    snapshot.sources.values().any(|source| {
+      source.path.as_ref() == Some(&discovered_path)
+    }),
+    "workspace snapshot should contain discovered source; sources: {:?}",
+    snapshot.sources,
+  );
+}

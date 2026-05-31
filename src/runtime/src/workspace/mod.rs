@@ -4,6 +4,7 @@ mod load;
 mod snapshot;
 mod refresh;
 mod workspace;
+mod discovery;
 
 pub use self::errors::*;
 pub use self::config::*;
@@ -11,6 +12,7 @@ use self::load::*;
 pub use self::snapshot::*;
 pub use self::refresh::*;
 pub use self::workspace::*;
+pub use self::discovery::*;
 
 use std::{
   collections::{BTreeMap, BTreeSet, VecDeque},

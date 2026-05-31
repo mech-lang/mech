@@ -66,13 +66,16 @@ pub(super) fn collect_snapshot(
   runtime: &MechRuntime,
   root: PathBuf,
   targets: BTreeMap<String, RuntimeWorkspaceTargetSnapshot>,
+  extra_module_versions: Vec<ModuleVersionId>,
   diagnostics: Vec<RuntimeWorkspaceDiagnostic>,
 ) -> MResult<RuntimeWorkspaceSnapshot> {
-  let loaded_versions = targets
+  let mut loaded_versions = targets
     .values()
     .map(|target| target.module_version)
     .collect::<Vec<_>>();
 
+  loaded_versions.extend(extra_module_versions);
+  
   let mut snapshot = RuntimeWorkspaceSnapshot {
     root,
     targets,
