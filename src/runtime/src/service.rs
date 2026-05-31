@@ -10,6 +10,10 @@
 
 use mech_core::MResult;
 
+mod workspace_session;
+
+pub use self::workspace_session::*;
+
 use crate::context::RuntimeContext;
 
 use crate::id::{
