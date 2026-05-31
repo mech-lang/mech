@@ -1,5 +1,5 @@
 use mech_core::{hash_str, MechSourceCode, Ref, Value};
-use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, InMemoryDocsProvider, ModuleScopeMetadata, ModuleBuildOptions, ResolvedSource, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeCapabilityGrantSpec, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeContextRegistry, RuntimeDocsEntrySpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, SourceContextBase, SourceContextCapability, SourceContextCapabilityScope, SourceContextDeclaration, SourceInterpreterId, SourceKind, SourceRequest, SourceResolver, SourceScope, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest, RuntimeWorkspace, RuntimeWorkspaceConfig, RuntimeWorkspaceDiagnosticSeverity};
+use mech_runtime::{BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, ClosureHostFunction, FileSourceResolver, InMemoryDocsProvider, ModuleScopeMetadata, ModuleBuildOptions, ResolvedSource, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeCapabilityGrantSpec, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeContextRegistry, RuntimeDocsEntrySpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, SourceContextBase, SourceContextCapability, SourceContextCapabilityScope, SourceContextDeclaration, SourceInterpreterId, SourceKind, SourceRequest, SourceResolver, SourceScope, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest, RuntimeWorkspace, RuntimeWorkspaceChangeKind, RuntimeWorkspaceConfig, RuntimeWorkspaceDiagnosticSeverity};
 
 fn setup_modules(main_source: &str) -> std::path::PathBuf {
   let root = std::env::temp_dir().join(format!("mech-runtime-module-smoke-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
@@ -58,6 +58,13 @@ fn module_options() -> ModuleBuildOptions<'static> {
 fn assert_bool_true(result: Value, label: &str) {
   match result {
     Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected bool result from {label}, got {:?}", other),
+  }
+}
+
+fn assert_bool_false(result: Value, label: &str) {
+  match result {
+    Value::Bool(value) => assert!(!*value.borrow()),
     other => panic!("expected bool result from {label}, got {:?}", other),
   }
 }
@@ -1744,4 +1751,99 @@ fn workspace_load_multiple_targets_continues_after_failure() {
   assert_eq!(snapshot.diagnostics[0].target.as_deref(), Some("missing"));
   let target = snapshot.targets.get("main").unwrap();
   assert_bool_true(runtime.run_module(target.module_version).unwrap(), "workspace surviving target");
+}
+
+
+#[test]
+fn workspace_refresh_before_load_fails() {
+  let root = setup_modules("result := true\n");
+  let mut runtime = runtime_with_root(&root);
+  let mut workspace = RuntimeWorkspace::open(
+    RuntimeWorkspaceConfig::new(&root).target("main", "main.mec"),
+  ).unwrap();
+
+  let error = format!("{:?}", workspace.refresh(&mut runtime, module_options()).err().unwrap());
+  assert!(error.contains("RuntimeWorkspaceNotLoaded"));
+}
+
+#[test]
+fn workspace_refresh_without_changes_is_empty() {
+  let root = setup_modules("result := true\n");
+  let mut runtime = runtime_with_root(&root);
+  let mut workspace = RuntimeWorkspace::open(
+    RuntimeWorkspaceConfig::new(&root).target("main", "main.mec"),
+  ).unwrap();
+
+  workspace.load(&mut runtime, module_options()).unwrap();
+  let refresh = workspace.refresh(&mut runtime, module_options()).unwrap();
+  assert!(refresh.changes.is_empty());
+  assert!(refresh.affected_targets.is_empty());
+  assert!(refresh.diagnostics.is_empty());
+  assert!(refresh.snapshot.targets.contains_key("main"));
+}
+
+#[test]
+fn workspace_refresh_modified_dependency_reloads_target() {
+  let root = setup_modules("+> ./math.mec\n\nresult := math/value\n");
+  std::fs::write(root.join("math.mec"), "value := false\n<+ value\n").unwrap();
+  let mut runtime = runtime_with_root(&root);
+  let mut workspace = RuntimeWorkspace::open(
+    RuntimeWorkspaceConfig::new(&root).target("main", "main.mec"),
+  ).unwrap();
+
+  let snapshot = workspace.load(&mut runtime, module_options()).unwrap();
+  assert_bool_false(runtime.run_module(snapshot.targets["main"].module_version).unwrap(), "initial workspace dependency");
+  std::fs::write(root.join("math.mec"), "value := true\n<+ value\n").unwrap();
+
+  let refresh = workspace.refresh(&mut runtime, module_options()).unwrap();
+  assert_eq!(refresh.changes.len(), 1);
+  assert_eq!(refresh.changes[0].kind, RuntimeWorkspaceChangeKind::Modified);
+  assert!(refresh.changes[0].canonical_uri.ends_with("/math.mec"));
+  assert_eq!(refresh.affected_targets, vec!["main"]);
+  assert!(refresh.diagnostics.is_empty());
+  assert_bool_true(runtime.run_module(refresh.snapshot.targets["main"].module_version).unwrap(), "refreshed workspace dependency");
+}
+
+#[test]
+fn workspace_refresh_removed_dependency_records_diagnostic() {
+  let root = setup_modules("+> ./math.mec\n\nresult := math/value\n");
+  std::fs::write(root.join("math.mec"), "value := false\n<+ value\n").unwrap();
+  let mut runtime = runtime_with_root(&root);
+  let mut workspace = RuntimeWorkspace::open(
+    RuntimeWorkspaceConfig::new(&root).target("main", "main.mec"),
+  ).unwrap();
+
+  workspace.load(&mut runtime, module_options()).unwrap();
+  std::fs::remove_file(root.join("math.mec")).unwrap();
+
+  let refresh = workspace.refresh(&mut runtime, module_options()).unwrap();
+  assert_eq!(refresh.changes.len(), 1);
+  assert_eq!(refresh.changes[0].kind, RuntimeWorkspaceChangeKind::Removed);
+  assert!(refresh.changes[0].canonical_uri.ends_with("/math.mec"));
+  assert_eq!(refresh.affected_targets, vec!["main"]);
+  assert_eq!(refresh.diagnostics.len(), 1);
+  assert_eq!(refresh.diagnostics[0].severity, RuntimeWorkspaceDiagnosticSeverity::Error);
+  assert_eq!(refresh.diagnostics[0].target.as_deref(), Some("main"));
+  assert!(!refresh.snapshot.targets.contains_key("main"));
+}
+
+#[test]
+fn workspace_refresh_modified_target_reloads_target() {
+  let root = setup_modules("result := false\n");
+  let mut runtime = runtime_with_root(&root);
+  let mut workspace = RuntimeWorkspace::open(
+    RuntimeWorkspaceConfig::new(&root).target("main", "main.mec"),
+  ).unwrap();
+
+  let snapshot = workspace.load(&mut runtime, module_options()).unwrap();
+  assert_bool_false(runtime.run_module(snapshot.targets["main"].module_version).unwrap(), "initial workspace target");
+  std::fs::write(root.join("main.mec"), "result := true\n").unwrap();
+
+  let refresh = workspace.refresh(&mut runtime, module_options()).unwrap();
+  assert_eq!(refresh.changes.len(), 1);
+  assert_eq!(refresh.changes[0].kind, RuntimeWorkspaceChangeKind::Modified);
+  assert!(refresh.changes[0].canonical_uri.ends_with("/main.mec"));
+  assert_eq!(refresh.affected_targets, vec!["main"]);
+  assert!(refresh.diagnostics.is_empty());
+  assert_bool_true(runtime.run_module(refresh.snapshot.targets["main"].module_version).unwrap(), "refreshed workspace target");
 }

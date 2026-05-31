@@ -41,6 +41,29 @@ pub struct RuntimeWorkspaceSnapshot {
 }
 
 #[derive(Clone, Debug)]
+pub struct RuntimeWorkspaceRefresh {
+  pub snapshot: RuntimeWorkspaceSnapshot,
+  pub changes: Vec<RuntimeWorkspaceChange>,
+  pub affected_targets: Vec<String>,
+  pub diagnostics: Vec<RuntimeWorkspaceDiagnostic>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RuntimeWorkspaceChangeKind {
+  Modified,
+  Removed,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeWorkspaceChange {
+  pub canonical_uri: String,
+  pub path: Option<PathBuf>,
+  pub kind: RuntimeWorkspaceChangeKind,
+  pub previous_hash: Option<u64>,
+  pub current_hash: Option<u64>,
+}
+
+#[derive(Clone, Debug)]
 pub struct RuntimeWorkspaceTargetSnapshot {
   pub name: String,
   pub specifier: String,
@@ -77,6 +100,19 @@ pub struct RuntimeWorkspaceDiagnostic {
   pub target: Option<String>,
   pub canonical_uri: Option<String>,
   pub message: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeWorkspaceNotLoaded;
+
+impl MechErrorKind for RuntimeWorkspaceNotLoaded {
+  fn name(&self) -> &str {
+    "RuntimeWorkspaceNotLoaded"
+  }
+
+  fn message(&self) -> String {
+    "runtime workspace must be loaded before it can be refreshed".to_string()
+  }
 }
 
 #[derive(Debug, Clone)]
@@ -166,65 +202,77 @@ impl RuntimeWorkspace {
     runtime: &mut MechRuntime,
     options: ModuleBuildOptions,
   ) -> MResult<RuntimeWorkspaceSnapshot> {
-    let mut snapshot = RuntimeWorkspaceSnapshot {
-      root: self.config.root.clone(),
-      ..RuntimeWorkspaceSnapshot::default()
-    };
-    let mut loaded_versions = Vec::new();
+    let mut targets = BTreeMap::new();
+    let mut diagnostics = Vec::new();
 
     for target in &self.config.targets {
-      let resolved_specifier = match workspace_target_specifier(
-        &self.config.root,
-        &target.specifier,
-      ) {
-        Ok(specifier) => specifier,
-        Err(error) => {
-          snapshot.diagnostics.push(target_diagnostic(
-            target,
-            format!(
-              "workspace target `{}` failed to resolve `{}` against root `{}`: {:?}",
-              target.name,
-              target.specifier,
-              self.config.root.display(),
-              error,
-            ),
-          ));
-          continue;
+      match load_target(&self.config.root, runtime, target, options.clone())? {
+        Ok(snapshot) => {
+          targets.insert(target.name.clone(), snapshot);
         }
-      };
-
-      match runtime.resolve_and_store_module_source(resolved_specifier.as_str(), options.clone()) {
-        Ok(Some(module_version)) => {
-          let Some((module, _)) = runtime.workspace_module_records(module_version)? else {
-            snapshot.diagnostics.push(target_diagnostic(
-              target,
-              format!("loaded module version `{}` was not found in the runtime store", module_version),
-            ));
-            continue;
-          };
-          snapshot.targets.insert(target.name.clone(), RuntimeWorkspaceTargetSnapshot {
-            name: target.name.clone(),
-            specifier: target.specifier.clone(),
-            canonical_uri: module.name,
-            module_version,
-          });
-          loaded_versions.push(module_version);
-        }
-        Ok(None) => snapshot.diagnostics.push(target_diagnostic(
-          target,
-          format!("workspace target `{}` could not resolve `{}`", target.name, target.specifier),
-        )),
-        Err(error) => snapshot.diagnostics.push(target_diagnostic(
-          target,
-          format!("workspace target `{}` failed to load `{}`: {:?}", target.name, target.specifier, error),
-        )),
+        Err(diagnostic) => diagnostics.push(diagnostic),
       }
     }
 
-    collect_loaded_modules(runtime, &loaded_versions, &mut snapshot)?;
-
+    let snapshot = collect_snapshot(runtime, self.config.root.clone(), targets, diagnostics)?;
     self.snapshot = Some(snapshot.clone());
     Ok(snapshot)
+  }
+
+  pub fn refresh(
+    &mut self,
+    runtime: &mut MechRuntime,
+    options: ModuleBuildOptions,
+  ) -> MResult<RuntimeWorkspaceRefresh> {
+    let Some(previous) = self.snapshot.clone() else {
+      return Err(MechError::new(RuntimeWorkspaceNotLoaded, None));
+    };
+    let changes = changed_sources(&previous);
+    if changes.is_empty() {
+      return Ok(RuntimeWorkspaceRefresh {
+        snapshot: previous,
+        changes,
+        affected_targets: Vec::new(),
+        diagnostics: Vec::new(),
+      });
+    }
+
+    let affected_targets = affected_targets(&previous, &changes);
+    let affected = affected_targets.iter().cloned().collect::<BTreeSet<_>>();
+    let mut targets = previous
+      .targets
+      .into_iter()
+      .filter(|(name, _)| !affected.contains(name))
+      .collect::<BTreeMap<_, _>>();
+    let mut diagnostics = Vec::new();
+
+    for target in self
+      .config
+      .targets
+      .iter()
+      .filter(|target| affected.contains(&target.name))
+    {
+      match load_target(&self.config.root, runtime, target, options.clone())? {
+        Ok(snapshot) => {
+          targets.insert(target.name.clone(), snapshot);
+        }
+        Err(diagnostic) => diagnostics.push(diagnostic),
+      }
+    }
+
+    let snapshot = collect_snapshot(
+      runtime,
+      self.config.root.clone(),
+      targets,
+      diagnostics.clone(),
+    )?;
+    self.snapshot = Some(snapshot.clone());
+    Ok(RuntimeWorkspaceRefresh {
+      snapshot,
+      changes,
+      affected_targets,
+      diagnostics,
+    })
   }
 
   pub fn target(
@@ -235,10 +283,159 @@ impl RuntimeWorkspace {
   }
 }
 
-fn workspace_target_specifier(
+fn load_target(
   root: &Path,
-  specifier: &str,
-) -> MResult<String> {
+  runtime: &mut MechRuntime,
+  target: &RuntimeWorkspaceTarget,
+  options: ModuleBuildOptions,
+) -> MResult<Result<RuntimeWorkspaceTargetSnapshot, RuntimeWorkspaceDiagnostic>> {
+  let resolved_specifier = match workspace_target_specifier(root, &target.specifier) {
+    Ok(specifier) => specifier,
+    Err(error) => return Ok(Err(target_diagnostic(
+      target,
+      format!(
+        "workspace target `{}` failed to resolve `{}` against root `{}`: {:?}",
+        target.name,
+        target.specifier,
+        root.display(),
+        error,
+      ),
+    ))),
+  };
+
+  let module_version = match runtime.resolve_and_store_module_source(resolved_specifier.as_str(), options) {
+    Ok(Some(module_version)) => module_version,
+    Ok(None) => return Ok(Err(target_diagnostic(
+      target,
+      format!("workspace target `{}` could not resolve `{}`", target.name, target.specifier),
+    ))),
+    Err(error) => return Ok(Err(target_diagnostic(
+      target,
+      format!("workspace target `{}` failed to load `{}`: {:?}", target.name, target.specifier, error),
+    ))),
+  };
+  let Some((module, _)) = runtime.workspace_module_records(module_version)? else {
+    return Ok(Err(target_diagnostic(
+      target,
+      format!("loaded module version `{}` was not found in the runtime store", module_version),
+    )));
+  };
+
+  Ok(Ok(RuntimeWorkspaceTargetSnapshot {
+    name: target.name.clone(),
+    specifier: target.specifier.clone(),
+    canonical_uri: module.name,
+    module_version,
+  }))
+}
+
+fn collect_snapshot(
+  runtime: &MechRuntime,
+  root: PathBuf,
+  targets: BTreeMap<String, RuntimeWorkspaceTargetSnapshot>,
+  diagnostics: Vec<RuntimeWorkspaceDiagnostic>,
+) -> MResult<RuntimeWorkspaceSnapshot> {
+  let loaded_versions = targets
+    .values()
+    .map(|target| target.module_version)
+    .collect::<Vec<_>>();
+  let mut snapshot = RuntimeWorkspaceSnapshot {
+    root,
+    targets,
+    diagnostics,
+    ..RuntimeWorkspaceSnapshot::default()
+  };
+  collect_loaded_modules(runtime, &loaded_versions, &mut snapshot)?;
+  Ok(snapshot)
+}
+
+fn changed_sources(snapshot: &RuntimeWorkspaceSnapshot) -> Vec<RuntimeWorkspaceChange> {
+  snapshot
+    .sources
+    .values()
+    .filter_map(|source| {
+      let path = source.path.as_ref()?;
+      if !path.exists() {
+        return Some(RuntimeWorkspaceChange {
+          canonical_uri: source.canonical_uri.clone(),
+          path: Some(path.clone()),
+          kind: RuntimeWorkspaceChangeKind::Removed,
+          previous_hash: Some(source.content_hash),
+          current_hash: None,
+        });
+      }
+
+      let current_hash = std::fs::read(path).ok().map(hash_content)?;
+      if current_hash == source.content_hash {
+        return None;
+      }
+      Some(RuntimeWorkspaceChange {
+        canonical_uri: source.canonical_uri.clone(),
+        path: Some(path.clone()),
+        kind: RuntimeWorkspaceChangeKind::Modified,
+        previous_hash: Some(source.content_hash),
+        current_hash: Some(current_hash),
+      })
+    })
+    .collect()
+}
+
+fn affected_targets(
+  snapshot: &RuntimeWorkspaceSnapshot,
+  changes: &[RuntimeWorkspaceChange],
+) -> Vec<String> {
+  let changed_uris = changes
+    .iter()
+    .map(|change| change.canonical_uri.as_str())
+    .collect::<BTreeSet<_>>();
+  let changed_versions = snapshot
+    .sources
+    .values()
+    .filter(|source| changed_uris.contains(source.canonical_uri.as_str()))
+    .filter_map(|source| source.module_version)
+    .collect::<BTreeSet<_>>();
+
+  snapshot
+    .targets
+    .values()
+    .filter_map(|target| {
+      if changed_uris.contains(target.canonical_uri.as_str())
+        || import_closure_contains(snapshot, target.module_version, &changed_versions)
+      {
+        Some(target.name.clone())
+      } else {
+        None
+      }
+    })
+    .collect()
+}
+
+fn import_closure_contains(
+  snapshot: &RuntimeWorkspaceSnapshot,
+  root: ModuleVersionId,
+  versions: &BTreeSet<ModuleVersionId>,
+) -> bool {
+  let mut pending = VecDeque::from([root]);
+  let mut visited = BTreeSet::new();
+  while let Some(module_version) = pending.pop_front() {
+    if !visited.insert(module_version) {
+      continue;
+    }
+    if versions.contains(&module_version) {
+      return true;
+    }
+    pending.extend(
+      snapshot
+        .import_edges
+        .iter()
+        .filter(|edge| edge.importer == module_version)
+        .map(|edge| edge.dependency),
+    );
+  }
+  false
+}
+
+fn workspace_target_specifier(root: &Path, specifier: &str) -> MResult<String> {
   if specifier.contains("://") {
     return Ok(specifier.to_string());
   }
