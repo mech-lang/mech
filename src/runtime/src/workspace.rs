@@ -173,7 +173,7 @@ impl RuntimeWorkspace {
     let mut loaded_versions = Vec::new();
 
     for target in &self.config.targets {
-      match runtime.resolve_and_store_module_source(target.specifier.as_str(), options) {
+      match runtime.resolve_and_store_module_source(target.specifier.as_str(), options.clone()) {
         Ok(Some(module_version)) => {
           let Some((module, _)) = runtime.workspace_module_records(module_version)? else {
             snapshot.diagnostics.push(target_diagnostic(
@@ -308,11 +308,87 @@ fn source_snapshot(
 }
 
 fn file_uri_path(canonical_uri: &str) -> Option<PathBuf> {
-  canonical_uri.strip_prefix("file://").map(PathBuf::from)
+  let rest = canonical_uri.strip_prefix("file://")?;
+
+  #[cfg(windows)]
+  {
+    file_uri_path_windows(rest)
+  }
+
+  #[cfg(not(windows))]
+  {
+    file_uri_path_unix(rest)
+  }
+}
+
+#[cfg(not(windows))]
+fn file_uri_path_unix(rest: &str) -> Option<PathBuf> {
+  if rest.is_empty() {
+    return None;
+  }
+  Some(PathBuf::from(rest))
+}
+
+#[cfg(windows)]
+fn file_uri_path_windows(rest: &str) -> Option<PathBuf> {
+  if rest.is_empty() {
+    return None;
+  }
+
+  if let Some(path) = rest.strip_prefix("//?/") {
+    return Some(PathBuf::from(format!(r"\\?\{}", path.replace('/', r"\"))));
+  }
+
+  if rest.len() >= 3
+    && rest.as_bytes()[0] == b'/'
+    && rest.as_bytes()[2] == b':'
+  {
+    return Some(PathBuf::from(rest[1..].replace('/', r"\")));
+  }
+
+  Some(PathBuf::from(rest.replace('/', r"\")))
 }
 
 fn hash_content(content: Vec<u8>) -> u64 {
   let mut hasher = DefaultHasher::new();
   content.hash(&mut hasher);
   hasher.finish()
+}
+
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[cfg(not(windows))]
+  #[test]
+  fn file_uri_path_converts_unix_file_uri() {
+    assert_eq!(
+      file_uri_path("file:///tmp/project/main.mec").unwrap(),
+      PathBuf::from("/tmp/project/main.mec"),
+    );
+  }
+
+  #[cfg(windows)]
+  #[test]
+  fn file_uri_path_converts_windows_drive_file_uri() {
+    assert_eq!(
+      file_uri_path("file:///C:/Users/cmont/project/main.mec").unwrap(),
+      PathBuf::from(r"C:\Users\cmont\project\main.mec"),
+    );
+  }
+
+  #[cfg(windows)]
+  #[test]
+  fn file_uri_path_converts_windows_extended_file_uri() {
+    assert_eq!(
+      file_uri_path("file:////?/C:/Users/cmont/project/main.mec").unwrap(),
+      PathBuf::from(r"\\?\C:\Users\cmont\project\main.mec"),
+    );
+  }
+
+  #[test]
+  fn file_uri_path_rejects_non_file_uri() {
+    assert!(file_uri_path("http://example.com/main.mec").is_none());
+  }
 }
