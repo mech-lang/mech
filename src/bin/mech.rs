@@ -3,6 +3,8 @@
 use mech::*;
 use mech_core::*;
 use mech_syntax::parser;
+#[cfg(feature = "serve")]
+use mech_runtime::{DefaultIdGenerator, HostFilesystemAuthority, SharedCapabilityKernel, IdGenerator, MECH_TOOL_SUBJECT, FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE, FS_WATCH};
 #[cfg(feature = "formatter")]
 use mech_syntax::formatter::*;
 use std::time::Instant;
@@ -328,7 +330,19 @@ async fn main() -> Result<(), MechError> {
 
     if cfg!(feature = "serve") {
       #[cfg(feature = "serve")]
-      let mut server = MechServer::new("Mech Server".to_string(), full_address, stylesheet_str, shim_str, wasm, js);
+      let mut id_generator = DefaultIdGenerator::new();
+      #[cfg(feature = "serve")]
+      let kernel = SharedCapabilityKernel::new();
+      #[cfg(feature = "serve")]
+      let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, kernel);
+      #[cfg(feature = "serve")]
+      {
+        let root = std::env::current_dir()?.canonicalize()?;
+        authority.grant_path(&mut id_generator, &root, true, [FS_READ, FS_LIST, FS_WATCH, FS_RESOLVE, FS_IMPORT, FS_SERVE])?;
+        println!("[Mech Server] Capability grant: {} :read,:list,:watch,:resolve,:import,:serve {} recursive=true", MECH_TOOL_SUBJECT, mech_runtime::fs_resource_key(&root)?);
+      }
+      #[cfg(feature = "serve")]
+      let mut server = MechServer::new("Mech Server".to_string(), full_address, stylesheet_str, shim_str, wasm, js, authority);
       #[cfg(feature = "serve")]
       server.init().await?;
       #[cfg(feature = "serve")]

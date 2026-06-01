@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 
 use mech_core::{MResult, MechError, MechSourceCode};
 
+use crate::{check_fs_capability, SharedCapabilityKernel, FS_IMPORT, FS_READ, FS_RESOLVE};
 use crate::resolver::{
   source_request_for_import, ResolvedSource, SourceIndex, SourceRequest, SourceResolver,
 };
@@ -18,19 +19,38 @@ use super::{
 #[derive(Clone, Debug)]
 pub struct FileSourceResolver {
   roots: Vec<PathBuf>,
+  capability_kernel: Option<SharedCapabilityKernel>,
+  capability_subject: Option<String>,
 }
 
 impl FileSourceResolver {
   pub fn new(root: impl Into<PathBuf>) -> Self {
     Self {
       roots: vec![root.into()],
+      capability_kernel: None,
+      capability_subject: None,
     }
   }
 
   pub fn empty() -> Self {
     Self {
       roots: Vec::new(),
+      capability_kernel: None,
+      capability_subject: None,
     }
+  }
+
+  pub fn with_capabilities(mut self, kernel: SharedCapabilityKernel, subject: impl Into<String>) -> Self {
+    self.capability_kernel = Some(kernel);
+    self.capability_subject = Some(subject.into());
+    self
+  }
+
+  fn check(&self, operation: &str, path: &Path) -> MResult<()> {
+    if let (Some(kernel), Some(subject)) = (&self.capability_kernel, &self.capability_subject) {
+      check_fs_capability(&mut kernel.clone(), subject, operation, path)?;
+    }
+    Ok(())
   }
 
   pub fn with_root(mut self, root: impl Into<PathBuf>) -> Self {
@@ -53,7 +73,7 @@ impl FileSourceResolver {
     let specifier = Path::new(&request.specifier);
 
     if specifier.is_absolute() && specifier.exists() {
-      return Ok(Some(canonicalize_source_path(specifier)?));
+      return self.authorize_resolved(request, canonicalize_source_path(specifier)?);
     }
 
     if let Some(referrer) = &request.referrer {
@@ -68,7 +88,7 @@ impl FileSourceResolver {
       if let Some(parent) = parent {
         for candidate in path_candidates(parent, specifier) {
           if candidate.is_file() {
-            return Ok(Some(canonicalize_source_path(&candidate)?));
+            return self.authorize_resolved(request, canonicalize_source_path(&candidate)?);
           }
         }
       }
@@ -77,12 +97,18 @@ impl FileSourceResolver {
     for root in &self.roots {
       for candidate in path_candidates(root, specifier) {
         if candidate.is_file() {
-          return Ok(Some(canonicalize_source_path(&candidate)?));
+          return self.authorize_resolved(request, canonicalize_source_path(&candidate)?);
         }
       }
     }
 
     Ok(None)
+  }
+
+  fn authorize_resolved(&self, request: &SourceRequest, path: PathBuf) -> MResult<Option<PathBuf>> {
+    self.check(FS_RESOLVE, &path)?;
+    if request.referrer.is_some() { self.check(FS_IMPORT, &path)?; }
+    Ok(Some(path))
   }
 }
 
@@ -98,7 +124,7 @@ impl SourceResolver for FileSourceResolver {
     };
 
     let kind = SourceKind::from_path(&path);
-    let source = read_runtime_source_file(&path)?;
+    let source = read_runtime_source_file_with_capabilities(&path, self.capability_kernel.as_ref(), self.capability_subject.as_deref())?;
     let name = path
       .file_name()
       .and_then(|name| name.to_str())
@@ -146,6 +172,11 @@ fn path_candidates(base: &Path, specifier: &Path) -> Vec<PathBuf> {
 }
 
 pub fn read_runtime_source_file(path: &Path) -> MResult<MechSourceCode> {
+  read_runtime_source_file_with_capabilities(path, None, None)
+}
+
+pub fn read_runtime_source_file_with_capabilities(path: &Path, kernel: Option<&SharedCapabilityKernel>, subject: Option<&str>) -> MResult<MechSourceCode> {
+  check_optional_fs(kernel, subject, FS_READ, path)?;
   let extension = path
     .extension()
     .and_then(|extension| extension.to_str())
@@ -161,7 +192,7 @@ pub fn read_runtime_source_file(path: &Path) -> MResult<MechSourceCode> {
 
   match extension.as_str() {
     "mec" | "🤖" => {
-      let expanded = expand_mechdown_includes(path)?;
+      let expanded = expand_mechdown_includes_with_capabilities(path, kernel, subject)?;
       Ok(MechSourceCode::String(expanded))
     }
 
@@ -169,20 +200,20 @@ pub fn read_runtime_source_file(path: &Path) -> MResult<MechSourceCode> {
       // Keep this as raw bytecode source for now only if your MechSourceCode
       // supports ByteCode(Vec<u8>). If your current loader needs
       // `load_program_from_file`, wire that in module builder later.
-      let bytes = read_file_bytes(path)?;
+      let bytes = read_file_bytes_with_capabilities(path, kernel, subject)?;
       Ok(MechSourceCode::ByteCode(bytes))
     }
 
     "html" | "htm" | "md" | "css" => {
-      Ok(MechSourceCode::Html(read_file_string(path)?))
+      Ok(MechSourceCode::Html(read_file_string_with_capabilities(path, kernel, subject)?))
     }
 
     "mdoc" | "mpkg" | "m" | "csv" | "js" => {
-      Ok(MechSourceCode::String(read_file_string(path)?))
+      Ok(MechSourceCode::String(read_file_string_with_capabilities(path, kernel, subject)?))
     }
 
     "png" | "jpg" | "jpeg" | "gif" | "svg" => {
-      Ok(MechSourceCode::Image(extension, read_file_bytes(path)?))
+      Ok(MechSourceCode::Image(extension, read_file_bytes_with_capabilities(path, kernel, subject)?))
     }
 
     other => Err(MechError::new(
@@ -193,6 +224,16 @@ pub fn read_runtime_source_file(path: &Path) -> MResult<MechSourceCode> {
       None,
     )),
   }
+}
+
+fn check_optional_fs(kernel: Option<&SharedCapabilityKernel>, subject: Option<&str>, operation: &str, path: &Path) -> MResult<()> {
+  if let (Some(kernel), Some(subject)) = (kernel, subject) { check_fs_capability(&mut kernel.clone(), subject, operation, path)?; }
+  Ok(())
+}
+
+pub fn read_file_string_with_capabilities(path: &Path, kernel: Option<&SharedCapabilityKernel>, subject: Option<&str>) -> MResult<String> {
+  check_optional_fs(kernel, subject, FS_READ, path)?;
+  read_file_string(path)
 }
 
 pub fn read_file_string(path: &Path) -> MResult<String> {
@@ -221,6 +262,11 @@ pub fn read_file_string(path: &Path) -> MResult<String> {
   Ok(buffer)
 }
 
+pub fn read_file_bytes_with_capabilities(path: &Path, kernel: Option<&SharedCapabilityKernel>, subject: Option<&str>) -> MResult<Vec<u8>> {
+  check_optional_fs(kernel, subject, FS_READ, path)?;
+  read_file_bytes(path)
+}
+
 pub fn read_file_bytes(path: &Path) -> MResult<Vec<u8>> {
   std::fs::read(path).map_err(|error| {
     MechError::new(
@@ -233,16 +279,19 @@ pub fn read_file_bytes(path: &Path) -> MResult<Vec<u8>> {
   })
 }
 
-pub fn expand_mechdown_includes(path: &Path) -> MResult<String> {
+pub fn expand_mechdown_includes(path: &Path) -> MResult<String> { expand_mechdown_includes_with_capabilities(path, None, None) }
+
+pub fn expand_mechdown_includes_with_capabilities(path: &Path, kernel: Option<&SharedCapabilityKernel>, subject: Option<&str>) -> MResult<String> {
   let canonical = canonicalize_source_path(path)?;
   let mut active = HashSet::new();
-
-  expand_mechdown_includes_inner(&canonical, &mut active)
+  expand_mechdown_includes_inner(&canonical, &mut active, kernel, subject)
 }
 
 fn expand_mechdown_includes_inner(
   path: &Path,
   active: &mut HashSet<PathBuf>,
+  kernel: Option<&SharedCapabilityKernel>,
+  subject: Option<&str>,
 ) -> MResult<String> {
   let canonical = canonicalize_source_path(path)?;
 
@@ -257,11 +306,13 @@ fn expand_mechdown_includes_inner(
 
   active.insert(canonical.clone());
 
-  let source = read_file_string(&canonical)?;
+  let source = read_file_string_with_capabilities(&canonical, kernel, subject)?;
   let expanded = expand_mechdown_include_tokens(
     &source,
     &canonical,
     active,
+    kernel,
+    subject,
   )?;
 
   active.remove(&canonical);
@@ -273,6 +324,8 @@ fn expand_mechdown_include_tokens(
   source: &str,
   canonical_path: &Path,
   active: &mut HashSet<PathBuf>,
+  kernel: Option<&SharedCapabilityKernel>,
+  subject: Option<&str>,
 ) -> MResult<String> {
   let mut result = String::new();
 
@@ -301,7 +354,7 @@ fn expand_mechdown_include_tokens(
           })?;
 
         let include_source =
-          expand_mechdown_includes_inner(&include_canonical, active)?;
+          expand_mechdown_includes_inner(&include_canonical, active, kernel, subject)?;
 
         result.push_str(&include_source);
 
@@ -445,4 +498,19 @@ mod tests {
     assert_eq!(resolved.name, "math.mec");
   }
 
+}
+
+#[cfg(test)]
+mod capability_tests {
+  use super::*;
+  use crate::{HostFilesystemAuthority, SequentialIdGenerator, MECH_TOOL_SUBJECT, SERVE_HOST_SUBJECT, FS_IMPORT, FS_READ, FS_RESOLVE};
+
+  fn temp_root(label: &str) -> PathBuf { let root = std::env::temp_dir().join(format!("mech-resolver-capability-{}-{}", label, std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos())); std::fs::create_dir_all(&root).unwrap(); root.canonicalize().unwrap() }
+  fn resolver(root: &Path, allowed: &Path) -> FileSourceResolver { let mut ids = SequentialIdGenerator::new(); let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, SharedCapabilityKernel::new()); authority.grant_path(&mut ids, allowed, true, [FS_READ, FS_RESOLVE, FS_IMPORT]).unwrap(); authority.delegate_path_to(&mut ids, SERVE_HOST_SUBJECT, allowed, true, [FS_READ, FS_RESOLVE, FS_IMPORT]).unwrap(); FileSourceResolver::new(root).with_capabilities(authority.kernel, SERVE_HOST_SUBJECT) }
+
+  #[test]
+  fn denies_source_outside_grant() { let root = temp_root("outside"); let allowed = root.join("allowed"); let outside = root.join("outside"); std::fs::create_dir_all(&allowed).unwrap(); std::fs::create_dir_all(&outside).unwrap(); std::fs::write(allowed.join("main.mec"), "x := 1\n").unwrap(); std::fs::write(outside.join("secret.mec"), "x := 2\n").unwrap(); let resolver = resolver(&root, &allowed); assert!(resolver.resolve(&SourceRequest::new("allowed/main.mec")).unwrap().is_some()); assert!(resolver.resolve(&SourceRequest::new("outside/secret.mec")).is_err()); std::fs::remove_dir_all(root).unwrap(); }
+
+  #[test]
+  fn denies_include_outside_grant() { let root = temp_root("include"); let allowed = root.join("allowed"); let outside = root.join("outside"); std::fs::create_dir_all(&allowed).unwrap(); std::fs::create_dir_all(&outside).unwrap(); std::fs::write(allowed.join("main.mec"), "{../outside/secret.mec}\n").unwrap(); std::fs::write(outside.join("secret.mec"), "x := 2\n").unwrap(); let resolver = resolver(&root, &allowed); assert!(resolver.resolve(&SourceRequest::new("allowed/main.mec")).is_err()); std::fs::remove_dir_all(root).unwrap(); }
 }

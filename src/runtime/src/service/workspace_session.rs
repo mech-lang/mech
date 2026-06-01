@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use mech_core::MResult;
 
 use crate::{
-  DefaultIdGenerator, EventSink, FileSourceResolver, IdGenerator, MechRuntime,
+  DefaultIdGenerator, EventSink, FileSourceResolver, IdGenerator, MechRuntime, SharedCapabilityKernel,
   ModuleBuildOptions, RuntimeBuilder, RuntimeEvent, RuntimeEventKind,
   RuntimeWorkspace, RuntimeWorkspaceConfig, RuntimeWorkspaceDiagnostic,
   RuntimeWorkspaceFolder, RuntimeWorkspaceRefresh, RuntimeWorkspaceSnapshot,
@@ -41,7 +41,7 @@ impl ServerWorkspaceSession {
 
     let mut workspace = RuntimeWorkspace::open(config)?;
     workspace.load(&mut runtime, options.clone())?;
-    let watcher = RuntimeWorkspaceWatcher::open(&workspace)?;
+    let watcher = RuntimeWorkspaceWatcher::open(&workspace, &mut runtime)?;
 
     Ok(Self {
       runtime,
@@ -50,6 +50,25 @@ impl ServerWorkspaceSession {
       event_ids: DefaultIdGenerator::new(),
       event_sequence: 0,
     })
+  }
+
+  pub fn open_with_capabilities(
+    root: impl Into<PathBuf>, targets: Vec<RuntimeWorkspaceTarget>, folders: Vec<RuntimeWorkspaceFolder>,
+    options: ModuleBuildOptions, capability_kernel: SharedCapabilityKernel, capability_subject: impl Into<String>,
+  ) -> MResult<Self> {
+    let root = root.into();
+    let capability_subject = capability_subject.into();
+    let mut runtime = RuntimeBuilder::new()
+      .capability_kernel(capability_kernel.clone())
+      .source_resolver(FileSourceResolver::new(&root).with_capabilities(capability_kernel, capability_subject.clone()))
+      .build()?;
+    let mut config = RuntimeWorkspaceConfig::new(&root).capability_subject(capability_subject);
+    for target in targets { config = config.target(target.name, target.specifier); }
+    for folder in folders { config = config.folder_recursive(folder.specifier, folder.recursive); }
+    let mut workspace = RuntimeWorkspace::open(config)?;
+    workspace.load(&mut runtime, options.clone())?;
+    let watcher = RuntimeWorkspaceWatcher::open(&workspace, &mut runtime)?;
+    Ok(Self { runtime, workspace, watcher, event_ids: DefaultIdGenerator::new(), event_sequence: 0 })
   }
 
   pub fn runtime(&self) -> &MechRuntime {

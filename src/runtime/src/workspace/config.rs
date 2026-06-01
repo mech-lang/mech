@@ -5,6 +5,7 @@ pub struct RuntimeWorkspaceConfig {
   pub root: PathBuf,
   pub targets: Vec<RuntimeWorkspaceTarget>,
   pub folders: Vec<RuntimeWorkspaceFolder>,
+  pub capability_subject: Option<String>,
 }
 
 impl RuntimeWorkspaceConfig {
@@ -13,7 +14,13 @@ impl RuntimeWorkspaceConfig {
       root: root.into(),
       targets: Vec::new(),
       folders: Vec::new(),
+      capability_subject: None,
     }
+  }
+
+  pub fn capability_subject(mut self, subject: impl Into<String>) -> Self {
+    self.capability_subject = Some(subject.into());
+    self
   }
 
   pub fn target(

@@ -52,7 +52,7 @@ impl RuntimeWorkspace {
     let mut diagnostics = Vec::new();
 
     for target in &self.config.targets {
-      match load_target(&self.config.root, runtime, target, options.clone())? {
+      match load_target(&self.config.root, runtime, target, options.clone(), self.config.capability_subject.as_deref())? {
         Ok(snapshot) => {
           targets.insert(target.name.clone(), snapshot);
         }
@@ -60,10 +60,10 @@ impl RuntimeWorkspace {
       }
     }
 
-    let discovered_files = discover_workspace_files(
-      &self.config.root,
-      &self.config.folders,
+    let (discovered_files, discovery_diagnostics) = discover_workspace_files(
+      &self.config.root, &self.config.folders, runtime, self.config.capability_subject.as_deref(),
     )?;
+    diagnostics.extend(discovery_diagnostics);
     let (extra_module_versions, discovered_diagnostics) =
       load_discovered_workspace_files(runtime, &discovered_files, options.clone());
     diagnostics.extend(discovered_diagnostics);
@@ -88,9 +88,8 @@ impl RuntimeWorkspace {
       return Err(MechError::new(RuntimeWorkspaceNotLoaded, None));
     };
 
-    let discovered_files = discover_workspace_files(
-      &self.config.root,
-      &self.config.folders,
+    let (discovered_files, discovery_diagnostics) = discover_workspace_files(
+      &self.config.root, &self.config.folders, runtime, self.config.capability_subject.as_deref(),
     )?;
 
     let mut changes = previous.changed_sources();
@@ -128,7 +127,7 @@ impl RuntimeWorkspace {
       .map(|(name, target)| (name.clone(), target.clone()))
       .collect::<BTreeMap<_, _>>();
 
-    let mut refresh_diagnostics = Vec::new();
+    let mut refresh_diagnostics = discovery_diagnostics;
 
     for target in self
       .config
@@ -136,7 +135,7 @@ impl RuntimeWorkspace {
       .iter()
       .filter(|target| affected.contains(&target.name))
     {
-      match load_target(&self.config.root, runtime, target, options.clone())? {
+      match load_target(&self.config.root, runtime, target, options.clone(), self.config.capability_subject.as_deref())? {
         Ok(snapshot) => {
           targets.insert(target.name.clone(), snapshot);
         }

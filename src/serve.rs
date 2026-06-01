@@ -11,7 +11,8 @@ use mech_core::*;
 use mech_runtime::{
   EventId, EventSink, ModuleBuildOptions, RuntimeEvent, RuntimeWorkspaceFolder,
   RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget, RuntimeWorkspaceWatchEvent,
-  ServerWorkspaceSession,
+  ServerWorkspaceSession, HostFilesystemAuthority, DefaultIdGenerator, IdGenerator, SERVE_HOST_SUBJECT,
+  FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE, FS_WATCH, MECH_TOOL_SUBJECT, check_fs_capability,
 };
 use warp::{Filter, Reply};
 
@@ -22,6 +23,7 @@ struct ServerAsset {
   bytes: Vec<u8>,
   content_type: &'static str,
   content_encoding: Option<&'static str>,
+  backing_path: Option<PathBuf>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -45,9 +47,18 @@ struct ServerSourceRegistry {
   user_assets: HashSet<String>,
   index_source: Option<String>,
   preferred_index_source: Option<String>,
+  capability_kernel: Option<mech_runtime::SharedCapabilityKernel>,
+  capability_subject: Option<String>,
 }
 
 impl ServerSourceRegistry {
+  fn with_capabilities(&mut self, kernel: mech_runtime::SharedCapabilityKernel, subject: impl Into<String>) { self.capability_kernel = Some(kernel); self.capability_subject = Some(subject.into()); }
+
+  fn check(&self, operation: &str, path: &Path) -> MResult<()> {
+    if let (Some(kernel), Some(subject)) = (&self.capability_kernel, &self.capability_subject) { check_fs_capability(&mut kernel.clone(), subject, operation, path)?; }
+    Ok(())
+  }
+
   fn insert_asset(&mut self, key: impl Into<String>, asset: ServerAsset) {
     self.assets.insert(key.into(), asset);
   }
@@ -150,6 +161,7 @@ impl ServerSourceRegistry {
       return Ok(());
     }
     let path = path.canonicalize()?;
+    self.check(FS_READ, &path)?;
     let relative = path.strip_prefix(root).map_err(|error| {
       Error::new(ErrorKind::InvalidInput, format!("static asset is outside workspace root: {}", error))
     })?;
@@ -160,6 +172,7 @@ impl ServerSourceRegistry {
       bytes: std::fs::read(&path)?,
       content_type: content_type_for_path(&key),
       content_encoding: content_encoding_for_path(&key),
+      backing_path: Some(path.clone()),
     });
     self.static_asset_paths.insert(key, path);
     Ok(())
@@ -209,11 +222,13 @@ impl ServerSourceRegistry {
         Error::new(ErrorKind::InvalidInput, format!("workspace source is outside workspace root: {}", error))
       })?;
       let Some(key) = url_key(relative) else { continue; };
+      self.check(FS_READ, path)?;
       let source = std::fs::read_to_string(path)?;
       self.raw_sources.insert(key.clone(), ServerAsset {
         bytes: source.as_bytes().to_vec(),
         content_type: "text/x-mech",
         content_encoding: None,
+        backing_path: Some(path.clone()),
       });
       match parser::parse(&source) {
         Ok(tree) => {
@@ -223,12 +238,14 @@ impl ServerSourceRegistry {
             bytes: html.into_bytes(),
             content_type: "text/html",
             content_encoding: None,
+            backing_path: Some(path.clone()),
           });
           #[cfg(feature = "serde")]
           self.code_sources.insert(key.clone(), ServerAsset {
             bytes: compress_and_encode(&tree).map_err(|error| Error::new(ErrorKind::Other, error.to_string()))?.into_bytes(),
             content_type: "text/plain",
             content_encoding: None,
+            backing_path: Some(path.clone()),
           });
         }
         Err(error) => {
@@ -237,6 +254,7 @@ impl ServerSourceRegistry {
             bytes: html.into_bytes(),
             content_type: "text/html",
             content_encoding: None,
+            backing_path: Some(path.clone()),
           });
         }
       }
@@ -262,10 +280,12 @@ pub struct MechServer {
   workspace_root: Option<PathBuf>,
   js: Vec<u8>,
   wasm: Vec<u8>,
+  authority: HostFilesystemAuthority,
+  serve_subject: String,
 }
 
 impl MechServer {
-  pub fn new(name: String, full_address: String, stylesheet: String, html_shim: String, wasm: Vec<u8>, js: Vec<u8>) -> Self {
+  pub fn new(name: String, full_address: String, stylesheet: String, html_shim: String, wasm: Vec<u8>, js: Vec<u8>, authority: HostFilesystemAuthority) -> Self {
     Self {
       name,
       init: false,
@@ -278,6 +298,8 @@ impl MechServer {
       workspace_root: None,
       js,
       wasm,
+      authority,
+      serve_subject: SERVE_HOST_SUBJECT.to_string(),
     }
   }
 
@@ -307,12 +329,35 @@ impl MechServer {
     }
   }
 
+  fn delegate_plan(&self, plan: &ServeInputPlan) -> MResult<()> {
+    let mut ids = DefaultIdGenerator::new();
+    let mut delegate = |path: &Path, recursive: bool, operations: Vec<&'static str>| -> MResult<()> {
+      println!("{} Capability requested: {} {} recursive={} operations={}", self.badge(), self.serve_subject, path.display(), recursive, operations.join(","));
+      self.authority.delegate_path_to(&mut ids, &self.serve_subject, path, recursive, operations.iter().copied())?;
+      println!("{} Capability delegated: {} {} recursive={} operations={}", self.badge(), self.serve_subject, path.display(), recursive, operations.join(","));
+      Ok(())
+    };
+    for folder in &plan.folders { delegate(&plan.root.join(&folder.specifier), true, vec![FS_LIST, FS_WATCH, FS_READ, FS_RESOLVE, FS_IMPORT, FS_SERVE])?; }
+    for target in &plan.targets {
+      let path = plan.root.join(&target.specifier);
+      delegate(&path, false, vec![FS_READ, FS_WATCH, FS_RESOLVE, FS_IMPORT, FS_SERVE])?;
+      if let Some(parent) = path.parent() { delegate(parent, true, vec![FS_READ, FS_RESOLVE, FS_IMPORT])?; }
+    }
+    for static_path in &plan.static_paths {
+      let path = plan.root.join(static_path);
+      delegate(&path, path.is_dir(), vec![FS_READ, FS_WATCH, FS_SERVE])?;
+    }
+    Ok(())
+  }
+
   pub fn load_workspace(&mut self, paths: &Vec<String>) -> MResult<()> {
     if !self.init {
       return Err(MechError::new(ServerNotInitializedError, None).with_compiler_loc());
     }
     let started = Instant::now();
     let plan = plan_serve_inputs(paths)?;
+    self.delegate_plan(&plan)?;
+    self.registry.write().unwrap().with_capabilities(self.authority.kernel.clone(), self.serve_subject.clone());
     let root = plan.root.clone();
     self.workspace_root = Some(root.clone());
     println!("{} Loading workspace…", self.badge());
@@ -341,7 +386,7 @@ impl MechServer {
     println!("{} Static assets loaded in {:?}.", self.badge(), static_started.elapsed());
     let session_started = Instant::now();
     println!("{} Opening runtime workspace session…", self.badge());
-    let mut session = ServerWorkspaceSession::open(&root, plan.targets, plan.folders, module_options())?;
+    let mut session = ServerWorkspaceSession::open_with_capabilities(&root, plan.targets, plan.folders, module_options(), self.authority.kernel.clone(), self.serve_subject.clone())?;
     println!("{} Runtime workspace session opened in {:?}.", self.badge(), session_started.elapsed());
     for path in session.watcher().watched_paths() {
       println!("{} Watching: {}", self.badge(), path.display());
@@ -353,6 +398,12 @@ impl MechServer {
     let sync_started = Instant::now();
     println!("{} Building served source registry views…", self.badge());
     if let Some(snapshot) = session.snapshot() {
+      for diagnostic in &snapshot.diagnostics {
+        println!("{} Workspace diagnostic: {}", self.badge(), diagnostic.message);
+        if diagnostic.message.contains("Capability denied") || diagnostic.message.contains("CapabilityDenied") {
+          println!("{} Capability denied: {}", self.badge(), diagnostic.message);
+        }
+      }
       self.registry.write().unwrap().sync_workspace_snapshot(&root, snapshot, &self.stylesheet, &self.html_shim)?;
     }
     let registry = self.registry.read().unwrap();
@@ -387,9 +438,15 @@ impl MechServer {
 
     let root = self.workspace_root.clone();
     let registry = self.registry.clone();
+    let capability_kernel = self.authority.kernel.clone();
+    let capability_subject = self.serve_subject.clone();
     let routes = warp::get().and(warp::path::full()).map(move |path: warp::path::FullPath| {
       match registry.read().unwrap().get_route_with_trace(path.as_str()) {
         Some((asset, trace)) => {
+          if let Err(error) = authorize_server_asset(&capability_kernel, &capability_subject, &asset) {
+            println!("[Mech Server] GET {} -> 403 capability denied {:?}", path.as_str(), error);
+            return response(b"<html><body><h1>403 Forbidden</h1><p>Capability denied.</p></body></html>".to_vec(), "text/html", None, warp::http::StatusCode::FORBIDDEN);
+          }
           println!("[Mech Server] GET {} -> {} ({}, {} bytes)", path.as_str(), trace, asset.content_type, asset.bytes.len());
           response(asset.bytes, asset.content_type, asset.content_encoding, warp::http::StatusCode::OK)
         }
@@ -701,7 +758,13 @@ fn module_options() -> ModuleBuildOptions<'static> {
 }
 
 fn asset(bytes: &[u8], content_type: &'static str, content_encoding: Option<&'static str>) -> ServerAsset {
-  ServerAsset { bytes: bytes.to_vec(), content_type, content_encoding }
+  ServerAsset { bytes: bytes.to_vec(), content_type, content_encoding, backing_path: None }
+}
+
+
+fn authorize_server_asset(kernel: &mech_runtime::SharedCapabilityKernel, subject: &str, asset: &ServerAsset) -> MResult<()> {
+  if let Some(path) = &asset.backing_path { check_fs_capability(&mut kernel.clone(), subject, FS_SERVE, path)?; }
+  Ok(())
 }
 
 fn response(bytes: Vec<u8>, content_type: &'static str, content_encoding: Option<&'static str>, status: warp::http::StatusCode) -> warp::reply::Response {
@@ -783,6 +846,9 @@ mod tests {
   }
 
   fn test_server() -> MechServer {
+    let mut ids = DefaultIdGenerator::new();
+    let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, mech_runtime::SharedCapabilityKernel::new());
+    authority.grant_path(&mut ids, &std::env::current_dir().unwrap(), true, [FS_READ, FS_LIST, FS_WATCH, FS_RESOLVE, FS_IMPORT, FS_SERVE]).unwrap();
     MechServer::new(
       "test".to_string(),
       "127.0.0.1:0".to_string(),
@@ -790,7 +856,21 @@ mod tests {
       "shim".to_string(),
       vec![1, 2, 3],
       vec![4, 5, 6],
+      authority,
     )
+  }
+
+  #[test]
+  fn restricted_authority_blocks_workspace_escape() {
+    let root = temp_root("restricted"); let allowed = root.join("allowed"); let outside = root.join("outside"); std::fs::create_dir_all(&allowed).unwrap(); std::fs::create_dir_all(&outside).unwrap(); std::fs::write(outside.join("secret.mec"), "x := 1\n").unwrap(); let _guard = CurrentDirGuard::enter(&root);
+    let mut ids = DefaultIdGenerator::new(); let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, mech_runtime::SharedCapabilityKernel::new()); authority.grant_path(&mut ids, &allowed, true, [FS_READ, FS_LIST, FS_WATCH, FS_RESOLVE, FS_IMPORT, FS_SERVE]).unwrap();
+    let mut server = MechServer::new("test".into(), "127.0.0.1:0".into(), "".into(), "".into(), vec![], vec![], authority); server.init = true;
+    assert!(server.load_workspace(&vec!["outside/secret.mec".to_string()]).is_err());
+  }
+
+  #[test]
+  fn user_backed_asset_requires_serve_capability() {
+    let root = temp_root("serve-denied"); let file = root.join("index.html"); std::fs::write(&file, "secret").unwrap(); let mut ids = DefaultIdGenerator::new(); let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, mech_runtime::SharedCapabilityKernel::new()); authority.grant_path(&mut ids, &root, true, [FS_READ]).unwrap(); authority.delegate_path_to(&mut ids, SERVE_HOST_SUBJECT, &root, true, [FS_READ]).unwrap(); let asset = ServerAsset { bytes: b"secret".to_vec(), content_type: "text/html", content_encoding: None, backing_path: Some(file) }; assert!(authorize_server_asset(&authority.kernel, SERVE_HOST_SUBJECT, &asset).is_err()); std::fs::remove_dir_all(root).unwrap();
   }
 
   #[test]

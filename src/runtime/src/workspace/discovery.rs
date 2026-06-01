@@ -11,11 +11,20 @@ pub(super) struct RuntimeWorkspaceDiscoveredFile {
 pub(super) fn discover_workspace_files(
   root: &Path,
   folders: &[RuntimeWorkspaceFolder],
-) -> MResult<Vec<RuntimeWorkspaceDiscoveredFile>> {
+  runtime: &mut MechRuntime,
+  capability_subject: Option<&str>,
+) -> MResult<(Vec<RuntimeWorkspaceDiscoveredFile>, Vec<RuntimeWorkspaceDiagnostic>)> {
+  let mut diagnostics = Vec::new();
   let mut discovered = BTreeMap::new();
 
   for folder in folders {
     let folder_path = workspace_folder_path(root, folder)?;
+    if let Some(subject) = capability_subject {
+      if let Err(error) = crate::check_fs_capability(runtime.capability_kernel_mut(), subject, crate::FS_LIST, &folder_path) {
+        diagnostics.push(capability_diagnostic(&folder.specifier, error));
+        continue;
+      }
+    }
 
     let mut builder = WalkBuilder::new(&folder_path);
     builder
@@ -48,7 +57,7 @@ pub(super) fn discover_workspace_files(
         continue;
       }
 
-      if path.extension().and_then(|ext| ext.to_str()) != Some("mec") {
+      if !matches!(path.extension().and_then(|ext| ext.to_str()), Some("mec") | Some("🤖")) {
         continue;
       }
 
@@ -64,6 +73,13 @@ pub(super) fn discover_workspace_files(
           None,
         )
       })?;
+
+      if let Some(subject) = capability_subject {
+        if let Err(error) = crate::check_fs_capability(runtime.capability_kernel_mut(), subject, crate::FS_READ, &canonical_path) {
+          diagnostics.push(capability_diagnostic(&canonical_path.display().to_string(), error));
+          continue;
+        }
+      }
 
       if !canonical_path.starts_with(root) {
         return Err(MechError::new(
@@ -85,7 +101,11 @@ pub(super) fn discover_workspace_files(
     }
   }
 
-  Ok(discovered.into_values().collect())
+  Ok((discovered.into_values().collect(), diagnostics))
+}
+
+fn capability_diagnostic(target: &str, error: MechError) -> RuntimeWorkspaceDiagnostic {
+  RuntimeWorkspaceDiagnostic { severity: RuntimeWorkspaceDiagnosticSeverity::Error, target: Some(target.to_string()), canonical_uri: None, message: format!("{:?}", error) }
 }
 
 fn workspace_folder_path(
@@ -156,6 +176,7 @@ fn workspace_folder_path(
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::RuntimeBuilder;
 
   fn temp_root(label: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!(
@@ -168,6 +189,17 @@ mod tests {
     ));
     std::fs::create_dir_all(&root).unwrap();
     root.canonicalize().unwrap()
+  }
+
+  #[test]
+  fn discovery_denial_returns_diagnostic_without_files() {
+    let root = temp_root("denied");
+    std::fs::write(root.join("secret.mec"), "x := 1\n").unwrap();
+    let mut runtime = RuntimeBuilder::new().capability_kernel(crate::SharedCapabilityKernel::new()).build().unwrap();
+    let (files, diagnostics) = discover_workspace_files(&root, &[RuntimeWorkspaceFolder { specifier: ".".to_string(), recursive: true }], &mut runtime, Some(crate::SERVE_HOST_SUBJECT)).unwrap();
+    assert!(files.is_empty());
+    assert!(diagnostics.iter().any(|diagnostic| diagnostic.message.contains("CapabilityDenied")));
+    std::fs::remove_dir_all(root).unwrap();
   }
 
   #[test]
@@ -184,7 +216,9 @@ mod tests {
         specifier: "src".to_string(),
         recursive: true,
       }],
-    ).unwrap();
+      &mut RuntimeBuilder::new().build().unwrap(),
+      None,
+    ).unwrap().0;
 
     let paths = files
       .iter()
@@ -209,7 +243,9 @@ mod tests {
         specifier: "src".to_string(),
         recursive: false,
       }],
-    ).unwrap();
+      &mut RuntimeBuilder::new().build().unwrap(),
+      None,
+    ).unwrap().0;
 
     let paths = files
       .iter()
@@ -236,6 +272,8 @@ mod tests {
           specifier: "../outside".to_string(),
           recursive: true,
         }],
+        &mut RuntimeBuilder::new().build().unwrap(),
+        None,
       ).err().unwrap()
     );
 
