@@ -228,7 +228,7 @@ fn watch_events_from_notify_event(event: Event) -> Vec<RuntimeWorkspaceWatchEven
   event
     .paths
     .into_iter()
-    .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("mec"))
+    .filter(|path| path.is_file() || !path.exists())
     .map(|path| RuntimeWorkspaceWatchEvent {
       path,
       kind: kind.clone(),
@@ -259,7 +259,7 @@ mod tests {
   use super::*;
 
   #[test]
-  fn watch_events_ignore_non_mec_paths() {
+  fn watch_events_include_non_mec_paths() {
     let event = Event {
       kind: EventKind::Modify(notify::event::ModifyKind::Any),
       paths: vec![
@@ -271,9 +271,15 @@ mod tests {
 
     let events = watch_events_from_notify_event(event);
 
-    assert_eq!(events.len(), 1);
-    assert_eq!(events[0].path, PathBuf::from("src/main.mec"));
-    assert_eq!(events[0].kind, RuntimeWorkspaceWatchEventKind::Modified);
+    assert_eq!(events.len(), 2);
+    assert!(events.iter().any(|event| {
+      event.path == PathBuf::from("src/main.mec")
+        && event.kind == RuntimeWorkspaceWatchEventKind::Modified
+    }));
+    assert!(events.iter().any(|event| {
+      event.path == PathBuf::from("src/readme.txt")
+        && event.kind == RuntimeWorkspaceWatchEventKind::Modified
+    }));
   }
 
   #[test]

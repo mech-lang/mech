@@ -33,20 +33,19 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
       "statements_default", "subscript_default", "state_machines",
-      "formatter", "mechfs", "serve", "run", "test", "repl", "build", "whos", "async", "trace",
+      "formatter", "serve", "run", "test", "repl", "build", "whos", "async", "trace",
       "mech-core/default", "mech-program/default", "mech-syntax/default",
       ]
 base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "statements_default", "subscript_default", "state_machines",
-      "formatter", "mechfs", "serve", "run", "test", "repl", "build","whos", "async", "trace",
+      "formatter", "serve", "run", "test", "repl", "build","whos", "async", "trace",
       "mech-core/base", "mech-program/base", "mech-syntax/base",
       ]
 build = ["compiler"]
 repl = []
 run = ["mech-program/program"]
 test = ["variable_define", "invariant_define", "symbol_table", "bool"]
-serve = ["mechfs"]
-mechfs = ["formatter", "mech-program/mechfs"]
+serve = ["formatter", "mech-runtime", "mech-runtime/default", "ignore"]
 whos = ["pretty_print", "variables", "symbol_table"]
 formatter = ["mech-syntax/formatter"]
 async = []
@@ -178,6 +177,8 @@ nalgebra = "0.34.1"
 mech-core        = { version = "0.3.5", default-features = false }
 mech-syntax      = { version = "0.3.5", default-features = false }
 mech-program = { version = "0.3.5", default-features = false }
+mech-runtime = { version = "0.3.5", default-features = false, optional = true }
+ignore = { version = "0.4.24", optional = true }
 
 sevenz-rust = "0.6.1"
 colored = "3.1.1"

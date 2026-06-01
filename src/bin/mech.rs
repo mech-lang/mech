@@ -332,7 +332,7 @@ async fn main() -> Result<(), MechError> {
       #[cfg(feature = "serve")]
       server.init().await?;
       #[cfg(feature = "serve")]
-      match server.load_sources(&mech_paths) {
+      match server.load_workspace(&mech_paths) {
         Ok(_) => println!("{} Sources loaded.", badge),
         Err(err) => {
           println!("{} {:#?}", "[Error]".truecolor(246,98,78), err);
