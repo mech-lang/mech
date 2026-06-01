@@ -9,7 +9,8 @@ use ignore::WalkBuilder;
 use mech_core::*;
 use mech_runtime::{
   EventId, EventSink, ModuleBuildOptions, RuntimeEvent, RuntimeWorkspaceFolder,
-  RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget, ServerWorkspaceSession,
+  RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget, RuntimeWorkspaceWatchEvent,
+  ServerWorkspaceSession,
 };
 use warp::{Filter, Reply};
 
@@ -30,6 +31,7 @@ struct ServerSourceRegistry {
   code_sources: HashMap<String, ServerAsset>,
   source_paths: HashMap<String, PathBuf>,
   workspace_keys: HashSet<String>,
+  static_asset_paths: HashMap<String, PathBuf>,
   user_assets: HashSet<String>,
   index_source: Option<String>,
 }
@@ -95,7 +97,28 @@ impl ServerSourceRegistry {
       content_type: content_type_for_path(&key),
       content_encoding: content_encoding_for_path(&key),
     });
+    self.static_asset_paths.insert(key, path);
     Ok(())
+  }
+
+  fn reload_static_path(&mut self, root: &Path, path: &Path) -> MResult<bool> {
+    if is_mech_source(path) {
+      return Ok(false);
+    }
+    let Some(key) = static_key_for_path(root, path) else {
+      return Ok(false);
+    };
+    if path.exists() && path.is_file() && is_allowed_static_file(path) {
+      self.insert_static_file(root, path)?;
+      return Ok(true);
+    }
+    if self.static_asset_paths.contains_key(&key) || self.user_assets.contains(&key) {
+      self.assets.remove(&key);
+      self.user_assets.remove(&key);
+      self.static_asset_paths.remove(&key);
+      return Ok(true);
+    }
+    Ok(false)
   }
 
   fn sync_workspace_snapshot(
@@ -316,12 +339,30 @@ fn poll_workspace_once(
   let mut session = session.lock().unwrap();
   let mut sink = ServerEventSink { events: events.clone() };
   let poll = session.poll_and_emit(module_options(), &mut sink)?;
-  if poll.refresh.is_some() {
-    if let Some(snapshot) = session.snapshot() {
-      registry.write().unwrap().sync_workspace_snapshot(root, snapshot, stylesheet, shim)?;
+  {
+    let mut registry = registry.write().unwrap();
+    sync_static_assets_from_watch_events(&mut registry, root, &poll.events)?;
+    if poll.refresh.is_some() {
+      if let Some(snapshot) = session.snapshot() {
+        registry.sync_workspace_snapshot(root, snapshot, stylesheet, shim)?;
+      }
     }
   }
   Ok(())
+}
+
+fn sync_static_assets_from_watch_events(
+  registry: &mut ServerSourceRegistry,
+  root: &Path,
+  events: &[RuntimeWorkspaceWatchEvent],
+) -> MResult<bool> {
+  let mut changed = false;
+  for event in events {
+    if registry.reload_static_path(root, &event.path)? {
+      changed = true;
+    }
+  }
+  Ok(changed)
 }
 
 fn load_static_assets_from_paths(registry: &mut ServerSourceRegistry, root: &Path, paths: &[String]) -> MResult<()> {
@@ -367,6 +408,21 @@ fn url_key(path: &Path) -> Option<String> {
     }
   }
   normalize_url_path(&segments.join("/"))
+}
+
+fn static_key_for_path(root: &Path, path: &Path) -> Option<String> {
+  let candidate = if path.is_absolute() {
+    path.to_path_buf()
+  } else {
+    root.join(path)
+  };
+  let normalized = if candidate.exists() {
+    candidate.canonicalize().ok()?
+  } else {
+    candidate
+  };
+  let relative = normalized.strip_prefix(root).ok()?;
+  url_key(relative)
 }
 
 fn content_encoding_for_path(path: &str) -> Option<&'static str> {
@@ -553,6 +609,63 @@ mod tests {
     registry.sync_workspace_snapshot(&root, &snapshot(&root, "index.mec"), "", "").unwrap();
     let served = registry.get_route("/").unwrap();
     assert_eq!(served.bytes, b"user index");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn registry_reload_static_path_updates_existing_asset() {
+    let root = temp_root("static-update");
+    let css = root.join("style.css");
+    std::fs::write(&css, "old").unwrap();
+    let mut registry = ServerSourceRegistry::default();
+    registry.insert_static_file(&root, &css).unwrap();
+    assert_eq!(registry.get_route("style.css").unwrap().bytes, b"old");
+    std::fs::write(&css, "new").unwrap();
+    assert!(registry.reload_static_path(&root, &css).unwrap());
+    assert_eq!(registry.get_route("style.css").unwrap().bytes, b"new");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn registry_reload_static_path_removes_deleted_asset() {
+    let root = temp_root("static-remove");
+    let css = root.join("style.css");
+    std::fs::write(&css, "old").unwrap();
+    let mut registry = ServerSourceRegistry::default();
+    registry.insert_static_file(&root, &css).unwrap();
+    assert!(registry.get_route("style.css").is_some());
+    std::fs::remove_file(&css).unwrap();
+    assert!(registry.reload_static_path(&root, &css).unwrap());
+    assert!(registry.get_route("style.css").is_none());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn registry_reload_static_path_ignores_mech_source() {
+    let root = temp_root("static-ignore-mech");
+    let source = root.join("main.mec");
+    std::fs::write(&source, "x := 1\n").unwrap();
+    let mut registry = ServerSourceRegistry::default();
+    assert!(!registry.reload_static_path(&root, &source).unwrap());
+    assert!(registry.get_route("main.mec").is_none());
+    assert!(registry.get_route("source/main.mec").is_none());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn sync_static_assets_from_watch_events_reloads_static_asset() {
+    let root = temp_root("static-watch-event");
+    let css = root.join("style.css");
+    std::fs::write(&css, "old").unwrap();
+    let mut registry = ServerSourceRegistry::default();
+    registry.insert_static_file(&root, &css).unwrap();
+    std::fs::write(&css, "new").unwrap();
+    let events = vec![RuntimeWorkspaceWatchEvent {
+      path: css,
+      kind: mech_runtime::RuntimeWorkspaceWatchEventKind::Modified,
+    }];
+    assert!(sync_static_assets_from_watch_events(&mut registry, &root, &events).unwrap());
+    assert_eq!(registry.get_route("style.css").unwrap().bytes, b"new");
     std::fs::remove_dir_all(root).unwrap();
   }
 
