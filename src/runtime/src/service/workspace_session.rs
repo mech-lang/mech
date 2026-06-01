@@ -3,16 +3,19 @@ use std::path::PathBuf;
 use mech_core::MResult;
 
 use crate::{
-  FileSourceResolver, MechRuntime, ModuleBuildOptions, RuntimeBuilder,
-  RuntimeWorkspace, RuntimeWorkspaceConfig, RuntimeWorkspaceFolder,
-  RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget, RuntimeWorkspaceWatcher,
-  RuntimeWorkspaceWatchPoll,
+  DefaultIdGenerator, EventSink, FileSourceResolver, IdGenerator, MechRuntime,
+  ModuleBuildOptions, RuntimeBuilder, RuntimeEvent, RuntimeEventKind,
+  RuntimeWorkspace, RuntimeWorkspaceConfig, RuntimeWorkspaceDiagnostic,
+  RuntimeWorkspaceFolder, RuntimeWorkspaceRefresh, RuntimeWorkspaceSnapshot,
+  RuntimeWorkspaceTarget, RuntimeWorkspaceWatcher, RuntimeWorkspaceWatchPoll,
 };
 
 pub struct ServerWorkspaceSession {
   runtime: MechRuntime,
   workspace: RuntimeWorkspace,
   watcher: RuntimeWorkspaceWatcher,
+  event_ids: DefaultIdGenerator,
+  event_sequence: u64,
 }
 
 impl ServerWorkspaceSession {
@@ -44,6 +47,8 @@ impl ServerWorkspaceSession {
       runtime,
       workspace,
       watcher,
+      event_ids: DefaultIdGenerator::new(),
+      event_sequence: 0,
     })
   }
 
@@ -71,6 +76,25 @@ impl ServerWorkspaceSession {
     self.workspace.snapshot()
   }
 
+  pub fn refresh(
+    &mut self,
+    options: ModuleBuildOptions,
+  ) -> MResult<RuntimeWorkspaceRefresh> {
+    self.workspace.refresh(&mut self.runtime, options)
+  }
+
+  pub fn emit_initial_events(
+    &mut self,
+    events: &mut dyn EventSink,
+  ) -> MResult<()> {
+    let Some(snapshot) = self.workspace.snapshot().cloned() else {
+      return Ok(());
+    };
+
+    self.emit_snapshot_loaded_events(&snapshot, events)?;
+    self.emit_workspace_diagnostics(&snapshot.diagnostics, events)
+  }
+
   pub fn poll(
     &mut self,
     options: ModuleBuildOptions,
@@ -81,11 +105,152 @@ impl ServerWorkspaceSession {
       options,
     )
   }
+
+  pub fn poll_and_emit(
+    &mut self,
+    options: ModuleBuildOptions,
+    events: &mut dyn EventSink,
+  ) -> MResult<RuntimeWorkspaceWatchPoll> {
+    let poll = self.poll(options)?;
+
+    self.emit_watch_poll_events(&poll, events)?;
+
+    Ok(poll)
+  }
+
+  fn emit_event(
+    &mut self,
+    kind: RuntimeEventKind,
+    events: &mut dyn EventSink,
+  ) -> MResult<()> {
+    self.event_sequence += 1;
+    let event = RuntimeEvent::new(
+      self.event_ids.event_id(),
+      self.event_sequence,
+      kind,
+    );
+    events.emit(event)?;
+    Ok(())
+  }
+
+  fn emit_snapshot_loaded_events(
+    &mut self,
+    snapshot: &RuntimeWorkspaceSnapshot,
+    events: &mut dyn EventSink,
+  ) -> MResult<()> {
+    for source in snapshot.sources.values() {
+      self.emit_event(
+        RuntimeEventKind::SourceResolved {
+          canonical_uri: source.canonical_uri.clone(),
+        },
+        events,
+      )?;
+    }
+
+    for edge in &snapshot.import_edges {
+      self.emit_event(
+        RuntimeEventKind::ModuleImportLinked {
+          importer: edge.importer,
+          dependency: edge.dependency,
+          specifier: edge.specifier.clone(),
+        },
+        events,
+      )?;
+    }
+
+    Ok(())
+  }
+
+  fn emit_watch_poll_events(
+    &mut self,
+    poll: &RuntimeWorkspaceWatchPoll,
+    events: &mut dyn EventSink,
+  ) -> MResult<()> {
+    for event in &poll.events {
+      self.emit_event(
+        RuntimeEventKind::SourceChanged {
+          canonical_uri: event.path.to_string_lossy().to_string(),
+        },
+        events,
+      )?;
+    }
+
+    let Some(refresh) = &poll.refresh else {
+      return Ok(());
+    };
+
+    for change in &refresh.changes {
+      self.emit_event(
+        RuntimeEventKind::SourceChanged {
+          canonical_uri: change.canonical_uri.clone(),
+        },
+        events,
+      )?;
+    }
+
+    for target_name in &refresh.affected_targets {
+      if let Some(target) = refresh.snapshot.targets.get(target_name) {
+        self.emit_event(
+          RuntimeEventKind::SourceReloaded {
+            canonical_uri: target.canonical_uri.clone(),
+          },
+          events,
+        )?;
+      }
+    }
+
+    self.emit_workspace_diagnostics(&refresh.refresh_diagnostics, events)
+  }
+
+  fn emit_workspace_diagnostics(
+    &mut self,
+    diagnostics: &[RuntimeWorkspaceDiagnostic],
+    events: &mut dyn EventSink,
+  ) -> MResult<()> {
+    for diagnostic in diagnostics {
+      if let Some(canonical_uri) = &diagnostic.canonical_uri {
+        self.emit_event(
+          RuntimeEventKind::ModuleCompileFailed {
+            canonical_uri: canonical_uri.clone(),
+            message: diagnostic.message.clone(),
+          },
+          events,
+        )?;
+      } else {
+        self.emit_event(
+          RuntimeEventKind::SourceResolveFailed {
+            specifier: diagnostic
+              .target
+              .clone()
+              .unwrap_or_else(|| "workspace".to_string()),
+            message: diagnostic.message.clone(),
+          },
+          events,
+        )?;
+      }
+    }
+
+    Ok(())
+  }
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::EventId;
+
+  #[derive(Debug, Default)]
+  struct RecordingEventSink {
+    events: Vec<RuntimeEvent>,
+  }
+
+  impl EventSink for RecordingEventSink {
+    fn emit(&mut self, event: RuntimeEvent) -> MResult<EventId> {
+      let id = event.id;
+      self.events.push(event);
+      Ok(id)
+    }
+  }
 
   fn setup_session_root() -> PathBuf {
     let root = std::env::temp_dir().join(format!(
@@ -176,5 +341,120 @@ mod tests {
 
     assert!(poll.events.is_empty());
     assert!(poll.refresh.is_none());
+  }
+
+  #[test]
+  fn server_workspace_session_emit_initial_events_reports_sources() {
+    let root = setup_session_root();
+    std::fs::write(root.join("main.mec"), "result := true\n").unwrap();
+
+    let mut session = ServerWorkspaceSession::open(
+      &root,
+      vec![main_target()],
+      vec![recursive_root_folder()],
+      module_options(),
+    ).unwrap();
+
+    let mut sink = RecordingEventSink::default();
+
+    session.emit_initial_events(&mut sink).unwrap();
+
+    assert!(sink.events.iter().any(|event| {
+      matches!(
+        &event.kind,
+        RuntimeEventKind::SourceResolved { canonical_uri }
+          if canonical_uri.ends_with("main.mec")
+      )
+    }));
+  }
+
+  #[test]
+  fn server_workspace_session_emit_initial_events_reports_diagnostics() {
+    let root = setup_session_root();
+
+    let mut session = ServerWorkspaceSession::open(
+      &root,
+      vec![RuntimeWorkspaceTarget {
+        name: "missing".to_string(),
+        specifier: "missing.mec".to_string(),
+      }],
+      vec![recursive_root_folder()],
+      module_options(),
+    ).unwrap();
+
+    let mut sink = RecordingEventSink::default();
+
+    session.emit_initial_events(&mut sink).unwrap();
+
+    assert!(sink.events.iter().any(|event| {
+      matches!(
+        &event.kind,
+        RuntimeEventKind::SourceResolveFailed { specifier, .. }
+          if specifier == "missing"
+      )
+    }));
+  }
+
+  #[test]
+  fn server_workspace_session_poll_and_emit_without_events_emits_nothing() {
+    let root = setup_session_root();
+    std::fs::write(root.join("main.mec"), "result := true\n").unwrap();
+
+    let mut session = ServerWorkspaceSession::open(
+      &root,
+      vec![main_target()],
+      vec![recursive_root_folder()],
+      module_options(),
+    ).unwrap();
+
+    let mut sink = RecordingEventSink::default();
+
+    let poll = session.poll_and_emit(module_options(), &mut sink).unwrap();
+
+    assert!(poll.events.is_empty());
+    assert!(poll.refresh.is_none());
+    assert!(sink.events.is_empty());
+  }
+
+  #[test]
+  fn server_workspace_session_emits_refresh_events_for_changed_file() {
+    let root = setup_session_root();
+    std::fs::write(root.join("main.mec"), "result := false\n").unwrap();
+
+    let mut session = ServerWorkspaceSession::open(
+      &root,
+      vec![main_target()],
+      vec![recursive_root_folder()],
+      module_options(),
+    ).unwrap();
+
+    std::fs::write(root.join("main.mec"), "result := true\n").unwrap();
+
+    let refresh = session.refresh(module_options()).unwrap();
+
+    let poll = RuntimeWorkspaceWatchPoll {
+      events: Vec::new(),
+      refresh: Some(refresh),
+    };
+
+    let mut sink = RecordingEventSink::default();
+
+    session.emit_watch_poll_events(&poll, &mut sink).unwrap();
+
+    assert!(sink.events.iter().any(|event| {
+      matches!(
+        &event.kind,
+        RuntimeEventKind::SourceChanged { canonical_uri }
+          if canonical_uri.ends_with("main.mec")
+      )
+    }));
+
+    assert!(sink.events.iter().any(|event| {
+      matches!(
+        &event.kind,
+        RuntimeEventKind::SourceReloaded { canonical_uri }
+          if canonical_uri.ends_with("main.mec")
+      )
+    }));
   }
 }
