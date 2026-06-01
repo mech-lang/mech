@@ -3,6 +3,7 @@ use std::io::{Error, ErrorKind};
 use std::net::SocketAddr;
 use std::path::{Component, Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
+use std::time::Instant;
 
 use colored::*;
 use ignore::WalkBuilder;
@@ -23,6 +24,15 @@ struct ServerAsset {
   content_encoding: Option<&'static str>,
 }
 
+#[derive(Clone, Copy, Debug)]
+struct ServerRegistrySummary {
+  assets: usize,
+  raw_sources: usize,
+  html_sources: usize,
+  code_sources: usize,
+  static_assets: usize,
+}
+
 #[derive(Debug, Default)]
 struct ServerSourceRegistry {
   assets: HashMap<String, ServerAsset>,
@@ -34,6 +44,7 @@ struct ServerSourceRegistry {
   static_asset_paths: HashMap<String, PathBuf>,
   user_assets: HashSet<String>,
   index_source: Option<String>,
+  preferred_index_source: Option<String>,
 }
 
 impl ServerSourceRegistry {
@@ -47,38 +58,95 @@ impl ServerSourceRegistry {
     self.insert_asset(key, asset);
   }
 
+  fn set_preferred_index_source(&mut self, key: impl Into<String>) {
+    self.preferred_index_source = Some(key.into());
+  }
+
+  fn summary(&self) -> ServerRegistrySummary {
+    ServerRegistrySummary {
+      assets: self.assets.len(),
+      raw_sources: self.raw_sources.len(),
+      html_sources: self.html_sources.len(),
+      code_sources: self.code_sources.len(),
+      static_assets: self.static_asset_paths.len(),
+    }
+  }
+
+  fn source_keys(&self) -> Vec<String> {
+    self.raw_sources.keys().cloned().collect()
+  }
+
+  fn static_asset_keys(&self) -> Vec<String> {
+    self.static_asset_paths.keys().cloned().collect()
+  }
+
   fn get_route(&self, path: &str) -> Option<ServerAsset> {
-    let path = normalize_url_path(path)?;
-    if let Some(source) = path.strip_prefix("source/") {
-      return self.raw_sources.get(source).cloned();
+    self.get_route_with_trace(path).map(|(asset, _)| asset)
+  }
+
+  fn get_route_with_trace(&self, path: &str) -> Option<(ServerAsset, String)> {
+    let normalized = normalize_url_path(path)?;
+    if let Some(source) = normalized.strip_prefix("source/") {
+      return self.raw_sources
+        .get(source)
+        .cloned()
+        .map(|asset| (asset, format!("raw source `{}`", source)));
     }
-    if let Some(source) = path.strip_prefix("code/") {
-      return self.code_sources.get(source).cloned();
+    if let Some(source) = normalized.strip_prefix("code/") {
+      return self.code_sources
+        .get(source)
+        .cloned()
+        .map(|asset| (asset, format!("code source `{}`", source)));
     }
-    if path == "index.html" {
+    if normalized == "index.html" {
       if self.user_assets.contains("index.html") {
-        return self.assets.get("index.html").cloned();
+        return self.assets
+          .get("index.html")
+          .cloned()
+          .map(|asset| (asset, "user asset `index.html`".to_string()));
+      }
+      if let Some(preferred) = &self.preferred_index_source {
+        if let Some(asset) = self.html_sources.get(preferred) {
+          return Some((asset.clone(), format!("preferred generated html `{}`", preferred)));
+        }
       }
       if let Some(index_source) = &self.index_source {
         if let Some(asset) = self.html_sources.get(index_source) {
-          return Some(asset.clone());
+          return Some((asset.clone(), format!("generated html `{}`", index_source)));
         }
       }
-      return self.assets.get("_mech/index.html")
+      return self.assets
+        .get("_mech/index.html")
         .cloned()
-        .or_else(|| self.assets.get("index.html").cloned());
+        .map(|asset| (asset, "bundled asset `_mech/index.html`".to_string()))
+        .or_else(|| {
+          self.assets
+            .get("index.html")
+            .cloned()
+            .map(|asset| (asset, "bundled asset `index.html`".to_string()))
+        });
     }
-    if path.ends_with(".mec") || path.ends_with(".🤖") {
-      return self.html_sources.get(&path).cloned();
+    if normalized.ends_with(".mec") || normalized.ends_with(".🤖") {
+      return self.html_sources
+        .get(&normalized)
+        .cloned()
+        .map(|asset| (asset, format!("generated html `{}`", normalized)));
     }
-    if path.ends_with(".html") || path.ends_with(".htm") {
-      if let Some(asset) = self.assets.get(&path) {
-        return Some(asset.clone());
+    if normalized.ends_with(".html") || normalized.ends_with(".htm") {
+      if let Some(asset) = self.assets.get(&normalized) {
+        return Some((asset.clone(), format!("asset `{}`", normalized)));
       }
-      let source = Path::new(&path).with_extension("mec");
-      return self.html_sources.get(&url_key(&source)?).cloned();
+      let source = Path::new(&normalized).with_extension("mec");
+      let key = url_key(&source)?;
+      return self.html_sources
+        .get(&key)
+        .cloned()
+        .map(|asset| (asset, format!("generated html fallback `{}`", key)));
     }
-    self.assets.get(&path).cloned()
+    self.assets
+      .get(&normalized)
+      .cloned()
+      .map(|asset| (asset, format!("asset `{}`", normalized)))
   }
 
   fn insert_static_file(&mut self, root: &Path, path: &Path) -> MResult<()> {
@@ -235,17 +303,43 @@ impl MechServer {
     Ok(())
   }
 
+  fn badge(&self) -> ColoredString {
+    if self.name.ends_with(" Server") {
+      format!("[{}]", self.name).truecolor(34, 204, 187)
+    } else {
+      format!("[{}] Server", self.name).truecolor(34, 204, 187)
+    }
+  }
+
   pub fn load_workspace(&mut self, paths: &Vec<String>) -> MResult<()> {
     if !self.init {
       return Err(MechError::new(ServerNotInitializedError, None).with_compiler_loc());
     }
+    let started = Instant::now();
     let root = std::env::current_dir()?.canonicalize()?;
     self.workspace_root = Some(root.clone());
+    println!("{} Loading workspace…", self.badge());
+    println!("{} Workspace root: {}", self.badge(), root.display());
     let mut targets = Vec::new();
     let mut static_paths = Vec::new();
+    let mut preferred_index_source = None;
     for specifier in paths {
       let path = Path::new(specifier);
       if is_mech_source(path) {
+        let candidate = if path.is_absolute() {
+          path.to_path_buf()
+        } else {
+          root.join(path)
+        };
+        if let Ok(canonical) = candidate.canonicalize() {
+          if let Ok(relative) = canonical.strip_prefix(&root) {
+            if let Some(key) = url_key(relative) {
+              preferred_index_source.get_or_insert(key);
+            }
+          }
+        } else if let Some(key) = normalize_url_path(specifier) {
+          preferred_index_source.get_or_insert(key);
+        }
         targets.push(RuntimeWorkspaceTarget {
           name: target_name(specifier),
           specifier: specifier.clone(),
@@ -254,18 +348,50 @@ impl MechServer {
         static_paths.push(specifier.clone());
       }
     }
+    println!("{} Targets: {} explicit, static inputs: {}", self.badge(), targets.len(), static_paths.len());
+    for target in &targets {
+      println!("{} Target `{}` -> `{}`", self.badge(), target.name, target.specifier);
+    }
+    let folders = if targets.is_empty() {
+      println!("{} No explicit Mech source targets provided; recursively discovering sources from `{}`.", self.badge(), root.display());
+      vec![RuntimeWorkspaceFolder { specifier: ".".to_string(), recursive: true }]
+    } else {
+      println!("{} Explicit Mech source targets provided; recursive source discovery disabled.", self.badge());
+      Vec::new()
+    };
+    let static_started = Instant::now();
+    println!("{} Loading static assets…", self.badge());
     load_static_assets_from_paths(&mut self.registry.write().unwrap(), &root, &static_paths)?;
-    let mut session = ServerWorkspaceSession::open(
-      &root,
-      targets,
-      vec![RuntimeWorkspaceFolder { specifier: ".".to_string(), recursive: true }],
-      module_options(),
-    )?;
+    println!("{} Static assets loaded in {:?}.", self.badge(), static_started.elapsed());
+    let session_started = Instant::now();
+    println!("{} Opening runtime workspace session…", self.badge());
+    let mut session = ServerWorkspaceSession::open(&root, targets, folders, module_options())?;
+    println!("{} Runtime workspace session opened in {:?}.", self.badge(), session_started.elapsed());
+    for path in session.watcher().watched_paths() {
+      println!("{} Watching: {}", self.badge(), path.display());
+    }
+    if let Some(key) = preferred_index_source {
+      self.registry.write().unwrap().set_preferred_index_source(key);
+    }
+    println!("{} Emitting initial workspace events…", self.badge());
     let mut sink = ServerEventSink { events: self.events.clone() };
     session.emit_initial_events(&mut sink)?;
+    let sync_started = Instant::now();
+    println!("{} Building served source registry views…", self.badge());
     if let Some(snapshot) = session.snapshot() {
       self.registry.write().unwrap().sync_workspace_snapshot(&root, snapshot, &self.stylesheet, &self.html_shim)?;
     }
+    let registry = self.registry.read().unwrap();
+    for key in registry.source_keys() {
+      println!("{} Loaded source: {}", self.badge(), key);
+    }
+    for key in registry.static_asset_keys() {
+      println!("{} Loaded static asset: {}", self.badge(), key);
+    }
+    let summary = registry.summary();
+    drop(registry);
+    println!("{} Registry ready in {:?}: {} assets, {} static assets, {} raw sources, {} html sources, {} code sources.", self.badge(), sync_started.elapsed(), summary.assets, summary.static_assets, summary.raw_sources, summary.html_sources, summary.code_sources);
+    println!("{} Workspace loaded in {:?}.", self.badge(), started.elapsed());
     self.workspace_session = Some(Arc::new(Mutex::new(session)));
     Ok(())
   }
@@ -274,26 +400,37 @@ impl MechServer {
     if !self.init {
       return Err(MechError::new(ServerNotInitializedError, None).with_compiler_loc());
     }
-    let server_badge = || { "[Mech Server]".truecolor(34, 204, 187) };
+    let server_name = self.name.clone();
     ctrlc::set_handler(move || {
-      println!("{} Server received shutdown signal. Process terminating.", server_badge());
+      let badge = if server_name.ends_with(" Server") {
+        format!("[{}]", server_name).truecolor(34, 204, 187)
+      } else {
+        format!("[{}] Server", server_name).truecolor(34, 204, 187)
+      };
+      println!("{} Server received shutdown signal. Process terminating.", badge);
       std::process::exit(0);
     }).expect("Error setting Ctrl-C handler");
 
     let root = self.workspace_root.clone();
     let registry = self.registry.clone();
     let routes = warp::get().and(warp::path::full()).map(move |path: warp::path::FullPath| {
-      match registry.read().unwrap().get_route(path.as_str()) {
-        Some(asset) => response(asset.bytes, asset.content_type, asset.content_encoding, warp::http::StatusCode::OK),
-        None => response(
+      match registry.read().unwrap().get_route_with_trace(path.as_str()) {
+        Some((asset, trace)) => {
+          println!("[Mech Server] GET {} -> {} ({}, {} bytes)", path.as_str(), trace, asset.content_type, asset.bytes.len());
+          response(asset.bytes, asset.content_type, asset.content_encoding, warp::http::StatusCode::OK)
+        }
+        None => {
+          println!("[Mech Server] GET {} -> 404", path.as_str());
+          response(
           format!("<html><body><h1>404 Not Found</h1><p>The requested URL {} was not found on this server.</p></body></html>", escape_html(path.as_str())).into_bytes(),
           "text/html",
           None,
           warp::http::StatusCode::NOT_FOUND,
-        ),
+          )
+        }
       }
     });
-    println!("{} Awaiting connections at {}", server_badge(), self.full_address);
+    println!("{} Awaiting connections at {}", self.badge(), self.full_address);
     let socket_address: SocketAddr = self.full_address.parse().unwrap();
     let server = warp::serve(routes).run(socket_address);
     if let (Some(session), Some(root)) = (&self.workspace_session, &root) {
@@ -310,7 +447,7 @@ impl MechServer {
     } else {
       server.await;
     }
-    println!("{} Closing server.", server_badge());
+    println!("{} Closing server.", self.badge());
     Ok(())
   }
 }
@@ -339,9 +476,26 @@ fn poll_workspace_once(
   let mut session = session.lock().unwrap();
   let mut sink = ServerEventSink { events: events.clone() };
   let poll = session.poll_and_emit(module_options(), &mut sink)?;
+  if !poll.events.is_empty() {
+    println!("[Mech Server] Watch events: {}", poll.events.len());
+    for event in &poll.events {
+      println!("[Mech Server] Watch event: {:?} {}", event.kind, event.path.display());
+    }
+  }
+  if let Some(refresh) = &poll.refresh {
+    println!("[Mech Server] Workspace refresh: {} changes, {} affected targets, {} diagnostics.", refresh.changes.len(), refresh.affected_targets.len(), refresh.refresh_diagnostics.len());
+    for change in &refresh.changes {
+      println!("[Mech Server] Workspace change: {:?} {}", change.kind, change.path.as_ref().map(|path| path.display().to_string()).unwrap_or_else(|| change.canonical_uri.clone()));
+    }
+    for diagnostic in &refresh.refresh_diagnostics {
+      println!("[Mech Server] Workspace diagnostic: {:?}", diagnostic);
+    }
+  }
   {
     let mut registry = registry.write().unwrap();
-    sync_static_assets_from_watch_events(&mut registry, root, &poll.events)?;
+    if sync_static_assets_from_watch_events(&mut registry, root, &poll.events)? {
+      println!("[Mech Server] Static assets updated from watch events.");
+    }
     if poll.refresh.is_some() {
       if let Some(snapshot) = session.snapshot() {
         registry.sync_workspace_snapshot(root, snapshot, stylesheet, shim)?;
@@ -742,6 +896,59 @@ mod tests {
     server.load_workspace(&vec!["main.mec".to_string()]).unwrap();
     assert!(server.registry.read().unwrap().get_route("main.mec").is_some());
     assert!(server.registry.read().unwrap().get_route("source/main.mec").is_some());
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn server_load_workspace_with_explicit_target_does_not_load_unrelated_mec() {
+    let root = temp_root("explicit-no-discovery");
+    std::fs::write(root.join("test2.mec"), "x := 1\n").unwrap();
+    std::fs::write(root.join("ROADMAP.mec"), "roadmap := true\n").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+    let mut server = test_server();
+    tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
+    server.load_workspace(&vec!["test2.mec".to_string()]).unwrap();
+    let registry = server.registry.read().unwrap();
+    assert!(registry.get_route("test2.mec").is_some());
+    assert!(registry.get_route("source/test2.mec").is_some());
+    assert!(registry.get_route("ROADMAP.mec").is_none());
+    assert!(registry.get_route("source/ROADMAP.mec").is_none());
+    drop(registry);
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn server_index_route_prefers_explicit_target() {
+    let root = temp_root("explicit-index");
+    std::fs::write(root.join("test2.mec"), "x := 1\n").unwrap();
+    std::fs::write(root.join("ROADMAP.mec"), "roadmap := true\n").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+    let mut server = test_server();
+    tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
+    server.load_workspace(&vec!["test2.mec".to_string()]).unwrap();
+    let registry = server.registry.read().unwrap();
+    let (_, trace) = registry.get_route_with_trace("/").unwrap();
+    assert!(trace.contains("test2.mec"));
+    drop(registry);
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn server_load_workspace_without_explicit_target_discovers_mec_files() {
+    let root = temp_root("discovery-enabled");
+    std::fs::write(root.join("a.mec"), "a := 1\n").unwrap();
+    std::fs::write(root.join("b.mec"), "b := 2\n").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+    let mut server = test_server();
+    tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
+    server.load_workspace(&Vec::new()).unwrap();
+    let registry = server.registry.read().unwrap();
+    assert!(registry.get_route("a.mec").is_some());
+    assert!(registry.get_route("b.mec").is_some());
+    drop(registry);
     drop(guard);
     std::fs::remove_dir_all(root).unwrap();
   }
