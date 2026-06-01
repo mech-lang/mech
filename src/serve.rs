@@ -58,10 +58,6 @@ impl ServerSourceRegistry {
     self.insert_asset(key, asset);
   }
 
-  fn set_preferred_index_source(&mut self, key: impl Into<String>) {
-    self.preferred_index_source = Some(key.into());
-  }
-
   fn summary(&self) -> ServerRegistrySummary {
     ServerRegistrySummary {
       assets: self.assets.len(),
@@ -316,63 +312,41 @@ impl MechServer {
       return Err(MechError::new(ServerNotInitializedError, None).with_compiler_loc());
     }
     let started = Instant::now();
-    let root = std::env::current_dir()?.canonicalize()?;
+    let plan = plan_serve_inputs(paths)?;
+    let root = plan.root.clone();
     self.workspace_root = Some(root.clone());
     println!("{} Loading workspace…", self.badge());
+    println!("{} Serve input plan:", self.badge());
+    println!("{}   root: {}", self.badge(), root.display());
+    println!("{}   targets: {}", self.badge(), plan.targets.len());
+    println!("{}   folders: {}", self.badge(), plan.folders.len());
+    println!("{}   static inputs: {}", self.badge(), plan.static_paths.len());
     println!("{} Workspace root: {}", self.badge(), root.display());
-    let mut targets = Vec::new();
-    let mut static_paths = Vec::new();
-    let mut preferred_index_source = None;
-    for specifier in paths {
-      let path = Path::new(specifier);
-      if is_mech_source(path) {
-        let candidate = if path.is_absolute() {
-          path.to_path_buf()
-        } else {
-          root.join(path)
-        };
-        if let Ok(canonical) = candidate.canonicalize() {
-          if let Ok(relative) = canonical.strip_prefix(&root) {
-            if let Some(key) = url_key(relative) {
-              preferred_index_source.get_or_insert(key);
-            }
-          }
-        } else if let Some(key) = normalize_url_path(specifier) {
-          preferred_index_source.get_or_insert(key);
-        }
-        targets.push(RuntimeWorkspaceTarget {
-          name: target_name(specifier),
-          specifier: specifier.clone(),
-        });
-      } else {
-        static_paths.push(specifier.clone());
-      }
-    }
-    println!("{} Targets: {} explicit, static inputs: {}", self.badge(), targets.len(), static_paths.len());
-    for target in &targets {
+    for target in &plan.targets {
       println!("{} Target `{}` -> `{}`", self.badge(), target.name, target.specifier);
     }
-    let folders = if targets.is_empty() {
-      println!("{} No explicit Mech source targets provided; recursively discovering sources from `{}`.", self.badge(), root.display());
-      vec![RuntimeWorkspaceFolder { specifier: ".".to_string(), recursive: true }]
-    } else {
-      println!("{} Explicit Mech source targets provided; recursive source discovery disabled.", self.badge());
-      Vec::new()
-    };
+    for folder in &plan.folders {
+      println!("{} Folder `{}` recursive={}", self.badge(), folder.specifier, folder.recursive);
+    }
+    for specifier in &plan.static_paths {
+      println!("{} Static input: `{}`", self.badge(), specifier);
+    }
+    log_skipped_serve_inputs(paths)?;
+    if paths.is_empty() {
+      println!("{} No serve inputs provided; recursively discovering sources from current directory `{}`.", self.badge(), root.display());
+    }
     let static_started = Instant::now();
     println!("{} Loading static assets…", self.badge());
-    load_static_assets_from_paths(&mut self.registry.write().unwrap(), &root, &static_paths)?;
+    load_static_assets_from_paths(&mut self.registry.write().unwrap(), &root, &plan.static_paths)?;
     println!("{} Static assets loaded in {:?}.", self.badge(), static_started.elapsed());
     let session_started = Instant::now();
     println!("{} Opening runtime workspace session…", self.badge());
-    let mut session = ServerWorkspaceSession::open(&root, targets, folders, module_options())?;
+    let mut session = ServerWorkspaceSession::open(&root, plan.targets, plan.folders, module_options())?;
     println!("{} Runtime workspace session opened in {:?}.", self.badge(), session_started.elapsed());
     for path in session.watcher().watched_paths() {
       println!("{} Watching: {}", self.badge(), path.display());
     }
-    if let Some(key) = preferred_index_source {
-      self.registry.write().unwrap().set_preferred_index_source(key);
-    }
+    self.registry.write().unwrap().preferred_index_source = plan.preferred_index_source;
     println!("{} Emitting initial workspace events…", self.badge());
     let mut sink = ServerEventSink { events: self.events.clone() };
     session.emit_initial_events(&mut sink)?;
@@ -519,15 +493,116 @@ fn sync_static_assets_from_watch_events(
   Ok(changed)
 }
 
-fn load_static_assets_from_paths(registry: &mut ServerSourceRegistry, root: &Path, paths: &[String]) -> MResult<()> {
+#[derive(Debug)]
+struct ServeInputPlan {
+  root: PathBuf,
+  targets: Vec<RuntimeWorkspaceTarget>,
+  folders: Vec<RuntimeWorkspaceFolder>,
+  static_paths: Vec<String>,
+  preferred_index_source: Option<String>,
+}
+
+fn plan_serve_inputs(paths: &[String]) -> MResult<ServeInputPlan> {
+  let current_dir = std::env::current_dir()?.canonicalize()?;
+  if paths.is_empty() {
+    return Ok(ServeInputPlan {
+      root: current_dir,
+      targets: Vec::new(),
+      folders: vec![RuntimeWorkspaceFolder { specifier: ".".to_string(), recursive: true }],
+      static_paths: Vec::new(),
+      preferred_index_source: None,
+    });
+  }
+
+  let mut resolved = Vec::new();
+  let mut root_paths = Vec::new();
+  for input in paths {
+    let input_path = Path::new(input);
+    let candidate = if input_path.is_absolute() { input_path.to_path_buf() } else { current_dir.join(input_path) };
+    if candidate.exists() {
+      let canonical = candidate.canonicalize()?;
+      if canonical.is_dir() {
+        root_paths.push(canonical.clone());
+      } else if let Some(parent) = canonical.parent() {
+        root_paths.push(parent.to_path_buf());
+      }
+      resolved.push(canonical);
+    } else if is_mech_source(&candidate) {
+      let parent = candidate.parent().ok_or_else(|| Error::new(ErrorKind::InvalidInput, format!("Mech target `{}` has no parent directory", input)))?;
+      let parent = parent.canonicalize().unwrap_or_else(|_| parent.to_path_buf());
+      root_paths.push(parent.clone());
+      resolved.push(parent.join(candidate.file_name().ok_or_else(|| Error::new(ErrorKind::InvalidInput, format!("Mech target `{}` has no file name", input)))?));
+    } else {
+      resolved.push(candidate);
+    }
+  }
+
+  let root = common_ancestor(&root_paths).ok_or_else(|| Error::new(ErrorKind::InvalidInput, "serve inputs do not have a common workspace root"))?;
+  let mut targets = Vec::new();
+  let mut folders = Vec::new();
+  let mut static_paths = Vec::new();
+  let mut preferred_index_source = None;
+  for path in resolved {
+    if path.is_dir() {
+      let specifier = relative_specifier(&root, &path).ok_or_else(|| Error::new(ErrorKind::InvalidInput, format!("serve directory `{}` is outside workspace root", path.display())))?;
+      folders.push(RuntimeWorkspaceFolder { specifier: specifier.clone(), recursive: true });
+      static_paths.push(specifier);
+    } else if is_mech_source(&path) {
+      let specifier = relative_specifier(&root, &path).ok_or_else(|| Error::new(ErrorKind::InvalidInput, format!("Mech target `{}` is outside workspace root", path.display())))?;
+      preferred_index_source.get_or_insert_with(|| specifier.clone());
+      targets.push(RuntimeWorkspaceTarget { name: target_name(&specifier), specifier });
+    } else if path.is_file() && is_allowed_static_file(&path) {
+      let specifier = relative_specifier(&root, &path).ok_or_else(|| Error::new(ErrorKind::InvalidInput, format!("static asset `{}` is outside workspace root", path.display())))?;
+      static_paths.push(specifier);
+    }
+  }
+  Ok(ServeInputPlan { root, targets, folders, static_paths, preferred_index_source })
+}
+
+fn common_ancestor(paths: &[PathBuf]) -> Option<PathBuf> {
+  let mut ancestor = paths.first()?.clone();
+  for path in &paths[1..] {
+    while !path.starts_with(&ancestor) {
+      if !ancestor.pop() {
+        return None;
+      }
+    }
+  }
+  Some(ancestor)
+}
+
+fn relative_specifier(root: &Path, path: &Path) -> Option<String> {
+  let relative = path.strip_prefix(root).ok()?;
+  if relative.as_os_str().is_empty() {
+    Some(".".to_string())
+  } else {
+    url_key(relative)
+  }
+}
+
+fn log_skipped_serve_inputs(paths: &[String]) -> MResult<()> {
+  let current_dir = std::env::current_dir()?.canonicalize()?;
   for input in paths {
     let path = Path::new(input);
+    let path = if path.is_absolute() { path.to_path_buf() } else { current_dir.join(path) };
+    if !path.exists() && !is_mech_source(&path) {
+      println!("[Mech Server] Warning: skipped missing non-Mech input `{}`.", input);
+    } else if path.is_file() && !is_mech_source(&path) && !is_allowed_static_file(&path) {
+      println!("[Mech Server] Warning: skipped unsupported file `{}`.", input);
+    }
+  }
+  Ok(())
+}
+
+fn load_static_assets_from_paths(registry: &mut ServerSourceRegistry, root: &Path, paths: &[String]) -> MResult<()> {
+  for input in paths {
+    let path = root.join(input);
     if path.is_file() {
-      if !is_mech_source(path) {
-        registry.insert_static_file(root, path)?;
+      if !is_mech_source(&path) {
+        registry.insert_static_file(root, &path)?;
       }
     } else if path.is_dir() {
-      for entry in WalkBuilder::new(path).build() {
+      for entry in WalkBuilder::new(&path).build() {
         let entry = entry.map_err(|error| Error::new(ErrorKind::Other, error.to_string()))?;
         if entry.file_type().map(|kind| kind.is_file()).unwrap_or(false) && !is_mech_source(entry.path()) {
           registry.insert_static_file(root, entry.path())?;
@@ -996,4 +1071,141 @@ mod tests {
     drop(guard);
     std::fs::remove_dir_all(root).unwrap();
   }
+
+  #[test]
+  fn plan_serve_inputs_single_directory_uses_directory_as_root() {
+    let root = temp_root("serve-dir-root");
+    let dir = root.join("examples").join("working");
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("fizzbuzz.mec"), "x := 1\n").unwrap();
+    std::fs::write(root.join("ROADMAP.mec"), "roadmap := true\n").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+    let plan = plan_serve_inputs(&vec!["examples/working".to_string()]).unwrap();
+    assert_eq!(plan.root, dir.canonicalize().unwrap());
+    assert!(plan.targets.is_empty());
+    assert_eq!(plan.folders, vec![RuntimeWorkspaceFolder { specifier: ".".to_string(), recursive: true }]);
+    assert!(plan.static_paths.iter().any(|path| path == "."));
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn server_load_workspace_directory_input_does_not_load_sibling_mec_files() {
+    let root = temp_root("serve-dir-no-siblings");
+    let dir = root.join("examples").join("working");
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("fizzbuzz.mec"), "x := 1\n").unwrap();
+    std::fs::write(root.join("ROADMAP.mec"), "roadmap := true\n").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+    let mut server = test_server();
+    tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
+    server.load_workspace(&vec!["examples/working".to_string()]).unwrap();
+    let registry = server.registry.read().unwrap();
+    assert!(registry.get_route("fizzbuzz.mec").is_some());
+    assert!(registry.get_route("source/fizzbuzz.mec").is_some());
+    assert!(registry.get_route("ROADMAP.mec").is_none());
+    assert!(registry.get_route("source/ROADMAP.mec").is_none());
+    drop(registry);
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn plan_serve_inputs_single_file_uses_parent_as_root() {
+    let root = temp_root("serve-file-root");
+    let dir = root.join("examples").join("working");
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("fizzbuzz.mec"), "x := 1\n").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+    let plan = plan_serve_inputs(&vec!["examples/working/fizzbuzz.mec".to_string()]).unwrap();
+    assert_eq!(plan.root, dir.canonicalize().unwrap());
+    assert_eq!(plan.targets, vec![RuntimeWorkspaceTarget { name: "fizzbuzz".to_string(), specifier: "fizzbuzz.mec".to_string() }]);
+    assert!(plan.folders.is_empty());
+    assert_eq!(plan.preferred_index_source.as_deref(), Some("fizzbuzz.mec"));
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn plan_serve_inputs_no_inputs_discovers_current_dir() {
+    let root = temp_root("serve-no-inputs");
+    let guard = CurrentDirGuard::enter(&root);
+    let plan = plan_serve_inputs(&Vec::new()).unwrap();
+    assert_eq!(plan.root, root.canonicalize().unwrap());
+    assert_eq!(plan.folders, vec![RuntimeWorkspaceFolder { specifier: ".".to_string(), recursive: true }]);
+    assert!(plan.targets.is_empty());
+    assert!(plan.static_paths.is_empty());
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn plan_serve_inputs_mixed_inputs_use_common_root_without_root_discovery() {
+    let root = temp_root("serve-mixed-root");
+    let working = root.join("examples").join("working");
+    let docs = root.join("docs").join("design");
+    std::fs::create_dir_all(&working).unwrap();
+    std::fs::create_dir_all(&docs).unwrap();
+    std::fs::write(working.join("fizzbuzz.mec"), "x := 1\n").unwrap();
+    std::fs::write(docs.join("ROADMAP.mec"), "roadmap := true\n").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+    let plan = plan_serve_inputs(&vec!["examples/working".to_string(), "docs/design/ROADMAP.mec".to_string()]).unwrap();
+    assert_eq!(plan.root, root.canonicalize().unwrap());
+    assert_eq!(plan.folders, vec![RuntimeWorkspaceFolder { specifier: "examples/working".to_string(), recursive: true }]);
+    assert_eq!(plan.targets, vec![RuntimeWorkspaceTarget { name: "docs-design-ROADMAP".to_string(), specifier: "docs/design/ROADMAP.mec".to_string() }]);
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn server_load_workspace_directory_index_serves_generated_html_at_root() {
+    let root = temp_root("serve-dir-index");
+    let dir = root.join("examples").join("working");
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("index.mec"), "x := 1\n").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+    let mut server = test_server();
+    tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
+    server.load_workspace(&vec!["examples/working".to_string()]).unwrap();
+    let registry = server.registry.read().unwrap();
+    let (_, trace) = registry.get_route_with_trace("/").unwrap();
+    assert!(trace.contains("index.mec"));
+    drop(registry);
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn server_load_workspace_directory_loads_static_assets_relative_to_directory() {
+    let root = temp_root("serve-dir-static");
+    let dir = root.join("examples").join("working");
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("style.css"), "body {}\n").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+    let mut server = test_server();
+    tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
+    server.load_workspace(&vec!["examples/working".to_string()]).unwrap();
+    assert!(server.registry.read().unwrap().get_route("style.css").is_some());
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn plan_serve_inputs_mech_and_static_file_share_parent_root() {
+    let root = temp_root("serve-file-static-root");
+    let dir = root.join("examples").join("working");
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("fizzbuzz.mec"), "x := 1\n").unwrap();
+    std::fs::write(dir.join("style.css"), "body {}\n").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+    let plan = plan_serve_inputs(&vec!["examples/working/fizzbuzz.mec".to_string(), "examples/working/style.css".to_string()]).unwrap();
+    assert_eq!(plan.root, dir.canonicalize().unwrap());
+    assert_eq!(plan.targets, vec![RuntimeWorkspaceTarget { name: "fizzbuzz".to_string(), specifier: "fizzbuzz.mec".to_string() }]);
+    assert!(plan.folders.is_empty());
+    assert_eq!(plan.static_paths, vec!["style.css".to_string()]);
+    assert_eq!(plan.preferred_index_source.as_deref(), Some("fizzbuzz.mec"));
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
 }
