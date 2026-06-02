@@ -52,12 +52,25 @@ pub fn check_fs_capability(kernel: &mut dyn CapabilityKernel, subject: &str, ope
 
 #[derive(Clone, Debug)]
 pub struct HostFilesystemAuthority {
-  pub kernel: SharedCapabilityKernel,
-  pub subject: String,
-  pub source_capabilities: Vec<CapabilityId>,
+  kernel: SharedCapabilityKernel,
+  subject: String,
+  source_capabilities: Vec<CapabilityId>,
 }
 
 impl HostFilesystemAuthority {
+
+  pub fn kernel(&self) -> &SharedCapabilityKernel {
+    &self.kernel
+  }
+
+  pub fn subject(&self) -> &str {
+    &self.subject
+  }
+
+  pub fn source_capabilities(&self) -> &[CapabilityId] {
+    &self.source_capabilities
+  }
+
   pub fn new(subject: impl Into<String>, kernel: SharedCapabilityKernel) -> Self {
     Self { kernel, subject: subject.into(), source_capabilities: Vec::new() }
   }

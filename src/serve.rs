@@ -399,7 +399,7 @@ impl MechServer {
     let started = Instant::now();
     let plan = plan_serve_inputs(paths)?;
     self.delegate_plan(&plan)?;
-    self.registry.write().unwrap().with_capabilities(self.authority.kernel.clone(), self.serve_subject.clone());
+    self.registry.write().unwrap().with_capabilities(self.authority.kernel().clone(), self.serve_subject.clone());
     let root = plan.root.clone();
     self.workspace_root = Some(root.clone());
     println!("{} Loading workspace…", self.badge());
@@ -428,7 +428,7 @@ impl MechServer {
     println!("{} Static assets loaded in {:?}.", self.badge(), static_started.elapsed());
     let session_started = Instant::now();
     println!("{} Opening runtime workspace session…", self.badge());
-    let mut session = ServerWorkspaceSession::open_with_capabilities(&root, plan.targets, plan.folders, module_options(), self.authority.kernel.clone(), self.serve_subject.clone())?;
+    let mut session = ServerWorkspaceSession::open_with_capabilities(&root, plan.targets, plan.folders, module_options(), self.authority.kernel().clone(), self.serve_subject.clone())?;
     println!("{} Runtime workspace session opened in {:?}.", self.badge(), session_started.elapsed());
     for path in session.watcher().watched_paths() {
       println!("{} Watching: {}", self.badge(), path.display());
@@ -482,7 +482,7 @@ impl MechServer {
 
     let root = self.workspace_root.clone();
     let registry = self.registry.clone();
-    let capability_kernel = self.authority.kernel.clone();
+    let capability_kernel = self.authority.kernel().clone();
     let capability_subject = self.serve_subject.clone();
     let routes = warp::get().and(warp::path::full()).map(move |path: warp::path::FullPath| {
       match registry.read().unwrap().get_route_with_trace(path.as_str()) {

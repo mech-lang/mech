@@ -322,7 +322,7 @@ impl SharedCapabilityKernel {
     Self { inner: Arc::new(Mutex::new(kernel)) }
   }
 
-  pub fn inner(&self) -> Arc<Mutex<BasicCapabilityKernel>> {
+  pub(crate) fn inner(&self) -> Arc<Mutex<BasicCapabilityKernel>> {
     self.inner.clone()
   }
 }

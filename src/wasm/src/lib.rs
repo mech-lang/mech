@@ -40,7 +40,7 @@ macro_rules! log {
 
 fn new_interpreter(id: u64) -> Interpreter {
 
-  let mut intrp = Interpreter::new(id);
+  let mut intrp = Interpreter::new(id, 10_000);
 
   let fxns_ref = intrp.functions();
   let mut fxns = fxns_ref.borrow_mut();
