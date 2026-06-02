@@ -289,73 +289,129 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   // Serve
   // --------------------------------------------------------------------------
-  #[cfg(feature = "serve")]
+ #[cfg(feature = "serve")]
   if let Some(matches) = matches.subcommand_matches("serve") {
     let badge = "[Mech Server]".truecolor(34, 204, 187);
-    
-    let port: String = matches.get_one::<String>("port").cloned().unwrap_or("8081".to_string());
-    let address = matches.get_one::<String>("address").cloned().unwrap_or("127.0.0.1".to_string());
-    let full_address: String = format!("{}:{}",address,port);
-    let mech_paths: Vec<String> = matches.get_many::<String>("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let stylesheet_paths: Vec<String> = matches.get_many::<String>("stylesheet").map_or(vec![], |paths| {
-      paths.map(|path| path.to_string()).collect()
-    });
-    let wasm_pkg = matches.get_one::<String>("wasm").cloned().unwrap_or("".to_string());
-    let shim_path = matches.get_one::<String>("shim").cloned().unwrap_or("".to_string());
+    let error_badge = "[Error]".truecolor(246, 98, 78);
 
-    let wasm_path = format!("{}/mech_wasm_bg.wasm.br", wasm_pkg);
-    let js_path = format!("{}/mech_wasm.js", wasm_pkg);
+    let port = matches
+      .get_one::<String>("port")
+      .map(String::as_str)
+      .unwrap_or("8081");
 
-    // Load stylesheet
-    println!("{} Loading resources…", badge);
-    print!("{} Loading stylesheet…", badge);
+    let address = matches
+      .get_one::<String>("address")
+      .map(String::as_str)
+      .unwrap_or("127.0.0.1");
+
+    let full_address = format!("{address}:{port}");
+
+    let mech_paths: Vec<String> = matches
+      .get_many::<String>("mech_serve_file_paths")
+      .into_iter()
+      .flatten()
+      .cloned()
+      .collect();
+
+    let stylesheet_paths: Vec<String> = matches
+      .get_many::<String>("stylesheet")
+      .into_iter()
+      .flatten()
+      .cloned()
+      .collect();
+
+    let wasm_pkg = matches
+      .get_one::<String>("wasm")
+      .map(String::as_str)
+      .unwrap_or("");
+
+    let shim_path = matches
+      .get_one::<String>("shim")
+      .map(String::as_str)
+      .unwrap_or("");
+
+    let wasm_path = format!("{wasm_pkg}/mech_wasm_bg.wasm.br");
+    let js_path = format!("{wasm_pkg}/mech_wasm.js");
+
+    println!("{badge} Loading resources…");
+
+    print!("{badge} Loading stylesheet…");
     let stylesheet_str = load_stylesheets(&stylesheet_paths, &stylesheet_backup_url).await?;
 
-    // Load shim HTML
-    print!("{} Loading HTML shim…", badge);
-    let shim = read_or_download(&shim_path, &shim_backup_url, Some(SHIMHTML.as_bytes()))
-        .await?;
+    print!("{badge} Loading HTML shim…");
+    let shim = read_or_download(
+      shim_path,
+      &shim_backup_url,
+      Some(SHIMHTML.as_bytes()),
+    )
+    .await?;
+
     let shim_str = String::from_utf8(shim)
-        .map_err(|e| MechError::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
+      .map_err(|e| {
+        MechError::new(
+          Utf8ConversionError {
+            source_error: e.to_string(),
+          },
+          None,
+        )
+        .with_compiler_loc()
+      })?;
 
-    // Load WASM
-    print!("{} Loading WASM…", badge);
-    let wasm = read_or_download(&wasm_path, &wasm_backup_url, Some(MECHWASM))
-        .await?;
+    print!("{badge} Loading WASM…");
+    let wasm = read_or_download(
+      &wasm_path,
+      &wasm_backup_url,
+      Some(MECHWASM),
+    )
+    .await?;
 
-    // Load JS shim
-    print!("{} Loading JS…", badge);
-    let js = read_or_download(&js_path, &js_backup_url, Some(MECHJS))
-        .await?;
+    print!("{badge} Loading JS…");
+    let js = read_or_download(
+      &js_path,
+      &js_backup_url,
+      Some(MECHJS),
+    )
+    .await?;
 
-    if cfg!(feature = "serve") {
-      #[cfg(feature = "serve")]
-      let mut id_generator = DefaultIdGenerator::new();
-      #[cfg(feature = "serve")]
-      let kernel = SharedCapabilityKernel::new();
-      #[cfg(feature = "serve")]
-      let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, kernel);
-      #[cfg(feature = "serve")]
-      {
-        let root = std::env::current_dir()?.canonicalize()?;
-        authority.grant_path(&mut id_generator, &root, true, [FS_READ, FS_LIST, FS_WATCH, FS_RESOLVE, FS_IMPORT, FS_SERVE])?;
-        println!("[Mech Server] Capability grant: {} :read,:list,:watch,:resolve,:import,:serve {} recursive=true", MECH_TOOL_SUBJECT, mech_runtime::fs_resource_key(&root)?);
-      }
-      #[cfg(feature = "serve")]
-      let mut server = MechServer::new("Mech Server".to_string(), full_address, stylesheet_str, shim_str, wasm, js, authority);
-      #[cfg(feature = "serve")]
-      server.init().await?;
-      #[cfg(feature = "serve")]
-      match server.load_workspace(&mech_paths) {
-        Ok(_) => println!("{} Sources loaded.", badge),
-        Err(err) => {
-          println!("{} {:#?}", "[Error]".truecolor(246,98,78), err);
-          std::process::exit(1);
-        }
-      }
-      #[cfg(feature = "serve")]
-      server.serve().await?;
-    }    
+    let mut id_generator = DefaultIdGenerator::new();
+    let kernel = SharedCapabilityKernel::new();
+    let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, kernel);
+
+    let root = std::env::current_dir()?.canonicalize()?;
+
+    authority.grant_path(
+      &mut id_generator,
+      &root,
+      true,
+      [FS_READ, FS_LIST, FS_WATCH, FS_RESOLVE, FS_IMPORT, FS_SERVE],
+    )?;
+
+    println!(
+      "{badge} Capability grant: {} :read,:list,:watch,:resolve,:import,:serve {} recursive=true",
+      MECH_TOOL_SUBJECT,
+      mech_runtime::fs_resource_key(&root)?,
+    );
+
+    let mut server = MechServer::new(
+      "Mech Server".to_string(),
+      full_address,
+      stylesheet_str,
+      shim_str,
+      wasm,
+      js,
+      authority,
+    );
+
+    server.init().await?;
+
+    if let Err(err) = server.load_workspace(&mech_paths) {
+      println!("{error_badge} {err:#?}");
+      std::process::exit(1);
+    }
+
+    println!("{badge} Sources loaded.");
+
+    server.serve().await?;
   }
   
   // --------------------------------------------------------------------------
