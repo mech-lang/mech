@@ -911,7 +911,7 @@ mod tests {
 
   #[test]
   fn user_backed_asset_requires_serve_capability() {
-    let root = temp_root("serve-denied"); let file = root.join("index.html"); std::fs::write(&file, "secret").unwrap(); let mut ids = DefaultIdGenerator::new(); let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, mech_runtime::SharedCapabilityKernel::new()); authority.grant_path(&mut ids, &root, true, [FS_READ]).unwrap(); authority.delegate_path_to(&mut ids, SERVE_HOST_SUBJECT, &root, true, [FS_READ]).unwrap(); let asset = ServerAsset { bytes: b"secret".to_vec(), content_type: "text/html", content_encoding: None, backing_path: Some(file) }; assert!(authorize_server_asset(&authority.kernel, SERVE_HOST_SUBJECT, &asset).is_err()); std::fs::remove_dir_all(root).unwrap();
+    let root = temp_root("serve-denied"); let file = root.join("index.html"); std::fs::write(&file, "secret").unwrap(); let mut ids = DefaultIdGenerator::new(); let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, mech_runtime::SharedCapabilityKernel::new()); authority.grant_path(&mut ids, &root, true, [FS_READ]).unwrap(); authority.delegate_path_to(&mut ids, SERVE_HOST_SUBJECT, &root, true, [FS_READ]).unwrap(); let asset = ServerAsset { bytes: b"secret".to_vec(), content_type: "text/html", content_encoding: None, backing_path: Some(file) }; assert!(authorize_server_asset(&authority.kernel(), SERVE_HOST_SUBJECT, &asset).is_err()); std::fs::remove_dir_all(root).unwrap();
   }
 
   #[test]
