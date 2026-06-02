@@ -173,6 +173,22 @@ fn repeated_interpreter_fences_merge_before_resolution_and_execution() {
 }
 
 #[test]
+fn faux_tilde_interpreter_fence_inside_markdown_backtick_block_is_ignored() {
+  let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\n```text\n~~~mech:foo\nbroken := missing\n~~~\n```\n\nresult := ok@foo\n");
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  assert_bool_true(runtime.run_module(version).unwrap(), "interpreter ignores faux tilde fence");
+}
+
+#[test]
+fn faux_backtick_interpreter_fence_inside_markdown_tilde_block_is_ignored() {
+  let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\n~~~text\n```mech:foo\nbroken := missing\n```\n~~~\n\nresult := ok@foo\n");
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  assert_bool_true(runtime.run_module(version).unwrap(), "interpreter ignores faux backtick fence");
+}
+
+#[test]
 fn duplicate_resolved_interpreter_address_target_still_fails_validation() {
   let foo = SourceInterpreterId {
     namespace: hash_str("foo"),

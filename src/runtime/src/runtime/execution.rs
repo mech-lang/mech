@@ -602,14 +602,8 @@ fn module_source_for_scope(
 
       let tree = mech_syntax::parser::parse(source_text.trim())?;
 
-      for section in &tree.body.sections {
-        for element in &section.elements {
-          if let mech_core::SectionElement::FencedMechCode(fenced) = element {
-            if fenced.config.namespace == interpreter.namespace {
-              return Ok(MechSourceCode::String(source_from_fenced_block(source_text, &interpreter.namespace_str)?));
-            }
-          }
-        }
+      if let Some(source) = source_from_parsed_fenced_blocks(&tree, interpreter.namespace)? {
+        return Ok(MechSourceCode::String(source));
       }
 
       Err(MechError::new(
@@ -623,66 +617,37 @@ fn module_source_for_scope(
   }
 }
 
-fn source_from_fenced_block(
-  source_text: &str,
-  namespace: &str,
-) -> MResult<String> {
-  let mut in_block = false;
-  let mut current_block = Vec::new();
+fn source_from_parsed_fenced_blocks(
+  tree: &mech_core::Program,
+  namespace: u64,
+) -> MResult<Option<String>> {
   let mut blocks = Vec::new();
 
-  for line in source_text.lines() {
-    let trimmed = line.trim();
-    if !in_block && fenced_mech_namespace(trimmed) == Some(namespace) {
-      in_block = true;
-      continue;
-    }
-    if in_block && (trimmed == "~~~" || trimmed == "```") {
-      blocks.push(current_block.join("\n"));
-      current_block.clear();
-      in_block = false;
-      continue;
-    }
-    if in_block {
-      current_block.push(line);
+  for section in &tree.body.sections {
+    for element in &section.elements {
+      if let mech_core::SectionElement::FencedMechCode(fenced) = element {
+        if fenced.config.namespace == namespace {
+          let block = source_from_parsed_fenced_code(fenced)?;
+          blocks.push(block.trim_end().to_string());
+        }
+      }
     }
   }
 
-  if in_block {
-    blocks.push(current_block.join("\n"));
+  if blocks.is_empty() {
+    Ok(None)
+  } else {
+    Ok(Some(blocks.join("\n")))
   }
-
-  Ok(blocks.join("\n"))
 }
 
-fn fenced_mech_namespace(line: &str) -> Option<&str> {
-  let info = line
-    .strip_prefix("~~~")
-    .or_else(|| line.strip_prefix("```"))?
-    .trim();
-  let tag = info.split('{').next()?.trim_end();
-
-  if !(tag.starts_with("mech") || tag.starts_with("mec") || tag.starts_with("🤖")) {
-    return None;
-  }
-
-  let namespace = tag
-    .trim_start_matches("mech")
-    .trim_start_matches("mec")
-    .trim_start_matches("🤖")
-    .trim_start_matches(':');
-
-  Some(match namespace {
-    "disabled" | "hidden" => "",
-    namespace => namespace,
-  })
-}
-
-#[allow(dead_code)]
-fn source_from_tokens(
-  _source_text: &str,
-  tokens: &[mech_core::Token],
+fn source_from_parsed_fenced_code(
+  fenced: &mech_core::FencedMechCode,
 ) -> MResult<String> {
+  source_from_tokens(std::slice::from_ref(&fenced.source))
+}
+
+fn source_from_tokens(tokens: &[mech_core::Token]) -> MResult<String> {
   if tokens.is_empty() {
     return Ok(String::new());
   }
@@ -743,22 +708,4 @@ pub fn strip_module_declarations_for_execution(source: &str) -> String {
     })
     .collect::<Vec<_>>()
     .join("\n")
-}
-
-#[cfg(test)]
-mod tests {
-  use super::source_from_fenced_block;
-
-  #[test]
-  fn repeated_named_fenced_blocks_merge_in_document_order() {
-    let source = "~~~mech:foo\nx := 1\n~~~\n\nprose stays out\n\n~~~mech:bar\nz := 3\n~~~\n\n~~~mech:foo\ny := x + 1\n~~~\n";
-    assert_eq!(source_from_fenced_block(source, "foo").unwrap(), "x := 1\ny := x + 1");
-    assert_eq!(source_from_fenced_block(source, "bar").unwrap(), "z := 3");
-  }
-
-  #[test]
-  fn repeated_unnamed_fenced_blocks_merge() {
-    let source = "~~~mech\nx := 1\n~~~\n\n~~~mec\ny := x + 1\n~~~\n";
-    assert_eq!(source_from_fenced_block(source, "").unwrap(), "x := 1\ny := x + 1");
-  }
 }
