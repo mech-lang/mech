@@ -294,7 +294,9 @@ impl ServerSourceRegistry {
       }
       self.source_paths.insert(key.clone(), path.clone());
       self.workspace_keys.insert(key.clone());
-      if is_index_source_key(&key) { self.index_source = Some(key); }
+      if is_index_source_key(&key) { 
+        self.index_source = Some(key); 
+      }
     }
     self.rebuild_listing();
     Ok(())
@@ -308,17 +310,29 @@ struct DelegationKey { path: PathBuf, recursive: bool }
 
 fn planned_delegations(plan: &ServeInputPlan) -> BTreeMap<DelegationKey, BTreeSet<&'static str>> {
   let mut delegations = BTreeMap::<DelegationKey, BTreeSet<&'static str>>::new();
-  let mut add = |path: PathBuf, recursive: bool, operations: &[&'static str]| { delegations.entry(DelegationKey { path, recursive }).or_default().extend(operations); };
-  for folder in &plan.folders { add(plan.root.join(&folder.specifier), true, &[FS_LIST, FS_WATCH, FS_READ, FS_RESOLVE, FS_IMPORT, FS_SERVE]); }
-  for target in &plan.targets {
-    let path = plan.root.join(&target.specifier); add(path.clone(), false, &[FS_READ, FS_WATCH, FS_RESOLVE, FS_IMPORT, FS_SERVE]);
-    if let Some(parent) = path.parent() { add(parent.to_path_buf(), true, &[FS_READ, FS_RESOLVE, FS_IMPORT]); }
+  let mut add = |path: PathBuf, recursive: bool, operations: &[&'static str]| { 
+    delegations.entry(DelegationKey { path, recursive }).or_default().extend(operations); 
+  };
+  for folder in &plan.folders { 
+    add(plan.root.join(&folder.specifier), true, &[FS_LIST, FS_WATCH, FS_READ, FS_RESOLVE, FS_IMPORT, FS_SERVE]); 
   }
-  for static_path in &plan.static_paths { let path = plan.root.join(static_path); let recursive = path.is_dir(); add(path, recursive, &[FS_READ, FS_WATCH, FS_SERVE]); }
+  for target in &plan.targets {
+    let path = plan.root.join(&target.specifier); 
+    add(path.clone(), false, &[FS_READ, FS_WATCH, FS_RESOLVE, FS_IMPORT, FS_SERVE]);
+    if let Some(parent) = path.parent() {
+      add(parent.to_path_buf(), true, &[FS_READ, FS_WATCH, FS_RESOLVE, FS_IMPORT, FS_SERVE]);
+    }
+  }
+  for static_path in &plan.static_paths { 
+    let path = plan.root.join(static_path); 
+    let recursive = path.is_dir(); add(path, recursive, &[FS_READ, FS_WATCH, FS_SERVE]); 
+  }
   delegations
 }
 
-fn display_fs_resource(path: &Path) -> String { mech_runtime::fs_resource_key(path).unwrap_or_else(|_| path.display().to_string()) }
+fn display_fs_resource(path: &Path) -> String { 
+  mech_runtime::fs_resource_key(path).unwrap_or_else(|_| path.display().to_string()) 
+}
 
 pub struct MechServer {
   name: String,
