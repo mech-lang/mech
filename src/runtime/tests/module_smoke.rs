@@ -2049,3 +2049,65 @@ fn workspace_watcher_watches_configured_folder() {
 
   assert!(watched_paths.contains(&root.join("src").canonicalize().unwrap()));
 }
+
+#[test]
+fn interpreter_scope_ignores_faux_tilde_fence_inside_backtick_code_block() {
+  let root = setup_modules(
+    "~~~mech:foo\n\
+ok := true\n\
+<+ ok\n\
+~~~\n\
+\n\
+```text\n\
+~~~mech:foo\n\
+broken := missing\n\
+~~~\n\
+```\n\
+\n\
+result := ok@foo\n",
+  );
+
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime
+    .resolve_and_store_module_source("main.mec", module_options())
+    .unwrap()
+    .unwrap();
+
+  let result = runtime.run_module(version).unwrap();
+
+  match result {
+    Value::Bool(value) => assert_eq!(*value.borrow(), true),
+    other => panic!("expected faux tilde fence to be ignored, got {:?}", other),
+  }
+}
+
+#[test]
+fn interpreter_scope_ignores_faux_backtick_fence_inside_tilde_code_block() {
+  let root = setup_modules(
+    "~~~mech:foo\n\
+ok := true\n\
+<+ ok\n\
+~~~\n\
+\n\
+~~~text\n\
+```mech:foo\n\
+broken := missing\n\
+```\n\
+~~~\n\
+\n\
+result := ok@foo\n",
+  );
+
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime
+    .resolve_and_store_module_source("main.mec", module_options())
+    .unwrap()
+    .unwrap();
+
+  let result = runtime.run_module(version).unwrap();
+
+  match result {
+    Value::Bool(value) => assert_eq!(*value.borrow(), true),
+    other => panic!("expected faux backtick fence to be ignored, got {:?}", other),
+  }
+}
