@@ -20,6 +20,8 @@ use crossterm::{
 };
 use ariadne::{Report, ReportKind, Label, Color, sources};
 use clap::{arg, command, value_parser, Arg, ArgAction, Command};
+#[cfg(feature = "serve")]
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 use tabled::{
   builder::Builder,
@@ -150,6 +152,26 @@ fn path_is_recursive_capability_target(path: &Path) -> bool {
 }
 
 #[cfg(feature = "serve")]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct CapabilityGrantKey {
+    path: PathBuf,
+    recursive: bool,
+}
+
+#[cfg(feature = "serve")]
+fn add_capability_grant(
+    grants: &mut BTreeMap<CapabilityGrantKey, BTreeSet<&'static str>>,
+    path: PathBuf,
+    recursive: bool,
+    operations: &[&'static str],
+) {
+    grants
+        .entry(CapabilityGrantKey { path, recursive })
+        .or_default()
+        .extend(operations.iter().copied());
+}
+
+#[cfg(feature = "serve")]
 fn grant_mech_filesystem_path(
     authority: &mut HostFilesystemAuthority,
     id_generator: &mut DefaultIdGenerator,
@@ -176,6 +198,7 @@ fn build_mech_filesystem_authority(
     let mut id_generator = DefaultIdGenerator::new();
     let kernel = SharedCapabilityKernel::new();
     let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, kernel);
+    let mut grants = BTreeMap::<CapabilityGrantKey, BTreeSet<&'static str>>::new();
 
     let cap_roots = collect_capability_paths(matches, "cap_root");
     let allow_read = collect_capability_paths(matches, "allow_read");
@@ -190,14 +213,12 @@ fn build_mech_filesystem_authority(
 
     if !explicit {
         let root = std::env::current_dir()?.canonicalize()?;
-        grant_mech_filesystem_path(
-            &mut authority,
-            &mut id_generator,
-            badge,
-            &root,
+        add_capability_grant(
+            &mut grants,
+            root,
             true,
             &[FS_READ, FS_LIST, FS_WATCH, FS_RESOLVE, FS_IMPORT, FS_SERVE],
-        )?;
+        );
     }
 
     for path in cap_roots {
@@ -212,57 +233,55 @@ fn build_mech_filesystem_authority(
             )
             .into());
         }
-        grant_mech_filesystem_path(
-            &mut authority,
-            &mut id_generator,
-            badge,
-            &path,
+        add_capability_grant(
+            &mut grants,
+            path,
             true,
             &[FS_READ, FS_LIST, FS_WATCH, FS_RESOLVE, FS_IMPORT, FS_SERVE],
-        )?;
+        );
     }
 
     for path in allow_read {
         let path = resolve_capability_path(&path)?;
         let recursive = path_is_recursive_capability_target(&path);
-        let operations = if recursive {
-            &[FS_READ, FS_LIST, FS_RESOLVE, FS_IMPORT][..]
+        if recursive {
+            add_capability_grant(
+                &mut grants,
+                path,
+                true,
+                &[FS_READ, FS_LIST, FS_RESOLVE, FS_IMPORT],
+            );
         } else {
-            &[FS_READ, FS_RESOLVE, FS_IMPORT][..]
-        };
-        grant_mech_filesystem_path(
-            &mut authority,
-            &mut id_generator,
-            badge,
-            &path,
-            recursive,
-            operations,
-        )?;
+            add_capability_grant(
+                &mut grants,
+                path,
+                false,
+                &[FS_READ, FS_RESOLVE, FS_IMPORT],
+            );
+        }
     }
 
     for path in allow_watch {
         let path = resolve_capability_path(&path)?;
         let recursive = path_is_recursive_capability_target(&path);
-        grant_mech_filesystem_path(
-            &mut authority,
-            &mut id_generator,
-            badge,
-            &path,
-            recursive,
-            &[FS_WATCH],
-        )?;
+        add_capability_grant(&mut grants, path, recursive, &[FS_WATCH]);
     }
 
     for path in allow_serve {
         let path = resolve_capability_path(&path)?;
         let recursive = path_is_recursive_capability_target(&path);
+        add_capability_grant(&mut grants, path, recursive, &[FS_SERVE]);
+    }
+
+    for (key, operations) in grants {
+        let operations = operations.into_iter().collect::<Vec<_>>();
         grant_mech_filesystem_path(
             &mut authority,
             &mut id_generator,
             badge,
-            &path,
-            recursive,
-            &[FS_SERVE],
+            &key.path,
+            key.recursive,
+            &operations,
         )?;
     }
 
@@ -1261,6 +1280,38 @@ mod filesystem_capability_cli_tests {
                 .delegate_path_to(&mut ids, SERVE_HOST_SUBJECT, &root, true, [FS_SERVE])
                 .is_err()
         );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn explicit_granular_grants_combine_for_normal_serve_directory() {
+        let root = temp_root("granular-combine");
+        let allowed = root.join("allowed");
+        std::fs::create_dir_all(&allowed).unwrap();
+        let allowed_arg = allowed.to_string_lossy();
+        let matches = capability_matches(&[
+            "mech",
+            "--allow-read",
+            &allowed_arg,
+            "--allow-watch",
+            &allowed_arg,
+            "--allow-serve",
+            &allowed_arg,
+            "serve",
+            &allowed_arg,
+        ]);
+        let authority = build_mech_filesystem_authority(&matches, &test_badge()).unwrap();
+        assert_eq!(authority.source_capabilities().len(), 1);
+        let mut ids = DefaultIdGenerator::new();
+        authority
+            .delegate_path_to(
+                &mut ids,
+                SERVE_HOST_SUBJECT,
+                &allowed,
+                true,
+                [FS_READ, FS_LIST, FS_WATCH, FS_RESOLVE, FS_IMPORT, FS_SERVE],
+            )
+            .unwrap();
         std::fs::remove_dir_all(root).unwrap();
     }
 
