@@ -150,4 +150,23 @@ mod tests {
     assert_eq!(resolved.contexts, index.all_contexts());
     assert_eq!(resolved.address_references, index.all_address_references());
   }
+  #[test]
+  fn source_index_unions_repeated_fenced_interpreter_namespaces() {
+    let tree = parse_program("~~~mech:bayes\nprior := 0.01\n~~~\n\n~~~mech:bayes\nposterior := prior\n~~~\n");
+    let index = SourceIndex::from_program(&tree);
+    assert!(index.validate_address_targets().is_ok());
+    assert_eq!(index.address_target_interpreters.len(), 1);
+    assert_eq!(index.address_target_interpreters[0].namespace_str, "bayes");
+    assert_eq!(index.interpreter_scopes().len(), 1);
+  }
+
+  #[test]
+  fn source_index_keeps_different_fenced_interpreter_namespaces_separate() {
+    let tree = parse_program("~~~mech:foo\nx := 1\n~~~\n\n~~~mech:bar\nx := 2\n~~~\n");
+    let index = SourceIndex::from_program(&tree);
+    assert!(index.validate_address_targets().is_ok());
+    let namespaces = index.interpreter_scopes().into_iter().map(|scope| scope.namespace_str).collect::<Vec<_>>();
+    assert_eq!(namespaces, vec!["foo", "bar"]);
+  }
+
 }

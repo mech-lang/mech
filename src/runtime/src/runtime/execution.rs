@@ -628,23 +628,54 @@ fn source_from_fenced_block(
   namespace: &str,
 ) -> MResult<String> {
   let mut in_block = false;
-  let mut lines = Vec::new();
+  let mut current_block = Vec::new();
+  let mut blocks = Vec::new();
 
   for line in source_text.lines() {
     let trimmed = line.trim();
-    if !in_block && (trimmed == format!("~~~mech:{}", namespace) || trimmed == format!("```mech:{}", namespace)) {
+    if !in_block && fenced_mech_namespace(trimmed) == Some(namespace) {
       in_block = true;
       continue;
     }
     if in_block && (trimmed == "~~~" || trimmed == "```") {
-      return Ok(lines.join("\n"));
+      blocks.push(current_block.join("\n"));
+      current_block.clear();
+      in_block = false;
+      continue;
     }
     if in_block {
-      lines.push(line);
+      current_block.push(line);
     }
   }
 
-  Ok(lines.join("\n"))
+  if in_block {
+    blocks.push(current_block.join("\n"));
+  }
+
+  Ok(blocks.join("\n"))
+}
+
+fn fenced_mech_namespace(line: &str) -> Option<&str> {
+  let info = line
+    .strip_prefix("~~~")
+    .or_else(|| line.strip_prefix("```"))?
+    .trim();
+  let tag = info.split('{').next()?.trim_end();
+
+  if !(tag.starts_with("mech") || tag.starts_with("mec") || tag.starts_with("🤖")) {
+    return None;
+  }
+
+  let namespace = tag
+    .trim_start_matches("mech")
+    .trim_start_matches("mec")
+    .trim_start_matches("🤖")
+    .trim_start_matches(':');
+
+  Some(match namespace {
+    "disabled" | "hidden" => "",
+    namespace => namespace,
+  })
 }
 
 #[allow(dead_code)]
@@ -712,4 +743,22 @@ pub fn strip_module_declarations_for_execution(source: &str) -> String {
     })
     .collect::<Vec<_>>()
     .join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+  use super::source_from_fenced_block;
+
+  #[test]
+  fn repeated_named_fenced_blocks_merge_in_document_order() {
+    let source = "~~~mech:foo\nx := 1\n~~~\n\nprose stays out\n\n~~~mech:bar\nz := 3\n~~~\n\n~~~mech:foo\ny := x + 1\n~~~\n";
+    assert_eq!(source_from_fenced_block(source, "foo").unwrap(), "x := 1\ny := x + 1");
+    assert_eq!(source_from_fenced_block(source, "bar").unwrap(), "z := 3");
+  }
+
+  #[test]
+  fn repeated_unnamed_fenced_blocks_merge() {
+    let source = "~~~mech\nx := 1\n~~~\n\n~~~mec\ny := x + 1\n~~~\n";
+    assert_eq!(source_from_fenced_block(source, "").unwrap(), "x := 1\ny := x + 1");
+  }
 }

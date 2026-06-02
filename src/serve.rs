@@ -1208,4 +1208,24 @@ mod tests {
     std::fs::remove_dir_all(root).unwrap();
   }
 
+  #[test]
+  fn server_load_workspace_serves_ekf_style_repeated_named_fences() {
+    let root = temp_root("serve-repeated-fences");
+    let dir = root.join("examples").join("working");
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("ekf.mec"), "~~~mech:bayes\nprior := 0.01\n~~~\n\n~~~mech:bayes\nposterior := prior\n~~~\n").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+    let mut server = test_server();
+    tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
+    server.load_workspace(&vec!["examples/working".to_string()]).unwrap();
+    let registry = server.registry.read().unwrap();
+    assert!(registry.get_route("ekf.mec").is_some());
+    assert!(registry.get_route("source/ekf.mec").is_some());
+    drop(registry);
+    let snapshot = server.workspace_session.as_ref().unwrap().lock().unwrap().snapshot().unwrap().clone();
+    assert!(!snapshot.diagnostics.iter().any(|diagnostic| format!("{:?}", diagnostic).contains("AddressTargetNameConflict")));
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
 }

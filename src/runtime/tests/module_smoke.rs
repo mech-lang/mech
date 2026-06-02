@@ -161,10 +161,39 @@ fn duplicate_context_address_target_fails_resolution() {
 }
 
 #[test]
-fn duplicate_interpreter_address_target_fails_resolution() {
-  let root = setup_modules("~~~mech:foo\n~~~\n\n~~~mech:foo\n~~~\n");
+fn repeated_interpreter_fences_merge_before_resolution_and_execution() {
+  let root = setup_modules("~~~mech:foo\nx := 1\n~~~\n\nprose stays out\n\n~~~mech:foo\ny := x + 1\n<+ y\n~~~\n\nresult := y@foo\n");
   let mut runtime = runtime_with_root(&root);
-  let result = runtime.resolve_and_store_module_source("main.mec", module_options());
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+  match result {
+    Value::F64(value) => assert_eq!(*value.borrow(), 2.0),
+    other => panic!("expected merged interpreter result, got {:?}", other),
+  }
+}
+
+#[test]
+fn duplicate_resolved_interpreter_address_target_still_fails_validation() {
+  let foo = SourceInterpreterId {
+    namespace: hash_str("foo"),
+    namespace_str: "foo".to_string(),
+  };
+  let scope = ModuleScopeMetadata {
+    scope: SourceScope::Interpreter(foo),
+    imports: Vec::new(),
+    exports: Vec::new(),
+    contexts: Vec::new(),
+    address_references: Vec::new(),
+  };
+  let resolved = ResolvedSource::new(
+    "main.mec",
+    "memory:main.mec",
+    MechSourceCode::String("ok := true\n".to_string()),
+  )
+  .with_kind(SourceKind::Mech)
+  .with_scopes(vec![scope.clone(), scope]);
+
+  let result = resolved.validate();
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("AddressTargetNameConflict"), "expected address target conflict, got {error}");
