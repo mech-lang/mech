@@ -167,3 +167,86 @@ fn config_profile_missing_config_binding_rejected() {
     let msg = err_text("x := 1\n");
     assert!(msg.contains("MissingConfigBinding"));
 }
+
+#[test]
+fn config_profile_extra_helper_argument_rejected() {
+    let msg = err_text(
+        r#"make-path(root<string>, child<string>) => <string>
+  | join-path(root, child).
+
+config := {serve: {paths: [make-path("docs", "reference", "typo")]}}
+"#,
+    );
+    assert!(msg.contains("wrong arity"));
+    assert!(msg.contains("expected 2 got 3"));
+}
+
+#[test]
+fn config_profile_missing_helper_argument_rejected() {
+    let msg = err_text(
+        r#"make-path(root<string>, child<string>) => <string>
+  | join-path(root, child).
+
+config := {serve: {paths: [make-path("docs")]}}
+"#,
+    );
+    assert!(msg.contains("wrong arity"));
+    assert!(msg.contains("expected 2 got 1"));
+}
+
+#[test]
+fn config_profile_multi_arm_helper_rejected() {
+    let msg = err_text(
+        r#"choose-path(root<string>) => <string>
+  | "docs" => "docs/reference"
+  | * => "fallback".
+
+config := {serve: {paths: [choose-path("docs")]}}
+"#,
+    );
+    assert!(msg.contains("ConfigProfileViolation"));
+    assert!(msg.contains("pattern-dispatched config helper functions are not supported"));
+}
+
+#[test]
+fn config_profile_match_expression_rejected() {
+    let msg = err_text(
+        r#"x := 1? | 1 => 2.
+config := {:}
+"#,
+    );
+    assert!(msg.contains("ConfigProfileViolation"));
+    assert!(msg.contains("match expressions are not supported"));
+}
+
+#[test]
+fn config_profile_slice_expression_rejected() {
+    let msg = err_text("x := [1 2 3]\nconfig := {serve: {port: x[1]}}\n");
+    assert!(msg.contains("ConfigProfileViolation"));
+    assert!(msg.contains("slice expressions are not supported"));
+}
+
+#[test]
+fn config_profile_range_expression_rejected() {
+    let msg = err_text("config := {serve: {paths: [1..5]}}\n");
+    assert!(msg.contains("ConfigProfileViolation"));
+    assert!(msg.contains("range expressions are not supported"));
+}
+
+#[test]
+fn config_profile_invalid_log_level_rejected() {
+    let msg = err_text("config := {runtime: {diagnostics: {log-level: \"verbose\"}}}\n");
+    assert!(msg.contains("InvalidConfigField"));
+    assert!(msg.contains("log-level"));
+}
+
+#[test]
+fn config_profile_valid_log_levels_accepted() {
+    for level in ["error", "warn", "info", "debug", "trace"] {
+        let doc = parse(&format!(
+            "config := {{runtime: {{diagnostics: {{log-level: \"{level}\"}}}}}}\n"
+        ))
+        .unwrap();
+        assert_eq!(doc.runtime.diagnostics.log_level.as_deref(), Some(level));
+    }
+}

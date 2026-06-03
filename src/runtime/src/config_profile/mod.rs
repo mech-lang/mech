@@ -1,14 +1,18 @@
 mod error;
-mod eval;
 mod extract;
+mod ir;
+mod compile;
+mod analyze;
+mod eval;
 mod lower;
-mod profile;
 
 pub use error::*;
-pub use eval::*;
 pub use extract::*;
+pub use ir::*;
+pub use compile::*;
+pub use analyze::*;
+pub use eval::*;
 pub use lower::*;
-pub use profile::*;
 
 use mech_core::MResult;
 
@@ -42,7 +46,8 @@ pub fn parse_config_document(
 ) -> MResult<MechConfigDocument> {
     let program = mech_syntax::parser::parse(source)?;
     let extracted = ConfigExtractor::new(options.clone()).extract(&program)?;
-    ConfigProfileValidator::new(options.clone()).validate(&extracted)?;
-    let value = ConfigEvaluator::new(options).evaluate(&extracted)?;
+    let ir = ConfigCompiler::new(options.clone()).compile(&extracted)?;
+    ConfigAnalyzer::new(options.clone()).analyze(&ir)?;
+    let value = ConfigEvaluator::new(options).evaluate(&ir)?;
     ConfigLowerer::new().lower(source_name.into(), value)
 }

@@ -1,10 +1,10 @@
 use std::collections::BTreeMap;
 
-use mech_core::*;
+use mech_core::MResult;
 
 use super::{
-    ConfigEvaluationBudgetExceeded, ConfigProfileOptions, ConfigProfileViolation,
-    ExtractedConfigProgram, MissingConfigBinding,
+    ConfigEvaluationBudgetExceeded, ConfigExpr, ConfigFunction, ConfigItem, ConfigProfileOptions,
+    ConfigProfileViolation, ConfigProgram, MissingConfigBinding,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -24,7 +24,7 @@ pub struct ConfigEvaluator {
     collection_items: usize,
     string_bytes: usize,
     bindings: BTreeMap<String, ConfigValue>,
-    functions: BTreeMap<String, FunctionDefine>,
+    functions: BTreeMap<String, ConfigFunction>,
 }
 
 impl ConfigEvaluator {
@@ -39,30 +39,27 @@ impl ConfigEvaluator {
         }
     }
 
-    pub fn evaluate(mut self, program: &ExtractedConfigProgram) -> MResult<ConfigValue> {
-        for (code, _) in &program.code {
-            if let MechCode::FunctionDefine(function) = code {
+    pub fn evaluate(mut self, program: &ConfigProgram) -> MResult<ConfigValue> {
+        for item in &program.items {
+            if let ConfigItem::Function(function) = item {
                 self.functions
-                    .insert(function.name.to_string(), function.clone());
+                    .insert(function.name.clone(), function.clone());
             }
         }
-        for (code, _) in &program.code {
-            match code {
-                MechCode::Comment(_) | MechCode::FunctionDefine(_) => {}
-                MechCode::Expression(expression) => {
-                    let _ = self.eval_expression(expression, 0)?;
+
+        for item in &program.items {
+            match item {
+                ConfigItem::Function(_) => {}
+                ConfigItem::Expr(expr) => {
+                    let _ = self.eval_expr(expr, 0)?;
                 }
-                MechCode::Statement(Statement::VariableDefine(def)) => {
-                    let value = self.eval_expression(&def.expression, 0)?;
-                    self.bindings.insert(def.var.name.to_string(), value);
-                }
-                _ => {
-                    return Err(ConfigProfileViolation::error(
-                        "validated Mech config contains unsupported code",
-                    ));
+                ConfigItem::Let(binding) => {
+                    let value = self.eval_expr(&binding.expr, 0)?;
+                    self.bindings.insert(binding.name.clone(), value);
                 }
             }
         }
+
         self.bindings
             .remove("config")
             .ok_or_else(|| MissingConfigBinding::error("final binding `config` is required"))
@@ -98,273 +95,192 @@ impl ConfigEvaluator {
         Ok(())
     }
 
-    fn eval_expression(&mut self, expression: &Expression, depth: usize) -> MResult<ConfigValue> {
+    fn eval_expr(&mut self, expr: &ConfigExpr, depth: usize) -> MResult<ConfigValue> {
         self.step()?;
-        match expression {
-            Expression::Literal(literal) => self.eval_literal(literal),
-            Expression::Var(var) => self
-                .bindings
-                .get(&var.name.to_string())
-                .cloned()
-                .ok_or_else(|| {
-                    ConfigProfileViolation::error(format!(
-                        "unknown config binding `{}`",
-                        var.name.to_string()
-                    ))
-                }),
-            Expression::Structure(structure) => self.eval_structure(structure, depth),
-            Expression::Formula(factor) => self.eval_factor(factor, depth),
-            Expression::FunctionCall(call) => self.eval_function_call(call, depth),
-            _ => Err(ConfigProfileViolation::error(
-                "expression is not supported by Mech config evaluator v1",
-            )),
-        }
-    }
-
-    fn eval_literal(&mut self, literal: &Literal) -> MResult<ConfigValue> {
-        match literal {
-            Literal::Boolean(t) => Ok(ConfigValue::Bool(matches!(
-                t.to_string().as_str(),
-                "true" | "True" | "TRUE"
-            ))),
-            Literal::Empty(_) => Ok(ConfigValue::Null),
-            Literal::String(s) => {
-                let out = s.to_string();
-                self.count_string(&out)?;
-                Ok(ConfigValue::String(out))
+        match expr {
+            ConfigExpr::Null => Ok(ConfigValue::Null),
+            ConfigExpr::Bool(value) => Ok(ConfigValue::Bool(*value)),
+            ConfigExpr::Integer(value) => Ok(ConfigValue::Integer(*value)),
+            ConfigExpr::Float(value) => Ok(ConfigValue::Float(*value)),
+            ConfigExpr::String(value) => {
+                self.count_string(value)?;
+                Ok(ConfigValue::String(value.clone()))
             }
-            Literal::Number(n) => self.eval_number(n),
-            Literal::Atom(atom) => {
-                let out = atom.name.to_string();
-                self.count_string(&out)?;
-                Ok(ConfigValue::String(out))
+            ConfigExpr::Atom(value) => {
+                self.count_string(value)?;
+                Ok(ConfigValue::String(value.clone()))
             }
-            Literal::TypedLiteral((literal, _)) => self.eval_literal(literal),
-            Literal::Kind(_) => Err(ConfigProfileViolation::error(
-                "kind literals are not supported in Mech config values",
-            )),
-        }
-    }
-
-    fn eval_number(&self, number: &Number) -> MResult<ConfigValue> {
-        match number {
-            Number::Real(real) => {
-                let text = real.to_string();
-                if matches!(real, RealNumber::Float(_) | RealNumber::Scientific(_)) {
-                    text.parse::<f64>().map(ConfigValue::Float).map_err(|_| {
-                        ConfigProfileViolation::error(format!("invalid config float `{text}`"))
-                    })
-                } else {
-                    let clean = text.trim_start_matches("0d");
-                    clean.parse::<i64>().map(ConfigValue::Integer).map_err(|_| {
-                        ConfigProfileViolation::error(format!("invalid config integer `{text}`"))
-                    })
-                }
-            }
-            Number::Complex(_) => Err(ConfigProfileViolation::error(
-                "complex numbers are not supported in Mech config",
-            )),
-        }
-    }
-
-    fn eval_structure(&mut self, structure: &Structure, depth: usize) -> MResult<ConfigValue> {
-        match structure {
-            Structure::Empty => Ok(ConfigValue::Map(BTreeMap::new())),
-            Structure::Record(record) => {
-                let mut out = BTreeMap::new();
-                for binding in &record.bindings {
+            ConfigExpr::List(items) => {
+                let mut out = Vec::with_capacity(items.len());
+                for item in items {
                     self.count_collection_item()?;
-                    out.insert(
-                        binding.name.to_string(),
-                        self.eval_expression(&binding.value, depth)?,
-                    );
+                    out.push(self.eval_expr(item, depth)?);
+                }
+                Ok(ConfigValue::List(out))
+            }
+            ConfigExpr::Map(entries) => {
+                let mut out = BTreeMap::new();
+                for (key, value) in entries {
+                    self.count_collection_item()?;
+                    self.count_string(key)?;
+                    out.insert(key.clone(), self.eval_expr(value, depth)?);
                 }
                 Ok(ConfigValue::Map(out))
             }
-            Structure::Map(map) => {
-                let mut out = BTreeMap::new();
-                for mapping in &map.elements {
-                    self.count_collection_item()?;
-                    let key = self.eval_expression(&mapping.key, depth)?;
-                    let key = match key {
-                        ConfigValue::String(s) => s,
-                        ConfigValue::Integer(i) => i.to_string(),
-                        _ => {
-                            return Err(ConfigProfileViolation::error(
-                                "config map keys must be strings, atoms, identifiers, or integers",
-                            ));
-                        }
-                    };
-                    out.insert(key, self.eval_expression(&mapping.value, depth)?);
-                }
-                Ok(ConfigValue::Map(out))
+            ConfigExpr::Var(name) => self.bindings.get(name).cloned().ok_or_else(|| {
+                ConfigProfileViolation::error(format!("unknown config binding `{name}`"))
+            }),
+            ConfigExpr::Call { name, args } => self.eval_call(name, args, depth),
+            ConfigExpr::Add(lhs, rhs) => {
+                let lhs = self.eval_expr(lhs, depth)?;
+                let rhs = self.eval_expr(rhs, depth)?;
+                self.add(lhs, rhs)
             }
-            Structure::Matrix(matrix) => {
-                let mut out = Vec::new();
-                for row in &matrix.rows {
-                    for column in &row.columns {
-                        self.count_collection_item()?;
-                        out.push(self.eval_expression(&column.element, depth)?);
-                    }
-                }
-                Ok(ConfigValue::List(out))
+            ConfigExpr::Sub(lhs, rhs) => {
+                let lhs = self.eval_expr(lhs, depth)?;
+                let rhs = self.eval_expr(rhs, depth)?;
+                self.sub(lhs, rhs)
             }
-            Structure::Set(set) => {
-                let mut out = Vec::new();
-                for element in &set.elements {
-                    self.count_collection_item()?;
-                    out.push(self.eval_expression(element, depth)?);
-                }
-                Ok(ConfigValue::List(out))
-            }
-            Structure::Tuple(tuple) => {
-                let mut out = Vec::new();
-                for element in &tuple.elements {
-                    self.count_collection_item()?;
-                    out.push(self.eval_expression(element, depth)?);
-                }
-                Ok(ConfigValue::List(out))
-            }
-            _ => Err(ConfigProfileViolation::error(
-                "structure is not supported by Mech config evaluator v1",
-            )),
-        }
-    }
-
-    fn eval_factor(&mut self, factor: &Factor, depth: usize) -> MResult<ConfigValue> {
-        match factor {
-            Factor::Expression(expression) => self.eval_expression(expression, depth),
-            Factor::Parenthetical(inner) => self.eval_factor(inner, depth),
-            Factor::Negate(inner) => match self.eval_factor(inner, depth)? {
-                ConfigValue::Integer(i) => Ok(ConfigValue::Integer(-i)),
-                ConfigValue::Float(f) => Ok(ConfigValue::Float(-f)),
+            ConfigExpr::Negate(inner) => match self.eval_expr(inner, depth)? {
+                ConfigValue::Integer(value) => Ok(ConfigValue::Integer(-value)),
+                ConfigValue::Float(value) => Ok(ConfigValue::Float(-value)),
                 _ => Err(ConfigProfileViolation::error(
                     "cannot negate non-number in Mech config",
                 )),
             },
-            Factor::Not(inner) => match self.eval_factor(inner, depth)? {
-                ConfigValue::Bool(b) => Ok(ConfigValue::Bool(!b)),
+            ConfigExpr::Not(inner) => match self.eval_expr(inner, depth)? {
+                ConfigValue::Bool(value) => Ok(ConfigValue::Bool(!value)),
                 _ => Err(ConfigProfileViolation::error(
                     "cannot apply not to non-bool in Mech config",
                 )),
             },
-            Factor::Term(term) => self.eval_term(term, depth),
-            Factor::Transpose(inner) => self.eval_factor(inner, depth),
         }
     }
 
-    fn eval_term(&mut self, term: &Term, depth: usize) -> MResult<ConfigValue> {
-        let mut value = self.eval_factor(&term.lhs, depth)?;
-        for (op, rhs) in &term.rhs {
-            let rhs = self.eval_factor(rhs, depth)?;
-            value = match (op, value, rhs) {
-                (
-                    FormulaOperator::AddSub(AddSubOp::Add),
-                    ConfigValue::Integer(a),
-                    ConfigValue::Integer(b),
-                ) => ConfigValue::Integer(a + b),
-                (
-                    FormulaOperator::AddSub(AddSubOp::Add),
-                    ConfigValue::String(a),
-                    ConfigValue::String(b),
-                ) => {
-                    let s = format!("{a}{b}");
-                    self.count_string(&s)?;
-                    ConfigValue::String(s)
-                }
-                (
-                    FormulaOperator::AddSub(AddSubOp::Sub),
-                    ConfigValue::Integer(a),
-                    ConfigValue::Integer(b),
-                ) => ConfigValue::Integer(a - b),
-                _ => {
-                    return Err(ConfigProfileViolation::error(
-                        "only simple pure arithmetic/string formulas are supported in Mech config v1",
-                    ));
-                }
-            };
+    fn add(&mut self, lhs: ConfigValue, rhs: ConfigValue) -> MResult<ConfigValue> {
+        match (lhs, rhs) {
+            (ConfigValue::Integer(lhs), ConfigValue::Integer(rhs)) => {
+                Ok(ConfigValue::Integer(lhs + rhs))
+            }
+            (ConfigValue::Float(lhs), ConfigValue::Float(rhs)) => Ok(ConfigValue::Float(lhs + rhs)),
+            (ConfigValue::Integer(lhs), ConfigValue::Float(rhs)) => {
+                Ok(ConfigValue::Float(lhs as f64 + rhs))
+            }
+            (ConfigValue::Float(lhs), ConfigValue::Integer(rhs)) => {
+                Ok(ConfigValue::Float(lhs + rhs as f64))
+            }
+            (ConfigValue::String(lhs), ConfigValue::String(rhs)) => {
+                let out = format!("{lhs}{rhs}");
+                self.count_string(&out)?;
+                Ok(ConfigValue::String(out))
+            }
+            _ => Err(ConfigProfileViolation::error(
+                "cannot add these config value types",
+            )),
         }
-        Ok(value)
     }
 
-    fn eval_function_call(&mut self, call: &FunctionCall, depth: usize) -> MResult<ConfigValue> {
+    fn sub(&self, lhs: ConfigValue, rhs: ConfigValue) -> MResult<ConfigValue> {
+        match (lhs, rhs) {
+            (ConfigValue::Integer(lhs), ConfigValue::Integer(rhs)) => {
+                Ok(ConfigValue::Integer(lhs - rhs))
+            }
+            (ConfigValue::Float(lhs), ConfigValue::Float(rhs)) => Ok(ConfigValue::Float(lhs - rhs)),
+            (ConfigValue::Integer(lhs), ConfigValue::Float(rhs)) => {
+                Ok(ConfigValue::Float(lhs as f64 - rhs))
+            }
+            (ConfigValue::Float(lhs), ConfigValue::Integer(rhs)) => {
+                Ok(ConfigValue::Float(lhs - rhs as f64))
+            }
+            _ => Err(ConfigProfileViolation::error(
+                "cannot subtract these config value types",
+            )),
+        }
+    }
+
+    fn eval_call(&mut self, name: &str, args: &[ConfigExpr], depth: usize) -> MResult<ConfigValue> {
         if depth >= self.options.max_function_depth {
             return Err(ConfigEvaluationBudgetExceeded::error(
                 "maximum function depth exceeded",
             ));
         }
-        let name = call.name.to_string();
-        if matches!(name.as_str(), "join-path" | "path-join") {
-            let mut parts = Vec::new();
-            for (_, arg) in &call.args {
-                match self.eval_expression(arg, depth + 1)? {
-                    ConfigValue::String(s) => parts.push(s),
-                    _ => {
-                        return Err(ConfigProfileViolation::error(
-                            "path join arguments must be strings",
-                        ));
-                    }
-                }
-            }
-            let out = parts.join("/");
-            self.count_string(&out)?;
-            return Ok(ConfigValue::String(out));
+
+        match name {
+            "join-path" | "path-join" => self.eval_join_path(args, depth),
+            "str" | "string" => self.eval_string(args, depth),
+            _ => self.eval_user_function(name, args, depth),
         }
-        if matches!(name.as_str(), "str" | "string") {
-            if call.args.len() != 1 {
-                return Err(ConfigProfileViolation::error("string expects one argument"));
-            }
-            let value = self.eval_expression(&call.args[0].1, depth + 1)?;
-            let out = match value {
-                ConfigValue::String(s) => s,
-                ConfigValue::Integer(i) => i.to_string(),
-                ConfigValue::Bool(b) => b.to_string(),
-                ConfigValue::Float(f) => f.to_string(),
+    }
+
+    fn eval_join_path(&mut self, args: &[ConfigExpr], depth: usize) -> MResult<ConfigValue> {
+        if args.is_empty() {
+            return Err(ConfigProfileViolation::error(
+                "wrong arity for builtin `join-path`: expected at least 1 got 0",
+            ));
+        }
+        let mut parts = Vec::new();
+        for arg in args {
+            match self.eval_expr(arg, depth + 1)? {
+                ConfigValue::String(value) => parts.push(value),
                 _ => {
                     return Err(ConfigProfileViolation::error(
-                        "cannot convert config value to string",
+                        "path join arguments must be strings",
                     ));
                 }
-            };
-            self.count_string(&out)?;
-            return Ok(ConfigValue::String(out));
-        }
-        let function = self.functions.get(&name).cloned().ok_or_else(|| {
-            ConfigProfileViolation::error(format!("unknown config function `{name}`"))
-        })?;
-        let saved = self.bindings.clone();
-        for (idx, arg) in function.input.iter().enumerate() {
-            let Some((_, expr)) = call.args.get(idx) else {
-                return Err(ConfigProfileViolation::error(format!(
-                    "function `{name}` missing argument `{}`",
-                    arg.name.to_string()
-                )));
-            };
-            let value = self.eval_expression(expr, depth + 1)?;
-            self.bindings.insert(arg.name.to_string(), value);
-        }
-        for statement in &function.statements {
-            if let Statement::VariableDefine(def) = statement {
-                let value = self.eval_expression(&def.expression, depth + 1)?;
-                self.bindings.insert(def.var.name.to_string(), value);
             }
         }
-        let result = if let Some(arm) = function.match_arms.first() {
-            self.eval_expression(&arm.expression, depth + 1)?
-        } else if let Some(output) = function.output.first() {
-            self.bindings
-                .get(&output.name.to_string())
-                .cloned()
-                .ok_or_else(|| {
-                    ConfigProfileViolation::error(format!(
-                        "function `{name}` did not produce `{}`",
-                        output.name.to_string()
-                    ))
-                })?
-        } else {
-            ConfigValue::Null
+        let out = parts.join("/");
+        self.count_string(&out)?;
+        Ok(ConfigValue::String(out))
+    }
+
+    fn eval_string(&mut self, args: &[ConfigExpr], depth: usize) -> MResult<ConfigValue> {
+        if args.len() != 1 {
+            return Err(ConfigProfileViolation::error(format!(
+                "wrong arity for builtin `string`: expected 1 got {}",
+                args.len()
+            )));
+        }
+        let arg = &args[0];
+        let out = match self.eval_expr(arg, depth + 1)? {
+            ConfigValue::String(value) => value,
+            ConfigValue::Integer(value) => value.to_string(),
+            ConfigValue::Bool(value) => value.to_string(),
+            ConfigValue::Float(value) => value.to_string(),
+            _ => {
+                return Err(ConfigProfileViolation::error(
+                    "cannot convert config value to string",
+                ));
+            }
         };
+        self.count_string(&out)?;
+        Ok(ConfigValue::String(out))
+    }
+
+    fn eval_user_function(
+        &mut self,
+        name: &str,
+        args: &[ConfigExpr],
+        depth: usize,
+    ) -> MResult<ConfigValue> {
+        let function = self.functions.get(name).cloned().ok_or_else(|| {
+            ConfigProfileViolation::error(format!("unknown config function `{name}`"))
+        })?;
+        if function.params.len() != args.len() {
+            return Err(ConfigProfileViolation::error(format!(
+                "wrong arity for function `{name}`: expected {} got {}",
+                function.params.len(),
+                args.len()
+            )));
+        }
+
+        let saved = self.bindings.clone();
+        for (param, arg) in function.params.iter().zip(args) {
+            let value = self.eval_expr(arg, depth + 1)?;
+            self.bindings.insert(param.clone(), value);
+        }
+        let result = self.eval_expr(&function.body, depth + 1);
         self.bindings = saved;
-        Ok(result)
+        result
     }
 }

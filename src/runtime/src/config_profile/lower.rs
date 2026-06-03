@@ -161,7 +161,16 @@ impl ConfigLowerer {
                         Some(expect_bool("runtime.diagnostics.debug-enabled", value)?)
                 }
                 "log-level" => {
-                    out.log_level = Some(expect_string("runtime.diagnostics.log-level", value)?)
+                    let log_level = expect_string("runtime.diagnostics.log-level", value)?;
+                    if !matches!(
+                        log_level.as_str(),
+                        "error" | "warn" | "info" | "debug" | "trace"
+                    ) {
+                        return invalid(format!(
+                            "runtime.diagnostics.log-level must be one of error, warn, info, debug, trace; got `{log_level}`"
+                        ));
+                    }
+                    out.log_level = Some(log_level)
                 }
                 other => return invalid(format!("unknown runtime.diagnostics field `{other}`")),
             }
