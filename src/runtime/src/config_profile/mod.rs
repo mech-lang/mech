@@ -1,17 +1,17 @@
+mod analyze;
+mod compile;
 mod error;
+mod eval;
 mod extract;
 mod ir;
-mod compile;
-mod analyze;
-mod eval;
 mod lower;
 
+pub use analyze::*;
+pub use compile::*;
 pub use error::*;
+pub use eval::*;
 pub use extract::*;
 pub use ir::*;
-pub use compile::*;
-pub use analyze::*;
-pub use eval::*;
 pub use lower::*;
 
 use mech_core::MResult;

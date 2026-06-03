@@ -250,3 +250,38 @@ fn config_profile_valid_log_levels_accepted() {
         assert_eq!(doc.runtime.diagnostics.log_level.as_deref(), Some(level));
     }
 }
+
+#[test]
+fn config_profile_single_patterned_helper_rejected() {
+    let msg = err_text(
+        r#"label(x<u64>) => <string>
+  | 0 => "zero".
+
+config := {serve: {paths: [label(1)]}}
+"#,
+    );
+    assert!(msg.contains("ConfigProfileViolation"));
+    assert!(msg.contains("pattern-dispatched config helper functions are not supported"));
+}
+
+#[test]
+fn config_profile_duplicate_let_rejected() {
+    let msg = err_text(
+        r#"root := "docs"
+root := "examples"
+config := {serve: {paths: [root]}}
+"#,
+    );
+    assert!(msg.contains("ConfigProfileViolation"));
+    assert!(msg.contains("binding `root` is defined more than once"));
+}
+
+#[test]
+fn config_profile_named_call_argument_rejected() {
+    let msg = err_text(
+        r#"config := {serve: {paths: [join-path(root: "docs", child: "reference")]}}
+"#,
+    );
+    assert!(msg.contains("ConfigProfileViolation"));
+    assert!(msg.contains("named function-call arguments are not supported"));
+}

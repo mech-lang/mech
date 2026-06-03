@@ -20,7 +20,7 @@ impl ConfigAnalyzer {
 
     pub fn analyze(&self, program: &ConfigProgram) -> MResult<()> {
         let mut functions: BTreeMap<String, &ConfigFunction> = BTreeMap::new();
-        let mut config_lets = 0usize;
+        let mut lets = BTreeSet::new();
 
         for item in &program.items {
             match item {
@@ -32,15 +32,16 @@ impl ConfigAnalyzer {
                         )));
                     }
                 }
-                ConfigItem::Let(binding) if binding.name == "config" => config_lets += 1,
+                ConfigItem::Let(binding) => {
+                    if !lets.insert(binding.name.clone()) {
+                        return Err(ConfigProfileViolation::error(format!(
+                            "binding `{}` is defined more than once",
+                            binding.name
+                        )));
+                    }
+                }
                 _ => {}
             }
-        }
-
-        if config_lets > 1 {
-            return Err(ConfigProfileViolation::error(
-                "config binding is defined more than once",
-            ));
         }
 
         let mut graph: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();

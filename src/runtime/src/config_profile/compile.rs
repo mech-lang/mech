@@ -100,7 +100,10 @@ impl ConfigCompiler {
     }
 
     fn compile_function(&self, function: &FunctionDefine) -> MResult<ConfigFunction> {
-        if !function.statements.is_empty() || function.match_arms.len() != 1 {
+        if !function.statements.is_empty()
+            || function.match_arms.len() != 1
+            || !matches!(function.match_arms[0].pattern, Pattern::Wildcard)
+        {
             return Err(ConfigProfileViolation::error(
                 "pattern-dispatched config helper functions are not supported in config v1",
             ));
@@ -128,14 +131,21 @@ impl ConfigCompiler {
                 Ok(ConfigExpr::Var(var.name.to_string()))
             }
             Expression::Structure(structure) => self.compile_structure(structure),
-            Expression::FunctionCall(call) => Ok(ConfigExpr::Call {
-                name: call.name.to_string(),
-                args: call
-                    .args
-                    .iter()
-                    .map(|(_, arg)| self.compile_expr(arg))
-                    .collect::<MResult<Vec<_>>>()?,
-            }),
+            Expression::FunctionCall(call) => {
+                if call.args.iter().any(|(name, _)| name.is_some()) {
+                    return Err(ConfigProfileViolation::error(
+                        "named function-call arguments are not supported in Mech config v1",
+                    ));
+                }
+                Ok(ConfigExpr::Call {
+                    name: call.name.to_string(),
+                    args: call
+                        .args
+                        .iter()
+                        .map(|(_, arg)| self.compile_expr(arg))
+                        .collect::<MResult<Vec<_>>>()?,
+                })
+            }
             Expression::Formula(factor) => self.compile_factor(factor),
             Expression::Match(_) => Err(ConfigProfileViolation::error(
                 "match expressions are not supported in Mech config v1",
