@@ -295,3 +295,44 @@ impl CapabilityTokenResolver for BasicCapabilityKernel {
     self.is_revoked(capability)
   }
 }
+// -----------------------------------------------------------------------------
+// Shared In-Memory Kernel
+// -----------------------------------------------------------------------------
+
+use std::sync::Mutex;
+
+/// Cloneable handle to one in-memory capability graph.
+#[derive(Clone, Debug)]
+pub struct SharedCapabilityKernel {
+  inner: Arc<Mutex<BasicCapabilityKernel>>,
+}
+
+impl Default for SharedCapabilityKernel {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
+impl SharedCapabilityKernel {
+  pub fn new() -> Self {
+    Self::from_kernel(BasicCapabilityKernel::new())
+  }
+
+  pub fn from_kernel(kernel: BasicCapabilityKernel) -> Self {
+    Self { inner: Arc::new(Mutex::new(kernel)) }
+  }
+
+  pub(crate) fn inner(&self) -> Arc<Mutex<BasicCapabilityKernel>> {
+    self.inner.clone()
+  }
+}
+
+impl CapabilityKernel for SharedCapabilityKernel {
+  fn grant(&mut self, grant: CapabilityGrant) -> MResult<CapabilityId> { self.inner.lock().unwrap().grant(grant) }
+  fn revoke(&mut self, revocation: CapabilityRevocation) -> MResult<()> { self.inner.lock().unwrap().revoke(revocation) }
+  fn check(&mut self, request: &CapabilityRequest) -> MResult<CapabilityId> { self.inner.lock().unwrap().check(request) }
+  fn get(&self, id: CapabilityId) -> MResult<Option<Arc<dyn Capability>>> { self.inner.lock().unwrap().get(id) }
+  fn list_for_subject(&self, subject: &dyn Subject) -> MResult<Vec<CapabilityId>> { self.inner.lock().unwrap().list_for_subject(subject) }
+  fn derive_capability(&mut self, derivation: CapabilityDerivation) -> MResult<CapabilityId> { self.inner.lock().unwrap().derive_capability(derivation) }
+  fn is_revoked(&self, id: CapabilityId) -> MResult<bool> { self.inner.lock().unwrap().is_revoked(id) }
+}

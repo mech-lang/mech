@@ -2044,7 +2044,8 @@ fn workspace_watcher_watches_configured_folder() {
       .folder("src"),
   ).unwrap();
 
-  let watcher = RuntimeWorkspaceWatcher::open(&workspace).unwrap();
+  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let watcher = RuntimeWorkspaceWatcher::open(&workspace, &mut runtime).unwrap();
   let watched_paths = watcher.watched_paths();
 
   assert!(watched_paths.contains(&root.join("src").canonicalize().unwrap()));

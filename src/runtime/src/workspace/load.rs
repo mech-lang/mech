@@ -5,6 +5,7 @@ pub(super) fn load_target(
   runtime: &mut MechRuntime,
   target: &RuntimeWorkspaceTarget,
   options: ModuleBuildOptions,
+  capability_subject: Option<&str>,
 ) -> MResult<Result<RuntimeWorkspaceTargetSnapshot, RuntimeWorkspaceDiagnostic>> {
   let resolved_specifier = match workspace_target_specifier(root, &target.specifier) {
     Ok(specifier) => specifier,
@@ -19,6 +20,17 @@ pub(super) fn load_target(
       ),
     ))),
   };
+
+  if let Some(subject) = capability_subject {
+    let local_path = Path::new(&resolved_specifier);
+    if !resolved_specifier.contains("://") {
+      for operation in [crate::FS_RESOLVE, crate::FS_READ] {
+        if let Err(error) = crate::check_fs_capability(runtime.capability_kernel_mut(), subject, operation, local_path) {
+          return Ok(Err(target_diagnostic(target, format!("{:?}", error))));
+        }
+      }
+    }
+  }
 
   let module_version = match runtime.resolve_and_store_module_source(
     resolved_specifier.as_str(),

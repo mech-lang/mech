@@ -3,6 +3,7 @@ pub mod kernel;
 pub mod error;
 pub mod basic;
 pub mod capability;
+pub mod filesystem;
 mod grant;
 
 pub use token::*;
@@ -10,6 +11,7 @@ pub use kernel::*;
 pub use error::*;
 pub use basic::*;
 pub use capability::*;
+pub use filesystem::*;
 pub use grant::*;
 
 

@@ -47,7 +47,7 @@ pub enum RuntimeWorkspaceWatchEventKind {
 }
 
 impl RuntimeWorkspaceWatcher {
-  pub fn open(workspace: &RuntimeWorkspace) -> MResult<Self> {
+  pub fn open(workspace: &RuntimeWorkspace, runtime: &mut MechRuntime) -> MResult<Self> {
     let (sender, receiver) = mpsc::channel();
 
     let watcher = notify::recommended_watcher(move |event| {
@@ -62,7 +62,7 @@ impl RuntimeWorkspaceWatcher {
       watched_paths: BTreeSet::new(),
     };
 
-    watcher.sync(workspace)?;
+    watcher.sync(workspace, runtime)?;
 
     Ok(watcher)
   }
@@ -83,7 +83,7 @@ impl RuntimeWorkspaceWatcher {
     }
 
     let refresh = workspace.refresh(runtime, options)?;
-    self.sync(workspace)?;
+    self.sync(workspace, runtime)?;
 
     Ok(RuntimeWorkspaceWatchPoll {
       events,
@@ -91,7 +91,7 @@ impl RuntimeWorkspaceWatcher {
     })
   }
 
-  pub fn sync(&mut self, workspace: &RuntimeWorkspace) -> MResult<()> {
+  pub fn sync(&mut self, workspace: &RuntimeWorkspace, runtime: &mut MechRuntime) -> MResult<()> {
     let desired = desired_watch_paths(workspace);
 
     for watched in self.watched_paths.clone() {
@@ -110,6 +110,10 @@ impl RuntimeWorkspaceWatcher {
     for watched in desired {
       if self.watched_paths.contains(&watched) {
         continue;
+      }
+
+      if let Some(subject) = workspace.config().capability_subject.as_deref() {
+        crate::check_fs_capability(runtime.capability_kernel_mut(), subject, crate::FS_WATCH, &watched.path)?;
       }
 
       let recursive_mode = if watched.recursive {
@@ -184,18 +188,10 @@ fn desired_watch_paths(
     }
   }
 
-  if let Some(snapshot) = workspace.snapshot() {
-    for source in snapshot.sources.values() {
-      let Some(path) = &source.path else {
-        continue;
-      };
-
-      let Some(parent) = path.parent() else {
-        continue;
-      };
-
+  for target in &workspace.config().targets {
+    if let Some(path) = local_workspace_path(&workspace.config().root, &target.specifier) {
       paths.insert(RuntimeWorkspaceWatchedPath {
-        path: parent.to_path_buf(),
+        path,
         recursive: false,
       });
     }
@@ -257,6 +253,14 @@ fn watch_error(reason: impl Into<String>) -> MechError {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::RuntimeBuilder;
+
+  #[test]
+  fn watcher_rejects_path_without_watch_capability() {
+    let root = std::env::temp_dir().join(format!("mech-watch-capability-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos())); std::fs::create_dir_all(&root).unwrap();
+    let workspace = RuntimeWorkspace::open(RuntimeWorkspaceConfig::new(&root).capability_subject(crate::SERVE_HOST_SUBJECT).folder(".")).unwrap(); let mut runtime = RuntimeBuilder::new().capability_kernel(crate::SharedCapabilityKernel::new()).build().unwrap();
+    assert!(RuntimeWorkspaceWatcher::open(&workspace, &mut runtime).is_err()); std::fs::remove_dir_all(root).unwrap();
+  }
 
   #[test]
   fn watch_events_include_non_mec_paths() {
