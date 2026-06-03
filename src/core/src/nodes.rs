@@ -528,6 +528,7 @@ pub struct ParsedMechCode {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FencedMechCode {
+  pub source: Token,
   pub code: Vec<(MechCode,Option<Comment>)>,
   pub imports: Vec<ImportDeclaration>,
   pub exports: Vec<ExportDeclaration>,

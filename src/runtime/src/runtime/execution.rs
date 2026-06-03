@@ -602,14 +602,8 @@ fn module_source_for_scope(
 
       let tree = mech_syntax::parser::parse(source_text.trim())?;
 
-      for section in &tree.body.sections {
-        for element in &section.elements {
-          if let mech_core::SectionElement::FencedMechCode(fenced) = element {
-            if fenced.config.namespace == interpreter.namespace {
-              return Ok(MechSourceCode::String(source_from_fenced_block(source_text, &interpreter.namespace_str)?));
-            }
-          }
-        }
+      if let Some(source) = source_from_parsed_fenced_blocks(&tree, interpreter.namespace)? {
+        return Ok(MechSourceCode::String(source));
       }
 
       Err(MechError::new(
@@ -623,35 +617,37 @@ fn module_source_for_scope(
   }
 }
 
-fn source_from_fenced_block(
-  source_text: &str,
-  namespace: &str,
-) -> MResult<String> {
-  let mut in_block = false;
-  let mut lines = Vec::new();
+fn source_from_parsed_fenced_blocks(
+  tree: &mech_core::Program,
+  namespace: u64,
+) -> MResult<Option<String>> {
+  let mut blocks = Vec::new();
 
-  for line in source_text.lines() {
-    let trimmed = line.trim();
-    if !in_block && (trimmed == format!("~~~mech:{}", namespace) || trimmed == format!("```mech:{}", namespace)) {
-      in_block = true;
-      continue;
-    }
-    if in_block && (trimmed == "~~~" || trimmed == "```") {
-      return Ok(lines.join("\n"));
-    }
-    if in_block {
-      lines.push(line);
+  for section in &tree.body.sections {
+    for element in &section.elements {
+      if let mech_core::SectionElement::FencedMechCode(fenced) = element {
+        if fenced.config.namespace == namespace {
+          let block = source_from_parsed_fenced_code(fenced)?;
+          blocks.push(block.trim_end().to_string());
+        }
+      }
     }
   }
 
-  Ok(lines.join("\n"))
+  if blocks.is_empty() {
+    Ok(None)
+  } else {
+    Ok(Some(blocks.join("\n")))
+  }
 }
 
-#[allow(dead_code)]
-fn source_from_tokens(
-  _source_text: &str,
-  tokens: &[mech_core::Token],
+fn source_from_parsed_fenced_code(
+  fenced: &mech_core::FencedMechCode,
 ) -> MResult<String> {
+  source_from_tokens(std::slice::from_ref(&fenced.source))
+}
+
+fn source_from_tokens(tokens: &[mech_core::Token]) -> MResult<String> {
   if tokens.is_empty() {
     return Ok(String::new());
   }

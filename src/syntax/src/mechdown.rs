@@ -804,6 +804,7 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
           Ok((_, parsed)) => {
             // TODO what if not all the input is parsed? Is that handled?
             return Ok((input, SectionElement::FencedMechCode(FencedMechCode{
+              source: code_token,
               code: parsed.code,
               imports: parsed.imports,
               exports: parsed.exports,

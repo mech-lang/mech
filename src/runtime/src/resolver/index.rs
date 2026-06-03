@@ -95,6 +95,7 @@ impl SourceIndex {
     pub fn from_program(program: &Program) -> Self {
         let mut index = Self::default();
         let mut order = 0usize;
+        let mut fenced_interpreters = std::collections::HashMap::new();
         index.push_scope(SourceScope::Program);
 
         for section in &program.body.sections {
@@ -158,9 +159,15 @@ impl SourceIndex {
                             namespace: fenced.config.namespace,
                             namespace_str: fenced.config.namespace_str.clone(),
                         };
-                        index.address_target_interpreters.push(interpreter.clone());
-                        let scope = SourceScope::Interpreter(interpreter);
-                        index.push_scope(scope.clone());
+                        let scope = fenced_interpreters
+                            .entry(interpreter.namespace_str.clone())
+                            .or_insert_with(|| {
+                                index.address_target_interpreters.push(interpreter.clone());
+                                let scope = SourceScope::Interpreter(interpreter);
+                                index.push_scope(scope.clone());
+                                scope
+                            })
+                            .clone();
 
                         // TODO: Interleaving imports/exports/statements exactly as written in fenced code
                         // requires parser ordering data; currently imports and exports preserve local vector order.
