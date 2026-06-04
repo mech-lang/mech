@@ -4,7 +4,7 @@ use mech_core::MResult;
 
 use crate::{
   DefaultIdGenerator, EventSink, FileSourceResolver, IdGenerator, MechRuntime, SharedCapabilityKernel,
-  ModuleBuildOptions, RuntimeBuilder, RuntimeEvent, RuntimeEventKind,
+  ModuleBuildOptions, RuntimeBuilder, RuntimeConfig, RuntimeEvent, RuntimeEventKind,
   RuntimeWorkspace, RuntimeWorkspaceConfig, RuntimeWorkspaceDiagnostic,
   RuntimeWorkspaceFolder, RuntimeWorkspaceRefresh, RuntimeWorkspaceSnapshot,
   RuntimeWorkspaceTarget, RuntimeWorkspaceWatcher, RuntimeWorkspaceWatchPoll,
@@ -56,9 +56,17 @@ impl ServerWorkspaceSession {
     root: impl Into<PathBuf>, targets: Vec<RuntimeWorkspaceTarget>, folders: Vec<RuntimeWorkspaceFolder>,
     options: ModuleBuildOptions, capability_kernel: SharedCapabilityKernel, capability_subject: impl Into<String>,
   ) -> MResult<Self> {
+    Self::open_with_capabilities_and_config(root, targets, folders, options, capability_kernel, capability_subject, RuntimeConfig::default())
+  }
+
+  pub fn open_with_capabilities_and_config(
+    root: impl Into<PathBuf>, targets: Vec<RuntimeWorkspaceTarget>, folders: Vec<RuntimeWorkspaceFolder>,
+    options: ModuleBuildOptions, capability_kernel: SharedCapabilityKernel, capability_subject: impl Into<String>, runtime_config: RuntimeConfig,
+  ) -> MResult<Self> {
     let root = root.into();
     let capability_subject = capability_subject.into();
     let mut runtime = RuntimeBuilder::new()
+      .config(runtime_config)
       .capability_kernel(capability_kernel.clone())
       .source_resolver(FileSourceResolver::new(&root).with_capabilities(capability_kernel, capability_subject.clone()))
       .build()?;
