@@ -81,15 +81,35 @@ mod capabilities;
 pub(crate) static CURRENT_DIR_LOCK: Mutex<()> = Mutex::new(());
 
 async fn load_stylesheets(paths: &[String], fallback_url: &str) -> Result<String, MechError> {
+  async fn embedded_or_download_stylesheet(fallback_url: &str) -> Result<Vec<u8>, MechError> {
+    if !STYLESHEET.as_bytes().is_empty() {
+      println!("Falling back to embedded stylesheet");
+      Ok(STYLESHEET.as_bytes().to_vec())
+    } else {
+      println!("Downloading stylesheet from {}", fallback_url);
+      read_or_download("", fallback_url, None).await
+    }
+  }
+
   if paths.is_empty() {
-    let stylesheet = read_or_download("", fallback_url, Some(STYLESHEET.as_bytes())).await?;
+    println!("Falling back to embedded stylesheet");
+    let stylesheet = STYLESHEET.as_bytes().to_vec();
     return String::from_utf8(stylesheet)
       .map_err(|e| MechError::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc());
   }
 
   let mut combined = String::new();
   for path in paths {
-    let stylesheet = read_or_download(path, fallback_url, Some(STYLESHEET.as_bytes())).await?;
+    let stylesheet = match std::fs::read(path) {
+      Ok(content) => {
+        println!("Using stylesheet: {}", path);
+        content
+      }
+      Err(_) => {
+        println!("\nConfig stylesheet not found:\n  {}", path);
+        embedded_or_download_stylesheet(fallback_url).await?
+      }
+    };
     let stylesheet_str = String::from_utf8(stylesheet)
       .map_err(|e| MechError::new(Utf8ConversionError { source_error: e.to_string() }, None).with_compiler_loc())?;
     if !combined.is_empty() {
@@ -312,7 +332,7 @@ async fn main() -> Result<(), MechError> {
     let error_badge = "[Error]".truecolor(246, 98, 78);
 
     let loaded_config = config::load_cli_config(serve_matches)?;
-    let effective = config::effective_serve_options(serve_matches, loaded_config.as_ref());
+    let effective = config::effective_serve_options(serve_matches, loaded_config.as_ref())?;
     let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
     let runtime_config = config::apply_runtime_config_patch(
       mech_runtime::RuntimeConfig::default(),
