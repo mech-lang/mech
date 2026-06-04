@@ -150,22 +150,26 @@ impl BrowserAuthority {
         scope: String,
     ) -> Result<(), BrowserCapabilityError> {
         let mut saw_resource_kind = false;
+        let mut saw_matching_resource = None;
+
         for grant in &self.grants {
             if grant.resource.kind() == resource_kind {
                 saw_resource_kind = true;
             }
             if matches_resource(&grant.resource) {
-                return if grant.allow.contains(&operation) {
-                    Ok(())
-                } else {
-                    Err(BrowserCapabilityError::OperationDenied {
-                        resource: grant.resource.clone(),
-                        operation,
-                    })
-                };
+                saw_matching_resource.get_or_insert_with(|| grant.resource.clone());
+                if grant.allow.contains(&operation) {
+                    return Ok(());
+                }
             }
         }
-        if saw_resource_kind {
+
+        if let Some(resource) = saw_matching_resource {
+            Err(BrowserCapabilityError::OperationDenied {
+                resource,
+                operation,
+            })
+        } else if saw_resource_kind {
             Err(BrowserCapabilityError::NoMatchingGrant {
                 resource: resource_kind,
                 scope,
@@ -578,6 +582,21 @@ mod tests {
             authority.allows_clipboard(BrowserOperation::Read),
             Err(BrowserCapabilityError::OperationDenied { .. })
         ));
+    }
+
+    #[test]
+    fn later_matching_grant_can_allow_operation_with_different_budget() {
+        let mut first = grant(BrowserResource::Clipboard, &[BrowserOperation::Read]);
+        first.budget = Some(BrowserBudget {
+            max_invocations: Some(1),
+        });
+        let mut second = grant(BrowserResource::Clipboard, &[BrowserOperation::Write]);
+        second.budget = Some(BrowserBudget {
+            max_invocations: Some(2),
+        });
+        let authority = BrowserAuthority::new([first, second]);
+
+        assert_eq!(authority.allows_clipboard(BrowserOperation::Write), Ok(()));
     }
 
     #[test]
