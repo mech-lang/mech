@@ -285,3 +285,82 @@ fn config_profile_named_call_argument_rejected() {
     assert!(msg.contains("ConfigProfileViolation"));
     assert!(msg.contains("named function-call arguments are not supported"));
 }
+
+#[test]
+fn config_profile_browser_section_accepts_valid_grants() {
+    let doc = parse(
+        r##"config := {
+  browser: {
+    dom: [
+      {selector: "#mech-output", allow: ["write"]}
+    ]
+    clipboard: [
+      {allow: ["write"]}
+    ]
+    network: [
+      {origin: "https://docs.mech-lang.org", allow: ["read"], methods: ["GET"]}
+    ]
+    storage: [
+      {backend: "opfs", scope: "/workspace", allow: ["read", "write", "list"]}
+    ]
+  }
+}
+"##,
+    )
+    .unwrap();
+
+    assert_eq!(doc.browser.grants().len(), 4);
+    assert!(
+        doc.browser
+            .allows_dom("#mech-output", BrowserOperation::Write)
+            .is_ok()
+    );
+    assert!(
+        doc.browser
+            .allows_clipboard(BrowserOperation::Write)
+            .is_ok()
+    );
+    assert!(
+        doc.browser
+            .allows_network(
+                "https://docs.mech-lang.org",
+                Some("GET"),
+                BrowserOperation::Read
+            )
+            .is_ok()
+    );
+    assert!(
+        doc.browser
+            .allows_storage(
+                BrowserStorageBackend::Opfs,
+                "/workspace",
+                BrowserOperation::List
+            )
+            .is_ok()
+    );
+}
+
+#[test]
+fn config_profile_browser_unknown_field_rejected() {
+    let msg = err_text("config := {browser: {geolocation: [{allow: [\"read\"]}]}}\n");
+    assert!(msg.contains("InvalidConfigField"));
+    assert!(msg.contains("unknown browser field `geolocation`"));
+}
+
+#[test]
+fn config_profile_browser_unknown_operation_rejected() {
+    let msg = err_text("config := {browser: {clipboard: [{allow: [\"read\", \"teleport\"]}]}}\n");
+    assert!(msg.contains("InvalidConfigField"));
+    assert!(msg.contains("unknown browser operation `teleport`"));
+}
+
+#[test]
+fn config_profile_browser_absence_is_deny_by_default() {
+    let doc = parse("config := {serve: {port: 8081}}\n").unwrap();
+    assert!(doc.browser.grants().is_empty());
+    assert!(
+        doc.browser
+            .allows_clipboard(BrowserOperation::Read)
+            .is_err()
+    );
+}
