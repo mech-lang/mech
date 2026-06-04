@@ -8,8 +8,7 @@ use mech::*;
 use mech_core::*;
 use mech_runtime::{
     ConfigCapabilityKind, DefaultIdGenerator, FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE,
-    FS_WATCH, HostFilesystemAuthority, MECH_TOOL_SUBJECT, MechConfigDocument,
-    SharedCapabilityKernel,
+    FS_WATCH, HostFilesystemAuthority, MECH_TOOL_SUBJECT, SharedCapabilityKernel,
 };
 
 pub fn add_filesystem_capability_args(command: Command) -> Command {
@@ -125,9 +124,11 @@ fn grant_mech_filesystem_path(
 
 fn add_config_capability_grant(
     grants: &mut BTreeMap<CapabilityGrantKey, BTreeSet<&'static str>>,
+    base_dir: &Path,
     grant: &mech_runtime::ConfigCapabilityGrant,
 ) -> MResult<()> {
-    let path = resolve_capability_path(&grant.path)?;
+    let path = crate::config::resolve_config_path(base_dir, &grant.path);
+    let path = resolve_capability_path(&path)?;
     match grant.kind {
         ConfigCapabilityKind::CapRoot => {
             if !path.is_dir() {
@@ -180,7 +181,7 @@ fn add_config_capability_grant(
 
 pub fn build_mech_filesystem_authority(
     matches: &clap::ArgMatches,
-    config: Option<&MechConfigDocument>,
+    config: Option<&crate::config::LoadedMechConfig>,
     badge: &ColoredString,
 ) -> MResult<HostFilesystemAuthority> {
     let mut id_generator = DefaultIdGenerator::new();
@@ -193,7 +194,8 @@ pub fn build_mech_filesystem_authority(
     let allow_watch = collect_capability_paths(matches, "allow_watch");
     let allow_serve = collect_capability_paths(matches, "allow_serve");
     let no_default = matches.get_flag("no_default_capabilities");
-    let has_config_capabilities = config.is_some_and(|doc| !doc.capabilities.is_empty());
+    let has_config_capabilities =
+        config.is_some_and(|loaded| !loaded.document.capabilities.is_empty());
     let explicit = no_default
         || has_config_capabilities
         || !cap_roots.is_empty()
@@ -258,9 +260,9 @@ pub fn build_mech_filesystem_authority(
         add_capability_grant(&mut grants, path, recursive, &[FS_SERVE]);
     }
 
-    if let Some(config) = config {
-        for grant in &config.capabilities {
-            add_config_capability_grant(&mut grants, grant)?;
+    if let Some(loaded) = config {
+        for grant in &loaded.document.capabilities {
+            add_config_capability_grant(&mut grants, &loaded.base_dir, grant)?;
         }
     }
 
@@ -339,13 +341,17 @@ mod filesystem_capability_tests {
         command.try_get_matches_from(args).unwrap()
     }
 
-    fn parse_config(source: &str) -> MechConfigDocument {
-        parse_config_document(
-            "test.mcfg".to_string(),
-            source,
-            ConfigProfileOptions::default(),
-        )
-        .unwrap()
+    fn parse_config(source: &str) -> crate::config::LoadedMechConfig {
+        crate::config::LoadedMechConfig {
+            path: PathBuf::from("test.mcfg"),
+            base_dir: PathBuf::new(),
+            document: parse_config_document(
+                "test.mcfg".to_string(),
+                source,
+                ConfigProfileOptions::default(),
+            )
+            .unwrap(),
+        }
     }
 
     fn delegate_all(authority: &HostFilesystemAuthority, path: &Path) -> MResult<()> {
@@ -367,17 +373,19 @@ mod filesystem_capability_tests {
         let outside = root.join("outside");
         std::fs::create_dir_all(&allowed).unwrap();
         std::fs::create_dir_all(&outside).unwrap();
-        let _guard = CurrentDirGuard::enter(&root);
-        let config = parse_config(
-            r#"config := {capabilities: [{allow: "read", path: "allowed"} {allow: "watch", path: "allowed"} {allow: "serve", path: "allowed"}]}"#,
-        );
-        let matches = cli(&["mech", "serve"]);
-        let serve_matches = matches.subcommand_matches("serve").unwrap();
-        let badge = "[test]".normal();
-        let authority =
-            build_mech_filesystem_authority(serve_matches, Some(&config), &badge).unwrap();
-        assert!(delegate_all(&authority, &allowed).is_ok());
-        assert!(delegate_all(&authority, &outside).is_err());
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let config = parse_config(
+                r#"config := {capabilities: [{allow: "read", path: "allowed"} {allow: "watch", path: "allowed"} {allow: "serve", path: "allowed"}]}"#,
+            );
+            let matches = cli(&["mech", "serve"]);
+            let serve_matches = matches.subcommand_matches("serve").unwrap();
+            let badge = "[test]".normal();
+            let authority =
+                build_mech_filesystem_authority(serve_matches, Some(&config), &badge).unwrap();
+            assert!(delegate_all(&authority, &allowed).is_ok());
+            assert!(delegate_all(&authority, &outside).is_err());
+        }
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -386,16 +394,18 @@ mod filesystem_capability_tests {
         let root = temp_root("no-default-config");
         let allowed = root.join("allowed");
         std::fs::create_dir_all(&allowed).unwrap();
-        let _guard = CurrentDirGuard::enter(&root);
-        let config = parse_config(
-            r#"config := {capabilities: [{allow: "read", path: "allowed"} {allow: "watch", path: "allowed"} {allow: "serve", path: "allowed"}]}"#,
-        );
-        let matches = cli(&["mech", "--no-default-capabilities", "serve"]);
-        let serve_matches = matches.subcommand_matches("serve").unwrap();
-        let badge = "[test]".normal();
-        let authority =
-            build_mech_filesystem_authority(serve_matches, Some(&config), &badge).unwrap();
-        assert!(delegate_all(&authority, &allowed).is_ok());
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let config = parse_config(
+                r#"config := {capabilities: [{allow: "read", path: "allowed"} {allow: "watch", path: "allowed"} {allow: "serve", path: "allowed"}]}"#,
+            );
+            let matches = cli(&["mech", "--no-default-capabilities", "serve"]);
+            let serve_matches = matches.subcommand_matches("serve").unwrap();
+            let badge = "[test]".normal();
+            let authority =
+                build_mech_filesystem_authority(serve_matches, Some(&config), &badge).unwrap();
+            assert!(delegate_all(&authority, &allowed).is_ok());
+        }
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -404,18 +414,20 @@ mod filesystem_capability_tests {
         let root = temp_root("grants-nothing");
         let allowed = root.join("allowed");
         std::fs::create_dir_all(&allowed).unwrap();
-        let _guard = CurrentDirGuard::enter(&root);
-        let matches = cli(&[
-            "mech",
-            "--no-config",
-            "--no-default-capabilities",
-            "serve",
-            "allowed",
-        ]);
-        let serve_matches = matches.subcommand_matches("serve").unwrap();
-        let badge = "[test]".normal();
-        let authority = build_mech_filesystem_authority(serve_matches, None, &badge).unwrap();
-        assert!(delegate_all(&authority, &allowed).is_err());
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let matches = cli(&[
+                "mech",
+                "--no-config",
+                "--no-default-capabilities",
+                "serve",
+                "allowed",
+            ]);
+            let serve_matches = matches.subcommand_matches("serve").unwrap();
+            let badge = "[test]".normal();
+            let authority = build_mech_filesystem_authority(serve_matches, None, &badge).unwrap();
+            assert!(delegate_all(&authority, &allowed).is_err());
+        }
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -424,37 +436,153 @@ mod filesystem_capability_tests {
         let root = temp_root("aggregate");
         let allowed = root.join("allowed");
         std::fs::create_dir_all(&allowed).unwrap();
-        let _guard = CurrentDirGuard::enter(&root);
-        let config =
-            parse_config(r#"config := {capabilities: [{allow: "read", path: "allowed"}]}"#);
-        let matches = cli(&[
-            "mech",
-            "--allow-watch",
-            "allowed",
-            "--allow-serve",
-            "allowed",
-            "serve",
-        ]);
-        let serve_matches = matches.subcommand_matches("serve").unwrap();
-        let badge = "[test]".normal();
-        let authority =
-            build_mech_filesystem_authority(serve_matches, Some(&config), &badge).unwrap();
-        assert!(delegate_all(&authority, &allowed).is_ok());
-        let mut kernel = authority.kernel().clone();
-        assert!(check_fs_capability(&mut kernel, MECH_TOOL_SUBJECT, FS_READ, &allowed).is_ok());
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let config =
+                parse_config(r#"config := {capabilities: [{allow: "read", path: "allowed"}]}"#);
+            let matches = cli(&[
+                "mech",
+                "--allow-watch",
+                "allowed",
+                "--allow-serve",
+                "allowed",
+                "serve",
+            ]);
+            let serve_matches = matches.subcommand_matches("serve").unwrap();
+            let badge = "[test]".normal();
+            let authority =
+                build_mech_filesystem_authority(serve_matches, Some(&config), &badge).unwrap();
+            assert!(delegate_all(&authority, &allowed).is_ok());
+            let mut kernel = authority.kernel().clone();
+            assert!(check_fs_capability(&mut kernel, MECH_TOOL_SUBJECT, FS_READ, &allowed).is_ok());
+        }
         std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
     fn config_cap_root_requires_existing_directory() {
         let root = temp_root("cap-root-missing");
-        let _guard = CurrentDirGuard::enter(&root);
-        let config =
-            parse_config(r#"config := {capabilities: [{allow: "cap-root", path: "missing"}]}"#);
-        let matches = cli(&["mech", "serve"]);
-        let serve_matches = matches.subcommand_matches("serve").unwrap();
-        let badge = "[test]".normal();
-        assert!(build_mech_filesystem_authority(serve_matches, Some(&config), &badge).is_err());
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let config =
+                parse_config(r#"config := {capabilities: [{allow: "cap-root", path: "missing"}]}"#);
+            let matches = cli(&["mech", "serve"]);
+            let serve_matches = matches.subcommand_matches("serve").unwrap();
+            let badge = "[test]".normal();
+            assert!(build_mech_filesystem_authority(serve_matches, Some(&config), &badge).is_err());
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn config_capability_paths_resolve_from_config_file_directory() {
+        let root = temp_root("relative-capabilities");
+        let subdir = root.join("subdir");
+        let config_allowed = subdir.join("allowed");
+        let cwd_allowed = root.join("allowed");
+        let outside = root.join("outside");
+        std::fs::create_dir_all(&config_allowed).unwrap();
+        std::fs::create_dir_all(&cwd_allowed).unwrap();
+        std::fs::create_dir_all(&outside).unwrap();
+        std::fs::write(
+            subdir.join(mech_runtime::DEFAULT_CONFIG_FILENAME),
+            r#"config := {
+  capabilities: [
+    {allow: "read", path: "allowed"}
+    {allow: "watch", path: "allowed"}
+    {allow: "serve", path: "allowed"}
+  ]
+}
+"#,
+        )
+        .unwrap();
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let matches = cli(&["mech", "--config", "subdir/mech.mcfg", "serve"]);
+            let serve_matches = matches.subcommand_matches("serve").unwrap();
+            let loaded = crate::config::load_cli_config(serve_matches)
+                .unwrap()
+                .unwrap();
+            let badge = "[test]".normal();
+            let authority =
+                build_mech_filesystem_authority(serve_matches, Some(&loaded), &badge).unwrap();
+            assert!(delegate_all(&authority, &config_allowed).is_ok());
+            assert!(delegate_all(&authority, &cwd_allowed).is_err());
+            assert!(delegate_all(&authority, &outside).is_err());
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn cli_capability_paths_remain_current_dir_relative() {
+        let root = temp_root("cli-capabilities-cwd-relative");
+        let subdir = root.join("subdir");
+        let config_allowed = subdir.join("allowed");
+        let cli_allowed = root.join("cli-allowed");
+        let accidental_subdir_cli_allowed = subdir.join("cli-allowed");
+        std::fs::create_dir_all(&config_allowed).unwrap();
+        std::fs::create_dir_all(&cli_allowed).unwrap();
+        std::fs::create_dir_all(&accidental_subdir_cli_allowed).unwrap();
+        std::fs::write(
+            subdir.join(mech_runtime::DEFAULT_CONFIG_FILENAME),
+            r#"config := {capabilities: [{allow: "read", path: "allowed"}]}"#,
+        )
+        .unwrap();
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let matches = cli(&[
+                "mech",
+                "--config",
+                "subdir/mech.mcfg",
+                "--allow-watch",
+                "cli-allowed",
+                "--allow-serve",
+                "cli-allowed",
+                "serve",
+            ]);
+            let serve_matches = matches.subcommand_matches("serve").unwrap();
+            let loaded = crate::config::load_cli_config(serve_matches)
+                .unwrap()
+                .unwrap();
+            let badge = "[test]".normal();
+            let authority =
+                build_mech_filesystem_authority(serve_matches, Some(&loaded), &badge).unwrap();
+
+            let mut ids = DefaultIdGenerator::new();
+            assert!(
+                authority
+                    .delegate_path_to(
+                        &mut ids,
+                        SERVE_HOST_SUBJECT,
+                        &config_allowed,
+                        true,
+                        [FS_READ, FS_LIST, FS_RESOLVE, FS_IMPORT],
+                    )
+                    .is_ok()
+            );
+            assert!(
+                authority
+                    .delegate_path_to(
+                        &mut ids,
+                        SERVE_HOST_SUBJECT,
+                        &cli_allowed,
+                        true,
+                        [FS_WATCH, FS_SERVE],
+                    )
+                    .is_ok()
+            );
+            assert!(
+                authority
+                    .delegate_path_to(
+                        &mut ids,
+                        SERVE_HOST_SUBJECT,
+                        &accidental_subdir_cli_allowed,
+                        true,
+                        [FS_WATCH, FS_SERVE],
+                    )
+                    .is_err()
+            );
+        }
         std::fs::remove_dir_all(root).unwrap();
     }
 }

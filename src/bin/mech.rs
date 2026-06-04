@@ -311,14 +311,14 @@ async fn main() -> Result<(), MechError> {
     let badge = "[Mech Server]".truecolor(34, 204, 187);
     let error_badge = "[Error]".truecolor(246, 98, 78);
 
-    let config_doc = config::load_cli_config(serve_matches)?;
-    let effective = config::effective_serve_options(serve_matches, config_doc.as_ref());
+    let loaded_config = config::load_cli_config(serve_matches)?;
+    let effective = config::effective_serve_options(serve_matches, loaded_config.as_ref());
     let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
     let runtime_config = config::apply_runtime_config_patch(
       mech_runtime::RuntimeConfig::default(),
-      config_doc
+      loaded_config
         .as_ref()
-        .map(|doc| &doc.runtime)
+        .map(|loaded| &loaded.document.runtime)
         .unwrap_or(&default_runtime_patch),
     )?;
 
@@ -373,7 +373,7 @@ async fn main() -> Result<(), MechError> {
 
     let authority = capabilities::build_mech_filesystem_authority(
       serve_matches,
-      config_doc.as_ref(),
+      loaded_config.as_ref(),
       &badge,
     )?;
 
