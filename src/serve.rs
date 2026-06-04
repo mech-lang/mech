@@ -9,7 +9,7 @@ use colored::*;
 use ignore::WalkBuilder;
 use mech_core::*;
 use mech_runtime::{
-  EventId, EventSink, ModuleBuildOptions, RuntimeEvent, RuntimeWorkspaceFolder,
+  EventId, EventSink, ModuleBuildOptions, RuntimeConfig, RuntimeEvent, RuntimeWorkspaceFolder,
   RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget, RuntimeWorkspaceWatchEvent,
   ServerWorkspaceSession, HostFilesystemAuthority, DefaultIdGenerator, IdGenerator, SERVE_HOST_SUBJECT,
   FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE, FS_WATCH, MECH_TOOL_SUBJECT, check_fs_capability,
@@ -348,10 +348,15 @@ pub struct MechServer {
   wasm: Vec<u8>,
   authority: HostFilesystemAuthority,
   serve_subject: String,
+  runtime_config: RuntimeConfig,
 }
 
 impl MechServer {
   pub fn new(name: String, full_address: String, stylesheet: String, html_shim: String, wasm: Vec<u8>, js: Vec<u8>, authority: HostFilesystemAuthority) -> Self {
+    Self::new_with_runtime_config(name, full_address, stylesheet, html_shim, wasm, js, authority, RuntimeConfig::default())
+  }
+
+  pub fn new_with_runtime_config(name: String, full_address: String, stylesheet: String, html_shim: String, wasm: Vec<u8>, js: Vec<u8>, authority: HostFilesystemAuthority, runtime_config: RuntimeConfig) -> Self {
     Self {
       name,
       init: false,
@@ -366,6 +371,7 @@ impl MechServer {
       wasm,
       authority,
       serve_subject: SERVE_HOST_SUBJECT.to_string(),
+      runtime_config,
     }
   }
 
@@ -442,7 +448,7 @@ impl MechServer {
     println!("{} Static assets loaded in {:?}.", self.badge(), static_started.elapsed());
     let session_started = Instant::now();
     println!("{} Opening runtime workspace session…", self.badge());
-    let mut session = ServerWorkspaceSession::open_with_capabilities(&root, plan.targets, plan.folders, module_options(), self.authority.kernel().clone(), self.serve_subject.clone())?;
+    let mut session = ServerWorkspaceSession::open_with_capabilities_and_config(&root, plan.targets, plan.folders, module_options(), self.authority.kernel().clone(), self.serve_subject.clone(), self.runtime_config.clone())?;
     println!("{} Runtime workspace session opened in {:?}.", self.badge(), session_started.elapsed());
     for path in session.watcher().watched_paths() {
       println!("{} Watching: {}", self.badge(), path.display());
