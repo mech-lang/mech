@@ -326,20 +326,16 @@ pub async fn read_or_download(path: &str,backup_url: &str, embedded: Option<&[u8
   // 1. User-supplied path always wins
   match std::fs::read(path) {
     Ok(content) => {
-      println!("\nUsing user-supplied resource: {}", path);
+      println!("Using user-supplied resource: {}", path);
       return Ok(content);
     }
-    Err(_) => {
-      if !path.is_empty() {
-        println!("\nConfigured resource not found:\n  {}", path);
-      }
-    }
+    Err(_) => { /* continue to embedded / download */ }
   }
 
   // 2. Embedded bytes (included via include_bytes!)
   if let Some(bytes) = embedded {
     if !bytes.is_empty() {
-      println!("Falling back to embedded resource");
+      println!("Using embedded resource");
       return Ok(bytes.to_vec());
     }
   }
