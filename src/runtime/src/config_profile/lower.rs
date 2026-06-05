@@ -6,7 +6,8 @@ use mech_core::{MResult, MechError};
 use super::{ConfigValue, InvalidConfigField};
 use crate::{
     BrowserAuthority, BrowserCapabilityGrant, BrowserDomScope, BrowserNetworkScope,
-    BrowserOperation, BrowserResource, BrowserStorageBackend, BrowserStorageScope,
+    BrowserOperation, BrowserResource, BrowserResourceKind, BrowserStorageBackend,
+    BrowserStorageScope,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -240,9 +241,10 @@ impl ConfigLowerer {
                         selector = Some(expect_string(&format!("{where_}.selector"), value)?)
                     }
                     "allow" => {
-                        allow = Some(expect_browser_operations(
+                        allow = Some(expect_browser_operations_for_resource(
                             &format!("{where_}.allow"),
                             value,
+                            BrowserResourceKind::Dom,
                         )?)
                     }
                     other => return invalid(format!("unknown browser.dom field `{other}`")),
@@ -275,9 +277,10 @@ impl ConfigLowerer {
             for (key, value) in map {
                 match key.as_str() {
                     "allow" => {
-                        allow = Some(expect_browser_operations(
+                        allow = Some(expect_browser_operations_for_resource(
                             &format!("{where_}.allow"),
                             value,
+                            BrowserResourceKind::Clipboard,
                         )?)
                     }
                     other => return invalid(format!("unknown browser.clipboard field `{other}`")),
@@ -312,9 +315,10 @@ impl ConfigLowerer {
                         methods = Some(expect_string_list(&format!("{where_}.methods"), value)?)
                     }
                     "allow" => {
-                        allow = Some(expect_browser_operations(
+                        allow = Some(expect_browser_operations_for_resource(
                             &format!("{where_}.allow"),
                             value,
+                            BrowserResourceKind::Network,
                         )?)
                     }
                     other => return invalid(format!("unknown browser.network field `{other}`")),
@@ -345,6 +349,7 @@ impl ConfigLowerer {
             let map = expect_map(&where_, item)?;
             let mut backend = None;
             let mut scope = None;
+            let mut recursive = None;
             let mut allow = None;
             for (key, value) in map {
                 match key.as_str() {
@@ -355,10 +360,14 @@ impl ConfigLowerer {
                         })?);
                     }
                     "scope" => scope = Some(expect_string(&format!("{where_}.scope"), value)?),
+                    "recursive" => {
+                        recursive = Some(expect_bool(&format!("{where_}.recursive"), value)?)
+                    }
                     "allow" => {
-                        allow = Some(expect_browser_operations(
+                        allow = Some(expect_browser_operations_for_resource(
                             &format!("{where_}.allow"),
                             value,
+                            BrowserResourceKind::Storage,
                         )?)
                     }
                     other => return invalid(format!("unknown browser.storage field `{other}`")),
@@ -371,7 +380,8 @@ impl ConfigLowerer {
             let allow =
                 allow.ok_or_else(|| invalid_error(format!("{where_}.allow is required")))?;
             let scope = BrowserStorageScope::new(backend, scope)
-                .map_err(|error| invalid_error(format!("{where_}.scope: {error}")))?;
+                .map_err(|error| invalid_error(format!("{where_}.scope: {error}")))?
+                .with_recursive(recursive.unwrap_or(false));
             authority.grant(BrowserCapabilityGrant {
                 resource: BrowserResource::Storage(scope),
                 allow,
@@ -498,21 +508,48 @@ fn expect_string_list(where_: &str, value: &ConfigValue) -> MResult<Vec<String>>
         .collect()
 }
 
-fn expect_browser_operations(
+fn expect_browser_operations_for_resource(
     where_: &str,
     value: &ConfigValue,
+    resource: BrowserResourceKind,
 ) -> MResult<BTreeSet<BrowserOperation>> {
     let operations = expect_string_list(where_, value)?;
     let mut out = BTreeSet::new();
+
     for operation in operations {
         let parsed = BrowserOperation::parse(&operation)
             .ok_or_else(|| invalid_error(format!("unknown browser operation `{operation}`")))?;
+
+        if !browser_resource_allows_operation(resource, parsed) {
+            return invalid(format!(
+                "browser {resource:?} grants do not support operation `{parsed}`"
+            ));
+        }
+
         out.insert(parsed);
     }
+
     if out.is_empty() {
         return invalid(format!("{where_} must contain at least one operation"));
     }
+
     Ok(out)
+}
+
+fn browser_resource_allows_operation(
+    resource: BrowserResourceKind,
+    operation: BrowserOperation,
+) -> bool {
+    match resource {
+        BrowserResourceKind::Dom | BrowserResourceKind::Clipboard => {
+            matches!(operation, BrowserOperation::Read | BrowserOperation::Write)
+        }
+        BrowserResourceKind::Network => matches!(operation, BrowserOperation::Read),
+        BrowserResourceKind::Storage => matches!(
+            operation,
+            BrowserOperation::Read | BrowserOperation::Write | BrowserOperation::List
+        ),
+    }
 }
 
 fn invalid_error(reason: impl Into<String>) -> MechError {

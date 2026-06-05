@@ -1,5 +1,9 @@
 #[cfg(feature = "no_std")]
-use alloc::collections::BTreeSet;
+use alloc::{
+    collections::BTreeSet,
+    string::{String, ToString},
+    vec::Vec,
+};
 use core::fmt;
 #[cfg(not(feature = "no_std"))]
 use std::collections::BTreeSet;
@@ -12,6 +16,11 @@ pub const BROWSER_CLIPBOARD_PROVIDER_URI: &str = "browser://clipboard";
 pub const BROWSER_NETWORK_PROVIDER_URI: &str = "browser://network";
 pub const BROWSER_STORAGE_PROVIDER_URI: &str = "browser://storage";
 
+/// Typed browser host grant model used by the WASM facade.
+///
+/// This is intentionally a compact browser-specific authority for initial host
+/// configuration and checks. It does not yet implement runtime capability IDs,
+/// delegation, or attenuation through the shared capability kernel.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct BrowserAuthority {
     grants: Vec<BrowserCapabilityGrant>,
@@ -136,7 +145,7 @@ impl BrowserAuthority {
             BrowserResourceKind::Storage,
             operation,
             |resource| {
-                matches!(resource, BrowserResource::Storage(storage) if storage.backend == backend && storage.scope == scope)
+                matches!(resource, BrowserResource::Storage(storage) if storage.backend == backend && storage.matches_scope(scope))
             },
             format!("storage backend `{backend}` scope `{scope}`"),
         )
@@ -149,6 +158,10 @@ impl BrowserAuthority {
         mut matches_resource: impl FnMut(&BrowserResource) -> bool,
         scope: String,
     ) -> Result<(), BrowserCapabilityError> {
+        if !browser_resource_allows_operation(resource_kind, operation) {
+            return Err(BrowserCapabilityError::UnsupportedOperation(operation));
+        }
+
         let mut saw_resource_kind = false;
         let mut saw_matching_resource = None;
 
@@ -291,6 +304,18 @@ impl BrowserDomScope {
                     .to_string(),
             });
         }
+        let token = &selector[1..];
+        if token.is_empty()
+            || !token
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
+        {
+            return Err(BrowserCapabilityError::InvalidScope {
+                resource: BrowserResourceKind::Dom,
+                scope: selector.to_string(),
+                reason: "DOM selector tokens may contain only ASCII letters, digits, `_`, or `-` after `#` or `.`".to_string(),
+            });
+        }
         Ok(())
     }
 }
@@ -320,25 +345,56 @@ impl BrowserNetworkScope {
     }
 
     pub fn validate_origin(origin: &str) -> Result<(), BrowserCapabilityError> {
+        let invalid = |reason: &str| BrowserCapabilityError::InvalidScope {
+            resource: BrowserResourceKind::Network,
+            scope: origin.to_string(),
+            reason: reason.to_string(),
+        };
+
         if origin.trim() != origin || origin.is_empty() {
-            return Err(BrowserCapabilityError::InvalidScope {
-                resource: BrowserResourceKind::Network,
-                scope: origin.to_string(),
-                reason:
-                    "network origins must be non-empty and must not include surrounding whitespace"
-                        .to_string(),
-            });
+            return Err(invalid(
+                "network origins must be non-empty and must not include surrounding whitespace",
+            ));
         }
-        if origin.ends_with('/')
-            || origin.contains('*')
-            || !(origin.starts_with("https://") || origin.starts_with("http://"))
-        {
-            return Err(BrowserCapabilityError::InvalidScope {
-                resource: BrowserResourceKind::Network,
-                scope: origin.to_string(),
-                reason: "network grants must use an http(s) origin without path, trailing slash, or wildcards".to_string(),
-            });
+        if origin.chars().any(char::is_whitespace) {
+            return Err(invalid("network origins must not contain whitespace"));
         }
+
+        let rest = origin
+            .strip_prefix("https://")
+            .or_else(|| origin.strip_prefix("http://"))
+            .ok_or_else(|| invalid("network grants must use an http(s) origin"))?;
+
+        if rest.is_empty() {
+            return Err(invalid("network origins must include a host"));
+        }
+        if rest.contains(['/', '?', '#', '@', '*']) {
+            return Err(invalid(
+                "network origins must not include path, query, fragment, userinfo, or wildcards",
+            ));
+        }
+
+        let (host, port) = match rest.rsplit_once(':') {
+            Some((host, port)) => {
+                if port.is_empty() || !port.bytes().all(|byte| byte.is_ascii_digit()) {
+                    return Err(invalid("network origin ports must be numeric"));
+                }
+                let port = port
+                    .parse::<u16>()
+                    .map_err(|_| invalid("network origin ports must be in 1..65535"))?;
+                if port == 0 {
+                    return Err(invalid("network origin port 0 is not allowed"));
+                }
+                (host, Some(port))
+            }
+            None => (rest, None),
+        };
+        let _ = port;
+
+        if !is_valid_browser_origin_host(host) {
+            return Err(invalid("network origins must include a valid simple host"));
+        }
+
         Ok(())
     }
 
@@ -362,6 +418,7 @@ impl BrowserNetworkScope {
 pub struct BrowserStorageScope {
     pub backend: BrowserStorageBackend,
     pub scope: String,
+    pub recursive: bool,
 }
 
 impl BrowserStorageScope {
@@ -371,7 +428,31 @@ impl BrowserStorageScope {
     ) -> Result<Self, BrowserCapabilityError> {
         let scope = scope.into();
         Self::validate_scope(&scope)?;
-        Ok(Self { backend, scope })
+        Ok(Self {
+            backend,
+            scope,
+            recursive: false,
+        })
+    }
+
+    pub fn with_recursive(mut self, recursive: bool) -> Self {
+        self.recursive = recursive;
+        self
+    }
+
+    pub fn matches_scope(&self, requested: &str) -> bool {
+        if self.scope == requested {
+            return true;
+        }
+        if !self.recursive {
+            return false;
+        }
+        if self.scope == "/" {
+            return requested.starts_with('/');
+        }
+        requested
+            .strip_prefix(&self.scope)
+            .is_some_and(|suffix| suffix.starts_with('/'))
     }
 
     pub fn validate_scope(scope: &str) -> Result<(), BrowserCapabilityError> {
@@ -536,6 +617,42 @@ pub fn browser_capability_result(result: Result<(), BrowserCapabilityError>) -> 
     result.map_err(browser_capability_error)
 }
 
+fn browser_resource_allows_operation(
+    resource: BrowserResourceKind,
+    operation: BrowserOperation,
+) -> bool {
+    match resource {
+        BrowserResourceKind::Dom | BrowserResourceKind::Clipboard => {
+            matches!(operation, BrowserOperation::Read | BrowserOperation::Write)
+        }
+        BrowserResourceKind::Network => matches!(operation, BrowserOperation::Read),
+        BrowserResourceKind::Storage => matches!(
+            operation,
+            BrowserOperation::Read | BrowserOperation::Write | BrowserOperation::List
+        ),
+    }
+}
+
+fn is_valid_browser_origin_host(host: &str) -> bool {
+    if host.is_empty()
+        || host.starts_with('.')
+        || host.ends_with('.')
+        || host.contains("..")
+        || host.contains(['[', ']'])
+    {
+        return false;
+    }
+
+    host.split('.').all(|label| {
+        !label.is_empty()
+            && !label.starts_with('-')
+            && !label.ends_with('-')
+            && label
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -569,6 +686,27 @@ mod tests {
             authority.allows_dom("#other", BrowserOperation::Write),
             Err(BrowserCapabilityError::NoMatchingGrant { .. })
         ));
+    }
+
+    #[test]
+    fn invalid_dom_selector_forms_are_rejected() {
+        for selector in [
+            "#mech-output, body",
+            "body",
+            ".mech-output *",
+            "#root + body",
+            "#root[data-x]",
+            "#root:hover",
+            "#",
+        ] {
+            assert!(matches!(
+                BrowserDomScope::new(selector),
+                Err(BrowserCapabilityError::InvalidScope {
+                    resource: BrowserResourceKind::Dom,
+                    ..
+                })
+            ));
+        }
     }
 
     #[test]
@@ -665,6 +803,75 @@ mod tests {
                 BrowserOperation::Read
             ),
             Err(BrowserCapabilityError::NoMatchingGrant { .. })
+        ));
+    }
+
+    #[test]
+    fn invalid_network_origin_forms_are_rejected() {
+        for origin in [
+            "https://",
+            "https://example.com/path",
+            "https://example.com?x=1",
+            "https://example.com#frag",
+            "https://user@example.com",
+            "https://*.example.com",
+        ] {
+            assert!(matches!(
+                BrowserNetworkScope::new(origin, None::<Vec<String>>),
+                Err(BrowserCapabilityError::InvalidScope {
+                    resource: BrowserResourceKind::Network,
+                    ..
+                })
+            ));
+        }
+    }
+
+    #[test]
+    fn recursive_storage_matching_uses_path_boundaries() {
+        let scope = BrowserStorageScope::new(BrowserStorageBackend::Opfs, "/workspace")
+            .unwrap()
+            .with_recursive(true);
+
+        assert!(scope.matches_scope("/workspace"));
+        assert!(scope.matches_scope("/workspace/main.mec"));
+        assert!(!scope.matches_scope("/workspace2/main.mec"));
+    }
+
+    #[test]
+    fn direct_api_invalid_resource_operation_pairs_are_rejected() {
+        let network = BrowserAuthority::new([grant(
+            BrowserResource::Network(
+                BrowserNetworkScope::new("https://docs.mech-lang.org", Some(["GET".to_string()]))
+                    .unwrap(),
+            ),
+            &[BrowserOperation::Write],
+        )]);
+        assert!(matches!(
+            network.allows_network(
+                "https://docs.mech-lang.org",
+                Some("GET"),
+                BrowserOperation::Write
+            ),
+            Err(BrowserCapabilityError::UnsupportedOperation(
+                BrowserOperation::Write
+            ))
+        ));
+
+        let storage = BrowserAuthority::new([grant(
+            BrowserResource::Storage(
+                BrowserStorageScope::new(BrowserStorageBackend::Opfs, "/workspace").unwrap(),
+            ),
+            &[BrowserOperation::Watch],
+        )]);
+        assert!(matches!(
+            storage.allows_storage(
+                BrowserStorageBackend::Opfs,
+                "/workspace",
+                BrowserOperation::Watch
+            ),
+            Err(BrowserCapabilityError::UnsupportedOperation(
+                BrowserOperation::Watch
+            ))
         ));
     }
 
