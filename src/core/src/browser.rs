@@ -585,18 +585,56 @@ mod tests {
     }
 
     #[test]
-    fn later_matching_grant_can_allow_operation_with_different_budget() {
-        let mut first = grant(BrowserResource::Clipboard, &[BrowserOperation::Read]);
-        first.budget = Some(BrowserBudget {
+    fn clipboard_read_and_write_succeed_when_split_across_budgeted_grants() {
+        let mut read = grant(BrowserResource::Clipboard, &[BrowserOperation::Read]);
+        read.budget = Some(BrowserBudget {
             max_invocations: Some(1),
         });
-        let mut second = grant(BrowserResource::Clipboard, &[BrowserOperation::Write]);
-        second.budget = Some(BrowserBudget {
+        let mut write = grant(BrowserResource::Clipboard, &[BrowserOperation::Write]);
+        write.budget = Some(BrowserBudget {
             max_invocations: Some(2),
         });
-        let authority = BrowserAuthority::new([first, second]);
+        let authority = BrowserAuthority::new([read, write]);
 
+        assert_eq!(authority.allows_clipboard(BrowserOperation::Read), Ok(()));
         assert_eq!(authority.allows_clipboard(BrowserOperation::Write), Ok(()));
+    }
+
+    #[test]
+    fn matching_resource_with_no_allowed_operation_returns_operation_denied() {
+        let mut read = grant(BrowserResource::Clipboard, &[BrowserOperation::Read]);
+        read.budget = Some(BrowserBudget {
+            max_invocations: Some(1),
+        });
+        let mut list = grant(BrowserResource::Clipboard, &[BrowserOperation::List]);
+        list.budget = Some(BrowserBudget {
+            max_invocations: Some(2),
+        });
+        let authority = BrowserAuthority::new([read, list]);
+
+        assert!(matches!(
+            authority.allows_clipboard(BrowserOperation::Write),
+            Err(BrowserCapabilityError::OperationDenied {
+                resource: BrowserResource::Clipboard,
+                operation: BrowserOperation::Write,
+            })
+        ));
+    }
+
+    #[test]
+    fn resource_kind_with_no_matching_scope_returns_no_matching_grant() {
+        let authority = BrowserAuthority::new([grant(
+            BrowserResource::Dom(BrowserDomScope::new("#mech-output").unwrap()),
+            &[BrowserOperation::Write],
+        )]);
+
+        assert!(matches!(
+            authority.allows_dom("#other-output", BrowserOperation::Write),
+            Err(BrowserCapabilityError::NoMatchingGrant {
+                resource: BrowserResourceKind::Dom,
+                ..
+            })
+        ));
     }
 
     #[test]
