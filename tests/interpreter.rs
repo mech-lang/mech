@@ -900,6 +900,11 @@ test_interpreter!(interpret_slice_range_2d, "x := [1 2 3; 4 5 6; 7 8 9]; x[2..=3
 test_interpreter!(interpret_slice_sclar_range, "ix := [true false true]'; x := [1 2 3; 4 5 6; 7 8 9]; x[2,ix]", Value::MatrixF64(Matrix::from_vec(vec![4.0, 6.0], 1, 2)));
 test_interpreter!(interpret_slice_range_scalar, "ix := [true false true]'; x := [1 2 3; 4 5 6; 7 8 9]; x[ix,2]", Value::MatrixF64(Matrix::from_vec(vec![2.0, 8.0], 2, 1)));
 test_interpreter!(interpret_slice_all, "x := [1 2; 4 5]; x[:]", Value::MatrixF64(Matrix::from_vec(vec![1.0, 4.0, 2.0, 5.0], 4, 1)));
+test_interpreter!(interpret_slice_all_matrix_regression, "a := [1 2; 3 4]; a[:]", Value::MatrixF64(Matrix::from_vec(vec![1.0, 3.0, 2.0, 4.0], 4, 1)));
+test_interpreter!(interpret_slice_all_row_vector_regression, "x := [1 2 3]; x[:]", Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0], 3, 1)));
+test_interpreter!(interpret_slice_all_vector_regression, "b := [1; 2; 3]; b[:]", Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0], 3, 1)));
+test_interpreter!(interpret_slice_all_dynamic_row_vector_regression, "x := [1 2 3 4 5]; x[:]", Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0], 5, 1)));
+test_interpreter!(interpret_slice_all_dynamic_vector_regression, "b := [1; 2; 3; 4; 5]; b[:]", Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0], 5, 1)));
 test_interpreter!(interpret_slice_all_2d, "x := [1 2; 4 5]; x[:,2]", Value::MatrixF64(Matrix::from_vec(vec![2.0, 5.0], 2, 1)));
 test_interpreter!(interpret_slice_all_2d_row, "x := [1 2; 4 5]; x[2,:]", Value::MatrixF64(Matrix::from_vec(vec![4.0, 5.0], 1, 2)));
 test_interpreter!(interpret_slice_all_2d_row2, "x := [1 2 3 4 5; 6 7 8 9 10]; x[1,:]", Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0], 1, 5)));
