@@ -98,7 +98,6 @@ use tabled::{
 };
 
 pub mod error;
-pub mod browser;
 pub mod kind;
 pub mod nodes;
 pub mod structures;
@@ -112,7 +111,6 @@ pub mod stdlib;
 pub mod types;
 
 pub use self::error::*;
-pub use self::browser::*;
 pub use self::kind::*;
 pub use self::nodes::*;
 pub use self::structures::*;

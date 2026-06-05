@@ -1,7 +1,5 @@
 #![allow(warnings)]
 
-pub mod host;
-
 use wasm_bindgen::prelude::*;
 use mech_core::*;
 use mech_syntax::*;
