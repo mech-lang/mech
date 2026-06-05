@@ -285,3 +285,205 @@ fn config_profile_named_call_argument_rejected() {
     assert!(msg.contains("ConfigProfileViolation"));
     assert!(msg.contains("named function-call arguments are not supported"));
 }
+
+#[test]
+fn config_profile_browser_section_accepts_valid_grants() {
+    let doc = parse(
+        r##"config := {
+  browser: {
+    dom: [
+      {selector: "#mech-output", allow: ["write"]}
+    ]
+    clipboard: [
+      {allow: ["write"]}
+    ]
+    network: [
+      {origin: "https://docs.mech-lang.org", allow: ["read"], methods: ["GET"]}
+    ]
+    storage: [
+      {backend: "opfs", scope: "/workspace", allow: ["read", "write", "list"]}
+    ]
+  }
+}
+"##,
+    )
+    .unwrap();
+
+    assert_eq!(doc.browser.grants().len(), 4);
+    assert!(doc
+        .browser
+        .allows_dom("#mech-output", BrowserOperation::Write)
+        .is_ok());
+    assert!(doc
+        .browser
+        .allows_clipboard(BrowserOperation::Write)
+        .is_ok());
+    assert!(doc
+        .browser
+        .allows_network(
+            "https://docs.mech-lang.org",
+            Some("GET"),
+            BrowserOperation::Read
+        )
+        .is_ok());
+    assert!(doc
+        .browser
+        .allows_storage(
+            BrowserStorageBackend::Opfs,
+            "/workspace",
+            BrowserOperation::List
+        )
+        .is_ok());
+}
+
+#[test]
+fn config_profile_browser_unknown_field_rejected() {
+    let msg = err_text("config := {browser: {geolocation: [{allow: [\"read\"]}]}}\n");
+    assert!(msg.contains("InvalidConfigField"));
+    assert!(msg.contains("unknown browser field `geolocation`"));
+}
+
+#[test]
+fn config_profile_browser_unknown_operation_rejected() {
+    let msg = err_text("config := {browser: {clipboard: [{allow: [\"read\", \"teleport\"]}]}}\n");
+    assert!(msg.contains("InvalidConfigField"));
+    assert!(msg.contains("unknown browser operation `teleport`"));
+}
+
+#[test]
+fn config_profile_browser_absence_is_deny_by_default() {
+    let doc = parse("config := {serve: {port: 8081}}\n").unwrap();
+    assert!(doc.browser.grants().is_empty());
+    assert!(doc
+        .browser
+        .allows_clipboard(BrowserOperation::Read)
+        .is_err());
+}
+
+#[test]
+fn config_profile_browser_invalid_dom_selector_forms_rejected() {
+    for selector in [
+        "#mech-output, body",
+        "body",
+        ".mech-output *",
+        "#root + body",
+        "#root[data-x]",
+        "#root:hover",
+        "#",
+    ] {
+        let msg = err_text(&format!(
+            "config := {{browser: {{dom: [{{selector: \"{selector}\", allow: [\"write\"]}}]}}}}\n"
+        ));
+        assert!(msg.contains("InvalidConfigField"), "{selector}: {msg}");
+        assert!(msg.contains("browser.dom[0].selector"), "{selector}: {msg}");
+    }
+}
+
+#[test]
+fn config_profile_browser_invalid_network_origins_rejected() {
+    for origin in [
+        "https://",
+        "https://example.com/path",
+        "https://example.com?x=1",
+        "https://example.com#frag",
+        "https://user@example.com",
+        "https://*.example.com",
+    ] {
+        let msg = err_text(&format!(
+            "config := {{browser: {{network: [{{origin: \"{origin}\", allow: [\"read\"], methods: [\"GET\"]}}]}}}}\n"
+        ));
+        assert!(msg.contains("InvalidConfigField"), "{origin}: {msg}");
+        assert!(msg.contains("browser.network[0]"), "{origin}: {msg}");
+    }
+}
+
+#[test]
+fn config_profile_browser_resource_specific_operations_rejected() {
+    let cases = [
+        (
+            "clipboard + list",
+            "config := {browser: {clipboard: [{allow: [\"list\"]}]}}\n",
+            "browser Clipboard grants do not support operation `list`",
+        ),
+        (
+            "dom + invoke",
+            "config := {browser: {dom: [{selector: \"#mech-output\", allow: [\"invoke\"]}]}}\n",
+            "browser Dom grants do not support operation `invoke`",
+        ),
+        (
+            "network + write",
+            "config := {browser: {network: [{origin: \"https://docs.mech-lang.org\", allow: [\"write\"], methods: [\"GET\"]}]}}\n",
+            "browser Network grants do not support operation `write`",
+        ),
+        (
+            "storage + watch",
+            "config := {browser: {storage: [{backend: \"opfs\", scope: \"/workspace\", allow: [\"watch\"]}]}}\n",
+            "browser Storage grants do not support operation `watch`",
+        ),
+    ];
+
+    for (label, source, expected) in cases {
+        let msg = err_text(source);
+        assert!(msg.contains("InvalidConfigField"), "{label}: {msg}");
+        assert!(msg.contains(expected), "{label}: {msg}");
+    }
+}
+
+#[test]
+fn config_profile_browser_storage_recursive_scope_is_explicit() {
+    let exact = parse(
+        r#"config := {
+  browser: {
+    storage: [
+      {backend: "opfs", scope: "/workspace", allow: ["read"]}
+    ]
+  }
+}
+"#,
+    )
+    .unwrap();
+    assert!(exact
+        .browser
+        .allows_storage(
+            BrowserStorageBackend::Opfs,
+            "/workspace",
+            BrowserOperation::Read
+        )
+        .is_ok());
+    assert!(matches!(
+        exact.browser.allows_storage(
+            BrowserStorageBackend::Opfs,
+            "/workspace/main.mec",
+            BrowserOperation::Read
+        ),
+        Err(BrowserCapabilityError::NoMatchingGrant { .. })
+    ));
+
+    let recursive = parse(
+        r#"config := {
+  browser: {
+    storage: [
+      {backend: "opfs", scope: "/workspace", recursive: true, allow: ["read"]}
+    ]
+  }
+}
+"#,
+    )
+    .unwrap();
+    assert!(recursive
+        .browser
+        .allows_storage(
+            BrowserStorageBackend::Opfs,
+            "/workspace/main.mec",
+            BrowserOperation::Read
+        )
+        .is_ok());
+    assert!(matches!(
+        recursive.browser.allows_storage(
+            BrowserStorageBackend::Opfs,
+            "/workspace2/main.mec",
+            BrowserOperation::Read
+        ),
+        Err(BrowserCapabilityError::NoMatchingGrant { .. })
+    ));
+}
