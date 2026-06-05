@@ -514,6 +514,32 @@ mod filesystem_capability_tests {
     }
 
     #[test]
+    fn config_capability_paths_normalize_backslashes() {
+        let root = temp_root("normalize-capabilities");
+        let subdir = root.join("subdir");
+        let allowed = subdir.join("allowed/nested");
+        std::fs::create_dir_all(&allowed).unwrap();
+        std::fs::write(
+            subdir.join(mech_runtime::DEFAULT_CONFIG_FILENAME),
+            r#"config := {capabilities: [{allow: "read", path: "allowed\\nested"} {allow: "watch", path: "allowed\\nested"} {allow: "serve", path: "allowed\\nested"}]}"#,
+        )
+        .unwrap();
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let matches = cli(&["mech", "--config", "subdir/mech.mcfg", "serve"]);
+            let serve_matches = matches.subcommand_matches("serve").unwrap();
+            let loaded = crate::config::load_cli_config(serve_matches)
+                .unwrap()
+                .unwrap();
+            let badge = "[test]".normal();
+            let authority =
+                build_mech_filesystem_authority(serve_matches, Some(&loaded), &badge).unwrap();
+            assert!(delegate_all(&authority, &allowed).is_ok());
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn cli_capability_paths_remain_current_dir_relative() {
         let root = temp_root("cli-capabilities-cwd-relative");
         let subdir = root.join("subdir");

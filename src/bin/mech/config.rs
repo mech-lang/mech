@@ -71,12 +71,81 @@ pub fn load_cli_config(matches: &clap::ArgMatches) -> MResult<Option<LoadedMechC
     }))
 }
 
-pub fn resolve_config_path(base_dir: &Path, path: &Path) -> PathBuf {
+pub fn normalize_config_path(path: &Path) -> PathBuf {
     if path.is_absolute() {
         path.to_path_buf()
     } else {
+        PathBuf::from(path.to_string_lossy().replace('\\', "/"))
+    }
+}
+
+pub fn resolve_config_path(base_dir: &Path, path: &Path) -> PathBuf {
+    let path = normalize_config_path(path);
+    if path.is_absolute() {
+        path
+    } else {
         base_dir.join(path)
     }
+}
+
+fn require_config_file(field: &str, path: &Path) -> MResult<()> {
+    if path.is_file() {
+        Ok(())
+    } else {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!(
+                "configuration error: {field} must be an existing file: {}",
+                path.display()
+            ),
+        )
+        .into())
+    }
+}
+
+fn require_config_dir(field: &str, path: &Path) -> MResult<()> {
+    if path.is_dir() {
+        Ok(())
+    } else {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!(
+                "configuration error: {field} must be an existing directory: {}",
+                path.display()
+            ),
+        )
+        .into())
+    }
+}
+
+fn require_config_wasm_package(field: &str, path: &Path) -> MResult<()> {
+    require_config_dir(field, path)?;
+
+    let wasm = path.join("mech_wasm_bg.wasm.br");
+    if !wasm.is_file() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!(
+                "configuration error: {field} is missing required file: {}",
+                wasm.display()
+            ),
+        )
+        .into());
+    }
+
+    let js = path.join("mech_wasm.js");
+    if !js.is_file() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!(
+                "configuration error: {field} is missing required file: {}",
+                js.display()
+            ),
+        )
+        .into());
+    }
+
+    Ok(())
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -92,7 +161,7 @@ pub struct EffectiveServeOptions {
 pub fn effective_serve_options(
     serve_matches: &clap::ArgMatches,
     config: Option<&LoadedMechConfig>,
-) -> EffectiveServeOptions {
+) -> MResult<EffectiveServeOptions> {
     let serve_config = config.and_then(|loaded| loaded.document.serve.as_ref());
     let config_path_to_string = |loaded: &LoadedMechConfig, path: &Path| {
         resolve_config_path(&loaded.base_dir, path)
@@ -112,54 +181,65 @@ pub fn effective_serve_options(
         .or_else(|| serve_config.and_then(|serve| serve.port.map(|port| port.to_string())))
         .unwrap_or_else(|| "8081".to_string());
 
-    let shim_path = serve_matches
-        .get_one::<String>("shim")
-        .cloned()
-        .or_else(|| {
-            config.and_then(|loaded| {
-                loaded.document.serve.as_ref().and_then(|serve| {
-                    serve
-                        .shim
-                        .as_ref()
-                        .map(|path| config_path_to_string(loaded, path))
-                })
-            })
+    let cli_shim = serve_matches.get_one::<String>("shim").cloned();
+    let config_shim = config.and_then(|loaded| {
+        loaded.document.serve.as_ref().and_then(|serve| {
+            serve
+                .shim
+                .as_ref()
+                .map(|path| config_path_to_string(loaded, path))
         })
+    });
+    let shim_path = cli_shim
+        .clone()
+        .or_else(|| config_shim.clone())
         .unwrap_or_default();
+    if cli_shim.is_none() {
+        if let Some(path) = config_shim.as_ref() {
+            require_config_file("serve.shim", Path::new(path))?;
+        }
+    }
 
-    let wasm_pkg = serve_matches
-        .get_one::<String>("wasm")
-        .cloned()
-        .or_else(|| {
-            config.and_then(|loaded| {
-                loaded.document.serve.as_ref().and_then(|serve| {
-                    serve
-                        .wasm
-                        .as_ref()
-                        .map(|path| config_path_to_string(loaded, path))
-                })
-            })
+    let cli_wasm = serve_matches.get_one::<String>("wasm").cloned();
+    let config_wasm = config.and_then(|loaded| {
+        loaded.document.serve.as_ref().and_then(|serve| {
+            serve
+                .wasm
+                .as_ref()
+                .map(|path| config_path_to_string(loaded, path))
         })
+    });
+    let wasm_pkg = cli_wasm
+        .clone()
+        .or_else(|| config_wasm.clone())
         .unwrap_or_default();
+    if cli_wasm.is_none() {
+        if let Some(path) = config_wasm.as_ref() {
+            require_config_wasm_package("serve.wasm", Path::new(path))?;
+        }
+    }
 
-    let mut stylesheet_paths: Vec<String> = config
+    let config_stylesheets: Vec<String> = config
         .and_then(|loaded| {
             loaded.document.serve.as_ref().map(|serve| {
                 serve
                     .stylesheets
                     .iter()
                     .map(|path| config_path_to_string(loaded, path))
-                    .collect()
+                    .collect::<Vec<_>>()
             })
         })
         .unwrap_or_default();
-    stylesheet_paths.extend(
-        serve_matches
-            .get_many::<String>("stylesheet")
-            .into_iter()
-            .flatten()
-            .cloned(),
-    );
+    for path in &config_stylesheets {
+        require_config_file("serve.stylesheets", Path::new(path))?;
+    }
+    let cli_stylesheets = serve_matches
+        .get_many::<String>("stylesheet")
+        .into_iter()
+        .flatten()
+        .cloned();
+    let mut stylesheet_paths = config_stylesheets;
+    stylesheet_paths.extend(cli_stylesheets);
 
     let cli_paths: Vec<String> = serve_matches
         .get_many::<String>("mech_serve_file_paths")
@@ -184,14 +264,14 @@ pub fn effective_serve_options(
             .unwrap_or_default()
     };
 
-    EffectiveServeOptions {
+    Ok(EffectiveServeOptions {
         address,
         port,
         paths,
         stylesheet_paths,
         shim_path,
         wasm_pkg,
-    }
+    })
 }
 
 pub fn apply_runtime_config_patch(
@@ -341,6 +421,24 @@ mod config_tests {
         }
     }
 
+    fn loaded_config_at(base_dir: PathBuf, source: &str) -> LoadedMechConfig {
+        LoadedMechConfig {
+            path: base_dir.join("mech.mcfg"),
+            base_dir,
+            document: parse_document(source),
+        }
+    }
+
+    fn create_wasm_pkg(path: &Path) {
+        std::fs::create_dir_all(path).unwrap();
+        std::fs::write(path.join("mech_wasm_bg.wasm.br"), b"wasm").unwrap();
+        std::fs::write(path.join("mech_wasm.js"), b"js").unwrap();
+    }
+
+    fn error_text(result: MResult<EffectiveServeOptions>) -> String {
+        format!("{:?}", result.unwrap_err())
+    }
+
     #[test]
     fn explicit_config_loads() {
         let root = temp_root("explicit");
@@ -395,7 +493,8 @@ mod config_tests {
         let config = loaded_config(r#"config := {serve: {address: "127.0.0.1", port: 8081}}"#);
         let matches = matches(&["mech", "serve", "--address", "0.0.0.0", "--port", "9090"]);
         let effective =
-            effective_serve_options(matches.subcommand_matches("serve").unwrap(), Some(&config));
+            effective_serve_options(matches.subcommand_matches("serve").unwrap(), Some(&config))
+                .unwrap();
         assert_eq!(effective.address, "0.0.0.0");
         assert_eq!(effective.port, "9090");
     }
@@ -405,7 +504,8 @@ mod config_tests {
         let config = loaded_config(r#"config := {serve: {paths: ["docs/reference"]}}"#);
         let matches = matches(&["mech", "serve"]);
         let effective =
-            effective_serve_options(matches.subcommand_matches("serve").unwrap(), Some(&config));
+            effective_serve_options(matches.subcommand_matches("serve").unwrap(), Some(&config))
+                .unwrap();
         assert_eq!(effective.paths, vec!["docs/reference"]);
     }
 
@@ -414,17 +514,31 @@ mod config_tests {
         let config = loaded_config(r#"config := {serve: {paths: ["docs/reference"]}}"#);
         let matches = matches(&["mech", "serve", "examples/working"]);
         let effective =
-            effective_serve_options(matches.subcommand_matches("serve").unwrap(), Some(&config));
+            effective_serve_options(matches.subcommand_matches("serve").unwrap(), Some(&config))
+                .unwrap();
         assert_eq!(effective.paths, vec!["examples/working"]);
     }
 
     #[test]
     fn stylesheets_combine() {
-        let config = loaded_config(r#"config := {serve: {stylesheets: ["a.css"]}}"#);
+        let root = temp_root("stylesheets-combine");
+        std::fs::write(root.join("a.css"), "body {}").unwrap();
+        let config = loaded_config_at(
+            root.clone(),
+            r#"config := {serve: {stylesheets: ["a.css"]}}"#,
+        );
         let matches = matches(&["mech", "serve", "--stylesheet", "b.css"]);
         let effective =
-            effective_serve_options(matches.subcommand_matches("serve").unwrap(), Some(&config));
-        assert_eq!(effective.stylesheet_paths, vec!["a.css", "b.css"]);
+            effective_serve_options(matches.subcommand_matches("serve").unwrap(), Some(&config))
+                .unwrap();
+        assert_eq!(
+            effective.stylesheet_paths,
+            vec![
+                root.join("a.css").to_string_lossy().to_string(),
+                "b.css".to_string()
+            ]
+        );
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -432,6 +546,9 @@ mod config_tests {
         let root = temp_root("relative-serve-paths");
         let subdir = root.join("subdir");
         std::fs::create_dir_all(&subdir).unwrap();
+        std::fs::write(subdir.join("style.css"), "body {}").unwrap();
+        std::fs::write(subdir.join("shim.html"), "<html></html>").unwrap();
+        create_wasm_pkg(&subdir.join("pkg"));
         std::fs::write(
             subdir.join(DEFAULT_CONFIG_FILENAME),
             r#"config := {
@@ -450,7 +567,7 @@ mod config_tests {
             let matches = matches(&["mech", "--config", "subdir/mech.mcfg", "serve"]);
             let serve_matches = matches.subcommand_matches("serve").unwrap();
             let config = load_cli_config(serve_matches).unwrap().unwrap();
-            let effective = effective_serve_options(serve_matches, Some(&config));
+            let effective = effective_serve_options(serve_matches, Some(&config)).unwrap();
             assert_eq!(
                 effective.paths,
                 vec![subdir.join("app.mec").to_string_lossy().to_string()]
@@ -486,7 +603,7 @@ mod config_tests {
             let matches = matches(&["mech", "--config", "subdir/mech.mcfg", "serve", "other.mec"]);
             let serve_matches = matches.subcommand_matches("serve").unwrap();
             let config = load_cli_config(serve_matches).unwrap().unwrap();
-            let effective = effective_serve_options(serve_matches, Some(&config));
+            let effective = effective_serve_options(serve_matches, Some(&config)).unwrap();
             assert_eq!(effective.paths, vec!["other.mec"]);
         }
         std::fs::remove_dir_all(root).unwrap();
@@ -516,10 +633,150 @@ mod config_tests {
             ]);
             let serve_matches = matches.subcommand_matches("serve").unwrap();
             let config = load_cli_config(serve_matches).unwrap().unwrap();
-            let effective = effective_serve_options(serve_matches, Some(&config));
+            let effective = effective_serve_options(serve_matches, Some(&config)).unwrap();
             assert_eq!(effective.shim_path, "cli-shim.html");
             assert_eq!(effective.wasm_pkg, "cli-pkg");
         }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn missing_config_shim_is_ignored_when_cli_shim_overrides() {
+        let config = loaded_config(r#"config := {serve: {shim: "missing-shim.html"}}"#);
+        let matches = matches(&["mech", "serve", "--shim", "local.html"]);
+        let effective =
+            effective_serve_options(matches.subcommand_matches("serve").unwrap(), Some(&config))
+                .unwrap();
+        assert_eq!(effective.shim_path, "local.html");
+    }
+
+    #[test]
+    fn missing_config_wasm_is_ignored_when_cli_wasm_overrides() {
+        let config = loaded_config(r#"config := {serve: {wasm: "missing-pkg"}}"#);
+        let matches = matches(&["mech", "serve", "--wasm", "local-pkg"]);
+        let effective =
+            effective_serve_options(matches.subcommand_matches("serve").unwrap(), Some(&config))
+                .unwrap();
+        assert_eq!(effective.wasm_pkg, "local-pkg");
+    }
+
+    #[test]
+    fn missing_config_stylesheet_fails_even_with_cli_stylesheet() {
+        let config = loaded_config(r#"config := {serve: {stylesheets: ["missing.css"]}}"#);
+        let matches = matches(&["mech", "serve", "--stylesheet", "local.css"]);
+        let error = error_text(effective_serve_options(
+            matches.subcommand_matches("serve").unwrap(),
+            Some(&config),
+        ));
+        assert!(error.contains("configuration error: serve.stylesheets must be an existing file"));
+    }
+
+    #[test]
+    fn config_stylesheet_directory_is_rejected() {
+        let root = temp_root("stylesheet-dir");
+        std::fs::create_dir_all(root.join("style.css")).unwrap();
+        let config = loaded_config_at(
+            root.clone(),
+            r#"config := {serve: {stylesheets: ["style.css"]}}"#,
+        );
+        let matches = matches(&["mech", "serve"]);
+        let error = error_text(effective_serve_options(
+            matches.subcommand_matches("serve").unwrap(),
+            Some(&config),
+        ));
+        assert!(error.contains("serve.stylesheets must be an existing file"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn config_shim_directory_is_rejected() {
+        let root = temp_root("shim-dir");
+        std::fs::create_dir_all(root.join("shim.html")).unwrap();
+        let config = loaded_config_at(root.clone(), r#"config := {serve: {shim: "shim.html"}}"#);
+        let matches = matches(&["mech", "serve"]);
+        let error = error_text(effective_serve_options(
+            matches.subcommand_matches("serve").unwrap(),
+            Some(&config),
+        ));
+        assert!(error.contains("serve.shim must be an existing file"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn config_wasm_file_is_rejected() {
+        let root = temp_root("wasm-file");
+        std::fs::write(root.join("pkg"), b"not a dir").unwrap();
+        let config = loaded_config_at(root.clone(), r#"config := {serve: {wasm: "pkg"}}"#);
+        let matches = matches(&["mech", "serve"]);
+        let error = error_text(effective_serve_options(
+            matches.subcommand_matches("serve").unwrap(),
+            Some(&config),
+        ));
+        assert!(error.contains("serve.wasm must be an existing directory"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn config_wasm_directory_missing_required_files_is_rejected() {
+        let root = temp_root("wasm-missing-files");
+        std::fs::create_dir_all(root.join("pkg")).unwrap();
+        let config = loaded_config_at(root.clone(), r#"config := {serve: {wasm: "pkg"}}"#);
+        let matches = matches(&["mech", "serve"]);
+        let error = error_text(effective_serve_options(
+            matches.subcommand_matches("serve").unwrap(),
+            Some(&config),
+        ));
+        assert!(error.contains("serve.wasm is missing required file"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn config_wasm_directory_with_required_files_is_accepted() {
+        let root = temp_root("wasm-complete");
+        create_wasm_pkg(&root.join("pkg"));
+        let config = loaded_config_at(root.clone(), r#"config := {serve: {wasm: "pkg"}}"#);
+        let matches = matches(&["mech", "serve"]);
+        let effective =
+            effective_serve_options(matches.subcommand_matches("serve").unwrap(), Some(&config))
+                .unwrap();
+        assert_eq!(
+            effective.wasm_pkg,
+            root.join("pkg").to_string_lossy().to_string()
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn config_relative_paths_normalize_backslashes_with_validation() {
+        let root = temp_root("normalize-backslashes");
+        std::fs::create_dir_all(root.join("include")).unwrap();
+        std::fs::write(root.join("include/style.css"), "body {}").unwrap();
+        std::fs::write(root.join("include/shim.html"), "<html></html>").unwrap();
+        create_wasm_pkg(&root.join("web/pkg"));
+        let config = loaded_config_at(
+            root.clone(),
+            r#"config := {serve: {paths: ["docs\\reference"], stylesheets: ["include\\style.css"], shim: "include\\shim.html", wasm: "web\\pkg"}}"#,
+        );
+        let matches = matches(&["mech", "serve"]);
+        let effective =
+            effective_serve_options(matches.subcommand_matches("serve").unwrap(), Some(&config))
+                .unwrap();
+        assert_eq!(
+            effective.paths,
+            vec![root.join("docs/reference").to_string_lossy().to_string()]
+        );
+        assert_eq!(
+            effective.stylesheet_paths,
+            vec![root.join("include/style.css").to_string_lossy().to_string()]
+        );
+        assert_eq!(
+            effective.shim_path,
+            root.join("include/shim.html").to_string_lossy().to_string()
+        );
+        assert_eq!(
+            effective.wasm_pkg,
+            root.join("web/pkg").to_string_lossy().to_string()
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 
