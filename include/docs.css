@@ -1863,10 +1863,21 @@ body.console-fullscreen .console-fullscreen-toggle .icon-exit {
   font-weight: 700;
 }
 
-.docs-version {
-  margin: 14px 0 0;
-  color: var(--text-secondary);
-  font-size: 14px;
+.version-badge {
+  display: inline-block;
+  margin-top: 1.2rem;
+  padding: 0.32rem 0.72rem;
+
+  border: 1px solid var(--accent-coral);
+  border-radius: 5px;
+
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1;
+
+  color: var(--accent-coral);
 }
 
 .docs-intro {
