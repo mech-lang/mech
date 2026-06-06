@@ -59,9 +59,19 @@ impl BrowserAuthority {
     }
 
     pub fn dom_entry_for_path(&self, path: &BrowserDomPath) -> Option<&BrowserDomManifestEntry> {
-        self.dom_manifest
+        if let Some(exact) = self
+            .dom_manifest
             .iter()
-            .find(|entry| entry.path.matches(path))
+            .find(|entry| !entry.path.is_wildcard() && entry.path == *path)
+        {
+            return Some(exact);
+        }
+
+        self
+            .dom_manifest
+            .iter()
+            .filter(|entry| entry.path.is_wildcard() && entry.path.matches(path))
+            .max_by_key(|entry| entry.path.as_str().trim_end_matches("/*").len())
     }
 
     pub fn grant(&mut self, grant: BrowserCapabilityGrant) {
@@ -420,40 +430,52 @@ impl BrowserDomProperty {
         attribute: Option<&str>,
         path: &BrowserDomPath,
     ) -> Result<Self, BrowserCapabilityError> {
+        let invalid = |reason: String| BrowserCapabilityError::InvalidScope {
+            resource: BrowserResourceKind::Dom,
+            scope: path.as_str().to_string(),
+            reason,
+        };
+
         match property {
-            Some("text") => Ok(Self::Text),
-            Some("value") => Ok(Self::Value),
-            Some("inner-html") | Some("innerHtml") | Some("html") => Ok(Self::InnerHtml),
+            Some("text") => {
+                if attribute.is_some() {
+                    return Err(invalid("DOM property `text` cannot include `attribute`".to_string()));
+                }
+                Ok(Self::Text)
+            }
+            Some("value") => {
+                if attribute.is_some() {
+                    return Err(invalid("DOM property `value` cannot include `attribute`".to_string()));
+                }
+                Ok(Self::Value)
+            }
+            Some("inner-html") | Some("innerHtml") | Some("html") => {
+                if attribute.is_some() {
+                    return Err(invalid("DOM property `inner-html` cannot include `attribute`".to_string()));
+                }
+                Ok(Self::InnerHtml)
+            }
             Some("attribute") => {
                 let Some(attribute) = attribute else {
-                    return Err(BrowserCapabilityError::InvalidScope {
-                        resource: BrowserResourceKind::Dom,
-                        scope: path.as_str().to_string(),
-                        reason: "DOM property `attribute` requires an `attribute` name".to_string(),
-                    });
+                    return Err(invalid("DOM property `attribute` requires an `attribute` name".to_string()));
                 };
                 validate_dom_attribute_name(attribute)?;
                 Ok(Self::Attribute(attribute.to_string()))
             }
-            Some(other) => Err(BrowserCapabilityError::InvalidScope {
-                resource: BrowserResourceKind::Dom,
-                scope: path.as_str().to_string(),
-                reason: format!(
-                    "DOM property `{other}` must be `text`, `value`, `inner-html`, or `attribute`"
-                ),
-            }),
+            Some(other) => Err(invalid(format!(
+                "DOM property `{other}` must be `text`, `value`, `inner-html`, or `attribute`"
+            ))),
             None => {
-                let inferred = path.dom_property();
-                if matches!(inferred, Self::Attribute(_)) {
-                    if let Some(attribute) = attribute {
-                        validate_dom_attribute_name(attribute)?;
-                        return Ok(Self::Attribute(attribute.to_string()));
-                    }
+                if attribute.is_some() {
+                    return Err(invalid(
+                        "`attribute` is only valid when `property` is `attribute`; underscore path segments infer attributes directly".to_string(),
+                    ));
                 }
-                Ok(inferred)
+                Ok(path.dom_property())
             }
         }
     }
+
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -955,6 +977,62 @@ mod tests {
                 })
             ));
         }
+    }
+
+
+    #[test]
+    fn dom_manifest_exact_path_beats_wildcard() {
+        let mut authority = BrowserAuthority::default();
+        let wildcard_scope = BrowserDomScope::new("#wild").unwrap();
+        let exact_scope = BrowserDomScope::new("#exact").unwrap();
+        authority.bind_dom_path(BrowserDomManifestEntry::new(
+            BrowserDomPath::new("body/*").unwrap(),
+            wildcard_scope,
+            BrowserDomProperty::Text,
+        ));
+        authority.bind_dom_path(BrowserDomManifestEntry::new(
+            BrowserDomPath::new("body/title").unwrap(),
+            exact_scope,
+            BrowserDomProperty::Text,
+        ));
+        let entry = authority
+            .dom_entry_for_path(&BrowserDomPath::new("body/title").unwrap())
+            .unwrap();
+        assert_eq!(entry.selector.selector, "#exact");
+    }
+
+    #[test]
+    fn dom_manifest_longest_wildcard_wins() {
+        let mut authority = BrowserAuthority::default();
+        let short_scope = BrowserDomScope::new("#short").unwrap();
+        let long_scope = BrowserDomScope::new("#long").unwrap();
+        authority.bind_dom_path(BrowserDomManifestEntry::new(
+            BrowserDomPath::new("body/*").unwrap(),
+            short_scope,
+            BrowserDomProperty::Text,
+        ));
+        authority.bind_dom_path(BrowserDomManifestEntry::new(
+            BrowserDomPath::new("body/content/*").unwrap(),
+            long_scope,
+            BrowserDomProperty::Text,
+        ));
+        let entry = authority
+            .dom_entry_for_path(&BrowserDomPath::new("body/content/title").unwrap())
+            .unwrap();
+        assert_eq!(entry.selector.selector, "#long");
+    }
+
+    #[test]
+    fn dom_manifest_sibling_wildcard_does_not_match() {
+        let mut authority = BrowserAuthority::default();
+        authority.bind_dom_path(BrowserDomManifestEntry::new(
+            BrowserDomPath::new("body/content/*").unwrap(),
+            BrowserDomScope::new("#content").unwrap(),
+            BrowserDomProperty::Text,
+        ));
+        assert!(authority
+            .dom_entry_for_path(&BrowserDomPath::new("body/sidebar/title").unwrap())
+            .is_none());
     }
 
     #[test]

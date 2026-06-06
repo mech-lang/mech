@@ -1,18 +1,38 @@
+use std::cell::RefCell;
 use std::collections::BTreeMap;
+use std::rc::Rc;
 
 use mech_core::Value;
 use mech_runtime::*;
 
 #[derive(Default)]
-struct FakeDomHost {
+struct FakeDomState {
   values: BTreeMap<String, String>,
+  reads: Vec<String>,
   writes: Vec<(String, String)>,
 }
 
+#[derive(Clone, Default)]
+struct FakeDomHost {
+  state: Rc<RefCell<FakeDomState>>,
+}
+
 impl FakeDomHost {
-  fn with_value(mut self, path: &str, value: &str) -> Self {
-    self.values.insert(path.to_string(), value.to_string());
+  fn with_value(self, path: &str, value: &str) -> Self {
+    self.state.borrow_mut().values.insert(path.to_string(), value.to_string());
     self
+  }
+
+  fn read_count(&self) -> usize {
+    self.state.borrow().reads.len()
+  }
+
+  fn write_count(&self) -> usize {
+    self.state.borrow().writes.len()
+  }
+
+  fn writes(&self) -> Vec<(String, String)> {
+    self.state.borrow().writes.clone()
   }
 }
 
@@ -22,7 +42,9 @@ impl BrowserDomHost for FakeDomHost {
     _entry: &BrowserDomManifestEntry,
     requested_path: &BrowserDomPath,
   ) -> mech_core::MResult<String> {
-    Ok(self.values.get(requested_path.as_str()).cloned().unwrap_or_default())
+    let mut state = self.state.borrow_mut();
+    state.reads.push(requested_path.as_str().to_string());
+    Ok(state.values.get(requested_path.as_str()).cloned().unwrap_or_default())
   }
 
   fn write_dom_string(
@@ -31,8 +53,9 @@ impl BrowserDomHost for FakeDomHost {
     requested_path: &BrowserDomPath,
     value: &str,
   ) -> mech_core::MResult<()> {
-    self.writes.push((requested_path.as_str().to_string(), value.to_string()));
-    self.values.insert(requested_path.as_str().to_string(), value.to_string());
+    let mut state = self.state.borrow_mut();
+    state.writes.push((requested_path.as_str().to_string(), value.to_string()));
+    state.values.insert(requested_path.as_str().to_string(), value.to_string());
     Ok(())
   }
 }
@@ -139,4 +162,86 @@ fn runtime_wildcard_dom_path_rejects_sibling() {
   runtime.set_browser_authority(authority("body/content/*", "#content", &[BrowserOperation::Read]));
   runtime.set_browser_dom_host(Box::new(FakeDomHost::default()));
   assert!(runtime.read_browser_dom_resource("browser", "body/sidebar/title").is_err());
+}
+
+
+fn read_write_authority(path: &str, selector: &str) -> BrowserAuthority {
+  authority(path, selector, &[BrowserOperation::Read, BrowserOperation::Write])
+}
+
+#[test]
+fn program_browser_resource_write_uses_runtime_host() {
+  let mut runtime = runtime();
+  runtime.set_browser_authority(read_write_authority("body/header/title", "#title"));
+  let host = FakeDomHost::default();
+  runtime.set_browser_dom_host(Box::new(host.clone()));
+
+  runtime
+    .run_string("@browser := browser://dom/\nbody/header/title@browser = \"Hello\"")
+    .unwrap();
+
+  assert_eq!(host.writes(), vec![("body/header/title".to_string(), "Hello".to_string())]);
+}
+
+#[test]
+fn program_browser_resource_read_uses_runtime_host() {
+  let mut runtime = runtime();
+  runtime.set_browser_authority(read_write_authority("body/search/_value", "#search"));
+  let host = FakeDomHost::default().with_value("body/search/_value", "query");
+  runtime.set_browser_dom_host(Box::new(host.clone()));
+
+  let value = runtime
+    .run_string("@browser := browser://dom/\nx := body/search/_value@browser")
+    .unwrap();
+
+  assert_eq!(value.as_string().unwrap().borrow().as_str(), "query");
+  assert_eq!(host.read_count(), 1);
+}
+
+#[test]
+fn program_browser_resource_define_does_not_write() {
+  let mut runtime = runtime();
+  runtime.set_browser_authority(read_write_authority("title", "#title"));
+  let host = FakeDomHost::default();
+  runtime.set_browser_dom_host(Box::new(host.clone()));
+
+  runtime
+    .run_string("@browser := browser://dom/\ntitle@browser := \"Hello\"")
+    .unwrap();
+
+  assert_eq!(host.write_count(), 0);
+}
+
+#[test]
+fn runtime_browser_resource_binding_applies_before_following_write() {
+  let mut runtime = runtime();
+  runtime.set_browser_authority(read_write_authority("body/header/title", "#title"));
+  let host = FakeDomHost::default();
+  runtime.set_browser_dom_host(Box::new(host.clone()));
+
+  runtime
+    .run_string("@browser := browser://dom/\nbody/header/title@browser = \"Hello\"")
+    .unwrap();
+
+  assert_eq!(
+    runtime.resolve_resource_path("browser", "body/header/title").unwrap().as_str(),
+    "body/header/title"
+  );
+  assert_eq!(host.write_count(), 1);
+}
+
+#[test]
+fn program_browser_resource_write_accepts_string_variable() {
+  let mut runtime = runtime();
+  runtime.set_browser_authority(read_write_authority("body/header/title", "#title"));
+  let host = FakeDomHost::default();
+  runtime.set_browser_dom_host(Box::new(host.clone()));
+
+  runtime
+    .run_string(
+      "@browser := browser://dom/\nsome-string-var := \"Hello\"\nbody/header/title@browser = some-string-var",
+    )
+    .unwrap();
+
+  assert_eq!(host.writes(), vec![("body/header/title".to_string(), "Hello".to_string())]);
 }

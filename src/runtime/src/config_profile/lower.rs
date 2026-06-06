@@ -299,6 +299,12 @@ impl ConfigLowerer {
                 ));
             }
             let property = if matches!(mode.as_deref(), Some("subtree")) {
+                if property.is_some() {
+                    return invalid(format!("{where_}.property is not allowed when mode is `subtree`"));
+                }
+                if attribute.is_some() {
+                    return invalid(format!("{where_}.attribute is not allowed when mode is `subtree`"));
+                }
                 BrowserDomProperty::Text
             } else {
                 BrowserDomProperty::parse_manifest(

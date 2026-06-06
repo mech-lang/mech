@@ -115,124 +115,224 @@ fn runtime_context_allows_write(
 }
 
 
-fn split_resource_address(value: &str) -> Option<(&str, &str)> {
-  let (path, binding) = value.rsplit_once('@')?;
-  let path = path.trim();
-  let binding = binding.trim();
-  if path.is_empty() || binding.is_empty() {
-    return None;
-  }
-  if !binding
-    .bytes()
-    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
-  {
-    return None;
-  }
-  Some((path, binding))
+
+fn program_codes(
+  tree: &mech_core::Program,
+) -> impl Iterator<Item = (&mech_core::MechCode, &Option<mech_core::Comment>)> {
+  tree.body.sections.iter().flat_map(|section| {
+    section.elements.iter().flat_map(|element| match element {
+      mech_core::SectionElement::MechCode(codes) => codes
+        .iter()
+        .map(|(code, comment)| (code, comment))
+        .collect::<Vec<_>>(),
+      mech_core::SectionElement::FencedMechCode(fenced) => fenced
+        .code
+        .iter()
+        .map(|(code, comment)| (code, comment))
+        .collect::<Vec<_>>(),
+      _ => Vec::new(),
+    })
+  })
 }
 
-fn parse_mech_string_literal(value: &str) -> Option<String> {
-  let value = value.trim();
-  if !value.starts_with('"') || !value.ends_with('"') || value.len() < 2 {
-    return None;
+fn single_code_program(
+  code: mech_core::MechCode,
+  comment: Option<mech_core::Comment>,
+) -> mech_core::Program {
+  mech_core::Program {
+    title: None,
+    body: mech_core::Body {
+      sections: vec![mech_core::Section {
+        subtitle: None,
+        elements: vec![mech_core::SectionElement::MechCode(vec![(code, comment)])],
+      }],
+    },
   }
-  let inner = &value[1..value.len() - 1];
-  let mut out = String::new();
-  let mut chars = inner.chars();
-  while let Some(ch) = chars.next() {
-    if ch != '\\' {
-      out.push(ch);
-      continue;
-    }
-    match chars.next()? {
-      'n' => out.push('\n'),
-      'r' => out.push('\r'),
-      't' => out.push('\t'),
-      '\\' => out.push('\\'),
-      '"' => out.push('"'),
-      other => {
-        out.push('\\');
-        out.push(other);
-      }
-    }
-  }
-  Some(out)
 }
 
-fn mech_string_literal(value: &str) -> String {
-  let escaped = value
-    .replace('\\', "\\\\")
-    .replace('"', "\\\"")
-    .replace('\n', "\\n")
-    .replace('\r', "\\r")
-    .replace('\t', "\\t");
-  format!("\"{escaped}\"")
+fn bind_runtime_value_on_program(
+  program: &mut MechProgram,
+  var: &mech_core::Var,
+  value: Value,
+  mutable: bool,
+) -> MResult<()> {
+  let (id, name) = match &var.context {
+    Some(context) => {
+      let name = format!("{}@{}", var.name.to_string(), context.to_string());
+      (hash_str(&name), name)
+    }
+    None => (var.name.hash(), var.name.to_string()),
+  };
+  let symbols = program.interpreter_mut().symbols();
+  let mut symbols = symbols.borrow_mut();
+  symbols.insert(id, value, mutable);
+  symbols.dictionary.borrow_mut().insert(id, name);
+  Ok(())
 }
+
+fn resolve_runtime_value(value: Value) -> Value {
+  match value {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  }
+}
+
 
 impl MechRuntime {
 
-
-  fn lower_browser_resource_source(&mut self, source: &str) -> MResult<String> {
-    let mut lowered = Vec::new();
-    for line in source.lines() {
-      let trimmed = line.trim();
-      if trimmed.is_empty() {
-        lowered.push(line.to_string());
+  fn bind_browser_resource_roots_from_program(
+    &mut self,
+    tree: &mech_core::Program,
+  ) -> MResult<()> {
+    for (code, _) in program_codes(tree) {
+      let mech_core::MechCode::Statement(mech_core::Statement::ContextDeclaration(ctx)) = code else {
         continue;
+      };
+      let mech_core::ContextBase::ResourceUri(uri) = &ctx.base else {
+        continue;
+      };
+      let uri = uri.to_string();
+      if uri.starts_with("browser://dom/") {
+        self.bind_resource_root(ctx.name.to_string(), uri)?;
       }
-
-      if let Some(rest) = trimmed.strip_prefix('@') {
-        if let Some((name, uri)) = rest.split_once(":=") {
-          let name = name.trim();
-          let uri = uri.trim();
-          if uri.starts_with("browser://dom/") {
-            self.bind_resource_root(name, uri)?;
-            continue;
-          }
-        }
-      }
-
-      if let Some((target, rhs)) = trimmed.split_once(" = ") {
-        if !target.contains(":=") {
-          if let Some((path, binding)) = split_resource_address(target) {
-            let Some(value) = parse_mech_string_literal(rhs) else {
-              return Err(browser_runtime_resource_error(
-                target,
-                "browser DOM resource writes currently require a string literal value",
-              ));
-            };
-            self.write_browser_dom_resource(binding, path, &Value::String(Ref::new(value)))?;
-            continue;
-          }
-        }
-      }
-
-      if let Some((lhs, rhs)) = trimmed.split_once(":=") {
-        if let Some((path, binding)) = split_resource_address(rhs) {
-          if self.resource_bindings.contains_key(binding) {
-            let value = self.read_browser_dom_resource(binding, path)?;
-            let Value::String(value) = value else {
-              return Err(browser_runtime_resource_error(
-                rhs,
-                "browser DOM resource reads must return strings",
-              ));
-            };
-            lowered.push(format!("{} := {}", lhs.trim(), mech_string_literal(&value.borrow())));
-            continue;
-          }
-        }
-      }
-
-      lowered.push(line.to_string());
     }
-    Ok(lowered.join("\n"))
+    Ok(())
+  }
+
+  fn run_tree_on_program(
+    &mut self,
+    _context: &mut RuntimeContext,
+    program: &mut MechProgram,
+    tree: &mech_core::Program,
+  ) -> MResult<Value> {
+    if !self.program_has_browser_resource_forms(tree) {
+      return program.run_tree(tree);
+    }
+
+    let mut result = Value::Empty;
+    for (code, comment) in program_codes(tree) {
+      match code {
+        mech_core::MechCode::Statement(mech_core::Statement::ContextDeclaration(ctx))
+          if self.is_browser_dom_context_declaration(ctx) =>
+        {
+          result = Value::Empty;
+        }
+        mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def))
+          if self.variable_define_reads_browser_resource(var_def) =>
+        {
+          result = self.read_browser_resource_variable_define(program, var_def)?;
+        }
+        mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def))
+          if self.variable_define_targets_browser_binding(var_def) =>
+        {
+          let value = self.evaluate_expression_on_program(program, &var_def.expression)?;
+          bind_runtime_value_on_program(program, &var_def.var, resolve_runtime_value(value.clone()), var_def.mutable)?;
+          result = value;
+        }
+        mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign))
+          if self.assignment_targets_browser_resource(assign) =>
+        {
+          let value = self.evaluate_expression_on_program(program, &assign.expression)?;
+          let binding = assign.target.context.as_ref().expect("checked browser binding").to_string();
+          self.write_browser_dom_resource(
+            &binding,
+            &assign.target.name.to_string(),
+            &resolve_runtime_value(value.clone()),
+          )?;
+          result = value;
+        }
+        _ => {
+          let single = single_code_program(code.clone(), comment.clone());
+          result = program.run_tree(&single)?;
+        }
+      }
+    }
+    Ok(result)
+  }
+
+  fn program_has_browser_resource_forms(&self, tree: &mech_core::Program) -> bool {
+    program_codes(tree).any(|(code, _)| match code {
+      mech_core::MechCode::Statement(mech_core::Statement::ContextDeclaration(ctx)) => {
+        self.is_browser_dom_context_declaration(ctx)
+      }
+      mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)) => {
+        self.variable_define_reads_browser_resource(var_def)
+          || self.variable_define_targets_browser_binding(var_def)
+      }
+      mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)) => {
+        self.assignment_targets_browser_resource(assign)
+      }
+      _ => false,
+    })
+  }
+
+  fn is_browser_dom_context_declaration(&self, ctx: &mech_core::ContextDeclaration) -> bool {
+    match &ctx.base {
+      mech_core::ContextBase::ResourceUri(uri) => uri.to_string().starts_with("browser://dom/"),
+      _ => false,
+    }
+  }
+
+  fn is_browser_dom_resource_binding(&self, binding: &str) -> bool {
+    self
+      .resource_bindings
+      .get(binding)
+      .is_some_and(|binding| binding.provider == BROWSER_DOM_PROVIDER_URI)
+  }
+
+  fn variable_define_reads_browser_resource(&self, var_def: &mech_core::VariableDefine) -> bool {
+    let mech_core::Expression::Var(var) = &var_def.expression else {
+      return false;
+    };
+    var
+      .context
+      .as_ref()
+      .is_some_and(|context| self.is_browser_dom_resource_binding(&context.to_string()))
+  }
+
+  fn variable_define_targets_browser_binding(&self, var_def: &mech_core::VariableDefine) -> bool {
+    var_def
+      .var
+      .context
+      .as_ref()
+      .is_some_and(|context| self.is_browser_dom_resource_binding(&context.to_string()))
+  }
+
+  fn assignment_targets_browser_resource(&self, assign: &mech_core::VariableAssign) -> bool {
+    assign
+      .target
+      .context
+      .as_ref()
+      .is_some_and(|context| self.is_browser_dom_resource_binding(&context.to_string()))
+  }
+
+  fn read_browser_resource_variable_define(
+    &mut self,
+    program: &mut MechProgram,
+    var_def: &mech_core::VariableDefine,
+  ) -> MResult<Value> {
+    let mech_core::Expression::Var(var) = &var_def.expression else {
+      unreachable!("checked resource variable read")
+    };
+    let binding = var.context.as_ref().expect("checked browser binding").to_string();
+    let value = self.read_browser_dom_resource(&binding, &var.name.to_string())?;
+    bind_runtime_value_on_program(program, &var_def.var, value.clone(), var_def.mutable)?;
+    Ok(value)
+  }
+
+  fn evaluate_expression_on_program(
+    &mut self,
+    program: &mut MechProgram,
+    expression: &mech_core::Expression,
+  ) -> MResult<Value> {
+    let single = single_code_program(mech_core::MechCode::Expression(expression.clone()), None);
+    program.run_tree(&single).map(resolve_runtime_value)
   }
 
   pub fn run_string(&mut self, source: &str) -> MResult<Value> {
     let mut context = self.runtime_context()?;
     self.run_string_with_context(&mut context, source)
   }
-
   pub fn run_string_with_context(
     &mut self,
     context: &mut RuntimeContext,
@@ -248,7 +348,8 @@ impl MechRuntime {
       },
     )?;
 
-    let source = self.lower_browser_resource_source(source)?;
+    let tree = mech_syntax::parser::parse(source.trim())?;
+    self.bind_browser_resource_roots_from_program(&tree)?;
 
     let program_config = self.program.config.clone();
     let mut program = std::mem::replace(
@@ -271,7 +372,7 @@ impl MechRuntime {
       }))
     });
 
-    let result = program.run_string(&source);
+    let result = self.run_tree_on_program(context, &mut program, &tree);
 
     ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
       slot.replace(previous_target);
@@ -323,6 +424,8 @@ impl MechRuntime {
       },
     )?;
 
+    self.bind_browser_resource_roots_from_program(tree)?;
+
     let program_config = self.program.config.clone();
     let mut program = std::mem::replace(
       &mut self.program,
@@ -344,7 +447,7 @@ impl MechRuntime {
       }))
     });
 
-    let result = program.run_tree(tree);
+    let result = self.run_tree_on_program(context, &mut program, tree);
 
     ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
       slot.replace(previous_target);

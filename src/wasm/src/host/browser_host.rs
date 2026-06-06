@@ -171,6 +171,9 @@ fn resolve_dom_element(
       if segment.starts_with('_') {
         break;
       }
+      // Safe because BrowserDomPath validation restricts path segments to
+      // ASCII alphanumeric, `_`, and `-`, and wildcard traversal never accepts
+      // raw CSS selectors from Mech code.
       let selector = format!(r#"[data-mech-node="{}"]"#, segment);
       element = element
         .query_selector(&selector)
