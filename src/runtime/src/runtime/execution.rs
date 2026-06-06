@@ -251,7 +251,7 @@ impl MechRuntime {
           let expression = self.lower_browser_resource_reads_in_expression(&assign.expression)?;
           let value = self.evaluate_expression_on_program(program, &expression)?;
           let binding = assign.target.context.as_ref().expect("checked browser binding").to_string();
-          self.write_browser_dom_resource(
+          self.write_bound_resource(
             &binding,
             &assign.target.name.to_string(),
             &resolve_runtime_value(value.clone()),
@@ -312,7 +312,7 @@ impl MechRuntime {
     self
       .resource_bindings
       .get(binding)
-      .is_some_and(|binding| binding.provider == BROWSER_DOM_PROVIDER_URI)
+      .is_some_and(|binding| binding.base_uri == BROWSER_DOM_PROVIDER_URI)
   }
 
   fn variable_define_targets_browser_binding(&self, var_def: &mech_core::VariableDefine) -> bool {
@@ -497,7 +497,7 @@ impl MechRuntime {
           return Ok(expression.clone());
         }
         let value = resolve_runtime_value(
-          self.read_browser_dom_resource(&binding, &var.name.to_string())?,
+          self.read_bound_resource(&binding, &var.name.to_string())?,
         );
         let Value::String(value) = value else {
           return Err(browser_runtime_resource_error(
