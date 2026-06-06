@@ -5,7 +5,14 @@ pub mod host;
 use wasm_bindgen::prelude::*;
 use mech_core::*;
 use mech_syntax::*;
-use mech_runtime::{MechRuntime, RuntimeConfig};
+use mech_runtime::{
+  ConfigProfileOptions, MechConfigDocument, MechRuntime, RuntimeConfig,
+  parse_config_document,
+};
+use crate::host::{
+  BrowserCapabilityRequest, BrowserDomScope, BrowserHost, BrowserHostError,
+  BrowserNetworkScope, BrowserOperation, BrowserStorageBackend, BrowserStorageScope,
+};
 use wasm_bindgen::JsCast;
 use web_sys::{window, HtmlElement, HtmlInputElement, Node, Element, HashChangeEvent, HtmlTextAreaElement, Url};
 use js_sys::decode_uri_component;
@@ -69,22 +76,38 @@ pub fn main() -> Result<(), JsValue> {
 }
 
 
-fn configure_browser_host(runtime: &mut MechRuntime) -> MResult<()> {
-  let _ = runtime;
-  Ok(())
+fn browser_host_from_config(document: Option<&MechConfigDocument>) -> BrowserHost {
+  match document {
+    Some(document) => BrowserHost::new(document.browser.clone()),
+    None => BrowserHost::deny_by_default(),
+  }
 }
 
-fn new_wasm_runtime() -> MechRuntime {
-  let mut runtime = MechRuntime::new(RuntimeConfig::default())
-    .expect("failed to initialize MechRuntime for wasm");
-  configure_browser_host(&mut runtime)
-    .expect("failed to configure browser host for wasm");
-  runtime
+fn runtime_from_config_document(document: Option<&MechConfigDocument>) -> MechRuntime {
+  let config = match document {
+    Some(document) => RuntimeConfig::default()
+      .apply_patch(&document.runtime)
+      .expect("failed to apply wasm runtime config"),
+    None => RuntimeConfig::default(),
+  };
+
+  MechRuntime::new(config)
+    .expect("failed to initialize MechRuntime for wasm")
+}
+
+fn wasm_parts_from_config_document(
+  document: Option<&MechConfigDocument>,
+) -> (MechRuntime, BrowserHost) {
+  (
+    runtime_from_config_document(document),
+    browser_host_from_config(document),
+  )
 }
 
 #[wasm_bindgen]
 pub struct WasmMech {
   runtime: MechRuntime,
+  browser_host: BrowserHost,
   repl_history: Vec<String>,
   repl_history_index: Option<usize>,
   repl_id: Option<String>,
@@ -98,9 +121,38 @@ impl WasmMech {
     Self::with_default_runtime()
   }
 
+  #[wasm_bindgen(js_name = "fromConfig")]
+  pub fn from_config(source: &str) -> Result<WasmMech, JsValue> {
+    Self::try_from_config("wasm://mech.mcfg", source)
+      .map_err(|error| JsValue::from_str(&format!("{error:?}")))
+  }
+
+  fn try_from_config(
+    source_name: &str,
+    source: &str,
+  ) -> MResult<Self> {
+    let document = parse_config_document(
+      source_name,
+      source,
+      ConfigProfileOptions::default(),
+    )?;
+    let (runtime, browser_host) = wasm_parts_from_config_document(Some(&document));
+
+    Ok(Self {
+      runtime,
+      browser_host,
+      repl_history: Vec::new(),
+      repl_history_index: None,
+      repl_id: None,
+    })
+  }
+
   fn with_default_runtime() -> Self {
+    let (runtime, browser_host) = wasm_parts_from_config_document(None);
+
     Self {
-      runtime: new_wasm_runtime(),
+      runtime,
+      browser_host,
       repl_history: Vec::new(),
       repl_history_index: None,
       repl_id: None,
@@ -114,7 +166,121 @@ impl WasmMech {
 
   #[wasm_bindgen]
   pub fn clear(&mut self) {
-    self.runtime = new_wasm_runtime();
+    self.runtime = MechRuntime::new(self.runtime.config().clone())
+      .expect("failed to reset MechRuntime for wasm");
+  }
+
+  #[wasm_bindgen(js_name = "canReadClipboard")]
+  pub fn can_read_clipboard(&self) -> bool {
+    self.browser_host
+      .check(BrowserCapabilityRequest::Clipboard {
+        operation: BrowserOperation::Read,
+      })
+      .is_ok()
+  }
+
+  #[wasm_bindgen(js_name = "canWriteClipboard")]
+  pub fn can_write_clipboard(&self) -> bool {
+    self.browser_host
+      .check(BrowserCapabilityRequest::Clipboard {
+        operation: BrowserOperation::Write,
+      })
+      .is_ok()
+  }
+
+  #[wasm_bindgen(js_name = "canReadDom")]
+  pub fn can_read_dom(&self, selector: &str) -> bool {
+    self.check_dom(selector, BrowserOperation::Read).is_ok()
+  }
+
+  #[wasm_bindgen(js_name = "canWriteDom")]
+  pub fn can_write_dom(&self, selector: &str) -> bool {
+    self.check_dom(selector, BrowserOperation::Write).is_ok()
+  }
+
+  #[wasm_bindgen(js_name = "canReadNetwork")]
+  pub fn can_read_network(&self, origin: &str, method: Option<String>) -> bool {
+    self.check_network(origin, method.as_deref(), BrowserOperation::Read)
+      .is_ok()
+  }
+
+  #[wasm_bindgen(js_name = "canReadStorage")]
+  pub fn can_read_storage(&self, backend: &str, scope: &str) -> bool {
+    self.check_storage(backend, scope, BrowserOperation::Read).is_ok()
+  }
+
+  #[wasm_bindgen(js_name = "canWriteStorage")]
+  pub fn can_write_storage(&self, backend: &str, scope: &str) -> bool {
+    self.check_storage(backend, scope, BrowserOperation::Write).is_ok()
+  }
+
+  #[wasm_bindgen(js_name = "canListStorage")]
+  pub fn can_list_storage(&self, backend: &str, scope: &str) -> bool {
+    self.check_storage(backend, scope, BrowserOperation::List).is_ok()
+  }
+
+  #[wasm_bindgen(js_name = "browserGrantCount")]
+  pub fn browser_grant_count(&self) -> usize {
+    self.browser_host.authority().grants().len()
+  }
+
+  fn check_dom(
+    &self,
+    selector: &str,
+    operation: BrowserOperation,
+  ) -> Result<(), BrowserHostError> {
+    BrowserDomScope::new(selector.to_string())
+      .map_err(|error| BrowserHostError::BrowserDeniedOrUnavailable {
+        reason: error.to_string(),
+      })?;
+    self.browser_host.check(BrowserCapabilityRequest::Dom {
+      selector: selector.to_string(),
+      operation,
+    })
+  }
+
+  fn check_network(
+    &self,
+    origin: &str,
+    method: Option<&str>,
+    operation: BrowserOperation,
+  ) -> Result<(), BrowserHostError> {
+    let methods = method.map(|method| vec![method.to_string()]);
+    BrowserNetworkScope::new(origin.to_string(), methods)
+      .map_err(|error| BrowserHostError::BrowserDeniedOrUnavailable {
+        reason: error.to_string(),
+      })?;
+    self.browser_host.check(BrowserCapabilityRequest::Network {
+      origin: origin.to_string(),
+      method: method.map(str::to_string),
+      operation,
+    })
+  }
+
+  fn check_storage(
+    &self,
+    backend: &str,
+    scope: &str,
+    operation: BrowserOperation,
+  ) -> Result<(), BrowserHostError> {
+    let parsed_backend = BrowserStorageBackend::parse(backend)
+      .ok_or_else(|| BrowserHostError::BrowserDeniedOrUnavailable {
+        reason: format!("unknown storage backend `{backend}`"),
+      })?;
+    BrowserStorageScope::new(parsed_backend, scope.to_string())
+      .map_err(|error| BrowserHostError::BrowserDeniedOrUnavailable {
+        reason: error.to_string(),
+      })?;
+    self.browser_host.check(BrowserCapabilityRequest::Storage {
+      backend: parsed_backend,
+      scope: scope.to_string(),
+      operation,
+    })
+  }
+
+  #[cfg(test)]
+  fn runtime_config_for_test(&self) -> &RuntimeConfig {
+    self.runtime.config()
   }
 
 #[cfg(feature = "repl")]
@@ -1157,5 +1323,63 @@ async fn fetch_docs(doc: &str) -> String {
   } else {
     web_sys::console::log_1(&format!("Invalid doc format: {}", doc).into());
     "".to_string()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  const CLIPBOARD_WRITE_CONFIG: &str = r#"config := {
+  browser: {
+    clipboard: [
+      {allow: ["write"]}
+    ]
+  }
+}
+"#;
+
+  #[test]
+  fn wasm_mech_default_browser_host_is_deny_by_default() {
+    let mech = WasmMech::new();
+
+    assert_eq!(mech.browser_grant_count(), 0);
+    assert!(!mech.can_read_clipboard());
+  }
+
+  #[test]
+  fn wasm_mech_from_config_loads_browser_grants() {
+    let mech = WasmMech::try_from_config("test.mcfg", CLIPBOARD_WRITE_CONFIG).unwrap();
+
+    assert!(mech.browser_grant_count() > 0);
+    assert!(mech.can_write_clipboard());
+    assert!(!mech.can_read_clipboard());
+  }
+
+  #[test]
+  fn wasm_mech_from_config_applies_runtime_config() {
+    let source = r#"config := {
+  runtime: {
+    name: "wasm-test-runtime"
+    limits: {
+      max-steps-per-turn: 123
+    }
+  }
+}
+"#;
+    let mech = WasmMech::try_from_config("test.mcfg", source).unwrap();
+    let config = mech.runtime_config_for_test();
+
+    assert_eq!(config.name, "wasm-test-runtime");
+    assert_eq!(config.limits.max_steps_per_turn, Some(123));
+  }
+
+  #[test]
+  fn wasm_mech_clear_preserves_browser_host() {
+    let mut mech = WasmMech::try_from_config("test.mcfg", CLIPBOARD_WRITE_CONFIG).unwrap();
+
+    mech.clear();
+
+    assert!(mech.can_write_clipboard());
   }
 }

@@ -69,6 +69,71 @@ impl RuntimeConfig {
     self.limits.validate()?;
     Ok(())
   }
+
+  pub fn apply_patch(
+    mut self,
+    patch: &crate::RuntimeConfigPatch,
+  ) -> MResult<Self> {
+    if let Some(name) = &patch.name {
+      self.name = name.clone();
+    }
+
+    if let Some(value) = patch.limits.max_steps_per_turn {
+      self.limits.max_steps_per_turn = Some(value);
+    }
+    if let Some(value) = patch.limits.max_turn_duration_ms {
+      self.limits.max_turn_duration_ms = Some(value);
+    }
+    if let Some(value) = patch.limits.max_memory_bytes {
+      self.limits.max_memory_bytes = Some(value);
+    }
+    if let Some(value) = patch.limits.max_tasks {
+      self.limits.max_tasks = Some(value);
+    }
+    if let Some(value) = patch.limits.max_actors {
+      self.limits.max_actors = Some(value);
+    }
+    if let Some(value) = patch.limits.max_actor_mailbox_len {
+      self.limits.max_actor_mailbox_len = Some(value);
+    }
+    if let Some(value) = patch.limits.max_source_bytes {
+      self.limits.max_source_bytes = Some(value);
+    }
+    if let Some(value) = patch.limits.max_in_memory_events {
+      self.limits.max_in_memory_events = Some(value);
+    }
+
+    if let Some(value) = patch.diagnostics.trace_enabled {
+      self.diagnostics.trace_enabled = value;
+    }
+    if let Some(value) = patch.diagnostics.profile_enabled {
+      self.diagnostics.profile_enabled = value;
+    }
+    if let Some(value) = patch.diagnostics.debug_enabled {
+      self.diagnostics.debug_enabled = value;
+    }
+    if let Some(value) = &patch.diagnostics.log_level {
+      self.diagnostics.log_level = match value.as_str() {
+        "error" => LogLevel::Error,
+        "warn" => LogLevel::Warn,
+        "info" => LogLevel::Info,
+        "debug" => LogLevel::Debug,
+        "trace" => LogLevel::Trace,
+        other => {
+          return Err(MechError::new(
+            InvalidRuntimeConfigValue {
+              field: "runtime.diagnostics.log-level",
+              reason: format!("unknown log level `{other}`"),
+            },
+            None,
+          ));
+        }
+      };
+    }
+
+    self.validate()?;
+    Ok(self)
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -188,6 +253,22 @@ impl Default for DiagnosticsConfig {
       debug_enabled: false,
       log_level: LogLevel::Info,
     }
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct InvalidRuntimeConfigValue {
+  pub field: &'static str,
+  pub reason: String,
+}
+
+impl MechErrorKind for InvalidRuntimeConfigValue {
+  fn name(&self) -> &str {
+    "InvalidRuntimeConfigValue"
+  }
+
+  fn message(&self) -> String {
+    format!("Invalid runtime config field `{}`: {}", self.field, self.reason)
   }
 }
 
