@@ -1,0 +1,5 @@
+@browser := browser://dom/
+
+body/content/mech-sandbox/title@browser = "Hello from Mech"
+body/content/mech-sandbox/status/_class@browser = "ready"
+input-value := body/content/mech-sandbox/input/_value@browser

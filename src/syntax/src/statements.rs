@@ -238,18 +238,21 @@ pub fn export_declaration(input: ParseString) -> ParseResult<ExportDeclaration> 
   Ok((input, ExportDeclaration { name }))
 }
 
-// context-declaration := "@", identifier, define-operator, context-base, "{", list1(list-separator, context-capability-declaration), list-separator?, "}" ;
+// context-declaration := "@", identifier, define-operator, context-base, ("{", list1(list-separator, context-capability-declaration), list-separator?, "}")? ;
 pub fn context_declaration(input: ParseString) -> ParseResult<ContextDeclaration> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = at(input)?;
   let (input, name) = identifier(input)?;
   let (input, _) = define_operator(input)?;
   let (input, base) = alt((context_base_resource_uri, context_base_context))(input)?;
-  let (input, _) = left_brace(input)?;
-  let (input, capabilities) = separated_list1(list_separator, context_capability_declaration)(input)?;
-  let (input, _) = opt(list_separator)(input)?;
-  let (input, _) = right_brace(input)?;
-  Ok((input, ContextDeclaration { name, base, capabilities }))
+  let (input, capabilities) = opt(|input| {
+    let (input, _) = left_brace(input)?;
+    let (input, capabilities) = separated_list1(list_separator, context_capability_declaration)(input)?;
+    let (input, _) = opt(list_separator)(input)?;
+    let (input, _) = right_brace(input)?;
+    Ok((input, capabilities))
+  })(input)?;
+  Ok((input, ContextDeclaration { name, base, capabilities: capabilities.unwrap_or_default() }))
 }
 
 // context-base-context := "@", identifier ;

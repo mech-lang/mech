@@ -1,0 +1,12 @@
+config := {
+  browser: {
+    dom: [
+      {
+        path: "body/content/mech-sandbox/*"
+        selector: "#mech-sandbox"
+        mode: "subtree"
+        allow: ["read", "write"]
+      }
+    ]
+  }
+}

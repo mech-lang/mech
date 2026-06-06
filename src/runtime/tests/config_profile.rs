@@ -487,3 +487,95 @@ fn config_profile_browser_storage_recursive_scope_is_explicit() {
         Err(BrowserCapabilityError::NoMatchingGrant { .. })
     ));
 }
+
+#[test]
+fn config_profile_browser_dom_path_manifest_lowers() {
+    let doc = parse(r##"config := {browser: {dom: [{path: "body/header/title", selector: "#title", property: "text", allow: ["read", "write"]}]}}"##).unwrap();
+    let entry = &doc.browser.dom_manifest()[0];
+    assert_eq!(entry.path.as_str(), "body/header/title");
+    assert_eq!(entry.selector.selector, "#title");
+    assert_eq!(entry.property, BrowserDomProperty::Text);
+}
+
+#[test]
+fn config_profile_browser_dom_path_infers_text_property() {
+    let doc = parse(r##"config := {browser: {dom: [{path: "body/header/title", selector: "#title", allow: ["read"]}]}}"##).unwrap();
+    assert_eq!(doc.browser.dom_manifest()[0].property, BrowserDomProperty::Text);
+}
+
+#[test]
+fn config_profile_browser_dom_attribute_path_infers_attribute() {
+    let doc = parse(r##"config := {browser: {dom: [{path: "body/status/_class", selector: "#status", allow: ["read"]}]}}"##).unwrap();
+    assert_eq!(doc.browser.dom_manifest()[0].property, BrowserDomProperty::Attribute("class".to_string()));
+}
+
+#[test]
+fn config_profile_browser_dom_attribute_property_requires_attribute() {
+    let msg = err_text(r##"config := {browser: {dom: [{path: "body/status", selector: "#status", property: "attribute", allow: ["read"]}]}}"##);
+    assert!(msg.contains("requires an `attribute` name"), "{msg}");
+}
+
+#[test]
+fn config_profile_browser_dom_subtree_requires_wildcard_path() {
+    let msg = err_text(r##"config := {browser: {dom: [{path: "body/content", selector: "#content", mode: "subtree", allow: ["read"]}]}}"##);
+    assert!(msg.contains("must end in `/*`"), "{msg}");
+}
+
+#[test]
+fn config_profile_browser_dom_wildcard_path_requires_final_star() {
+    let msg = err_text(r##"config := {browser: {dom: [{path: "body/*/title", selector: "#content", allow: ["read"]}]}}"##);
+    assert!(msg.contains("wildcard `*` must be its own final segment") || msg.contains("only allowed as the final segment"), "{msg}");
+}
+
+#[test]
+fn config_profile_browser_dom_duplicate_path_last_wins() {
+    let doc = parse(r##"config := {browser: {dom: [
+      {path: "body/title", selector: "#old", allow: ["read"]}
+      {path: "body/title", selector: "#new", allow: ["read"]}
+    ]}}"##).unwrap();
+    assert_eq!(doc.browser.dom_manifest().len(), 1);
+    assert_eq!(doc.browser.dom_manifest()[0].selector.selector, "#new");
+}
+
+#[test]
+fn config_profile_browser_dom_text_property_rejects_attribute() {
+    let msg = err_text(r##"config := {browser: {dom: [{path: "body/status", selector: "#status", property: "text", attribute: "class", allow: ["read"]}]}}"##);
+    assert!(msg.contains("cannot include `attribute`"), "{msg}");
+}
+
+#[test]
+fn config_profile_browser_dom_attribute_without_property_rejected() {
+    let msg = err_text(r##"config := {browser: {dom: [{path: "body/status/_class", selector: "#status", attribute: "class", allow: ["read"]}]}}"##);
+    assert!(msg.contains("`attribute` is only valid when `property` is `attribute`"), "{msg}");
+}
+
+#[test]
+fn config_profile_browser_dom_value_path_infers_value() {
+    let doc = parse(r##"config := {browser: {dom: [{path: "body/search/_value", selector: "#search", allow: ["read"]}]}}"##).unwrap();
+    assert_eq!(doc.browser.dom_manifest()[0].property, BrowserDomProperty::Value);
+}
+
+#[test]
+fn config_profile_browser_dom_html_path_infers_inner_html() {
+    let doc = parse(r##"config := {browser: {dom: [{path: "body/content/_html", selector: "#content", allow: ["read"]}]}}"##).unwrap();
+    assert_eq!(doc.browser.dom_manifest()[0].property, BrowserDomProperty::InnerHtml);
+}
+
+#[test]
+fn config_profile_browser_dom_subtree_rejects_property() {
+    let msg = err_text(r##"config := {browser: {dom: [{path: "body/content/*", selector: "#content", mode: "subtree", property: "text", allow: ["read"]}]}}"##);
+    assert!(msg.contains("property is not allowed"), "{msg}");
+}
+
+#[test]
+fn config_profile_browser_dom_subtree_rejects_attribute() {
+    let msg = err_text(r##"config := {browser: {dom: [{path: "body/content/*", selector: "#content", mode: "subtree", attribute: "class", allow: ["read"]}]}}"##);
+    assert!(msg.contains("attribute is not allowed"), "{msg}");
+}
+
+#[test]
+fn config_profile_browser_dom_subtree_with_wildcard_path_accepted() {
+    let doc = parse(r##"config := {browser: {dom: [{path: "body/content/*", selector: "#content", mode: "subtree", allow: ["read"]}]}}"##).unwrap();
+    assert_eq!(doc.browser.dom_manifest()[0].path.as_str(), "body/content/*");
+    assert_eq!(doc.browser.dom_manifest()[0].property, BrowserDomProperty::Text);
+}
