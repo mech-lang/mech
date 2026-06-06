@@ -64,8 +64,12 @@ fn runtime() -> MechRuntime {
   MechRuntime::new(RuntimeConfig::default()).unwrap()
 }
 
-fn authority(path: &str, selector: &str, allow: &[BrowserOperation]) -> BrowserAuthority {
-  let mut authority = BrowserAuthority::default();
+fn bind_authority_path(
+  authority: &mut BrowserAuthority,
+  path: &str,
+  selector: &str,
+  allow: &[BrowserOperation],
+) {
   let scope = BrowserDomScope::new(selector).unwrap();
   authority.grant(BrowserCapabilityGrant::new(
     BrowserResource::Dom(scope.clone()),
@@ -76,6 +80,11 @@ fn authority(path: &str, selector: &str, allow: &[BrowserOperation]) -> BrowserA
     scope,
     BrowserDomProperty::Text,
   ));
+}
+
+fn authority(path: &str, selector: &str, allow: &[BrowserOperation]) -> BrowserAuthority {
+  let mut authority = BrowserAuthority::default();
+  bind_authority_path(&mut authority, path, selector, allow);
   authority
 }
 
@@ -244,4 +253,105 @@ fn program_browser_resource_write_accepts_string_variable() {
     .unwrap();
 
   assert_eq!(host.writes(), vec![("body/header/title".to_string(), "Hello".to_string())]);
+}
+
+#[test]
+fn program_browser_resource_read_inside_expression() {
+  let mut runtime = runtime();
+  runtime.set_browser_authority(read_write_authority("body/search/_value", "#search"));
+  let host = FakeDomHost::default().with_value("body/search/_value", "query");
+  runtime.set_browser_dom_host(Box::new(host.clone()));
+
+  let value = runtime
+    .run_string(r#"@browser := browser://dom/
+message := "Search: " + body/search/_value@browser"#)
+    .unwrap();
+
+  assert_eq!(value.as_string().unwrap().borrow().as_str(), "Search: query");
+  assert_eq!(host.read_count(), 1);
+}
+
+#[test]
+fn program_browser_resource_write_rhs_reads_browser_resource() {
+  let mut authority = BrowserAuthority::default();
+  bind_authority_path(
+    &mut authority,
+    "body/search/_value",
+    "#search",
+    &[BrowserOperation::Read],
+  );
+  bind_authority_path(
+    &mut authority,
+    "body/header/title",
+    "#title",
+    &[BrowserOperation::Write],
+  );
+  let mut runtime = runtime();
+  runtime.set_browser_authority(authority);
+  let host = FakeDomHost::default().with_value("body/search/_value", "query");
+  runtime.set_browser_dom_host(Box::new(host.clone()));
+
+  runtime
+    .run_string(
+      "@browser := browser://dom/
+body/header/title@browser = body/search/_value@browser",
+    )
+    .unwrap();
+
+  assert_eq!(host.read_count(), 1);
+  assert_eq!(
+    host.writes(),
+    vec![("body/header/title".to_string(), "query".to_string())]
+  );
+}
+
+#[test]
+fn program_browser_resource_write_rhs_combines_string_and_resource() {
+  let mut authority = BrowserAuthority::default();
+  bind_authority_path(
+    &mut authority,
+    "body/search/_value",
+    "#search",
+    &[BrowserOperation::Read],
+  );
+  bind_authority_path(
+    &mut authority,
+    "body/header/title",
+    "#title",
+    &[BrowserOperation::Write],
+  );
+  let mut runtime = runtime();
+  runtime.set_browser_authority(authority);
+  let host = FakeDomHost::default().with_value("body/search/_value", "query");
+  runtime.set_browser_dom_host(Box::new(host.clone()));
+
+  runtime
+    .run_string(r#"@browser := browser://dom/
+body/header/title@browser = "Search: " + body/search/_value@browser"#)
+    .unwrap();
+
+  assert_eq!(host.read_count(), 1);
+  assert_eq!(
+    host.writes(),
+    vec![("body/header/title".to_string(), "Search: query".to_string())]
+  );
+}
+
+#[test]
+fn program_browser_resource_read_inside_expression_denied_before_eval() {
+  let mut runtime = runtime();
+  runtime.set_browser_authority(authority(
+    "body/search/_value",
+    "#search",
+    &[BrowserOperation::Write],
+  ));
+  let host = FakeDomHost::default().with_value("body/search/_value", "query");
+  runtime.set_browser_dom_host(Box::new(host.clone()));
+
+  let result = runtime
+    .run_string(r#"@browser := browser://dom/
+message := "Search: " + body/search/_value@browser"#);
+
+  assert!(result.is_err());
+  assert_eq!(host.read_count(), 0);
 }
