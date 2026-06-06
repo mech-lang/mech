@@ -61,21 +61,22 @@ mod tests {
     }
 }
 
-pub struct WasmBrowserDomHost;
+#[derive(Debug)]
+pub struct WasmBrowserDomBackend;
 
-impl WasmBrowserDomHost {
+impl WasmBrowserDomBackend {
   pub fn new() -> Self {
     Self
   }
 }
 
-impl Default for WasmBrowserDomHost {
+impl Default for WasmBrowserDomBackend {
   fn default() -> Self {
     Self::new()
   }
 }
 
-impl mech_runtime::BrowserDomHost for WasmBrowserDomHost {
+impl mech_runtime::BrowserDomBackend for WasmBrowserDomBackend {
   fn read_dom_string(
     &self,
     entry: &mech_core::BrowserDomManifestEntry,

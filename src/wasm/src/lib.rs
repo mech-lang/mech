@@ -6,13 +6,13 @@ use wasm_bindgen::prelude::*;
 use mech_core::*;
 use mech_syntax::*;
 use mech_runtime::{
-  ConfigProfileOptions, MechConfigDocument, MechRuntime, RuntimeConfig,
+  BrowserResourceProvider, ConfigProfileOptions, MechConfigDocument, MechRuntime, RuntimeConfig,
   parse_config_document,
 };
 use crate::host::{
   BrowserCapabilityRequest, BrowserDomScope, BrowserHost, BrowserHostError,
   BrowserNetworkScope, BrowserOperation, BrowserStorageBackend, BrowserStorageScope,
-  WasmBrowserDomHost,
+  WasmBrowserDomBackend,
 };
 use wasm_bindgen::JsCast;
 use web_sys::{window, HtmlElement, HtmlInputElement, Node, Element, HashChangeEvent, HtmlTextAreaElement, Url};
@@ -143,11 +143,16 @@ fn runtime_from_config_document(document: Option<&MechConfigDocument>) -> MechRu
 
   let mut runtime = MechRuntime::new(config)
     .expect("failed to initialize MechRuntime for wasm");
-  match document {
-    Some(document) => runtime.set_browser_authority(document.browser.clone()),
-    None => runtime.set_browser_authority(mech_runtime::BrowserAuthority::default()),
-  }
-  runtime.set_browser_dom_host(Box::new(WasmBrowserDomHost::new()));
+  let authority = match document {
+    Some(document) => document.browser.clone(),
+    None => mech_runtime::BrowserAuthority::default(),
+  };
+  runtime
+    .register_resource_provider(Box::new(BrowserResourceProvider::new(
+      authority,
+      WasmBrowserDomBackend::new(),
+    )))
+    .expect("failed to register browser resource provider");
   runtime
     .bind_resource_root("browser", "browser://dom/")
     .expect("failed to bind default browser DOM resource root");
@@ -227,8 +232,12 @@ impl WasmMech {
   pub fn clear(&mut self) {
     let mut runtime = MechRuntime::new(self.runtime.config().clone())
       .expect("failed to reset MechRuntime for wasm");
-    runtime.set_browser_authority(self.browser_host.authority().clone());
-    runtime.set_browser_dom_host(Box::new(WasmBrowserDomHost::new()));
+    runtime
+      .register_resource_provider(Box::new(BrowserResourceProvider::new(
+        self.browser_host.authority().clone(),
+        WasmBrowserDomBackend::new(),
+      )))
+      .expect("failed to register browser resource provider");
     runtime
       .bind_resource_root("browser", "browser://dom/")
       .expect("failed to bind default browser DOM resource root");

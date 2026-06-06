@@ -5,14 +5,14 @@ use std::rc::Rc;
 use mech_core::Value;
 use mech_runtime::*;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct FakeDomState {
   values: BTreeMap<String, String>,
   reads: Vec<String>,
   writes: Vec<(String, String)>,
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 struct FakeDomHost {
   state: Rc<RefCell<FakeDomState>>,
 }
@@ -36,7 +36,7 @@ impl FakeDomHost {
   }
 }
 
-impl BrowserDomHost for FakeDomHost {
+impl BrowserDomBackend for FakeDomHost {
   fn read_dom_string(
     &self,
     _entry: &BrowserDomManifestEntry,
@@ -62,6 +62,16 @@ impl BrowserDomHost for FakeDomHost {
 
 fn runtime() -> MechRuntime {
   MechRuntime::new(RuntimeConfig::default()).unwrap()
+}
+
+fn register_browser_provider(
+  runtime: &mut MechRuntime,
+  authority: BrowserAuthority,
+  host: FakeDomHost,
+) {
+  runtime
+    .register_resource_provider(Box::new(BrowserResourceProvider::new(authority, host)))
+    .unwrap();
 }
 
 fn bind_authority_path(
@@ -113,8 +123,11 @@ fn runtime_resolves_child_path_under_narrow_root() {
 fn runtime_reads_configured_browser_dom_path() {
   let mut runtime = runtime();
   runtime.bind_resource_root("browser", "browser://dom/").unwrap();
-  runtime.set_browser_authority(authority("body/title", "#title", &[BrowserOperation::Read]));
-  runtime.set_browser_dom_host(Box::new(FakeDomHost::default().with_value("body/title", "Hello")));
+  register_browser_provider(
+    &mut runtime,
+    authority("body/title", "#title", &[BrowserOperation::Read]),
+    FakeDomHost::default().with_value("body/title", "Hello"),
+  );
   let value = runtime.read_browser_dom_resource("browser", "body/title").unwrap();
   assert_eq!(value.as_string().unwrap().borrow().as_str(), "Hello");
 }
@@ -123,8 +136,11 @@ fn runtime_reads_configured_browser_dom_path() {
 fn runtime_writes_configured_browser_dom_path() {
   let mut runtime = runtime();
   runtime.bind_resource_root("browser", "browser://dom/").unwrap();
-  runtime.set_browser_authority(authority("body/title", "#title", &[BrowserOperation::Write]));
-  runtime.set_browser_dom_host(Box::new(FakeDomHost::default()));
+  register_browser_provider(
+    &mut runtime,
+    authority("body/title", "#title", &[BrowserOperation::Write]),
+    FakeDomHost::default(),
+  );
   runtime.write_browser_dom_resource("browser", "body/title", &Value::from("Hello".to_string())).unwrap();
 }
 
@@ -132,8 +148,11 @@ fn runtime_writes_configured_browser_dom_path() {
 fn runtime_denies_browser_dom_read_without_read_grant() {
   let mut runtime = runtime();
   runtime.bind_resource_root("browser", "browser://dom/").unwrap();
-  runtime.set_browser_authority(authority("body/title", "#title", &[BrowserOperation::Write]));
-  runtime.set_browser_dom_host(Box::new(FakeDomHost::default()));
+  register_browser_provider(
+    &mut runtime,
+    authority("body/title", "#title", &[BrowserOperation::Write]),
+    FakeDomHost::default(),
+  );
   assert!(runtime.read_browser_dom_resource("browser", "body/title").is_err());
 }
 
@@ -141,8 +160,11 @@ fn runtime_denies_browser_dom_read_without_read_grant() {
 fn runtime_denies_browser_dom_write_without_write_grant() {
   let mut runtime = runtime();
   runtime.bind_resource_root("browser", "browser://dom/").unwrap();
-  runtime.set_browser_authority(authority("body/title", "#title", &[BrowserOperation::Read]));
-  runtime.set_browser_dom_host(Box::new(FakeDomHost::default()));
+  register_browser_provider(
+    &mut runtime,
+    authority("body/title", "#title", &[BrowserOperation::Read]),
+    FakeDomHost::default(),
+  );
   assert!(runtime.write_browser_dom_resource("browser", "body/title", &Value::from("Hello".to_string())).is_err());
 }
 
@@ -150,8 +172,11 @@ fn runtime_denies_browser_dom_write_without_write_grant() {
 fn runtime_rejects_unknown_browser_dom_path() {
   let mut runtime = runtime();
   runtime.bind_resource_root("browser", "browser://dom/").unwrap();
-  runtime.set_browser_authority(authority("body/title", "#title", &[BrowserOperation::Read]));
-  runtime.set_browser_dom_host(Box::new(FakeDomHost::default()));
+  register_browser_provider(
+    &mut runtime,
+    authority("body/title", "#title", &[BrowserOperation::Read]),
+    FakeDomHost::default(),
+  );
   assert!(runtime.read_browser_dom_resource("browser", "body/other").is_err());
 }
 
@@ -159,8 +184,11 @@ fn runtime_rejects_unknown_browser_dom_path() {
 fn runtime_wildcard_dom_path_allows_child() {
   let mut runtime = runtime();
   runtime.bind_resource_root("browser", "browser://dom/").unwrap();
-  runtime.set_browser_authority(authority("body/content/*", "#content", &[BrowserOperation::Read]));
-  runtime.set_browser_dom_host(Box::new(FakeDomHost::default().with_value("body/content/title", "Hello")));
+  register_browser_provider(
+    &mut runtime,
+    authority("body/content/*", "#content", &[BrowserOperation::Read]),
+    FakeDomHost::default().with_value("body/content/title", "Hello"),
+  );
   assert!(runtime.read_browser_dom_resource("browser", "body/content/title").is_ok());
 }
 
@@ -168,8 +196,11 @@ fn runtime_wildcard_dom_path_allows_child() {
 fn runtime_wildcard_dom_path_rejects_sibling() {
   let mut runtime = runtime();
   runtime.bind_resource_root("browser", "browser://dom/").unwrap();
-  runtime.set_browser_authority(authority("body/content/*", "#content", &[BrowserOperation::Read]));
-  runtime.set_browser_dom_host(Box::new(FakeDomHost::default()));
+  register_browser_provider(
+    &mut runtime,
+    authority("body/content/*", "#content", &[BrowserOperation::Read]),
+    FakeDomHost::default(),
+  );
   assert!(runtime.read_browser_dom_resource("browser", "body/sidebar/title").is_err());
 }
 
@@ -181,9 +212,12 @@ fn read_write_authority(path: &str, selector: &str) -> BrowserAuthority {
 #[test]
 fn program_browser_resource_write_uses_runtime_host() {
   let mut runtime = runtime();
-  runtime.set_browser_authority(read_write_authority("body/header/title", "#title"));
   let host = FakeDomHost::default();
-  runtime.set_browser_dom_host(Box::new(host.clone()));
+  register_browser_provider(
+    &mut runtime,
+    read_write_authority("body/header/title", "#title"),
+    host.clone(),
+  );
 
   runtime
     .run_string("@browser := browser://dom/\nbody/header/title@browser = \"Hello\"")
@@ -195,9 +229,12 @@ fn program_browser_resource_write_uses_runtime_host() {
 #[test]
 fn program_browser_resource_read_uses_runtime_host() {
   let mut runtime = runtime();
-  runtime.set_browser_authority(read_write_authority("body/search/_value", "#search"));
   let host = FakeDomHost::default().with_value("body/search/_value", "query");
-  runtime.set_browser_dom_host(Box::new(host.clone()));
+  register_browser_provider(
+    &mut runtime,
+    read_write_authority("body/search/_value", "#search"),
+    host.clone(),
+  );
 
   let value = runtime
     .run_string("@browser := browser://dom/\nx := body/search/_value@browser")
@@ -210,9 +247,12 @@ fn program_browser_resource_read_uses_runtime_host() {
 #[test]
 fn program_browser_resource_define_does_not_write() {
   let mut runtime = runtime();
-  runtime.set_browser_authority(read_write_authority("title", "#title"));
   let host = FakeDomHost::default();
-  runtime.set_browser_dom_host(Box::new(host.clone()));
+  register_browser_provider(
+    &mut runtime,
+    read_write_authority("title", "#title"),
+    host.clone(),
+  );
 
   runtime
     .run_string("@browser := browser://dom/\ntitle@browser := \"Hello\"")
@@ -224,9 +264,12 @@ fn program_browser_resource_define_does_not_write() {
 #[test]
 fn runtime_browser_resource_binding_applies_before_following_write() {
   let mut runtime = runtime();
-  runtime.set_browser_authority(read_write_authority("body/header/title", "#title"));
   let host = FakeDomHost::default();
-  runtime.set_browser_dom_host(Box::new(host.clone()));
+  register_browser_provider(
+    &mut runtime,
+    read_write_authority("body/header/title", "#title"),
+    host.clone(),
+  );
 
   runtime
     .run_string("@browser := browser://dom/\nbody/header/title@browser = \"Hello\"")
@@ -242,9 +285,12 @@ fn runtime_browser_resource_binding_applies_before_following_write() {
 #[test]
 fn program_browser_resource_write_accepts_string_variable() {
   let mut runtime = runtime();
-  runtime.set_browser_authority(read_write_authority("body/header/title", "#title"));
   let host = FakeDomHost::default();
-  runtime.set_browser_dom_host(Box::new(host.clone()));
+  register_browser_provider(
+    &mut runtime,
+    read_write_authority("body/header/title", "#title"),
+    host.clone(),
+  );
 
   runtime
     .run_string(
@@ -258,9 +304,12 @@ fn program_browser_resource_write_accepts_string_variable() {
 #[test]
 fn program_browser_resource_read_inside_expression() {
   let mut runtime = runtime();
-  runtime.set_browser_authority(read_write_authority("body/search/_value", "#search"));
   let host = FakeDomHost::default().with_value("body/search/_value", "query");
-  runtime.set_browser_dom_host(Box::new(host.clone()));
+  register_browser_provider(
+    &mut runtime,
+    read_write_authority("body/search/_value", "#search"),
+    host.clone(),
+  );
 
   let value = runtime
     .run_string(r#"@browser := browser://dom/
@@ -287,9 +336,8 @@ fn program_browser_resource_write_rhs_reads_browser_resource() {
     &[BrowserOperation::Write],
   );
   let mut runtime = runtime();
-  runtime.set_browser_authority(authority);
   let host = FakeDomHost::default().with_value("body/search/_value", "query");
-  runtime.set_browser_dom_host(Box::new(host.clone()));
+  register_browser_provider(&mut runtime, authority, host.clone());
 
   runtime
     .run_string(
@@ -321,9 +369,8 @@ fn program_browser_resource_write_rhs_combines_string_and_resource() {
     &[BrowserOperation::Write],
   );
   let mut runtime = runtime();
-  runtime.set_browser_authority(authority);
   let host = FakeDomHost::default().with_value("body/search/_value", "query");
-  runtime.set_browser_dom_host(Box::new(host.clone()));
+  register_browser_provider(&mut runtime, authority, host.clone());
 
   runtime
     .run_string(r#"@browser := browser://dom/
@@ -340,13 +387,16 @@ body/header/title@browser = "Search: " + body/search/_value@browser"#)
 #[test]
 fn program_browser_resource_read_inside_expression_denied_before_host_access() {
   let mut runtime = runtime();
-  runtime.set_browser_authority(authority(
-    "body/search/_value",
-    "#search",
-    &[BrowserOperation::Write],
-  ));
   let host = FakeDomHost::default().with_value("body/search/_value", "query");
-  runtime.set_browser_dom_host(Box::new(host.clone()));
+  register_browser_provider(
+    &mut runtime,
+    authority(
+      "body/search/_value",
+      "#search",
+      &[BrowserOperation::Write],
+    ),
+    host.clone(),
+  );
 
   let result = runtime
     .run_string(r#"@browser := browser://dom/
@@ -354,4 +404,21 @@ message := "Search: " + body/search/_value@browser"#);
 
   assert!(result.is_err());
   assert_eq!(host.read_count(), 0);
+}
+
+#[test]
+fn runtime_browser_dom_uses_generic_resource_provider_dispatch() {
+  let mut runtime = runtime();
+  runtime.bind_resource_root("browser", "browser://dom/").unwrap();
+  let host = FakeDomHost::default().with_value("body/title", "Hello");
+  register_browser_provider(
+    &mut runtime,
+    authority("body/title", "#title", &[BrowserOperation::Read]),
+    host.clone(),
+  );
+
+  let value = runtime.read_bound_resource("browser", "body/title").unwrap();
+
+  assert_eq!(value.as_string().unwrap().borrow().as_str(), "Hello");
+  assert_eq!(host.read_count(), 1);
 }
