@@ -15,6 +15,7 @@ use super::*;
 
 const DEFAULT_RESOURCE_SUBJECT: &str = "task://main";
 
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum RuntimeAddressTarget {
   Interpreter(SourceScope),
@@ -185,6 +186,134 @@ impl MechRuntime {
     }
 
     result
+  }
+
+
+  pub fn run_tree(&mut self, tree: &mech_core::Program) -> MResult<Value> {
+    let mut context = self.runtime_context()?;
+    self.run_tree_with_context(&mut context, tree)
+  }
+
+  pub fn run_tree_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    tree: &mech_core::Program,
+  ) -> MResult<Value> {
+    context.validate()?;
+    context.charge_step()?;
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ProgramStarted {
+        task_id: context.task,
+      },
+    )?;
+
+    let program_config = self.program.config.clone();
+    let mut program = std::mem::replace(
+      &mut self.program,
+      MechProgram::new(program_config),
+    );
+
+    self.register_runtime_program_host_functions(
+      context,
+      &mut program,
+    )?;
+
+    let runtime_ptr: *mut MechRuntime = self;
+    let context_ptr: *mut RuntimeContext = context;
+
+    let previous_target = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      slot.replace(Some(RuntimeProgramHostTarget {
+        runtime: runtime_ptr,
+        context: context_ptr,
+      }))
+    });
+
+    let result = program.run_tree(tree);
+
+    ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      slot.replace(previous_target);
+    });
+
+    self.program = program;
+
+    match &result {
+      Ok(_) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramCompleted {
+            task_id: context.task,
+          },
+        )?;
+      }
+      Err(error) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramFailed {
+            task_id: context.task,
+            message: format!("{:?}", error),
+          },
+        )?;
+      }
+    }
+
+    result
+  }
+
+  pub fn out_string(&self) -> String {
+    self.program.out_string()
+  }
+
+  pub fn has_interpreter(&self, interpreter_id: u64) -> bool {
+    self.program.has_interpreter(interpreter_id)
+  }
+
+  pub fn output_value_for_interpreter(
+    &self,
+    interpreter_id: u64,
+    output_id: u64,
+  ) -> Option<Value> {
+    self.program.output_value_for_interpreter(interpreter_id, output_id)
+  }
+
+  pub fn symbol_name_for_interpreter_output(
+    &self,
+    interpreter_id: u64,
+    output_id: u64,
+  ) -> Option<String> {
+    self.program.symbol_name_for_interpreter_output(interpreter_id, output_id)
+  }
+
+  pub fn symbol_values_for_interpreter(
+    &self,
+    interpreter_id: u64,
+    names: &[String],
+  ) -> Option<Vec<(String, Value)>> {
+    self.program.symbol_values_for_interpreter(interpreter_id, names)
+  }
+
+  pub fn bind_ans_for_interpreter(
+    &mut self,
+    interpreter_id: u64,
+    value: &Value,
+  ) -> MResult<()> {
+    if self.program.bind_ans_for_interpreter(interpreter_id, value) {
+      return Ok(());
+    }
+
+    Err(MechError::new(
+      RuntimeInvalidOperationError {
+        operation: "bind_ans_for_interpreter",
+        reason: format!("interpreter id {} not found", interpreter_id),
+      },
+      None,
+    ))
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn step(&mut self, count: u64) -> MResult<()> {
+    self.program.step(count)
   }
 
   pub fn run_module(&mut self, version: ModuleVersionId) -> MResult<Value> {
@@ -583,6 +712,8 @@ impl MechRuntime {
   }
 }
 
+
+
 fn module_source_for_scope(
   source: &MechSourceCode,
   scope: &SourceScope,
@@ -708,4 +839,48 @@ pub fn strip_module_declarations_for_execution(source: &str) -> String {
     })
     .collect::<Vec<_>>()
     .join("\n")
+}
+
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn runtime_has_interpreter_finds_root_interpreter() {
+    let runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+    assert!(runtime.has_interpreter(0));
+  }
+
+  #[test]
+  fn runtime_output_value_for_interpreter_returns_value_after_run_string() {
+    let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+    let source = "```mech
+1
+```";
+    let _ = runtime.run_string(source).unwrap();
+    let root_id = runtime.program().interpreter().id;
+    let output_id = {
+      let out_values = runtime.program().interpreter().out_values.borrow();
+      *out_values.keys().next().expect("expected output value after run_string")
+    };
+    let output = runtime.output_value_for_interpreter(root_id, output_id);
+    assert!(output.is_some());
+  }
+
+  #[test]
+  fn runtime_bind_ans_for_interpreter_binds_ans() {
+    let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+    let value = Value::U64(Ref::new(42));
+    runtime.bind_ans_for_interpreter(0, &value).unwrap();
+    let ans_id = hash_str("ans");
+    let bound = runtime
+      .program()
+      .interpreter()
+      .symbols()
+      .borrow()
+      .get(ans_id)
+      .map(|value| value.borrow().clone());
+    assert_eq!(bound, Some(value));
+  }
 }
