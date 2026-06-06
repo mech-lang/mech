@@ -21,7 +21,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::Arc;
-use gloo_net::http::Request;
+use gloo_net::http::{Method, Request, RequestBuilder};
 use wasm_bindgen_futures::spawn_local;
 
 #[cfg(feature = "repl")]
@@ -47,6 +47,55 @@ macro_rules! log {
 }
 
 
+fn js_error(message: impl Into<String>) -> JsValue {
+  JsValue::from_str(&message.into())
+}
+
+fn browser_host_error_to_js(error: BrowserHostError) -> JsValue {
+  js_error(error.to_string())
+}
+
+fn browser_origin_for_url(url: &str) -> Result<String, JsValue> {
+  let parsed = web_sys::Url::new(url)
+    .map_err(|error| js_error(format!("invalid URL `{url}`: {:?}", error)))?;
+
+  let protocol = parsed.protocol();
+  if protocol != "http:" && protocol != "https:" {
+    return Err(js_error(format!(
+      "network URLs must use http or https, got `{protocol}`"
+    )));
+  }
+
+  let host = parsed.host();
+  if host.is_empty() {
+    return Err(js_error(format!("network URL `{url}` has no host")));
+  }
+
+  Ok(format!("{}//{}", protocol, host))
+}
+
+fn browser_storage_for_backend(backend: &str) -> Result<web_sys::Storage, JsValue> {
+  let window = web_sys::window()
+    .ok_or_else(|| js_error("global window does not exist"))?;
+
+  match BrowserStorageBackend::parse(backend) {
+    Some(BrowserStorageBackend::LocalStorage) => window
+      .local_storage()
+      .map_err(|error| js_error(format!("localStorage unavailable: {:?}", error)))?
+      .ok_or_else(|| js_error("localStorage is not available")),
+    Some(BrowserStorageBackend::SessionStorage) => window
+      .session_storage()
+      .map_err(|error| js_error(format!("sessionStorage unavailable: {:?}", error)))?
+      .ok_or_else(|| js_error("sessionStorage is not available")),
+    Some(BrowserStorageBackend::IndexedDb) => Err(js_error(
+      "indexed-db storage backend is configured but not implemented yet",
+    )),
+    Some(BrowserStorageBackend::Opfs) => Err(js_error(
+      "opfs storage backend is configured but not implemented yet",
+    )),
+    None => Err(js_error(format!("unknown storage backend `{backend}`"))),
+  }
+}
 
 
 fn format_output_value_html(output: &Value) -> String {
@@ -124,7 +173,7 @@ impl WasmMech {
   #[wasm_bindgen(js_name = "fromConfig")]
   pub fn from_config(source: &str) -> Result<WasmMech, JsValue> {
     Self::try_from_config("wasm://mech.mcfg", source)
-      .map_err(|error| JsValue::from_str(&format!("{error:?}")))
+      .map_err(|error| js_error(format!("{error:?}")))
   }
 
   fn try_from_config(
@@ -168,6 +217,164 @@ impl WasmMech {
   pub fn clear(&mut self) {
     self.runtime = MechRuntime::new(self.runtime.config().clone())
       .expect("failed to reset MechRuntime for wasm");
+  }
+
+  #[wasm_bindgen(js_name = "readDomText")]
+  pub fn read_dom_text(&self, selector: &str) -> Result<String, JsValue> {
+    self
+      .check_dom(selector, BrowserOperation::Read)
+      .map_err(browser_host_error_to_js)?;
+
+    let window = web_sys::window()
+      .ok_or_else(|| js_error("global window does not exist"))?;
+    let document = window
+      .document()
+      .ok_or_else(|| js_error("document is not available"))?;
+
+    let element = document
+      .query_selector(selector)
+      .map_err(|error| js_error(format!("failed to query selector `{selector}`: {:?}", error)))?
+      .ok_or_else(|| js_error(format!("DOM selector `{selector}` did not match an element")))?;
+
+    Ok(element.text_content().unwrap_or_default())
+  }
+
+  #[wasm_bindgen(js_name = "writeDomText")]
+  pub fn write_dom_text(&self, selector: &str, text: &str) -> Result<(), JsValue> {
+    self
+      .check_dom(selector, BrowserOperation::Write)
+      .map_err(browser_host_error_to_js)?;
+
+    let window = web_sys::window()
+      .ok_or_else(|| js_error("global window does not exist"))?;
+    let document = window
+      .document()
+      .ok_or_else(|| js_error("document is not available"))?;
+
+    let element = document
+      .query_selector(selector)
+      .map_err(|error| js_error(format!("failed to query selector `{selector}`: {:?}", error)))?
+      .ok_or_else(|| js_error(format!("DOM selector `{selector}` did not match an element")))?;
+
+    element.set_text_content(Some(text));
+    Ok(())
+  }
+
+  #[wasm_bindgen(js_name = "readClipboardText")]
+  pub async fn read_clipboard_text(&self) -> Result<String, JsValue> {
+    self
+      .browser_host
+      .check(BrowserCapabilityRequest::Clipboard {
+        operation: BrowserOperation::Read,
+      })
+      .map_err(browser_host_error_to_js)?;
+
+    let window = web_sys::window()
+      .ok_or_else(|| js_error("global window does not exist"))?;
+    let clipboard = window.navigator().clipboard();
+
+    let promise = clipboard.read_text();
+    let value = wasm_bindgen_futures::JsFuture::from(promise)
+      .await
+      .map_err(|error| js_error(format!("clipboard read failed: {:?}", error)))?;
+
+    Ok(value.as_string().unwrap_or_default())
+  }
+
+  #[wasm_bindgen(js_name = "writeClipboardText")]
+  pub async fn write_clipboard_text(&self, text: &str) -> Result<(), JsValue> {
+    self
+      .browser_host
+      .check(BrowserCapabilityRequest::Clipboard {
+        operation: BrowserOperation::Write,
+      })
+      .map_err(browser_host_error_to_js)?;
+
+    let window = web_sys::window()
+      .ok_or_else(|| js_error("global window does not exist"))?;
+    let clipboard = window.navigator().clipboard();
+
+    let promise = clipboard.write_text(text);
+    wasm_bindgen_futures::JsFuture::from(promise)
+      .await
+      .map_err(|error| js_error(format!("clipboard write failed: {:?}", error)))?;
+
+    Ok(())
+  }
+
+  #[wasm_bindgen(js_name = "fetchText")]
+  pub async fn fetch_text(&self, url: &str, method: Option<String>) -> Result<String, JsValue> {
+    let method = method.unwrap_or_else(|| "GET".to_string());
+    let origin = browser_origin_for_url(url)?;
+
+    self
+      .check_network(&origin, Some(&method), BrowserOperation::Read)
+      .map_err(browser_host_error_to_js)?;
+
+    let method = method
+      .parse::<Method>()
+      .map_err(|error| js_error(format!("invalid HTTP method `{method}`: {error}")))?;
+    let response = RequestBuilder::new(url)
+      .method(method)
+      .send()
+      .await
+      .map_err(|error| js_error(format!("browser fetch failed: {error}")))?;
+
+    response
+      .text()
+      .await
+      .map_err(|error| js_error(format!("failed to read fetch response text: {error}")))
+  }
+
+  #[wasm_bindgen(js_name = "readStorageText")]
+  pub fn read_storage_text(
+    &self,
+    backend: &str,
+    scope: &str,
+  ) -> Result<Option<String>, JsValue> {
+    self
+      .check_storage(backend, scope, BrowserOperation::Read)
+      .map_err(browser_host_error_to_js)?;
+
+    let storage = browser_storage_for_backend(backend)?;
+    Ok(storage
+      .get_item(scope)
+      .map_err(|error| js_error(format!("storage read failed: {:?}", error)))?)
+  }
+
+  #[wasm_bindgen(js_name = "writeStorageText")]
+  pub fn write_storage_text(
+    &self,
+    backend: &str,
+    scope: &str,
+    value: &str,
+  ) -> Result<(), JsValue> {
+    self
+      .check_storage(backend, scope, BrowserOperation::Write)
+      .map_err(browser_host_error_to_js)?;
+
+    let storage = browser_storage_for_backend(backend)?;
+    storage
+      .set_item(scope, value)
+      .map_err(|error| js_error(format!("storage write failed: {:?}", error)))?;
+    Ok(())
+  }
+
+  #[wasm_bindgen(js_name = "removeStorageItem")]
+  pub fn remove_storage_item(
+    &self,
+    backend: &str,
+    scope: &str,
+  ) -> Result<(), JsValue> {
+    self
+      .check_storage(backend, scope, BrowserOperation::Write)
+      .map_err(browser_host_error_to_js)?;
+
+    let storage = browser_storage_for_backend(backend)?;
+    storage
+      .remove_item(scope)
+      .map_err(|error| js_error(format!("storage remove failed: {:?}", error)))?;
+    Ok(())
   }
 
   #[wasm_bindgen(js_name = "canReadClipboard")]
@@ -1339,6 +1546,42 @@ mod tests {
 }
 "#;
 
+  const DOM_WRITE_CONFIG: &str = r##"config := {
+  browser: {
+    dom: [
+      {selector: "#mech-output", allow: ["write"]}
+    ]
+  }
+}
+"##;
+
+  const NETWORK_GET_CONFIG: &str = r#"config := {
+  browser: {
+    network: [
+      {origin: "https://example.com", methods: ["GET"], allow: ["read"]}
+    ]
+  }
+}
+"#;
+
+  const STORAGE_EXACT_CONFIG: &str = r#"config := {
+  browser: {
+    storage: [
+      {backend: "opfs", scope: "/workspace", allow: ["read", "write", "list"]}
+    ]
+  }
+}
+"#;
+
+  const STORAGE_RECURSIVE_CONFIG: &str = r#"config := {
+  browser: {
+    storage: [
+      {backend: "opfs", scope: "/workspace", recursive: true, allow: ["read", "write", "list"]}
+    ]
+  }
+}
+"#;
+
   #[test]
   fn wasm_mech_default_browser_host_is_deny_by_default() {
     let mech = WasmMech::new();
@@ -1354,6 +1597,48 @@ mod tests {
     assert!(mech.browser_grant_count() > 0);
     assert!(mech.can_write_clipboard());
     assert!(!mech.can_read_clipboard());
+  }
+
+  #[test]
+  fn wasm_mech_denies_dom_write_without_grant() {
+    let mech = WasmMech::new();
+
+    assert!(!mech.can_write_dom("#mech-output"));
+  }
+
+  #[test]
+  fn wasm_mech_allows_dom_write_with_grant() {
+    let mech = WasmMech::try_from_config("test.mcfg", DOM_WRITE_CONFIG).unwrap();
+
+    assert!(mech.can_write_dom("#mech-output"));
+  }
+
+  #[test]
+  fn wasm_mech_denies_network_method_not_granted() {
+    let mech = WasmMech::try_from_config("test.mcfg", NETWORK_GET_CONFIG).unwrap();
+
+    assert!(!mech.can_read_network("https://example.com", Some("POST".to_string())));
+  }
+
+  #[test]
+  fn wasm_mech_allows_network_method_granted() {
+    let mech = WasmMech::try_from_config("test.mcfg", NETWORK_GET_CONFIG).unwrap();
+
+    assert!(mech.can_read_network("https://example.com", Some("GET".to_string())));
+  }
+
+  #[test]
+  fn wasm_mech_denies_recursive_storage_child_without_recursive() {
+    let mech = WasmMech::try_from_config("test.mcfg", STORAGE_EXACT_CONFIG).unwrap();
+
+    assert!(!mech.can_read_storage("opfs", "/workspace/main.mec"));
+  }
+
+  #[test]
+  fn wasm_mech_allows_recursive_storage_child_with_recursive() {
+    let mech = WasmMech::try_from_config("test.mcfg", STORAGE_RECURSIVE_CONFIG).unwrap();
+
+    assert!(mech.can_read_storage("opfs", "/workspace/main.mec"));
   }
 
   #[test]
