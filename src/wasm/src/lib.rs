@@ -74,6 +74,14 @@ fn configure_browser_host(runtime: &mut MechRuntime) -> MResult<()> {
   Ok(())
 }
 
+fn new_wasm_runtime() -> MechRuntime {
+  let mut runtime = MechRuntime::new(RuntimeConfig::default())
+    .expect("failed to initialize MechRuntime for wasm");
+  configure_browser_host(&mut runtime)
+    .expect("failed to configure browser host for wasm");
+  runtime
+}
+
 #[wasm_bindgen]
 pub struct WasmMech {
   runtime: MechRuntime,
@@ -91,13 +99,8 @@ impl WasmMech {
   }
 
   fn with_default_runtime() -> Self {
-    let mut runtime = MechRuntime::new(RuntimeConfig::default())
-      .expect("failed to initialize MechRuntime for wasm");
-    configure_browser_host(&mut runtime)
-      .expect("failed to configure browser host for wasm");
-
     Self {
-      runtime,
+      runtime: new_wasm_runtime(),
       repl_history: Vec::new(),
       repl_history_index: None,
       repl_id: None,
@@ -111,8 +114,7 @@ impl WasmMech {
 
   #[wasm_bindgen]
   pub fn clear(&mut self) {
-    self.runtime = MechRuntime::new(RuntimeConfig::default())
-      .expect("failed to reset MechRuntime for wasm");
+    self.runtime = new_wasm_runtime();
   }
 
 #[cfg(feature = "repl")]

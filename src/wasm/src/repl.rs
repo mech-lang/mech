@@ -79,8 +79,20 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
               Some(n) => n,
               None => 1,
             };
-            mech.interpreter.step(n as u64);
-            return format!("<div class=\"mech-output-kind\">Step</div><div class=\"mech-output-value\">Executed {} step(s).</div>",n);
+            match mech.runtime.step(n as u64) {
+              Ok(()) => {
+                return format!(
+                  "<div class=\"mech-output-kind\">Step</div><div class=\"mech-output-value\">Executed {} step(s).</div>",
+                  n
+                );
+              }
+              Err(err) => {
+                return format!(
+                  "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
+                  err.to_html()
+                );
+              }
+            }
           }
         }
         "Error: No interpreter found.".to_string()

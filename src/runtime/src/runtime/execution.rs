@@ -15,6 +15,47 @@ use super::*;
 
 const DEFAULT_RESOURCE_SUBJECT: &str = "task://main";
 
+
+macro_rules! with_interpreter {
+  ($interpreter:expr, $interpreter_id:expr, $name:ident, $body:block) => {{
+    let root = $interpreter;
+    let mut stack = vec![std::ptr::from_ref(root)];
+    let mut result = None;
+    while let Some(interpreter) = stack.pop() {
+      let $name = unsafe { &*interpreter };
+      if $interpreter_id == 0 || $name.id == $interpreter_id {
+        result = Some($body);
+        break;
+      }
+      let sub_interpreters = $name.sub_interpreters.borrow();
+      for sub_interpreter in sub_interpreters.values() {
+        stack.push(std::ptr::from_ref(sub_interpreter.as_ref()));
+      }
+    }
+    result
+  }};
+}
+
+macro_rules! with_interpreter_mut {
+  ($interpreter:expr, $interpreter_id:expr, $name:ident, $body:block) => {{
+    let root = $interpreter;
+    let mut stack = vec![std::ptr::from_mut(root)];
+    let mut result = None;
+    while let Some(interpreter) = stack.pop() {
+      let $name = unsafe { &mut *interpreter };
+      if $interpreter_id == 0 || $name.id == $interpreter_id {
+        result = Some($body);
+        break;
+      }
+      let mut sub_interpreters = $name.sub_interpreters.borrow_mut();
+      for sub_interpreter in sub_interpreters.values_mut() {
+        stack.push(std::ptr::from_mut(sub_interpreter.as_mut()));
+      }
+    }
+    result
+  }};
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum RuntimeAddressTarget {
   Interpreter(SourceScope),
@@ -265,11 +306,7 @@ impl MechRuntime {
   }
 
   pub fn has_interpreter(&self, interpreter_id: u64) -> bool {
-    let root = self.program.interpreter();
-    if interpreter_id == 0 || root.id == interpreter_id {
-      return true;
-    }
-    root.sub_interpreters.borrow().contains_key(&interpreter_id)
+    with_interpreter!(self.program.interpreter(), interpreter_id, interpreter, { () }).is_some()
   }
 
   pub fn output_value_for_interpreter(
@@ -277,15 +314,10 @@ impl MechRuntime {
     interpreter_id: u64,
     output_id: u64,
   ) -> Option<Value> {
-    let root = self.program.interpreter();
-    if interpreter_id == 0 || root.id == interpreter_id {
-      return root.out_values.borrow().get(&output_id).cloned();
-    }
-    root
-      .sub_interpreters
-      .borrow()
-      .get(&interpreter_id)
-      .and_then(|interpreter| interpreter.out_values.borrow().get(&output_id).cloned())
+    with_interpreter!(self.program.interpreter(), interpreter_id, interpreter, {
+      interpreter.out_values.borrow().get(&output_id).cloned()
+    })
+    .flatten()
   }
 
   pub fn symbol_name_for_interpreter_output(
@@ -293,15 +325,10 @@ impl MechRuntime {
     interpreter_id: u64,
     output_id: u64,
   ) -> Option<String> {
-    let root = self.program.interpreter();
-    if interpreter_id == 0 || root.id == interpreter_id {
-      return root.symbols().borrow().get_symbol_name_by_id(output_id);
-    }
-    root
-      .sub_interpreters
-      .borrow()
-      .get(&interpreter_id)
-      .and_then(|interpreter| interpreter.symbols().borrow().get_symbol_name_by_id(output_id))
+    with_interpreter!(self.program.interpreter(), interpreter_id, interpreter, {
+      interpreter.symbols().borrow().get_symbol_name_by_id(output_id)
+    })
+    .flatten()
   }
 
   pub fn symbol_values_for_interpreter(
@@ -309,21 +336,11 @@ impl MechRuntime {
     interpreter_id: u64,
     names: &[String],
   ) -> Option<Vec<(String, Value)>> {
-    let root = self.program.interpreter();
-    if interpreter_id == 0 || root.id == interpreter_id {
-      let symbols = root.symbols();
+    with_interpreter!(self.program.interpreter(), interpreter_id, interpreter, {
+      let symbols = interpreter.symbols();
       let symbols_brrw = symbols.borrow();
-      return Some(symbol_rows(&symbols_brrw, names));
-    }
-    root
-      .sub_interpreters
-      .borrow()
-      .get(&interpreter_id)
-      .map(|interpreter| {
-        let symbols = interpreter.symbols();
-        let symbols_brrw = symbols.borrow();
-        symbol_rows(&symbols_brrw, names)
-      })
+      symbol_rows(&symbols_brrw, names)
+    })
   }
 
   pub fn bind_ans_for_interpreter(
@@ -331,36 +348,35 @@ impl MechRuntime {
     interpreter_id: u64,
     value: &Value,
   ) -> MResult<()> {
-    let resolved_value = match value {
-      Value::MutableReference(reference) => reference.borrow().clone(),
-      _ => value.clone(),
-    };
-    let ans_id = hash_str("ans");
-    let root = self.program.interpreter_mut();
-    if interpreter_id == 0 || root.id == interpreter_id {
-      let symbols = root.symbols();
+    let bound = with_interpreter_mut!(self.program.interpreter_mut(), interpreter_id, interpreter, {
+      let resolved_value = match value {
+        Value::MutableReference(reference) => reference.borrow().clone(),
+        _ => value.clone(),
+      };
+      let ans_id = hash_str("ans");
+      let symbols = interpreter.symbols();
       let mut symbols_brrw = symbols.borrow_mut();
       symbols_brrw.insert(ans_id, resolved_value, false);
       symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
-      root.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
+      interpreter.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
+    });
+
+    if bound.is_some() {
       return Ok(());
     }
 
-    let mut sub_interpreters = root.sub_interpreters.borrow_mut();
-    let Some(interpreter) = sub_interpreters.get_mut(&interpreter_id) else {
-      return Err(MechError::new(
-        RuntimeInvalidOperationError {
-          operation: "bind_ans_for_interpreter",
-          reason: format!("interpreter id {} not found", interpreter_id),
-        },
-        None,
-      ));
-    };
-    let symbols = interpreter.symbols();
-    let mut symbols_brrw = symbols.borrow_mut();
-    symbols_brrw.insert(ans_id, resolved_value, false);
-    symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
-    interpreter.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
+    Err(MechError::new(
+      RuntimeInvalidOperationError {
+        operation: "bind_ans_for_interpreter",
+        reason: format!("interpreter id {} not found", interpreter_id),
+      },
+      None,
+    ))
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn step(&mut self, count: u64) -> MResult<()> {
+    self.program.interpreter_mut().step(count as usize, 1)?;
     Ok(())
   }
 
@@ -760,6 +776,7 @@ impl MechRuntime {
   }
 }
 
+
 fn symbol_rows(symbol_table: &mech_core::SymbolTable, names: &[String]) -> Vec<(String, Value)> {
   let dictionary = symbol_table.dictionary.borrow();
   let mut rows = Vec::new();
@@ -940,6 +957,61 @@ mod tests {
     };
     let output = runtime.output_value_for_interpreter(root_id, output_id);
     assert!(output.is_some());
+  }
+
+  #[test]
+  fn runtime_has_interpreter_finds_nested_interpreter() {
+    let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+    let nested_id = 4242;
+    let child_id = 2424;
+    let mut child = runtime.program().interpreter().clone();
+    child.clear();
+    child.id = child_id;
+    let mut nested = runtime.program().interpreter().clone();
+    nested.clear();
+    nested.id = nested_id;
+    child
+      .sub_interpreters
+      .borrow_mut()
+      .insert(nested_id, Box::new(nested));
+    runtime
+      .program_mut()
+      .interpreter_mut()
+      .sub_interpreters
+      .borrow_mut()
+      .insert(child_id, Box::new(child));
+
+    assert!(runtime.has_interpreter(nested_id));
+  }
+
+  #[test]
+  fn runtime_output_value_for_interpreter_finds_nested_interpreter() {
+    let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+    let nested_id = 4242;
+    let child_id = 2424;
+    let output_id = 101;
+    let mut child = runtime.program().interpreter().clone();
+    child.clear();
+    child.id = child_id;
+    let mut nested = runtime.program().interpreter().clone();
+    nested.clear();
+    nested.id = nested_id;
+    nested
+      .out_values
+      .borrow_mut()
+      .insert(output_id, Value::U64(Ref::new(42)));
+    child
+      .sub_interpreters
+      .borrow_mut()
+      .insert(nested_id, Box::new(nested));
+    runtime
+      .program_mut()
+      .interpreter_mut()
+      .sub_interpreters
+      .borrow_mut()
+      .insert(child_id, Box::new(child));
+
+    assert!(runtime.output_value_for_interpreter(nested_id, output_id).is_some());
   }
 
   #[test]
