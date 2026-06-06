@@ -262,11 +262,11 @@ impl MechRuntime {
   }
 
   pub fn out_string(&self) -> String {
-    self.program.interpreter().out.to_string()
+    self.program.out_string()
   }
 
   pub fn has_interpreter(&self, interpreter_id: u64) -> bool {
-    with_interpreter(self.program.interpreter(), interpreter_id, &mut |_| ()).is_some()
+    self.program.has_interpreter(interpreter_id)
   }
 
   pub fn output_value_for_interpreter(
@@ -274,10 +274,7 @@ impl MechRuntime {
     interpreter_id: u64,
     output_id: u64,
   ) -> Option<Value> {
-    with_interpreter(self.program.interpreter(), interpreter_id, &mut |interpreter| {
-      interpreter.out_values.borrow().get(&output_id).cloned()
-    })
-    .flatten()
+    self.program.output_value_for_interpreter(interpreter_id, output_id)
   }
 
   pub fn symbol_name_for_interpreter_output(
@@ -285,10 +282,7 @@ impl MechRuntime {
     interpreter_id: u64,
     output_id: u64,
   ) -> Option<String> {
-    with_interpreter(self.program.interpreter(), interpreter_id, &mut |interpreter| {
-      interpreter.symbols().borrow().get_symbol_name_by_id(output_id)
-    })
-    .flatten()
+    self.program.symbol_name_for_interpreter_output(interpreter_id, output_id)
   }
 
   pub fn symbol_values_for_interpreter(
@@ -296,11 +290,7 @@ impl MechRuntime {
     interpreter_id: u64,
     names: &[String],
   ) -> Option<Vec<(String, Value)>> {
-    with_interpreter(self.program.interpreter(), interpreter_id, &mut |interpreter| {
-      let symbols = interpreter.symbols();
-      let symbols_brrw = symbols.borrow();
-      symbol_rows(&symbols_brrw, names)
-    })
+    self.program.symbol_values_for_interpreter(interpreter_id, names)
   }
 
   pub fn bind_ans_for_interpreter(
@@ -308,7 +298,7 @@ impl MechRuntime {
     interpreter_id: u64,
     value: &Value,
   ) -> MResult<()> {
-    if bind_ans_recursive(self.program.interpreter_mut(), interpreter_id, value) {
+    if self.program.bind_ans_for_interpreter(interpreter_id, value) {
       return Ok(());
     }
 
@@ -323,8 +313,7 @@ impl MechRuntime {
 
   #[cfg(feature = "functions")]
   pub fn step(&mut self, count: u64) -> MResult<()> {
-    self.program.interpreter_mut().step(count as usize, 1)?;
-    Ok(())
+    self.program.step(count)
   }
 
   pub fn run_module(&mut self, version: ModuleVersionId) -> MResult<Value> {
@@ -724,96 +713,6 @@ impl MechRuntime {
 }
 
 
-fn with_interpreter<T>(
-  interpreter: &mech_interpreter::Interpreter,
-  interpreter_id: u64,
-  f: &mut impl FnMut(&mech_interpreter::Interpreter) -> T,
-) -> Option<T> {
-  if interpreter_id == 0 || interpreter.id == interpreter_id {
-    return Some(f(interpreter));
-  }
-
-  let sub_interpreters = interpreter.sub_interpreters.borrow();
-  for sub_interpreter in sub_interpreters.values() {
-    if let Some(result) = with_interpreter(sub_interpreter.as_ref(), interpreter_id, f) {
-      return Some(result);
-    }
-  }
-
-  None
-}
-
-fn bind_ans_recursive(
-  interpreter: &mut mech_interpreter::Interpreter,
-  interpreter_id: u64,
-  value: &Value,
-) -> bool {
-  if interpreter_id == 0 || interpreter.id == interpreter_id {
-    bind_ans_on_interpreter(interpreter, value);
-    return true;
-  }
-
-  let child_ids = {
-    let sub_interpreters = interpreter.sub_interpreters.borrow();
-    sub_interpreters.keys().copied().collect::<Vec<_>>()
-  };
-
-  for child_id in child_ids {
-    let mut sub_interpreters = interpreter.sub_interpreters.borrow_mut();
-    let Some(child) = sub_interpreters.get_mut(&child_id) else {
-      continue;
-    };
-    if bind_ans_recursive(child.as_mut(), interpreter_id, value) {
-      return true;
-    }
-  }
-
-  false
-}
-
-fn bind_ans_on_interpreter(
-  interpreter: &mut mech_interpreter::Interpreter,
-  value: &Value,
-) {
-  let resolved_value = match value {
-    Value::MutableReference(reference) => reference.borrow().clone(),
-    _ => value.clone(),
-  };
-  let ans_id = hash_str("ans");
-  let symbols = interpreter.symbols();
-  let mut symbols_brrw = symbols.borrow_mut();
-  symbols_brrw.insert(ans_id, resolved_value, false);
-  symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
-  interpreter.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
-}
-
-fn symbol_rows(symbol_table: &mech_core::SymbolTable, names: &[String]) -> Vec<(String, Value)> {
-  let dictionary = symbol_table.dictionary.borrow();
-  let mut rows = Vec::new();
-
-  if !names.is_empty() {
-    for target_name in names {
-      for (id, name) in dictionary.iter() {
-        if name == target_name {
-          if let Some(value_ref) = symbol_table.symbols.get(id) {
-            let value = value_ref.borrow();
-            rows.push((name.clone(), value.clone()));
-          }
-          break;
-        }
-      }
-    }
-  } else {
-    for (id, value_ref) in symbol_table.symbols.iter() {
-      if let Some(name) = dictionary.get(id) {
-        let value = value_ref.borrow();
-        rows.push((name.clone(), value.clone()));
-      }
-    }
-  }
-
-  rows
-}
 
 fn module_source_for_scope(
   source: &MechSourceCode,
@@ -967,61 +866,6 @@ mod tests {
     };
     let output = runtime.output_value_for_interpreter(root_id, output_id);
     assert!(output.is_some());
-  }
-
-  #[test]
-  fn runtime_has_interpreter_finds_nested_interpreter() {
-    let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
-    let nested_id = 4242;
-    let child_id = 2424;
-    let mut child = runtime.program().interpreter().clone();
-    child.clear();
-    child.id = child_id;
-    let mut nested = runtime.program().interpreter().clone();
-    nested.clear();
-    nested.id = nested_id;
-    child
-      .sub_interpreters
-      .borrow_mut()
-      .insert(nested_id, Box::new(nested));
-    runtime
-      .program_mut()
-      .interpreter_mut()
-      .sub_interpreters
-      .borrow_mut()
-      .insert(child_id, Box::new(child));
-
-    assert!(runtime.has_interpreter(nested_id));
-  }
-
-  #[test]
-  fn runtime_output_value_for_interpreter_finds_nested_interpreter() {
-    let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
-    let nested_id = 4242;
-    let child_id = 2424;
-    let output_id = 101;
-    let mut child = runtime.program().interpreter().clone();
-    child.clear();
-    child.id = child_id;
-    let mut nested = runtime.program().interpreter().clone();
-    nested.clear();
-    nested.id = nested_id;
-    nested
-      .out_values
-      .borrow_mut()
-      .insert(output_id, Value::U64(Ref::new(42)));
-    child
-      .sub_interpreters
-      .borrow_mut()
-      .insert(nested_id, Box::new(nested));
-    runtime
-      .program_mut()
-      .interpreter_mut()
-      .sub_interpreters
-      .borrow_mut()
-      .insert(child_id, Box::new(child));
-
-    assert!(runtime.output_value_for_interpreter(nested_id, output_id).is_some());
   }
 
   #[test]
