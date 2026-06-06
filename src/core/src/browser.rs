@@ -24,6 +24,7 @@ pub const BROWSER_STORAGE_PROVIDER_URI: &str = "browser://storage";
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct BrowserAuthority {
     grants: Vec<BrowserCapabilityGrant>,
+    dom_manifest: Vec<BrowserDomManifestEntry>,
 }
 
 impl BrowserAuthority {
@@ -37,6 +38,40 @@ impl BrowserAuthority {
 
     pub fn grants(&self) -> &[BrowserCapabilityGrant] {
         &self.grants
+    }
+
+    pub fn dom_manifest(&self) -> &[BrowserDomManifestEntry] {
+        &self.dom_manifest
+    }
+
+    pub fn bind_dom_path(&mut self, entry: BrowserDomManifestEntry) {
+        if let Some(existing) = self
+            .dom_manifest
+            .iter_mut()
+            .find(|existing| existing.path == entry.path)
+        {
+            *existing = entry;
+        } else {
+            self.dom_manifest.push(entry);
+            self.dom_manifest
+                .sort_by(|left, right| left.path.cmp(&right.path));
+        }
+    }
+
+    pub fn dom_entry_for_path(&self, path: &BrowserDomPath) -> Option<&BrowserDomManifestEntry> {
+        if let Some(exact) = self
+            .dom_manifest
+            .iter()
+            .find(|entry| !entry.path.is_wildcard() && entry.path == *path)
+        {
+            return Some(exact);
+        }
+
+        self
+            .dom_manifest
+            .iter()
+            .filter(|entry| entry.path.is_wildcard() && entry.path.matches(path))
+            .max_by_key(|entry| entry.path.as_str().trim_end_matches("/*").len())
     }
 
     pub fn grant(&mut self, grant: BrowserCapabilityGrant) {
@@ -272,6 +307,175 @@ impl fmt::Display for BrowserOperation {
             Self::Invoke => "invoke",
         })
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BrowserDomManifestEntry {
+    pub path: BrowserDomPath,
+    pub selector: BrowserDomScope,
+    pub property: BrowserDomProperty,
+}
+
+impl BrowserDomManifestEntry {
+    pub fn new(
+        path: BrowserDomPath,
+        selector: BrowserDomScope,
+        property: BrowserDomProperty,
+    ) -> Self {
+        Self {
+            path,
+            selector,
+            property,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct BrowserDomPath {
+    path: String,
+    wildcard: bool,
+}
+
+impl BrowserDomPath {
+    pub fn new(path: impl Into<String>) -> Result<Self, BrowserCapabilityError> {
+        let path = path.into();
+        validate_browser_dom_path(&path)?;
+        let wildcard = path.ends_with("/*");
+        Ok(Self { path, wildcard })
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.path
+    }
+
+    pub fn is_wildcard(&self) -> bool {
+        self.wildcard
+    }
+
+    pub fn matches(&self, requested: &BrowserDomPath) -> bool {
+        if self.path == requested.path {
+            return true;
+        }
+
+        if !self.wildcard {
+            return false;
+        }
+
+        let prefix = self
+            .path
+            .strip_suffix("/*")
+            .expect("wildcard DOM path must end in /*");
+
+        requested
+            .path
+            .strip_prefix(prefix)
+            .is_some_and(|suffix| suffix.starts_with('/'))
+    }
+
+    pub fn join(&self, child: &str) -> Result<Self, BrowserCapabilityError> {
+        let base = self.path.trim_end_matches('/');
+        let child = child.trim_start_matches('/');
+        if base.is_empty() {
+            Self::new(child.to_string())
+        } else if child.is_empty() {
+            Self::new(base.to_string())
+        } else {
+            Self::new(format!("{base}/{child}"))
+        }
+    }
+
+    pub fn without_property_suffix(&self) -> &str {
+        let Some((base, leaf)) = self.path.rsplit_once('/') else {
+            return &self.path;
+        };
+        if leaf.starts_with('_') {
+            base
+        } else {
+            &self.path
+        }
+    }
+
+    pub fn dom_property(&self) -> BrowserDomProperty {
+        let Some((_, leaf)) = self.path.rsplit_once('/') else {
+            return BrowserDomProperty::Text;
+        };
+
+        BrowserDomProperty::from_path_segment(leaf)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum BrowserDomProperty {
+    Text,
+    Value,
+    InnerHtml,
+    Attribute(String),
+}
+
+impl BrowserDomProperty {
+    pub fn from_path_segment(segment: &str) -> Self {
+        match segment {
+            "_text" => Self::Text,
+            "_value" => Self::Value,
+            "_html" => Self::InnerHtml,
+            segment if segment.starts_with('_') => {
+                Self::Attribute(segment.trim_start_matches('_').to_string())
+            }
+            _ => Self::Text,
+        }
+    }
+
+    pub fn parse_manifest(
+        property: Option<&str>,
+        attribute: Option<&str>,
+        path: &BrowserDomPath,
+    ) -> Result<Self, BrowserCapabilityError> {
+        let invalid = |reason: String| BrowserCapabilityError::InvalidScope {
+            resource: BrowserResourceKind::Dom,
+            scope: path.as_str().to_string(),
+            reason,
+        };
+
+        match property {
+            Some("text") => {
+                if attribute.is_some() {
+                    return Err(invalid("DOM property `text` cannot include `attribute`".to_string()));
+                }
+                Ok(Self::Text)
+            }
+            Some("value") => {
+                if attribute.is_some() {
+                    return Err(invalid("DOM property `value` cannot include `attribute`".to_string()));
+                }
+                Ok(Self::Value)
+            }
+            Some("inner-html") | Some("innerHtml") | Some("html") => {
+                if attribute.is_some() {
+                    return Err(invalid("DOM property `inner-html` cannot include `attribute`".to_string()));
+                }
+                Ok(Self::InnerHtml)
+            }
+            Some("attribute") => {
+                let Some(attribute) = attribute else {
+                    return Err(invalid("DOM property `attribute` requires an `attribute` name".to_string()));
+                };
+                validate_dom_attribute_name(attribute)?;
+                Ok(Self::Attribute(attribute.to_string()))
+            }
+            Some(other) => Err(invalid(format!(
+                "DOM property `{other}` must be `text`, `value`, `inner-html`, or `attribute`"
+            ))),
+            None => {
+                if attribute.is_some() {
+                    return Err(invalid(
+                        "`attribute` is only valid when `property` is `attribute`; underscore path segments infer attributes directly".to_string(),
+                    ));
+                }
+                Ok(path.dom_property())
+            }
+        }
+    }
+
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -617,6 +821,72 @@ pub fn browser_capability_result(result: Result<(), BrowserCapabilityError>) -> 
     result.map_err(browser_capability_error)
 }
 
+fn validate_browser_dom_path(path: &str) -> Result<(), BrowserCapabilityError> {
+    let invalid = |reason: &str| BrowserCapabilityError::InvalidScope {
+        resource: BrowserResourceKind::Dom,
+        scope: path.to_string(),
+        reason: reason.to_string(),
+    };
+
+    if path.trim() != path || path.is_empty() {
+        return Err(invalid(
+            "DOM resource paths must be non-empty and must not include surrounding whitespace",
+        ));
+    }
+
+    let segments: Vec<&str> = path.split('/').collect();
+    for (index, segment) in segments.iter().enumerate() {
+        if segment.is_empty() || *segment == "." || *segment == ".." {
+            return Err(invalid(
+                "DOM resource path segments must be non-empty normalized tokens",
+            ));
+        }
+
+        if *segment == "*" {
+            if index + 1 != segments.len() {
+                return Err(invalid(
+                    "DOM resource wildcard `*` is only allowed as the final segment",
+                ));
+            }
+            continue;
+        }
+
+        if segment.contains('*') {
+            return Err(invalid(
+                "DOM resource wildcard `*` must be its own final segment",
+            ));
+        }
+
+        if !segment
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
+        {
+            return Err(invalid(
+                "DOM resource path segments may contain only ASCII letters, digits, `_`, or `-`",
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+fn validate_dom_attribute_name(attribute: &str) -> Result<(), BrowserCapabilityError> {
+    if attribute.trim() != attribute
+        || attribute.is_empty()
+        || !attribute
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_')
+    {
+        return Err(BrowserCapabilityError::InvalidScope {
+            resource: BrowserResourceKind::Dom,
+            scope: attribute.to_string(),
+            reason: "DOM attribute names must be non-empty simple tokens".to_string(),
+        });
+    }
+
+    Ok(())
+}
+
 fn browser_resource_allows_operation(
     resource: BrowserResourceKind,
     operation: BrowserOperation,
@@ -707,6 +977,62 @@ mod tests {
                 })
             ));
         }
+    }
+
+
+    #[test]
+    fn dom_manifest_exact_path_beats_wildcard() {
+        let mut authority = BrowserAuthority::default();
+        let wildcard_scope = BrowserDomScope::new("#wild").unwrap();
+        let exact_scope = BrowserDomScope::new("#exact").unwrap();
+        authority.bind_dom_path(BrowserDomManifestEntry::new(
+            BrowserDomPath::new("body/*").unwrap(),
+            wildcard_scope,
+            BrowserDomProperty::Text,
+        ));
+        authority.bind_dom_path(BrowserDomManifestEntry::new(
+            BrowserDomPath::new("body/title").unwrap(),
+            exact_scope,
+            BrowserDomProperty::Text,
+        ));
+        let entry = authority
+            .dom_entry_for_path(&BrowserDomPath::new("body/title").unwrap())
+            .unwrap();
+        assert_eq!(entry.selector.selector, "#exact");
+    }
+
+    #[test]
+    fn dom_manifest_longest_wildcard_wins() {
+        let mut authority = BrowserAuthority::default();
+        let short_scope = BrowserDomScope::new("#short").unwrap();
+        let long_scope = BrowserDomScope::new("#long").unwrap();
+        authority.bind_dom_path(BrowserDomManifestEntry::new(
+            BrowserDomPath::new("body/*").unwrap(),
+            short_scope,
+            BrowserDomProperty::Text,
+        ));
+        authority.bind_dom_path(BrowserDomManifestEntry::new(
+            BrowserDomPath::new("body/content/*").unwrap(),
+            long_scope,
+            BrowserDomProperty::Text,
+        ));
+        let entry = authority
+            .dom_entry_for_path(&BrowserDomPath::new("body/content/title").unwrap())
+            .unwrap();
+        assert_eq!(entry.selector.selector, "#long");
+    }
+
+    #[test]
+    fn dom_manifest_sibling_wildcard_does_not_match() {
+        let mut authority = BrowserAuthority::default();
+        authority.bind_dom_path(BrowserDomManifestEntry::new(
+            BrowserDomPath::new("body/content/*").unwrap(),
+            BrowserDomScope::new("#content").unwrap(),
+            BrowserDomProperty::Text,
+        ));
+        assert!(authority
+            .dom_entry_for_path(&BrowserDomPath::new("body/sidebar/title").unwrap())
+            .is_none());
     }
 
     #[test]

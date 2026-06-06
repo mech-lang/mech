@@ -5,9 +5,9 @@ use mech_core::{MResult, MechError};
 
 use super::{ConfigValue, InvalidConfigField};
 use crate::{
-    BrowserAuthority, BrowserCapabilityGrant, BrowserDomScope, BrowserNetworkScope,
-    BrowserOperation, BrowserResource, BrowserResourceKind, BrowserStorageBackend,
-    BrowserStorageScope,
+    BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
+    BrowserDomProperty, BrowserDomScope, BrowserNetworkScope, BrowserOperation, BrowserResource,
+    BrowserResourceKind, BrowserStorageBackend, BrowserStorageScope,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -233,13 +233,25 @@ impl ConfigLowerer {
         for (idx, item) in expect_list("browser.dom", value)?.iter().enumerate() {
             let where_ = format!("browser.dom[{idx}]");
             let map = expect_map(&where_, item)?;
+            let mut path = None;
             let mut selector = None;
+            let mut property = None;
+            let mut attribute = None;
+            let mut mode = None;
             let mut allow = None;
             for (key, value) in map {
                 match key.as_str() {
+                    "path" => path = Some(expect_string(&format!("{where_}.path"), value)?),
                     "selector" => {
                         selector = Some(expect_string(&format!("{where_}.selector"), value)?)
                     }
+                    "property" => {
+                        property = Some(expect_string(&format!("{where_}.property"), value)?)
+                    }
+                    "attribute" => {
+                        attribute = Some(expect_string(&format!("{where_}.attribute"), value)?)
+                    }
+                    "mode" => mode = Some(expect_string(&format!("{where_}.mode"), value)?),
                     "allow" => {
                         allow = Some(expect_browser_operations_for_resource(
                             &format!("{where_}.allow"),
@@ -257,10 +269,52 @@ impl ConfigLowerer {
             let scope = BrowserDomScope::new(selector)
                 .map_err(|error| invalid_error(format!("{where_}.selector: {error}")))?;
             authority.grant(BrowserCapabilityGrant {
-                resource: BrowserResource::Dom(scope),
+                resource: BrowserResource::Dom(scope.clone()),
                 allow,
                 budget: None,
             });
+
+            let Some(path) = path else {
+                continue;
+            };
+            let path = BrowserDomPath::new(path)
+                .map_err(|error| invalid_error(format!("{where_}.path: {error}")))?;
+            let mode = match mode.as_deref() {
+                Some("node") | None => mode,
+                Some("subtree") => mode,
+                Some(other) => {
+                    return invalid(format!(
+                        "{where_}.mode must be `node` or `subtree`; got `{other}`"
+                    ))
+                }
+            };
+            if path.is_wildcard() && !matches!(mode.as_deref(), None | Some("subtree")) {
+                return invalid(format!(
+                    "{where_}.mode must be `subtree` when path ends in `/*`"
+                ));
+            }
+            if matches!(mode.as_deref(), Some("subtree")) && !path.is_wildcard() {
+                return invalid(format!(
+                    "{where_}.path must end in `/*` when mode is `subtree`"
+                ));
+            }
+            let property = if matches!(mode.as_deref(), Some("subtree")) {
+                if property.is_some() {
+                    return invalid(format!("{where_}.property is not allowed when mode is `subtree`"));
+                }
+                if attribute.is_some() {
+                    return invalid(format!("{where_}.attribute is not allowed when mode is `subtree`"));
+                }
+                BrowserDomProperty::Text
+            } else {
+                BrowserDomProperty::parse_manifest(
+                    property.as_deref(),
+                    attribute.as_deref(),
+                    &path,
+                )
+                .map_err(|error| invalid_error(format!("{where_}: {error}")))?
+            };
+            authority.bind_dom_path(BrowserDomManifestEntry::new(path, scope, property));
         }
         Ok(())
     }

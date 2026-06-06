@@ -12,6 +12,7 @@ use mech_runtime::{
 use crate::host::{
   BrowserCapabilityRequest, BrowserDomScope, BrowserHost, BrowserHostError,
   BrowserNetworkScope, BrowserOperation, BrowserStorageBackend, BrowserStorageScope,
+  WasmBrowserDomHost,
 };
 use wasm_bindgen::JsCast;
 use web_sys::{window, HtmlElement, HtmlInputElement, Node, Element, HashChangeEvent, HtmlTextAreaElement, Url};
@@ -140,8 +141,17 @@ fn runtime_from_config_document(document: Option<&MechConfigDocument>) -> MechRu
     None => RuntimeConfig::default(),
   };
 
-  MechRuntime::new(config)
-    .expect("failed to initialize MechRuntime for wasm")
+  let mut runtime = MechRuntime::new(config)
+    .expect("failed to initialize MechRuntime for wasm");
+  match document {
+    Some(document) => runtime.set_browser_authority(document.browser.clone()),
+    None => runtime.set_browser_authority(mech_runtime::BrowserAuthority::default()),
+  }
+  runtime.set_browser_dom_host(Box::new(WasmBrowserDomHost::new()));
+  runtime
+    .bind_resource_root("browser", "browser://dom/")
+    .expect("failed to bind default browser DOM resource root");
+  runtime
 }
 
 fn wasm_parts_from_config_document(
@@ -215,8 +225,14 @@ impl WasmMech {
 
   #[wasm_bindgen]
   pub fn clear(&mut self) {
-    self.runtime = MechRuntime::new(self.runtime.config().clone())
+    let mut runtime = MechRuntime::new(self.runtime.config().clone())
       .expect("failed to reset MechRuntime for wasm");
+    runtime.set_browser_authority(self.browser_host.authority().clone());
+    runtime.set_browser_dom_host(Box::new(WasmBrowserDomHost::new()));
+    runtime
+      .bind_resource_root("browser", "browser://dom/")
+      .expect("failed to bind default browser DOM resource root");
+    self.runtime = runtime;
   }
 
   #[wasm_bindgen(js_name = "readDomText")]
