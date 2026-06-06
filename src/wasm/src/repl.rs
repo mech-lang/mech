@@ -12,7 +12,7 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
         if let Some(ptr) = *mech_ref.borrow() {
           unsafe {
             let mut mech = &mut *ptr;
-            mech.interpreter.clear();
+            mech.clear();
           }
         }
       });
@@ -24,7 +24,7 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
         if let Some(ptr) = *mech_ref.borrow() {
           unsafe {
             let mut mech = &mut *ptr;
-            let window = web_sys::window().expect("global window does not exists");    
+            let window = web_sys::window().expect("global window does not exists");
             let document = window.document().expect("expecting a document on window");
             let output_element = document.get_element_by_id(&mech.repl_id.as_ref().unwrap().clone()).expect("REPL output element not found");
             // Remove all children
@@ -48,16 +48,20 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
         if let Some(ptr) = *mech_ref.borrow() {
           unsafe {
             let mut mech = &mut *ptr;
-            match run_mech_code(&mut mech.interpreter, &code)  {
-              Ok(output) => { 
-                let kind_str = html_escape(&format!("{}",output.kind()));
-                return format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html());
-              },
-              Err(err) => {
-                return format!(
-                  "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
-                  err.to_html()
-                );
+            for (_, source) in code {
+              if let MechSourceCode::String(source) = source {
+                match mech.runtime.run_string(&source) {
+                  Ok(output) => {
+                    let kind_str = html_escape(&format!("{}", output.kind()));
+                    return format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html());
+                  }
+                  Err(err) => {
+                    return format!(
+                      "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
+                      err.to_html()
+                    );
+                  }
+                }
               }
             }
           }
@@ -88,7 +92,7 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
         if let Some(ptr) = *mech_ref.borrow() {
           unsafe {
             let mut mech = &mut *ptr;
-            return whos_html(&mech.interpreter, names)
+            return whos_html(&mech.runtime, names)
           }
         }
         "Error: No interpreter found.".to_string()
@@ -114,7 +118,7 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
           format!("Fetching doc: {}…", d)
         },
         None => "Enter the name of a doc to load.".to_string(),
-      } 
+      }
     }
     x => format!("Command {:?} not implemented for wasm", x),
   }
@@ -133,12 +137,12 @@ pub fn help_html() -> String {
 └─┘     └─┘ └──────┘ └──────┘ └─┘  └─┘"#;
   let version = env!("CARGO_PKG_VERSION");
   let mut html = String::new();
-  
+
   html.push_str("<div class=\"mech-help\">");
-  html.push_str(&format!("<div class=\"mech-text-logo\">{}</div>", text_logo));  
+  html.push_str(&format!("<div class=\"mech-text-logo\">{}</div>", text_logo));
   html.push_str(&format!("<div class=\"mech-version\">Version: <a href=\"https://github.com/mech-lang/mech/releases/tag/v{}-beta\">{}</a></div>", version, version));
   html.push_str("<p>Welcome to the Mech REPL!</p>");
-  html.push_str("<p>Full documentation: <a href=\"https://docs.mech-lang.org\">docs.mech-lang.org</a>.</p>"); 
+  html.push_str("<p>Full documentation: <a href=\"https://docs.mech-lang.org\">docs.mech-lang.org</a>.</p>");
   html.push_str("<table class=\"mech-help-table\">");
     html.push_str("<thead><tr><th>Command</th><th>Short</th><th>Options</th><th>Description</th></tr></thead>");
     html.push_str("<tbody>");
@@ -155,35 +159,10 @@ pub fn help_html() -> String {
 }
 
 #[cfg(feature = "whos")]
-pub fn whos_html(intrp: &Interpreter, names: Vec<String>) -> String {
-  let state_brrw = intrp.state.borrow();
-  let symbol_table = state_brrw.symbol_table.borrow();
-  let dictionary = symbol_table.dictionary.borrow();
-
-  // Collect matching symbols into a vector
-  let mut rows = Vec::new();
-
-  if !names.is_empty() {
-    for target_name in &names {
-      for (id, name) in dictionary.iter() {
-        if *name == *target_name {
-          if let Some(value_ref) = symbol_table.symbols.get(id) {
-            let value = value_ref.borrow();
-            rows.push((name.clone(), value.clone()));
-          }
-          break;
-        }
-      }
-    }
-  } else {
-    // Show all symbols
-    for (id, value_ref) in symbol_table.symbols.iter() {
-      if let Some(name) = dictionary.get(id) {
-        let value = value_ref.borrow();
-        rows.push((name.clone(), value.clone()));
-      }
-    }
-  }
+pub fn whos_html(runtime: &MechRuntime, names: Vec<String>) -> String {
+  let rows = runtime
+    .symbol_values_for_interpreter(0, &names)
+    .unwrap_or_default();
 
   if rows.is_empty() {
     if names.is_empty() {

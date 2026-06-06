@@ -187,6 +187,183 @@ impl MechRuntime {
     result
   }
 
+
+  pub fn run_tree(&mut self, tree: &mech_core::Program) -> MResult<Value> {
+    let mut context = self.runtime_context()?;
+    self.run_tree_with_context(&mut context, tree)
+  }
+
+  pub fn run_tree_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    tree: &mech_core::Program,
+  ) -> MResult<Value> {
+    context.validate()?;
+    context.charge_step()?;
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ProgramStarted {
+        task_id: context.task,
+      },
+    )?;
+
+    let program_config = self.program.config.clone();
+    let mut program = std::mem::replace(
+      &mut self.program,
+      MechProgram::new(program_config),
+    );
+
+    self.register_runtime_program_host_functions(
+      context,
+      &mut program,
+    )?;
+
+    let runtime_ptr: *mut MechRuntime = self;
+    let context_ptr: *mut RuntimeContext = context;
+
+    let previous_target = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      slot.replace(Some(RuntimeProgramHostTarget {
+        runtime: runtime_ptr,
+        context: context_ptr,
+      }))
+    });
+
+    let result = program.run_tree(tree);
+
+    ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      slot.replace(previous_target);
+    });
+
+    self.program = program;
+
+    match &result {
+      Ok(_) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramCompleted {
+            task_id: context.task,
+          },
+        )?;
+      }
+      Err(error) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramFailed {
+            task_id: context.task,
+            message: format!("{:?}", error),
+          },
+        )?;
+      }
+    }
+
+    result
+  }
+
+  pub fn out_string(&self) -> String {
+    self.program.interpreter().out.to_string()
+  }
+
+  pub fn has_interpreter(&self, interpreter_id: u64) -> bool {
+    let root = self.program.interpreter();
+    if interpreter_id == 0 || root.id == interpreter_id {
+      return true;
+    }
+    root.sub_interpreters.borrow().contains_key(&interpreter_id)
+  }
+
+  pub fn output_value_for_interpreter(
+    &self,
+    interpreter_id: u64,
+    output_id: u64,
+  ) -> Option<Value> {
+    let root = self.program.interpreter();
+    if interpreter_id == 0 || root.id == interpreter_id {
+      return root.out_values.borrow().get(&output_id).cloned();
+    }
+    root
+      .sub_interpreters
+      .borrow()
+      .get(&interpreter_id)
+      .and_then(|interpreter| interpreter.out_values.borrow().get(&output_id).cloned())
+  }
+
+  pub fn symbol_name_for_interpreter_output(
+    &self,
+    interpreter_id: u64,
+    output_id: u64,
+  ) -> Option<String> {
+    let root = self.program.interpreter();
+    if interpreter_id == 0 || root.id == interpreter_id {
+      return root.symbols().borrow().get_symbol_name_by_id(output_id);
+    }
+    root
+      .sub_interpreters
+      .borrow()
+      .get(&interpreter_id)
+      .and_then(|interpreter| interpreter.symbols().borrow().get_symbol_name_by_id(output_id))
+  }
+
+  pub fn symbol_values_for_interpreter(
+    &self,
+    interpreter_id: u64,
+    names: &[String],
+  ) -> Option<Vec<(String, Value)>> {
+    let root = self.program.interpreter();
+    if interpreter_id == 0 || root.id == interpreter_id {
+      let symbols = root.symbols();
+      let symbols_brrw = symbols.borrow();
+      return Some(symbol_rows(&symbols_brrw, names));
+    }
+    root
+      .sub_interpreters
+      .borrow()
+      .get(&interpreter_id)
+      .map(|interpreter| {
+        let symbols = interpreter.symbols();
+        let symbols_brrw = symbols.borrow();
+        symbol_rows(&symbols_brrw, names)
+      })
+  }
+
+  pub fn bind_ans_for_interpreter(
+    &mut self,
+    interpreter_id: u64,
+    value: &Value,
+  ) -> MResult<()> {
+    let resolved_value = match value {
+      Value::MutableReference(reference) => reference.borrow().clone(),
+      _ => value.clone(),
+    };
+    let ans_id = hash_str("ans");
+    let root = self.program.interpreter_mut();
+    if interpreter_id == 0 || root.id == interpreter_id {
+      let symbols = root.symbols();
+      let mut symbols_brrw = symbols.borrow_mut();
+      symbols_brrw.insert(ans_id, resolved_value, false);
+      symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
+      root.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
+      return Ok(());
+    }
+
+    let mut sub_interpreters = root.sub_interpreters.borrow_mut();
+    let Some(interpreter) = sub_interpreters.get_mut(&interpreter_id) else {
+      return Err(MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "bind_ans_for_interpreter",
+          reason: format!("interpreter id {} not found", interpreter_id),
+        },
+        None,
+      ));
+    };
+    let symbols = interpreter.symbols();
+    let mut symbols_brrw = symbols.borrow_mut();
+    symbols_brrw.insert(ans_id, resolved_value, false);
+    symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
+    interpreter.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
+    Ok(())
+  }
+
   pub fn run_module(&mut self, version: ModuleVersionId) -> MResult<Value> {
     let mut context = self.runtime_context()?
       .with_module_version(version);
@@ -583,6 +760,34 @@ impl MechRuntime {
   }
 }
 
+fn symbol_rows(symbol_table: &mech_core::SymbolTable, names: &[String]) -> Vec<(String, Value)> {
+  let dictionary = symbol_table.dictionary.borrow();
+  let mut rows = Vec::new();
+
+  if !names.is_empty() {
+    for target_name in names {
+      for (id, name) in dictionary.iter() {
+        if name == target_name {
+          if let Some(value_ref) = symbol_table.symbols.get(id) {
+            let value = value_ref.borrow();
+            rows.push((name.clone(), value.clone()));
+          }
+          break;
+        }
+      }
+    }
+  } else {
+    for (id, value_ref) in symbol_table.symbols.iter() {
+      if let Some(name) = dictionary.get(id) {
+        let value = value_ref.borrow();
+        rows.push((name.clone(), value.clone()));
+      }
+    }
+  }
+
+  rows
+}
+
 fn module_source_for_scope(
   source: &MechSourceCode,
   scope: &SourceScope,
@@ -708,4 +913,48 @@ pub fn strip_module_declarations_for_execution(source: &str) -> String {
     })
     .collect::<Vec<_>>()
     .join("\n")
+}
+
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn runtime_has_interpreter_finds_root_interpreter() {
+    let runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+    assert!(runtime.has_interpreter(0));
+  }
+
+  #[test]
+  fn runtime_output_value_for_interpreter_returns_value_after_run_string() {
+    let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+    let source = "```mech
+1
+```";
+    let _ = runtime.run_string(source).unwrap();
+    let root_id = runtime.program().interpreter().id;
+    let output_id = {
+      let out_values = runtime.program().interpreter().out_values.borrow();
+      *out_values.keys().next().expect("expected output value after run_string")
+    };
+    let output = runtime.output_value_for_interpreter(root_id, output_id);
+    assert!(output.is_some());
+  }
+
+  #[test]
+  fn runtime_bind_ans_for_interpreter_binds_ans() {
+    let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+    let value = Value::U64(Ref::new(42));
+    runtime.bind_ans_for_interpreter(0, &value).unwrap();
+    let ans_id = hash_str("ans");
+    let bound = runtime
+      .program()
+      .interpreter()
+      .symbols()
+      .borrow()
+      .get(ans_id)
+      .map(|value| value.borrow().clone());
+    assert_eq!(bound, Some(value));
+  }
 }
