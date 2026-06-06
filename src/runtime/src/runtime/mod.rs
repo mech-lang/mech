@@ -37,8 +37,9 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 
 use mech_core::{
-  MResult, MechError, MechErrorKind, MechSourceCode, Ref, Value, NativeFunctionCompiler, MechFunctionImpl,
-  Register, CompileCtx, MechFunctionCompiler,
+  browser_capability_error, BrowserAuthority, BrowserDomPath, BrowserOperation,
+  BROWSER_DOM_PROVIDER_URI, MResult, MechError, MechErrorKind, MechSourceCode, Ref, Value,
+  NativeFunctionCompiler, MechFunctionImpl, Register, CompileCtx, MechFunctionCompiler,
   hash_str,
 };
 
@@ -63,7 +64,7 @@ use crate::event::{
 };
 
 use crate::host::{
-  default_host_capability_request, DefaultHostCallPolicy, HostCall,
+  default_host_capability_request, BrowserDomHost, DefaultHostCallPolicy, HostCall,
   HostCallPolicy, HostFunction, HostFunctionNotFoundError, HostRegistry,
   InMemoryHostRegistry,
 };
@@ -310,6 +311,9 @@ impl RuntimeBuilder {
       module_builder: self.module_builder,
       resources: RuntimeResourceRegistry::new(),
       grants: RuntimeCapabilityGrantRegistry::new(),
+      browser_dom_host: None,
+      browser_authority: BrowserAuthority::default(),
+      resource_bindings: HashMap::new(),
     };
 
     for spec in &self.config_specs {
@@ -356,6 +360,9 @@ pub struct MechRuntime {
   module_builder: ModuleBuilder,
   resources: RuntimeResourceRegistry,
   grants: RuntimeCapabilityGrantRegistry,
+  browser_dom_host: Option<Box<dyn BrowserDomHost>>,
+  browser_authority: BrowserAuthority,
+  resource_bindings: HashMap<String, RuntimeResourceBinding>,
 }
 
 impl std::fmt::Debug for MechRuntime {
@@ -378,8 +385,53 @@ impl std::fmt::Debug for MechRuntime {
       .field("module_builder", &self.module_builder)
       .field("resources", &self.resources)
       .field("grants", &self.grants)
+      .field("browser_authority", &self.browser_authority)
+      .field("resource_bindings", &self.resource_bindings)
       .finish()
   }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeResourceBinding {
+  pub name: String,
+  pub provider: String,
+  pub root_path: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct BrowserRuntimeResourceError {
+  pub resource: String,
+  pub reason: String,
+}
+
+impl MechErrorKind for BrowserRuntimeResourceError {
+  fn name(&self) -> &str {
+    "BrowserRuntimeResource"
+  }
+
+  fn message(&self) -> String {
+    format!("browser runtime resource `{}` failed: {}", self.resource, self.reason)
+  }
+}
+
+fn browser_runtime_resource_error(
+  resource: impl Into<String>,
+  reason: impl Into<String>,
+) -> MechError {
+  MechError::new(
+    BrowserRuntimeResourceError {
+      resource: resource.into(),
+      reason: reason.into(),
+    },
+    None,
+  )
+}
+
+fn validate_resource_binding_name(name: &str) -> bool {
+  !name.is_empty()
+    && name
+      .bytes()
+      .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
 }
 
 #[derive(Clone, Debug)]
@@ -412,6 +464,144 @@ impl MechRuntime {
 
   pub fn program_mut(&mut self) -> &mut MechProgram {
     &mut self.program
+  }
+
+
+  pub fn set_browser_authority(&mut self, authority: BrowserAuthority) {
+    self.browser_authority = authority;
+  }
+
+  pub fn browser_authority(&self) -> &BrowserAuthority {
+    &self.browser_authority
+  }
+
+  pub fn set_browser_dom_host(&mut self, host: Box<dyn BrowserDomHost>) {
+    self.browser_dom_host = Some(host);
+  }
+
+  pub fn bind_resource_root(
+    &mut self,
+    name: impl Into<String>,
+    uri: impl AsRef<str>,
+  ) -> MResult<()> {
+    let name = name.into();
+    if !validate_resource_binding_name(&name) {
+      return Err(browser_runtime_resource_error(
+        name,
+        "resource binding names must be non-empty simple tokens",
+      ));
+    }
+
+    let uri = uri.as_ref();
+    let prefix = "browser://dom/";
+    let Some(root_path) = uri.strip_prefix(prefix) else {
+      return Err(browser_runtime_resource_error(
+        uri,
+        "only browser://dom/ resource roots are supported in this PR",
+      ));
+    };
+    let root_path = root_path.trim_matches('/').to_string();
+    if !root_path.is_empty() {
+      BrowserDomPath::new(root_path.clone()).map_err(browser_capability_error)?;
+    }
+
+    self.resource_bindings.insert(
+      name.clone(),
+      RuntimeResourceBinding {
+        name,
+        provider: BROWSER_DOM_PROVIDER_URI.to_string(),
+        root_path,
+      },
+    );
+    Ok(())
+  }
+
+  pub fn resolve_resource_path(
+    &self,
+    binding: &str,
+    child_path: &str,
+  ) -> MResult<BrowserDomPath> {
+    let Some(binding_record) = self.resource_bindings.get(binding) else {
+      return Err(browser_runtime_resource_error(
+        binding,
+        "unknown resource root binding",
+      ));
+    };
+    if binding_record.provider != BROWSER_DOM_PROVIDER_URI {
+      return Err(browser_runtime_resource_error(
+        binding,
+        "only browser DOM resource bindings are supported",
+      ));
+    }
+
+    let child_path = child_path.trim_matches('/');
+    let full_path = if binding_record.root_path.is_empty() {
+      child_path.to_string()
+    } else if child_path.is_empty() {
+      binding_record.root_path.clone()
+    } else {
+      format!("{}/{}", binding_record.root_path, child_path)
+    };
+    BrowserDomPath::new(full_path).map_err(browser_capability_error)
+  }
+
+  pub fn read_browser_dom_resource(
+    &self,
+    binding: &str,
+    child_path: &str,
+  ) -> MResult<Value> {
+    let path = self.resolve_resource_path(binding, child_path)?;
+    let Some(entry) = self.browser_authority.dom_entry_for_path(&path) else {
+      return Err(browser_runtime_resource_error(
+        path.as_str(),
+        "no configured DOM manifest entry for path",
+      ));
+    };
+    self.browser_authority
+      .allows_dom(entry.selector.selector.as_str(), BrowserOperation::Read)
+      .map_err(browser_capability_error)?;
+    let Some(host) = self.browser_dom_host.as_ref() else {
+      return Err(browser_runtime_resource_error(
+        path.as_str(),
+        "no browser DOM host is registered",
+      ));
+    };
+    Ok(Value::String(Ref::new(host.read_dom_string(entry, &path)?)))
+  }
+
+  pub fn write_browser_dom_resource(
+    &mut self,
+    binding: &str,
+    child_path: &str,
+    value: &Value,
+  ) -> MResult<()> {
+    let path = self.resolve_resource_path(binding, child_path)?;
+    let entry = self
+      .browser_authority
+      .dom_entry_for_path(&path)
+      .cloned()
+      .ok_or_else(|| {
+        browser_runtime_resource_error(
+          path.as_str(),
+          "no configured DOM manifest entry for path",
+        )
+      })?;
+    self.browser_authority
+      .allows_dom(entry.selector.selector.as_str(), BrowserOperation::Write)
+      .map_err(browser_capability_error)?;
+    let Value::String(value) = value else {
+      return Err(browser_runtime_resource_error(
+        path.as_str(),
+        "only string values can be written to browser DOM resources in this PR",
+      ));
+    };
+    let Some(host) = self.browser_dom_host.as_mut() else {
+      return Err(browser_runtime_resource_error(
+        path.as_str(),
+        "no browser DOM host is registered",
+      ));
+    };
+    host.write_dom_string(&entry, &path, value.borrow().as_str())
   }
 
   pub fn apply_config_spec(

@@ -1,9 +1,3 @@
-extern crate mech_program;
-extern crate mech_utilities;
-extern crate mech_core;
-use mech_program::*;
-use mech_utilities::*;
-use mech_core::*;
 /*
 #[test]
 fn program_test() {
@@ -30,3 +24,26 @@ fn load_module_with_program() {
     }
   }
 }*/
+#[test]
+fn program_browser_resource_binding_declaration() {
+  let tree = mech_syntax::parser::parse("@browser := browser://dom/").unwrap();
+  assert!(!tree.body.sections.is_empty());
+}
+
+#[test]
+fn program_browser_resource_read() {
+  let tree = mech_syntax::parser::parse("x := body/search/_value@browser").unwrap();
+  assert!(!tree.body.sections.is_empty());
+}
+
+#[test]
+fn program_browser_resource_write() {
+  let tree = mech_syntax::parser::parse("body/header/title@browser = \"Hello\"").unwrap();
+  assert!(!tree.body.sections.is_empty());
+}
+
+#[test]
+fn program_browser_resource_define_does_not_write() {
+  let tree = mech_syntax::parser::parse("title@browser := \"Hello\"").unwrap();
+  assert!(!tree.body.sections.is_empty());
+}

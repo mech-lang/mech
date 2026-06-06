@@ -114,7 +114,119 @@ fn runtime_context_allows_write(
   })
 }
 
+
+fn split_resource_address(value: &str) -> Option<(&str, &str)> {
+  let (path, binding) = value.rsplit_once('@')?;
+  let path = path.trim();
+  let binding = binding.trim();
+  if path.is_empty() || binding.is_empty() {
+    return None;
+  }
+  if !binding
+    .bytes()
+    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
+  {
+    return None;
+  }
+  Some((path, binding))
+}
+
+fn parse_mech_string_literal(value: &str) -> Option<String> {
+  let value = value.trim();
+  if !value.starts_with('"') || !value.ends_with('"') || value.len() < 2 {
+    return None;
+  }
+  let inner = &value[1..value.len() - 1];
+  let mut out = String::new();
+  let mut chars = inner.chars();
+  while let Some(ch) = chars.next() {
+    if ch != '\\' {
+      out.push(ch);
+      continue;
+    }
+    match chars.next()? {
+      'n' => out.push('\n'),
+      'r' => out.push('\r'),
+      't' => out.push('\t'),
+      '\\' => out.push('\\'),
+      '"' => out.push('"'),
+      other => {
+        out.push('\\');
+        out.push(other);
+      }
+    }
+  }
+  Some(out)
+}
+
+fn mech_string_literal(value: &str) -> String {
+  let escaped = value
+    .replace('\\', "\\\\")
+    .replace('"', "\\\"")
+    .replace('\n', "\\n")
+    .replace('\r', "\\r")
+    .replace('\t', "\\t");
+  format!("\"{escaped}\"")
+}
+
 impl MechRuntime {
+
+
+  fn lower_browser_resource_source(&mut self, source: &str) -> MResult<String> {
+    let mut lowered = Vec::new();
+    for line in source.lines() {
+      let trimmed = line.trim();
+      if trimmed.is_empty() {
+        lowered.push(line.to_string());
+        continue;
+      }
+
+      if let Some(rest) = trimmed.strip_prefix('@') {
+        if let Some((name, uri)) = rest.split_once(":=") {
+          let name = name.trim();
+          let uri = uri.trim();
+          if uri.starts_with("browser://dom/") {
+            self.bind_resource_root(name, uri)?;
+            continue;
+          }
+        }
+      }
+
+      if let Some((target, rhs)) = trimmed.split_once(" = ") {
+        if !target.contains(":=") {
+          if let Some((path, binding)) = split_resource_address(target) {
+            let Some(value) = parse_mech_string_literal(rhs) else {
+              return Err(browser_runtime_resource_error(
+                target,
+                "browser DOM resource writes currently require a string literal value",
+              ));
+            };
+            self.write_browser_dom_resource(binding, path, &Value::String(Ref::new(value)))?;
+            continue;
+          }
+        }
+      }
+
+      if let Some((lhs, rhs)) = trimmed.split_once(":=") {
+        if let Some((path, binding)) = split_resource_address(rhs) {
+          if self.resource_bindings.contains_key(binding) {
+            let value = self.read_browser_dom_resource(binding, path)?;
+            let Value::String(value) = value else {
+              return Err(browser_runtime_resource_error(
+                rhs,
+                "browser DOM resource reads must return strings",
+              ));
+            };
+            lowered.push(format!("{} := {}", lhs.trim(), mech_string_literal(&value.borrow())));
+            continue;
+          }
+        }
+      }
+
+      lowered.push(line.to_string());
+    }
+    Ok(lowered.join("\n"))
+  }
 
   pub fn run_string(&mut self, source: &str) -> MResult<Value> {
     let mut context = self.runtime_context()?;
@@ -135,6 +247,8 @@ impl MechRuntime {
         task_id: context.task,
       },
     )?;
+
+    let source = self.lower_browser_resource_source(source)?;
 
     let program_config = self.program.config.clone();
     let mut program = std::mem::replace(
@@ -157,7 +271,7 @@ impl MechRuntime {
       }))
     });
 
-    let result = program.run_string(source);
+    let result = program.run_string(&source);
 
     ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
       slot.replace(previous_target);

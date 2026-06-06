@@ -128,3 +128,52 @@ fn context_declaration_does_not_break_import_export() {
 fn bare_capability_operation_is_rejected() {
   assert!(parser::parse("@main := db://main{:write}").is_err());
 }
+
+#[test]
+fn program_browser_resource_binding_declaration() {
+  let stmts = statements("@browser := browser://dom/");
+  match &stmts[0] {
+    Statement::ContextDeclaration(ctx) => {
+      assert_eq!(ctx.name.to_string(), "browser");
+      assert!(ctx.capabilities.is_empty());
+      match &ctx.base {
+        ContextBase::ResourceUri(uri) => assert_eq!(uri.to_string(), "browser://dom/"),
+        _ => panic!("expected resource uri"),
+      }
+    }
+    _ => panic!("expected context declaration"),
+  }
+}
+
+#[test]
+fn program_browser_resource_read() {
+  let stmts = statements("x := body/search/_value@browser");
+  match &stmts[0] {
+    Statement::VariableDefine(v) => match &v.expression {
+      Expression::Var(var) => {
+        assert_eq!(var.name.to_string(), "body/search/_value");
+        assert_eq!(var.context.as_ref().unwrap().to_string(), "browser");
+      }
+      _ => panic!("expected addressed var expression"),
+    },
+    _ => panic!("expected variable define"),
+  }
+}
+
+#[test]
+fn program_browser_resource_write() {
+  let stmts = statements("body/header/title@browser = \"Hello\"");
+  match &stmts[0] {
+    Statement::VariableAssign(assign) => {
+      assert_eq!(assign.target.name.to_string(), "body/header/title");
+      assert_eq!(assign.target.context.as_ref().unwrap().to_string(), "browser");
+    }
+    _ => panic!("expected variable assignment"),
+  }
+}
+
+#[test]
+fn program_browser_resource_define_does_not_write() {
+  let stmts = statements("title@browser := \"Hello\"");
+  assert!(matches!(&stmts[0], Statement::VariableDefine(_)));
+}

@@ -340,7 +340,7 @@ pub fn symbol(input: ParseString) -> ParseResult<Token> {
 
 // identifier-symbol := ampersand | dollar | bar | percent | slash | hashtag | backslash | tilde | plus | dash | asterisk | caret ;
 pub fn identifier_symbol(input: ParseString) -> ParseResult<Token> {
-  let (input, symbol) = alt((ampersand, dollar, percent, slash, hashtag, backslash, tilde, plus, dash, asterisk, caret))(input)?;
+  let (input, symbol) = alt((ampersand, dollar, percent, slash, hashtag, backslash, tilde, plus, dash, asterisk, caret, underscore))(input)?;
   Ok((input, symbol))
 }
 
@@ -439,7 +439,7 @@ pub fn enum_separator(input: ParseString) -> ParseResult<()> {
 
 // identifier := (alpha | emoji), (alpha | digit | identifier_symbol | emoji)* ;
 pub fn identifier(input: ParseString) -> ParseResult<Identifier> {
-  let (input, (first, mut rest)) = nom_tuple((alt((alpha_token, emoji)), many0(alt((alpha_token, digit_token, identifier_symbol, emoji)))))(input)?;
+  let (input, (first, mut rest)) = nom_tuple((alt((alpha_token, emoji, underscore)), many0(alt((alpha_token, digit_token, identifier_symbol, emoji)))))(input)?;
   let mut tokens = vec![first];
   tokens.append(&mut rest);
   let mut merged = Token::merge_tokens(&mut tokens).unwrap();
