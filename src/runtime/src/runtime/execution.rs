@@ -178,14 +178,14 @@ fn resolve_runtime_value(value: Value) -> Value {
 }
 
 
-fn string_value_expression(value: String) -> mech_core::Expression {
-  mech_core::Expression::Literal(mech_core::Literal::String(mech_core::MechString {
+fn string_value_expression(value: String) -> MResult<mech_core::Expression> {
+  Ok(mech_core::Expression::Literal(mech_core::Literal::String(mech_core::MechString {
     text: mech_core::Token::new(
       mech_core::TokenKind::String,
       mech_core::SourceRange::default(),
       value.chars().collect(),
     ),
-  }))
+  })))
 }
 
 impl MechRuntime {
@@ -505,7 +505,7 @@ impl MechRuntime {
             "browser DOM resource reads must return string values in this PR",
           ));
         };
-        Ok(string_value_expression(value.borrow().clone()))
+        string_value_expression(value.borrow().clone())
       }
       mech_core::Expression::Formula(factor) => {
         Ok(mech_core::Expression::Formula(self.lower_browser_resource_reads_in_factor(factor)?))

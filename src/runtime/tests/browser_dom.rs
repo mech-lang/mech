@@ -338,7 +338,7 @@ body/header/title@browser = "Search: " + body/search/_value@browser"#)
 }
 
 #[test]
-fn program_browser_resource_read_inside_expression_denied_before_eval() {
+fn program_browser_resource_read_inside_expression_denied_before_host_access() {
   let mut runtime = runtime();
   runtime.set_browser_authority(authority(
     "body/search/_value",
