@@ -71,7 +71,7 @@ baselib = ["bool", "string",
     ]
 
 compiler = ["program", "mech-core/compiler", "mech-interpreter/compiler", "mech-syntax/compiler"]
-program = ["mechfs", "mech-core/program", "mech-interpreter/program", "mech-syntax/program"]
+program = ["native", "mech-core/program", "mech-interpreter/program", "mech-syntax/program"]
 pretty_print = ["mech-core/pretty_print", "mech-interpreter/pretty_print", "mech-syntax/pretty_print"]
 serde = ["mech-core/serde", "mech-interpreter/serde", "mech-syntax/serde"]
 mika = ["mech-syntax/mika", "mech-core/mika"]
@@ -169,8 +169,3 @@ notify = { version = "8.2.0", optional = true }
 csv = { version = "1.4.0", optional = true }
 colored = {version = "3.1.1", optional = true }
 reqwest = { version = "0.13.2", features = ["blocking"], optional = true }
-
-[patch.crates-io]
-mech-core = { path = "../core" }
-mech-syntax = { path = "../syntax" }
-mech-interpreter = { path = "../interpreter" }

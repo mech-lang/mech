@@ -22,7 +22,7 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 
-default = ["baselib", "pretty_print", "serde", "compiler", "program",
+default = ["baselib", "pretty_print", "serde", "compiler", "program", "formatter", "mika",
       "u8", "u16", "u32", "u64", "u128", 
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
@@ -30,15 +30,13 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program",
       "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "io_default", "stats_default", "combinatorics_default",      
       "run_program", "inline_output_values", "codeblock_output_values", "clickable_symbol_listeners",
       "eval", "repl", "whos", "help", "docs", "clc", "clear", "code",
-      "mech-core/default", "mech-interpreter/default", "mech-syntax/default", "mech-runtime/default",
       ]
 
-base = ["baselib", "pretty_print", "serde", "compiler", "program",
+base = ["baselib", "pretty_print", "serde", "compiler", "program", "formatter", "mika",
       "statements_default", "subscript_default",
       "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "io_default", "stats_default", "combinatorics_default",
       "run_program", "inline_output_values", "codeblock_output_values", "clickable_symbol_listeners",
       "eval", "repl", "whos", "help", "docs", "clc", "clear", "code",
-      "mech-core/base", "mech-interpreter/base", "mech-syntax/base", "mech-runtime/base",
       ]
 
 statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
@@ -62,6 +60,8 @@ baselib = ["bool", "string",
 compiler = ["mech-core/compiler", "mech-interpreter/compiler", "mech-syntax/compiler", "mech-runtime/compiler"]
 program = ["mech-core/program", "mech-interpreter/program", "mech-syntax/program", "mech-runtime/program"]
 pretty_print = ["mech-core/pretty_print", "mech-syntax/pretty_print", "mech-runtime/pretty_print"]
+formatter = ["mech-syntax/formatter"]
+mika = ["mech-syntax/mika", "mech-core/mika", "mech-runtime/mika"]
 serde = ["mech-core/serde", "mech-syntax/serde", "mech-interpreter/serde", "mech-runtime/serde"]
 run_program = ["program"]
 inline_output_values = []

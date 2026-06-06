@@ -10,8 +10,10 @@
 
 use mech_core::MResult;
 
+#[cfg(feature = "watcher")]
 mod workspace_session;
 
+#[cfg(feature = "watcher")]
 pub use self::workspace_session::*;
 
 use crate::context::RuntimeContext;
