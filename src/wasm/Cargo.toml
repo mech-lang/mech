@@ -294,6 +294,7 @@ mech-interpreter = { version = "0.3.5", default-features = false}
 mech-runtime = { path = "../runtime", default-features = false }
 
 wasm-bindgen = "0.2.100"
+serde-wasm-bindgen = "0.6.5"
 js-sys = "0.3.77"
 miniz_oxide = "0.8.9"
 bincode = "2.0.1"

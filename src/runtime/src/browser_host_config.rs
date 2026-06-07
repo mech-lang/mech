@@ -2,7 +2,11 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{MechConfigDocument, RuntimeConfig};
-use mech_core::BrowserResource;
+use mech_core::{
+  BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry as RuntimeBrowserDomManifestEntry,
+  BrowserDomPath, BrowserDomProperty, BrowserDomScope, BrowserNetworkScope, BrowserOperation,
+  BrowserResource, BrowserStorageBackend, BrowserStorageScope, MResult, MechError, MechErrorKind,
+};
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
@@ -118,6 +122,69 @@ impl BrowserHostConfig {
       browser: BrowserHostBrowserConfig { grants, dom },
     }
   }
+
+  pub fn into_runtime_config(&self) -> MResult<RuntimeConfig> {
+    let log_level = match self.runtime.diagnostics.log_level.as_str() {
+      "error" => crate::LogLevel::Error,
+      "warn" => crate::LogLevel::Warn,
+      "info" => crate::LogLevel::Info,
+      "debug" => crate::LogLevel::Debug,
+      "trace" => crate::LogLevel::Trace,
+      other => return Err(invalid_host_config(format!("unknown runtime log level `{other}`"))),
+    };
+    let config = RuntimeConfig {
+      name: self.runtime.name.clone(),
+      limits: crate::RuntimeLimits {
+        max_steps_per_turn: self.runtime.limits.max_steps_per_turn,
+        max_turn_duration_ms: self.runtime.limits.max_turn_duration_ms,
+        max_memory_bytes: self.runtime.limits.max_memory_bytes,
+        max_tasks: self.runtime.limits.max_tasks,
+        max_actors: self.runtime.limits.max_actors,
+        max_actor_mailbox_len: self.runtime.limits.max_actor_mailbox_len,
+        max_source_bytes: self.runtime.limits.max_source_bytes,
+        max_in_memory_events: self.runtime.limits.max_in_memory_events,
+      },
+      diagnostics: crate::DiagnosticsConfig {
+        trace_enabled: self.runtime.diagnostics.trace_enabled,
+        profile_enabled: self.runtime.diagnostics.profile_enabled,
+        debug_enabled: self.runtime.diagnostics.debug_enabled,
+        log_level,
+      },
+    };
+    config.validate()?;
+    Ok(config)
+  }
+
+  pub fn into_browser_authority(&self) -> MResult<BrowserAuthority> {
+    let mut authority = BrowserAuthority::default();
+
+    for entry in &self.browser.dom {
+      authority.bind_dom_path(RuntimeBrowserDomManifestEntry::new(
+        BrowserDomPath::new(entry.path.clone()).map_err(host_config_error)?,
+        BrowserDomScope::new(entry.selector.clone()).map_err(host_config_error)?,
+        BrowserDomProperty::parse_config_name(&entry.property, entry.attribute.as_deref())
+          .map_err(host_config_error)?,
+      ));
+    }
+
+    for grant in &self.browser.grants {
+      let allow = grant
+        .allow
+        .iter()
+        .map(|operation| {
+          BrowserOperation::parse(operation)
+            .ok_or_else(|| invalid_host_config(format!("unknown browser operation `{operation}`")))
+        })
+        .collect::<MResult<Vec<_>>>()?;
+      authority.grant(BrowserCapabilityGrant::new(grant.resource.to_browser_resource()?, allow));
+    }
+
+    Ok(authority)
+  }
+
+  pub fn into_runtime_and_browser_authority(self) -> MResult<(RuntimeConfig, BrowserAuthority)> {
+    Ok((self.into_runtime_config()?, self.into_browser_authority()?))
+  }
 }
 
 impl From<&RuntimeConfig> for BrowserHostRuntimeConfig {
@@ -165,6 +232,52 @@ impl From<&BrowserResource> for BrowserHostResourceConfig {
       },
     }
   }
+}
+
+impl BrowserHostResourceConfig {
+  pub fn to_browser_resource(&self) -> MResult<BrowserResource> {
+    match self {
+      Self::Dom { selector } => Ok(BrowserResource::Dom(
+        BrowserDomScope::new(selector.clone()).map_err(host_config_error)?,
+      )),
+      Self::Clipboard => Ok(BrowserResource::Clipboard),
+      Self::Network { origin, methods } => Ok(BrowserResource::Network(
+        BrowserNetworkScope::new(origin.clone(), methods.clone()).map_err(host_config_error)?,
+      )),
+      Self::Storage { backend, scope, recursive } => {
+        let backend = BrowserStorageBackend::parse(backend)
+          .ok_or_else(|| invalid_host_config(format!("unknown storage backend `{backend}`")))?;
+        Ok(BrowserResource::Storage(
+          BrowserStorageScope::new(backend, scope.clone())
+            .map_err(host_config_error)?
+            .with_recursive(*recursive),
+        ))
+      }
+    }
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct InvalidBrowserHostConfigError {
+  pub reason: String,
+}
+
+impl MechErrorKind for InvalidBrowserHostConfigError {
+  fn name(&self) -> &str {
+    "InvalidBrowserHostConfig"
+  }
+
+  fn message(&self) -> String {
+    format!("Invalid browser host config: {}", self.reason)
+  }
+}
+
+fn invalid_host_config(reason: impl Into<String>) -> MechError {
+  MechError::new(InvalidBrowserHostConfigError { reason: reason.into() }, None)
+}
+
+fn host_config_error(error: impl std::fmt::Display) -> MechError {
+  invalid_host_config(error.to_string())
 }
 
 #[cfg(test)]
@@ -234,6 +347,33 @@ mod tests {
         && entry.property == "attribute"
         && entry.attribute.as_deref() == Some("class")
     }));
+  }
+
+  #[test]
+  fn browser_host_config_converts_back_to_runtime_and_authority() {
+    let source = r##"config := {
+  runtime: {name: "browser-test" diagnostics: {log-level: "trace"}}
+  browser: {
+    dom: [
+      {path: "body/title" selector: "#title" property: "text" allow: ["write"]}
+    ]
+  }
+}"##;
+    let document = parse_config_document(
+      "test.mcfg".to_string(),
+      source,
+      ConfigProfileOptions::default(),
+    )
+    .unwrap();
+    let runtime = RuntimeConfig::default().apply_patch(&document.runtime).unwrap();
+    let host = BrowserHostConfig::from_document_and_runtime(&document, &runtime);
+    let (runtime, authority) = host.into_runtime_and_browser_authority().unwrap();
+
+    assert_eq!(runtime.name, "browser-test");
+    assert_eq!(runtime.diagnostics.log_level, LogLevel::Trace);
+    assert_eq!(authority.grants().len(), 1);
+    assert_eq!(authority.dom_manifest().len(), 1);
+    authority.allows_dom("#title", BrowserOperation::Write).unwrap();
   }
 
   #[cfg(feature = "serde")]
