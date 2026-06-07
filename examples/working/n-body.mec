@@ -1,5 +1,7 @@
 N-Body Simulation
 ===============================================================================
+section: Examples
+===============================================================================
 
 The program simulates the gravitational interactions between celestial bodies using numerical methods.
 
