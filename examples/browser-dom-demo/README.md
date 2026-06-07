@@ -4,7 +4,8 @@ This example demonstrates browser DOM resources backed by runtime resource provi
 
 It shows a full DOM -> Mech -> DOM round trip:
 
-- `WasmMech.fromConfig(...)` loads browser DOM grants from `demo.mcfg`.
+- `mech serve` loads `demo.mcfg` and injects a derived host config as `window.MECH_HOST_CONFIG`.
+- `WasmMech.fromHostConfig()` initializes the browser runtime from the host-owned config projection.
 - Mech code binds `@browser := browser://dom/`.
 - Mech reads the source input value from `body/content/mech-sandbox/input/_value@browser`.
 - Mech computes `greeting`, `roundtrip`, and `status` strings from that DOM value.
@@ -22,20 +23,18 @@ It shows a full DOM -> Mech -> DOM round trip:
 
 ## Running
 
-Build or copy the Mech WASM package into `examples/browser-dom-demo/pkg/` so the page can import:
+Build the Mech WASM package, then run the host-owned config flow with `mech serve`:
 
 ```text
-./pkg/mech_wasm.js
-./pkg/mech_wasm_bg.wasm
+cargo run --bin mech -- --config examples/browser-dom-demo/demo.mcfg serve
 ```
 
-Then serve this directory with any static file server. For example:
+Open:
 
 ```text
-cd examples/browser-dom-demo
-python3 -m http.server 8080
+http://127.0.0.1:8081/
 ```
 
-Open `http://localhost:8080/` in a browser.
+`mech serve` loads the config, uses the `serve` section for the address, port, source paths, shim, and WASM package, and injects a derived host config as `window.MECH_HOST_CONFIG`.
 
 Change the `Source DOM input` field, click `Run round trip`, and observe that Mech reads the DOM value, computes new strings, and writes the computed result back into the page.

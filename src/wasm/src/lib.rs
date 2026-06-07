@@ -6,7 +6,7 @@ use wasm_bindgen::prelude::*;
 use mech_core::*;
 use mech_syntax::*;
 use mech_runtime::{
-  BrowserResourceProvider, ConfigProfileOptions, MechConfigDocument, MechRuntime, RuntimeConfig,
+  BrowserHostConfig, BrowserResourceProvider, ConfigProfileOptions, MechConfigDocument, MechRuntime, RuntimeConfig,
   parse_config_document,
 };
 use crate::host::{
@@ -168,6 +168,26 @@ fn wasm_parts_from_config_document(
   )
 }
 
+fn wasm_parts_from_host_config(config: JsValue) -> Result<(MechRuntime, BrowserHost), JsValue> {
+  let host_config: BrowserHostConfig = serde_wasm_bindgen::from_value(config)
+    .map_err(|error| js_error(format!("failed to deserialize host config: {error}")))?;
+  let (runtime_config, authority) = host_config
+    .into_runtime_and_browser_authority()
+    .map_err(|error| js_error(format!("invalid host config: {error:?}")))?;
+  let mut runtime = MechRuntime::new(runtime_config)
+    .map_err(|error| js_error(format!("failed to initialize host-configured runtime: {error:?}")))?;
+  runtime
+    .register_resource_provider(Box::new(BrowserResourceProvider::new(
+      authority.clone(),
+      WasmBrowserDomBackend::new(),
+    )))
+    .map_err(|error| js_error(format!("failed to register browser resource provider: {error:?}")))?;
+  runtime
+    .bind_resource_root("browser", "browser://dom/")
+    .map_err(|error| js_error(format!("failed to bind browser resource root: {error:?}")))?;
+  Ok((runtime, BrowserHost::new(authority)))
+}
+
 #[wasm_bindgen]
 pub struct WasmMech {
   runtime: MechRuntime,
@@ -189,6 +209,23 @@ impl WasmMech {
   pub fn from_config(source: &str) -> Result<WasmMech, JsValue> {
     Self::try_from_config("wasm://mech.mcfg", source)
       .map_err(|error| js_error(format!("{error:?}")))
+  }
+
+  #[wasm_bindgen(js_name = "fromHostConfig")]
+  pub fn from_host_config() -> Result<WasmMech, JsValue> {
+    let config = js_sys::Reflect::get(&js_sys::global(), &JsValue::from_str("MECH_HOST_CONFIG"))
+      .map_err(|error| js_error(format!("failed to read host config: {error:?}")))?;
+    if config.is_undefined() || config.is_null() {
+      return Err(js_error("host config was not provided by mech serve"));
+    }
+    let (runtime, browser_host) = wasm_parts_from_host_config(config)?;
+    Ok(Self {
+      runtime,
+      browser_host,
+      repl_history: Vec::new(),
+      repl_history_index: None,
+      repl_id: None,
+    })
   }
 
   fn try_from_config(
