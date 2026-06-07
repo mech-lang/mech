@@ -19,6 +19,7 @@ pub mod actor;
 pub mod service;
 pub mod actor_behavior;
 pub mod module;
+#[cfg(feature = "watcher")]
 mod workspace;
 
 pub use self::id::*;
@@ -40,4 +41,5 @@ pub use self::actor::*;
 pub use self::service::*;
 pub use self::actor_behavior::*;
 pub use self::module::*;
+#[cfg(feature = "watcher")]
 pub use self::workspace::*;

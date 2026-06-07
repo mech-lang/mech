@@ -158,3 +158,6 @@ tracing = { version = "0.1.41", optional = true }
 ignore = {version = "0.4.24", optional = true }
 uuid = { version = "1.23.1", features = ["v7", "serde"] }
 notify = { version = "8.2.0", optional = true }
+
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+uuid = { version = "1.23.1", features = ["js"] }
