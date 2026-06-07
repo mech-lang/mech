@@ -1022,6 +1022,68 @@ mod tests {
   }
 
   #[test]
+  fn server_directory_input_does_not_serve_mcfg_files() {
+    let root = temp_root("dir-mcfg-not-served");
+    let app = root.join("app");
+    std::fs::create_dir_all(&app).unwrap();
+    std::fs::write(app.join("demo.mcfg"), "config := {}\n").unwrap();
+    std::fs::write(app.join("index.html"), "custom index").unwrap();
+    std::fs::write(app.join("demo.mec"), "x := 1\n").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+    let mut server = test_server();
+    tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
+    server.load_workspace(&vec!["app".to_string()]).unwrap();
+    let registry = server.registry.read().unwrap();
+
+    assert!(registry.get_route("/demo.mcfg").is_none());
+    assert!(registry.get_route("/source/demo.mcfg").is_none());
+    assert!(registry.get_route("/code/demo.mcfg").is_none());
+    assert_eq!(registry.get_route("/index.html").unwrap().bytes, b"custom index");
+    assert_eq!(registry.get_route("/demo.mec").unwrap().content_type, "text/html");
+
+    drop(registry);
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn static_directory_serve_path_skips_mcfg_assets() {
+    let root = temp_root("static-dir-mcfg-not-served");
+    let app = root.join("app");
+    std::fs::create_dir_all(&app).unwrap();
+    std::fs::write(app.join("demo.mcfg"), "config := {}\n").unwrap();
+    std::fs::write(app.join("index.html"), "custom index").unwrap();
+    let mut registry = ServerSourceRegistry::default();
+    load_static_assets_from_paths(&mut registry, &root, &vec!["app".to_string()]).unwrap();
+
+    assert!(registry.get_route("app/demo.mcfg").is_none());
+    assert!(!registry.static_asset_keys().contains(&"app/demo.mcfg".to_string()));
+    assert!(registry.get_route("app/index.html").is_some());
+
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn explicit_mcfg_serve_input_is_skipped() {
+    let root = temp_root("explicit-mcfg-not-served");
+    std::fs::write(root.join("demo.mcfg"), "config := {}\n").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+    let plan = plan_serve_inputs(&vec!["demo.mcfg".to_string()]).unwrap();
+    assert!(plan.targets.is_empty());
+    assert!(plan.folders.is_empty());
+    assert!(plan.static_paths.is_empty());
+
+    let mut registry = ServerSourceRegistry::default();
+    load_static_assets_from_paths(&mut registry, &plan.root, &vec!["demo.mcfg".to_string()]).unwrap();
+    assert!(registry.get_route("demo.mcfg").is_none());
+    assert!(registry.get_route("source/demo.mcfg").is_none());
+    assert!(registry.get_route("code/demo.mcfg").is_none());
+
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
   fn registry_reload_static_path_updates_existing_asset() {
     let root = temp_root("static-update");
     let css = root.join("style.css");
