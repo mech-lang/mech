@@ -1545,7 +1545,13 @@ impl Formatter {
         MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
         MechCode::FunctionDefine(func_def) => self.function_define(func_def),
         MechCode::Statement(stmt) => self.statement(stmt),
-        x => todo!("Unhandled MechCode: {:#?}", x),
+        MechCode::Error(token, range) => {
+          if self.html {
+            format!("<span class=\"mech-error\" title=\"Error at {:?}\">{}</span>", range, token.to_string())
+          } else {
+            format!("{{ERROR: {} at {:?}}}", token.to_string(), range)
+          }
+        },
       };
       let formatted_comment = match cmmnt {
         Some(cmmt) => self.comment(cmmt),
@@ -1987,13 +1993,105 @@ impl Formatter {
       Statement::TupleDestructure(tpl_dstrct) => self.tuple_destructure(tpl_dstrct),
       Statement::KindDefine(kind_def) => self.kind_define(kind_def),
       Statement::EnumDefine(enum_def) => self.enum_define(enum_def),
-      _ => todo!(),
-      //Statement::FsmDeclare(fsm_decl) => self.fsm_declare(fsm_decl, src),
+      Statement::FsmDeclare(fsm_decl) => self.fsm_declare(fsm_decl),
+      Statement::SplitTable => self.split_table(),
+      Statement::FlattenTable => self.flatten_table(),
+      Statement::ContextDeclaration(context) => {
+        let base = match &context.base {
+          ContextBase::ResourceUri(uri) => uri.to_string(),
+          ContextBase::Context(name) => format!("@{}", name.to_string()),
+        };
+        let capabilities = context.capabilities.iter().map(|capability| {
+          let scope = match &capability.scope {
+            ContextCapabilityScope::Path(path) => path.to_string(),
+            ContextCapabilityScope::Wildcard(_) => "*".to_string(),
+          };
+          format!(":{}({})", capability.operation.to_string(), scope)
+        }).collect::<Vec<_>>().join(", ");
+        let capabilities = if capabilities.is_empty() {
+          String::new()
+        } else {
+          format!(" {{ {} }}", capabilities)
+        };
+        if self.html {
+          format!("<span class=\"mech-context-declaration\"><span class=\"mech-context-name\">@{}</span><span class=\"mech-define-op\">:=</span><span class=\"mech-context-base\">{}</span><span class=\"mech-context-capabilities\">{}</span></span>", context.name.to_string(), base, capabilities)
+        } else {
+          format!("@{} := {}{}", context.name.to_string(), base, capabilities)
+        }
+      },
     };
     if self.html {
       format!("<span class=\"mech-statement\">{}</span>",s)
     } else {
       format!("{}", s)
+    }
+  }
+
+  pub fn fsm_declare(&mut self, node: &FsmDeclare) -> String {
+    let fsm = self.fsm(&node.fsm);
+    let pipe = self.fsm_pipe(&node.pipe);
+    if self.html {
+      format!("<span class=\"mech-fsm-declare\"><span class=\"mech-fsm-declare-fsm\">{}</span><span class=\"mech-define-op\">:=</span><span class=\"mech-fsm-declare-pipe\">{}</span></span>", fsm, pipe)
+    } else {
+      format!("{} := {}", fsm, pipe)
+    }
+  }
+
+  pub fn fsm(&mut self, node: &Fsm) -> String {
+    let name = node.name.to_string();
+    let args = match &node.args {
+      Some(arguments) => {
+        let args = arguments
+          .iter()
+          .map(|(ident, expr)| {
+            let e = self.expression(expr);
+            match ident {
+              Some(id) => format!("{}: {}", id.to_string(), e),
+              None => e,
+            }
+          })
+          .collect::<Vec<_>>()
+          .join(", ");
+        if self.html {
+          format!("<span class=\"mech-left-paren\">(</span><span class=\"mech-fsm-args\">{}</span><span class=\"mech-right-paren\">)</span>", args)
+        } else {
+          format!("({})", args)
+        }
+      },
+      None => String::new(),
+    };
+    let kind = match &node.kind {
+      Some(kind) => {
+        let formatted = self.kind_annotation(&kind.kind);
+        if self.html {
+          format!("<span class=\"mech-fsm-kind\">{}</span>", formatted)
+        } else {
+          formatted
+        }
+      },
+      None => String::new(),
+    };
+
+    if self.html {
+      format!("<span class=\"mech-fsm\"><span class=\"mech-fsm-name\">#{}</span>{}{}</span>", name, args, kind)
+    } else {
+      format!("#{}{}{}", name, args, kind)
+    }
+  }
+
+  pub fn split_table(&mut self) -> String {
+    if self.html {
+      "<span class=\"mech-split-table\">&gt;-</span>".to_string()
+    } else {
+      ">-".to_string()
+    }
+  }
+
+  pub fn flatten_table(&mut self) -> String {
+    if self.html {
+      "<span class=\"mech-flatten-table\">-&lt;</span>".to_string()
+    } else {
+      "-<".to_string()
     }
   }
 
@@ -2140,7 +2238,6 @@ impl Formatter {
       Expression::MatrixComprehension(matrix_comp) => self.matrix_comprehension(matrix_comp),
       Expression::Match(match_expr) => self.match_expression(match_expr),
       Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe),
-      x => todo!("Unhandled Expression: {:#?}", x),
     };
     if self.html {
       format!("<span class=\"mech-expression\">{}</span>",e)
