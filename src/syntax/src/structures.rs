@@ -92,9 +92,23 @@ pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
       break;
     }
 
-    let (next_input, row) = matrix_row(input)?;
-    rows.push(row);
-    input = next_input;
+    match matrix_row(input.clone()) {
+      Ok((next_input, row)) => {
+        if next_input.cursor == input.cursor {
+          return Err(Failure(ParseError::new(
+            input,
+            "Internal parser error: matrix row parser made no progress",
+          )));
+        }
+
+        rows.push(row);
+        input = next_input;
+      }
+      Err(_) => {
+        let _ = label!(matrix_end, msg, r)(input)?;
+        unreachable!("matrix parser loop already ruled out matrix_end before attempting a row");
+      }
+    }
   }
 
   let (input, _) = whitespace0(input)?;
