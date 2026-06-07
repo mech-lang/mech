@@ -228,6 +228,18 @@ pub enum LogLevel {
   Trace,
 }
 
+impl LogLevel {
+  pub fn as_str(&self) -> &'static str {
+    match self {
+      Self::Error => "error",
+      Self::Warn => "warn",
+      Self::Info => "info",
+      Self::Debug => "debug",
+      Self::Trace => "trace",
+    }
+  }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DiagnosticsConfig {

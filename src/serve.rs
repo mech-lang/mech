@@ -9,7 +9,7 @@ use colored::*;
 use ignore::WalkBuilder;
 use mech_core::*;
 use mech_runtime::{
-  EventId, EventSink, ModuleBuildOptions, RuntimeConfig, RuntimeEvent, RuntimeWorkspaceFolder,
+  BrowserHostConfig, EventId, EventSink, ModuleBuildOptions, RuntimeConfig, RuntimeEvent, RuntimeWorkspaceFolder,
   RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget, RuntimeWorkspaceWatchEvent,
   ServerWorkspaceSession, HostFilesystemAuthority, DefaultIdGenerator, IdGenerator, SERVE_HOST_SUBJECT,
   FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE, FS_WATCH, MECH_TOOL_SUBJECT, check_fs_capability,
@@ -349,6 +349,8 @@ pub struct MechServer {
   authority: HostFilesystemAuthority,
   serve_subject: String,
   runtime_config: RuntimeConfig,
+  host_config: Option<BrowserHostConfig>,
+  serve_configured_shim_at_root: bool,
 }
 
 impl MechServer {
@@ -357,6 +359,21 @@ impl MechServer {
   }
 
   pub fn new_with_runtime_config(name: String, full_address: String, stylesheet: String, html_shim: String, wasm: Vec<u8>, js: Vec<u8>, authority: HostFilesystemAuthority, runtime_config: RuntimeConfig) -> Self {
+    Self::new_with_runtime_config_and_host_config(name, full_address, stylesheet, html_shim, wasm, js, authority, runtime_config, None, false)
+  }
+
+  pub fn new_with_runtime_config_and_host_config(
+    name: String,
+    full_address: String,
+    stylesheet: String,
+    html_shim: String,
+    wasm: Vec<u8>,
+    js: Vec<u8>,
+    authority: HostFilesystemAuthority,
+    runtime_config: RuntimeConfig,
+    host_config: Option<BrowserHostConfig>,
+    serve_configured_shim_at_root: bool,
+  ) -> Self {
     Self {
       name,
       init: false,
@@ -372,16 +389,27 @@ impl MechServer {
       authority,
       serve_subject: SERVE_HOST_SUBJECT.to_string(),
       runtime_config,
+      host_config,
+      serve_configured_shim_at_root,
     }
   }
 
   pub async fn init(&mut self) -> MResult<()> {
     let mut registry = self.registry.write().unwrap();
-    let html = asset(self.html_shim.as_bytes(), "text/html", None);
+    let html_shim = if let Some(host_config) = &self.host_config {
+      inject_host_config_script(&self.html_shim, host_config)?
+    } else {
+      self.html_shim.clone()
+    };
+    let html = asset(html_shim.as_bytes(), "text/html", None);
     let css = asset(self.stylesheet.as_bytes(), "text/css", None);
     let js = asset(&self.js, "application/javascript", None);
     let wasm = asset(&self.wasm, "application/wasm", Some("br"));
-    registry.insert_asset("index.html", html.clone());
+    if self.serve_configured_shim_at_root {
+      registry.insert_user_asset("index.html", html.clone());
+    } else {
+      registry.insert_asset("index.html", html.clone());
+    }
     registry.insert_asset("_mech/index.html", html);
     registry.insert_asset("_mech/style.css", css);
     registry.insert_asset("_mech/pkg/mech_wasm.js", js.clone());
@@ -821,6 +849,24 @@ fn module_options() -> ModuleBuildOptions<'static> {
   ModuleBuildOptions::new("serve", "v0.3", "native", &[], &[])
 }
 
+fn host_config_script(host_config: &BrowserHostConfig) -> MResult<String> {
+  let json = serde_json::to_string(host_config)
+    .map_err(|error| Error::new(ErrorKind::InvalidData, error.to_string()))?
+    .replace('<', "\\u003c");
+  Ok(format!("<script>window.__MECH_HOST_CONFIG = {json};</script>"))
+}
+
+fn inject_host_config_script(html: &str, host_config: &BrowserHostConfig) -> MResult<String> {
+  let script = host_config_script(host_config)?;
+  if let Some(index) = html.find("</head>") {
+    let mut out = html.to_string();
+    out.insert_str(index, &script);
+    Ok(out)
+  } else {
+    Ok(format!("{script}\n{html}"))
+  }
+}
+
 fn asset(bytes: &[u8], content_type: &'static str, content_encoding: Option<&'static str>) -> ServerAsset {
   ServerAsset { bytes: bytes.to_vec(), content_type, content_encoding, backing_path: None }
 }
@@ -983,6 +1029,119 @@ mod tests {
   }
 
   #[test]
+  fn registry_does_not_serve_active_config_endpoint() {
+    let registry = ServerSourceRegistry::default();
+    assert!(registry.get_route("/__mech/config.mcfg").is_none());
+  }
+
+  #[test]
+  fn host_config_script_escapes_less_than() {
+    let host_config = BrowserHostConfig {
+      runtime: mech_runtime::BrowserHostRuntimeConfig {
+        name: "x<script".to_string(),
+        limits: mech_runtime::BrowserHostRuntimeLimits {
+          max_steps_per_turn: None,
+          max_turn_duration_ms: None,
+          max_memory_bytes: None,
+          max_tasks: None,
+          max_actors: None,
+          max_actor_mailbox_len: None,
+          max_source_bytes: None,
+          max_in_memory_events: None,
+        },
+        diagnostics: mech_runtime::BrowserHostDiagnosticsConfig {
+          trace_enabled: false,
+          profile_enabled: false,
+          debug_enabled: false,
+          log_level: "info".to_string(),
+        },
+      },
+      browser: mech_runtime::BrowserHostBrowserConfig {
+        grants: Vec::new(),
+        dom: Vec::new(),
+      },
+    };
+    let script = host_config_script(&host_config).unwrap();
+    assert!(script.contains("\\u003cscript"));
+    assert!(!script.contains("x<script"));
+  }
+
+  #[test]
+  fn config_shim_at_root_prefers_custom_shim_over_listing() {
+    let root = temp_root("config-shim-root");
+    std::fs::write(root.join("demo.mec"), "x := 1\n").unwrap();
+    let mut registry = ServerSourceRegistry::default();
+    registry.insert_user_asset("index.html", asset(b"custom shim", "text/html", None));
+    registry.insert_asset("_mech/index.html", asset(b"embedded", "text/html", None));
+    registry.sync_workspace_snapshot(&root, &snapshot(&root, "demo.mec"), "", "").unwrap();
+    let served = registry.get_route("/").unwrap();
+    assert_eq!(served.bytes, b"custom shim");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn server_directory_input_does_not_serve_mcfg_files() {
+    let root = temp_root("dir-mcfg-not-served");
+    let app = root.join("app");
+    std::fs::create_dir_all(&app).unwrap();
+    std::fs::write(app.join("demo.mcfg"), "config := {}\n").unwrap();
+    std::fs::write(app.join("index.html"), "custom index").unwrap();
+    std::fs::write(app.join("demo.mec"), "x := 1\n").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+    let mut server = test_server();
+    tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
+    server.load_workspace(&vec!["app".to_string()]).unwrap();
+    let registry = server.registry.read().unwrap();
+
+    assert!(registry.get_route("/demo.mcfg").is_none());
+    assert!(registry.get_route("/source/demo.mcfg").is_none());
+    assert!(registry.get_route("/code/demo.mcfg").is_none());
+    assert_eq!(registry.get_route("/index.html").unwrap().bytes, b"custom index");
+    assert_eq!(registry.get_route("/demo.mec").unwrap().content_type, "text/html");
+
+    drop(registry);
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn static_directory_serve_path_skips_mcfg_assets() {
+    let root = temp_root("static-dir-mcfg-not-served");
+    let app = root.join("app");
+    std::fs::create_dir_all(&app).unwrap();
+    std::fs::write(app.join("demo.mcfg"), "config := {}\n").unwrap();
+    std::fs::write(app.join("index.html"), "custom index").unwrap();
+    let mut registry = ServerSourceRegistry::default();
+    load_static_assets_from_paths(&mut registry, &root, &vec!["app".to_string()]).unwrap();
+
+    assert!(registry.get_route("app/demo.mcfg").is_none());
+    assert!(!registry.static_asset_keys().contains(&"app/demo.mcfg".to_string()));
+    assert!(registry.get_route("app/index.html").is_some());
+
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn explicit_mcfg_serve_input_is_skipped() {
+    let root = temp_root("explicit-mcfg-not-served");
+    std::fs::write(root.join("demo.mcfg"), "config := {}\n").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+    let plan = plan_serve_inputs(&vec!["demo.mcfg".to_string()]).unwrap();
+    assert!(plan.targets.is_empty());
+    assert!(plan.folders.is_empty());
+    assert!(plan.static_paths.is_empty());
+
+    let mut registry = ServerSourceRegistry::default();
+    load_static_assets_from_paths(&mut registry, &plan.root, &vec!["demo.mcfg".to_string()]).unwrap();
+    assert!(registry.get_route("demo.mcfg").is_none());
+    assert!(registry.get_route("source/demo.mcfg").is_none());
+    assert!(registry.get_route("code/demo.mcfg").is_none());
+
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
   fn registry_reload_static_path_updates_existing_asset() {
     let root = temp_root("static-update");
     let css = root.join("style.css");
@@ -1067,6 +1226,22 @@ mod tests {
     std::fs::write(root.join("main.mec"), "x := 1\n").unwrap();
     let registry = synced_registry(&root, "main.mec");
     assert!(String::from_utf8(registry.get_route("source/main.mec").unwrap().bytes).unwrap().contains("x := 1"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn registry_distinguishes_generated_html_and_code_routes() {
+    let root = temp_root("html-vs-code");
+    std::fs::write(root.join("demo.mec"), "x := 1\n").unwrap();
+    let registry = synced_registry(&root, "demo.mec");
+
+    let html = registry.get_route("/demo.mec").unwrap();
+    assert_eq!(html.content_type, "text/html");
+
+    let (code, trace) = registry.get_route_with_trace("/code/demo.mec").unwrap();
+    assert_eq!(code.content_type, "text/plain");
+    assert!(trace.contains("code source `demo.mec`"));
+
     std::fs::remove_dir_all(root).unwrap();
   }
 

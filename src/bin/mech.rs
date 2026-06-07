@@ -77,6 +77,7 @@ mod config;
 #[path = "mech/capabilities.rs"]
 mod capabilities;
 
+
 #[cfg(all(test, feature = "serve"))]
 pub(crate) static CURRENT_DIR_LOCK: Mutex<()> = Mutex::new(());
 
@@ -321,6 +322,9 @@ async fn main() -> Result<(), MechError> {
     let error_badge = "[Error]".truecolor(246, 98, 78);
 
     let loaded_config = config::load_cli_config(serve_matches)?;
+    if let Some(loaded) = loaded_config.as_ref() {
+      println!("{badge} Loaded browser config grants: {}", loaded.document.browser.grants().len());
+    }
     let effective = config::effective_serve_options(serve_matches, loaded_config.as_ref())?;
     let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
     let runtime_config = config::apply_runtime_config_patch(
@@ -336,6 +340,12 @@ async fn main() -> Result<(), MechError> {
     let stylesheet_paths = effective.stylesheet_paths;
     let wasm_pkg = effective.wasm_pkg.as_str();
     let shim_path = effective.shim_path.as_str();
+    let config_shim_at_root = loaded_config
+      .as_ref()
+      .and_then(|loaded| loaded.document.serve.as_ref())
+      .and_then(|serve| serve.shim.as_ref())
+      .is_some()
+      && serve_matches.get_one::<String>("shim").is_none();
 
     let wasm_path = format!("{wasm_pkg}/mech_wasm_bg.wasm.br");
     let js_path = format!("{wasm_pkg}/mech_wasm.js");
@@ -386,7 +396,14 @@ async fn main() -> Result<(), MechError> {
       &badge,
     )?;
 
-    let mut server = MechServer::new_with_runtime_config(
+    let host_config = loaded_config
+      .as_ref()
+      .map(|loaded| mech_runtime::BrowserHostConfig::from_document_and_runtime(
+        &loaded.document,
+        &runtime_config,
+      ));
+
+    let mut server = MechServer::new_with_runtime_config_and_host_config(
       "Mech Server".to_string(),
       full_address,
       stylesheet_str,
@@ -395,6 +412,8 @@ async fn main() -> Result<(), MechError> {
       js,
       authority,
       runtime_config,
+      host_config,
+      config_shim_at_root,
     );
 
     server.init().await?;
@@ -948,6 +967,7 @@ pub fn print_mech_error(err: &MechError) {
       println!("{:#?}", err);
   }
 } 
+
 
 #[cfg(all(test, feature = "serve"))]
 mod filesystem_capability_cli_tests {

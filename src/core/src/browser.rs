@@ -265,6 +265,10 @@ impl BrowserResource {
             Self::Storage(_) => BrowserResourceKind::Storage,
         }
     }
+
+  pub fn kind_str(&self) -> &'static str {
+    self.kind().as_str()
+  }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -273,6 +277,27 @@ pub enum BrowserResourceKind {
     Clipboard,
     Network,
     Storage,
+}
+
+impl BrowserResourceKind {
+  pub fn parse(value: &str) -> Option<Self> {
+    match value {
+      "dom" => Some(Self::Dom),
+      "clipboard" => Some(Self::Clipboard),
+      "network" => Some(Self::Network),
+      "storage" => Some(Self::Storage),
+      _ => None,
+    }
+  }
+
+  pub fn as_str(&self) -> &'static str {
+    match self {
+      Self::Dom => "dom",
+      Self::Clipboard => "clipboard",
+      Self::Network => "network",
+      Self::Storage => "storage",
+    }
+  }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -295,17 +320,21 @@ impl BrowserOperation {
             _ => None,
         }
     }
+
+  pub fn as_str(&self) -> &'static str {
+    match self {
+      Self::Read => "read",
+      Self::Write => "write",
+      Self::List => "list",
+      Self::Watch => "watch",
+      Self::Invoke => "invoke",
+    }
+  }
 }
 
 impl fmt::Display for BrowserOperation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
-            Self::Read => "read",
-            Self::Write => "write",
-            Self::List => "list",
-            Self::Watch => "watch",
-            Self::Invoke => "invoke",
-        })
+        f.write_str(self.as_str())
     }
 }
 
@@ -424,6 +453,30 @@ impl BrowserDomProperty {
             _ => Self::Text,
         }
     }
+
+  pub fn config_name(&self) -> &'static str {
+    match self {
+      Self::Text => "text",
+      Self::Value => "value",
+      Self::InnerHtml => "inner-html",
+      Self::Attribute(_) => "attribute",
+    }
+  }
+
+  pub fn config_attribute(&self) -> Option<&str> {
+    match self {
+      Self::Attribute(attribute) => Some(attribute.as_str()),
+      _ => None,
+    }
+  }
+
+  pub fn parse_config_name(
+    property: &str,
+    attribute: Option<&str>,
+  ) -> Result<Self, BrowserCapabilityError> {
+    let path = BrowserDomPath::new("_text")?;
+    Self::parse_manifest(Some(property), attribute, &path)
+  }
 
     pub fn parse_manifest(
         property: Option<&str>,

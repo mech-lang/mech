@@ -63,7 +63,7 @@ pub fn load_cli_config(matches: &clap::ArgMatches) -> MResult<Option<LoadedMechC
         &source,
         ConfigProfileOptions::default(),
     )?;
-    println!("[Mech Config] Loaded config: {}", path.display());
+    println!("[Mech Server] Loading config…{}", path.display());
     Ok(Some(LoadedMechConfig {
         path,
         base_dir,
