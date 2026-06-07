@@ -77,6 +77,143 @@ mod config;
 #[path = "mech/capabilities.rs"]
 mod capabilities;
 
+
+#[cfg(feature = "serve")]
+fn browser_operation_name(operation: &mech_runtime::BrowserOperation) -> &'static str {
+  match operation {
+    mech_runtime::BrowserOperation::Read => "read",
+    mech_runtime::BrowserOperation::Write => "write",
+    mech_runtime::BrowserOperation::List => "list",
+    mech_runtime::BrowserOperation::Watch => "watch",
+    mech_runtime::BrowserOperation::Invoke => "invoke",
+  }
+}
+
+#[cfg(feature = "serve")]
+fn browser_resource_json(resource: &mech_runtime::BrowserResource) -> serde_json::Value {
+  match resource {
+    mech_runtime::BrowserResource::Dom(scope) => serde_json::json!({
+      "kind": "dom",
+      "selector": &scope.selector,
+    }),
+    mech_runtime::BrowserResource::Clipboard => serde_json::json!({
+      "kind": "clipboard",
+    }),
+    mech_runtime::BrowserResource::Network(scope) => serde_json::json!({
+      "kind": "network",
+      "origin": &scope.origin,
+      "methods": scope.methods.as_ref().map(|methods| methods.iter().cloned().collect::<Vec<_>>()),
+    }),
+    mech_runtime::BrowserResource::Storage(scope) => serde_json::json!({
+      "kind": "storage",
+      "backend": scope.backend.to_string(),
+      "scope": &scope.scope,
+      "recursive": scope.recursive,
+    }),
+  }
+}
+
+#[cfg(feature = "serve")]
+fn browser_dom_property_json(property: &mech_runtime::BrowserDomProperty) -> serde_json::Value {
+  match property {
+    mech_runtime::BrowserDomProperty::Text => serde_json::json!({"property": "text"}),
+    mech_runtime::BrowserDomProperty::Value => serde_json::json!({"property": "value"}),
+    mech_runtime::BrowserDomProperty::InnerHtml => serde_json::json!({"property": "inner-html"}),
+    mech_runtime::BrowserDomProperty::Attribute(attribute) => serde_json::json!({
+      "property": "attribute",
+      "attribute": attribute,
+    }),
+  }
+}
+
+#[cfg(feature = "serve")]
+fn runtime_log_level_name(log_level: &mech_runtime::LogLevel) -> &'static str {
+  match log_level {
+    mech_runtime::LogLevel::Error => "error",
+    mech_runtime::LogLevel::Warn => "warn",
+    mech_runtime::LogLevel::Info => "info",
+    mech_runtime::LogLevel::Debug => "debug",
+    mech_runtime::LogLevel::Trace => "trace",
+  }
+}
+
+#[cfg(feature = "serve")]
+fn host_config_script(
+  document: &mech_runtime::MechConfigDocument,
+  runtime_config: &mech_runtime::RuntimeConfig,
+) -> String {
+  let grants = document
+    .browser
+    .grants()
+    .iter()
+    .map(|grant| {
+      let allow = grant
+        .allow
+        .iter()
+        .map(browser_operation_name)
+        .collect::<Vec<_>>();
+      serde_json::json!({
+        "resource": browser_resource_json(&grant.resource),
+        "allow": allow,
+      })
+    })
+    .collect::<Vec<_>>();
+
+  let dom = document
+    .browser
+    .dom_manifest()
+    .iter()
+    .map(|entry| {
+      let mut value = browser_dom_property_json(&entry.property);
+      let object = value.as_object_mut().expect("DOM property JSON is an object");
+      object.insert("path".to_string(), serde_json::json!(entry.path.as_str()));
+      object.insert("selector".to_string(), serde_json::json!(&entry.selector.selector));
+      value
+    })
+    .collect::<Vec<_>>();
+
+  let host_config = serde_json::json!({
+    "runtime": {
+      "name": &runtime_config.name,
+      "limits": {
+        "maxStepsPerTurn": runtime_config.limits.max_steps_per_turn,
+        "maxTurnDurationMs": runtime_config.limits.max_turn_duration_ms,
+        "maxMemoryBytes": runtime_config.limits.max_memory_bytes,
+        "maxTasks": runtime_config.limits.max_tasks,
+        "maxActors": runtime_config.limits.max_actors,
+        "maxActorMailboxLen": runtime_config.limits.max_actor_mailbox_len,
+        "maxSourceBytes": runtime_config.limits.max_source_bytes,
+        "maxInMemoryEvents": runtime_config.limits.max_in_memory_events,
+      },
+      "diagnostics": {
+        "traceEnabled": runtime_config.diagnostics.trace_enabled,
+        "profileEnabled": runtime_config.diagnostics.profile_enabled,
+        "debugEnabled": runtime_config.diagnostics.debug_enabled,
+        "logLevel": runtime_log_level_name(&runtime_config.diagnostics.log_level),
+      },
+    },
+    "browser": {
+      "grants": grants,
+      "dom": dom,
+    },
+  });
+  let json = serde_json::to_string(&host_config)
+    .expect("host config JSON serialization should not fail")
+    .replace('<', "\\u003c");
+  format!("<script>window.__MECH_HOST_CONFIG = {json};</script>")
+}
+
+#[cfg(feature = "serve")]
+fn inject_host_config_script(html: String, script: &str) -> String {
+  if let Some(index) = html.find("</head>") {
+    let mut out = html;
+    out.insert_str(index, script);
+    out
+  } else {
+    format!("{script}\n{html}")
+  }
+}
+
 #[cfg(all(test, feature = "serve"))]
 pub(crate) static CURRENT_DIR_LOCK: Mutex<()> = Mutex::new(());
 
@@ -322,8 +459,7 @@ async fn main() -> Result<(), MechError> {
 
     let loaded_config = config::load_cli_config(serve_matches)?;
     if let Some(loaded) = loaded_config.as_ref() {
-      println!("{badge} Browser config grants: {}", loaded.document.browser.grants().len());
-      println!("{badge} Serving active config at /__mech/config.mcfg");
+      println!("{badge} Loaded browser config grants: {}", loaded.document.browser.grants().len());
     }
     let effective = config::effective_serve_options(serve_matches, loaded_config.as_ref())?;
     let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
@@ -373,6 +509,11 @@ async fn main() -> Result<(), MechError> {
         )
         .with_compiler_loc()
       })?;
+    let shim_str = if let Some(loaded) = loaded_config.as_ref() {
+      inject_host_config_script(shim_str, &host_config_script(&loaded.document, &runtime_config))
+    } else {
+      shim_str
+    };
 
     print!("{badge} Loading WASM…");
     let wasm = read_or_download(
@@ -396,7 +537,7 @@ async fn main() -> Result<(), MechError> {
       &badge,
     )?;
 
-    let mut server = MechServer::new_with_runtime_config_and_host_config(
+    let mut server = MechServer::new_with_runtime_config_and_shim_mode(
       "Mech Server".to_string(),
       full_address,
       stylesheet_str,
@@ -405,7 +546,6 @@ async fn main() -> Result<(), MechError> {
       js,
       authority,
       runtime_config,
-      loaded_config.as_ref().map(|loaded| loaded.source.clone()),
       config_shim_at_root,
     );
 
@@ -960,6 +1100,7 @@ pub fn print_mech_error(err: &MechError) {
       println!("{:#?}", err);
   }
 } 
+
 
 #[cfg(all(test, feature = "serve"))]
 mod filesystem_capability_cli_tests {

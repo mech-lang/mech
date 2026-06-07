@@ -105,15 +105,6 @@ impl ServerSourceRegistry {
 
   fn set_preferred_index_source(&mut self, source: impl Into<String>) { self.preferred_index_source = Some(source.into()); }
 
-  fn set_active_config_source(&mut self, source: impl Into<String>) {
-    self.insert_asset("__mech/config.mcfg", ServerAsset {
-      bytes: source.into().into_bytes(),
-      content_type: "text/plain; charset=utf-8",
-      content_encoding: None,
-      backing_path: None,
-    });
-  }
-
   fn rebuild_listing(&mut self) {
     let mut keys = self.raw_sources.keys().cloned().collect::<Vec<_>>(); keys.sort();
     if keys.is_empty() { self.listing_asset = None; return; }
@@ -358,7 +349,6 @@ pub struct MechServer {
   authority: HostFilesystemAuthority,
   serve_subject: String,
   runtime_config: RuntimeConfig,
-  active_config_source: Option<String>,
   serve_configured_shim_at_root: bool,
 }
 
@@ -368,10 +358,10 @@ impl MechServer {
   }
 
   pub fn new_with_runtime_config(name: String, full_address: String, stylesheet: String, html_shim: String, wasm: Vec<u8>, js: Vec<u8>, authority: HostFilesystemAuthority, runtime_config: RuntimeConfig) -> Self {
-    Self::new_with_runtime_config_and_host_config(name, full_address, stylesheet, html_shim, wasm, js, authority, runtime_config, None, false)
+    Self::new_with_runtime_config_and_shim_mode(name, full_address, stylesheet, html_shim, wasm, js, authority, runtime_config, false)
   }
 
-  pub fn new_with_runtime_config_and_host_config(
+  pub fn new_with_runtime_config_and_shim_mode(
     name: String,
     full_address: String,
     stylesheet: String,
@@ -380,7 +370,6 @@ impl MechServer {
     js: Vec<u8>,
     authority: HostFilesystemAuthority,
     runtime_config: RuntimeConfig,
-    active_config_source: Option<String>,
     serve_configured_shim_at_root: bool,
   ) -> Self {
     Self {
@@ -398,7 +387,6 @@ impl MechServer {
       authority,
       serve_subject: SERVE_HOST_SUBJECT.to_string(),
       runtime_config,
-      active_config_source,
       serve_configured_shim_at_root,
     }
   }
@@ -421,9 +409,6 @@ impl MechServer {
     registry.insert_asset("_mech/pkg/mech_wasm_bg.wasm.br", wasm.clone());
     registry.insert_asset("pkg/mech_wasm.js", js);
     registry.insert_asset("pkg/mech_wasm_bg.wasm", wasm);
-    if let Some(source) = &self.active_config_source {
-      registry.set_active_config_source(source.clone());
-    }
     self.init = true;
     Ok(())
   }
@@ -1018,17 +1003,7 @@ mod tests {
   }
 
   #[test]
-  fn active_config_endpoint_returns_config_source() {
-    let source = "config := {serve: {port: 8081}}\n";
-    let mut registry = ServerSourceRegistry::default();
-    registry.set_active_config_source(source.to_string());
-    let served = registry.get_route("/__mech/config.mcfg").unwrap();
-    assert_eq!(served.bytes, source.as_bytes());
-    assert_eq!(served.content_type, "text/plain; charset=utf-8");
-  }
-
-  #[test]
-  fn no_config_registry_has_no_active_config_endpoint() {
+  fn registry_does_not_serve_active_config_endpoint() {
     let registry = ServerSourceRegistry::default();
     assert!(registry.get_route("/__mech/config.mcfg").is_none());
   }

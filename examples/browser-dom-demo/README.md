@@ -6,8 +6,8 @@ It shows the intended host flow for browser configuration:
 
 - `mech serve` loads `demo.mcfg` as the host config.
 - The `serve` section selects `index.html` as the custom shim, chooses the Mech source files, and points at the WASM package.
-- The server exposes the active host config to the page at `/__mech/config.mcfg`.
-- The page initializes `WasmMech.fromConfig(...)` from that server-provided config.
+- `mech serve` keeps the config host-owned and does not serve it to the browser as a file.
+- The custom shim initializes `WasmMech.fromHostConfig()` from host-provided runtime/browser configuration injected by `mech serve`.
 - DOM permissions come from the host config loaded by `mech serve`, not an arbitrary app-level fetch of `demo.mcfg`.
 
 The demo performs a full DOM -> Mech -> DOM round trip:
@@ -23,7 +23,7 @@ The demo performs a full DOM -> Mech -> DOM round trip:
 ## Files
 
 - `demo.mcfg` — runtime, serve, and browser host config, including DOM read/write permissions.
-- `index.html` — custom shim page that loads the WASM package and fetches the active host config from `/__mech/config.mcfg`.
+- `index.html` — custom shim page that loads the WASM package, uses host-provided config, and fetches Mech source through `/code/...`.
 - `demo.mec` — allowed program that reads a DOM value, performs string logic in Mech, and writes DOM output.
 - `denied.mec` — program that attempts a denied DOM write.
 
@@ -44,6 +44,6 @@ cargo run --bin mech -- --config examples/browser-dom-demo/demo.mcfg serve
 
 Open `http://127.0.0.1:8081/` in a browser.
 
-`mech serve` reads `examples/browser-dom-demo/demo.mcfg`, resolves `serve.paths`, `serve.shim`, and `serve.wasm` relative to that config file, serves `index.html` at `/`, and serves only the active host config at `/__mech/config.mcfg` for the page to pass to `WasmMech.fromConfig(...)`. The custom shim fetches Mech code through `/code/demo.mec` and `/code/denied.mec`, while config comes from `/__mech/config.mcfg`.
+`mech serve` reads `examples/browser-dom-demo/demo.mcfg`, resolves `serve.paths`, `serve.shim`, and `serve.wasm` relative to that config file, serves `index.html` at `/`, and keeps the host config internal instead of exposing it as a browser-fetchable file. The custom shim initializes `WasmMech.fromHostConfig()` from host-provided runtime/browser configuration and fetches Mech code through `/code/demo.mec` and `/code/denied.mec`.
 
 Change the `Source DOM input` field, click `Run round trip`, and observe that Mech reads the DOM value, computes new strings, and writes the computed result back into the page.

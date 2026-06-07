@@ -345,7 +345,6 @@ mod filesystem_capability_tests {
         crate::config::LoadedMechConfig {
             path: PathBuf::from("test.mcfg"),
             base_dir: PathBuf::new(),
-            source: source.to_string(),
             document: parse_config_document(
                 "test.mcfg".to_string(),
                 source,

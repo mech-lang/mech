@@ -92,11 +92,10 @@
       async function main() {
         await init();
 
-        const configSource = await loadText("/__mech/config.mcfg");
         const demoSource = await loadText("/code/demo.mec");
         const deniedSource = await loadText("/code/denied.mec");
 
-        const mech = WasmMech.fromConfig(configSource);
+        const mech = WasmMech.fromHostConfig();
 
         log(`browser grants: ${mech.browserGrantCount()}`);
         log(`can read source input: ${mech.canReadDom("#name-input")}`);

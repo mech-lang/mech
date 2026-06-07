@@ -10,14 +10,15 @@ use mech_runtime::{
   parse_config_document,
 };
 use crate::host::{
-  BrowserCapabilityRequest, BrowserDomScope, BrowserHost, BrowserHostError,
-  BrowserNetworkScope, BrowserOperation, BrowserStorageBackend, BrowserStorageScope,
+  BrowserAuthority, BrowserCapabilityGrant, BrowserCapabilityRequest, BrowserDomManifestEntry,
+  BrowserDomPath, BrowserDomProperty, BrowserDomScope, BrowserHost, BrowserHostError,
+  BrowserNetworkScope, BrowserOperation, BrowserResource, BrowserStorageBackend, BrowserStorageScope,
   WasmBrowserDomBackend,
 };
 use wasm_bindgen::JsCast;
 use web_sys::{window, HtmlElement, HtmlInputElement, Node, Element, HashChangeEvent, HtmlTextAreaElement, Url};
 use js_sys::decode_uri_component;
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::panic::{catch_unwind, AssertUnwindSafe};
@@ -168,6 +169,200 @@ fn wasm_parts_from_config_document(
   )
 }
 
+
+fn js_field(object: &JsValue, name: &str) -> Result<JsValue, JsValue> {
+  js_sys::Reflect::get(object, &JsValue::from_str(name))
+    .map_err(|error| js_error(format!("failed to read host config field `{name}`: {error:?}")))
+}
+
+fn js_optional_field(object: &JsValue, name: &str) -> Result<Option<JsValue>, JsValue> {
+  let value = js_field(object, name)?;
+  if value.is_undefined() || value.is_null() {
+    Ok(None)
+  } else {
+    Ok(Some(value))
+  }
+}
+
+fn js_string_field(object: &JsValue, name: &str) -> Result<String, JsValue> {
+  js_field(object, name)?
+    .as_string()
+    .ok_or_else(|| js_error(format!("host config field `{name}` must be a string")))
+}
+
+fn js_optional_string_field(object: &JsValue, name: &str) -> Result<Option<String>, JsValue> {
+  js_optional_field(object, name)?
+    .map(|value| {
+      value
+        .as_string()
+        .ok_or_else(|| js_error(format!("host config field `{name}` must be a string")))
+    })
+    .transpose()
+}
+
+fn js_optional_u64_field(object: &JsValue, name: &str) -> Result<Option<u64>, JsValue> {
+  let Some(value) = js_optional_field(object, name)? else {
+    return Ok(None);
+  };
+  let Some(number) = value.as_f64() else {
+    return Err(js_error(format!("host config field `{name}` must be a number or null")));
+  };
+  if !number.is_finite() || number < 0.0 || number.fract() != 0.0 || number > u64::MAX as f64 {
+    return Err(js_error(format!("host config field `{name}` must be a non-negative integer")));
+  }
+  Ok(Some(number as u64))
+}
+
+fn js_array_field(object: &JsValue, name: &str) -> Result<js_sys::Array, JsValue> {
+  let value = js_field(object, name)?;
+  if !js_sys::Array::is_array(&value) {
+    return Err(js_error(format!("host config field `{name}` must be an array")));
+  }
+  Ok(js_sys::Array::from(&value))
+}
+
+fn parse_host_runtime_config(config: &JsValue) -> Result<RuntimeConfig, JsValue> {
+  let mut out = RuntimeConfig::default();
+  let Some(runtime) = js_optional_field(config, "runtime")? else {
+    return Ok(out);
+  };
+  if let Some(name) = js_optional_string_field(&runtime, "name")? {
+    out.name = name;
+  }
+  if let Some(limits) = js_optional_field(&runtime, "limits")? {
+    out.limits.max_steps_per_turn = js_optional_u64_field(&limits, "maxStepsPerTurn")?;
+    out.limits.max_turn_duration_ms = js_optional_u64_field(&limits, "maxTurnDurationMs")?;
+    out.limits.max_memory_bytes = js_optional_u64_field(&limits, "maxMemoryBytes")?;
+    out.limits.max_tasks = js_optional_u64_field(&limits, "maxTasks")?;
+    out.limits.max_actors = js_optional_u64_field(&limits, "maxActors")?;
+    out.limits.max_actor_mailbox_len = js_optional_u64_field(&limits, "maxActorMailboxLen")?;
+    out.limits.max_source_bytes = js_optional_u64_field(&limits, "maxSourceBytes")?;
+    out.limits.max_in_memory_events = js_optional_u64_field(&limits, "maxInMemoryEvents")?;
+  }
+  if let Some(diagnostics) = js_optional_field(&runtime, "diagnostics")? {
+    if let Some(value) = js_optional_field(&diagnostics, "traceEnabled")? {
+      out.diagnostics.trace_enabled = value.as_bool().ok_or_else(|| js_error("traceEnabled must be boolean"))?;
+    }
+    if let Some(value) = js_optional_field(&diagnostics, "profileEnabled")? {
+      out.diagnostics.profile_enabled = value.as_bool().ok_or_else(|| js_error("profileEnabled must be boolean"))?;
+    }
+    if let Some(value) = js_optional_field(&diagnostics, "debugEnabled")? {
+      out.diagnostics.debug_enabled = value.as_bool().ok_or_else(|| js_error("debugEnabled must be boolean"))?;
+    }
+    if let Some(log_level) = js_optional_string_field(&diagnostics, "logLevel")? {
+      out.diagnostics.log_level = match log_level.as_str() {
+        "error" => mech_runtime::LogLevel::Error,
+        "warn" => mech_runtime::LogLevel::Warn,
+        "info" => mech_runtime::LogLevel::Info,
+        "debug" => mech_runtime::LogLevel::Debug,
+        "trace" => mech_runtime::LogLevel::Trace,
+        other => return Err(js_error(format!("unknown host config log level `{other}`"))),
+      };
+    }
+  }
+  out.validate().map_err(|error| js_error(format!("invalid host runtime config: {error:?}")))?;
+  Ok(out)
+}
+
+fn parse_host_dom_property(entry: &JsValue) -> Result<BrowserDomProperty, JsValue> {
+  let property = js_string_field(entry, "property")?;
+  match property.as_str() {
+    "text" => Ok(BrowserDomProperty::Text),
+    "value" => Ok(BrowserDomProperty::Value),
+    "inner-html" | "innerHtml" | "html" => Ok(BrowserDomProperty::InnerHtml),
+    "attribute" => Ok(BrowserDomProperty::Attribute(js_string_field(entry, "attribute")?)),
+    other => Err(js_error(format!("unknown host DOM property `{other}`"))),
+  }
+}
+
+fn parse_host_browser_resource(resource: &JsValue) -> Result<BrowserResource, JsValue> {
+  match js_string_field(resource, "kind")?.as_str() {
+    "dom" => Ok(BrowserResource::Dom(
+      BrowserDomScope::new(js_string_field(resource, "selector")?)
+        .map_err(|error| js_error(format!("invalid host DOM selector: {error}")))?,
+    )),
+    "clipboard" => Ok(BrowserResource::Clipboard),
+    "network" => {
+      let methods = js_optional_field(resource, "methods")?
+        .map(|value| {
+          if !js_sys::Array::is_array(&value) {
+            return Err(js_error("host network methods must be an array"));
+          }
+          js_sys::Array::from(&value)
+            .iter()
+            .map(|item| item.as_string().ok_or_else(|| js_error("host network method must be a string")))
+            .collect::<Result<Vec<_>, _>>()
+        })
+        .transpose()?;
+      Ok(BrowserResource::Network(
+        BrowserNetworkScope::new(js_string_field(resource, "origin")?, methods)
+          .map_err(|error| js_error(format!("invalid host network scope: {error}")))?,
+      ))
+    }
+    "storage" => {
+      let backend = BrowserStorageBackend::parse(&js_string_field(resource, "backend")?)
+        .ok_or_else(|| js_error("unknown host storage backend"))?;
+      let recursive = js_optional_field(resource, "recursive")?
+        .map(|value| value.as_bool().ok_or_else(|| js_error("host storage recursive must be boolean")))
+        .transpose()?
+        .unwrap_or(false);
+      Ok(BrowserResource::Storage(
+        BrowserStorageScope::new(backend, js_string_field(resource, "scope")?)
+          .map_err(|error| js_error(format!("invalid host storage scope: {error}")))?
+          .with_recursive(recursive),
+      ))
+    }
+    other => Err(js_error(format!("unknown host browser resource kind `{other}`"))),
+  }
+}
+
+fn parse_host_browser_authority(config: &JsValue) -> Result<BrowserAuthority, JsValue> {
+  let mut authority = BrowserAuthority::default();
+  let Some(browser) = js_optional_field(config, "browser")? else {
+    return Ok(authority);
+  };
+
+  for entry in js_array_field(&browser, "dom")?.iter() {
+    let path = BrowserDomPath::new(js_string_field(&entry, "path")?)
+      .map_err(|error| js_error(format!("invalid host DOM path: {error}")))?;
+    let selector = BrowserDomScope::new(js_string_field(&entry, "selector")?)
+      .map_err(|error| js_error(format!("invalid host DOM selector: {error}")))?;
+    let property = parse_host_dom_property(&entry)?;
+    authority.bind_dom_path(BrowserDomManifestEntry::new(path, selector, property));
+  }
+
+  for grant in js_array_field(&browser, "grants")?.iter() {
+    let resource = parse_host_browser_resource(&js_field(&grant, "resource")?)?;
+    let allow = js_array_field(&grant, "allow")?
+      .iter()
+      .map(|item| {
+        let operation = item.as_string().ok_or_else(|| js_error("host browser operation must be a string"))?;
+        BrowserOperation::parse(&operation)
+          .ok_or_else(|| js_error(format!("unknown host browser operation `{operation}`")))
+      })
+      .collect::<Result<BTreeSet<_>, _>>()?;
+    authority.grant(BrowserCapabilityGrant::new(resource, allow));
+  }
+  Ok(authority)
+}
+
+fn wasm_parts_from_host_config(config: &JsValue) -> Result<(MechRuntime, BrowserHost), JsValue> {
+  let runtime_config = parse_host_runtime_config(config)?;
+  let authority = parse_host_browser_authority(config)?;
+  let mut runtime = MechRuntime::new(runtime_config)
+    .map_err(|error| js_error(format!("failed to initialize host-configured runtime: {error:?}")))?;
+  runtime
+    .register_resource_provider(Box::new(BrowserResourceProvider::new(
+      authority.clone(),
+      WasmBrowserDomBackend::new(),
+    )))
+    .map_err(|error| js_error(format!("failed to register browser resource provider: {error:?}")))?;
+  runtime
+    .bind_resource_root("browser", "browser://dom/")
+    .map_err(|error| js_error(format!("failed to bind browser resource root: {error:?}")))?;
+  Ok((runtime, BrowserHost::new(authority)))
+}
+
 #[wasm_bindgen]
 pub struct WasmMech {
   runtime: MechRuntime,
@@ -189,6 +384,24 @@ impl WasmMech {
   pub fn from_config(source: &str) -> Result<WasmMech, JsValue> {
     Self::try_from_config("wasm://mech.mcfg", source)
       .map_err(|error| js_error(format!("{error:?}")))
+  }
+
+
+  #[wasm_bindgen(js_name = "fromHostConfig")]
+  pub fn from_host_config() -> Result<WasmMech, JsValue> {
+    let config = js_sys::Reflect::get(&js_sys::global(), &JsValue::from_str("__MECH_HOST_CONFIG"))
+      .map_err(|error| js_error(format!("failed to read host config: {error:?}")))?;
+    if config.is_undefined() || config.is_null() {
+      return Err(js_error("host config was not provided by mech serve"));
+    }
+    let (runtime, browser_host) = wasm_parts_from_host_config(&config)?;
+    Ok(Self {
+      runtime,
+      browser_host,
+      repl_history: Vec::new(),
+      repl_history_index: None,
+      repl_id: None,
+    })
   }
 
   fn try_from_config(
