@@ -92,7 +92,7 @@
       async function main() {
         await init();
 
-        const configSource = await loadText("./demo.mcfg");
+        const configSource = await loadText("/__mech/config.mcfg");
         const demoSource = await loadText("./demo.mec");
         const deniedSource = await loadText("./denied.mec");
 

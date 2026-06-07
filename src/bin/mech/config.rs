@@ -31,6 +31,7 @@ pub fn add_config_args(command: Command) -> Command {
 pub struct LoadedMechConfig {
     pub path: PathBuf,
     pub base_dir: PathBuf,
+    pub source: String,
     pub document: MechConfigDocument,
 }
 
@@ -63,10 +64,11 @@ pub fn load_cli_config(matches: &clap::ArgMatches) -> MResult<Option<LoadedMechC
         &source,
         ConfigProfileOptions::default(),
     )?;
-    println!("[Mech Config] Loaded config: {}", path.display());
+    println!("[Mech Server] Loading config…{}", path.display());
     Ok(Some(LoadedMechConfig {
         path,
         base_dir,
+        source,
         document,
     }))
 }
@@ -417,6 +419,7 @@ mod config_tests {
         LoadedMechConfig {
             path: PathBuf::from("test.mcfg"),
             base_dir: PathBuf::new(),
+            source: source.to_string(),
             document: parse_document(source),
         }
     }
@@ -425,6 +428,7 @@ mod config_tests {
         LoadedMechConfig {
             path: base_dir.join("mech.mcfg"),
             base_dir,
+            source: source.to_string(),
             document: parse_document(source),
         }
     }

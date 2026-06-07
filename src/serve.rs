@@ -105,6 +105,15 @@ impl ServerSourceRegistry {
 
   fn set_preferred_index_source(&mut self, source: impl Into<String>) { self.preferred_index_source = Some(source.into()); }
 
+  fn set_active_config_source(&mut self, source: impl Into<String>) {
+    self.insert_asset("__mech/config.mcfg", ServerAsset {
+      bytes: source.into().into_bytes(),
+      content_type: "text/plain; charset=utf-8",
+      content_encoding: None,
+      backing_path: None,
+    });
+  }
+
   fn rebuild_listing(&mut self) {
     let mut keys = self.raw_sources.keys().cloned().collect::<Vec<_>>(); keys.sort();
     if keys.is_empty() { self.listing_asset = None; return; }
@@ -349,6 +358,8 @@ pub struct MechServer {
   authority: HostFilesystemAuthority,
   serve_subject: String,
   runtime_config: RuntimeConfig,
+  active_config_source: Option<String>,
+  serve_configured_shim_at_root: bool,
 }
 
 impl MechServer {
@@ -357,6 +368,21 @@ impl MechServer {
   }
 
   pub fn new_with_runtime_config(name: String, full_address: String, stylesheet: String, html_shim: String, wasm: Vec<u8>, js: Vec<u8>, authority: HostFilesystemAuthority, runtime_config: RuntimeConfig) -> Self {
+    Self::new_with_runtime_config_and_host_config(name, full_address, stylesheet, html_shim, wasm, js, authority, runtime_config, None, false)
+  }
+
+  pub fn new_with_runtime_config_and_host_config(
+    name: String,
+    full_address: String,
+    stylesheet: String,
+    html_shim: String,
+    wasm: Vec<u8>,
+    js: Vec<u8>,
+    authority: HostFilesystemAuthority,
+    runtime_config: RuntimeConfig,
+    active_config_source: Option<String>,
+    serve_configured_shim_at_root: bool,
+  ) -> Self {
     Self {
       name,
       init: false,
@@ -372,6 +398,8 @@ impl MechServer {
       authority,
       serve_subject: SERVE_HOST_SUBJECT.to_string(),
       runtime_config,
+      active_config_source,
+      serve_configured_shim_at_root,
     }
   }
 
@@ -381,7 +409,11 @@ impl MechServer {
     let css = asset(self.stylesheet.as_bytes(), "text/css", None);
     let js = asset(&self.js, "application/javascript", None);
     let wasm = asset(&self.wasm, "application/wasm", Some("br"));
-    registry.insert_asset("index.html", html.clone());
+    if self.serve_configured_shim_at_root {
+      registry.insert_user_asset("index.html", html.clone());
+    } else {
+      registry.insert_asset("index.html", html.clone());
+    }
     registry.insert_asset("_mech/index.html", html);
     registry.insert_asset("_mech/style.css", css);
     registry.insert_asset("_mech/pkg/mech_wasm.js", js.clone());
@@ -389,6 +421,9 @@ impl MechServer {
     registry.insert_asset("_mech/pkg/mech_wasm_bg.wasm.br", wasm.clone());
     registry.insert_asset("pkg/mech_wasm.js", js);
     registry.insert_asset("pkg/mech_wasm_bg.wasm", wasm);
+    if let Some(source) = &self.active_config_source {
+      registry.set_active_config_source(source.clone());
+    }
     self.init = true;
     Ok(())
   }
@@ -979,6 +1014,35 @@ mod tests {
     registry.sync_workspace_snapshot(&root, &snapshot(&root, "index.mec"), "", "").unwrap();
     let served = registry.get_route("/").unwrap();
     assert_eq!(served.bytes, b"user index");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn active_config_endpoint_returns_config_source() {
+    let source = "config := {serve: {port: 8081}}\n";
+    let mut registry = ServerSourceRegistry::default();
+    registry.set_active_config_source(source.to_string());
+    let served = registry.get_route("/__mech/config.mcfg").unwrap();
+    assert_eq!(served.bytes, source.as_bytes());
+    assert_eq!(served.content_type, "text/plain; charset=utf-8");
+  }
+
+  #[test]
+  fn no_config_registry_has_no_active_config_endpoint() {
+    let registry = ServerSourceRegistry::default();
+    assert!(registry.get_route("/__mech/config.mcfg").is_none());
+  }
+
+  #[test]
+  fn config_shim_at_root_prefers_custom_shim_over_listing() {
+    let root = temp_root("config-shim-root");
+    std::fs::write(root.join("demo.mec"), "x := 1\n").unwrap();
+    let mut registry = ServerSourceRegistry::default();
+    registry.insert_user_asset("index.html", asset(b"custom shim", "text/html", None));
+    registry.insert_asset("_mech/index.html", asset(b"embedded", "text/html", None));
+    registry.sync_workspace_snapshot(&root, &snapshot(&root, "demo.mec"), "", "").unwrap();
+    let served = registry.get_route("/").unwrap();
+    assert_eq!(served.bytes, b"custom shim");
     std::fs::remove_dir_all(root).unwrap();
   }
 
