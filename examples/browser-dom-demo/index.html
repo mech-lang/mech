@@ -12,7 +12,16 @@
       #mech-sandbox {
         border: 1px solid #ccc;
         padding: 1rem;
-        max-width: 520px;
+        max-width: 620px;
+      }
+
+      label {
+        display: block;
+        margin: 0.75rem 0;
+      }
+
+      input {
+        min-width: 24rem;
       }
 
       #status {
@@ -41,8 +50,13 @@
 
     <section id="mech-sandbox">
       <label>
-        Name:
+        Source DOM input:
         <input id="name-input" value="Ada" />
+      </label>
+
+      <label>
+        Computed DOM output:
+        <input id="roundtrip-output" readonly value="Not updated yet" />
       </label>
 
       <h2 id="title">Not updated yet</h2>
@@ -51,7 +65,7 @@
     </section>
 
     <p>
-      <button id="run-ok">Run allowed Mech program</button>
+      <button id="run-ok">Run round trip</button>
       <button id="run-denied">Run denied write</button>
     </p>
 
@@ -85,19 +99,23 @@
         const mech = WasmMech.fromConfig(configSource);
 
         log(`browser grants: ${mech.browserGrantCount()}`);
-        log(`can read input value: ${mech.canReadDom("#name-input")}`);
-        log(`can write input value: ${mech.canWriteDom("#name-input")}`);
+        log(`can read source input: ${mech.canReadDom("#name-input")}`);
+        log(`can write source input: ${mech.canWriteDom("#name-input")}`);
+        log(`can write computed output: ${mech.canWriteDom("#roundtrip-output")}`);
         log(`can write title: ${mech.canWriteDom("#title")}`);
         log("");
 
         document.getElementById("run-ok").addEventListener("click", () => {
           try {
+            const sourceValue = document.getElementById("name-input").value;
             const outputHtml = mech.eval(demoSource);
-            log("allowed program ran");
-            log(`runtime output: ${outputHtml}`);
+            log("round trip program ran");
+            log(`DOM -> Mech source value: ${sourceValue}`);
+            log(`Mech -> DOM computed output: ${document.getElementById("roundtrip-output").value}`);
             log(`title text: ${document.getElementById("title").textContent}`);
             log(`status text: ${document.getElementById("status").textContent}`);
             log(`status class: ${document.getElementById("status").getAttribute("class")}`);
+            log(`runtime output: ${outputHtml}`);
             log("");
           } catch (error) {
             log(`unexpected error: ${error}`);
@@ -113,7 +131,7 @@
             log(`denied as expected: ${error}`);
           }
 
-          log(`input value is still: ${document.getElementById("name-input").value}`);
+          log(`source input value is still: ${document.getElementById("name-input").value}`);
           log("");
         });
       }
