@@ -17,6 +17,13 @@ config := {
       }
 
       {
+        path: "body/content/mech-sandbox/output/_value"
+        selector: "#roundtrip-output"
+        property: "value"
+        allow: ["write"]
+      }
+
+      {
         path: "body/content/mech-sandbox/title"
         selector: "#title"
         property: "text"
