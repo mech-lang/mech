@@ -1135,6 +1135,22 @@ mod tests {
   }
 
   #[test]
+  fn registry_distinguishes_generated_html_and_code_routes() {
+    let root = temp_root("html-vs-code");
+    std::fs::write(root.join("demo.mec"), "x := 1\n").unwrap();
+    let registry = synced_registry(&root, "demo.mec");
+
+    let html = registry.get_route("/demo.mec").unwrap();
+    assert_eq!(html.content_type, "text/html");
+
+    let (code, trace) = registry.get_route_with_trace("/code/demo.mec").unwrap();
+    assert_eq!(code.content_type, "text/plain");
+    assert!(trace.contains("code source `demo.mec`"));
+
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
   fn registry_html_path_falls_back_to_mec_html() {
     let root = temp_root("fallback");
     std::fs::write(root.join("main.mec"), "x := 1\n").unwrap();

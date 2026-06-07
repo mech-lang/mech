@@ -44,6 +44,6 @@ cargo run --bin mech -- --config examples/browser-dom-demo/demo.mcfg serve
 
 Open `http://127.0.0.1:8081/` in a browser.
 
-`mech serve` reads `examples/browser-dom-demo/demo.mcfg`, resolves `serve.paths`, `serve.shim`, and `serve.wasm` relative to that config file, serves `index.html` at `/`, and serves only the active host config at `/__mech/config.mcfg` for the page to pass to `WasmMech.fromConfig(...)`.
+`mech serve` reads `examples/browser-dom-demo/demo.mcfg`, resolves `serve.paths`, `serve.shim`, and `serve.wasm` relative to that config file, serves `index.html` at `/`, and serves only the active host config at `/__mech/config.mcfg` for the page to pass to `WasmMech.fromConfig(...)`. The custom shim fetches Mech code through `/code/demo.mec` and `/code/denied.mec`, while config comes from `/__mech/config.mcfg`.
 
 Change the `Source DOM input` field, click `Run round trip`, and observe that Mech reads the DOM value, computes new strings, and writes the computed result back into the page.

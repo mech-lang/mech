@@ -93,8 +93,8 @@
         await init();
 
         const configSource = await loadText("/__mech/config.mcfg");
-        const demoSource = await loadText("./demo.mec");
-        const deniedSource = await loadText("./denied.mec");
+        const demoSource = await loadText("/code/demo.mec");
+        const deniedSource = await loadText("/code/denied.mec");
 
         const mech = WasmMech.fromConfig(configSource);
 
