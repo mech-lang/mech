@@ -1,0 +1,11 @@
+@browser := browser://dom/
+
+name := body/content/mech-sandbox/input/_value@browser
+greeting := "Hello, " + name
+roundtrip := greeting + " — computed in Mech"
+status := "Read `" + name + "` from the DOM and wrote the computed result back."
+
+body/content/mech-sandbox/title@browser = greeting
+body/content/mech-sandbox/output/_value@browser = roundtrip
+body/content/mech-sandbox/status@browser = status
+body/content/mech-sandbox/status/_class@browser = "ready"
