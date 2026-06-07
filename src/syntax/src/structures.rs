@@ -104,9 +104,15 @@ pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
         rows.push(row);
         input = next_input;
       }
-      Err(_) => {
+      Err(Err::Error(_)) => {
         let _ = label!(matrix_end, msg, r)(input)?;
         unreachable!("matrix parser loop already ruled out matrix_end before attempting a row");
+      }
+      Err(err @ Err::Failure(_)) => {
+        return Err(err);
+      }
+      Err(err @ Err::Incomplete(_)) => {
+        return Err(err);
       }
     }
   }
