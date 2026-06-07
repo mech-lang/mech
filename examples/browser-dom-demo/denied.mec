@@ -1,0 +1,3 @@
+@browser := browser://dom/
+
+body/content/mech-sandbox/input/_value@browser = "This should be denied"

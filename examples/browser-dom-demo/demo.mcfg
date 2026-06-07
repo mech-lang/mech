@@ -1,0 +1,49 @@
+config := {
+  runtime: {
+    name: "browser-dom-demo"
+    diagnostics: {
+      debug-enabled: true
+      log-level: "info"
+    }
+  }
+
+  browser: {
+    dom: [
+      {
+        path: "body/content/mech-sandbox/input/_value"
+        selector: "#name-input"
+        property: "value"
+        allow: ["read"]
+      }
+
+      {
+        path: "body/content/mech-sandbox/output/_value"
+        selector: "#roundtrip-output"
+        property: "value"
+        allow: ["write"]
+      }
+
+      {
+        path: "body/content/mech-sandbox/title"
+        selector: "#title"
+        property: "text"
+        allow: ["write"]
+      }
+
+      {
+        path: "body/content/mech-sandbox/status/_class"
+        selector: "#status"
+        property: "attribute"
+        attribute: "class"
+        allow: ["write"]
+      }
+
+      {
+        path: "body/content/mech-sandbox/status"
+        selector: "#status"
+        property: "text"
+        allow: ["write"]
+      }
+    ]
+  }
+}
