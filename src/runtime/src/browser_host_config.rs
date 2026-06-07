@@ -376,6 +376,96 @@ mod tests {
     authority.allows_dom("#title", BrowserOperation::Write).unwrap();
   }
 
+  #[test]
+  fn invalid_browser_host_config_values_are_rejected() {
+    let mut host = BrowserHostConfig::from_document_and_runtime(
+      &parse_config_document(
+        "test.mcfg".to_string(),
+        r##"config := {
+  browser: {
+    dom: [
+      {path: "body/title" selector: "#title" property: "text" allow: ["write"]}
+    ]
+  }
+}"##,
+        ConfigProfileOptions::default(),
+      )
+      .unwrap(),
+      &RuntimeConfig::default(),
+    );
+
+    host.runtime.diagnostics.log_level = "verbose".to_string();
+    assert!(host.into_runtime_config().is_err());
+
+    let mut host = BrowserHostConfig::from_document_and_runtime(
+      &parse_config_document(
+        "test.mcfg".to_string(),
+        r##"config := {
+  browser: {
+    dom: [
+      {path: "body/title" selector: "#title" property: "text" allow: ["write"]}
+    ]
+  }
+}"##,
+        ConfigProfileOptions::default(),
+      )
+      .unwrap(),
+      &RuntimeConfig::default(),
+    );
+    host.browser.grants[0].allow = vec!["teleport".to_string()];
+    assert!(host.into_browser_authority().is_err());
+
+    let mut host = BrowserHostConfig::from_document_and_runtime(
+      &parse_config_document(
+        "test.mcfg".to_string(),
+        r##"config := {
+  browser: {
+    dom: [
+      {path: "body/title" selector: "#title" property: "text" allow: ["write"]}
+    ]
+  }
+}"##,
+        ConfigProfileOptions::default(),
+      )
+      .unwrap(),
+      &RuntimeConfig::default(),
+    );
+    host.browser.dom[0].property = "attribute".to_string();
+    host.browser.dom[0].attribute = None;
+    assert!(host.into_browser_authority().is_err());
+
+    let host = BrowserHostConfig {
+      runtime: BrowserHostRuntimeConfig::from(&RuntimeConfig::default()),
+      browser: BrowserHostBrowserConfig {
+        grants: vec![BrowserHostBrowserGrant {
+          resource: BrowserHostResourceConfig::Storage {
+            backend: "cookies".to_string(),
+            scope: "/demo".to_string(),
+            recursive: false,
+          },
+          allow: vec!["read".to_string()],
+        }],
+        dom: Vec::new(),
+      },
+    };
+    assert!(host.into_browser_authority().is_err());
+
+    let host = BrowserHostConfig {
+      runtime: BrowserHostRuntimeConfig::from(&RuntimeConfig::default()),
+      browser: BrowserHostBrowserConfig {
+        grants: vec![BrowserHostBrowserGrant {
+          resource: BrowserHostResourceConfig::Network {
+            origin: "not an origin".to_string(),
+            methods: None,
+          },
+          allow: vec!["read".to_string()],
+        }],
+        dom: Vec::new(),
+      },
+    };
+    assert!(host.into_browser_authority().is_err());
+  }
+
   #[cfg(feature = "serde")]
   #[test]
   fn browser_host_config_serializes_expected_shape() {
