@@ -535,18 +535,34 @@ pub fn table_column(r: &TableColumn, env: Option<&Environment>, p: &Interpreter)
 // ----------------------------------------------------------------------------
 
 #[cfg(feature = "matrix")]
+fn is_composite_matrix_cell(value: &Value) -> bool {
+  match value {
+    #[cfg(feature = "record")]
+    Value::Record(_) => true,
+    #[cfg(feature = "map")]
+    Value::Map(_) => true,
+    #[cfg(feature = "tuple")]
+    Value::Tuple(_) => true,
+    #[cfg(feature = "set")]
+    Value::Set(_) => true,
+    #[cfg(feature = "table")]
+    Value::Table(_) => true,
+    Value::MatrixValue(_) => true,
+    _ => false,
+  }
+}
+
+#[cfg(feature = "matrix")]
 pub fn matrix(m: &Mat, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   let mut shape = vec![0, 0];
   let mut col: Vec<Value> = Vec::new();
-  let mut kind = ValueKind::Empty;
   #[cfg(feature = "matrix_horzcat")]
   {
     for row in &m.rows {
       let result = matrix_row(row, env, p)?;
       if shape == vec![0,0] {
         shape = result.shape();
-        kind = result.kind();
         col.push(result);
       } else if shape[1] == result.shape()[1] {
         col.push(result);
@@ -566,6 +582,38 @@ pub fn matrix(m: &Mat, env: Option<&Environment>, p: &Interpreter) -> MResult<Va
   }
   #[cfg(feature = "matrix_vertcat")]
   {
+    if col.iter().any(|value| matches!(value, Value::MatrixValue(_))) {
+      let mut values = Vec::new();
+      let mut expected_cols: Option<usize> = None;
+      let mut row_count = 0;
+
+      for row_value in col {
+        let row_matrix = match row_value {
+          Value::MatrixValue(matrix) => matrix,
+          other => Matrix::from_vec(vec![other], 1, 1),
+        };
+        let row_shape = row_matrix.shape();
+        let row_cols = row_shape[1];
+
+        match expected_cols {
+          Some(cols) if cols != row_cols => {
+            return Err(MechError::new(
+              DimensionMismatch { dims: vec![cols, row_cols] },
+              None
+            ).with_compiler_loc());
+          }
+          None => expected_cols = Some(row_cols),
+          _ => (),
+        }
+
+        row_count += row_shape[0];
+        values.extend(row_matrix.as_vec());
+      }
+
+      let cols = expected_cols.unwrap_or(0);
+      return Ok(Value::MatrixValue(Matrix::from_vec(values, row_count, cols)));
+    }
+
     let new_fxn = MatrixVertCat{}.compile(&col)?;
     new_fxn.solve();
     let out = new_fxn.out();
@@ -584,14 +632,12 @@ pub fn matrix_row(r: &MatrixRow, env: Option<&Environment>, p: &Interpreter) -> 
   let plan = p.plan();
   let mut row: Vec<Value> = Vec::new();
   let mut shape = vec![0, 0];
-  let mut kind = ValueKind::Empty;
   let mut saw_empty = false;
   for col in &r.columns {
     let result = matrix_column(col, env, p)?;
     saw_empty |= matches!(result.kind(), ValueKind::Empty);
     if shape == vec![0,0] {
       shape = result.shape();
-      kind = result.kind();
       row.push(result);
     } else if shape[0] == result.shape()[0] {
       row.push(result);
@@ -602,6 +648,10 @@ pub fn matrix_row(r: &MatrixRow, env: Option<&Environment>, p: &Interpreter) -> 
         ).with_compiler_loc()
       );
     }
+  }
+  if row.iter().any(is_composite_matrix_cell) {
+    let cols = row.len();
+    return Ok(Value::MatrixValue(Matrix::from_vec(row, 1, cols)));
   }
   if saw_empty && row.iter().all(|value| value.shape() == vec![1, 1]) {
     return Ok(Value::MatrixValue(Matrix::from_vec(row, 1, r.columns.len())));

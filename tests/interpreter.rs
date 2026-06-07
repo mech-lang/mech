@@ -947,6 +947,99 @@ test_interpreter!(interpret_dot_index_table6, "x := | x<u32> y<f32> z<i8>|1 2 3|
 test_interpreter!(interpret_set_empty,"{_}", Value::Set(Ref::new(MechSet::from_vec(vec![]))));
 test_interpreter!(interpret_set_empty2,"{}", Value::Set(Ref::new(MechSet::from_vec(vec![]))));
 test_interpreter!(interpret_set, "{1,2,3}", Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0))]))));
+
+#[test]
+fn interpret_matrix_single_record_cell() {
+  let s = r##"dom := [
+  {
+    path: "body/content/mech-sandbox/input/_value"
+    selector: "#name-input"
+    property: "value"
+  }
+]"##;
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_matrix_single_record_cell".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
+  let Value::MatrixValue(matrix) = result else { panic!("expected MatrixValue"); };
+  assert_eq!(matrix.shape(), vec![1, 1]);
+  let values = matrix.as_vec();
+  let Value::Record(record) = &values[0] else { panic!("expected record cell"); };
+  let record = record.borrow();
+  assert_eq!(record.data.len(), 3);
+  assert!(record.data.contains_key(&hash_str("path")));
+  assert!(record.data.contains_key(&hash_str("selector")));
+  assert!(record.data.contains_key(&hash_str("property")));
+}
+
+#[test]
+fn interpret_matrix_records_with_blank_line_are_column_cells() {
+  let s = r##"dom := [
+  {
+    path: "body/content/mech-sandbox/input/_value"
+    selector: "#name-input"
+    property: "value"
+  }
+
+  {
+    path: "body/content/mech-sandbox/output/_value"
+    selector: "#roundtrip-output"
+    property: "value"
+  }
+]"##;
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_matrix_records_with_blank_line_are_column_cells".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
+  let Value::MatrixValue(matrix) = result else { panic!("expected MatrixValue"); };
+  assert_eq!(matrix.shape(), vec![2, 1]);
+  let values = matrix.as_vec();
+  assert!(matches!(values[0], Value::Record(_)));
+  assert!(matches!(values[1], Value::Record(_)));
+}
+
+#[test]
+fn interpret_matrix_records_without_blank_line_are_column_cells() {
+  let s = r##"dom := [
+  { path: "a" selector: "#x" property: "value" }
+  { path: "b" selector: "#y" property: "value" }
+]"##;
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_matrix_records_without_blank_line_are_column_cells".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
+  let Value::MatrixValue(matrix) = result else { panic!("expected MatrixValue"); };
+  assert_eq!(matrix.shape(), vec![2, 1]);
+  let values = matrix.as_vec();
+  assert!(matches!(values[0], Value::Record(_)));
+  assert!(matches!(values[1], Value::Record(_)));
+}
+
+
+#[test]
+fn interpret_matrix_record_missing_closing_bracket_errors() {
+  let s = r##"dom := [
+  {
+    path: "a"
+  }
+"##;
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_matrix_record_missing_closing_bracket_errors".to_string(), environment: MechProgramEnvironment::default()});
+  assert!(program.run_string(s).is_err());
+}
+
+#[test]
+fn interpret_matrix_eof_after_whitespace_errors() {
+  let s = "dom := [
+  
+";
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_matrix_eof_after_whitespace_errors".to_string(), environment: MechProgramEnvironment::default()});
+  assert!(program.run_string(s).is_err());
+}
+
+
+#[test]
+fn interpret_matrix_record_bad_value_errors() {
+  let s = r##"dom := [
+  { path: }
+]"##;
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_matrix_record_bad_value_errors".to_string(), environment: MechProgramEnvironment::default()});
+  assert!(program.run_string(s).is_err());
+}
+
 test_interpreter!(interpret_record,r#"{a: 1, b: "Hello"}"#, Value::Record(Ref::new(MechRecord::from_vec(vec![((55170961230981453,"a".to_string()),Value::F64(Ref::new(1.0))),((44311847522083591,"b".to_string()),Value::String(Ref::new("Hello".to_string())))]))));
 test_interpreter!(interpret_define_custom_record, r#"<point2>:=<{a<f64>,b<f64>}>; p<point2>:={a:1.0,b:2.0}"#, Value::Record(Ref::new(MechRecord::from_vec(vec![((55170961230981453,"a".to_string()),Value::F64(Ref::new(1.0))),((44311847522083591,"b".to_string()),Value::F64(Ref::new(2.0)))]))));
 test_interpreter!(interpret_record_field_access,r#"a := {x: 1,  y: 2}; a.y"#, Value::F64(Ref::new(2.0)));
