@@ -26,20 +26,21 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program", "formatter
       "u8", "u16", "u32", "u64", "u128", 
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
-      "statements_default", "subscript_default",
+      "statements_default", "subscript_default", "state_machines", "string_default",
       "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "io_default", "stats_default", "combinatorics_default",      
       "run_program", "inline_output_values", "codeblock_output_values", "clickable_symbol_listeners",
       "eval", "repl", "whos", "help", "docs", "clc", "clear", "code",
       ]
 
 base = ["baselib", "pretty_print", "serde", "compiler", "program", "formatter", "mika",
-      "statements_default", "subscript_default",
+      "statements_default", "subscript_default", "state_machines", "string_default",
       "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "io_default", "stats_default", "combinatorics_default",
       "run_program", "inline_output_values", "codeblock_output_values", "clickable_symbol_listeners",
       "eval", "repl", "whos", "help", "docs", "clc", "clear", "code",
       ]
 
 statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
+state_machines = ["functions", "mech-interpreter/state_machines", "mech-runtime/state_machines"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
 
 baselib = ["bool", "string", 
@@ -95,6 +96,8 @@ convert = ["functions", "mech-interpreter/convert"]
 # types
 bool = ["mech-core/bool", "mech-syntax/bool", "mech-interpreter/bool", "mech-runtime/bool"]
 string = ["mech-core/string", "mech-syntax/string", "mech-interpreter/string", "mech-runtime/string"]
+string_default = ["string_concat", "mech-interpreter/string_default"]
+string_concat = ["string", "mech-interpreter/string_concat"]
 
 # Numbers
 numbers = ["mech-core/numbers", "mech-interpreter/numbers", "mech-syntax/numbers", "mech-runtime/numbers"]
