@@ -81,10 +81,22 @@ pub fn structure(input: ParseString) -> ParseResult<Structure> {
 // matrix := matrix-start, (box-drawing-char | whitespace)*, matrix-row*, box-drawing-char*, matrix-end ;
 pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
   let msg = "Expects right bracket ']' to finish the matrix";
-  let (input, (_, r)) = range(matrix_start)(input)?;
-  let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
-  let (input, rows) = many0(matrix_row)(input)?;
-  let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
+  let (mut input, (_, r)) = range(matrix_start)(input)?;
+  let mut rows = Vec::new();
+
+  loop {
+    let (next_input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
+    input = next_input;
+
+    if peek(matrix_end)(input.clone()).is_ok() {
+      break;
+    }
+
+    let (next_input, row) = matrix_row(input)?;
+    rows.push(row);
+    input = next_input;
+  }
+
   let (input, _) = whitespace0(input)?;
   let (input, _) = match label!(matrix_end, msg, r)(input) {
     Ok(k) => k,
