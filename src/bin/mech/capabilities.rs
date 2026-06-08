@@ -127,7 +127,7 @@ fn add_config_capability_grant(
     base_dir: &Path,
     grant: &mech_runtime::ConfigCapabilityGrant,
 ) -> MResult<()> {
-    let path = crate::config::resolve_config_path(base_dir, &grant.path);
+    let path = resolve_config_path(base_dir, &grant.path);
     let path = resolve_capability_path(&path)?;
     match grant.kind {
         ConfigCapabilityKind::CapRoot => {
@@ -181,7 +181,7 @@ fn add_config_capability_grant(
 
 pub fn build_mech_filesystem_authority(
     matches: &clap::ArgMatches,
-    config: Option<&crate::config::LoadedMechConfig>,
+    config: Option<&LoadedMechConfig>,
     badge: &ColoredString,
 ) -> MResult<HostFilesystemAuthority> {
     let mut id_generator = DefaultIdGenerator::new();
@@ -341,8 +341,8 @@ mod filesystem_capability_tests {
         command.try_get_matches_from(args).unwrap()
     }
 
-    fn parse_config(source: &str) -> crate::config::LoadedMechConfig {
-        crate::config::LoadedMechConfig {
+    fn parse_config(source: &str) -> LoadedMechConfig {
+        LoadedMechConfig {
             path: PathBuf::from("test.mcfg"),
             base_dir: PathBuf::new(),
             document: parse_config_document(
@@ -351,7 +351,7 @@ mod filesystem_capability_tests {
                 ConfigProfileOptions::default(),
             )
             .unwrap(),
-            discovered_from_serve_project_dir: None,
+            discovered_project_dir: None,
         }
     }
 

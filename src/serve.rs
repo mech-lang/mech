@@ -407,7 +407,7 @@ impl MechServer {
 
   pub async fn init(&mut self) -> MResult<()> {
     let html_shim = if let Some(host_config) = &self.host_config {
-      inject_host_config_script(&self.html_shim, host_config)?
+      inject_browser_host_config_script(&self.html_shim, host_config)?
     } else {
       self.html_shim.clone()
     };
@@ -860,25 +860,6 @@ fn module_options() -> ModuleBuildOptions<'static> {
   ModuleBuildOptions::new("serve", "v0.3", "native", &[], &[])
 }
 
-fn host_config_script(host_config: &BrowserHostConfig) -> MResult<String> {
-  let json = serde_json::to_string(host_config)
-    .map_err(|error| Error::new(ErrorKind::InvalidData, error.to_string()))?
-    .replace('<', "\\u003c");
-  Ok(format!("<script>window.__MECH_HOST_CONFIG = {json};</script>"))
-}
-
-fn inject_host_config_script(html: &str, host_config: &BrowserHostConfig) -> MResult<String> {
-  let script = host_config_script(host_config)?;
-  if let Some(index) = html.find("</head>") {
-    let mut out = html.to_string();
-    out.insert_str(index, &script);
-    Ok(out)
-  } else {
-    Ok(format!("{script}
-{html}"))
-  }
-}
-
 fn asset(bytes: &[u8], content_type: &'static str, content_encoding: Option<&'static str>) -> ServerAsset {
   ServerAsset { bytes: bytes.to_vec(), content_type, content_encoding, backing_path: None }
 }
@@ -992,20 +973,7 @@ mod tests {
     }
   }
 
-  #[test]
-  fn host_config_script_uses_mech_host_config_global() {
-    let script = host_config_script(&empty_host_config()).unwrap();
-    assert!(script.contains("window.__MECH_HOST_CONFIG ="));
-  }
 
-  #[test]
-  fn host_config_script_escapes_less_than() {
-    let mut config = empty_host_config();
-    config.runtime.name = "</script>".to_string();
-    let script = host_config_script(&config).unwrap();
-    assert!(script.contains("\\u003c/script>"));
-    assert!(!script.contains("</script>\""));
-  }
 
   #[test]
   fn server_init_does_not_mutate_html_shim_with_host_config() {

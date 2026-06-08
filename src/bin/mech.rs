@@ -323,7 +323,7 @@ async fn main() -> Result<(), MechError> {
     let loaded_config = config::load_cli_config(serve_matches)?;
     let effective = config::effective_serve_options(serve_matches, loaded_config.as_ref())?;
     let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
-    let runtime_config = config::apply_runtime_config_patch(
+    let runtime_config = mech::apply_runtime_config_patch(
       mech_runtime::RuntimeConfig::default(),
       loaded_config
         .as_ref()
