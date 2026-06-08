@@ -62,13 +62,46 @@ fn discover_serve_project_config(
     }
 
     let project_dir = project_dir.canonicalize()?;
-    let config_path = project_dir.join(DEFAULT_CONFIG_FILENAME);
-
-    if !config_path.is_file() {
-        return Ok(None);
+    let default_config_path = project_dir.join(DEFAULT_CONFIG_FILENAME);
+    if default_config_path.is_file() {
+        return Ok(Some((default_config_path.canonicalize()?, project_dir)));
     }
 
-    Ok(Some((config_path.canonicalize()?, project_dir)))
+    let mut candidates = std::fs::read_dir(&project_dir)?
+        .filter_map(|entry| entry.ok())
+        .map(|entry| entry.path())
+        .filter(|path| {
+            path.is_file() && path.extension().and_then(|ext| ext.to_str()) == Some("mcfg")
+        })
+        .collect::<Vec<_>>();
+
+    candidates.sort();
+
+    match candidates.len() {
+        0 => Ok(None),
+        1 => Ok(Some((candidates[0].canonicalize()?, project_dir))),
+        _ => {
+            let names = candidates
+                .iter()
+                .map(|path| {
+                    path.file_name()
+                        .map(|name| name.to_string_lossy().to_string())
+                        .unwrap_or_else(|| path.display().to_string())
+                })
+                .collect::<Vec<_>>()
+                .join(", ");
+
+            Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!(
+                    "ambiguous project config in {}: found multiple .mcfg files: {}",
+                    project_dir.display(),
+                    names
+                ),
+            )
+            .into())
+        }
+    }
 }
 
 pub fn load_cli_config(matches: &clap::ArgMatches) -> MResult<Option<LoadedMechConfig>> {
@@ -502,13 +535,13 @@ mod config_tests {
         std::fs::write(path.join("mech_wasm.js"), b"js").unwrap();
     }
 
-    fn create_serve_project(root: &Path) -> PathBuf {
+    fn create_serve_project_with_config_name(root: &Path, config_name: &str) -> PathBuf {
         let project = root.join("project");
         std::fs::create_dir_all(&project).unwrap();
         std::fs::write(project.join("index.html"), "<html></html>").unwrap();
         std::fs::write(project.join("demo.mec"), "# demo\n").unwrap();
         std::fs::write(
-            project.join(DEFAULT_CONFIG_FILENAME),
+            project.join(config_name),
             r#"config := {
   serve: {
     paths: ["demo.mec"]
@@ -519,6 +552,10 @@ mod config_tests {
         )
         .unwrap();
         project
+    }
+
+    fn create_serve_project(root: &Path) -> PathBuf {
+        create_serve_project_with_config_name(root, DEFAULT_CONFIG_FILENAME)
     }
 
     fn error_text(result: MResult<EffectiveServeOptions>) -> String {
@@ -549,6 +586,99 @@ mod config_tests {
                 Some(project.canonicalize().unwrap())
             );
         }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn serve_project_directory_loads_single_non_default_mcfg() {
+        let root = temp_root("serve-project-loads-single-non-default");
+        let project = create_serve_project_with_config_name(&root, "demo.mcfg");
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let matches = matches(&["mech", "serve", "project"]);
+            let loaded = load_cli_config(matches.subcommand_matches("serve").unwrap())
+                .unwrap()
+                .unwrap();
+
+            let canonical_project = project.canonicalize().unwrap();
+            assert_eq!(
+                loaded.path,
+                project.join("demo.mcfg").canonicalize().unwrap()
+            );
+            assert_eq!(loaded.base_dir, canonical_project);
+            assert_eq!(
+                loaded.discovered_from_serve_project_dir,
+                Some(project.canonicalize().unwrap())
+            );
+
+            let serve_matches = matches.subcommand_matches("serve").unwrap();
+            let options = effective_serve_options(serve_matches, Some(&loaded)).unwrap();
+            assert_eq!(
+                options.paths,
+                vec![project.join("demo.mec").to_string_lossy().to_string()]
+            );
+            assert_eq!(
+                options.shim_path,
+                project.join("index.html").to_string_lossy().to_string()
+            );
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn serve_project_directory_prefers_default_mcfg_over_other_mcfg() {
+        let root = temp_root("serve-project-prefers-default");
+        let project = create_serve_project_with_config_name(&root, "demo.mcfg");
+        std::fs::write(
+            project.join(DEFAULT_CONFIG_FILENAME),
+            "config := {serve: {port: 9090}}\n",
+        )
+        .unwrap();
+
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let matches = matches(&["mech", "serve", "project"]);
+            let loaded = load_cli_config(matches.subcommand_matches("serve").unwrap())
+                .unwrap()
+                .unwrap();
+
+            assert_eq!(
+                loaded.path,
+                project
+                    .join(DEFAULT_CONFIG_FILENAME)
+                    .canonicalize()
+                    .unwrap()
+            );
+            assert_eq!(
+                loaded.discovered_from_serve_project_dir,
+                Some(project.canonicalize().unwrap())
+            );
+        }
+
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn serve_project_directory_errors_on_multiple_non_default_mcfg() {
+        let root = temp_root("serve-project-ambiguous-config");
+        let project = root.join("project");
+        std::fs::create_dir_all(&project).unwrap();
+        std::fs::write(project.join("a.mcfg"), "config := {}\n").unwrap();
+        std::fs::write(project.join("b.mcfg"), "config := {}\n").unwrap();
+
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let matches = matches(&["mech", "serve", "project"]);
+            let error = format!(
+                "{:?}",
+                load_cli_config(matches.subcommand_matches("serve").unwrap()).unwrap_err()
+            );
+
+            assert!(error.contains("ambiguous project config"));
+            assert!(error.contains("a.mcfg"));
+            assert!(error.contains("b.mcfg"));
+        }
+
         std::fs::remove_dir_all(root).unwrap();
     }
 
