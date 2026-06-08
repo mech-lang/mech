@@ -91,15 +91,8 @@ pub fn discover_project_config(project_dir: &Path) -> MResult<Option<ProjectConf
   }
 }
 
-pub fn discover_project_config_from_serve_inputs(
-  serve_inputs: &[String],
-  current_dir: &Path,
-) -> MResult<Option<ProjectConfigDiscovery>> {
-  if serve_inputs.len() != 1 {
-    return Ok(None);
-  }
-
-  let input = PathBuf::from(&serve_inputs[0]);
+pub fn resolve_project_dir_input(input: &str, current_dir: &Path) -> MResult<Option<PathBuf>> {
+  let input = PathBuf::from(input);
   let project_dir = if input.is_absolute() {
     input
   } else {
@@ -109,6 +102,21 @@ pub fn discover_project_config_from_serve_inputs(
   if !project_dir.exists() || !project_dir.is_dir() {
     return Ok(None);
   }
+
+  Ok(Some(project_dir.canonicalize()?))
+}
+
+pub fn discover_project_config_from_single_project_input(
+  inputs: &[String],
+  current_dir: &Path,
+) -> MResult<Option<ProjectConfigDiscovery>> {
+  if inputs.len() != 1 {
+    return Ok(None);
+  }
+
+  let Some(project_dir) = resolve_project_dir_input(&inputs[0], current_dir)? else {
+    return Ok(None);
+  };
 
   discover_project_config(&project_dir)
 }
@@ -138,7 +146,7 @@ pub fn load_optional_mech_config(
   current_dir: &Path,
   explicit_config: Option<&str>,
   no_config: bool,
-  serve_inputs: &[String],
+  project_inputs: &[String],
 ) -> MResult<Option<LoadedMechConfig>> {
   if no_config {
     return Ok(None);
@@ -150,7 +158,9 @@ pub fn load_optional_mech_config(
     return load_mech_config_path(path, None).map(Some);
   }
 
-  if let Some(discovery) = discover_project_config_from_serve_inputs(serve_inputs, current_dir)? {
+  if let Some(discovery) =
+    discover_project_config_from_single_project_input(project_inputs, current_dir)?
+  {
     return load_mech_config_path(discovery.config_path, Some(discovery.project_dir)).map(Some);
   }
 
@@ -304,17 +314,7 @@ mod tests {
     std::fs::create_dir_all(&project).unwrap();
     std::fs::write(project.join("index.html"), "<html></html>").unwrap();
     std::fs::write(project.join("demo.mec"), "# demo\n").unwrap();
-    std::fs::write(
-      project.join(config_name),
-      r#"config := {
-  serve: {
-    paths: ["demo.mec"]
-    shim: "index.html"
-  }
-}
-"#,
-    )
-    .unwrap();
+    std::fs::write(project.join(config_name), "config := {runtime: {name: \"test\"}}\n").unwrap();
     project
   }
 
@@ -326,7 +326,7 @@ mod tests {
   fn discover_project_config_prefers_default_mcfg_over_other_mcfg() {
     let root = temp_root("prefers-default");
     let project = create_project_with_config_name(&root, "demo.mcfg");
-    std::fs::write(project.join(DEFAULT_CONFIG_FILENAME), "config := {serve: {port: 9090}}\n")
+    std::fs::write(project.join(DEFAULT_CONFIG_FILENAME), "config := {runtime: {name: \"test\"}}\n")
       .unwrap();
 
     let discovery = discover_project_config(&project).unwrap().unwrap();
@@ -351,8 +351,8 @@ mod tests {
     let root = temp_root("ambiguous");
     let project = root.join("project");
     std::fs::create_dir_all(&project).unwrap();
-    std::fs::write(project.join("a.mcfg"), "config := {}\n").unwrap();
-    std::fs::write(project.join("b.mcfg"), "config := {}\n").unwrap();
+    std::fs::write(project.join("a.mcfg"), "config := {runtime: {name: \"test\"}}\n").unwrap();
+    std::fs::write(project.join("b.mcfg"), "config := {runtime: {name: \"test\"}}\n").unwrap();
 
     let error = format!("{:?}", discover_project_config(&project).unwrap_err());
     assert!(error.contains("ambiguous project config"));
@@ -365,7 +365,7 @@ mod tests {
   fn load_optional_mech_config_honors_explicit_config_over_project_dir_discovery() {
     let root = temp_root("explicit-wins");
     let project = create_project(&root);
-    std::fs::write(root.join("explicit.mcfg"), "config := {serve: {port: 9090}}\n").unwrap();
+    std::fs::write(root.join("explicit.mcfg"), "config := {runtime: {name: \"test\"}}\n").unwrap();
 
     let loaded = load_optional_mech_config(
       &root,
@@ -394,7 +394,7 @@ mod tests {
   #[test]
   fn load_optional_mech_config_falls_back_to_current_dir_default_config() {
     let root = temp_root("current-dir-default");
-    std::fs::write(root.join(DEFAULT_CONFIG_FILENAME), "config := {serve: {port: 9090}}\n")
+    std::fs::write(root.join(DEFAULT_CONFIG_FILENAME), "config := {runtime: {name: \"test\"}}\n")
       .unwrap();
 
     let loaded = load_optional_mech_config(&root, None, false, &[]).unwrap().unwrap();

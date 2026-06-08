@@ -26,7 +26,7 @@ pub fn add_config_args(command: Command) -> Command {
 pub fn load_cli_config(matches: &clap::ArgMatches) -> MResult<Option<LoadedMechConfig>> {
   let no_config = matches.get_flag("no_config");
   let explicit_config = matches.get_one::<String>("config").map(|path| path.as_str());
-  let serve_inputs: Vec<String> = matches
+  let project_inputs: Vec<String> = matches
     .get_many::<String>("mech_serve_file_paths")
     .into_iter()
     .flatten()
@@ -37,7 +37,7 @@ pub fn load_cli_config(matches: &clap::ArgMatches) -> MResult<Option<LoadedMechC
     &current_dir,
     explicit_config,
     no_config,
-    &serve_inputs,
+    &project_inputs,
   )?;
   if let Some(config) = loaded.as_ref() {
     println!("[Mech Server] Loading config… {}", config.path.display());
