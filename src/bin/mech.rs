@@ -330,6 +330,21 @@ async fn main() -> Result<(), MechError> {
         .map(|loaded| &loaded.document.runtime)
         .unwrap_or(&default_runtime_patch),
     )?;
+    let host_config = loaded_config
+      .as_ref()
+      .map(|loaded| mech_runtime::BrowserHostConfig::from_document_and_runtime(
+        &loaded.document,
+        &runtime_config,
+      ));
+    let config_shim_at_root = loaded_config
+      .as_ref()
+      .and_then(|loaded| loaded.document.serve.as_ref())
+      .and_then(|serve| serve.shim.as_ref())
+      .is_some()
+      && serve_matches.get_one::<String>("shim").is_none();
+    if let Some(loaded) = loaded_config.as_ref() {
+      println!("{badge} Loaded browser config grants: {}", loaded.document.browser.grants().len());
+    }
 
     let full_address = format!("{}:{}", effective.address, effective.port);
     let mech_paths = effective.paths;
@@ -386,7 +401,7 @@ async fn main() -> Result<(), MechError> {
       &badge,
     )?;
 
-    let mut server = MechServer::new_with_runtime_config(
+    let mut server = MechServer::new_with_runtime_config_and_host_config(
       "Mech Server".to_string(),
       full_address,
       stylesheet_str,
@@ -395,6 +410,8 @@ async fn main() -> Result<(), MechError> {
       js,
       authority,
       runtime_config,
+      host_config,
+      config_shim_at_root,
     );
 
     server.init().await?;

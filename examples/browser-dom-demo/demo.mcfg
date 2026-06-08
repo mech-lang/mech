@@ -7,6 +7,14 @@ config := {
     }
   }
 
+  serve: {
+    address: "127.0.0.1"
+    port: 8081
+    paths: ["demo.mec", "denied.mec"]
+    shim: "index.html"
+    wasm: "../../src/wasm/pkg"
+  }
+
   browser: {
     dom: [
       {
