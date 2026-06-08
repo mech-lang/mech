@@ -413,9 +413,13 @@ config := {
     let json = serde_json::to_value(&host_config).unwrap();
     assert_eq!(json["runtime"]["diagnostics"]["logLevel"], "debug");
     assert_eq!(json["browser"]["grants"][0]["resource"]["kind"], "dom");
+    assert!(json["browser"].get("dom").is_none());
     assert!(json["browser"]["domManifest"].as_array().unwrap().iter().any(|entry| {
       entry["property"] == "attribute" && entry["attribute"] == "aria-label"
     }));
+
+    let round_tripped: BrowserHostConfig = serde_json::from_value(json).unwrap();
+    assert_eq!(round_tripped.browser.dom_manifest, host_config.browser.dom_manifest);
   }
 
   #[test]

@@ -864,7 +864,7 @@ fn host_config_script(host_config: &BrowserHostConfig) -> MResult<String> {
   let json = serde_json::to_string(host_config)
     .map_err(|error| Error::new(ErrorKind::InvalidData, error.to_string()))?
     .replace('<', "\\u003c");
-  Ok(format!("<script>window.MECH_HOST_CONFIG = {json};</script>"))
+  Ok(format!("<script>window.__MECH_HOST_CONFIG = {json};</script>"))
 }
 
 fn inject_host_config_script(html: &str, host_config: &BrowserHostConfig) -> MResult<String> {
@@ -890,7 +890,10 @@ fn authorize_server_asset(kernel: &mech_runtime::SharedCapabilityKernel, subject
 }
 
 fn response(bytes: Vec<u8>, content_type: &'static str, content_encoding: Option<&'static str>, status: warp::http::StatusCode) -> warp::reply::Response {
-  let mut response = warp::http::Response::builder().status(status).header("content-type", content_type);
+  let mut response = warp::http::Response::builder()
+    .status(status)
+    .header("content-type", content_type)
+    .header("cache-control", "no-store");
   if let Some(content_encoding) = content_encoding {
     response = response.header("content-encoding", content_encoding);
   }
@@ -992,7 +995,7 @@ mod tests {
   #[test]
   fn host_config_script_uses_mech_host_config_global() {
     let script = host_config_script(&empty_host_config()).unwrap();
-    assert!(script.contains("window.MECH_HOST_CONFIG ="));
+    assert!(script.contains("window.__MECH_HOST_CONFIG ="));
   }
 
   #[test]
@@ -1013,11 +1016,22 @@ mod tests {
     tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
     tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
 
-    assert!(!server.html_shim.contains("MECH_HOST_CONFIG"));
+    assert!(!server.html_shim.contains("__MECH_HOST_CONFIG"));
 
     let registry = server.registry.read().unwrap();
     let html = String::from_utf8(registry.get_route("index.html").unwrap().bytes).unwrap();
-    assert_eq!(html.matches("window.MECH_HOST_CONFIG =").count(), 1);
+    assert_eq!(html.matches("window.__MECH_HOST_CONFIG =").count(), 1);
+  }
+
+
+  #[test]
+  fn wasm_host_config_constructor_export_is_declared() {
+    let source_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/wasm/src/lib.rs");
+    let source = std::fs::read_to_string(&source_path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", source_path.display()));
+    assert!(source.contains("#[wasm_bindgen(js_name = \"fromHostConfig\")]"));
+    assert!(source.contains("pub fn from_host_config() -> Result<WasmMech, JsValue>"));
+    assert!(source.contains("JsValue::from_str(\"__MECH_HOST_CONFIG\")"));
   }
 
   #[test]
@@ -1081,14 +1095,25 @@ mod tests {
   }
 
   #[test]
-  fn registry_distinguishes_generated_html_and_code_routes() {
+  fn registry_distinguishes_source_text_and_encoded_compiled_code_routes() {
     let root = temp_root("html-code-routes");
-    std::fs::write(root.join("main.mec"), "x := 1\n").unwrap();
+    let source_text = "x := 1\n";
+    std::fs::write(root.join("main.mec"), source_text).unwrap();
     let registry = synced_registry(&root, "main.mec");
     let html = registry.get_route("main.mec").unwrap();
+    let source = registry.get_route("source/main.mec").unwrap();
     let code = registry.get_route("code/main.mec").unwrap();
+
     assert_eq!(html.content_type, "text/html");
+    assert_eq!(source.content_type, "text/x-mech");
+    assert_eq!(String::from_utf8(source.bytes).unwrap(), source_text);
     assert_eq!(code.content_type, "text/plain");
+
+    let encoded = String::from_utf8(code.bytes).unwrap();
+    assert_ne!(encoded, source_text);
+    assert!(!encoded.contains("x := 1"));
+    let decoded: Program = decode_and_decompress(&encoded).unwrap();
+    assert_eq!(decoded, parser::parse(source_text).unwrap());
     std::fs::remove_dir_all(root).unwrap();
   }
 

@@ -213,7 +213,7 @@ impl WasmMech {
 
   #[wasm_bindgen(js_name = "fromHostConfig")]
   pub fn from_host_config() -> Result<WasmMech, JsValue> {
-    let config = js_sys::Reflect::get(&js_sys::global(), &JsValue::from_str("MECH_HOST_CONFIG"))
+    let config = js_sys::Reflect::get(&js_sys::global(), &JsValue::from_str("__MECH_HOST_CONFIG"))
       .map_err(|error| js_error(format!("failed to read host config: {error:?}")))?;
     if config.is_undefined() || config.is_null() {
       return Err(js_error("host config was not provided by mech serve"));
@@ -875,6 +875,30 @@ pub fn attach_repl(&mut self, repl_id: &str) {
 
 
   #[cfg(feature = "eval")]
+  fn format_eval_error_html(error: impl std::fmt::Display) -> String {
+    format!(
+      "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
+      html_escape(&error.to_string())
+    )
+  }
+
+  #[cfg(feature = "eval")]
+  fn format_eval_mech_error_html(error: &MechError) -> String {
+    format!(
+      "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
+      error.to_html()
+    )
+  }
+
+  #[cfg(feature = "eval")]
+  fn eval_tree(&mut self, tree: &Program) -> String {
+    match self.runtime.run_tree(tree) {
+      Ok(output) => format_output_value_html(&output),
+      Err(err) => Self::format_eval_mech_error_html(&err),
+    }
+  }
+
+  #[cfg(feature = "eval")]
   pub fn eval(&mut self, input: &str) -> String {
     if input.chars().nth(0) == Some(':') {
       #[cfg(feature = "repl")]
@@ -904,21 +928,18 @@ pub fn attach_repl(&mut self, repl_id: &str) {
       }
     } else {
       match self.runtime.run_string(input) {
-        Ok(output) => {
-          let kind_str = html_escape(&format!("{}", output.kind()));
-          format!(
-            "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
-            kind_str,
-            output.to_html()
-          )
-        }
-        Err(err) => {
-          format!(
-            "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
-            err.to_html()
-          )
-        }
+        Ok(output) => format_output_value_html(&output),
+        Err(err) => Self::format_eval_mech_error_html(&err),
       }
+    }
+  }
+
+  #[cfg(feature = "eval")]
+  #[wasm_bindgen(js_name = "evalCompiled")]
+  pub fn eval_compiled(&mut self, input: &str) -> String {
+    match decode_and_decompress::<Program>(input) {
+      Ok(tree) => self.eval_tree(&tree),
+      Err(err) => Self::format_eval_error_html(format!("failed to decode compiled Mech code: {err}")),
     }
   }
 
@@ -1511,6 +1532,39 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         }
       }
     }
+  }
+}
+
+#[cfg(all(test, feature = "eval", feature = "serde"))]
+mod eval_tests {
+  use super::*;
+
+  #[test]
+  fn eval_is_source_only_and_compiled_eval_decodes_payload() {
+    let source = "x := 1";
+    let tree = parse(source).unwrap();
+    let encoded = compress_and_encode(&tree).unwrap();
+    assert_ne!(encoded, source);
+
+    let mut source_mech = WasmMech::new();
+    let source_output = source_mech.eval(source);
+    assert!(!source_output.contains("ParserErrorContext"));
+
+    let mut encoded_as_source_mech = WasmMech::new();
+    let encoded_as_source_output = encoded_as_source_mech.eval(&encoded);
+    assert!(encoded_as_source_output.contains("<div class=\"mech-output-kind\">Error</div>"));
+
+    let mut compiled_mech = WasmMech::new();
+    let compiled_output = compiled_mech.eval_compiled(&encoded);
+    assert!(!compiled_output.contains("ParserErrorContext"));
+  }
+
+  #[test]
+  fn eval_compiled_reports_decode_errors_without_parsing_input() {
+    let mut mech = WasmMech::new();
+    let output = mech.eval_compiled("x := 1");
+    assert!(output.contains("failed to decode compiled Mech code"));
+    assert!(!output.contains("ParserErrorContext"));
   }
 }
 
