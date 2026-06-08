@@ -4,7 +4,7 @@ This example demonstrates browser DOM resources backed by runtime resource provi
 
 It shows a full DOM -> Mech -> DOM round trip:
 
-- `mech serve` loads `demo.mcfg` and injects a derived host config as `window.MECH_HOST_CONFIG`.
+- `mech serve` loads `demo.mcfg` and injects a derived host config as `window.__MECH_HOST_CONFIG`.
 - `WasmMech.fromHostConfig()` initializes the browser runtime from the host-owned config projection.
 - Mech code binds `@browser := browser://dom/`.
 - Mech reads the source input value from `body/content/mech-sandbox/input/_value@browser`.
@@ -26,7 +26,18 @@ It shows a full DOM -> Mech -> DOM round trip:
 Build the Mech WASM package, then run the host-owned config flow with `mech serve`:
 
 ```text
+cd src/wasm
+wasm-pack build --target web
+cd ../..
+# If the server expects the pre-compressed asset, refresh it after rebuilding.
+brotli -Z --force src/wasm/pkg/mech_wasm_bg.wasm
 cargo run --bin mech -- --config examples/browser-dom-demo/demo.mcfg serve
+```
+
+Rebuild `src/wasm/pkg` every time the `WasmMech` browser API changes so the served demo HTML and the wasm-bindgen JavaScript package are from the same commit. Before constructing `WasmMech`, you can verify the host-config constructor is present in DevTools with:
+
+```js
+Object.getOwnPropertyNames(WasmMech).includes("fromHostConfig")
 ```
 
 Open:
@@ -35,6 +46,6 @@ Open:
 http://127.0.0.1:8081/
 ```
 
-`mech serve` loads the config, uses the `serve` section for the address, port, source paths, shim, and WASM package, and injects a derived host config as `window.MECH_HOST_CONFIG`.
+`mech serve` loads the config, uses the `serve` section for the address, port, source paths, shim, and WASM package, and injects a derived host config as `window.__MECH_HOST_CONFIG`.
 
 Change the `Source DOM input` field, click `Run round trip`, and observe that Mech reads the DOM value, computes new strings, and writes the computed result back into the page.

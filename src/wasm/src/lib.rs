@@ -213,7 +213,7 @@ impl WasmMech {
 
   #[wasm_bindgen(js_name = "fromHostConfig")]
   pub fn from_host_config() -> Result<WasmMech, JsValue> {
-    let config = js_sys::Reflect::get(&js_sys::global(), &JsValue::from_str("MECH_HOST_CONFIG"))
+    let config = js_sys::Reflect::get(&js_sys::global(), &JsValue::from_str("__MECH_HOST_CONFIG"))
       .map_err(|error| js_error(format!("failed to read host config: {error:?}")))?;
     if config.is_undefined() || config.is_null() {
       return Err(js_error("host config was not provided by mech serve"));
