@@ -4,8 +4,8 @@ use clap::{Arg, ArgAction, Command};
 use mech::*;
 use mech_core::*;
 use mech_runtime::{
-    ConfigProfileOptions, DEFAULT_CONFIG_FILENAME, LogLevel, MechConfigDocument, RuntimeConfig,
-    RuntimeConfigPatch,
+    ConfigProfileOptions, LogLevel, MechConfigDocument, RuntimeConfig, RuntimeConfigPatch,
+    DEFAULT_CONFIG_FILENAME,
 };
 
 pub fn add_config_args(command: Command) -> Command {
@@ -32,6 +32,43 @@ pub struct LoadedMechConfig {
     pub path: PathBuf,
     pub base_dir: PathBuf,
     pub document: MechConfigDocument,
+    pub discovered_from_serve_project_dir: Option<PathBuf>,
+}
+
+fn discover_serve_project_config(
+    matches: &clap::ArgMatches,
+    current_dir: &Path,
+) -> MResult<Option<(PathBuf, PathBuf)>> {
+    let serve_inputs: Vec<String> = matches
+        .get_many::<String>("mech_serve_file_paths")
+        .into_iter()
+        .flatten()
+        .cloned()
+        .collect();
+
+    if serve_inputs.len() != 1 {
+        return Ok(None);
+    }
+
+    let input = PathBuf::from(&serve_inputs[0]);
+    let project_dir = if input.is_absolute() {
+        input
+    } else {
+        current_dir.join(input)
+    };
+
+    if !project_dir.exists() || !project_dir.is_dir() {
+        return Ok(None);
+    }
+
+    let project_dir = project_dir.canonicalize()?;
+    let config_path = project_dir.join(DEFAULT_CONFIG_FILENAME);
+
+    if !config_path.is_file() {
+        return Ok(None);
+    }
+
+    Ok(Some((config_path.canonicalize()?, project_dir)))
 }
 
 pub fn load_cli_config(matches: &clap::ArgMatches) -> MResult<Option<LoadedMechConfig>> {
@@ -40,21 +77,26 @@ pub fn load_cli_config(matches: &clap::ArgMatches) -> MResult<Option<LoadedMechC
     }
 
     let current_dir = std::env::current_dir()?;
-    let path = if let Some(path) = matches.get_one::<String>("config") {
-        let path = PathBuf::from(path);
-        let path = if path.is_absolute() {
-            path
+    let (path, discovered_from_serve_project_dir) =
+        if let Some(path) = matches.get_one::<String>("config") {
+            let path = PathBuf::from(path);
+            let path = if path.is_absolute() {
+                path
+            } else {
+                current_dir.join(path)
+            };
+            (path.canonicalize()?, None)
+        } else if let Some((config_path, project_dir)) =
+            discover_serve_project_config(matches, &current_dir)?
+        {
+            (config_path, Some(project_dir))
         } else {
-            current_dir.join(path)
+            let path = current_dir.join(DEFAULT_CONFIG_FILENAME);
+            if !path.exists() {
+                return Ok(None);
+            }
+            (path.canonicalize()?, None)
         };
-        path.canonicalize()?
-    } else {
-        let path = current_dir.join(DEFAULT_CONFIG_FILENAME);
-        if !path.exists() {
-            return Ok(None);
-        }
-        path.canonicalize()?
-    };
 
     let base_dir = path.parent().unwrap_or(&current_dir).to_path_buf();
     let source = std::fs::read_to_string(&path)?;
@@ -68,6 +110,7 @@ pub fn load_cli_config(matches: &clap::ArgMatches) -> MResult<Option<LoadedMechC
         path,
         base_dir,
         document,
+        discovered_from_serve_project_dir,
     }))
 }
 
@@ -241,12 +284,34 @@ pub fn effective_serve_options(
     let mut stylesheet_paths = config_stylesheets;
     stylesheet_paths.extend(cli_stylesheets);
 
-    let cli_paths: Vec<String> = serve_matches
+    let mut cli_paths: Vec<String> = serve_matches
         .get_many::<String>("mech_serve_file_paths")
         .into_iter()
         .flatten()
         .cloned()
         .collect();
+
+    if let Some(loaded) = config {
+        if let Some(project_dir) = loaded.discovered_from_serve_project_dir.as_ref() {
+            if cli_paths.len() == 1 {
+                let current_dir = std::env::current_dir()?;
+                let input = PathBuf::from(&cli_paths[0]);
+                let input_path = if input.is_absolute() {
+                    input
+                } else {
+                    current_dir.join(input)
+                };
+
+                if input_path.exists()
+                    && input_path.is_dir()
+                    && input_path.canonicalize()? == *project_dir
+                {
+                    cli_paths.clear();
+                }
+            }
+        }
+    }
+
     let paths = if !cli_paths.is_empty() {
         cli_paths
     } else {
@@ -418,6 +483,7 @@ mod config_tests {
             path: PathBuf::from("test.mcfg"),
             base_dir: PathBuf::new(),
             document: parse_document(source),
+            discovered_from_serve_project_dir: None,
         }
     }
 
@@ -426,6 +492,7 @@ mod config_tests {
             path: base_dir.join("mech.mcfg"),
             base_dir,
             document: parse_document(source),
+            discovered_from_serve_project_dir: None,
         }
     }
 
@@ -435,8 +502,154 @@ mod config_tests {
         std::fs::write(path.join("mech_wasm.js"), b"js").unwrap();
     }
 
+    fn create_serve_project(root: &Path) -> PathBuf {
+        let project = root.join("project");
+        std::fs::create_dir_all(&project).unwrap();
+        std::fs::write(project.join("index.html"), "<html></html>").unwrap();
+        std::fs::write(project.join("demo.mec"), "# demo\n").unwrap();
+        std::fs::write(
+            project.join(DEFAULT_CONFIG_FILENAME),
+            r#"config := {
+  serve: {
+    paths: ["demo.mec"]
+    shim: "index.html"
+  }
+}
+"#,
+        )
+        .unwrap();
+        project
+    }
+
     fn error_text(result: MResult<EffectiveServeOptions>) -> String {
         format!("{:?}", result.unwrap_err())
+    }
+
+    #[test]
+    fn serve_project_directory_loads_nested_mech_config() {
+        let root = temp_root("serve-project-loads-nested");
+        let project = create_serve_project(&root);
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let matches = matches(&["mech", "serve", "project"]);
+            let loaded = load_cli_config(matches.subcommand_matches("serve").unwrap())
+                .unwrap()
+                .unwrap();
+            let canonical_project = project.canonicalize().unwrap();
+            assert_eq!(
+                loaded.path,
+                project
+                    .join(DEFAULT_CONFIG_FILENAME)
+                    .canonicalize()
+                    .unwrap()
+            );
+            assert_eq!(loaded.base_dir, canonical_project);
+            assert_eq!(
+                loaded.discovered_from_serve_project_dir,
+                Some(project.canonicalize().unwrap())
+            );
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn serve_project_directory_uses_config_paths_not_selector_path() {
+        let root = temp_root("serve-project-uses-config-paths");
+        let project = create_serve_project(&root);
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let matches = matches(&["mech", "serve", "project"]);
+            let serve_matches = matches.subcommand_matches("serve").unwrap();
+            let loaded = load_cli_config(serve_matches).unwrap().unwrap();
+            let options = effective_serve_options(serve_matches, Some(&loaded)).unwrap();
+            assert_eq!(
+                options.paths,
+                vec![project.join("demo.mec").to_string_lossy().to_string()]
+            );
+            assert_eq!(
+                options.shim_path,
+                project.join("index.html").to_string_lossy().to_string()
+            );
+            assert!(!options.paths.iter().any(|path| path == "project"));
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn explicit_config_wins_over_project_directory_discovery() {
+        let root = temp_root("explicit-wins-project-discovery");
+        let project = create_serve_project(&root);
+        std::fs::write(
+            root.join("explicit.mcfg"),
+            "config := {serve: {port: 9090}}\n",
+        )
+        .unwrap();
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let matches = matches(&["mech", "--config", "explicit.mcfg", "serve", "project"]);
+            let loaded = load_cli_config(matches.subcommand_matches("serve").unwrap())
+                .unwrap()
+                .unwrap();
+            assert_eq!(loaded.path, root.join("explicit.mcfg"));
+            assert_eq!(loaded.discovered_from_serve_project_dir, None);
+            assert_ne!(loaded.path, project.join(DEFAULT_CONFIG_FILENAME));
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn no_config_disables_project_directory_discovery() {
+        let root = temp_root("no-config-disables-project-discovery");
+        create_serve_project(&root);
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let matches = matches(&["mech", "--no-config", "serve", "project"]);
+            assert!(
+                load_cli_config(matches.subcommand_matches("serve").unwrap())
+                    .unwrap()
+                    .is_none()
+            );
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn multiple_serve_inputs_do_not_trigger_project_directory_discovery() {
+        let root = temp_root("multiple-inputs-no-project-discovery");
+        create_serve_project(&root);
+        std::fs::write(root.join("other.mec"), "# other\n").unwrap();
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let matches = matches(&["mech", "serve", "project", "other.mec"]);
+            assert!(
+                load_cli_config(matches.subcommand_matches("serve").unwrap())
+                    .unwrap()
+                    .is_none()
+            );
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn project_directory_without_mech_config_falls_back_to_current_dir_config() {
+        let root = temp_root("project-without-config-falls-back");
+        let project = root.join("project");
+        std::fs::create_dir_all(&project).unwrap();
+        std::fs::write(
+            root.join(DEFAULT_CONFIG_FILENAME),
+            "config := {serve: {port: 9090}}\n",
+        )
+        .unwrap();
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let matches = matches(&["mech", "serve", "project"]);
+            let loaded = load_cli_config(matches.subcommand_matches("serve").unwrap())
+                .unwrap()
+                .unwrap();
+            assert_eq!(loaded.path, root.join(DEFAULT_CONFIG_FILENAME));
+            assert_eq!(loaded.discovered_from_serve_project_dir, None);
+        }
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
