@@ -351,6 +351,7 @@ mod filesystem_capability_tests {
                 ConfigProfileOptions::default(),
             )
             .unwrap(),
+            discovered_from_serve_project_dir: None,
         }
     }
 
