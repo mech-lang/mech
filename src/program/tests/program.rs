@@ -35,11 +35,11 @@ fn program_browser_resource_binding_declaration() {
 
 #[test]
 fn program_browser_resource_read() {
-  let stmts = statements("x := body/search/_value@browser");
+  let stmts = statements("x := @browser/body/content/input/_value");
   match &stmts[0] {
     Statement::VariableDefine(v) => match &v.expression {
       Expression::Var(var) => {
-        assert_eq!(var.name.to_string(), "body/search/_value");
+        assert_eq!(var.name.to_string(), "body/content/input/_value");
         assert_eq!(var.context.as_ref().unwrap().to_string(), "browser");
       }
       _ => panic!("expected addressed var expression"),
@@ -50,10 +50,10 @@ fn program_browser_resource_read() {
 
 #[test]
 fn program_browser_resource_write() {
-  let stmts = statements("body/header/title@browser = \"Hello\"");
+  let stmts = statements("@browser/body/content/output/_value = \"Hello\"");
   match &stmts[0] {
     Statement::VariableAssign(assign) => {
-      assert_eq!(assign.target.name.to_string(), "body/header/title");
+      assert_eq!(assign.target.name.to_string(), "body/content/output/_value");
       assert_eq!(assign.target.context.as_ref().unwrap().to_string(), "browser");
     }
     _ => panic!("expected variable assignment"),
@@ -62,6 +62,6 @@ fn program_browser_resource_write() {
 
 #[test]
 fn program_browser_resource_define_does_not_write() {
-  let stmts = statements("title@browser := \"Hello\"");
+  let stmts = statements("@browser/title := \"Hello\"");
   assert!(matches!(&stmts[0], Statement::VariableDefine(_)));
 }

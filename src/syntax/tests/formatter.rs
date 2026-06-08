@@ -81,3 +81,62 @@ fn fsm_declare_statement_formats_html_class() {
 
     assert!(formatter.statement(&statement).contains("mech-fsm-declare"));
 }
+
+#[test]
+fn formatter_renders_context_qualified_var_with_prefix_context() {
+    let mut formatter = Formatter::new();
+    let var = Var {
+        name: ident("body/content/input/_value"),
+        context: Some(ident("browser")),
+        kind: None,
+    };
+
+    assert_eq!(formatter.var(&var), "@browser/body/content/input/_value");
+}
+
+#[test]
+fn formatter_renders_context_qualified_assignment_target_with_prefix_context() {
+    let mut formatter = Formatter::new();
+    let assign = VariableAssign {
+        target: SliceRef {
+            name: ident("body/content/output/_value"),
+            context: Some(ident("browser")),
+            subscript: None,
+        },
+        expression: Expression::Literal(Literal::String(MechString { text: token(TokenKind::String, "hello") })),
+    };
+
+    assert_eq!(formatter.variable_assign(&assign), "@browser/body/content/output/_value = \"hello\"");
+}
+
+fn first_statement(src: &str) -> Statement {
+    let program = mech_syntax::parser::parse(src).expect("parse failed");
+    for section in &program.body.sections {
+        for element in &section.elements {
+            if let SectionElement::MechCode(codes) = element {
+                for (node, _) in codes {
+                    if let MechCode::Statement(statement) = node {
+                        return statement.clone();
+                    }
+                }
+            }
+        }
+    }
+    panic!("expected statement")
+}
+
+#[test]
+fn formatter_normalizes_old_suffix_context_resource_read_to_prefix_context() {
+    let mut formatter = Formatter::new();
+    let statement = first_statement("name := body/content/input/_value@browser");
+
+    assert_eq!(formatter.statement(&statement), "name := @browser/body/content/input/_value");
+}
+
+#[test]
+fn formatter_preserves_new_prefix_context_resource_read() {
+    let mut formatter = Formatter::new();
+    let statement = first_statement("name := @browser/body/content/input/_value");
+
+    assert_eq!(formatter.statement(&statement), "name := @browser/body/content/input/_value");
+}
