@@ -79,7 +79,7 @@ fn parses_context_declaration_with_wildcard_scope() {
 
 #[test]
 fn parses_addressed_path_expression() {
-  let stmts = statements("name := users/name@main");
+  let stmts = statements("name := @main/users/name");
   match &stmts[0] {
     Statement::VariableDefine(v) => match &v.expression {
       Expression::Var(var) => {
@@ -94,7 +94,7 @@ fn parses_addressed_path_expression() {
 
 #[test]
 fn parses_addressed_path_assignment_target() {
-  let stmts = statements("users/name@main = 1");
+  let stmts = statements("@main/users/name = 1");
   match &stmts[0] {
     Statement::VariableAssign(assign) => {
       assert_eq!(assign.target.name.to_string(), "users/name");
@@ -147,11 +147,11 @@ fn program_browser_resource_binding_declaration() {
 
 #[test]
 fn program_browser_resource_read() {
-  let stmts = statements("x := body/search/_value@browser");
+  let stmts = statements("x := @browser/body/content/input/_value");
   match &stmts[0] {
     Statement::VariableDefine(v) => match &v.expression {
       Expression::Var(var) => {
-        assert_eq!(var.name.to_string(), "body/search/_value");
+        assert_eq!(var.name.to_string(), "body/content/input/_value");
         assert_eq!(var.context.as_ref().unwrap().to_string(), "browser");
       }
       _ => panic!("expected addressed var expression"),
@@ -162,10 +162,10 @@ fn program_browser_resource_read() {
 
 #[test]
 fn program_browser_resource_write() {
-  let stmts = statements("body/header/title@browser = \"Hello\"");
+  let stmts = statements("@browser/body/content/output/_value = \"Hello\"");
   match &stmts[0] {
     Statement::VariableAssign(assign) => {
-      assert_eq!(assign.target.name.to_string(), "body/header/title");
+      assert_eq!(assign.target.name.to_string(), "body/content/output/_value");
       assert_eq!(assign.target.context.as_ref().unwrap().to_string(), "browser");
     }
     _ => panic!("expected variable assignment"),
@@ -174,6 +174,32 @@ fn program_browser_resource_write() {
 
 #[test]
 fn program_browser_resource_define_does_not_write() {
-  let stmts = statements("title@browser := \"Hello\"");
+  let stmts = statements("@browser/title := \"Hello\"");
   assert!(matches!(&stmts[0], Statement::VariableDefine(_)));
+}
+
+#[test]
+fn parses_prefix_browser_resource_read_inside_expression() {
+  let stmts = statements(
+    "@browser := browser://dom/\ngreeting := \"Hello, \" + @browser/body/content/input/_value",
+  );
+  match &stmts[1] {
+    Statement::VariableDefine(v) => match &v.expression {
+      Expression::Formula(factor) => match factor {
+        Factor::Term(term) => match &term.rhs[0].1 {
+          Factor::Expression(expr) => match &**expr {
+            Expression::Var(var) => {
+              assert_eq!(var.name.to_string(), "body/content/input/_value");
+              assert_eq!(var.context.as_ref().unwrap().to_string(), "browser");
+            }
+            _ => panic!("expected addressed var expression in formula rhs"),
+          },
+          _ => panic!("expected expression factor"),
+        },
+        _ => panic!("expected formula term"),
+      },
+      _ => panic!("expected formula expression"),
+    },
+    _ => panic!("expected variable define"),
+  }
 }

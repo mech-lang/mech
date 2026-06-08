@@ -2217,11 +2217,16 @@ impl Formatter {
       },
       None => {},
     }
+    let display_name = if let Some(context) = &node.context {
+      format!("@{}/{}", context.to_string(), name)
+    } else {
+      name.clone()
+    };
     let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
     if self.html {
-      format!("<span class=\"mech-slice-ref\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",id,name,subscript)
+      format!("<span class=\"mech-slice-ref\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",id,display_name,subscript)
     } else {
-      format!("{}{}", name, subscript)
+      format!("{}{}", display_name, subscript)
     }
   }
 
@@ -2504,15 +2509,20 @@ impl Formatter {
   pub fn slice(&mut self, node: &Slice) -> String {
     let name = node.name.to_string();
     let mut subscript = "".to_string();
-    for (i, sub) in node.subscript.iter().enumerate() {
+    for sub in node.subscript.iter() {
       let s = self.subscript(sub);
       subscript = format!("{}{}", subscript, s);
     }
+    let display_name = if let Some(context) = &node.context {
+      format!("@{}/{}", context.to_string(), name)
+    } else {
+      name.clone()
+    };
     let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
     if self.html {
-      format!("<span class=\"mech-slice\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",id,name,subscript)
+      format!("<span class=\"mech-slice\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",id,display_name,subscript)
     } else {
-      format!("{}{}", name, subscript)
+      format!("{}{}", display_name, subscript)
     }
   }
 
@@ -2887,11 +2897,16 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       "".to_string()
     };
     let name = &node.name.to_string();
+    let display_name = if let Some(context) = &node.context {
+      format!("@{}/{}", context.to_string(), name)
+    } else {
+      node.name.to_string()
+    };
     let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
     if self.html {
-      format!("<span class=\"mech-var-name mech-clickable\" id=\"{}\">{}</span>{}", id, node.name.to_string(), annotation)
+      format!("<span class=\"mech-var-name mech-clickable\" id=\"{}\">{}</span>{}", id, display_name, annotation)
     } else {
-      format!("{}{}", node.name.to_string(), annotation)
+      format!("{}{}", display_name, annotation)
     }
   }
 

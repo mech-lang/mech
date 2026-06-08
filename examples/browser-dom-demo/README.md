@@ -8,11 +8,11 @@ It shows a full DOM -> Mech -> DOM round trip:
 - `WasmMech.fromHostConfig()` initializes the browser runtime from the host-owned config projection.
 - The page fetches `/code/*.mec` encoded compiled payloads and executes them with `WasmMech.evalCompiled()`.
 - Mech code binds `@browser := browser://dom/`.
-- Mech reads the source input value from `body/content/mech-sandbox/input/_value@browser`.
+- Mech reads the source input value from `@browser/body/content/mech-sandbox/input/_value`.
 - Mech computes `greeting`, `roundtrip`, and `status` strings from that DOM value.
-- Mech writes the computed output back to `body/content/mech-sandbox/output/_value@browser`.
-- Mech writes DOM text to `body/content/mech-sandbox/title@browser` and `body/content/mech-sandbox/status@browser`.
-- Mech writes the `class` attribute through `body/content/mech-sandbox/status/_class@browser`.
+- Mech writes the computed output back to `@browser/body/content/mech-sandbox/output/_value`.
+- Mech writes DOM text to `@browser/body/content/mech-sandbox/title` and `@browser/body/content/mech-sandbox/status`.
+- Mech writes the `class` attribute through `@browser/body/content/mech-sandbox/status/_class`.
 - `denied.mec` attempts to write to the read-only source input and is rejected by config permissions.
 
 ## Files
