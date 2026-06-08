@@ -1095,14 +1095,25 @@ mod tests {
   }
 
   #[test]
-  fn registry_distinguishes_generated_html_and_code_routes() {
+  fn registry_distinguishes_source_text_and_encoded_compiled_code_routes() {
     let root = temp_root("html-code-routes");
-    std::fs::write(root.join("main.mec"), "x := 1\n").unwrap();
+    let source_text = "x := 1\n";
+    std::fs::write(root.join("main.mec"), source_text).unwrap();
     let registry = synced_registry(&root, "main.mec");
     let html = registry.get_route("main.mec").unwrap();
+    let source = registry.get_route("source/main.mec").unwrap();
     let code = registry.get_route("code/main.mec").unwrap();
+
     assert_eq!(html.content_type, "text/html");
+    assert_eq!(source.content_type, "text/x-mech");
+    assert_eq!(String::from_utf8(source.bytes).unwrap(), source_text);
     assert_eq!(code.content_type, "text/plain");
+
+    let encoded = String::from_utf8(code.bytes).unwrap();
+    assert_ne!(encoded, source_text);
+    assert!(!encoded.contains("x := 1"));
+    let decoded: Program = decode_and_decompress(&encoded).unwrap();
+    assert_eq!(decoded, parser::parse(source_text).unwrap());
     std::fs::remove_dir_all(root).unwrap();
   }
 
