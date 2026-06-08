@@ -411,9 +411,8 @@ impl MechServer {
     } else {
       self.html_shim.clone()
     };
-    self.html_shim = html_shim;
     let mut registry = self.registry.write().unwrap();
-    let html = asset(self.html_shim.as_bytes(), "text/html", None);
+    let html = asset(html_shim.as_bytes(), "text/html", None);
     let css = asset(self.stylesheet.as_bytes(), "text/css", None);
     let js = asset(&self.js, "application/javascript", None);
     let wasm = asset(&self.wasm, "application/wasm", Some("br"));
@@ -1003,6 +1002,22 @@ mod tests {
     let script = host_config_script(&config).unwrap();
     assert!(script.contains("\\u003c/script>"));
     assert!(!script.contains("</script>\""));
+  }
+
+  #[test]
+  fn server_init_does_not_mutate_html_shim_with_host_config() {
+    let mut server = test_server();
+    server.html_shim = "<html><head></head><body></body></html>".to_string();
+    server.host_config = Some(empty_host_config());
+
+    tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
+    tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
+
+    assert!(!server.html_shim.contains("MECH_HOST_CONFIG"));
+
+    let registry = server.registry.read().unwrap();
+    let html = String::from_utf8(registry.get_route("index.html").unwrap().bytes).unwrap();
+    assert_eq!(html.matches("window.MECH_HOST_CONFIG =").count(), 1);
   }
 
   #[test]

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use mech_core::{
   BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
   BrowserDomProperty, BrowserDomScope, BrowserNetworkScope, BrowserOperation, BrowserResource,
-  BrowserResourceKind, BrowserStorageBackend, BrowserStorageScope, MResult, MechError,
+  BrowserStorageBackend, BrowserStorageScope, MResult, MechError,
   MechErrorKind,
 };
 
@@ -195,25 +195,16 @@ impl BrowserHostConfig {
     }
     for grant in &self.browser.grants {
       let resource = grant.resource.to_browser_resource()?;
-      let mut allow = Vec::new();
-      let resource_kind = resource.kind();
-      for operation in &grant.allow {
-        let operation = BrowserOperation::parse(operation).ok_or_else(|| invalid_error(
-          "browser.grants.allow",
-          format!("unknown browser operation `{operation}`"),
-        ))?;
-        if !browser_resource_allows_operation(resource_kind, operation) {
-          return invalid(
+      let allow = grant
+        .allow
+        .iter()
+        .map(|operation| {
+          BrowserOperation::parse(operation).ok_or_else(|| invalid_error(
             "browser.grants.allow",
-            format!(
-              "browser {} grants do not support operation `{}`",
-              resource_kind.as_str(),
-              operation.as_str(),
-            ),
-          );
-        }
-        allow.push(operation);
-      }
+            format!("unknown browser operation `{operation}`"),
+          ))
+        })
+        .collect::<MResult<Vec<_>>>()?;
       if allow.is_empty() {
         return invalid("browser.grants.allow", "must contain at least one operation");
       }
@@ -302,22 +293,6 @@ fn log_level_as_str(log_level: &LogLevel) -> &'static str {
   }
 }
 
-fn browser_resource_allows_operation(
-  resource: BrowserResourceKind,
-  operation: BrowserOperation,
-) -> bool {
-  match resource {
-    BrowserResourceKind::Dom | BrowserResourceKind::Clipboard => {
-      matches!(operation, BrowserOperation::Read | BrowserOperation::Write)
-    }
-    BrowserResourceKind::Network => matches!(operation, BrowserOperation::Read),
-    BrowserResourceKind::Storage => matches!(
-      operation,
-      BrowserOperation::Read | BrowserOperation::Write | BrowserOperation::List
-    ),
-  }
-}
-
 fn invalid_error(field: &'static str, reason: impl Into<String>) -> MechError {
   MechError::new(InvalidBrowserHostConfigError { field, reason: reason.into() }, None)
 }
@@ -330,6 +305,7 @@ fn invalid<T>(field: &'static str, reason: impl Into<String>) -> MResult<T> {
 mod tests {
   use super::*;
   use crate::{parse_config_document, ConfigProfileOptions};
+  use mech_core::BrowserResourceKind;
 
   fn config_document() -> MechConfigDocument {
     parse_config_document(
