@@ -373,6 +373,7 @@ mod tests {
       stylesheet_paths: Vec::new(),
       wasm_pkg: root.join("pkg"),
       loaded_config: loaded,
+      host_config_injection: None,
     }
   }
 
@@ -531,6 +532,7 @@ mod tests {
       stylesheet_paths: Vec::new(),
       wasm_pkg: app.join("pkg"),
       loaded_config: loaded,
+      host_config_injection: None,
     };
 
     let error = format!("{:?}", bundle_web_project(options).unwrap_err());
