@@ -58,22 +58,26 @@ use std::collections::HashSet;
 mod repl;
 #[cfg(feature = "cli")]
 pub mod cli;
-#[cfg(feature = "serve")]
+#[cfg(feature = "bundle_web")]
+mod bundle_web;
+#[cfg(feature = "project")]
 mod project;
 #[cfg(feature = "serve")]
 mod serve;
-#[cfg(feature = "serve")]
+#[cfg(feature = "web_host")]
 mod web_host;
 #[cfg(feature = "test")]
 mod test;
 
 #[cfg(feature = "repl")]
 pub use self::repl::*;
-#[cfg(feature = "serve")]
+#[cfg(feature = "bundle_web")]
+pub use self::bundle_web::*;
+#[cfg(feature = "project")]
 pub use self::project::*;
 #[cfg(feature = "serve")]
 pub use self::serve::*;
-#[cfg(feature = "serve")]
+#[cfg(feature = "web_host")]
 pub use self::web_host::*;
 #[cfg(feature = "test")]
 pub use self::test::*;

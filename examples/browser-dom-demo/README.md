@@ -50,3 +50,24 @@ http://127.0.0.1:8081/
 `mech serve` loads the config, uses the `serve` section for the address, port, source paths, shim, and WASM package, and injects a derived host config as `window.__MECH_HOST_CONFIG`.
 
 Change the `Source DOM input` field, click `Run round trip`, and observe that Mech reads the DOM value, computes new strings, and writes the computed result back into the page.
+
+## Bundle as static web assets
+
+Build the browser wasm package, bundle the demo, and serve it with a plain static file server:
+
+```sh
+cd src/wasm
+wasm-pack build --target web
+cd ../..
+cargo run --bin mech -- bundle-web examples/browser-dom-demo --out dist/browser-dom-demo
+python -m http.server 9000 -d dist/browser-dom-demo
+```
+
+Then open:
+
+```text
+http://127.0.0.1:9000/
+```
+
+This uses a plain static file server, not `mech serve`, because browsers generally do not load wasm modules and fetched code payloads reliably from `file://`.
+
