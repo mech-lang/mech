@@ -33,12 +33,12 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
       "statements_default", "subscript_default", "state_machines",
-      "formatter", "serve", "run", "test", "repl", "build", "whos", "async", "trace",
+      "formatter", "serve", "bundle_web", "run", "test", "repl", "build", "whos", "async", "trace",
       "mech-core/default", "mech-program/default", "mech-syntax/default",
       ]
 base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "statements_default", "subscript_default", "state_machines",
-      "formatter", "serve", "run", "test", "repl", "build","whos", "async", "trace",
+      "formatter", "serve", "bundle_web", "run", "test", "repl", "build","whos", "async", "trace",
       "mech-core/base", "mech-program/base", "mech-syntax/base",
       ]
 build = ["compiler"]
@@ -46,7 +46,10 @@ repl = []
 run = ["mech-program/program"]
 test = ["variable_define", "invariant_define", "symbol_table", "bool"]
 cli = []
-serve = ["cli", "formatter", "mech-runtime", "mech-runtime/default", "ignore"]
+project = ["mech-runtime", "mech-runtime/default"]
+web_host = ["mech-runtime", "mech-runtime/default"]
+bundle_web = ["cli", "project", "web_host", "formatter", "serde", "mech-runtime", "mech-runtime/default"]
+serve = ["cli", "project", "web_host", "formatter", "mech-runtime", "mech-runtime/default", "ignore"]
 whos = ["pretty_print", "variables", "symbol_table"]
 formatter = ["mech-syntax/formatter"]
 async = []

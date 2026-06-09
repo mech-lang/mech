@@ -69,6 +69,8 @@ impl MechErrorKind for Utf8ConversionError {
   }
 }
 
+#[cfg(feature = "bundle_web")]
+use mech::cli::bundle_web;
 #[cfg(feature = "serve")]
 use mech::cli::{capabilities, config};
 
@@ -285,11 +287,17 @@ async fn main() -> Result<(), MechError> {
         .help("Start REPL")
         .action(ArgAction::SetTrue));
 
+  #[cfg(feature = "bundle_web")]
+  let cli_command = cli_command.subcommand(bundle_web::bundle_web_command());
+
   #[cfg(feature = "serve")]
   let cli_command = capabilities::add_filesystem_capability_args(cli_command);
 
   #[cfg(feature = "serve")]
   let cli_command = config::add_config_args(cli_command);
+
+  #[cfg(all(feature = "bundle_web", not(feature = "serve")))]
+  let cli_command = bundle_web::add_config_args(cli_command);
 
   let cli_matches = cli_command.get_matches();
 
@@ -304,6 +312,24 @@ async fn main() -> Result<(), MechError> {
   let stylesheet_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/style.css".to_string();
   let wasm_backup_url = format!("https://github.com/mech-lang/mech/releases/download/v{}-beta/mech_wasm_bg.wasm.br", VERSION);
   let js_backup_url = format!("https://github.com/mech-lang/mech/releases/download/v{}-beta/mech_wasm.js", VERSION);
+
+  // --------------------------------------------------------------------------
+  // Bundle Web
+  // --------------------------------------------------------------------------
+  #[cfg(feature = "bundle_web")]
+  if let Some(bundle_matches) = cli_matches.subcommand_matches("bundle-web") {
+    let badge = "[Mech Bundle]".truecolor(34, 204, 187);
+
+    let loaded = bundle_web::load_bundle_web_config(bundle_matches)?;
+    println!("{badge} Loading config… {}", loaded.path.display());
+
+    let options = bundle_web::effective_bundle_web_options(bundle_matches, loaded)?;
+    let result = mech::bundle_web_project(options)?;
+
+    println!("{badge} Bundle written: {}", result.output_dir.display());
+    println!("{badge} Sources bundled: {}", result.source_count);
+    return Ok(());
+  }
 
   // --------------------------------------------------------------------------
   // Serve

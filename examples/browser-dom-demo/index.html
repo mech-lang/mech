@@ -92,8 +92,8 @@
       async function main() {
         await init();
 
-        const demoCode = await loadText("/code/demo.mec");
-        const deniedCode = await loadText("/code/denied.mec");
+        const demoCode = await loadText("./code/demo.mec");
+        const deniedCode = await loadText("./code/denied.mec");
 
         const mech = WasmMech.fromHostConfig();
 
