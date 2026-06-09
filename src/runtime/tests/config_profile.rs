@@ -1,5 +1,8 @@
 use std::path::PathBuf;
 
+use mech_core::{
+  BrowserCapabilityError, BrowserDomProperty, BrowserOperation, BrowserStorageBackend,
+};
 use mech_runtime::*;
 
 fn parse(source: &str) -> mech_core::MResult<MechConfigDocument> {
