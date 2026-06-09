@@ -69,5 +69,7 @@ Then open:
 http://127.0.0.1:9000/
 ```
 
+The shim used by `bundle-web` must use relative URLs for bundled Mech assets, such as `./pkg/mech_wasm.js` and `./code/demo.mec`. `bundle-web` rejects server-root Mech URLs like `/code/demo.mec` because those depend on `mech serve`.
+
 This uses a plain static file server, not `mech serve`, because browsers generally do not load wasm modules and fetched code payloads reliably from `file://`.
 
