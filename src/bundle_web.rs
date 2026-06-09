@@ -6,7 +6,7 @@ use mech_core::*;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::parser;
 
-use crate::LoadedMechConfig;
+use crate::{BrowserHostConfigInjection, LoadedMechConfig};
 
 #[derive(Clone, Debug)]
 pub struct BundleWebOptions {
@@ -17,6 +17,7 @@ pub struct BundleWebOptions {
   pub stylesheet_paths: Vec<PathBuf>,
   pub wasm_pkg: PathBuf,
   pub loaded_config: LoadedMechConfig,
+  pub host_config_injection: Option<BrowserHostConfigInjection>,
 }
 
 #[derive(Debug)]
@@ -81,7 +82,10 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     &runtime_config,
   );
   let index_html = output_dir.join("index.html");
-  let shim_with_config = crate::inject_browser_host_config_script(&shim_string, &host_config)?;
+  let injection = options
+    .host_config_injection
+    .unwrap_or_else(|| BrowserHostConfigInjection::Unsigned(host_config));
+  let shim_with_config = crate::inject_browser_host_config_injection_script(&shim_string, &injection)?;
   fs::write(&index_html, shim_with_config)?;
 
   for source_path in &options.source_paths {

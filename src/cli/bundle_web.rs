@@ -70,6 +70,25 @@ pub fn bundle_web_command() -> clap::Command {
         .num_args(1)
         .help("Path to the wasm package directory."),
     )
+    .args(browser_delegation_args())
+}
+
+#[cfg(feature = "browser_delegation_signing")]
+fn browser_delegation_args() -> Vec<Arg> {
+  vec![
+    Arg::new("browser_delegation_key").long("browser-delegation-key").value_name("PATH").num_args(1),
+    Arg::new("browser_delegation_public_key").long("browser-delegation-public-key").value_name("PATH").num_args(1),
+    Arg::new("browser_delegation_key_id").long("browser-delegation-key-id").value_name("ID").num_args(1),
+    Arg::new("browser_delegation_issuer").long("browser-delegation-issuer").value_name("ISSUER").num_args(1),
+    Arg::new("browser_delegation_subject").long("browser-delegation-subject").value_name("SUBJECT").num_args(1),
+    Arg::new("browser_delegation_audience").long("browser-delegation-audience").value_name("AUDIENCE").num_args(1),
+    Arg::new("browser_delegation_expires_ms").long("browser-delegation-expires-ms").value_name("MS").num_args(1),
+  ]
+}
+
+#[cfg(not(feature = "browser_delegation_signing"))]
+fn browser_delegation_args() -> Vec<Arg> {
+  Vec::new()
 }
 
 pub fn load_bundle_web_config(matches: &clap::ArgMatches) -> MResult<LoadedMechConfig> {
@@ -204,6 +223,15 @@ pub fn effective_bundle_web_options(
     })?;
   require_bundle_wasm_package(&wasm_pkg)?;
 
+  #[cfg(feature = "browser_delegation_signing")]
+  let host_config_injection = browser_delegation_signing_options(
+    matches,
+    &loaded,
+    &format!("browser://bundle/{}", loaded.document.runtime.name.clone().unwrap_or_else(|| "mech".to_string())),
+  )?;
+  #[cfg(not(feature = "browser_delegation_signing"))]
+  let host_config_injection = None;
+
   Ok(BundleWebOptions {
     project_dir,
     output_dir,
@@ -212,7 +240,46 @@ pub fn effective_bundle_web_options(
     stylesheet_paths,
     wasm_pkg,
     loaded_config: loaded,
+    host_config_injection,
   })
+}
+
+
+#[cfg(feature = "browser_delegation_signing")]
+fn browser_delegation_signing_options(
+  matches: &clap::ArgMatches,
+  loaded: &LoadedMechConfig,
+  default_audience: &str,
+) -> MResult<Option<crate::BrowserHostConfigInjection>> {
+  let Some(private_key) = matches.get_one::<String>("browser_delegation_key") else {
+    return Ok(None);
+  };
+  let public_key = matches
+    .get_one::<String>("browser_delegation_public_key")
+    .ok_or_else(|| Error::new(ErrorKind::InvalidInput, "--browser-delegation-public-key is required with --browser-delegation-key"))?;
+  let current_dir = std::env::current_dir()?;
+  let options = crate::BrowserDelegationSigningOptions {
+    private_key_path: resolve_current_dir_path(&current_dir, Path::new(private_key)),
+    public_key_path: resolve_current_dir_path(&current_dir, Path::new(public_key)),
+    key_id: matches.get_one::<String>("browser_delegation_key_id").cloned().unwrap_or_else(|| "dev".to_string()),
+    issuer: matches.get_one::<String>("browser_delegation_issuer").cloned().unwrap_or_else(|| "host://mech-cli".to_string()),
+    subject: matches.get_one::<String>("browser_delegation_subject").cloned().unwrap_or_else(|| "wasm://browser".to_string()),
+    audience: matches.get_one::<String>("browser_delegation_audience").cloned().unwrap_or_else(|| default_audience.to_string()),
+    expires_ms: matches.get_one::<String>("browser_delegation_expires_ms").map(|value| value.parse()).transpose().map_err(|_| Error::new(ErrorKind::InvalidInput, "--browser-delegation-expires-ms must be an integer"))?,
+  };
+  let runtime_config = crate::apply_runtime_config_patch(
+    mech_runtime::RuntimeConfig::default(),
+    &loaded.document.runtime,
+  )?;
+  let host_config = mech_runtime::BrowserHostConfig::from_document_and_runtime(
+    &loaded.document,
+    &runtime_config,
+  );
+  let now_ms = std::time::SystemTime::now()
+    .duration_since(std::time::UNIX_EPOCH)
+    .map_err(|error| Error::new(ErrorKind::InvalidData, error.to_string()))?
+    .as_millis() as u64;
+  crate::signed_browser_host_config_injection(host_config, &options, now_ms).map(Some)
 }
 
 fn resolve_current_dir_path(current_dir: &Path, path: &Path) -> PathBuf {

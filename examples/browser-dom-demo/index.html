@@ -95,7 +95,9 @@
         const demoCode = await loadText("./code/demo.mec");
         const deniedCode = await loadText("./code/denied.mec");
 
-        const mech = WasmMech.fromHostConfig();
+        const mech = globalThis.__MECH_TRUSTED_BROWSER_KEYS
+          ? WasmMech.fromDelegatedHostConfig()
+          : WasmMech.fromHostConfig();
 
         log(`browser grants: ${mech.browserGrantCount()}`);
         log(`can read source input: ${mech.canReadDom("#name-input")}`);

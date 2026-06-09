@@ -7,6 +7,10 @@ pub mod config;
 pub mod config_profile;
 pub mod browser_host_config;
 pub mod browser;
+#[cfg(feature = "browser_delegation")]
+pub mod browser_delegation;
+#[cfg(feature = "browser_delegation_signing")]
+pub mod browser_delegation_crypto;
 mod config_spec;
 pub mod store;
 pub mod resolver;
@@ -29,6 +33,10 @@ pub use self::config::*;
 pub use self::config_profile::*;
 pub use self::browser_host_config::*;
 pub use self::browser::*;
+#[cfg(feature = "browser_delegation")]
+pub use self::browser_delegation::*;
+#[cfg(feature = "browser_delegation_signing")]
+pub use self::browser_delegation_crypto::*;
 pub use self::config_spec::*;
 pub use self::capability::*;
 pub use self::store::*;

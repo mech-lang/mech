@@ -261,7 +261,8 @@ async fn main() -> Result<(), MechError> {
         .short('a')
         .long("address")
         .value_name("ADDRESS")
-        .help("Sets the address of the server (127.0.0.1)")))
+        .help("Sets the address of the server (127.0.0.1)"))
+      .args(browser_delegation_args()))
     .arg(Arg::new("tree")
         .short('e')
         .long("tree")
@@ -366,6 +367,15 @@ async fn main() -> Result<(), MechError> {
     }
 
     let full_address = format!("{}:{}", effective.address, effective.port);
+    #[cfg(feature = "browser_delegation_signing")]
+    let host_config_injection = serve_browser_delegation_injection(
+      serve_matches,
+      loaded_config.as_ref(),
+      &runtime_config,
+      &full_address,
+    )?;
+    #[cfg(not(feature = "browser_delegation_signing"))]
+    let host_config_injection = None;
     let mech_paths = effective.paths;
     let stylesheet_paths = effective.stylesheet_paths;
     let wasm_pkg = effective.wasm_pkg.as_str();
@@ -430,6 +440,7 @@ async fn main() -> Result<(), MechError> {
       authority,
       runtime_config,
       host_config,
+      host_config_injection,
       config_shim_at_root,
     );
 
@@ -853,6 +864,62 @@ pub fn load_resource(resource_path: &str) -> String {
       }
     }
   }
+}
+
+
+#[cfg(all(feature = "browser_delegation_signing", feature = "serve"))]
+fn browser_delegation_args() -> Vec<Arg> {
+  vec![
+    Arg::new("browser_delegation_key").long("browser-delegation-key").value_name("PATH").num_args(1),
+    Arg::new("browser_delegation_public_key").long("browser-delegation-public-key").value_name("PATH").num_args(1),
+    Arg::new("browser_delegation_key_id").long("browser-delegation-key-id").value_name("ID").num_args(1),
+    Arg::new("browser_delegation_issuer").long("browser-delegation-issuer").value_name("ISSUER").num_args(1),
+    Arg::new("browser_delegation_subject").long("browser-delegation-subject").value_name("SUBJECT").num_args(1),
+    Arg::new("browser_delegation_audience").long("browser-delegation-audience").value_name("AUDIENCE").num_args(1),
+    Arg::new("browser_delegation_expires_ms").long("browser-delegation-expires-ms").value_name("MS").num_args(1),
+  ]
+}
+
+#[cfg(any(not(feature = "browser_delegation_signing"), not(feature = "serve")))]
+fn browser_delegation_args() -> Vec<Arg> {
+  Vec::new()
+}
+
+#[cfg(all(feature = "browser_delegation_signing", feature = "serve"))]
+fn serve_browser_delegation_injection(
+  matches: &clap::ArgMatches,
+  loaded_config: Option<&mech::LoadedMechConfig>,
+  runtime_config: &mech_runtime::RuntimeConfig,
+  full_address: &str,
+) -> MResult<Option<mech::BrowserHostConfigInjection>> {
+  let Some(private_key) = matches.get_one::<String>("browser_delegation_key") else {
+    return Ok(None);
+  };
+  let public_key = matches
+    .get_one::<String>("browser_delegation_public_key")
+    .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, "--browser-delegation-public-key is required with --browser-delegation-key"))?;
+  let Some(loaded_config) = loaded_config else {
+    return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "browser delegation signing requires a loaded config").into());
+  };
+  let current_dir = std::env::current_dir()?;
+  let options = mech::BrowserDelegationSigningOptions {
+    private_key_path: current_dir.join(private_key),
+    public_key_path: current_dir.join(public_key),
+    key_id: matches.get_one::<String>("browser_delegation_key_id").cloned().unwrap_or_else(|| "dev".to_string()),
+    issuer: matches.get_one::<String>("browser_delegation_issuer").cloned().unwrap_or_else(|| "host://mech-cli".to_string()),
+    subject: matches.get_one::<String>("browser_delegation_subject").cloned().unwrap_or_else(|| "wasm://browser".to_string()),
+    audience: matches.get_one::<String>("browser_delegation_audience").cloned().unwrap_or_else(|| format!("browser://serve/{full_address}")),
+    expires_ms: matches.get_one::<String>("browser_delegation_expires_ms").map(|value| value.parse()).transpose().map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidInput, "--browser-delegation-expires-ms must be an integer"))?,
+  };
+  let host_config = mech_runtime::BrowserHostConfig::from_document_and_runtime(
+    &loaded_config.document,
+    runtime_config,
+  );
+  let now_ms = std::time::SystemTime::now()
+    .duration_since(std::time::UNIX_EPOCH)
+    .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error.to_string()))?
+    .as_millis() as u64;
+  mech::signed_browser_host_config_injection(host_config, &options, now_ms).map(Some)
 }
 
 fn is_intended_path(s: &str) -> bool {

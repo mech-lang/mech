@@ -64,6 +64,8 @@ pretty_print = ["mech-core/pretty_print", "mech-syntax/pretty_print", "mech-runt
 formatter = ["mech-syntax/formatter"]
 mika = ["mech-syntax/mika", "mech-core/mika", "mech-runtime/mika"]
 serde = ["mech-core/serde", "mech-syntax/serde", "mech-interpreter/serde", "mech-runtime/serde"]
+browser_delegation = ["serde", "mech-runtime/browser_delegation"]
+browser_delegation_signing = ["browser_delegation", "mech-runtime/browser_delegation_signing"]
 run_program = ["program"]
 inline_output_values = []
 codeblock_output_values = []
@@ -295,6 +297,7 @@ mech-runtime = { path = "../runtime", default-features = false }
 
 wasm-bindgen = "0.2.100"
 serde-wasm-bindgen = "0.6.5"
+serde = { version = "1.0.228", features = ["derive"] }
 js-sys = "0.3.77"
 miniz_oxide = "0.8.9"
 bincode = "2.0.1"

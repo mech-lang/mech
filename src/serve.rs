@@ -340,6 +340,7 @@ pub struct MechServer {
   stylesheet: String,
   html_shim: String,
   host_config: Option<BrowserHostConfig>,
+  host_config_injection: Option<BrowserHostConfigInjection>,
   serve_configured_shim_at_root: bool,
   full_address: String,
   registry: Arc<RwLock<ServerSourceRegistry>>,
@@ -369,6 +370,7 @@ impl MechServer {
       authority,
       runtime_config,
       None,
+      None,
       false,
     )
   }
@@ -383,6 +385,7 @@ impl MechServer {
     authority: HostFilesystemAuthority,
     runtime_config: RuntimeConfig,
     host_config: Option<BrowserHostConfig>,
+    host_config_injection: Option<BrowserHostConfigInjection>,
     serve_configured_shim_at_root: bool,
   ) -> Self {
     Self {
@@ -391,6 +394,7 @@ impl MechServer {
       stylesheet,
       html_shim,
       host_config,
+      host_config_injection,
       serve_configured_shim_at_root,
       full_address,
       registry: Arc::new(RwLock::new(ServerSourceRegistry::default())),
@@ -406,7 +410,9 @@ impl MechServer {
   }
 
   pub async fn init(&mut self) -> MResult<()> {
-    let html_shim = if let Some(host_config) = &self.host_config {
+    let html_shim = if let Some(injection) = &self.host_config_injection {
+      inject_browser_host_config_injection_script(&self.html_shim, injection)?
+    } else if let Some(host_config) = &self.host_config {
       inject_browser_host_config_script(&self.html_shim, host_config)?
     } else {
       self.html_shim.clone()

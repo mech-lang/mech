@@ -146,6 +146,8 @@ logical_indexing = ["subscript","vectord","bool", "mech-core/logical_indexing", 
 dot_indexing = ["subscript", "mech-core/dot_indexing", "mech-program/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle", "mech-program/swizzle"]
 notify = ["dep:notify"]
+browser_delegation = ["serde", "default"]
+browser_delegation_signing = ["browser_delegation", "dep:ed25519-dalek", "dep:rand_core"]
 
 [dev-dependencies]
 serde_json = "1.0.150"
@@ -161,6 +163,8 @@ tracing = { version = "0.1.41", optional = true }
 ignore = {version = "0.4.24", optional = true }
 uuid = { version = "1.23.1", features = ["v7", "serde"] }
 notify = { version = "8.2.0", optional = true }
+ed25519-dalek = { version = "2.2.0", default-features = false, features = ["alloc", "fast", "zeroize"], optional = true }
+rand_core = { version = "0.6.4", optional = true }
 
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
 uuid = { version = "1.23.1", features = ["js"] }
