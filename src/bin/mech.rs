@@ -70,15 +70,8 @@ impl MechErrorKind for Utf8ConversionError {
 }
 
 #[cfg(feature = "serve")]
-#[path = "mech/config.rs"]
-mod config;
+use mech::cli::{capabilities, config};
 
-#[cfg(feature = "serve")]
-#[path = "mech/capabilities.rs"]
-mod capabilities;
-
-#[cfg(all(test, feature = "serve"))]
-pub(crate) static CURRENT_DIR_LOCK: Mutex<()> = Mutex::new(());
 
 async fn load_stylesheets(paths: &[String], fallback_url: &str) -> Result<String, MechError> {
   if paths.is_empty() {
@@ -323,7 +316,7 @@ async fn main() -> Result<(), MechError> {
     let loaded_config = config::load_cli_config(serve_matches)?;
     let effective = config::effective_serve_options(serve_matches, loaded_config.as_ref())?;
     let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
-    let runtime_config = config::apply_runtime_config_patch(
+    let runtime_config = mech::apply_runtime_config_patch(
       mech_runtime::RuntimeConfig::default(),
       loaded_config
         .as_ref()
