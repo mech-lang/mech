@@ -58,7 +58,7 @@ pub fn verify_host_delegation<P: HostDelegationPayload>(
   envelope: &HostDelegationEnvelope<P>,
   request: HostDelegationVerificationRequest,
 ) -> MResult<VerifiedHostDelegation<P, P::Authority>> {
-  let authority = envelope.validate_unsigned()?;
+  envelope.validate_unsigned_header()?;
 
   let signature = envelope
     .signature
@@ -127,6 +127,8 @@ pub fn verify_host_delegation<P: HostDelegationPayload>(
     .verify(&payload, &signature)
     .map_err(|error| signature_error(format!("ed25519 verification failed: {error}")))?;
 
+  let authority = envelope.payload.validate_payload()?;
+
   Ok(VerifiedHostDelegation {
     issuer: envelope.header.issuer.clone(),
     subject: envelope.header.subject.clone(),
@@ -157,8 +159,10 @@ fn signature_error(reason: impl Into<String>) -> MechError {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+
   use crate::host_delegation::tests::{header, test_payload, TestPayload};
-  use crate::HostDelegationKeyStore;
+  use crate::{HostDelegationKeyStore, encode_string};
 
   const PRIVATE_KEY: [u8; 32] = [
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -191,6 +195,42 @@ mod tests {
     let key = signing_key();
     let envelope = sign_host_delegation(header(), test_payload(), &key).unwrap();
     (key, envelope)
+  }
+
+  #[derive(Clone, Debug)]
+  struct CountingPayload {
+    validate_count: Arc<AtomicUsize>,
+  }
+
+  impl HostDelegationPayload for CountingPayload {
+    type Authority = ();
+
+    fn kind(&self) -> &'static str {
+      "counting"
+    }
+
+    fn validate_payload(&self) -> MResult<Self::Authority> {
+      self.validate_count.fetch_add(1, Ordering::SeqCst);
+      Ok(())
+    }
+
+    fn encode_payload(&self, out: &mut Vec<u8>) {
+      encode_string(out, "counting");
+    }
+  }
+
+  #[test]
+  fn invalid_signature_does_not_validate_payload() {
+    let key = signing_key();
+    let validate_count = Arc::new(AtomicUsize::new(0));
+    let payload = CountingPayload { validate_count: validate_count.clone() };
+    let mut envelope = sign_host_delegation(header(), payload, &key).unwrap();
+    assert_eq!(validate_count.load(Ordering::SeqCst), 1);
+    validate_count.store(0, Ordering::SeqCst);
+    envelope.signature.as_mut().unwrap().bytes[0] ^= 0xff;
+
+    assert!(verify_host_delegation(&envelope, request(&key)).is_err());
+    assert_eq!(validate_count.load(Ordering::SeqCst), 0);
   }
 
   #[test]

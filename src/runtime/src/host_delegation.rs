@@ -180,7 +180,7 @@ impl<P: HostDelegationPayload> HostDelegationEnvelope<P> {
     }
   }
 
-  pub fn validate_unsigned(&self) -> MResult<P::Authority> {
+  pub fn validate_unsigned_header(&self) -> MResult<()> {
     if self.format != HOST_DELEGATION_FORMAT {
       return invalid("format", format!("must equal `{}`", HOST_DELEGATION_FORMAT));
     }
@@ -209,11 +209,16 @@ impl<P: HostDelegationPayload> HostDelegationEnvelope<P> {
         return invalid("header.nonce", "must not be empty when present");
       }
     }
+    Ok(())
+  }
+
+  pub fn validate_unsigned(&self) -> MResult<P::Authority> {
+    self.validate_unsigned_header()?;
     self.payload.validate_payload()
   }
 
   pub fn signing_payload(&self) -> MResult<Vec<u8>> {
-    self.validate_unsigned()?;
+    self.validate_unsigned_header()?;
     let mut out = Vec::new();
     push_len_prefixed(&mut out, HOST_DELEGATION_DOMAIN);
     push_string(&mut out, &self.format);
