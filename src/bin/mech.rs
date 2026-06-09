@@ -70,15 +70,8 @@ impl MechErrorKind for Utf8ConversionError {
 }
 
 #[cfg(feature = "serve")]
-#[path = "mech/config.rs"]
-mod config;
+use mech::cli::{capabilities, config};
 
-#[cfg(feature = "serve")]
-#[path = "mech/capabilities.rs"]
-mod capabilities;
-
-#[cfg(all(test, feature = "serve"))]
-pub(crate) static CURRENT_DIR_LOCK: Mutex<()> = Mutex::new(());
 
 async fn load_stylesheets(paths: &[String], fallback_url: &str) -> Result<String, MechError> {
   if paths.is_empty() {

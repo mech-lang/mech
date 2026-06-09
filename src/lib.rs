@@ -57,6 +57,8 @@ use std::collections::HashSet;
 #[cfg(feature = "repl")]
 mod repl;
 #[cfg(feature = "serve")]
+pub mod cli;
+#[cfg(feature = "serve")]
 mod project;
 #[cfg(feature = "serve")]
 mod serve;

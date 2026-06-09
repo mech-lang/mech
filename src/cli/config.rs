@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use clap::{Arg, ArgAction, Command};
-use mech::*;
+use crate::*;
 use mech_core::*;
 
 pub fn add_config_args(command: Command) -> Command {
@@ -33,7 +33,7 @@ pub fn load_cli_config(matches: &clap::ArgMatches) -> MResult<Option<LoadedMechC
     .cloned()
     .collect();
   let current_dir = std::env::current_dir()?;
-  let loaded = mech::load_optional_mech_config(
+  let loaded = crate::load_optional_mech_config(
     &current_dir,
     explicit_config,
     no_config,
@@ -206,7 +206,7 @@ mod config_tests {
 
   impl CurrentDirGuard {
     fn enter(path: &std::path::Path) -> Self {
-      let lock = crate::CURRENT_DIR_LOCK.lock().unwrap();
+      let lock = crate::cli::CURRENT_DIR_LOCK.lock().unwrap();
       let previous = std::env::current_dir().unwrap();
       std::env::set_current_dir(path).unwrap();
       Self {
