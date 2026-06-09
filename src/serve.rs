@@ -8,8 +8,9 @@ use std::time::Instant;
 use colored::*;
 use ignore::WalkBuilder;
 use mech_core::*;
+use mech_host_browser::BrowserHostConfig;
 use mech_runtime::{
-  BrowserHostConfig, EventId, EventSink, ModuleBuildOptions, RuntimeConfig, RuntimeEvent, RuntimeWorkspaceFolder,
+  EventId, EventSink, ModuleBuildOptions, RuntimeConfig, RuntimeEvent, RuntimeWorkspaceFolder,
   RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget, RuntimeWorkspaceWatchEvent,
   ServerWorkspaceSession, HostFilesystemAuthority, DefaultIdGenerator, IdGenerator, SERVE_HOST_SUBJECT,
   FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE, FS_WATCH, MECH_TOOL_SUBJECT, check_fs_capability,
@@ -971,8 +972,8 @@ mod tests {
 
   fn empty_host_config() -> BrowserHostConfig {
     BrowserHostConfig {
-      runtime: mech_runtime::BrowserHostRuntimeConfig::from(&RuntimeConfig::default()),
-      browser: mech_runtime::BrowserHostBrowserConfig {
+      runtime: mech_host_browser::BrowserHostRuntimeConfig::from(&RuntimeConfig::default()),
+      browser: mech_host_browser::BrowserHostBrowserConfig {
         grants: Vec::new(),
         dom_manifest: Vec::new(),
       },

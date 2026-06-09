@@ -2,12 +2,10 @@ use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
 use mech_core::{MResult, MechError};
 
 use crate::{
-  BrowserHostConfig, BrowserHostDelegationEnvelope, BrowserHostDelegationPayload,
   HostDelegationEnvelope, HostDelegationExpiredError, HostDelegationHeader,
   HostDelegationKeyNotFoundError, HostDelegationPayload, HostDelegationPublicKey,
   HostDelegationSignature, HostDelegationSignatureError, HostDelegationVerificationRequest,
-  HostDelegationWrongAudienceError, VerifiedBrowserHostDelegation, VerifiedHostDelegation,
-  HOST_DELEGATION_ALGORITHM_ED25519,
+  HostDelegationWrongAudienceError, VerifiedHostDelegation, HOST_DELEGATION_ALGORITHM_ED25519,
 };
 
 #[derive(Clone, Debug)]
@@ -139,21 +137,6 @@ pub fn verify_host_delegation<P: HostDelegationPayload>(
   })
 }
 
-pub fn sign_browser_host_delegation(
-  header: HostDelegationHeader,
-  host_config: BrowserHostConfig,
-  signing_key: &HostDelegationSigningKey,
-) -> MResult<BrowserHostDelegationEnvelope> {
-  sign_host_delegation(header, BrowserHostDelegationPayload { host_config }, signing_key)
-}
-
-pub fn verify_browser_host_delegation(
-  envelope: &BrowserHostDelegationEnvelope,
-  request: HostDelegationVerificationRequest,
-) -> MResult<VerifiedBrowserHostDelegation> {
-  verify_host_delegation(envelope, request)
-}
-
 fn validate_public_key(key: &HostDelegationPublicKey) -> MResult<()> {
   if key.algorithm != HOST_DELEGATION_ALGORITHM_ED25519 {
     return Err(signature_error(format!(
@@ -174,9 +157,8 @@ fn signature_error(reason: impl Into<String>) -> MechError {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::host_delegation::tests::{browser_payload, header, host_config, test_payload, TestPayload};
+  use crate::host_delegation::tests::{header, test_payload, TestPayload};
   use crate::HostDelegationKeyStore;
-  use mech_core::BrowserOperation;
 
   const PRIVATE_KEY: [u8; 32] = [
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -211,12 +193,6 @@ mod tests {
     (key, envelope)
   }
 
-  fn signed_browser_envelope() -> (HostDelegationSigningKey, BrowserHostDelegationEnvelope) {
-    let key = signing_key();
-    let envelope = sign_host_delegation(header(), browser_payload(), &key).unwrap();
-    (key, envelope)
-  }
-
   #[test]
   fn wrong_payload_kind_cannot_reuse_signature() {
     let (key, mut envelope) = signed_test_envelope();
@@ -229,20 +205,6 @@ mod tests {
     let (key, envelope) = signed_test_envelope();
     let verified = verify_host_delegation(&envelope, request(&key)).unwrap();
     assert_eq!(verified.authority, "payload");
-  }
-
-  #[test]
-  fn valid_browser_host_delegation_verifies() {
-    let (key, envelope) = signed_browser_envelope();
-    let verified = verify_browser_host_delegation(&envelope, request(&key)).unwrap();
-    assert_eq!(verified.issuer, "host://mech-cli");
-  }
-
-  #[test]
-  fn modified_browser_host_config_fails_signature_verification() {
-    let (key, mut envelope) = signed_browser_envelope();
-    envelope.payload.host_config.browser.grants[0].allow.push("list".to_string());
-    assert!(verify_browser_host_delegation(&envelope, request(&key)).is_err());
   }
 
   #[test]
@@ -284,32 +246,5 @@ mod tests {
     header.expires_at_ms = Some(10_000);
     let envelope = sign_host_delegation(header, test_payload(), &key).unwrap();
     assert!(verify_host_delegation(&envelope, request(&key)).is_err());
-  }
-
-  #[test]
-  fn verified_browser_envelope_converts_into_runtime_and_authority() {
-    let (key, envelope) = signed_browser_envelope();
-    let verified = verify_browser_host_delegation(&envelope, request(&key)).unwrap();
-    assert_eq!(verified.authority.runtime_config.name, "demo");
-    assert!(verified.authority.browser_authority.allows_dom("#out", BrowserOperation::Write).is_ok());
-  }
-
-  #[test]
-  fn verified_browser_authority_enforces_denied_dom_write() {
-    let (key, envelope) = signed_browser_envelope();
-    let verified = verify_browser_host_delegation(&envelope, request(&key)).unwrap();
-    let error = verified
-      .authority
-      .browser_authority
-      .allows_dom("#source", BrowserOperation::Write)
-      .unwrap_err();
-    assert!(format!("{:?}", error).contains("OperationDenied"));
-  }
-
-  #[test]
-  fn browser_signing_wrapper_signs_browser_payload() {
-    let key = signing_key();
-    let envelope = sign_browser_host_delegation(header(), host_config(), &key).unwrap();
-    assert_eq!(envelope.payload.kind(), "browser");
   }
 }

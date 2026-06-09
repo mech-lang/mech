@@ -5,15 +5,14 @@ pub mod host;
 use wasm_bindgen::prelude::*;
 use mech_core::*;
 use mech_syntax::*;
+use mech_host_browser::{BrowserHostConfig, BrowserResourceProvider};
+#[cfg(feature = "host_delegation_signing")]
+use mech_host_browser::{verify_browser_host_delegation, BrowserHostDelegationEnvelope};
 use mech_runtime::{
-  BrowserHostConfig, BrowserResourceProvider, ConfigProfileOptions, MechConfigDocument, MechRuntime, RuntimeConfig,
-  parse_config_document,
+  ConfigProfileOptions, MechConfigDocument, MechRuntime, RuntimeConfig, parse_config_document,
 };
 #[cfg(feature = "host_delegation_signing")]
-use mech_runtime::{
-  verify_browser_host_delegation, BrowserHostDelegationEnvelope, HostDelegationKeyStore,
-  HostDelegationPublicKey, HostDelegationVerificationRequest,
-};
+use mech_runtime::{HostDelegationKeyStore, HostDelegationPublicKey, HostDelegationVerificationRequest};
 use crate::host::{
   BrowserCapabilityRequest, BrowserDomScope, BrowserHost, BrowserHostError,
   BrowserNetworkScope, BrowserOperation, BrowserStorageBackend, BrowserStorageScope,
@@ -154,7 +153,7 @@ fn runtime_from_config_document(document: Option<&MechConfigDocument>) -> MechRu
     .expect("failed to initialize MechRuntime for wasm");
   let authority = match document {
     Some(document) => document.browser.clone(),
-    None => mech_runtime::BrowserAuthority::default(),
+    None => mech_core::BrowserAuthority::default(),
   };
   runtime
     .register_resource_provider(Box::new(BrowserResourceProvider::new(

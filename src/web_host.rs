@@ -1,14 +1,16 @@
 use std::io::{Error, ErrorKind};
 
 use mech_core::*;
-use mech_runtime::BrowserHostConfig;
+use mech_host_browser::BrowserHostConfig;
 
 #[cfg(feature = "host_delegation_signing")]
 use base64::Engine;
 #[cfg(feature = "host_delegation_signing")]
+use mech_host_browser::{sign_browser_host_delegation, BrowserHostDelegationEnvelope};
+#[cfg(feature = "host_delegation_signing")]
 use mech_runtime::{
-  sign_browser_host_delegation, BrowserHostDelegationEnvelope, HostDelegationHeader,
-  HostDelegationPublicKey, HostDelegationSigningKey, HOST_DELEGATION_ALGORITHM_ED25519,
+  HostDelegationHeader, HostDelegationPublicKey, HostDelegationSigningKey,
+  HOST_DELEGATION_ALGORITHM_ED25519,
 };
 #[cfg(feature = "host_delegation_signing")]
 use serde::Deserialize;
@@ -205,8 +207,8 @@ mod tests {
 
   fn empty_host_config() -> BrowserHostConfig {
     BrowserHostConfig {
-      runtime: mech_runtime::BrowserHostRuntimeConfig::from(&RuntimeConfig::default()),
-      browser: mech_runtime::BrowserHostBrowserConfig {
+      runtime: mech_host_browser::BrowserHostRuntimeConfig::from(&RuntimeConfig::default()),
+      browser: mech_host_browser::BrowserHostBrowserConfig {
         grants: Vec::new(),
         dom_manifest: Vec::new(),
       },

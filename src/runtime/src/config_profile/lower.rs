@@ -1,14 +1,13 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
-use mech_core::{MResult, MechError};
-
-use super::{ConfigValue, InvalidConfigField};
-use crate::{
+use mech_core::{
     BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
     BrowserDomProperty, BrowserDomScope, BrowserNetworkScope, BrowserOperation, BrowserResource,
-    BrowserResourceKind, BrowserStorageBackend, BrowserStorageScope,
+    BrowserResourceKind, BrowserStorageBackend, BrowserStorageScope, MResult, MechError,
 };
+
+use super::{ConfigValue, InvalidConfigField};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechConfigDocument {

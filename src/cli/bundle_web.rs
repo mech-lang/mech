@@ -271,7 +271,7 @@ fn host_delegation_signing_options(
     mech_runtime::RuntimeConfig::default(),
     &loaded.document.runtime,
   )?;
-  let host_config = mech_runtime::BrowserHostConfig::from_document_and_runtime(
+  let host_config = mech_host_browser::BrowserHostConfig::from_document_and_runtime(
     &loaded.document,
     &runtime_config,
   );

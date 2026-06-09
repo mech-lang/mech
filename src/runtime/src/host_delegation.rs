@@ -1,11 +1,7 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use mech_core::{BrowserAuthority, MResult, MechError, MechErrorKind};
-
-use crate::{
-  BrowserHostConfig, BrowserHostResourceConfig, RuntimeConfig,
-};
+use mech_core::{MResult, MechError, MechErrorKind};
 
 pub const HOST_DELEGATION_FORMAT: &str = "mech.host-delegation.v1";
 pub const HOST_DELEGATION_ALGORITHM_ED25519: &str = "ed25519";
@@ -84,23 +80,6 @@ pub struct VerifiedHostDelegation<P, A> {
   pub payload: P,
   pub authority: A,
 }
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BrowserHostDelegationPayload {
-  pub host_config: BrowserHostConfig,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BrowserVerifiedAuthority {
-  pub runtime_config: RuntimeConfig,
-  pub browser_authority: BrowserAuthority,
-  pub host_config: BrowserHostConfig,
-}
-
-pub type BrowserHostDelegationEnvelope = HostDelegationEnvelope<BrowserHostDelegationPayload>;
-pub type VerifiedBrowserHostDelegation = VerifiedHostDelegation<BrowserHostDelegationPayload, BrowserVerifiedAuthority>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvalidHostDelegationEnvelopeError {
@@ -252,28 +231,6 @@ impl<P: HostDelegationPayload> HostDelegationEnvelope<P> {
   }
 }
 
-impl HostDelegationPayload for BrowserHostDelegationPayload {
-  type Authority = BrowserVerifiedAuthority;
-
-  fn kind(&self) -> &'static str {
-    "browser"
-  }
-
-  fn validate_payload(&self) -> MResult<Self::Authority> {
-    let runtime_config = self.host_config.into_runtime_config()?;
-    let browser_authority = self.host_config.into_browser_authority()?;
-    Ok(BrowserVerifiedAuthority {
-      runtime_config,
-      browser_authority,
-      host_config: self.host_config.clone(),
-    })
-  }
-
-  fn encode_payload(&self, out: &mut Vec<u8>) {
-    encode_browser_host_config(out, &self.host_config);
-  }
-}
-
 impl HostDelegationKeyStore {
   pub fn new(keys: impl IntoIterator<Item = HostDelegationPublicKey>) -> Self {
     Self { keys: keys.into_iter().collect() }
@@ -291,101 +248,28 @@ impl HostDelegationKeyStore {
   }
 }
 
-pub fn encode_browser_host_config(out: &mut Vec<u8>, config: &BrowserHostConfig) {
-  push_string(out, &config.runtime.name);
-  push_option_u64(out, config.runtime.limits.max_steps_per_turn);
-  push_option_u64(out, config.runtime.limits.max_turn_duration_ms);
-  push_option_u64(out, config.runtime.limits.max_memory_bytes);
-  push_option_u64(out, config.runtime.limits.max_tasks);
-  push_option_u64(out, config.runtime.limits.max_actors);
-  push_option_u64(out, config.runtime.limits.max_actor_mailbox_len);
-  push_option_u64(out, config.runtime.limits.max_source_bytes);
-  push_option_u64(out, config.runtime.limits.max_in_memory_events);
-  push_bool(out, config.runtime.diagnostics.trace_enabled);
-  push_bool(out, config.runtime.diagnostics.profile_enabled);
-  push_bool(out, config.runtime.diagnostics.debug_enabled);
-  push_string(out, &config.runtime.diagnostics.log_level);
-
-  let mut grants = config.browser.grants.clone();
-  grants.sort_by(|left, right| grant_sort_key(left).cmp(&grant_sort_key(right)));
-  push_u64(out, grants.len() as u64);
-  for grant in grants {
-    push_resource(out, &grant.resource);
-    let mut allow = grant.allow.clone();
-    allow.sort();
-    push_u64(out, allow.len() as u64);
-    for operation in allow {
-      push_string(out, &operation);
-    }
-  }
-
-  let mut entries = config.browser.dom_manifest.clone();
-  entries.sort_by(|left, right| {
-    (&left.path, &left.selector, &left.property, &left.attribute)
-      .cmp(&(&right.path, &right.selector, &right.property, &right.attribute))
-  });
-  push_u64(out, entries.len() as u64);
-  for entry in entries {
-    push_string(out, &entry.path);
-    push_string(out, &entry.selector);
-    push_string(out, &entry.property);
-    push_option_string(out, entry.attribute.as_deref());
-  }
+pub fn encode_len_prefixed(out: &mut Vec<u8>, bytes: &[u8]) {
+  push_len_prefixed(out, bytes);
 }
 
-fn grant_sort_key(grant: &crate::BrowserHostBrowserGrant) -> (String, Vec<String>) {
-  let mut allow = grant.allow.clone();
-  allow.sort();
-  (resource_sort_key(&grant.resource), allow)
+pub fn encode_string(out: &mut Vec<u8>, value: &str) {
+  push_string(out, value);
 }
 
-fn resource_sort_key(resource: &BrowserHostResourceConfig) -> String {
-  match resource {
-    BrowserHostResourceConfig::Dom { selector } => format!("dom\0{selector}"),
-    BrowserHostResourceConfig::Clipboard => "clipboard".to_string(),
-    BrowserHostResourceConfig::Network { origin, methods } => {
-      let mut methods = methods.clone().unwrap_or_default();
-      methods.sort();
-      format!("network\0{origin}\0{}", methods.join("\0"))
-    }
-    BrowserHostResourceConfig::Storage { backend, scope, recursive } => {
-      format!("storage\0{backend}\0{scope}\0{recursive}")
-    }
-  }
+pub fn encode_option_string(out: &mut Vec<u8>, value: Option<&str>) {
+  push_option_string(out, value);
 }
 
-fn push_resource(out: &mut Vec<u8>, resource: &BrowserHostResourceConfig) {
-  match resource {
-    BrowserHostResourceConfig::Dom { selector } => {
-      push_string(out, "dom");
-      push_string(out, selector);
-    }
-    BrowserHostResourceConfig::Clipboard => {
-      push_string(out, "clipboard");
-    }
-    BrowserHostResourceConfig::Network { origin, methods } => {
-      push_string(out, "network");
-      push_string(out, origin);
-      match methods {
-        Some(methods) => {
-          out.push(1);
-          let mut methods = methods.clone();
-          methods.sort();
-          push_u64(out, methods.len() as u64);
-          for method in methods {
-            push_string(out, &method);
-          }
-        }
-        None => out.push(0),
-      }
-    }
-    BrowserHostResourceConfig::Storage { backend, scope, recursive } => {
-      push_string(out, "storage");
-      push_string(out, backend);
-      push_string(out, scope);
-      push_bool(out, *recursive);
-    }
-  }
+pub fn encode_u64(out: &mut Vec<u8>, value: u64) {
+  push_u64(out, value);
+}
+
+pub fn encode_option_u64(out: &mut Vec<u8>, value: Option<u64>) {
+  push_option_u64(out, value);
+}
+
+pub fn encode_bool(out: &mut Vec<u8>, value: bool) {
+  push_bool(out, value);
 }
 
 fn push_len_prefixed(out: &mut Vec<u8>, bytes: &[u8]) {
@@ -435,10 +319,6 @@ fn invalid<T>(field: &'static str, reason: impl Into<String>) -> MResult<T> {
 #[cfg(test)]
 pub(crate) mod tests {
   use super::*;
-  use crate::{
-    BrowserHostBrowserConfig, BrowserHostBrowserGrant, BrowserHostDiagnosticsConfig,
-    BrowserHostDomManifestEntry, BrowserHostRuntimeConfig, BrowserHostRuntimeLimits,
-  };
 
   #[derive(Clone, Debug, PartialEq, Eq)]
   pub struct TestPayload {
@@ -458,73 +338,12 @@ pub(crate) mod tests {
     }
 
     fn encode_payload(&self, out: &mut Vec<u8>) {
-      push_string(out, &self.value);
+      encode_string(out, &self.value);
     }
   }
 
   pub fn test_payload() -> TestPayload {
     TestPayload { kind: "test", value: "payload".to_string() }
-  }
-
-  pub fn host_config() -> BrowserHostConfig {
-    BrowserHostConfig {
-      runtime: BrowserHostRuntimeConfig {
-        name: "demo".to_string(),
-        limits: BrowserHostRuntimeLimits {
-          max_steps_per_turn: Some(100),
-          max_turn_duration_ms: None,
-          max_memory_bytes: None,
-          max_tasks: None,
-          max_actors: None,
-          max_actor_mailbox_len: None,
-          max_source_bytes: None,
-          max_in_memory_events: None,
-        },
-        diagnostics: BrowserHostDiagnosticsConfig {
-          trace_enabled: false,
-          profile_enabled: false,
-          debug_enabled: false,
-          log_level: "info".to_string(),
-        },
-      },
-      browser: BrowserHostBrowserConfig {
-        grants: vec![
-          BrowserHostBrowserGrant {
-            resource: BrowserHostResourceConfig::Dom { selector: "#out".to_string() },
-            allow: vec!["write".to_string(), "read".to_string()],
-          },
-          BrowserHostBrowserGrant {
-            resource: BrowserHostResourceConfig::Dom { selector: "#source".to_string() },
-            allow: vec!["read".to_string()],
-          },
-          BrowserHostBrowserGrant {
-            resource: BrowserHostResourceConfig::Network {
-              origin: "https://example.com".to_string(),
-              methods: Some(vec!["post".to_string(), "get".to_string()]),
-            },
-            allow: vec!["read".to_string()],
-          },
-        ],
-        dom_manifest: vec![
-          BrowserHostDomManifestEntry {
-            path: "out/_text".to_string(),
-            selector: "#out".to_string(),
-            property: "text".to_string(),
-            attribute: None,
-          },
-          BrowserHostDomManifestEntry {
-            path: "source/_value".to_string(),
-            selector: "#source".to_string(),
-            property: "value".to_string(),
-            attribute: None,
-          },
-        ],
-      },
-    }
-  }
-
-  pub fn browser_payload() -> BrowserHostDelegationPayload {
-    BrowserHostDelegationPayload { host_config: host_config() }
   }
 
   pub fn header() -> HostDelegationHeader {
@@ -552,41 +371,5 @@ pub(crate) mod tests {
     let first = HostDelegationEnvelope::unsigned(header(), test_payload());
     let second = HostDelegationEnvelope::unsigned(header(), test_payload());
     assert_eq!(first.signing_payload().unwrap(), second.signing_payload().unwrap());
-  }
-
-  #[test]
-  fn browser_payload_is_deterministic_when_grants_are_reordered() {
-    let config = host_config();
-    let mut reordered = config.clone();
-    reordered.browser.grants.reverse();
-    assert_eq!(
-      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: config }).signing_payload().unwrap(),
-      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: reordered }).signing_payload().unwrap(),
-    );
-  }
-
-  #[test]
-  fn browser_payload_is_deterministic_when_allow_lists_are_reordered() {
-    let config = host_config();
-    let mut reordered = config.clone();
-    reordered.browser.grants[0].allow.reverse();
-    if let BrowserHostResourceConfig::Network { methods: Some(methods), .. } = &mut reordered.browser.grants[2].resource {
-      methods.reverse();
-    }
-    assert_eq!(
-      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: config }).signing_payload().unwrap(),
-      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: reordered }).signing_payload().unwrap(),
-    );
-  }
-
-  #[test]
-  fn browser_payload_is_deterministic_when_dom_manifest_is_reordered() {
-    let config = host_config();
-    let mut reordered = config.clone();
-    reordered.browser.dom_manifest.reverse();
-    assert_eq!(
-      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: config }).signing_payload().unwrap(),
-      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: reordered }).signing_payload().unwrap(),
-    );
   }
 }

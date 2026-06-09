@@ -335,7 +335,7 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   // Serve
   // --------------------------------------------------------------------------
- #[cfg(feature = "serve")]
+  #[cfg(feature = "serve")]
   if let Some(serve_matches) = cli_matches.subcommand_matches("serve") {
     let badge = "[Mech Server]".truecolor(34, 204, 187);
     let error_badge = "[Error]".truecolor(246, 98, 78);
@@ -352,7 +352,7 @@ async fn main() -> Result<(), MechError> {
     )?;
     let host_config = loaded_config
       .as_ref()
-      .map(|loaded| mech_runtime::BrowserHostConfig::from_document_and_runtime(
+      .map(|loaded| mech_host_browser::BrowserHostConfig::from_document_and_runtime(
         &loaded.document,
         &runtime_config,
       ));
@@ -911,7 +911,7 @@ fn serve_host_delegation_injection(
     audience: matches.get_one::<String>("host_delegation_audience").cloned().unwrap_or_else(|| format!("browser://serve/{full_address}")),
     expires_ms: matches.get_one::<String>("host_delegation_expires_ms").map(|value| value.parse()).transpose().map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidInput, "--host-delegation-expires-ms must be an integer"))?,
   };
-  let host_config = mech_runtime::BrowserHostConfig::from_document_and_runtime(
+  let host_config = mech_host_browser::BrowserHostConfig::from_document_and_runtime(
     &loaded_config.document,
     runtime_config,
   );
