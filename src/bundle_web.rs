@@ -40,6 +40,26 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
   let wasm_pkg = options.wasm_pkg.canonicalize()?;
   fs::create_dir_all(&options.output_dir)?;
   let output_dir = options.output_dir.canonicalize()?;
+  if output_dir == project_dir {
+    return Err(Error::new(
+      ErrorKind::InvalidInput,
+      format!(
+        "bundle-web output directory must not be the project root: {}. Use a subdirectory such as dist/<name>.",
+        output_dir.display(),
+      ),
+    )
+    .into());
+  }
+  if output_dir == base_dir {
+    return Err(Error::new(
+      ErrorKind::InvalidInput,
+      format!(
+        "bundle-web output directory must not be the config base directory: {}. Use a subdirectory such as dist/<name>.",
+        output_dir.display(),
+      ),
+    )
+    .into());
+  }
   let stylesheet_string = read_stylesheets(&options.stylesheet_paths)?;
   let shim_string = read_shim(&options.shim_path)?;
   validate_static_web_shim(&shim_string)?;
@@ -113,9 +133,9 @@ fn validate_static_web_shim(shim: &str) -> MResult<()> {
     ("\"/source/", "/source/", "./source/..."),
     ("'/source/", "/source/", "./source/..."),
     ("`/source/", "/source/", "./source/..."),
-    ("\"/pkg/mech_wasm.js\"", "/pkg/mech_wasm.js", "./pkg/mech_wasm.js"),
-    ("'/pkg/mech_wasm.js'", "/pkg/mech_wasm.js", "./pkg/mech_wasm.js"),
-    ("`/pkg/mech_wasm.js`", "/pkg/mech_wasm.js", "./pkg/mech_wasm.js"),
+    ("\"/pkg/mech_wasm.js", "/pkg/mech_wasm.js", "./pkg/mech_wasm.js"),
+    ("'/pkg/mech_wasm.js", "/pkg/mech_wasm.js", "./pkg/mech_wasm.js"),
+    ("`/pkg/mech_wasm.js", "/pkg/mech_wasm.js", "./pkg/mech_wasm.js"),
     ("\"/_mech/", "/_mech/", "./pkg/mech_wasm.js"),
     ("'/_mech/", "/_mech/", "./pkg/mech_wasm.js"),
     ("`/_mech/", "/_mech/", "./pkg/mech_wasm.js"),
@@ -450,6 +470,78 @@ mod tests {
   }
 
   #[test]
+  fn bundle_web_rejects_output_equal_project_root() {
+    let root = temp_root("output-project-root");
+    let loaded = write_demo_project(&root);
+    let original_index = fs::read_to_string(root.join("index.html")).unwrap();
+
+    let error = format!("{:?}", bundle_web_project(options(&root, &root, loaded)).unwrap_err());
+
+    assert!(error.contains("bundle-web output directory must not be the project root"));
+    assert_eq!(fs::read_to_string(root.join("index.html")).unwrap(), original_index);
+    assert!(!root.join("style.css").exists());
+    assert!(!root.join("source/demo.mec").exists());
+    assert!(!root.join("code/demo.mec").exists());
+    assert!(!root.join("html/demo.html").exists());
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn bundle_web_rejects_output_equal_config_base_dir() {
+    let root = temp_root("output-config-base");
+    let app = root.join("app");
+    let config = root.join("config");
+    fs::create_dir_all(app.join("pkg")).unwrap();
+    fs::create_dir_all(&config).unwrap();
+    fs::write(
+      app.join("index.html"),
+      r#"<!doctype html><html><head></head><body><script type="module">import init from "./pkg/mech_wasm.js"; const code = await fetch("./code/demo.mec");</script></body></html>"#,
+    )
+    .unwrap();
+    fs::write(app.join("demo.mec"), "x := 1\n").unwrap();
+    fs::write(app.join("pkg/mech_wasm.js"), "export default async function init() {}\n").unwrap();
+    fs::write(app.join("pkg/mech_wasm_bg.wasm"), b"wasm").unwrap();
+    fs::write(
+      config.join("demo.mcfg"),
+      r#"config := {
+  runtime: {name: "bundle-config-base-test"}
+  serve: {
+    paths: ["../app/demo.mec"]
+    shim: "../app/index.html"
+    wasm: "../app/pkg"
+  }
+}
+"#,
+    )
+    .unwrap();
+    let loaded = crate::load_mech_config_path(
+      config.join("demo.mcfg"),
+      Some(config.clone()),
+    )
+    .unwrap();
+    let options = BundleWebOptions {
+      project_dir: app.clone(),
+      output_dir: config.clone(),
+      source_paths: vec![app.join("demo.mec")],
+      shim_path: app.join("index.html"),
+      stylesheet_paths: Vec::new(),
+      wasm_pkg: app.join("pkg"),
+      loaded_config: loaded,
+    };
+
+    let error = format!("{:?}", bundle_web_project(options).unwrap_err());
+
+    assert!(error.contains("bundle-web output directory must not be the config base directory"));
+    assert!(config.join("demo.mcfg").is_file());
+    assert!(!config.join("style.css").exists());
+    assert!(!config.join("source/demo.mec").exists());
+    assert!(!config.join("code/demo.mec").exists());
+    assert!(!config.join("html/demo.html").exists());
+    assert!(!config.join("pkg/mech_wasm.js").exists());
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
   fn bundle_web_rejects_root_relative_code_url() {
     let root = temp_root("root-code-url");
     let loaded = write_demo_project(&root);
@@ -486,18 +578,54 @@ mod tests {
   }
 
   #[test]
+  fn bundle_web_rejects_root_relative_pkg_url_with_query() {
+    let root = temp_root("root-pkg-query-url");
+    let loaded = write_demo_project(&root);
+    fs::write(
+      root.join("index.html"),
+      r#"<!doctype html><html><head></head><body><script type="module">import init from "/pkg/mech_wasm.js?v=123";</script></body></html>"#,
+    )
+    .unwrap();
+    let out = root.join("out");
+
+    let error = format!("{:?}", bundle_web_project(options(&root, &out, loaded)).unwrap_err());
+
+    assert!(error.contains("bundle-web shim contains server-root Mech URL"));
+    assert!(error.contains("./pkg/mech_wasm.js"));
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn bundle_web_rejects_root_relative_pkg_url_with_fragment() {
+    let root = temp_root("root-pkg-fragment-url");
+    let loaded = write_demo_project(&root);
+    fs::write(
+      root.join("index.html"),
+      r#"<!doctype html><html><head></head><body><script type="module">import init from '/pkg/mech_wasm.js#hash';</script></body></html>"#,
+    )
+    .unwrap();
+    let out = root.join("out");
+
+    let error = format!("{:?}", bundle_web_project(options(&root, &out, loaded)).unwrap_err());
+
+    assert!(error.contains("bundle-web shim contains server-root Mech URL"));
+    assert!(error.contains("./pkg/mech_wasm.js"));
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
   fn bundle_web_does_not_reject_ordinary_external_urls() {
     let root = temp_root("external-urls");
     let loaded = write_demo_project(&root);
     fs::write(
       root.join("index.html"),
       r#"<!doctype html><html><head></head><body>
-<a href="https://example.com/source/demo.mec">external</a>
+<a href="https://example.com/code/demo.mec">external</a>
 <a href="http://localhost:8081/code/demo.mec">local</a>
 <script src="//cdn.example.com/pkg/mech_wasm.js"></script>
 <a href="mailto:test@example.com">mail</a>
-<img src="data:image/svg+xml,%3Csvg%3E" />
-<script type="module">import init from "./pkg/mech_wasm.js"; const code = await fetch("./code/demo.mec");</script>
+<img src="data:text/plain,hello" />
+<script type="module">import init from "./pkg/mech_wasm.js"; const code = await fetch("./code/demo.mec"); const source = await fetch("./source/demo.mec");</script>
 </body></html>"#,
     )
     .unwrap();
