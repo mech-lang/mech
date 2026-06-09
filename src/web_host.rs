@@ -3,29 +3,30 @@ use std::io::{Error, ErrorKind};
 use mech_core::*;
 use mech_runtime::BrowserHostConfig;
 
-#[cfg(feature = "browser_delegation_signing")]
+#[cfg(feature = "host_delegation_signing")]
 use base64::Engine;
-#[cfg(feature = "browser_delegation_signing")]
+#[cfg(feature = "host_delegation_signing")]
 use mech_runtime::{
-  sign_browser_delegation, BrowserDelegationHeader, BrowserDelegationPublicKey,
-  BrowserDelegationSigningKey, BROWSER_DELEGATION_ALGORITHM_ED25519,
+  sign_browser_host_delegation, BrowserHostDelegationEnvelope, HostDelegationHeader,
+  HostDelegationPublicKey, HostDelegationSigningKey, HOST_DELEGATION_ALGORITHM_ED25519,
 };
-#[cfg(feature = "browser_delegation_signing")]
+#[cfg(feature = "host_delegation_signing")]
 use serde::Deserialize;
 
 #[derive(Clone, Debug)]
-pub enum BrowserHostConfigInjection {
-  Unsigned(BrowserHostConfig),
-  #[cfg(feature = "browser_delegation_signing")]
-  Signed {
-    envelope: mech_runtime::BrowserDelegationEnvelope,
-    trusted_keys: Vec<BrowserDelegationPublicKey>,
+pub enum HostAuthorityInjection {
+  BrowserUnsigned(BrowserHostConfig),
+  #[cfg(feature = "host_delegation_signing")]
+  BrowserSigned {
+    envelope: BrowserHostDelegationEnvelope,
+    trusted_keys: Vec<HostDelegationPublicKey>,
+    audience: String,
   },
 }
 
-#[cfg(feature = "browser_delegation_signing")]
+#[cfg(feature = "host_delegation_signing")]
 #[derive(Clone, Debug)]
-pub struct BrowserDelegationSigningOptions {
+pub struct HostDelegationSigningOptions {
   pub private_key_path: std::path::PathBuf,
   pub public_key_path: std::path::PathBuf,
   pub key_id: String,
@@ -35,19 +36,19 @@ pub struct BrowserDelegationSigningOptions {
   pub expires_ms: Option<u64>,
 }
 
-#[cfg(feature = "browser_delegation_signing")]
+#[cfg(feature = "host_delegation_signing")]
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct BrowserDelegationPrivateKeyFile {
+struct HostDelegationPrivateKeyFile {
   algorithm: String,
   key_id: String,
   private_key: String,
 }
 
-#[cfg(feature = "browser_delegation_signing")]
+#[cfg(feature = "host_delegation_signing")]
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct BrowserDelegationPublicKeyFile {
+struct HostDelegationPublicKeyFile {
   issuer: String,
   algorithm: String,
   key_id: String,
@@ -55,21 +56,22 @@ struct BrowserDelegationPublicKeyFile {
 }
 
 pub fn browser_host_config_script(host_config: &BrowserHostConfig) -> MResult<String> {
-  browser_host_config_injection_script(&BrowserHostConfigInjection::Unsigned(host_config.clone()))
+  host_authority_injection_script(&HostAuthorityInjection::BrowserUnsigned(host_config.clone()))
 }
 
-pub fn browser_host_config_injection_script(injection: &BrowserHostConfigInjection) -> MResult<String> {
+pub fn host_authority_injection_script(injection: &HostAuthorityInjection) -> MResult<String> {
   match injection {
-    BrowserHostConfigInjection::Unsigned(host_config) => {
+    HostAuthorityInjection::BrowserUnsigned(host_config) => {
       let json = json_for_script(host_config)?;
       Ok(format!("<script>window.__MECH_HOST_CONFIG = {json};</script>"))
     }
-    #[cfg(feature = "browser_delegation_signing")]
-    BrowserHostConfigInjection::Signed { envelope, trusted_keys } => {
+    #[cfg(feature = "host_delegation_signing")]
+    HostAuthorityInjection::BrowserSigned { envelope, trusted_keys, audience } => {
       let envelope_json = json_for_script(envelope)?;
       let trusted_keys_json = json_for_script(&trusted_keys_for_js(trusted_keys))?;
+      let audience_json = json_for_script(audience)?;
       Ok(format!(
-        "<script>window.__MECH_HOST_CONFIG = {envelope_json};window.__MECH_TRUSTED_BROWSER_KEYS = {trusted_keys_json};</script>",
+        "<script>window.__MECH_HOST_CONFIG = {envelope_json};window.__MECH_TRUSTED_HOST_KEYS = {trusted_keys_json};window.__MECH_HOST_DELEGATION_AUDIENCE = {audience_json};</script>",
       ))
     }
   }
@@ -79,17 +81,17 @@ pub fn inject_browser_host_config_script(
   html: &str,
   host_config: &BrowserHostConfig,
 ) -> MResult<String> {
-  inject_browser_host_config_injection_script(
+  inject_host_authority_injection_script(
     html,
-    &BrowserHostConfigInjection::Unsigned(host_config.clone()),
+    &HostAuthorityInjection::BrowserUnsigned(host_config.clone()),
   )
 }
 
-pub fn inject_browser_host_config_injection_script(
+pub fn inject_host_authority_injection_script(
   html: &str,
-  injection: &BrowserHostConfigInjection,
+  injection: &HostAuthorityInjection,
 ) -> MResult<String> {
-  let script = browser_host_config_injection_script(injection)?;
+  let script = host_authority_injection_script(injection)?;
   if let Some(index) = html.find("</head>") {
     let mut out = html.to_string();
     out.insert_str(index, &script);
@@ -99,66 +101,67 @@ pub fn inject_browser_host_config_injection_script(
   }
 }
 
-#[cfg(feature = "browser_delegation_signing")]
+#[cfg(feature = "host_delegation_signing")]
 pub fn signed_browser_host_config_injection(
   host_config: BrowserHostConfig,
-  options: &BrowserDelegationSigningOptions,
+  options: &HostDelegationSigningOptions,
   now_ms: u64,
-) -> MResult<BrowserHostConfigInjection> {
+) -> MResult<HostAuthorityInjection> {
   let private_key = read_private_key_file(options)?;
   let public_key = read_public_key_file(options)?;
-  let header = BrowserDelegationHeader {
+  let header = HostDelegationHeader {
     issuer: options.issuer.clone(),
     subject: options.subject.clone(),
     audience: options.audience.clone(),
     key_id: options.key_id.clone(),
-    algorithm: BROWSER_DELEGATION_ALGORITHM_ED25519.to_string(),
+    algorithm: HOST_DELEGATION_ALGORITHM_ED25519.to_string(),
     issued_at_ms: now_ms,
     expires_at_ms: options.expires_ms.map(|expires_ms| now_ms.saturating_add(expires_ms)),
     nonce: None,
   };
-  let envelope = sign_browser_delegation(header, host_config, &private_key)?;
-  Ok(BrowserHostConfigInjection::Signed {
+  let envelope = sign_browser_host_delegation(header, host_config, &private_key)?;
+  Ok(HostAuthorityInjection::BrowserSigned {
     envelope,
     trusted_keys: vec![public_key],
+    audience: options.audience.clone(),
   })
 }
 
-#[cfg(feature = "browser_delegation_signing")]
-fn read_private_key_file(options: &BrowserDelegationSigningOptions) -> MResult<BrowserDelegationSigningKey> {
+#[cfg(feature = "host_delegation_signing")]
+fn read_private_key_file(options: &HostDelegationSigningOptions) -> MResult<HostDelegationSigningKey> {
   let text = std::fs::read_to_string(&options.private_key_path)?;
-  let file: BrowserDelegationPrivateKeyFile = serde_json::from_str(&text)
+  let file: HostDelegationPrivateKeyFile = serde_json::from_str(&text)
     .map_err(|error| Error::new(ErrorKind::InvalidData, error.to_string()))?;
-  if file.algorithm != BROWSER_DELEGATION_ALGORITHM_ED25519 {
+  if file.algorithm != HOST_DELEGATION_ALGORITHM_ED25519 {
     return Err(Error::new(ErrorKind::InvalidData, "private key algorithm must be ed25519").into());
   }
   if file.key_id != options.key_id {
-    return Err(Error::new(ErrorKind::InvalidData, "private key keyId does not match --browser-delegation-key-id").into());
+    return Err(Error::new(ErrorKind::InvalidData, "private key keyId does not match --host-delegation-key-id").into());
   }
   let bytes = base64::engine::general_purpose::STANDARD
     .decode(file.private_key.as_bytes())
     .map_err(|error| Error::new(ErrorKind::InvalidData, error.to_string()))?;
-  BrowserDelegationSigningKey::from_ed25519_private_key_bytes(&bytes)
+  HostDelegationSigningKey::from_ed25519_private_key_bytes(&bytes)
 }
 
-#[cfg(feature = "browser_delegation_signing")]
-fn read_public_key_file(options: &BrowserDelegationSigningOptions) -> MResult<BrowserDelegationPublicKey> {
+#[cfg(feature = "host_delegation_signing")]
+fn read_public_key_file(options: &HostDelegationSigningOptions) -> MResult<HostDelegationPublicKey> {
   let text = std::fs::read_to_string(&options.public_key_path)?;
-  let file: BrowserDelegationPublicKeyFile = serde_json::from_str(&text)
+  let file: HostDelegationPublicKeyFile = serde_json::from_str(&text)
     .map_err(|error| Error::new(ErrorKind::InvalidData, error.to_string()))?;
-  if file.algorithm != BROWSER_DELEGATION_ALGORITHM_ED25519 {
+  if file.algorithm != HOST_DELEGATION_ALGORITHM_ED25519 {
     return Err(Error::new(ErrorKind::InvalidData, "public key algorithm must be ed25519").into());
   }
   if file.key_id != options.key_id {
-    return Err(Error::new(ErrorKind::InvalidData, "public key keyId does not match --browser-delegation-key-id").into());
+    return Err(Error::new(ErrorKind::InvalidData, "public key keyId does not match --host-delegation-key-id").into());
   }
   if file.issuer != options.issuer {
-    return Err(Error::new(ErrorKind::InvalidData, "public key issuer does not match --browser-delegation-issuer").into());
+    return Err(Error::new(ErrorKind::InvalidData, "public key issuer does not match --host-delegation-issuer").into());
   }
   let public_key = base64::engine::general_purpose::STANDARD
     .decode(file.public_key.as_bytes())
     .map_err(|error| Error::new(ErrorKind::InvalidData, error.to_string()))?;
-  Ok(BrowserDelegationPublicKey {
+  Ok(HostDelegationPublicKey {
     issuer: file.issuer,
     key_id: file.key_id,
     algorithm: file.algorithm,
@@ -166,21 +169,21 @@ fn read_public_key_file(options: &BrowserDelegationSigningOptions) -> MResult<Br
   })
 }
 
-#[cfg(feature = "browser_delegation_signing")]
+#[cfg(feature = "host_delegation_signing")]
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
-struct JsTrustedBrowserKey<'a> {
+struct JsTrustedHostKey<'a> {
   issuer: &'a str,
   key_id: &'a str,
   algorithm: &'a str,
   public_key: String,
 }
 
-#[cfg(feature = "browser_delegation_signing")]
-fn trusted_keys_for_js(keys: &[BrowserDelegationPublicKey]) -> Vec<JsTrustedBrowserKey<'_>> {
+#[cfg(feature = "host_delegation_signing")]
+fn trusted_keys_for_js(keys: &[HostDelegationPublicKey]) -> Vec<JsTrustedHostKey<'_>> {
   keys
     .iter()
-    .map(|key| JsTrustedBrowserKey {
+    .map(|key| JsTrustedHostKey {
       issuer: &key.issuer,
       key_id: &key.key_id,
       algorithm: &key.algorithm,

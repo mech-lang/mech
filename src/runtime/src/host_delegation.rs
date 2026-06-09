@@ -7,24 +7,32 @@ use crate::{
   BrowserHostConfig, BrowserHostResourceConfig, RuntimeConfig,
 };
 
-pub const BROWSER_DELEGATION_FORMAT: &str = "mech.browser-delegation.v1";
-pub const BROWSER_DELEGATION_ALGORITHM_ED25519: &str = "ed25519";
-const BROWSER_DELEGATION_DOMAIN: &[u8] = b"mech.browser-delegation.v1";
+pub const HOST_DELEGATION_FORMAT: &str = "mech.host-delegation.v1";
+pub const HOST_DELEGATION_ALGORITHM_ED25519: &str = "ed25519";
+const HOST_DELEGATION_DOMAIN: &[u8] = b"mech.host-delegation.v1";
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BrowserDelegationEnvelope {
-  pub format: String,
-  pub header: BrowserDelegationHeader,
-  pub host_config: BrowserHostConfig,
-  pub signature: Option<BrowserDelegationSignature>,
+pub trait HostDelegationPayload: Clone + std::fmt::Debug {
+  type Authority;
+
+  fn kind(&self) -> &'static str;
+  fn validate_payload(&self) -> MResult<Self::Authority>;
+  fn encode_payload(&self, out: &mut Vec<u8>);
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BrowserDelegationHeader {
+pub struct HostDelegationEnvelope<P> {
+  pub format: String,
+  pub header: HostDelegationHeader,
+  pub payload: P,
+  pub signature: Option<HostDelegationSignature>,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HostDelegationHeader {
   pub issuer: String,
   pub subject: String,
   pub audience: String,
@@ -38,148 +46,164 @@ pub struct BrowserDelegationHeader {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BrowserDelegationSignature {
+pub struct HostDelegationSignature {
   pub bytes: Vec<u8>,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BrowserDelegationPublicKey {
+pub struct HostDelegationPublicKey {
   pub issuer: String,
   pub key_id: String,
   pub algorithm: String,
   pub public_key: Vec<u8>,
 }
 
-pub type BrowserDelegationKeyRecord = BrowserDelegationPublicKey;
+pub type HostDelegationKeyRecord = HostDelegationPublicKey;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BrowserDelegationKeyStore {
-  keys: Vec<BrowserDelegationPublicKey>,
+pub struct HostDelegationKeyStore {
+  keys: Vec<HostDelegationPublicKey>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BrowserDelegationVerificationRequest {
+pub struct HostDelegationVerificationRequest {
   pub now_ms: u64,
   pub expected_audience: String,
-  pub trusted_keys: BrowserDelegationKeyStore,
+  pub trusted_keys: HostDelegationKeyStore,
   pub max_clock_skew_ms: u64,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct VerifiedBrowserDelegation {
+pub struct VerifiedHostDelegation<P, A> {
   pub issuer: String,
   pub subject: String,
   pub audience: String,
   pub key_id: String,
+  pub payload: P,
+  pub authority: A,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BrowserHostDelegationPayload {
+  pub host_config: BrowserHostConfig,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BrowserVerifiedAuthority {
   pub runtime_config: RuntimeConfig,
   pub browser_authority: BrowserAuthority,
   pub host_config: BrowserHostConfig,
 }
 
+pub type BrowserHostDelegationEnvelope = HostDelegationEnvelope<BrowserHostDelegationPayload>;
+pub type VerifiedBrowserHostDelegation = VerifiedHostDelegation<BrowserHostDelegationPayload, BrowserVerifiedAuthority>;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct InvalidBrowserDelegationEnvelopeError {
+pub struct InvalidHostDelegationEnvelopeError {
   pub field: &'static str,
   pub reason: String,
 }
 
-impl MechErrorKind for InvalidBrowserDelegationEnvelopeError {
+impl MechErrorKind for InvalidHostDelegationEnvelopeError {
   fn name(&self) -> &str {
-    "InvalidBrowserDelegationEnvelopeError"
+    "InvalidHostDelegationEnvelopeError"
   }
 
   fn message(&self) -> String {
-    format!("Invalid browser delegation field `{}`: {}", self.field, self.reason)
+    format!("Invalid host delegation field `{}`: {}", self.field, self.reason)
   }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BrowserDelegationSignatureError {
+pub struct HostDelegationSignatureError {
   pub reason: String,
 }
 
-impl MechErrorKind for BrowserDelegationSignatureError {
+impl MechErrorKind for HostDelegationSignatureError {
   fn name(&self) -> &str {
-    "BrowserDelegationSignatureError"
+    "HostDelegationSignatureError"
   }
 
   fn message(&self) -> String {
-    format!("Browser delegation signature verification failed: {}", self.reason)
+    format!("Host delegation signature verification failed: {}", self.reason)
   }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BrowserDelegationKeyNotFoundError {
+pub struct HostDelegationKeyNotFoundError {
   pub issuer: String,
   pub key_id: String,
 }
 
-impl MechErrorKind for BrowserDelegationKeyNotFoundError {
+impl MechErrorKind for HostDelegationKeyNotFoundError {
   fn name(&self) -> &str {
-    "BrowserDelegationKeyNotFoundError"
+    "HostDelegationKeyNotFoundError"
   }
 
   fn message(&self) -> String {
     format!(
-      "Browser delegation key not found for issuer `{}` and key `{}`",
+      "Host delegation key not found for issuer `{}` and key `{}`",
       self.issuer, self.key_id,
     )
   }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BrowserDelegationExpiredError {
+pub struct HostDelegationExpiredError {
   pub now_ms: u64,
   pub issued_at_ms: u64,
   pub expires_at_ms: Option<u64>,
 }
 
-impl MechErrorKind for BrowserDelegationExpiredError {
+impl MechErrorKind for HostDelegationExpiredError {
   fn name(&self) -> &str {
-    "BrowserDelegationExpiredError"
+    "HostDelegationExpiredError"
   }
 
   fn message(&self) -> String {
     format!(
-      "Browser delegation is outside its valid time window: now={}, issuedAt={}, expiresAt={:?}",
+      "Host delegation is outside its valid time window: now={}, issuedAt={}, expiresAt={:?}",
       self.now_ms, self.issued_at_ms, self.expires_at_ms,
     )
   }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BrowserDelegationWrongAudienceError {
+pub struct HostDelegationWrongAudienceError {
   pub expected: String,
   pub actual: String,
 }
 
-impl MechErrorKind for BrowserDelegationWrongAudienceError {
+impl MechErrorKind for HostDelegationWrongAudienceError {
   fn name(&self) -> &str {
-    "BrowserDelegationWrongAudienceError"
+    "HostDelegationWrongAudienceError"
   }
 
   fn message(&self) -> String {
     format!(
-      "Browser delegation audience mismatch: expected `{}`, got `{}`",
+      "Host delegation audience mismatch: expected `{}`, got `{}`",
       self.expected, self.actual,
     )
   }
 }
 
-impl BrowserDelegationEnvelope {
-  pub fn unsigned(header: BrowserDelegationHeader, host_config: BrowserHostConfig) -> Self {
+impl<P: HostDelegationPayload> HostDelegationEnvelope<P> {
+  pub fn unsigned(header: HostDelegationHeader, payload: P) -> Self {
     Self {
-      format: BROWSER_DELEGATION_FORMAT.to_string(),
+      format: HOST_DELEGATION_FORMAT.to_string(),
       header,
-      host_config,
+      payload,
       signature: None,
     }
   }
 
-  pub fn validate_unsigned(&self) -> MResult<()> {
-    if self.format != BROWSER_DELEGATION_FORMAT {
-      return invalid("format", format!("must equal `{}`", BROWSER_DELEGATION_FORMAT));
+  pub fn validate_unsigned(&self) -> MResult<P::Authority> {
+    if self.format != HOST_DELEGATION_FORMAT {
+      return invalid("format", format!("must equal `{}`", HOST_DELEGATION_FORMAT));
     }
     if self.header.issuer.trim().is_empty() {
       return invalid("header.issuer", "must not be empty");
@@ -193,8 +217,8 @@ impl BrowserDelegationEnvelope {
     if self.header.key_id.trim().is_empty() {
       return invalid("header.keyId", "must not be empty");
     }
-    if self.header.algorithm != BROWSER_DELEGATION_ALGORITHM_ED25519 {
-      return invalid("header.algorithm", format!("must equal `{}`", BROWSER_DELEGATION_ALGORITHM_ED25519));
+    if self.header.algorithm != HOST_DELEGATION_ALGORITHM_ED25519 {
+      return invalid("header.algorithm", format!("must equal `{}`", HOST_DELEGATION_ALGORITHM_ED25519));
     }
     if let Some(expires_at_ms) = self.header.expires_at_ms {
       if expires_at_ms < self.header.issued_at_ms {
@@ -206,16 +230,15 @@ impl BrowserDelegationEnvelope {
         return invalid("header.nonce", "must not be empty when present");
       }
     }
-    self.host_config.into_runtime_config()?;
-    self.host_config.into_browser_authority()?;
-    Ok(())
+    self.payload.validate_payload()
   }
 
   pub fn signing_payload(&self) -> MResult<Vec<u8>> {
     self.validate_unsigned()?;
     let mut out = Vec::new();
-    push_len_prefixed(&mut out, BROWSER_DELEGATION_DOMAIN);
+    push_len_prefixed(&mut out, HOST_DELEGATION_DOMAIN);
     push_string(&mut out, &self.format);
+    push_string(&mut out, self.payload.kind());
     push_string(&mut out, &self.header.issuer);
     push_string(&mut out, &self.header.subject);
     push_string(&mut out, &self.header.audience);
@@ -224,29 +247,51 @@ impl BrowserDelegationEnvelope {
     push_u64(&mut out, self.header.issued_at_ms);
     push_option_u64(&mut out, self.header.expires_at_ms);
     push_option_string(&mut out, self.header.nonce.as_deref());
-    push_host_config(&mut out, &self.host_config);
+    self.payload.encode_payload(&mut out);
     Ok(out)
   }
 }
 
-impl BrowserDelegationKeyStore {
-  pub fn new(keys: impl IntoIterator<Item = BrowserDelegationPublicKey>) -> Self {
+impl HostDelegationPayload for BrowserHostDelegationPayload {
+  type Authority = BrowserVerifiedAuthority;
+
+  fn kind(&self) -> &'static str {
+    "browser"
+  }
+
+  fn validate_payload(&self) -> MResult<Self::Authority> {
+    let runtime_config = self.host_config.into_runtime_config()?;
+    let browser_authority = self.host_config.into_browser_authority()?;
+    Ok(BrowserVerifiedAuthority {
+      runtime_config,
+      browser_authority,
+      host_config: self.host_config.clone(),
+    })
+  }
+
+  fn encode_payload(&self, out: &mut Vec<u8>) {
+    encode_browser_host_config(out, &self.host_config);
+  }
+}
+
+impl HostDelegationKeyStore {
+  pub fn new(keys: impl IntoIterator<Item = HostDelegationPublicKey>) -> Self {
     Self { keys: keys.into_iter().collect() }
   }
 
-  pub fn key(&self, issuer: &str, key_id: &str) -> Option<&BrowserDelegationPublicKey> {
+  pub fn key(&self, issuer: &str, key_id: &str) -> Option<&HostDelegationPublicKey> {
     self
       .keys
       .iter()
       .find(|key| key.issuer == issuer && key.key_id == key_id)
   }
 
-  pub fn keys(&self) -> &[BrowserDelegationPublicKey] {
+  pub fn keys(&self) -> &[HostDelegationPublicKey] {
     &self.keys
   }
 }
 
-fn push_host_config(out: &mut Vec<u8>, config: &BrowserHostConfig) {
+pub fn encode_browser_host_config(out: &mut Vec<u8>, config: &BrowserHostConfig) {
   push_string(out, &config.runtime.name);
   push_option_u64(out, config.runtime.limits.max_steps_per_turn);
   push_option_u64(out, config.runtime.limits.max_turn_duration_ms);
@@ -382,7 +427,7 @@ fn push_bool(out: &mut Vec<u8>, value: bool) {
 
 fn invalid<T>(field: &'static str, reason: impl Into<String>) -> MResult<T> {
   Err(MechError::new(
-    InvalidBrowserDelegationEnvelopeError { field, reason: reason.into() },
+    InvalidHostDelegationEnvelopeError { field, reason: reason.into() },
     None,
   ))
 }
@@ -394,6 +439,32 @@ pub(crate) mod tests {
     BrowserHostBrowserConfig, BrowserHostBrowserGrant, BrowserHostDiagnosticsConfig,
     BrowserHostDomManifestEntry, BrowserHostRuntimeConfig, BrowserHostRuntimeLimits,
   };
+
+  #[derive(Clone, Debug, PartialEq, Eq)]
+  pub struct TestPayload {
+    pub kind: &'static str,
+    pub value: String,
+  }
+
+  impl HostDelegationPayload for TestPayload {
+    type Authority = String;
+
+    fn kind(&self) -> &'static str {
+      self.kind
+    }
+
+    fn validate_payload(&self) -> MResult<Self::Authority> {
+      Ok(self.value.clone())
+    }
+
+    fn encode_payload(&self, out: &mut Vec<u8>) {
+      push_string(out, &self.value);
+    }
+  }
+
+  pub fn test_payload() -> TestPayload {
+    TestPayload { kind: "test", value: "payload".to_string() }
+  }
 
   pub fn host_config() -> BrowserHostConfig {
     BrowserHostConfig {
@@ -452,13 +523,17 @@ pub(crate) mod tests {
     }
   }
 
-  pub fn header() -> BrowserDelegationHeader {
-    BrowserDelegationHeader {
+  pub fn browser_payload() -> BrowserHostDelegationPayload {
+    BrowserHostDelegationPayload { host_config: host_config() }
+  }
+
+  pub fn header() -> HostDelegationHeader {
+    HostDelegationHeader {
       issuer: "host://mech-cli".to_string(),
       subject: "wasm://browser".to_string(),
       audience: "browser://test".to_string(),
       key_id: "dev".to_string(),
-      algorithm: BROWSER_DELEGATION_ALGORITHM_ED25519.to_string(),
+      algorithm: HOST_DELEGATION_ALGORITHM_ED25519.to_string(),
       issued_at_ms: 1000,
       expires_at_ms: Some(10_000),
       nonce: Some("nonce".to_string()),
@@ -466,27 +541,52 @@ pub(crate) mod tests {
   }
 
   #[test]
-  fn signing_payload_is_deterministic_when_grants_are_reordered() {
+  fn generic_payload_kind_is_part_of_signing_payload() {
+    let first = HostDelegationEnvelope::unsigned(header(), TestPayload { kind: "first", value: "same".to_string() });
+    let second = HostDelegationEnvelope::unsigned(header(), TestPayload { kind: "second", value: "same".to_string() });
+    assert_ne!(first.signing_payload().unwrap(), second.signing_payload().unwrap());
+  }
+
+  #[test]
+  fn generic_signing_payload_is_deterministic() {
+    let first = HostDelegationEnvelope::unsigned(header(), test_payload());
+    let second = HostDelegationEnvelope::unsigned(header(), test_payload());
+    assert_eq!(first.signing_payload().unwrap(), second.signing_payload().unwrap());
+  }
+
+  #[test]
+  fn browser_payload_is_deterministic_when_grants_are_reordered() {
     let config = host_config();
     let mut reordered = config.clone();
     reordered.browser.grants.reverse();
     assert_eq!(
-      BrowserDelegationEnvelope::unsigned(header(), config).signing_payload().unwrap(),
-      BrowserDelegationEnvelope::unsigned(header(), reordered).signing_payload().unwrap(),
+      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: config }).signing_payload().unwrap(),
+      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: reordered }).signing_payload().unwrap(),
     );
   }
 
   #[test]
-  fn signing_payload_is_deterministic_when_allow_lists_are_reordered() {
+  fn browser_payload_is_deterministic_when_allow_lists_are_reordered() {
     let config = host_config();
     let mut reordered = config.clone();
     reordered.browser.grants[0].allow.reverse();
-    if let BrowserHostResourceConfig::Network { methods: Some(methods), .. } = &mut reordered.browser.grants[1].resource {
+    if let BrowserHostResourceConfig::Network { methods: Some(methods), .. } = &mut reordered.browser.grants[2].resource {
       methods.reverse();
     }
     assert_eq!(
-      BrowserDelegationEnvelope::unsigned(header(), config).signing_payload().unwrap(),
-      BrowserDelegationEnvelope::unsigned(header(), reordered).signing_payload().unwrap(),
+      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: config }).signing_payload().unwrap(),
+      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: reordered }).signing_payload().unwrap(),
+    );
+  }
+
+  #[test]
+  fn browser_payload_is_deterministic_when_dom_manifest_is_reordered() {
+    let config = host_config();
+    let mut reordered = config.clone();
+    reordered.browser.dom_manifest.reverse();
+    assert_eq!(
+      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: config }).signing_payload().unwrap(),
+      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: reordered }).signing_payload().unwrap(),
     );
   }
 }

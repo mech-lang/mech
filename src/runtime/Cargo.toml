@@ -146,8 +146,8 @@ logical_indexing = ["subscript","vectord","bool", "mech-core/logical_indexing", 
 dot_indexing = ["subscript", "mech-core/dot_indexing", "mech-program/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle", "mech-program/swizzle"]
 notify = ["dep:notify"]
-browser_delegation = ["serde", "default"]
-browser_delegation_signing = ["browser_delegation", "dep:ed25519-dalek", "dep:rand_core"]
+host_delegation = ["serde", "base"]
+host_delegation_signing = ["host_delegation", "dep:ed25519-dalek", "dep:rand_core"]
 
 [dev-dependencies]
 serde_json = "1.0.150"

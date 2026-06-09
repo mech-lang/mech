@@ -262,7 +262,7 @@ async fn main() -> Result<(), MechError> {
         .long("address")
         .value_name("ADDRESS")
         .help("Sets the address of the server (127.0.0.1)"))
-      .args(browser_delegation_args()))
+      .args(host_delegation_args()))
     .arg(Arg::new("tree")
         .short('e')
         .long("tree")
@@ -367,14 +367,14 @@ async fn main() -> Result<(), MechError> {
     }
 
     let full_address = format!("{}:{}", effective.address, effective.port);
-    #[cfg(feature = "browser_delegation_signing")]
-    let host_config_injection = serve_browser_delegation_injection(
+    #[cfg(feature = "host_delegation_signing")]
+    let host_config_injection = serve_host_delegation_injection(
       serve_matches,
       loaded_config.as_ref(),
       &runtime_config,
       &full_address,
     )?;
-    #[cfg(not(feature = "browser_delegation_signing"))]
+    #[cfg(not(feature = "host_delegation_signing"))]
     let host_config_injection = None;
     let mech_paths = effective.paths;
     let stylesheet_paths = effective.stylesheet_paths;
@@ -867,49 +867,49 @@ pub fn load_resource(resource_path: &str) -> String {
 }
 
 
-#[cfg(all(feature = "browser_delegation_signing", feature = "serve"))]
-fn browser_delegation_args() -> Vec<Arg> {
+#[cfg(all(feature = "host_delegation_signing", feature = "serve"))]
+fn host_delegation_args() -> Vec<Arg> {
   vec![
-    Arg::new("browser_delegation_key").long("browser-delegation-key").value_name("PATH").num_args(1),
-    Arg::new("browser_delegation_public_key").long("browser-delegation-public-key").value_name("PATH").num_args(1),
-    Arg::new("browser_delegation_key_id").long("browser-delegation-key-id").value_name("ID").num_args(1),
-    Arg::new("browser_delegation_issuer").long("browser-delegation-issuer").value_name("ISSUER").num_args(1),
-    Arg::new("browser_delegation_subject").long("browser-delegation-subject").value_name("SUBJECT").num_args(1),
-    Arg::new("browser_delegation_audience").long("browser-delegation-audience").value_name("AUDIENCE").num_args(1),
-    Arg::new("browser_delegation_expires_ms").long("browser-delegation-expires-ms").value_name("MS").num_args(1),
+    Arg::new("host_delegation_key").long("host-delegation-key").value_name("PATH").num_args(1),
+    Arg::new("host_delegation_public_key").long("host-delegation-public-key").value_name("PATH").num_args(1),
+    Arg::new("host_delegation_key_id").long("host-delegation-key-id").value_name("ID").num_args(1),
+    Arg::new("host_delegation_issuer").long("host-delegation-issuer").value_name("ISSUER").num_args(1),
+    Arg::new("host_delegation_subject").long("host-delegation-subject").value_name("SUBJECT").num_args(1),
+    Arg::new("host_delegation_audience").long("host-delegation-audience").value_name("AUDIENCE").num_args(1),
+    Arg::new("host_delegation_expires_ms").long("host-delegation-expires-ms").value_name("MS").num_args(1),
   ]
 }
 
-#[cfg(any(not(feature = "browser_delegation_signing"), not(feature = "serve")))]
-fn browser_delegation_args() -> Vec<Arg> {
+#[cfg(any(not(feature = "host_delegation_signing"), not(feature = "serve")))]
+fn host_delegation_args() -> Vec<Arg> {
   Vec::new()
 }
 
-#[cfg(all(feature = "browser_delegation_signing", feature = "serve"))]
-fn serve_browser_delegation_injection(
+#[cfg(all(feature = "host_delegation_signing", feature = "serve"))]
+fn serve_host_delegation_injection(
   matches: &clap::ArgMatches,
   loaded_config: Option<&mech::LoadedMechConfig>,
   runtime_config: &mech_runtime::RuntimeConfig,
   full_address: &str,
-) -> MResult<Option<mech::BrowserHostConfigInjection>> {
-  let Some(private_key) = matches.get_one::<String>("browser_delegation_key") else {
+) -> MResult<Option<mech::HostAuthorityInjection>> {
+  let Some(private_key) = matches.get_one::<String>("host_delegation_key") else {
     return Ok(None);
   };
   let public_key = matches
-    .get_one::<String>("browser_delegation_public_key")
-    .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, "--browser-delegation-public-key is required with --browser-delegation-key"))?;
+    .get_one::<String>("host_delegation_public_key")
+    .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, "--host-delegation-public-key is required with --host-delegation-key"))?;
   let Some(loaded_config) = loaded_config else {
-    return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "browser delegation signing requires a loaded config").into());
+    return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "host delegation signing requires a loaded config").into());
   };
   let current_dir = std::env::current_dir()?;
-  let options = mech::BrowserDelegationSigningOptions {
+  let options = mech::HostDelegationSigningOptions {
     private_key_path: current_dir.join(private_key),
     public_key_path: current_dir.join(public_key),
-    key_id: matches.get_one::<String>("browser_delegation_key_id").cloned().unwrap_or_else(|| "dev".to_string()),
-    issuer: matches.get_one::<String>("browser_delegation_issuer").cloned().unwrap_or_else(|| "host://mech-cli".to_string()),
-    subject: matches.get_one::<String>("browser_delegation_subject").cloned().unwrap_or_else(|| "wasm://browser".to_string()),
-    audience: matches.get_one::<String>("browser_delegation_audience").cloned().unwrap_or_else(|| format!("browser://serve/{full_address}")),
-    expires_ms: matches.get_one::<String>("browser_delegation_expires_ms").map(|value| value.parse()).transpose().map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidInput, "--browser-delegation-expires-ms must be an integer"))?,
+    key_id: matches.get_one::<String>("host_delegation_key_id").cloned().unwrap_or_else(|| "dev".to_string()),
+    issuer: matches.get_one::<String>("host_delegation_issuer").cloned().unwrap_or_else(|| "host://mech-cli".to_string()),
+    subject: matches.get_one::<String>("host_delegation_subject").cloned().unwrap_or_else(|| "wasm://browser".to_string()),
+    audience: matches.get_one::<String>("host_delegation_audience").cloned().unwrap_or_else(|| format!("browser://serve/{full_address}")),
+    expires_ms: matches.get_one::<String>("host_delegation_expires_ms").map(|value| value.parse()).transpose().map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidInput, "--host-delegation-expires-ms must be an integer"))?,
   };
   let host_config = mech_runtime::BrowserHostConfig::from_document_and_runtime(
     &loaded_config.document,
