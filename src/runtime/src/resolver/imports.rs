@@ -96,19 +96,17 @@ mod tests {
   }
 
   #[test]
-  fn classifies_single_import() {
+  fn stdlib_single_imports_are_not_source_imports() {
     let fenced = parse_fenced("~~~mech\n+> math/sin\n~~~\n");
     let imports = imports_from_fenced_code(&fenced);
-    assert_eq!(imports[0].specifier, "math");
-    assert_eq!(imports[0].kind, SourceImportKind::Single { name: "sin".to_string() });
+    assert!(imports.is_empty());
   }
 
   #[test]
-  fn classifies_wildcard_import() {
+  fn stdlib_wildcard_imports_are_not_source_imports() {
     let fenced = parse_fenced("~~~mech\n+> math/*\n~~~\n");
     let imports = imports_from_fenced_code(&fenced);
-    assert_eq!(imports[0].specifier, "math");
-    assert_eq!(imports[0].kind, SourceImportKind::Wildcard);
+    assert!(imports.is_empty());
   }
 
   #[test]
@@ -130,11 +128,8 @@ mod tests {
     let fenced = parse_fenced("~~~mech\n+> math\n+> math/sin\n+> math/*\n+> ./dep.mec\n~~~\n");
     let imports = imports_from_fenced_code(&fenced);
     let dependencies = import_dependencies(&imports);
-    assert_eq!(dependencies.len(), 4);
-    assert_eq!(dependencies[0].specifier, "math");
-    assert_eq!(dependencies[1].specifier, "math");
-    assert_eq!(dependencies[2].specifier, "math");
-    assert_eq!(dependencies[3].specifier, "./dep.mec");
+    assert_eq!(dependencies.len(), 1);
+    assert_eq!(dependencies[0].specifier, "./dep.mec");
   }
 
   #[test]

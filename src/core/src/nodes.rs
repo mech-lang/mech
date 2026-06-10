@@ -808,12 +808,39 @@ impl MDList {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ModuleImportKind {
+  Module,
+  Item,
+  Glob,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ModuleImport {
+  pub module: Identifier,
+  pub item: Option<Identifier>,
+  pub kind: ModuleImportKind,
+}
+
+impl ModuleImport {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.module.tokens();
+    if let Some(item) = &self.item {
+      tokens.append(&mut item.tokens());
+    }
+    tokens
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum MechCode {
   Comment(Comment),
   Expression(Expression),
   FsmImplementation(FsmImplementation),
   FsmSpecification(FsmSpecification),
   FunctionDefine(FunctionDefine),
+  Import(ModuleImport),
   Statement(Statement),
   Error(Token, SourceRange),
 }
@@ -833,6 +860,7 @@ impl MechCode {
       MechCode::FsmSpecification(x) => x.tokens(),
       MechCode::FsmImplementation(x) => x.tokens(),
       MechCode::FunctionDefine(_) => vec![],
+      MechCode::Import(x) => x.tokens(),
       MechCode::Error(t,_) => vec![t.clone()],
     }
   }
