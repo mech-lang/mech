@@ -684,6 +684,7 @@ impl Formatter {
         MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
         MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
         MechCode::FunctionDefine(func_def) => self.function_define(func_def),
+        MechCode::Import(import) => self.module_import(import),
         MechCode::Statement(stmt) => self.statement(stmt),
         x => format!("{{{:?}}}", x)
       };
@@ -1544,6 +1545,7 @@ impl Formatter {
         MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
         MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
         MechCode::FunctionDefine(func_def) => self.function_define(func_def),
+        MechCode::Import(import) => self.module_import(import),
         MechCode::Statement(stmt) => self.statement(stmt),
         MechCode::Error(token, range) => {
           if self.html {
@@ -1848,6 +1850,17 @@ impl Formatter {
       </div>"#,name,input,output,states)
     } else {
       format!("#{}({}){} {}\n{}", name, input, output, ":=", states)
+    }
+  }
+
+  pub fn module_import(&mut self, node: &ModuleImport) -> String {
+    match node.kind {
+      ModuleImportKind::Module => format!("+> {}", node.module.to_string()),
+      ModuleImportKind::Item => {
+        let item = node.item.as_ref().unwrap().iter().map(|id| id.to_string()).collect::<Vec<_>>().join("/");
+        format!("+> {}/{}", node.module.to_string(), item)
+      }
+      ModuleImportKind::Glob => format!("+> {}/*", node.module.to_string()),
     }
   }
 

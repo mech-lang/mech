@@ -61,6 +61,23 @@ pub fn source_request_for_import(
   request
 }
 
+
+pub(crate) fn module_import_specifier(import: &mech_core::ModuleImport) -> String {
+  let module = import.module.to_string();
+  match import.kind {
+    mech_core::ModuleImportKind::Module => module,
+    mech_core::ModuleImportKind::Glob => format!("{module}/*"),
+    mech_core::ModuleImportKind::Item => {
+      let item = import
+        .item
+        .as_ref()
+        .map(|path| path.iter().map(|id| id.to_string()).collect::<Vec<_>>().join("/"))
+        .unwrap_or_default();
+      format!("{module}/{item}")
+    }
+  }
+}
+
 pub fn import_dependencies(imports: &[SourceImportDeclaration]) -> Vec<SourceRequest> {
   imports
     .iter()
@@ -96,24 +113,22 @@ mod tests {
   }
 
   #[test]
-  fn classifies_single_import() {
+  fn stdlib_single_imports_are_not_source_imports() {
     let fenced = parse_fenced("~~~mech\n+> math/sin\n~~~\n");
     let imports = imports_from_fenced_code(&fenced);
-    assert_eq!(imports[0].specifier, "math");
-    assert_eq!(imports[0].kind, SourceImportKind::Single { name: "sin".to_string() });
+    assert!(imports.is_empty());
   }
 
   #[test]
-  fn classifies_wildcard_import() {
+  fn stdlib_wildcard_imports_are_not_source_imports() {
     let fenced = parse_fenced("~~~mech\n+> math/*\n~~~\n");
     let imports = imports_from_fenced_code(&fenced);
-    assert_eq!(imports[0].specifier, "math");
-    assert_eq!(imports[0].kind, SourceImportKind::Wildcard);
+    assert!(imports.is_empty());
   }
 
   #[test]
   fn classifies_dependency_only_imports() {
-    let fenced = parse_fenced("~~~mech\n+> ./dep.mec\n+> fs://lib/dep.mec\n+> file:///tmp/dep.mec\n+> memory://scratch/dep\n+> https://example.com/dep.mec\n~~~\n");
+    let fenced = parse_fenced("~~~mech\n+> ./dep.mec\n+> ../lib/dep.mec\n+> fs://lib/dep.mec\n+> file:///tmp/dep.mec\n+> memory://scratch/dep\n+> https://example.com/dep.mec\n~~~\n");
     let imports = imports_from_fenced_code(&fenced);
     assert!(imports.iter().all(|imp| imp.kind == SourceImportKind::DependencyOnly));
   }
@@ -130,11 +145,8 @@ mod tests {
     let fenced = parse_fenced("~~~mech\n+> math\n+> math/sin\n+> math/*\n+> ./dep.mec\n~~~\n");
     let imports = imports_from_fenced_code(&fenced);
     let dependencies = import_dependencies(&imports);
-    assert_eq!(dependencies.len(), 4);
-    assert_eq!(dependencies[0].specifier, "math");
-    assert_eq!(dependencies[1].specifier, "math");
-    assert_eq!(dependencies[2].specifier, "math");
-    assert_eq!(dependencies[3].specifier, "./dep.mec");
+    assert_eq!(dependencies.len(), 1);
+    assert_eq!(dependencies[0].specifier, "./dep.mec");
   }
 
   #[test]

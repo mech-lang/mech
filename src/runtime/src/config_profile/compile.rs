@@ -27,6 +27,11 @@ impl ConfigCompiler {
                     items.push(ConfigItem::Function(self.compile_function(function)?));
                 }
                 MechCode::Statement(statement) => items.push(self.compile_statement(statement)?),
+                MechCode::Import(_) => {
+                    return Err(ConfigProfileViolation::error(
+                        "module imports are not allowed in Mech config",
+                    ));
+                }
                 MechCode::FsmSpecification(_) | MechCode::FsmImplementation(_) => {
                     return Err(ConfigProfileViolation::error(
                         "state machines are not allowed in Mech config",
