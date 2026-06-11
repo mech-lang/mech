@@ -26,23 +26,27 @@ fn named_math_functions_fail_without_imports() {
     assert!(!run("x := math/sin(1.23)"));
 }
 
+#[cfg(feature = "linked_stdlib")]
 #[test]
 fn qualified_module_import_enables_only_qualified_calls() {
     assert!(run("+> math\nx := math/sin(1.23)"));
     assert!(!run("+> math\nx := sin(1.23)"));
 }
 
+#[cfg(feature = "linked_stdlib")]
 #[test]
 fn item_import_enables_only_that_unqualified_item() {
     assert!(run("+> math/sin\nx := sin(1.23)"));
     assert!(!run("+> math/sin\nx := cos(1.23)"));
 }
 
+#[cfg(feature = "linked_stdlib")]
 #[test]
 fn glob_import_enables_all_module_exports_unqualified() {
     assert!(run("+> math/*\nx := sin(1.23)\ny := cos(1.23)"));
 }
 
+#[cfg(feature = "linked_stdlib")]
 #[test]
 fn nested_stats_imports_work_and_require_imports() {
     assert!(!run("x := stats/sum/column([1 2 3])"));
