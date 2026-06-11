@@ -75,3 +75,10 @@ register_descriptor! {
     ptr: &MathY0{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "bessel/y0",
+  }
+}

@@ -80,3 +80,10 @@ register_descriptor! {
     ptr: &MathTanh{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "tanh",
+  }
+}

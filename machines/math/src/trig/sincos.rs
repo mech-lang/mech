@@ -75,3 +75,10 @@ register_descriptor! {
     ptr: &MathSincos{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "sincos",
+  }
+}

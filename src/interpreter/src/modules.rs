@@ -2,146 +2,35 @@ use crate::*;
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
-pub struct ModuleExports {
-    pub module: &'static str,
-    pub exports: Vec<&'static str>,
+pub struct ModuleManifest {
+    pub module: String,
+    pub items: Vec<String>,
 }
 
-const MATH_EXPORTS: &[&str] = &[
-    "sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sinh", "cosh", "tanh", "asinh", "acosh",
-    "atanh", "cot", "sec", "csc", "acot", "asec", "acsc", "sqrt", "abs",
-];
-const STATS_EXPORTS: &[&str] = &["sum/column", "sum/row"];
-const IO_EXPORTS: &[&str] = &["print", "println"];
-const STRING_EXPORTS: &[&str] = &["concat"];
-const COMBINATORICS_EXPORTS: &[&str] = &["n-choose-k"];
+fn module_items(module: &str) -> Vec<String> {
+    let mut items = Vec::<String>::new();
 
-fn public_exports(module: &str) -> Option<ModuleExports> {
-    match module {
-        "math" => Some(ModuleExports {
-            module: "math",
-            exports: MATH_EXPORTS.to_vec(),
-        }),
-        "stats" => Some(ModuleExports {
-            module: "stats",
-            exports: STATS_EXPORTS.to_vec(),
-        }),
-        "io" => Some(ModuleExports {
-            module: "io",
-            exports: IO_EXPORTS.to_vec(),
-        }),
-        "string" => Some(ModuleExports {
-            module: "string",
-            exports: STRING_EXPORTS.to_vec(),
-        }),
-        "combinatorics" => Some(ModuleExports {
-            module: "combinatorics",
-            exports: COMBINATORICS_EXPORTS.to_vec(),
-        }),
-        _ => None,
+    for item_desc in inventory::iter::<ModuleItemDescriptor> {
+        if item_desc.module == module {
+            let item = item_desc.item.to_string();
+            if !items.iter().any(|existing| existing == &item) {
+                items.push(item);
+            }
+        }
     }
+
+    items
 }
 
-fn module_export_for_name(name: &str) -> Option<(&'static str, &'static str)> {
-    let exact = match name {
-        "math/sin" => Some(("math", "sin")),
-        "math/cos" => Some(("math", "cos")),
-        "math/tan" => Some(("math", "tan")),
-        "math/asin" => Some(("math", "asin")),
-        "math/acos" => Some(("math", "acos")),
-        "math/atan" => Some(("math", "atan")),
-        "math/atan2" => Some(("math", "atan2")),
-        "math/sinh" => Some(("math", "sinh")),
-        "math/cosh" => Some(("math", "cosh")),
-        "math/tanh" => Some(("math", "tanh")),
-        "math/asinh" => Some(("math", "asinh")),
-        "math/acosh" => Some(("math", "acosh")),
-        "math/atanh" => Some(("math", "atanh")),
-        "math/cot" => Some(("math", "cot")),
-        "math/sec" => Some(("math", "sec")),
-        "math/csc" => Some(("math", "csc")),
-        "math/acot" => Some(("math", "acot")),
-        "math/asec" => Some(("math", "asec")),
-        "math/acsc" => Some(("math", "acsc")),
-        "math/sqrt" => Some(("math", "sqrt")),
-        "math/abs" => Some(("math", "abs")),
-        "stats/sum/column" => Some(("stats", "sum/column")),
-        "stats/sum/row" => Some(("stats", "sum/row")),
-        "io/print" => Some(("io", "print")),
-        "io/println" => Some(("io", "println")),
-        "string/concat" => Some(("string", "concat")),
-        "combinatorics/n_choose_k" => Some(("combinatorics", "n-choose-k")),
-        "combinatorics/n-choose-k" => Some(("combinatorics", "n-choose-k")),
-        "StatsSumColumn" => Some(("stats", "sum/column")),
-        "StatsSumRow" => Some(("stats", "sum/row")),
-        "MathSin" => Some(("math", "sin")),
-        "MathCos" => Some(("math", "cos")),
-        "MathTan" => Some(("math", "tan")),
-        "MathAsin" => Some(("math", "asin")),
-        "MathAcos" => Some(("math", "acos")),
-        "MathAtan" => Some(("math", "atan")),
-        "MathAtan2" => Some(("math", "atan2")),
-        "MathSinh" => Some(("math", "sinh")),
-        "MathCosh" => Some(("math", "cosh")),
-        "MathTanh" => Some(("math", "tanh")),
-        "MathAsinh" => Some(("math", "asinh")),
-        "MathAcosh" => Some(("math", "acosh")),
-        "MathAtanh" => Some(("math", "atanh")),
-        "MathCot" => Some(("math", "cot")),
-        "MathSec" => Some(("math", "sec")),
-        "MathCsc" => Some(("math", "csc")),
-        "MathAcot" => Some(("math", "acot")),
-        "MathAsec" => Some(("math", "asec")),
-        "MathAcsc" => Some(("math", "acsc")),
-        "MathSqrt" => Some(("math", "sqrt")),
-        "MathAbs" => Some(("math", "abs")),
-        _ => None,
-    };
-    if exact.is_some() {
-        return exact;
-    }
-    if name.starts_with("StatsSumColumn") {
-        return Some(("stats", "sum/column"));
-    }
-    if name.starts_with("StatsSumRow") {
-        return Some(("stats", "sum/row"));
-    }
-    const MATH_PREFIXES: &[(&str, (&str, &str))] = &[
-        ("MathAtan2", ("math", "atan2")),
-        ("MathAsinh", ("math", "asinh")),
-        ("MathAcosh", ("math", "acosh")),
-        ("MathAtanh", ("math", "atanh")),
-        ("MathSinh", ("math", "sinh")),
-        ("MathCosh", ("math", "cosh")),
-        ("MathTanh", ("math", "tanh")),
-        ("MathAcot", ("math", "acot")),
-        ("MathAsec", ("math", "asec")),
-        ("MathAcsc", ("math", "acsc")),
-        ("MathAsin", ("math", "asin")),
-        ("MathAcos", ("math", "acos")),
-        ("MathAtan", ("math", "atan")),
-        ("MathSin", ("math", "sin")),
-        ("MathCos", ("math", "cos")),
-        ("MathTan", ("math", "tan")),
-        ("MathCot", ("math", "cot")),
-        ("MathSec", ("math", "sec")),
-        ("MathCsc", ("math", "csc")),
-        ("MathSqrt", ("math", "sqrt")),
-        ("MathAbs", ("math", "abs")),
-    ];
-    MATH_PREFIXES
-        .iter()
-        .find(|(prefix, _)| name.starts_with(prefix))
-        .map(|(_, export)| *export)
-}
-
-fn canonical_qualified_name(module: &str, export: &str) -> String {
-    format!("{module}/{export}")
+fn has_module_item(module: &str) -> bool {
+    inventory::iter::<ModuleItemDescriptor>
+        .into_iter()
+        .any(|item_desc| item_desc.module == module)
 }
 
 pub trait ModuleLoader {
     fn can_load(&self, module: &str) -> bool;
-    fn load(&self, fxns: &mut Functions, module: &str) -> MResult<ModuleExports>;
+    fn load(&self, fxns: &mut Functions, module: &str) -> MResult<ModuleManifest>;
 }
 
 #[derive(Default)]
@@ -149,41 +38,40 @@ pub struct LinkedModuleLoader;
 
 impl ModuleLoader for LinkedModuleLoader {
     fn can_load(&self, module: &str) -> bool {
-        public_exports(module).is_some()
+        has_module_item(module)
     }
 
-    fn load(&self, fxns: &mut Functions, module: &str) -> MResult<ModuleExports> {
-        let exports = public_exports(module).ok_or_else(|| {
-            MechError::new(
+    fn load(&self, fxns: &mut Functions, module: &str) -> MResult<ModuleManifest> {
+        let items = module_items(module);
+
+        if items.is_empty() {
+            return Err(MechError::new(
                 MissingFunctionError {
                     function_id: hash_str(module),
                 },
                 None,
             )
-            .with_compiler_loc()
-        })?;
-        for fxn_desc in inventory::iter::<FunctionDescriptor> {
-            if let Some((desc_module, _desc_export)) = module_export_for_name(fxn_desc.name) {
-                if desc_module == exports.module {
-                    fxns.functions.insert(hash_str(fxn_desc.name), fxn_desc.ptr);
-                    fxns.dictionary
-                        .borrow_mut()
-                        .insert(hash_str(fxn_desc.name), fxn_desc.name.to_string());
-                }
-            }
+            .with_compiler_loc());
         }
+
+        let module_prefix = format!("{module}/");
         for fxn_comp in inventory::iter::<FunctionCompilerDescriptor> {
-            if let Some((desc_module, desc_export)) = module_export_for_name(fxn_comp.name) {
-                if desc_module == exports.module {
-                    let qualified = canonical_qualified_name(desc_module, desc_export);
+            let name = fxn_comp.name;
+
+            if let Some(item) = name.strip_prefix(&module_prefix) {
+                if items.iter().any(|manifest_item| manifest_item == item) {
                     fxns.insert_function_compiler(
-                        qualified,
+                        name,
                         Arc::new(StaticNativeFunctionCompiler::new(fxn_comp.ptr)),
                     );
                 }
             }
         }
-        Ok(exports)
+
+        Ok(ModuleManifest {
+            module: module.to_string(),
+            items,
+        })
     }
 }
 
@@ -207,7 +95,7 @@ impl ModuleRegistry {
         Self::new().with_loader(Box::new(LinkedModuleLoader::default()))
     }
 
-    pub fn load(&self, fxns: &mut Functions, module: &str) -> MResult<ModuleExports> {
+    pub fn load(&self, fxns: &mut Functions, module: &str) -> MResult<ModuleManifest> {
         for loader in &self.loaders {
             if loader.can_load(module) {
                 return loader.load(fxns, module);
@@ -224,17 +112,21 @@ impl ModuleRegistry {
     }
 }
 
-pub fn load_module(fxns: &mut Functions, module: &str) -> MResult<ModuleExports> {
+pub fn load_module(fxns: &mut Functions, module: &str) -> MResult<ModuleManifest> {
     ModuleRegistry::linked_stdlib().load(fxns, module)
 }
 
-pub fn import_module_qualified(fxns: &mut Functions, module: &str) -> MResult<ModuleExports> {
+pub fn import_module_qualified(fxns: &mut Functions, module: &str) -> MResult<ModuleManifest> {
     load_module(fxns, module)
 }
 
 pub fn import_module_item(fxns: &mut Functions, module: &str, item: &str) -> MResult<()> {
-    let exports = load_module(fxns, module)?;
-    if !exports.exports.contains(&item) {
+    let manifest = load_module(fxns, module)?;
+    if !manifest
+        .items
+        .iter()
+        .any(|manifest_item| manifest_item == item)
+    {
         return Err(MechError::new(
             MissingFunctionError {
                 function_id: hash_str(&format!("{module}/{item}")),
@@ -247,8 +139,8 @@ pub fn import_module_item(fxns: &mut Functions, module: &str, item: &str) -> MRe
 }
 
 pub fn import_module_glob(fxns: &mut Functions, module: &str) -> MResult<()> {
-    let exports = load_module(fxns, module)?;
-    for item in exports.exports.iter() {
+    let manifest = load_module(fxns, module)?;
+    for item in manifest.items.iter() {
         alias_module_item(fxns, module, item)?;
     }
     Ok(())
