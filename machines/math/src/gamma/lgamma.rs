@@ -75,3 +75,10 @@ register_descriptor! {
     ptr: &MathLgamma{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "lgamma",
+  }
+}

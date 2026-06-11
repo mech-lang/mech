@@ -75,3 +75,10 @@ register_descriptor! {
     ptr: &MathLog10{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "log10",
+  }
+}

@@ -273,3 +273,10 @@ register_descriptor! {
     ptr: &CombinatoricsNChooseK{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "combinatorics",
+    item: "n-choose-k",
+  }
+}

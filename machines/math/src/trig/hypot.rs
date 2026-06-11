@@ -245,3 +245,10 @@ register_descriptor! {
     ptr: &MathHypot{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "hypot",
+  }
+}

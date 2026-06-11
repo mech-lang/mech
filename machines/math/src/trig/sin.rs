@@ -75,3 +75,10 @@ register_descriptor! {
     ptr: &MathSin{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "sin",
+  }
+}

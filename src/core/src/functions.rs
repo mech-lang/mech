@@ -76,6 +76,15 @@ impl Debug for FunctionCompilerDescriptor {
 
 unsafe impl Sync for FunctionCompilerDescriptor {}
 
+#[repr(C)]
+#[derive(Clone, Debug)]
+pub struct ModuleItemDescriptor {
+  pub module: &'static str,
+  pub item: &'static str,
+}
+
+unsafe impl Sync for ModuleItemDescriptor {}
+
 pub trait MechFunctionFactory {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>>;
 }

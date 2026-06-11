@@ -134,6 +134,9 @@ inventory::collect!(FunctionDescriptor);
 #[cfg(feature = "functions")]
 inventory::collect!(FunctionCompilerDescriptor);
 
+#[cfg(feature = "functions")]
+inventory::collect!(ModuleItemDescriptor);
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MechSourceCode {

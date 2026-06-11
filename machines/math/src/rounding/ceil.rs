@@ -75,3 +75,10 @@ register_descriptor! {
     ptr: &MathCeil{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "ceil",
+  }
+}

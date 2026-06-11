@@ -248,3 +248,10 @@ register_descriptor!{
     ptr: &IoPrintln{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "io",
+    item: "println",
+  }
+}

@@ -53,3 +53,22 @@ fn nested_stats_imports_work_and_require_imports() {
     assert!(run("+> stats\nx := stats/sum/column([1 2 3])"));
     assert!(run("+> stats/sum/column\nx := column([1 2 3])"));
 }
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn repeated_module_and_item_imports_remain_idempotent() {
+    assert!(run("+> math\n+> math\nx := math/sin(1.23)"));
+    assert!(run("+> math\n+> math/sin\nx := sin(1.23)"));
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn linked_loader_discovers_machine_declared_math_items() {
+    assert!(run("+> math/copysign\nx := copysign(1.0, -2.0)"));
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn linked_loader_glob_uses_machine_manifest() {
+    assert!(run("+> math/*\nx := round(1.23)"));
+}
