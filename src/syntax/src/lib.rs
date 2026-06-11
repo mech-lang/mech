@@ -41,6 +41,7 @@ use colored::*;
 
 //#[cfg(feature = "mechdown")]
 pub mod mechdown;
+pub mod imports;
 pub mod expressions;
 pub mod statements;
 pub mod structures;
@@ -57,6 +58,7 @@ pub mod state_machines;
 pub mod functions;
 pub mod repl;
 
+pub use crate::imports::*;
 pub use crate::parser::*;
 //#[cfg(feature = "mechdown")]
 pub use crate::mechdown::*;

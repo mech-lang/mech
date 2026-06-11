@@ -63,6 +63,11 @@ impl MechProgram {
     }
   }
 
+  #[cfg(feature = "functions")]
+  pub fn load_full_stdlib(&mut self) {
+    mech_interpreter::load_stdlib(&mut self.interpreter.functions().borrow_mut());
+  }
+
   pub fn register_native_function_compiler(
     &mut self,
     name: impl Into<String>,

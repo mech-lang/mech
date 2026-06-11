@@ -18,6 +18,7 @@ macro_rules! test_interpreter {
     fn $func() {
       let s = $input;
       let mut program = MechProgram::new(MechProgramConfig{name: "test".to_string(), environment: MechProgramEnvironment::default()});
+      program.load_full_stdlib();
       match program.run_string(s) {
         Ok(result) => assert_eq!(result, $expected),
         Err(err) => panic!("{:?}", err),

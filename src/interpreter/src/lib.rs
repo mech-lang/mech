@@ -95,6 +95,8 @@ use indexmap::set::IndexSet;
 use na::DMatrix;
 use std::time::Duration;
 
+#[cfg(feature = "functions")]
+pub mod builtins;
 pub mod expressions;
 #[cfg(feature = "functions")]
 pub mod functions;
@@ -111,6 +113,8 @@ pub mod tracing;
 
 pub use mech_core::*;
 
+#[cfg(feature = "functions")]
+pub use crate::builtins::*;
 pub use crate::expressions::*;
 #[cfg(feature = "functions")]
 pub use crate::functions::*;
@@ -194,8 +198,7 @@ pub fn load_stdlib(fxns: &mut Functions) {
   }
 
   for fxn_comp in inventory::iter::<FunctionCompilerDescriptor> {
-    fxns.function_compilers
-      .insert(hash_str(fxn_comp.name), Arc::new(StaticNativeFunctionCompiler::new(fxn_comp.ptr)));
+    fxns.insert_function_compiler(fxn_comp.name, Arc::new(StaticNativeFunctionCompiler::new(fxn_comp.ptr)));
   }
 }
 

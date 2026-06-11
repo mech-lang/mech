@@ -5,7 +5,7 @@ use mech_core::{
 };
 
 use super::{
-    classify_import_specifier, AddressTargetNameConflict, SourceAddressReference, SourceContextBase,
+    classify_import_specifier, module_import_specifier, AddressTargetNameConflict, SourceAddressReference, SourceContextBase,
     SourceContextCapability, SourceContextCapabilityScope, SourceContextDeclaration,
     SourceExportDeclaration, SourceImportDeclaration,
 };
@@ -104,6 +104,15 @@ impl SourceIndex {
                     SectionElement::MechCode(code_items) => {
                         for (code, _) in code_items {
                             match code {
+                                MechCode::Import(import) => {
+                                    index.push_import(
+                                        SourceScope::Program,
+                                        order,
+                                        declaration_range(import.tokens()),
+                                        classify_import_specifier(module_import_specifier(import)),
+                                    );
+                                    order += 1;
+                                }
                                 MechCode::Statement(statement) => {
                                     match statement {
                                         Statement::ImportDeclaration(import) => {
@@ -195,6 +204,15 @@ impl SourceIndex {
 
                         for (code, _) in &fenced.code {
                             match code {
+                                MechCode::Import(import) => {
+                                    index.push_import(
+                                        scope.clone(),
+                                        order,
+                                        declaration_range(import.tokens()),
+                                        classify_import_specifier(module_import_specifier(import)),
+                                    );
+                                    order += 1;
+                                }
                                 MechCode::Statement(Statement::ContextDeclaration(context)) => {
                                     index.push_context(
                                         scope.clone(),
@@ -591,6 +609,15 @@ fn index_expression_address_references(
                     mech_core::Transition::CodeBlock(code_items) => {
                         for (code, _) in code_items {
                             match code {
+                                MechCode::Import(import) => {
+                                    index.push_import(
+                                        scope.clone(),
+                                        *order,
+                                        declaration_range(import.tokens()),
+                                        classify_import_specifier(module_import_specifier(import)),
+                                    );
+                                    *order += 1;
+                                }
                                 MechCode::Statement(statement) => {
                                     index_statement_address_references(index, scope, order, statement);
                                 }

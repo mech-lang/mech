@@ -288,10 +288,34 @@ pub fn comment(cmmt: &Comment, p: &Interpreter) -> MResult<Value> {
   Ok(Value::Empty)
 }
 
+#[cfg(feature = "functions")]
+pub fn module_import_runtime(import: &ModuleImport, p: &Interpreter) -> MResult<Value> {
+  let module = import.module.to_string();
+  match import.kind {
+    ModuleImportKind::Module => {
+      load_module(&mut p.functions().borrow_mut(), &module)?;
+      Ok(Value::Empty)
+    }
+    ModuleImportKind::Item => {
+      let item = import.item.as_ref().ok_or_else(|| {
+        MechError::new(MissingFunctionError { function_id: hash_str(&module) }, None).with_compiler_loc()
+      })?.iter().map(|id| id.to_string()).collect::<Vec<_>>().join("/");
+      import_module_item(&mut p.functions().borrow_mut(), &module, &item)?;
+      Ok(Value::Empty)
+    }
+    ModuleImportKind::Glob => {
+      import_module_glob(&mut p.functions().borrow_mut(), &module)?;
+      Ok(Value::Empty)
+    }
+  }
+}
+
 pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
   let out = match &code {
     MechCode::Expression(expr) => expression(&expr, None, p),
     MechCode::Statement(stmt) => statement(&stmt, None, p),
+    #[cfg(feature = "functions")]
+    MechCode::Import(import) => module_import_runtime(import, p),
     #[cfg(feature = "state_machines")]
     MechCode::FsmSpecification(fsm_spec) => {
       crate::state_machines::register_fsm_specification(fsm_spec, p)?;
