@@ -1,5 +1,9 @@
 use crate::*;
+#[cfg(feature = "dynamic-modules")]
+use std::path::PathBuf;
 use std::sync::Arc;
+#[cfg(feature = "dynamic-modules")]
+use std::sync::{Mutex, OnceLock};
 
 #[derive(Clone, Debug)]
 pub struct ModuleManifest {
@@ -75,6 +79,139 @@ impl ModuleLoader for LinkedModuleLoader {
     }
 }
 
+#[cfg(feature = "dynamic-modules")]
+static DYNAMIC_MODULE_LIBRARIES: OnceLock<Mutex<Vec<libloading::Library>>> = OnceLock::new();
+
+#[cfg(feature = "dynamic-modules")]
+pub struct DynamicModuleLoader {
+    search_paths: Vec<PathBuf>,
+}
+
+#[cfg(feature = "dynamic-modules")]
+impl DynamicModuleLoader {
+    pub fn from_env() -> Self {
+        let mut search_paths = Vec::new();
+
+        if let Some(paths) = std::env::var_os("MECH_MODULE_PATH") {
+            search_paths.extend(std::env::split_paths(&paths));
+        }
+
+        search_paths.push(PathBuf::from("mech-modules"));
+        search_paths.push(PathBuf::from("target/mech-modules"));
+
+        Self { search_paths }
+    }
+
+    fn candidate_paths(&self, module: &str) -> Vec<PathBuf> {
+        let filename_module = module.replace('-', "_");
+        let filename = format!(
+            "{}mech_module_{}{}",
+            std::env::consts::DLL_PREFIX,
+            filename_module,
+            std::env::consts::DLL_SUFFIX
+        );
+
+        self.search_paths
+            .iter()
+            .map(|search_path| search_path.join(&filename))
+            .collect()
+    }
+
+    fn dynamic_error(msg: impl Into<String>) -> MechError {
+        MechError::new(GenericError { msg: msg.into() }, None).with_compiler_loc()
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
+impl ModuleLoader for DynamicModuleLoader {
+    fn can_load(&self, module: &str) -> bool {
+        self.candidate_paths(module)
+            .iter()
+            .any(|candidate| candidate.exists())
+    }
+
+    fn load(&self, fxns: &mut Functions, module: &str) -> MResult<ModuleManifest> {
+        let candidates = self.candidate_paths(module);
+        let library_path = candidates
+            .iter()
+            .find(|candidate| candidate.exists())
+            .cloned()
+            .ok_or_else(|| {
+                Self::dynamic_error(format!(
+                    "dynamic module library not found for module `{module}`; searched: {}",
+                    candidates
+                        .iter()
+                        .map(|path| path.display().to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ))
+            })?;
+
+        let library = unsafe { libloading::Library::new(&library_path) }.map_err(|err| {
+            Self::dynamic_error(format!(
+                "dynamic module library failed to open for module `{module}` at `{}`: {err}",
+                library_path.display()
+            ))
+        })?;
+
+        let items = {
+            let register: libloading::Symbol<DynamicModuleRegisterV1> = unsafe {
+                library.get(b"mech_module_register_v1")
+            }
+            .map_err(|err| {
+                Self::dynamic_error(format!(
+                    "dynamic module registration symbol missing for module `{module}` in `{}`: {err}",
+                    library_path.display()
+                ))
+            })?;
+
+            unsafe { register(fxns, module) }?
+        };
+
+        if items.is_empty() {
+            return Err(Self::dynamic_error(format!(
+                "dynamic module registration returned no items for requested module `{module}` from `{}`; expected ABI version {}",
+                library_path.display(),
+                MECH_DYNAMIC_MODULE_ABI_VERSION
+            )));
+        }
+
+        {
+            let compilers: libloading::Symbol<DynamicModuleCompilersV1> = unsafe {
+                library.get(b"mech_module_compilers_v1")
+            }
+            .map_err(|err| {
+                Self::dynamic_error(format!(
+                    "dynamic module compiler symbol missing for module `{module}` in `{}`: {err}",
+                    library_path.display()
+                ))
+            })?;
+
+            for compiler in unsafe { compilers(module) }? {
+                fxns.insert_function_compiler(
+                    compiler.name,
+                    Arc::new(StaticNativeFunctionCompiler::new(compiler.ptr)),
+                );
+            }
+        }
+
+        DYNAMIC_MODULE_LIBRARIES
+            .get_or_init(|| Mutex::new(Vec::new()))
+            .lock()
+            .map_err(|err| {
+                Self::dynamic_error(format!(
+                    "dynamic module library handle store lock failed for module `{module}`: {err}"
+                ))
+            })?
+            .push(library);
+
+        Ok(ModuleManifest {
+            module: module.to_string(),
+            items,
+        })
+    }
+}
+
 pub struct ModuleRegistry {
     loaders: Vec<Box<dyn ModuleLoader>>,
 }
@@ -95,6 +232,15 @@ impl ModuleRegistry {
         Self::new().with_loader(Box::new(LinkedModuleLoader::default()))
     }
 
+    pub fn default_loaders() -> Self {
+        let registry = Self::new().with_loader(Box::new(LinkedModuleLoader::default()));
+
+        #[cfg(feature = "dynamic-modules")]
+        let registry = registry.with_loader(Box::new(DynamicModuleLoader::from_env()));
+
+        registry
+    }
+
     pub fn load(&self, fxns: &mut Functions, module: &str) -> MResult<ModuleManifest> {
         for loader in &self.loaders {
             if loader.can_load(module) {
@@ -113,7 +259,7 @@ impl ModuleRegistry {
 }
 
 pub fn load_module(fxns: &mut Functions, module: &str) -> MResult<ModuleManifest> {
-    ModuleRegistry::linked_stdlib().load(fxns, module)
+    ModuleRegistry::default_loaders().load(fxns, module)
 }
 
 pub fn import_module_qualified(fxns: &mut Functions, module: &str) -> MResult<ModuleManifest> {
