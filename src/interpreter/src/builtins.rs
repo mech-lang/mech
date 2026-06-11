@@ -58,6 +58,7 @@ fn is_prelude_name(name: &str) -> bool {
         "convert",
         "convert/kind",
         "set/comprehension",
+        "set/define",
         "matrix/comprehension",
         "range/inclusive",
         "range/exclusive",
@@ -156,6 +157,7 @@ fn is_prelude_name(name: &str) -> bool {
         "MatrixTranspose",
         "ValueMatrixComprehension",
         "ValueSetComprehension",
+        "ValueSet",
         "SetElementOf",
         "SetNotElementOf",
         "SetInsert",
@@ -278,7 +280,9 @@ fn canonical_qualified_name(module: &str, export: &str) -> String {
 
 pub fn load_prelude(fxns: &mut Functions) {
     for fxn_desc in inventory::iter::<FunctionDescriptor> {
-        if is_prelude_name(fxn_desc.name) {
+        if is_prelude_name(fxn_desc.name)
+            || (module_export_for_name(fxn_desc.name).is_none() && !fxn_desc.name.contains('/'))
+        {
             fxns.insert_function(fxn_desc.clone());
         }
     }

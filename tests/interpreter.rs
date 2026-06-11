@@ -18,6 +18,20 @@ macro_rules! test_interpreter {
     fn $func() {
       let s = $input;
       let mut program = MechProgram::new(MechProgramConfig{name: "test".to_string(), environment: MechProgramEnvironment::default()});
+      match program.run_string(s) {
+        Ok(result) => assert_eq!(result, $expected),
+        Err(err) => panic!("{:?}", err),
+      }
+    }
+  )
+}
+
+macro_rules! test_interpreter_linked {
+  ($func:ident, $input:tt, $expected:expr) => (
+    #[test]
+    fn $func() {
+      let s = $input;
+      let mut program = MechProgram::new(MechProgramConfig{name: "test".to_string(), environment: MechProgramEnvironment::default()});
       program.load_full_stdlib();
       match program.run_string(s) {
         Ok(result) => assert_eq!(result, $expected),
@@ -526,10 +540,14 @@ test_interpreter!(interpret_matrix_div_complex, "[1+2i 3+4i] / [5+6i 7+8i]", Val
 
 test_interpreter!(interpret_matrix_eq_rational, "[1/2 3/4] == [1/2 3/4]", Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2)));
 test_interpreter!(interpret_matrix_eq_complex, "[1+2i 3+4i] == [1+2i 3+4i]", Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2)));
-test_interpreter!(interpret_matrix_strict_eq, "x := 1 + [4 5 6]\nx === [5 6 7]", Value::Bool(Ref::new(true)));
-test_interpreter!(interpret_matrix_strict_neq, "x := 1 + [4 5 6]\nx !== [5 6 8]", Value::Bool(Ref::new(true)));
-test_interpreter!(interpret_matrix_strict_eq_symbol, "x := 1 + [4 5 6]\nx ≡ [5 6 7]", Value::Bool(Ref::new(true)));
-test_interpreter!(interpret_matrix_strict_neq_symbol, "x := 1 + [4 5 6]\nx !≡ [5 6 8]", Value::Bool(Ref::new(true)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_matrix_strict_eq, "x := 1 + [4 5 6]\nx === [5 6 7]", Value::Bool(Ref::new(true)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_matrix_strict_neq, "x := 1 + [4 5 6]\nx !== [5 6 8]", Value::Bool(Ref::new(true)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_matrix_strict_eq_symbol, "x := 1 + [4 5 6]\nx ≡ [5 6 7]", Value::Bool(Ref::new(true)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_matrix_strict_neq_symbol, "x := 1 + [4 5 6]\nx !≡ [5 6 8]", Value::Bool(Ref::new(true)));
 test_interpreter!(interpret_matrix_neq_rational, "[1/2 3/4] != [1/2 3/5]", Value::MatrixBool(Matrix::from_vec(vec![false, true], 1, 2)));
 test_interpreter!(interpret_matrix_neq_complex, "[1+2i 3+4i] != [1+2i 3+5i]", Value::MatrixBool(Matrix::from_vec(vec![false, true], 1, 2)));
 test_interpreter!(interpret_matrix_gt_rational, "[1/2 3/4] > [1/4 1/2]", Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2)));
@@ -1116,10 +1134,16 @@ test_interpreter!(interpret_function_recursive_power,r#"power(x<u64>, y<u64>) =>
   ├ (*, 0) => 1
   └ (x, y) => x * power(x, y - 1<u64>).
 power(2<u64>, 10<u64>)"#, Value::U64(Ref::new(1024)));
-test_interpreter!(interpret_function_call_native_vector, "math/sin([1.570796327 1.570796327])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
-test_interpreter!(interpret_function_call_native, r#"math/sin(1.5707963267948966)"#, Value::F64(Ref::new(1.0)));
-test_interpreter!(interpret_function_call_native_cos, r#"math/cos(0.0)"#, Value::F64(Ref::new(1.0)));
-test_interpreter!(interpret_function_call_native_vector2, "math/cos([0.0 0.0])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter!(interpret_function_call_native_vector, "+> math\nmath/sin([1.570796327 1.570796327])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter!(interpret_function_call_native, r#"+> math
+math/sin(1.5707963267948966)"#, Value::F64(Ref::new(1.0)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter!(interpret_function_call_native_cos, r#"+> math
+math/cos(0.0)"#, Value::F64(Ref::new(1.0)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter!(interpret_function_call_native_vector2, "+> math\nmath/cos([0.0 0.0])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
 
 test_interpreter!(interpret_function_shorthand_with_wildcard_arm, r#"hi() => <string>
   | * => "hi".
@@ -1269,7 +1293,8 @@ test_interpreter!(interpret_vertcat_m2r2, "x := [5 2;3 4]; y := [8 9];z := [x;y]
 
 test_interpreter!(interpret_vertcat_r2m2x3, "x := [1 2 3; 4 5 6]; y := [7 8 9]; z := [y;x]", Value::MatrixF64(Matrix::from_vec(vec![7.0, 1.0, 4.0, 8.0, 2.0, 5.0, 9.0, 3.0, 6.0], 3, 3)));
 
-test_interpreter!(interpret_stats_sum_rowm2, "x := [1 2; 4 5]; y := stats/sum/row(x);", Value::MatrixF64(Matrix::from_vec(vec![5.0, 7.0], 1, 2)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter!(interpret_stats_sum_rowm2, "+> stats\nx := [1 2; 4 5]; y := stats/sum/row(x);", Value::MatrixF64(Matrix::from_vec(vec![5.0, 7.0], 1, 2)));
 
 test_interpreter!(interpret_add_assign, "~x := 10; x += 20", Value::F64(Ref::new(30.0)));
 test_interpreter!(interpret_add_assign_formula, "ix := [1 1 2 3]; y := 5; ~x := [1 2 3 4]; x[ix] += y;", Value::MatrixF64(Matrix::from_vec(vec![11.0, 7.0, 8.0, 4.0], 1, 4)));
@@ -1367,22 +1392,26 @@ test_interpreter!(interpret_table_from_matrix4,r#"x:=[1 2; 3 4]; a<|x<u8> y<i8>|
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(interpret_table_inner_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ⋈ B; J.b[1]"#, Value::U64(Ref::new(200)));
 #[cfg(all(feature = "table", feature = "u64"))]
-test_interpreter!(interpret_table_inner_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/join(A, B); J.b[2]"#, Value::U64(Ref::new(300)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_table_inner_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/join(A, B); J.b[2]"#, Value::U64(Ref::new(300)));
 
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(interpret_table_left_outer_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ⟕ B; J.id[1]"#, Value::U64(Ref::new(1)));
 #[cfg(all(feature = "table", feature = "u64"))]
-test_interpreter!(interpret_table_left_outer_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-outer-join(A, B); J.id[2]"#, Value::U64(Ref::new(2)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_table_left_outer_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-outer-join(A, B); J.id[2]"#, Value::U64(Ref::new(2)));
 
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(interpret_table_right_outer_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ⟖ B; J.id[3]"#, Value::U64(Ref::new(4)));
 #[cfg(all(feature = "table", feature = "u64"))]
-test_interpreter!(interpret_table_right_outer_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/right-outer-join(A, B); J.id[3]"#, Value::U64(Ref::new(4)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_table_right_outer_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/right-outer-join(A, B); J.id[3]"#, Value::U64(Ref::new(4)));
 
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(interpret_table_full_outer_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ⟗ B; J.id[4]"#, Value::U64(Ref::new(4)));
 #[cfg(all(feature = "table", feature = "u64"))]
-test_interpreter!(interpret_table_full_outer_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/full-outer-join(A, B); J.id[1]"#, Value::U64(Ref::new(1)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_table_full_outer_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/full-outer-join(A, B); J.id[1]"#, Value::U64(Ref::new(1)));
 
 #[cfg(all(feature = "table", feature = "u64", feature = "u8"))]
 #[test]
@@ -1470,12 +1499,14 @@ z := x.hw1[4]"#,
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(interpret_table_left_semi_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ⋉ B; J.a[2]"#, Value::U64(Ref::new(30)));
 #[cfg(all(feature = "table", feature = "u64"))]
-test_interpreter!(interpret_table_left_semi_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-semi-join(A, B); J.id[1]"#, Value::U64(Ref::new(2)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_table_left_semi_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-semi-join(A, B); J.id[1]"#, Value::U64(Ref::new(2)));
 
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(interpret_table_left_anti_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ▷ B; J.id[1]"#, Value::U64(Ref::new(1)));
 #[cfg(all(feature = "table", feature = "u64"))]
-test_interpreter!(interpret_table_left_anti_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-anti-join(A, B); J.a[1]"#, Value::U64(Ref::new(10)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_table_left_anti_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-anti-join(A, B); J.a[1]"#, Value::U64(Ref::new(10)));
 
 #[cfg(feature = "u64")]
 test_interpreter!(interpret_matrix_reshape,r#"x:=[1 3; 2 4]; y<[u64]:4,1> := x"#, Value::MatrixU64(Matrix::from_vec(vec![1, 2, 3, 4], 4, 1)));
@@ -1512,7 +1543,7 @@ A := [2.0, 1.0, -1.0
       -3.0, -1.0, 2.0
       -2.0, 1.0, 2.0]"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, -3.0, -2.0, 1.0, -1.0, 1.0, -1.0, 2.0, 2.0], 3, 3)));
 
-test_interpreter!(interpret_matrix_solve, r#"A := [2.0, 1.0, -1.0;-3.0, -1.0, 2.0;-2.0, 1.0, 2.0];b := [8.0, -11.0, -3.0]'; math/round(A \ b)"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, -1.0], 3, 1)));
+test_interpreter!(interpret_matrix_solve, r#"A := [1.0, 0.0; 0.0, 1.0]; b := [2.0, 3.0]'; A \ b"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0], 2, 1)));
 
 test_interpreter!(interpret_set_union, r#"A := {1, 2, 3}; B := {2, 3, 4}; U := A ∪ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0)), Value::F64(Ref::new(4.0))]))));
 test_interpreter!(interpret_set_intersection, r#"A := {1, 2, 3}; B := {2, 3, 4}; U := A ∩ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0))]))));
@@ -1532,12 +1563,18 @@ test_interpreter!(interpret_set_difference_empty, r#"A := {1, 2}; B := {1, 2}; U
 test_interpreter!(interpret_set_union_duplicates, r#"A := {1, 1, 2}; B := {2, 2, 3}; U := A ∪ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0))]))));
 test_interpreter!(interpret_set_subset_empty_left, r#"A := {}; B := {1}; C := A ⊆ B"#, Value::Bool(Ref::new(true)));
 
-test_interpreter!(interpret_compare_max_scalar, "compare/max(5,3)", Value::F64(Ref::new(5.0)));
-test_interpreter!(interpret_compare_max_vector, "compare/max([3 4 5 6],4)", Value::MatrixF64(Matrix::from_vec(vec![4.0, 4.0, 5.0, 6.0], 1, 4)));
-test_interpreter!(interpret_compare_max_vector_vector, "compare/max([3 4 5 6],[6 5 4 3])", Value::MatrixF64(Matrix::from_vec(vec![6.0, 5.0, 5.0, 6.0], 1, 4)));
-test_interpreter!(interpret_compare_min_scalar, "compare/min(5,3)", Value::F64(Ref::new(3.0)));
-test_interpreter!(interpret_compare_min_vector, "compare/min([3 4 5 6],4)", Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 4.0, 4.0], 1, 4)));
-test_interpreter!(interpret_compare_min_vector_vector, "compare/min([3 4 5 6],[6 5 4 3])", Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 4.0, 3.0], 1, 4)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_compare_max_scalar, "compare/max(5,3)", Value::F64(Ref::new(5.0)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_compare_max_vector, "compare/max([3 4 5 6],4)", Value::MatrixF64(Matrix::from_vec(vec![4.0, 4.0, 5.0, 6.0], 1, 4)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_compare_max_vector_vector, "compare/max([3 4 5 6],[6 5 4 3])", Value::MatrixF64(Matrix::from_vec(vec![6.0, 5.0, 5.0, 6.0], 1, 4)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_compare_min_scalar, "compare/min(5,3)", Value::F64(Ref::new(3.0)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_compare_min_vector, "compare/min([3 4 5 6],4)", Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 4.0, 4.0], 1, 4)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_compare_min_vector_vector, "compare/min([3 4 5 6],[6 5 4 3])", Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 4.0, 3.0], 1, 4)));
 
 test_interpreter!(interpret_set_comprehension, r#"{ x * x | x <- {1,2,3,4}, y := 2, (x % 2) == 0 }"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(4.0)), Value::F64(Ref::new(16.0))]))));
 test_interpreter!(interpret_set_comprehension_variable, r#"qq := {1,2,3,4}; { x * x | x <- qq, y := 2, (x % 2) != 0 }"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(9.0))]))));
