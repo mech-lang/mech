@@ -5,10 +5,14 @@ pub mod host;
 use wasm_bindgen::prelude::*;
 use mech_core::*;
 use mech_syntax::*;
+use mech_host_browser::{BrowserHostConfig, BrowserResourceProvider};
+#[cfg(feature = "host_delegation_signing")]
+use mech_host_browser::{verify_browser_host_delegation, BrowserHostDelegationEnvelope};
 use mech_runtime::{
-  BrowserHostConfig, BrowserResourceProvider, ConfigProfileOptions, MechConfigDocument, MechRuntime, RuntimeConfig,
-  parse_config_document,
+  ConfigProfileOptions, MechConfigDocument, MechRuntime, RuntimeConfig, parse_config_document,
 };
+#[cfg(feature = "host_delegation_signing")]
+use mech_runtime::{HostDelegationKeyStore, HostDelegationPublicKey, HostDelegationVerificationRequest};
 use crate::host::{
   BrowserCapabilityRequest, BrowserDomScope, BrowserHost, BrowserHostError,
   BrowserNetworkScope, BrowserOperation, BrowserStorageBackend, BrowserStorageScope,
@@ -24,6 +28,10 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::Arc;
 use gloo_net::http::{Method, Request, RequestBuilder};
 use wasm_bindgen_futures::spawn_local;
+#[cfg(feature = "host_delegation_signing")]
+use base64::Engine;
+#[cfg(feature = "host_delegation_signing")]
+use serde::Deserialize;
 
 #[cfg(feature = "repl")]
 pub mod repl;
@@ -145,7 +153,7 @@ fn runtime_from_config_document(document: Option<&MechConfigDocument>) -> MechRu
     .expect("failed to initialize MechRuntime for wasm");
   let authority = match document {
     Some(document) => document.browser.clone(),
-    None => mech_runtime::BrowserAuthority::default(),
+    None => mech_core::BrowserAuthority::default(),
   };
   runtime
     .register_resource_provider(Box::new(BrowserResourceProvider::new(
@@ -166,6 +174,68 @@ fn wasm_parts_from_config_document(
     runtime_from_config_document(document),
     browser_host_from_config(document),
   )
+}
+
+
+#[cfg(feature = "host_delegation_signing")]
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct JsTrustedHostKey {
+  issuer: String,
+  key_id: String,
+  algorithm: String,
+  public_key: String,
+}
+
+#[cfg(feature = "host_delegation_signing")]
+fn trusted_host_key_store_from_js(value: JsValue) -> Result<HostDelegationKeyStore, JsValue> {
+  let keys: Vec<JsTrustedHostKey> = serde_wasm_bindgen::from_value(value)
+    .map_err(|error| js_error(format!("failed to deserialize trusted host keys: {error}")))?;
+  let mut decoded = Vec::with_capacity(keys.len());
+  for key in keys {
+    let public_key = base64::engine::general_purpose::STANDARD
+      .decode(key.public_key.as_bytes())
+      .map_err(|error| js_error(format!("failed to decode trusted host key `{}`: {error}", key.key_id)))?;
+    decoded.push(HostDelegationPublicKey {
+      issuer: key.issuer,
+      key_id: key.key_id,
+      algorithm: key.algorithm,
+      public_key,
+    });
+  }
+  Ok(HostDelegationKeyStore::new(decoded))
+}
+
+#[cfg(feature = "host_delegation_signing")]
+fn wasm_parts_from_delegated_host_config(
+  config: JsValue,
+  trusted_keys: JsValue,
+  expected_audience: String,
+) -> Result<(MechRuntime, BrowserHost), JsValue> {
+  let envelope: BrowserHostDelegationEnvelope = serde_wasm_bindgen::from_value(config)
+    .map_err(|error| js_error(format!("failed to deserialize host delegation envelope: {error}")))?;
+  let trusted_keys = trusted_host_key_store_from_js(trusted_keys)?;
+  let now_ms = js_sys::Date::now() as u64;
+  let request = HostDelegationVerificationRequest {
+    now_ms,
+    expected_audience,
+    trusted_keys,
+    max_clock_skew_ms: 60_000,
+  };
+  let verified = verify_browser_host_delegation(&envelope, request)
+    .map_err(|error| js_error(format!("host delegation verification failed: {error:?}")))?;
+  let mut runtime = MechRuntime::new(verified.authority.runtime_config)
+    .map_err(|error| js_error(format!("failed to initialize delegated runtime: {error:?}")))?;
+  runtime
+    .register_resource_provider(Box::new(BrowserResourceProvider::new(
+      verified.authority.browser_authority.clone(),
+      WasmBrowserDomBackend::new(),
+    )))
+    .map_err(|error| js_error(format!("failed to register browser resource provider: {error:?}")))?;
+  runtime
+    .bind_resource_root("browser", "browser://dom/")
+    .map_err(|error| js_error(format!("failed to bind browser resource root: {error:?}")))?;
+  Ok((runtime, BrowserHost::new(verified.authority.browser_authority)))
 }
 
 fn wasm_parts_from_host_config(config: JsValue) -> Result<(MechRuntime, BrowserHost), JsValue> {
@@ -219,6 +289,41 @@ impl WasmMech {
       return Err(js_error("host config was not provided by mech serve"));
     }
     let (runtime, browser_host) = wasm_parts_from_host_config(config)?;
+    Ok(Self {
+      runtime,
+      browser_host,
+      repl_history: Vec::new(),
+      repl_history_index: None,
+      repl_id: None,
+    })
+  }
+
+
+  #[cfg(feature = "host_delegation_signing")]
+  #[wasm_bindgen(js_name = "fromDelegatedHostConfig")]
+  pub fn from_delegated_host_config(expected_audience: Option<String>) -> Result<WasmMech, JsValue> {
+    let config = js_sys::Reflect::get(&js_sys::global(), &JsValue::from_str("__MECH_HOST_CONFIG"))
+      .map_err(|error| js_error(format!("failed to read delegated host config: {error:?}")))?;
+    if config.is_undefined() || config.is_null() {
+      return Err(js_error("delegated host config was not provided by mech serve"));
+    }
+    let trusted_keys = js_sys::Reflect::get(&js_sys::global(), &JsValue::from_str("__MECH_TRUSTED_HOST_KEYS"))
+      .map_err(|error| js_error(format!("failed to read trusted host keys: {error:?}")))?;
+    if trusted_keys.is_undefined() || trusted_keys.is_null() {
+      return Err(js_error("trusted host keys were not provided for delegated host config"));
+    }
+    let expected_audience = match expected_audience {
+      Some(value) if !value.is_empty() => value,
+      _ => {
+        let value = js_sys::Reflect::get(&js_sys::global(), &JsValue::from_str("__MECH_HOST_DELEGATION_AUDIENCE"))
+          .map_err(|error| js_error(format!("failed to read host delegation audience: {error:?}")))?;
+        value
+          .as_string()
+          .filter(|value| !value.is_empty())
+          .ok_or_else(|| js_error("host delegation audience was not provided"))?
+      }
+    };
+    let (runtime, browser_host) = wasm_parts_from_delegated_host_config(config, trusted_keys, expected_audience)?;
     Ok(Self {
       runtime,
       browser_host,

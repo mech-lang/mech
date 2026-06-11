@@ -31,11 +31,9 @@ use crate::service::RuntimeServices;
 
 pub mod actor;
 pub mod arg;
-pub mod browser_dom;
 
 pub use self::actor::*;
 pub use self::arg::*;
-pub use self::browser_dom::*;
 
 // -----------------------------------------------------------------------------
 // Host Function

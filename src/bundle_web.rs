@@ -6,7 +6,7 @@ use mech_core::*;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::parser;
 
-use crate::LoadedMechConfig;
+use crate::{HostAuthorityInjection, LoadedMechConfig};
 
 #[derive(Clone, Debug)]
 pub struct BundleWebOptions {
@@ -17,6 +17,7 @@ pub struct BundleWebOptions {
   pub stylesheet_paths: Vec<PathBuf>,
   pub wasm_pkg: PathBuf,
   pub loaded_config: LoadedMechConfig,
+  pub host_config_injection: Option<HostAuthorityInjection>,
 }
 
 #[derive(Debug)]
@@ -76,12 +77,15 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     mech_runtime::RuntimeConfig::default(),
     &options.loaded_config.document.runtime,
   )?;
-  let host_config = mech_runtime::BrowserHostConfig::from_document_and_runtime(
+  let host_config = mech_host_browser::BrowserHostConfig::from_document_and_runtime(
     &options.loaded_config.document,
     &runtime_config,
   );
   let index_html = output_dir.join("index.html");
-  let shim_with_config = crate::inject_browser_host_config_script(&shim_string, &host_config)?;
+  let injection = options
+    .host_config_injection
+    .unwrap_or_else(|| HostAuthorityInjection::BrowserUnsigned(host_config));
+  let shim_with_config = crate::inject_host_authority_injection_script(&shim_string, &injection)?;
   fs::write(&index_html, shim_with_config)?;
 
   for source_path in &options.source_paths {
@@ -369,6 +373,7 @@ mod tests {
       stylesheet_paths: Vec::new(),
       wasm_pkg: root.join("pkg"),
       loaded_config: loaded,
+      host_config_injection: None,
     }
   }
 
@@ -527,6 +532,7 @@ mod tests {
       stylesheet_paths: Vec::new(),
       wasm_pkg: app.join("pkg"),
       loaded_config: loaded,
+      host_config_injection: None,
     };
 
     let error = format!("{:?}", bundle_web_project(options).unwrap_err());

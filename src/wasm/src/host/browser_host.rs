@@ -76,7 +76,7 @@ impl Default for WasmBrowserDomBackend {
   }
 }
 
-impl mech_runtime::BrowserDomBackend for WasmBrowserDomBackend {
+impl mech_host_browser::BrowserDomBackend for WasmBrowserDomBackend {
   fn read_dom_string(
     &self,
     entry: &mech_core::BrowserDomManifestEntry,
@@ -124,7 +124,7 @@ impl mech_runtime::BrowserDomBackend for WasmBrowserDomBackend {
 
 fn browser_dom_error(resource: impl Into<String>, reason: impl Into<String>) -> mech_core::MechError {
   mech_core::MechError::new(
-    mech_runtime::BrowserRuntimeResourceError {
+    mech_host_browser::BrowserResourceProviderError {
       resource: resource.into(),
       reason: reason.into(),
     },

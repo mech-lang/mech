@@ -3,7 +3,7 @@ use mech_core::{
   BrowserOperation, BROWSER_DOM_PROVIDER_URI, MResult, MechError, MechErrorKind, Ref, Value,
 };
 
-use crate::{RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteRequest};
+use mech_runtime::{RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteRequest};
 
 pub trait BrowserDomBackend: std::fmt::Debug {
   fn read_dom_string(

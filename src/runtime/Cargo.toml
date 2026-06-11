@@ -146,6 +146,8 @@ logical_indexing = ["subscript","vectord","bool", "mech-core/logical_indexing", 
 dot_indexing = ["subscript", "mech-core/dot_indexing", "mech-program/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle", "mech-program/swizzle"]
 notify = ["dep:notify"]
+host_delegation = ["serde"]
+host_delegation_signing = ["host_delegation", "dep:ed25519-dalek", "dep:rand_core"]
 
 [dev-dependencies]
 serde_json = "1.0.150"
@@ -161,6 +163,108 @@ tracing = { version = "0.1.41", optional = true }
 ignore = {version = "0.4.24", optional = true }
 uuid = { version = "1.23.1", features = ["v7", "serde"] }
 notify = { version = "8.2.0", optional = true }
+ed25519-dalek = { version = "2.2.0", default-features = false, features = ["alloc", "fast", "zeroize"], optional = true }
+rand_core = { version = "0.6.4", optional = true }
 
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
 uuid = { version = "1.23.1", features = ["js"] }
+
+[[bin]]
+name = "address_target_diagnostics"
+path = "src/bin/address_target_diagnostics.rs"
+required-features = ["program"]
+
+[[bin]]
+name = "module_smoke"
+path = "src/bin/module_smoke.rs"
+required-features = ["program"]
+
+[[example]]
+name = "actor_context_host"
+path = "examples/actor_context_host.rs"
+required-features = ["program"]
+
+[[example]]
+name = "actor_state_host"
+path = "examples/actor_state_host.rs"
+required-features = ["program"]
+
+[[example]]
+name = "arbitrary_rust_host_function"
+path = "examples/arbitrary_rust_host_function.rs"
+required-features = ["program"]
+
+[[example]]
+name = "arbitrary_rust_host_functions2"
+path = "examples/arbitrary_rust_host_functions2.rs"
+required-features = ["program"]
+
+[[example]]
+name = "basic_runtime"
+path = "examples/basic_runtime.rs"
+required-features = ["program"]
+
+[[example]]
+name = "dep_cycle"
+path = "examples/dep_cycle.rs"
+required-features = ["program"]
+
+[[example]]
+name = "dep_diamond"
+path = "examples/dep_diamond.rs"
+required-features = ["program"]
+
+[[example]]
+name = "host_value_roundtrip"
+path = "examples/host_value_roundtrip.rs"
+required-features = ["program"]
+
+[[example]]
+name = "matrix_multiply"
+path = "examples/matrix_multiply.rs"
+required-features = ["program"]
+
+[[example]]
+name = "runtime_dep_src"
+path = "examples/runtime_dep_src.rs"
+required-features = ["program"]
+
+[[example]]
+name = "runtime_services_host"
+path = "examples/runtime_services_host.rs"
+required-features = ["program"]
+
+[[example]]
+name = "scheduled_actor_native_functions"
+path = "examples/scheduled_actor_native_functions.rs"
+required-features = ["program"]
+
+[[example]]
+name = "scheduled_actor_state_host"
+path = "examples/scheduled_actor_state_host.rs"
+required-features = ["program"]
+
+[[example]]
+name = "scheduled_runtime"
+path = "examples/scheduled_runtime.rs"
+required-features = ["program"]
+
+[[example]]
+name = "source_import_dependency"
+path = "examples/source_import_dependency.rs"
+required-features = ["program"]
+
+[[example]]
+name = "transactional_runtime"
+path = "examples/transactional_runtime.rs"
+required-features = ["program"]
+
+[[test]]
+name = "config_profile"
+path = "tests/config_profile.rs"
+required-features = ["program"]
+
+[[test]]
+name = "module_smoke"
+path = "tests/module_smoke.rs"
+required-features = ["program"]

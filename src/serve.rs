@@ -8,8 +8,9 @@ use std::time::Instant;
 use colored::*;
 use ignore::WalkBuilder;
 use mech_core::*;
+use mech_host_browser::BrowserHostConfig;
 use mech_runtime::{
-  BrowserHostConfig, EventId, EventSink, ModuleBuildOptions, RuntimeConfig, RuntimeEvent, RuntimeWorkspaceFolder,
+  EventId, EventSink, ModuleBuildOptions, RuntimeConfig, RuntimeEvent, RuntimeWorkspaceFolder,
   RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget, RuntimeWorkspaceWatchEvent,
   ServerWorkspaceSession, HostFilesystemAuthority, DefaultIdGenerator, IdGenerator, SERVE_HOST_SUBJECT,
   FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE, FS_WATCH, MECH_TOOL_SUBJECT, check_fs_capability,
@@ -340,6 +341,7 @@ pub struct MechServer {
   stylesheet: String,
   html_shim: String,
   host_config: Option<BrowserHostConfig>,
+  host_config_injection: Option<HostAuthorityInjection>,
   serve_configured_shim_at_root: bool,
   full_address: String,
   registry: Arc<RwLock<ServerSourceRegistry>>,
@@ -369,6 +371,7 @@ impl MechServer {
       authority,
       runtime_config,
       None,
+      None,
       false,
     )
   }
@@ -383,6 +386,7 @@ impl MechServer {
     authority: HostFilesystemAuthority,
     runtime_config: RuntimeConfig,
     host_config: Option<BrowserHostConfig>,
+    host_config_injection: Option<HostAuthorityInjection>,
     serve_configured_shim_at_root: bool,
   ) -> Self {
     Self {
@@ -391,6 +395,7 @@ impl MechServer {
       stylesheet,
       html_shim,
       host_config,
+      host_config_injection,
       serve_configured_shim_at_root,
       full_address,
       registry: Arc::new(RwLock::new(ServerSourceRegistry::default())),
@@ -406,7 +411,9 @@ impl MechServer {
   }
 
   pub async fn init(&mut self) -> MResult<()> {
-    let html_shim = if let Some(host_config) = &self.host_config {
+    let html_shim = if let Some(injection) = &self.host_config_injection {
+      inject_host_authority_injection_script(&self.html_shim, injection)?
+    } else if let Some(host_config) = &self.host_config {
       inject_browser_host_config_script(&self.html_shim, host_config)?
     } else {
       self.html_shim.clone()
@@ -965,8 +972,8 @@ mod tests {
 
   fn empty_host_config() -> BrowserHostConfig {
     BrowserHostConfig {
-      runtime: mech_runtime::BrowserHostRuntimeConfig::from(&RuntimeConfig::default()),
-      browser: mech_runtime::BrowserHostBrowserConfig {
+      runtime: mech_host_browser::BrowserHostRuntimeConfig::from(&RuntimeConfig::default()),
+      browser: mech_host_browser::BrowserHostBrowserConfig {
         grants: Vec::new(),
         dom_manifest: Vec::new(),
       },

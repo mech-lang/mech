@@ -47,9 +47,11 @@ run = ["mech-program/program"]
 test = ["variable_define", "invariant_define", "symbol_table", "bool"]
 cli = []
 project = ["mech-runtime", "mech-runtime/default"]
-web_host = ["mech-runtime", "mech-runtime/default"]
+web_host = ["mech-runtime", "mech-runtime/default", "mech-host-browser", "mech-host-browser/serde", "mech-host-browser/provider"]
 bundle_web = ["cli", "project", "web_host", "formatter", "serde", "mech-runtime", "mech-runtime/default"]
 serve = ["cli", "project", "web_host", "formatter", "mech-runtime", "mech-runtime/default", "ignore"]
+host_delegation = ["serde", "mech-runtime", "mech-runtime/host_delegation", "mech-host-browser", "mech-host-browser/delegation"]
+host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_signing", "mech-host-browser/delegation_signing"]
 whos = ["pretty_print", "variables", "symbol_table"]
 formatter = ["mech-syntax/formatter"]
 async = []
@@ -182,6 +184,7 @@ mech-core        = { version = "0.3.5", default-features = false }
 mech-syntax      = { version = "0.3.5", default-features = false }
 mech-program = { version = "0.3.5", default-features = false }
 mech-runtime = { version = "0.3.5", default-features = false, optional = true }
+mech-host-browser = { version = "0.3.5", default-features = false, optional = true }
 ignore = { version = "0.4.24", optional = true }
 
 sevenz-rust = "0.6.1"
@@ -221,7 +224,8 @@ members = [
   "src/interpreter",
   "src/program",
   "src/runtime",
-  "src/wasm", 
+  "src/wasm",
+  "hosts/browser",
 ]
 
 [build-dependencies]
@@ -238,6 +242,7 @@ mech-interpreter = { path = 'src/interpreter'}
 mech-program = { path = 'src/program'}
 mech-runtime = { path = 'src/runtime'}
 mech-wasm = { path = 'src/wasm'}
+mech-host-browser = { path = 'hosts/browser'}
 #mech-utilities = { path = 'src/utilities' }
 mech-combinatorics = { path = 'machines/combinatorics' }
 mech-compare = { path = 'machines/compare' }

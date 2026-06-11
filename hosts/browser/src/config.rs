@@ -8,7 +8,7 @@ use mech_core::{
   MechErrorKind,
 };
 
-use crate::{
+use mech_runtime::{
   DiagnosticsConfig, LogLevel, MechConfigDocument, RuntimeConfig, RuntimeLimits,
 };
 
@@ -304,7 +304,7 @@ fn invalid<T>(field: &'static str, reason: impl Into<String>) -> MResult<T> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::{parse_config_document, ConfigProfileOptions};
+  use mech_runtime::{parse_config_document, ConfigProfileOptions};
   use mech_core::BrowserResourceKind;
 
   fn config_document() -> MechConfigDocument {
