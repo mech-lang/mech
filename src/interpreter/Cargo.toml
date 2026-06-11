@@ -18,7 +18,16 @@ gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [features]
-no_std = ["mech-core/no_std", "mech-math/no_std", "mech-compare/no_std", "mech-logic/no_std", "mech-matrix/no_std", "mech-range/no_std"]
+no_std = [
+  "mech-core/no_std",
+  "mech-set/no_std",
+  "mech-math/no_std",
+  "mech-compare/no_std",
+  "mech-logic/no_std",
+  "mech-matrix/no_std",
+  "mech-range/no_std",
+  "mech-string/no_std",
+]
 
 default = ["baselib", "prelude_default", "pretty_print", "serde", "compiler", "program", "mika",
   "u8", "u16", "u32", "u64", "u128", 
@@ -45,7 +54,17 @@ prelude_default = [
 ]
 
 math_prelude = ["math_ops_default", "math_ops_assign_default", "mech-math/prelude"]
-compare_prelude = ["compare_eq", "compare_neq", "compare_lt", "compare_gt", "compare_lte", "compare_gte", "mech-compare/prelude"]
+compare_prelude = [
+  "compare_eq",
+  "compare_neq",
+  "compare_seq",
+  "compare_sneq",
+  "compare_lt",
+  "compare_gt",
+  "compare_lte",
+  "compare_gte",
+  "mech-compare/prelude",
+]
 logic_prelude = ["logic_and", "logic_or", "logic_not", "logic_xor", "mech-logic/prelude"]
 matrix_prelude = ["matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_solve", "matrix_dot", "matrix_transpose", "matrix_comprehensions", "mech-matrix/prelude"]
 set_prelude = ["set_membership_default", "set_modify_default", "set_operations_default", "set_relations_default", "set_comprehensions", "set_setdata_default", "mech-set/prelude"]

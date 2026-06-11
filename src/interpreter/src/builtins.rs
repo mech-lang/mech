@@ -127,6 +127,7 @@ fn is_prelude_name(name: &str) -> bool {
         "Assign",
         "Access",
         "Convert",
+        "VariableDefine",
         "Range",
         "MathAdd",
         "MathSub",
@@ -135,26 +136,53 @@ fn is_prelude_name(name: &str) -> bool {
         "MathMod",
         "MathPow",
         "MathNegate",
+        "Add",
+        "Sub",
+        "Mul",
+        "Div",
+        "Mod",
+        "Pow",
+        "Negate",
         "AddAssign",
         "SubAssign",
         "MulAssign",
         "DivAssign",
         "CompareEqual",
         "CompareNotEqual",
+        "CompareStrictEqual",
+        "CompareStrictNotEqual",
         "CompareLessThan",
         "CompareGreaterThan",
         "CompareLessThanEqual",
         "CompareGreaterThanEqual",
+        "EQ",
+        "NEQ",
+        "SEQ",
+        "SNEQ",
+        "LT",
+        "GT",
+        "LTE",
+        "GTE",
         "LogicAnd",
         "LogicOr",
         "LogicNot",
         "LogicXor",
+        "And",
+        "Or",
+        "Not",
+        "Xor",
         "MatrixHorzCat",
         "MatrixVertCat",
+        "HorizontalConcatenate",
+        "VerticalConcatenate",
         "MatrixMatMul",
         "MatrixSolve",
+        "MatMul",
+        "Solve",
         "MatrixDot",
         "MatrixTranspose",
+        "Dot",
+        "Transpose",
         "ValueMatrixComprehension",
         "ValueSetComprehension",
         "ValueSet",
@@ -176,6 +204,7 @@ fn is_prelude_name(name: &str) -> bool {
         "SetSubset",
         "SetSuperset",
         "SetSize",
+        "Set1D",
         "Table",
     ];
     EXACT.contains(&name) || PREFIXES.iter().any(|prefix| name.starts_with(prefix))
@@ -280,9 +309,7 @@ fn canonical_qualified_name(module: &str, export: &str) -> String {
 
 pub fn load_prelude(fxns: &mut Functions) {
     for fxn_desc in inventory::iter::<FunctionDescriptor> {
-        if is_prelude_name(fxn_desc.name)
-            || (module_export_for_name(fxn_desc.name).is_none() && !fxn_desc.name.contains('/'))
-        {
+        if is_prelude_name(fxn_desc.name) {
             fxns.insert_function(fxn_desc.clone());
         }
     }
