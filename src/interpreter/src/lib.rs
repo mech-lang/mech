@@ -97,6 +97,8 @@ use std::time::Duration;
 
 #[cfg(feature = "functions")]
 pub mod builtins;
+#[cfg(feature = "functions")]
+pub mod modules;
 pub mod expressions;
 #[cfg(feature = "functions")]
 pub mod functions;
@@ -115,6 +117,8 @@ pub use mech_core::*;
 
 #[cfg(feature = "functions")]
 pub use crate::builtins::*;
+#[cfg(feature = "functions")]
+pub use crate::modules::*;
 pub use crate::expressions::*;
 #[cfg(feature = "functions")]
 pub use crate::functions::*;
