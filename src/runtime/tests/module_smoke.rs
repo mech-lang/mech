@@ -5,6 +5,7 @@ fn setup_modules(main_source: &str) -> std::path::PathBuf {
   let root = std::env::temp_dir().join(format!("mech-runtime-module-smoke-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
   std::fs::create_dir_all(&root).unwrap();
   std::fs::write(root.join("math.mec"), "tau := 6.28318\nsecret := 42\n<+ tau\n").unwrap();
+  std::fs::write(root.join("calc.mec"), "tau := 6.28318\nsecret := 42\n<+ tau\n").unwrap();
   std::fs::write(root.join("main.mec"), main_source).unwrap();
   root
 }
@@ -1240,7 +1241,7 @@ fn file_import_does_not_expose_non_exported_binding() {
 
 #[test]
 fn namespace_import_exposes_exports_under_module_namespace() {
-  let root = setup_modules("+> math\nok := math/tau > 6.0\n");
+  let root = setup_modules("+> calc\nok := calc/tau > 6.0\n");
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
@@ -1253,7 +1254,7 @@ fn namespace_import_exposes_exports_under_module_namespace() {
 
 #[test]
 fn single_import_exposes_export_unqualified() {
-  let root = setup_modules("+> math/tau\nok := tau > 6.0\n");
+  let root = setup_modules("+> calc/tau\nok := tau > 6.0\n");
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
@@ -1266,7 +1267,7 @@ fn single_import_exposes_export_unqualified() {
 
 #[test]
 fn wildcard_import_exposes_all_exports_unqualified() {
-  let root = setup_modules("+> math/*\nok := tau > 6.0\n");
+  let root = setup_modules("+> calc/*\nok := tau > 6.0\n");
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
@@ -1279,7 +1280,7 @@ fn wildcard_import_exposes_all_exports_unqualified() {
 
 #[test]
 fn wildcard_import_does_not_expose_non_exported_binding() {
-  let root = setup_modules("+> math/*\nok := secret > 0\n");
+  let root = setup_modules("+> calc/*\nok := secret > 0\n");
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
@@ -1294,9 +1295,9 @@ fn wildcard_import_does_not_expose_non_exported_binding() {
 fn import_conflict_fails() {
   let root = std::env::temp_dir().join(format!("mech-runtime-module-conflict-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
   std::fs::create_dir_all(&root).unwrap();
-  std::fs::write(root.join("math.mec"), "tau := 6.28318\n<+ tau\n").unwrap();
+  std::fs::write(root.join("calc.mec"), "tau := 6.28318\n<+ tau\n").unwrap();
   std::fs::write(root.join("science.mec"), "tau := 6.2\n<+ tau\n").unwrap();
-  std::fs::write(root.join("main.mec"), "+> math/tau\n+> science/tau\nok := tau > 0\n").unwrap();
+  std::fs::write(root.join("main.mec"), "+> calc/tau\n+> science/tau\nok := tau > 0\n").unwrap();
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
@@ -1310,8 +1311,8 @@ fn import_conflict_fails() {
 fn re_export_works() {
   let root = std::env::temp_dir().join(format!("mech-runtime-module-reexport-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
   std::fs::create_dir_all(&root).unwrap();
-  std::fs::write(root.join("math.mec"), "tau := 6.28318\n<+ tau\n").unwrap();
-  std::fs::write(root.join("bridge.mec"), "+> math/tau\n<+ tau\n").unwrap();
+  std::fs::write(root.join("calc.mec"), "tau := 6.28318\n<+ tau\n").unwrap();
+  std::fs::write(root.join("bridge.mec"), "+> calc/tau\n<+ tau\n").unwrap();
   std::fs::write(root.join("main.mec"), "+> bridge/tau\nok := tau > 6.0\n").unwrap();
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
@@ -1378,8 +1379,8 @@ fn multi_level_re_export_works() {
 fn multi_level_private_symbol_does_not_leak() {
   let root = std::env::temp_dir().join(format!("mech-runtime-module-privacy-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
   std::fs::create_dir_all(&root).unwrap();
-  std::fs::write(root.join("math.mec"), "tau := 6.28318\nsecret := 42\n<+ tau\n").unwrap();
-  std::fs::write(root.join("bridge.mec"), "+> math/tau\n<+ tau\n").unwrap();
+  std::fs::write(root.join("calc.mec"), "tau := 6.28318\nsecret := 42\n<+ tau\n").unwrap();
+  std::fs::write(root.join("bridge.mec"), "+> calc/tau\n<+ tau\n").unwrap();
   std::fs::write(root.join("main.mec"), "+> bridge/*\nok := secret > 0\n").unwrap();
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
@@ -1410,7 +1411,7 @@ fn duplicate_unqualified_import_conflict_fails() {
 
 #[test]
 fn duplicate_same_export_import_policy_is_explicit() {
-  let root = setup_modules("+> math/tau\n+> math/*\nok := tau > 6.0\n");
+  let root = setup_modules("+> calc/tau\n+> calc/*\nok := tau > 6.0\n");
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();

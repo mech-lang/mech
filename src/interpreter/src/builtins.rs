@@ -11,10 +11,10 @@ const MATH_EXPORTS: &[&str] = &[
     "sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sinh", "cosh", "tanh", "asinh", "acosh",
     "atanh", "cot", "sec", "csc", "acot", "asec", "acsc", "sqrt",
 ];
-const STATS_EXPORTS: &[&str] = &["sum"];
+const STATS_EXPORTS: &[&str] = &["sum/column"];
 const IO_EXPORTS: &[&str] = &["print", "println"];
 const STRING_EXPORTS: &[&str] = &["concat"];
-const COMBINATORICS_EXPORTS: &[&str] = &["n_choose_k"];
+const COMBINATORICS_EXPORTS: &[&str] = &["n-choose-k"];
 
 fn public_exports(module: &str) -> Option<ModuleExports> {
     match module {
@@ -43,140 +43,7 @@ fn public_exports(module: &str) -> Option<ModuleExports> {
 }
 
 fn is_prelude_name(name: &str) -> bool {
-    const EXACT: &[&str] = &[
-        "assign",
-        "assign/value",
-        "assign/column",
-        "assign/add",
-        "assign/sub",
-        "assign/mul",
-        "assign/div",
-        "access/scalar",
-        "access/range",
-        "access/column",
-        "access/swizzle",
-        "convert",
-        "convert/kind",
-        "set/comprehension",
-        "matrix/comprehension",
-        "range/inclusive",
-        "range/exclusive",
-        "range/inclusive_increment",
-        "range/exclusive_increment",
-        "math/add",
-        "math/sub",
-        "math/mul",
-        "math/div",
-        "math/mod",
-        "math/pow",
-        "math/neg",
-        "math/add_assign",
-        "math/sub_assign",
-        "math/mul_assign",
-        "math/div_assign",
-        "math/add-assign",
-        "math/sub-assign",
-        "math/mul-assign",
-        "math/div-assign",
-        "math/add-assign/range",
-        "math/sub-assign/range",
-        "math/mul-assign/range",
-        "math/div-assign/range",
-        "math/add-assign/range-all",
-        "math/sub-assign/range-all",
-        "math/mul-assign/range-all",
-        "math/div-assign/range-all",
-        "compare/eq",
-        "compare/neq",
-        "compare/lt",
-        "compare/gt",
-        "compare/lte",
-        "compare/gte",
-        "logic/and",
-        "logic/or",
-        "logic/not",
-        "logic/xor",
-        "matrix/horzcat",
-        "matrix/vertcat",
-        "matrix/matmul",
-        "matrix/solve",
-        "matrix/dot",
-        "matrix/transpose",
-        "matrix/comprehension",
-        "set/element_of",
-        "set/not_element_of",
-        "set/insert",
-        "set/remove",
-        "set/cartesian_product",
-        "set/difference",
-        "set/intersection",
-        "set/powerset",
-        "set/symmetric_difference",
-        "set/union",
-        "set/disjoint",
-        "set/equals",
-        "set/not_equals",
-        "set/proper_subset",
-        "set/proper_superset",
-        "set/subset",
-        "set/superset",
-        "set/size",
-    ];
-    const PREFIXES: &[&str] = &[
-        "Assign",
-        "Access",
-        "Convert",
-        "Range",
-        "MathAdd",
-        "MathSub",
-        "MathMul",
-        "MathDiv",
-        "MathMod",
-        "MathPow",
-        "MathNegate",
-        "AddAssign",
-        "SubAssign",
-        "MulAssign",
-        "DivAssign",
-        "CompareEqual",
-        "CompareNotEqual",
-        "CompareLessThan",
-        "CompareGreaterThan",
-        "CompareLessThanEqual",
-        "CompareGreaterThanEqual",
-        "LogicAnd",
-        "LogicOr",
-        "LogicNot",
-        "LogicXor",
-        "MatrixHorzCat",
-        "MatrixVertCat",
-        "MatrixMatMul",
-        "MatrixSolve",
-        "MatrixDot",
-        "MatrixTranspose",
-        "ValueMatrixComprehension",
-        "ValueSetComprehension",
-        "SetElementOf",
-        "SetNotElementOf",
-        "SetInsert",
-        "SetRemove",
-        "SetCartesianProduct",
-        "SetDifference",
-        "SetIntersection",
-        "SetPowerset",
-        "SetSymmetricDifference",
-        "SetUnion",
-        "SetDisjoint",
-        "SetEquals",
-        "SetNotEquals",
-        "SetProperSubset",
-        "SetProperSuperset",
-        "SetSubset",
-        "SetSuperset",
-        "SetSize",
-        "Table",
-    ];
-    EXACT.contains(&name) || PREFIXES.iter().any(|prefix| name.starts_with(prefix))
+    module_export_for_name(name).is_none()
 }
 
 fn module_export_for_name(name: &str) -> Option<(&'static str, &'static str)> {
@@ -201,12 +68,12 @@ fn module_export_for_name(name: &str) -> Option<(&'static str, &'static str)> {
         "math/asec" => Some(("math", "asec")),
         "math/acsc" => Some(("math", "acsc")),
         "math/sqrt" => Some(("math", "sqrt")),
-        "stats/sum" => Some(("stats", "sum")),
+        "stats/sum/column" => Some(("stats", "sum/column")),
         "io/print" => Some(("io", "print")),
         "io/println" => Some(("io", "println")),
         "string/concat" => Some(("string", "concat")),
         "combinatorics/n_choose_k" | "combinatorics/n-choose-k" => {
-            Some(("combinatorics", "n_choose_k"))
+            Some(("combinatorics", "n-choose-k"))
         }
         "MathSin" => Some(("math", "sin")),
         "MathCos" => Some(("math", "cos")),
@@ -228,6 +95,10 @@ fn module_export_for_name(name: &str) -> Option<(&'static str, &'static str)> {
         "MathAsec" => Some(("math", "asec")),
         "MathAcsc" => Some(("math", "acsc")),
         "MathSqrt" => Some(("math", "sqrt")),
+        "StatsSumColumn" => Some(("stats", "sum/column")),
+        "IoPrint" => Some(("io", "print")),
+        "IoPrintln" => Some(("io", "println")),
+        "StringConcat" => Some(("string", "concat")),
         _ => None,
     };
     if exact.is_some() {
@@ -255,10 +126,28 @@ fn module_export_for_name(name: &str) -> Option<(&'static str, &'static str)> {
         ("MathCsc", ("math", "csc")),
         ("MathSqrt", ("math", "sqrt")),
     ];
-    MATH_PREFIXES
+    if let Some((_, export)) = MATH_PREFIXES
         .iter()
         .find(|(prefix, _)| name.starts_with(prefix))
-        .map(|(_, export)| *export)
+    {
+        return Some(*export);
+    }
+    if name.starts_with("StatsSumColumn") {
+        return Some(("stats", "sum/column"));
+    }
+    if name.starts_with("NChooseK") {
+        return Some(("combinatorics", "n-choose-k"));
+    }
+    if name.starts_with("IoPrintln") {
+        return Some(("io", "println"));
+    }
+    if name.starts_with("IoPrint") {
+        return Some(("io", "print"));
+    }
+    if name.starts_with("StringConcat") {
+        return Some(("string", "concat"));
+    }
+    None
 }
 
 fn canonical_qualified_name(module: &str, export: &str) -> String {
@@ -298,11 +187,6 @@ pub fn load_module(fxns: &mut Functions, module: &str) -> MResult<ModuleExports>
                 fxns.dictionary
                     .borrow_mut()
                     .insert(hash_str(fxn_desc.name), fxn_desc.name.to_string());
-                let qualified = canonical_qualified_name(desc_module, desc_export);
-                fxns.functions.insert(hash_str(&qualified), fxn_desc.ptr);
-                fxns.dictionary
-                    .borrow_mut()
-                    .insert(hash_str(&qualified), qualified);
             }
         }
     }
@@ -349,23 +233,26 @@ pub fn import_module_glob(fxns: &mut Functions, module: &str) -> MResult<()> {
 fn alias_module_item(fxns: &mut Functions, module: &str, item: &str) -> MResult<()> {
     let qualified_name = format!("{module}/{item}");
     let qualified_id = hash_str(&qualified_name);
-    let local_id = hash_str(item);
+    let local_name = item.rsplit('/').next().unwrap_or(item);
+    let local_id = hash_str(local_name);
     let mut found = false;
 
     if let Some(ptr) = fxns.function_compilers.get(&qualified_id).cloned() {
         fxns.function_compilers.insert(local_id, ptr);
         fxns.dictionary
             .borrow_mut()
-            .insert(local_id, item.to_string());
+            .insert(local_id, local_name.to_string());
         found = true;
     }
 
-    if let Some(ptr) = fxns.functions.get(&qualified_id).copied() {
-        fxns.functions.insert(local_id, ptr);
-        fxns.dictionary
-            .borrow_mut()
-            .insert(local_id, item.to_string());
-        found = true;
+    if !found {
+        if let Some(ptr) = fxns.functions.get(&qualified_id).copied() {
+            fxns.functions.insert(local_id, ptr);
+            fxns.dictionary
+                .borrow_mut()
+                .insert(local_id, local_name.to_string());
+            found = true;
+        }
     }
 
     if found {

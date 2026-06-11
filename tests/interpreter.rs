@@ -1115,10 +1115,14 @@ test_interpreter!(interpret_function_recursive_power,r#"power(x<u64>, y<u64>) =>
   ├ (*, 0) => 1
   └ (x, y) => x * power(x, y - 1<u64>).
 power(2<u64>, 10<u64>)"#, Value::U64(Ref::new(1024)));
-test_interpreter!(interpret_function_call_native_vector, "math/sin([1.570796327 1.570796327])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
-test_interpreter!(interpret_function_call_native, r#"math/sin(1.5707963267948966)"#, Value::F64(Ref::new(1.0)));
-test_interpreter!(interpret_function_call_native_cos, r#"math/cos(0.0)"#, Value::F64(Ref::new(1.0)));
-test_interpreter!(interpret_function_call_native_vector2, "math/cos([0.0 0.0])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
+test_interpreter!(interpret_function_call_native_vector, "+> math
+math/sin([1.570796327 1.570796327])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
+test_interpreter!(interpret_function_call_native, r#"+> math
+math/sin(1.5707963267948966)"#, Value::F64(Ref::new(1.0)));
+test_interpreter!(interpret_function_call_native_cos, r#"+> math
+math/cos(0.0)"#, Value::F64(Ref::new(1.0)));
+test_interpreter!(interpret_function_call_native_vector2, "+> math
+math/cos([0.0 0.0])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
 
 test_interpreter!(interpret_function_shorthand_with_wildcard_arm, r#"hi() => <string>
   | * => "hi".
@@ -1268,7 +1272,8 @@ test_interpreter!(interpret_vertcat_m2r2, "x := [5 2;3 4]; y := [8 9];z := [x;y]
 
 test_interpreter!(interpret_vertcat_r2m2x3, "x := [1 2 3; 4 5 6]; y := [7 8 9]; z := [y;x]", Value::MatrixF64(Matrix::from_vec(vec![7.0, 1.0, 4.0, 8.0, 2.0, 5.0, 9.0, 3.0, 6.0], 3, 3)));
 
-test_interpreter!(interpret_stats_sum_rowm2, "x := [1 2; 4 5]; y := stats/sum/row(x);", Value::MatrixF64(Matrix::from_vec(vec![5.0, 7.0], 1, 2)));
+test_interpreter!(interpret_stats_sum_rowm2, "+> stats/sum/column
+x := [1 2; 4 5]; y := column(x);", Value::MatrixF64(Matrix::from_vec(vec![3.0, 9.0], 2, 1)));
 
 test_interpreter!(interpret_add_assign, "~x := 10; x += 20", Value::F64(Ref::new(30.0)));
 test_interpreter!(interpret_add_assign_formula, "ix := [1 1 2 3]; y := 5; ~x := [1 2 3 4]; x[ix] += y;", Value::MatrixF64(Matrix::from_vec(vec![11.0, 7.0, 8.0, 4.0], 1, 4)));

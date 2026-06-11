@@ -818,15 +818,17 @@ pub enum ModuleImportKind {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ModuleImport {
   pub module: Identifier,
-  pub item: Option<Identifier>,
+  pub item: Option<Vec<Identifier>>,
   pub kind: ModuleImportKind,
 }
 
 impl ModuleImport {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tokens = self.module.tokens();
-    if let Some(item) = &self.item {
-      tokens.append(&mut item.tokens());
+    if let Some(item_path) = &self.item {
+      for item in item_path {
+        tokens.append(&mut item.tokens());
+      }
     }
     tokens
   }

@@ -1856,7 +1856,10 @@ impl Formatter {
   pub fn module_import(&mut self, node: &ModuleImport) -> String {
     match node.kind {
       ModuleImportKind::Module => format!("+> {}", node.module.to_string()),
-      ModuleImportKind::Item => format!("+> {}/{}", node.module.to_string(), node.item.as_ref().unwrap().to_string()),
+      ModuleImportKind::Item => {
+        let item_path = node.item.as_ref().unwrap().iter().map(|item| item.to_string()).collect::<Vec<_>>().join("/");
+        format!("+> {}/{}", node.module.to_string(), item_path)
+      },
       ModuleImportKind::Glob => format!("+> {}/*", node.module.to_string()),
     }
   }
