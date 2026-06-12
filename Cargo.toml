@@ -56,6 +56,7 @@ whos = ["pretty_print", "variables", "symbol_table"]
 formatter = ["mech-syntax/formatter"]
 async = []
 trace = ["mech-program/trace"]
+dynamic-modules = ["mech-program/dynamic-modules"]
 linked_stdlib = ["mech-program/linked_stdlib"]
 linked_math = ["mech-program/linked_math"]
 linked_combinatorics = ["mech-program/linked_combinatorics"]
@@ -225,6 +226,10 @@ tempfile = { version = "3.26.0", optional = true }
 zip = { version =  "5.1.1", optional = true }
 
 [workspace]
+# `mech-math` is consumed by the dynamic math wrapper as a path dependency, but
+# remains outside this workspace member set because the machines tree is not yet
+# workspace-managed.
+exclude = ["machines/math"]
 members = [
   "src/core",
   "src/syntax",
@@ -233,6 +238,7 @@ members = [
   "src/runtime",
   "src/wasm",
   "hosts/browser",
+  "modules/math-dylib",
 ]
 
 [build-dependencies]

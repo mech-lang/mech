@@ -1,0 +1,15 @@
+[package]
+name = "mech-module-math"
+version = "0.3.5"
+edition = "2024"
+rust-version = "1.92"
+
+[lib]
+crate-type = ["dylib"]
+
+
+[dependencies]
+mech-core = { path = "../../src/core", default-features = false, features = ["base", "compiler", "functions", "f64"] }
+mech-math = { path = "../../machines/math", default-features = false, features = ["base", "math_default", "compiler", "functions", "f64"] }
+inventory = "0.3"
+

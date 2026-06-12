@@ -85,6 +85,83 @@ pub struct ModuleItemDescriptor {
 
 unsafe impl Sync for ModuleItemDescriptor {}
 
+/// Experimental same-build Rust ABI for dynamic Mech modules.
+///
+/// This ABI is only intended for dynamic modules built from the same source tree,
+/// with the same Rust toolchain, the same `mech-core` version, and the same
+/// lockfile as the host binary.
+///
+/// It is not a stable external plugin ABI.
+pub const MECH_DYNAMIC_MODULE_ABI_VERSION: u32 = 1;
+
+#[repr(C)]
+pub struct DynamicModuleDeclaration {
+  pub abi_version: u32,
+  pub module: &'static str,
+  pub register: unsafe fn(&mut DynamicModuleRegistrar) -> MResult<()>,
+}
+
+impl Debug for DynamicModuleDeclaration {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.debug_struct("DynamicModuleDeclaration")
+      .field("abi_version", &self.abi_version)
+      .field("module", &self.module)
+      .finish_non_exhaustive()
+  }
+}
+
+unsafe impl Sync for DynamicModuleDeclaration {}
+
+#[derive(Clone, Copy)]
+pub struct DynamicCompilerRegistration {
+  pub name: &'static str,
+  pub ptr: &'static dyn NativeFunctionCompiler,
+}
+
+pub struct DynamicModuleRegistrar {
+  module: String,
+  items: Vec<String>,
+  compilers: Vec<DynamicCompilerRegistration>,
+}
+
+impl DynamicModuleRegistrar {
+  pub fn new(module: &str) -> Self {
+    Self {
+      module: module.to_string(),
+      items: Vec::new(),
+      compilers: Vec::new(),
+    }
+  }
+
+  pub fn module(&self) -> &str {
+    &self.module
+  }
+
+  pub fn register_item(&mut self, item: &'static str) {
+    if !self.items.iter().any(|existing| existing == item) {
+      self.items.push(item.to_string());
+    }
+  }
+
+  pub fn register_compiler(
+    &mut self,
+    name: &'static str,
+    ptr: &'static dyn NativeFunctionCompiler,
+  ) {
+    if !self.compilers.iter().any(|existing| existing.name == name) {
+      self.compilers.push(DynamicCompilerRegistration { name, ptr });
+    }
+  }
+
+  pub fn items(&self) -> &[String] {
+    &self.items
+  }
+
+  pub fn compilers(&self) -> &[DynamicCompilerRegistration] {
+    &self.compilers
+  }
+}
+
 pub trait MechFunctionFactory {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>>;
 }
