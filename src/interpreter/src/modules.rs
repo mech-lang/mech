@@ -123,6 +123,45 @@ impl DynamicModuleLoader {
 }
 
 #[cfg(feature = "dynamic-modules")]
+fn module_symbol_name(module: &str) -> Vec<u8> {
+    // Mech-facing module names keep hyphens. Rust/OS symbol names may not.
+    //
+    // Rule:
+    //   "/" is not expected in module names
+    //   "-" becomes "__"
+    //   append NUL for libloading
+    let escaped = module.replace('-', "__");
+    format!("mech_module_{escaped}\0").into_bytes()
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn commit_dynamic_registrar(
+    fxns: &mut Functions,
+    registrar: &DynamicModuleRegistrar,
+) -> MResult<ModuleManifest> {
+    for compiler in registrar.compilers() {
+        fxns.insert_function_compiler(
+            compiler.name,
+            Arc::new(StaticNativeFunctionCompiler::new(compiler.ptr)),
+        );
+    }
+
+    let items = registrar.items().to_vec();
+
+    if items.is_empty() {
+        return Err(DynamicModuleLoader::dynamic_error(format!(
+            "dynamic module `{}` registered no items",
+            registrar.module()
+        )));
+    }
+
+    Ok(ModuleManifest {
+        module: registrar.module().to_string(),
+        items,
+    })
+}
+
+#[cfg(feature = "dynamic-modules")]
 impl ModuleLoader for DynamicModuleLoader {
     fn can_load(&self, module: &str) -> bool {
         self.candidate_paths(module)
@@ -154,46 +193,37 @@ impl ModuleLoader for DynamicModuleLoader {
             ))
         })?;
 
-        let items = {
-            let register: libloading::Symbol<DynamicModuleRegisterV1> = unsafe {
-                library.get(b"mech_module_register_v1")
-            }
-            .map_err(|err| {
+        let symbol_name = module_symbol_name(module);
+        let declaration_symbol: libloading::Symbol<*const *const DynamicModuleDeclaration> =
+            unsafe { library.get(&symbol_name) }.map_err(|err| {
                 Self::dynamic_error(format!(
-                    "dynamic module registration symbol missing for module `{module}` in `{}`: {err}",
-                    library_path.display()
-                ))
+                "dynamic module declaration symbol missing for module `{module}` in `{}`: {err}",
+                library_path.display()
+            ))
             })?;
 
-            unsafe { register(fxns, module) }?
-        };
+        let declaration = unsafe { &***declaration_symbol };
 
-        if items.is_empty() {
+        if declaration.abi_version != MECH_DYNAMIC_MODULE_ABI_VERSION {
             return Err(Self::dynamic_error(format!(
-                "dynamic module registration returned no items for requested module `{module}` from `{}`; expected ABI version {}",
+                "dynamic module ABI version mismatch for module `{module}` in `{}`: host expected {}, module declared {}",
                 library_path.display(),
-                MECH_DYNAMIC_MODULE_ABI_VERSION
+                MECH_DYNAMIC_MODULE_ABI_VERSION,
+                declaration.abi_version
             )));
         }
 
-        {
-            let compilers: libloading::Symbol<DynamicModuleCompilersV1> = unsafe {
-                library.get(b"mech_module_compilers_v1")
-            }
-            .map_err(|err| {
-                Self::dynamic_error(format!(
-                    "dynamic module compiler symbol missing for module `{module}` in `{}`: {err}",
-                    library_path.display()
-                ))
-            })?;
-
-            for compiler in unsafe { compilers(module) }? {
-                fxns.insert_function_compiler(
-                    compiler.name,
-                    Arc::new(StaticNativeFunctionCompiler::new(compiler.ptr)),
-                );
-            }
+        if declaration.module != module {
+            return Err(Self::dynamic_error(format!(
+                "dynamic module declaration mismatch for requested module `{module}` in `{}`: declaration is for `{}`",
+                library_path.display(),
+                declaration.module
+            )));
         }
+
+        let mut registrar = DynamicModuleRegistrar::new(module);
+        unsafe { (declaration.register)(&mut registrar) }?;
+        let manifest = commit_dynamic_registrar(fxns, &registrar)?;
 
         DYNAMIC_MODULE_LIBRARIES
             .get_or_init(|| Mutex::new(Vec::new()))
@@ -205,10 +235,7 @@ impl ModuleLoader for DynamicModuleLoader {
             })?
             .push(library);
 
-        Ok(ModuleManifest {
-            module: module.to_string(),
-            items,
-        })
+        Ok(manifest)
     }
 }
 

@@ -226,6 +226,7 @@ tempfile = { version = "3.26.0", optional = true }
 zip = { version =  "5.1.1", optional = true }
 
 [workspace]
+exclude = ["machines/math"]
 members = [
   "src/core",
   "src/syntax",
@@ -234,6 +235,7 @@ members = [
   "src/runtime",
   "src/wasm",
   "hosts/browser",
+  "modules/math-dylib",
 ]
 
 [build-dependencies]

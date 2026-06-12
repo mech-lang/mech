@@ -89,34 +89,78 @@ unsafe impl Sync for ModuleItemDescriptor {}
 ///
 /// This ABI is only intended for dynamic modules built from the same source tree,
 /// with the same Rust toolchain, the same `mech-core` version, and the same
-/// lockfile as the host binary. It is not a stable external plugin ABI and must
-/// not be used for independently-built third-party modules.
+/// lockfile as the host binary.
+///
+/// It is not a stable external plugin ABI.
 pub const MECH_DYNAMIC_MODULE_ABI_VERSION: u32 = 1;
 
-/// Registration symbol type for experimental dynamic Mech modules.
-///
-/// The Rust ABI is intentional for this first prototype because it passes Mech
-/// Rust types such as `Functions` and `MResult` across the boundary.
-pub type DynamicModuleRegisterV1 =
-  unsafe fn(fxns: &mut Functions, module: &str) -> MResult<Vec<String>>;
-
-/// Function compiler descriptor returned by experimental dynamic modules.
-///
-/// The trait object in `ptr` is part of the same-build Rust ABI prototype and
-/// is only valid when the module and host are built together as described by
-/// `MECH_DYNAMIC_MODULE_ABI_VERSION`.
 #[repr(C)]
+pub struct DynamicModuleDeclaration {
+  pub abi_version: u32,
+  pub module: &'static str,
+  pub register: unsafe fn(&mut DynamicModuleRegistrar) -> MResult<()>,
+}
+
+impl Debug for DynamicModuleDeclaration {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.debug_struct("DynamicModuleDeclaration")
+      .field("abi_version", &self.abi_version)
+      .field("module", &self.module)
+      .finish_non_exhaustive()
+  }
+}
+
+unsafe impl Sync for DynamicModuleDeclaration {}
+
 #[derive(Clone, Copy)]
-pub struct DynamicModuleCompilerV1 {
+pub struct DynamicCompilerRegistration {
   pub name: &'static str,
   pub ptr: &'static dyn NativeFunctionCompiler,
 }
 
-/// Optional companion symbol that lets the host insert dynamic compilers using
-/// host-side `Functions` methods while the registration symbol reports the
-/// module manifest.
-pub type DynamicModuleCompilersV1 =
-  unsafe fn(module: &str) -> MResult<Vec<DynamicModuleCompilerV1>>;
+pub struct DynamicModuleRegistrar {
+  module: String,
+  items: Vec<String>,
+  compilers: Vec<DynamicCompilerRegistration>,
+}
+
+impl DynamicModuleRegistrar {
+  pub fn new(module: &str) -> Self {
+    Self {
+      module: module.to_string(),
+      items: Vec::new(),
+      compilers: Vec::new(),
+    }
+  }
+
+  pub fn module(&self) -> &str {
+    &self.module
+  }
+
+  pub fn register_item(&mut self, item: &'static str) {
+    if !self.items.iter().any(|existing| existing == item) {
+      self.items.push(item.to_string());
+    }
+  }
+
+  pub fn register_compiler(
+    &mut self,
+    name: &'static str,
+    ptr: &'static dyn NativeFunctionCompiler,
+  ) {
+    if !self.compilers.iter().any(|existing| existing.name == name) {
+      self.compilers.push(DynamicCompilerRegistration { name, ptr });
+    }
+  }
+
+  pub fn items(&self) -> &[String] {
+    &self.items
+  }
+
+  pub fn compilers(&self) -> &[DynamicCompilerRegistration] {
+    &self.compilers
+  }
+}
 
 pub trait MechFunctionFactory {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>>;

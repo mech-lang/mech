@@ -39,7 +39,7 @@ jobs:
           cargo test -p mech-runtime --lib --tests
 
           # Dynamic module validation without linked-stdlib.
-          cargo build --manifest-path modules/math-dylib/Cargo.toml --target-dir target/dynamic-modules
+          cargo build -p mech-module-math --target-dir target/dynamic-modules
           mkdir -p target/mech-modules
           cp target/dynamic-modules/debug/libmech_module_math.so target/mech-modules/
           MECH_MODULE_PATH=target/mech-modules cargo test --test dynamic_modules --no-default-features --features "base dynamic-modules f64"
