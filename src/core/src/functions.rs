@@ -15,6 +15,7 @@ use tabled::{
   Tabled,
 };
 use std::fmt;
+use std::ffi::c_void;
 use std::sync::Arc;
 
 // Functions ------------------------------------------------------------------
@@ -112,10 +113,45 @@ impl Debug for DynamicModuleDeclaration {
 
 unsafe impl Sync for DynamicModuleDeclaration {}
 
+/// Dylib-owned compile thunk for the experimental same-build Rust ABI.
+///
+/// The host must not call methods on dylib-owned trait objects directly. It
+/// only passes the opaque compiler pointer back to this function pointer, which
+/// lives in the dylib and performs the actual native compiler call there.
+pub type DynamicCompileFnV1 = unsafe fn(
+  compiler: *const c_void,
+  arguments: &Vec<Value>,
+) -> MResult<DynamicFunctionHandleV1>;
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct DynamicFunctionHandleV1 {
+  pub instance: *mut c_void,
+  pub vtable: &'static DynamicFunctionVTableV1,
+}
+
+#[repr(C)]
+pub struct DynamicFunctionVTableV1 {
+  pub solve: unsafe fn(*mut c_void),
+  pub out: unsafe fn(*mut c_void) -> Value,
+
+  #[cfg(feature = "compiler")]
+  pub compile: unsafe fn(*mut c_void, &mut CompileCtx) -> MResult<Register>,
+
+  pub drop: unsafe fn(*mut c_void),
+}
+
 #[derive(Clone, Copy)]
 pub struct DynamicCompilerRegistration {
   pub name: &'static str,
-  pub ptr: &'static dyn NativeFunctionCompiler,
+
+  // Opaque dylib-owned compiler handle. The host must not dereference this or
+  // call dylib trait-object methods directly; it is only passed back into
+  // `compile`.
+  pub compiler: *const c_void,
+
+  // Dylib-owned function pointer that performs the native compiler call.
+  pub compile: DynamicCompileFnV1,
 }
 
 pub struct DynamicModuleRegistrar {
@@ -146,10 +182,15 @@ impl DynamicModuleRegistrar {
   pub fn register_compiler(
     &mut self,
     name: &'static str,
-    ptr: &'static dyn NativeFunctionCompiler,
+    compiler: *const c_void,
+    compile: DynamicCompileFnV1,
   ) {
     if !self.compilers.iter().any(|existing| existing.name == name) {
-      self.compilers.push(DynamicCompilerRegistration { name, ptr });
+      self.compilers.push(DynamicCompilerRegistration {
+        name,
+        compiler,
+        compile,
+      });
     }
   }
 

@@ -1,5 +1,7 @@
 use crate::*;
 #[cfg(feature = "dynamic-modules")]
+use std::ffi::c_void;
+#[cfg(feature = "dynamic-modules")]
 use std::path::PathBuf;
 use std::sync::Arc;
 #[cfg(feature = "dynamic-modules")]
@@ -132,7 +134,70 @@ fn dynamic_trace(message: impl std::fmt::Display) {
 }
 
 #[cfg(feature = "dynamic-modules")]
-static DYNAMIC_MODULE_LIBRARIES: OnceLock<Mutex<Vec<libloading::Library>>> = OnceLock::new();
+static DYNAMIC_MODULE_LIBRARIES: OnceLock<Mutex<Vec<Arc<libloading::Library>>>> = OnceLock::new();
+
+#[cfg(feature = "dynamic-modules")]
+struct DynamicNativeFunctionCompiler {
+    _library: Arc<libloading::Library>,
+    compiler: *const c_void,
+    compile: DynamicCompileFnV1,
+}
+
+#[cfg(feature = "dynamic-modules")]
+impl NativeFunctionCompiler for DynamicNativeFunctionCompiler {
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        dynamic_trace(format!(
+            "calling dynamic compile function for compiler ptr={:p}",
+            self.compiler
+        ));
+
+        let handle = unsafe { (self.compile)(self.compiler, arguments)? };
+
+        dynamic_trace("dynamic compile function returned handle");
+
+        Ok(Box::new(DynamicMechFunction {
+            _library: self._library.clone(),
+            instance: handle.instance,
+            vtable: handle.vtable,
+        }))
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
+struct DynamicMechFunction {
+    _library: Arc<libloading::Library>,
+    instance: *mut c_void,
+    vtable: &'static DynamicFunctionVTableV1,
+}
+
+#[cfg(feature = "dynamic-modules")]
+impl Drop for DynamicMechFunction {
+    fn drop(&mut self) {
+        unsafe { (self.vtable.drop)(self.instance) }
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
+impl MechFunctionImpl for DynamicMechFunction {
+    fn solve(&self) {
+        unsafe { (self.vtable.solve)(self.instance) }
+    }
+
+    fn out(&self) -> Value {
+        unsafe { (self.vtable.out)(self.instance) }
+    }
+
+    fn to_string(&self) -> String {
+        "[dynamic mech function]".to_string()
+    }
+}
+
+#[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
+impl MechFunctionCompiler for DynamicMechFunction {
+    fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        unsafe { (self.vtable.compile)(self.instance, ctx) }
+    }
+}
 
 #[cfg(feature = "dynamic-modules")]
 pub struct DynamicModuleLoader {
@@ -195,11 +260,22 @@ fn module_symbol_name(module: &str) -> Vec<u8> {
 fn commit_dynamic_registrar(
     fxns: &mut Functions,
     registrar: &DynamicModuleRegistrar,
+    library: Arc<libloading::Library>,
 ) -> MResult<ModuleManifest> {
     for compiler in registrar.compilers() {
+        dynamic_trace(format!(
+            "committing dynamic compiler {} compiler={:p}",
+            compiler.name,
+            compiler.compiler
+        ));
+
         fxns.insert_function_compiler(
             compiler.name,
-            Arc::new(StaticNativeFunctionCompiler::new(compiler.ptr)),
+            Arc::new(DynamicNativeFunctionCompiler {
+                _library: library.clone(),
+                compiler: compiler.compiler,
+                compile: compiler.compile,
+            }),
         );
     }
 
@@ -249,12 +325,14 @@ impl ModuleLoader for DynamicModuleLoader {
             })?;
 
         dynamic_trace(format!("opening library `{}`", library_path.display()));
-        let library = unsafe { libloading::Library::new(&library_path) }.map_err(|err| {
-            Self::dynamic_error(format!(
-                "dynamic module library failed to open for module `{module}` at `{}`: {err}",
-                library_path.display()
-            ))
-        })?;
+        let library = Arc::new(
+            unsafe { libloading::Library::new(&library_path) }.map_err(|err| {
+                Self::dynamic_error(format!(
+                    "dynamic module library failed to open for module `{module}` at `{}`: {err}",
+                    library_path.display()
+                ))
+            })?,
+        );
 
         let symbol_name = module_symbol_name(module);
         let symbol_label =
@@ -296,7 +374,7 @@ impl ModuleLoader for DynamicModuleLoader {
         dynamic_trace(format!("registering module `{module}`"));
         let mut registrar = DynamicModuleRegistrar::new(module);
         unsafe { (declaration.register)(&mut registrar) }?;
-        let manifest = commit_dynamic_registrar(fxns, &registrar)?;
+        let manifest = commit_dynamic_registrar(fxns, &registrar, library.clone())?;
         dynamic_trace(format!(
             "registered module `{module}` items: {:?}",
             manifest.items
