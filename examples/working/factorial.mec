@@ -4,3 +4,5 @@ factorial(n<f64>) => <f64>
 
 n := 5
 res := factorial(n)
+
+factorial! := res === 120.0
