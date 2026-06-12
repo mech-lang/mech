@@ -41,7 +41,10 @@ pub trait ModuleLoader {
 fn missing_module_error(module: &str) -> MechError {
     let function_id = hash_str(module);
     MechError::new(
-        MissingFunctionError { function_id },
+        MissingFunctionError {
+            function_id,
+            function_name: Some(module.to_string()),
+        },
         Some(format!(
             "Missing module `{module}` (function id {function_id})"
         )),
@@ -54,7 +57,10 @@ fn missing_module_item_error(module: &str, item: &str) -> MechError {
     let name = format!("{module}/{item}");
     let function_id = hash_str(&name);
     MechError::new(
-        MissingFunctionError { function_id },
+        MissingFunctionError {
+            function_id,
+            function_name: Some(name.clone()),
+        },
         Some(format!(
             "Missing module item `{name}` (function id {function_id})"
         )),
@@ -66,7 +72,10 @@ fn missing_module_item_error(module: &str, item: &str) -> MechError {
 fn missing_alias_error(qualified_name: &str, local_name: &str) -> MechError {
     let function_id = hash_str(qualified_name);
     MechError::new(
-        MissingFunctionError { function_id },
+        MissingFunctionError {
+            function_id,
+            function_name: Some(qualified_name.to_string()),
+        },
         Some(format!(
             "Cannot alias `{qualified_name}` as `{local_name}`: function compiler not found (function id {function_id})"
         )),

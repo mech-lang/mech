@@ -413,6 +413,7 @@ pub fn set_comprehension(set_comp: &SetComprehension, p: &Interpreter) -> MResul
         None => Err(MechError::new(
             MissingFunctionError {
                 function_id: set_define_id,
+                function_name: Some("set/comprehension".to_string()),
             },
             None,
         )
@@ -442,6 +443,7 @@ pub fn matrix_comprehension(matrix_comp: &MatrixComprehension, p: &Interpreter) 
         None => Err(MechError::new(
             MissingFunctionError {
                 function_id: horzcat_id,
+                function_name: Some("matrix/comprehension".to_string()),
             },
             None,
         )

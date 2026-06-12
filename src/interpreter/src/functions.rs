@@ -139,6 +139,7 @@ pub fn function_call(fxn_call: &FunctionCall, env: Option<&Environment>, p: &Int
     None => Err(MechError::new(
       MissingFunctionError {
         function_id: fxn_name_id,
+        function_name: Some(fxn_call.name.to_string()),
       },
       None,
     )
@@ -856,6 +857,7 @@ pub(crate) fn detach_value(value: &Value) -> Value {
 #[derive(Debug, Clone)]
 pub struct MissingFunctionError {
   pub function_id: u64,
+  pub function_name: Option<String>,
 }
 
 impl MechErrorKind for MissingFunctionError {
@@ -863,7 +865,13 @@ impl MechErrorKind for MissingFunctionError {
     "MissingFunction"
   }
   fn message(&self) -> String {
-    format!("Function with id {} not found", self.function_id)
+    match &self.function_name {
+      Some(function_name) => format!(
+        "Function `{}` with id {} not found",
+        function_name, self.function_id
+      ),
+      None => format!("Function with id {} not found", self.function_id),
+    }
   }
 }
 

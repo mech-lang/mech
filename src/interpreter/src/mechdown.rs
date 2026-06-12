@@ -298,7 +298,13 @@ pub fn module_import_runtime(import: &ModuleImport, p: &Interpreter) -> MResult<
     }
     ModuleImportKind::Item => {
       let item = import.item.as_ref().ok_or_else(|| {
-        MechError::new(MissingFunctionError { function_id: hash_str(&module) }, None).with_compiler_loc()
+        MechError::new(
+          MissingFunctionError {
+            function_id: hash_str(&module),
+            function_name: Some(module.clone()),
+          },
+          None,
+        ).with_compiler_loc()
       })?.iter().map(|id| id.to_string()).collect::<Vec<_>>().join("/");
       import_module_item(&mut p.functions().borrow_mut(), &module, &item)?;
       Ok(Value::Empty)
