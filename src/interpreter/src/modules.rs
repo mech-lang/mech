@@ -194,15 +194,17 @@ impl ModuleLoader for DynamicModuleLoader {
         })?;
 
         let symbol_name = module_symbol_name(module);
-        let declaration_symbol: libloading::Symbol<*const *const DynamicModuleDeclaration> =
-            unsafe { library.get(&symbol_name) }.map_err(|err| {
-                Self::dynamic_error(format!(
+        let declaration_symbol = unsafe {
+            library.get::<*const DynamicModuleDeclaration>(&symbol_name)
+        }
+        .map_err(|err| {
+            Self::dynamic_error(format!(
                 "dynamic module declaration symbol missing for module `{module}` in `{}`: {err}",
                 library_path.display()
             ))
-            })?;
+        })?;
 
-        let declaration = unsafe { &***declaration_symbol };
+        let declaration = unsafe { &**declaration_symbol };
 
         if declaration.abi_version != MECH_DYNAMIC_MODULE_ABI_VERSION {
             return Err(Self::dynamic_error(format!(

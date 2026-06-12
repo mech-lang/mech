@@ -8,14 +8,12 @@ use mech_math as _;
 /// This is intentionally a Rust `dylib` boundary for modules built from the
 /// same source tree, same Rust toolchain, same `mech-core` version, and same
 /// lockfile as the host. It is not a stable external plugin ABI.
-static MATH_DECLARATION: DynamicModuleDeclaration = DynamicModuleDeclaration {
+#[unsafe(no_mangle)]
+pub static mech_module_math: DynamicModuleDeclaration = DynamicModuleDeclaration {
     abi_version: MECH_DYNAMIC_MODULE_ABI_VERSION,
     module: "math",
     register: register_math,
 };
-
-#[unsafe(no_mangle)]
-pub static mut mech_module_math: *const DynamicModuleDeclaration = &MATH_DECLARATION;
 
 unsafe fn register_math(registrar: &mut DynamicModuleRegistrar) -> MResult<()> {
     if registrar.module() != "math" {
