@@ -235,7 +235,6 @@ members = [
   "src/runtime",
   "src/wasm",
   "hosts/browser",
-  "machines/combinatorics",
 ]
 
 [build-dependencies]
