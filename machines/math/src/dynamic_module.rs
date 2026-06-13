@@ -1,60 +1,18 @@
 #![cfg(feature = "dynamic-module")]
 
-use mech_abi::{
-    MechExportV1, MechKernelFnV1, MechKernelKindV1, MechStatusV1, MechStrV1,
-    MECH_MODULE_ABI_VERSION_V1,
-};
+use mech_abi::{MechExportV1, MechKernelFnV1, MechKernelKindV1, MechStatusV1, MechStrV1};
 
 const MODULE_NAME: &[u8] = b"math";
 const EXPORT_NAME: &[u8] = b"math/round";
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn mech_module_abi_version_v1() -> u32 {
-    MECH_MODULE_ABI_VERSION_V1
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn mech_module_name_v1(out: *mut MechStrV1) -> MechStatusV1 {
-    if out.is_null() {
-        return MechStatusV1::NullPointer;
-    }
-
-    unsafe {
-        *out = MechStrV1::from_static(MODULE_NAME);
-    }
-
-    MechStatusV1::Ok
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn mech_module_export_count_v1() -> usize {
-    1
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn mech_module_get_export_v1(
-    index: usize,
-    out: *mut MechExportV1,
-) -> MechStatusV1 {
-    if out.is_null() {
-        return MechStatusV1::NullPointer;
-    }
-
-    if index != 0 {
-        return MechStatusV1::InvalidIndex;
-    }
-
-    unsafe {
-        *out = MechExportV1 {
-            name: MechStrV1::from_static(EXPORT_NAME),
-            kind: MechKernelKindV1::UnaryF64ToF64,
-            function: MechKernelFnV1 {
-                unary_f64_to_f64: math_round_f64_v1,
-            },
-        };
-    }
-
-    MechStatusV1::Ok
+mech_abi::mech_dynamic_module_v1! {
+    module: b"math",
+    exports: [
+        unary_f64_to_f64 {
+            name: b"math/round",
+            function: math_round_f64_v1,
+        },
+    ],
 }
 
 #[unsafe(no_mangle)]
@@ -75,6 +33,12 @@ mod tests {
     use super::*;
 
     #[test]
+    fn module_name_null_pointer_returns_null_pointer() {
+        let status = unsafe { mech_module_name_v1(core::ptr::null_mut()) };
+        assert_eq!(status, MechStatusV1::NullPointer);
+    }
+
+    #[test]
     fn module_metadata_reports_module_name() {
         let mut module_name = MechStrV1 { ptr: core::ptr::null(), len: 0 };
         let status = unsafe { mech_module_name_v1(&mut module_name) };
@@ -86,6 +50,23 @@ mod tests {
     #[test]
     fn module_export_count_is_one() {
         assert_eq!(unsafe { mech_module_export_count_v1() }, 1);
+    }
+
+    #[test]
+    fn module_get_export_rejects_null_output() {
+        let status = unsafe { mech_module_get_export_v1(0, core::ptr::null_mut()) };
+        assert_eq!(status, MechStatusV1::NullPointer);
+    }
+
+    #[test]
+    fn module_get_export_rejects_invalid_index() {
+        let mut export = MechExportV1 {
+            name: MechStrV1 { ptr: core::ptr::null(), len: 0 },
+            kind: MechKernelKindV1::UnaryF64ToF64,
+            function: MechKernelFnV1 { unary_f64_to_f64: math_round_f64_v1 },
+        };
+        let status = unsafe { mech_module_get_export_v1(1, &mut export) };
+        assert_eq!(status, MechStatusV1::InvalidIndex);
     }
 
     #[test]
