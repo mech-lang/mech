@@ -16,10 +16,10 @@ gitlab = { repository = "mech-lang/machines/math", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [lib]
-crate-type = ["rlib"]
+crate-type = ["rlib", "cdylib"]
 
 [features]
-no_std = ["mech-core/no_std"]
+no_std = ["dep:mech-core", "mech-core/no_std"]
 
 default = ["baselib", "pretty_print", "serde", "compiler", "program",
           "u8", "u16", "u32", "u64", "u128", 
@@ -67,7 +67,8 @@ math_default = ["arithmetic_default", "bessel_default", "exponential_default", "
                 "gamma_default", "logarithm_default", "ops_default", "ops_assign_default",
                 "root_default", "rounding_default", "stat_error_default", "trig_default"] 
 
-math = ["num-traits", "libm", "functions"]
+math = ["dep:num-traits", "dep:libm", "functions"]
+dynamic-module = ["dep:mech-abi", "dep:libm"]
 arithmetic = ["math"]
 bessel = ["math"]
 exp = ["math"]
@@ -188,7 +189,7 @@ variable_assign = ["statements", "mech-core/variable_assign"]
 kind_define = ["kind_annotation", "statements", "mech-core/kind_define"]
 kind_annotation = ["functions", "mech-core/kind_annotation"]
 formulas = ["mech-core/formulas"]
-functions = ["symbol_table", "mech-core/functions"]
+functions = ["symbol_table", "mech-core/functions", "dep:inventory", "dep:paste"]
 symbol_table = ["mech-core/symbol_table"]
 
 bool = ["mech-core/bool"]
@@ -257,12 +258,13 @@ dot_indexing = ["subscript", "mech-core/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle"]
 
 [dependencies]
-mech-core = {version = "0.3.5", default-features = false}
+mech-core = {version = "0.3.5", default-features = false, optional = true}
+mech-abi = { path = "../../src/abi", optional = true }
 
 libm = {version = "0.2.15", optional = true}
 simba = {version = "0.9.0", optional = true}
-paste = "1.0.15"
-inventory = "0.3.22"
+paste = { version = "1.0.15", optional = true }
+inventory = { version = "0.3.22", optional = true }
 nalgebra = {version="0.34.1", optional = true}
 
 [dependencies.num-traits]

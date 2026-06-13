@@ -228,7 +228,9 @@ impl ModuleLoader for DynamicModuleLoader {
                     len: 0,
                 },
                 kind: mech_abi::MechKernelKindV1::BinaryF64F64ToF64,
-                binary_f64_f64_to_f64: dynamic_null_binary_f64_f64_to_f64,
+                function: mech_abi::MechKernelFnV1 {
+                    binary_f64_f64_to_f64: dynamic_null_binary_f64_f64_to_f64,
+                },
             };
             Self::call_status(
                 unsafe { get_export_fn(index, &mut export) },
@@ -258,12 +260,32 @@ impl ModuleLoader for DynamicModuleLoader {
 
             match export.kind {
                 mech_abi::MechKernelKindV1::BinaryF64F64ToF64 => {
-                    let kernel = export.binary_f64_f64_to_f64;
+                    let kernel = unsafe { export.function.binary_f64_f64_to_f64 };
                     let compiler_name = export_name.clone();
 
                     fxns.insert_function_compiler(
                         compiler_name.clone(),
                         Arc::new(DynamicBinaryF64F64ToF64Compiler {
+                            name: compiler_name.clone(),
+                            kernel,
+                            _library: library.clone(),
+                        }),
+                    );
+
+                    dynamic_trace(format!(
+                        "registered dynamic export `{}` as item `{}`",
+                        compiler_name, item
+                    ));
+
+                    items.push(item);
+                }
+                mech_abi::MechKernelKindV1::UnaryF64ToF64 => {
+                    let kernel = unsafe { export.function.unary_f64_to_f64 };
+                    let compiler_name = export_name.clone();
+
+                    fxns.insert_function_compiler(
+                        compiler_name.clone(),
+                        Arc::new(DynamicUnaryF64ToF64Compiler {
                             name: compiler_name.clone(),
                             kernel,
                             _library: library.clone(),
@@ -291,6 +313,14 @@ impl ModuleLoader for DynamicModuleLoader {
 unsafe extern "C" fn dynamic_null_binary_f64_f64_to_f64(
     _n: f64,
     _k: f64,
+    _out: *mut f64,
+) -> mech_abi::MechStatusV1 {
+    mech_abi::MechStatusV1::Unsupported
+}
+
+#[cfg(feature = "dynamic-modules")]
+unsafe extern "C" fn dynamic_null_unary_f64_to_f64(
+    _input: f64,
     _out: *mut f64,
 ) -> mech_abi::MechStatusV1 {
     mech_abi::MechStatusV1::Unsupported
@@ -347,6 +377,39 @@ impl NativeFunctionCompiler for DynamicBinaryF64F64ToF64Compiler {
             name: self.name.clone(),
             n,
             k,
+            out: Ref::new(0.0),
+            kernel: self.kernel,
+            _library: self._library.clone(),
+        }))
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
+struct DynamicUnaryF64ToF64Compiler {
+    name: String,
+    kernel: mech_abi::MechUnaryF64ToF64KernelV1,
+    _library: Arc<libloading::Library>,
+}
+
+#[cfg(feature = "dynamic-modules")]
+impl NativeFunctionCompiler for DynamicUnaryF64ToF64Compiler {
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        if arguments.len() != 1 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: arguments.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+
+        let input = dynamic_arg_as_f64_ref(&arguments[0], &self.name)?;
+
+        Ok(Box::new(DynamicUnaryF64ToF64Function {
+            name: self.name.clone(),
+            input,
             out: Ref::new(0.0),
             kernel: self.kernel,
             _library: self._library.clone(),
@@ -418,6 +481,53 @@ impl MechFunctionImpl for DynamicBinaryF64F64ToF64Function {
 
 #[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
 impl MechFunctionCompiler for DynamicBinaryF64F64ToF64Function {
+    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+        Err(MechError::new(
+            GenericError {
+                msg: format!(
+                    "bytecode compilation is not implemented for dynamic function `{}`",
+                    self.name
+                ),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
+struct DynamicUnaryF64ToF64Function {
+    name: String,
+    input: Ref<f64>,
+    out: Ref<f64>,
+    kernel: mech_abi::MechUnaryF64ToF64KernelV1,
+    _library: Arc<libloading::Library>,
+}
+
+#[cfg(feature = "dynamic-modules")]
+impl MechFunctionImpl for DynamicUnaryF64ToF64Function {
+    fn solve(&self) {
+        let status = unsafe { (self.kernel)(*self.input.as_ptr(), self.out.as_mut_ptr()) };
+
+        if status != mech_abi::MechStatusV1::Ok {
+            dynamic_trace(format!(
+                "dynamic kernel `{}` returned status {:?}",
+                self.name, status
+            ));
+        }
+    }
+
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+
+    fn to_string(&self) -> String {
+        format!("dynamic {}", self.name)
+    }
+}
+
+#[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
+impl MechFunctionCompiler for DynamicUnaryF64ToF64Function {
     fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
         Err(MechError::new(
             GenericError {
