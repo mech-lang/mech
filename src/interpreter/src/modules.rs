@@ -305,14 +305,14 @@ impl ModuleLoader for DynamicModuleLoader {
                         items.push(item);
                     }
                 }
-                mech_abi::MechKernelKindV1::UnaryF64SliceToF64Slice => {
-                    let kernel = unsafe { export.function.unary_f64_slice_to_f64_slice };
+                mech_abi::MechKernelKindV1::UnaryF64ViewToF64View => {
+                    let kernel = unsafe { export.function.unary_f64_view_to_f64_view };
                     let compiler_name = export_name.clone();
 
                     dynamic_compilers
                         .entry(compiler_name.clone())
                         .or_default()
-                        .push(Arc::new(DynamicUnaryF64SliceToF64SliceCompiler {
+                        .push(Arc::new(DynamicUnaryF64ViewToF64ViewCompiler {
                             name: compiler_name.clone(),
                             kernel,
                             _library: library.clone(),
@@ -370,9 +370,9 @@ unsafe extern "C" fn dynamic_null_unary_f64_to_f64(
 }
 
 #[cfg(feature = "dynamic-modules")]
-unsafe extern "C" fn dynamic_null_unary_f64_slice_to_f64_slice(
-    _input: mech_abi::MechF64SliceV1,
-    _out: mech_abi::MechF64SliceMutV1,
+unsafe extern "C" fn dynamic_null_unary_f64_view_to_f64_view(
+    _input: mech_abi::MechF64ViewV1,
+    _out: mech_abi::MechF64ViewMutV1,
 ) -> mech_abi::MechStatusV1 {
     mech_abi::MechStatusV1::Unsupported
 }
@@ -499,14 +499,14 @@ impl NativeFunctionCompiler for DynamicUnaryF64ToF64Compiler {
 }
 
 #[cfg(feature = "dynamic-modules")]
-struct DynamicUnaryF64SliceToF64SliceCompiler {
+struct DynamicUnaryF64ViewToF64ViewCompiler {
     name: String,
-    kernel: mech_abi::MechUnaryF64SliceToF64SliceKernelV1,
+    kernel: mech_abi::MechUnaryF64ViewToF64ViewKernelV1,
     _library: Arc<libloading::Library>,
 }
 
 #[cfg(feature = "dynamic-modules")]
-impl NativeFunctionCompiler for DynamicUnaryF64SliceToF64SliceCompiler {
+impl NativeFunctionCompiler for DynamicUnaryF64ViewToF64ViewCompiler {
     fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
@@ -525,11 +525,13 @@ impl NativeFunctionCompiler for DynamicUnaryF64SliceToF64SliceCompiler {
         let len = rows * cols;
         let out = Matrix::from_vec(vec![0.0; len], rows, cols);
 
-        Ok(Box::new(DynamicUnaryF64SliceToF64SliceFunction {
+        Ok(Box::new(DynamicUnaryF64ViewToF64ViewFunction {
             name: self.name.clone(),
             input,
             out,
             len,
+            rows,
+            cols,
             kernel: self.kernel,
             _library: self._library.clone(),
         }))
@@ -693,17 +695,19 @@ impl MechFunctionCompiler for DynamicUnaryF64ToF64Function {
 }
 
 #[cfg(feature = "dynamic-modules")]
-struct DynamicUnaryF64SliceToF64SliceFunction {
+struct DynamicUnaryF64ViewToF64ViewFunction {
     name: String,
     input: Matrix<f64>,
     out: Matrix<f64>,
     len: usize,
-    kernel: mech_abi::MechUnaryF64SliceToF64SliceKernelV1,
+    rows: usize,
+    cols: usize,
+    kernel: mech_abi::MechUnaryF64ViewToF64ViewKernelV1,
     _library: Arc<libloading::Library>,
 }
 
 #[cfg(feature = "dynamic-modules")]
-impl MechFunctionImpl for DynamicUnaryF64SliceToF64SliceFunction {
+impl MechFunctionImpl for DynamicUnaryF64ViewToF64ViewFunction {
     fn solve(&self) {
         let mut input_vec = Vec::with_capacity(self.len);
         for index in 1..=self.len {
@@ -714,13 +718,17 @@ impl MechFunctionImpl for DynamicUnaryF64SliceToF64SliceFunction {
 
         let status = unsafe {
             (self.kernel)(
-                mech_abi::MechF64SliceV1 {
+                mech_abi::MechF64ViewV1 {
                     ptr: input_vec.as_ptr(),
                     len: input_vec.len(),
+                    rows: self.rows,
+                    cols: self.cols,
                 },
-                mech_abi::MechF64SliceMutV1 {
+                mech_abi::MechF64ViewMutV1 {
                     ptr: out_vec.as_mut_ptr(),
                     len: out_vec.len(),
+                    rows: self.rows,
+                    cols: self.cols,
                 },
             )
         };
@@ -745,7 +753,7 @@ impl MechFunctionImpl for DynamicUnaryF64SliceToF64SliceFunction {
 }
 
 #[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
-impl MechFunctionCompiler for DynamicUnaryF64SliceToF64SliceFunction {
+impl MechFunctionCompiler for DynamicUnaryF64ViewToF64ViewFunction {
     fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
         Err(MechError::new(
             GenericError {

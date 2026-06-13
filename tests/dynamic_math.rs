@@ -1,7 +1,7 @@
 extern crate mech_core;
 
 use mech::program::{MechProgram, MechProgramConfig};
-use mech_core::{Value, structures::matrix::Matrix};
+use mech_core::{structures::matrix::Matrix, Value};
 
 fn run(source: &str) -> bool {
     let mut program = MechProgram::new(MechProgramConfig::default());

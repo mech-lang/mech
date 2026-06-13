@@ -4,7 +4,7 @@ pub mod round {
         libm::round(input)
     }
 
-    pub fn slice_f64(input: &[f64], out: &mut [f64]) {
+    pub fn view_f64(input: &[f64], out: &mut [f64]) {
         for (src, dst) in input.iter().zip(out.iter_mut()) {
             *dst = scalar_f64(*src);
         }
