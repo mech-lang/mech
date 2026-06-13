@@ -1,4 +1,3 @@
-use core::ffi::c_void;
 use mech_abi::{
     MechExportV1, MechKernelKindV1, MechStatusV1, MechStrV1, MECH_MODULE_ABI_VERSION_V1,
 };
@@ -46,7 +45,7 @@ pub unsafe extern "C" fn mech_module_get_export_v1(
         *out = MechExportV1 {
             name: MechStrV1::from_static(EXPORT_NAME),
             kind: MechKernelKindV1::BinaryF64F64ToF64,
-            function: combinatorics_n_choose_k_f64_v1 as *const c_void,
+            binary_f64_f64_to_f64: combinatorics_n_choose_k_f64_v1,
         };
     }
 
@@ -96,4 +95,27 @@ pub unsafe extern "C" fn combinatorics_n_choose_k_f64_v1(
     }
 
     MechStatusV1::Ok
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn n_choose_k_f64_returns_expected_result() {
+        let mut out = 0.0;
+        let status = unsafe { combinatorics_n_choose_k_f64_v1(10.0, 2.0, &mut out) };
+
+        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(out, 45.0);
+    }
+
+    #[test]
+    fn n_choose_k_returns_zero_when_k_exceeds_n() {
+        let mut out = 123.0;
+        let status = unsafe { combinatorics_n_choose_k_f64_v1(2.0, 10.0, &mut out) };
+
+        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(out, 0.0);
+    }
 }

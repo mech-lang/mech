@@ -215,29 +215,24 @@ impl ModuleLoader for DynamicModuleLoader {
                     len: 0,
                 },
                 kind: mech_abi::MechKernelKindV1::BinaryF64F64ToF64,
-                function: std::ptr::null(),
+                binary_f64_f64_to_f64: dynamic_null_binary_f64_f64_to_f64,
             };
             Self::call_status(
                 unsafe { get_export_fn(index, &mut export) },
                 format!("mech_module_get_export_v1({index})"),
             )?;
 
-            if export.function.is_null() {
-                return Err(Self::dynamic_error(format!(
-                    "dynamic export {index} has null function pointer"
-                )));
-            }
-
             let export_name = unsafe { mech_str_to_string(export.name) }?;
-            let item = export_name
-                .strip_prefix(&module_prefix)
-                .unwrap_or(&export_name)
-                .to_string();
+            let Some(item) = export_name.strip_prefix(&module_prefix) else {
+                return Err(Self::dynamic_error(format!(
+                    "dynamic module `{module}` exported `{export_name}`, which is outside `{module}/`"
+                )));
+            };
+            let item = item.to_string();
 
             match export.kind {
                 mech_abi::MechKernelKindV1::BinaryF64F64ToF64 => {
-                    let kernel: mech_abi::MechBinaryF64F64ToF64KernelV1 =
-                        unsafe { std::mem::transmute(export.function) };
+                    let kernel = export.binary_f64_f64_to_f64;
 
                     fxns.insert_function_compiler(
                         export_name.clone(),
@@ -257,6 +252,15 @@ impl ModuleLoader for DynamicModuleLoader {
             items,
         })
     }
+}
+
+#[cfg(feature = "dynamic-modules")]
+unsafe extern "C" fn dynamic_null_binary_f64_f64_to_f64(
+    _n: f64,
+    _k: f64,
+    _out: *mut f64,
+) -> mech_abi::MechStatusV1 {
+    mech_abi::MechStatusV1::Unsupported
 }
 
 #[cfg(feature = "dynamic-modules")]

@@ -1,7 +1,5 @@
 #![allow(non_camel_case_types)]
 
-use core::ffi::c_void;
-
 pub const MECH_MODULE_ABI_VERSION_V1: u32 = 1;
 
 #[repr(i32)]
@@ -32,6 +30,9 @@ impl MechStrV1 {
     }
 }
 
+// This v1 prototype intentionally contains one kernel kind.
+// Add a #[repr(C)] union of typed kernel function pointers when the second
+// kernel kind is introduced.
 #[repr(u32)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MechKernelKindV1 {
@@ -46,7 +47,10 @@ pub type MechBinaryF64F64ToF64KernelV1 =
 pub struct MechExportV1 {
     pub name: MechStrV1,
     pub kind: MechKernelKindV1,
-    pub function: *const c_void,
+
+    // In v1 there is only one kernel kind, so keep this typed.
+    // When more kinds are added, replace this with a #[repr(C)] union.
+    pub binary_f64_f64_to_f64: MechBinaryF64F64ToF64KernelV1,
 }
 
 pub type MechModuleAbiVersionFnV1 = unsafe extern "C" fn() -> u32;
