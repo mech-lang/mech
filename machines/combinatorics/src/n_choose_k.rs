@@ -4,7 +4,7 @@ use mech_core::value::ToUsize;
 use mech_core::structures::matrix::Matrix;
 
 use std::fmt::Debug;
-use std::ops::{Add, AddAssign, Sub, Div};
+use std::ops::{Add, AddAssign, Sub, Div, Mul};
 use num_traits::{Zero, One};
 use itertools::Itertools;
 use paste::paste;
@@ -47,7 +47,7 @@ impl<T> MechFunctionImpl for NChooseK<T>
 where
   T: Copy + Debug + Clone + Sync + Send + 'static +
       Add<Output = T> + AddAssign +
-      Sub<Output = T> + Div<Output = T> +
+      Sub<Output = T> + Div<Output = T> + Mul<Output = T> +
       Zero + One +
       PartialEq + PartialOrd,
   Ref<T>: ToValue,
@@ -59,19 +59,7 @@ where
     unsafe {
       let n = *n_ptr;
       let k = *k_ptr;
-      if k > n {
-        *out_ptr = T::zero(); // undefined for k > n
-        return;
-      }
-      let mut result = T::one();
-      let mut i = T::zero();
-      while i < k {
-        let numerator = n - i;
-        let denominator = i + T::one();
-        result = result * numerator / denominator;
-        i = i + T::one();
-      }
-      *out_ptr = result;
+      *out_ptr = crate::kernels::n_choose_k::scalar(n, k);
     }
   }
   fn out(&self) -> Value {self.out.to_value()}
