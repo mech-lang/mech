@@ -20,7 +20,7 @@ crate-type = ["rlib", "cdylib"]
 
 [features]
 no_std = ["mech-core/no_std"]
-dynamic-module = ["dep:mech-abi"]
+dynamic-module = ["dep:mech-abi", "dep:num-traits"]
 
 default = ["baselib", "pretty_print", "serde", "compiler", "program",
           "u8", "u16", "u32", "u64", "u128", 
@@ -51,7 +51,7 @@ baselib = ["bool", "string",
 
 combinatorics_default = ["n_choose_k"]
 combinatorics = ["functions"]
-n_choose_k = ["itertools", "num-traits", "paste", "inventory", "combinatorics"]
+n_choose_k = ["dep:itertools", "dep:num-traits", "dep:paste", "dep:inventory", "combinatorics"]
 
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
@@ -166,5 +166,8 @@ version = "0.2.19"
 default-features = false
 features = ["libm"]
 optional = true
+
+[patch.crates-io]
+mech-core = { path = "../../src/core" }
 
 [workspace]
