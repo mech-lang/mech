@@ -89,3 +89,97 @@ pub type MechModuleNameFnV1 = unsafe extern "C" fn(out: *mut MechStrV1) -> MechS
 pub type MechModuleExportCountFnV1 = unsafe extern "C" fn() -> usize;
 pub type MechModuleGetExportFnV1 =
     unsafe extern "C" fn(index: usize, out: *mut MechExportV1) -> MechStatusV1;
+
+/// Generates the standard V1 dynamic module metadata and export symbols.
+///
+/// The generated ABI exposes only module metadata and typed scalar kernel
+/// pointers. Export order is the declaration order in the macro invocation.
+#[macro_export]
+macro_rules! mech_dynamic_module_v1 {
+    (
+        module: $module_name:expr,
+        exports: [
+            $(
+                $kind:ident {
+                    name: $export_name:expr,
+                    function: $function:path $(,)?
+                }
+            ),* $(,)?
+        ],
+    ) => {
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn mech_module_abi_version_v1() -> u32 {
+            $crate::MECH_MODULE_ABI_VERSION_V1
+        }
+
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn mech_module_name_v1(
+            out: *mut $crate::MechStrV1,
+        ) -> $crate::MechStatusV1 {
+            if out.is_null() {
+                return $crate::MechStatusV1::NullPointer;
+            }
+
+            unsafe {
+                *out = $crate::MechStrV1::from_static($module_name);
+            }
+
+            $crate::MechStatusV1::Ok
+        }
+
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn mech_module_export_count_v1() -> usize {
+            <[()]>::len(&[$($crate::mech_dynamic_module_v1!(@unit $kind)),*])
+        }
+
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn mech_module_get_export_v1(
+            index: usize,
+            out: *mut $crate::MechExportV1,
+        ) -> $crate::MechStatusV1 {
+            if out.is_null() {
+                return $crate::MechStatusV1::NullPointer;
+            }
+
+            let exports: &[$crate::MechExportV1] = &[
+                $(
+                    $crate::mech_dynamic_module_v1!(
+                        @export $kind, $export_name, $function
+                    )
+                ),*
+            ];
+
+            let Some(export) = exports.get(index).copied() else {
+                return $crate::MechStatusV1::InvalidIndex;
+            };
+
+            unsafe {
+                *out = export;
+            }
+
+            $crate::MechStatusV1::Ok
+        }
+    };
+
+    (@unit $kind:ident) => { () };
+
+    (@export unary_f64_to_f64, $export_name:expr, $function:path) => {
+        $crate::MechExportV1 {
+            name: $crate::MechStrV1::from_static($export_name),
+            kind: $crate::MechKernelKindV1::UnaryF64ToF64,
+            function: $crate::MechKernelFnV1 {
+                unary_f64_to_f64: $function,
+            },
+        }
+    };
+
+    (@export binary_f64_f64_to_f64, $export_name:expr, $function:path) => {
+        $crate::MechExportV1 {
+            name: $crate::MechStrV1::from_static($export_name),
+            kind: $crate::MechKernelKindV1::BinaryF64F64ToF64,
+            function: $crate::MechKernelFnV1 {
+                binary_f64_f64_to_f64: $function,
+            },
+        }
+    };
+}
