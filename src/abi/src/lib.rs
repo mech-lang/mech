@@ -37,14 +37,25 @@ impl MechStrV1 {
     }
 }
 
-// This v1 prototype intentionally contains one kernel kind.
-// Add a #[repr(C)] union of typed kernel function pointers when the second
-// kernel kind is introduced.
+/// Scalar kernel shape exported by a dynamic module.
+///
+/// V1 supports scalar typed function pointers through `MechKernelFnV1`, a
+/// tagged union keyed by this enum. The host must read only the union field
+/// corresponding to `kind`.
 #[repr(u32)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MechKernelKindV1 {
-    BinaryF64F64ToF64 = 1,
+    UnaryF64ToF64 = 1,
+    BinaryF64F64ToF64 = 2,
 }
+
+/// Kernel for a unary scalar f64 function.
+///
+/// The host owns all Mech runtime values. The module receives one copied
+/// scalar input and writes one scalar result into `out`.
+/// The module must not retain `out` after returning.
+pub type MechUnaryF64ToF64KernelV1 =
+    unsafe extern "C" fn(input: f64, out: *mut f64) -> MechStatusV1;
 
 /// Kernel for a binary scalar f64 function.
 ///
@@ -54,20 +65,23 @@ pub enum MechKernelKindV1 {
 pub type MechBinaryF64F64ToF64KernelV1 =
     unsafe extern "C" fn(n: f64, k: f64, out: *mut f64) -> MechStatusV1;
 
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub union MechKernelFnV1 {
+    pub unary_f64_to_f64: MechUnaryF64ToF64KernelV1,
+    pub binary_f64_f64_to_f64: MechBinaryF64F64ToF64KernelV1,
+}
+
 /// One exported Mech function/kernel.
 ///
-/// V1 intentionally supports a single typed kernel function pointer.
-/// When a second kernel kind is added, replace the typed function field with
-/// a `#[repr(C)]` union of typed function pointers keyed by `kind`.
+/// V1 supports scalar typed function pointers through a tagged union. The host
+/// must read only the `function` union field corresponding to `kind`.
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct MechExportV1 {
     pub name: MechStrV1,
     pub kind: MechKernelKindV1,
-
-    // In v1 there is only one kernel kind, so keep this typed.
-    // When more kinds are added, replace this with a #[repr(C)] union.
-    pub binary_f64_f64_to_f64: MechBinaryF64F64ToF64KernelV1,
+    pub function: MechKernelFnV1,
 }
 
 pub type MechModuleAbiVersionFnV1 = unsafe extern "C" fn() -> u32;

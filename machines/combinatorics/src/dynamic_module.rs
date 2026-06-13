@@ -1,7 +1,7 @@
 #![cfg(feature = "dynamic-module")]
 
 use mech_abi::{
-    MechExportV1, MechKernelKindV1, MechStatusV1, MechStrV1, MECH_MODULE_ABI_VERSION_V1,
+    MechExportV1, MechKernelFnV1, MechKernelKindV1, MechStatusV1, MechStrV1, MECH_MODULE_ABI_VERSION_V1,
 };
 
 const MODULE_NAME: &[u8] = b"combinatorics";
@@ -47,7 +47,9 @@ pub unsafe extern "C" fn mech_module_get_export_v1(
         *out = MechExportV1 {
             name: MechStrV1::from_static(EXPORT_NAME),
             kind: MechKernelKindV1::BinaryF64F64ToF64,
-            binary_f64_f64_to_f64: combinatorics_n_choose_k_f64_v1,
+            function: MechKernelFnV1 {
+                binary_f64_f64_to_f64: combinatorics_n_choose_k_f64_v1,
+            },
         };
     }
 
@@ -110,7 +112,9 @@ mod tests {
                 len: 0,
             },
             kind: MechKernelKindV1::BinaryF64F64ToF64,
-            binary_f64_f64_to_f64: combinatorics_n_choose_k_f64_v1,
+            function: MechKernelFnV1 {
+                binary_f64_f64_to_f64: combinatorics_n_choose_k_f64_v1,
+            },
         };
 
         let status = unsafe { mech_module_get_export_v1(1, &mut export) };
@@ -131,7 +135,9 @@ mod tests {
                 len: 0,
             },
             kind: MechKernelKindV1::BinaryF64F64ToF64,
-            binary_f64_f64_to_f64: combinatorics_n_choose_k_f64_v1,
+            function: MechKernelFnV1 {
+                binary_f64_f64_to_f64: combinatorics_n_choose_k_f64_v1,
+            },
         };
         let status = unsafe { mech_module_get_export_v1(0, &mut export) };
         let name = unsafe { core::slice::from_raw_parts(export.name.ptr, export.name.len) };
