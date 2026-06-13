@@ -1,5 +1,7 @@
 use crate::*;
 #[cfg(feature = "dynamic-modules")]
+use std::collections::HashSet;
+#[cfg(feature = "dynamic-modules")]
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -207,6 +209,17 @@ impl ModuleLoader for DynamicModuleLoader {
         let mut items = Vec::new();
         let module_prefix = format!("{module}/");
         let export_count = unsafe { export_count_fn() };
+        if export_count == 0 {
+            return Err(Self::dynamic_error(format!(
+                "dynamic module `{module}` exported no functions"
+            )));
+        }
+
+        dynamic_trace(format!(
+            "dynamic module `{module}` exports {export_count} function(s)"
+        ));
+
+        let mut seen_exports = HashSet::<String>::new();
 
         for index in 0..export_count {
             let mut export = mech_abi::MechExportV1 {
@@ -223,25 +236,45 @@ impl ModuleLoader for DynamicModuleLoader {
             )?;
 
             let export_name = unsafe { mech_str_to_string(export.name) }?;
+            if !seen_exports.insert(export_name.clone()) {
+                return Err(Self::dynamic_error(format!(
+                    "dynamic module `{module}` exported duplicate function `{export_name}`"
+                )));
+            }
+
             let Some(item) = export_name.strip_prefix(&module_prefix) else {
                 return Err(Self::dynamic_error(format!(
                     "dynamic module `{module}` exported `{export_name}`, which is outside `{module}/`"
                 )));
             };
+
+            if item.is_empty() {
+                return Err(Self::dynamic_error(format!(
+                    "dynamic module `{module}` exported an empty item name via `{export_name}`"
+                )));
+            }
+
             let item = item.to_string();
 
             match export.kind {
                 mech_abi::MechKernelKindV1::BinaryF64F64ToF64 => {
                     let kernel = export.binary_f64_f64_to_f64;
+                    let compiler_name = export_name.clone();
 
                     fxns.insert_function_compiler(
-                        export_name.clone(),
+                        compiler_name.clone(),
                         Arc::new(DynamicBinaryF64F64ToF64Compiler {
-                            name: export_name,
+                            name: compiler_name.clone(),
                             kernel,
                             _library: library.clone(),
                         }),
                     );
+
+                    dynamic_trace(format!(
+                        "registered dynamic export `{}` as item `{}`",
+                        compiler_name, item
+                    ));
+
                     items.push(item);
                 }
             }

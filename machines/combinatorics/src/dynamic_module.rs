@@ -83,6 +83,47 @@ mod tests {
     }
 
     #[test]
+    fn module_metadata_reports_module_name() {
+        let mut module_name = MechStrV1 {
+            ptr: core::ptr::null(),
+            len: 0,
+        };
+
+        let status = unsafe { mech_module_name_v1(&mut module_name) };
+        assert_eq!(status, MechStatusV1::Ok);
+
+        let name = unsafe { core::slice::from_raw_parts(module_name.ptr, module_name.len) };
+        assert_eq!(name, MODULE_NAME);
+    }
+
+    #[test]
+    fn module_get_export_rejects_null_output() {
+        let status = unsafe { mech_module_get_export_v1(0, core::ptr::null_mut()) };
+        assert_eq!(status, MechStatusV1::NullPointer);
+    }
+
+    #[test]
+    fn module_get_export_rejects_invalid_index() {
+        let mut export = MechExportV1 {
+            name: MechStrV1 {
+                ptr: core::ptr::null(),
+                len: 0,
+            },
+            kind: MechKernelKindV1::BinaryF64F64ToF64,
+            binary_f64_f64_to_f64: combinatorics_n_choose_k_f64_v1,
+        };
+
+        let status = unsafe { mech_module_get_export_v1(1, &mut export) };
+        assert_eq!(status, MechStatusV1::InvalidIndex);
+    }
+
+    #[test]
+    fn n_choose_k_rejects_null_output() {
+        let status = unsafe { combinatorics_n_choose_k_f64_v1(10.0, 2.0, core::ptr::null_mut()) };
+        assert_eq!(status, MechStatusV1::NullPointer);
+    }
+
+    #[test]
     fn export_metadata_describes_n_choose_k_kernel() {
         let mut export = MechExportV1 {
             name: MechStrV1 {
