@@ -431,6 +431,30 @@ impl NativeFunctionCompiler for DynamicOverloadedCompiler {
 }
 
 #[cfg(feature = "dynamic-modules")]
+#[derive(Clone)]
+enum DynamicF64Arg {
+    Scalar(Ref<f64>),
+    Matrix(Matrix<f64>),
+}
+
+#[cfg(feature = "dynamic-modules")]
+impl DynamicF64Arg {
+    fn matrix_shape(&self) -> Option<(usize, usize)> {
+        match self {
+            DynamicF64Arg::Scalar(_) => None,
+            DynamicF64Arg::Matrix(matrix) => Some((matrix.rows(), matrix.cols())),
+        }
+    }
+
+    fn value_at(&self, index: usize) -> f64 {
+        match self {
+            DynamicF64Arg::Scalar(value) => unsafe { *value.as_ptr() },
+            DynamicF64Arg::Matrix(matrix) => matrix.index1d(index),
+        }
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
 struct DynamicBinaryF64F64ToF64Compiler {
     name: String,
     kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
@@ -451,17 +475,49 @@ impl NativeFunctionCompiler for DynamicBinaryF64F64ToF64Compiler {
             .with_compiler_loc());
         }
 
-        let n = dynamic_arg_as_f64_ref(&arguments[0], &self.name)?;
-        let k = dynamic_arg_as_f64_ref(&arguments[1], &self.name)?;
+        let lhs = dynamic_arg_as_f64_scalar_or_matrix(&arguments[0], &self.name)?;
+        let rhs = dynamic_arg_as_f64_scalar_or_matrix(&arguments[1], &self.name)?;
 
-        Ok(Box::new(DynamicBinaryF64F64ToF64Function {
-            name: self.name.clone(),
-            n,
-            k,
-            out: Ref::new(0.0),
-            kernel: self.kernel,
-            _library: self._library.clone(),
-        }))
+        match (&lhs, &rhs) {
+            (DynamicF64Arg::Scalar(n), DynamicF64Arg::Scalar(k)) => {
+                Ok(Box::new(DynamicBinaryF64F64ToF64Function {
+                    name: self.name.clone(),
+                    n: n.clone(),
+                    k: k.clone(),
+                    out: Ref::new(0.0),
+                    kernel: self.kernel,
+                    _library: self._library.clone(),
+                }))
+            }
+
+            _ => {
+                let (rows, cols) = dynamic_binary_broadcast_shape(&lhs, &rhs, &self.name)?;
+                let Some(len) = rows.checked_mul(cols) else {
+                    return Err(MechError::new(
+                        GenericError {
+                            msg: format!(
+                                "dynamic function `{}` broadcast shape overflowed: {} x {}",
+                                self.name, rows, cols
+                            ),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                };
+
+                let out = Matrix::from_vec(vec![0.0; len], rows, cols);
+
+                Ok(Box::new(DynamicBinaryF64F64BroadcastFunction {
+                    name: self.name.clone(),
+                    lhs,
+                    rhs,
+                    out,
+                    len,
+                    kernel: self.kernel,
+                    _library: self._library.clone(),
+                }))
+            }
+        }
     }
 }
 
@@ -568,6 +624,84 @@ fn dynamic_arg_as_f64_ref(value: &Value, fxn_name: &str) -> MResult<Ref<f64>> {
 }
 
 #[cfg(feature = "dynamic-modules")]
+fn dynamic_arg_as_f64_scalar_or_matrix(value: &Value, fxn_name: &str) -> MResult<DynamicF64Arg> {
+    match value {
+        #[cfg(feature = "f64")]
+        Value::F64(v) => Ok(DynamicF64Arg::Scalar(v.clone())),
+
+        #[cfg(all(feature = "matrix", feature = "f64"))]
+        Value::MatrixF64(matrix) => Ok(DynamicF64Arg::Matrix(matrix.clone())),
+
+        Value::MutableReference(v) => {
+            let borrowed = v.borrow();
+            match &*borrowed {
+                #[cfg(feature = "f64")]
+                Value::F64(inner) => Ok(DynamicF64Arg::Scalar(inner.clone())),
+
+                #[cfg(all(feature = "matrix", feature = "f64"))]
+                Value::MatrixF64(matrix) => Ok(DynamicF64Arg::Matrix(matrix.clone())),
+
+                x => Err(MechError::new(
+                    UnhandledFunctionArgumentKind1 {
+                        arg: x.kind(),
+                        fxn_name: fxn_name.to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()),
+            }
+        }
+
+        x => Err(MechError::new(
+            UnhandledFunctionArgumentKind1 {
+                arg: x.kind(),
+                fxn_name: fxn_name.to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc()),
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn dynamic_binary_broadcast_shape(
+    lhs: &DynamicF64Arg,
+    rhs: &DynamicF64Arg,
+    fxn_name: &str,
+) -> MResult<(usize, usize)> {
+    match (lhs.matrix_shape(), rhs.matrix_shape()) {
+        (Some((lhs_rows, lhs_cols)), Some((rhs_rows, rhs_cols))) => {
+            if lhs_rows == rhs_rows && lhs_cols == rhs_cols {
+                Ok((lhs_rows, lhs_cols))
+            } else {
+                Err(MechError::new(
+                    GenericError {
+                        msg: format!(
+                            "dynamic function `{}` cannot broadcast matrix shapes {}x{} and {}x{}",
+                            fxn_name, lhs_rows, lhs_cols, rhs_rows, rhs_cols
+                        ),
+                    },
+                    None,
+                )
+                .with_compiler_loc())
+            }
+        }
+        (Some(shape), None) => Ok(shape),
+        (None, Some(shape)) => Ok(shape),
+        (None, None) => Err(MechError::new(
+            GenericError {
+                msg: format!(
+                    "dynamic function `{}` expected at least one matrix argument for broadcast",
+                    fxn_name
+                ),
+            },
+            None,
+        )
+        .with_compiler_loc()),
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
 fn dynamic_arg_as_f64_matrix(value: &Value, fxn_name: &str) -> MResult<Matrix<f64>> {
     match value {
         #[cfg(all(feature = "matrix", feature = "f64"))]
@@ -633,6 +767,68 @@ impl MechFunctionImpl for DynamicBinaryF64F64ToF64Function {
 
 #[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
 impl MechFunctionCompiler for DynamicBinaryF64F64ToF64Function {
+    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+        Err(MechError::new(
+            GenericError {
+                msg: format!(
+                    "bytecode compilation is not implemented for dynamic function `{}`",
+                    self.name
+                ),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
+struct DynamicBinaryF64F64BroadcastFunction {
+    name: String,
+    lhs: DynamicF64Arg,
+    rhs: DynamicF64Arg,
+    out: Matrix<f64>,
+    len: usize,
+    kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
+    _library: Arc<libloading::Library>,
+}
+
+#[cfg(feature = "dynamic-modules")]
+impl MechFunctionImpl for DynamicBinaryF64F64BroadcastFunction {
+    fn solve(&self) {
+        let mut out_vec = Vec::with_capacity(self.len);
+
+        for index in 1..=self.len {
+            let lhs = self.lhs.value_at(index);
+            let rhs = self.rhs.value_at(index);
+            let mut out = 0.0;
+
+            let status = unsafe { (self.kernel)(lhs, rhs, &mut out as *mut f64) };
+
+            if status != mech_abi::MechStatusV1::Ok {
+                dynamic_trace(format!(
+                    "dynamic kernel `{}` returned status {:?}",
+                    self.name, status
+                ));
+                return;
+            }
+
+            out_vec.push(out);
+        }
+
+        self.out.set(out_vec);
+    }
+
+    fn out(&self) -> Value {
+        Value::MatrixF64(self.out.clone())
+    }
+
+    fn to_string(&self) -> String {
+        format!("dynamic {}", self.name)
+    }
+}
+
+#[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
+impl MechFunctionCompiler for DynamicBinaryF64F64BroadcastFunction {
     fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
         Err(MechError::new(
             GenericError {
