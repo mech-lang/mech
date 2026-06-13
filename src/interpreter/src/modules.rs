@@ -1,6 +1,6 @@
 use crate::*;
 #[cfg(feature = "dynamic-modules")]
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 #[cfg(feature = "dynamic-modules")]
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -219,7 +219,8 @@ impl ModuleLoader for DynamicModuleLoader {
             "dynamic module `{module}` exports {export_count} function(s)"
         ));
 
-        let mut seen_exports = HashSet::<String>::new();
+        let mut seen_exports = HashSet::<(String, mech_abi::MechKernelKindV1)>::new();
+        let mut dynamic_compilers = HashMap::<String, Vec<Arc<dyn NativeFunctionCompiler>>>::new();
 
         for index in 0..export_count {
             let mut export = mech_abi::MechExportV1 {
@@ -238,9 +239,10 @@ impl ModuleLoader for DynamicModuleLoader {
             )?;
 
             let export_name = unsafe { mech_str_to_string(export.name) }?;
-            if !seen_exports.insert(export_name.clone()) {
+            if !seen_exports.insert((export_name.clone(), export.kind)) {
                 return Err(Self::dynamic_error(format!(
-                    "dynamic module `{module}` exported duplicate function `{export_name}`"
+                    "dynamic module `{module}` exported duplicate function `{export_name}` with kind {:?}",
+                    export.kind
                 )));
             }
 
@@ -263,62 +265,83 @@ impl ModuleLoader for DynamicModuleLoader {
                     let kernel = unsafe { export.function.binary_f64_f64_to_f64 };
                     let compiler_name = export_name.clone();
 
-                    fxns.insert_function_compiler(
-                        compiler_name.clone(),
-                        Arc::new(DynamicBinaryF64F64ToF64Compiler {
+                    dynamic_compilers
+                        .entry(compiler_name.clone())
+                        .or_default()
+                        .push(Arc::new(DynamicBinaryF64F64ToF64Compiler {
                             name: compiler_name.clone(),
                             kernel,
                             _library: library.clone(),
-                        }),
-                    );
+                        }));
 
                     dynamic_trace(format!(
                         "registered dynamic export `{}` as item `{}`",
                         compiler_name, item
                     ));
 
-                    items.push(item);
+                    if !items.iter().any(|existing| existing == &item) {
+                        items.push(item);
+                    }
                 }
                 mech_abi::MechKernelKindV1::UnaryF64ToF64 => {
                     let kernel = unsafe { export.function.unary_f64_to_f64 };
                     let compiler_name = export_name.clone();
 
-                    fxns.insert_function_compiler(
-                        compiler_name.clone(),
-                        Arc::new(DynamicUnaryF64ToF64Compiler {
+                    dynamic_compilers
+                        .entry(compiler_name.clone())
+                        .or_default()
+                        .push(Arc::new(DynamicUnaryF64ToF64Compiler {
                             name: compiler_name.clone(),
                             kernel,
                             _library: library.clone(),
-                        }),
-                    );
+                        }));
 
                     dynamic_trace(format!(
                         "registered dynamic export `{}` as item `{}`",
                         compiler_name, item
                     ));
 
-                    items.push(item);
+                    if !items.iter().any(|existing| existing == &item) {
+                        items.push(item);
+                    }
                 }
                 mech_abi::MechKernelKindV1::UnaryF64SliceToF64Slice => {
                     let kernel = unsafe { export.function.unary_f64_slice_to_f64_slice };
                     let compiler_name = export_name.clone();
 
-                    fxns.insert_function_compiler(
-                        compiler_name.clone(),
-                        Arc::new(DynamicUnaryF64SliceToF64SliceCompiler {
+                    dynamic_compilers
+                        .entry(compiler_name.clone())
+                        .or_default()
+                        .push(Arc::new(DynamicUnaryF64SliceToF64SliceCompiler {
                             name: compiler_name.clone(),
                             kernel,
                             _library: library.clone(),
-                        }),
-                    );
+                        }));
 
                     dynamic_trace(format!(
                         "registered dynamic export `{}` as item `{}`",
                         compiler_name, item
                     ));
 
-                    items.push(item);
+                    if !items.iter().any(|existing| existing == &item) {
+                        items.push(item);
+                    }
                 }
+            }
+        }
+
+        for (compiler_name, compilers) in dynamic_compilers {
+            if compilers.len() == 1 {
+                let compiler = compilers.into_iter().next().expect("one compiler");
+                fxns.insert_function_compiler(compiler_name, compiler);
+            } else {
+                fxns.insert_function_compiler(
+                    compiler_name.clone(),
+                    Arc::new(DynamicOverloadedCompiler {
+                        name: compiler_name,
+                        compilers,
+                    }),
+                );
             }
         }
 
@@ -374,6 +397,36 @@ unsafe fn mech_str_to_string(s: mech_abi::MechStrV1) -> MResult<String> {
 fn dynamic_trace(message: impl AsRef<str>) {
     if std::env::var_os("MECH_DYNAMIC_TRACE").is_some() {
         eprintln!("[mech-dynamic] {}", message.as_ref());
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
+struct DynamicOverloadedCompiler {
+    name: String,
+    compilers: Vec<Arc<dyn NativeFunctionCompiler>>,
+}
+
+#[cfg(feature = "dynamic-modules")]
+impl NativeFunctionCompiler for DynamicOverloadedCompiler {
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        let mut last_error = None;
+
+        for compiler in &self.compilers {
+            match compiler.compile(arguments) {
+                Ok(function) => return Ok(function),
+                Err(err) => last_error = Some(err),
+            }
+        }
+
+        Err(last_error.unwrap_or_else(|| {
+            MechError::new(
+                GenericError {
+                    msg: format!("no dynamic overload matched for `{}`", self.name),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        }))
     }
 }
 

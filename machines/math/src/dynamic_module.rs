@@ -7,7 +7,6 @@ use mech_abi::{
 
 const MODULE_NAME: &[u8] = b"math";
 const EXPORT_NAME: &[u8] = b"math/round";
-const SLICE_EXPORT_NAME: &[u8] = b"math/round-slice";
 
 mech_abi::mech_dynamic_module_v1! {
     module: b"math",
@@ -17,7 +16,7 @@ mech_abi::mech_dynamic_module_v1! {
             function: math_round_f64_v1,
         },
         unary_f64_slice_to_f64_slice {
-            name: b"math/round-slice",
+            name: b"math/round",
             function: math_round_f64_slice_v1,
         },
     ],
@@ -144,7 +143,7 @@ mod tests {
         let status = unsafe { mech_module_get_export_v1(1, &mut export) };
         let name = unsafe { core::slice::from_raw_parts(export.name.ptr, export.name.len) };
         assert_eq!(status, MechStatusV1::Ok);
-        assert_eq!(name, SLICE_EXPORT_NAME);
+        assert_eq!(name, EXPORT_NAME);
         assert_eq!(export.kind, MechKernelKindV1::UnaryF64SliceToF64Slice);
     }
 

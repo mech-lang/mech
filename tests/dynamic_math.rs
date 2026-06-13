@@ -9,6 +9,22 @@ fn run(source: &str) -> bool {
 }
 
 #[cfg(feature = "dynamic-modules")]
+fn run_matrix_round(source: &str) {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let result = program.run_string(source).unwrap();
+
+    let detached = match result {
+        Value::MutableReference(v) => v.borrow().clone(),
+        value => value,
+    };
+
+    assert_eq!(
+        detached,
+        Value::MatrixF64(Matrix::from_vec(vec![1.0, 5.0], 1, 2))
+    );
+}
+
+#[cfg(feature = "dynamic-modules")]
 #[test]
 fn dynamic_math_item_import_works() {
     assert!(run("+> math/round\nx := round(1.23)"));
@@ -28,23 +44,18 @@ fn dynamic_math_glob_import_works() {
 
 #[cfg(feature = "dynamic-modules")]
 #[test]
-fn dynamic_math_round_slice_item_import_works() {
-    let mut program = MechProgram::new(MechProgramConfig::default());
-    let result = program
-        .run_string(
-            "+> math/round-slice
-x := round-slice([1.23 2.7 3.1])
-x",
-        )
-        .unwrap();
+fn dynamic_math_round_item_import_accepts_matrix() {
+    run_matrix_round("+> math/round\nx := round([1.23 4.56])\nx");
+}
 
-    let detached = match result {
-        Value::MutableReference(v) => v.borrow().clone(),
-        value => value,
-    };
+#[cfg(feature = "dynamic-modules")]
+#[test]
+fn dynamic_math_round_module_import_accepts_matrix() {
+    run_matrix_round("+> math\nx := math/round([1.23 4.56])\nx");
+}
 
-    assert_eq!(
-        detached,
-        Value::MatrixF64(Matrix::from_vec(vec![1.0, 3.0, 3.0], 1, 3))
-    );
+#[cfg(feature = "dynamic-modules")]
+#[test]
+fn dynamic_math_round_glob_import_accepts_matrix() {
+    run_matrix_round("+> math/*\nx := round([1.23 4.56])\nx");
 }

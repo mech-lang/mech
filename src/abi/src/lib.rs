@@ -57,7 +57,7 @@ impl MechStrV1 {
 /// tagged union keyed by this enum. The host must read only the union field
 /// corresponding to `kind`.
 #[repr(u32)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum MechKernelKindV1 {
     UnaryF64ToF64 = 1,
     BinaryF64F64ToF64 = 2,
