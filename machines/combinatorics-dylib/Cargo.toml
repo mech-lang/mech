@@ -1,0 +1,12 @@
+[package]
+name = "mech-module-combinatorics"
+version = "0.3.5"
+edition = "2024"
+rust-version = "1.92"
+
+[lib]
+name = "mech_module_combinatorics"
+crate-type = ["cdylib"]
+
+[dependencies]
+mech-abi = { path = "../../src/abi" }

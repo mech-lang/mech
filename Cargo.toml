@@ -63,6 +63,7 @@ linked_compare = ["mech-program/linked_compare"]
 linked_io = ["mech-program/linked_io"]
 linked_stats = ["mech-program/linked_stats"]
 linked_string = ["mech-program/linked_string"]
+dynamic-modules = ["mech-program/dynamic-modules"]
 
 statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
@@ -226,6 +227,7 @@ zip = { version =  "5.1.1", optional = true }
 
 [workspace]
 members = [
+  "src/abi",
   "src/core",
   "src/syntax",
   "src/interpreter",
@@ -233,6 +235,7 @@ members = [
   "src/runtime",
   "src/wasm",
   "hosts/browser",
+  "machines/combinatorics-dylib",
 ]
 
 [build-dependencies]

@@ -45,6 +45,7 @@ linked_compare = ["mech-interpreter/linked_compare"]
 linked_io = ["mech-interpreter/linked_io"]
 linked_stats = ["mech-interpreter/linked_stats"]
 linked_string = ["mech-interpreter/linked_string"]
+dynamic-modules = ["mech-interpreter/dynamic-modules"]
 
 statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]

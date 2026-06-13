@@ -78,6 +78,7 @@ linked_io = ["mech-io/default", "io_default"]
 linked_stats = ["mech-stats/default", "stats_default"]
 linked_string = ["mech-string/default", "string_default"]
 linked_stdlib = ["linked_math", "linked_combinatorics", "linked_compare", "linked_io", "linked_stats", "linked_string"]
+dynamic-modules = ["dep:libloading", "dep:mech-abi"]
   
 statements_default = ["variable_assign","variable_define","invariant_define","kind_define",
     "mech-core/statements_default", "mech-set/statements_default", "mech-math/statements_default", "mech-compare/statements_default", "mech-logic/statements_default", "mech-matrix/statements_default", "mech-range/statements_default", "mech-string/statements_default"]
@@ -348,6 +349,8 @@ mech-io = { version = "0.3.5", default-features = false, optional = true }
 mech-set = { version = "0.3.5", default-features = false, optional = true }
 mech-combinatorics = { version = "0.3.5", default-features = false, optional = true }
 mech-string = { version = "0.3.5", default-features = false, optional = true }
+mech-abi = { path = "../abi", optional = true }
+libloading = { version = "0.8.9", optional = true }
 
 paste = "1.0.15"
 byteorder = "1.5.0"
