@@ -7,6 +7,10 @@ use mech_abi::{
 
 const MODULE_NAME: &[u8] = b"math";
 const EXPORT_NAME: &[u8] = b"math/round";
+const SQRT_EXPORT_NAME: &[u8] = b"math/sqrt";
+const FLOOR_EXPORT_NAME: &[u8] = b"math/floor";
+const CEIL_EXPORT_NAME: &[u8] = b"math/ceil";
+const ATAN2_EXPORT_NAME: &[u8] = b"math/atan2";
 
 mech_abi::mech_dynamic_module_v1! {
     module: b"math",
@@ -19,26 +23,70 @@ mech_abi::mech_dynamic_module_v1! {
             name: b"math/round",
             function: math_round_f64_view_v1,
         },
+        unary_f64_to_f64 {
+            name: b"math/sqrt",
+            function: math_sqrt_f64_v1,
+        },
+        unary_f64_view_to_f64_view {
+            name: b"math/sqrt",
+            function: math_sqrt_f64_view_v1,
+        },
+        unary_f64_to_f64 {
+            name: b"math/floor",
+            function: math_floor_f64_v1,
+        },
+        unary_f64_view_to_f64_view {
+            name: b"math/floor",
+            function: math_floor_f64_view_v1,
+        },
+        unary_f64_to_f64 {
+            name: b"math/ceil",
+            function: math_ceil_f64_v1,
+        },
+        unary_f64_view_to_f64_view {
+            name: b"math/ceil",
+            function: math_ceil_f64_view_v1,
+        },
+        binary_f64_f64_to_f64 {
+            name: b"math/atan2",
+            function: math_atan2_f64_v1,
+        },
     ],
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn math_round_f64_v1(input: f64, out: *mut f64) -> MechStatusV1 {
+unsafe fn call_unary_f64(input: f64, out: *mut f64, kernel: fn(f64) -> f64) -> MechStatusV1 {
     if out.is_null() {
         return MechStatusV1::NullPointer;
     }
 
     unsafe {
-        *out = crate::kernels::round::scalar_f64(input);
+        *out = kernel(input);
     }
 
     MechStatusV1::Ok
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn math_round_f64_view_v1(
+unsafe fn call_binary_f64(
+    lhs: f64,
+    rhs: f64,
+    out: *mut f64,
+    kernel: fn(f64, f64) -> f64,
+) -> MechStatusV1 {
+    if out.is_null() {
+        return MechStatusV1::NullPointer;
+    }
+
+    unsafe {
+        *out = kernel(lhs, rhs);
+    }
+
+    MechStatusV1::Ok
+}
+
+unsafe fn call_unary_f64_view(
     input: MechF64ViewV1,
     out: MechF64ViewMutV1,
+    kernel: fn(&[f64], &mut [f64]),
 ) -> MechStatusV1 {
     if input.len != out.len {
         return MechStatusV1::WrongShape;
@@ -71,9 +119,66 @@ pub unsafe extern "C" fn math_round_f64_view_v1(
     let input_slice = unsafe { core::slice::from_raw_parts(input.ptr, input.len) };
     let out_slice = unsafe { core::slice::from_raw_parts_mut(out.ptr, out.len) };
 
-    crate::kernels::round::view_f64(input_slice, out_slice);
+    kernel(input_slice, out_slice);
 
     MechStatusV1::Ok
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn math_round_f64_v1(input: f64, out: *mut f64) -> MechStatusV1 {
+    unsafe { call_unary_f64(input, out, crate::kernels::round::scalar_f64) }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn math_round_f64_view_v1(
+    input: MechF64ViewV1,
+    out: MechF64ViewMutV1,
+) -> MechStatusV1 {
+    unsafe { call_unary_f64_view(input, out, crate::kernels::round::view_f64) }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn math_sqrt_f64_v1(input: f64, out: *mut f64) -> MechStatusV1 {
+    unsafe { call_unary_f64(input, out, crate::kernels::sqrt::scalar_f64) }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn math_sqrt_f64_view_v1(
+    input: MechF64ViewV1,
+    out: MechF64ViewMutV1,
+) -> MechStatusV1 {
+    unsafe { call_unary_f64_view(input, out, crate::kernels::sqrt::view_f64) }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn math_floor_f64_v1(input: f64, out: *mut f64) -> MechStatusV1 {
+    unsafe { call_unary_f64(input, out, crate::kernels::floor::scalar_f64) }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn math_floor_f64_view_v1(
+    input: MechF64ViewV1,
+    out: MechF64ViewMutV1,
+) -> MechStatusV1 {
+    unsafe { call_unary_f64_view(input, out, crate::kernels::floor::view_f64) }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn math_ceil_f64_v1(input: f64, out: *mut f64) -> MechStatusV1 {
+    unsafe { call_unary_f64(input, out, crate::kernels::ceil::scalar_f64) }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn math_ceil_f64_view_v1(
+    input: MechF64ViewV1,
+    out: MechF64ViewMutV1,
+) -> MechStatusV1 {
+    unsafe { call_unary_f64_view(input, out, crate::kernels::ceil::view_f64) }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn math_atan2_f64_v1(lhs: f64, rhs: f64, out: *mut f64) -> MechStatusV1 {
+    unsafe { call_binary_f64(lhs, rhs, out, crate::kernels::atan2::scalar_f64) }
 }
 
 #[cfg(test)]
@@ -99,8 +204,8 @@ mod tests {
     }
 
     #[test]
-    fn module_export_count_is_two() {
-        assert_eq!(unsafe { mech_module_export_count_v1() }, 2);
+    fn module_export_count_is_nine() {
+        assert_eq!(unsafe { mech_module_export_count_v1() }, 9);
     }
 
     #[test]
@@ -121,7 +226,7 @@ mod tests {
                 unary_f64_to_f64: math_round_f64_v1,
             },
         };
-        let status = unsafe { mech_module_get_export_v1(2, &mut export) };
+        let status = unsafe { mech_module_get_export_v1(9, &mut export) };
         assert_eq!(status, MechStatusV1::InvalidIndex);
     }
 
@@ -164,11 +269,124 @@ mod tests {
     }
 
     #[test]
+    fn export_metadata_describes_sqrt_scalar_kernel() {
+        let mut export = MechExportV1 {
+            name: MechStrV1 {
+                ptr: core::ptr::null(),
+                len: 0,
+            },
+            kind: MechKernelKindV1::UnaryF64ToF64,
+            function: MechKernelFnV1 {
+                unary_f64_to_f64: math_sqrt_f64_v1,
+            },
+        };
+        let status = unsafe { mech_module_get_export_v1(2, &mut export) };
+        let name = unsafe { core::slice::from_raw_parts(export.name.ptr, export.name.len) };
+        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(name, SQRT_EXPORT_NAME);
+        assert_eq!(export.kind, MechKernelKindV1::UnaryF64ToF64);
+    }
+
+    #[test]
+    fn export_metadata_describes_sqrt_view_kernel() {
+        let mut export = MechExportV1 {
+            name: MechStrV1 {
+                ptr: core::ptr::null(),
+                len: 0,
+            },
+            kind: MechKernelKindV1::UnaryF64ViewToF64View,
+            function: MechKernelFnV1 {
+                unary_f64_view_to_f64_view: math_sqrt_f64_view_v1,
+            },
+        };
+        let status = unsafe { mech_module_get_export_v1(3, &mut export) };
+        let name = unsafe { core::slice::from_raw_parts(export.name.ptr, export.name.len) };
+        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(name, SQRT_EXPORT_NAME);
+        assert_eq!(export.kind, MechKernelKindV1::UnaryF64ViewToF64View);
+    }
+
+    #[test]
+    fn export_metadata_describes_atan2_kernel() {
+        let mut export = MechExportV1 {
+            name: MechStrV1 {
+                ptr: core::ptr::null(),
+                len: 0,
+            },
+            kind: MechKernelKindV1::BinaryF64F64ToF64,
+            function: MechKernelFnV1 {
+                binary_f64_f64_to_f64: math_atan2_f64_v1,
+            },
+        };
+        let status = unsafe { mech_module_get_export_v1(8, &mut export) };
+        let name = unsafe { core::slice::from_raw_parts(export.name.ptr, export.name.len) };
+        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(name, ATAN2_EXPORT_NAME);
+        assert_eq!(export.kind, MechKernelKindV1::BinaryF64F64ToF64);
+    }
+
+    #[test]
     fn math_round_f64_returns_expected_result() {
         let mut out = 0.0;
         let status = unsafe { math_round_f64_v1(1.23, &mut out) };
         assert_eq!(status, MechStatusV1::Ok);
         assert_eq!(out, 1.0);
+    }
+
+    #[test]
+    fn math_sqrt_f64_returns_expected_result() {
+        let mut out = 0.0;
+        let status = unsafe { math_sqrt_f64_v1(9.0, &mut out) };
+        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(out, 3.0);
+    }
+
+    #[test]
+    fn math_floor_f64_returns_expected_result() {
+        let mut out = 0.0;
+        let status = unsafe { math_floor_f64_v1(4.56, &mut out) };
+        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(out, 4.0);
+    }
+
+    #[test]
+    fn math_ceil_f64_returns_expected_result() {
+        let mut out = 0.0;
+        let status = unsafe { math_ceil_f64_v1(4.56, &mut out) };
+        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(out, 5.0);
+    }
+
+    #[test]
+    fn math_atan2_f64_returns_expected_result() {
+        let mut out = 1.0;
+        let status = unsafe { math_atan2_f64_v1(0.0, 1.0, &mut out) };
+        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(out, 0.0);
+    }
+
+    #[test]
+    fn math_sqrt_f64_view_returns_expected_result() {
+        let input = [1.0, 4.0, 9.0];
+        let mut out = [0.0, 0.0, 0.0];
+        let status = unsafe {
+            math_sqrt_f64_view_v1(
+                MechF64ViewV1 {
+                    ptr: input.as_ptr(),
+                    len: input.len(),
+                    rows: 1,
+                    cols: 3,
+                },
+                MechF64ViewMutV1 {
+                    ptr: out.as_mut_ptr(),
+                    len: out.len(),
+                    rows: 1,
+                    cols: 3,
+                },
+            )
+        };
+        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(out, [1.0, 2.0, 3.0]);
     }
 
     #[test]
