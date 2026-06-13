@@ -299,6 +299,26 @@ impl ModuleLoader for DynamicModuleLoader {
 
                     items.push(item);
                 }
+                mech_abi::MechKernelKindV1::UnaryF64SliceToF64Slice => {
+                    let kernel = unsafe { export.function.unary_f64_slice_to_f64_slice };
+                    let compiler_name = export_name.clone();
+
+                    fxns.insert_function_compiler(
+                        compiler_name.clone(),
+                        Arc::new(DynamicUnaryF64SliceToF64SliceCompiler {
+                            name: compiler_name.clone(),
+                            kernel,
+                            _library: library.clone(),
+                        }),
+                    );
+
+                    dynamic_trace(format!(
+                        "registered dynamic export `{}` as item `{}`",
+                        compiler_name, item
+                    ));
+
+                    items.push(item);
+                }
             }
         }
 
@@ -322,6 +342,14 @@ unsafe extern "C" fn dynamic_null_binary_f64_f64_to_f64(
 unsafe extern "C" fn dynamic_null_unary_f64_to_f64(
     _input: f64,
     _out: *mut f64,
+) -> mech_abi::MechStatusV1 {
+    mech_abi::MechStatusV1::Unsupported
+}
+
+#[cfg(feature = "dynamic-modules")]
+unsafe extern "C" fn dynamic_null_unary_f64_slice_to_f64_slice(
+    _input: mech_abi::MechF64SliceV1,
+    _out: mech_abi::MechF64SliceMutV1,
 ) -> mech_abi::MechStatusV1 {
     mech_abi::MechStatusV1::Unsupported
 }
@@ -418,6 +446,44 @@ impl NativeFunctionCompiler for DynamicUnaryF64ToF64Compiler {
 }
 
 #[cfg(feature = "dynamic-modules")]
+struct DynamicUnaryF64SliceToF64SliceCompiler {
+    name: String,
+    kernel: mech_abi::MechUnaryF64SliceToF64SliceKernelV1,
+    _library: Arc<libloading::Library>,
+}
+
+#[cfg(feature = "dynamic-modules")]
+impl NativeFunctionCompiler for DynamicUnaryF64SliceToF64SliceCompiler {
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        if arguments.len() != 1 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: arguments.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+
+        let input = dynamic_arg_as_f64_matrix(&arguments[0], &self.name)?;
+        let rows = input.rows();
+        let cols = input.cols();
+        let len = rows * cols;
+        let out = Matrix::from_vec(vec![0.0; len], rows, cols);
+
+        Ok(Box::new(DynamicUnaryF64SliceToF64SliceFunction {
+            name: self.name.clone(),
+            input,
+            out,
+            len,
+            kernel: self.kernel,
+            _library: self._library.clone(),
+        }))
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
 fn dynamic_arg_as_f64_ref(value: &Value, fxn_name: &str) -> MResult<Ref<f64>> {
     match value {
         Value::F64(v) => Ok(v.clone()),
@@ -425,6 +491,37 @@ fn dynamic_arg_as_f64_ref(value: &Value, fxn_name: &str) -> MResult<Ref<f64>> {
             let borrowed = v.borrow();
             match &*borrowed {
                 Value::F64(inner) => Ok(inner.clone()),
+                x => Err(MechError::new(
+                    UnhandledFunctionArgumentKind1 {
+                        arg: x.kind(),
+                        fxn_name: fxn_name.to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()),
+            }
+        }
+        x => Err(MechError::new(
+            UnhandledFunctionArgumentKind1 {
+                arg: x.kind(),
+                fxn_name: fxn_name.to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc()),
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn dynamic_arg_as_f64_matrix(value: &Value, fxn_name: &str) -> MResult<Matrix<f64>> {
+    match value {
+        #[cfg(all(feature = "matrix", feature = "f64"))]
+        Value::MatrixF64(matrix) => Ok(matrix.clone()),
+        Value::MutableReference(v) => {
+            let borrowed = v.borrow();
+            match &*borrowed {
+                #[cfg(all(feature = "matrix", feature = "f64"))]
+                Value::MatrixF64(matrix) => Ok(matrix.clone()),
                 x => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {
                         arg: x.kind(),
@@ -528,6 +625,74 @@ impl MechFunctionImpl for DynamicUnaryF64ToF64Function {
 
 #[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
 impl MechFunctionCompiler for DynamicUnaryF64ToF64Function {
+    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+        Err(MechError::new(
+            GenericError {
+                msg: format!(
+                    "bytecode compilation is not implemented for dynamic function `{}`",
+                    self.name
+                ),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
+struct DynamicUnaryF64SliceToF64SliceFunction {
+    name: String,
+    input: Matrix<f64>,
+    out: Matrix<f64>,
+    len: usize,
+    kernel: mech_abi::MechUnaryF64SliceToF64SliceKernelV1,
+    _library: Arc<libloading::Library>,
+}
+
+#[cfg(feature = "dynamic-modules")]
+impl MechFunctionImpl for DynamicUnaryF64SliceToF64SliceFunction {
+    fn solve(&self) {
+        let mut input_vec = Vec::with_capacity(self.len);
+        for index in 1..=self.len {
+            input_vec.push(self.input.index1d(index));
+        }
+
+        let mut out_vec = vec![0.0; self.len];
+
+        let status = unsafe {
+            (self.kernel)(
+                mech_abi::MechF64SliceV1 {
+                    ptr: input_vec.as_ptr(),
+                    len: input_vec.len(),
+                },
+                mech_abi::MechF64SliceMutV1 {
+                    ptr: out_vec.as_mut_ptr(),
+                    len: out_vec.len(),
+                },
+            )
+        };
+
+        if status == mech_abi::MechStatusV1::Ok {
+            self.out.set(out_vec);
+        } else {
+            dynamic_trace(format!(
+                "dynamic kernel `{}` returned status {:?}",
+                self.name, status
+            ));
+        }
+    }
+
+    fn out(&self) -> Value {
+        Value::MatrixF64(self.out.clone())
+    }
+
+    fn to_string(&self) -> String {
+        format!("dynamic {}", self.name)
+    }
+}
+
+#[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
+impl MechFunctionCompiler for DynamicUnaryF64SliceToF64SliceFunction {
     fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
         Err(MechError::new(
             GenericError {

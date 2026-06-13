@@ -28,6 +28,20 @@ pub struct MechStrV1 {
     pub len: usize,
 }
 
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct MechF64SliceV1 {
+    pub ptr: *const f64,
+    pub len: usize,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct MechF64SliceMutV1 {
+    pub ptr: *mut f64,
+    pub len: usize,
+}
+
 impl MechStrV1 {
     pub const fn from_static(bytes: &'static [u8]) -> Self {
         Self {
@@ -47,6 +61,7 @@ impl MechStrV1 {
 pub enum MechKernelKindV1 {
     UnaryF64ToF64 = 1,
     BinaryF64F64ToF64 = 2,
+    UnaryF64SliceToF64Slice = 3,
 }
 
 /// Kernel for a unary scalar f64 function.
@@ -56,6 +71,9 @@ pub enum MechKernelKindV1 {
 /// The module must not retain `out` after returning.
 pub type MechUnaryF64ToF64KernelV1 =
     unsafe extern "C" fn(input: f64, out: *mut f64) -> MechStatusV1;
+
+pub type MechUnaryF64SliceToF64SliceKernelV1 =
+    unsafe extern "C" fn(input: MechF64SliceV1, out: MechF64SliceMutV1) -> MechStatusV1;
 
 /// Kernel for a binary scalar f64 function.
 ///
@@ -70,6 +88,7 @@ pub type MechBinaryF64F64ToF64KernelV1 =
 pub union MechKernelFnV1 {
     pub unary_f64_to_f64: MechUnaryF64ToF64KernelV1,
     pub binary_f64_f64_to_f64: MechBinaryF64F64ToF64KernelV1,
+    pub unary_f64_slice_to_f64_slice: MechUnaryF64SliceToF64SliceKernelV1,
 }
 
 /// One exported Mech function/kernel.
@@ -179,6 +198,16 @@ macro_rules! mech_dynamic_module_v1 {
             kind: $crate::MechKernelKindV1::BinaryF64F64ToF64,
             function: $crate::MechKernelFnV1 {
                 binary_f64_f64_to_f64: $function,
+            },
+        }
+    };
+
+    (@export unary_f64_slice_to_f64_slice, $export_name:expr, $function:path) => {
+        $crate::MechExportV1 {
+            name: $crate::MechStrV1::from_static($export_name),
+            kind: $crate::MechKernelKindV1::UnaryF64SliceToF64Slice,
+            function: $crate::MechKernelFnV1 {
+                unary_f64_slice_to_f64_slice: $function,
             },
         }
     };
