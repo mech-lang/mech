@@ -36,9 +36,10 @@ jobs:
           cargo test bytecode
 
           # Narrow ABI dynamic module smoke test.
-          cargo build -p mech-module-combinatorics --target-dir target/dynamic-modules
+          cargo test -p mech-combinatorics --no-default-features --features "dynamic-module"
+          cargo build -p mech-combinatorics --no-default-features --features "dynamic-module" --target-dir target/dynamic-modules
           mkdir -p target/mech-modules
-          cp target/dynamic-modules/debug/libmech_module_combinatorics.so target/mech-modules/
+          cp target/dynamic-modules/debug/libmech_combinatorics.so target/mech-modules/libmech_module_combinatorics.so
           MECH_MODULE_PATH=target/mech-modules cargo test --test dynamic_combinatorics --no-default-features --features "base dynamic-modules f64"
 
           # Runtime package tests.

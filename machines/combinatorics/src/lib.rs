@@ -1,4 +1,4 @@
-#![no_main]
+#![cfg_attr(not(test), no_main)]
 #![allow(warnings)]
 
 #[cfg(feature = "matrix")]
@@ -12,3 +12,6 @@ pub mod n_choose_k;
 
 #[cfg(feature = "n_choose_k")]
 pub use self::n_choose_k::*;
+
+#[cfg(feature = "dynamic-module")]
+mod dynamic_module;

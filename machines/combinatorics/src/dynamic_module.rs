@@ -1,3 +1,5 @@
+#![cfg(feature = "dynamic-module")]
+
 use mech_abi::{
     MechExportV1, MechKernelKindV1, MechStatusV1, MechStrV1, MECH_MODULE_ABI_VERSION_V1,
 };
