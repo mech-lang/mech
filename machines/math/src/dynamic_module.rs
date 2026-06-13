@@ -1,8 +1,8 @@
 #![cfg(feature = "dynamic-module")]
 
 use mech_abi::{
-    MechExportV1, MechF64SliceMutV1, MechF64SliceV1, MechKernelFnV1, MechKernelKindV1,
-    MechStatusV1, MechStrV1,
+    MechExportV1, MechF64ViewMutV1, MechF64ViewV1, MechKernelFnV1, MechKernelKindV1, MechStatusV1,
+    MechStrV1,
 };
 
 const MODULE_NAME: &[u8] = b"math";
@@ -15,9 +15,9 @@ mech_abi::mech_dynamic_module_v1! {
             name: b"math/round",
             function: math_round_f64_v1,
         },
-        unary_f64_slice_to_f64_slice {
+        unary_f64_view_to_f64_view {
             name: b"math/round",
-            function: math_round_f64_slice_v1,
+            function: math_round_f64_view_v1,
         },
     ],
 }
@@ -36,11 +36,27 @@ pub unsafe extern "C" fn math_round_f64_v1(input: f64, out: *mut f64) -> MechSta
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn math_round_f64_slice_v1(
-    input: MechF64SliceV1,
-    out: MechF64SliceMutV1,
+pub unsafe extern "C" fn math_round_f64_view_v1(
+    input: MechF64ViewV1,
+    out: MechF64ViewMutV1,
 ) -> MechStatusV1 {
     if input.len != out.len {
+        return MechStatusV1::WrongShape;
+    }
+
+    if input.rows != out.rows || input.cols != out.cols {
+        return MechStatusV1::WrongShape;
+    }
+
+    let Some(input_cells) = input.rows.checked_mul(input.cols) else {
+        return MechStatusV1::WrongShape;
+    };
+
+    let Some(out_cells) = out.rows.checked_mul(out.cols) else {
+        return MechStatusV1::WrongShape;
+    };
+
+    if input.len != input_cells || out.len != out_cells {
         return MechStatusV1::WrongShape;
     }
 
@@ -55,7 +71,7 @@ pub unsafe extern "C" fn math_round_f64_slice_v1(
     let input_slice = unsafe { core::slice::from_raw_parts(input.ptr, input.len) };
     let out_slice = unsafe { core::slice::from_raw_parts_mut(out.ptr, out.len) };
 
-    crate::kernels::round::slice_f64(input_slice, out_slice);
+    crate::kernels::round::view_f64(input_slice, out_slice);
 
     MechStatusV1::Ok
 }
@@ -129,22 +145,22 @@ mod tests {
     }
 
     #[test]
-    fn export_metadata_describes_round_slice_kernel() {
+    fn export_metadata_describes_round_view_kernel() {
         let mut export = MechExportV1 {
             name: MechStrV1 {
                 ptr: core::ptr::null(),
                 len: 0,
             },
-            kind: MechKernelKindV1::UnaryF64SliceToF64Slice,
+            kind: MechKernelKindV1::UnaryF64ViewToF64View,
             function: MechKernelFnV1 {
-                unary_f64_slice_to_f64_slice: math_round_f64_slice_v1,
+                unary_f64_view_to_f64_view: math_round_f64_view_v1,
             },
         };
         let status = unsafe { mech_module_get_export_v1(1, &mut export) };
         let name = unsafe { core::slice::from_raw_parts(export.name.ptr, export.name.len) };
         assert_eq!(status, MechStatusV1::Ok);
         assert_eq!(name, EXPORT_NAME);
-        assert_eq!(export.kind, MechKernelKindV1::UnaryF64SliceToF64Slice);
+        assert_eq!(export.kind, MechKernelKindV1::UnaryF64ViewToF64View);
     }
 
     #[test]
@@ -162,19 +178,23 @@ mod tests {
     }
 
     #[test]
-    fn math_round_f64_slice_returns_expected_result() {
+    fn math_round_f64_view_returns_expected_result() {
         let input = [1.23, 2.7, 3.1];
         let mut out = [0.0, 0.0, 0.0];
 
         let status = unsafe {
-            math_round_f64_slice_v1(
-                MechF64SliceV1 {
+            math_round_f64_view_v1(
+                MechF64ViewV1 {
                     ptr: input.as_ptr(),
                     len: input.len(),
+                    rows: 1,
+                    cols: 3,
                 },
-                MechF64SliceMutV1 {
+                MechF64ViewMutV1 {
                     ptr: out.as_mut_ptr(),
                     len: out.len(),
+                    rows: 1,
+                    cols: 3,
                 },
             )
         };
@@ -184,18 +204,22 @@ mod tests {
     }
 
     #[test]
-    fn math_round_f64_slice_rejects_null_input() {
+    fn math_round_f64_view_rejects_null_input() {
         let mut out = [0.0, 0.0, 0.0];
 
         let status = unsafe {
-            math_round_f64_slice_v1(
-                MechF64SliceV1 {
+            math_round_f64_view_v1(
+                MechF64ViewV1 {
                     ptr: core::ptr::null(),
                     len: out.len(),
+                    rows: 1,
+                    cols: 3,
                 },
-                MechF64SliceMutV1 {
+                MechF64ViewMutV1 {
                     ptr: out.as_mut_ptr(),
                     len: out.len(),
+                    rows: 1,
+                    cols: 3,
                 },
             )
         };
@@ -204,18 +228,22 @@ mod tests {
     }
 
     #[test]
-    fn math_round_f64_slice_rejects_null_output() {
+    fn math_round_f64_view_rejects_null_output() {
         let input = [1.23, 2.7, 3.1];
 
         let status = unsafe {
-            math_round_f64_slice_v1(
-                MechF64SliceV1 {
+            math_round_f64_view_v1(
+                MechF64ViewV1 {
                     ptr: input.as_ptr(),
                     len: input.len(),
+                    rows: 1,
+                    cols: 3,
                 },
-                MechF64SliceMutV1 {
+                MechF64ViewMutV1 {
                     ptr: core::ptr::null_mut(),
                     len: input.len(),
+                    rows: 1,
+                    cols: 3,
                 },
             )
         };
@@ -224,19 +252,23 @@ mod tests {
     }
 
     #[test]
-    fn math_round_f64_slice_rejects_wrong_shape() {
+    fn math_round_f64_view_rejects_wrong_len() {
         let input = [1.23, 2.7, 3.1];
         let mut out = [0.0, 0.0];
 
         let status = unsafe {
-            math_round_f64_slice_v1(
-                MechF64SliceV1 {
+            math_round_f64_view_v1(
+                MechF64ViewV1 {
                     ptr: input.as_ptr(),
                     len: input.len(),
+                    rows: 1,
+                    cols: 3,
                 },
-                MechF64SliceMutV1 {
+                MechF64ViewMutV1 {
                     ptr: out.as_mut_ptr(),
                     len: out.len(),
+                    rows: 1,
+                    cols: 2,
                 },
             )
         };
@@ -245,16 +277,70 @@ mod tests {
     }
 
     #[test]
-    fn math_round_f64_slice_accepts_empty_slices() {
+    fn math_round_f64_view_rejects_mismatched_shape() {
+        let input = [1.23, 2.7, 3.1, 4.2];
+        let mut out = [0.0, 0.0, 0.0, 0.0];
+
         let status = unsafe {
-            math_round_f64_slice_v1(
-                MechF64SliceV1 {
+            math_round_f64_view_v1(
+                MechF64ViewV1 {
+                    ptr: input.as_ptr(),
+                    len: input.len(),
+                    rows: 2,
+                    cols: 2,
+                },
+                MechF64ViewMutV1 {
+                    ptr: out.as_mut_ptr(),
+                    len: out.len(),
+                    rows: 1,
+                    cols: 4,
+                },
+            )
+        };
+
+        assert_eq!(status, MechStatusV1::WrongShape);
+    }
+
+    #[test]
+    fn math_round_f64_view_rejects_len_shape_mismatch() {
+        let input = [1.23, 2.7, 3.1];
+        let mut out = [0.0, 0.0, 0.0];
+
+        let status = unsafe {
+            math_round_f64_view_v1(
+                MechF64ViewV1 {
+                    ptr: input.as_ptr(),
+                    len: input.len(),
+                    rows: 3,
+                    cols: 3,
+                },
+                MechF64ViewMutV1 {
+                    ptr: out.as_mut_ptr(),
+                    len: out.len(),
+                    rows: 3,
+                    cols: 3,
+                },
+            )
+        };
+
+        assert_eq!(status, MechStatusV1::WrongShape);
+    }
+
+    #[test]
+    fn math_round_f64_view_accepts_empty_views() {
+        let status = unsafe {
+            math_round_f64_view_v1(
+                MechF64ViewV1 {
                     ptr: core::ptr::null(),
                     len: 0,
+                    rows: 0,
+                    cols: 0,
                 },
-                MechF64SliceMutV1 {
+                MechF64ViewMutV1 {
                     ptr: core::ptr::null_mut(),
                     len: 0,
+                    rows: 0,
+                    cols: 0,
                 },
             )
         };

@@ -28,18 +28,32 @@ pub struct MechStrV1 {
     pub len: usize,
 }
 
+/// Borrowed contiguous f64 view owned by the host.
+///
+/// The view is valid only for the duration of the ABI call.
+/// `len` must equal `rows * cols`.
+/// The dynamic module must not retain the pointer.
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub struct MechF64SliceV1 {
+pub struct MechF64ViewV1 {
     pub ptr: *const f64,
     pub len: usize,
+    pub rows: usize,
+    pub cols: usize,
 }
 
+/// Mutable contiguous f64 view owned by the host.
+///
+/// The view is valid only for the duration of the ABI call.
+/// `len` must equal `rows * cols`.
+/// The dynamic module must not retain the pointer.
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub struct MechF64SliceMutV1 {
+pub struct MechF64ViewMutV1 {
     pub ptr: *mut f64,
     pub len: usize,
+    pub rows: usize,
+    pub cols: usize,
 }
 
 impl MechStrV1 {
@@ -61,7 +75,7 @@ impl MechStrV1 {
 pub enum MechKernelKindV1 {
     UnaryF64ToF64 = 1,
     BinaryF64F64ToF64 = 2,
-    UnaryF64SliceToF64Slice = 3,
+    UnaryF64ViewToF64View = 3,
 }
 
 /// Kernel for a unary scalar f64 function.
@@ -72,8 +86,8 @@ pub enum MechKernelKindV1 {
 pub type MechUnaryF64ToF64KernelV1 =
     unsafe extern "C" fn(input: f64, out: *mut f64) -> MechStatusV1;
 
-pub type MechUnaryF64SliceToF64SliceKernelV1 =
-    unsafe extern "C" fn(input: MechF64SliceV1, out: MechF64SliceMutV1) -> MechStatusV1;
+pub type MechUnaryF64ViewToF64ViewKernelV1 =
+    unsafe extern "C" fn(input: MechF64ViewV1, out: MechF64ViewMutV1) -> MechStatusV1;
 
 /// Kernel for a binary scalar f64 function.
 ///
@@ -88,7 +102,7 @@ pub type MechBinaryF64F64ToF64KernelV1 =
 pub union MechKernelFnV1 {
     pub unary_f64_to_f64: MechUnaryF64ToF64KernelV1,
     pub binary_f64_f64_to_f64: MechBinaryF64F64ToF64KernelV1,
-    pub unary_f64_slice_to_f64_slice: MechUnaryF64SliceToF64SliceKernelV1,
+    pub unary_f64_view_to_f64_view: MechUnaryF64ViewToF64ViewKernelV1,
 }
 
 /// One exported Mech function/kernel.
@@ -202,12 +216,12 @@ macro_rules! mech_dynamic_module_v1 {
         }
     };
 
-    (@export unary_f64_slice_to_f64_slice, $export_name:expr, $function:path) => {
+    (@export unary_f64_view_to_f64_view, $export_name:expr, $function:path) => {
         $crate::MechExportV1 {
             name: $crate::MechStrV1::from_static($export_name),
-            kind: $crate::MechKernelKindV1::UnaryF64SliceToF64Slice,
+            kind: $crate::MechKernelKindV1::UnaryF64ViewToF64View,
             function: $crate::MechKernelFnV1 {
-                unary_f64_slice_to_f64_slice: $function,
+                unary_f64_view_to_f64_view: $function,
             },
         }
     };
