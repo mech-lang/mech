@@ -1,7 +1,7 @@
 extern crate mech_core;
 
 use mech::program::{MechProgram, MechProgramConfig};
-use mech_core::{structures::matrix::Matrix, Value};
+use mech_core::{Value, structures::matrix::Matrix};
 
 fn run(source: &str) -> bool {
     let mut program = MechProgram::new(MechProgramConfig::default());
@@ -177,6 +177,104 @@ x",
     run_matrix_f64(
         "+> math/atan2
 x := atan2([0.0 0.0], [1.0 1.0])
+x",
+        vec![0.0, 0.0],
+        1,
+        2,
+    );
+}
+
+#[cfg(feature = "dynamic-modules")]
+#[test]
+fn dynamic_math_trig_item_import_works_for_scalar_and_matrix() {
+    run_scalar_f64(
+        "+> math/sin
+x := sin(0.0)
+x",
+        0.0,
+    );
+    run_matrix_f64(
+        "+> math/sin
+x := sin([0.0 0.0])
+x",
+        vec![0.0, 0.0],
+        1,
+        2,
+    );
+
+    run_scalar_f64(
+        "+> math/cos
+x := cos(0.0)
+x",
+        1.0,
+    );
+    run_matrix_f64(
+        "+> math/cos
+x := cos([0.0 0.0])
+x",
+        vec![1.0, 1.0],
+        1,
+        2,
+    );
+
+    run_scalar_f64(
+        "+> math/tan
+x := tan(0.0)
+x",
+        0.0,
+    );
+    run_matrix_f64(
+        "+> math/tan
+x := tan([0.0 0.0])
+x",
+        vec![0.0, 0.0],
+        1,
+        2,
+    );
+}
+
+#[cfg(feature = "dynamic-modules")]
+#[test]
+fn dynamic_math_inverse_trig_module_and_glob_import_work_for_scalar_and_matrix() {
+    run_scalar_f64(
+        "+> math
+x := math/asin(0.0)
+x",
+        0.0,
+    );
+    run_matrix_f64(
+        "+> math
+x := math/asin([0.0 0.0])
+x",
+        vec![0.0, 0.0],
+        1,
+        2,
+    );
+
+    run_scalar_f64(
+        "+> math/*
+x := acos(1.0)
+x",
+        0.0,
+    );
+    run_matrix_f64(
+        "+> math/*
+x := acos([1.0 1.0])
+x",
+        vec![0.0, 0.0],
+        1,
+        2,
+    );
+
+    run_scalar_f64(
+        "+> math/atan
+x := atan(0.0)
+x",
+        0.0,
+    );
+    run_matrix_f64(
+        "+> math/atan
+x := atan([0.0 0.0])
 x",
         vec![0.0, 0.0],
         1,
