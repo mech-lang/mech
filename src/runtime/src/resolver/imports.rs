@@ -75,6 +75,20 @@ pub(crate) fn module_import_specifier(import: &mech_core::ModuleImport) -> Strin
         .unwrap_or_default();
       format!("{module}/{item}")
     }
+    mech_core::ModuleImportKind::Group => {
+      let items = import
+        .group_items
+        .as_ref()
+        .map(|items| {
+          items
+            .iter()
+            .map(|item| item.item.iter().map(|id| id.to_string()).collect::<Vec<_>>().join("/"))
+            .collect::<Vec<_>>()
+            .join(", ")
+        })
+        .unwrap_or_default();
+      format!("{module}/{{{items}}}")
+    }
   }
 }
 

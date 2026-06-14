@@ -1861,6 +1861,13 @@ impl Formatter {
         format!("+> {}/{}", node.module.to_string(), item)
       }
       ModuleImportKind::Glob => format!("+> {}/*", node.module.to_string()),
+      ModuleImportKind::Group => {
+        let items = node.group_items.as_ref().unwrap().iter()
+          .map(|group_item| group_item.item.iter().map(|id| id.to_string()).collect::<Vec<_>>().join("/"))
+          .collect::<Vec<_>>()
+          .join(", ");
+        format!("+> {}/{{{}}}", node.module.to_string(), items)
+      }
     }
   }
 

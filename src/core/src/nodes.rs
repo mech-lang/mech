@@ -812,6 +812,13 @@ pub enum ModuleImportKind {
   Module,
   Item,
   Glob,
+  Group,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ModuleImportGroupItem {
+  pub item: Vec<Identifier>,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -819,17 +826,33 @@ pub enum ModuleImportKind {
 pub struct ModuleImport {
   pub module: Identifier,
   pub item: Option<Vec<Identifier>>,
+  pub group_items: Option<Vec<ModuleImportGroupItem>>,
+  pub alias: Option<Identifier>,
   pub kind: ModuleImportKind,
 }
 
 impl ModuleImport {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tokens = self.module.tokens();
+
     if let Some(item_path) = &self.item {
       for item in item_path {
         tokens.append(&mut item.tokens());
       }
     }
+
+    if let Some(group_items) = &self.group_items {
+      for group_item in group_items {
+        for item in &group_item.item {
+          tokens.append(&mut item.tokens());
+        }
+      }
+    }
+
+    if let Some(alias) = &self.alias {
+      tokens.append(&mut alias.tokens());
+    }
+
     tokens
   }
 }

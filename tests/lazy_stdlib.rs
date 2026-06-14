@@ -72,3 +72,45 @@ fn linked_loader_discovers_machine_declared_math_items() {
 fn linked_loader_glob_uses_machine_manifest() {
     assert!(run("+> math/*\nx := round(1.23)"));
 }
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn item_alias_import_enables_alias() {
+    assert!(run("+> foo := math/sin\nx := foo(1.23)"));
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn item_alias_import_does_not_create_original_unqualified_name() {
+    assert!(!run("+> foo := math/sin\nx := sin(1.23)"));
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn nested_item_alias_import_works() {
+    assert!(run("+> total := stats/sum/column\nx := total([1 2 3])"));
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn grouped_item_import_enables_each_grouped_item() {
+    assert!(run("+> math/{sin, cos, tan}\nx := sin(1.23)\ny := cos(1.23)\nz := tan(1.23)"));
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn grouped_item_import_does_not_import_other_items() {
+    assert!(!run("+> math/{sin, cos, tan}\nx := round(1.23)"));
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn multiline_grouped_item_import_works() {
+    assert!(run("+> math/{\n  sin\n  cos\n  tan\n}\nx := sin(1.23)\ny := cos(1.23)\nz := tan(1.23)"));
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn comma_shorthand_grouped_import_is_rejected() {
+    assert!(!run("+> math/sin, cos, tan\nx := sin(1.23)"));
+}

@@ -81,3 +81,38 @@ x := n-choose-k([10.0 20.0 30.0 40.0], [2.0 3.0; 4.0 5.0])
 ",
 );
 }
+
+#[test]
+fn dynamic_item_alias_import_works() {
+    run_ok(
+        "+> s := math/sin\nx := s(0.0)\n",
+    );
+}
+
+#[test]
+fn dynamic_grouped_item_import_works() {
+    run_ok(
+        "+> math/{sin, cos, tan}\nx := sin(0.0)\ny := cos(0.0)\nz := tan(0.0)\n",
+    );
+}
+
+#[test]
+fn dynamic_multiline_grouped_item_import_works() {
+    run_ok(
+        "+> math/{\n  sin\n  cos\n  tan\n}\nx := sin(0.0)\ny := cos(0.0)\nz := tan(0.0)\n",
+    );
+}
+
+#[test]
+fn dynamic_grouped_item_import_does_not_import_other_items() {
+    run_err(
+        "+> math/{sin, cos, tan}\nx := round(1.23)\n",
+    );
+}
+
+#[test]
+fn dynamic_comma_shorthand_grouped_import_is_rejected() {
+    run_err(
+        "+> math/sin, cos, tan\nx := sin(0.0)\n",
+    );
+}
