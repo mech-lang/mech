@@ -12,45 +12,78 @@ const FLOOR_EXPORT_NAME: &[u8] = b"math/floor";
 const CEIL_EXPORT_NAME: &[u8] = b"math/ceil";
 const ATAN2_EXPORT_NAME: &[u8] = b"math/atan2";
 
-mech_abi::mech_dynamic_module_v1! {
-    module: b"math",
-    exports: [
-        unary_f64_to_f64 {
-            name: b"math/round",
-            function: math_round_f64_v1,
-        },
-        unary_f64_view_to_f64_view {
-            name: b"math/round",
-            function: math_round_f64_view_v1,
-        },
-        unary_f64_to_f64 {
-            name: b"math/sqrt",
-            function: math_sqrt_f64_v1,
-        },
-        unary_f64_view_to_f64_view {
-            name: b"math/sqrt",
-            function: math_sqrt_f64_view_v1,
-        },
-        unary_f64_to_f64 {
-            name: b"math/floor",
-            function: math_floor_f64_v1,
-        },
-        unary_f64_view_to_f64_view {
-            name: b"math/floor",
-            function: math_floor_f64_view_v1,
-        },
-        unary_f64_to_f64 {
-            name: b"math/ceil",
-            function: math_ceil_f64_v1,
-        },
-        unary_f64_view_to_f64_view {
-            name: b"math/ceil",
-            function: math_ceil_f64_view_v1,
-        },
-        binary_f64_f64_to_f64 {
-            name: b"math/atan2",
-            function: math_atan2_f64_v1,
-        },
+macro_rules! define_unary_f64_dynamic_kernels {
+    ($scalar_symbol:ident, $view_symbol:ident, $kernel_mod:ident) => {
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn $scalar_symbol(input: f64, out: *mut f64) -> MechStatusV1 {
+            unsafe { call_unary_f64(input, out, crate::kernels::$kernel_mod::scalar_f64) }
+        }
+
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn $view_symbol(
+            input: MechF64ViewV1,
+            out: MechF64ViewMutV1,
+        ) -> MechStatusV1 {
+            unsafe { call_unary_f64_view(input, out, crate::kernels::$kernel_mod::view_f64) }
+        }
+    };
+}
+
+macro_rules! define_binary_f64_dynamic_kernel {
+    ($symbol:ident, $kernel_mod:ident) => {
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn $symbol(lhs: f64, rhs: f64, out: *mut f64) -> MechStatusV1 {
+            unsafe { call_binary_f64(lhs, rhs, out, crate::kernels::$kernel_mod::scalar_f64) }
+        }
+    };
+}
+
+macro_rules! math_dynamic_module_v1 {
+    (
+        unary: [
+            $(
+                $unary_name:expr => ($unary_scalar:path, $unary_view:path)
+            ),* $(,)?
+        ],
+        binary: [
+            $(
+                $binary_name:expr => $binary_scalar:path
+            ),* $(,)?
+        ],
+    ) => {
+        mech_abi::mech_dynamic_module_v1! {
+            module: b"math",
+            exports: [
+                $(
+                    unary_f64_to_f64 {
+                        name: $unary_name,
+                        function: $unary_scalar,
+                    },
+                    unary_f64_view_to_f64_view {
+                        name: $unary_name,
+                        function: $unary_view,
+                    },
+                )*
+                $(
+                    binary_f64_f64_to_f64 {
+                        name: $binary_name,
+                        function: $binary_scalar,
+                    },
+                )*
+            ],
+        }
+    };
+}
+
+math_dynamic_module_v1! {
+    unary: [
+        b"math/round" => (math_round_f64_v1, math_round_f64_view_v1),
+        b"math/sqrt" => (math_sqrt_f64_v1, math_sqrt_f64_view_v1),
+        b"math/floor" => (math_floor_f64_v1, math_floor_f64_view_v1),
+        b"math/ceil" => (math_ceil_f64_v1, math_ceil_f64_view_v1),
+    ],
+    binary: [
+        b"math/atan2" => math_atan2_f64_v1,
     ],
 }
 
@@ -124,62 +157,34 @@ unsafe fn call_unary_f64_view(
     MechStatusV1::Ok
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn math_round_f64_v1(input: f64, out: *mut f64) -> MechStatusV1 {
-    unsafe { call_unary_f64(input, out, crate::kernels::round::scalar_f64) }
-}
+define_unary_f64_dynamic_kernels!(
+    math_round_f64_v1,
+    math_round_f64_view_v1,
+    round
+);
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn math_round_f64_view_v1(
-    input: MechF64ViewV1,
-    out: MechF64ViewMutV1,
-) -> MechStatusV1 {
-    unsafe { call_unary_f64_view(input, out, crate::kernels::round::view_f64) }
-}
+define_unary_f64_dynamic_kernels!(
+    math_sqrt_f64_v1,
+    math_sqrt_f64_view_v1,
+    sqrt
+);
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn math_sqrt_f64_v1(input: f64, out: *mut f64) -> MechStatusV1 {
-    unsafe { call_unary_f64(input, out, crate::kernels::sqrt::scalar_f64) }
-}
+define_unary_f64_dynamic_kernels!(
+    math_floor_f64_v1,
+    math_floor_f64_view_v1,
+    floor
+);
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn math_sqrt_f64_view_v1(
-    input: MechF64ViewV1,
-    out: MechF64ViewMutV1,
-) -> MechStatusV1 {
-    unsafe { call_unary_f64_view(input, out, crate::kernels::sqrt::view_f64) }
-}
+define_unary_f64_dynamic_kernels!(
+    math_ceil_f64_v1,
+    math_ceil_f64_view_v1,
+    ceil
+);
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn math_floor_f64_v1(input: f64, out: *mut f64) -> MechStatusV1 {
-    unsafe { call_unary_f64(input, out, crate::kernels::floor::scalar_f64) }
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn math_floor_f64_view_v1(
-    input: MechF64ViewV1,
-    out: MechF64ViewMutV1,
-) -> MechStatusV1 {
-    unsafe { call_unary_f64_view(input, out, crate::kernels::floor::view_f64) }
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn math_ceil_f64_v1(input: f64, out: *mut f64) -> MechStatusV1 {
-    unsafe { call_unary_f64(input, out, crate::kernels::ceil::scalar_f64) }
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn math_ceil_f64_view_v1(
-    input: MechF64ViewV1,
-    out: MechF64ViewMutV1,
-) -> MechStatusV1 {
-    unsafe { call_unary_f64_view(input, out, crate::kernels::ceil::view_f64) }
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn math_atan2_f64_v1(lhs: f64, rhs: f64, out: *mut f64) -> MechStatusV1 {
-    unsafe { call_binary_f64(lhs, rhs, out, crate::kernels::atan2::scalar_f64) }
-}
+define_binary_f64_dynamic_kernel!(
+    math_atan2_f64_v1,
+    atan2
+);
 
 #[cfg(test)]
 mod tests {
