@@ -48,3 +48,16 @@ jobs:
 
           # Runtime package tests.
           cargo test -p mech-runtime --lib --tests
+
+  dynamic-modules:
+    name: Dynamic modules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run dynamic module smoke path
+        run: bash scripts/test-dynamic-modules.sh
