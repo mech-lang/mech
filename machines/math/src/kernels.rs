@@ -1,136 +1,40 @@
-#[cfg(any(feature = "round", feature = "dynamic-module"))]
-pub mod round {
-    pub fn scalar_f64(input: f64) -> f64 {
-        libm::round(input)
-    }
+macro_rules! define_unary_f64_kernel_module {
+    ($module:ident, $feature:literal, $kernel:path) => {
+        #[cfg(any(feature = $feature, feature = "dynamic-module"))]
+        pub mod $module {
+            pub fn scalar_f64(input: f64) -> f64 {
+                $kernel(input)
+            }
 
-    pub fn view_f64(input: &[f64], out: &mut [f64]) {
-        for (src, dst) in input.iter().zip(out.iter_mut()) {
-            *dst = scalar_f64(*src);
+            pub fn view_f64(input: &[f64], out: &mut [f64]) {
+                for (src, dst) in input.iter().zip(out.iter_mut()) {
+                    *dst = scalar_f64(*src);
+                }
+            }
         }
-    }
+    };
 }
 
-#[cfg(any(feature = "sqrt", feature = "dynamic-module"))]
-pub mod sqrt {
-    pub fn scalar_f64(input: f64) -> f64 {
-        libm::sqrt(input)
-    }
-
-    pub fn view_f64(input: &[f64], out: &mut [f64]) {
-        for (src, dst) in input.iter().zip(out.iter_mut()) {
-            *dst = scalar_f64(*src);
+macro_rules! define_binary_f64_kernel_module {
+    ($module:ident, $feature:literal, $kernel:path) => {
+        #[cfg(any(feature = $feature, feature = "dynamic-module"))]
+        pub mod $module {
+            pub fn scalar_f64(lhs: f64, rhs: f64) -> f64 {
+                $kernel(lhs, rhs)
+            }
         }
-    }
+    };
 }
 
-#[cfg(any(feature = "floor", feature = "dynamic-module"))]
-pub mod floor {
-    pub fn scalar_f64(input: f64) -> f64 {
-        libm::floor(input)
-    }
+define_unary_f64_kernel_module!(round, "round", libm::round);
+define_unary_f64_kernel_module!(sqrt, "sqrt", libm::sqrt);
+define_unary_f64_kernel_module!(floor, "floor", libm::floor);
+define_unary_f64_kernel_module!(ceil, "ceil", libm::ceil);
+define_unary_f64_kernel_module!(sin, "sin", libm::sin);
+define_unary_f64_kernel_module!(cos, "cos", libm::cos);
+define_unary_f64_kernel_module!(tan, "tan", libm::tan);
+define_unary_f64_kernel_module!(asin, "asin", libm::asin);
+define_unary_f64_kernel_module!(acos, "acos", libm::acos);
+define_unary_f64_kernel_module!(atan, "atan", libm::atan);
 
-    pub fn view_f64(input: &[f64], out: &mut [f64]) {
-        for (src, dst) in input.iter().zip(out.iter_mut()) {
-            *dst = scalar_f64(*src);
-        }
-    }
-}
-
-#[cfg(any(feature = "ceil", feature = "dynamic-module"))]
-pub mod ceil {
-    pub fn scalar_f64(input: f64) -> f64 {
-        libm::ceil(input)
-    }
-
-    pub fn view_f64(input: &[f64], out: &mut [f64]) {
-        for (src, dst) in input.iter().zip(out.iter_mut()) {
-            *dst = scalar_f64(*src);
-        }
-    }
-}
-
-#[cfg(any(feature = "atan2", feature = "dynamic-module"))]
-pub mod atan2 {
-    pub fn scalar_f64(lhs: f64, rhs: f64) -> f64 {
-        libm::atan2(lhs, rhs)
-    }
-}
-
-#[cfg(any(feature = "sin", feature = "dynamic-module"))]
-pub mod sin {
-    pub fn scalar_f64(input: f64) -> f64 {
-        libm::sin(input)
-    }
-
-    pub fn view_f64(input: &[f64], out: &mut [f64]) {
-        for (src, dst) in input.iter().zip(out.iter_mut()) {
-            *dst = scalar_f64(*src);
-        }
-    }
-}
-
-#[cfg(any(feature = "cos", feature = "dynamic-module"))]
-pub mod cos {
-    pub fn scalar_f64(input: f64) -> f64 {
-        libm::cos(input)
-    }
-
-    pub fn view_f64(input: &[f64], out: &mut [f64]) {
-        for (src, dst) in input.iter().zip(out.iter_mut()) {
-            *dst = scalar_f64(*src);
-        }
-    }
-}
-
-#[cfg(any(feature = "tan", feature = "dynamic-module"))]
-pub mod tan {
-    pub fn scalar_f64(input: f64) -> f64 {
-        libm::tan(input)
-    }
-
-    pub fn view_f64(input: &[f64], out: &mut [f64]) {
-        for (src, dst) in input.iter().zip(out.iter_mut()) {
-            *dst = scalar_f64(*src);
-        }
-    }
-}
-
-#[cfg(any(feature = "asin", feature = "dynamic-module"))]
-pub mod asin {
-    pub fn scalar_f64(input: f64) -> f64 {
-        libm::asin(input)
-    }
-
-    pub fn view_f64(input: &[f64], out: &mut [f64]) {
-        for (src, dst) in input.iter().zip(out.iter_mut()) {
-            *dst = scalar_f64(*src);
-        }
-    }
-}
-
-#[cfg(any(feature = "acos", feature = "dynamic-module"))]
-pub mod acos {
-    pub fn scalar_f64(input: f64) -> f64 {
-        libm::acos(input)
-    }
-
-    pub fn view_f64(input: &[f64], out: &mut [f64]) {
-        for (src, dst) in input.iter().zip(out.iter_mut()) {
-            *dst = scalar_f64(*src);
-        }
-    }
-}
-
-#[cfg(any(feature = "atan", feature = "dynamic-module"))]
-pub mod atan {
-    pub fn scalar_f64(input: f64) -> f64 {
-        libm::atan(input)
-    }
-
-    pub fn view_f64(input: &[f64], out: &mut [f64]) {
-        for (src, dst) in input.iter().zip(out.iter_mut()) {
-            *dst = scalar_f64(*src);
-        }
-    }
-}
+define_binary_f64_kernel_module!(atan2, "atan2", libm::atan2);
