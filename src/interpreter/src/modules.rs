@@ -438,6 +438,57 @@ enum DynamicF64Arg {
 }
 
 #[cfg(feature = "dynamic-modules")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum DynamicF64BinaryBroadcastKind {
+    MatrixScalar,
+    ScalarMatrix,
+    MatrixMatrix,
+}
+
+#[cfg(feature = "dynamic-modules")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct DynamicF64BinaryBroadcastPlan {
+    kind: DynamicF64BinaryBroadcastKind,
+    rows: usize,
+    cols: usize,
+    len: usize,
+}
+
+#[cfg(feature = "dynamic-modules")]
+impl DynamicF64BinaryBroadcastPlan {
+    fn new(
+        kind: DynamicF64BinaryBroadcastKind,
+        rows: usize,
+        cols: usize,
+        fxn_name: &str,
+    ) -> MResult<Self> {
+        let Some(len) = rows.checked_mul(cols) else {
+            return Err(MechError::new(
+                GenericError {
+                    msg: format!(
+                        "dynamic function `{}` broadcast shape overflowed: {} x {}",
+                        fxn_name, rows, cols
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        };
+
+        Ok(Self {
+            kind,
+            rows,
+            cols,
+            len,
+        })
+    }
+
+    fn new_output_matrix(&self) -> Matrix<f64> {
+        Matrix::from_vec(vec![0.0; self.len], self.rows, self.cols)
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
 impl DynamicF64Arg {
     fn matrix_shape(&self) -> Option<(usize, usize)> {
         match self {
@@ -491,28 +542,15 @@ impl NativeFunctionCompiler for DynamicBinaryF64F64ToF64Compiler {
             }
 
             _ => {
-                let (rows, cols) = dynamic_binary_broadcast_shape(&lhs, &rhs, &self.name)?;
-                let Some(len) = rows.checked_mul(cols) else {
-                    return Err(MechError::new(
-                        GenericError {
-                            msg: format!(
-                                "dynamic function `{}` broadcast shape overflowed: {} x {}",
-                                self.name, rows, cols
-                            ),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc());
-                };
-
-                let out = Matrix::from_vec(vec![0.0; len], rows, cols);
+                let plan = dynamic_binary_broadcast_plan(&lhs, &rhs, &self.name)?;
+                let out = plan.new_output_matrix();
 
                 Ok(Box::new(DynamicBinaryF64F64BroadcastFunction {
                     name: self.name.clone(),
                     lhs,
                     rhs,
                     out,
-                    len,
+                    plan,
                     kernel: self.kernel,
                     _library: self._library.clone(),
                 }))
@@ -664,20 +702,25 @@ fn dynamic_arg_as_f64_scalar_or_matrix(value: &Value, fxn_name: &str) -> MResult
 }
 
 #[cfg(feature = "dynamic-modules")]
-fn dynamic_binary_broadcast_shape(
+fn dynamic_binary_broadcast_plan(
     lhs: &DynamicF64Arg,
     rhs: &DynamicF64Arg,
     fxn_name: &str,
-) -> MResult<(usize, usize)> {
+) -> MResult<DynamicF64BinaryBroadcastPlan> {
     match (lhs.matrix_shape(), rhs.matrix_shape()) {
         (Some((lhs_rows, lhs_cols)), Some((rhs_rows, rhs_cols))) => {
             if lhs_rows == rhs_rows && lhs_cols == rhs_cols {
-                Ok((lhs_rows, lhs_cols))
+                DynamicF64BinaryBroadcastPlan::new(
+                    DynamicF64BinaryBroadcastKind::MatrixMatrix,
+                    lhs_rows,
+                    lhs_cols,
+                    fxn_name,
+                )
             } else {
                 Err(MechError::new(
                     GenericError {
                         msg: format!(
-                            "dynamic function `{}` cannot broadcast matrix shapes {}x{} and {}x{}",
+                            "dynamic function `{}` cannot broadcast matrix shapes {}x{} and {}x{}; exact shape match is required",
                             fxn_name, lhs_rows, lhs_cols, rhs_rows, rhs_cols
                         ),
                     },
@@ -686,12 +729,22 @@ fn dynamic_binary_broadcast_shape(
                 .with_compiler_loc())
             }
         }
-        (Some(shape), None) => Ok(shape),
-        (None, Some(shape)) => Ok(shape),
+        (Some((rows, cols)), None) => DynamicF64BinaryBroadcastPlan::new(
+            DynamicF64BinaryBroadcastKind::MatrixScalar,
+            rows,
+            cols,
+            fxn_name,
+        ),
+        (None, Some((rows, cols))) => DynamicF64BinaryBroadcastPlan::new(
+            DynamicF64BinaryBroadcastKind::ScalarMatrix,
+            rows,
+            cols,
+            fxn_name,
+        ),
         (None, None) => Err(MechError::new(
             GenericError {
                 msg: format!(
-                    "dynamic function `{}` expected at least one matrix argument for broadcast",
+                    "dynamic function `{}` does not need a broadcast plan for scalar/scalar arguments",
                     fxn_name
                 ),
             },
@@ -787,7 +840,7 @@ struct DynamicBinaryF64F64BroadcastFunction {
     lhs: DynamicF64Arg,
     rhs: DynamicF64Arg,
     out: Matrix<f64>,
-    len: usize,
+    plan: DynamicF64BinaryBroadcastPlan,
     kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
     _library: Arc<libloading::Library>,
 }
@@ -795,9 +848,9 @@ struct DynamicBinaryF64F64BroadcastFunction {
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicBinaryF64F64BroadcastFunction {
     fn solve(&self) {
-        let mut out_vec = Vec::with_capacity(self.len);
+        let mut out_vec = Vec::with_capacity(self.plan.len);
 
-        for index in 1..=self.len {
+        for index in 1..=self.plan.len {
             let lhs = self.lhs.value_at(index);
             let rhs = self.rhs.value_at(index);
             let mut out = 0.0;
@@ -1071,5 +1124,81 @@ fn alias_module_item(fxns: &mut Functions, module: &str, item: &str) -> MResult<
             None,
         )
         .with_compiler_loc())
+    }
+}
+
+#[cfg(all(test, feature = "dynamic-modules"))]
+mod dynamic_binary_broadcast_tests {
+    use super::*;
+
+    fn scalar(value: f64) -> DynamicF64Arg {
+        DynamicF64Arg::Scalar(Ref::new(value))
+    }
+
+    fn matrix(values: Vec<f64>, rows: usize, cols: usize) -> DynamicF64Arg {
+        DynamicF64Arg::Matrix(Matrix::from_vec(values, rows, cols))
+    }
+
+    #[test]
+    fn broadcast_plan_matrix_scalar() {
+        let lhs = matrix(vec![10.0, 20.0], 1, 2);
+        let rhs = scalar(2.0);
+
+        let plan = dynamic_binary_broadcast_plan(&lhs, &rhs, "test").unwrap();
+
+        assert_eq!(plan.kind, DynamicF64BinaryBroadcastKind::MatrixScalar);
+        assert_eq!(plan.rows, 1);
+        assert_eq!(plan.cols, 2);
+        assert_eq!(plan.len, 2);
+    }
+
+    #[test]
+    fn broadcast_plan_scalar_matrix() {
+        let lhs = scalar(10.0);
+        let rhs = matrix(vec![2.0, 3.0], 1, 2);
+
+        let plan = dynamic_binary_broadcast_plan(&lhs, &rhs, "test").unwrap();
+
+        assert_eq!(plan.kind, DynamicF64BinaryBroadcastKind::ScalarMatrix);
+        assert_eq!(plan.rows, 1);
+        assert_eq!(plan.cols, 2);
+        assert_eq!(plan.len, 2);
+    }
+
+    #[test]
+    fn broadcast_plan_same_shape_matrix_matrix() {
+        let lhs = matrix(vec![10.0, 20.0], 1, 2);
+        let rhs = matrix(vec![2.0, 3.0], 1, 2);
+
+        let plan = dynamic_binary_broadcast_plan(&lhs, &rhs, "test").unwrap();
+
+        assert_eq!(plan.kind, DynamicF64BinaryBroadcastKind::MatrixMatrix);
+        assert_eq!(plan.rows, 1);
+        assert_eq!(plan.cols, 2);
+        assert_eq!(plan.len, 2);
+    }
+
+    #[test]
+    fn broadcast_plan_rejects_different_lengths() {
+        let lhs = matrix(vec![10.0, 20.0], 1, 2);
+        let rhs = matrix(vec![2.0, 3.0, 4.0], 1, 3);
+
+        assert!(dynamic_binary_broadcast_plan(&lhs, &rhs, "test").is_err());
+    }
+
+    #[test]
+    fn broadcast_plan_rejects_same_len_different_shape() {
+        let lhs = matrix(vec![1.0, 2.0, 3.0, 4.0], 1, 4);
+        let rhs = matrix(vec![1.0, 2.0, 3.0, 4.0], 2, 2);
+
+        assert!(dynamic_binary_broadcast_plan(&lhs, &rhs, "test").is_err());
+    }
+
+    #[test]
+    fn broadcast_plan_rejects_scalar_scalar() {
+        let lhs = scalar(10.0);
+        let rhs = scalar(2.0);
+
+        assert!(dynamic_binary_broadcast_plan(&lhs, &rhs, "test").is_err());
     }
 }

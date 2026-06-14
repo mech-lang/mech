@@ -97,3 +97,14 @@ fn dynamic_combinatorics_matrix_matrix_shape_mismatch_errors() {
 
     assert!(result.is_err());
 }
+
+#[cfg(feature = "dynamic-modules")]
+#[test]
+fn dynamic_combinatorics_matrix_matrix_same_cells_different_shape_errors() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let result = program.run_string(
+        "+> combinatorics/n-choose-k\nx := n-choose-k([10.0 20.0 30.0 40.0], [2.0 3.0; 4.0 5.0])\nx",
+    );
+
+    assert!(result.is_err());
+}
