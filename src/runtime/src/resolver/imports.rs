@@ -71,9 +71,14 @@ pub(crate) fn module_import_specifier(import: &mech_core::ModuleImport) -> Strin
       let item = import
         .item
         .as_ref()
-        .map(|path| path.iter().map(|id| id.to_string()).collect::<Vec<_>>().join("/"))
+        .map(|items| items.iter().map(|id| id.to_string()).collect::<Vec<_>>().join("/"))
         .unwrap_or_default();
-      format!("{module}/{item}")
+
+      if let Some(alias) = &import.alias {
+        format!("{} := {module}/{item}", alias.to_string())
+      } else {
+        format!("{module}/{item}")
+      }
     }
     mech_core::ModuleImportKind::Group => {
       let items = import

@@ -116,3 +116,24 @@ fn dynamic_comma_shorthand_grouped_import_is_rejected() {
         "+> math/sin, cos, tan\nx := sin(0.0)\n",
     );
 }
+
+#[test]
+fn dynamic_module_alias_import_is_rejected() {
+    run_err(
+        "+> m := math\nx := m/sin(0.0)\n",
+    );
+}
+
+#[test]
+fn dynamic_glob_alias_import_is_rejected() {
+    run_err(
+        "+> f := math/*\nx := f(0.0)\n",
+    );
+}
+
+#[test]
+fn dynamic_grouped_item_alias_import_is_rejected() {
+    run_err(
+        "+> math/{s := sin}\nx := s(0.0)\n",
+    );
+}

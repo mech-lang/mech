@@ -114,3 +114,21 @@ fn multiline_grouped_item_import_works() {
 fn comma_shorthand_grouped_import_is_rejected() {
     assert!(!run("+> math/sin, cos, tan\nx := sin(1.23)"));
 }
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn module_alias_import_is_rejected() {
+    assert!(!run("+> m := math\nx := m/sin(1.23)"));
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn glob_alias_import_is_rejected() {
+    assert!(!run("+> f := math/*\nx := f(1.23)"));
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn grouped_item_alias_import_is_rejected() {
+    assert!(!run("+> math/{s := sin}\nx := s(1.23)"));
+}
