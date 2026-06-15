@@ -100,11 +100,9 @@ fn module_import_end(input: ParseString) -> ParseResult<()> {
 }
 
 fn aliased_item_import(input: ParseString) -> ParseResult<ModuleImport> {
-    let original = input.clone();
-    let (input, alias) = module_import_alias_path(input)
-        .map_err(|_| nom::Err::Error(ParseError::new(original.clone(), "not aliased module import")))?;
-    let (input, _) = import_alias_operator(input)
-        .map_err(|_| nom::Err::Error(ParseError::new(original, "not aliased module import")))?;
+    let (input, alias) = module_import_alias_path(input)?;
+    let (input, _) = import_alias_operator(input)?;
+
     let (input, (module, _, item)) = cut(nom_tuple((
         module_root,
         slash,
@@ -171,14 +169,11 @@ pub fn module_import(input: ParseString) -> ParseResult<ModuleImport> {
     let (input, _) = right_angle(input)?;
     let (input, _) = space_tab0(input)?;
 
-    let import_input = input.clone();
-    let (input, mut import) = match aliased_item_import(import_input.clone()) {
-        Ok(result) => result,
-        Err(_) => alt((
-            module_suffix_import,
-            module_only_import,
-        ))(import_input)?,
-    };
+    let (input, mut import) = alt((
+        aliased_item_import,
+        module_suffix_import,
+        module_only_import,
+    ))(input)?;
 
     let (next_input, _) = module_import_end(input.clone())?;
     import.module.name.src_range.end = next_input.loc();
