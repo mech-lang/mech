@@ -340,7 +340,7 @@ pub fn symbol(input: ParseString) -> ParseResult<Token> {
 
 // identifier-symbol := ampersand | dollar | bar | percent | slash | hashtag | backslash | tilde | plus | dash | asterisk | caret ;
 pub fn identifier_symbol(input: ParseString) -> ParseResult<Token> {
-  let (input, symbol) = alt((ampersand, dollar, percent, slash, hashtag, backslash, tilde, plus, dash, asterisk, caret, underscore))(input)?;
+  let (input, symbol) = alt((ampersand, dollar, percent, slash, hashtag, backslash, tilde, plus, dash, asterisk, caret))(input)?;
   Ok((input, symbol))
 }
 
@@ -439,10 +439,41 @@ pub fn enum_separator(input: ParseString) -> ParseResult<()> {
 
 // identifier := (alpha | emoji), (alpha | digit | identifier_symbol | emoji)* ;
 pub fn identifier(input: ParseString) -> ParseResult<Identifier> {
-  let (input, (first, mut rest)) = nom_tuple((alt((alpha_token, emoji, underscore)), many0(alt((alpha_token, digit_token, identifier_symbol, emoji)))))(input)?;
+  let (input, (first, mut rest)) = nom_tuple((alt((alpha_token, emoji)), many0(alt((alpha_token, digit_token, identifier_symbol, emoji)))))(input)?;
   let mut tokens = vec![first];
   tokens.append(&mut rest);
   let mut merged = Token::merge_tokens(&mut tokens).unwrap();
   merged.kind = TokenKind::Identifier; 
+  Ok((input, Identifier{name: merged}))
+}
+fn identifier_path_segment_emoji(input: ParseString) -> ParseResult<Token> {
+  let (input, _) = is_not(alt((
+    slash,
+    asterisk,
+    comma,
+    colon,
+    equal,
+    left_brace,
+    right_brace,
+    underscore,
+    space,
+    tab,
+    new_line,
+  )))(input)?;
+  emoji(input)
+}
+
+pub fn identifier_path_segment(input: ParseString) -> ParseResult<Identifier> {
+  let (input, (first, mut rest)) = nom_tuple((
+    alt((alpha_token, identifier_path_segment_emoji)),
+    many0(alt((alpha_token, digit_token, dash, identifier_path_segment_emoji))),
+  ))(input)?;
+
+  let mut tokens = vec![first];
+  tokens.append(&mut rest);
+
+  let mut merged = Token::merge_tokens(&mut tokens).unwrap();
+  merged.kind = TokenKind::Identifier;
+
   Ok((input, Identifier{name: merged}))
 }

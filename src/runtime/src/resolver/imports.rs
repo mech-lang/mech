@@ -62,18 +62,59 @@ pub fn source_request_for_import(
 }
 
 
-pub(crate) fn module_import_specifier(import: &mech_core::ModuleImport) -> String {
+fn module_import_item_path(item: &mech_core::ModuleImportPath) -> String {
+  item.to_string()
+}
+
+fn classified_module_import(module: &str, item: Option<&str>, alias: Option<String>) -> SourceImportDeclaration {
+  let specifier = match item {
+    Some(item) => format!("{module}/{item}"),
+    None => module.to_string(),
+  };
+
+  let mut declaration = classify_import_specifier(specifier);
+  declaration.alias = alias;
+  declaration
+}
+
+pub(crate) fn module_import_declarations(import: &mech_core::ModuleImport) -> Vec<SourceImportDeclaration> {
   let module = import.module.to_string();
+
   match import.kind {
-    mech_core::ModuleImportKind::Module => module,
-    mech_core::ModuleImportKind::Glob => format!("{module}/*"),
+    mech_core::ModuleImportKind::Module => {
+      vec![classified_module_import(&module, None, None)]
+    }
+
+    mech_core::ModuleImportKind::Glob => {
+      vec![classify_import_specifier(format!("{module}/*"))]
+    }
+
     mech_core::ModuleImportKind::Item => {
       let item = import
         .item
         .as_ref()
-        .map(|path| path.iter().map(|id| id.to_string()).collect::<Vec<_>>().join("/"))
+        .map(module_import_item_path)
         .unwrap_or_default();
-      format!("{module}/{item}")
+
+      let alias = import.alias.as_ref().map(|alias| alias.to_string());
+
+      vec![classified_module_import(&module, Some(&item), alias)]
+    }
+
+    mech_core::ModuleImportKind::Group => {
+      import
+        .group_items
+        .as_ref()
+        .map(|items| {
+          items
+            .iter()
+            .map(|group_item| {
+              let item = module_import_item_path(&group_item.item);
+              classified_module_import(&module, Some(&item), None)
+            })
+            .collect::<Vec<_>>()
+        })
+        .unwrap_or_default()
     }
   }
 }

@@ -812,24 +812,122 @@ pub enum ModuleImportKind {
   Module,
   Item,
   Glob,
+  Group,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ModuleImportIntrinsicSegment {
+  pub marker: Token,
+  pub name: Identifier,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ModuleImportPathSegment {
+  Name(Identifier),
+  Intrinsic(ModuleImportIntrinsicSegment),
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ModuleImportPath {
+  pub segments: Vec<ModuleImportPathSegment>,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ModuleImportGroupItem {
+  pub item: ModuleImportPath,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ModuleImport {
   pub module: Identifier,
-  pub item: Option<Vec<Identifier>>,
+  pub item: Option<ModuleImportPath>,
+  pub group_items: Option<Vec<ModuleImportGroupItem>>,
+  pub alias: Option<ModuleImportPath>,
   pub kind: ModuleImportKind,
+}
+
+impl ModuleImportPathSegment {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      ModuleImportPathSegment::Name(identifier) => identifier.tokens(),
+      ModuleImportPathSegment::Intrinsic(segment) => {
+        let mut tokens = vec![segment.marker.clone()];
+        tokens.append(&mut segment.name.tokens());
+        tokens
+      }
+    }
+  }
+}
+
+impl ModuleImportPath {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = vec![];
+    for segment in &self.segments {
+      tokens.append(&mut segment.tokens());
+    }
+    tokens
+  }
+
+  pub fn iter(&self) -> impl Iterator<Item = &Identifier> {
+    self.segments.iter().map(|segment| match segment {
+      ModuleImportPathSegment::Name(identifier) => identifier,
+      ModuleImportPathSegment::Intrinsic(segment) => &segment.name,
+    })
+  }
+}
+
+impl fmt::Display for ModuleImportPathSegment {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      ModuleImportPathSegment::Name(identifier) => write!(f, "{}", identifier.to_string()),
+      ModuleImportPathSegment::Intrinsic(segment) => write!(f, "_{}", segment.name.to_string()),
+    }
+  }
+}
+
+impl fmt::Display for ModuleImportPath {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let parts = self
+      .segments
+      .iter()
+      .map(|segment| segment.to_string())
+      .collect::<Vec<_>>()
+      .join("/");
+    write!(f, "{parts}")
+  }
 }
 
 impl ModuleImport {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tokens = self.module.tokens();
+
     if let Some(item_path) = &self.item {
-      for item in item_path {
-        tokens.append(&mut item.tokens());
+      tokens.append(&mut item_path.tokens());
+    }
+
+    if let Some(group_items) = &self.group_items {
+      for group_item in group_items {
+        tokens.append(&mut group_item.item.tokens());
       }
     }
+
+    if matches!(self.kind, ModuleImportKind::Glob) {
+      tokens.push(Token {
+        kind: TokenKind::Asterisk,
+        chars: vec!['*'],
+        src_range: self.module.name.src_range.clone(),
+      });
+    }
+
+    if let Some(alias) = &self.alias {
+      tokens.append(&mut alias.tokens());
+    }
+
     tokens
   }
 }

@@ -1083,6 +1083,30 @@ pub fn import_module_item(fxns: &mut Functions, module: &str, item: &str) -> MRe
     alias_module_item(fxns, module, item)
 }
 
+pub fn import_module_item_as(
+    fxns: &mut Functions,
+    module: &str,
+    item: &str,
+    alias: &str,
+) -> MResult<()> {
+    let manifest = load_module(fxns, module)?;
+    if !manifest
+        .items
+        .iter()
+        .any(|manifest_item| manifest_item == item)
+    {
+        return Err(MechError::new(
+            MissingFunctionError {
+                function_id: hash_str(&format!("{module}/{item}")),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+
+    alias_module_item_as(fxns, module, item, alias)
+}
+
 pub fn import_module_glob(fxns: &mut Functions, module: &str) -> MResult<()> {
     let manifest = load_module(fxns, module)?;
     for item in manifest.items.iter() {
@@ -1092,9 +1116,18 @@ pub fn import_module_glob(fxns: &mut Functions, module: &str) -> MResult<()> {
 }
 
 fn alias_module_item(fxns: &mut Functions, module: &str, item: &str) -> MResult<()> {
+    let local_name = item.rsplit('/').next().unwrap_or(item);
+    alias_module_item_as(fxns, module, item, local_name)
+}
+
+fn alias_module_item_as(
+    fxns: &mut Functions,
+    module: &str,
+    item: &str,
+    local_name: &str,
+) -> MResult<()> {
     let qualified_name = format!("{module}/{item}");
     let qualified_id = hash_str(&qualified_name);
-    let local_name = item.rsplit('/').next().unwrap_or(item);
     let local_id = hash_str(local_name);
     let mut found = false;
 

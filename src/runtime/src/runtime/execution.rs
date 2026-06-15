@@ -1391,10 +1391,13 @@ impl MechRuntime {
           let Some(export_value) = dependency_instance.exports.get(name) else {
             return Err(MechError::new(RuntimeModuleExportNotFound { dependency: import.specifier.clone(), export: name.clone() }, None));
           };
-          if let Some(first) = ownership.insert(name.clone(), import.specifier.clone()) {
-            return Err(MechError::new(RuntimeModuleImportConflict { binding: name.clone(), first_import: first, second_import: import.specifier.clone() }, None));
+
+          let binding = import.alias.clone().unwrap_or_else(|| name.clone());
+
+          if let Some(first) = ownership.insert(binding.clone(), import.specifier.clone()) {
+            return Err(MechError::new(RuntimeModuleImportConflict { binding: binding.clone(), first_import: first, second_import: import.specifier.clone() }, None));
           }
-          bindings.insert(name.clone(), export_value.clone());
+          bindings.insert(binding, export_value.clone());
         }
         SourceImportKind::Wildcard => {
           for (export_name, export_value) in &dependency_instance.exports {

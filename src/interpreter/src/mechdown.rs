@@ -289,22 +289,55 @@ pub fn comment(cmmt: &Comment, p: &Interpreter) -> MResult<Value> {
 }
 
 #[cfg(feature = "functions")]
+fn module_import_item_path(item: &ModuleImportPath) -> String {
+  item.to_string()
+}
+
+#[cfg(feature = "functions")]
 pub fn module_import_runtime(import: &ModuleImport, p: &Interpreter) -> MResult<Value> {
   let module = import.module.to_string();
   match import.kind {
     ModuleImportKind::Module => {
+      if import.alias.is_some() {
+        return Err(MechError::new(
+          GenericError { msg: "Module import alias is only supported for item imports".to_string() },
+          None,
+        ).with_compiler_loc());
+      }
       load_module(&mut p.functions().borrow_mut(), &module)?;
       Ok(Value::Empty)
     }
     ModuleImportKind::Item => {
       let item = import.item.as_ref().ok_or_else(|| {
         MechError::new(MissingFunctionError { function_id: hash_str(&module) }, None).with_compiler_loc()
-      })?.iter().map(|id| id.to_string()).collect::<Vec<_>>().join("/");
-      import_module_item(&mut p.functions().borrow_mut(), &module, &item)?;
+      })?;
+      let item = module_import_item_path(item);
+      if let Some(alias) = &import.alias {
+        import_module_item_as(&mut p.functions().borrow_mut(), &module, &item, &alias.to_string())?;
+      } else {
+        import_module_item(&mut p.functions().borrow_mut(), &module, &item)?;
+      }
       Ok(Value::Empty)
     }
     ModuleImportKind::Glob => {
+      if import.alias.is_some() {
+        return Err(MechError::new(
+          GenericError { msg: "Module import alias is only supported for item imports".to_string() },
+          None,
+        ).with_compiler_loc());
+      }
       import_module_glob(&mut p.functions().borrow_mut(), &module)?;
+      Ok(Value::Empty)
+    }
+    ModuleImportKind::Group => {
+      let group_items = import.group_items.as_ref().ok_or_else(|| {
+        MechError::new(MissingFunctionError { function_id: hash_str(&module) }, None).with_compiler_loc()
+      })?;
+
+      for group_item in group_items {
+        let item = module_import_item_path(&group_item.item);
+        import_module_item(&mut p.functions().borrow_mut(), &module, &item)?;
+      }
       Ok(Value::Empty)
     }
   }
