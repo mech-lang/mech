@@ -2,67 +2,62 @@
 use crate::*;
 use nom::{
     branch::alt,
-    combinator::{cut, map},
+    combinator::{cut, map, opt},
     multi::many0,
     sequence::{delimited, preceded, tuple as nom_tuple},
 };
 
-const STDLIB_MODULE_ROOTS: &[&str] = &["math", "stats", "io", "string", "combinatorics"];
-
-fn import_emoji(input: ParseString) -> ParseResult<Token> {
-    let (input, _) = is_not(alt((
-        slash,
-        asterisk,
-        left_brace,
-        right_brace,
-        comma,
-        colon,
-        equal,
-        space,
-        tab,
-        new_line,
-    )))(input)?;
-    emoji(input)
+fn module_import_name_segment(input: ParseString) -> ParseResult<ModuleImportPathSegment> {
+    let (input, name) = identifier_path_segment(input)?;
+    Ok((input, ModuleImportPathSegment::Name(name)))
 }
 
-fn import_part(input: ParseString) -> ParseResult<Identifier> {
-    let (input, (first, mut rest)) = nom_tuple((
-        alt((alpha_token, import_emoji, underscore)),
-        many0(alt((alpha_token, digit_token, dash, underscore, import_emoji))),
-    ))(input)?;
-
-    let mut tokens = vec![first];
-    tokens.append(&mut rest);
-
-    let mut merged = Token::merge_tokens(&mut tokens).unwrap();
-    merged.kind = TokenKind::Identifier;
-
-    Ok((input, Identifier { name: merged }))
+fn module_import_intrinsic_segment(input: ParseString) -> ParseResult<ModuleImportPathSegment> {
+    let (input, marker) = underscore(input)?;
+    let (input, name) = cut(identifier_path_segment)(input)?;
+    Ok((
+        input,
+        ModuleImportPathSegment::Intrinsic(ModuleImportIntrinsicSegment {
+            marker,
+            name,
+        }),
+    ))
 }
 
-fn import_item_path(input: ParseString) -> ParseResult<Vec<Identifier>> {
-    let (input, first) = import_part(input)?;
-    let (input, mut rest) = many0(preceded(slash, import_part))(input)?;
-
-    let mut items = vec![first];
-    items.append(&mut rest);
-
-    Ok((input, items))
+fn module_import_path_segment(input: ParseString) -> ParseResult<ModuleImportPathSegment> {
+    alt((
+        module_import_intrinsic_segment,
+        module_import_name_segment,
+    ))(input)
 }
 
-fn stdlib_module(input: ParseString) -> ParseResult<Identifier> {
-    let original = input.clone();
-    let (input, module) = import_part(input)?;
-    let module_name = module.to_string();
+fn module_import_path(input: ParseString) -> ParseResult<ModuleImportPath> {
+    let (input, first) = module_import_path_segment(input)?;
+    let (input, mut rest) = many0(preceded(slash, module_import_path_segment))(input)?;
 
-    if STDLIB_MODULE_ROOTS.iter().any(|root| root == &module_name.as_str()) {
-        Ok((input, module))
-    } else {
-        Err(nom::Err::Error(ParseError::new(
-            original,
-            "not a known stdlib module import",
-        )))
-    }
+    let mut segments = vec![first];
+    segments.append(&mut rest);
+
+    Ok((input, ModuleImportPath { segments }))
+}
+
+fn module_import_alias_segment(input: ParseString) -> ParseResult<ModuleImportPathSegment> {
+    let (input, name) = identifier_path_segment(input)?;
+    Ok((input, ModuleImportPathSegment::Name(name)))
+}
+
+fn module_import_alias_path(input: ParseString) -> ParseResult<ModuleImportPath> {
+    let (input, first) = module_import_alias_segment(input)?;
+    let (input, mut rest) = many0(preceded(slash, module_import_alias_segment))(input)?;
+
+    let mut segments = vec![first];
+    segments.append(&mut rest);
+
+    Ok((input, ModuleImportPath { segments }))
+}
+
+fn module_root(input: ParseString) -> ParseResult<Identifier> {
+    identifier_path_segment(input)
 }
 
 fn import_alias_operator(input: ParseString) -> ParseResult<()> {
@@ -78,12 +73,11 @@ fn import_group_separator(input: ParseString) -> ParseResult<()> {
         list_separator,
         map(whitespace1, |_| ()),
     ))(input)?;
-
     Ok((input, ()))
 }
 
 fn import_group_item(input: ParseString) -> ParseResult<ModuleImportGroupItem> {
-    let (input, item) = import_item_path(input)?;
+    let (input, item) = module_import_path(input)?;
     Ok((input, ModuleImportGroupItem { item }))
 }
 
@@ -106,12 +100,15 @@ fn module_import_end(input: ParseString) -> ParseResult<()> {
 }
 
 fn aliased_item_import(input: ParseString) -> ParseResult<ModuleImport> {
-    let (input, alias) = import_part(input)?;
-    let (input, _) = import_alias_operator(input)?;
+    let original = input.clone();
+    let (input, alias) = module_import_alias_path(input)
+        .map_err(|_| nom::Err::Error(ParseError::new(original.clone(), "not aliased module import")))?;
+    let (input, _) = import_alias_operator(input)
+        .map_err(|_| nom::Err::Error(ParseError::new(original, "not aliased module import")))?;
     let (input, (module, _, item)) = cut(nom_tuple((
-        stdlib_module,
+        module_root,
         slash,
-        import_item_path,
+        module_import_path,
     )))(input)?;
 
     Ok((
@@ -127,7 +124,7 @@ fn aliased_item_import(input: ParseString) -> ParseResult<ModuleImport> {
 }
 
 fn module_suffix_import(input: ParseString) -> ParseResult<ModuleImport> {
-    let (input, module) = stdlib_module(input)?;
+    let (input, module) = module_root(input)?;
     let (input, _) = slash(input)?;
     let (input, (item, group_items, kind)) = cut(alt((
         map(asterisk, |_| (None, None, ModuleImportKind::Glob)),
@@ -135,7 +132,7 @@ fn module_suffix_import(input: ParseString) -> ParseResult<ModuleImport> {
             delimited(left_brace, cut(import_group_items), right_brace),
             |group_items| (None, Some(group_items), ModuleImportKind::Group),
         ),
-        map(import_item_path, |item| (Some(item), None, ModuleImportKind::Item)),
+        map(module_import_path, |item| (Some(item), None, ModuleImportKind::Item)),
     )))(input)?;
 
     Ok((
@@ -151,7 +148,10 @@ fn module_suffix_import(input: ParseString) -> ParseResult<ModuleImport> {
 }
 
 fn module_only_import(input: ParseString) -> ParseResult<ModuleImport> {
-    let (input, module) = stdlib_module(input)?;
+    let (input, module) = module_root(input)?;
+    if slash(input.clone()).is_ok() {
+        return Err(nom::Err::Error(ParseError::new(input, "not a module-only import")));
+    }
 
     Ok((
         input,
@@ -165,75 +165,23 @@ fn module_only_import(input: ParseString) -> ParseResult<ModuleImport> {
     ))
 }
 
-fn item_import(input: ParseString) -> ParseResult<ModuleImport> {
-    let (input, module) = stdlib_module(input)?;
-    let (input, _) = slash(input)?;
-    let (input, item) = import_item_path(input)?;
-
-    Ok((
-        input,
-        ModuleImport {
-            module,
-            item: Some(item),
-            group_items: None,
-            alias: None,
-            kind: ModuleImportKind::Item,
-        },
-    ))
-}
-
-fn glob_import(input: ParseString) -> ParseResult<ModuleImport> {
-    let (input, module) = stdlib_module(input)?;
-    let (input, _) = slash(input)?;
-    let (input, _) = asterisk(input)?;
-
-    Ok((
-        input,
-        ModuleImport {
-            module,
-            item: None,
-            group_items: None,
-            alias: None,
-            kind: ModuleImportKind::Glob,
-        },
-    ))
-}
-
-fn grouped_item_import(input: ParseString) -> ParseResult<ModuleImport> {
-    let (input, module) = stdlib_module(input)?;
-    let (input, _) = slash(input)?;
-    let (input, group_items) = delimited(
-        left_brace,
-        cut(import_group_items),
-        right_brace,
-    )(input)?;
-
-    Ok((
-        input,
-        ModuleImport {
-            module,
-            item: None,
-            group_items: Some(group_items),
-            alias: None,
-            kind: ModuleImportKind::Group,
-        },
-    ))
-}
-
 pub fn module_import(input: ParseString) -> ParseResult<ModuleImport> {
     let (input, _) = whitespace0(input)?;
     let (input, _) = plus(input)?;
     let (input, _) = right_angle(input)?;
     let (input, _) = space_tab0(input)?;
 
-    let (input, mut import) = alt((
-        aliased_item_import,
-        module_suffix_import,
-        module_only_import,
-    ))(input)?;
+    let import_input = input.clone();
+    let (input, mut import) = match aliased_item_import(import_input.clone()) {
+        Ok(result) => result,
+        Err(_) => alt((
+            module_suffix_import,
+            module_only_import,
+        ))(import_input)?,
+    };
 
-    import.module.name.src_range.end = input.loc();
     let (input, _) = module_import_end(input)?;
+    import.module.name.src_range.end = input.loc();
 
     Ok((input, import))
 }

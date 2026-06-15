@@ -289,11 +289,8 @@ pub fn comment(cmmt: &Comment, p: &Interpreter) -> MResult<Value> {
 }
 
 #[cfg(feature = "functions")]
-fn module_import_item_path(item: &[Identifier]) -> String {
-  item.iter()
-    .map(|id| id.to_string())
-    .collect::<Vec<_>>()
-    .join("/")
+fn module_import_item_path(item: &ModuleImportPath) -> String {
+  item.to_string()
 }
 
 #[cfg(feature = "functions")]

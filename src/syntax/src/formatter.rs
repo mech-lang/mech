@@ -1857,10 +1857,7 @@ impl Formatter {
     match node.kind {
       ModuleImportKind::Module => format!("+> {}", node.module.to_string()),
       ModuleImportKind::Item => {
-        let item = node.item.as_ref().unwrap().iter()
-          .map(|id| id.to_string())
-          .collect::<Vec<_>>()
-          .join("/");
+        let item = node.item.as_ref().map(|item| item.to_string()).unwrap_or_default();
 
         if let Some(alias) = &node.alias {
           format!("+> {} := {}/{}", alias.to_string(), node.module.to_string(), item)
@@ -1872,10 +1869,11 @@ impl Formatter {
       ModuleImportKind::Group => {
         let items = node.group_items.as_ref().map(|group_items| {
           group_items.iter()
-            .map(|group_item| group_item.item.iter().map(|id| id.to_string()).collect::<Vec<_>>().join("/"))
+            .map(|group_item| group_item.item.to_string())
             .collect::<Vec<_>>()
             .join(", ")
         }).unwrap_or_default();
+
         format!("+> {}/{{{}}}", node.module.to_string(), items)
       }
     }
