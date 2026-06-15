@@ -60,9 +60,21 @@ fn module_import_value_alias(input: ParseString) -> ParseResult<ModuleImportAlia
     map(module_import_alias_path, ModuleImportAlias::Value)(input)
 }
 
+fn context_import_alias_segment(input: ParseString) -> ParseResult<Identifier> {
+    let (input, (first, mut rest)) = nom_tuple((
+        alpha_token,
+        many0(alt((alpha_token, digit_token, dash, underscore))),
+    ))(input)?;
+    let mut tokens = vec![first];
+    tokens.append(&mut rest);
+    let mut merged = Token::merge_tokens(&mut tokens).unwrap();
+    merged.kind = TokenKind::Identifier;
+    Ok((input, Identifier { name: merged }))
+}
+
 fn module_import_context_alias(input: ParseString) -> ParseResult<Identifier> {
     let (input, _) = at(input)?;
-    let (input, name) = identifier_path_segment(input)?;
+    let (input, name) = context_import_alias_segment(input)?;
     if slash(input.clone()).is_ok() {
         return Err(nom::Err::Error(ParseError::new(input, "context import aliases must be a single identifier")));
     }

@@ -134,7 +134,7 @@ pub fn exp_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
 pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
-  let (input, mutable) = opt(tilde)(input)?; 
+  let (input, mutable) = opt(tilde)(input)?;
   let (input, var) = var(input)?;
   let (input, _) = labelr!(null(is_not(assign_operator)), skip_nil, msg1)(input)?;
   let (input, _) = define_operator(input)?;
@@ -182,7 +182,7 @@ pub fn op_assign(input: ParseString) -> ParseResult<OpAssign> {
   Ok((input, OpAssign{target,op,expression}))
 }
 
-// parser for the second line of the output table, generate the 
+// parser for the second line of the output table, generate the
 // var name if there is one.
 
 // split_operator := ">-" ;
@@ -221,50 +221,94 @@ fn source_import_tail(input: ParseString) -> ParseResult<Token> {
   Ok((input, token))
 }
 
+fn merge_source_tokens(start: SourceLocation, mut tokens: Vec<Token>) -> MechString {
+  let mut token = Token::merge_tokens(&mut tokens).unwrap_or(Token::default());
+  token.kind = TokenKind::Any;
+  token.src_range.start = start;
+  MechString { text: token }
+}
+
+fn source_path_component_token(input: ParseString) -> ParseResult<Token> {
+  alt((alpha_token, digit_token, dash, underscore, period))(input)
+}
+
+fn source_path_component(input: ParseString) -> ParseResult<Vec<Token>> {
+  many1(source_path_component_token)(input)
+}
+
+fn source_mec_path(input: ParseString) -> ParseResult<Vec<Token>> {
+  let (input, first) = source_path_component(input)?;
+  let (input, mut rest) = many0(nom_tuple((slash, source_path_component)))(input)?;
+  let mut tokens = first;
+  for (slash, mut component) in rest.drain(..) {
+    tokens.push(slash);
+    tokens.append(&mut component);
+  }
+  let text = Token::merge_tokens(&mut tokens.clone()).unwrap_or(Token::default()).to_string();
+  if !text.ends_with(".mec") {
+    return Err(nom::Err::Error(ParseError::new(input, "source import path must end in .mec")));
+  }
+  Ok((input, tokens))
+}
+
 fn relative_source_import_specifier(input: ParseString) -> ParseResult<MechString> {
   let start = input.loc();
   let (input, prefix) = alt((
     nom_map(nom_tuple((period, period, slash)), |(a, b, c)| vec![a, b, c]),
     nom_map(nom_tuple((period, slash)), |(a, b)| vec![a, b]),
   ))(input)?;
-  let (input, tail) = source_import_tail(input)?;
+  let (input, tail) = source_mec_path(input)?;
   let mut tokens = prefix;
-  tokens.push(tail);
-  let mut token = Token::merge_tokens(&mut tokens).unwrap_or(Token::default());
-  token.kind = TokenKind::Any;
-  token.src_range.start = start;
-  Ok((input, MechString { text: token }))
+  tokens.extend(tail);
+  Ok((input, merge_source_tokens(start, tokens)))
 }
 
-fn source_import_uri_scheme(input: ParseString) -> ParseResult<String> {
-  alt((
-    tag("https"),
-    tag("http"),
-    tag("file"),
-    tag("memory"),
-    tag("fs"),
-  ))(input)
+fn absolute_source_import_specifier(input: ParseString) -> ParseResult<MechString> {
+  let start = input.loc();
+  let (input, leading) = slash(input)?;
+  let (input, tail) = source_mec_path(input)?;
+  let mut tokens = vec![leading];
+  tokens.extend(tail);
+  Ok((input, merge_source_tokens(start, tokens)))
+}
+
+fn bare_source_import_specifier(input: ParseString) -> ParseResult<MechString> {
+  let start = input.loc();
+  let (input, tokens) = source_mec_path(input)?;
+  Ok((input, merge_source_tokens(start, tokens)))
+}
+
+fn uri_scheme_part(input: ParseString) -> ParseResult<Token> {
+  alt((alpha_token, digit_token, plus, dash, period))(input)
+}
+
+fn source_import_uri_scheme(input: ParseString) -> ParseResult<Vec<Token>> {
+  let (input, first) = alpha_token(input)?;
+  let (input, mut rest) = many0(uri_scheme_part)(input)?;
+  let mut tokens = vec![first];
+  tokens.append(&mut rest);
+  Ok((input, tokens))
 }
 
 fn uri_source_import_specifier(input: ParseString) -> ParseResult<MechString> {
   let start = input.loc();
-  let scheme_start = input.loc();
-  let (input, scheme) = source_import_uri_scheme(input)?;
-  let scheme_end = input.loc();
-  let scheme = Token::new(TokenKind::Any, SourceRange { start: scheme_start, end: scheme_end }, scheme.chars().collect());
+  let (input, mut tokens) = source_import_uri_scheme(input)?;
   let uri_marker_start = input.loc();
   let (input, uri_marker) = tag("://")(input)?;
   let uri_marker_end = input.loc();
-  let uri_marker = Token::new(TokenKind::Any, SourceRange { start: uri_marker_start, end: uri_marker_end }, uri_marker.chars().collect());
+  tokens.push(Token::new(TokenKind::Any, SourceRange { start: uri_marker_start, end: uri_marker_end }, uri_marker.chars().collect()));
   let (input, tail) = source_import_tail(input)?;
-  let mut token = Token::merge_tokens(&mut vec![scheme, uri_marker, tail]).unwrap_or(Token::default());
-  token.kind = TokenKind::Any;
-  token.src_range.start = start;
-  Ok((input, MechString { text: token }))
+  tokens.push(tail);
+  Ok((input, merge_source_tokens(start, tokens)))
 }
 
 fn source_import_specifier(input: ParseString) -> ParseResult<MechString> {
-  alt((relative_source_import_specifier, uri_source_import_specifier))(input)
+  alt((
+    relative_source_import_specifier,
+    absolute_source_import_specifier,
+    uri_source_import_specifier,
+    bare_source_import_specifier,
+  ))(input)
 }
 
 // import-declaration := "+>", source-import-specifier ;

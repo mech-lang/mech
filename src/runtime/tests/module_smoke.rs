@@ -2114,3 +2114,45 @@ result := @foo/ok\n",
     other => panic!("expected faux backtick fence to be ignored, got {:?}", other),
   }
 }
+
+#[test]
+fn manifest_context_import_materializes_without_source_dependency() {
+  let root = setup_modules("+> @ui := browser/dom\nx := 1\n");
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+
+  assert_eq!(record.imports.len(), 1);
+  assert_eq!(record.import_edges.len(), 0);
+  assert_eq!(record.dependencies.len(), 0);
+  let program_scope = record.scopes.iter().find(|scope| scope.scope == SourceScope::Program).unwrap();
+  assert!(program_scope.contexts.iter().any(|context| context.name == "ui"));
+  assert!(record.contexts.iter().any(|context| context.name == "ui"));
+}
+
+#[test]
+fn manifest_context_import_is_visible_to_scoped_address_resolution() {
+  let root = setup_modules("+> @ui := browser/dom\ntitle := @ui/counter/_text\n");
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err(), "expected resource/provider failure without browser provider");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(!error.contains("UnknownAddressTarget"), "context import should be visible to address resolution, got {error}");
+}
+
+#[test]
+fn context_import_alias_is_not_bound_as_value_import() {
+  let root = setup_modules("+> @ui := browser/dom\n+> ./math.mec\nresult := ui\n");
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  assert_eq!(record.imports.len(), 2);
+  assert_eq!(record.import_edges.len(), 1);
+  assert!(record.import_edges.iter().all(|edge| !matches!(edge.import.alias, Some(SourceImportAlias::Context(_)))));
+
+  let result = runtime.run_module(version);
+  assert!(result.is_err(), "context alias should not be available as a value binding");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("Undefined") || error.contains("Variable"), "expected missing value binding error, got {error}");
+}

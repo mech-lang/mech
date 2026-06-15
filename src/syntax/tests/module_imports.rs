@@ -171,3 +171,65 @@ fn examples_working_parse_without_mech_code_errors() {
         }
     }
 }
+
+#[test]
+fn dynamic_module_imports_stay_mech_code_imports() {
+    let parsed = imports("+> combinatorics/n-choose-k\n+> userlib/tool\n+> math/sin\n+> browser/dom\n");
+    assert_eq!(parsed.len(), 4);
+    for import in &parsed {
+        assert_eq!(import.kind, ModuleImportKind::Item);
+    }
+    assert_eq!(parsed[0].module.to_string(), "combinatorics");
+    assert_eq!(item_path(&parsed[0]), vec!["n-choose-k"]);
+    assert_eq!(parsed[1].module.to_string(), "userlib");
+    assert_eq!(item_path(&parsed[1]), vec!["tool"]);
+    assert_eq!(parsed[2].module.to_string(), "math");
+    assert_eq!(item_path(&parsed[2]), vec!["sin"]);
+    assert_eq!(parsed[3].module.to_string(), "browser");
+    assert_eq!(item_path(&parsed[3]), vec!["dom"]);
+}
+
+#[test]
+fn context_import_alias_accepts_single_segment_with_underscore() {
+    let parsed = imports("+> @ui := browser/dom\n+> @my_ui := browser/dom\n");
+    assert_eq!(parsed.len(), 2);
+    match &parsed[0].alias {
+        Some(ModuleImportAlias::Context(name)) => assert_eq!(name.to_string(), "ui"),
+        other => panic!("expected context alias, got {other:?}"),
+    }
+    match &parsed[1].alias {
+        Some(ModuleImportAlias::Context(name)) => assert_eq!(name.to_string(), "my_ui"),
+        other => panic!("expected context alias, got {other:?}"),
+    }
+    assert!(parser::parse("+> @ui/main := browser/dom").is_err());
+    assert!(parser::parse("+> @foo/bar := browser/dom").is_err());
+}
+
+#[test]
+fn source_imports_accept_generic_uris_bare_and_absolute_mec_paths() {
+    let stmts = statements(
+        "+> dep.mec\n+> lib/dep.mec\n+> ./dep.mec\n+> ../lib/dep.mec\n+> /tmp/lib.mec\n+> /workspace/app/main.mec\n+> fs://lib/dep.mec\n+> file:///tmp/dep.mec\n+> memory://scratch/dep\n+> https://example.com/dep.mec\n+> s3://bucket/app.mec\n+> db://module/main.mec\n",
+    );
+    assert_eq!(stmts.len(), 12);
+    assert!(stmts.iter().all(|stmt| matches!(stmt, Statement::ImportDeclaration(_))));
+}
+
+#[test]
+fn source_and_module_imports_remain_separate() {
+    let module_imports = imports("+> math/sin\n+> math/*\n+> combinatorics/n-choose-k\n+> browser/dom\n+> @ui := browser/dom\n");
+    assert_eq!(module_imports.len(), 5);
+    let source_imports = statements("+> dep.mec\n+> ./dep.mec\n+> ../lib/dep.mec\n+> /tmp/lib.mec\n+> fs://lib/dep.mec\n+> s3://bucket/app.mec\n");
+    assert_eq!(source_imports.len(), 6);
+    assert!(source_imports.iter().all(|stmt| matches!(stmt, Statement::ImportDeclaration(_))));
+
+    for invalid in [
+        "+> @ui/main := browser/dom",
+        "+> @foo/bar := browser/dom",
+        "+> @ui := browser",
+        "+> @ui := browser/*",
+        "+> @ui := browser/{dom, storage}",
+        "+> @ui := fs://workspace",
+    ] {
+        assert!(parser::parse(invalid).is_err(), "expected parse failure for {invalid}");
+    }
+}

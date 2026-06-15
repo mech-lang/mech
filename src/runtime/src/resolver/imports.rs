@@ -128,9 +128,14 @@ pub(crate) fn module_import_declarations(import: &mech_core::ModuleImport) -> Ve
   }
 }
 
+pub fn import_requires_source_dependency(import: &SourceImportDeclaration) -> bool {
+  !matches!(import.alias, Some(SourceImportAlias::Context(_)))
+}
+
 pub fn import_dependencies(imports: &[SourceImportDeclaration]) -> Vec<SourceRequest> {
   imports
     .iter()
+    .filter(|import| import_requires_source_dependency(import))
     .map(|import| source_request_for_import(import, None))
     .collect()
 }

@@ -34,6 +34,59 @@ impl MechRuntime {
     self.store.put_module(module)
   }
 
+  fn materialize_manifest_context_imports(
+    &mut self,
+    record: &mut crate::RuntimeModuleRecord,
+  ) -> MResult<()> {
+    for scope in &mut record.scopes {
+      let context_imports = scope
+        .imports
+        .iter()
+        .filter_map(|import| match &import.alias {
+          Some(SourceImportAlias::Context(alias)) => Some((import, alias.clone())),
+          _ => None,
+        })
+        .collect::<Vec<_>>();
+
+      for (import, alias) in context_imports {
+        if scope.contexts.iter().any(|context| context.name == alias) {
+          return Err(MechError::new(RuntimeInvalidOperationError {
+            operation: "materialize_manifest_context_imports",
+            reason: format!("context import duplicates an existing context binding `{alias}`"),
+          }, None));
+        }
+
+        let module = import.module.as_deref().ok_or_else(|| {
+          MechError::new(RuntimeInvalidOperationError {
+            operation: "materialize_manifest_context_imports",
+            reason: format!("context import `{}` is missing module metadata", import.specifier),
+          }, None)
+        })?;
+        let item = import.item.as_deref().ok_or_else(|| {
+          MechError::new(RuntimeInvalidOperationError {
+            operation: "materialize_manifest_context_imports",
+            reason: format!("context import `{}` is missing item metadata", import.specifier),
+          }, None)
+        })?;
+
+        let export = self.module_manifests.context_export(module, item)?;
+        let declaration = crate::SourceContextDeclaration {
+          name: alias,
+          base: crate::SourceContextBase::ResourceUri(export.base_uri.clone()),
+          capabilities: export.operations.iter().map(|operation| crate::SourceContextCapability {
+            operation: operation.clone(),
+            scope: crate::SourceContextCapabilityScope::Wildcard,
+          }).collect(),
+        };
+
+        scope.contexts.push(declaration.clone());
+        record.contexts.push(declaration);
+      }
+    }
+
+    Ok(())
+  }
+
   pub fn resolve_source(
     &self,
     request: impl Into<SourceRequest>,
@@ -164,7 +217,7 @@ impl MechRuntime {
       let mut flat_import_dependencies = Vec::new();
 
       for import in &resolved.imports {
-        if matches!(import.alias, Some(crate::resolver::SourceImportAlias::Context(_))) {
+        if !crate::resolver::import_requires_source_dependency(import) {
           continue;
         }
         let dependency_request = crate::resolver::source_request_for_import(import, Some(&canonical_uri));
@@ -193,7 +246,7 @@ impl MechRuntime {
       let mut matched_flat_imports = vec![false; flat_import_dependencies.len()];
       for scope_metadata in &resolved.scopes {
         for import in &scope_metadata.imports {
-          if matches!(import.alias, Some(crate::resolver::SourceImportAlias::Context(_))) {
+          if !crate::resolver::import_requires_source_dependency(import) {
             continue;
           }
           let Some((index, (_, dependency_version))) = flat_import_dependencies
@@ -213,7 +266,7 @@ impl MechRuntime {
         }
       }
 
-      let record = self.module_builder.build_resolved_source(
+      let mut record = self.module_builder.build_resolved_source(
         resolved,
         options.compiler_version.to_string(),
         options.language_edition.to_string(),
@@ -221,8 +274,9 @@ impl MechRuntime {
         &feature_flags_owned,
         &dependency_versions,
         &concrete_capability_requirements,
-)?;
+      )?;
 
+      self.materialize_manifest_context_imports(&mut record)?;
       self.bind_context_imports_from_source(&record.imports)?;
 
       let module = self.ensure_module(

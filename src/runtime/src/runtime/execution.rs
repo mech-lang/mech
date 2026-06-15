@@ -23,6 +23,10 @@ enum RuntimeAddressTarget {
   Unknown,
 }
 
+fn address_binding_key(target: &str, name: &str) -> String {
+  format!("@{target}/{name}")
+}
+
 fn resolve_runtime_address_target(
   record: &ModuleVersionRecord,
   _scope: &SourceScope,
@@ -1323,7 +1327,7 @@ impl MechRuntime {
             context_name: binding.name.clone(),
           })?;
           bindings.insert(
-            format!("@{}/{}", reference.target, reference.name),
+            address_binding_key(&reference.target, &reference.name),
             Ref::new(value),
           );
         }
@@ -1346,7 +1350,7 @@ impl MechRuntime {
         let Some(export_value) = instance.exports.get(&reference.name) else {
           return Err(MechError::new(RuntimeModuleExportNotFound { dependency: record.id.to_string(), export: reference.name.clone() }, None));
         };
-        bindings.insert(format!("@{}/{}", reference.target, reference.name), export_value.clone());
+        bindings.insert(address_binding_key(&reference.target, &reference.name), export_value.clone());
       }
     }
 

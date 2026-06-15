@@ -125,7 +125,7 @@ impl MechErrorKind for ContextAddressReadUnsupported {
 
   fn message(&self) -> String {
     format!(
-      "context-addressed read `{}@{}` resolved to `{}`, but context reads are not supported yet",
+      "context-addressed read `@{}/{}` resolved to `{}`, but context reads are not supported yet",
       self.name,
       self.target,
       self.base,

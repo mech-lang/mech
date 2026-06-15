@@ -1,7 +1,7 @@
 use mech_core::Program;
 
 use super::{
-  source_request_for_import, SourceContextDeclaration, SourceExportDeclaration,
+  import_requires_source_dependency, source_request_for_import, SourceContextDeclaration, SourceExportDeclaration,
   SourceImportDeclaration, SourceIndex, SourceRequest,
 };
 
@@ -17,6 +17,7 @@ pub fn dependencies_from_program(tree: &Program, referrer: Option<&str>) -> Vec<
   SourceIndex::from_program(tree)
     .all_imports()
     .iter()
+    .filter(|import| import_requires_source_dependency(import))
     .map(|import| source_request_for_import(import, referrer))
     .collect()
 }

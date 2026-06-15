@@ -44,7 +44,7 @@ fn run_case(root: &std::path::Path, name: &str, source: &str, docs: Option<InMem
       println!("scoped address references:");
       for scope in &record.scopes {
         for reference in &scope.address_references {
-          println!("  - {:?}: {}@{}", scope.scope, reference.name, reference.target);
+          println!("  - {:?}: @{}/{}", scope.scope, reference.target, reference.name);
         }
       }
       println!("run result: {:?}", runtime.run_module(version));
