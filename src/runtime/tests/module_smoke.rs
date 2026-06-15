@@ -893,30 +893,42 @@ fn program_unknown_interpreter_address_returns_error() {
 
 #[test]
 fn addressed_assignment_is_unsupported() {
-  let root = setup_modules("x@foo := 1\n");
+  let root = setup_modules("@foo/x := 1\nresult := @foo/x\n");
 
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
-  let result = runtime.resolve_and_store_module_source("main.mec", options);
-  assert!(result.is_err(), "legacy suffix addressed assignment should be rejected by the parser");
+  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err(), "prefix addressed assignment should not silently create an address target");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("UnknownAddressTarget"), "expected unknown address target error, got {error}");
+  assert!(error.contains("foo"), "expected address target in error, got {error}");
 }
 
 #[test]
 fn addressed_assignment_to_context_is_still_unsupported() {
-  let root = setup_modules("@manual := docs://manual{:write(intro/title)}\nintro/title@manual := true\n");
+  let root = setup_modules("@manual := docs://manual{:write(intro/title)}\n@manual/intro/title := true\nresult := @manual/intro/title\n");
 
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
-  let result = runtime.resolve_and_store_module_source("main.mec", module_options());
-  assert!(result.is_err(), "legacy suffix addressed assignment should be rejected by the parser");
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err(), "prefix addressed assignment should not bypass context capability checks");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeResourceCapabilityDenied"), "expected capability error, got {error}");
+  assert!(error.contains("manual"), "expected context name in error, got {error}");
 }
 
 #[test]
 fn addressed_assignment_with_docs_provider_is_still_unsupported() {
-  let root = setup_modules("@manual := docs://manual{:write(intro/title)}\nintro/title@manual := true\n");
+  let root = setup_modules("@manual := docs://manual{:write(intro/title)}\n@manual/intro/title := true\nresult := @manual/intro/title\n");
 
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).in_memory_docs(InMemoryDocsProvider::new()).build().unwrap();
-  let result = runtime.resolve_and_store_module_source("main.mec", module_options());
-  assert!(result.is_err(), "legacy suffix addressed assignment should be rejected by the parser");
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err(), "prefix addressed assignment should not bypass context capability checks");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeResourceCapabilityDenied"), "expected capability error, got {error}");
+  assert!(error.contains("manual"), "expected context name in error, got {error}");
 }
 
 #[test]

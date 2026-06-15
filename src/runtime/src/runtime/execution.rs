@@ -156,13 +156,13 @@ fn bind_runtime_value_on_program(
   value: Value,
   mutable: bool,
 ) -> MResult<()> {
-  let (id, name) = match &var.context {
-    Some(context) => {
-      let name = format!("@{}/{}", context.to_string(), var.name.to_string());
-      (hash_str(&name), name)
-    }
-    None => (var.name.hash(), var.name.to_string()),
-  };
+  if var.context.is_some() {
+    return Err(MechError::new(
+      mech_core::GenericError { msg: "AddressedAssignmentUnsupported: addressed assignment is not supported yet".to_string() },
+      None,
+    ).with_compiler_loc().with_tokens(var.tokens()));
+  }
+  let (id, name) = (var.name.hash(), var.name.to_string());
   let symbols = program.interpreter_mut().symbols();
   let mut symbols = symbols.borrow_mut();
   symbols.insert(id, value, mutable);
