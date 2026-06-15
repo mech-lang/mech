@@ -5,17 +5,17 @@ use super::{SourceExportDeclaration, SourceImportAlias, SourceImportDeclaration,
 pub fn classify_import_specifier(specifier: impl Into<String>) -> SourceImportDeclaration {
   let specifier = specifier.into();
   if let Some(prefix) = specifier.strip_suffix("/*") {
-    SourceImportDeclaration { specifier: prefix.to_string(), alias: None, kind: SourceImportKind::Wildcard }
+    SourceImportDeclaration { specifier: prefix.to_string(), alias: None, module: None, item: None, kind: SourceImportKind::Wildcard }
   } else if specifier.contains("://")
     || specifier.starts_with("./")
     || specifier.starts_with("../")
     || specifier.ends_with(".mec")
   {
-    SourceImportDeclaration { specifier, alias: None, kind: SourceImportKind::DependencyOnly }
+    SourceImportDeclaration { specifier, alias: None, module: None, item: None, kind: SourceImportKind::DependencyOnly }
   } else if let Some((module, name)) = specifier.rsplit_once('/') {
-    SourceImportDeclaration { specifier: module.to_string(), alias: None, kind: SourceImportKind::Single { name: name.to_string() } }
+    SourceImportDeclaration { specifier: module.to_string(), alias: None, module: None, item: None, kind: SourceImportKind::Single { name: name.to_string() } }
   } else {
-    SourceImportDeclaration { specifier, alias: None, kind: SourceImportKind::Namespace }
+    SourceImportDeclaration { specifier, alias: None, module: None, item: None, kind: SourceImportKind::Namespace }
   }
 }
 
@@ -74,6 +74,8 @@ fn classified_module_import(module: &str, item: Option<&str>, alias: Option<Sour
 
   let mut declaration = classify_import_specifier(specifier);
   declaration.alias = alias;
+  declaration.module = Some(module.to_string());
+  declaration.item = item.map(|item| item.to_string());
   declaration
 }
 
@@ -86,7 +88,11 @@ pub(crate) fn module_import_declarations(import: &mech_core::ModuleImport) -> Ve
     }
 
     mech_core::ModuleImportKind::Glob => {
-      vec![classify_import_specifier(format!("{module}/*"))]
+      {
+      let mut declaration = classify_import_specifier(format!("{module}/*"));
+      declaration.module = Some(module.clone());
+      vec![declaration]
+    }
     }
 
     mech_core::ModuleImportKind::Item => {

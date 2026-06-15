@@ -74,11 +74,7 @@ fn module_import_alias(input: ParseString) -> ParseResult<ModuleImportAlias> {
 }
 
 fn module_root(input: ParseString) -> ParseResult<Identifier> {
-    let (input, module) = identifier_path_segment(input)?;
-    match module.to_string().as_str() {
-        "math" | "stats" | "browser" => Ok((input, module)),
-        _ => Err(nom::Err::Error(ParseError::new(input, "not a built-in module import"))),
-    }
+    identifier_path_segment(input)
 }
 
 fn import_alias_operator(input: ParseString) -> ParseResult<()> {

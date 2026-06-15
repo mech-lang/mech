@@ -217,4 +217,7 @@ fn rejects_legacy_suffix_context_forms() {
   assert!(parser::parse("x := counter@ui").is_err());
   assert!(parser::parse("x := counter@ui<String>").is_err());
   assert!(parser::parse("x := counter @ ui").is_err());
+  assert!(parser::parse("x := counter[0]@ui").is_err());
+  assert!(parser::parse("x := counter.foo@ui").is_err());
+  assert!(parser::parse("x := counter{0}@ui").is_err());
 }

@@ -1134,7 +1134,7 @@ mod tests {
 
   #[test]
   fn fenced_block_scopes_imports_and_exports() {
-    let src = "~~~mech:foo\n+> math/*\nx := 1.23\nsin(x)\n~~~\n\n~~~mech:bar\n+> geometry/triangle-area\narea := triangle-area(3, 4, 1.5708)\n<+ area\n~~~\n";
+    let src = "~~~mech:foo\n+> math/*\nx := 1.23\nsin(x)\n~~~\n\n~~~mech:bar\n+> ./geometry/triangle-area.mec\narea := triangle-area(3, 4, 1.5708)\n<+ area\n~~~\n";
     let tree = parser::parse(src).unwrap();
     let fenced: Vec<_> = tree
       .body
@@ -1149,7 +1149,7 @@ mod tests {
     assert_eq!(fenced[1].config.namespace_str, "bar");
     assert_eq!(fenced[1].imports.len(), 1);
     assert_eq!(fenced[1].exports.len(), 1);
-    assert_eq!(fenced[1].imports[0].specifier.to_string(), "geometry/triangle-area");
+    assert_eq!(fenced[1].imports[0].specifier.to_string(), "./geometry/triangle-area.mec");
     assert_eq!(fenced[1].exports[0].name.to_string(), "area");
   }
 

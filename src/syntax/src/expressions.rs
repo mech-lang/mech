@@ -778,8 +778,7 @@ pub fn slice(input: ParseString) -> ParseResult<Slice> {
   }
   let (input, name) = identifier(input)?;
   let (input, ixes) = subscript(input)?;
-  let (input, context) = opt(preceded(at, identifier))(input)?;
-  Ok((input, Slice{name, context, subscript: ixes}))
+  Ok((input, Slice{name, context: None, subscript: ixes}))
 }
 
 // slice-ref := ("@", identifier, "/", identifier) | identifier, subscript? ;
@@ -790,8 +789,7 @@ pub fn slice_ref(input: ParseString) -> ParseResult<SliceRef> {
   }
   let (input, name) = identifier(input)?;
   let (input, ixes) = opt(subscript)(input)?;
-  let (input, context) = opt(preceded(at, identifier))(input)?;
-  Ok((input, SliceRef{name, context, subscript: ixes}))
+  Ok((input, SliceRef{name, context: None, subscript: ixes}))
 }
 
 // swizzle-subscript := ".", identifier, ",", list1(",", identifier) ;

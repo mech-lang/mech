@@ -215,7 +215,9 @@ impl MechRuntime {
         &feature_flags_owned,
         &dependency_versions,
         &concrete_capability_requirements,
-      )?;
+)?;
+
+      self.bind_context_imports_from_source(&record.imports)?;
 
       let module = self.ensure_module(
         &record.name,

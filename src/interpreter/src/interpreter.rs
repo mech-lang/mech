@@ -39,6 +39,7 @@ pub struct Interpreter {
   pub out_values: Ref<HashMap<u64, Value>>,
   pub inline_eval_counter: Ref<u64>,
   pub context_bindings: Ref<HashMap<u64, RuntimeContextBinding>>,
+  pub module_manifests: Ref<ModuleManifestCatalog>,
   #[cfg(feature = "state_machines")]
   pub user_state_machines: Ref<HashMap<u64, FsmImplementation>>,
   #[cfg(feature = "state_machines")]
@@ -71,6 +72,7 @@ impl Clone for Interpreter {
       out_values: self.out_values.clone(),
       inline_eval_counter: self.inline_eval_counter.clone(),
       context_bindings: self.context_bindings.clone(),
+      module_manifests: self.module_manifests.clone(),
       #[cfg(feature = "state_machines")]
       user_state_machines: self.user_state_machines.clone(),
       #[cfg(feature = "state_machines")]
@@ -122,6 +124,7 @@ impl Interpreter {
       out_values: Ref::new(HashMap::new()),
       inline_eval_counter: Ref::new(0),
       context_bindings: Ref::new(HashMap::new()),
+      module_manifests: Ref::new(ModuleManifestCatalog::with_builtin_browser()),
       #[cfg(feature = "state_machines")]
       user_state_machines: Ref::new(HashMap::new()),
       #[cfg(feature = "state_machines")]
@@ -145,6 +148,20 @@ impl Interpreter {
 
   pub fn context_binding(&self, name: &Identifier) -> Option<RuntimeContextBinding> {
     self.context_bindings.borrow().get(&name.hash()).cloned()
+  }
+
+  pub fn bind_context_export(
+    &self,
+    alias: &Identifier,
+    module: &str,
+    item: &str,
+  ) -> MResult<()> {
+    let base_uri = {
+      let manifests = self.module_manifests.borrow();
+      manifests.context_export(module, item)?.base_uri.clone()
+    };
+    self.bind_context(alias, base_uri);
+    Ok(())
   }
 
   #[cfg(feature = "functions")]

@@ -5,6 +5,7 @@ use mech_core::{
     BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
     BrowserDomProperty, BrowserDomScope, BrowserNetworkScope, BrowserOperation, BrowserResource,
     BrowserResourceKind, BrowserStorageBackend, BrowserStorageScope, MResult, MechError,
+    ModuleManifestConfig, ModuleManifestExportConfig, ModuleManifestExportKind,
 };
 
 use super::{ConfigValue, InvalidConfigField};
@@ -69,25 +70,6 @@ pub enum ConfigCapabilityKind {
     Read,
     Watch,
     Serve,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ModuleManifestConfig {
-    pub name: String,
-    pub exports: Vec<ModuleManifestExportConfig>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ModuleManifestExportConfig {
-    pub name: String,
-    pub kind: ModuleManifestExportKind,
-    pub base_uri: String,
-    pub operations: Vec<String>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum ModuleManifestExportKind {
-    Context,
 }
 
 pub struct ConfigLowerer;
@@ -164,13 +146,16 @@ impl ConfigLowerer {
             }
         }
         let name = name.ok_or_else(|| invalid_error(format!("{where_}.name is required")))?;
+        if name.trim().is_empty() { return invalid(format!("{where_}.name must be non-empty")); }
         let kind = kind.ok_or_else(|| invalid_error(format!("{where_}.kind is required")))?;
         let base_uri = base_uri.ok_or_else(|| invalid_error(format!("{where_}.base-uri is required")))?;
         if !base_uri.contains("://") { return invalid(format!("{where_}.base-uri must contain `://`")); }
         let operations = operations.ok_or_else(|| invalid_error(format!("{where_}.operations is required")))?;
         if operations.is_empty() { return invalid(format!("{where_}.operations must contain at least one operation")); }
-        if base_uri == "browser://dom" {
-            for op in &operations { if op != "read" && op != "write" { return invalid(format!("browser/dom only supports operations `read` and `write`; got `{op}`")); } }
+        for op in &operations {
+            if op != "read" && op != "write" {
+                return invalid(format!("module context exports only support operations `read` and `write`; got `{op}`"));
+            }
         }
         Ok(ModuleManifestExportConfig { name, kind, base_uri, operations })
     }

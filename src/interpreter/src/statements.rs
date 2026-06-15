@@ -9,7 +9,7 @@ use crate::stdlib::define::*;
 
 pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   match stmt {
-    Statement::ImportDeclaration(import) => import_declaration(import, p),
+    Statement::ImportDeclaration(_) => Ok(Value::Empty),
     Statement::ExportDeclaration(_) => Ok(Value::Empty),
     Statement::ContextDeclaration(ctx) => context_declaration(ctx, p),
     #[cfg(feature = "tuple")]
@@ -43,19 +43,9 @@ pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -
 
 
 
-pub fn import_declaration(import: &ImportDeclaration, p: &Interpreter) -> MResult<Value> {
-  let spec = import.specifier.to_string();
-  if let Some((alias, target)) = spec.strip_prefix('@').and_then(|s| s.split_once(":=")) {
-    let alias = alias.trim();
-    let target = target.trim();
-    if target == "browser/dom" {
-      p.context_bindings.borrow_mut().insert(hash_str(alias), RuntimeContextBinding { name: alias.to_string(), base_uri: "browser://dom".to_string() });
-      return Ok(Value::Empty);
-    }
-  }
-  Ok(Value::Empty)
-}
 
+// Interpreter-local context bindings are for direct interpreter execution.
+// Host runtime resource bindings are owned by MechRuntime.resource_bindings.
 pub fn context_declaration(ctx: &ContextDeclaration, p: &Interpreter) -> MResult<Value> {
   match &ctx.base {
     ContextBase::ResourceUri(uri) => {

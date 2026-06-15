@@ -174,6 +174,8 @@ pub enum SourceImportAlias {
 pub struct SourceImportDeclaration {
   pub specifier: String,
   pub alias: Option<SourceImportAlias>,
+  pub module: Option<String>,
+  pub item: Option<String>,
   pub kind: SourceImportKind,
 }
 

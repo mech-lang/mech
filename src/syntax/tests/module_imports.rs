@@ -75,12 +75,11 @@ fn preserves_source_import_declarations() {
 }
 
 #[test]
-fn unknown_module_roots_fall_back_to_source_imports() {
-    let stmts = statements("+> userlib\n+> userlib/tool");
-    assert_eq!(stmts.len(), 2);
-    assert!(stmts
-        .iter()
-        .all(|stmt| matches!(stmt, Statement::ImportDeclaration(_))));
+fn arbitrary_module_roots_parse_as_module_imports() {
+    let parsed = imports("+> userlib\n+> userlib/tool");
+    assert_eq!(parsed.len(), 2);
+    assert_eq!(parsed[0].kind, ModuleImportKind::Module);
+    assert_eq!(parsed[1].kind, ModuleImportKind::Item);
 }
 
 #[test]
@@ -93,10 +92,22 @@ fn rejects_invalid_stdlib_import_paths() {
 
 #[test]
 fn parses_context_and_value_import_aliases() {
-    assert!(parser::parse("+> @ui := browser/dom").is_ok());
-    let parsed = imports("+> s := math/sin");
+    let parsed = imports("+> @ui := browser/dom\n+> s := math/sin");
+    assert_eq!(parsed.len(), 2);
+    match &parsed[0].alias {
+        Some(ModuleImportAlias::Context(name)) => assert_eq!(name.to_string(), "ui"),
+        other => panic!("expected context alias, got {other:?}"),
+    }
+    assert!(matches!(parsed[1].alias, Some(ModuleImportAlias::Value(_))));
+}
+
+#[test]
+fn parses_combinatorics_module_item_import() {
+    let parsed = imports("+> combinatorics/n-choose-k");
     assert_eq!(parsed.len(), 1);
-    assert!(matches!(parsed[0].alias, Some(ModuleImportAlias::Value(_))));
+    assert_eq!(parsed[0].kind, ModuleImportKind::Item);
+    assert_eq!(parsed[0].module.to_string(), "combinatorics");
+    assert_eq!(item_path(&parsed[0]), vec!["n-choose-k"]);
 }
 
 #[test]

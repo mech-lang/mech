@@ -40,7 +40,7 @@ use mech_core::{
   browser_capability_error, BrowserDomPath, BROWSER_DOM_PROVIDER_URI, MResult, MechError,
   MechErrorKind, MechSourceCode, Ref, Value,
   NativeFunctionCompiler, MechFunctionImpl, Register, CompileCtx, MechFunctionCompiler,
-  hash_str,
+  hash_str, ModuleManifestCatalog, ModuleManifestConfig,
 };
 
 use mech_program::{
@@ -76,7 +76,8 @@ use crate::id::{
 
 use crate::resolver::{
   InMemorySourceResolver, ResolvedSource, SourceRequest, SourceResolver,
-  SourceAddressReference, SourceExportDeclaration, SourceImportKind, SourceScope, module_namespace_for_import,
+  SourceAddressReference, SourceExportDeclaration, SourceImportAlias, SourceImportDeclaration,
+  SourceImportKind, SourceScope, module_namespace_for_import,
 };
 
 use crate::scheduler::{
@@ -128,6 +129,7 @@ pub struct RuntimeBuilder {
   module_builder: ModuleBuilder,
   config_specs: Vec<RuntimeConfigSpec>,
   resource_providers: Vec<Box<dyn RuntimeResourceProvider>>,
+  module_manifests: ModuleManifestCatalog,
 }
 
 impl std::fmt::Debug for RuntimeBuilder {
@@ -146,6 +148,7 @@ impl std::fmt::Debug for RuntimeBuilder {
       .field("module_builder", &self.module_builder)
       .field("config_specs", &self.config_specs)
       .field("resource_providers", &self.resource_providers.len())
+      .field("module_manifests", &self.module_manifests)
       .finish()
   }
 }
@@ -166,6 +169,7 @@ impl Default for RuntimeBuilder {
       module_builder: ModuleBuilder::new(),
       config_specs: Vec::new(),
       resource_providers: Vec::new(),
+      module_manifests: ModuleManifestCatalog::with_builtin_browser(),
     }
   }
 }
@@ -256,6 +260,11 @@ impl RuntimeBuilder {
     self
   }
 
+  pub fn module_manifest(mut self, manifest: ModuleManifestConfig) -> MResult<Self> {
+    self.module_manifests.register(manifest)?;
+    Ok(self)
+  }
+
   pub fn resource_provider(
     mut self,
     provider: Box<dyn RuntimeResourceProvider>,
@@ -311,6 +320,7 @@ impl RuntimeBuilder {
       resources: RuntimeResourceRegistry::new(),
       grants: RuntimeCapabilityGrantRegistry::new(),
       resource_bindings: HashMap::new(),
+      module_manifests: self.module_manifests,
     };
 
     for spec in &self.config_specs {
@@ -358,6 +368,7 @@ pub struct MechRuntime {
   resources: RuntimeResourceRegistry,
   grants: RuntimeCapabilityGrantRegistry,
   resource_bindings: HashMap<String, RuntimeResourceBinding>,
+  module_manifests: ModuleManifestCatalog,
 }
 
 impl std::fmt::Debug for MechRuntime {
@@ -381,6 +392,7 @@ impl std::fmt::Debug for MechRuntime {
       .field("resources", &self.resources)
       .field("grants", &self.grants)
       .field("resource_bindings", &self.resource_bindings)
+      .field("module_manifests", &self.module_manifests)
       .finish()
   }
 }
@@ -460,6 +472,42 @@ impl MechRuntime {
     &mut self.program
   }
 
+  pub fn bind_context_export(
+    &mut self,
+    alias: &str,
+    module: &str,
+    item: &str,
+  ) -> MResult<()> {
+    let base_uri = self.module_manifests.context_export(module, item)?.base_uri.clone();
+    self.bind_resource_root(alias, &base_uri)
+  }
+
+  pub fn bind_context_imports_from_source(
+    &mut self,
+    imports: &[SourceImportDeclaration],
+  ) -> MResult<()> {
+    for import in imports {
+      let Some(SourceImportAlias::Context(alias)) = &import.alias else {
+        continue;
+      };
+      let module = import.module.as_deref().ok_or_else(|| MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "bind_context_imports_from_source",
+          reason: "context import is missing module metadata".to_string(),
+        },
+        None,
+      ))?;
+      let item = import.item.as_deref().ok_or_else(|| MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "bind_context_imports_from_source",
+          reason: "context import is missing item metadata".to_string(),
+        },
+        None,
+      ))?;
+      self.bind_context_export(alias, module, item)?;
+    }
+    Ok(())
+  }
 
   pub fn bind_resource_root(
     &mut self,
@@ -847,4 +895,25 @@ fn validate_module_import_edges(record: &ModuleVersionRecord) -> MResult<()> {
       None,
     )
   })
+}
+
+#[cfg(test)]
+mod manifest_context_import_tests {
+  use super::*;
+
+  #[test]
+  fn runtime_binds_context_imports_from_source_metadata() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let imports = vec![SourceImportDeclaration {
+      specifier: "browser/dom".to_string(),
+      alias: Some(SourceImportAlias::Context("ui".to_string())),
+      module: Some("browser".to_string()),
+      item: Some("dom".to_string()),
+      kind: SourceImportKind::Single { name: "dom".to_string() },
+    }];
+
+    runtime.bind_context_imports_from_source(&imports).unwrap();
+
+    assert!(runtime.resolve_resource_path("ui", "counter/_text").is_ok());
+  }
 }

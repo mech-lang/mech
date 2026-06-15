@@ -126,14 +126,6 @@ fn first_statement(src: &str) -> Statement {
 }
 
 #[test]
-fn formatter_normalizes_old_suffix_context_resource_read_to_prefix_context() {
-    let mut formatter = Formatter::new();
-    let statement = first_statement("name := body/content/input/_value@browser");
-
-    assert_eq!(formatter.statement(&statement), "name := @browser/body/content/input/_value");
-}
-
-#[test]
 fn formatter_preserves_new_prefix_context_resource_read() {
     let mut formatter = Formatter::new();
     let statement = first_statement("name := @browser/body/content/input/_value");

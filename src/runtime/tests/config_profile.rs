@@ -585,13 +585,8 @@ fn config_profile_browser_dom_subtree_with_wildcard_path_accepted() {
 
 #[test]
 fn browser_module_manifest_config_parses_and_lowers() {
-    let source = std::fs::read_to_string("hosts/browser/module.mcfg").unwrap();
+    let source = std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../hosts/browser/module.mcfg")).unwrap();
     let doc = parse_config_document("hosts/browser/module.mcfg", &source, ConfigProfileOptions::default()).unwrap();
     let module = doc.module.unwrap();
-    assert_eq!(module.name, "browser");
-    assert_eq!(module.exports.len(), 1);
-    assert_eq!(module.exports[0].name, "dom");
-    assert_eq!(module.exports[0].kind, ModuleManifestExportKind::Context);
-    assert_eq!(module.exports[0].base_uri, "browser://dom");
-    assert_eq!(module.exports[0].operations, vec!["read", "write"]);
+    assert_eq!(module, mech_core::builtin_browser_module_manifest());
 }
