@@ -95,7 +95,7 @@ fn import_group_items(input: ParseString) -> ParseResult<Vec<ModuleImportGroupIt
 
 fn module_import_end(input: ParseString) -> ParseResult<()> {
     let (input, _) = space_tab0(input)?;
-    let (_, _) = new_line(input.clone())?;
+    let (input, _) = opt(new_line)(input)?;
     Ok((input, ()))
 }
 
@@ -180,8 +180,8 @@ pub fn module_import(input: ParseString) -> ParseResult<ModuleImport> {
         ))(import_input)?,
     };
 
-    let (input, _) = module_import_end(input)?;
-    import.module.name.src_range.end = input.loc();
+    let (next_input, _) = module_import_end(input.clone())?;
+    import.module.name.src_range.end = next_input.loc();
 
     Ok((input, import))
 }
