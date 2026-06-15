@@ -158,7 +158,7 @@ fn bind_runtime_value_on_program(
 ) -> MResult<()> {
   let (id, name) = match &var.context {
     Some(context) => {
-      let name = format!("{}@{}", var.name.to_string(), context.to_string());
+      let name = format!("@{}/{}", context.to_string(), var.name.to_string());
       (hash_str(&name), name)
     }
     None => (var.name.hash(), var.name.to_string()),
@@ -1323,7 +1323,7 @@ impl MechRuntime {
             context_name: binding.name.clone(),
           })?;
           bindings.insert(
-            format!("{}@{}", reference.name, reference.target),
+            format!("@{}/{}", reference.target, reference.name),
             Ref::new(value),
           );
         }
@@ -1346,7 +1346,7 @@ impl MechRuntime {
         let Some(export_value) = instance.exports.get(&reference.name) else {
           return Err(MechError::new(RuntimeModuleExportNotFound { dependency: record.id.to_string(), export: reference.name.clone() }, None));
         };
-        bindings.insert(format!("{}@{}", reference.name, reference.target), export_value.clone());
+        bindings.insert(format!("@{}/{}", reference.target, reference.name), export_value.clone());
       }
     }
 
