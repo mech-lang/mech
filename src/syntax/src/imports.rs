@@ -62,8 +62,11 @@ fn module_import_value_alias(input: ParseString) -> ParseResult<ModuleImportAlia
 
 fn module_import_context_alias(input: ParseString) -> ParseResult<ModuleImportAlias> {
     let (input, _) = at(input)?;
-    let (next, name) = identifier(input)?;
-    Ok((next, ModuleImportAlias::Context(name)))
+    let (input, name) = identifier_path_segment(input)?;
+    if slash(input.clone()).is_ok() {
+        return Err(nom::Err::Error(ParseError::new(input, "context import aliases must be a single identifier")));
+    }
+    Ok((input, ModuleImportAlias::Context(name)))
 }
 
 fn module_import_alias(input: ParseString) -> ParseResult<ModuleImportAlias> {
@@ -117,19 +120,29 @@ fn module_import_end(input: ParseString) -> ParseResult<()> {
     Ok((input, ()))
 }
 
-
 fn aliased_context_item_import(input: ParseString) -> ParseResult<ModuleImport> {
     let (input, _) = at(input)?;
     let (input, alias) = identifier_path_segment(input)?;
+    if slash(input.clone()).is_ok() {
+        return Err(nom::Err::Error(ParseError::new(input, "context import aliases must be a single identifier")));
+    }
     let (input, _) = import_alias_operator(input)?;
-    let (input, (module, _, item)) = cut(nom_tuple((module_root, slash, module_import_path)))(input)?;
-    Ok((input, ModuleImport {
-        module,
-        item: Some(item),
-        group_items: None,
-        alias: Some(ModuleImportAlias::Context(alias)),
-        kind: ModuleImportKind::Item,
-    }))
+    let (input, (module, _, item)) = cut(nom_tuple((
+        module_root,
+        slash,
+        module_import_path,
+    )))(input)?;
+
+    Ok((
+        input,
+        ModuleImport {
+            module,
+            item: Some(item),
+            group_items: None,
+            alias: Some(ModuleImportAlias::Context(alias)),
+            kind: ModuleImportKind::Item,
+        },
+    ))
 }
 
 fn aliased_item_import(input: ParseString) -> ParseResult<ModuleImport> {
