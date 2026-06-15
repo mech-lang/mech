@@ -1388,13 +1388,16 @@ impl MechRuntime {
           }
         }
         SourceImportKind::Single { name } => {
+          if matches!(import.alias, Some(crate::resolver::SourceImportAlias::Context(_))) {
+            continue;
+          }
           let Some(export_value) = dependency_instance.exports.get(name) else {
             return Err(MechError::new(RuntimeModuleExportNotFound { dependency: import.specifier.clone(), export: name.clone() }, None));
           };
 
           let binding = match &import.alias {
             Some(crate::resolver::SourceImportAlias::Value(alias)) => alias.clone(),
-            Some(crate::resolver::SourceImportAlias::Context(alias)) => alias.clone(),
+            Some(crate::resolver::SourceImportAlias::Context(_)) => continue,
             None => name.clone(),
           };
 

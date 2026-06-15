@@ -35,6 +35,23 @@ fn statements(src: &str) -> Vec<Statement> {
     out
 }
 
+fn assert_no_mech_code_errors(program: &Program) {
+    for section in &program.body.sections {
+        for element in &section.elements {
+            match element {
+                SectionElement::MechCode(codes) | SectionElement::FencedMechCode(FencedMechCode { code: codes, .. }) => {
+                    for (node, _) in codes {
+                        if matches!(node, MechCode::Error(..)) {
+                            panic!("unexpected MechCode::Error: {node:?}");
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
 fn item_path(import: &ModuleImport) -> Vec<String> {
     import
         .item
@@ -66,9 +83,9 @@ fn parses_module_item_glob_and_nested_item_imports() {
 #[test]
 fn preserves_source_import_declarations() {
     let stmts = statements(
-        "+> ./dep.mec\n+> ../lib/dep.mec\n+> fs://lib/dep.mec\n+> file:///tmp/dep.mec\n+> memory://scratch/dep\n+> https://example.com/dep.mec",
+        "+> ./dep.mec\n+> ../lib/dep.mec\n+> fs://lib/dep.mec\n+> file:///tmp/dep.mec\n+> memory://scratch/dep\n+> https://example.com/dep.mec\n+> http://example.com/dep.mec",
     );
-    assert_eq!(stmts.len(), 6);
+    assert_eq!(stmts.len(), 7);
     assert!(stmts
         .iter()
         .all(|stmt| matches!(stmt, Statement::ImportDeclaration(_))));
@@ -113,7 +130,44 @@ fn parses_combinatorics_module_item_import() {
 #[test]
 fn rejects_invalid_context_import_aliases() {
     assert!(parser::parse("+> @ui/main := browser/dom").is_err());
+    assert!(parser::parse("+> @foo/bar := browser/dom").is_err());
     assert!(parser::parse("+> @ui := browser").is_err());
     assert!(parser::parse("+> @ui := browser/*").is_err());
     assert!(parser::parse("+> @ui := browser/{dom, storage}").is_err());
+    assert!(parser::parse("+> @ui := fs://workspace").is_err());
+}
+
+#[test]
+fn whole_documents_parse_module_and_context_imports_without_errors() {
+    for src in [
+        "+> math/*\nx := 1.23\nsin(x)\n",
+        "+> geometry/triangle-area\narea := triangle-area(3, 4, 1.5708)\n<+ area\n",
+        "+> @ui := browser/dom\ntitle := @ui/counter/_text\n",
+    ] {
+        let program = parser::parse(src).expect("whole document should parse");
+        assert_no_mech_code_errors(&program);
+    }
+}
+
+#[test]
+fn examples_working_parse_without_mech_code_errors() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/working");
+    let mut stack = vec![root];
+    while let Some(path) = stack.pop() {
+        let entries = std::fs::read_dir(&path)
+            .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
+        for entry in entries {
+            let entry = entry.unwrap_or_else(|err| panic!("failed to read entry in {}: {err}", path.display()));
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path.extension().is_some_and(|extension| extension == "mec") {
+                let src = std::fs::read_to_string(&path)
+                    .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
+                let program = parser::parse(&src)
+                    .unwrap_or_else(|err| panic!("failed to parse {}: {err:?}", path.display()));
+                assert_no_mech_code_errors(&program);
+            }
+        }
+    }
 }

@@ -1,5 +1,6 @@
 #[macro_use]
 use crate::*;
+use nom::combinator::map as nom_map;
 use nom::sequence::tuple as nom_tuple;
 
 // #### Statements
@@ -207,35 +208,72 @@ fn tuple_destructure(input: ParseString) -> ParseResult<TupleDestructure> {
   Ok((input, TupleDestructure{vars, expression}))
 }
 
-// import-declaration := "+>", module-import-specifier ;
+fn source_import_tail(input: ParseString) -> ParseResult<Token> {
+  let start = input.loc();
+  let (input, matched) = many1(nom_tuple((
+    is_not(alt((new_line, semicolon))),
+    any_token,
+  )))(input)?;
+  let mut tokens: Vec<Token> = matched.into_iter().map(|(_, token)| token).collect();
+  let mut token = Token::merge_tokens(&mut tokens).unwrap_or(Token::default());
+  token.kind = TokenKind::Any;
+  token.src_range.start = start;
+  Ok((input, token))
+}
+
+fn relative_source_import_specifier(input: ParseString) -> ParseResult<MechString> {
+  let start = input.loc();
+  let (input, prefix) = alt((
+    nom_map(nom_tuple((period, period, slash)), |(a, b, c)| vec![a, b, c]),
+    nom_map(nom_tuple((period, slash)), |(a, b)| vec![a, b]),
+  ))(input)?;
+  let (input, tail) = source_import_tail(input)?;
+  let mut tokens = prefix;
+  tokens.push(tail);
+  let mut token = Token::merge_tokens(&mut tokens).unwrap_or(Token::default());
+  token.kind = TokenKind::Any;
+  token.src_range.start = start;
+  Ok((input, MechString { text: token }))
+}
+
+fn source_import_uri_scheme(input: ParseString) -> ParseResult<String> {
+  alt((
+    tag("https"),
+    tag("http"),
+    tag("file"),
+    tag("memory"),
+    tag("fs"),
+  ))(input)
+}
+
+fn uri_source_import_specifier(input: ParseString) -> ParseResult<MechString> {
+  let start = input.loc();
+  let scheme_start = input.loc();
+  let (input, scheme) = source_import_uri_scheme(input)?;
+  let scheme_end = input.loc();
+  let scheme = Token::new(TokenKind::Any, SourceRange { start: scheme_start, end: scheme_end }, scheme.chars().collect());
+  let uri_marker_start = input.loc();
+  let (input, uri_marker) = tag("://")(input)?;
+  let uri_marker_end = input.loc();
+  let uri_marker = Token::new(TokenKind::Any, SourceRange { start: uri_marker_start, end: uri_marker_end }, uri_marker.chars().collect());
+  let (input, tail) = source_import_tail(input)?;
+  let mut token = Token::merge_tokens(&mut vec![scheme, uri_marker, tail]).unwrap_or(Token::default());
+  token.kind = TokenKind::Any;
+  token.src_range.start = start;
+  Ok((input, MechString { text: token }))
+}
+
+fn source_import_specifier(input: ParseString) -> ParseResult<MechString> {
+  alt((relative_source_import_specifier, uri_source_import_specifier))(input)
+}
+
+// import-declaration := "+>", source-import-specifier ;
 pub fn import_declaration(input: ParseString) -> ParseResult<ImportDeclaration> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = module_import_sigil(input)?;
   let (input, _) = whitespace1(input)?;
-  let start = input.loc();
-  let spec_start = input.cursor;
-  let (input, _) = many1(nom_tuple((is_not(alt((new_line, semicolon))), any_token)))(input)?;
-  let specifier = input.slice(spec_start, input.cursor).trim().to_string();
-  if specifier.starts_with('@')
-    && (specifier.contains("/*")
-      || specifier.contains('{')
-      || specifier.starts_with("@ui/main")
-      || !specifier.contains(":=")
-      || !specifier.split_once(":=").map(|(_, rhs)| rhs.trim().contains('/')).unwrap_or(false))
-  {
-    return Err(nom::Err::Failure(ParseError::new(input, "Context import aliases must use module item import syntax")));
-  }
-  if specifier == "*" || specifier.contains("/*/") || specifier.contains('*') && !specifier.ends_with("/*") {
-    return Err(nom::Err::Failure(ParseError::new(input, "Invalid wildcard placement in import specifier")));
-  }
-  let end = input.loc();
-  let src_range = SourceRange { start, end };
-  let token = Token {
-    kind: TokenKind::Any,
-    chars: specifier.chars().collect(),
-    src_range,
-  };
-  Ok((input, ImportDeclaration { specifier: MechString { text: token } }))
+  let (input, specifier) = source_import_specifier(input)?;
+  Ok((input, ImportDeclaration { specifier }))
 }
 
 // export-declaration := "<+", export-name ;

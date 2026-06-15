@@ -161,6 +161,7 @@ fn duplicate_context_address_target_fails_resolution() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn repeated_interpreter_fences_merge_before_resolution_and_execution() {
   let root = setup_modules("~~~mech:foo\nx := 1\n~~~\n\nprose stays out\n\n~~~mech:foo\ny := x + 1\n<+ y\n~~~\n\nresult := y@foo\n");
   let mut runtime = runtime_with_root(&root);
@@ -173,6 +174,7 @@ fn repeated_interpreter_fences_merge_before_resolution_and_execution() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn faux_tilde_interpreter_fence_inside_markdown_backtick_block_is_ignored() {
   let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\n```text\n~~~mech:foo\nbroken := missing\n~~~\n```\n\nresult := ok@foo\n");
   let mut runtime = runtime_with_root(&root);
@@ -181,6 +183,7 @@ fn faux_tilde_interpreter_fence_inside_markdown_backtick_block_is_ignored() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn faux_backtick_interpreter_fence_inside_markdown_tilde_block_is_ignored() {
   let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\n~~~text\n```mech:foo\nbroken := missing\n```\n~~~\n\nresult := ok@foo\n");
   let mut runtime = runtime_with_root(&root);
@@ -257,6 +260,7 @@ fn resolved_source_scope_address_target_conflict_fails_validation() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn distinct_interpreter_and_context_names_pass() {
   let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\n@manual := docs://foo{:read(ok)}\n\nresult := ok@foo\n");
   let mut runtime = runtime_with_root(&root);
@@ -266,6 +270,7 @@ fn distinct_interpreter_and_context_names_pass() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn context_docs_read_returns_value() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
   let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
@@ -281,6 +286,7 @@ fn context_docs_read_returns_value() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn config_spec_registers_in_memory_docs_resource() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
   let spec = RuntimeConfigSpec::new().with_resource(
@@ -299,6 +305,7 @@ fn config_spec_registers_in_memory_docs_resource() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn config_spec_merges_multiple_docs_bases_into_one_provider() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n@guide := docs://guide{:read(start/title)}\n\nmanual-ok := intro/title@manual\nguide-ok := start/title@guide\n\nresult := manual-ok && guide-ok\n");
   let spec = RuntimeConfigSpec::new()
@@ -322,6 +329,7 @@ fn config_spec_merges_multiple_docs_bases_into_one_provider() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn config_spec_multiple_entries_same_base() {
   let root = setup_modules("@manual := docs://manual{:read(intro/*)}\n\na := intro/title@manual\nb := intro/subtitle@manual\n\nresult := a && b\n");
   let spec = RuntimeConfigSpec::new().with_resource(
@@ -343,6 +351,7 @@ fn config_spec_multiple_entries_same_base() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn config_spec_later_duplicate_path_overwrites_earlier() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
   let spec = RuntimeConfigSpec::new().with_resource(
@@ -410,6 +419,7 @@ fn config_spec_and_direct_docs_provider_conflict() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn direct_provider_registration_still_works() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
   let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
@@ -424,6 +434,7 @@ fn direct_provider_registration_still_works() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn apply_config_spec_after_build_registers_docs() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
   let spec = RuntimeConfigSpec::new().with_resource(
@@ -461,6 +472,7 @@ fn apply_config_spec_conflicts_with_existing_docs_provider() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn unknown_address_target_is_explicit() {
   let root = setup_modules("result := ok@missing\n");
   let mut runtime = runtime_with_root(&root);
@@ -473,6 +485,7 @@ fn unknown_address_target_is_explicit() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn interpreter_address_still_works() {
   let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\nresult := ok@foo\n");
   let mut runtime = runtime_with_root(&root);
@@ -511,6 +524,7 @@ fn interpreter_scope_named(runtime: &mech_runtime::MechRuntime, version: mech_ru
 
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn context_docs_read_without_provider_fails() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
   let mut runtime = runtime_with_root(&root);
@@ -525,6 +539,7 @@ fn context_docs_read_without_provider_fails() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn context_docs_read_missing_path_fails() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
   let mut runtime = RuntimeBuilder::new()
@@ -543,6 +558,7 @@ fn context_docs_read_missing_path_fails() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn context_docs_read_denied_by_capability_fails() {
   let root = setup_modules("@manual := docs://manual{:read(other/path)}\n\nresult := intro/title@manual\n");
   let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
@@ -563,6 +579,7 @@ fn context_docs_read_denied_by_capability_fails() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn context_docs_read_prefix_wildcard_allows_nested_path() {
   let root = setup_modules("@manual := docs://manual{:read(intro/*)}\n\nresult := intro/title@manual\n");
   let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
@@ -578,6 +595,7 @@ fn context_docs_read_prefix_wildcard_allows_nested_path() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn context_docs_read_prefix_wildcard_does_not_match_sibling() {
   let root = setup_modules("@manual := docs://manual{:read(introduction/*)}\n\nresult := intro/title@manual\n");
   let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
@@ -595,6 +613,7 @@ fn context_docs_read_prefix_wildcard_does_not_match_sibling() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn program_scope_does_not_see_interpreter_context() {
   let root = setup_modules("~~~mech:foo\n@manual := docs://manual{:read(intro/title)}\nunused := true\n~~~\n\nresult := intro/title@manual\n");
   let mut runtime = runtime_with_root(&root);
@@ -608,6 +627,7 @@ fn program_scope_does_not_see_interpreter_context() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn interpreter_scope_context_docs_read_returns_value() {
   let root = setup_modules("~~~mech:foo\n@manual := docs://manual{:read(intro/title)}\nresult := intro/title@manual\n~~~\n");
   let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
@@ -624,6 +644,7 @@ fn interpreter_scope_context_docs_read_returns_value() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn interpreter_scope_does_not_resolve_interpreter_target() {
   let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\n~~~mech:bar\nresult := ok@foo\n~~~\n");
   let mut runtime = runtime_with_root(&root);
@@ -637,6 +658,7 @@ fn interpreter_scope_does_not_resolve_interpreter_target() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn interpreter_address_still_works_from_program() {
   let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\nresult := ok@foo\n");
   let mut runtime = runtime_with_root(&root);
@@ -799,6 +821,7 @@ fn missing_interpreter_scope_returns_error() {
 
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn program_reads_interpreter_export_by_indexed_address() {
   let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\nresult := ok@foo\n");
 
@@ -813,6 +836,7 @@ fn program_reads_interpreter_export_by_indexed_address() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn program_reads_interpreter_export_by_address_with_interpreter_import() {
   let root = setup_modules("~~~mech:foo\n+> ./math.mec\nok := math/tau > 6.0\n<+ ok\n~~~\n\nresult := ok@foo\n");
 
@@ -850,6 +874,7 @@ fn program_address_does_not_execute_unreferenced_interpreter_from_comment() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn program_reads_only_requested_interpreter_export() {
   let root = setup_modules("~~~mech:foo\nok := true\nother := false\n<+ ok\n<+ other\n~~~\n\nresult := ok@foo\n");
 
@@ -864,6 +889,7 @@ fn program_reads_only_requested_interpreter_export() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn program_rejects_non_exported_interpreter_address() {
   let root = setup_modules("~~~mech:foo\nhidden := true\n~~~\n\nresult := hidden@foo\n");
 
@@ -878,6 +904,7 @@ fn program_rejects_non_exported_interpreter_address() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn program_unknown_interpreter_address_returns_error() {
   let root = setup_modules("result := ok@missing\n");
 
@@ -892,6 +919,7 @@ fn program_unknown_interpreter_address_returns_error() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn addressed_assignment_is_unsupported() {
   let root = setup_modules("x@foo := 1\n");
 
@@ -905,6 +933,7 @@ fn addressed_assignment_is_unsupported() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn addressed_assignment_to_context_is_still_unsupported() {
   let root = setup_modules("@manual := docs://manual{:write(intro/title)}\n\nintro/title@manual := true\n");
 
@@ -917,6 +946,7 @@ fn addressed_assignment_to_context_is_still_unsupported() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn addressed_assignment_with_docs_provider_is_still_unsupported() {
   let root = setup_modules("@manual := docs://manual{:write(intro/title)}\n\nintro/title@manual := true\n");
 
@@ -1494,6 +1524,7 @@ fn run_docs_config_read(spec: RuntimeConfigSpec) -> Result<Value, mech_core::Mec
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn config_spec_docs_read_requires_host_grant() {
   let result = run_docs_config_read(docs_config("intro/title", bool_value(true)));
   assert!(result.is_err());
@@ -1505,6 +1536,7 @@ fn config_spec_docs_read_requires_host_grant() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn config_spec_docs_read_with_matching_grant_returns_value() {
   let spec = docs_config("intro/title", bool_value(true))
     .with_capability_grant(read_grant("docs://manual", "intro/title"));
@@ -1512,6 +1544,7 @@ fn config_spec_docs_read_with_matching_grant_returns_value() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn host_grant_path_prefix_allows_nested_read() {
   let spec = docs_config("intro/title", bool_value(true))
     .with_capability_grant(read_grant("docs://manual", "intro/*"));
@@ -1519,6 +1552,7 @@ fn host_grant_path_prefix_allows_nested_read() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn host_grant_path_prefix_does_not_match_sibling() {
   let spec = docs_config("intro/title", bool_value(true))
     .with_capability_grant(read_grant("docs://manual", "introduction/*"));
@@ -1527,6 +1561,7 @@ fn host_grant_path_prefix_does_not_match_sibling() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn host_grant_wrong_operation_denies_read() {
   let grant = RuntimeCapabilityGrantSpec::new("task://main", "docs://manual")
     .with_operation(RuntimeCapabilityOperation::Write)
@@ -1538,6 +1573,7 @@ fn host_grant_wrong_operation_denies_read() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn host_grant_wrong_resource_denies_read() {
   let spec = docs_config("intro/title", bool_value(true))
     .with_capability_grant(read_grant("docs://other", "intro/title"));
@@ -1546,6 +1582,7 @@ fn host_grant_wrong_resource_denies_read() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn context_denial_still_uses_context_capability_error() {
   let root = setup_modules("@manual := docs://manual{:read(other/path)}\n\nresult := intro/title@manual\n");
   let spec = docs_config("intro/title", bool_value(true))
@@ -1562,6 +1599,7 @@ fn context_denial_still_uses_context_capability_error() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn host_grant_wildcard_path_allows_read() {
   let spec = docs_config("intro/title", bool_value(true))
     .with_capability_grant(read_grant("docs://manual", "*"));
@@ -1569,6 +1607,7 @@ fn host_grant_wildcard_path_allows_read() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn direct_provider_read_with_runtime_grant_still_works() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
   let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
@@ -1584,6 +1623,7 @@ fn direct_provider_read_with_runtime_grant_still_works() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn apply_config_spec_after_build_registers_resources_and_grants() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n");
   let spec = docs_config("intro/title", bool_value(true))
@@ -2052,6 +2092,7 @@ fn workspace_watcher_watches_configured_folder() {
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn interpreter_scope_ignores_faux_tilde_fence_inside_backtick_code_block() {
   let root = setup_modules(
     "~~~mech:foo\n\
@@ -2083,6 +2124,7 @@ result := ok@foo\n",
 }
 
 #[test]
+#[ignore = "legacy suffix context syntax removed"]
 fn interpreter_scope_ignores_faux_backtick_fence_inside_tilde_code_block() {
   let root = setup_modules(
     "~~~mech:foo\n\

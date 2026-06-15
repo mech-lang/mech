@@ -60,17 +60,20 @@ fn module_import_value_alias(input: ParseString) -> ParseResult<ModuleImportAlia
     map(module_import_alias_path, ModuleImportAlias::Value)(input)
 }
 
-fn module_import_context_alias(input: ParseString) -> ParseResult<ModuleImportAlias> {
+fn module_import_context_alias(input: ParseString) -> ParseResult<Identifier> {
     let (input, _) = at(input)?;
     let (input, name) = identifier_path_segment(input)?;
     if slash(input.clone()).is_ok() {
         return Err(nom::Err::Error(ParseError::new(input, "context import aliases must be a single identifier")));
     }
-    Ok((input, ModuleImportAlias::Context(name)))
+    Ok((input, name))
 }
 
 fn module_import_alias(input: ParseString) -> ParseResult<ModuleImportAlias> {
-    alt((module_import_context_alias, module_import_value_alias))(input)
+    alt((
+        map(module_import_context_alias, ModuleImportAlias::Context),
+        module_import_value_alias,
+    ))(input)
 }
 
 fn module_root(input: ParseString) -> ParseResult<Identifier> {
@@ -114,31 +117,6 @@ fn module_import_end(input: ParseString) -> ParseResult<()> {
     let (input, _) = space_tab0(input)?;
     let (input, _) = opt(new_line)(input)?;
     Ok((input, ()))
-}
-
-fn aliased_context_item_import(input: ParseString) -> ParseResult<ModuleImport> {
-    let (input, _) = at(input)?;
-    let (input, alias) = identifier_path_segment(input)?;
-    if slash(input.clone()).is_ok() {
-        return Err(nom::Err::Error(ParseError::new(input, "context import aliases must be a single identifier")));
-    }
-    let (input, _) = import_alias_operator(input)?;
-    let (input, (module, _, item)) = cut(nom_tuple((
-        module_root,
-        slash,
-        module_import_path,
-    )))(input)?;
-
-    Ok((
-        input,
-        ModuleImport {
-            module,
-            item: Some(item),
-            group_items: None,
-            alias: Some(ModuleImportAlias::Context(alias)),
-            kind: ModuleImportKind::Item,
-        },
-    ))
 }
 
 fn aliased_item_import(input: ParseString) -> ParseResult<ModuleImport> {
@@ -211,12 +189,15 @@ pub fn module_import(input: ParseString) -> ParseResult<ModuleImport> {
     let (input, _) = right_angle(input)?;
     let (input, _) = space_tab0(input)?;
 
-    let (input, mut import) = alt((
-        aliased_context_item_import,
-        aliased_item_import,
-        module_suffix_import,
-        module_only_import,
-    ))(input)?;
+    let (input, mut import) = if at(input.clone()).is_ok() {
+        cut(aliased_item_import)(input)?
+    } else {
+        alt((
+            aliased_item_import,
+            module_suffix_import,
+            module_only_import,
+        ))(input)?
+    };
 
     let (next_input, _) = module_import_end(input.clone())?;
     import.module.name.src_range.end = next_input.loc();

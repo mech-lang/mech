@@ -164,6 +164,9 @@ impl MechRuntime {
       let mut flat_import_dependencies = Vec::new();
 
       for import in &resolved.imports {
+        if matches!(import.alias, Some(crate::resolver::SourceImportAlias::Context(_))) {
+          continue;
+        }
         let dependency_request = crate::resolver::source_request_for_import(import, Some(&canonical_uri));
         let dependency_version = self
           .build_module_from_request_with_context_and_graph(
@@ -190,6 +193,9 @@ impl MechRuntime {
       let mut matched_flat_imports = vec![false; flat_import_dependencies.len()];
       for scope_metadata in &resolved.scopes {
         for import in &scope_metadata.imports {
+          if matches!(import.alias, Some(crate::resolver::SourceImportAlias::Context(_))) {
+            continue;
+          }
           let Some((index, (_, dependency_version))) = flat_import_dependencies
             .iter()
             .enumerate()
