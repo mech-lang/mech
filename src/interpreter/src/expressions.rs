@@ -487,7 +487,7 @@ pub fn range(rng: &RangeExpression, env: Option<&Environment>, p: &Interpreter) 
 
 fn addressed_identifier_name(name: &Identifier, context: &Option<Identifier>) -> String {
     match context {
-        Some(context) => format!("{}@{}", name.to_string(), context.to_string()),
+        Some(context) => format!("@{}/{}", context.to_string(), name.to_string()),
         None => name.to_string(),
     }
 }

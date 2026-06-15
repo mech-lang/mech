@@ -582,3 +582,16 @@ fn config_profile_browser_dom_subtree_with_wildcard_path_accepted() {
     assert_eq!(doc.browser.dom_manifest()[0].path.as_str(), "body/content/*");
     assert_eq!(doc.browser.dom_manifest()[0].property, BrowserDomProperty::Text);
 }
+
+#[test]
+fn browser_module_manifest_config_parses_and_lowers() {
+    let source = std::fs::read_to_string("hosts/browser/module.mcfg").unwrap();
+    let doc = parse_config_document("hosts/browser/module.mcfg", &source, ConfigProfileOptions::default()).unwrap();
+    let module = doc.module.unwrap();
+    assert_eq!(module.name, "browser");
+    assert_eq!(module.exports.len(), 1);
+    assert_eq!(module.exports[0].name, "dom");
+    assert_eq!(module.exports[0].kind, ModuleManifestExportKind::Context);
+    assert_eq!(module.exports[0].base_uri, "browser://dom");
+    assert_eq!(module.exports[0].operations, vec!["read", "write"]);
+}

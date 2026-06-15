@@ -1144,9 +1144,8 @@ mod tests {
       .filter_map(|el| match el { SectionElement::FencedMechCode(code) => Some(code), _ => None })
       .collect();
     assert_eq!(fenced[0].config.namespace_str, "foo");
-    assert_eq!(fenced[0].imports.len(), 1);
+    assert_eq!(fenced[0].imports.len(), 0);
     assert_eq!(fenced[0].exports.len(), 0);
-    assert_eq!(fenced[0].imports[0].specifier.to_string(), "math/*");
     assert_eq!(fenced[1].config.namespace_str, "bar");
     assert_eq!(fenced[1].imports.len(), 1);
     assert_eq!(fenced[1].exports.len(), 1);

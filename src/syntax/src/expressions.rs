@@ -240,16 +240,15 @@ fn prefixed_context_path(input: ParseString) -> ParseResult<(Identifier, Identif
   }
 }
 
-// var := ("@", identifier, "/", identifier) | identifier, ("@", identifier)?, ?kind-annotation ;
+// var := ("@", identifier, "/", identifier), kind-annotation? | identifier, kind-annotation? ;
 pub fn var(input: ParseString) -> ParseResult<Var> {
   if let Ok((input, (context, name))) = prefixed_context_path(input.clone()) {
     let ((input, kind)) = opt(kind_annotation)(input)?;
     return Ok((input, Var{ name, context: Some(context), kind }));
   }
   let ((input, name)) = identifier(input)?;
-  let ((input, context)) = opt(preceded(at, identifier))(input)?;
   let ((input, kind)) = opt(kind_annotation)(input)?;
-  Ok((input, Var{ name, context, kind }))
+  Ok((input, Var{ name, context: None, kind }))
 }
 
 // statement-separator := ";" ;
@@ -771,7 +770,7 @@ pub fn subscript(input: ParseString) -> ParseResult<Vec<Subscript>> {
   Ok((input, subscripts))
 }
 
-// slice := ("@", identifier, "/", identifier) | identifier, subscript, ("@", identifier)? ;
+// slice := ("@", identifier, "/", identifier) | identifier, subscript ;
 pub fn slice(input: ParseString) -> ParseResult<Slice> {
   if let Ok((input, (context, name))) = prefixed_context_path(input.clone()) {
     let (input, ixes) = subscript(input)?;
@@ -783,7 +782,7 @@ pub fn slice(input: ParseString) -> ParseResult<Slice> {
   Ok((input, Slice{name, context, subscript: ixes}))
 }
 
-// slice-ref := ("@", identifier, "/", identifier) | identifier, subscript?, ("@", identifier)? ;
+// slice-ref := ("@", identifier, "/", identifier) | identifier, subscript? ;
 pub fn slice_ref(input: ParseString) -> ParseResult<SliceRef> {
   if let Ok((input, (context, name))) = prefixed_context_path(input.clone()) {
     let (input, ixes) = opt(subscript)(input)?;

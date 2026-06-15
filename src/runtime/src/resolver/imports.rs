@@ -1,6 +1,6 @@
 use mech_core::FencedMechCode;
 
-use super::{SourceExportDeclaration, SourceImportDeclaration, SourceImportKind, SourceRequest};
+use super::{SourceExportDeclaration, SourceImportAlias, SourceImportDeclaration, SourceImportKind, SourceRequest};
 
 pub fn classify_import_specifier(specifier: impl Into<String>) -> SourceImportDeclaration {
   let specifier = specifier.into();
@@ -66,7 +66,7 @@ fn module_import_item_path(item: &mech_core::ModuleImportPath) -> String {
   item.to_string()
 }
 
-fn classified_module_import(module: &str, item: Option<&str>, alias: Option<String>) -> SourceImportDeclaration {
+fn classified_module_import(module: &str, item: Option<&str>, alias: Option<SourceImportAlias>) -> SourceImportDeclaration {
   let specifier = match item {
     Some(item) => format!("{module}/{item}"),
     None => module.to_string(),
@@ -96,7 +96,10 @@ pub(crate) fn module_import_declarations(import: &mech_core::ModuleImport) -> Ve
         .map(module_import_item_path)
         .unwrap_or_default();
 
-      let alias = import.alias.as_ref().map(|alias| alias.to_string());
+      let alias = import.alias.as_ref().map(|alias| match alias {
+        mech_core::ModuleImportAlias::Value(path) => SourceImportAlias::Value(path.to_string()),
+        mech_core::ModuleImportAlias::Context(name) => SourceImportAlias::Context(name.to_string()),
+      });
 
       vec![classified_module_import(&module, Some(&item), alias)]
     }

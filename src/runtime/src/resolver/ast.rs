@@ -40,7 +40,7 @@ mod tests {
 
   #[test]
   fn resolved_source_extracts_resource_context() {
-    let tree = parse_program("@main := db://main{:read(users/*), :write(users/name)}\nx := users/name@main\n");
+    let tree = parse_program("@main := db://main{:read(users/*), :write(users/name)}\nx := @main/users/name\n");
     let contexts = contexts_from_program(&tree);
     assert_eq!(contexts.len(), 1);
     assert_eq!(contexts[0].name, "main");
@@ -106,7 +106,7 @@ mod tests {
 
   #[test]
   fn source_index_collects_program_address_reference() {
-    let tree = parse_program("result := ok@foo\n");
+    let tree = parse_program("result := @foo/ok\n");
     let index = SourceIndex::from_program(&tree);
     let refs = index.program_address_references();
     assert_eq!(refs.len(), 1);
@@ -116,7 +116,7 @@ mod tests {
 
   #[test]
   fn source_index_collects_fenced_address_reference() {
-    let tree = parse_program("~~~mech:foo\nresult := ok@bar\n~~~\n");
+    let tree = parse_program("~~~mech:foo\nresult := @bar/ok\n~~~\n");
     let index = SourceIndex::from_program(&tree);
     assert_eq!(index.program_address_references().len(), 0);
     let foo_scope = index.module_scopes().into_iter().find(|metadata| match &metadata.scope {

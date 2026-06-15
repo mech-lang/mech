@@ -56,8 +56,26 @@ fn module_import_alias_path(input: ParseString) -> ParseResult<ModuleImportPath>
     Ok((input, ModuleImportPath { segments }))
 }
 
+fn module_import_value_alias(input: ParseString) -> ParseResult<ModuleImportAlias> {
+    map(module_import_alias_path, ModuleImportAlias::Value)(input)
+}
+
+fn module_import_context_alias(input: ParseString) -> ParseResult<ModuleImportAlias> {
+    let (input, _) = at(input)?;
+    let (next, name) = identifier(input)?;
+    Ok((next, ModuleImportAlias::Context(name)))
+}
+
+fn module_import_alias(input: ParseString) -> ParseResult<ModuleImportAlias> {
+    alt((module_import_context_alias, module_import_value_alias))(input)
+}
+
 fn module_root(input: ParseString) -> ParseResult<Identifier> {
-    identifier_path_segment(input)
+    let (input, module) = identifier_path_segment(input)?;
+    match module.to_string().as_str() {
+        "math" | "stats" | "browser" => Ok((input, module)),
+        _ => Err(nom::Err::Error(ParseError::new(input, "not a built-in module import"))),
+    }
 }
 
 fn import_alias_operator(input: ParseString) -> ParseResult<()> {
@@ -99,8 +117,23 @@ fn module_import_end(input: ParseString) -> ParseResult<()> {
     Ok((input, ()))
 }
 
+
+fn aliased_context_item_import(input: ParseString) -> ParseResult<ModuleImport> {
+    let (input, _) = at(input)?;
+    let (input, alias) = identifier_path_segment(input)?;
+    let (input, _) = import_alias_operator(input)?;
+    let (input, (module, _, item)) = cut(nom_tuple((module_root, slash, module_import_path)))(input)?;
+    Ok((input, ModuleImport {
+        module,
+        item: Some(item),
+        group_items: None,
+        alias: Some(ModuleImportAlias::Context(alias)),
+        kind: ModuleImportKind::Item,
+    }))
+}
+
 fn aliased_item_import(input: ParseString) -> ParseResult<ModuleImport> {
-    let (input, alias) = module_import_alias_path(input)?;
+    let (input, alias) = module_import_alias(input)?;
     let (input, _) = import_alias_operator(input)?;
 
     let (input, (module, _, item)) = cut(nom_tuple((
@@ -170,6 +203,7 @@ pub fn module_import(input: ParseString) -> ParseResult<ModuleImport> {
     let (input, _) = space_tab0(input)?;
 
     let (input, mut import) = alt((
+        aliased_context_item_import,
         aliased_item_import,
         module_suffix_import,
         module_only_import,

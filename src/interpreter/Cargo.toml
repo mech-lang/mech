@@ -365,3 +365,6 @@ version = "0.2.19"
 default-features = false
 features = ["libm"]
 optional = true
+
+[dev-dependencies]
+mech-syntax = { path = "../syntax", default-features = false }

@@ -9,8 +9,9 @@ use crate::stdlib::define::*;
 
 pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   match stmt {
-    Statement::ImportDeclaration(_) => Ok(Value::Empty),
+    Statement::ImportDeclaration(import) => import_declaration(import, p),
     Statement::ExportDeclaration(_) => Ok(Value::Empty),
+    Statement::ContextDeclaration(ctx) => context_declaration(ctx, p),
     #[cfg(feature = "tuple")]
     Statement::TupleDestructure(tpl_dstrct) => tuple_destructure(&tpl_dstrct, p),
     #[cfg(feature = "invariant_define")]
@@ -37,6 +38,42 @@ pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -
         None
       ).with_compiler_loc().with_tokens(x.tokens())
     ),
+  }
+}
+
+
+
+pub fn import_declaration(import: &ImportDeclaration, p: &Interpreter) -> MResult<Value> {
+  let spec = import.specifier.to_string();
+  if let Some((alias, target)) = spec.strip_prefix('@').and_then(|s| s.split_once(":=")) {
+    let alias = alias.trim();
+    let target = target.trim();
+    if target == "browser/dom" {
+      p.context_bindings.borrow_mut().insert(hash_str(alias), RuntimeContextBinding { name: alias.to_string(), base_uri: "browser://dom".to_string() });
+      return Ok(Value::Empty);
+    }
+  }
+  Ok(Value::Empty)
+}
+
+pub fn context_declaration(ctx: &ContextDeclaration, p: &Interpreter) -> MResult<Value> {
+  match &ctx.base {
+    ContextBase::ResourceUri(uri) => {
+      p.bind_context(&ctx.name, uri.chars.iter().collect::<String>());
+      Ok(Value::Empty)
+    }
+    ContextBase::Context(base) => {
+      match p.context_binding(base) {
+        Some(binding) => {
+          p.bind_context(&ctx.name, binding.base_uri);
+          Ok(Value::Empty)
+        }
+        None => Err(MechError::new(
+          GenericError { msg: format!("Context `@{}` is not defined", base.to_string()) },
+          None,
+        ).with_compiler_loc().with_tokens(base.tokens())),
+      }
+    }
   }
 }
 

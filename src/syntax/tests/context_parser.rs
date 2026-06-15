@@ -203,3 +203,18 @@ fn parses_prefix_browser_resource_read_inside_expression() {
     _ => panic!("expected variable define"),
   }
 }
+
+#[test]
+fn parses_required_context_forms() {
+  assert!(parser::parse("@ui := browser://dom").is_ok());
+  assert!(parser::parse("@child := @ui").is_ok());
+  assert!(parser::parse("x := @ui/counter").is_ok());
+  assert!(parser::parse("x := @ui/counter<String>").is_ok());
+}
+
+#[test]
+fn rejects_legacy_suffix_context_forms() {
+  assert!(parser::parse("x := counter@ui").is_err());
+  assert!(parser::parse("x := counter@ui<String>").is_err());
+  assert!(parser::parse("x := counter @ ui").is_err());
+}

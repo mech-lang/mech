@@ -1392,7 +1392,11 @@ impl MechRuntime {
             return Err(MechError::new(RuntimeModuleExportNotFound { dependency: import.specifier.clone(), export: name.clone() }, None));
           };
 
-          let binding = import.alias.clone().unwrap_or_else(|| name.clone());
+          let binding = match &import.alias {
+            Some(crate::resolver::SourceImportAlias::Value(alias)) => alias.clone(),
+            Some(crate::resolver::SourceImportAlias::Context(alias)) => alias.clone(),
+            None => name.clone(),
+          };
 
           if let Some(first) = ownership.insert(binding.clone(), import.specifier.clone()) {
             return Err(MechError::new(RuntimeModuleImportConflict { binding: binding.clone(), first_import: first, second_import: import.specifier.clone() }, None));

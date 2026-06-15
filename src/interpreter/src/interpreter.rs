@@ -10,6 +10,12 @@ use std::time::Instant;
 // Interpreter
 // ----------------------------------------------------------------------------
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeContextBinding {
+  pub name: String,
+  pub base_uri: String,
+}
+
 pub struct Interpreter {
   pub id: u64,
   pub profile: bool,
@@ -32,6 +38,7 @@ pub struct Interpreter {
   pub out: Value,
   pub out_values: Ref<HashMap<u64, Value>>,
   pub inline_eval_counter: Ref<u64>,
+  pub context_bindings: Ref<HashMap<u64, RuntimeContextBinding>>,
   #[cfg(feature = "state_machines")]
   pub user_state_machines: Ref<HashMap<u64, FsmImplementation>>,
   #[cfg(feature = "state_machines")]
@@ -63,6 +70,7 @@ impl Clone for Interpreter {
       out: self.out.clone(),
       out_values: self.out_values.clone(),
       inline_eval_counter: self.inline_eval_counter.clone(),
+      context_bindings: self.context_bindings.clone(),
       #[cfg(feature = "state_machines")]
       user_state_machines: self.user_state_machines.clone(),
       #[cfg(feature = "state_machines")]
@@ -113,6 +121,7 @@ impl Interpreter {
       sub_interpreters: Ref::new(HashMap::new()),
       out_values: Ref::new(HashMap::new()),
       inline_eval_counter: Ref::new(0),
+      context_bindings: Ref::new(HashMap::new()),
       #[cfg(feature = "state_machines")]
       user_state_machines: Ref::new(HashMap::new()),
       #[cfg(feature = "state_machines")]
@@ -125,6 +134,17 @@ impl Interpreter {
 
   pub fn default() -> Self {
     Self::new(0, 10_000)
+  }
+
+  pub fn bind_context(&self, name: &Identifier, base_uri: impl Into<String>) {
+    self.context_bindings.borrow_mut().insert(name.hash(), RuntimeContextBinding {
+      name: name.to_string(),
+      base_uri: base_uri.into(),
+    });
+  }
+
+  pub fn context_binding(&self, name: &Identifier) -> Option<RuntimeContextBinding> {
+    self.context_bindings.borrow().get(&name.hash()).cloned()
   }
 
   #[cfg(feature = "functions")]

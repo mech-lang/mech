@@ -216,6 +216,9 @@ pub fn import_declaration(input: ParseString) -> ParseResult<ImportDeclaration> 
   let spec_start = input.cursor;
   let (input, _) = many1(nom_tuple((is_not(alt((new_line, semicolon))), any_token)))(input)?;
   let specifier = input.slice(spec_start, input.cursor).trim().to_string();
+  if specifier.starts_with('@') && (specifier.starts_with("@ui/main") || !specifier.contains(":=") || specifier.contains("/*") || specifier.contains("{") || !specifier.contains('/')) {
+    return Err(nom::Err::Failure(ParseError::new(input, "Context import aliases must use module item import syntax")));
+  }
   if specifier == "*" || specifier.contains("/*/") || specifier.contains('*') && !specifier.ends_with("/*") {
     return Err(nom::Err::Failure(ParseError::new(input, "Invalid wildcard placement in import specifier")));
   }

@@ -16,6 +16,7 @@ pub struct MechConfigDocument {
     pub serve: Option<ServeHostConfig>,
     pub browser: BrowserAuthority,
     pub capabilities: Vec<ConfigCapabilityGrant>,
+    pub module: Option<ModuleManifestConfig>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -70,6 +71,25 @@ pub enum ConfigCapabilityKind {
     Serve,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ModuleManifestConfig {
+    pub name: String,
+    pub exports: Vec<ModuleManifestExportConfig>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ModuleManifestExportConfig {
+    pub name: String,
+    pub kind: ModuleManifestExportKind,
+    pub base_uri: String,
+    pub operations: Vec<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ModuleManifestExportKind {
+    Context,
+}
+
 pub struct ConfigLowerer;
 
 impl ConfigLowerer {
@@ -85,6 +105,7 @@ impl ConfigLowerer {
             serve: None,
             browser: BrowserAuthority::default(),
             capabilities: Vec::new(),
+            module: None,
         };
         for (key, value) in map {
             match key.as_str() {
@@ -92,10 +113,66 @@ impl ConfigLowerer {
                 "serve" => doc.serve = Some(self.lower_serve(value)?),
                 "browser" => doc.browser = self.lower_browser(value)?,
                 "capabilities" => doc.capabilities = self.lower_capabilities(value)?,
+                "module" => doc.module = Some(self.lower_module(value)?),
                 other => return invalid(format!("unknown top-level config field `{other}`")),
             }
         }
         Ok(doc)
+    }
+
+
+    fn lower_module(&self, value: &ConfigValue) -> MResult<ModuleManifestConfig> {
+        let map = expect_map("module", value)?;
+        let mut name = None;
+        let mut exports = None;
+        for (key, value) in map {
+            match key.as_str() {
+                "name" => name = Some(expect_string("module.name", value)?),
+                "exports" => {
+                    let list = expect_list("module.exports", value)?;
+                    exports = Some(list.iter().enumerate().map(|(idx, v)| self.lower_module_export(idx, v)).collect::<MResult<Vec<_>>>()?);
+                }
+                other => return invalid(format!("unknown module field `{other}`")),
+            }
+        }
+        let name = name.ok_or_else(|| invalid_error("module.name is required"))?;
+        if name.trim().is_empty() { return invalid("module.name must be non-empty"); }
+        let exports = exports.ok_or_else(|| invalid_error("module.exports is required"))?;
+        Ok(ModuleManifestConfig { name, exports })
+    }
+
+    fn lower_module_export(&self, idx: usize, value: &ConfigValue) -> MResult<ModuleManifestExportConfig> {
+        let where_ = format!("module.exports[{idx}]");
+        let map = expect_map(&where_, value)?;
+        let mut name = None;
+        let mut kind = None;
+        let mut base_uri = None;
+        let mut operations = None;
+        for (key, value) in map {
+            match key.as_str() {
+                "name" => name = Some(expect_string(&format!("{where_}.name"), value)?),
+                "kind" => {
+                    let raw = expect_string(&format!("{where_}.kind"), value)?;
+                    kind = Some(match raw.as_str() {
+                        "context" => ModuleManifestExportKind::Context,
+                        _ => return invalid(format!("{where_}.kind must be `context`; got `{raw}`")),
+                    });
+                }
+                "base-uri" => base_uri = Some(expect_string(&format!("{where_}.base-uri"), value)?),
+                "operations" => operations = Some(expect_string_list(&format!("{where_}.operations"), value)?),
+                other => return invalid(format!("unknown {where_} field `{other}`")),
+            }
+        }
+        let name = name.ok_or_else(|| invalid_error(format!("{where_}.name is required")))?;
+        let kind = kind.ok_or_else(|| invalid_error(format!("{where_}.kind is required")))?;
+        let base_uri = base_uri.ok_or_else(|| invalid_error(format!("{where_}.base-uri is required")))?;
+        if !base_uri.contains("://") { return invalid(format!("{where_}.base-uri must contain `://`")); }
+        let operations = operations.ok_or_else(|| invalid_error(format!("{where_}.operations is required")))?;
+        if operations.is_empty() { return invalid(format!("{where_}.operations must contain at least one operation")); }
+        if base_uri == "browser://dom" {
+            for op in &operations { if op != "read" && op != "write" { return invalid(format!("browser/dom only supports operations `read` and `write`; got `{op}`")); } }
+        }
+        Ok(ModuleManifestExportConfig { name, kind, base_uri, operations })
     }
 
     fn lower_runtime(&self, value: &ConfigValue) -> MResult<RuntimeConfigPatch> {

@@ -312,10 +312,27 @@ pub fn module_import_runtime(import: &ModuleImport, p: &Interpreter) -> MResult<
         MechError::new(MissingFunctionError { function_id: hash_str(&module) }, None).with_compiler_loc()
       })?;
       let item = module_import_item_path(item);
-      if let Some(alias) = &import.alias {
-        import_module_item_as(&mut p.functions().borrow_mut(), &module, &item, &alias.to_string())?;
-      } else {
-        import_module_item(&mut p.functions().borrow_mut(), &module, &item)?;
+      match &import.alias {
+        None => import_module_item(&mut p.functions().borrow_mut(), &module, &item)?,
+        Some(ModuleImportAlias::Value(alias)) => {
+          if module == "browser" && item == "dom" {
+            return Err(MechError::new(
+              GenericError { msg: "Module export `browser/dom` is a context export; import it with `+> @name := browser/dom`".to_string() },
+              None,
+            ).with_compiler_loc());
+          }
+          import_module_item_as(&mut p.functions().borrow_mut(), &module, &item, &alias.to_string())?;
+        }
+        Some(ModuleImportAlias::Context(alias)) => {
+          if module == "browser" && item == "dom" {
+            p.bind_context(alias, "browser://dom");
+          } else {
+            return Err(MechError::new(
+              GenericError { msg: format!("Context module import `{module}/{item}` is not implemented; only `browser/dom` is supported in this PR") },
+              None,
+            ).with_compiler_loc());
+          }
+        }
       }
       Ok(Value::Empty)
     }

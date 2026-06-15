@@ -340,7 +340,7 @@ pub fn symbol(input: ParseString) -> ParseResult<Token> {
 
 // identifier-symbol := ampersand | dollar | bar | percent | slash | hashtag | backslash | tilde | plus | dash | asterisk | caret ;
 pub fn identifier_symbol(input: ParseString) -> ParseResult<Token> {
-  let (input, symbol) = alt((ampersand, dollar, percent, slash, hashtag, backslash, tilde, plus, dash, asterisk, caret))(input)?;
+  let (input, symbol) = alt((ampersand, dollar, percent, slash, hashtag, backslash, tilde, plus, dash, asterisk, caret, underscore))(input)?;
   Ok((input, symbol))
 }
 

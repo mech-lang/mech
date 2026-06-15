@@ -90,3 +90,19 @@ fn rejects_invalid_stdlib_import_paths() {
     assert!(parser::parse("+> math/").is_err());
     assert!(parser::parse("+> math/*/x").is_err());
 }
+
+#[test]
+fn parses_context_and_value_import_aliases() {
+    assert!(parser::parse("+> @ui := browser/dom").is_ok());
+    let parsed = imports("+> s := math/sin");
+    assert_eq!(parsed.len(), 1);
+    assert!(matches!(parsed[0].alias, Some(ModuleImportAlias::Value(_))));
+}
+
+#[test]
+fn rejects_invalid_context_import_aliases() {
+    assert!(parser::parse("+> @ui/main := browser/dom").is_err());
+    assert!(parser::parse("+> @ui := browser").is_err());
+    assert!(parser::parse("+> @ui := browser/*").is_err());
+    assert!(parser::parse("+> @ui := browser/{dom, storage}").is_err());
+}
