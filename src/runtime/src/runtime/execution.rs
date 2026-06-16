@@ -23,10 +23,6 @@ enum RuntimeAddressTarget {
   Unknown,
 }
 
-fn address_binding_key(target: &str, name: &str) -> String {
-  format!("@{target}/{name}")
-}
-
 fn resolve_runtime_address_target(
   record: &ModuleVersionRecord,
   _scope: &SourceScope,
@@ -1276,6 +1272,10 @@ impl MechRuntime {
     seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
     module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
   ) -> MResult<HashMap<String, mech_core::ValRef>> {
+    fn address_binding_key(target: &str, name: &str) -> String {
+      format!("@{target}/{name}")
+    }
+
     let scoped_refs = record
       .scopes
       .iter()

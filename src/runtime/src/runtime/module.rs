@@ -87,6 +87,42 @@ impl MechRuntime {
     Ok(())
   }
 
+  fn validate_runtime_module_record_address_targets(
+    record: &crate::RuntimeModuleRecord,
+  ) -> MResult<()> {
+    let mut targets: HashMap<String, String> = HashMap::new();
+
+    for metadata in &record.scopes {
+      if let SourceScope::Interpreter(interpreter) = &metadata.scope {
+        if let Some(first_kind) = targets.insert(interpreter.namespace_str.clone(), "interpreter".to_string()) {
+          return Err(MechError::new(
+            crate::resolver::AddressTargetNameConflict {
+              name: interpreter.namespace_str.clone(),
+              first_kind,
+              second_kind: "interpreter".to_string(),
+            },
+            None,
+          ));
+        }
+      }
+
+      for context in &metadata.contexts {
+        if let Some(first_kind) = targets.insert(context.name.clone(), "context".to_string()) {
+          return Err(MechError::new(
+            crate::resolver::AddressTargetNameConflict {
+              name: context.name.clone(),
+              first_kind,
+              second_kind: "context".to_string(),
+            },
+            None,
+          ));
+        }
+      }
+    }
+
+    Ok(())
+  }
+
   pub fn resolve_source(
     &self,
     request: impl Into<SourceRequest>,
@@ -277,6 +313,7 @@ impl MechRuntime {
       )?;
 
       self.materialize_manifest_context_imports(&mut record)?;
+      Self::validate_runtime_module_record_address_targets(&record)?;
       self.bind_context_imports_from_source(&record.imports)?;
 
       let module = self.ensure_module(

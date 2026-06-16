@@ -2142,6 +2142,17 @@ fn manifest_context_import_is_visible_to_scoped_address_resolution() {
 }
 
 #[test]
+fn manifest_context_import_conflicts_with_interpreter_address_target() {
+  let root = setup_modules("+> @foo := browser/dom\n\n~~~mech:foo\nok := true\n<+ ok\n~~~\n\nresult := @foo/counter/_text\n");
+  let mut runtime = runtime_with_root(&root);
+  let result = runtime.resolve_and_store_module_source("main.mec", module_options());
+  assert!(result.is_err(), "manifest context alias should conflict with interpreter target");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("AddressTargetNameConflict"), "expected address target conflict, got {error}");
+  assert!(error.contains("foo"), "expected conflicting target name in error, got {error}");
+}
+
+#[test]
 fn context_import_alias_is_not_bound_as_value_import() {
   let root = setup_modules("+> @ui := browser/dom\n+> ./math.mec\nresult := ui\n");
   let mut runtime = runtime_with_root(&root);
