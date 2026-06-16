@@ -30,6 +30,39 @@ pub struct ModuleManifestCatalog {
   manifests: Vec<ModuleManifestConfig>,
 }
 
+impl ModuleManifestConfig {
+  pub fn validate(&self) -> MResult<()> {
+    if self.name.trim().is_empty() {
+      return Err(MechError::new(GenericError { msg: "Module manifest name must not be empty".to_string() }, None).with_compiler_loc());
+    }
+    let mut names = std::collections::HashSet::new();
+    for export in &self.exports {
+      if export.name.trim().is_empty() {
+        return Err(MechError::new(GenericError { msg: format!("Module manifest `{}` has an empty export name", self.name) }, None).with_compiler_loc());
+      }
+      if !names.insert(export.name.clone()) {
+        return Err(MechError::new(GenericError { msg: format!("Module manifest `{}` declares duplicate export `{}`", self.name, export.name) }, None).with_compiler_loc());
+      }
+      if !export.base_uri.contains("://") {
+        return Err(MechError::new(GenericError { msg: format!("Module manifest `{}` export `{}` has invalid base_uri `{}`", self.name, export.name, export.base_uri) }, None).with_compiler_loc());
+      }
+      if export.operations.is_empty() {
+        return Err(MechError::new(GenericError { msg: format!("Module manifest `{}` export `{}` must declare at least one operation", self.name, export.name) }, None).with_compiler_loc());
+      }
+      match export.kind {
+        ModuleManifestExportKind::Context => {
+          for operation in &export.operations {
+            if operation != "read" && operation != "write" {
+              return Err(MechError::new(GenericError { msg: format!("Module manifest `{}` context export `{}` has unsupported operation `{}`", self.name, export.name, operation) }, None).with_compiler_loc());
+            }
+          }
+        }
+      }
+    }
+    Ok(())
+  }
+}
+
 impl ModuleManifestCatalog {
   pub fn new() -> Self { Self::default() }
 
@@ -40,6 +73,7 @@ impl ModuleManifestCatalog {
   }
 
   pub fn register(&mut self, manifest: ModuleManifestConfig) -> MResult<()> {
+    manifest.validate()?;
     if self.manifest(&manifest.name).is_some() {
       return Err(MechError::new(GenericError { msg: format!("Module manifest `{}` is already registered", manifest.name) }, None).with_compiler_loc());
     }

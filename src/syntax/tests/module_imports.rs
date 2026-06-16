@@ -235,3 +235,20 @@ fn source_and_module_imports_remain_separate() {
         assert!(parser::parse(invalid).is_err(), "expected parse failure for {invalid}");
     }
 }
+
+#[test]
+fn source_uri_import_specifiers_trim_trailing_whitespace() {
+    let stmts = statements("+> fs://lib/dep.mec   \n+> https://example.com/dep.mec   \n+> memory://scratch/dep   \n");
+    let specifiers: Vec<String> = stmts
+        .iter()
+        .map(|stmt| match stmt {
+            Statement::ImportDeclaration(import) => import.specifier.to_string(),
+            other => panic!("expected source import, got {other:?}"),
+        })
+        .collect();
+    assert_eq!(specifiers, vec![
+        "fs://lib/dep.mec",
+        "https://example.com/dep.mec",
+        "memory://scratch/dep",
+    ]);
+}

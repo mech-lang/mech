@@ -12,6 +12,7 @@
 // Both methods have corresponding _with_context versions that accept a mutable reference to a RuntimeContext, allowing for execution within the context of an active transaction. This ensures that any changes made during execution are properly staged within the transaction that if an error occurs, the transaction can be rolled back to maintain consistency.
 
 use super::*;
+use crate::SourceIndex;
 
 const DEFAULT_RESOURCE_SUBJECT: &str = "task://main";
 
@@ -194,16 +195,26 @@ impl MechRuntime {
     &mut self,
     tree: &mech_core::Program,
   ) -> MResult<()> {
-    for (code, _) in program_codes(tree) {
-      let mech_core::MechCode::Statement(mech_core::Statement::ContextDeclaration(ctx)) = code else {
+    let index = SourceIndex::from_program(tree);
+    for import in index.program_imports() {
+      let Some(SourceImportAlias::Context(alias)) = import.alias else {
         continue;
       };
-      let mech_core::ContextBase::ResourceUri(uri) = &ctx.base else {
+      let Some(module) = import.module.as_deref() else {
         continue;
       };
-      let uri = uri.to_string();
-      if uri.starts_with("browser://dom/") {
-        self.bind_resource_root(ctx.name.to_string(), uri)?;
+      let Some(item) = import.item.as_deref() else {
+        continue;
+      };
+      self.bind_context_export(&alias, module, item)?;
+    }
+
+    for ctx in index.program_contexts() {
+      let crate::SourceContextBase::ResourceUri(uri) = &ctx.base else {
+        continue;
+      };
+      if uri.starts_with("browser://dom") {
+        self.bind_resource_root(ctx.name, uri)?;
       }
     }
     Ok(())
@@ -404,9 +415,13 @@ impl MechRuntime {
 
   fn slice_reads_browser_resource(&self, slice: &mech_core::Slice) -> bool {
     slice
-      .subscript
-      .iter()
-      .any(|subscript| self.subscript_reads_browser_resource(subscript))
+      .context
+      .as_ref()
+      .is_some_and(|context| self.is_browser_dom_resource_binding(&context.to_string()))
+      || slice
+        .subscript
+        .iter()
+        .any(|subscript| self.subscript_reads_browser_resource(subscript))
   }
 
   fn subscript_reads_browser_resource(&self, subscript: &mech_core::Subscript) -> bool {
@@ -646,6 +661,16 @@ impl MechRuntime {
     &mut self,
     slice: &mech_core::Slice,
   ) -> MResult<mech_core::Slice> {
+    if slice
+      .context
+      .as_ref()
+      .is_some_and(|context| self.is_browser_dom_resource_binding(&context.to_string()))
+    {
+      return Err(browser_runtime_resource_error(
+        slice.name.to_string(),
+        "context-addressed slices are not supported for browser DOM resources in this PR",
+      ));
+    }
     Ok(mech_core::Slice {
       name: slice.name.clone(),
       context: slice.context.clone(),
