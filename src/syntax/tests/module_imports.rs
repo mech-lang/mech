@@ -190,17 +190,18 @@ fn dynamic_module_imports_stay_mech_code_imports() {
 }
 
 #[test]
-fn context_import_alias_accepts_single_segment_with_underscore() {
-    let parsed = imports("+> @ui := browser/dom\n+> @my_ui := browser/dom\n");
+fn context_import_alias_accepts_single_segment_without_underscore() {
+    let parsed = imports("+> @ui := browser/dom\n+> @my-ui := browser/dom\n");
     assert_eq!(parsed.len(), 2);
     match &parsed[0].alias {
         Some(ModuleImportAlias::Context(name)) => assert_eq!(name.to_string(), "ui"),
         other => panic!("expected context alias, got {other:?}"),
     }
     match &parsed[1].alias {
-        Some(ModuleImportAlias::Context(name)) => assert_eq!(name.to_string(), "my_ui"),
+        Some(ModuleImportAlias::Context(name)) => assert_eq!(name.to_string(), "my-ui"),
         other => panic!("expected context alias, got {other:?}"),
     }
+    assert!(parser::parse("+> @my_ui := browser/dom").is_err());
     assert!(parser::parse("+> @ui/main := browser/dom").is_err());
     assert!(parser::parse("+> @foo/bar := browser/dom").is_err());
 }
@@ -229,6 +230,7 @@ fn source_and_module_imports_remain_separate() {
         "+> @ui := browser/*",
         "+> @ui := browser/{dom, storage}",
         "+> @ui := fs://workspace",
+        "+> @my_ui := browser/dom",
     ] {
         assert!(parser::parse(invalid).is_err(), "expected parse failure for {invalid}");
     }

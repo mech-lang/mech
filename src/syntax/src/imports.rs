@@ -63,7 +63,7 @@ fn module_import_value_alias(input: ParseString) -> ParseResult<ModuleImportAlia
 fn context_import_alias_segment(input: ParseString) -> ParseResult<Identifier> {
     let (input, (first, mut rest)) = nom_tuple((
         alpha_token,
-        many0(alt((alpha_token, digit_token, dash, underscore))),
+        many0(alt((alpha_token, digit_token, dash))),
     ))(input)?;
     let mut tokens = vec![first];
     tokens.append(&mut rest);

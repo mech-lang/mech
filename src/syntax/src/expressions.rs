@@ -216,28 +216,23 @@ pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
   Ok((input, Factor::Parenthetical(Box::new(frmla))))
 }
 
-fn identifier_from_string(name: &str) -> Identifier {
-  Identifier {
-    name: Token::new(TokenKind::Identifier, SourceRange::default(), name.chars().collect()),
-  }
+fn context_address_path_token(input: ParseString) -> ParseResult<Token> {
+  alt((alpha_token, digit_token, dash, slash, underscore, period))(input)
 }
 
-fn split_prefix_context_identifier(identifier: Identifier) -> Option<(Identifier, Identifier)> {
-  let text = identifier.to_string();
-  let (context, path) = text.split_once('/')?;
-  if context.is_empty() || path.is_empty() {
-    return None;
-  }
-  Some((identifier_from_string(context), identifier_from_string(path)))
+fn context_address_path(input: ParseString) -> ParseResult<Identifier> {
+  let (input, mut tokens) = many1(context_address_path_token)(input)?;
+  let mut merged = Token::merge_tokens(&mut tokens).unwrap();
+  merged.kind = TokenKind::Identifier;
+  Ok((input, Identifier { name: merged }))
 }
 
 fn prefixed_context_path(input: ParseString) -> ParseResult<(Identifier, Identifier)> {
   let (input, _) = at(input)?;
-  let (input, addressed) = identifier(input)?;
-  match split_prefix_context_identifier(addressed) {
-    Some((context, name)) => Ok((input, (context, name))),
-    None => Err(nom::Err::Error(ParseError::new(input, "context-prefixed resource paths require @context/path"))),
-  }
+  let (input, context) = identifier_path_segment(input)?;
+  let (input, _) = slash(input)?;
+  let (input, name) = context_address_path(input)?;
+  Ok((input, (context, name)))
 }
 
 // var := ("@", identifier, "/", identifier), kind-annotation? | identifier, kind-annotation? ;

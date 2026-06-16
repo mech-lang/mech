@@ -213,6 +213,11 @@ fn parses_required_context_forms() {
 }
 
 #[test]
+fn rejects_underscore_in_context_identifier() {
+  assert!(parser::parse("@my_ui := browser://dom").is_err());
+}
+
+#[test]
 fn rejects_legacy_suffix_context_forms() {
   assert!(parser::parse("x := counter@ui").is_err());
   assert!(parser::parse("x := counter@ui<String>").is_err());

@@ -338,9 +338,9 @@ pub fn symbol(input: ParseString) -> ParseResult<Token> {
   Ok((input, symbol))
 }
 
-// identifier-symbol := ampersand | dollar | bar | percent | slash | hashtag | backslash | tilde | plus | dash | asterisk | caret | underscore ;
+// identifier-symbol := ampersand | dollar | bar | percent | slash | hashtag | backslash | tilde | plus | dash | asterisk | caret ;
 pub fn identifier_symbol(input: ParseString) -> ParseResult<Token> {
-  let (input, symbol) = alt((ampersand, dollar, percent, slash, hashtag, backslash, tilde, plus, dash, asterisk, caret, underscore))(input)?;
+  let (input, symbol) = alt((ampersand, dollar, percent, slash, hashtag, backslash, tilde, plus, dash, asterisk, caret))(input)?;
   Ok((input, symbol))
 }
 
