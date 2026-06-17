@@ -2210,6 +2210,59 @@ fn manifest_context_import_in_fenced_scope_does_not_leak_to_program_scope() {
 }
 
 #[test]
+fn resolving_module_with_fenced_context_import_does_not_pollute_direct_runtime_bindings() {
+  let root = setup_modules(
+    "~~~mech:foo\n+> @ui := browser/dom\na := @ui/counter/_text\n~~~\n"
+  );
+
+  let mut runtime = runtime_with_root(&root);
+  runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+
+  let result = runtime.run_string("x := @ui/counter/_text\n");
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+
+  assert!(
+    error.contains("UnknownAddressTarget") || error.contains("Undefined"),
+    "expected @ui not to exist in direct runtime scope, got {error}"
+  );
+  assert!(
+    !error.contains("RuntimeResourceProviderNotFound"),
+    "module resolution leaked @ui into global browser bindings: {error}"
+  );
+}
+
+#[test]
+fn fenced_context_alias_can_match_unrelated_interpreter_name_without_resolving_as_interpreter() {
+  let root = setup_modules(
+    "~~~mech:foo\nok := true\n<+ ok\n~~~\n\n~~~mech:bar\n+> @foo := browser/dom\nx := @foo/counter/_text\n~~~\n"
+  );
+
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+
+  let result = runtime.run_module_scope(
+    version,
+    SourceScope::Interpreter(SourceInterpreterId {
+      namespace: hash_str("bar"),
+      namespace_str: "bar".to_string(),
+    }),
+  );
+
+  assert!(result.is_err(), "expected browser provider failure without browser provider");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(
+    error.contains("RuntimeResourceProviderNotFound")
+      || error.contains("RuntimeCapabilityGrantDenied")
+      || error.contains("RuntimeResourceCapabilityDenied"),
+    "expected @foo in bar to resolve as context, not interpreter, got {error}"
+  );
+  assert!(
+    !error.contains("RuntimeModuleExportNotFound"),
+    "@foo in bar resolved as interpreter foo instead of local context: {error}"
+  );
+}
+#[test]
 fn direct_runtime_context_addressed_slice_is_rejected_explicitly() {
   let mut runtime = RuntimeBuilder::new().build().unwrap();
   let result = runtime.run_string("+> @ui := browser/dom\nx := @ui/counter[0]\n");

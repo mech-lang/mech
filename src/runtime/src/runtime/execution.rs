@@ -26,10 +26,16 @@ enum RuntimeAddressTarget {
 
 fn resolve_runtime_address_target(
   record: &ModuleVersionRecord,
-  _scope: &SourceScope,
+  scope: &SourceScope,
   context_registry: &RuntimeContextRegistry,
   target: &str,
 ) -> RuntimeAddressTarget {
+  if !matches!(scope, SourceScope::Program) {
+    if let Some(binding) = context_registry.get(target) {
+      return RuntimeAddressTarget::Context(binding.clone());
+    }
+  }
+
   for metadata in &record.scopes {
     if let SourceScope::Interpreter(interpreter) = &metadata.scope {
       if interpreter.namespace_str == target {

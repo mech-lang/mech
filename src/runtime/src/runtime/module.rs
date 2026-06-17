@@ -328,7 +328,6 @@ impl MechRuntime {
 
       self.materialize_manifest_context_imports(&mut record)?;
       Self::validate_runtime_module_record_address_targets(&record)?;
-      self.bind_context_imports_from_source(&record.imports)?;
 
       let module = self.ensure_module(
         &record.name,

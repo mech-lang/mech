@@ -76,7 +76,7 @@ use crate::id::{
 
 use crate::resolver::{
   InMemorySourceResolver, ResolvedSource, SourceRequest, SourceResolver,
-  SourceAddressReference, SourceExportDeclaration, SourceImportAlias, SourceImportDeclaration,
+  SourceAddressReference, SourceExportDeclaration, SourceImportAlias,
   SourceImportKind, SourceScope, module_namespace_for_import,
 };
 
@@ -482,33 +482,6 @@ impl MechRuntime {
     self.bind_resource_root(alias, &base_uri)
   }
 
-  pub fn bind_context_imports_from_source(
-    &mut self,
-    imports: &[SourceImportDeclaration],
-  ) -> MResult<()> {
-    for import in imports {
-      let Some(SourceImportAlias::Context(alias)) = &import.alias else {
-        continue;
-      };
-      let module = import.module.as_deref().ok_or_else(|| MechError::new(
-        RuntimeInvalidOperationError {
-          operation: "bind_context_imports_from_source",
-          reason: "context import is missing module metadata".to_string(),
-        },
-        None,
-      ))?;
-      let item = import.item.as_deref().ok_or_else(|| MechError::new(
-        RuntimeInvalidOperationError {
-          operation: "bind_context_imports_from_source",
-          reason: "context import is missing item metadata".to_string(),
-        },
-        None,
-      ))?;
-      self.bind_context_export(alias, module, item)?;
-    }
-    Ok(())
-  }
-
   pub fn bind_resource_root(
     &mut self,
     name: impl Into<String>,
@@ -895,25 +868,4 @@ fn validate_module_import_edges(record: &ModuleVersionRecord) -> MResult<()> {
       None,
     )
   })
-}
-
-#[cfg(test)]
-mod manifest_context_import_tests {
-  use super::*;
-
-  #[test]
-  fn runtime_binds_context_imports_from_source_metadata() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
-    let imports = vec![SourceImportDeclaration {
-      specifier: "browser/dom".to_string(),
-      alias: Some(SourceImportAlias::Context("ui".to_string())),
-      module: Some("browser".to_string()),
-      item: Some("dom".to_string()),
-      kind: SourceImportKind::Single { name: "dom".to_string() },
-    }];
-
-    runtime.bind_context_imports_from_source(&imports).unwrap();
-
-    assert!(runtime.resolve_resource_path("ui", "counter/_text").is_ok());
-  }
 }
