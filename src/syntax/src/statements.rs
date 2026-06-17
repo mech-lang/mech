@@ -216,6 +216,10 @@ fn source_import_tail(input: ParseString) -> ParseResult<Token> {
   )))(input)?;
   let mut tokens: Vec<Token> = matched.into_iter().map(|(_, token)| token).collect();
   let mut token = Token::merge_tokens(&mut tokens).unwrap_or(Token::default());
+  while token.chars.last().is_some_and(|ch| ch.is_whitespace()) {
+    token.chars.pop();
+    token.src_range.end.col = token.src_range.end.col.saturating_sub(1);
+  }
   token.kind = TokenKind::Any;
   token.src_range.start = start;
   Ok((input, token))

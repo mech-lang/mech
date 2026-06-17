@@ -90,11 +90,11 @@ impl MechRuntime {
   fn validate_runtime_module_record_address_targets(
     record: &crate::RuntimeModuleRecord,
   ) -> MResult<()> {
-    let mut targets: HashMap<String, String> = HashMap::new();
+    let mut interpreter_targets: HashMap<String, String> = HashMap::new();
 
     for metadata in &record.scopes {
       if let SourceScope::Interpreter(interpreter) = &metadata.scope {
-        if let Some(first_kind) = targets.insert(interpreter.namespace_str.clone(), "interpreter".to_string()) {
+        if let Some(first_kind) = interpreter_targets.insert(interpreter.namespace_str.clone(), "interpreter".to_string()) {
           return Err(MechError::new(
             crate::resolver::AddressTargetNameConflict {
               name: interpreter.namespace_str.clone(),
@@ -105,9 +105,23 @@ impl MechRuntime {
           ));
         }
       }
+    }
+
+    for metadata in &record.scopes {
+      let mut scope_targets = HashMap::new();
+      match &metadata.scope {
+        SourceScope::Program => {
+          for (name, kind) in &interpreter_targets {
+            scope_targets.insert(name.clone(), kind.clone());
+          }
+        }
+        SourceScope::Interpreter(interpreter) => {
+          scope_targets.insert(interpreter.namespace_str.clone(), "interpreter".to_string());
+        }
+      }
 
       for context in &metadata.contexts {
-        if let Some(first_kind) = targets.insert(context.name.clone(), "context".to_string()) {
+        if let Some(first_kind) = scope_targets.insert(context.name.clone(), "context".to_string()) {
           return Err(MechError::new(
             crate::resolver::AddressTargetNameConflict {
               name: context.name.clone(),
@@ -314,7 +328,6 @@ impl MechRuntime {
 
       self.materialize_manifest_context_imports(&mut record)?;
       Self::validate_runtime_module_record_address_targets(&record)?;
-      self.bind_context_imports_from_source(&record.imports)?;
 
       let module = self.ensure_module(
         &record.name,
