@@ -249,6 +249,7 @@ fn source_wildcard_import_specifiers_reject_invalid_placements() {
         "+> dep.mec/*/foo",
         "+> ./lib/*/dep.mec",
         "+> fs://lib/dep.mec/**",
+        "+> fs://lib*/dep.mec/*",
         "+> https://example.com/dep.mec/*/foo",
         "+> s3://bucket/app.mec*",
     ] {
