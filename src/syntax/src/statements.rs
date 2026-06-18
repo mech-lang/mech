@@ -225,14 +225,10 @@ fn source_import_tail(input: ParseString) -> ParseResult<Token> {
   Ok((input, token))
 }
 
-fn validate_source_wildcard_specifier(input: ParseString, specifier: &str) -> ParseResult<()> {
-  if specifier == "*"
-    || specifier.contains("/*/")
-    || specifier.contains('*') && !specifier.ends_with("/*")
-  {
-    return Err(nom::Err::Failure(ParseError::new(input, "Invalid wildcard placement in import specifier")));
-  }
-  Ok((input, ()))
+fn source_wildcard_specifier_is_valid(specifier: &str) -> bool {
+  specifier != "*"
+    && !specifier.contains("/*/")
+    && (!specifier.contains('*') || specifier.ends_with("/*"))
 }
 
 fn merge_source_tokens(start: SourceLocation, mut tokens: Vec<Token>) -> MechString {
@@ -343,7 +339,9 @@ pub fn import_declaration(input: ParseString) -> ParseResult<ImportDeclaration> 
   let (input, _) = module_import_sigil(input)?;
   let (input, _) = whitespace1(input)?;
   let (input, specifier) = source_import_specifier(input)?;
-  validate_source_wildcard_specifier(input.clone(), &specifier.to_string())?;
+  if !source_wildcard_specifier_is_valid(&specifier.to_string()) {
+    return Err(nom::Err::Failure(ParseError::new(input, "Invalid wildcard placement in import specifier")));
+  }
   Ok((input, ImportDeclaration { specifier }))
 }
 
