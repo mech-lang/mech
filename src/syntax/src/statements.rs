@@ -226,9 +226,8 @@ fn source_import_tail(input: ParseString) -> ParseResult<Token> {
 }
 
 fn source_wildcard_specifier_is_valid(specifier: &str) -> bool {
-  specifier != "*"
-    && !specifier.contains("/*/")
-    && (!specifier.contains('*') || specifier.ends_with("/*"))
+  let wildcard_count = specifier.matches('*').count();
+  wildcard_count == 0 || (wildcard_count == 1 && specifier.ends_with("/*"))
 }
 
 fn merge_source_tokens(start: SourceLocation, mut tokens: Vec<Token>) -> MechString {
