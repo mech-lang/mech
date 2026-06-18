@@ -216,6 +216,48 @@ fn source_imports_accept_generic_uris_bare_and_absolute_mec_paths() {
 }
 
 #[test]
+fn source_wildcard_import_specifiers_parse() {
+    let stmts = statements(
+        "+> dep.mec/*\n+> lib/dep.mec/*\n+> ./dep.mec/*\n+> ../lib/dep.mec/*\n+> /tmp/lib.mec/*\n+> fs://lib/dep.mec/*\n+> https://example.com/dep.mec/*\n",
+    );
+
+    let specifiers: Vec<String> = stmts
+        .iter()
+        .map(|stmt| match stmt {
+            Statement::ImportDeclaration(import) => import.specifier.to_string(),
+            other => panic!("expected source import, got {other:?}"),
+        })
+        .collect();
+
+    assert_eq!(specifiers, vec![
+        "dep.mec/*",
+        "lib/dep.mec/*",
+        "./dep.mec/*",
+        "../lib/dep.mec/*",
+        "/tmp/lib.mec/*",
+        "fs://lib/dep.mec/*",
+        "https://example.com/dep.mec/*",
+    ]);
+}
+
+#[test]
+fn source_wildcard_import_specifiers_reject_invalid_placements() {
+    for invalid in [
+        "+> *",
+        "+> dep.mec*",
+        "+> dep.mec/**",
+        "+> dep.mec/*/foo",
+        "+> ./lib/*/dep.mec",
+        "+> fs://lib/dep.mec/**",
+        "+> fs://lib*/dep.mec/*",
+        "+> https://example.com/dep.mec/*/foo",
+        "+> s3://bucket/app.mec*",
+    ] {
+        assert!(parser::parse(invalid).is_err(), "expected parse failure for {invalid}");
+    }
+}
+
+#[test]
 fn source_and_module_imports_remain_separate() {
     let module_imports = imports("+> math/sin\n+> math/*\n+> combinatorics/n-choose-k\n+> browser/dom\n+> @ui := browser/dom\n");
     assert_eq!(module_imports.len(), 5);

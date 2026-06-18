@@ -233,4 +233,18 @@ mod tests {
     let import = classify_import_specifier("math/*");
     assert_eq!(module_namespace_for_import(&import), Some("math".to_string()));
   }
+
+  #[test]
+  fn classifies_mec_wildcard_imports() {
+    for (specifier, expected_request) in [
+      ("dep.mec/*", "dep.mec"),
+      ("./dep.mec/*", "./dep.mec"),
+      ("fs://lib/dep.mec/*", "fs://lib/dep.mec"),
+    ] {
+      let import = classify_import_specifier(specifier);
+      assert_eq!(import.kind, SourceImportKind::Wildcard);
+      assert_eq!(import.specifier, expected_request);
+      assert_eq!(source_request_for_import(&import, None).specifier, expected_request);
+    }
+  }
 }
