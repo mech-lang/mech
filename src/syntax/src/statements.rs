@@ -225,6 +225,16 @@ fn source_import_tail(input: ParseString) -> ParseResult<Token> {
   Ok((input, token))
 }
 
+fn validate_source_wildcard_specifier(input: ParseString, specifier: &str) -> ParseResult<()> {
+  if specifier == "*"
+    || specifier.contains("/*/")
+    || specifier.contains('*') && !specifier.ends_with("/*")
+  {
+    return Err(nom::Err::Failure(ParseError::new(input, "Invalid wildcard placement in import specifier")));
+  }
+  Ok((input, ()))
+}
+
 fn merge_source_tokens(start: SourceLocation, mut tokens: Vec<Token>) -> MechString {
   let mut token = Token::merge_tokens(&mut tokens).unwrap_or(Token::default());
   token.kind = TokenKind::Any;
@@ -255,6 +265,11 @@ fn source_mec_path(input: ParseString) -> ParseResult<Vec<Token>> {
   Ok((input, tokens))
 }
 
+fn source_mec_path_wildcard_suffix(input: ParseString) -> ParseResult<Vec<Token>> {
+  let (input, suffix) = opt(nom_tuple((slash, asterisk)))(input)?;
+  Ok((input, suffix.map(|(slash, asterisk)| vec![slash, asterisk]).unwrap_or_default()))
+}
+
 fn relative_source_import_specifier(input: ParseString) -> ParseResult<MechString> {
   let start = input.loc();
   let (input, prefix) = alt((
@@ -262,8 +277,10 @@ fn relative_source_import_specifier(input: ParseString) -> ParseResult<MechStrin
     nom_map(nom_tuple((period, slash)), |(a, b)| vec![a, b]),
   ))(input)?;
   let (input, tail) = source_mec_path(input)?;
+  let (input, wildcard) = source_mec_path_wildcard_suffix(input)?;
   let mut tokens = prefix;
   tokens.extend(tail);
+  tokens.extend(wildcard);
   Ok((input, merge_source_tokens(start, tokens)))
 }
 
@@ -271,14 +288,19 @@ fn absolute_source_import_specifier(input: ParseString) -> ParseResult<MechStrin
   let start = input.loc();
   let (input, leading) = slash(input)?;
   let (input, tail) = source_mec_path(input)?;
+  let (input, wildcard) = source_mec_path_wildcard_suffix(input)?;
   let mut tokens = vec![leading];
   tokens.extend(tail);
+  tokens.extend(wildcard);
   Ok((input, merge_source_tokens(start, tokens)))
 }
 
 fn bare_source_import_specifier(input: ParseString) -> ParseResult<MechString> {
   let start = input.loc();
   let (input, tokens) = source_mec_path(input)?;
+  let (input, wildcard) = source_mec_path_wildcard_suffix(input)?;
+  let mut tokens = tokens;
+  tokens.extend(wildcard);
   Ok((input, merge_source_tokens(start, tokens)))
 }
 
@@ -321,6 +343,7 @@ pub fn import_declaration(input: ParseString) -> ParseResult<ImportDeclaration> 
   let (input, _) = module_import_sigil(input)?;
   let (input, _) = whitespace1(input)?;
   let (input, specifier) = source_import_specifier(input)?;
+  validate_source_wildcard_specifier(input.clone(), &specifier.to_string())?;
   Ok((input, ImportDeclaration { specifier }))
 }
 
