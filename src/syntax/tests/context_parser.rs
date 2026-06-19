@@ -130,6 +130,25 @@ fn bare_capability_operation_is_rejected() {
 }
 
 #[test]
+fn context_capability_paths_accept_slashes_and_underscores() {
+  let stmts = statements("@browser := browser://dom/{:read(body/search/_value), :write(body/header/title)}");
+  match &stmts[0] {
+    Statement::ContextDeclaration(ctx) => {
+      assert_eq!(ctx.capabilities.len(), 2);
+      match &ctx.capabilities[0].scope {
+        ContextCapabilityScope::Path(path) => assert_eq!(path.to_string(), "body/search/_value"),
+        _ => panic!("expected read path capability"),
+      }
+      match &ctx.capabilities[1].scope {
+        ContextCapabilityScope::Path(path) => assert_eq!(path.to_string(), "body/header/title"),
+        _ => panic!("expected write path capability"),
+      }
+    }
+    _ => panic!("expected context declaration"),
+  }
+}
+
+#[test]
 fn program_browser_resource_binding_declaration() {
   let stmts = statements("@browser := browser://dom/");
   match &stmts[0] {

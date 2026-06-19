@@ -401,12 +401,12 @@ fn context_capability_declaration(input: ParseString) -> ParseResult<ContextCapa
   Ok((input, ContextCapabilityDeclaration { operation, scope }))
 }
 
-// context-capability-scope := "*" | identifier ;
+// context-capability-scope := "*" | context-address-path ;
 fn context_capability_scope(input: ParseString) -> ParseResult<ContextCapabilityScope> {
   if let Ok((input, wildcard)) = asterisk(input.clone()) {
     Ok((input, ContextCapabilityScope::Wildcard(wildcard)))
   } else {
-    let (input, path) = identifier(input)?;
+    let (input, path) = context_address_path(input)?;
     Ok((input, ContextCapabilityScope::Path(path)))
   }
 }

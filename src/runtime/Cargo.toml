@@ -68,6 +68,7 @@ program = ["mech-program/program"]
 pretty_print = ["mech-program/pretty_print"]
 serde = ["dep:serde", "dep:serde_derive", "mech-program/serde"]
 mika = ["mech-program/mika"]
+linked_stdlib = ["mech-program/linked_stdlib"]
 
 statements = ["mech-core/statements", "mech-program/statements"]
 variables = ["variable_define", "symbol_table", "mech-core/variables", "mech-program/variables"]
