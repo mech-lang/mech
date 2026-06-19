@@ -20,6 +20,8 @@ pub struct RuntimeResourceWriteRequest {
 pub trait RuntimeResourceProvider: std::fmt::Debug {
   fn scheme(&self) -> &str;
 
+  fn base_uris(&self) -> Vec<String> { Vec::new() }
+
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value>;
 
   fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
@@ -70,6 +72,25 @@ impl RuntimeResourceRegistry {
 
   pub fn has_provider(&self, scheme: &str) -> bool {
     self.providers.contains_key(scheme)
+  }
+
+  pub fn provider_base_uri_for(&self, candidate: &str) -> MResult<Option<String>> {
+    let scheme = resource_uri_scheme(candidate)?.to_string();
+    let Some(provider) = self.providers.get(&scheme) else {
+      return Ok(None);
+    };
+
+    let mut matches = provider
+      .base_uris()
+      .into_iter()
+      .filter(|base| resource_base_matches(base, candidate))
+      .collect::<Vec<_>>();
+    matches.sort_by_key(|base| std::cmp::Reverse(base.len()));
+    if let Some(base) = matches.into_iter().next() {
+      return Ok(Some(base));
+    }
+
+    Ok(Some(resource_uri_origin(candidate)?.to_string()))
   }
 
   pub fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
@@ -158,6 +179,10 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
     "docs"
   }
 
+  fn base_uris(&self) -> Vec<String> {
+    self.documents.keys().cloned().collect()
+  }
+
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
     let Some(document) = self.documents.get(&request.base_uri) else {
       return Err(MechError::new(
@@ -209,6 +234,26 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
 
     Ok(())
   }
+}
+
+pub fn resource_base_matches(base: &str, candidate: &str) -> bool {
+  candidate == base || candidate.strip_prefix(base).is_some_and(|suffix| suffix.starts_with('/'))
+}
+
+fn resource_uri_origin(uri: &str) -> MResult<&str> {
+  let scheme = resource_uri_scheme(uri)?;
+  let rest = &uri[scheme.len() + 3..];
+  let authority_end = rest.find('/').unwrap_or(rest.len());
+  if authority_end == 0 {
+    return Err(MechError::new(
+      RuntimeResourceInvalidUri {
+        uri: uri.to_string(),
+        reason: "resource URI authority cannot be empty".to_string(),
+      },
+      None,
+    ));
+  }
+  Ok(&uri[..scheme.len() + 3 + authority_end])
 }
 
 fn resource_uri_scheme(uri: &str) -> MResult<&str> {

@@ -69,6 +69,10 @@ impl<B: BrowserDomBackend> RuntimeResourceProvider for BrowserResourceProvider<B
     "browser"
   }
 
+  fn base_uris(&self) -> Vec<String> {
+    vec![BROWSER_DOM_PROVIDER_URI.to_string()]
+  }
+
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
     Self::validate_dom_base(&request.base_uri)?;
     let path = Self::dom_path(request.path)?;

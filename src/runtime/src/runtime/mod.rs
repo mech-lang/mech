@@ -38,7 +38,7 @@ use std::collections::{HashMap, HashSet};
 
 use mech_core::{
   browser_capability_error, BrowserDomPath, BROWSER_DOM_PROVIDER_URI, MResult, MechError,
-  MechErrorKind, MechSourceCode, Ref, Value,
+  MechErrorKind, MechSourceCode, Value,
   NativeFunctionCompiler, MechFunctionImpl, Register, CompileCtx, MechFunctionCompiler,
   hash_str, ModuleManifestCatalog, ModuleManifestConfig,
 };
@@ -104,7 +104,7 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
-use crate::{register_config_spec_grants, register_config_spec_resources, InMemoryDocsProvider, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest};
+use crate::{register_config_spec_grants, register_config_spec_resources, InMemoryDocsProvider, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, resource_base_matches, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest};
 
 thread_local! {
   static ACTIVE_RUNTIME_PROGRAM_HOST: RefCell<Option<RuntimeProgramHostTarget>> =
@@ -169,7 +169,7 @@ impl Default for RuntimeBuilder {
       module_builder: ModuleBuilder::new(),
       config_specs: Vec::new(),
       resource_providers: Vec::new(),
-      module_manifests: ModuleManifestCatalog::with_builtin_browser(),
+      module_manifests: ModuleManifestCatalog::with_builtin_hosts(),
     }
   }
 }
@@ -495,22 +495,19 @@ impl MechRuntime {
       ));
     }
 
-    let uri = uri.as_ref();
-    let (base_uri, root_path) = if uri == BROWSER_DOM_PROVIDER_URI {
-      (BROWSER_DOM_PROVIDER_URI.to_string(), String::new())
-    } else {
-      let prefix = "browser://dom/";
-      let Some(root_path) = uri.strip_prefix(prefix) else {
-        return Err(browser_runtime_resource_error(
-          uri,
-          "only browser://dom/ resource roots are supported in this PR",
-        ));
-      };
-      (BROWSER_DOM_PROVIDER_URI.to_string(), root_path.trim_matches('/').to_string())
-    };
-
-    if !root_path.is_empty() {
-      BrowserDomPath::new(root_path.clone()).map_err(browser_capability_error)?;
+    let uri = uri.as_ref().trim_end_matches('/');
+    let mut base_uri = uri.to_string();
+    let mut root_path = String::new();
+    if resource_base_matches(BROWSER_DOM_PROVIDER_URI, uri) {
+      base_uri = BROWSER_DOM_PROVIDER_URI.to_string();
+      root_path = uri
+        .strip_prefix(BROWSER_DOM_PROVIDER_URI)
+        .unwrap_or_default()
+        .trim_matches('/')
+        .to_string();
+      if !root_path.is_empty() {
+        BrowserDomPath::new(root_path.clone()).map_err(browser_capability_error)?;
+      }
     }
 
     self.resource_bindings.insert(

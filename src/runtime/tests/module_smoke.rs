@@ -31,13 +31,37 @@ fn read_grant(resource: &str, path: &str) -> RuntimeCapabilityGrantSpec {
     .with_path(path)
 }
 
-fn runtime_read_grant(resource: &str, path: &str) -> RuntimeCapabilityGrant {
+fn runtime_write_grant_for(subject: &str, resource: &str, path: &str) -> RuntimeCapabilityGrant {
   RuntimeCapabilityGrant {
-    subject: "task://main".to_string(),
+    subject: subject.to_string(),
+    resource: resource.to_string(),
+    operations: vec![RuntimeCapabilityOperation::Write],
+    paths: vec![path.to_string()],
+  }
+}
+
+fn runtime_read_grant_for(subject: &str, resource: &str, path: &str) -> RuntimeCapabilityGrant {
+  RuntimeCapabilityGrant {
+    subject: subject.to_string(),
     resource: resource.to_string(),
     operations: vec![RuntimeCapabilityOperation::Read],
     paths: vec![path.to_string()],
   }
+}
+
+fn runtime_context_read_grant(runtime: &MechRuntime, resource: &str, path: &str) -> RuntimeCapabilityGrant {
+  let subject = runtime.runtime_context().unwrap().subject;
+  runtime_read_grant_for(&subject, resource, path)
+}
+
+fn runtime_context_write_grant(runtime: &MechRuntime, resource: &str, path: &str) -> RuntimeCapabilityGrant {
+  let subject = runtime.runtime_context().unwrap().subject;
+  runtime_write_grant_for(&subject, resource, path)
+}
+
+fn run_module_as_main(runtime: &mut MechRuntime, version: ModuleVersionId) -> mech_core::MResult<Value> {
+  let mut context = runtime.runtime_context()?.with_subject("task://main");
+  runtime.run_module_with_context(&mut context, version)
 }
 
 fn bool_value(value: bool) -> Value {
@@ -274,7 +298,7 @@ fn context_docs_read_returns_value() {
     .in_memory_docs(provider)
     .build()
     .unwrap();
-  runtime.grant_capability(runtime_read_grant("docs://manual", "intro/title")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version).unwrap();
   assert_bool_true(result, "context docs read");
@@ -295,7 +319,7 @@ fn config_spec_registers_in_memory_docs_resource() {
     .build()
     .unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  assert_bool_true(runtime.run_module(version).unwrap(), "config spec docs read");
+  assert_bool_true(run_module_as_main(&mut runtime, version).unwrap(), "config spec docs read");
 }
 
 #[test]
@@ -318,7 +342,7 @@ fn config_spec_merges_multiple_docs_bases_into_one_provider() {
     .build()
     .unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  assert_bool_true(runtime.run_module(version).unwrap(), "merged config spec docs bases");
+  assert_bool_true(run_module_as_main(&mut runtime, version).unwrap(), "merged config spec docs bases");
 }
 
 #[test]
@@ -339,7 +363,7 @@ fn config_spec_multiple_entries_same_base() {
     .build()
     .unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  assert_bool_true(runtime.run_module(version).unwrap(), "config spec docs entries under one base");
+  assert_bool_true(run_module_as_main(&mut runtime, version).unwrap(), "config spec docs entries under one base");
 }
 
 #[test]
@@ -358,7 +382,7 @@ fn config_spec_later_duplicate_path_overwrites_earlier() {
     .build()
     .unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  assert_bool_true(runtime.run_module(version).unwrap(), "later duplicate config spec docs path");
+  assert_bool_true(run_module_as_main(&mut runtime, version).unwrap(), "later duplicate config spec docs path");
 }
 
 #[test]
@@ -418,7 +442,7 @@ fn direct_provider_registration_still_works() {
     .in_memory_docs(provider)
     .build()
     .unwrap();
-  runtime.grant_capability(runtime_read_grant("docs://manual", "intro/title")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   assert_bool_true(runtime.run_module(version).unwrap(), "direct docs provider registration");
 }
@@ -438,7 +462,7 @@ fn apply_config_spec_after_build_registers_docs() {
     .unwrap();
   runtime.apply_config_spec(spec).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  assert_bool_true(runtime.run_module(version).unwrap(), "applied config spec docs read");
+  assert_bool_true(run_module_as_main(&mut runtime, version).unwrap(), "applied config spec docs read");
 }
 
 #[test]
@@ -514,7 +538,7 @@ fn interpreter_scope_named(runtime: &mech_runtime::MechRuntime, version: mech_ru
 fn context_docs_read_without_provider_fails() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n");
   let mut runtime = runtime_with_root(&root);
-  runtime.grant_capability(runtime_read_grant("docs://manual", "intro/title")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version);
   assert!(result.is_err());
@@ -532,7 +556,7 @@ fn context_docs_read_missing_path_fails() {
     .in_memory_docs(InMemoryDocsProvider::new())
     .build()
     .unwrap();
-  runtime.grant_capability(runtime_read_grant("docs://manual", "intro/title")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version);
   assert!(result.is_err());
@@ -551,7 +575,7 @@ fn context_docs_read_denied_by_capability_fails() {
     .in_memory_docs(provider)
     .build()
     .unwrap();
-  runtime.grant_capability(runtime_read_grant("docs://manual", "intro/title")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version);
   assert!(result.is_err());
@@ -571,7 +595,7 @@ fn context_docs_read_prefix_wildcard_allows_nested_path() {
     .in_memory_docs(provider)
     .build()
     .unwrap();
-  runtime.grant_capability(runtime_read_grant("docs://manual", "intro/*")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/*")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version).unwrap();
   assert_bool_true(result, "context docs prefix wildcard");
@@ -586,7 +610,7 @@ fn context_docs_read_prefix_wildcard_does_not_match_sibling() {
     .in_memory_docs(provider)
     .build()
     .unwrap();
-  runtime.grant_capability(runtime_read_grant("docs://manual", "intro/title")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version);
   assert!(result.is_err());
@@ -616,7 +640,7 @@ fn interpreter_scope_context_docs_read_returns_value() {
     .in_memory_docs(provider)
     .build()
     .unwrap();
-  runtime.grant_capability(runtime_read_grant("docs://manual", "intro/title")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let foo = foo_scope(&runtime, version);
   let result = runtime.run_module_scope(version, foo).unwrap();
@@ -907,7 +931,7 @@ fn addressed_assignment_is_unsupported() {
 
 #[test]
 fn addressed_assignment_to_context_is_still_unsupported() {
-  let root = setup_modules("@manual := docs://manual{:write(intro/title)}\n@manual/intro/title := true\nresult := @manual/intro/title\n");
+  let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n@manual/intro/title := true\nresult := @manual/intro/title\n");
 
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
@@ -920,7 +944,7 @@ fn addressed_assignment_to_context_is_still_unsupported() {
 
 #[test]
 fn addressed_assignment_with_docs_provider_is_still_unsupported() {
-  let root = setup_modules("@manual := docs://manual{:write(intro/title)}\n@manual/intro/title := true\nresult := @manual/intro/title\n");
+  let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n@manual/intro/title := true\nresult := @manual/intro/title\n");
 
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).in_memory_docs(InMemoryDocsProvider::new()).build().unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
@@ -1493,7 +1517,7 @@ fn run_docs_config_read(spec: RuntimeConfigSpec) -> Result<Value, mech_core::Mec
     .build()
     .unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  runtime.run_module(version)
+  run_module_as_main(&mut runtime, version)
 }
 
 #[test]
@@ -1580,8 +1604,9 @@ fn direct_provider_read_with_runtime_grant_still_works() {
     .in_memory_docs(provider)
     .build()
     .unwrap();
-  runtime.grant_capability(runtime_read_grant("docs://manual", "intro/title")).unwrap();
-  assert!(runtime.has_capability_grant("task://main", "docs://manual", &RuntimeCapabilityOperation::Read, "intro/title"));
+  let subject = runtime.runtime_context().unwrap().subject;
+  runtime.grant_capability(runtime_read_grant_for(&subject, "docs://manual", "intro/title")).unwrap();
+  assert!(runtime.has_capability_grant(&subject, "docs://manual", &RuntimeCapabilityOperation::Read, "intro/title"));
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   assert_bool_true(runtime.run_module(version).unwrap(), "runtime grant");
 }
@@ -1597,7 +1622,7 @@ fn apply_config_spec_after_build_registers_resources_and_grants() {
     .unwrap();
   runtime.apply_config_spec(spec).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  assert_bool_true(runtime.run_module(version).unwrap(), "apply spec");
+  assert_bool_true(run_module_as_main(&mut runtime, version).unwrap(), "apply spec");
 }
 
 #[test]
@@ -2171,6 +2196,7 @@ fn context_import_alias_is_not_bound_as_value_import() {
 #[test]
 fn direct_runtime_manifest_context_import_read_uses_browser_binding_before_lowering() {
   let mut runtime = RuntimeBuilder::new().build().unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "browser://dom", "counter/_text")).unwrap();
   let result = runtime.run_string("+> @ui := browser/dom\ntitle := @ui/counter/_text\n");
   assert!(result.is_err(), "expected browser provider failure without a browser provider");
   let error = format!("{:?}", result.err().unwrap());
@@ -2179,14 +2205,15 @@ fn direct_runtime_manifest_context_import_read_uses_browser_binding_before_lower
 }
 
 #[test]
-fn direct_runtime_manifest_context_import_write_reports_current_addressed_assignment_limit() {
+fn direct_runtime_manifest_context_import_write_uses_provider_lookup() {
   let mut runtime = RuntimeBuilder::new().build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "browser://dom", "counter/_text")).unwrap();
   let result = runtime.run_string("+> @ui := browser/dom
 @ui/counter/_text := \"hello\"
 ");
-  assert!(result.is_err(), "direct addressed assignment is not yet supported by this runtime path");
+  assert!(result.is_err(), "browser write should reach provider lookup without a browser provider");
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("AddressedAssignmentUnsupported"), "expected current direct assignment limit, got {error}");
+  assert!(error.contains("RuntimeResourceProviderNotFound"), "expected provider lookup, got {error}");
   assert!(!error.contains("UnknownAddressTarget"), "@ui should not be treated as an unknown address target: {error}");
 }
 
@@ -2285,5 +2312,419 @@ fn module_manifest_catalog_validates_builder_manifests() {
   for manifest in invalids {
     let result = RuntimeBuilder::new().module_manifest(manifest);
     assert!(result.is_err(), "invalid manifest should be rejected by builder/catalog");
+  }
+}
+
+#[derive(Debug, Clone, Default)]
+struct InMemoryCliProvider {
+  env: std::collections::HashMap<String, String>,
+  stdout: std::sync::Arc<std::sync::Mutex<Vec<String>>>,
+  stderr: std::sync::Arc<std::sync::Mutex<Vec<String>>>,
+}
+
+impl InMemoryCliProvider {
+  fn with_env(mut self, name: &str, value: &str) -> Self {
+    self.env.insert(name.to_string(), value.to_string());
+    self
+  }
+}
+
+impl RuntimeResourceProvider for InMemoryCliProvider {
+  fn scheme(&self) -> &str { "cli" }
+
+  fn base_uris(&self) -> Vec<String> {
+    vec!["cli://env".to_string(), "cli://stdout".to_string(), "cli://stderr".to_string()]
+  }
+
+  fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
+    if request.base_uri != "cli://env" {
+      return Err(mech_core::MechError::new(RuntimeResourceWriteUnsupported {
+        scheme: self.scheme().to_string(),
+        base_uri: request.base_uri,
+        path: request.path,
+      }, None));
+    }
+    let value = self.env.get(&request.path).cloned().unwrap_or_default();
+    Ok(Value::String(Ref::new(value)))
+  }
+
+  fn write(&mut self, request: RuntimeResourceWriteRequest) -> mech_core::MResult<()> {
+    let Value::String(value) = request.value else { return Ok(()); };
+    match request.base_uri.as_str() {
+      "cli://stdout" => self.stdout.lock().unwrap().push(value.borrow().clone()),
+      "cli://stderr" => self.stderr.lock().unwrap().push(value.borrow().clone()),
+      _ => return Err(mech_core::MechError::new(RuntimeResourceWriteUnsupported {
+        scheme: self.scheme().to_string(),
+        base_uri: request.base_uri,
+        path: request.path,
+      }, None)),
+    }
+    Ok(())
+  }
+}
+
+#[test]
+fn cli_context_direct_read_uses_manifest_boundary() {
+  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/mech-home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
+  runtime.run_string("+> @env := cli/env\nhome := @env/HOME\n").unwrap();
+  let id = hash_str("home");
+  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  match value {
+    Value::String(value) => assert_eq!(&*value.borrow(), "/tmp/mech-home"),
+    other => panic!("expected string home, got {other:?}"),
+  }
+}
+
+#[test]
+fn cli_context_direct_write_uses_manifest_boundary() {
+  let provider = InMemoryCliProvider::default();
+  let stdout = provider.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  runtime.run_string("+> @out := cli/stdout\n@out/line := \"hello\"\n").unwrap();
+  assert_eq!(stdout.lock().unwrap().as_slice(), &["hello".to_string()]);
+}
+
+#[test]
+fn cli_context_module_read_exports_value() {
+  let root = setup_modules("+> @env := cli/env\nhome := @env/HOME\n<+ home\nhome\n");
+  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/module-home");
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+  let result = match result {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  match result {
+    Value::String(value) => assert_eq!(&*value.borrow(), "/tmp/module-home"),
+    other => panic!("expected string home, got {other:?}"),
+  }
+}
+
+#[test]
+fn cli_context_module_write_is_not_stripped() {
+  let root = setup_modules("+> @out := cli/stdout\n@out/line := \"hello\"\n");
+  let provider = InMemoryCliProvider::default();
+  let stdout = provider.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  runtime.run_module(version).unwrap();
+  assert_eq!(stdout.lock().unwrap().as_slice(), &["hello".to_string()]);
+}
+
+#[test]
+fn cli_context_capabilities_are_enforced() {
+  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  let read_error = runtime.run_string("+> @out := cli/stdout\nvalue := @out/line\n").unwrap_err();
+  assert!(format!("{read_error:?}").contains("RuntimeResourceCapabilityDenied"));
+  let write_error = runtime.run_string("+> @env := cli/env\n@env/HOME := \"nope\"\n").unwrap_err();
+  assert!(format!("{write_error:?}").contains("RuntimeResourceCapabilityDenied"));
+}
+
+#[derive(Debug, Clone)]
+struct RecordingResourceProvider {
+  scheme: &'static str,
+  bases: Vec<String>,
+  values: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, Value>>>,
+  writes: std::sync::Arc<std::sync::Mutex<Vec<(String, String, Value)>>>,
+}
+
+impl RecordingResourceProvider {
+  fn new(scheme: &'static str, bases: &[&str]) -> Self {
+    Self {
+      scheme,
+      bases: bases.iter().map(|base| base.to_string()).collect(),
+      values: Default::default(),
+      writes: Default::default(),
+    }
+  }
+
+  fn with_value(self, base: &str, path: &str, value: Value) -> Self {
+    self.values.lock().unwrap().insert(format!("{base}|{path}"), value);
+    self
+  }
+}
+
+impl RuntimeResourceProvider for RecordingResourceProvider {
+  fn scheme(&self) -> &str { self.scheme }
+
+  fn base_uris(&self) -> Vec<String> { self.bases.clone() }
+
+  fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
+    self.values
+      .lock()
+      .unwrap()
+      .get(&format!("{}|{}", request.base_uri, request.path))
+      .cloned()
+      .ok_or_else(|| mech_core::MechError::new(RuntimeResourcePathNotFound { base_uri: request.base_uri, path: request.path }, None))
+  }
+
+  fn write(&mut self, request: RuntimeResourceWriteRequest) -> mech_core::MResult<()> {
+    self.writes.lock().unwrap().push((request.base_uri.clone(), request.path.clone(), request.value.clone()));
+    self.values.lock().unwrap().insert(format!("{}|{}", request.base_uri, request.path), request.value);
+    Ok(())
+  }
+}
+
+fn assert_string_value(value: Value, expected: &str) {
+  let value = match value {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  match value {
+    Value::String(value) => assert_eq!(&*value.borrow(), expected),
+    other => panic!("expected string value `{expected}`, got {other:?}"),
+  }
+}
+
+#[test]
+fn cli_context_direct_read_resolves_inside_formula_expression() {
+  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
+  runtime.run_string("+> @env := cli/env\nmsg := \"HOME=\" + @env/HOME\n").unwrap();
+  let id = hash_str("msg");
+  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  assert_string_value(value, "HOME=/tmp/home");
+}
+
+#[test]
+fn cli_context_standalone_expression_returns_env_value() {
+  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
+  let value = runtime.run_string("+> @env := cli/env\n@env/HOME\n").unwrap();
+  assert_string_value(value, "/tmp/home");
+}
+
+#[test]
+fn docs_context_write_requires_runtime_grant_before_provider_write() {
+  let provider = RecordingResourceProvider::new("docs", &["docs://manual"]);
+  let writes = provider.writes.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  let result = runtime.run_string("@manual := docs://manual{:write(intro/title)}\n@manual/intro/title := \"hello\"\n");
+  assert!(result.is_err(), "write without host grant should fail");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeCapabilityGrantDenied"), "expected host grant denial, got {error}");
+  assert!(writes.lock().unwrap().is_empty(), "provider write should not be called without grant");
+}
+
+#[test]
+fn docs_context_write_with_runtime_grant_reaches_provider() {
+  let provider = RecordingResourceProvider::new("docs", &["docs://manual"]);
+  let writes = provider.writes.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "docs://manual", "intro/title")).unwrap();
+  runtime.run_string("@manual := docs://manual{:write(intro/title)}\n@manual/intro/title := \"hello\"\n").unwrap();
+  let writes = writes.lock().unwrap();
+  assert_eq!(writes.len(), 1);
+  assert_eq!(writes[0].0, "docs://manual");
+  assert_eq!(writes[0].1, "intro/title");
+  assert_string_value(writes[0].2.clone(), "hello");
+}
+
+#[test]
+fn browser_context_subroot_normalizes_to_provider_base_path() {
+  let provider = RecordingResourceProvider::new("browser", &["browser://dom"])
+    .with_value("browser://dom", "counter/text", Value::String(Ref::new("count".to_string())));
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "browser://dom", "counter/text")).unwrap();
+  runtime.run_string("@ui := browser://dom/counter{:read(text)}\ntitle := @ui/text\n").unwrap();
+  let id = hash_str("title");
+  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  assert_string_value(value, "count");
+}
+
+#[test]
+fn docs_context_subroot_normalizes_to_provider_base_path() {
+  let provider = RecordingResourceProvider::new("docs", &["docs://manual"])
+    .with_value("docs://manual", "intro/title", Value::String(Ref::new("Manual".to_string())));
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
+  runtime.run_string("@manual := docs://manual/intro{:read(title)}\ntitle := @manual/title\n").unwrap();
+  let id = hash_str("title");
+  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  assert_string_value(value, "Manual");
+}
+
+
+#[test]
+fn context_write_uses_active_runtime_context_subject() {
+  let provider = RecordingResourceProvider::new("docs", &["docs://manual"]);
+  let writes = provider.writes.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  let mut context = runtime.runtime_context().unwrap().with_subject("task://custom");
+
+  runtime.grant_capability(runtime_write_grant_for("task://custom", "docs://manual", "intro/title")).unwrap();
+
+  runtime.run_string_with_context(
+    &mut context,
+    "@manual := docs://manual{:write(intro/title)}\n@manual/intro/title := \"hello\"\n",
+  ).unwrap();
+
+  assert_eq!(writes.lock().unwrap().len(), 1);
+}
+
+#[test]
+fn context_write_does_not_accept_grant_for_default_subject_when_context_subject_differs() {
+  let provider = RecordingResourceProvider::new("docs", &["docs://manual"]);
+  let writes = provider.writes.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_write_grant_for("task://main", "docs://manual", "intro/title")).unwrap();
+  let mut context = runtime.runtime_context().unwrap().with_subject("task://custom");
+
+  let result = runtime.run_string_with_context(
+    &mut context,
+    "@manual := docs://manual{:write(intro/title)}\n@manual/intro/title := \"hello\"\n",
+  );
+
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeCapabilityGrantDenied"));
+  assert!(writes.lock().unwrap().is_empty());
+}
+
+#[test]
+fn unqualified_fenced_context_import_is_available_to_program_execution() {
+  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/fenced-home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  let mut context = runtime.runtime_context().unwrap().with_subject("task://fenced");
+  runtime.grant_capability(RuntimeCapabilityGrant {
+    subject: "task://fenced".to_string(),
+    resource: "cli://env".to_string(),
+    operations: vec![RuntimeCapabilityOperation::Read],
+    paths: vec!["HOME".to_string()],
+  }).unwrap();
+
+  runtime.run_string_with_context(
+    &mut context,
+    "```mech
++> @env := cli/env
+home := @env/HOME
+```
+",
+  ).unwrap();
+
+  let id = hash_str("home");
+  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  assert_string_value(value, "/tmp/fenced-home");
+}
+
+#[test]
+fn named_fenced_context_import_write_uses_context_registry() {
+  let root = setup_modules("~~~mech:bar\n+> @out := cli/stdout\n@out/line := \"hello\"\n~~~\n");
+  let provider = InMemoryCliProvider::default();
+  let stdout = provider.stdout.clone();
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .resource_provider(Box::new(provider))
+    .build()
+    .unwrap();
+
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+
+  runtime.run_module_scope(
+    version,
+    SourceScope::Interpreter(SourceInterpreterId {
+      namespace: hash_str("bar"),
+      namespace_str: "bar".to_string(),
+    }),
+  ).unwrap();
+
+  assert_eq!(stdout.lock().unwrap().as_slice(), &["hello".to_string()]);
+}
+
+#[test]
+fn named_fenced_context_import_read_exports_value() {
+  let root = setup_modules("~~~mech:bar\n+> @env := cli/env\nhome := @env/HOME\n<+ home\nhome\n~~~\n");
+  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/named-fence-home");
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .resource_provider(Box::new(provider))
+    .build()
+    .unwrap();
+
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+
+  let result = runtime.run_module_scope(
+    version,
+    SourceScope::Interpreter(SourceInterpreterId {
+      namespace: hash_str("bar"),
+      namespace_str: "bar".to_string(),
+    }),
+  ).unwrap();
+
+  assert_string_value(result, "/tmp/named-fence-home");
+}
+
+#[test]
+fn module_context_read_after_context_write_uses_execution_order() {
+  let root = setup_modules(
+    "@manual := docs://manual{:read(intro/title), :write(intro/title)}\n@manual/intro/title := \"hello\"\nresult := @manual/intro/title\n<+ result\nresult\n",
+  );
+  let provider = RecordingResourceProvider::new("docs", &["docs://manual"]);
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .resource_provider(Box::new(provider))
+    .build()
+    .unwrap();
+
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "docs://manual", "intro/title")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
+
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+
+  assert_string_value(result, "hello");
+}
+
+#[test]
+fn module_context_read_after_context_write_ignores_stale_provider_value() {
+  let root = setup_modules(
+    "@manual := docs://manual{:read(intro/title), :write(intro/title)}\n@manual/intro/title := \"new\"\nresult := @manual/intro/title\n<+ result\nresult\n",
+  );
+  let provider = RecordingResourceProvider::new("docs", &["docs://manual"])
+    .with_value("docs://manual", "intro/title", Value::String(Ref::new("old".to_string())));
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .resource_provider(Box::new(provider))
+    .build()
+    .unwrap();
+
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "docs://manual", "intro/title")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
+
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+
+  assert_string_value(result, "new");
+}
+
+#[test]
+fn direct_context_read_resolves_inside_op_assign() {
+  let provider = RecordingResourceProvider::new("docs", &["docs://numbers"])
+    .with_value("docs://numbers", "increment", Value::F64(Ref::new(2.0)));
+  let mut runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(provider))
+    .build()
+    .unwrap();
+
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://numbers", "increment")).unwrap();
+
+  runtime.run_string("@numbers := docs://numbers{:read(increment)}\n~total := 1.0\ntotal += @numbers/increment\n").unwrap();
+
+  let id = hash_str("total");
+  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  match value {
+    Value::F64(value) => assert_eq!(*value.borrow(), 3.0),
+    other => panic!("expected f64 total, got {other:?}"),
   }
 }
