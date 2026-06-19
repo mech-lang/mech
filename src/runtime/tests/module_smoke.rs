@@ -32,10 +32,18 @@ fn read_grant(resource: &str, path: &str) -> RuntimeCapabilityGrantSpec {
 }
 
 fn runtime_read_grant(resource: &str, path: &str) -> RuntimeCapabilityGrant {
+  runtime_grant(resource, RuntimeCapabilityOperation::Read, path)
+}
+
+fn runtime_write_grant(resource: &str, path: &str) -> RuntimeCapabilityGrant {
+  runtime_grant(resource, RuntimeCapabilityOperation::Write, path)
+}
+
+fn runtime_grant(resource: &str, operation: RuntimeCapabilityOperation, path: &str) -> RuntimeCapabilityGrant {
   RuntimeCapabilityGrant {
     subject: "task://main".to_string(),
     resource: resource.to_string(),
-    operations: vec![RuntimeCapabilityOperation::Read],
+    operations: vec![operation],
     paths: vec![path.to_string()],
   }
 }
@@ -2171,6 +2179,7 @@ fn context_import_alias_is_not_bound_as_value_import() {
 #[test]
 fn direct_runtime_manifest_context_import_read_uses_browser_binding_before_lowering() {
   let mut runtime = RuntimeBuilder::new().build().unwrap();
+  runtime.grant_capability(runtime_read_grant("browser://dom", "counter/_text")).unwrap();
   let result = runtime.run_string("+> @ui := browser/dom\ntitle := @ui/counter/_text\n");
   assert!(result.is_err(), "expected browser provider failure without a browser provider");
   let error = format!("{:?}", result.err().unwrap());
@@ -2181,6 +2190,7 @@ fn direct_runtime_manifest_context_import_read_uses_browser_binding_before_lower
 #[test]
 fn direct_runtime_manifest_context_import_write_uses_provider_lookup() {
   let mut runtime = RuntimeBuilder::new().build().unwrap();
+  runtime.grant_capability(runtime_write_grant("browser://dom", "counter/_text")).unwrap();
   let result = runtime.run_string("+> @ui := browser/dom
 @ui/counter/_text := \"hello\"
 ");
@@ -2305,6 +2315,10 @@ impl InMemoryCliProvider {
 impl RuntimeResourceProvider for InMemoryCliProvider {
   fn scheme(&self) -> &str { "cli" }
 
+  fn base_uris(&self) -> Vec<String> {
+    vec!["cli://env".to_string(), "cli://stdout".to_string(), "cli://stderr".to_string()]
+  }
+
   fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
     if request.base_uri != "cli://env" {
       return Err(mech_core::MechError::new(RuntimeResourceWriteUnsupported {
@@ -2336,6 +2350,7 @@ impl RuntimeResourceProvider for InMemoryCliProvider {
 fn cli_context_direct_read_uses_manifest_boundary() {
   let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/mech-home");
   let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_read_grant("cli://env", "HOME")).unwrap();
   runtime.run_string("+> @env := cli/env\nhome := @env/HOME\n").unwrap();
   let id = hash_str("home");
   let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
@@ -2350,6 +2365,7 @@ fn cli_context_direct_write_uses_manifest_boundary() {
   let provider = InMemoryCliProvider::default();
   let stdout = provider.stdout.clone();
   let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_write_grant("cli://stdout", "line")).unwrap();
   runtime.run_string("+> @out := cli/stdout\n@out/line := \"hello\"\n").unwrap();
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello".to_string()]);
 }
@@ -2378,6 +2394,7 @@ fn cli_context_module_write_is_not_stripped() {
   let provider = InMemoryCliProvider::default();
   let stdout = provider.stdout.clone();
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_write_grant("cli://stdout", "line")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   runtime.run_module(version).unwrap();
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello".to_string()]);
@@ -2391,4 +2408,130 @@ fn cli_context_capabilities_are_enforced() {
   assert!(format!("{read_error:?}").contains("RuntimeResourceCapabilityDenied"));
   let write_error = runtime.run_string("+> @env := cli/env\n@env/HOME := \"nope\"\n").unwrap_err();
   assert!(format!("{write_error:?}").contains("RuntimeResourceCapabilityDenied"));
+}
+
+#[derive(Debug, Clone)]
+struct RecordingResourceProvider {
+  scheme: &'static str,
+  bases: Vec<String>,
+  values: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, Value>>>,
+  writes: std::sync::Arc<std::sync::Mutex<Vec<(String, String, Value)>>>,
+}
+
+impl RecordingResourceProvider {
+  fn new(scheme: &'static str, bases: &[&str]) -> Self {
+    Self {
+      scheme,
+      bases: bases.iter().map(|base| base.to_string()).collect(),
+      values: Default::default(),
+      writes: Default::default(),
+    }
+  }
+
+  fn with_value(self, base: &str, path: &str, value: Value) -> Self {
+    self.values.lock().unwrap().insert(format!("{base}|{path}"), value);
+    self
+  }
+}
+
+impl RuntimeResourceProvider for RecordingResourceProvider {
+  fn scheme(&self) -> &str { self.scheme }
+
+  fn base_uris(&self) -> Vec<String> { self.bases.clone() }
+
+  fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
+    self.values
+      .lock()
+      .unwrap()
+      .get(&format!("{}|{}", request.base_uri, request.path))
+      .cloned()
+      .ok_or_else(|| mech_core::MechError::new(RuntimeResourcePathNotFound { base_uri: request.base_uri, path: request.path }, None))
+  }
+
+  fn write(&mut self, request: RuntimeResourceWriteRequest) -> mech_core::MResult<()> {
+    self.writes.lock().unwrap().push((request.base_uri.clone(), request.path.clone(), request.value.clone()));
+    self.values.lock().unwrap().insert(format!("{}|{}", request.base_uri, request.path), request.value);
+    Ok(())
+  }
+}
+
+fn assert_string_value(value: Value, expected: &str) {
+  let value = match value {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  match value {
+    Value::String(value) => assert_eq!(&*value.borrow(), expected),
+    other => panic!("expected string value `{expected}`, got {other:?}"),
+  }
+}
+
+#[test]
+fn cli_context_direct_read_resolves_inside_formula_expression() {
+  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_read_grant("cli://env", "HOME")).unwrap();
+  runtime.run_string("+> @env := cli/env\nmsg := \"HOME=\" + @env/HOME\n").unwrap();
+  let id = hash_str("msg");
+  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  assert_string_value(value, "HOME=/tmp/home");
+}
+
+#[test]
+fn cli_context_standalone_expression_returns_env_value() {
+  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_read_grant("cli://env", "HOME")).unwrap();
+  let value = runtime.run_string("+> @env := cli/env\n@env/HOME\n").unwrap();
+  assert_string_value(value, "/tmp/home");
+}
+
+#[test]
+fn docs_context_write_requires_runtime_grant_before_provider_write() {
+  let provider = RecordingResourceProvider::new("docs", &["docs://manual"]);
+  let writes = provider.writes.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  let result = runtime.run_string("@manual := docs://manual{:write(intro/title)}\n@manual/intro/title := \"hello\"\n");
+  assert!(result.is_err(), "write without host grant should fail");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeCapabilityGrantDenied"), "expected host grant denial, got {error}");
+  assert!(writes.lock().unwrap().is_empty(), "provider write should not be called without grant");
+}
+
+#[test]
+fn docs_context_write_with_runtime_grant_reaches_provider() {
+  let provider = RecordingResourceProvider::new("docs", &["docs://manual"]);
+  let writes = provider.writes.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_write_grant("docs://manual", "intro/title")).unwrap();
+  runtime.run_string("@manual := docs://manual{:write(intro/title)}\n@manual/intro/title := \"hello\"\n").unwrap();
+  let writes = writes.lock().unwrap();
+  assert_eq!(writes.len(), 1);
+  assert_eq!(writes[0].0, "docs://manual");
+  assert_eq!(writes[0].1, "intro/title");
+  assert_string_value(writes[0].2.clone(), "hello");
+}
+
+#[test]
+fn browser_context_subroot_normalizes_to_provider_base_path() {
+  let provider = RecordingResourceProvider::new("browser", &["browser://dom"])
+    .with_value("browser://dom", "counter/text", Value::String(Ref::new("count".to_string())));
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_read_grant("browser://dom", "counter/text")).unwrap();
+  runtime.run_string("@ui := browser://dom/counter{:read(text)}\ntitle := @ui/text\n").unwrap();
+  let id = hash_str("title");
+  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  assert_string_value(value, "count");
+}
+
+#[test]
+fn docs_context_subroot_normalizes_to_provider_base_path() {
+  let provider = RecordingResourceProvider::new("docs", &["docs://manual"])
+    .with_value("docs://manual", "intro/title", Value::String(Ref::new("Manual".to_string())));
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_read_grant("docs://manual", "intro/title")).unwrap();
+  runtime.run_string("@manual := docs://manual/intro{:read(title)}\ntitle := @manual/title\n").unwrap();
+  let id = hash_str("title");
+  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  assert_string_value(value, "Manual");
 }
