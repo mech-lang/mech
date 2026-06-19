@@ -931,7 +931,7 @@ fn addressed_assignment_is_unsupported() {
 
 #[test]
 fn addressed_assignment_to_context_is_still_unsupported() {
-  let root = setup_modules("@manual := docs://manual{:write(intro/title)}\n@manual/intro/title := true\nresult := @manual/intro/title\n");
+  let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n@manual/intro/title := true\nresult := @manual/intro/title\n");
 
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
@@ -944,7 +944,7 @@ fn addressed_assignment_to_context_is_still_unsupported() {
 
 #[test]
 fn addressed_assignment_with_docs_provider_is_still_unsupported() {
-  let root = setup_modules("@manual := docs://manual{:write(intro/title)}\n@manual/intro/title := true\nresult := @manual/intro/title\n");
+  let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n@manual/intro/title := true\nresult := @manual/intro/title\n");
 
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).in_memory_docs(InMemoryDocsProvider::new()).build().unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
@@ -2663,4 +2663,68 @@ fn named_fenced_context_import_read_exports_value() {
   ).unwrap();
 
   assert_string_value(result, "/tmp/named-fence-home");
+}
+
+#[test]
+fn module_context_read_after_context_write_uses_execution_order() {
+  let root = setup_modules(
+    "@manual := docs://manual{:read(intro/title), :write(intro/title)}\n@manual/intro/title := \"hello\"\nresult := @manual/intro/title\n<+ result\nresult\n",
+  );
+  let provider = RecordingResourceProvider::new("docs", &["docs://manual"]);
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .resource_provider(Box::new(provider))
+    .build()
+    .unwrap();
+
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "docs://manual", "intro/title")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
+
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+
+  assert_string_value(result, "hello");
+}
+
+#[test]
+fn module_context_read_after_context_write_ignores_stale_provider_value() {
+  let root = setup_modules(
+    "@manual := docs://manual{:read(intro/title), :write(intro/title)}\n@manual/intro/title := \"new\"\nresult := @manual/intro/title\n<+ result\nresult\n",
+  );
+  let provider = RecordingResourceProvider::new("docs", &["docs://manual"])
+    .with_value("docs://manual", "intro/title", Value::String(Ref::new("old".to_string())));
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .resource_provider(Box::new(provider))
+    .build()
+    .unwrap();
+
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "docs://manual", "intro/title")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
+
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+
+  assert_string_value(result, "new");
+}
+
+#[test]
+fn direct_context_read_resolves_inside_op_assign() {
+  let provider = RecordingResourceProvider::new("docs", &["docs://numbers"])
+    .with_value("docs://numbers", "increment", Value::F64(Ref::new(2.0)));
+  let mut runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(provider))
+    .build()
+    .unwrap();
+
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://numbers", "increment")).unwrap();
+
+  runtime.run_string("@numbers := docs://numbers{:read(increment)}\n~total := 1.0\ntotal += @numbers/increment\n").unwrap();
+
+  let id = hash_str("total");
+  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  match value {
+    Value::F64(value) => assert_eq!(*value.borrow(), 3.0),
+    other => panic!("expected f64 total, got {other:?}"),
+  }
 }

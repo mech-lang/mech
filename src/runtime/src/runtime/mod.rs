@@ -38,7 +38,7 @@ use std::collections::{HashMap, HashSet};
 
 use mech_core::{
   browser_capability_error, BrowserDomPath, BROWSER_DOM_PROVIDER_URI, MResult, MechError,
-  MechErrorKind, MechSourceCode, Ref, Value,
+  MechErrorKind, MechSourceCode, Value,
   NativeFunctionCompiler, MechFunctionImpl, Register, CompileCtx, MechFunctionCompiler,
   hash_str, ModuleManifestCatalog, ModuleManifestConfig,
 };

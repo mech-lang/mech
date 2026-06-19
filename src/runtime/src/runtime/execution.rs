@@ -655,6 +655,44 @@ impl MechRuntime {
     }
   }
 
+  fn resolve_context_reads_in_statement(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    statement: &mech_core::Statement,
+  ) -> MResult<mech_core::Statement> {
+    match statement {
+      mech_core::Statement::VariableDefine(var_def) => {
+        let mut var_def = var_def.clone();
+        var_def.expression = self.resolve_context_reads_in_expression(context, program, registry, &var_def.expression)?;
+        Ok(mech_core::Statement::VariableDefine(var_def))
+      }
+      mech_core::Statement::VariableAssign(assign) => {
+        let mut assign = assign.clone();
+        assign.expression = self.resolve_context_reads_in_expression(context, program, registry, &assign.expression)?;
+        Ok(mech_core::Statement::VariableAssign(assign))
+      }
+      mech_core::Statement::OpAssign(op_assign) => {
+        let mut op_assign = op_assign.clone();
+        op_assign.expression = self.resolve_context_reads_in_expression(context, program, registry, &op_assign.expression)?;
+        Ok(mech_core::Statement::OpAssign(op_assign))
+      }
+      mech_core::Statement::TupleDestructure(tuple_destructure) => {
+        let mut tuple_destructure = tuple_destructure.clone();
+        tuple_destructure.expression = self.resolve_context_reads_in_expression(context, program, registry, &tuple_destructure.expression)?;
+        Ok(mech_core::Statement::TupleDestructure(tuple_destructure))
+      }
+      #[cfg(feature = "invariant_define")]
+      mech_core::Statement::InvariantDefine(invariant) => {
+        let mut invariant = invariant.clone();
+        invariant.expression = self.resolve_context_reads_in_expression(context, program, registry, &invariant.expression)?;
+        Ok(mech_core::Statement::InvariantDefine(invariant))
+      }
+      _ => Ok(statement.clone()),
+    }
+  }
+
   fn push_direct_code(
     &mut self,
     context: &RuntimeContext,
@@ -698,12 +736,13 @@ impl MechRuntime {
             return Ok(());
           }
         }
-        let mut var_def = var_def.clone();
-        var_def.expression = self.resolve_context_reads_in_expression(context, program, registry, &var_def.expression)?;
-        pending_codes.push((
-          mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)),
-          comment.clone(),
-        ));
+        let statement = self.resolve_context_reads_in_statement(
+          context,
+          program,
+          registry,
+          &mech_core::Statement::VariableDefine(var_def.clone()),
+        )?;
+        pending_codes.push((mech_core::MechCode::Statement(statement), comment.clone()));
         Ok(())
       }
       mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)) => {
@@ -721,17 +760,23 @@ impl MechRuntime {
             return Ok(());
           }
         }
-        let mut assign = assign.clone();
-        assign.expression = self.resolve_context_reads_in_expression(context, program, registry, &assign.expression)?;
-        pending_codes.push((
-          mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)),
-          comment.clone(),
-        ));
+        let statement = self.resolve_context_reads_in_statement(
+          context,
+          program,
+          registry,
+          &mech_core::Statement::VariableAssign(assign.clone()),
+        )?;
+        pending_codes.push((mech_core::MechCode::Statement(statement), comment.clone()));
         Ok(())
       }
       mech_core::MechCode::Expression(expression) => {
         let expression = self.resolve_context_reads_in_expression(context, program, registry, expression)?;
         pending_codes.push((mech_core::MechCode::Expression(expression), comment.clone()));
+        Ok(())
+      }
+      mech_core::MechCode::Statement(statement) => {
+        let statement = self.resolve_context_reads_in_statement(context, program, registry, statement)?;
+        pending_codes.push((mech_core::MechCode::Statement(statement), comment.clone()));
         Ok(())
       }
       _ => {
@@ -1261,12 +1306,9 @@ impl MechRuntime {
           }
           requested_by_scope.entry(interpreter_scope).or_default().push(reference.clone());
         }
-        RuntimeAddressTarget::Context(binding) => {
-          let value = self.read_context_resource(context, &binding, &reference.name)?;
-          bindings.insert(
-            address_binding_key(&reference.target, &reference.name),
-            Ref::new(value),
-          );
+        RuntimeAddressTarget::Context(_) => {
+          // Context-addressed resource reads are resolved while executing source
+          // statements so reads observe earlier writes in the same module scope.
         }
         RuntimeAddressTarget::Unknown => {
           return Err(MechError::new(UnknownAddressTarget { target: reference.target.clone() }, None));
@@ -1495,6 +1537,7 @@ fn exports_for_scope<'a>(
 #[cfg(test)]
 mod tests {
   use super::*;
+  use mech_core::Ref;
 
   #[test]
   fn runtime_has_interpreter_finds_root_interpreter() {
