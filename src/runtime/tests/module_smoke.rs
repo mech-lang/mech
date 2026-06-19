@@ -2615,3 +2615,52 @@ home := @env/HOME
   let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
   assert_string_value(value, "/tmp/fenced-home");
 }
+
+#[test]
+fn named_fenced_context_import_write_uses_context_registry() {
+  let root = setup_modules("~~~mech:bar\n+> @out := cli/stdout\n@out/line := \"hello\"\n~~~\n");
+  let provider = InMemoryCliProvider::default();
+  let stdout = provider.stdout.clone();
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .resource_provider(Box::new(provider))
+    .build()
+    .unwrap();
+
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+
+  runtime.run_module_scope(
+    version,
+    SourceScope::Interpreter(SourceInterpreterId {
+      namespace: hash_str("bar"),
+      namespace_str: "bar".to_string(),
+    }),
+  ).unwrap();
+
+  assert_eq!(stdout.lock().unwrap().as_slice(), &["hello".to_string()]);
+}
+
+#[test]
+fn named_fenced_context_import_read_exports_value() {
+  let root = setup_modules("~~~mech:bar\n+> @env := cli/env\nhome := @env/HOME\n<+ home\nhome\n~~~\n");
+  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/named-fence-home");
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .resource_provider(Box::new(provider))
+    .build()
+    .unwrap();
+
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+
+  let result = runtime.run_module_scope(
+    version,
+    SourceScope::Interpreter(SourceInterpreterId {
+      namespace: hash_str("bar"),
+      namespace_str: "bar".to_string(),
+    }),
+  ).unwrap();
+
+  assert_string_value(result, "/tmp/named-fence-home");
+}

@@ -84,6 +84,14 @@ fn identifier_from_str(name: &str) -> mech_core::Identifier {
   }
 }
 
+
+fn execution_scope_for_extracted_module_source(scope: &SourceScope) -> SourceScope {
+  match scope {
+    SourceScope::Program => SourceScope::Program,
+    SourceScope::Interpreter(_) => SourceScope::Program,
+  }
+}
+
 fn resolve_runtime_address_target(
   record: &ModuleVersionRecord,
   scope: &SourceScope,
@@ -1184,10 +1192,17 @@ impl MechRuntime {
       },
     )?;
 
+    // Named interpreter scopes are extracted to bare source by module_source_for_scope.
+    // Once extracted, their declarations are indexed as SourceScope::Program in the
+    // reparsed tree, so direct context handling must use Program scope for that tree.
+    // The surrounding module execution still uses the original scope for imports,
+    // exports, address environment, and ModuleInstance identity.
+    let execution_scope = execution_scope_for_extracted_module_source(scope);
+
     let result = match source {
       MechSourceCode::String(source) => {
         mech_syntax::parser::parse(source.trim())
-          .and_then(|tree| self.run_tree_on_program(context, program, &tree, Some(scope)))
+          .and_then(|tree| self.run_tree_on_program(context, program, &tree, Some(&execution_scope)))
       }
       other => program.run_source(other),
     };
