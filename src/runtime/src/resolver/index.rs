@@ -166,19 +166,23 @@ impl SourceIndex {
                         }
                     }
                     SectionElement::FencedMechCode(fenced) => {
-                        let interpreter = SourceInterpreterId {
-                            namespace: fenced.config.namespace,
-                            namespace_str: fenced.config.namespace_str.clone(),
+                        let scope = if fenced.config.namespace_str.is_empty() {
+                            SourceScope::Program
+                        } else {
+                            let interpreter = SourceInterpreterId {
+                                namespace: fenced.config.namespace,
+                                namespace_str: fenced.config.namespace_str.clone(),
+                            };
+                            fenced_interpreters
+                                .entry(interpreter.namespace_str.clone())
+                                .or_insert_with(|| {
+                                    index.address_target_interpreters.push(interpreter.clone());
+                                    let scope = SourceScope::Interpreter(interpreter);
+                                    index.push_scope(scope.clone());
+                                    scope
+                                })
+                                .clone()
                         };
-                        let scope = fenced_interpreters
-                            .entry(interpreter.namespace_str.clone())
-                            .or_insert_with(|| {
-                                index.address_target_interpreters.push(interpreter.clone());
-                                let scope = SourceScope::Interpreter(interpreter);
-                                index.push_scope(scope.clone());
-                                scope
-                            })
-                            .clone();
 
                         // TODO: Interleaving imports/exports/statements exactly as written in fenced code
                         // requires parser ordering data; currently imports and exports preserve local vector order.
@@ -843,4 +847,22 @@ fn source_context_declaration(context: &mech_core::ContextDeclaration) -> Source
 
 fn declaration_range(mut tokens: Vec<Token>) -> Option<SourceRange> {
     Token::merge_tokens(&mut tokens).map(|token| token.src_range)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn source_index_treats_unqualified_fenced_mech_as_program_scope() {
+        let tree = mech_syntax::parser::parse(
+            "```mech\n+> @env := cli/env\nhome := @env/HOME\n```\n",
+        ).unwrap();
+
+        let index = SourceIndex::from_program(&tree);
+
+        assert_eq!(index.imports.len(), 1);
+        assert_eq!(index.imports[0].occurrence.scope, SourceScope::Program);
+        assert!(index.interpreter_scopes().is_empty());
+    }
 }

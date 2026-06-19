@@ -14,9 +14,6 @@
 use super::*;
 use crate::SourceIndex;
 
-const DEFAULT_RESOURCE_SUBJECT: &str = "task://main";
-
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum RuntimeAddressTarget {
   Interpreter(SourceScope),
@@ -24,6 +21,26 @@ enum RuntimeAddressTarget {
   Unknown,
 }
 
+struct ActiveRuntimeProgramHostGuard {
+  previous: Option<RuntimeProgramHostTarget>,
+}
+
+impl ActiveRuntimeProgramHostGuard {
+  fn install(runtime: *mut MechRuntime, context: *mut RuntimeContext) -> Self {
+    let previous = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      slot.replace(Some(RuntimeProgramHostTarget { runtime, context }))
+    });
+    Self { previous }
+  }
+}
+
+impl Drop for ActiveRuntimeProgramHostGuard {
+  fn drop(&mut self) {
+    ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      slot.replace(self.previous.take());
+    });
+  }
+}
 
 #[derive(Debug, Clone)]
 pub struct RuntimeAddressedAssignmentUnsupported {
@@ -166,32 +183,6 @@ fn runtime_context_allows_write(
 
 
 
-fn program_codes<'a>(
-  tree: &'a mech_core::Program,
-  scope: &'a SourceScope,
-) -> impl Iterator<Item = (&'a mech_core::MechCode, &'a Option<mech_core::Comment>)> + 'a {
-  tree.body.sections.iter().flat_map(move |section| {
-    section.elements.iter().flat_map(move |element| match element {
-      mech_core::SectionElement::MechCode(codes) => codes
-        .iter()
-        .map(|(code, comment)| (code, comment))
-        .collect::<Vec<_>>(),
-      mech_core::SectionElement::FencedMechCode(fenced) if match scope {
-        SourceScope::Program => fenced.config.namespace_str.is_empty(),
-        SourceScope::Interpreter(interpreter) => {
-          fenced.config.namespace_str == interpreter.namespace_str || fenced.config.namespace_str.is_empty()
-        }
-      } => fenced
-        .code
-        .iter()
-        .map(|(code, comment)| (code, comment))
-        .collect::<Vec<_>>(),
-      mech_core::SectionElement::FencedMechCode(_) => Vec::new(),
-      _ => Vec::new(),
-    })
-  })
-}
-
 fn single_code_program(
   code: mech_core::MechCode,
   comment: Option<mech_core::Comment>,
@@ -313,6 +304,7 @@ impl MechRuntime {
 
   fn read_context_resource(
     &self,
+    context: &RuntimeContext,
     binding: &RuntimeContextBinding,
     path: &str,
   ) -> MResult<Value> {
@@ -325,13 +317,13 @@ impl MechRuntime {
       }, None));
     }
     if !self.grants.allows(
-      DEFAULT_RESOURCE_SUBJECT,
+      &context.subject,
       &resolved.provider_base_uri,
       &RuntimeCapabilityOperation::Read,
       &resolved.provider_path,
     ) {
       return Err(MechError::new(RuntimeCapabilityGrantDenied {
-        subject: DEFAULT_RESOURCE_SUBJECT.to_string(),
+        subject: context.subject.clone(),
         resource: resolved.provider_base_uri,
         operation: RuntimeCapabilityOperation::Read,
         path: resolved.provider_path,
@@ -346,6 +338,7 @@ impl MechRuntime {
 
   fn write_context_resource(
     &mut self,
+    context: &RuntimeContext,
     binding: &RuntimeContextBinding,
     path: &str,
     value: Value,
@@ -359,13 +352,13 @@ impl MechRuntime {
       }, None));
     }
     if !self.grants.allows(
-      DEFAULT_RESOURCE_SUBJECT,
+      &context.subject,
       &resolved.provider_base_uri,
       &RuntimeCapabilityOperation::Write,
       &resolved.provider_path,
     ) {
       return Err(MechError::new(RuntimeCapabilityGrantDenied {
-        subject: DEFAULT_RESOURCE_SUBJECT.to_string(),
+        subject: context.subject.clone(),
         resource: resolved.provider_base_uri,
         operation: RuntimeCapabilityOperation::Write,
         path: resolved.provider_path,
@@ -398,29 +391,30 @@ impl MechRuntime {
 
   fn resolve_context_reads_in_expression(
     &mut self,
+    context: &RuntimeContext,
     program: &mut MechProgram,
     registry: &RuntimeContextRegistry,
     expression: &mech_core::Expression,
   ) -> MResult<mech_core::Expression> {
     match expression {
       mech_core::Expression::Var(var) => {
-        let Some(context) = &var.context else {
+        let Some(var_context) = &var.context else {
           return Ok(expression.clone());
         };
-        let target = context.to_string();
+        let target = var_context.to_string();
         let Some(binding) = registry.get(&target) else {
           return Ok(expression.clone());
         };
         let path = var.name.to_string();
-        let value = self.read_context_resource(binding, &path)?;
+        let value = self.read_context_resource(context, binding, &path)?;
         self.bind_context_read_temp(program, &target, &path, value)
       }
       mech_core::Expression::Formula(factor) => Ok(mech_core::Expression::Formula(
-        self.resolve_context_reads_in_factor(program, registry, factor)?,
+        self.resolve_context_reads_in_factor(context, program, registry, factor)?,
       )),
       mech_core::Expression::FunctionCall(call) => {
         let args = call.args.iter().map(|(name, expression)| {
-          Ok((name.clone(), self.resolve_context_reads_in_expression(program, registry, expression)?))
+          Ok((name.clone(), self.resolve_context_reads_in_expression(context, program, registry, expression)?))
         }).collect::<MResult<Vec<_>>>()?;
         Ok(mech_core::Expression::FunctionCall(mech_core::FunctionCall { name: call.name.clone(), args }))
       }
@@ -428,7 +422,7 @@ impl MechRuntime {
         let mut pipe = pipe.clone();
         if let Some(args) = &pipe.start.args {
           pipe.start.args = Some(args.iter().map(|(name, expression)| {
-            Ok((name.clone(), self.resolve_context_reads_in_expression(program, registry, expression)?))
+            Ok((name.clone(), self.resolve_context_reads_in_expression(context, program, registry, expression)?))
           }).collect::<MResult<Vec<_>>>()?);
         }
         Ok(mech_core::Expression::FsmPipe(pipe))
@@ -436,24 +430,24 @@ impl MechRuntime {
       mech_core::Expression::Literal(_) => Ok(expression.clone()),
       mech_core::Expression::Match(match_expression) => {
         let mut match_expression = match_expression.as_ref().clone();
-        match_expression.source = self.resolve_context_reads_in_expression(program, registry, &match_expression.source)?;
+        match_expression.source = self.resolve_context_reads_in_expression(context, program, registry, &match_expression.source)?;
         match_expression.arms = match_expression.arms.iter().map(|arm| {
           Ok(mech_core::MatchArm {
             pattern: arm.pattern.clone(),
-            guard: arm.guard.as_ref().map(|guard| self.resolve_context_reads_in_expression(program, registry, guard)).transpose()?,
-            expression: self.resolve_context_reads_in_expression(program, registry, &arm.expression)?,
+            guard: arm.guard.as_ref().map(|guard| self.resolve_context_reads_in_expression(context, program, registry, guard)).transpose()?,
+            expression: self.resolve_context_reads_in_expression(context, program, registry, &arm.expression)?,
           })
         }).collect::<MResult<Vec<_>>>()?;
         Ok(mech_core::Expression::Match(Box::new(match_expression)))
       }
       mech_core::Expression::Range(range) => {
         let mut range = range.as_ref().clone();
-        range.start = self.resolve_context_reads_in_factor(program, registry, &range.start)?;
+        range.start = self.resolve_context_reads_in_factor(context, program, registry, &range.start)?;
         range.increment = match &range.increment {
-          Some((operator, increment)) => Some((operator.clone(), self.resolve_context_reads_in_factor(program, registry, increment)?)),
+          Some((operator, increment)) => Some((operator.clone(), self.resolve_context_reads_in_factor(context, program, registry, increment)?)),
           None => None,
         };
-        range.terminal = self.resolve_context_reads_in_factor(program, registry, &range.terminal)?;
+        range.terminal = self.resolve_context_reads_in_factor(context, program, registry, &range.terminal)?;
         Ok(mech_core::Expression::Range(Box::new(range)))
       }
       mech_core::Expression::Slice(slice) => {
@@ -468,22 +462,22 @@ impl MechRuntime {
           }, None));
         }
         Ok(mech_core::Expression::Slice(
-          self.resolve_context_reads_in_slice(program, registry, slice)?,
+          self.resolve_context_reads_in_slice(context, program, registry, slice)?,
         ))
       }
       mech_core::Expression::Structure(structure) => Ok(mech_core::Expression::Structure(
-        self.resolve_context_reads_in_structure(program, registry, structure)?,
+        self.resolve_context_reads_in_structure(context, program, registry, structure)?,
       )),
       mech_core::Expression::SetComprehension(comprehension) => {
         let mut comprehension = comprehension.as_ref().clone();
-        comprehension.expression = self.resolve_context_reads_in_expression(program, registry, &comprehension.expression)?;
-        comprehension.qualifiers = comprehension.qualifiers.iter().map(|qualifier| self.resolve_context_reads_in_comprehension_qualifier(program, registry, qualifier)).collect::<MResult<Vec<_>>>()?;
+        comprehension.expression = self.resolve_context_reads_in_expression(context, program, registry, &comprehension.expression)?;
+        comprehension.qualifiers = comprehension.qualifiers.iter().map(|qualifier| self.resolve_context_reads_in_comprehension_qualifier(context, program, registry, qualifier)).collect::<MResult<Vec<_>>>()?;
         Ok(mech_core::Expression::SetComprehension(Box::new(comprehension)))
       }
       mech_core::Expression::MatrixComprehension(comprehension) => {
         let mut comprehension = comprehension.as_ref().clone();
-        comprehension.expression = self.resolve_context_reads_in_expression(program, registry, &comprehension.expression)?;
-        comprehension.qualifiers = comprehension.qualifiers.iter().map(|qualifier| self.resolve_context_reads_in_comprehension_qualifier(program, registry, qualifier)).collect::<MResult<Vec<_>>>()?;
+        comprehension.expression = self.resolve_context_reads_in_expression(context, program, registry, &comprehension.expression)?;
+        comprehension.qualifiers = comprehension.qualifiers.iter().map(|qualifier| self.resolve_context_reads_in_comprehension_qualifier(context, program, registry, qualifier)).collect::<MResult<Vec<_>>>()?;
         Ok(mech_core::Expression::MatrixComprehension(Box::new(comprehension)))
       }
     }
@@ -491,22 +485,23 @@ impl MechRuntime {
 
   fn resolve_context_reads_in_factor(
     &mut self,
+    context: &RuntimeContext,
     program: &mut MechProgram,
     registry: &RuntimeContextRegistry,
     factor: &mech_core::Factor,
   ) -> MResult<mech_core::Factor> {
     match factor {
-      mech_core::Factor::Expression(expression) => Ok(mech_core::Factor::Expression(Box::new(self.resolve_context_reads_in_expression(program, registry, expression)?))),
-      mech_core::Factor::Negate(factor) => Ok(mech_core::Factor::Negate(Box::new(self.resolve_context_reads_in_factor(program, registry, factor)?))),
-      mech_core::Factor::Not(factor) => Ok(mech_core::Factor::Not(Box::new(self.resolve_context_reads_in_factor(program, registry, factor)?))),
-      mech_core::Factor::Parenthetical(factor) => Ok(mech_core::Factor::Parenthetical(Box::new(self.resolve_context_reads_in_factor(program, registry, factor)?))),
-      mech_core::Factor::Transpose(factor) => Ok(mech_core::Factor::Transpose(Box::new(self.resolve_context_reads_in_factor(program, registry, factor)?))),
+      mech_core::Factor::Expression(expression) => Ok(mech_core::Factor::Expression(Box::new(self.resolve_context_reads_in_expression(context, program, registry, expression)?))),
+      mech_core::Factor::Negate(factor) => Ok(mech_core::Factor::Negate(Box::new(self.resolve_context_reads_in_factor(context, program, registry, factor)?))),
+      mech_core::Factor::Not(factor) => Ok(mech_core::Factor::Not(Box::new(self.resolve_context_reads_in_factor(context, program, registry, factor)?))),
+      mech_core::Factor::Parenthetical(factor) => Ok(mech_core::Factor::Parenthetical(Box::new(self.resolve_context_reads_in_factor(context, program, registry, factor)?))),
+      mech_core::Factor::Transpose(factor) => Ok(mech_core::Factor::Transpose(Box::new(self.resolve_context_reads_in_factor(context, program, registry, factor)?))),
       mech_core::Factor::Term(term) => {
         let rhs = term.rhs.iter().map(|(operator, factor)| {
-          Ok((operator.clone(), self.resolve_context_reads_in_factor(program, registry, factor)?))
+          Ok((operator.clone(), self.resolve_context_reads_in_factor(context, program, registry, factor)?))
         }).collect::<MResult<Vec<_>>>()?;
         Ok(mech_core::Factor::Term(Box::new(mech_core::Term {
-          lhs: self.resolve_context_reads_in_factor(program, registry, &term.lhs)?,
+          lhs: self.resolve_context_reads_in_factor(context, program, registry, &term.lhs)?,
           rhs,
         })))
       }
@@ -515,6 +510,7 @@ impl MechRuntime {
 
   fn resolve_context_reads_in_slice(
     &mut self,
+    context: &RuntimeContext,
     program: &mut MechProgram,
     registry: &RuntimeContextRegistry,
     slice: &mech_core::Slice,
@@ -522,28 +518,29 @@ impl MechRuntime {
     Ok(mech_core::Slice {
       name: slice.name.clone(),
       context: slice.context.clone(),
-      subscript: slice.subscript.iter().map(|subscript| self.resolve_context_reads_in_subscript(program, registry, subscript)).collect::<MResult<Vec<_>>>()?,
+      subscript: slice.subscript.iter().map(|subscript| self.resolve_context_reads_in_subscript(context, program, registry, subscript)).collect::<MResult<Vec<_>>>()?,
     })
   }
 
   fn resolve_context_reads_in_subscript(
     &mut self,
+    context: &RuntimeContext,
     program: &mut MechProgram,
     registry: &RuntimeContextRegistry,
     subscript: &mech_core::Subscript,
   ) -> MResult<mech_core::Subscript> {
     match subscript {
-      mech_core::Subscript::Brace(subscripts) => Ok(mech_core::Subscript::Brace(subscripts.iter().map(|subscript| self.resolve_context_reads_in_subscript(program, registry, subscript)).collect::<MResult<Vec<_>>>()?)),
-      mech_core::Subscript::Bracket(subscripts) => Ok(mech_core::Subscript::Bracket(subscripts.iter().map(|subscript| self.resolve_context_reads_in_subscript(program, registry, subscript)).collect::<MResult<Vec<_>>>()?)),
-      mech_core::Subscript::Formula(factor) => Ok(mech_core::Subscript::Formula(self.resolve_context_reads_in_factor(program, registry, factor)?)),
+      mech_core::Subscript::Brace(subscripts) => Ok(mech_core::Subscript::Brace(subscripts.iter().map(|subscript| self.resolve_context_reads_in_subscript(context, program, registry, subscript)).collect::<MResult<Vec<_>>>()?)),
+      mech_core::Subscript::Bracket(subscripts) => Ok(mech_core::Subscript::Bracket(subscripts.iter().map(|subscript| self.resolve_context_reads_in_subscript(context, program, registry, subscript)).collect::<MResult<Vec<_>>>()?)),
+      mech_core::Subscript::Formula(factor) => Ok(mech_core::Subscript::Formula(self.resolve_context_reads_in_factor(context, program, registry, factor)?)),
       mech_core::Subscript::Range(range) => {
         let mut range = range.clone();
-        range.start = self.resolve_context_reads_in_factor(program, registry, &range.start)?;
+        range.start = self.resolve_context_reads_in_factor(context, program, registry, &range.start)?;
         range.increment = match &range.increment {
-          Some((operator, increment)) => Some((operator.clone(), self.resolve_context_reads_in_factor(program, registry, increment)?)),
+          Some((operator, increment)) => Some((operator.clone(), self.resolve_context_reads_in_factor(context, program, registry, increment)?)),
           None => None,
         };
-        range.terminal = self.resolve_context_reads_in_factor(program, registry, &range.terminal)?;
+        range.terminal = self.resolve_context_reads_in_factor(context, program, registry, &range.terminal)?;
         Ok(mech_core::Subscript::Range(range))
       }
       _ => Ok(subscript.clone()),
@@ -552,6 +549,7 @@ impl MechRuntime {
 
   fn resolve_context_reads_in_structure(
     &mut self,
+    context: &RuntimeContext,
     program: &mut MechProgram,
     registry: &RuntimeContextRegistry,
     structure: &mech_core::Structure,
@@ -560,14 +558,14 @@ impl MechRuntime {
       mech_core::Structure::Empty => Ok(mech_core::Structure::Empty),
       mech_core::Structure::Map(map) => Ok(mech_core::Structure::Map(mech_core::Map {
         elements: map.elements.iter().map(|mapping| Ok(mech_core::Mapping {
-          key: self.resolve_context_reads_in_expression(program, registry, &mapping.key)?,
-          value: self.resolve_context_reads_in_expression(program, registry, &mapping.value)?,
+          key: self.resolve_context_reads_in_expression(context, program, registry, &mapping.key)?,
+          value: self.resolve_context_reads_in_expression(context, program, registry, &mapping.value)?,
         })).collect::<MResult<Vec<_>>>()?,
       })),
       mech_core::Structure::Matrix(matrix) => Ok(mech_core::Structure::Matrix(mech_core::nodes::Matrix {
         rows: matrix.rows.iter().map(|row| Ok(mech_core::MatrixRow {
           columns: row.columns.iter().map(|column| Ok(mech_core::MatrixColumn {
-            element: self.resolve_context_reads_in_expression(program, registry, &column.element)?,
+            element: self.resolve_context_reads_in_expression(context, program, registry, &column.element)?,
           })).collect::<MResult<Vec<_>>>()?,
         })).collect::<MResult<Vec<_>>>()?,
       })),
@@ -575,127 +573,227 @@ impl MechRuntime {
         bindings: record.bindings.iter().map(|binding| Ok(mech_core::Binding {
           name: binding.name.clone(),
           kind: binding.kind.clone(),
-          value: self.resolve_context_reads_in_expression(program, registry, &binding.value)?,
+          value: self.resolve_context_reads_in_expression(context, program, registry, &binding.value)?,
         })).collect::<MResult<Vec<_>>>()?,
       })),
       mech_core::Structure::Set(set) => Ok(mech_core::Structure::Set(mech_core::Set {
-        elements: set.elements.iter().map(|expression| self.resolve_context_reads_in_expression(program, registry, expression)).collect::<MResult<Vec<_>>>()?,
+        elements: set.elements.iter().map(|expression| self.resolve_context_reads_in_expression(context, program, registry, expression)).collect::<MResult<Vec<_>>>()?,
       })),
       mech_core::Structure::Table(table) => Ok(mech_core::Structure::Table(mech_core::Table {
         header: table.header.clone(),
         rows: table.rows.iter().map(|row| Ok(mech_core::TableRow {
           columns: row.columns.iter().map(|column| Ok(mech_core::TableColumn {
-            element: self.resolve_context_reads_in_expression(program, registry, &column.element)?,
+            element: self.resolve_context_reads_in_expression(context, program, registry, &column.element)?,
           })).collect::<MResult<Vec<_>>>()?,
         })).collect::<MResult<Vec<_>>>()?,
       })),
       mech_core::Structure::Tuple(tuple) => Ok(mech_core::Structure::Tuple(mech_core::Tuple {
-        elements: tuple.elements.iter().map(|expression| self.resolve_context_reads_in_expression(program, registry, expression)).collect::<MResult<Vec<_>>>()?,
+        elements: tuple.elements.iter().map(|expression| self.resolve_context_reads_in_expression(context, program, registry, expression)).collect::<MResult<Vec<_>>>()?,
       })),
       mech_core::Structure::TupleStruct(tuple_struct) => Ok(mech_core::Structure::TupleStruct(mech_core::TupleStruct {
         name: tuple_struct.name.clone(),
-        value: Box::new(self.resolve_context_reads_in_expression(program, registry, &tuple_struct.value)?),
+        value: Box::new(self.resolve_context_reads_in_expression(context, program, registry, &tuple_struct.value)?),
       })),
     }
   }
 
   fn resolve_context_reads_in_comprehension_qualifier(
     &mut self,
+    context: &RuntimeContext,
     program: &mut MechProgram,
     registry: &RuntimeContextRegistry,
     qualifier: &mech_core::ComprehensionQualifier,
   ) -> MResult<mech_core::ComprehensionQualifier> {
     match qualifier {
-      mech_core::ComprehensionQualifier::Generator((pattern, expression)) => Ok(mech_core::ComprehensionQualifier::Generator((pattern.clone(), self.resolve_context_reads_in_expression(program, registry, expression)?))),
-      mech_core::ComprehensionQualifier::Filter(expression) => Ok(mech_core::ComprehensionQualifier::Filter(self.resolve_context_reads_in_expression(program, registry, expression)?)),
+      mech_core::ComprehensionQualifier::Generator((pattern, expression)) => Ok(mech_core::ComprehensionQualifier::Generator((pattern.clone(), self.resolve_context_reads_in_expression(context, program, registry, expression)?))),
+      mech_core::ComprehensionQualifier::Filter(expression) => Ok(mech_core::ComprehensionQualifier::Filter(self.resolve_context_reads_in_expression(context, program, registry, expression)?)),
       mech_core::ComprehensionQualifier::Let(var_def) => {
         let mut var_def = var_def.clone();
-        var_def.expression = self.resolve_context_reads_in_expression(program, registry, &var_def.expression)?;
+        var_def.expression = self.resolve_context_reads_in_expression(context, program, registry, &var_def.expression)?;
         Ok(mech_core::ComprehensionQualifier::Let(var_def))
+      }
+    }
+  }
+
+  fn flush_direct_execution(
+    &mut self,
+    program: &mut MechProgram,
+    pending: &mut Vec<mech_core::SectionElement>,
+    result: &mut Value,
+  ) -> MResult<()> {
+    if pending.is_empty() {
+      return Ok(());
+    }
+    let tree = mech_core::Program {
+      title: None,
+      body: mech_core::Body {
+        sections: vec![mech_core::Section {
+          subtitle: None,
+          elements: std::mem::take(pending),
+        }],
+      },
+    };
+    *result = program.run_tree(&tree)?;
+    Ok(())
+  }
+
+  fn executable_fence_for_scope(
+    fenced: &mech_core::FencedMechCode,
+    scope: &SourceScope,
+  ) -> bool {
+    match scope {
+      SourceScope::Program => fenced.config.namespace_str.is_empty(),
+      SourceScope::Interpreter(interpreter) => fenced.config.namespace_str == interpreter.namespace_str,
+    }
+  }
+
+  fn push_direct_code(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    pending: &mut Vec<mech_core::SectionElement>,
+    pending_codes: &mut Vec<(mech_core::MechCode, Option<mech_core::Comment>)>,
+    result: &mut Value,
+    code: &mech_core::MechCode,
+    comment: &Option<mech_core::Comment>,
+  ) -> MResult<()> {
+    match code {
+      mech_core::MechCode::Import(_)
+      | mech_core::MechCode::Statement(mech_core::Statement::ImportDeclaration(_))
+      | mech_core::MechCode::Statement(mech_core::Statement::ContextDeclaration(_)) => Ok(()),
+      mech_core::MechCode::Statement(mech_core::Statement::ExportDeclaration(export)) => {
+        if !pending_codes.is_empty() {
+          pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes)));
+        }
+        self.flush_direct_execution(program, pending, result)?;
+        let id = hash_str(&export.name.to_string());
+        if let Some(value) = program.interpreter().symbols().borrow().get(id) {
+          *result = resolve_runtime_value(value.borrow().clone());
+        } else {
+          *result = Value::Empty;
+        }
+        Ok(())
+      }
+      mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)) => {
+        if let Some(context_name) = &var_def.var.context {
+          let target = context_name.to_string();
+          if let Some(binding) = registry.get(&target).cloned() {
+            if !pending_codes.is_empty() {
+              pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes)));
+            }
+            self.flush_direct_execution(program, pending, result)?;
+            let expression = self.resolve_context_reads_in_expression(context, program, registry, &var_def.expression)?;
+            let value = resolve_runtime_value(self.evaluate_expression_on_program(program, &expression)?);
+            self.write_context_resource(context, &binding, &var_def.var.name.to_string(), value.clone())?;
+            *result = value;
+            return Ok(());
+          }
+        }
+        let mut var_def = var_def.clone();
+        var_def.expression = self.resolve_context_reads_in_expression(context, program, registry, &var_def.expression)?;
+        pending_codes.push((
+          mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)),
+          comment.clone(),
+        ));
+        Ok(())
+      }
+      mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)) => {
+        if let Some(context_name) = &assign.target.context {
+          let target = context_name.to_string();
+          if let Some(binding) = registry.get(&target).cloned() {
+            if !pending_codes.is_empty() {
+              pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes)));
+            }
+            self.flush_direct_execution(program, pending, result)?;
+            let expression = self.resolve_context_reads_in_expression(context, program, registry, &assign.expression)?;
+            let value = resolve_runtime_value(self.evaluate_expression_on_program(program, &expression)?);
+            self.write_context_resource(context, &binding, &assign.target.name.to_string(), value.clone())?;
+            *result = value;
+            return Ok(());
+          }
+        }
+        let mut assign = assign.clone();
+        assign.expression = self.resolve_context_reads_in_expression(context, program, registry, &assign.expression)?;
+        pending_codes.push((
+          mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)),
+          comment.clone(),
+        ));
+        Ok(())
+      }
+      mech_core::MechCode::Expression(expression) => {
+        let expression = self.resolve_context_reads_in_expression(context, program, registry, expression)?;
+        pending_codes.push((mech_core::MechCode::Expression(expression), comment.clone()));
+        Ok(())
+      }
+      _ => {
+        pending_codes.push((code.clone(), comment.clone()));
+        Ok(())
       }
     }
   }
 
   fn run_tree_on_program(
     &mut self,
-    _context: &mut RuntimeContext,
+    context: &mut RuntimeContext,
     program: &mut MechProgram,
     tree: &mech_core::Program,
     scope_hint: Option<&SourceScope>,
   ) -> MResult<Value> {
     let execution_scope = scope_hint.unwrap_or(&SourceScope::Program);
-    let registry = self.direct_context_registry_for_scope(tree, &SourceScope::Program)?;
+    let registry = self.direct_context_registry_for_scope(tree, execution_scope)?;
     let mut result = Value::Empty;
-    for (code, comment) in program_codes(tree, execution_scope) {
-      match code {
-        mech_core::MechCode::Import(_)
-        | mech_core::MechCode::Statement(mech_core::Statement::ImportDeclaration(_))
-        | mech_core::MechCode::Statement(mech_core::Statement::ContextDeclaration(_)) => {
-          result = Value::Empty;
-        }
-        mech_core::MechCode::Statement(mech_core::Statement::ExportDeclaration(export)) => {
-          let id = hash_str(&export.name.to_string());
-          if let Some(value) = program.interpreter().symbols().borrow().get(id) {
-            result = resolve_runtime_value(value.borrow().clone());
-          } else {
-            result = Value::Empty;
-          }
-        }
-        mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)) => {
-          if let Some(context) = &var_def.var.context {
-            let target = context.to_string();
-            if let Some(binding) = registry.get(&target).cloned() {
-              let expression = self.resolve_context_reads_in_expression(program, &registry, &var_def.expression)?;
-              let value = resolve_runtime_value(self.evaluate_expression_on_program(program, &expression)?);
-              self.write_context_resource(&binding, &var_def.var.name.to_string(), value.clone())?;
-              result = value;
-            } else {
-              let single = single_code_program(code.clone(), comment.clone());
-              result = program.run_tree(&single)?;
+    let mut pending = Vec::new();
+
+    for section in &tree.body.sections {
+      for element in &section.elements {
+        match element {
+          mech_core::SectionElement::MechCode(codes) => {
+            let mut pending_codes = Vec::new();
+            for (code, comment) in codes {
+              self.push_direct_code(
+                context,
+                program,
+                &registry,
+                &mut pending,
+                &mut pending_codes,
+                &mut result,
+                code,
+                comment,
+              )?;
             }
-          } else {
-            let mut var_def = var_def.clone();
-            var_def.expression = self.resolve_context_reads_in_expression(program, &registry, &var_def.expression)?;
-            let single = single_code_program(
-              mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)),
-              comment.clone(),
-            );
-            result = program.run_tree(&single)?;
-          }
-        }
-        mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)) => {
-          if let Some(context) = &assign.target.context {
-            let target = context.to_string();
-            if let Some(binding) = registry.get(&target).cloned() {
-              let expression = self.resolve_context_reads_in_expression(program, &registry, &assign.expression)?;
-              let value = resolve_runtime_value(self.evaluate_expression_on_program(program, &expression)?);
-              self.write_context_resource(&binding, &assign.target.name.to_string(), value.clone())?;
-              result = value;
-            } else {
-              let single = single_code_program(code.clone(), comment.clone());
-              result = program.run_tree(&single)?;
+            if !pending_codes.is_empty() {
+              pending.push(mech_core::SectionElement::MechCode(pending_codes));
             }
-          } else {
-            let mut assign = assign.clone();
-            assign.expression = self.resolve_context_reads_in_expression(program, &registry, &assign.expression)?;
-            let single = single_code_program(
-              mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)),
-              comment.clone(),
-            );
-            result = program.run_tree(&single)?;
           }
-        }
-        mech_core::MechCode::Expression(expression) => {
-          let expression = self.resolve_context_reads_in_expression(program, &registry, expression)?;
-          let single = single_code_program(mech_core::MechCode::Expression(expression), comment.clone());
-          result = program.run_tree(&single)?;
-        }
-        _ => {
-          let single = single_code_program(code.clone(), comment.clone());
-          result = program.run_tree(&single)?;
+          mech_core::SectionElement::FencedMechCode(fenced)
+            if Self::executable_fence_for_scope(fenced, execution_scope) =>
+          {
+            let mut pending_codes = Vec::new();
+            for (code, comment) in &fenced.code {
+              self.push_direct_code(
+                context,
+                program,
+                &registry,
+                &mut pending,
+                &mut pending_codes,
+                &mut result,
+                code,
+                comment,
+              )?;
+            }
+            if !pending_codes.is_empty() {
+              let mut fenced = fenced.clone();
+              fenced.code = pending_codes;
+              pending.push(mech_core::SectionElement::FencedMechCode(fenced));
+            }
+          }
+          _ => {}
         }
       }
     }
+
+    self.flush_direct_execution(program, &mut pending, &mut result)?;
     Ok(result)
   }
 
@@ -741,19 +839,9 @@ impl MechRuntime {
 
     let runtime_ptr: *mut MechRuntime = self;
     let context_ptr: *mut RuntimeContext = context;
-
-    let previous_target = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
-      slot.replace(Some(RuntimeProgramHostTarget {
-        runtime: runtime_ptr,
-        context: context_ptr,
-      }))
-    });
+    let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
 
     let result = self.run_tree_on_program(context, &mut program, &tree, None);
-
-    ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
-      slot.replace(previous_target);
-    });
 
     self.program = program;
 
@@ -814,19 +902,9 @@ impl MechRuntime {
 
     let runtime_ptr: *mut MechRuntime = self;
     let context_ptr: *mut RuntimeContext = context;
-
-    let previous_target = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
-      slot.replace(Some(RuntimeProgramHostTarget {
-        runtime: runtime_ptr,
-        context: context_ptr,
-      }))
-    });
+    let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
 
     let result = self.run_tree_on_program(context, &mut program, tree, None);
-
-    ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
-      slot.replace(previous_target);
-    });
 
     self.program = program;
 
@@ -1097,13 +1175,7 @@ impl MechRuntime {
 
     let runtime_ptr: *mut MechRuntime = self;
     let context_ptr: *mut RuntimeContext = context;
-
-    let previous_target = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
-      slot.replace(Some(RuntimeProgramHostTarget {
-        runtime: runtime_ptr,
-        context: context_ptr,
-      }))
-    });
+    let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
 
     self.emit_event_to_context(
       context,
@@ -1114,15 +1186,11 @@ impl MechRuntime {
 
     let result = match source {
       MechSourceCode::String(source) => {
-        let tree = mech_syntax::parser::parse(source.trim())?;
-        self.run_tree_on_program(context, program, &tree, Some(scope))
+        mech_syntax::parser::parse(source.trim())
+          .and_then(|tree| self.run_tree_on_program(context, program, &tree, Some(scope)))
       }
       other => program.run_source(other),
     };
-
-    ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
-      slot.replace(previous_target);
-    });
 
     match &result {
       Ok(_) => {
@@ -1179,7 +1247,7 @@ impl MechRuntime {
           requested_by_scope.entry(interpreter_scope).or_default().push(reference.clone());
         }
         RuntimeAddressTarget::Context(binding) => {
-          let value = self.read_context_resource(&binding, &reference.name)?;
+          let value = self.read_context_resource(context, &binding, &reference.name)?;
           bindings.insert(
             address_binding_key(&reference.target, &reference.name),
             Ref::new(value),
