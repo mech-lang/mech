@@ -24,6 +24,20 @@ enum RuntimeAddressTarget {
   Unknown,
 }
 
+
+#[derive(Debug, Clone)]
+pub struct RuntimeAddressedAssignmentUnsupported {
+  pub target: String,
+}
+
+impl MechErrorKind for RuntimeAddressedAssignmentUnsupported {
+  fn name(&self) -> &str { "RuntimeAddressedAssignmentUnsupported" }
+
+  fn message(&self) -> String {
+    format!("addressed assignment is not supported for `{}`", self.target)
+  }
+}
+
 fn resolve_runtime_address_target(
   record: &ModuleVersionRecord,
   scope: &SourceScope,
@@ -165,7 +179,7 @@ fn bind_runtime_value_on_program(
 ) -> MResult<()> {
   if var.context.is_some() {
     return Err(MechError::new(
-      mech_core::GenericError { msg: "AddressedAssignmentUnsupported: addressed assignment is not supported yet".to_string() },
+      RuntimeAddressedAssignmentUnsupported { target: var.name.to_string() },
       None,
     ).with_compiler_loc().with_tokens(var.tokens()));
   }
@@ -185,45 +199,119 @@ fn resolve_runtime_value(value: Value) -> Value {
 }
 
 
-fn string_value_expression(value: String) -> MResult<mech_core::Expression> {
-  Ok(mech_core::Expression::Literal(mech_core::Literal::String(mech_core::MechString {
-    text: mech_core::Token::new(
-      mech_core::TokenKind::String,
-      mech_core::SourceRange::default(),
-      value.chars().collect(),
-    ),
-  })))
-}
 
 impl MechRuntime {
 
-  fn bind_browser_resource_roots_from_program(
-    &mut self,
-    tree: &mech_core::Program,
-  ) -> MResult<()> {
-    let index = SourceIndex::from_program(tree);
-    for import in index.program_imports() {
-      let Some(SourceImportAlias::Context(alias)) = import.alias else {
+  fn context_declarations_from_index_scope(
+    &self,
+    index: &SourceIndex,
+    scope: &SourceScope,
+  ) -> MResult<Vec<crate::SourceContextDeclaration>> {
+    let mut declarations = index
+      .contexts
+      .iter()
+      .filter(|ctx| &ctx.occurrence.scope == scope)
+      .map(|ctx| ctx.declaration.clone())
+      .collect::<Vec<_>>();
+
+    for import in index.imports.iter().filter(|import| &import.occurrence.scope == scope) {
+      let Some(SourceImportAlias::Context(alias)) = &import.declaration.alias else {
         continue;
       };
-      let Some(module) = import.module.as_deref() else {
-        continue;
-      };
-      let Some(item) = import.item.as_deref() else {
-        continue;
-      };
-      self.bind_context_export(&alias, module, item)?;
+      let module = import.declaration.module.as_deref().ok_or_else(|| {
+        MechError::new(RuntimeInvalidOperationError {
+          operation: "materialize_direct_manifest_context_imports",
+          reason: format!("context import `{}` is missing module metadata", import.declaration.specifier),
+        }, None)
+      })?;
+      let item = import.declaration.item.as_deref().ok_or_else(|| {
+        MechError::new(RuntimeInvalidOperationError {
+          operation: "materialize_direct_manifest_context_imports",
+          reason: format!("context import `{}` is missing item metadata", import.declaration.specifier),
+        }, None)
+      })?;
+      let export = self.module_manifests.context_export(module, item)?;
+      declarations.push(crate::SourceContextDeclaration {
+        name: alias.clone(),
+        base: crate::SourceContextBase::ResourceUri(export.base_uri.clone()),
+        capabilities: export.operations.iter().map(|operation| crate::SourceContextCapability {
+          operation: operation.clone(),
+          scope: crate::SourceContextCapabilityScope::Wildcard,
+        }).collect(),
+      });
     }
 
-    for ctx in index.program_contexts() {
-      let crate::SourceContextBase::ResourceUri(uri) = &ctx.base else {
-        continue;
-      };
-      if uri.starts_with("browser://dom") {
-        self.bind_resource_root(ctx.name, uri)?;
-      }
+    Ok(declarations)
+  }
+
+  fn direct_context_registry_for_scope(
+    &self,
+    tree: &mech_core::Program,
+    scope: &SourceScope,
+  ) -> MResult<RuntimeContextRegistry> {
+    let index = SourceIndex::from_program(tree);
+    let declarations = self.context_declarations_from_index_scope(&index, scope)?;
+    RuntimeContextRegistry::from_declarations(scope.clone(), &declarations)
+  }
+
+  fn read_context_resource(
+    &self,
+    binding: &RuntimeContextBinding,
+    path: &str,
+  ) -> MResult<Value> {
+    let base_uri = runtime_context_base_uri(binding);
+    if !runtime_context_allows_read(binding, path) {
+      return Err(MechError::new(RuntimeResourceCapabilityDenied {
+        context_name: binding.name.clone(),
+        operation: "read".to_string(),
+        path: path.to_string(),
+      }, None));
     }
-    Ok(())
+    self.resources.read(RuntimeResourceReadRequest {
+      base_uri,
+      path: path.to_string(),
+      context_name: binding.name.clone(),
+    })
+  }
+
+  fn write_context_resource(
+    &mut self,
+    binding: &RuntimeContextBinding,
+    path: &str,
+    value: Value,
+  ) -> MResult<()> {
+    let base_uri = runtime_context_base_uri(binding);
+    if !runtime_context_allows_write(binding, path) {
+      return Err(MechError::new(RuntimeResourceCapabilityDenied {
+        context_name: binding.name.clone(),
+        operation: "write".to_string(),
+        path: path.to_string(),
+      }, None));
+    }
+    self.resources.write(RuntimeResourceWriteRequest {
+      base_uri,
+      path: path.to_string(),
+      context_name: binding.name.clone(),
+      value,
+    })
+  }
+
+  fn expression_context_read(
+    &self,
+    registry: &RuntimeContextRegistry,
+    expression: &mech_core::Expression,
+  ) -> MResult<Option<Value>> {
+    let mech_core::Expression::Var(var) = expression else {
+      return Ok(None);
+    };
+    let Some(context) = &var.context else {
+      return Ok(None);
+    };
+    let target = context.to_string();
+    let Some(binding) = registry.get(&target) else {
+      return Ok(None);
+    };
+    Ok(Some(resolve_runtime_value(self.read_context_resource(binding, &var.name.to_string())?)))
   }
 
   fn run_tree_on_program(
@@ -232,62 +320,58 @@ impl MechRuntime {
     program: &mut MechProgram,
     tree: &mech_core::Program,
   ) -> MResult<Value> {
-    if !self.program_has_browser_resource_forms(tree) {
-      return program.run_tree(tree);
-    }
-
+    let registry = self.direct_context_registry_for_scope(tree, &SourceScope::Program)?;
     let mut result = Value::Empty;
     for (code, comment) in program_codes(tree) {
       match code {
-        mech_core::MechCode::Statement(mech_core::Statement::ContextDeclaration(ctx))
-          if self.is_browser_dom_context_declaration(ctx) =>
-        {
+        mech_core::MechCode::Import(_)
+        | mech_core::MechCode::Statement(mech_core::Statement::ImportDeclaration(_))
+        | mech_core::MechCode::Statement(mech_core::Statement::ExportDeclaration(_))
+        | mech_core::MechCode::Statement(mech_core::Statement::ContextDeclaration(_)) => {
           result = Value::Empty;
         }
-        mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def))
-          if self.variable_define_targets_browser_binding(var_def) =>
-        {
-          let expression = self.lower_browser_resource_reads_in_expression(&var_def.expression)?;
-          let value = self.evaluate_expression_on_program(program, &expression)?;
-          bind_runtime_value_on_program(program, &var_def.var, resolve_runtime_value(value.clone()), var_def.mutable)?;
-          result = value;
-        }
         mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)) => {
-          let expression = self.lower_browser_resource_reads_in_expression(&var_def.expression)?;
-          let mut var_def = var_def.clone();
-          var_def.expression = expression;
-          let single = single_code_program(
-            mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)),
-            comment.clone(),
-          );
-          result = program.run_tree(&single)?;
-        }
-        mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign))
-          if self.assignment_targets_browser_resource(assign) =>
-        {
-          let expression = self.lower_browser_resource_reads_in_expression(&assign.expression)?;
-          let value = self.evaluate_expression_on_program(program, &expression)?;
-          let binding = assign.target.context.as_ref().expect("checked browser binding").to_string();
-          self.write_bound_resource(
-            &binding,
-            &assign.target.name.to_string(),
-            &resolve_runtime_value(value.clone()),
-          )?;
-          result = value;
+          if let Some(context) = &var_def.var.context {
+            let target = context.to_string();
+            if let Some(binding) = registry.get(&target).cloned() {
+              let value = resolve_runtime_value(self.evaluate_expression_on_program(program, &var_def.expression)?);
+              self.write_context_resource(&binding, &var_def.var.name.to_string(), value.clone())?;
+              result = value;
+            } else {
+              let single = single_code_program(code.clone(), comment.clone());
+              result = program.run_tree(&single)?;
+            }
+          } else if let Some(value) = self.expression_context_read(&registry, &var_def.expression)? {
+            bind_runtime_value_on_program(program, &var_def.var, value.clone(), var_def.mutable)?;
+            result = value;
+          } else {
+            let single = single_code_program(code.clone(), comment.clone());
+            result = program.run_tree(&single)?;
+          }
         }
         mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)) => {
-          let mut assign = assign.clone();
-          assign.expression = self.lower_browser_resource_reads_in_expression(&assign.expression)?;
-          let single = single_code_program(
-            mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)),
-            comment.clone(),
-          );
-          result = program.run_tree(&single)?;
+          if let Some(context) = &assign.target.context {
+            let target = context.to_string();
+            if let Some(binding) = registry.get(&target).cloned() {
+              let value = resolve_runtime_value(self.evaluate_expression_on_program(program, &assign.expression)?);
+              self.write_context_resource(&binding, &assign.target.name.to_string(), value.clone())?;
+              result = value;
+            } else {
+              let single = single_code_program(code.clone(), comment.clone());
+              result = program.run_tree(&single)?;
+            }
+          } else {
+            let single = single_code_program(code.clone(), comment.clone());
+            result = program.run_tree(&single)?;
+          }
         }
         mech_core::MechCode::Expression(expression) => {
-          let expression = self.lower_browser_resource_reads_in_expression(expression)?;
-          let single = single_code_program(mech_core::MechCode::Expression(expression), comment.clone());
-          result = program.run_tree(&single)?;
+          if let Some(value) = self.expression_context_read(&registry, expression)? {
+            result = value;
+          } else {
+            let single = single_code_program(code.clone(), comment.clone());
+            result = program.run_tree(&single)?;
+          }
         }
         _ => {
           let single = single_code_program(code.clone(), comment.clone());
@@ -296,550 +380,6 @@ impl MechRuntime {
       }
     }
     Ok(result)
-  }
-
-  fn program_has_browser_resource_forms(&self, tree: &mech_core::Program) -> bool {
-    program_codes(tree).any(|(code, _)| match code {
-      mech_core::MechCode::Statement(mech_core::Statement::ContextDeclaration(ctx)) => {
-        self.is_browser_dom_context_declaration(ctx)
-      }
-      mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)) => {
-        self.variable_define_targets_browser_binding(var_def)
-          || self.expression_reads_browser_resource(&var_def.expression)
-      }
-      mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)) => {
-        self.assignment_targets_browser_resource(assign)
-          || self.expression_reads_browser_resource(&assign.expression)
-      }
-      mech_core::MechCode::Expression(expression) => {
-        self.expression_reads_browser_resource(expression)
-      }
-      _ => false,
-    })
-  }
-
-  fn is_browser_dom_context_declaration(&self, ctx: &mech_core::ContextDeclaration) -> bool {
-    match &ctx.base {
-      mech_core::ContextBase::ResourceUri(uri) => uri.to_string().starts_with("browser://dom/"),
-      _ => false,
-    }
-  }
-
-  fn is_browser_dom_resource_binding(&self, binding: &str) -> bool {
-    self
-      .resource_bindings
-      .get(binding)
-      .is_some_and(|binding| binding.base_uri == BROWSER_DOM_PROVIDER_URI)
-  }
-
-  fn variable_define_targets_browser_binding(&self, var_def: &mech_core::VariableDefine) -> bool {
-    var_def
-      .var
-      .context
-      .as_ref()
-      .is_some_and(|context| self.is_browser_dom_resource_binding(&context.to_string()))
-  }
-
-  fn assignment_targets_browser_resource(&self, assign: &mech_core::VariableAssign) -> bool {
-    assign
-      .target
-      .context
-      .as_ref()
-      .is_some_and(|context| self.is_browser_dom_resource_binding(&context.to_string()))
-  }
-
-  fn expression_reads_browser_resource(&self, expression: &mech_core::Expression) -> bool {
-    match expression {
-      mech_core::Expression::Var(var) => var
-        .context
-        .as_ref()
-        .is_some_and(|context| self.is_browser_dom_resource_binding(&context.to_string())),
-      mech_core::Expression::Formula(factor) => self.factor_reads_browser_resource(factor),
-      mech_core::Expression::FunctionCall(call) => call
-        .args
-        .iter()
-        .any(|(_, expression)| self.expression_reads_browser_resource(expression)),
-      mech_core::Expression::FsmPipe(pipe) => pipe
-        .start
-        .args
-        .as_ref()
-        .is_some_and(|args| args.iter().any(|(_, expression)| self.expression_reads_browser_resource(expression))),
-      mech_core::Expression::Literal(_) => false,
-      mech_core::Expression::Match(match_expression) => {
-        self.expression_reads_browser_resource(&match_expression.source)
-          || match_expression.arms.iter().any(|arm| {
-            arm
-              .guard
-              .as_ref()
-              .is_some_and(|guard| self.expression_reads_browser_resource(guard))
-              || self.expression_reads_browser_resource(&arm.expression)
-          })
-      }
-      mech_core::Expression::Range(range) => {
-        self.factor_reads_browser_resource(&range.start)
-          || range
-            .increment
-            .as_ref()
-            .is_some_and(|(_, increment)| self.factor_reads_browser_resource(increment))
-          || self.factor_reads_browser_resource(&range.terminal)
-      }
-      mech_core::Expression::Slice(slice) => self.slice_reads_browser_resource(slice),
-      mech_core::Expression::Structure(structure) => self.structure_reads_browser_resource(structure),
-      mech_core::Expression::SetComprehension(comprehension) => {
-        self.expression_reads_browser_resource(&comprehension.expression)
-          || comprehension
-            .qualifiers
-            .iter()
-            .any(|qualifier| self.comprehension_qualifier_reads_browser_resource(qualifier))
-      }
-      mech_core::Expression::MatrixComprehension(comprehension) => {
-        self.expression_reads_browser_resource(&comprehension.expression)
-          || comprehension
-            .qualifiers
-            .iter()
-            .any(|qualifier| self.comprehension_qualifier_reads_browser_resource(qualifier))
-      }
-    }
-  }
-
-  fn factor_reads_browser_resource(&self, factor: &mech_core::Factor) -> bool {
-    match factor {
-      mech_core::Factor::Expression(expression) => self.expression_reads_browser_resource(expression),
-      mech_core::Factor::Negate(factor)
-      | mech_core::Factor::Not(factor)
-      | mech_core::Factor::Parenthetical(factor)
-      | mech_core::Factor::Transpose(factor) => self.factor_reads_browser_resource(factor),
-      mech_core::Factor::Term(term) => {
-        self.factor_reads_browser_resource(&term.lhs)
-          || term
-            .rhs
-            .iter()
-            .any(|(_, factor)| self.factor_reads_browser_resource(factor))
-      }
-    }
-  }
-
-  fn slice_reads_browser_resource(&self, slice: &mech_core::Slice) -> bool {
-    slice
-      .context
-      .as_ref()
-      .is_some_and(|context| self.is_browser_dom_resource_binding(&context.to_string()))
-      || slice
-        .subscript
-        .iter()
-        .any(|subscript| self.subscript_reads_browser_resource(subscript))
-  }
-
-  fn subscript_reads_browser_resource(&self, subscript: &mech_core::Subscript) -> bool {
-    match subscript {
-      mech_core::Subscript::Brace(subscripts) | mech_core::Subscript::Bracket(subscripts) => {
-        subscripts
-          .iter()
-          .any(|subscript| self.subscript_reads_browser_resource(subscript))
-      }
-      mech_core::Subscript::Formula(factor) => self.factor_reads_browser_resource(factor),
-      mech_core::Subscript::Range(range) => {
-        self.factor_reads_browser_resource(&range.start)
-          || range
-            .increment
-            .as_ref()
-            .is_some_and(|(_, increment)| self.factor_reads_browser_resource(increment))
-          || self.factor_reads_browser_resource(&range.terminal)
-      }
-      _ => false,
-    }
-  }
-
-  fn structure_reads_browser_resource(&self, structure: &mech_core::Structure) -> bool {
-    match structure {
-      mech_core::Structure::Empty => false,
-      mech_core::Structure::Map(map) => map.elements.iter().any(|mapping| {
-        self.expression_reads_browser_resource(&mapping.key)
-          || self.expression_reads_browser_resource(&mapping.value)
-      }),
-      mech_core::Structure::Matrix(matrix) => matrix.rows.iter().any(|row| {
-        row
-          .columns
-          .iter()
-          .any(|column| self.expression_reads_browser_resource(&column.element))
-      }),
-      mech_core::Structure::Record(record) => record
-        .bindings
-        .iter()
-        .any(|binding| self.expression_reads_browser_resource(&binding.value)),
-      mech_core::Structure::Set(set) => set
-        .elements
-        .iter()
-        .any(|expression| self.expression_reads_browser_resource(expression)),
-      mech_core::Structure::Table(table) => table.rows.iter().any(|row| {
-        row
-          .columns
-          .iter()
-          .any(|column| self.expression_reads_browser_resource(&column.element))
-      }),
-      mech_core::Structure::Tuple(tuple) => tuple
-        .elements
-        .iter()
-        .any(|expression| self.expression_reads_browser_resource(expression)),
-      mech_core::Structure::TupleStruct(tuple_struct) => {
-        self.expression_reads_browser_resource(&tuple_struct.value)
-      }
-    }
-  }
-
-  fn comprehension_qualifier_reads_browser_resource(
-    &self,
-    qualifier: &mech_core::ComprehensionQualifier,
-  ) -> bool {
-    match qualifier {
-      mech_core::ComprehensionQualifier::Generator((_, expression)) => {
-        self.expression_reads_browser_resource(expression)
-      }
-      mech_core::ComprehensionQualifier::Filter(expression) => {
-        self.expression_reads_browser_resource(expression)
-      }
-      mech_core::ComprehensionQualifier::Let(var_def) => {
-        self.expression_reads_browser_resource(&var_def.expression)
-      }
-    }
-  }
-
-  fn lower_browser_resource_reads_in_expression(
-    &mut self,
-    expression: &mech_core::Expression,
-  ) -> MResult<mech_core::Expression> {
-    match expression {
-      mech_core::Expression::Var(var) => {
-        let Some(context) = &var.context else {
-          return Ok(expression.clone());
-        };
-        let binding = context.to_string();
-        if !self.is_browser_dom_resource_binding(&binding) {
-          return Ok(expression.clone());
-        }
-        let value = resolve_runtime_value(
-          self.read_bound_resource(&binding, &var.name.to_string())?,
-        );
-        let Value::String(value) = value else {
-          return Err(browser_runtime_resource_error(
-            var.name.to_string(),
-            "browser DOM resource reads must return string values in this PR",
-          ));
-        };
-        string_value_expression(value.borrow().clone())
-      }
-      mech_core::Expression::Formula(factor) => {
-        Ok(mech_core::Expression::Formula(self.lower_browser_resource_reads_in_factor(factor)?))
-      }
-      mech_core::Expression::FunctionCall(call) => {
-        let args = call
-          .args
-          .iter()
-          .map(|(name, expression)| {
-            Ok((
-              name.clone(),
-              self.lower_browser_resource_reads_in_expression(expression)?,
-            ))
-          })
-          .collect::<MResult<Vec<_>>>()?;
-        Ok(mech_core::Expression::FunctionCall(mech_core::FunctionCall {
-          name: call.name.clone(),
-          args,
-        }))
-      }
-      mech_core::Expression::FsmPipe(pipe) => {
-        let mut pipe = pipe.clone();
-        if let Some(args) = &pipe.start.args {
-          pipe.start.args = Some(
-            args
-              .iter()
-              .map(|(name, expression)| {
-                Ok((
-                  name.clone(),
-                  self.lower_browser_resource_reads_in_expression(expression)?,
-                ))
-              })
-              .collect::<MResult<Vec<_>>>()?,
-          );
-        }
-        Ok(mech_core::Expression::FsmPipe(pipe))
-      }
-      mech_core::Expression::Literal(_) => Ok(expression.clone()),
-      mech_core::Expression::Match(match_expression) => {
-        let mut match_expression = match_expression.as_ref().clone();
-        match_expression.source = self.lower_browser_resource_reads_in_expression(&match_expression.source)?;
-        match_expression.arms = match_expression
-          .arms
-          .iter()
-          .map(|arm| {
-            Ok(mech_core::MatchArm {
-              pattern: arm.pattern.clone(),
-              guard: arm
-                .guard
-                .as_ref()
-                .map(|guard| self.lower_browser_resource_reads_in_expression(guard))
-                .transpose()?,
-              expression: self.lower_browser_resource_reads_in_expression(&arm.expression)?,
-            })
-          })
-          .collect::<MResult<Vec<_>>>()?;
-        Ok(mech_core::Expression::Match(Box::new(match_expression)))
-      }
-      mech_core::Expression::Range(range) => {
-        let mut range = range.as_ref().clone();
-        range.start = self.lower_browser_resource_reads_in_factor(&range.start)?;
-        range.increment = match &range.increment {
-          Some((operator, increment)) => Some((
-            operator.clone(),
-            self.lower_browser_resource_reads_in_factor(increment)?,
-          )),
-          None => None,
-        };
-        range.terminal = self.lower_browser_resource_reads_in_factor(&range.terminal)?;
-        Ok(mech_core::Expression::Range(Box::new(range)))
-      }
-      mech_core::Expression::Slice(slice) => {
-        Ok(mech_core::Expression::Slice(self.lower_browser_resource_reads_in_slice(slice)?))
-      }
-      mech_core::Expression::Structure(structure) => {
-        Ok(mech_core::Expression::Structure(self.lower_browser_resource_reads_in_structure(structure)?))
-      }
-      mech_core::Expression::SetComprehension(comprehension) => {
-        let mut comprehension = comprehension.as_ref().clone();
-        comprehension.expression = self.lower_browser_resource_reads_in_expression(&comprehension.expression)?;
-        comprehension.qualifiers = comprehension
-          .qualifiers
-          .iter()
-          .map(|qualifier| self.lower_browser_resource_reads_in_comprehension_qualifier(qualifier))
-          .collect::<MResult<Vec<_>>>()?;
-        Ok(mech_core::Expression::SetComprehension(Box::new(comprehension)))
-      }
-      mech_core::Expression::MatrixComprehension(comprehension) => {
-        let mut comprehension = comprehension.as_ref().clone();
-        comprehension.expression = self.lower_browser_resource_reads_in_expression(&comprehension.expression)?;
-        comprehension.qualifiers = comprehension
-          .qualifiers
-          .iter()
-          .map(|qualifier| self.lower_browser_resource_reads_in_comprehension_qualifier(qualifier))
-          .collect::<MResult<Vec<_>>>()?;
-        Ok(mech_core::Expression::MatrixComprehension(Box::new(comprehension)))
-      }
-    }
-  }
-
-  fn lower_browser_resource_reads_in_factor(
-    &mut self,
-    factor: &mech_core::Factor,
-  ) -> MResult<mech_core::Factor> {
-    match factor {
-      mech_core::Factor::Expression(expression) => Ok(mech_core::Factor::Expression(Box::new(
-        self.lower_browser_resource_reads_in_expression(expression)?,
-      ))),
-      mech_core::Factor::Negate(factor) => Ok(mech_core::Factor::Negate(Box::new(
-        self.lower_browser_resource_reads_in_factor(factor)?,
-      ))),
-      mech_core::Factor::Not(factor) => Ok(mech_core::Factor::Not(Box::new(
-        self.lower_browser_resource_reads_in_factor(factor)?,
-      ))),
-      mech_core::Factor::Parenthetical(factor) => Ok(mech_core::Factor::Parenthetical(Box::new(
-        self.lower_browser_resource_reads_in_factor(factor)?,
-      ))),
-      mech_core::Factor::Term(term) => {
-        let rhs = term
-          .rhs
-          .iter()
-          .map(|(operator, factor)| {
-            Ok((operator.clone(), self.lower_browser_resource_reads_in_factor(factor)?))
-          })
-          .collect::<MResult<Vec<_>>>()?;
-        Ok(mech_core::Factor::Term(Box::new(mech_core::Term {
-          lhs: self.lower_browser_resource_reads_in_factor(&term.lhs)?,
-          rhs,
-        })))
-      }
-      mech_core::Factor::Transpose(factor) => Ok(mech_core::Factor::Transpose(Box::new(
-        self.lower_browser_resource_reads_in_factor(factor)?,
-      ))),
-    }
-  }
-
-  fn lower_browser_resource_reads_in_slice(
-    &mut self,
-    slice: &mech_core::Slice,
-  ) -> MResult<mech_core::Slice> {
-    if slice
-      .context
-      .as_ref()
-      .is_some_and(|context| self.is_browser_dom_resource_binding(&context.to_string()))
-    {
-      return Err(browser_runtime_resource_error(
-        slice.name.to_string(),
-        "context-addressed slices are not supported for browser DOM resources in this PR",
-      ));
-    }
-    Ok(mech_core::Slice {
-      name: slice.name.clone(),
-      context: slice.context.clone(),
-      subscript: slice
-        .subscript
-        .iter()
-        .map(|subscript| self.lower_browser_resource_reads_in_subscript(subscript))
-        .collect::<MResult<Vec<_>>>()?,
-    })
-  }
-
-  fn lower_browser_resource_reads_in_subscript(
-    &mut self,
-    subscript: &mech_core::Subscript,
-  ) -> MResult<mech_core::Subscript> {
-    match subscript {
-      mech_core::Subscript::Brace(subscripts) => Ok(mech_core::Subscript::Brace(
-        subscripts
-          .iter()
-          .map(|subscript| self.lower_browser_resource_reads_in_subscript(subscript))
-          .collect::<MResult<Vec<_>>>()?,
-      )),
-      mech_core::Subscript::Bracket(subscripts) => Ok(mech_core::Subscript::Bracket(
-        subscripts
-          .iter()
-          .map(|subscript| self.lower_browser_resource_reads_in_subscript(subscript))
-          .collect::<MResult<Vec<_>>>()?,
-      )),
-      mech_core::Subscript::Formula(factor) => Ok(mech_core::Subscript::Formula(
-        self.lower_browser_resource_reads_in_factor(factor)?,
-      )),
-      mech_core::Subscript::Range(range) => {
-        let mut range = range.clone();
-        range.start = self.lower_browser_resource_reads_in_factor(&range.start)?;
-        range.increment = match &range.increment {
-          Some((operator, increment)) => Some((
-            operator.clone(),
-            self.lower_browser_resource_reads_in_factor(increment)?,
-          )),
-          None => None,
-        };
-        range.terminal = self.lower_browser_resource_reads_in_factor(&range.terminal)?;
-        Ok(mech_core::Subscript::Range(range))
-      }
-      _ => Ok(subscript.clone()),
-    }
-  }
-
-  fn lower_browser_resource_reads_in_structure(
-    &mut self,
-    structure: &mech_core::Structure,
-  ) -> MResult<mech_core::Structure> {
-    match structure {
-      mech_core::Structure::Empty => Ok(mech_core::Structure::Empty),
-      mech_core::Structure::Map(map) => Ok(mech_core::Structure::Map(mech_core::Map {
-        elements: map
-          .elements
-          .iter()
-          .map(|mapping| {
-            Ok(mech_core::Mapping {
-              key: self.lower_browser_resource_reads_in_expression(&mapping.key)?,
-              value: self.lower_browser_resource_reads_in_expression(&mapping.value)?,
-            })
-          })
-          .collect::<MResult<Vec<_>>>()?,
-      })),
-      mech_core::Structure::Matrix(matrix) => Ok(mech_core::Structure::Matrix(mech_core::nodes::Matrix {
-        rows: matrix
-          .rows
-          .iter()
-          .map(|row| {
-            Ok(mech_core::MatrixRow {
-              columns: row
-                .columns
-                .iter()
-                .map(|column| {
-                  Ok(mech_core::MatrixColumn {
-                    element: self.lower_browser_resource_reads_in_expression(&column.element)?,
-                  })
-                })
-                .collect::<MResult<Vec<_>>>()?,
-            })
-          })
-          .collect::<MResult<Vec<_>>>()?,
-      })),
-      mech_core::Structure::Record(record) => Ok(mech_core::Structure::Record(mech_core::Record {
-        bindings: record
-          .bindings
-          .iter()
-          .map(|binding| {
-            Ok(mech_core::Binding {
-              name: binding.name.clone(),
-              kind: binding.kind.clone(),
-              value: self.lower_browser_resource_reads_in_expression(&binding.value)?,
-            })
-          })
-          .collect::<MResult<Vec<_>>>()?,
-      })),
-      mech_core::Structure::Set(set) => Ok(mech_core::Structure::Set(mech_core::Set {
-        elements: set
-          .elements
-          .iter()
-          .map(|expression| self.lower_browser_resource_reads_in_expression(expression))
-          .collect::<MResult<Vec<_>>>()?,
-      })),
-      mech_core::Structure::Table(table) => Ok(mech_core::Structure::Table(mech_core::Table {
-        header: table.header.clone(),
-        rows: table
-          .rows
-          .iter()
-          .map(|row| {
-            Ok(mech_core::TableRow {
-              columns: row
-                .columns
-                .iter()
-                .map(|column| {
-                  Ok(mech_core::TableColumn {
-                    element: self.lower_browser_resource_reads_in_expression(&column.element)?,
-                  })
-                })
-                .collect::<MResult<Vec<_>>>()?,
-            })
-          })
-          .collect::<MResult<Vec<_>>>()?,
-      })),
-      mech_core::Structure::Tuple(tuple) => Ok(mech_core::Structure::Tuple(mech_core::Tuple {
-        elements: tuple
-          .elements
-          .iter()
-          .map(|expression| self.lower_browser_resource_reads_in_expression(expression))
-          .collect::<MResult<Vec<_>>>()?,
-      })),
-      mech_core::Structure::TupleStruct(tuple_struct) => {
-        Ok(mech_core::Structure::TupleStruct(mech_core::TupleStruct {
-          name: tuple_struct.name.clone(),
-          value: Box::new(self.lower_browser_resource_reads_in_expression(&tuple_struct.value)?),
-        }))
-      }
-    }
-  }
-
-  fn lower_browser_resource_reads_in_comprehension_qualifier(
-    &mut self,
-    qualifier: &mech_core::ComprehensionQualifier,
-  ) -> MResult<mech_core::ComprehensionQualifier> {
-    match qualifier {
-      mech_core::ComprehensionQualifier::Generator((pattern, expression)) => {
-        Ok(mech_core::ComprehensionQualifier::Generator((
-          pattern.clone(),
-          self.lower_browser_resource_reads_in_expression(expression)?,
-        )))
-      }
-      mech_core::ComprehensionQualifier::Filter(expression) => {
-        Ok(mech_core::ComprehensionQualifier::Filter(
-          self.lower_browser_resource_reads_in_expression(expression)?,
-        ))
-      }
-      mech_core::ComprehensionQualifier::Let(var_def) => {
-        let mut var_def = var_def.clone();
-        var_def.expression = self.lower_browser_resource_reads_in_expression(&var_def.expression)?;
-        Ok(mech_core::ComprehensionQualifier::Let(var_def))
-      }
-    }
   }
 
   fn evaluate_expression_on_program(
@@ -871,8 +411,6 @@ impl MechRuntime {
     )?;
 
     let tree = mech_syntax::parser::parse(source.trim())?;
-    self.bind_browser_resource_roots_from_program(&tree)?;
-
     let program_config = self.program.config.clone();
     let mut program = std::mem::replace(
       &mut self.program,
@@ -945,8 +483,6 @@ impl MechRuntime {
         task_id: context.task,
       },
     )?;
-
-    self.bind_browser_resource_roots_from_program(tree)?;
 
     let program_config = self.program.config.clone();
     let mut program = std::mem::replace(
@@ -1260,8 +796,8 @@ impl MechRuntime {
 
     let result = match source {
       MechSourceCode::String(source) => {
-        let stripped = strip_module_declarations_for_execution(source);
-        program.run_source(&MechSourceCode::String(stripped))
+        let tree = mech_syntax::parser::parse(source.trim())?;
+        self.run_tree_on_program(context, program, &tree)
       }
       other => program.run_source(other),
     };
@@ -1583,16 +1119,7 @@ fn exports_for_scope<'a>(
     .unwrap_or(&[])
 }
 
-pub fn strip_module_declarations_for_execution(source: &str) -> String {
-  source
-    .lines()
-    .filter(|line| {
-      let trimmed = line.trim_start();
-      !(trimmed.starts_with("+>") || trimmed.starts_with("<+") || trimmed.starts_with("@"))
-    })
-    .collect::<Vec<_>>()
-    .join("\n")
-}
+
 
 
 #[cfg(test)]

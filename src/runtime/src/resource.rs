@@ -211,6 +211,10 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
   }
 }
 
+pub fn resource_base_matches(base: &str, candidate: &str) -> bool {
+  candidate == base || candidate.strip_prefix(base).is_some_and(|suffix| suffix.starts_with('/'))
+}
+
 fn resource_uri_scheme(uri: &str) -> MResult<&str> {
   let Some((scheme, _rest)) = uri.split_once("://") else {
     return Err(MechError::new(

@@ -2179,14 +2179,14 @@ fn direct_runtime_manifest_context_import_read_uses_browser_binding_before_lower
 }
 
 #[test]
-fn direct_runtime_manifest_context_import_write_reports_current_addressed_assignment_limit() {
+fn direct_runtime_manifest_context_import_write_uses_provider_lookup() {
   let mut runtime = RuntimeBuilder::new().build().unwrap();
   let result = runtime.run_string("+> @ui := browser/dom
 @ui/counter/_text := \"hello\"
 ");
-  assert!(result.is_err(), "direct addressed assignment is not yet supported by this runtime path");
+  assert!(result.is_err(), "browser write should reach provider lookup without a browser provider");
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("AddressedAssignmentUnsupported"), "expected current direct assignment limit, got {error}");
+  assert!(error.contains("RuntimeResourceProviderNotFound"), "expected provider lookup, got {error}");
   assert!(!error.contains("UnknownAddressTarget"), "@ui should not be treated as an unknown address target: {error}");
 }
 
@@ -2286,4 +2286,109 @@ fn module_manifest_catalog_validates_builder_manifests() {
     let result = RuntimeBuilder::new().module_manifest(manifest);
     assert!(result.is_err(), "invalid manifest should be rejected by builder/catalog");
   }
+}
+
+#[derive(Debug, Clone, Default)]
+struct InMemoryCliProvider {
+  env: std::collections::HashMap<String, String>,
+  stdout: std::sync::Arc<std::sync::Mutex<Vec<String>>>,
+  stderr: std::sync::Arc<std::sync::Mutex<Vec<String>>>,
+}
+
+impl InMemoryCliProvider {
+  fn with_env(mut self, name: &str, value: &str) -> Self {
+    self.env.insert(name.to_string(), value.to_string());
+    self
+  }
+}
+
+impl RuntimeResourceProvider for InMemoryCliProvider {
+  fn scheme(&self) -> &str { "cli" }
+
+  fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
+    if request.base_uri != "cli://env" {
+      return Err(mech_core::MechError::new(RuntimeResourceWriteUnsupported {
+        scheme: self.scheme().to_string(),
+        base_uri: request.base_uri,
+        path: request.path,
+      }, None));
+    }
+    let value = self.env.get(&request.path).cloned().unwrap_or_default();
+    Ok(Value::String(Ref::new(value)))
+  }
+
+  fn write(&mut self, request: RuntimeResourceWriteRequest) -> mech_core::MResult<()> {
+    let Value::String(value) = request.value else { return Ok(()); };
+    match request.base_uri.as_str() {
+      "cli://stdout" => self.stdout.lock().unwrap().push(value.borrow().clone()),
+      "cli://stderr" => self.stderr.lock().unwrap().push(value.borrow().clone()),
+      _ => return Err(mech_core::MechError::new(RuntimeResourceWriteUnsupported {
+        scheme: self.scheme().to_string(),
+        base_uri: request.base_uri,
+        path: request.path,
+      }, None)),
+    }
+    Ok(())
+  }
+}
+
+#[test]
+fn cli_context_direct_read_uses_manifest_boundary() {
+  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/mech-home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  runtime.run_string("+> @env := cli/env\nhome := @env/HOME\n").unwrap();
+  let id = hash_str("home");
+  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  match value {
+    Value::String(value) => assert_eq!(&*value.borrow(), "/tmp/mech-home"),
+    other => panic!("expected string home, got {other:?}"),
+  }
+}
+
+#[test]
+fn cli_context_direct_write_uses_manifest_boundary() {
+  let provider = InMemoryCliProvider::default();
+  let stdout = provider.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  runtime.run_string("+> @out := cli/stdout\n@out/line := \"hello\"\n").unwrap();
+  assert_eq!(stdout.lock().unwrap().as_slice(), &["hello".to_string()]);
+}
+
+#[test]
+fn cli_context_module_read_exports_value() {
+  let root = setup_modules("+> @env := cli/env\nhome := @env/HOME\n<+ home\nhome\n");
+  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/module-home");
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).resource_provider(Box::new(provider)).build().unwrap();
+  runtime.grant_capability(runtime_read_grant("cli://env", "HOME")).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+  let result = match result {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  match result {
+    Value::String(value) => assert_eq!(&*value.borrow(), "/tmp/module-home"),
+    other => panic!("expected string home, got {other:?}"),
+  }
+}
+
+#[test]
+fn cli_context_module_write_is_not_stripped() {
+  let root = setup_modules("+> @out := cli/stdout\n@out/line := \"hello\"\n");
+  let provider = InMemoryCliProvider::default();
+  let stdout = provider.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).resource_provider(Box::new(provider)).build().unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  runtime.run_module(version).unwrap();
+  assert_eq!(stdout.lock().unwrap().as_slice(), &["hello".to_string()]);
+}
+
+#[test]
+fn cli_context_capabilities_are_enforced() {
+  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  let read_error = runtime.run_string("+> @out := cli/stdout\nvalue := @out/line\n").unwrap_err();
+  assert!(format!("{read_error:?}").contains("RuntimeResourceCapabilityDenied"));
+  let write_error = runtime.run_string("+> @env := cli/env\n@env/HOME := \"nope\"\n").unwrap_err();
+  assert!(format!("{write_error:?}").contains("RuntimeResourceCapabilityDenied"));
 }
