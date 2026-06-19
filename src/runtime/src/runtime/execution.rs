@@ -386,7 +386,7 @@ impl MechRuntime {
     path: &str,
     value: Value,
   ) -> MResult<mech_core::Expression> {
-    let name = format!("__mech_ctx_{}_{}", hash_str(target), hash_str(path));
+    let name = format!("mech-internal-context-{}-{}", hash_str(target), hash_str(path));
     let var = mech_core::Var {
       name: identifier_from_str(&name),
       context: None,
