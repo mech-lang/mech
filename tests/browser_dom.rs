@@ -236,7 +236,7 @@ fn program_browser_resource_write_uses_runtime_host() {
   );
 
   runtime
-    .run_string("@browser := browser://dom/\nbody/header/title@browser = \"Hello\"")
+    .run_string("@browser := browser://dom/\n@browser/body/header/title = \"Hello\"")
     .unwrap();
 
   assert_eq!(host.writes(), vec![("body/header/title".to_string(), "Hello".to_string())]);
@@ -253,7 +253,7 @@ fn program_browser_resource_read_uses_runtime_host() {
   );
 
   let value = runtime
-    .run_string("@browser := browser://dom/\nx := body/search/_value@browser")
+    .run_string("@browser := browser://dom/\nx := @browser/body/search/_value")
     .unwrap();
 
   assert_eq!(value.as_string().unwrap().borrow().as_str(), "query");
@@ -271,7 +271,7 @@ fn program_browser_resource_define_does_not_write() {
   );
 
   runtime
-    .run_string("@browser := browser://dom/\ntitle@browser := \"Hello\"")
+    .run_string("@browser := browser://dom/\n@browser/title := \"Hello\"")
     .unwrap();
 
   assert_eq!(host.write_count(), 0);
@@ -288,7 +288,7 @@ fn runtime_browser_resource_binding_applies_before_following_write() {
   );
 
   runtime
-    .run_string("@browser := browser://dom/\nbody/header/title@browser = \"Hello\"")
+    .run_string("@browser := browser://dom/\n@browser/body/header/title = \"Hello\"")
     .unwrap();
 
   assert_eq!(
@@ -310,7 +310,7 @@ fn program_browser_resource_write_accepts_string_variable() {
 
   runtime
     .run_string(
-      "@browser := browser://dom/\nsome-string-var := \"Hello\"\nbody/header/title@browser = some-string-var",
+      "@browser := browser://dom/\nsome-string-var := \"Hello\"\n@browser/body/header/title = some-string-var",
     )
     .unwrap();
 
@@ -329,7 +329,7 @@ fn program_browser_resource_read_inside_expression() {
 
   let value = runtime
     .run_string(r#"@browser := browser://dom/
-message := "Search: " + body/search/_value@browser"#)
+message := "Search: " + @browser/body/search/_value"#)
     .unwrap();
 
   assert_eq!(value.as_string().unwrap().borrow().as_str(), "Search: query");
@@ -347,7 +347,7 @@ fn program_browser_resource_write_rhs_reads_browser_resource() {
 
   runtime
     .run_string(
-      "@browser := browser://dom/\nbody/header/title@browser = body/search/_value@browser",
+      "@browser := browser://dom/\n@browser/body/header/title = @browser/body/search/_value",
     )
     .unwrap();
 
@@ -366,7 +366,7 @@ fn program_browser_resource_write_rhs_combines_string_and_browser_resource() {
 
   runtime
     .run_string(r#"@browser := browser://dom/
-body/header/title@browser = "Search: " + body/search/_value@browser"#)
+@browser/body/header/title = "Search: " + @browser/body/search/_value"#)
     .unwrap();
 
   assert_eq!(host.read_count(), 1);
@@ -387,7 +387,7 @@ fn program_browser_resource_read_inside_expression_denied_before_host_access() {
   );
 
   let result = runtime.run_string(r#"@browser := browser://dom/
-message := "Search: " + body/search/_value@browser"#);
+message := "Search: " + @browser/body/search/_value"#);
 
   assert!(result.is_err());
   assert_eq!(host.read_count(), 0);
@@ -421,11 +421,11 @@ fn prefix_context_browser_roundtrip_works_and_read_only_input_write_is_denied() 
 
   runtime
     .run_string(r#"@browser := browser://dom/form/
-name := name/_value@browser
-output/_value@browser = name"#)
+name := @browser/name/_value
+@browser/output/_value = name"#)
     .unwrap();
   let denied = runtime.run_string(r#"@browser := browser://dom/form/
-name/_value@browser = "Grace""#);
+@browser/name/_value = "Grace""#);
 
   assert!(denied.is_err());
   assert_eq!(host.read_count(), 1);
