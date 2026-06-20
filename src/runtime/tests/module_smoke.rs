@@ -936,10 +936,10 @@ fn addressed_assignment_to_context_is_still_unsupported() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version);
-  assert!(result.is_err(), "prefix addressed assignment should not bypass context capability checks");
+  assert!(result.is_err(), "prefix addressed define should be rejected explicitly");
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("RuntimeResourceCapabilityDenied"), "expected capability error, got {error}");
-  assert!(error.contains("manual"), "expected context name in error, got {error}");
+  assert!(error.contains("RuntimeInvalidOperation"), "expected invalid operation error, got {error}");
+  assert!(error.contains("use `=` for context writes"), "expected context write hint, got {error}");
 }
 
 #[test]
@@ -949,10 +949,10 @@ fn addressed_assignment_with_docs_provider_is_still_unsupported() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).in_memory_docs(InMemoryDocsProvider::new()).build().unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version);
-  assert!(result.is_err(), "prefix addressed assignment should not bypass context capability checks");
+  assert!(result.is_err(), "prefix addressed define should be rejected explicitly");
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("RuntimeResourceCapabilityDenied"), "expected capability error, got {error}");
-  assert!(error.contains("manual"), "expected context name in error, got {error}");
+  assert!(error.contains("RuntimeInvalidOperation"), "expected invalid operation error, got {error}");
+  assert!(error.contains("use `=` for context writes"), "expected context write hint, got {error}");
 }
 
 #[test]

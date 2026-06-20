@@ -131,6 +131,13 @@ fn bare_capability_operation_is_rejected() {
 
 #[test]
 fn context_capability_paths_accept_slashes_and_underscores() {
+  assert!(parser::parse("@main := db://main{:read(users/*)}").is_ok());
+  assert!(parser::parse("@main := db://main{:read(users/name), :write(users/*)}").is_ok());
+  assert!(
+    parser::parse("@browser := browser://dom/{:read(body/search/_value), :write(body/header/title)}")
+      .is_ok()
+  );
+
   let stmts = statements("@browser := browser://dom/{:read(body/search/_value), :write(body/header/title)}");
   match &stmts[0] {
     Statement::ContextDeclaration(ctx) => {
@@ -146,6 +153,34 @@ fn context_capability_paths_accept_slashes_and_underscores() {
     }
     _ => panic!("expected context declaration"),
   }
+}
+
+#[test]
+fn context_capability_paths_extract_nested_wildcard_scopes() {
+  let stmts = statements("@main := db://main{:read(users/*), :write(users/name)}");
+  match &stmts[0] {
+    Statement::ContextDeclaration(ctx) => {
+      assert_eq!(ctx.capabilities.len(), 2);
+      match &ctx.capabilities[0].scope {
+        ContextCapabilityScope::Path(path) => assert_eq!(path.to_string(), "users/*"),
+        _ => panic!("expected read path capability"),
+      }
+      match &ctx.capabilities[1].scope {
+        ContextCapabilityScope::Path(path) => assert_eq!(path.to_string(), "users/name"),
+        _ => panic!("expected write path capability"),
+      }
+    }
+    _ => panic!("expected context declaration"),
+  }
+}
+
+#[test]
+fn context_capability_paths_reject_invalid_wildcard_placement() {
+  assert!(parser::parse("@main := db://main{:read(users*)}").is_err());
+  assert!(parser::parse("@main := db://main{:read(users/**)}").is_err());
+  assert!(parser::parse("@main := db://main{:read(users/*/name)}").is_err());
+  assert!(parser::parse("@main := db://main{:read(*users)}").is_err());
+  assert!(parser::parse("@main := db://main{:read(users/*foo)}").is_err());
 }
 
 #[test]

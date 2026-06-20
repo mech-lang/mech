@@ -864,11 +864,13 @@ impl MechRuntime {
     pending: &mut Vec<mech_core::SectionElement>,
     pending_codes: &mut Vec<(mech_core::MechCode, Option<mech_core::Comment>)>,
     result: &mut Value,
+    skip_non_context_imports: bool,
     code: &mech_core::MechCode,
     comment: &Option<mech_core::Comment>,
   ) -> MResult<()> {
     match code {
       mech_core::MechCode::Import(import) if Self::is_manifest_context_import(import) => Ok(()),
+      mech_core::MechCode::Import(_) if skip_non_context_imports => Ok(()),
       mech_core::MechCode::Statement(mech_core::Statement::ImportDeclaration(_))
       | mech_core::MechCode::Statement(mech_core::Statement::ContextDeclaration(_)) => Ok(()),
       mech_core::MechCode::Statement(mech_core::Statement::ExportDeclaration(export)) => {
@@ -951,6 +953,7 @@ impl MechRuntime {
     scope_hint: Option<&SourceScope>,
   ) -> MResult<Value> {
     let execution_scope = scope_hint.unwrap_or(&SourceScope::Program);
+    let skip_non_context_imports = scope_hint.is_some();
     let registry = self.direct_context_registry_for_scope(tree, execution_scope)?;
     let mut result = Value::Empty;
     let mut pending = Vec::new();
@@ -968,6 +971,7 @@ impl MechRuntime {
                 &mut pending,
                 &mut pending_codes,
                 &mut result,
+                skip_non_context_imports,
                 code,
                 comment,
               )?;
@@ -988,6 +992,7 @@ impl MechRuntime {
                 &mut pending,
                 &mut pending_codes,
                 &mut result,
+                skip_non_context_imports,
                 code,
                 comment,
               )?;

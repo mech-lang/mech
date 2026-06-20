@@ -220,7 +220,7 @@ fn context_address_path_token(input: ParseString) -> ParseResult<Token> {
   alt((alpha_token, digit_token, dash, slash, underscore, period))(input)
 }
 
-pub fn context_address_path(input: ParseString) -> ParseResult<Identifier> {
+fn context_address_path(input: ParseString) -> ParseResult<Identifier> {
   let (input, mut tokens) = many1(context_address_path_token)(input)?;
   let mut merged = Token::merge_tokens(&mut tokens).unwrap();
   merged.kind = TokenKind::Identifier;
