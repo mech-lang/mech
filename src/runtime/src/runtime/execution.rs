@@ -236,6 +236,10 @@ fn resolve_runtime_value(value: Value) -> Value {
 
 
 impl MechRuntime {
+  fn is_manifest_context_import(import: &mech_core::ModuleImport) -> bool {
+    matches!(import.alias, Some(mech_core::ModuleImportAlias::Context(_)))
+  }
+
 
   fn context_declarations_from_index_scope(
     &self,
@@ -860,12 +864,14 @@ impl MechRuntime {
     pending: &mut Vec<mech_core::SectionElement>,
     pending_codes: &mut Vec<(mech_core::MechCode, Option<mech_core::Comment>)>,
     result: &mut Value,
+    skip_non_context_imports: bool,
     code: &mech_core::MechCode,
     comment: &Option<mech_core::Comment>,
   ) -> MResult<()> {
     match code {
-      mech_core::MechCode::Import(_)
-      | mech_core::MechCode::Statement(mech_core::Statement::ImportDeclaration(_))
+      mech_core::MechCode::Import(import) if Self::is_manifest_context_import(import) => Ok(()),
+      mech_core::MechCode::Import(_) if skip_non_context_imports => Ok(()),
+      mech_core::MechCode::Statement(mech_core::Statement::ImportDeclaration(_))
       | mech_core::MechCode::Statement(mech_core::Statement::ContextDeclaration(_)) => Ok(()),
       mech_core::MechCode::Statement(mech_core::Statement::ExportDeclaration(export)) => {
         if !pending_codes.is_empty() {
@@ -888,11 +894,14 @@ impl MechRuntime {
               pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes)));
             }
             self.flush_direct_execution(program, pending, result)?;
-            let expression = self.resolve_context_reads_in_expression(context, program, registry, &var_def.expression)?;
-            let value = resolve_runtime_value(self.evaluate_expression_on_program(program, &expression)?);
-            self.write_context_resource(context, &binding, &var_def.var.name.to_string(), value.clone())?;
-            *result = value;
-            return Ok(());
+            return Err(MechError::new(RuntimeInvalidOperationError {
+              operation: "direct_context_define",
+              reason: format!(
+                "context-addressed path `@{}/{}` cannot be defined with `:=`; use `=` for context writes",
+                binding.name,
+                var_def.var.name.to_string()
+              ),
+            }, None));
           }
         }
         let code = self.resolve_context_reads_in_mech_code(
@@ -944,6 +953,7 @@ impl MechRuntime {
     scope_hint: Option<&SourceScope>,
   ) -> MResult<Value> {
     let execution_scope = scope_hint.unwrap_or(&SourceScope::Program);
+    let skip_non_context_imports = scope_hint.is_some();
     let registry = self.direct_context_registry_for_scope(tree, execution_scope)?;
     let mut result = Value::Empty;
     let mut pending = Vec::new();
@@ -961,6 +971,7 @@ impl MechRuntime {
                 &mut pending,
                 &mut pending_codes,
                 &mut result,
+                skip_non_context_imports,
                 code,
                 comment,
               )?;
@@ -981,6 +992,7 @@ impl MechRuntime {
                 &mut pending,
                 &mut pending_codes,
                 &mut result,
+                skip_non_context_imports,
                 code,
                 comment,
               )?;

@@ -86,8 +86,8 @@ fn main() {
 
   run_case(
     &root,
-    "ok@foo works",
-    "~~~mech:foo\nok := true\n<+ ok\n~~~\n\nresult := ok@foo\n",
+    "@foo/ok works",
+    "~~~mech:foo\nok := true\n<+ ok\n~~~\n\nresult := @foo/ok\n",
     None,
     None,
     false,
@@ -95,7 +95,7 @@ fn main() {
   run_case(
     &root,
     "docs://manual intro/title read returns true",
-    "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
+    "@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n",
     Some(docs_provider_with("intro/title", Value::Bool(Ref::new(true)))),
     None,
     true,
@@ -103,7 +103,7 @@ fn main() {
   run_case(
     &root,
     "config spec docs://manual intro/title read returns true",
-    "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
+    "@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n",
     None,
     Some(RuntimeConfigSpec::new().with_resource(
       RuntimeResourceConfigSpec::InMemoryDocs(
@@ -116,7 +116,7 @@ fn main() {
   run_case(
     &root,
     "docs read without host grant fails RuntimeCapabilityGrantDenied",
-    "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
+    "@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n",
     Some(docs_provider_with("intro/title", Value::Bool(Ref::new(true)))),
     None,
     false,
@@ -124,7 +124,7 @@ fn main() {
   run_case(
     &root,
     "missing docs provider fails",
-    "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
+    "@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n",
     None,
     None,
     true,
@@ -132,7 +132,7 @@ fn main() {
   run_case(
     &root,
     "missing docs path fails",
-    "@manual := docs://manual{:read(intro/title)}\n\nresult := intro/title@manual\n",
+    "@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n",
     Some(InMemoryDocsProvider::new()),
     None,
     true,
@@ -140,7 +140,7 @@ fn main() {
   run_case(
     &root,
     "denied docs capability fails",
-    "@manual := docs://manual{:read(other/path)}\n\nresult := intro/title@manual\n",
+    "@manual := docs://manual{:read(other/path)}\n\nresult := @manual/intro/title\n",
     Some(docs_provider_with("intro/title", Value::Bool(Ref::new(true)))),
     None,
     true,
@@ -148,7 +148,7 @@ fn main() {
   run_case(
     &root,
     "interpreter-scoped docs context works when running interpreter scope",
-    "~~~mech:foo\n@manual := docs://manual{:read(intro/title)}\nresult := intro/title@manual\n~~~\n",
+    "~~~mech:foo\n@manual := docs://manual{:read(intro/title)}\nresult := @manual/intro/title\n~~~\n",
     Some(docs_provider_with("intro/title", Value::Bool(Ref::new(true)))),
     None,
     true,
@@ -164,7 +164,7 @@ fn main() {
   run_case(
     &root,
     "unknown target returns UnknownAddressTarget",
-    "result := ok@missing\n",
+    "result := @missing/ok\n",
     None,
     None,
     false,

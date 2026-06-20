@@ -401,12 +401,40 @@ fn context_capability_declaration(input: ParseString) -> ParseResult<ContextCapa
   Ok((input, ContextCapabilityDeclaration { operation, scope }))
 }
 
-// context-capability-scope := "*" | identifier ;
+fn context_capability_path_token(input: ParseString) -> ParseResult<Token> {
+  alt((alpha_token, digit_token, dash, slash, underscore, period, asterisk))(input)
+}
+
+fn validate_context_capability_path<'a>(
+  path: &str,
+  input: ParseString<'a>,
+) -> Result<(), nom::Err<ParseError<'a>>> {
+  let star_count = path.chars().filter(|c| *c == '*').count();
+  if star_count == 0 || (star_count == 1 && path.ends_with("/*") && path.len() > 2) {
+    Ok(())
+  } else {
+    Err(nom::Err::Error(ParseError::new(
+      input,
+      "context capability wildcard must be either `*` or a final path segment like `foo/*`",
+    )))
+  }
+}
+
+fn context_capability_path(input: ParseString) -> ParseResult<Identifier> {
+  let validation_input = input.clone();
+  let (input, mut tokens) = many1(context_capability_path_token)(input)?;
+  let mut merged = Token::merge_tokens(&mut tokens).unwrap();
+  merged.kind = TokenKind::Identifier;
+  validate_context_capability_path(&merged.to_string(), validation_input)?;
+  Ok((input, Identifier { name: merged }))
+}
+
+// context-capability-scope := "*" | context-capability-path ;
 fn context_capability_scope(input: ParseString) -> ParseResult<ContextCapabilityScope> {
   if let Ok((input, wildcard)) = asterisk(input.clone()) {
     Ok((input, ContextCapabilityScope::Wildcard(wildcard)))
   } else {
-    let (input, path) = identifier(input)?;
+    let (input, path) = context_capability_path(input)?;
     Ok((input, ContextCapabilityScope::Path(path)))
   }
 }

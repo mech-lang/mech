@@ -936,10 +936,10 @@ fn addressed_assignment_to_context_is_still_unsupported() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version);
-  assert!(result.is_err(), "prefix addressed assignment should not bypass context capability checks");
+  assert!(result.is_err(), "prefix addressed define should be rejected explicitly");
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("RuntimeResourceCapabilityDenied"), "expected capability error, got {error}");
-  assert!(error.contains("manual"), "expected context name in error, got {error}");
+  assert!(error.contains("RuntimeInvalidOperation"), "expected invalid operation error, got {error}");
+  assert!(error.contains("use `=` for context writes"), "expected context write hint, got {error}");
 }
 
 #[test]
@@ -949,10 +949,10 @@ fn addressed_assignment_with_docs_provider_is_still_unsupported() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).in_memory_docs(InMemoryDocsProvider::new()).build().unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version);
-  assert!(result.is_err(), "prefix addressed assignment should not bypass context capability checks");
+  assert!(result.is_err(), "prefix addressed define should be rejected explicitly");
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("RuntimeResourceCapabilityDenied"), "expected capability error, got {error}");
-  assert!(error.contains("manual"), "expected context name in error, got {error}");
+  assert!(error.contains("RuntimeInvalidOperation"), "expected invalid operation error, got {error}");
+  assert!(error.contains("use `=` for context writes"), "expected context write hint, got {error}");
 }
 
 #[test]
@@ -2193,6 +2193,18 @@ fn context_import_alias_is_not_bound_as_value_import() {
   assert!(error.contains("Undefined") || error.contains("Variable"), "expected missing value binding error, got {error}");
 }
 
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn direct_runtime_normal_import_is_not_dropped() {
+  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let result = runtime.run_string("+> math/sin\nresult := sin(0.0)\n").unwrap();
+
+  match result {
+    Value::F64(value) => assert_eq!(*value.borrow(), 0.0),
+    other => panic!("expected sin(0.0) to return 0.0, got {other:?}"),
+  }
+}
+
 #[test]
 fn direct_runtime_manifest_context_import_read_uses_browser_binding_before_lowering() {
   let mut runtime = RuntimeBuilder::new().build().unwrap();
@@ -2209,7 +2221,7 @@ fn direct_runtime_manifest_context_import_write_uses_provider_lookup() {
   let mut runtime = RuntimeBuilder::new().build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "browser://dom", "counter/_text")).unwrap();
   let result = runtime.run_string("+> @ui := browser/dom
-@ui/counter/_text := \"hello\"
+@ui/counter/_text = \"hello\"
 ");
   assert!(result.is_err(), "browser write should reach provider lookup without a browser provider");
   let error = format!("{:?}", result.err().unwrap());
@@ -2383,7 +2395,7 @@ fn cli_context_direct_write_uses_manifest_boundary() {
   let stdout = provider.stdout.clone();
   let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
-  runtime.run_string("+> @out := cli/stdout\n@out/line := \"hello\"\n").unwrap();
+  runtime.run_string("+> @out := cli/stdout\n@out/line = \"hello\"\n").unwrap();
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello".to_string()]);
 }
 
@@ -2407,7 +2419,7 @@ fn cli_context_module_read_exports_value() {
 
 #[test]
 fn cli_context_module_write_is_not_stripped() {
-  let root = setup_modules("+> @out := cli/stdout\n@out/line := \"hello\"\n");
+  let root = setup_modules("+> @out := cli/stdout\n@out/line = \"hello\"\n");
   let provider = InMemoryCliProvider::default();
   let stdout = provider.stdout.clone();
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).resource_provider(Box::new(provider)).build().unwrap();
@@ -2423,7 +2435,7 @@ fn cli_context_capabilities_are_enforced() {
   let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
   let read_error = runtime.run_string("+> @out := cli/stdout\nvalue := @out/line\n").unwrap_err();
   assert!(format!("{read_error:?}").contains("RuntimeResourceCapabilityDenied"));
-  let write_error = runtime.run_string("+> @env := cli/env\n@env/HOME := \"nope\"\n").unwrap_err();
+  let write_error = runtime.run_string("+> @env := cli/env\n@env/HOME = \"nope\"\n").unwrap_err();
   assert!(format!("{write_error:?}").contains("RuntimeResourceCapabilityDenied"));
 }
 
@@ -2508,7 +2520,7 @@ fn docs_context_write_requires_runtime_grant_before_provider_write() {
   let provider = RecordingResourceProvider::new("docs", &["docs://manual"]);
   let writes = provider.writes.clone();
   let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
-  let result = runtime.run_string("@manual := docs://manual{:write(intro/title)}\n@manual/intro/title := \"hello\"\n");
+  let result = runtime.run_string("@manual := docs://manual{:write(intro/title)}\n@manual/intro/title = \"hello\"\n");
   assert!(result.is_err(), "write without host grant should fail");
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("RuntimeCapabilityGrantDenied"), "expected host grant denial, got {error}");
@@ -2521,7 +2533,7 @@ fn docs_context_write_with_runtime_grant_reaches_provider() {
   let writes = provider.writes.clone();
   let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "docs://manual", "intro/title")).unwrap();
-  runtime.run_string("@manual := docs://manual{:write(intro/title)}\n@manual/intro/title := \"hello\"\n").unwrap();
+  runtime.run_string("@manual := docs://manual{:write(intro/title)}\n@manual/intro/title = \"hello\"\n").unwrap();
   let writes = writes.lock().unwrap();
   assert_eq!(writes.len(), 1);
   assert_eq!(writes[0].0, "docs://manual");
@@ -2565,7 +2577,7 @@ fn context_write_uses_active_runtime_context_subject() {
 
   runtime.run_string_with_context(
     &mut context,
-    "@manual := docs://manual{:write(intro/title)}\n@manual/intro/title := \"hello\"\n",
+    "@manual := docs://manual{:write(intro/title)}\n@manual/intro/title = \"hello\"\n",
   ).unwrap();
 
   assert_eq!(writes.lock().unwrap().len(), 1);
@@ -2581,7 +2593,7 @@ fn context_write_does_not_accept_grant_for_default_subject_when_context_subject_
 
   let result = runtime.run_string_with_context(
     &mut context,
-    "@manual := docs://manual{:write(intro/title)}\n@manual/intro/title := \"hello\"\n",
+    "@manual := docs://manual{:write(intro/title)}\n@manual/intro/title = \"hello\"\n",
   );
 
   assert!(result.is_err());
@@ -2618,7 +2630,7 @@ home := @env/HOME
 
 #[test]
 fn named_fenced_context_import_write_uses_context_registry() {
-  let root = setup_modules("~~~mech:bar\n+> @out := cli/stdout\n@out/line := \"hello\"\n~~~\n");
+  let root = setup_modules("~~~mech:bar\n+> @out := cli/stdout\n@out/line = \"hello\"\n~~~\n");
   let provider = InMemoryCliProvider::default();
   let stdout = provider.stdout.clone();
   let mut runtime = RuntimeBuilder::new()
@@ -2668,7 +2680,7 @@ fn named_fenced_context_import_read_exports_value() {
 #[test]
 fn module_context_read_after_context_write_uses_execution_order() {
   let root = setup_modules(
-    "@manual := docs://manual{:read(intro/title), :write(intro/title)}\n@manual/intro/title := \"hello\"\nresult := @manual/intro/title\n<+ result\nresult\n",
+    "@manual := docs://manual{:read(intro/title), :write(intro/title)}\n@manual/intro/title = \"hello\"\nresult := @manual/intro/title\n<+ result\nresult\n",
   );
   let provider = RecordingResourceProvider::new("docs", &["docs://manual"]);
   let mut runtime = RuntimeBuilder::new()
@@ -2689,7 +2701,7 @@ fn module_context_read_after_context_write_uses_execution_order() {
 #[test]
 fn module_context_read_after_context_write_ignores_stale_provider_value() {
   let root = setup_modules(
-    "@manual := docs://manual{:read(intro/title), :write(intro/title)}\n@manual/intro/title := \"new\"\nresult := @manual/intro/title\n<+ result\nresult\n",
+    "@manual := docs://manual{:read(intro/title), :write(intro/title)}\n@manual/intro/title = \"new\"\nresult := @manual/intro/title\n<+ result\nresult\n",
   );
   let provider = RecordingResourceProvider::new("docs", &["docs://manual"])
     .with_value("docs://manual", "intro/title", Value::String(Ref::new("old".to_string())));
