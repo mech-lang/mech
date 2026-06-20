@@ -1287,6 +1287,7 @@ pub enum Statement {
   OpAssign(OpAssign),
   VariableAssign(VariableAssign),
   VariableDefine(VariableDefine),
+  ContextSend(ContextSend),
   #[cfg(feature = "invariant_define")]
   InvariantDefine(InvariantDefine),
   TupleDestructure(TupleDestructure),
@@ -1306,6 +1307,7 @@ impl Statement {
       Statement::OpAssign(x) => x.tokens(),
       Statement::VariableAssign(x) => x.tokens(),
       Statement::VariableDefine(x) => x.tokens(),
+      Statement::ContextSend(x) => x.tokens(),
       #[cfg(feature = "invariant_define")]
       Statement::InvariantDefine(x) => x.tokens(),
       Statement::TupleDestructure(x) => x.tokens(),
@@ -1874,6 +1876,21 @@ impl Var {
 pub struct VariableAssign {
   pub target: SliceRef,
   pub expression: Expression,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ContextSend {
+  pub target: Var,
+  pub expression: Expression,
+}
+
+impl ContextSend {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.target.tokens();
+    tkns.append(&mut self.expression.tokens());
+    tkns
+  }
 }
 
 impl VariableAssign {

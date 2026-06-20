@@ -130,12 +130,36 @@ pub fn exp_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   Ok((input, ParserNode::FlattenData{children: vec![]}))
 }*/
 
+
+// send-operator := "<-" ;
+pub fn send_operator(input: ParseString) -> ParseResult<()> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = tag("<-")(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, ()))
+}
+
+// context-send := prefixed-context-path, send-operator, expression ;
+pub fn context_send(input: ParseString) -> ParseResult<ContextSend> {
+  let msg2 = "Expects expression";
+  let (input, target) = var(input)?;
+  if target.context.is_none() {
+    return Err(nom::Err::Error(ParseError::new(input, "send target must be an addressed context path")));
+  }
+  let (input, _) = send_operator(input)?;
+  let (input, expression) = label!(expression, msg2)(input)?;
+  Ok((input, ContextSend { target, expression }))
+}
+
 // variable-define := tilde?, var, !assign-operator, define-operator, expression ;
 pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
   let (input, mutable) = opt(tilde)(input)?;
   let (input, var) = var(input)?;
+  if var.context.is_some() {
+    return Err(nom::Err::Error(ParseError::new(input, "addressed context paths cannot be defined with :=")));
+  }
   let (input, _) = labelr!(null(is_not(assign_operator)), skip_nil, msg1)(input)?;
   let (input, _) = define_operator(input)?;
   let (input, expression) = label!(expression, msg2)(input)?;
@@ -448,6 +472,7 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
     ("fsm_declare", Box::new(|i| fsm_declare(i).map(|(i, v)| (i, Statement::FsmDeclare(v))))),
     #[cfg(feature = "invariant_define")]
     ("invariant_define", Box::new(|i| invariant_define(i).map(|(i, v)| (i, Statement::InvariantDefine(v))))),
+    ("context_send", Box::new(|i| context_send(i).map(|(i, v)| (i, Statement::ContextSend(v))))),
     ("variable_define", Box::new(|i| variable_define(i).map(|(i, v)| (i, Statement::VariableDefine(v))))),
     ("variable_assign", Box::new(|i| variable_assign(i).map(|(i, v)| (i, Statement::VariableAssign(v))))),
     ("op_assign", Box::new(|i| op_assign(i).map(|(i, v)| (i, Statement::OpAssign(v))))),

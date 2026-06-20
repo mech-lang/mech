@@ -1,0 +1,19 @@
+[package]
+name = "mech-host-cli"
+version = "0.3.5"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "CLI host integration for Mech runtimes."
+documentation = "https://docs.mech-lang.org"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-lang/mech"
+license = "Apache-2.0"
+edition = "2024"
+rust-version = "1.92"
+
+[features]
+default = []
+provider = ["mech-core/string"]
+
+[dependencies]
+mech-core = { version = "0.3.5", default-features = false }
+mech-runtime = { version = "0.3.5", default-features = false }

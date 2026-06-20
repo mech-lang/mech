@@ -354,6 +354,7 @@ impl MechRuntime {
     binding: &RuntimeContextBinding,
     path: &str,
     value: Value,
+    intent: RuntimeResourceWriteIntent,
   ) -> MResult<()> {
     let resolved = self.resolve_context_resource_request(binding, path)?;
     if !runtime_context_allows_write(binding, &resolved.context_path) {
@@ -381,6 +382,7 @@ impl MechRuntime {
       path: resolved.provider_path,
       context_name: binding.name.clone(),
       value,
+      intent,
     })
   }
 
@@ -913,6 +915,24 @@ impl MechRuntime {
         pending_codes.push((code, comment.clone()));
         Ok(())
       }
+      mech_core::MechCode::Statement(mech_core::Statement::ContextSend(send)) => {
+        let Some(context_name) = &send.target.context else {
+          return Err(MechError::new(RuntimeAddressedAssignmentUnsupported { target: send.target.name.to_string() }, None));
+        };
+        let target = context_name.to_string();
+        let Some(binding) = registry.get(&target).cloned() else {
+          return Err(MechError::new(RuntimeAddressedAssignmentUnsupported { target }, None));
+        };
+        if !pending_codes.is_empty() {
+          pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes)));
+        }
+        self.flush_direct_execution(program, pending, result)?;
+        let expression = self.resolve_context_reads_in_expression(context, program, registry, &send.expression)?;
+        let value = resolve_runtime_value(self.evaluate_expression_on_program(program, &expression)?);
+        self.write_context_resource(context, &binding, &send.target.name.to_string(), value.clone(), RuntimeResourceWriteIntent::Send)?;
+        *result = value;
+        return Ok(());
+      }
       mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)) => {
         if let Some(context_name) = &assign.target.context {
           let target = context_name.to_string();
@@ -923,7 +943,7 @@ impl MechRuntime {
             self.flush_direct_execution(program, pending, result)?;
             let expression = self.resolve_context_reads_in_expression(context, program, registry, &assign.expression)?;
             let value = resolve_runtime_value(self.evaluate_expression_on_program(program, &expression)?);
-            self.write_context_resource(context, &binding, &assign.target.name.to_string(), value.clone())?;
+            self.write_context_resource(context, &binding, &assign.target.name.to_string(), value.clone(), RuntimeResourceWriteIntent::Assign)?;
             *result = value;
             return Ok(());
           }

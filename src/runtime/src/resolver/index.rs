@@ -506,6 +506,9 @@ fn index_statement_address_references(
         Statement::VariableAssign(assign) => {
             index_expression_address_references(index, scope, order, &assign.expression)
         }
+        Statement::ContextSend(send) => {
+            index_expression_address_references(index, scope, order, &send.expression)
+        }
         Statement::OpAssign(assign) => {
             index_expression_address_references(index, scope, order, &assign.expression)
         }
@@ -525,7 +528,6 @@ fn index_statement_address_references(
         | Statement::KindDefine(_)
         | Statement::SplitTable
         | Statement::FlattenTable => {}
-        #[cfg(feature = "invariant_define")]
         Statement::InvariantDefine(_) => {}
     }
 }

@@ -3,7 +3,7 @@ use mech_core::{
   BrowserOperation, BROWSER_DOM_PROVIDER_URI, MResult, MechError, MechErrorKind, Ref, Value,
 };
 
-use mech_runtime::{RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteRequest};
+use mech_runtime::{RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
 
 pub trait BrowserDomBackend: std::fmt::Debug {
   fn read_dom_string(
@@ -90,6 +90,9 @@ impl<B: BrowserDomBackend> RuntimeResourceProvider for BrowserResourceProvider<B
   }
 
   fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    if request.intent != RuntimeResourceWriteIntent::Assign {
+      return Err(browser_resource_provider_error(&request.base_uri, "browser DOM resources do not support send intent; use assignment"));
+    }
     Self::validate_dom_base(&request.base_uri)?;
     let path = Self::dom_path(request.path)?;
     let entry = self

@@ -235,6 +235,7 @@ members = [
   "src/runtime",
   "src/wasm",
   "hosts/browser",
+  "hosts/cli",
 ]
 
 [build-dependencies]
@@ -252,6 +253,7 @@ mech-program = { path = 'src/program'}
 mech-runtime = { path = 'src/runtime'}
 mech-wasm = { path = 'src/wasm'}
 mech-host-browser = { path = 'hosts/browser'}
+mech-host-cli = { path = 'hosts/cli'}
 #mech-utilities = { path = 'src/utilities' }
 mech-combinatorics = { path = 'machines/combinatorics' }
 mech-compare = { path = 'machines/compare' }

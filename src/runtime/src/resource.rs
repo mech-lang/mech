@@ -9,12 +9,19 @@ pub struct RuntimeResourceReadRequest {
   pub context_name: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RuntimeResourceWriteIntent {
+  Assign,
+  Send,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeResourceWriteRequest {
   pub base_uri: String,
   pub path: String,
   pub context_name: String,
   pub value: Value,
+  pub intent: RuntimeResourceWriteIntent,
 }
 
 pub trait RuntimeResourceProvider: std::fmt::Debug {
