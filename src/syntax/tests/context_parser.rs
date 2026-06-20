@@ -301,6 +301,17 @@ fn parses_context_send_statements() {
   }
 }
 
+
+#[test]
+fn rejects_context_send_inside_function_body() {
+  assert!(parser::parse("emit() = result<string> := @out/line <- \"hello\".").is_err());
+}
+
+#[test]
+fn function_body_without_context_send_still_parses() {
+  assert!(parser::parse("emit() = result<string> := result := \"hello\".").is_ok());
+}
+
 #[test]
 fn rejects_local_send_and_context_definitions() {
   assert!(parser::parse("x <- 5").is_err());

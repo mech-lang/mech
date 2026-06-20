@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+
 use mech_core::{hash_str, MechSourceCode, ModuleManifestConfig, ModuleManifestExportConfig, ModuleManifestExportKind, Ref, Value};
 use mech_host_cli::{CliBackend, CliResourceProvider};
 use mech_runtime::*;
@@ -94,6 +97,26 @@ fn assert_bool_false(result: Value, label: &str) {
   }
 }
 
+
+
+#[test]
+fn direct_run_string_preserves_normal_imports() {
+  let root = setup_modules("+> ./math.mec
+ok := math/tau > 6.0
+");
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .build()
+    .unwrap();
+  let version = runtime
+    .resolve_and_store_module_source("main.mec", module_options())
+    .unwrap()
+    .unwrap();
+
+  let result = runtime.run_module(version).unwrap();
+
+  assert_bool_true(result, "direct run_string normal import");
+}
 
 #[test]
 fn in_memory_docs_provider_write_then_read_returns_value() {
@@ -2322,6 +2345,57 @@ fn module_manifest_catalog_validates_builder_manifests() {
   }
 }
 
+
+#[derive(Debug, Default)]
+struct RuntimeFakeCliState {
+  env: HashMap<String, String>,
+  stdout: Vec<String>,
+  stderr: Vec<String>,
+  env_reads: usize,
+  stdout_writes: usize,
+  stderr_writes: usize,
+}
+
+#[derive(Debug, Clone)]
+struct RuntimeFakeCliBackend {
+  state: Arc<Mutex<RuntimeFakeCliState>>,
+}
+
+impl RuntimeFakeCliBackend {
+  fn new(state: Arc<Mutex<RuntimeFakeCliState>>) -> Self {
+    Self { state }
+  }
+}
+
+impl CliBackend for RuntimeFakeCliBackend {
+  fn env_var(&self, name: &str) -> mech_core::MResult<Option<String>> {
+    let mut state = self.state.lock().unwrap();
+    state.env_reads += 1;
+    Ok(state.env.get(name).cloned())
+  }
+
+  fn write_stdout(&mut self, text: &str) -> mech_core::MResult<()> {
+    let mut state = self.state.lock().unwrap();
+    state.stdout_writes += 1;
+    state.stdout.push(text.to_string());
+    Ok(())
+  }
+
+  fn write_stderr(&mut self, text: &str) -> mech_core::MResult<()> {
+    let mut state = self.state.lock().unwrap();
+    state.stderr_writes += 1;
+    state.stderr.push(text.to_string());
+    Ok(())
+  }
+}
+
+fn runtime_with_fake_cli(state: Arc<Mutex<RuntimeFakeCliState>>) -> MechRuntime {
+  RuntimeBuilder::new()
+    .resource_provider(Box::new(CliResourceProvider::new(RuntimeFakeCliBackend::new(state))))
+    .build()
+    .unwrap()
+}
+
 #[derive(Debug, Clone, Default)]
 struct FakeCliBackend {
   env: std::collections::HashMap<String, String>,
@@ -2354,6 +2428,148 @@ impl CliBackend for FakeCliBackend {
     self.stderr.lock().unwrap().push(text.to_string());
     Ok(())
   }
+}
+
+
+#[test]
+fn cli_manifest_env_import_reads_through_runtime() {
+  let state = Arc::new(Mutex::new(RuntimeFakeCliState::default()));
+  state.lock().unwrap().env.insert("HOME".to_string(), "/tmp/home".to_string());
+
+  let mut runtime = runtime_with_fake_cli(state.clone());
+  runtime
+    .grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME"))
+    .unwrap();
+
+  let result = runtime
+    .run_string("+> @env := cli/env
+@env/HOME
+")
+    .unwrap();
+
+  let result = match result {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  match result {
+    Value::String(value) => assert_eq!(&*value.borrow(), "/tmp/home"),
+    other => panic!("expected HOME string from cli env, got {:?}", other),
+  }
+
+  assert_eq!(state.lock().unwrap().env_reads, 1);
+}
+
+#[test]
+fn cli_manifest_stdout_send_line_writes_through_runtime() {
+  let state = Arc::new(Mutex::new(RuntimeFakeCliState::default()));
+  let mut runtime = runtime_with_fake_cli(state.clone());
+
+  runtime
+    .grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line"))
+    .unwrap();
+
+  runtime
+    .run_string("+> @out := cli/stdout
+@out/line <- \"hello\"
+")
+    .unwrap();
+
+  let state = state.lock().unwrap();
+  assert_eq!(state.stdout, vec!["hello\n".to_string()]);
+  assert_eq!(state.stdout_writes, 1);
+}
+
+#[test]
+fn cli_manifest_stderr_send_text_writes_through_runtime() {
+  let state = Arc::new(Mutex::new(RuntimeFakeCliState::default()));
+  let mut runtime = runtime_with_fake_cli(state.clone());
+
+  runtime
+    .grant_capability(runtime_context_write_grant(&runtime, "cli://stderr", "text"))
+    .unwrap();
+
+  runtime
+    .run_string("+> @err := cli/stderr
+@err/text <- \"warning\"
+")
+    .unwrap();
+
+  let state = state.lock().unwrap();
+  assert_eq!(state.stderr, vec!["warning".to_string()]);
+  assert_eq!(state.stderr_writes, 1);
+}
+
+#[test]
+fn cli_stdout_assignment_errors_and_writes_nothing() {
+  let state = Arc::new(Mutex::new(RuntimeFakeCliState::default()));
+  let mut runtime = runtime_with_fake_cli(state.clone());
+
+  runtime
+    .grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line"))
+    .unwrap();
+
+  let result = runtime.run_string("+> @out := cli/stdout
+@out/line = \"hello\"
+");
+
+  assert!(result.is_err());
+  let state = state.lock().unwrap();
+  assert!(state.stdout.is_empty());
+  assert_eq!(state.stdout_writes, 0);
+}
+
+#[test]
+fn cli_stdout_define_errors_and_writes_nothing() {
+  let state = Arc::new(Mutex::new(RuntimeFakeCliState::default()));
+  let mut runtime = runtime_with_fake_cli(state.clone());
+
+  runtime
+    .grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line"))
+    .unwrap();
+
+  let result = runtime.run_string("+> @out := cli/stdout
+@out/line := \"hello\"
+");
+
+  assert!(result.is_err());
+  let state = state.lock().unwrap();
+  assert!(state.stdout.is_empty());
+  assert_eq!(state.stdout_writes, 0);
+}
+
+#[test]
+fn cli_env_send_errors() {
+  let state = Arc::new(Mutex::new(RuntimeFakeCliState::default()));
+  let mut runtime = runtime_with_fake_cli(state.clone());
+
+  runtime
+    .grant_capability(runtime_context_write_grant(&runtime, "cli://env", "HOME"))
+    .unwrap();
+
+  let result = runtime.run_string("+> @env := cli/env
+@env/HOME <- \"x\"
+");
+
+  assert!(result.is_err());
+  let state = state.lock().unwrap();
+  assert_eq!(state.env_reads, 0);
+  assert_eq!(state.stdout_writes, 0);
+  assert_eq!(state.stderr_writes, 0);
+}
+
+#[test]
+fn cli_stdout_missing_write_grant_fails_before_backend() {
+  let state = Arc::new(Mutex::new(RuntimeFakeCliState::default()));
+  let mut runtime = runtime_with_fake_cli(state.clone());
+
+  let result = runtime.run_string("+> @out := cli/stdout
+@out/line <- \"hello\"
+");
+
+  assert!(result.is_err());
+  let state = state.lock().unwrap();
+  assert!(state.stdout.is_empty());
+  assert_eq!(state.stdout_writes, 0);
 }
 
 #[test]
