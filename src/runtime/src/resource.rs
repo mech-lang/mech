@@ -213,6 +213,17 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
   }
 
   fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    if request.intent == RuntimeResourceWriteIntent::Send {
+      return Err(MechError::new(
+        RuntimeResourceWriteUnsupported {
+          scheme: self.scheme().to_string(),
+          base_uri: request.base_uri,
+          path: request.path,
+        },
+        None,
+      ));
+    }
+
     let scheme = resource_uri_scheme(&request.base_uri)?;
     if scheme != "docs" {
       return Err(MechError::new(

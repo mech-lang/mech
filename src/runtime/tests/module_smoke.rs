@@ -2455,6 +2455,56 @@ fn cli_host_missing_stderr_write_grant_fails_before_backend_call() {
   assert!(stderr.lock().unwrap().is_empty(), "stderr should not be written without grant");
 }
 
+
+#[test]
+fn cli_host_direct_env_declaration_reads_with_runtime_grant() {
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/direct-home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
+  runtime.run_string("@env := cli://env{:read(HOME)}\nhome := @env/HOME\n").unwrap();
+  let id = hash_str("home");
+  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  assert_string_value(value, "/tmp/direct-home");
+}
+
+#[test]
+fn cli_host_direct_stdout_declaration_sends_with_runtime_grant() {
+  let backend = FakeCliBackend::default();
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  runtime.run_string("@out := cli://stdout{:write(line)}\n@out/line <- \"hello\"\n").unwrap();
+  assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
+}
+
+#[test]
+fn cli_host_direct_stderr_declaration_sends_with_runtime_grant() {
+  let backend = FakeCliBackend::default();
+  let stderr = backend.stderr.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stderr", "text")).unwrap();
+  runtime.run_string("@err := cli://stderr{:write(text)}\n@err/text <- \"warning\"\n").unwrap();
+  assert_eq!(stderr.lock().unwrap().as_slice(), &["warning".to_string()]);
+}
+
+#[test]
+fn cli_host_env_assignment_errors() {
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://env", "HOME")).unwrap();
+  let result = runtime.run_string("+> @env := cli/env\n@env/HOME = \"x\"\n");
+  assert!(result.is_err(), "env assignment should error");
+}
+
+#[test]
+fn cli_host_stdout_read_errors() {
+  let backend = FakeCliBackend::default();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let result = runtime.run_string("+> @out := cli/stdout\nx := @out/line\n");
+  assert!(result.is_err(), "stdout read should error");
+}
+
 #[test]
 fn cli_context_module_read_exports_value() {
   let root = setup_modules("+> @env := cli/env\nhome := @env/HOME\n<+ home\nhome\n");
@@ -2559,6 +2609,22 @@ fn cli_context_standalone_expression_returns_env_value() {
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   let value = runtime.run_string("+> @env := cli/env\n@env/HOME\n").unwrap();
   assert_string_value(value, "/tmp/home");
+}
+
+
+#[test]
+fn docs_context_send_errors_and_does_not_write() {
+  let mut runtime = RuntimeBuilder::new().in_memory_docs(InMemoryDocsProvider::new()).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "docs://manual", "intro/title")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
+
+  let result = runtime.run_string("@manual := docs://manual{:read(intro/title), :write(intro/title)}\n@manual/intro/title <- \"hello\"\n");
+  assert!(result.is_err(), "docs context send should error");
+
+  let read_result = runtime.run_string("@manual := docs://manual{:read(intro/title)}\nresult := @manual/intro/title\n");
+  assert!(read_result.is_err(), "docs send should not write a readable value");
+  let error = format!("{:?}", read_result.err().unwrap());
+  assert!(error.contains("RuntimeResourcePathNotFound"), "expected missing docs path after failed send, got {error}");
 }
 
 #[test]
