@@ -28,6 +28,20 @@ pub fn function_define(input: ParseString) -> ParseResult<FunctionDefine> {
   }
 }
 
+fn function_body_statement(input: ParseString) -> ParseResult<Statement> {
+  let start = input.clone();
+  let (input, statement) = statement(input)?;
+
+  if matches!(statement, Statement::ContextSend(_)) {
+    return Err(Failure(ParseError::new(
+      start,
+      "context sends are only supported at top level; functions cannot contain `<-` yet",
+    )));
+  }
+
+  Ok((input, statement))
+}
+
 fn function_define_statements(
   input: ParseString,
   name: Identifier,
@@ -37,7 +51,10 @@ fn function_define_statements(
   let ((input, _)) = whitespace0(input)?;
   let ((input, output)) = alt((function_out_args,function_out_arg))(input)?;
   let ((input, _)) = define_operator(input)?;
-  let ((input, statements)) = separated_list1(alt((whitespace1,statement_separator)), statement)(input)?;
+  let ((input, statements)) = separated_list1(
+    alt((whitespace1, statement_separator)),
+    function_body_statement,
+  )(input)?;
   let ((input, _)) = period(input)?;
   Ok((input,FunctionDefine{name,input: input_args,output,statements,match_arms: vec![]}))
 }
