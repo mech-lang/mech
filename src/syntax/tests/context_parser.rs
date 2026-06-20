@@ -302,11 +302,6 @@ fn parses_context_send_statements() {
 }
 
 #[test]
-fn top_level_context_send_still_parses_after_fsm_rejection() {
-  assert!(parser::parse("@out/line <- \"hello\"").is_ok());
-}
-
-#[test]
 fn rejects_context_send_inside_fsm_statement_transition() {
   assert!(
     parser::parse(
@@ -326,6 +321,10 @@ fn rejects_context_send_inside_fsm_block_transition() {
   );
 }
 
+#[test]
+fn top_level_context_send_still_parses_after_fsm_rejection() {
+  assert!(parser::parse("@out/line <- \"hello\"").is_ok());
+}
 
 #[test]
 fn rejects_context_send_inside_function_body() {
