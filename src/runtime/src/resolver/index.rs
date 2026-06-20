@@ -528,6 +528,7 @@ fn index_statement_address_references(
         | Statement::KindDefine(_)
         | Statement::SplitTable
         | Statement::FlattenTable => {}
+        #[cfg(feature = "invariant_define")]
         Statement::InvariantDefine(_) => {}
     }
 }

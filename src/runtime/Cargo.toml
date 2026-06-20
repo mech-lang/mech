@@ -151,6 +151,7 @@ host_delegation = ["serde"]
 host_delegation_signing = ["host_delegation", "dep:ed25519-dalek", "dep:rand_core"]
 
 [dev-dependencies]
+mech-host-cli = { path = "../../hosts/cli", features = ["provider"] }
 serde_json = "1.0.150"
 
 [dependencies]

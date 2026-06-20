@@ -1,4 +1,5 @@
 use mech_core::{hash_str, MechSourceCode, ModuleManifestConfig, ModuleManifestExportConfig, ModuleManifestExportKind, Ref, Value};
+use mech_host_cli::{CliBackend, CliResourceProvider};
 use mech_runtime::*;
 
 fn setup_modules(main_source: &str) -> std::path::PathBuf {
@@ -921,12 +922,10 @@ fn addressed_assignment_is_unsupported() {
 
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
-  let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let result = runtime.run_module(version);
-  assert!(result.is_err(), "prefix addressed assignment should not silently create an address target");
+  let result = runtime.resolve_and_store_module_source("main.mec", options);
+  assert!(result.is_err(), "prefix addressed define should be rejected while parsing/building");
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("UnknownAddressTarget"), "expected unknown address target error, got {error}");
-  assert!(error.contains("foo"), "expected address target in error, got {error}");
+  assert!(error.contains("ParserErrorContext"), "expected parser error for addressed define, got {error}");
 }
 
 #[test]
@@ -934,12 +933,10 @@ fn addressed_assignment_to_context_is_still_unsupported() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n@manual/intro/title := true\nresult := @manual/intro/title\n");
 
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
-  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let result = runtime.run_module(version);
-  assert!(result.is_err(), "prefix addressed define should be rejected explicitly");
+  let result = runtime.resolve_and_store_module_source("main.mec", module_options());
+  assert!(result.is_err(), "prefix addressed define should be rejected while parsing/building");
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("RuntimeInvalidOperation"), "expected invalid operation error, got {error}");
-  assert!(error.contains("use `=` for context writes"), "expected context write hint, got {error}");
+  assert!(error.contains("ParserErrorContext"), "expected parser error for addressed define, got {error}");
 }
 
 #[test]
@@ -947,12 +944,10 @@ fn addressed_assignment_with_docs_provider_is_still_unsupported() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n@manual/intro/title := true\nresult := @manual/intro/title\n");
 
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).in_memory_docs(InMemoryDocsProvider::new()).build().unwrap();
-  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let result = runtime.run_module(version);
-  assert!(result.is_err(), "prefix addressed define should be rejected explicitly");
+  let result = runtime.resolve_and_store_module_source("main.mec", module_options());
+  assert!(result.is_err(), "prefix addressed define should be rejected while parsing/building");
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("RuntimeInvalidOperation"), "expected invalid operation error, got {error}");
-  assert!(error.contains("use `=` for context writes"), "expected context write hint, got {error}");
+  assert!(error.contains("ParserErrorContext"), "expected parser error for addressed define, got {error}");
 }
 
 #[test]
@@ -2197,11 +2192,11 @@ fn context_import_alias_is_not_bound_as_value_import() {
 #[test]
 fn direct_runtime_normal_import_is_not_dropped() {
   let mut runtime = RuntimeBuilder::new().build().unwrap();
-  let result = runtime.run_string("+> math/sin\nresult := sin(0.0)\n").unwrap();
+  let result = runtime.run_string("+> math/sin\nresult := sin(0)\n").unwrap();
 
   match result {
     Value::F64(value) => assert_eq!(*value.borrow(), 0.0),
-    other => panic!("expected sin(0.0) to return 0.0, got {other:?}"),
+    other => panic!("expected sin(0) to return 0.0, got {other:?}"),
   }
 }
 
@@ -2328,57 +2323,43 @@ fn module_manifest_catalog_validates_builder_manifests() {
 }
 
 #[derive(Debug, Clone, Default)]
-struct InMemoryCliProvider {
+struct FakeCliBackend {
   env: std::collections::HashMap<String, String>,
   stdout: std::sync::Arc<std::sync::Mutex<Vec<String>>>,
   stderr: std::sync::Arc<std::sync::Mutex<Vec<String>>>,
+  calls: std::sync::Arc<std::sync::Mutex<Vec<String>>>,
 }
 
-impl InMemoryCliProvider {
+impl FakeCliBackend {
   fn with_env(mut self, name: &str, value: &str) -> Self {
     self.env.insert(name.to_string(), value.to_string());
     self
   }
 }
 
-impl RuntimeResourceProvider for InMemoryCliProvider {
-  fn scheme(&self) -> &str { "cli" }
-
-  fn base_uris(&self) -> Vec<String> {
-    vec!["cli://env".to_string(), "cli://stdout".to_string(), "cli://stderr".to_string()]
+impl CliBackend for FakeCliBackend {
+  fn env_var(&self, name: &str) -> mech_core::MResult<Option<String>> {
+    self.calls.lock().unwrap().push(format!("env:{name}"));
+    Ok(self.env.get(name).cloned())
   }
 
-  fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
-    if request.base_uri != "cli://env" {
-      return Err(mech_core::MechError::new(RuntimeResourceWriteUnsupported {
-        scheme: self.scheme().to_string(),
-        base_uri: request.base_uri,
-        path: request.path,
-      }, None));
-    }
-    let value = self.env.get(&request.path).cloned().unwrap_or_default();
-    Ok(Value::String(Ref::new(value)))
+  fn write_stdout(&mut self, text: &str) -> mech_core::MResult<()> {
+    self.calls.lock().unwrap().push(format!("stdout:{text}"));
+    self.stdout.lock().unwrap().push(text.to_string());
+    Ok(())
   }
 
-  fn write(&mut self, request: RuntimeResourceWriteRequest) -> mech_core::MResult<()> {
-    let Value::String(value) = request.value else { return Ok(()); };
-    match request.base_uri.as_str() {
-      "cli://stdout" => self.stdout.lock().unwrap().push(value.borrow().clone()),
-      "cli://stderr" => self.stderr.lock().unwrap().push(value.borrow().clone()),
-      _ => return Err(mech_core::MechError::new(RuntimeResourceWriteUnsupported {
-        scheme: self.scheme().to_string(),
-        base_uri: request.base_uri,
-        path: request.path,
-      }, None)),
-    }
+  fn write_stderr(&mut self, text: &str) -> mech_core::MResult<()> {
+    self.calls.lock().unwrap().push(format!("stderr:{text}"));
+    self.stderr.lock().unwrap().push(text.to_string());
     Ok(())
   }
 }
 
 #[test]
-fn cli_context_direct_read_uses_manifest_boundary() {
-  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/mech-home");
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+fn cli_host_env_manifest_import_reads_with_runtime_grant() {
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/mech-home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   runtime.run_string("+> @env := cli/env\nhome := @env/HOME\n").unwrap();
   let id = hash_str("home");
@@ -2390,20 +2371,95 @@ fn cli_context_direct_read_uses_manifest_boundary() {
 }
 
 #[test]
-fn cli_context_direct_write_uses_manifest_boundary() {
-  let provider = InMemoryCliProvider::default();
-  let stdout = provider.stdout.clone();
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+fn cli_host_stdout_send_writes_line_with_runtime_grant() {
+  let backend = FakeCliBackend::default();
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
-  runtime.run_string("+> @out := cli/stdout\n@out/line = \"hello\"\n").unwrap();
-  assert_eq!(stdout.lock().unwrap().as_slice(), &["hello".to_string()]);
+  runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap();
+  assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
+}
+
+#[test]
+fn cli_host_stderr_send_writes_text_with_runtime_grant() {
+  let backend = FakeCliBackend::default();
+  let stderr = backend.stderr.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stderr", "text")).unwrap();
+  runtime.run_string("+> @err := cli/stderr\n@err/text <- \"warning\"\n").unwrap();
+  assert_eq!(stderr.lock().unwrap().as_slice(), &["warning".to_string()]);
+}
+
+#[test]
+fn cli_host_stdout_assignment_errors_and_writes_nothing() {
+  let backend = FakeCliBackend::default();
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let result = runtime.run_string("+> @out := cli/stdout\n@out/line = \"hello\"\n");
+  assert!(result.is_err(), "stdout assignment should error");
+  assert!(stdout.lock().unwrap().is_empty(), "stdout assignment should not write");
+}
+
+#[test]
+fn cli_host_stdout_definition_errors_and_writes_nothing() {
+  let backend = FakeCliBackend::default();
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let result = runtime.run_string("+> @out := cli/stdout\n@out/line := \"hello\"\n");
+  assert!(result.is_err(), "stdout definition should error");
+  assert!(stdout.lock().unwrap().is_empty(), "stdout definition should not write");
+}
+
+#[test]
+fn cli_host_env_send_errors() {
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://env", "HOME")).unwrap();
+  let result = runtime.run_string("+> @env := cli/env\n@env/HOME <- \"x\"\n");
+  assert!(result.is_err(), "env send should error");
+}
+
+#[test]
+fn cli_host_missing_env_read_grant_fails_before_backend_call() {
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let calls = backend.calls.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let result = runtime.run_string("+> @env := cli/env\nhome := @env/HOME\n");
+  assert!(result.is_err(), "env read without runtime grant should fail");
+  assert!(calls.lock().unwrap().is_empty(), "backend should not be called without read grant");
+}
+
+#[test]
+fn cli_host_missing_stdout_write_grant_fails_before_backend_call() {
+  let backend = FakeCliBackend::default();
+  let calls = backend.calls.clone();
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let result = runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n");
+  assert!(result.is_err(), "stdout send without runtime grant should fail");
+  assert!(calls.lock().unwrap().is_empty(), "backend should not be called without write grant");
+  assert!(stdout.lock().unwrap().is_empty(), "stdout should not be written without grant");
+}
+
+#[test]
+fn cli_host_missing_stderr_write_grant_fails_before_backend_call() {
+  let backend = FakeCliBackend::default();
+  let calls = backend.calls.clone();
+  let stderr = backend.stderr.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let result = runtime.run_string("+> @err := cli/stderr\n@err/text <- \"warning\"\n");
+  assert!(result.is_err(), "stderr send without runtime grant should fail");
+  assert!(calls.lock().unwrap().is_empty(), "backend should not be called without write grant");
+  assert!(stderr.lock().unwrap().is_empty(), "stderr should not be written without grant");
 }
 
 #[test]
 fn cli_context_module_read_exports_value() {
   let root = setup_modules("+> @env := cli/env\nhome := @env/HOME\n<+ home\nhome\n");
-  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/module-home");
-  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).resource_provider(Box::new(provider)).build().unwrap();
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/module-home");
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version).unwrap();
@@ -2418,25 +2474,15 @@ fn cli_context_module_read_exports_value() {
 }
 
 #[test]
-fn cli_context_module_write_is_not_stripped() {
-  let root = setup_modules("+> @out := cli/stdout\n@out/line = \"hello\"\n");
-  let provider = InMemoryCliProvider::default();
-  let stdout = provider.stdout.clone();
-  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).resource_provider(Box::new(provider)).build().unwrap();
+fn cli_context_module_send_is_not_stripped() {
+  let root = setup_modules("+> @out := cli/stdout\n@out/line <- \"hello\"\n");
+  let backend = FakeCliBackend::default();
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   runtime.run_module(version).unwrap();
-  assert_eq!(stdout.lock().unwrap().as_slice(), &["hello".to_string()]);
-}
-
-#[test]
-fn cli_context_capabilities_are_enforced() {
-  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/home");
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
-  let read_error = runtime.run_string("+> @out := cli/stdout\nvalue := @out/line\n").unwrap_err();
-  assert!(format!("{read_error:?}").contains("RuntimeResourceCapabilityDenied"));
-  let write_error = runtime.run_string("+> @env := cli/env\n@env/HOME = \"nope\"\n").unwrap_err();
-  assert!(format!("{write_error:?}").contains("RuntimeResourceCapabilityDenied"));
+  assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
 }
 
 #[derive(Debug, Clone)]
@@ -2497,8 +2543,8 @@ fn assert_string_value(value: Value, expected: &str) {
 
 #[test]
 fn cli_context_direct_read_resolves_inside_formula_expression() {
-  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/home");
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   runtime.run_string("+> @env := cli/env\nmsg := \"HOME=\" + @env/HOME\n").unwrap();
   let id = hash_str("msg");
@@ -2508,8 +2554,8 @@ fn cli_context_direct_read_resolves_inside_formula_expression() {
 
 #[test]
 fn cli_context_standalone_expression_returns_env_value() {
-  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/home");
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   let value = runtime.run_string("+> @env := cli/env\n@env/HOME\n").unwrap();
   assert_string_value(value, "/tmp/home");
@@ -2604,8 +2650,8 @@ fn context_write_does_not_accept_grant_for_default_subject_when_context_subject_
 
 #[test]
 fn unqualified_fenced_context_import_is_available_to_program_execution() {
-  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/fenced-home");
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/fenced-home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
   let mut context = runtime.runtime_context().unwrap().with_subject("task://fenced");
   runtime.grant_capability(RuntimeCapabilityGrant {
     subject: "task://fenced".to_string(),
@@ -2630,12 +2676,12 @@ home := @env/HOME
 
 #[test]
 fn named_fenced_context_import_write_uses_context_registry() {
-  let root = setup_modules("~~~mech:bar\n+> @out := cli/stdout\n@out/line = \"hello\"\n~~~\n");
-  let provider = InMemoryCliProvider::default();
-  let stdout = provider.stdout.clone();
+  let root = setup_modules("~~~mech:bar\n+> @out := cli/stdout\n@out/line <- \"hello\"\n~~~\n");
+  let backend = FakeCliBackend::default();
+  let stdout = backend.stdout.clone();
   let mut runtime = RuntimeBuilder::new()
     .source_resolver(FileSourceResolver::new(&root))
-    .resource_provider(Box::new(provider))
+    .resource_provider(Box::new(CliResourceProvider::new(backend)))
     .build()
     .unwrap();
 
@@ -2650,16 +2696,16 @@ fn named_fenced_context_import_write_uses_context_registry() {
     }),
   ).unwrap();
 
-  assert_eq!(stdout.lock().unwrap().as_slice(), &["hello".to_string()]);
+  assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
 }
 
 #[test]
 fn named_fenced_context_import_read_exports_value() {
   let root = setup_modules("~~~mech:bar\n+> @env := cli/env\nhome := @env/HOME\n<+ home\nhome\n~~~\n");
-  let provider = InMemoryCliProvider::default().with_env("HOME", "/tmp/named-fence-home");
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/named-fence-home");
   let mut runtime = RuntimeBuilder::new()
     .source_resolver(FileSourceResolver::new(&root))
-    .resource_provider(Box::new(provider))
+    .resource_provider(Box::new(CliResourceProvider::new(backend)))
     .build()
     .unwrap();
 

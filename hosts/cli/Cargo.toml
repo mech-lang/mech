@@ -12,8 +12,13 @@ rust-version = "1.92"
 
 [features]
 default = []
-provider = ["mech-core/string"]
+provider = ["mech-core/default", "mech-runtime/default"]
 
 [dependencies]
 mech-core = { version = "0.3.5", default-features = false }
 mech-runtime = { version = "0.3.5", default-features = false }
+
+[[test]]
+name = "provider"
+path = "tests/provider.rs"
+required-features = ["provider"]
