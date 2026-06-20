@@ -161,13 +161,16 @@ pub fn fsm_async_transition(input: ParseString) -> ParseResult<Transition> {
 }
 
 fn fsm_transition_statement(input: ParseString) -> ParseResult<Statement> {
+  const FSM_CONTEXT_SEND_ERROR: &str =
+    "context sends are only supported at top level; FSM transitions cannot contain `<-` yet";
+
   let start = input.clone();
   let (input, statement) = statement(input)?;
 
   if matches!(statement, Statement::ContextSend(_)) {
     return Err(nom::Err::Failure(ParseError::new(
       start,
-      "context sends are only supported at top level; FSM transitions cannot contain `<-` yet",
+      FSM_CONTEXT_SEND_ERROR,
     )));
   }
 
@@ -189,6 +192,9 @@ fn fsm_code_block_contains_context_send(code: &[(MechCode, Option<Comment>)]) ->
 
 // fsm_block_transition := transition_operator, left_brace, mech_code+, right_brace ;
 pub fn fsm_block_transition(input: ParseString) -> ParseResult<Transition> {
+  const FSM_CONTEXT_SEND_BLOCK_ERROR: &str =
+    "context sends are only supported at top level; FSM transition blocks cannot contain `<-` yet";
+
   let (input, _) = transition_operator(input)?;
   let (input, _) = left_brace(input)?;
   let (input, parsed) = mech_code(input)?;
@@ -197,7 +203,7 @@ pub fn fsm_block_transition(input: ParseString) -> ParseResult<Transition> {
   if fsm_code_block_contains_context_send(&code) {
     return Err(nom::Err::Failure(ParseError::new(
       input,
-      "context sends are only supported at top level; FSM transition blocks cannot contain `<-` yet",
+      FSM_CONTEXT_SEND_BLOCK_ERROR,
     )));
   }
 
