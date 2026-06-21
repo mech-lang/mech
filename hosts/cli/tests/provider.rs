@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use mech_core::{MResult, Ref, Value};
+use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 use mech_host_cli::{CliBackend, CliResourceProvider};
 use mech_runtime::{
     RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
@@ -10,12 +10,21 @@ use mech_runtime::{
 #[derive(Debug, Default)]
 struct FakeCliBackend {
     env: HashMap<String, String>,
+    env_error: Option<String>,
     stdout: Vec<String>,
     stderr: Vec<String>,
 }
 
 impl CliBackend for FakeCliBackend {
     fn env_var(&self, name: &str) -> MResult<Option<String>> {
+        if let Some(reason) = &self.env_error {
+            return Err(MechError::new(
+                FakeCliBackendError {
+                    reason: reason.clone(),
+                },
+                None,
+            ));
+        }
         Ok(self.env.get(name).cloned())
     }
     fn write_stdout(&mut self, text: &str) -> MResult<()> {
@@ -25,6 +34,21 @@ impl CliBackend for FakeCliBackend {
     fn write_stderr(&mut self, text: &str) -> MResult<()> {
         self.stderr.push(text.to_string());
         Ok(())
+    }
+}
+
+#[derive(Debug, Clone)]
+struct FakeCliBackendError {
+    reason: String,
+}
+
+impl MechErrorKind for FakeCliBackendError {
+    fn name(&self) -> &str {
+        "FakeCliBackend"
+    }
+
+    fn message(&self) -> String {
+        self.reason.clone()
     }
 }
 
@@ -56,6 +80,39 @@ fn env_read_returns_fake_value_and_missing_errors() {
             })
             .is_err()
     );
+}
+
+#[test]
+fn env_read_rejects_invalid_env_keys() {
+    let provider = CliResourceProvider::new(FakeCliBackend::default());
+
+    for path in ["", "1HOME", "HOME/PATH", "HOME-PATH"] {
+        let result = provider.read(RuntimeResourceReadRequest {
+            base_uri: "cli://env".to_string(),
+            path: path.to_string(),
+            context_name: "env".to_string(),
+        });
+        assert!(result.is_err(), "expected invalid env path to fail: {path}");
+    }
+}
+
+#[test]
+fn env_read_propagates_backend_errors() {
+    let provider = CliResourceProvider::new(FakeCliBackend {
+        env_error: Some("host env decode failed".to_string()),
+        ..FakeCliBackend::default()
+    });
+
+    let result = provider.read(RuntimeResourceReadRequest {
+        base_uri: "cli://env".to_string(),
+        path: "HOME".to_string(),
+        context_name: "env".to_string(),
+    });
+
+    assert!(result.is_err());
+    let message = result.unwrap_err().display_message();
+    assert!(message.contains("host env decode failed"), "{message}");
+    assert!(!message.contains("is not set"), "{message}");
 }
 
 #[test]

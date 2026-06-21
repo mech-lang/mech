@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::{env::VarError, io::Write};
 
 use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 use mech_runtime::{
@@ -17,31 +17,30 @@ pub struct StdCliBackend;
 
 impl CliBackend for StdCliBackend {
     fn env_var(&self, name: &str) -> MResult<Option<String>> {
-        Ok(std::env::var(name).ok())
+        match std::env::var(name) {
+            Ok(value) => Ok(Some(value)),
+            Err(VarError::NotPresent) => Ok(None),
+            Err(VarError::NotUnicode(_)) => Err(cli_error(
+                "cli://env".to_string(),
+                format!("environment variable `{name}` exists but is not valid Unicode"),
+            )),
+        }
     }
 
     fn write_stdout(&mut self, text: &str) -> MResult<()> {
-        std::io::stdout().write_all(text.as_bytes()).map_err(|err| {
-            MechError::new(
-                CliResourceProviderError {
-                    resource: "cli://stdout".to_string(),
-                    reason: err.to_string(),
-                },
-                None,
-            )
-        })
+        let mut out = std::io::stdout().lock();
+        out.write_all(text.as_bytes())
+            .map_err(|err| cli_error("cli://stdout".to_string(), err.to_string()))?;
+        out.flush()
+            .map_err(|err| cli_error("cli://stdout".to_string(), err.to_string()))
     }
 
     fn write_stderr(&mut self, text: &str) -> MResult<()> {
-        std::io::stderr().write_all(text.as_bytes()).map_err(|err| {
-            MechError::new(
-                CliResourceProviderError {
-                    resource: "cli://stderr".to_string(),
-                    reason: err.to_string(),
-                },
-                None,
-            )
-        })
+        let mut err = std::io::stderr().lock();
+        err.write_all(text.as_bytes())
+            .map_err(|err| cli_error("cli://stderr".to_string(), err.to_string()))?;
+        err.flush()
+            .map_err(|err| cli_error("cli://stderr".to_string(), err.to_string()))
     }
 }
 
@@ -105,6 +104,8 @@ impl<B: CliBackend> RuntimeResourceProvider for CliResourceProvider<B> {
                 "cli env is read-only and does not support writes or sends",
             )),
             "cli://stdout" | "cli://stderr" => {
+                // The manifest grants stdout/stderr `write`; the provider currently accepts only
+                // send intents because context sends are represented as resource write requests.
                 if request.intent != RuntimeResourceWriteIntent::Send {
                     return Err(cli_error(
                         request.base_uri,
