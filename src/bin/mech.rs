@@ -116,13 +116,13 @@ async fn load_stylesheets(paths: &[String], fallback_url: &str) -> Result<String
 }
 
 #[cfg(feature = "run")]
-fn new_cli_runtime(config: RuntimeConfig) -> MResult<MechRuntime> {
+fn new_cli_runtime(config: RuntimeConfig, cli_grants: &config::EffectiveCliHostGrants) -> MResult<MechRuntime> {
   let mut runtime = RuntimeBuilder::new()
     .config(config)
     .resource_provider(Box::new(CliResourceProvider::new(StdCliBackend)))
     .build()?;
 
-  grant_cli_runner_capabilities(&mut runtime)?;
+  grant_cli_runner_capabilities(&mut runtime, cli_grants)?;
 
   Ok(runtime)
 }
@@ -189,29 +189,35 @@ fn run_cli_source(runtime: &mut MechRuntime, source: &str) -> MResult<Value> {
 }
 
 #[cfg(feature = "run")]
-fn grant_cli_runner_capabilities(runtime: &mut MechRuntime) -> MResult<()> {
+fn grant_cli_runner_capabilities(runtime: &mut MechRuntime, grants: &config::EffectiveCliHostGrants) -> MResult<()> {
   let subject = runtime.runtime_context()?.subject;
 
-  runtime.grant_capability(RuntimeCapabilityGrant {
-    subject: subject.clone(),
-    resource: "cli://env".to_string(),
-    operations: vec![RuntimeCapabilityOperation::Read],
-    paths: vec!["*".to_string()],
-  })?;
+  if !grants.env_read_paths.is_empty() {
+    runtime.grant_capability(RuntimeCapabilityGrant {
+      subject: subject.clone(),
+      resource: "cli://env".to_string(),
+      operations: vec![RuntimeCapabilityOperation::Read],
+      paths: grants.env_read_paths.clone(),
+    })?;
+  }
 
-  runtime.grant_capability(RuntimeCapabilityGrant {
-    subject: subject.clone(),
-    resource: "cli://stdout".to_string(),
-    operations: vec![RuntimeCapabilityOperation::Write],
-    paths: vec!["text".to_string(), "line".to_string()],
-  })?;
+  if !grants.stdout_write_paths.is_empty() {
+    runtime.grant_capability(RuntimeCapabilityGrant {
+      subject: subject.clone(),
+      resource: "cli://stdout".to_string(),
+      operations: vec![RuntimeCapabilityOperation::Write],
+      paths: grants.stdout_write_paths.clone(),
+    })?;
+  }
 
-  runtime.grant_capability(RuntimeCapabilityGrant {
-    subject,
-    resource: "cli://stderr".to_string(),
-    operations: vec![RuntimeCapabilityOperation::Write],
-    paths: vec!["text".to_string(), "line".to_string()],
-  })?;
+  if !grants.stderr_write_paths.is_empty() {
+    runtime.grant_capability(RuntimeCapabilityGrant {
+      subject,
+      resource: "cli://stderr".to_string(),
+      operations: vec![RuntimeCapabilityOperation::Write],
+      paths: grants.stderr_write_paths.clone(),
+    })?;
+  }
 
   Ok(())
 }
@@ -366,8 +372,32 @@ async fn main() -> Result<(), MechError> {
       .arg(Arg::new("trace")
         .long("trace")
         .help("Print trace output for state-machine arms and function calls")
+        .action(ArgAction::SetTrue))
+      .arg(Arg::new("deny_cli_env")
+        .long("deny-cli-env")
+        .help("Deny CLI environment access")
+        .action(ArgAction::SetTrue))
+      .arg(Arg::new("deny_cli_stdout")
+        .long("deny-cli-stdout")
+        .help("Deny CLI stdout access")
+        .action(ArgAction::SetTrue))
+      .arg(Arg::new("deny_cli_stderr")
+        .long("deny-cli-stderr")
+        .help("Deny CLI stderr access")
         .action(ArgAction::SetTrue)))
-    .subcommand(Command::new("serve")
+    .arg(Arg::new("deny_cli_env")
+        .long("deny-cli-env")
+        .help("Deny CLI environment access")
+        .action(ArgAction::SetTrue))
+      .arg(Arg::new("deny_cli_stdout")
+        .long("deny-cli-stdout")
+        .help("Deny CLI stdout access")
+        .action(ArgAction::SetTrue))
+      .arg(Arg::new("deny_cli_stderr")
+        .long("deny-cli-stderr")
+        .help("Deny CLI stderr access")
+        .action(ArgAction::SetTrue))
+      .subcommand(Command::new("serve")
       .about("Serve Mech program over an HTTP server.")
       .arg(Arg::new("mech_serve_file_paths")
         .help("Source .mec and .mecb files")
@@ -810,6 +840,18 @@ async fn main() -> Result<(), MechError> {
     let config_inputs = if any_look_like_paths { run_inputs.as_slice() } else { &[] };
     let loaded_config = config::load_run_cli_config(config_matches, config_inputs)?;
 
+    let run_deny_cli_env = cli_matches.get_flag("deny_cli_env") || run_matches.map(|m| m.get_flag("deny_cli_env")).unwrap_or(false);
+    let run_deny_cli_stdout = cli_matches.get_flag("deny_cli_stdout") || run_matches.map(|m| m.get_flag("deny_cli_stdout")).unwrap_or(false);
+    let run_deny_cli_stderr = cli_matches.get_flag("deny_cli_stderr") || run_matches.map(|m| m.get_flag("deny_cli_stderr")).unwrap_or(false);
+    let cli_grants = config::effective_cli_host_grants(
+      loaded_config.as_ref(),
+      config::CliHostGrantAttenuation {
+        deny_env: run_deny_cli_env,
+        deny_stdout: run_deny_cli_stdout,
+        deny_stderr: run_deny_cli_stderr,
+      },
+    )?;
+
     let runtime_config = effective_run_runtime_config(
       loaded_config.as_ref(),
       format!("program-{}", uuid),
@@ -820,7 +862,7 @@ async fn main() -> Result<(), MechError> {
     )?;
     repl_runtime_config = Some(runtime_config.clone());
 
-    let mut runtime = new_cli_runtime(runtime_config)?;
+    let mut runtime = new_cli_runtime(runtime_config, &cli_grants)?;
 
     if !run_inputs.is_empty() && !any_look_like_paths {
       let joined = run_inputs.join(" ");

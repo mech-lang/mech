@@ -968,6 +968,99 @@ impl MechRuntime {
     }
   }
 
+
+  fn preflight_context_access(
+    &self,
+    context: &RuntimeContext,
+    binding: &RuntimeContextBinding,
+    operation: RuntimeCapabilityOperation,
+    path: &str,
+  ) -> MResult<()> {
+    let resolved = self.resolve_context_resource_request(binding, path)?;
+    let context_allowed = match operation {
+      RuntimeCapabilityOperation::Read => runtime_context_allows_read(binding, &resolved.context_path),
+      RuntimeCapabilityOperation::Write => runtime_context_allows_write(binding, &resolved.context_path),
+      RuntimeCapabilityOperation::Custom(_) => true,
+    };
+    if !context_allowed {
+      return Err(MechError::new(RuntimeResourceCapabilityDenied {
+        context_name: binding.name.clone(),
+        operation: match operation { RuntimeCapabilityOperation::Read => "read", RuntimeCapabilityOperation::Write => "write", RuntimeCapabilityOperation::Custom(_) => "custom" }.to_string(),
+        path: resolved.context_path,
+      }, None));
+    }
+    if !self.grants.allows(&context.subject, &resolved.provider_base_uri, &operation, &resolved.provider_path) {
+      return Err(MechError::new(RuntimeCapabilityGrantDenied {
+        subject: context.subject.clone(),
+        resource: resolved.provider_base_uri,
+        operation,
+        path: resolved.provider_path,
+      }, None));
+    }
+    Ok(())
+  }
+
+  fn preflight_context_reads_in_expression(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    expression: &mech_core::Expression,
+  ) -> MResult<()> {
+    match expression {
+      mech_core::Expression::Var(var) => {
+        if let Some(var_context) = &var.context {
+          if let Some(binding) = registry.get(&var_context.to_string()) {
+            self.preflight_context_access(context, binding, RuntimeCapabilityOperation::Read, &var.name.to_string())?;
+          }
+        }
+      }
+      _ => {}
+    }
+    Ok(())
+  }
+
+  fn preflight_direct_context_capabilities(
+    &self,
+    context: &RuntimeContext,
+    tree: &mech_core::Program,
+    registry: &RuntimeContextRegistry,
+  ) -> MResult<()> {
+    for section in &tree.body.sections {
+      for element in &section.elements {
+        let codes: Vec<&(mech_core::MechCode, Option<mech_core::Comment>)> = match element {
+          mech_core::SectionElement::MechCode(codes) => codes.iter().collect(),
+          mech_core::SectionElement::FencedMechCode(fenced) => fenced.code.iter().collect(),
+          _ => Vec::new(),
+        };
+        for (code, _) in codes {
+          match code {
+            mech_core::MechCode::Statement(mech_core::Statement::ContextSend(send)) => {
+              if let Some(context_name) = &send.target.context {
+                if let Some(binding) = registry.get(&context_name.to_string()) {
+                  self.preflight_context_access(context, binding, RuntimeCapabilityOperation::Write, &send.target.name.to_string())?;
+                }
+              }
+              self.preflight_context_reads_in_expression(context, registry, &send.expression)?;
+            }
+            mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)) => {
+              if let Some(context_name) = &assign.target.context {
+                if let Some(binding) = registry.get(&context_name.to_string()) {
+                  self.preflight_context_access(context, binding, RuntimeCapabilityOperation::Write, &assign.target.name.to_string())?;
+                }
+              }
+              self.preflight_context_reads_in_expression(context, registry, &assign.expression)?;
+            }
+            mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)) => {
+              self.preflight_context_reads_in_expression(context, registry, &var_def.expression)?;
+            }
+            _ => {}
+          }
+        }
+      }
+    }
+    Ok(())
+  }
+
   fn run_tree_on_program(
     &mut self,
     context: &mut RuntimeContext,
@@ -978,6 +1071,7 @@ impl MechRuntime {
     let execution_scope = scope_hint.unwrap_or(&SourceScope::Program);
     let skip_non_context_imports = scope_hint.is_some();
     let registry = self.direct_context_registry_for_scope(tree, execution_scope)?;
+    self.preflight_direct_context_capabilities(context, tree, &registry)?;
     let mut result = Value::Empty;
     let mut pending = Vec::new();
 

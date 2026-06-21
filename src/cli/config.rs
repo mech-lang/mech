@@ -75,6 +75,58 @@ pub struct EffectiveServeOptions {
   pub wasm_pkg: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EffectiveCliHostGrants {
+  pub env_read_paths: Vec<String>,
+  pub stdout_write_paths: Vec<String>,
+  pub stderr_write_paths: Vec<String>,
+}
+
+impl Default for EffectiveCliHostGrants {
+  fn default() -> Self {
+    Self {
+      env_read_paths: vec!["*".to_string()],
+      stdout_write_paths: vec!["text".to_string(), "line".to_string()],
+      stderr_write_paths: vec!["text".to_string(), "line".to_string()],
+    }
+  }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CliHostGrantAttenuation {
+  pub deny_env: bool,
+  pub deny_stdout: bool,
+  pub deny_stderr: bool,
+}
+
+pub fn effective_cli_host_grants(
+  config: Option<&LoadedMechConfig>,
+  attenuation: CliHostGrantAttenuation,
+) -> MResult<EffectiveCliHostGrants> {
+  let mut grants = EffectiveCliHostGrants::default();
+  if let Some(run) = config.and_then(|loaded| loaded.document.run.as_ref()) {
+    if let Some(paths) = &run.cli.env.read {
+      grants.env_read_paths = paths.clone();
+    }
+    if let Some(paths) = &run.cli.stdout.write {
+      grants.stdout_write_paths = paths.clone();
+    }
+    if let Some(paths) = &run.cli.stderr.write {
+      grants.stderr_write_paths = paths.clone();
+    }
+  }
+  if attenuation.deny_env {
+    grants.env_read_paths.clear();
+  }
+  if attenuation.deny_stdout {
+    grants.stdout_write_paths.clear();
+  }
+  if attenuation.deny_stderr {
+    grants.stderr_write_paths.clear();
+  }
+  Ok(grants)
+}
+
 pub fn effective_run_options(
   cli_paths: Vec<String>,
   config: Option<&LoadedMechConfig>,
@@ -419,6 +471,43 @@ mod config_tests {
 
   fn run_error_text(result: MResult<Option<EffectiveRunOptions>>) -> String {
     format!("{:?}", result.unwrap_err())
+  }
+
+
+  #[test]
+  fn default_cli_host_grants_allow_cli_envelope() {
+    let grants = effective_cli_host_grants(None, CliHostGrantAttenuation::default()).unwrap();
+    assert_eq!(grants.env_read_paths, vec!["*".to_string()]);
+    assert_eq!(grants.stdout_write_paths, vec!["text".to_string(), "line".to_string()]);
+    assert_eq!(grants.stderr_write_paths, vec!["text".to_string(), "line".to_string()]);
+  }
+
+  #[test]
+  fn config_narrows_stdout_grant_to_line() {
+    let config = loaded_config(r#"config := {run: {cli: {stdout: {write: ["line"]}}}}"#);
+    let grants = effective_cli_host_grants(Some(&config), CliHostGrantAttenuation::default()).unwrap();
+    assert_eq!(grants.stdout_write_paths, vec!["line".to_string()]);
+  }
+
+  #[test]
+  fn config_denies_stdout_grant_with_empty_list() {
+    let config = loaded_config(r#"config := {run: {cli: {stdout: {write: []}}}}"#);
+    let grants = effective_cli_host_grants(Some(&config), CliHostGrantAttenuation::default()).unwrap();
+    assert!(grants.stdout_write_paths.is_empty());
+  }
+
+  #[test]
+  fn config_narrows_env_grant_to_path() {
+    let config = loaded_config(r#"config := {run: {cli: {env: {read: ["PATH"]}}}}"#);
+    let grants = effective_cli_host_grants(Some(&config), CliHostGrantAttenuation::default()).unwrap();
+    assert_eq!(grants.env_read_paths, vec!["PATH".to_string()]);
+  }
+
+  #[test]
+  fn cli_deny_stdout_clears_config_stdout_grant() {
+    let config = loaded_config(r#"config := {run: {cli: {stdout: {write: ["line"]}}}}"#);
+    let grants = effective_cli_host_grants(Some(&config), CliHostGrantAttenuation { deny_stdout: true, ..CliHostGrantAttenuation::default() }).unwrap();
+    assert!(grants.stdout_write_paths.is_empty());
   }
 
   #[test]

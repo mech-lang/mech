@@ -61,6 +61,24 @@ pub struct ServeHostConfig {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RunHostConfig {
     pub paths: Vec<PathBuf>,
+    pub cli: RunCliHostConfig,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RunCliHostConfig {
+    pub env: RunCliEnvConfig,
+    pub stdout: RunCliStreamConfig,
+    pub stderr: RunCliStreamConfig,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RunCliEnvConfig {
+    pub read: Option<Vec<String>>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RunCliStreamConfig {
+    pub write: Option<Vec<String>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -286,10 +304,49 @@ impl ConfigLowerer {
         for (key, value) in map {
             match key.as_str() {
                 "paths" => out.paths = expect_path_list("run.paths", value)?,
+                "cli" => out.cli = self.lower_run_cli(value)?,
                 other => return invalid(format!("unknown run field `{other}`")),
             }
         }
 
+        Ok(out)
+    }
+
+    fn lower_run_cli(&self, value: &ConfigValue) -> MResult<RunCliHostConfig> {
+        let map = expect_map("run.cli", value)?;
+        let mut out = RunCliHostConfig::default();
+        for (key, value) in map {
+            match key.as_str() {
+                "env" => out.env = self.lower_run_cli_env(value)?,
+                "stdout" => out.stdout = self.lower_run_cli_stream("run.cli.stdout", value)?,
+                "stderr" => out.stderr = self.lower_run_cli_stream("run.cli.stderr", value)?,
+                other => return invalid(format!("unknown run.cli field `{other}`")),
+            }
+        }
+        Ok(out)
+    }
+
+    fn lower_run_cli_env(&self, value: &ConfigValue) -> MResult<RunCliEnvConfig> {
+        let map = expect_map("run.cli.env", value)?;
+        let mut out = RunCliEnvConfig::default();
+        for (key, value) in map {
+            match key.as_str() {
+                "read" => out.read = Some(expect_cli_env_paths("run.cli.env.read", value)?),
+                other => return invalid(format!("unknown run.cli.env field `{other}`")),
+            }
+        }
+        Ok(out)
+    }
+
+    fn lower_run_cli_stream(&self, where_: &str, value: &ConfigValue) -> MResult<RunCliStreamConfig> {
+        let map = expect_map(where_, value)?;
+        let mut out = RunCliStreamConfig::default();
+        for (key, value) in map {
+            match key.as_str() {
+                "write" => out.write = Some(expect_cli_stream_paths(&format!("{where_}.write"), value)?),
+                other => return invalid(format!("unknown {where_} field `{other}`")),
+            }
+        }
         Ok(out)
     }
 
@@ -645,6 +702,31 @@ fn expect_string_list(where_: &str, value: &ConfigValue) -> MResult<Vec<String>>
         .collect()
 }
 
+fn expect_cli_env_paths(where_: &str, value: &ConfigValue) -> MResult<Vec<String>> {
+    let paths = expect_string_list(where_, value)?;
+    for path in &paths {
+        if path == "*" {
+            continue;
+        }
+        let mut chars = path.chars();
+        let Some(first) = chars.next() else { return invalid(format!("{where_} contains invalid env key `{path}`")); };
+        if !(first == '_' || first.is_ascii_alphabetic()) || !chars.all(|c| c == '_' || c.is_ascii_alphanumeric()) {
+            return invalid(format!("{where_} contains invalid env key `{path}`"));
+        }
+    }
+    Ok(paths)
+}
+
+fn expect_cli_stream_paths(where_: &str, value: &ConfigValue) -> MResult<Vec<String>> {
+    let paths = expect_string_list(where_, value)?;
+    for path in &paths {
+        if path != "text" && path != "line" {
+            return invalid(format!("{where_} contains invalid stream path `{path}`"));
+        }
+    }
+    Ok(paths)
+}
+
 fn expect_browser_operations_for_resource(
     where_: &str,
     value: &ConfigValue,
@@ -735,6 +817,43 @@ mod tests {
             run.paths,
             vec![PathBuf::from("foo.mec"), PathBuf::from("bar.mec")]
         );
+    }
+
+
+    #[test]
+    fn run_cli_stdout_empty_write_lowers() {
+        let doc = parse(r#"config := {run: {cli: {stdout: {write: []}}}}"#).unwrap();
+        assert_eq!(doc.run.unwrap().cli.stdout.write, Some(vec![]));
+    }
+
+    #[test]
+    fn run_cli_stdout_line_write_lowers() {
+        let doc = parse(r#"config := {run: {cli: {stdout: {write: ["line"]}}}}"#).unwrap();
+        assert_eq!(doc.run.unwrap().cli.stdout.write, Some(vec!["line".to_string()]));
+    }
+
+    #[test]
+    fn run_cli_env_path_read_lowers() {
+        let doc = parse(r#"config := {run: {cli: {env: {read: ["PATH"]}}}}"#).unwrap();
+        assert_eq!(doc.run.unwrap().cli.env.read, Some(vec!["PATH".to_string()]));
+    }
+
+    #[test]
+    fn invalid_run_cli_stdout_path_fails() {
+        let err = parse(r#"config := {run: {cli: {stdout: {write: ["html"]}}}}"#).unwrap_err();
+        assert!(format!("{:?}", err).contains("invalid stream path `html`"));
+    }
+
+    #[test]
+    fn invalid_run_cli_env_key_fails() {
+        let err = parse(r#"config := {run: {cli: {env: {read: ["1HOME"]}}}}"#).unwrap_err();
+        assert!(format!("{:?}", err).contains("invalid env key `1HOME`"));
+    }
+
+    #[test]
+    fn unknown_run_cli_field_fails() {
+        let err = parse(r#"config := {run: {cli: {bad: {}}}}"#).unwrap_err();
+        assert!(format!("{:?}", err).contains("unknown run.cli field `bad`"));
     }
 
     #[test]
