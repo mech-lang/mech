@@ -1055,6 +1055,7 @@ impl MechRuntime {
   ) -> MResult<Value> {
     context.validate()?;
     context.charge_step()?;
+    let profile_started = self.config.diagnostics.profile_enabled.then(std::time::Instant::now);
 
     self.emit_event_to_context(
       context,
@@ -1063,25 +1064,30 @@ impl MechRuntime {
       },
     )?;
 
-    let tree = mech_syntax::parser::parse(source.trim())?;
-    let program_config = self.program.config.clone();
-    let mut program = std::mem::replace(
-      &mut self.program,
-      MechProgram::new(program_config),
-    );
+    let result = match mech_syntax::parser::parse(source.trim()) {
+      Ok(tree) => {
+        let program_config = self.program.config.clone();
+        let mut program = std::mem::replace(
+          &mut self.program,
+          MechProgram::new(program_config),
+        );
 
-    self.register_runtime_program_host_functions(
-      context,
-      &mut program,
-    )?;
+        self.register_runtime_program_host_functions(
+          context,
+          &mut program,
+        )?;
 
-    let runtime_ptr: *mut MechRuntime = self;
-    let context_ptr: *mut RuntimeContext = context;
-    let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+        let runtime_ptr: *mut MechRuntime = self;
+        let context_ptr: *mut RuntimeContext = context;
+        let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
 
-    let result = self.run_tree_on_program(context, &mut program, &tree, None);
+        let result = self.run_tree_on_program(context, &mut program, &tree, None);
 
-    self.program = program;
+        self.program = program;
+        result
+      }
+      Err(error) => Err(error),
+    };
 
     match &result {
       Ok(_) => {
@@ -1091,6 +1097,15 @@ impl MechRuntime {
             task_id: context.task,
           },
         )?;
+        if let Some(started) = profile_started {
+          self.emit_event_to_context(
+            context,
+            RuntimeEventKind::ProgramProfiled {
+              task_id: context.task,
+              duration_ns: started.elapsed().as_nanos(),
+            },
+          )?;
+        }
       }
       Err(error) => {
         self.emit_event_to_context(
@@ -1100,6 +1115,15 @@ impl MechRuntime {
             message: format!("{:?}", error),
           },
         )?;
+        if let Some(started) = profile_started {
+          self.emit_event_to_context(
+            context,
+            RuntimeEventKind::ProgramProfiled {
+              task_id: context.task,
+              duration_ns: started.elapsed().as_nanos(),
+            },
+          )?;
+        }
       }
     }
 
@@ -1119,6 +1143,7 @@ impl MechRuntime {
   ) -> MResult<Value> {
     context.validate()?;
     context.charge_step()?;
+    let profile_started = self.config.diagnostics.profile_enabled.then(std::time::Instant::now);
 
     self.emit_event_to_context(
       context,
@@ -1154,6 +1179,15 @@ impl MechRuntime {
             task_id: context.task,
           },
         )?;
+        if let Some(started) = profile_started {
+          self.emit_event_to_context(
+            context,
+            RuntimeEventKind::ProgramProfiled {
+              task_id: context.task,
+              duration_ns: started.elapsed().as_nanos(),
+            },
+          )?;
+        }
       }
       Err(error) => {
         self.emit_event_to_context(
@@ -1163,6 +1197,15 @@ impl MechRuntime {
             message: format!("{:?}", error),
           },
         )?;
+        if let Some(started) = profile_started {
+          self.emit_event_to_context(
+            context,
+            RuntimeEventKind::ProgramProfiled {
+              task_id: context.task,
+              duration_ns: started.elapsed().as_nanos(),
+            },
+          )?;
+        }
       }
     }
 
@@ -1744,6 +1787,40 @@ mod tests {
     };
     let output = runtime.output_value_for_interpreter(root_id, output_id);
     assert!(output.is_some());
+  }
+
+  #[test]
+  fn run_string_with_context_emits_profile_event_when_enabled() {
+    let mut config = RuntimeConfig::default();
+    config.diagnostics.profile_enabled = true;
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+
+    runtime.run_string_with_context(&mut context, "1 + 1").unwrap();
+
+    assert!(context.events.iter().any(|event| {
+      matches!(
+        event.kind,
+        RuntimeEventKind::ProgramProfiled { duration_ns, .. } if duration_ns > 0
+      )
+    }));
+  }
+
+  #[test]
+  fn run_string_with_context_emits_profile_event_on_failure_when_enabled() {
+    let mut config = RuntimeConfig::default();
+    config.diagnostics.profile_enabled = true;
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+
+    assert!(runtime.run_string_with_context(&mut context, "1 +").is_err());
+
+    assert!(context.events.iter().any(|event| {
+      matches!(
+        event.kind,
+        RuntimeEventKind::ProgramProfiled { duration_ns, .. } if duration_ns > 0
+      )
+    }));
   }
 
   #[test]

@@ -8,8 +8,8 @@ use mech_host_cli::{CliResourceProvider, StdCliBackend};
 
 #[cfg(feature = "run")]
 use mech_runtime::{
-  DiagnosticsConfig, LogLevel, MechRuntime, RuntimeBuilder, RuntimeCapabilityGrant,
-  RuntimeCapabilityOperation, RuntimeConfig, RuntimeLimits,
+  MechRuntime, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeCapabilityOperation, RuntimeConfig,
+  RuntimeEvent, RuntimeEventKind,
 };
 #[cfg(feature = "serve")]
 #[cfg(feature = "formatter")]
@@ -80,7 +80,10 @@ impl MechErrorKind for Utf8ConversionError {
 #[cfg(feature = "bundle_web")]
 use mech::cli::bundle_web;
 #[cfg(feature = "serve")]
-use mech::cli::{capabilities, config};
+use mech::cli::capabilities;
+
+#[cfg(any(feature = "serve", feature = "run"))]
+use mech::cli::config;
 
 
 async fn load_stylesheets(paths: &[String], fallback_url: &str) -> Result<String, MechError> {
@@ -113,20 +116,7 @@ async fn load_stylesheets(paths: &[String], fallback_url: &str) -> Result<String
 }
 
 #[cfg(feature = "run")]
-fn new_cli_runtime(
-  name: String,
-  debug_enabled: bool,
-  trace_enabled: bool,
-  profile_enabled: bool,
-  rounds_per_step: usize,
-) -> MResult<MechRuntime> {
-  let mut config = RuntimeConfig::default();
-  config.name = name;
-  config.limits.max_steps_per_turn = Some(rounds_per_step as u64);
-  config.diagnostics.debug_enabled = debug_enabled;
-  config.diagnostics.trace_enabled = trace_enabled;
-  config.diagnostics.profile_enabled = profile_enabled;
-
+fn new_cli_runtime(config: RuntimeConfig) -> MResult<MechRuntime> {
   let mut runtime = RuntimeBuilder::new()
     .config(config)
     .resource_provider(Box::new(CliResourceProvider::new(StdCliBackend)))
@@ -135,6 +125,67 @@ fn new_cli_runtime(
   grant_cli_runner_capabilities(&mut runtime)?;
 
   Ok(runtime)
+}
+
+#[cfg(feature = "run")]
+fn effective_run_runtime_config(
+  loaded_config: Option<&mech::LoadedMechConfig>,
+  name: String,
+  debug_enabled: bool,
+  trace_enabled: bool,
+  profile_enabled: bool,
+  rounds_per_step: Option<usize>,
+) -> MResult<RuntimeConfig> {
+  let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
+
+  let mut config = mech::apply_runtime_config_patch(
+    RuntimeConfig::default(),
+    loaded_config
+      .as_ref()
+      .map(|loaded| &loaded.document.runtime)
+      .unwrap_or(&default_runtime_patch),
+  )?;
+
+  config.name = name;
+
+  if debug_enabled {
+    config.diagnostics.debug_enabled = true;
+  }
+
+  if trace_enabled {
+    config.diagnostics.trace_enabled = true;
+  }
+
+  if profile_enabled {
+    config.diagnostics.profile_enabled = true;
+  }
+
+  if let Some(rounds_per_step) = rounds_per_step {
+    config.limits.max_steps_per_turn = Some(rounds_per_step as u64);
+  }
+
+  config.validate()?;
+  Ok(config)
+}
+
+#[cfg(feature = "run")]
+fn print_run_runtime_events(events: &[RuntimeEvent]) {
+  for event in events {
+    match &event.kind {
+      RuntimeEventKind::ProgramProfiled { duration_ns, .. } => {
+        println!("Cycle Time: {} ns", duration_ns);
+      }
+      _ => {}
+    }
+  }
+}
+
+#[cfg(feature = "run")]
+fn run_cli_source(runtime: &mut MechRuntime, source: &str) -> MResult<Value> {
+  let mut context = runtime.runtime_context()?;
+  let result = runtime.run_string_with_context(&mut context, source);
+  print_run_runtime_events(&context.events);
+  result
 }
 
 #[cfg(feature = "run")]
@@ -181,29 +232,29 @@ async fn main() -> Result<(), MechError> {
 
 
   let super_3D_logo = r#"
-          _____                      _____                     _____                     _____         
-         ╱╲    ╲                    ╱╲    ╲                   ╱╲    ╲                   ╱╲    ╲         
-        ╱┊┊╲    ╲                  ╱┊┊╲    ╲                 ╱┊┊╲____╲                 ╱┊┊╲____╲        
-        ╲┊┊┊╲    ╲                 ╲┊┊┊╲    ╲               ╱┊┊┊╱    ╱                ╱┊┊┊╱    ╱        
-      ___╲┊┊┊╲    ╲              ___╲┊┊┊╲    ╲             ╱┊┊┊╱   _╱___             ╱┊┊┊╱    ╱         
-     ╱╲   ╲┊┊┊╲    ╲            ╱╲   ╲┊┊┊╲    ╲           ╱┊┊┊╱   ╱╲    ╲           ╱┊┊┊╱    ╱          
-    ╱┊┊╲___╲┊┊┊╲    ╲          ╱┊┊╲   ╲┊┊┊╲    ╲         ╱┊┊┊╱   ╱┊┊╲    ╲         ╱┊┊┊╱___ ╱          
-   ╱┊┊┊╱   ╱┊┊┊┊╲    ╲        ╱┊┊┊┊╲   ╲┊┊┊╲    ╲       ╱┊┊┊╱    ╲┊┊┊╲    ╲       ╱┊┊┊┊╲    ╲   _____    
-  ╱┊┊┊╱   ╱┊┊┊┊┊┊╲    ╲      ╱┊┊┊┊┊┊╲   ╲┊┊┊╲    ╲     ╱┊┊┊╱    ╱ ╲┊┊┊╲    ╲     ╱┊┊┊┊┊┊╲    ╲ ╱╲    ╲ 
+          _____                      _____                     _____                     _____
+         ╱╲    ╲                    ╱╲    ╲                   ╱╲    ╲                   ╱╲    ╲
+        ╱┊┊╲    ╲                  ╱┊┊╲    ╲                 ╱┊┊╲____╲                 ╱┊┊╲____╲
+        ╲┊┊┊╲    ╲                 ╲┊┊┊╲    ╲               ╱┊┊┊╱    ╱                ╱┊┊┊╱    ╱
+      ___╲┊┊┊╲    ╲              ___╲┊┊┊╲    ╲             ╱┊┊┊╱   _╱___             ╱┊┊┊╱    ╱
+     ╱╲   ╲┊┊┊╲    ╲            ╱╲   ╲┊┊┊╲    ╲           ╱┊┊┊╱   ╱╲    ╲           ╱┊┊┊╱    ╱
+    ╱┊┊╲___╲┊┊┊╲    ╲          ╱┊┊╲   ╲┊┊┊╲    ╲         ╱┊┊┊╱   ╱┊┊╲    ╲         ╱┊┊┊╱___ ╱
+   ╱┊┊┊╱   ╱┊┊┊┊╲    ╲        ╱┊┊┊┊╲   ╲┊┊┊╲    ╲       ╱┊┊┊╱    ╲┊┊┊╲    ╲       ╱┊┊┊┊╲    ╲   _____
+  ╱┊┊┊╱   ╱┊┊┊┊┊┊╲    ╲      ╱┊┊┊┊┊┊╲   ╲┊┊┊╲    ╲     ╱┊┊┊╱    ╱ ╲┊┊┊╲    ╲     ╱┊┊┊┊┊┊╲    ╲ ╱╲    ╲
  ╱┊┊┊╱   ╱┊┊┊╱╲┊┊┊╲    ╲    ╱┊┊┊╱╲┊┊┊╲   ╲┊┊┊╲____╲   ╱┊┊┊╱    ╱   ╲┊┊┊╲____╲   ╱┊┊┊╱╲┊┊┊╲____╱┊┊╲____╲
 ╱┊┊┊╱   ╱┊┊┊╱  ╲┊┊┊╲____╲  ╱┊┊┊╱__╲┊┊┊╲   ╲┊┊╱    ╱  ╱┊┊┊╱____╱    ╱┊┊┊╱    ╱  ╱┊┊┊╱  ╲┊┊╱   ╱┊┊┊╱    ╱
 ╲┊┊╱   ╱┊┊┊╱    ╲┊┊╱    ╱  ╲┊┊┊╲   ╲┊┊┊╲   ╲╱____╱   ╲┊┊┊╲    ╲    ╲┊┊╱    ╱   ╲┊┊╱    ╲╱___╱┊┊┊╱    ╱
- ╲╱___╱┊┊┊╱   ___╲╱____╱    ╲┊┊┊╲   ╲┊┊┊╲    ╲        ╲┊┊┊╲    ╲    ╲╱____╱     ╲╱____╱    ╱┊┊┊╱    ╱ 
-     ╱┊┊┊╱   ╱╲    ╲         ╲┊┊┊╲   ╲┊┊┊╲____╲        ╲┊┊┊╲    ╲____                     ╱┊┊┊╱    ╱  
-     ╲┊┊╱   ╱┊┊╲____╲         ╲┊┊┊╲   ╲┊┊╱    ╱         ╲┊┊┊╲  ╱╲    ╲                   ╱┊┊┊╱    ╱   
-      ╲╱___╱┊┊┊╱    ╱          ╲┊┊┊╲   ╲╱____╱           ╲┊┊┊╲╱┊┊╲____╲                 ╱┊┊┊╱    ╱    
-          ╱┊┊┊╱    ╱            ╲┊┊┊╲    ╲                ╲┊┊┊┊┊┊╱    ╱                ╱┊┊┊╱    ╱     
-         ╱┊┊┊╱    ╱              ╲┊┊┊╲____╲                ╲┊┊┊┊╱    ╱                ╱┊┊┊╱    ╱       
-        ╱┊┊┊╱    ╱                ╲┊┊╱    ╱                 ╲┊┊╱    ╱                 ╲┊┊╱    ╱        
+ ╲╱___╱┊┊┊╱   ___╲╱____╱    ╲┊┊┊╲   ╲┊┊┊╲    ╲        ╲┊┊┊╲    ╲    ╲╱____╱     ╲╱____╱    ╱┊┊┊╱    ╱
+     ╱┊┊┊╱   ╱╲    ╲         ╲┊┊┊╲   ╲┊┊┊╲____╲        ╲┊┊┊╲    ╲____                     ╱┊┊┊╱    ╱
+     ╲┊┊╱   ╱┊┊╲____╲         ╲┊┊┊╲   ╲┊┊╱    ╱         ╲┊┊┊╲  ╱╲    ╲                   ╱┊┊┊╱    ╱
+      ╲╱___╱┊┊┊╱    ╱          ╲┊┊┊╲   ╲╱____╱           ╲┊┊┊╲╱┊┊╲____╲                 ╱┊┊┊╱    ╱
+          ╱┊┊┊╱    ╱            ╲┊┊┊╲    ╲                ╲┊┊┊┊┊┊╱    ╱                ╱┊┊┊╱    ╱
+         ╱┊┊┊╱    ╱              ╲┊┊┊╲____╲                ╲┊┊┊┊╱    ╱                ╱┊┊┊╱    ╱
+        ╱┊┊┊╱    ╱                ╲┊┊╱    ╱                 ╲┊┊╱    ╱                 ╲┊┊╱    ╱
         ╲┊┊╱    ╱                  ╲╱____╱                   ╲╱____╱                   ╲╱____╱
          ╲╱____╱"#.truecolor(246,192,78);
 
-  
+
   let micromika = "╭◉╮".truecolor(246,192,78);
   let micromika_point = "╭◉─".truecolor(246,192,78);
   let micromika_hello = "╭◉╯".truecolor(246,192,78);
@@ -212,10 +263,11 @@ async fn main() -> Result<(), MechError> {
   let ctrlc_cmd = ":ctrl+c".bright_yellow();
   let mika_open = "⸢".bright_yellow();
   let mika_close = "⸥".bright_yellow();
-  
+
   let about = format!("{}", text_logo);
 
   let cli_command = Command::new("Mech")
+    .subcommand_precedence_over_arg(true)
     .version(VERSION)
     .author("Corey Montella corey@mech-lang.org")
     .about(about)
@@ -238,7 +290,7 @@ async fn main() -> Result<(), MechError> {
         .short('o')
         .long("out")
         .help("Destination folder.")
-        .required(false))        
+        .required(false))
       .arg(Arg::new("stylesheet")
         .short('s')
         .long("stylesheet")
@@ -250,7 +302,7 @@ async fn main() -> Result<(), MechError> {
         .short('m')
         .long("shim")
         .value_name("SHIM")
-        .help("Sets the shim for the HTML output"))        
+        .help("Sets the shim for the HTML output"))
       .arg(Arg::new("html")
         .short('t')
         .long("html")
@@ -272,7 +324,7 @@ async fn main() -> Result<(), MechError> {
         .short('o')
         .long("out")
         .help("Destination folder.")
-        .required(false)))            
+        .required(false)))
     .subcommand(Command::new("test")
       .about("Validate program invariants.")
       .arg(Arg::new("mech_test_file_paths")
@@ -290,6 +342,31 @@ async fn main() -> Result<(), MechError> {
         .help("Print verbose pass/fail details.")
         .action(ArgAction::SetTrue)
         .required(false)))
+    .subcommand(Command::new("run")
+      .about("Run Mech source files, project inputs, or inline Mech code.")
+      .arg(Arg::new("mech_run_paths")
+        .help("Source .mec files, project folders, or inline Mech code.")
+        .required(false)
+        .action(ArgAction::Append))
+      .arg(Arg::new("debug")
+        .short('d')
+        .long("debug")
+        .help("Print debug info")
+        .action(ArgAction::SetTrue))
+      .arg(Arg::new("time")
+        .short('t')
+        .long("time")
+        .help("Measure how long the program takes to execute.")
+        .action(ArgAction::SetTrue))
+      .arg(Arg::new("rounds-per-step")
+        .long("rounds-per-step")
+        .value_name("ROUNDS")
+        .help("Sets the number of rounds per step. Overrides runtime.limits.max-steps-per-turn.")
+        .required(false))
+      .arg(Arg::new("trace")
+        .long("trace")
+        .help("Print trace output for state-machine arms and function calls")
+        .action(ArgAction::SetTrue)))
     .subcommand(Command::new("serve")
       .about("Serve Mech program over an HTTP server.")
       .arg(Arg::new("mech_serve_file_paths")
@@ -328,7 +405,7 @@ async fn main() -> Result<(), MechError> {
         .short('e')
         .long("tree")
         .help("Print parse tree")
-        .action(ArgAction::SetTrue))   
+        .action(ArgAction::SetTrue))
     .arg(Arg::new("time")
         .short('t')
         .long("time")
@@ -355,7 +432,7 @@ async fn main() -> Result<(), MechError> {
   #[cfg(feature = "serve")]
   let cli_command = capabilities::add_filesystem_capability_args(cli_command);
 
-  #[cfg(feature = "serve")]
+  #[cfg(any(feature = "serve", feature = "run"))]
   let cli_command = config::add_config_args(cli_command);
 
   #[cfg(all(feature = "bundle_web", not(feature = "serve")))]
@@ -368,7 +445,7 @@ async fn main() -> Result<(), MechError> {
   let mut repl_flag = cli_matches.get_flag("repl");
   let time_flag = cli_matches.get_flag("time");
   let trace_flag = cli_matches.get_flag("trace");
-  let rounds_per_step = cli_matches.get_one::<String>("rounds-per-step").and_then(|s| s.parse::<usize>().ok()).unwrap_or(10_000);
+  let root_rounds_per_step = cli_matches.get_one::<String>("rounds-per-step").and_then(|s| s.parse::<usize>().ok());
 
   let shim_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/shim.html".to_string();
   let stylesheet_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/style.css".to_string();
@@ -516,7 +593,7 @@ async fn main() -> Result<(), MechError> {
 
     server.serve().await?;
   }
-  
+
   // --------------------------------------------------------------------------
   // Test
   // --------------------------------------------------------------------------
@@ -678,7 +755,7 @@ async fn main() -> Result<(), MechError> {
         // otherwise produce multiple output files
         for (path, content) in html_items {
           let filename = path.with_extension("html");
-          let output_file = if is_output_file { output_path.clone() } 
+          let output_file = if is_output_file { output_path.clone() }
                             else { output_path.join(filename) };
           save_to_file(output_file, content)?;
         }
@@ -687,7 +764,7 @@ async fn main() -> Result<(), MechError> {
       // Raw source mode
       for (filename, mech_src) in loaded_sources {
         let content = mech_src.to_string();
-        let output_file = if is_output_file { output_path.clone() } 
+        let output_file = if is_output_file { output_path.clone() }
                           else { output_path.join(filename) };
         save_to_file(output_file, &content)?;
       }
@@ -703,72 +780,87 @@ async fn main() -> Result<(), MechError> {
   let mut caught_inturrupts = Arc::new(Mutex::new(0));
   #[cfg(feature = "run")]
   let uuid = generate_uuid();
-
   #[cfg(feature = "run")]
-  let mut runtime = new_cli_runtime(
-    format!("program-{}", uuid),
-    debug_flag,
-    trace_flag,
-    time_flag,
-    rounds_per_step,
-  )?;
+  let mut repl_runtime_config: Option<RuntimeConfig> = None;
+
   #[cfg(feature = "run")]
   {
-    let mut paths = if let Some(m) = cli_matches.get_many::<String>("mech_paths") {
+    let run_matches = cli_matches.subcommand_matches("run");
+    let explicit_run_command = run_matches.is_some();
+    let run_inputs: Vec<String> = if let Some(run_matches) = run_matches {
+      run_matches
+        .get_many::<String>("mech_run_paths")
+        .map_or(vec![], |files| files.map(|file| file.to_string()).collect())
+    } else if let Some(m) = cli_matches.get_many::<String>("mech_paths") {
       m.map(|s| s.to_string()).collect()
-    } else { repl_flag = true; vec![] };
+    } else {
+      vec![]
+    };
 
-    let any_look_like_paths = paths.iter().any(|p| {
-      is_intended_path(p)
-    });
+    let run_debug_flag = debug_flag || run_matches.map(|m| m.get_flag("debug")).unwrap_or(false);
+    let run_trace_flag = trace_flag || run_matches.map(|m| m.get_flag("trace")).unwrap_or(false);
+    let run_time_flag = time_flag || run_matches.map(|m| m.get_flag("time")).unwrap_or(false);
+    let run_rounds_per_step = run_matches
+      .and_then(|m| m.get_one::<String>("rounds-per-step"))
+      .and_then(|s| s.parse::<usize>().ok())
+      .or(root_rounds_per_step);
 
-    if !paths.is_empty() {
-      if any_look_like_paths {
-        let mut run_errors = Vec::new();
-        for p in &paths {
-          if let Err(err) = std::fs::read_to_string(p) {
-            run_errors.push(MechError::new(GenericError{msg: format!("Unable to read source `{}`: {}", p, err)}, None).with_compiler_loc());
-          }
+    let any_look_like_paths = run_inputs.iter().any(|p| is_intended_path(p));
+    let config_matches = run_matches.unwrap_or(&cli_matches);
+    let config_inputs = if any_look_like_paths { run_inputs.as_slice() } else { &[] };
+    let loaded_config = config::load_run_cli_config(config_matches, config_inputs)?;
+
+    let runtime_config = effective_run_runtime_config(
+      loaded_config.as_ref(),
+      format!("program-{}", uuid),
+      run_debug_flag,
+      run_trace_flag,
+      run_time_flag,
+      run_rounds_per_step,
+    )?;
+    repl_runtime_config = Some(runtime_config.clone());
+
+    let mut runtime = new_cli_runtime(runtime_config)?;
+
+    if !run_inputs.is_empty() && !any_look_like_paths {
+      let joined = run_inputs.join(" ");
+      match run_cli_source(&mut runtime, joined.trim()) {
+        Ok(r) => {
+          println!("{}", r.kind());
+          #[cfg(feature = "pretty_print")]
+          println!("{}", r.pretty_print());
+          #[cfg(not(feature = "pretty_print"))]
+          println!("{:#?}", r);
+          std::process::exit(0);
         }
-        if !run_errors.is_empty() {
-          // These looked like paths but failed to watch
-          // Print errors
-          for err in &run_errors {
-            print_mech_error(err);
-          }
+        Err(err) => {
+          println!("{} {:#?}",
+            "[Error]".truecolor(246,98,78),
+            err
+          );
           std::process::exit(1);
-        }
-      } else {
-        // ---------- 4. Treat the inputs as Mech code ----------
-        let joined = paths.join(" ");
-        match runtime.run_string(joined.trim()) {
-          Ok(r) => {
-            println!("{}", r.kind());
-            #[cfg(feature = "pretty_print")]
-            println!("{}", r.pretty_print());
-            #[cfg(not(feature = "pretty_print"))]
-            println!("{:#?}", r);
-            std::process::exit(0);
-          }
-          Err(err) => {
-            println!("{} {:#?}",
-              "[Error]".truecolor(246,98,78),
-              err
-            );
-            std::process::exit(1);
-          }
         }
       }
     }
 
-    let result: MResult<Value> = if paths.is_empty() { Ok(Value::Empty) } else {
+    let options = config::effective_run_options(
+      run_inputs,
+      loaded_config.as_ref(),
+      explicit_run_command,
+    )?;
+
+    let result: MResult<Value> = if let Some(options) = options {
       let mut last = Value::Empty;
-      for p in &paths {
+      for p in &options.paths {
         let src = std::fs::read_to_string(p)?;
-        last = runtime.run_string(&src)?;
+        last = run_cli_source(&mut runtime, &src)?;
       }
       Ok(last)
+    } else {
+      repl_flag = true;
+      Ok(Value::Empty)
     };
+
     if !repl_flag {
       match &result {
         Ok(r) => {
@@ -785,7 +877,7 @@ async fn main() -> Result<(), MechError> {
         }
       };
     }
-    
+
     #[cfg(windows)]
     control::set_virtual_terminal(true).unwrap();
     clc();
@@ -794,7 +886,7 @@ async fn main() -> Result<(), MechError> {
     stdo.execute(cursor::MoveToNextLine(1));
     println!("\n                {}                ",format!("v{}",VERSION).truecolor(246,192,78));
     println!("           {}           \n", "www.mech-lang.org");
-    let intro_message = format!("{}Enter {} for a list of all commands.{}\n", mika_open, help_cmd, mika_close); 
+    let intro_message = format!("{}Enter {} for a list of all commands.{}\n", mika_open, help_cmd, mika_close);
     println!("{} {}", micromika, intro_message);
 
     // Catch Ctrl-C a couple times before quitting
@@ -807,7 +899,7 @@ async fn main() -> Result<(), MechError> {
         let final_state = ProgressBar::new_spinner();
         let completed_style = ProgressStyle::with_template(
           "\n{spinner:.yellow} {msg}"
-        ).unwrap().tick_strings(MICROMIKA_WAVE);  
+        ).unwrap().tick_strings(MICROMIKA_WAVE);
         final_state.set_style(completed_style);
         final_state.set_message(format!("{}Okay cya!{}\n", mika_open, mika_close));
         for _ in 0..MICROMIKA_WAVE.len() - 1 {
@@ -826,7 +918,20 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   #[cfg(all(feature = "repl", feature = "run"))]
   // TODO: move the REPL onto MechRuntime as a separate PR so CLI host contexts work interactively too.
-  let mut repl = MechRepl::new();
+  let mut repl = {
+    let config = repl_runtime_config.unwrap_or_else(RuntimeConfig::default);
+    let mut repl_program = MechProgram::new(MechProgramConfig {
+      name: config.name.clone(),
+      environment: MechProgramEnvironment::default(),
+    });
+    repl_program.configure(
+      config.diagnostics.debug_enabled,
+      config.diagnostics.trace_enabled,
+      config.diagnostics.profile_enabled,
+      config.limits.max_steps_per_turn.unwrap_or(10_000) as usize,
+    );
+    MechRepl::from(repl_program)
+  };
   #[cfg(all(feature = "repl", not(feature = "run")))]
   let mut repl = MechRepl::from(MechProgram::new(MechProgramConfig {
     name: format!("repl-{}", generate_uuid()),
@@ -874,7 +979,7 @@ async fn main() -> Result<(), MechError> {
       }
     }
   }
-  
+
   Ok(())
 }
 
@@ -992,7 +1097,10 @@ fn is_intended_path(s: &str) -> bool {
   if s.trim().is_empty() { return false; }
 
   let path = Path::new(s);
-  if s.starts_with("./") || s.starts_with(".\\") || 
+  if path.exists() {
+    return true;
+  }
+  if s.starts_with("./") || s.starts_with(".\\") ||
     s.starts_with("../") || s.starts_with("..\\") ||
     s.starts_with('/') || s.starts_with('\\') {
     return true;
@@ -1105,7 +1213,7 @@ pub fn print_mech_error(err: &MechError) {
         } else {
           println!("Error:");
           println!("{:#?}", err);
-        }                
+        }
       }
       None => {
         println!("Error:");
@@ -1116,7 +1224,7 @@ pub fn print_mech_error(err: &MechError) {
       println!("Error:");
       println!("{:#?}", err);
   }
-} 
+}
 
 #[cfg(all(test, feature = "serve"))]
 mod filesystem_capability_cli_tests {

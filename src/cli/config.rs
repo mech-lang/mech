@@ -24,25 +24,45 @@ pub fn add_config_args(command: Command) -> Command {
 }
 
 pub fn load_cli_config(matches: &clap::ArgMatches) -> MResult<Option<LoadedMechConfig>> {
-  let no_config = matches.get_flag("no_config");
-  let explicit_config = matches.get_one::<String>("config").map(|path| path.as_str());
   let project_inputs: Vec<String> = matches
     .get_many::<String>("mech_serve_file_paths")
     .into_iter()
     .flatten()
     .cloned()
     .collect();
+  load_cli_config_with_inputs(matches, &project_inputs, "Server")
+}
+
+pub fn load_cli_config_with_inputs(
+  matches: &clap::ArgMatches,
+  project_inputs: &[String],
+  label: &str,
+) -> MResult<Option<LoadedMechConfig>> {
+  let no_config = matches.get_flag("no_config");
+  let explicit_config = matches.get_one::<String>("config").map(|path| path.as_str());
   let current_dir = std::env::current_dir()?;
   let loaded = crate::load_optional_mech_config(
     &current_dir,
     explicit_config,
     no_config,
-    &project_inputs,
+    project_inputs,
   )?;
   if let Some(config) = loaded.as_ref() {
-    println!("[Mech Server] Loading config… {}", config.path.display());
+    println!("[Mech {label}] Loading config… {}", config.path.display());
   }
   Ok(loaded)
+}
+
+pub fn load_run_cli_config(
+  matches: &clap::ArgMatches,
+  run_inputs: &[String],
+) -> MResult<Option<LoadedMechConfig>> {
+  load_cli_config_with_inputs(matches, run_inputs, "Run")
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EffectiveRunOptions {
+  pub paths: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -53,6 +73,73 @@ pub struct EffectiveServeOptions {
   pub stylesheet_paths: Vec<String>,
   pub shim_path: String,
   pub wasm_pkg: String,
+}
+
+pub fn effective_run_options(
+  cli_paths: Vec<String>,
+  config: Option<&LoadedMechConfig>,
+  explicit_run_command: bool,
+) -> MResult<Option<EffectiveRunOptions>> {
+  let config_path_to_string = |loaded: &LoadedMechConfig, path: &Path| {
+    resolve_config_path(&loaded.base_dir, path)
+      .to_string_lossy()
+      .to_string()
+  };
+
+  let config_paths = config
+    .and_then(|loaded| {
+      loaded.document.run.as_ref().map(|run| {
+        run.paths
+          .iter()
+          .map(|path| config_path_to_string(loaded, path))
+          .collect::<Vec<_>>()
+      })
+    })
+    .unwrap_or_default();
+
+  let mut effective_cli_paths = cli_paths;
+
+  if let Some(loaded) = config {
+    if let Some(project_dir) = loaded.discovered_project_dir.as_ref() {
+      if effective_cli_paths.len() == 1 {
+        let current_dir = std::env::current_dir()?;
+        let input = PathBuf::from(&effective_cli_paths[0]);
+        let input_path = if input.is_absolute() {
+          input
+        } else {
+          current_dir.join(input)
+        };
+
+        if input_path.exists()
+          && input_path.is_dir()
+          && input_path.canonicalize()? == *project_dir
+        {
+          effective_cli_paths.clear();
+        }
+      }
+    }
+  }
+
+  let paths = if !effective_cli_paths.is_empty() {
+    effective_cli_paths
+  } else {
+    config_paths
+  };
+
+  if paths.is_empty() {
+    if explicit_run_command {
+      return Err(MechError::new(
+        GenericError {
+          msg: "no run inputs supplied; pass path(s) or configure run.paths".to_string(),
+        },
+        None,
+      ).with_compiler_loc());
+    }
+
+    return Ok(None);
+  }
+
+  Ok(Some(EffectiveRunOptions { paths }))
 }
 
 pub fn effective_serve_options(
@@ -288,6 +375,15 @@ mod config_tests {
     }
   }
 
+  fn loaded_run_project_config_at(base_dir: PathBuf, source: &str, project_dir: PathBuf) -> LoadedMechConfig {
+    LoadedMechConfig {
+      path: base_dir.join("mech.mcfg"),
+      base_dir,
+      document: parse_document(source),
+      discovered_project_dir: Some(project_dir),
+    }
+  }
+
   fn create_wasm_pkg(path: &Path) {
     std::fs::create_dir_all(path).unwrap();
     std::fs::write(path.join("mech_wasm_bg.wasm.br"), b"wasm").unwrap();
@@ -319,6 +415,63 @@ mod config_tests {
 
   fn error_text(result: MResult<EffectiveServeOptions>) -> String {
     format!("{:?}", result.unwrap_err())
+  }
+
+  fn run_error_text(result: MResult<Option<EffectiveRunOptions>>) -> String {
+    format!("{:?}", result.unwrap_err())
+  }
+
+  #[test]
+  fn config_run_paths_used_when_cli_paths_absent() {
+    let config = loaded_config(r#"config := {run: {paths: ["foo.mec", "bar.mec"]}}"#);
+    let effective = effective_run_options(vec![], Some(&config), true)
+      .unwrap()
+      .unwrap();
+    assert_eq!(effective.paths, vec!["foo.mec", "bar.mec"]);
+  }
+
+  #[test]
+  fn cli_run_paths_override_config_paths() {
+    let config = loaded_config(r#"config := {run: {paths: ["foo.mec"]}}"#);
+    let effective = effective_run_options(vec!["cli.mec".to_string()], Some(&config), true)
+      .unwrap()
+      .unwrap();
+    assert_eq!(effective.paths, vec!["cli.mec"]);
+  }
+
+  #[test]
+  fn run_project_directory_uses_config_paths_not_selector_path() {
+    let root = temp_root("run-project-uses-config-paths");
+    let project = root.join("project");
+    std::fs::create_dir_all(&project).unwrap();
+    let config = loaded_run_project_config_at(
+      project.clone(),
+      r#"config := {run: {paths: ["demo.mec"]}}"#,
+      project.canonicalize().unwrap(),
+    );
+    {
+      let _guard = CurrentDirGuard::enter(&root);
+      let effective = effective_run_options(vec!["project".to_string()], Some(&config), false)
+        .unwrap()
+        .unwrap();
+      assert_eq!(
+        effective.paths,
+        vec![project.join("demo.mec").to_string_lossy().to_string()]
+      );
+    }
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn implicit_run_without_inputs_returns_none() {
+    let options = effective_run_options(vec![], None, false).unwrap();
+    assert_eq!(options, None);
+  }
+
+  #[test]
+  fn explicit_run_without_inputs_and_without_config_paths_errors() {
+    let msg = run_error_text(effective_run_options(vec![], None, true));
+    assert!(msg.contains("no run inputs supplied"));
   }
 
 

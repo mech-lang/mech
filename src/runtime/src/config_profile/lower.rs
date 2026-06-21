@@ -15,6 +15,7 @@ pub struct MechConfigDocument {
     pub source_name: String,
     pub runtime: RuntimeConfigPatch,
     pub serve: Option<ServeHostConfig>,
+    pub run: Option<RunHostConfig>,
     pub browser: BrowserAuthority,
     pub capabilities: Vec<ConfigCapabilityGrant>,
     pub module: Option<ModuleManifestConfig>,
@@ -57,6 +58,11 @@ pub struct ServeHostConfig {
     pub wasm: Option<PathBuf>,
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RunHostConfig {
+    pub paths: Vec<PathBuf>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConfigCapabilityGrant {
     pub kind: ConfigCapabilityKind,
@@ -85,6 +91,7 @@ impl ConfigLowerer {
             source_name,
             runtime: RuntimeConfigPatch::default(),
             serve: None,
+            run: None,
             browser: BrowserAuthority::default(),
             capabilities: Vec::new(),
             module: None,
@@ -93,6 +100,7 @@ impl ConfigLowerer {
             match key.as_str() {
                 "runtime" => doc.runtime = self.lower_runtime(value)?,
                 "serve" => doc.serve = Some(self.lower_serve(value)?),
+                "run" => doc.run = Some(self.lower_run(value)?),
                 "browser" => doc.browser = self.lower_browser(value)?,
                 "capabilities" => doc.capabilities = self.lower_capabilities(value)?,
                 "module" => doc.module = Some(self.lower_module(value)?),
@@ -268,6 +276,20 @@ impl ConfigLowerer {
                 other => return invalid(format!("unknown serve field `{other}`")),
             }
         }
+        Ok(out)
+    }
+
+    fn lower_run(&self, value: &ConfigValue) -> MResult<RunHostConfig> {
+        let map = expect_map("run", value)?;
+        let mut out = RunHostConfig::default();
+
+        for (key, value) in map {
+            match key.as_str() {
+                "paths" => out.paths = expect_path_list("run.paths", value)?,
+                other => return invalid(format!("unknown run field `{other}`")),
+            }
+        }
+
         Ok(out)
     }
 
@@ -684,5 +706,49 @@ fn type_name(value: &ConfigValue) -> &'static str {
         ConfigValue::String(_) => "string",
         ConfigValue::List(_) => "list",
         ConfigValue::Map(_) => "map",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{ConfigProfileOptions, parse_config_document};
+
+    fn parse(source: &str) -> MResult<MechConfigDocument> {
+        parse_config_document("mech.mcfg", source, ConfigProfileOptions::default())
+    }
+
+    #[test]
+    fn run_paths_parse_and_lower() {
+        let doc = parse(
+            r#"config := {
+  run: {
+    paths: ["foo.mec", "bar.mec"]
+  }
+}
+"#,
+        )
+        .unwrap();
+
+        let run = doc.run.unwrap();
+        assert_eq!(
+            run.paths,
+            vec![PathBuf::from("foo.mec"), PathBuf::from("bar.mec")]
+        );
+    }
+
+    #[test]
+    fn unknown_run_field_fails() {
+        let err = parse(
+            r#"config := {
+  run: {
+    bad: true
+  }
+}
+"#,
+        )
+        .expect_err("unknown run fields must fail");
+        let msg = format!("{} {} {:?}", err.kind_name(), err.kind_message(), err);
+        assert!(msg.contains("unknown run field `bad`"));
     }
 }
