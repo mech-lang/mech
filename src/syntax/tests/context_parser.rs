@@ -302,6 +302,23 @@ fn parses_context_send_statements() {
 }
 
 #[test]
+fn rejects_kind_annotations_on_context_send_targets() {
+  assert!(parser::parse("@out/line<string> <- \"hello\"").is_err());
+}
+
+#[test]
+fn parses_deep_context_send_path() {
+  let stmts = statements("@ui/counter/_text <- \"hello\"");
+  match &stmts[0] {
+    Statement::ContextSend(send) => {
+      assert_eq!(send.target.context.as_ref().unwrap().to_string(), "ui");
+      assert_eq!(send.target.name.to_string(), "counter/_text");
+    }
+    other => panic!("expected context send, got {other:?}"),
+  }
+}
+
+#[test]
 fn rejects_context_send_inside_fsm_statement_transition() {
   assert!(
     parser::parse(

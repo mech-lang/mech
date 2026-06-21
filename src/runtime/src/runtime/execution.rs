@@ -916,6 +916,9 @@ impl MechRuntime {
         Ok(())
       }
       mech_core::MechCode::Statement(mech_core::Statement::ContextSend(send)) => {
+        // Context sends are executed only at module top level for now. Parser paths
+        // intentionally reject nested sends until interpreter/effect execution can
+        // support them in functions and state machines.
         let Some(context_name) = &send.target.context else {
           return Err(MechError::new(RuntimeAddressedAssignmentUnsupported { target: send.target.name.to_string() }, None));
         };

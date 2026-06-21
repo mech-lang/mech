@@ -146,6 +146,9 @@ pub fn context_send(input: ParseString) -> ParseResult<ContextSend> {
   if target.context.is_none() {
     return Err(nom::Err::Error(ParseError::new(input, "send target must be an addressed context path")));
   }
+  if target.kind.is_some() {
+    return Err(nom::Err::Error(ParseError::new(input, "send targets cannot have kind annotations")));
+  }
   let (input, _) = send_operator(input)?;
   let (input, expression) = label!(expression, msg2)(input)?;
   Ok((input, ContextSend { target, expression }))
