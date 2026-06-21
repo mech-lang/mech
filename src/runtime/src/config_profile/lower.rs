@@ -128,6 +128,7 @@ impl ConfigLowerer {
         Ok(doc)
     }
 
+
     fn lower_module(&self, value: &ConfigValue) -> MResult<ModuleManifestConfig> {
         let map = expect_map("module", value)?;
         let mut name = None;
@@ -137,29 +138,18 @@ impl ConfigLowerer {
                 "name" => name = Some(expect_string("module.name", value)?),
                 "exports" => {
                     let list = expect_list("module.exports", value)?;
-                    exports = Some(
-                        list.iter()
-                            .enumerate()
-                            .map(|(idx, v)| self.lower_module_export(idx, v))
-                            .collect::<MResult<Vec<_>>>()?,
-                    );
+                    exports = Some(list.iter().enumerate().map(|(idx, v)| self.lower_module_export(idx, v)).collect::<MResult<Vec<_>>>()?);
                 }
                 other => return invalid(format!("unknown module field `{other}`")),
             }
         }
         let name = name.ok_or_else(|| invalid_error("module.name is required"))?;
-        if name.trim().is_empty() {
-            return invalid("module.name must be non-empty");
-        }
+        if name.trim().is_empty() { return invalid("module.name must be non-empty"); }
         let exports = exports.ok_or_else(|| invalid_error("module.exports is required"))?;
         Ok(ModuleManifestConfig { name, exports })
     }
 
-    fn lower_module_export(
-        &self,
-        idx: usize,
-        value: &ConfigValue,
-    ) -> MResult<ModuleManifestExportConfig> {
+    fn lower_module_export(&self, idx: usize, value: &ConfigValue) -> MResult<ModuleManifestExportConfig> {
         let where_ = format!("module.exports[{idx}]");
         let map = expect_map(&where_, value)?;
         let mut name = None;
@@ -173,48 +163,27 @@ impl ConfigLowerer {
                     let raw = expect_string(&format!("{where_}.kind"), value)?;
                     kind = Some(match raw.as_str() {
                         "context" => ModuleManifestExportKind::Context,
-                        _ => {
-                            return invalid(format!("{where_}.kind must be `context`; got `{raw}`"));
-                        }
+                        _ => return invalid(format!("{where_}.kind must be `context`; got `{raw}`")),
                     });
                 }
                 "base-uri" => base_uri = Some(expect_string(&format!("{where_}.base-uri"), value)?),
-                "operations" => {
-                    operations = Some(expect_string_list(&format!("{where_}.operations"), value)?)
-                }
+                "operations" => operations = Some(expect_string_list(&format!("{where_}.operations"), value)?),
                 other => return invalid(format!("unknown {where_} field `{other}`")),
             }
         }
         let name = name.ok_or_else(|| invalid_error(format!("{where_}.name is required")))?;
-        if name.trim().is_empty() {
-            return invalid(format!("{where_}.name must be non-empty"));
-        }
+        if name.trim().is_empty() { return invalid(format!("{where_}.name must be non-empty")); }
         let kind = kind.ok_or_else(|| invalid_error(format!("{where_}.kind is required")))?;
-        let base_uri =
-            base_uri.ok_or_else(|| invalid_error(format!("{where_}.base-uri is required")))?;
-        if !base_uri.contains("://") {
-            return invalid(format!("{where_}.base-uri must contain `://`"));
-        }
-        let operations =
-            operations.ok_or_else(|| invalid_error(format!("{where_}.operations is required")))?;
-        if operations.is_empty() {
-            return invalid(format!(
-                "{where_}.operations must contain at least one operation"
-            ));
-        }
+        let base_uri = base_uri.ok_or_else(|| invalid_error(format!("{where_}.base-uri is required")))?;
+        if !base_uri.contains("://") { return invalid(format!("{where_}.base-uri must contain `://`")); }
+        let operations = operations.ok_or_else(|| invalid_error(format!("{where_}.operations is required")))?;
+        if operations.is_empty() { return invalid(format!("{where_}.operations must contain at least one operation")); }
         for op in &operations {
             if op != "read" && op != "write" {
-                return invalid(format!(
-                    "module context exports only support operations `read` and `write`; got `{op}`"
-                ));
+                return invalid(format!("module context exports only support operations `read` and `write`; got `{op}`"));
             }
         }
-        Ok(ModuleManifestExportConfig {
-            name,
-            kind,
-            base_uri,
-            operations,
-        })
+        Ok(ModuleManifestExportConfig { name, kind, base_uri, operations })
     }
 
     fn lower_runtime(&self, value: &ConfigValue) -> MResult<RuntimeConfigPatch> {
@@ -366,9 +335,7 @@ impl ConfigLowerer {
                     let paths = expect_string_list("run.cli.env.read", value)?;
                     for path in &paths {
                         if path != "*" && !is_cli_env_key(path) {
-                            return invalid(format!(
-                                "run.cli.env.read contains invalid env key `{path}`"
-                            ));
+                            return invalid(format!("run.cli.env.read contains invalid env key `{path}`"));
                         }
                     }
                     out.read = Some(paths);
@@ -392,9 +359,7 @@ impl ConfigLowerer {
                     let paths = expect_string_list(&format!("{where_}.write"), value)?;
                     for path in &paths {
                         if path != "text" && path != "line" {
-                            return invalid(format!(
-                                "{where_}.write contains invalid path `{path}`"
-                            ));
+                            return invalid(format!("{where_}.write contains invalid path `{path}`"));
                         }
                     }
                     out.write = Some(paths);
@@ -480,7 +445,7 @@ impl ConfigLowerer {
                 Some(other) => {
                     return invalid(format!(
                         "{where_}.mode must be `node` or `subtree`; got `{other}`"
-                    ));
+                    ))
                 }
             };
             if path.is_wildcard() && !matches!(mode.as_deref(), None | Some("subtree")) {
@@ -495,19 +460,19 @@ impl ConfigLowerer {
             }
             let property = if matches!(mode.as_deref(), Some("subtree")) {
                 if property.is_some() {
-                    return invalid(format!(
-                        "{where_}.property is not allowed when mode is `subtree`"
-                    ));
+                    return invalid(format!("{where_}.property is not allowed when mode is `subtree`"));
                 }
                 if attribute.is_some() {
-                    return invalid(format!(
-                        "{where_}.attribute is not allowed when mode is `subtree`"
-                    ));
+                    return invalid(format!("{where_}.attribute is not allowed when mode is `subtree`"));
                 }
                 BrowserDomProperty::Text
             } else {
-                BrowserDomProperty::parse_manifest(property.as_deref(), attribute.as_deref(), &path)
-                    .map_err(|error| invalid_error(format!("{where_}: {error}")))?
+                BrowserDomProperty::parse_manifest(
+                    property.as_deref(),
+                    attribute.as_deref(),
+                    &path,
+                )
+                .map_err(|error| invalid_error(format!("{where_}: {error}")))?
             };
             authority.bind_dom_path(BrowserDomManifestEntry::new(path, scope, property));
         }
@@ -882,45 +847,38 @@ mod tests {
     #[test]
     fn run_cli_stdout_line_write_parses() {
         let doc = parse(r#"config := { run: { cli: { stdout: { write: ["line"] } } } }"#).unwrap();
-        assert_eq!(
-            doc.run.unwrap().cli.stdout.write,
-            Some(vec!["line".to_string()])
-        );
+        assert_eq!(doc.run.unwrap().cli.stdout.write, Some(vec!["line".to_string()]));
     }
 
     #[test]
     fn run_cli_env_path_read_parses() {
         let doc = parse(r#"config := { run: { cli: { env: { read: ["PATH"] } } } }"#).unwrap();
-        assert_eq!(
-            doc.run.unwrap().cli.env.read,
-            Some(vec!["PATH".to_string()])
-        );
+        assert_eq!(doc.run.unwrap().cli.env.read, Some(vec!["PATH".to_string()]));
     }
 
     #[test]
-    fn invalid_run_cli_stdout_write_path_errors() {
+    fn invalid_run_cli_stdout_path_fails() {
         let err = parse(r#"config := { run: { cli: { stdout: { write: ["html"] } } } }"#)
-            .expect_err("invalid stdout path must fail");
+            .expect_err("invalid stdout path should fail");
         let msg = format!("{} {} {:?}", err.kind_name(), err.kind_message(), err);
-        assert!(msg.contains("invalid path `html`"), "got {msg}");
+        assert!(msg.contains("run.cli.stdout.write contains invalid path `html`"));
     }
 
     #[test]
-    fn invalid_run_cli_env_key_errors() {
+    fn invalid_run_cli_env_key_fails() {
         for key in ["HOME/PATH", "1HOME", "HOME-PATH"] {
-            let source =
-                format!(r#"config := {{ run: {{ cli: {{ env: {{ read: ["{key}"] }} }} }} }}"#);
-            let err = parse(&source).expect_err("invalid env key must fail");
+            let source = format!(r#"config := {{ run: {{ cli: {{ env: {{ read: ["{key}"] }} }} }} }}"#);
+            let err = parse(&source).expect_err("invalid env key should fail");
             let msg = format!("{} {} {:?}", err.kind_name(), err.kind_message(), err);
-            assert!(msg.contains("invalid env key"), "got {msg}");
+            assert!(msg.contains("run.cli.env.read contains invalid env key"));
         }
     }
 
     #[test]
-    fn unknown_run_cli_field_errors() {
-        let err = parse(r#"config := { run: { cli: { bad: true } } }"#)
-            .expect_err("unknown run.cli field must fail");
+    fn unknown_run_cli_field_fails() {
+        let err = parse(r#"config := { run: { cli: { prompt: true } } }"#)
+            .expect_err("unknown run.cli field should fail");
         let msg = format!("{} {} {:?}", err.kind_name(), err.kind_message(), err);
-        assert!(msg.contains("unknown run.cli field `bad`"), "got {msg}");
+        assert!(msg.contains("unknown run.cli field `prompt`"));
     }
 }
