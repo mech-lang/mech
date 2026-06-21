@@ -3,6 +3,14 @@
 use mech::*;
 use mech_core::*;
 use mech_syntax::parser;
+#[cfg(feature = "run")]
+use mech_host_cli::{CliResourceProvider, StdCliBackend};
+
+#[cfg(feature = "run")]
+use mech_runtime::{
+  DiagnosticsConfig, LogLevel, MechRuntime, RuntimeBuilder, RuntimeCapabilityGrant,
+  RuntimeCapabilityOperation, RuntimeConfig, RuntimeLimits,
+};
 #[cfg(feature = "serve")]
 #[cfg(feature = "formatter")]
 use mech_syntax::formatter::*;
@@ -102,6 +110,59 @@ async fn load_stylesheets(paths: &[String], fallback_url: &str) -> Result<String
     combined.push_str(&stylesheet_str);
   }
   Ok(combined)
+}
+
+#[cfg(feature = "run")]
+fn new_cli_runtime(
+  name: String,
+  debug_enabled: bool,
+  trace_enabled: bool,
+  profile_enabled: bool,
+  rounds_per_step: usize,
+) -> MResult<MechRuntime> {
+  let mut config = RuntimeConfig::default();
+  config.name = name;
+  config.limits.max_steps_per_turn = Some(rounds_per_step as u64);
+  config.diagnostics.debug_enabled = debug_enabled;
+  config.diagnostics.trace_enabled = trace_enabled;
+  config.diagnostics.profile_enabled = profile_enabled;
+
+  let mut runtime = RuntimeBuilder::new()
+    .config(config)
+    .resource_provider(Box::new(CliResourceProvider::new(StdCliBackend)))
+    .build()?;
+
+  grant_cli_runner_capabilities(&mut runtime)?;
+
+  Ok(runtime)
+}
+
+#[cfg(feature = "run")]
+fn grant_cli_runner_capabilities(runtime: &mut MechRuntime) -> MResult<()> {
+  let subject = runtime.runtime_context()?.subject;
+
+  runtime.grant_capability(RuntimeCapabilityGrant {
+    subject: subject.clone(),
+    resource: "cli://env".to_string(),
+    operations: vec![RuntimeCapabilityOperation::Read],
+    paths: vec!["*".to_string()],
+  })?;
+
+  runtime.grant_capability(RuntimeCapabilityGrant {
+    subject: subject.clone(),
+    resource: "cli://stdout".to_string(),
+    operations: vec![RuntimeCapabilityOperation::Write],
+    paths: vec!["text".to_string(), "line".to_string()],
+  })?;
+
+  runtime.grant_capability(RuntimeCapabilityGrant {
+    subject,
+    resource: "cli://stderr".to_string(),
+    operations: vec![RuntimeCapabilityOperation::Write],
+    paths: vec!["text".to_string(), "line".to_string()],
+  })?;
+
+  Ok(())
 }
 
 #[tokio::main]
@@ -642,10 +703,15 @@ async fn main() -> Result<(), MechError> {
   let mut caught_inturrupts = Arc::new(Mutex::new(0));
   #[cfg(feature = "run")]
   let uuid = generate_uuid();
+
   #[cfg(feature = "run")]
-  let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
-  #[cfg(feature = "run")]
-  program.configure(debug_flag, trace_flag, time_flag, rounds_per_step);
+  let mut runtime = new_cli_runtime(
+    format!("program-{}", uuid),
+    debug_flag,
+    trace_flag,
+    time_flag,
+    rounds_per_step,
+  )?;
   #[cfg(feature = "run")]
   {
     let mut paths = if let Some(m) = cli_matches.get_many::<String>("mech_paths") {
@@ -674,9 +740,8 @@ async fn main() -> Result<(), MechError> {
         }
       } else {
         // ---------- 4. Treat the inputs as Mech code ----------
-        program.interpreter_mut().clear();
         let joined = paths.join(" ");
-        match program.run_program(joined.trim()) {
+        match runtime.run_string(joined.trim()) {
           Ok(r) => {
             println!("{}", r.kind());
             #[cfg(feature = "pretty_print")]
@@ -700,7 +765,7 @@ async fn main() -> Result<(), MechError> {
       let mut last = Value::Empty;
       for p in &paths {
         let src = std::fs::read_to_string(p)?;
-        last = program.run_string(&src)?;
+        last = runtime.run_string(&src)?;
       }
       Ok(last)
     };
@@ -760,7 +825,8 @@ async fn main() -> Result<(), MechError> {
   // REPL
   // --------------------------------------------------------------------------
   #[cfg(all(feature = "repl", feature = "run"))]
-  let mut repl = MechRepl::from(program);
+  // TODO: move the REPL onto MechRuntime as a separate PR so CLI host contexts work interactively too.
+  let mut repl = MechRepl::new();
   #[cfg(all(feature = "repl", not(feature = "run")))]
   let mut repl = MechRepl::from(MechProgram::new(MechProgramConfig {
     name: format!("repl-{}", generate_uuid()),
