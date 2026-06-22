@@ -2749,6 +2749,34 @@ fn run_tree_with_context_preflight_failure_emits_failure_and_profile_events() {
 }
 
 
+
+#[test]
+fn cli_context_module_env_denial_preflights_before_stdout_write() {
+  let root = setup_modules(r#"+> @out := cli/stdout
++> @env := cli/env
+
+@out/line <- "must-not-write"
+x := @env/HOME
+"done"
+"#);
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .resource_provider(Box::new(CliResourceProvider::new(backend)))
+    .build()
+    .unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+
+  let result = runtime.run_module(version);
+
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeCapabilityGrantDenied"), "got {error}");
+  assert_eq!(stdout.lock().unwrap().len(), 0, "stdout write should be preflighted before provider effects");
+}
+
 #[test]
 fn cli_host_direct_env_declaration_reads_with_runtime_grant() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/direct-home");

@@ -121,12 +121,14 @@ pub fn cli_host_capability_args() -> Vec<Arg> {
     Arg::new("deny_default_capabilities")
       .long("deny-default-capabilities")
       .help("Disable default CLI host capability profiles for this run")
+      .global(true)
       .action(ArgAction::SetTrue),
     Arg::new("capabilities")
       .long("capabilities")
       .value_name("CAPABILITY")
       .help("Enable named CLI host capability profiles for this run, e.g. :cli/stdout")
-      .num_args(1..)
+      .global(true)
+      .num_args(1)
       .action(ArgAction::Append),
   ]
 }
@@ -149,6 +151,9 @@ pub fn cli_host_capability_selection(
 
   if let Some(run_matches) = run_matches {
     if let Some(values) = run_matches.get_many::<String>("capabilities") {
+      profiles.extend(values.filter(|value| value.starts_with(':')).cloned());
+    }
+    if let Some(values) = run_matches.get_many::<String>("mech_run_paths") {
       profiles.extend(values.filter(|value| value.starts_with(':')).cloned());
     }
   }

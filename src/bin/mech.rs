@@ -80,7 +80,7 @@ use mech::cli::capabilities;
 use mech::cli::config;
 #[cfg(feature = "run")]
 use mech::cli::run::{
-  cli_host_capability_args, cli_host_capability_path_values, cli_host_capability_selection,
+  cli_host_capability_args, cli_host_capability_selection,
   effective_run_runtime_config, new_cli_runtime, run_cli_source,
 };
 
@@ -251,7 +251,7 @@ async fn main() -> Result<(), MechError> {
         .help("Print verbose pass/fail details.")
         .action(ArgAction::SetTrue)
         .required(false)))
-    .subcommand(add_cli_host_capability_args(Command::new("run")
+    .subcommand(Command::new("run")
       .about("Run Mech source files, project inputs, or inline Mech code.")
       .arg(Arg::new("mech_run_paths")
         .help("Source .mec files, project folders, or inline Mech code.")
@@ -275,7 +275,7 @@ async fn main() -> Result<(), MechError> {
       .arg(Arg::new("trace")
         .long("trace")
         .help("Print trace output for state-machine arms and function calls")
-        .action(ArgAction::SetTrue))))
+        .action(ArgAction::SetTrue)))
     .subcommand(Command::new("serve")
       .about("Serve Mech program over an HTTP server.")
       .arg(Arg::new("mech_serve_file_paths")
@@ -333,8 +333,7 @@ async fn main() -> Result<(), MechError> {
         .short('r')
         .long("repl")
         .help("Start REPL")
-        .action(ArgAction::SetTrue))
-    .args(cli_host_capability_args());
+        .action(ArgAction::SetTrue));
 
   let cli_command = add_cli_host_capability_args(cli_command);
 
@@ -702,14 +701,17 @@ async fn main() -> Result<(), MechError> {
     let mut run_inputs: Vec<String> = if let Some(run_matches) = run_matches {
       run_matches
         .get_many::<String>("mech_run_paths")
-        .map_or(vec![], |files| files.map(|file| file.to_string()).collect())
+        .map_or(vec![], |files| {
+          files
+            .filter(|file| !file.starts_with(':'))
+            .map(|file| file.to_string())
+            .collect()
+        })
     } else if let Some(m) = cli_matches.get_many::<String>("mech_paths") {
       m.map(|s| s.to_string()).collect()
     } else {
       vec![]
     };
-    run_inputs.extend(cli_host_capability_path_values(&cli_matches, run_matches));
-
     let run_debug_flag = debug_flag || run_matches.map(|m| m.get_flag("debug")).unwrap_or(false);
     let run_trace_flag = trace_flag || run_matches.map(|m| m.get_flag("trace")).unwrap_or(false);
     let run_time_flag = time_flag || run_matches.map(|m| m.get_flag("time")).unwrap_or(false);
