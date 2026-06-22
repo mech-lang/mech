@@ -133,36 +133,22 @@ pub fn cli_host_capability_args() -> Vec<Arg> {
   ]
 }
 
-fn cli_host_capability_values(
-  cli_matches: &clap::ArgMatches,
-  run_matches: Option<&clap::ArgMatches>,
-) -> Vec<String> {
-  let mut values = Vec::new();
-
-  if let Some(raw) = cli_matches.get_many::<String>("capabilities") {
-    values.extend(raw.cloned());
-  }
-
-  if let Some(run_matches) = run_matches {
-    if let Some(raw) = run_matches.get_many::<String>("capabilities") {
-      values.extend(raw.cloned());
-    }
-  }
-
-  values
+fn cli_host_capability_values(cli_matches: &clap::ArgMatches) -> Vec<String> {
+  cli_matches
+    .get_many::<String>("capabilities")
+    .into_iter()
+    .flatten()
+    .cloned()
+    .collect()
 }
 
 pub fn cli_host_capability_selection(
   cli_matches: &clap::ArgMatches,
-  run_matches: Option<&clap::ArgMatches>,
+  _run_matches: Option<&clap::ArgMatches>,
 ) -> config::CliHostCapabilitySelection {
-  let deny_defaults =
-    cli_matches.get_flag("deny_default_capabilities")
-      || run_matches
-        .map(|matches| matches.get_flag("deny_default_capabilities"))
-        .unwrap_or(false);
+  let deny_defaults = cli_matches.get_flag("deny_default_capabilities");
 
-  let profiles = cli_host_capability_values(cli_matches, run_matches)
+  let profiles = cli_host_capability_values(cli_matches)
     .into_iter()
     .filter(|value| value.starts_with(':'))
     .collect();
@@ -175,9 +161,9 @@ pub fn cli_host_capability_selection(
 
 pub fn cli_host_capability_passthrough_values(
   cli_matches: &clap::ArgMatches,
-  run_matches: Option<&clap::ArgMatches>,
+  _run_matches: Option<&clap::ArgMatches>,
 ) -> Vec<String> {
-  cli_host_capability_values(cli_matches, run_matches)
+  cli_host_capability_values(cli_matches)
     .into_iter()
     .filter(|value| !value.starts_with(':'))
     .collect()

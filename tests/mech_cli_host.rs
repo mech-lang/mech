@@ -247,6 +247,46 @@ fn mech_run_explicit_stdout_profile_permits_stdout() {
   assert_success_contains(output, "stdout-profile-ok");
 }
 
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_capability_passthrough_file_runs_once() {
+  let root = temp_root("cap-passthrough-once");
+  let source = root.join("once.mec");
+  std::fs::write(
+    &source,
+    "+> @out := cli/stdout
+@out/line <- \"cap-passthrough-once\"
+\"done\"
+",
+  )
+  .unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("--deny-default-capabilities")
+    .arg("--capabilities")
+    .arg(":cli/stdout")
+    .arg(&source)
+    .output()
+    .unwrap();
+
+  assert!(
+    output.status.success(),
+    "expected command to succeed:
+{}",
+    combined_output(&output)
+  );
+
+  let combined = combined_output(&output);
+  let count = combined.matches("cap-passthrough-once").count();
+  assert_eq!(
+    count, 1,
+    "source file should execute exactly once, got {count} occurrences:
+{combined}"
+  );
+}
+
 #[cfg(all(feature = "run", feature = "cli_host"))]
 #[test]
 fn mech_run_single_capabilities_arg_accepts_stdout_and_env_profiles() {
