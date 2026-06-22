@@ -333,7 +333,8 @@ async fn main() -> Result<(), MechError> {
         .short('r')
         .long("repl")
         .help("Start REPL")
-        .action(ArgAction::SetTrue));
+        .action(ArgAction::SetTrue))
+    .args(cli_host_capability_args());
 
   let cli_command = add_cli_host_capability_args(cli_command);
 
