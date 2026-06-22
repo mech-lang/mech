@@ -1532,28 +1532,30 @@ impl MechRuntime {
     )?;
 
     let result = match mech_syntax::parser::parse(source.trim()) {
-      Ok(tree) => {
-        self.preflight_context_capabilities(context, &tree, &SourceScope::Program)?;
-        let program_config = self.program.config.clone();
-        let mut program = std::mem::replace(
-          &mut self.program,
-          MechProgram::new(program_config),
-        );
+      Ok(tree) => match self.preflight_context_capabilities(context, &tree, &SourceScope::Program) {
+        Ok(()) => {
+          let program_config = self.program.config.clone();
+          let mut program = std::mem::replace(
+            &mut self.program,
+            MechProgram::new(program_config),
+          );
 
-        self.register_runtime_program_host_functions(
-          context,
-          &mut program,
-        )?;
+          self.register_runtime_program_host_functions(
+            context,
+            &mut program,
+          )?;
 
-        let runtime_ptr: *mut MechRuntime = self;
-        let context_ptr: *mut RuntimeContext = context;
-        let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+          let runtime_ptr: *mut MechRuntime = self;
+          let context_ptr: *mut RuntimeContext = context;
+          let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
 
-        let result = self.run_tree_on_program(context, &mut program, &tree, None);
+          let result = self.run_tree_on_program(context, &mut program, &tree, None);
 
-        self.program = program;
-        result
-      }
+          self.program = program;
+          result
+        }
+        Err(error) => Err(error),
+      },
       Err(error) => Err(error),
     };
 
@@ -1947,10 +1949,13 @@ impl MechRuntime {
     let execution_scope = execution_scope_for_extracted_module_source(scope);
 
     let result = match source {
-      MechSourceCode::String(source) => {
-        mech_syntax::parser::parse(source.trim())
-          .and_then(|tree| self.run_tree_on_program(context, program, &tree, Some(&execution_scope)))
-      }
+      MechSourceCode::String(source) => match mech_syntax::parser::parse(source.trim()) {
+        Ok(tree) => match self.preflight_context_capabilities(context, &tree, &execution_scope) {
+          Ok(()) => self.run_tree_on_program(context, program, &tree, Some(&execution_scope)),
+          Err(error) => Err(error),
+        },
+        Err(error) => Err(error),
+      },
       other => program.run_source(other),
     };
 

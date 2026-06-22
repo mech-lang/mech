@@ -188,6 +188,42 @@ fn assert_failure_contains(output: std::process::Output, expected: &str) -> Stri
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
 #[test]
+fn mech_run_inline_source_preserves_define_token() {
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("x")
+    .arg(":=")
+    .arg("1")
+    .output()
+    .unwrap();
+  assert!(
+    output.status.success(),
+    "inline source with := should not have := filtered out:\n{}",
+    combined_output(&output)
+  );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_inline_source_preserves_colon_prefixed_token() {
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg(":running")
+    .output()
+    .unwrap();
+  let combined = combined_output(&output);
+  assert!(
+    !combined.contains("unknown CLI capability profile"),
+    "colon-prefixed source token must not be treated as capability profile:\n{combined}"
+  );
+  assert!(
+    !combined.contains("No source files, project paths, or inline code were provided"),
+    "colon-prefixed source token must not be dropped from run inputs:\n{combined}"
+  );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
 fn mech_run_explicit_stdout_profile_permits_stdout() {
   let root = temp_root("profile-stdout");
   let source = root.join("stdout.mec");
@@ -209,6 +245,46 @@ fn mech_run_explicit_stdout_profile_permits_stdout() {
     .unwrap();
 
   assert_success_contains(output, "stdout-profile-ok");
+}
+
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_capability_passthrough_file_runs_once() {
+  let root = temp_root("cap-passthrough-once");
+  let source = root.join("once.mec");
+  std::fs::write(
+    &source,
+    "+> @out := cli/stdout
+@out/line <- \"cap-passthrough-once\"
+\"done\"
+",
+  )
+  .unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("--deny-default-capabilities")
+    .arg("--capabilities")
+    .arg(":cli/stdout")
+    .arg(&source)
+    .output()
+    .unwrap();
+
+  assert!(
+    output.status.success(),
+    "expected command to succeed:
+{}",
+    combined_output(&output)
+  );
+
+  let combined = combined_output(&output);
+  let count = combined.matches("cap-passthrough-once").count();
+  assert_eq!(
+    count, 1,
+    "source file should execute exactly once, got {count} occurrences:
+{combined}"
+  );
 }
 
 #[cfg(all(feature = "run", feature = "cli_host"))]

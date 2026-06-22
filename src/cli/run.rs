@@ -121,37 +121,37 @@ pub fn cli_host_capability_args() -> Vec<Arg> {
     Arg::new("deny_default_capabilities")
       .long("deny-default-capabilities")
       .help("Disable default CLI host capability profiles for this run")
+      .global(true)
       .action(ArgAction::SetTrue),
     Arg::new("capabilities")
       .long("capabilities")
       .value_name("CAPABILITY")
       .help("Enable named CLI host capability profiles for this run, e.g. :cli/stdout")
+      .global(true)
       .num_args(1..)
       .action(ArgAction::Append),
   ]
 }
 
+fn cli_host_capability_values(cli_matches: &clap::ArgMatches) -> Vec<String> {
+  cli_matches
+    .get_many::<String>("capabilities")
+    .into_iter()
+    .flatten()
+    .cloned()
+    .collect()
+}
+
 pub fn cli_host_capability_selection(
   cli_matches: &clap::ArgMatches,
-  run_matches: Option<&clap::ArgMatches>,
+  _run_matches: Option<&clap::ArgMatches>,
 ) -> config::CliHostCapabilitySelection {
-  let deny_defaults =
-    cli_matches.get_flag("deny_default_capabilities")
-      || run_matches
-        .map(|matches| matches.get_flag("deny_default_capabilities"))
-        .unwrap_or(false);
+  let deny_defaults = cli_matches.get_flag("deny_default_capabilities");
 
-  let mut profiles = Vec::new();
-
-  if let Some(values) = cli_matches.get_many::<String>("capabilities") {
-    profiles.extend(values.filter(|value| value.starts_with(':')).cloned());
-  }
-
-  if let Some(run_matches) = run_matches {
-    if let Some(values) = run_matches.get_many::<String>("capabilities") {
-      profiles.extend(values.filter(|value| value.starts_with(':')).cloned());
-    }
-  }
+  let profiles = cli_host_capability_values(cli_matches)
+    .into_iter()
+    .filter(|value| value.starts_with(':'))
+    .collect();
 
   config::CliHostCapabilitySelection {
     include_defaults: !deny_defaults,
@@ -159,22 +159,12 @@ pub fn cli_host_capability_selection(
   }
 }
 
-
-pub fn cli_host_capability_path_values(
+pub fn cli_host_capability_passthrough_values(
   cli_matches: &clap::ArgMatches,
-  run_matches: Option<&clap::ArgMatches>,
+  _run_matches: Option<&clap::ArgMatches>,
 ) -> Vec<String> {
-  let mut paths = Vec::new();
-
-  if let Some(values) = cli_matches.get_many::<String>("capabilities") {
-    paths.extend(values.filter(|value| !value.starts_with(':')).cloned());
-  }
-
-  if let Some(run_matches) = run_matches {
-    if let Some(values) = run_matches.get_many::<String>("capabilities") {
-      paths.extend(values.filter(|value| !value.starts_with(':')).cloned());
-    }
-  }
-
-  paths
+  cli_host_capability_values(cli_matches)
+    .into_iter()
+    .filter(|value| !value.starts_with(':'))
+    .collect()
 }
