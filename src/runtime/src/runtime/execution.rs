@@ -968,109 +968,6 @@ impl MechRuntime {
     }
   }
 
-
-  fn preflight_context_capabilities(
-    &self,
-    context: &RuntimeContext,
-    tree: &mech_core::Program,
-    scope: &SourceScope,
-  ) -> MResult<()> {
-    fn collect_var_reads(expression: &mech_core::Expression, reads: &mut Vec<(String, String)>) {
-      match expression {
-        mech_core::Expression::Var(var) => {
-          if let Some(target) = &var.context {
-            reads.push((target.to_string(), var.name.to_string()));
-          }
-        }
-        mech_core::Expression::FunctionCall(call) => {
-          for (_, argument) in &call.args {
-            collect_var_reads(argument, reads);
-          }
-        }
-        mech_core::Expression::Match(match_expr) => {
-          collect_var_reads(&match_expr.source, reads);
-          for arm in &match_expr.arms {
-            if let Some(guard) = &arm.guard {
-              collect_var_reads(guard, reads);
-            }
-            collect_var_reads(&arm.expression, reads);
-          }
-        }
-        _ => {}
-      }
-    }
-
-    fn collect_statement_reads(statement: &mech_core::Statement, reads: &mut Vec<(String, String)>) {
-      match statement {
-        mech_core::Statement::VariableDefine(def) => collect_var_reads(&def.expression, reads),
-        mech_core::Statement::VariableAssign(assign) => collect_var_reads(&assign.expression, reads),
-        mech_core::Statement::ContextSend(send) => collect_var_reads(&send.expression, reads),
-        mech_core::Statement::OpAssign(assign) => collect_var_reads(&assign.expression, reads),
-        mech_core::Statement::TupleDestructure(destructure) => collect_var_reads(&destructure.expression, reads),
-        _ => {}
-      }
-    }
-
-    let registry = self.direct_context_registry_for_scope(tree, scope)?;
-    let mut reads = Vec::new();
-    for section in &tree.body.sections {
-      for element in &section.elements {
-        match element {
-          mech_core::SectionElement::MechCode(codes) => {
-            for (code, _) in codes {
-              match code {
-                mech_core::MechCode::Statement(statement) => collect_statement_reads(statement, &mut reads),
-                mech_core::MechCode::Expression(expression) => collect_var_reads(expression, &mut reads),
-                _ => {}
-              }
-            }
-          }
-          mech_core::SectionElement::FencedMechCode(fenced)
-            if Self::executable_fence_for_scope(fenced, scope) =>
-          {
-            for (code, _) in &fenced.code {
-              match code {
-                mech_core::MechCode::Statement(statement) => collect_statement_reads(statement, &mut reads),
-                mech_core::MechCode::Expression(expression) => collect_var_reads(expression, &mut reads),
-                _ => {}
-              }
-            }
-          }
-          _ => {}
-        }
-      }
-    }
-
-    for (target, path) in reads {
-      let Some(binding) = registry.get(&target) else {
-        continue;
-      };
-      let resolved = self.resolve_context_resource_request(binding, &path)?;
-      if !runtime_context_allows_read(binding, &resolved.context_path) {
-        return Err(MechError::new(RuntimeResourceCapabilityDenied {
-          context_name: binding.name.clone(),
-          operation: "read".to_string(),
-          path: resolved.context_path,
-        }, None));
-      }
-      if !self.grants.allows(
-        &context.subject,
-        &resolved.provider_base_uri,
-        &RuntimeCapabilityOperation::Read,
-        &resolved.provider_path,
-      ) {
-        return Err(MechError::new(RuntimeCapabilityGrantDenied {
-          subject: context.subject.clone(),
-          resource: resolved.provider_base_uri,
-          operation: RuntimeCapabilityOperation::Read,
-          path: resolved.provider_path,
-        }, None));
-      }
-    }
-
-    Ok(())
-  }
-
   fn run_tree_on_program(
     &mut self,
     context: &mut RuntimeContext,
@@ -1168,30 +1065,27 @@ impl MechRuntime {
     )?;
 
     let result = match mech_syntax::parser::parse(source.trim()) {
-      Ok(tree) => match self.preflight_context_capabilities(context, &tree, &SourceScope::Program) {
-        Ok(()) => {
-          let program_config = self.program.config.clone();
-          let mut program = std::mem::replace(
-            &mut self.program,
-            MechProgram::new(program_config),
-          );
+      Ok(tree) => {
+        let program_config = self.program.config.clone();
+        let mut program = std::mem::replace(
+          &mut self.program,
+          MechProgram::new(program_config),
+        );
 
-          self.register_runtime_program_host_functions(
-            context,
-            &mut program,
-          )?;
+        self.register_runtime_program_host_functions(
+          context,
+          &mut program,
+        )?;
 
-          let runtime_ptr: *mut MechRuntime = self;
-          let context_ptr: *mut RuntimeContext = context;
-          let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+        let runtime_ptr: *mut MechRuntime = self;
+        let context_ptr: *mut RuntimeContext = context;
+        let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
 
-          let result = self.run_tree_on_program(context, &mut program, &tree, None);
+        let result = self.run_tree_on_program(context, &mut program, &tree, None);
 
-          self.program = program;
-          result
-        }
-        Err(error) => Err(error),
-      },
+        self.program = program;
+        result
+      }
       Err(error) => Err(error),
     };
 
@@ -1273,10 +1167,7 @@ impl MechRuntime {
     let context_ptr: *mut RuntimeContext = context;
     let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
 
-    let result = match self.preflight_context_capabilities(context, tree, &SourceScope::Program) {
-      Ok(()) => self.run_tree_on_program(context, &mut program, tree, None),
-      Err(error) => Err(error),
-    };
+    let result = self.run_tree_on_program(context, &mut program, tree, None);
 
     self.program = program;
 
@@ -1583,10 +1474,8 @@ impl MechRuntime {
 
     let result = match source {
       MechSourceCode::String(source) => {
-        mech_syntax::parser::parse(source.trim()).and_then(|tree| {
-          self.preflight_context_capabilities(context, &tree, &execution_scope)?;
-          self.run_tree_on_program(context, program, &tree, Some(&execution_scope))
-        })
+        mech_syntax::parser::parse(source.trim())
+          .and_then(|tree| self.run_tree_on_program(context, program, &tree, Some(&execution_scope)))
       }
       other => program.run_source(other),
     };

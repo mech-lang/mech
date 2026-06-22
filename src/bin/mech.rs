@@ -5,8 +5,6 @@ use mech_core::*;
 use mech_syntax::parser;
 #[cfg(feature = "run")]
 use mech_host_cli::{CliResourceProvider, StdCliBackend};
-#[cfg(feature = "run")]
-use clap::ArgMatches;
 
 #[cfg(feature = "run")]
 use mech_runtime::{
@@ -70,24 +68,6 @@ static STYLESHEET: &str = "No Embedded Stylesheet";
 pub struct Utf8ConversionError {
   pub source_error: String
 }
-
-#[cfg(feature = "run")]
-#[derive(Debug, Clone)]
-pub struct UnknownCliCapabilityProfile {
-  pub profile: String,
-}
-
-#[cfg(feature = "run")]
-impl MechErrorKind for UnknownCliCapabilityProfile {
-  fn name(&self) -> &str {
-    "UnknownCliCapabilityProfile"
-  }
-
-  fn message(&self) -> String {
-    format!("unknown CLI capability profile `{}`", self.profile)
-  }
-}
-
 impl MechErrorKind for Utf8ConversionError {
   fn name(&self) -> &str {
     "Utf8ConversionError"
@@ -136,100 +116,13 @@ async fn load_stylesheets(paths: &[String], fallback_url: &str) -> Result<String
 }
 
 #[cfg(feature = "run")]
-fn cli_host_capability_args() -> Vec<Arg> {
-  vec![
-    Arg::new("deny_default_capabilities")
-      .long("deny-default-capabilities")
-      .help("Disable default CLI host capability profiles for this run")
-      .global(true)
-      .action(ArgAction::SetTrue),
-    Arg::new("capabilities")
-      .long("capabilities")
-      .value_name("CAPABILITY")
-      .help("Enable named CLI host capability profiles for this run, e.g. :cli/stdout")
-      .global(true)
-      .num_args(1..)
-      .action(ArgAction::Append),
-  ]
-}
-
-#[cfg(feature = "run")]
-fn add_cli_host_capability_args(command: Command) -> Command {
-  command.args(cli_host_capability_args())
-}
-
-#[cfg(not(feature = "run"))]
-fn add_cli_host_capability_args(command: Command) -> Command {
-  command
-}
-
-#[cfg(feature = "run")]
-fn normalized_cli_args_for_capabilities() -> Vec<String> {
-  let mut normalized = Vec::new();
-  let mut args = std::env::args().peekable();
-  while let Some(arg) = args.next() {
-    if arg == "--capabilities" {
-      normalized.push(arg);
-      while let Some(next) = args.peek() {
-        if next.starts_with(':') {
-          normalized.push(args.next().unwrap());
-        } else {
-          if next != "--" {
-            normalized.push("--".to_string());
-          }
-          break;
-        }
-      }
-    } else {
-      normalized.push(arg);
-    }
-  }
-  normalized
-}
-
-#[cfg(not(feature = "run"))]
-fn normalized_cli_args_for_capabilities() -> Vec<String> {
-  std::env::args().collect()
-}
-
-#[cfg(feature = "run")]
-#[derive(Debug, Clone, Default)]
-struct CliHostCapabilitySelection {
-  deny_default_capabilities: bool,
-  capabilities: Vec<String>,
-}
-
-#[cfg(feature = "run")]
-fn cli_host_capability_selection(
-  cli_matches: &ArgMatches,
-  run_matches: Option<&ArgMatches>,
-) -> CliHostCapabilitySelection {
-  let deny_default_capabilities = cli_matches.get_flag("deny_default_capabilities")
-    || run_matches.map(|m| m.get_flag("deny_default_capabilities")).unwrap_or(false);
-  let mut capabilities = Vec::new();
-  for matches in [Some(cli_matches), run_matches].into_iter().flatten() {
-    if let Some(values) = matches.get_many::<String>("capabilities") {
-      for value in values {
-        if !capabilities.iter().any(|existing| existing == value) {
-          capabilities.push(value.to_string());
-        }
-      }
-    }
-  }
-  CliHostCapabilitySelection { deny_default_capabilities, capabilities }
-}
-
-#[cfg(feature = "run")]
-fn new_cli_runtime(config: RuntimeConfig, selection: &CliHostCapabilitySelection) -> MResult<MechRuntime> {
+fn new_cli_runtime(config: RuntimeConfig) -> MResult<MechRuntime> {
   let mut runtime = RuntimeBuilder::new()
     .config(config)
     .resource_provider(Box::new(CliResourceProvider::new(StdCliBackend)))
     .build()?;
 
-  if !selection.deny_default_capabilities {
-    grant_cli_runner_capabilities(&mut runtime)?;
-  }
-  grant_selected_cli_capabilities(&mut runtime, &selection.capabilities)?;
+  grant_cli_runner_capabilities(&mut runtime)?;
 
   Ok(runtime)
 }
@@ -293,40 +186,6 @@ fn run_cli_source(runtime: &mut MechRuntime, source: &str) -> MResult<Value> {
   let result = runtime.run_string_with_context(&mut context, source);
   print_run_runtime_events(&context.events);
   result
-}
-
-#[cfg(feature = "run")]
-fn grant_cli_capability_profile(runtime: &mut MechRuntime, profile: &str) -> MResult<()> {
-  let subject = runtime.runtime_context()?.subject;
-  match profile {
-    ":cli/env" => runtime.grant_capability(RuntimeCapabilityGrant {
-      subject,
-      resource: "cli://env".to_string(),
-      operations: vec![RuntimeCapabilityOperation::Read],
-      paths: vec!["*".to_string()],
-    }),
-    ":cli/stdout" => runtime.grant_capability(RuntimeCapabilityGrant {
-      subject,
-      resource: "cli://stdout".to_string(),
-      operations: vec![RuntimeCapabilityOperation::Write],
-      paths: vec!["text".to_string(), "line".to_string()],
-    }),
-    ":cli/stderr" => runtime.grant_capability(RuntimeCapabilityGrant {
-      subject,
-      resource: "cli://stderr".to_string(),
-      operations: vec![RuntimeCapabilityOperation::Write],
-      paths: vec!["text".to_string(), "line".to_string()],
-    }),
-    unknown => Err(MechError::new(UnknownCliCapabilityProfile { profile: unknown.to_string() }, None)),
-  }
-}
-
-#[cfg(feature = "run")]
-fn grant_selected_cli_capabilities(runtime: &mut MechRuntime, capabilities: &[String]) -> MResult<()> {
-  for capability in capabilities {
-    grant_cli_capability_profile(runtime, capability)?;
-  }
-  Ok(())
 }
 
 #[cfg(feature = "run")]
@@ -579,9 +438,7 @@ async fn main() -> Result<(), MechError> {
   #[cfg(all(feature = "bundle_web", not(feature = "serve")))]
   let cli_command = bundle_web::add_config_args(cli_command);
 
-  let cli_command = add_cli_host_capability_args(cli_command);
-
-  let cli_matches = cli_command.get_matches_from(normalized_cli_args_for_capabilities());
+  let cli_matches = cli_command.get_matches();
 
   let debug_flag = cli_matches.get_flag("debug");
   let tree_flag = cli_matches.get_flag("tree");
@@ -963,8 +820,7 @@ async fn main() -> Result<(), MechError> {
     )?;
     repl_runtime_config = Some(runtime_config.clone());
 
-    let capability_selection = cli_host_capability_selection(&cli_matches, run_matches);
-    let mut runtime = new_cli_runtime(runtime_config, &capability_selection)?;
+    let mut runtime = new_cli_runtime(runtime_config)?;
 
     if !run_inputs.is_empty() && !any_look_like_paths {
       let joined = run_inputs.join(" ");
