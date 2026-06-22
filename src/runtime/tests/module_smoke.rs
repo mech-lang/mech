@@ -2751,14 +2751,10 @@ fn run_tree_with_context_preflight_failure_emits_failure_and_profile_events() {
 
 
 #[test]
-fn cli_context_module_env_denial_preflights_before_stdout_write() {
-  let root = setup_modules(r#"+> @out := cli/stdout
-+> @env := cli/env
-
-@out/line <- "must-not-write"
-x := @env/HOME
-"done"
-"#);
+fn module_preflight_denial_emits_program_failed_event() {
+  let root = setup_modules(
+    "+> @out := cli/stdout\n+> @env := cli/env\n@out/line <- \"must-not-write\"\nhome := @env/HOME\n",
+  );
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let stdout = backend.stdout.clone();
   let mut runtime = RuntimeBuilder::new()
@@ -2766,15 +2762,36 @@ x := @env/HOME
     .resource_provider(Box::new(CliResourceProvider::new(backend)))
     .build()
     .unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
-  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  runtime
+    .grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line"))
+    .unwrap();
+  let version = runtime
+    .resolve_and_store_module_source("main.mec", module_options())
+    .unwrap()
+    .unwrap();
+  let mut context = runtime.runtime_context().unwrap();
 
-  let result = runtime.run_module(version);
+  let result = runtime.run_module_with_context(&mut context, version);
 
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("RuntimeCapabilityGrantDenied"), "got {error}");
-  assert_eq!(stdout.lock().unwrap().len(), 0, "stdout write should be preflighted before provider effects");
+  assert!(
+    stdout.lock().unwrap().is_empty(),
+    "stdout should not be written before denied env read is reported"
+  );
+  assert!(
+    context
+      .events
+      .iter()
+      .any(|event| matches!(event.kind, RuntimeEventKind::ProgramStarted { .. }))
+  );
+  assert!(
+    context
+      .events
+      .iter()
+      .any(|event| matches!(event.kind, RuntimeEventKind::ProgramFailed { .. }))
+  );
 }
 
 #[test]

@@ -1949,11 +1949,13 @@ impl MechRuntime {
     let execution_scope = execution_scope_for_extracted_module_source(scope);
 
     let result = match source {
-      MechSourceCode::String(source) => {
-        let tree = mech_syntax::parser::parse(source.trim())?;
-        self.preflight_context_capabilities(context, &tree, &execution_scope)?;
-        self.run_tree_on_program(context, program, &tree, Some(&execution_scope))
-      }
+      MechSourceCode::String(source) => match mech_syntax::parser::parse(source.trim()) {
+        Ok(tree) => match self.preflight_context_capabilities(context, &tree, &execution_scope) {
+          Ok(()) => self.run_tree_on_program(context, program, &tree, Some(&execution_scope)),
+          Err(error) => Err(error),
+        },
+        Err(error) => Err(error),
+      },
       other => program.run_source(other),
     };
 

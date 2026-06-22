@@ -153,9 +153,6 @@ pub fn cli_host_capability_selection(
     if let Some(values) = run_matches.get_many::<String>("capabilities") {
       profiles.extend(values.filter(|value| value.starts_with(':')).cloned());
     }
-    if let Some(values) = run_matches.get_many::<String>("mech_run_paths") {
-      profiles.extend(values.filter(|value| value.starts_with(':')).cloned());
-    }
   }
 
   config::CliHostCapabilitySelection {

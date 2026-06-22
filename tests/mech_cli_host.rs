@@ -188,6 +188,42 @@ fn assert_failure_contains(output: std::process::Output, expected: &str) -> Stri
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
 #[test]
+fn mech_run_inline_source_preserves_define_token() {
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("x")
+    .arg(":=")
+    .arg("1")
+    .output()
+    .unwrap();
+  assert!(
+    output.status.success(),
+    "inline source with := should not have := filtered out:\n{}",
+    combined_output(&output)
+  );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_inline_source_preserves_colon_prefixed_token() {
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg(":running")
+    .output()
+    .unwrap();
+  let combined = combined_output(&output);
+  assert!(
+    !combined.contains("unknown CLI capability profile"),
+    "colon-prefixed source token must not be treated as capability profile:\n{combined}"
+  );
+  assert!(
+    !combined.contains("No source files, project paths, or inline code were provided"),
+    "colon-prefixed source token must not be dropped from run inputs:\n{combined}"
+  );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
 fn mech_run_explicit_stdout_profile_permits_stdout() {
   let root = temp_root("profile-stdout");
   let source = root.join("stdout.mec");
@@ -213,7 +249,7 @@ fn mech_run_explicit_stdout_profile_permits_stdout() {
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
 #[test]
-fn mech_run_single_capabilities_arg_accepts_stdout_and_env_profiles() {
+fn mech_run_repeated_capabilities_args_accept_stdout_and_env_profiles() {
   let root = temp_root("profile-stdout-env");
   let source = root.join("stdout_env.mec");
   std::fs::write(
@@ -232,6 +268,7 @@ fn mech_run_single_capabilities_arg_accepts_stdout_and_env_profiles() {
     .arg("--deny-default-capabilities")
     .arg("--capabilities")
     .arg(":cli/stdout")
+    .arg("--capabilities")
     .arg(":cli/env")
     .arg(&source)
     .env("MECH_CLI_HOST_TEST", "stdout-env-profile-ok")

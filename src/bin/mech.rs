@@ -701,12 +701,7 @@ async fn main() -> Result<(), MechError> {
     let mut run_inputs: Vec<String> = if let Some(run_matches) = run_matches {
       run_matches
         .get_many::<String>("mech_run_paths")
-        .map_or(vec![], |files| {
-          files
-            .filter(|file| !file.starts_with(':'))
-            .map(|file| file.to_string())
-            .collect()
-        })
+        .map_or(vec![], |files| files.map(|file| file.to_string()).collect())
     } else if let Some(m) = cli_matches.get_many::<String>("mech_paths") {
       m.map(|s| s.to_string()).collect()
     } else {
