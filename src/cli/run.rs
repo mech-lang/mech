@@ -126,7 +126,7 @@ pub fn cli_host_capability_args() -> Vec<Arg> {
       .long("capabilities")
       .value_name("CAPABILITY")
       .help("Enable named CLI host capability profiles for this run, e.g. :cli/stdout")
-      .num_args(1)
+      .num_args(1..)
       .action(ArgAction::Append),
   ]
 }
@@ -144,12 +144,12 @@ pub fn cli_host_capability_selection(
   let mut profiles = Vec::new();
 
   if let Some(values) = cli_matches.get_many::<String>("capabilities") {
-    profiles.extend(values.cloned());
+    profiles.extend(values.filter(|value| value.starts_with(':')).cloned());
   }
 
   if let Some(run_matches) = run_matches {
     if let Some(values) = run_matches.get_many::<String>("capabilities") {
-      profiles.extend(values.cloned());
+      profiles.extend(values.filter(|value| value.starts_with(':')).cloned());
     }
   }
 
@@ -157,4 +157,24 @@ pub fn cli_host_capability_selection(
     include_defaults: !deny_defaults,
     profiles,
   }
+}
+
+
+pub fn cli_host_capability_path_values(
+  cli_matches: &clap::ArgMatches,
+  run_matches: Option<&clap::ArgMatches>,
+) -> Vec<String> {
+  let mut paths = Vec::new();
+
+  if let Some(values) = cli_matches.get_many::<String>("capabilities") {
+    paths.extend(values.filter(|value| !value.starts_with(':')).cloned());
+  }
+
+  if let Some(run_matches) = run_matches {
+    if let Some(values) = run_matches.get_many::<String>("capabilities") {
+      paths.extend(values.filter(|value| !value.starts_with(':')).cloned());
+    }
+  }
+
+  paths
 }

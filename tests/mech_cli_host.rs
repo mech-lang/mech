@@ -213,6 +213,36 @@ fn mech_run_explicit_stdout_profile_permits_stdout() {
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
 #[test]
+fn mech_run_single_capabilities_arg_accepts_stdout_and_env_profiles() {
+  let root = temp_root("profile-stdout-env");
+  let source = root.join("stdout_env.mec");
+  std::fs::write(
+    &source,
+    r#"+> @env := cli/env
++> @out := cli/stdout
+
+@out/line <- @env/MECH_CLI_HOST_TEST
+"done"
+"#,
+  )
+  .unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("--deny-default-capabilities")
+    .arg("--capabilities")
+    .arg(":cli/stdout")
+    .arg(":cli/env")
+    .arg(&source)
+    .env("MECH_CLI_HOST_TEST", "stdout-env-profile-ok")
+    .output()
+    .unwrap();
+
+  assert_success_contains(output, "stdout-env-profile-ok");
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
 fn mech_run_explicit_stdout_profile_denies_env_before_write() {
   let root = temp_root("profile-stdout-deny-env");
   let source = root.join("stdout_env.mec");
