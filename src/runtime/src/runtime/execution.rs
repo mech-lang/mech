@@ -1084,6 +1084,19 @@ impl MechRuntime {
       mech_core::Expression::Formula(factor) => {
         self.preflight_factor_context_reads(context, registry, factor)?;
       }
+      mech_core::Expression::FunctionCall(call) => {
+        for (_, expression) in &call.args {
+          self.preflight_expression_context_reads(context, registry, expression)?;
+        }
+      }
+      mech_core::Expression::FsmPipe(pipe) => {
+        if let Some(args) = &pipe.start.args {
+          for (_, expression) in args {
+            self.preflight_expression_context_reads(context, registry, expression)?;
+          }
+        }
+      }
+      mech_core::Expression::Literal(_) => {}
       mech_core::Expression::Range(range) => {
         self.preflight_factor_context_reads(context, registry, &range.start)?;
         if let Some((_, increment)) = &range.increment {
@@ -1103,7 +1116,31 @@ impl MechRuntime {
           self.preflight_expression_context_reads(context, registry, &arm.expression)?;
         }
       }
-      _ => {}
+      mech_core::Expression::Slice(slice) => {
+        if slice
+          .context
+          .as_ref()
+          .is_some_and(|context| registry.contains(&context.to_string()))
+        {
+          return Err(MechError::new(RuntimeInvalidOperationError {
+            operation: "context_read",
+            reason: "context-addressed slices are not supported".to_string(),
+          }, None));
+        }
+        self.preflight_slice_context_reads(context, registry, slice)?;
+      }
+      mech_core::Expression::SetComprehension(comprehension) => {
+        self.preflight_expression_context_reads(context, registry, &comprehension.expression)?;
+        for qualifier in &comprehension.qualifiers {
+          self.preflight_comprehension_qualifier_context_reads(context, registry, qualifier)?;
+        }
+      }
+      mech_core::Expression::MatrixComprehension(comprehension) => {
+        self.preflight_expression_context_reads(context, registry, &comprehension.expression)?;
+        for qualifier in &comprehension.qualifiers {
+          self.preflight_comprehension_qualifier_context_reads(context, registry, qualifier)?;
+        }
+      }
     }
     Ok(())
   }
@@ -1152,6 +1189,25 @@ impl MechRuntime {
           self.preflight_expression_context_reads(context, registry, expression)?;
         }
       }
+      mech_core::Structure::Matrix(matrix) => {
+        for row in &matrix.rows {
+          for column in &row.columns {
+            self.preflight_expression_context_reads(context, registry, &column.element)?;
+          }
+        }
+      }
+      mech_core::Structure::Record(record) => {
+        for binding in &record.bindings {
+          self.preflight_expression_context_reads(context, registry, &binding.value)?;
+        }
+      }
+      mech_core::Structure::Table(table) => {
+        for row in &table.rows {
+          for column in &row.columns {
+            self.preflight_expression_context_reads(context, registry, &column.element)?;
+          }
+        }
+      }
       mech_core::Structure::Tuple(tuple) => {
         for expression in &tuple.elements {
           self.preflight_expression_context_reads(context, registry, expression)?;
@@ -1163,6 +1219,62 @@ impl MechRuntime {
       _ => {}
     }
     Ok(())
+  }
+
+  fn preflight_slice_context_reads(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    slice: &mech_core::Slice,
+  ) -> MResult<()> {
+    for subscript in &slice.subscript {
+      self.preflight_subscript_context_reads(context, registry, subscript)?;
+    }
+    Ok(())
+  }
+
+  fn preflight_subscript_context_reads(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    subscript: &mech_core::Subscript,
+  ) -> MResult<()> {
+    match subscript {
+      mech_core::Subscript::Brace(subscripts) | mech_core::Subscript::Bracket(subscripts) => {
+        for subscript in subscripts {
+          self.preflight_subscript_context_reads(context, registry, subscript)?;
+        }
+      }
+      mech_core::Subscript::Formula(factor) => {
+        self.preflight_factor_context_reads(context, registry, factor)?;
+      }
+      mech_core::Subscript::Range(range) => {
+        self.preflight_factor_context_reads(context, registry, &range.start)?;
+        if let Some((_, increment)) = &range.increment {
+          self.preflight_factor_context_reads(context, registry, increment)?;
+        }
+        self.preflight_factor_context_reads(context, registry, &range.terminal)?;
+      }
+      _ => {}
+    }
+    Ok(())
+  }
+
+  fn preflight_comprehension_qualifier_context_reads(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    qualifier: &mech_core::ComprehensionQualifier,
+  ) -> MResult<()> {
+    match qualifier {
+      mech_core::ComprehensionQualifier::Generator((_, expression))
+      | mech_core::ComprehensionQualifier::Filter(expression) => {
+        self.preflight_expression_context_reads(context, registry, expression)
+      }
+      mech_core::ComprehensionQualifier::Let(var_def) => {
+        self.preflight_expression_context_reads(context, registry, &var_def.expression)
+      }
+    }
   }
 
   fn preflight_context_access(
@@ -1389,26 +1501,30 @@ impl MechRuntime {
       },
     )?;
 
-    self.preflight_context_capabilities(context, tree, &SourceScope::Program)?;
+    let result = match self.preflight_context_capabilities(context, tree, &SourceScope::Program) {
+      Ok(()) => {
+        let program_config = self.program.config.clone();
+        let mut program = std::mem::replace(
+          &mut self.program,
+          MechProgram::new(program_config),
+        );
 
-    let program_config = self.program.config.clone();
-    let mut program = std::mem::replace(
-      &mut self.program,
-      MechProgram::new(program_config),
-    );
+        self.register_runtime_program_host_functions(
+          context,
+          &mut program,
+        )?;
 
-    self.register_runtime_program_host_functions(
-      context,
-      &mut program,
-    )?;
+        let runtime_ptr: *mut MechRuntime = self;
+        let context_ptr: *mut RuntimeContext = context;
+        let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
 
-    let runtime_ptr: *mut MechRuntime = self;
-    let context_ptr: *mut RuntimeContext = context;
-    let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+        let result = self.run_tree_on_program(context, &mut program, tree, None);
 
-    let result = self.run_tree_on_program(context, &mut program, tree, None);
-
-    self.program = program;
+        self.program = program;
+        result
+      }
+      Err(error) => Err(error),
+    };
 
     match &result {
       Ok(_) => {

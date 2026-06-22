@@ -2706,6 +2706,33 @@ fn narrow_stdout_grant_permits_line_but_denies_text() {
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
 }
 
+#[test]
+fn nested_env_read_denial_preflights_before_stdout_write() {
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let result = runtime.run_string("+> @env := cli/env\n+> @out := cli/stdout\n@out/line <- \"must-not-write\"\nx := [@env/HOME]\n");
+  assert!(result.is_err());
+  assert!(format!("{:?}", result.err().unwrap()).contains("RuntimeCapabilityGrantDenied"));
+  assert!(stdout.lock().unwrap().is_empty());
+}
+
+#[test]
+fn run_tree_with_context_preflight_failure_emits_failure_and_profile_events() {
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let mut config = RuntimeConfig::default();
+  config.diagnostics.profile_enabled = true;
+  let mut runtime = RuntimeBuilder::new().config(config).resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  let tree = mech_syntax::parser::parse("+> @env := cli/env\nhome := @env/HOME\n").unwrap();
+  let result = runtime.run_tree_with_context(&mut context, &tree);
+  assert!(result.is_err());
+  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramStarted { .. })));
+  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramFailed { .. })));
+  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramProfiled { .. })));
+}
+
 
 #[test]
 fn cli_host_direct_env_declaration_reads_with_runtime_grant() {
