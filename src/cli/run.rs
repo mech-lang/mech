@@ -118,17 +118,43 @@ fn grant_cli_runner_capabilities(
 
 pub fn cli_host_capability_args() -> Vec<Arg> {
   vec![
-    Arg::new("deny_cli_env")
-      .long("deny-cli-env")
-      .help("Deny cli://env read grants for this run")
+    Arg::new("deny_default_capabilities")
+      .long("deny-default-capabilities")
+      .help("Disable default CLI host capability profiles for this run")
       .action(ArgAction::SetTrue),
-    Arg::new("deny_cli_stdout")
-      .long("deny-cli-stdout")
-      .help("Deny cli://stdout write grants for this run")
-      .action(ArgAction::SetTrue),
-    Arg::new("deny_cli_stderr")
-      .long("deny-cli-stderr")
-      .help("Deny cli://stderr write grants for this run")
-      .action(ArgAction::SetTrue),
+    Arg::new("capabilities")
+      .long("capabilities")
+      .value_name("CAPABILITY")
+      .help("Enable named CLI host capability profiles for this run, e.g. :cli/stdout")
+      .num_args(1)
+      .action(ArgAction::Append),
   ]
+}
+
+pub fn cli_host_capability_selection(
+  cli_matches: &clap::ArgMatches,
+  run_matches: Option<&clap::ArgMatches>,
+) -> config::CliHostCapabilitySelection {
+  let deny_defaults =
+    cli_matches.get_flag("deny_default_capabilities")
+      || run_matches
+        .map(|matches| matches.get_flag("deny_default_capabilities"))
+        .unwrap_or(false);
+
+  let mut profiles = Vec::new();
+
+  if let Some(values) = cli_matches.get_many::<String>("capabilities") {
+    profiles.extend(values.cloned());
+  }
+
+  if let Some(run_matches) = run_matches {
+    if let Some(values) = run_matches.get_many::<String>("capabilities") {
+      profiles.extend(values.cloned());
+    }
+  }
+
+  config::CliHostCapabilitySelection {
+    include_defaults: !deny_defaults,
+    profiles,
+  }
 }

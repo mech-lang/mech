@@ -188,26 +188,88 @@ fn assert_failure_contains(output: std::process::Output, expected: &str) -> Stri
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
 #[test]
-fn mech_run_deny_stdout_blocks_stdout_send() {
-  let root = temp_root("deny-stdout");
-  let source = root.join("cli_host.mec");
+fn mech_run_explicit_stdout_profile_permits_stdout() {
+  let root = temp_root("profile-stdout");
+  let source = root.join("stdout.mec");
   std::fs::write(
     &source,
-    "+> @out := cli/stdout\n@out/line <- \"sentinel-denied\"\n",
+    "+> @out := cli/stdout
+@out/line <- \"stdout-profile-ok\"
+",
   )
   .unwrap();
 
   let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg("run")
-    .arg("--deny-cli-stdout")
+    .arg("--deny-default-capabilities")
+    .arg("--capabilities")
+    .arg(":cli/stdout")
+    .arg(&source)
+    .output()
+    .unwrap();
+
+  assert_success_contains(output, "stdout-profile-ok");
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_explicit_stdout_profile_denies_env_before_write() {
+  let root = temp_root("profile-stdout-deny-env");
+  let source = root.join("stdout_env.mec");
+  std::fs::write(
+    &source,
+    r#"+> @out := cli/stdout
++> @env := cli/env
+
+@out/line <- "must-not-write"
+x := @env/HOME
+"done"
+"#,
+  )
+  .unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("--deny-default-capabilities")
+    .arg("--capabilities")
+    .arg(":cli/stdout")
     .arg(&source)
     .output()
     .unwrap();
 
   let combined = assert_failure_contains(output, "RuntimeCapabilityGrantDenied");
   assert!(
-    !combined.contains("sentinel-denied"),
+    !combined.contains("must-not-write"),
     "provider wrote denied string: {combined}"
+  );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_unknown_capability_profile_fails() {
+  let root = temp_root("unknown-profile");
+  let source = root.join("stdout.mec");
+  std::fs::write(
+    &source,
+    "+> @out := cli/stdout
+@out/line <- \"should-not-run\"
+",
+  )
+  .unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("--deny-default-capabilities")
+    .arg("--capabilities")
+    .arg(":quxx")
+    .arg(&source)
+    .output()
+    .unwrap();
+
+  let combined = assert_failure_contains(output, "unknown CLI capability profile `:quxx`");
+  assert!(
+    !combined.contains("should-not-run"),
+    "program ran despite unknown profile: {combined}"
   );
 }
 
