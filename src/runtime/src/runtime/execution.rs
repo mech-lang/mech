@@ -1010,7 +1010,126 @@ impl MechRuntime {
       mech_core::MechCode::Expression(expression) => {
         self.preflight_expression_context_reads(context, registry, expression)
       }
-      _ => Ok(()),
+      mech_core::MechCode::FsmImplementation(fsm) => {
+        self.preflight_fsm_implementation_context_capabilities(context, registry, fsm)
+      }
+      mech_core::MechCode::FunctionDefine(function) => {
+        self.preflight_function_define_context_capabilities(context, registry, function)
+      }
+      mech_core::MechCode::Import(_)
+      | mech_core::MechCode::Comment(_)
+      | mech_core::MechCode::FsmSpecification(_)
+      | mech_core::MechCode::Error(_, _) => Ok(()),
+    }
+  }
+
+  fn preflight_function_define_context_capabilities(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    function: &mech_core::FunctionDefine,
+  ) -> MResult<()> {
+    for statement in &function.statements {
+      self.preflight_statement_context_capabilities(context, registry, statement)?;
+    }
+    for arm in &function.match_arms {
+      self.preflight_pattern_context_reads(context, registry, &arm.pattern)?;
+      self.preflight_expression_context_reads(context, registry, &arm.expression)?;
+    }
+    Ok(())
+  }
+
+  fn preflight_fsm_implementation_context_capabilities(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    fsm: &mech_core::FsmImplementation,
+  ) -> MResult<()> {
+    self.preflight_pattern_context_reads(context, registry, &fsm.start)?;
+    for arm in &fsm.arms {
+      match arm {
+        mech_core::FsmArm::Guard(pattern, guards) => {
+          self.preflight_pattern_context_reads(context, registry, pattern)?;
+          for guard in guards {
+            self.preflight_pattern_context_reads(context, registry, &guard.condition)?;
+            for transition in &guard.transitions {
+              self.preflight_transition_context_capabilities(context, registry, transition)?;
+            }
+          }
+        }
+        mech_core::FsmArm::Transition(pattern, transitions) => {
+          self.preflight_pattern_context_reads(context, registry, pattern)?;
+          for transition in transitions {
+            self.preflight_transition_context_capabilities(context, registry, transition)?;
+          }
+        }
+        mech_core::FsmArm::Comment(_) => {}
+      }
+    }
+    Ok(())
+  }
+
+  fn preflight_transition_context_capabilities(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    transition: &mech_core::Transition,
+  ) -> MResult<()> {
+    match transition {
+      mech_core::Transition::Async(pattern)
+      | mech_core::Transition::Next(pattern)
+      | mech_core::Transition::Output(pattern) => {
+        self.preflight_pattern_context_reads(context, registry, pattern)
+      }
+      mech_core::Transition::CodeBlock(code_items) => {
+        for (code, _) in code_items {
+          self.preflight_code_context_capabilities(context, registry, code)?;
+        }
+        Ok(())
+      }
+      mech_core::Transition::Statement(statement) => {
+        self.preflight_statement_context_capabilities(context, registry, statement)
+      }
+    }
+  }
+
+  fn preflight_pattern_context_reads(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    pattern: &mech_core::Pattern,
+  ) -> MResult<()> {
+    match pattern {
+      mech_core::Pattern::Expression(expression) => {
+        self.preflight_expression_context_reads(context, registry, expression)
+      }
+      mech_core::Pattern::TupleStruct(tuple_struct) => {
+        for pattern in &tuple_struct.patterns {
+          self.preflight_pattern_context_reads(context, registry, pattern)?;
+        }
+        Ok(())
+      }
+      mech_core::Pattern::Tuple(tuple) => {
+        for pattern in &tuple.0 {
+          self.preflight_pattern_context_reads(context, registry, pattern)?;
+        }
+        Ok(())
+      }
+      mech_core::Pattern::Array(array) => {
+        for pattern in &array.prefix {
+          self.preflight_pattern_context_reads(context, registry, pattern)?;
+        }
+        if let Some(spread) = &array.spread {
+          if let Some(binding) = &spread.binding {
+            self.preflight_pattern_context_reads(context, registry, binding)?;
+          }
+        }
+        for pattern in &array.suffix {
+          self.preflight_pattern_context_reads(context, registry, pattern)?;
+        }
+        Ok(())
+      }
+      mech_core::Pattern::Wildcard => Ok(()),
     }
   }
 

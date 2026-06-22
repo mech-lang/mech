@@ -64,6 +64,8 @@ pub struct RunHostConfig {
     pub cli: RunCliHostConfig,
 }
 
+// Native CLI runner attenuation policy; resource providers are not required to
+// use this shape for host-specific configuration.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RunCliHostConfig {
     pub env: RunCliEnvConfig,
