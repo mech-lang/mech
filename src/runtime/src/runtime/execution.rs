@@ -1258,27 +1258,33 @@ impl MechRuntime {
       },
     )?;
 
-    let program_config = self.program.config.clone();
-    let mut program = std::mem::replace(
-      &mut self.program,
-      MechProgram::new(program_config),
-    );
+    let result = match self.preflight_context_capabilities(context, tree, &SourceScope::Program) {
+      Ok(()) => {
+        let program_config = self.program.config.clone();
+        let mut program = std::mem::replace(
+          &mut self.program,
+          MechProgram::new(program_config),
+        );
 
-    self.register_runtime_program_host_functions(
-      context,
-      &mut program,
-    )?;
+        self.register_runtime_program_host_functions(
+          context,
+          &mut program,
+        )?;
 
-    let runtime_ptr: *mut MechRuntime = self;
-    let context_ptr: *mut RuntimeContext = context;
-    let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+        let runtime_ptr: *mut MechRuntime = self;
+        let context_ptr: *mut RuntimeContext = context;
+        let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
 
     let result = match self.preflight_context_capabilities(context, tree, &SourceScope::Program) {
       Ok(()) => self.run_tree_on_program(context, &mut program, tree, None),
       Err(error) => Err(error),
     };
 
-    self.program = program;
+        self.program = program;
+        result
+      }
+      Err(error) => Err(error),
+    };
 
     match &result {
       Ok(_) => {

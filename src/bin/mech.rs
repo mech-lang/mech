@@ -104,7 +104,23 @@ use mech::cli::capabilities;
 
 #[cfg(any(feature = "serve", feature = "run"))]
 use mech::cli::config;
+#[cfg(feature = "run")]
+use mech::cli::run::{
+  cli_host_capability_args, cli_host_capability_path_values, cli_host_capability_selection,
+  effective_run_runtime_config, new_cli_runtime, run_cli_source,
+};
 
+
+
+#[cfg(feature = "run")]
+fn add_cli_host_capability_args(command: Command) -> Command {
+  command.args(cli_host_capability_args())
+}
+
+#[cfg(not(feature = "run"))]
+fn add_cli_host_capability_args(command: Command) -> Command {
+  command
+}
 
 async fn load_stylesheets(paths: &[String], fallback_url: &str) -> Result<String, MechError> {
   if paths.is_empty() {
@@ -483,7 +499,7 @@ async fn main() -> Result<(), MechError> {
         .help("Print verbose pass/fail details.")
         .action(ArgAction::SetTrue)
         .required(false)))
-    .subcommand(Command::new("run")
+    .subcommand(add_cli_host_capability_args(Command::new("run")
       .about("Run Mech source files, project inputs, or inline Mech code.")
       .arg(Arg::new("mech_run_paths")
         .help("Source .mec files, project folders, or inline Mech code.")
@@ -507,7 +523,7 @@ async fn main() -> Result<(), MechError> {
       .arg(Arg::new("trace")
         .long("trace")
         .help("Print trace output for state-machine arms and function calls")
-        .action(ArgAction::SetTrue)))
+        .action(ArgAction::SetTrue))))
     .subcommand(Command::new("serve")
       .about("Serve Mech program over an HTTP server.")
       .arg(Arg::new("mech_serve_file_paths")
@@ -565,7 +581,10 @@ async fn main() -> Result<(), MechError> {
         .short('r')
         .long("repl")
         .help("Start REPL")
-        .action(ArgAction::SetTrue));
+        .action(ArgAction::SetTrue))
+    .args(cli_host_capability_args());
+
+  let cli_command = add_cli_host_capability_args(cli_command);
 
   #[cfg(feature = "bundle_web")]
   let cli_command = cli_command.subcommand(bundle_web::bundle_web_command());
@@ -930,7 +949,7 @@ async fn main() -> Result<(), MechError> {
   {
     let run_matches = cli_matches.subcommand_matches("run");
     let explicit_run_command = run_matches.is_some();
-    let run_inputs: Vec<String> = if let Some(run_matches) = run_matches {
+    let mut run_inputs: Vec<String> = if let Some(run_matches) = run_matches {
       run_matches
         .get_many::<String>("mech_run_paths")
         .map_or(vec![], |files| files.map(|file| file.to_string()).collect())
@@ -939,6 +958,7 @@ async fn main() -> Result<(), MechError> {
     } else {
       vec![]
     };
+    run_inputs.extend(cli_host_capability_path_values(&cli_matches, run_matches));
 
     let run_debug_flag = debug_flag || run_matches.map(|m| m.get_flag("debug")).unwrap_or(false);
     let run_trace_flag = trace_flag || run_matches.map(|m| m.get_flag("trace")).unwrap_or(false);
