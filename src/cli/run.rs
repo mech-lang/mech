@@ -128,9 +128,28 @@ pub fn cli_host_capability_args() -> Vec<Arg> {
       .value_name("CAPABILITY")
       .help("Enable named CLI host capability profiles for this run, e.g. :cli/stdout")
       .global(true)
-      .num_args(1)
+      .num_args(1..)
       .action(ArgAction::Append),
   ]
+}
+
+fn cli_host_capability_values(
+  cli_matches: &clap::ArgMatches,
+  run_matches: Option<&clap::ArgMatches>,
+) -> Vec<String> {
+  let mut values = Vec::new();
+
+  if let Some(raw) = cli_matches.get_many::<String>("capabilities") {
+    values.extend(raw.cloned());
+  }
+
+  if let Some(run_matches) = run_matches {
+    if let Some(raw) = run_matches.get_many::<String>("capabilities") {
+      values.extend(raw.cloned());
+    }
+  }
+
+  values
 }
 
 pub fn cli_host_capability_selection(
@@ -143,17 +162,10 @@ pub fn cli_host_capability_selection(
         .map(|matches| matches.get_flag("deny_default_capabilities"))
         .unwrap_or(false);
 
-  let mut profiles = Vec::new();
-
-  if let Some(values) = cli_matches.get_many::<String>("capabilities") {
-    profiles.extend(values.filter(|value| value.starts_with(':')).cloned());
-  }
-
-  if let Some(run_matches) = run_matches {
-    if let Some(values) = run_matches.get_many::<String>("capabilities") {
-      profiles.extend(values.filter(|value| value.starts_with(':')).cloned());
-    }
-  }
+  let profiles = cli_host_capability_values(cli_matches, run_matches)
+    .into_iter()
+    .filter(|value| value.starts_with(':'))
+    .collect();
 
   config::CliHostCapabilitySelection {
     include_defaults: !deny_defaults,
@@ -161,22 +173,12 @@ pub fn cli_host_capability_selection(
   }
 }
 
-
-pub fn cli_host_capability_path_values(
+pub fn cli_host_capability_passthrough_values(
   cli_matches: &clap::ArgMatches,
   run_matches: Option<&clap::ArgMatches>,
 ) -> Vec<String> {
-  let mut paths = Vec::new();
-
-  if let Some(values) = cli_matches.get_many::<String>("capabilities") {
-    paths.extend(values.filter(|value| !value.starts_with(':')).cloned());
-  }
-
-  if let Some(run_matches) = run_matches {
-    if let Some(values) = run_matches.get_many::<String>("capabilities") {
-      paths.extend(values.filter(|value| !value.starts_with(':')).cloned());
-    }
-  }
-
-  paths
+  cli_host_capability_values(cli_matches, run_matches)
+    .into_iter()
+    .filter(|value| !value.starts_with(':'))
+    .collect()
 }

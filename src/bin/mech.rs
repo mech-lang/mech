@@ -80,8 +80,8 @@ use mech::cli::capabilities;
 use mech::cli::config;
 #[cfg(feature = "run")]
 use mech::cli::run::{
-  cli_host_capability_args, cli_host_capability_selection,
-  effective_run_runtime_config, new_cli_runtime, run_cli_source,
+  cli_host_capability_args, cli_host_capability_passthrough_values,
+  cli_host_capability_selection, effective_run_runtime_config, new_cli_runtime, run_cli_source,
 };
 
 
@@ -707,6 +707,8 @@ async fn main() -> Result<(), MechError> {
     } else {
       vec![]
     };
+    run_inputs.extend(cli_host_capability_passthrough_values(&cli_matches, run_matches));
+
     let run_debug_flag = debug_flag || run_matches.map(|m| m.get_flag("debug")).unwrap_or(false);
     let run_trace_flag = trace_flag || run_matches.map(|m| m.get_flag("trace")).unwrap_or(false);
     let run_time_flag = time_flag || run_matches.map(|m| m.get_flag("time")).unwrap_or(false);

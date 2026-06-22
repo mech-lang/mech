@@ -249,7 +249,7 @@ fn mech_run_explicit_stdout_profile_permits_stdout() {
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
 #[test]
-fn mech_run_repeated_capabilities_args_accept_stdout_and_env_profiles() {
+fn mech_run_single_capabilities_arg_accepts_stdout_and_env_profiles() {
   let root = temp_root("profile-stdout-env");
   let source = root.join("stdout_env.mec");
   std::fs::write(
@@ -268,7 +268,6 @@ fn mech_run_repeated_capabilities_args_accept_stdout_and_env_profiles() {
     .arg("--deny-default-capabilities")
     .arg("--capabilities")
     .arg(":cli/stdout")
-    .arg("--capabilities")
     .arg(":cli/env")
     .arg(&source)
     .env("MECH_CLI_HOST_TEST", "stdout-env-profile-ok")
