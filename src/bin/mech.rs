@@ -4,13 +4,7 @@ use mech::*;
 use mech_core::*;
 use mech_syntax::parser;
 #[cfg(feature = "run")]
-use mech_host_cli::{CliResourceProvider, StdCliBackend};
-
-#[cfg(feature = "run")]
-use mech_runtime::{
-  MechRuntime, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeCapabilityOperation, RuntimeConfig,
-  RuntimeEvent, RuntimeEventKind,
-};
+use mech_runtime::RuntimeConfig;
 #[cfg(feature = "serve")]
 #[cfg(feature = "formatter")]
 use mech_syntax::formatter::*;
@@ -84,7 +78,23 @@ use mech::cli::capabilities;
 
 #[cfg(any(feature = "serve", feature = "run"))]
 use mech::cli::config;
+#[cfg(feature = "run")]
+use mech::cli::run::{
+  cli_host_capability_args, cli_host_capability_path_values, cli_host_capability_selection,
+  effective_run_runtime_config, new_cli_runtime, run_cli_source,
+};
 
+
+
+#[cfg(feature = "run")]
+fn add_cli_host_capability_args(command: Command) -> Command {
+  command.args(cli_host_capability_args())
+}
+
+#[cfg(not(feature = "run"))]
+fn add_cli_host_capability_args(command: Command) -> Command {
+  command
+}
 
 async fn load_stylesheets(paths: &[String], fallback_url: &str) -> Result<String, MechError> {
   if paths.is_empty() {
@@ -113,107 +123,6 @@ async fn load_stylesheets(paths: &[String], fallback_url: &str) -> Result<String
     combined.push_str(&stylesheet_str);
   }
   Ok(combined)
-}
-
-#[cfg(feature = "run")]
-fn new_cli_runtime(config: RuntimeConfig) -> MResult<MechRuntime> {
-  let mut runtime = RuntimeBuilder::new()
-    .config(config)
-    .resource_provider(Box::new(CliResourceProvider::new(StdCliBackend)))
-    .build()?;
-
-  grant_cli_runner_capabilities(&mut runtime)?;
-
-  Ok(runtime)
-}
-
-#[cfg(feature = "run")]
-fn effective_run_runtime_config(
-  loaded_config: Option<&mech::LoadedMechConfig>,
-  name: String,
-  debug_enabled: bool,
-  trace_enabled: bool,
-  profile_enabled: bool,
-  rounds_per_step: Option<usize>,
-) -> MResult<RuntimeConfig> {
-  let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
-
-  let mut config = mech::apply_runtime_config_patch(
-    RuntimeConfig::default(),
-    loaded_config
-      .as_ref()
-      .map(|loaded| &loaded.document.runtime)
-      .unwrap_or(&default_runtime_patch),
-  )?;
-
-  config.name = name;
-
-  if debug_enabled {
-    config.diagnostics.debug_enabled = true;
-  }
-
-  if trace_enabled {
-    config.diagnostics.trace_enabled = true;
-  }
-
-  if profile_enabled {
-    config.diagnostics.profile_enabled = true;
-  }
-
-  if let Some(rounds_per_step) = rounds_per_step {
-    config.limits.max_steps_per_turn = Some(rounds_per_step as u64);
-  }
-
-  config.validate()?;
-  Ok(config)
-}
-
-#[cfg(feature = "run")]
-fn print_run_runtime_events(events: &[RuntimeEvent]) {
-  for event in events {
-    match &event.kind {
-      RuntimeEventKind::ProgramProfiled { duration_ns, .. } => {
-        println!("Cycle Time: {} ns", duration_ns);
-      }
-      _ => {}
-    }
-  }
-}
-
-#[cfg(feature = "run")]
-fn run_cli_source(runtime: &mut MechRuntime, source: &str) -> MResult<Value> {
-  let mut context = runtime.runtime_context()?;
-  let result = runtime.run_string_with_context(&mut context, source);
-  print_run_runtime_events(&context.events);
-  result
-}
-
-#[cfg(feature = "run")]
-fn grant_cli_runner_capabilities(runtime: &mut MechRuntime) -> MResult<()> {
-  let subject = runtime.runtime_context()?.subject;
-
-  runtime.grant_capability(RuntimeCapabilityGrant {
-    subject: subject.clone(),
-    resource: "cli://env".to_string(),
-    operations: vec![RuntimeCapabilityOperation::Read],
-    paths: vec!["*".to_string()],
-  })?;
-
-  runtime.grant_capability(RuntimeCapabilityGrant {
-    subject: subject.clone(),
-    resource: "cli://stdout".to_string(),
-    operations: vec![RuntimeCapabilityOperation::Write],
-    paths: vec!["text".to_string(), "line".to_string()],
-  })?;
-
-  runtime.grant_capability(RuntimeCapabilityGrant {
-    subject,
-    resource: "cli://stderr".to_string(),
-    operations: vec![RuntimeCapabilityOperation::Write],
-    paths: vec!["text".to_string(), "line".to_string()],
-  })?;
-
-  Ok(())
 }
 
 #[tokio::main]
@@ -342,7 +251,7 @@ async fn main() -> Result<(), MechError> {
         .help("Print verbose pass/fail details.")
         .action(ArgAction::SetTrue)
         .required(false)))
-    .subcommand(Command::new("run")
+    .subcommand(add_cli_host_capability_args(Command::new("run")
       .about("Run Mech source files, project inputs, or inline Mech code.")
       .arg(Arg::new("mech_run_paths")
         .help("Source .mec files, project folders, or inline Mech code.")
@@ -366,7 +275,7 @@ async fn main() -> Result<(), MechError> {
       .arg(Arg::new("trace")
         .long("trace")
         .help("Print trace output for state-machine arms and function calls")
-        .action(ArgAction::SetTrue)))
+        .action(ArgAction::SetTrue))))
     .subcommand(Command::new("serve")
       .about("Serve Mech program over an HTTP server.")
       .arg(Arg::new("mech_serve_file_paths")
@@ -425,6 +334,8 @@ async fn main() -> Result<(), MechError> {
         .long("repl")
         .help("Start REPL")
         .action(ArgAction::SetTrue));
+
+  let cli_command = add_cli_host_capability_args(cli_command);
 
   #[cfg(feature = "bundle_web")]
   let cli_command = cli_command.subcommand(bundle_web::bundle_web_command());
@@ -787,7 +698,7 @@ async fn main() -> Result<(), MechError> {
   {
     let run_matches = cli_matches.subcommand_matches("run");
     let explicit_run_command = run_matches.is_some();
-    let run_inputs: Vec<String> = if let Some(run_matches) = run_matches {
+    let mut run_inputs: Vec<String> = if let Some(run_matches) = run_matches {
       run_matches
         .get_many::<String>("mech_run_paths")
         .map_or(vec![], |files| files.map(|file| file.to_string()).collect())
@@ -796,6 +707,7 @@ async fn main() -> Result<(), MechError> {
     } else {
       vec![]
     };
+    run_inputs.extend(cli_host_capability_path_values(&cli_matches, run_matches));
 
     let run_debug_flag = debug_flag || run_matches.map(|m| m.get_flag("debug")).unwrap_or(false);
     let run_trace_flag = trace_flag || run_matches.map(|m| m.get_flag("trace")).unwrap_or(false);
@@ -820,7 +732,13 @@ async fn main() -> Result<(), MechError> {
     )?;
     repl_runtime_config = Some(runtime_config.clone());
 
-    let mut runtime = new_cli_runtime(runtime_config)?;
+    let cli_capability_selection = cli_host_capability_selection(&cli_matches, run_matches);
+    let cli_grants = config::effective_cli_host_grants(
+      loaded_config.as_ref(),
+      cli_capability_selection,
+    )?;
+
+    let mut runtime = new_cli_runtime(runtime_config, &cli_grants)?;
 
     if !run_inputs.is_empty() && !any_look_like_paths {
       let joined = run_inputs.join(" ");

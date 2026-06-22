@@ -2671,6 +2671,83 @@ fn cli_host_missing_stderr_write_grant_fails_before_backend_call() {
   assert!(stderr.lock().unwrap().is_empty(), "stderr should not be written without grant");
 }
 
+#[test]
+fn default_cli_stdout_grant_allows_send() {
+  let backend = FakeCliBackend::default();
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "text")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap();
+  assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
+}
+
+#[test]
+fn narrow_env_grant_permits_path_but_denies_home() {
+  let backend = FakeCliBackend::default().with_env("PATH", "/bin").with_env("HOME", "/tmp/home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "PATH")).unwrap();
+  runtime.run_string("+> @env := cli/env\npath := @env/PATH\n").unwrap();
+  let result = runtime.run_string("+> @env := cli/env\nhome := @env/HOME\n");
+  assert!(result.is_err());
+  assert!(format!("{:?}", result.err().unwrap()).contains("RuntimeCapabilityGrantDenied"));
+}
+
+#[test]
+fn narrow_stdout_grant_permits_line_but_denies_text() {
+  let backend = FakeCliBackend::default();
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap();
+  let result = runtime.run_string("+> @out := cli/stdout\n@out/text <- \"bad\"\n");
+  assert!(result.is_err());
+  assert!(format!("{:?}", result.err().unwrap()).contains("RuntimeCapabilityGrantDenied"));
+  assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
+}
+
+#[test]
+fn nested_env_read_denial_preflights_before_stdout_write() {
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let result = runtime.run_string("+> @env := cli/env\n+> @out := cli/stdout\n@out/line <- \"must-not-write\"\nx := [@env/HOME]\n");
+  assert!(result.is_err());
+  assert!(format!("{:?}", result.err().unwrap()).contains("RuntimeCapabilityGrantDenied"));
+  assert!(stdout.lock().unwrap().is_empty());
+}
+
+#[test]
+fn function_define_env_read_denial_preflights_before_stdout_write() {
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let result = runtime.run_string("+> @out := cli/stdout\n+> @env := cli/env\n@out/line <- \"must-not-write\"\nuses-env(root<string>) => <string>\n  | @env/HOME.\n");
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeCapabilityGrantDenied"), "got {error}");
+  assert!(stdout.lock().unwrap().is_empty());
+  // FSM traversal is covered structurally by preflight_fsm_implementation_context_capabilities;
+  // add a parser-level FSM fixture when the compact syntax is less brittle for this suite.
+}
+
+#[test]
+fn run_tree_with_context_preflight_failure_emits_failure_and_profile_events() {
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let mut config = RuntimeConfig::default();
+  config.diagnostics.profile_enabled = true;
+  let mut runtime = RuntimeBuilder::new().config(config).resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  let tree = mech_syntax::parser::parse("+> @env := cli/env\nhome := @env/HOME\n").unwrap();
+  let result = runtime.run_tree_with_context(&mut context, &tree);
+  assert!(result.is_err());
+  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramStarted { .. })));
+  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramFailed { .. })));
+  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramProfiled { .. })));
+}
+
 
 #[test]
 fn cli_host_direct_env_declaration_reads_with_runtime_grant() {
