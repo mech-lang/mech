@@ -3068,3 +3068,24 @@ fn direct_context_read_resolves_inside_op_assign() {
     other => panic!("expected f64 total, got {other:?}"),
   }
 }
+
+#[test]
+fn cli_module_preflight_denies_later_read_before_stdout_write() {
+  let root = setup_modules("+> @out := cli/stdout\n+> @env := cli/env\n\n@out/line <- \"must-not-write\"\nx := @env/HOME\n\"done\"\n");
+  let state = Arc::new(Mutex::new(RuntimeFakeCliState::default()));
+  state.lock().unwrap().env.insert("HOME".to_string(), "/tmp/denied".to_string());
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .resource_provider(Box::new(CliResourceProvider::new(RuntimeFakeCliBackend::new(state.clone()))))
+    .build()
+    .unwrap();
+
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version);
+
+  assert!(result.is_err(), "missing env read grant should fail");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeCapabilityGrantDenied"), "expected host grant denial, got {error}");
+  assert_eq!(state.lock().unwrap().stdout_writes, 0, "module preflight should prevent earlier stdout write");
+}
