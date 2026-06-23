@@ -10,6 +10,8 @@ TARGET_DIR="${REPO_ROOT}/target/dynamic-modules"
 MODULE_DIR="${REPO_ROOT}/target/mech-modules"
 PROFILE_DIR="${TARGET_DIR}/debug"
 
+export CARGO_HTTP_MULTIPLEXING=false
+
 case "$(uname -s)" in
 Darwin*)
 DYLIB_PREFIX="lib"

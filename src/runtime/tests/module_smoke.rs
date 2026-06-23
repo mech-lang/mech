@@ -2671,6 +2671,123 @@ fn cli_host_missing_stderr_write_grant_fails_before_backend_call() {
   assert!(stderr.lock().unwrap().is_empty(), "stderr should not be written without grant");
 }
 
+#[test]
+fn default_cli_stdout_grant_allows_send() {
+  let backend = FakeCliBackend::default();
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "text")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap();
+  assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
+}
+
+#[test]
+fn narrow_env_grant_permits_path_but_denies_home() {
+  let backend = FakeCliBackend::default().with_env("PATH", "/bin").with_env("HOME", "/tmp/home");
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "PATH")).unwrap();
+  runtime.run_string("+> @env := cli/env\npath := @env/PATH\n").unwrap();
+  let result = runtime.run_string("+> @env := cli/env\nhome := @env/HOME\n");
+  assert!(result.is_err());
+  assert!(format!("{:?}", result.err().unwrap()).contains("RuntimeCapabilityGrantDenied"));
+}
+
+#[test]
+fn narrow_stdout_grant_permits_line_but_denies_text() {
+  let backend = FakeCliBackend::default();
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap();
+  let result = runtime.run_string("+> @out := cli/stdout\n@out/text <- \"bad\"\n");
+  assert!(result.is_err());
+  assert!(format!("{:?}", result.err().unwrap()).contains("RuntimeCapabilityGrantDenied"));
+  assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
+}
+
+#[test]
+fn nested_env_read_denial_preflights_before_stdout_write() {
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let result = runtime.run_string("+> @env := cli/env\n+> @out := cli/stdout\n@out/line <- \"must-not-write\"\nx := [@env/HOME]\n");
+  assert!(result.is_err());
+  assert!(format!("{:?}", result.err().unwrap()).contains("RuntimeCapabilityGrantDenied"));
+  assert!(stdout.lock().unwrap().is_empty());
+}
+
+#[test]
+fn function_define_env_read_denial_preflights_before_stdout_write() {
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let result = runtime.run_string("+> @out := cli/stdout\n+> @env := cli/env\n@out/line <- \"must-not-write\"\nuses-env(root<string>) => <string>\n  | @env/HOME.\n");
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeCapabilityGrantDenied"), "got {error}");
+  assert!(stdout.lock().unwrap().is_empty());
+  // FSM traversal is covered structurally by preflight_fsm_implementation_context_capabilities;
+  // add a parser-level FSM fixture when the compact syntax is less brittle for this suite.
+}
+
+#[test]
+fn run_tree_with_context_preflight_failure_emits_failure_and_profile_events() {
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let mut config = RuntimeConfig::default();
+  config.diagnostics.profile_enabled = true;
+  let mut runtime = RuntimeBuilder::new().config(config).resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  let tree = mech_syntax::parser::parse("+> @env := cli/env\nhome := @env/HOME\n").unwrap();
+  let result = runtime.run_tree_with_context(&mut context, &tree);
+  assert!(result.is_err());
+  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramStarted { .. })));
+  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramFailed { .. })));
+  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramProfiled { .. })));
+}
+
+
+
+#[test]
+fn module_preflight_denial_emits_program_failed_event() {
+  let root = setup_modules(
+    "+> @out := cli/stdout\n+> @env := cli/env\n@out/line <- \"must-not-write\"\nhome := @env/HOME\n",
+  );
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .resource_provider(Box::new(CliResourceProvider::new(backend)))
+    .build()
+    .unwrap();
+  runtime
+    .grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line"))
+    .unwrap();
+  let version = runtime
+    .resolve_and_store_module_source("main.mec", module_options())
+    .unwrap()
+    .unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+
+  let result = runtime.run_module_with_context(&mut context, version);
+
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeCapabilityGrantDenied"), "got {error}");
+  assert!(
+    stdout.lock().unwrap().is_empty(),
+    "stdout should not be written before denied env read is reported"
+  );
+  assert!(
+    !context
+      .events
+      .iter()
+      .any(|event| matches!(event.kind, RuntimeEventKind::ProgramStarted { .. })),
+    "graph preflight should fail before module program execution starts"
+  );
+}
 
 #[test]
 fn cli_host_direct_env_declaration_reads_with_runtime_grant() {
@@ -3067,4 +3184,112 @@ fn direct_context_read_resolves_inside_op_assign() {
     Value::F64(value) => assert_eq!(*value.borrow(), 3.0),
     other => panic!("expected f64 total, got {other:?}"),
   }
+}
+
+
+#[test]
+fn cli_context_source_scope_denial_preflights_before_stdout_write() {
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(CliResourceProvider::new(backend)))
+    .build()
+    .unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
+
+  let result = runtime.run_string(r#"+> @out := cli/stdout
+@env := cli://env{:read(PATH)}
+
+@out/line <- "must-not-write"
+home := @env/HOME
+"#);
+
+  let error = format!("{:?}", result.err().expect("source-level env denial should fail"));
+  assert!(error.contains("RuntimeResourceCapabilityDenied"), "expected source-level capability error, got {error}");
+  assert!(stdout.lock().unwrap().is_empty(), "stdout write should be preflight-blocked");
+}
+
+#[test]
+fn module_graph_preflight_blocks_dependency_stdout_before_main_env_denial() {
+  let root = setup_modules("+> ./dep.mec\n+> @env := cli/env\nhome := @env/HOME\n");
+  std::fs::write(
+    root.join("dep.mec"),
+    "+> @out := cli/stdout\n@out/line <- \"must-not-write\"\n",
+  )
+  .unwrap();
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .resource_provider(Box::new(CliResourceProvider::new(backend)))
+    .build()
+    .unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+
+  let result = runtime.run_module_with_context(&mut context, version);
+
+  let error = format!("{:?}", result.err().expect("main env grant denial should fail"));
+  assert!(error.contains("RuntimeCapabilityGrantDenied"), "expected runtime grant denial, got {error}");
+  assert!(stdout.lock().unwrap().is_empty(), "dependency stdout write should be preflight-blocked");
+}
+
+#[test]
+fn module_graph_preflight_blocks_current_stdout_before_dependency_denial() {
+  let root = setup_modules("+> ./dep.mec\n+> @out := cli/stdout\n@out/line <- \"must-not-write\"\n");
+  std::fs::write(root.join("dep.mec"), "+> @env := cli/env\nhome := @env/HOME\n").unwrap();
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .resource_provider(Box::new(CliResourceProvider::new(backend)))
+    .build()
+    .unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+
+  let result = runtime.run_module_with_context(&mut context, version);
+
+  let error = format!("{:?}", result.err().expect("dependency env grant denial should fail"));
+  assert!(error.contains("RuntimeCapabilityGrantDenied"), "expected runtime grant denial, got {error}");
+  assert!(stdout.lock().unwrap().is_empty(), "current module stdout write should be preflight-blocked");
+}
+
+#[test]
+fn module_graph_preflight_blocks_addressed_interpreter_import_write_before_denial() {
+  let root = setup_modules(
+    r#"~~~mech:foo
++> ./dep.mec
++> @env := cli/env
+home := @env/HOME
+<+ home
+~~~
+
+value := @foo/home
+"#,
+  );
+  std::fs::write(
+    root.join("dep.mec"),
+    "+> @out := cli/stdout\n@out/line <- \"must-not-write\"\n",
+  )
+  .unwrap();
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .resource_provider(Box::new(CliResourceProvider::new(backend)))
+    .build()
+    .unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+
+  let result = runtime.run_module_with_context(&mut context, version);
+
+  let error = format!("{:?}", result.err().expect("addressed interpreter env grant denial should fail"));
+  assert!(error.contains("RuntimeCapabilityGrantDenied"), "expected runtime grant denial, got {error}");
+  assert!(stdout.lock().unwrap().is_empty(), "addressed interpreter dependency write should be preflight-blocked");
 }
