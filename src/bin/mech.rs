@@ -84,8 +84,6 @@ use mech::cli::run::{
   cli_host_capability_selection, effective_run_runtime_config, new_cli_runtime, run_cli_source,
 };
 
-
-
 #[cfg(feature = "run")]
 fn add_cli_host_capability_args(command: Command) -> Command {
   command.args(cli_host_capability_args())
@@ -93,6 +91,83 @@ fn add_cli_host_capability_args(command: Command) -> Command {
 
 #[cfg(not(feature = "run"))]
 fn add_cli_host_capability_args(command: Command) -> Command {
+  command
+}
+
+#[cfg(feature = "run")]
+fn add_run_subcommand(command: Command) -> Command {
+  command.subcommand(Command::new("run")
+    .about("Run Mech source files, project inputs, or inline Mech code.")
+    .arg(Arg::new("mech_run_paths")
+      .help("Source .mec files, project folders, or inline Mech code.")
+      .required(false)
+      .action(ArgAction::Append))
+    .arg(Arg::new("debug")
+      .short('d')
+      .long("debug")
+      .help("Print debug info")
+      .action(ArgAction::SetTrue))
+    .arg(Arg::new("time")
+      .short('t')
+      .long("time")
+      .help("Measure how long the program takes to execute.")
+      .action(ArgAction::SetTrue))
+    .arg(Arg::new("rounds-per-step")
+      .long("rounds-per-step")
+      .value_name("ROUNDS")
+      .help("Sets the number of rounds per step. Overrides runtime.limits.max-steps-per-turn.")
+      .required(false))
+    .arg(Arg::new("trace")
+      .long("trace")
+      .help("Print trace output for state-machine arms and function calls")
+      .action(ArgAction::SetTrue)))
+}
+
+#[cfg(not(feature = "run"))]
+fn add_run_subcommand(command: Command) -> Command {
+  command
+}
+
+#[cfg(feature = "serve")]
+fn add_serve_subcommand(command: Command) -> Command {
+  command.subcommand(Command::new("serve")
+      .about("Serve Mech program over an HTTP server.")
+      .arg(Arg::new("mech_serve_file_paths")
+        .help("Source .mec and .mecb files")
+        .required(false)
+        .action(ArgAction::Append))
+      .arg(Arg::new("port")
+        .short('p')
+        .long("port")
+        .value_name("PORT")
+        .help("Sets the port for the server (8081)"))
+      .arg(Arg::new("stylesheet")
+        .short('s')
+        .long("stylesheet")
+        .value_name("STYLESHEET")
+        .num_args(1..)
+        .action(ArgAction::Append)
+        .help("Sets the stylesheet for the HTML output"))
+      .arg(Arg::new("shim")
+        .short('m')
+        .long("shim")
+        .value_name("SHIM")
+        .help("Sets the shim for the HTML output"))
+      .arg(Arg::new("wasm")
+        .short('w')
+        .long("wasm")
+        .value_name("WASM")
+        .help("Sets the the path to the wasm package"))
+      .arg(Arg::new("address")
+        .short('a')
+        .long("address")
+        .value_name("ADDRESS")
+        .help("Sets the address of the server (127.0.0.1)"))
+      .args(host_delegation_args()))
+}
+
+#[cfg(not(feature = "serve"))]
+fn add_serve_subcommand(command: Command) -> Command {
   command
 }
 
@@ -251,65 +326,6 @@ async fn main() -> Result<(), MechError> {
         .help("Print verbose pass/fail details.")
         .action(ArgAction::SetTrue)
         .required(false)))
-    .subcommand(Command::new("run")
-      .about("Run Mech source files, project inputs, or inline Mech code.")
-      .arg(Arg::new("mech_run_paths")
-        .help("Source .mec files, project folders, or inline Mech code.")
-        .required(false)
-        .action(ArgAction::Append))
-      .arg(Arg::new("debug")
-        .short('d')
-        .long("debug")
-        .help("Print debug info")
-        .action(ArgAction::SetTrue))
-      .arg(Arg::new("time")
-        .short('t')
-        .long("time")
-        .help("Measure how long the program takes to execute.")
-        .action(ArgAction::SetTrue))
-      .arg(Arg::new("rounds-per-step")
-        .long("rounds-per-step")
-        .value_name("ROUNDS")
-        .help("Sets the number of rounds per step. Overrides runtime.limits.max-steps-per-turn.")
-        .required(false))
-      .arg(Arg::new("trace")
-        .long("trace")
-        .help("Print trace output for state-machine arms and function calls")
-        .action(ArgAction::SetTrue)))
-    .subcommand(Command::new("serve")
-      .about("Serve Mech program over an HTTP server.")
-      .arg(Arg::new("mech_serve_file_paths")
-        .help("Source .mec and .mecb files")
-        .required(false)
-        .action(ArgAction::Append))
-      .arg(Arg::new("port")
-        .short('p')
-        .long("port")
-        .value_name("PORT")
-        .help("Sets the port for the server (8081)"))
-      .arg(Arg::new("stylesheet")
-        .short('s')
-        .long("stylesheet")
-        .value_name("STYLESHEET")
-        .num_args(1..)
-        .action(ArgAction::Append)
-        .help("Sets the stylesheet for the HTML output"))
-      .arg(Arg::new("shim")
-        .short('m')
-        .long("shim")
-        .value_name("SHIM")
-        .help("Sets the shim for the HTML output"))
-      .arg(Arg::new("wasm")
-        .short('w')
-        .long("wasm")
-        .value_name("WASM")
-        .help("Sets the the path to the wasm package"))
-      .arg(Arg::new("address")
-        .short('a')
-        .long("address")
-        .value_name("ADDRESS")
-        .help("Sets the address of the server (127.0.0.1)"))
-      .args(host_delegation_args()))
     .arg(Arg::new("tree")
         .short('e')
         .long("tree")
@@ -335,6 +351,8 @@ async fn main() -> Result<(), MechError> {
         .help("Start REPL")
         .action(ArgAction::SetTrue));
 
+  let cli_command = add_run_subcommand(cli_command);
+  let cli_command = add_serve_subcommand(cli_command);
   let cli_command = add_cli_host_capability_args(cli_command);
 
   #[cfg(feature = "bundle_web")]
