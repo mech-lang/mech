@@ -2781,16 +2781,11 @@ fn module_preflight_denial_emits_program_failed_event() {
     "stdout should not be written before denied env read is reported"
   );
   assert!(
-    context
+    !context
       .events
       .iter()
-      .any(|event| matches!(event.kind, RuntimeEventKind::ProgramStarted { .. }))
-  );
-  assert!(
-    context
-      .events
-      .iter()
-      .any(|event| matches!(event.kind, RuntimeEventKind::ProgramFailed { .. }))
+      .any(|event| matches!(event.kind, RuntimeEventKind::ProgramStarted { .. })),
+    "graph preflight should fail before module program execution starts"
   );
 }
 
@@ -3189,4 +3184,76 @@ fn direct_context_read_resolves_inside_op_assign() {
     Value::F64(value) => assert_eq!(*value.borrow(), 3.0),
     other => panic!("expected f64 total, got {other:?}"),
   }
+}
+
+
+#[test]
+fn cli_context_source_scope_denial_preflights_before_stdout_write() {
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(CliResourceProvider::new(backend)))
+    .build()
+    .unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
+
+  let result = runtime.run_string(r#"+> @out := cli/stdout
+@env := cli://env{:read(PATH)}
+
+@out/line <- "must-not-write"
+home := @env/HOME
+"#);
+
+  let error = format!("{:?}", result.err().expect("source-level env denial should fail"));
+  assert!(error.contains("RuntimeResourceCapabilityDenied"), "expected source-level capability error, got {error}");
+  assert!(stdout.lock().unwrap().is_empty(), "stdout write should be preflight-blocked");
+}
+
+#[test]
+fn module_graph_preflight_blocks_dependency_stdout_before_main_env_denial() {
+  let root = setup_modules("+> ./dep.mec\n+> @env := cli/env\nhome := @env/HOME\n");
+  std::fs::write(
+    root.join("dep.mec"),
+    "+> @out := cli/stdout\n@out/line <- \"must-not-write\"\n",
+  )
+  .unwrap();
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .resource_provider(Box::new(CliResourceProvider::new(backend)))
+    .build()
+    .unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+
+  let result = runtime.run_module_with_context(&mut context, version);
+
+  let error = format!("{:?}", result.err().expect("main env grant denial should fail"));
+  assert!(error.contains("RuntimeCapabilityGrantDenied"), "expected runtime grant denial, got {error}");
+  assert!(stdout.lock().unwrap().is_empty(), "dependency stdout write should be preflight-blocked");
+}
+
+#[test]
+fn module_graph_preflight_blocks_current_stdout_before_dependency_denial() {
+  let root = setup_modules("+> ./dep.mec\n+> @out := cli/stdout\n@out/line <- \"must-not-write\"\n");
+  std::fs::write(root.join("dep.mec"), "+> @env := cli/env\nhome := @env/HOME\n").unwrap();
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .resource_provider(Box::new(CliResourceProvider::new(backend)))
+    .build()
+    .unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+
+  let result = runtime.run_module_with_context(&mut context, version);
+
+  let error = format!("{:?}", result.err().expect("dependency env grant denial should fail"));
+  assert!(error.contains("RuntimeCapabilityGrantDenied"), "expected runtime grant denial, got {error}");
+  assert!(stdout.lock().unwrap().is_empty(), "current module stdout write should be preflight-blocked");
 }

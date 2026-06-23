@@ -126,9 +126,10 @@ pub fn cli_host_capability_args() -> Vec<Arg> {
     Arg::new("capabilities")
       .long("capabilities")
       .value_name("CAPABILITY")
-      .help("Enable named CLI host capability profiles for this run, e.g. :cli/stdout")
+      .help("Enable one named CLI host capability profile for this run, e.g. :cli/stdout")
       .global(true)
-      .num_args(1..)
+      .num_args(1)
+      .value_parser([":cli/env", ":cli/stdout", ":cli/stderr"])
       .action(ArgAction::Append),
   ]
 }
@@ -148,10 +149,7 @@ pub fn cli_host_capability_selection(
 ) -> config::CliHostCapabilitySelection {
   let deny_defaults = cli_matches.get_flag("deny_default_capabilities");
 
-  let profiles = cli_host_capability_values(cli_matches)
-    .into_iter()
-    .filter(|value| value.starts_with(':'))
-    .collect();
+  let profiles = cli_host_capability_values(cli_matches);
 
   config::CliHostCapabilitySelection {
     include_defaults: !deny_defaults,
@@ -163,8 +161,5 @@ pub fn cli_host_capability_passthrough_values(
   cli_matches: &clap::ArgMatches,
   _run_matches: Option<&clap::ArgMatches>,
 ) -> Vec<String> {
-  cli_host_capability_values(cli_matches)
-    .into_iter()
-    .filter(|value| !value.starts_with(':'))
-    .collect()
+  Vec::new()
 }
