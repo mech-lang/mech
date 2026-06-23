@@ -308,6 +308,7 @@ fn mech_run_single_capabilities_arg_accepts_stdout_and_env_profiles() {
     .arg("--deny-default-capabilities")
     .arg("--capabilities")
     .arg(":cli/stdout")
+    .arg("--capabilities")
     .arg(":cli/env")
     .arg(&source)
     .env("MECH_CLI_HOST_TEST", "stdout-env-profile-ok")
@@ -315,6 +316,32 @@ fn mech_run_single_capabilities_arg_accepts_stdout_and_env_profiles() {
     .unwrap();
 
   assert_success_contains(output, "stdout-env-profile-ok");
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_capabilities_preserves_inline_colon_syntax() {
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("--deny-default-capabilities")
+    .arg("--capabilities")
+    .arg(":cli/stdout")
+    .arg("x := 1")
+    .output()
+    .unwrap();
+
+  assert!(
+    output.status.success(),
+    "inline source after --capabilities should run successfully:
+{}",
+    combined_output(&output)
+  );
+  let combined = combined_output(&output);
+  assert!(
+    !combined.contains("unknown") && !combined.contains(":="),
+    "inline := token should not be parsed as a capability profile:
+{combined}"
+  );
 }
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
@@ -372,7 +399,7 @@ fn mech_run_unknown_capability_profile_fails() {
     .output()
     .unwrap();
 
-  let combined = assert_failure_contains(output, "unknown CLI capability profile `:quxx`");
+  let combined = assert_failure_contains(output, "invalid value ':quxx' for '--capabilities <CAPABILITY>'");
   assert!(
     !combined.contains("should-not-run"),
     "program ran despite unknown profile: {combined}"

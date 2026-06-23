@@ -975,19 +975,29 @@ impl MechRuntime {
     scope: &SourceScope,
   ) -> MResult<()> {
     let registry = self.direct_context_registry_for_scope(tree, scope)?;
+    self.preflight_context_capabilities_with_registry(context, &registry, tree, scope)
+  }
+
+  fn preflight_context_capabilities_with_registry(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    tree: &mech_core::Program,
+    scope: &SourceScope,
+  ) -> MResult<()> {
     for section in &tree.body.sections {
       for element in &section.elements {
         match element {
           mech_core::SectionElement::MechCode(codes) => {
             for (code, _) in codes {
-              self.preflight_code_context_capabilities(context, &registry, code)?;
+              self.preflight_code_context_capabilities(context, registry, code)?;
             }
           }
           mech_core::SectionElement::FencedMechCode(fenced)
             if Self::executable_fence_for_scope(fenced, scope) =>
           {
             for (code, _) in &fenced.code {
-              self.preflight_code_context_capabilities(context, &registry, code)?;
+              self.preflight_code_context_capabilities(context, registry, code)?;
             }
           }
           _ => {}
@@ -1414,7 +1424,15 @@ impl MechRuntime {
       _ => true,
     };
     if !context_allowed {
-      return Ok(());
+      return Err(MechError::new(RuntimeResourceCapabilityDenied {
+        context_name: binding.name.clone(),
+        operation: match operation {
+          RuntimeCapabilityOperation::Read => "read".to_string(),
+          RuntimeCapabilityOperation::Write => "write".to_string(),
+          other => format!("{other:?}"),
+        },
+        path: resolved.context_path,
+      }, None));
     }
     if !self.grants.allows(
       &context.subject,
@@ -1775,6 +1793,9 @@ impl MechRuntime {
     version: ModuleVersionId,
     scope: SourceScope,
   ) -> MResult<Value> {
+    let mut preflight_seen = HashSet::new();
+    self.preflight_module_graph_for_scope(context, version, &scope, &mut preflight_seen)?;
+
     let mut seen = HashSet::new();
     let mut module_instances = HashMap::new();
 
@@ -1787,6 +1808,104 @@ impl MechRuntime {
     )?;
 
     Ok(instance.result)
+  }
+
+  fn preflight_module_graph_for_scope(
+    &self,
+    context: &RuntimeContext,
+    version: ModuleVersionId,
+    scope: &SourceScope,
+    seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
+  ) -> MResult<()> {
+    context.validate()?;
+    let instance_key = (version, scope.clone());
+    if !seen.insert(instance_key) {
+      return Ok(());
+    }
+
+    let Some(record) = self.store.get_module_version(version)? else {
+      return Err(MechError::new(RuntimeRecordNotFoundError { record_type: "module_version", id: version.to_string() }, None));
+    };
+    validate_module_import_edges(&record)?;
+    let Some(source) = record.source.clone() else {
+      return Err(MechError::new(RuntimeInvalidOperationError { operation: "run_module", reason: "module version has no source".to_string() }, None));
+    };
+
+    let context_registry = context_registry_for_scope(&record, scope)?;
+    let scoped_source = module_source_for_scope(&source, scope)?;
+    let execution_scope = execution_scope_for_extracted_module_source(scope);
+    self.preflight_module_source(context, &context_registry, &scoped_source, &execution_scope)?;
+
+    for edge in &record.import_edges {
+      if &edge.scope != scope {
+        continue;
+      }
+
+      self.preflight_module_graph_for_scope(
+        context,
+        edge.dependency,
+        &SourceScope::Program,
+        seen,
+      )?;
+    }
+
+    let scoped_refs = record
+      .scopes
+      .iter()
+      .find(|metadata| &metadata.scope == scope)
+      .map(|metadata| metadata.address_references.as_slice())
+      .unwrap_or(&[]);
+
+    for reference in scoped_refs {
+      match resolve_runtime_address_target(&record, scope, &context_registry, &reference.target) {
+        RuntimeAddressTarget::Interpreter(interpreter_scope) => {
+          if !matches!(scope, SourceScope::Program) {
+            return Err(MechError::new(UnknownAddressTarget { target: reference.target.clone() }, None));
+          }
+          self.preflight_module_graph_for_scope(
+            context,
+            version,
+            &interpreter_scope,
+            seen,
+          )?;
+        }
+        RuntimeAddressTarget::Context(_) => {}
+        RuntimeAddressTarget::Unknown => {
+          return Err(MechError::new(UnknownAddressTarget { target: reference.target.clone() }, None));
+        }
+      }
+    }
+
+    Ok(())
+  }
+
+  fn preflight_module_source(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    source: &MechSourceCode,
+    scope: &SourceScope,
+  ) -> MResult<()> {
+    match source {
+      MechSourceCode::String(source) => {
+        let tree = mech_syntax::parser::parse(source.trim())?;
+        self.preflight_context_capabilities_with_registry(context, registry, &tree, scope)
+      }
+      MechSourceCode::Tree(tree) => {
+        self.preflight_context_capabilities_with_registry(context, registry, tree, scope)
+      }
+      MechSourceCode::Program(sources) => {
+        for source in sources {
+          self.preflight_module_source(context, registry, source, scope)?;
+        }
+        Ok(())
+      }
+      MechSourceCode::Html(_) => Ok(()),
+      other => Err(MechError::new(RuntimeInvalidOperationError {
+        operation: "run_module_preflight",
+        reason: format!("unsupported executable source kind for provider preflight: {other:?}"),
+      }, None)),
+    }
   }
 
   fn execute_module_isolated_for_scope(
@@ -1956,7 +2075,25 @@ impl MechRuntime {
         },
         Err(error) => Err(error),
       },
-      other => program.run_source(other),
+      MechSourceCode::Tree(tree) => match self.preflight_context_capabilities(context, tree, &execution_scope) {
+        Ok(()) => self.run_tree_on_program(context, program, tree, Some(&execution_scope)),
+        Err(error) => Err(error),
+      },
+      MechSourceCode::Program(sources) => {
+        let mut result = Ok(Value::Empty);
+        for source in sources {
+          result = self.run_module_source_on_program(context, program, source, scope);
+          if result.is_err() {
+            break;
+          }
+        }
+        result
+      }
+      MechSourceCode::Html(_) => program.run_source(source),
+      other => Err(MechError::new(RuntimeInvalidOperationError {
+        operation: "run_module_preflight",
+        reason: format!("unsupported executable source kind for provider preflight: {other:?}"),
+      }, None)),
     };
 
     match &result {
