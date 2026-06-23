@@ -1905,10 +1905,10 @@ impl MechRuntime {
         }
         Ok(())
       }
-      MechSourceCode::Html(_) => Ok(()),
-      other => Err(MechError::new(RuntimeInvalidOperationError {
+      MechSourceCode::Html(_) | MechSourceCode::ByteCode(_) => Ok(()),
+      MechSourceCode::Image(_, _) => Err(MechError::new(RuntimeInvalidOperationError {
         operation: "run_module_preflight",
-        reason: format!("unsupported executable source kind for provider preflight: {other:?}"),
+        reason: "unsupported executable source kind for provider preflight: image".to_string(),
       }, None)),
     }
   }
@@ -2094,10 +2094,10 @@ impl MechRuntime {
         }
         result
       }
-      MechSourceCode::Html(_) => program.run_source(source),
-      other => Err(MechError::new(RuntimeInvalidOperationError {
+      MechSourceCode::Html(_) | MechSourceCode::ByteCode(_) => program.run_source(source),
+      MechSourceCode::Image(_, _) => Err(MechError::new(RuntimeInvalidOperationError {
         operation: "run_module_preflight",
-        reason: format!("unsupported executable source kind for provider preflight: {other:?}"),
+        reason: "unsupported executable source kind for provider preflight: image".to_string(),
       }, None)),
     };
 
