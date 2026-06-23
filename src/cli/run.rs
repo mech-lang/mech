@@ -93,8 +93,7 @@ fn section_element_contains_context_addressed_source(element: &SectionElement) -
   match element {
     SectionElement::MechCode(codes) => codes.iter().any(|(code, _)| mech_code_contains_context_addressed_source(code)),
     SectionElement::FencedMechCode(fenced) => {
-      fenced.imports.iter().any(|_| false)
-        || fenced.code.iter().any(|(code, _)| mech_code_contains_context_addressed_source(code))
+      fenced.code.iter().any(|(code, _)| mech_code_contains_context_addressed_source(code))
     }
     _ => false,
   }
@@ -406,6 +405,16 @@ mod tests {
   fn classifies_single_inline_context_send_with_slashes_as_inline_source() {
     let mode = classify_run_inputs(vec![
       "+> @out := cli/stdout\n@out/line <- \"hi\"".to_string(),
+    ]);
+    assert!(matches!(mode, RunInputMode::InlineSource(_)));
+  }
+
+  #[test]
+  fn classifies_single_fenced_context_import_with_slashes_as_inline_source() {
+    let mode = classify_run_inputs(vec![
+      "```mech
++> @out := cli/stdout
+```".to_string(),
     ]);
     assert!(matches!(mode, RunInputMode::InlineSource(_)));
   }
