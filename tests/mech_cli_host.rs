@@ -606,3 +606,18 @@ fn mech_run_inline_context_send_is_not_treated_as_path() {
 
   assert_success_contains(output, "inline-context-ok");
 }
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_split_inline_context_read_is_not_treated_as_path() {
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("+> @env := cli/env\nx")
+    .arg(":=")
+    .arg("@env/MECH_SPLIT_INLINE_TEST")
+    .env("MECH_SPLIT_INLINE_TEST", "split-inline-ok")
+    .output()
+    .unwrap();
+
+  assert_success_contains(output, "split-inline-ok");
+}

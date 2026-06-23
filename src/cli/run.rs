@@ -70,10 +70,15 @@ pub fn classify_run_inputs(inputs: Vec<String>) -> RunInputMode {
     return RunInputMode::InlineSource(inputs[0].clone());
   }
 
+  let joined = inputs.join(" ");
+  if mech_syntax::parser::parse(joined.trim()).is_ok() {
+    return RunInputMode::InlineSource(joined);
+  }
+
   if inputs.iter().any(|input| is_intended_path(input)) {
     RunInputMode::Paths(inputs)
   } else {
-    RunInputMode::InlineSource(inputs.join(" "))
+    RunInputMode::InlineSource(joined)
   }
 }
 
@@ -426,8 +431,28 @@ mod tests {
   }
 
   #[test]
-  fn classifies_multiple_path_like_inputs_as_paths() {
-    let mode = classify_run_inputs(vec!["examples/foo.mec".to_string(), "bar.mec".to_string()]);
+  fn classifies_split_inline_context_read_with_slashes_as_inline_source() {
+    let mode = classify_run_inputs(vec![
+      "x".to_string(),
+      ":=".to_string(),
+      "@env/HOME".to_string(),
+    ]);
+    assert!(matches!(mode, RunInputMode::InlineSource(_)));
+  }
+
+  #[test]
+  fn classifies_split_inline_context_send_with_slashes_as_inline_source() {
+    let mode = classify_run_inputs(vec![
+      "@out/line".to_string(),
+      "<-".to_string(),
+      "\"hi\"".to_string(),
+    ]);
+    assert!(matches!(mode, RunInputMode::InlineSource(_)));
+  }
+
+  #[test]
+  fn classifies_unparseable_path_like_inputs_as_paths() {
+    let mode = classify_run_inputs(vec!["examples/foo.mec".to_string(), "\0".to_string()]);
     assert!(matches!(mode, RunInputMode::Paths(_)));
   }
 }

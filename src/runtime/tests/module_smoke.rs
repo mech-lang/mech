@@ -2783,6 +2783,118 @@ fn function_define_env_read_denial_preflights_before_stdout_write() {
 }
 
 #[test]
+fn match_arm_pattern_context_read_fails_preflight_before_stdout_write() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  grant_runtime_stdout_line(&mut runtime);
+
+  let result = runtime.run_string(
+    "@out := cli://stdout{:write(line)}
+@env := cli://env{:read(HOME)}
+@out/line <- \"must-not-write\"
+result := \"x\"?
+  | @env/HOME => true
+  | * => false.
+",
+  );
+
+  assert!(result.is_err(), "match arm context read should fail in preflight");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(
+    error.contains("RuntimeCapabilityGrantDenied") || error.contains("context_read"),
+    "expected context read preflight error, got {error}",
+  );
+  assert!(
+    state.lock().unwrap().stdout.is_empty(),
+    "preflight failed after stdout write: {:?}",
+    state.lock().unwrap().stdout,
+  );
+}
+
+#[test]
+fn fsm_pipe_transition_context_read_fails_preflight_before_stdout_write() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  grant_runtime_stdout_line(&mut runtime);
+
+  let result = runtime.run_string(
+    "@out := cli://stdout{:write(line)}
+@env := cli://env{:read(HOME)}
+@out/line <- \"must-not-write\"
+machine := #Machine() -> @env/HOME
+",
+  );
+
+  assert!(result.is_err(), "FSM pipe transition context read should fail in preflight");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(
+    error.contains("RuntimeCapabilityGrantDenied") || error.contains("context_read"),
+    "expected context read preflight error, got {error}",
+  );
+  assert!(
+    state.lock().unwrap().stdout.is_empty(),
+    "preflight failed after stdout write: {:?}",
+    state.lock().unwrap().stdout,
+  );
+}
+
+#[test]
+fn fsm_declare_context_read_fails_preflight_before_stdout_write() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  grant_runtime_stdout_line(&mut runtime);
+
+  let result = runtime.run_string(
+    "@out := cli://stdout{:write(line)}
+@env := cli://env{:read(HOME)}
+@out/line <- \"must-not-write\"
+#run := #Machine(@env/HOME)
+",
+  );
+
+  assert!(result.is_err(), "FSM declaration context read should fail in preflight");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(
+    error.contains("RuntimeCapabilityGrantDenied") || error.contains("context_read"),
+    "expected context read preflight error, got {error}",
+  );
+  assert!(
+    state.lock().unwrap().stdout.is_empty(),
+    "preflight failed after stdout write: {:?}",
+    state.lock().unwrap().stdout,
+  );
+}
+
+#[test]
+fn match_arm_context_read_pattern_is_rewritten_when_allowed() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  state.lock().unwrap().env.insert(
+    "MECH_MATCH_PATTERN".to_string(),
+    "expected".to_string(),
+  );
+
+  let subject = runtime.runtime_context().unwrap().subject;
+  runtime.grant_capability(RuntimeCapabilityGrant {
+    subject,
+    resource: "cli://env".to_string(),
+    operations: vec![RuntimeCapabilityOperation::Read],
+    paths: vec!["MECH_MATCH_PATTERN".to_string()],
+  }).unwrap();
+
+  let result = runtime.run_string(
+    "@env := cli://env{:read(MECH_MATCH_PATTERN)}
+result := \"expected\"?
+  | @env/MECH_MATCH_PATTERN => true
+  | * => false.
+result
+",
+  ).unwrap();
+
+  let result = match result {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_bool_true(result, "match arm context read pattern");
+}
+
+#[test]
 fn run_tree_with_context_preflight_failure_emits_failure_and_profile_events() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let mut config = RuntimeConfig::default();
