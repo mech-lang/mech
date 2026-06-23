@@ -3375,6 +3375,31 @@ fn unknown_context_send_target_fails_preflight_before_writes() {
   );
 }
 #[test]
+fn context_assignment_to_send_only_cli_stream_fails_preflight_before_writes() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  grant_runtime_stdout_line(&mut runtime);
+
+  let result = runtime.run_string(
+    "@out := cli://stdout{:write(line)}
+@out/line <- \"must-not-write\"
+@out/line = \"done\"
+",
+  );
+
+  assert!(result.is_err(), "stdout assignment should fail in preflight");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(
+    error.contains("send-only") || error.contains("use <-"),
+    "expected send-only assignment error, got {error}",
+  );
+  assert!(
+    state.lock().unwrap().stdout.is_empty(),
+    "preflight failed after stdout write: {:?}",
+    state.lock().unwrap().stdout,
+  );
+}
+
+#[test]
 fn context_send_inside_function_body_fails_runtime_preflight() {
   let (mut runtime, state) = runtime_with_recording_cli();
   grant_runtime_stdout_line(&mut runtime);

@@ -13,6 +13,7 @@
 
 use super::*;
 use crate::SourceIndex;
+use crate::RuntimeResourceWritePreflightRequest;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum RuntimeAddressTarget {
@@ -1221,6 +1222,7 @@ impl MechRuntime {
             &path,
             RuntimeCapabilityOperation::Write,
             true,
+            Some(RuntimeResourceWriteIntent::Assign),
           )?;
         }
         self.preflight_expression_context_reads(context, registry, &assign.expression)?;
@@ -1251,6 +1253,7 @@ impl MechRuntime {
           &path,
           RuntimeCapabilityOperation::Write,
           true,
+          Some(RuntimeResourceWriteIntent::Send),
         )?;
 
         self.preflight_expression_context_reads(context, registry, &send.expression)?;
@@ -1291,6 +1294,7 @@ impl MechRuntime {
             &var.name.to_string(),
             RuntimeCapabilityOperation::Read,
             false,
+            None,
           )?;
         }
       }
@@ -1520,6 +1524,7 @@ impl MechRuntime {
     path: &str,
     operation: RuntimeCapabilityOperation,
     require_context_binding: bool,
+    write_intent: Option<RuntimeResourceWriteIntent>,
   ) -> MResult<()> {
     let Some(binding) = registry.get(context_name) else {
       if require_context_binding {
@@ -1563,6 +1568,16 @@ impl MechRuntime {
         None,
       ));
     }
+
+    if let Some(intent) = write_intent {
+      self.resources.preflight_write(RuntimeResourceWritePreflightRequest {
+        base_uri: resolved.provider_base_uri,
+        path: resolved.provider_path,
+        context_name: binding.name.clone(),
+        intent,
+      })?;
+    }
+
     Ok(())
   }
 

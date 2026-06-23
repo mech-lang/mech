@@ -3,7 +3,7 @@ use std::{env::VarError, io::Write};
 use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 use mech_runtime::{
     RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
-    RuntimeResourceWriteRequest,
+    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
 };
 
 pub trait CliBackend: std::fmt::Debug {
@@ -97,39 +97,49 @@ impl<B: CliBackend> RuntimeResourceProvider for CliResourceProvider<B> {
         }
     }
 
-    fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
         match request.base_uri.as_str() {
             "cli://env" => Err(cli_error(
                 request.base_uri,
                 "cli env is read-only and does not support writes or sends",
             )),
             "cli://stdout" | "cli://stderr" => {
-                // The manifest grants stdout/stderr `write`; the provider currently accepts only
-                // send intents because context sends are represented as resource write requests.
                 if request.intent != RuntimeResourceWriteIntent::Send {
                     return Err(cli_error(
                         request.base_uri,
                         "stdout/stderr are send-only; use <-",
                     ));
                 }
-                let suffix = match request.path.as_str() {
-                    "text" => "",
-                    "line" => "\n",
-                    _ => {
-                        return Err(cli_error(
-                            request.base_uri,
-                            "stdout/stderr support only `text` and `line` paths",
-                        ));
-                    }
-                };
-                let text = value_to_text(&request.value) + suffix;
-                if request.base_uri == "cli://stdout" {
-                    self.backend.write_stdout(&text)
-                } else {
-                    self.backend.write_stderr(&text)
+                match request.path.as_str() {
+                    "text" | "line" => Ok(()),
+                    _ => Err(cli_error(
+                        request.base_uri,
+                        "stdout/stderr support only `text` and `line` paths",
+                    )),
                 }
             }
             other => Err(cli_error(other.to_string(), "unsupported cli resource")),
+        }
+    }
+
+    fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+        self.preflight_write(RuntimeResourceWritePreflightRequest {
+            base_uri: request.base_uri.clone(),
+            path: request.path.clone(),
+            context_name: request.context_name.clone(),
+            intent: request.intent,
+        })?;
+
+        let suffix = match request.path.as_str() {
+            "text" => "",
+            "line" => "\n",
+            _ => unreachable!("cli stdout/stderr path validated by preflight_write"),
+        };
+        let text = value_to_text(&request.value) + suffix;
+        if request.base_uri == "cli://stdout" {
+            self.backend.write_stdout(&text)
+        } else {
+            self.backend.write_stderr(&text)
         }
     }
 }
