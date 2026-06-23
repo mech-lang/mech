@@ -1706,6 +1706,11 @@ impl MechRuntime {
     result
   }
 
+  pub fn take_program(&mut self) -> MechProgram {
+    let program_config = self.program.config.clone();
+    std::mem::replace(&mut self.program, MechProgram::new(program_config))
+  }
+
   pub fn out_string(&self) -> String {
     self.program.out_string()
   }

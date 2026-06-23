@@ -1,3 +1,9 @@
+#[cfg(all(feature = "run", feature = "cli_host", feature = "repl"))]
+use std::io::Write;
+
+#[cfg(all(feature = "run", feature = "cli_host", feature = "repl"))]
+use std::process::Stdio;
+
 #[cfg(all(feature = "run", feature = "cli_host"))]
 fn temp_root(name: &str) -> std::path::PathBuf {
   let root = std::env::temp_dir().join(format!(
@@ -9,6 +15,29 @@ fn temp_root(name: &str) -> std::path::PathBuf {
   ));
   std::fs::create_dir_all(&root).unwrap();
   root
+}
+
+#[cfg(all(feature = "run", feature = "cli_host", feature = "repl"))]
+fn run_mech_with_stdin(
+  root: &std::path::Path,
+  args: &[&str],
+  input: &str,
+) -> std::process::Output {
+  let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .args(args)
+    .current_dir(root)
+    .stdin(Stdio::piped())
+    .stdout(Stdio::piped())
+    .stderr(Stdio::piped())
+    .spawn()
+    .unwrap();
+
+  {
+    let mut stdin = child.stdin.take().unwrap();
+    stdin.write_all(input.as_bytes()).unwrap();
+  }
+
+  child.wait_with_output().unwrap()
 }
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
@@ -127,6 +156,58 @@ fn mech_project_directory_uses_config_run_paths() {
     .unwrap();
 
   assert_success_contains(output, "mech-project-run-ok");
+}
+
+#[cfg(all(feature = "run", feature = "cli_host", feature = "repl"))]
+#[test]
+fn bare_mech_with_run_paths_enters_repl_without_running_config_paths() {
+  let root = temp_root("bare-mech-config-repl");
+  write_cli_host_source(&root);
+  std::fs::write(
+    root.join("mech.mcfg"),
+    r#"config := {
+  run: {
+    paths: ["cli_host.mec"]
+  }
+}
+"#,
+  )
+  .unwrap();
+
+  let output = run_mech_with_stdin(&root, &[], ":quit\n");
+  let combined = combined_output(&output);
+
+  assert!(
+    output.status.success(),
+    "bare mech REPL should exit cleanly:
+{combined}"
+  );
+  assert!(
+    !combined.contains("MECH_CLI_HOST_TEST") && !combined.contains("mech-config-run-ok"),
+    "bare mech unexpectedly executed configured run.paths:
+{combined}"
+  );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host", feature = "repl"))]
+#[test]
+fn repl_after_file_execution_preserves_loaded_program_state() {
+  let root = temp_root("repl-startup-state");
+  std::fs::write(root.join("startup.mec"), "x := 42\n").unwrap();
+
+  let output = run_mech_with_stdin(&root, &["startup.mec", "--repl"], "x\n:quit\n");
+  let combined = combined_output(&output);
+
+  assert!(
+    output.status.success(),
+    "REPL command failed:
+{combined}"
+  );
+  assert!(
+    combined.contains("42"),
+    "REPL did not see definition loaded from startup file:
+{combined}"
+  );
 }
 
 #[cfg(all(feature = "run", feature = "cli_host"))]

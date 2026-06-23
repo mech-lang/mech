@@ -693,6 +693,8 @@ async fn main() -> Result<(), MechError> {
   let uuid = generate_uuid();
   #[cfg(feature = "run")]
   let mut repl_runtime_config: Option<RuntimeConfig> = None;
+  #[cfg(all(feature = "run", feature = "repl"))]
+  let mut repl_seed_program: Option<MechProgram> = None;
 
   #[cfg(feature = "run")]
   {
@@ -779,9 +781,14 @@ async fn main() -> Result<(), MechError> {
       Ok(Value::Empty)
     };
 
-    if !repl_flag {
-      match &result {
-        Ok(r) => {
+    match &result {
+      Ok(r) if repl_flag => {
+        #[cfg(feature = "repl")]
+        {
+          repl_seed_program = Some(runtime.take_program());
+        }
+        #[cfg(not(feature = "repl"))]
+        {
           println!("{}", r.kind());
           #[cfg(feature = "pretty_print")]
           println!("{}", r.pretty_print());
@@ -789,11 +796,19 @@ async fn main() -> Result<(), MechError> {
           println!("{:#?}", r);
           std::process::exit(0);
         }
-        Err(err) => {
-          print_mech_error(err);
-          std::process::exit(1);
-        }
-      };
+      }
+      Ok(r) => {
+        println!("{}", r.kind());
+        #[cfg(feature = "pretty_print")]
+        println!("{}", r.pretty_print());
+        #[cfg(not(feature = "pretty_print"))]
+        println!("{:#?}", r);
+        std::process::exit(0);
+      }
+      Err(err) => {
+        print_mech_error(err);
+        std::process::exit(1);
+      }
     }
 
     #[cfg(windows)]
@@ -837,18 +852,22 @@ async fn main() -> Result<(), MechError> {
   #[cfg(all(feature = "repl", feature = "run"))]
   // TODO: move the REPL onto MechRuntime as a separate PR so CLI host contexts work interactively too.
   let mut repl = {
-    let config = repl_runtime_config.unwrap_or_else(RuntimeConfig::default);
-    let mut repl_program = MechProgram::new(MechProgramConfig {
-      name: config.name.clone(),
-      environment: MechProgramEnvironment::default(),
-    });
-    repl_program.configure(
-      config.diagnostics.debug_enabled,
-      config.diagnostics.trace_enabled,
-      config.diagnostics.profile_enabled,
-      config.limits.max_steps_per_turn.unwrap_or(10_000) as usize,
-    );
-    MechRepl::from(repl_program)
+    if let Some(program) = repl_seed_program {
+      MechRepl::from(program)
+    } else {
+      let config = repl_runtime_config.unwrap_or_else(RuntimeConfig::default);
+      let mut repl_program = MechProgram::new(MechProgramConfig {
+        name: config.name.clone(),
+        environment: MechProgramEnvironment::default(),
+      });
+      repl_program.configure(
+        config.diagnostics.debug_enabled,
+        config.diagnostics.trace_enabled,
+        config.diagnostics.profile_enabled,
+        config.limits.max_steps_per_turn.unwrap_or(10_000) as usize,
+      );
+      MechRepl::from(repl_program)
+    }
   };
   #[cfg(all(feature = "repl", not(feature = "run")))]
   let mut repl = MechRepl::from(MechProgram::new(MechProgramConfig {
