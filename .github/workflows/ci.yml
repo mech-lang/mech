@@ -49,6 +49,15 @@ jobs:
           # Runtime package tests.
           cargo test -p mech-runtime --lib --tests
 
+          # CLI host and context-send regression coverage.
+          cargo test -p mech-syntax --test context_parser
+          cargo test -p mech-runtime --test module_smoke
+          cargo test -p mech-host-cli --features provider --test provider
+          cargo test --features "run repl pretty_print" --test mech_cli_host
+          cargo test --features "run repl pretty_print" cli::run::tests
+          cargo check -p mech-runtime -p mech-host-browser -p mech-host-cli
+          cargo check -p mech-host-cli --no-default-features
+
   dynamic-modules:
     name: Dynamic modules
     runs-on: ubuntu-latest
