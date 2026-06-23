@@ -3257,3 +3257,39 @@ fn module_graph_preflight_blocks_current_stdout_before_dependency_denial() {
   assert!(error.contains("RuntimeCapabilityGrantDenied"), "expected runtime grant denial, got {error}");
   assert!(stdout.lock().unwrap().is_empty(), "current module stdout write should be preflight-blocked");
 }
+
+#[test]
+fn module_graph_preflight_blocks_addressed_interpreter_import_write_before_denial() {
+  let root = setup_modules(
+    r#"~~~mech:foo
++> ./dep.mec
++> @env := cli/env
+home := @env/HOME
+<+ home
+~~~
+
+value := @foo/home
+"#,
+  );
+  std::fs::write(
+    root.join("dep.mec"),
+    "+> @out := cli/stdout\n@out/line <- \"must-not-write\"\n",
+  )
+  .unwrap();
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+  let stdout = backend.stdout.clone();
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .resource_provider(Box::new(CliResourceProvider::new(backend)))
+    .build()
+    .unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+
+  let result = runtime.run_module_with_context(&mut context, version);
+
+  let error = format!("{:?}", result.err().expect("addressed interpreter env grant denial should fail"));
+  assert!(error.contains("RuntimeCapabilityGrantDenied"), "expected runtime grant denial, got {error}");
+  assert!(stdout.lock().unwrap().is_empty(), "addressed interpreter dependency write should be preflight-blocked");
+}

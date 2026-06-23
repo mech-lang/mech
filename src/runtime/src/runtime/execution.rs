@@ -1849,6 +1849,33 @@ impl MechRuntime {
       )?;
     }
 
+    let scoped_refs = record
+      .scopes
+      .iter()
+      .find(|metadata| &metadata.scope == scope)
+      .map(|metadata| metadata.address_references.as_slice())
+      .unwrap_or(&[]);
+
+    for reference in scoped_refs {
+      match resolve_runtime_address_target(&record, scope, &context_registry, &reference.target) {
+        RuntimeAddressTarget::Interpreter(interpreter_scope) => {
+          if !matches!(scope, SourceScope::Program) {
+            return Err(MechError::new(UnknownAddressTarget { target: reference.target.clone() }, None));
+          }
+          self.preflight_module_graph_for_scope(
+            context,
+            version,
+            &interpreter_scope,
+            seen,
+          )?;
+        }
+        RuntimeAddressTarget::Context(_) => {}
+        RuntimeAddressTarget::Unknown => {
+          return Err(MechError::new(UnknownAddressTarget { target: reference.target.clone() }, None));
+        }
+      }
+    }
+
     Ok(())
   }
 
