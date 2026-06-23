@@ -31,8 +31,6 @@ use indicatif::{ProgressBar, ProgressStyle, MultiProgress};
 use serde_json;
 use std::panic;
 use std::sync::{Arc, Mutex};
-use std::path::Path;
-use std::ffi::OsStr;
 use std::time::Duration;
 use std::thread;
 
@@ -80,8 +78,9 @@ use mech::cli::capabilities;
 use mech::cli::config;
 #[cfg(feature = "run")]
 use mech::cli::run::{
-  cli_host_capability_args, cli_host_capability_passthrough_values,
+  classify_run_inputs, cli_host_capability_args, cli_host_capability_passthrough_values,
   cli_host_capability_selection, effective_run_runtime_config, new_cli_runtime, run_cli_source,
+  RunInputMode,
 };
 
 #[cfg(feature = "run")]
@@ -737,10 +736,13 @@ async fn main() -> Result<(), MechError> {
       .and_then(|s| s.parse::<usize>().ok())
       .or(root_rounds_per_step);
 
-    let any_look_like_paths = run_inputs.iter().any(|p| is_intended_path(p));
+    let run_input_mode = classify_run_inputs(run_inputs);
     let config_matches = run_matches.unwrap_or(&cli_matches);
-    let config_inputs = if any_look_like_paths { run_inputs.as_slice() } else { &[] };
-    let loaded_config = config::load_run_cli_config(config_matches, config_inputs)?;
+    let config_inputs: Vec<String> = match &run_input_mode {
+      RunInputMode::Paths(paths) => paths.clone(),
+      RunInputMode::Empty | RunInputMode::InlineSource(_) => Vec::new(),
+    };
+    let loaded_config = config::load_run_cli_config(config_matches, &config_inputs)?;
 
     let runtime_config = effective_run_runtime_config(
       loaded_config.as_ref(),
@@ -760,9 +762,8 @@ async fn main() -> Result<(), MechError> {
 
     let mut runtime = new_cli_runtime(runtime_config, &cli_grants)?;
 
-    if !run_inputs.is_empty() && !any_look_like_paths {
-      let joined = run_inputs.join(" ");
-      match run_cli_source(&mut runtime, joined.trim()) {
+    if let RunInputMode::InlineSource(source) = &run_input_mode {
+      match run_cli_source(&mut runtime, source.trim()) {
         Ok(r) => {
           println!("{}", r.kind());
           #[cfg(feature = "pretty_print")]
@@ -781,8 +782,14 @@ async fn main() -> Result<(), MechError> {
       }
     }
 
+    let run_paths = match run_input_mode {
+      RunInputMode::Paths(paths) => paths,
+      RunInputMode::Empty => Vec::new(),
+      RunInputMode::InlineSource(_) => unreachable!("inline source exits before path execution"),
+    };
+
     let options = config::effective_run_options(
-      run_inputs,
+      run_paths,
       loaded_config.as_ref(),
       explicit_run_command,
     )?;
@@ -1046,41 +1053,6 @@ fn serve_host_delegation_injection(
     .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error.to_string()))?
     .as_millis() as u64;
   mech::signed_browser_host_config_injection(host_config, &options, now_ms).map(Some)
-}
-
-fn is_intended_path(s: &str) -> bool {
-  if s.trim().is_empty() { return false; }
-
-  let path = Path::new(s);
-  if path.exists() {
-    return true;
-  }
-  if s.starts_with("./") || s.starts_with(".\\") ||
-    s.starts_with("../") || s.starts_with("..\\") ||
-    s.starts_with('/') || s.starts_with('\\') {
-    return true;
-  }
-  if s.len() > 2 && s.as_bytes()[1] == b':' {
-    return true;
-  }
-  if s.contains('/') || s.contains('\\') {
-    return true;
-  }
-  if let Some(ext) = path.extension().and_then(OsStr::to_str) {
-    match ext {
-      // Mech specific
-      "mec" | "🤖" | "mecb" | "mdoc" | "mpkg" => true,
-      // Data/Standard formats
-      "m" | "csv" | "tsv" | "txt" | "md" | "json" | "toml" | "yaml" => true,
-      // Web
-      "html" | "htm" | "css" | "js" | "wasm" => true,
-      // Images
-      "png" | "jpg" | "jpeg" | "gif" | "svg" | "bmp" | "ico" => true,
-      _ => false,
-    }
-  } else {
-    false
-  }
 }
 
 fn source_range_to_offset_range(file_content: &str, range: &SourceRange) -> (usize, usize) {

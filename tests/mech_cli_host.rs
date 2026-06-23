@@ -594,3 +594,15 @@ fn mech_run_config_can_narrow_env_to_path() {
     .unwrap();
   assert_failure_contains(bad, "RuntimeCapabilityGrantDenied");
 }
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_inline_context_send_is_not_treated_as_path() {
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("+> @out := cli/stdout\n@out/line <- \"inline-context-ok\"")
+    .output()
+    .unwrap();
+
+  assert_success_contains(output, "inline-context-ok");
+}

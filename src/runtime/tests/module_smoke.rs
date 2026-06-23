@@ -63,6 +63,55 @@ fn runtime_context_write_grant(runtime: &MechRuntime, resource: &str, path: &str
   runtime_write_grant_for(&subject, resource, path)
 }
 
+#[derive(Clone, Debug, Default)]
+struct RecordingCliState {
+  env: HashMap<String, String>,
+  stdout: Vec<String>,
+  stderr: Vec<String>,
+}
+
+#[derive(Clone, Debug)]
+struct RecordingCliBackend {
+  state: Arc<Mutex<RecordingCliState>>,
+}
+
+impl CliBackend for RecordingCliBackend {
+  fn env_var(&self, name: &str) -> mech_core::MResult<Option<String>> {
+    Ok(self.state.lock().unwrap().env.get(name).cloned())
+  }
+
+  fn write_stdout(&mut self, text: &str) -> mech_core::MResult<()> {
+    self.state.lock().unwrap().stdout.push(text.to_string());
+    Ok(())
+  }
+
+  fn write_stderr(&mut self, text: &str) -> mech_core::MResult<()> {
+    self.state.lock().unwrap().stderr.push(text.to_string());
+    Ok(())
+  }
+}
+
+fn runtime_with_recording_cli() -> (MechRuntime, Arc<Mutex<RecordingCliState>>) {
+  let state = Arc::new(Mutex::new(RecordingCliState::default()));
+  let runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(CliResourceProvider::new(RecordingCliBackend {
+      state: state.clone(),
+    })))
+    .build()
+    .unwrap();
+  (runtime, state)
+}
+
+fn grant_runtime_stdout_line(runtime: &mut MechRuntime) {
+  let subject = runtime.runtime_context().unwrap().subject;
+  runtime.grant_capability(RuntimeCapabilityGrant {
+    subject,
+    resource: "cli://stdout".to_string(),
+    operations: vec![RuntimeCapabilityOperation::Write],
+    paths: vec!["line".to_string()],
+  }).unwrap();
+}
+
 fn run_module_as_main(runtime: &mut MechRuntime, version: ModuleVersionId) -> mech_core::MResult<Value> {
   let mut context = runtime.runtime_context()?.with_subject("task://main");
   runtime.run_module_with_context(&mut context, version)
@@ -3292,4 +3341,97 @@ value := @foo/home
   let error = format!("{:?}", result.err().expect("addressed interpreter env grant denial should fail"));
   assert!(error.contains("RuntimeCapabilityGrantDenied"), "expected runtime grant denial, got {error}");
   assert!(stdout.lock().unwrap().is_empty(), "addressed interpreter dependency write should be preflight-blocked");
+}
+
+#[test]
+fn top_level_context_send_writes_stdout() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  grant_runtime_stdout_line(&mut runtime);
+
+  let result = runtime.run_string(
+    "@out := cli://stdout{:write(line)}\n@out/line <- \"top-level-send-ok\"\n\"done\"\n",
+  );
+
+  assert!(result.is_ok(), "top-level send failed: {result:?}");
+  let stdout = state.lock().unwrap().stdout.clone();
+  assert_eq!(stdout, vec!["top-level-send-ok\n".to_string()]);
+}
+#[test]
+fn unknown_context_send_target_fails_preflight_before_writes() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  grant_runtime_stdout_line(&mut runtime);
+
+  let result = runtime.run_string(
+    "@out := cli://stdout{:write(line)}\n@out/line <- \"must-not-write\"\n@missing/line <- \"boom\"\n",
+  );
+
+  assert!(result.is_err(), "missing context send should fail");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("missing"), "expected missing context in error, got {error}");
+  assert!(
+    state.lock().unwrap().stdout.is_empty(),
+    "preflight failed after stdout write: {:?}",
+    state.lock().unwrap().stdout,
+  );
+}
+#[test]
+fn context_send_inside_function_body_fails_runtime_preflight() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  grant_runtime_stdout_line(&mut runtime);
+
+  let result = runtime.run_string(
+    "@out := cli://stdout{:write(line)}\nemit() = result<string> := @out/line <- \"must-not-write\".\n",
+  );
+
+  assert!(result.is_err(), "nested function send should fail");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("function body"), "expected function body placement error, got {error}");
+  assert!(state.lock().unwrap().stdout.is_empty());
+}
+#[test]
+fn context_send_inside_fsm_transition_fails_runtime_preflight() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  grant_runtime_stdout_line(&mut runtime);
+
+  let result = runtime.run_string(
+    "@out := cli://stdout{:write(line)}\n#machine(x) -> :start\n:start -> @out/line <- \"must-not-write\"\n.\n",
+  );
+
+  assert!(result.is_err(), "FSM send should fail");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("FSM transition"), "expected FSM transition placement error, got {error}");
+  assert!(state.lock().unwrap().stdout.is_empty());
+}
+#[test]
+fn context_assignment_inside_function_body_fails_runtime_preflight() {
+  let mut runtime = RuntimeBuilder::new()
+    .in_memory_docs(InMemoryDocsProvider::new())
+    .build()
+    .unwrap();
+
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "docs://manual", "intro/title")).unwrap();
+
+  let result = runtime.run_string(
+    "@manual := docs://manual{:write(intro/title)}\nemit() = result<bool> := @manual/intro/title = true.\n",
+  );
+
+  assert!(result.is_err(), "nested function context assignment should fail");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("function body"), "expected function body placement error, got {error}");
+}
+#[test]
+fn top_level_context_assignment_still_writes_and_reads() {
+  let mut runtime = RuntimeBuilder::new()
+    .in_memory_docs(InMemoryDocsProvider::new())
+    .build()
+    .unwrap();
+
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "docs://manual", "intro/title")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
+
+  let result = runtime.run_string(
+    "@manual := docs://manual{:write(intro/title), :read(intro/title)}\n@manual/intro/title = true\nresult := @manual/intro/title\n",
+  ).unwrap();
+
+  assert_bool_true(result, "top-level context assignment");
 }

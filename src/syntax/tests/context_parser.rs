@@ -319,22 +319,22 @@ fn parses_deep_context_send_path() {
 }
 
 #[test]
-fn rejects_context_send_inside_fsm_statement_transition() {
+fn parses_context_send_inside_fsm_statement_transition() {
   assert!(
     parser::parse(
       "#machine(x) -> :start\n:start -> @out/line <- \"hello\"\n."
     )
-    .is_err()
+    .is_ok()
   );
 }
 
 #[test]
-fn rejects_context_send_inside_fsm_block_transition() {
+fn parses_context_send_inside_fsm_block_transition() {
   assert!(
     parser::parse(
       "#machine(x) -> :start\n:start -> { @out/line <- \"hello\" }\n."
     )
-    .is_err()
+    .is_ok()
   );
 }
 
@@ -344,8 +344,8 @@ fn top_level_context_send_still_parses_after_fsm_rejection() {
 }
 
 #[test]
-fn rejects_context_send_inside_function_body() {
-  assert!(parser::parse("emit() = result<string> := @out/line <- \"hello\".").is_err());
+fn parses_context_send_inside_function_body() {
+  assert!(parser::parse("emit() = result<string> := @out/line <- \"hello\".").is_ok());
 }
 
 #[test]

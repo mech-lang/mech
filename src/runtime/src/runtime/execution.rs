@@ -21,6 +21,27 @@ enum RuntimeAddressTarget {
   Unknown,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum DirectContextEffectPlacement {
+  TopLevel,
+  FunctionBody,
+  FsmTransition,
+}
+
+impl DirectContextEffectPlacement {
+  fn description(self) -> &'static str {
+    match self {
+      DirectContextEffectPlacement::TopLevel => "module top level",
+      DirectContextEffectPlacement::FunctionBody => "a function body",
+      DirectContextEffectPlacement::FsmTransition => "an FSM transition",
+    }
+  }
+
+  fn allows_direct_context_effect(self) -> bool {
+    matches!(self, DirectContextEffectPlacement::TopLevel)
+  }
+}
+
 struct ActiveRuntimeProgramHostGuard {
   previous: Option<RuntimeProgramHostTarget>,
 }
@@ -161,6 +182,10 @@ fn runtime_context_allows_read(
       }
     }
   })
+}
+
+fn direct_context_target(context_name: &str, path: &str) -> String {
+  format!("@{}/{}", context_name, path)
 }
 
 #[allow(dead_code)]
@@ -990,14 +1015,14 @@ impl MechRuntime {
         match element {
           mech_core::SectionElement::MechCode(codes) => {
             for (code, _) in codes {
-              self.preflight_code_context_capabilities(context, registry, code)?;
+              self.preflight_code_context_capabilities(context, registry, code, DirectContextEffectPlacement::TopLevel)?;
             }
           }
           mech_core::SectionElement::FencedMechCode(fenced)
             if Self::executable_fence_for_scope(fenced, scope) =>
           {
             for (code, _) in &fenced.code {
-              self.preflight_code_context_capabilities(context, registry, code)?;
+              self.preflight_code_context_capabilities(context, registry, code, DirectContextEffectPlacement::TopLevel)?;
             }
           }
           _ => {}
@@ -1012,10 +1037,11 @@ impl MechRuntime {
     context: &RuntimeContext,
     registry: &RuntimeContextRegistry,
     code: &mech_core::MechCode,
+    placement: DirectContextEffectPlacement,
   ) -> MResult<()> {
     match code {
       mech_core::MechCode::Statement(statement) => {
-        self.preflight_statement_context_capabilities(context, registry, statement)
+        self.preflight_statement_context_capabilities(context, registry, statement, placement)
       }
       mech_core::MechCode::Expression(expression) => {
         self.preflight_expression_context_reads(context, registry, expression)
@@ -1040,7 +1066,12 @@ impl MechRuntime {
     function: &mech_core::FunctionDefine,
   ) -> MResult<()> {
     for statement in &function.statements {
-      self.preflight_statement_context_capabilities(context, registry, statement)?;
+      self.preflight_statement_context_capabilities(
+        context,
+        registry,
+        statement,
+        DirectContextEffectPlacement::FunctionBody,
+      )?;
     }
     for arm in &function.match_arms {
       self.preflight_pattern_context_reads(context, registry, &arm.pattern)?;
@@ -1093,12 +1124,22 @@ impl MechRuntime {
       }
       mech_core::Transition::CodeBlock(code_items) => {
         for (code, _) in code_items {
-          self.preflight_code_context_capabilities(context, registry, code)?;
+          self.preflight_code_context_capabilities(
+            context,
+            registry,
+            code,
+            DirectContextEffectPlacement::FsmTransition,
+          )?;
         }
         Ok(())
       }
       mech_core::Transition::Statement(statement) => {
-        self.preflight_statement_context_capabilities(context, registry, statement)
+        self.preflight_statement_context_capabilities(
+          context,
+          registry,
+          statement,
+          DirectContextEffectPlacement::FsmTransition,
+        )
       }
     }
   }
@@ -1148,38 +1189,80 @@ impl MechRuntime {
     context: &RuntimeContext,
     registry: &RuntimeContextRegistry,
     statement: &mech_core::Statement,
+    placement: DirectContextEffectPlacement,
   ) -> MResult<()> {
     match statement {
       mech_core::Statement::VariableDefine(var_def) => {
+        if let Some(context_name) = &var_def.var.context {
+          return Err(MechError::new(RuntimeInvalidOperationError {
+            operation: "direct_context_define",
+            reason: format!(
+              "context-addressed path `{}` cannot be defined with `:=`; use `=` or `<-`",
+              direct_context_target(&context_name.to_string(), &var_def.var.name.to_string()),
+            ),
+          }, None));
+        }
         self.preflight_expression_context_reads(context, registry, &var_def.expression)
       }
       mech_core::Statement::VariableAssign(assign) => {
-        self.preflight_expression_context_reads(context, registry, &assign.expression)?;
         if let Some(context_name) = &assign.target.context {
+          let context_name = context_name.to_string();
+          let path = assign.target.name.to_string();
+          self.reject_direct_context_effect_placement(
+            "assignment",
+            &context_name,
+            &path,
+            placement,
+          )?;
           self.preflight_context_access(
             context,
             registry,
-            &context_name.to_string(),
-            &assign.target.name.to_string(),
+            &context_name,
+            &path,
             RuntimeCapabilityOperation::Write,
+            true,
           )?;
         }
+        self.preflight_expression_context_reads(context, registry, &assign.expression)?;
         Ok(())
       }
       mech_core::Statement::ContextSend(send) => {
+        let Some(context_name) = &send.target.context else {
+          return Err(MechError::new(RuntimeInvalidOperationError {
+            operation: "direct_context_send",
+            reason: format!("send target `{}` is not a context path", send.target.name.to_string()),
+          }, None));
+        };
+
+        let context_name = context_name.to_string();
+        let path = send.target.name.to_string();
+
+        self.reject_direct_context_effect_placement(
+          "send",
+          &context_name,
+          &path,
+          placement,
+        )?;
+
+        self.preflight_context_access(
+          context,
+          registry,
+          &context_name,
+          &path,
+          RuntimeCapabilityOperation::Write,
+          true,
+        )?;
+
         self.preflight_expression_context_reads(context, registry, &send.expression)?;
-        if let Some(context_name) = &send.target.context {
-          self.preflight_context_access(
-            context,
-            registry,
-            &context_name.to_string(),
-            &send.target.name.to_string(),
-            RuntimeCapabilityOperation::Write,
-          )?;
-        }
         Ok(())
       }
       mech_core::Statement::OpAssign(op_assign) => {
+        if op_assign.target.context.is_some() {
+          return Err(MechError::new(RuntimeInvalidOperationError {
+            operation: "direct_context_op_assign",
+            reason: "context op-assignment is not supported; use `=` or `<-`".to_string(),
+          }, None));
+        }
         self.preflight_expression_context_reads(context, registry, &op_assign.expression)
       }
       mech_core::Statement::TupleDestructure(tuple_destructure) => self
@@ -1207,6 +1290,7 @@ impl MechRuntime {
             &context_name.to_string(),
             &var.name.to_string(),
             RuntimeCapabilityOperation::Read,
+            false,
           )?;
         }
       }
@@ -1406,6 +1490,28 @@ impl MechRuntime {
     }
   }
 
+
+  fn reject_direct_context_effect_placement(
+    &self,
+    effect: &str,
+    context_name: &str,
+    path: &str,
+    placement: DirectContextEffectPlacement,
+  ) -> MResult<()> {
+    if placement.allows_direct_context_effect() {
+      return Ok(());
+    }
+
+    Err(MechError::new(RuntimeInvalidOperationError {
+      operation: "direct_context_effect_placement",
+      reason: format!(
+        "context {effect} to `{}` is only supported at module top level, not inside {}",
+        direct_context_target(context_name, path),
+        placement.description(),
+      ),
+    }, None))
+  }
+
   fn preflight_context_access(
     &self,
     context: &RuntimeContext,
@@ -1413,8 +1519,15 @@ impl MechRuntime {
     context_name: &str,
     path: &str,
     operation: RuntimeCapabilityOperation,
+    require_context_binding: bool,
   ) -> MResult<()> {
     let Some(binding) = registry.get(context_name) else {
+      if require_context_binding {
+        return Err(MechError::new(RuntimeInvalidOperationError {
+          operation: "direct_context_target",
+          reason: format!("context target `@{context_name}` is not declared or imported"),
+        }, None));
+      }
       return Ok(());
     };
     let resolved = self.resolve_context_resource_request(binding, path)?;

@@ -138,11 +138,11 @@ pub fn fsm_guard(input: ParseString) -> ParseResult<Guard> {
 pub fn fsm_transition(input: ParseString) -> ParseResult<FsmArm> {
   let (input, start) = pattern(input)?;
   let (input, trns) = many1(alt((
+    fsm_block_transition,
+    fsm_statement_transition,
     fsm_state_transition,
     fsm_output,
-    fsm_async_transition,
-    fsm_statement_transition,
-    fsm_block_transition)))(input)?;
+    fsm_async_transition)))(input)?;
   Ok((input, FsmArm::Transition(start, trns)))
 }
 
@@ -160,57 +160,39 @@ pub fn fsm_async_transition(input: ParseString) -> ParseResult<Transition> {
   Ok((input, Transition::Async(ptrn)))
 }
 
-fn fsm_transition_statement(input: ParseString) -> ParseResult<Statement> {
-  const FSM_CONTEXT_SEND_ERROR: &str =
-    "context sends are only supported at top level; FSM transitions cannot contain `<-` yet";
-
-  let start = input.clone();
-  let (input, statement) = statement(input)?;
-
-  if matches!(statement, Statement::ContextSend(_)) {
-    return Err(nom::Err::Failure(ParseError::new(
-      start,
-      FSM_CONTEXT_SEND_ERROR,
-    )));
-  }
-
-  Ok((input, statement))
-}
-
 // fsm_statement_transition := transition_operator, statement ;
 pub fn fsm_statement_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = transition_operator(input)?;
-  let (input, stmnt) = fsm_transition_statement(input)?;
+  let (input, stmnt) = statement(input)?;
   Ok((input, Transition::Statement(stmnt)))
-}
-
-fn fsm_code_block_contains_context_send(code: &[(MechCode, Option<Comment>)]) -> bool {
-  code.iter().any(|(node, _)| {
-    matches!(node, MechCode::Statement(Statement::ContextSend(_)))
-  })
 }
 
 // fsm_block_transition := transition_operator, left_brace, mech_code+, right_brace ;
 pub fn fsm_block_transition(input: ParseString) -> ParseResult<Transition> {
-  const FSM_CONTEXT_SEND_BLOCK_ERROR: &str =
-    "context sends are only supported at top level; FSM transition blocks cannot contain `<-` yet";
+  let (mut input, _) = transition_operator(input)?;
+  let (next_input, _) = left_brace(input)?;
+  input = next_input;
 
-  let (input, _) = transition_operator(input)?;
-  let (input, _) = left_brace(input)?;
-  let (input, parsed) = mech_code(input)?;
-  let code = parsed.code;
-
-  if fsm_code_block_contains_context_send(&code) {
-    return Err(nom::Err::Failure(ParseError::new(
-      input,
-      FSM_CONTEXT_SEND_BLOCK_ERROR,
-    )));
+  let mut code = Vec::new();
+  loop {
+    let (next_input, _) = whitespace0(input.clone())?;
+    input = next_input;
+    if right_brace(input.clone()).is_ok() {
+      break;
+    }
+    let (next_input, item) = mech_code_alt(input)?;
+    input = next_input;
+    let (next_input, comment) = match code_terminal(input.clone()) {
+      Ok((next_input, comment)) => (next_input, comment),
+      Err(_) => (input, None),
+    };
+    input = next_input;
+    code.push((item, comment));
   }
 
   let (input, _) = right_brace(input)?;
   Ok((input, Transition::CodeBlock(code)))
 }
-
 
 // fsm_output := output_operator, pattern ;
 pub fn fsm_output(input: ParseString) -> ParseResult<Transition> {
