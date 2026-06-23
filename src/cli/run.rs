@@ -71,7 +71,7 @@ pub fn classify_run_inputs(inputs: Vec<String>) -> RunInputMode {
   }
 
   let joined = inputs.join(" ");
-  if mech_syntax::parser::parse(joined.trim()).is_ok() {
+  if parses_as_executable_run_source(&joined) {
     return RunInputMode::InlineSource(joined);
   }
 
@@ -79,6 +79,42 @@ pub fn classify_run_inputs(inputs: Vec<String>) -> RunInputMode {
     RunInputMode::Paths(inputs)
   } else {
     RunInputMode::InlineSource(joined)
+  }
+}
+
+fn parses_as_executable_run_source(input: &str) -> bool {
+  mech_syntax::parser::parse(input.trim())
+    .map(|program| program_contains_executable_run_source(&program))
+    .unwrap_or(false)
+}
+
+fn program_contains_executable_run_source(program: &Program) -> bool {
+  program.body.sections.iter().any(|section| {
+    section.elements.iter().any(section_element_contains_executable_run_source)
+  })
+}
+
+fn section_element_contains_executable_run_source(element: &SectionElement) -> bool {
+  match element {
+    SectionElement::MechCode(codes) => {
+      codes.iter().any(|(code, _)| mech_code_is_executable_run_source(code))
+    }
+    SectionElement::FencedMechCode(fenced) => {
+      fenced.code.iter().any(|(code, _)| mech_code_is_executable_run_source(code))
+    }
+    _ => false,
+  }
+}
+
+fn mech_code_is_executable_run_source(code: &MechCode) -> bool {
+  match code {
+    MechCode::Statement(_)
+    | MechCode::Expression(_)
+    | MechCode::FunctionDefine(_)
+    | MechCode::FsmImplementation(_)
+    | MechCode::FsmSpecification(_)
+    | MechCode::Import(_) => true,
+    MechCode::Comment(_) | MechCode::Error(_, _) => false,
   }
 }
 
@@ -451,8 +487,11 @@ mod tests {
   }
 
   #[test]
-  fn classifies_unparseable_path_like_inputs_as_paths() {
-    let mode = classify_run_inputs(vec!["examples/foo.mec".to_string(), "\0".to_string()]);
+  fn classifies_multiple_path_like_inputs_as_paths_even_if_joined_text_parses() {
+    let mode = classify_run_inputs(vec![
+      "examples/foo.mec".to_string(),
+      "bar.mec".to_string(),
+    ]);
     assert!(matches!(mode, RunInputMode::Paths(_)));
   }
 }
