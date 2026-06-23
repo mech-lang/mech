@@ -264,6 +264,7 @@ pub fn effective_run_options(
     .unwrap_or_default();
 
   let mut effective_cli_paths = cli_paths;
+  let had_cli_selector = !effective_cli_paths.is_empty();
 
   if let Some(loaded) = config {
     if let Some(project_dir) = loaded.discovered_project_dir.as_ref() {
@@ -288,8 +289,10 @@ pub fn effective_run_options(
 
   let paths = if !effective_cli_paths.is_empty() {
     effective_cli_paths
-  } else {
+  } else if explicit_run_command || had_cli_selector {
     config_paths
+  } else {
+    Vec::new()
   };
 
   if paths.is_empty() {
@@ -631,6 +634,13 @@ mod config_tests {
   #[test]
   fn implicit_run_without_inputs_returns_none() {
     let options = effective_run_options(vec![], None, false).unwrap();
+    assert_eq!(options, None);
+  }
+
+  #[test]
+  fn implicit_run_without_cli_selector_ignores_config_run_paths() {
+    let config = loaded_config(r#"config := {run: {paths: ["foo.mec"]}}"#);
+    let options = effective_run_options(vec![], Some(&config), false).unwrap();
     assert_eq!(options, None);
   }
 
