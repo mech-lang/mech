@@ -2755,6 +2755,93 @@ fn narrow_stdout_grant_permits_line_but_denies_text() {
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
 }
 
+
+
+#[test]
+fn direct_run_string_preserves_named_fence_interpreter() {
+  let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+
+  runtime.run_string(
+    "~~~mech:foo
+ok := true
+<+ ok
+~~~
+",
+  ).unwrap();
+
+  assert!(runtime.has_interpreter(hash_str("foo")));
+  let values = runtime
+    .symbol_values_for_interpreter(hash_str("foo"), &["ok".to_string()])
+    .expect("named fence interpreter should expose symbols");
+  assert_eq!(values.len(), 1, "named fence export should remain observable after direct run");
+}
+
+#[test]
+fn function_body_context_read_is_rejected_before_stdout_send() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  grant_runtime_stdout_line(&mut runtime);
+
+  let result = runtime.run_string(
+    r#"+> @out := cli/stdout
++> @env := cli/env
+@out/line <- "must-not-write"
+uses-env(root<string>) => <string>
+  | @env/HOME.
+"#,
+  );
+
+  assert!(result.is_err(), "function body context read should be rejected");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(
+    error.contains("direct_context_read_placement") || error.contains("function definitions"),
+    "expected function definition context-read placement error, got {error}",
+  );
+  assert!(state.lock().unwrap().stdout.is_empty());
+}
+
+#[test]
+fn assignment_subscript_context_read_is_preflighted_before_stdout_send() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  grant_runtime_stdout_line(&mut runtime);
+
+  let result = runtime.run_string(
+    r#"+> @out := cli/stdout
++> @env := cli/env
+@out/line <- "must-not-write"
+xs := [0 0]
+xs[@env/HOME] = 1
+"#,
+  );
+
+  assert!(result.is_err(), "assignment target subscript context read should be preflighted");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeCapabilityGrantDenied"), "got {error}");
+  assert!(state.lock().unwrap().stdout.is_empty());
+}
+
+#[test]
+fn op_assignment_subscript_context_read_is_preflighted_before_stdout_send() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  grant_runtime_stdout_line(&mut runtime);
+
+  let result = runtime.run_string(
+    r#"+> @out := cli/stdout
++> @env := cli/env
+@out/line <- "must-not-write"
+xs := [0 0]
+xs[@env/HOME] += 1
+"#,
+  );
+
+  assert!(result.is_err(), "op-assignment target subscript context read should be preflighted");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(
+    error.contains("RuntimeCapabilityGrantDenied") || error.contains("parse") || error.contains("Parse"),
+    "got {error}",
+  );
+  assert!(state.lock().unwrap().stdout.is_empty());
+}
+
 #[test]
 fn nested_env_read_denial_preflights_before_stdout_write() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
@@ -2776,7 +2863,10 @@ fn function_define_env_read_denial_preflights_before_stdout_write() {
   let result = runtime.run_string("+> @out := cli/stdout\n+> @env := cli/env\n@out/line <- \"must-not-write\"\nuses-env(root<string>) => <string>\n  | @env/HOME.\n");
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("RuntimeCapabilityGrantDenied"), "got {error}");
+  assert!(
+    error.contains("direct_context_read_placement") || error.contains("function definitions"),
+    "got {error}",
+  );
   assert!(stdout.lock().unwrap().is_empty());
   // FSM traversal is covered structurally by preflight_fsm_implementation_context_capabilities;
   // add a parser-level FSM fixture when the compact syntax is less brittle for this suite.

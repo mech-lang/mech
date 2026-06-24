@@ -577,6 +577,25 @@ impl MechRuntime {
     })
   }
 
+  fn resolve_context_reads_in_slice_ref(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    target: &mech_core::SliceRef,
+  ) -> MResult<mech_core::SliceRef> {
+    let mut target = target.clone();
+    if let Some(subscripts) = &target.subscript {
+      target.subscript = Some(
+        subscripts
+          .iter()
+          .map(|subscript| self.resolve_context_reads_in_subscript(context, program, registry, subscript))
+          .collect::<MResult<Vec<_>>>()?,
+      );
+    }
+    Ok(target)
+  }
+
   fn resolve_context_reads_in_subscript(
     &mut self,
     context: &RuntimeContext,
@@ -1037,9 +1056,7 @@ impl MechRuntime {
       name: function.name.clone(),
       input: function.input.clone(),
       output: function.output.clone(),
-      statements: function.statements.iter()
-        .map(|statement| self.resolve_context_reads_in_statement(context, program, registry, statement))
-        .collect::<MResult<Vec<_>>>()?,
+      statements: function.statements.clone(),
       match_arms: function.match_arms.iter().map(|arm| Ok(mech_core::FunctionMatchArm {
         pattern: self.resolve_context_reads_in_match_pattern(
           context,
@@ -1047,12 +1064,7 @@ impl MechRuntime {
           registry,
           &arm.pattern,
         )?,
-        expression: self.resolve_context_reads_in_expression(
-          context,
-          program,
-          registry,
-          &arm.expression,
-        )?,
+        expression: arm.expression.clone(),
       })).collect::<MResult<Vec<_>>>()?,
     })
   }
@@ -1099,11 +1111,13 @@ impl MechRuntime {
       }
       mech_core::Statement::VariableAssign(assign) => {
         let mut assign = assign.clone();
+        assign.target = self.resolve_context_reads_in_slice_ref(context, program, registry, &assign.target)?;
         assign.expression = self.resolve_context_reads_in_expression(context, program, registry, &assign.expression)?;
         Ok(mech_core::Statement::VariableAssign(assign))
       }
       mech_core::Statement::OpAssign(op_assign) => {
         let mut op_assign = op_assign.clone();
+        op_assign.target = self.resolve_context_reads_in_slice_ref(context, program, registry, &op_assign.target)?;
         op_assign.expression = self.resolve_context_reads_in_expression(context, program, registry, &op_assign.expression)?;
         Ok(mech_core::Statement::OpAssign(op_assign))
       }
@@ -1313,6 +1327,14 @@ impl MechRuntime {
     addressed_read_preflight: AddressedReadPreflight,
   ) -> MResult<()> {
     for statement in &function.statements {
+      self.reject_runtime_context_reads_in_statement(registry, statement)?;
+    }
+    for arm in &function.match_arms {
+      self.reject_runtime_context_reads_in_pattern(registry, &arm.pattern)?;
+      self.reject_runtime_context_reads_in_expression(registry, &arm.expression)?;
+    }
+
+    for statement in &function.statements {
       self.preflight_statement_context_capabilities(
         context,
         registry,
@@ -1328,7 +1350,371 @@ impl MechRuntime {
     Ok(())
   }
 
-  fn preflight_fsm_implementation_context_capabilities(
+  fn reject_function_context_read(
+        &self,
+        context_name: &mech_core::Identifier,
+        path: &mech_core::Identifier,
+    ) -> MResult<()> {
+        Err(MechError::new(
+            RuntimeInvalidOperationError {
+                operation: "direct_context_read_placement",
+                reason: format!(
+                    "context read from `{}` is not supported inside function definitions yet; read at module top level and pass the value as an argument",
+                    direct_context_target(&context_name.to_string(), &path.to_string()),
+                ),
+            },
+            None,
+        ))
+    }
+
+    fn reject_runtime_context_reads_in_statement(
+        &self,
+        registry: &RuntimeContextRegistry,
+        statement: &mech_core::Statement,
+    ) -> MResult<()> {
+        match statement {
+            mech_core::Statement::VariableDefine(var_def) => {
+                self.reject_runtime_context_reads_in_expression(registry, &var_def.expression)
+            }
+            mech_core::Statement::VariableAssign(assign) => {
+                self.reject_runtime_context_reads_in_slice_ref(registry, &assign.target)?;
+                self.reject_runtime_context_reads_in_expression(registry, &assign.expression)
+            }
+            mech_core::Statement::OpAssign(op_assign) => {
+                self.reject_runtime_context_reads_in_slice_ref(registry, &op_assign.target)?;
+                self.reject_runtime_context_reads_in_expression(registry, &op_assign.expression)
+            }
+            mech_core::Statement::ContextSend(send) => {
+                self.reject_runtime_context_reads_in_expression(registry, &send.expression)
+            }
+            mech_core::Statement::TupleDestructure(tuple_destructure) => self
+                .reject_runtime_context_reads_in_expression(
+                    registry,
+                    &tuple_destructure.expression,
+                ),
+            mech_core::Statement::FsmDeclare(fsm) => {
+                if let Some(args) = &fsm.pipe.start.args {
+                    for (_, expression) in args {
+                        self.reject_runtime_context_reads_in_expression(registry, expression)?;
+                    }
+                }
+                for transition in &fsm.pipe.transitions {
+                    self.reject_runtime_context_reads_in_transition(registry, transition)?;
+                }
+                Ok(())
+            }
+            #[cfg(feature = "invariant_define")]
+            mech_core::Statement::InvariantDefine(invariant) => {
+                self.reject_runtime_context_reads_in_expression(registry, &invariant.expression)
+            }
+            _ => Ok(()),
+        }
+    }
+
+    fn reject_runtime_context_reads_in_transition(
+        &self,
+        registry: &RuntimeContextRegistry,
+        transition: &mech_core::Transition,
+    ) -> MResult<()> {
+        match transition {
+            mech_core::Transition::Async(pattern)
+            | mech_core::Transition::Next(pattern)
+            | mech_core::Transition::Output(pattern) => {
+                self.reject_runtime_context_reads_in_pattern(registry, pattern)
+            }
+            mech_core::Transition::CodeBlock(code_items) => {
+                for (code, _) in code_items {
+                    if let mech_core::MechCode::Statement(statement) = code {
+                        self.reject_runtime_context_reads_in_statement(registry, statement)?;
+                    } else if let mech_core::MechCode::Expression(expression) = code {
+                        self.reject_runtime_context_reads_in_expression(registry, expression)?;
+                    }
+                }
+                Ok(())
+            }
+            mech_core::Transition::Statement(statement) => {
+                self.reject_runtime_context_reads_in_statement(registry, statement)
+            }
+        }
+    }
+
+    fn reject_runtime_context_reads_in_pattern(
+        &self,
+        registry: &RuntimeContextRegistry,
+        pattern: &mech_core::Pattern,
+    ) -> MResult<()> {
+        match pattern {
+            mech_core::Pattern::Expression(expression) => {
+                self.reject_runtime_context_reads_in_expression(registry, expression)
+            }
+            mech_core::Pattern::TupleStruct(tuple_struct) => {
+                for pattern in &tuple_struct.patterns {
+                    self.reject_runtime_context_reads_in_pattern(registry, pattern)?;
+                }
+                Ok(())
+            }
+            mech_core::Pattern::Tuple(tuple) => {
+                for pattern in &tuple.0 {
+                    self.reject_runtime_context_reads_in_pattern(registry, pattern)?;
+                }
+                Ok(())
+            }
+            mech_core::Pattern::Array(array) => {
+                for pattern in &array.prefix {
+                    self.reject_runtime_context_reads_in_pattern(registry, pattern)?;
+                }
+                if let Some(spread) = &array.spread {
+                    if let Some(binding) = &spread.binding {
+                        self.reject_runtime_context_reads_in_pattern(registry, binding)?;
+                    }
+                }
+                for pattern in &array.suffix {
+                    self.reject_runtime_context_reads_in_pattern(registry, pattern)?;
+                }
+                Ok(())
+            }
+            mech_core::Pattern::Wildcard => Ok(()),
+        }
+    }
+
+    fn reject_runtime_context_reads_in_expression(
+        &self,
+        registry: &RuntimeContextRegistry,
+        expression: &mech_core::Expression,
+    ) -> MResult<()> {
+        match expression {
+            mech_core::Expression::Var(var) => {
+                if let Some(context_name) = &var.context {
+                    if registry.contains(&context_name.to_string()) {
+                        self.reject_function_context_read(context_name, &var.name)?;
+                    }
+                }
+                Ok(())
+            }
+            mech_core::Expression::Formula(factor) => {
+                self.reject_runtime_context_reads_in_factor(registry, factor)
+            }
+            mech_core::Expression::FunctionCall(call) => {
+                for (_, expression) in &call.args {
+                    self.reject_runtime_context_reads_in_expression(registry, expression)?;
+                }
+                Ok(())
+            }
+            mech_core::Expression::FsmPipe(pipe) => {
+                if let Some(args) = &pipe.start.args {
+                    for (_, expression) in args {
+                        self.reject_runtime_context_reads_in_expression(registry, expression)?;
+                    }
+                }
+                for transition in &pipe.transitions {
+                    self.reject_runtime_context_reads_in_transition(registry, transition)?;
+                }
+                Ok(())
+            }
+            mech_core::Expression::Literal(_) => Ok(()),
+            mech_core::Expression::Range(range) => {
+                self.reject_runtime_context_reads_in_factor(registry, &range.start)?;
+                if let Some((_, increment)) = &range.increment {
+                    self.reject_runtime_context_reads_in_factor(registry, increment)?;
+                }
+                self.reject_runtime_context_reads_in_factor(registry, &range.terminal)
+            }
+            mech_core::Expression::Structure(structure) => {
+                self.reject_runtime_context_reads_in_structure(registry, structure)
+            }
+            mech_core::Expression::Match(match_expression) => {
+                self.reject_runtime_context_reads_in_expression(
+                    registry,
+                    &match_expression.source,
+                )?;
+                for arm in &match_expression.arms {
+                    self.reject_runtime_context_reads_in_pattern(registry, &arm.pattern)?;
+                    if let Some(guard) = &arm.guard {
+                        self.reject_runtime_context_reads_in_expression(registry, guard)?;
+                    }
+                    self.reject_runtime_context_reads_in_expression(registry, &arm.expression)?;
+                }
+                Ok(())
+            }
+            mech_core::Expression::Slice(slice) => {
+                self.reject_runtime_context_reads_in_slice(registry, slice)
+            }
+            mech_core::Expression::SetComprehension(comprehension) => {
+                self.reject_runtime_context_reads_in_expression(
+                    registry,
+                    &comprehension.expression,
+                )?;
+                for qualifier in &comprehension.qualifiers {
+                    self.reject_runtime_context_reads_in_comprehension_qualifier(
+                        registry, qualifier,
+                    )?;
+                }
+                Ok(())
+            }
+            mech_core::Expression::MatrixComprehension(comprehension) => {
+                self.reject_runtime_context_reads_in_expression(
+                    registry,
+                    &comprehension.expression,
+                )?;
+                for qualifier in &comprehension.qualifiers {
+                    self.reject_runtime_context_reads_in_comprehension_qualifier(
+                        registry, qualifier,
+                    )?;
+                }
+                Ok(())
+            }
+        }
+    }
+
+    fn reject_runtime_context_reads_in_factor(
+        &self,
+        registry: &RuntimeContextRegistry,
+        factor: &mech_core::Factor,
+    ) -> MResult<()> {
+        match factor {
+            mech_core::Factor::Expression(expression) => {
+                self.reject_runtime_context_reads_in_expression(registry, expression)
+            }
+            mech_core::Factor::Negate(factor)
+            | mech_core::Factor::Not(factor)
+            | mech_core::Factor::Parenthetical(factor)
+            | mech_core::Factor::Transpose(factor) => {
+                self.reject_runtime_context_reads_in_factor(registry, factor)
+            }
+            mech_core::Factor::Term(term) => {
+                self.reject_runtime_context_reads_in_factor(registry, &term.lhs)?;
+                for (_, factor) in &term.rhs {
+                    self.reject_runtime_context_reads_in_factor(registry, factor)?;
+                }
+                Ok(())
+            }
+        }
+    }
+
+    fn reject_runtime_context_reads_in_slice(
+        &self,
+        registry: &RuntimeContextRegistry,
+        slice: &mech_core::Slice,
+    ) -> MResult<()> {
+        if let Some(context_name) = &slice.context {
+            if registry.contains(&context_name.to_string()) {
+                self.reject_function_context_read(context_name, &slice.name)?;
+            }
+        }
+        for subscript in &slice.subscript {
+            self.reject_runtime_context_reads_in_subscript(registry, subscript)?;
+        }
+        Ok(())
+    }
+
+    fn reject_runtime_context_reads_in_slice_ref(
+        &self,
+        registry: &RuntimeContextRegistry,
+        target: &mech_core::SliceRef,
+    ) -> MResult<()> {
+        if let Some(subscripts) = &target.subscript {
+            for subscript in subscripts {
+                self.reject_runtime_context_reads_in_subscript(registry, subscript)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn reject_runtime_context_reads_in_subscript(
+        &self,
+        registry: &RuntimeContextRegistry,
+        subscript: &mech_core::Subscript,
+    ) -> MResult<()> {
+        match subscript {
+            mech_core::Subscript::Brace(subscripts) | mech_core::Subscript::Bracket(subscripts) => {
+                for subscript in subscripts {
+                    self.reject_runtime_context_reads_in_subscript(registry, subscript)?;
+                }
+                Ok(())
+            }
+            mech_core::Subscript::Formula(factor) => {
+                self.reject_runtime_context_reads_in_factor(registry, factor)
+            }
+            mech_core::Subscript::Range(range) => {
+                self.reject_runtime_context_reads_in_factor(registry, &range.start)?;
+                if let Some((_, increment)) = &range.increment {
+                    self.reject_runtime_context_reads_in_factor(registry, increment)?;
+                }
+                self.reject_runtime_context_reads_in_factor(registry, &range.terminal)
+            }
+            _ => Ok(()),
+        }
+    }
+
+    fn reject_runtime_context_reads_in_structure(
+        &self,
+        registry: &RuntimeContextRegistry,
+        structure: &mech_core::Structure,
+    ) -> MResult<()> {
+        match structure {
+            mech_core::Structure::Map(map) => {
+                for mapping in &map.elements {
+                    self.reject_runtime_context_reads_in_expression(registry, &mapping.key)?;
+                    self.reject_runtime_context_reads_in_expression(registry, &mapping.value)?;
+                }
+            }
+            mech_core::Structure::Set(set) => {
+                for expression in &set.elements {
+                    self.reject_runtime_context_reads_in_expression(registry, expression)?;
+                }
+            }
+            mech_core::Structure::Matrix(matrix) => {
+                for row in &matrix.rows {
+                    for column in &row.columns {
+                        self.reject_runtime_context_reads_in_expression(registry, &column.element)?;
+                    }
+                }
+            }
+            mech_core::Structure::Record(record) => {
+                for binding in &record.bindings {
+                    self.reject_runtime_context_reads_in_expression(registry, &binding.value)?;
+                }
+            }
+            mech_core::Structure::Table(table) => {
+                for row in &table.rows {
+                    for column in &row.columns {
+                        self.reject_runtime_context_reads_in_expression(registry, &column.element)?;
+                    }
+                }
+            }
+            mech_core::Structure::Tuple(tuple) => {
+                for expression in &tuple.elements {
+                    self.reject_runtime_context_reads_in_expression(registry, expression)?;
+                }
+            }
+            mech_core::Structure::TupleStruct(tuple_struct) => {
+                self.reject_runtime_context_reads_in_expression(registry, &tuple_struct.value)?;
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    fn reject_runtime_context_reads_in_comprehension_qualifier(
+        &self,
+        registry: &RuntimeContextRegistry,
+        qualifier: &mech_core::ComprehensionQualifier,
+    ) -> MResult<()> {
+        match qualifier {
+            mech_core::ComprehensionQualifier::Generator((pattern, expression)) => {
+                self.reject_runtime_context_reads_in_pattern(registry, pattern)?;
+                self.reject_runtime_context_reads_in_expression(registry, expression)
+            }
+            mech_core::ComprehensionQualifier::Filter(expression) => {
+                self.reject_runtime_context_reads_in_expression(registry, expression)
+            }
+            mech_core::ComprehensionQualifier::Let(var_def) => {
+                self.reject_runtime_context_reads_in_expression(registry, &var_def.expression)
+            }
+        }
+    }
+
+    fn preflight_fsm_implementation_context_capabilities(
     &self,
     context: &RuntimeContext,
     registry: &RuntimeContextRegistry,
@@ -1459,6 +1845,7 @@ impl MechRuntime {
         self.preflight_expression_context_reads(context, registry, &var_def.expression, addressed_read_preflight)
       }
       mech_core::Statement::VariableAssign(assign) => {
+        self.preflight_slice_ref_subscript_context_reads(context, registry, &assign.target, addressed_read_preflight)?;
         if let Some(context_name) = &assign.target.context {
           let context_name = context_name.to_string();
           let path = assign.target.name.to_string();
@@ -1513,6 +1900,7 @@ impl MechRuntime {
         Ok(())
       }
       mech_core::Statement::OpAssign(op_assign) => {
+        self.preflight_slice_ref_subscript_context_reads(context, registry, &op_assign.target, addressed_read_preflight)?;
         if op_assign.target.context.is_some() {
           return Err(MechError::new(RuntimeInvalidOperationError {
             operation: "direct_context_op_assign",
@@ -1732,6 +2120,21 @@ impl MechRuntime {
     Ok(())
   }
 
+  fn preflight_slice_ref_subscript_context_reads(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    target: &mech_core::SliceRef,
+    addressed_read_preflight: AddressedReadPreflight,
+  ) -> MResult<()> {
+    if let Some(subscripts) = &target.subscript {
+      for subscript in subscripts {
+        self.preflight_subscript_context_reads(context, registry, subscript, addressed_read_preflight)?;
+      }
+    }
+    Ok(())
+  }
+
   fn preflight_subscript_context_reads(
     &self,
     context: &RuntimeContext,
@@ -1872,6 +2275,7 @@ impl MechRuntime {
     tree: &mech_core::Program,
     scope_hint: Option<&SourceScope>,
   ) -> MResult<Value> {
+    let direct_document_run = scope_hint.is_none();
     let execution_scope = scope_hint.unwrap_or(&SourceScope::Program);
     let skip_non_context_imports = scope_hint.is_some();
     let registry = self.direct_context_registry_for_scope(tree, execution_scope)?;
@@ -1922,6 +2326,9 @@ impl MechRuntime {
               fenced.code = pending_codes;
               pending.push(mech_core::SectionElement::FencedMechCode(fenced));
             }
+          }
+          mech_core::SectionElement::FencedMechCode(fenced) if direct_document_run => {
+            pending.push(mech_core::SectionElement::FencedMechCode(fenced.clone()));
           }
           _ => {}
         }
