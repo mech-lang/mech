@@ -744,3 +744,33 @@ ys := { x | (x, @env/MECH_GENERATOR_PATTERN_TEST) <- [("keep", "secret") ("drop"
     "literalized generator pattern should reject nonmatching tuple:\n{combined}"
   );
 }
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_undeclared_context_read_is_preflighted_before_send() {
+  let root = temp_root("undeclared-context-read");
+  let source = root.join("undeclared_context_read.mec");
+
+  std::fs::write(
+    &source,
+    r#"+> @out := cli/stdout
+
+@out/line <- "must-not-write"
+x := @missing/HOME
+"done"
+"#,
+  )
+  .unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg(&source)
+    .output()
+    .unwrap();
+
+  let combined = assert_failure_contains(output, "direct_context_target");
+  assert!(
+    !combined.contains("must-not-write"),
+    "provider wrote before undeclared context read failed preflight:\n{combined}"
+  );
+}
