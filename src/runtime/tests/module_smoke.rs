@@ -2943,6 +2943,60 @@ wrappedMismatch
     wrapped_mismatching,
     "wrapped match arm context read pattern should not bind mismatched value",
   );
+
+  let mut bool_runtime = RuntimeBuilder::new()
+    .in_memory_docs(InMemoryDocsProvider::new())
+    .build()
+    .unwrap();
+
+  bool_runtime.grant_capability(runtime_context_write_grant(
+    &bool_runtime,
+    "docs://manual",
+    "flag",
+  )).unwrap();
+  bool_runtime.grant_capability(runtime_context_read_grant(
+    &bool_runtime,
+    "docs://manual",
+    "flag",
+  )).unwrap();
+
+  let bool_matching = bool_runtime.run_string(
+    "@manual := docs://manual{:read(flag), :write(flag)}
+@manual/flag = false
+matched := false?
+  | @manual/flag => true
+  | * => false.
+matched
+",
+  ).unwrap();
+
+  let bool_matching = match bool_matching {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_bool_true(
+    bool_matching,
+    "boolean context match pattern should compare false to false",
+  );
+
+  let bool_mismatching = bool_runtime.run_string(
+    "@manual := docs://manual{:read(flag), :write(flag)}
+@manual/flag = true
+mismatched := false?
+  | @manual/flag => true
+  | * => false.
+mismatched
+",
+  ).unwrap();
+
+  let bool_mismatching = match bool_mismatching {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_bool_false(
+    bool_mismatching,
+    "boolean context match pattern should not match false to true",
+  );
 }
 
 #[test]
