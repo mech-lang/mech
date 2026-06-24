@@ -2863,7 +2863,7 @@ fn fsm_declare_context_read_fails_preflight_before_stdout_write() {
 }
 
 #[test]
-fn match_arm_context_read_pattern_is_rewritten_when_allowed() {
+fn match_arm_context_read_pattern_compares_value_when_allowed() {
   let (mut runtime, state) = runtime_with_recording_cli();
   state.lock().unwrap().env.insert(
     "MECH_MATCH_PATTERN".to_string(),
@@ -2878,7 +2878,7 @@ fn match_arm_context_read_pattern_is_rewritten_when_allowed() {
     paths: vec!["MECH_MATCH_PATTERN".to_string()],
   }).unwrap();
 
-  let result = runtime.run_string(
+  let matching = runtime.run_string(
     "@env := cli://env{:read(MECH_MATCH_PATTERN)}
 result := \"expected\"?
   | @env/MECH_MATCH_PATTERN => true
@@ -2887,11 +2887,26 @@ result
 ",
   ).unwrap();
 
-  let result = match result {
+  let matching = match matching {
     Value::MutableReference(value) => value.borrow().clone(),
     other => other,
   };
-  assert_bool_true(result, "match arm context read pattern");
+  assert_bool_true(matching, "match arm context read pattern should match equal value");
+
+  let mismatching = runtime.run_string(
+    "@env := cli://env{:read(MECH_MATCH_PATTERN)}
+mismatch := \"other\"?
+  | @env/MECH_MATCH_PATTERN => true
+  | * => false.
+mismatch
+",
+  ).unwrap();
+
+  let mismatching = match mismatching {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_bool_false(mismatching, "match arm context read pattern should not bind mismatched value");
 }
 
 #[test]

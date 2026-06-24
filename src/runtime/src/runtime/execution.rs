@@ -469,7 +469,7 @@ impl MechRuntime {
         match_expression.source = self.resolve_context_reads_in_expression(context, program, registry, &match_expression.source)?;
         match_expression.arms = match_expression.arms.iter().map(|arm| {
           Ok(mech_core::MatchArm {
-            pattern: self.resolve_context_reads_in_pattern(context, program, registry, &arm.pattern)?,
+            pattern: self.resolve_context_reads_in_match_pattern(context, program, registry, &arm.pattern)?,
             guard: arm.guard.as_ref().map(|guard| self.resolve_context_reads_in_expression(context, program, registry, guard)).transpose()?,
             expression: self.resolve_context_reads_in_expression(context, program, registry, &arm.expression)?,
           })
@@ -727,6 +727,108 @@ impl MechRuntime {
         }))
       }
       mech_core::Pattern::Wildcard => Ok(mech_core::Pattern::Wildcard),
+    }
+  }
+
+  fn resolve_context_reads_in_match_pattern(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    pattern: &mech_core::Pattern,
+  ) -> MResult<mech_core::Pattern> {
+    match pattern {
+      mech_core::Pattern::Expression(expression) => Ok(mech_core::Pattern::Expression(
+        self.resolve_context_reads_in_match_pattern_expression(context, program, registry, expression)?,
+      )),
+      mech_core::Pattern::TupleStruct(tuple_struct) => Ok(mech_core::Pattern::TupleStruct(mech_core::PatternTupleStruct {
+        name: tuple_struct.name.clone(),
+        patterns: tuple_struct.patterns.iter()
+          .map(|pattern| self.resolve_context_reads_in_match_pattern(context, program, registry, pattern))
+          .collect::<MResult<Vec<_>>>()?,
+      })),
+      mech_core::Pattern::Tuple(tuple) => Ok(mech_core::Pattern::Tuple(mech_core::PatternTuple(
+        tuple.0.iter()
+          .map(|pattern| self.resolve_context_reads_in_match_pattern(context, program, registry, pattern))
+          .collect::<MResult<Vec<_>>>()?,
+      ))),
+      mech_core::Pattern::Array(array) => {
+        let spread = if let Some(spread) = &array.spread {
+          Some(mech_core::PatternArraySpread {
+            kind: spread.kind.clone(),
+            binding: spread.binding.as_ref()
+              .map(|binding| self.resolve_context_reads_in_match_pattern(context, program, registry, binding).map(Box::new))
+              .transpose()?,
+          })
+        } else {
+          None
+        };
+        Ok(mech_core::Pattern::Array(mech_core::PatternArray {
+          prefix: array.prefix.iter()
+            .map(|pattern| self.resolve_context_reads_in_match_pattern(context, program, registry, pattern))
+            .collect::<MResult<Vec<_>>>()?,
+          spread,
+          suffix: array.suffix.iter()
+            .map(|pattern| self.resolve_context_reads_in_match_pattern(context, program, registry, pattern))
+            .collect::<MResult<Vec<_>>>()?,
+        }))
+      }
+      mech_core::Pattern::Wildcard => Ok(mech_core::Pattern::Wildcard),
+    }
+  }
+
+  fn resolve_context_reads_in_match_pattern_expression(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    expression: &mech_core::Expression,
+  ) -> MResult<mech_core::Expression> {
+    if let mech_core::Expression::Var(var) = expression {
+      if let Some(var_context) = &var.context {
+        let target = var_context.to_string();
+        if let Some(binding) = registry.get(&target) {
+          let path = var.name.to_string();
+          let value = self.read_context_resource(context, binding, &path)?;
+          return self.context_pattern_value_expression(value);
+        }
+      }
+    }
+
+    self.resolve_context_reads_in_expression(context, program, registry, expression)
+  }
+
+  fn context_pattern_value_expression(&self, value: Value) -> MResult<mech_core::Expression> {
+    let value = resolve_runtime_value(value);
+    match value {
+      Value::String(value) => {
+        let text = value.borrow().clone();
+        Ok(mech_core::Expression::Literal(mech_core::Literal::String(mech_core::MechString {
+          text: mech_core::Token::new(
+            mech_core::TokenKind::String,
+            mech_core::SourceRange::default(),
+            text.chars().collect(),
+          ),
+        })))
+      }
+      #[cfg(feature = "bool")]
+      Value::Bool(value) => {
+        let flag = *value.borrow();
+        Ok(mech_core::Expression::Literal(mech_core::Literal::Boolean(mech_core::Token::new(
+          if flag { mech_core::TokenKind::True } else { mech_core::TokenKind::False },
+          mech_core::SourceRange::default(),
+          if flag { "true".chars().collect() } else { "false".chars().collect() },
+        ))))
+      }
+      Value::Empty => Ok(mech_core::Expression::Literal(mech_core::Literal::Empty(mech_core::Token::new(
+        mech_core::TokenKind::Empty,
+        mech_core::SourceRange::default(),
+        vec!['_'],
+      )))),
+      other => Err(MechError::new(RuntimeInvalidOperationError {
+        operation: "context_match_pattern",
+        reason: format!("context match patterns currently support string, bool, and empty values; got {other:?}"),
+      }, None)),
     }
   }
 
