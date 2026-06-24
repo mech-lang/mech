@@ -641,7 +641,7 @@ fn mech_run_split_inline_context_read_is_not_treated_as_path() {
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
 #[test]
-fn mech_run_function_arm_context_pattern_is_literal_not_capture() {
+fn mech_run_function_arm_runtime_context_pattern_is_rejected() {
   let root = temp_root("function-context-pattern");
   let source = root.join("function_context_pattern.mec");
 
@@ -654,7 +654,7 @@ pick(x<string>) => <string>
   | @env/MECH_FUNCTION_PATTERN_TEST => "matched"
   | * => "missed".
 
-@out/line <- pick("not-the-secret")
+@out/line <- "must-not-write"
 @out/line <- pick(@env/MECH_FUNCTION_PATTERN_TEST)
 "done"
 "#,
@@ -670,21 +670,19 @@ pick(x<string>) => <string>
 
   let combined = combined_output(&output);
   assert!(
-    output.status.success(),
-    "function context-pattern program failed:\n{combined}"
+    !output.status.success(),
+    "function runtime context-pattern program should be rejected:
+{combined}"
   );
   assert!(
-    combined.contains("missed"),
-    "nonmatching argument should hit wildcard arm:\n{combined}"
+    combined.contains("direct_context_read_placement") || combined.contains("function definitions"),
+    "expected function definition context-read placement error:
+{combined}"
   );
   assert!(
-    combined.contains("matched"),
-    "matching argument should hit literal context arm:\n{combined}"
-  );
-  assert_eq!(
-    combined.matches("matched").count(),
-    1,
-    "context pattern must not capture every argument:\n{combined}"
+    !combined.contains("must-not-write"),
+    "stdout write should not happen before preflight rejection:
+{combined}"
   );
 }
 
