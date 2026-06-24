@@ -257,6 +257,23 @@ fn combined_output(output: &std::process::Output) -> String {
 }
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_single_quoted_formula_with_slash_is_inline_source() {
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("1 / 2")
+    .output()
+    .unwrap();
+
+  assert!(
+    output.status.success(),
+    "single quoted inline formula with slash should execute as source, not be read as a path:
+{}",
+    combined_output(&output)
+  );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
 fn assert_failure_contains(output: std::process::Output, expected: &str) -> String {
   assert!(!output.status.success(), "expected mech command to fail");
   let combined = combined_output(&output);

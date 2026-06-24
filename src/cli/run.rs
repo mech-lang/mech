@@ -61,7 +61,7 @@ pub fn classify_run_inputs(inputs: Vec<String>) -> RunInputMode {
     if Path::new(&inputs[0]).exists() {
       return RunInputMode::Paths(inputs);
     }
-    if parses_as_context_addressed_source(&inputs[0]) {
+    if parses_as_executable_run_source(&inputs[0]) {
       return RunInputMode::InlineSource(inputs[0].clone());
     }
     if is_intended_path(&inputs[0]) {
@@ -463,6 +463,12 @@ mod tests {
   #[test]
   fn classifies_single_plain_inline_expression_as_inline_source() {
     let mode = classify_run_inputs(vec!["x := 1".to_string()]);
+    assert!(matches!(mode, RunInputMode::InlineSource(_)));
+  }
+
+  #[test]
+  fn classifies_single_formula_with_slash_as_inline_source() {
+    let mode = classify_run_inputs(vec!["1 / 2".to_string()]);
     assert!(matches!(mode, RunInputMode::InlineSource(_)));
   }
 
