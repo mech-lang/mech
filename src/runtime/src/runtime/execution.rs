@@ -459,13 +459,9 @@ impl MechRuntime {
         Ok(mech_core::Expression::FunctionCall(mech_core::FunctionCall { name: call.name.clone(), args }))
       }
       mech_core::Expression::FsmPipe(pipe) => {
-        let mut pipe = pipe.clone();
-        if let Some(args) = &pipe.start.args {
-          pipe.start.args = Some(args.iter().map(|(name, expression)| {
-            Ok((name.clone(), self.resolve_context_reads_in_expression(context, program, registry, expression)?))
-          }).collect::<MResult<Vec<_>>>()?);
-        }
-        Ok(mech_core::Expression::FsmPipe(pipe))
+        Ok(mech_core::Expression::FsmPipe(
+          self.resolve_context_reads_in_fsm_pipe(context, program, registry, pipe)?,
+        ))
       }
       mech_core::Expression::Literal(_) => Ok(expression.clone()),
       mech_core::Expression::Match(match_expression) => {
@@ -473,7 +469,7 @@ impl MechRuntime {
         match_expression.source = self.resolve_context_reads_in_expression(context, program, registry, &match_expression.source)?;
         match_expression.arms = match_expression.arms.iter().map(|arm| {
           Ok(mech_core::MatchArm {
-            pattern: arm.pattern.clone(),
+            pattern: self.resolve_context_reads_in_match_pattern(context, program, registry, &arm.pattern)?,
             guard: arm.guard.as_ref().map(|guard| self.resolve_context_reads_in_expression(context, program, registry, guard)).transpose()?,
             expression: self.resolve_context_reads_in_expression(context, program, registry, &arm.expression)?,
           })
@@ -734,6 +730,170 @@ impl MechRuntime {
     }
   }
 
+  fn resolve_context_reads_in_match_pattern(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    pattern: &mech_core::Pattern,
+  ) -> MResult<mech_core::Pattern> {
+    match pattern {
+      mech_core::Pattern::Expression(expression) => Ok(mech_core::Pattern::Expression(
+        self.resolve_context_reads_in_match_pattern_expression(context, program, registry, expression)?,
+      )),
+      mech_core::Pattern::TupleStruct(tuple_struct) => Ok(mech_core::Pattern::TupleStruct(mech_core::PatternTupleStruct {
+        name: tuple_struct.name.clone(),
+        patterns: tuple_struct.patterns.iter()
+          .map(|pattern| self.resolve_context_reads_in_match_pattern(context, program, registry, pattern))
+          .collect::<MResult<Vec<_>>>()?,
+      })),
+      mech_core::Pattern::Tuple(tuple) => {
+        if tuple.0.len() == 1 {
+          let pattern = self.resolve_context_reads_in_match_pattern(context, program, registry, &tuple.0[0])?;
+          if pattern != tuple.0[0] {
+            return Ok(pattern);
+          }
+        }
+        Ok(mech_core::Pattern::Tuple(mech_core::PatternTuple(
+          tuple.0.iter()
+            .map(|pattern| self.resolve_context_reads_in_match_pattern(context, program, registry, pattern))
+            .collect::<MResult<Vec<_>>>()?,
+        )))
+      }
+      mech_core::Pattern::Array(array) => {
+        let spread = if let Some(spread) = &array.spread {
+          Some(mech_core::PatternArraySpread {
+            kind: spread.kind.clone(),
+            binding: spread.binding.as_ref()
+              .map(|binding| self.resolve_context_reads_in_match_pattern(context, program, registry, binding).map(Box::new))
+              .transpose()?,
+          })
+        } else {
+          None
+        };
+        Ok(mech_core::Pattern::Array(mech_core::PatternArray {
+          prefix: array.prefix.iter()
+            .map(|pattern| self.resolve_context_reads_in_match_pattern(context, program, registry, pattern))
+            .collect::<MResult<Vec<_>>>()?,
+          spread,
+          suffix: array.suffix.iter()
+            .map(|pattern| self.resolve_context_reads_in_match_pattern(context, program, registry, pattern))
+            .collect::<MResult<Vec<_>>>()?,
+        }))
+      }
+      mech_core::Pattern::Wildcard => Ok(mech_core::Pattern::Wildcard),
+    }
+  }
+
+  fn resolve_context_reads_in_match_pattern_expression(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    expression: &mech_core::Expression,
+  ) -> MResult<mech_core::Expression> {
+    if let Some(expression) = self.literalize_match_pattern_context_read_expression(
+      context,
+      registry,
+      expression,
+    )? {
+      return Ok(expression);
+    }
+
+    self.resolve_context_reads_in_expression(context, program, registry, expression)
+  }
+
+  fn literalize_match_pattern_context_read_expression(
+    &mut self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    expression: &mech_core::Expression,
+  ) -> MResult<Option<mech_core::Expression>> {
+    match expression {
+      mech_core::Expression::Var(var) => {
+        self.literalize_match_pattern_context_read_var(context, registry, var)
+      }
+      mech_core::Expression::Formula(factor) => {
+        self.literalize_match_pattern_context_read_factor(context, registry, factor)
+      }
+      _ => Ok(None),
+    }
+  }
+
+  fn literalize_match_pattern_context_read_factor(
+    &mut self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    factor: &mech_core::Factor,
+  ) -> MResult<Option<mech_core::Expression>> {
+    match factor {
+      mech_core::Factor::Expression(expression) => {
+        self.literalize_match_pattern_context_read_expression(context, registry, expression)
+      }
+      mech_core::Factor::Parenthetical(inner) => {
+        self.literalize_match_pattern_context_read_factor(context, registry, inner)
+      }
+      mech_core::Factor::Term(term) if term.rhs.is_empty() => {
+        self.literalize_match_pattern_context_read_factor(context, registry, &term.lhs)
+      }
+      _ => Ok(None),
+    }
+  }
+
+  fn literalize_match_pattern_context_read_var(
+    &mut self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    var: &mech_core::Var,
+  ) -> MResult<Option<mech_core::Expression>> {
+    let Some(var_context) = &var.context else {
+      return Ok(None);
+    };
+
+    let target = var_context.to_string();
+    let Some(binding) = registry.get(&target) else {
+      return Ok(None);
+    };
+
+    let path = var.name.to_string();
+    let value = self.read_context_resource(context, binding, &path)?;
+    Ok(Some(self.context_pattern_value_expression(value)?))
+  }
+
+  fn context_pattern_value_expression(&self, value: Value) -> MResult<mech_core::Expression> {
+    let value = resolve_runtime_value(value);
+    match value {
+      Value::String(value) => {
+        let text = value.borrow().clone();
+        Ok(mech_core::Expression::Literal(mech_core::Literal::String(mech_core::MechString {
+          text: mech_core::Token::new(
+            mech_core::TokenKind::String,
+            mech_core::SourceRange::default(),
+            text.chars().collect(),
+          ),
+        })))
+      }
+      #[cfg(feature = "bool")]
+      Value::Bool(value) => {
+        let flag = *value.borrow();
+        Ok(mech_core::Expression::Literal(mech_core::Literal::Boolean(mech_core::Token::new(
+          if flag { mech_core::TokenKind::True } else { mech_core::TokenKind::False },
+          mech_core::SourceRange::default(),
+          if flag { "true".chars().collect() } else { "false".chars().collect() },
+        ))))
+      }
+      Value::Empty => Ok(mech_core::Expression::Literal(mech_core::Literal::Empty(mech_core::Token::new(
+        mech_core::TokenKind::Empty,
+        mech_core::SourceRange::default(),
+        vec!['_'],
+      )))),
+      other => Err(MechError::new(RuntimeInvalidOperationError {
+        operation: "context_match_pattern",
+        reason: format!("context match patterns currently support string, bool, and empty values; got {other:?}"),
+      }, None)),
+    }
+  }
+
   fn resolve_context_reads_in_transition(
     &mut self,
     context: &RuntimeContext,
@@ -760,6 +920,28 @@ impl MechRuntime {
         self.resolve_context_reads_in_statement(context, program, registry, statement)?,
       )),
     }
+  }
+
+  fn resolve_context_reads_in_fsm_pipe(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    pipe: &mech_core::FsmPipe,
+  ) -> MResult<mech_core::FsmPipe> {
+    let mut pipe = pipe.clone();
+
+    if let Some(args) = &pipe.start.args {
+      pipe.start.args = Some(args.iter().map(|(name, expression)| {
+        Ok((name.clone(), self.resolve_context_reads_in_expression(context, program, registry, expression)?))
+      }).collect::<MResult<Vec<_>>>()?);
+    }
+
+    pipe.transitions = pipe.transitions.iter()
+      .map(|transition| self.resolve_context_reads_in_transition(context, program, registry, transition))
+      .collect::<MResult<Vec<_>>>()?;
+
+    Ok(pipe)
   }
 
   fn resolve_context_reads_in_fsm_implementation(
@@ -879,6 +1061,11 @@ impl MechRuntime {
         let mut invariant = invariant.clone();
         invariant.expression = self.resolve_context_reads_in_expression(context, program, registry, &invariant.expression)?;
         Ok(mech_core::Statement::InvariantDefine(invariant))
+      }
+      mech_core::Statement::FsmDeclare(fsm) => {
+        let mut fsm = fsm.clone();
+        fsm.pipe = self.resolve_context_reads_in_fsm_pipe(context, program, registry, &fsm.pipe)?;
+        Ok(mech_core::Statement::FsmDeclare(fsm))
       }
       _ => Ok(statement.clone()),
     }
@@ -1274,8 +1461,30 @@ impl MechRuntime {
       mech_core::Statement::InvariantDefine(invariant) => {
         self.preflight_expression_context_reads(context, registry, &invariant.expression)
       }
+      mech_core::Statement::FsmDeclare(fsm) => {
+        self.preflight_fsm_pipe_context_capabilities(context, registry, &fsm.pipe)
+      }
       _ => Ok(()),
     }
+  }
+
+  fn preflight_fsm_pipe_context_capabilities(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    pipe: &mech_core::FsmPipe,
+  ) -> MResult<()> {
+    if let Some(args) = &pipe.start.args {
+      for (_, expression) in args {
+        self.preflight_expression_context_reads(context, registry, expression)?;
+      }
+    }
+
+    for transition in &pipe.transitions {
+      self.preflight_transition_context_capabilities(context, registry, transition)?;
+    }
+
+    Ok(())
   }
 
   fn preflight_expression_context_reads(
@@ -1307,11 +1516,7 @@ impl MechRuntime {
         }
       }
       mech_core::Expression::FsmPipe(pipe) => {
-        if let Some(args) = &pipe.start.args {
-          for (_, expression) in args {
-            self.preflight_expression_context_reads(context, registry, expression)?;
-          }
-        }
+        self.preflight_fsm_pipe_context_capabilities(context, registry, pipe)?;
       }
       mech_core::Expression::Literal(_) => {}
       mech_core::Expression::Range(range) => {
@@ -1327,6 +1532,7 @@ impl MechRuntime {
       mech_core::Expression::Match(match_expression) => {
         self.preflight_expression_context_reads(context, registry, &match_expression.source)?;
         for arm in &match_expression.arms {
+          self.preflight_pattern_context_reads(context, registry, &arm.pattern)?;
           if let Some(guard) = &arm.guard {
             self.preflight_expression_context_reads(context, registry, guard)?;
           }

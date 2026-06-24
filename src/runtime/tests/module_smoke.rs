@@ -2783,6 +2783,223 @@ fn function_define_env_read_denial_preflights_before_stdout_write() {
 }
 
 #[test]
+fn match_arm_pattern_context_read_fails_preflight_before_stdout_write() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  grant_runtime_stdout_line(&mut runtime);
+
+  let result = runtime.run_string(
+    "@out := cli://stdout{:write(line)}
+@env := cli://env{:read(HOME)}
+@out/line <- \"must-not-write\"
+result := \"x\"?
+  | @env/HOME => true
+  | * => false.
+",
+  );
+
+  assert!(result.is_err(), "match arm context read should fail in preflight");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(
+    error.contains("RuntimeCapabilityGrantDenied") || error.contains("context_read"),
+    "expected context read preflight error, got {error}",
+  );
+  assert!(
+    state.lock().unwrap().stdout.is_empty(),
+    "preflight failed after stdout write: {:?}",
+    state.lock().unwrap().stdout,
+  );
+}
+
+#[test]
+fn fsm_pipe_transition_context_read_fails_preflight_before_stdout_write() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  grant_runtime_stdout_line(&mut runtime);
+
+  let result = runtime.run_string(
+    "@out := cli://stdout{:write(line)}
+@env := cli://env{:read(HOME)}
+@out/line <- \"must-not-write\"
+machine := #Machine() -> @env/HOME
+",
+  );
+
+  assert!(result.is_err(), "FSM pipe transition context read should fail in preflight");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(
+    error.contains("RuntimeCapabilityGrantDenied") || error.contains("context_read"),
+    "expected context read preflight error, got {error}",
+  );
+  assert!(
+    state.lock().unwrap().stdout.is_empty(),
+    "preflight failed after stdout write: {:?}",
+    state.lock().unwrap().stdout,
+  );
+}
+
+#[test]
+fn fsm_declare_context_read_fails_preflight_before_stdout_write() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  grant_runtime_stdout_line(&mut runtime);
+
+  let result = runtime.run_string(
+    "@out := cli://stdout{:write(line)}
+@env := cli://env{:read(HOME)}
+@out/line <- \"must-not-write\"
+#run := #Machine(@env/HOME)
+",
+  );
+
+  assert!(result.is_err(), "FSM declaration context read should fail in preflight");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(
+    error.contains("RuntimeCapabilityGrantDenied") || error.contains("context_read"),
+    "expected context read preflight error, got {error}",
+  );
+  assert!(
+    state.lock().unwrap().stdout.is_empty(),
+    "preflight failed after stdout write: {:?}",
+    state.lock().unwrap().stdout,
+  );
+}
+
+#[test]
+fn match_arm_context_read_pattern_compares_value_when_allowed() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  state.lock().unwrap().env.insert(
+    "MECH_MATCH_PATTERN".to_string(),
+    "expected".to_string(),
+  );
+
+  let subject = runtime.runtime_context().unwrap().subject;
+  runtime.grant_capability(RuntimeCapabilityGrant {
+    subject,
+    resource: "cli://env".to_string(),
+    operations: vec![RuntimeCapabilityOperation::Read],
+    paths: vec!["MECH_MATCH_PATTERN".to_string()],
+  }).unwrap();
+
+  let matching = runtime.run_string(
+    "@env := cli://env{:read(MECH_MATCH_PATTERN)}
+result := \"expected\"?
+  | @env/MECH_MATCH_PATTERN => true
+  | * => false.
+result
+",
+  ).unwrap();
+
+  let matching = match matching {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_bool_true(matching, "match arm context read pattern should match equal value");
+
+  let mismatching = runtime.run_string(
+    "@env := cli://env{:read(MECH_MATCH_PATTERN)}
+mismatch := \"other\"?
+  | @env/MECH_MATCH_PATTERN => true
+  | * => false.
+mismatch
+",
+  ).unwrap();
+
+  let mismatching = match mismatching {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_bool_false(mismatching, "match arm context read pattern should not bind mismatched value");
+
+  let wrapped_matching = runtime.run_string(
+    "@env := cli://env{:read(MECH_MATCH_PATTERN)}
+wrapped := \"expected\"?
+  | (@env/MECH_MATCH_PATTERN) => true
+  | * => false.
+wrapped
+",
+  ).unwrap();
+
+  let wrapped_matching = match wrapped_matching {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_bool_true(
+    wrapped_matching,
+    "wrapped match arm context read pattern should match equal value",
+  );
+
+  let wrapped_mismatching = runtime.run_string(
+    "@env := cli://env{:read(MECH_MATCH_PATTERN)}
+wrappedMismatch := \"other\"?
+  | (@env/MECH_MATCH_PATTERN) => true
+  | * => false.
+wrappedMismatch
+",
+  ).unwrap();
+
+  let wrapped_mismatching = match wrapped_mismatching {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_bool_false(
+    wrapped_mismatching,
+    "wrapped match arm context read pattern should not bind mismatched value",
+  );
+
+  let mut bool_runtime = RuntimeBuilder::new()
+    .in_memory_docs(InMemoryDocsProvider::new())
+    .build()
+    .unwrap();
+
+  bool_runtime.grant_capability(runtime_context_write_grant(
+    &bool_runtime,
+    "docs://manual",
+    "flag",
+  )).unwrap();
+  bool_runtime.grant_capability(runtime_context_read_grant(
+    &bool_runtime,
+    "docs://manual",
+    "flag",
+  )).unwrap();
+
+  let bool_matching = bool_runtime.run_string(
+    "@manual := docs://manual{:read(flag), :write(flag)}
+@manual/flag = false
+matched := false?
+  | @manual/flag => true
+  | * => false.
+matched
+",
+  ).unwrap();
+
+  let bool_matching = match bool_matching {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_bool_true(
+    bool_matching,
+    "boolean context match pattern should compare false to false",
+  );
+
+  let bool_mismatching = bool_runtime.run_string(
+    "@manual := docs://manual{:read(flag), :write(flag)}
+@manual/flag = true
+mismatched := false?
+  | @manual/flag => true
+  | * => false.
+mismatched
+",
+  ).unwrap();
+
+  let bool_mismatching = match bool_mismatching {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_bool_false(
+    bool_mismatching,
+    "boolean context match pattern should not match false to true",
+  );
+}
+
+#[test]
 fn run_tree_with_context_preflight_failure_emits_failure_and_profile_events() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let mut config = RuntimeConfig::default();
