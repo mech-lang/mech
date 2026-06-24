@@ -2907,6 +2907,42 @@ mismatch
     other => other,
   };
   assert_bool_false(mismatching, "match arm context read pattern should not bind mismatched value");
+
+  let wrapped_matching = runtime.run_string(
+    "@env := cli://env{:read(MECH_MATCH_PATTERN)}
+wrapped := \"expected\"?
+  | (@env/MECH_MATCH_PATTERN) => true
+  | * => false.
+wrapped
+",
+  ).unwrap();
+
+  let wrapped_matching = match wrapped_matching {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_bool_true(
+    wrapped_matching,
+    "wrapped match arm context read pattern should match equal value",
+  );
+
+  let wrapped_mismatching = runtime.run_string(
+    "@env := cli://env{:read(MECH_MATCH_PATTERN)}
+wrappedMismatch := \"other\"?
+  | (@env/MECH_MATCH_PATTERN) => true
+  | * => false.
+wrappedMismatch
+",
+  ).unwrap();
+
+  let wrapped_mismatching = match wrapped_mismatching {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_bool_false(
+    wrapped_mismatching,
+    "wrapped match arm context read pattern should not bind mismatched value",
+  );
 }
 
 #[test]

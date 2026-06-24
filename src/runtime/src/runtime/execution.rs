@@ -747,11 +747,19 @@ impl MechRuntime {
           .map(|pattern| self.resolve_context_reads_in_match_pattern(context, program, registry, pattern))
           .collect::<MResult<Vec<_>>>()?,
       })),
-      mech_core::Pattern::Tuple(tuple) => Ok(mech_core::Pattern::Tuple(mech_core::PatternTuple(
-        tuple.0.iter()
-          .map(|pattern| self.resolve_context_reads_in_match_pattern(context, program, registry, pattern))
-          .collect::<MResult<Vec<_>>>()?,
-      ))),
+      mech_core::Pattern::Tuple(tuple) => {
+        if tuple.0.len() == 1 {
+          let pattern = self.resolve_context_reads_in_match_pattern(context, program, registry, &tuple.0[0])?;
+          if pattern != tuple.0[0] {
+            return Ok(pattern);
+          }
+        }
+        Ok(mech_core::Pattern::Tuple(mech_core::PatternTuple(
+          tuple.0.iter()
+            .map(|pattern| self.resolve_context_reads_in_match_pattern(context, program, registry, pattern))
+            .collect::<MResult<Vec<_>>>()?,
+        )))
+      }
       mech_core::Pattern::Array(array) => {
         let spread = if let Some(spread) = &array.spread {
           Some(mech_core::PatternArraySpread {
@@ -784,18 +792,72 @@ impl MechRuntime {
     registry: &RuntimeContextRegistry,
     expression: &mech_core::Expression,
   ) -> MResult<mech_core::Expression> {
-    if let mech_core::Expression::Var(var) = expression {
-      if let Some(var_context) = &var.context {
-        let target = var_context.to_string();
-        if let Some(binding) = registry.get(&target) {
-          let path = var.name.to_string();
-          let value = self.read_context_resource(context, binding, &path)?;
-          return self.context_pattern_value_expression(value);
-        }
-      }
+    if let Some(expression) = self.literalize_match_pattern_context_read_expression(
+      context,
+      registry,
+      expression,
+    )? {
+      return Ok(expression);
     }
 
     self.resolve_context_reads_in_expression(context, program, registry, expression)
+  }
+
+  fn literalize_match_pattern_context_read_expression(
+    &mut self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    expression: &mech_core::Expression,
+  ) -> MResult<Option<mech_core::Expression>> {
+    match expression {
+      mech_core::Expression::Var(var) => {
+        self.literalize_match_pattern_context_read_var(context, registry, var)
+      }
+      mech_core::Expression::Formula(factor) => {
+        self.literalize_match_pattern_context_read_factor(context, registry, factor)
+      }
+      _ => Ok(None),
+    }
+  }
+
+  fn literalize_match_pattern_context_read_factor(
+    &mut self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    factor: &mech_core::Factor,
+  ) -> MResult<Option<mech_core::Expression>> {
+    match factor {
+      mech_core::Factor::Expression(expression) => {
+        self.literalize_match_pattern_context_read_expression(context, registry, expression)
+      }
+      mech_core::Factor::Parenthetical(inner) => {
+        self.literalize_match_pattern_context_read_factor(context, registry, inner)
+      }
+      mech_core::Factor::Term(term) if term.rhs.is_empty() => {
+        self.literalize_match_pattern_context_read_factor(context, registry, &term.lhs)
+      }
+      _ => Ok(None),
+    }
+  }
+
+  fn literalize_match_pattern_context_read_var(
+    &mut self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    var: &mech_core::Var,
+  ) -> MResult<Option<mech_core::Expression>> {
+    let Some(var_context) = &var.context else {
+      return Ok(None);
+    };
+
+    let target = var_context.to_string();
+    let Some(binding) = registry.get(&target) else {
+      return Ok(None);
+    };
+
+    let path = var.name.to_string();
+    let value = self.read_context_resource(context, binding, &path)?;
+    Ok(Some(self.context_pattern_value_expression(value)?))
   }
 
   fn context_pattern_value_expression(&self, value: Value) -> MResult<mech_core::Expression> {
