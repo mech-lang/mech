@@ -560,7 +560,9 @@ fn index_statement_address_references(
         | Statement::SplitTable
         | Statement::FlattenTable => {}
         #[cfg(feature = "invariant_define")]
-        Statement::InvariantDefine(_) => {}
+        Statement::InvariantDefine(invariant) => {
+            index_expression_address_references(index, scope, order, &invariant.expression);
+        }
     }
 }
 
@@ -639,6 +641,11 @@ fn index_expression_address_references(
             }
         }
         Expression::FsmPipe(pipe) => {
+            if let Some(args) = &pipe.start.args {
+                for (_, expression) in args {
+                    index_expression_address_references(index, scope, order, expression);
+                }
+            }
             for transition in &pipe.transitions {
                 match transition {
                     mech_core::Transition::Async(pattern)
@@ -1009,6 +1016,48 @@ result := x?
                 .iter()
                 .any(|reference| reference.target == "env" && reference.name == "STATE"),
             "expected FSM arm selector addressed read to be indexed"
+        );
+    }
+
+    #[test]
+    fn source_index_records_fsm_pipe_start_arg_address_references() {
+        let tree = program_with_code(MechCode::Expression(Expression::FsmPipe(
+            mech_core::FsmPipe {
+                start: mech_core::FsmInstance {
+                    name: ident("Pick"),
+                    args: Some(vec![(None, addressed_var("missing", "x"))]),
+                },
+                transitions: vec![],
+            },
+        )));
+
+        let index = SourceIndex::from_program(&tree);
+        assert!(
+            index
+                .program_address_references()
+                .iter()
+                .any(|reference| reference.target == "missing" && reference.name == "x"),
+            "expected FSM pipe start arg addressed read to be indexed"
+        );
+    }
+
+    #[cfg(feature = "invariant_define")]
+    #[test]
+    fn source_index_records_invariant_address_references() {
+        let tree = program_with_code(MechCode::Statement(Statement::InvariantDefine(
+            mech_core::InvariantDefine {
+                name: ident("check"),
+                expression: addressed_var("missing", "x"),
+            },
+        )));
+
+        let index = SourceIndex::from_program(&tree);
+        assert!(
+            index
+                .program_address_references()
+                .iter()
+                .any(|reference| reference.target == "missing" && reference.name == "x"),
+            "expected invariant addressed read to be indexed"
         );
     }
 }

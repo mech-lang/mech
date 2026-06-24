@@ -1004,7 +1004,7 @@ impl MechRuntime {
     Ok(mech_core::FsmImplementation {
       name: fsm.name.clone(),
       input: fsm.input.clone(),
-      start: self.resolve_context_reads_in_match_pattern(context, program, registry, &fsm.start)?,
+      start: self.resolve_context_reads_in_pattern(context, program, registry, &fsm.start)?,
       arms,
     })
   }
