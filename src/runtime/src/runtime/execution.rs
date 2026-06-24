@@ -641,7 +641,12 @@ impl MechRuntime {
     qualifier: &mech_core::ComprehensionQualifier,
   ) -> MResult<mech_core::ComprehensionQualifier> {
     match qualifier {
-      mech_core::ComprehensionQualifier::Generator((pattern, expression)) => Ok(mech_core::ComprehensionQualifier::Generator((pattern.clone(), self.resolve_context_reads_in_expression(context, program, registry, expression)?))),
+      mech_core::ComprehensionQualifier::Generator((pattern, expression)) => {
+        Ok(mech_core::ComprehensionQualifier::Generator((
+          self.resolve_context_reads_in_match_pattern(context, program, registry, pattern)?,
+          self.resolve_context_reads_in_expression(context, program, registry, expression)?,
+        )))
+      }
       mech_core::ComprehensionQualifier::Filter(expression) => Ok(mech_core::ComprehensionQualifier::Filter(self.resolve_context_reads_in_expression(context, program, registry, expression)?)),
       mech_core::ComprehensionQualifier::Let(var_def) => {
         let mut var_def = var_def.clone();
@@ -995,8 +1000,18 @@ impl MechRuntime {
         .map(|statement| self.resolve_context_reads_in_statement(context, program, registry, statement))
         .collect::<MResult<Vec<_>>>()?,
       match_arms: function.match_arms.iter().map(|arm| Ok(mech_core::FunctionMatchArm {
-        pattern: self.resolve_context_reads_in_pattern(context, program, registry, &arm.pattern)?,
-        expression: self.resolve_context_reads_in_expression(context, program, registry, &arm.expression)?,
+        pattern: self.resolve_context_reads_in_match_pattern(
+          context,
+          program,
+          registry,
+          &arm.pattern,
+        )?,
+        expression: self.resolve_context_reads_in_expression(
+          context,
+          program,
+          registry,
+          &arm.expression,
+        )?,
       })).collect::<MResult<Vec<_>>>()?,
     })
   }
@@ -1690,8 +1705,11 @@ impl MechRuntime {
     qualifier: &mech_core::ComprehensionQualifier,
   ) -> MResult<()> {
     match qualifier {
-      mech_core::ComprehensionQualifier::Generator((_, expression))
-      | mech_core::ComprehensionQualifier::Filter(expression) => {
+      mech_core::ComprehensionQualifier::Generator((pattern, expression)) => {
+        self.preflight_pattern_context_reads(context, registry, pattern)?;
+        self.preflight_expression_context_reads(context, registry, expression)
+      }
+      mech_core::ComprehensionQualifier::Filter(expression) => {
         self.preflight_expression_context_reads(context, registry, expression)
       }
       mech_core::ComprehensionQualifier::Let(var_def) => {

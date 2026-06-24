@@ -621,3 +621,126 @@ fn mech_run_split_inline_context_read_is_not_treated_as_path() {
 
   assert_success_contains(output, "split-inline-ok");
 }
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_function_arm_context_pattern_is_literal_not_capture() {
+  let root = temp_root("function-context-pattern");
+  let source = root.join("function_context_pattern.mec");
+
+  std::fs::write(
+    &source,
+    r#"+> @env := cli/env
++> @out := cli/stdout
+
+pick(x<string>) => <string>
+  | @env/MECH_FUNCTION_PATTERN_TEST => "matched"
+  | * => "missed".
+
+@out/line <- pick("not-the-secret")
+@out/line <- pick(@env/MECH_FUNCTION_PATTERN_TEST)
+"done"
+"#,
+  )
+  .unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg(&source)
+    .env("MECH_FUNCTION_PATTERN_TEST", "secret")
+    .output()
+    .unwrap();
+
+  let combined = combined_output(&output);
+  assert!(
+    output.status.success(),
+    "function context-pattern program failed:\n{combined}"
+  );
+  assert!(
+    combined.contains("missed"),
+    "nonmatching argument should hit wildcard arm:\n{combined}"
+  );
+  assert!(
+    combined.contains("matched"),
+    "matching argument should hit literal context arm:\n{combined}"
+  );
+  assert_eq!(
+    combined.matches("matched").count(),
+    1,
+    "context pattern must not capture every argument:\n{combined}"
+  );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_generator_pattern_context_read_is_preflighted_before_send() {
+  let root = temp_root("generator-pattern-preflight");
+  let source = root.join("generator_pattern_preflight.mec");
+
+  std::fs::write(
+    &source,
+    r#"+> @out := cli/stdout
++> @env := cli/env
+
+@out/line <- "must-not-write"
+ys := { "hit" | @env/HOME <- ["anything"] }
+"done"
+"#,
+  )
+  .unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("--deny-default-capabilities")
+    .arg("--capabilities")
+    .arg(":cli/stdout")
+    .arg(&source)
+    .output()
+    .unwrap();
+
+  let combined = assert_failure_contains(output, "RuntimeCapabilityGrantDenied");
+  assert!(
+    !combined.contains("must-not-write"),
+    "provider wrote before generator-pattern preflight failed:\n{combined}"
+  );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_generator_context_pattern_is_literal_filter() {
+  let root = temp_root("generator-pattern-literal");
+  let source = root.join("generator_pattern_literal.mec");
+
+  std::fs::write(
+    &source,
+    r#"+> @env := cli/env
++> @out := cli/stdout
+
+ys := { x | (x, @env/MECH_GENERATOR_PATTERN_TEST) <- [("keep", "secret") ("drop", "other")] }
+@out/line <- ys
+"done"
+"#,
+  )
+  .unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg(&source)
+    .env("MECH_GENERATOR_PATTERN_TEST", "secret")
+    .output()
+    .unwrap();
+
+  let combined = combined_output(&output);
+  assert!(
+    output.status.success(),
+    "generator context-pattern program failed:\n{combined}"
+  );
+  assert!(
+    combined.contains("keep"),
+    "literalized generator pattern should retain matching tuple:\n{combined}"
+  );
+  assert!(
+    !combined.contains("drop"),
+    "literalized generator pattern should reject nonmatching tuple:\n{combined}"
+  );
+}

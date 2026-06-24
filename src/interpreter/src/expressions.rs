@@ -36,7 +36,12 @@ pub fn expression(expr: &Expression, env: Option<&Environment>, p: &Interpreter)
 }
 
 #[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
-pub fn pattern_match_value(pattern: &Pattern, value: &Value, env: &mut Environment) -> MResult<()> {
+pub fn pattern_match_value(
+    pattern: &Pattern,
+    value: &Value,
+    env: &mut Environment,
+    p: &Interpreter,
+) -> MResult<()> {
     match pattern {
         Pattern::Wildcard => Ok(()),
         Pattern::Expression(expr) => match expr {
@@ -59,7 +64,22 @@ pub fn pattern_match_value(pattern: &Pattern, value: &Value, env: &mut Environme
                     }
                 }
             }
-            _ => todo!("Unsupported expression in pattern"),
+            _ => {
+                let expected = expression(expr, Some(env), p)?;
+                if detach_comprehension_value(&expected) == detach_comprehension_value(value) {
+                    Ok(())
+                } else {
+                    Err(MechError::new(
+                        PatternMatchError {
+                            var: "<expression>".to_string(),
+                            expected: expected.to_string(),
+                            found: value.to_string(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc())
+                }
+            }
         },
         #[cfg(feature = "tuple")]
         Pattern::Tuple(pat_tuple) => match value {
@@ -76,7 +96,7 @@ pub fn pattern_match_value(pattern: &Pattern, value: &Value, env: &mut Environme
                     .with_compiler_loc());
                 }
                 for (pttrn, val) in pat_tuple.0.iter().zip(values_brrw.elements.iter()) {
-                    pattern_match_value(pttrn, val, env)?;
+                    pattern_match_value(pttrn, val, env, p)?;
                 }
                 Ok(())
             }
@@ -113,7 +133,7 @@ fn comprehension_environments(
                     let collection = expression(expr, Some(env), &new_p)?;
                     for elmnt in comprehension_generator_values(&collection)? {
                         let mut new_env = env.clone();
-                        if pattern_match_value(pttrn, &elmnt, &mut new_env).is_ok() {
+                        if pattern_match_value(pttrn, &elmnt, &mut new_env, &new_p).is_ok() {
                             new_envs.push(new_env);
                         }
                     }
