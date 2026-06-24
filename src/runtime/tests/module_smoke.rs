@@ -3792,3 +3792,55 @@ fn module_function_unknown_address_target_is_preflighted_before_send() {
   assert!(error.contains("UnknownAddressTarget"), "expected unknown address target, got {error}");
   assert!(state.lock().unwrap().stdout.is_empty(), "stdout write leaked before module preflight failed");
 }
+
+#[test]
+fn module_function_pattern_interpreter_address_is_literal_not_capture() {
+  let root = setup_modules(r#"~~~mech:cfg
+STATE := "secret"
+<+ STATE
+~~~
+
+pick(x<string>) => <string>
+  | @cfg/STATE => "matched"
+  | * => "missed".
+
+result := pick("not-secret") == "missed"
+"#);
+
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime
+    .resolve_and_store_module_source("main.mec", module_options())
+    .unwrap()
+    .unwrap();
+
+  assert_bool_true(
+    runtime.run_module(version).unwrap(),
+    "module interpreter address pattern should compare, not capture",
+  );
+}
+
+#[test]
+fn module_function_pattern_interpreter_address_matches_export_value() {
+  let root = setup_modules(r#"~~~mech:cfg
+STATE := "secret"
+<+ STATE
+~~~
+
+pick(x<string>) => <string>
+  | @cfg/STATE => "matched"
+  | * => "missed".
+
+result := pick("secret") == "matched"
+"#);
+
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime
+    .resolve_and_store_module_source("main.mec", module_options())
+    .unwrap()
+    .unwrap();
+
+  assert_bool_true(
+    runtime.run_module(version).unwrap(),
+    "module interpreter address pattern should match exported value",
+  );
+}
