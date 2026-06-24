@@ -189,6 +189,13 @@ fn direct_context_target(context_name: &str, path: &str) -> String {
   format!("@{}/{}", context_name, path)
 }
 
+fn undeclared_direct_context_target_error(context_name: &str) -> MechError {
+  MechError::new(RuntimeInvalidOperationError {
+    operation: "direct_context_target",
+    reason: format!("context target `@{context_name}` is not declared or imported"),
+  }, None)
+}
+
 #[allow(dead_code)]
 fn runtime_context_allows_write(
   binding: &RuntimeContextBinding,
@@ -443,7 +450,7 @@ impl MechRuntime {
         };
         let target = var_context.to_string();
         let Some(binding) = registry.get(&target) else {
-          return Ok(expression.clone());
+          return Err(undeclared_direct_context_target_error(&target));
         };
         let path = var.name.to_string();
         let value = self.read_context_resource(context, binding, &path)?;
@@ -487,15 +494,15 @@ impl MechRuntime {
         Ok(mech_core::Expression::Range(Box::new(range)))
       }
       mech_core::Expression::Slice(slice) => {
-        if slice
-          .context
-          .as_ref()
-          .is_some_and(|context| registry.contains(&context.to_string()))
-        {
-          return Err(MechError::new(RuntimeInvalidOperationError {
-            operation: "context_read",
-            reason: "context-addressed slices are not supported".to_string(),
-          }, None));
+        if let Some(context_name) = &slice.context {
+          let context_name = context_name.to_string();
+          if registry.contains(&context_name) {
+            return Err(MechError::new(RuntimeInvalidOperationError {
+              operation: "context_read",
+              reason: "context-addressed slices are not supported".to_string(),
+            }, None));
+          }
+          return Err(undeclared_direct_context_target_error(&context_name));
         }
         Ok(mech_core::Expression::Slice(
           self.resolve_context_reads_in_slice(context, program, registry, slice)?,
@@ -1517,7 +1524,7 @@ impl MechRuntime {
             &context_name.to_string(),
             &var.name.to_string(),
             RuntimeCapabilityOperation::Read,
-            false,
+            true,
             None,
           )?;
         }
@@ -1555,15 +1562,15 @@ impl MechRuntime {
         }
       }
       mech_core::Expression::Slice(slice) => {
-        if slice
-          .context
-          .as_ref()
-          .is_some_and(|context| registry.contains(&context.to_string()))
-        {
-          return Err(MechError::new(RuntimeInvalidOperationError {
-            operation: "context_read",
-            reason: "context-addressed slices are not supported".to_string(),
-          }, None));
+        if let Some(context_name) = &slice.context {
+          let context_name = context_name.to_string();
+          if registry.contains(&context_name) {
+            return Err(MechError::new(RuntimeInvalidOperationError {
+              operation: "context_read",
+              reason: "context-addressed slices are not supported".to_string(),
+            }, None));
+          }
+          return Err(undeclared_direct_context_target_error(&context_name));
         }
         self.preflight_slice_context_reads(context, registry, slice)?;
       }
@@ -1752,10 +1759,7 @@ impl MechRuntime {
   ) -> MResult<()> {
     let Some(binding) = registry.get(context_name) else {
       if require_context_binding {
-        return Err(MechError::new(RuntimeInvalidOperationError {
-          operation: "direct_context_target",
-          reason: format!("context target `@{context_name}` is not declared or imported"),
-        }, None));
+        return Err(undeclared_direct_context_target_error(context_name));
       }
       return Ok(());
     };

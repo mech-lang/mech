@@ -39,8 +39,15 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
 
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value>;
 
-  fn preflight_write(&self, _request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
-    Ok(())
+  fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+    Err(MechError::new(
+      RuntimeResourceWriteUnsupported {
+        scheme: self.scheme().to_string(),
+        base_uri: request.base_uri,
+        path: request.path,
+      },
+      None,
+    ))
   }
 
   fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
