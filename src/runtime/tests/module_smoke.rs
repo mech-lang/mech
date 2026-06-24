@@ -3708,3 +3708,87 @@ fn module_unknown_address_target_still_fails_before_execution() {
   assert!(error.contains("UnknownAddressTarget"), "expected unknown address target, got {error}");
   assert!(error.contains("missing"), "expected missing target in error, got {error}");
 }
+
+#[test]
+fn module_function_unknown_address_target_is_preflighted_before_send() {
+  fn token(kind: mech_core::TokenKind, text: &str) -> mech_core::Token {
+    mech_core::Token::new(kind, mech_core::SourceRange::default(), text.chars().collect())
+  }
+
+  fn ident(name: &str) -> mech_core::Identifier {
+    mech_core::Identifier { name: token(mech_core::TokenKind::Identifier, name) }
+  }
+
+  fn addressed_var(target: &str, name: &str) -> mech_core::Expression {
+    mech_core::Expression::Var(mech_core::Var { name: ident(name), context: Some(ident(target)), kind: None })
+  }
+
+  let tree = mech_core::Program {
+    title: None,
+    body: mech_core::Body {
+      sections: vec![mech_core::Section {
+        subtitle: None,
+        elements: vec![mech_core::SectionElement::MechCode(vec![
+          (mech_core::MechCode::Statement(mech_core::Statement::ContextDeclaration(mech_core::ContextDeclaration {
+            name: ident("out"),
+            base: mech_core::ContextBase::ResourceUri(token(mech_core::TokenKind::String, "cli://stdout")),
+            capabilities: vec![mech_core::ContextCapabilityDeclaration {
+              operation: ident("write"),
+              scope: mech_core::ContextCapabilityScope::Path(ident("line")),
+            }],
+          })), None),
+          (mech_core::MechCode::Statement(mech_core::Statement::ContextSend(mech_core::ContextSend {
+            target: mech_core::Var { name: ident("line"), context: Some(ident("out")), kind: None },
+            expression: mech_core::Expression::Literal(mech_core::Literal::String(mech_core::MechString {
+              text: token(mech_core::TokenKind::String, "must-not-write"),
+            })),
+          })), None),
+          (mech_core::MechCode::FunctionDefine(mech_core::FunctionDefine {
+            name: ident("lookup"),
+            input: vec![],
+            output: vec![],
+            statements: vec![mech_core::Statement::VariableDefine(mech_core::VariableDefine {
+              mutable: false,
+              var: mech_core::Var { name: ident("value"), context: None, kind: None },
+              expression: addressed_var("missing", "HOME"),
+            })],
+            match_arms: vec![],
+          }), None),
+          (mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(mech_core::VariableDefine {
+            mutable: false,
+            var: mech_core::Var { name: ident("result"), context: None, kind: None },
+            expression: mech_core::Expression::Literal(mech_core::Literal::Boolean(token(mech_core::TokenKind::True, "true"))),
+          })), None),
+        ])],
+      }],
+    },
+  };
+
+  let state = Arc::new(Mutex::new(RecordingCliState::default()));
+  let mut runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(CliResourceProvider::new(RecordingCliBackend { state: state.clone() })))
+    .build()
+    .unwrap();
+
+  grant_runtime_stdout_line(&mut runtime);
+
+  let index = SourceIndex::from_program(&tree);
+  let version = runtime
+    .store_resolved_module_source(
+      ResolvedSource::new("main.mec", "memory://main.mec", MechSourceCode::Tree(tree))
+        .with_imports(index.all_imports())
+        .with_exports(index.all_exports())
+        .with_contexts(index.all_contexts())
+        .with_address_references(index.all_address_references())
+        .with_scopes(index.module_scopes()),
+      module_options(),
+    )
+    .unwrap();
+
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("UnknownAddressTarget"), "expected unknown address target, got {error}");
+  assert!(state.lock().unwrap().stdout.is_empty(), "stdout write leaked before module preflight failed");
+}
