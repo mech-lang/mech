@@ -104,7 +104,7 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
-use crate::{register_config_spec_grants, register_config_spec_resources, InMemoryDocsProvider, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, resource_base_matches, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest};
+use crate::{register_config_spec_grants, register_config_spec_resources, InMemoryDocsProvider, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, resource_base_matches, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
 
 thread_local! {
   static ACTIVE_RUNTIME_PROGRAM_HOST: RefCell<Option<RuntimeProgramHostTarget>> =
@@ -584,6 +584,7 @@ impl MechRuntime {
       path,
       context_name: binding.to_string(),
       value: value.clone(),
+      intent: RuntimeResourceWriteIntent::Assign,
     })
   }
 

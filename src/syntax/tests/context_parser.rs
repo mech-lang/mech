@@ -227,9 +227,8 @@ fn program_browser_resource_write() {
 }
 
 #[test]
-fn program_browser_resource_define_does_not_write() {
-  let stmts = statements("@browser/title := \"Hello\"");
-  assert!(matches!(&stmts[0], Statement::VariableDefine(_)));
+fn program_browser_resource_define_is_rejected() {
+  assert!(parser::parse("@browser/title := \"Hello\"").is_err());
 }
 
 #[test]
@@ -279,4 +278,90 @@ fn rejects_legacy_suffix_context_forms() {
   assert!(parser::parse("x := counter[0]@ui").is_err());
   assert!(parser::parse("x := counter.foo@ui").is_err());
   assert!(parser::parse("x := counter{0}@ui").is_err());
+}
+
+
+#[test]
+fn parses_context_send_statements() {
+  let stmts = statements("@out/line <- \"hello\"\n@err/text <- \"warning\"");
+  assert_eq!(stmts.len(), 2);
+  match &stmts[0] {
+    Statement::ContextSend(send) => {
+      assert_eq!(send.target.context.as_ref().unwrap().to_string(), "out");
+      assert_eq!(send.target.name.to_string(), "line");
+    }
+    other => panic!("expected context send, got {other:?}"),
+  }
+  match &stmts[1] {
+    Statement::ContextSend(send) => {
+      assert_eq!(send.target.context.as_ref().unwrap().to_string(), "err");
+      assert_eq!(send.target.name.to_string(), "text");
+    }
+    other => panic!("expected context send, got {other:?}"),
+  }
+}
+
+#[test]
+fn rejects_kind_annotations_on_context_send_targets() {
+  assert!(parser::parse("@out/line<string> <- \"hello\"").is_err());
+}
+
+#[test]
+fn parses_deep_context_send_path() {
+  let stmts = statements("@ui/counter/_text <- \"hello\"");
+  match &stmts[0] {
+    Statement::ContextSend(send) => {
+      assert_eq!(send.target.context.as_ref().unwrap().to_string(), "ui");
+      assert_eq!(send.target.name.to_string(), "counter/_text");
+    }
+    other => panic!("expected context send, got {other:?}"),
+  }
+}
+
+#[test]
+fn parses_context_send_inside_fsm_statement_transition() {
+  assert!(
+    parser::parse(
+      "#machine(x) -> :start\n:start -> @out/line <- \"hello\"\n."
+    )
+    .is_ok()
+  );
+}
+
+#[test]
+fn parses_context_send_inside_fsm_block_transition() {
+  assert!(
+    parser::parse(
+      "#machine(x) -> :start\n:start -> { @out/line <- \"hello\" }\n."
+    )
+    .is_ok()
+  );
+}
+
+#[test]
+fn top_level_context_send_still_parses_after_fsm_rejection() {
+  assert!(parser::parse("@out/line <- \"hello\"").is_ok());
+}
+
+#[test]
+fn parses_context_send_inside_function_body() {
+  assert!(parser::parse("emit() = result<string> := @out/line <- \"hello\".").is_ok());
+}
+
+#[test]
+fn function_body_without_context_send_still_parses() {
+  assert!(parser::parse("emit() = result<string> := result := \"hello\".").is_ok());
+}
+
+#[test]
+fn rejects_local_send_and_context_definitions() {
+  assert!(parser::parse("x <- 5").is_err());
+  assert!(parser::parse("@out/line := \"hello\"").is_err());
+  assert!(parser::parse("@ui/counter/_text := \"hello\"").is_err());
+}
+
+#[test]
+fn context_assignment_still_parses() {
+  let stmts = statements("@ui/counter/_text = \"hello\"");
+  assert!(matches!(stmts.as_slice(), [Statement::VariableAssign(_)]));
 }

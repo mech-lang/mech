@@ -9,12 +9,27 @@ pub struct RuntimeResourceReadRequest {
   pub context_name: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RuntimeResourceWriteIntent {
+  Assign,
+  Send,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeResourceWritePreflightRequest {
+  pub base_uri: String,
+  pub path: String,
+  pub context_name: String,
+  pub intent: RuntimeResourceWriteIntent,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeResourceWriteRequest {
   pub base_uri: String,
   pub path: String,
   pub context_name: String,
   pub value: Value,
+  pub intent: RuntimeResourceWriteIntent,
 }
 
 pub trait RuntimeResourceProvider: std::fmt::Debug {
@@ -23,6 +38,17 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
   fn base_uris(&self) -> Vec<String> { Vec::new() }
 
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value>;
+
+  fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+    Err(MechError::new(
+      RuntimeResourceWriteUnsupported {
+        scheme: self.scheme().to_string(),
+        base_uri: request.base_uri,
+        path: request.path,
+      },
+      None,
+    ))
+  }
 
   fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
     Err(MechError::new(
@@ -105,6 +131,20 @@ impl RuntimeResourceRegistry {
       ));
     };
     provider.read(request)
+  }
+
+  pub fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+    let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
+    let Some(provider) = self.providers.get(&scheme) else {
+      return Err(MechError::new(
+        RuntimeResourceProviderNotFound {
+          scheme,
+          uri: request.base_uri,
+        },
+        None,
+      ));
+    };
+    provider.preflight_write(request)
   }
 
   pub fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
@@ -205,7 +245,18 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
     Ok(value.clone())
   }
 
-  fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+  fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+    if request.intent == RuntimeResourceWriteIntent::Send {
+      return Err(MechError::new(
+        RuntimeResourceWriteUnsupported {
+          scheme: self.scheme().to_string(),
+          base_uri: request.base_uri,
+          path: request.path,
+        },
+        None,
+      ));
+    }
+
     let scheme = resource_uri_scheme(&request.base_uri)?;
     if scheme != "docs" {
       return Err(MechError::new(
@@ -226,6 +277,17 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
         None,
       ));
     }
+
+    Ok(())
+  }
+
+  fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    self.preflight_write(RuntimeResourceWritePreflightRequest {
+      base_uri: request.base_uri.clone(),
+      path: request.path.clone(),
+      context_name: request.context_name.clone(),
+      intent: request.intent,
+    })?;
 
     self.documents
       .entry(request.base_uri)

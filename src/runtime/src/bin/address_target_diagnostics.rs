@@ -1,5 +1,5 @@
 use mech_core::{Ref, Value};
-use mech_runtime::{FileSourceResolver, InMemoryDocsProvider, ModuleBuildOptions, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteRequest, SourceScope};
+use mech_runtime::{FileSourceResolver, InMemoryDocsProvider, ModuleBuildOptions, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest, SourceScope};
 
 fn write_case(root: &std::path::Path, name: &str, source: &str) -> std::path::PathBuf {
   let case_root = root.join(name);
@@ -76,7 +76,7 @@ fn main() {
   let mut provider = InMemoryDocsProvider::new();
   println!("provider write/read:");
   println!("  write docs://manual intro/title = true");
-  provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: Value::Bool(Ref::new(true)) }).unwrap();
+  provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: Value::Bool(Ref::new(true)), intent: RuntimeResourceWriteIntent::Assign }).unwrap();
   let value = provider.read(RuntimeResourceReadRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string() }).unwrap();
   match value {
     Value::Bool(value) => println!("  read result: Bool({})", value.borrow()),

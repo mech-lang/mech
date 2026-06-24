@@ -54,6 +54,10 @@ pub enum RuntimeEventKind {
   ProgramStarted { task_id: Option<TaskId> },
   ProgramCompleted { task_id: Option<TaskId> },
   ProgramFailed { task_id: Option<TaskId>, message: String },
+  ProgramProfiled {
+    task_id: Option<TaskId>,
+    duration_ns: u128,
+  },
 
   TaskCreated { task_id: TaskId },
   TaskStarted { task_id: TaskId },
@@ -108,6 +112,7 @@ impl RuntimeEventKind {
       RuntimeEventKind::ProgramStarted { .. } => ":program/started",
       RuntimeEventKind::ProgramCompleted { .. } => ":program/completed",
       RuntimeEventKind::ProgramFailed { .. } => ":program/failed",
+      RuntimeEventKind::ProgramProfiled { .. } => ":program/profiled",
       RuntimeEventKind::TaskCreated { .. } => ":task/created",
       RuntimeEventKind::TaskStarted { .. } => ":task/started",
       RuntimeEventKind::TaskCompleted { .. } => ":task/completed",

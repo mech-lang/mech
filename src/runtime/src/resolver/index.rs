@@ -1,13 +1,15 @@
 use mech_core::{
-    ComprehensionQualifier, ContextBase, ContextCapabilityScope, Expression, Factor, MechCode,
-    MResult, MechError, Pattern, Program, RangeExpression, SectionElement, SourceRange, Statement,
-    Structure, Subscript, Term, Token,
+    ComprehensionQualifier, ContextBase, ContextCapabilityScope, Expression, Factor, FsmArm,
+    FsmImplementation, FunctionDefine, MResult, MechCode, MechError, Pattern, Program,
+    RangeExpression, SectionElement, SourceRange, Statement, Structure, Subscript, Term, Token,
+    Transition,
 };
 
 use super::{
-    classify_import_specifier, module_import_declarations, AddressTargetNameConflict, SourceAddressReference, SourceContextBase,
-    SourceContextCapability, SourceContextCapabilityScope, SourceContextDeclaration,
-    SourceExportDeclaration, SourceImportDeclaration,
+    classify_import_specifier, module_import_declarations, AddressTargetNameConflict,
+    SourceAddressReference, SourceContextBase, SourceContextCapability,
+    SourceContextCapabilityScope, SourceContextDeclaration, SourceExportDeclaration,
+    SourceImportDeclaration,
 };
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -103,66 +105,12 @@ impl SourceIndex {
                 match element {
                     SectionElement::MechCode(code_items) => {
                         for (code, _) in code_items {
-                            match code {
-                                MechCode::Import(import) => {
-                                    for declaration in module_import_declarations(import) {
-                                        index.push_import(
-                                            SourceScope::Program,
-                                            order,
-                                            declaration_range(import.tokens()),
-                                            declaration,
-                                        );
-                                        order += 1;
-                                    }
-                                }
-                                MechCode::Statement(statement) => {
-                                    match statement {
-                                        Statement::ImportDeclaration(import) => {
-                                            index.push_import(
-                                                SourceScope::Program,
-                                                order,
-                                                declaration_range(import.tokens()),
-                                                classify_import_specifier(import.specifier.to_string()),
-                                            );
-                                            order += 1;
-                                        }
-                                        Statement::ExportDeclaration(export) => {
-                                            index.push_export(
-                                                SourceScope::Program,
-                                                order,
-                                                declaration_range(export.tokens()),
-                                                SourceExportDeclaration {
-                                                    name: export.name.to_string(),
-                                                },
-                                            );
-                                            order += 1;
-                                        }
-                                        Statement::ContextDeclaration(context) => {
-                                            index.push_context(
-                                                SourceScope::Program,
-                                                order,
-                                                declaration_range(context.tokens()),
-                                                source_context_declaration(context),
-                                            );
-                                            order += 1;
-                                        }
-                                        _ => {}
-                                    }
-                                    index_statement_address_references(
-                                        &mut index,
-                                        &SourceScope::Program,
-                                        &mut order,
-                                        statement,
-                                    );
-                                }
-                                MechCode::Expression(expression) => index_expression_address_references(
-                                    &mut index,
-                                    &SourceScope::Program,
-                                    &mut order,
-                                    expression,
-                                ),
-                                _ => {}
-                            }
+                            index_mech_code_address_references(
+                                &mut index,
+                                &SourceScope::Program,
+                                &mut order,
+                                code,
+                            );
                         }
                     }
                     SectionElement::FencedMechCode(fenced) => {
@@ -184,66 +132,10 @@ impl SourceIndex {
                                 .clone()
                         };
 
-                        // TODO: Interleaving imports/exports/statements exactly as written in fenced code
-                        // requires parser ordering data; currently imports and exports preserve local vector order.
-                        for import in &fenced.imports {
-                            index.push_import(
-                                scope.clone(),
-                                order,
-                                declaration_range(import.tokens()),
-                                classify_import_specifier(import.specifier.to_string()),
-                            );
-                            order += 1;
-                        }
-
-                        for export in &fenced.exports {
-                            index.push_export(
-                                scope.clone(),
-                                order,
-                                declaration_range(export.tokens()),
-                                SourceExportDeclaration {
-                                    name: export.name.to_string(),
-                                },
-                            );
-                            order += 1;
-                        }
-
                         for (code, _) in &fenced.code {
-                            match code {
-                                MechCode::Import(import) => {
-                                    for declaration in module_import_declarations(import) {
-                                        index.push_import(
-                                            scope.clone(),
-                                            order,
-                                            declaration_range(import.tokens()),
-                                            declaration,
-                                        );
-                                        order += 1;
-                                    }
-                                }
-                                MechCode::Statement(Statement::ContextDeclaration(context)) => {
-                                    index.push_context(
-                                        scope.clone(),
-                                        order,
-                                        declaration_range(context.tokens()),
-                                        source_context_declaration(context),
-                                    );
-                                    order += 1;
-                                }
-                                MechCode::Statement(statement) => index_statement_address_references(
-                                    &mut index,
-                                    &scope,
-                                    &mut order,
-                                    statement,
-                                ),
-                                MechCode::Expression(expression) => index_expression_address_references(
-                                    &mut index,
-                                    &scope,
-                                    &mut order,
-                                    expression,
-                                ),
-                                _ => {}
-                            }
+                            index_mech_code_address_references(
+                                &mut index, &scope, &mut order, code,
+                            );
                         }
                     }
                     _ => {}
@@ -255,10 +147,13 @@ impl SourceIndex {
     }
 
     pub fn validate_address_targets(&self) -> MResult<()> {
-        let mut targets: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+        let mut targets: std::collections::HashMap<String, String> =
+            std::collections::HashMap::new();
 
         for interpreter in &self.address_target_interpreters {
-            if let Some(first_kind) = targets.insert(interpreter.namespace_str.clone(), "interpreter".to_string()) {
+            if let Some(first_kind) =
+                targets.insert(interpreter.namespace_str.clone(), "interpreter".to_string())
+            {
                 return Err(MechError::new(
                     AddressTargetNameConflict {
                         name: interpreter.namespace_str.clone(),
@@ -271,7 +166,9 @@ impl SourceIndex {
         }
 
         for context in &self.contexts {
-            if let Some(first_kind) = targets.insert(context.declaration.name.clone(), "context".to_string()) {
+            if let Some(first_kind) =
+                targets.insert(context.declaration.name.clone(), "context".to_string())
+            {
                 return Err(MechError::new(
                     AddressTargetNameConflict {
                         name: context.declaration.name.clone(),
@@ -493,6 +390,140 @@ impl SourceIndex {
     }
 }
 
+fn index_mech_code_address_references(
+    index: &mut SourceIndex,
+    scope: &SourceScope,
+    order: &mut usize,
+    code: &MechCode,
+) {
+    match code {
+        MechCode::Import(import) => {
+            for declaration in module_import_declarations(import) {
+                index.push_import(
+                    scope.clone(),
+                    *order,
+                    declaration_range(import.tokens()),
+                    declaration,
+                );
+                *order += 1;
+            }
+        }
+        MechCode::Statement(statement) => {
+            match statement {
+                Statement::ImportDeclaration(import) => {
+                    index.push_import(
+                        scope.clone(),
+                        *order,
+                        declaration_range(import.tokens()),
+                        classify_import_specifier(import.specifier.to_string()),
+                    );
+                    *order += 1;
+                }
+                Statement::ExportDeclaration(export) => {
+                    index.push_export(
+                        scope.clone(),
+                        *order,
+                        declaration_range(export.tokens()),
+                        SourceExportDeclaration {
+                            name: export.name.to_string(),
+                        },
+                    );
+                    *order += 1;
+                }
+                Statement::ContextDeclaration(context) => {
+                    index.push_context(
+                        scope.clone(),
+                        *order,
+                        declaration_range(context.tokens()),
+                        source_context_declaration(context),
+                    );
+                    *order += 1;
+                }
+                _ => {}
+            }
+
+            index_statement_address_references(index, scope, order, statement);
+        }
+        MechCode::Expression(expression) => {
+            index_expression_address_references(index, scope, order, expression);
+        }
+        MechCode::FunctionDefine(function) => {
+            index_function_define_address_references(index, scope, order, function);
+        }
+        MechCode::FsmImplementation(fsm) => {
+            index_fsm_implementation_address_references(index, scope, order, fsm);
+        }
+        MechCode::FsmSpecification(_) | MechCode::Comment(_) | MechCode::Error(_, _) => {}
+    }
+}
+
+fn index_function_define_address_references(
+    index: &mut SourceIndex,
+    scope: &SourceScope,
+    order: &mut usize,
+    function: &FunctionDefine,
+) {
+    for statement in &function.statements {
+        index_statement_address_references(index, scope, order, statement);
+    }
+
+    for arm in &function.match_arms {
+        index_pattern_address_references(index, scope, order, &arm.pattern);
+        index_expression_address_references(index, scope, order, &arm.expression);
+    }
+}
+
+fn index_fsm_implementation_address_references(
+    index: &mut SourceIndex,
+    scope: &SourceScope,
+    order: &mut usize,
+    fsm: &FsmImplementation,
+) {
+    index_pattern_address_references(index, scope, order, &fsm.start);
+
+    for arm in &fsm.arms {
+        match arm {
+            FsmArm::Guard(pattern, guards) => {
+                index_pattern_address_references(index, scope, order, pattern);
+                for guard in guards {
+                    index_pattern_address_references(index, scope, order, &guard.condition);
+                    for transition in &guard.transitions {
+                        index_transition_address_references(index, scope, order, transition);
+                    }
+                }
+            }
+            FsmArm::Transition(pattern, transitions) => {
+                index_pattern_address_references(index, scope, order, pattern);
+                for transition in transitions {
+                    index_transition_address_references(index, scope, order, transition);
+                }
+            }
+            FsmArm::Comment(_) => {}
+        }
+    }
+}
+
+fn index_transition_address_references(
+    index: &mut SourceIndex,
+    scope: &SourceScope,
+    order: &mut usize,
+    transition: &Transition,
+) {
+    match transition {
+        Transition::Async(pattern) | Transition::Next(pattern) | Transition::Output(pattern) => {
+            index_pattern_address_references(index, scope, order, pattern);
+        }
+        Transition::Statement(statement) => {
+            index_statement_address_references(index, scope, order, statement);
+        }
+        Transition::CodeBlock(code_items) => {
+            for (code, _) in code_items {
+                index_mech_code_address_references(index, scope, order, code);
+            }
+        }
+    }
+}
+
 fn index_statement_address_references(
     index: &mut SourceIndex,
     scope: &SourceScope,
@@ -505,6 +536,9 @@ fn index_statement_address_references(
         }
         Statement::VariableAssign(assign) => {
             index_expression_address_references(index, scope, order, &assign.expression)
+        }
+        Statement::ContextSend(send) => {
+            index_expression_address_references(index, scope, order, &send.expression)
         }
         Statement::OpAssign(assign) => {
             index_expression_address_references(index, scope, order, &assign.expression)
@@ -526,7 +560,9 @@ fn index_statement_address_references(
         | Statement::SplitTable
         | Statement::FlattenTable => {}
         #[cfg(feature = "invariant_define")]
-        Statement::InvariantDefine(_) => {}
+        Statement::InvariantDefine(invariant) => {
+            index_expression_address_references(index, scope, order, &invariant.expression);
+        }
     }
 }
 
@@ -582,6 +618,7 @@ fn index_expression_address_references(
         Expression::Match(match_expr) => {
             index_expression_address_references(index, scope, order, &match_expr.source);
             for arm in &match_expr.arms {
+                index_pattern_address_references(index, scope, order, &arm.pattern);
                 if let Some(guard) = &arm.guard {
                     index_expression_address_references(index, scope, order, guard);
                 }
@@ -604,6 +641,11 @@ fn index_expression_address_references(
             }
         }
         Expression::FsmPipe(pipe) => {
+            if let Some(args) = &pipe.start.args {
+                for (_, expression) in args {
+                    index_expression_address_references(index, scope, order, expression);
+                }
+            }
             for transition in &pipe.transitions {
                 match transition {
                     mech_core::Transition::Async(pattern)
@@ -616,26 +658,7 @@ fn index_expression_address_references(
                     }
                     mech_core::Transition::CodeBlock(code_items) => {
                         for (code, _) in code_items {
-                            match code {
-                                MechCode::Import(import) => {
-                                    for declaration in module_import_declarations(import) {
-                                        index.push_import(
-                                            scope.clone(),
-                                            *order,
-                                            declaration_range(import.tokens()),
-                                            declaration,
-                                        );
-                                        *order += 1;
-                                    }
-                                }
-                                MechCode::Statement(statement) => {
-                                    index_statement_address_references(index, scope, order, statement);
-                                }
-                                MechCode::Expression(expression) => {
-                                    index_expression_address_references(index, scope, order, expression);
-                                }
-                                _ => {}
-                            }
+                            index_mech_code_address_references(index, scope, order, code);
                         }
                     }
                 }
@@ -708,10 +731,7 @@ fn index_subscript_address_references(
         }
         Subscript::Formula(factor) => index_factor_address_references(index, scope, order, factor),
         Subscript::Range(range) => index_range_address_references(index, scope, order, range),
-        Subscript::All
-        | Subscript::Dot(_)
-        | Subscript::DotInt(_)
-        | Subscript::Swizzle(_) => {}
+        Subscript::All | Subscript::Dot(_) | Subscript::DotInt(_) | Subscript::Swizzle(_) => {}
     }
 }
 
@@ -853,16 +873,191 @@ fn declaration_range(mut tokens: Vec<Token>) -> Option<SourceRange> {
 mod tests {
     use super::*;
 
+    fn ident(name: &str) -> mech_core::Identifier {
+        mech_core::Identifier {
+            name: Token::new(
+                mech_core::TokenKind::Identifier,
+                SourceRange::default(),
+                name.chars().collect(),
+            ),
+        }
+    }
+
+    fn addressed_var(target: &str, name: &str) -> Expression {
+        Expression::Var(mech_core::Var {
+            name: ident(name),
+            context: Some(ident(target)),
+            kind: None,
+        })
+    }
+
+    fn program_with_code(code: MechCode) -> Program {
+        Program {
+            title: None,
+            body: mech_core::Body {
+                sections: vec![mech_core::Section {
+                    subtitle: None,
+                    elements: vec![SectionElement::MechCode(vec![(code, None)])],
+                }],
+            },
+        }
+    }
+
     #[test]
     fn source_index_treats_unqualified_fenced_mech_as_program_scope() {
-        let tree = mech_syntax::parser::parse(
-            "```mech\n+> @env := cli/env\nhome := @env/HOME\n```\n",
-        ).unwrap();
+        let tree =
+            mech_syntax::parser::parse("```mech\n+> @env := cli/env\nhome := @env/HOME\n```\n")
+                .unwrap();
 
         let index = SourceIndex::from_program(&tree);
 
         assert_eq!(index.imports.len(), 1);
         assert_eq!(index.imports[0].occurrence.scope, SourceScope::Program);
         assert!(index.interpreter_scopes().is_empty());
+    }
+
+    #[test]
+    fn source_index_records_function_body_address_references() {
+        let tree = program_with_code(MechCode::FunctionDefine(FunctionDefine {
+            name: ident("lookup"),
+            input: vec![],
+            output: vec![],
+            statements: vec![Statement::VariableDefine(mech_core::VariableDefine {
+                mutable: false,
+                var: mech_core::Var {
+                    name: ident("result"),
+                    context: None,
+                    kind: None,
+                },
+                expression: addressed_var("missing", "HOME"),
+            })],
+            match_arms: vec![],
+        }));
+
+        let index = SourceIndex::from_program(&tree);
+        assert!(
+            index
+                .program_address_references()
+                .iter()
+                .any(|reference| reference.target == "missing" && reference.name == "HOME"),
+            "expected function body addressed read to be indexed"
+        );
+    }
+
+    #[test]
+    fn source_index_records_function_pattern_address_references() {
+        let tree = program_with_code(MechCode::FunctionDefine(FunctionDefine {
+            name: ident("pick"),
+            input: vec![],
+            output: vec![],
+            statements: vec![],
+            match_arms: vec![mech_core::FunctionMatchArm {
+                pattern: Pattern::Expression(addressed_var("env", "SECRET")),
+                expression: Expression::Literal(mech_core::Literal::Empty(Token::new(
+                    mech_core::TokenKind::Empty,
+                    SourceRange::default(),
+                    vec!['_'],
+                ))),
+            }],
+        }));
+
+        let index = SourceIndex::from_program(&tree);
+        assert!(
+            index
+                .program_address_references()
+                .iter()
+                .any(|reference| reference.target == "env" && reference.name == "SECRET"),
+            "expected function pattern addressed read to be indexed"
+        );
+    }
+
+    #[test]
+    fn source_index_records_match_pattern_address_references() {
+        let tree = mech_syntax::parser::parse(
+            r#"
+x := "secret"
+result := x?
+  | @env/SECRET => "matched"
+  | * => "missed".
+"#,
+        )
+        .unwrap();
+
+        let index = SourceIndex::from_program(&tree);
+        assert!(
+            index
+                .program_address_references()
+                .iter()
+                .any(|reference| reference.target == "env" && reference.name == "SECRET"),
+            "expected match pattern addressed read to be indexed"
+        );
+    }
+
+    #[test]
+    fn source_index_records_fsm_arm_selector_address_references() {
+        let tree = mech_syntax::parser::parse(
+            r#"
+#Pick(x<string>) => <string>
+  ├ :PickState(x<string>)
+  └ :Done(out<string>).
+
+#Pick(x) -> :PickState("not-the-secret")
+  :PickState(@env/STATE) -> :Done("matched")
+  :PickState("not-the-secret") -> :Done("missed")
+  :Done(out) => out.
+"#,
+        )
+        .unwrap();
+
+        let index = SourceIndex::from_program(&tree);
+        assert!(
+            index
+                .program_address_references()
+                .iter()
+                .any(|reference| reference.target == "env" && reference.name == "STATE"),
+            "expected FSM arm selector addressed read to be indexed"
+        );
+    }
+
+    #[test]
+    fn source_index_records_fsm_pipe_start_arg_address_references() {
+        let tree = program_with_code(MechCode::Expression(Expression::FsmPipe(
+            mech_core::FsmPipe {
+                start: mech_core::FsmInstance {
+                    name: ident("Pick"),
+                    args: Some(vec![(None, addressed_var("missing", "x"))]),
+                },
+                transitions: vec![],
+            },
+        )));
+
+        let index = SourceIndex::from_program(&tree);
+        assert!(
+            index
+                .program_address_references()
+                .iter()
+                .any(|reference| reference.target == "missing" && reference.name == "x"),
+            "expected FSM pipe start arg addressed read to be indexed"
+        );
+    }
+
+    #[cfg(feature = "invariant_define")]
+    #[test]
+    fn source_index_records_invariant_address_references() {
+        let tree = program_with_code(MechCode::Statement(Statement::InvariantDefine(
+            mech_core::InvariantDefine {
+                name: ident("check"),
+                expression: addressed_var("missing", "x"),
+            },
+        )));
+
+        let index = SourceIndex::from_program(&tree);
+        assert!(
+            index
+                .program_address_references()
+                .iter()
+                .any(|reference| reference.target == "missing" && reference.name == "x"),
+            "expected invariant addressed read to be indexed"
+        );
     }
 }

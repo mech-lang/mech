@@ -2018,6 +2018,7 @@ impl Formatter {
       Statement::InvariantDefine(inv_def) => self.invariant_define(inv_def),
       Statement::OpAssign(op_asgn) => self.op_assign(op_asgn),
       Statement::VariableAssign(var_asgn) => self.variable_assign(var_asgn),
+      Statement::ContextSend(send) => self.context_send(send),
       Statement::TupleDestructure(tpl_dstrct) => self.tuple_destructure(tpl_dstrct),
       Statement::KindDefine(kind_def) => self.kind_define(kind_def),
       Statement::EnumDefine(enum_def) => self.enum_define(enum_def),
@@ -2189,6 +2190,20 @@ impl Formatter {
       format!("<span class=\"mech-tuple-destructure\"><span class=\"mech-tuple-vars\">({})</span><span class=\"mech-assign-op\">:=</span><span class=\"mech-tuple-expression\">{}</span></span>",vars,expression)
     } else {
       format!("({}) := {}", vars, expression)
+    }
+  }
+
+  pub fn context_send(&mut self, node: &ContextSend) -> String {
+    let target = if let Some(context) = &node.target.context {
+      format!("@{}/{}", context.to_string(), node.target.name.to_string())
+    } else {
+      node.target.name.to_string()
+    };
+    let expression = self.expression(&node.expression);
+    if self.html {
+      format!(r#"<span class="mech-context-send"><span class="mech-target">{}</span><span class="mech-send-op"><-</span><span class="mech-expression">{}</span></span>"#, target, expression)
+    } else {
+      format!("{} <- {}", target, expression)
     }
   }
 
