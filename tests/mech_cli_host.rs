@@ -774,3 +774,52 @@ x := @missing/HOME
     "provider wrote before undeclared context read failed preflight:\n{combined}"
   );
 }
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_fsm_arm_context_pattern_is_literal_not_capture() {
+  let root = temp_root("fsm-context-pattern");
+  let source = root.join("fsm_context_pattern.mec");
+
+  std::fs::write(
+    &source,
+    r#"+> @env := cli/env
++> @out := cli/stdout
+
+#Pick(x<string>) => <string>
+  ├ :PickState(x<string>)
+  └ :Done(out<string>).
+
+#Pick(x) -> :PickState("not-the-secret")
+  :PickState(@env/MECH_FSM_PATTERN_TEST) -> :Done("matched")
+  :PickState("not-the-secret") -> :Done("missed")
+  :PickState("secret") -> :Done("matched")
+  :Done(out) => out.
+
+@out/line <- #Pick("ignored")
+"done"
+"#,
+  )
+  .unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg(&source)
+    .env("MECH_FSM_PATTERN_TEST", "secret")
+    .output()
+    .unwrap();
+
+  let combined = combined_output(&output);
+  assert!(
+    output.status.success(),
+    "FSM context-pattern program failed:\n{combined}"
+  );
+  assert!(
+    combined.contains("missed"),
+    "nonmatching FSM state should not be captured by context arm:\n{combined}"
+  );
+  assert!(
+    !combined.contains("matched"),
+    "context FSM arm matched too broadly:\n{combined}"
+  );
+}

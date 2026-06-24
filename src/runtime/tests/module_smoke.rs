@@ -2329,7 +2329,7 @@ fn resolving_module_with_fenced_context_import_does_not_pollute_direct_runtime_b
   let error = format!("{:?}", result.err().unwrap());
 
   assert!(
-    error.contains("UnknownAddressTarget") || error.contains("Undefined"),
+    error.contains("UnknownAddressTarget") || error.contains("Undefined") || error.contains("direct_context_target"),
     "expected @ui not to exist in direct runtime scope, got {error}"
   );
   assert!(
@@ -3163,6 +3163,10 @@ impl RuntimeResourceProvider for RecordingResourceProvider {
 
   fn base_uris(&self) -> Vec<String> { self.bases.clone() }
 
+  fn preflight_write(&self, _request: RuntimeResourceWritePreflightRequest) -> mech_core::MResult<()> {
+    Ok(())
+  }
+
   fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
     self.values
       .lock()
@@ -3676,4 +3680,31 @@ fn top_level_context_assignment_still_writes_and_reads() {
   ).unwrap();
 
   assert_bool_true(result, "top-level context assignment");
+}
+
+#[test]
+fn module_interpreter_address_preflight_allows_non_context_target() {
+  let root = setup_modules("~~~mech:foo
+ok := true
+<+ ok
+~~~
+
+result := @foo/ok
+");
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  assert_bool_true(runtime.run_module(version).unwrap(), "interpreter address from program");
+}
+
+#[test]
+fn module_unknown_address_target_still_fails_before_execution() {
+  let root = setup_modules("result := @missing/HOME
+");
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("UnknownAddressTarget"), "expected unknown address target, got {error}");
+  assert!(error.contains("missing"), "expected missing target in error, got {error}");
 }

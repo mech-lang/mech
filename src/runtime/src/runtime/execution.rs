@@ -29,6 +29,18 @@ enum DirectContextEffectPlacement {
   FsmTransition,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum AddressedReadPreflight {
+  RequireContextBinding,
+  AllowModuleAddressTargets,
+}
+
+impl AddressedReadPreflight {
+  fn requires_context_binding(self) -> bool {
+    matches!(self, AddressedReadPreflight::RequireContextBinding)
+  }
+}
+
 impl DirectContextEffectPlacement {
   fn description(self) -> &'static str {
     match self {
@@ -450,7 +462,7 @@ impl MechRuntime {
         };
         let target = var_context.to_string();
         let Some(binding) = registry.get(&target) else {
-          return Err(undeclared_direct_context_target_error(&target));
+          return Ok(expression.clone());
         };
         let path = var.name.to_string();
         let value = self.read_context_resource(context, binding, &path)?;
@@ -502,7 +514,7 @@ impl MechRuntime {
               reason: "context-addressed slices are not supported".to_string(),
             }, None));
           }
-          return Err(undeclared_direct_context_target_error(&context_name));
+          return Ok(expression.clone());
         }
         Ok(mech_core::Expression::Slice(
           self.resolve_context_reads_in_slice(context, program, registry, slice)?,
@@ -966,16 +978,21 @@ impl MechRuntime {
     let arms = fsm.arms.iter().map(|arm| {
       match arm {
         mech_core::FsmArm::Guard(pattern, guards) => Ok(mech_core::FsmArm::Guard(
-          self.resolve_context_reads_in_pattern(context, program, registry, pattern)?,
+          self.resolve_context_reads_in_match_pattern(context, program, registry, pattern)?,
           guards.iter().map(|guard| Ok(mech_core::Guard {
-            condition: self.resolve_context_reads_in_pattern(context, program, registry, &guard.condition)?,
+            condition: self.resolve_context_reads_in_match_pattern(
+              context,
+              program,
+              registry,
+              &guard.condition,
+            )?,
             transitions: guard.transitions.iter()
               .map(|transition| self.resolve_context_reads_in_transition(context, program, registry, transition))
               .collect::<MResult<Vec<_>>>()?,
           })).collect::<MResult<Vec<_>>>()?,
         )),
         mech_core::FsmArm::Transition(pattern, transitions) => Ok(mech_core::FsmArm::Transition(
-          self.resolve_context_reads_in_pattern(context, program, registry, pattern)?,
+          self.resolve_context_reads_in_match_pattern(context, program, registry, pattern)?,
           transitions.iter()
             .map(|transition| self.resolve_context_reads_in_transition(context, program, registry, transition))
             .collect::<MResult<Vec<_>>>()?,
@@ -987,7 +1004,7 @@ impl MechRuntime {
     Ok(mech_core::FsmImplementation {
       name: fsm.name.clone(),
       input: fsm.input.clone(),
-      start: self.resolve_context_reads_in_pattern(context, program, registry, &fsm.start)?,
+      start: self.resolve_context_reads_in_match_pattern(context, program, registry, &fsm.start)?,
       arms,
     })
   }
@@ -1210,7 +1227,7 @@ impl MechRuntime {
     scope: &SourceScope,
   ) -> MResult<()> {
     let registry = self.direct_context_registry_for_scope(tree, scope)?;
-    self.preflight_context_capabilities_with_registry(context, &registry, tree, scope)
+    self.preflight_context_capabilities_with_registry(context, &registry, tree, scope, AddressedReadPreflight::RequireContextBinding)
   }
 
   fn preflight_context_capabilities_with_registry(
@@ -1219,20 +1236,21 @@ impl MechRuntime {
     registry: &RuntimeContextRegistry,
     tree: &mech_core::Program,
     scope: &SourceScope,
+    addressed_read_preflight: AddressedReadPreflight,
   ) -> MResult<()> {
     for section in &tree.body.sections {
       for element in &section.elements {
         match element {
           mech_core::SectionElement::MechCode(codes) => {
             for (code, _) in codes {
-              self.preflight_code_context_capabilities(context, registry, code, DirectContextEffectPlacement::TopLevel)?;
+              self.preflight_code_context_capabilities(context, registry, code, DirectContextEffectPlacement::TopLevel, addressed_read_preflight)?;
             }
           }
           mech_core::SectionElement::FencedMechCode(fenced)
             if Self::executable_fence_for_scope(fenced, scope) =>
           {
             for (code, _) in &fenced.code {
-              self.preflight_code_context_capabilities(context, registry, code, DirectContextEffectPlacement::TopLevel)?;
+              self.preflight_code_context_capabilities(context, registry, code, DirectContextEffectPlacement::TopLevel, addressed_read_preflight)?;
             }
           }
           _ => {}
@@ -1248,19 +1266,20 @@ impl MechRuntime {
     registry: &RuntimeContextRegistry,
     code: &mech_core::MechCode,
     placement: DirectContextEffectPlacement,
+    addressed_read_preflight: AddressedReadPreflight,
   ) -> MResult<()> {
     match code {
       mech_core::MechCode::Statement(statement) => {
-        self.preflight_statement_context_capabilities(context, registry, statement, placement)
+        self.preflight_statement_context_capabilities(context, registry, statement, placement, addressed_read_preflight)
       }
       mech_core::MechCode::Expression(expression) => {
-        self.preflight_expression_context_reads(context, registry, expression)
+        self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)
       }
       mech_core::MechCode::FsmImplementation(fsm) => {
-        self.preflight_fsm_implementation_context_capabilities(context, registry, fsm)
+        self.preflight_fsm_implementation_context_capabilities(context, registry, fsm, addressed_read_preflight)
       }
       mech_core::MechCode::FunctionDefine(function) => {
-        self.preflight_function_define_context_capabilities(context, registry, function)
+        self.preflight_function_define_context_capabilities(context, registry, function, addressed_read_preflight)
       }
       mech_core::MechCode::Import(_)
       | mech_core::MechCode::Comment(_)
@@ -1274,6 +1293,7 @@ impl MechRuntime {
     context: &RuntimeContext,
     registry: &RuntimeContextRegistry,
     function: &mech_core::FunctionDefine,
+    addressed_read_preflight: AddressedReadPreflight,
   ) -> MResult<()> {
     for statement in &function.statements {
       self.preflight_statement_context_capabilities(
@@ -1281,11 +1301,12 @@ impl MechRuntime {
         registry,
         statement,
         DirectContextEffectPlacement::FunctionBody,
+        addressed_read_preflight,
       )?;
     }
     for arm in &function.match_arms {
-      self.preflight_pattern_context_reads(context, registry, &arm.pattern)?;
-      self.preflight_expression_context_reads(context, registry, &arm.expression)?;
+      self.preflight_pattern_context_reads(context, registry, &arm.pattern, addressed_read_preflight)?;
+      self.preflight_expression_context_reads(context, registry, &arm.expression, addressed_read_preflight)?;
     }
     Ok(())
   }
@@ -1295,23 +1316,24 @@ impl MechRuntime {
     context: &RuntimeContext,
     registry: &RuntimeContextRegistry,
     fsm: &mech_core::FsmImplementation,
+    addressed_read_preflight: AddressedReadPreflight,
   ) -> MResult<()> {
-    self.preflight_pattern_context_reads(context, registry, &fsm.start)?;
+    self.preflight_pattern_context_reads(context, registry, &fsm.start, addressed_read_preflight)?;
     for arm in &fsm.arms {
       match arm {
         mech_core::FsmArm::Guard(pattern, guards) => {
-          self.preflight_pattern_context_reads(context, registry, pattern)?;
+          self.preflight_pattern_context_reads(context, registry, pattern, addressed_read_preflight)?;
           for guard in guards {
-            self.preflight_pattern_context_reads(context, registry, &guard.condition)?;
+            self.preflight_pattern_context_reads(context, registry, &guard.condition, addressed_read_preflight)?;
             for transition in &guard.transitions {
-              self.preflight_transition_context_capabilities(context, registry, transition)?;
+              self.preflight_transition_context_capabilities(context, registry, transition, addressed_read_preflight)?;
             }
           }
         }
         mech_core::FsmArm::Transition(pattern, transitions) => {
-          self.preflight_pattern_context_reads(context, registry, pattern)?;
+          self.preflight_pattern_context_reads(context, registry, pattern, addressed_read_preflight)?;
           for transition in transitions {
-            self.preflight_transition_context_capabilities(context, registry, transition)?;
+            self.preflight_transition_context_capabilities(context, registry, transition, addressed_read_preflight)?;
           }
         }
         mech_core::FsmArm::Comment(_) => {}
@@ -1325,12 +1347,13 @@ impl MechRuntime {
     context: &RuntimeContext,
     registry: &RuntimeContextRegistry,
     transition: &mech_core::Transition,
+    addressed_read_preflight: AddressedReadPreflight,
   ) -> MResult<()> {
     match transition {
       mech_core::Transition::Async(pattern)
       | mech_core::Transition::Next(pattern)
       | mech_core::Transition::Output(pattern) => {
-        self.preflight_pattern_context_reads(context, registry, pattern)
+        self.preflight_pattern_context_reads(context, registry, pattern, addressed_read_preflight)
       }
       mech_core::Transition::CodeBlock(code_items) => {
         for (code, _) in code_items {
@@ -1339,6 +1362,7 @@ impl MechRuntime {
             registry,
             code,
             DirectContextEffectPlacement::FsmTransition,
+            addressed_read_preflight,
           )?;
         }
         Ok(())
@@ -1349,6 +1373,7 @@ impl MechRuntime {
           registry,
           statement,
           DirectContextEffectPlacement::FsmTransition,
+          addressed_read_preflight,
         )
       }
     }
@@ -1359,34 +1384,35 @@ impl MechRuntime {
     context: &RuntimeContext,
     registry: &RuntimeContextRegistry,
     pattern: &mech_core::Pattern,
+    addressed_read_preflight: AddressedReadPreflight,
   ) -> MResult<()> {
     match pattern {
       mech_core::Pattern::Expression(expression) => {
-        self.preflight_expression_context_reads(context, registry, expression)
+        self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)
       }
       mech_core::Pattern::TupleStruct(tuple_struct) => {
         for pattern in &tuple_struct.patterns {
-          self.preflight_pattern_context_reads(context, registry, pattern)?;
+          self.preflight_pattern_context_reads(context, registry, pattern, addressed_read_preflight)?;
         }
         Ok(())
       }
       mech_core::Pattern::Tuple(tuple) => {
         for pattern in &tuple.0 {
-          self.preflight_pattern_context_reads(context, registry, pattern)?;
+          self.preflight_pattern_context_reads(context, registry, pattern, addressed_read_preflight)?;
         }
         Ok(())
       }
       mech_core::Pattern::Array(array) => {
         for pattern in &array.prefix {
-          self.preflight_pattern_context_reads(context, registry, pattern)?;
+          self.preflight_pattern_context_reads(context, registry, pattern, addressed_read_preflight)?;
         }
         if let Some(spread) = &array.spread {
           if let Some(binding) = &spread.binding {
-            self.preflight_pattern_context_reads(context, registry, binding)?;
+            self.preflight_pattern_context_reads(context, registry, binding, addressed_read_preflight)?;
           }
         }
         for pattern in &array.suffix {
-          self.preflight_pattern_context_reads(context, registry, pattern)?;
+          self.preflight_pattern_context_reads(context, registry, pattern, addressed_read_preflight)?;
         }
         Ok(())
       }
@@ -1400,6 +1426,7 @@ impl MechRuntime {
     registry: &RuntimeContextRegistry,
     statement: &mech_core::Statement,
     placement: DirectContextEffectPlacement,
+    addressed_read_preflight: AddressedReadPreflight,
   ) -> MResult<()> {
     match statement {
       mech_core::Statement::VariableDefine(var_def) => {
@@ -1412,7 +1439,7 @@ impl MechRuntime {
             ),
           }, None));
         }
-        self.preflight_expression_context_reads(context, registry, &var_def.expression)
+        self.preflight_expression_context_reads(context, registry, &var_def.expression, addressed_read_preflight)
       }
       mech_core::Statement::VariableAssign(assign) => {
         if let Some(context_name) = &assign.target.context {
@@ -1434,7 +1461,7 @@ impl MechRuntime {
             Some(RuntimeResourceWriteIntent::Assign),
           )?;
         }
-        self.preflight_expression_context_reads(context, registry, &assign.expression)?;
+        self.preflight_expression_context_reads(context, registry, &assign.expression, addressed_read_preflight)?;
         Ok(())
       }
       mech_core::Statement::ContextSend(send) => {
@@ -1465,7 +1492,7 @@ impl MechRuntime {
           Some(RuntimeResourceWriteIntent::Send),
         )?;
 
-        self.preflight_expression_context_reads(context, registry, &send.expression)?;
+        self.preflight_expression_context_reads(context, registry, &send.expression, addressed_read_preflight)?;
         Ok(())
       }
       mech_core::Statement::OpAssign(op_assign) => {
@@ -1475,16 +1502,16 @@ impl MechRuntime {
             reason: "context op-assignment is not supported; use `=` or `<-`".to_string(),
           }, None));
         }
-        self.preflight_expression_context_reads(context, registry, &op_assign.expression)
+        self.preflight_expression_context_reads(context, registry, &op_assign.expression, addressed_read_preflight)
       }
       mech_core::Statement::TupleDestructure(tuple_destructure) => self
-        .preflight_expression_context_reads(context, registry, &tuple_destructure.expression),
+        .preflight_expression_context_reads(context, registry, &tuple_destructure.expression, addressed_read_preflight),
       #[cfg(feature = "invariant_define")]
       mech_core::Statement::InvariantDefine(invariant) => {
-        self.preflight_expression_context_reads(context, registry, &invariant.expression)
+        self.preflight_expression_context_reads(context, registry, &invariant.expression, addressed_read_preflight)
       }
       mech_core::Statement::FsmDeclare(fsm) => {
-        self.preflight_fsm_pipe_context_capabilities(context, registry, &fsm.pipe)
+        self.preflight_fsm_pipe_context_capabilities(context, registry, &fsm.pipe, addressed_read_preflight)
       }
       _ => Ok(()),
     }
@@ -1495,15 +1522,16 @@ impl MechRuntime {
     context: &RuntimeContext,
     registry: &RuntimeContextRegistry,
     pipe: &mech_core::FsmPipe,
+    addressed_read_preflight: AddressedReadPreflight,
   ) -> MResult<()> {
     if let Some(args) = &pipe.start.args {
       for (_, expression) in args {
-        self.preflight_expression_context_reads(context, registry, expression)?;
+        self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)?;
       }
     }
 
     for transition in &pipe.transitions {
-      self.preflight_transition_context_capabilities(context, registry, transition)?;
+      self.preflight_transition_context_capabilities(context, registry, transition, addressed_read_preflight)?;
     }
 
     Ok(())
@@ -1514,51 +1542,55 @@ impl MechRuntime {
     context: &RuntimeContext,
     registry: &RuntimeContextRegistry,
     expression: &mech_core::Expression,
+    addressed_read_preflight: AddressedReadPreflight,
   ) -> MResult<()> {
     match expression {
       mech_core::Expression::Var(var) => {
         if let Some(context_name) = &var.context {
-          self.preflight_context_access(
-            context,
-            registry,
-            &context_name.to_string(),
-            &var.name.to_string(),
-            RuntimeCapabilityOperation::Read,
-            true,
-            None,
-          )?;
+          let context_name = context_name.to_string();
+          if registry.contains(&context_name) || addressed_read_preflight.requires_context_binding() {
+            self.preflight_context_access(
+              context,
+              registry,
+              &context_name,
+              &var.name.to_string(),
+              RuntimeCapabilityOperation::Read,
+              true,
+              None,
+            )?;
+          }
         }
       }
       mech_core::Expression::Formula(factor) => {
-        self.preflight_factor_context_reads(context, registry, factor)?;
+        self.preflight_factor_context_reads(context, registry, factor, addressed_read_preflight)?;
       }
       mech_core::Expression::FunctionCall(call) => {
         for (_, expression) in &call.args {
-          self.preflight_expression_context_reads(context, registry, expression)?;
+          self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)?;
         }
       }
       mech_core::Expression::FsmPipe(pipe) => {
-        self.preflight_fsm_pipe_context_capabilities(context, registry, pipe)?;
+        self.preflight_fsm_pipe_context_capabilities(context, registry, pipe, addressed_read_preflight)?;
       }
       mech_core::Expression::Literal(_) => {}
       mech_core::Expression::Range(range) => {
-        self.preflight_factor_context_reads(context, registry, &range.start)?;
+        self.preflight_factor_context_reads(context, registry, &range.start, addressed_read_preflight)?;
         if let Some((_, increment)) = &range.increment {
-          self.preflight_factor_context_reads(context, registry, increment)?;
+          self.preflight_factor_context_reads(context, registry, increment, addressed_read_preflight)?;
         }
-        self.preflight_factor_context_reads(context, registry, &range.terminal)?;
+        self.preflight_factor_context_reads(context, registry, &range.terminal, addressed_read_preflight)?;
       }
       mech_core::Expression::Structure(structure) => {
-        self.preflight_structure_context_reads(context, registry, structure)?;
+        self.preflight_structure_context_reads(context, registry, structure, addressed_read_preflight)?;
       }
       mech_core::Expression::Match(match_expression) => {
-        self.preflight_expression_context_reads(context, registry, &match_expression.source)?;
+        self.preflight_expression_context_reads(context, registry, &match_expression.source, addressed_read_preflight)?;
         for arm in &match_expression.arms {
-          self.preflight_pattern_context_reads(context, registry, &arm.pattern)?;
+          self.preflight_pattern_context_reads(context, registry, &arm.pattern, addressed_read_preflight)?;
           if let Some(guard) = &arm.guard {
-            self.preflight_expression_context_reads(context, registry, guard)?;
+            self.preflight_expression_context_reads(context, registry, guard, addressed_read_preflight)?;
           }
-          self.preflight_expression_context_reads(context, registry, &arm.expression)?;
+          self.preflight_expression_context_reads(context, registry, &arm.expression, addressed_read_preflight)?;
         }
       }
       mech_core::Expression::Slice(slice) => {
@@ -1570,20 +1602,22 @@ impl MechRuntime {
               reason: "context-addressed slices are not supported".to_string(),
             }, None));
           }
-          return Err(undeclared_direct_context_target_error(&context_name));
+          if addressed_read_preflight.requires_context_binding() {
+            return Err(undeclared_direct_context_target_error(&context_name));
+          }
         }
-        self.preflight_slice_context_reads(context, registry, slice)?;
+        self.preflight_slice_context_reads(context, registry, slice, addressed_read_preflight)?;
       }
       mech_core::Expression::SetComprehension(comprehension) => {
-        self.preflight_expression_context_reads(context, registry, &comprehension.expression)?;
+        self.preflight_expression_context_reads(context, registry, &comprehension.expression, addressed_read_preflight)?;
         for qualifier in &comprehension.qualifiers {
-          self.preflight_comprehension_qualifier_context_reads(context, registry, qualifier)?;
+          self.preflight_comprehension_qualifier_context_reads(context, registry, qualifier, addressed_read_preflight)?;
         }
       }
       mech_core::Expression::MatrixComprehension(comprehension) => {
-        self.preflight_expression_context_reads(context, registry, &comprehension.expression)?;
+        self.preflight_expression_context_reads(context, registry, &comprehension.expression, addressed_read_preflight)?;
         for qualifier in &comprehension.qualifiers {
-          self.preflight_comprehension_qualifier_context_reads(context, registry, qualifier)?;
+          self.preflight_comprehension_qualifier_context_reads(context, registry, qualifier, addressed_read_preflight)?;
         }
       }
     }
@@ -1595,21 +1629,22 @@ impl MechRuntime {
     context: &RuntimeContext,
     registry: &RuntimeContextRegistry,
     factor: &mech_core::Factor,
+    addressed_read_preflight: AddressedReadPreflight,
   ) -> MResult<()> {
     match factor {
       mech_core::Factor::Expression(expression) => {
-        self.preflight_expression_context_reads(context, registry, expression)
+        self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)
       }
       mech_core::Factor::Negate(factor)
       | mech_core::Factor::Not(factor)
       | mech_core::Factor::Parenthetical(factor)
       | mech_core::Factor::Transpose(factor) => {
-        self.preflight_factor_context_reads(context, registry, factor)
+        self.preflight_factor_context_reads(context, registry, factor, addressed_read_preflight)
       }
       mech_core::Factor::Term(term) => {
-        self.preflight_factor_context_reads(context, registry, &term.lhs)?;
+        self.preflight_factor_context_reads(context, registry, &term.lhs, addressed_read_preflight)?;
         for (_, factor) in &term.rhs {
-          self.preflight_factor_context_reads(context, registry, factor)?;
+          self.preflight_factor_context_reads(context, registry, factor, addressed_read_preflight)?;
         }
         Ok(())
       }
@@ -1621,45 +1656,46 @@ impl MechRuntime {
     context: &RuntimeContext,
     registry: &RuntimeContextRegistry,
     structure: &mech_core::Structure,
+    addressed_read_preflight: AddressedReadPreflight,
   ) -> MResult<()> {
     match structure {
       mech_core::Structure::Map(map) => {
         for mapping in &map.elements {
-          self.preflight_expression_context_reads(context, registry, &mapping.key)?;
-          self.preflight_expression_context_reads(context, registry, &mapping.value)?;
+          self.preflight_expression_context_reads(context, registry, &mapping.key, addressed_read_preflight)?;
+          self.preflight_expression_context_reads(context, registry, &mapping.value, addressed_read_preflight)?;
         }
       }
       mech_core::Structure::Set(set) => {
         for expression in &set.elements {
-          self.preflight_expression_context_reads(context, registry, expression)?;
+          self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)?;
         }
       }
       mech_core::Structure::Matrix(matrix) => {
         for row in &matrix.rows {
           for column in &row.columns {
-            self.preflight_expression_context_reads(context, registry, &column.element)?;
+            self.preflight_expression_context_reads(context, registry, &column.element, addressed_read_preflight)?;
           }
         }
       }
       mech_core::Structure::Record(record) => {
         for binding in &record.bindings {
-          self.preflight_expression_context_reads(context, registry, &binding.value)?;
+          self.preflight_expression_context_reads(context, registry, &binding.value, addressed_read_preflight)?;
         }
       }
       mech_core::Structure::Table(table) => {
         for row in &table.rows {
           for column in &row.columns {
-            self.preflight_expression_context_reads(context, registry, &column.element)?;
+            self.preflight_expression_context_reads(context, registry, &column.element, addressed_read_preflight)?;
           }
         }
       }
       mech_core::Structure::Tuple(tuple) => {
         for expression in &tuple.elements {
-          self.preflight_expression_context_reads(context, registry, expression)?;
+          self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)?;
         }
       }
       mech_core::Structure::TupleStruct(tuple_struct) => {
-        self.preflight_expression_context_reads(context, registry, &tuple_struct.value)?;
+        self.preflight_expression_context_reads(context, registry, &tuple_struct.value, addressed_read_preflight)?;
       }
       _ => {}
     }
@@ -1671,9 +1707,10 @@ impl MechRuntime {
     context: &RuntimeContext,
     registry: &RuntimeContextRegistry,
     slice: &mech_core::Slice,
+    addressed_read_preflight: AddressedReadPreflight,
   ) -> MResult<()> {
     for subscript in &slice.subscript {
-      self.preflight_subscript_context_reads(context, registry, subscript)?;
+      self.preflight_subscript_context_reads(context, registry, subscript, addressed_read_preflight)?;
     }
     Ok(())
   }
@@ -1683,22 +1720,23 @@ impl MechRuntime {
     context: &RuntimeContext,
     registry: &RuntimeContextRegistry,
     subscript: &mech_core::Subscript,
+    addressed_read_preflight: AddressedReadPreflight,
   ) -> MResult<()> {
     match subscript {
       mech_core::Subscript::Brace(subscripts) | mech_core::Subscript::Bracket(subscripts) => {
         for subscript in subscripts {
-          self.preflight_subscript_context_reads(context, registry, subscript)?;
+          self.preflight_subscript_context_reads(context, registry, subscript, addressed_read_preflight)?;
         }
       }
       mech_core::Subscript::Formula(factor) => {
-        self.preflight_factor_context_reads(context, registry, factor)?;
+        self.preflight_factor_context_reads(context, registry, factor, addressed_read_preflight)?;
       }
       mech_core::Subscript::Range(range) => {
-        self.preflight_factor_context_reads(context, registry, &range.start)?;
+        self.preflight_factor_context_reads(context, registry, &range.start, addressed_read_preflight)?;
         if let Some((_, increment)) = &range.increment {
-          self.preflight_factor_context_reads(context, registry, increment)?;
+          self.preflight_factor_context_reads(context, registry, increment, addressed_read_preflight)?;
         }
-        self.preflight_factor_context_reads(context, registry, &range.terminal)?;
+        self.preflight_factor_context_reads(context, registry, &range.terminal, addressed_read_preflight)?;
       }
       _ => {}
     }
@@ -1710,17 +1748,18 @@ impl MechRuntime {
     context: &RuntimeContext,
     registry: &RuntimeContextRegistry,
     qualifier: &mech_core::ComprehensionQualifier,
+    addressed_read_preflight: AddressedReadPreflight,
   ) -> MResult<()> {
     match qualifier {
       mech_core::ComprehensionQualifier::Generator((pattern, expression)) => {
-        self.preflight_pattern_context_reads(context, registry, pattern)?;
-        self.preflight_expression_context_reads(context, registry, expression)
+        self.preflight_pattern_context_reads(context, registry, pattern, addressed_read_preflight)?;
+        self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)
       }
       mech_core::ComprehensionQualifier::Filter(expression) => {
-        self.preflight_expression_context_reads(context, registry, expression)
+        self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)
       }
       mech_core::ComprehensionQualifier::Let(var_def) => {
-        self.preflight_expression_context_reads(context, registry, &var_def.expression)
+        self.preflight_expression_context_reads(context, registry, &var_def.expression, addressed_read_preflight)
       }
     }
   }
@@ -2250,10 +2289,10 @@ impl MechRuntime {
     match source {
       MechSourceCode::String(source) => {
         let tree = mech_syntax::parser::parse(source.trim())?;
-        self.preflight_context_capabilities_with_registry(context, registry, &tree, scope)
+        self.preflight_context_capabilities_with_registry(context, registry, &tree, scope, AddressedReadPreflight::AllowModuleAddressTargets)
       }
       MechSourceCode::Tree(tree) => {
-        self.preflight_context_capabilities_with_registry(context, registry, tree, scope)
+        self.preflight_context_capabilities_with_registry(context, registry, tree, scope, AddressedReadPreflight::AllowModuleAddressTargets)
       }
       MechSourceCode::Program(sources) => {
         for source in sources {
@@ -2430,15 +2469,33 @@ impl MechRuntime {
 
     let result = match source {
       MechSourceCode::String(source) => match mech_syntax::parser::parse(source.trim()) {
-        Ok(tree) => match self.preflight_context_capabilities(context, &tree, &execution_scope) {
-          Ok(()) => self.run_tree_on_program(context, program, &tree, Some(&execution_scope)),
-          Err(error) => Err(error),
+        Ok(tree) => {
+          let registry = self.direct_context_registry_for_scope(&tree, &execution_scope)?;
+          match self.preflight_context_capabilities_with_registry(
+            context,
+            &registry,
+            &tree,
+            &execution_scope,
+            AddressedReadPreflight::AllowModuleAddressTargets,
+          ) {
+            Ok(()) => self.run_tree_on_program(context, program, &tree, Some(&execution_scope)),
+            Err(error) => Err(error),
+          }
         },
         Err(error) => Err(error),
       },
-      MechSourceCode::Tree(tree) => match self.preflight_context_capabilities(context, tree, &execution_scope) {
-        Ok(()) => self.run_tree_on_program(context, program, tree, Some(&execution_scope)),
-        Err(error) => Err(error),
+      MechSourceCode::Tree(tree) => {
+        let registry = self.direct_context_registry_for_scope(tree, &execution_scope)?;
+        match self.preflight_context_capabilities_with_registry(
+          context,
+          &registry,
+          tree,
+          &execution_scope,
+          AddressedReadPreflight::AllowModuleAddressTargets,
+        ) {
+          Ok(()) => self.run_tree_on_program(context, program, tree, Some(&execution_scope)),
+          Err(error) => Err(error),
+        }
       },
       MechSourceCode::Program(sources) => {
         let mut result = Ok(Value::Empty);
