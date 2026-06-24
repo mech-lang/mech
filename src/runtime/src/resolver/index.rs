@@ -988,15 +988,19 @@ result := x?
 
     #[test]
     fn source_index_records_fsm_arm_selector_address_references() {
-        let tree = program_with_code(MechCode::FsmImplementation(FsmImplementation {
-            name: ident("Pick"),
-            input: vec![],
-            start: Pattern::Wildcard,
-            arms: vec![FsmArm::Transition(
-                Pattern::Expression(addressed_var("env", "STATE")),
-                vec![],
-            )],
-        }));
+        let tree = mech_syntax::parser::parse(
+            r#"
+#Pick(x<string>) => <string>
+  ├ :PickState(x<string>)
+  └ :Done(out<string>).
+
+#Pick(x) -> :PickState("not-the-secret")
+  :PickState(@env/STATE) -> :Done("matched")
+  :PickState("not-the-secret") -> :Done("missed")
+  :Done(out) => out.
+"#,
+        )
+        .unwrap();
 
         let index = SourceIndex::from_program(&tree);
         assert!(
