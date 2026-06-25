@@ -843,11 +843,18 @@ pub struct ModuleImportGroupItem {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ModuleImportAlias {
+  Value(ModuleImportPath),
+  Context(Identifier),
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ModuleImport {
   pub module: Identifier,
   pub item: Option<ModuleImportPath>,
   pub group_items: Option<Vec<ModuleImportGroupItem>>,
-  pub alias: Option<ModuleImportPath>,
+  pub alias: Option<ModuleImportAlias>,
   pub kind: ModuleImportKind,
 }
 
@@ -899,6 +906,33 @@ impl fmt::Display for ModuleImportPath {
       .collect::<Vec<_>>()
       .join("/");
     write!(f, "{parts}")
+  }
+}
+
+
+impl ModuleImportAlias {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      ModuleImportAlias::Value(path) => path.tokens(),
+      ModuleImportAlias::Context(identifier) => {
+        let mut tokens = vec![Token {
+          kind: TokenKind::At,
+          chars: vec!['@'],
+          src_range: identifier.name.src_range.clone(),
+        }];
+        tokens.append(&mut identifier.tokens());
+        tokens
+      }
+    }
+  }
+}
+
+impl fmt::Display for ModuleImportAlias {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      ModuleImportAlias::Value(path) => write!(f, "{}", path),
+      ModuleImportAlias::Context(identifier) => write!(f, "@{}", identifier.to_string()),
+    }
   }
 }
 
@@ -1253,6 +1287,7 @@ pub enum Statement {
   OpAssign(OpAssign),
   VariableAssign(VariableAssign),
   VariableDefine(VariableDefine),
+  ContextSend(ContextSend),
   #[cfg(feature = "invariant_define")]
   InvariantDefine(InvariantDefine),
   TupleDestructure(TupleDestructure),
@@ -1272,6 +1307,7 @@ impl Statement {
       Statement::OpAssign(x) => x.tokens(),
       Statement::VariableAssign(x) => x.tokens(),
       Statement::VariableDefine(x) => x.tokens(),
+      Statement::ContextSend(x) => x.tokens(),
       #[cfg(feature = "invariant_define")]
       Statement::InvariantDefine(x) => x.tokens(),
       Statement::TupleDestructure(x) => x.tokens(),
@@ -1840,6 +1876,21 @@ impl Var {
 pub struct VariableAssign {
   pub target: SliceRef,
   pub expression: Expression,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ContextSend {
+  pub target: Var,
+  pub expression: Expression,
+}
+
+impl ContextSend {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.target.tokens();
+    tkns.append(&mut self.expression.tokens());
+    tkns
+  }
 }
 
 impl VariableAssign {

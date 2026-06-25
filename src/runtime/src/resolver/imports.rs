@@ -1,21 +1,21 @@
 use mech_core::FencedMechCode;
 
-use super::{SourceExportDeclaration, SourceImportDeclaration, SourceImportKind, SourceRequest};
+use super::{SourceExportDeclaration, SourceImportAlias, SourceImportDeclaration, SourceImportKind, SourceRequest};
 
 pub fn classify_import_specifier(specifier: impl Into<String>) -> SourceImportDeclaration {
   let specifier = specifier.into();
   if let Some(prefix) = specifier.strip_suffix("/*") {
-    SourceImportDeclaration { specifier: prefix.to_string(), alias: None, kind: SourceImportKind::Wildcard }
+    SourceImportDeclaration { specifier: prefix.to_string(), alias: None, module: None, item: None, kind: SourceImportKind::Wildcard }
   } else if specifier.contains("://")
     || specifier.starts_with("./")
     || specifier.starts_with("../")
     || specifier.ends_with(".mec")
   {
-    SourceImportDeclaration { specifier, alias: None, kind: SourceImportKind::DependencyOnly }
+    SourceImportDeclaration { specifier, alias: None, module: None, item: None, kind: SourceImportKind::DependencyOnly }
   } else if let Some((module, name)) = specifier.rsplit_once('/') {
-    SourceImportDeclaration { specifier: module.to_string(), alias: None, kind: SourceImportKind::Single { name: name.to_string() } }
+    SourceImportDeclaration { specifier: module.to_string(), alias: None, module: None, item: None, kind: SourceImportKind::Single { name: name.to_string() } }
   } else {
-    SourceImportDeclaration { specifier, alias: None, kind: SourceImportKind::Namespace }
+    SourceImportDeclaration { specifier, alias: None, module: None, item: None, kind: SourceImportKind::Namespace }
   }
 }
 
@@ -66,7 +66,7 @@ fn module_import_item_path(item: &mech_core::ModuleImportPath) -> String {
   item.to_string()
 }
 
-fn classified_module_import(module: &str, item: Option<&str>, alias: Option<String>) -> SourceImportDeclaration {
+fn classified_module_import(module: &str, item: Option<&str>, alias: Option<SourceImportAlias>) -> SourceImportDeclaration {
   let specifier = match item {
     Some(item) => format!("{module}/{item}"),
     None => module.to_string(),
@@ -74,6 +74,8 @@ fn classified_module_import(module: &str, item: Option<&str>, alias: Option<Stri
 
   let mut declaration = classify_import_specifier(specifier);
   declaration.alias = alias;
+  declaration.module = Some(module.to_string());
+  declaration.item = item.map(|item| item.to_string());
   declaration
 }
 
@@ -86,7 +88,11 @@ pub(crate) fn module_import_declarations(import: &mech_core::ModuleImport) -> Ve
     }
 
     mech_core::ModuleImportKind::Glob => {
-      vec![classify_import_specifier(format!("{module}/*"))]
+      {
+      let mut declaration = classify_import_specifier(format!("{module}/*"));
+      declaration.module = Some(module.clone());
+      vec![declaration]
+    }
     }
 
     mech_core::ModuleImportKind::Item => {
@@ -96,7 +102,10 @@ pub(crate) fn module_import_declarations(import: &mech_core::ModuleImport) -> Ve
         .map(module_import_item_path)
         .unwrap_or_default();
 
-      let alias = import.alias.as_ref().map(|alias| alias.to_string());
+      let alias = import.alias.as_ref().map(|alias| match alias {
+        mech_core::ModuleImportAlias::Value(path) => SourceImportAlias::Value(path.to_string()),
+        mech_core::ModuleImportAlias::Context(name) => SourceImportAlias::Context(name.to_string()),
+      });
 
       vec![classified_module_import(&module, Some(&item), alias)]
     }
@@ -119,9 +128,14 @@ pub(crate) fn module_import_declarations(import: &mech_core::ModuleImport) -> Ve
   }
 }
 
+pub fn import_requires_source_dependency(import: &SourceImportDeclaration) -> bool {
+  !matches!(import.alias, Some(SourceImportAlias::Context(_)))
+}
+
 pub fn import_dependencies(imports: &[SourceImportDeclaration]) -> Vec<SourceRequest> {
   imports
     .iter()
+    .filter(|import| import_requires_source_dependency(import))
     .map(|import| source_request_for_import(import, None))
     .collect()
 }
@@ -218,5 +232,19 @@ mod tests {
   fn namespace_for_wildcard_import() {
     let import = classify_import_specifier("math/*");
     assert_eq!(module_namespace_for_import(&import), Some("math".to_string()));
+  }
+
+  #[test]
+  fn classifies_mec_wildcard_imports() {
+    for (specifier, expected_request) in [
+      ("dep.mec/*", "dep.mec"),
+      ("./dep.mec/*", "./dep.mec"),
+      ("fs://lib/dep.mec/*", "fs://lib/dep.mec"),
+    ] {
+      let import = classify_import_specifier(specifier);
+      assert_eq!(import.kind, SourceImportKind::Wildcard);
+      assert_eq!(import.specifier, expected_request);
+      assert_eq!(source_request_for_import(&import, None).specifier, expected_request);
+    }
   }
 }

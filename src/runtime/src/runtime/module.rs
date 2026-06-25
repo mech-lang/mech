@@ -15,9 +15,22 @@
 // - `active_module_version`: Retrieves the active version of a module, if any.
 
 use super::*;
+use crate::SourceIndex;
+
+fn source_index_for_module_record_source(
+  source: &mech_core::MechSourceCode,
+) -> MResult<Option<SourceIndex>> {
+  match source {
+    mech_core::MechSourceCode::Tree(tree) => Ok(Some(SourceIndex::from_program(tree))),
+    mech_core::MechSourceCode::String(source) => {
+      let tree = mech_syntax::parser::parse(source.trim())?;
+      Ok(Some(SourceIndex::from_program(&tree)))
+    }
+    _ => Ok(None),
+  }
+}
 
 impl MechRuntime {
-
   pub fn ensure_module(
     &mut self,
     name: &str,
@@ -32,6 +45,129 @@ impl MechRuntime {
       .with_description(name.to_string());
 
     self.store.put_module(module)
+  }
+
+  fn materialize_manifest_context_imports(
+    &mut self,
+    record: &mut crate::RuntimeModuleRecord,
+  ) -> MResult<()> {
+    let Some(index) = source_index_for_module_record_source(&record.source)? else {
+      return self.materialize_manifest_context_imports_legacy(record);
+    };
+
+    let mut all_contexts = Vec::new();
+
+    for scope in &mut record.scopes {
+      let contexts = self.context_declarations_from_index_scope(&index, &scope.scope)?;
+      scope.contexts = contexts;
+      all_contexts.extend(scope.contexts.iter().cloned());
+    }
+
+    record.contexts = all_contexts;
+    Ok(())
+  }
+
+  fn materialize_manifest_context_imports_legacy(
+    &mut self,
+    record: &mut crate::RuntimeModuleRecord,
+  ) -> MResult<()> {
+    for scope in &mut record.scopes {
+      let context_imports = scope
+        .imports
+        .iter()
+        .filter_map(|import| match &import.alias {
+          Some(SourceImportAlias::Context(alias)) => Some((import, alias.clone())),
+          _ => None,
+        })
+        .collect::<Vec<_>>();
+
+      for (import, alias) in context_imports {
+        if scope.contexts.iter().any(|context| context.name == alias) {
+          return Err(MechError::new(RuntimeInvalidOperationError {
+            operation: "materialize_manifest_context_imports",
+            reason: format!("context import duplicates an existing context binding `{alias}`"),
+          }, None));
+        }
+
+        let module = import.module.as_deref().ok_or_else(|| {
+          MechError::new(RuntimeInvalidOperationError {
+            operation: "materialize_manifest_context_imports",
+            reason: format!("context import `{}` is missing module metadata", import.specifier),
+          }, None)
+        })?;
+        let item = import.item.as_deref().ok_or_else(|| {
+          MechError::new(RuntimeInvalidOperationError {
+            operation: "materialize_manifest_context_imports",
+            reason: format!("context import `{}` is missing item metadata", import.specifier),
+          }, None)
+        })?;
+
+        let export = self.module_manifests.context_export(module, item)?;
+        let declaration = crate::SourceContextDeclaration {
+          name: alias,
+          base: crate::SourceContextBase::ResourceUri(export.base_uri.clone()),
+          capabilities: export.operations.iter().map(|operation| crate::SourceContextCapability {
+            operation: operation.clone(),
+            scope: crate::SourceContextCapabilityScope::Wildcard,
+          }).collect(),
+        };
+
+        scope.contexts.push(declaration.clone());
+        record.contexts.push(declaration);
+      }
+    }
+
+    Ok(())
+  }
+
+  fn validate_runtime_module_record_address_targets(
+    record: &crate::RuntimeModuleRecord,
+  ) -> MResult<()> {
+    let mut interpreter_targets: HashMap<String, String> = HashMap::new();
+
+    for metadata in &record.scopes {
+      if let SourceScope::Interpreter(interpreter) = &metadata.scope {
+        if let Some(first_kind) = interpreter_targets.insert(interpreter.namespace_str.clone(), "interpreter".to_string()) {
+          return Err(MechError::new(
+            crate::resolver::AddressTargetNameConflict {
+              name: interpreter.namespace_str.clone(),
+              first_kind,
+              second_kind: "interpreter".to_string(),
+            },
+            None,
+          ));
+        }
+      }
+    }
+
+    for metadata in &record.scopes {
+      let mut scope_targets = HashMap::new();
+      match &metadata.scope {
+        SourceScope::Program => {
+          for (name, kind) in &interpreter_targets {
+            scope_targets.insert(name.clone(), kind.clone());
+          }
+        }
+        SourceScope::Interpreter(interpreter) => {
+          scope_targets.insert(interpreter.namespace_str.clone(), "interpreter".to_string());
+        }
+      }
+
+      for context in &metadata.contexts {
+        if let Some(first_kind) = scope_targets.insert(context.name.clone(), "context".to_string()) {
+          return Err(MechError::new(
+            crate::resolver::AddressTargetNameConflict {
+              name: context.name.clone(),
+              first_kind,
+              second_kind: "context".to_string(),
+            },
+            None,
+          ));
+        }
+      }
+    }
+
+    Ok(())
   }
 
   pub fn resolve_source(
@@ -164,6 +300,9 @@ impl MechRuntime {
       let mut flat_import_dependencies = Vec::new();
 
       for import in &resolved.imports {
+        if !crate::resolver::import_requires_source_dependency(import) {
+          continue;
+        }
         let dependency_request = crate::resolver::source_request_for_import(import, Some(&canonical_uri));
         let dependency_version = self
           .build_module_from_request_with_context_and_graph(
@@ -190,6 +329,9 @@ impl MechRuntime {
       let mut matched_flat_imports = vec![false; flat_import_dependencies.len()];
       for scope_metadata in &resolved.scopes {
         for import in &scope_metadata.imports {
+          if !crate::resolver::import_requires_source_dependency(import) {
+            continue;
+          }
           let Some((index, (_, dependency_version))) = flat_import_dependencies
             .iter()
             .enumerate()
@@ -207,7 +349,7 @@ impl MechRuntime {
         }
       }
 
-      let record = self.module_builder.build_resolved_source(
+      let mut record = self.module_builder.build_resolved_source(
         resolved,
         options.compiler_version.to_string(),
         options.language_edition.to_string(),
@@ -216,6 +358,9 @@ impl MechRuntime {
         &dependency_versions,
         &concrete_capability_requirements,
       )?;
+
+      self.materialize_manifest_context_imports(&mut record)?;
+      Self::validate_runtime_module_record_address_targets(&record)?;
 
       let module = self.ensure_module(
         &record.name,

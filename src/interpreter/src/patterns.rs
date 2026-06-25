@@ -147,6 +147,9 @@ pub fn pattern_matches_value_with_semantics(pattern: &Pattern, value: &Value, en
       if semantics == PatternMatchSemantics::OptionGuard {
         #[cfg(feature = "bool")]
         if let Value::Bool(flag) = &expected {
+          if matches!(expr, Expression::Literal(Literal::Boolean(_))) {
+            return Ok(values_match(&deep_detach_value(&expected), &detached_value));
+          }
           return Ok(*flag.borrow());
         }
       }

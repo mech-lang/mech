@@ -5,6 +5,7 @@ use mech_core::{
     BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
     BrowserDomProperty, BrowserDomScope, BrowserNetworkScope, BrowserOperation, BrowserResource,
     BrowserResourceKind, BrowserStorageBackend, BrowserStorageScope, MResult, MechError,
+    ModuleManifestConfig, ModuleManifestExportConfig, ModuleManifestExportKind,
 };
 
 use super::{ConfigValue, InvalidConfigField};
@@ -14,8 +15,10 @@ pub struct MechConfigDocument {
     pub source_name: String,
     pub runtime: RuntimeConfigPatch,
     pub serve: Option<ServeHostConfig>,
+    pub run: Option<RunHostConfig>,
     pub browser: BrowserAuthority,
     pub capabilities: Vec<ConfigCapabilityGrant>,
+    pub module: Option<ModuleManifestConfig>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -55,6 +58,31 @@ pub struct ServeHostConfig {
     pub wasm: Option<PathBuf>,
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RunHostConfig {
+    pub paths: Vec<PathBuf>,
+    pub cli: RunCliHostConfig,
+}
+
+// Native CLI runner attenuation policy; resource providers are not required to
+// use this shape for host-specific configuration.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RunCliHostConfig {
+    pub env: RunCliEnvConfig,
+    pub stdout: RunCliStreamConfig,
+    pub stderr: RunCliStreamConfig,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RunCliEnvConfig {
+    pub read: Option<Vec<String>>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RunCliStreamConfig {
+    pub write: Option<Vec<String>>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConfigCapabilityGrant {
     pub kind: ConfigCapabilityKind,
@@ -83,19 +111,81 @@ impl ConfigLowerer {
             source_name,
             runtime: RuntimeConfigPatch::default(),
             serve: None,
+            run: None,
             browser: BrowserAuthority::default(),
             capabilities: Vec::new(),
+            module: None,
         };
         for (key, value) in map {
             match key.as_str() {
                 "runtime" => doc.runtime = self.lower_runtime(value)?,
                 "serve" => doc.serve = Some(self.lower_serve(value)?),
+                "run" => doc.run = Some(self.lower_run(value)?),
                 "browser" => doc.browser = self.lower_browser(value)?,
                 "capabilities" => doc.capabilities = self.lower_capabilities(value)?,
+                "module" => doc.module = Some(self.lower_module(value)?),
                 other => return invalid(format!("unknown top-level config field `{other}`")),
             }
         }
         Ok(doc)
+    }
+
+
+    fn lower_module(&self, value: &ConfigValue) -> MResult<ModuleManifestConfig> {
+        let map = expect_map("module", value)?;
+        let mut name = None;
+        let mut exports = None;
+        for (key, value) in map {
+            match key.as_str() {
+                "name" => name = Some(expect_string("module.name", value)?),
+                "exports" => {
+                    let list = expect_list("module.exports", value)?;
+                    exports = Some(list.iter().enumerate().map(|(idx, v)| self.lower_module_export(idx, v)).collect::<MResult<Vec<_>>>()?);
+                }
+                other => return invalid(format!("unknown module field `{other}`")),
+            }
+        }
+        let name = name.ok_or_else(|| invalid_error("module.name is required"))?;
+        if name.trim().is_empty() { return invalid("module.name must be non-empty"); }
+        let exports = exports.ok_or_else(|| invalid_error("module.exports is required"))?;
+        Ok(ModuleManifestConfig { name, exports })
+    }
+
+    fn lower_module_export(&self, idx: usize, value: &ConfigValue) -> MResult<ModuleManifestExportConfig> {
+        let where_ = format!("module.exports[{idx}]");
+        let map = expect_map(&where_, value)?;
+        let mut name = None;
+        let mut kind = None;
+        let mut base_uri = None;
+        let mut operations = None;
+        for (key, value) in map {
+            match key.as_str() {
+                "name" => name = Some(expect_string(&format!("{where_}.name"), value)?),
+                "kind" => {
+                    let raw = expect_string(&format!("{where_}.kind"), value)?;
+                    kind = Some(match raw.as_str() {
+                        "context" => ModuleManifestExportKind::Context,
+                        _ => return invalid(format!("{where_}.kind must be `context`; got `{raw}`")),
+                    });
+                }
+                "base-uri" => base_uri = Some(expect_string(&format!("{where_}.base-uri"), value)?),
+                "operations" => operations = Some(expect_string_list(&format!("{where_}.operations"), value)?),
+                other => return invalid(format!("unknown {where_} field `{other}`")),
+            }
+        }
+        let name = name.ok_or_else(|| invalid_error(format!("{where_}.name is required")))?;
+        if name.trim().is_empty() { return invalid(format!("{where_}.name must be non-empty")); }
+        let kind = kind.ok_or_else(|| invalid_error(format!("{where_}.kind is required")))?;
+        let base_uri = base_uri.ok_or_else(|| invalid_error(format!("{where_}.base-uri is required")))?;
+        if !base_uri.contains("://") { return invalid(format!("{where_}.base-uri must contain `://`")); }
+        let operations = operations.ok_or_else(|| invalid_error(format!("{where_}.operations is required")))?;
+        if operations.is_empty() { return invalid(format!("{where_}.operations must contain at least one operation")); }
+        for op in &operations {
+            if op != "read" && op != "write" {
+                return invalid(format!("module context exports only support operations `read` and `write`; got `{op}`"));
+            }
+        }
+        Ok(ModuleManifestExportConfig { name, kind, base_uri, operations })
     }
 
     fn lower_runtime(&self, value: &ConfigValue) -> MResult<RuntimeConfigPatch> {
@@ -204,6 +294,79 @@ impl ConfigLowerer {
                 "shim" => out.shim = Some(PathBuf::from(expect_string("serve.shim", value)?)),
                 "wasm" => out.wasm = Some(PathBuf::from(expect_string("serve.wasm", value)?)),
                 other => return invalid(format!("unknown serve field `{other}`")),
+            }
+        }
+        Ok(out)
+    }
+
+    fn lower_run(&self, value: &ConfigValue) -> MResult<RunHostConfig> {
+        let map = expect_map("run", value)?;
+        let mut out = RunHostConfig::default();
+
+        for (key, value) in map {
+            match key.as_str() {
+                "paths" => out.paths = expect_path_list("run.paths", value)?,
+                "cli" => out.cli = self.lower_run_cli(value)?,
+                other => return invalid(format!("unknown run field `{other}`")),
+            }
+        }
+
+        Ok(out)
+    }
+
+    fn lower_run_cli(&self, value: &ConfigValue) -> MResult<RunCliHostConfig> {
+        let map = expect_map("run.cli", value)?;
+        let mut out = RunCliHostConfig::default();
+        for (key, value) in map {
+            match key.as_str() {
+                "env" => out.env = self.lower_run_cli_env(value)?,
+                "stdout" => out.stdout = self.lower_run_cli_stream("run.cli.stdout", value)?,
+                "stderr" => out.stderr = self.lower_run_cli_stream("run.cli.stderr", value)?,
+                other => return invalid(format!("unknown run.cli field `{other}`")),
+            }
+        }
+        Ok(out)
+    }
+
+    fn lower_run_cli_env(&self, value: &ConfigValue) -> MResult<RunCliEnvConfig> {
+        let map = expect_map("run.cli.env", value)?;
+        let mut out = RunCliEnvConfig::default();
+        for (key, value) in map {
+            match key.as_str() {
+                "read" => {
+                    let paths = expect_string_list("run.cli.env.read", value)?;
+                    for path in &paths {
+                        if path != "*" && !is_cli_env_key(path) {
+                            return invalid(format!("run.cli.env.read contains invalid env key `{path}`"));
+                        }
+                    }
+                    out.read = Some(paths);
+                }
+                other => return invalid(format!("unknown run.cli.env field `{other}`")),
+            }
+        }
+        Ok(out)
+    }
+
+    fn lower_run_cli_stream(
+        &self,
+        where_: &str,
+        value: &ConfigValue,
+    ) -> MResult<RunCliStreamConfig> {
+        let map = expect_map(where_, value)?;
+        let mut out = RunCliStreamConfig::default();
+        for (key, value) in map {
+            match key.as_str() {
+                "write" => {
+                    let paths = expect_string_list(&format!("{where_}.write"), value)?;
+                    for path in &paths {
+                        if path != "text" && path != "line" {
+                            return invalid(format!("{where_}.write contains invalid path `{path}`"));
+                        }
+                    }
+                    out.write = Some(paths);
+                }
+                other => return invalid(format!("unknown {where_} field `{other}`")),
             }
         }
         Ok(out)
@@ -605,6 +768,15 @@ fn browser_resource_allows_operation(
     }
 }
 
+fn is_cli_env_key(value: &str) -> bool {
+    let mut chars = value.chars();
+    match chars.next() {
+        Some(first) if first == '_' || first.is_ascii_alphabetic() => {}
+        _ => return false,
+    }
+    chars.all(|ch| ch == '_' || ch.is_ascii_alphanumeric())
+}
+
 fn invalid_error(reason: impl Into<String>) -> MechError {
     MechError::new(InvalidConfigField::new(reason), None).with_compiler_loc()
 }
@@ -622,5 +794,93 @@ fn type_name(value: &ConfigValue) -> &'static str {
         ConfigValue::String(_) => "string",
         ConfigValue::List(_) => "list",
         ConfigValue::Map(_) => "map",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{ConfigProfileOptions, parse_config_document};
+
+    fn parse(source: &str) -> MResult<MechConfigDocument> {
+        parse_config_document("mech.mcfg", source, ConfigProfileOptions::default())
+    }
+
+    #[test]
+    fn run_paths_parse_and_lower() {
+        let doc = parse(
+            r#"config := {
+  run: {
+    paths: ["foo.mec", "bar.mec"]
+  }
+}
+"#,
+        )
+        .unwrap();
+
+        let run = doc.run.unwrap();
+        assert_eq!(
+            run.paths,
+            vec![PathBuf::from("foo.mec"), PathBuf::from("bar.mec")]
+        );
+    }
+
+    #[test]
+    fn unknown_run_field_fails() {
+        let err = parse(
+            r#"config := {
+  run: {
+    bad: true
+  }
+}
+"#,
+        )
+        .expect_err("unknown run fields must fail");
+        let msg = format!("{} {} {:?}", err.kind_name(), err.kind_message(), err);
+        assert!(msg.contains("unknown run field `bad`"));
+    }
+
+    #[test]
+    fn run_cli_stdout_empty_write_parses() {
+        let doc = parse(r#"config := { run: { cli: { stdout: { write: [] } } } }"#).unwrap();
+        assert_eq!(doc.run.unwrap().cli.stdout.write, Some(vec![]));
+    }
+
+    #[test]
+    fn run_cli_stdout_line_write_parses() {
+        let doc = parse(r#"config := { run: { cli: { stdout: { write: ["line"] } } } }"#).unwrap();
+        assert_eq!(doc.run.unwrap().cli.stdout.write, Some(vec!["line".to_string()]));
+    }
+
+    #[test]
+    fn run_cli_env_path_read_parses() {
+        let doc = parse(r#"config := { run: { cli: { env: { read: ["PATH"] } } } }"#).unwrap();
+        assert_eq!(doc.run.unwrap().cli.env.read, Some(vec!["PATH".to_string()]));
+    }
+
+    #[test]
+    fn invalid_run_cli_stdout_path_fails() {
+        let err = parse(r#"config := { run: { cli: { stdout: { write: ["html"] } } } }"#)
+            .expect_err("invalid stdout path should fail");
+        let msg = format!("{} {} {:?}", err.kind_name(), err.kind_message(), err);
+        assert!(msg.contains("run.cli.stdout.write contains invalid path `html`"));
+    }
+
+    #[test]
+    fn invalid_run_cli_env_key_fails() {
+        for key in ["HOME/PATH", "1HOME", "HOME-PATH"] {
+            let source = format!(r#"config := {{ run: {{ cli: {{ env: {{ read: ["{key}"] }} }} }} }}"#);
+            let err = parse(&source).expect_err("invalid env key should fail");
+            let msg = format!("{} {} {:?}", err.kind_name(), err.kind_message(), err);
+            assert!(msg.contains("run.cli.env.read contains invalid env key"));
+        }
+    }
+
+    #[test]
+    fn unknown_run_cli_field_fails() {
+        let err = parse(r#"config := { run: { cli: { prompt: true } } }"#)
+            .expect_err("unknown run.cli field should fail");
+        let msg = format!("{} {} {:?}", err.kind_name(), err.kind_message(), err);
+        assert!(msg.contains("unknown run.cli field `prompt`"));
     }
 }

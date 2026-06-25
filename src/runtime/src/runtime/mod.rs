@@ -38,9 +38,9 @@ use std::collections::{HashMap, HashSet};
 
 use mech_core::{
   browser_capability_error, BrowserDomPath, BROWSER_DOM_PROVIDER_URI, MResult, MechError,
-  MechErrorKind, MechSourceCode, Ref, Value,
+  MechErrorKind, MechSourceCode, Value,
   NativeFunctionCompiler, MechFunctionImpl, Register, CompileCtx, MechFunctionCompiler,
-  hash_str,
+  hash_str, ModuleManifestCatalog, ModuleManifestConfig,
 };
 
 use mech_program::{
@@ -76,7 +76,8 @@ use crate::id::{
 
 use crate::resolver::{
   InMemorySourceResolver, ResolvedSource, SourceRequest, SourceResolver,
-  SourceAddressReference, SourceExportDeclaration, SourceImportKind, SourceScope, module_namespace_for_import,
+  SourceAddressReference, SourceExportDeclaration, SourceImportAlias,
+  SourceImportKind, SourceScope, module_namespace_for_import,
 };
 
 use crate::scheduler::{
@@ -103,7 +104,7 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
-use crate::{register_config_spec_grants, register_config_spec_resources, InMemoryDocsProvider, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteRequest};
+use crate::{register_config_spec_grants, register_config_spec_resources, InMemoryDocsProvider, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, resource_base_matches, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
 
 thread_local! {
   static ACTIVE_RUNTIME_PROGRAM_HOST: RefCell<Option<RuntimeProgramHostTarget>> =
@@ -128,6 +129,7 @@ pub struct RuntimeBuilder {
   module_builder: ModuleBuilder,
   config_specs: Vec<RuntimeConfigSpec>,
   resource_providers: Vec<Box<dyn RuntimeResourceProvider>>,
+  module_manifests: ModuleManifestCatalog,
 }
 
 impl std::fmt::Debug for RuntimeBuilder {
@@ -146,6 +148,7 @@ impl std::fmt::Debug for RuntimeBuilder {
       .field("module_builder", &self.module_builder)
       .field("config_specs", &self.config_specs)
       .field("resource_providers", &self.resource_providers.len())
+      .field("module_manifests", &self.module_manifests)
       .finish()
   }
 }
@@ -166,6 +169,7 @@ impl Default for RuntimeBuilder {
       module_builder: ModuleBuilder::new(),
       config_specs: Vec::new(),
       resource_providers: Vec::new(),
+      module_manifests: ModuleManifestCatalog::with_builtin_hosts(),
     }
   }
 }
@@ -256,6 +260,11 @@ impl RuntimeBuilder {
     self
   }
 
+  pub fn module_manifest(mut self, manifest: ModuleManifestConfig) -> MResult<Self> {
+    self.module_manifests.register(manifest)?;
+    Ok(self)
+  }
+
   pub fn resource_provider(
     mut self,
     provider: Box<dyn RuntimeResourceProvider>,
@@ -311,6 +320,7 @@ impl RuntimeBuilder {
       resources: RuntimeResourceRegistry::new(),
       grants: RuntimeCapabilityGrantRegistry::new(),
       resource_bindings: HashMap::new(),
+      module_manifests: self.module_manifests,
     };
 
     for spec in &self.config_specs {
@@ -358,6 +368,7 @@ pub struct MechRuntime {
   resources: RuntimeResourceRegistry,
   grants: RuntimeCapabilityGrantRegistry,
   resource_bindings: HashMap<String, RuntimeResourceBinding>,
+  module_manifests: ModuleManifestCatalog,
 }
 
 impl std::fmt::Debug for MechRuntime {
@@ -381,6 +392,7 @@ impl std::fmt::Debug for MechRuntime {
       .field("resources", &self.resources)
       .field("grants", &self.grants)
       .field("resource_bindings", &self.resource_bindings)
+      .field("module_manifests", &self.module_manifests)
       .finish()
   }
 }
@@ -460,6 +472,15 @@ impl MechRuntime {
     &mut self.program
   }
 
+  pub fn bind_context_export(
+    &mut self,
+    alias: &str,
+    module: &str,
+    item: &str,
+  ) -> MResult<()> {
+    let base_uri = self.module_manifests.context_export(module, item)?.base_uri.clone();
+    self.bind_resource_root(alias, &base_uri)
+  }
 
   pub fn bind_resource_root(
     &mut self,
@@ -474,22 +495,19 @@ impl MechRuntime {
       ));
     }
 
-    let uri = uri.as_ref();
-    let (base_uri, root_path) = if uri == BROWSER_DOM_PROVIDER_URI {
-      (BROWSER_DOM_PROVIDER_URI.to_string(), String::new())
-    } else {
-      let prefix = "browser://dom/";
-      let Some(root_path) = uri.strip_prefix(prefix) else {
-        return Err(browser_runtime_resource_error(
-          uri,
-          "only browser://dom/ resource roots are supported in this PR",
-        ));
-      };
-      (BROWSER_DOM_PROVIDER_URI.to_string(), root_path.trim_matches('/').to_string())
-    };
-
-    if !root_path.is_empty() {
-      BrowserDomPath::new(root_path.clone()).map_err(browser_capability_error)?;
+    let uri = uri.as_ref().trim_end_matches('/');
+    let mut base_uri = uri.to_string();
+    let mut root_path = String::new();
+    if resource_base_matches(BROWSER_DOM_PROVIDER_URI, uri) {
+      base_uri = BROWSER_DOM_PROVIDER_URI.to_string();
+      root_path = uri
+        .strip_prefix(BROWSER_DOM_PROVIDER_URI)
+        .unwrap_or_default()
+        .trim_matches('/')
+        .to_string();
+      if !root_path.is_empty() {
+        BrowserDomPath::new(root_path.clone()).map_err(browser_capability_error)?;
+      }
     }
 
     self.resource_bindings.insert(
@@ -566,6 +584,7 @@ impl MechRuntime {
       path,
       context_name: binding.to_string(),
       value: value.clone(),
+      intent: RuntimeResourceWriteIntent::Assign,
     })
   }
 

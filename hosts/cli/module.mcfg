@@ -1,0 +1,10 @@
+config := {
+  module: {
+    name: "cli"
+    exports: [
+      { name: "env" kind: "context" base-uri: "cli://env" operations: ["read"] }
+      { name: "stdout" kind: "context" base-uri: "cli://stdout" operations: ["write"] }
+      { name: "stderr" kind: "context" base-uri: "cli://stderr" operations: ["write"] }
+    ]
+  }
+}

@@ -293,6 +293,23 @@ fn module_import_item_path(item: &ModuleImportPath) -> String {
   item.to_string()
 }
 
+
+#[cfg(feature = "functions")]
+fn context_export_error(module: &str, item: &str) -> MechError {
+  MechError::new(
+    GenericError { msg: format!("Module export `{module}/{item}` is a context export; import it with `+> @name := {module}/{item}`") },
+    None,
+  ).with_compiler_loc()
+}
+
+#[cfg(feature = "functions")]
+fn is_context_export(p: &Interpreter, module: &str, item: &str) -> bool {
+  p.module_manifests
+    .borrow()
+    .export(module, item)
+    .is_some_and(|export| export.kind == ModuleManifestExportKind::Context)
+}
+
 #[cfg(feature = "functions")]
 pub fn module_import_runtime(import: &ModuleImport, p: &Interpreter) -> MResult<Value> {
   let module = import.module.to_string();
@@ -312,10 +329,22 @@ pub fn module_import_runtime(import: &ModuleImport, p: &Interpreter) -> MResult<
         MechError::new(MissingFunctionError { function_id: hash_str(&module) }, None).with_compiler_loc()
       })?;
       let item = module_import_item_path(item);
-      if let Some(alias) = &import.alias {
-        import_module_item_as(&mut p.functions().borrow_mut(), &module, &item, &alias.to_string())?;
-      } else {
-        import_module_item(&mut p.functions().borrow_mut(), &module, &item)?;
+      match &import.alias {
+        None => {
+          if is_context_export(p, &module, &item) {
+            return Err(context_export_error(&module, &item));
+          }
+          import_module_item(&mut p.functions().borrow_mut(), &module, &item)?;
+        }
+        Some(ModuleImportAlias::Value(alias)) => {
+          if is_context_export(p, &module, &item) {
+            return Err(context_export_error(&module, &item));
+          }
+          import_module_item_as(&mut p.functions().borrow_mut(), &module, &item, &alias.to_string())?;
+        }
+        Some(ModuleImportAlias::Context(alias)) => {
+          p.bind_context_export(alias, &module, &item)?;
+        }
       }
       Ok(Value::Empty)
     }
@@ -323,6 +352,12 @@ pub fn module_import_runtime(import: &ModuleImport, p: &Interpreter) -> MResult<
       if import.alias.is_some() {
         return Err(MechError::new(
           GenericError { msg: "Module import alias is only supported for item imports".to_string() },
+          None,
+        ).with_compiler_loc());
+      }
+      if p.module_manifests.borrow().manifest(&module).is_some_and(|manifest| manifest.exports.iter().any(|export| export.kind == ModuleManifestExportKind::Context)) {
+        return Err(MechError::new(
+          GenericError { msg: "Glob imports do not support context exports; import context exports explicitly with `+> @name := module/item`".to_string() },
           None,
         ).with_compiler_loc());
       }
@@ -336,6 +371,12 @@ pub fn module_import_runtime(import: &ModuleImport, p: &Interpreter) -> MResult<
 
       for group_item in group_items {
         let item = module_import_item_path(&group_item.item);
+        if is_context_export(p, &module, &item) {
+          return Err(MechError::new(
+            GenericError { msg: format!("Grouped imports do not support context exports; import `{module}/{item}` with `+> @name := {module}/{item}`") },
+            None,
+          ).with_compiler_loc());
+        }
         import_module_item(&mut p.functions().borrow_mut(), &module, &item)?;
       }
       Ok(Value::Empty)

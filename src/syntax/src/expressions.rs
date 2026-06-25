@@ -216,40 +216,34 @@ pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
   Ok((input, Factor::Parenthetical(Box::new(frmla))))
 }
 
-fn identifier_from_string(name: &str) -> Identifier {
-  Identifier {
-    name: Token::new(TokenKind::Identifier, SourceRange::default(), name.chars().collect()),
-  }
+fn context_address_path_token(input: ParseString) -> ParseResult<Token> {
+  alt((alpha_token, digit_token, dash, slash, underscore, period))(input)
 }
 
-fn split_prefix_context_identifier(identifier: Identifier) -> Option<(Identifier, Identifier)> {
-  let text = identifier.to_string();
-  let (context, path) = text.split_once('/')?;
-  if context.is_empty() || path.is_empty() {
-    return None;
-  }
-  Some((identifier_from_string(context), identifier_from_string(path)))
+fn context_address_path(input: ParseString) -> ParseResult<Identifier> {
+  let (input, mut tokens) = many1(context_address_path_token)(input)?;
+  let mut merged = Token::merge_tokens(&mut tokens).unwrap();
+  merged.kind = TokenKind::Identifier;
+  Ok((input, Identifier { name: merged }))
 }
 
 fn prefixed_context_path(input: ParseString) -> ParseResult<(Identifier, Identifier)> {
   let (input, _) = at(input)?;
-  let (input, addressed) = identifier(input)?;
-  match split_prefix_context_identifier(addressed) {
-    Some((context, name)) => Ok((input, (context, name))),
-    None => Err(nom::Err::Error(ParseError::new(input, "context-prefixed resource paths require @context/path"))),
-  }
+  let (input, context) = identifier_path_segment(input)?;
+  let (input, _) = slash(input)?;
+  let (input, name) = context_address_path(input)?;
+  Ok((input, (context, name)))
 }
 
-// var := ("@", identifier, "/", identifier) | identifier, ("@", identifier)?, ?kind-annotation ;
+// var := ("@", identifier, "/", identifier), kind-annotation? | identifier, kind-annotation? ;
 pub fn var(input: ParseString) -> ParseResult<Var> {
   if let Ok((input, (context, name))) = prefixed_context_path(input.clone()) {
     let ((input, kind)) = opt(kind_annotation)(input)?;
     return Ok((input, Var{ name, context: Some(context), kind }));
   }
   let ((input, name)) = identifier(input)?;
-  let ((input, context)) = opt(preceded(at, identifier))(input)?;
   let ((input, kind)) = opt(kind_annotation)(input)?;
-  Ok((input, Var{ name, context, kind }))
+  Ok((input, Var{ name, context: None, kind }))
 }
 
 // statement-separator := ";" ;
@@ -771,7 +765,7 @@ pub fn subscript(input: ParseString) -> ParseResult<Vec<Subscript>> {
   Ok((input, subscripts))
 }
 
-// slice := ("@", identifier, "/", identifier) | identifier, subscript, ("@", identifier)? ;
+// slice := ("@", identifier, "/", identifier) | identifier, subscript ;
 pub fn slice(input: ParseString) -> ParseResult<Slice> {
   if let Ok((input, (context, name))) = prefixed_context_path(input.clone()) {
     let (input, ixes) = subscript(input)?;
@@ -779,11 +773,10 @@ pub fn slice(input: ParseString) -> ParseResult<Slice> {
   }
   let (input, name) = identifier(input)?;
   let (input, ixes) = subscript(input)?;
-  let (input, context) = opt(preceded(at, identifier))(input)?;
-  Ok((input, Slice{name, context, subscript: ixes}))
+  Ok((input, Slice{name, context: None, subscript: ixes}))
 }
 
-// slice-ref := ("@", identifier, "/", identifier) | identifier, subscript?, ("@", identifier)? ;
+// slice-ref := ("@", identifier, "/", identifier) | identifier, subscript? ;
 pub fn slice_ref(input: ParseString) -> ParseResult<SliceRef> {
   if let Ok((input, (context, name))) = prefixed_context_path(input.clone()) {
     let (input, ixes) = opt(subscript)(input)?;
@@ -791,8 +784,7 @@ pub fn slice_ref(input: ParseString) -> ParseResult<SliceRef> {
   }
   let (input, name) = identifier(input)?;
   let (input, ixes) = opt(subscript)(input)?;
-  let (input, context) = opt(preceded(at, identifier))(input)?;
-  Ok((input, SliceRef{name, context, subscript: ixes}))
+  Ok((input, SliceRef{name, context: None, subscript: ixes}))
 }
 
 // swizzle-subscript := ".", identifier, ",", list1(",", identifier) ;

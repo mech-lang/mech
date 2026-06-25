@@ -56,6 +56,38 @@ fn module_import_alias_path(input: ParseString) -> ParseResult<ModuleImportPath>
     Ok((input, ModuleImportPath { segments }))
 }
 
+fn module_import_value_alias(input: ParseString) -> ParseResult<ModuleImportAlias> {
+    map(module_import_alias_path, ModuleImportAlias::Value)(input)
+}
+
+fn context_import_alias_segment(input: ParseString) -> ParseResult<Identifier> {
+    let (input, (first, mut rest)) = nom_tuple((
+        alpha_token,
+        many0(alt((alpha_token, digit_token, dash))),
+    ))(input)?;
+    let mut tokens = vec![first];
+    tokens.append(&mut rest);
+    let mut merged = Token::merge_tokens(&mut tokens).unwrap();
+    merged.kind = TokenKind::Identifier;
+    Ok((input, Identifier { name: merged }))
+}
+
+fn module_import_context_alias(input: ParseString) -> ParseResult<Identifier> {
+    let (input, _) = at(input)?;
+    let (input, name) = context_import_alias_segment(input)?;
+    if slash(input.clone()).is_ok() {
+        return Err(nom::Err::Error(ParseError::new(input, "context import aliases must be a single identifier")));
+    }
+    Ok((input, name))
+}
+
+fn module_import_alias(input: ParseString) -> ParseResult<ModuleImportAlias> {
+    alt((
+        map(module_import_context_alias, ModuleImportAlias::Context),
+        module_import_value_alias,
+    ))(input)
+}
+
 fn module_root(input: ParseString) -> ParseResult<Identifier> {
     identifier_path_segment(input)
 }
@@ -100,7 +132,7 @@ fn module_import_end(input: ParseString) -> ParseResult<()> {
 }
 
 fn aliased_item_import(input: ParseString) -> ParseResult<ModuleImport> {
-    let (input, alias) = module_import_alias_path(input)?;
+    let (input, alias) = module_import_alias(input)?;
     let (input, _) = import_alias_operator(input)?;
 
     let (input, (module, _, item)) = cut(nom_tuple((
@@ -169,11 +201,15 @@ pub fn module_import(input: ParseString) -> ParseResult<ModuleImport> {
     let (input, _) = right_angle(input)?;
     let (input, _) = space_tab0(input)?;
 
-    let (input, mut import) = alt((
-        aliased_item_import,
-        module_suffix_import,
-        module_only_import,
-    ))(input)?;
+    let (input, mut import) = if at(input.clone()).is_ok() {
+        cut(aliased_item_import)(input)?
+    } else {
+        alt((
+            aliased_item_import,
+            module_suffix_import,
+            module_only_import,
+        ))(input)?
+    };
 
     let (next_input, _) = module_import_end(input.clone())?;
     import.module.name.src_range.end = next_input.loc();

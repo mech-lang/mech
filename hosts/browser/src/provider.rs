@@ -3,7 +3,7 @@ use mech_core::{
   BrowserOperation, BROWSER_DOM_PROVIDER_URI, MResult, MechError, MechErrorKind, Ref, Value,
 };
 
-use mech_runtime::{RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteRequest};
+use mech_runtime::{RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest};
 
 pub trait BrowserDomBackend: std::fmt::Debug {
   fn read_dom_string(
@@ -69,6 +69,10 @@ impl<B: BrowserDomBackend> RuntimeResourceProvider for BrowserResourceProvider<B
     "browser"
   }
 
+  fn base_uris(&self) -> Vec<String> {
+    vec![BROWSER_DOM_PROVIDER_URI.to_string()]
+  }
+
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
     Self::validate_dom_base(&request.base_uri)?;
     let path = Self::dom_path(request.path)?;
@@ -85,8 +89,31 @@ impl<B: BrowserDomBackend> RuntimeResourceProvider for BrowserResourceProvider<B
     Ok(Value::String(Ref::new(self.backend.read_dom_string(entry, &path)?)))
   }
 
-  fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+  fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+    if request.intent != RuntimeResourceWriteIntent::Assign {
+      return Err(browser_resource_provider_error(&request.base_uri, "browser DOM resources do not support send intent; use assignment"));
+    }
     Self::validate_dom_base(&request.base_uri)?;
+    let path = Self::dom_path(request.path)?;
+    let Some(entry) = self.authority.dom_entry_for_path(&path) else {
+      return Err(browser_resource_provider_error(
+        path.as_str(),
+        "no configured DOM manifest entry for path",
+      ));
+    };
+    self
+      .authority
+      .allows_dom(entry.selector.selector.as_str(), BrowserOperation::Write)
+      .map_err(browser_capability_error)
+  }
+
+  fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    self.preflight_write(RuntimeResourceWritePreflightRequest {
+      base_uri: request.base_uri.clone(),
+      path: request.path.clone(),
+      context_name: request.context_name.clone(),
+      intent: request.intent,
+    })?;
     let path = Self::dom_path(request.path)?;
     let entry = self
       .authority
@@ -98,10 +125,6 @@ impl<B: BrowserDomBackend> RuntimeResourceProvider for BrowserResourceProvider<B
           "no configured DOM manifest entry for path",
         )
       })?;
-    self
-      .authority
-      .allows_dom(entry.selector.selector.as_str(), BrowserOperation::Write)
-      .map_err(browser_capability_error)?;
     let Value::String(value) = request.value else {
       return Err(browser_resource_provider_error(
         path.as_str(),

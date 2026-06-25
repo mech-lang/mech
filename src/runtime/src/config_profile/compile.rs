@@ -68,6 +68,9 @@ impl ConfigCompiler {
             Statement::VariableAssign(_) => Err(ConfigProfileViolation::error(
                 "assignment is not allowed in Mech config",
             )),
+            Statement::ContextSend(_) => Err(ConfigProfileViolation::error(
+                "context sends are not allowed in Mech config",
+            )),
             #[cfg(feature = "invariant_define")]
             Statement::InvariantDefine(_) => Err(ConfigProfileViolation::error(
                 "invariants are not allowed in Mech config",

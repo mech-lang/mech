@@ -164,9 +164,18 @@ pub enum SourceImportKind {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SourceImportAlias {
+  Value(String),
+  Context(String),
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SourceImportDeclaration {
   pub specifier: String,
-  pub alias: Option<String>,
+  pub alias: Option<SourceImportAlias>,
+  pub module: Option<String>,
+  pub item: Option<String>,
   pub kind: SourceImportKind,
 }
 

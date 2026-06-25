@@ -1144,13 +1144,13 @@ mod tests {
       .filter_map(|el| match el { SectionElement::FencedMechCode(code) => Some(code), _ => None })
       .collect();
     assert_eq!(fenced[0].config.namespace_str, "foo");
-    assert_eq!(fenced[0].imports.len(), 1);
+    assert_eq!(fenced[0].imports.len(), 0);
     assert_eq!(fenced[0].exports.len(), 0);
-    assert_eq!(fenced[0].imports[0].specifier.to_string(), "math/*");
+    assert!(fenced[0].code.iter().any(|(node, _)| matches!(node, MechCode::Import(import) if import.module.to_string() == "math" && import.kind == ModuleImportKind::Glob)));
     assert_eq!(fenced[1].config.namespace_str, "bar");
-    assert_eq!(fenced[1].imports.len(), 1);
+    assert_eq!(fenced[1].imports.len(), 0);
     assert_eq!(fenced[1].exports.len(), 1);
-    assert_eq!(fenced[1].imports[0].specifier.to_string(), "geometry/triangle-area");
+    assert!(fenced[1].code.iter().any(|(node, _)| matches!(node, MechCode::Import(import) if import.module.to_string() == "geometry" && import.kind == ModuleImportKind::Item)));
     assert_eq!(fenced[1].exports[0].name.to_string(), "area");
   }
 

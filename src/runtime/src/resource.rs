@@ -9,18 +9,46 @@ pub struct RuntimeResourceReadRequest {
   pub context_name: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RuntimeResourceWriteIntent {
+  Assign,
+  Send,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeResourceWritePreflightRequest {
+  pub base_uri: String,
+  pub path: String,
+  pub context_name: String,
+  pub intent: RuntimeResourceWriteIntent,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeResourceWriteRequest {
   pub base_uri: String,
   pub path: String,
   pub context_name: String,
   pub value: Value,
+  pub intent: RuntimeResourceWriteIntent,
 }
 
 pub trait RuntimeResourceProvider: std::fmt::Debug {
   fn scheme(&self) -> &str;
 
+  fn base_uris(&self) -> Vec<String> { Vec::new() }
+
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value>;
+
+  fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+    Err(MechError::new(
+      RuntimeResourceWriteUnsupported {
+        scheme: self.scheme().to_string(),
+        base_uri: request.base_uri,
+        path: request.path,
+      },
+      None,
+    ))
+  }
 
   fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
     Err(MechError::new(
@@ -72,6 +100,25 @@ impl RuntimeResourceRegistry {
     self.providers.contains_key(scheme)
   }
 
+  pub fn provider_base_uri_for(&self, candidate: &str) -> MResult<Option<String>> {
+    let scheme = resource_uri_scheme(candidate)?.to_string();
+    let Some(provider) = self.providers.get(&scheme) else {
+      return Ok(None);
+    };
+
+    let mut matches = provider
+      .base_uris()
+      .into_iter()
+      .filter(|base| resource_base_matches(base, candidate))
+      .collect::<Vec<_>>();
+    matches.sort_by_key(|base| std::cmp::Reverse(base.len()));
+    if let Some(base) = matches.into_iter().next() {
+      return Ok(Some(base));
+    }
+
+    Ok(Some(resource_uri_origin(candidate)?.to_string()))
+  }
+
   pub fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
     let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
     let Some(provider) = self.providers.get(&scheme) else {
@@ -84,6 +131,20 @@ impl RuntimeResourceRegistry {
       ));
     };
     provider.read(request)
+  }
+
+  pub fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+    let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
+    let Some(provider) = self.providers.get(&scheme) else {
+      return Err(MechError::new(
+        RuntimeResourceProviderNotFound {
+          scheme,
+          uri: request.base_uri,
+        },
+        None,
+      ));
+    };
+    provider.preflight_write(request)
   }
 
   pub fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
@@ -158,6 +219,10 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
     "docs"
   }
 
+  fn base_uris(&self) -> Vec<String> {
+    self.documents.keys().cloned().collect()
+  }
+
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
     let Some(document) = self.documents.get(&request.base_uri) else {
       return Err(MechError::new(
@@ -180,7 +245,18 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
     Ok(value.clone())
   }
 
-  fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+  fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+    if request.intent == RuntimeResourceWriteIntent::Send {
+      return Err(MechError::new(
+        RuntimeResourceWriteUnsupported {
+          scheme: self.scheme().to_string(),
+          base_uri: request.base_uri,
+          path: request.path,
+        },
+        None,
+      ));
+    }
+
     let scheme = resource_uri_scheme(&request.base_uri)?;
     if scheme != "docs" {
       return Err(MechError::new(
@@ -202,6 +278,17 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
       ));
     }
 
+    Ok(())
+  }
+
+  fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    self.preflight_write(RuntimeResourceWritePreflightRequest {
+      base_uri: request.base_uri.clone(),
+      path: request.path.clone(),
+      context_name: request.context_name.clone(),
+      intent: request.intent,
+    })?;
+
     self.documents
       .entry(request.base_uri)
       .or_default()
@@ -209,6 +296,26 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
 
     Ok(())
   }
+}
+
+pub fn resource_base_matches(base: &str, candidate: &str) -> bool {
+  candidate == base || candidate.strip_prefix(base).is_some_and(|suffix| suffix.starts_with('/'))
+}
+
+fn resource_uri_origin(uri: &str) -> MResult<&str> {
+  let scheme = resource_uri_scheme(uri)?;
+  let rest = &uri[scheme.len() + 3..];
+  let authority_end = rest.find('/').unwrap_or(rest.len());
+  if authority_end == 0 {
+    return Err(MechError::new(
+      RuntimeResourceInvalidUri {
+        uri: uri.to_string(),
+        reason: "resource URI authority cannot be empty".to_string(),
+      },
+      None,
+    ));
+  }
+  Ok(&uri[..scheme.len() + 3 + authority_end])
 }
 
 fn resource_uri_scheme(uri: &str) -> MResult<&str> {

@@ -30,7 +30,7 @@ use crate::id::{
 };
 use crate::resolver::{
   ModuleScopeMetadata, SourceAddressReference, SourceContextDeclaration, SourceExportDeclaration,
-  SourceImportDeclaration, SourceScope,
+  SourceImportAlias, SourceImportDeclaration, SourceScope,
 };
 
 // -----------------------------------------------------------------------------
@@ -207,6 +207,10 @@ pub struct ModuleVersionRecord {
   pub capability_requirements: Vec<CapabilityRequest>,
 }
 
+fn import_requires_edge(import: &SourceImportDeclaration) -> bool {
+  !matches!(import.alias, Some(SourceImportAlias::Context(_)))
+}
+
 impl ModuleVersionRecord {
   pub fn new(id: ModuleVersionId, module: ModuleId, version: u64) -> Self {
     Self {
@@ -293,14 +297,15 @@ impl ModuleVersionRecord {
   }
 
   pub fn validate_import_edges(&self) -> MResult<()> {
-    if self.import_edges.len() != self.imports.len() {
+    let expected_edges = self.imports.iter().filter(|import| import_requires_edge(import)).count();
+    if self.import_edges.len() != expected_edges {
       return Err(MechError::new(
         InvalidModuleImportEdgesError {
           module: self.id,
           reason: format!(
-            "import edge count {} does not match imports count {}",
+            "import edge count {} does not match source dependency imports count {}",
             self.import_edges.len(),
-            self.imports.len()
+            expected_edges
           ),
         },
         None,
@@ -308,6 +313,16 @@ impl ModuleVersionRecord {
     }
 
     for edge in &self.import_edges {
+      if matches!(edge.import.alias, Some(SourceImportAlias::Context(_))) {
+        return Err(MechError::new(
+          InvalidModuleImportEdgesError {
+            module: self.id,
+            reason: "context imports must not create import edges".to_string(),
+          },
+          None,
+        ));
+      }
+
       if edge.import.specifier.trim().is_empty() {
         return Err(MechError::new(
           InvalidModuleImportEdgesError {
@@ -1653,4 +1668,18 @@ mod tests {
     assert_eq!(loaded.actor_updates, vec![ActorId(6)]);
     assert_eq!(loaded.events, vec![EventId(7)]);
   }
+  #[test]
+  fn context_import_without_import_edge_validates() {
+    let import = SourceImportDeclaration {
+      specifier: "browser/dom".to_string(),
+      alias: Some(SourceImportAlias::Context("ui".to_string())),
+      module: Some("browser".to_string()),
+      item: Some("dom".to_string()),
+      kind: crate::resolver::SourceImportKind::Single { name: "dom".to_string() },
+    };
+    let version = ModuleVersionRecord::new(ModuleVersionId(10), ModuleId(1), 1)
+      .with_imports(vec![import]);
+    assert!(version.validate_import_edges().is_ok());
+  }
+
 }
