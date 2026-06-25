@@ -2309,6 +2309,78 @@ fn manifest_context_import_ordering_supports_derived_alias() {
 }
 
 #[test]
+fn stored_module_manifest_context_import_ordering_supports_derived_alias() {
+  let root = setup_modules(
+    "+> @ui := browser/dom\n\n@dom := @ui\n\nresult := @dom/counter/_text\n",
+  );
+
+  let mut runtime = runtime_with_root(&root);
+  runtime
+    .grant_capability(runtime_context_read_grant(&runtime, "browser://dom", "counter/_text"))
+    .unwrap();
+
+  let version = runtime
+    .resolve_and_store_module_source("main.mec", module_options())
+    .unwrap()
+    .unwrap();
+
+  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  let program_scope = record
+    .scopes
+    .iter()
+    .find(|scope| scope.scope == SourceScope::Program)
+    .unwrap();
+
+  let names = program_scope
+    .contexts
+    .iter()
+    .map(|context| context.name.as_str())
+    .collect::<Vec<_>>();
+
+  assert_eq!(names, vec!["ui", "dom"]);
+
+  let result = runtime.run_module(version);
+  assert!(result.is_err(), "without browser provider this should fail at provider lookup");
+
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(
+    !error.contains("RuntimeContextInvalidBinding")
+      && !error.contains("RuntimeContextDerivedBaseUnsupported")
+      && !error.contains("references unknown context `@ui`"),
+    "derived manifest alias should be materialized before @dom, got {error}",
+  );
+  assert!(
+    error.contains("RuntimeResourceProviderNotFound")
+      || error.contains("BrowserResourceProvider")
+      || error.contains("provider"),
+    "expected to reach provider layer after successful context materialization, got {error}",
+  );
+}
+
+#[test]
+fn stored_module_derived_context_before_manifest_base_is_rejected() {
+  let root = setup_modules(
+    "@dom := @ui\n\n+> @ui := browser/dom\n\nx := 1\n",
+  );
+
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime
+    .resolve_and_store_module_source("main.mec", module_options())
+    .unwrap()
+    .unwrap();
+
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(
+    error.contains("RuntimeContextInvalidBinding")
+      && error.contains("unknown context `@ui`"),
+    "derived alias before base should still fail, got {error}",
+  );
+}
+
+#[test]
 fn direct_runtime_manifest_context_import_read_uses_browser_binding_before_lowering() {
   let mut runtime = RuntimeBuilder::new().build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "browser://dom", "counter/_text")).unwrap();

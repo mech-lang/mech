@@ -286,7 +286,7 @@ impl MechRuntime {
   }
 
 
-  fn context_declarations_from_index_scope(
+  pub(crate) fn context_declarations_from_index_scope(
     &self,
     index: &SourceIndex,
     scope: &SourceScope,

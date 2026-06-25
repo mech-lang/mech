@@ -15,9 +15,22 @@
 // - `active_module_version`: Retrieves the active version of a module, if any.
 
 use super::*;
+use crate::SourceIndex;
+
+fn source_index_for_module_record_source(
+  source: &mech_core::MechSourceCode,
+) -> MResult<Option<SourceIndex>> {
+  match source {
+    mech_core::MechSourceCode::Tree(tree) => Ok(Some(SourceIndex::from_program(tree))),
+    mech_core::MechSourceCode::String(source) => {
+      let tree = mech_syntax::parser::parse(source.trim())?;
+      Ok(Some(SourceIndex::from_program(&tree)))
+    }
+    _ => Ok(None),
+  }
+}
 
 impl MechRuntime {
-
   pub fn ensure_module(
     &mut self,
     name: &str,
@@ -35,6 +48,26 @@ impl MechRuntime {
   }
 
   fn materialize_manifest_context_imports(
+    &mut self,
+    record: &mut crate::RuntimeModuleRecord,
+  ) -> MResult<()> {
+    let Some(index) = source_index_for_module_record_source(&record.source)? else {
+      return self.materialize_manifest_context_imports_legacy(record);
+    };
+
+    let mut all_contexts = Vec::new();
+
+    for scope in &mut record.scopes {
+      let contexts = self.context_declarations_from_index_scope(&index, &scope.scope)?;
+      scope.contexts = contexts;
+      all_contexts.extend(scope.contexts.iter().cloned());
+    }
+
+    record.contexts = all_contexts;
+    Ok(())
+  }
+
+  fn materialize_manifest_context_imports_legacy(
     &mut self,
     record: &mut crate::RuntimeModuleRecord,
   ) -> MResult<()> {
