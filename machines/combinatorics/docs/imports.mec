@@ -1,0 +1,8 @@
+Combinatorics Imports
+===============================================================================
+
+```mech:disabled
++> combinatorics/n-choose-k
+
+ways := n-choose-k(5, 2)
+```

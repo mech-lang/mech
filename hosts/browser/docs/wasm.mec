@@ -1,0 +1,4 @@
+Browser WASM Boundary
+===============================================================================
+
+`mech serve` and `bundle-web` project a host config into the page as `window.__MECH_HOST_CONFIG`. `WasmMech.fromHostConfig()` reads that projection and constructs a browser runtime with the configured browser host boundary.

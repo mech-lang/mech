@@ -1,0 +1,4 @@
+Kernel Shapes
+===============================================================================
+
+Supported dynamic kernel shapes include f64 scalar kernels and f64 view kernels. The host owns wrapper objects and validates shape compatibility before invoking provider code.

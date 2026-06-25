@@ -7,7 +7,7 @@ It shows a full DOM -> Mech -> DOM round trip:
 - `mech serve` loads `demo.mcfg` and injects a derived host config as `window.__MECH_HOST_CONFIG`.
 - `WasmMech.fromHostConfig()` initializes the browser runtime from the host-owned config projection.
 - The page fetches `/code/*.mec` encoded compiled payloads and executes them with `WasmMech.evalCompiled()`.
-- Mech code binds `@browser := browser://dom/`.
+- Mech code imports `+> @browser := browser/dom` from the browser host manifest.
 - Mech reads the source input value from `@browser/body/content/mech-sandbox/input/_value`.
 - Mech computes `greeting`, `roundtrip`, and `status` strings from that DOM value.
 - Mech writes the computed output back to `@browser/body/content/mech-sandbox/output/_value`.

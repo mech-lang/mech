@@ -1,0 +1,55 @@
+Capabilities
+===============================================================================
+
+1. Overview
+-------------------------------------------------------------------------------
+
+A capability grant authorizes a subject to perform operations on a scoped host resource path. Capabilities are checked before host-backed reads, writes, and sends are allowed.
+
+2. Grant fields
+-------------------------------------------------------------------------------
+
+A grant contains:
+
+- subject: the program, module, or host execution unit receiving access;
+- operation: `read`, `write`, or `send`;
+- resource: a context base such as `cli://env`, `cli://stdout`, or `browser://dom`;
+- path scope: one path, a list of paths, or a configured subtree.
+
+3. Read, write, and send
+-------------------------------------------------------------------------------
+
+`read` allows expressions such as `@env/HOME`. `write` allows resource assignment such as `@ui/title = "Hello"`. `send` allows effect statements such as `@out/line <- "ok"` when the host exposes the target as a sink.
+
+4. Host attenuation
+-------------------------------------------------------------------------------
+
+Hosts may attenuate a grant by narrowing paths or operations. A configuration file can grant less than the host supports, but it cannot make a host perform operations the host implementation does not expose.
+
+5. Default CLI grants
+-------------------------------------------------------------------------------
+
+The CLI host can provide named profiles for environment reads and stdout/stderr writes. `--deny-default-capabilities` removes defaults, and `--capabilities` selects named profiles such as `:cli/env`, `:cli/stdout`, and `:cli/stderr`.
+
+6. Browser and CLI examples
+-------------------------------------------------------------------------------
+
+```mech:disabled
++> @env := cli/env
++> @out := cli/stdout
+
+home := @env/HOME
+@out/line <- home
+```
+
+```mech:disabled
++> @ui := browser/dom
+
+name := @ui/body/content/input/_value
+@ui/body/content/output/_value = name
+```
+
+7. Preflight behavior
+-------------------------------------------------------------------------------
+
+A runtime may reject a program during preflight if it imports an unsupported context, requests an operation not present in the manifest, or addresses a path outside the configured capability scope.

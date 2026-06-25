@@ -1,0 +1,57 @@
+Runtime
+===============================================================================
+
+1. Runtime
+-------------------------------------------------------------------------------
+
+The runtime loads source, resolves modules, evaluates programs, manages host contexts, and reports events.
+
+2. Host
+-------------------------------------------------------------------------------
+
+A host embeds or launches the runtime and provides resource providers. Browser and CLI behavior is documented under `hosts/browser/docs` and `hosts/cli/docs`.
+
+3. Source resolver
+-------------------------------------------------------------------------------
+
+The source resolver maps source imports such as `+> ./geometry.mec` to source text and module records.
+
+4. Module record
+-------------------------------------------------------------------------------
+
+A module record contains a resolved module identity, imports, exports, private bindings, and evaluation state.
+
+5. Module version
+-------------------------------------------------------------------------------
+
+A module version identifies the loaded module content or provider version used to satisfy imports.
+
+6. Context
+-------------------------------------------------------------------------------
+
+A context is a host-backed resource root bound to an `@name`. Contexts are imported from manifests or declared directly by advanced resource syntax.
+
+7. Resource provider
+-------------------------------------------------------------------------------
+
+A resource provider implements reads, writes, and sends for a context base URI.
+
+8. Capability grant
+-------------------------------------------------------------------------------
+
+A capability grant authorizes an operation on a scoped resource path.
+
+9. Runtime event
+-------------------------------------------------------------------------------
+
+Runtime events describe load, validation, evaluation, resource, and diagnostic activity.
+
+10. Workspace
+-------------------------------------------------------------------------------
+
+A workspace is the configured set of source roots, module roots, config files, and host projections used for a run.
+
+11. Execution boundary
+-------------------------------------------------------------------------------
+
+The execution boundary separates Mech evaluation from host effects. Host effects cross this boundary through resource providers and capability checks.

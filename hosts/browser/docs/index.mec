@@ -1,0 +1,8 @@
+Browser Host
+===============================================================================
+
+```mech:disabled
++> @ui := browser/dom
+```
+
+`browser/dom` exports a DOM context backed by the browser host. It maps configured DOM nodes and properties into Mech context paths.

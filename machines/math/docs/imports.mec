@@ -1,0 +1,11 @@
+Math Imports
+===============================================================================
+
+```mech:disabled
++> math
++> math/sin
++> math/{sin, cos, tan}
++> round := math/round
+```
+
+Math exports numeric functions for arithmetic, trigonometry, roots, logs, rounding, and related operations.

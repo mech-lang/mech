@@ -1,0 +1,4 @@
+CLI Config
+===============================================================================
+
+`run.cli` configures CLI host grants. Use it to narrow environment, stdout, and stderr access for a run. Relevant flags include `--config`, `--no-config`, `--capabilities`, and `--deny-default-capabilities`.

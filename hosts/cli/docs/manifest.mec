@@ -1,0 +1,4 @@
+CLI Host Manifest
+===============================================================================
+
+The CLI manifest is named `cli`. It exports `env` as a read-only context and `stdout` and `stderr` as write contexts.

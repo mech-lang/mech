@@ -1,114 +1,76 @@
-defining, assigning, and accessing data
+Define, Assign, and Send
 ===============================================================================
-
-%% Core language statements for creating bindings, mutating values, and declaring kinds/enums.
 
 1. Overview
 -------------------------------------------------------------------------------
 
-The core statement forms are:
+Mech distinguishes local definition, assignment, and host sends.
 
-- **Variable define** (`:=`) to create a binding.
-- **Variable assign** (`=`) to update an existing mutable binding.
-- **Operator-assign** (`+=`, `-=`, `*=`, `/=`) for in-place arithmetic updates.
-- **Tuple destructure** (`(a,b,...) := expr`) to unpack tuple values.
-- **Enum define** (`<name> := ...`) to declare tagged variants.
-- **Kind define** (`<name> := <kind-annotation>`) to declare named kinds.
+```mech:disabled
+x := 1              -- define local binding
+x = 2               -- assign existing binding or writable resource
+@out/line <- "ok"   -- send to host sink
+```
 
-2. Variable define (`:=`)
+2. Define
 -------------------------------------------------------------------------------
 
-```mech:define-basic
-x := 10
-label := "hello"
+`:=` defines a new local binding.
+
+```mech:disabled
+answer := 42
+name := "Ada"
 ```
 
-Use `~` to define a mutable binding:
+Top-level definitions may be exported with `<+` from a module.
 
-```mech:define-mutable
-~counter := 0
-```
-
-3. Variable assign (`=`)
+3. Assign
 -------------------------------------------------------------------------------
 
-Assignment updates an existing mutable symbol:
+`=` assigns an existing mutable binding or writable resource.
 
-```mech:assign-basic
-~counter := 0
-counter = counter + 1
+```mech:disabled
+x := 1
+x = 2
 ```
 
-Assignment also supports indexed/sliced targets:
+A writable context path can also be an assignment target:
 
-```mech:assign-slice
-~m := [1, 2; 3, 4]
-m[1,2] = 99
+```mech:disabled
++> @ui := browser/dom
+
+@ui/body/content/title = "Hello"
 ```
 
-4. Operator-assign
+Local assignment changes a program binding. Resource assignment requests a write through the host resource provider and may be rejected by capability or path permissions.
+
+4. Send
 -------------------------------------------------------------------------------
 
-In-place arithmetic statement forms:
+`<-` sends a value to a host-backed target.
 
-```mech:op-assign
-~x := 5
-x += 2
-x *= 3
+```mech:disabled
++> @out := cli/stdout
+
+@out/line <- "ok"
 ```
 
-Currently implemented operators are `+=`, `-=`, `*=`, `/=` in interpreter statement execution.
+Send is a statement and is effectful. It is intended for host sinks such as stdout, stderr, message channels, or other append-like resources. It does not define or replace a local binding.
 
-(i)> The grammar includes `^=` (`exp-assign-operator`), but interpreter statement dispatch currently only implements add/sub/mul/div branches.
-
-5. Tuple destructuring
+5. Context paths
 -------------------------------------------------------------------------------
 
-Unpack tuple elements into new bindings:
+A context path starts with an imported or declared context binding:
 
-```mech:tuple-destructure
-(a, b, c) := (1, 2, 3)
+```mech:disabled
++> @env := cli/env
+
+home := @env/HOME
 ```
 
-6. Enum define (`<name> := variants`)
+Context paths may appear in read positions. Writable context paths may appear on the left side of `=`, and send-capable context paths may appear on the left side of `<-`.
+
+6. Destructuring, enums, kinds, and access
 -------------------------------------------------------------------------------
 
-Declare enum variants using atom-style names, optionally with payload kinds.
-
-```mech:enum-define
-<response> := :ok<u64> | :error<string> | :timeout
-```
-
-Payload style variants are also valid:
-
-```mech:enum-define-2
-<event> := :click | :keypress<string>
-```
-
-7. Kind define (`<name> := <kind>`)
--------------------------------------------------------------------------------
-
-Declare a named kind alias/specification:
-
-```mech:kind-define
-<distance> := <f64>
-```
-
-8. Accessing values
--------------------------------------------------------------------------------
-
-Core access patterns include:
-
-- Identifier access: `x`
-- Index/slice access: `m[1,2]`, `xs[2]`
-- Field/column access: `record.field`, `table.column`
-- String scalar access: `s[1]`
-
-For detailed indexing behavior, see [`indexing`](/reference/indexing.html).
-
-9. Notes
--------------------------------------------------------------------------------
-
-- Use `:=` to declare and `=` to update.
-- Assigning to undefined or immutable symbols is an error.
-- Mutation requires bindings declared with `~`.
+Tuple destructuring defines multiple names from one expression. Enum and kind definitions introduce domain-specific names and categories. Access expressions read fields, paths, and indexed values from existing data.

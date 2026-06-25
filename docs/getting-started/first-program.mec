@@ -1,0 +1,13 @@
+First Program
+===============================================================================
+
+```mech:disabled
+answer := 42
+answer-is-right! := answer == 42
+```
+
+Run it with:
+
+```sh
+mech test first-program.mec
+```

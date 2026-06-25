@@ -1,0 +1,10 @@
+CLI Host
+===============================================================================
+
+```mech:disabled
++> @env := cli/env
++> @out := cli/stdout
++> @err := cli/stderr
+```
+
+The CLI host provides environment reads and stdout/stderr write sinks.

@@ -1,0 +1,8 @@
+Browser Host Manifest
+===============================================================================
+
+The browser host module manifest is named `browser`. It exports `dom` as a context with base URI `browser://dom` and read/write operations.
+
+```mech:disabled
++> @ui := browser/dom
+```

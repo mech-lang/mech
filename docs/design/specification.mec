@@ -2374,3 +2374,151 @@ factor := repeat0
 group := "(", expression, ")" ;
 terminal := quote, +any-token, quote ;
 ```
+
+Appendix: Current module, context, validation, and effect syntax
+===============================================================================
+
+This appendix aligns the platform specification with the current language surface.
+
+A. Operator table additions
+-------------------------------------------------------------------------------
+
+| Category | Operators | Meaning |
+|----------|-----------|---------|
+| Strict comparison | `===`, `!==` | strict equality and strict inequality |
+| Effect/send | `<-` | send a value to a host-backed target |
+
+`<-` is also used inside set comprehensions as a generator operator. The two uses are distinguished by grammar context:
+
+```mech:disabled
+{x | x <- xs}       -- generator inside comprehension
+@out/line <- "ok"   -- send statement
+```
+
+B. Statement grammar
+-------------------------------------------------------------------------------
+
+```ebnf
+statement := module-import
+      | module-export
+      | context-declaration
+      | variable-define
+      | invariant-define
+      | variable-assign
+      | op-assign
+      | send
+      | enum-define
+      | function-define
+      | fsm-declare
+      | kind-define ;
+```
+
+C. Module import grammar
+-------------------------------------------------------------------------------
+
+```ebnf
+module-import := "+>", (source-import | context-import | aliased-import | module-import-target) ;
+source-import := relative-source-path | absolute-source-uri ;
+context-import := context-name, ":=", module-path, "/", identifier ;
+aliased-import := identifier, ":=", module-import-target ;
+module-import-target := module-path | module-path, "/", import-selector ;
+import-selector := identifier | "*" | "{", identifier, {",", identifier}, "}" ;
+module-path := identifier, {"/", identifier} ;
+context-name := "@", identifier ;
+```
+
+Examples:
+
+```mech:disabled
++> math
++> math/sin
++> math/*
++> math/{sin, cos}
++> alias := math/sin
++> ./file.mec
++> @env := cli/env
+```
+
+A module import imports a namespace, item, group, or glob. A source import loads a source file. A context import binds an `@name` to a context exported by a host manifest. An import alias changes the local name introduced by the import.
+
+D. Module export grammar
+-------------------------------------------------------------------------------
+
+```ebnf
+module-export := "<+", identifier ;
+```
+
+Exports mark existing top-level bindings as public. Export declarations do not create bindings.
+
+E. Invariant grammar
+-------------------------------------------------------------------------------
+
+```ebnf
+invariant-define := invariant-name, ":=", expression ;
+invariant-name := identifier, "!" ;
+```
+
+An invariant name must end with `!`. Its expression must evaluate to `<bool>`. Invariants participate in runtime validation, and `mech test` reports invariant pass/fail status.
+
+F. Context path grammar
+-------------------------------------------------------------------------------
+
+```ebnf
+context-path := context-name, "/", resource-path ;
+resource-path := path-segment, {"/", path-segment} ;
+```
+
+`@ctx` names a context binding. The path is relative to that context. Context paths may appear in read positions. Writable context paths may appear as assignment targets. Send-capable context paths may appear as send targets.
+
+G. Direct context declaration grammar
+-------------------------------------------------------------------------------
+
+Direct resource contexts are advanced syntax for binding a context directly to a resource URI and attenuating it.
+
+```ebnf
+context-declaration := context-name, ":=", (resource-uri | context-name), [capability-scope] ;
+capability-scope := "{", capability, {",", capability}, "}" ;
+capability := ":read", "(", path-pattern, ")" | ":write", "(", path-pattern, ")" | ":send", "(", path-pattern, ")" ;
+```
+
+```mech:disabled
+@manual := docs://manual{:read(intro/*), :write(intro/title)}
+@intro := @manual{:read(intro/*)}
+```
+
+H. Send grammar
+-------------------------------------------------------------------------------
+
+```ebnf
+send := context-path, "<-", expression ;
+```
+
+Send is an effectful statement, not assignment. The send target must support the required host operation, and the runtime may reject sends during preflight.
+
+I. Assignment grammar and semantics
+-------------------------------------------------------------------------------
+
+```ebnf
+variable-assign := (identifier | access-path | context-path), "=", expression ;
+```
+
+Local assignment updates an existing binding. Resource assignment writes through a context path and may be rejected by host capabilities.
+
+```mech:disabled
+@ui/title = "Hello"
+```
+
+J. Matrix literal semantics for composite cells
+-------------------------------------------------------------------------------
+
+Matrix elements must have a consistent cell kind. Composite cells are valid when each cell has the same composite kind and shape required by the runtime.
+
+```mech:disabled
+rows := [
+  {name: "Ada"}
+
+  {name: "Grace"}
+]
+```
+
+This is a matrix whose cells are records with a compatible record shape.

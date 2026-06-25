@@ -1,0 +1,4 @@
+Math Dynamic Provider
+===============================================================================
+
+The math dynamic provider may satisfy imports such as `math/sqrt` when the module loader has the provider available. User-facing syntax is documented in `docs/reference/modules.mec`; ABI details live in `src/abi/docs`.

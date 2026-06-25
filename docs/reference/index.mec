@@ -32,13 +32,15 @@ Platform Reference
 - [`match`](/reference/match.html) - construct for branching logic based on pattern matching
 - [`pattern`](/reference/pattern.html) - match and destructure data
 - [`state machine`](/reference/state-machine.html) - defines a set of states and transitions between them
-- [Modules](/reference/module-declarations.html) - organize code into reusable components
+- [Modules](/reference/modules.html) - imports, exports, namespaces, and host context bindings
 - [Validation](/reference/validation.html) - runtime invariants and integrity constraints
 - Synth `todo`
 - Gen `todo`
 - Programs `todo`
 - Error Handling `todo`
-- Capabilities `todo`
+- [Runtime](/reference/runtime.html) - platform runtime model
+- [Capabilities](/reference/capabilities.html) - host grants, operations, and path scopes
+- [Config](/reference/config.html) - `mech.mcfg` and runtime configuration
 - Concurrency `todo`
 
 3. System Model

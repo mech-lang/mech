@@ -1,0 +1,11 @@
+Browser DOM Context
+===============================================================================
+
+```mech:disabled
++> @ui := browser/dom
+
+name := @ui/body/content/mech-sandbox/input/_value
+@ui/body/content/mech-sandbox/output/_value = name
+```
+
+Configured DOM paths map to element text, attributes, or properties. Property paths such as `_value` expose DOM property values. Reads and writes require matching configured permissions. Denied writes are rejected before the host mutates the DOM.

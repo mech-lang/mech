@@ -1,0 +1,4 @@
+Browser Host Config
+===============================================================================
+
+Browser demos use `runtime`, `serve`, and `browser.dom` config. `serve` selects the HTTP address, port, source paths, shim, and WASM package. `browser.dom` lists paths, selectors, properties, and `allow` lists that grant read/write access.

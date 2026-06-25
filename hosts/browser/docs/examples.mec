@@ -1,0 +1,15 @@
+Browser Host Examples
+===============================================================================
+
+Use manifest-backed imports in browser examples:
+
+```mech:disabled
++> @browser := browser/dom
+
+name := @browser/body/content/mech-sandbox/input/_value
+@browser/body/content/mech-sandbox/output/_value = name
+```
+
+The `examples/browser-dom-demo` flow is: configure DOM paths in `demo.mcfg`, run `mech serve examples/browser-dom-demo`, or bundle static assets with `mech bundle-web examples/browser-dom-demo --out dist/browser-dom-demo`.
+
+Direct URI declarations such as `@browser := browser://dom/` are lower-level runtime syntax and should not be the primary user-facing example.

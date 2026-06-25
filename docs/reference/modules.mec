@@ -1,271 +1,176 @@
 Modules
 ===============================================================================
 
-%% Importing modules and exporting public bindings.
-
 1. Overview
 -------------------------------------------------------------------------------
 
-Modules let you split a program across multiple files, reuse shared code, and control which bindings are available to other modules.
-
-Modules are defined in source files. A module can import other modules and export some of its bindings for use by other modules.
-
-- Use `+>` to import from another module or source file.
-- Use `<+` to export a local top-level binding.
-
-```mech:disabled
-+> math/sin
-<+ triangle-area
-
-triangle-area(a: <f64>, b: <f64>, angle: <f64>) => <f64>
-  | 0.5 * a * b * sin(angle).
-```
-
-Only exported bindings can be imported directly from another module.
-
-2. Importing
--------------------------------------------------------------------------------
-
-Importing a module by name makes the module available as a namespace.
+Modules provide imports, exports, namespaces, and host context bindings. Import statements use `+>` and export statements use `<+`.
 
 ```mech:disabled
 +> math
-```
-
-Use qualified names to access bindings from the imported module.
-
-```mech:namespace-use
-math/sin(angle)
-math/cos(angle)
-```
-
-Namespace imports are useful when you want to avoid local name conflicts or make it clear where a binding comes from.
-
-(2.1) One binding
-
-Import a single exported binding by naming it at the end of the import path.
-
-```mech:disabled
 +> math/sin
-```
-
-The imported binding is available by its local name.
-
-```mech:disabled
-sin(angle)
-```
-
-The final path segment is the imported binding name. The preceding path names the
-module.
-
-```mech:disabled
-+> math/sin
-+> math/trig/sin
-+> geometry/area
-```
-
-(2.2) All bindings
-
-Use `*` to import every exported binding from a module.
-
-```mech:disabled
 +> math/*
++> math/{sin, cos, tan}
++> sine := math/sin
+
++> ./geometry.mec
++> ../shared/util.mec
+
++> @env := cli/env
++> @out := cli/stdout
++> @ui := browser/dom
+
+<+ result
 ```
 
-For instance, `math` exports `sin`, `cos`, and many other bindings. This import makes all of them available in the current module without a namespace prefix.
+A module runs in its own top-level scope. Imports add names or context bindings to that scope. Exports mark existing top-level bindings as public.
 
-```mech:disabled
-sin(angle)
-cos(angle)
-```
-
-Wildcard imports are convenient for small modules and prelude-style modules. However, they can lead to name conflicts and make it less clear where a binding comes from. Use them judiciously.
-
-(2.3) Source files
-
-A module can import another source file by path.
+2. Static source imports
+-------------------------------------------------------------------------------
 
 ```mech:disabled
 +> ./geometry.mec
 +> ../shared/strings.mec
 ```
 
-Relative paths are resolved from the file containing the import.
+Static source imports load another `.mec` source file. Relative paths are resolved from the file that contains the import. A source import creates a dependency edge in the module graph, so the imported source is resolved and evaluated before the importing module depends on its exported names.
 
-A source file can also be imported through a source prefix.
+Each imported source executes as an isolated module record. Its private bindings remain private. Only bindings named by `<+` are visible to other modules.
 
-```mech:disabled
-+> fs://lib/geometry.mec
-+> fs://shared/strings.mec
-```
+Cycles are invalid. If `a.mec` imports `b.mec` and `b.mec` imports `a.mec`, the resolver reports a cycle. Move shared definitions into a third module to break the cycle.
 
-Source imports create dependencies between modules. When a module is loaded, its imports are resolved before the module runs.
-
-(2.4) Versioned imports
-
-By default, an import resolves to the latest version of the module. To ensure a specific version is used, include the version in the import path. 
-
-A version can appear as part of the module path.
-
-```mech:versioned-import
-+> math/v1.2.3/sin
-```
-
-This imports `sin` from version `v1.2.3` of the `math` module.
-
-
-(2.5) Cycles
-
-Modules should not import each other in a cycle.
-
-```text
-a.mec -> b.mec
-b.mec -> a.mec
-```
-
-When modules form a cycle, the resolver reports the cycle so the imports can be
-restructured.
-
-A common fix is to move shared bindings into a third module.
-
-```text
-a.mec -> shared.mec
-b.mec -> shared.mec
-```
-
-This is called a diamond dependency. It is not a cycle because the shared module does not import either of the other two modules. When the resolver encounters a diamond dependency, it memoizes the shared module so it is only loaded once.
-
-
-3. Exporting
+3. Static module imports
 -------------------------------------------------------------------------------
-
-Export a top-level binding with `<+`.
-
-```mech:disabled
-pi := 3.1415926535
-
-area := fn(radius)
-  pi * radius * radius
-
-circumference := fn(radius)
-  2 * pi * radius
-
-<+ circumference
-<+ pi
-```
-
-This module exports `circumference` and `pi`, demonstrating that exports can be declared in any order. 
-
-The `area` binding is not exported, so it cannot be imported directly by other modules.
-
-Exports do not create bindings. They mark existing bindings as public.
-
-```mech:disabled
-double := fn(x) x * 2
-
-<+ double
-```
-
-(3.1). Re-exporting bindings
-
-A module can import a binding and export it again.
-
-```mech:disabled
-+> math/sin
-+> math/cos
-
-<+ sin
-<+ cos
-```
-
-Re-exporting is useful for building modules that collect bindings from several
-other modules.
-
-```mech:disabled
-+> math/sin
-+> math/cos
-+> math/pi
-+> strings/trim
-
-<+ sin
-<+ cos
-<+ pi
-<+ trim
-```
-
-A program can then import the collected exports.
-
-```mech:disabled
-+> prelude/*
-
-x := sin(angle)
-name := trim(raw-name)
-```
-
-4. Name conflicts
--------------------------------------------------------------------------------
-
-Imported names share the current module's top-level scope. If two imports provide the same local name, use a namespace import or import only the binding you need.
-
-Instead of importing two wildcard sets:
-
-```mech:disabled
-+> math/*
-+> matrix/*
-
-multiply(1, [1 2 3]) -- This is ambiguous because both math and matrix export a `multiply` binding.
-```
-
-Import the modules as namespaces:
 
 ```mech:disabled
 +> math
-+> matrix
-
-math/multiply(1, [1 2 3])    -- i.e {{1 * [1 2 3]}}
-matrix/multiply(1, [1 2 3])  -- i.e. {{1 ** [1 2 3]}}
++> math/sin
++> math/*
 ```
 
-Qualified names make conflicts explicit and keep the program easier to read.
+A namespace import makes the module available through its module name:
 
-5. A complete module
+```mech:disabled
++> math
+
+angle := math/sin(theta)
+```
+
+An item import imports one exported binding into the local scope:
+
+```mech:disabled
++> math/sin
+
+height := sin(theta)
+```
+
+A glob import imports every exported binding from the module into the local scope:
+
+```mech:disabled
++> math/*
+
+x := sin(theta) + cos(theta)
+```
+
+Glob imports are convenient for small modules and prelude-style modules, but they can create name conflicts. Prefer item or namespace imports when readability matters.
+
+4. Grouped imports
 -------------------------------------------------------------------------------
 
-This file defines a small geometry module.
-
 ```mech:disabled
-pi := 3.1415926535
-
-circumference(radius<f64>) => <f64>
-  2 * pi * radius.
-
-<+ pi
-<+ circumference
++> math/{sin, cos, tan}
 ```
 
-Another module can import one exported binding.
+A grouped import imports several items from the same module path. It is equivalent to separate item imports:
 
 ```mech:disabled
-+> ./geometry.mec/circumference
-
-r := 10
-c := circumference(r)
++> math/sin
++> math/cos
++> math/tan
 ```
 
-It can import the module namespace.
+5. Import aliases
+-------------------------------------------------------------------------------
 
 ```mech:disabled
-+> ./geometry.mec
-
-area(r<f64>) => <f64>
-  geometry/pi * r ^ 2.
++> sine := math/sin
 ```
 
-Or it can import all exported bindings.
+An alias imports the target binding under a local name. The alias name is the name visible in the importing module.
 
 ```mech:disabled
-+> ./geometry.mec/*
++> round_to_int := math/round
 
-area(r<f64>) => <f64>
-  pi * r ^ 2.
+n := round_to_int(x)
 ```
+
+Aliases are useful for resolving local naming conflicts and for giving host or machine exports domain-specific names.
+
+6. Dynamic module imports
+-------------------------------------------------------------------------------
+
+Dynamic module imports use the same syntax as static module imports from the user's point of view:
+
+```mech:disabled
++> math/sqrt
++> combinatorics/n-choose-k
+```
+
+The module loader first resolves the import through registered source modules and module manifests. When a dynamic provider is available, it may satisfy an import at load time. The imported binding behaves like any other imported function or value.
+
+If the provider is unavailable, does not export the requested item, or cannot satisfy the requested module path, the import fails. ABI details for dynamic providers are intentionally not documented here; see `src/abi/docs` for provider-authoring details.
+
+7. Host context imports
+-------------------------------------------------------------------------------
+
+```mech:disabled
++> @env := cli/env
++> @out := cli/stdout
++> @ui := browser/dom
+```
+
+A host context import binds an `@name` context from a host module manifest. The module path names the host and exported context. The local `@name` is then used as the root of context paths:
+
+```mech:disabled
+home := @env/HOME
+@out/line <- home
+```
+
+Host-specific paths, permissions, and configuration are documented with each host implementation under `hosts/*/docs`.
+
+8. Exports
+-------------------------------------------------------------------------------
+
+```mech:disabled
+result := 42
+<+ result
+```
+
+Exports mark existing top-level bindings as public. Export statements do not create bindings. A private binding can be used by exported bindings but cannot be imported directly by another module.
+
+9. Re-exports
+-------------------------------------------------------------------------------
+
+```mech:disabled
++> math/sin
+<+ sin
+```
+
+A module may import a binding and export it again. Re-exports are useful for prelude modules and compatibility modules that collect names from several providers.
+
+10. Name conflicts and import errors
+-------------------------------------------------------------------------------
+
+The resolver reports an error for duplicate local names introduced by imports, aliases, or definitions. Use a namespace import or alias to make names distinct.
+
+Common import errors include:
+
+- duplicate local name;
+- missing source file;
+- missing module;
+- missing item in an existing module;
+- unsupported host context module;
+- unavailable dynamic provider;
+- dependency cycle.
+
+Import failures occur before dependent code executes, so later statements cannot rely on a failed import.

@@ -1,0 +1,4 @@
+CLI Capabilities
+===============================================================================
+
+The CLI host can grant named profiles: `:cli/env`, `:cli/stdout`, and `:cli/stderr`. Defaults may be disabled with `--deny-default-capabilities`. Config and command-line flags can attenuate grants to selected paths such as `line` or `text`.

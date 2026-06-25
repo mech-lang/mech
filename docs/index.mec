@@ -42,14 +42,22 @@ Mech Documentation
 - [`match`](/reference/match.html) - construct for branching logic based on pattern matching
 - [`pattern`](/reference/pattern.html) - match and destructure data
 - [`state machine`](/reference/state-machine.html) - defines a set of states and transitions between them
-- [Modules](/reference/module-declarations.html) - organize code into reusable components
+- [Modules](/reference/modules.html) - imports, exports, namespaces, and host context bindings
 - [Validation](/reference/validation.html) - runtime invariants and integrity constraints
 - Synth `todo`
 - Gen `todo`
 - Programs `todo`
 - Error Handling `todo`
-- Capabilities `todo`
+- [Runtime](/reference/runtime.html) - platform runtime model
+- [Capabilities](/reference/capabilities.html) - host grants, operations, and path scopes
+- [Config](/reference/config.html) - `mech.mcfg` and runtime configuration
 - Concurrency `todo`
+
+
+(2.4) Host Reference
+
+- [Browser Host](../hosts/browser/docs/index.html) - browser DOM context reference
+- [CLI Host](../hosts/cli/docs/index.html) - CLI environment and stream contexts
 
 (2.3) System Model
 
@@ -124,7 +132,7 @@ Mech Documentation
 ```mech:hidden
 document/index := {
   name: "docs" 
-  version: "v0.3.5"
+  version: "v0.3.6"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/mech/docs"
   license: "Apache-2.0"}

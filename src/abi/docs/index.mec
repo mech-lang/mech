@@ -1,0 +1,8 @@
+Dynamic Module ABI
+===============================================================================
+
+ABI-level documentation for dynamic module providers lives here, separate from the user-facing language reference.
+
+- `dynamic-module-abi.mec`
+- `provider-authoring.mec`
+- `kernel-shapes.mec`

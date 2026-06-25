@@ -1,0 +1,4 @@
+Provider Authoring
+===============================================================================
+
+Provider authors expose descriptors and required symbols expected by the runtime. Providers should declare exported items, kernel kind, argument shape, result shape, and ABI version compatibility.

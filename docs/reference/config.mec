@@ -1,0 +1,59 @@
+Config
+===============================================================================
+
+1. Overview
+-------------------------------------------------------------------------------
+
+Mech configuration is stored in `mech.mcfg` by default. The config document describes runtime behavior, serving, browser host projection, CLI execution, and capability attenuation.
+
+2. Loading
+-------------------------------------------------------------------------------
+
+The CLI discovers `mech.mcfg` from the project/config base unless `--config PATH` supplies a specific file or `--no-config` disables config loading.
+
+3. Document shape
+-------------------------------------------------------------------------------
+
+```mech:disabled
+config := {
+  runtime: {...},
+  serve: {...},
+  browser: {...},
+  run: {cli: {...}},
+}
+```
+
+4. `runtime`
+-------------------------------------------------------------------------------
+
+`runtime` contains platform-level runtime settings such as source roots, module roots, and host projection inputs.
+
+5. `serve`
+-------------------------------------------------------------------------------
+
+`serve` configures HTTP serving: address, port, static paths, source paths, shim, and WASM package locations.
+
+6. `browser`
+-------------------------------------------------------------------------------
+
+`browser` configures browser host projections such as DOM paths, selectors, properties, and allowed operations. Host-specific details live in `hosts/browser/docs/config.mec`.
+
+7. `run.cli`
+-------------------------------------------------------------------------------
+
+`run.cli` configures CLI host grants for environment, stdout, and stderr. Host-specific details live in `hosts/cli/docs/config.mec`.
+
+8. Capability config
+-------------------------------------------------------------------------------
+
+Capability config narrows host grants by operation and path. Invalid operations, unsupported paths, or malformed capability entries make the config invalid.
+
+9. Path resolution and discovery
+-------------------------------------------------------------------------------
+
+Relative paths are resolved from the config file's directory unless a field documents a different base. Config discovery stops at the selected project/config base.
+
+10. Invalid config behavior
+-------------------------------------------------------------------------------
+
+Invalid config prevents the command from running and reports the invalid field, value, or missing required entry.

@@ -148,3 +148,44 @@ mech --help
 mech serve --help
 ```
 
+
+3. Current release examples
+-------------------------------------------------------------------------------
+
+Run all tests in the current directory:
+
+```sh
+mech test .
+```
+
+Serve the browser DOM demo:
+
+```sh
+mech serve examples/browser-dom-demo
+```
+
+Bundle the browser DOM demo as static web assets:
+
+```sh
+mech bundle-web examples/browser-dom-demo --out dist/browser-dom-demo
+```
+
+(3.1) Config and capability flags
+
+| Option | Description |
+|--------|-------------|
+| `--config` | Load an explicit config file. |
+| `--no-config` | Disable config discovery/loading. |
+| `--capabilities` | Enable one named CLI host capability profile for the run. |
+| `--deny-default-capabilities` | Remove default CLI host grants before applying explicit grants. |
+
+(3.2) Minimal CLI host-context example
+
+```mech:disabled
++> @env := cli/env
++> @out := cli/stdout
+
+@out/line <- @env/HOME
+```
+
+Detailed CLI host behavior is documented in `hosts/cli/docs`.

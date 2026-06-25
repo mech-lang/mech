@@ -1,0 +1,13 @@
+CLI Stdout and Stderr Contexts
+===============================================================================
+
+```mech:disabled
++> @out := cli/stdout
++> @err := cli/stderr
+
+@out/line <- "hello"
+@out/text <- "no newline"
+@err/line <- "warning"
+```
+
+`line` writes append a newline. `text` writes do not append a newline.

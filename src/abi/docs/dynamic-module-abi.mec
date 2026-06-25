@@ -1,0 +1,6 @@
+Dynamic Module ABI
+===============================================================================
+
+This ABI is a prototype validation path for dynamic providers. It is not a package manager or dynamic dependency resolver.
+
+The ABI defines versioning, export descriptors, required symbols, supported kernel kinds, f64 scalar kernels, f64 view kernels, the host-owned wrapper model, safety rules, and non-goals.

@@ -1,0 +1,4 @@
+Combinatorics Dynamic Provider
+===============================================================================
+
+The combinatorics dynamic provider may satisfy combinatorics imports when available through the module loader. Dynamic import syntax is documented in `docs/reference/modules.mec`.
