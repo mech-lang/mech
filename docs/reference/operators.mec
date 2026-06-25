@@ -1,33 +1,105 @@
 Operators
-===============================================================================
+================================================================================
 
-1. Overview
--------------------------------------------------------------------------------
+%% Quick reference of all the operators in Mech, organized by category. 
 
-Operators are punctuation forms used in expressions and statements.
+For detailed information on each operator, see the corresponding reference page.
 
-2. Binding and assignment operators
--------------------------------------------------------------------------------
+1. Math Operators
+--------------------------------------------------------------------------------
 
-| Operator | Meaning |
-|----------|---------|
-| `:=` | define a new local binding |
-| `=` | assign an existing binding or writable resource |
-| `+=` `-=` `*=` `/=` | update an existing binding with an arithmetic operation |
+| Operator   | Meaning                 | Example         |
+|:----------:|-------------------------|-----------------|
+| `+`        | addition                | {{3 + 4}}       |
+| `-`        | subtraction or negation | `10 - 3; -10`  |
+| `*` or `×` | multiplication          | {{6 * 7}}       |
+| `/` or `÷` | division                | {{22 / 7}}      |
+| `%`        | modulus (remainder)     | {{17 % 5}}      |
+| `^`        | exponentiation          | {{2 ^ 8}}       |
+
+2. String Operators
+--------------------------------------------------------------------------------
+
+| Operator | Meaning | Example |
+|:--:|---|---|
+| `+` | concatenation | {{label := "user-" + "42"}} |
+
+3. Matrix Operators
+--------------------------------------------------------------------------------
+
+| Operator     | Meaning                     | Example      |
+|:------------:|-----------------------------|--------------|
+| `+`          | broadcast addition       | {{a + b}}    |
+| `-`          | broadcast subtraction    | {{a - b}}    |
+| `*` or `×`   | broadcast multiplication | {{a * b}}    |
+| `/` or `÷`   | broadcast division       | {{a / b}}    |
+| `%`          | broadcast modulus        | {{a % b}}    |
+| `^`          | broadcast power          | {{a ^ b}}    |
+| `**`         | matrix multiplication       | {{a ** b}}   |
+| `'`          | matrix transpose            | {{a'}}       |
+| `\\`         | linear solve `A \\ b`     | `a \\ b`    |
+| `·` or `•`   | dot product                 | {{ u · v}}   |
+| `⨯`          | cross product               | {{ u ⨯ v}}   |
+
+4. Set Operators
+--------------------------------------------------------------------------------
+
+| Operator     | Meaning              | Example      |
+|:------------:|----------------------|--------------|
+| `∪`          | union                | {{a ∪ b}}    |
+| `∩`          | intersection         | {{a ∩ b}}    |
+| `∖`          | difference           | {{a ∖ b}}    |
+| `∁`          | complement           | {{a ∁ b}}    |
+| `Δ` (or `∆`) | symmetric difference | {{a Δ b}}    |
+| `⊆`          | subset               | {{a ⊆ b}}    |
+| `⊊` (or `⊂`) | proper subset        | {{a ⊊ b}}    |
+| `⊇`          | superset             | {{a ⊇ b}}    |
+| `⊋` (or `⊃`) | proper superset      | {{a ⊋ b}}    |
+| `∈`          | element of           | {{2 ∈ a}}    |
+| `∉`          | not element of       | {{9 ∉ a}}    |
+
+5. Table Operators
+--------------------------------------------------------------------------------
+
+| Operator | Meaning          | Example          |
+|:--------:|------------------|------------------|
+| `⋈`     | inner join        | {{j := a ⋈ b}}   |
+| `⟕`     | left outer join   | {{j := a ⟕ b}}   |
+| `⟖`     | right outer join  | {{j := a ⟖ b}}   |
+| `⟗`     | full outer join   | {{j := a ⟗ b}}   |
+| `⋉`     | left semi join    | {{j := a ⋉ b}}   |
+| `▷`     | left anti join    | {{j := a ▷ b}}   |
+
+6. Assignment Operators
+--------------------------------------------------------------------------------
+
+| Operator | Meaning                                      | Example    |
+|:--------:|----------------------------------------------|------------|
+| `:=`     | define a new binding                         | {{x := 10}}  |
+| `=`      | assign/update an existing mutable binding or writable context path | {{x = 11}}   |
+| `+=`     | add-assign=                                  | {{x += 1}}   |
+| `-=`     | subtract-assign                              | {{x -= 1}}   |
+| `*=`     | multiply-assign                              | {{x *= 2}}   |
+| `/=`     | divide-assign                                | {{x /= 2}}   |
+| `^=`     | exponent-assign                              | {{x ^= 3}}   |
+
+
+Assignment can also target writable host resources through a context path:
 
 ```mech:disabled
-x := 1
-x = 2
-x += 3
-@ui/title = "Hello"
++> @ui := browser/dom
+
+@ui/body/content/title = "Hello"
 ```
 
-3. Effect operators
--------------------------------------------------------------------------------
+Resource assignment requests a host write and may be rejected by the runtime if the context does not grant write access.
 
-| Operator | Meaning |
-|----------|---------|
-| `<-` | send a value to a host-backed target |
+7. Effect Operators
+--------------------------------------------------------------------------------
+
+| Operator | Meaning | Example |
+|:--------:|---------|---------|
+| `<-` | send a value to a host-backed target | `@out/line <- "ok"` |
 
 ```mech:disabled
 +> @out := cli/stdout
@@ -35,35 +107,39 @@ x += 3
 @out/line <- "ok"
 ```
 
-Send is effectful and is not assignment. The target must be a context path that supports the required host operation.
+Send is an effectful statement, not assignment. It is intended for host sinks such as stdout, stderr, message queues, or other append-like resources.
 
-4. Comparison operators
--------------------------------------------------------------------------------
-
-| Operator | Meaning |
-|----------|---------|
-| `==` | equality |
-| `!=` | inequality |
-| `===` | strict equality |
-| `!==` | strict inequality |
-| `<` `<=` `>` `>=` | ordering comparisons |
-
-5. Arithmetic and logic operators
--------------------------------------------------------------------------------
-
-Arithmetic operators include `+`, `-`, `*`, `/`, `%`, `**`, and `\`. Logic operators include `&&`, `||`, and `!`.
-
-6. Comprehension generator operator
--------------------------------------------------------------------------------
-
-Inside a comprehension, `<-` introduces a generator:
+`<-` is also used inside comprehensions as a generator operator:
 
 ```mech:disabled
-{x | x <- xs}
+{x | x <- xs}       -- generator inside comprehension
+@out/line <- "ok"   -- send statement
 ```
 
-This is distinct from a send statement. A send statement has a context path on the left and appears as a statement:
+The parser distinguishes these uses by context: a comprehension generator appears inside a comprehension clause, while a send statement has a context path target in statement position.
 
-```mech:disabled
-@out/line <- "ok"
-```
+8. Comparison Operators
+--------------------------------------------------------------------------------
+
+| Operator     | Meaning               | Example               |
+|:------------:|-----------------------|-----------------------|
+| `==` or `⩵` | equality               |  {{[1 2] == [1 3]}}   |
+| `!=` or `≠`  | inequality            |  {{[1 2] != [1 3]}}   |
+| `===` or `≡` | strict equality       | {{[1 2] === [1 2]}}   |
+| `!==` or `!≡`| strict inequality     | {{[1 2] !== [1 3]}}   |
+| `<`          | less than             | {{3 < 5}}               |
+| `<=` or `⩽`  | less than or equal    | {{3 <= 3}}              |
+| `>`          | greater than          | {{5 > 3}}               |
+| `>=` or `⩾`  | greater than or equal | {{5 >= 5}}              |
+
+Strict equality (`===`) and strict inequality (`!==`) compare complete values and are useful when an expression must produce one scalar boolean, such as an invariant over a matrix or record.
+
+9. Logical Operators
+--------------------------------------------------------------------------------
+
+| Operator            | Meaning     | Example                             |
+|:-------------------:|-------------|-------------------------------------|
+| `&&` or `∧`         | logical AND | {{true && false}}, {{true ∧ false}} | 
+| `||` or `∨`         | logical OR  | {{true || false}}, {{true ∨ false}} |
+| `^^` or `⊕` or `⊻` | logical XOR | `true ^^ false`                   |
+| `!` or `¬`          | logical NOT | {{!true}}                           |

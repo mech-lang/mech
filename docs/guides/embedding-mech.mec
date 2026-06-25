@@ -1,4 +1,0 @@
-Embedding Mech
-===============================================================================
-
-Embedding hosts provide source resolution, module manifests, resource providers, and capability grants. Host-specific embedding details live with each host implementation.
