@@ -769,7 +769,7 @@ fn duplicate_context_registry_binding_rejected() {
 }
 
 #[test]
-fn derived_context_base_is_unsupported() {
+fn derived_context_unknown_base_is_rejected() {
   let declaration = SourceContextDeclaration {
     name: "manual".to_string(),
     base: SourceContextBase::Context("base".to_string()),
@@ -782,8 +782,37 @@ fn derived_context_base_is_unsupported() {
   let result = RuntimeContextRegistry::from_declarations(SourceScope::Program, &[declaration]);
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("RuntimeContextDerivedBaseUnsupported"), "expected derived base error, got {error}");
+  assert!(error.contains("RuntimeContextInvalidBinding"), "expected invalid binding error, got {error}");
   assert!(error.contains("base"), "expected base context name in error, got {error}");
+}
+
+#[test]
+fn direct_runtime_derived_context_without_host_read_preflights() {
+  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  runtime.run_string("@base := docs://manual{:read(*)}\n@docs := @base\nx := 1\n").unwrap();
+}
+
+#[test]
+fn direct_runtime_derived_context_read_uses_alias() {
+  let mut runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(docs_provider_with("docs://manual", "intro/title", Value::String(Ref::new("Hello".to_string())))))
+    .build()
+    .unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
+  let result = runtime.run_string("@base := docs://manual{:read(intro/title)}\n@docs := @base\nresult := @docs/intro/title\n").unwrap();
+  match result {
+    Value::String(value) => assert_eq!(&*value.borrow(), "Hello"),
+    other => panic!("expected docs title string, got {other:?}"),
+  }
+}
+
+#[test]
+fn derived_context_cannot_expand_capabilities() {
+  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let result = runtime.run_string("@base := docs://manual{:read(intro/title)}\n@docs := @base{:write(intro/title)}\n");
+  assert!(result.is_err(), "derived write should not be allowed to expand read-only base");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeContextInvalidBinding"), "expected invalid binding error, got {error}");
 }
 
 #[test]
@@ -2270,6 +2299,85 @@ fn direct_runtime_normal_import_is_not_dropped() {
     Value::F64(value) => assert_eq!(*value.borrow(), 0.0),
     other => panic!("expected sin(0) to return 0.0, got {other:?}"),
   }
+}
+
+#[test]
+fn manifest_context_import_ordering_supports_derived_alias() {
+  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let result = runtime.run_string("+> @ui := browser/dom\n@dom := @ui\n");
+  assert!(result.is_ok(), "manifest context import should be available to later derived alias: {result:?}");
+}
+
+#[test]
+fn stored_module_manifest_context_import_ordering_supports_derived_alias() {
+  let root = setup_modules(
+    "+> @ui := browser/dom\n\n@dom := @ui\n\nresult := @dom/counter/_text\n",
+  );
+
+  let mut runtime = runtime_with_root(&root);
+  runtime
+    .grant_capability(runtime_context_read_grant(&runtime, "browser://dom", "counter/_text"))
+    .unwrap();
+
+  let version = runtime
+    .resolve_and_store_module_source("main.mec", module_options())
+    .unwrap()
+    .unwrap();
+
+  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  let program_scope = record
+    .scopes
+    .iter()
+    .find(|scope| scope.scope == SourceScope::Program)
+    .unwrap();
+
+  let names = program_scope
+    .contexts
+    .iter()
+    .map(|context| context.name.as_str())
+    .collect::<Vec<_>>();
+
+  assert_eq!(names, vec!["ui", "dom"]);
+
+  let result = runtime.run_module(version);
+  assert!(result.is_err(), "without browser provider this should fail at provider lookup");
+
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(
+    !error.contains("RuntimeContextInvalidBinding")
+      && !error.contains("RuntimeContextDerivedBaseUnsupported")
+      && !error.contains("references unknown context `@ui`"),
+    "derived manifest alias should be materialized before @dom, got {error}",
+  );
+  assert!(
+    error.contains("RuntimeResourceProviderNotFound")
+      || error.contains("BrowserResourceProvider")
+      || error.contains("provider"),
+    "expected to reach provider layer after successful context materialization, got {error}",
+  );
+}
+
+#[test]
+fn stored_module_derived_context_before_manifest_base_is_rejected() {
+  let root = setup_modules(
+    "@dom := @ui\n\n+> @ui := browser/dom\n\nx := 1\n",
+  );
+
+  let mut runtime = runtime_with_root(&root);
+  let version = runtime
+    .resolve_and_store_module_source("main.mec", module_options())
+    .unwrap()
+    .unwrap();
+
+  let result = runtime.run_module(version);
+  assert!(result.is_err());
+
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(
+    error.contains("RuntimeContextInvalidBinding")
+      && error.contains("unknown context `@ui`"),
+    "derived alias before base should still fail, got {error}",
+  );
 }
 
 #[test]

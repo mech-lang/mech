@@ -88,10 +88,16 @@ impl RuntimeContextRegistry {
     declarations: &[SourceContextDeclaration],
   ) -> MResult<Self> {
     let mut registry = Self::new();
+
     for declaration in declarations {
-      let binding = RuntimeContextBinding::from_source(scope.clone(), declaration)?;
+      let binding = RuntimeContextBinding::from_source_with_registry(
+        scope.clone(),
+        declaration,
+        &registry,
+      )?;
       registry.insert(binding)?;
     }
+
     Ok(registry)
   }
 
@@ -128,6 +134,15 @@ impl RuntimeContextBinding {
     scope: SourceScope,
     declaration: &SourceContextDeclaration,
   ) -> MResult<Self> {
+    let registry = RuntimeContextRegistry::new();
+    Self::from_source_with_registry(scope, declaration, &registry)
+  }
+
+  pub fn from_source_with_registry(
+    scope: SourceScope,
+    declaration: &SourceContextDeclaration,
+    registry: &RuntimeContextRegistry,
+  ) -> MResult<Self> {
     if declaration.name.is_empty() {
       return Err(MechError::new(
         RuntimeContextInvalidBinding {
@@ -152,23 +167,71 @@ impl RuntimeContextBinding {
         RuntimeContextBase::ResourceUri(uri.clone())
       }
       SourceContextBase::Context(name) => {
-        return Err(MechError::new(
-          RuntimeContextDerivedBaseUnsupported {
-            name: declaration.name.clone(),
-            base: name.clone(),
-          },
-          None,
-        ));
+        let base_binding = registry.get(name).ok_or_else(|| {
+          MechError::new(
+            RuntimeContextInvalidBinding {
+              name: declaration.name.clone(),
+              reason: format!(
+                "derived context `@{}` references unknown context `@{}`",
+                declaration.name, name,
+              ),
+            },
+            None,
+          )
+        })?;
+        base_binding.base.clone()
       }
     };
 
-    let mut capabilities = Vec::with_capacity(declaration.capabilities.len());
-    for capability in &declaration.capabilities {
-      capabilities.push(runtime_context_capability_from_source(
-        &declaration.name,
-        capability,
-      )?);
-    }
+    let capabilities = match &declaration.base {
+      SourceContextBase::Context(name) if declaration.capabilities.is_empty() => {
+        registry
+          .get(name)
+          .map(|binding| binding.capabilities.clone())
+          .unwrap_or_default()
+      }
+      SourceContextBase::Context(name) => {
+        let base_binding = registry.get(name).expect("derived base validated above");
+        let mut capabilities = Vec::with_capacity(declaration.capabilities.len());
+        for capability in &declaration.capabilities {
+          let requested = runtime_context_capability_from_source(
+            &declaration.name,
+            capability,
+          )?;
+          if !base_binding
+            .capabilities
+            .iter()
+            .any(|base| runtime_context_capability_contains(base, &requested))
+          {
+            return Err(MechError::new(
+              RuntimeContextInvalidBinding {
+                name: declaration.name.clone(),
+                reason: format!(
+                  "derived context `@{}` capability `{}({})` is not contained by base context `@{}`",
+                  declaration.name,
+                  requested.operation,
+                  runtime_context_scope_label(&requested.scope),
+                  name,
+                ),
+              },
+              None,
+            ));
+          }
+          capabilities.push(requested);
+        }
+        capabilities
+      }
+      _ => {
+        let mut capabilities = Vec::with_capacity(declaration.capabilities.len());
+        for capability in &declaration.capabilities {
+          capabilities.push(runtime_context_capability_from_source(
+            &declaration.name,
+            capability,
+          )?);
+        }
+        capabilities
+      }
+    };
 
     Ok(Self {
       name: declaration.name.clone(),
@@ -204,6 +267,40 @@ fn runtime_context_capability_from_source(
     operation: capability.operation.clone(),
     scope,
   })
+}
+
+pub fn runtime_context_capability_contains(
+  base: &RuntimeContextCapability,
+  requested: &RuntimeContextCapability,
+) -> bool {
+  base.operation == requested.operation
+    && runtime_context_scope_contains(&base.scope, &requested.scope)
+}
+
+pub fn runtime_context_scope_contains(
+  base_scope: &RuntimeContextCapabilityScope,
+  requested_scope: &RuntimeContextCapabilityScope,
+) -> bool {
+  match (base_scope, requested_scope) {
+    (RuntimeContextCapabilityScope::Wildcard, _) => true,
+    (RuntimeContextCapabilityScope::Path(_), RuntimeContextCapabilityScope::Wildcard) => false,
+    (RuntimeContextCapabilityScope::Path(base), RuntimeContextCapabilityScope::Path(requested)) => {
+      if base == requested {
+        return true;
+      }
+      let Some(prefix) = base.strip_suffix("/*") else {
+        return false;
+      };
+      requested.strip_prefix(prefix).is_some_and(|suffix| suffix.starts_with('/'))
+    }
+  }
+}
+
+fn runtime_context_scope_label(scope: &RuntimeContextCapabilityScope) -> String {
+  match scope {
+    RuntimeContextCapabilityScope::Wildcard => "*".to_string(),
+    RuntimeContextCapabilityScope::Path(path) => path.clone(),
+  }
 }
 
 #[derive(Debug, Clone)]

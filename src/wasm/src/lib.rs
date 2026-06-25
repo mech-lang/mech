@@ -10,6 +10,7 @@ use mech_host_browser::{BrowserHostConfig, BrowserResourceProvider};
 use mech_host_browser::{verify_browser_host_delegation, BrowserHostDelegationEnvelope};
 use mech_runtime::{
   ConfigProfileOptions, MechConfigDocument, MechRuntime, RuntimeConfig, parse_config_document,
+  RuntimeCapabilityGrant, RuntimeCapabilityOperation,
 };
 #[cfg(feature = "host_delegation_signing")]
 use mech_runtime::{HostDelegationKeyStore, HostDelegationPublicKey, HostDelegationVerificationRequest};
@@ -134,6 +135,50 @@ pub fn main() -> Result<(), JsValue> {
 }
 
 
+
+fn install_browser_runtime_grants(
+  runtime: &mut MechRuntime,
+  authority: &BrowserAuthority,
+) -> Result<(), JsValue> {
+  let subject = runtime
+    .runtime_context()
+    .map_err(|error| js_error(format!("failed to create runtime context: {error:?}")))?
+    .subject;
+
+  for entry in authority.dom_manifest() {
+    let mut operations = Vec::new();
+
+    if authority
+      .allows_dom(entry.selector.selector.as_str(), BrowserOperation::Read)
+      .is_ok()
+    {
+      operations.push(RuntimeCapabilityOperation::Read);
+    }
+
+    if authority
+      .allows_dom(entry.selector.selector.as_str(), BrowserOperation::Write)
+      .is_ok()
+    {
+      operations.push(RuntimeCapabilityOperation::Write);
+    }
+
+    if operations.is_empty() {
+      continue;
+    }
+
+    runtime
+      .grant_capability(RuntimeCapabilityGrant {
+        subject: subject.clone(),
+        resource: BROWSER_DOM_PROVIDER_URI.to_string(),
+        operations,
+        paths: vec![entry.path.as_str().to_string()],
+      })
+      .map_err(|error| js_error(format!("failed to install browser DOM runtime grant: {error:?}")))?;
+  }
+
+  Ok(())
+}
+
 fn browser_host_from_config(document: Option<&MechConfigDocument>) -> BrowserHost {
   match document {
     Some(document) => BrowserHost::new(document.browser.clone()),
@@ -157,13 +202,15 @@ fn runtime_from_config_document(document: Option<&MechConfigDocument>) -> MechRu
   };
   runtime
     .register_resource_provider(Box::new(BrowserResourceProvider::new(
-      authority,
+      authority.clone(),
       WasmBrowserDomBackend::new(),
     )))
     .expect("failed to register browser resource provider");
   runtime
     .bind_resource_root("browser", "browser://dom/")
     .expect("failed to bind default browser DOM resource root");
+  install_browser_runtime_grants(&mut runtime, &authority)
+    .expect("failed to install browser runtime grants");
   runtime
 }
 
@@ -235,6 +282,7 @@ fn wasm_parts_from_delegated_host_config(
   runtime
     .bind_resource_root("browser", "browser://dom/")
     .map_err(|error| js_error(format!("failed to bind browser resource root: {error:?}")))?;
+  install_browser_runtime_grants(&mut runtime, &verified.authority.browser_authority)?;
   Ok((runtime, BrowserHost::new(verified.authority.browser_authority)))
 }
 
@@ -255,6 +303,7 @@ fn wasm_parts_from_host_config(config: JsValue) -> Result<(MechRuntime, BrowserH
   runtime
     .bind_resource_root("browser", "browser://dom/")
     .map_err(|error| js_error(format!("failed to bind browser resource root: {error:?}")))?;
+  install_browser_runtime_grants(&mut runtime, &authority)?;
   Ok((runtime, BrowserHost::new(authority)))
 }
 
@@ -383,6 +432,8 @@ impl WasmMech {
     runtime
       .bind_resource_root("browser", "browser://dom/")
       .expect("failed to bind default browser DOM resource root");
+    install_browser_runtime_grants(&mut runtime, self.browser_host.authority())
+      .expect("failed to install browser runtime grants");
     self.runtime = runtime;
   }
 
@@ -1776,6 +1827,25 @@ mod tests {
 }
 "##;
 
+
+  const DOM_READ_PATH_CONFIG: &str = r##"config := {
+  browser: {
+    dom: [
+      {path: "counter/_text", selector: "#counter", allow: ["read"]}
+    ]
+  }
+}
+"##;
+
+  const DOM_WRITE_PATH_CONFIG: &str = r##"config := {
+  browser: {
+    dom: [
+      {path: "counter/_text", selector: "#counter", allow: ["write"]}
+    ]
+  }
+}
+"##;
+
   const NETWORK_GET_CONFIG: &str = r#"config := {
   browser: {
     network: [
@@ -1832,6 +1902,38 @@ mod tests {
     let mech = WasmMech::try_from_config("test.mcfg", DOM_WRITE_CONFIG).unwrap();
 
     assert!(mech.can_write_dom("#mech-output"));
+  }
+
+
+  #[test]
+  fn browser_config_dom_read_installs_runtime_grant() {
+    let mut mech = WasmMech::try_from_config("test.mcfg", DOM_READ_PATH_CONFIG).unwrap();
+    let result = mech.runtime.run_string("+> @ui := browser/dom\ntitle := @ui/counter/_text\n");
+    if let Err(error) = result {
+      let error = format!("{error:?}");
+      assert!(!error.contains("RuntimeCapabilityGrantDenied"), "read should pass runtime grant preflight: {error}");
+    }
+  }
+
+  #[test]
+  fn browser_config_without_dom_read_runtime_grant_denies() {
+    let mut mech = WasmMech::try_from_config("test.mcfg", DOM_WRITE_PATH_CONFIG).unwrap();
+    let result = mech.runtime.run_string("+> @ui := browser/dom\ntitle := @ui/counter/_text\n");
+    let error = format!("{:?}", result.err().unwrap());
+    assert!(error.contains("RuntimeCapabilityGrantDenied"), "read should be denied without read grant: {error}");
+  }
+
+  #[test]
+  fn browser_config_dom_grants_are_operation_specific() {
+    let mut write_only = WasmMech::try_from_config("test.mcfg", DOM_WRITE_PATH_CONFIG).unwrap();
+    let read_result = write_only.runtime.run_string("+> @ui := browser/dom\ntitle := @ui/counter/_text\n");
+    let read_error = format!("{:?}", read_result.err().unwrap());
+    assert!(read_error.contains("RuntimeCapabilityGrantDenied"), "write-only grant must not allow reads: {read_error}");
+
+    let mut read_only = WasmMech::try_from_config("test.mcfg", DOM_READ_PATH_CONFIG).unwrap();
+    let write_result = read_only.runtime.run_string("+> @ui := browser/dom\n@ui/counter/_text = \"hello\"\n");
+    let write_error = format!("{:?}", write_result.err().unwrap());
+    assert!(write_error.contains("RuntimeCapabilityGrantDenied"), "read-only grant must not allow writes: {write_error}");
   }
 
   #[test]

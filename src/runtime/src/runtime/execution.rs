@@ -12,7 +12,7 @@
 // Both methods have corresponding _with_context versions that accept a mutable reference to a RuntimeContext, allowing for execution within the context of an active transaction. This ensures that any changes made during execution are properly staged within the transaction that if an error occurs, the transaction can be rolled back to maintain consistency.
 
 use super::*;
-use crate::SourceIndex;
+use crate::{SourceDeclaration, SourceIndex};
 use crate::RuntimeResourceWritePreflightRequest;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -286,43 +286,46 @@ impl MechRuntime {
   }
 
 
-  fn context_declarations_from_index_scope(
+  pub(crate) fn context_declarations_from_index_scope(
     &self,
     index: &SourceIndex,
     scope: &SourceScope,
   ) -> MResult<Vec<crate::SourceContextDeclaration>> {
-    let mut declarations = index
-      .contexts
-      .iter()
-      .filter(|ctx| &ctx.occurrence.scope == scope)
-      .map(|ctx| ctx.declaration.clone())
-      .collect::<Vec<_>>();
+    let mut declarations = Vec::new();
 
-    for import in index.imports.iter().filter(|import| &import.occurrence.scope == scope) {
-      let Some(SourceImportAlias::Context(alias)) = &import.declaration.alias else {
-        continue;
-      };
-      let module = import.declaration.module.as_deref().ok_or_else(|| {
-        MechError::new(RuntimeInvalidOperationError {
-          operation: "materialize_direct_manifest_context_imports",
-          reason: format!("context import `{}` is missing module metadata", import.declaration.specifier),
-        }, None)
-      })?;
-      let item = import.declaration.item.as_deref().ok_or_else(|| {
-        MechError::new(RuntimeInvalidOperationError {
-          operation: "materialize_direct_manifest_context_imports",
-          reason: format!("context import `{}` is missing item metadata", import.declaration.specifier),
-        }, None)
-      })?;
-      let export = self.module_manifests.context_export(module, item)?;
-      declarations.push(crate::SourceContextDeclaration {
-        name: alias.clone(),
-        base: crate::SourceContextBase::ResourceUri(export.base_uri.clone()),
-        capabilities: export.operations.iter().map(|operation| crate::SourceContextCapability {
-          operation: operation.clone(),
-          scope: crate::SourceContextCapabilityScope::Wildcard,
-        }).collect(),
-      });
+    for declaration in &index.declarations {
+      match declaration {
+        SourceDeclaration::Context(context) if &context.occurrence.scope == scope => {
+          declarations.push(context.declaration.clone());
+        }
+        SourceDeclaration::Import(import) if &import.occurrence.scope == scope => {
+          let Some(SourceImportAlias::Context(alias)) = &import.declaration.alias else {
+            continue;
+          };
+          let module = import.declaration.module.as_deref().ok_or_else(|| {
+            MechError::new(RuntimeInvalidOperationError {
+              operation: "materialize_direct_manifest_context_imports",
+              reason: format!("context import `{}` is missing module metadata", import.declaration.specifier),
+            }, None)
+          })?;
+          let item = import.declaration.item.as_deref().ok_or_else(|| {
+            MechError::new(RuntimeInvalidOperationError {
+              operation: "materialize_direct_manifest_context_imports",
+              reason: format!("context import `{}` is missing item metadata", import.declaration.specifier),
+            }, None)
+          })?;
+          let export = self.module_manifests.context_export(module, item)?;
+          declarations.push(crate::SourceContextDeclaration {
+            name: alias.clone(),
+            base: crate::SourceContextBase::ResourceUri(export.base_uri.clone()),
+            capabilities: export.operations.iter().map(|operation| crate::SourceContextCapability {
+              operation: operation.clone(),
+              scope: crate::SourceContextCapabilityScope::Wildcard,
+            }).collect(),
+          });
+        }
+        _ => {}
+      }
     }
 
     Ok(declarations)
