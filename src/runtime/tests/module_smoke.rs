@@ -614,6 +614,68 @@ fn two_fallback_docs_providers_conflict() {
 }
 
 #[test]
+fn registered_module_manifest_context_import_still_resolves() {
+  let root = setup_modules("+> @manual := docs/page\nresult := @manual/title\n<+ result\nresult\n");
+  let manifest = ModuleManifestConfig {
+    name: "docs".to_string(),
+    exports: vec![ModuleManifestExportConfig {
+      name: "page".to_string(),
+      kind: ModuleManifestExportKind::Context,
+      base_uri: "docs://manual".to_string(),
+      operations: vec!["read".to_string()],
+    }],
+  };
+  let provider = docs_provider_with("docs://manual", "title", bool_value(true));
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .module_manifest(manifest)
+    .unwrap()
+    .in_memory_docs(provider)
+    .build()
+    .unwrap();
+  runtime
+    .grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "title"))
+    .unwrap();
+  let version = runtime
+    .resolve_and_store_module_source("main.mec", module_options())
+    .unwrap()
+    .unwrap();
+  let result = match runtime.run_module(version).unwrap() {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_bool_true(result, "registered module manifest context import");
+}
+
+#[test]
+fn host_instance_unknown_context_does_not_fallback_to_module_manifest() {
+  let root = setup_modules("+> @bad := cli/missing\nresult := true\n");
+  let manifest = ModuleManifestConfig {
+    name: "cli".to_string(),
+    exports: vec![ModuleManifestExportConfig {
+      name: "missing".to_string(),
+      kind: ModuleManifestExportKind::Context,
+      base_uri: "docs://wrong".to_string(),
+      operations: vec!["read".to_string()],
+    }],
+  };
+  let backend = FakeCliBackend::default();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new()
+      .source_resolver(FileSourceResolver::new(&root))
+      .module_manifest(manifest)
+      .unwrap(),
+    backend,
+  )
+  .build()
+  .unwrap();
+  let result = runtime.resolve_and_store_module_source("main.mec", module_options());
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("HostInterfaceUnknownContext"), "expected host unknown context, got {error}");
+}
+
+#[test]
 fn unknown_address_target_is_explicit() {
   let root = setup_modules("result := @missing/ok\n");
   let mut runtime = runtime_with_root(&root);

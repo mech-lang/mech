@@ -32,14 +32,29 @@ impl HostInterfaceCatalog {
     Ok(())
   }
 
-  pub fn resolve(&self, target: &str) -> MResult<&MaterializedHostContext> {
+  pub fn has_instance(&self, instance: &str) -> bool {
+    self.interfaces.contains_key(instance)
+  }
+
+  pub fn resolve_optional(&self, target: &str) -> MResult<Option<&MaterializedHostContext>> {
     let (instance, context) = parse_host_context_target(target)?;
     let Some(interface) = self.interfaces.get(instance) else {
-      return Err(error("HostInterfaceUnknownInstance", format!("unknown host instance `{instance}`")));
+      return Ok(None);
     };
-    interface.contexts.iter().find(|item| item.name == context).ok_or_else(|| {
-      error("HostInterfaceUnknownContext", format!("unknown context `{context}` on host instance `{instance}`"))
-    })
+    let Some(resolved) = interface.contexts.iter().find(|item| item.name == context) else {
+      return Err(error("HostInterfaceUnknownContext", format!("unknown context `{context}` on host instance `{instance}`")));
+    };
+    Ok(Some(resolved))
+  }
+
+  pub fn resolve(&self, target: &str) -> MResult<&MaterializedHostContext> {
+    match self.resolve_optional(target)? {
+      Some(context) => Ok(context),
+      None => {
+        let (instance, _) = parse_host_context_target(target)?;
+        Err(error("HostInterfaceUnknownInstance", format!("unknown host instance `{instance}`")))
+      }
+    }
   }
 
   pub fn interface(&self, instance: &str) -> Option<&MaterializedHostInterface> { self.interfaces.get(instance) }
