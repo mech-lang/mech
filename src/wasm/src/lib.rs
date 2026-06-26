@@ -181,7 +181,11 @@ fn install_browser_runtime_grants(
 
 fn browser_host_from_config(document: Option<&MechConfigDocument>) -> BrowserHost {
   match document {
-    Some(document) => BrowserHost::new(document.browser.clone()),
+    Some(document) => {
+      let config = RuntimeConfig::default().apply_patch(&document.runtime).unwrap_or_default();
+      let host_config = BrowserHostConfig::from_document_and_runtime(document, &config);
+      BrowserHost::new(host_config.into_browser_authority().unwrap_or_default())
+    }
     None => BrowserHost::deny_by_default(),
   }
 }
@@ -197,7 +201,7 @@ fn runtime_from_config_document(document: Option<&MechConfigDocument>) -> MechRu
   let mut runtime = MechRuntime::new(config)
     .expect("failed to initialize MechRuntime for wasm");
   let authority = match document {
-    Some(document) => document.browser.clone(),
+    Some(document) => BrowserHostConfig::from_document_and_runtime(document, &config).into_browser_authority().unwrap_or_default(),
     None => mech_core::BrowserAuthority::default(),
   };
   runtime

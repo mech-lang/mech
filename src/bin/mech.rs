@@ -429,7 +429,7 @@ async fn main() -> Result<(), MechError> {
       .is_some()
       && serve_matches.get_one::<String>("shim").is_none();
     if let Some(loaded) = loaded_config.as_ref() {
-      println!("{badge} Loaded browser config grants: {}", loaded.document.browser.grants().len());
+      println!("{badge} Loaded host config entries: {}", loaded.document.hosts.len());
     }
 
     let full_address = format!("{}:{}", effective.address, effective.port);

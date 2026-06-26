@@ -169,21 +169,9 @@ fn union_string(paths: &mut Vec<String>, value: &str) {
 }
 
 fn apply_run_cli_attenuation(
-  grants: &mut EffectiveCliHostGrants,
-  run: &mech_runtime::RunHostConfig,
+  _grants: &mut EffectiveCliHostGrants,
+  _run: &mech_runtime::RunHostConfig,
 ) -> MResult<()> {
-  if let Some(paths) = &run.cli.env.read {
-    grants.env_read_paths = intersect_env_paths(&grants.env_read_paths, paths);
-  }
-  if let Some(paths) = &run.cli.stdout.write {
-    let paths = validated_cli_stream_paths("run.cli.stdout.write", paths)?;
-    grants.stdout_write_paths = intersect_paths(&grants.stdout_write_paths, &paths);
-  }
-  if let Some(paths) = &run.cli.stderr.write {
-    let paths = validated_cli_stream_paths("run.cli.stderr.write", paths)?;
-    grants.stderr_write_paths = intersect_paths(&grants.stderr_write_paths, &paths);
-  }
-
   Ok(())
 }
 

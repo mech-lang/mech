@@ -81,7 +81,7 @@ impl RuntimeCapabilityGrantRegistry {
   ) -> bool {
     self.grants.iter().any(|grant| {
       grant.subject == subject
-        && grant.resource == resource
+        && resource_names_match(&grant.resource, resource)
         && grant.operations.iter().any(|allowed| allowed == operation)
         && grant.paths.iter().any(|allowed| grant_path_matches(allowed, path))
     })
@@ -119,6 +119,17 @@ fn invalid_grant(reason: impl Into<String>) -> MResult<()> {
     },
     None,
   ))
+}
+
+fn resource_names_match(grant_resource: &str, requested_resource: &str) -> bool {
+  if grant_resource == requested_resource { return true; }
+  match (grant_resource.strip_prefix("cli://cli/"), requested_resource.strip_prefix("cli://")) {
+    (Some(grant_context), Some(request_context)) if grant_context == request_context => true,
+    _ => match (grant_resource.strip_prefix("cli://"), requested_resource.strip_prefix("cli://cli/")) {
+      (Some(grant_context), Some(request_context)) => grant_context == request_context,
+      _ => false,
+    }
+  }
 }
 
 fn grant_path_matches(grant_path: &str, requested_path: &str) -> bool {

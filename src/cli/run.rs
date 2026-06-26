@@ -1,8 +1,8 @@
 use clap::{Arg, ArgAction};
 use mech_core::*;
-use mech_host_cli::{CliResourceProvider, StdCliBackend};
+use mech_host_cli::CliHostFactory;
 use mech_runtime::{
-  MechRuntime, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeCapabilityOperation, RuntimeConfig,
+  ConfigValue, HostInstanceConfig, MechRuntime, RunResourceGrantConfig, RuntimeBuilder, RuntimeConfig,
   RuntimeEvent, RuntimeEventKind,
 };
 use std::ffi::OsStr;
@@ -286,14 +286,20 @@ pub fn new_cli_runtime(
   config: RuntimeConfig,
   cli_grants: &config::EffectiveCliHostGrants,
 ) -> MResult<MechRuntime> {
-  let mut runtime = RuntimeBuilder::new()
+  let mut builder = RuntimeBuilder::new()
     .config(config)
-    .resource_provider(Box::new(CliResourceProvider::new(StdCliBackend)))
-    .build()?;
+    .host_factory(Box::new(CliHostFactory::new()?))?
+    .host_instance(HostInstanceConfig {
+      name: "cli".to_string(),
+      provider: "cli".to_string(),
+      settings: ConfigValue::Map(std::collections::BTreeMap::new()),
+    });
 
-  grant_cli_runner_capabilities(&mut runtime, cli_grants)?;
+  for grant in cli_grants_to_run_resource_grants(cli_grants) {
+    builder = builder.run_resource_grant(grant);
+  }
 
-  Ok(runtime)
+  builder.build()
 }
 
 pub fn effective_run_runtime_config(
@@ -354,40 +360,18 @@ pub fn run_cli_source(runtime: &mut MechRuntime, source: &str) -> MResult<Value>
   result
 }
 
-fn grant_cli_runner_capabilities(
-  runtime: &mut MechRuntime,
-  grants: &config::EffectiveCliHostGrants,
-) -> MResult<()> {
-  let subject = runtime.runtime_context()?.subject;
-
+fn cli_grants_to_run_resource_grants(grants: &config::EffectiveCliHostGrants) -> Vec<RunResourceGrantConfig> {
+  let mut out = Vec::new();
   if !grants.env_read_paths.is_empty() {
-    runtime.grant_capability(RuntimeCapabilityGrant {
-      subject: subject.clone(),
-      resource: "cli://env".to_string(),
-      operations: vec![RuntimeCapabilityOperation::Read],
-      paths: grants.env_read_paths.clone(),
-    })?;
+    out.push(RunResourceGrantConfig { target: "cli/env".to_string(), operations: vec!["read".to_string()], paths: grants.env_read_paths.clone() });
   }
-
   if !grants.stdout_write_paths.is_empty() {
-    runtime.grant_capability(RuntimeCapabilityGrant {
-      subject: subject.clone(),
-      resource: "cli://stdout".to_string(),
-      operations: vec![RuntimeCapabilityOperation::Write],
-      paths: grants.stdout_write_paths.clone(),
-    })?;
+    out.push(RunResourceGrantConfig { target: "cli/stdout".to_string(), operations: vec!["write".to_string()], paths: grants.stdout_write_paths.clone() });
   }
-
   if !grants.stderr_write_paths.is_empty() {
-    runtime.grant_capability(RuntimeCapabilityGrant {
-      subject,
-      resource: "cli://stderr".to_string(),
-      operations: vec![RuntimeCapabilityOperation::Write],
-      paths: grants.stderr_write_paths.clone(),
-    })?;
+    out.push(RunResourceGrantConfig { target: "cli/stderr".to_string(), operations: vec!["write".to_string()], paths: grants.stderr_write_paths.clone() });
   }
-
-  Ok(())
+  out
 }
 
 pub fn cli_host_capability_args() -> Vec<Arg> {

@@ -1,12 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
-use mech_core::{
-    BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
-    BrowserDomProperty, BrowserDomScope, BrowserNetworkScope, BrowserOperation, BrowserResource,
-    BrowserResourceKind, BrowserStorageBackend, BrowserStorageScope, MResult, MechError,
-    ModuleManifestConfig, ModuleManifestExportConfig, ModuleManifestExportKind,
-};
+use mech_core::{MResult, MechError, ModuleManifestConfig, ModuleManifestExportConfig, ModuleManifestExportKind};
 use crate::{HostInstanceConfig, HostManifestConfig, HostContextManifest, RunResourceGrantConfig, validate_run_resource_grant};
 
 use super::{ConfigValue, InvalidConfigField};
@@ -18,9 +13,8 @@ pub struct MechConfigDocument {
     pub serve: Option<ServeHostConfig>,
     pub run: Option<RunHostConfig>,
     pub hosts: Vec<HostInstanceConfig>,
-    pub host: Option<HostManifestConfig>,
-    pub browser: BrowserAuthority,
     pub capabilities: Vec<ConfigCapabilityGrant>,
+    pub host: Option<HostManifestConfig>,
     pub module: Option<ModuleManifestConfig>,
 }
 
@@ -65,27 +59,8 @@ pub struct ServeHostConfig {
 pub struct RunHostConfig {
     pub paths: Vec<PathBuf>,
     pub grants: Vec<RunResourceGrantConfig>,
-    pub cli: RunCliHostConfig,
 }
 
-// Native CLI runner attenuation policy; resource providers are not required to
-// use this shape for host-specific configuration.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct RunCliHostConfig {
-    pub env: RunCliEnvConfig,
-    pub stdout: RunCliStreamConfig,
-    pub stderr: RunCliStreamConfig,
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct RunCliEnvConfig {
-    pub read: Option<Vec<String>>,
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct RunCliStreamConfig {
-    pub write: Option<Vec<String>>,
-}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConfigCapabilityGrant {
@@ -117,9 +92,8 @@ impl ConfigLowerer {
             serve: None,
             run: None,
             hosts: Vec::new(),
-            host: None,
-            browser: BrowserAuthority::default(),
             capabilities: Vec::new(),
+            host: None,
             module: None,
         };
         for (key, value) in map {
@@ -129,7 +103,6 @@ impl ConfigLowerer {
                 "run" => doc.run = Some(self.lower_run(value)?),
                 "hosts" => doc.hosts = self.lower_hosts(value)?,
                 "host" => doc.host = Some(self.lower_host_manifest(value)?),
-                "browser" => doc.browser = self.lower_browser(value)?,
                 "capabilities" => doc.capabilities = self.lower_capabilities(value)?,
                 "module" => doc.module = Some(self.lower_module(value)?),
                 other => return invalid(format!("unknown top-level config field `{other}`")),
@@ -376,7 +349,6 @@ impl ConfigLowerer {
             match key.as_str() {
                 "paths" => out.paths = expect_path_list("run.paths", value)?,
                 "grants" => out.grants = self.lower_run_grants(value)?,
-                "cli" => out.cli = self.lower_run_cli(value)?,
                 other => return invalid(format!("unknown run field `{other}`")),
             }
         }
@@ -403,299 +375,6 @@ impl ConfigLowerer {
             validate_run_resource_grant(&grant)?;
             Ok(grant)
         }).collect()
-    }
-
-    fn lower_run_cli(&self, value: &ConfigValue) -> MResult<RunCliHostConfig> {
-        let map = expect_map("run.cli", value)?;
-        let mut out = RunCliHostConfig::default();
-        for (key, value) in map {
-            match key.as_str() {
-                "env" => out.env = self.lower_run_cli_env(value)?,
-                "stdout" => out.stdout = self.lower_run_cli_stream("run.cli.stdout", value)?,
-                "stderr" => out.stderr = self.lower_run_cli_stream("run.cli.stderr", value)?,
-                other => return invalid(format!("unknown run.cli field `{other}`")),
-            }
-        }
-        Ok(out)
-    }
-
-    fn lower_run_cli_env(&self, value: &ConfigValue) -> MResult<RunCliEnvConfig> {
-        let map = expect_map("run.cli.env", value)?;
-        let mut out = RunCliEnvConfig::default();
-        for (key, value) in map {
-            match key.as_str() {
-                "read" => {
-                    let paths = expect_string_list("run.cli.env.read", value)?;
-                    for path in &paths {
-                        if path != "*" && !is_cli_env_key(path) {
-                            return invalid(format!("run.cli.env.read contains invalid env key `{path}`"));
-                        }
-                    }
-                    out.read = Some(paths);
-                }
-                other => return invalid(format!("unknown run.cli.env field `{other}`")),
-            }
-        }
-        Ok(out)
-    }
-
-    fn lower_run_cli_stream(
-        &self,
-        where_: &str,
-        value: &ConfigValue,
-    ) -> MResult<RunCliStreamConfig> {
-        let map = expect_map(where_, value)?;
-        let mut out = RunCliStreamConfig::default();
-        for (key, value) in map {
-            match key.as_str() {
-                "write" => {
-                    let paths = expect_string_list(&format!("{where_}.write"), value)?;
-                    for path in &paths {
-                        if path != "text" && path != "line" {
-                            return invalid(format!("{where_}.write contains invalid path `{path}`"));
-                        }
-                    }
-                    out.write = Some(paths);
-                }
-                other => return invalid(format!("unknown {where_} field `{other}`")),
-            }
-        }
-        Ok(out)
-    }
-
-    fn lower_browser(&self, value: &ConfigValue) -> MResult<BrowserAuthority> {
-        let map = expect_map("browser", value)?;
-        let mut authority = BrowserAuthority::default();
-        for (key, value) in map {
-            match key.as_str() {
-                "dom" => self.lower_browser_dom(value, &mut authority)?,
-                "clipboard" => self.lower_browser_clipboard(value, &mut authority)?,
-                "network" => self.lower_browser_network(value, &mut authority)?,
-                "storage" => self.lower_browser_storage(value, &mut authority)?,
-                other => return invalid(format!("unknown browser field `{other}`")),
-            }
-        }
-        Ok(authority)
-    }
-
-    fn lower_browser_dom(
-        &self,
-        value: &ConfigValue,
-        authority: &mut BrowserAuthority,
-    ) -> MResult<()> {
-        for (idx, item) in expect_list("browser.dom", value)?.iter().enumerate() {
-            let where_ = format!("browser.dom[{idx}]");
-            let map = expect_map(&where_, item)?;
-            let mut path = None;
-            let mut selector = None;
-            let mut property = None;
-            let mut attribute = None;
-            let mut mode = None;
-            let mut allow = None;
-            for (key, value) in map {
-                match key.as_str() {
-                    "path" => path = Some(expect_string(&format!("{where_}.path"), value)?),
-                    "selector" => {
-                        selector = Some(expect_string(&format!("{where_}.selector"), value)?)
-                    }
-                    "property" => {
-                        property = Some(expect_string(&format!("{where_}.property"), value)?)
-                    }
-                    "attribute" => {
-                        attribute = Some(expect_string(&format!("{where_}.attribute"), value)?)
-                    }
-                    "mode" => mode = Some(expect_string(&format!("{where_}.mode"), value)?),
-                    "allow" => {
-                        allow = Some(expect_browser_operations_for_resource(
-                            &format!("{where_}.allow"),
-                            value,
-                            BrowserResourceKind::Dom,
-                        )?)
-                    }
-                    other => return invalid(format!("unknown browser.dom field `{other}`")),
-                }
-            }
-            let selector =
-                selector.ok_or_else(|| invalid_error(format!("{where_}.selector is required")))?;
-            let allow =
-                allow.ok_or_else(|| invalid_error(format!("{where_}.allow is required")))?;
-            let scope = BrowserDomScope::new(selector)
-                .map_err(|error| invalid_error(format!("{where_}.selector: {error}")))?;
-            authority.grant(BrowserCapabilityGrant {
-                resource: BrowserResource::Dom(scope.clone()),
-                allow,
-                budget: None,
-            });
-
-            let Some(path) = path else {
-                continue;
-            };
-            let path = BrowserDomPath::new(path)
-                .map_err(|error| invalid_error(format!("{where_}.path: {error}")))?;
-            let mode = match mode.as_deref() {
-                Some("node") | None => mode,
-                Some("subtree") => mode,
-                Some(other) => {
-                    return invalid(format!(
-                        "{where_}.mode must be `node` or `subtree`; got `{other}`"
-                    ))
-                }
-            };
-            if path.is_wildcard() && !matches!(mode.as_deref(), None | Some("subtree")) {
-                return invalid(format!(
-                    "{where_}.mode must be `subtree` when path ends in `/*`"
-                ));
-            }
-            if matches!(mode.as_deref(), Some("subtree")) && !path.is_wildcard() {
-                return invalid(format!(
-                    "{where_}.path must end in `/*` when mode is `subtree`"
-                ));
-            }
-            let property = if matches!(mode.as_deref(), Some("subtree")) {
-                if property.is_some() {
-                    return invalid(format!("{where_}.property is not allowed when mode is `subtree`"));
-                }
-                if attribute.is_some() {
-                    return invalid(format!("{where_}.attribute is not allowed when mode is `subtree`"));
-                }
-                BrowserDomProperty::Text
-            } else {
-                BrowserDomProperty::parse_manifest(
-                    property.as_deref(),
-                    attribute.as_deref(),
-                    &path,
-                )
-                .map_err(|error| invalid_error(format!("{where_}: {error}")))?
-            };
-            authority.bind_dom_path(BrowserDomManifestEntry::new(path, scope, property));
-        }
-        Ok(())
-    }
-
-    fn lower_browser_clipboard(
-        &self,
-        value: &ConfigValue,
-        authority: &mut BrowserAuthority,
-    ) -> MResult<()> {
-        for (idx, item) in expect_list("browser.clipboard", value)?.iter().enumerate() {
-            let where_ = format!("browser.clipboard[{idx}]");
-            let map = expect_map(&where_, item)?;
-            let mut allow = None;
-            for (key, value) in map {
-                match key.as_str() {
-                    "allow" => {
-                        allow = Some(expect_browser_operations_for_resource(
-                            &format!("{where_}.allow"),
-                            value,
-                            BrowserResourceKind::Clipboard,
-                        )?)
-                    }
-                    other => return invalid(format!("unknown browser.clipboard field `{other}`")),
-                }
-            }
-            let allow =
-                allow.ok_or_else(|| invalid_error(format!("{where_}.allow is required")))?;
-            authority.grant(BrowserCapabilityGrant {
-                resource: BrowserResource::Clipboard,
-                allow,
-                budget: None,
-            });
-        }
-        Ok(())
-    }
-
-    fn lower_browser_network(
-        &self,
-        value: &ConfigValue,
-        authority: &mut BrowserAuthority,
-    ) -> MResult<()> {
-        for (idx, item) in expect_list("browser.network", value)?.iter().enumerate() {
-            let where_ = format!("browser.network[{idx}]");
-            let map = expect_map(&where_, item)?;
-            let mut origin = None;
-            let mut methods = None;
-            let mut allow = None;
-            for (key, value) in map {
-                match key.as_str() {
-                    "origin" => origin = Some(expect_string(&format!("{where_}.origin"), value)?),
-                    "methods" => {
-                        methods = Some(expect_string_list(&format!("{where_}.methods"), value)?)
-                    }
-                    "allow" => {
-                        allow = Some(expect_browser_operations_for_resource(
-                            &format!("{where_}.allow"),
-                            value,
-                            BrowserResourceKind::Network,
-                        )?)
-                    }
-                    other => return invalid(format!("unknown browser.network field `{other}`")),
-                }
-            }
-            let origin =
-                origin.ok_or_else(|| invalid_error(format!("{where_}.origin is required")))?;
-            let allow =
-                allow.ok_or_else(|| invalid_error(format!("{where_}.allow is required")))?;
-            let scope = BrowserNetworkScope::new(origin, methods)
-                .map_err(|error| invalid_error(format!("{where_}: {error}")))?;
-            authority.grant(BrowserCapabilityGrant {
-                resource: BrowserResource::Network(scope),
-                allow,
-                budget: None,
-            });
-        }
-        Ok(())
-    }
-
-    fn lower_browser_storage(
-        &self,
-        value: &ConfigValue,
-        authority: &mut BrowserAuthority,
-    ) -> MResult<()> {
-        for (idx, item) in expect_list("browser.storage", value)?.iter().enumerate() {
-            let where_ = format!("browser.storage[{idx}]");
-            let map = expect_map(&where_, item)?;
-            let mut backend = None;
-            let mut scope = None;
-            let mut recursive = None;
-            let mut allow = None;
-            for (key, value) in map {
-                match key.as_str() {
-                    "backend" => {
-                        let value = expect_string(&format!("{where_}.backend"), value)?;
-                        backend = Some(BrowserStorageBackend::parse(&value).ok_or_else(|| {
-                            invalid_error(format!("unknown browser.storage backend `{value}`"))
-                        })?);
-                    }
-                    "scope" => scope = Some(expect_string(&format!("{where_}.scope"), value)?),
-                    "recursive" => {
-                        recursive = Some(expect_bool(&format!("{where_}.recursive"), value)?)
-                    }
-                    "allow" => {
-                        allow = Some(expect_browser_operations_for_resource(
-                            &format!("{where_}.allow"),
-                            value,
-                            BrowserResourceKind::Storage,
-                        )?)
-                    }
-                    other => return invalid(format!("unknown browser.storage field `{other}`")),
-                }
-            }
-            let backend =
-                backend.ok_or_else(|| invalid_error(format!("{where_}.backend is required")))?;
-            let scope =
-                scope.ok_or_else(|| invalid_error(format!("{where_}.scope is required")))?;
-            let allow =
-                allow.ok_or_else(|| invalid_error(format!("{where_}.allow is required")))?;
-            let scope = BrowserStorageScope::new(backend, scope)
-                .map_err(|error| invalid_error(format!("{where_}.scope: {error}")))?
-                .with_recursive(recursive.unwrap_or(false));
-            authority.grant(BrowserCapabilityGrant {
-                resource: BrowserResource::Storage(scope),
-                allow,
-                budget: None,
-            });
-        }
-        Ok(())
     }
 
     fn lower_capabilities(&self, value: &ConfigValue) -> MResult<Vec<ConfigCapabilityGrant>> {
@@ -813,59 +492,6 @@ fn expect_string_list(where_: &str, value: &ConfigValue) -> MResult<Vec<String>>
         .enumerate()
         .map(|(idx, value)| expect_string(&format!("{where_}[{idx}]"), value))
         .collect()
-}
-
-fn expect_browser_operations_for_resource(
-    where_: &str,
-    value: &ConfigValue,
-    resource: BrowserResourceKind,
-) -> MResult<BTreeSet<BrowserOperation>> {
-    let operations = expect_string_list(where_, value)?;
-    let mut out = BTreeSet::new();
-
-    for operation in operations {
-        let parsed = BrowserOperation::parse(&operation)
-            .ok_or_else(|| invalid_error(format!("unknown browser operation `{operation}`")))?;
-
-        if !browser_resource_allows_operation(resource, parsed) {
-            return invalid(format!(
-                "browser {resource:?} grants do not support operation `{parsed}`"
-            ));
-        }
-
-        out.insert(parsed);
-    }
-
-    if out.is_empty() {
-        return invalid(format!("{where_} must contain at least one operation"));
-    }
-
-    Ok(out)
-}
-
-fn browser_resource_allows_operation(
-    resource: BrowserResourceKind,
-    operation: BrowserOperation,
-) -> bool {
-    match resource {
-        BrowserResourceKind::Dom | BrowserResourceKind::Clipboard => {
-            matches!(operation, BrowserOperation::Read | BrowserOperation::Write)
-        }
-        BrowserResourceKind::Network => matches!(operation, BrowserOperation::Read),
-        BrowserResourceKind::Storage => matches!(
-            operation,
-            BrowserOperation::Read | BrowserOperation::Write | BrowserOperation::List
-        ),
-    }
-}
-
-fn is_cli_env_key(value: &str) -> bool {
-    let mut chars = value.chars();
-    match chars.next() {
-        Some(first) if first == '_' || first.is_ascii_alphabetic() => {}
-        _ => return false,
-    }
-    chars.all(|ch| ch == '_' || ch.is_ascii_alphanumeric())
 }
 
 fn invalid_error(reason: impl Into<String>) -> MechError {

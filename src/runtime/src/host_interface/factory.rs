@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use mech_core::{MResult, MechError, MechErrorKind};
 use crate::{ConfigValue, RuntimeResourceProvider};
-use super::{HostInstanceConfig, HostManifestConfig, MaterializedHostInterface, validate_host_manifest};
+use super::{validate_host_interface, HostInstanceConfig, HostInterfaceCatalog, HostManifestConfig, MaterializedHostInterface, validate_host_manifest};
 
 pub trait RuntimeHostFactory: std::fmt::Debug {
   fn provider_name(&self) -> &str;
@@ -35,6 +35,9 @@ impl RuntimeHostFactoryRegistry {
     let installation = factory.instantiate(&config.name, &config.settings)?;
     if installation.interface.instance != config.name { return Err(error("RuntimeHostInstallationMismatch", "host installation returned mismatched instance")); }
     if installation.interface.provider != config.provider { return Err(error("RuntimeHostInstallationMismatch", "host installation returned mismatched provider")); }
+    validate_host_interface(&installation.interface)?;
+    let mut catalog = HostInterfaceCatalog::new();
+    catalog.register(installation.interface.clone())?;
     Ok(installation)
   }
 }

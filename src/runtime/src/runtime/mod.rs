@@ -104,7 +104,7 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
-use crate::{register_config_spec_grants, register_config_spec_resources, InMemoryDocsProvider, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, resource_base_matches, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
+use crate::{register_config_spec_grants, register_config_spec_resources, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RunResourceGrantConfig, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, resource_base_matches, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
 
 thread_local! {
   static ACTIVE_RUNTIME_PROGRAM_HOST: RefCell<Option<RuntimeProgramHostTarget>> =
@@ -129,6 +129,9 @@ pub struct RuntimeBuilder {
   module_builder: ModuleBuilder,
   config_specs: Vec<RuntimeConfigSpec>,
   resource_providers: Vec<Box<dyn RuntimeResourceProvider>>,
+  host_factories: RuntimeHostFactoryRegistry,
+  host_instances: Vec<HostInstanceConfig>,
+  run_grants: Vec<RunResourceGrantConfig>,
   module_manifests: ModuleManifestCatalog,
 }
 
@@ -148,6 +151,9 @@ impl std::fmt::Debug for RuntimeBuilder {
       .field("module_builder", &self.module_builder)
       .field("config_specs", &self.config_specs)
       .field("resource_providers", &self.resource_providers.len())
+      .field("host_factories", &self.host_factories)
+      .field("host_instances", &self.host_instances)
+      .field("run_grants", &self.run_grants)
       .field("module_manifests", &self.module_manifests)
       .finish()
   }
@@ -169,7 +175,10 @@ impl Default for RuntimeBuilder {
       module_builder: ModuleBuilder::new(),
       config_specs: Vec::new(),
       resource_providers: Vec::new(),
-      module_manifests: ModuleManifestCatalog::with_builtin_hosts(),
+      host_factories: RuntimeHostFactoryRegistry::new(),
+      host_instances: Vec::new(),
+      run_grants: Vec::new(),
+      module_manifests: ModuleManifestCatalog::new(),
     }
   }
 }
@@ -265,6 +274,21 @@ impl RuntimeBuilder {
     Ok(self)
   }
 
+  pub fn host_factory(mut self, factory: Box<dyn RuntimeHostFactory>) -> MResult<Self> {
+    self.host_factories.register(factory)?;
+    Ok(self)
+  }
+
+  pub fn host_instance(mut self, config: HostInstanceConfig) -> Self {
+    self.host_instances.push(config);
+    self
+  }
+
+  pub fn run_resource_grant(mut self, grant: RunResourceGrantConfig) -> Self {
+    self.run_grants.push(grant);
+    self
+  }
+
   pub fn resource_provider(
     mut self,
     provider: Box<dyn RuntimeResourceProvider>,
@@ -301,6 +325,13 @@ impl RuntimeBuilder {
       },
     };
 
+    let mut host_interfaces = HostInterfaceCatalog::new();
+    for host_instance in &self.host_instances {
+      let installation = self.host_factories.instantiate(host_instance)?;
+      host_interfaces.register(installation.interface)?;
+      self.resource_providers.extend(installation.resource_providers);
+    }
+
     let mut runtime = MechRuntime {
       id: runtime_id,
       event_sequence: 0,
@@ -320,6 +351,7 @@ impl RuntimeBuilder {
       resources: RuntimeResourceRegistry::new(),
       grants: RuntimeCapabilityGrantRegistry::new(),
       resource_bindings: HashMap::new(),
+      host_interfaces,
       module_manifests: self.module_manifests,
     };
 
@@ -330,6 +362,10 @@ impl RuntimeBuilder {
 
     for provider in self.resource_providers {
       runtime.register_resource_provider(provider)?;
+    }
+
+    for grant in &self.run_grants {
+      runtime.install_run_resource_grant(grant)?;
     }
 
     let mut context = runtime.runtime_context()?;
@@ -368,6 +404,7 @@ pub struct MechRuntime {
   resources: RuntimeResourceRegistry,
   grants: RuntimeCapabilityGrantRegistry,
   resource_bindings: HashMap<String, RuntimeResourceBinding>,
+  host_interfaces: HostInterfaceCatalog,
   module_manifests: ModuleManifestCatalog,
 }
 
@@ -392,6 +429,7 @@ impl std::fmt::Debug for MechRuntime {
       .field("resources", &self.resources)
       .field("grants", &self.grants)
       .field("resource_bindings", &self.resource_bindings)
+      .field("host_interfaces", &self.host_interfaces)
       .field("module_manifests", &self.module_manifests)
       .finish()
   }
@@ -636,6 +674,28 @@ impl MechRuntime {
     path: &str,
   ) -> bool {
     self.grants.allows(subject, resource, operation, path)
+  }
+
+  pub fn install_run_resource_grant(
+    &mut self,
+    grant: &RunResourceGrantConfig,
+  ) -> MResult<()> {
+    let context = self.host_interfaces.resolve(&grant.target)?;
+    for operation in &grant.operations {
+      if !context.operations.iter().any(|allowed| allowed == operation) {
+        return Err(MechError::new(RuntimeInvalidOperationError {
+          operation: "install_run_resource_grant",
+          reason: format!("host context `{}` does not expose operation `{operation}`", grant.target),
+        }, None));
+      }
+    }
+    let operations = grant.operations.iter().map(|operation| RuntimeCapabilityOperation::from_name(operation.clone())).collect::<MResult<Vec<_>>>()?;
+    self.grants.add_grant(RuntimeCapabilityGrant {
+      subject: format!("runtime:{}", self.id),
+      resource: context.base_uri.clone(),
+      operations,
+      paths: grant.paths.clone(),
+    })
   }
 
   pub fn register_resource_provider(

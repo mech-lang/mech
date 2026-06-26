@@ -66,17 +66,6 @@ impl ModuleManifestConfig {
 impl ModuleManifestCatalog {
   pub fn new() -> Self { Self::default() }
 
-  pub fn with_builtin_hosts() -> Self {
-    let mut catalog = Self::new();
-    let _ = catalog.register(builtin_browser_module_manifest());
-    let _ = catalog.register(builtin_cli_module_manifest());
-    catalog
-  }
-
-  pub fn with_builtin_browser() -> Self {
-    Self::with_builtin_hosts()
-  }
-
   pub fn register(&mut self, manifest: ModuleManifestConfig) -> MResult<()> {
     manifest.validate()?;
     if self.manifest(&manifest.name).is_some() {
@@ -100,44 +89,5 @@ impl ModuleManifestCatalog {
     match export.kind {
       ModuleManifestExportKind::Context => Ok(export),
     }
-  }
-}
-
-pub fn builtin_browser_module_manifest() -> ModuleManifestConfig {
-  ModuleManifestConfig {
-    name: "browser".to_string(),
-    exports: vec![ModuleManifestExportConfig {
-      name: "dom".to_string(),
-      kind: ModuleManifestExportKind::Context,
-      base_uri: "browser://dom".to_string(),
-      operations: vec!["read".to_string(), "write".to_string()],
-    }],
-  }
-}
-
-
-pub fn builtin_cli_module_manifest() -> ModuleManifestConfig {
-  ModuleManifestConfig {
-    name: "cli".to_string(),
-    exports: vec![
-      ModuleManifestExportConfig {
-        name: "env".to_string(),
-        kind: ModuleManifestExportKind::Context,
-        base_uri: "cli://env".to_string(),
-        operations: vec!["read".to_string()],
-      },
-      ModuleManifestExportConfig {
-        name: "stdout".to_string(),
-        kind: ModuleManifestExportKind::Context,
-        base_uri: "cli://stdout".to_string(),
-        operations: vec!["write".to_string()],
-      },
-      ModuleManifestExportConfig {
-        name: "stderr".to_string(),
-        kind: ModuleManifestExportKind::Context,
-        base_uri: "cli://stderr".to_string(),
-        operations: vec!["write".to_string()],
-      },
-    ],
   }
 }

@@ -1,6 +1,7 @@
+use std::collections::BTreeSet;
 use mech_core::{MResult, MechError};
 use crate::InvalidConfigField;
-use super::catalog::{MaterializedHostContext, MaterializedHostInterface};
+use super::catalog::{validate_uri_with_authority, MaterializedHostContext, MaterializedHostInterface};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HostManifestConfig {
@@ -17,11 +18,14 @@ pub struct HostContextManifest {
 
 pub fn validate_host_manifest(manifest: &HostManifestConfig) -> MResult<()> {
   if manifest.provider.trim().is_empty() { return invalid("host.provider must be non-empty"); }
-  let mut names = std::collections::BTreeSet::new();
+  if manifest.contexts.is_empty() { return invalid("host.contexts must contain at least one context"); }
+  let mut names = BTreeSet::new();
   for context in &manifest.contexts {
     if context.name.trim().is_empty() { return invalid("host.contexts[].name must be non-empty"); }
     if !names.insert(context.name.clone()) { return invalid(format!("duplicate host context `{}`", context.name)); }
-    if context.base_uri_template.trim().is_empty() || !context.base_uri_template.contains("://") { return invalid(format!("host context `{}` base-uri must contain `://`", context.name)); }
+    if context.base_uri_template.trim().is_empty() { return invalid(format!("host context `{}` base-uri must be non-empty", context.name)); }
+    if !context.base_uri_template.contains("://") { return invalid(format!("host context `{}` base-uri must contain `://`", context.name)); }
+    if !context.base_uri_template.contains("{instance}") { return invalid(format!("host context `{}` base-uri must contain `{{instance}}`", context.name)); }
     if context.operations.is_empty() { return invalid(format!("host context `{}` operations must contain at least one operation", context.name)); }
     for op in &context.operations {
       if op != "read" && op != "write" { return invalid(format!("unknown host context operation `{op}`")); }
@@ -31,16 +35,21 @@ pub fn validate_host_manifest(manifest: &HostManifestConfig) -> MResult<()> {
 }
 
 pub fn materialize_host_manifest(instance: &str, manifest: &HostManifestConfig) -> MResult<MaterializedHostInterface> {
+  if instance.trim().is_empty() { return invalid("host instance name must be non-empty"); }
   validate_host_manifest(manifest)?;
-  Ok(MaterializedHostInterface {
-    instance: instance.to_string(),
-    provider: manifest.provider.clone(),
-    contexts: manifest.contexts.iter().map(|context| MaterializedHostContext {
+  let mut bases = BTreeSet::new();
+  let mut contexts = Vec::new();
+  for context in &manifest.contexts {
+    let base_uri = context.base_uri_template.replace("{instance}", instance);
+    validate_uri_with_authority(&base_uri)?;
+    if !bases.insert(base_uri.clone()) { return invalid(format!("duplicate materialized host base URI `{base_uri}`")); }
+    contexts.push(MaterializedHostContext {
       name: context.name.clone(),
-      base_uri: context.base_uri_template.replace("{instance}", instance),
+      base_uri,
       operations: context.operations.clone(),
-    }).collect(),
-  })
+    });
+  }
+  Ok(MaterializedHostInterface { instance: instance.to_string(), provider: manifest.provider.clone(), contexts })
 }
 
 fn invalid<T>(message: impl Into<String>) -> MResult<T> {

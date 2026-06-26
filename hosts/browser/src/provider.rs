@@ -1,7 +1,8 @@
 use mech_core::{
   browser_capability_error, BrowserAuthority, BrowserDomManifestEntry, BrowserDomPath,
-  BrowserOperation, BROWSER_DOM_PROVIDER_URI, MResult, MechError, MechErrorKind, Ref, Value,
+  BrowserOperation, MResult, MechError, MechErrorKind, Ref, Value,
 };
+use crate::{BrowserHostConfig, BrowserHostRuntimeConfig};
 
 use mech_runtime::{RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest};
 
@@ -22,13 +23,22 @@ pub trait BrowserDomBackend: std::fmt::Debug {
 
 #[derive(Debug)]
 pub struct BrowserResourceProvider<B> {
+  instance: String,
   authority: BrowserAuthority,
   backend: B,
 }
 
 impl<B> BrowserResourceProvider<B> {
   pub fn new(authority: BrowserAuthority, backend: B) -> Self {
-    Self { authority, backend }
+    Self::for_instance("browser", authority, backend)
+  }
+
+  pub fn for_instance(instance: impl Into<String>, authority: BrowserAuthority, backend: B) -> Self {
+    Self { instance: instance.into(), authority, backend }
+  }
+
+  fn dom_base(&self) -> String {
+    format!("browser://{}/dom", self.instance)
   }
 
   pub fn authority(&self) -> &BrowserAuthority {
@@ -49,16 +59,6 @@ impl<B> BrowserResourceProvider<B> {
 }
 
 impl<B: BrowserDomBackend> BrowserResourceProvider<B> {
-  fn validate_dom_base(base_uri: &str) -> MResult<()> {
-    if base_uri == BROWSER_DOM_PROVIDER_URI || base_uri == "browser://dom/" {
-      return Ok(());
-    }
-    Err(browser_resource_provider_error(
-      base_uri,
-      "browser provider base is unsupported in this PR; only browser://dom is supported",
-    ))
-  }
-
   fn dom_path(path: String) -> MResult<BrowserDomPath> {
     BrowserDomPath::new(path).map_err(browser_capability_error)
   }
@@ -70,11 +70,11 @@ impl<B: BrowserDomBackend> RuntimeResourceProvider for BrowserResourceProvider<B
   }
 
   fn base_uris(&self) -> Vec<String> {
-    vec![BROWSER_DOM_PROVIDER_URI.to_string()]
+    vec![self.dom_base()]
   }
 
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
-    Self::validate_dom_base(&request.base_uri)?;
+    if request.base_uri != self.dom_base() { return Err(browser_resource_provider_error(&request.base_uri, "unsupported browser DOM base URI")); }
     let path = Self::dom_path(request.path)?;
     let Some(entry) = self.authority.dom_entry_for_path(&path) else {
       return Err(browser_resource_provider_error(
@@ -93,7 +93,7 @@ impl<B: BrowserDomBackend> RuntimeResourceProvider for BrowserResourceProvider<B
     if request.intent != RuntimeResourceWriteIntent::Assign {
       return Err(browser_resource_provider_error(&request.base_uri, "browser DOM resources do not support send intent; use assignment"));
     }
-    Self::validate_dom_base(&request.base_uri)?;
+    if request.base_uri != self.dom_base() { return Err(browser_resource_provider_error(&request.base_uri, "unsupported browser DOM base URI")); }
     let path = Self::dom_path(request.path)?;
     let Some(entry) = self.authority.dom_entry_for_path(&path) else {
       return Err(browser_resource_provider_error(
@@ -162,4 +162,36 @@ fn browser_resource_provider_error(
     },
     None,
   )
+}
+
+#[derive(Debug)]
+pub struct BrowserHostFactory<B: BrowserDomBackend + Clone + 'static> {
+  manifest: mech_runtime::HostManifestConfig,
+  backend: B,
+}
+
+impl<B: BrowserDomBackend + Clone + 'static> BrowserHostFactory<B> {
+  pub fn new(backend: B) -> MResult<Self> {
+    Ok(Self { manifest: crate::browser_host_manifest()?, backend })
+  }
+}
+
+impl<B: BrowserDomBackend + Clone + 'static> mech_runtime::RuntimeHostFactory for BrowserHostFactory<B> {
+  fn provider_name(&self) -> &str { "browser" }
+  fn manifest(&self) -> &mech_runtime::HostManifestConfig { &self.manifest }
+  fn validate_settings(&self, _instance_name: &str, settings: &mech_runtime::ConfigValue) -> MResult<()> {
+    crate::browser_config_from_settings(settings).map(|_| ())
+  }
+  fn instantiate(&self, instance_name: &str, settings: &mech_runtime::ConfigValue) -> MResult<mech_runtime::RuntimeHostInstallation> {
+    self.validate_settings(instance_name, settings)?;
+    let browser = crate::browser_config_from_settings(settings)?;
+    let authority = BrowserHostConfig {
+      runtime: BrowserHostRuntimeConfig::from(&mech_runtime::RuntimeConfig::default()),
+      browser,
+    }.into_browser_authority()?;
+    Ok(mech_runtime::RuntimeHostInstallation {
+      interface: mech_runtime::materialize_host_manifest(instance_name, &self.manifest)?,
+      resource_providers: vec![Box::new(BrowserResourceProvider::for_instance(instance_name, authority, self.backend.clone()))],
+    })
+  }
 }

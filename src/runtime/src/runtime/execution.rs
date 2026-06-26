@@ -314,11 +314,12 @@ impl MechRuntime {
               reason: format!("context import `{}` is missing item metadata", import.declaration.specifier),
             }, None)
           })?;
-          let export = self.module_manifests.context_export(module, item)?;
+          let target = format!("{module}/{item}");
+          let context = self.host_interfaces.resolve(&target)?;
           declarations.push(crate::SourceContextDeclaration {
             name: alias.clone(),
-            base: crate::SourceContextBase::ResourceUri(export.base_uri.clone()),
-            capabilities: export.operations.iter().map(|operation| crate::SourceContextCapability {
+            base: crate::SourceContextBase::ResourceUri(context.base_uri.clone()),
+            capabilities: context.operations.iter().map(|operation| crate::SourceContextCapability {
               operation: operation.clone(),
               scope: crate::SourceContextCapabilityScope::Wildcard,
             }).collect(),

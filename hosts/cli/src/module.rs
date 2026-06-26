@@ -14,15 +14,3 @@ pub fn cli_host_manifest() -> mech_core::MResult<mech_runtime::HostManifestConfi
     ).with_compiler_loc()
   })
 }
-
-pub fn cli_module_manifest() -> mech_core::MResult<mech_core::ModuleManifestConfig> {
-  Ok(mech_core::ModuleManifestConfig {
-    name: "cli".to_string(),
-    exports: cli_host_manifest()?.contexts.into_iter().map(|context| mech_core::ModuleManifestExportConfig {
-      name: context.name,
-      kind: mech_core::ModuleManifestExportKind::Context,
-      base_uri: context.base_uri_template.replace("{instance}/", ""),
-      operations: context.operations,
-    }).collect(),
-  })
-}

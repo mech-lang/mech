@@ -9,7 +9,7 @@ use mech_core::{
 };
 
 use mech_runtime::{
-  DiagnosticsConfig, LogLevel, MechConfigDocument, RuntimeConfig, RuntimeLimits,
+  ConfigValue, DiagnosticsConfig, LogLevel, MechConfigDocument, RuntimeConfig, RuntimeLimits,
 };
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -111,35 +111,16 @@ impl BrowserHostConfig {
     document: &MechConfigDocument,
     runtime_config: &RuntimeConfig,
   ) -> Self {
-    let grants = document
-      .browser
-      .grants()
-      .iter()
-      .map(|grant| BrowserHostBrowserGrant {
-        resource: BrowserHostResourceConfig::from(&grant.resource),
-        allow: grant
-          .allow
-          .iter()
-          .map(|operation| operation.as_str().to_string())
-          .collect(),
-      })
-      .collect();
-    let dom_manifest = document
-      .browser
-      .dom_manifest()
-      .iter()
-      .map(|entry| BrowserHostDomManifestEntry {
-        path: entry.path.as_str().to_string(),
-        selector: entry.selector.selector.clone(),
-        property: entry.property.config_name().to_string(),
-        attribute: entry.property.config_attribute().map(ToString::to_string),
-      })
-      .collect();
+    let browser = browser_config_from_hosts(document).unwrap_or_else(|_| BrowserHostBrowserConfig {
+      grants: Vec::new(),
+      dom_manifest: Vec::new(),
+    });
     Self {
       runtime: BrowserHostRuntimeConfig::from(runtime_config),
-      browser: BrowserHostBrowserConfig { grants, dom_manifest },
+      browser,
     }
   }
+
 
   pub fn into_runtime_config(&self) -> MResult<RuntimeConfig> {
     let log_level = match self.runtime.diagnostics.log_level.as_str() {
@@ -299,6 +280,70 @@ fn invalid_error(field: &'static str, reason: impl Into<String>) -> MechError {
 
 fn invalid<T>(field: &'static str, reason: impl Into<String>) -> MResult<T> {
   Err(invalid_error(field, reason))
+}
+
+fn browser_config_from_hosts(document: &MechConfigDocument) -> MResult<BrowserHostBrowserConfig> {
+  let Some(host) = document.hosts.iter().find(|host| host.provider == "browser" || host.name == "browser") else {
+    return Ok(BrowserHostBrowserConfig { grants: Vec::new(), dom_manifest: Vec::new() });
+  };
+  browser_config_from_settings(&host.settings)
+}
+
+pub fn browser_config_from_settings(settings: &ConfigValue) -> MResult<BrowserHostBrowserConfig> {
+  let map = match settings {
+    ConfigValue::Map(map) => map,
+    _ => return invalid("browser.settings", "must be a map"),
+  };
+  let dom = match map.get("dom") {
+    Some(ConfigValue::List(items)) => items,
+    None => return Ok(BrowserHostBrowserConfig { grants: Vec::new(), dom_manifest: Vec::new() }),
+    Some(_) => return invalid("browser.settings.dom", "must be a list"),
+  };
+  let mut grants = Vec::new();
+  let mut dom_manifest = Vec::new();
+  for (idx, item) in dom.iter().enumerate() {
+    let where_ = format!("browser.settings.dom[{idx}]");
+    let ConfigValue::Map(item) = item else { return invalid("browser.settings.dom", "items must be maps"); };
+    let path = config_string(item.get("path"), "path")?;
+    let selector = config_string(item.get("selector"), "selector")?;
+    let property = config_string(item.get("property"), "property")?;
+    let attribute = match item.get("attribute") {
+      Some(ConfigValue::String(value)) => Some(value.clone()),
+      Some(_) => return invalid("browser.settings.dom.attribute", "must be a string"),
+      None => None,
+    };
+    let operations = config_string_list(item.get("operations"), "operations")?;
+    if operations.is_empty() { return invalid("browser.settings.dom.operations", "must not be empty"); }
+    BrowserDomPath::new(&path).map_err(|error| invalid_error("browser.settings.dom.path", format!("invalid DOM path `{path}`: {error}")))?;
+    BrowserDomScope::new(&selector).map_err(|error| invalid_error("browser.settings.dom.selector", format!("invalid DOM selector `{selector}`: {error}")))?;
+    BrowserDomProperty::parse_config_name(&property, attribute.as_deref()).map_err(|error| invalid_error("browser.settings.dom.property", format!("invalid DOM property `{property}`: {error}")))?;
+    for operation in &operations {
+      BrowserOperation::parse(operation).ok_or_else(|| invalid_error("browser.settings.dom.operations", format!("unknown browser operation `{operation}`")))?;
+    }
+    dom_manifest.push(BrowserHostDomManifestEntry { path, selector: selector.clone(), property, attribute });
+    grants.push(BrowserHostBrowserGrant { resource: BrowserHostResourceConfig::Dom { selector }, allow: operations });
+    let _ = where_;
+  }
+  Ok(BrowserHostBrowserConfig { grants, dom_manifest })
+}
+
+fn config_string(value: Option<&ConfigValue>, field: &'static str) -> MResult<String> {
+  match value {
+    Some(ConfigValue::String(value)) => Ok(value.clone()),
+    Some(_) => invalid(field, "must be a string"),
+    None => invalid(field, "is required"),
+  }
+}
+
+fn config_string_list(value: Option<&ConfigValue>, field: &'static str) -> MResult<Vec<String>> {
+  match value {
+    Some(ConfigValue::List(items)) => items.iter().map(|item| match item {
+      ConfigValue::String(value) => Ok(value.clone()),
+      _ => invalid(field, "must contain only strings"),
+    }).collect(),
+    Some(_) => invalid(field, "must be a list"),
+    None => invalid(field, "is required"),
+  }
 }
 
 #[cfg(test)]
