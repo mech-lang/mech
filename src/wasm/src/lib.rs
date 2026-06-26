@@ -179,52 +179,48 @@ fn install_browser_runtime_grants(
   Ok(())
 }
 
-fn browser_host_from_config(document: Option<&MechConfigDocument>) -> BrowserHost {
+fn browser_host_from_config(document: Option<&MechConfigDocument>) -> MResult<BrowserHost> {
   match document {
     Some(document) => {
-      let config = RuntimeConfig::default().apply_patch(&document.runtime).unwrap_or_default();
-      let host_config = BrowserHostConfig::from_document_and_runtime(document, &config);
-      BrowserHost::new(host_config.into_browser_authority().unwrap_or_default())
+      let config = RuntimeConfig::default().apply_patch(&document.runtime)?;
+      let host_config = BrowserHostConfig::from_document_and_runtime(document, &config)?;
+      Ok(BrowserHost::new(host_config.into_browser_authority()?))
     }
-    None => BrowserHost::deny_by_default(),
+    None => Ok(BrowserHost::deny_by_default()),
   }
 }
 
-fn runtime_from_config_document(document: Option<&MechConfigDocument>) -> MechRuntime {
+fn runtime_from_config_document(document: Option<&MechConfigDocument>) -> MResult<MechRuntime> {
   let config = match document {
-    Some(document) => RuntimeConfig::default()
-      .apply_patch(&document.runtime)
-      .expect("failed to apply wasm runtime config"),
+    Some(document) => RuntimeConfig::default().apply_patch(&document.runtime)?,
     None => RuntimeConfig::default(),
   };
 
-  let mut runtime = MechRuntime::new(config)
-    .expect("failed to initialize MechRuntime for wasm");
+  let mut runtime = MechRuntime::new(config.clone())?;
   let authority = match document {
-    Some(document) => BrowserHostConfig::from_document_and_runtime(document, &config).into_browser_authority().unwrap_or_default(),
+    Some(document) => BrowserHostConfig::from_document_and_runtime(document, &config)?.into_browser_authority()?,
     None => mech_core::BrowserAuthority::default(),
   };
   runtime
     .register_resource_provider(Box::new(BrowserResourceProvider::new(
       authority.clone(),
       WasmBrowserDomBackend::new(),
-    )))
-    .expect("failed to register browser resource provider");
+    )))?;
   runtime
-    .bind_resource_root("browser", "browser://dom/")
-    .expect("failed to bind default browser DOM resource root");
-  install_browser_runtime_grants(&mut runtime, &authority)
-    .expect("failed to install browser runtime grants");
-  runtime
+    .bind_resource_root("browser", "browser://dom/")?;
+  install_browser_runtime_grants(&mut runtime, &authority).map_err(|error| {
+    MechError::new(GenericError { msg: format!("failed to install browser runtime grants: {error:?}") }, None)
+  })?;
+  Ok(runtime)
 }
 
 fn wasm_parts_from_config_document(
   document: Option<&MechConfigDocument>,
-) -> (MechRuntime, BrowserHost) {
-  (
-    runtime_from_config_document(document),
-    browser_host_from_config(document),
-  )
+) -> MResult<(MechRuntime, BrowserHost)> {
+  Ok((
+    runtime_from_config_document(document)?,
+    browser_host_from_config(document)?,
+  ))
 }
 
 
@@ -395,7 +391,7 @@ impl WasmMech {
       source,
       ConfigProfileOptions::default(),
     )?;
-    let (runtime, browser_host) = wasm_parts_from_config_document(Some(&document));
+    let (runtime, browser_host) = wasm_parts_from_config_document(Some(&document))?;
 
     Ok(Self {
       runtime,
@@ -407,7 +403,8 @@ impl WasmMech {
   }
 
   fn with_default_runtime() -> Self {
-    let (runtime, browser_host) = wasm_parts_from_config_document(None);
+    let (runtime, browser_host) = wasm_parts_from_config_document(None)
+      .expect("default wasm runtime config should be valid");
 
     Self {
       runtime,

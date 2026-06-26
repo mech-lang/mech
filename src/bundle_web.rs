@@ -80,7 +80,7 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
   let host_config = mech_host_browser::BrowserHostConfig::from_document_and_runtime(
     &options.loaded_config.document,
     &runtime_config,
-  );
+  )?;
   let index_html = output_dir.join("index.html");
   let injection = options
     .host_config_injection

@@ -421,7 +421,8 @@ async fn main() -> Result<(), MechError> {
       .map(|loaded| mech_host_browser::BrowserHostConfig::from_document_and_runtime(
         &loaded.document,
         &runtime_config,
-      ));
+      ))
+      .transpose()?;
     let config_shim_at_root = loaded_config
       .as_ref()
       .and_then(|loaded| loaded.document.serve.as_ref())
@@ -1058,7 +1059,7 @@ fn serve_host_delegation_injection(
   let host_config = mech_host_browser::BrowserHostConfig::from_document_and_runtime(
     &loaded_config.document,
     runtime_config,
-  );
+  )?;
   let now_ms = std::time::SystemTime::now()
     .duration_since(std::time::UNIX_EPOCH)
     .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error.to_string()))?

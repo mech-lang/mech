@@ -110,15 +110,12 @@ impl BrowserHostConfig {
   pub fn from_document_and_runtime(
     document: &MechConfigDocument,
     runtime_config: &RuntimeConfig,
-  ) -> Self {
-    let browser = browser_config_from_hosts(document).unwrap_or_else(|_| BrowserHostBrowserConfig {
-      grants: Vec::new(),
-      dom_manifest: Vec::new(),
-    });
-    Self {
+  ) -> MResult<Self> {
+    let browser = browser_config_from_hosts(document)?;
+    Ok(Self {
       runtime: BrowserHostRuntimeConfig::from(runtime_config),
       browser,
-    }
+    })
   }
 
 
@@ -538,7 +535,7 @@ config := {
   fn browser_host_config_projects_runtime_browser_grants_and_dom_manifest() {
     let document = config_document();
     let runtime_config = RuntimeConfig::default().apply_patch(&document.runtime).unwrap();
-    let host_config = BrowserHostConfig::from_document_and_runtime(&document, &runtime_config);
+    let host_config = BrowserHostConfig::from_document_and_runtime(&document, &runtime_config).unwrap();
     assert_eq!(host_config.runtime.name, "demo");
     assert_eq!(host_config.runtime.diagnostics.log_level, "debug");
     assert_eq!(host_config.browser.grants.len(), 3);
@@ -550,12 +547,30 @@ config := {
   fn browser_host_config_converts_back_to_runtime_and_authority() {
     let document = config_document();
     let runtime_config = RuntimeConfig::default().apply_patch(&document.runtime).unwrap();
-    let host_config = BrowserHostConfig::from_document_and_runtime(&document, &runtime_config);
+    let host_config = BrowserHostConfig::from_document_and_runtime(&document, &runtime_config).unwrap();
     let (runtime, authority) = host_config.into_runtime_and_browser_authority().unwrap();
     assert_eq!(runtime.name, "demo");
     assert_eq!(runtime.diagnostics.log_level, LogLevel::Debug);
     assert!(authority.allows_dom("#counter", BrowserOperation::Write).is_ok());
     assert_eq!(authority.dom_manifest().len(), 3);
+  }
+
+  #[test]
+  fn browser_settings_dom_only_parses() {
+    let config = browser_config_from_settings(&cfg_map(vec![
+      ("dom", cfg_list(vec![cfg_map(vec![
+        ("path", cfg_string("body/content/input/_value")),
+        ("selector", cfg_string("#input")),
+        ("property", cfg_string("value")),
+        ("operations", cfg_list(vec![cfg_string("read"), cfg_string("write")])),
+      ])])),
+    ])).unwrap();
+
+    assert_eq!(config.dom_manifest.len(), 1);
+    assert_eq!(config.grants.len(), 1);
+    assert_eq!(config.dom_manifest[0].path, "body/content/input/_value");
+    assert!(matches!(config.grants[0].resource, BrowserHostResourceConfig::Dom { ref selector } if selector == "#input"));
+    assert_eq!(config.grants[0].allow, vec!["read".to_string(), "write".to_string()]);
   }
 
   #[test]
@@ -614,7 +629,7 @@ config := {
   }
 
   #[test]
-  fn browser_settings_dom_absent_does_not_drop_other_grants() {
+  fn browser_settings_mixed_resources_parse() {
     let config = browser_config_from_settings(&cfg_map(vec![
       ("clipboard", cfg_list(vec![cfg_map(vec![
         ("operations", cfg_list(vec![cfg_string("read")]))
@@ -641,7 +656,7 @@ config := {
   }
 
   #[test]
-  fn browser_settings_uses_operations_not_allow() {
+  fn browser_settings_allow_field_rejected() {
     let err = browser_config_from_settings(&cfg_map(vec![
       ("clipboard", cfg_list(vec![cfg_map(vec![
         ("allow", cfg_list(vec![cfg_string("read")]))
@@ -651,12 +666,43 @@ config := {
     assert!(error.contains("allow"), "got {error}");
   }
 
+  #[test]
+  fn browser_from_document_and_runtime_rejects_invalid_host_settings() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    {
+      name: "browser"
+      provider: "browser"
+      settings: {
+        dom: [
+          {
+            path: "bad path"
+            selector: "#input"
+            property: "value"
+            operations: ["read"]
+          }
+        ]
+      }
+    }
+  ]
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let err = BrowserHostConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap_err();
+    let error = format!("{err:?}");
+    assert!(error.contains("browser.settings.dom.path"), "got {error}");
+  }
+
   #[cfg(feature = "serde")]
   #[test]
   fn browser_host_config_serializes_expected_shape() {
     let document = config_document();
     let runtime_config = RuntimeConfig::default().apply_patch(&document.runtime).unwrap();
-    let host_config = BrowserHostConfig::from_document_and_runtime(&document, &runtime_config);
+    let host_config = BrowserHostConfig::from_document_and_runtime(&document, &runtime_config).unwrap();
     let json = serde_json::to_value(&host_config).unwrap();
     assert_eq!(json["runtime"]["diagnostics"]["logLevel"], "debug");
     assert_eq!(json["browser"]["grants"][0]["resource"]["kind"], "dom");

@@ -274,7 +274,7 @@ fn host_delegation_signing_options(
   let host_config = mech_host_browser::BrowserHostConfig::from_document_and_runtime(
     &loaded.document,
     &runtime_config,
-  );
+  )?;
   let now_ms = std::time::SystemTime::now()
     .duration_since(std::time::UNIX_EPOCH)
     .map_err(|error| Error::new(ErrorKind::InvalidData, error.to_string()))?
