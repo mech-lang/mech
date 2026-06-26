@@ -285,6 +285,7 @@ fn comprehension_qualifier_contains_context_addressed_source(qualifier: &Compreh
 pub fn new_cli_runtime(
   config: RuntimeConfig,
   cli_grants: &config::EffectiveCliHostGrants,
+  run_grants: &[RunResourceGrantConfig],
 ) -> MResult<MechRuntime> {
   let mut builder = RuntimeBuilder::new()
     .config(config)
@@ -297,6 +298,10 @@ pub fn new_cli_runtime(
 
   for grant in cli_grants_to_run_resource_grants(cli_grants) {
     builder = builder.run_resource_grant(grant);
+  }
+
+  for grant in run_grants {
+    builder = builder.run_resource_grant(grant.clone());
   }
 
   builder.build()

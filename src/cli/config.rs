@@ -124,9 +124,7 @@ pub fn effective_cli_host_grants(
     grant_cli_profile(&mut grants, profile)?;
   }
 
-  if let Some(run) = config.and_then(|loaded| loaded.document.run.as_ref()) {
-    apply_run_cli_attenuation(&mut grants, run)?;
-  }
+  let _ = config;
 
   Ok(grants)
 }
@@ -166,13 +164,6 @@ fn union_string(paths: &mut Vec<String>, value: &str) {
   if !paths.iter().any(|path| path == value) {
     paths.push(value.to_string());
   }
-}
-
-fn apply_run_cli_attenuation(
-  _grants: &mut EffectiveCliHostGrants,
-  _run: &mech_runtime::RunHostConfig,
-) -> MResult<()> {
-  Ok(())
 }
 
 fn intersect_env_paths(current: &[String], configured: &[String]) -> Vec<String> {

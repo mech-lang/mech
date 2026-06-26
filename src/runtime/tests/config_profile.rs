@@ -1,8 +1,5 @@
 use std::path::PathBuf;
 
-use mech_core::{
-  BrowserCapabilityError, BrowserDomProperty, BrowserOperation, BrowserStorageBackend,
-};
 use mech_runtime::*;
 
 fn parse(source: &str) -> mech_core::MResult<MechConfigDocument> {
@@ -289,304 +286,72 @@ fn config_profile_named_call_argument_rejected() {
     assert!(msg.contains("named function-call arguments are not supported"));
 }
 
+
 #[test]
-fn config_profile_browser_section_accepts_valid_grants() {
-    let doc = parse(
-        r##"config := {
+fn config_profile_hosts_browser_settings_preserved() {
+    let doc = parse(r##"
+config := {
+  hosts: [
+    {
+      name: "browser"
+      provider: "browser"
+      settings: {
+        dom: [
+          {
+            path: "body/header/title"
+            selector: "#title"
+            property: "text"
+            operations: ["read", "write"]
+          }
+        ]
+      }
+    }
+  ]
+}
+"##).unwrap();
+
+    assert_eq!(doc.hosts.len(), 1);
+    assert_eq!(doc.hosts[0].name, "browser");
+    assert_eq!(doc.hosts[0].provider, "browser");
+
+    let ConfigValue::Map(settings) = &doc.hosts[0].settings else {
+        panic!("expected browser settings map");
+    };
+    assert!(settings.contains_key("dom"));
+}
+
+#[test]
+fn config_profile_top_level_browser_is_rejected() {
+    let err = parse(r##"
+config := {
   browser: {
     dom: [
-      {selector: "#mech-output", allow: ["write"]}
-    ]
-    clipboard: [
-      {allow: ["write"]}
-    ]
-    network: [
-      {origin: "https://docs.mech-lang.org", allow: ["read"], methods: ["GET"]}
-    ]
-    storage: [
-      {backend: "opfs", scope: "/workspace", allow: ["read", "write", "list"]}
+      { path: "body/header/title" selector: "#title" property: "text" allow: ["read"] }
     ]
   }
 }
-"##,
-    )
-    .unwrap();
+"##).unwrap_err();
 
-    assert_eq!(mech_core::BrowserAuthority::default().grants().len(), 4);
-    assert!(doc
-        .browser
-        .allows_dom("#mech-output", BrowserOperation::Write)
-        .is_ok());
-    assert!(doc
-        .browser
-        .allows_clipboard(BrowserOperation::Write)
-        .is_ok());
-    assert!(doc
-        .browser
-        .allows_network(
-            "https://docs.mech-lang.org",
-            Some("GET"),
-            BrowserOperation::Read
-        )
-        .is_ok());
-    assert!(doc
-        .browser
-        .allows_storage(
-            BrowserStorageBackend::Opfs,
-            "/workspace",
-            BrowserOperation::List
-        )
-        .is_ok());
+    let error = format!("{err:?}");
+    assert!(error.contains("unknown top-level config field `browser`"), "got {error}");
 }
 
 #[test]
-fn config_profile_browser_unknown_field_rejected() {
-    let msg = err_text("config := {browser: {geolocation: [{allow: [\"read\"]}]}}\n");
-    assert!(msg.contains("InvalidConfigField"));
-    assert!(msg.contains("unknown browser field `geolocation`"));
-}
+fn browser_host_manifest_config_parses_and_lowers() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../hosts/browser/host.mcfg");
+    let source = std::fs::read_to_string(path).unwrap();
 
-#[test]
-fn config_profile_browser_unknown_operation_rejected() {
-    let msg = err_text("config := {browser: {clipboard: [{allow: [\"read\", \"teleport\"]}]}}\n");
-    assert!(msg.contains("InvalidConfigField"));
-    assert!(msg.contains("unknown browser operation `teleport`"));
-}
+    let doc = parse_config_document(
+        "hosts/browser/host.mcfg",
+        &source,
+        ConfigProfileOptions::default(),
+    ).unwrap();
 
-#[test]
-fn config_profile_browser_absence_is_deny_by_default() {
-    let doc = parse("config := {serve: {port: 8081}}\n").unwrap();
-    assert!(mech_core::BrowserAuthority::default().grants().is_empty());
-    assert!(doc
-        .browser
-        .allows_clipboard(BrowserOperation::Read)
-        .is_err());
-}
-
-#[test]
-fn config_profile_browser_invalid_dom_selector_forms_rejected() {
-    for selector in [
-        "#mech-output, body",
-        "body",
-        ".mech-output *",
-        "#root + body",
-        "#root[data-x]",
-        "#root:hover",
-        "#",
-    ] {
-        let msg = err_text(&format!(
-            "config := {{browser: {{dom: [{{selector: \"{selector}\", allow: [\"write\"]}}]}}}}\n"
-        ));
-        assert!(msg.contains("InvalidConfigField"), "{selector}: {msg}");
-        assert!(msg.contains("browser.dom[0].selector"), "{selector}: {msg}");
-    }
-}
-
-#[test]
-fn config_profile_browser_invalid_network_origins_rejected() {
-    for origin in [
-        "https://",
-        "https://example.com/path",
-        "https://example.com?x=1",
-        "https://example.com#frag",
-        "https://user@example.com",
-        "https://*.example.com",
-    ] {
-        let msg = err_text(&format!(
-            "config := {{browser: {{network: [{{origin: \"{origin}\", allow: [\"read\"], methods: [\"GET\"]}}]}}}}\n"
-        ));
-        assert!(msg.contains("InvalidConfigField"), "{origin}: {msg}");
-        assert!(msg.contains("browser.network[0]"), "{origin}: {msg}");
-    }
-}
-
-#[test]
-fn config_profile_browser_resource_specific_operations_rejected() {
-    let cases = [
-        (
-            "clipboard + list",
-            "config := {browser: {clipboard: [{allow: [\"list\"]}]}}\n",
-            "browser Clipboard grants do not support operation `list`",
-        ),
-        (
-            "dom + invoke",
-            "config := {browser: {dom: [{selector: \"#mech-output\", allow: [\"invoke\"]}]}}\n",
-            "browser Dom grants do not support operation `invoke`",
-        ),
-        (
-            "network + write",
-            "config := {browser: {network: [{origin: \"https://docs.mech-lang.org\", allow: [\"write\"], methods: [\"GET\"]}]}}\n",
-            "browser Network grants do not support operation `write`",
-        ),
-        (
-            "storage + watch",
-            "config := {browser: {storage: [{backend: \"opfs\", scope: \"/workspace\", allow: [\"watch\"]}]}}\n",
-            "browser Storage grants do not support operation `watch`",
-        ),
-    ];
-
-    for (label, source, expected) in cases {
-        let msg = err_text(source);
-        assert!(msg.contains("InvalidConfigField"), "{label}: {msg}");
-        assert!(msg.contains(expected), "{label}: {msg}");
-    }
-}
-
-#[test]
-fn config_profile_browser_storage_recursive_scope_is_explicit() {
-    let exact = parse(
-        r#"config := {
-  browser: {
-    storage: [
-      {backend: "opfs", scope: "/workspace", allow: ["read"]}
-    ]
-  }
-}
-"#,
-    )
-    .unwrap();
-    assert!(exact
-        .browser
-        .allows_storage(
-            BrowserStorageBackend::Opfs,
-            "/workspace",
-            BrowserOperation::Read
-        )
-        .is_ok());
-    assert!(matches!(
-        exact.browser.allows_storage(
-            BrowserStorageBackend::Opfs,
-            "/workspace/main.mec",
-            BrowserOperation::Read
-        ),
-        Err(BrowserCapabilityError::NoMatchingGrant { .. })
-    ));
-
-    let recursive = parse(
-        r#"config := {
-  browser: {
-    storage: [
-      {backend: "opfs", scope: "/workspace", recursive: true, allow: ["read"]}
-    ]
-  }
-}
-"#,
-    )
-    .unwrap();
-    assert!(recursive
-        .browser
-        .allows_storage(
-            BrowserStorageBackend::Opfs,
-            "/workspace/main.mec",
-            BrowserOperation::Read
-        )
-        .is_ok());
-    assert!(matches!(
-        recursive.browser.allows_storage(
-            BrowserStorageBackend::Opfs,
-            "/workspace2/main.mec",
-            BrowserOperation::Read
-        ),
-        Err(BrowserCapabilityError::NoMatchingGrant { .. })
-    ));
-}
-
-#[test]
-fn config_profile_browser_dom_path_manifest_lowers() {
-    let doc = parse(r##"config := {browser: {dom: [{path: "body/header/title", selector: "#title", property: "text", allow: ["read", "write"]}]}}"##).unwrap();
-    let entry = &mech_core::BrowserAuthority::default().dom_manifest()[0];
-    assert_eq!(entry.path.as_str(), "body/header/title");
-    assert_eq!(entry.selector.selector, "#title");
-    assert_eq!(entry.property, BrowserDomProperty::Text);
-}
-
-#[test]
-fn config_profile_browser_dom_path_infers_text_property() {
-    let doc = parse(r##"config := {browser: {dom: [{path: "body/header/title", selector: "#title", allow: ["read"]}]}}"##).unwrap();
-    assert_eq!(mech_core::BrowserAuthority::default().dom_manifest()[0].property, BrowserDomProperty::Text);
-}
-
-#[test]
-fn config_profile_browser_dom_attribute_path_infers_attribute() {
-    let doc = parse(r##"config := {browser: {dom: [{path: "body/status/_class", selector: "#status", allow: ["read"]}]}}"##).unwrap();
-    assert_eq!(mech_core::BrowserAuthority::default().dom_manifest()[0].property, BrowserDomProperty::Attribute("class".to_string()));
-}
-
-#[test]
-fn config_profile_browser_dom_attribute_property_requires_attribute() {
-    let msg = err_text(r##"config := {browser: {dom: [{path: "body/status", selector: "#status", property: "attribute", allow: ["read"]}]}}"##);
-    assert!(msg.contains("requires an `attribute` name"), "{msg}");
-}
-
-#[test]
-fn config_profile_browser_dom_subtree_requires_wildcard_path() {
-    let msg = err_text(r##"config := {browser: {dom: [{path: "body/content", selector: "#content", mode: "subtree", allow: ["read"]}]}}"##);
-    assert!(msg.contains("must end in `/*`"), "{msg}");
-}
-
-#[test]
-fn config_profile_browser_dom_wildcard_path_requires_final_star() {
-    let msg = err_text(r##"config := {browser: {dom: [{path: "body/*/title", selector: "#content", allow: ["read"]}]}}"##);
-    assert!(msg.contains("wildcard `*` must be its own final segment") || msg.contains("only allowed as the final segment"), "{msg}");
-}
-
-#[test]
-fn config_profile_browser_dom_duplicate_path_last_wins() {
-    let doc = parse(r##"config := {browser: {dom: [
-      {path: "body/title", selector: "#old", allow: ["read"]}
-      {path: "body/title", selector: "#new", allow: ["read"]}
-    ]}}"##).unwrap();
-    assert_eq!(mech_core::BrowserAuthority::default().dom_manifest().len(), 1);
-    assert_eq!(mech_core::BrowserAuthority::default().dom_manifest()[0].selector.selector, "#new");
-}
-
-#[test]
-fn config_profile_browser_dom_text_property_rejects_attribute() {
-    let msg = err_text(r##"config := {browser: {dom: [{path: "body/status", selector: "#status", property: "text", attribute: "class", allow: ["read"]}]}}"##);
-    assert!(msg.contains("cannot include `attribute`"), "{msg}");
-}
-
-#[test]
-fn config_profile_browser_dom_attribute_without_property_rejected() {
-    let msg = err_text(r##"config := {browser: {dom: [{path: "body/status/_class", selector: "#status", attribute: "class", allow: ["read"]}]}}"##);
-    assert!(msg.contains("`attribute` is only valid when `property` is `attribute`"), "{msg}");
-}
-
-#[test]
-fn config_profile_browser_dom_value_path_infers_value() {
-    let doc = parse(r##"config := {browser: {dom: [{path: "body/search/_value", selector: "#search", allow: ["read"]}]}}"##).unwrap();
-    assert_eq!(mech_core::BrowserAuthority::default().dom_manifest()[0].property, BrowserDomProperty::Value);
-}
-
-#[test]
-fn config_profile_browser_dom_html_path_infers_inner_html() {
-    let doc = parse(r##"config := {browser: {dom: [{path: "body/content/_html", selector: "#content", allow: ["read"]}]}}"##).unwrap();
-    assert_eq!(mech_core::BrowserAuthority::default().dom_manifest()[0].property, BrowserDomProperty::InnerHtml);
-}
-
-#[test]
-fn config_profile_browser_dom_subtree_rejects_property() {
-    let msg = err_text(r##"config := {browser: {dom: [{path: "body/content/*", selector: "#content", mode: "subtree", property: "text", allow: ["read"]}]}}"##);
-    assert!(msg.contains("property is not allowed"), "{msg}");
-}
-
-#[test]
-fn config_profile_browser_dom_subtree_rejects_attribute() {
-    let msg = err_text(r##"config := {browser: {dom: [{path: "body/content/*", selector: "#content", mode: "subtree", attribute: "class", allow: ["read"]}]}}"##);
-    assert!(msg.contains("attribute is not allowed"), "{msg}");
-}
-
-#[test]
-fn config_profile_browser_dom_subtree_with_wildcard_path_accepted() {
-    let doc = parse(r##"config := {browser: {dom: [{path: "body/content/*", selector: "#content", mode: "subtree", allow: ["read"]}]}}"##).unwrap();
-    assert_eq!(mech_core::BrowserAuthority::default().dom_manifest()[0].path.as_str(), "body/content/*");
-    assert_eq!(mech_core::BrowserAuthority::default().dom_manifest()[0].property, BrowserDomProperty::Text);
-}
-
-#[test]
-fn browser_module_manifest_config_parses_and_lowers() {
-    let source = std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../hosts/browser/module.mcfg")).unwrap();
-    let doc = parse_config_document("hosts/browser/module.mcfg", &source, ConfigProfileOptions::default()).unwrap();
-    let module = doc.module.unwrap();
-    assert_eq!(module, module.clone());
+    let host = doc.host.unwrap();
+    assert_eq!(host.provider, "browser");
+    assert_eq!(host.contexts.len(), 1);
+    assert_eq!(host.contexts[0].name, "dom");
+    assert_eq!(host.contexts[0].base_uri_template, "browser://{instance}/dom");
+    assert_eq!(host.contexts[0].operations, vec!["read".to_string(), "write".to_string()]);
 }

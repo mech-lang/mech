@@ -111,6 +111,26 @@ thread_local! {
     RefCell::new(None);
 }
 
+
+fn default_host_interfaces() -> MResult<HostInterfaceCatalog> {
+  let mut catalog = HostInterfaceCatalog::new();
+  catalog.register(crate::MaterializedHostInterface {
+    instance: "cli".to_string(),
+    provider: "cli".to_string(),
+    contexts: vec![
+      crate::MaterializedHostContext { name: "env".to_string(), base_uri: "cli://cli/env".to_string(), operations: vec!["read".to_string()] },
+      crate::MaterializedHostContext { name: "stdout".to_string(), base_uri: "cli://cli/stdout".to_string(), operations: vec!["write".to_string()] },
+      crate::MaterializedHostContext { name: "stderr".to_string(), base_uri: "cli://cli/stderr".to_string(), operations: vec!["write".to_string()] },
+    ],
+  })?;
+  catalog.register(crate::MaterializedHostInterface {
+    instance: "browser".to_string(),
+    provider: "browser".to_string(),
+    contexts: vec![crate::MaterializedHostContext { name: "dom".to_string(), base_uri: mech_core::BROWSER_DOM_PROVIDER_URI.to_string(), operations: vec!["read".to_string(), "write".to_string()] }],
+  })?;
+  Ok(catalog)
+}
+
 // -----------------------------------------------------------------------------
 // Runtime Builder
 // -----------------------------------------------------------------------------
@@ -325,10 +345,12 @@ impl RuntimeBuilder {
       },
     };
 
-    let mut host_interfaces = HostInterfaceCatalog::new();
+    let mut host_interfaces = default_host_interfaces()?;
     for host_instance in &self.host_instances {
       let installation = self.host_factories.instantiate(host_instance)?;
-      host_interfaces.register(installation.interface)?;
+      if host_interfaces.interface(&installation.interface.instance).is_none() {
+        host_interfaces.register(installation.interface)?;
+      }
       self.resource_providers.extend(installation.resource_providers);
     }
 

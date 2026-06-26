@@ -558,46 +558,55 @@ mod tests {
     }
 
     #[test]
-    fn run_cli_stdout_empty_write_parses() {
-        let doc = parse(r#"config := { run: { cli: { stdout: { write: [] } } } }"#).unwrap();
-        assert_eq!(doc.run.unwrap().cli.stdout.write, Some(vec![]));
+    fn run_grants_empty_paths_allowed_when_explicit_empty_list_is_rejected_or_allowed_per_policy() {
+        let result = parse_config_document(
+            "test.mcfg",
+            r#"config := {run: {grants: [{target: "cli/stdout" operations: ["write"] paths: []}]}}"#,
+            ConfigProfileOptions::default(),
+        );
+
+        assert!(result.is_err());
     }
 
     #[test]
-    fn run_cli_stdout_line_write_parses() {
-        let doc = parse(r#"config := { run: { cli: { stdout: { write: ["line"] } } } }"#).unwrap();
-        assert_eq!(doc.run.unwrap().cli.stdout.write, Some(vec!["line".to_string()]));
+    fn run_grants_stdout_line_lowers() {
+        let doc = parse_config_document(
+            "test.mcfg",
+            r#"config := {run: {grants: [{target: "cli/stdout" operations: ["write"] paths: ["line"]}]}}"#,
+            ConfigProfileOptions::default(),
+        ).unwrap();
+
+        let run = doc.run.unwrap();
+        assert_eq!(run.grants.len(), 1);
+        assert_eq!(run.grants[0].target, "cli/stdout");
+        assert_eq!(run.grants[0].operations, vec!["write".to_string()]);
+        assert_eq!(run.grants[0].paths, vec!["line".to_string()]);
     }
 
     #[test]
-    fn run_cli_env_path_read_parses() {
-        let doc = parse(r#"config := { run: { cli: { env: { read: ["PATH"] } } } }"#).unwrap();
-        assert_eq!(doc.run.unwrap().cli.env.read, Some(vec!["PATH".to_string()]));
+    fn run_grants_env_path_lowers() {
+        let doc = parse_config_document(
+            "test.mcfg",
+            r#"config := {run: {grants: [{target: "cli/env" operations: ["read"] paths: ["PATH"]}]}}"#,
+            ConfigProfileOptions::default(),
+        ).unwrap();
+
+        let run = doc.run.unwrap();
+        assert_eq!(run.grants[0].target, "cli/env");
+        assert_eq!(run.grants[0].operations, vec!["read".to_string()]);
+        assert_eq!(run.grants[0].paths, vec!["PATH".to_string()]);
     }
 
     #[test]
-    fn invalid_run_cli_stdout_path_fails() {
-        let err = parse(r#"config := { run: { cli: { stdout: { write: ["html"] } } } }"#)
-            .expect_err("invalid stdout path should fail");
-        let msg = format!("{} {} {:?}", err.kind_name(), err.kind_message(), err);
-        assert!(msg.contains("run.cli.stdout.write contains invalid path `html`"));
+    fn run_cli_is_rejected() {
+        let err = parse_config_document(
+            "test.mcfg",
+            r#"config := {run: {cli: {stdout: {write: ["line"]}}}}"#,
+            ConfigProfileOptions::default(),
+        ).unwrap_err();
+
+        let error = format!("{err:?}");
+        assert!(error.contains("unknown run field `cli`"), "got {error}");
     }
 
-    #[test]
-    fn invalid_run_cli_env_key_fails() {
-        for key in ["HOME/PATH", "1HOME", "HOME-PATH"] {
-            let source = format!(r#"config := {{ run: {{ cli: {{ env: {{ read: ["{key}"] }} }} }} }}"#);
-            let err = parse(&source).expect_err("invalid env key should fail");
-            let msg = format!("{} {} {:?}", err.kind_name(), err.kind_message(), err);
-            assert!(msg.contains("run.cli.env.read contains invalid env key"));
-        }
-    }
-
-    #[test]
-    fn unknown_run_cli_field_fails() {
-        let err = parse(r#"config := { run: { cli: { prompt: true } } }"#)
-            .expect_err("unknown run.cli field should fail");
-        let msg = format!("{} {} {:?}", err.kind_name(), err.kind_message(), err);
-        assert!(msg.contains("unknown run.cli field `prompt`"));
-    }
 }

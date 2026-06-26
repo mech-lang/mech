@@ -1,6 +1,6 @@
 use mech_core::{
   browser_capability_error, BrowserAuthority, BrowserDomManifestEntry, BrowserDomPath,
-  BrowserOperation, MResult, MechError, MechErrorKind, Ref, Value,
+  BrowserOperation, BROWSER_DOM_PROVIDER_URI, MResult, MechError, MechErrorKind, Ref, Value,
 };
 use crate::{BrowserHostConfig, BrowserHostRuntimeConfig};
 
@@ -41,6 +41,11 @@ impl<B> BrowserResourceProvider<B> {
     format!("browser://{}/dom", self.instance)
   }
 
+  fn matches_dom_base(&self, base_uri: &str) -> bool {
+    base_uri == self.dom_base()
+      || (self.instance == "browser" && (base_uri == BROWSER_DOM_PROVIDER_URI || base_uri == "browser://dom/"))
+  }
+
   pub fn authority(&self) -> &BrowserAuthority {
     &self.authority
   }
@@ -70,11 +75,16 @@ impl<B: BrowserDomBackend> RuntimeResourceProvider for BrowserResourceProvider<B
   }
 
   fn base_uris(&self) -> Vec<String> {
-    vec![self.dom_base()]
+    let mut bases = vec![self.dom_base()];
+    if self.instance == "browser" {
+      bases.push(BROWSER_DOM_PROVIDER_URI.to_string());
+      bases.push("browser://dom/".to_string());
+    }
+    bases
   }
 
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
-    if request.base_uri != self.dom_base() { return Err(browser_resource_provider_error(&request.base_uri, "unsupported browser DOM base URI")); }
+    if !self.matches_dom_base(&request.base_uri) { return Err(browser_resource_provider_error(&request.base_uri, "unsupported browser DOM base URI")); }
     let path = Self::dom_path(request.path)?;
     let Some(entry) = self.authority.dom_entry_for_path(&path) else {
       return Err(browser_resource_provider_error(
@@ -93,7 +103,7 @@ impl<B: BrowserDomBackend> RuntimeResourceProvider for BrowserResourceProvider<B
     if request.intent != RuntimeResourceWriteIntent::Assign {
       return Err(browser_resource_provider_error(&request.base_uri, "browser DOM resources do not support send intent; use assignment"));
     }
-    if request.base_uri != self.dom_base() { return Err(browser_resource_provider_error(&request.base_uri, "unsupported browser DOM base URI")); }
+    if !self.matches_dom_base(&request.base_uri) { return Err(browser_resource_provider_error(&request.base_uri, "unsupported browser DOM base URI")); }
     let path = Self::dom_path(request.path)?;
     let Some(entry) = self.authority.dom_entry_for_path(&path) else {
       return Err(browser_resource_provider_error(
