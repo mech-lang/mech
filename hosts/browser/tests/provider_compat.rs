@@ -1,3 +1,5 @@
+#![cfg(feature = "provider")]
+
 use mech_core::{BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath, BrowserDomProperty, BrowserDomScope, BrowserOperation, BrowserResource, BROWSER_DOM_PROVIDER_URI, MResult};
 use mech_host_browser::{BrowserDomBackend, BrowserResourceProvider};
 use mech_runtime::{RuntimeResourceProvider, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest};

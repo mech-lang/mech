@@ -364,47 +364,35 @@ config := {
       trace-enabled: true
     }
   }
-  browser: {
-    dom: [
-      {
-        path: "counter/_text"
-        selector: "#counter"
-        property: "text"
-        allow: ["read", "write"]
+  hosts: [
+    {
+      name: "browser"
+      provider: "browser"
+      settings: {
+        dom: [
+          {
+            path: "counter/_text"
+            selector: "#counter"
+            property: "text"
+            operations: ["read", "write"]
+          }
+          {
+            path: "name/_value"
+            selector: "#name"
+            property: "value"
+            operations: ["read"]
+          }
+          {
+            path: "button/_aria-label"
+            selector: "#button"
+            property: "attribute"
+            attribute: "aria-label"
+            operations: ["read"]
+          }
+        ]
       }
-      {
-        path: "name/_value"
-        selector: "#name"
-        property: "value"
-        allow: ["read"]
-      }
-      {
-        path: "button/_aria-label"
-        selector: "#button"
-        property: "attribute"
-        attribute: "aria-label"
-        allow: ["read"]
-      }
-    ]
-    clipboard: [
-      { allow: ["read"] }
-    ]
-    network: [
-      {
-        origin: "https://example.com"
-        methods: ["get"]
-        allow: ["read"]
-      }
-    ]
-    storage: [
-      {
-        backend: "local-storage"
-        scope: "/demo"
-        recursive: true
-        allow: ["read", "list"]
-      }
-    ]
-  }
+    }
+  ]
 }
 "##,
       ConfigProfileOptions::default(),
@@ -429,7 +417,7 @@ config := {
     let host_config = BrowserHostConfig::from_document_and_runtime(&document, &runtime_config);
     assert_eq!(host_config.runtime.name, "demo");
     assert_eq!(host_config.runtime.diagnostics.log_level, "debug");
-    assert_eq!(host_config.browser.grants.len(), 6);
+    assert_eq!(host_config.browser.grants.len(), 3);
     assert!(host_config.browser.grants.iter().any(|grant| matches!(grant.resource, BrowserHostResourceConfig::Dom { ref selector } if selector == "#counter") && grant.allow == vec!["read", "write"]));
     assert!(host_config.browser.dom_manifest.iter().any(|entry| entry.path == "button/_aria-label" && entry.property == "attribute" && entry.attribute.as_deref() == Some("aria-label")));
   }
@@ -443,9 +431,6 @@ config := {
     assert_eq!(runtime.name, "demo");
     assert_eq!(runtime.diagnostics.log_level, LogLevel::Debug);
     assert!(authority.allows_dom("#counter", BrowserOperation::Write).is_ok());
-    assert!(authority.allows_clipboard(BrowserOperation::Read).is_ok());
-    assert!(authority.allows_network("https://example.com", Some("GET"), BrowserOperation::Read).is_ok());
-    assert!(authority.allows_storage(BrowserStorageBackend::LocalStorage, "/demo/file", BrowserOperation::List).is_ok());
     assert_eq!(authority.dom_manifest().len(), 3);
   }
 

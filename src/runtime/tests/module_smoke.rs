@@ -3306,11 +3306,13 @@ fn module_preflight_denial_emits_program_failed_event() {
   );
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new()
-    .source_resolver(FileSourceResolver::new(&root))
-
-    .build()
-    .unwrap();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new()
+      .source_resolver(FileSourceResolver::new(&root)),
+    backend,
+  )
+  .build()
+  .unwrap();
   runtime
     .grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line"))
     .unwrap();
@@ -3631,11 +3633,13 @@ fn named_fenced_context_import_write_uses_context_registry() {
   let root = setup_modules("~~~mech:bar\n+> @out := cli/stdout\n@out/line <- \"hello\"\n~~~\n");
   let backend = FakeCliBackend::default();
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new()
-    .source_resolver(FileSourceResolver::new(&root))
-
-    .build()
-    .unwrap();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new()
+      .source_resolver(FileSourceResolver::new(&root)),
+    backend,
+  )
+  .build()
+  .unwrap();
 
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
@@ -3655,11 +3659,13 @@ fn named_fenced_context_import_write_uses_context_registry() {
 fn named_fenced_context_import_read_exports_value() {
   let root = setup_modules("~~~mech:bar\n+> @env := cli/env\nhome := @env/HOME\n<+ home\nhome\n~~~\n");
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/named-fence-home");
-  let mut runtime = RuntimeBuilder::new()
-    .source_resolver(FileSourceResolver::new(&root))
-
-    .build()
-    .unwrap();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new()
+      .source_resolver(FileSourceResolver::new(&root)),
+    backend,
+  )
+  .build()
+  .unwrap();
 
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://cli/env", "HOME")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
@@ -3744,10 +3750,12 @@ fn direct_context_read_resolves_inside_op_assign() {
 fn cli_context_source_scope_denial_preflights_before_stdout_write() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new()
-
-    .build()
-    .unwrap();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new(),
+    backend,
+  )
+  .build()
+  .unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://cli/env", "HOME")).unwrap();
 
@@ -3773,11 +3781,13 @@ fn module_graph_preflight_blocks_dependency_stdout_before_main_env_denial() {
   .unwrap();
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new()
-    .source_resolver(FileSourceResolver::new(&root))
-
-    .build()
-    .unwrap();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new()
+      .source_resolver(FileSourceResolver::new(&root)),
+    backend,
+  )
+  .build()
+  .unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let mut context = runtime.runtime_context().unwrap();
@@ -3795,11 +3805,13 @@ fn module_graph_preflight_blocks_current_stdout_before_dependency_denial() {
   std::fs::write(root.join("dep.mec"), "+> @env := cli/env\nhome := @env/HOME\n").unwrap();
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new()
-    .source_resolver(FileSourceResolver::new(&root))
-
-    .build()
-    .unwrap();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new()
+      .source_resolver(FileSourceResolver::new(&root)),
+    backend,
+  )
+  .build()
+  .unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let mut context = runtime.runtime_context().unwrap();
@@ -3831,11 +3843,13 @@ value := @foo/home
   .unwrap();
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new()
-    .source_resolver(FileSourceResolver::new(&root))
-
-    .build()
-    .unwrap();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new()
+      .source_resolver(FileSourceResolver::new(&root)),
+    backend,
+  )
+  .build()
+  .unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let mut context = runtime.runtime_context().unwrap();
@@ -4049,7 +4063,16 @@ fn module_function_unknown_address_target_is_preflighted_before_send() {
 
   let state = Arc::new(Mutex::new(RecordingCliState::default()));
   let mut runtime = RuntimeBuilder::new()
-
+    .host_factory(Box::new(RecordingCliHostFactory {
+      manifest: mech_host_cli::cli_host_manifest().unwrap(),
+      state: state.clone(),
+    }))
+    .unwrap()
+    .host_instance(HostInstanceConfig {
+      name: "cli".to_string(),
+      provider: "cli".to_string(),
+      settings: ConfigValue::Map(Default::default()),
+    })
     .build()
     .unwrap();
 

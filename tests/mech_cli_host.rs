@@ -518,7 +518,7 @@ fn mech_run_config_can_deny_stdout() {
     r#"config := {
   run: {
     paths: ["cli_host.mec"]
-    cli: { stdout: { write: [] } }
+    grants: []
   }
 }
 "#,
@@ -527,6 +527,7 @@ fn mech_run_config_can_deny_stdout() {
 
   let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg("run")
+    .arg("--deny-default-capabilities")
     .current_dir(&root)
     .output()
     .unwrap();
@@ -550,12 +551,13 @@ fn mech_run_config_can_narrow_stdout_to_line() {
   .unwrap();
   std::fs::write(
     root.join("mech.mcfg"),
-    r#"config := { run: { cli: { stdout: { write: ["line"] } } } }"#,
+    r#"config := { run: { grants: [{ target: "cli/stdout" operations: ["write"] paths: ["line"] }] } }"#,
   )
   .unwrap();
 
   let ok = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg("run")
+    .arg("--deny-default-capabilities")
     .arg("line.mec")
     .current_dir(&root)
     .output()
@@ -564,6 +566,7 @@ fn mech_run_config_can_narrow_stdout_to_line() {
 
   let bad = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg("run")
+    .arg("--deny-default-capabilities")
     .arg("text.mec")
     .current_dir(&root)
     .output()
@@ -587,12 +590,13 @@ fn mech_run_config_can_narrow_env_to_path() {
   .unwrap();
   std::fs::write(
     root.join("mech.mcfg"),
-    r#"config := { run: { cli: { env: { read: ["PATH"] } } } }"#,
+    r#"config := { run: { grants: [{ target: "cli/env" operations: ["read"] paths: ["PATH"] }] } }"#,
   )
   .unwrap();
 
   let ok = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg("run")
+    .arg("--deny-default-capabilities")
     .arg("path.mec")
     .current_dir(&root)
     .output()
@@ -605,6 +609,7 @@ fn mech_run_config_can_narrow_env_to_path() {
 
   let bad = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg("run")
+    .arg("--deny-default-capabilities")
     .arg("home.mec")
     .current_dir(&root)
     .output()
