@@ -9,6 +9,7 @@ pub mod host_delegation;
 #[cfg(feature = "host_delegation_signing")]
 pub mod host_delegation_crypto;
 mod resource;
+pub mod host_interface;
 
 #[cfg(any(feature = "program", feature = "compiler"))]
 pub mod runtime;
@@ -49,6 +50,7 @@ pub use self::host_delegation::*;
 #[cfg(feature = "host_delegation_signing")]
 pub use self::host_delegation_crypto::*;
 pub use self::resource::*;
+pub use self::host_interface::*;
 
 #[cfg(any(feature = "program", feature = "compiler"))]
 pub use self::runtime::*;

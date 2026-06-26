@@ -7,15 +7,18 @@ use mech_core::{
     BrowserResourceKind, BrowserStorageBackend, BrowserStorageScope, MResult, MechError,
     ModuleManifestConfig, ModuleManifestExportConfig, ModuleManifestExportKind,
 };
+use crate::{HostInstanceConfig, HostManifestConfig, HostContextManifest, RunResourceGrantConfig, validate_run_resource_grant};
 
 use super::{ConfigValue, InvalidConfigField};
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct MechConfigDocument {
     pub source_name: String,
     pub runtime: RuntimeConfigPatch,
     pub serve: Option<ServeHostConfig>,
     pub run: Option<RunHostConfig>,
+    pub hosts: Vec<HostInstanceConfig>,
+    pub host: Option<HostManifestConfig>,
     pub browser: BrowserAuthority,
     pub capabilities: Vec<ConfigCapabilityGrant>,
     pub module: Option<ModuleManifestConfig>,
@@ -58,9 +61,10 @@ pub struct ServeHostConfig {
     pub wasm: Option<PathBuf>,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct RunHostConfig {
     pub paths: Vec<PathBuf>,
+    pub grants: Vec<RunResourceGrantConfig>,
     pub cli: RunCliHostConfig,
 }
 
@@ -112,6 +116,8 @@ impl ConfigLowerer {
             runtime: RuntimeConfigPatch::default(),
             serve: None,
             run: None,
+            hosts: Vec::new(),
+            host: None,
             browser: BrowserAuthority::default(),
             capabilities: Vec::new(),
             module: None,
@@ -121,6 +127,8 @@ impl ConfigLowerer {
                 "runtime" => doc.runtime = self.lower_runtime(value)?,
                 "serve" => doc.serve = Some(self.lower_serve(value)?),
                 "run" => doc.run = Some(self.lower_run(value)?),
+                "hosts" => doc.hosts = self.lower_hosts(value)?,
+                "host" => doc.host = Some(self.lower_host_manifest(value)?),
                 "browser" => doc.browser = self.lower_browser(value)?,
                 "capabilities" => doc.capabilities = self.lower_capabilities(value)?,
                 "module" => doc.module = Some(self.lower_module(value)?),
@@ -128,6 +136,67 @@ impl ConfigLowerer {
             }
         }
         Ok(doc)
+    }
+
+    fn lower_hosts(&self, value: &ConfigValue) -> MResult<Vec<HostInstanceConfig>> {
+        let mut out = Vec::new();
+        let mut names = BTreeSet::new();
+        for (idx, item) in expect_list("hosts", value)?.iter().enumerate() {
+            let where_ = format!("hosts[{idx}]");
+            let map = expect_map(&where_, item)?;
+            let mut name = None;
+            let mut provider = None;
+            let mut settings = None;
+            for (key, value) in map {
+                match key.as_str() {
+                    "name" => name = Some(expect_string(&format!("{where_}.name"), value)?),
+                    "provider" => provider = Some(expect_string(&format!("{where_}.provider"), value)?),
+                    "settings" => settings = Some(value.clone()),
+                    other => return invalid(format!("unknown {where_} field `{other}`")),
+                }
+            }
+            let name = name.ok_or_else(|| invalid_error(format!("{where_}.name is required")))?;
+            if name.trim().is_empty() { return invalid(format!("{where_}.name must be non-empty")); }
+            if !names.insert(name.clone()) { return invalid(format!("duplicate host instance `{name}`")); }
+            let provider = provider.ok_or_else(|| invalid_error(format!("{where_}.provider is required")))?;
+            if provider.trim().is_empty() { return invalid(format!("{where_}.provider must be non-empty")); }
+            let settings = settings.unwrap_or_else(|| ConfigValue::Map(BTreeMap::new()));
+            out.push(HostInstanceConfig { name, provider, settings });
+        }
+        Ok(out)
+    }
+
+    fn lower_host_manifest(&self, value: &ConfigValue) -> MResult<HostManifestConfig> {
+        let map = expect_map("host", value)?;
+        let mut provider = None;
+        let mut contexts = None;
+        for (key, value) in map {
+            match key.as_str() {
+                "provider" => provider = Some(expect_string("host.provider", value)?),
+                "contexts" => contexts = Some(expect_list("host.contexts", value)?.iter().enumerate().map(|(idx, item)| self.lower_host_context(idx, item)).collect::<MResult<Vec<_>>>()?),
+                other => return invalid(format!("unknown host field `{other}`")),
+            }
+        }
+        let manifest = HostManifestConfig { provider: provider.ok_or_else(|| invalid_error("host.provider is required"))?, contexts: contexts.ok_or_else(|| invalid_error("host.contexts is required"))? };
+        crate::validate_host_manifest(&manifest)?;
+        Ok(manifest)
+    }
+
+    fn lower_host_context(&self, idx: usize, value: &ConfigValue) -> MResult<HostContextManifest> {
+        let where_ = format!("host.contexts[{idx}]");
+        let map = expect_map(&where_, value)?;
+        let mut name = None;
+        let mut base_uri_template = None;
+        let mut operations = None;
+        for (key, value) in map {
+            match key.as_str() {
+                "name" => name = Some(expect_string(&format!("{where_}.name"), value)?),
+                "base-uri" => base_uri_template = Some(expect_string(&format!("{where_}.base-uri"), value)?),
+                "operations" => operations = Some(expect_string_list(&format!("{where_}.operations"), value)?),
+                other => return invalid(format!("unknown {where_} field `{other}`")),
+            }
+        }
+        Ok(HostContextManifest { name: name.ok_or_else(|| invalid_error(format!("{where_}.name is required")))?, base_uri_template: base_uri_template.ok_or_else(|| invalid_error(format!("{where_}.base-uri is required")))?, operations: operations.ok_or_else(|| invalid_error(format!("{where_}.operations is required")))? })
     }
 
 
@@ -306,12 +375,34 @@ impl ConfigLowerer {
         for (key, value) in map {
             match key.as_str() {
                 "paths" => out.paths = expect_path_list("run.paths", value)?,
+                "grants" => out.grants = self.lower_run_grants(value)?,
                 "cli" => out.cli = self.lower_run_cli(value)?,
                 other => return invalid(format!("unknown run field `{other}`")),
             }
         }
 
         Ok(out)
+    }
+
+    fn lower_run_grants(&self, value: &ConfigValue) -> MResult<Vec<RunResourceGrantConfig>> {
+        expect_list("run.grants", value)?.iter().enumerate().map(|(idx, item)| {
+            let where_ = format!("run.grants[{idx}]");
+            let map = expect_map(&where_, item)?;
+            let mut target = None;
+            let mut operations = None;
+            let mut paths = None;
+            for (key, value) in map {
+                match key.as_str() {
+                    "target" => target = Some(expect_string(&format!("{where_}.target"), value)?),
+                    "operations" => operations = Some(expect_string_list(&format!("{where_}.operations"), value)?),
+                    "paths" => paths = Some(expect_string_list(&format!("{where_}.paths"), value)?),
+                    other => return invalid(format!("unknown {where_} field `{other}`")),
+                }
+            }
+            let grant = RunResourceGrantConfig { target: target.ok_or_else(|| invalid_error(format!("{where_}.target is required")))?, operations: operations.ok_or_else(|| invalid_error(format!("{where_}.operations is required")))?, paths: paths.ok_or_else(|| invalid_error(format!("{where_}.paths is required")))? };
+            validate_run_resource_grant(&grant)?;
+            Ok(grant)
+        }).collect()
     }
 
     fn lower_run_cli(&self, value: &ConfigValue) -> MResult<RunCliHostConfig> {
