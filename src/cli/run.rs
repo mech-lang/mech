@@ -285,16 +285,30 @@ fn comprehension_qualifier_contains_context_addressed_source(qualifier: &Compreh
 pub fn new_cli_runtime(
   config: RuntimeConfig,
   cli_grants: &config::EffectiveCliHostGrants,
+  configured_hosts: &[HostInstanceConfig],
   run_grants: &[RunResourceGrantConfig],
 ) -> MResult<MechRuntime> {
   let mut builder = RuntimeBuilder::new()
     .config(config)
-    .host_factory(Box::new(CliHostFactory::new()?))?
-    .host_instance(HostInstanceConfig {
+    .host_factory(Box::new(CliHostFactory::new()?))?;
+
+  let mut saw_cli_instance = false;
+  for host in configured_hosts {
+    if host.provider == "cli" {
+      if host.name == "cli" {
+        saw_cli_instance = true;
+      }
+      builder = builder.host_instance(host.clone());
+    }
+  }
+
+  if !saw_cli_instance {
+    builder = builder.host_instance(HostInstanceConfig {
       name: "cli".to_string(),
       provider: "cli".to_string(),
       settings: ConfigValue::Map(std::collections::BTreeMap::new()),
     });
+  }
 
   for grant in cli_grants_to_run_resource_grants(cli_grants) {
     builder = builder.run_resource_grant(grant);

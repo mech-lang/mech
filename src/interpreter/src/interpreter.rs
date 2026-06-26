@@ -124,7 +124,7 @@ impl Interpreter {
       out_values: Ref::new(HashMap::new()),
       inline_eval_counter: Ref::new(0),
       context_bindings: Ref::new(HashMap::new()),
-      module_manifests: Ref::new(ModuleManifestCatalog::new()),
+      module_manifests: Ref::new(ModuleManifestCatalog::with_builtin_hosts()),
       #[cfg(feature = "state_machines")]
       user_state_machines: Ref::new(HashMap::new()),
       #[cfg(feature = "state_machines")]

@@ -760,13 +760,18 @@ async fn main() -> Result<(), MechError> {
       cli_capability_selection,
     )?;
 
+    let configured_hosts = loaded_config
+      .as_ref()
+      .map(|loaded| loaded.document.hosts.as_slice())
+      .unwrap_or(&[]);
+
     let configured_run_grants = loaded_config
       .as_ref()
       .and_then(|loaded| loaded.document.run.as_ref())
       .map(|run| run.grants.as_slice())
       .unwrap_or(&[]);
 
-    let mut runtime = new_cli_runtime(runtime_config, &cli_grants, configured_run_grants)?;
+    let mut runtime = new_cli_runtime(runtime_config, &cli_grants, configured_hosts, configured_run_grants)?;
 
     if let RunInputMode::InlineSource(source) = &run_input_mode {
       match run_cli_source(&mut runtime, source.trim()) {

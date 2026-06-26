@@ -294,37 +294,145 @@ pub fn browser_config_from_settings(settings: &ConfigValue) -> MResult<BrowserHo
     ConfigValue::Map(map) => map,
     _ => return invalid("browser.settings", "must be a map"),
   };
-  let dom = match map.get("dom") {
-    Some(ConfigValue::List(items)) => items,
-    None => return Ok(BrowserHostBrowserConfig { grants: Vec::new(), dom_manifest: Vec::new() }),
-    Some(_) => return invalid("browser.settings.dom", "must be a list"),
-  };
+
+  for key in map.keys() {
+    match key.as_str() {
+      "dom" | "clipboard" | "network" | "storage" => {}
+      other => return invalid("browser.settings", format!("unknown browser settings key `{other}`")),
+    }
+  }
+
   let mut grants = Vec::new();
   let mut dom_manifest = Vec::new();
-  for (idx, item) in dom.iter().enumerate() {
-    let where_ = format!("browser.settings.dom[{idx}]");
-    let ConfigValue::Map(item) = item else { return invalid("browser.settings.dom", "items must be maps"); };
-    let path = config_string(item.get("path"), "path")?;
-    let selector = config_string(item.get("selector"), "selector")?;
-    let property = config_string(item.get("property"), "property")?;
-    let attribute = match item.get("attribute") {
-      Some(ConfigValue::String(value)) => Some(value.clone()),
-      Some(_) => return invalid("browser.settings.dom.attribute", "must be a string"),
-      None => None,
+
+  if let Some(value) = map.get("dom") {
+    let dom = match value {
+      ConfigValue::List(items) => items,
+      _ => return invalid("browser.settings.dom", "must be a list"),
     };
-    let operations = config_string_list(item.get("operations"), "operations")?;
-    if operations.is_empty() { return invalid("browser.settings.dom.operations", "must not be empty"); }
-    BrowserDomPath::new(&path).map_err(|error| invalid_error("browser.settings.dom.path", format!("invalid DOM path `{path}`: {error}")))?;
-    BrowserDomScope::new(&selector).map_err(|error| invalid_error("browser.settings.dom.selector", format!("invalid DOM selector `{selector}`: {error}")))?;
-    BrowserDomProperty::parse_config_name(&property, attribute.as_deref()).map_err(|error| invalid_error("browser.settings.dom.property", format!("invalid DOM property `{property}`: {error}")))?;
-    for operation in &operations {
-      BrowserOperation::parse(operation).ok_or_else(|| invalid_error("browser.settings.dom.operations", format!("unknown browser operation `{operation}`")))?;
+    for item in dom {
+      let ConfigValue::Map(item) = item else { return invalid("browser.settings.dom", "items must be maps"); };
+      reject_unknown_fields(item, &["path", "selector", "property", "attribute", "operations"], "browser.settings.dom")?;
+      let path = config_string(item.get("path"), "browser.settings.dom.path")?;
+      let selector = config_string(item.get("selector"), "browser.settings.dom.selector")?;
+      let property = config_string(item.get("property"), "browser.settings.dom.property")?;
+      let attribute = match item.get("attribute") {
+        Some(ConfigValue::String(value)) => Some(value.clone()),
+        Some(_) => return invalid("browser.settings.dom.attribute", "must be a string"),
+        None => None,
+      };
+      let operations = config_operations(item.get("operations"), "browser.settings.dom.operations")?;
+      BrowserDomPath::new(&path).map_err(|error| invalid_error("browser.settings.dom.path", format!("invalid DOM path `{path}`: {error}")))?;
+      BrowserDomScope::new(&selector).map_err(|error| invalid_error("browser.settings.dom.selector", format!("invalid DOM selector `{selector}`: {error}")))?;
+      BrowserDomProperty::parse_config_name(&property, attribute.as_deref()).map_err(|error| invalid_error("browser.settings.dom.property", format!("invalid DOM property `{property}`: {error}")))?;
+      dom_manifest.push(BrowserHostDomManifestEntry { path, selector: selector.clone(), property, attribute });
+      grants.push(BrowserHostBrowserGrant { resource: BrowserHostResourceConfig::Dom { selector }, allow: operations });
     }
-    dom_manifest.push(BrowserHostDomManifestEntry { path, selector: selector.clone(), property, attribute });
-    grants.push(BrowserHostBrowserGrant { resource: BrowserHostResourceConfig::Dom { selector }, allow: operations });
-    let _ = where_;
   }
+
+  if let Some(value) = map.get("clipboard") {
+    let clipboard = match value {
+      ConfigValue::List(items) => items,
+      _ => return invalid("browser.settings.clipboard", "must be a list"),
+    };
+    for item in clipboard {
+      let ConfigValue::Map(item) = item else { return invalid("browser.settings.clipboard", "items must be maps"); };
+      reject_unknown_fields(item, &["operations"], "browser.settings.clipboard")?;
+      let operations = config_operations(item.get("operations"), "browser.settings.clipboard.operations")?;
+      grants.push(BrowserHostBrowserGrant { resource: BrowserHostResourceConfig::Clipboard, allow: operations });
+    }
+  }
+
+  if let Some(value) = map.get("network") {
+    let network = match value {
+      ConfigValue::List(items) => items,
+      _ => return invalid("browser.settings.network", "must be a list"),
+    };
+    for item in network {
+      let ConfigValue::Map(item) = item else { return invalid("browser.settings.network", "items must be maps"); };
+      reject_unknown_fields(item, &["origin", "operations", "methods"], "browser.settings.network")?;
+      let origin = config_string(item.get("origin"), "browser.settings.network.origin")?;
+      let operations = config_operations(item.get("operations"), "browser.settings.network.operations")?;
+      let methods = optional_config_string_list(item.get("methods"), "browser.settings.network.methods")?;
+      let scope = BrowserNetworkScope::new(&origin, methods.clone()).map_err(|error| invalid_error(
+        "browser.settings.network.origin",
+        format!("invalid network origin `{origin}`: {error}"),
+      ))?;
+      grants.push(BrowserHostBrowserGrant {
+        resource: BrowserHostResourceConfig::Network {
+          origin: scope.origin,
+          methods: scope.methods.map(|methods| methods.into_iter().collect()),
+        },
+        allow: operations,
+      });
+    }
+  }
+
+  if let Some(value) = map.get("storage") {
+    let storage = match value {
+      ConfigValue::List(items) => items,
+      _ => return invalid("browser.settings.storage", "must be a list"),
+    };
+    for item in storage {
+      let ConfigValue::Map(item) = item else { return invalid("browser.settings.storage", "items must be maps"); };
+      reject_unknown_fields(item, &["backend", "scope", "recursive", "operations"], "browser.settings.storage")?;
+      let backend_name = config_string(item.get("backend"), "browser.settings.storage.backend")?;
+      let scope = config_string(item.get("scope"), "browser.settings.storage.scope")?;
+      let recursive = config_bool(item.get("recursive"), "browser.settings.storage.recursive", false)?;
+      let operations = config_operations(item.get("operations"), "browser.settings.storage.operations")?;
+      let backend = BrowserStorageBackend::parse(&backend_name).ok_or_else(|| invalid_error(
+        "browser.settings.storage.backend",
+        format!("unknown storage backend `{backend_name}`"),
+      ))?;
+      BrowserStorageScope::new(backend, &scope).map_err(|error| invalid_error(
+        "browser.settings.storage.scope",
+        format!("invalid storage scope `{scope}`: {error}"),
+      ))?;
+      grants.push(BrowserHostBrowserGrant {
+        resource: BrowserHostResourceConfig::Storage { backend: backend.to_string(), scope, recursive },
+        allow: operations,
+      });
+    }
+  }
+
   Ok(BrowserHostBrowserConfig { grants, dom_manifest })
+}
+
+fn reject_unknown_fields(
+  map: &std::collections::BTreeMap<String, ConfigValue>,
+  allowed: &[&str],
+  field: &'static str,
+) -> MResult<()> {
+  for key in map.keys() {
+    if !allowed.iter().any(|allowed| *allowed == key) {
+      return invalid(field, format!("unknown field `{key}`"));
+    }
+  }
+  Ok(())
+}
+
+fn config_operations(value: Option<&ConfigValue>, field: &'static str) -> MResult<Vec<String>> {
+  let operations = config_string_list(value, field)?;
+  if operations.is_empty() { return invalid(field, "must not be empty"); }
+  for operation in &operations {
+    BrowserOperation::parse(operation).ok_or_else(|| invalid_error(field, format!("unknown browser operation `{operation}`")))?;
+  }
+  Ok(operations)
+}
+
+fn config_bool(value: Option<&ConfigValue>, field: &'static str, default: bool) -> MResult<bool> {
+  match value {
+    Some(ConfigValue::Bool(value)) => Ok(*value),
+    Some(_) => invalid(field, "must be a bool"),
+    None => Ok(default),
+  }
+}
+
+fn optional_config_string_list(value: Option<&ConfigValue>, field: &'static str) -> MResult<Option<Vec<String>>> {
+  match value {
+    Some(value) => config_string_list(Some(value), field).map(Some),
+    None => Ok(None),
+  }
 }
 
 fn config_string(value: Option<&ConfigValue>, field: &'static str) -> MResult<String> {
@@ -351,6 +459,22 @@ mod tests {
   use super::*;
   use mech_runtime::{parse_config_document, ConfigProfileOptions};
   use mech_core::BrowserResourceKind;
+
+  fn cfg_string(value: &str) -> ConfigValue {
+    ConfigValue::String(value.to_string())
+  }
+
+  fn cfg_bool(value: bool) -> ConfigValue {
+    ConfigValue::Bool(value)
+  }
+
+  fn cfg_list(items: Vec<ConfigValue>) -> ConfigValue {
+    ConfigValue::List(items)
+  }
+
+  fn cfg_map(items: Vec<(&str, ConfigValue)>) -> ConfigValue {
+    ConfigValue::Map(items.into_iter().map(|(key, value)| (key.to_string(), value)).collect())
+  }
 
   fn config_document() -> MechConfigDocument {
     parse_config_document(
@@ -432,6 +556,99 @@ config := {
     assert_eq!(runtime.diagnostics.log_level, LogLevel::Debug);
     assert!(authority.allows_dom("#counter", BrowserOperation::Write).is_ok());
     assert_eq!(authority.dom_manifest().len(), 3);
+  }
+
+  #[test]
+  fn browser_settings_clipboard_only_parses() {
+    let config = browser_config_from_settings(&cfg_map(vec![
+      ("clipboard", cfg_list(vec![cfg_map(vec![
+        ("operations", cfg_list(vec![cfg_string("read"), cfg_string("write")]))
+      ])])),
+    ])).unwrap();
+
+    assert!(config.dom_manifest.is_empty());
+    assert_eq!(config.grants.len(), 1);
+    assert!(matches!(config.grants[0].resource, BrowserHostResourceConfig::Clipboard));
+    assert_eq!(config.grants[0].allow, vec!["read".to_string(), "write".to_string()]);
+  }
+
+  #[test]
+  fn browser_settings_network_only_parses() {
+    let config = browser_config_from_settings(&cfg_map(vec![
+      ("network", cfg_list(vec![cfg_map(vec![
+        ("origin", cfg_string("https://docs.mech-lang.org")),
+        ("operations", cfg_list(vec![cfg_string("read")])),
+        ("methods", cfg_list(vec![cfg_string("GET")])),
+      ])])),
+    ])).unwrap();
+
+    assert!(config.dom_manifest.is_empty());
+    assert_eq!(config.grants.len(), 1);
+    assert!(matches!(
+      &config.grants[0].resource,
+      BrowserHostResourceConfig::Network { origin, methods }
+        if origin == "https://docs.mech-lang.org" && methods.as_ref().unwrap() == &vec!["GET".to_string()]
+    ));
+    assert_eq!(config.grants[0].allow, vec!["read".to_string()]);
+  }
+
+  #[test]
+  fn browser_settings_storage_only_parses() {
+    let config = browser_config_from_settings(&cfg_map(vec![
+      ("storage", cfg_list(vec![cfg_map(vec![
+        ("backend", cfg_string("opfs")),
+        ("scope", cfg_string("/workspace")),
+        ("recursive", cfg_bool(true)),
+        ("operations", cfg_list(vec![cfg_string("read"), cfg_string("write"), cfg_string("list")])),
+      ])])),
+    ])).unwrap();
+
+    assert!(config.dom_manifest.is_empty());
+    assert_eq!(config.grants.len(), 1);
+    assert!(matches!(
+      &config.grants[0].resource,
+      BrowserHostResourceConfig::Storage { backend, scope, recursive }
+        if backend == "opfs" && scope == "/workspace" && *recursive
+    ));
+    assert_eq!(config.grants[0].allow, vec!["read".to_string(), "write".to_string(), "list".to_string()]);
+  }
+
+  #[test]
+  fn browser_settings_dom_absent_does_not_drop_other_grants() {
+    let config = browser_config_from_settings(&cfg_map(vec![
+      ("clipboard", cfg_list(vec![cfg_map(vec![
+        ("operations", cfg_list(vec![cfg_string("read")]))
+      ])])),
+      ("network", cfg_list(vec![cfg_map(vec![
+        ("origin", cfg_string("https://docs.mech-lang.org")),
+        ("operations", cfg_list(vec![cfg_string("read")])),
+      ])])),
+    ])).unwrap();
+
+    assert!(config.dom_manifest.is_empty());
+    assert_eq!(config.grants.len(), 2);
+    assert!(config.grants.iter().any(|grant| matches!(grant.resource, BrowserHostResourceConfig::Clipboard)));
+    assert!(config.grants.iter().any(|grant| matches!(grant.resource, BrowserHostResourceConfig::Network { .. })));
+  }
+
+  #[test]
+  fn browser_settings_unknown_key_rejected() {
+    let err = browser_config_from_settings(&cfg_map(vec![
+      ("cookies", cfg_list(vec![])),
+    ])).unwrap_err();
+    let error = format!("{err:?}");
+    assert!(error.contains("unknown browser settings key `cookies`"), "got {error}");
+  }
+
+  #[test]
+  fn browser_settings_uses_operations_not_allow() {
+    let err = browser_config_from_settings(&cfg_map(vec![
+      ("clipboard", cfg_list(vec![cfg_map(vec![
+        ("allow", cfg_list(vec![cfg_string("read")]))
+      ])])),
+    ])).unwrap_err();
+    let error = format!("{err:?}");
+    assert!(error.contains("allow"), "got {error}");
   }
 
   #[cfg(feature = "serde")]

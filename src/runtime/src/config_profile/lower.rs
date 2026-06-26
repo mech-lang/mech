@@ -124,7 +124,13 @@ impl ConfigLowerer {
                 match key.as_str() {
                     "name" => name = Some(expect_string(&format!("{where_}.name"), value)?),
                     "provider" => provider = Some(expect_string(&format!("{where_}.provider"), value)?),
-                    "settings" => settings = Some(value.clone()),
+                    "settings" => {
+                        settings = Some(match value {
+                            ConfigValue::Null => ConfigValue::Map(BTreeMap::new()),
+                            ConfigValue::List(items) if items.is_empty() => ConfigValue::Map(BTreeMap::new()),
+                            _ => value.clone(),
+                        })
+                    }
                     other => return invalid(format!("unknown {where_} field `{other}`")),
                 }
             }
