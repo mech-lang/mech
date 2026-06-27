@@ -1,6 +1,8 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+use std::collections::BTreeSet;
+
 use mech_core::{
   BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
   BrowserDomProperty, BrowserDomScope, BrowserNetworkScope, BrowserOperation, BrowserResource,
@@ -9,8 +11,8 @@ use mech_core::{
 };
 
 use mech_runtime::{
-  ConfigValue, DiagnosticsConfig, HostInstanceConfig, LogLevel, MechConfigDocument,
-  RunResourceGrantConfig, RuntimeConfig, RuntimeLimits,
+  parse_host_context_target, ConfigValue, DiagnosticsConfig, HostInstanceConfig, LogLevel,
+  MechConfigDocument, RunResourceGrantConfig, RuntimeConfig, RuntimeLimits,
 };
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -51,14 +53,21 @@ impl BrowserRuntimeInjectionConfig {
     for host in &hosts {
       browser_config_from_settings(&host.settings)?;
     }
+    let injected_host_names: BTreeSet<String> =
+      hosts.iter().map(|host| host.name.clone()).collect();
+    let mut run_grants = Vec::new();
+    if let Some(run) = &document.run {
+      for grant in &run.grants {
+        let (instance, _) = parse_host_context_target(&grant.target)?;
+        if injected_host_names.contains(instance) {
+          run_grants.push(grant.clone());
+        }
+      }
+    }
     Ok(Self {
       runtime: BrowserHostRuntimeConfig::from(runtime_config),
       hosts,
-      run_grants: document
-        .run
-        .as_ref()
-        .map(|run| run.grants.clone())
-        .unwrap_or_default(),
+      run_grants,
     })
   }
 
@@ -984,6 +993,98 @@ config := {
 
     assert!(injected.hosts.iter().any(|host| host.name == "ui" && host.provider == "browser"));
     assert!(injected.hosts.iter().any(|host| host.name == "browser" && host.provider == "browser"));
+    assert_eq!(injected.run_grants.len(), 1);
+    assert_eq!(injected.run_grants[0].target, "ui/dom");
+  }
+
+  #[test]
+  fn browser_runtime_injection_filters_non_browser_run_grants() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    {
+      name: "browser"
+      provider: "browser"
+      settings: {}
+    }
+    {
+      name: "arm"
+      provider: "fake-robot"
+      settings: {}
+    }
+  ]
+  run: {
+    grants: [
+      {
+        target: "browser/dom"
+        operations: ["write"]
+        paths: ["body/content/output/_value"]
+      }
+      {
+        target: "arm/commands"
+        operations: ["write"]
+        paths: ["joints/shoulder/target"]
+      }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let injected =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
+
+    assert!(injected.hosts.iter().all(|host| host.provider == "browser"));
+    assert_eq!(injected.run_grants.len(), 1);
+    assert_eq!(injected.run_grants[0].target, "browser/dom");
+
+    let mut builder = mech_runtime::RuntimeBuilder::new()
+      .host_factory(Box::new(RecordingBrowserFactory {
+        manifest: crate::browser_host_manifest().unwrap(),
+        writes: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
+      }))
+      .unwrap();
+    for host in injected.hosts {
+      builder = builder.host_instance(host);
+    }
+    for grant in injected.run_grants {
+      builder = builder.run_resource_grant(grant);
+    }
+    builder.build().unwrap();
+  }
+
+  #[test]
+  fn browser_runtime_injection_keeps_alias_run_grant() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    {
+      name: "ui"
+      provider: "browser"
+      settings: {}
+    }
+  ]
+  run: {
+    grants: [
+      {
+        target: "ui/dom"
+        operations: ["write"]
+        paths: ["body/content/output/_value"]
+      }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let injected =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
+
+    assert!(injected.hosts.iter().any(|host| host.name == "ui"));
     assert_eq!(injected.run_grants.len(), 1);
     assert_eq!(injected.run_grants[0].target, "ui/dom");
   }
