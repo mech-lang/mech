@@ -289,24 +289,18 @@ fn wasm_parts_from_delegated_host_config(
   };
   let verified = verify_browser_host_delegation(&envelope, request)
     .map_err(|error| js_error(format!("host delegation verification failed: {error:?}")))?;
-  let mut runtime = MechRuntime::new(verified.authority.runtime_config)
-    .map_err(|error| js_error(format!("failed to initialize delegated runtime: {error:?}")))?;
-  runtime
-    .register_resource_provider(Box::new(BrowserResourceProvider::new(
-      verified.authority.browser_authority.clone(),
-      WasmBrowserDomBackend::new(),
-    )))
-    .map_err(|error| js_error(format!("failed to register browser resource provider: {error:?}")))?;
-  runtime
-    .bind_resource_root("browser", "browser://dom/")
-    .map_err(|error| js_error(format!("failed to bind browser resource root: {error:?}")))?;
-  install_browser_runtime_grants(&mut runtime, &verified.authority.browser_authority)?;
-  Ok((runtime, BrowserHost::new(verified.authority.browser_authority)))
+  wasm_parts_from_runtime_injection_config(verified.authority.runtime_injection)
 }
 
 fn wasm_parts_from_host_config(config: JsValue) -> Result<(MechRuntime, BrowserHost), JsValue> {
   let injected: BrowserRuntimeInjectionConfig = serde_wasm_bindgen::from_value(config)
     .map_err(|error| js_error(format!("failed to deserialize host config: {error}")))?;
+  wasm_parts_from_runtime_injection_config(injected)
+}
+
+fn wasm_parts_from_runtime_injection_config(
+  injected: BrowserRuntimeInjectionConfig,
+) -> Result<(MechRuntime, BrowserHost), JsValue> {
   let runtime_config = injected
     .into_runtime_config()
     .map_err(|error| js_error(format!("invalid host config: {error:?}")))?;

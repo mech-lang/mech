@@ -347,6 +347,17 @@ impl RuntimeBuilder {
 
     let mut host_interfaces = default_host_interfaces()?;
     for host_instance in &self.host_instances {
+      if let Some(existing) = host_interfaces.interface(&host_instance.name) {
+        if existing.provider != host_instance.provider {
+          return Err(MechError::new(RuntimeInvalidOperationError {
+            operation: "host_instance",
+            reason: format!(
+              "host instance `{}` is built in as provider `{}` and cannot be configured as provider `{}`",
+              host_instance.name, existing.provider, host_instance.provider,
+            ),
+          }, None));
+        }
+      }
       let installation = self.host_factories.instantiate(host_instance)?;
       if host_interfaces.interface(&installation.interface.instance).is_none() {
         host_interfaces.register(installation.interface)?;

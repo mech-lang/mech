@@ -73,6 +73,41 @@ struct FakeRobotError { message: String }
 impl MechErrorKind for FakeRobotError { fn name(&self) -> &str { "FakeRobotError" } fn message(&self) -> String { self.message.clone() } }
 fn fake_error(message: impl Into<String>) -> MechError { MechError::new(FakeRobotError { message: message.into() }, None) }
 
+#[derive(Debug)]
+struct FakeBrowserFactory {
+  manifest: HostManifestConfig,
+}
+
+impl FakeBrowserFactory {
+  fn new() -> Self {
+    Self {
+      manifest: HostManifestConfig {
+        provider: "browser".to_string(),
+        contexts: vec![HostContextManifest {
+          name: "dom".to_string(),
+          base_uri_template: "browser://{instance}/dom".to_string(),
+          operations: vec!["read".to_string(), "write".to_string()],
+        }],
+      },
+    }
+  }
+}
+
+impl RuntimeHostFactory for FakeBrowserFactory {
+  fn provider_name(&self) -> &str { "browser" }
+  fn manifest(&self) -> &HostManifestConfig { &self.manifest }
+  fn validate_settings(&self, _instance_name: &str, settings: &ConfigValue) -> MResult<()> {
+    match settings { ConfigValue::Map(_) => Ok(()), _ => Err(fake_error("settings must be a map")) }
+  }
+  fn instantiate(&self, instance_name: &str, settings: &ConfigValue) -> MResult<RuntimeHostInstallation> {
+    self.validate_settings(instance_name, settings)?;
+    Ok(RuntimeHostInstallation {
+      interface: materialize_host_manifest(instance_name, &self.manifest)?,
+      resource_providers: Vec::new(),
+    })
+  }
+}
+
 fn robot_runtime(log: Arc<Mutex<Vec<String>>>) -> MResult<MechRuntime> {
   RuntimeBuilder::new()
     .host_factory(Box::new(FakeRobotFactory::new(log)))?
@@ -88,6 +123,52 @@ fn robot_runtime(log: Arc<Mutex<Vec<String>>>) -> MResult<MechRuntime> {
       ],
     })
     .build()
+}
+
+#[test]
+fn host_instance_different_provider_builtin_collision_fails() {
+  let error = RuntimeBuilder::new()
+    .host_instance(HostInstanceConfig {
+      name: "cli".to_string(),
+      provider: "browser".to_string(),
+      settings: ConfigValue::Map(Default::default()),
+    })
+    .build()
+    .expect_err("different-provider built-in host collision should fail");
+  let error = format!("{error:?}");
+  assert!(error.contains("cli"), "got {error}");
+  assert!(error.contains("built in"), "got {error}");
+  assert!(error.contains("browser"), "got {error}");
+}
+
+#[test]
+fn host_instance_same_provider_builtin_configures_default() {
+  let mut runtime = RuntimeBuilder::new()
+    .host_factory(Box::new(FakeBrowserFactory::new()))
+    .unwrap()
+    .host_instance(HostInstanceConfig {
+      name: "browser".to_string(),
+      provider: "browser".to_string(),
+      settings: ConfigValue::Map(Default::default()),
+    })
+    .build()
+    .unwrap();
+  runtime.bind_context_export("dom", "browser", "dom").unwrap();
+}
+
+#[test]
+fn host_instance_custom_browser_name_succeeds() {
+  let mut runtime = RuntimeBuilder::new()
+    .host_factory(Box::new(FakeBrowserFactory::new()))
+    .unwrap()
+    .host_instance(HostInstanceConfig {
+      name: "ui".to_string(),
+      provider: "browser".to_string(),
+      settings: ConfigValue::Map(Default::default()),
+    })
+    .build()
+    .unwrap();
+  runtime.bind_context_export("dom", "ui", "dom").unwrap();
 }
 
 #[test]

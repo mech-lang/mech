@@ -1056,7 +1056,7 @@ fn serve_host_delegation_injection(
     audience: matches.get_one::<String>("host_delegation_audience").cloned().unwrap_or_else(|| format!("browser://serve/{full_address}")),
     expires_ms: matches.get_one::<String>("host_delegation_expires_ms").map(|value| value.parse()).transpose().map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidInput, "--host-delegation-expires-ms must be an integer"))?,
   };
-  let host_config = mech_host_browser::BrowserHostConfig::from_document_and_runtime(
+  let host_config = mech_host_browser::BrowserRuntimeInjectionConfig::from_document_and_runtime(
     &loaded_config.document,
     runtime_config,
   )?;
@@ -1064,7 +1064,7 @@ fn serve_host_delegation_injection(
     .duration_since(std::time::UNIX_EPOCH)
     .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error.to_string()))?
     .as_millis() as u64;
-  mech::signed_browser_host_config_injection(host_config, &options, now_ms).map(Some)
+  mech::signed_browser_runtime_injection_config(host_config, &options, now_ms).map(Some)
 }
 
 fn source_range_to_offset_range(file_content: &str, range: &SourceRange) -> (usize, usize) {
