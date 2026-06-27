@@ -395,6 +395,23 @@ fn context_docs_read_returns_value() {
 }
 
 #[test]
+fn context_docs_read_uses_provider_base_for_full_requested_uri() {
+  let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n");
+  let root_provider = docs_provider_with("docs://manual", "intro/title", bool_value(false));
+  let intro_provider = docs_provider_with("docs://manual/intro", "title", bool_value(true));
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .in_memory_docs(root_provider)
+    .in_memory_docs(intro_provider)
+    .build()
+    .unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual/intro", "title")).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+  assert_bool_true(result, "context docs read from most specific provider");
+}
+
+#[test]
 fn config_spec_registers_in_memory_docs_resource() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n");
   let spec = RuntimeConfigSpec::new().with_resource(

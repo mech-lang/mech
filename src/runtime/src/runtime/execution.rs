@@ -97,17 +97,6 @@ struct ResolvedContextResourceRequest {
   context_path: String,
 }
 
-fn join_resource_paths(prefix: &str, child: &str) -> String {
-  let prefix = prefix.trim_matches('/');
-  let child = child.trim_matches('/');
-  match (prefix.is_empty(), child.is_empty()) {
-    (true, true) => String::new(),
-    (true, false) => child.to_string(),
-    (false, true) => prefix.to_string(),
-    (false, false) => format!("{}/{}", prefix, child),
-  }
-}
-
 fn identifier_from_str(name: &str) -> mech_core::Identifier {
   mech_core::Identifier {
     name: mech_core::Token::new(
@@ -359,18 +348,27 @@ impl MechRuntime {
     requested_path: &str,
   ) -> MResult<ResolvedContextResourceRequest> {
     let context_base_uri = runtime_context_base_uri(binding).trim_end_matches('/').to_string();
+    let requested_path = requested_path.trim_matches('/').to_string();
+    let candidate_uri = if requested_path.is_empty() {
+      context_base_uri.clone()
+    } else {
+      format!("{}/{}", context_base_uri, requested_path)
+    };
+
     let provider_base_uri = self
       .resources
-      .provider_base_uri_for(&context_base_uri)?
+      .provider_base_uri_for(&candidate_uri)?
       .unwrap_or_else(|| context_base_uri.clone());
-    let context_root = context_base_uri
+    let provider_path = candidate_uri
       .strip_prefix(&provider_base_uri)
       .unwrap_or_default()
-      .trim_matches('/');
+      .trim_matches('/')
+      .to_string();
+
     Ok(ResolvedContextResourceRequest {
       provider_base_uri,
-      provider_path: join_resource_paths(context_root, requested_path),
-      context_path: requested_path.trim_matches('/').to_string(),
+      provider_path,
+      context_path: requested_path,
     })
   }
 

@@ -74,20 +74,7 @@ impl BrowserRuntimeInjectionConfig {
   }
 
   pub fn browser_config(&self) -> MResult<BrowserHostBrowserConfig> {
-    let mut grants = Vec::new();
-    let mut dom_manifest = Vec::new();
-    for host in &self.hosts {
-      if host.provider != "browser" {
-        continue;
-      }
-      let config = browser_config_from_settings(&host.settings)?;
-      grants.extend(config.grants);
-      dom_manifest.extend(config.dom_manifest);
-    }
-    Ok(BrowserHostBrowserConfig {
-      grants,
-      dom_manifest,
-    })
+    browser_config_from_browser_hosts(self.hosts.iter().filter(|host| host.provider == "browser"))
   }
 
   pub fn browser_host_config(&self) -> MResult<BrowserHostConfig> {
@@ -357,10 +344,22 @@ fn invalid<T>(field: &'static str, reason: impl Into<String>) -> MResult<T> {
 }
 
 fn browser_config_from_hosts(document: &MechConfigDocument) -> MResult<BrowserHostBrowserConfig> {
-  let Some(host) = document.hosts.iter().find(|host| host.provider == "browser" || host.name == "browser") else {
-    return Ok(BrowserHostBrowserConfig { grants: Vec::new(), dom_manifest: Vec::new() });
-  };
-  browser_config_from_settings(&host.settings)
+  browser_config_from_browser_hosts(document.hosts.iter().filter(|host| host.provider == "browser"))
+}
+
+fn browser_config_from_browser_hosts<'a>(
+  hosts: impl IntoIterator<Item = &'a HostInstanceConfig>,
+) -> MResult<BrowserHostBrowserConfig> {
+  let mut grants = Vec::new();
+  let mut dom_manifest = Vec::new();
+
+  for host in hosts {
+    let config = browser_config_from_settings(&host.settings)?;
+    grants.extend(config.grants);
+    dom_manifest.extend(config.dom_manifest);
+  }
+
+  Ok(BrowserHostBrowserConfig { grants, dom_manifest })
 }
 
 pub fn browser_config_from_settings(settings: &ConfigValue) -> MResult<BrowserHostBrowserConfig> {
@@ -622,6 +621,103 @@ config := {
     assert_eq!(host_config.browser.grants.len(), 3);
     assert!(host_config.browser.grants.iter().any(|grant| matches!(grant.resource, BrowserHostResourceConfig::Dom { ref selector } if selector == "#counter") && grant.allow == vec!["read", "write"]));
     assert!(host_config.browser.dom_manifest.iter().any(|entry| entry.path == "button/_aria-label" && entry.property == "attribute" && entry.attribute.as_deref() == Some("aria-label")));
+  }
+
+  #[test]
+  fn browser_config_from_hosts_merges_multiple_browser_instances() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    {
+      name: "browser"
+      provider: "browser"
+      settings: {
+        dom: [
+          {
+            path: "body/content/default/_value"
+            selector: "#default"
+            property: "value"
+            operations: ["write"]
+          }
+        ]
+      }
+    }
+    {
+      name: "ui"
+      provider: "browser"
+      settings: {
+        dom: [
+          {
+            path: "body/content/ui/_value"
+            selector: "#ui"
+            property: "value"
+            operations: ["read", "write"]
+          }
+        ]
+      }
+    }
+  ]
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+
+    let config = browser_config_from_hosts(&document).unwrap();
+    assert_eq!(config.dom_manifest.len(), 2);
+    assert_eq!(config.grants.len(), 2);
+    assert!(config.dom_manifest.iter().any(|entry| entry.selector == "#default"));
+    assert!(config.dom_manifest.iter().any(|entry| entry.selector == "#ui"));
+  }
+
+  #[test]
+  fn browser_host_from_config_allows_later_browser_instance_selector() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    {
+      name: "browser"
+      provider: "browser"
+      settings: {
+        dom: [
+          {
+            path: "body/content/default/_value"
+            selector: "#default"
+            property: "value"
+            operations: ["write"]
+          }
+        ]
+      }
+    }
+    {
+      name: "ui"
+      provider: "browser"
+      settings: {
+        dom: [
+          {
+            path: "body/content/ui/_value"
+            selector: "#ui"
+            property: "value"
+            operations: ["read", "write"]
+          }
+        ]
+      }
+    }
+  ]
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let runtime_config = RuntimeConfig::default().apply_patch(&document.runtime).unwrap();
+    let authority = BrowserHostConfig::from_document_and_runtime(&document, &runtime_config)
+      .unwrap()
+      .into_browser_authority()
+      .unwrap();
+
+    assert!(authority.allows_dom("#ui", BrowserOperation::Write).is_ok());
   }
 
   #[test]
