@@ -37,6 +37,18 @@ impl BrowserRuntimeInjectionConfig {
     document: &MechConfigDocument,
     runtime_config: &RuntimeConfig,
   ) -> MResult<Self> {
+    for host in &document.hosts {
+      if host.name == "browser" && host.provider != "browser" {
+        return Err(invalid_error(
+          "hosts.browser",
+          format!(
+            "host instance `browser` is reserved for provider `browser` and cannot be configured as provider `{}`",
+            host.provider,
+          ),
+        ));
+      }
+    }
+
     let mut hosts: Vec<HostInstanceConfig> = document
       .hosts
       .iter()
@@ -403,7 +415,11 @@ pub fn browser_config_from_settings(settings: &ConfigValue) -> MResult<BrowserHo
         Some(_) => return invalid("browser.settings.dom.attribute", "must be a string"),
         None => None,
       };
-      let operations = config_operations(item.get("operations"), "browser.settings.dom.operations")?;
+      let operations = config_operations(
+        item.get("operations"),
+        "browser.settings.dom.operations",
+        &[BrowserOperation::Read, BrowserOperation::Write],
+      )?;
       BrowserDomPath::new(&path).map_err(|error| invalid_error("browser.settings.dom.path", format!("invalid DOM path `{path}`: {error}")))?;
       BrowserDomScope::new(&selector).map_err(|error| invalid_error("browser.settings.dom.selector", format!("invalid DOM selector `{selector}`: {error}")))?;
       BrowserDomProperty::parse_config_name(&property, attribute.as_deref()).map_err(|error| invalid_error("browser.settings.dom.property", format!("invalid DOM property `{property}`: {error}")))?;
@@ -420,7 +436,11 @@ pub fn browser_config_from_settings(settings: &ConfigValue) -> MResult<BrowserHo
     for item in clipboard {
       let ConfigValue::Map(item) = item else { return invalid("browser.settings.clipboard", "items must be maps"); };
       reject_unknown_fields(item, &["operations"], "browser.settings.clipboard")?;
-      let operations = config_operations(item.get("operations"), "browser.settings.clipboard.operations")?;
+      let operations = config_operations(
+        item.get("operations"),
+        "browser.settings.clipboard.operations",
+        &[BrowserOperation::Read, BrowserOperation::Write],
+      )?;
       grants.push(BrowserHostBrowserGrant { resource: BrowserHostResourceConfig::Clipboard, allow: operations });
     }
   }
@@ -434,7 +454,11 @@ pub fn browser_config_from_settings(settings: &ConfigValue) -> MResult<BrowserHo
       let ConfigValue::Map(item) = item else { return invalid("browser.settings.network", "items must be maps"); };
       reject_unknown_fields(item, &["origin", "operations", "methods"], "browser.settings.network")?;
       let origin = config_string(item.get("origin"), "browser.settings.network.origin")?;
-      let operations = config_operations(item.get("operations"), "browser.settings.network.operations")?;
+      let operations = config_operations(
+        item.get("operations"),
+        "browser.settings.network.operations",
+        &[BrowserOperation::Read],
+      )?;
       let methods = optional_config_string_list(item.get("methods"), "browser.settings.network.methods")?;
       let scope = BrowserNetworkScope::new(&origin, methods.clone()).map_err(|error| invalid_error(
         "browser.settings.network.origin",
@@ -461,7 +485,11 @@ pub fn browser_config_from_settings(settings: &ConfigValue) -> MResult<BrowserHo
       let backend_name = config_string(item.get("backend"), "browser.settings.storage.backend")?;
       let scope = config_string(item.get("scope"), "browser.settings.storage.scope")?;
       let recursive = config_bool(item.get("recursive"), "browser.settings.storage.recursive", false)?;
-      let operations = config_operations(item.get("operations"), "browser.settings.storage.operations")?;
+      let operations = config_operations(
+        item.get("operations"),
+        "browser.settings.storage.operations",
+        &[BrowserOperation::Read, BrowserOperation::Write, BrowserOperation::List],
+      )?;
       let backend = BrowserStorageBackend::parse(&backend_name).ok_or_else(|| invalid_error(
         "browser.settings.storage.backend",
         format!("unknown storage backend `{backend_name}`"),
@@ -493,11 +521,22 @@ fn reject_unknown_fields(
   Ok(())
 }
 
-fn config_operations(value: Option<&ConfigValue>, field: &'static str) -> MResult<Vec<String>> {
+fn config_operations(
+  value: Option<&ConfigValue>,
+  field: &'static str,
+  allowed: &[BrowserOperation],
+) -> MResult<Vec<String>> {
   let operations = config_string_list(value, field)?;
   if operations.is_empty() { return invalid(field, "must not be empty"); }
   for operation in &operations {
-    BrowserOperation::parse(operation).ok_or_else(|| invalid_error(field, format!("unknown browser operation `{operation}`")))?;
+    let parsed = BrowserOperation::parse(operation)
+      .ok_or_else(|| invalid_error(field, format!("unknown browser operation `{operation}`")))?;
+    if !allowed.contains(&parsed) {
+      return Err(invalid_error(
+        field,
+        format!("browser operation `{operation}` is not supported for this resource"),
+      ));
+    }
   }
   Ok(operations)
 }
@@ -923,6 +962,73 @@ config := {
   }
 
   #[test]
+  fn network_rejects_write_operation() {
+    let err = browser_config_from_settings(&cfg_map(vec![
+      ("network", cfg_list(vec![cfg_map(vec![
+        ("origin", cfg_string("https://example.com")),
+        ("operations", cfg_list(vec![cfg_string("write")])),
+      ])])),
+    ])).unwrap_err();
+    let error = format!("{err:?}");
+    assert!(error.contains("network"), "got {error}");
+    assert!(error.contains("write"), "got {error}");
+    assert!(error.contains("not supported"), "got {error}");
+  }
+
+  #[test]
+  fn dom_rejects_list_operation() {
+    let err = browser_config_from_settings(&cfg_map(vec![
+      ("dom", cfg_list(vec![cfg_map(vec![
+        ("path", cfg_string("counter/_text")),
+        ("selector", cfg_string("#counter")),
+        ("property", cfg_string("text")),
+        ("operations", cfg_list(vec![cfg_string("list")])),
+      ])])),
+    ])).unwrap_err();
+    let error = format!("{err:?}");
+    assert!(error.contains("dom.operations"), "got {error}");
+    assert!(error.contains("list"), "got {error}");
+    assert!(error.contains("not supported"), "got {error}");
+  }
+
+  #[test]
+  fn storage_allows_list_operation() {
+    let config = browser_config_from_settings(&cfg_map(vec![
+      ("storage", cfg_list(vec![cfg_map(vec![
+        ("backend", cfg_string("local-storage")),
+        ("scope", cfg_string("/app")),
+        ("operations", cfg_list(vec![cfg_string("read"), cfg_string("write"), cfg_string("list")])),
+      ])])),
+    ])).unwrap();
+
+    assert_eq!(config.grants.len(), 1);
+    assert_eq!(config.grants[0].allow, vec!["read".to_string(), "write".to_string(), "list".to_string()]);
+  }
+
+  #[test]
+  fn clipboard_allows_read_write() {
+    let config = browser_config_from_settings(&cfg_map(vec![
+      ("clipboard", cfg_list(vec![cfg_map(vec![
+        ("operations", cfg_list(vec![cfg_string("read"), cfg_string("write")])),
+      ])])),
+    ])).unwrap();
+
+    assert_eq!(config.grants.len(), 1);
+    assert_eq!(config.grants[0].allow, vec!["read".to_string(), "write".to_string()]);
+  }
+
+  #[test]
+  fn browser_settings_unknown_operation_rejected() {
+    let err = browser_config_from_settings(&cfg_map(vec![
+      ("clipboard", cfg_list(vec![cfg_map(vec![
+        ("operations", cfg_list(vec![cfg_string("teleport")])),
+      ])])),
+    ])).unwrap_err();
+    let error = format!("{err:?}");
+    assert!(error.contains("unknown browser operation `teleport`"), "got {error}");
+  }
+
+  #[test]
   fn browser_from_document_and_runtime_rejects_invalid_host_settings() {
     let document = parse_config_document(
       "test.mcfg",
@@ -1087,6 +1193,106 @@ config := {
     assert!(injected.hosts.iter().any(|host| host.name == "ui"));
     assert_eq!(injected.run_grants.len(), 1);
     assert_eq!(injected.run_grants[0].target, "ui/dom");
+  }
+
+  #[test]
+  fn browser_reserved_name_rejects_non_browser_provider() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    {
+      name: "browser"
+      provider: "fake-robot"
+      settings: {}
+    }
+  ]
+  run: {
+    grants: [
+      {
+        target: "browser/dom"
+        operations: ["read"]
+        paths: ["counter/_text"]
+      }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let err =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap_err();
+    let error = format!("{err:?}");
+    assert!(error.contains("browser"), "got {error}");
+    assert!(error.contains("reserved") || error.contains("provider"), "got {error}");
+    assert!(error.contains("fake-robot"), "got {error}");
+  }
+
+  #[test]
+  fn browser_fallback_still_added_when_no_browser_host_declared() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    {
+      name: "arm"
+      provider: "fake-robot"
+      settings: {}
+    }
+  ]
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let injected =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
+
+    assert!(injected.hosts.iter().any(|host| host.name == "browser" && host.provider == "browser"));
+  }
+
+  #[test]
+  fn explicit_browser_provider_still_accepts_browser_grant() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    {
+      name: "browser"
+      provider: "browser"
+      settings: {
+        dom: [
+          {
+            path: "counter/_text"
+            selector: "#counter"
+            property: "text"
+            operations: ["read"]
+          }
+        ]
+      }
+    }
+  ]
+  run: {
+    grants: [
+      {
+        target: "browser/dom"
+        operations: ["read"]
+        paths: ["counter/_text"]
+      }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let injected =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
+
+    assert_eq!(injected.run_grants.len(), 1);
+    assert_eq!(injected.run_grants[0].target, "browser/dom");
+    assert_eq!(injected.hosts.iter().filter(|host| host.name == "browser").count(), 1);
   }
 
 

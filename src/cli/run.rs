@@ -289,6 +289,17 @@ pub fn new_cli_runtime(
   configured_hosts: &[HostInstanceConfig],
   run_grants: &[RunResourceGrantConfig],
 ) -> MResult<MechRuntime> {
+  for host in configured_hosts {
+    if host.name == "cli" && host.provider != "cli" {
+      return Err(MechError::new(CliRuntimeHostConfigError {
+        reason: format!(
+          "host instance `cli` is reserved for provider `cli` and cannot be configured as provider `{}`",
+          host.provider,
+        ),
+      }, None));
+    }
+  }
+
   let mut builder = RuntimeBuilder::new()
     .config(config)
     .host_factory(Box::new(CliHostFactory::new()?))?;
@@ -326,6 +337,21 @@ pub fn new_cli_runtime(
   }
 
   builder.build()
+}
+
+#[derive(Debug, Clone)]
+struct CliRuntimeHostConfigError {
+  reason: String,
+}
+
+impl MechErrorKind for CliRuntimeHostConfigError {
+  fn name(&self) -> &str {
+    "CliRuntimeHostConfigError"
+  }
+
+  fn message(&self) -> String {
+    format!("invalid CLI runtime host config: {}", self.reason)
+  }
 }
 
 pub fn effective_run_runtime_config(
@@ -568,5 +594,35 @@ mod tests {
     ).unwrap();
 
     runtime.run_string("+> @out := term/stdout\n@out/line <- \"ok\"\n").unwrap();
+  }
+
+  #[test]
+  fn cli_reserved_name_rejects_non_cli_provider() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r#"config := {
+  hosts: [
+    {name: "cli", provider: "browser", settings: {}}
+  ]
+  run: {
+    grants: [
+      {target: "cli/stdout", operations: ["write"], paths: ["line"]}
+    ]
+  }
+}
+"#,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let run_grants = document.run.as_ref().unwrap().grants.as_slice();
+    let err = new_cli_runtime(
+      RuntimeConfig::default(),
+      &config::EffectiveCliHostGrants::default(),
+      &document.hosts,
+      run_grants,
+    ).unwrap_err();
+    let error = format!("{err:?}");
+    assert!(error.contains("cli"), "got {error}");
+    assert!(error.contains("reserved") || error.contains("provider"), "got {error}");
+    assert!(error.contains("browser"), "got {error}");
   }
 }
