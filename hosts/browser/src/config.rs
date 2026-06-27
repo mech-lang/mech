@@ -70,10 +70,19 @@ impl BrowserRuntimeInjectionConfig {
     let mut run_grants = Vec::new();
     if let Some(run) = &document.run {
       for grant in &run.grants {
-        let (instance, _) = parse_host_context_target(&grant.target)?;
-        if injected_host_names.contains(instance) {
-          run_grants.push(grant.clone());
+        let (instance, context) = parse_host_context_target(&grant.target)?;
+        if !injected_host_names.contains(instance) {
+          continue;
         }
+        if !browser_context_is_injected(context) {
+          return Err(invalid_error(
+            "run.grants.target",
+            format!(
+              "browser host instance `{instance}` does not expose context `{context}`; supported browser contexts: dom"
+            ),
+          ));
+        }
+        run_grants.push(grant.clone());
       }
     }
     Ok(Self {
@@ -381,6 +390,10 @@ fn browser_config_from_browser_hosts<'a>(
   }
 
   Ok(BrowserHostBrowserConfig { grants, dom_manifest })
+}
+
+fn browser_context_is_injected(context: &str) -> bool {
+  context == "dom"
 }
 
 pub fn browser_config_from_settings(settings: &ConfigValue) -> MResult<BrowserHostBrowserConfig> {
@@ -1159,6 +1172,78 @@ config := {
       builder = builder.run_resource_grant(grant);
     }
     builder.build().unwrap();
+  }
+
+  #[test]
+  fn browser_runtime_injection_rejects_unsupported_injected_context() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    {
+      name: "browser"
+      provider: "browser"
+      settings: {}
+    }
+  ]
+  run: {
+    grants: [
+      {
+        target: "browser/clipboard"
+        operations: ["read"]
+        paths: ["*"]
+      }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let err =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap_err();
+    let error = format!("{err:?}");
+    assert!(error.contains("browser"), "got {error}");
+    assert!(error.contains("clipboard"), "got {error}");
+    assert!(error.contains("dom"), "got {error}");
+  }
+
+  #[test]
+  fn browser_runtime_injection_filters_non_browser_only_run_grant() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    {
+      name: "browser"
+      provider: "browser"
+      settings: {}
+    }
+    {
+      name: "arm"
+      provider: "fake-robot"
+      settings: {}
+    }
+  ]
+  run: {
+    grants: [
+      {
+        target: "arm/commands"
+        operations: ["write"]
+        paths: ["move"]
+      }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let injected =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
+
+    assert!(injected.hosts.iter().all(|host| host.provider == "browser"));
+    assert!(injected.run_grants.is_empty());
   }
 
   #[test]
