@@ -122,13 +122,45 @@ fn invalid_grant(reason: impl Into<String>) -> MResult<()> {
 }
 
 fn resource_names_match(grant_resource: &str, requested_resource: &str) -> bool {
-  if grant_resource == requested_resource { return true; }
-  match (grant_resource.strip_prefix("cli://cli/"), requested_resource.strip_prefix("cli://")) {
-    (Some(grant_context), Some(request_context)) if grant_context == request_context => true,
-    _ => match (grant_resource.strip_prefix("cli://"), requested_resource.strip_prefix("cli://cli/")) {
-      (Some(grant_context), Some(request_context)) => grant_context == request_context,
-      _ => false,
+  if grant_resource == requested_resource {
+    return true;
+  }
+
+  if default_host_resource_aliases_match(grant_resource, requested_resource, "cli") {
+    return true;
+  }
+
+  if default_host_resource_aliases_match(grant_resource, requested_resource, "browser") {
+    return true;
+  }
+
+  false
+}
+
+fn default_host_resource_aliases_match(
+  grant_resource: &str,
+  requested_resource: &str,
+  scheme: &str,
+) -> bool {
+  let legacy_prefix = format!("{scheme}://");
+  let materialized_prefix = format!("{scheme}://{scheme}/");
+
+  match (
+    grant_resource.strip_prefix(&materialized_prefix),
+    requested_resource.strip_prefix(&legacy_prefix),
+  ) {
+    (Some(grant_context), Some(request_context)) if grant_context == request_context => {
+      return true;
     }
+    _ => {}
+  }
+
+  match (
+    grant_resource.strip_prefix(&legacy_prefix),
+    requested_resource.strip_prefix(&materialized_prefix),
+  ) {
+    (Some(grant_context), Some(request_context)) => grant_context == request_context,
+    _ => false,
   }
 }
 
@@ -219,6 +251,20 @@ impl RuntimeCapabilityGrantInput for Arc<dyn Capability> {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn resource_names_match_cli_default_aliases() {
+    assert!(resource_names_match("cli://stdout", "cli://cli/stdout"));
+    assert!(resource_names_match("cli://cli/stdout", "cli://stdout"));
+    assert!(!resource_names_match("cli://stdout", "cli://cli/stderr"));
+  }
+
+  #[test]
+  fn resource_names_match_browser_default_aliases() {
+    assert!(resource_names_match("browser://dom", "browser://browser/dom"));
+    assert!(resource_names_match("browser://browser/dom", "browser://dom"));
+    assert!(!resource_names_match("browser://dom", "browser://browser/storage"));
+  }
 
   #[test]
   fn operation_names_map_to_typed_variants() {
