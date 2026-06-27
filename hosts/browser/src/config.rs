@@ -118,7 +118,6 @@ impl BrowserHostConfig {
     })
   }
 
-
   pub fn into_runtime_config(&self) -> MResult<RuntimeConfig> {
     let log_level = match self.runtime.diagnostics.log_level.as_str() {
       "error" => LogLevel::Error,
@@ -454,8 +453,12 @@ fn config_string_list(value: Option<&ConfigValue>, field: &'static str) -> MResu
 #[cfg(test)]
 mod tests {
   use super::*;
-  use mech_runtime::{parse_config_document, ConfigProfileOptions};
-  use mech_core::BrowserResourceKind;
+  use mech_core::{BrowserResourceKind, Value};
+  use mech_runtime::{
+    materialize_host_manifest, parse_config_document, ConfigProfileOptions, RuntimeHostFactory,
+    RuntimeHostInstallation, RuntimeResourceProvider, RuntimeResourceReadRequest,
+    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+  };
 
   fn cfg_string(value: &str) -> ConfigValue {
     ConfigValue::String(value.to_string())
@@ -629,7 +632,7 @@ config := {
   }
 
   #[test]
-  fn browser_settings_mixed_resources_parse() {
+  fn browser_settings_dom_absent_does_not_drop_other_grants() {
     let config = browser_config_from_settings(&cfg_map(vec![
       ("clipboard", cfg_list(vec![cfg_map(vec![
         ("operations", cfg_list(vec![cfg_string("read")]))
@@ -644,6 +647,26 @@ config := {
     assert_eq!(config.grants.len(), 2);
     assert!(config.grants.iter().any(|grant| matches!(grant.resource, BrowserHostResourceConfig::Clipboard)));
     assert!(config.grants.iter().any(|grant| matches!(grant.resource, BrowserHostResourceConfig::Network { .. })));
+  }
+
+  #[test]
+  fn browser_settings_mixed_resources_parse() {
+    let config = browser_config_from_settings(&cfg_map(vec![
+      ("dom", cfg_list(vec![cfg_map(vec![
+        ("path", cfg_string("body/content/output/_value")),
+        ("selector", cfg_string("#output")),
+        ("property", cfg_string("value")),
+        ("operations", cfg_list(vec![cfg_string("write")])),
+      ])])),
+      ("clipboard", cfg_list(vec![cfg_map(vec![
+        ("operations", cfg_list(vec![cfg_string("read")]))
+      ])])),
+    ])).unwrap();
+
+    assert_eq!(config.dom_manifest.len(), 1);
+    assert_eq!(config.grants.len(), 2);
+    assert!(config.grants.iter().any(|grant| matches!(grant.resource, BrowserHostResourceConfig::Dom { .. })));
+    assert!(config.grants.iter().any(|grant| matches!(grant.resource, BrowserHostResourceConfig::Clipboard)));
   }
 
   #[test]
@@ -695,6 +718,118 @@ config := {
     let err = BrowserHostConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap_err();
     let error = format!("{err:?}");
     assert!(error.contains("browser.settings.dom.path"), "got {error}");
+  }
+
+
+  #[derive(Clone, Debug, Default)]
+  struct RecordingBrowserProvider {
+    instance: String,
+    writes: std::sync::Arc<std::sync::Mutex<Vec<(String, String)>>>,
+  }
+
+  impl RuntimeResourceProvider for RecordingBrowserProvider {
+    fn scheme(&self) -> &str {
+      "browser"
+    }
+
+    fn base_uris(&self) -> Vec<String> {
+      vec![format!("browser://{}/dom", self.instance)]
+    }
+
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+      panic!("configured browser instance test does not read")
+    }
+
+    fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+      assert_eq!(request.base_uri, format!("browser://{}/dom", self.instance));
+      assert_eq!(request.path, "body/content/output/_value");
+      assert_eq!(request.intent, RuntimeResourceWriteIntent::Assign);
+      Ok(())
+    }
+
+    fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+      self.preflight_write(RuntimeResourceWritePreflightRequest {
+        base_uri: request.base_uri,
+        path: request.path.clone(),
+        context_name: request.context_name,
+        intent: request.intent,
+      })?;
+      let Value::String(value) = request.value else {
+        panic!("configured browser instance test writes a string")
+      };
+      self.writes.lock().unwrap().push((request.path, value.borrow().as_str().to_string()));
+      Ok(())
+    }
+  }
+
+  #[derive(Debug)]
+  struct RecordingBrowserFactory {
+    manifest: mech_runtime::HostManifestConfig,
+    writes: std::sync::Arc<std::sync::Mutex<Vec<(String, String)>>>,
+  }
+
+  impl RuntimeHostFactory for RecordingBrowserFactory {
+    fn provider_name(&self) -> &str {
+      "browser"
+    }
+
+    fn manifest(&self) -> &mech_runtime::HostManifestConfig {
+      &self.manifest
+    }
+
+    fn validate_settings(&self, _instance_name: &str, settings: &ConfigValue) -> MResult<()> {
+      browser_config_from_settings(settings).map(|_| ())
+    }
+
+    fn instantiate(&self, instance_name: &str, settings: &ConfigValue) -> MResult<RuntimeHostInstallation> {
+      self.validate_settings(instance_name, settings)?;
+      Ok(RuntimeHostInstallation {
+        interface: materialize_host_manifest(instance_name, &self.manifest)?,
+        resource_providers: vec![Box::new(RecordingBrowserProvider {
+          instance: instance_name.to_string(),
+          writes: self.writes.clone(),
+        })],
+      })
+    }
+  }
+
+  #[test]
+  fn configured_browser_instance_name_resolves_dom_context() {
+    let settings = cfg_map(vec![
+      ("dom", cfg_list(vec![cfg_map(vec![
+        ("path", cfg_string("body/content/output/_value")),
+        ("selector", cfg_string("#output")),
+        ("property", cfg_string("value")),
+        ("operations", cfg_list(vec![cfg_string("write")])),
+      ])])),
+    ]);
+    let writes = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let mut runtime = mech_runtime::RuntimeBuilder::new()
+      .host_factory(Box::new(RecordingBrowserFactory {
+        manifest: crate::browser_host_manifest().unwrap(),
+        writes: writes.clone(),
+      }))
+      .unwrap()
+      .host_instance(mech_runtime::HostInstanceConfig {
+        name: "ui".to_string(),
+        provider: "browser".to_string(),
+        settings,
+      })
+      .run_resource_grant(mech_runtime::RunResourceGrantConfig {
+        target: "ui/dom".to_string(),
+        operations: vec!["write".to_string()],
+        paths: vec!["body/content/output/_value".to_string()],
+      })
+      .build()
+      .unwrap();
+
+    runtime.run_string(r#"+> @ui := ui/dom
+@ui/body/content/output/_value = "ok"
+"#).unwrap();
+
+    let writes = writes.lock().unwrap();
+    assert_eq!(writes.len(), 1);
+    assert_eq!(writes[0], ("body/content/output/_value".to_string(), "ok".to_string()));
   }
 
   #[cfg(feature = "serde")]

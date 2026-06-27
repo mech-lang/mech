@@ -538,8 +538,16 @@ impl MechRuntime {
     module: &str,
     item: &str,
   ) -> MResult<()> {
-    let base_uri = self.module_manifests.context_export(module, item)?.base_uri.clone();
+    let target = format!("{module}/{item}");
+    let base_uri = match self.host_interfaces.resolve_optional(&target)? {
+      Some(context) => context.base_uri.clone(),
+      None => self.module_manifests.context_export(module, item)?.base_uri.clone(),
+    };
     self.bind_resource_root(alias, &base_uri)
+  }
+
+  pub fn resource_binding(&self, name: &str) -> Option<&RuntimeResourceBinding> {
+    self.resource_bindings.get(name)
   }
 
   pub fn bind_resource_root(

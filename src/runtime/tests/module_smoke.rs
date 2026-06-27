@@ -2700,6 +2700,67 @@ fn with_test_cli<B: CliBackend + Clone + 'static>(builder: RuntimeBuilder, backe
     .host_instance(HostInstanceConfig { name: "cli".to_string(), provider: "cli".to_string(), settings: ConfigValue::Map(Default::default()) })
 }
 
+#[test]
+fn runtime_bind_context_export_resolves_host_interface() {
+  let backend = FakeCliBackend::default();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
+
+  runtime.bind_context_export("out", "cli", "stdout").unwrap();
+
+  let binding = runtime.resource_binding("out").unwrap();
+  assert_eq!(binding.base_uri, "cli://cli/stdout");
+  assert_eq!(binding.root_path, "");
+}
+
+#[test]
+fn runtime_bind_context_export_falls_back_to_module_manifest() {
+  let manifest = ModuleManifestConfig {
+    name: "docs".to_string(),
+    exports: vec![ModuleManifestExportConfig {
+      name: "page".to_string(),
+      kind: ModuleManifestExportKind::Context,
+      base_uri: "docs://manual".to_string(),
+      operations: vec!["read".to_string()],
+    }],
+  };
+  let mut runtime = RuntimeBuilder::new()
+    .module_manifest(manifest)
+    .unwrap()
+    .build()
+    .unwrap();
+
+  runtime.bind_context_export("doc", "docs", "page").unwrap();
+
+  let binding = runtime.resource_binding("doc").unwrap();
+  assert_eq!(binding.base_uri, "docs://manual");
+  assert_eq!(binding.root_path, "");
+}
+
+#[test]
+fn runtime_bind_context_export_host_unknown_context_does_not_fallback() {
+  let manifest = ModuleManifestConfig {
+    name: "cli".to_string(),
+    exports: vec![ModuleManifestExportConfig {
+      name: "missing".to_string(),
+      kind: ModuleManifestExportKind::Context,
+      base_uri: "docs://wrong".to_string(),
+      operations: vec!["read".to_string()],
+    }],
+  };
+  let backend = FakeCliBackend::default();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new().module_manifest(manifest).unwrap(),
+    backend,
+  )
+  .build()
+  .unwrap();
+
+  let result = runtime.bind_context_export("bad", "cli", "missing");
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("HostInterfaceUnknownContext"), "got {error}");
+}
+
 #[derive(Debug, Clone, Default)]
 struct FakeCliBackend {
   env: std::collections::HashMap<String, String>,

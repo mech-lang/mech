@@ -5,11 +5,11 @@ pub mod host;
 use wasm_bindgen::prelude::*;
 use mech_core::*;
 use mech_syntax::*;
-use mech_host_browser::{BrowserHostConfig, BrowserResourceProvider};
+use mech_host_browser::{BrowserHostConfig, BrowserHostFactory, BrowserResourceProvider};
 #[cfg(feature = "host_delegation_signing")]
 use mech_host_browser::{verify_browser_host_delegation, BrowserHostDelegationEnvelope};
 use mech_runtime::{
-  ConfigProfileOptions, MechConfigDocument, MechRuntime, RuntimeConfig, parse_config_document,
+  ConfigProfileOptions, ConfigValue, HostInstanceConfig, MechConfigDocument, MechRuntime, RuntimeBuilder, RuntimeConfig, parse_config_document,
   RuntimeCapabilityGrant, RuntimeCapabilityOperation,
 };
 #[cfg(feature = "host_delegation_signing")]
@@ -196,21 +196,35 @@ fn runtime_from_config_document(document: Option<&MechConfigDocument>) -> MResul
     None => RuntimeConfig::default(),
   };
 
-  let mut runtime = MechRuntime::new(config.clone())?;
-  let authority = match document {
-    Some(document) => BrowserHostConfig::from_document_and_runtime(document, &config)?.into_browser_authority()?,
-    None => mech_core::BrowserAuthority::default(),
-  };
-  runtime
-    .register_resource_provider(Box::new(BrowserResourceProvider::new(
-      authority.clone(),
-      WasmBrowserDomBackend::new(),
-    )))?;
-  runtime
-    .bind_resource_root("browser", "browser://dom/")?;
-  install_browser_runtime_grants(&mut runtime, &authority).map_err(|error| {
-    MechError::new(GenericError { msg: format!("failed to install browser runtime grants: {error:?}") }, None)
-  })?;
+  let mut builder = RuntimeBuilder::new()
+    .config(config.clone())
+    .host_factory(Box::new(BrowserHostFactory::new(WasmBrowserDomBackend::new())?))?;
+
+  let mut saw_browser_instance = false;
+  if let Some(document) = document {
+    for host in &document.hosts {
+      if host.provider == "browser" {
+        saw_browser_instance = true;
+        builder = builder.host_instance(host.clone());
+      }
+    }
+    if let Some(run) = &document.run {
+      for grant in &run.grants {
+        builder = builder.run_resource_grant(grant.clone());
+      }
+    }
+  }
+
+  if !saw_browser_instance {
+    builder = builder.host_instance(HostInstanceConfig {
+      name: "browser".to_string(),
+      provider: "browser".to_string(),
+      settings: ConfigValue::Map(Default::default()),
+    });
+  }
+
+  let mut runtime = builder.build()?;
+  runtime.bind_resource_root("browser", "browser://dom/")?;
   Ok(runtime)
 }
 

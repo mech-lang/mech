@@ -12,7 +12,7 @@ rust-version = "1.92"
 
 [features]
 default = []
-provider = ["mech-core/string"]
+provider = ["mech-core/string", "mech-runtime/program"]
 
 [dependencies]
 mech-core = { version = "0.3.5", default-features = false }
