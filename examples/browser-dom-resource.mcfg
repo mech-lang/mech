@@ -1,11 +1,53 @@
 config := {
-  browser: {
-    dom: [
+  hosts: [
+    {
+      name: "browser"
+      provider: "browser"
+      settings: {
+        dom: [
+          {
+            path: "body/content/mech-sandbox/input/_value"
+            selector: "#name-input"
+            property: "value"
+            operations: ["read"]
+          }
+
+          {
+            path: "body/content/mech-sandbox/title"
+            selector: "#title"
+            property: "text"
+            operations: ["write"]
+          }
+
+          {
+            path: "body/content/mech-sandbox/status/_class"
+            selector: "#status"
+            property: "attribute"
+            attribute: "class"
+            operations: ["write"]
+          }
+        ]
+      }
+    }
+  ]
+
+  run: {
+    grants: [
       {
-        path: "body/content/mech-sandbox/*"
-        selector: "#mech-sandbox"
-        mode: "subtree"
-        allow: ["read", "write"]
+        target: "browser/dom"
+        operations: ["read"]
+        paths: [
+          "body/content/mech-sandbox/input/_value"
+        ]
+      }
+
+      {
+        target: "browser/dom"
+        operations: ["write"]
+        paths: [
+          "body/content/mech-sandbox/title"
+          "body/content/mech-sandbox/status/_class"
+        ]
       }
     ]
   }

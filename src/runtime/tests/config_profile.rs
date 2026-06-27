@@ -12,6 +12,27 @@ fn err_text(source: &str) -> String {
 }
 
 #[test]
+fn shipped_browser_examples_use_hosts_schema() {
+    let demo = parse_config_document(
+        "examples/browser-dom-demo/demo.mcfg",
+        include_str!("../../../examples/browser-dom-demo/demo.mcfg"),
+        ConfigProfileOptions::default(),
+    )
+    .unwrap();
+    assert!(demo.hosts.iter().any(|host| host.name == "browser" && host.provider == "browser"));
+    assert_eq!(demo.run.as_ref().unwrap().grants.len(), 2);
+
+    let resource = parse_config_document(
+        "examples/browser-dom-resource.mcfg",
+        include_str!("../../../examples/browser-dom-resource.mcfg"),
+        ConfigProfileOptions::default(),
+    )
+    .unwrap();
+    assert!(resource.hosts.iter().any(|host| host.name == "browser" && host.provider == "browser"));
+    assert_eq!(resource.run.as_ref().unwrap().grants.len(), 2);
+}
+
+#[test]
 fn config_profile_rich_mechdown_config_parses_and_lowers() {
     let doc = parse(
         r#"Project config
