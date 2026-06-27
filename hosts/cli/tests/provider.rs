@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 use mech_host_cli::{CliBackend, CliResourceProvider};
 use mech_runtime::{
-    RuntimeCapabilityOperation, RuntimeResourceProvider, RuntimeResourceReadRequest,
-    RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
+    RuntimeCapabilityOperation, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
+    RuntimeResourceWriteRequest,
 };
 
 #[derive(Debug, Default)]
