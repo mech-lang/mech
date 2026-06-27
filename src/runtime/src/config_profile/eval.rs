@@ -7,6 +7,7 @@ use super::{
     ConfigProfileViolation, ConfigProgram, MissingConfigBinding,
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
 pub enum ConfigValue {
     Null,

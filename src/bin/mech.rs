@@ -418,7 +418,7 @@ async fn main() -> Result<(), MechError> {
     )?;
     let host_config = loaded_config
       .as_ref()
-      .map(|loaded| mech_host_browser::BrowserHostConfig::from_document_and_runtime(
+      .map(|loaded| mech_host_browser::BrowserRuntimeInjectionConfig::from_document_and_runtime(
         &loaded.document,
         &runtime_config,
       ))

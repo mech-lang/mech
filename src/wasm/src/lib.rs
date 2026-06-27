@@ -5,7 +5,9 @@ pub mod host;
 use wasm_bindgen::prelude::*;
 use mech_core::*;
 use mech_syntax::*;
-use mech_host_browser::{BrowserHostConfig, BrowserHostFactory, BrowserResourceProvider};
+use mech_host_browser::{
+  BrowserHostConfig, BrowserHostFactory, BrowserResourceProvider, BrowserRuntimeInjectionConfig,
+};
 #[cfg(feature = "host_delegation_signing")]
 use mech_host_browser::{verify_browser_host_delegation, BrowserHostDelegationEnvelope};
 use mech_runtime::{
@@ -200,11 +202,13 @@ fn runtime_from_config_document(document: Option<&MechConfigDocument>) -> MResul
     .config(config.clone())
     .host_factory(Box::new(BrowserHostFactory::new(WasmBrowserDomBackend::new())?))?;
 
-  let mut saw_browser_instance = false;
+  let mut saw_default_browser_instance = false;
   if let Some(document) = document {
     for host in &document.hosts {
       if host.provider == "browser" {
-        saw_browser_instance = true;
+        if host.name == "browser" {
+          saw_default_browser_instance = true;
+        }
         builder = builder.host_instance(host.clone());
       }
     }
@@ -215,7 +219,7 @@ fn runtime_from_config_document(document: Option<&MechConfigDocument>) -> MResul
     }
   }
 
-  if !saw_browser_instance {
+  if !saw_default_browser_instance {
     builder = builder.host_instance(HostInstanceConfig {
       name: "browser".to_string(),
       provider: "browser".to_string(),
@@ -301,23 +305,45 @@ fn wasm_parts_from_delegated_host_config(
 }
 
 fn wasm_parts_from_host_config(config: JsValue) -> Result<(MechRuntime, BrowserHost), JsValue> {
-  let host_config: BrowserHostConfig = serde_wasm_bindgen::from_value(config)
+  let injected: BrowserRuntimeInjectionConfig = serde_wasm_bindgen::from_value(config)
     .map_err(|error| js_error(format!("failed to deserialize host config: {error}")))?;
-  let (runtime_config, authority) = host_config
-    .into_runtime_and_browser_authority()
+  let runtime_config = injected
+    .into_runtime_config()
     .map_err(|error| js_error(format!("invalid host config: {error:?}")))?;
-  let mut runtime = MechRuntime::new(runtime_config)
+  let mut builder = RuntimeBuilder::new()
+    .config(runtime_config)
+    .host_factory(Box::new(BrowserHostFactory::new(WasmBrowserDomBackend::new())
+      .map_err(|error| js_error(format!("failed to initialize browser host factory: {error:?}")))?))
+    .map_err(|error| js_error(format!("failed to register browser host factory: {error:?}")))?;
+  let mut saw_default_browser_instance = false;
+  for host in &injected.hosts {
+    if host.provider == "browser" {
+      if host.name == "browser" {
+        saw_default_browser_instance = true;
+      }
+      builder = builder.host_instance(host.clone());
+    }
+  }
+  if !saw_default_browser_instance {
+    builder = builder.host_instance(HostInstanceConfig {
+      name: "browser".to_string(),
+      provider: "browser".to_string(),
+      settings: ConfigValue::Map(Default::default()),
+    });
+  }
+  for grant in &injected.run_grants {
+    builder = builder.run_resource_grant(grant.clone());
+  }
+  let mut runtime = builder
+    .build()
     .map_err(|error| js_error(format!("failed to initialize host-configured runtime: {error:?}")))?;
-  runtime
-    .register_resource_provider(Box::new(BrowserResourceProvider::new(
-      authority.clone(),
-      WasmBrowserDomBackend::new(),
-    )))
-    .map_err(|error| js_error(format!("failed to register browser resource provider: {error:?}")))?;
   runtime
     .bind_resource_root("browser", "browser://dom/")
     .map_err(|error| js_error(format!("failed to bind browser resource root: {error:?}")))?;
-  install_browser_runtime_grants(&mut runtime, &authority)?;
+  let authority = injected
+    .browser_host_config()
+    .and_then(|host_config| host_config.into_browser_authority())
+    .map_err(|error| js_error(format!("invalid browser host authority: {error:?}")))?;
   Ok((runtime, BrowserHost::new(authority)))
 }
 

@@ -1,6 +1,7 @@
 use mech_core::{MResult, MechError};
 use crate::InvalidConfigField;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RunResourceGrantConfig {
   pub target: String,

@@ -9,7 +9,8 @@ use mech_core::{
 };
 
 use mech_runtime::{
-  ConfigValue, DiagnosticsConfig, LogLevel, MechConfigDocument, RuntimeConfig, RuntimeLimits,
+  ConfigValue, DiagnosticsConfig, HostInstanceConfig, LogLevel, MechConfigDocument,
+  RunResourceGrantConfig, RuntimeConfig, RuntimeLimits,
 };
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -18,6 +19,83 @@ use mech_runtime::{
 pub struct BrowserHostConfig {
   pub runtime: BrowserHostRuntimeConfig,
   pub browser: BrowserHostBrowserConfig,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct BrowserRuntimeInjectionConfig {
+  pub runtime: BrowserHostRuntimeConfig,
+  pub hosts: Vec<HostInstanceConfig>,
+  pub run_grants: Vec<RunResourceGrantConfig>,
+}
+
+impl BrowserRuntimeInjectionConfig {
+  pub fn from_document_and_runtime(
+    document: &MechConfigDocument,
+    runtime_config: &RuntimeConfig,
+  ) -> MResult<Self> {
+    let mut hosts: Vec<HostInstanceConfig> = document
+      .hosts
+      .iter()
+      .filter(|host| host.provider == "browser")
+      .cloned()
+      .collect();
+    if !hosts.iter().any(|host| host.name == "browser") {
+      hosts.push(HostInstanceConfig {
+        name: "browser".to_string(),
+        provider: "browser".to_string(),
+        settings: ConfigValue::Map(Default::default()),
+      });
+    }
+    for host in &hosts {
+      browser_config_from_settings(&host.settings)?;
+    }
+    Ok(Self {
+      runtime: BrowserHostRuntimeConfig::from(runtime_config),
+      hosts,
+      run_grants: document
+        .run
+        .as_ref()
+        .map(|run| run.grants.clone())
+        .unwrap_or_default(),
+    })
+  }
+
+  pub fn into_runtime_config(&self) -> MResult<RuntimeConfig> {
+    BrowserHostConfig {
+      runtime: self.runtime.clone(),
+      browser: BrowserHostBrowserConfig {
+        grants: Vec::new(),
+        dom_manifest: Vec::new(),
+      },
+    }
+    .into_runtime_config()
+  }
+
+  pub fn browser_config(&self) -> MResult<BrowserHostBrowserConfig> {
+    let mut grants = Vec::new();
+    let mut dom_manifest = Vec::new();
+    for host in &self.hosts {
+      if host.provider != "browser" {
+        continue;
+      }
+      let config = browser_config_from_settings(&host.settings)?;
+      grants.extend(config.grants);
+      dom_manifest.extend(config.dom_manifest);
+    }
+    Ok(BrowserHostBrowserConfig {
+      grants,
+      dom_manifest,
+    })
+  }
+
+  pub fn browser_host_config(&self) -> MResult<BrowserHostConfig> {
+    Ok(BrowserHostConfig {
+      runtime: self.runtime.clone(),
+      browser: self.browser_config()?,
+    })
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -720,6 +798,50 @@ config := {
     assert!(error.contains("browser.settings.dom.path"), "got {error}");
   }
 
+  #[test]
+  fn browser_runtime_injection_preserves_alias_and_default_browser() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    {
+      name: "ui"
+      provider: "browser"
+      settings: {
+        dom: [
+          {
+            path: "body/content/output/_value"
+            selector: "#output"
+            property: "value"
+            operations: ["write"]
+          }
+        ]
+      }
+    }
+  ]
+  run: {
+    grants: [
+      {
+        target: "ui/dom"
+        operations: ["write"]
+        paths: ["body/content/output/_value"]
+      }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let injected =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
+
+    assert!(injected.hosts.iter().any(|host| host.name == "ui" && host.provider == "browser"));
+    assert!(injected.hosts.iter().any(|host| host.name == "browser" && host.provider == "browser"));
+    assert_eq!(injected.run_grants.len(), 1);
+    assert_eq!(injected.run_grants[0].target, "ui/dom");
+  }
+
 
   #[derive(Clone, Debug, Default)]
   struct RecordingBrowserProvider {
@@ -742,7 +864,7 @@ config := {
 
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
       assert_eq!(request.base_uri, format!("browser://{}/dom", self.instance));
-      assert_eq!(request.path, "body/content/output/_value");
+      assert!(request.path.starts_with("body/content/"));
       assert_eq!(request.intent, RuntimeResourceWriteIntent::Assign);
       Ok(())
     }
@@ -830,6 +952,56 @@ config := {
     let writes = writes.lock().unwrap();
     assert_eq!(writes.len(), 1);
     assert_eq!(writes[0], ("body/content/output/_value".to_string(), "ok".to_string()));
+  }
+
+  #[test]
+  fn browser_runtime_grants_do_not_broaden_from_settings() {
+    let settings = cfg_map(vec![
+      ("dom", cfg_list(vec![
+        cfg_map(vec![
+          ("path", cfg_string("body/content/allowed/_value")),
+          ("selector", cfg_string("#allowed")),
+          ("property", cfg_string("value")),
+          ("operations", cfg_list(vec![cfg_string("write")])),
+        ]),
+        cfg_map(vec![
+          ("path", cfg_string("body/content/denied/_value")),
+          ("selector", cfg_string("#denied")),
+          ("property", cfg_string("value")),
+          ("operations", cfg_list(vec![cfg_string("write")])),
+        ]),
+      ])),
+    ]);
+    let writes = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let mut runtime = mech_runtime::RuntimeBuilder::new()
+      .host_factory(Box::new(RecordingBrowserFactory {
+        manifest: crate::browser_host_manifest().unwrap(),
+        writes,
+      }))
+      .unwrap()
+      .host_instance(mech_runtime::HostInstanceConfig {
+        name: "ui".to_string(),
+        provider: "browser".to_string(),
+        settings,
+      })
+      .run_resource_grant(mech_runtime::RunResourceGrantConfig {
+        target: "ui/dom".to_string(),
+        operations: vec!["write".to_string()],
+        paths: vec!["body/content/allowed/_value".to_string()],
+      })
+      .build()
+      .unwrap();
+
+    runtime.run_string(r#"+> @ui := ui/dom
+@ui/body/content/allowed/_value = "ok"
+"#).unwrap();
+
+    let result = runtime.run_string(r#"+> @ui := ui/dom
+@ui/body/content/denied/_value = "no"
+"#);
+    assert!(result.is_err());
+    let error = format!("{:?}", result.err().unwrap());
+    assert!(error.contains("RuntimeCapabilityGrantDenied"), "got {error}");
   }
 
   #[cfg(feature = "serde")]

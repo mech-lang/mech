@@ -1,7 +1,7 @@
 use std::io::{Error, ErrorKind};
 
 use mech_core::*;
-use mech_host_browser::BrowserHostConfig;
+use mech_host_browser::{BrowserHostConfig, BrowserRuntimeInjectionConfig};
 
 #[cfg(feature = "host_delegation_signing")]
 use base64::Engine;
@@ -17,7 +17,7 @@ use serde::Deserialize;
 
 #[derive(Clone, Debug)]
 pub enum HostAuthorityInjection {
-  BrowserUnsigned(BrowserHostConfig),
+  BrowserUnsigned(BrowserRuntimeInjectionConfig),
   #[cfg(feature = "host_delegation_signing")]
   BrowserSigned {
     envelope: BrowserHostDelegationEnvelope,
@@ -58,7 +58,8 @@ struct HostDelegationPublicKeyFile {
 }
 
 pub fn browser_host_config_script(host_config: &BrowserHostConfig) -> MResult<String> {
-  host_authority_injection_script(&HostAuthorityInjection::BrowserUnsigned(host_config.clone()))
+  let json = json_for_script(host_config)?;
+  Ok(format!("<script>window.__MECH_HOST_CONFIG = {json};</script>"))
 }
 
 pub fn host_authority_injection_script(injection: &HostAuthorityInjection) -> MResult<String> {
@@ -81,7 +82,7 @@ pub fn host_authority_injection_script(injection: &HostAuthorityInjection) -> MR
 
 pub fn inject_browser_host_config_script(
   html: &str,
-  host_config: &BrowserHostConfig,
+  host_config: &BrowserRuntimeInjectionConfig,
 ) -> MResult<String> {
   inject_host_authority_injection_script(
     html,
