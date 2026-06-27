@@ -721,6 +721,56 @@ config := {
   }
 
   #[test]
+  fn browser_runtime_injection_config_merges_same_browser_settings() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    {
+      name: "browser"
+      provider: "browser"
+      settings: {
+        dom: [
+          {
+            path: "body/content/default/_value"
+            selector: "#default"
+            property: "value"
+            operations: ["read"]
+          }
+        ]
+      }
+    }
+    {
+      name: "ui"
+      provider: "browser"
+      settings: {
+        dom: [
+          {
+            path: "body/content/ui/_value"
+            selector: "#ui"
+            property: "value"
+            operations: ["write"]
+          }
+        ]
+      }
+    }
+  ]
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let injected =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
+    let host_config = injected.browser_host_config().unwrap();
+
+    assert_eq!(host_config.browser.dom_manifest.len(), 2);
+    assert_eq!(host_config.browser.grants.len(), 2);
+    assert!(host_config.browser.dom_manifest.iter().any(|entry| entry.selector == "#default"));
+    assert!(host_config.browser.dom_manifest.iter().any(|entry| entry.selector == "#ui"));
+  }
+
+  #[test]
   fn browser_host_config_converts_back_to_runtime_and_authority() {
     let document = config_document();
     let runtime_config = RuntimeConfig::default().apply_patch(&document.runtime).unwrap();
