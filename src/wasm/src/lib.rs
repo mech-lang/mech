@@ -6,13 +6,12 @@ use wasm_bindgen::prelude::*;
 use mech_core::*;
 use mech_syntax::*;
 use mech_host_browser::{
-  BrowserHostConfig, BrowserHostFactory, BrowserResourceProvider, BrowserRuntimeInjectionConfig,
+  BrowserHostFactory, BrowserRuntimeInjectionConfig,
 };
 #[cfg(feature = "host_delegation_signing")]
 use mech_host_browser::{verify_browser_host_delegation, BrowserHostDelegationEnvelope};
 use mech_runtime::{
   ConfigProfileOptions, ConfigValue, HostInstanceConfig, MechConfigDocument, MechRuntime, RuntimeBuilder, RuntimeConfig, parse_config_document,
-  RuntimeCapabilityGrant, RuntimeCapabilityOperation,
 };
 #[cfg(feature = "host_delegation_signing")]
 use mech_runtime::{HostDelegationKeyStore, HostDelegationPublicKey, HostDelegationVerificationRequest};
@@ -138,109 +137,36 @@ pub fn main() -> Result<(), JsValue> {
 
 
 
-fn install_browser_runtime_grants(
-  runtime: &mut MechRuntime,
-  authority: &BrowserAuthority,
-) -> Result<(), JsValue> {
-  let subject = runtime
-    .runtime_context()
-    .map_err(|error| js_error(format!("failed to create runtime context: {error:?}")))?
-    .subject;
-
-  for entry in authority.dom_manifest() {
-    let mut operations = Vec::new();
-
-    if authority
-      .allows_dom(entry.selector.selector.as_str(), BrowserOperation::Read)
-      .is_ok()
-    {
-      operations.push(RuntimeCapabilityOperation::Read);
-    }
-
-    if authority
-      .allows_dom(entry.selector.selector.as_str(), BrowserOperation::Write)
-      .is_ok()
-    {
-      operations.push(RuntimeCapabilityOperation::Write);
-    }
-
-    if operations.is_empty() {
-      continue;
-    }
-
-    runtime
-      .grant_capability(RuntimeCapabilityGrant {
-        subject: subject.clone(),
-        resource: BROWSER_DOM_PROVIDER_URI.to_string(),
-        operations,
-        paths: vec![entry.path.as_str().to_string()],
-      })
-      .map_err(|error| js_error(format!("failed to install browser DOM runtime grant: {error:?}")))?;
-  }
-
-  Ok(())
-}
-
-fn browser_host_from_config(document: Option<&MechConfigDocument>) -> MResult<BrowserHost> {
-  match document {
-    Some(document) => {
-      let config = RuntimeConfig::default().apply_patch(&document.runtime)?;
-      let host_config = BrowserHostConfig::from_document_and_runtime(document, &config)?;
-      Ok(BrowserHost::new(host_config.into_browser_authority()?))
-    }
-    None => Ok(BrowserHost::deny_by_default()),
-  }
-}
-
-fn runtime_from_config_document(document: Option<&MechConfigDocument>) -> MResult<MechRuntime> {
-  let config = match document {
-    Some(document) => RuntimeConfig::default().apply_patch(&document.runtime)?,
-    None => RuntimeConfig::default(),
-  };
-
-  let mut builder = RuntimeBuilder::new()
-    .config(config.clone())
-    .host_factory(Box::new(BrowserHostFactory::new(WasmBrowserDomBackend::new())?))?;
-
-  let mut saw_default_browser_instance = false;
-  if let Some(document) = document {
-    for host in &document.hosts {
-      if host.provider == "browser" {
-        if host.name == "browser" {
-          saw_default_browser_instance = true;
-        }
-        builder = builder.host_instance(host.clone());
-      }
-    }
-    if let Some(run) = &document.run {
-      for grant in &run.grants {
-        builder = builder.run_resource_grant(grant.clone());
-      }
-    }
-  }
-
-  if !saw_default_browser_instance {
-    builder = builder.host_instance(HostInstanceConfig {
-      name: "browser".to_string(),
-      provider: "browser".to_string(),
-      settings: ConfigValue::Map(Default::default()),
-    });
-  }
-
-  let mut runtime = builder.build()?;
-  runtime.bind_resource_root("browser", "browser://dom/")?;
-  Ok(runtime)
+struct WasmRuntimeParts {
+  runtime: MechRuntime,
+  browser_host: BrowserHost,
+  runtime_injection: BrowserRuntimeInjectionConfig,
 }
 
 fn wasm_parts_from_config_document(
   document: Option<&MechConfigDocument>,
-) -> MResult<(MechRuntime, BrowserHost)> {
-  Ok((
-    runtime_from_config_document(document)?,
-    browser_host_from_config(document)?,
-  ))
+) -> MResult<WasmRuntimeParts> {
+  let injected = match document {
+    Some(document) => {
+      let config = RuntimeConfig::default().apply_patch(&document.runtime)?;
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(document, &config)?
+    }
+    None => default_browser_runtime_injection_config(),
+  };
+  wasm_parts_from_runtime_injection_config_result(injected)
 }
 
+fn default_browser_runtime_injection_config() -> BrowserRuntimeInjectionConfig {
+  BrowserRuntimeInjectionConfig {
+    runtime: mech_host_browser::BrowserHostRuntimeConfig::from(&RuntimeConfig::default()),
+    hosts: vec![HostInstanceConfig {
+      name: "browser".to_string(),
+      provider: "browser".to_string(),
+      settings: ConfigValue::Map(Default::default()),
+    }],
+    run_grants: Vec::new(),
+  }
+}
 
 #[cfg(feature = "host_delegation_signing")]
 #[derive(Deserialize)]
@@ -276,7 +202,7 @@ fn wasm_parts_from_delegated_host_config(
   config: JsValue,
   trusted_keys: JsValue,
   expected_audience: String,
-) -> Result<(MechRuntime, BrowserHost), JsValue> {
+) -> Result<WasmRuntimeParts, JsValue> {
   let envelope: BrowserHostDelegationEnvelope = serde_wasm_bindgen::from_value(config)
     .map_err(|error| js_error(format!("failed to deserialize host delegation envelope: {error}")))?;
   let trusted_keys = trusted_host_key_store_from_js(trusted_keys)?;
@@ -292,7 +218,7 @@ fn wasm_parts_from_delegated_host_config(
   wasm_parts_from_runtime_injection_config(verified.authority.runtime_injection)
 }
 
-fn wasm_parts_from_host_config(config: JsValue) -> Result<(MechRuntime, BrowserHost), JsValue> {
+fn wasm_parts_from_host_config(config: JsValue) -> Result<WasmRuntimeParts, JsValue> {
   let injected: BrowserRuntimeInjectionConfig = serde_wasm_bindgen::from_value(config)
     .map_err(|error| js_error(format!("failed to deserialize host config: {error}")))?;
   wasm_parts_from_runtime_injection_config(injected)
@@ -300,15 +226,18 @@ fn wasm_parts_from_host_config(config: JsValue) -> Result<(MechRuntime, BrowserH
 
 fn wasm_parts_from_runtime_injection_config(
   injected: BrowserRuntimeInjectionConfig,
-) -> Result<(MechRuntime, BrowserHost), JsValue> {
-  let runtime_config = injected
-    .into_runtime_config()
-    .map_err(|error| js_error(format!("invalid host config: {error:?}")))?;
+) -> Result<WasmRuntimeParts, JsValue> {
+  wasm_parts_from_runtime_injection_config_result(injected)
+    .map_err(|error| js_error(format!("invalid host config: {error:?}")))
+}
+
+fn wasm_parts_from_runtime_injection_config_result(
+  injected: BrowserRuntimeInjectionConfig,
+) -> MResult<WasmRuntimeParts> {
+  let runtime_config = injected.into_runtime_config()?;
   let mut builder = RuntimeBuilder::new()
     .config(runtime_config)
-    .host_factory(Box::new(BrowserHostFactory::new(WasmBrowserDomBackend::new())
-      .map_err(|error| js_error(format!("failed to initialize browser host factory: {error:?}")))?))
-    .map_err(|error| js_error(format!("failed to register browser host factory: {error:?}")))?;
+    .host_factory(Box::new(BrowserHostFactory::new(WasmBrowserDomBackend::new())?))?;
   let mut saw_default_browser_instance = false;
   for host in &injected.hosts {
     if host.provider == "browser" {
@@ -328,23 +257,23 @@ fn wasm_parts_from_runtime_injection_config(
   for grant in &injected.run_grants {
     builder = builder.run_resource_grant(grant.clone());
   }
-  let mut runtime = builder
-    .build()
-    .map_err(|error| js_error(format!("failed to initialize host-configured runtime: {error:?}")))?;
-  runtime
-    .bind_resource_root("browser", "browser://dom/")
-    .map_err(|error| js_error(format!("failed to bind browser resource root: {error:?}")))?;
+  let mut runtime = builder.build()?;
+  runtime.bind_resource_root("browser", "browser://dom/")?;
   let authority = injected
     .browser_host_config()
-    .and_then(|host_config| host_config.into_browser_authority())
-    .map_err(|error| js_error(format!("invalid browser host authority: {error:?}")))?;
-  Ok((runtime, BrowserHost::new(authority)))
+    .and_then(|host_config| host_config.into_browser_authority())?;
+  Ok(WasmRuntimeParts {
+    runtime,
+    browser_host: BrowserHost::new(authority),
+    runtime_injection: injected,
+  })
 }
 
 #[wasm_bindgen]
 pub struct WasmMech {
   runtime: MechRuntime,
   browser_host: BrowserHost,
+  runtime_injection: BrowserRuntimeInjectionConfig,
   repl_history: Vec<String>,
   repl_history_index: Option<usize>,
   repl_id: Option<String>,
@@ -371,10 +300,11 @@ impl WasmMech {
     if config.is_undefined() || config.is_null() {
       return Err(js_error("host config was not provided by mech serve"));
     }
-    let (runtime, browser_host) = wasm_parts_from_host_config(config)?;
+    let parts = wasm_parts_from_host_config(config)?;
     Ok(Self {
-      runtime,
-      browser_host,
+      runtime: parts.runtime,
+      browser_host: parts.browser_host,
+      runtime_injection: parts.runtime_injection,
       repl_history: Vec::new(),
       repl_history_index: None,
       repl_id: None,
@@ -406,10 +336,11 @@ impl WasmMech {
           .ok_or_else(|| js_error("host delegation audience was not provided"))?
       }
     };
-    let (runtime, browser_host) = wasm_parts_from_delegated_host_config(config, trusted_keys, expected_audience)?;
+    let parts = wasm_parts_from_delegated_host_config(config, trusted_keys, expected_audience)?;
     Ok(Self {
-      runtime,
-      browser_host,
+      runtime: parts.runtime,
+      browser_host: parts.browser_host,
+      runtime_injection: parts.runtime_injection,
       repl_history: Vec::new(),
       repl_history_index: None,
       repl_id: None,
@@ -425,11 +356,12 @@ impl WasmMech {
       source,
       ConfigProfileOptions::default(),
     )?;
-    let (runtime, browser_host) = wasm_parts_from_config_document(Some(&document))?;
+    let parts = wasm_parts_from_config_document(Some(&document))?;
 
     Ok(Self {
-      runtime,
-      browser_host,
+      runtime: parts.runtime,
+      browser_host: parts.browser_host,
+      runtime_injection: parts.runtime_injection,
       repl_history: Vec::new(),
       repl_history_index: None,
       repl_id: None,
@@ -437,12 +369,13 @@ impl WasmMech {
   }
 
   fn with_default_runtime() -> Self {
-    let (runtime, browser_host) = wasm_parts_from_config_document(None)
+    let parts = wasm_parts_from_config_document(None)
       .expect("default wasm runtime config should be valid");
 
     Self {
-      runtime,
-      browser_host,
+      runtime: parts.runtime,
+      browser_host: parts.browser_host,
+      runtime_injection: parts.runtime_injection,
       repl_history: Vec::new(),
       repl_history_index: None,
       repl_id: None,
@@ -456,20 +389,11 @@ impl WasmMech {
 
   #[wasm_bindgen]
   pub fn clear(&mut self) {
-    let mut runtime = MechRuntime::new(self.runtime.config().clone())
-      .expect("failed to reset MechRuntime for wasm");
-    runtime
-      .register_resource_provider(Box::new(BrowserResourceProvider::new(
-        self.browser_host.authority().clone(),
-        WasmBrowserDomBackend::new(),
-      )))
-      .expect("failed to register browser resource provider");
-    runtime
-      .bind_resource_root("browser", "browser://dom/")
-      .expect("failed to bind default browser DOM resource root");
-    install_browser_runtime_grants(&mut runtime, self.browser_host.authority())
-      .expect("failed to install browser runtime grants");
-    self.runtime = runtime;
+    let parts = wasm_parts_from_runtime_injection_config_result(self.runtime_injection.clone())
+      .expect("failed to reset wasm runtime from injected host config");
+    self.runtime = parts.runtime;
+    self.browser_host = parts.browser_host;
+    self.runtime_injection = parts.runtime_injection;
   }
 
   #[wasm_bindgen(js_name = "readDomText")]
@@ -2015,6 +1939,120 @@ mod tests {
 
     assert_eq!(config.name, "wasm-test-runtime");
     assert_eq!(config.limits.max_steps_per_turn, Some(123));
+  }
+
+  #[test]
+  fn wasm_from_config_filters_non_browser_run_grants() {
+    let source = r#"config := {
+  hosts: [
+    {name: "browser", provider: "browser", settings: {}}
+    {name: "arm", provider: "fake-robot", settings: {}}
+  ]
+  run: {
+    grants: [
+      {target: "browser/dom", operations: ["read"], paths: ["counter/_text"]}
+      {target: "arm/commands", operations: ["write"], paths: ["move"]}
+    ]
+  }
+}
+"#;
+    let mech = WasmMech::try_from_config("test.mcfg", source).unwrap();
+
+    assert_eq!(mech.runtime_injection.run_grants.len(), 1);
+    assert_eq!(mech.runtime_injection.run_grants[0].target, "browser/dom");
+    assert!(mech.runtime_injection.hosts.iter().all(|host| host.provider == "browser"));
+  }
+
+  #[test]
+  fn wasm_from_config_keeps_browser_alias_run_grant() {
+    let source = r#"config := {
+  hosts: [
+    {name: "ui", provider: "browser", settings: {}}
+  ]
+  run: {
+    grants: [
+      {target: "ui/dom", operations: ["read"], paths: ["counter/_text"]}
+    ]
+  }
+}
+"#;
+    let mech = WasmMech::try_from_config("test.mcfg", source).unwrap();
+
+    assert!(mech.runtime_injection.hosts.iter().any(|host| host.name == "ui"));
+    assert_eq!(mech.runtime_injection.run_grants.len(), 1);
+    assert_eq!(mech.runtime_injection.run_grants[0].target, "ui/dom");
+  }
+
+  #[test]
+  fn clear_preserves_browser_alias() {
+    let source = r##"config := {
+  hosts: [
+    {
+      name: "ui"
+      provider: "browser"
+      settings: {
+        dom: [
+          {path: "counter/_text", selector: "#counter", property: "text", operations: ["read"]}
+        ]
+      }
+    }
+  ]
+  run: {
+    grants: [
+      {target: "ui/dom", operations: ["read"], paths: ["counter/_text"]}
+    ]
+  }
+}
+"##;
+    let mut mech = WasmMech::try_from_config("test.mcfg", source).unwrap();
+    mech.clear();
+
+    assert!(mech.runtime_injection.hosts.iter().any(|host| host.name == "ui"));
+    let result = mech.runtime.run_string("+> @ui := ui/dom\ntitle := @ui/counter/_text\n");
+    if let Err(error) = result {
+      let error = format!("{error:?}");
+      assert!(!error.contains("HostInterfaceUnknownInstance"), "ui alias should survive clear: {error}");
+      assert!(!error.contains("RuntimeResourceProviderNotFound"), "ui provider should survive clear: {error}");
+      assert!(!error.contains("RuntimeCapabilityGrantDenied"), "ui read grant should survive clear: {error}");
+    }
+  }
+
+  #[test]
+  fn clear_preserves_narrowed_run_grants() {
+    let source = r##"config := {
+  hosts: [
+    {
+      name: "browser"
+      provider: "browser"
+      settings: {
+        dom: [
+          {path: "counter/_text", selector: "#counter", property: "text", operations: ["read", "write"]}
+        ]
+      }
+    }
+  ]
+  run: {
+    grants: [
+      {target: "browser/dom", operations: ["read"], paths: ["counter/_text"]}
+    ]
+  }
+}
+"##;
+    let mut mech = WasmMech::try_from_config("test.mcfg", source).unwrap();
+    mech.clear();
+
+    let write_result = mech.runtime.run_string("+> @ui := browser/dom\n@ui/counter/_text = \"hello\"\n");
+    let write_error = format!("{:?}", write_result.err().unwrap());
+    assert!(write_error.contains("RuntimeCapabilityGrantDenied"), "clear must preserve narrowed run grants: {write_error}");
+  }
+
+  #[test]
+  fn clear_default_runtime_still_works() {
+    let mut mech = WasmMech::new();
+    mech.clear();
+
+    assert_eq!(mech.browser_grant_count(), 0);
+    assert!(!mech.can_read_clipboard());
   }
 
   #[test]

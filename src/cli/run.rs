@@ -2,9 +2,10 @@ use clap::{Arg, ArgAction};
 use mech_core::*;
 use mech_host_cli::CliHostFactory;
 use mech_runtime::{
-  ConfigValue, HostInstanceConfig, MechRuntime, RunResourceGrantConfig, RuntimeBuilder, RuntimeConfig,
-  RuntimeEvent, RuntimeEventKind,
+  parse_host_context_target, ConfigValue, HostInstanceConfig, MechRuntime, RunResourceGrantConfig,
+  RuntimeBuilder, RuntimeConfig, RuntimeEvent, RuntimeEventKind,
 };
+use std::collections::BTreeSet;
 use std::ffi::OsStr;
 use std::path::Path;
 
@@ -293,8 +294,10 @@ pub fn new_cli_runtime(
     .host_factory(Box::new(CliHostFactory::new()?))?;
 
   let mut saw_cli_instance = false;
+  let mut registered_cli_instances = BTreeSet::new();
   for host in configured_hosts {
     if host.provider == "cli" {
+      registered_cli_instances.insert(host.name.clone());
       if host.name == "cli" {
         saw_cli_instance = true;
       }
@@ -303,6 +306,7 @@ pub fn new_cli_runtime(
   }
 
   if !saw_cli_instance {
+    registered_cli_instances.insert("cli".to_string());
     builder = builder.host_instance(HostInstanceConfig {
       name: "cli".to_string(),
       provider: "cli".to_string(),
@@ -315,7 +319,10 @@ pub fn new_cli_runtime(
   }
 
   for grant in run_grants {
-    builder = builder.run_resource_grant(grant.clone());
+    let (instance, _) = parse_host_context_target(&grant.target)?;
+    if registered_cli_instances.contains(instance) {
+      builder = builder.run_resource_grant(grant.clone());
+    }
   }
 
   builder.build()
@@ -444,6 +451,7 @@ pub fn cli_host_capability_passthrough_values(
 #[cfg(test)]
 mod tests {
   use super::*;
+  use mech_runtime::{parse_config_document, ConfigProfileOptions};
 
   #[test]
   fn classifies_single_inline_context_send_with_slashes_as_inline_source() {
@@ -502,5 +510,63 @@ mod tests {
       "bar.mec".to_string(),
     ]);
     assert!(matches!(mode, RunInputMode::Paths(_)));
+  }
+
+  #[test]
+  fn new_cli_runtime_filters_non_cli_run_grants() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r#"config := {
+  hosts: [
+    {name: "cli", provider: "cli", settings: {}}
+    {name: "ui", provider: "browser", settings: {}}
+  ]
+  run: {
+    grants: [
+      {target: "cli/stdout", operations: ["write"], paths: ["line"]}
+      {target: "ui/dom", operations: ["read"], paths: ["counter/_text"]}
+    ]
+  }
+}
+"#,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let run_grants = document.run.as_ref().unwrap().grants.as_slice();
+    let mut runtime = new_cli_runtime(
+      RuntimeConfig::default(),
+      &config::EffectiveCliHostGrants::default(),
+      &document.hosts,
+      run_grants,
+    ).unwrap();
+
+    runtime.run_string("+> @out := cli/stdout\n@out/line <- \"ok\"\n").unwrap();
+  }
+
+  #[test]
+  fn new_cli_runtime_keeps_cli_alias_run_grant() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r#"config := {
+  hosts: [
+    {name: "term", provider: "cli", settings: {}}
+  ]
+  run: {
+    grants: [
+      {target: "term/stdout", operations: ["write"], paths: ["line"]}
+    ]
+  }
+}
+"#,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let run_grants = document.run.as_ref().unwrap().grants.as_slice();
+    let mut runtime = new_cli_runtime(
+      RuntimeConfig::default(),
+      &config::EffectiveCliHostGrants::default(),
+      &document.hosts,
+      run_grants,
+    ).unwrap();
+
+    runtime.run_string("+> @out := term/stdout\n@out/line <- \"ok\"\n").unwrap();
   }
 }
