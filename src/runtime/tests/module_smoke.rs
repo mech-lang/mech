@@ -2701,6 +2701,28 @@ fn with_test_cli<B: CliBackend + Clone + 'static>(builder: RuntimeBuilder, backe
 }
 
 #[test]
+fn with_test_cli_registers_cli_provider_for_instance_bases() {
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/test-home");
+
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new(),
+    backend,
+  )
+  .build()
+  .unwrap();
+
+  runtime
+    .grant_capability(runtime_context_read_grant(&runtime, "cli://cli/env", "HOME"))
+    .unwrap();
+
+  let result = runtime
+    .run_string("+> @env := cli/env\nhome := @env/HOME\nhome\n")
+    .unwrap();
+
+  assert_string_value(result, "/tmp/test-home");
+}
+
+#[test]
 fn runtime_bind_context_export_resolves_host_interface() {
   let backend = FakeCliBackend::default();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
