@@ -2,9 +2,9 @@ use std::{env::VarError, io::Write};
 
 use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 use mech_runtime::{
-    materialize_host_manifest, ConfigValue, HostManifestConfig, RuntimeHostFactory,
-    RuntimeHostInstallation, RuntimeResourceProvider, RuntimeResourceReadRequest,
-    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+    ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInstallation,
+    RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
+    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, materialize_host_manifest,
 };
 
 pub trait CliBackend: std::fmt::Debug {
@@ -56,13 +56,17 @@ impl<B: CliBackend> CliResourceProvider<B> {
         Self::for_instance("cli", backend)
     }
     pub fn for_instance(instance: impl Into<String>, backend: B) -> Self {
-        Self { instance: instance.into(), backend }
+        Self {
+            instance: instance.into(),
+            backend,
+        }
     }
     fn base(&self, context: &str) -> String {
         format!("cli://{}/{}", self.instance, context)
     }
     fn matches_base(&self, base_uri: &str, context: &str) -> bool {
-        base_uri == self.base(context) || (self.instance == "cli" && base_uri == format!("cli://{}", context))
+        base_uri == self.base(context)
+            || (self.instance == "cli" && base_uri == format!("cli://{}", context))
     }
     pub fn backend(&self) -> &B {
         &self.backend
@@ -80,26 +84,35 @@ impl<B: CliBackend> RuntimeResourceProvider for CliResourceProvider<B> {
     fn base_uris(&self) -> Vec<String> {
         let mut bases = vec![self.base("env"), self.base("stdout"), self.base("stderr")];
         if self.instance == "cli" {
-            bases.extend(["cli://env".to_string(), "cli://stdout".to_string(), "cli://stderr".to_string()]);
+            bases.extend([
+                "cli://env".to_string(),
+                "cli://stdout".to_string(),
+                "cli://stderr".to_string(),
+            ]);
         }
         bases
     }
 
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         if self.matches_base(&request.base_uri, "env") {
-                validate_env_key(&request.path)?;
-                let value = self.backend.env_var(&request.path)?.ok_or_else(|| {
-                    MechError::new(
-                        CliResourceProviderError {
-                            resource: request.base_uri.clone(),
-                            reason: format!("environment variable `{}` is not set", request.path),
-                        },
-                        None,
-                    )
-                })?;
-                Ok(Value::String(Ref::new(value)))
-        } else if self.matches_base(&request.base_uri, "stdout") || self.matches_base(&request.base_uri, "stderr") {
-            Err(cli_error(request.base_uri, "stdout/stderr are send-only and cannot be read; use <- to send"))
+            validate_env_key(&request.path)?;
+            let value = self.backend.env_var(&request.path)?.ok_or_else(|| {
+                MechError::new(
+                    CliResourceProviderError {
+                        resource: request.base_uri.clone(),
+                        reason: format!("environment variable `{}` is not set", request.path),
+                    },
+                    None,
+                )
+            })?;
+            Ok(Value::String(Ref::new(value)))
+        } else if self.matches_base(&request.base_uri, "stdout")
+            || self.matches_base(&request.base_uri, "stderr")
+        {
+            Err(cli_error(
+                request.base_uri,
+                "stdout/stderr are send-only and cannot be read; use <- to send",
+            ))
         } else {
             Err(cli_error(request.base_uri, "unsupported cli resource"))
         }
@@ -111,20 +124,22 @@ impl<B: CliBackend> RuntimeResourceProvider for CliResourceProvider<B> {
                 request.base_uri,
                 "cli env is read-only and does not support writes or sends",
             ))
-        } else if self.matches_base(&request.base_uri, "stdout") || self.matches_base(&request.base_uri, "stderr") {
-                if request.intent != RuntimeResourceWriteIntent::Send {
-                    return Err(cli_error(
-                        request.base_uri,
-                        "stdout/stderr are send-only; use <-",
-                    ));
-                }
-                match request.path.as_str() {
-                    "text" | "line" => Ok(()),
-                    _ => Err(cli_error(
-                        request.base_uri,
-                        "stdout/stderr support only `text` and `line` paths",
-                    )),
-                }
+        } else if self.matches_base(&request.base_uri, "stdout")
+            || self.matches_base(&request.base_uri, "stderr")
+        {
+            if request.intent != RuntimeResourceWriteIntent::Send {
+                return Err(cli_error(
+                    request.base_uri,
+                    "stdout/stderr are send-only; use <-",
+                ));
+            }
+            match request.path.as_str() {
+                "text" | "line" => Ok(()),
+                _ => Err(cli_error(
+                    request.base_uri,
+                    "stdout/stderr support only `text` and `line` paths",
+                )),
+            }
         } else {
             Err(cli_error(request.base_uri, "unsupported cli resource"))
         }
@@ -135,6 +150,7 @@ impl<B: CliBackend> RuntimeResourceProvider for CliResourceProvider<B> {
             base_uri: request.base_uri.clone(),
             path: request.path.clone(),
             context_name: request.context_name.clone(),
+            operation: request.operation.clone(),
             intent: request.intent,
         })?;
 
@@ -203,7 +219,6 @@ impl MechErrorKind for CliResourceProviderError {
     }
 }
 
-
 #[derive(Debug)]
 pub struct CliHostFactory {
     manifest: HostManifestConfig,
@@ -211,24 +226,40 @@ pub struct CliHostFactory {
 
 impl CliHostFactory {
     pub fn new() -> MResult<Self> {
-        Ok(Self { manifest: crate::cli_host_manifest()? })
+        Ok(Self {
+            manifest: crate::cli_host_manifest()?,
+        })
     }
 }
 
 impl RuntimeHostFactory for CliHostFactory {
-    fn provider_name(&self) -> &str { "cli" }
-    fn manifest(&self) -> &HostManifestConfig { &self.manifest }
+    fn provider_name(&self) -> &str {
+        "cli"
+    }
+    fn manifest(&self) -> &HostManifestConfig {
+        &self.manifest
+    }
     fn validate_settings(&self, _instance_name: &str, settings: &ConfigValue) -> MResult<()> {
         match settings {
             ConfigValue::Map(map) if map.is_empty() => Ok(()),
-            _ => Err(cli_error("cli://settings".to_string(), "cli host settings must be an empty map")),
+            _ => Err(cli_error(
+                "cli://settings".to_string(),
+                "cli host settings must be an empty map",
+            )),
         }
     }
-    fn instantiate(&self, instance_name: &str, settings: &ConfigValue) -> MResult<RuntimeHostInstallation> {
+    fn instantiate(
+        &self,
+        instance_name: &str,
+        settings: &ConfigValue,
+    ) -> MResult<RuntimeHostInstallation> {
         self.validate_settings(instance_name, settings)?;
         Ok(RuntimeHostInstallation {
             interface: materialize_host_manifest(instance_name, &self.manifest)?,
-            resource_providers: vec![Box::new(CliResourceProvider::for_instance(instance_name, StdCliBackend))],
+            resource_providers: vec![Box::new(CliResourceProvider::for_instance(
+                instance_name,
+                StdCliBackend,
+            ))],
         })
     }
 }
