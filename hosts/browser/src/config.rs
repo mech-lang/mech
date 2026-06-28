@@ -14,7 +14,6 @@ use mech_runtime::{
   parse_host_context_target, ConfigValue, DiagnosticsConfig, HostInstanceConfig, LogLevel,
   MechConfigDocument, RunResourceGrantConfig, RuntimeConfig, RuntimeLimits,
 };
-use crate::browser_available_host_providers;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
@@ -42,11 +41,10 @@ impl BrowserRuntimeInjectionConfig {
       validate_builtin_host_name_provider_collision(host)?;
     }
 
-    let available_providers = browser_available_host_providers();
     let mut hosts: Vec<HostInstanceConfig> = document
       .hosts
       .iter()
-      .filter(|host| available_providers.contains(&host.provider))
+      .filter(|host| host.provider == "browser")
       .cloned()
       .collect();
     if !hosts.iter().any(|host| host.name == "browser") {
@@ -453,26 +451,6 @@ fn injected_host_context_operations(
       Ok(vec!["read".to_string(), "write".to_string()])
     }
 
-    #[cfg(feature = "host-robot-arm")]
-    "robot-arm" => {
-      use mech_runtime::{materialize_host_manifest, RuntimeHostFactory};
-
-      let factory = mech_host_robot_arm::RobotArmHostFactory::new()?;
-      let interface = materialize_host_manifest(&host.name, factory.manifest())?;
-      let Some(context) = interface.contexts.iter().find(|context| context.name == context_name) else {
-        return Err(invalid_error(
-          "run.grants.target",
-          format!(
-            "host instance `{}` provider `{}` does not expose context `{}`",
-            host.name,
-            host.provider,
-            context_name,
-          ),
-        ));
-      };
-      Ok(context.operations.clone())
-    }
-
     other => Err(invalid_error(
       "hosts.provider",
       format!(
@@ -485,12 +463,6 @@ fn injected_host_context_operations(
 fn validate_injected_host_settings(host: &HostInstanceConfig) -> MResult<()> {
   match host.provider.as_str() {
     "browser" => browser_config_from_settings(&host.settings).map(|_| ()),
-    #[cfg(feature = "host-robot-arm")]
-    "robot-arm" => {
-      use mech_runtime::RuntimeHostFactory;
-      mech_host_robot_arm::RobotArmHostFactory::new()?
-        .validate_settings(&host.name, &host.settings)
-    }
     _ => Ok(()),
   }
 }
@@ -1421,61 +1393,6 @@ config := {
     assert!(injected.run_grants.is_empty());
   }
 
-  #[cfg(feature = "host-robot-arm")]
-  #[test]
-  fn browser_injection_keeps_available_robot_host() {
-    let document = parse_config_document(
-      "test.mcfg",
-      r##"
-config := {
-  hosts: [
-    {
-      name: "ui"
-      provider: "browser"
-      settings: {
-        dom: [
-          {
-            path: "x-slider/_value"
-            selector: "#x-slider"
-            property: "value"
-            operations: ["read"]
-          }
-        ]
-      }
-    }
-    {
-      name: "arm"
-      provider: "robot-arm"
-      settings: { backend: "mock" }
-    }
-  ]
-  run: {
-    grants: [
-      {
-        target: "ui/dom"
-        operations: ["read"]
-        paths: ["x-slider/_value"]
-      }
-      {
-        target: "arm/commands"
-        operations: ["move"]
-        paths: ["move"]
-      }
-    ]
-  }
-}
-"##,
-      ConfigProfileOptions::default(),
-    ).unwrap();
-    let injected =
-      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
-
-    assert!(injected.hosts.iter().any(|host| host.name == "ui" && host.provider == "browser"));
-    assert!(injected.hosts.iter().any(|host| host.name == "arm" && host.provider == "robot-arm"));
-    assert!(injected.run_grants.iter().any(|grant| grant.target == "ui/dom"));
-    assert!(injected.run_grants.iter().any(|grant| grant.target == "arm/commands"));
-  }
-
   #[test]
   fn browser_injection_filters_unavailable_provider() {
     let document = parse_config_document(
@@ -1512,120 +1429,6 @@ config := {
 
     assert!(!injected.hosts.iter().any(|host| host.name == "native"));
     assert!(injected.run_grants.is_empty());
-  }
-
-  #[cfg(feature = "host-robot-arm")]
-  #[test]
-  fn browser_injection_does_not_apply_browser_context_check_to_robot() {
-    let document = parse_config_document(
-      "test.mcfg",
-      r##"
-config := {
-  hosts: [
-    {
-      name: "arm"
-      provider: "robot-arm"
-      settings: { backend: "mock" }
-    }
-  ]
-  run: {
-    grants: [
-      {
-        target: "arm/commands"
-        operations: ["move"]
-        paths: ["move"]
-      }
-    ]
-  }
-}
-"##,
-      ConfigProfileOptions::default(),
-    ).unwrap();
-    let injected =
-      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
-
-    assert!(injected.hosts.iter().any(|host| host.name == "arm" && host.provider == "robot-arm"));
-    assert_eq!(injected.run_grants.len(), 1);
-    assert_eq!(injected.run_grants[0].target, "arm/commands");
-  }
-
-  #[cfg(feature = "host-robot-arm")]
-  #[test]
-  fn browser_runtime_injection_keeps_valid_robot_arm_grant() {
-    let document = parse_config_document(
-      "test.mcfg",
-      r##"
-config := {
-  hosts: [
-    { name: "arm" provider: "robot-arm" settings: { backend: "mock" } }
-  ]
-  run: {
-    grants: [
-      { target: "arm/commands" operations: ["move"] paths: ["move"] }
-    ]
-  }
-}
-"##,
-      ConfigProfileOptions::default(),
-    ).unwrap();
-    let injected =
-      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
-
-    assert!(injected.hosts.iter().any(|host| host.name == "arm" && host.provider == "robot-arm"));
-    assert!(injected.run_grants.iter().any(|grant| grant.target == "arm/commands"));
-  }
-
-  #[cfg(feature = "host-robot-arm")]
-  #[test]
-  fn browser_runtime_injection_rejects_robot_arm_unknown_context_grant() {
-    let document = parse_config_document(
-      "test.mcfg",
-      r##"
-config := {
-  hosts: [
-    { name: "arm" provider: "robot-arm" settings: { backend: "mock" } }
-  ]
-  run: {
-    grants: [
-      { target: "arm/typo" operations: ["move"] paths: ["move"] }
-    ]
-  }
-}
-"##,
-      ConfigProfileOptions::default(),
-    ).unwrap();
-    let err =
-      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap_err();
-    let error = format!("{err:?}");
-    assert!(error.contains("arm"), "got {error}");
-    assert!(error.contains("robot-arm"), "got {error}");
-    assert!(error.contains("typo"), "got {error}");
-  }
-
-  #[cfg(feature = "host-robot-arm")]
-  #[test]
-  fn browser_runtime_injection_rejects_robot_arm_unknown_operation_grant() {
-    let document = parse_config_document(
-      "test.mcfg",
-      r##"
-config := {
-  hosts: [
-    { name: "arm" provider: "robot-arm" settings: { backend: "mock" } }
-  ]
-  run: {
-    grants: [
-      { target: "arm/commands" operations: ["dance"] paths: ["dance"] }
-    ]
-  }
-}
-"##,
-      ConfigProfileOptions::default(),
-    ).unwrap();
-    let err =
-      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap_err();
-    let error = format!("{err:?}");
-    assert!(error.contains("arm/commands"), "got {error}");
-    assert!(error.contains("dance"), "got {error}");
   }
 
   #[test]

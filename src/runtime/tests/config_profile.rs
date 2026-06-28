@@ -58,6 +58,53 @@ fn shipped_browser_demo_sources_use_browser_dom_host_import() {
 }
 
 #[test]
+fn browser_host_crate_does_not_depend_on_robot_arm_host() {
+    let workspace_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let browser_cargo = std::fs::read_to_string(workspace_root.join("hosts/browser/Cargo.toml")).unwrap();
+    assert!(
+        !browser_cargo.contains("mech-host-robot-arm"),
+        "hosts/browser/Cargo.toml must not depend on mech-host-robot-arm"
+    );
+    assert!(
+        !browser_cargo.contains("host-robot-arm"),
+        "hosts/browser/Cargo.toml must not define a host-robot-arm feature"
+    );
+
+    fn visit(path: &std::path::Path, source: &mut String) {
+        for entry in std::fs::read_dir(path).unwrap() {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            if path.is_dir() {
+                visit(&path, source);
+            } else if path.extension().and_then(|ext| ext.to_str()) == Some("rs") {
+                source.push_str(&std::fs::read_to_string(path).unwrap());
+            }
+        }
+    }
+
+    let mut browser_source = String::new();
+    visit(&workspace_root.join("hosts/browser/src"), &mut browser_source);
+    assert!(
+        !browser_source.contains("mech_host_robot_arm"),
+        "hosts/browser source must not reference mech_host_robot_arm"
+    );
+    assert!(
+        !browser_source.contains("\"robot-arm\""),
+        "hosts/browser source must not know about the robot-arm provider"
+    );
+
+    let root_cargo = std::fs::read_to_string(workspace_root.join("Cargo.toml")).unwrap();
+    let host_robot_feature = root_cargo
+        .lines()
+        .find(|line| line.trim_start().starts_with("host-robot-arm ="))
+        .expect("root host-robot-arm feature should exist");
+    assert!(
+        !host_robot_feature.contains("mech-host-browser/"),
+        "root host-robot-arm feature must not enable mech-host-browser features"
+    );
+}
+
+#[test]
 fn config_profile_rich_mechdown_config_parses_and_lowers() {
     let doc = parse(
         r#"Project config
