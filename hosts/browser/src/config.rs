@@ -39,15 +39,7 @@ impl BrowserRuntimeInjectionConfig {
     runtime_config: &RuntimeConfig,
   ) -> MResult<Self> {
     for host in &document.hosts {
-      if host.name == "browser" && host.provider != "browser" {
-        return Err(invalid_error(
-          "hosts.browser",
-          format!(
-            "host instance `browser` is reserved for provider `browser` and cannot be configured as provider `{}`",
-            host.provider,
-          ),
-        ));
-      }
+      validate_builtin_host_name_provider_collision(host)?;
     }
 
     let available_providers = browser_available_host_providers();
@@ -67,23 +59,16 @@ impl BrowserRuntimeInjectionConfig {
     for host in &hosts {
       validate_injected_host_settings(host)?;
     }
-    let injected_hosts_by_name: BTreeMap<String, String> =
-      hosts.iter().map(|host| (host.name.clone(), host.provider.clone())).collect();
+    let injected_hosts_by_name: BTreeMap<String, HostInstanceConfig> =
+      hosts.iter().map(|host| (host.name.clone(), host.clone())).collect();
     let mut run_grants = Vec::new();
     if let Some(run) = &document.run {
       for grant in &run.grants {
-        let (instance, context) = parse_host_context_target(&grant.target)?;
-        let Some(provider) = injected_hosts_by_name.get(instance) else {
+        let (instance, _) = parse_host_context_target(&grant.target)?;
+        let Some(host) = injected_hosts_by_name.get(instance) else {
           continue;
         };
-        if provider == "browser" && !browser_context_is_injected(context) {
-          return Err(invalid_error(
-            "run.grants.target",
-            format!(
-              "browser host instance `{instance}` does not expose context `{context}`; supported browser contexts: dom"
-            ),
-          ));
-        }
+        validate_injected_run_grant(host, grant)?;
         run_grants.push(grant.clone());
       }
     }
@@ -394,8 +379,107 @@ fn browser_config_from_browser_hosts<'a>(
   Ok(BrowserHostBrowserConfig { grants, dom_manifest })
 }
 
-fn browser_context_is_injected(context: &str) -> bool {
-  context == "dom"
+fn validate_builtin_host_name_provider_collision(host: &HostInstanceConfig) -> MResult<()> {
+  match host.name.as_str() {
+    "browser" if host.provider != "browser" => Err(invalid_error(
+      "hosts",
+      format!(
+        "host instance `browser` is reserved for provider `browser` and cannot be configured as provider `{}`",
+        host.provider,
+      ),
+    )),
+    "cli" if host.provider != "cli" => Err(invalid_error(
+      "hosts",
+      format!(
+        "host instance `cli` is reserved for provider `cli` and cannot be configured as provider `{}`",
+        host.provider,
+      ),
+    )),
+    _ => Ok(()),
+  }
+}
+
+fn validate_injected_run_grant(
+  host: &HostInstanceConfig,
+  grant: &RunResourceGrantConfig,
+) -> MResult<()> {
+  let (instance, context_name) = parse_host_context_target(&grant.target)?;
+
+  if instance != host.name {
+    return Err(invalid_error(
+      "run.grants.target",
+      format!(
+        "run grant target `{}` does not match injected host instance `{}`",
+        grant.target,
+        host.name,
+      ),
+    ));
+  }
+
+  let operations = injected_host_context_operations(host, context_name)?;
+
+  for operation in &grant.operations {
+    if !operations.iter().any(|allowed| allowed == operation) {
+      return Err(invalid_error(
+        "run.grants.operations",
+        format!(
+          "host context `{}` does not expose operation `{}`",
+          grant.target,
+          operation,
+        ),
+      ));
+    }
+  }
+
+  Ok(())
+}
+
+fn injected_host_context_operations(
+  host: &HostInstanceConfig,
+  context_name: &str,
+) -> MResult<Vec<String>> {
+  match host.provider.as_str() {
+    "browser" => {
+      if context_name != "dom" {
+        return Err(invalid_error(
+          "run.grants.target",
+          format!(
+            "browser host instance `{}` does not expose context `{}`; supported browser contexts: dom",
+            host.name,
+            context_name,
+          ),
+        ));
+      }
+      Ok(vec!["read".to_string(), "write".to_string()])
+    }
+
+    #[cfg(feature = "host-robot-arm")]
+    "robot-arm" => {
+      use mech_runtime::{materialize_host_manifest, RuntimeHostFactory};
+
+      let factory = mech_host_robot_arm::RobotArmHostFactory::new()?;
+      let interface = materialize_host_manifest(&host.name, factory.manifest())?;
+      let Some(context) = interface.contexts.iter().find(|context| context.name == context_name) else {
+        return Err(invalid_error(
+          "run.grants.target",
+          format!(
+            "host instance `{}` provider `{}` does not expose context `{}`",
+            host.name,
+            host.provider,
+            context_name,
+          ),
+        ));
+      };
+      Ok(context.operations.clone())
+    }
+
+    other => Err(invalid_error(
+      "hosts.provider",
+      format!(
+        "cannot validate injected host provider `{other}` because no injection validator is registered"
+      ),
+    )),
+  }
 }
 
 fn validate_injected_host_settings(host: &HostInstanceConfig) -> MResult<()> {
@@ -1224,6 +1308,82 @@ config := {
   }
 
   #[test]
+  fn browser_runtime_injection_rejects_unknown_browser_context_grant() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    { name: "browser" provider: "browser" settings: {} }
+  ]
+  run: {
+    grants: [
+      { target: "browser/clipboard" operations: ["read"] paths: ["*"] }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let err =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap_err();
+    let error = format!("{err:?}");
+    assert!(error.contains("browser"), "got {error}");
+    assert!(error.contains("clipboard"), "got {error}");
+    assert!(error.contains("dom"), "got {error}");
+  }
+
+  #[test]
+  fn browser_runtime_injection_rejects_unsupported_browser_grant_operation() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    { name: "browser" provider: "browser" settings: {} }
+  ]
+  run: {
+    grants: [
+      { target: "browser/dom" operations: ["list"] paths: ["*"] }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let err =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap_err();
+    let error = format!("{err:?}");
+    assert!(error.contains("browser/dom"), "got {error}");
+    assert!(error.contains("list"), "got {error}");
+  }
+
+  #[test]
+  fn browser_runtime_injection_still_filters_non_injected_native_grant() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    { name: "native" provider: "fake-robot" settings: {} }
+  ]
+  run: {
+    grants: [
+      { target: "native/commands" operations: ["move"] paths: ["move"] }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let injected =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
+
+    assert!(!injected.hosts.iter().any(|host| host.name == "native"));
+    assert!(injected.run_grants.is_empty());
+  }
+
+  #[test]
   fn browser_runtime_injection_filters_non_browser_only_run_grant() {
     let document = parse_config_document(
       "test.mcfg",
@@ -1389,6 +1549,85 @@ config := {
     assert_eq!(injected.run_grants[0].target, "arm/commands");
   }
 
+  #[cfg(feature = "host-robot-arm")]
+  #[test]
+  fn browser_runtime_injection_keeps_valid_robot_arm_grant() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    { name: "arm" provider: "robot-arm" settings: { backend: "mock" } }
+  ]
+  run: {
+    grants: [
+      { target: "arm/commands" operations: ["move"] paths: ["move"] }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let injected =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
+
+    assert!(injected.hosts.iter().any(|host| host.name == "arm" && host.provider == "robot-arm"));
+    assert!(injected.run_grants.iter().any(|grant| grant.target == "arm/commands"));
+  }
+
+  #[cfg(feature = "host-robot-arm")]
+  #[test]
+  fn browser_runtime_injection_rejects_robot_arm_unknown_context_grant() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    { name: "arm" provider: "robot-arm" settings: { backend: "mock" } }
+  ]
+  run: {
+    grants: [
+      { target: "arm/typo" operations: ["move"] paths: ["move"] }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let err =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap_err();
+    let error = format!("{err:?}");
+    assert!(error.contains("arm"), "got {error}");
+    assert!(error.contains("robot-arm"), "got {error}");
+    assert!(error.contains("typo"), "got {error}");
+  }
+
+  #[cfg(feature = "host-robot-arm")]
+  #[test]
+  fn browser_runtime_injection_rejects_robot_arm_unknown_operation_grant() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    { name: "arm" provider: "robot-arm" settings: { backend: "mock" } }
+  ]
+  run: {
+    grants: [
+      { target: "arm/commands" operations: ["dance"] paths: ["dance"] }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let err =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap_err();
+    let error = format!("{err:?}");
+    assert!(error.contains("arm/commands"), "got {error}");
+    assert!(error.contains("dance"), "got {error}");
+  }
+
   #[test]
   fn browser_runtime_injection_keeps_alias_run_grant() {
     let document = parse_config_document(
@@ -1424,7 +1663,7 @@ config := {
   }
 
   #[test]
-  fn browser_reserved_name_rejects_non_browser_provider() {
+  fn browser_runtime_injection_rejects_non_browser_host_named_browser() {
     let document = parse_config_document(
       "test.mcfg",
       r##"
@@ -1455,6 +1694,31 @@ config := {
     assert!(error.contains("browser"), "got {error}");
     assert!(error.contains("reserved") || error.contains("provider"), "got {error}");
     assert!(error.contains("fake-robot"), "got {error}");
+  }
+
+  #[test]
+  fn browser_runtime_injection_rejects_browser_host_named_cli() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    {
+      name: "cli"
+      provider: "browser"
+      settings: {}
+    }
+  ]
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let err =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap_err();
+    let error = format!("{err:?}");
+    assert!(error.contains("cli"), "got {error}");
+    assert!(error.contains("browser"), "got {error}");
+    assert!(error.contains("reserved") || error.contains("provider"), "got {error}");
   }
 
   #[test]
