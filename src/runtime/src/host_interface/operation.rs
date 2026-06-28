@@ -43,17 +43,16 @@ fn invalid<T>(message: impl Into<String>) -> MResult<T> {
     Err(MechError::new(InvalidConfigField::new(message), None))
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn validates_spellable_operation_names() {
-        for operation in ["set-mode", "move"] {
+        for operation in ["move", "grip", "home", "set-mode", "set-speed2"] {
             validate_host_operation_name(operation).unwrap();
         }
-        for operation in ["set_mode", "Move", "move.arm", "move/arm"] {
+        for operation in ["set_mode", "Move", "moveArm", "move/arm", "move.arm", "move arm", ""] {
             assert!(validate_host_operation_name(operation).is_err(), "{operation} should be invalid");
         }
     }
