@@ -82,13 +82,11 @@ impl RuntimeResourceProvider for RobotArmResourceProvider {
                 "robot commands require context send (`<-`)",
             ));
         }
-        match request.operation.name() {
-            "move" | "grip" | "home" => Ok(()),
-            other => Err(robot_error(
-                request.base_uri,
-                format!("unsupported robot command `{other}`"),
-            )),
-        }
+        validate_command_target(
+            request.base_uri,
+            request.operation.name(),
+            &request.path,
+        )
     }
 
     fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
@@ -103,25 +101,25 @@ impl RuntimeResourceProvider for RobotArmResourceProvider {
             .state
             .lock()
             .map_err(|_| robot_error(request.base_uri.clone(), "robot state lock poisoned"))?;
-        match request.operation.name() {
-            "move" => {
+        match (request.operation.name(), request.path.as_str()) {
+            ("move", "move") => {
                 state.position = Some(request.value);
                 state.last_command = Some("move".to_string());
                 Ok(())
             }
-            "grip" => {
+            ("grip", "grip") => {
                 state.gripper = Some(request.value);
                 state.last_command = Some("grip".to_string());
                 Ok(())
             }
-            "home" => {
+            ("home", "home") => {
                 state.position = Some(Value::Empty);
                 state.last_command = Some("home".to_string());
                 Ok(())
             }
-            other => Err(robot_error(
+            (operation, path) => Err(robot_error(
                 request.base_uri,
-                format!("unsupported robot command `{other}`"),
+                format!("unsupported robot command `{operation}` at path `{path}`"),
             )),
         }
     }
@@ -179,6 +177,18 @@ impl RuntimeHostFactory for RobotArmHostFactory {
             interface: materialize_host_manifest(instance_name, &self.manifest)?,
             resource_providers: vec![Box::new(RobotArmResourceProvider::new(instance_name))],
         })
+    }
+}
+
+fn validate_command_target(base_uri: String, operation: &str, path: &str) -> MResult<()> {
+    match (operation, path) {
+        ("move", "move") => Ok(()),
+        ("grip", "grip") => Ok(()),
+        ("home", "home") => Ok(()),
+        (operation, path) => Err(robot_error(
+            base_uri,
+            format!("unsupported robot command `{operation}` at path `{path}`"),
+        )),
     }
 }
 
@@ -241,6 +251,47 @@ mod tests {
         assert_eq!(state.last_command.as_deref(), Some("grip"));
         assert!(state.position.is_some());
         assert!(state.gripper.is_some());
+    }
+
+    fn send_request(operation: &str, path: &str) -> RuntimeResourceWriteRequest {
+        RuntimeResourceWriteRequest {
+            base_uri: "robot://arm/commands".to_string(),
+            path: path.to_string(),
+            context_name: "commands".to_string(),
+            operation: RuntimeCapabilityOperation::Custom(operation.to_string()),
+            value: bool_value(true),
+            intent: RuntimeResourceWriteIntent::Send,
+        }
+    }
+
+    #[test]
+    fn robot_provider_accepts_exact_command_paths() {
+        let mut provider = RobotArmResourceProvider::new("arm");
+        for (operation, path) in [("move", "move"), ("grip", "grip"), ("home", "home")] {
+            provider.write(send_request(operation, path)).unwrap();
+        }
+    }
+
+    #[test]
+    fn robot_provider_rejects_command_subpaths() {
+        let mut provider = RobotArmResourceProvider::new("arm");
+        for (operation, path) in [("move", "move/typo"), ("grip", "grip/closed"), ("home", "home/reset")] {
+            let error = provider.write(send_request(operation, path)).expect_err("subpath should be rejected");
+            let message = error.display_message();
+            assert!(message.contains(operation), "got {message}");
+            assert!(message.contains(path), "got {message}");
+        }
+    }
+
+    #[test]
+    fn robot_provider_rejects_mismatched_operation_and_path() {
+        let mut provider = RobotArmResourceProvider::new("arm");
+        for (operation, path) in [("move", "grip"), ("grip", "move")] {
+            let error = provider.write(send_request(operation, path)).expect_err("mismatch should be rejected");
+            let message = error.display_message();
+            assert!(message.contains(operation), "got {message}");
+            assert!(message.contains(path), "got {message}");
+        }
     }
 
     #[test]

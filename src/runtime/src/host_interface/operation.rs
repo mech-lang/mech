@@ -17,9 +17,9 @@ pub fn validate_host_operation_name(operation: &str) -> MResult<()> {
             "host operation `{operation}` must start with a lowercase ASCII letter"
         ));
     }
-    if !chars.all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-' || ch == '_') {
+    if !chars.all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-') {
         return invalid(format!(
-            "host operation `{operation}` may contain only lowercase ASCII letters, digits, `-`, or `_`"
+            "host operation `{operation}` may contain only lowercase ASCII letters, digits, or `-`"
         ));
     }
     Ok(())
@@ -41,4 +41,20 @@ pub fn validate_host_operations(field: &str, operations: &[String]) -> MResult<(
 
 fn invalid<T>(message: impl Into<String>) -> MResult<T> {
     Err(MechError::new(InvalidConfigField::new(message), None))
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validates_spellable_operation_names() {
+        for operation in ["set-mode", "move"] {
+            validate_host_operation_name(operation).unwrap();
+        }
+        for operation in ["set_mode", "Move", "move.arm", "move/arm"] {
+            assert!(validate_host_operation_name(operation).is_err(), "{operation} should be invalid");
+        }
+    }
 }
