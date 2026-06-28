@@ -111,6 +111,31 @@ fn browser_host_crate_does_not_depend_on_robot_arm_host() {
 }
 
 #[test]
+fn robot_arm_demos_are_host_owned_not_top_level_examples() {
+    let workspace_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+
+    for path in [
+        "hosts/robot-arm/examples/robot-arm-demo/demo.mcfg",
+        "hosts/robot-arm/examples/robot-arm-demo/demo.mec",
+        "hosts/robot-arm/examples/browser-robot-arm-demo/demo.mcfg",
+        "hosts/robot-arm/examples/browser-robot-arm-demo/demo.mec",
+        "hosts/robot-arm/examples/browser-robot-arm-demo/demo.js",
+    ] {
+        assert!(workspace_root.join(path).exists(), "{path} should exist under the robot-arm host package");
+    }
+
+    for path in [
+        "examples/robot-arm-demo/demo.mcfg",
+        "examples/robot-arm-demo/demo.mec",
+        "examples/browser-robot-arm-demo/demo.mcfg",
+        "examples/browser-robot-arm-demo/demo.mec",
+        "examples/browser-robot-arm-demo/demo.js",
+    ] {
+        assert!(!workspace_root.join(path).exists(), "{path} should not exist in generic top-level examples");
+    }
+}
+
+#[test]
 fn config_profile_rich_mechdown_config_parses_and_lowers() {
     let doc = parse(
         r#"Project config
