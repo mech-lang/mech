@@ -1,4 +1,4 @@
-import init, { WasmMech } from '../../pkg/mech_wasm.js';
+import init, { WasmMech } from '/pkg/mech_wasm.js';
 
 const canvas = document.querySelector('#arm-canvas');
 const ctx = canvas.getContext('2d');

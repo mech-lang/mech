@@ -5,4 +5,4 @@ These examples belong to the `mech-host-robot-arm` package. They are not part of
 The examples require a composition build or runner that registers `RobotArmHostFactory` alongside any other required host factories.
 
 - `robot-arm-demo/` demonstrates the robot-arm host directly.
-- `browser-robot-arm-demo/` demonstrates a browser UI plus a robot-arm host. It requires an explicit composition layer that registers both browser and robot-arm hosts.
+- `browser-robot-arm-demo/` demonstrates a browser UI plus a robot-arm host. It expects a composition server/build that registers both browser and robot-arm hosts and serves the wasm package at `/pkg/`.
