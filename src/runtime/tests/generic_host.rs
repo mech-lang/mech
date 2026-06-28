@@ -126,19 +126,27 @@ fn robot_runtime(log: Arc<Mutex<Vec<String>>>) -> MResult<MechRuntime> {
 }
 
 #[test]
-fn host_instance_different_provider_builtin_collision_fails() {
+fn duplicate_host_instance_registration_fails_generically() {
   let error = RuntimeBuilder::new()
+    .host_factory(Box::new(FakeBrowserFactory::new()))
+    .unwrap()
+    .host_factory(Box::new(FakeRobotFactory::new(Arc::new(Mutex::new(Vec::new())))))
+    .unwrap()
     .host_instance(HostInstanceConfig {
-      name: "cli".to_string(),
+      name: "shared".to_string(),
       provider: "browser".to_string(),
       settings: ConfigValue::Map(Default::default()),
     })
+    .host_instance(HostInstanceConfig {
+      name: "shared".to_string(),
+      provider: "fake-robot".to_string(),
+      settings: ConfigValue::Map(Default::default()),
+    })
     .build()
-    .expect_err("different-provider built-in host collision should fail");
+    .expect_err("duplicate host instance registration should fail");
   let error = format!("{error:?}");
-  assert!(error.contains("cli"), "got {error}");
-  assert!(error.contains("built in"), "got {error}");
-  assert!(error.contains("browser"), "got {error}");
+  assert!(error.contains("shared"), "got {error}");
+  assert!(error.contains("duplicate") || error.contains("already"), "got {error}");
 }
 
 #[test]

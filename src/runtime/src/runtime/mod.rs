@@ -37,8 +37,7 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 
 use mech_core::{
-  browser_capability_error, BrowserDomPath, BROWSER_DOM_PROVIDER_URI, MResult, MechError,
-  MechErrorKind, MechSourceCode, Value,
+  MResult, MechError, MechErrorKind, MechSourceCode, Value,
   NativeFunctionCompiler, MechFunctionImpl, Register, CompileCtx, MechFunctionCompiler,
   hash_str, ModuleManifestCatalog, ModuleManifestConfig,
 };
@@ -104,32 +103,13 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
-use crate::{register_config_spec_grants, register_config_spec_resources, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RunResourceGrantConfig, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, resource_base_matches, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
+use crate::{register_config_spec_grants, register_config_spec_resources, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RunResourceGrantConfig, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
 
 thread_local! {
   static ACTIVE_RUNTIME_PROGRAM_HOST: RefCell<Option<RuntimeProgramHostTarget>> =
     RefCell::new(None);
 }
 
-
-fn default_host_interfaces() -> MResult<HostInterfaceCatalog> {
-  let mut catalog = HostInterfaceCatalog::new();
-  catalog.register(crate::MaterializedHostInterface {
-    instance: "cli".to_string(),
-    provider: "cli".to_string(),
-    contexts: vec![
-      crate::MaterializedHostContext { name: "env".to_string(), base_uri: "cli://cli/env".to_string(), operations: vec!["read".to_string()] },
-      crate::MaterializedHostContext { name: "stdout".to_string(), base_uri: "cli://cli/stdout".to_string(), operations: vec!["write".to_string()] },
-      crate::MaterializedHostContext { name: "stderr".to_string(), base_uri: "cli://cli/stderr".to_string(), operations: vec!["write".to_string()] },
-    ],
-  })?;
-  catalog.register(crate::MaterializedHostInterface {
-    instance: "browser".to_string(),
-    provider: "browser".to_string(),
-    contexts: vec![crate::MaterializedHostContext { name: "dom".to_string(), base_uri: mech_core::BROWSER_DOM_PROVIDER_URI.to_string(), operations: vec!["read".to_string(), "write".to_string()] }],
-  })?;
-  Ok(catalog)
-}
 
 // -----------------------------------------------------------------------------
 // Runtime Builder
@@ -345,23 +325,10 @@ impl RuntimeBuilder {
       },
     };
 
-    let mut host_interfaces = default_host_interfaces()?;
+    let mut host_interfaces = HostInterfaceCatalog::new();
     for host_instance in &self.host_instances {
-      if let Some(existing) = host_interfaces.interface(&host_instance.name) {
-        if existing.provider != host_instance.provider {
-          return Err(MechError::new(RuntimeInvalidOperationError {
-            operation: "host_instance",
-            reason: format!(
-              "host instance `{}` is built in as provider `{}` and cannot be configured as provider `{}`",
-              host_instance.name, existing.provider, host_instance.provider,
-            ),
-          }, None));
-        }
-      }
       let installation = self.host_factories.instantiate(host_instance)?;
-      if host_interfaces.interface(&installation.interface.instance).is_none() {
-        host_interfaces.register(installation.interface)?;
-      }
+      host_interfaces.register(installation.interface)?;
       self.resource_providers.extend(installation.resource_providers);
     }
 
@@ -574,20 +541,16 @@ impl MechRuntime {
       ));
     }
 
-    let uri = uri.as_ref().trim_end_matches('/');
-    let mut base_uri = uri.to_string();
-    let mut root_path = String::new();
-    if resource_base_matches(BROWSER_DOM_PROVIDER_URI, uri) {
-      base_uri = BROWSER_DOM_PROVIDER_URI.to_string();
-      root_path = uri
-        .strip_prefix(BROWSER_DOM_PROVIDER_URI)
-        .unwrap_or_default()
-        .trim_matches('/')
-        .to_string();
-      if !root_path.is_empty() {
-        BrowserDomPath::new(root_path.clone()).map_err(browser_capability_error)?;
-      }
-    }
+    let uri = uri.as_ref().trim_end_matches('/').to_string();
+    let base_uri = self
+      .resources
+      .provider_base_uri_for(&uri)?
+      .unwrap_or_else(|| uri.clone());
+    let root_path = uri
+      .strip_prefix(&base_uri)
+      .unwrap_or_default()
+      .trim_matches('/')
+      .to_string();
 
     self.resource_bindings.insert(
       name.clone(),
@@ -621,68 +584,6 @@ impl MechRuntime {
       format!("{}/{}", binding_record.root_path, child_path)
     };
     Ok((binding_record.base_uri.clone(), full_path))
-  }
-
-  pub fn resolve_resource_path(
-    &self,
-    binding: &str,
-    child_path: &str,
-  ) -> MResult<BrowserDomPath> {
-    let (base_uri, full_path) = self.resolve_bound_resource_parts(binding, child_path)?;
-    if base_uri != BROWSER_DOM_PROVIDER_URI {
-      return Err(browser_runtime_resource_error(
-        binding,
-        "only browser DOM resource bindings are supported",
-      ));
-    }
-    BrowserDomPath::new(full_path).map_err(browser_capability_error)
-  }
-
-  pub fn read_bound_resource(
-    &self,
-    binding: &str,
-    child_path: &str,
-  ) -> MResult<Value> {
-    let (base_uri, path) = self.resolve_bound_resource_parts(binding, child_path)?;
-    self.resources.read(RuntimeResourceReadRequest {
-      base_uri,
-      path,
-      context_name: binding.to_string(),
-    })
-  }
-
-  pub fn write_bound_resource(
-    &mut self,
-    binding: &str,
-    child_path: &str,
-    value: &Value,
-  ) -> MResult<()> {
-    let (base_uri, path) = self.resolve_bound_resource_parts(binding, child_path)?;
-    self.resources.write(RuntimeResourceWriteRequest {
-      base_uri,
-      path,
-      context_name: binding.to_string(),
-      operation: RuntimeCapabilityOperation::Write,
-      value: value.clone(),
-      intent: RuntimeResourceWriteIntent::Assign,
-    })
-  }
-
-  pub fn read_browser_dom_resource(
-    &self,
-    binding: &str,
-    child_path: &str,
-  ) -> MResult<Value> {
-    self.read_bound_resource(binding, child_path)
-  }
-
-  pub fn write_browser_dom_resource(
-    &mut self,
-    binding: &str,
-    child_path: &str,
-    value: &Value,
-  ) -> MResult<()> {
-    self.write_bound_resource(binding, child_path, value)
   }
 
   pub fn apply_config_spec(

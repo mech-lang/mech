@@ -37,17 +37,13 @@ impl BrowserRuntimeInjectionConfig {
     document: &MechConfigDocument,
     runtime_config: &RuntimeConfig,
   ) -> MResult<Self> {
-    for host in &document.hosts {
-      validate_builtin_host_name_provider_collision(host)?;
-    }
-
     let mut hosts: Vec<HostInstanceConfig> = document
       .hosts
       .iter()
       .filter(|host| host.provider == "browser")
       .cloned()
       .collect();
-    if !hosts.iter().any(|host| host.name == "browser") {
+    if !document.hosts.iter().any(|host| host.name == "browser") {
       hosts.push(HostInstanceConfig {
         name: "browser".to_string(),
         provider: "browser".to_string(),
@@ -375,26 +371,6 @@ fn browser_config_from_browser_hosts<'a>(
   }
 
   Ok(BrowserHostBrowserConfig { grants, dom_manifest })
-}
-
-fn validate_builtin_host_name_provider_collision(host: &HostInstanceConfig) -> MResult<()> {
-  match host.name.as_str() {
-    "browser" if host.provider != "browser" => Err(invalid_error(
-      "hosts",
-      format!(
-        "host instance `browser` is reserved for provider `browser` and cannot be configured as provider `{}`",
-        host.provider,
-      ),
-    )),
-    "cli" if host.provider != "cli" => Err(invalid_error(
-      "hosts",
-      format!(
-        "host instance `cli` is reserved for provider `cli` and cannot be configured as provider `{}`",
-        host.provider,
-      ),
-    )),
-    _ => Ok(()),
-  }
 }
 
 fn validate_injected_run_grant(
@@ -1356,6 +1332,31 @@ config := {
   }
 
   #[test]
+  fn browser_runtime_injection_does_not_shadow_non_browser_host_named_browser() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    { name: "browser" provider: "fake-robot" settings: {} }
+  ]
+  run: {
+    grants: [
+      { target: "browser/dom" operations: ["read"] paths: ["counter/_text"] }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let injected =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
+
+    assert!(injected.hosts.is_empty());
+    assert!(injected.run_grants.is_empty());
+  }
+
+  #[test]
   fn browser_runtime_injection_filters_non_browser_only_run_grant() {
     let document = parse_config_document(
       "test.mcfg",
@@ -1463,65 +1464,6 @@ config := {
     assert!(injected.hosts.iter().any(|host| host.name == "ui"));
     assert_eq!(injected.run_grants.len(), 1);
     assert_eq!(injected.run_grants[0].target, "ui/dom");
-  }
-
-  #[test]
-  fn browser_runtime_injection_rejects_non_browser_host_named_browser() {
-    let document = parse_config_document(
-      "test.mcfg",
-      r##"
-config := {
-  hosts: [
-    {
-      name: "browser"
-      provider: "fake-robot"
-      settings: {}
-    }
-  ]
-  run: {
-    grants: [
-      {
-        target: "browser/dom"
-        operations: ["read"]
-        paths: ["counter/_text"]
-      }
-    ]
-  }
-}
-"##,
-      ConfigProfileOptions::default(),
-    ).unwrap();
-    let err =
-      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap_err();
-    let error = format!("{err:?}");
-    assert!(error.contains("browser"), "got {error}");
-    assert!(error.contains("reserved") || error.contains("provider"), "got {error}");
-    assert!(error.contains("fake-robot"), "got {error}");
-  }
-
-  #[test]
-  fn browser_runtime_injection_rejects_browser_host_named_cli() {
-    let document = parse_config_document(
-      "test.mcfg",
-      r##"
-config := {
-  hosts: [
-    {
-      name: "cli"
-      provider: "browser"
-      settings: {}
-    }
-  ]
-}
-"##,
-      ConfigProfileOptions::default(),
-    ).unwrap();
-    let err =
-      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap_err();
-    let error = format!("{err:?}");
-    assert!(error.contains("cli"), "got {error}");
-    assert!(error.contains("browser"), "got {error}");
-    assert!(error.contains("reserved") || error.contains("provider"), "got {error}");
   }
 
   #[test]

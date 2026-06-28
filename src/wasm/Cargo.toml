@@ -66,7 +66,6 @@ mika = ["mech-syntax/mika", "mech-core/mika", "mech-runtime/mika"]
 serde = ["mech-core/serde", "mech-syntax/serde", "mech-interpreter/serde", "mech-runtime/serde", "mech-host-browser/serde"]
 host_delegation = ["serde", "mech-runtime/host_delegation", "mech-host-browser/delegation"]
 host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_signing", "mech-host-browser/delegation_signing"]
-host-robot-arm = ["dep:mech-host-robot-arm", "mech-host-robot-arm/provider"]
 run_program = ["program"]
 inline_output_values = []
 codeblock_output_values = []
@@ -296,7 +295,6 @@ mech-syntax = { version = "0.3.5", default-features = false}
 mech-interpreter = { version = "0.3.5", default-features = false}
 mech-runtime = { path = "../runtime", default-features = false }
 mech-host-browser = { path = "../../hosts/browser", default-features = false, features = ["provider"] }
-mech-host-robot-arm = { path = "../../hosts/robot-arm", default-features = false, optional = true }
 
 wasm-bindgen = "0.2.100"
 serde-wasm-bindgen = "0.6.5"

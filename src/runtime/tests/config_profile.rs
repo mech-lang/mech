@@ -85,22 +85,28 @@ fn browser_host_crate_does_not_depend_on_robot_arm_host() {
     let mut browser_source = String::new();
     visit(&workspace_root.join("hosts/browser/src"), &mut browser_source);
     assert!(
-        !browser_source.contains("mech_host_robot_arm"),
-        "hosts/browser source must not reference mech_host_robot_arm"
+        !browser_source.contains(&["mech", "_host", "_robot", "_arm"].concat()),
+        "hosts/browser source must not reference mech-host-robot-arm"
     );
     assert!(
         !browser_source.contains("\"robot-arm\""),
         "hosts/browser source must not know about the robot-arm provider"
     );
+    assert!(
+        !browser_source.contains("\"cli\""),
+        "hosts/browser source must not know about the CLI provider"
+    );
 
     let root_cargo = std::fs::read_to_string(workspace_root.join("Cargo.toml")).unwrap();
-    let host_robot_feature = root_cargo
-        .lines()
-        .find(|line| line.trim_start().starts_with("host-robot-arm ="))
-        .expect("root host-robot-arm feature should exist");
     assert!(
-        !host_robot_feature.contains("mech-host-browser/"),
-        "root host-robot-arm feature must not enable mech-host-browser features"
+        !root_cargo.lines().any(|line| line.trim_start().starts_with("host-robot-arm =")),
+        "root Cargo.toml must not define a host-robot-arm feature"
+    );
+
+    let wasm_cargo = std::fs::read_to_string(workspace_root.join("src/wasm/Cargo.toml")).unwrap();
+    assert!(
+        !wasm_cargo.lines().any(|line| line.trim_start().starts_with("host-robot-arm =")),
+        "src/wasm/Cargo.toml must not define a host-robot-arm feature"
     );
 }
 

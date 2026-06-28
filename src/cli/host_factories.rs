@@ -12,12 +12,6 @@ pub fn register_cli_host_factories(
     providers.insert(cli_factory.provider_name().to_string());
     builder = builder.host_factory(Box::new(cli_factory))?;
 
-    #[cfg(feature = "host-robot-arm")]
-    {
-        let robot_factory = mech_host_robot_arm::RobotArmHostFactory::new()?;
-        providers.insert(robot_factory.provider_name().to_string());
-        builder = builder.host_factory(Box::new(robot_factory))?;
-    }
 
     Ok((builder, providers))
 }

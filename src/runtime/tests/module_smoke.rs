@@ -15,6 +15,26 @@ fn setup_modules(main_source: &str) -> std::path::PathBuf {
 
 
 
+fn browser_dom_manifest() -> ModuleManifestConfig {
+  ModuleManifestConfig {
+    name: "browser".to_string(),
+    exports: vec![ModuleManifestExportConfig {
+      name: "dom".to_string(),
+      kind: ModuleManifestExportKind::Context,
+      base_uri: "browser://dom".to_string(),
+      operations: vec!["read".to_string(), "write".to_string()],
+    }],
+  }
+}
+
+fn runtime_with_browser_manifest() -> mech_runtime::MechRuntime {
+  RuntimeBuilder::new()
+    .module_manifest(browser_dom_manifest())
+    .unwrap()
+    .build()
+    .unwrap()
+}
+
 fn runtime_with_root(root: &std::path::Path) -> mech_runtime::MechRuntime {
   RuntimeBuilder::new().source_resolver(FileSourceResolver::new(root)).build().unwrap()
 }
@@ -121,12 +141,14 @@ fn runtime_with_recording_cli() -> (MechRuntime, Arc<Mutex<RecordingCliState>>) 
 
 fn grant_runtime_stdout_line(runtime: &mut MechRuntime) {
   let subject = runtime.runtime_context().unwrap().subject;
-  runtime.grant_capability(RuntimeCapabilityGrant {
-    subject,
-    resource: "cli://cli/stdout".to_string(),
-    operations: vec![RuntimeCapabilityOperation::Write],
-    paths: vec!["line".to_string()],
-  }).unwrap();
+  for resource in ["cli://cli/stdout", "cli://stdout"] {
+    runtime.grant_capability(RuntimeCapabilityGrant {
+      subject: subject.clone(),
+      resource: resource.to_string(),
+      operations: vec![RuntimeCapabilityOperation::Write],
+      paths: vec!["line".to_string()],
+    }).unwrap();
+  }
 }
 
 fn run_module_as_main(runtime: &mut MechRuntime, version: ModuleVersionId) -> mech_core::MResult<Value> {
@@ -923,7 +945,7 @@ fn derived_context_unknown_base_is_rejected() {
 
 #[test]
 fn direct_runtime_derived_context_without_host_read_preflights() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let mut runtime = runtime_with_browser_manifest();
   runtime.run_string("@base := docs://manual{:read(*)}\n@docs := @base\nx := 1\n").unwrap();
 }
 
@@ -943,7 +965,7 @@ fn direct_runtime_derived_context_read_uses_alias() {
 
 #[test]
 fn derived_context_cannot_expand_capabilities() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let mut runtime = runtime_with_browser_manifest();
   let result = runtime.run_string("@base := docs://manual{:read(intro/title)}\n@docs := @base{:write(intro/title)}\n");
   assert!(result.is_err(), "derived write should not be allowed to expand read-only base");
   let error = format!("{:?}", result.err().unwrap());
@@ -2302,7 +2324,7 @@ fn workspace_watcher_watches_configured_folder() {
       .folder("src"),
   ).unwrap();
 
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let mut runtime = runtime_with_browser_manifest();
   let watcher = RuntimeWorkspaceWatcher::open(&workspace, &mut runtime).unwrap();
   let watched_paths = watcher.watched_paths();
 
@@ -2427,7 +2449,7 @@ fn context_import_alias_is_not_bound_as_value_import() {
 #[cfg(feature = "linked_stdlib")]
 #[test]
 fn direct_runtime_normal_import_is_not_dropped() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let mut runtime = runtime_with_browser_manifest();
   let result = runtime.run_string("+> math/sin\nresult := sin(0)\n").unwrap();
 
   match result {
@@ -2438,7 +2460,7 @@ fn direct_runtime_normal_import_is_not_dropped() {
 
 #[test]
 fn manifest_context_import_ordering_supports_derived_alias() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let mut runtime = runtime_with_browser_manifest();
   let result = runtime.run_string("+> @ui := browser/dom\n@dom := @ui\n");
   assert!(result.is_ok(), "manifest context import should be available to later derived alias: {result:?}");
 }
@@ -2517,7 +2539,7 @@ fn stored_module_derived_context_before_manifest_base_is_rejected() {
 
 #[test]
 fn direct_runtime_manifest_context_import_read_uses_browser_binding_before_lowering() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let mut runtime = runtime_with_browser_manifest();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "browser://dom", "counter/_text")).unwrap();
   let result = runtime.run_string("+> @ui := browser/dom\ntitle := @ui/counter/_text\n");
   assert!(result.is_err(), "expected browser provider failure without a browser provider");
@@ -2528,7 +2550,7 @@ fn direct_runtime_manifest_context_import_read_uses_browser_binding_before_lower
 
 #[test]
 fn direct_runtime_manifest_context_import_write_uses_provider_lookup() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let mut runtime = runtime_with_browser_manifest();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "browser://dom", "counter/_text")).unwrap();
   let result = runtime.run_string("+> @ui := browser/dom
 @ui/counter/_text = \"hello\"
@@ -2613,7 +2635,7 @@ fn fenced_context_alias_can_match_unrelated_interpreter_name_without_resolving_a
 }
 #[test]
 fn direct_runtime_context_addressed_slice_is_rejected_explicitly() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let mut runtime = runtime_with_browser_manifest();
   let result = runtime.run_string("+> @ui := browser/dom\nx := @ui/counter[0]\n");
   assert!(result.is_err(), "context-addressed browser slices should be explicit until semantics are defined");
   let error = format!("{:?}", result.err().unwrap());
@@ -2729,7 +2751,7 @@ fn with_test_cli_registers_cli_provider_for_instance_bases() {
   .unwrap();
 
   runtime
-    .grant_capability(runtime_context_read_grant(&runtime, "cli://cli/env", "HOME"))
+    .grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME"))
     .unwrap();
 
   let result = runtime
@@ -2842,7 +2864,7 @@ fn cli_manifest_env_import_reads_through_runtime() {
 
   let mut runtime = runtime_with_fake_cli(state.clone());
   runtime
-    .grant_capability(runtime_context_read_grant(&runtime, "cli://cli/env", "HOME"))
+    .grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME"))
     .unwrap();
 
   let result = runtime
@@ -2869,7 +2891,7 @@ fn cli_manifest_stdout_send_line_writes_through_runtime() {
   let mut runtime = runtime_with_fake_cli(state.clone());
 
   runtime
-    .grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line"))
+    .grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line"))
     .unwrap();
 
   runtime
@@ -2889,7 +2911,7 @@ fn cli_manifest_stderr_send_text_writes_through_runtime() {
   let mut runtime = runtime_with_fake_cli(state.clone());
 
   runtime
-    .grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stderr", "text"))
+    .grant_capability(runtime_context_write_grant(&runtime, "cli://stderr", "text"))
     .unwrap();
 
   runtime
@@ -2909,7 +2931,7 @@ fn cli_stdout_assignment_errors_and_writes_nothing() {
   let mut runtime = runtime_with_fake_cli(state.clone());
 
   runtime
-    .grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line"))
+    .grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line"))
     .unwrap();
 
   let result = runtime.run_string("+> @out := cli/stdout
@@ -2928,7 +2950,7 @@ fn cli_stdout_define_errors_and_writes_nothing() {
   let mut runtime = runtime_with_fake_cli(state.clone());
 
   runtime
-    .grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line"))
+    .grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line"))
     .unwrap();
 
   let result = runtime.run_string("+> @out := cli/stdout
@@ -2980,7 +3002,7 @@ fn cli_stdout_missing_write_grant_fails_before_backend() {
 fn cli_host_env_manifest_import_reads_with_runtime_grant() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/mech-home");
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://cli/env", "HOME")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   runtime.run_string("+> @env := cli/env\nhome := @env/HOME\n").unwrap();
   let id = hash_str("home");
   let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
@@ -2995,7 +3017,7 @@ fn cli_host_stdout_send_writes_line_with_runtime_grant() {
   let backend = FakeCliBackend::default();
   let stdout = backend.stdout.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap();
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
 }
@@ -3005,7 +3027,7 @@ fn cli_host_stderr_send_writes_text_with_runtime_grant() {
   let backend = FakeCliBackend::default();
   let stderr = backend.stderr.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stderr", "text")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stderr", "text")).unwrap();
   runtime.run_string("+> @err := cli/stderr\n@err/text <- \"warning\"\n").unwrap();
   assert_eq!(stderr.lock().unwrap().as_slice(), &["warning".to_string()]);
 }
@@ -3015,7 +3037,7 @@ fn cli_host_stdout_assignment_errors_and_writes_nothing() {
   let backend = FakeCliBackend::default();
   let stdout = backend.stdout.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let result = runtime.run_string("+> @out := cli/stdout\n@out/line = \"hello\"\n");
   assert!(result.is_err(), "stdout assignment should error");
   assert!(stdout.lock().unwrap().is_empty(), "stdout assignment should not write");
@@ -3026,7 +3048,7 @@ fn cli_host_stdout_definition_errors_and_writes_nothing() {
   let backend = FakeCliBackend::default();
   let stdout = backend.stdout.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let result = runtime.run_string("+> @out := cli/stdout\n@out/line := \"hello\"\n");
   assert!(result.is_err(), "stdout definition should error");
   assert!(stdout.lock().unwrap().is_empty(), "stdout definition should not write");
@@ -3081,7 +3103,7 @@ fn default_cli_stdout_grant_allows_send() {
   let stdout = backend.stdout.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "text")).unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap();
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
 }
@@ -3102,7 +3124,7 @@ fn narrow_stdout_grant_permits_line_but_denies_text() {
   let backend = FakeCliBackend::default();
   let stdout = backend.stdout.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap();
   let result = runtime.run_string("+> @out := cli/stdout\n@out/text <- \"bad\"\n");
   assert!(result.is_err());
@@ -3202,7 +3224,7 @@ fn nested_env_read_denial_preflights_before_stdout_write() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let stdout = backend.stdout.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let result = runtime.run_string("+> @env := cli/env\n+> @out := cli/stdout\n@out/line <- \"must-not-write\"\nx := [@env/HOME]\n");
   assert!(result.is_err());
   assert!(format!("{:?}", result.err().unwrap()).contains("RuntimeCapabilityGrantDenied"));
@@ -3214,7 +3236,7 @@ fn function_define_env_read_denial_preflights_before_stdout_write() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let stdout = backend.stdout.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let result = runtime.run_string("+> @out := cli/stdout\n+> @env := cli/env\n@out/line <- \"must-not-write\"\nuses-env(root<string>) => <string>\n  | @env/HOME.\n");
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
@@ -3476,7 +3498,7 @@ fn module_preflight_denial_emits_program_failed_event() {
   .build()
   .unwrap();
   runtime
-    .grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line"))
+    .grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line"))
     .unwrap();
   let version = runtime
     .resolve_and_store_module_source("main.mec", module_options())
@@ -3506,7 +3528,7 @@ fn module_preflight_denial_emits_program_failed_event() {
 fn cli_host_direct_env_declaration_reads_with_runtime_grant() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/direct-home");
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://cli/env", "HOME")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   runtime.run_string("@env := cli://env{:read(HOME)}\nhome := @env/HOME\n").unwrap();
   let id = hash_str("home");
   let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
@@ -3518,7 +3540,7 @@ fn cli_host_direct_stdout_declaration_sends_with_runtime_grant() {
   let backend = FakeCliBackend::default();
   let stdout = backend.stdout.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   runtime.run_string("@out := cli://stdout{:write(line)}\n@out/line <- \"hello\"\n").unwrap();
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
 }
@@ -3528,7 +3550,7 @@ fn cli_host_direct_stderr_declaration_sends_with_runtime_grant() {
   let backend = FakeCliBackend::default();
   let stderr = backend.stderr.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stderr", "text")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stderr", "text")).unwrap();
   runtime.run_string("@err := cli://stderr{:write(text)}\n@err/text <- \"warning\"\n").unwrap();
   assert_eq!(stderr.lock().unwrap().as_slice(), &["warning".to_string()]);
 }
@@ -3556,7 +3578,7 @@ fn cli_context_module_read_exports_value() {
   let root = setup_modules("+> @env := cli/env\nhome := @env/HOME\n<+ home\nhome\n");
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/module-home");
   let mut runtime = with_test_cli(RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://cli/env", "HOME")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version).unwrap();
   let result = match result {
@@ -3575,7 +3597,7 @@ fn cli_context_module_send_is_not_stripped() {
   let backend = FakeCliBackend::default();
   let stdout = backend.stdout.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   runtime.run_module(version).unwrap();
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
@@ -3645,7 +3667,7 @@ fn assert_string_value(value: Value, expected: &str) {
 fn cli_context_direct_read_resolves_inside_formula_expression() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://cli/env", "HOME")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   runtime.run_string("+> @env := cli/env\nmsg := \"HOME=\" + @env/HOME\n").unwrap();
   let id = hash_str("msg");
   let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
@@ -3656,7 +3678,7 @@ fn cli_context_direct_read_resolves_inside_formula_expression() {
 fn cli_context_standalone_expression_returns_env_value() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://cli/env", "HOME")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   let value = runtime.run_string("+> @env := cli/env\n@env/HOME\n").unwrap();
   assert_string_value(value, "/tmp/home");
 }
@@ -3803,7 +3825,7 @@ fn named_fenced_context_import_write_uses_context_registry() {
   .build()
   .unwrap();
 
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
 
   runtime.run_module_scope(
@@ -3829,7 +3851,7 @@ fn named_fenced_context_import_read_exports_value() {
   .build()
   .unwrap();
 
-  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://cli/env", "HOME")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
 
   let result = runtime.run_module_scope(
@@ -3918,8 +3940,8 @@ fn cli_context_source_scope_denial_preflights_before_stdout_write() {
   )
   .build()
   .unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
-  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://cli/env", "HOME")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
 
   let result = runtime.run_string(r#"+> @out := cli/stdout
 @env := cli://env{:read(PATH)}
@@ -3950,7 +3972,7 @@ fn module_graph_preflight_blocks_dependency_stdout_before_main_env_denial() {
   )
   .build()
   .unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let mut context = runtime.runtime_context().unwrap();
 
@@ -3974,7 +3996,7 @@ fn module_graph_preflight_blocks_current_stdout_before_dependency_denial() {
   )
   .build()
   .unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let mut context = runtime.runtime_context().unwrap();
 
@@ -4012,7 +4034,7 @@ value := @foo/home
   )
   .build()
   .unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let mut context = runtime.runtime_context().unwrap();
 

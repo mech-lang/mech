@@ -372,7 +372,7 @@ mod tests {
 
   fn header() -> HostDelegationHeader {
     HostDelegationHeader {
-      issuer: "host://mech-cli".to_string(),
+      issuer: "host://mech-browser".to_string(),
       subject: "wasm://browser".to_string(),
       audience: "browser://test".to_string(),
       key_id: "dev".to_string(),
@@ -444,7 +444,7 @@ mod tests {
       now_ms: 2000,
       expected_audience: "browser://test".to_string(),
       trusted_keys: HostDelegationKeyStore::new([HostDelegationPublicKey {
-        issuer: "host://mech-cli".to_string(),
+        issuer: "host://mech-browser".to_string(),
         key_id: "dev".to_string(),
         algorithm: HOST_DELEGATION_ALGORITHM_ED25519.to_string(),
         public_key: signing_key.public_key_bytes(),
@@ -459,7 +459,7 @@ mod tests {
     let key = signing_key();
     let envelope = sign_browser_host_delegation(header(), runtime_injection_config(), &key).unwrap();
     let verified = verify_browser_host_delegation(&envelope, request(&key)).unwrap();
-    assert_eq!(verified.issuer, "host://mech-cli");
+    assert_eq!(verified.issuer, "host://mech-browser");
     assert!(verified.authority.runtime_injection.hosts.iter().any(|host| host.name == "ui"));
     assert!(verified.authority.runtime_injection.run_grants.iter().any(|grant| grant.target == "ui/dom"));
   }

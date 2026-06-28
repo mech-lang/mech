@@ -24,8 +24,6 @@ use wasm_bindgen::JsCast;
 use web_sys::{window, HtmlElement, HtmlInputElement, Node, Element, HashChangeEvent, HtmlTextAreaElement, Url};
 use js_sys::decode_uri_component;
 use std::collections::HashMap;
-#[cfg(feature = "host-robot-arm")]
-use std::io::{Error, ErrorKind};
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::panic::{catch_unwind, AssertUnwindSafe};
@@ -175,64 +173,7 @@ fn wasm_runtime_injection_config_from_document(
   document: &MechConfigDocument,
   runtime_config: &RuntimeConfig,
 ) -> MResult<BrowserRuntimeInjectionConfig> {
-  let mut config =
-    BrowserRuntimeInjectionConfig::from_document_and_runtime(document, runtime_config)?;
-  append_feature_enabled_injected_hosts(document, &mut config)?;
-  Ok(config)
-}
-
-fn append_feature_enabled_injected_hosts(
-  document: &MechConfigDocument,
-  config: &mut BrowserRuntimeInjectionConfig,
-) -> MResult<()> {
-  #[cfg(feature = "host-robot-arm")]
-  append_robot_arm_injected_hosts(document, config)?;
-
-  Ok(())
-}
-
-#[cfg(feature = "host-robot-arm")]
-fn append_robot_arm_injected_hosts(
-  document: &MechConfigDocument,
-  config: &mut BrowserRuntimeInjectionConfig,
-) -> MResult<()> {
-  use mech_runtime::{materialize_host_manifest, parse_host_context_target, RuntimeHostFactory};
-
-  let factory = mech_host_robot_arm::RobotArmHostFactory::new()?;
-  for host in document.hosts.iter().filter(|host| host.provider == "robot-arm") {
-    factory.validate_settings(&host.name, &host.settings)?;
-    let interface = materialize_host_manifest(&host.name, factory.manifest())?;
-
-    if let Some(run) = &document.run {
-      for grant in &run.grants {
-        let (instance, context_name) = parse_host_context_target(&grant.target)?;
-        if instance != host.name {
-          continue;
-        }
-        let Some(context) = interface.contexts.iter().find(|context| context.name == context_name) else {
-          return Err(Error::new(ErrorKind::InvalidInput, format!(
-            "host instance `{}` provider `{}` does not expose context `{}`",
-            host.name,
-            host.provider,
-            context_name,
-          )).into());
-        };
-        for operation in &grant.operations {
-          if !context.operations.iter().any(|allowed| allowed == operation) {
-            return Err(Error::new(ErrorKind::InvalidInput, format!(
-              "host context `{}` does not expose operation `{}`",
-              grant.target,
-              operation,
-            )).into());
-          }
-        }
-        config.run_grants.push(grant.clone());
-      }
-    }
-
-    config.hosts.push(host.clone());
-  }
-  Ok(())
+  BrowserRuntimeInjectionConfig::from_document_and_runtime(document, runtime_config)
 }
 
 #[cfg(feature = "host_delegation_signing")]
@@ -305,10 +246,6 @@ fn wasm_parts_from_runtime_injection_config_result(
   let mut builder = RuntimeBuilder::new()
     .config(runtime_config)
     .host_factory(Box::new(BrowserHostFactory::new(WasmBrowserDomBackend::new())?))?;
-  #[cfg(feature = "host-robot-arm")]
-  {
-    builder = builder.host_factory(Box::new(mech_host_robot_arm::RobotArmHostFactory::new()?))?;
-  }
   let mut saw_default_browser_instance = false;
   for host in &injected.hosts {
     if host.provider == "browser" {
