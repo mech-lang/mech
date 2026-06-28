@@ -136,13 +136,11 @@ impl<B: BrowserDomBackend> RuntimeResourceProvider for BrowserResourceProvider<B
           "no configured DOM manifest entry for path",
         )
       })?;
-    let Value::String(value) = request.value else {
-      return Err(browser_resource_provider_error(
-        path.as_str(),
-        "only string values can be written to browser DOM resources in this PR",
-      ));
+    let value = match request.value {
+      Value::String(value) => value.borrow().as_str().to_string(),
+      value => value.format_value_inline(),
     };
-    self.backend.write_dom_string(&entry, &path, value.borrow().as_str())
+    self.backend.write_dom_string(&entry, &path, value.as_str())
   }
 }
 

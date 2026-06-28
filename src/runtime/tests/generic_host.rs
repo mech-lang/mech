@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use mech_core::{MResult, MechError, MechErrorKind, Value};
+use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 use mech_runtime::*;
 
 #[derive(Debug)]
@@ -238,13 +238,20 @@ impl PlotterProvider {
 impl RuntimeResourceProvider for PlotterProvider {
   fn scheme(&self) -> &str { "plotter" }
   fn base_uris(&self) -> Vec<String> { vec![self.base()] }
-  fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> { Err(fake_error("plotter reads are not implemented in this test")) }
+  fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    if request.base_uri != self.base() { return Err(fake_error("unknown plotter base URI")); }
+    match request.path.as_str() {
+      "read" => Ok(Value::String(Ref::new("ok".to_string()))),
+      _ => Err(fake_error("plotter read path is not implemented in this test")),
+    }
+  }
   fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
     if request.base_uri != self.base() { return Err(fake_error("unknown plotter base URI")); }
     if request.intent != RuntimeResourceWriteIntent::Send { return Err(fake_error("plotter commands accept only send intent")); }
     match request.path.as_str() {
-      "line" | "text" => Ok(()),
+      "line" | "text" | "read" => Ok(()),
       path if path.starts_with("line/") => Ok(()),
+      path if path.starts_with("read/") => Ok(()),
       _ => Err(fake_error(format!("unsupported plotter command path `{}`", request.path))),
     }
   }
@@ -262,7 +269,7 @@ fn plotter_runtime(operations: &[&str], grants: &[&str], log: Arc<Mutex<Vec<Stri
     .run_resource_grant(RunResourceGrantConfig {
       target: "plotter/commands".to_string(),
       operations: grants.iter().map(|grant| grant.to_string()).collect(),
-      paths: vec!["line".to_string(), "text".to_string(), "line/safe/*".to_string(), "line/unsafe".to_string()],
+      paths: vec!["line".to_string(), "text".to_string(), "read".to_string(), "read/*".to_string(), "line/safe/*".to_string(), "line/unsafe".to_string()],
     })
     .build()
 }
@@ -289,6 +296,35 @@ fn legacy_write_only_line_send_still_uses_write() {
   let mut runtime = plotter_runtime(&["write"], &["write"], log.clone()).unwrap();
   runtime.run_string("+> @plotter := plotter/commands\n@plotter/line <- \"hello\"\n").unwrap();
   assert_eq!(log.lock().unwrap().as_slice(), &["write".to_string()]);
+}
+
+#[test]
+fn context_send_read_path_does_not_use_read_grant() {
+  let log = Arc::new(Mutex::new(Vec::new()));
+  let mut runtime = plotter_runtime(&["read"], &["read"], log.clone()).unwrap();
+  let error = runtime.run_string("+> @plotter := plotter/commands\n@plotter/read <- \"bad\"\n").expect_err("read must not authorize send");
+  let message = format!("{error:?}");
+  assert!(message.contains("context_send") || message.contains("reserved"), "got {message}");
+  assert!(message.contains("read"), "got {message}");
+  assert!(log.lock().unwrap().is_empty());
+}
+
+#[test]
+fn context_send_read_subpath_does_not_use_read_grant() {
+  let log = Arc::new(Mutex::new(Vec::new()));
+  let mut runtime = plotter_runtime(&["read"], &["read"], log.clone()).unwrap();
+  let error = runtime.run_string("+> @plotter := plotter/commands\n@plotter/read/value <- \"bad\"\n").expect_err("read must not authorize send");
+  let message = format!("{error:?}");
+  assert!(message.contains("context_send") || message.contains("reserved"), "got {message}");
+  assert!(message.contains("read"), "got {message}");
+  assert!(log.lock().unwrap().is_empty());
+}
+
+#[test]
+fn actual_read_path_still_uses_read_grant() {
+  let log = Arc::new(Mutex::new(Vec::new()));
+  let mut runtime = plotter_runtime(&["read"], &["read"], log).unwrap();
+  runtime.run_string("+> @plotter := plotter/commands\nvalue := @plotter/read\n").unwrap();
 }
 
 #[test]

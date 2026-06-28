@@ -220,11 +220,29 @@ fn first_context_send_segment(path: &str) -> MResult<&str> {
     }, None))
 }
 
+fn reserved_context_send_operation_error(operation: &str, path: &str) -> MechError {
+  MechError::new(RuntimeInvalidOperationError {
+    operation: "context_send",
+    reason: format!(
+      "context send target path `{path}` starts with reserved operation `{operation}`; use assignment for writes or a custom send operation"
+    ),
+  }, None)
+}
+
 fn context_send_operation(
   binding: &RuntimeContextBinding,
   path: &str,
 ) -> MResult<RuntimeCapabilityOperation> {
   let candidate = first_context_send_segment(path)?;
+  if candidate == "read" {
+    return Err(reserved_context_send_operation_error(candidate, path));
+  }
+  if candidate == "write" {
+    if runtime_context_allows_write(binding, path) {
+      return Ok(RuntimeCapabilityOperation::Write);
+    }
+    return Err(reserved_context_send_operation_error(candidate, path));
+  }
   if runtime_context_allows_operation(binding, candidate, path) {
     return RuntimeCapabilityOperation::from_name(candidate.to_string());
   }
