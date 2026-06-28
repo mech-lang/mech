@@ -48,7 +48,6 @@ test = ["variable_define", "invariant_define", "symbol_table", "bool"]
 cli = []
 project = ["mech-runtime", "mech-runtime/default"]
 cli_host = ["mech-runtime", "mech-runtime/default", "mech-host-cli", "mech-host-cli/provider"]
-host-robot-arm = ["dep:mech-host-robot-arm", "mech-host-robot-arm/provider", "mech-host-browser?/host-robot-arm"]
 web_host = ["mech-runtime", "mech-runtime/default", "mech-host-browser", "mech-host-browser/serde", "mech-host-browser/provider"]
 bundle_web = ["cli", "project", "web_host", "formatter", "serde", "mech-runtime", "mech-runtime/default"]
 serve = ["cli", "project", "web_host", "formatter", "mech-runtime", "mech-runtime/default", "ignore"]
@@ -196,7 +195,6 @@ mech-program = { version = "0.3.5", default-features = false }
 mech-runtime = { version = "0.3.5", default-features = false, optional = true }
 mech-host-browser = { version = "0.3.5", default-features = false, optional = true }
 mech-host-cli = { version = "0.3.5", default-features = false, optional = true }
-mech-host-robot-arm = { version = "0.3.5", default-features = false, optional = true }
 ignore = { version = "0.4.24", optional = true }
 
 sevenz-rust = "0.6.1"

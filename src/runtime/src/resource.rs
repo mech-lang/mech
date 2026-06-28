@@ -41,6 +41,8 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
 
   fn base_uris(&self) -> Vec<String> { Vec::new() }
 
+  fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> { Vec::new() }
+
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value>;
 
   fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
@@ -143,6 +145,23 @@ impl RuntimeResourceRegistry {
       return Ok(Some(base.clone()));
     }
     Ok(Some(resource_uri_origin(candidate)?.to_string()))
+  }
+
+  pub fn base_uris_equivalent(&self, left: &str, right: &str) -> bool {
+    let left = left.trim_end_matches('/');
+    let right = right.trim_end_matches('/');
+
+    if left == right {
+      return true;
+    }
+
+    self.providers.iter().any(|entry| {
+      entry.provider.equivalent_base_uri_groups().iter().any(|group| {
+        let has_left = group.iter().any(|base| base.trim_end_matches('/') == left);
+        let has_right = group.iter().any(|base| base.trim_end_matches('/') == right);
+        has_left && has_right
+      })
+    })
   }
 
   fn provider_entry_for(&self, scheme: &str, uri: &str) -> Option<&RuntimeResourceProviderEntry> {

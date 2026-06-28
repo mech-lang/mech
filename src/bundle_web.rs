@@ -77,7 +77,7 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     mech_runtime::RuntimeConfig::default(),
     &options.loaded_config.document.runtime,
   )?;
-  let host_config = mech_host_browser::BrowserRuntimeInjectionConfig::from_document_and_runtime(
+  let host_config = crate::web_runtime_injection_config_from_document(
     &options.loaded_config.document,
     &runtime_config,
   )?;

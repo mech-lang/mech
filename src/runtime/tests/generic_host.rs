@@ -74,6 +74,63 @@ impl MechErrorKind for FakeRobotError { fn name(&self) -> &str { "FakeRobotError
 fn fake_error(message: impl Into<String>) -> MechError { MechError::new(FakeRobotError { message: message.into() }, None) }
 
 #[derive(Debug)]
+struct AliasProvider {
+  bases: Vec<String>,
+  equivalent_groups: Vec<Vec<String>>,
+}
+
+impl AliasProvider {
+  fn new(bases: &[&str]) -> Self {
+    Self {
+      bases: bases.iter().map(|base| base.to_string()).collect(),
+      equivalent_groups: Vec::new(),
+    }
+  }
+
+  fn with_equivalent_group(mut self, group: &[&str]) -> Self {
+    self.equivalent_groups.push(group.iter().map(|base| base.to_string()).collect());
+    self
+  }
+}
+
+impl RuntimeResourceProvider for AliasProvider {
+  fn scheme(&self) -> &str { "test" }
+  fn base_uris(&self) -> Vec<String> { self.bases.clone() }
+  fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> { self.equivalent_groups.clone() }
+  fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+    Ok(Value::String(Ref::new("ok".to_string())))
+  }
+}
+
+fn runtime_with_alias_provider() -> MechRuntime {
+  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  runtime
+    .register_resource_provider(Box::new(
+      AliasProvider::new(&[
+        "test://default/context",
+        "test://context",
+      ])
+      .with_equivalent_group(&[
+        "test://default/context",
+        "test://context",
+      ]),
+    ))
+    .unwrap();
+  runtime
+}
+
+fn grant_test_read(runtime: &mut MechRuntime, resource: &str) {
+  runtime
+    .grant_capability(RuntimeCapabilityGrant {
+      subject: "subject".to_string(),
+      resource: resource.to_string(),
+      operations: vec![RuntimeCapabilityOperation::Read],
+      paths: vec!["item".to_string()],
+    })
+    .unwrap();
+}
+
+#[derive(Debug)]
 struct FakeBrowserFactory {
   manifest: HostManifestConfig,
 }
@@ -126,19 +183,130 @@ fn robot_runtime(log: Arc<Mutex<Vec<String>>>) -> MResult<MechRuntime> {
 }
 
 #[test]
-fn host_instance_different_provider_builtin_collision_fails() {
+fn duplicate_host_instance_registration_fails_generically() {
   let error = RuntimeBuilder::new()
+    .host_factory(Box::new(FakeBrowserFactory::new()))
+    .unwrap()
+    .host_factory(Box::new(FakeRobotFactory::new(Arc::new(Mutex::new(Vec::new())))))
+    .unwrap()
     .host_instance(HostInstanceConfig {
-      name: "cli".to_string(),
+      name: "shared".to_string(),
       provider: "browser".to_string(),
       settings: ConfigValue::Map(Default::default()),
     })
+    .host_instance(HostInstanceConfig {
+      name: "shared".to_string(),
+      provider: "fake-robot".to_string(),
+      settings: ConfigValue::Map(Default::default()),
+    })
     .build()
-    .expect_err("different-provider built-in host collision should fail");
+    .expect_err("duplicate host instance registration should fail");
   let error = format!("{error:?}");
-  assert!(error.contains("cli"), "got {error}");
-  assert!(error.contains("built in"), "got {error}");
-  assert!(error.contains("browser"), "got {error}");
+  assert!(error.contains("shared"), "got {error}");
+  assert!(error.contains("duplicate") || error.contains("already"), "got {error}");
+}
+
+#[test]
+fn provider_advertised_alias_grant_authorizes_materialized_base() {
+  let mut runtime = runtime_with_alias_provider();
+  grant_test_read(&mut runtime, "test://context");
+
+  assert!(runtime.has_capability_grant(
+    "subject",
+    "test://default/context",
+    &RuntimeCapabilityOperation::Read,
+    "item",
+  ));
+}
+
+#[test]
+fn provider_advertised_materialized_grant_authorizes_alias_base() {
+  let mut runtime = runtime_with_alias_provider();
+  grant_test_read(&mut runtime, "test://default/context");
+
+  assert!(runtime.has_capability_grant(
+    "subject",
+    "test://context",
+    &RuntimeCapabilityOperation::Read,
+    "item",
+  ));
+}
+
+#[test]
+fn provider_advertised_alias_grant_does_not_authorize_unregistered_base() {
+  let mut runtime = runtime_with_alias_provider();
+  grant_test_read(&mut runtime, "test://context");
+
+  assert!(!runtime.has_capability_grant(
+    "subject",
+    "test://other/context",
+    &RuntimeCapabilityOperation::Read,
+    "item",
+  ));
+}
+
+#[test]
+fn provider_advertised_alias_grants_do_not_use_string_heuristics() {
+  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  runtime
+    .register_resource_provider(Box::new(AliasProvider::new(&["test://context"])))
+    .unwrap();
+  grant_test_read(&mut runtime, "test://context");
+
+  assert!(!runtime.has_capability_grant(
+    "subject",
+    "test://default/context",
+    &RuntimeCapabilityOperation::Read,
+    "item",
+  ));
+}
+
+#[test]
+fn multiple_provider_bases_are_not_implicit_aliases() {
+  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  runtime
+    .register_resource_provider(Box::new(AliasProvider::new(&[
+      "test://default/context",
+      "test://context",
+    ])))
+    .unwrap();
+  grant_test_read(&mut runtime, "test://context");
+
+  assert!(!runtime.has_capability_grant(
+    "subject",
+    "test://default/context",
+    &RuntimeCapabilityOperation::Read,
+    "item",
+  ));
+}
+
+#[test]
+fn in_memory_docs_bases_are_not_implicit_aliases() {
+  let mut docs = InMemoryDocsProvider::new();
+  docs
+    .insert("docs://manual", "title", Value::String(Ref::new("manual".to_string())))
+    .unwrap();
+  docs
+    .insert("docs://guide", "title", Value::String(Ref::new("guide".to_string())))
+    .unwrap();
+
+  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  runtime.register_resource_provider(Box::new(docs)).unwrap();
+  runtime
+    .grant_capability(RuntimeCapabilityGrant {
+      subject: "subject".to_string(),
+      resource: "docs://manual".to_string(),
+      operations: vec![RuntimeCapabilityOperation::Read],
+      paths: vec!["title".to_string()],
+    })
+    .unwrap();
+
+  assert!(!runtime.has_capability_grant(
+    "subject",
+    "docs://guide",
+    &RuntimeCapabilityOperation::Read,
+    "title",
+  ));
 }
 
 #[test]

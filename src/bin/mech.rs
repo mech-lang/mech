@@ -418,7 +418,7 @@ async fn main() -> Result<(), MechError> {
     )?;
     let host_config = loaded_config
       .as_ref()
-      .map(|loaded| mech_host_browser::BrowserRuntimeInjectionConfig::from_document_and_runtime(
+      .map(|loaded| mech::web_runtime_injection_config_from_document(
         &loaded.document,
         &runtime_config,
       ))
@@ -1056,7 +1056,7 @@ fn serve_host_delegation_injection(
     audience: matches.get_one::<String>("host_delegation_audience").cloned().unwrap_or_else(|| format!("browser://serve/{full_address}")),
     expires_ms: matches.get_one::<String>("host_delegation_expires_ms").map(|value| value.parse()).transpose().map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidInput, "--host-delegation-expires-ms must be an integer"))?,
   };
-  let host_config = mech_host_browser::BrowserRuntimeInjectionConfig::from_document_and_runtime(
+  let host_config = mech::web_runtime_injection_config_from_document(
     &loaded_config.document,
     runtime_config,
   )?;

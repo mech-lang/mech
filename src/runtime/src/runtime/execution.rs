@@ -441,7 +441,7 @@ impl MechRuntime {
         path: resolved.context_path,
       }, None));
     }
-    if !self.grants.allows(
+    if !self.has_capability_grant(
       &context.subject,
       &resolved.provider_base_uri,
       &RuntimeCapabilityOperation::Read,
@@ -478,7 +478,7 @@ impl MechRuntime {
         path: resolved.context_path,
       }, None));
     }
-    if !self.grants.allows(
+    if !self.has_capability_grant(
       &context.subject,
       &resolved.provider_base_uri,
       &operation,
@@ -2329,7 +2329,7 @@ impl MechRuntime {
         path: resolved.context_path,
       }, None));
     }
-    if !self.grants.allows(
+    if !self.has_capability_grant(
       &context.subject,
       &resolved.provider_base_uri,
       &operation,

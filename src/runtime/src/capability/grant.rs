@@ -44,9 +44,29 @@ impl RuntimeCapabilityGrantRegistry {
     operation: &RuntimeCapabilityOperation,
     path: &str,
   ) -> bool {
+    self.allows_with_resource_match(
+      subject,
+      resource,
+      operation,
+      path,
+      resource_names_match,
+    )
+  }
+
+  pub fn allows_with_resource_match<F>(
+    &self,
+    subject: &str,
+    resource: &str,
+    operation: &RuntimeCapabilityOperation,
+    path: &str,
+    resource_matches: F,
+  ) -> bool
+  where
+    F: Fn(&str, &str) -> bool,
+  {
     self.grants.iter().any(|grant| {
       grant.subject == subject
-        && resource_names_match(&grant.resource, resource)
+        && resource_matches(&grant.resource, resource)
         && grant.operations.iter().any(|allowed| allowed == operation)
         && grant.paths.iter().any(|allowed| grant_path_matches(allowed, path))
     })
@@ -87,46 +107,7 @@ fn invalid_grant(reason: impl Into<String>) -> MResult<()> {
 }
 
 fn resource_names_match(grant_resource: &str, requested_resource: &str) -> bool {
-  if grant_resource == requested_resource {
-    return true;
-  }
-
-  if default_host_resource_aliases_match(grant_resource, requested_resource, "cli") {
-    return true;
-  }
-
-  if default_host_resource_aliases_match(grant_resource, requested_resource, "browser") {
-    return true;
-  }
-
-  false
-}
-
-fn default_host_resource_aliases_match(
-  grant_resource: &str,
-  requested_resource: &str,
-  scheme: &str,
-) -> bool {
-  let legacy_prefix = format!("{scheme}://");
-  let materialized_prefix = format!("{scheme}://{scheme}/");
-
-  match (
-    grant_resource.strip_prefix(&materialized_prefix),
-    requested_resource.strip_prefix(&legacy_prefix),
-  ) {
-    (Some(grant_context), Some(request_context)) if grant_context == request_context => {
-      return true;
-    }
-    _ => {}
-  }
-
-  match (
-    grant_resource.strip_prefix(&legacy_prefix),
-    requested_resource.strip_prefix(&materialized_prefix),
-  ) {
-    (Some(grant_context), Some(request_context)) => grant_context == request_context,
-    _ => false,
-  }
+  grant_resource == requested_resource
 }
 
 fn grant_path_matches(grant_path: &str, requested_path: &str) -> bool {
@@ -218,17 +199,10 @@ mod tests {
   use super::*;
 
   #[test]
-  fn resource_names_match_cli_default_aliases() {
-    assert!(resource_names_match("cli://stdout", "cli://cli/stdout"));
-    assert!(resource_names_match("cli://cli/stdout", "cli://stdout"));
-    assert!(!resource_names_match("cli://stdout", "cli://cli/stderr"));
-  }
-
-  #[test]
-  fn resource_names_match_browser_default_aliases() {
-    assert!(resource_names_match("browser://dom", "browser://browser/dom"));
-    assert!(resource_names_match("browser://browser/dom", "browser://dom"));
-    assert!(!resource_names_match("browser://dom", "browser://browser/storage"));
+  fn resource_names_match_exact_resources_only() {
+    assert!(resource_names_match("docs://manual", "docs://manual"));
+    assert!(!resource_names_match("docs://manual", "docs://manual/chapter"));
+    assert!(!resource_names_match("docs://manual", "notes://manual"));
   }
 
   #[test]

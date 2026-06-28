@@ -2,6 +2,7 @@ use std::io::{Error, ErrorKind};
 
 use mech_core::*;
 use mech_host_browser::BrowserRuntimeInjectionConfig;
+use mech_runtime::{MechConfigDocument, RuntimeConfig};
 
 #[cfg(feature = "host_delegation_signing")]
 use base64::Engine;
@@ -14,6 +15,13 @@ use mech_runtime::{
 };
 #[cfg(feature = "host_delegation_signing")]
 use serde::Deserialize;
+
+pub fn web_runtime_injection_config_from_document(
+  document: &MechConfigDocument,
+  runtime_config: &RuntimeConfig,
+) -> MResult<BrowserRuntimeInjectionConfig> {
+  mech_host_browser::BrowserRuntimeInjectionConfig::from_document_and_runtime(document, runtime_config)
+}
 
 #[derive(Clone, Debug)]
 pub enum HostAuthorityInjection {
@@ -252,4 +260,5 @@ mod tests {
     assert!(script.contains("\"runGrants\""));
     assert!(!script.contains("\"browser\":"));
   }
+
 }

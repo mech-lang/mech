@@ -33,6 +33,109 @@ fn shipped_browser_examples_use_hosts_schema() {
 }
 
 #[test]
+fn shipped_browser_demo_sources_use_browser_dom_host_import() {
+    for (path, source) in [
+        (
+            "examples/browser-dom-demo/demo.mec",
+            include_str!("../../../examples/browser-dom-demo/demo.mec"),
+        ),
+        (
+            "examples/browser-dom-demo/denied.mec",
+            include_str!("../../../examples/browser-dom-demo/denied.mec"),
+        ),
+        (
+            "examples/browser-dom-resource.mec",
+            include_str!("../../../examples/browser-dom-resource.mec"),
+        ),
+    ] {
+        let first_line = source.lines().find(|line| !line.trim().is_empty()).unwrap_or("");
+        assert_eq!(first_line, "+> @browser := browser/dom", "{path} must start with a browser/dom host import");
+        assert!(
+            !source.contains("@browser := browser://dom/"),
+            "{path} must not use a raw browser://dom/ context declaration"
+        );
+    }
+}
+
+#[test]
+fn browser_host_crate_does_not_depend_on_robot_arm_host() {
+    let workspace_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let browser_cargo = std::fs::read_to_string(workspace_root.join("hosts/browser/Cargo.toml")).unwrap();
+    assert!(
+        !browser_cargo.contains("mech-host-robot-arm"),
+        "hosts/browser/Cargo.toml must not depend on mech-host-robot-arm"
+    );
+    assert!(
+        !browser_cargo.contains("host-robot-arm"),
+        "hosts/browser/Cargo.toml must not define a host-robot-arm feature"
+    );
+
+    fn visit(path: &std::path::Path, source: &mut String) {
+        for entry in std::fs::read_dir(path).unwrap() {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            if path.is_dir() {
+                visit(&path, source);
+            } else if path.extension().and_then(|ext| ext.to_str()) == Some("rs") {
+                source.push_str(&std::fs::read_to_string(path).unwrap());
+            }
+        }
+    }
+
+    let mut browser_source = String::new();
+    visit(&workspace_root.join("hosts/browser/src"), &mut browser_source);
+    assert!(
+        !browser_source.contains(&["mech", "_host", "_robot", "_arm"].concat()),
+        "hosts/browser source must not reference mech-host-robot-arm"
+    );
+    assert!(
+        !browser_source.contains("\"robot-arm\""),
+        "hosts/browser source must not know about the robot-arm provider"
+    );
+    assert!(
+        !browser_source.contains("\"cli\""),
+        "hosts/browser source must not know about the CLI provider"
+    );
+
+    let root_cargo = std::fs::read_to_string(workspace_root.join("Cargo.toml")).unwrap();
+    assert!(
+        !root_cargo.lines().any(|line| line.trim_start().starts_with("host-robot-arm =")),
+        "root Cargo.toml must not define a host-robot-arm feature"
+    );
+
+    let wasm_cargo = std::fs::read_to_string(workspace_root.join("src/wasm/Cargo.toml")).unwrap();
+    assert!(
+        !wasm_cargo.lines().any(|line| line.trim_start().starts_with("host-robot-arm =")),
+        "src/wasm/Cargo.toml must not define a host-robot-arm feature"
+    );
+}
+
+#[test]
+fn robot_arm_demos_are_host_owned_not_top_level_examples() {
+    let workspace_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+
+    for path in [
+        "hosts/robot-arm/examples/robot-arm-demo/demo.mcfg",
+        "hosts/robot-arm/examples/robot-arm-demo/demo.mec",
+        "hosts/robot-arm/examples/browser-robot-arm-demo/demo.mcfg",
+        "hosts/robot-arm/examples/browser-robot-arm-demo/demo.mec",
+        "hosts/robot-arm/examples/browser-robot-arm-demo/demo.js",
+    ] {
+        assert!(workspace_root.join(path).exists(), "{path} should exist under the robot-arm host package");
+    }
+
+    for path in [
+        "examples/robot-arm-demo/demo.mcfg",
+        "examples/robot-arm-demo/demo.mec",
+        "examples/browser-robot-arm-demo/demo.mcfg",
+        "examples/browser-robot-arm-demo/demo.mec",
+        "examples/browser-robot-arm-demo/demo.js",
+    ] {
+        assert!(!workspace_root.join(path).exists(), "{path} should not exist in generic top-level examples");
+    }
+}
+
+#[test]
 fn config_profile_rich_mechdown_config_parses_and_lowers() {
     let doc = parse(
         r#"Project config

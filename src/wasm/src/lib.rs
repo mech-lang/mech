@@ -38,6 +38,7 @@ use serde::Deserialize;
 #[cfg(feature = "repl")]
 pub mod repl;
 
+
 #[cfg(feature = "repl")]
 pub use crate::repl::*;
 
@@ -149,7 +150,7 @@ fn wasm_parts_from_config_document(
   let injected = match document {
     Some(document) => {
       let config = RuntimeConfig::default().apply_patch(&document.runtime)?;
-      BrowserRuntimeInjectionConfig::from_document_and_runtime(document, &config)?
+      wasm_runtime_injection_config_from_document(document, &config)?
     }
     None => default_browser_runtime_injection_config(),
   };
@@ -166,6 +167,13 @@ fn default_browser_runtime_injection_config() -> BrowserRuntimeInjectionConfig {
     }],
     run_grants: Vec::new(),
   }
+}
+
+fn wasm_runtime_injection_config_from_document(
+  document: &MechConfigDocument,
+  runtime_config: &RuntimeConfig,
+) -> MResult<BrowserRuntimeInjectionConfig> {
+  BrowserRuntimeInjectionConfig::from_document_and_runtime(document, runtime_config)
 }
 
 #[cfg(feature = "host_delegation_signing")]
@@ -238,10 +246,6 @@ fn wasm_parts_from_runtime_injection_config_result(
   let mut builder = RuntimeBuilder::new()
     .config(runtime_config)
     .host_factory(Box::new(BrowserHostFactory::new(WasmBrowserDomBackend::new())?))?;
-  #[cfg(feature = "host-robot-arm")]
-  {
-    builder = builder.host_factory(Box::new(mech_host_robot_arm::RobotArmHostFactory::new()?))?;
-  }
   let mut saw_default_browser_instance = false;
   for host in &injected.hosts {
     if host.provider == "browser" {
