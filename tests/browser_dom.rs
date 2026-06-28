@@ -149,6 +149,11 @@ fn runtime_resolves_child_path_under_browser_root() {
 #[test]
 fn runtime_resolves_child_path_under_narrow_browser_root() {
   let mut runtime = runtime();
+  register_browser_provider(
+    &mut runtime,
+    read_write_authority("body/header/title", "#title"),
+    FakeDomHost::default(),
+  );
   runtime.bind_resource_root("head", "browser://dom/body/header/").unwrap();
   assert_eq!(
     runtime.resource_binding("head").unwrap().root_path.as_str(),

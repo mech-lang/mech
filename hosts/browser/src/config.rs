@@ -37,13 +37,25 @@ impl BrowserRuntimeInjectionConfig {
     document: &MechConfigDocument,
     runtime_config: &RuntimeConfig,
   ) -> MResult<Self> {
+    for host in &document.hosts {
+      if host.name == "browser" && host.provider != "browser" {
+        return Err(invalid_error(
+          "hosts",
+          format!(
+            "host instance `browser` is reserved for provider `browser` in browser runtime injection and cannot be configured as provider `{}`",
+            host.provider,
+          ),
+        ));
+      }
+    }
+
     let mut hosts: Vec<HostInstanceConfig> = document
       .hosts
       .iter()
       .filter(|host| host.provider == "browser")
       .cloned()
       .collect();
-    if !document.hosts.iter().any(|host| host.name == "browser") {
+    if !hosts.iter().any(|host| host.name == "browser") {
       hosts.push(HostInstanceConfig {
         name: "browser".to_string(),
         provider: "browser".to_string(),
@@ -1332,7 +1344,7 @@ config := {
   }
 
   #[test]
-  fn browser_runtime_injection_does_not_shadow_non_browser_host_named_browser() {
+  fn browser_runtime_injection_rejects_non_browser_host_named_browser() {
     let document = parse_config_document(
       "test.mcfg",
       r##"
@@ -1349,11 +1361,12 @@ config := {
 "##,
       ConfigProfileOptions::default(),
     ).unwrap();
-    let injected =
-      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
-
-    assert!(injected.hosts.is_empty());
-    assert!(injected.run_grants.is_empty());
+    let err =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap_err();
+    let error = format!("{err:?}");
+    assert!(error.contains("browser"), "got {error}");
+    assert!(error.contains("fake-robot"), "got {error}");
+    assert!(error.contains("reserved") || error.contains("provider"), "got {error}");
   }
 
   #[test]

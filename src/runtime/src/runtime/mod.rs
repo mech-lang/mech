@@ -443,27 +443,27 @@ pub struct RuntimeResourceBinding {
 }
 
 #[derive(Debug, Clone)]
-pub struct BrowserRuntimeResourceError {
+pub struct RuntimeResourceBindingError {
   pub resource: String,
   pub reason: String,
 }
 
-impl MechErrorKind for BrowserRuntimeResourceError {
+impl MechErrorKind for RuntimeResourceBindingError {
   fn name(&self) -> &str {
-    "BrowserRuntimeResource"
+    "RuntimeResourceBinding"
   }
 
   fn message(&self) -> String {
-    format!("browser runtime resource `{}` failed: {}", self.resource, self.reason)
+    format!("runtime resource binding `{}` failed: {}", self.resource, self.reason)
   }
 }
 
-fn browser_runtime_resource_error(
+fn runtime_resource_binding_error(
   resource: impl Into<String>,
   reason: impl Into<String>,
 ) -> MechError {
   MechError::new(
-    BrowserRuntimeResourceError {
+    RuntimeResourceBindingError {
       resource: resource.into(),
       reason: reason.into(),
     },
@@ -535,7 +535,7 @@ impl MechRuntime {
   ) -> MResult<()> {
     let name = name.into();
     if !validate_resource_binding_name(&name) {
-      return Err(browser_runtime_resource_error(
+      return Err(runtime_resource_binding_error(
         name,
         "resource binding names must be non-empty simple tokens",
       ));
@@ -569,7 +569,7 @@ impl MechRuntime {
     child_path: &str,
   ) -> MResult<(String, String)> {
     let Some(binding_record) = self.resource_bindings.get(binding) else {
-      return Err(browser_runtime_resource_error(
+      return Err(runtime_resource_binding_error(
         binding,
         "unknown resource root binding",
       ));
@@ -584,6 +584,36 @@ impl MechRuntime {
       format!("{}/{}", binding_record.root_path, child_path)
     };
     Ok((binding_record.base_uri.clone(), full_path))
+  }
+
+  pub fn read_bound_resource(
+    &self,
+    binding: &str,
+    child_path: &str,
+  ) -> MResult<Value> {
+    let (base_uri, path) = self.resolve_bound_resource_parts(binding, child_path)?;
+    self.read_resource(RuntimeResourceReadRequest {
+      base_uri,
+      path,
+      context_name: binding.to_string(),
+    })
+  }
+
+  pub fn write_bound_resource(
+    &mut self,
+    binding: &str,
+    child_path: &str,
+    value: &Value,
+  ) -> MResult<()> {
+    let (base_uri, path) = self.resolve_bound_resource_parts(binding, child_path)?;
+    self.write_resource(RuntimeResourceWriteRequest {
+      base_uri,
+      path,
+      context_name: binding.to_string(),
+      operation: RuntimeCapabilityOperation::Write,
+      value: value.clone(),
+      intent: RuntimeResourceWriteIntent::Assign,
+    })
   }
 
   pub fn apply_config_spec(
