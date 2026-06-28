@@ -202,27 +202,39 @@ fn runtime_context_allows_write(
   runtime_context_allows_operation(binding, "write", path)
 }
 
+fn first_context_send_segment(path: &str) -> MResult<&str> {
+  path
+    .split('/')
+    .next()
+    .filter(|segment| !segment.is_empty())
+    .ok_or_else(|| MechError::new(RuntimeInvalidOperationError {
+      operation: "context_send",
+      reason: "context send target path must start with an operation name".to_string(),
+    }, None))
+}
+
+fn context_send_operation(
+  binding: &RuntimeContextBinding,
+  path: &str,
+) -> MResult<RuntimeCapabilityOperation> {
+  let candidate = first_context_send_segment(path)?;
+  if runtime_context_allows_operation(binding, candidate, path) {
+    return RuntimeCapabilityOperation::from_name(candidate.to_string());
+  }
+  if runtime_context_allows_write(binding, path) {
+    return Ok(RuntimeCapabilityOperation::Write);
+  }
+  RuntimeCapabilityOperation::from_name(candidate.to_string())
+}
+
 fn context_write_operation(
+  binding: &RuntimeContextBinding,
   intent: RuntimeResourceWriteIntent,
   path: &str,
 ) -> MResult<RuntimeCapabilityOperation> {
   match intent {
     RuntimeResourceWriteIntent::Assign => Ok(RuntimeCapabilityOperation::Write),
-    RuntimeResourceWriteIntent::Send => {
-      let operation = path
-        .split('/')
-        .next()
-        .filter(|segment| !segment.is_empty())
-        .ok_or_else(|| MechError::new(RuntimeInvalidOperationError {
-          operation: "context_send",
-          reason: "context send target path must start with an operation name".to_string(),
-        }, None))?;
-      if matches!(operation, "text" | "line") {
-        Ok(RuntimeCapabilityOperation::Write)
-      } else {
-        RuntimeCapabilityOperation::from_name(operation.to_string())
-      }
-    }
+    RuntimeResourceWriteIntent::Send => context_send_operation(binding, path),
   }
 }
 
@@ -430,7 +442,7 @@ impl MechRuntime {
     intent: RuntimeResourceWriteIntent,
   ) -> MResult<()> {
     let resolved = self.resolve_context_resource_request(binding, path)?;
-    let operation = context_write_operation(intent, &resolved.context_path)?;
+    let operation = context_write_operation(binding, intent, &resolved.context_path)?;
     if !runtime_context_allows_operation(binding, operation.name(), &resolved.context_path) {
       return Err(MechError::new(RuntimeResourceCapabilityDenied {
         context_name: binding.name.clone(),
@@ -1916,14 +1928,11 @@ impl MechRuntime {
           placement,
         )?;
 
-        self.preflight_context_access(
+        self.preflight_context_send_access(
           context,
           registry,
           &context_name,
           &path,
-          context_write_operation(RuntimeResourceWriteIntent::Send, &path)?,
-          true,
-          Some(RuntimeResourceWriteIntent::Send),
         )?;
 
         self.preflight_expression_context_reads(context, registry, &send.expression, addressed_read_preflight)?;
@@ -2234,6 +2243,29 @@ impl MechRuntime {
         placement.description(),
       ),
     }, None))
+  }
+
+  fn preflight_context_send_access(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    context_name: &str,
+    path: &str,
+  ) -> MResult<()> {
+    let Some(binding) = registry.get(context_name) else {
+      return Err(undeclared_direct_context_target_error(context_name));
+    };
+    let resolved = self.resolve_context_resource_request(binding, path)?;
+    let operation = context_send_operation(binding, &resolved.context_path)?;
+    self.preflight_context_access(
+      context,
+      registry,
+      context_name,
+      path,
+      operation,
+      true,
+      Some(RuntimeResourceWriteIntent::Send),
+    )
   }
 
   fn preflight_context_access(
