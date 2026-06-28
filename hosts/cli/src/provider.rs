@@ -85,6 +85,17 @@ impl<B: CliBackend> RuntimeResourceProvider for CliResourceProvider<B> {
         bases
     }
 
+    fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {
+        if self.instance != "cli" {
+            return Vec::new();
+        }
+        vec![
+            vec![self.base("env"), "cli://env".to_string()],
+            vec![self.base("stdout"), "cli://stdout".to_string()],
+            vec![self.base("stderr"), "cli://stderr".to_string()],
+        ]
+    }
+
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         if self.matches_base(&request.base_uri, "env") {
                 validate_env_key(&request.path)?;

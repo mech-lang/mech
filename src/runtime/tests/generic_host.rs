@@ -76,17 +76,27 @@ fn fake_error(message: impl Into<String>) -> MechError { MechError::new(FakeRobo
 #[derive(Debug)]
 struct AliasProvider {
   bases: Vec<String>,
+  equivalent_groups: Vec<Vec<String>>,
 }
 
 impl AliasProvider {
   fn new(bases: &[&str]) -> Self {
-    Self { bases: bases.iter().map(|base| base.to_string()).collect() }
+    Self {
+      bases: bases.iter().map(|base| base.to_string()).collect(),
+      equivalent_groups: Vec::new(),
+    }
+  }
+
+  fn with_equivalent_group(mut self, group: &[&str]) -> Self {
+    self.equivalent_groups.push(group.iter().map(|base| base.to_string()).collect());
+    self
   }
 }
 
 impl RuntimeResourceProvider for AliasProvider {
   fn scheme(&self) -> &str { "test" }
   fn base_uris(&self) -> Vec<String> { self.bases.clone() }
+  fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> { self.equivalent_groups.clone() }
   fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
     Ok(Value::String(Ref::new("ok".to_string())))
   }
@@ -95,10 +105,16 @@ impl RuntimeResourceProvider for AliasProvider {
 fn runtime_with_alias_provider() -> MechRuntime {
   let mut runtime = RuntimeBuilder::new().build().unwrap();
   runtime
-    .register_resource_provider(Box::new(AliasProvider::new(&[
-      "test://default/context",
-      "test://context",
-    ])))
+    .register_resource_provider(Box::new(
+      AliasProvider::new(&[
+        "test://default/context",
+        "test://context",
+      ])
+      .with_equivalent_group(&[
+        "test://default/context",
+        "test://context",
+      ]),
+    ))
     .unwrap();
   runtime
 }
@@ -242,6 +258,54 @@ fn provider_advertised_alias_grants_do_not_use_string_heuristics() {
     "test://default/context",
     &RuntimeCapabilityOperation::Read,
     "item",
+  ));
+}
+
+#[test]
+fn multiple_provider_bases_are_not_implicit_aliases() {
+  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  runtime
+    .register_resource_provider(Box::new(AliasProvider::new(&[
+      "test://default/context",
+      "test://context",
+    ])))
+    .unwrap();
+  grant_test_read(&mut runtime, "test://context");
+
+  assert!(!runtime.has_capability_grant(
+    "subject",
+    "test://default/context",
+    &RuntimeCapabilityOperation::Read,
+    "item",
+  ));
+}
+
+#[test]
+fn in_memory_docs_bases_are_not_implicit_aliases() {
+  let mut docs = InMemoryDocsProvider::new();
+  docs
+    .insert("docs://manual", "title", Value::String(Ref::new("manual".to_string())))
+    .unwrap();
+  docs
+    .insert("docs://guide", "title", Value::String(Ref::new("guide".to_string())))
+    .unwrap();
+
+  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  runtime.register_resource_provider(Box::new(docs)).unwrap();
+  runtime
+    .grant_capability(RuntimeCapabilityGrant {
+      subject: "subject".to_string(),
+      resource: "docs://manual".to_string(),
+      operations: vec![RuntimeCapabilityOperation::Read],
+      paths: vec!["title".to_string()],
+    })
+    .unwrap();
+
+  assert!(!runtime.has_capability_grant(
+    "subject",
+    "docs://guide",
+    &RuntimeCapabilityOperation::Read,
+    "title",
   ));
 }
 
