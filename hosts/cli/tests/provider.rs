@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 use mech_host_cli::{CliBackend, CliResourceProvider};
 use mech_runtime::{
-    RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
+    RuntimeCapabilityOperation, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
     RuntimeResourceWriteRequest,
 };
 
@@ -128,6 +128,7 @@ fn env_write_and_send_error() {
                     base_uri: "cli://env".to_string(),
                     path: "HOME".to_string(),
                     context_name: "env".to_string(),
+                    operation: RuntimeCapabilityOperation::Write,
                     value: str_value("x"),
                     intent
                 })
@@ -144,6 +145,7 @@ fn stdout_and_stderr_send_text_and_line() {
             base_uri: "cli://stdout".to_string(),
             path: "text".to_string(),
             context_name: "out".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
             value: str_value("abc"),
             intent: RuntimeResourceWriteIntent::Send,
         })
@@ -153,6 +155,7 @@ fn stdout_and_stderr_send_text_and_line() {
             base_uri: "cli://stdout".to_string(),
             path: "line".to_string(),
             context_name: "out".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
             value: str_value("abc"),
             intent: RuntimeResourceWriteIntent::Send,
         })
@@ -162,6 +165,7 @@ fn stdout_and_stderr_send_text_and_line() {
             base_uri: "cli://stderr".to_string(),
             path: "text".to_string(),
             context_name: "err".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
             value: str_value("warning"),
             intent: RuntimeResourceWriteIntent::Send,
         })
@@ -171,6 +175,7 @@ fn stdout_and_stderr_send_text_and_line() {
             base_uri: "cli://stderr".to_string(),
             path: "line".to_string(),
             context_name: "err".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
             value: str_value("warning"),
             intent: RuntimeResourceWriteIntent::Send,
         })
@@ -188,6 +193,7 @@ fn stdout_and_stderr_reject_assign_read_and_unknown_path() {
                 base_uri: "cli://stdout".to_string(),
                 path: "line".to_string(),
                 context_name: "out".to_string(),
+                operation: RuntimeCapabilityOperation::Write,
                 value: str_value("abc"),
                 intent: RuntimeResourceWriteIntent::Assign
             })
@@ -208,6 +214,7 @@ fn stdout_and_stderr_reject_assign_read_and_unknown_path() {
                 base_uri: "cli://stderr".to_string(),
                 path: "foo".to_string(),
                 context_name: "err".to_string(),
+                operation: RuntimeCapabilityOperation::Write,
                 value: str_value("abc"),
                 intent: RuntimeResourceWriteIntent::Send
             })

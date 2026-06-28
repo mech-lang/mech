@@ -8,6 +8,7 @@ pub mod config_profile;
 pub mod host_delegation;
 #[cfg(feature = "host_delegation_signing")]
 pub mod host_delegation_crypto;
+pub mod operation;
 mod resource;
 pub mod host_interface;
 
@@ -45,6 +46,7 @@ mod workspace;
 pub use self::id::*;
 pub use self::config::*;
 pub use self::config_profile::*;
+pub use self::operation::*;
 #[cfg(feature = "host_delegation")]
 pub use self::host_delegation::*;
 #[cfg(feature = "host_delegation_signing")]

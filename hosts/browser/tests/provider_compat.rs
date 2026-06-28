@@ -2,7 +2,7 @@
 
 use mech_core::{BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath, BrowserDomProperty, BrowserDomScope, BrowserOperation, BrowserResource, BROWSER_DOM_PROVIDER_URI, MResult};
 use mech_host_browser::{BrowserDomBackend, BrowserResourceProvider};
-use mech_runtime::{RuntimeResourceProvider, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest};
+use mech_runtime::{RuntimeCapabilityOperation, RuntimeResourceProvider, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest};
 
 #[derive(Debug, Clone)]
 struct TestDomBackend;
@@ -27,7 +27,7 @@ fn authority() -> BrowserAuthority {
   ));
   authority.grant(BrowserCapabilityGrant::new(
     BrowserResource::Dom(selector),
-    [BrowserOperation::Read, BrowserOperation::Write].into_iter().collect(),
+    [BrowserOperation::Read, BrowserOperation::Write],
   ));
   authority
 }
@@ -54,6 +54,7 @@ fn default_browser_provider_preflights_legacy_dom_base() {
     base_uri: BROWSER_DOM_PROVIDER_URI.to_string(),
     path: "body/header/title".to_string(),
     context_name: "ui".to_string(),
+    operation: RuntimeCapabilityOperation::Write,
     intent: RuntimeResourceWriteIntent::Assign,
   }).unwrap();
 }

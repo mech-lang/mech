@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use mech_core::{MResult, MechError, MechErrorKind, Value};
 
+use crate::RuntimeCapabilityOperation;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeResourceReadRequest {
   pub base_uri: String,
@@ -20,6 +22,7 @@ pub struct RuntimeResourceWritePreflightRequest {
   pub base_uri: String,
   pub path: String,
   pub context_name: String,
+  pub operation: RuntimeCapabilityOperation,
   pub intent: RuntimeResourceWriteIntent,
 }
 
@@ -28,6 +31,7 @@ pub struct RuntimeResourceWriteRequest {
   pub base_uri: String,
   pub path: String,
   pub context_name: String,
+  pub operation: RuntimeCapabilityOperation,
   pub value: Value,
   pub intent: RuntimeResourceWriteIntent,
 }
@@ -318,6 +322,7 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
       base_uri: request.base_uri.clone(),
       path: request.path.clone(),
       context_name: request.context_name.clone(),
+      operation: request.operation.clone(),
       intent: request.intent,
     })?;
 

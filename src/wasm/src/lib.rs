@@ -238,14 +238,18 @@ fn wasm_parts_from_runtime_injection_config_result(
   let mut builder = RuntimeBuilder::new()
     .config(runtime_config)
     .host_factory(Box::new(BrowserHostFactory::new(WasmBrowserDomBackend::new())?))?;
+  #[cfg(feature = "host-robot-arm")]
+  {
+    builder = builder.host_factory(Box::new(mech_host_robot_arm::RobotArmHostFactory::new()?))?;
+  }
   let mut saw_default_browser_instance = false;
   for host in &injected.hosts {
     if host.provider == "browser" {
       if host.name == "browser" {
         saw_default_browser_instance = true;
       }
-      builder = builder.host_instance(host.clone());
     }
+    builder = builder.host_instance(host.clone());
   }
   if !saw_default_browser_instance {
     builder = builder.host_instance(HostInstanceConfig {

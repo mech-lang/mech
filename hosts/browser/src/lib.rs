@@ -1,4 +1,5 @@
 pub mod config;
+pub mod host_factories;
 #[cfg(feature = "provider")]
 pub mod provider;
 
@@ -6,6 +7,7 @@ pub mod provider;
 pub mod delegation;
 
 pub use self::config::*;
+pub use self::host_factories::*;
 #[cfg(feature = "provider")]
 pub use self::provider::*;
 

@@ -662,6 +662,7 @@ impl MechRuntime {
       base_uri,
       path,
       context_name: binding.to_string(),
+      operation: RuntimeCapabilityOperation::Write,
       value: value.clone(),
       intent: RuntimeResourceWriteIntent::Assign,
     })

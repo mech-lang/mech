@@ -2,42 +2,7 @@ use std::sync::Arc;
 
 use mech_core::{MResult, MechError, MechErrorKind};
 
-use crate::{Capability, CapabilityId, MechRuntime, RuntimeCapabilityGrantSpec};
-
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub enum RuntimeCapabilityOperation {
-  Read,
-  Write,
-  Custom(String),
-}
-
-impl RuntimeCapabilityOperation {
-  pub fn name(&self) -> &str {
-    match self {
-      RuntimeCapabilityOperation::Read => "read",
-      RuntimeCapabilityOperation::Write => "write",
-      RuntimeCapabilityOperation::Custom(name) => name.as_str(),
-    }
-  }
-
-  pub fn from_name(name: impl Into<String>) -> MResult<Self> {
-    let name = name.into();
-    if name.is_empty() {
-      return Err(MechError::new(
-        RuntimeCapabilityGrantInvalid {
-          reason: "operation cannot be empty".to_string(),
-        },
-        None,
-      ));
-    }
-
-    Ok(match name.as_str() {
-      "read" => RuntimeCapabilityOperation::Read,
-      "write" => RuntimeCapabilityOperation::Write,
-      _ => RuntimeCapabilityOperation::Custom(name),
-    })
-  }
-}
+use crate::{Capability, CapabilityId, MechRuntime, RuntimeCapabilityGrantSpec, RuntimeCapabilityOperation};
 
 #[derive(Clone, Debug, Default)]
 pub struct RuntimeCapabilityGrantRegistry {
@@ -288,7 +253,7 @@ mod tests {
       .with_operation_name("");
     assert!(result.is_err());
     let error = format!("{:?}", result.err().unwrap());
-    assert!(error.contains("RuntimeCapabilityGrantInvalid"));
+    assert!(error.contains("RuntimeCapabilityOperationInvalid"));
     assert!(error.contains("operation"));
   }
 }

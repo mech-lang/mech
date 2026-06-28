@@ -135,6 +135,7 @@ impl<B: CliBackend> RuntimeResourceProvider for CliResourceProvider<B> {
             base_uri: request.base_uri.clone(),
             path: request.path.clone(),
             context_name: request.context_name.clone(),
+            operation: request.operation.clone(),
             intent: request.intent,
         })?;
 

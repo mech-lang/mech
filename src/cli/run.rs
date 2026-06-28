@@ -1,6 +1,5 @@
 use clap::{Arg, ArgAction};
 use mech_core::*;
-use mech_host_cli::CliHostFactory;
 use mech_runtime::{
   parse_host_context_target, ConfigValue, HostInstanceConfig, MechRuntime, RunResourceGrantConfig,
   RuntimeBuilder, RuntimeConfig, RuntimeEvent, RuntimeEventKind,
@@ -300,14 +299,13 @@ pub fn new_cli_runtime(
     }
   }
 
-  let mut builder = RuntimeBuilder::new()
-    .config(config)
-    .host_factory(Box::new(CliHostFactory::new()?))?;
+  let builder = RuntimeBuilder::new().config(config);
+  let (mut builder, registered_providers) = crate::cli::host_factories::register_cli_host_factories(builder)?;
 
   let mut saw_cli_instance = false;
   let mut registered_cli_instances = BTreeSet::new();
   for host in configured_hosts {
-    if host.provider == "cli" {
+    if registered_providers.contains(&host.provider) {
       registered_cli_instances.insert(host.name.clone());
       if host.name == "cli" {
         saw_cli_instance = true;

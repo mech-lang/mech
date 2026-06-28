@@ -11,8 +11,7 @@ pub struct RunResourceGrantConfig {
 
 pub fn validate_run_resource_grant(grant: &RunResourceGrantConfig) -> MResult<()> {
   super::parse_host_context_target(&grant.target)?;
-  if grant.operations.is_empty() { return invalid("run.grants[].operations must contain at least one operation"); }
-  for op in &grant.operations { if op != "read" && op != "write" { return invalid(format!("unknown run grant operation `{op}`")); } }
+  super::validate_host_operations("run.grants[].operations", &grant.operations)?;
   if grant.paths.is_empty() { return invalid("run.grants[].paths must contain at least one path"); }
   for path in &grant.paths { validate_grant_path(path)?; }
   Ok(())

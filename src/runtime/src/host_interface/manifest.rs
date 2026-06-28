@@ -26,10 +26,7 @@ pub fn validate_host_manifest(manifest: &HostManifestConfig) -> MResult<()> {
     if context.base_uri_template.trim().is_empty() { return invalid(format!("host context `{}` base-uri must be non-empty", context.name)); }
     if !context.base_uri_template.contains("://") { return invalid(format!("host context `{}` base-uri must contain `://`", context.name)); }
     if !context.base_uri_template.contains("{instance}") { return invalid(format!("host context `{}` base-uri must contain `{{instance}}`", context.name)); }
-    if context.operations.is_empty() { return invalid(format!("host context `{}` operations must contain at least one operation", context.name)); }
-    for op in &context.operations {
-      if op != "read" && op != "write" { return invalid(format!("unknown host context operation `{op}`")); }
-    }
+    super::validate_host_operations(&format!("host context `{}` operations", context.name), &context.operations)?;
   }
   Ok(())
 }

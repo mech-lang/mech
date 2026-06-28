@@ -71,10 +71,7 @@ pub fn validate_host_interface(interface: &MaterializedHostInterface) -> MResult
     validate_uri_with_authority(&context.base_uri)?;
     if !contexts.insert(context.name.clone()) { return Err(error("HostInterfaceDuplicateContext", format!("duplicate host context `{}`", context.name))); }
     if !bases.insert(context.base_uri.clone()) { return Err(error("HostInterfaceDuplicateBaseUri", format!("duplicate host context base URI `{}`", context.base_uri))); }
-    if context.operations.is_empty() { return Err(error("HostInterfaceInvalid", format!("host context `{}` operations must be non-empty", context.name))); }
-    for operation in &context.operations {
-      if operation != "read" && operation != "write" { return Err(error("HostInterfaceInvalid", format!("unknown host context operation `{operation}`"))); }
-    }
+    super::validate_host_operations(&format!("host context `{}` operations", context.name), &context.operations)?;
   }
   Ok(())
 }

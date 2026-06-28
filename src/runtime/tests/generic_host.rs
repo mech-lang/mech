@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use mech_core::{MResult, MechError, MechErrorKind, Value};
+use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 use mech_runtime::*;
 
 #[derive(Debug)]
@@ -62,7 +62,7 @@ impl RuntimeResourceProvider for FakeRobotProvider {
     }
   }
   fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
-    self.preflight_write(RuntimeResourceWritePreflightRequest { base_uri: request.base_uri.clone(), path: request.path.clone(), context_name: request.context_name.clone(), intent: request.intent })?;
+    self.preflight_write(RuntimeResourceWritePreflightRequest { base_uri: request.base_uri.clone(), path: request.path.clone(), context_name: request.context_name.clone(), operation: request.operation.clone(), intent: request.intent })?;
     self.log.lock().unwrap().push(request.path);
     Ok(())
   }
@@ -186,4 +186,175 @@ fn fake_robot_unsafe_program_fails_before_provider_write() {
   let error = runtime.run_string("+> @arm := arm/commands\n@arm/joints/shoulder/target <- 0.35\n@arm/raw/motor/shoulder <- 1.0\n").expect_err("unsafe path should fail");
   assert!(format!("{error:?}").contains("raw/motor/shoulder"));
   assert_eq!(log.lock().unwrap().len(), 0);
+}
+
+#[derive(Debug)]
+struct PlotterFactory {
+  manifest: HostManifestConfig,
+  log: Arc<Mutex<Vec<String>>>,
+}
+
+impl PlotterFactory {
+  fn new(operations: &[&str], log: Arc<Mutex<Vec<String>>>) -> Self {
+    Self {
+      manifest: HostManifestConfig {
+        provider: "plotter".to_string(),
+        contexts: vec![HostContextManifest {
+          name: "commands".to_string(),
+          base_uri_template: "plotter://{instance}/commands".to_string(),
+          operations: operations.iter().map(|operation| operation.to_string()).collect(),
+        }],
+      },
+      log,
+    }
+  }
+}
+
+impl RuntimeHostFactory for PlotterFactory {
+  fn provider_name(&self) -> &str { "plotter" }
+  fn manifest(&self) -> &HostManifestConfig { &self.manifest }
+  fn validate_settings(&self, _instance_name: &str, settings: &ConfigValue) -> MResult<()> {
+    match settings { ConfigValue::Map(_) => Ok(()), _ => Err(fake_error("settings must be a map")) }
+  }
+  fn instantiate(&self, instance_name: &str, settings: &ConfigValue) -> MResult<RuntimeHostInstallation> {
+    self.validate_settings(instance_name, settings)?;
+    Ok(RuntimeHostInstallation {
+      interface: materialize_host_manifest(instance_name, self.manifest())?,
+      resource_providers: vec![Box::new(PlotterProvider { instance: instance_name.to_string(), log: self.log.clone() })],
+    })
+  }
+}
+
+#[derive(Debug)]
+struct PlotterProvider {
+  instance: String,
+  log: Arc<Mutex<Vec<String>>>,
+}
+
+impl PlotterProvider {
+  fn base(&self) -> String { format!("plotter://{}/commands", self.instance) }
+}
+
+impl RuntimeResourceProvider for PlotterProvider {
+  fn scheme(&self) -> &str { "plotter" }
+  fn base_uris(&self) -> Vec<String> { vec![self.base()] }
+  fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    if request.base_uri != self.base() { return Err(fake_error("unknown plotter base URI")); }
+    match request.path.as_str() {
+      "read" => Ok(Value::String(Ref::new("ok".to_string()))),
+      _ => Err(fake_error("plotter read path is not implemented in this test")),
+    }
+  }
+  fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+    if request.base_uri != self.base() { return Err(fake_error("unknown plotter base URI")); }
+    if request.intent != RuntimeResourceWriteIntent::Send { return Err(fake_error("plotter commands accept only send intent")); }
+    match request.path.as_str() {
+      "line" | "text" | "read" => Ok(()),
+      path if path.starts_with("line/") => Ok(()),
+      path if path.starts_with("read/") => Ok(()),
+      _ => Err(fake_error(format!("unsupported plotter command path `{}`", request.path))),
+    }
+  }
+  fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    self.preflight_write(RuntimeResourceWritePreflightRequest { base_uri: request.base_uri.clone(), path: request.path.clone(), context_name: request.context_name.clone(), operation: request.operation.clone(), intent: request.intent })?;
+    self.log.lock().unwrap().push(request.operation.name().to_string());
+    Ok(())
+  }
+}
+
+fn plotter_runtime(operations: &[&str], grants: &[&str], log: Arc<Mutex<Vec<String>>>) -> MResult<MechRuntime> {
+  RuntimeBuilder::new()
+    .host_factory(Box::new(PlotterFactory::new(operations, log)))?
+    .host_instance(HostInstanceConfig { name: "plotter".to_string(), provider: "plotter".to_string(), settings: ConfigValue::Map(Default::default()) })
+    .run_resource_grant(RunResourceGrantConfig {
+      target: "plotter/commands".to_string(),
+      operations: grants.iter().map(|grant| grant.to_string()).collect(),
+      paths: vec!["line".to_string(), "text".to_string(), "read".to_string(), "read/*".to_string(), "line/safe/*".to_string(), "line/unsafe".to_string()],
+    })
+    .build()
+}
+
+#[test]
+fn custom_line_send_is_not_forced_to_write() {
+  let log = Arc::new(Mutex::new(Vec::new()));
+  let mut runtime = plotter_runtime(&["line"], &["line"], log.clone()).unwrap();
+  runtime.run_string("+> @plotter := plotter/commands\n@plotter/line <- { x1: 0 y1: 0 x2: 10 y2: 10 }\n").unwrap();
+  assert_eq!(log.lock().unwrap().as_slice(), &["line".to_string()]);
+}
+
+#[test]
+fn custom_text_send_is_not_forced_to_write() {
+  let log = Arc::new(Mutex::new(Vec::new()));
+  let mut runtime = plotter_runtime(&["text"], &["text"], log.clone()).unwrap();
+  runtime.run_string("+> @plotter := plotter/commands\n@plotter/text <- { message: \"hello\" }\n").unwrap();
+  assert_eq!(log.lock().unwrap().as_slice(), &["text".to_string()]);
+}
+
+#[test]
+fn legacy_write_only_line_send_still_uses_write() {
+  let log = Arc::new(Mutex::new(Vec::new()));
+  let mut runtime = plotter_runtime(&["write"], &["write"], log.clone()).unwrap();
+  runtime.run_string("+> @plotter := plotter/commands\n@plotter/line <- \"hello\"\n").unwrap();
+  assert_eq!(log.lock().unwrap().as_slice(), &["write".to_string()]);
+}
+
+#[test]
+fn context_send_read_path_does_not_use_read_grant() {
+  let log = Arc::new(Mutex::new(Vec::new()));
+  let mut runtime = plotter_runtime(&["read"], &["read"], log.clone()).unwrap();
+  let error = runtime.run_string("+> @plotter := plotter/commands\n@plotter/read <- \"bad\"\n").expect_err("read must not authorize send");
+  let message = format!("{error:?}");
+  assert!(message.contains("context_send") || message.contains("reserved"), "got {message}");
+  assert!(message.contains("read"), "got {message}");
+  assert!(log.lock().unwrap().is_empty());
+}
+
+#[test]
+fn context_send_read_subpath_does_not_use_read_grant() {
+  let log = Arc::new(Mutex::new(Vec::new()));
+  let mut runtime = plotter_runtime(&["read"], &["read"], log.clone()).unwrap();
+  let error = runtime.run_string("+> @plotter := plotter/commands\n@plotter/read/value <- \"bad\"\n").expect_err("read must not authorize send");
+  let message = format!("{error:?}");
+  assert!(message.contains("context_send") || message.contains("reserved"), "got {message}");
+  assert!(message.contains("read"), "got {message}");
+  assert!(log.lock().unwrap().is_empty());
+}
+
+#[test]
+fn actual_read_path_still_uses_read_grant() {
+  let log = Arc::new(Mutex::new(Vec::new()));
+  let mut runtime = plotter_runtime(&["read"], &["read"], log).unwrap();
+  runtime.run_string("+> @plotter := plotter/commands\nvalue := @plotter/read\n").unwrap();
+}
+
+#[test]
+fn custom_line_preferred_over_write_fallback() {
+  let log = Arc::new(Mutex::new(Vec::new()));
+  let mut runtime = plotter_runtime(&["write", "line"], &["line"], log.clone()).unwrap();
+  runtime.run_string("+> @plotter := plotter/commands\n@plotter/line <- { x1: 0 y1: 0 x2: 10 y2: 10 }\n").unwrap();
+  assert_eq!(log.lock().unwrap().as_slice(), &["line".to_string()]);
+}
+
+#[test]
+fn scoped_custom_line_does_not_fallback_to_write() {
+  let log = Arc::new(Mutex::new(Vec::new()));
+  let mut runtime = plotter_runtime(&["write", "line"], &["write", "line"], log.clone()).unwrap();
+  let error = runtime.run_string("+> @plotter := plotter/commands{:line(line/safe/*), :write(*)}
+@plotter/line/unsafe <- { x1: 0 y1: 0 x2: 10 y2: 10 }
+").expect_err("line outside its scoped capability should fail");
+  let message = format!("{error:?}");
+  assert!(message.contains("line"), "got {message}");
+  assert!(!message.contains("Write"), "got {message}");
+  assert!(log.lock().unwrap().is_empty());
+}
+
+#[test]
+fn denied_line_send_reports_candidate_operation() {
+  let log = Arc::new(Mutex::new(Vec::new()));
+  let mut runtime = plotter_runtime(&["line", "text"], &["text"], log.clone()).unwrap();
+  let error = runtime.run_string("+> @plotter := plotter/commands\n@plotter/line <- { x1: 0 y1: 0 x2: 10 y2: 10 }\n").expect_err("missing line grant should fail");
+  let message = format!("{error:?}");
+  assert!(message.contains("line"), "got {message}");
+  assert!(!message.contains("Write"), "got {message}");
+  assert!(log.lock().unwrap().is_empty());
 }

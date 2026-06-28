@@ -1,7 +1,7 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use std::collections::BTreeSet;
+use std::collections::BTreeMap;
 
 use mech_core::{
   BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
@@ -14,6 +14,7 @@ use mech_runtime::{
   parse_host_context_target, ConfigValue, DiagnosticsConfig, HostInstanceConfig, LogLevel,
   MechConfigDocument, RunResourceGrantConfig, RuntimeConfig, RuntimeLimits,
 };
+use crate::browser_available_host_providers;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
@@ -49,10 +50,11 @@ impl BrowserRuntimeInjectionConfig {
       }
     }
 
+    let available_providers = browser_available_host_providers();
     let mut hosts: Vec<HostInstanceConfig> = document
       .hosts
       .iter()
-      .filter(|host| host.provider == "browser")
+      .filter(|host| available_providers.contains(&host.provider))
       .cloned()
       .collect();
     if !hosts.iter().any(|host| host.name == "browser") {
@@ -63,18 +65,18 @@ impl BrowserRuntimeInjectionConfig {
       });
     }
     for host in &hosts {
-      browser_config_from_settings(&host.settings)?;
+      validate_injected_host_settings(host)?;
     }
-    let injected_host_names: BTreeSet<String> =
-      hosts.iter().map(|host| host.name.clone()).collect();
+    let injected_hosts_by_name: BTreeMap<String, String> =
+      hosts.iter().map(|host| (host.name.clone(), host.provider.clone())).collect();
     let mut run_grants = Vec::new();
     if let Some(run) = &document.run {
       for grant in &run.grants {
         let (instance, context) = parse_host_context_target(&grant.target)?;
-        if !injected_host_names.contains(instance) {
+        let Some(provider) = injected_hosts_by_name.get(instance) else {
           continue;
-        }
-        if !browser_context_is_injected(context) {
+        };
+        if provider == "browser" && !browser_context_is_injected(context) {
           return Err(invalid_error(
             "run.grants.target",
             format!(
@@ -394,6 +396,19 @@ fn browser_config_from_browser_hosts<'a>(
 
 fn browser_context_is_injected(context: &str) -> bool {
   context == "dom"
+}
+
+fn validate_injected_host_settings(host: &HostInstanceConfig) -> MResult<()> {
+  match host.provider.as_str() {
+    "browser" => browser_config_from_settings(&host.settings).map(|_| ()),
+    #[cfg(feature = "host-robot-arm")]
+    "robot-arm" => {
+      use mech_runtime::RuntimeHostFactory;
+      mech_host_robot_arm::RobotArmHostFactory::new()?
+        .validate_settings(&host.name, &host.settings)
+    }
+    _ => Ok(()),
+  }
 }
 
 pub fn browser_config_from_settings(settings: &ConfigValue) -> MResult<BrowserHostBrowserConfig> {
@@ -1246,6 +1261,134 @@ config := {
     assert!(injected.run_grants.is_empty());
   }
 
+  #[cfg(feature = "host-robot-arm")]
+  #[test]
+  fn browser_injection_keeps_available_robot_host() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    {
+      name: "ui"
+      provider: "browser"
+      settings: {
+        dom: [
+          {
+            path: "x-slider/_value"
+            selector: "#x-slider"
+            property: "value"
+            operations: ["read"]
+          }
+        ]
+      }
+    }
+    {
+      name: "arm"
+      provider: "robot-arm"
+      settings: { backend: "mock" }
+    }
+  ]
+  run: {
+    grants: [
+      {
+        target: "ui/dom"
+        operations: ["read"]
+        paths: ["x-slider/_value"]
+      }
+      {
+        target: "arm/commands"
+        operations: ["move"]
+        paths: ["move"]
+      }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let injected =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
+
+    assert!(injected.hosts.iter().any(|host| host.name == "ui" && host.provider == "browser"));
+    assert!(injected.hosts.iter().any(|host| host.name == "arm" && host.provider == "robot-arm"));
+    assert!(injected.run_grants.iter().any(|grant| grant.target == "ui/dom"));
+    assert!(injected.run_grants.iter().any(|grant| grant.target == "arm/commands"));
+  }
+
+  #[test]
+  fn browser_injection_filters_unavailable_provider() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    {
+      name: "ui"
+      provider: "browser"
+      settings: {}
+    }
+    {
+      name: "native"
+      provider: "some-native-host"
+      settings: {}
+    }
+  ]
+  run: {
+    grants: [
+      {
+        target: "native/commands"
+        operations: ["move"]
+        paths: ["move"]
+      }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let injected =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
+
+    assert!(!injected.hosts.iter().any(|host| host.name == "native"));
+    assert!(injected.run_grants.is_empty());
+  }
+
+  #[cfg(feature = "host-robot-arm")]
+  #[test]
+  fn browser_injection_does_not_apply_browser_context_check_to_robot() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    {
+      name: "arm"
+      provider: "robot-arm"
+      settings: { backend: "mock" }
+    }
+  ]
+  run: {
+    grants: [
+      {
+        target: "arm/commands"
+        operations: ["move"]
+        paths: ["move"]
+      }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let injected =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
+
+    assert!(injected.hosts.iter().any(|host| host.name == "arm" && host.provider == "robot-arm"));
+    assert_eq!(injected.run_grants.len(), 1);
+    assert_eq!(injected.run_grants[0].target, "arm/commands");
+  }
+
   #[test]
   fn browser_runtime_injection_keeps_alias_run_grant() {
     let document = parse_config_document(
@@ -1412,6 +1555,7 @@ config := {
         base_uri: request.base_uri,
         path: request.path.clone(),
         context_name: request.context_name,
+        operation: request.operation.clone(),
         intent: request.intent,
       })?;
       let Value::String(value) = request.value else {

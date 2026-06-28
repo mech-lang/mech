@@ -187,7 +187,7 @@ ok := math/tau > 6.0
 #[test]
 fn in_memory_docs_provider_write_then_read_returns_value() {
   let mut provider = InMemoryDocsProvider::new();
-  provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign }).unwrap();
+  provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign }).unwrap();
   let value = provider.read(RuntimeResourceReadRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string() }).unwrap();
   assert_bool_true(value, "provider write then read");
 }
@@ -196,7 +196,7 @@ fn in_memory_docs_provider_write_then_read_returns_value() {
 fn resource_registry_write_then_read_returns_value() {
   let mut registry = RuntimeResourceRegistry::new();
   registry.register_provider(Box::new(InMemoryDocsProvider::new())).unwrap();
-  registry.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign }).unwrap();
+  registry.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign }).unwrap();
   let value = registry.read(RuntimeResourceReadRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string() }).unwrap();
   assert_bool_true(value, "registry write then read");
 }
@@ -204,7 +204,7 @@ fn resource_registry_write_then_read_returns_value() {
 #[test]
 fn resource_registry_write_missing_provider_fails() {
   let mut registry = RuntimeResourceRegistry::new();
-  let result = registry.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
+  let result = registry.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("RuntimeResourceProviderNotFound"), "expected missing provider error, got {error}");
@@ -215,7 +215,7 @@ fn resource_registry_write_missing_provider_fails() {
 #[test]
 fn in_memory_docs_write_invalid_scheme_fails() {
   let mut provider = InMemoryDocsProvider::new();
-  let result = provider.write(RuntimeResourceWriteRequest { base_uri: "db://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
+  let result = provider.write(RuntimeResourceWriteRequest { base_uri: "db://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("RuntimeResourceInvalidUri"), "expected invalid URI error, got {error}");
@@ -225,7 +225,7 @@ fn in_memory_docs_write_invalid_scheme_fails() {
 #[test]
 fn in_memory_docs_write_empty_path_fails() {
   let mut provider = InMemoryDocsProvider::new();
-  let result = provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: String::new(), context_name: "manual".to_string(), value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
+  let result = provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: String::new(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("RuntimeResourceInvalidUri"), "expected invalid URI error, got {error}");
@@ -243,7 +243,7 @@ impl RuntimeResourceProvider for ReadOnlyDocsProvider {
 #[test]
 fn provider_default_write_is_unsupported() {
   let mut provider = ReadOnlyDocsProvider;
-  let result = provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
+  let result = provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("RuntimeResourceWriteUnsupported"), "expected unsupported write error, got {error}");

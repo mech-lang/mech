@@ -29,6 +29,10 @@ impl RuntimeHostFactoryRegistry {
     self.factories.insert(provider, factory);
     Ok(())
   }
+  pub fn contains_provider(&self, provider: &str) -> bool { self.factories.contains_key(provider) }
+
+  pub fn provider_names(&self) -> impl Iterator<Item = &str> { self.factories.keys().map(String::as_str) }
+
   pub fn instantiate(&self, config: &HostInstanceConfig) -> MResult<RuntimeHostInstallation> {
     let Some(factory) = self.factories.get(&config.provider) else { return Err(error("RuntimeHostProviderNotFound", format!("host provider `{}` is not registered", config.provider))); };
     factory.validate_settings(&config.name, &config.settings)?;

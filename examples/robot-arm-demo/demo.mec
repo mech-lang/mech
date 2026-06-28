@@ -1,0 +1,6 @@
++> @arm := arm/commands
++> @state := arm/state
+@arm/move <- { x: 10 y: 20 z: 5 }
+@arm/grip <- { closed: true }
+position := @state/position
+gripper := @state/gripper
