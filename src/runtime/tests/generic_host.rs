@@ -244,6 +244,7 @@ impl RuntimeResourceProvider for PlotterProvider {
     if request.intent != RuntimeResourceWriteIntent::Send { return Err(fake_error("plotter commands accept only send intent")); }
     match request.path.as_str() {
       "line" | "text" => Ok(()),
+      path if path.starts_with("line/") => Ok(()),
       _ => Err(fake_error(format!("unsupported plotter command path `{}`", request.path))),
     }
   }
@@ -261,7 +262,7 @@ fn plotter_runtime(operations: &[&str], grants: &[&str], log: Arc<Mutex<Vec<Stri
     .run_resource_grant(RunResourceGrantConfig {
       target: "plotter/commands".to_string(),
       operations: grants.iter().map(|grant| grant.to_string()).collect(),
-      paths: vec!["line".to_string(), "text".to_string()],
+      paths: vec!["line".to_string(), "text".to_string(), "line/safe/*".to_string(), "line/unsafe".to_string()],
     })
     .build()
 }
@@ -296,6 +297,19 @@ fn custom_line_preferred_over_write_fallback() {
   let mut runtime = plotter_runtime(&["write", "line"], &["line"], log.clone()).unwrap();
   runtime.run_string("+> @plotter := plotter/commands\n@plotter/line <- { x1: 0 y1: 0 x2: 10 y2: 10 }\n").unwrap();
   assert_eq!(log.lock().unwrap().as_slice(), &["line".to_string()]);
+}
+
+#[test]
+fn scoped_custom_line_does_not_fallback_to_write() {
+  let log = Arc::new(Mutex::new(Vec::new()));
+  let mut runtime = plotter_runtime(&["write", "line"], &["write", "line"], log.clone()).unwrap();
+  let error = runtime.run_string("+> @plotter := plotter/commands{:line(line/safe/*), :write(*)}
+@plotter/line/unsafe <- { x1: 0 y1: 0 x2: 10 y2: 10 }
+").expect_err("line outside its scoped capability should fail");
+  let message = format!("{error:?}");
+  assert!(message.contains("line"), "got {message}");
+  assert!(!message.contains("Write"), "got {message}");
+  assert!(log.lock().unwrap().is_empty());
 }
 
 #[test]

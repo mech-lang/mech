@@ -187,6 +187,13 @@ fn runtime_context_allows_operation(
   })
 }
 
+fn runtime_context_exposes_operation(
+  binding: &RuntimeContextBinding,
+  operation: &str,
+) -> bool {
+  binding.capabilities.iter().any(|capability| capability.operation == operation)
+}
+
 fn runtime_context_allows_read(
   binding: &RuntimeContextBinding,
   path: &str,
@@ -219,6 +226,9 @@ fn context_send_operation(
 ) -> MResult<RuntimeCapabilityOperation> {
   let candidate = first_context_send_segment(path)?;
   if runtime_context_allows_operation(binding, candidate, path) {
+    return RuntimeCapabilityOperation::from_name(candidate.to_string());
+  }
+  if runtime_context_exposes_operation(binding, candidate) {
     return RuntimeCapabilityOperation::from_name(candidate.to_string());
   }
   if runtime_context_allows_write(binding, path) {
