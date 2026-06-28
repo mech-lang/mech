@@ -31,6 +31,10 @@ impl FakeDomHost {
     self.state.borrow().reads.len()
   }
 
+  fn reads(&self) -> Vec<String> {
+    self.state.borrow().reads.clone()
+  }
+
   fn write_count(&self) -> usize {
     self.state.borrow().writes.len()
   }
@@ -159,6 +163,42 @@ fn runtime_resolves_child_path_under_narrow_browser_root() {
     runtime.resource_binding("head").unwrap().root_path.as_str(),
     "body/header",
   );
+}
+
+#[test]
+fn nested_browser_resource_binding_resolves_provider_after_late_registration() {
+  let mut runtime = runtime();
+  let host = FakeDomHost::default().with_value("body/header/title", "Hello");
+  runtime.bind_resource_root("head", "browser://dom/body/header/").unwrap();
+  register_browser_provider(
+    &mut runtime,
+    authority("body/header/title", "#title", &[BrowserOperation::Read]),
+    host.clone(),
+  );
+  grant_runtime_context_read(&mut runtime, "body/header/title");
+
+  let value = runtime.read_bound_resource("head", "title").unwrap();
+
+  assert_eq!(value.as_string().unwrap().borrow().as_str(), "Hello");
+  assert_eq!(host.reads(), vec!["body/header/title".to_string()]);
+}
+
+#[test]
+fn nested_browser_resource_binding_resolves_provider_when_registered_before_binding() {
+  let mut runtime = runtime();
+  let host = FakeDomHost::default().with_value("body/header/title", "Hello");
+  register_browser_provider(
+    &mut runtime,
+    authority("body/header/title", "#title", &[BrowserOperation::Read]),
+    host.clone(),
+  );
+  runtime.bind_resource_root("head", "browser://dom/body/header/").unwrap();
+  grant_runtime_context_read(&mut runtime, "body/header/title");
+
+  let value = runtime.read_bound_resource("head", "title").unwrap();
+
+  assert_eq!(value.as_string().unwrap().borrow().as_str(), "Hello");
+  assert_eq!(host.reads(), vec!["body/header/title".to_string()]);
 }
 
 #[test]

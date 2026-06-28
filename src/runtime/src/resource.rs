@@ -145,6 +145,21 @@ impl RuntimeResourceRegistry {
     Ok(Some(resource_uri_origin(candidate)?.to_string()))
   }
 
+  pub fn base_uris_equivalent(&self, left: &str, right: &str) -> bool {
+    let left = left.trim_end_matches('/');
+    let right = right.trim_end_matches('/');
+
+    if left == right {
+      return true;
+    }
+
+    self.providers.iter().any(|entry| {
+      let has_left = entry.bases.iter().any(|base| base.trim_end_matches('/') == left);
+      let has_right = entry.bases.iter().any(|base| base.trim_end_matches('/') == right);
+      has_left && has_right
+    })
+  }
+
   fn provider_entry_for(&self, scheme: &str, uri: &str) -> Option<&RuntimeResourceProviderEntry> {
     self.providers
       .iter()

@@ -39,6 +39,15 @@ fn runtime_with_root(root: &std::path::Path) -> mech_runtime::MechRuntime {
   RuntimeBuilder::new().source_resolver(FileSourceResolver::new(root)).build().unwrap()
 }
 
+fn runtime_with_root_and_browser_manifest(root: &std::path::Path) -> mech_runtime::MechRuntime {
+  RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(root))
+    .module_manifest(browser_dom_manifest())
+    .unwrap()
+    .build()
+    .unwrap()
+}
+
 fn docs_provider_with(
   base_uri: &str,
   path: &str,
@@ -2396,7 +2405,7 @@ result := @foo/ok\n",
 #[test]
 fn manifest_context_import_materializes_without_source_dependency() {
   let root = setup_modules("+> @ui := browser/dom\nx := 1\n");
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let record = runtime.store().get_module_version(version).unwrap().unwrap();
 
@@ -2411,7 +2420,7 @@ fn manifest_context_import_materializes_without_source_dependency() {
 #[test]
 fn manifest_context_import_is_visible_to_scoped_address_resolution() {
   let root = setup_modules("+> @ui := browser/dom\ntitle := @ui/counter/_text\n");
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version);
   assert!(result.is_err(), "expected resource/provider failure without browser provider");
@@ -2422,7 +2431,7 @@ fn manifest_context_import_is_visible_to_scoped_address_resolution() {
 #[test]
 fn manifest_context_import_conflicts_with_interpreter_address_target() {
   let root = setup_modules("+> @foo := browser/dom\n\n~~~mech:foo\nok := true\n<+ ok\n~~~\n\nresult := @foo/counter/_text\n");
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let result = runtime.resolve_and_store_module_source("main.mec", module_options());
   assert!(result.is_err(), "manifest context alias should conflict with interpreter target");
   let error = format!("{:?}", result.err().unwrap());
@@ -2433,7 +2442,7 @@ fn manifest_context_import_conflicts_with_interpreter_address_target() {
 #[test]
 fn context_import_alias_is_not_bound_as_value_import() {
   let root = setup_modules("+> @ui := browser/dom\n+> ./math.mec\nresult := ui\n");
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let record = runtime.store().get_module_version(version).unwrap().unwrap();
   assert_eq!(record.imports.len(), 2);
@@ -2471,7 +2480,7 @@ fn stored_module_manifest_context_import_ordering_supports_derived_alias() {
     "+> @ui := browser/dom\n\n@dom := @ui\n\nresult := @dom/counter/_text\n",
   );
 
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   runtime
     .grant_capability(runtime_context_read_grant(&runtime, "browser://dom", "counter/_text"))
     .unwrap();
@@ -2520,7 +2529,7 @@ fn stored_module_derived_context_before_manifest_base_is_rejected() {
     "@dom := @ui\n\n+> @ui := browser/dom\n\nx := 1\n",
   );
 
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let version = runtime
     .resolve_and_store_module_source("main.mec", module_options())
     .unwrap()
@@ -2564,7 +2573,7 @@ fn direct_runtime_manifest_context_import_write_uses_provider_lookup() {
 #[test]
 fn repeated_manifest_context_alias_in_separate_fenced_scopes_is_legal() {
   let root = setup_modules("~~~mech:foo\n+> @ui := browser/dom\na := @ui/counter/_text\n~~~\n\n~~~mech:bar\n+> @ui := browser/dom\nb := @ui/counter/_text\n~~~\n");
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let result = runtime.resolve_and_store_module_source("main.mec", module_options());
   assert!(result.is_ok(), "same context alias in separate fenced scopes should be legal: {result:?}");
 }
@@ -2572,7 +2581,7 @@ fn repeated_manifest_context_alias_in_separate_fenced_scopes_is_legal() {
 #[test]
 fn manifest_context_import_in_fenced_scope_does_not_leak_to_program_scope() {
   let root = setup_modules("~~~mech:foo\n+> @ui := browser/dom\na := @ui/counter/_text\n~~~\n\nresult := @ui/counter/_text\n");
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version);
   assert!(result.is_err(), "program scope should not see fenced @ui context import");
@@ -2586,7 +2595,7 @@ fn resolving_module_with_fenced_context_import_does_not_pollute_direct_runtime_b
     "~~~mech:foo\n+> @ui := browser/dom\na := @ui/counter/_text\n~~~\n"
   );
 
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
 
   let result = runtime.run_string("x := @ui/counter/_text\n");
@@ -2609,7 +2618,7 @@ fn fenced_context_alias_can_match_unrelated_interpreter_name_without_resolving_a
     "~~~mech:foo\nok := true\n<+ ok\n~~~\n\n~~~mech:bar\n+> @foo := browser/dom\nx := @foo/counter/_text\n~~~\n"
   );
 
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
 
   let result = runtime.run_module_scope(

@@ -576,6 +576,32 @@ impl MechRuntime {
     };
 
     let child_path = child_path.trim_matches('/');
+
+    let stored_root = if binding_record.root_path.is_empty() {
+      binding_record.base_uri.trim_end_matches('/').to_string()
+    } else {
+      format!(
+        "{}/{}",
+        binding_record.base_uri.trim_end_matches('/'),
+        binding_record.root_path.trim_matches('/'),
+      )
+    };
+
+    let candidate_uri = if child_path.is_empty() {
+      stored_root
+    } else {
+      format!("{}/{}", stored_root.trim_end_matches('/'), child_path)
+    };
+
+    if let Some(provider_base_uri) = self.resources.provider_base_uri_for(&candidate_uri)? {
+      let provider_path = candidate_uri
+        .strip_prefix(&provider_base_uri)
+        .unwrap_or_default()
+        .trim_matches('/')
+        .to_string();
+      return Ok((provider_base_uri, provider_path));
+    }
+
     let full_path = if binding_record.root_path.is_empty() {
       child_path.to_string()
     } else if child_path.is_empty() {
@@ -646,7 +672,16 @@ impl MechRuntime {
     operation: &RuntimeCapabilityOperation,
     path: &str,
   ) -> bool {
-    self.grants.allows(subject, resource, operation, path)
+    self.grants.allows_with_resource_match(
+      subject,
+      resource,
+      operation,
+      path,
+      |grant_resource, requested_resource| {
+        grant_resource == requested_resource
+          || self.resources.base_uris_equivalent(grant_resource, requested_resource)
+      },
+    )
   }
 
   pub fn install_run_resource_grant(

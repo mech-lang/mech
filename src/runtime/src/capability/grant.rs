@@ -44,9 +44,29 @@ impl RuntimeCapabilityGrantRegistry {
     operation: &RuntimeCapabilityOperation,
     path: &str,
   ) -> bool {
+    self.allows_with_resource_match(
+      subject,
+      resource,
+      operation,
+      path,
+      resource_names_match,
+    )
+  }
+
+  pub fn allows_with_resource_match<F>(
+    &self,
+    subject: &str,
+    resource: &str,
+    operation: &RuntimeCapabilityOperation,
+    path: &str,
+    resource_matches: F,
+  ) -> bool
+  where
+    F: Fn(&str, &str) -> bool,
+  {
     self.grants.iter().any(|grant| {
       grant.subject == subject
-        && resource_names_match(&grant.resource, resource)
+        && resource_matches(&grant.resource, resource)
         && grant.operations.iter().any(|allowed| allowed == operation)
         && grant.paths.iter().any(|allowed| grant_path_matches(allowed, path))
     })

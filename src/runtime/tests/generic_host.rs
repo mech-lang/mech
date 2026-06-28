@@ -74,6 +74,47 @@ impl MechErrorKind for FakeRobotError { fn name(&self) -> &str { "FakeRobotError
 fn fake_error(message: impl Into<String>) -> MechError { MechError::new(FakeRobotError { message: message.into() }, None) }
 
 #[derive(Debug)]
+struct AliasProvider {
+  bases: Vec<String>,
+}
+
+impl AliasProvider {
+  fn new(bases: &[&str]) -> Self {
+    Self { bases: bases.iter().map(|base| base.to_string()).collect() }
+  }
+}
+
+impl RuntimeResourceProvider for AliasProvider {
+  fn scheme(&self) -> &str { "test" }
+  fn base_uris(&self) -> Vec<String> { self.bases.clone() }
+  fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+    Ok(Value::String(Ref::new("ok".to_string())))
+  }
+}
+
+fn runtime_with_alias_provider() -> MechRuntime {
+  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  runtime
+    .register_resource_provider(Box::new(AliasProvider::new(&[
+      "test://default/context",
+      "test://context",
+    ])))
+    .unwrap();
+  runtime
+}
+
+fn grant_test_read(runtime: &mut MechRuntime, resource: &str) {
+  runtime
+    .grant_capability(RuntimeCapabilityGrant {
+      subject: "subject".to_string(),
+      resource: resource.to_string(),
+      operations: vec![RuntimeCapabilityOperation::Read],
+      paths: vec!["item".to_string()],
+    })
+    .unwrap();
+}
+
+#[derive(Debug)]
 struct FakeBrowserFactory {
   manifest: HostManifestConfig,
 }
@@ -147,6 +188,61 @@ fn duplicate_host_instance_registration_fails_generically() {
   let error = format!("{error:?}");
   assert!(error.contains("shared"), "got {error}");
   assert!(error.contains("duplicate") || error.contains("already"), "got {error}");
+}
+
+#[test]
+fn provider_advertised_alias_grant_authorizes_materialized_base() {
+  let mut runtime = runtime_with_alias_provider();
+  grant_test_read(&mut runtime, "test://context");
+
+  assert!(runtime.has_capability_grant(
+    "subject",
+    "test://default/context",
+    &RuntimeCapabilityOperation::Read,
+    "item",
+  ));
+}
+
+#[test]
+fn provider_advertised_materialized_grant_authorizes_alias_base() {
+  let mut runtime = runtime_with_alias_provider();
+  grant_test_read(&mut runtime, "test://default/context");
+
+  assert!(runtime.has_capability_grant(
+    "subject",
+    "test://context",
+    &RuntimeCapabilityOperation::Read,
+    "item",
+  ));
+}
+
+#[test]
+fn provider_advertised_alias_grant_does_not_authorize_unregistered_base() {
+  let mut runtime = runtime_with_alias_provider();
+  grant_test_read(&mut runtime, "test://context");
+
+  assert!(!runtime.has_capability_grant(
+    "subject",
+    "test://other/context",
+    &RuntimeCapabilityOperation::Read,
+    "item",
+  ));
+}
+
+#[test]
+fn provider_advertised_alias_grants_do_not_use_string_heuristics() {
+  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  runtime
+    .register_resource_provider(Box::new(AliasProvider::new(&["test://context"])))
+    .unwrap();
+  grant_test_read(&mut runtime, "test://context");
+
+  assert!(!runtime.has_capability_grant(
+    "subject",
+    "test://default/context",
+    &RuntimeCapabilityOperation::Read,
+    "item",
+  ));
 }
 
 #[test]
