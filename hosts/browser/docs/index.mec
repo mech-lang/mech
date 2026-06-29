@@ -17,9 +17,16 @@ The DOM context is backed by configured DOM paths, selectors, properties, and al
 2. Pages
 -------------------------------------------------------------------------------
 
+- [Manifest](manifest.html)
 - [Config](config.html)
 - [DOM](dom.html)
+- [Clipboard](clipboard.html)
+- [Network](network.html)
+- [Storage](storage.html)
 - [WASM API](wasm-api.html)
+- [Host Config Injection](host-config-injection.html)
+- [Host Delegation](delegation.html)
+- [Examples](examples.html)
 
 3. Related guides
 -------------------------------------------------------------------------------
