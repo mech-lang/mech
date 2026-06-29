@@ -1,0 +1,45 @@
+`mech bundle-web`
+===============================================================================
+
+`mech bundle-web` bundles a configured browser project into static web assets.
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```sh
+mech bundle-web examples/browser-dom-demo --out dist/browser-dom-demo
+```
+
+2. Required project config
+-------------------------------------------------------------------------------
+
+`bundle-web` requires a project config with enough `serve` information to locate source files, the HTML shim, and the wasm package.
+
+```mech
+config := {
+  serve: {
+    paths: ["demo.mec"]
+    shim: "index.html"
+    wasm: "../../src/wasm/pkg"
+  }
+}
+```
+
+3. Output layout
+-------------------------------------------------------------------------------
+
+The bundle output includes:
+
+```text
+index.html
+style.css
+pkg/
+source/
+code/
+html/
+```
+
+4. Static URL rules
+-------------------------------------------------------------------------------
+
+Static bundles should use relative browser URLs. Server-root URLs such as `/code/demo.mec` depend on `mech serve` and are rejected for static bundles.
