@@ -623,4 +623,69 @@ mod tests {
     assert!(error.contains("reserved") || error.contains("provider"), "got {error}");
     assert!(error.contains("browser"), "got {error}");
   }
+
+  #[test]
+  fn explicit_config_cli_stdout_line_is_authoritative_without_deny_defaults() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r#"config := { run: { grants: [{target: "cli/stdout", operations: ["write"], paths: ["line"]}] } }"#,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let loaded = crate::LoadedMechConfig {
+      path: std::path::PathBuf::from("test.mcfg"),
+      base_dir: std::path::PathBuf::new(),
+      document: document.clone(),
+      discovered_project_dir: None,
+    };
+    let cli_grants = config::effective_cli_host_grants(
+      Some(&loaded),
+      config::CliHostCapabilitySelection::default(),
+    ).unwrap();
+    let run_grants = document.run.as_ref().unwrap().grants.as_slice();
+    let mut runtime = new_cli_runtime(
+      RuntimeConfig::default(),
+      &cli_grants,
+      &document.hosts,
+      run_grants,
+    ).unwrap();
+
+    runtime.run_string("+> @out := cli/stdout\n@out/line <- \"ok\"\n").unwrap();
+    assert!(runtime.run_string("+> @env := cli/env\nx := @env/HOME\n").is_err());
+    assert!(runtime.run_string("+> @err := cli/stderr\n@err/line <- \"bad\"\n").is_err());
+    assert!(runtime.run_string("+> @out := cli/stdout\n@out/text <- \"bad\"\n").is_err());
+  }
+
+  #[test]
+  fn explicit_cli_profile_remains_additive_with_config_grants() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r#"config := { run: { grants: [{target: "cli/stdout", operations: ["write"], paths: ["line"]}] } }"#,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let loaded = crate::LoadedMechConfig {
+      path: std::path::PathBuf::from("test.mcfg"),
+      base_dir: std::path::PathBuf::new(),
+      document: document.clone(),
+      discovered_project_dir: None,
+    };
+    let cli_grants = config::effective_cli_host_grants(
+      Some(&loaded),
+      config::CliHostCapabilitySelection {
+        include_defaults: true,
+        profiles: vec![":cli/stderr".to_string()],
+      },
+    ).unwrap();
+    let run_grants = document.run.as_ref().unwrap().grants.as_slice();
+    let mut runtime = new_cli_runtime(
+      RuntimeConfig::default(),
+      &cli_grants,
+      &document.hosts,
+      run_grants,
+    ).unwrap();
+
+    runtime.run_string("+> @out := cli/stdout\n@out/line <- \"ok\"\n").unwrap();
+    runtime.run_string("+> @err := cli/stderr\n@err/line <- \"ok\"\n").unwrap();
+    assert!(runtime.run_string("+> @env := cli/env\nx := @env/HOME\n").is_err());
+  }
+
 }
