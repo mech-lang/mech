@@ -87,16 +87,6 @@ fn path_is_recursive_capability_target(path: &Path) -> bool {
 }
 
 
-fn normalize_watch_capability_path(path: &Path) -> PathBuf {
-  if path.exists() && path.is_dir() {
-    return path.to_path_buf();
-  }
-  path.parent()
-    .filter(|parent| !parent.as_os_str().is_empty())
-    .map(Path::to_path_buf)
-    .unwrap_or_else(|| path.to_path_buf())
-}
-
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 struct CapabilityGrantKey {
   path: PathBuf,
@@ -178,8 +168,7 @@ fn add_config_capability_grant(
       let recursive = grant
         .recursive
         .unwrap_or_else(|| path_is_recursive_capability_target(&path));
-      let watch_path = if recursive { path } else { normalize_watch_capability_path(&path) };
-      add_capability_grant(grants, watch_path, recursive, &[FS_WATCH]);
+      add_capability_grant(grants, path, recursive, &[FS_WATCH]);
     }
     ConfigCapabilityKind::Serve => {
       let recursive = grant
@@ -263,8 +252,7 @@ pub fn build_mech_filesystem_authority(
   for path in allow_watch {
     let path = resolve_capability_path(&path)?;
     let recursive = path_is_recursive_capability_target(&path);
-    let watch_path = if recursive { path } else { normalize_watch_capability_path(&path) };
-    add_capability_grant(&mut grants, watch_path, recursive, &[FS_WATCH]);
+    add_capability_grant(&mut grants, path, recursive, &[FS_WATCH]);
   }
 
   for path in allow_serve {
@@ -627,7 +615,7 @@ mod filesystem_capability_tests {
   }
 
   #[test]
-  fn file_scoped_allow_watch_grants_parent_directory_for_reload() {
+  fn file_scoped_allow_watch_stays_scoped_to_file() {
     let root = temp_root("file-watch-parent-grant");
     let target = root.join("main.mec");
     std::fs::write(&target, "x := 1").unwrap();
@@ -646,20 +634,20 @@ mod filesystem_capability_tests {
       let badge = "[test]".normal();
       let authority = build_mech_filesystem_authority(serve_matches, None, &badge).unwrap();
       let mut ids = DefaultIdGenerator::new();
-      authority
-        .delegate_path_to(
-          &mut ids,
-          SERVE_HOST_SUBJECT,
-          &root,
-          false,
-          [FS_WATCH],
-        )
-        .unwrap();
       assert!(authority
         .delegate_path_to(
           &mut ids,
           SERVE_HOST_SUBJECT,
           &target,
+          false,
+          [FS_WATCH],
+        )
+        .is_ok());
+      assert!(authority
+        .delegate_path_to(
+          &mut ids,
+          SERVE_HOST_SUBJECT,
+          &root,
           false,
           [FS_WATCH],
         )

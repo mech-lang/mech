@@ -80,6 +80,40 @@ struct CollectedSourceTarget {
 
 
 #[cfg(feature = "formatter")]
+fn absolute_path(path: &Path) -> MResult<PathBuf> {
+  Ok(if path.is_absolute() {
+    path.to_path_buf()
+  } else {
+    std::env::current_dir()?.join(path)
+  })
+}
+
+#[cfg(feature = "formatter")]
+fn normalize_output_exclusion(output_path: &Path, is_output_file: bool) -> MResult<Option<PathBuf>> {
+  if is_output_file {
+    return Ok(None);
+  }
+  let absolute = absolute_path(output_path)?;
+  Ok(Some(if absolute.exists() {
+    absolute.canonicalize()?
+  } else {
+    absolute
+  }))
+}
+
+#[cfg(feature = "formatter")]
+fn is_excluded_output_path(path: &Path, output_exclusion: Option<&Path>) -> MResult<bool> {
+  let Some(excluded) = output_exclusion else { return Ok(false); };
+  let absolute = absolute_path(path)?;
+  let normalized = if absolute.exists() {
+    absolute.canonicalize()?
+  } else {
+    absolute
+  };
+  Ok(normalized == excluded || normalized.starts_with(excluded))
+}
+
+#[cfg(feature = "formatter")]
 fn explicit_file_relative_path(path: &Path) -> MResult<PathBuf> {
   if path.is_relative() {
     return Ok(path.to_path_buf());
@@ -104,7 +138,7 @@ fn read_format_source(path: &Path) -> MResult<MechSourceCode> {
 }
 
 #[cfg(feature = "formatter")]
-fn collect_format_targets(path: &Path) -> MResult<Vec<CollectedSourceTarget>> {
+fn collect_format_targets(path: &Path, output_exclusion: Option<&Path>) -> MResult<Vec<CollectedSourceTarget>> {
   if path.is_file() {
     if !extension_allowed(path, FORMAT_EXTENSIONS) {
       return Err(unsupported_source_path_error(path, FORMAT_EXTENSIONS));
@@ -124,7 +158,8 @@ fn collect_format_targets(path: &Path) -> MResult<Vec<CollectedSourceTarget>> {
     return Err(MechError::new(GenericError { msg: format!("Source path is neither a file nor directory: {}", path.display()) }, None).with_compiler_loc());
   }
 
-  fn collect_dir(root: &Path, dir: &Path, out: &mut Vec<CollectedSourceTarget>, visited: &mut BTreeSet<PathBuf>) -> MResult<()> {
+  fn collect_dir(root: &Path, dir: &Path, output_exclusion: Option<&Path>, out: &mut Vec<CollectedSourceTarget>, visited: &mut BTreeSet<PathBuf>) -> MResult<()> {
+    if is_excluded_output_path(dir, output_exclusion)? { return Ok(()); }
     let canonical = dir.canonicalize()?;
     if !visited.insert(canonical) { return Ok(()); }
     for entry in fs::read_dir(dir)? {
@@ -138,7 +173,8 @@ fn collect_format_targets(path: &Path) -> MResult<Vec<CollectedSourceTarget>> {
         if let Some(name) = p.file_name().and_then(|n| n.to_str()) {
           if SKIP_SOURCE_DIRS.iter().any(|skip| skip == &name) { continue; }
         }
-        collect_dir(root, &p, out, visited)?;
+        if is_excluded_output_path(&p, output_exclusion)? { continue; }
+        collect_dir(root, &p, output_exclusion, out, visited)?;
       } else if extension_allowed(&p, FORMAT_EXTENSIONS) {
         let relative_path = p.strip_prefix(root).unwrap_or(&p).to_path_buf();
         out.push(CollectedSourceTarget { input_root: root.to_path_buf(), path: p, relative_path });
@@ -149,7 +185,7 @@ fn collect_format_targets(path: &Path) -> MResult<Vec<CollectedSourceTarget>> {
 
   let mut out = Vec::new();
   let mut visited = BTreeSet::new();
-  collect_dir(path, path, &mut out, &mut visited)?;
+  collect_dir(path, path, output_exclusion, &mut out, &mut visited)?;
   out.sort_by(|a, b| a.relative_path.cmp(&b.relative_path).then_with(|| a.path.cmp(&b.path)));
   Ok(out)
 }
@@ -224,6 +260,22 @@ fn ensure_unique_format_outputs(targets: &[CollectedSourceTarget], output_path: 
   Ok(())
 }
 
+#[cfg(feature = "formatter")]
+fn reject_multi_target_file_output(target_count: usize, output_path: &Path, is_output_file: bool) -> MResult<()> {
+  if is_output_file && target_count > 1 {
+    return Err(MechError::new(
+      GenericError {
+        msg: format!(
+          "Cannot write {} formatted sources into single output file `{}`. Use an output directory instead.",
+          target_count,
+          output_path.display(),
+        ),
+      },
+      None,
+    ).with_compiler_loc());
+  }
+  Ok(())
+}
 
 #[cfg(has_file_wasm)]
 static MECHWASM: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm_bg.wasm.br");
@@ -803,13 +855,16 @@ async fn main() -> Result<(), MechError> {
     if mech_paths.len() == 1 {
       let input_path = PathBuf::from(&mech_paths[0]);
       if input_path.is_dir() && is_output_file {
-        eprintln!(
-          "{} Cannot write directory `{}` into single output file `{}`. Provide a directory for --out instead.",
-          "[Error]".truecolor(246,98,78),
-          input_path.display(),
-          output_path.display()
-        );
-        return Ok(());
+        return Err(MechError::new(
+          GenericError {
+            msg: format!(
+              "Cannot write directory `{}` into single output file `{}`. Provide a directory for --out instead.",
+              input_path.display(),
+              output_path.display(),
+            ),
+          },
+          None,
+        ).with_compiler_loc());
       }
     }
     println!("{} Loading resources…", badge);
@@ -831,13 +886,15 @@ async fn main() -> Result<(), MechError> {
       .with_compiler_loc()
     })?;
 
+    let output_exclusion = normalize_output_exclusion(&output_path, is_output_file)?;
     let mut loaded_sources: Vec<(CollectedSourceTarget, MechSourceCode)> = Vec::new();
     for path in mech_paths {
-      for target in collect_format_targets(Path::new(&path))? {
+      for target in collect_format_targets(Path::new(&path), output_exclusion.as_deref())? {
         let code = read_format_source(&target.path)?;
         loaded_sources.push((target, code));
       }
     }
+    reject_multi_target_file_output(loaded_sources.len(), &output_path, is_output_file)?;
     let format_targets: Vec<CollectedSourceTarget> = loaded_sources.iter().map(|(target, _)| target.clone()).collect();
     ensure_unique_format_outputs(&format_targets, &output_path, html_flag)?;
 
@@ -1556,7 +1613,7 @@ mod format_collection_tests {
     std::fs::write(docs.join("a/index.mec"), "x := 1").unwrap();
     std::fs::write(docs.join("b/index.mec"), "x := 2").unwrap();
 
-    let targets = collect_format_targets(&docs).unwrap();
+    let targets = collect_format_targets(&docs, None).unwrap();
     let relatives = targets.iter().map(|target| target.relative_path.clone()).collect::<Vec<_>>();
     assert_eq!(relatives, vec![PathBuf::from("a/index.mec"), PathBuf::from("b/index.mec")]);
     assert!(targets.iter().all(|target| target.input_root == docs));
@@ -1575,7 +1632,7 @@ mod format_collection_tests {
     std::fs::write(root.join("src/main.mec"), "x := 1").unwrap();
     let old_cwd = std::env::current_dir().unwrap();
     std::env::set_current_dir(&root).unwrap();
-    let targets = collect_format_targets(Path::new("src/main.mec")).unwrap();
+    let targets = collect_format_targets(Path::new("src/main.mec"), None).unwrap();
     std::env::set_current_dir(old_cwd).unwrap();
     assert_eq!(targets[0].relative_path, PathBuf::from("src/main.mec"));
     assert_eq!(root.join("out").join(&targets[0].relative_path), root.join("out/src/main.mec"));
@@ -1611,7 +1668,7 @@ mod format_collection_tests {
     std::fs::write(root.join("main.mec"), "x := 1").unwrap();
     symlink(&root, root.join("self")).unwrap();
 
-    let format_targets = collect_format_targets(&root).unwrap();
+    let format_targets = collect_format_targets(&root, None).unwrap();
     assert_eq!(format_targets.len(), 1);
     assert_eq!(format_targets[0].relative_path, PathBuf::from("main.mec"));
 
@@ -1622,16 +1679,57 @@ mod format_collection_tests {
 
 
   #[test]
+  fn reject_multi_target_format_to_single_file() {
+    let root = temp_root("single-file-output");
+    let docs = root.join("docs");
+    std::fs::create_dir_all(&docs).unwrap();
+    std::fs::write(docs.join("a.mec"), "a := 1").unwrap();
+    std::fs::write(docs.join("b.mec"), "b := 2").unwrap();
+    let targets = collect_format_targets(&docs, None).unwrap();
+    let error = format!("{:?}", reject_multi_target_file_output(targets.len(), &root.join("out.mec"), true).unwrap_err());
+    assert!(error.contains("Cannot write 2 formatted sources into single output file"), "got {error}");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn reject_multiple_explicit_inputs_to_single_file() {
+    let root = temp_root("explicit-single-file-output");
+    std::fs::write(root.join("a.mec"), "a := 1").unwrap();
+    std::fs::write(root.join("b.mec"), "b := 2").unwrap();
+    let mut targets = Vec::new();
+    targets.extend(collect_format_targets(&root.join("a.mec"), None).unwrap());
+    targets.extend(collect_format_targets(&root.join("b.mec"), None).unwrap());
+    let error = format!("{:?}", reject_multi_target_file_output(targets.len(), &root.join("out.mec"), true).unwrap_err());
+    assert!(error.contains("Cannot write 2 formatted sources into single output file"), "got {error}");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_format_targets_skips_selected_output_directory() {
+    let root = temp_root("skip-selected-output");
+    let docs = root.join("docs");
+    let site = docs.join("site");
+    std::fs::create_dir_all(&site).unwrap();
+    std::fs::write(docs.join("main.mec"), "x := 1").unwrap();
+    std::fs::write(site.join("main.html"), "<html></html>").unwrap();
+    let exclusion = normalize_output_exclusion(&site, false).unwrap();
+    let targets = collect_format_targets(&docs, exclusion.as_deref()).unwrap();
+    assert_eq!(targets.len(), 1);
+    assert_eq!(targets[0].relative_path, PathBuf::from("main.mec"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
   fn collect_format_targets_skips_markdown_in_directories_but_rejects_explicit_markdown() {
     let root = temp_root("markdown");
     std::fs::write(root.join("README.md"), "# Raw Markdown").unwrap();
     std::fs::write(root.join("demo.mec"), "x := 1").unwrap();
 
-    let targets = collect_format_targets(&root).unwrap();
+    let targets = collect_format_targets(&root, None).unwrap();
     assert_eq!(targets.len(), 1);
     assert_eq!(targets[0].relative_path, PathBuf::from("demo.mec"));
 
-    let error = format!("{:?}", collect_format_targets(&root.join("README.md")).unwrap_err());
+    let error = format!("{:?}", collect_format_targets(&root.join("README.md"), None).unwrap_err());
     assert!(error.contains("Unsupported source extension"), "got {error}");
     std::fs::remove_dir_all(root).unwrap();
   }

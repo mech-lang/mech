@@ -165,6 +165,17 @@ fn bytecode_static_bound_string_access_compiles() {
 }
 
 #[test]
+fn bytecode_dynamic_string_index_rejects_stale_constant_compile() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_dynamic_string_index_rejects_stale_constant_compile".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"s := "abc"
+~i := 1
+first := s[i]
+"#).unwrap();
+  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet"), "got {error}");
+}
+
+#[test]
 fn bytecode_dynamic_string_access_rejects_stale_constant_compile() {
   let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_dynamic_string_access_rejects_stale_constant_compile".to_string(), environment: MechProgramEnvironment::default() });
   prgrm.run_string("~s := \"abc\"\nfirst := s[1]\n").unwrap();

@@ -28,9 +28,15 @@ enum StringAccessCompileMode {
 }
 
 #[derive(Debug)]
+enum StringAccessIndex {
+  Direct(Ref<usize>),
+  Mutable(MutableReference),
+}
+
+#[derive(Debug)]
 struct StringAccessElement {
   source: StringAccessSource,
-  ix: Ref<usize>,
+  index: StringAccessIndex,
   out: Ref<String>,
   compile_mode: StringAccessCompileMode,
 }
@@ -42,10 +48,33 @@ impl StringAccessElement {
       StringAccessSource::Mutable(r) => match &*r.borrow() {
         Value::String(s) => Ok(s.borrow().clone()),
         other => Err(MechError::new(
-          UnhandledFunctionArgumentKind2 { arg: (other.kind(), Value::Index(self.ix.clone()).kind()), fxn_name: "access/scalar-string".to_string() },
+          UnhandledFunctionArgumentKind2 { arg: (other.kind(), self.index_value_for_error().kind()), fxn_name: "access/scalar-string".to_string() },
           None,
         ).with_compiler_loc()),
       },
+    }
+  }
+
+  fn current_index(&self) -> MResult<usize> {
+    match &self.index {
+      StringAccessIndex::Direct(ix) => Ok(*ix.borrow()),
+      StringAccessIndex::Mutable(r) => {
+        let current = r.borrow();
+        match current.as_index()? {
+          Value::Index(ix) => Ok(*ix.borrow()),
+          other => Err(MechError::new(
+            UnhandledFunctionArgumentKind2 { arg: (self.current_source_string().map(|_| ValueKind::String).unwrap_or(ValueKind::Empty), other.kind()), fxn_name: "access/scalar-string".to_string() },
+            None,
+          ).with_compiler_loc()),
+        }
+      }
+    }
+  }
+
+  fn index_value_for_error(&self) -> Value {
+    match &self.index {
+      StringAccessIndex::Direct(ix) => Value::Index(ix.clone()),
+      StringAccessIndex::Mutable(r) => Value::MutableReference(r.clone()),
     }
   }
 }
@@ -56,7 +85,7 @@ impl MechFunctionImpl for StringAccessElement {
   }
   fn solve_result(&self) -> MResult<()> {
     let source = self.current_source_string()?;
-    let ix = *self.ix.borrow();
+    let ix = self.current_index()?;
     let grapheme = access_grapheme(&source, ix)?;
     *self.out.borrow_mut() = grapheme;
     Ok(())
@@ -95,14 +124,41 @@ impl NativeFunctionCompiler for StringAccessScalar {
     match (src.clone(), ix1.clone()) {
       (Value::String(s), Value::Index(ix)) => {
         let grapheme = access_grapheme(&s.borrow(), *ix.borrow())?;
-        let new_fxn = StringAccessElement { source: StringAccessSource::Direct(s), ix, out: Ref::new(grapheme), compile_mode: StringAccessCompileMode::Static };
+        let new_fxn = StringAccessElement { source: StringAccessSource::Direct(s), index: StringAccessIndex::Direct(ix), out: Ref::new(grapheme), compile_mode: StringAccessCompileMode::Static };
+        Ok(Box::new(new_fxn))
+      },
+      (Value::String(s), Value::MutableReference(ix_ref)) => {
+        let ix = match ix_ref.borrow().as_index()? {
+          Value::Index(ix) => *ix.borrow(),
+          other => return Err(MechError::new(UnhandledFunctionArgumentKind2 { arg: (src.kind(), other.kind()), fxn_name: "access/scalar-string".to_string() }, None).with_compiler_loc()),
+        };
+        let grapheme = access_grapheme(&s.borrow(), ix)?;
+        let new_fxn = StringAccessElement { source: StringAccessSource::Direct(s), index: StringAccessIndex::Mutable(ix_ref), out: Ref::new(grapheme), compile_mode: StringAccessCompileMode::Dynamic };
         Ok(Box::new(new_fxn))
       },
       (Value::MutableReference(r), Value::Index(ix)) => {
         match &*r.borrow() {
           Value::String(s) => {
             let grapheme = access_grapheme(&s.borrow(), *ix.borrow())?;
-            let new_fxn = StringAccessElement { source: StringAccessSource::Mutable(r.clone()), ix, out: Ref::new(grapheme), compile_mode: StringAccessCompileMode::Dynamic };
+            let new_fxn = StringAccessElement { source: StringAccessSource::Mutable(r.clone()), index: StringAccessIndex::Direct(ix), out: Ref::new(grapheme), compile_mode: StringAccessCompileMode::Dynamic };
+            Ok(Box::new(new_fxn))
+          },
+          _ => Err(MechError::new(
+              UnhandledFunctionArgumentKind2 { arg: (src.kind(), ix1.kind()), fxn_name: "access/scalar-string".to_string() },
+              None
+            ).with_compiler_loc()
+          ),
+        }
+      },
+      (Value::MutableReference(r), Value::MutableReference(ix_ref)) => {
+        let ix = match ix_ref.borrow().as_index()? {
+          Value::Index(ix) => *ix.borrow(),
+          other => return Err(MechError::new(UnhandledFunctionArgumentKind2 { arg: (src.kind(), other.kind()), fxn_name: "access/scalar-string".to_string() }, None).with_compiler_loc()),
+        };
+        match &*r.borrow() {
+          Value::String(s) => {
+            let grapheme = access_grapheme(&s.borrow(), ix)?;
+            let new_fxn = StringAccessElement { source: StringAccessSource::Mutable(r.clone()), index: StringAccessIndex::Mutable(ix_ref), out: Ref::new(grapheme), compile_mode: StringAccessCompileMode::Dynamic };
             Ok(Box::new(new_fxn))
           },
           _ => Err(MechError::new(

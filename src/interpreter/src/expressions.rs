@@ -587,7 +587,16 @@ pub fn subscript_formula_ix(
     match sbscrpt {
         Subscript::Formula(fctr) => {
             let result = factor(fctr, env, p)?;
-            result.as_index()
+            match &result {
+                Value::MutableReference(r) => {
+                    let indexed = { r.borrow().as_index()? };
+                    match indexed {
+                        Value::Index(_) => Ok(result),
+                        indexed => Ok(indexed),
+                    }
+                }
+                _ => result.as_index(),
+            }
         }
         _ => unreachable!(),
     }

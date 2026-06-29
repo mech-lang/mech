@@ -1684,6 +1684,43 @@ fn interpret_mutable_string_access_updates_after_assignment() {
 }
 
 #[test]
+fn interpret_mutable_string_index_updates_after_assignment() {
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_mutable_string_index_updates_after_assignment".to_string(), environment: MechProgramEnvironment::default()});
+  program.run_string(r#"s := "abc"
+~i := 1
+ch := s[i]
+i = 2"#).unwrap();
+  program.step(3).unwrap();
+  let symbols = program.interpreter().symbols();
+  let symbols_brrw = symbols.borrow();
+  let ch = symbols_brrw.get(hash_str("ch")).unwrap().borrow().clone();
+  let ch = match ch {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_eq!(ch, Value::String(Ref::new("b".to_string())));
+}
+
+#[test]
+fn interpret_mutable_string_source_and_index_update_after_assignment() {
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_mutable_string_source_and_index_update_after_assignment".to_string(), environment: MechProgramEnvironment::default()});
+  program.run_string(r#"~s := "abc"
+~i := 1
+ch := s[i]
+s = "xyz"
+i = 2"#).unwrap();
+  program.step(3).unwrap();
+  let symbols = program.interpreter().symbols();
+  let symbols_brrw = symbols.borrow();
+  let ch = symbols_brrw.get(hash_str("ch")).unwrap().borrow().clone();
+  let ch = match ch {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_eq!(ch, Value::String(Ref::new("y".to_string())));
+}
+
+#[test]
 fn interpret_mutable_string_access_stale_index_returns_error_without_panic() {
   let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
     let mut program = MechProgram::new(MechProgramConfig{name: "interpret_mutable_string_access_stale_index_returns_error_without_panic".to_string(), environment: MechProgramEnvironment::default()});
