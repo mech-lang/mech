@@ -338,7 +338,7 @@ impl Interpreter {
         for _ in 0..step_count {
           for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
             let start = Instant::now();
-            fxn.solve();
+            fxn.solve_result()?;
             total_durations[idx] += start.elapsed();
           }
         }
@@ -360,7 +360,7 @@ impl Interpreter {
                 .to_string();
               format!("[trace][plan] step[{idx}] {fxn_header}")
             });
-            fxn.solve();
+            fxn.solve_result()?;
             trace_println!(self, "{}", {
               let output = fxn.out().to_string();
               let output = if output.chars().count() > 96 {
@@ -407,7 +407,7 @@ impl Interpreter {
     }
 
     for _ in 0..step_count {
-      fxn.solve();
+      fxn.solve_result()?;
     }
 
     Ok(fxn.out().clone())

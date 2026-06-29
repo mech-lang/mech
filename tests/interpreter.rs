@@ -1682,3 +1682,15 @@ fn interpret_mutable_string_access_updates_after_assignment() {
   };
   assert_eq!(first, Value::String(Ref::new("x".to_string())));
 }
+
+#[test]
+fn interpret_mutable_string_access_stale_index_returns_error_without_panic() {
+  let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    let mut program = MechProgram::new(MechProgramConfig{name: "interpret_mutable_string_access_stale_index_returns_error_without_panic".to_string(), environment: MechProgramEnvironment::default()});
+    program.run_string("~s := \"abc\"\nch := s[3]\ns = \"x\"").unwrap();
+    program.step(2)
+  }));
+  let step_result = result.expect("stale string index should not panic");
+  let error = step_result.expect_err("stale string index should return a Mech error");
+  assert!(format!("{:?}", error).contains("IndexOutOfBounds"), "got {error:?}");
+}

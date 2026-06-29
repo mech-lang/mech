@@ -528,18 +528,30 @@ pub fn slice(slc: &Slice, env: Option<&Environment>, p: &Interpreter) -> MResult
             val.clone()
         } else {
             // fallback to global symbols
-            match p.symbols().borrow().get(id) {
-                Some(val) => Value::MutableReference(val.clone()),
-                None => {
-                    return Err(MechError::new(UndefinedVariableError { id, name: name.clone() }, None)
-                        .with_compiler_loc()
-                        .with_tokens(slc.tokens()));
+            {
+                let symbols = p.symbols();
+                let symbols_brrw = symbols.borrow();
+                match symbols_brrw.get(id) {
+                    Some(val) => match symbols_brrw.get_mutable(id) {
+                        Some(_) => Value::MutableReference(val.clone()),
+                        None => val.borrow().clone(),
+                    },
+                    None => {
+                        return Err(MechError::new(UndefinedVariableError { id, name: name.clone() }, None)
+                            .with_compiler_loc()
+                            .with_tokens(slc.tokens()));
+                    }
                 }
             }
         }
     } else {
-        match p.symbols().borrow().get(id) {
-            Some(val) => Value::MutableReference(val.clone()),
+        let symbols = p.symbols();
+        let symbols_brrw = symbols.borrow();
+        match symbols_brrw.get(id) {
+            Some(val) => match symbols_brrw.get_mutable(id) {
+                Some(_) => Value::MutableReference(val.clone()),
+                None => val.borrow().clone(),
+            },
             None => {
                 return Err(MechError::new(UndefinedVariableError { id, name: name.clone() }, None)
                     .with_compiler_loc()

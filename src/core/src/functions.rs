@@ -91,6 +91,10 @@ pub trait MechFunctionFactory {
 
 pub trait MechFunctionImpl {
   fn solve(&self);
+  fn solve_result(&self) -> MResult<()> {
+    self.solve();
+    Ok(())
+  }
   fn out(&self) -> Value;
   fn to_string(&self) -> String;
 }

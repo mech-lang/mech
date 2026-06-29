@@ -156,10 +156,18 @@ fn bytecode_strict_inequality_returns_error_without_panic() {
   compile_bytecode_strict_compare_returns_error_without_panic("x := 1 !== 2", "dynamic strict inequality");
 }
 
+
 #[test]
-fn bytecode_string_access_rejects_stale_constant_compile() {
-  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_string_access_rejects_stale_constant_compile".to_string(), environment: MechProgramEnvironment::default() });
+fn bytecode_static_bound_string_access_compiles() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_static_bound_string_access_compiles".to_string(), environment: MechProgramEnvironment::default() });
   prgrm.run_string("s := \"abc\"\nfirst := s[1]\n").unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_dynamic_string_access_rejects_stale_constant_compile() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_dynamic_string_access_rejects_stale_constant_compile".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string("~s := \"abc\"\nfirst := s[1]\n").unwrap();
   let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
-  assert!(error.contains("string scalar access is not bytecode-compilable yet"), "got {error}");
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet"), "got {error}");
 }

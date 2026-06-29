@@ -21,11 +21,18 @@ enum StringAccessSource {
   Mutable(MutableReference),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum StringAccessCompileMode {
+  Static,
+  Dynamic,
+}
+
 #[derive(Debug)]
 struct StringAccessElement {
   source: StringAccessSource,
   ix: Ref<usize>,
   out: Ref<String>,
+  compile_mode: StringAccessCompileMode,
 }
 
 impl StringAccessElement {
@@ -45,23 +52,35 @@ impl StringAccessElement {
 
 impl MechFunctionImpl for StringAccessElement {
   fn solve(&self) {
-    let source = self.current_source_string().expect("StringAccessElement source must remain a string");
+    let _ = self.solve_result();
+  }
+  fn solve_result(&self) -> MResult<()> {
+    let source = self.current_source_string()?;
     let ix = *self.ix.borrow();
-    let grapheme = access_grapheme(&source, ix).expect("StringAccessElement index must remain in bounds");
+    let grapheme = access_grapheme(&source, ix)?;
     *self.out.borrow_mut() = grapheme;
+    Ok(())
   }
   fn out(&self) -> Value { Value::String(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for StringAccessElement {
-  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
-    Err(MechError::new(
-      GenericError {
-        msg: "string scalar access is not bytecode-compilable yet because it depends on live source/index registers".to_string(),
-      },
-      None,
-    ).with_compiler_loc())
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    match self.compile_mode {
+      StringAccessCompileMode::Static => {
+        ctx.features.insert(FeatureFlag::Builtin(FeatureKind::String));
+        ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
+        let reg = compile_register!(Value::String(self.out.clone()), ctx);
+        Ok(reg)
+      }
+      StringAccessCompileMode::Dynamic => Err(MechError::new(
+        GenericError {
+          msg: "dynamic string scalar access is not bytecode-compilable yet because it depends on live source/index registers".to_string(),
+        },
+        None,
+      ).with_compiler_loc()),
+    }
   }
 }
 
@@ -76,14 +95,14 @@ impl NativeFunctionCompiler for StringAccessScalar {
     match (src.clone(), ix1.clone()) {
       (Value::String(s), Value::Index(ix)) => {
         let grapheme = access_grapheme(&s.borrow(), *ix.borrow())?;
-        let new_fxn = StringAccessElement { source: StringAccessSource::Direct(s), ix, out: Ref::new(grapheme) };
+        let new_fxn = StringAccessElement { source: StringAccessSource::Direct(s), ix, out: Ref::new(grapheme), compile_mode: StringAccessCompileMode::Static };
         Ok(Box::new(new_fxn))
       },
       (Value::MutableReference(r), Value::Index(ix)) => {
         match &*r.borrow() {
           Value::String(s) => {
             let grapheme = access_grapheme(&s.borrow(), *ix.borrow())?;
-            let new_fxn = StringAccessElement { source: StringAccessSource::Mutable(r.clone()), ix, out: Ref::new(grapheme) };
+            let new_fxn = StringAccessElement { source: StringAccessSource::Mutable(r.clone()), ix, out: Ref::new(grapheme), compile_mode: StringAccessCompileMode::Dynamic };
             Ok(Box::new(new_fxn))
           },
           _ => Err(MechError::new(
