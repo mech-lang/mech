@@ -17,5 +17,8 @@ cli/stderr
 2. Pages
 -------------------------------------------------------------------------------
 
+- [Manifest](manifest.html)
 - [Environment](env.html)
 - [Stdout and Stderr](stdout-stderr.html)
+- [Grants](grants.html)
+- [Examples](examples.html)
