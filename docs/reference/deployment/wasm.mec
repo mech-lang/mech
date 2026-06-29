@@ -1,0 +1,23 @@
+WASM
+===============================================================================
+
+Browser deployment uses the Mech WASM package.
+
+Build the package from `src/wasm`:
+
+```sh
+cd src/wasm
+wasm-pack build --target web
+```
+
+Projects served by `mech serve` or bundled by `mech bundle-web` can point `serve.wasm` at the generated package directory.
+
+```mech
+config := {
+  serve: {
+    wasm: "../../src/wasm/pkg"
+  }
+}
+```
+
+Browser projects that use host configuration initialize with `WasmMech.fromHostConfig()`.
