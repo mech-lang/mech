@@ -1,23 +1,20 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
-use mech_core::{
-    BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
-    BrowserDomProperty, BrowserDomScope, BrowserNetworkScope, BrowserOperation, BrowserResource,
-    BrowserResourceKind, BrowserStorageBackend, BrowserStorageScope, MResult, MechError,
-    ModuleManifestConfig, ModuleManifestExportConfig, ModuleManifestExportKind,
-};
+use mech_core::{MResult, MechError, ModuleManifestConfig, ModuleManifestExportConfig, ModuleManifestExportKind};
+use crate::{HostInstanceConfig, HostManifestConfig, HostContextManifest, RunResourceGrantConfig, validate_run_resource_grant};
 
 use super::{ConfigValue, InvalidConfigField};
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct MechConfigDocument {
     pub source_name: String,
     pub runtime: RuntimeConfigPatch,
     pub serve: Option<ServeHostConfig>,
     pub run: Option<RunHostConfig>,
-    pub browser: BrowserAuthority,
+    pub hosts: Vec<HostInstanceConfig>,
     pub capabilities: Vec<ConfigCapabilityGrant>,
+    pub host: Option<HostManifestConfig>,
     pub module: Option<ModuleManifestConfig>,
 }
 
@@ -58,30 +55,13 @@ pub struct ServeHostConfig {
     pub wasm: Option<PathBuf>,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct RunHostConfig {
     pub paths: Vec<PathBuf>,
-    pub cli: RunCliHostConfig,
+    pub grants: Vec<RunResourceGrantConfig>,
+    pub grants_specified: bool,
 }
 
-// Native CLI runner attenuation policy; resource providers are not required to
-// use this shape for host-specific configuration.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct RunCliHostConfig {
-    pub env: RunCliEnvConfig,
-    pub stdout: RunCliStreamConfig,
-    pub stderr: RunCliStreamConfig,
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct RunCliEnvConfig {
-    pub read: Option<Vec<String>>,
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct RunCliStreamConfig {
-    pub write: Option<Vec<String>>,
-}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConfigCapabilityGrant {
@@ -112,8 +92,9 @@ impl ConfigLowerer {
             runtime: RuntimeConfigPatch::default(),
             serve: None,
             run: None,
-            browser: BrowserAuthority::default(),
+            hosts: Vec::new(),
             capabilities: Vec::new(),
+            host: None,
             module: None,
         };
         for (key, value) in map {
@@ -121,13 +102,81 @@ impl ConfigLowerer {
                 "runtime" => doc.runtime = self.lower_runtime(value)?,
                 "serve" => doc.serve = Some(self.lower_serve(value)?),
                 "run" => doc.run = Some(self.lower_run(value)?),
-                "browser" => doc.browser = self.lower_browser(value)?,
+                "hosts" => doc.hosts = self.lower_hosts(value)?,
+                "host" => doc.host = Some(self.lower_host_manifest(value)?),
                 "capabilities" => doc.capabilities = self.lower_capabilities(value)?,
                 "module" => doc.module = Some(self.lower_module(value)?),
                 other => return invalid(format!("unknown top-level config field `{other}`")),
             }
         }
         Ok(doc)
+    }
+
+    fn lower_hosts(&self, value: &ConfigValue) -> MResult<Vec<HostInstanceConfig>> {
+        let mut out = Vec::new();
+        let mut names = BTreeSet::new();
+        for (idx, item) in expect_list("hosts", value)?.iter().enumerate() {
+            let where_ = format!("hosts[{idx}]");
+            let map = expect_map(&where_, item)?;
+            let mut name = None;
+            let mut provider = None;
+            let mut settings = None;
+            for (key, value) in map {
+                match key.as_str() {
+                    "name" => name = Some(expect_string(&format!("{where_}.name"), value)?),
+                    "provider" => provider = Some(expect_string(&format!("{where_}.provider"), value)?),
+                    "settings" => {
+                        settings = Some(match value {
+                            ConfigValue::Null => ConfigValue::Map(BTreeMap::new()),
+                            ConfigValue::List(items) if items.is_empty() => ConfigValue::Map(BTreeMap::new()),
+                            _ => value.clone(),
+                        })
+                    }
+                    other => return invalid(format!("unknown {where_} field `{other}`")),
+                }
+            }
+            let name = name.ok_or_else(|| invalid_error(format!("{where_}.name is required")))?;
+            if name.trim().is_empty() { return invalid(format!("{where_}.name must be non-empty")); }
+            if !names.insert(name.clone()) { return invalid(format!("duplicate host instance `{name}`")); }
+            let provider = provider.ok_or_else(|| invalid_error(format!("{where_}.provider is required")))?;
+            if provider.trim().is_empty() { return invalid(format!("{where_}.provider must be non-empty")); }
+            let settings = settings.unwrap_or_else(|| ConfigValue::Map(BTreeMap::new()));
+            out.push(HostInstanceConfig { name, provider, settings });
+        }
+        Ok(out)
+    }
+
+    fn lower_host_manifest(&self, value: &ConfigValue) -> MResult<HostManifestConfig> {
+        let map = expect_map("host", value)?;
+        let mut provider = None;
+        let mut contexts = None;
+        for (key, value) in map {
+            match key.as_str() {
+                "provider" => provider = Some(expect_string("host.provider", value)?),
+                "contexts" => contexts = Some(expect_list("host.contexts", value)?.iter().enumerate().map(|(idx, item)| self.lower_host_context(idx, item)).collect::<MResult<Vec<_>>>()?),
+                other => return invalid(format!("unknown host field `{other}`")),
+            }
+        }
+        let manifest = HostManifestConfig { provider: provider.ok_or_else(|| invalid_error("host.provider is required"))?, contexts: contexts.ok_or_else(|| invalid_error("host.contexts is required"))? };
+        crate::validate_host_manifest(&manifest)?;
+        Ok(manifest)
+    }
+
+    fn lower_host_context(&self, idx: usize, value: &ConfigValue) -> MResult<HostContextManifest> {
+        let where_ = format!("host.contexts[{idx}]");
+        let map = expect_map(&where_, value)?;
+        let mut name = None;
+        let mut base_uri_template = None;
+        let mut operations = None;
+        for (key, value) in map {
+            match key.as_str() {
+                "name" => name = Some(expect_string(&format!("{where_}.name"), value)?),
+                "base-uri" => base_uri_template = Some(expect_string(&format!("{where_}.base-uri"), value)?),
+                "operations" => operations = Some(expect_string_list(&format!("{where_}.operations"), value)?),
+                other => return invalid(format!("unknown {where_} field `{other}`")),
+            }
+        }
+        Ok(HostContextManifest { name: name.ok_or_else(|| invalid_error(format!("{where_}.name is required")))?, base_uri_template: base_uri_template.ok_or_else(|| invalid_error(format!("{where_}.base-uri is required")))?, operations: operations.ok_or_else(|| invalid_error(format!("{where_}.operations is required")))? })
     }
 
 
@@ -306,7 +355,10 @@ impl ConfigLowerer {
         for (key, value) in map {
             match key.as_str() {
                 "paths" => out.paths = expect_path_list("run.paths", value)?,
-                "cli" => out.cli = self.lower_run_cli(value)?,
+                "grants" => {
+                    out.grants = self.lower_run_grants(value)?;
+                    out.grants_specified = true;
+                }
                 other => return invalid(format!("unknown run field `{other}`")),
             }
         }
@@ -314,297 +366,25 @@ impl ConfigLowerer {
         Ok(out)
     }
 
-    fn lower_run_cli(&self, value: &ConfigValue) -> MResult<RunCliHostConfig> {
-        let map = expect_map("run.cli", value)?;
-        let mut out = RunCliHostConfig::default();
-        for (key, value) in map {
-            match key.as_str() {
-                "env" => out.env = self.lower_run_cli_env(value)?,
-                "stdout" => out.stdout = self.lower_run_cli_stream("run.cli.stdout", value)?,
-                "stderr" => out.stderr = self.lower_run_cli_stream("run.cli.stderr", value)?,
-                other => return invalid(format!("unknown run.cli field `{other}`")),
-            }
-        }
-        Ok(out)
-    }
-
-    fn lower_run_cli_env(&self, value: &ConfigValue) -> MResult<RunCliEnvConfig> {
-        let map = expect_map("run.cli.env", value)?;
-        let mut out = RunCliEnvConfig::default();
-        for (key, value) in map {
-            match key.as_str() {
-                "read" => {
-                    let paths = expect_string_list("run.cli.env.read", value)?;
-                    for path in &paths {
-                        if path != "*" && !is_cli_env_key(path) {
-                            return invalid(format!("run.cli.env.read contains invalid env key `{path}`"));
-                        }
-                    }
-                    out.read = Some(paths);
-                }
-                other => return invalid(format!("unknown run.cli.env field `{other}`")),
-            }
-        }
-        Ok(out)
-    }
-
-    fn lower_run_cli_stream(
-        &self,
-        where_: &str,
-        value: &ConfigValue,
-    ) -> MResult<RunCliStreamConfig> {
-        let map = expect_map(where_, value)?;
-        let mut out = RunCliStreamConfig::default();
-        for (key, value) in map {
-            match key.as_str() {
-                "write" => {
-                    let paths = expect_string_list(&format!("{where_}.write"), value)?;
-                    for path in &paths {
-                        if path != "text" && path != "line" {
-                            return invalid(format!("{where_}.write contains invalid path `{path}`"));
-                        }
-                    }
-                    out.write = Some(paths);
-                }
-                other => return invalid(format!("unknown {where_} field `{other}`")),
-            }
-        }
-        Ok(out)
-    }
-
-    fn lower_browser(&self, value: &ConfigValue) -> MResult<BrowserAuthority> {
-        let map = expect_map("browser", value)?;
-        let mut authority = BrowserAuthority::default();
-        for (key, value) in map {
-            match key.as_str() {
-                "dom" => self.lower_browser_dom(value, &mut authority)?,
-                "clipboard" => self.lower_browser_clipboard(value, &mut authority)?,
-                "network" => self.lower_browser_network(value, &mut authority)?,
-                "storage" => self.lower_browser_storage(value, &mut authority)?,
-                other => return invalid(format!("unknown browser field `{other}`")),
-            }
-        }
-        Ok(authority)
-    }
-
-    fn lower_browser_dom(
-        &self,
-        value: &ConfigValue,
-        authority: &mut BrowserAuthority,
-    ) -> MResult<()> {
-        for (idx, item) in expect_list("browser.dom", value)?.iter().enumerate() {
-            let where_ = format!("browser.dom[{idx}]");
+    fn lower_run_grants(&self, value: &ConfigValue) -> MResult<Vec<RunResourceGrantConfig>> {
+        expect_list("run.grants", value)?.iter().enumerate().map(|(idx, item)| {
+            let where_ = format!("run.grants[{idx}]");
             let map = expect_map(&where_, item)?;
-            let mut path = None;
-            let mut selector = None;
-            let mut property = None;
-            let mut attribute = None;
-            let mut mode = None;
-            let mut allow = None;
+            let mut target = None;
+            let mut operations = None;
+            let mut paths = None;
             for (key, value) in map {
                 match key.as_str() {
-                    "path" => path = Some(expect_string(&format!("{where_}.path"), value)?),
-                    "selector" => {
-                        selector = Some(expect_string(&format!("{where_}.selector"), value)?)
-                    }
-                    "property" => {
-                        property = Some(expect_string(&format!("{where_}.property"), value)?)
-                    }
-                    "attribute" => {
-                        attribute = Some(expect_string(&format!("{where_}.attribute"), value)?)
-                    }
-                    "mode" => mode = Some(expect_string(&format!("{where_}.mode"), value)?),
-                    "allow" => {
-                        allow = Some(expect_browser_operations_for_resource(
-                            &format!("{where_}.allow"),
-                            value,
-                            BrowserResourceKind::Dom,
-                        )?)
-                    }
-                    other => return invalid(format!("unknown browser.dom field `{other}`")),
+                    "target" => target = Some(expect_string(&format!("{where_}.target"), value)?),
+                    "operations" => operations = Some(expect_string_list(&format!("{where_}.operations"), value)?),
+                    "paths" => paths = Some(expect_string_list(&format!("{where_}.paths"), value)?),
+                    other => return invalid(format!("unknown {where_} field `{other}`")),
                 }
             }
-            let selector =
-                selector.ok_or_else(|| invalid_error(format!("{where_}.selector is required")))?;
-            let allow =
-                allow.ok_or_else(|| invalid_error(format!("{where_}.allow is required")))?;
-            let scope = BrowserDomScope::new(selector)
-                .map_err(|error| invalid_error(format!("{where_}.selector: {error}")))?;
-            authority.grant(BrowserCapabilityGrant {
-                resource: BrowserResource::Dom(scope.clone()),
-                allow,
-                budget: None,
-            });
-
-            let Some(path) = path else {
-                continue;
-            };
-            let path = BrowserDomPath::new(path)
-                .map_err(|error| invalid_error(format!("{where_}.path: {error}")))?;
-            let mode = match mode.as_deref() {
-                Some("node") | None => mode,
-                Some("subtree") => mode,
-                Some(other) => {
-                    return invalid(format!(
-                        "{where_}.mode must be `node` or `subtree`; got `{other}`"
-                    ))
-                }
-            };
-            if path.is_wildcard() && !matches!(mode.as_deref(), None | Some("subtree")) {
-                return invalid(format!(
-                    "{where_}.mode must be `subtree` when path ends in `/*`"
-                ));
-            }
-            if matches!(mode.as_deref(), Some("subtree")) && !path.is_wildcard() {
-                return invalid(format!(
-                    "{where_}.path must end in `/*` when mode is `subtree`"
-                ));
-            }
-            let property = if matches!(mode.as_deref(), Some("subtree")) {
-                if property.is_some() {
-                    return invalid(format!("{where_}.property is not allowed when mode is `subtree`"));
-                }
-                if attribute.is_some() {
-                    return invalid(format!("{where_}.attribute is not allowed when mode is `subtree`"));
-                }
-                BrowserDomProperty::Text
-            } else {
-                BrowserDomProperty::parse_manifest(
-                    property.as_deref(),
-                    attribute.as_deref(),
-                    &path,
-                )
-                .map_err(|error| invalid_error(format!("{where_}: {error}")))?
-            };
-            authority.bind_dom_path(BrowserDomManifestEntry::new(path, scope, property));
-        }
-        Ok(())
-    }
-
-    fn lower_browser_clipboard(
-        &self,
-        value: &ConfigValue,
-        authority: &mut BrowserAuthority,
-    ) -> MResult<()> {
-        for (idx, item) in expect_list("browser.clipboard", value)?.iter().enumerate() {
-            let where_ = format!("browser.clipboard[{idx}]");
-            let map = expect_map(&where_, item)?;
-            let mut allow = None;
-            for (key, value) in map {
-                match key.as_str() {
-                    "allow" => {
-                        allow = Some(expect_browser_operations_for_resource(
-                            &format!("{where_}.allow"),
-                            value,
-                            BrowserResourceKind::Clipboard,
-                        )?)
-                    }
-                    other => return invalid(format!("unknown browser.clipboard field `{other}`")),
-                }
-            }
-            let allow =
-                allow.ok_or_else(|| invalid_error(format!("{where_}.allow is required")))?;
-            authority.grant(BrowserCapabilityGrant {
-                resource: BrowserResource::Clipboard,
-                allow,
-                budget: None,
-            });
-        }
-        Ok(())
-    }
-
-    fn lower_browser_network(
-        &self,
-        value: &ConfigValue,
-        authority: &mut BrowserAuthority,
-    ) -> MResult<()> {
-        for (idx, item) in expect_list("browser.network", value)?.iter().enumerate() {
-            let where_ = format!("browser.network[{idx}]");
-            let map = expect_map(&where_, item)?;
-            let mut origin = None;
-            let mut methods = None;
-            let mut allow = None;
-            for (key, value) in map {
-                match key.as_str() {
-                    "origin" => origin = Some(expect_string(&format!("{where_}.origin"), value)?),
-                    "methods" => {
-                        methods = Some(expect_string_list(&format!("{where_}.methods"), value)?)
-                    }
-                    "allow" => {
-                        allow = Some(expect_browser_operations_for_resource(
-                            &format!("{where_}.allow"),
-                            value,
-                            BrowserResourceKind::Network,
-                        )?)
-                    }
-                    other => return invalid(format!("unknown browser.network field `{other}`")),
-                }
-            }
-            let origin =
-                origin.ok_or_else(|| invalid_error(format!("{where_}.origin is required")))?;
-            let allow =
-                allow.ok_or_else(|| invalid_error(format!("{where_}.allow is required")))?;
-            let scope = BrowserNetworkScope::new(origin, methods)
-                .map_err(|error| invalid_error(format!("{where_}: {error}")))?;
-            authority.grant(BrowserCapabilityGrant {
-                resource: BrowserResource::Network(scope),
-                allow,
-                budget: None,
-            });
-        }
-        Ok(())
-    }
-
-    fn lower_browser_storage(
-        &self,
-        value: &ConfigValue,
-        authority: &mut BrowserAuthority,
-    ) -> MResult<()> {
-        for (idx, item) in expect_list("browser.storage", value)?.iter().enumerate() {
-            let where_ = format!("browser.storage[{idx}]");
-            let map = expect_map(&where_, item)?;
-            let mut backend = None;
-            let mut scope = None;
-            let mut recursive = None;
-            let mut allow = None;
-            for (key, value) in map {
-                match key.as_str() {
-                    "backend" => {
-                        let value = expect_string(&format!("{where_}.backend"), value)?;
-                        backend = Some(BrowserStorageBackend::parse(&value).ok_or_else(|| {
-                            invalid_error(format!("unknown browser.storage backend `{value}`"))
-                        })?);
-                    }
-                    "scope" => scope = Some(expect_string(&format!("{where_}.scope"), value)?),
-                    "recursive" => {
-                        recursive = Some(expect_bool(&format!("{where_}.recursive"), value)?)
-                    }
-                    "allow" => {
-                        allow = Some(expect_browser_operations_for_resource(
-                            &format!("{where_}.allow"),
-                            value,
-                            BrowserResourceKind::Storage,
-                        )?)
-                    }
-                    other => return invalid(format!("unknown browser.storage field `{other}`")),
-                }
-            }
-            let backend =
-                backend.ok_or_else(|| invalid_error(format!("{where_}.backend is required")))?;
-            let scope =
-                scope.ok_or_else(|| invalid_error(format!("{where_}.scope is required")))?;
-            let allow =
-                allow.ok_or_else(|| invalid_error(format!("{where_}.allow is required")))?;
-            let scope = BrowserStorageScope::new(backend, scope)
-                .map_err(|error| invalid_error(format!("{where_}.scope: {error}")))?
-                .with_recursive(recursive.unwrap_or(false));
-            authority.grant(BrowserCapabilityGrant {
-                resource: BrowserResource::Storage(scope),
-                allow,
-                budget: None,
-            });
-        }
-        Ok(())
+            let grant = RunResourceGrantConfig { target: target.ok_or_else(|| invalid_error(format!("{where_}.target is required")))?, operations: operations.ok_or_else(|| invalid_error(format!("{where_}.operations is required")))?, paths: paths.ok_or_else(|| invalid_error(format!("{where_}.paths is required")))? };
+            validate_run_resource_grant(&grant)?;
+            Ok(grant)
+        }).collect()
     }
 
     fn lower_capabilities(&self, value: &ConfigValue) -> MResult<Vec<ConfigCapabilityGrant>> {
@@ -724,59 +504,6 @@ fn expect_string_list(where_: &str, value: &ConfigValue) -> MResult<Vec<String>>
         .collect()
 }
 
-fn expect_browser_operations_for_resource(
-    where_: &str,
-    value: &ConfigValue,
-    resource: BrowserResourceKind,
-) -> MResult<BTreeSet<BrowserOperation>> {
-    let operations = expect_string_list(where_, value)?;
-    let mut out = BTreeSet::new();
-
-    for operation in operations {
-        let parsed = BrowserOperation::parse(&operation)
-            .ok_or_else(|| invalid_error(format!("unknown browser operation `{operation}`")))?;
-
-        if !browser_resource_allows_operation(resource, parsed) {
-            return invalid(format!(
-                "browser {resource:?} grants do not support operation `{parsed}`"
-            ));
-        }
-
-        out.insert(parsed);
-    }
-
-    if out.is_empty() {
-        return invalid(format!("{where_} must contain at least one operation"));
-    }
-
-    Ok(out)
-}
-
-fn browser_resource_allows_operation(
-    resource: BrowserResourceKind,
-    operation: BrowserOperation,
-) -> bool {
-    match resource {
-        BrowserResourceKind::Dom | BrowserResourceKind::Clipboard => {
-            matches!(operation, BrowserOperation::Read | BrowserOperation::Write)
-        }
-        BrowserResourceKind::Network => matches!(operation, BrowserOperation::Read),
-        BrowserResourceKind::Storage => matches!(
-            operation,
-            BrowserOperation::Read | BrowserOperation::Write | BrowserOperation::List
-        ),
-    }
-}
-
-fn is_cli_env_key(value: &str) -> bool {
-    let mut chars = value.chars();
-    match chars.next() {
-        Some(first) if first == '_' || first.is_ascii_alphabetic() => {}
-        _ => return false,
-    }
-    chars.all(|ch| ch == '_' || ch.is_ascii_alphanumeric())
-}
-
 fn invalid_error(reason: impl Into<String>) -> MechError {
     MechError::new(InvalidConfigField::new(reason), None).with_compiler_loc()
 }
@@ -841,46 +568,55 @@ mod tests {
     }
 
     #[test]
-    fn run_cli_stdout_empty_write_parses() {
-        let doc = parse(r#"config := { run: { cli: { stdout: { write: [] } } } }"#).unwrap();
-        assert_eq!(doc.run.unwrap().cli.stdout.write, Some(vec![]));
+    fn run_grants_empty_paths_allowed_when_explicit_empty_list_is_rejected_or_allowed_per_policy() {
+        let result = parse_config_document(
+            "test.mcfg",
+            r#"config := {run: {grants: [{target: "cli/stdout" operations: ["write"] paths: []}]}}"#,
+            ConfigProfileOptions::default(),
+        );
+
+        assert!(result.is_err());
     }
 
     #[test]
-    fn run_cli_stdout_line_write_parses() {
-        let doc = parse(r#"config := { run: { cli: { stdout: { write: ["line"] } } } }"#).unwrap();
-        assert_eq!(doc.run.unwrap().cli.stdout.write, Some(vec!["line".to_string()]));
+    fn run_grants_stdout_line_lowers() {
+        let doc = parse_config_document(
+            "test.mcfg",
+            r#"config := {run: {grants: [{target: "cli/stdout" operations: ["write"] paths: ["line"]}]}}"#,
+            ConfigProfileOptions::default(),
+        ).unwrap();
+
+        let run = doc.run.unwrap();
+        assert_eq!(run.grants.len(), 1);
+        assert_eq!(run.grants[0].target, "cli/stdout");
+        assert_eq!(run.grants[0].operations, vec!["write".to_string()]);
+        assert_eq!(run.grants[0].paths, vec!["line".to_string()]);
     }
 
     #[test]
-    fn run_cli_env_path_read_parses() {
-        let doc = parse(r#"config := { run: { cli: { env: { read: ["PATH"] } } } }"#).unwrap();
-        assert_eq!(doc.run.unwrap().cli.env.read, Some(vec!["PATH".to_string()]));
+    fn run_grants_env_path_lowers() {
+        let doc = parse_config_document(
+            "test.mcfg",
+            r#"config := {run: {grants: [{target: "cli/env" operations: ["read"] paths: ["PATH"]}]}}"#,
+            ConfigProfileOptions::default(),
+        ).unwrap();
+
+        let run = doc.run.unwrap();
+        assert_eq!(run.grants[0].target, "cli/env");
+        assert_eq!(run.grants[0].operations, vec!["read".to_string()]);
+        assert_eq!(run.grants[0].paths, vec!["PATH".to_string()]);
     }
 
     #[test]
-    fn invalid_run_cli_stdout_path_fails() {
-        let err = parse(r#"config := { run: { cli: { stdout: { write: ["html"] } } } }"#)
-            .expect_err("invalid stdout path should fail");
-        let msg = format!("{} {} {:?}", err.kind_name(), err.kind_message(), err);
-        assert!(msg.contains("run.cli.stdout.write contains invalid path `html`"));
+    fn run_cli_is_rejected() {
+        let err = parse_config_document(
+            "test.mcfg",
+            r#"config := {run: {cli: {stdout: {write: ["line"]}}}}"#,
+            ConfigProfileOptions::default(),
+        ).unwrap_err();
+
+        let error = format!("{err:?}");
+        assert!(error.contains("unknown run field `cli`"), "got {error}");
     }
 
-    #[test]
-    fn invalid_run_cli_env_key_fails() {
-        for key in ["HOME/PATH", "1HOME", "HOME-PATH"] {
-            let source = format!(r#"config := {{ run: {{ cli: {{ env: {{ read: ["{key}"] }} }} }} }}"#);
-            let err = parse(&source).expect_err("invalid env key should fail");
-            let msg = format!("{} {} {:?}", err.kind_name(), err.kind_message(), err);
-            assert!(msg.contains("run.cli.env.read contains invalid env key"));
-        }
-    }
-
-    #[test]
-    fn unknown_run_cli_field_fails() {
-        let err = parse(r#"config := { run: { cli: { prompt: true } } }"#)
-            .expect_err("unknown run.cli field should fail");
-        let msg = format!("{} {} {:?}", err.kind_name(), err.kind_message(), err);
-        assert!(msg.contains("unknown run.cli field `prompt`"));
-    }
 }

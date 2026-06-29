@@ -37,8 +37,7 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 
 use mech_core::{
-  browser_capability_error, BrowserDomPath, BROWSER_DOM_PROVIDER_URI, MResult, MechError,
-  MechErrorKind, MechSourceCode, Value,
+  MResult, MechError, MechErrorKind, MechSourceCode, Value,
   NativeFunctionCompiler, MechFunctionImpl, Register, CompileCtx, MechFunctionCompiler,
   hash_str, ModuleManifestCatalog, ModuleManifestConfig,
 };
@@ -104,12 +103,13 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
-use crate::{register_config_spec_grants, register_config_spec_resources, InMemoryDocsProvider, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, resource_base_matches, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
+use crate::{register_config_spec_grants, register_config_spec_resources, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RunResourceGrantConfig, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
 
 thread_local! {
   static ACTIVE_RUNTIME_PROGRAM_HOST: RefCell<Option<RuntimeProgramHostTarget>> =
     RefCell::new(None);
 }
+
 
 // -----------------------------------------------------------------------------
 // Runtime Builder
@@ -129,6 +129,9 @@ pub struct RuntimeBuilder {
   module_builder: ModuleBuilder,
   config_specs: Vec<RuntimeConfigSpec>,
   resource_providers: Vec<Box<dyn RuntimeResourceProvider>>,
+  host_factories: RuntimeHostFactoryRegistry,
+  host_instances: Vec<HostInstanceConfig>,
+  run_grants: Vec<RunResourceGrantConfig>,
   module_manifests: ModuleManifestCatalog,
 }
 
@@ -148,6 +151,9 @@ impl std::fmt::Debug for RuntimeBuilder {
       .field("module_builder", &self.module_builder)
       .field("config_specs", &self.config_specs)
       .field("resource_providers", &self.resource_providers.len())
+      .field("host_factories", &self.host_factories)
+      .field("host_instances", &self.host_instances)
+      .field("run_grants", &self.run_grants)
       .field("module_manifests", &self.module_manifests)
       .finish()
   }
@@ -169,7 +175,10 @@ impl Default for RuntimeBuilder {
       module_builder: ModuleBuilder::new(),
       config_specs: Vec::new(),
       resource_providers: Vec::new(),
-      module_manifests: ModuleManifestCatalog::with_builtin_hosts(),
+      host_factories: RuntimeHostFactoryRegistry::new(),
+      host_instances: Vec::new(),
+      run_grants: Vec::new(),
+      module_manifests: ModuleManifestCatalog::new(),
     }
   }
 }
@@ -265,6 +274,21 @@ impl RuntimeBuilder {
     Ok(self)
   }
 
+  pub fn host_factory(mut self, factory: Box<dyn RuntimeHostFactory>) -> MResult<Self> {
+    self.host_factories.register(factory)?;
+    Ok(self)
+  }
+
+  pub fn host_instance(mut self, config: HostInstanceConfig) -> Self {
+    self.host_instances.push(config);
+    self
+  }
+
+  pub fn run_resource_grant(mut self, grant: RunResourceGrantConfig) -> Self {
+    self.run_grants.push(grant);
+    self
+  }
+
   pub fn resource_provider(
     mut self,
     provider: Box<dyn RuntimeResourceProvider>,
@@ -301,6 +325,13 @@ impl RuntimeBuilder {
       },
     };
 
+    let mut host_interfaces = HostInterfaceCatalog::new();
+    for host_instance in &self.host_instances {
+      let installation = self.host_factories.instantiate(host_instance)?;
+      host_interfaces.register(installation.interface)?;
+      self.resource_providers.extend(installation.resource_providers);
+    }
+
     let mut runtime = MechRuntime {
       id: runtime_id,
       event_sequence: 0,
@@ -320,6 +351,7 @@ impl RuntimeBuilder {
       resources: RuntimeResourceRegistry::new(),
       grants: RuntimeCapabilityGrantRegistry::new(),
       resource_bindings: HashMap::new(),
+      host_interfaces,
       module_manifests: self.module_manifests,
     };
 
@@ -330,6 +362,10 @@ impl RuntimeBuilder {
 
     for provider in self.resource_providers {
       runtime.register_resource_provider(provider)?;
+    }
+
+    for grant in &self.run_grants {
+      runtime.install_run_resource_grant(grant)?;
     }
 
     let mut context = runtime.runtime_context()?;
@@ -368,6 +404,7 @@ pub struct MechRuntime {
   resources: RuntimeResourceRegistry,
   grants: RuntimeCapabilityGrantRegistry,
   resource_bindings: HashMap<String, RuntimeResourceBinding>,
+  host_interfaces: HostInterfaceCatalog,
   module_manifests: ModuleManifestCatalog,
 }
 
@@ -392,6 +429,7 @@ impl std::fmt::Debug for MechRuntime {
       .field("resources", &self.resources)
       .field("grants", &self.grants)
       .field("resource_bindings", &self.resource_bindings)
+      .field("host_interfaces", &self.host_interfaces)
       .field("module_manifests", &self.module_manifests)
       .finish()
   }
@@ -405,27 +443,27 @@ pub struct RuntimeResourceBinding {
 }
 
 #[derive(Debug, Clone)]
-pub struct BrowserRuntimeResourceError {
+pub struct RuntimeResourceBindingError {
   pub resource: String,
   pub reason: String,
 }
 
-impl MechErrorKind for BrowserRuntimeResourceError {
+impl MechErrorKind for RuntimeResourceBindingError {
   fn name(&self) -> &str {
-    "BrowserRuntimeResource"
+    "RuntimeResourceBinding"
   }
 
   fn message(&self) -> String {
-    format!("browser runtime resource `{}` failed: {}", self.resource, self.reason)
+    format!("runtime resource binding `{}` failed: {}", self.resource, self.reason)
   }
 }
 
-fn browser_runtime_resource_error(
+fn runtime_resource_binding_error(
   resource: impl Into<String>,
   reason: impl Into<String>,
 ) -> MechError {
   MechError::new(
-    BrowserRuntimeResourceError {
+    RuntimeResourceBindingError {
       resource: resource.into(),
       reason: reason.into(),
     },
@@ -478,8 +516,16 @@ impl MechRuntime {
     module: &str,
     item: &str,
   ) -> MResult<()> {
-    let base_uri = self.module_manifests.context_export(module, item)?.base_uri.clone();
+    let target = format!("{module}/{item}");
+    let base_uri = match self.host_interfaces.resolve_optional(&target)? {
+      Some(context) => context.base_uri.clone(),
+      None => self.module_manifests.context_export(module, item)?.base_uri.clone(),
+    };
     self.bind_resource_root(alias, &base_uri)
+  }
+
+  pub fn resource_binding(&self, name: &str) -> Option<&RuntimeResourceBinding> {
+    self.resource_bindings.get(name)
   }
 
   pub fn bind_resource_root(
@@ -489,26 +535,22 @@ impl MechRuntime {
   ) -> MResult<()> {
     let name = name.into();
     if !validate_resource_binding_name(&name) {
-      return Err(browser_runtime_resource_error(
+      return Err(runtime_resource_binding_error(
         name,
         "resource binding names must be non-empty simple tokens",
       ));
     }
 
-    let uri = uri.as_ref().trim_end_matches('/');
-    let mut base_uri = uri.to_string();
-    let mut root_path = String::new();
-    if resource_base_matches(BROWSER_DOM_PROVIDER_URI, uri) {
-      base_uri = BROWSER_DOM_PROVIDER_URI.to_string();
-      root_path = uri
-        .strip_prefix(BROWSER_DOM_PROVIDER_URI)
-        .unwrap_or_default()
-        .trim_matches('/')
-        .to_string();
-      if !root_path.is_empty() {
-        BrowserDomPath::new(root_path.clone()).map_err(browser_capability_error)?;
-      }
-    }
+    let uri = uri.as_ref().trim_end_matches('/').to_string();
+    let base_uri = self
+      .resources
+      .provider_base_uri_for(&uri)?
+      .unwrap_or_else(|| uri.clone());
+    let root_path = uri
+      .strip_prefix(&base_uri)
+      .unwrap_or_default()
+      .trim_matches('/')
+      .to_string();
 
     self.resource_bindings.insert(
       name.clone(),
@@ -527,13 +569,39 @@ impl MechRuntime {
     child_path: &str,
   ) -> MResult<(String, String)> {
     let Some(binding_record) = self.resource_bindings.get(binding) else {
-      return Err(browser_runtime_resource_error(
+      return Err(runtime_resource_binding_error(
         binding,
         "unknown resource root binding",
       ));
     };
 
     let child_path = child_path.trim_matches('/');
+
+    let stored_root = if binding_record.root_path.is_empty() {
+      binding_record.base_uri.trim_end_matches('/').to_string()
+    } else {
+      format!(
+        "{}/{}",
+        binding_record.base_uri.trim_end_matches('/'),
+        binding_record.root_path.trim_matches('/'),
+      )
+    };
+
+    let candidate_uri = if child_path.is_empty() {
+      stored_root
+    } else {
+      format!("{}/{}", stored_root.trim_end_matches('/'), child_path)
+    };
+
+    if let Some(provider_base_uri) = self.resources.provider_base_uri_for(&candidate_uri)? {
+      let provider_path = candidate_uri
+        .strip_prefix(&provider_base_uri)
+        .unwrap_or_default()
+        .trim_matches('/')
+        .to_string();
+      return Ok((provider_base_uri, provider_path));
+    }
+
     let full_path = if binding_record.root_path.is_empty() {
       child_path.to_string()
     } else if child_path.is_empty() {
@@ -544,28 +612,13 @@ impl MechRuntime {
     Ok((binding_record.base_uri.clone(), full_path))
   }
 
-  pub fn resolve_resource_path(
-    &self,
-    binding: &str,
-    child_path: &str,
-  ) -> MResult<BrowserDomPath> {
-    let (base_uri, full_path) = self.resolve_bound_resource_parts(binding, child_path)?;
-    if base_uri != BROWSER_DOM_PROVIDER_URI {
-      return Err(browser_runtime_resource_error(
-        binding,
-        "only browser DOM resource bindings are supported",
-      ));
-    }
-    BrowserDomPath::new(full_path).map_err(browser_capability_error)
-  }
-
   pub fn read_bound_resource(
     &self,
     binding: &str,
     child_path: &str,
   ) -> MResult<Value> {
     let (base_uri, path) = self.resolve_bound_resource_parts(binding, child_path)?;
-    self.resources.read(RuntimeResourceReadRequest {
+    self.read_resource(RuntimeResourceReadRequest {
       base_uri,
       path,
       context_name: binding.to_string(),
@@ -579,30 +632,14 @@ impl MechRuntime {
     value: &Value,
   ) -> MResult<()> {
     let (base_uri, path) = self.resolve_bound_resource_parts(binding, child_path)?;
-    self.resources.write(RuntimeResourceWriteRequest {
+    self.write_resource(RuntimeResourceWriteRequest {
       base_uri,
       path,
       context_name: binding.to_string(),
+      operation: RuntimeCapabilityOperation::Write,
       value: value.clone(),
       intent: RuntimeResourceWriteIntent::Assign,
     })
-  }
-
-  pub fn read_browser_dom_resource(
-    &self,
-    binding: &str,
-    child_path: &str,
-  ) -> MResult<Value> {
-    self.read_bound_resource(binding, child_path)
-  }
-
-  pub fn write_browser_dom_resource(
-    &mut self,
-    binding: &str,
-    child_path: &str,
-    value: &Value,
-  ) -> MResult<()> {
-    self.write_bound_resource(binding, child_path, value)
   }
 
   pub fn apply_config_spec(
@@ -635,7 +672,38 @@ impl MechRuntime {
     operation: &RuntimeCapabilityOperation,
     path: &str,
   ) -> bool {
-    self.grants.allows(subject, resource, operation, path)
+    self.grants.allows_with_resource_match(
+      subject,
+      resource,
+      operation,
+      path,
+      |grant_resource, requested_resource| {
+        grant_resource == requested_resource
+          || self.resources.base_uris_equivalent(grant_resource, requested_resource)
+      },
+    )
+  }
+
+  pub fn install_run_resource_grant(
+    &mut self,
+    grant: &RunResourceGrantConfig,
+  ) -> MResult<()> {
+    let context = self.host_interfaces.resolve(&grant.target)?;
+    for operation in &grant.operations {
+      if !context.operations.iter().any(|allowed| allowed == operation) {
+        return Err(MechError::new(RuntimeInvalidOperationError {
+          operation: "install_run_resource_grant",
+          reason: format!("host context `{}` does not expose operation `{operation}`", grant.target),
+        }, None));
+      }
+    }
+    let operations = grant.operations.iter().map(|operation| RuntimeCapabilityOperation::from_name(operation.clone())).collect::<MResult<Vec<_>>>()?;
+    self.grants.add_grant(RuntimeCapabilityGrant {
+      subject: format!("runtime:{}", self.id),
+      resource: context.base_uri.clone(),
+      operations,
+      paths: grant.paths.clone(),
+    })
   }
 
   pub fn register_resource_provider(

@@ -418,10 +418,11 @@ async fn main() -> Result<(), MechError> {
     )?;
     let host_config = loaded_config
       .as_ref()
-      .map(|loaded| mech_host_browser::BrowserHostConfig::from_document_and_runtime(
+      .map(|loaded| mech::web_runtime_injection_config_from_document(
         &loaded.document,
         &runtime_config,
-      ));
+      ))
+      .transpose()?;
     let config_shim_at_root = loaded_config
       .as_ref()
       .and_then(|loaded| loaded.document.serve.as_ref())
@@ -429,7 +430,7 @@ async fn main() -> Result<(), MechError> {
       .is_some()
       && serve_matches.get_one::<String>("shim").is_none();
     if let Some(loaded) = loaded_config.as_ref() {
-      println!("{badge} Loaded browser config grants: {}", loaded.document.browser.grants().len());
+      println!("{badge} Loaded host config entries: {}", loaded.document.hosts.len());
     }
 
     let full_address = format!("{}:{}", effective.address, effective.port);
@@ -760,7 +761,18 @@ async fn main() -> Result<(), MechError> {
       cli_capability_selection,
     )?;
 
-    let mut runtime = new_cli_runtime(runtime_config, &cli_grants)?;
+    let configured_hosts = loaded_config
+      .as_ref()
+      .map(|loaded| loaded.document.hosts.as_slice())
+      .unwrap_or(&[]);
+
+    let configured_run_grants = loaded_config
+      .as_ref()
+      .and_then(|loaded| loaded.document.run.as_ref())
+      .map(|run| run.grants.as_slice())
+      .unwrap_or(&[]);
+
+    let mut runtime = new_cli_runtime(runtime_config, &cli_grants, configured_hosts, configured_run_grants)?;
 
     if let RunInputMode::InlineSource(source) = &run_input_mode {
       match run_cli_source(&mut runtime, source.trim()) {
@@ -1044,15 +1056,15 @@ fn serve_host_delegation_injection(
     audience: matches.get_one::<String>("host_delegation_audience").cloned().unwrap_or_else(|| format!("browser://serve/{full_address}")),
     expires_ms: matches.get_one::<String>("host_delegation_expires_ms").map(|value| value.parse()).transpose().map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidInput, "--host-delegation-expires-ms must be an integer"))?,
   };
-  let host_config = mech_host_browser::BrowserHostConfig::from_document_and_runtime(
+  let host_config = mech::web_runtime_injection_config_from_document(
     &loaded_config.document,
     runtime_config,
-  );
+  )?;
   let now_ms = std::time::SystemTime::now()
     .duration_since(std::time::UNIX_EPOCH)
     .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error.to_string()))?
     .as_millis() as u64;
-  mech::signed_browser_host_config_injection(host_config, &options, now_ms).map(Some)
+  mech::signed_browser_runtime_injection_config(host_config, &options, now_ms).map(Some)
 }
 
 fn source_range_to_offset_range(file_content: &str, range: &SourceRange) -> (usize, usize) {

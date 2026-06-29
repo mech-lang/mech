@@ -8,7 +8,7 @@ extern crate nalgebra as na;
 #[cfg(not(feature = "dynamic-module"))]
 use mech_core::*;
 
-#[cfg(not(feature = "dynamic-module"))]
+#[cfg(all(not(feature = "dynamic-module"), feature = "functions"))]
 use paste::paste;
 
 #[cfg(feature = "vector2")]

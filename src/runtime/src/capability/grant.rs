@@ -2,42 +2,7 @@ use std::sync::Arc;
 
 use mech_core::{MResult, MechError, MechErrorKind};
 
-use crate::{Capability, CapabilityId, MechRuntime, RuntimeCapabilityGrantSpec};
-
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub enum RuntimeCapabilityOperation {
-  Read,
-  Write,
-  Custom(String),
-}
-
-impl RuntimeCapabilityOperation {
-  pub fn name(&self) -> &str {
-    match self {
-      RuntimeCapabilityOperation::Read => "read",
-      RuntimeCapabilityOperation::Write => "write",
-      RuntimeCapabilityOperation::Custom(name) => name.as_str(),
-    }
-  }
-
-  pub fn from_name(name: impl Into<String>) -> MResult<Self> {
-    let name = name.into();
-    if name.is_empty() {
-      return Err(MechError::new(
-        RuntimeCapabilityGrantInvalid {
-          reason: "operation cannot be empty".to_string(),
-        },
-        None,
-      ));
-    }
-
-    Ok(match name.as_str() {
-      "read" => RuntimeCapabilityOperation::Read,
-      "write" => RuntimeCapabilityOperation::Write,
-      _ => RuntimeCapabilityOperation::Custom(name),
-    })
-  }
-}
+use crate::{Capability, CapabilityId, MechRuntime, RuntimeCapabilityGrantSpec, RuntimeCapabilityOperation};
 
 #[derive(Clone, Debug, Default)]
 pub struct RuntimeCapabilityGrantRegistry {
@@ -79,9 +44,29 @@ impl RuntimeCapabilityGrantRegistry {
     operation: &RuntimeCapabilityOperation,
     path: &str,
   ) -> bool {
+    self.allows_with_resource_match(
+      subject,
+      resource,
+      operation,
+      path,
+      resource_names_match,
+    )
+  }
+
+  pub fn allows_with_resource_match<F>(
+    &self,
+    subject: &str,
+    resource: &str,
+    operation: &RuntimeCapabilityOperation,
+    path: &str,
+    resource_matches: F,
+  ) -> bool
+  where
+    F: Fn(&str, &str) -> bool,
+  {
     self.grants.iter().any(|grant| {
       grant.subject == subject
-        && grant.resource == resource
+        && resource_matches(&grant.resource, resource)
         && grant.operations.iter().any(|allowed| allowed == operation)
         && grant.paths.iter().any(|allowed| grant_path_matches(allowed, path))
     })
@@ -119,6 +104,10 @@ fn invalid_grant(reason: impl Into<String>) -> MResult<()> {
     },
     None,
   ))
+}
+
+fn resource_names_match(grant_resource: &str, requested_resource: &str) -> bool {
+  grant_resource == requested_resource
 }
 
 fn grant_path_matches(grant_path: &str, requested_path: &str) -> bool {
@@ -210,6 +199,13 @@ mod tests {
   use super::*;
 
   #[test]
+  fn resource_names_match_exact_resources_only() {
+    assert!(resource_names_match("docs://manual", "docs://manual"));
+    assert!(!resource_names_match("docs://manual", "docs://manual/chapter"));
+    assert!(!resource_names_match("docs://manual", "notes://manual"));
+  }
+
+  #[test]
   fn operation_names_map_to_typed_variants() {
     assert_eq!(
       RuntimeCapabilityOperation::from_name("read").unwrap(),
@@ -231,7 +227,7 @@ mod tests {
       .with_operation_name("");
     assert!(result.is_err());
     let error = format!("{:?}", result.err().unwrap());
-    assert!(error.contains("RuntimeCapabilityGrantInvalid"));
+    assert!(error.contains("RuntimeCapabilityOperationInvalid"));
     assert!(error.contains("operation"));
   }
 }

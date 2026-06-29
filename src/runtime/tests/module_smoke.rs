@@ -15,8 +15,37 @@ fn setup_modules(main_source: &str) -> std::path::PathBuf {
 
 
 
+fn browser_dom_manifest() -> ModuleManifestConfig {
+  ModuleManifestConfig {
+    name: "browser".to_string(),
+    exports: vec![ModuleManifestExportConfig {
+      name: "dom".to_string(),
+      kind: ModuleManifestExportKind::Context,
+      base_uri: "browser://dom".to_string(),
+      operations: vec!["read".to_string(), "write".to_string()],
+    }],
+  }
+}
+
+fn runtime_with_browser_manifest() -> mech_runtime::MechRuntime {
+  RuntimeBuilder::new()
+    .module_manifest(browser_dom_manifest())
+    .unwrap()
+    .build()
+    .unwrap()
+}
+
 fn runtime_with_root(root: &std::path::Path) -> mech_runtime::MechRuntime {
   RuntimeBuilder::new().source_resolver(FileSourceResolver::new(root)).build().unwrap()
+}
+
+fn runtime_with_root_and_browser_manifest(root: &std::path::Path) -> mech_runtime::MechRuntime {
+  RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(root))
+    .module_manifest(browser_dom_manifest())
+    .unwrap()
+    .build()
+    .unwrap()
 }
 
 fn docs_provider_with(
@@ -91,12 +120,29 @@ impl CliBackend for RecordingCliBackend {
   }
 }
 
+#[derive(Debug)]
+struct RecordingCliHostFactory {
+  manifest: HostManifestConfig,
+  state: Arc<Mutex<RecordingCliState>>,
+}
+
+impl RuntimeHostFactory for RecordingCliHostFactory {
+  fn provider_name(&self) -> &str { "cli" }
+  fn manifest(&self) -> &HostManifestConfig { &self.manifest }
+  fn validate_settings(&self, _instance_name: &str, _settings: &ConfigValue) -> mech_core::MResult<()> { Ok(()) }
+  fn instantiate(&self, instance_name: &str, _settings: &ConfigValue) -> mech_core::MResult<RuntimeHostInstallation> {
+    Ok(RuntimeHostInstallation {
+      interface: materialize_host_manifest(instance_name, &self.manifest)?,
+      resource_providers: vec![Box::new(CliResourceProvider::for_instance(instance_name, RecordingCliBackend { state: self.state.clone() }))],
+    })
+  }
+}
+
 fn runtime_with_recording_cli() -> (MechRuntime, Arc<Mutex<RecordingCliState>>) {
   let state = Arc::new(Mutex::new(RecordingCliState::default()));
   let runtime = RuntimeBuilder::new()
-    .resource_provider(Box::new(CliResourceProvider::new(RecordingCliBackend {
-      state: state.clone(),
-    })))
+    .host_factory(Box::new(RecordingCliHostFactory { manifest: mech_host_cli::cli_host_manifest().unwrap(), state: state.clone() })).unwrap()
+    .host_instance(HostInstanceConfig { name: "cli".to_string(), provider: "cli".to_string(), settings: ConfigValue::Map(Default::default()) })
     .build()
     .unwrap();
   (runtime, state)
@@ -104,12 +150,14 @@ fn runtime_with_recording_cli() -> (MechRuntime, Arc<Mutex<RecordingCliState>>) 
 
 fn grant_runtime_stdout_line(runtime: &mut MechRuntime) {
   let subject = runtime.runtime_context().unwrap().subject;
-  runtime.grant_capability(RuntimeCapabilityGrant {
-    subject,
-    resource: "cli://stdout".to_string(),
-    operations: vec![RuntimeCapabilityOperation::Write],
-    paths: vec!["line".to_string()],
-  }).unwrap();
+  for resource in ["cli://cli/stdout", "cli://stdout"] {
+    runtime.grant_capability(RuntimeCapabilityGrant {
+      subject: subject.clone(),
+      resource: resource.to_string(),
+      operations: vec![RuntimeCapabilityOperation::Write],
+      paths: vec!["line".to_string()],
+    }).unwrap();
+  }
 }
 
 fn run_module_as_main(runtime: &mut MechRuntime, version: ModuleVersionId) -> mech_core::MResult<Value> {
@@ -170,7 +218,7 @@ ok := math/tau > 6.0
 #[test]
 fn in_memory_docs_provider_write_then_read_returns_value() {
   let mut provider = InMemoryDocsProvider::new();
-  provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign }).unwrap();
+  provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign }).unwrap();
   let value = provider.read(RuntimeResourceReadRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string() }).unwrap();
   assert_bool_true(value, "provider write then read");
 }
@@ -179,7 +227,7 @@ fn in_memory_docs_provider_write_then_read_returns_value() {
 fn resource_registry_write_then_read_returns_value() {
   let mut registry = RuntimeResourceRegistry::new();
   registry.register_provider(Box::new(InMemoryDocsProvider::new())).unwrap();
-  registry.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign }).unwrap();
+  registry.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign }).unwrap();
   let value = registry.read(RuntimeResourceReadRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string() }).unwrap();
   assert_bool_true(value, "registry write then read");
 }
@@ -187,7 +235,7 @@ fn resource_registry_write_then_read_returns_value() {
 #[test]
 fn resource_registry_write_missing_provider_fails() {
   let mut registry = RuntimeResourceRegistry::new();
-  let result = registry.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
+  let result = registry.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("RuntimeResourceProviderNotFound"), "expected missing provider error, got {error}");
@@ -198,7 +246,7 @@ fn resource_registry_write_missing_provider_fails() {
 #[test]
 fn in_memory_docs_write_invalid_scheme_fails() {
   let mut provider = InMemoryDocsProvider::new();
-  let result = provider.write(RuntimeResourceWriteRequest { base_uri: "db://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
+  let result = provider.write(RuntimeResourceWriteRequest { base_uri: "db://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("RuntimeResourceInvalidUri"), "expected invalid URI error, got {error}");
@@ -208,7 +256,7 @@ fn in_memory_docs_write_invalid_scheme_fails() {
 #[test]
 fn in_memory_docs_write_empty_path_fails() {
   let mut provider = InMemoryDocsProvider::new();
-  let result = provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: String::new(), context_name: "manual".to_string(), value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
+  let result = provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: String::new(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("RuntimeResourceInvalidUri"), "expected invalid URI error, got {error}");
@@ -226,7 +274,7 @@ impl RuntimeResourceProvider for ReadOnlyDocsProvider {
 #[test]
 fn provider_default_write_is_unsupported() {
   let mut provider = ReadOnlyDocsProvider;
-  let result = provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
+  let result = provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("RuntimeResourceWriteUnsupported"), "expected unsupported write error, got {error}");
@@ -378,6 +426,23 @@ fn context_docs_read_returns_value() {
 }
 
 #[test]
+fn context_docs_read_uses_provider_base_for_full_requested_uri() {
+  let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n");
+  let root_provider = docs_provider_with("docs://manual", "intro/title", bool_value(false));
+  let intro_provider = docs_provider_with("docs://manual/intro", "title", bool_value(true));
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .in_memory_docs(root_provider)
+    .in_memory_docs(intro_provider)
+    .build()
+    .unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual/intro", "title")).unwrap();
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let result = runtime.run_module(version).unwrap();
+  assert_bool_true(result, "context docs read from most specific provider");
+}
+
+#[test]
 fn config_spec_registers_in_memory_docs_resource() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n");
   let spec = RuntimeConfigSpec::new().with_resource(
@@ -489,21 +554,18 @@ fn config_spec_invalid_empty_path_fails_build() {
 }
 
 #[test]
-fn config_spec_and_direct_docs_provider_conflict() {
+fn config_spec_and_direct_docs_fallback_can_coexist() {
   let spec = RuntimeConfigSpec::new().with_resource(
     RuntimeResourceConfigSpec::InMemoryDocs(
       RuntimeInMemoryDocsResourceSpec::new("docs://manual")
         .with_entry("intro/title", bool_value(true)),
     ),
   );
-  let result = RuntimeBuilder::new()
+  RuntimeBuilder::new()
     .config_spec(spec)
     .in_memory_docs(InMemoryDocsProvider::new())
-    .build();
-  assert!(result.is_err());
-  let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("RuntimeResourceProviderConflict"), "expected provider conflict, got {error}");
-  assert!(error.contains("docs"), "expected docs scheme in conflict, got {error}");
+    .build()
+    .unwrap();
 }
 
 #[test]
@@ -539,7 +601,7 @@ fn apply_config_spec_after_build_registers_docs() {
 }
 
 #[test]
-fn apply_config_spec_conflicts_with_existing_docs_provider() {
+fn apply_config_spec_after_docs_fallback_can_coexist() {
   let spec = RuntimeConfigSpec::new().with_resource(
     RuntimeResourceConfigSpec::InMemoryDocs(
       RuntimeInMemoryDocsResourceSpec::new("docs://manual")
@@ -550,11 +612,115 @@ fn apply_config_spec_conflicts_with_existing_docs_provider() {
     .in_memory_docs(InMemoryDocsProvider::new())
     .build()
     .unwrap();
+  runtime.apply_config_spec(spec).unwrap();
+}
+
+#[test]
+fn config_spec_conflicts_with_existing_same_docs_base() {
+  let spec = RuntimeConfigSpec::new().with_resource(
+    RuntimeResourceConfigSpec::InMemoryDocs(
+      RuntimeInMemoryDocsResourceSpec::new("docs://manual")
+        .with_entry("intro/title", bool_value(true)),
+    ),
+  );
+  let result = RuntimeBuilder::new()
+    .in_memory_docs(docs_provider_with("docs://manual", "other/title", bool_value(true)))
+    .config_spec(spec)
+    .build();
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeResourceProviderConflict"), "expected provider conflict, got {error}");
+}
+
+#[test]
+fn apply_config_spec_conflicts_with_existing_same_docs_base() {
+  let spec = RuntimeConfigSpec::new().with_resource(
+    RuntimeResourceConfigSpec::InMemoryDocs(
+      RuntimeInMemoryDocsResourceSpec::new("docs://manual")
+        .with_entry("intro/title", bool_value(true)),
+    ),
+  );
+  let mut runtime = RuntimeBuilder::new()
+    .in_memory_docs(docs_provider_with("docs://manual", "other/title", bool_value(true)))
+    .build()
+    .unwrap();
   let result = runtime.apply_config_spec(spec);
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("RuntimeResourceProviderConflict"), "expected provider conflict, got {error}");
-  assert!(error.contains("docs"), "expected docs scheme in conflict, got {error}");
+}
+
+#[test]
+fn two_fallback_docs_providers_conflict() {
+  let result = RuntimeBuilder::new()
+    .in_memory_docs(InMemoryDocsProvider::new())
+    .in_memory_docs(InMemoryDocsProvider::new())
+    .build();
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("RuntimeResourceProviderConflict"), "expected provider conflict, got {error}");
+}
+
+#[test]
+fn registered_module_manifest_context_import_still_resolves() {
+  let root = setup_modules("+> @manual := docs/page\nresult := @manual/title\n<+ result\nresult\n");
+  let manifest = ModuleManifestConfig {
+    name: "docs".to_string(),
+    exports: vec![ModuleManifestExportConfig {
+      name: "page".to_string(),
+      kind: ModuleManifestExportKind::Context,
+      base_uri: "docs://manual".to_string(),
+      operations: vec!["read".to_string()],
+    }],
+  };
+  let provider = docs_provider_with("docs://manual", "title", bool_value(true));
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .module_manifest(manifest)
+    .unwrap()
+    .in_memory_docs(provider)
+    .build()
+    .unwrap();
+  runtime
+    .grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "title"))
+    .unwrap();
+  let version = runtime
+    .resolve_and_store_module_source("main.mec", module_options())
+    .unwrap()
+    .unwrap();
+  let result = match runtime.run_module(version).unwrap() {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_bool_true(result, "registered module manifest context import");
+}
+
+#[test]
+fn host_instance_unknown_context_does_not_fallback_to_module_manifest() {
+  let root = setup_modules("+> @bad := cli/missing\nresult := true\n");
+  let manifest = ModuleManifestConfig {
+    name: "cli".to_string(),
+    exports: vec![ModuleManifestExportConfig {
+      name: "missing".to_string(),
+      kind: ModuleManifestExportKind::Context,
+      base_uri: "docs://wrong".to_string(),
+      operations: vec!["read".to_string()],
+    }],
+  };
+  let backend = FakeCliBackend::default();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new()
+      .source_resolver(FileSourceResolver::new(&root))
+      .module_manifest(manifest)
+      .unwrap(),
+    backend,
+  )
+  .build()
+  .unwrap();
+  let result = runtime.resolve_and_store_module_source("main.mec", module_options());
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("HostInterfaceUnknownContext"), "expected host unknown context, got {error}");
 }
 
 #[test]
@@ -788,7 +954,7 @@ fn derived_context_unknown_base_is_rejected() {
 
 #[test]
 fn direct_runtime_derived_context_without_host_read_preflights() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let mut runtime = runtime_with_browser_manifest();
   runtime.run_string("@base := docs://manual{:read(*)}\n@docs := @base\nx := 1\n").unwrap();
 }
 
@@ -808,7 +974,7 @@ fn direct_runtime_derived_context_read_uses_alias() {
 
 #[test]
 fn derived_context_cannot_expand_capabilities() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let mut runtime = runtime_with_browser_manifest();
   let result = runtime.run_string("@base := docs://manual{:read(intro/title)}\n@docs := @base{:write(intro/title)}\n");
   assert!(result.is_err(), "derived write should not be allowed to expand read-only base");
   let error = format!("{:?}", result.err().unwrap());
@@ -2167,7 +2333,7 @@ fn workspace_watcher_watches_configured_folder() {
       .folder("src"),
   ).unwrap();
 
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let mut runtime = runtime_with_browser_manifest();
   let watcher = RuntimeWorkspaceWatcher::open(&workspace, &mut runtime).unwrap();
   let watched_paths = watcher.watched_paths();
 
@@ -2239,7 +2405,7 @@ result := @foo/ok\n",
 #[test]
 fn manifest_context_import_materializes_without_source_dependency() {
   let root = setup_modules("+> @ui := browser/dom\nx := 1\n");
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let record = runtime.store().get_module_version(version).unwrap().unwrap();
 
@@ -2254,7 +2420,7 @@ fn manifest_context_import_materializes_without_source_dependency() {
 #[test]
 fn manifest_context_import_is_visible_to_scoped_address_resolution() {
   let root = setup_modules("+> @ui := browser/dom\ntitle := @ui/counter/_text\n");
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version);
   assert!(result.is_err(), "expected resource/provider failure without browser provider");
@@ -2265,7 +2431,7 @@ fn manifest_context_import_is_visible_to_scoped_address_resolution() {
 #[test]
 fn manifest_context_import_conflicts_with_interpreter_address_target() {
   let root = setup_modules("+> @foo := browser/dom\n\n~~~mech:foo\nok := true\n<+ ok\n~~~\n\nresult := @foo/counter/_text\n");
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let result = runtime.resolve_and_store_module_source("main.mec", module_options());
   assert!(result.is_err(), "manifest context alias should conflict with interpreter target");
   let error = format!("{:?}", result.err().unwrap());
@@ -2276,7 +2442,7 @@ fn manifest_context_import_conflicts_with_interpreter_address_target() {
 #[test]
 fn context_import_alias_is_not_bound_as_value_import() {
   let root = setup_modules("+> @ui := browser/dom\n+> ./math.mec\nresult := ui\n");
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let record = runtime.store().get_module_version(version).unwrap().unwrap();
   assert_eq!(record.imports.len(), 2);
@@ -2292,7 +2458,7 @@ fn context_import_alias_is_not_bound_as_value_import() {
 #[cfg(feature = "linked_stdlib")]
 #[test]
 fn direct_runtime_normal_import_is_not_dropped() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let mut runtime = runtime_with_browser_manifest();
   let result = runtime.run_string("+> math/sin\nresult := sin(0)\n").unwrap();
 
   match result {
@@ -2303,7 +2469,7 @@ fn direct_runtime_normal_import_is_not_dropped() {
 
 #[test]
 fn manifest_context_import_ordering_supports_derived_alias() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let mut runtime = runtime_with_browser_manifest();
   let result = runtime.run_string("+> @ui := browser/dom\n@dom := @ui\n");
   assert!(result.is_ok(), "manifest context import should be available to later derived alias: {result:?}");
 }
@@ -2314,7 +2480,7 @@ fn stored_module_manifest_context_import_ordering_supports_derived_alias() {
     "+> @ui := browser/dom\n\n@dom := @ui\n\nresult := @dom/counter/_text\n",
   );
 
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   runtime
     .grant_capability(runtime_context_read_grant(&runtime, "browser://dom", "counter/_text"))
     .unwrap();
@@ -2363,7 +2529,7 @@ fn stored_module_derived_context_before_manifest_base_is_rejected() {
     "@dom := @ui\n\n+> @ui := browser/dom\n\nx := 1\n",
   );
 
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let version = runtime
     .resolve_and_store_module_source("main.mec", module_options())
     .unwrap()
@@ -2382,7 +2548,7 @@ fn stored_module_derived_context_before_manifest_base_is_rejected() {
 
 #[test]
 fn direct_runtime_manifest_context_import_read_uses_browser_binding_before_lowering() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let mut runtime = runtime_with_browser_manifest();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "browser://dom", "counter/_text")).unwrap();
   let result = runtime.run_string("+> @ui := browser/dom\ntitle := @ui/counter/_text\n");
   assert!(result.is_err(), "expected browser provider failure without a browser provider");
@@ -2393,7 +2559,7 @@ fn direct_runtime_manifest_context_import_read_uses_browser_binding_before_lower
 
 #[test]
 fn direct_runtime_manifest_context_import_write_uses_provider_lookup() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let mut runtime = runtime_with_browser_manifest();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "browser://dom", "counter/_text")).unwrap();
   let result = runtime.run_string("+> @ui := browser/dom
 @ui/counter/_text = \"hello\"
@@ -2407,7 +2573,7 @@ fn direct_runtime_manifest_context_import_write_uses_provider_lookup() {
 #[test]
 fn repeated_manifest_context_alias_in_separate_fenced_scopes_is_legal() {
   let root = setup_modules("~~~mech:foo\n+> @ui := browser/dom\na := @ui/counter/_text\n~~~\n\n~~~mech:bar\n+> @ui := browser/dom\nb := @ui/counter/_text\n~~~\n");
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let result = runtime.resolve_and_store_module_source("main.mec", module_options());
   assert!(result.is_ok(), "same context alias in separate fenced scopes should be legal: {result:?}");
 }
@@ -2415,7 +2581,7 @@ fn repeated_manifest_context_alias_in_separate_fenced_scopes_is_legal() {
 #[test]
 fn manifest_context_import_in_fenced_scope_does_not_leak_to_program_scope() {
   let root = setup_modules("~~~mech:foo\n+> @ui := browser/dom\na := @ui/counter/_text\n~~~\n\nresult := @ui/counter/_text\n");
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version);
   assert!(result.is_err(), "program scope should not see fenced @ui context import");
@@ -2429,7 +2595,7 @@ fn resolving_module_with_fenced_context_import_does_not_pollute_direct_runtime_b
     "~~~mech:foo\n+> @ui := browser/dom\na := @ui/counter/_text\n~~~\n"
   );
 
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
 
   let result = runtime.run_string("x := @ui/counter/_text\n");
@@ -2452,7 +2618,7 @@ fn fenced_context_alias_can_match_unrelated_interpreter_name_without_resolving_a
     "~~~mech:foo\nok := true\n<+ ok\n~~~\n\n~~~mech:bar\n+> @foo := browser/dom\nx := @foo/counter/_text\n~~~\n"
   );
 
-  let mut runtime = runtime_with_root(&root);
+  let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
 
   let result = runtime.run_module_scope(
@@ -2478,7 +2644,7 @@ fn fenced_context_alias_can_match_unrelated_interpreter_name_without_resolving_a
 }
 #[test]
 fn direct_runtime_context_addressed_slice_is_rejected_explicitly() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
+  let mut runtime = runtime_with_browser_manifest();
   let result = runtime.run_string("+> @ui := browser/dom\nx := @ui/counter[0]\n");
   assert!(result.is_err(), "context-addressed browser slices should be explicit until semantics are defined");
   let error = format!("{:?}", result.err().unwrap());
@@ -2547,10 +2713,122 @@ impl CliBackend for RuntimeFakeCliBackend {
 }
 
 fn runtime_with_fake_cli(state: Arc<Mutex<RuntimeFakeCliState>>) -> MechRuntime {
-  RuntimeBuilder::new()
-    .resource_provider(Box::new(CliResourceProvider::new(RuntimeFakeCliBackend::new(state))))
+  with_test_cli(RuntimeBuilder::new(), RuntimeFakeCliBackend::new(state))
     .build()
     .unwrap()
+}
+
+#[derive(Debug)]
+struct TestCliFactory<B: CliBackend + Clone + 'static> {
+  backend: B,
+  manifest: HostManifestConfig,
+}
+
+impl<B: CliBackend + Clone + 'static> TestCliFactory<B> {
+  fn new(backend: B) -> Self {
+    Self { backend, manifest: mech_host_cli::cli_host_manifest().unwrap() }
+  }
+}
+
+impl<B: CliBackend + Clone + 'static> RuntimeHostFactory for TestCliFactory<B> {
+  fn provider_name(&self) -> &str { "cli" }
+  fn manifest(&self) -> &HostManifestConfig { &self.manifest }
+  fn validate_settings(&self, _instance_name: &str, _settings: &ConfigValue) -> mech_core::MResult<()> { Ok(()) }
+  fn instantiate(&self, instance_name: &str, _settings: &ConfigValue) -> mech_core::MResult<RuntimeHostInstallation> {
+    Ok(RuntimeHostInstallation {
+      interface: materialize_host_manifest(instance_name, &self.manifest)?,
+      resource_providers: vec![Box::new(CliResourceProvider::for_instance(instance_name, self.backend.clone()))],
+    })
+  }
+}
+
+fn with_test_cli<B: CliBackend + Clone + 'static>(builder: RuntimeBuilder, backend: B) -> RuntimeBuilder {
+  builder
+    .host_factory(Box::new(TestCliFactory::new(backend))).unwrap()
+    .host_instance(HostInstanceConfig { name: "cli".to_string(), provider: "cli".to_string(), settings: ConfigValue::Map(Default::default()) })
+}
+
+#[test]
+fn with_test_cli_registers_cli_provider_for_instance_bases() {
+  let backend = FakeCliBackend::default().with_env("HOME", "/tmp/test-home");
+
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new(),
+    backend,
+  )
+  .build()
+  .unwrap();
+
+  runtime
+    .grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME"))
+    .unwrap();
+
+  let result = runtime
+    .run_string("+> @env := cli/env\nhome := @env/HOME\nhome\n")
+    .unwrap();
+
+  assert_string_value(result, "/tmp/test-home");
+}
+
+#[test]
+fn runtime_bind_context_export_resolves_host_interface() {
+  let backend = FakeCliBackend::default();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
+
+  runtime.bind_context_export("out", "cli", "stdout").unwrap();
+
+  let binding = runtime.resource_binding("out").unwrap();
+  assert_eq!(binding.base_uri, "cli://cli/stdout");
+  assert_eq!(binding.root_path, "");
+}
+
+#[test]
+fn runtime_bind_context_export_falls_back_to_module_manifest() {
+  let manifest = ModuleManifestConfig {
+    name: "docs".to_string(),
+    exports: vec![ModuleManifestExportConfig {
+      name: "page".to_string(),
+      kind: ModuleManifestExportKind::Context,
+      base_uri: "docs://manual".to_string(),
+      operations: vec!["read".to_string()],
+    }],
+  };
+  let mut runtime = RuntimeBuilder::new()
+    .module_manifest(manifest)
+    .unwrap()
+    .build()
+    .unwrap();
+
+  runtime.bind_context_export("doc", "docs", "page").unwrap();
+
+  let binding = runtime.resource_binding("doc").unwrap();
+  assert_eq!(binding.base_uri, "docs://manual");
+  assert_eq!(binding.root_path, "");
+}
+
+#[test]
+fn runtime_bind_context_export_host_unknown_context_does_not_fallback() {
+  let manifest = ModuleManifestConfig {
+    name: "cli".to_string(),
+    exports: vec![ModuleManifestExportConfig {
+      name: "missing".to_string(),
+      kind: ModuleManifestExportKind::Context,
+      base_uri: "docs://wrong".to_string(),
+      operations: vec!["read".to_string()],
+    }],
+  };
+  let backend = FakeCliBackend::default();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new().module_manifest(manifest).unwrap(),
+    backend,
+  )
+  .build()
+  .unwrap();
+
+  let result = runtime.bind_context_export("bad", "cli", "missing");
+  assert!(result.is_err());
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(error.contains("HostInterfaceUnknownContext"), "got {error}");
 }
 
 #[derive(Debug, Clone, Default)]
@@ -2700,7 +2978,7 @@ fn cli_env_send_errors() {
   let mut runtime = runtime_with_fake_cli(state.clone());
 
   runtime
-    .grant_capability(runtime_context_write_grant(&runtime, "cli://env", "HOME"))
+    .grant_capability(runtime_context_write_grant(&runtime, "cli://cli/env", "HOME"))
     .unwrap();
 
   let result = runtime.run_string("+> @env := cli/env
@@ -2732,7 +3010,7 @@ fn cli_stdout_missing_write_grant_fails_before_backend() {
 #[test]
 fn cli_host_env_manifest_import_reads_with_runtime_grant() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/mech-home");
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   runtime.run_string("+> @env := cli/env\nhome := @env/HOME\n").unwrap();
   let id = hash_str("home");
@@ -2747,7 +3025,7 @@ fn cli_host_env_manifest_import_reads_with_runtime_grant() {
 fn cli_host_stdout_send_writes_line_with_runtime_grant() {
   let backend = FakeCliBackend::default();
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap();
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
@@ -2757,7 +3035,7 @@ fn cli_host_stdout_send_writes_line_with_runtime_grant() {
 fn cli_host_stderr_send_writes_text_with_runtime_grant() {
   let backend = FakeCliBackend::default();
   let stderr = backend.stderr.clone();
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stderr", "text")).unwrap();
   runtime.run_string("+> @err := cli/stderr\n@err/text <- \"warning\"\n").unwrap();
   assert_eq!(stderr.lock().unwrap().as_slice(), &["warning".to_string()]);
@@ -2767,7 +3045,7 @@ fn cli_host_stderr_send_writes_text_with_runtime_grant() {
 fn cli_host_stdout_assignment_errors_and_writes_nothing() {
   let backend = FakeCliBackend::default();
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let result = runtime.run_string("+> @out := cli/stdout\n@out/line = \"hello\"\n");
   assert!(result.is_err(), "stdout assignment should error");
@@ -2778,7 +3056,7 @@ fn cli_host_stdout_assignment_errors_and_writes_nothing() {
 fn cli_host_stdout_definition_errors_and_writes_nothing() {
   let backend = FakeCliBackend::default();
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let result = runtime.run_string("+> @out := cli/stdout\n@out/line := \"hello\"\n");
   assert!(result.is_err(), "stdout definition should error");
@@ -2788,8 +3066,8 @@ fn cli_host_stdout_definition_errors_and_writes_nothing() {
 #[test]
 fn cli_host_env_send_errors() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://env", "HOME")).unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/env", "HOME")).unwrap();
   let result = runtime.run_string("+> @env := cli/env\n@env/HOME <- \"x\"\n");
   assert!(result.is_err(), "env send should error");
 }
@@ -2798,7 +3076,7 @@ fn cli_host_env_send_errors() {
 fn cli_host_missing_env_read_grant_fails_before_backend_call() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let calls = backend.calls.clone();
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   let result = runtime.run_string("+> @env := cli/env\nhome := @env/HOME\n");
   assert!(result.is_err(), "env read without runtime grant should fail");
   assert!(calls.lock().unwrap().is_empty(), "backend should not be called without read grant");
@@ -2809,7 +3087,7 @@ fn cli_host_missing_stdout_write_grant_fails_before_backend_call() {
   let backend = FakeCliBackend::default();
   let calls = backend.calls.clone();
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   let result = runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n");
   assert!(result.is_err(), "stdout send without runtime grant should fail");
   assert!(calls.lock().unwrap().is_empty(), "backend should not be called without write grant");
@@ -2821,7 +3099,7 @@ fn cli_host_missing_stderr_write_grant_fails_before_backend_call() {
   let backend = FakeCliBackend::default();
   let calls = backend.calls.clone();
   let stderr = backend.stderr.clone();
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   let result = runtime.run_string("+> @err := cli/stderr\n@err/text <- \"warning\"\n");
   assert!(result.is_err(), "stderr send without runtime grant should fail");
   assert!(calls.lock().unwrap().is_empty(), "backend should not be called without write grant");
@@ -2832,8 +3110,8 @@ fn cli_host_missing_stderr_write_grant_fails_before_backend_call() {
 fn default_cli_stdout_grant_allows_send() {
   let backend = FakeCliBackend::default();
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "text")).unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "text")).unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap();
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
@@ -2842,8 +3120,8 @@ fn default_cli_stdout_grant_allows_send() {
 #[test]
 fn narrow_env_grant_permits_path_but_denies_home() {
   let backend = FakeCliBackend::default().with_env("PATH", "/bin").with_env("HOME", "/tmp/home");
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
-  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "PATH")).unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://cli/env", "PATH")).unwrap();
   runtime.run_string("+> @env := cli/env\npath := @env/PATH\n").unwrap();
   let result = runtime.run_string("+> @env := cli/env\nhome := @env/HOME\n");
   assert!(result.is_err());
@@ -2854,7 +3132,7 @@ fn narrow_env_grant_permits_path_but_denies_home() {
 fn narrow_stdout_grant_permits_line_but_denies_text() {
   let backend = FakeCliBackend::default();
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap();
   let result = runtime.run_string("+> @out := cli/stdout\n@out/text <- \"bad\"\n");
@@ -2954,7 +3232,7 @@ xs[@env/HOME] += 1
 fn nested_env_read_denial_preflights_before_stdout_write() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let result = runtime.run_string("+> @env := cli/env\n+> @out := cli/stdout\n@out/line <- \"must-not-write\"\nx := [@env/HOME]\n");
   assert!(result.is_err());
@@ -2966,7 +3244,7 @@ fn nested_env_read_denial_preflights_before_stdout_write() {
 fn function_define_env_read_denial_preflights_before_stdout_write() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let result = runtime.run_string("+> @out := cli/stdout\n+> @env := cli/env\n@out/line <- \"must-not-write\"\nuses-env(root<string>) => <string>\n  | @env/HOME.\n");
   assert!(result.is_err());
@@ -3071,7 +3349,7 @@ fn match_arm_context_read_pattern_compares_value_when_allowed() {
   let subject = runtime.runtime_context().unwrap().subject;
   runtime.grant_capability(RuntimeCapabilityGrant {
     subject,
-    resource: "cli://env".to_string(),
+    resource: "cli://cli/env".to_string(),
     operations: vec![RuntimeCapabilityOperation::Read],
     paths: vec!["MECH_MATCH_PATTERN".to_string()],
   }).unwrap();
@@ -3202,7 +3480,7 @@ fn run_tree_with_context_preflight_failure_emits_failure_and_profile_events() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let mut config = RuntimeConfig::default();
   config.diagnostics.profile_enabled = true;
-  let mut runtime = RuntimeBuilder::new().config(config).resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new().config(config), backend).build().unwrap();
   let mut context = runtime.runtime_context().unwrap();
   let tree = mech_syntax::parser::parse("+> @env := cli/env\nhome := @env/HOME\n").unwrap();
   let result = runtime.run_tree_with_context(&mut context, &tree);
@@ -3221,11 +3499,13 @@ fn module_preflight_denial_emits_program_failed_event() {
   );
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new()
-    .source_resolver(FileSourceResolver::new(&root))
-    .resource_provider(Box::new(CliResourceProvider::new(backend)))
-    .build()
-    .unwrap();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new()
+      .source_resolver(FileSourceResolver::new(&root)),
+    backend,
+  )
+  .build()
+  .unwrap();
   runtime
     .grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line"))
     .unwrap();
@@ -3256,7 +3536,7 @@ fn module_preflight_denial_emits_program_failed_event() {
 #[test]
 fn cli_host_direct_env_declaration_reads_with_runtime_grant() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/direct-home");
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   runtime.run_string("@env := cli://env{:read(HOME)}\nhome := @env/HOME\n").unwrap();
   let id = hash_str("home");
@@ -3268,7 +3548,7 @@ fn cli_host_direct_env_declaration_reads_with_runtime_grant() {
 fn cli_host_direct_stdout_declaration_sends_with_runtime_grant() {
   let backend = FakeCliBackend::default();
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   runtime.run_string("@out := cli://stdout{:write(line)}\n@out/line <- \"hello\"\n").unwrap();
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
@@ -3278,7 +3558,7 @@ fn cli_host_direct_stdout_declaration_sends_with_runtime_grant() {
 fn cli_host_direct_stderr_declaration_sends_with_runtime_grant() {
   let backend = FakeCliBackend::default();
   let stderr = backend.stderr.clone();
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stderr", "text")).unwrap();
   runtime.run_string("@err := cli://stderr{:write(text)}\n@err/text <- \"warning\"\n").unwrap();
   assert_eq!(stderr.lock().unwrap().as_slice(), &["warning".to_string()]);
@@ -3287,8 +3567,8 @@ fn cli_host_direct_stderr_declaration_sends_with_runtime_grant() {
 #[test]
 fn cli_host_env_assignment_errors() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://env", "HOME")).unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
+  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/env", "HOME")).unwrap();
   let result = runtime.run_string("+> @env := cli/env\n@env/HOME = \"x\"\n");
   assert!(result.is_err(), "env assignment should error");
 }
@@ -3296,8 +3576,8 @@ fn cli_host_env_assignment_errors() {
 #[test]
 fn cli_host_stdout_read_errors() {
   let backend = FakeCliBackend::default();
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
-  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://cli/stdout", "line")).unwrap();
   let result = runtime.run_string("+> @out := cli/stdout\nx := @out/line\n");
   assert!(result.is_err(), "stdout read should error");
 }
@@ -3306,7 +3586,7 @@ fn cli_host_stdout_read_errors() {
 fn cli_context_module_read_exports_value() {
   let root = setup_modules("+> @env := cli/env\nhome := @env/HOME\n<+ home\nhome\n");
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/module-home");
-  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)), backend).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version).unwrap();
@@ -3325,7 +3605,7 @@ fn cli_context_module_send_is_not_stripped() {
   let root = setup_modules("+> @out := cli/stdout\n@out/line <- \"hello\"\n");
   let backend = FakeCliBackend::default();
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   runtime.run_module(version).unwrap();
@@ -3395,7 +3675,7 @@ fn assert_string_value(value: Value, expected: &str) {
 #[test]
 fn cli_context_direct_read_resolves_inside_formula_expression() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   runtime.run_string("+> @env := cli/env\nmsg := \"HOME=\" + @env/HOME\n").unwrap();
   let id = hash_str("msg");
@@ -3406,7 +3686,7 @@ fn cli_context_direct_read_resolves_inside_formula_expression() {
 #[test]
 fn cli_context_standalone_expression_returns_env_value() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   let value = runtime.run_string("+> @env := cli/env\n@env/HOME\n").unwrap();
   assert_string_value(value, "/tmp/home");
@@ -3518,11 +3798,11 @@ fn context_write_does_not_accept_grant_for_default_subject_when_context_subject_
 #[test]
 fn unqualified_fenced_context_import_is_available_to_program_execution() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/fenced-home");
-  let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(CliResourceProvider::new(backend))).build().unwrap();
+  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   let mut context = runtime.runtime_context().unwrap().with_subject("task://fenced");
   runtime.grant_capability(RuntimeCapabilityGrant {
     subject: "task://fenced".to_string(),
-    resource: "cli://env".to_string(),
+    resource: "cli://cli/env".to_string(),
     operations: vec![RuntimeCapabilityOperation::Read],
     paths: vec!["HOME".to_string()],
   }).unwrap();
@@ -3546,11 +3826,13 @@ fn named_fenced_context_import_write_uses_context_registry() {
   let root = setup_modules("~~~mech:bar\n+> @out := cli/stdout\n@out/line <- \"hello\"\n~~~\n");
   let backend = FakeCliBackend::default();
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new()
-    .source_resolver(FileSourceResolver::new(&root))
-    .resource_provider(Box::new(CliResourceProvider::new(backend)))
-    .build()
-    .unwrap();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new()
+      .source_resolver(FileSourceResolver::new(&root)),
+    backend,
+  )
+  .build()
+  .unwrap();
 
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
@@ -3570,11 +3852,13 @@ fn named_fenced_context_import_write_uses_context_registry() {
 fn named_fenced_context_import_read_exports_value() {
   let root = setup_modules("~~~mech:bar\n+> @env := cli/env\nhome := @env/HOME\n<+ home\nhome\n~~~\n");
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/named-fence-home");
-  let mut runtime = RuntimeBuilder::new()
-    .source_resolver(FileSourceResolver::new(&root))
-    .resource_provider(Box::new(CliResourceProvider::new(backend)))
-    .build()
-    .unwrap();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new()
+      .source_resolver(FileSourceResolver::new(&root)),
+    backend,
+  )
+  .build()
+  .unwrap();
 
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
@@ -3659,10 +3943,12 @@ fn direct_context_read_resolves_inside_op_assign() {
 fn cli_context_source_scope_denial_preflights_before_stdout_write() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new()
-    .resource_provider(Box::new(CliResourceProvider::new(backend)))
-    .build()
-    .unwrap();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new(),
+    backend,
+  )
+  .build()
+  .unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
 
@@ -3688,11 +3974,13 @@ fn module_graph_preflight_blocks_dependency_stdout_before_main_env_denial() {
   .unwrap();
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new()
-    .source_resolver(FileSourceResolver::new(&root))
-    .resource_provider(Box::new(CliResourceProvider::new(backend)))
-    .build()
-    .unwrap();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new()
+      .source_resolver(FileSourceResolver::new(&root)),
+    backend,
+  )
+  .build()
+  .unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let mut context = runtime.runtime_context().unwrap();
@@ -3710,11 +3998,13 @@ fn module_graph_preflight_blocks_current_stdout_before_dependency_denial() {
   std::fs::write(root.join("dep.mec"), "+> @env := cli/env\nhome := @env/HOME\n").unwrap();
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new()
-    .source_resolver(FileSourceResolver::new(&root))
-    .resource_provider(Box::new(CliResourceProvider::new(backend)))
-    .build()
-    .unwrap();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new()
+      .source_resolver(FileSourceResolver::new(&root)),
+    backend,
+  )
+  .build()
+  .unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let mut context = runtime.runtime_context().unwrap();
@@ -3746,11 +4036,13 @@ value := @foo/home
   .unwrap();
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let stdout = backend.stdout.clone();
-  let mut runtime = RuntimeBuilder::new()
-    .source_resolver(FileSourceResolver::new(&root))
-    .resource_provider(Box::new(CliResourceProvider::new(backend)))
-    .build()
-    .unwrap();
+  let mut runtime = with_test_cli(
+    RuntimeBuilder::new()
+      .source_resolver(FileSourceResolver::new(&root)),
+    backend,
+  )
+  .build()
+  .unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let mut context = runtime.runtime_context().unwrap();
@@ -3929,7 +4221,7 @@ fn module_function_unknown_address_target_is_preflighted_before_send() {
         elements: vec![mech_core::SectionElement::MechCode(vec![
           (mech_core::MechCode::Statement(mech_core::Statement::ContextDeclaration(mech_core::ContextDeclaration {
             name: ident("out"),
-            base: mech_core::ContextBase::ResourceUri(token(mech_core::TokenKind::String, "cli://stdout")),
+            base: mech_core::ContextBase::ResourceUri(token(mech_core::TokenKind::String, "cli://cli/stdout")),
             capabilities: vec![mech_core::ContextCapabilityDeclaration {
               operation: ident("write"),
               scope: mech_core::ContextCapabilityScope::Path(ident("line")),
@@ -3964,7 +4256,16 @@ fn module_function_unknown_address_target_is_preflighted_before_send() {
 
   let state = Arc::new(Mutex::new(RecordingCliState::default()));
   let mut runtime = RuntimeBuilder::new()
-    .resource_provider(Box::new(CliResourceProvider::new(RecordingCliBackend { state: state.clone() })))
+    .host_factory(Box::new(RecordingCliHostFactory {
+      manifest: mech_host_cli::cli_host_manifest().unwrap(),
+      state: state.clone(),
+    }))
+    .unwrap()
+    .host_instance(HostInstanceConfig {
+      name: "cli".to_string(),
+      provider: "cli".to_string(),
+      settings: ConfigValue::Map(Default::default()),
+    })
     .build()
     .unwrap();
 

@@ -124,7 +124,7 @@ impl Interpreter {
       out_values: Ref::new(HashMap::new()),
       inline_eval_counter: Ref::new(0),
       context_bindings: Ref::new(HashMap::new()),
-      module_manifests: Ref::new(ModuleManifestCatalog::with_builtin_browser()),
+      module_manifests: Ref::new(ModuleManifestCatalog::with_builtin_hosts()),
       #[cfg(feature = "state_machines")]
       user_state_machines: Ref::new(HashMap::new()),
       #[cfg(feature = "state_machines")]
@@ -455,7 +455,7 @@ impl Interpreter {
   }
     
 
-  #[cfg(feature = "program")]
+  #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
   pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
     // Reset the instruction pointer
     self.ip = 0;
@@ -642,7 +642,7 @@ impl Interpreter {
     Ok(self.out.clone())
   }
 
-  #[cfg(feature = "compiler")]
+  #[cfg(all(feature = "compiler", feature = "functions"))]
   pub fn compile(&mut self) -> MResult<Vec<u8>> {
     let state_brrw = self.state.borrow();
     let mut plan_brrw = state_brrw.plan.borrow_mut();

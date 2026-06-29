@@ -77,10 +77,10 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     mech_runtime::RuntimeConfig::default(),
     &options.loaded_config.document.runtime,
   )?;
-  let host_config = mech_host_browser::BrowserHostConfig::from_document_and_runtime(
+  let host_config = crate::web_runtime_injection_config_from_document(
     &options.loaded_config.document,
     &runtime_config,
-  );
+  )?;
   let index_html = output_dir.join("index.html");
   let injection = options
     .host_config_injection
@@ -364,6 +364,63 @@ mod tests {
     crate::load_mech_config_path(root.join("demo.mcfg"), Some(root.to_path_buf())).unwrap()
   }
 
+  fn write_browser_alias_project(root: &Path) -> LoadedMechConfig {
+    fs::write(
+      root.join("demo.mcfg"),
+      r##"config := {
+  runtime: {name: "bundle-alias-test"}
+  serve: {
+    paths: ["demo.mec"]
+    shim: "index.html"
+    wasm: "pkg"
+  }
+  hosts: [
+    {
+      name: "ui"
+      provider: "browser"
+      settings: {
+        dom: [
+          {
+            path: "body/content/allowed/_value"
+            selector: "#allowed"
+            property: "value"
+            operations: ["write"]
+          }
+          {
+            path: "body/content/denied/_value"
+            selector: "#denied"
+            property: "value"
+            operations: ["write"]
+          }
+        ]
+      }
+    }
+  ]
+  run: {
+    grants: [
+      {
+        target: "ui/dom"
+        operations: ["write"]
+        paths: ["body/content/allowed/_value"]
+      }
+    ]
+  }
+}
+"##,
+    )
+    .unwrap();
+    fs::write(
+      root.join("index.html"),
+      r#"<!doctype html><html><head></head><body><script type="module">import init from "./pkg/mech_wasm.js"; const code = await fetch("./code/demo.mec");</script></body></html>"#,
+    )
+    .unwrap();
+    fs::write(root.join("demo.mec"), "x := 1\n").unwrap();
+    fs::create_dir_all(root.join("pkg")).unwrap();
+    fs::write(root.join("pkg/mech_wasm.js"), "export default async function init() {}\n").unwrap();
+    fs::write(root.join("pkg/mech_wasm_bg.wasm"), b"wasm").unwrap();
+    crate::load_mech_config_path(root.join("demo.mcfg"), Some(root.to_path_buf())).unwrap()
+  }
+
   fn options(root: &Path, out: &Path, loaded: LoadedMechConfig) -> BundleWebOptions {
     BundleWebOptions {
       project_dir: root.to_path_buf(),
@@ -433,6 +490,25 @@ mod tests {
 
     let index = fs::read_to_string(out.join("index.html")).unwrap();
     assert!(index.contains("window.__MECH_HOST_CONFIG"));
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn bundle_web_injection_preserves_browser_alias_and_run_grants() {
+    let root = temp_root("host-alias-config");
+    let loaded = write_browser_alias_project(&root);
+    let out = root.join("out");
+
+    bundle_web_project(options(&root, &out, loaded)).unwrap();
+
+    let index = fs::read_to_string(out.join("index.html")).unwrap();
+    assert!(index.contains("window.__MECH_HOST_CONFIG"));
+    assert!(index.contains("\"hosts\""));
+    assert!(index.contains("\"name\":\"ui\""));
+    assert!(index.contains("\"name\":\"browser\""));
+    assert!(index.contains("\"runGrants\""));
+    assert!(index.contains("\"target\":\"ui/dom\""));
+    assert!(index.contains("body/content/allowed/_value"));
     fs::remove_dir_all(root).unwrap();
   }
 

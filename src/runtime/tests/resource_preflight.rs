@@ -1,6 +1,6 @@
 use mech_core::{MResult, Value};
 use mech_runtime::{
-  RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
+  RuntimeCapabilityOperation, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
   RuntimeResourceWritePreflightRequest,
 };
 
@@ -28,6 +28,7 @@ fn default_resource_preflight_rejects_unsupported_write() {
     base_uri: "readonly://root".to_string(),
     path: "value".to_string(),
     context_name: "ro".to_string(),
+    operation: RuntimeCapabilityOperation::Write,
     intent: RuntimeResourceWriteIntent::Assign,
   }).unwrap_err();
 

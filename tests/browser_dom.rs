@@ -31,6 +31,10 @@ impl FakeDomHost {
     self.state.borrow().reads.len()
   }
 
+  fn reads(&self) -> Vec<String> {
+    self.state.borrow().reads.clone()
+  }
+
   fn write_count(&self) -> usize {
     self.state.borrow().writes.len()
   }
@@ -131,8 +135,8 @@ fn runtime_binds_browser_resource_root() {
   let mut runtime = runtime();
   runtime.bind_resource_root("browser", "browser://dom/").unwrap();
   assert_eq!(
-    runtime.resolve_resource_path("browser", "body/title").unwrap().as_str(),
-    "body/title",
+    runtime.resource_binding("browser").unwrap().root_path.as_str(),
+    "",
   );
 }
 
@@ -141,19 +145,60 @@ fn runtime_resolves_child_path_under_browser_root() {
   let mut runtime = runtime();
   runtime.bind_resource_root("browser", "browser://dom/").unwrap();
   assert_eq!(
-    runtime.resolve_resource_path("browser", "body/header/title").unwrap().as_str(),
-    "body/header/title",
+    runtime.resource_binding("browser").unwrap().root_path.as_str(),
+    "",
   );
 }
 
 #[test]
 fn runtime_resolves_child_path_under_narrow_browser_root() {
   let mut runtime = runtime();
+  register_browser_provider(
+    &mut runtime,
+    read_write_authority("body/header/title", "#title"),
+    FakeDomHost::default(),
+  );
   runtime.bind_resource_root("head", "browser://dom/body/header/").unwrap();
   assert_eq!(
-    runtime.resolve_resource_path("head", "title").unwrap().as_str(),
-    "body/header/title",
+    runtime.resource_binding("head").unwrap().root_path.as_str(),
+    "body/header",
   );
+}
+
+#[test]
+fn nested_browser_resource_binding_resolves_provider_after_late_registration() {
+  let mut runtime = runtime();
+  let host = FakeDomHost::default().with_value("body/header/title", "Hello");
+  runtime.bind_resource_root("head", "browser://dom/body/header/").unwrap();
+  register_browser_provider(
+    &mut runtime,
+    authority("body/header/title", "#title", &[BrowserOperation::Read]),
+    host.clone(),
+  );
+  grant_runtime_context_read(&mut runtime, "body/header/title");
+
+  let value = runtime.read_bound_resource("head", "title").unwrap();
+
+  assert_eq!(value.as_string().unwrap().borrow().as_str(), "Hello");
+  assert_eq!(host.reads(), vec!["body/header/title".to_string()]);
+}
+
+#[test]
+fn nested_browser_resource_binding_resolves_provider_when_registered_before_binding() {
+  let mut runtime = runtime();
+  let host = FakeDomHost::default().with_value("body/header/title", "Hello");
+  register_browser_provider(
+    &mut runtime,
+    authority("body/header/title", "#title", &[BrowserOperation::Read]),
+    host.clone(),
+  );
+  runtime.bind_resource_root("head", "browser://dom/body/header/").unwrap();
+  grant_runtime_context_read(&mut runtime, "body/header/title");
+
+  let value = runtime.read_bound_resource("head", "title").unwrap();
+
+  assert_eq!(value.as_string().unwrap().borrow().as_str(), "Hello");
+  assert_eq!(host.reads(), vec!["body/header/title".to_string()]);
 }
 
 #[test]
@@ -165,7 +210,7 @@ fn runtime_reads_configured_browser_dom_path() {
     authority("body/title", "#title", &[BrowserOperation::Read]),
     FakeDomHost::default().with_value("body/title", "Hello"),
   );
-  let value = runtime.read_browser_dom_resource("browser", "body/title").unwrap();
+  let value = runtime.read_bound_resource("browser", "body/title").unwrap();
   assert_eq!(value.as_string().unwrap().borrow().as_str(), "Hello");
 }
 
@@ -179,7 +224,7 @@ fn runtime_writes_configured_browser_dom_path() {
     FakeDomHost::default(),
   );
   runtime
-    .write_browser_dom_resource("browser", "body/title", &Value::from("Hello".to_string()))
+    .write_bound_resource("browser", "body/title", &Value::from("Hello".to_string()))
     .unwrap();
 }
 
@@ -192,7 +237,7 @@ fn runtime_denies_browser_dom_read_without_read_grant() {
     authority("body/title", "#title", &[BrowserOperation::Write]),
     FakeDomHost::default(),
   );
-  assert!(runtime.read_browser_dom_resource("browser", "body/title").is_err());
+  assert!(runtime.read_bound_resource("browser", "body/title").is_err());
 }
 
 #[test]
@@ -205,7 +250,7 @@ fn runtime_denies_browser_dom_write_without_write_grant() {
     FakeDomHost::default(),
   );
   assert!(runtime
-    .write_browser_dom_resource("browser", "body/title", &Value::from("Hello".to_string()))
+    .write_bound_resource("browser", "body/title", &Value::from("Hello".to_string()))
     .is_err());
 }
 
@@ -218,7 +263,7 @@ fn runtime_rejects_unknown_browser_dom_path() {
     authority("body/title", "#title", &[BrowserOperation::Read]),
     FakeDomHost::default(),
   );
-  assert!(runtime.read_browser_dom_resource("browser", "body/other").is_err());
+  assert!(runtime.read_bound_resource("browser", "body/other").is_err());
 }
 
 #[test]
@@ -230,7 +275,7 @@ fn runtime_wildcard_dom_path_accepts_children() {
     authority("body/content/*", "#content", &[BrowserOperation::Read]),
     FakeDomHost::default().with_value("body/content/title", "Hello"),
   );
-  assert!(runtime.read_browser_dom_resource("browser", "body/content/title").is_ok());
+  assert!(runtime.read_bound_resource("browser", "body/content/title").is_ok());
 }
 
 #[test]
@@ -242,7 +287,7 @@ fn runtime_wildcard_dom_path_rejects_siblings() {
     authority("body/content/*", "#content", &[BrowserOperation::Read]),
     FakeDomHost::default(),
   );
-  assert!(runtime.read_browser_dom_resource("browser", "body/sidebar/title").is_err());
+  assert!(runtime.read_bound_resource("browser", "body/sidebar/title").is_err());
 }
 
 #[test]

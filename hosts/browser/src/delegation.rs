@@ -1,6 +1,6 @@
 use mech_core::{BrowserAuthority, MResult};
 use mech_runtime::{
-  encode_bool, encode_option_string, encode_option_u64, encode_string, encode_u64,
+  encode_bool, encode_option_string, encode_option_u64, encode_string, encode_u64, ConfigValue,
   HostDelegationEnvelope, HostDelegationPayload, VerifiedHostDelegation,
 };
 #[cfg(feature = "delegation_signing")]
@@ -9,20 +9,21 @@ use mech_runtime::{
   HostDelegationVerificationRequest,
 };
 
-use crate::{BrowserHostConfig, BrowserHostResourceConfig};
+use crate::{BrowserHostConfig, BrowserHostResourceConfig, BrowserRuntimeInjectionConfig};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct BrowserHostDelegationPayload {
-  pub host_config: BrowserHostConfig,
+  #[cfg_attr(feature = "serde", serde(flatten))]
+  pub runtime_injection: BrowserRuntimeInjectionConfig,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct BrowserVerifiedAuthority {
   pub runtime_config: mech_runtime::RuntimeConfig,
   pub browser_authority: BrowserAuthority,
-  pub host_config: BrowserHostConfig,
+  pub runtime_injection: BrowserRuntimeInjectionConfig,
 }
 
 pub type BrowserHostDelegationEnvelope = HostDelegationEnvelope<BrowserHostDelegationPayload>;
@@ -36,27 +37,30 @@ impl HostDelegationPayload for BrowserHostDelegationPayload {
   }
 
   fn validate_payload(&self) -> MResult<Self::Authority> {
-    let runtime_config = self.host_config.into_runtime_config()?;
-    let browser_authority = self.host_config.into_browser_authority()?;
+    let runtime_config = self.runtime_injection.into_runtime_config()?;
+    let browser_authority = self
+      .runtime_injection
+      .browser_host_config()?
+      .into_browser_authority()?;
     Ok(BrowserVerifiedAuthority {
       runtime_config,
       browser_authority,
-      host_config: self.host_config.clone(),
+      runtime_injection: self.runtime_injection.clone(),
     })
   }
 
   fn encode_payload(&self, out: &mut Vec<u8>) {
-    encode_browser_host_config(out, &self.host_config);
+    encode_browser_runtime_injection_config(out, &self.runtime_injection);
   }
 }
 
 #[cfg(feature = "delegation_signing")]
 pub fn sign_browser_host_delegation(
   header: HostDelegationHeader,
-  host_config: BrowserHostConfig,
+  runtime_injection: BrowserRuntimeInjectionConfig,
   signing_key: &HostDelegationSigningKey,
 ) -> MResult<BrowserHostDelegationEnvelope> {
-  sign_host_delegation(header, BrowserHostDelegationPayload { host_config }, signing_key)
+  sign_host_delegation(header, BrowserHostDelegationPayload { runtime_injection }, signing_key)
 }
 
 #[cfg(feature = "delegation_signing")]
@@ -106,6 +110,94 @@ pub fn encode_browser_host_config(out: &mut Vec<u8>, config: &BrowserHostConfig)
     encode_string(out, &entry.selector);
     encode_string(out, &entry.property);
     encode_option_string(out, entry.attribute.as_deref());
+  }
+}
+
+pub fn encode_browser_runtime_injection_config(
+  out: &mut Vec<u8>,
+  config: &BrowserRuntimeInjectionConfig,
+) {
+  encode_string(out, &config.runtime.name);
+  encode_option_u64(out, config.runtime.limits.max_steps_per_turn);
+  encode_option_u64(out, config.runtime.limits.max_turn_duration_ms);
+  encode_option_u64(out, config.runtime.limits.max_memory_bytes);
+  encode_option_u64(out, config.runtime.limits.max_tasks);
+  encode_option_u64(out, config.runtime.limits.max_actors);
+  encode_option_u64(out, config.runtime.limits.max_actor_mailbox_len);
+  encode_option_u64(out, config.runtime.limits.max_source_bytes);
+  encode_option_u64(out, config.runtime.limits.max_in_memory_events);
+  encode_bool(out, config.runtime.diagnostics.trace_enabled);
+  encode_bool(out, config.runtime.diagnostics.profile_enabled);
+  encode_bool(out, config.runtime.diagnostics.debug_enabled);
+  encode_string(out, &config.runtime.diagnostics.log_level);
+
+  let mut hosts = config.hosts.clone();
+  hosts.sort_by(|left, right| {
+    (&left.name, &left.provider).cmp(&(&right.name, &right.provider))
+  });
+  encode_u64(out, hosts.len() as u64);
+  for host in hosts {
+    encode_string(out, &host.name);
+    encode_string(out, &host.provider);
+    encode_config_value(out, &host.settings);
+  }
+
+  let mut run_grants = config.run_grants.clone();
+  run_grants.sort_by(|left, right| {
+    (&left.target, &left.operations, &left.paths).cmp(&(&right.target, &right.operations, &right.paths))
+  });
+  encode_u64(out, run_grants.len() as u64);
+  for grant in run_grants {
+    encode_string(out, &grant.target);
+    let mut operations = grant.operations;
+    operations.sort();
+    encode_u64(out, operations.len() as u64);
+    for operation in operations {
+      encode_string(out, &operation);
+    }
+    let mut paths = grant.paths;
+    paths.sort();
+    encode_u64(out, paths.len() as u64);
+    for path in paths {
+      encode_string(out, &path);
+    }
+  }
+}
+
+fn encode_config_value(out: &mut Vec<u8>, value: &ConfigValue) {
+  match value {
+    ConfigValue::Null => out.push(0),
+    ConfigValue::Bool(value) => {
+      out.push(1);
+      encode_bool(out, *value);
+    }
+    ConfigValue::Integer(value) => {
+      out.push(2);
+      encode_string(out, &value.to_string());
+    }
+    ConfigValue::Float(value) => {
+      out.push(3);
+      encode_u64(out, value.to_bits());
+    }
+    ConfigValue::String(value) => {
+      out.push(4);
+      encode_string(out, value);
+    }
+    ConfigValue::List(values) => {
+      out.push(5);
+      encode_u64(out, values.len() as u64);
+      for value in values {
+        encode_config_value(out, value);
+      }
+    }
+    ConfigValue::Map(values) => {
+      out.push(6);
+      encode_u64(out, values.len() as u64);
+      for (key, value) in values {
+        encode_string(out, key);
+        encode_config_value(out, value);
+      }
+    }
   }
 }
 
@@ -167,12 +259,16 @@ fn push_resource(out: &mut Vec<u8>, resource: &BrowserHostResourceConfig) {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use std::collections::BTreeMap;
   use crate::{
     BrowserHostBrowserConfig, BrowserHostBrowserGrant, BrowserHostDiagnosticsConfig,
     BrowserHostDomManifestEntry, BrowserHostRuntimeConfig, BrowserHostRuntimeLimits,
   };
   use mech_core::BrowserOperation;
-  use mech_runtime::{HOST_DELEGATION_ALGORITHM_ED25519, HostDelegationKeyStore, HostDelegationPublicKey};
+  use mech_runtime::{
+    ConfigValue, HostInstanceConfig, RunResourceGrantConfig,
+    HOST_DELEGATION_ALGORITHM_ED25519, HostDelegationKeyStore, HostDelegationPublicKey,
+  };
 
   const PRIVATE_KEY: [u8; 32] = [
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -236,9 +332,47 @@ mod tests {
     }
   }
 
+  fn runtime_injection_config() -> BrowserRuntimeInjectionConfig {
+    BrowserRuntimeInjectionConfig {
+      runtime: host_config().runtime,
+      hosts: vec![HostInstanceConfig {
+        name: "ui".to_string(),
+        provider: "browser".to_string(),
+        settings: browser_settings(),
+      }],
+      run_grants: vec![RunResourceGrantConfig {
+        target: "ui/dom".to_string(),
+        operations: vec!["write".to_string()],
+        paths: vec!["ui/_value".to_string()],
+      }],
+    }
+  }
+
+  fn browser_settings() -> ConfigValue {
+    ConfigValue::Map(BTreeMap::from([(
+      "dom".to_string(),
+      ConfigValue::List(vec![
+        dom_setting("out/_text", "#out", "text", &["read", "write"]),
+        dom_setting("source/_value", "#source", "value", &["read"]),
+      ]),
+    )]))
+  }
+
+  fn dom_setting(path: &str, selector: &str, property: &str, operations: &[&str]) -> ConfigValue {
+    ConfigValue::Map(BTreeMap::from([
+      ("path".to_string(), ConfigValue::String(path.to_string())),
+      ("selector".to_string(), ConfigValue::String(selector.to_string())),
+      ("property".to_string(), ConfigValue::String(property.to_string())),
+      (
+        "operations".to_string(),
+        ConfigValue::List(operations.iter().map(|operation| ConfigValue::String((*operation).to_string())).collect()),
+      ),
+    ]))
+  }
+
   fn header() -> HostDelegationHeader {
     HostDelegationHeader {
-      issuer: "host://mech-cli".to_string(),
+      issuer: "host://mech-browser".to_string(),
       subject: "wasm://browser".to_string(),
       audience: "browser://test".to_string(),
       key_id: "dev".to_string(),
@@ -255,8 +389,8 @@ mod tests {
     let mut reordered = config.clone();
     reordered.browser.grants.reverse();
     assert_eq!(
-      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: config }).signing_payload().unwrap(),
-      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: reordered }).signing_payload().unwrap(),
+      encode_browser_host_config_for_test(config),
+      encode_browser_host_config_for_test(reordered),
     );
   }
 
@@ -269,8 +403,8 @@ mod tests {
       methods.reverse();
     }
     assert_eq!(
-      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: config }).signing_payload().unwrap(),
-      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: reordered }).signing_payload().unwrap(),
+      encode_browser_host_config_for_test(config),
+      encode_browser_host_config_for_test(reordered),
     );
   }
 
@@ -280,9 +414,23 @@ mod tests {
     let mut reordered = config.clone();
     reordered.browser.dom_manifest.reverse();
     assert_eq!(
-      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: config }).signing_payload().unwrap(),
-      HostDelegationEnvelope::unsigned(header(), BrowserHostDelegationPayload { host_config: reordered }).signing_payload().unwrap(),
+      encode_browser_host_config_for_test(config),
+      encode_browser_host_config_for_test(reordered),
     );
+  }
+
+  fn encode_browser_host_config_for_test(config: BrowserHostConfig) -> Vec<u8> {
+    let mut out = Vec::new();
+    encode_browser_host_config(&mut out, &config);
+    out
+  }
+
+  #[test]
+  fn browser_runtime_injection_payload_includes_hosts_and_run_grants() {
+    let config = runtime_injection_config();
+    let payload = BrowserHostDelegationPayload { runtime_injection: config.clone() };
+    assert!(payload.runtime_injection.hosts.iter().any(|host| host.name == "ui"));
+    assert!(payload.runtime_injection.run_grants.iter().any(|grant| grant.target == "ui/dom"));
   }
 
   #[cfg(feature = "delegation_signing")]
@@ -296,7 +444,7 @@ mod tests {
       now_ms: 2000,
       expected_audience: "browser://test".to_string(),
       trusted_keys: HostDelegationKeyStore::new([HostDelegationPublicKey {
-        issuer: "host://mech-cli".to_string(),
+        issuer: "host://mech-browser".to_string(),
         key_id: "dev".to_string(),
         algorithm: HOST_DELEGATION_ALGORITHM_ED25519.to_string(),
         public_key: signing_key.public_key_bytes(),
@@ -309,17 +457,31 @@ mod tests {
   #[test]
   fn valid_browser_host_delegation_verifies() {
     let key = signing_key();
-    let envelope = sign_browser_host_delegation(header(), host_config(), &key).unwrap();
+    let envelope = sign_browser_host_delegation(header(), runtime_injection_config(), &key).unwrap();
     let verified = verify_browser_host_delegation(&envelope, request(&key)).unwrap();
-    assert_eq!(verified.issuer, "host://mech-cli");
+    assert_eq!(verified.issuer, "host://mech-browser");
+    assert!(verified.authority.runtime_injection.hosts.iter().any(|host| host.name == "ui"));
+    assert!(verified.authority.runtime_injection.run_grants.iter().any(|grant| grant.target == "ui/dom"));
+  }
+
+  #[cfg(feature = "delegation_signing")]
+  #[test]
+  fn signed_delegation_payload_serializes_runtime_hosts_and_run_grants() {
+    let key = signing_key();
+    let envelope = sign_browser_host_delegation(header(), runtime_injection_config(), &key).unwrap();
+    let json = serde_json::to_value(&envelope).unwrap();
+    assert_eq!(json["payload"]["hosts"][0]["name"], "ui");
+    assert_eq!(json["payload"]["runGrants"][0]["target"], "ui/dom");
+    assert!(json["payload"].get("runtime").is_some());
+    assert!(json["payload"].get("browser").is_none());
   }
 
   #[cfg(feature = "delegation_signing")]
   #[test]
   fn modified_browser_host_config_fails_signature_verification() {
     let key = signing_key();
-    let mut envelope = sign_browser_host_delegation(header(), host_config(), &key).unwrap();
-    envelope.payload.host_config.browser.grants[0].allow.push("list".to_string());
+    let mut envelope = sign_browser_host_delegation(header(), runtime_injection_config(), &key).unwrap();
+    envelope.payload.runtime_injection.run_grants[0].paths.push("other/_value".to_string());
     assert!(verify_browser_host_delegation(&envelope, request(&key)).is_err());
   }
 
@@ -327,7 +489,7 @@ mod tests {
   #[test]
   fn verified_browser_authority_enforces_denied_dom_write() {
     let key = signing_key();
-    let envelope = sign_browser_host_delegation(header(), host_config(), &key).unwrap();
+    let envelope = sign_browser_host_delegation(header(), runtime_injection_config(), &key).unwrap();
     let verified = verify_browser_host_delegation(&envelope, request(&key)).unwrap();
     let error = verified
       .authority

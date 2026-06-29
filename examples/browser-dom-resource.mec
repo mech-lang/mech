@@ -1,4 +1,4 @@
-@browser := browser://dom/
++> @browser := browser/dom
 
 @browser/body/content/mech-sandbox/title = "Hello from Mech"
 @browser/body/content/mech-sandbox/status/_class = "ready"

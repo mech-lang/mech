@@ -13,7 +13,7 @@ rust-version = "1.92"
 [features]
 default = []
 serde = ["dep:serde", "dep:serde_derive", "mech-core/serde", "mech-runtime/serde"]
-provider = ["mech-core/string"]
+provider = ["mech-core/string", "mech-runtime/program"]
 delegation = ["serde", "mech-runtime/host_delegation"]
 delegation_signing = ["delegation", "mech-runtime/host_delegation_signing"]
 
@@ -26,4 +26,5 @@ serde_json = "1.0.150"
 base64 = "0.22.1"
 
 [dev-dependencies]
+mech-runtime = { version = "0.3.5" }
 serde_json = "1.0.150"

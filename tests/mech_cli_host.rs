@@ -518,7 +518,7 @@ fn mech_run_config_can_deny_stdout() {
     r#"config := {
   run: {
     paths: ["cli_host.mec"]
-    cli: { stdout: { write: [] } }
+    grants: []
   }
 }
 "#,
@@ -527,6 +527,7 @@ fn mech_run_config_can_deny_stdout() {
 
   let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg("run")
+    .arg("--deny-default-capabilities")
     .current_dir(&root)
     .output()
     .unwrap();
@@ -550,12 +551,13 @@ fn mech_run_config_can_narrow_stdout_to_line() {
   .unwrap();
   std::fs::write(
     root.join("mech.mcfg"),
-    r#"config := { run: { cli: { stdout: { write: ["line"] } } } }"#,
+    r#"config := { run: { grants: [{ target: "cli/stdout" operations: ["write"] paths: ["line"] }] } }"#,
   )
   .unwrap();
 
   let ok = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg("run")
+    .arg("--deny-default-capabilities")
     .arg("line.mec")
     .current_dir(&root)
     .output()
@@ -564,6 +566,7 @@ fn mech_run_config_can_narrow_stdout_to_line() {
 
   let bad = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg("run")
+    .arg("--deny-default-capabilities")
     .arg("text.mec")
     .current_dir(&root)
     .output()
@@ -587,12 +590,13 @@ fn mech_run_config_can_narrow_env_to_path() {
   .unwrap();
   std::fs::write(
     root.join("mech.mcfg"),
-    r#"config := { run: { cli: { env: { read: ["PATH"] } } } }"#,
+    r#"config := { run: { grants: [{ target: "cli/env" operations: ["read"] paths: ["PATH"] }] } }"#,
   )
   .unwrap();
 
   let ok = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg("run")
+    .arg("--deny-default-capabilities")
     .arg("path.mec")
     .current_dir(&root)
     .output()
@@ -605,11 +609,92 @@ fn mech_run_config_can_narrow_env_to_path() {
 
   let bad = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg("run")
+    .arg("--deny-default-capabilities")
     .arg("home.mec")
     .current_dir(&root)
     .output()
     .unwrap();
   assert_failure_contains(bad, "RuntimeCapabilityGrantDenied");
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_configured_cli_alias_stdout_grant_works() {
+  let root = temp_root("configured-cli-alias");
+  std::fs::write(
+    root.join("term.mec"),
+    r#"+> @out := term/stdout
+@out/line <- "term-ok"
+"#,
+  )
+  .unwrap();
+  std::fs::write(
+    root.join("mech.mcfg"),
+    r#"config := {
+  hosts: [
+    { name: "term" provider: "cli" settings: {} }
+  ]
+  run: {
+    grants: [
+      { target: "term/stdout" operations: ["write"] paths: ["line"] }
+    ]
+  }
+}
+"#,
+  )
+  .unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("--deny-default-capabilities")
+    .arg("term.mec")
+    .current_dir(&root)
+    .output()
+    .unwrap();
+
+  assert_success_contains(output, "term-ok");
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_configured_cli_alias_grant_does_not_imply_default_cli_stdout() {
+  let root = temp_root("configured-cli-alias-no-default-grant");
+  std::fs::write(
+    root.join("cli.mec"),
+    r#"+> @out := cli/stdout
+@out/line <- "should-fail"
+"#,
+  )
+  .unwrap();
+  std::fs::write(
+    root.join("mech.mcfg"),
+    r#"config := {
+  hosts: [
+    { name: "term" provider: "cli" settings: {} }
+  ]
+  run: {
+    grants: [
+      { target: "term/stdout" operations: ["write"] paths: ["line"] }
+    ]
+  }
+}
+"#,
+  )
+  .unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("--deny-default-capabilities")
+    .arg("cli.mec")
+    .current_dir(&root)
+    .output()
+    .unwrap();
+
+  let combined = assert_failure_contains(output, "RuntimeCapabilityGrantDenied");
+  assert!(
+    !combined.contains("should-fail"),
+    "provider wrote denied string: {combined}"
+  );
 }
 
 #[cfg(all(feature = "run", feature = "cli_host"))]

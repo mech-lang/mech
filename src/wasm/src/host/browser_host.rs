@@ -61,7 +61,7 @@ mod tests {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct WasmBrowserDomBackend;
 
 impl WasmBrowserDomBackend {

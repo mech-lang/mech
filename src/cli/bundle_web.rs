@@ -271,15 +271,15 @@ fn host_delegation_signing_options(
     mech_runtime::RuntimeConfig::default(),
     &loaded.document.runtime,
   )?;
-  let host_config = mech_host_browser::BrowserHostConfig::from_document_and_runtime(
+  let host_config = crate::web_runtime_injection_config_from_document(
     &loaded.document,
     &runtime_config,
-  );
+  )?;
   let now_ms = std::time::SystemTime::now()
     .duration_since(std::time::UNIX_EPOCH)
     .map_err(|error| Error::new(ErrorKind::InvalidData, error.to_string()))?
     .as_millis() as u64;
-  crate::signed_browser_host_config_injection(host_config, &options, now_ms).map(Some)
+  crate::signed_browser_runtime_injection_config(host_config, &options, now_ms).map(Some)
 }
 
 fn resolve_current_dir_path(current_dir: &Path, path: &Path) -> PathBuf {

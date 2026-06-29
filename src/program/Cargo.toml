@@ -37,7 +37,14 @@ mechfs = ["bincode", "notify", "csv", "reqwest", "mech-syntax/formatter", "color
 async = []
 trace = []
 profile = []
-native = []
+native = [
+      "functions",
+      "kind_annotation",
+      "tuple",
+      "mech-core/compiler",
+      "mech-interpreter/compiler",
+      "mech-interpreter/convert",
+      ]
 linked_stdlib = ["mech-interpreter/linked_stdlib"]
 linked_math = ["mech-interpreter/linked_math"]
 linked_combinatorics = ["mech-interpreter/linked_combinatorics"]

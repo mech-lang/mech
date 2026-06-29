@@ -25,6 +25,44 @@ pub enum ModuleManifestExportKind {
   Context,
 }
 
+pub fn builtin_browser_module_manifest() -> ModuleManifestConfig {
+  ModuleManifestConfig {
+    name: "browser".to_string(),
+    exports: vec![ModuleManifestExportConfig {
+      name: "dom".to_string(),
+      kind: ModuleManifestExportKind::Context,
+      base_uri: "browser://dom".to_string(),
+      operations: vec!["read".to_string(), "write".to_string()],
+    }],
+  }
+}
+
+pub fn builtin_cli_module_manifest() -> ModuleManifestConfig {
+  ModuleManifestConfig {
+    name: "cli".to_string(),
+    exports: vec![
+      ModuleManifestExportConfig {
+        name: "env".to_string(),
+        kind: ModuleManifestExportKind::Context,
+        base_uri: "cli://env".to_string(),
+        operations: vec!["read".to_string()],
+      },
+      ModuleManifestExportConfig {
+        name: "stdout".to_string(),
+        kind: ModuleManifestExportKind::Context,
+        base_uri: "cli://stdout".to_string(),
+        operations: vec!["write".to_string()],
+      },
+      ModuleManifestExportConfig {
+        name: "stderr".to_string(),
+        kind: ModuleManifestExportKind::Context,
+        base_uri: "cli://stderr".to_string(),
+        operations: vec!["write".to_string()],
+      },
+    ],
+  }
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ModuleManifestCatalog {
   manifests: Vec<ModuleManifestConfig>,
@@ -100,44 +138,5 @@ impl ModuleManifestCatalog {
     match export.kind {
       ModuleManifestExportKind::Context => Ok(export),
     }
-  }
-}
-
-pub fn builtin_browser_module_manifest() -> ModuleManifestConfig {
-  ModuleManifestConfig {
-    name: "browser".to_string(),
-    exports: vec![ModuleManifestExportConfig {
-      name: "dom".to_string(),
-      kind: ModuleManifestExportKind::Context,
-      base_uri: "browser://dom".to_string(),
-      operations: vec!["read".to_string(), "write".to_string()],
-    }],
-  }
-}
-
-
-pub fn builtin_cli_module_manifest() -> ModuleManifestConfig {
-  ModuleManifestConfig {
-    name: "cli".to_string(),
-    exports: vec![
-      ModuleManifestExportConfig {
-        name: "env".to_string(),
-        kind: ModuleManifestExportKind::Context,
-        base_uri: "cli://env".to_string(),
-        operations: vec!["read".to_string()],
-      },
-      ModuleManifestExportConfig {
-        name: "stdout".to_string(),
-        kind: ModuleManifestExportKind::Context,
-        base_uri: "cli://stdout".to_string(),
-        operations: vec!["write".to_string()],
-      },
-      ModuleManifestExportConfig {
-        name: "stderr".to_string(),
-        kind: ModuleManifestExportKind::Context,
-        base_uri: "cli://stderr".to_string(),
-        operations: vec!["write".to_string()],
-      },
-    ],
   }
 }

@@ -285,6 +285,7 @@ pub fn host_arg_optional_string(
   Ok(Some(host_arg_string(function, args, index)?))
 }
 
+#[cfg(feature = "bool")]
 pub fn host_arg_bool(
   function: &str,
   args: &[Value],
@@ -296,6 +297,7 @@ pub fn host_arg_bool(
   }
 }
 
+#[cfg(feature = "bool")]
 pub fn host_arg_optional_bool(
   function: &str,
   args: &[Value],
@@ -497,6 +499,7 @@ pub fn host_arg_id(
   }
 }
 
+#[cfg(feature = "enum")]
 pub fn host_arg_enum(
   function: &str,
   args: &[Value],
@@ -901,10 +904,12 @@ pub fn value_id(value: u64) -> Value {
   Value::Id(value)
 }
 
+#[cfg(feature = "atom")]
 pub fn value_atom(value: mech_core::MechAtom) -> Value {
   Value::Atom(Ref::new(value))
 }
 
+#[cfg(feature = "enum")]
 pub fn value_enum(value: mech_core::MechEnum) -> Value {
   Value::Enum(Ref::new(value))
 }

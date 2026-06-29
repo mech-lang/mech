@@ -1,10 +1,10 @@
 use clap::{Arg, ArgAction};
 use mech_core::*;
-use mech_host_cli::{CliResourceProvider, StdCliBackend};
 use mech_runtime::{
-  MechRuntime, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeCapabilityOperation, RuntimeConfig,
-  RuntimeEvent, RuntimeEventKind,
+  parse_host_context_target, ConfigValue, HostInstanceConfig, MechRuntime, RunResourceGrantConfig,
+  RuntimeBuilder, RuntimeConfig, RuntimeEvent, RuntimeEventKind,
 };
+use std::collections::BTreeSet;
 use std::ffi::OsStr;
 use std::path::Path;
 
@@ -285,15 +285,71 @@ fn comprehension_qualifier_contains_context_addressed_source(qualifier: &Compreh
 pub fn new_cli_runtime(
   config: RuntimeConfig,
   cli_grants: &config::EffectiveCliHostGrants,
+  configured_hosts: &[HostInstanceConfig],
+  run_grants: &[RunResourceGrantConfig],
 ) -> MResult<MechRuntime> {
-  let mut runtime = RuntimeBuilder::new()
-    .config(config)
-    .resource_provider(Box::new(CliResourceProvider::new(StdCliBackend)))
-    .build()?;
+  for host in configured_hosts {
+    if host.name == "cli" && host.provider != "cli" {
+      return Err(MechError::new(CliRuntimeHostConfigError {
+        reason: format!(
+          "host instance `cli` is reserved for provider `cli` and cannot be configured as provider `{}`",
+          host.provider,
+        ),
+      }, None));
+    }
+  }
 
-  grant_cli_runner_capabilities(&mut runtime, cli_grants)?;
+  let builder = RuntimeBuilder::new().config(config);
+  let (mut builder, registered_providers) = crate::cli::host_factories::register_cli_host_factories(builder)?;
 
-  Ok(runtime)
+  let mut saw_cli_instance = false;
+  let mut registered_cli_instances = BTreeSet::new();
+  for host in configured_hosts {
+    if registered_providers.contains(&host.provider) {
+      registered_cli_instances.insert(host.name.clone());
+      if host.name == "cli" {
+        saw_cli_instance = true;
+      }
+      builder = builder.host_instance(host.clone());
+    }
+  }
+
+  if !saw_cli_instance {
+    registered_cli_instances.insert("cli".to_string());
+    builder = builder.host_instance(HostInstanceConfig {
+      name: "cli".to_string(),
+      provider: "cli".to_string(),
+      settings: ConfigValue::Map(std::collections::BTreeMap::new()),
+    });
+  }
+
+  for grant in cli_grants_to_run_resource_grants(cli_grants) {
+    builder = builder.run_resource_grant(grant);
+  }
+
+  for grant in run_grants {
+    let (instance, _) = parse_host_context_target(&grant.target)?;
+    if registered_cli_instances.contains(instance) {
+      builder = builder.run_resource_grant(grant.clone());
+    }
+  }
+
+  builder.build()
+}
+
+#[derive(Debug, Clone)]
+struct CliRuntimeHostConfigError {
+  reason: String,
+}
+
+impl MechErrorKind for CliRuntimeHostConfigError {
+  fn name(&self) -> &str {
+    "CliRuntimeHostConfigError"
+  }
+
+  fn message(&self) -> String {
+    format!("invalid CLI runtime host config: {}", self.reason)
+  }
 }
 
 pub fn effective_run_runtime_config(
@@ -354,40 +410,18 @@ pub fn run_cli_source(runtime: &mut MechRuntime, source: &str) -> MResult<Value>
   result
 }
 
-fn grant_cli_runner_capabilities(
-  runtime: &mut MechRuntime,
-  grants: &config::EffectiveCliHostGrants,
-) -> MResult<()> {
-  let subject = runtime.runtime_context()?.subject;
-
+fn cli_grants_to_run_resource_grants(grants: &config::EffectiveCliHostGrants) -> Vec<RunResourceGrantConfig> {
+  let mut out = Vec::new();
   if !grants.env_read_paths.is_empty() {
-    runtime.grant_capability(RuntimeCapabilityGrant {
-      subject: subject.clone(),
-      resource: "cli://env".to_string(),
-      operations: vec![RuntimeCapabilityOperation::Read],
-      paths: grants.env_read_paths.clone(),
-    })?;
+    out.push(RunResourceGrantConfig { target: "cli/env".to_string(), operations: vec!["read".to_string()], paths: grants.env_read_paths.clone() });
   }
-
   if !grants.stdout_write_paths.is_empty() {
-    runtime.grant_capability(RuntimeCapabilityGrant {
-      subject: subject.clone(),
-      resource: "cli://stdout".to_string(),
-      operations: vec![RuntimeCapabilityOperation::Write],
-      paths: grants.stdout_write_paths.clone(),
-    })?;
+    out.push(RunResourceGrantConfig { target: "cli/stdout".to_string(), operations: vec!["write".to_string()], paths: grants.stdout_write_paths.clone() });
   }
-
   if !grants.stderr_write_paths.is_empty() {
-    runtime.grant_capability(RuntimeCapabilityGrant {
-      subject,
-      resource: "cli://stderr".to_string(),
-      operations: vec![RuntimeCapabilityOperation::Write],
-      paths: grants.stderr_write_paths.clone(),
-    })?;
+    out.push(RunResourceGrantConfig { target: "cli/stderr".to_string(), operations: vec!["write".to_string()], paths: grants.stderr_write_paths.clone() });
   }
-
-  Ok(())
+  out
 }
 
 pub fn cli_host_capability_args() -> Vec<Arg> {
@@ -441,6 +475,7 @@ pub fn cli_host_capability_passthrough_values(
 #[cfg(test)]
 mod tests {
   use super::*;
+  use mech_runtime::{parse_config_document, ConfigProfileOptions};
 
   #[test]
   fn classifies_single_inline_context_send_with_slashes_as_inline_source() {
@@ -500,4 +535,157 @@ mod tests {
     ]);
     assert!(matches!(mode, RunInputMode::Paths(_)));
   }
+
+  #[test]
+  fn new_cli_runtime_filters_non_cli_run_grants() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r#"config := {
+  hosts: [
+    {name: "cli", provider: "cli", settings: {}}
+    {name: "ui", provider: "browser", settings: {}}
+  ]
+  run: {
+    grants: [
+      {target: "cli/stdout", operations: ["write"], paths: ["line"]}
+      {target: "ui/dom", operations: ["read"], paths: ["counter/_text"]}
+    ]
+  }
+}
+"#,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let run_grants = document.run.as_ref().unwrap().grants.as_slice();
+    let mut runtime = new_cli_runtime(
+      RuntimeConfig::default(),
+      &config::EffectiveCliHostGrants::default(),
+      &document.hosts,
+      run_grants,
+    ).unwrap();
+
+    runtime.run_string("+> @out := cli/stdout\n@out/line <- \"ok\"\n").unwrap();
+  }
+
+  #[test]
+  fn new_cli_runtime_keeps_cli_alias_run_grant() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r#"config := {
+  hosts: [
+    {name: "term", provider: "cli", settings: {}}
+  ]
+  run: {
+    grants: [
+      {target: "term/stdout", operations: ["write"], paths: ["line"]}
+    ]
+  }
+}
+"#,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let run_grants = document.run.as_ref().unwrap().grants.as_slice();
+    let mut runtime = new_cli_runtime(
+      RuntimeConfig::default(),
+      &config::EffectiveCliHostGrants::default(),
+      &document.hosts,
+      run_grants,
+    ).unwrap();
+
+    runtime.run_string("+> @out := term/stdout\n@out/line <- \"ok\"\n").unwrap();
+  }
+
+  #[test]
+  fn cli_reserved_name_rejects_non_cli_provider() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r#"config := {
+  hosts: [
+    {name: "cli", provider: "browser", settings: {}}
+  ]
+  run: {
+    grants: [
+      {target: "cli/stdout", operations: ["write"], paths: ["line"]}
+    ]
+  }
+}
+"#,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let run_grants = document.run.as_ref().unwrap().grants.as_slice();
+    let err = new_cli_runtime(
+      RuntimeConfig::default(),
+      &config::EffectiveCliHostGrants::default(),
+      &document.hosts,
+      run_grants,
+    ).unwrap_err();
+    let error = format!("{err:?}");
+    assert!(error.contains("cli"), "got {error}");
+    assert!(error.contains("reserved") || error.contains("provider"), "got {error}");
+    assert!(error.contains("browser"), "got {error}");
+  }
+
+  #[test]
+  fn explicit_config_cli_stdout_line_is_authoritative_without_deny_defaults() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r#"config := { run: { grants: [{target: "cli/stdout", operations: ["write"], paths: ["line"]}] } }"#,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let loaded = crate::LoadedMechConfig {
+      path: std::path::PathBuf::from("test.mcfg"),
+      base_dir: std::path::PathBuf::new(),
+      document: document.clone(),
+      discovered_project_dir: None,
+    };
+    let cli_grants = config::effective_cli_host_grants(
+      Some(&loaded),
+      config::CliHostCapabilitySelection::default(),
+    ).unwrap();
+    let run_grants = document.run.as_ref().unwrap().grants.as_slice();
+    let mut runtime = new_cli_runtime(
+      RuntimeConfig::default(),
+      &cli_grants,
+      &document.hosts,
+      run_grants,
+    ).unwrap();
+
+    runtime.run_string("+> @out := cli/stdout\n@out/line <- \"ok\"\n").unwrap();
+    assert!(runtime.run_string("+> @env := cli/env\nx := @env/HOME\n").is_err());
+    assert!(runtime.run_string("+> @err := cli/stderr\n@err/line <- \"bad\"\n").is_err());
+    assert!(runtime.run_string("+> @out := cli/stdout\n@out/text <- \"bad\"\n").is_err());
+  }
+
+  #[test]
+  fn explicit_cli_profile_remains_additive_with_config_grants() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r#"config := { run: { grants: [{target: "cli/stdout", operations: ["write"], paths: ["line"]}] } }"#,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let loaded = crate::LoadedMechConfig {
+      path: std::path::PathBuf::from("test.mcfg"),
+      base_dir: std::path::PathBuf::new(),
+      document: document.clone(),
+      discovered_project_dir: None,
+    };
+    let cli_grants = config::effective_cli_host_grants(
+      Some(&loaded),
+      config::CliHostCapabilitySelection {
+        include_defaults: true,
+        profiles: vec![":cli/stderr".to_string()],
+      },
+    ).unwrap();
+    let run_grants = document.run.as_ref().unwrap().grants.as_slice();
+    let mut runtime = new_cli_runtime(
+      RuntimeConfig::default(),
+      &cli_grants,
+      &document.hosts,
+      run_grants,
+    ).unwrap();
+
+    runtime.run_string("+> @out := cli/stdout\n@out/line <- \"ok\"\n").unwrap();
+    runtime.run_string("+> @err := cli/stderr\n@err/line <- \"ok\"\n").unwrap();
+    assert!(runtime.run_string("+> @env := cli/env\nx := @env/HOME\n").is_err());
+  }
+
 }

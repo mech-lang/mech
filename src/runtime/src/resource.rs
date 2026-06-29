@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use mech_core::{MResult, MechError, MechErrorKind, Value};
 
+use crate::RuntimeCapabilityOperation;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeResourceReadRequest {
   pub base_uri: String,
@@ -20,6 +22,7 @@ pub struct RuntimeResourceWritePreflightRequest {
   pub base_uri: String,
   pub path: String,
   pub context_name: String,
+  pub operation: RuntimeCapabilityOperation,
   pub intent: RuntimeResourceWriteIntent,
 }
 
@@ -28,6 +31,7 @@ pub struct RuntimeResourceWriteRequest {
   pub base_uri: String,
   pub path: String,
   pub context_name: String,
+  pub operation: RuntimeCapabilityOperation,
   pub value: Value,
   pub intent: RuntimeResourceWriteIntent,
 }
@@ -36,6 +40,8 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
   fn scheme(&self) -> &str;
 
   fn base_uris(&self) -> Vec<String> { Vec::new() }
+
+  fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> { Vec::new() }
 
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value>;
 
@@ -62,9 +68,16 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
   }
 }
 
+#[derive(Debug)]
+struct RuntimeResourceProviderEntry {
+  scheme: String,
+  bases: Vec<String>,
+  provider: Box<dyn RuntimeResourceProvider>,
+}
+
 #[derive(Debug, Default)]
 pub struct RuntimeResourceRegistry {
-  providers: HashMap<String, Box<dyn RuntimeResourceProvider>>,
+  providers: Vec<RuntimeResourceProviderEntry>,
 }
 
 impl RuntimeResourceRegistry {
@@ -86,79 +99,121 @@ impl RuntimeResourceRegistry {
         None,
       ));
     }
-    if self.providers.contains_key(&scheme) {
+
+    let bases = provider.base_uris();
+    for base in &bases {
+      let base_scheme = resource_uri_scheme(base)?;
+      if base_scheme != scheme {
+        return Err(MechError::new(
+          RuntimeResourceInvalidUri {
+            uri: base.clone(),
+            reason: format!("resource provider base URI scheme must be `{scheme}`"),
+          },
+          None,
+        ));
+      }
+      resource_uri_origin(base)?;
+      if self.providers.iter().any(|entry| entry.bases.iter().any(|existing| existing == base)) {
+        return Err(MechError::new(
+          RuntimeResourceProviderConflict { scheme: scheme.clone() },
+          None,
+        ));
+      }
+    }
+
+    if bases.is_empty() && self.providers.iter().any(|entry| entry.scheme == scheme && entry.bases.is_empty()) {
       return Err(MechError::new(
-        RuntimeResourceProviderConflict { scheme },
+        RuntimeResourceProviderConflict { scheme: scheme.clone() },
         None,
       ));
     }
-    self.providers.insert(scheme, provider);
+
+    self.providers.push(RuntimeResourceProviderEntry { scheme, bases, provider });
     Ok(())
   }
 
   pub fn has_provider(&self, scheme: &str) -> bool {
-    self.providers.contains_key(scheme)
+    self.providers.iter().any(|entry| entry.scheme == scheme)
   }
 
   pub fn provider_base_uri_for(&self, candidate: &str) -> MResult<Option<String>> {
     let scheme = resource_uri_scheme(candidate)?.to_string();
-    let Some(provider) = self.providers.get(&scheme) else {
+    let Some(entry) = self.provider_entry_for(&scheme, candidate) else {
       return Ok(None);
     };
+    if let Some(base) = entry.bases.iter().filter(|base| resource_base_matches(base, candidate)).max_by_key(|base| base.len()) {
+      return Ok(Some(base.clone()));
+    }
+    Ok(Some(resource_uri_origin(candidate)?.to_string()))
+  }
 
-    let mut matches = provider
-      .base_uris()
-      .into_iter()
-      .filter(|base| resource_base_matches(base, candidate))
-      .collect::<Vec<_>>();
-    matches.sort_by_key(|base| std::cmp::Reverse(base.len()));
-    if let Some(base) = matches.into_iter().next() {
-      return Ok(Some(base));
+  pub fn base_uris_equivalent(&self, left: &str, right: &str) -> bool {
+    let left = left.trim_end_matches('/');
+    let right = right.trim_end_matches('/');
+
+    if left == right {
+      return true;
     }
 
-    Ok(Some(resource_uri_origin(candidate)?.to_string()))
+    self.providers.iter().any(|entry| {
+      entry.provider.equivalent_base_uri_groups().iter().any(|group| {
+        let has_left = group.iter().any(|base| base.trim_end_matches('/') == left);
+        let has_right = group.iter().any(|base| base.trim_end_matches('/') == right);
+        has_left && has_right
+      })
+    })
+  }
+
+  fn provider_entry_for(&self, scheme: &str, uri: &str) -> Option<&RuntimeResourceProviderEntry> {
+    self.providers
+      .iter()
+      .filter(|entry| entry.scheme == scheme && entry.bases.iter().any(|base| resource_base_matches(base, uri)))
+      .max_by_key(|entry| entry.bases.iter().filter(|base| resource_base_matches(base, uri)).map(|base| base.len()).max().unwrap_or(0))
+      .or_else(|| self.providers.iter().find(|entry| entry.scheme == scheme && entry.bases.is_empty()))
+  }
+
+  fn provider_entry_for_mut(&mut self, scheme: &str, uri: &str) -> Option<&mut RuntimeResourceProviderEntry> {
+    let index = self.providers
+      .iter()
+      .enumerate()
+      .filter(|(_, entry)| entry.scheme == scheme && entry.bases.iter().any(|base| resource_base_matches(base, uri)))
+      .max_by_key(|(_, entry)| entry.bases.iter().filter(|base| resource_base_matches(base, uri)).map(|base| base.len()).max().unwrap_or(0))
+      .map(|(index, _)| index)
+      .or_else(|| self.providers.iter().position(|entry| entry.scheme == scheme && entry.bases.is_empty()))?;
+    self.providers.get_mut(index)
   }
 
   pub fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
     let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
-    let Some(provider) = self.providers.get(&scheme) else {
+    let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
       return Err(MechError::new(
-        RuntimeResourceProviderNotFound {
-          scheme,
-          uri: request.base_uri,
-        },
+        RuntimeResourceProviderNotFound { scheme, uri: request.base_uri },
         None,
       ));
     };
-    provider.read(request)
+    entry.provider.read(request)
   }
 
   pub fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
     let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
-    let Some(provider) = self.providers.get(&scheme) else {
+    let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
       return Err(MechError::new(
-        RuntimeResourceProviderNotFound {
-          scheme,
-          uri: request.base_uri,
-        },
+        RuntimeResourceProviderNotFound { scheme, uri: request.base_uri },
         None,
       ));
     };
-    provider.preflight_write(request)
+    entry.provider.preflight_write(request)
   }
 
   pub fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
     let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
-    let Some(provider) = self.providers.get_mut(&scheme) else {
+    let Some(entry) = self.provider_entry_for_mut(&scheme, &request.base_uri) else {
       return Err(MechError::new(
-        RuntimeResourceProviderNotFound {
-          scheme,
-          uri: request.base_uri,
-        },
+        RuntimeResourceProviderNotFound { scheme, uri: request.base_uri },
         None,
       ));
     };
-    provider.write(request)
+    entry.provider.write(request)
   }
 }
 
@@ -286,6 +341,7 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
       base_uri: request.base_uri.clone(),
       path: request.path.clone(),
       context_name: request.context_name.clone(),
+      operation: request.operation.clone(),
       intent: request.intent,
     })?;
 

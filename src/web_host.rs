@@ -1,7 +1,8 @@
 use std::io::{Error, ErrorKind};
 
 use mech_core::*;
-use mech_host_browser::BrowserHostConfig;
+use mech_host_browser::BrowserRuntimeInjectionConfig;
+use mech_runtime::{MechConfigDocument, RuntimeConfig};
 
 #[cfg(feature = "host_delegation_signing")]
 use base64::Engine;
@@ -15,9 +16,16 @@ use mech_runtime::{
 #[cfg(feature = "host_delegation_signing")]
 use serde::Deserialize;
 
+pub fn web_runtime_injection_config_from_document(
+  document: &MechConfigDocument,
+  runtime_config: &RuntimeConfig,
+) -> MResult<BrowserRuntimeInjectionConfig> {
+  mech_host_browser::BrowserRuntimeInjectionConfig::from_document_and_runtime(document, runtime_config)
+}
+
 #[derive(Clone, Debug)]
 pub enum HostAuthorityInjection {
-  BrowserUnsigned(BrowserHostConfig),
+  BrowserUnsigned(BrowserRuntimeInjectionConfig),
   #[cfg(feature = "host_delegation_signing")]
   BrowserSigned {
     envelope: BrowserHostDelegationEnvelope,
@@ -57,8 +65,10 @@ struct HostDelegationPublicKeyFile {
   public_key: String,
 }
 
-pub fn browser_host_config_script(host_config: &BrowserHostConfig) -> MResult<String> {
-  host_authority_injection_script(&HostAuthorityInjection::BrowserUnsigned(host_config.clone()))
+pub fn browser_runtime_injection_config_script(
+  config: &BrowserRuntimeInjectionConfig,
+) -> MResult<String> {
+  host_authority_injection_script(&HostAuthorityInjection::BrowserUnsigned(config.clone()))
 }
 
 pub fn host_authority_injection_script(injection: &HostAuthorityInjection) -> MResult<String> {
@@ -79,14 +89,21 @@ pub fn host_authority_injection_script(injection: &HostAuthorityInjection) -> MR
   }
 }
 
-pub fn inject_browser_host_config_script(
+pub fn inject_browser_runtime_injection_config_script(
   html: &str,
-  host_config: &BrowserHostConfig,
+  config: &BrowserRuntimeInjectionConfig,
 ) -> MResult<String> {
   inject_host_authority_injection_script(
     html,
-    &HostAuthorityInjection::BrowserUnsigned(host_config.clone()),
+    &HostAuthorityInjection::BrowserUnsigned(config.clone()),
   )
+}
+
+pub fn inject_browser_host_config_script(
+  html: &str,
+  config: &BrowserRuntimeInjectionConfig,
+) -> MResult<String> {
+  inject_browser_runtime_injection_config_script(html, config)
 }
 
 pub fn inject_host_authority_injection_script(
@@ -104,8 +121,8 @@ pub fn inject_host_authority_injection_script(
 }
 
 #[cfg(feature = "host_delegation_signing")]
-pub fn signed_browser_host_config_injection(
-  host_config: BrowserHostConfig,
+pub fn signed_browser_runtime_injection_config(
+  config: BrowserRuntimeInjectionConfig,
   options: &HostDelegationSigningOptions,
   now_ms: u64,
 ) -> MResult<HostAuthorityInjection> {
@@ -121,7 +138,7 @@ pub fn signed_browser_host_config_injection(
     expires_at_ms: options.expires_ms.map(|expires_ms| now_ms.saturating_add(expires_ms)),
     nonce: None,
   };
-  let envelope = sign_browser_host_delegation(header, host_config, &private_key)?;
+  let envelope = sign_browser_host_delegation(header, config, &private_key)?;
   Ok(HostAuthorityInjection::BrowserSigned {
     envelope,
     trusted_keys: vec![public_key],
@@ -203,30 +220,45 @@ fn json_for_script<T: serde::Serialize>(value: &T) -> MResult<String> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use mech_runtime::RuntimeConfig;
+  use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 
-  fn empty_host_config() -> BrowserHostConfig {
-    BrowserHostConfig {
+  fn empty_runtime_injection_config() -> BrowserRuntimeInjectionConfig {
+    BrowserRuntimeInjectionConfig {
       runtime: mech_host_browser::BrowserHostRuntimeConfig::from(&RuntimeConfig::default()),
-      browser: mech_host_browser::BrowserHostBrowserConfig {
-        grants: Vec::new(),
-        dom_manifest: Vec::new(),
-      },
+      hosts: vec![HostInstanceConfig {
+        name: "browser".to_string(),
+        provider: "browser".to_string(),
+        settings: ConfigValue::Map(Default::default()),
+      }],
+      run_grants: vec![RunResourceGrantConfig {
+        target: "browser/dom".to_string(),
+        operations: vec!["write".to_string()],
+        paths: vec!["body/output/_value".to_string()],
+      }],
     }
   }
 
   #[test]
-  fn browser_host_config_script_uses_mech_host_config_global() {
-    let script = browser_host_config_script(&empty_host_config()).unwrap();
+  fn browser_runtime_injection_config_script_uses_mech_host_config_global() {
+    let script = browser_runtime_injection_config_script(&empty_runtime_injection_config()).unwrap();
     assert!(script.contains("window.__MECH_HOST_CONFIG ="));
   }
 
   #[test]
-  fn browser_host_config_script_escapes_less_than() {
-    let mut config = empty_host_config();
+  fn browser_runtime_injection_config_script_escapes_less_than() {
+    let mut config = empty_runtime_injection_config();
     config.runtime.name = "</script>".to_string();
-    let script = browser_host_config_script(&config).unwrap();
+    let script = browser_runtime_injection_config_script(&config).unwrap();
     assert!(script.contains("\\u003c/script>"));
     assert!(!script.contains("</script>\""));
   }
+
+  #[test]
+  fn browser_runtime_injection_config_script_emits_new_shape() {
+    let script = browser_runtime_injection_config_script(&empty_runtime_injection_config()).unwrap();
+    assert!(script.contains("\"hosts\""));
+    assert!(script.contains("\"runGrants\""));
+    assert!(!script.contains("\"browser\":"));
+  }
+
 }
