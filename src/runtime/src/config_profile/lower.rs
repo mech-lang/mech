@@ -59,6 +59,7 @@ pub struct ServeHostConfig {
 pub struct RunHostConfig {
     pub paths: Vec<PathBuf>,
     pub grants: Vec<RunResourceGrantConfig>,
+    pub grants_specified: bool,
 }
 
 
@@ -354,7 +355,10 @@ impl ConfigLowerer {
         for (key, value) in map {
             match key.as_str() {
                 "paths" => out.paths = expect_path_list("run.paths", value)?,
-                "grants" => out.grants = self.lower_run_grants(value)?,
+                "grants" => {
+                    out.grants = self.lower_run_grants(value)?;
+                    out.grants_specified = true;
+                }
                 other => return invalid(format!("unknown run field `{other}`")),
             }
         }

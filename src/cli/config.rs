@@ -137,6 +137,14 @@ pub fn has_explicit_cli_run_grants(config: &LoadedMechConfig) -> MResult<bool> {
     return Ok(false);
   };
 
+  if !run.grants_specified {
+    return Ok(false);
+  }
+
+  if run.grants.is_empty() {
+    return Ok(true);
+  }
+
   let mut cli_instances = std::collections::BTreeSet::from(["cli".to_string()]);
   for host in &config.document.hosts {
     if host.provider == "cli" {
@@ -1081,6 +1089,64 @@ mod config_tests {
     )
     .unwrap_err();
     assert!(format!("{error:?}").contains("unknown CLI capability profile `:quxx`"));
+  }
+
+  fn assert_default_cli_grants(grants: &EffectiveCliHostGrants) {
+    assert_eq!(grants.env_read_paths, vec!["*".to_string()]);
+    assert_eq!(grants.stdout_write_paths, vec!["text".to_string(), "line".to_string()]);
+    assert_eq!(grants.stderr_write_paths, vec!["text".to_string(), "line".to_string()]);
+  }
+
+  #[test]
+  fn explicit_empty_config_run_grants_suppress_implicit_defaults() {
+    let root = temp_root("cli-empty-grants");
+    let config = loaded_config_at(
+      root.clone(),
+      r#"config := { run: { grants: [] } }"#,
+    );
+    let grants = effective_cli_host_grants(Some(&config), CliHostCapabilitySelection::default()).unwrap();
+    assert!(grants.env_read_paths.is_empty());
+    assert!(grants.stdout_write_paths.is_empty());
+    assert!(grants.stderr_write_paths.is_empty());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn run_paths_without_grants_does_not_suppress_implicit_defaults() {
+    let root = temp_root("cli-run-paths-no-grants");
+    let config = loaded_config_at(
+      root.clone(),
+      r#"config := { run: { paths: ["main.mec"] } }"#,
+    );
+    let grants = effective_cli_host_grants(Some(&config), CliHostCapabilitySelection::default()).unwrap();
+    assert_default_cli_grants(&grants);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn explicit_empty_run_grants_still_allow_explicit_cli_profiles_to_be_additive() {
+    let root = temp_root("cli-empty-grants-additive");
+    let config = loaded_config_at(
+      root.clone(),
+      r#"config := { run: { grants: [] } }"#,
+    );
+    let grants = effective_cli_host_grants(Some(&config), stdout_selection()).unwrap();
+    assert!(grants.env_read_paths.is_empty());
+    assert_eq!(grants.stdout_write_paths, vec!["text".to_string(), "line".to_string()]);
+    assert!(grants.stderr_write_paths.is_empty());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn non_cli_run_grants_do_not_suppress_cli_defaults() {
+    let root = temp_root("non-cli-grants-defaults");
+    let config = loaded_config_at(
+      root.clone(),
+      r#"config := { hosts: [{name: "ui", provider: "browser", settings: {}}] run: { grants: [{target: "ui/dom", operations: ["read"], paths: ["counter/_text"]}] } }"#,
+    );
+    let grants = effective_cli_host_grants(Some(&config), CliHostCapabilitySelection::default()).unwrap();
+    assert_default_cli_grants(&grants);
+    std::fs::remove_dir_all(root).unwrap();
   }
 
   #[test]
