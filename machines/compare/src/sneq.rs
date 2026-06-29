@@ -27,7 +27,12 @@ impl MechFunctionImpl for StrictNotEqValue {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for StrictNotEqValue {
   fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!()
+    Err(MechError::new(
+      GenericError {
+        msg: "bytecode compilation for dynamic strict inequality is not supported yet".to_string(),
+      },
+      None,
+    ).with_compiler_loc())
   }
 }
 
