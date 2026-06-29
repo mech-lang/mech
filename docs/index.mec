@@ -7,10 +7,10 @@ Mech Documentation
 1. [Introduction](getting-started/introduction.html)
 2. [Install Mech](getting-started/install.html)
 3. [Build and Run Mech Programs](getting-started/build-and-run.html)
-4. [Mech REPL](getting-started/repl.html) 
-5. [Your First Mech Program](getting-started/first-program.html) `todo`
+4. [Mech REPL](getting-started/repl.html)
+5. [Your First Mech Project](getting-started/first-project.html)
 
-2. Platform Reference
+2. Language Reference
 -------------------------------------------------------------------------------
 
 (2.1) Data Model
@@ -26,62 +26,75 @@ Mech Documentation
 - [Data Structures](/reference/structures.html)
   - [`map`](/reference/map.html) - stores key-value pairs for fast lookups
   - [`matrix`](/reference/matrix.html) - 2D array of homogenous values arranged in rows and columns
-  - [`record`](/reference/record.html) - groups related fields, usually for representing structured data
+  - [`record`](/reference/record.html) - groups related fields
   - [`set`](/reference/set.html) - unordered collection of unique values
-  - [`table`](/reference/table.html) - collection of heterogeneous data organized into rows and columns
+  - [`table`](/reference/table.html) - heterogeneous data organized into rows and columns
   - [`tuple`](/reference/tuple.html) - fixed-size, ordered grouping of heterogeneous values
-- [Defining, Assigning, and Accessing Data](/reference/define.html) `todo` - create data and change it
-- [Indexing](/reference/indexing.html) - access elements within data structures
-- [Conversion](/reference/convert.html) `todo` - convert data from one kind to another
-- [Broadcasting](/reference/broadcasting.html) - apply operations over data structures
+- [Defining, Assigning, and Accessing Data](/reference/define.html) `todo`
+- [Indexing](/reference/indexing.html)
+- [Conversion](/reference/convert.html) `todo`
+- [Broadcasting](/reference/broadcasting.html)
 
 (2.2) Program Model
 
-- [`comprehension`](/reference/comprehension.html) - for constructing sets and matrices from predicates
-- [`function`](/reference/function.html) - reusable computations that match input arguments against patterns and produce output values
-- [`match`](/reference/match.html) - construct for branching logic based on pattern matching
-- [`pattern`](/reference/pattern.html) - match and destructure data
-- [`state machine`](/reference/state-machine.html) - defines a set of states and transitions between them
-- [Modules](/reference/module-declarations.html) - organize code into reusable components
-- [Validation](/reference/validation.html) - runtime invariants and integrity constraints
-- Synth `todo`
-- Gen `todo`
-- Programs `todo`
-- Error Handling `todo`
-- Capabilities `todo`
-- Concurrency `todo`
+- [`comprehension`](/reference/comprehension.html)
+- [`function`](/reference/function.html)
+- [`match`](/reference/match.html)
+- [`pattern`](/reference/pattern.html)
+- [`state machine`](/reference/state-machine.html)
+- [Modules](/reference/modules.html)
+- [Validation](/reference/validation.html)
 
-(2.3) System Model
-
-(i)> Coming `v0.4`
-
-- Distributed Computation `todo`
-
-3. Mechdown Reference
+3. Runtime Reference
 -------------------------------------------------------------------------------
 
-- Introduction
-  - What is Mechdown? `todo`
-  - Writing Mechdown Documents `todo`
-  - Mechdown Syntax Overview `todo`
-- Mechdown Documents `todo`
-  - Sections and Subsections `todo`
-  - Tables of Contents `todo`
-  - Breadcrumbs `todo`
-  - Document Metadata `todo`
-- Document Elements
-  - [Title](/mechdown/title.html)
-  - [Paragraph](/mechdown/paragraph.html)
-  - [List](/mechdown/list.html)
-  - [Code Block](/mechdown/code-block.html)
-  - [Table](/mechdown/table.html)
-  - [Image](/mechdown/image.html)
-  - [Thematic Break](/mechdown/thematic-break.html)
-  - [Equation](/mechdown/equation.html)
-  - [Callout Block](/mechdown/callout-block.html)
-  - [Diagram](/mechdown/diagram.html)
+- [Runtime Overview](/reference/runtime/index.html)
+- [Runtime Object](/reference/runtime/runtime.html)
+- [Runtime Builder](/reference/runtime/builder.html)
 
-4. Standard Library
+4. Project Configuration
+-------------------------------------------------------------------------------
+
+- [Configuration Overview](/reference/config/index.html)
+- [Config Files](/reference/config/config-files.html)
+- [Config Schema](/reference/config/schema.html)
+- [Runtime Config](/reference/config/runtime.html)
+- [Run Config](/reference/config/run.html)
+- [Serve Config](/reference/config/serve.html)
+- [Host Config](/reference/config/hosts.html)
+- [Grants](/reference/config/grants.html)
+
+5. Commands
+-------------------------------------------------------------------------------
+
+- [`mech`](/reference/commands/mech.html)
+- [`mechc`](/reference/commands/mechc.html)
+- [`mech run`](/reference/commands/run.html)
+- [`mech test`](/reference/commands/test.html)
+- [`mech serve`](/reference/commands/serve.html)
+- [`mech build`](/reference/commands/build.html)
+- [`mech format`](/reference/commands/format.html)
+- [`mech bundle-web`](/reference/commands/bundle-web.html)
+
+6. Contexts
+-------------------------------------------------------------------------------
+
+- [Contexts Overview](/reference/contexts/index.html)
+- [Bindings](/reference/contexts/bindings.html)
+- [Capabilities](/reference/contexts/capabilities.html)
+- [Paths](/reference/contexts/paths.html)
+
+7. Build and Deployment
+-------------------------------------------------------------------------------
+
+- [Deployment Overview](/reference/deployment/index.html)
+- [Command Line](/reference/deployment/command-line.html)
+- [Web Server](/reference/deployment/web-server.html)
+- [Static Web Bundles](/reference/deployment/static-web-bundles.html)
+- [Executables](/reference/deployment/executables.html)
+- [WASM](/reference/deployment/wasm.html)
+
+8. Standard Library
 -------------------------------------------------------------------------------
 
 - [Assign](/stdlib/assign/index.html) `todo`
@@ -98,33 +111,57 @@ Mech Documentation
 - [Stats](/stdlib/stats/index.html) `todo`
 - [String](/stdlib/string/index.html) `todo`
 
-5. Guides
+9. Host Providers
+-------------------------------------------------------------------------------
+
+- [Browser Host](/hosts/browser/docs/index.html)
+- [CLI Host](/hosts/cli/docs/index.html)
+- [Robot Arm Host](/hosts/robot-arm/docs/index.html)
+
+10. Guides
 -------------------------------------------------------------------------------
 
 - [Mech in Fifteen Minutes](/guides/mech-in-fifteen-minutes.html)
+- [Browser DOM Demo](/guides/browser-dom-demo.html)
+- [Robot Arm Demo](/guides/robot-arm-demo.html)
+- [First Web Bundle](/guides/first-web-bundle.html)
+- [Executable Build](/guides/executable-build.html)
 - [Tutorials](/guides/tutorials.html) `todo`
 
-6. Project Design Documents
+11. Mechdown Reference
+-------------------------------------------------------------------------------
+
+- Introduction `todo`
+- [Title](/mechdown/title.html)
+- [Paragraph](/mechdown/paragraph.html)
+- [List](/mechdown/list.html)
+- [Code Block](/mechdown/code-block.html)
+- [Table](/mechdown/table.html)
+- [Image](/mechdown/image.html)
+- [Thematic Break](/mechdown/thematic-break.html)
+- [Equation](/mechdown/equation.html)
+- [Callout Block](/mechdown/callout-block.html)
+- [Diagram](/mechdown/diagram.html)
+
+12. Release Notes
+-------------------------------------------------------------------------------
+
+- [v0.3.6](/releases/v0.3.6.html)
+
+13. Project Design Documents
 -------------------------------------------------------------------------------
 
 - [Platform Specification](/design/specification.html)
+- [Dynamic Modules Prototype](/design/dynamic-modules-prototype.html)
 - [Design Principles](/design/design-principles.html) `todo`
 - [Syntax Design Notes](/design/syntax-design.html) `todo`
 - [History](/design/history.html) `todo`
 - [Roadmap](/design/ROADMAP.html)
 
-7. Examples
--------------------------------------------------------------------------------
-
-- [Fizz Buzz](/examples/fizzbuzz.html) - a classic programming exercise that demonstrates the use of Mech's data model and operators.
-- [N-Body Simulation](/examples/n-body.html) - a simulation of gravitational interactions between multiple bodies.
-- [Extended Kalman Filter](/examples/ekf.html) - an implementation of the Extended Kalman Filter algorithm for state estimation.
-- [Bubble Sort](/examples/bubble-sort.html) - the classic bubble sort algorithm implemented with state machines.
-
 ```mech:hidden
 document/index := {
   name: "docs" 
-  version: "v0.3.5"
+  version: "v0.3.6"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/mech/docs"
   license: "Apache-2.0"}
