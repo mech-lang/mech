@@ -1,0 +1,36 @@
+Browser DOM
+===============================================================================
+
+The browser DOM context maps configured Mech paths to browser selectors and properties.
+
+1. DOM entry
+-------------------------------------------------------------------------------
+
+```mech
+{
+  path: "body/content/mech-sandbox/title"
+  selector: "#title"
+  property: "text"
+  operations: ["write"]
+}
+```
+
+2. Fields
+-------------------------------------------------------------------------------
+
+| Field | Description |
+|-------|-------------|
+| `path` | Path used by Mech under the DOM context. |
+| `selector` | Browser selector used by the host. |
+| `property` | DOM property mapped to the path. |
+| `attribute` | Attribute name when `property` is `attribute`. |
+| `operations` | Allowed operations for this DOM entry. |
+
+3. Binding
+-------------------------------------------------------------------------------
+
+```mech
++> @browser := browser/dom
+
+@browser/body/content/mech-sandbox/title = "Hello"
+```
