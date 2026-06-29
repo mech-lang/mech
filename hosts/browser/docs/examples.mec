@@ -27,7 +27,12 @@ Guide:
 /docs/guides/first-web-bundle.mec
 ```
 
-3. Notes
+3. Config-profile fixture
 -------------------------------------------------------------------------------
 
-Loose browser DOM resource fixture files were removed from `examples/`. Use the full `browser-dom-demo` folder as the user-facing browser example.
+```text
+examples/browser-dom-resource.mcfg
+examples/browser-dom-resource.mec
+```
+
+These files are retained because runtime config-profile tests include them directly. They are not the primary user-facing browser DOM example; use the full `browser-dom-demo` folder for that.
