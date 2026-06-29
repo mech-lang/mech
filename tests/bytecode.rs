@@ -132,3 +132,26 @@ bytecode_test!(bytecode_define_table, "x := |x<f64> y<u64>| 1 2 | 3 4 |", Value:
 ))));
 bytecode_test!(bytecode_define_table_eq, "x := |x<f64> y<bool>| 1 true | 3 false |; y := |x<f64> y<bool>| 1 true | 3 false |; x == y", Value::Bool(Ref::new(true)));
 //bytecode_test!(bytecode_set_union, "x := {1 2 3}; y := {3 4 5}; x ∪ y", Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)),Value::F64(Ref::new(2.0)),Value::F64(Ref::new(3.0)),Value::F64(Ref::new(4.0)),Value::F64(Ref::new(5.0))]))));
+fn compile_bytecode_strict_compare_returns_error_without_panic(source: &str, expected_message: &str) {
+  let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+      name: "strict_compare_no_panic".to_string(),
+      environment: MechProgramEnvironment::default(),
+    });
+    prgrm.run_string(source).unwrap();
+    prgrm.compile_bytecode()
+  }));
+  let compile_result = result.expect("strict compare bytecode compilation should not panic");
+  let error = compile_result.expect_err("strict compare bytecode compilation should return an error");
+  assert!(error.full_chain_message().contains(expected_message), "unexpected error: {:?}", error);
+}
+
+#[test]
+fn bytecode_strict_equality_returns_error_without_panic() {
+  compile_bytecode_strict_compare_returns_error_without_panic("x := 1 === 1", "dynamic strict equality");
+}
+
+#[test]
+fn bytecode_strict_inequality_returns_error_without_panic() {
+  compile_bytecode_strict_compare_returns_error_without_panic("x := 1 !== 2", "dynamic strict inequality");
+}

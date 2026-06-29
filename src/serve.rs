@@ -410,14 +410,18 @@ impl MechServer {
     }
   }
 
-  pub async fn init(&mut self) -> MResult<()> {
-    let html_shim = if let Some(injection) = &self.host_config_injection {
-      inject_host_authority_injection_script(&self.html_shim, injection)?
+  fn injected_html_shim(&self) -> MResult<String> {
+    if let Some(injection) = &self.host_config_injection {
+      inject_host_authority_injection_script(&self.html_shim, injection)
     } else if let Some(host_config) = &self.host_config {
-      inject_browser_host_config_script(&self.html_shim, host_config)?
+      inject_browser_host_config_script(&self.html_shim, host_config)
     } else {
-      self.html_shim.clone()
-    };
+      Ok(self.html_shim.clone())
+    }
+  }
+
+  pub async fn init(&mut self) -> MResult<()> {
+    let html_shim = self.injected_html_shim()?;
     let mut registry = self.registry.write().unwrap();
     let html = asset(html_shim.as_bytes(), "text/html", None);
     let css = asset(self.stylesheet.as_bytes(), "text/css", None);
@@ -514,7 +518,8 @@ impl MechServer {
           println!("{} Capability denied: {}", self.badge(), diagnostic.message);
         }
       }
-      self.registry.write().unwrap().sync_workspace_snapshot(&root, snapshot, &self.stylesheet, &self.html_shim)?;
+      let html_shim = self.injected_html_shim()?;
+      self.registry.write().unwrap().sync_workspace_snapshot(&root, snapshot, &self.stylesheet, &html_shim)?;
     }
     let registry = self.registry.read().unwrap();
     for key in registry.source_keys() {
@@ -575,12 +580,13 @@ impl MechServer {
     let socket_address: SocketAddr = self.full_address.parse().unwrap();
     let server = warp::serve(routes).run(socket_address);
     if let (Some(session), Some(root)) = (&self.workspace_session, &root) {
+      let html_shim = self.injected_html_shim()?;
       let mut interval = tokio::time::interval(std::time::Duration::from_millis(100));
       tokio::pin!(server);
       loop {
         tokio::select! {
           _ = interval.tick() => {
-            let _ = poll_workspace_once(session, &self.registry, &self.events, &root, &self.stylesheet, &self.html_shim);
+            let _ = poll_workspace_once(session, &self.registry, &self.events, &root, &self.stylesheet, &html_shim);
           }
           _ = &mut server => break,
         }
@@ -998,6 +1004,30 @@ mod tests {
 
 
   #[test]
+  fn generated_mech_html_uses_injected_host_config_shim() {
+    let root = temp_root("generated-host-config-shim");
+    std::fs::write(root.join("index.mec"), "x := 1\n").unwrap();
+
+    let guard = CurrentDirGuard::enter(&root);
+    let mut server = test_server();
+    server.html_shim = "<html><head></head><body></body></html>".to_string();
+    server.host_config = Some(empty_host_config());
+
+    tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
+    server.load_workspace(&vec!["index.mec".to_string()]).unwrap();
+
+    let registry = server.registry.read().unwrap();
+    let html = String::from_utf8(registry.get_route("/").unwrap().bytes).unwrap();
+
+    assert!(html.contains("window.__MECH_HOST_CONFIG ="));
+    assert_eq!(html.matches("window.__MECH_HOST_CONFIG =").count(), 1);
+
+    drop(registry);
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
   fn wasm_host_config_constructor_export_is_declared() {
     let source_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/wasm/src/lib.rs");
     let source = std::fs::read_to_string(&source_path)
@@ -1363,21 +1393,29 @@ mod tests {
     std::fs::write(root.join("main.mec"), "x := 1\n").unwrap();
     let guard = CurrentDirGuard::enter(&root);
     let mut server = test_server();
+    server.html_shim = "<html><head></head><body></body></html>".to_string();
+    server.host_config = Some(empty_host_config());
     tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
     server.load_workspace(&vec!["main.mec".to_string()]).unwrap();
     std::fs::write(root.join("main.mec"), "x := 2\n").unwrap();
     let session = server.workspace_session.as_ref().unwrap();
     let mut session = session.lock().unwrap();
     session.refresh(module_options()).unwrap();
+    let html_shim = server.injected_html_shim().unwrap();
     server.registry.write().unwrap().sync_workspace_snapshot(
       &root,
       session.snapshot().unwrap(),
       &server.stylesheet,
-      &server.html_shim,
+      &html_shim,
     ).unwrap();
     drop(session);
-    let raw = server.registry.read().unwrap().get_route("source/main.mec").unwrap();
+    let registry = server.registry.read().unwrap();
+    let raw = registry.get_route("source/main.mec").unwrap();
     assert!(String::from_utf8(raw.bytes).unwrap().contains("x := 2"));
+    let html = String::from_utf8(registry.get_route("main.mec").unwrap().bytes).unwrap();
+    assert!(html.contains("window.__MECH_HOST_CONFIG ="));
+    assert_eq!(html.matches("window.__MECH_HOST_CONFIG =").count(), 1);
+    drop(registry);
     drop(guard);
     std::fs::remove_dir_all(root).unwrap();
   }
