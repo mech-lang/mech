@@ -42,7 +42,7 @@ const FORMAT_EXTENSIONS: &[&str] = &["mec", "🤖", "html", "htm", "mdoc"];
 #[cfg(any(feature = "formatter", feature = "run"))]
 const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
 #[cfg(feature = "run")]
-const RUN_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb"];
+const RUN_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb", "mdoc"];
 
 #[cfg(any(feature = "formatter", feature = "run"))]
 fn source_extension(path: &Path) -> Option<String> {
@@ -99,6 +99,22 @@ fn normalize_output_exclusion(output_path: &Path, is_output_file: bool) -> MResu
   } else {
     absolute
   }))
+}
+
+#[cfg(feature = "formatter")]
+fn format_output_exclusion(output_arg: Option<&str>, output_path: &Path, is_output_file: bool) -> MResult<Option<PathBuf>> {
+  match output_arg {
+    None => Ok(None),
+    Some(".") => Ok(None),
+    Some(_) if is_output_file => Ok(None),
+    Some(_) => {
+      let exclusion = normalize_output_exclusion(output_path, false)?;
+      match exclusion {
+        Some(path) if path == std::env::current_dir()?.canonicalize()? => Ok(None),
+        other => Ok(other),
+      }
+    }
+  }
 }
 
 #[cfg(feature = "formatter")]
@@ -167,6 +183,17 @@ fn collect_format_targets(path: &Path, output_exclusion: Option<&Path>) -> MResu
       let p = entry.path();
       let file_type = entry.file_type()?;
       if file_type.is_symlink() {
+        let target_meta = match fs::metadata(&p) {
+          Ok(meta) => meta,
+          Err(_) => continue,
+        };
+        if target_meta.is_dir() {
+          continue;
+        }
+        if target_meta.is_file() && extension_allowed(&p, FORMAT_EXTENSIONS) {
+          let relative_path = p.strip_prefix(root).unwrap_or(&p).to_path_buf();
+          out.push(CollectedSourceTarget { input_root: root.to_path_buf(), path: p, relative_path });
+        }
         continue;
       }
       if file_type.is_dir() {
@@ -213,6 +240,16 @@ fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
       let p = entry.path();
       let file_type = entry.file_type()?;
       if file_type.is_symlink() {
+        let target_meta = match fs::metadata(&p) {
+          Ok(meta) => meta,
+          Err(_) => continue,
+        };
+        if target_meta.is_dir() {
+          continue;
+        }
+        if target_meta.is_file() && extension_allowed(&p, RUN_EXTENSIONS) {
+          out.push(p);
+        }
         continue;
       }
       if file_type.is_dir() {
@@ -843,8 +880,8 @@ async fn main() -> Result<(), MechError> {
         .cloned()
         .unwrap_or("".to_string());
 
-    let output_path =
-        PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
+    let output_arg = matches.get_one::<String>("output_path").cloned();
+    let output_path = PathBuf::from(output_arg.clone().unwrap_or(".".to_string()));
     let is_output_file = output_path.extension().is_some();
 
     let mech_paths: Vec<String> = matches
@@ -886,7 +923,7 @@ async fn main() -> Result<(), MechError> {
       .with_compiler_loc()
     })?;
 
-    let output_exclusion = normalize_output_exclusion(&output_path, is_output_file)?;
+    let output_exclusion = format_output_exclusion(output_arg.as_deref(), &output_path, is_output_file)?;
     let mut loaded_sources: Vec<(CollectedSourceTarget, MechSourceCode)> = Vec::new();
     for path in mech_paths {
       for target in collect_format_targets(Path::new(&path), output_exclusion.as_deref())? {
@@ -1677,6 +1714,49 @@ mod format_collection_tests {
     std::fs::remove_dir_all(root).unwrap();
   }
 
+  #[cfg(unix)]
+  #[test]
+  fn collect_format_targets_includes_symlinked_files_but_not_dirs_or_broken_links() {
+    use std::os::unix::fs::symlink;
+    let root = temp_root("format-symlink-file");
+    std::fs::write(root.join("main.mec"), "x := 1").unwrap();
+    symlink(root.join("main.mec"), root.join("linked.mec")).unwrap();
+    symlink(&root, root.join("self")).unwrap();
+    symlink(root.join("missing.mec"), root.join("broken.mec")).unwrap();
+
+    let targets = collect_format_targets(&root, None).unwrap();
+    let relatives = targets.iter().map(|target| target.relative_path.clone()).collect::<Vec<_>>();
+    assert_eq!(relatives, vec![PathBuf::from("linked.mec"), PathBuf::from("main.mec")]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_default_output_has_no_exclusion() {
+    let exclusion = format_output_exclusion(None, Path::new("."), false).unwrap();
+    assert!(exclusion.is_none());
+  }
+
+  #[test]
+  fn format_explicit_dot_output_has_no_exclusion() {
+    let exclusion = format_output_exclusion(Some("."), Path::new("."), false).unwrap();
+    assert!(exclusion.is_none());
+  }
+
+  #[test]
+  fn format_docs_default_and_dot_outputs_collect_docs_sources() {
+    let root = temp_root("default-output");
+    let docs = root.join("docs");
+    std::fs::create_dir_all(&docs).unwrap();
+    std::fs::write(docs.join("main.mec"), "x := 1").unwrap();
+    std::fs::write(docs.join("other.mec"), "y := 2").unwrap();
+
+    let default_targets = collect_format_targets(&docs, format_output_exclusion(None, Path::new("."), false).unwrap().as_deref()).unwrap();
+    assert_eq!(default_targets.len(), 2);
+
+    let dot_targets = collect_format_targets(&docs, format_output_exclusion(Some("."), Path::new("."), false).unwrap().as_deref()).unwrap();
+    assert_eq!(dot_targets.len(), 2);
+    std::fs::remove_dir_all(root).unwrap();
+  }
 
   #[test]
   fn reject_multi_target_format_to_single_file() {
@@ -1731,6 +1811,55 @@ mod format_collection_tests {
 
     let error = format!("{:?}", collect_format_targets(&root.join("README.md"), None).unwrap_err());
     assert!(error.contains("Unsupported source extension"), "got {error}");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+}
+
+#[cfg(all(test, feature = "run"))]
+mod run_collection_tests {
+  use super::*;
+
+  fn temp_root(label: &str) -> PathBuf {
+    let root = std::env::temp_dir().join(format!(
+      "mech-run-collection-{label}-{}",
+      std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos(),
+    ));
+    std::fs::create_dir_all(&root).unwrap();
+    root
+  }
+
+  #[test]
+  fn collect_run_targets_accepts_explicit_mdoc() {
+    let root = temp_root("explicit-mdoc");
+    let doc = root.join("doc.mdoc");
+    std::fs::write(&doc, "x := 1").unwrap();
+    assert_eq!(collect_run_targets(&doc).unwrap(), vec![doc]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_run_targets_discovers_mdoc_in_directory() {
+    let root = temp_root("directory-mdoc");
+    std::fs::write(root.join("doc.mdoc"), "x := 1").unwrap();
+    std::fs::write(root.join("main.mec"), "y := 2").unwrap();
+    let targets = collect_run_targets(&root).unwrap();
+    assert!(targets.contains(&root.join("doc.mdoc")));
+    assert!(targets.contains(&root.join("main.mec")));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn collect_run_targets_includes_symlinked_files_but_not_dirs_or_broken_links() {
+    use std::os::unix::fs::symlink;
+    let root = temp_root("symlink-file");
+    std::fs::write(root.join("main.mec"), "x := 1").unwrap();
+    symlink(root.join("main.mec"), root.join("linked.mec")).unwrap();
+    symlink(&root, root.join("self")).unwrap();
+    symlink(root.join("missing.mec"), root.join("broken.mec")).unwrap();
+
+    let targets = collect_run_targets(&root).unwrap();
+    assert_eq!(targets, vec![root.join("linked.mec"), root.join("main.mec")]);
     std::fs::remove_dir_all(root).unwrap();
   }
 }

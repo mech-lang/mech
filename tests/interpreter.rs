@@ -1071,6 +1071,35 @@ test_interpreter!(interpret_set_rational, r#"{1/2, 3/4}"#, Value::Set(Ref::new(M
 test_interpreter!(interpret_function_define,r#"foo(x<f64>) = z<f64> :=
 z := 10 + x.
 foo(10)"#, Value::F64(Ref::new(20.0)));
+#[test]
+fn interpret_user_function_string_access_valid() {
+  let source = r#"pick() = ch<string> :=
+s := "abc"
+ch := s[2].
+
+pick()"#;
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_user_function_string_access_valid".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(source).unwrap();
+  assert_eq!(result, Value::String(Ref::new("b".to_string())));
+}
+
+#[test]
+fn interpret_user_function_string_access_error_propagates() {
+  let source = r#"bad() = ch<string> :=
+~s := "abc"
+s = "x"
+ch := s[3].
+
+bad()"#;
+  let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    let mut program = MechProgram::new(MechProgramConfig{name: "interpret_user_function_string_access_error_propagates".to_string(), environment: MechProgramEnvironment::default()});
+    program.run_string(source)
+  }));
+  let run_result = result.expect("user function string access should not panic");
+  let error = run_result.expect_err("user function string access should return an error");
+  assert!(format!("{:?}", error).contains("IndexOutOfBounds"), "got {error:?}");
+}
+
 test_interpreter!(interpret_function_define_2_args,r#"foo(x<f64>, y<f64>) = z<f64> :=
 z := x + y.
 foo(10,20)"#, Value::F64(Ref::new(30.0)));
