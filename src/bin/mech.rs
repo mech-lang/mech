@@ -76,6 +76,7 @@ struct CollectedSourceTarget {
   input_root: PathBuf,
   path: PathBuf,
   relative_path: PathBuf,
+  default_output_path: PathBuf,
 }
 
 
@@ -144,6 +145,21 @@ fn explicit_file_relative_path(path: &Path) -> MResult<PathBuf> {
 }
 
 #[cfg(feature = "formatter")]
+fn default_output_relative_path(input_root: &Path, path: &Path) -> MResult<PathBuf> {
+  let cwd = std::env::current_dir()?;
+  if path.is_relative() {
+    return Ok(path.to_path_buf());
+  }
+  if let Ok(stripped) = path.strip_prefix(&cwd) {
+    return Ok(stripped.to_path_buf());
+  }
+  if let Ok(stripped) = path.strip_prefix(input_root) {
+    return Ok(input_root.join(stripped));
+  }
+  Ok(path.file_name().map(PathBuf::from).unwrap_or_else(|| path.to_path_buf()))
+}
+
+#[cfg(feature = "formatter")]
 fn read_format_source(path: &Path) -> MResult<MechSourceCode> {
   let extension = source_extension(path).ok_or_else(|| unsupported_source_path_error(path, FORMAT_EXTENSIONS))?;
   match extension.as_str() {
@@ -159,10 +175,12 @@ fn collect_format_targets(path: &Path, output_exclusion: Option<&Path>) -> MResu
     if !extension_allowed(path, FORMAT_EXTENSIONS) {
       return Err(unsupported_source_path_error(path, FORMAT_EXTENSIONS));
     }
+    let relative_path = explicit_file_relative_path(path)?;
     return Ok(vec![CollectedSourceTarget {
       input_root: path.parent().unwrap_or_else(|| Path::new("")).to_path_buf(),
       path: path.to_path_buf(),
-      relative_path: explicit_file_relative_path(path)?,
+      relative_path: relative_path.clone(),
+      default_output_path: relative_path,
     }]);
   }
 
@@ -192,7 +210,8 @@ fn collect_format_targets(path: &Path, output_exclusion: Option<&Path>) -> MResu
         }
         if target_meta.is_file() && extension_allowed(&p, FORMAT_EXTENSIONS) {
           let relative_path = p.strip_prefix(root).unwrap_or(&p).to_path_buf();
-          out.push(CollectedSourceTarget { input_root: root.to_path_buf(), path: p, relative_path });
+          let default_output_path = default_output_relative_path(root, &p)?;
+          out.push(CollectedSourceTarget { input_root: root.to_path_buf(), path: p, relative_path, default_output_path });
         }
         continue;
       }
@@ -204,7 +223,8 @@ fn collect_format_targets(path: &Path, output_exclusion: Option<&Path>) -> MResu
         collect_dir(root, &p, output_exclusion, out, visited)?;
       } else if extension_allowed(&p, FORMAT_EXTENSIONS) {
         let relative_path = p.strip_prefix(root).unwrap_or(&p).to_path_buf();
-        out.push(CollectedSourceTarget { input_root: root.to_path_buf(), path: p, relative_path });
+        let default_output_path = default_output_relative_path(root, &p)?;
+        out.push(CollectedSourceTarget { input_root: root.to_path_buf(), path: p, relative_path, default_output_path });
       }
     }
     Ok(())
@@ -272,14 +292,31 @@ fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
 }
 
 #[cfg(feature = "formatter")]
-fn ensure_unique_format_outputs(targets: &[CollectedSourceTarget], output_path: &Path, html: bool) -> MResult<()> {
+fn format_output_file_for_target(
+  target: &CollectedSourceTarget,
+  output_arg: Option<&str>,
+  output_path: &Path,
+  is_output_file: bool,
+  html: bool,
+) -> PathBuf {
+  let mut path = if is_output_file {
+    output_path.to_path_buf()
+  } else if output_arg.is_none() || output_arg == Some(".") {
+    target.default_output_path.clone()
+  } else {
+    output_path.join(&target.relative_path)
+  };
+  if html {
+    path = path.with_extension("html");
+  }
+  path
+}
+
+#[cfg(feature = "formatter")]
+fn ensure_unique_format_outputs(targets: &[CollectedSourceTarget], output_arg: Option<&str>, output_path: &Path, is_output_file: bool, html: bool) -> MResult<()> {
   let mut seen: BTreeMap<PathBuf, PathBuf> = BTreeMap::new();
   for target in targets {
-    let output_file = if html {
-      output_path.join(&target.relative_path).with_extension("html")
-    } else {
-      output_path.join(&target.relative_path)
-    };
+    let output_file = format_output_file_for_target(target, output_arg, output_path, is_output_file, html);
     if let Some(previous) = seen.insert(output_file.clone(), target.path.clone()) {
       return Err(MechError::new(
         GenericError {
@@ -933,7 +970,7 @@ async fn main() -> Result<(), MechError> {
     }
     reject_multi_target_file_output(loaded_sources.len(), &output_path, is_output_file)?;
     let format_targets: Vec<CollectedSourceTarget> = loaded_sources.iter().map(|(target, _)| target.clone()).collect();
-    ensure_unique_format_outputs(&format_targets, &output_path, html_flag)?;
+    ensure_unique_format_outputs(&format_targets, output_arg.as_deref(), &output_path, is_output_file, html_flag)?;
 
     // Only create directory if output_path is not a file
     if !is_output_file && output_path != PathBuf::from(".") {
@@ -967,7 +1004,7 @@ async fn main() -> Result<(), MechError> {
         save_to_file(output_path, &content)?;
       } else {
         for (target, content) in html_items {
-          let output_file = output_path.join(&target.relative_path).with_extension("html");
+          let output_file = format_output_file_for_target(&target, output_arg.as_deref(), &output_path, is_output_file, true);
           save_to_file(output_file, &content)?;
         }
       }
@@ -983,8 +1020,7 @@ async fn main() -> Result<(), MechError> {
           MechSourceCode::Html(content) => content,
           other => return Err(MechError::new(GenericError { msg: format!("Unsupported source kind for raw formatting `{}`: {:?}", target.path.display(), other) }, None).with_compiler_loc()),
         };
-        let output_file = if is_output_file { output_path.clone() }
-                          else { output_path.join(&target.relative_path) };
+        let output_file = format_output_file_for_target(&target, output_arg.as_deref(), &output_path, is_output_file, false);
         save_to_file(output_file, &content)?;
       }
     }
@@ -1654,10 +1690,29 @@ mod format_collection_tests {
     let relatives = targets.iter().map(|target| target.relative_path.clone()).collect::<Vec<_>>();
     assert_eq!(relatives, vec![PathBuf::from("a/index.mec"), PathBuf::from("b/index.mec")]);
     assert!(targets.iter().all(|target| target.input_root == docs));
-    ensure_unique_format_outputs(&targets, &root.join("out"), true).unwrap();
-    ensure_unique_format_outputs(&targets, &root.join("out"), false).unwrap();
+    ensure_unique_format_outputs(&targets, Some("out"), &root.join("out"), false, true).unwrap();
+    ensure_unique_format_outputs(&targets, Some("out"), &root.join("out"), false, false).unwrap();
     assert_eq!(root.join("out").join(&targets[0].relative_path).with_extension("html"), root.join("out/a/index.html"));
     assert_eq!(root.join("out").join(&targets[1].relative_path), root.join("out/b/index.mec"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_directory_output_path_selection_preserves_default_and_output_roots() {
+    let root = temp_root("default-output-paths");
+    std::fs::create_dir_all(root.join("docs")).unwrap();
+    std::fs::write(root.join("docs/main.mec"), "x := 1").unwrap();
+    let old_cwd = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&root).unwrap();
+    let targets = collect_format_targets(Path::new("docs"), None).unwrap();
+    std::env::set_current_dir(old_cwd).unwrap();
+    let target = &targets[0];
+
+    assert_eq!(format_output_file_for_target(target, None, Path::new("."), false, false), PathBuf::from("docs/main.mec"));
+    assert_eq!(format_output_file_for_target(target, None, Path::new("."), false, true), PathBuf::from("docs/main.html"));
+    assert_eq!(format_output_file_for_target(target, Some("."), Path::new("."), false, false), PathBuf::from("docs/main.mec"));
+    assert_eq!(format_output_file_for_target(target, Some("out"), Path::new("out"), false, false), PathBuf::from("out/main.mec"));
+    assert_eq!(format_output_file_for_target(target, Some("out"), Path::new("out"), false, true), PathBuf::from("out/main.html"));
     std::fs::remove_dir_all(root).unwrap();
   }
 
@@ -1672,8 +1727,30 @@ mod format_collection_tests {
     let targets = collect_format_targets(Path::new("src/main.mec"), None).unwrap();
     std::env::set_current_dir(old_cwd).unwrap();
     assert_eq!(targets[0].relative_path, PathBuf::from("src/main.mec"));
+    assert_eq!(targets[0].default_output_path, PathBuf::from("src/main.mec"));
+    assert_eq!(format_output_file_for_target(&targets[0], None, Path::new("."), false, false), PathBuf::from("src/main.mec"));
     assert_eq!(root.join("out").join(&targets[0].relative_path), root.join("out/src/main.mec"));
     assert_eq!(root.join("out").join(&targets[0].relative_path).with_extension("html"), root.join("out/src/main.html"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_output_collision_uses_actual_output_paths() {
+    let root = temp_root("actual-collisions");
+    std::fs::create_dir_all(root.join("a")).unwrap();
+    std::fs::create_dir_all(root.join("b")).unwrap();
+    std::fs::write(root.join("a/main.mec"), "x := 1").unwrap();
+    std::fs::write(root.join("b/main.mec"), "y := 2").unwrap();
+    let old_cwd = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&root).unwrap();
+    let mut targets = Vec::new();
+    targets.extend(collect_format_targets(Path::new("a"), None).unwrap());
+    targets.extend(collect_format_targets(Path::new("b"), None).unwrap());
+    std::env::set_current_dir(old_cwd).unwrap();
+
+    ensure_unique_format_outputs(&targets, None, Path::new("."), false, false).unwrap();
+    let error = format!("{:?}", ensure_unique_format_outputs(&targets, Some("out"), Path::new("out"), false, false).unwrap_err());
+    assert!(error.contains("Format output collision"), "got {error}");
     std::fs::remove_dir_all(root).unwrap();
   }
 
