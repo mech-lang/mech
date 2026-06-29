@@ -21,7 +21,15 @@ The command context supports provider-specific operations:
 
 The state context supports `read`.
 
-2. Examples
+2. Pages
+-------------------------------------------------------------------------------
+
+- [Manifest](manifest.html)
+- [Commands](commands.html)
+- [State](state.html)
+- [Examples](examples.html)
+
+3. Examples
 -------------------------------------------------------------------------------
 
 ```text
