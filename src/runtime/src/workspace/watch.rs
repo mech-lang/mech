@@ -227,7 +227,7 @@ fn local_workspace_target_watch_path(
   }
   let path = PathBuf::from(specifier);
   let joined = if path.is_absolute() { path } else { root.join(path) };
-  if joined.exists() {
+  if joined.exists() && joined.is_dir() {
     return joined.canonicalize().ok();
   }
   joined.parent().and_then(|parent| parent.canonicalize().ok())
@@ -284,7 +284,7 @@ mod tests {
     std::fs::create_dir_all(&root).unwrap();
     let target = root.join("main.mec");
     std::fs::write(&target, "x := 1").unwrap();
-    assert_eq!(local_workspace_target_watch_path(&root, "main.mec").unwrap(), target.canonicalize().unwrap());
+    assert_eq!(local_workspace_target_watch_path(&root, "main.mec").unwrap(), root.canonicalize().unwrap());
     std::fs::remove_file(&target).unwrap();
     assert_eq!(local_workspace_target_watch_path(&root, "main.mec").unwrap(), root.canonicalize().unwrap());
     std::fs::remove_dir_all(root).unwrap();

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use mech_core::{hash_str, MechSourceCode, ModuleManifestConfig, ModuleManifestExportConfig, ModuleManifestExportKind, Ref, Value};
+use mech_program::{MechProgram, MechProgramConfig};
 use mech_host_cli::{CliBackend, CliResourceProvider};
 use mech_runtime::*;
 
@@ -4342,4 +4343,23 @@ result := pick("secret") == "matched"
     runtime.run_module(version).unwrap(),
     "module interpreter address pattern should match exported value",
   );
+}
+
+
+#[test]
+fn run_source_with_context_bytecode_emits_completion_and_profile_events() {
+  let mut compiler_program = MechProgram::new(MechProgramConfig::default());
+  compiler_program.run_string("x := 1 + 2").unwrap();
+  let bytecode = compiler_program.compile_bytecode().unwrap();
+
+  let mut config = RuntimeConfig::default();
+  config.diagnostics.profile_enabled = true;
+  let mut runtime = RuntimeBuilder::new().config(config).build().unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  let result = runtime.run_source_with_context(&mut context, &MechSourceCode::ByteCode(bytecode)).unwrap();
+
+  assert_eq!(result, Value::F64(Ref::new(3.0)));
+  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramStarted { .. })));
+  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramCompleted { .. })));
+  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramProfiled { .. })));
 }

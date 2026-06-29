@@ -21,6 +21,7 @@ use crossterm::{
 };
 use ariadne::{Report, ReportKind, Label, Color, sources};
 use clap::{Arg, ArgAction, Command};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use tabled::{
   builder::Builder,
@@ -42,38 +43,145 @@ fn source_extension(path: &Path) -> Option<String> {
 }
 
 #[cfg(any(feature = "formatter", feature = "run"))]
-fn collect_source_targets(path: &Path, allowed_extensions: &[&str], skip_dirs: &[&str]) -> MResult<Vec<PathBuf>> {
+fn extension_allowed(path: &Path, allowed_extensions: &[&str]) -> bool {
+  source_extension(path)
+    .map(|ext| allowed_extensions.iter().any(|allowed| *allowed == ext))
+    .unwrap_or(false)
+}
+
+#[cfg(any(feature = "formatter", feature = "run"))]
+fn unsupported_source_path_error(path: &Path, allowed_extensions: &[&str]) -> MechError {
+  MechError::new(
+    GenericError {
+      msg: format!(
+        "Unsupported source extension for `{}`; expected one of: {}",
+        path.display(),
+        allowed_extensions.join(", "),
+      ),
+    },
+    None,
+  ).with_compiler_loc()
+}
+
+#[cfg(feature = "formatter")]
+#[derive(Clone, Debug)]
+struct CollectedSourceTarget {
+  input_root: PathBuf,
+  path: PathBuf,
+  relative_path: PathBuf,
+}
+
+#[cfg(feature = "formatter")]
+fn collect_format_targets(path: &Path) -> MResult<Vec<CollectedSourceTarget>> {
+  const FORMAT_EXTENSIONS: &[&str] = &["mec", "🤖", "html", "htm", "mdoc"];
+  const SKIP_DIRS: &[&str] = &["target", ".git", "dist", "out"];
+
   if path.is_file() {
+    if !extension_allowed(path, FORMAT_EXTENSIONS) {
+      return Err(unsupported_source_path_error(path, FORMAT_EXTENSIONS));
+    }
+    return Ok(vec![CollectedSourceTarget {
+      input_root: path.parent().unwrap_or_else(|| Path::new("")).to_path_buf(),
+      path: path.to_path_buf(),
+      relative_path: path.file_name().map(PathBuf::from).unwrap_or_else(|| path.to_path_buf()),
+    }]);
+  }
+
+  if !path.exists() {
+    return Err(MechError::new(GenericError { msg: format!("Source path does not exist: {}", path.display()) }, None).with_compiler_loc());
+  }
+
+  if !path.is_dir() {
+    return Err(MechError::new(GenericError { msg: format!("Source path is neither a file nor directory: {}", path.display()) }, None).with_compiler_loc());
+  }
+
+  fn collect_dir(root: &Path, dir: &Path, out: &mut Vec<CollectedSourceTarget>) -> MResult<()> {
+    for entry in fs::read_dir(dir)? {
+      let entry = entry?;
+      let p = entry.path();
+      if p.is_dir() {
+        if let Some(name) = p.file_name().and_then(|n| n.to_str()) {
+          if SKIP_DIRS.iter().any(|skip| skip == &name) { continue; }
+        }
+        collect_dir(root, &p, out)?;
+      } else if extension_allowed(&p, FORMAT_EXTENSIONS) {
+        let relative_path = p.strip_prefix(root).unwrap_or(&p).to_path_buf();
+        out.push(CollectedSourceTarget { input_root: root.to_path_buf(), path: p, relative_path });
+      }
+    }
+    Ok(())
+  }
+
+  let mut out = Vec::new();
+  collect_dir(path, path, &mut out)?;
+  out.sort_by(|a, b| a.relative_path.cmp(&b.relative_path).then_with(|| a.path.cmp(&b.path)));
+  Ok(out)
+}
+
+#[cfg(feature = "run")]
+fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
+  const RUN_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb"];
+  const SKIP_DIRS: &[&str] = &["target", ".git", "dist", "out"];
+
+  if path.is_file() {
+    if !extension_allowed(path, RUN_EXTENSIONS) {
+      return Err(unsupported_source_path_error(path, RUN_EXTENSIONS));
+    }
     return Ok(vec![path.to_path_buf()]);
+  }
+  if !path.exists() {
+    return Err(MechError::new(GenericError { msg: format!("Source path does not exist: {}", path.display()) }, None).with_compiler_loc());
   }
   if !path.is_dir() {
-    return Ok(vec![path.to_path_buf()]);
+    return Err(MechError::new(GenericError { msg: format!("Source path is neither a file nor directory: {}", path.display()) }, None).with_compiler_loc());
   }
-  let mut out = Vec::new();
-  for entry in fs::read_dir(path)? {
-    let entry = entry?;
-    let p = entry.path();
-    if p.is_dir() {
-      if let Some(name) = p.file_name().and_then(|n| n.to_str()) {
-        if skip_dirs.iter().any(|skip| skip == &name) { continue; }
+
+  fn collect_dir(dir: &Path, out: &mut Vec<PathBuf>) -> MResult<()> {
+    for entry in fs::read_dir(dir)? {
+      let entry = entry?;
+      let p = entry.path();
+      if p.is_dir() {
+        if let Some(name) = p.file_name().and_then(|n| n.to_str()) {
+          if SKIP_DIRS.iter().any(|skip| skip == &name) { continue; }
+        }
+        collect_dir(&p, out)?;
+      } else if extension_allowed(&p, RUN_EXTENSIONS) {
+        out.push(p);
       }
-      out.extend(collect_source_targets(&p, allowed_extensions, skip_dirs)?);
-    } else if source_extension(&p).map(|ext| allowed_extensions.iter().any(|allowed| *allowed == ext)).unwrap_or(false) {
-      out.push(p);
     }
+    Ok(())
   }
+
+  let mut out = Vec::new();
+  collect_dir(path, &mut out)?;
   out.sort();
   Ok(out)
 }
 
 #[cfg(feature = "formatter")]
-fn collect_format_targets(path: &Path) -> MResult<Vec<PathBuf>> {
-  collect_source_targets(path, &["mec", "🤖", "html", "htm", "md", "mdoc"], &["target", ".git", "dist", "out"])
-}
-
-#[cfg(feature = "run")]
-fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
-  collect_source_targets(path, &["mec", "🤖", "mecb"], &["target", ".git", "dist", "out"])
+fn ensure_unique_format_outputs(targets: &[CollectedSourceTarget], output_path: &Path, html: bool) -> MResult<()> {
+  let mut seen: BTreeMap<PathBuf, PathBuf> = BTreeMap::new();
+  for target in targets {
+    let output_file = if html {
+      output_path.join(&target.relative_path).with_extension("html")
+    } else {
+      output_path.join(&target.relative_path)
+    };
+    if let Some(previous) = seen.insert(output_file.clone(), target.path.clone()) {
+      return Err(MechError::new(
+        GenericError {
+          msg: format!(
+            "Format output collision for `{}` between `{}` and `{}`",
+            output_file.display(),
+            previous.display(),
+            target.path.display(),
+          ),
+        },
+        None,
+      ).with_compiler_loc());
+    }
+  }
+  Ok(())
 }
 
 
@@ -173,7 +281,7 @@ fn add_serve_subcommand(command: Command) -> Command {
   command.subcommand(Command::new("serve")
       .about("Serve Mech program over an HTTP server.")
       .arg(Arg::new("mech_serve_file_paths")
-        .help("Source .mec and .mecb files")
+        .help("Source .mec files, .mecb bytecode files, project folders, or directories")
         .required(false)
         .action(ArgAction::Append))
       .arg(Arg::new("port")
@@ -296,7 +404,7 @@ async fn main() -> Result<(), MechError> {
     .author("Corey Montella corey@mech-lang.org")
     .about(about)
     .arg(Arg::new("mech_paths")
-        .help("Source .mec and files")
+        .help("Source .mec files, .mecb bytecode files, project folders, or inline Mech code")
         .required(false)
         .action(ArgAction::Append))
     .arg(Arg::new("debug")
@@ -307,7 +415,7 @@ async fn main() -> Result<(), MechError> {
     .subcommand(Command::new("format")
       .about("Format Mech source code into standard format.")
       .arg(Arg::new("mech_format_file_paths")
-        .help("Source .mec and .mecb files")
+        .help("Source .mec/.mdoc files, HTML files, or directories")
         .required(false)
         .action(ArgAction::Append))
       .arg(Arg::new("output_path")
@@ -352,7 +460,7 @@ async fn main() -> Result<(), MechError> {
     .subcommand(Command::new("test")
       .about("Validate program invariants.")
       .arg(Arg::new("mech_test_file_paths")
-        .help("Source .mec and .mecb files")
+        .help("Source .mec and .mecb files or directories")
         .required(false)
         .action(ArgAction::Append))
       .arg(Arg::new("output_path")
@@ -683,13 +791,15 @@ async fn main() -> Result<(), MechError> {
       .with_compiler_loc()
     })?;
 
-    let mut loaded_sources: Vec<(PathBuf, MechSourceCode)> = Vec::new();
+    let mut loaded_sources: Vec<(CollectedSourceTarget, MechSourceCode)> = Vec::new();
     for path in mech_paths {
-      for pb in collect_format_targets(Path::new(&path))? {
-        let code = mech_runtime::read_runtime_source_file(&pb)?;
-        loaded_sources.push((pb, code));
+      for target in collect_format_targets(Path::new(&path))? {
+        let code = mech_runtime::read_runtime_source_file(&target.path)?;
+        loaded_sources.push((target, code));
       }
     }
+    let format_targets: Vec<CollectedSourceTarget> = loaded_sources.iter().map(|(target, _)| target.clone()).collect();
+    ensure_unique_format_outputs(&format_targets, &output_path, html_flag)?;
 
     // Only create directory if output_path is not a file
     if !is_output_file && output_path != PathBuf::from(".") {
@@ -705,8 +815,8 @@ async fn main() -> Result<(), MechError> {
 
     // HTML mode
     if html_flag {
-      let mut html_items: Vec<(PathBuf, String)> = Vec::new();
-      for (path, src) in &loaded_sources {
+      let mut html_items: Vec<(CollectedSourceTarget, String)> = Vec::new();
+      for (target, src) in &loaded_sources {
         let html = match src {
           MechSourceCode::Html(content) => content.clone(),
           MechSourceCode::String(source) => {
@@ -714,26 +824,25 @@ async fn main() -> Result<(), MechError> {
             let mut formatter = Formatter::new();
             formatter.format_html(&tree, stylesheet_str.clone(), shim_str.clone())
           }
-          other => return Err(MechError::new(GenericError { msg: format!("Unsupported source kind for HTML formatting `{}`: {:?}", path.display(), other) }, None).with_compiler_loc()),
+          other => return Err(MechError::new(GenericError { msg: format!("Unsupported source kind for HTML formatting `{}`: {:?}", target.path.display(), other) }, None).with_compiler_loc()),
         };
-        html_items.push((path.clone(), html));
+        html_items.push((target.clone(), html));
       }
       if is_output_file && html_items.len() == 1 {
         let (_, content) = html_items.remove(0);
         save_to_file(output_path, &content)?;
       } else {
-        for (path, content) in html_items {
-          let filename = path.file_name().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("source.mec")).with_extension("html");
-          let output_file = output_path.join(filename);
+        for (target, content) in html_items {
+          let output_file = output_path.join(&target.relative_path).with_extension("html");
           save_to_file(output_file, &content)?;
         }
       }
     } else {
       // Raw source mode
-      for (filename, mech_src) in loaded_sources {
+      for (target, mech_src) in loaded_sources {
         let content = mech_src.to_string();
         let output_file = if is_output_file { output_path.clone() }
-                          else { output_path.join(filename.file_name().map(PathBuf::from).unwrap_or(filename)) };
+                          else { output_path.join(&target.relative_path) };
         save_to_file(output_file, &content)?;
       }
     }
@@ -1375,4 +1484,52 @@ mod filesystem_capability_cli_tests {
             .unwrap();
         std::fs::remove_dir_all(root).unwrap();
     }
+}
+
+#[cfg(all(test, feature = "formatter"))]
+mod format_collection_tests {
+  use super::*;
+
+  fn temp_root(label: &str) -> PathBuf {
+    let root = std::env::temp_dir().join(format!(
+      "mech-format-collection-{label}-{}",
+      std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos(),
+    ));
+    std::fs::create_dir_all(&root).unwrap();
+    root
+  }
+
+  #[test]
+  fn collect_format_targets_preserves_duplicate_basenames_under_directory() {
+    let root = temp_root("duplicates");
+    let docs = root.join("docs");
+    std::fs::create_dir_all(docs.join("a")).unwrap();
+    std::fs::create_dir_all(docs.join("b")).unwrap();
+    std::fs::write(docs.join("a/index.mec"), "x := 1").unwrap();
+    std::fs::write(docs.join("b/index.mec"), "x := 2").unwrap();
+
+    let targets = collect_format_targets(&docs).unwrap();
+    let relatives = targets.iter().map(|target| target.relative_path.clone()).collect::<Vec<_>>();
+    assert_eq!(relatives, vec![PathBuf::from("a/index.mec"), PathBuf::from("b/index.mec")]);
+    ensure_unique_format_outputs(&targets, &root.join("out"), true).unwrap();
+    ensure_unique_format_outputs(&targets, &root.join("out"), false).unwrap();
+    assert_eq!(root.join("out").join(&targets[0].relative_path).with_extension("html"), root.join("out/a/index.html"));
+    assert_eq!(root.join("out").join(&targets[1].relative_path), root.join("out/b/index.mec"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_format_targets_skips_markdown_in_directories_but_rejects_explicit_markdown() {
+    let root = temp_root("markdown");
+    std::fs::write(root.join("README.md"), "# Raw Markdown").unwrap();
+    std::fs::write(root.join("demo.mec"), "x := 1").unwrap();
+
+    let targets = collect_format_targets(&root).unwrap();
+    assert_eq!(targets.len(), 1);
+    assert_eq!(targets[0].relative_path, PathBuf::from("demo.mec"));
+
+    let error = format!("{:?}", collect_format_targets(&root.join("README.md")).unwrap_err());
+    assert!(error.contains("Unsupported source extension"), "got {error}");
+    std::fs::remove_dir_all(root).unwrap();
+  }
 }

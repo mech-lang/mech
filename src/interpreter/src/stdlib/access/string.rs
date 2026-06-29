@@ -55,16 +55,13 @@ impl MechFunctionImpl for StringAccessElement {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for StringAccessElement {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    let mut registers = [0];
-    registers[0] = compile_register!(Value::String(self.out.clone()), ctx);
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::String));
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
-    ctx.emit_nullop(
-      hash_str(stringify!("StringAccessElement")),
-      registers[0],
-    );
-    return Ok(registers[0]);
+  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    Err(MechError::new(
+      GenericError {
+        msg: "string scalar access is not bytecode-compilable yet because it depends on live source/index registers".to_string(),
+      },
+      None,
+    ).with_compiler_loc())
   }
 }
 

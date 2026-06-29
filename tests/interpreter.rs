@@ -1667,3 +1667,18 @@ test_interpreter!(interpreter_mika_micromica, r#"╭⦿╯"#, Value::Atom(Ref::n
 test_interpreter!(interpreter_mika_micromica_gripper, r#"Ɔ∞⦿╯"#, Value::Atom(Ref::new(MechAtom::from_name("Ɔ∞⦿╯"))));
 test_interpreter!(interpreter_mika_minimika, r#"(˙◯˙)"#, Value::Atom(Ref::new(MechAtom::from_name("(˙◯˙)"))));
 test_interpreter!(interpreter_mika_micromica_mikasection, r#"╭⦿╯ ⸢Hello, I'm Mika!⸥"#, Value::Atom(Ref::new(MechAtom::from_name("╭⦿╯"))));
+
+#[test]
+fn interpret_mutable_string_access_updates_after_assignment() {
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_mutable_string_access_updates_after_assignment".to_string(), environment: MechProgramEnvironment::default()});
+  program.run_string("~s := \"abc\"\nfirst := s[1]\ns = \"xyz\"").unwrap();
+  program.step(2).unwrap();
+  let symbols = program.interpreter().symbols();
+  let symbols_brrw = symbols.borrow();
+  let first = symbols_brrw.get(hash_str("first")).unwrap().borrow().clone();
+  let first = match first {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_eq!(first, Value::String(Ref::new("x".to_string())));
+}
