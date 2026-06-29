@@ -189,7 +189,7 @@ fn desired_watch_paths(
   }
 
   for target in &workspace.config().targets {
-    if let Some(path) = local_workspace_path(&workspace.config().root, &target.specifier) {
+    if let Some(path) = local_workspace_target_watch_path(&workspace.config().root, &target.specifier) {
       paths.insert(RuntimeWorkspaceWatchedPath {
         path,
         recursive: false,
@@ -216,6 +216,21 @@ fn local_workspace_path(
   };
 
   joined.canonicalize().ok()
+}
+
+fn local_workspace_target_watch_path(
+  root: &Path,
+  specifier: &str,
+) -> Option<PathBuf> {
+  if specifier.contains("://") {
+    return None;
+  }
+  let path = PathBuf::from(specifier);
+  let joined = if path.is_absolute() { path } else { root.join(path) };
+  if joined.exists() {
+    return joined.canonicalize().ok();
+  }
+  joined.parent().and_then(|parent| parent.canonicalize().ok())
 }
 
 fn watch_events_from_notify_event(event: Event) -> Vec<RuntimeWorkspaceWatchEvent> {
@@ -261,6 +276,26 @@ mod tests {
     let workspace = RuntimeWorkspace::open(RuntimeWorkspaceConfig::new(&root).capability_subject(crate::SERVE_HOST_SUBJECT).folder(".")).unwrap(); let mut runtime = RuntimeBuilder::new().capability_kernel(crate::SharedCapabilityKernel::new()).build().unwrap();
     assert!(RuntimeWorkspaceWatcher::open(&workspace, &mut runtime).is_err()); std::fs::remove_dir_all(root).unwrap();
   }
+
+
+  #[test]
+  fn target_watch_falls_back_to_existing_parent_when_target_is_deleted() {
+    let root = std::env::temp_dir().join(format!("mech-watch-target-parent-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    std::fs::create_dir_all(&root).unwrap();
+    let target = root.join("main.mec");
+    std::fs::write(&target, "x := 1").unwrap();
+    assert_eq!(local_workspace_target_watch_path(&root, "main.mec").unwrap(), target.canonicalize().unwrap());
+    std::fs::remove_file(&target).unwrap();
+    assert_eq!(local_workspace_target_watch_path(&root, "main.mec").unwrap(), root.canonicalize().unwrap());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn target_watch_ignores_non_local_specifiers() {
+    let root = std::env::temp_dir();
+    assert!(local_workspace_target_watch_path(&root, "https://example.com/main.mec").is_none());
+  }
+
 
   #[test]
   fn watch_events_include_non_mec_paths() {

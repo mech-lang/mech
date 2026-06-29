@@ -202,12 +202,12 @@ pub fn run_mech_tests(
     });
     let _ = tree_flag;
     program.configure(debug_flag, trace_flag, time_flag, 10_000);
-    let source = match std::fs::read_to_string(path) {
+    let source = match mech_runtime::read_runtime_source_file(Path::new(path)) {
       Ok(source) => source,
       Err(err) => {
         let err = MechError::new(
           GenericError {
-            msg: format!("Unable to read test source `{}`: {}", path, err),
+            msg: format!("Unable to read test source `{}`: {:?}", path, err),
           },
           None,
         )
@@ -219,7 +219,7 @@ pub fn run_mech_tests(
         continue;
       }
     };
-    if let Err(err) = program.run_string(&source) {
+    if let Err(err) = program.run_source(&source) {
       eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
       run_errors = true;
       any_failed = true;

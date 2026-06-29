@@ -2529,6 +2529,36 @@ impl MechRuntime {
   }
 
 
+  pub fn run_source_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    source: &MechSourceCode,
+  ) -> MResult<Value> {
+    match source {
+      MechSourceCode::String(source) => self.run_string_with_context(context, source),
+      MechSourceCode::Tree(tree) => self.run_tree_with_context(context, tree),
+      MechSourceCode::ByteCode(_) => {
+        context.validate()?;
+        context.charge_step()?;
+        self.emit_event_to_context(context, RuntimeEventKind::ProgramStarted { task_id: context.task })?;
+        let result = self.program.run_source(source);
+        match &result {
+          Ok(_) => { self.emit_event_to_context(context, RuntimeEventKind::ProgramCompleted { task_id: context.task })?; }
+          Err(error) => { self.emit_event_to_context(context, RuntimeEventKind::ProgramFailed { task_id: context.task, message: format!("{:?}", error) })?; }
+        }
+        result
+      }
+      MechSourceCode::Program(sources) => {
+        let mut value = Value::Empty;
+        for source in sources {
+          value = self.run_source_with_context(context, source)?;
+        }
+        Ok(value)
+      }
+      unsupported => Err(MechError::new(RuntimeInvalidOperationError { operation: "run_source", reason: format!("unsupported program source: {:?}", unsupported) }, None)),
+    }
+  }
+
   pub fn run_tree(&mut self, tree: &mech_core::Program) -> MResult<Value> {
     let mut context = self.runtime_context()?;
     self.run_tree_with_context(&mut context, tree)

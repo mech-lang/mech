@@ -21,7 +21,7 @@ use crossterm::{
 };
 use ariadne::{Report, ReportKind, Label, Color, sources};
 use clap::{Arg, ArgAction, Command};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tabled::{
   builder::Builder,
   settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
@@ -35,6 +35,47 @@ use std::time::Duration;
 use std::thread;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+#[cfg(any(feature = "formatter", feature = "run"))]
+fn source_extension(path: &Path) -> Option<String> {
+  path.extension().and_then(|e| e.to_str()).map(|e| e.to_ascii_lowercase())
+}
+
+#[cfg(any(feature = "formatter", feature = "run"))]
+fn collect_source_targets(path: &Path, allowed_extensions: &[&str], skip_dirs: &[&str]) -> MResult<Vec<PathBuf>> {
+  if path.is_file() {
+    return Ok(vec![path.to_path_buf()]);
+  }
+  if !path.is_dir() {
+    return Ok(vec![path.to_path_buf()]);
+  }
+  let mut out = Vec::new();
+  for entry in fs::read_dir(path)? {
+    let entry = entry?;
+    let p = entry.path();
+    if p.is_dir() {
+      if let Some(name) = p.file_name().and_then(|n| n.to_str()) {
+        if skip_dirs.iter().any(|skip| skip == &name) { continue; }
+      }
+      out.extend(collect_source_targets(&p, allowed_extensions, skip_dirs)?);
+    } else if source_extension(&p).map(|ext| allowed_extensions.iter().any(|allowed| *allowed == ext)).unwrap_or(false) {
+      out.push(p);
+    }
+  }
+  out.sort();
+  Ok(out)
+}
+
+#[cfg(feature = "formatter")]
+fn collect_format_targets(path: &Path) -> MResult<Vec<PathBuf>> {
+  collect_source_targets(path, &["mec", "🤖", "html", "htm", "md", "mdoc"], &["target", ".git", "dist", "out"])
+}
+
+#[cfg(feature = "run")]
+fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
+  collect_source_targets(path, &["mec", "🤖", "mecb"], &["target", ".git", "dist", "out"])
+}
+
 
 #[cfg(has_file_wasm)]
 static MECHWASM: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm_bg.wasm.br");
@@ -79,7 +120,7 @@ use mech::cli::config;
 #[cfg(feature = "run")]
 use mech::cli::run::{
   classify_run_inputs, cli_host_capability_args, cli_host_capability_passthrough_values,
-  cli_host_capability_selection, effective_run_runtime_config, new_cli_runtime, run_cli_source,
+  cli_host_capability_selection, effective_run_runtime_config, new_cli_runtime, run_cli_source, run_cli_source_code,
   RunInputMode,
 };
 
@@ -545,7 +586,7 @@ async fn main() -> Result<(), MechError> {
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let output_path = PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
     let debug_flag = matches.get_flag("debug");
-    let rounds_per_step = matches.get_one::<String>("rounds-per-step").and_then(|s| s.parse::<usize>().ok()).unwrap_or(10_000);
+    let rounds_per_step = root_rounds_per_step.unwrap_or(10_000);
     // Create the directory html_output_path
     if output_path != PathBuf::from(".") {
       match fs::create_dir_all(&output_path) {
@@ -564,8 +605,8 @@ async fn main() -> Result<(), MechError> {
     let _ = trace_flag;
     program.configure(debug_flag, trace_flag, time_flag, rounds_per_step);
     for path in mech_paths {
-      let source = std::fs::read_to_string(&path)?;
-      let _ = program.run_string(&source)?;
+      let source = mech_runtime::read_runtime_source_file(Path::new(&path))?;
+      let _ = program.run_source(&source)?;
     }
 
     let bytecode = program.interpreter_mut().compile()?;
@@ -644,13 +685,10 @@ async fn main() -> Result<(), MechError> {
 
     let mut loaded_sources: Vec<(PathBuf, MechSourceCode)> = Vec::new();
     for path in mech_paths {
-      let pb = PathBuf::from(&path);
-      let source = std::fs::read_to_string(&pb)?;
-      let code = match pb.extension().and_then(|e| e.to_str()) {
-        Some("html") => MechSourceCode::Html(source),
-        _ => MechSourceCode::String(source),
-      };
-      loaded_sources.push((pb, code));
+      for pb in collect_format_targets(Path::new(&path))? {
+        let code = mech_runtime::read_runtime_source_file(&pb)?;
+        loaded_sources.push((pb, code));
+      }
     }
 
     // Only create directory if output_path is not a file
@@ -667,26 +705,27 @@ async fn main() -> Result<(), MechError> {
 
     // HTML mode
     if html_flag {
-      let html_items: Vec<_> = loaded_sources.iter().filter_map(|(p, src)| {
-        if let MechSourceCode::Html(content) = src {
-          Some((p, content))
-        } else {
-          None
-        }
-      }).collect();
-      let is_single_html = html_items.len() == 1;
-
-      if is_output_file && is_single_html {
-        // write ONLY HTML result to output file
-        let (_, content) = html_items[0];
-        save_to_file(output_path, content)?;
+      let mut html_items: Vec<(PathBuf, String)> = Vec::new();
+      for (path, src) in &loaded_sources {
+        let html = match src {
+          MechSourceCode::Html(content) => content.clone(),
+          MechSourceCode::String(source) => {
+            let tree = parser::parse(source.trim())?;
+            let mut formatter = Formatter::new();
+            formatter.format_html(&tree, stylesheet_str.clone(), shim_str.clone())
+          }
+          other => return Err(MechError::new(GenericError { msg: format!("Unsupported source kind for HTML formatting `{}`: {:?}", path.display(), other) }, None).with_compiler_loc()),
+        };
+        html_items.push((path.clone(), html));
+      }
+      if is_output_file && html_items.len() == 1 {
+        let (_, content) = html_items.remove(0);
+        save_to_file(output_path, &content)?;
       } else {
-        // otherwise produce multiple output files
         for (path, content) in html_items {
-          let filename = path.with_extension("html");
-          let output_file = if is_output_file { output_path.clone() }
-                            else { output_path.join(filename) };
-          save_to_file(output_file, content)?;
+          let filename = path.file_name().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("source.mec")).with_extension("html");
+          let output_file = output_path.join(filename);
+          save_to_file(output_file, &content)?;
         }
       }
     } else {
@@ -694,7 +733,7 @@ async fn main() -> Result<(), MechError> {
       for (filename, mech_src) in loaded_sources {
         let content = mech_src.to_string();
         let output_file = if is_output_file { output_path.clone() }
-                          else { output_path.join(filename) };
+                          else { output_path.join(filename.file_name().map(PathBuf::from).unwrap_or(filename)) };
         save_to_file(output_file, &content)?;
       }
     }
@@ -809,8 +848,10 @@ async fn main() -> Result<(), MechError> {
     let result: MResult<Value> = if let Some(options) = options {
       let mut last = Value::Empty;
       for p in &options.paths {
-        let src = std::fs::read_to_string(p)?;
-        last = run_cli_source(&mut runtime, &src)?;
+        for target in collect_run_targets(Path::new(p))? {
+          let src = mech_runtime::read_runtime_source_file(&target)?;
+          last = run_cli_source_code(&mut runtime, &src)?;
+        }
       }
       Ok(last)
     } else {

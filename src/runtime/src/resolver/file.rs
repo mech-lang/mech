@@ -72,8 +72,13 @@ impl FileSourceResolver {
   ) -> MResult<Option<PathBuf>> {
     let specifier = Path::new(&request.specifier);
 
-    if specifier.is_absolute() && specifier.exists() {
-      return self.authorize_resolved(request, canonicalize_source_path(specifier)?);
+    if specifier.is_absolute() {
+      for candidate in absolute_path_candidates(specifier) {
+        if candidate.is_file() {
+          return self.authorize_resolved(request, canonicalize_source_path(&candidate)?);
+        }
+      }
+      return Ok(None);
     }
 
     if let Some(referrer) = &request.referrer {
@@ -168,6 +173,14 @@ fn path_candidates(base: &Path, specifier: &Path) -> Vec<PathBuf> {
     base.join(specifier),
     base.join(format!("{}.mec", specifier.to_string_lossy())),
     base.join(specifier).join("index.mec"),
+  ]
+}
+
+fn absolute_path_candidates(specifier: &Path) -> Vec<PathBuf> {
+  vec![
+    specifier.to_path_buf(),
+    PathBuf::from(format!("{}.mec", specifier.to_string_lossy())),
+    specifier.join("index.mec"),
   ]
 }
 
@@ -496,6 +509,29 @@ mod tests {
     let request = SourceRequest::new("./math.mec").with_referrer(referrer.to_string_lossy().to_string());
     let resolved = resolver.resolve(&request).unwrap().unwrap();
     assert_eq!(resolved.name, "math.mec");
+  }
+
+
+  #[test]
+  fn resolves_absolute_file_directory_index_extensionless_and_missing() {
+    let root = temp_root("resolve-absolute-candidates");
+    std::fs::create_dir_all(root.join("module")).unwrap();
+    std::fs::write(root.join("main.mec"), "x := 1").unwrap();
+    std::fs::write(root.join("module/index.mec"), "x := 2").unwrap();
+    std::fs::write(root.join("other.mec"), "x := 3").unwrap();
+    let resolver = FileSourceResolver::new(&root);
+
+    let main = resolver.resolve(&SourceRequest::new(root.join("main.mec").to_string_lossy().to_string())).unwrap().unwrap();
+    assert_eq!(main.name, "main.mec");
+
+    let module = resolver.resolve(&SourceRequest::new(root.join("module").to_string_lossy().to_string())).unwrap().unwrap();
+    assert_eq!(module.name, "index.mec");
+
+    let other = resolver.resolve(&SourceRequest::new(root.join("other").to_string_lossy().to_string())).unwrap().unwrap();
+    assert_eq!(other.name, "other.mec");
+
+    assert!(resolver.resolve(&SourceRequest::new(root.join("missing").to_string_lossy().to_string())).unwrap().is_none());
+    std::fs::remove_dir_all(root).unwrap();
   }
 
 }
