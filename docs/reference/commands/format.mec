@@ -1,0 +1,25 @@
+`mech format`
+===============================================================================
+
+`mech format` formats Mech source and Mechdown documents.
+
+1. Format source
+-------------------------------------------------------------------------------
+
+```sh
+mech format main.mec --out formatted
+```
+
+2. HTML output
+-------------------------------------------------------------------------------
+
+```sh
+mech format docs/index.mec --html --out docs-out
+```
+
+3. Stylesheets and shim
+-------------------------------------------------------------------------------
+
+```sh
+mech format docs/index.mec --html --stylesheet include/docs.css --shim include/docs.html
+```
