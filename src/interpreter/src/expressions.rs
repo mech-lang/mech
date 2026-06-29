@@ -587,16 +587,7 @@ pub fn subscript_formula_ix(
     match sbscrpt {
         Subscript::Formula(fctr) => {
             let result = factor(fctr, env, p)?;
-            match &result {
-                Value::MutableReference(r) => {
-                    let indexed = { r.borrow().as_index()? };
-                    match indexed {
-                        Value::Index(_) => Ok(result),
-                        indexed => Ok(indexed),
-                    }
-                }
-                _ => result.as_index(),
-            }
+            result.as_index()
         }
         _ => unreachable!(),
     }
@@ -735,9 +726,20 @@ pub fn subscript(
             match &subs[..] {
                 #[cfg(feature = "subscript_formula")]
                 [Subscript::Formula(ix)] => {
-                    let result = subscript_formula_ix(&subs[0], env, p)?;
-                    let shape = result.shape();
-                    fxn_input.push(result);
+                    let raw_index = subscript_formula(&subs[0], env, p)?;
+                    let index_arg = if matches!(val.deref_kind(), ValueKind::String) {
+                        match &raw_index {
+                            Value::MutableReference(r) => {
+                                r.borrow().as_index()?;
+                                raw_index
+                            }
+                            _ => raw_index.as_index()?,
+                        }
+                    } else {
+                        raw_index.as_index()?
+                    };
+                    let shape = index_arg.shape();
+                    fxn_input.push(index_arg);
                     match shape[..] {
                         [1, 1] => plan.borrow_mut().push(AccessScalar {}.compile(&fxn_input)?),
                         #[cfg(feature = "subscript_range")]
