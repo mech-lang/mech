@@ -51,6 +51,12 @@ Mech Documentation
 - [Runtime Overview](/reference/runtime/index.html)
 - [Runtime Object](/reference/runtime/runtime.html)
 - [Runtime Builder](/reference/runtime/builder.html)
+- [Runtime Context](/reference/runtime/context.html)
+- [Runtime Events](/reference/runtime/events.html)
+- [Scheduler](/reference/runtime/scheduler.html)
+- [Store](/reference/runtime/store.html)
+- [Source Resolver](/reference/runtime/source-resolver.html)
+- [Module Manifests](/reference/runtime/module-manifests.html)
 
 4. Project Configuration
 -------------------------------------------------------------------------------
@@ -126,9 +132,17 @@ Mech Documentation
 - [Robot Arm Demo](/guides/robot-arm-demo.html)
 - [First Web Bundle](/guides/first-web-bundle.html)
 - [Executable Build](/guides/executable-build.html)
+- [Writing a Host](/guides/writing-a-host.html)
 - [Tutorials](/guides/tutorials.html) `todo`
 
-11. Mechdown Reference
+11. Examples
+-------------------------------------------------------------------------------
+
+- [Examples Overview](/examples/README.html)
+- [Browser DOM Demo](/examples/browser-dom-demo/README.html)
+- [Robot Arm Examples](/hosts/robot-arm/examples/README.html)
+
+12. Mechdown Reference
 -------------------------------------------------------------------------------
 
 - Introduction `todo`
@@ -143,12 +157,12 @@ Mech Documentation
 - [Callout Block](/mechdown/callout-block.html)
 - [Diagram](/mechdown/diagram.html)
 
-12. Release Notes
+13. Release Notes
 -------------------------------------------------------------------------------
 
 - [v0.3.6](/releases/v0.3.6.html)
 
-13. Project Design Documents
+14. Project Design Documents
 -------------------------------------------------------------------------------
 
 - [Platform Specification](/design/specification.html)
