@@ -1,0 +1,27 @@
+Host Delegation
+===============================================================================
+
+Host delegation is an experimental browser-host feature path.
+
+It is feature-gated and should not be documented as a stable browser authority model in v0.3.6.
+
+1. Purpose
+-------------------------------------------------------------------------------
+
+Delegated host config allows a host to sign a browser runtime authority projection and allows the browser runtime to verify it before use.
+
+2. Documentation status
+-------------------------------------------------------------------------------
+
+For v0.3.6 RC documentation, describe delegation as experimental.
+
+Do not present delegation as required for normal local `mech serve` or `bundle-web` use.
+
+3. Normal path
+-------------------------------------------------------------------------------
+
+Most browser examples should use unsigned host config injection:
+
+```js
+const mech = WasmMech.fromHostConfig();
+```
