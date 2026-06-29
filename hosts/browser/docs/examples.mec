@@ -1,0 +1,33 @@
+Browser Host Examples
+===============================================================================
+
+Browser host examples live under `examples` and browser-oriented guide pages.
+
+1. DOM demo
+-------------------------------------------------------------------------------
+
+```text
+examples/browser-dom-demo/
+```
+
+This demo shows browser DOM host configuration, context binding, DOM reads, DOM writes, denied access, `mech serve`, and `bundle-web`.
+
+Guide:
+
+```text
+/docs/guides/browser-dom-demo.mec
+```
+
+2. Static bundle
+-------------------------------------------------------------------------------
+
+Guide:
+
+```text
+/docs/guides/first-web-bundle.mec
+```
+
+3. Notes
+-------------------------------------------------------------------------------
+
+Loose browser DOM resource fixture files were removed from `examples/`. Use the full `browser-dom-demo` folder as the user-facing browser example.
