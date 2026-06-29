@@ -1,0 +1,38 @@
+`mech run`
+===============================================================================
+
+`mech run` runs Mech source from files, project configuration, or inline source.
+
+1. Source files
+-------------------------------------------------------------------------------
+
+```sh
+mech run main.mec
+mech run src/main.mec src/support.mec
+```
+
+2. Project directory
+-------------------------------------------------------------------------------
+
+```sh
+mech run .
+mech run examples/browser-dom-demo
+```
+
+When a single project directory is supplied and it contains a config file, configured `run.paths` are used unless explicit source paths override them.
+
+3. Inline source
+-------------------------------------------------------------------------------
+
+```sh
+mech run '1 + 1'
+```
+
+4. Diagnostics
+-------------------------------------------------------------------------------
+
+```sh
+mech run main.mec --debug
+mech run main.mec --trace
+mech run main.mec --time
+```
