@@ -1,0 +1,19 @@
+Runtime Reference
+===============================================================================
+
+The runtime is the host-facing execution shell for Mech programs.
+
+It owns the program, configuration, store, scheduler, source resolver, host registry, host policy, capability kernel, resource providers, host interfaces, and module manifests.
+
+1. Pages
+-------------------------------------------------------------------------------
+
+- [Runtime Object](runtime.html)
+- [Runtime Builder](builder.html)
+
+2. Scope
+-------------------------------------------------------------------------------
+
+This reference explains the runtime model and public host-facing concepts. It does not document every internal Rust type.
+
+Use this section when you need to understand how config, hosts, contexts, capabilities, and program execution fit together.
