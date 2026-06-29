@@ -1,49 +1,78 @@
 Platform Reference
 ================================================================================
 
-1. Data Model
+The reference is organized by stable concepts rather than by implementation crate.
+Concrete host provider behavior is documented in each host crate under `hosts/*/docs`.
+
+1. Language and Data
 --------------------------------------------------------------------------------
 
 - [Data Types](/reference/data.html)
-  - [`atom`](/reference/atom.html) - symbolic constants, often used for tags or enums
-  - [`bool`](/reference/bool.html) - logical values for true and false
-  - [`empty`](/reference/empty.html) - represents an absence of value
-  - [`kind`](/reference/kind.html) - a category of values
-  - [`number`](/reference/number.html) - numeric values, including integers and floating-point numbers
-  - [`string`](/reference/string.html) - sequence of UTF-8 characters representing text
-
 - [Data Structures](/reference/structures.html)
-  - [`map`](/reference/map.html) - stores key-value pairs for fast lookups
-  - [`matrix`](/reference/matrix.html) - 2D array of homogenous values arranged in rows and columns
-  - [`record`](/reference/record.html) - groups related fields, usually for representing structured data
-  - [`set`](/reference/set.html) - unordered collection of unique values
-  - [`table`](/reference/table.html) - collection of heterogeneous data organized into rows and columns
-  - [`tuple`](/reference/tuple.html) - fixed-size, ordered grouping of heterogeneous values
-- [Defining, Assigning, and Accessing Data](/reference/define.html) `todo` - create data and change it
-- [Indexing](/reference/indexing.html) - access elements within data structures
-- [Conversion](/reference/convert.html) `todo` - convert data from one kind to another
-- [Broadcasting](/reference/broadcasting.html) - apply operations over data structures
+- [Defining, Assigning, and Accessing Data](/reference/define.html) `todo`
+- [Indexing](/reference/indexing.html)
+- [Conversion](/reference/convert.html) `todo`
+- [Broadcasting](/reference/broadcasting.html)
+- [`comprehension`](/reference/comprehension.html)
+- [`function`](/reference/function.html)
+- [`match`](/reference/match.html)
+- [`pattern`](/reference/pattern.html)
+- [`state machine`](/reference/state-machine.html)
+- [Modules](/reference/modules.html)
+- [Validation](/reference/validation.html)
 
-2. Program Model
+2. Runtime
 --------------------------------------------------------------------------------
 
-- [`comprehension`](/reference/comprehension.html) - for constructing sets and matrices from predicates
-- [`function`](/reference/function.html) - reusable computations that match input arguments against patterns and produce output values
-- [`match`](/reference/match.html) - construct for branching logic based on pattern matching
-- [`pattern`](/reference/pattern.html) - match and destructure data
-- [`state machine`](/reference/state-machine.html) - defines a set of states and transitions between them
-- [Modules](/reference/module-declarations.html) - organize code into reusable components
-- [Validation](/reference/validation.html) - runtime invariants and integrity constraints
-- Synth `todo`
-- Gen `todo`
-- Programs `todo`
-- Error Handling `todo`
-- Capabilities `todo`
-- Concurrency `todo`
+- [Runtime Overview](/reference/runtime/index.html)
+- [Runtime Object](/reference/runtime/runtime.html)
+- [Runtime Builder](/reference/runtime/builder.html)
 
-3. System Model
+3. Project Configuration
 --------------------------------------------------------------------------------
 
-(i)> Coming `v0.4`
+- [Configuration Overview](/reference/config/index.html)
+- [Config Files](/reference/config/config-files.html)
+- [Config Schema](/reference/config/schema.html)
+- [Runtime Config](/reference/config/runtime.html)
+- [Run Config](/reference/config/run.html)
+- [Serve Config](/reference/config/serve.html)
+- [Host Config](/reference/config/hosts.html)
+- [Grants](/reference/config/grants.html)
 
-- Distributed Computation `todo`
+4. Commands
+--------------------------------------------------------------------------------
+
+- [`mech`](/reference/commands/mech.html)
+- [`mechc`](/reference/commands/mechc.html)
+- [`mech run`](/reference/commands/run.html)
+- [`mech test`](/reference/commands/test.html)
+- [`mech serve`](/reference/commands/serve.html)
+- [`mech build`](/reference/commands/build.html)
+- [`mech format`](/reference/commands/format.html)
+- [`mech bundle-web`](/reference/commands/bundle-web.html)
+
+5. Contexts
+--------------------------------------------------------------------------------
+
+- [Contexts Overview](/reference/contexts/index.html)
+- [Bindings](/reference/contexts/bindings.html)
+- [Capabilities](/reference/contexts/capabilities.html)
+- [Paths](/reference/contexts/paths.html)
+
+6. Build and Deployment
+--------------------------------------------------------------------------------
+
+- [Deployment Overview](/reference/deployment/index.html)
+- [Command Line](/reference/deployment/command-line.html)
+- [Web Server](/reference/deployment/web-server.html)
+- [Static Web Bundles](/reference/deployment/static-web-bundles.html)
+- [Executables](/reference/deployment/executables.html)
+- [WASM](/reference/deployment/wasm.html)
+
+7. Host Providers
+--------------------------------------------------------------------------------
+
+- [Browser Host](/hosts/browser/docs/index.html)
+- [CLI Host](/hosts/cli/docs/index.html)
+- [Robot Arm Host](/hosts/robot-arm/docs/index.html)
