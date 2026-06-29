@@ -1,0 +1,21 @@
+CLI Host
+===============================================================================
+
+The CLI host exposes command-line environment and output streams as contexts.
+
+1. Contexts
+-------------------------------------------------------------------------------
+
+```text
+cli/env
+cli/stdout
+cli/stderr
+```
+
+`cli/env` supports reads. `cli/stdout` and `cli/stderr` support writes/sends.
+
+2. Pages
+-------------------------------------------------------------------------------
+
+- [Environment](env.html)
+- [Stdout and Stderr](stdout-stderr.html)
