@@ -27,6 +27,12 @@ Concrete host provider behavior is documented in each host crate under `hosts/*/
 - [Runtime Overview](/reference/runtime/index.html)
 - [Runtime Object](/reference/runtime/runtime.html)
 - [Runtime Builder](/reference/runtime/builder.html)
+- [Runtime Context](/reference/runtime/context.html)
+- [Runtime Events](/reference/runtime/events.html)
+- [Scheduler](/reference/runtime/scheduler.html)
+- [Store](/reference/runtime/store.html)
+- [Source Resolver](/reference/runtime/source-resolver.html)
+- [Module Manifests](/reference/runtime/module-manifests.html)
 
 3. Project Configuration
 --------------------------------------------------------------------------------
