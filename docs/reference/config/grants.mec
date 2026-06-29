@@ -1,0 +1,44 @@
+Grants
+===============================================================================
+
+Grants allow a running program to use a context for specific operations and paths.
+
+```mech
+config := {
+  run: {
+    grants: [
+      {
+        target: "browser/dom"
+        operations: ["read", "write"]
+        paths: ["body/content/title"]
+      }
+    ]
+  }
+}
+```
+
+1. Fields
+-------------------------------------------------------------------------------
+
+| Field | Description |
+|-------|-------------|
+| `target` | Context target in the form `<instance>/<context>`. |
+| `operations` | Operations allowed on the context. |
+| `paths` | Resource paths allowed under the context. |
+
+2. Operations
+-------------------------------------------------------------------------------
+
+Common operations are:
+
+- `read`
+- `write`
+- `send`
+- provider-specific custom operations
+
+A provider may expose different operation names. For example, the robot arm host exposes command operations such as `move`, `grip`, and `home`.
+
+3. Paths
+-------------------------------------------------------------------------------
+
+Paths are interpreted by the provider for the target context. For browser DOM, paths map configured DOM paths to selectors and properties. For CLI streams, paths identify supported stream write forms such as `text` and `line`.
