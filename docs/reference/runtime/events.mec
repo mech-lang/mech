@@ -1,0 +1,25 @@
+Runtime Events
+===============================================================================
+
+Runtime events record significant runtime activity.
+
+Events are used for diagnostics, tracing, runtime inspection, and future durable runtime history.
+
+1. Event scope
+-------------------------------------------------------------------------------
+
+Runtime events belong to runtime execution, not to the language syntax itself.
+
+Examples of event-producing activity include runtime creation, task execution, actor turns, transactions, module loading, and host/resource access.
+
+2. Event retention
+-------------------------------------------------------------------------------
+
+The runtime config includes `max-in-memory-events`, which limits how many events are retained in memory.
+
+Durable event storage is a store concern, not a scalar runtime config field.
+
+3. Documentation status
+-------------------------------------------------------------------------------
+
+The event model should be documented more fully after the event shape is stabilized for external consumers.
