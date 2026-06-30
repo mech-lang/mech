@@ -352,6 +352,23 @@ fn watch_filter_matches(existing: &RuntimeWorkspaceWatchedPath, desired: &Runtim
     })
 }
 
+fn can_preserve_watch_authorization(
+  existing: &RuntimeWorkspaceWatchedPath,
+  desired: &RuntimeWorkspaceWatchedPath,
+) -> bool {
+  if !watch_filter_matches(existing, desired) {
+    return false;
+  }
+
+  if desired.authorized_path.exists() {
+    let desired_authorized = normalize_watch_event_path(&desired.authorized_path);
+    let existing_authorized = normalize_watch_event_path(&existing.authorized_path);
+    return desired_authorized == existing_authorized;
+  }
+
+  true
+}
+
 fn preserve_existing_watch_authorizations(
   current: &BTreeSet<RuntimeWorkspaceWatchedPath>,
   desired: BTreeSet<RuntimeWorkspaceWatchedPath>,
@@ -360,14 +377,16 @@ fn preserve_existing_watch_authorizations(
     .into_iter()
     .map(|mut watch| {
       if let Some(existing) = current.iter().find(|existing| watch_filter_matches(existing, &watch)) {
-        watch.authorized_path = existing.authorized_path.clone();
-        for path in &existing.filter_paths {
-          if !watch.filter_paths.contains(path) {
-            watch.filter_paths.push(path.clone());
+        if can_preserve_watch_authorization(existing, &watch) {
+          watch.authorized_path = existing.authorized_path.clone();
+          for path in &existing.filter_paths {
+            if !watch.filter_paths.contains(path) {
+              watch.filter_paths.push(path.clone());
+            }
           }
+          watch.filter_paths.sort();
+          watch.filter_paths.dedup();
         }
-        watch.filter_paths.sort();
-        watch.filter_paths.dedup();
       }
       watch
     })
@@ -538,6 +557,51 @@ mod tests {
     assert_eq!(watch.authorized_path, canonical_real);
     assert!(watch.filter_paths.contains(&link));
     assert!(event_allowed_by_watches(&reconciled, &link));
+    assert!(!event_allowed_by_watches(&reconciled, &sibling));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn retargeted_symlink_watch_uses_new_authorization_and_filters() {
+    use std::os::unix::fs::symlink;
+    let root = std::env::temp_dir().join(format!("mech-watch-symlink-retarget-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    std::fs::create_dir_all(&root).unwrap();
+    let a = root.join("a.mec");
+    let b = root.join("b.mec");
+    let link = root.join("link.mec");
+    let sibling = root.join("sibling.mec");
+    std::fs::write(&a, "x := 1").unwrap();
+    std::fs::write(&b, "x := 2").unwrap();
+    std::fs::write(&sibling, "y := 3").unwrap();
+    symlink(&a, &link).unwrap();
+
+    let current = local_workspace_target_watches(&root, "link.mec")
+      .into_iter()
+      .collect::<BTreeSet<_>>();
+    let canonical_a = a.canonicalize().unwrap();
+    let canonical_b = b.canonicalize().unwrap();
+    assert!(current.iter().any(|watch| watch.authorized_path == canonical_a));
+
+    std::fs::remove_file(&link).unwrap();
+    symlink(&b, &link).unwrap();
+
+    let desired = local_workspace_target_watches(&root, "link.mec")
+      .into_iter()
+      .collect::<BTreeSet<_>>();
+    let reconciled = preserve_existing_watch_authorizations(&current, desired);
+    let link_watch = reconciled
+      .iter()
+      .find(|watch| watch.filter_paths.contains(&link))
+      .unwrap();
+
+    assert_eq!(link_watch.authorized_path, canonical_b);
+    assert_ne!(link_watch.authorized_path, canonical_a);
+    assert!(link_watch.filter_paths.contains(&link));
+    assert!(link_watch.filter_paths.contains(&canonical_b));
+    assert!(!link_watch.filter_paths.contains(&canonical_a));
+    assert!(event_allowed_by_watches(&reconciled, &link));
+    assert!(event_allowed_by_watches(&reconciled, &b));
     assert!(!event_allowed_by_watches(&reconciled, &sibling));
     std::fs::remove_dir_all(root).unwrap();
   }
