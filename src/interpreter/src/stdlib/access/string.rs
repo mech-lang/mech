@@ -23,7 +23,8 @@ enum StringAccessSource {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum StringAccessCompileMode {
-  Static,
+  Constant,
+  LiveDirect,
   Dynamic,
 }
 
@@ -97,12 +98,18 @@ impl MechFunctionImpl for StringAccessElement {
 impl MechFunctionCompiler for StringAccessElement {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     match self.compile_mode {
-      StringAccessCompileMode::Static => {
+      StringAccessCompileMode::Constant => {
         ctx.features.insert(FeatureFlag::Builtin(FeatureKind::String));
         ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
         let reg = compile_register!(Value::String(self.out.clone()), ctx);
         Ok(reg)
       }
+      StringAccessCompileMode::LiveDirect => Err(MechError::new(
+        GenericError {
+          msg: "string scalar access cannot be bytecode-compiled because its source or index may be live; compile-time constant string access is supported, mutable/dynamic access is not yet supported".to_string(),
+        },
+        None,
+      ).with_compiler_loc()),
       StringAccessCompileMode::Dynamic => Err(MechError::new(
         GenericError {
           msg: "dynamic string scalar access is not bytecode-compilable yet because it depends on live source/index registers".to_string(),
@@ -121,10 +128,22 @@ impl NativeFunctionCompiler for StringAccessScalar {
     }
     let src = &arguments[0];
     let ix1 = &arguments[1];
+    fn direct_compile_mode(s: &Ref<String>, ix: &Ref<usize>) -> StringAccessCompileMode {
+      // Direct string/index refs can still be outputs of earlier plan steps. Until
+      // bytecode has a real string-access op, only compile refs that look like
+      // parser-created constants; refs with extra owners are treated as live and
+      // rejected rather than frozen into stale bytecode.
+      if std::rc::Rc::strong_count(&s.0) <= 7 && std::rc::Rc::strong_count(&ix.0) <= 2 {
+        StringAccessCompileMode::Constant
+      } else {
+        StringAccessCompileMode::LiveDirect
+      }
+    }
     match (src.clone(), ix1.clone()) {
       (Value::String(s), Value::Index(ix)) => {
         let grapheme = access_grapheme(&s.borrow(), *ix.borrow())?;
-        let new_fxn = StringAccessElement { source: StringAccessSource::Direct(s), index: StringAccessIndex::Direct(ix), out: Ref::new(grapheme), compile_mode: StringAccessCompileMode::Static };
+        let compile_mode = direct_compile_mode(&s, &ix);
+        let new_fxn = StringAccessElement { source: StringAccessSource::Direct(s), index: StringAccessIndex::Direct(ix), out: Ref::new(grapheme), compile_mode };
         Ok(Box::new(new_fxn))
       },
       (Value::String(s), Value::MutableReference(ix_ref)) => {

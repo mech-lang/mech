@@ -18,6 +18,7 @@ pub struct RuntimeWorkspaceWatcher {
   watcher: RecommendedWatcher,
   receiver: Receiver<notify::Result<Event>>,
   watched_paths: BTreeSet<RuntimeWorkspaceWatchedPath>,
+  watched_keys: BTreeSet<RuntimeWorkspaceWatchKey>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -26,6 +27,19 @@ struct RuntimeWorkspaceWatchedPath {
   authorized_path: PathBuf,
   filter_paths: Vec<PathBuf>,
   recursive: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct RuntimeWorkspaceWatchKey {
+  path: PathBuf,
+  recursive: bool,
+}
+
+fn watch_key(watch: &RuntimeWorkspaceWatchedPath) -> RuntimeWorkspaceWatchKey {
+  RuntimeWorkspaceWatchKey {
+    path: watch.watch_path.clone(),
+    recursive: watch.recursive,
+  }
 }
 
 #[derive(Clone, Debug)]
@@ -62,6 +76,7 @@ impl RuntimeWorkspaceWatcher {
       watcher,
       receiver,
       watched_paths: BTreeSet::new(),
+      watched_keys: BTreeSet::new(),
     };
 
     watcher.sync(workspace, runtime)?;
@@ -99,45 +114,45 @@ impl RuntimeWorkspaceWatcher {
       desired_watch_paths(workspace),
     );
 
-    for watched in self.watched_paths.clone() {
-      if !desired.contains(&watched) {
-        self.watcher.unwatch(&watched.watch_path).map_err(|error| {
-          watch_error(format!(
-            "could not unwatch `{}`: {}",
-            watched.watch_path.display(),
-            error,
-          ))
-        })?;
-        self.watched_paths.remove(&watched);
+    if let Some(subject) = workspace.config().capability_subject.as_deref() {
+      for watch in &desired {
+        crate::check_fs_capability(runtime.capability_kernel_mut(), subject, crate::FS_WATCH, &watch.authorized_path)?;
       }
     }
 
-    for watched in desired {
-      if self.watched_paths.contains(&watched) {
-        continue;
-      }
+    let desired_keys: BTreeSet<_> = desired.iter().map(watch_key).collect();
+    let current_keys = self.watched_keys.clone();
 
-      if let Some(subject) = workspace.config().capability_subject.as_deref() {
-        crate::check_fs_capability(runtime.capability_kernel_mut(), subject, crate::FS_WATCH, &watched.authorized_path)?;
-      }
+    for key in current_keys.difference(&desired_keys) {
+      self.watcher.unwatch(&key.path).map_err(|error| {
+        watch_error(format!(
+          "could not unwatch `{}`: {}",
+          key.path.display(),
+          error,
+        ))
+      })?;
+      self.watched_keys.remove(key);
+    }
 
-      let recursive_mode = if watched.recursive {
+    for key in desired_keys.difference(&self.watched_keys).cloned().collect::<Vec<_>>() {
+      let recursive_mode = if key.recursive {
         RecursiveMode::Recursive
       } else {
         RecursiveMode::NonRecursive
       };
 
-      self.watcher.watch(&watched.watch_path, recursive_mode).map_err(|error| {
+      self.watcher.watch(&key.path, recursive_mode).map_err(|error| {
         watch_error(format!(
           "could not watch `{}`: {}",
-          watched.watch_path.display(),
+          key.path.display(),
           error,
         ))
       })?;
 
-      self.watched_paths.insert(watched);
+      self.watched_keys.insert(key);
     }
 
+    self.watched_paths = desired;
     Ok(())
   }
 
@@ -160,9 +175,9 @@ impl RuntimeWorkspaceWatcher {
   }
 
   pub fn watched_paths(&self) -> Vec<PathBuf> {
-    self.watched_paths
+    self.watched_keys
       .iter()
-      .map(|watched| watched.watch_path.clone())
+      .map(|key| key.path.clone())
       .collect()
   }
 
@@ -175,6 +190,7 @@ impl RuntimeWorkspaceWatcher {
       watcher,
       receiver,
       watched_paths: BTreeSet::new(),
+      watched_keys: BTreeSet::new(),
     }
   }
 
@@ -200,7 +216,7 @@ fn desired_watch_paths(
   }
 
   for target in &workspace.config().targets {
-    if let Some(watch) = local_workspace_target_watch(&workspace.config().root, &target.specifier) {
+    for watch in local_workspace_target_watches(&workspace.config().root, &target.specifier) {
       paths.insert(watch);
     }
   }
@@ -230,19 +246,26 @@ fn local_workspace_target_watch(
   root: &Path,
   specifier: &str,
 ) -> Option<RuntimeWorkspaceWatchedPath> {
+  local_workspace_target_watches(root, specifier).into_iter().next()
+}
+
+fn local_workspace_target_watches(
+  root: &Path,
+  specifier: &str,
+) -> Vec<RuntimeWorkspaceWatchedPath> {
   if specifier.contains("://") {
-    return None;
+    return Vec::new();
   }
   let path = PathBuf::from(specifier);
   let joined = if path.is_absolute() { path.clone() } else { root.join(&path) };
   if joined.exists() && joined.is_dir() {
-    let path = joined.canonicalize().ok()?;
-    return Some(RuntimeWorkspaceWatchedPath {
+    let Some(path) = joined.canonicalize().ok() else { return Vec::new(); };
+    return vec![RuntimeWorkspaceWatchedPath {
       watch_path: path.clone(),
       authorized_path: path,
       filter_paths: Vec::new(),
       recursive: false,
-    });
+    }];
   }
   let filter_path = if joined.is_absolute() {
     joined.clone()
@@ -250,23 +273,42 @@ fn local_workspace_target_watch(
     root.join(&path)
   };
   let authorized_path = if joined.exists() {
-    joined.canonicalize().ok()?
+    let Some(canonical) = joined.canonicalize().ok() else { return Vec::new(); };
+    canonical
   } else {
     filter_path.clone()
   };
-  let parent = filter_path.parent()?.canonicalize().ok()?;
+  let Some(parent) = filter_path.parent().and_then(|parent| parent.canonicalize().ok()) else {
+    return Vec::new();
+  };
   let mut filter_paths = vec![filter_path.clone()];
-  if let Ok(canonical) = filter_path.canonicalize() {
-    if canonical != filter_path {
-      filter_paths.push(canonical);
+  let canonical_target = filter_path.canonicalize().ok();
+  if let Some(canonical) = &canonical_target {
+    if canonical != &filter_path {
+      filter_paths.push(canonical.clone());
     }
   }
-  Some(RuntimeWorkspaceWatchedPath {
+  let mut watches = vec![RuntimeWorkspaceWatchedPath {
     watch_path: parent,
-    authorized_path,
+    authorized_path: authorized_path.clone(),
     filter_paths,
     recursive: false,
-  })
+  }];
+
+  if let Some(canonical) = canonical_target {
+    if let Some(canonical_parent) = canonical.parent().and_then(|parent| parent.canonicalize().ok()) {
+      if canonical_parent != watches[0].watch_path {
+        watches.push(RuntimeWorkspaceWatchedPath {
+          watch_path: canonical_parent,
+          authorized_path,
+          filter_paths: vec![canonical],
+          recursive: false,
+        });
+      }
+    }
+  }
+
+  watches
 }
 
 fn normalize_watch_event_path(path: &Path) -> PathBuf {
@@ -497,6 +539,71 @@ mod tests {
     assert!(watch.filter_paths.contains(&link));
     assert!(event_allowed_by_watches(&reconciled, &link));
     assert!(!event_allowed_by_watches(&reconciled, &sibling));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn symlink_target_outside_link_dir_watches_link_and_target_parents() {
+    use std::os::unix::fs::symlink;
+    let root = std::env::temp_dir().join(format!("mech-watch-symlink-outside-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    let link_dir = root.join("links");
+    let shared_dir = root.join("shared");
+    std::fs::create_dir_all(&link_dir).unwrap();
+    std::fs::create_dir_all(&shared_dir).unwrap();
+    let real = shared_dir.join("real.mec");
+    let link = link_dir.join("link.mec");
+    let link_sibling = link_dir.join("sibling.mec");
+    let target_sibling = shared_dir.join("sibling.mec");
+    std::fs::write(&real, "x := 1").unwrap();
+    std::fs::write(&link_sibling, "y := 2").unwrap();
+    std::fs::write(&target_sibling, "z := 3").unwrap();
+    symlink(&real, &link).unwrap();
+
+    let watches = local_workspace_target_watches(&root, "links/link.mec");
+    let link_parent = link_dir.canonicalize().unwrap();
+    let target_parent = shared_dir.canonicalize().unwrap();
+    assert!(watches.iter().any(|watch| watch.watch_path == link_parent && watch.filter_paths.contains(&link)));
+    assert!(watches.iter().any(|watch| watch.watch_path == target_parent && watch.filter_paths.contains(&real.canonicalize().unwrap())));
+    let watch_set = watches.into_iter().collect::<BTreeSet<_>>();
+    assert!(event_allowed_by_watches(&watch_set, &link));
+    assert!(event_allowed_by_watches(&watch_set, &real));
+    assert!(!event_allowed_by_watches(&watch_set, &link_sibling));
+    assert!(!event_allowed_by_watches(&watch_set, &target_sibling));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn symlink_target_same_parent_uses_single_watch_with_both_filters() {
+    use std::os::unix::fs::symlink;
+    let root = std::env::temp_dir().join(format!("mech-watch-symlink-same-parent-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    std::fs::create_dir_all(&root).unwrap();
+    let real = root.join("real.mec");
+    let link = root.join("link.mec");
+    std::fs::write(&real, "x := 1").unwrap();
+    symlink(&real, &link).unwrap();
+
+    let watches = local_workspace_target_watches(&root, "link.mec");
+    assert_eq!(watches.len(), 1);
+    assert!(watches[0].filter_paths.contains(&link));
+    assert!(watches[0].filter_paths.contains(&real.canonicalize().unwrap()));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn shared_parent_watch_keys_collapse_multiple_file_filters() {
+    let root = std::env::temp_dir().join(format!("mech-watch-shared-parent-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(root.join("a.mec"), "a := 1").unwrap();
+    std::fs::write(root.join("b.mec"), "b := 2").unwrap();
+    let mut watches = BTreeSet::new();
+    watches.extend(local_workspace_target_watches(&root, "a.mec"));
+    watches.extend(local_workspace_target_watches(&root, "b.mec"));
+    let keys = watches.iter().map(watch_key).collect::<BTreeSet<_>>();
+    assert_eq!(watches.len(), 2);
+    assert_eq!(keys.len(), 1);
+    assert_eq!(keys.iter().next().unwrap().path, root.canonicalize().unwrap());
     std::fs::remove_dir_all(root).unwrap();
   }
 
