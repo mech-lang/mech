@@ -593,6 +593,53 @@ pub fn subscript_formula_ix(
     }
 }
 
+#[cfg(feature = "subscript_formula")]
+fn subscript_formula_is_mutable_symbol(
+    sbscrpt: &Subscript,
+    env: Option<&Environment>,
+    p: &Interpreter,
+) -> bool {
+    if env.is_some() {
+        return false;
+    }
+    let Subscript::Formula(fctr) = sbscrpt else {
+        return false;
+    };
+    let Factor::Expression(expr) = fctr else {
+        return false;
+    };
+    let Expression::Var(var) = expr.as_ref() else {
+        return false;
+    };
+    let id = addressed_identifier_hash(&var.name, &var.context);
+    let state_brrw = p.state.borrow();
+    let symbols_brrw = state_brrw.symbol_table.borrow();
+    symbols_brrw.get_mutable(id).is_some()
+}
+
+#[cfg(feature = "subscript_formula")]
+fn mutable_reference_is_mutable_symbol(reference: &MutableReference, p: &Interpreter) -> bool {
+    let state_brrw = p.state.borrow();
+    let symbols_brrw = state_brrw.symbol_table.borrow();
+    symbols_brrw
+        .mutable_variables
+        .values()
+        .any(|symbol| std::rc::Rc::ptr_eq(&symbol.0, &reference.0))
+}
+
+#[cfg(feature = "subscript_formula")]
+fn string_access_source_argument(value: &Value, p: &Interpreter) -> Value {
+    match value {
+        Value::MutableReference(reference)
+            if matches!(value.deref_kind(), ValueKind::String)
+                && !mutable_reference_is_mutable_symbol(reference, p) =>
+        {
+            reference.borrow().clone()
+        }
+        _ => value.clone(),
+    }
+}
+
 #[cfg(feature = "subscript_range")]
 pub fn subscript_range(
     sbscrpt: &Subscript,
@@ -722,14 +769,18 @@ pub fn subscript(
         }
         #[cfg(feature = "subscript_slice")]
         Subscript::Bracket(subs) => {
-            let mut fxn_input = vec![val.clone()];
+            let mut fxn_input = if matches!(val.deref_kind(), ValueKind::String) {
+                vec![string_access_source_argument(val, p)]
+            } else {
+                vec![val.clone()]
+            };
             match &subs[..] {
                 #[cfg(feature = "subscript_formula")]
                 [Subscript::Formula(ix)] => {
                     let raw_index = subscript_formula(&subs[0], env, p)?;
                     let index_arg = if matches!(val.deref_kind(), ValueKind::String) {
                         match &raw_index {
-                            Value::MutableReference(r) => {
+                            Value::MutableReference(r) if subscript_formula_is_mutable_symbol(&subs[0], env, p) => {
                                 r.borrow().as_index()?;
                                 raw_index
                             }

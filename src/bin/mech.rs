@@ -409,7 +409,7 @@ fn format_output_file_for_target(
   } else {
     output_path.join(&target.relative_path)
   };
-  if html {
+  if html && !is_output_file {
     path = path.with_extension("html");
   }
   path
@@ -1836,6 +1836,9 @@ mod format_collection_tests {
     assert_eq!(format_output_file_for_target(target, Path::new("out"), false, false, false), PathBuf::from("out/main.mec"));
     assert_eq!(format_output_file_for_target(target, Path::new("out"), false, false, true), PathBuf::from("out/main.html"));
     assert_eq!(format_output_file_for_target(target, Path::new("single.mec"), true, false, false), PathBuf::from("single.mec"));
+    assert_eq!(format_output_file_for_target(target, Path::new("page.htm"), true, false, true), PathBuf::from("page.htm"));
+    assert_eq!(format_output_file_for_target(target, Path::new("page.html"), true, false, true), PathBuf::from("page.html"));
+    assert_eq!(format_output_file_for_target(target, Path::new("page.custom"), true, false, true), PathBuf::from("page.custom"));
     std::fs::remove_dir_all(root).unwrap();
   }
 

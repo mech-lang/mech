@@ -165,6 +165,13 @@ fn bytecode_static_bound_string_access_compiles() {
 }
 
 #[test]
+fn bytecode_literal_string_immutable_index_symbol_compiles() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_literal_string_immutable_index_symbol_compiles".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string("s := \"abc\"\ni := 1\nfirst := s[i]\n").unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+#[test]
 fn bytecode_live_direct_string_access_rejects_stale_constant_compile() {
   let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_live_direct_string_access_rejects_stale_constant_compile".to_string(), environment: MechProgramEnvironment::default() });
   prgrm.run_string("~p := \"a\"\ns := p + \"bc\"\nch := s[1]\n").unwrap();

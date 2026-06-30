@@ -373,24 +373,42 @@ fn preserve_existing_watch_authorizations(
   current: &BTreeSet<RuntimeWorkspaceWatchedPath>,
   desired: BTreeSet<RuntimeWorkspaceWatchedPath>,
 ) -> BTreeSet<RuntimeWorkspaceWatchedPath> {
-  desired
-    .into_iter()
-    .map(|mut watch| {
-      if let Some(existing) = current.iter().find(|existing| watch_filter_matches(existing, &watch)) {
-        if can_preserve_watch_authorization(existing, &watch) {
-          watch.authorized_path = existing.authorized_path.clone();
-          for path in &existing.filter_paths {
-            if !watch.filter_paths.contains(path) {
-              watch.filter_paths.push(path.clone());
-            }
+  let mut result = BTreeSet::new();
+  for mut watch in desired {
+    if let Some(existing) = current.iter().find(|existing| watch_filter_matches(existing, &watch)) {
+      if can_preserve_watch_authorization(existing, &watch) {
+        watch.authorized_path = existing.authorized_path.clone();
+        for path in &existing.filter_paths {
+          if !watch.filter_paths.contains(path) {
+            watch.filter_paths.push(path.clone());
           }
-          watch.filter_paths.sort();
-          watch.filter_paths.dedup();
         }
+        watch.filter_paths.sort();
+        watch.filter_paths.dedup();
       }
-      watch
+    }
+    result.insert(watch);
+  }
+  for existing in current {
+    if should_preserve_missing_external_target_watch(existing, &result) {
+      result.insert(existing.clone());
+    }
+  }
+  result
+}
+
+fn should_preserve_missing_external_target_watch(
+  existing: &RuntimeWorkspaceWatchedPath,
+  desired: &BTreeSet<RuntimeWorkspaceWatchedPath>,
+) -> bool {
+  !existing.filter_paths.is_empty()
+    && !existing.authorized_path.exists()
+    && !desired.iter().any(|watch| watch_filter_matches(existing, watch))
+    && desired.iter().any(|watch| {
+      !watch.filter_paths.is_empty()
+        && watch.authorized_path == existing.authorized_path
+        && watch.watch_path != existing.watch_path
     })
-    .collect()
 }
 
 fn watch_events_from_notify_event(event: Event) -> Vec<RuntimeWorkspaceWatchEvent> {
@@ -399,7 +417,7 @@ fn watch_events_from_notify_event(event: Event) -> Vec<RuntimeWorkspaceWatchEven
   event
     .paths
     .into_iter()
-    .filter(|path| path.is_file() || !path.exists())
+    .filter(|path| path.is_file() || path.is_dir() || !path.exists())
     .map(|path| RuntimeWorkspaceWatchEvent {
       path,
       kind: kind.clone(),
@@ -639,6 +657,86 @@ mod tests {
 
   #[cfg(unix)]
   #[test]
+  fn external_symlink_target_parent_watch_survives_missing_target() {
+    use std::os::unix::fs::symlink;
+    let root = std::env::temp_dir().join(format!("mech-watch-external-missing-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    let link_dir = root.join("links");
+    let shared_dir = root.join("shared");
+    std::fs::create_dir_all(&link_dir).unwrap();
+    std::fs::create_dir_all(&shared_dir).unwrap();
+    let real = shared_dir.join("real.mec");
+    let link = link_dir.join("link.mec");
+    let sibling = shared_dir.join("sibling.mec");
+    std::fs::write(&real, "x := 1").unwrap();
+    std::fs::write(&sibling, "y := 2").unwrap();
+    symlink(&real, &link).unwrap();
+
+    let current = local_workspace_target_watches(&root, "links/link.mec")
+      .into_iter()
+      .collect::<BTreeSet<_>>();
+    let canonical_real = real.canonicalize().unwrap();
+    let shared_parent = shared_dir.canonicalize().unwrap();
+    assert!(current.iter().any(|watch| watch.watch_path == shared_parent));
+
+    std::fs::remove_file(&real).unwrap();
+    let desired = local_workspace_target_watches(&root, "links/link.mec")
+      .into_iter()
+      .collect::<BTreeSet<_>>();
+    let reconciled = preserve_existing_watch_authorizations(&current, desired);
+
+    assert!(reconciled.iter().any(|watch| watch.watch_path == shared_parent && watch.authorized_path == canonical_real));
+    assert!(reconciled.iter().any(|watch| watch.filter_paths.contains(&link)));
+    assert!(!event_allowed_by_watches(&reconciled, &sibling));
+
+    std::fs::write(&real, "x := 2").unwrap();
+    let event = Event {
+      kind: EventKind::Create(notify::event::CreateKind::File),
+      paths: vec![real.clone()],
+      attrs: Default::default(),
+    };
+    let converted = watch_events_from_notify_event(event);
+    assert_eq!(converted.len(), 1);
+    assert!(event_allowed_by_watches(&reconciled, &real));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn external_symlink_target_parent_watch_not_preserved_after_retarget() {
+    use std::os::unix::fs::symlink;
+    let root = std::env::temp_dir().join(format!("mech-watch-external-retarget-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    let link_dir = root.join("links");
+    let shared_dir = root.join("shared");
+    std::fs::create_dir_all(&link_dir).unwrap();
+    std::fs::create_dir_all(&shared_dir).unwrap();
+    let real = shared_dir.join("real.mec");
+    let other = shared_dir.join("other.mec");
+    let link = link_dir.join("link.mec");
+    std::fs::write(&real, "x := 1").unwrap();
+    std::fs::write(&other, "x := 2").unwrap();
+    symlink(&real, &link).unwrap();
+
+    let current = local_workspace_target_watches(&root, "links/link.mec")
+      .into_iter()
+      .collect::<BTreeSet<_>>();
+    let canonical_real = real.canonicalize().unwrap();
+    let canonical_other = other.canonicalize().unwrap();
+
+    std::fs::remove_file(&link).unwrap();
+    symlink(&other, &link).unwrap();
+    let desired = local_workspace_target_watches(&root, "links/link.mec")
+      .into_iter()
+      .collect::<BTreeSet<_>>();
+    let reconciled = preserve_existing_watch_authorizations(&current, desired);
+
+    assert!(reconciled.iter().any(|watch| watch.authorized_path == canonical_other));
+    assert!(!reconciled.iter().any(|watch| watch.authorized_path == canonical_real));
+    assert!(!reconciled.iter().any(|watch| watch.filter_paths.contains(&canonical_real)));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
   fn symlink_target_same_parent_uses_single_watch_with_both_filters() {
     use std::os::unix::fs::symlink;
     let root = std::env::temp_dir().join(format!("mech-watch-symlink-same-parent-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
@@ -755,6 +853,34 @@ mod tests {
       event.path == PathBuf::from("src/readme.txt")
         && event.kind == RuntimeWorkspaceWatchEventKind::Modified
     }));
+  }
+
+  #[test]
+  fn watch_events_from_notify_event_keeps_existing_directory_paths() {
+    let root = std::env::temp_dir().join(format!("mech-watch-directory-convert-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    let app = root.join("app");
+    let sibling = root.join("sibling");
+    std::fs::create_dir_all(&app).unwrap();
+    std::fs::create_dir_all(&sibling).unwrap();
+    let event = Event {
+      kind: EventKind::Create(notify::event::CreateKind::Folder),
+      paths: vec![app.clone()],
+      attrs: Default::default(),
+    };
+    let events = watch_events_from_notify_event(event);
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].path, app);
+
+    let watch = RuntimeWorkspaceWatchedPath {
+      watch_path: root.canonicalize().unwrap(),
+      authorized_path: app.clone(),
+      filter_paths: vec![app.clone()],
+      recursive: false,
+    };
+    let watches = [watch].into_iter().collect::<BTreeSet<_>>();
+    assert!(event_allowed_by_watches(&watches, &app));
+    assert!(!event_allowed_by_watches(&watches, &sibling));
+    std::fs::remove_dir_all(root).unwrap();
   }
 
   #[test]
