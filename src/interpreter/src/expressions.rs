@@ -593,6 +593,67 @@ pub fn subscript_formula_ix(
     }
 }
 
+
+thread_local! {
+    static STRING_ACCESS_LIVE_VALUES: std::cell::RefCell<std::collections::BTreeSet<usize>> = std::cell::RefCell::new(std::collections::BTreeSet::new());
+    static CURRENT_STRING_ACCESS_EXPRESSION_LIVE: std::cell::RefCell<bool> = std::cell::RefCell::new(false);
+}
+
+#[cfg(feature = "subscript_formula")]
+pub(crate) fn reset_current_string_access_expression_live() {
+    CURRENT_STRING_ACCESS_EXPRESSION_LIVE.with(|live| *live.borrow_mut() = false);
+}
+
+#[cfg(feature = "subscript_formula")]
+pub(crate) fn take_current_string_access_expression_live() -> bool {
+    CURRENT_STRING_ACCESS_EXPRESSION_LIVE.with(|live| {
+        let value = *live.borrow();
+        *live.borrow_mut() = false;
+        value
+    })
+}
+
+#[cfg(feature = "subscript_formula")]
+fn mark_current_string_access_expression_live() {
+    CURRENT_STRING_ACCESS_EXPRESSION_LIVE.with(|live| *live.borrow_mut() = true);
+}
+
+#[cfg(feature = "subscript_formula")]
+fn string_access_scalar_addr(value: &Value) -> Option<usize> {
+    match value {
+        Value::MutableReference(reference) => string_access_scalar_addr(&reference.borrow()),
+        Value::String(value) => Some(value.addr()),
+        Value::Index(value) => Some(value.addr()),
+        #[cfg(feature = "f64")]
+        Value::F64(value) => Some(value.addr()),
+        #[cfg(feature = "u64")]
+        Value::U64(value) => Some(value.addr()),
+        #[cfg(feature = "u32")]
+        Value::U32(value) => Some(value.addr()),
+        #[cfg(feature = "i64")]
+        Value::I64(value) => Some(value.addr()),
+        #[cfg(feature = "i32")]
+        Value::I32(value) => Some(value.addr()),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "subscript_formula")]
+pub(crate) fn mark_string_access_value_live(value: &Value) {
+    if let Some(addr) = string_access_scalar_addr(value) {
+        STRING_ACCESS_LIVE_VALUES.with(|values| {
+            values.borrow_mut().insert(addr);
+        });
+    }
+}
+
+#[cfg(feature = "subscript_formula")]
+fn string_access_value_is_marked_live(value: &Value) -> bool {
+    string_access_scalar_addr(value)
+        .map(|addr| STRING_ACCESS_LIVE_VALUES.with(|values| values.borrow().contains(&addr)))
+        .unwrap_or(false)
+}
+
 #[cfg(feature = "subscript_formula")]
 fn subscript_formula_is_mutable_symbol(
     sbscrpt: &Subscript,
@@ -647,45 +708,14 @@ fn values_share_scalar_storage(a: &Value, b: &Value) -> bool {
 }
 
 #[cfg(feature = "subscript_formula")]
-fn mutable_reference_is_plan_output(reference: &MutableReference, p: &Interpreter) -> bool {
-    {
-        let state_brrw = p.state.borrow();
-        let symbols_brrw = state_brrw.symbol_table.borrow();
-        if symbols_brrw.mutable_variables.is_empty() {
-            return false;
-        }
-    }
-
+fn mutable_reference_is_live_plan_output(reference: &MutableReference) -> bool {
     let current = reference.borrow();
-    p.plan()
-        .borrow()
-        .iter()
-        .any(|fxn| values_share_scalar_storage(&fxn.out(), &current))
-}
-
-
-#[cfg(feature = "subscript_formula")]
-fn value_is_plan_output(value: &Value, p: &Interpreter) -> bool {
-    p.plan()
-        .borrow()
-        .iter()
-        .any(|fxn| values_share_scalar_storage(&fxn.out(), value))
+    string_access_value_is_marked_live(&current)
 }
 
 #[cfg(feature = "subscript_formula")]
-fn string_access_argument_is_live(value: &Value, p: &Interpreter) -> bool {
-    {
-        let state_brrw = p.state.borrow();
-        let symbols_brrw = state_brrw.symbol_table.borrow();
-        if symbols_brrw.mutable_variables.is_empty() {
-            return false;
-        }
-    }
-
-    match value {
-        Value::MutableReference(reference) => mutable_reference_is_plan_output(reference, p),
-        _ => value_is_plan_output(value, p),
-    }
+fn string_access_argument_is_live(value: &Value, _p: &Interpreter) -> bool {
+    string_access_value_is_marked_live(value)
 }
 
 #[cfg(feature = "subscript_formula")]
@@ -694,7 +724,7 @@ fn string_access_source_argument(value: &Value, p: &Interpreter) -> Value {
         Value::MutableReference(reference)
             if matches!(value.deref_kind(), ValueKind::String)
                 && !mutable_reference_is_mutable_symbol(reference, p)
-                && !mutable_reference_is_plan_output(reference, p) =>
+                && !mutable_reference_is_live_plan_output(reference) =>
         {
             reference.borrow().clone()
         }
@@ -712,7 +742,7 @@ fn string_access_index_argument(
     match &raw_index {
         Value::MutableReference(reference)
             if subscript_formula_is_mutable_symbol(sbscrpt, env, p)
-                || mutable_reference_is_plan_output(reference, p) =>
+                || mutable_reference_is_live_plan_output(reference) =>
         {
             reference.borrow().as_index()?;
             Ok(raw_index)
@@ -1080,6 +1110,13 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
 
     let id = addressed_identifier_hash(&v.name, &v.context);
     let name = addressed_identifier_name(&v.name, &v.context);
+    let mark_if_live_symbol = |value: &MutableReference| {
+        let state_brrw = p.state.borrow();
+        let symbols_brrw = state_brrw.symbol_table.borrow();
+        if symbols_brrw.get_mutable(id).is_some() || string_access_value_is_marked_live(&value.borrow()) {
+            mark_current_string_access_expression_live();
+        }
+    };
     match env {
         Some(env) => match env.get(&id) {
             Some(value) => maybe_cast_to_kind(value.clone()),
@@ -1090,7 +1127,10 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
                 drop(symbols_brrw);
                 drop(state_brrw);
                 match symbol_value {
-                    Some(value) => maybe_cast_to_kind(Value::MutableReference(value)),
+                    Some(value) => {
+                        mark_if_live_symbol(&value);
+                        maybe_cast_to_kind(Value::MutableReference(value))
+                    },
                     None => Err(MechError::new(UndefinedVariableError { id, name: name.clone() }, None)
                         .with_compiler_loc()
                         .with_tokens(v.tokens())),
@@ -1104,7 +1144,10 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
             drop(symbols_brrw);
             drop(state_brrw);
             match symbol_value {
-                Some(value) => maybe_cast_to_kind(Value::MutableReference(value)),
+                Some(value) => {
+                    mark_if_live_symbol(&value);
+                    maybe_cast_to_kind(Value::MutableReference(value))
+                },
                 None => Err(MechError::new(UndefinedVariableError { id, name: name.clone() }, None)
                     .with_compiler_loc()
                     .with_tokens(v.tokens())),

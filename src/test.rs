@@ -20,7 +20,7 @@ fn collect_test_targets(path: &Path) -> io::Result<Vec<PathBuf>> {
       files.extend(collect_test_targets(&entry_path)?);
     } else if matches!(
       entry_path.extension().and_then(OsStr::to_str),
-      Some("mec" | "🤖" | "mecb")
+      Some("mec" | "🤖")
     ) {
       files.push(entry_path);
     }
@@ -457,22 +457,45 @@ mod tests {
   }
 
   #[test]
-  fn mech_test_rejects_collected_mecb_input() {
-    let root = std::env::temp_dir().join(format!("mech-test-bytecode-collected-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+  fn test_directory_discovery_skips_mecb_artifacts() {
+    let root = std::env::temp_dir().join(format!("mech-test-bytecode-skip-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
     std::fs::create_dir_all(&root).unwrap();
-    std::fs::write(root.join("compiled.mecb"), b"not valid bytecode").unwrap();
+    let source = root.join("main.mec");
+    let bytecode = root.join("output.mecb");
+    std::fs::write(&source, "x := 1").unwrap();
+    std::fs::write(&bytecode, b"not valid bytecode").unwrap();
 
-    let exit_code = run_mech_tests(
-      vec![root.display().to_string()],
-      false,
-      false,
-      false,
-      false,
-      None,
-      false,
-    ).unwrap();
+    let targets = collect_test_targets(&root).unwrap();
 
-    assert_eq!(exit_code, 1);
+    assert_eq!(targets, vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn test_explicit_mecb_input_is_still_collected_for_rejection() {
+    let root = std::env::temp_dir().join(format!("mech-test-bytecode-explicit-collect-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    std::fs::create_dir_all(&root).unwrap();
+    let bytecode = root.join("compiled.mecb");
+    std::fs::write(&bytecode, b"not valid bytecode").unwrap();
+
+    let targets = collect_test_targets(&bytecode).unwrap();
+
+    assert_eq!(targets, vec![bytecode]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn test_directory_with_source_and_output_mecb_passes_collection() {
+    let root = std::env::temp_dir().join(format!("mech-test-bytecode-source-plus-output-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    std::fs::create_dir_all(&root).unwrap();
+    let source = root.join("main.mec");
+    std::fs::write(&source, "# ok := true
+").unwrap();
+    std::fs::write(root.join("output.mecb"), b"not valid bytecode").unwrap();
+
+    let targets = collect_test_targets(&root).unwrap();
+
+    assert_eq!(targets, vec![source]);
     std::fs::remove_dir_all(root).unwrap();
   }
 }

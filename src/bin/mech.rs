@@ -45,6 +45,38 @@ const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
 // Keep in sync with read_runtime_source_file_with_capabilities.
 const RUN_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb", "mdoc", "mpkg", "m", "csv", "js"];
 
+
+#[cfg(feature = "build")]
+fn is_bytecode_source_path(path: &str) -> bool {
+  Path::new(path)
+    .extension()
+    .and_then(|extension| extension.to_str())
+    .map(|extension| extension.eq_ignore_ascii_case("mecb"))
+    .unwrap_or(false)
+}
+
+#[cfg(feature = "build")]
+fn validate_build_bytecode_inputs(paths: &[String]) -> MResult<usize> {
+  let bytecode_count = paths.iter().filter(|path| is_bytecode_source_path(path)).count();
+  if bytecode_count > 0 && bytecode_count != paths.len() {
+    return Err(MechError::new(
+      GenericError {
+        msg: "Cannot mix bytecode (.mecb) inputs with source inputs in `mech build`; build bytecode inputs separately or rebuild from source.".to_string(),
+      },
+      None,
+    ).with_compiler_loc());
+  }
+  if bytecode_count > 1 {
+    return Err(MechError::new(
+      GenericError {
+        msg: "Cannot combine multiple bytecode (.mecb) inputs in one `mech build` invocation.".to_string(),
+      },
+      None,
+    ).with_compiler_loc());
+  }
+  Ok(bytecode_count)
+}
+
 #[cfg(any(feature = "formatter", feature = "run"))]
 fn source_extension(path: &Path) -> Option<String> {
   path.extension().and_then(|e| e.to_str()).map(|e| e.to_ascii_lowercase())
@@ -248,7 +280,7 @@ fn collect_format_targets(path: &Path, output_exclusion: Option<&Path>, html: bo
     if !extension_allowed(path, FORMAT_EXTENSIONS) {
       return Err(unsupported_source_path_error(path, FORMAT_EXTENSIONS));
     }
-    let default_output_path = explicit_file_relative_path(path)?;
+    let default_output_path = path.to_path_buf();
     let relative_path = safe_output_relative_path(path)?;
     return Ok(vec![CollectedSourceTarget {
       input_root: path.parent().unwrap_or_else(|| Path::new("")).to_path_buf(),
@@ -977,28 +1009,38 @@ async fn main() -> Result<(), MechError> {
       }
     }
 
-    let uuid = generate_uuid();
-    let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
-    let _ = tree_flag;
-    let _ = trace_flag;
-    program.configure(debug_flag, trace_flag, time_flag, rounds_per_step);
-    for path in mech_paths {
-      let source = mech_runtime::read_runtime_source_file(Path::new(&path))?;
-      let _ = program.run_source(&source)?;
-    }
+    let bytecode_count = validate_build_bytecode_inputs(&mech_paths)?;
+    let bytecode = if bytecode_count == 1 {
+      match mech_runtime::read_runtime_source_file(Path::new(&mech_paths[0]))? {
+        MechSourceCode::ByteCode(bytecode) => bytecode,
+        _ => unreachable!("bytecode input should load as MechSourceCode::ByteCode"),
+      }
+    } else {
+      let uuid = generate_uuid();
+      let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
+      let _ = tree_flag;
+      let _ = trace_flag;
+      program.configure(debug_flag, trace_flag, time_flag, rounds_per_step);
+      for path in mech_paths {
+        let source = mech_runtime::read_runtime_source_file(Path::new(&path))?;
+        let _ = program.run_source(&source)?;
+      }
 
-    let bytecode = program.interpreter_mut().compile()?;
+      let bytecode = program.interpreter_mut().compile()?;
 
-    let mut output_file = output_path.join("output.mecb");
+      // print debug info for the context
+      if debug_flag {
+        println!("{} Bytecode Size: {:#?} bytes", "[Debug]".truecolor(246,192,78), &program.interpreter().context);
+      }
+
+      bytecode
+    };
+
+    let output_file = output_path.join("output.mecb");
 
     let mut f = std::fs::File::create(&output_file)?;
     f.write_all(&bytecode)?;
     f.flush()?;
-
-    // print debug info for the context
-    if debug_flag {
-      println!("{} Bytecode Size: {:#?} bytes", "[Debug]".truecolor(246,192,78), &program.interpreter().context);
-    }
 
     println!("{} Mech bytecode written to: {}", "[Output]".truecolor(153,221,85), output_file.display());
 
@@ -1775,6 +1817,49 @@ mod filesystem_capability_cli_tests {
     }
 }
 
+#[cfg(all(test, feature = "build"))]
+mod build_input_tests {
+  use super::*;
+
+  fn paths(values: &[&str]) -> Vec<String> {
+    values.iter().map(|value| value.to_string()).collect()
+  }
+
+  #[test]
+  fn build_rejects_mixed_source_then_bytecode() {
+    let error = validate_build_bytecode_inputs(&paths(&["old.mec", "compiled.mecb"]))
+      .unwrap_err()
+      .full_chain_message();
+    assert!(error.contains("Cannot mix bytecode"));
+  }
+
+  #[test]
+  fn build_rejects_bytecode_then_source() {
+    let error = validate_build_bytecode_inputs(&paths(&["compiled.mecb", "next.mec"]))
+      .unwrap_err()
+      .full_chain_message();
+    assert!(error.contains("Cannot mix bytecode"));
+  }
+
+  #[test]
+  fn build_rejects_multiple_bytecode_inputs() {
+    let error = validate_build_bytecode_inputs(&paths(&["a.mecb", "b.mecb"]))
+      .unwrap_err()
+      .full_chain_message();
+    assert!(error.contains("Cannot combine multiple bytecode"));
+  }
+
+  #[test]
+  fn build_single_bytecode_input_is_allowed_for_clean_copy() {
+    assert_eq!(validate_build_bytecode_inputs(&paths(&["compiled.mecb"])).unwrap(), 1);
+  }
+
+  #[test]
+  fn build_multiple_source_inputs_still_work() {
+    assert_eq!(validate_build_bytecode_inputs(&paths(&["a.mec", "b.mec"])).unwrap(), 0);
+  }
+}
+
 #[cfg(all(test, feature = "formatter"))]
 mod format_collection_tests {
   use super::*;
@@ -2187,6 +2272,73 @@ mod format_collection_tests {
     assert!(error.contains("Unsupported source extension"), "got {error}");
     std::fs::remove_dir_all(root).unwrap();
   }
+  #[test]
+  fn format_explicit_absolute_file_default_updates_absolute_path() {
+    let root = temp_root("absolute-default");
+    let file = root.join("main.mec");
+    std::fs::write(&file, "x := 1").unwrap();
+    let targets = collect_format_targets(&file, None, false, true).unwrap();
+
+    let output = format_output_file_for_target(&targets[0], Path::new("."), false, true, false);
+
+    assert_eq!(output, file);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_explicit_absolute_file_out_dot_updates_absolute_path() {
+    let root = temp_root("absolute-dot");
+    let file = root.join("main.mec");
+    std::fs::write(&file, "x := 1").unwrap();
+    let targets = collect_format_targets(&file, None, false, true).unwrap();
+
+    let output = format_output_file_for_target(&targets[0], Path::new("."), false, true, false);
+
+    assert_eq!(output, file);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_explicit_absolute_file_out_directory_stays_inside_out() {
+    let root = temp_root("absolute-out");
+    let file = root.join("main.mec");
+    std::fs::write(&file, "x := 1").unwrap();
+    let targets = collect_format_targets(&file, None, false, false).unwrap();
+
+    let output = format_output_file_for_target(&targets[0], Path::new("formatted"), false, false, false);
+
+    assert_eq!(output, PathBuf::from("formatted").join("main.mec"));
+    assert!(!output.components().any(|component| matches!(component, std::path::Component::ParentDir | std::path::Component::RootDir | std::path::Component::Prefix(_))));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_explicit_absolute_file_html_default_writes_absolute_html_sibling() {
+    let root = temp_root("absolute-html-default");
+    let file = root.join("main.mec");
+    std::fs::write(&file, "x := 1").unwrap();
+    let targets = collect_format_targets(&file, None, true, true).unwrap();
+
+    let output = format_output_file_for_target(&targets[0], Path::new("."), false, true, true);
+
+    assert_eq!(output, root.join("main.html"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_explicit_absolute_file_html_out_directory_stays_inside_out() {
+    let root = temp_root("absolute-html-out");
+    let file = root.join("main.mec");
+    std::fs::write(&file, "x := 1").unwrap();
+    let targets = collect_format_targets(&file, None, true, false).unwrap();
+
+    let output = format_output_file_for_target(&targets[0], Path::new("formatted"), false, false, true);
+
+    assert_eq!(output, PathBuf::from("formatted").join("main.html"));
+    assert!(!output.components().any(|component| matches!(component, std::path::Component::ParentDir | std::path::Component::RootDir | std::path::Component::Prefix(_))));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
 }
 
 #[cfg(all(test, feature = "run"))]
