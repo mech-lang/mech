@@ -620,18 +620,37 @@ fn mark_current_string_access_expression_live(p: &Interpreter) {
 fn string_access_scalar_addr(value: &Value) -> Option<usize> {
     match value {
         Value::MutableReference(reference) => string_access_scalar_addr(&reference.borrow()),
+        Value::Typed(value, _) => string_access_scalar_addr(value),
         Value::String(value) => Some(value.addr()),
         Value::Index(value) => Some(value.addr()),
-        #[cfg(feature = "f64")]
-        Value::F64(value) => Some(value.addr()),
-        #[cfg(feature = "u64")]
-        Value::U64(value) => Some(value.addr()),
+
+        #[cfg(feature = "u8")]
+        Value::U8(value) => Some(value.addr()),
+        #[cfg(feature = "u16")]
+        Value::U16(value) => Some(value.addr()),
         #[cfg(feature = "u32")]
         Value::U32(value) => Some(value.addr()),
-        #[cfg(feature = "i64")]
-        Value::I64(value) => Some(value.addr()),
+        #[cfg(feature = "u64")]
+        Value::U64(value) => Some(value.addr()),
+        #[cfg(feature = "u128")]
+        Value::U128(value) => Some(value.addr()),
+
+        #[cfg(feature = "i8")]
+        Value::I8(value) => Some(value.addr()),
+        #[cfg(feature = "i16")]
+        Value::I16(value) => Some(value.addr()),
         #[cfg(feature = "i32")]
         Value::I32(value) => Some(value.addr()),
+        #[cfg(feature = "i64")]
+        Value::I64(value) => Some(value.addr()),
+        #[cfg(feature = "i128")]
+        Value::I128(value) => Some(value.addr()),
+
+        #[cfg(feature = "f32")]
+        Value::F32(value) => Some(value.addr()),
+        #[cfg(feature = "f64")]
+        Value::F64(value) => Some(value.addr()),
+
         _ => None,
     }
 }

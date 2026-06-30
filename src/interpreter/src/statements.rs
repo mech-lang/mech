@@ -8,6 +8,9 @@ use crate::stdlib::define::*;
 // ----------------------------------------------------------------------------
 
 pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+  #[cfg(feature = "subscript_formula")]
+  reset_current_string_access_expression_live(p);
+
   match stmt {
     Statement::ImportDeclaration(_) => Ok(Value::Empty),
     Statement::ExportDeclaration(_) => Ok(Value::Empty),

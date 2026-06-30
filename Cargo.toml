@@ -41,10 +41,10 @@ base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "formatter", "serve", "bundle_web", "run", "test", "repl", "build","whos", "async", "trace",
       "mech-core/base", "mech-program/base", "mech-syntax/base",
       ]
-build = ["compiler"]
+build = ["compiler", "mech-runtime", "mech-runtime/default"]
 repl = []
 run = ["mech-program/program", "cli", "cli_host"]
-test = ["variable_define", "invariant_define", "symbol_table", "bool"]
+test = ["variable_define", "invariant_define", "symbol_table", "bool", "mech-runtime", "mech-runtime/default"]
 cli = []
 project = ["mech-runtime", "mech-runtime/default"]
 cli_host = ["mech-runtime", "mech-runtime/default", "mech-host-cli", "mech-host-cli/provider"]
