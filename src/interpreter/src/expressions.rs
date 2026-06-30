@@ -1104,10 +1104,17 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
     let id = addressed_identifier_hash(&v.name, &v.context);
     let name = addressed_identifier_name(&v.name, &v.context);
     let mark_if_live_symbol = |value: &MutableReference| {
-        let state_brrw = p.state.borrow();
-        let symbols_brrw = state_brrw.symbol_table.borrow();
-        if symbols_brrw.get_mutable(id).is_some() || string_access_value_is_marked_live(p, &value.borrow()) {
-            mark_current_string_access_expression_live(p);
+        #[cfg(feature = "subscript_formula")]
+        {
+            let state_brrw = p.state.borrow();
+            let symbols_brrw = state_brrw.symbol_table.borrow();
+            if symbols_brrw.get_mutable(id).is_some() || string_access_value_is_marked_live(p, &value.borrow()) {
+                mark_current_string_access_expression_live(p);
+            }
+        }
+        #[cfg(not(feature = "subscript_formula"))]
+        {
+            let _ = value;
         }
     };
     match env {
