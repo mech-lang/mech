@@ -200,16 +200,7 @@ fn is_excluded_output_path(path: &Path, output_exclusion: Option<&Path>) -> MRes
 
 #[cfg(feature = "formatter")]
 fn explicit_file_relative_path(path: &Path) -> MResult<PathBuf> {
-  if path.is_relative() {
-    return Ok(path.to_path_buf());
-  }
-
-  let cwd = std::env::current_dir()?;
-  if let Ok(stripped) = path.strip_prefix(&cwd) {
-    return Ok(stripped.to_path_buf());
-  }
-
-  Ok(path.file_name().map(PathBuf::from).unwrap_or_else(|| path.to_path_buf()))
+  Ok(path.to_path_buf())
 }
 
 #[cfg(feature = "formatter")]
@@ -272,6 +263,11 @@ fn read_format_source(path: &Path) -> MResult<MechSourceCode> {
 #[cfg(feature = "formatter")]
 fn skip_directory_format_source(path: &Path, html: bool, writes_in_place: bool) -> bool {
   html && writes_in_place && matches!(source_extension(path).as_deref(), Some("html") | Some("htm"))
+}
+
+#[cfg(feature = "run")]
+fn skip_directory_run_source(path: &Path) -> bool {
+  matches!(source_extension(path).as_deref(), Some("mecb"))
 }
 
 #[cfg(feature = "formatter")]
@@ -373,7 +369,7 @@ fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
         if target_meta.is_dir() {
           continue;
         }
-        if target_meta.is_file() && extension_allowed(&p, RUN_EXTENSIONS) {
+        if target_meta.is_file() && !skip_directory_run_source(&p) && extension_allowed(&p, RUN_EXTENSIONS) {
           out.push(p);
         }
         continue;
@@ -383,7 +379,7 @@ fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
           if SKIP_SOURCE_DIRS.iter().any(|skip| skip == &name) { continue; }
         }
         collect_dir(&p, out, visited)?;
-      } else if extension_allowed(&p, RUN_EXTENSIONS) {
+      } else if !skip_directory_run_source(&p) && extension_allowed(&p, RUN_EXTENSIONS) {
         out.push(p);
       }
     }
@@ -2440,6 +2436,50 @@ mod run_collection_tests {
   }
 
   #[test]
+  fn collect_run_targets_skips_mecb_in_directory() {
+    let root = temp_root("directory-skip-mecb");
+    let source = root.join("main.mec");
+    let bytecode = root.join("output.mecb");
+    std::fs::write(&source, "x := 1").unwrap();
+    std::fs::write(&bytecode, b"bytecode").unwrap();
+
+    let targets = collect_run_targets(&root).unwrap();
+
+    assert_eq!(targets, vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_run_targets_allows_explicit_mecb_file() {
+    let root = temp_root("explicit-mecb");
+    let bytecode = root.join("output.mecb");
+    std::fs::write(&bytecode, b"bytecode").unwrap();
+
+    assert_eq!(collect_run_targets(&bytecode).unwrap(), vec![bytecode]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_run_targets_directory_still_includes_mec_mdoc_mpkg_m_csv_js() {
+    let root = temp_root("directory-run-supported");
+    let expected = vec![
+      root.join("data.csv"),
+      root.join("doc.mdoc"),
+      root.join("main.mec"),
+      root.join("project.mpkg"),
+      root.join("script.js"),
+      root.join("script.m"),
+    ];
+    for path in &expected {
+      std::fs::write(path, "x := 1").unwrap();
+    }
+    std::fs::write(root.join("output.mecb"), b"bytecode").unwrap();
+
+    assert_eq!(collect_run_targets(&root).unwrap(), expected);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
   fn collect_run_targets_still_rejects_unsupported_extension() {
     let root = temp_root("unsupported");
     let source = root.join("notes.txt");
@@ -2460,6 +2500,23 @@ mod run_collection_tests {
 
     let targets = collect_run_targets(&root).unwrap();
     assert_eq!(targets, vec![root.join("linked.mec"), root.join("main.mec")]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn collect_run_targets_skips_symlinked_mecb_in_directory() {
+    use std::os::unix::fs::symlink;
+    let root = temp_root("symlink-mecb");
+    let source = root.join("main.mec");
+    let bytecode = root.join("output.mecb");
+    std::fs::write(&source, "x := 1").unwrap();
+    std::fs::write(&bytecode, b"bytecode").unwrap();
+    symlink(&bytecode, root.join("linked.mecb")).unwrap();
+
+    let targets = collect_run_targets(&root).unwrap();
+
+    assert_eq!(targets, vec![source]);
     std::fs::remove_dir_all(root).unwrap();
   }
 }

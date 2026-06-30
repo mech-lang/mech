@@ -594,28 +594,26 @@ pub fn subscript_formula_ix(
 }
 
 
-thread_local! {
-    static STRING_ACCESS_LIVE_VALUES: std::cell::RefCell<std::collections::BTreeSet<usize>> = std::cell::RefCell::new(std::collections::BTreeSet::new());
-    static CURRENT_STRING_ACCESS_EXPRESSION_LIVE: std::cell::RefCell<bool> = std::cell::RefCell::new(false);
+#[cfg(feature = "subscript_formula")]
+pub(crate) fn reset_current_string_access_expression_live(p: &Interpreter) {
+    *p.current_string_access_expression_live.borrow_mut() = false;
 }
 
 #[cfg(feature = "subscript_formula")]
-pub(crate) fn reset_current_string_access_expression_live() {
-    CURRENT_STRING_ACCESS_EXPRESSION_LIVE.with(|live| *live.borrow_mut() = false);
+fn current_string_access_expression_live(p: &Interpreter) -> bool {
+    *p.current_string_access_expression_live.borrow()
 }
 
 #[cfg(feature = "subscript_formula")]
-pub(crate) fn take_current_string_access_expression_live() -> bool {
-    CURRENT_STRING_ACCESS_EXPRESSION_LIVE.with(|live| {
-        let value = *live.borrow();
-        *live.borrow_mut() = false;
-        value
-    })
+pub(crate) fn take_current_string_access_expression_live(p: &Interpreter) -> bool {
+    let value = *p.current_string_access_expression_live.borrow();
+    *p.current_string_access_expression_live.borrow_mut() = false;
+    value
 }
 
 #[cfg(feature = "subscript_formula")]
-fn mark_current_string_access_expression_live() {
-    CURRENT_STRING_ACCESS_EXPRESSION_LIVE.with(|live| *live.borrow_mut() = true);
+fn mark_current_string_access_expression_live(p: &Interpreter) {
+    *p.current_string_access_expression_live.borrow_mut() = true;
 }
 
 #[cfg(feature = "subscript_formula")]
@@ -639,18 +637,16 @@ fn string_access_scalar_addr(value: &Value) -> Option<usize> {
 }
 
 #[cfg(feature = "subscript_formula")]
-pub(crate) fn mark_string_access_value_live(value: &Value) {
+pub(crate) fn mark_string_access_value_live(p: &Interpreter, value: &Value) {
     if let Some(addr) = string_access_scalar_addr(value) {
-        STRING_ACCESS_LIVE_VALUES.with(|values| {
-            values.borrow_mut().insert(addr);
-        });
+        p.string_access_live_values.borrow_mut().insert(addr);
     }
 }
 
 #[cfg(feature = "subscript_formula")]
-fn string_access_value_is_marked_live(value: &Value) -> bool {
+fn string_access_value_is_marked_live(p: &Interpreter, value: &Value) -> bool {
     string_access_scalar_addr(value)
-        .map(|addr| STRING_ACCESS_LIVE_VALUES.with(|values| values.borrow().contains(&addr)))
+        .map(|addr| p.string_access_live_values.borrow().contains(&addr))
         .unwrap_or(false)
 }
 
@@ -689,33 +685,27 @@ fn mutable_reference_is_mutable_symbol(reference: &MutableReference, p: &Interpr
 }
 
 #[cfg(feature = "subscript_formula")]
-fn values_share_scalar_storage(a: &Value, b: &Value) -> bool {
-    match (a, b) {
-        (Value::String(a), Value::String(b)) => std::rc::Rc::ptr_eq(&a.0, &b.0),
-        (Value::Index(a), Value::Index(b)) => std::rc::Rc::ptr_eq(&a.0, &b.0),
-        #[cfg(feature = "f64")]
-        (Value::F64(a), Value::F64(b)) => std::rc::Rc::ptr_eq(&a.0, &b.0),
-        #[cfg(feature = "u64")]
-        (Value::U64(a), Value::U64(b)) => std::rc::Rc::ptr_eq(&a.0, &b.0),
-        #[cfg(feature = "u32")]
-        (Value::U32(a), Value::U32(b)) => std::rc::Rc::ptr_eq(&a.0, &b.0),
-        #[cfg(feature = "i64")]
-        (Value::I64(a), Value::I64(b)) => std::rc::Rc::ptr_eq(&a.0, &b.0),
-        #[cfg(feature = "i32")]
-        (Value::I32(a), Value::I32(b)) => std::rc::Rc::ptr_eq(&a.0, &b.0),
+fn value_is_mutable_symbol_reference(value: &Value, p: &Interpreter) -> bool {
+    match value {
+        Value::MutableReference(reference) => mutable_reference_is_mutable_symbol(reference, p),
         _ => false,
     }
 }
 
 #[cfg(feature = "subscript_formula")]
-fn mutable_reference_is_live_plan_output(reference: &MutableReference) -> bool {
+fn mutable_reference_is_live_plan_output(reference: &MutableReference, p: &Interpreter) -> bool {
     let current = reference.borrow();
-    string_access_value_is_marked_live(&current)
+    string_access_value_is_marked_live(p, &current)
 }
 
 #[cfg(feature = "subscript_formula")]
-fn string_access_argument_is_live(value: &Value, _p: &Interpreter) -> bool {
-    string_access_value_is_marked_live(value)
+fn string_access_argument_is_live(value: &Value, p: &Interpreter) -> bool {
+    string_access_value_is_marked_live(p, value)
+}
+
+#[cfg(feature = "subscript_formula")]
+fn string_access_input_is_live(value: &Value, p: &Interpreter) -> bool {
+    value_is_mutable_symbol_reference(value, p) || string_access_argument_is_live(value, p)
 }
 
 #[cfg(feature = "subscript_formula")]
@@ -724,7 +714,7 @@ fn string_access_source_argument(value: &Value, p: &Interpreter) -> Value {
         Value::MutableReference(reference)
             if matches!(value.deref_kind(), ValueKind::String)
                 && !mutable_reference_is_mutable_symbol(reference, p)
-                && !mutable_reference_is_live_plan_output(reference) =>
+                && !mutable_reference_is_live_plan_output(reference, p) =>
         {
             reference.borrow().clone()
         }
@@ -742,7 +732,7 @@ fn string_access_index_argument(
     match &raw_index {
         Value::MutableReference(reference)
             if subscript_formula_is_mutable_symbol(sbscrpt, env, p)
-                || mutable_reference_is_live_plan_output(reference) =>
+                || mutable_reference_is_live_plan_output(reference, p) =>
         {
             reference.borrow().as_index()?;
             Ok(raw_index)
@@ -900,7 +890,10 @@ pub fn subscript(
                         && matches!(fxn_input.first(), Some(Value::String(_)))
                         && matches!(&index_arg, Value::Index(_))
                     {
-                        let mode = if string_source_is_live || string_access_argument_is_live(&index_arg, p) {
+                        let mode = if current_string_access_expression_live(p)
+                            || string_source_is_live
+                            || string_access_argument_is_live(&index_arg, p)
+                        {
                             StringAccessCompileMode::LiveDirect
                         } else {
                             StringAccessCompileMode::Constant
@@ -1113,8 +1106,8 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
     let mark_if_live_symbol = |value: &MutableReference| {
         let state_brrw = p.state.borrow();
         let symbols_brrw = state_brrw.symbol_table.borrow();
-        if symbols_brrw.get_mutable(id).is_some() || string_access_value_is_marked_live(&value.borrow()) {
-            mark_current_string_access_expression_live();
+        if symbols_brrw.get_mutable(id).is_some() || string_access_value_is_marked_live(p, &value.borrow()) {
+            mark_current_string_access_expression_live(p);
         }
     };
     match env {
@@ -1571,18 +1564,32 @@ pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &Interpreter) -> MRes
     #[cfg(feature = "math_neg")]
     Factor::Negate(neg) => {
       let value = factor(neg, env, p)?;
+      #[cfg(feature = "subscript_formula")]
+      let value_is_live = current_string_access_expression_live(p) || string_access_input_is_live(&value, p);
       let new_fxn = MathNegate {}.compile(&vec![value])?;
       new_fxn.solve();
       let out = new_fxn.out();
+      #[cfg(feature = "subscript_formula")]
+      if value_is_live {
+        mark_current_string_access_expression_live(p);
+        mark_string_access_value_live(p, &out);
+      }
       p.state.borrow_mut().add_plan_step(new_fxn);
       Ok(out)
     }
     #[cfg(feature = "logic_not")]
     Factor::Not(neg) => {
       let value = factor(neg, env, p)?;
+      #[cfg(feature = "subscript_formula")]
+      let value_is_live = current_string_access_expression_live(p) || string_access_input_is_live(&value, p);
       let new_fxn = LogicNot {}.compile(&vec![value])?;
       new_fxn.solve();
       let out = new_fxn.out();
+      #[cfg(feature = "subscript_formula")]
+      if value_is_live {
+        mark_current_string_access_expression_live(p);
+        mark_string_access_value_live(p, &out);
+      }
       p.state.borrow_mut().add_plan_step(new_fxn);
       Ok(out)
     }
@@ -1590,9 +1597,16 @@ pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &Interpreter) -> MRes
     Factor::Transpose(fctr) => {
       use mech_matrix::MatrixTranspose;
       let value = factor(fctr, env, p)?;
+      #[cfg(feature = "subscript_formula")]
+      let value_is_live = current_string_access_expression_live(p) || string_access_input_is_live(&value, p);
       let new_fxn = MatrixTranspose {}.compile(&vec![value])?;
       new_fxn.solve();
       let out = new_fxn.out();
+      #[cfg(feature = "subscript_formula")]
+      if value_is_live {
+        mark_current_string_access_expression_live(p);
+        mark_string_access_value_live(p, &out);
+      }
       p.state.borrow_mut().add_plan_step(new_fxn);
       Ok(out)
     }
@@ -1607,6 +1621,10 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
   let mut term_plan: Vec<Box<dyn MechFunction>> = vec![];
   for (op, rhs) in &trm.rhs {
     let rhs = factor(&rhs, env, p)?;
+    #[cfg(feature = "subscript_formula")]
+    let new_fxn_is_live = current_string_access_expression_live(p)
+      || string_access_input_is_live(&lhs, p)
+      || string_access_input_is_live(&rhs, p);
     let new_fxn: Box<dyn MechFunction> = match op {
       // Math
       FormulaOperator::AddSub(AddSubOp::Add) => match (&lhs, &rhs) {
@@ -1730,6 +1748,11 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
     };
     new_fxn.solve();
     let res = new_fxn.out();
+    #[cfg(feature = "subscript_formula")]
+    if new_fxn_is_live {
+      mark_current_string_access_expression_live(p);
+      mark_string_access_value_live(p, &res);
+    }
     term_plan.push(new_fxn);
     lhs = res;
   }
