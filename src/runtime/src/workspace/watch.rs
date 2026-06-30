@@ -334,7 +334,7 @@ fn event_allowed_by_watches(
     if watch.recursive {
       normalized.starts_with(&watch_path)
     } else {
-      normalized.parent() == Some(watch_path.as_path())
+      normalized == watch_path || normalized.parent() == Some(watch_path.as_path())
     }
   })
 }
@@ -604,6 +604,56 @@ mod tests {
     assert_eq!(watches.len(), 2);
     assert_eq!(keys.len(), 1);
     assert_eq!(keys.iter().next().unwrap().path, root.canonicalize().unwrap());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn nonrecursive_directory_watch_allows_directory_and_direct_children_only() {
+    let root = std::env::temp_dir().join(format!("mech-watch-directory-event-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    let docs = root.join("docs");
+    let nested = docs.join("nested");
+    std::fs::create_dir_all(&nested).unwrap();
+    let watch = RuntimeWorkspaceWatchedPath {
+      watch_path: docs.clone(),
+      authorized_path: docs.clone(),
+      filter_paths: Vec::new(),
+      recursive: false,
+    };
+    let watches = [watch].into_iter().collect::<BTreeSet<_>>();
+    assert!(event_allowed_by_watches(&watches, &docs));
+    assert!(event_allowed_by_watches(&watches, &docs.join("main.mec")));
+    assert!(!event_allowed_by_watches(&watches, &nested.join("main.mec")));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn filtered_file_watch_still_rejects_parent_directory_event() {
+    let root = std::env::temp_dir().join(format!("mech-watch-filter-parent-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    std::fs::create_dir_all(&root).unwrap();
+    let target = root.join("main.mec");
+    std::fs::write(&target, "x := 1").unwrap();
+    let watch = local_workspace_target_watch(&root, "main.mec").unwrap();
+    let watches = [watch].into_iter().collect::<BTreeSet<_>>();
+    assert!(!event_allowed_by_watches(&watches, &root));
+    assert!(event_allowed_by_watches(&watches, &target));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn recursive_directory_watch_still_allows_descendants() {
+    let root = std::env::temp_dir().join(format!("mech-watch-recursive-event-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    let docs = root.join("docs");
+    let nested_file = docs.join("nested/main.mec");
+    std::fs::create_dir_all(nested_file.parent().unwrap()).unwrap();
+    let watch = RuntimeWorkspaceWatchedPath {
+      watch_path: docs.clone(),
+      authorized_path: docs.clone(),
+      filter_paths: Vec::new(),
+      recursive: true,
+    };
+    let watches = [watch].into_iter().collect::<BTreeSet<_>>();
+    assert!(event_allowed_by_watches(&watches, &docs));
+    assert!(event_allowed_by_watches(&watches, &nested_file));
     std::fs::remove_dir_all(root).unwrap();
   }
 
