@@ -20,13 +20,33 @@ fn collect_test_targets(path: &Path) -> io::Result<Vec<PathBuf>> {
       files.extend(collect_test_targets(&entry_path)?);
     } else if matches!(
       entry_path.extension().and_then(OsStr::to_str),
-      Some("mec" | "🤖" | "mecb")
+      Some("mec" | "🤖")
     ) {
       files.push(entry_path);
     }
   }
   files.sort();
   Ok(files)
+}
+
+fn is_bytecode_test_path(path: &str) -> bool {
+  Path::new(path)
+    .extension()
+    .and_then(|extension| extension.to_str())
+    .map(|extension| extension.eq_ignore_ascii_case("mecb"))
+    .unwrap_or(false)
+}
+
+fn bytecode_test_unsupported_error(path: &str) -> MechError {
+  MechError::new(
+    GenericError {
+      msg: format!(
+        "Bytecode test input `{}` is not supported because compiled bytecode does not currently include invariant metadata. Run tests from source files instead.",
+        path
+      ),
+    },
+    None,
+  ).with_compiler_loc()
 }
 
 // Test
@@ -202,12 +222,20 @@ pub fn run_mech_tests(
     });
     let _ = tree_flag;
     program.configure(debug_flag, trace_flag, time_flag, 10_000);
-    let source = match std::fs::read_to_string(path) {
+    if is_bytecode_test_path(path) {
+      let err = bytecode_test_unsupported_error(path);
+      eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
+      run_errors = true;
+      any_failed = true;
+      file_reports.push(FileReport { path: path.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
+      continue;
+    }
+    let source = match mech_runtime::read_runtime_source_file(Path::new(path)) {
       Ok(source) => source,
       Err(err) => {
         let err = MechError::new(
           GenericError {
-            msg: format!("Unable to read test source `{}`: {}", path, err),
+            msg: format!("Unable to read test source `{}`: {:?}", path, err),
           },
           None,
         )
@@ -219,7 +247,7 @@ pub fn run_mech_tests(
         continue;
       }
     };
-    if let Err(err) = program.run_string(&source) {
+    if let Err(err) = program.run_source(&source) {
       eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
       run_errors = true;
       any_failed = true;
@@ -387,4 +415,87 @@ pub fn run_mech_tests(
     }
   }
   Ok(if any_failed { 1 } else { 0 })
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn bytecode_test_path_detection_is_case_insensitive() {
+    assert!(is_bytecode_test_path("compiled.mecb"));
+    assert!(is_bytecode_test_path("compiled.MECB"));
+    assert!(!is_bytecode_test_path("source.mec"));
+  }
+
+  #[test]
+  fn bytecode_test_error_mentions_invariant_metadata() {
+    let message = bytecode_test_unsupported_error("compiled.mecb").display_message();
+    assert!(message.contains("Bytecode test input"));
+    assert!(message.contains("invariant metadata"));
+  }
+
+  #[test]
+  fn mech_test_rejects_explicit_mecb_input() {
+    let root = std::env::temp_dir().join(format!("mech-test-bytecode-explicit-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    std::fs::create_dir_all(&root).unwrap();
+    let bytecode = root.join("compiled.mecb");
+    std::fs::write(&bytecode, b"not valid bytecode").unwrap();
+
+    let exit_code = run_mech_tests(
+      vec![bytecode.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      None,
+      false,
+    ).unwrap();
+
+    assert_eq!(exit_code, 1);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn test_directory_discovery_skips_mecb_artifacts() {
+    let root = std::env::temp_dir().join(format!("mech-test-bytecode-skip-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    std::fs::create_dir_all(&root).unwrap();
+    let source = root.join("main.mec");
+    let bytecode = root.join("output.mecb");
+    std::fs::write(&source, "x := 1").unwrap();
+    std::fs::write(&bytecode, b"not valid bytecode").unwrap();
+
+    let targets = collect_test_targets(&root).unwrap();
+
+    assert_eq!(targets, vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn test_explicit_mecb_input_is_still_collected_for_rejection() {
+    let root = std::env::temp_dir().join(format!("mech-test-bytecode-explicit-collect-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    std::fs::create_dir_all(&root).unwrap();
+    let bytecode = root.join("compiled.mecb");
+    std::fs::write(&bytecode, b"not valid bytecode").unwrap();
+
+    let targets = collect_test_targets(&bytecode).unwrap();
+
+    assert_eq!(targets, vec![bytecode]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn test_directory_with_source_and_output_mecb_passes_collection() {
+    let root = std::env::temp_dir().join(format!("mech-test-bytecode-source-plus-output-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    std::fs::create_dir_all(&root).unwrap();
+    let source = root.join("main.mec");
+    std::fs::write(&source, "# ok := true
+").unwrap();
+    std::fs::write(root.join("output.mecb"), b"not valid bytecode").unwrap();
+
+    let targets = collect_test_targets(&root).unwrap();
+
+    assert_eq!(targets, vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
 }

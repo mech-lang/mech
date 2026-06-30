@@ -91,6 +91,10 @@ pub trait MechFunctionFactory {
 
 pub trait MechFunctionImpl {
   fn solve(&self);
+  fn solve_result(&self) -> MResult<()> {
+    self.solve();
+    Ok(())
+  }
   fn out(&self) -> Value;
   fn to_string(&self) -> String;
 }
@@ -239,11 +243,16 @@ impl FunctionDefinition {
     }
   }
 
-  pub fn solve(&self) -> ValRef {
+  pub fn solve_result(&self) -> MResult<ValRef> {
     let plan_brrw = self.plan.borrow();
     for step in plan_brrw.iter() {
-      let result = step.solve();
+      step.solve_result()?;
     }
+    Ok(self.out.clone())
+  }
+
+  pub fn solve(&self) -> ValRef {
+    let _ = self.solve_result();
     self.out.clone()
   }
 
@@ -260,7 +269,11 @@ pub struct UserFunction {
 
 impl MechFunctionImpl for UserFunction {
   fn solve(&self) {
-    self.fxn.solve();
+    let _ = self.solve_result();
+  }
+  fn solve_result(&self) -> MResult<()> {
+    self.fxn.solve_result()?;
+    Ok(())
   }
   fn out(&self) -> Value {
     self.fxn.out.borrow().clone()

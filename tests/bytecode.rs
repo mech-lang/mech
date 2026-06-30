@@ -155,3 +155,189 @@ fn bytecode_strict_equality_returns_error_without_panic() {
 fn bytecode_strict_inequality_returns_error_without_panic() {
   compile_bytecode_strict_compare_returns_error_without_panic("x := 1 !== 2", "dynamic strict inequality");
 }
+
+
+#[test]
+fn bytecode_static_bound_string_access_compiles() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_static_bound_string_access_compiles".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string("s := \"abc\"\nfirst := s[1]\n").unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_literal_string_immutable_index_symbol_compiles() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_literal_string_immutable_index_symbol_compiles".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string("s := \"abc\"\ni := 1\nfirst := s[i]\n").unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+
+#[test]
+fn bytecode_string_access_constant_string_aliases_compile() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_string_access_constant_string_aliases_compile".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string("s := \"abc\"\na := s\nb := a\nc := b\nd := c\nfirst := s[1]\n").unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_string_access_constant_index_aliases_compile() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_string_access_constant_index_aliases_compile".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string("i := 1\na := i\nb := a\ns := \"abc\"\nfirst := s[i]\n").unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_live_computed_string_index_rejects_stale_constant_compile() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_live_computed_string_index_rejects_stale_constant_compile".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string("~p := 1\ni := p + 1\ns := \"abc\"\nfirst := s[i]\n").unwrap();
+  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+}
+
+
+#[test]
+fn bytecode_constant_string_plan_output_with_unrelated_mutable_symbol_compiles() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_constant_string_plan_output_with_unrelated_mutable_symbol_compiles".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"~unused := 0
+s := "a" + "bc"
+first := s[1]
+"#).unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_string_plan_output_depending_on_mutable_symbol_rejects() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_string_plan_output_depending_on_mutable_symbol_rejects".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"~p := "a"
+s := p + "bc"
+first := s[1]
+"#).unwrap();
+  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+}
+
+#[test]
+fn bytecode_constant_index_plan_output_with_unrelated_mutable_symbol_compiles() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_constant_index_plan_output_with_unrelated_mutable_symbol_compiles".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"~unused := 0
+i := 1 + 0
+s := "abc"
+first := s[i]
+"#).unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_index_plan_output_depending_on_mutable_symbol_rejects() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_index_plan_output_depending_on_mutable_symbol_rejects".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"~i0 := 1
+i := i0 + 0
+s := "abc"
+first := s[i]
+"#).unwrap();
+  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+}
+
+#[test]
+fn bytecode_live_markers_do_not_leak_between_programs_for_string_source() {
+  let mut live = MechProgram::new(MechProgramConfig { name: "bytecode_live_markers_do_not_leak_between_programs_live".to_string(), environment: MechProgramEnvironment::default() });
+  live.run_string(r#"~p := "a"
+s := p + "bc"
+first := s[1]
+"#).unwrap();
+  let error = format!("{:?}", live.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+
+  let mut constant = MechProgram::new(MechProgramConfig { name: "bytecode_live_markers_do_not_leak_between_programs_constant".to_string(), environment: MechProgramEnvironment::default() });
+  constant.run_string(r#"s := "abc"
+first := s[1]
+"#).unwrap();
+  constant.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_live_markers_do_not_leak_between_programs_for_index() {
+  let mut live = MechProgram::new(MechProgramConfig { name: "bytecode_live_markers_do_not_leak_between_programs_index_live".to_string(), environment: MechProgramEnvironment::default() });
+  live.run_string(r#"~i0 := 1
+i := i0 + 0
+s := "abc"
+first := s[i]
+"#).unwrap();
+  let error = format!("{:?}", live.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+
+  let mut constant = MechProgram::new(MechProgramConfig { name: "bytecode_live_markers_do_not_leak_between_programs_index_constant".to_string(), environment: MechProgramEnvironment::default() });
+  constant.run_string(r#"i := 1 + 0
+s := "abc"
+first := s[i]
+"#).unwrap();
+  constant.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_inline_mutable_string_source_access_rejects() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_inline_mutable_string_source_access_rejects".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"~p := "a"
+s := p + "bc"
+first := s[1]
+"#).unwrap();
+  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+}
+
+#[test]
+fn bytecode_inline_mutable_index_access_rejects() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_inline_mutable_index_access_rejects".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"~i0 := 1
+s := "abc"
+first := s[i0 + 1]
+"#).unwrap();
+  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+}
+
+#[test]
+fn bytecode_inline_constant_string_source_access_compiles() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_inline_constant_string_source_access_compiles".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"s := "a" + "bc"
+first := s[1]
+"#).unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_inline_constant_index_access_compiles() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_inline_constant_index_access_compiles".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"s := "abc"
+first := s[1 + 0]
+"#).unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_live_direct_string_access_rejects_stale_constant_compile() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_live_direct_string_access_rejects_stale_constant_compile".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string("~p := \"a\"\ns := p + \"bc\"\nch := s[1]\n").unwrap();
+  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+  assert!(error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+}
+
+#[test]
+fn bytecode_dynamic_string_index_rejects_stale_constant_compile() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_dynamic_string_index_rejects_stale_constant_compile".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"s := "abc"
+~i := 1
+first := s[i]
+"#).unwrap();
+  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet"), "got {error}");
+}
+
+#[test]
+fn bytecode_dynamic_string_access_rejects_stale_constant_compile() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_dynamic_string_access_rejects_stale_constant_compile".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string("~s := \"abc\"\nfirst := s[1]\n").unwrap();
+  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet"), "got {error}");
+}

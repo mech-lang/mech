@@ -21,7 +21,8 @@ use crossterm::{
 };
 use ariadne::{Report, ReportKind, Label, Color, sources};
 use clap::{Arg, ArgAction, Command};
-use std::path::PathBuf;
+use std::collections::{BTreeMap, BTreeSet};
+use std::path::{Path, PathBuf};
 use tabled::{
   builder::Builder,
   settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
@@ -35,6 +36,452 @@ use std::time::Duration;
 use std::thread;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+#[cfg(feature = "formatter")]
+const FORMAT_EXTENSIONS: &[&str] = &["mec", "🤖", "html", "htm", "mdoc"];
+#[cfg(any(feature = "formatter", feature = "run"))]
+const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
+#[cfg(feature = "run")]
+// Keep in sync with read_runtime_source_file_with_capabilities.
+const RUN_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb", "mdoc", "mpkg", "m", "csv", "js"];
+
+
+#[cfg(feature = "build")]
+fn is_bytecode_source_path(path: &str) -> bool {
+  Path::new(path)
+    .extension()
+    .and_then(|extension| extension.to_str())
+    .map(|extension| extension.eq_ignore_ascii_case("mecb"))
+    .unwrap_or(false)
+}
+
+#[cfg(feature = "build")]
+fn validate_build_bytecode_inputs(paths: &[String]) -> MResult<usize> {
+  let bytecode_count = paths.iter().filter(|path| is_bytecode_source_path(path)).count();
+  if bytecode_count > 0 && bytecode_count != paths.len() {
+    return Err(MechError::new(
+      GenericError {
+        msg: "Cannot mix bytecode (.mecb) inputs with source inputs in `mech build`; build bytecode inputs separately or rebuild from source.".to_string(),
+      },
+      None,
+    ).with_compiler_loc());
+  }
+  if bytecode_count > 1 {
+    return Err(MechError::new(
+      GenericError {
+        msg: "Cannot combine multiple bytecode (.mecb) inputs in one `mech build` invocation.".to_string(),
+      },
+      None,
+    ).with_compiler_loc());
+  }
+  Ok(bytecode_count)
+}
+
+#[cfg(any(feature = "formatter", feature = "run"))]
+fn source_extension(path: &Path) -> Option<String> {
+  path.extension().and_then(|e| e.to_str()).map(|e| e.to_ascii_lowercase())
+}
+
+#[cfg(any(feature = "formatter", feature = "run"))]
+fn extension_allowed(path: &Path, allowed_extensions: &[&str]) -> bool {
+  source_extension(path)
+    .map(|ext| allowed_extensions.iter().any(|allowed| *allowed == ext))
+    .unwrap_or(false)
+}
+
+#[cfg(any(feature = "formatter", feature = "run"))]
+fn unsupported_source_path_error(path: &Path, allowed_extensions: &[&str]) -> MechError {
+  MechError::new(
+    GenericError {
+      msg: format!(
+        "Unsupported source extension for `{}`; expected one of: {}",
+        path.display(),
+        allowed_extensions.join(", "),
+      ),
+    },
+    None,
+  ).with_compiler_loc()
+}
+
+#[cfg(feature = "formatter")]
+#[derive(Clone, Debug)]
+struct CollectedSourceTarget {
+  input_root: PathBuf,
+  path: PathBuf,
+  relative_path: PathBuf,
+  default_output_path: PathBuf,
+}
+
+
+#[cfg(feature = "formatter")]
+fn absolute_path(path: &Path) -> MResult<PathBuf> {
+  Ok(if path.is_absolute() {
+    path.to_path_buf()
+  } else {
+    std::env::current_dir()?.join(path)
+  })
+}
+
+#[cfg(feature = "formatter")]
+fn normalized_existing_or_absolute(path: &Path) -> MResult<PathBuf> {
+  let absolute = absolute_path(path)?;
+  Ok(if absolute.exists() {
+    absolute.canonicalize()?
+  } else {
+    absolute
+  })
+}
+
+#[cfg(feature = "formatter")]
+fn paths_equivalent(a: &Path, b: &Path) -> MResult<bool> {
+  Ok(normalized_existing_or_absolute(a)? == normalized_existing_or_absolute(b)?)
+}
+
+#[cfg(feature = "formatter")]
+fn normalize_output_exclusion(output_path: &Path, is_output_file: bool) -> MResult<Option<PathBuf>> {
+  if is_output_file {
+    return Ok(None);
+  }
+  let absolute = absolute_path(output_path)?;
+  Ok(Some(if absolute.exists() {
+    absolute.canonicalize()?
+  } else {
+    absolute
+  }))
+}
+
+#[cfg(feature = "formatter")]
+fn format_output_exclusion(output_arg: Option<&str>, output_path: &Path, is_output_file: bool) -> MResult<Option<PathBuf>> {
+  match output_arg {
+    None => Ok(None),
+    Some(".") => Ok(None),
+    Some(_) if is_output_file => Ok(None),
+    Some(_) => {
+      let exclusion = normalize_output_exclusion(output_path, false)?;
+      match exclusion {
+        Some(path) if path == std::env::current_dir()?.canonicalize()? => Ok(None),
+        other => Ok(other),
+      }
+    }
+  }
+}
+
+#[cfg(feature = "formatter")]
+fn format_writes_in_place(output_arg: Option<&str>, output_path: &Path, is_output_file: bool) -> MResult<bool> {
+  if is_output_file {
+    return Ok(false);
+  }
+  match output_arg {
+    None => Ok(true),
+    Some(_) => {
+      let cwd = std::env::current_dir()?.canonicalize()?;
+      let absolute = absolute_path(output_path)?;
+      let normalized = if absolute.exists() {
+        absolute.canonicalize()?
+      } else {
+        absolute
+      };
+      Ok(normalized == cwd)
+    }
+  }
+}
+
+#[cfg(feature = "formatter")]
+fn is_excluded_output_path(path: &Path, output_exclusion: Option<&Path>) -> MResult<bool> {
+  let Some(excluded) = output_exclusion else { return Ok(false); };
+  let absolute = absolute_path(path)?;
+  let normalized = if absolute.exists() {
+    absolute.canonicalize()?
+  } else {
+    absolute
+  };
+  Ok(normalized == excluded || normalized.starts_with(excluded))
+}
+
+#[cfg(feature = "formatter")]
+fn explicit_file_relative_path(path: &Path) -> MResult<PathBuf> {
+  Ok(path.to_path_buf())
+}
+
+#[cfg(feature = "formatter")]
+fn safe_output_relative_path(path: &Path) -> MResult<PathBuf> {
+  let cwd = std::env::current_dir()?;
+  let candidate = if path.is_absolute() {
+    match path.strip_prefix(&cwd) {
+      Ok(stripped) => stripped.to_path_buf(),
+      Err(_) => return Ok(path.file_name().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("output.mec"))),
+    }
+  } else {
+    path.to_path_buf()
+  };
+
+  let mut safe = PathBuf::new();
+  for component in candidate.components() {
+    match component {
+      std::path::Component::Normal(part) => safe.push(part),
+      std::path::Component::CurDir => {}
+      std::path::Component::ParentDir
+      | std::path::Component::RootDir
+      | std::path::Component::Prefix(_) => {
+        return Ok(path.file_name().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("output.mec")));
+      }
+    }
+  }
+
+  if safe.as_os_str().is_empty() {
+    Ok(path.file_name().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("output.mec")))
+  } else {
+    Ok(safe)
+  }
+}
+
+#[cfg(feature = "formatter")]
+fn default_output_relative_path(input_root: &Path, path: &Path) -> MResult<PathBuf> {
+  let cwd = std::env::current_dir()?;
+  if path.is_relative() {
+    return Ok(path.to_path_buf());
+  }
+  if let Ok(stripped) = path.strip_prefix(&cwd) {
+    return Ok(stripped.to_path_buf());
+  }
+  if let Ok(stripped) = path.strip_prefix(input_root) {
+    return Ok(input_root.join(stripped));
+  }
+  Ok(path.file_name().map(PathBuf::from).unwrap_or_else(|| path.to_path_buf()))
+}
+
+#[cfg(feature = "formatter")]
+fn read_format_source(path: &Path) -> MResult<MechSourceCode> {
+  let extension = source_extension(path).ok_or_else(|| unsupported_source_path_error(path, FORMAT_EXTENSIONS))?;
+  match extension.as_str() {
+    "mec" | "🤖" | "mdoc" => Ok(MechSourceCode::String(std::fs::read_to_string(path)?)),
+    "html" | "htm" => Ok(MechSourceCode::Html(std::fs::read_to_string(path)?)),
+    _ => Err(unsupported_source_path_error(path, FORMAT_EXTENSIONS)),
+  }
+}
+
+#[cfg(feature = "formatter")]
+fn skip_directory_format_source(path: &Path, html: bool, writes_in_place: bool) -> bool {
+  html && writes_in_place && matches!(source_extension(path).as_deref(), Some("html") | Some("htm"))
+}
+
+#[cfg(feature = "run")]
+fn skip_directory_run_source(path: &Path) -> bool {
+  matches!(source_extension(path).as_deref(), Some("mecb"))
+}
+
+#[cfg(feature = "formatter")]
+fn collect_format_targets(path: &Path, output_exclusion: Option<&Path>, html: bool, writes_in_place: bool) -> MResult<Vec<CollectedSourceTarget>> {
+  if path.is_file() {
+    if !extension_allowed(path, FORMAT_EXTENSIONS) {
+      return Err(unsupported_source_path_error(path, FORMAT_EXTENSIONS));
+    }
+    let default_output_path = path.to_path_buf();
+    let relative_path = safe_output_relative_path(path)?;
+    return Ok(vec![CollectedSourceTarget {
+      input_root: path.parent().unwrap_or_else(|| Path::new("")).to_path_buf(),
+      path: path.to_path_buf(),
+      relative_path,
+      default_output_path,
+    }]);
+  }
+
+  if !path.exists() {
+    return Err(MechError::new(GenericError { msg: format!("Source path does not exist: {}", path.display()) }, None).with_compiler_loc());
+  }
+
+  if !path.is_dir() {
+    return Err(MechError::new(GenericError { msg: format!("Source path is neither a file nor directory: {}", path.display()) }, None).with_compiler_loc());
+  }
+
+  fn collect_dir(root: &Path, dir: &Path, output_exclusion: Option<&Path>, html: bool, writes_in_place: bool, out: &mut Vec<CollectedSourceTarget>, visited: &mut BTreeSet<PathBuf>) -> MResult<()> {
+    if is_excluded_output_path(dir, output_exclusion)? { return Ok(()); }
+    let canonical = dir.canonicalize()?;
+    if !visited.insert(canonical) { return Ok(()); }
+    for entry in fs::read_dir(dir)? {
+      let entry = entry?;
+      let p = entry.path();
+      let file_type = entry.file_type()?;
+      if file_type.is_symlink() {
+        let target_meta = match fs::metadata(&p) {
+          Ok(meta) => meta,
+          Err(_) => continue,
+        };
+        if target_meta.is_dir() {
+          continue;
+        }
+        if target_meta.is_file() && !skip_directory_format_source(&p, html, writes_in_place) && extension_allowed(&p, FORMAT_EXTENSIONS) {
+          let relative_path = p.strip_prefix(root).unwrap_or(&p).to_path_buf();
+          let default_output_path = default_output_relative_path(root, &p)?;
+          out.push(CollectedSourceTarget { input_root: root.to_path_buf(), path: p, relative_path, default_output_path });
+        }
+        continue;
+      }
+      if file_type.is_dir() {
+        if let Some(name) = p.file_name().and_then(|n| n.to_str()) {
+          if SKIP_SOURCE_DIRS.iter().any(|skip| skip == &name) { continue; }
+        }
+        if is_excluded_output_path(&p, output_exclusion)? { continue; }
+        collect_dir(root, &p, output_exclusion, html, writes_in_place, out, visited)?;
+      } else if !skip_directory_format_source(&p, html, writes_in_place) && extension_allowed(&p, FORMAT_EXTENSIONS) {
+        let relative_path = p.strip_prefix(root).unwrap_or(&p).to_path_buf();
+        let default_output_path = default_output_relative_path(root, &p)?;
+        out.push(CollectedSourceTarget { input_root: root.to_path_buf(), path: p, relative_path, default_output_path });
+      }
+    }
+    Ok(())
+  }
+
+  let mut out = Vec::new();
+  let mut visited = BTreeSet::new();
+  collect_dir(path, path, output_exclusion, html, writes_in_place, &mut out, &mut visited)?;
+  out.sort_by(|a, b| a.relative_path.cmp(&b.relative_path).then_with(|| a.path.cmp(&b.path)));
+  Ok(out)
+}
+
+#[cfg(feature = "run")]
+fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
+  if path.is_file() {
+    if !extension_allowed(path, RUN_EXTENSIONS) {
+      return Err(unsupported_source_path_error(path, RUN_EXTENSIONS));
+    }
+    return Ok(vec![path.to_path_buf()]);
+  }
+  if !path.exists() {
+    return Err(MechError::new(GenericError { msg: format!("Source path does not exist: {}", path.display()) }, None).with_compiler_loc());
+  }
+  if !path.is_dir() {
+    return Err(MechError::new(GenericError { msg: format!("Source path is neither a file nor directory: {}", path.display()) }, None).with_compiler_loc());
+  }
+
+  fn collect_dir(dir: &Path, out: &mut Vec<PathBuf>, visited: &mut BTreeSet<PathBuf>) -> MResult<()> {
+    let canonical = dir.canonicalize()?;
+    if !visited.insert(canonical) { return Ok(()); }
+    for entry in fs::read_dir(dir)? {
+      let entry = entry?;
+      let p = entry.path();
+      let file_type = entry.file_type()?;
+      if file_type.is_symlink() {
+        let target_meta = match fs::metadata(&p) {
+          Ok(meta) => meta,
+          Err(_) => continue,
+        };
+        if target_meta.is_dir() {
+          continue;
+        }
+        if target_meta.is_file() && !skip_directory_run_source(&p) && extension_allowed(&p, RUN_EXTENSIONS) {
+          out.push(p);
+        }
+        continue;
+      }
+      if file_type.is_dir() {
+        if let Some(name) = p.file_name().and_then(|n| n.to_str()) {
+          if SKIP_SOURCE_DIRS.iter().any(|skip| skip == &name) { continue; }
+        }
+        collect_dir(&p, out, visited)?;
+      } else if !skip_directory_run_source(&p) && extension_allowed(&p, RUN_EXTENSIONS) {
+        out.push(p);
+      }
+    }
+    Ok(())
+  }
+
+  let mut out = Vec::new();
+  let mut visited = BTreeSet::new();
+  collect_dir(path, &mut out, &mut visited)?;
+  out.sort();
+  Ok(out)
+}
+
+#[cfg(feature = "formatter")]
+fn format_output_matches_input_dir(mech_paths: &[String], output_path: &Path, is_output_file: bool) -> MResult<bool> {
+  if is_output_file {
+    return Ok(false);
+  }
+  for input in mech_paths {
+    let input_path = Path::new(input);
+    if input_path.is_dir() && paths_equivalent(input_path, output_path)? {
+      return Ok(true);
+    }
+  }
+  Ok(false)
+}
+
+#[cfg(feature = "formatter")]
+fn reject_ambiguous_matching_output_dir(output_matches_input_dir: bool, input_count: usize, output_path: &Path) -> MResult<()> {
+  if output_matches_input_dir && input_count > 1 {
+    return Err(MechError::new(
+      GenericError {
+        msg: format!(
+          "Output directory `{}` matches one of multiple format inputs. Use in-place formatting without --out, or choose a distinct output directory.",
+          output_path.display(),
+        ),
+      },
+      None,
+    ).with_compiler_loc());
+  }
+  Ok(())
+}
+
+#[cfg(feature = "formatter")]
+fn format_output_file_for_target(
+  target: &CollectedSourceTarget,
+  output_path: &Path,
+  is_output_file: bool,
+  writes_in_place: bool,
+  html: bool,
+) -> PathBuf {
+  let mut path = if is_output_file {
+    output_path.to_path_buf()
+  } else if writes_in_place {
+    target.default_output_path.clone()
+  } else {
+    output_path.join(&target.relative_path)
+  };
+  if html && !is_output_file {
+    path = path.with_extension("html");
+  }
+  path
+}
+
+#[cfg(feature = "formatter")]
+fn ensure_unique_format_outputs(targets: &[CollectedSourceTarget], output_path: &Path, is_output_file: bool, writes_in_place: bool, html: bool) -> MResult<()> {
+  let mut seen: BTreeMap<PathBuf, PathBuf> = BTreeMap::new();
+  for target in targets {
+    let output_file = format_output_file_for_target(target, output_path, is_output_file, writes_in_place, html);
+    if let Some(previous) = seen.insert(output_file.clone(), target.path.clone()) {
+      return Err(MechError::new(
+        GenericError {
+          msg: format!(
+            "Format output collision for `{}` between `{}` and `{}`",
+            output_file.display(),
+            previous.display(),
+            target.path.display(),
+          ),
+        },
+        None,
+      ).with_compiler_loc());
+    }
+  }
+  Ok(())
+}
+
+#[cfg(feature = "formatter")]
+fn reject_multi_target_file_output(target_count: usize, output_path: &Path, is_output_file: bool) -> MResult<()> {
+  if is_output_file && target_count > 1 {
+    return Err(MechError::new(
+      GenericError {
+        msg: format!(
+          "Cannot write {} formatted sources into single output file `{}`. Use an output directory instead.",
+          target_count,
+          output_path.display(),
+        ),
+      },
+      None,
+    ).with_compiler_loc());
+  }
+  Ok(())
+}
 
 #[cfg(has_file_wasm)]
 static MECHWASM: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm_bg.wasm.br");
@@ -79,7 +526,7 @@ use mech::cli::config;
 #[cfg(feature = "run")]
 use mech::cli::run::{
   classify_run_inputs, cli_host_capability_args, cli_host_capability_passthrough_values,
-  cli_host_capability_selection, effective_run_runtime_config, new_cli_runtime, run_cli_source,
+  cli_host_capability_selection, effective_run_runtime_config, new_cli_runtime, run_cli_source, run_cli_source_code,
   RunInputMode,
 };
 
@@ -132,7 +579,7 @@ fn add_serve_subcommand(command: Command) -> Command {
   command.subcommand(Command::new("serve")
       .about("Serve Mech program over an HTTP server.")
       .arg(Arg::new("mech_serve_file_paths")
-        .help("Source .mec and .mecb files")
+        .help("Source .mec files, .mecb bytecode files, project folders, or directories")
         .required(false)
         .action(ArgAction::Append))
       .arg(Arg::new("port")
@@ -255,7 +702,7 @@ async fn main() -> Result<(), MechError> {
     .author("Corey Montella corey@mech-lang.org")
     .about(about)
     .arg(Arg::new("mech_paths")
-        .help("Source .mec and files")
+        .help("Source .mec files, .mecb bytecode files, project folders, or inline Mech code")
         .required(false)
         .action(ArgAction::Append))
     .arg(Arg::new("debug")
@@ -266,7 +713,7 @@ async fn main() -> Result<(), MechError> {
     .subcommand(Command::new("format")
       .about("Format Mech source code into standard format.")
       .arg(Arg::new("mech_format_file_paths")
-        .help("Source .mec and .mecb files")
+        .help("Source .mec/.mdoc files, HTML files, or directories")
         .required(false)
         .action(ArgAction::Append))
       .arg(Arg::new("output_path")
@@ -311,7 +758,7 @@ async fn main() -> Result<(), MechError> {
     .subcommand(Command::new("test")
       .about("Validate program invariants.")
       .arg(Arg::new("mech_test_file_paths")
-        .help("Source .mec and .mecb files")
+        .help("Source .mec and .mecb files or directories")
         .required(false)
         .action(ArgAction::Append))
       .arg(Arg::new("output_path")
@@ -545,7 +992,7 @@ async fn main() -> Result<(), MechError> {
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let output_path = PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
     let debug_flag = matches.get_flag("debug");
-    let rounds_per_step = matches.get_one::<String>("rounds-per-step").and_then(|s| s.parse::<usize>().ok()).unwrap_or(10_000);
+    let rounds_per_step = root_rounds_per_step.unwrap_or(10_000);
     // Create the directory html_output_path
     if output_path != PathBuf::from(".") {
       match fs::create_dir_all(&output_path) {
@@ -558,28 +1005,38 @@ async fn main() -> Result<(), MechError> {
       }
     }
 
-    let uuid = generate_uuid();
-    let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
-    let _ = tree_flag;
-    let _ = trace_flag;
-    program.configure(debug_flag, trace_flag, time_flag, rounds_per_step);
-    for path in mech_paths {
-      let source = std::fs::read_to_string(&path)?;
-      let _ = program.run_string(&source)?;
-    }
+    let bytecode_count = validate_build_bytecode_inputs(&mech_paths)?;
+    let bytecode = if bytecode_count == 1 {
+      match mech_runtime::read_runtime_source_file(Path::new(&mech_paths[0]))? {
+        MechSourceCode::ByteCode(bytecode) => bytecode,
+        _ => unreachable!("bytecode input should load as MechSourceCode::ByteCode"),
+      }
+    } else {
+      let uuid = generate_uuid();
+      let mut program = MechProgram::new(MechProgramConfig { name: format!("program-{}", uuid), environment: MechProgramEnvironment::default() });
+      let _ = tree_flag;
+      let _ = trace_flag;
+      program.configure(debug_flag, trace_flag, time_flag, rounds_per_step);
+      for path in mech_paths {
+        let source = mech_runtime::read_runtime_source_file(Path::new(&path))?;
+        let _ = program.run_source(&source)?;
+      }
 
-    let bytecode = program.interpreter_mut().compile()?;
+      let bytecode = program.interpreter_mut().compile()?;
 
-    let mut output_file = output_path.join("output.mecb");
+      // print debug info for the context
+      if debug_flag {
+        println!("{} Bytecode Size: {:#?} bytes", "[Debug]".truecolor(246,192,78), &program.interpreter().context);
+      }
+
+      bytecode
+    };
+
+    let output_file = output_path.join("output.mecb");
 
     let mut f = std::fs::File::create(&output_file)?;
     f.write_all(&bytecode)?;
     f.flush()?;
-
-    // print debug info for the context
-    if debug_flag {
-      println!("{} Bytecode Size: {:#?} bytes", "[Debug]".truecolor(246,192,78), &program.interpreter().context);
-    }
 
     println!("{} Mech bytecode written to: {}", "[Output]".truecolor(153,221,85), output_file.display());
 
@@ -602,25 +1059,31 @@ async fn main() -> Result<(), MechError> {
         .cloned()
         .unwrap_or("".to_string());
 
-    let output_path =
-        PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
+    let output_arg = matches.get_one::<String>("output_path").cloned();
+    let output_path = PathBuf::from(output_arg.clone().unwrap_or(".".to_string()));
     let is_output_file = output_path.extension().is_some();
 
     let mech_paths: Vec<String> = matches
         .get_many::<String>("mech_format_file_paths")
         .map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+    let output_matches_input_dir = format_output_matches_input_dir(&mech_paths, &output_path, is_output_file)?;
+    reject_ambiguous_matching_output_dir(output_matches_input_dir, mech_paths.len(), &output_path)?;
+    let writes_in_place = format_writes_in_place(output_arg.as_deref(), &output_path, is_output_file)? || output_matches_input_dir;
 
     // If the user provided exactly one path
     if mech_paths.len() == 1 {
       let input_path = PathBuf::from(&mech_paths[0]);
       if input_path.is_dir() && is_output_file {
-        eprintln!(
-          "{} Cannot write directory `{}` into single output file `{}`. Provide a directory for --out instead.",
-          "[Error]".truecolor(246,98,78),
-          input_path.display(),
-          output_path.display()
-        );
-        return Ok(());
+        return Err(MechError::new(
+          GenericError {
+            msg: format!(
+              "Cannot write directory `{}` into single output file `{}`. Provide a directory for --out instead.",
+              input_path.display(),
+              output_path.display(),
+            ),
+          },
+          None,
+        ).with_compiler_loc());
       }
     }
     println!("{} Loading resources…", badge);
@@ -642,16 +1105,21 @@ async fn main() -> Result<(), MechError> {
       .with_compiler_loc()
     })?;
 
-    let mut loaded_sources: Vec<(PathBuf, MechSourceCode)> = Vec::new();
+    let output_exclusion = if writes_in_place {
+      None
+    } else {
+      format_output_exclusion(output_arg.as_deref(), &output_path, is_output_file)?
+    };
+    let mut loaded_sources: Vec<(CollectedSourceTarget, MechSourceCode)> = Vec::new();
     for path in mech_paths {
-      let pb = PathBuf::from(&path);
-      let source = std::fs::read_to_string(&pb)?;
-      let code = match pb.extension().and_then(|e| e.to_str()) {
-        Some("html") => MechSourceCode::Html(source),
-        _ => MechSourceCode::String(source),
-      };
-      loaded_sources.push((pb, code));
+      for target in collect_format_targets(Path::new(&path), output_exclusion.as_deref(), html_flag, writes_in_place)? {
+        let code = read_format_source(&target.path)?;
+        loaded_sources.push((target, code));
+      }
     }
+    reject_multi_target_file_output(loaded_sources.len(), &output_path, is_output_file)?;
+    let format_targets: Vec<CollectedSourceTarget> = loaded_sources.iter().map(|(target, _)| target.clone()).collect();
+    ensure_unique_format_outputs(&format_targets, &output_path, is_output_file, writes_in_place, html_flag)?;
 
     // Only create directory if output_path is not a file
     if !is_output_file && output_path != PathBuf::from(".") {
@@ -667,34 +1135,41 @@ async fn main() -> Result<(), MechError> {
 
     // HTML mode
     if html_flag {
-      let html_items: Vec<_> = loaded_sources.iter().filter_map(|(p, src)| {
-        if let MechSourceCode::Html(content) = src {
-          Some((p, content))
-        } else {
-          None
-        }
-      }).collect();
-      let is_single_html = html_items.len() == 1;
-
-      if is_output_file && is_single_html {
-        // write ONLY HTML result to output file
-        let (_, content) = html_items[0];
-        save_to_file(output_path, content)?;
+      let mut html_items: Vec<(CollectedSourceTarget, String)> = Vec::new();
+      for (target, src) in &loaded_sources {
+        let html = match src {
+          MechSourceCode::Html(content) => content.clone(),
+          MechSourceCode::String(source) => {
+            let tree = parser::parse(source.trim())?;
+            let mut formatter = Formatter::new();
+            formatter.format_html(&tree, stylesheet_str.clone(), shim_str.clone())
+          }
+          other => return Err(MechError::new(GenericError { msg: format!("Unsupported source kind for HTML formatting `{}`: {:?}", target.path.display(), other) }, None).with_compiler_loc()),
+        };
+        html_items.push((target.clone(), html));
+      }
+      if is_output_file && html_items.len() == 1 {
+        let (_, content) = html_items.remove(0);
+        save_to_file(output_path, &content)?;
       } else {
-        // otherwise produce multiple output files
-        for (path, content) in html_items {
-          let filename = path.with_extension("html");
-          let output_file = if is_output_file { output_path.clone() }
-                            else { output_path.join(filename) };
-          save_to_file(output_file, content)?;
+        for (target, content) in html_items {
+          let output_file = format_output_file_for_target(&target, &output_path, is_output_file, writes_in_place, true);
+          save_to_file(output_file, &content)?;
         }
       }
     } else {
       // Raw source mode
-      for (filename, mech_src) in loaded_sources {
-        let content = mech_src.to_string();
-        let output_file = if is_output_file { output_path.clone() }
-                          else { output_path.join(filename) };
+      for (target, mech_src) in loaded_sources {
+        let content = match mech_src {
+          MechSourceCode::String(source) => {
+            let tree = parser::parse(source.trim())?;
+            let mut formatter = Formatter::new();
+            formatter.format(&tree)
+          }
+          MechSourceCode::Html(content) => content,
+          other => return Err(MechError::new(GenericError { msg: format!("Unsupported source kind for raw formatting `{}`: {:?}", target.path.display(), other) }, None).with_compiler_loc()),
+        };
+        let output_file = format_output_file_for_target(&target, &output_path, is_output_file, writes_in_place, false);
         save_to_file(output_file, &content)?;
       }
     }
@@ -809,8 +1284,10 @@ async fn main() -> Result<(), MechError> {
     let result: MResult<Value> = if let Some(options) = options {
       let mut last = Value::Empty;
       for p in &options.paths {
-        let src = std::fs::read_to_string(p)?;
-        last = run_cli_source(&mut runtime, &src)?;
+        for target in collect_run_targets(Path::new(p))? {
+          let src = mech_runtime::read_runtime_source_file(&target)?;
+          last = run_cli_source_code(&mut runtime, &src)?;
+        }
       }
       Ok(last)
     } else {
@@ -1334,4 +1811,712 @@ mod filesystem_capability_cli_tests {
             .unwrap();
         std::fs::remove_dir_all(root).unwrap();
     }
+}
+
+#[cfg(all(test, feature = "build"))]
+mod build_input_tests {
+  use super::*;
+
+  fn paths(values: &[&str]) -> Vec<String> {
+    values.iter().map(|value| value.to_string()).collect()
+  }
+
+  #[test]
+  fn build_rejects_mixed_source_then_bytecode() {
+    let error = validate_build_bytecode_inputs(&paths(&["old.mec", "compiled.mecb"]))
+      .unwrap_err()
+      .full_chain_message();
+    assert!(error.contains("Cannot mix bytecode"));
+  }
+
+  #[test]
+  fn build_rejects_bytecode_then_source() {
+    let error = validate_build_bytecode_inputs(&paths(&["compiled.mecb", "next.mec"]))
+      .unwrap_err()
+      .full_chain_message();
+    assert!(error.contains("Cannot mix bytecode"));
+  }
+
+  #[test]
+  fn build_rejects_multiple_bytecode_inputs() {
+    let error = validate_build_bytecode_inputs(&paths(&["a.mecb", "b.mecb"]))
+      .unwrap_err()
+      .full_chain_message();
+    assert!(error.contains("Cannot combine multiple bytecode"));
+  }
+
+  #[test]
+  fn build_single_bytecode_input_is_allowed_for_clean_copy() {
+    assert_eq!(validate_build_bytecode_inputs(&paths(&["compiled.mecb"])).unwrap(), 1);
+  }
+
+  #[test]
+  fn build_multiple_source_inputs_still_work() {
+    assert_eq!(validate_build_bytecode_inputs(&paths(&["a.mec", "b.mec"])).unwrap(), 0);
+  }
+}
+
+#[cfg(all(test, feature = "formatter"))]
+mod format_collection_tests {
+  use super::*;
+
+  fn temp_root(label: &str) -> PathBuf {
+    let root = std::env::temp_dir().join(format!(
+      "mech-format-collection-{label}-{}",
+      std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos(),
+    ));
+    std::fs::create_dir_all(&root).unwrap();
+    root
+  }
+
+  fn format_test_lock() -> std::sync::MutexGuard<'static, ()> {
+    static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    LOCK.lock().unwrap()
+  }
+
+  #[test]
+  fn collect_format_targets_preserves_duplicate_basenames_under_directory() {
+    let _guard = format_test_lock();
+    let root = temp_root("duplicates");
+    let docs = root.join("docs");
+    std::fs::create_dir_all(docs.join("a")).unwrap();
+    std::fs::create_dir_all(docs.join("b")).unwrap();
+    std::fs::write(docs.join("a/index.mec"), "x := 1").unwrap();
+    std::fs::write(docs.join("b/index.mec"), "x := 2").unwrap();
+
+    let targets = collect_format_targets(&docs, None, false, false).unwrap();
+    let relatives = targets.iter().map(|target| target.relative_path.clone()).collect::<Vec<_>>();
+    assert_eq!(relatives, vec![PathBuf::from("a/index.mec"), PathBuf::from("b/index.mec")]);
+    assert!(targets.iter().all(|target| target.input_root == docs));
+    ensure_unique_format_outputs(&targets, &root.join("out"), false, false, true).unwrap();
+    ensure_unique_format_outputs(&targets, &root.join("out"), false, false, false).unwrap();
+    assert_eq!(root.join("out").join(&targets[0].relative_path).with_extension("html"), root.join("out/a/index.html"));
+    assert_eq!(root.join("out").join(&targets[1].relative_path), root.join("out/b/index.mec"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_directory_output_path_selection_preserves_default_and_output_roots() {
+    let _guard = format_test_lock();
+    let root = temp_root("default-output-paths");
+    std::fs::create_dir_all(root.join("docs")).unwrap();
+    std::fs::write(root.join("docs/main.mec"), "x := 1").unwrap();
+    let old_cwd = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&root).unwrap();
+    let targets = collect_format_targets(Path::new("docs"), None, false, false).unwrap();
+    let target = &targets[0];
+    assert!(format_writes_in_place(None, Path::new("."), false).unwrap());
+    assert!(format_writes_in_place(Some("."), Path::new("."), false).unwrap());
+    assert!(format_writes_in_place(Some("./"), Path::new("./"), false).unwrap());
+    assert!(format_writes_in_place(Some(root.to_str().unwrap()), &root, false).unwrap());
+    assert!(!format_writes_in_place(Some("out"), Path::new("out"), false).unwrap());
+    std::env::set_current_dir(old_cwd).unwrap();
+
+    assert_eq!(format_output_file_for_target(target, Path::new("."), false, true, false), PathBuf::from("docs/main.mec"));
+    assert_eq!(format_output_file_for_target(target, Path::new("."), false, true, true), PathBuf::from("docs/main.html"));
+    assert_eq!(format_output_file_for_target(target, Path::new("."), false, true, false), PathBuf::from("docs/main.mec"));
+    assert_eq!(format_output_file_for_target(target, Path::new("out"), false, false, false), PathBuf::from("out/main.mec"));
+    assert_eq!(format_output_file_for_target(target, Path::new("out"), false, false, true), PathBuf::from("out/main.html"));
+    assert_eq!(format_output_file_for_target(target, Path::new("single.mec"), true, false, false), PathBuf::from("single.mec"));
+    assert_eq!(format_output_file_for_target(target, Path::new("page.htm"), true, false, true), PathBuf::from("page.htm"));
+    assert_eq!(format_output_file_for_target(target, Path::new("page.html"), true, false, true), PathBuf::from("page.html"));
+    assert_eq!(format_output_file_for_target(target, Path::new("page.custom"), true, false, true), PathBuf::from("page.custom"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+
+  #[test]
+  fn collect_format_targets_preserves_explicit_relative_file_path() {
+    let _guard = format_test_lock();
+    let root = temp_root("explicit-relative");
+    std::fs::create_dir_all(root.join("src")).unwrap();
+    std::fs::write(root.join("src/main.mec"), "x := 1").unwrap();
+    let old_cwd = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&root).unwrap();
+    let targets = collect_format_targets(Path::new("src/main.mec"), None, false, false).unwrap();
+    std::env::set_current_dir(old_cwd).unwrap();
+    assert_eq!(targets[0].relative_path, PathBuf::from("src/main.mec"));
+    assert_eq!(targets[0].default_output_path, PathBuf::from("src/main.mec"));
+    assert_eq!(format_output_file_for_target(&targets[0], Path::new("."), false, true, false), PathBuf::from("src/main.mec"));
+    assert_eq!(root.join("out").join(&targets[0].relative_path), root.join("out/src/main.mec"));
+    assert_eq!(root.join("out").join(&targets[0].relative_path).with_extension("html"), root.join("out/src/main.html"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn safe_output_relative_path_rejects_parent_components() {
+    let _guard = format_test_lock();
+    assert_eq!(safe_output_relative_path(Path::new("../docs/main.mec")).unwrap(), PathBuf::from("main.mec"));
+  }
+
+  #[test]
+  fn format_explicit_parent_relative_input_under_out_uses_filename() {
+    let _guard = format_test_lock();
+    let root = temp_root("parent-relative-out");
+    std::fs::create_dir_all(root.join("docs")).unwrap();
+    std::fs::create_dir_all(root.join("examples")).unwrap();
+    std::fs::write(root.join("docs/main.mec"), "x := 1").unwrap();
+    let old_cwd = std::env::current_dir().unwrap();
+    std::env::set_current_dir(root.join("examples")).unwrap();
+    let targets = collect_format_targets(Path::new("../docs/main.mec"), None, false, false).unwrap();
+    std::env::set_current_dir(old_cwd).unwrap();
+    let raw_output = format_output_file_for_target(&targets[0], Path::new("formatted"), false, false, false);
+    let html_output = format_output_file_for_target(&targets[0], Path::new("formatted"), false, false, true);
+    assert_eq!(raw_output, PathBuf::from("formatted/main.mec"));
+    assert_eq!(html_output, PathBuf::from("formatted/main.html"));
+    assert_eq!(format_output_file_for_target(&targets[0], Path::new("."), false, true, false), PathBuf::from("../docs/main.mec"));
+    assert!(!raw_output.components().any(|component| matches!(component, std::path::Component::ParentDir | std::path::Component::RootDir | std::path::Component::Prefix(_))));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_explicit_safe_relative_input_under_out_preserves_subdir() {
+    let _guard = format_test_lock();
+    let root = temp_root("safe-relative-out");
+    std::fs::create_dir_all(root.join("src")).unwrap();
+    std::fs::write(root.join("src/main.mec"), "x := 1").unwrap();
+    let old_cwd = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&root).unwrap();
+    let targets = collect_format_targets(Path::new("src/main.mec"), None, false, false).unwrap();
+    std::env::set_current_dir(old_cwd).unwrap();
+    let output = format_output_file_for_target(&targets[0], Path::new("formatted"), false, false, false);
+    assert_eq!(output, PathBuf::from("formatted/src/main.mec"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_output_collision_uses_actual_output_paths() {
+    let _guard = format_test_lock();
+    let root = temp_root("actual-collisions");
+    std::fs::create_dir_all(root.join("a")).unwrap();
+    std::fs::create_dir_all(root.join("b")).unwrap();
+    std::fs::write(root.join("a/main.mec"), "x := 1").unwrap();
+    std::fs::write(root.join("b/main.mec"), "y := 2").unwrap();
+    let old_cwd = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&root).unwrap();
+    let mut targets = Vec::new();
+    targets.extend(collect_format_targets(Path::new("a"), None, false, false).unwrap());
+    targets.extend(collect_format_targets(Path::new("b"), None, false, false).unwrap());
+    std::env::set_current_dir(old_cwd).unwrap();
+
+    ensure_unique_format_outputs(&targets, Path::new("."), false, true, false).unwrap();
+    let error = format!("{:?}", ensure_unique_format_outputs(&targets, Path::new("out"), false, false, false).unwrap_err());
+    assert!(error.contains("Format output collision"), "got {error}");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn raw_format_preserves_include_directives_without_expanding() {
+    let _guard = format_test_lock();
+    let root = temp_root("include");
+    std::fs::write(root.join("included.mec"), "secret := 42\n").unwrap();
+    std::fs::write(root.join("main.mec"), "+> ./included.mec\nvisible := 1\n").unwrap();
+    let source = read_format_source(&root.join("main.mec")).unwrap();
+    let formatted = match source {
+      MechSourceCode::String(text) => {
+        let tree = parser::parse(text.trim()).unwrap();
+        let mut formatter = Formatter::new();
+        formatter.format(&tree)
+      }
+      other => panic!("expected string source, got {other:?}"),
+    };
+    assert!(formatted.contains("+> ./included.mec"), "formatted output was {formatted}");
+    assert!(formatted.contains("visible"), "formatted output was {formatted}");
+    assert!(!formatted.contains("secret := 42"), "formatted output was {formatted}");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn collectors_skip_symlinked_directory_loops() {
+    let _guard = format_test_lock();
+    use std::os::unix::fs::symlink;
+    let root = temp_root("symlink-loop");
+    std::fs::write(root.join("main.mec"), "x := 1").unwrap();
+    symlink(&root, root.join("self")).unwrap();
+
+    let format_targets = collect_format_targets(&root, None, false, false).unwrap();
+    assert_eq!(format_targets.len(), 1);
+    assert_eq!(format_targets[0].relative_path, PathBuf::from("main.mec"));
+
+    let run_targets = collect_run_targets(&root).unwrap();
+    assert_eq!(run_targets, vec![root.join("main.mec")]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn collect_format_targets_includes_symlinked_files_but_not_dirs_or_broken_links() {
+    let _guard = format_test_lock();
+    use std::os::unix::fs::symlink;
+    let root = temp_root("format-symlink-file");
+    std::fs::write(root.join("main.mec"), "x := 1").unwrap();
+    symlink(root.join("main.mec"), root.join("linked.mec")).unwrap();
+    symlink(&root, root.join("self")).unwrap();
+    symlink(root.join("missing.mec"), root.join("broken.mec")).unwrap();
+
+    let targets = collect_format_targets(&root, None, false, false).unwrap();
+    let relatives = targets.iter().map(|target| target.relative_path.clone()).collect::<Vec<_>>();
+    assert_eq!(relatives, vec![PathBuf::from("linked.mec"), PathBuf::from("main.mec")]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_default_output_has_no_exclusion() {
+    let _guard = format_test_lock();
+    let exclusion = format_output_exclusion(None, Path::new("."), false).unwrap();
+    assert!(exclusion.is_none());
+  }
+
+  #[test]
+  fn format_explicit_dot_output_has_no_exclusion() {
+    let _guard = format_test_lock();
+    let exclusion = format_output_exclusion(Some("."), Path::new("."), false).unwrap();
+    assert!(exclusion.is_none());
+  }
+
+  #[test]
+  fn format_docs_default_and_dot_outputs_collect_docs_sources() {
+    let _guard = format_test_lock();
+    let root = temp_root("default-output");
+    let docs = root.join("docs");
+    std::fs::create_dir_all(&docs).unwrap();
+    std::fs::write(docs.join("main.mec"), "x := 1").unwrap();
+    std::fs::write(docs.join("other.mec"), "y := 2").unwrap();
+
+    let default_targets = collect_format_targets(&docs, format_output_exclusion(None, Path::new("."), false).unwrap().as_deref(), false, false).unwrap();
+    assert_eq!(default_targets.len(), 2);
+
+    let dot_targets = collect_format_targets(&docs, format_output_exclusion(Some("."), Path::new("."), false).unwrap().as_deref(), false, false).unwrap();
+    assert_eq!(dot_targets.len(), 2);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_html_directory_in_place_skips_generated_html_siblings() {
+    let _guard = format_test_lock();
+    let root = temp_root("html-in-place-skip");
+    let docs = root.join("docs");
+    std::fs::create_dir_all(&docs).unwrap();
+    std::fs::write(docs.join("foo.mec"), "x := 1").unwrap();
+    std::fs::write(docs.join("foo.html"), "<html></html>").unwrap();
+    let old_cwd = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&root).unwrap();
+    let targets = collect_format_targets(Path::new("docs"), None, true, true).unwrap();
+    std::env::set_current_dir(old_cwd).unwrap();
+    assert_eq!(targets.len(), 1);
+    assert_eq!(targets[0].path, PathBuf::from("docs/foo.mec"));
+    ensure_unique_format_outputs(&targets, Path::new("."), false, true, true).unwrap();
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_html_explicit_html_file_still_collected() {
+    let _guard = format_test_lock();
+    let root = temp_root("explicit-html");
+    let html = root.join("foo.html");
+    std::fs::write(&html, "<html></html>").unwrap();
+    let targets = collect_format_targets(&html, None, true, true).unwrap();
+    assert_eq!(targets.len(), 1);
+    assert_eq!(targets[0].path, html);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_html_directory_to_separate_out_still_collects_html() {
+    let _guard = format_test_lock();
+    let root = temp_root("html-separate-out");
+    let docs = root.join("docs");
+    std::fs::create_dir_all(&docs).unwrap();
+    std::fs::write(docs.join("foo.mec"), "x := 1").unwrap();
+    std::fs::write(docs.join("foo.html"), "<html></html>").unwrap();
+    let targets = collect_format_targets(&docs, None, true, false).unwrap();
+    let names = targets.iter().map(|target| target.relative_path.clone()).collect::<Vec<_>>();
+    assert!(names.contains(&PathBuf::from("foo.mec")));
+    assert!(names.contains(&PathBuf::from("foo.html")));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_directory_dash_o_same_directory_collects_sources_in_place() {
+    let _guard = format_test_lock();
+    let root = temp_root("same-output-dir");
+    std::fs::create_dir_all(root.join("docs")).unwrap();
+    std::fs::write(root.join("docs/main.mec"), "x := 1").unwrap();
+    let old_cwd = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&root).unwrap();
+    let mech_paths = vec!["docs".to_string()];
+    let output_matches_input_dir = format_output_matches_input_dir(&mech_paths, Path::new("docs"), false).unwrap();
+    let writes_in_place = format_writes_in_place(Some("docs"), Path::new("docs"), false).unwrap() || output_matches_input_dir;
+    let targets = collect_format_targets(Path::new("docs"), None, false, writes_in_place).unwrap();
+    std::env::set_current_dir(old_cwd).unwrap();
+    assert!(writes_in_place);
+    assert_eq!(targets.len(), 1);
+    assert_eq!(format_output_file_for_target(&targets[0], Path::new("docs"), false, writes_in_place, false), PathBuf::from("docs/main.mec"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_directory_dash_o_same_directory_html_skips_generated_siblings() {
+    let _guard = format_test_lock();
+    let root = temp_root("same-output-html");
+    std::fs::create_dir_all(root.join("docs")).unwrap();
+    std::fs::write(root.join("docs/main.mec"), "x := 1").unwrap();
+    std::fs::write(root.join("docs/main.html"), "<html></html>").unwrap();
+    let old_cwd = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&root).unwrap();
+    let mech_paths = vec!["docs".to_string()];
+    let output_matches_input_dir = format_output_matches_input_dir(&mech_paths, Path::new("docs"), false).unwrap();
+    let writes_in_place = format_writes_in_place(Some("docs"), Path::new("docs"), false).unwrap() || output_matches_input_dir;
+    let targets = collect_format_targets(Path::new("docs"), None, true, writes_in_place).unwrap();
+    std::env::set_current_dir(old_cwd).unwrap();
+    assert!(writes_in_place);
+    assert_eq!(targets.len(), 1);
+    assert_eq!(targets[0].path, PathBuf::from("docs/main.mec"));
+    assert_eq!(format_output_file_for_target(&targets[0], Path::new("docs"), false, writes_in_place, true), PathBuf::from("docs/main.html"));
+    ensure_unique_format_outputs(&targets, Path::new("docs"), false, writes_in_place, true).unwrap();
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_multiple_inputs_dash_o_matching_one_input_errors() {
+    let _guard = format_test_lock();
+    let root = temp_root("multi-same-output");
+    std::fs::create_dir_all(root.join("docs")).unwrap();
+    std::fs::create_dir_all(root.join("more")).unwrap();
+    let old_cwd = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&root).unwrap();
+    let mech_paths = vec!["docs".to_string(), "more".to_string()];
+    let output_matches_input_dir = format_output_matches_input_dir(&mech_paths, Path::new("docs"), false).unwrap();
+    assert!(output_matches_input_dir);
+    let error = format!("{:?}", reject_ambiguous_matching_output_dir(output_matches_input_dir, mech_paths.len(), Path::new("docs")).unwrap_err());
+    assert!(error.contains("matches one of multiple format inputs"), "got {error}");
+    std::env::set_current_dir(old_cwd).unwrap();
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_directory_dash_o_distinct_directory_still_writes_under_out() {
+    let _guard = format_test_lock();
+    let root = temp_root("distinct-output-dir");
+    std::fs::create_dir_all(root.join("docs")).unwrap();
+    std::fs::write(root.join("docs/main.mec"), "x := 1").unwrap();
+    let old_cwd = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&root).unwrap();
+    let targets = collect_format_targets(Path::new("docs"), None, false, false).unwrap();
+    std::env::set_current_dir(old_cwd).unwrap();
+    assert_eq!(format_output_file_for_target(&targets[0], Path::new("out"), false, false, false), PathBuf::from("out/main.mec"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn reject_multi_target_format_to_single_file() {
+    let _guard = format_test_lock();
+    let root = temp_root("single-file-output");
+    let docs = root.join("docs");
+    std::fs::create_dir_all(&docs).unwrap();
+    std::fs::write(docs.join("a.mec"), "a := 1").unwrap();
+    std::fs::write(docs.join("b.mec"), "b := 2").unwrap();
+    let targets = collect_format_targets(&docs, None, false, false).unwrap();
+    let error = format!("{:?}", reject_multi_target_file_output(targets.len(), &root.join("out.mec"), true).unwrap_err());
+    assert!(error.contains("Cannot write 2 formatted sources into single output file"), "got {error}");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn reject_multiple_explicit_inputs_to_single_file() {
+    let _guard = format_test_lock();
+    let root = temp_root("explicit-single-file-output");
+    std::fs::write(root.join("a.mec"), "a := 1").unwrap();
+    std::fs::write(root.join("b.mec"), "b := 2").unwrap();
+    let mut targets = Vec::new();
+    targets.extend(collect_format_targets(&root.join("a.mec"), None, false, false).unwrap());
+    targets.extend(collect_format_targets(&root.join("b.mec"), None, false, false).unwrap());
+    let error = format!("{:?}", reject_multi_target_file_output(targets.len(), &root.join("out.mec"), true).unwrap_err());
+    assert!(error.contains("Cannot write 2 formatted sources into single output file"), "got {error}");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_format_targets_skips_selected_output_directory() {
+    let _guard = format_test_lock();
+    let root = temp_root("skip-selected-output");
+    let docs = root.join("docs");
+    let site = docs.join("site");
+    std::fs::create_dir_all(&site).unwrap();
+    std::fs::write(docs.join("main.mec"), "x := 1").unwrap();
+    std::fs::write(site.join("main.html"), "<html></html>").unwrap();
+    let exclusion = normalize_output_exclusion(&site, false).unwrap();
+    let targets = collect_format_targets(&docs, exclusion.as_deref(), false, false).unwrap();
+    assert_eq!(targets.len(), 1);
+    assert_eq!(targets[0].relative_path, PathBuf::from("main.mec"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_format_targets_skips_markdown_in_directories_but_rejects_explicit_markdown() {
+    let _guard = format_test_lock();
+    let root = temp_root("markdown");
+    std::fs::write(root.join("README.md"), "# Raw Markdown").unwrap();
+    std::fs::write(root.join("demo.mec"), "x := 1").unwrap();
+
+    let targets = collect_format_targets(&root, None, false, false).unwrap();
+    assert_eq!(targets.len(), 1);
+    assert_eq!(targets[0].relative_path, PathBuf::from("demo.mec"));
+
+    let error = format!("{:?}", collect_format_targets(&root.join("README.md"), None, false, false).unwrap_err());
+    assert!(error.contains("Unsupported source extension"), "got {error}");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+  #[test]
+  fn format_explicit_absolute_file_default_updates_absolute_path() {
+    let root = temp_root("absolute-default");
+    let file = root.join("main.mec");
+    std::fs::write(&file, "x := 1").unwrap();
+    let targets = collect_format_targets(&file, None, false, true).unwrap();
+
+    let output = format_output_file_for_target(&targets[0], Path::new("."), false, true, false);
+
+    assert_eq!(output, file);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_explicit_absolute_file_out_dot_updates_absolute_path() {
+    let root = temp_root("absolute-dot");
+    let file = root.join("main.mec");
+    std::fs::write(&file, "x := 1").unwrap();
+    let targets = collect_format_targets(&file, None, false, true).unwrap();
+
+    let output = format_output_file_for_target(&targets[0], Path::new("."), false, true, false);
+
+    assert_eq!(output, file);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_explicit_absolute_file_out_directory_stays_inside_out() {
+    let root = temp_root("absolute-out");
+    let file = root.join("main.mec");
+    std::fs::write(&file, "x := 1").unwrap();
+    let targets = collect_format_targets(&file, None, false, false).unwrap();
+
+    let output = format_output_file_for_target(&targets[0], Path::new("formatted"), false, false, false);
+
+    assert_eq!(output, PathBuf::from("formatted").join("main.mec"));
+    assert!(!output.components().any(|component| matches!(component, std::path::Component::ParentDir | std::path::Component::RootDir | std::path::Component::Prefix(_))));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_explicit_absolute_file_html_default_writes_absolute_html_sibling() {
+    let root = temp_root("absolute-html-default");
+    let file = root.join("main.mec");
+    std::fs::write(&file, "x := 1").unwrap();
+    let targets = collect_format_targets(&file, None, true, true).unwrap();
+
+    let output = format_output_file_for_target(&targets[0], Path::new("."), false, true, true);
+
+    assert_eq!(output, root.join("main.html"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_explicit_absolute_file_html_out_directory_stays_inside_out() {
+    let root = temp_root("absolute-html-out");
+    let file = root.join("main.mec");
+    std::fs::write(&file, "x := 1").unwrap();
+    let targets = collect_format_targets(&file, None, true, false).unwrap();
+
+    let output = format_output_file_for_target(&targets[0], Path::new("formatted"), false, false, true);
+
+    assert_eq!(output, PathBuf::from("formatted").join("main.html"));
+    assert!(!output.components().any(|component| matches!(component, std::path::Component::ParentDir | std::path::Component::RootDir | std::path::Component::Prefix(_))));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+}
+
+#[cfg(all(test, feature = "run"))]
+mod run_collection_tests {
+  use super::*;
+
+  fn temp_root(label: &str) -> PathBuf {
+    let root = std::env::temp_dir().join(format!(
+      "mech-run-collection-{label}-{}",
+      std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos(),
+    ));
+    std::fs::create_dir_all(&root).unwrap();
+    root
+  }
+
+  #[test]
+  fn collect_run_targets_accepts_explicit_mdoc() {
+    let root = temp_root("explicit-mdoc");
+    let doc = root.join("doc.mdoc");
+    std::fs::write(&doc, "x := 1").unwrap();
+    assert_eq!(collect_run_targets(&doc).unwrap(), vec![doc]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_run_targets_discovers_mdoc_in_directory() {
+    let root = temp_root("directory-mdoc");
+    std::fs::write(root.join("doc.mdoc"), "x := 1").unwrap();
+    std::fs::write(root.join("main.mec"), "y := 2").unwrap();
+    let targets = collect_run_targets(&root).unwrap();
+    assert!(targets.contains(&root.join("doc.mdoc")));
+    assert!(targets.contains(&root.join("main.mec")));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_run_targets_accepts_explicit_mpkg() {
+    let root = temp_root("explicit-mpkg");
+    let package = root.join("project.mpkg");
+    std::fs::write(&package, "{}").unwrap();
+    assert_eq!(collect_run_targets(&package).unwrap(), vec![package]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_run_targets_discovers_mpkg_in_directory() {
+    let root = temp_root("directory-mpkg");
+    std::fs::write(root.join("project.mpkg"), "{}").unwrap();
+    std::fs::write(root.join("main.mec"), "y := 2").unwrap();
+    let targets = collect_run_targets(&root).unwrap();
+    assert!(targets.contains(&root.join("project.mpkg")));
+    assert!(targets.contains(&root.join("main.mec")));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+
+  #[test]
+  fn collect_run_targets_accepts_explicit_m_source() {
+    let root = temp_root("explicit-m");
+    let source = root.join("script.m");
+    std::fs::write(&source, "x := 1").unwrap();
+    assert_eq!(collect_run_targets(&source).unwrap(), vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_run_targets_accepts_explicit_csv_source() {
+    let root = temp_root("explicit-csv");
+    let source = root.join("data.csv");
+    std::fs::write(&source, "x,y\n1,2\n").unwrap();
+    assert_eq!(collect_run_targets(&source).unwrap(), vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_run_targets_accepts_explicit_js_source() {
+    let root = temp_root("explicit-js");
+    let source = root.join("script.js");
+    std::fs::write(&source, "console.log('mech');").unwrap();
+    assert_eq!(collect_run_targets(&source).unwrap(), vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_run_targets_discovers_loader_supported_text_sources_in_directory() {
+    let root = temp_root("directory-loader-text");
+    let m = root.join("script.m");
+    let csv = root.join("data.csv");
+    let js = root.join("script.js");
+    std::fs::write(&m, "x := 1").unwrap();
+    std::fs::write(&csv, "x,y\n1,2\n").unwrap();
+    std::fs::write(&js, "console.log('mech');").unwrap();
+
+    let targets = collect_run_targets(&root).unwrap();
+    assert!(targets.contains(&m));
+    assert!(targets.contains(&csv));
+    assert!(targets.contains(&js));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_run_targets_skips_mecb_in_directory() {
+    let root = temp_root("directory-skip-mecb");
+    let source = root.join("main.mec");
+    let bytecode = root.join("output.mecb");
+    std::fs::write(&source, "x := 1").unwrap();
+    std::fs::write(&bytecode, b"bytecode").unwrap();
+
+    let targets = collect_run_targets(&root).unwrap();
+
+    assert_eq!(targets, vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_run_targets_allows_explicit_mecb_file() {
+    let root = temp_root("explicit-mecb");
+    let bytecode = root.join("output.mecb");
+    std::fs::write(&bytecode, b"bytecode").unwrap();
+
+    assert_eq!(collect_run_targets(&bytecode).unwrap(), vec![bytecode]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_run_targets_directory_still_includes_mec_mdoc_mpkg_m_csv_js() {
+    let root = temp_root("directory-run-supported");
+    let expected = vec![
+      root.join("data.csv"),
+      root.join("doc.mdoc"),
+      root.join("main.mec"),
+      root.join("project.mpkg"),
+      root.join("script.js"),
+      root.join("script.m"),
+    ];
+    for path in &expected {
+      std::fs::write(path, "x := 1").unwrap();
+    }
+    std::fs::write(root.join("output.mecb"), b"bytecode").unwrap();
+
+    assert_eq!(collect_run_targets(&root).unwrap(), expected);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_run_targets_still_rejects_unsupported_extension() {
+    let root = temp_root("unsupported");
+    let source = root.join("notes.txt");
+    std::fs::write(&source, "not a mech runtime source").unwrap();
+    assert!(collect_run_targets(&source).is_err());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn collect_run_targets_includes_symlinked_files_but_not_dirs_or_broken_links() {
+    use std::os::unix::fs::symlink;
+    let root = temp_root("symlink-file");
+    std::fs::write(root.join("main.mec"), "x := 1").unwrap();
+    symlink(root.join("main.mec"), root.join("linked.mec")).unwrap();
+    symlink(&root, root.join("self")).unwrap();
+    symlink(root.join("missing.mec"), root.join("broken.mec")).unwrap();
+
+    let targets = collect_run_targets(&root).unwrap();
+    assert_eq!(targets, vec![root.join("linked.mec"), root.join("main.mec")]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn collect_run_targets_skips_symlinked_mecb_in_directory() {
+    use std::os::unix::fs::symlink;
+    let root = temp_root("symlink-mecb");
+    let source = root.join("main.mec");
+    let bytecode = root.join("output.mecb");
+    std::fs::write(&source, "x := 1").unwrap();
+    std::fs::write(&bytecode, b"bytecode").unwrap();
+    symlink(&bytecode, root.join("linked.mecb")).unwrap();
+
+    let targets = collect_run_targets(&root).unwrap();
+
+    assert_eq!(targets, vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
 }

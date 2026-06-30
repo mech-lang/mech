@@ -86,6 +86,7 @@ fn path_is_recursive_capability_target(path: &Path) -> bool {
   path.exists() && path.is_dir()
 }
 
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 struct CapabilityGrantKey {
   path: PathBuf,
@@ -612,4 +613,47 @@ mod filesystem_capability_tests {
     }
     std::fs::remove_dir_all(root).unwrap();
   }
+
+  #[test]
+  fn file_scoped_allow_watch_stays_scoped_to_file() {
+    let root = temp_root("file-watch-parent-grant");
+    let target = root.join("main.mec");
+    std::fs::write(&target, "x := 1").unwrap();
+    {
+      let _guard = CurrentDirGuard::enter(&root);
+      let matches = cli(&[
+        "mech",
+        "--no-config",
+        "--no-default-capabilities",
+        "--allow-watch",
+        "main.mec",
+        "serve",
+        "main.mec",
+      ]);
+      let serve_matches = matches.subcommand_matches("serve").unwrap();
+      let badge = "[test]".normal();
+      let authority = build_mech_filesystem_authority(serve_matches, None, &badge).unwrap();
+      let mut ids = DefaultIdGenerator::new();
+      assert!(authority
+        .delegate_path_to(
+          &mut ids,
+          SERVE_HOST_SUBJECT,
+          &target,
+          false,
+          [FS_WATCH],
+        )
+        .is_ok());
+      assert!(authority
+        .delegate_path_to(
+          &mut ids,
+          SERVE_HOST_SUBJECT,
+          &root,
+          false,
+          [FS_WATCH],
+        )
+        .is_err());
+    }
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
 }

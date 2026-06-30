@@ -410,6 +410,13 @@ pub fn run_cli_source(runtime: &mut MechRuntime, source: &str) -> MResult<Value>
   result
 }
 
+pub fn run_cli_source_code(runtime: &mut MechRuntime, source: &MechSourceCode) -> MResult<Value> {
+  let mut context = runtime.runtime_context()?;
+  let result = runtime.run_source_with_context(&mut context, source);
+  print_run_runtime_events(&context.events);
+  result
+}
+
 fn cli_grants_to_run_resource_grants(grants: &config::EffectiveCliHostGrants) -> Vec<RunResourceGrantConfig> {
   let mut out = Vec::new();
   if !grants.env_read_paths.is_empty() {

@@ -37,6 +37,10 @@ pub struct Interpreter {
   pub code: Vec<MechSourceCode>,
   pub out: Value,
   pub out_values: Ref<HashMap<u64, Value>>,
+  #[cfg(feature = "subscript_formula")]
+  pub string_access_live_values: Ref<std::collections::BTreeSet<usize>>,
+  #[cfg(feature = "subscript_formula")]
+  pub current_string_access_expression_live: Ref<bool>,
   pub inline_eval_counter: Ref<u64>,
   pub context_bindings: Ref<HashMap<u64, RuntimeContextBinding>>,
   pub module_manifests: Ref<ModuleManifestCatalog>,
@@ -70,6 +74,10 @@ impl Clone for Interpreter {
       code: self.code.clone(),
       out: self.out.clone(),
       out_values: self.out_values.clone(),
+      #[cfg(feature = "subscript_formula")]
+      string_access_live_values: Ref::new(self.string_access_live_values.borrow().clone()),
+      #[cfg(feature = "subscript_formula")]
+      current_string_access_expression_live: Ref::new(*self.current_string_access_expression_live.borrow()),
       inline_eval_counter: self.inline_eval_counter.clone(),
       context_bindings: self.context_bindings.clone(),
       module_manifests: self.module_manifests.clone(),
@@ -122,6 +130,10 @@ impl Interpreter {
       out: Value::Empty,
       sub_interpreters: Ref::new(HashMap::new()),
       out_values: Ref::new(HashMap::new()),
+      #[cfg(feature = "subscript_formula")]
+      string_access_live_values: Ref::new(std::collections::BTreeSet::new()),
+      #[cfg(feature = "subscript_formula")]
+      current_string_access_expression_live: Ref::new(false),
       inline_eval_counter: Ref::new(0),
       context_bindings: Ref::new(HashMap::new()),
       module_manifests: Ref::new(ModuleManifestCatalog::with_builtin_hosts()),
@@ -338,7 +350,7 @@ impl Interpreter {
         for _ in 0..step_count {
           for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
             let start = Instant::now();
-            fxn.solve();
+            fxn.solve_result()?;
             total_durations[idx] += start.elapsed();
           }
         }
@@ -360,7 +372,7 @@ impl Interpreter {
                 .to_string();
               format!("[trace][plan] step[{idx}] {fxn_header}")
             });
-            fxn.solve();
+            fxn.solve_result()?;
             trace_println!(self, "{}", {
               let output = fxn.out().to_string();
               let output = if output.chars().count() > 96 {
@@ -407,7 +419,7 @@ impl Interpreter {
     }
 
     for _ in 0..step_count {
-      fxn.solve();
+      fxn.solve_result()?;
     }
 
     Ok(fxn.out().clone())

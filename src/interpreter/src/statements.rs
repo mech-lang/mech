@@ -495,7 +495,11 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       ).with_compiler_loc().with_tokens(var_def.var.name.tokens()));
     }
   }
+  #[cfg(feature = "subscript_formula")]
+  reset_current_string_access_expression_live(p);
   let mut result = expression(&var_def.expression, None, p)?;
+  #[cfg(feature = "subscript_formula")]
+  let string_access_result_is_live = take_current_string_access_expression_live(p);
   #[cfg(all(feature = "kind_annotation", feature = "convert"))]
   if let Some(knd_anntn) =  &var_def.var.kind {
     let knd = kind_annotation(&knd_anntn.kind,p)?;
@@ -602,6 +606,10 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       },
     };
     let detached_result = detach_variable_value(&result);
+    #[cfg(feature = "subscript_formula")]
+    if string_access_result_is_live {
+      mark_string_access_value_live(p, &detached_result);
+    }
     // Save symbol to interpreter
     let val_ref = state_brrw.save_symbol(var_id, var_name.clone(), detached_result.clone(), var_def.mutable);
     // Add variable define step to plan
@@ -611,6 +619,10 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
   } 
   let mut state_brrw = p.state.borrow_mut();
   let detached_result = detach_variable_value(&result);
+  #[cfg(feature = "subscript_formula")]
+  if string_access_result_is_live {
+    mark_string_access_value_live(p, &detached_result);
+  }
   // Save symbol to interpreter
   let val_ref = state_brrw.save_symbol(var_id,var_name.clone(),detached_result.clone(),var_def.mutable);
   // Add variable define step to plan

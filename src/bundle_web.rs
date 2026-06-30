@@ -86,7 +86,7 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     .host_config_injection
     .unwrap_or_else(|| HostAuthorityInjection::BrowserUnsigned(host_config));
   let shim_with_config = crate::inject_host_authority_injection_script(&shim_string, &injection)?;
-  fs::write(&index_html, shim_with_config)?;
+  fs::write(&index_html, &shim_with_config)?;
 
   for source_path in &options.source_paths {
     let source_path = source_path.canonicalize()?;
@@ -101,7 +101,7 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     write_bundle_file(&output_dir, "code", &relative, encoded.as_bytes())?;
 
     let mut formatter = Formatter::new();
-    let html = formatter.format_html(&tree, stylesheet_string.clone(), shim_string.clone());
+    let html = formatter.format_html(&tree, stylesheet_string.clone(), shim_with_config.clone());
     let html_relative = relative.with_extension("html");
     write_bundle_file(&output_dir, "html", &html_relative, html.as_bytes())?;
   }
@@ -489,7 +489,9 @@ mod tests {
     bundle_web_project(options(&root, &out, loaded)).unwrap();
 
     let index = fs::read_to_string(out.join("index.html")).unwrap();
+    let source_html = fs::read_to_string(out.join("html/demo.html")).unwrap();
     assert!(index.contains("window.__MECH_HOST_CONFIG"));
+    assert!(source_html.contains("window.__MECH_HOST_CONFIG"));
     fs::remove_dir_all(root).unwrap();
   }
 
@@ -502,13 +504,16 @@ mod tests {
     bundle_web_project(options(&root, &out, loaded)).unwrap();
 
     let index = fs::read_to_string(out.join("index.html")).unwrap();
-    assert!(index.contains("window.__MECH_HOST_CONFIG"));
-    assert!(index.contains("\"hosts\""));
-    assert!(index.contains("\"name\":\"ui\""));
-    assert!(index.contains("\"name\":\"browser\""));
-    assert!(index.contains("\"runGrants\""));
-    assert!(index.contains("\"target\":\"ui/dom\""));
-    assert!(index.contains("body/content/allowed/_value"));
+    let source_html = fs::read_to_string(out.join("html/demo.html")).unwrap();
+    for html in [&index, &source_html] {
+      assert!(html.contains("window.__MECH_HOST_CONFIG"));
+      assert!(html.contains("\"hosts\""));
+      assert!(html.contains("\"name\":\"ui\""));
+      assert!(html.contains("\"name\":\"browser\""));
+      assert!(html.contains("\"runGrants\""));
+      assert!(html.contains("\"target\":\"ui/dom\""));
+      assert!(html.contains("body/content/allowed/_value"));
+    }
     fs::remove_dir_all(root).unwrap();
   }
 

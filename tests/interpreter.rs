@@ -1071,6 +1071,35 @@ test_interpreter!(interpret_set_rational, r#"{1/2, 3/4}"#, Value::Set(Ref::new(M
 test_interpreter!(interpret_function_define,r#"foo(x<f64>) = z<f64> :=
 z := 10 + x.
 foo(10)"#, Value::F64(Ref::new(20.0)));
+#[test]
+fn interpret_user_function_string_access_valid() {
+  let source = r#"pick() = ch<string> :=
+s := "abc"
+ch := s[2].
+
+pick()"#;
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_user_function_string_access_valid".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(source).unwrap();
+  assert_eq!(result, Value::String(Ref::new("b".to_string())));
+}
+
+#[test]
+fn interpret_user_function_string_access_error_propagates() {
+  let source = r#"bad() = ch<string> :=
+~s := "abc"
+s = "x"
+ch := s[3].
+
+bad()"#;
+  let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    let mut program = MechProgram::new(MechProgramConfig{name: "interpret_user_function_string_access_error_propagates".to_string(), environment: MechProgramEnvironment::default()});
+    program.run_string(source)
+  }));
+  let run_result = result.expect("user function string access should not panic");
+  let error = run_result.expect_err("user function string access should return an error");
+  assert!(format!("{:?}", error).contains("IndexOutOfBounds"), "got {error:?}");
+}
+
 test_interpreter!(interpret_function_define_2_args,r#"foo(x<f64>, y<f64>) = z<f64> :=
 z := x + y.
 foo(10,20)"#, Value::F64(Ref::new(30.0)));
@@ -1667,3 +1696,67 @@ test_interpreter!(interpreter_mika_micromica, r#"╭⦿╯"#, Value::Atom(Ref::n
 test_interpreter!(interpreter_mika_micromica_gripper, r#"Ɔ∞⦿╯"#, Value::Atom(Ref::new(MechAtom::from_name("Ɔ∞⦿╯"))));
 test_interpreter!(interpreter_mika_minimika, r#"(˙◯˙)"#, Value::Atom(Ref::new(MechAtom::from_name("(˙◯˙)"))));
 test_interpreter!(interpreter_mika_micromica_mikasection, r#"╭⦿╯ ⸢Hello, I'm Mika!⸥"#, Value::Atom(Ref::new(MechAtom::from_name("╭⦿╯"))));
+
+#[test]
+fn interpret_mutable_string_access_updates_after_assignment() {
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_mutable_string_access_updates_after_assignment".to_string(), environment: MechProgramEnvironment::default()});
+  program.run_string("~s := \"abc\"\nfirst := s[1]\ns = \"xyz\"").unwrap();
+  program.step(2).unwrap();
+  let symbols = program.interpreter().symbols();
+  let symbols_brrw = symbols.borrow();
+  let first = symbols_brrw.get(hash_str("first")).unwrap().borrow().clone();
+  let first = match first {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_eq!(first, Value::String(Ref::new("x".to_string())));
+}
+
+#[test]
+fn interpret_mutable_string_index_updates_after_assignment() {
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_mutable_string_index_updates_after_assignment".to_string(), environment: MechProgramEnvironment::default()});
+  program.run_string(r#"s := "abc"
+~i := 1
+ch := s[i]
+i = 2"#).unwrap();
+  program.step(3).unwrap();
+  let symbols = program.interpreter().symbols();
+  let symbols_brrw = symbols.borrow();
+  let ch = symbols_brrw.get(hash_str("ch")).unwrap().borrow().clone();
+  let ch = match ch {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_eq!(ch, Value::String(Ref::new("b".to_string())));
+}
+
+#[test]
+fn interpret_mutable_string_source_and_index_update_after_assignment() {
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_mutable_string_source_and_index_update_after_assignment".to_string(), environment: MechProgramEnvironment::default()});
+  program.run_string(r#"~s := "abc"
+~i := 1
+ch := s[i]
+s = "xyz"
+i = 2"#).unwrap();
+  program.step(3).unwrap();
+  let symbols = program.interpreter().symbols();
+  let symbols_brrw = symbols.borrow();
+  let ch = symbols_brrw.get(hash_str("ch")).unwrap().borrow().clone();
+  let ch = match ch {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_eq!(ch, Value::String(Ref::new("y".to_string())));
+}
+
+#[test]
+fn interpret_mutable_string_access_stale_index_returns_error_without_panic() {
+  let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    let mut program = MechProgram::new(MechProgramConfig{name: "interpret_mutable_string_access_stale_index_returns_error_without_panic".to_string(), environment: MechProgramEnvironment::default()});
+    program.run_string("~s := \"abc\"\nch := s[3]\ns = \"x\"").unwrap();
+    program.step(2)
+  }));
+  let step_result = result.expect("stale string index should not panic");
+  let error = step_result.expect_err("stale string index should return a Mech error");
+  assert!(format!("{:?}", error).contains("IndexOutOfBounds"), "got {error:?}");
+}

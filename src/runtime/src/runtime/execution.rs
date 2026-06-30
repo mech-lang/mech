@@ -2529,6 +2529,105 @@ impl MechRuntime {
   }
 
 
+  pub fn run_bytecode_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    bytecode: &[u8],
+  ) -> MResult<Value> {
+    context.validate()?;
+    context.charge_step()?;
+    let profile_started = self.config.diagnostics.profile_enabled.then(std::time::Instant::now);
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ProgramStarted {
+        task_id: context.task,
+      },
+    )?;
+
+    let program_config = self.program.config.clone();
+    let previous_program = std::mem::replace(
+      &mut self.program,
+      MechProgram::new(program_config.clone()),
+    );
+    let mut bytecode_program = MechProgram::new(program_config);
+
+    let result = (|| {
+      self.register_runtime_program_host_functions(
+        context,
+        &mut bytecode_program,
+      )?;
+
+      let runtime_ptr: *mut MechRuntime = self;
+      let context_ptr: *mut RuntimeContext = context;
+      let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+
+      bytecode_program.run_bytecode(bytecode)
+    })();
+
+    self.program = previous_program;
+
+    match &result {
+      Ok(_) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramCompleted {
+            task_id: context.task,
+          },
+        )?;
+        if let Some(started) = profile_started {
+          self.emit_event_to_context(
+            context,
+            RuntimeEventKind::ProgramProfiled {
+              task_id: context.task,
+              duration_ns: started.elapsed().as_nanos(),
+            },
+          )?;
+        }
+      }
+      Err(error) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramFailed {
+            task_id: context.task,
+            message: format!("{:?}", error),
+          },
+        )?;
+        if let Some(started) = profile_started {
+          self.emit_event_to_context(
+            context,
+            RuntimeEventKind::ProgramProfiled {
+              task_id: context.task,
+              duration_ns: started.elapsed().as_nanos(),
+            },
+          )?;
+        }
+      }
+    }
+
+    result
+  }
+
+  pub fn run_source_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    source: &MechSourceCode,
+  ) -> MResult<Value> {
+    match source {
+      MechSourceCode::String(source) => self.run_string_with_context(context, source),
+      MechSourceCode::Tree(tree) => self.run_tree_with_context(context, tree),
+      MechSourceCode::ByteCode(bytes) => self.run_bytecode_with_context(context, bytes),
+      MechSourceCode::Program(sources) => {
+        let mut value = Value::Empty;
+        for source in sources {
+          value = self.run_source_with_context(context, source)?;
+        }
+        Ok(value)
+      }
+      unsupported => Err(MechError::new(RuntimeInvalidOperationError { operation: "run_source", reason: format!("unsupported program source: {:?}", unsupported) }, None)),
+    }
+  }
+
   pub fn run_tree(&mut self, tree: &mech_core::Program) -> MResult<Value> {
     let mut context = self.runtime_context()?;
     self.run_tree_with_context(&mut context, tree)
