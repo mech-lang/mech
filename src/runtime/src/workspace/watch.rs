@@ -94,7 +94,10 @@ impl RuntimeWorkspaceWatcher {
   }
 
   pub fn sync(&mut self, workspace: &RuntimeWorkspace, runtime: &mut MechRuntime) -> MResult<()> {
-    let desired = desired_watch_paths(workspace);
+    let desired = preserve_existing_watch_authorizations(
+      &self.watched_paths,
+      desired_watch_paths(workspace),
+    );
 
     for watched in self.watched_paths.clone() {
       if !desired.contains(&watched) {
@@ -294,6 +297,41 @@ fn event_allowed_by_watches(
   })
 }
 
+fn watch_filter_matches(existing: &RuntimeWorkspaceWatchedPath, desired: &RuntimeWorkspaceWatchedPath) -> bool {
+  if existing.filter_paths.is_empty() || desired.filter_paths.is_empty() {
+    return false;
+  }
+  existing.watch_path == desired.watch_path
+    && desired.filter_paths.iter().any(|desired_path| {
+      existing.filter_paths.iter().any(|existing_path| {
+        desired_path == existing_path
+          || normalize_watch_event_path(desired_path) == normalize_watch_event_path(existing_path)
+      })
+    })
+}
+
+fn preserve_existing_watch_authorizations(
+  current: &BTreeSet<RuntimeWorkspaceWatchedPath>,
+  desired: BTreeSet<RuntimeWorkspaceWatchedPath>,
+) -> BTreeSet<RuntimeWorkspaceWatchedPath> {
+  desired
+    .into_iter()
+    .map(|mut watch| {
+      if let Some(existing) = current.iter().find(|existing| watch_filter_matches(existing, &watch)) {
+        watch.authorized_path = existing.authorized_path.clone();
+        for path in &existing.filter_paths {
+          if !watch.filter_paths.contains(path) {
+            watch.filter_paths.push(path.clone());
+          }
+        }
+        watch.filter_paths.sort();
+        watch.filter_paths.dedup();
+      }
+      watch
+    })
+    .collect()
+}
+
 fn watch_events_from_notify_event(event: Event) -> Vec<RuntimeWorkspaceWatchEvent> {
   let kind = watch_event_kind(&event.kind);
 
@@ -425,6 +463,51 @@ mod tests {
     assert!(!event_allowed_by_watches(&watches, &sibling));
     std::fs::remove_file(&link).unwrap();
     assert!(event_allowed_by_watches(&watches, &link));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn symlink_file_watch_preserves_authorized_path_after_link_delete() {
+    use std::os::unix::fs::symlink;
+    let root = std::env::temp_dir().join(format!("mech-watch-symlink-preserve-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    std::fs::create_dir_all(&root).unwrap();
+    let real = root.join("real.mec");
+    let link = root.join("link.mec");
+    let sibling = root.join("sibling.mec");
+    std::fs::write(&real, "x := 1").unwrap();
+    std::fs::write(&sibling, "y := 2").unwrap();
+    symlink(&real, &link).unwrap();
+
+    let existing_watch = local_workspace_target_watch(&root, "link.mec").unwrap();
+    let canonical_real = real.canonicalize().unwrap();
+    assert_eq!(existing_watch.authorized_path, canonical_real);
+    assert!(existing_watch.filter_paths.contains(&link));
+    assert!(existing_watch.filter_paths.contains(&canonical_real));
+
+    let mut current = BTreeSet::new();
+    current.insert(existing_watch);
+    std::fs::remove_file(&link).unwrap();
+    let mut desired = BTreeSet::new();
+    desired.insert(local_workspace_target_watch(&root, "link.mec").unwrap());
+    let reconciled = preserve_existing_watch_authorizations(&current, desired);
+    let watch = reconciled.iter().next().unwrap();
+
+    assert_eq!(watch.authorized_path, canonical_real);
+    assert!(watch.filter_paths.contains(&link));
+    assert!(event_allowed_by_watches(&reconciled, &link));
+    assert!(!event_allowed_by_watches(&reconciled, &sibling));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn regular_missing_file_watch_without_existing_authorization_uses_missing_path() {
+    let root = std::env::temp_dir().join(format!("mech-watch-regular-missing-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    std::fs::create_dir_all(&root).unwrap();
+    let missing = root.join("missing.mec");
+    let watch = local_workspace_target_watch(&root, "missing.mec").unwrap();
+    assert_eq!(watch.authorized_path, missing);
+    assert_eq!(watch.filter_paths, vec![watch.authorized_path.clone()]);
     std::fs::remove_dir_all(root).unwrap();
   }
 

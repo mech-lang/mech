@@ -145,6 +145,38 @@ fn explicit_file_relative_path(path: &Path) -> MResult<PathBuf> {
 }
 
 #[cfg(feature = "formatter")]
+fn safe_output_relative_path(path: &Path) -> MResult<PathBuf> {
+  let cwd = std::env::current_dir()?;
+  let candidate = if path.is_absolute() {
+    match path.strip_prefix(&cwd) {
+      Ok(stripped) => stripped.to_path_buf(),
+      Err(_) => return Ok(path.file_name().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("output.mec"))),
+    }
+  } else {
+    path.to_path_buf()
+  };
+
+  let mut safe = PathBuf::new();
+  for component in candidate.components() {
+    match component {
+      std::path::Component::Normal(part) => safe.push(part),
+      std::path::Component::CurDir => {}
+      std::path::Component::ParentDir
+      | std::path::Component::RootDir
+      | std::path::Component::Prefix(_) => {
+        return Ok(path.file_name().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("output.mec")));
+      }
+    }
+  }
+
+  if safe.as_os_str().is_empty() {
+    Ok(path.file_name().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("output.mec")))
+  } else {
+    Ok(safe)
+  }
+}
+
+#[cfg(feature = "formatter")]
 fn default_output_relative_path(input_root: &Path, path: &Path) -> MResult<PathBuf> {
   let cwd = std::env::current_dir()?;
   if path.is_relative() {
@@ -175,12 +207,13 @@ fn collect_format_targets(path: &Path, output_exclusion: Option<&Path>) -> MResu
     if !extension_allowed(path, FORMAT_EXTENSIONS) {
       return Err(unsupported_source_path_error(path, FORMAT_EXTENSIONS));
     }
-    let relative_path = explicit_file_relative_path(path)?;
+    let default_output_path = explicit_file_relative_path(path)?;
+    let relative_path = safe_output_relative_path(path)?;
     return Ok(vec![CollectedSourceTarget {
       input_root: path.parent().unwrap_or_else(|| Path::new("")).to_path_buf(),
       path: path.to_path_buf(),
-      relative_path: relative_path.clone(),
-      default_output_path: relative_path,
+      relative_path,
+      default_output_path,
     }]);
   }
 
@@ -1731,6 +1764,44 @@ mod format_collection_tests {
     assert_eq!(format_output_file_for_target(&targets[0], None, Path::new("."), false, false), PathBuf::from("src/main.mec"));
     assert_eq!(root.join("out").join(&targets[0].relative_path), root.join("out/src/main.mec"));
     assert_eq!(root.join("out").join(&targets[0].relative_path).with_extension("html"), root.join("out/src/main.html"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn safe_output_relative_path_rejects_parent_components() {
+    assert_eq!(safe_output_relative_path(Path::new("../docs/main.mec")).unwrap(), PathBuf::from("main.mec"));
+  }
+
+  #[test]
+  fn format_explicit_parent_relative_input_under_out_uses_filename() {
+    let root = temp_root("parent-relative-out");
+    std::fs::create_dir_all(root.join("docs")).unwrap();
+    std::fs::create_dir_all(root.join("examples")).unwrap();
+    std::fs::write(root.join("docs/main.mec"), "x := 1").unwrap();
+    let old_cwd = std::env::current_dir().unwrap();
+    std::env::set_current_dir(root.join("examples")).unwrap();
+    let targets = collect_format_targets(Path::new("../docs/main.mec"), None).unwrap();
+    std::env::set_current_dir(old_cwd).unwrap();
+    let raw_output = format_output_file_for_target(&targets[0], Some("formatted"), Path::new("formatted"), false, false);
+    let html_output = format_output_file_for_target(&targets[0], Some("formatted"), Path::new("formatted"), false, true);
+    assert_eq!(raw_output, PathBuf::from("formatted/main.mec"));
+    assert_eq!(html_output, PathBuf::from("formatted/main.html"));
+    assert_eq!(format_output_file_for_target(&targets[0], None, Path::new("."), false, false), PathBuf::from("../docs/main.mec"));
+    assert!(!raw_output.components().any(|component| matches!(component, std::path::Component::ParentDir | std::path::Component::RootDir | std::path::Component::Prefix(_))));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn format_explicit_safe_relative_input_under_out_preserves_subdir() {
+    let root = temp_root("safe-relative-out");
+    std::fs::create_dir_all(root.join("src")).unwrap();
+    std::fs::write(root.join("src/main.mec"), "x := 1").unwrap();
+    let old_cwd = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&root).unwrap();
+    let targets = collect_format_targets(Path::new("src/main.mec"), None).unwrap();
+    std::env::set_current_dir(old_cwd).unwrap();
+    let output = format_output_file_for_target(&targets[0], Some("formatted"), Path::new("formatted"), false, false);
+    assert_eq!(output, PathBuf::from("formatted/src/main.mec"));
     std::fs::remove_dir_all(root).unwrap();
   }
 
