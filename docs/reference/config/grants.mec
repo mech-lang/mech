@@ -33,8 +33,9 @@ Common operations are:
 
 - `read`
 - `write`
-- `send`
 - provider-specific custom operations
+
+`<-` is send syntax in Mech source, but it is not a grant operation named `send`. Capability checks authorize the underlying operation, usually `write` for stream output or a provider-specific operation such as `move`, `grip`, or `home`.
 
 A provider may expose different operation names. For example, the robot arm host exposes command operations such as `move`, `grip`, and `home`.
 
