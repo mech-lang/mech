@@ -628,15 +628,96 @@ fn mutable_reference_is_mutable_symbol(reference: &MutableReference, p: &Interpr
 }
 
 #[cfg(feature = "subscript_formula")]
+fn values_share_scalar_storage(a: &Value, b: &Value) -> bool {
+    match (a, b) {
+        (Value::String(a), Value::String(b)) => std::rc::Rc::ptr_eq(&a.0, &b.0),
+        (Value::Index(a), Value::Index(b)) => std::rc::Rc::ptr_eq(&a.0, &b.0),
+        #[cfg(feature = "f64")]
+        (Value::F64(a), Value::F64(b)) => std::rc::Rc::ptr_eq(&a.0, &b.0),
+        #[cfg(feature = "u64")]
+        (Value::U64(a), Value::U64(b)) => std::rc::Rc::ptr_eq(&a.0, &b.0),
+        #[cfg(feature = "u32")]
+        (Value::U32(a), Value::U32(b)) => std::rc::Rc::ptr_eq(&a.0, &b.0),
+        #[cfg(feature = "i64")]
+        (Value::I64(a), Value::I64(b)) => std::rc::Rc::ptr_eq(&a.0, &b.0),
+        #[cfg(feature = "i32")]
+        (Value::I32(a), Value::I32(b)) => std::rc::Rc::ptr_eq(&a.0, &b.0),
+        _ => false,
+    }
+}
+
+#[cfg(feature = "subscript_formula")]
+fn mutable_reference_is_plan_output(reference: &MutableReference, p: &Interpreter) -> bool {
+    {
+        let state_brrw = p.state.borrow();
+        let symbols_brrw = state_brrw.symbol_table.borrow();
+        if symbols_brrw.mutable_variables.is_empty() {
+            return false;
+        }
+    }
+
+    let current = reference.borrow();
+    p.plan()
+        .borrow()
+        .iter()
+        .any(|fxn| values_share_scalar_storage(&fxn.out(), &current))
+}
+
+
+#[cfg(feature = "subscript_formula")]
+fn value_is_plan_output(value: &Value, p: &Interpreter) -> bool {
+    p.plan()
+        .borrow()
+        .iter()
+        .any(|fxn| values_share_scalar_storage(&fxn.out(), value))
+}
+
+#[cfg(feature = "subscript_formula")]
+fn string_access_argument_is_live(value: &Value, p: &Interpreter) -> bool {
+    {
+        let state_brrw = p.state.borrow();
+        let symbols_brrw = state_brrw.symbol_table.borrow();
+        if symbols_brrw.mutable_variables.is_empty() {
+            return false;
+        }
+    }
+
+    match value {
+        Value::MutableReference(reference) => mutable_reference_is_plan_output(reference, p),
+        _ => value_is_plan_output(value, p),
+    }
+}
+
+#[cfg(feature = "subscript_formula")]
 fn string_access_source_argument(value: &Value, p: &Interpreter) -> Value {
     match value {
         Value::MutableReference(reference)
             if matches!(value.deref_kind(), ValueKind::String)
-                && !mutable_reference_is_mutable_symbol(reference, p) =>
+                && !mutable_reference_is_mutable_symbol(reference, p)
+                && !mutable_reference_is_plan_output(reference, p) =>
         {
             reference.borrow().clone()
         }
         _ => value.clone(),
+    }
+}
+
+#[cfg(feature = "subscript_formula")]
+fn string_access_index_argument(
+    raw_index: Value,
+    sbscrpt: &Subscript,
+    env: Option<&Environment>,
+    p: &Interpreter,
+) -> MResult<Value> {
+    match &raw_index {
+        Value::MutableReference(reference)
+            if subscript_formula_is_mutable_symbol(sbscrpt, env, p)
+                || mutable_reference_is_plan_output(reference, p) =>
+        {
+            reference.borrow().as_index()?;
+            Ok(raw_index)
+        }
+        _ => raw_index.as_index(),
     }
 }
 
@@ -769,6 +850,8 @@ pub fn subscript(
         }
         #[cfg(feature = "subscript_slice")]
         Subscript::Bracket(subs) => {
+            let string_source_is_live = matches!(val.deref_kind(), ValueKind::String)
+                && string_access_argument_is_live(val, p);
             let mut fxn_input = if matches!(val.deref_kind(), ValueKind::String) {
                 vec![string_access_source_argument(val, p)]
             } else {
@@ -779,16 +862,21 @@ pub fn subscript(
                 [Subscript::Formula(ix)] => {
                     let raw_index = subscript_formula(&subs[0], env, p)?;
                     let index_arg = if matches!(val.deref_kind(), ValueKind::String) {
-                        match &raw_index {
-                            Value::MutableReference(r) if subscript_formula_is_mutable_symbol(&subs[0], env, p) => {
-                                r.borrow().as_index()?;
-                                raw_index
-                            }
-                            _ => raw_index.as_index()?,
-                        }
+                        string_access_index_argument(raw_index, &subs[0], env, p)?
                     } else {
                         raw_index.as_index()?
                     };
+                    if matches!(val.deref_kind(), ValueKind::String)
+                        && matches!(fxn_input.first(), Some(Value::String(_)))
+                        && matches!(&index_arg, Value::Index(_))
+                    {
+                        let mode = if string_source_is_live || string_access_argument_is_live(&index_arg, p) {
+                            StringAccessCompileMode::LiveDirect
+                        } else {
+                            StringAccessCompileMode::Constant
+                        };
+                        set_next_string_access_compile_mode(mode);
+                    }
                     let shape = index_arg.shape();
                     fxn_input.push(index_arg);
                     match shape[..] {

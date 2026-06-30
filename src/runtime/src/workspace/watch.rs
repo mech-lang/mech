@@ -414,6 +414,10 @@ fn should_preserve_missing_external_target_watch(
 fn watch_events_from_notify_event(event: Event) -> Vec<RuntimeWorkspaceWatchEvent> {
   let kind = watch_event_kind(&event.kind);
 
+  if matches!(kind, RuntimeWorkspaceWatchEventKind::Other) {
+    return Vec::new();
+  }
+
   event
     .paths
     .into_iter()
@@ -853,6 +857,59 @@ mod tests {
       event.path == PathBuf::from("src/readme.txt")
         && event.kind == RuntimeWorkspaceWatchEventKind::Modified
     }));
+  }
+
+
+  #[test]
+  fn watch_events_from_notify_event_ignores_other_directory_events() {
+    let root = std::env::temp_dir().join(format!("mech-watch-other-dir-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    let app = root.join("app");
+    std::fs::create_dir_all(&app).unwrap();
+    let event = Event {
+      kind: EventKind::Access(notify::event::AccessKind::Any),
+      paths: vec![app],
+      attrs: Default::default(),
+    };
+
+    let events = watch_events_from_notify_event(event);
+
+    assert!(events.is_empty());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn watch_events_from_notify_event_keeps_create_directory_events() {
+    let root = std::env::temp_dir().join(format!("mech-watch-create-dir-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    let app = root.join("app");
+    std::fs::create_dir_all(&app).unwrap();
+    let event = Event {
+      kind: EventKind::Create(notify::event::CreateKind::Folder),
+      paths: vec![app.clone()],
+      attrs: Default::default(),
+    };
+
+    let events = watch_events_from_notify_event(event);
+
+    assert_eq!(events, vec![RuntimeWorkspaceWatchEvent { path: app, kind: RuntimeWorkspaceWatchEventKind::Created }]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn watch_events_from_notify_event_keeps_modify_file_events() {
+    let root = std::env::temp_dir().join(format!("mech-watch-modify-file-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    std::fs::create_dir_all(&root).unwrap();
+    let file = root.join("main.mec");
+    std::fs::write(&file, "x := 1").unwrap();
+    let event = Event {
+      kind: EventKind::Modify(notify::event::ModifyKind::Data(notify::event::DataChange::Any)),
+      paths: vec![file.clone()],
+      attrs: Default::default(),
+    };
+
+    let events = watch_events_from_notify_event(event);
+
+    assert_eq!(events, vec![RuntimeWorkspaceWatchEvent { path: file, kind: RuntimeWorkspaceWatchEventKind::Modified }]);
+    std::fs::remove_dir_all(root).unwrap();
   }
 
   #[test]

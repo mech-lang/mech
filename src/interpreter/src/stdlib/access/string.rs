@@ -22,7 +22,7 @@ enum StringAccessSource {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum StringAccessCompileMode {
+pub(crate) enum StringAccessCompileMode {
   Constant,
   LiveDirect,
   Dynamic,
@@ -32,6 +32,20 @@ enum StringAccessCompileMode {
 enum StringAccessIndex {
   Direct(Ref<usize>),
   Mutable(MutableReference),
+}
+
+thread_local! {
+  static NEXT_STRING_ACCESS_COMPILE_MODE: std::cell::RefCell<Option<StringAccessCompileMode>> = std::cell::RefCell::new(None);
+}
+
+pub(crate) fn set_next_string_access_compile_mode(mode: StringAccessCompileMode) {
+  NEXT_STRING_ACCESS_COMPILE_MODE.with(|slot| {
+    *slot.borrow_mut() = Some(mode);
+  });
+}
+
+fn take_next_string_access_compile_mode() -> Option<StringAccessCompileMode> {
+  NEXT_STRING_ACCESS_COMPILE_MODE.with(|slot| slot.borrow_mut().take())
 }
 
 #[derive(Debug)]
@@ -128,16 +142,11 @@ impl NativeFunctionCompiler for StringAccessScalar {
     }
     let src = &arguments[0];
     let ix1 = &arguments[1];
-    fn direct_compile_mode(s: &Ref<String>, ix: &Ref<usize>) -> StringAccessCompileMode {
-      // Direct string/index refs can still be outputs of earlier plan steps. Until
-      // bytecode has a real string-access op, only compile refs that look like
-      // parser-created constants; refs with extra owners are treated as live and
-      // rejected rather than frozen into stale bytecode.
-      if std::rc::Rc::strong_count(&s.0) <= 7 && std::rc::Rc::strong_count(&ix.0) <= 2 {
-        StringAccessCompileMode::Constant
-      } else {
-        StringAccessCompileMode::LiveDirect
-      }
+    fn direct_compile_mode(_s: &Ref<String>, _ix: &Ref<usize>) -> StringAccessCompileMode {
+      // Expression lowering sets an explicit semantic mode when it can see that
+      // a direct ref is a live plan output. Otherwise direct refs are constants
+      // or immutable aliases and remain bytecode-compilable.
+      take_next_string_access_compile_mode().unwrap_or(StringAccessCompileMode::Constant)
     }
     match (src.clone(), ix1.clone()) {
       (Value::String(s), Value::Index(ix)) => {

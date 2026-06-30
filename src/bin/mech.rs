@@ -42,7 +42,8 @@ const FORMAT_EXTENSIONS: &[&str] = &["mec", "🤖", "html", "htm", "mdoc"];
 #[cfg(any(feature = "formatter", feature = "run"))]
 const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
 #[cfg(feature = "run")]
-const RUN_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb", "mdoc", "mpkg"];
+// Keep in sync with read_runtime_source_file_with_capabilities.
+const RUN_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb", "mdoc", "mpkg", "m", "csv", "js"];
 
 #[cfg(any(feature = "formatter", feature = "run"))]
 fn source_extension(path: &Path) -> Option<String> {
@@ -2238,6 +2239,60 @@ mod run_collection_tests {
     let targets = collect_run_targets(&root).unwrap();
     assert!(targets.contains(&root.join("project.mpkg")));
     assert!(targets.contains(&root.join("main.mec")));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+
+  #[test]
+  fn collect_run_targets_accepts_explicit_m_source() {
+    let root = temp_root("explicit-m");
+    let source = root.join("script.m");
+    std::fs::write(&source, "x := 1").unwrap();
+    assert_eq!(collect_run_targets(&source).unwrap(), vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_run_targets_accepts_explicit_csv_source() {
+    let root = temp_root("explicit-csv");
+    let source = root.join("data.csv");
+    std::fs::write(&source, "x,y\n1,2\n").unwrap();
+    assert_eq!(collect_run_targets(&source).unwrap(), vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_run_targets_accepts_explicit_js_source() {
+    let root = temp_root("explicit-js");
+    let source = root.join("script.js");
+    std::fs::write(&source, "console.log('mech');").unwrap();
+    assert_eq!(collect_run_targets(&source).unwrap(), vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_run_targets_discovers_loader_supported_text_sources_in_directory() {
+    let root = temp_root("directory-loader-text");
+    let m = root.join("script.m");
+    let csv = root.join("data.csv");
+    let js = root.join("script.js");
+    std::fs::write(&m, "x := 1").unwrap();
+    std::fs::write(&csv, "x,y\n1,2\n").unwrap();
+    std::fs::write(&js, "console.log('mech');").unwrap();
+
+    let targets = collect_run_targets(&root).unwrap();
+    assert!(targets.contains(&m));
+    assert!(targets.contains(&csv));
+    assert!(targets.contains(&js));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn collect_run_targets_still_rejects_unsupported_extension() {
+    let root = temp_root("unsupported");
+    let source = root.join("notes.txt");
+    std::fs::write(&source, "not a mech runtime source").unwrap();
+    assert!(collect_run_targets(&source).is_err());
     std::fs::remove_dir_all(root).unwrap();
   }
 

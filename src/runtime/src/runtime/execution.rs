@@ -2546,25 +2546,26 @@ impl MechRuntime {
     )?;
 
     let program_config = self.program.config.clone();
-    let mut program = std::mem::replace(
+    let previous_program = std::mem::replace(
       &mut self.program,
-      MechProgram::new(program_config),
+      MechProgram::new(program_config.clone()),
     );
+    let mut bytecode_program = MechProgram::new(program_config);
 
     let result = (|| {
       self.register_runtime_program_host_functions(
         context,
-        &mut program,
+        &mut bytecode_program,
       )?;
 
       let runtime_ptr: *mut MechRuntime = self;
       let context_ptr: *mut RuntimeContext = context;
       let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
 
-      program.run_bytecode(bytecode)
+      bytecode_program.run_bytecode(bytecode)
     })();
 
-    self.program = program;
+    self.program = previous_program;
 
     match &result {
       Ok(_) => {
