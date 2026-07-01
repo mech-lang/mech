@@ -30,6 +30,22 @@ fn push_serve_source_file(logical_path: &Path, read_path: &Path, seen_files: &mu
   Ok(())
 }
 
+fn normalize_link_logical_path(path: &Path) -> MResult<PathBuf> {
+  let parent = path.parent().ok_or_else(|| {
+    Error::new(
+      ErrorKind::InvalidInput,
+      format!("serve.paths symlink has no parent: {}", path.display()),
+    )
+  })?;
+  let file_name = path.file_name().ok_or_else(|| {
+    Error::new(
+      ErrorKind::InvalidInput,
+      format!("serve.paths symlink has no file name: {}", path.display()),
+    )
+  })?;
+  Ok(parent.canonicalize()?.join(file_name))
+}
+
 fn collect_serve_source_path(
   path: &Path,
   visited_dirs: &mut BTreeSet<PathBuf>,
@@ -55,19 +71,25 @@ fn collect_serve_source_path(
     if target.is_dir() { return Ok(()); }
     if target.is_file() {
       require_file("serve.paths", &target)?;
-      if is_mech_source(&target) { push_serve_source_file(path, &target, seen_files, out)?; }
+      if is_mech_source(&target) {
+        let logical = normalize_link_logical_path(path)?;
+        push_serve_source_file(&logical, &target, seen_files, out)?;
+      }
     }
     return Ok(());
   }
   if metadata.is_file() {
     require_file("serve.paths", path)?;
-    if is_mech_source(path) { push_serve_source_file(path, path, seen_files, out)?; }
+    if is_mech_source(path) {
+      let logical = path.canonicalize()?;
+      push_serve_source_file(&logical, &logical, seen_files, out)?;
+    }
     return Ok(());
   }
   if !metadata.is_dir() { return Ok(()); }
   let canonical = path.canonicalize()?;
-  if !visited_dirs.insert(canonical) { return Ok(()); }
-  let mut entries = std::fs::read_dir(path)?.collect::<Result<Vec<_>, _>>()?;
+  if !visited_dirs.insert(canonical.clone()) { return Ok(()); }
+  let mut entries = std::fs::read_dir(&canonical)?.collect::<Result<Vec<_>, _>>()?;
   entries.sort_by_key(|entry| entry.path());
   for entry in entries { collect_serve_source_path(&entry.path(), visited_dirs, seen_files, out)?; }
   Ok(())
@@ -570,6 +592,117 @@ mod tests {
 
     assert!(error.contains("serve.paths entry does not exist"));
     assert!(error.contains("missing.mec"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn source_collection_normalizes_file_path_with_parent_components() {
+    let root = temp_root("normalize-file-parent-components");
+    let app = root.join("app");
+    let config = root.join("config");
+    std::fs::create_dir_all(&app).unwrap();
+    std::fs::create_dir_all(&config).unwrap();
+    std::fs::write(app.join("demo.mec"), "x := 1\n").unwrap();
+
+    let paths = expand_serve_source_paths(&config, &[PathBuf::from("../app/demo.mec")]).unwrap();
+
+    assert_eq!(paths, vec![app.join("demo.mec").canonicalize().unwrap()]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn source_collection_normalizes_directory_children_with_parent_components() {
+    let root = temp_root("normalize-dir-parent-components");
+    let app = root.join("app");
+    let config = root.join("config");
+    std::fs::create_dir_all(app.join("src")).unwrap();
+    std::fs::create_dir_all(&config).unwrap();
+    std::fs::write(app.join("src/demo.mec"), "x := 1\n").unwrap();
+
+    let paths = expand_serve_source_paths(&config, &[PathBuf::from("../app/src")]).unwrap();
+
+    assert_eq!(paths, vec![app.join("src/demo.mec").canonicalize().unwrap()]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn bundle_web_with_config_outside_project_normalizes_file_serve_path() {
+    let root = temp_root("bundle-normalized-file");
+    let app = root.join("app");
+    let config = root.join("config");
+    std::fs::create_dir_all(app.join("pkg")).unwrap();
+    std::fs::create_dir_all(&config).unwrap();
+    std::fs::write(app.join("index.html"), "<html><head></head><body><script type=\"module\">import init from \"./pkg/mech_wasm.js\"; await fetch(\"./style.css\");</script></body></html>").unwrap();
+    std::fs::write(app.join("demo.mec"), "x := 1\n").unwrap();
+    std::fs::write(app.join("pkg/mech_wasm.js"), "export default async function init() {}\n").unwrap();
+    std::fs::write(app.join("pkg/mech_wasm_bg.wasm"), b"wasm").unwrap();
+    std::fs::write(config.join("style.css"), "body {}\n").unwrap();
+    std::fs::write(
+      config.join("demo.mcfg"),
+      r#"config := {
+  runtime: {name: "bundle-normalized-file"}
+  serve: {
+    paths: ["../app/demo.mec"]
+    shim: "../app/index.html"
+    stylesheets: ["style.css"]
+    wasm: "../app/pkg"
+  }
+}
+"#,
+    )
+    .unwrap();
+    let _guard = CurrentDirGuard::enter(&root);
+    let matches = bundle_matches(&["mech", "--config", "config/demo.mcfg", "bundle-web", "app", "--out", "out"]);
+    let loaded = load_bundle_web_config(&matches).unwrap();
+    let options = effective_bundle_web_options(&matches, loaded).unwrap();
+
+    crate::bundle_web_project(options).unwrap();
+
+    assert!(root.join("out/source/demo.mec").is_file());
+    assert!(root.join("out/code/demo.mec").is_file());
+    assert!(root.join("out/html/demo.html").is_file());
+    assert!(!root.join("out/source/../app/demo.mec").exists());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn bundle_web_with_config_outside_project_normalizes_directory_serve_path() {
+    let root = temp_root("bundle-normalized-dir");
+    let app = root.join("app");
+    let config = root.join("config");
+    std::fs::create_dir_all(app.join("pkg")).unwrap();
+    std::fs::create_dir_all(app.join("src")).unwrap();
+    std::fs::create_dir_all(&config).unwrap();
+    std::fs::write(app.join("index.html"), "<html><head></head><body><script type=\"module\">import init from \"./pkg/mech_wasm.js\"; await fetch(\"./style.css\");</script></body></html>").unwrap();
+    std::fs::write(app.join("src/demo.mec"), "x := 1\n").unwrap();
+    std::fs::write(app.join("pkg/mech_wasm.js"), "export default async function init() {}\n").unwrap();
+    std::fs::write(app.join("pkg/mech_wasm_bg.wasm"), b"wasm").unwrap();
+    std::fs::write(config.join("style.css"), "body {}\n").unwrap();
+    std::fs::write(
+      config.join("demo.mcfg"),
+      r#"config := {
+  runtime: {name: "bundle-normalized-dir"}
+  serve: {
+    paths: ["../app/src"]
+    shim: "../app/index.html"
+    stylesheets: ["style.css"]
+    wasm: "../app/pkg"
+  }
+}
+"#,
+    )
+    .unwrap();
+    let _guard = CurrentDirGuard::enter(&root);
+    let matches = bundle_matches(&["mech", "--config", "config/demo.mcfg", "bundle-web", "app", "--out", "out"]);
+    let loaded = load_bundle_web_config(&matches).unwrap();
+    let options = effective_bundle_web_options(&matches, loaded).unwrap();
+
+    crate::bundle_web_project(options).unwrap();
+
+    assert!(root.join("out/source/src/demo.mec").is_file());
+    assert!(root.join("out/code/src/demo.mec").is_file());
+    assert!(root.join("out/html/src/demo.html").is_file());
+    assert!(!root.join("out/source/../app/src/demo.mec").exists());
     std::fs::remove_dir_all(root).unwrap();
   }
 
