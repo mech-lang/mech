@@ -341,3 +341,70 @@ fn bytecode_dynamic_string_access_rejects_stale_constant_compile() {
   let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
   assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet"), "got {error}");
 }
+
+#[test]
+fn bytecode_constant_string_access_after_live_statement_still_compiles() {
+  let code = r#"
+~i := 1
+i == 1
+s := "abc"
+ch := s[1]
+"#;
+
+  let mut prgrm = MechProgram::new(MechProgramConfig {
+    name: "bytecode_constant_string_access_after_live_statement_still_compiles".to_string(),
+    environment: MechProgramEnvironment::default(),
+  });
+
+  prgrm.run_string(code).unwrap();
+  prgrm.compile_bytecode()
+    .unwrap_or_else(|err| panic!("constant string access should compile after unrelated live statement: {:?}", err));
+}
+
+#[cfg(feature = "u8")]
+#[test]
+fn bytecode_rejects_live_u8_string_index_dependency() {
+  let code = r#"
+~i0 := 1<u8>
+i := i0 + 0<u8>
+s := "abc"
+ch := s[i]
+"#;
+
+  let mut prgrm = MechProgram::new(MechProgramConfig {
+    name: "bytecode_rejects_live_u8_string_index_dependency".to_string(),
+    environment: MechProgramEnvironment::default(),
+  });
+
+  prgrm.run_string(code).unwrap();
+  let err = prgrm.compile_bytecode();
+  assert!(
+    err.is_err(),
+    "live u8-derived string index must not compile as a frozen constant"
+  );
+}
+
+#[test]
+fn bytecode_rejects_live_function_input_index_result_dependency() {
+  let code = r#"
+~i0 := 1
+id(ix<f64>) = out<f64> :=
+out := ix + 0.
+
+i := id(i0 + 0)
+s := "abc"
+ch := s[i]
+"#;
+
+  let mut prgrm = MechProgram::new(MechProgramConfig {
+    name: "bytecode_rejects_live_function_input_index_result_dependency".to_string(),
+    environment: MechProgramEnvironment::default(),
+  });
+
+  prgrm.run_string(code).unwrap();
+  let err = prgrm.compile_bytecode();
+  assert!(
+    err.is_err(),
+    "live function-input-derived index result must not compile as a frozen string access"
+  );
+}
