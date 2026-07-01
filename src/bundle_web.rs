@@ -86,8 +86,8 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
   let injection = options
     .host_config_injection
     .unwrap_or_else(|| HostAuthorityInjection::BrowserUnsigned(host_config));
-  let shim_with_config = crate::inject_host_authority_injection_script(&shim_string, &injection)?;
-  fs::write(&index_html, &shim_with_config)?;
+  let root_shim_with_config = crate::inject_host_authority_injection_script(&shim_string, &injection)?;
+  fs::write(&index_html, &root_shim_with_config)?;
 
   for source_path in &options.source_paths {
     let source_path = source_path.canonicalize()?;
@@ -102,7 +102,9 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     write_bundle_file(&output_dir, "code", &relative, encoded.as_bytes())?;
 
     let html_relative = relative.with_extension("html");
-    let source_shim = rebase_bundle_shim_for_depth(&shim_with_config, html_relative.components().count());
+    let depth = html_relative.components().count();
+    let rebased_shim = rebase_bundle_shim_for_depth(&shim_string, depth);
+    let source_shim = crate::inject_host_authority_injection_script(&rebased_shim, &injection)?;
     let mut formatter = Formatter::new();
     let html = formatter.format_html(&tree, stylesheet_string.clone(), source_shim);
     write_bundle_file(&output_dir, "html", &html_relative, html.as_bytes())?;
@@ -776,5 +778,54 @@ mod tests {
     let two = rebase_bundle_shim_for_depth(shim, 2);
     assert!(two.contains("../../pkg/mech_wasm.js"));
     assert!(two.contains("../../style.css"));
+  }
+
+  #[test]
+  fn bundle_web_rebases_source_shim_before_injecting_host_config() {
+    let root = temp_root("rebase-before-inject");
+    let _ = write_demo_project(&root);
+    fs::write(
+      root.join("demo.mcfg"),
+      r#"config := {
+  runtime: {name: "bundle-test"}
+  serve: {
+    paths: ["demo.mec"]
+    shim: "index.html"
+    wasm: "pkg"
+  }
+  run: {
+    grants: [
+      {
+        target: "browser/dom"
+        operations: ["read"]
+        paths: ["./source/foo", "./code/foo"]
+      }
+    ]
+  }
+}
+"#,
+    )
+    .unwrap();
+    let loaded = crate::load_mech_config_path(root.join("demo.mcfg"), Some(root.to_path_buf())).unwrap();
+    fs::write(
+      root.join("index.html"),
+      r#"<!doctype html><html><head></head><body><script type="module">import init from "./pkg/mech_wasm.js"; await fetch("./style.css");</script></body></html>"#,
+    )
+    .unwrap();
+    let out = root.join("out");
+
+    bundle_web_project(options(&root, &out, loaded)).unwrap();
+
+    let index = fs::read_to_string(out.join("index.html")).unwrap();
+    assert!(index.contains("./pkg/mech_wasm.js"));
+    assert!(index.contains("./style.css"));
+    let source = fs::read_to_string(out.join("html/demo.html")).unwrap();
+    assert!(source.contains("../pkg/mech_wasm.js"));
+    assert!(source.contains("../style.css"));
+    assert!(source.contains("./source/foo"));
+    assert!(source.contains("./code/foo"));
+    assert!(!source.contains("../source/foo"));
+    assert!(!source.contains("../code/foo"));
+    fs::remove_dir_all(root).unwrap();
   }
 }

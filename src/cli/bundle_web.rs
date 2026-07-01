@@ -26,7 +26,12 @@ fn expand_serve_source_paths(base_dir: &Path, paths: &[PathBuf]) -> MResult<Vec<
 fn collect_serve_source_path(path: &Path, visited: &mut BTreeSet<PathBuf>, out: &mut Vec<PathBuf>) -> MResult<()> {
   let metadata = match std::fs::symlink_metadata(path) {
     Ok(metadata) => metadata,
-    Err(error) if error.kind() == ErrorKind::NotFound => return Ok(()),
+    Err(error) if error.kind() == ErrorKind::NotFound => {
+      return Err(Error::new(
+        ErrorKind::InvalidInput,
+        format!("serve.paths entry does not exist: {}", path.display()),
+      ).into());
+    }
     Err(error) => return Err(error.into()),
   };
   if metadata.file_type().is_symlink() {
@@ -530,6 +535,29 @@ mod tests {
     assert_eq!(options.shim_path, root.join("override.html"));
     assert!(options.stylesheet_paths.contains(&root.join("override.css")));
     assert_eq!(options.wasm_pkg, root.join("override-pkg"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn source_collection_errors_for_missing_serve_path() {
+    let root = temp_root("missing-serve-path");
+    let error = format!("{:?}", expand_serve_source_paths(&root, &[PathBuf::from("missing.mec")]).unwrap_err());
+
+    assert!(error.contains("serve.paths entry does not exist"));
+    assert!(error.contains("missing.mec"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn source_collection_errors_for_missing_serve_path_after_existing_directory() {
+    let root = temp_root("missing-serve-path-after-dir");
+    std::fs::create_dir_all(root.join("src")).unwrap();
+    std::fs::write(root.join("src/demo.mec"), "x := 1\n").unwrap();
+
+    let error = format!("{:?}", expand_serve_source_paths(&root, &[PathBuf::from("src"), PathBuf::from("missing.mec")]).unwrap_err());
+
+    assert!(error.contains("serve.paths entry does not exist"));
+    assert!(error.contains("missing.mec"));
     std::fs::remove_dir_all(root).unwrap();
   }
 
