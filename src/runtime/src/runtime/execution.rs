@@ -2772,6 +2772,10 @@ impl MechRuntime {
 
   #[cfg(feature = "functions")]
   pub fn step(&mut self, count: u64) -> MResult<()> {
+    let mut context = self.runtime_context()?;
+    let runtime_ptr: *mut MechRuntime = self;
+    let context_ptr: *mut RuntimeContext = &mut context;
+    let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
     self.program.step(count)
   }
 

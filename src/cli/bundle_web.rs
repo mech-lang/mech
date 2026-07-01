@@ -24,11 +24,27 @@ fn expand_serve_source_paths(base_dir: &Path, paths: &[PathBuf]) -> MResult<Vec<
 }
 
 fn collect_serve_source_path(path: &Path, visited: &mut BTreeSet<PathBuf>, out: &mut Vec<PathBuf>) -> MResult<()> {
-  let metadata = std::fs::symlink_metadata(path)?;
-  if metadata.file_type().is_symlink() { return Ok(()); }
+  let metadata = match std::fs::symlink_metadata(path) {
+    Ok(metadata) => metadata,
+    Err(error) if error.kind() == ErrorKind::NotFound => return Ok(()),
+    Err(error) => return Err(error.into()),
+  };
+  if metadata.file_type().is_symlink() {
+    let target = match path.canonicalize() {
+      Ok(target) => target,
+      Err(error) if error.kind() == ErrorKind::NotFound => return Ok(()),
+      Err(error) => return Err(error.into()),
+    };
+    if target.is_dir() { return Ok(()); }
+    if target.is_file() {
+      require_file("serve.paths", &target)?;
+      if is_mech_source(&target) { out.push(target); }
+    }
+    return Ok(());
+  }
   if metadata.is_file() {
     require_file("serve.paths", path)?;
-    if is_mech_source(path) { out.push(path.to_path_buf()); }
+    if is_mech_source(path) { out.push(path.canonicalize()?); }
     return Ok(());
   }
   if !metadata.is_dir() { return Ok(()); }
@@ -514,6 +530,26 @@ mod tests {
     assert_eq!(options.shim_path, root.join("override.html"));
     assert!(options.stylesheet_paths.contains(&root.join("override.css")));
     assert_eq!(options.wasm_pkg, root.join("override-pkg"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn source_collection_includes_file_symlinks_but_skips_directory_symlinks_and_broken_links() {
+    use std::os::unix::fs as unix_fs;
+
+    let root = temp_root("symlink-sources");
+    let project = root.join("project");
+    let src = project.join("src");
+    std::fs::create_dir_all(src.join("cycle")).unwrap();
+    std::fs::write(src.join("real.mec"), "x := 1\n").unwrap();
+    unix_fs::symlink(src.join("real.mec"), src.join("link.mec")).unwrap();
+    unix_fs::symlink(&src, src.join("cycle/dir-link")).unwrap();
+    unix_fs::symlink(src.join("missing.mec"), src.join("broken.mec")).unwrap();
+
+    let paths = expand_serve_source_paths(&project, &[PathBuf::from("src/link.mec"), PathBuf::from("src")]).unwrap();
+
+    assert_eq!(paths, vec![src.join("real.mec").canonicalize().unwrap()]);
     std::fs::remove_dir_all(root).unwrap();
   }
 }

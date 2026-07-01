@@ -101,9 +101,10 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
       .map_err(|error| Error::new(ErrorKind::Other, error.to_string()))?;
     write_bundle_file(&output_dir, "code", &relative, encoded.as_bytes())?;
 
-    let mut formatter = Formatter::new();
-    let html = formatter.format_html(&tree, stylesheet_string.clone(), shim_with_config.clone());
     let html_relative = relative.with_extension("html");
+    let source_shim = rebase_bundle_shim_for_depth(&shim_with_config, html_relative.components().count());
+    let mut formatter = Formatter::new();
+    let html = formatter.format_html(&tree, stylesheet_string.clone(), source_shim);
     write_bundle_file(&output_dir, "html", &html_relative, html.as_bytes())?;
   }
 
@@ -112,6 +113,20 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     index_html,
     source_count: options.source_paths.len(),
   })
+}
+
+fn rebase_bundle_shim_for_depth(shim: &str, depth: usize) -> String {
+  if depth == 0 {
+    return shim.to_string();
+  }
+  let prefix = "../".repeat(depth);
+  let mut rebased = shim.to_string();
+  for asset in ["pkg/", "style.css", "code/", "source/"] {
+    let from = format!("./{asset}");
+    let to = format!("{prefix}{asset}");
+    rebased = rebased.replace(&from, &to);
+  }
+  rebased
 }
 
 fn read_stylesheets(paths: &[PathBuf]) -> MResult<String> {
@@ -744,5 +759,22 @@ mod tests {
     let has_config = walk_has_mcfg(&out);
     assert!(!has_config);
     fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn source_page_shim_rebases_relative_bundle_assets_by_depth() {
+    let shim = r#"<script type="module">import init from "./pkg/mech_wasm.js"; await fetch("./style.css"); await fetch("./code/demo.mec"); await fetch("./source/demo.mec");</script>"#;
+
+    let root = rebase_bundle_shim_for_depth(shim, 0);
+    assert!(root.contains("./pkg/mech_wasm.js"));
+    assert!(root.contains("./style.css"));
+
+    let one = rebase_bundle_shim_for_depth(shim, 1);
+    assert!(one.contains("../pkg/mech_wasm.js"));
+    assert!(one.contains("../style.css"));
+
+    let two = rebase_bundle_shim_for_depth(shim, 2);
+    assert!(two.contains("../../pkg/mech_wasm.js"));
+    assert!(two.contains("../../style.css"));
   }
 }

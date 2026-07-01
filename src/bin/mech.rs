@@ -1271,6 +1271,8 @@ async fn main() -> Result<(), MechError> {
     )?;
 
     let mut runtime = new_cli_runtime(runtime_config, &cli_grants, configured_hosts, configured_run_grants)?;
+    let fs_kernel = fs_authority.kernel().clone();
+    runtime.set_source_resolver(FileSourceResolver::new(&std::env::current_dir()?).with_capabilities(fs_kernel.clone(), MECH_TOOL_SUBJECT));
 
     if let RunInputMode::InlineSource(source) = &run_input_mode {
       match run_cli_source(&mut runtime, source.trim()) {
