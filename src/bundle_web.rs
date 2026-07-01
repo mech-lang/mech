@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::fs;
 use std::io::{Error, ErrorKind};
 use std::path::{Component, Path, PathBuf};
@@ -169,7 +170,8 @@ pub fn copy_project_static_assets(
     .iter()
     .filter_map(|path| path.canonicalize().ok())
     .collect::<Vec<_>>();
-  copy_project_static_assets_inner(&project_dir, &project_dir, &output_dir, &excluded_dirs)
+  let mut visited = BTreeSet::new();
+  copy_project_static_assets_inner(&project_dir, &project_dir, &output_dir, &excluded_dirs, &mut visited)
 }
 
 fn copy_project_static_assets_inner(
@@ -177,10 +179,17 @@ fn copy_project_static_assets_inner(
   current_dir: &Path,
   output_dir: &Path,
   excluded_dirs: &[PathBuf],
+  visited: &mut BTreeSet<PathBuf>,
 ) -> MResult<()> {
-  for entry in fs::read_dir(current_dir)? {
+  let current_dir = current_dir.canonicalize()?;
+  if !visited.insert(current_dir.clone()) { return Ok(()); }
+  for entry in fs::read_dir(&current_dir)? {
     let entry = entry?;
     let path = entry.path();
+    let file_type = entry.file_type()?;
+    if file_type.is_symlink() && path.canonicalize().map(|target| target.is_dir()).unwrap_or(false) {
+      continue;
+    }
     let canonical_path = path.canonicalize()?;
 
     if should_skip_static_asset_path(&canonical_path, output_dir, excluded_dirs) {
@@ -191,7 +200,7 @@ fn copy_project_static_assets_inner(
       if should_skip_static_asset_dir(&canonical_path) {
         continue;
       }
-      copy_project_static_assets_inner(project_dir, &canonical_path, output_dir, excluded_dirs)?;
+      copy_project_static_assets_inner(project_dir, &canonical_path, output_dir, excluded_dirs, visited)?;
       continue;
     }
 

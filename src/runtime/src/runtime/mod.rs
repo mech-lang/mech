@@ -755,6 +755,10 @@ impl MechRuntime {
     self.source_resolver.as_mut()
   }
 
+  pub fn set_source_resolver(&mut self, source_resolver: impl SourceResolver + 'static) {
+    self.source_resolver = Box::new(source_resolver);
+  }
+
   pub fn host_registry(&self) -> &dyn HostRegistry {
     self.host_registry.as_ref()
   }

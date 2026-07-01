@@ -24,6 +24,7 @@ fn authority() -> BrowserAuthority {
     BrowserDomPath::new("body/header/title").unwrap(),
     selector.clone(),
     BrowserDomProperty::Text,
+    [BrowserOperation::Read, BrowserOperation::Write],
   ));
   authority.grant(BrowserCapabilityGrant::new(
     BrowserResource::Dom(selector),

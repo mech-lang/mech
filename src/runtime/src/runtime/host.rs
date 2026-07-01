@@ -34,6 +34,7 @@
 
 
 use super::*;
+use mech_core::Ref;
 
 impl MechRuntime {
 
@@ -159,7 +160,7 @@ impl MechRuntime {
 }
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct RuntimeProgramHostTarget {
   pub runtime: *mut MechRuntime,
   pub context: *mut RuntimeContext,
@@ -188,7 +189,7 @@ impl NativeFunctionCompiler for RuntimeHostNativeFunctionCompiler {
     &self,
     arguments: &Vec<Value>,
   ) -> MResult<Box<dyn mech_core::MechFunction>> {
-    let value = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+    let (value, target) = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
       let target = slot.borrow().ok_or_else(|| {
         MechError::new(
           RuntimeProgramHostNotActiveError {
@@ -202,17 +203,21 @@ impl NativeFunctionCompiler for RuntimeHostNativeFunctionCompiler {
       // in `run_string_with_context`. During that call the `MechProgram` has
       // been moved out of `self`, so calling back into the runtime does not
       // alias `self.program`.
-      unsafe {
+      let value = unsafe {
         (&mut *target.runtime).call_host_with_context(
           &mut *target.context,
           HostCall::new(&self.host_name, arguments.clone()),
         )
-      }
+      }?;
+      Ok::<(Value, RuntimeProgramHostTarget), MechError>((value, target))
     })?;
 
     Ok(Box::new(RuntimeHostNativeFunction {
       name: self.mech_name.clone(),
-      value,
+      host_name: self.host_name.clone(),
+      arguments: arguments.clone(),
+      value: Ref::new(value),
+      target,
     }))
   }
 }
@@ -220,16 +225,26 @@ impl NativeFunctionCompiler for RuntimeHostNativeFunctionCompiler {
 #[derive(Clone, Debug)]
 pub struct RuntimeHostNativeFunction {
   pub name: String,
-  pub value: Value,
+  pub host_name: String,
+  pub arguments: Vec<Value>,
+  pub value: Ref<Value>,
+  pub target: RuntimeProgramHostTarget,
 }
 
 impl MechFunctionImpl for RuntimeHostNativeFunction {
   fn solve(&self) {
-    // The runtime host call already ran during native function compilation.
+    if let Ok(value) = unsafe {
+      (&mut *self.target.runtime).call_host_with_context(
+        &mut *self.target.context,
+        HostCall::new(&self.host_name, self.arguments.clone()),
+      )
+    } {
+      *self.value.borrow_mut() = value;
+    }
   }
 
   fn out(&self) -> Value {
-    self.value.clone()
+    self.value.borrow().clone()
   }
 
   fn to_string(&self) -> String {
