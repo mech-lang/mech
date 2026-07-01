@@ -1,0 +1,20 @@
+Executables
+===============================================================================
+
+Use `mechc build` to package Mech bytecode with a Rust shim executable.
+
+```sh
+mechc build main.mec --out app
+mechc build main.mec --release --out app
+```
+
+The current output path is:
+
+```text
+build/debug/app.exe
+build/release/app.exe
+```
+
+This is the current artifact path, not a final cross-platform packaging contract.
+
+For bytecode-only output, use `mech build` instead.

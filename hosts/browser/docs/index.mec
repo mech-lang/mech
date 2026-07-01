@@ -1,0 +1,35 @@
+Browser Host
+===============================================================================
+
+The browser host exposes browser resources to Mech programs through configured contexts and grants.
+
+1. Contexts
+-------------------------------------------------------------------------------
+
+The browser host exposes:
+
+```text
+browser/dom
+```
+
+The DOM context is backed by configured DOM paths, selectors, properties, and allowed operations.
+
+2. Pages
+-------------------------------------------------------------------------------
+
+- [Manifest](manifest.html)
+- [Config](config.html)
+- [DOM](dom.html)
+- [Clipboard](clipboard.html)
+- [Network](network.html)
+- [Storage](storage.html)
+- [WASM API](wasm-api.html)
+- [Host Config Injection](host-config-injection.html)
+- [Host Delegation](delegation.html)
+- [Examples](examples.html)
+
+3. Related guides
+-------------------------------------------------------------------------------
+
+- [Browser DOM Demo](/guides/browser-dom-demo.html)
+- [First Web Bundle](/guides/first-web-bundle.html)

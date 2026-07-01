@@ -1,0 +1,38 @@
+`mech serve`
+===============================================================================
+
+`mech serve` starts the Mech development server.
+
+1. Serve source files
+-------------------------------------------------------------------------------
+
+```sh
+mech serve main.mec
+```
+
+The default address is `127.0.0.1` and the default port is `8081`.
+
+```text
+http://127.0.0.1:8081/
+```
+
+2. Configure address and port
+-------------------------------------------------------------------------------
+
+```sh
+mech serve main.mec --address 127.0.0.1 --port 3000
+```
+
+3. Serve a project
+-------------------------------------------------------------------------------
+
+```sh
+mech serve examples/browser-dom-demo
+```
+
+When a config file is loaded, `serve.paths`, `serve.shim`, `serve.wasm`, and `serve.stylesheets` can define the served project.
+
+4. Browser host config
+-------------------------------------------------------------------------------
+
+When browser host settings or run grants are present, the server injects host configuration into the served page so the browser runtime can initialize from host-owned settings.

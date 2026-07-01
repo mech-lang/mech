@@ -1,0 +1,39 @@
+Context Capabilities
+===============================================================================
+
+Context access is capability-checked.
+
+A program may bind a context, but each read, write, or send still has to be permitted by runtime grants and provider rules.
+
+1. Grants
+-------------------------------------------------------------------------------
+
+A grant names a target context, the allowed operations, and the allowed paths.
+
+```mech
+config := {
+  run: {
+    grants: [
+      {
+        target: "browser/dom"
+        operations: ["read"]
+        paths: ["body/content/input/_value"]
+      }
+    ]
+  }
+}
+```
+
+2. Provider authority
+-------------------------------------------------------------------------------
+
+A grant is not the only check. The provider can also reject access.
+
+For example, the browser host has DOM settings that map paths to selectors and properties. If a path is not present in the DOM manifest, the provider rejects the access even if a broad runtime grant exists.
+
+3. Denied access
+-------------------------------------------------------------------------------
+
+Denied access is expected behavior. It is how a host limits what a Mech program can read or modify.
+
+The browser DOM demo includes a denied source file that attempts to write to a read-only input path.

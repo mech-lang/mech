@@ -1,0 +1,43 @@
+v0.3.6 Release Notes
+===============================================================================
+
+v0.3.6 is the runtime, host, and project-configuration release.
+
+The release adds the infrastructure needed to run Mech programs as configured systems: runtime construction, host contexts, capability-checked resource access, browser DOM integration, CLI host resources, web serving, static web bundling, executable packaging, and a dynamic module prototype.
+
+1. Major additions
+-------------------------------------------------------------------------------
+
+- Runtime shell and builder for host-facing execution.
+- `.mcfg` project configuration files.
+- Host manifests, host instances, contexts, resource providers, and grants.
+- Context bindings such as `+> @browser := browser/dom`.
+- Browser DOM host support and WASM host-config initialization.
+- CLI host resources for environment reads and stdout/stderr writes.
+- Robot arm host demo as a non-browser host integration.
+- Config-aware `mech run`, `mech serve`, and `bundle-web` flows.
+- `mech test` invariant validation output.
+- Module and validation reference pages.
+- Dynamic module prototype for math and combinatorics smoke testing.
+
+2. Documentation split
+-------------------------------------------------------------------------------
+
+The release documentation is split by responsibility.
+
+Central docs under `/docs` explain the language, runtime, config schema, commands, contexts, deployment, guides, and release notes.
+
+Host provider docs live with each host crate under `hosts/*/docs`.
+
+Machine docs remain with machine crates under `machines/*/docs`.
+
+Examples should be organized by what they demonstrate rather than by `working` or `aspirational` status.
+
+3. Experimental areas
+-------------------------------------------------------------------------------
+
+The dynamic module path is a prototype in this release candidate. It validates the current ABI and smoke path, but it is not a package manager, installer, or dynamic dependency resolver.
+
+Host delegation signing is feature-gated and should be documented as experimental until the trust and key-management surface is finalized.
+
+The robot arm host is a demo provider. It documents the host model and command/state flow; it is not a general robotics API.
