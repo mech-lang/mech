@@ -45,6 +45,9 @@ const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
 // Keep in sync with read_runtime_source_file_with_capabilities.
 const RUN_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb", "mdoc", "mpkg", "m", "csv", "js"];
 
+#[cfg(feature = "run")]
+const RUN_DIRECTORY_EXTENSIONS: &[&str] = &["mec", "🤖", "mdoc", "mpkg"];
+
 
 #[cfg(feature = "build")]
 fn is_bytecode_source_path(path: &str) -> bool {
@@ -369,7 +372,7 @@ fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
         if target_meta.is_dir() {
           continue;
         }
-        if target_meta.is_file() && !skip_directory_run_source(&p) && extension_allowed(&p, RUN_EXTENSIONS) {
+        if target_meta.is_file() && !skip_directory_run_source(&p) && extension_allowed(&p, RUN_DIRECTORY_EXTENSIONS) {
           out.push(p);
         }
         continue;
@@ -379,7 +382,7 @@ fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
           if SKIP_SOURCE_DIRS.iter().any(|skip| skip == &name) { continue; }
         }
         collect_dir(&p, out, visited)?;
-      } else if !skip_directory_run_source(&p) && extension_allowed(&p, RUN_EXTENSIONS) {
+      } else if !skip_directory_run_source(&p) && extension_allowed(&p, RUN_DIRECTORY_EXTENSIONS) {
         out.push(p);
       }
     }
@@ -973,7 +976,7 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   // Test
   // --------------------------------------------------------------------------
-  #[cfg(all(feature = "run", feature = "variable_define", feature = "invariant_define", feature = "symbol_table", feature = "bool"))]
+  #[cfg(feature = "test")]
   if let Some(matches) = cli_matches.subcommand_matches("test") {
     let mech_paths: Vec<String> = matches
       .get_many::<String>("mech_test_file_paths")
@@ -2419,7 +2422,7 @@ mod run_collection_tests {
   }
 
   #[test]
-  fn collect_run_targets_discovers_loader_supported_text_sources_in_directory() {
+  fn collect_run_targets_ignores_loader_supported_text_sources_in_directory() {
     let root = temp_root("directory-loader-text");
     let m = root.join("script.m");
     let csv = root.join("data.csv");
@@ -2428,10 +2431,7 @@ mod run_collection_tests {
     std::fs::write(&csv, "x,y\n1,2\n").unwrap();
     std::fs::write(&js, "console.log('mech');").unwrap();
 
-    let targets = collect_run_targets(&root).unwrap();
-    assert!(targets.contains(&m));
-    assert!(targets.contains(&csv));
-    assert!(targets.contains(&js));
+    assert!(collect_run_targets(&root).unwrap().is_empty());
     std::fs::remove_dir_all(root).unwrap();
   }
 
@@ -2460,9 +2460,9 @@ mod run_collection_tests {
   }
 
   #[test]
-  fn collect_run_targets_directory_still_includes_mec_mdoc_mpkg_m_csv_js() {
+  fn collect_run_targets_directory_only_includes_mech_source_document_package_extensions() {
     let root = temp_root("directory-run-supported");
-    let expected = vec![
+    let files = vec![
       root.join("data.csv"),
       root.join("doc.mdoc"),
       root.join("main.mec"),
@@ -2470,12 +2470,16 @@ mod run_collection_tests {
       root.join("script.js"),
       root.join("script.m"),
     ];
-    for path in &expected {
+    for path in &files {
       std::fs::write(path, "x := 1").unwrap();
     }
     std::fs::write(root.join("output.mecb"), b"bytecode").unwrap();
 
-    assert_eq!(collect_run_targets(&root).unwrap(), expected);
+    assert_eq!(collect_run_targets(&root).unwrap(), vec![
+      root.join("doc.mdoc"),
+      root.join("main.mec"),
+      root.join("project.mpkg"),
+    ]);
     std::fs::remove_dir_all(root).unwrap();
   }
 

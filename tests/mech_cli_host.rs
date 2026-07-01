@@ -256,6 +256,56 @@ fn combined_output(output: &std::process::Output) -> String {
   )
 }
 
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_directory_ignores_non_mech_assets() {
+  let root = temp_root("run-dir-ignore-assets");
+
+  std::fs::write(root.join("main.mec"), "x := 41 + 1\n").unwrap();
+  std::fs::write(root.join("app.js"), "console.log('not mech');\n").unwrap();
+  std::fs::write(root.join("data.csv"), "a,b\n1,2\n").unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg(".")
+    .current_dir(&root)
+    .output()
+    .unwrap();
+
+  assert!(
+    output.status.success(),
+    "directory run should ignore ordinary assets:\n{}",
+    combined_output(&output)
+  );
+
+  assert!(
+    combined_output(&output).contains("42"),
+    "expected Mech source result, got:\n{}",
+    combined_output(&output)
+  );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_explicit_loader_supported_text_file_still_runs() {
+  let root = temp_root("run-explicit-js");
+  let source = root.join("script.js");
+  std::fs::write(&source, "x := 21 + 21\n").unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg(&source)
+    .output()
+    .unwrap();
+
+  assert!(
+    output.status.success(),
+    "explicit loader-supported file should still run:\n{}",
+    combined_output(&output)
+  );
+}
+
 #[cfg(all(feature = "run", feature = "cli_host"))]
 #[test]
 fn mech_run_single_quoted_formula_with_slash_is_inline_source() {

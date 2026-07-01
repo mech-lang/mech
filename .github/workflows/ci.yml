@@ -32,6 +32,9 @@ jobs:
 
           # Prelude-only no-default feature checks.
           cargo build --no-default-features
+          cargo build --no-default-features --features build
+          cargo build --no-default-features --features test
+          cargo run --bin mech --no-default-features --features test -- test examples/working/fizzbuzz.mec
           cargo test interpret
           cargo test bytecode
 

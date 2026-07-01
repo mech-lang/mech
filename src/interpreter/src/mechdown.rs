@@ -387,7 +387,11 @@ pub fn module_import_runtime(import: &ModuleImport, p: &Interpreter) -> MResult<
 pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
   let out = match &code {
     MechCode::Expression(expr) => expression(&expr, None, p),
-    MechCode::Statement(stmt) => statement(&stmt, None, p),
+    MechCode::Statement(stmt) => {
+      #[cfg(feature = "subscript_formula")]
+      reset_current_string_access_expression_live(p);
+      statement(&stmt, None, p)
+    },
     #[cfg(feature = "functions")]
     MechCode::Import(import) => module_import_runtime(import, p),
     #[cfg(feature = "state_machines")]
