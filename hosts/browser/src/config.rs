@@ -176,6 +176,7 @@ pub struct BrowserHostDomManifestEntry {
   pub property: String,
   #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
   pub attribute: Option<String>,
+  pub operations: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -256,7 +257,20 @@ impl BrowserHostConfig {
         "browser.domManifest.property",
         format!("invalid DOM property `{}`: {error}", entry.property),
       ))?;
-      authority.bind_dom_path(BrowserDomManifestEntry::new(path, selector, property));
+      let operations = entry
+        .operations
+        .iter()
+        .map(|operation| {
+          BrowserOperation::parse(operation).ok_or_else(|| invalid_error(
+            "browser.domManifest.operations",
+            format!("unknown browser operation `{operation}`"),
+          ))
+        })
+        .collect::<MResult<Vec<_>>>()?;
+      if operations.is_empty() {
+        return invalid("browser.domManifest.operations", "must contain at least one operation");
+      }
+      authority.bind_dom_path(BrowserDomManifestEntry::new(path, selector, property, operations));
     }
     for grant in &self.browser.grants {
       let resource = grant.resource.to_browser_resource()?;
@@ -495,7 +509,7 @@ pub fn browser_config_from_settings(settings: &ConfigValue) -> MResult<BrowserHo
       BrowserDomPath::new(&path).map_err(|error| invalid_error("browser.settings.dom.path", format!("invalid DOM path `{path}`: {error}")))?;
       BrowserDomScope::new(&selector).map_err(|error| invalid_error("browser.settings.dom.selector", format!("invalid DOM selector `{selector}`: {error}")))?;
       BrowserDomProperty::parse_config_name(&property, attribute.as_deref()).map_err(|error| invalid_error("browser.settings.dom.property", format!("invalid DOM property `{property}`: {error}")))?;
-      dom_manifest.push(BrowserHostDomManifestEntry { path, selector: selector.clone(), property, attribute });
+      dom_manifest.push(BrowserHostDomManifestEntry { path, selector: selector.clone(), property, attribute, operations: operations.clone() });
       grants.push(BrowserHostBrowserGrant { resource: BrowserHostResourceConfig::Dom { selector }, allow: operations });
     }
   }
@@ -1747,6 +1761,7 @@ config := {
           selector: "#ok".to_string(),
           property: "text".to_string(),
           attribute: None,
+          operations: vec!["read".to_string()],
         }],
       },
     };

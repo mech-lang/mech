@@ -320,9 +320,6 @@ fn planned_delegations(plan: &ServeInputPlan) -> BTreeMap<DelegationKey, BTreeSe
   for target in &plan.targets {
     let path = plan.root.join(&target.specifier); 
     add(path.clone(), false, &[FS_READ, FS_WATCH, FS_RESOLVE, FS_IMPORT, FS_SERVE]);
-    if let Some(parent) = path.parent() {
-      add(parent.to_path_buf(), true, &[FS_READ, FS_WATCH, FS_RESOLVE, FS_IMPORT, FS_SERVE]);
-    }
   }
   for static_path in &plan.static_paths { 
     let path = plan.root.join(static_path); 

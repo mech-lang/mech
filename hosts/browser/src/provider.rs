@@ -103,6 +103,9 @@ impl<B: BrowserDomBackend> RuntimeResourceProvider for BrowserResourceProvider<B
         "no configured DOM manifest entry for path",
       ));
     };
+    if !entry.allows_operation(BrowserOperation::Read) {
+      return Err(browser_resource_provider_error(path.as_str(), "DOM manifest entry does not allow read"));
+    }
     self
       .authority
       .allows_dom(entry.selector.selector.as_str(), BrowserOperation::Read)
@@ -122,6 +125,9 @@ impl<B: BrowserDomBackend> RuntimeResourceProvider for BrowserResourceProvider<B
         "no configured DOM manifest entry for path",
       ));
     };
+    if !entry.allows_operation(BrowserOperation::Write) {
+      return Err(browser_resource_provider_error(path.as_str(), "DOM manifest entry does not allow write"));
+    }
     self
       .authority
       .allows_dom(entry.selector.selector.as_str(), BrowserOperation::Write)

@@ -97,6 +97,7 @@ fn bind_authority_path(
     BrowserDomPath::new(path).unwrap(),
     scope,
     BrowserDomProperty::Text,
+    allow.iter().copied(),
   ));
 }
 
@@ -504,4 +505,18 @@ name := @browser/form/name/_value
   assert!(denied.is_err());
   assert_eq!(host.read_count(), 1);
   assert_eq!(host.writes(), vec![("form/output/_value".to_string(), "Ada".to_string())]);
+}
+
+#[test]
+fn runtime_scopes_dom_operations_to_manifest_entry_path() {
+  let mut runtime = runtime();
+  runtime.bind_resource_root("browser", "browser://dom/").unwrap();
+  let mut authority = BrowserAuthority::default();
+  bind_authority_path(&mut authority, "panel/text", "#panel", &[BrowserOperation::Read]);
+  bind_authority_path(&mut authority, "panel/value", "#panel", &[BrowserOperation::Write]);
+  register_browser_provider(&mut runtime, authority, FakeDomHost::default().with_value("panel/text", "readable"));
+  assert!(runtime.read_bound_resource("browser", "panel/text").is_ok());
+  assert!(runtime.write_bound_resource("browser", "panel/text", &Value::from("blocked".to_string())).is_err());
+  assert!(runtime.write_bound_resource("browser", "panel/value", &Value::from("writable".to_string())).is_ok());
+  assert!(runtime.read_bound_resource("browser", "panel/value").is_err());
 }

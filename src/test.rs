@@ -2,22 +2,32 @@ use crate::*;
 use mech_core::*;
 use mech_program::*;
 use serde::Serialize;
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::ffi::OsStr;
 use std::io;
 use std::path::{Path, PathBuf};
 
 fn collect_test_targets(path: &Path) -> io::Result<Vec<PathBuf>> {
-  if !path.is_dir() {
-    return Ok(vec![path.to_path_buf()]);
-  }
+  let mut visited = BTreeSet::new();
+  collect_test_targets_inner(path, &mut visited)
+}
+
+fn collect_test_targets_inner(path: &Path, visited: &mut BTreeSet<PathBuf>) -> io::Result<Vec<PathBuf>> {
+  let metadata = std::fs::symlink_metadata(path)?;
+  if !metadata.is_dir() { return Ok(vec![path.to_path_buf()]); }
+  if metadata.file_type().is_symlink() { return Ok(Vec::new()); }
+  let canonical = path.canonicalize()?;
+  if !visited.insert(canonical) { return Ok(Vec::new()); }
 
   let mut files = Vec::new();
   for entry in std::fs::read_dir(path)? {
     let entry = entry?;
     let entry_path = entry.path();
-    if entry_path.is_dir() {
-      files.extend(collect_test_targets(&entry_path)?);
+    let file_type = entry.file_type()?;
+    if file_type.is_symlink() {
+      continue;
+    } else if file_type.is_dir() {
+      files.extend(collect_test_targets_inner(&entry_path, visited)?);
     } else if matches!(
       entry_path.extension().and_then(OsStr::to_str),
       Some("mec" | "🤖")

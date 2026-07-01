@@ -339,6 +339,7 @@ pub struct BrowserDomManifestEntry {
     pub path: BrowserDomPath,
     pub selector: BrowserDomScope,
     pub property: BrowserDomProperty,
+    pub operations: BTreeSet<BrowserOperation>,
 }
 
 impl BrowserDomManifestEntry {
@@ -346,12 +347,18 @@ impl BrowserDomManifestEntry {
         path: BrowserDomPath,
         selector: BrowserDomScope,
         property: BrowserDomProperty,
+        operations: impl IntoIterator<Item = BrowserOperation>,
     ) -> Self {
         Self {
             path,
             selector,
             property,
+            operations: operations.into_iter().collect(),
         }
+    }
+
+    pub fn allows_operation(&self, operation: BrowserOperation) -> bool {
+        self.operations.contains(&operation)
     }
 }
 
@@ -1038,11 +1045,13 @@ mod tests {
             BrowserDomPath::new("body/*").unwrap(),
             wildcard_scope,
             BrowserDomProperty::Text,
+            [BrowserOperation::Read, BrowserOperation::Write],
         ));
         authority.bind_dom_path(BrowserDomManifestEntry::new(
             BrowserDomPath::new("body/title").unwrap(),
             exact_scope,
             BrowserDomProperty::Text,
+            [BrowserOperation::Read, BrowserOperation::Write],
         ));
         let entry = authority
             .dom_entry_for_path(&BrowserDomPath::new("body/title").unwrap())
@@ -1059,11 +1068,13 @@ mod tests {
             BrowserDomPath::new("body/*").unwrap(),
             short_scope,
             BrowserDomProperty::Text,
+            [BrowserOperation::Read, BrowserOperation::Write],
         ));
         authority.bind_dom_path(BrowserDomManifestEntry::new(
             BrowserDomPath::new("body/content/*").unwrap(),
             long_scope,
             BrowserDomProperty::Text,
+            [BrowserOperation::Read, BrowserOperation::Write],
         ));
         let entry = authority
             .dom_entry_for_path(&BrowserDomPath::new("body/content/title").unwrap())
@@ -1078,6 +1089,7 @@ mod tests {
             BrowserDomPath::new("body/content/*").unwrap(),
             BrowserDomScope::new("#content").unwrap(),
             BrowserDomProperty::Text,
+            [BrowserOperation::Read, BrowserOperation::Write],
         ));
         assert!(authority
             .dom_entry_for_path(&BrowserDomPath::new("body/sidebar/title").unwrap())

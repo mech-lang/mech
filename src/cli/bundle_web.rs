@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+use std::ffi::OsStr;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 
@@ -8,6 +10,39 @@ use crate::{
   discover_project_config, load_mech_config_path, require_config_file, resolve_config_path,
   resolve_project_dir_input, BundleWebOptions, LoadedMechConfig,
 };
+
+fn expand_serve_source_paths(base_dir: &Path, paths: &[PathBuf]) -> MResult<Vec<PathBuf>> {
+  let mut visited = BTreeSet::new();
+  let mut out = Vec::new();
+  for path in paths {
+    let resolved = resolve_config_path(base_dir, path);
+    collect_serve_source_path(&resolved, &mut visited, &mut out)?;
+  }
+  out.sort();
+  out.dedup();
+  Ok(out)
+}
+
+fn collect_serve_source_path(path: &Path, visited: &mut BTreeSet<PathBuf>, out: &mut Vec<PathBuf>) -> MResult<()> {
+  let metadata = std::fs::symlink_metadata(path)?;
+  if metadata.file_type().is_symlink() { return Ok(()); }
+  if metadata.is_file() {
+    require_file("serve.paths", path)?;
+    if is_mech_source(path) { out.push(path.to_path_buf()); }
+    return Ok(());
+  }
+  if !metadata.is_dir() { return Ok(()); }
+  let canonical = path.canonicalize()?;
+  if !visited.insert(canonical) { return Ok(()); }
+  let mut entries = std::fs::read_dir(path)?.collect::<Result<Vec<_>, _>>()?;
+  entries.sort_by_key(|entry| entry.path());
+  for entry in entries { collect_serve_source_path(&entry.path(), visited, out)?; }
+  Ok(())
+}
+
+fn is_mech_source(path: &Path) -> bool {
+  matches!(path.extension().and_then(OsStr::to_str), Some("mec" | "🤖"))
+}
 
 pub fn add_config_args(command: Command) -> Command {
   command
@@ -152,13 +187,8 @@ pub fn effective_bundle_web_options(
 
   let serve_config = loaded.document.serve.as_ref();
   let source_paths = serve_config
-    .map(|serve| {
-      serve
-        .paths
-        .iter()
-        .map(|path| resolve_config_path(&loaded.base_dir, path))
-        .collect::<Vec<_>>()
-    })
+    .map(|serve| expand_serve_source_paths(&loaded.base_dir, &serve.paths))
+    .transpose()?
     .unwrap_or_default();
   if source_paths.is_empty() {
     return Err(Error::new(
@@ -166,9 +196,6 @@ pub fn effective_bundle_web_options(
       "bundle-web requires serve.paths in the project config",
     )
     .into());
-  }
-  for path in &source_paths {
-    require_file("serve.paths", path)?;
   }
 
   let shim_path = matches

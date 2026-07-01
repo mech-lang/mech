@@ -4,7 +4,7 @@ use mech::*;
 use mech_core::*;
 use mech_syntax::parser;
 #[cfg(feature = "run")]
-use mech_runtime::RuntimeConfig;
+use mech_runtime::{FileSourceResolver, RuntimeConfig, FS_LIST, FS_READ, MECH_TOOL_SUBJECT};
 #[cfg(feature = "serve")]
 #[cfg(feature = "formatter")]
 use mech_syntax::formatter::*;
@@ -344,7 +344,18 @@ fn collect_format_targets(path: &Path, output_exclusion: Option<&Path>, html: bo
 
 #[cfg(feature = "run")]
 fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
+  let mut ids = mech_runtime::DefaultIdGenerator::new();
+  let mut authority = mech_runtime::HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, mech_runtime::SharedCapabilityKernel::new());
+  let root = if path.is_dir() { path } else { path.parent().unwrap_or_else(|| Path::new(".")) };
+  authority.grant_path(&mut ids, root, true, [FS_READ, FS_LIST])?;
+  collect_run_targets_with_capabilities(path, authority.kernel())
+}
+
+#[cfg(feature = "run")]
+fn collect_run_targets_with_capabilities(path: &Path, kernel: &mech_runtime::SharedCapabilityKernel) -> MResult<Vec<PathBuf>> {
   if path.is_file() {
+    let mut kernel = kernel.clone();
+    mech_runtime::check_fs_capability(&mut kernel, MECH_TOOL_SUBJECT, FS_READ, path)?;
     if !extension_allowed(path, RUN_EXTENSIONS) {
       return Err(unsupported_source_path_error(path, RUN_EXTENSIONS));
     }
@@ -357,7 +368,9 @@ fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
     return Err(MechError::new(GenericError { msg: format!("Source path is neither a file nor directory: {}", path.display()) }, None).with_compiler_loc());
   }
 
-  fn collect_dir(dir: &Path, out: &mut Vec<PathBuf>, visited: &mut BTreeSet<PathBuf>) -> MResult<()> {
+  fn collect_dir(dir: &Path, out: &mut Vec<PathBuf>, visited: &mut BTreeSet<PathBuf>, kernel: &mech_runtime::SharedCapabilityKernel) -> MResult<()> {
+    let mut check_kernel = kernel.clone();
+    mech_runtime::check_fs_capability(&mut check_kernel, MECH_TOOL_SUBJECT, FS_LIST, dir)?;
     let canonical = dir.canonicalize()?;
     if !visited.insert(canonical) { return Ok(()); }
     for entry in fs::read_dir(dir)? {
@@ -381,7 +394,7 @@ fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
         if let Some(name) = p.file_name().and_then(|n| n.to_str()) {
           if SKIP_SOURCE_DIRS.iter().any(|skip| skip == &name) { continue; }
         }
-        collect_dir(&p, out, visited)?;
+        collect_dir(&p, out, visited, kernel)?;
       } else if !skip_directory_run_source(&p) && extension_allowed(&p, RUN_DIRECTORY_EXTENSIONS) {
         out.push(p);
       }
@@ -391,7 +404,7 @@ fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
 
   let mut out = Vec::new();
   let mut visited = BTreeSet::new();
-  collect_dir(path, &mut out, &mut visited)?;
+  collect_dir(path, &mut out, &mut visited, kernel)?;
   out.sort();
   Ok(out)
 }
@@ -1250,6 +1263,13 @@ async fn main() -> Result<(), MechError> {
       .map(|run| run.grants.as_slice())
       .unwrap_or(&[]);
 
+    let badge = "[Mech Run]".truecolor(34, 204, 187);
+    let mut fs_authority = capabilities::build_mech_filesystem_authority(
+      config_matches,
+      loaded_config.as_ref(),
+      &badge,
+    )?;
+
     let mut runtime = new_cli_runtime(runtime_config, &cli_grants, configured_hosts, configured_run_grants)?;
 
     if let RunInputMode::InlineSource(source) = &run_input_mode {
@@ -1285,10 +1305,20 @@ async fn main() -> Result<(), MechError> {
     )?;
 
     let result: MResult<Value> = if let Some(options) = options {
+      if !config_matches.get_flag("no_default_capabilities") {
+        let mut ids = mech_runtime::DefaultIdGenerator::new();
+        for p in &options.paths {
+          let path = Path::new(p);
+          let grant_path = if path.is_dir() { path } else { path.parent().unwrap_or_else(|| Path::new(".")) };
+          fs_authority.grant_path(&mut ids, grant_path, true, [FS_READ, FS_LIST, mech_runtime::FS_RESOLVE, mech_runtime::FS_IMPORT])?;
+        }
+      }
+      let fs_kernel = fs_authority.kernel().clone();
+      runtime.set_source_resolver(FileSourceResolver::new(&std::env::current_dir()?).with_capabilities(fs_kernel.clone(), MECH_TOOL_SUBJECT));
       let mut last = Value::Empty;
       for p in &options.paths {
-        for target in collect_run_targets(Path::new(p))? {
-          let src = mech_runtime::read_runtime_source_file(&target)?;
+        for target in collect_run_targets_with_capabilities(Path::new(p), &fs_kernel)? {
+          let src = mech_runtime::read_runtime_source_file_with_capabilities(&target, Some(&fs_kernel), Some(MECH_TOOL_SUBJECT))?;
           last = run_cli_source_code(&mut runtime, &src)?;
         }
       }
