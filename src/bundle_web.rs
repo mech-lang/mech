@@ -90,9 +90,10 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
   fs::write(&index_html, &root_shim_with_config)?;
 
   for source_path in &options.source_paths {
-    let source_path = source_path.canonicalize()?;
-    let relative = relative_source_path(&source_path, &base_dir, &project_dir)?;
-    let source_text = fs::read_to_string(&source_path)?;
+    let logical_source_path = source_path;
+    let read_source_path = source_path.canonicalize()?;
+    let relative = relative_source_path(logical_source_path, &base_dir, &project_dir)?;
+    let source_text = fs::read_to_string(&read_source_path)?;
     let tree = parser::parse(&source_text)?;
 
     write_bundle_file(&output_dir, "source", &relative, source_text.as_bytes())?;
@@ -826,6 +827,31 @@ mod tests {
     assert!(source.contains("./code/foo"));
     assert!(!source.contains("../source/foo"));
     assert!(!source.contains("../code/foo"));
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn bundle_web_uses_symlink_path_as_source_route_identity() {
+    use std::os::unix::fs as unix_fs;
+
+    let root = temp_root("symlink-route-identity");
+    let loaded = write_demo_project(&root);
+    fs::create_dir_all(root.join("src")).unwrap();
+    fs::create_dir_all(root.join("shared")).unwrap();
+    fs::write(root.join("shared/lib.mec"), "answer := 42\n").unwrap();
+    unix_fs::symlink("../shared/lib.mec", root.join("src/link.mec")).unwrap();
+    let out = root.join("out");
+    let mut options = options(&root, &out, loaded);
+    options.source_paths = vec![root.join("src/link.mec")];
+
+    bundle_web_project(options).unwrap();
+
+    assert!(out.join("source/src/link.mec").is_file());
+    assert!(out.join("code/src/link.mec").is_file());
+    assert!(out.join("html/src/link.html").is_file());
+    assert!(!out.join("source/shared/lib.mec").exists());
+    assert!(!out.join("html/shared/lib.html").exists());
     fs::remove_dir_all(root).unwrap();
   }
 }

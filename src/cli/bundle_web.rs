@@ -12,18 +12,30 @@ use crate::{
 };
 
 fn expand_serve_source_paths(base_dir: &Path, paths: &[PathBuf]) -> MResult<Vec<PathBuf>> {
-  let mut visited = BTreeSet::new();
+  let mut visited_dirs = BTreeSet::new();
+  let mut seen_files = BTreeSet::new();
   let mut out = Vec::new();
   for path in paths {
     let resolved = resolve_config_path(base_dir, path);
-    collect_serve_source_path(&resolved, &mut visited, &mut out)?;
+    collect_serve_source_path(&resolved, &mut visited_dirs, &mut seen_files, &mut out)?;
   }
-  out.sort();
-  out.dedup();
   Ok(out)
 }
 
-fn collect_serve_source_path(path: &Path, visited: &mut BTreeSet<PathBuf>, out: &mut Vec<PathBuf>) -> MResult<()> {
+fn push_serve_source_file(logical_path: &Path, read_path: &Path, seen_files: &mut BTreeSet<PathBuf>, out: &mut Vec<PathBuf>) -> MResult<()> {
+  let canonical_file = read_path.canonicalize()?;
+  if seen_files.insert(canonical_file) {
+    out.push(logical_path.to_path_buf());
+  }
+  Ok(())
+}
+
+fn collect_serve_source_path(
+  path: &Path,
+  visited_dirs: &mut BTreeSet<PathBuf>,
+  seen_files: &mut BTreeSet<PathBuf>,
+  out: &mut Vec<PathBuf>,
+) -> MResult<()> {
   let metadata = match std::fs::symlink_metadata(path) {
     Ok(metadata) => metadata,
     Err(error) if error.kind() == ErrorKind::NotFound => {
@@ -43,21 +55,21 @@ fn collect_serve_source_path(path: &Path, visited: &mut BTreeSet<PathBuf>, out: 
     if target.is_dir() { return Ok(()); }
     if target.is_file() {
       require_file("serve.paths", &target)?;
-      if is_mech_source(&target) { out.push(target); }
+      if is_mech_source(&target) { push_serve_source_file(path, &target, seen_files, out)?; }
     }
     return Ok(());
   }
   if metadata.is_file() {
     require_file("serve.paths", path)?;
-    if is_mech_source(path) { out.push(path.canonicalize()?); }
+    if is_mech_source(path) { push_serve_source_file(path, path, seen_files, out)?; }
     return Ok(());
   }
   if !metadata.is_dir() { return Ok(()); }
   let canonical = path.canonicalize()?;
-  if !visited.insert(canonical) { return Ok(()); }
+  if !visited_dirs.insert(canonical) { return Ok(()); }
   let mut entries = std::fs::read_dir(path)?.collect::<Result<Vec<_>, _>>()?;
   entries.sort_by_key(|entry| entry.path());
-  for entry in entries { collect_serve_source_path(&entry.path(), visited, out)?; }
+  for entry in entries { collect_serve_source_path(&entry.path(), visited_dirs, seen_files, out)?; }
   Ok(())
 }
 
@@ -577,7 +589,28 @@ mod tests {
 
     let paths = expand_serve_source_paths(&project, &[PathBuf::from("src/link.mec"), PathBuf::from("src")]).unwrap();
 
-    assert_eq!(paths, vec![src.join("real.mec").canonicalize().unwrap()]);
+    assert_eq!(paths, vec![src.join("link.mec")]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn source_collection_dedupes_file_symlinks_by_canonical_target() {
+    use std::os::unix::fs as unix_fs;
+
+    let root = temp_root("symlink-dedupe");
+    let project = root.join("project");
+    let src = project.join("src");
+    let shared = project.join("shared");
+    std::fs::create_dir_all(&src).unwrap();
+    std::fs::create_dir_all(&shared).unwrap();
+    std::fs::write(shared.join("lib.mec"), "x := 1\n").unwrap();
+    unix_fs::symlink("../shared/lib.mec", src.join("link-a.mec")).unwrap();
+    unix_fs::symlink("../shared/lib.mec", src.join("link-b.mec")).unwrap();
+
+    let paths = expand_serve_source_paths(&project, &[PathBuf::from("src")]).unwrap();
+
+    assert_eq!(paths, vec![src.join("link-a.mec")]);
     std::fs::remove_dir_all(root).unwrap();
   }
 }
