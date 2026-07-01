@@ -86,13 +86,14 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
   let injection = options
     .host_config_injection
     .unwrap_or_else(|| HostAuthorityInjection::BrowserUnsigned(host_config));
-  let shim_with_config = crate::inject_host_authority_injection_script(&shim_string, &injection)?;
-  fs::write(&index_html, &shim_with_config)?;
+  let root_shim_with_config = crate::inject_host_authority_injection_script(&shim_string, &injection)?;
+  fs::write(&index_html, &root_shim_with_config)?;
 
   for source_path in &options.source_paths {
-    let source_path = source_path.canonicalize()?;
-    let relative = relative_source_path(&source_path, &base_dir, &project_dir)?;
-    let source_text = fs::read_to_string(&source_path)?;
+    let logical_source_path = source_path;
+    let read_source_path = source_path.canonicalize()?;
+    let relative = relative_source_path(logical_source_path, &base_dir, &project_dir)?;
+    let source_text = fs::read_to_string(&read_source_path)?;
     let tree = parser::parse(&source_text)?;
 
     write_bundle_file(&output_dir, "source", &relative, source_text.as_bytes())?;
@@ -101,9 +102,12 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
       .map_err(|error| Error::new(ErrorKind::Other, error.to_string()))?;
     write_bundle_file(&output_dir, "code", &relative, encoded.as_bytes())?;
 
-    let mut formatter = Formatter::new();
-    let html = formatter.format_html(&tree, stylesheet_string.clone(), shim_with_config.clone());
     let html_relative = relative.with_extension("html");
+    let depth = html_relative.components().count();
+    let rebased_shim = rebase_bundle_shim_for_depth(&shim_string, depth);
+    let source_shim = crate::inject_host_authority_injection_script(&rebased_shim, &injection)?;
+    let mut formatter = Formatter::new();
+    let html = formatter.format_html(&tree, stylesheet_string.clone(), source_shim);
     write_bundle_file(&output_dir, "html", &html_relative, html.as_bytes())?;
   }
 
@@ -112,6 +116,20 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     index_html,
     source_count: options.source_paths.len(),
   })
+}
+
+fn rebase_bundle_shim_for_depth(shim: &str, depth: usize) -> String {
+  if depth == 0 {
+    return shim.to_string();
+  }
+  let prefix = "../".repeat(depth);
+  let mut rebased = shim.to_string();
+  for asset in ["pkg/", "style.css", "code/", "source/"] {
+    let from = format!("./{asset}");
+    let to = format!("{prefix}{asset}");
+    rebased = rebased.replace(&from, &to);
+  }
+  rebased
 }
 
 fn read_stylesheets(paths: &[PathBuf]) -> MResult<String> {
@@ -743,6 +761,97 @@ mod tests {
 
     let has_config = walk_has_mcfg(&out);
     assert!(!has_config);
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn source_page_shim_rebases_relative_bundle_assets_by_depth() {
+    let shim = r#"<script type="module">import init from "./pkg/mech_wasm.js"; await fetch("./style.css"); await fetch("./code/demo.mec"); await fetch("./source/demo.mec");</script>"#;
+
+    let root = rebase_bundle_shim_for_depth(shim, 0);
+    assert!(root.contains("./pkg/mech_wasm.js"));
+    assert!(root.contains("./style.css"));
+
+    let one = rebase_bundle_shim_for_depth(shim, 1);
+    assert!(one.contains("../pkg/mech_wasm.js"));
+    assert!(one.contains("../style.css"));
+
+    let two = rebase_bundle_shim_for_depth(shim, 2);
+    assert!(two.contains("../../pkg/mech_wasm.js"));
+    assert!(two.contains("../../style.css"));
+  }
+
+  #[test]
+  fn bundle_web_rebases_source_shim_before_injecting_host_config() {
+    let root = temp_root("rebase-before-inject");
+    let _ = write_demo_project(&root);
+    fs::write(
+      root.join("demo.mcfg"),
+      r#"config := {
+  runtime: {name: "bundle-test"}
+  serve: {
+    paths: ["demo.mec"]
+    shim: "index.html"
+    wasm: "pkg"
+  }
+  run: {
+    grants: [
+      {
+        target: "browser/dom"
+        operations: ["read"]
+        paths: ["./source/foo", "./code/foo"]
+      }
+    ]
+  }
+}
+"#,
+    )
+    .unwrap();
+    let loaded = crate::load_mech_config_path(root.join("demo.mcfg"), Some(root.to_path_buf())).unwrap();
+    fs::write(
+      root.join("index.html"),
+      r#"<!doctype html><html><head></head><body><script type="module">import init from "./pkg/mech_wasm.js"; await fetch("./style.css");</script></body></html>"#,
+    )
+    .unwrap();
+    let out = root.join("out");
+
+    bundle_web_project(options(&root, &out, loaded)).unwrap();
+
+    let index = fs::read_to_string(out.join("index.html")).unwrap();
+    assert!(index.contains("./pkg/mech_wasm.js"));
+    assert!(index.contains("./style.css"));
+    let source = fs::read_to_string(out.join("html/demo.html")).unwrap();
+    assert!(source.contains("../pkg/mech_wasm.js"));
+    assert!(source.contains("../style.css"));
+    assert!(source.contains("./source/foo"));
+    assert!(source.contains("./code/foo"));
+    assert!(!source.contains("../source/foo"));
+    assert!(!source.contains("../code/foo"));
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn bundle_web_uses_symlink_path_as_source_route_identity() {
+    use std::os::unix::fs as unix_fs;
+
+    let root = temp_root("symlink-route-identity");
+    let loaded = write_demo_project(&root);
+    fs::create_dir_all(root.join("src")).unwrap();
+    fs::create_dir_all(root.join("shared")).unwrap();
+    fs::write(root.join("shared/lib.mec"), "answer := 42\n").unwrap();
+    unix_fs::symlink("../shared/lib.mec", root.join("src/link.mec")).unwrap();
+    let out = root.join("out");
+    let mut options = options(&root, &out, loaded);
+    options.source_paths = vec![root.join("src/link.mec")];
+
+    bundle_web_project(options).unwrap();
+
+    assert!(out.join("source/src/link.mec").is_file());
+    assert!(out.join("code/src/link.mec").is_file());
+    assert!(out.join("html/src/link.html").is_file());
+    assert!(!out.join("source/shared/lib.mec").exists());
+    assert!(!out.join("html/shared/lib.html").exists());
     fs::remove_dir_all(root).unwrap();
   }
 }

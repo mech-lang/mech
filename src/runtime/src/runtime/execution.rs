@@ -2772,7 +2772,33 @@ impl MechRuntime {
 
   #[cfg(feature = "functions")]
   pub fn step(&mut self, count: u64) -> MResult<()> {
-    self.program.step(count)
+    let mut context = self.runtime_context()?;
+    self.step_with_context(&mut context, count)
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn step_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    count: u64,
+  ) -> MResult<()> {
+    context.validate()?;
+    context.charge_step()?;
+
+    let program_config = self.program.config.clone();
+    let mut program = std::mem::replace(
+      &mut self.program,
+      MechProgram::new(program_config),
+    );
+
+    let runtime_ptr: *mut MechRuntime = self;
+    let context_ptr: *mut RuntimeContext = context;
+    let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+
+    let result = program.step(count);
+
+    self.program = program;
+    result
   }
 
   pub fn run_module(&mut self, version: ModuleVersionId) -> MResult<Value> {
@@ -3413,7 +3439,14 @@ fn exports_for_scope<'a>(
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::{
+    BasicCapability, BasicOperation, BasicResource, BasicSubject, ClosureHostFunction,
+  };
   use mech_core::Ref;
+  use std::sync::{
+    Arc,
+    atomic::{AtomicUsize, Ordering},
+  };
 
   #[test]
   fn runtime_has_interpreter_finds_root_interpreter() {
@@ -3485,5 +3518,80 @@ mod tests {
       .get(ans_id)
       .map(|value| value.borrow().clone());
     assert_eq!(bound, Some(value));
+  }
+
+  #[cfg(feature = "functions")]
+  #[test]
+  fn step_with_context_recomputes_runtime_host_function_with_provided_context() {
+    let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+    let calls = Arc::new(AtomicUsize::new(0));
+    let calls_for_host = calls.clone();
+    runtime
+      .register_mech_host_function(ClosureHostFunction::new(
+        "demo/echo",
+        move |_services, context, args| {
+          assert_eq!(context.subject, "program:step-host-test");
+          calls_for_host.fetch_add(1, Ordering::SeqCst);
+          match &args[0] {
+            Value::F64(value) => Ok(Value::F64(Ref::new(*value.borrow()))),
+            Value::MutableReference(value) => match &*value.borrow() {
+              Value::F64(value) => Ok(Value::F64(Ref::new(*value.borrow()))),
+              other => panic!("expected F64 mutable reference, got {:?}", other),
+            },
+            other => panic!("expected F64 argument, got {:?}", other),
+          }
+        },
+      ))
+      .unwrap();
+    runtime
+      .grant_capability(Arc::new(BasicCapability::new(
+        CapabilityId(1),
+        &BasicSubject::new("program:step-host-test"),
+        &BasicResource::new("host:demo/echo"),
+        [BasicOperation::new("call")],
+      )))
+      .unwrap();
+
+    let mut context = runtime
+      .runtime_context()
+      .unwrap()
+      .with_subject("program:step-host-test");
+    runtime
+      .run_string_with_context(&mut context, "x := 1\ny := demo/echo(x) + 0")
+      .unwrap();
+    let x = runtime
+      .program()
+      .interpreter()
+      .symbols()
+      .borrow()
+      .get(hash_str("x"))
+      .map(|value| value.borrow().clone())
+      .expect("expected x to be bound");
+    let x_ref = match x {
+      Value::F64(value) => value,
+      other => panic!("expected x to be F64, got {:?}", other),
+    };
+    *x_ref.borrow_mut() = 2.0;
+    runtime.step_with_context(&mut context, 3).unwrap();
+
+    *x_ref.borrow_mut() = 2.0;
+    let function = RuntimeHostNativeFunction {
+      name: "demo/echo".to_string(),
+      host_name: "demo/echo".to_string(),
+      arguments: vec![Value::F64(x_ref.clone())],
+      value: Ref::new(Value::F64(Ref::new(1.0))),
+    };
+    let calls_before_solve = calls.load(Ordering::SeqCst);
+    let runtime_ptr: *mut MechRuntime = &mut runtime;
+    let context_ptr: *mut RuntimeContext = &mut context;
+    let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+    function.solve();
+
+    assert!(calls.load(Ordering::SeqCst) > calls_before_solve);
+    let y = function.out();
+    match y {
+      Value::F64(value) => assert_eq!(*value.borrow(), 2.0),
+      other => panic!("expected F64(2.0), got {:?}", other),
+    }
   }
 }

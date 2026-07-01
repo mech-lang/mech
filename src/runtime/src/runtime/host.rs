@@ -189,7 +189,7 @@ impl NativeFunctionCompiler for RuntimeHostNativeFunctionCompiler {
     &self,
     arguments: &Vec<Value>,
   ) -> MResult<Box<dyn mech_core::MechFunction>> {
-    let (value, target) = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+    let value = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
       let target = slot.borrow().ok_or_else(|| {
         MechError::new(
           RuntimeProgramHostNotActiveError {
@@ -209,7 +209,7 @@ impl NativeFunctionCompiler for RuntimeHostNativeFunctionCompiler {
           HostCall::new(&self.host_name, arguments.clone()),
         )
       }?;
-      Ok::<(Value, RuntimeProgramHostTarget), MechError>((value, target))
+      Ok::<Value, MechError>(value)
     })?;
 
     Ok(Box::new(RuntimeHostNativeFunction {
@@ -217,7 +217,6 @@ impl NativeFunctionCompiler for RuntimeHostNativeFunctionCompiler {
       host_name: self.host_name.clone(),
       arguments: arguments.clone(),
       value: Ref::new(value),
-      target,
     }))
   }
 }
@@ -228,18 +227,41 @@ pub struct RuntimeHostNativeFunction {
   pub host_name: String,
   pub arguments: Vec<Value>,
   pub value: Ref<Value>,
-  pub target: RuntimeProgramHostTarget,
 }
 
 impl MechFunctionImpl for RuntimeHostNativeFunction {
   fn solve(&self) {
-    if let Ok(value) = unsafe {
-      (&mut *self.target.runtime).call_host_with_context(
-        &mut *self.target.context,
-        HostCall::new(&self.host_name, self.arguments.clone()),
-      )
-    } {
-      *self.value.borrow_mut() = value;
+    let result = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      let Some(target) = *slot.borrow() else {
+        return Err(MechError::new(
+          RuntimeProgramHostNotActiveError {
+            function: self.name.clone(),
+          },
+          None,
+        ));
+      };
+
+      // Safety: callers install the active runtime-program host target around
+      // program execution/stepping. Runtime host functions intentionally do not
+      // retain the original context pointer because persisted programs may be
+      // solved later with a different active RuntimeContext.
+      unsafe {
+        (&mut *target.runtime).call_host_with_context(
+          &mut *target.context,
+          HostCall::new(&self.host_name, self.arguments.clone()),
+        )
+      }
+    });
+
+    match result {
+      Ok(value) => *self.value.borrow_mut() = value,
+      Err(error) => {
+        eprintln!(
+          "[Mech Runtime Host Error] function `{}` failed during solve; preserving previous output: {:?}",
+          self.name,
+          error,
+        );
+      }
     }
   }
 
