@@ -657,3 +657,33 @@ mod filesystem_capability_tests {
   }
 
 }
+
+#[cfg(feature = "run")]
+pub(crate) struct FilesystemRuntimeAccess {
+  pub authority: HostFilesystemAuthority,
+  pub kernel: SharedCapabilityKernel,
+}
+
+#[cfg(feature = "run")]
+pub(crate) fn build_filesystem_runtime_access(
+  matches: &clap::ArgMatches,
+  loaded_config: Option<&LoadedMechConfig>,
+  badge: &ColoredString,
+) -> MResult<FilesystemRuntimeAccess> {
+  let authority = build_mech_filesystem_authority(matches, loaded_config, badge)?;
+  let kernel = authority.kernel().clone();
+  Ok(FilesystemRuntimeAccess { authority, kernel })
+}
+
+#[cfg(feature = "run")]
+pub(crate) fn install_file_resolver(
+  runtime: &mut mech_runtime::MechRuntime,
+  access: &FilesystemRuntimeAccess,
+  cwd: &Path,
+) -> MResult<()> {
+  runtime.set_source_resolver(
+    mech_runtime::FileSourceResolver::new(cwd)
+      .with_capabilities(access.kernel.clone(), MECH_TOOL_SUBJECT),
+  );
+  Ok(())
+}
