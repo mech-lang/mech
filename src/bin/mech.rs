@@ -820,7 +820,7 @@ async fn main() -> Result<(), MechError> {
   #[cfg(feature = "bundle_web")]
   let cli_command = cli_command.subcommand(bundle_web::bundle_web_command());
 
-  #[cfg(feature = "serve")]
+  #[cfg(any(feature = "serve", feature = "run"))]
   let cli_command = capabilities::add_filesystem_capability_args(cli_command);
 
   #[cfg(any(feature = "serve", feature = "run"))]

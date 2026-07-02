@@ -222,6 +222,14 @@ fn copy_project_static_assets_inner(
       continue;
     }
 
+    let canonical_relative = canonical_path.strip_prefix(project_dir).map_err(|error| {
+      Error::new(
+        ErrorKind::InvalidInput,
+        format!("bundle-web static asset target is outside project root: {error}"),
+      )
+    })?;
+    validate_safe_relative_path(canonical_relative)?;
+
     if !is_allowed_static_asset(&canonical_path) {
       continue;
     }
@@ -589,6 +597,50 @@ mod tests {
     assert!(out.join("assets/favicon.ico").is_file());
     let index = fs::read_to_string(out.join("index.html")).unwrap();
     assert!(index.contains("./favicon.ico"));
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn bundle_web_rejects_static_file_symlink_target_outside_project() {
+    use std::os::unix::fs as unix_fs;
+
+    let root = temp_root("static-symlink-outside-target");
+    let project = root.join("project");
+    let secrets = root.join("secrets");
+    fs::create_dir_all(project.join("pkg")).unwrap();
+    fs::create_dir_all(project.join("public")).unwrap();
+    fs::create_dir_all(&secrets).unwrap();
+    fs::write(
+      project.join("demo.mcfg"),
+      r#"config := {
+  runtime: {name: "bundle-test"}
+  serve: {
+    paths: ["demo.mec"]
+    shim: "index.html"
+    wasm: "pkg"
+  }
+}
+"#,
+    )
+    .unwrap();
+    fs::write(
+      project.join("index.html"),
+      r#"<!doctype html><html><head></head><body><script type="module">import init from "./pkg/mech_wasm.js"; const code = await fetch("./code/demo.mec");</script></body></html>"#,
+    )
+    .unwrap();
+    fs::write(project.join("demo.mec"), "x := 1\n").unwrap();
+    fs::write(project.join("pkg/mech_wasm.js"), "export default async function init() {}\n").unwrap();
+    fs::write(project.join("pkg/mech_wasm_bg.wasm"), b"wasm").unwrap();
+    fs::write(secrets.join("settings.json"), r#"{"secret":true}"#).unwrap();
+    unix_fs::symlink("../../secrets/settings.json", project.join("public/settings.json")).unwrap();
+    let loaded = crate::load_mech_config_path(project.join("demo.mcfg"), Some(project.clone())).unwrap();
+    let out = project.join("out");
+
+    let error = format!("{:?}", bundle_web_project(options(&project, &out, loaded)).unwrap_err());
+
+    assert!(error.contains("bundle-web static asset target is outside project root"));
+    assert!(!out.join("public/settings.json").exists());
     fs::remove_dir_all(root).unwrap();
   }
 
