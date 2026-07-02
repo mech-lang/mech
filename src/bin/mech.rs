@@ -534,7 +534,7 @@ impl MechErrorKind for Utf8ConversionError {
 
 #[cfg(feature = "bundle_web")]
 use mech::cli::bundle_web;
-#[cfg(feature = "serve")]
+#[cfg(any(feature = "serve", feature = "run"))]
 use mech::cli::capabilities;
 
 #[cfg(any(feature = "serve", feature = "run"))]

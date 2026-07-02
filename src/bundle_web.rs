@@ -203,12 +203,12 @@ fn copy_project_static_assets_inner(
   if !visited.insert(current_dir.clone()) { return Ok(()); }
   for entry in fs::read_dir(&current_dir)? {
     let entry = entry?;
-    let path = entry.path();
+    let logical_path = entry.path();
     let file_type = entry.file_type()?;
-    if file_type.is_symlink() && path.canonicalize().map(|target| target.is_dir()).unwrap_or(false) {
+    let canonical_path = logical_path.canonicalize()?;
+    if file_type.is_symlink() && canonical_path.is_dir() {
       continue;
     }
-    let canonical_path = path.canonicalize()?;
 
     if should_skip_static_asset_path(&canonical_path, output_dir, excluded_dirs) {
       continue;
@@ -226,10 +226,10 @@ fn copy_project_static_assets_inner(
       continue;
     }
 
-    let relative = canonical_path.strip_prefix(project_dir).map_err(|error| {
+    let relative = logical_path.strip_prefix(project_dir).map_err(|error| {
       Error::new(
         ErrorKind::InvalidInput,
-        format!("bundle-web static asset is outside project root: {error}"),
+        format!("bundle-web static asset path is outside project root: {error}"),
       )
     })?;
     validate_safe_relative_path(relative)?;
@@ -277,6 +277,7 @@ fn is_allowed_static_asset(path: &Path) -> bool {
         | "gif"
         | "svg"
         | "webp"
+        | "ico"
         | "md"
         | "csv"
         | "json"
@@ -562,6 +563,51 @@ mod tests {
     assert!(out.join("source/demo.mec").is_file());
     assert!(out.join("code/demo.mec").is_file());
     assert!(out.join("html/demo.html").is_file());
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn bundle_web_preserves_static_file_symlink_output_identity() {
+    use std::os::unix::fs as unix_fs;
+
+    let root = temp_root("static-symlink-file-identity");
+    let loaded = write_demo_project(&root);
+    let out = root.join("out");
+    fs::create_dir_all(root.join("assets")).unwrap();
+    fs::write(root.join("assets/favicon.ico"), b"icon").unwrap();
+    unix_fs::symlink("assets/favicon.ico", root.join("favicon.ico")).unwrap();
+    fs::write(
+      root.join("index.html"),
+      r#"<!doctype html><html><head><link rel="icon" href="./favicon.ico"></head><body><script type="module">import init from "./pkg/mech_wasm.js"; const code = await fetch("./code/demo.mec");</script></body></html>"#,
+    )
+    .unwrap();
+
+    bundle_web_project(options(&root, &out, loaded)).unwrap();
+
+    assert_eq!(fs::read(out.join("favicon.ico")).unwrap(), b"icon");
+    assert!(out.join("assets/favicon.ico").is_file());
+    let index = fs::read_to_string(out.join("index.html")).unwrap();
+    assert!(index.contains("./favicon.ico"));
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn bundle_web_skips_static_symlinked_directories() {
+    use std::os::unix::fs as unix_fs;
+
+    let root = temp_root("static-symlink-dir-skip");
+    let loaded = write_demo_project(&root);
+    let out = root.join("out");
+    fs::create_dir_all(root.join("real_assets/nested")).unwrap();
+    fs::write(root.join("real_assets/nested/logo.svg"), "<svg></svg>\n").unwrap();
+    unix_fs::symlink("real_assets", root.join("linked_assets")).unwrap();
+
+    bundle_web_project(options(&root, &out, loaded)).unwrap();
+
+    assert!(out.join("real_assets/nested/logo.svg").is_file());
+    assert!(!out.join("linked_assets/nested/logo.svg").exists());
     fs::remove_dir_all(root).unwrap();
   }
 
