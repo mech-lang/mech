@@ -189,26 +189,35 @@ pub fn copy_project_static_assets(
     .filter_map(|path| path.canonicalize().ok())
     .collect::<Vec<_>>();
   let mut visited = BTreeSet::new();
-  copy_project_static_assets_inner(&project_dir, &project_dir, &output_dir, &excluded_dirs, &mut visited)
+  copy_project_static_assets_inner(
+    &project_dir,
+    &project_dir,
+    &project_dir,
+    &output_dir,
+    &excluded_dirs,
+    &mut visited,
+  )
 }
 
 fn copy_project_static_assets_inner(
   project_dir: &Path,
-  current_dir: &Path,
+  logical_dir: &Path,
+  read_dir: &Path,
   output_dir: &Path,
   excluded_dirs: &[PathBuf],
   visited: &mut BTreeSet<PathBuf>,
 ) -> MResult<()> {
-  let current_dir = current_dir.canonicalize()?;
-  if !visited.insert(current_dir.clone()) { return Ok(()); }
-  for entry in fs::read_dir(&current_dir)? {
+  let canonical_dir = read_dir.canonicalize()?;
+  if !visited.insert(canonical_dir.clone()) { return Ok(()); }
+  for entry in fs::read_dir(read_dir)? {
     let entry = entry?;
-    let path = entry.path();
+    let logical_path = logical_dir.join(entry.file_name());
+    let read_path = entry.path();
     let file_type = entry.file_type()?;
-    if file_type.is_symlink() && path.canonicalize().map(|target| target.is_dir()).unwrap_or(false) {
+    if file_type.is_symlink() && read_path.canonicalize().map(|target| target.is_dir()).unwrap_or(false) {
       continue;
     }
-    let canonical_path = path.canonicalize()?;
+    let canonical_path = read_path.canonicalize()?;
 
     if should_skip_static_asset_path(&canonical_path, output_dir, excluded_dirs) {
       continue;
@@ -218,7 +227,7 @@ fn copy_project_static_assets_inner(
       if should_skip_static_asset_dir(&canonical_path) {
         continue;
       }
-      copy_project_static_assets_inner(project_dir, &canonical_path, output_dir, excluded_dirs, visited)?;
+      copy_project_static_assets_inner(project_dir, &logical_path, &canonical_path, output_dir, excluded_dirs, visited)?;
       continue;
     }
 
@@ -226,7 +235,7 @@ fn copy_project_static_assets_inner(
       continue;
     }
 
-    let relative = canonical_path.strip_prefix(project_dir).map_err(|error| {
+    let relative = logical_path.strip_prefix(project_dir).map_err(|error| {
       Error::new(
         ErrorKind::InvalidInput,
         format!("bundle-web static asset is outside project root: {error}"),
@@ -280,6 +289,7 @@ fn is_allowed_static_asset(path: &Path) -> bool {
         | "md"
         | "csv"
         | "json"
+        | "ico"
     )
   )
 }
@@ -854,4 +864,44 @@ mod tests {
     assert!(!out.join("html/shared/lib.html").exists());
     fs::remove_dir_all(root).unwrap();
   }
+
+  #[cfg(unix)]
+  #[test]
+  fn bundle_web_copies_static_symlink_using_logical_output_path() {
+    use std::os::unix::fs as unix_fs;
+
+    let root = temp_root("static-symlink-logical-path");
+    let loaded = write_demo_project(&root);
+    fs::create_dir_all(root.join("assets")).unwrap();
+    fs::write(root.join("assets/favicon.ico"), "icon").unwrap();
+    unix_fs::symlink("assets/favicon.ico", root.join("favicon.ico")).unwrap();
+    let out = root.join("out");
+
+    bundle_web_project(options(&root, &out, loaded)).unwrap();
+
+    assert!(out.join("favicon.ico").is_file());
+    let html = fs::read_to_string(out.join("index.html")).unwrap();
+    assert!(html.contains("./favicon.ico") || !html.contains("favicon.ico"));
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn bundle_web_skips_static_symlinked_directories() {
+    use std::os::unix::fs as unix_fs;
+
+    let root = temp_root("static-symlink-dir-skip");
+    let loaded = write_demo_project(&root);
+    fs::create_dir_all(root.join("real_assets")).unwrap();
+    fs::write(root.join("real_assets/linked.js"), "console.log('linked');").unwrap();
+    unix_fs::symlink("real_assets", root.join("linked_assets")).unwrap();
+    let out = root.join("out");
+
+    bundle_web_project(options(&root, &out, loaded)).unwrap();
+
+    assert!(out.join("real_assets/linked.js").is_file());
+    assert!(!out.join("linked_assets/linked.js").exists());
+    fs::remove_dir_all(root).unwrap();
+  }
+
 }
