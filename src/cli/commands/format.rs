@@ -1,6 +1,474 @@
-use clap::ArgMatches;
-use mech_core::*;
+use std::collections::{BTreeMap, BTreeSet};
+use std::fs;
+use std::path::{Path, PathBuf};
 
-pub(crate) fn run(_root_matches: &ArgMatches, _subcommand_matches: Option<&ArgMatches>) -> MResult<()> {
+use clap::ArgMatches;
+use colored::*;
+use mech_core::*;
+use mech_syntax::formatter::*;
+use mech_syntax::parser;
+
+use crate::{save_to_file, MechError, GenericError};
+use crate::cli::app::Utf8ConversionError;
+use crate::cli::paths::{
+  absolute_path,
+  extension_allowed,
+  paths_equivalent,
+  source_extension,
+  unsupported_source_path_error,
+};
+use crate::cli::source_discovery::{
+  collect_sources,
+  DedupePolicy,
+  DiscoveryOptions,
+  MissingPathPolicy,
+};
+
+const FORMAT_EXTENSIONS: &[&str] = &["mec", "🤖", "html", "htm", "mdoc"];
+const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
+
+#[derive(Clone, Debug)]
+struct CollectedSourceTarget {
+  input_root: PathBuf,
+  path: PathBuf,
+  relative_path: PathBuf,
+  default_output_path: PathBuf,
+}
+
+
+fn normalize_output_exclusion(output_path: &Path, is_output_file: bool) -> MResult<Option<PathBuf>> {
+  if is_output_file {
+    return Ok(None);
+  }
+  let absolute = absolute_path(output_path)?;
+  Ok(Some(if absolute.exists() {
+    absolute.canonicalize()?
+  } else {
+    absolute
+  }))
+}
+
+fn format_output_exclusion(output_arg: Option<&str>, output_path: &Path, is_output_file: bool) -> MResult<Option<PathBuf>> {
+  match output_arg {
+    None => Ok(None),
+    Some(".") => Ok(None),
+    Some(_) if is_output_file => Ok(None),
+    Some(_) => {
+      let exclusion = normalize_output_exclusion(output_path, false)?;
+      match exclusion {
+        Some(path) if path == std::env::current_dir()?.canonicalize()? => Ok(None),
+        other => Ok(other),
+      }
+    }
+  }
+}
+
+fn format_writes_in_place(output_arg: Option<&str>, output_path: &Path, is_output_file: bool) -> MResult<bool> {
+  if is_output_file {
+    return Ok(false);
+  }
+  match output_arg {
+    None => Ok(true),
+    Some(_) => {
+      let cwd = std::env::current_dir()?.canonicalize()?;
+      let absolute = absolute_path(output_path)?;
+      let normalized = if absolute.exists() {
+        absolute.canonicalize()?
+      } else {
+        absolute
+      };
+      Ok(normalized == cwd)
+    }
+  }
+}
+
+fn is_excluded_output_path(path: &Path, output_exclusion: Option<&Path>) -> MResult<bool> {
+  let Some(excluded) = output_exclusion else { return Ok(false); };
+  let absolute = absolute_path(path)?;
+  let normalized = if absolute.exists() {
+    absolute.canonicalize()?
+  } else {
+    absolute
+  };
+  Ok(normalized == excluded || normalized.starts_with(excluded))
+}
+
+fn explicit_file_relative_path(path: &Path) -> MResult<PathBuf> {
+  Ok(path.to_path_buf())
+}
+
+fn safe_output_relative_path(path: &Path) -> MResult<PathBuf> {
+  let cwd = std::env::current_dir()?;
+  let candidate = if path.is_absolute() {
+    match path.strip_prefix(&cwd) {
+      Ok(stripped) => stripped.to_path_buf(),
+      Err(_) => return Ok(path.file_name().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("output.mec"))),
+    }
+  } else {
+    path.to_path_buf()
+  };
+
+  let mut safe = PathBuf::new();
+  for component in candidate.components() {
+    match component {
+      std::path::Component::Normal(part) => safe.push(part),
+      std::path::Component::CurDir => {}
+      std::path::Component::ParentDir
+      | std::path::Component::RootDir
+      | std::path::Component::Prefix(_) => {
+        return Ok(path.file_name().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("output.mec")));
+      }
+    }
+  }
+
+  if safe.as_os_str().is_empty() {
+    Ok(path.file_name().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("output.mec")))
+  } else {
+    Ok(safe)
+  }
+}
+
+fn default_output_relative_path(input_root: &Path, path: &Path) -> MResult<PathBuf> {
+  let cwd = std::env::current_dir()?;
+  if path.is_relative() {
+    return Ok(path.to_path_buf());
+  }
+  if let Ok(stripped) = path.strip_prefix(&cwd) {
+    return Ok(stripped.to_path_buf());
+  }
+  if let Ok(stripped) = path.strip_prefix(input_root) {
+    return Ok(input_root.join(stripped));
+  }
+  Ok(path.file_name().map(PathBuf::from).unwrap_or_else(|| path.to_path_buf()))
+}
+
+fn read_format_source(path: &Path) -> MResult<MechSourceCode> {
+  let extension = source_extension(path).ok_or_else(|| unsupported_source_path_error(path, FORMAT_EXTENSIONS))?;
+  match extension.as_str() {
+    "mec" | "🤖" | "mdoc" => Ok(MechSourceCode::String(std::fs::read_to_string(path)?)),
+    "html" | "htm" => Ok(MechSourceCode::Html(std::fs::read_to_string(path)?)),
+    _ => Err(unsupported_source_path_error(path, FORMAT_EXTENSIONS)),
+  }
+}
+
+fn skip_directory_format_source(path: &Path, html: bool, writes_in_place: bool) -> bool {
+  html && writes_in_place && matches!(source_extension(path).as_deref(), Some("html") | Some("htm"))
+}
+
+
+fn collect_format_targets(path: &Path, output_exclusion: Option<&Path>, html: bool, writes_in_place: bool) -> MResult<Vec<CollectedSourceTarget>> {
+  if path.is_file() {
+    if !extension_allowed(path, FORMAT_EXTENSIONS) {
+      return Err(unsupported_source_path_error(path, FORMAT_EXTENSIONS));
+    }
+    let default_output_path = path.to_path_buf();
+    let relative_path = safe_output_relative_path(path)?;
+    return Ok(vec![CollectedSourceTarget {
+      input_root: path.parent().unwrap_or_else(|| Path::new("")).to_path_buf(),
+      path: path.to_path_buf(),
+      relative_path,
+      default_output_path,
+    }]);
+  }
+
+  if !path.exists() {
+    return Err(MechError::new(GenericError { msg: format!("Source path does not exist: {}", path.display()) }, None).with_compiler_loc());
+  }
+
+  if !path.is_dir() {
+    return Err(MechError::new(GenericError { msg: format!("Source path is neither a file nor directory: {}", path.display()) }, None).with_compiler_loc());
+  }
+
+  fn collect_dir(root: &Path, dir: &Path, output_exclusion: Option<&Path>, html: bool, writes_in_place: bool, out: &mut Vec<CollectedSourceTarget>, visited: &mut BTreeSet<PathBuf>) -> MResult<()> {
+    if is_excluded_output_path(dir, output_exclusion)? { return Ok(()); }
+    let canonical = dir.canonicalize()?;
+    if !visited.insert(canonical) { return Ok(()); }
+    for entry in fs::read_dir(dir)? {
+      let entry = entry?;
+      let p = entry.path();
+      let file_type = entry.file_type()?;
+      if file_type.is_symlink() {
+        let target_meta = match fs::metadata(&p) {
+          Ok(meta) => meta,
+          Err(_) => continue,
+        };
+        if target_meta.is_dir() {
+          continue;
+        }
+        if target_meta.is_file() && !skip_directory_format_source(&p, html, writes_in_place) && extension_allowed(&p, FORMAT_EXTENSIONS) {
+          let relative_path = p.strip_prefix(root).unwrap_or(&p).to_path_buf();
+          let default_output_path = default_output_relative_path(root, &p)?;
+          out.push(CollectedSourceTarget { input_root: root.to_path_buf(), path: p, relative_path, default_output_path });
+        }
+        continue;
+      }
+      if file_type.is_dir() {
+        if let Some(name) = p.file_name().and_then(|n| n.to_str()) {
+          if SKIP_SOURCE_DIRS.iter().any(|skip| skip == &name) { continue; }
+        }
+        if is_excluded_output_path(&p, output_exclusion)? { continue; }
+        collect_dir(root, &p, output_exclusion, html, writes_in_place, out, visited)?;
+      } else if !skip_directory_format_source(&p, html, writes_in_place) && extension_allowed(&p, FORMAT_EXTENSIONS) {
+        let relative_path = p.strip_prefix(root).unwrap_or(&p).to_path_buf();
+        let default_output_path = default_output_relative_path(root, &p)?;
+        out.push(CollectedSourceTarget { input_root: root.to_path_buf(), path: p, relative_path, default_output_path });
+      }
+    }
+    Ok(())
+  }
+
+  let entries = collect_sources(
+    &[path.to_path_buf()],
+    path,
+    DiscoveryOptions {
+      allowed_file_extensions: FORMAT_EXTENSIONS,
+      recursive_file_extensions: FORMAT_EXTENSIONS,
+      skip_dir_names: SKIP_SOURCE_DIRS,
+      follow_file_symlinks: true,
+      follow_dir_symlinks: false,
+      missing_path_policy: MissingPathPolicy::SkipBrokenSymlink,
+      dedupe_policy: DedupePolicy::LogicalPath,
+    },
+  )?;
+  let mut out = entries
+    .into_iter()
+    .filter(|entry| !skip_directory_format_source(&entry.logical_path, html, writes_in_place))
+    .filter(|entry| is_excluded_output_path(&entry.logical_path, output_exclusion).map(|excluded| !excluded).unwrap_or(false))
+    .map(|entry| {
+      let default_output_path = default_output_relative_path(path, &entry.logical_path)?;
+      Ok(CollectedSourceTarget {
+        input_root: path.to_path_buf(),
+        path: entry.logical_path,
+        relative_path: entry.relative_path,
+        default_output_path,
+      })
+    })
+    .collect::<MResult<Vec<_>>>()?;
+  out.sort_by(|a, b| a.relative_path.cmp(&b.relative_path).then_with(|| a.path.cmp(&b.path)));
+  Ok(out)
+}
+fn format_output_matches_input_dir(mech_paths: &[String], output_path: &Path, is_output_file: bool) -> MResult<bool> {
+  if is_output_file {
+    return Ok(false);
+  }
+  for input in mech_paths {
+    let input_path = Path::new(input);
+    if input_path.is_dir() && paths_equivalent(input_path, output_path)? {
+      return Ok(true);
+    }
+  }
+  Ok(false)
+}
+
+fn reject_ambiguous_matching_output_dir(output_matches_input_dir: bool, input_count: usize, output_path: &Path) -> MResult<()> {
+  if output_matches_input_dir && input_count > 1 {
+    return Err(MechError::new(
+      GenericError {
+        msg: format!(
+          "Output directory `{}` matches one of multiple format inputs. Use in-place formatting without --out, or choose a distinct output directory.",
+          output_path.display(),
+        ),
+      },
+      None,
+    ).with_compiler_loc());
+  }
   Ok(())
 }
+
+fn format_output_file_for_target(
+  target: &CollectedSourceTarget,
+  output_path: &Path,
+  is_output_file: bool,
+  writes_in_place: bool,
+  html: bool,
+) -> PathBuf {
+  let mut path = if is_output_file {
+    output_path.to_path_buf()
+  } else if writes_in_place {
+    target.default_output_path.clone()
+  } else {
+    output_path.join(&target.relative_path)
+  };
+  if html && !is_output_file {
+    path = path.with_extension("html");
+  }
+  path
+}
+
+fn ensure_unique_format_outputs(targets: &[CollectedSourceTarget], output_path: &Path, is_output_file: bool, writes_in_place: bool, html: bool) -> MResult<()> {
+  let mut seen: BTreeMap<PathBuf, PathBuf> = BTreeMap::new();
+  for target in targets {
+    let output_file = format_output_file_for_target(target, output_path, is_output_file, writes_in_place, html);
+    if let Some(previous) = seen.insert(output_file.clone(), target.path.clone()) {
+      return Err(MechError::new(
+        GenericError {
+          msg: format!(
+            "Format output collision for `{}` between `{}` and `{}`",
+            output_file.display(),
+            previous.display(),
+            target.path.display(),
+          ),
+        },
+        None,
+      ).with_compiler_loc());
+    }
+  }
+  Ok(())
+}
+
+fn reject_multi_target_file_output(target_count: usize, output_path: &Path, is_output_file: bool) -> MResult<()> {
+  if is_output_file && target_count > 1 {
+    return Err(MechError::new(
+      GenericError {
+        msg: format!(
+          "Cannot write {} formatted sources into single output file `{}`. Use an output directory instead.",
+          target_count,
+          output_path.display(),
+        ),
+      },
+      None,
+    ).with_compiler_loc());
+  }
+  Ok(())
+}
+
+
+pub(crate) async fn run(
+  _root_matches: &ArgMatches,
+  matches: &ArgMatches,
+  stylesheet_backup_url: &str,
+  shim_backup_url: &str,
+  embedded_shim: &'static str,
+) -> MResult<()> {
+let badge = "[Mech Formatter]".truecolor(34, 204, 187);
+let html_flag = matches.get_flag("html");
+let stylesheet_paths: Vec<String> = matches
+    .get_many::<String>("stylesheet")
+    .map_or(vec![], |paths| paths.map(|path| path.to_string()).collect());
+
+let shim_path = matches
+    .get_one::<String>("shim")
+    .cloned()
+    .unwrap_or("".to_string());
+
+let output_arg = matches.get_one::<String>("output_path").cloned();
+let output_path = PathBuf::from(output_arg.clone().unwrap_or(".".to_string()));
+let is_output_file = output_path.extension().is_some();
+
+let mech_paths: Vec<String> = matches
+    .get_many::<String>("mech_format_file_paths")
+    .map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+let output_matches_input_dir = format_output_matches_input_dir(&mech_paths, &output_path, is_output_file)?;
+reject_ambiguous_matching_output_dir(output_matches_input_dir, mech_paths.len(), &output_path)?;
+let writes_in_place = format_writes_in_place(output_arg.as_deref(), &output_path, is_output_file)? || output_matches_input_dir;
+
+// If the user provided exactly one path
+if mech_paths.len() == 1 {
+  let input_path = PathBuf::from(&mech_paths[0]);
+  if input_path.is_dir() && is_output_file {
+    return Err(MechError::new(
+      GenericError {
+        msg: format!(
+          "Cannot write directory `{}` into single output file `{}`. Provide a directory for --out instead.",
+          input_path.display(),
+          output_path.display(),
+        ),
+      },
+      None,
+    ).with_compiler_loc());
+  }
+}
+println!("{} Loading resources…", badge);
+
+// Load stylesheet
+print!("{} Loading stylesheet…", badge);
+let stylesheet_str = crate::cli::app::load_stylesheets(&stylesheet_paths, stylesheet_backup_url).await?;
+
+// Load shim HTML
+print!("{} Loading HTML shim…", badge);
+let shim = crate::read_or_download(&shim_path, shim_backup_url, Some(embedded_shim.as_bytes())).await?;
+let shim_str = String::from_utf8(shim).map_err(|e| {
+  MechError::new(
+    Utf8ConversionError {
+      source_error: e.to_string(),
+    },
+    None,
+  )
+  .with_compiler_loc()
+})?;
+
+let output_exclusion = if writes_in_place {
+  None
+} else {
+  format_output_exclusion(output_arg.as_deref(), &output_path, is_output_file)?
+};
+let mut loaded_sources: Vec<(CollectedSourceTarget, MechSourceCode)> = Vec::new();
+for path in mech_paths {
+  for target in collect_format_targets(Path::new(&path), output_exclusion.as_deref(), html_flag, writes_in_place)? {
+    let code = read_format_source(&target.path)?;
+    loaded_sources.push((target, code));
+  }
+}
+reject_multi_target_file_output(loaded_sources.len(), &output_path, is_output_file)?;
+let format_targets: Vec<CollectedSourceTarget> = loaded_sources.iter().map(|(target, _)| target.clone()).collect();
+ensure_unique_format_outputs(&format_targets, &output_path, is_output_file, writes_in_place, html_flag)?;
+
+// Only create directory if output_path is not a file
+if !is_output_file && output_path != PathBuf::from(".") {
+  match fs::create_dir_all(&output_path) {
+    Ok(_) => println!(
+      "{} Directory created: {}",
+      "[Created]".truecolor(153, 221, 85),
+      output_path.display()
+    ),
+    Err(err) => println!("Error creating directory: {:?}", err),
+  }
+}
+
+// HTML mode
+if html_flag {
+  let mut html_items: Vec<(CollectedSourceTarget, String)> = Vec::new();
+  for (target, src) in &loaded_sources {
+    let html = match src {
+      MechSourceCode::Html(content) => content.clone(),
+      MechSourceCode::String(source) => {
+        let tree = parser::parse(source.trim())?;
+        let mut formatter = Formatter::new();
+        formatter.format_html(&tree, stylesheet_str.clone(), shim_str.clone())
+      }
+      other => return Err(MechError::new(GenericError { msg: format!("Unsupported source kind for HTML formatting `{}`: {:?}", target.path.display(), other) }, None).with_compiler_loc()),
+    };
+    html_items.push((target.clone(), html));
+  }
+  if is_output_file && html_items.len() == 1 {
+    let (_, content) = html_items.remove(0);
+    save_to_file(output_path, &content)?;
+  } else {
+    for (target, content) in html_items {
+      let output_file = format_output_file_for_target(&target, &output_path, is_output_file, writes_in_place, true);
+      save_to_file(output_file, &content)?;
+    }
+  }
+} else {
+  // Raw source mode
+  for (target, mech_src) in loaded_sources {
+    let content = match mech_src {
+      MechSourceCode::String(source) => {
+        let tree = parser::parse(source.trim())?;
+        let mut formatter = Formatter::new();
+        formatter.format(&tree)
+      }
+      MechSourceCode::Html(content) => content,
+      other => return Err(MechError::new(GenericError { msg: format!("Unsupported source kind for raw formatting `{}`: {:?}", target.path.display(), other) }, None).with_compiler_loc()),
+    };
+    let output_file = format_output_file_for_target(&target, &output_path, is_output_file, writes_in_place, false);
+    save_to_file(output_file, &content)?;
+  }
+}
+
+Ok(())
+
+}
+
+#[cfg(test)]
+mod tests;
