@@ -1,4 +1,6 @@
 use super::*;
+#[cfg(feature = "build")]
+use crate::cli::commands::build::validate_build_bytecode_inputs;
 
 #[cfg(all(test, feature = "serve"))]
 mod filesystem_capability_cli_tests {

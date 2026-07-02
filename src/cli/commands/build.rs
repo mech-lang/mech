@@ -16,7 +16,7 @@ fn is_bytecode_source_path(path: &str) -> bool {
     .unwrap_or(false)
 }
 
-fn validate_build_bytecode_inputs(paths: &[String]) -> MResult<usize> {
+pub(crate) fn validate_build_bytecode_inputs(paths: &[String]) -> MResult<usize> {
   let bytecode_count = paths.iter().filter(|path| is_bytecode_source_path(path)).count();
   if bytecode_count > 0 && bytecode_count != paths.len() {
     return Err(MechError::new(

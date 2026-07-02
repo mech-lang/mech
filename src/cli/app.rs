@@ -740,7 +740,7 @@ async fn async_main() -> Result<(), MechError> {
   #[cfg(feature = "bundle_web")]
   let cli_command = cli_command.subcommand(bundle_web::bundle_web_command());
 
-  #[cfg(feature = "serve")]
+  #[cfg(any(feature = "serve", feature = "run"))]
   let cli_command = capabilities::add_filesystem_capability_args(cli_command);
 
   #[cfg(any(feature = "serve", feature = "run"))]
@@ -1424,10 +1424,10 @@ fn host_delegation_args() -> Vec<Arg> {
 #[cfg(all(feature = "host_delegation_signing", feature = "serve"))]
 fn serve_host_delegation_injection(
   matches: &clap::ArgMatches,
-  loaded_config: Option<&mech::LoadedMechConfig>,
+  loaded_config: Option<&crate::LoadedMechConfig>,
   runtime_config: &mech_runtime::RuntimeConfig,
   full_address: &str,
-) -> MResult<Option<mech::HostAuthorityInjection>> {
+) -> MResult<Option<crate::HostAuthorityInjection>> {
   let Some(private_key) = matches.get_one::<String>("host_delegation_key") else {
     return Ok(None);
   };
@@ -1438,7 +1438,7 @@ fn serve_host_delegation_injection(
     return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "host delegation signing requires a loaded config").into());
   };
   let current_dir = std::env::current_dir()?;
-  let options = mech::HostDelegationSigningOptions {
+  let options = crate::HostDelegationSigningOptions {
     private_key_path: current_dir.join(private_key),
     public_key_path: current_dir.join(public_key),
     key_id: matches.get_one::<String>("host_delegation_key_id").cloned().unwrap_or_else(|| "dev".to_string()),
@@ -1455,7 +1455,7 @@ fn serve_host_delegation_injection(
     .duration_since(std::time::UNIX_EPOCH)
     .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error.to_string()))?
     .as_millis() as u64;
-  mech::signed_browser_runtime_injection_config(host_config, &options, now_ms).map(Some)
+  crate::signed_browser_runtime_injection_config(host_config, &options, now_ms).map(Some)
 }
 
 fn source_range_to_offset_range(file_content: &str, range: &SourceRange) -> (usize, usize) {

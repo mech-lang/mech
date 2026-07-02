@@ -231,6 +231,16 @@ fn copy_project_static_assets_inner(
       continue;
     }
 
+    if !canonical_path.starts_with(project_dir) {
+      return Err(Error::new(
+        ErrorKind::InvalidInput,
+        format!(
+          "bundle-web static asset target is outside project root: {}",
+          canonical_path.display()
+        ),
+      ).into());
+    }
+
     if !is_allowed_static_asset(&canonical_path) {
       continue;
     }
@@ -883,6 +893,31 @@ mod tests {
     let html = fs::read_to_string(out.join("index.html")).unwrap();
     assert!(html.contains("./favicon.ico") || !html.contains("favicon.ico"));
     fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn bundle_web_rejects_static_symlink_target_outside_project() {
+    use std::os::unix::fs as unix_fs;
+
+    let root = temp_root("static-symlink-outside-project");
+    let loaded = write_demo_project(&root);
+    let outside = std::env::temp_dir().join(format!(
+      "mech-outside-static-{}",
+      std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos()
+    ));
+    std::fs::write(&outside, "{}").unwrap();
+    unix_fs::symlink(&outside, root.join("config.json")).unwrap();
+
+    let out = root.join("out");
+    let err = bundle_web_project(options(&root, &out, loaded)).unwrap_err();
+    assert!(format!("{err:?}").contains("outside project root"));
+
+    let _ = std::fs::remove_file(outside);
+    let _ = std::fs::remove_dir_all(root);
   }
 
   #[cfg(unix)]
