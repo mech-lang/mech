@@ -219,6 +219,7 @@ mod build_input_tests {
 #[cfg(all(test, feature = "run"))]
 mod run_collection_tests {
   use super::*;
+  use crate::cli::commands::run::collect_run_targets;
 
   fn temp_root(label: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!(

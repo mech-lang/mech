@@ -181,7 +181,7 @@ fn collectors_skip_symlinked_directory_loops() {
 
   #[cfg(feature = "run")]
   {
-    let run_targets = crate::cli::app::collect_run_targets(&root).unwrap();
+    let run_targets = crate::cli::commands::run::collect_run_targets(&root).unwrap();
     assert_eq!(run_targets, vec![root.join("main.mec")]);
   }
   std::fs::remove_dir_all(root).unwrap();
