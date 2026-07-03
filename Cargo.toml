@@ -41,10 +41,10 @@ base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "formatter", "serve", "bundle_web", "run", "test", "repl", "build","whos", "async", "trace",
       "mech-core/base", "mech-program/base", "mech-syntax/base",
       ]
-build = ["compiler", "mech-runtime", "mech-runtime/default"]
-repl = []
-run = ["mech-program/program", "cli", "cli_host"]
-test = ["variable_define", "invariant_define", "symbol_table", "bool", "mech-runtime", "mech-runtime/default"]
+build = ["cli", "compiler", "mech-runtime", "mech-runtime/default"]
+repl = ["cli"]
+run = ["mech-program/program", "cli", "cli_host", "project"]
+test = ["cli", "variable_define", "invariant_define", "symbol_table", "bool", "mech-runtime", "mech-runtime/default"]
 cli = []
 project = ["mech-runtime", "mech-runtime/default"]
 cli_host = ["mech-runtime", "mech-runtime/default", "mech-host-cli", "mech-host-cli/provider"]
@@ -54,7 +54,7 @@ serve = ["cli", "project", "web_host", "formatter", "mech-runtime", "mech-runtim
 host_delegation = ["serde", "mech-runtime", "mech-runtime/host_delegation", "mech-host-browser", "mech-host-browser/delegation"]
 host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_signing", "mech-host-browser/delegation_signing"]
 whos = ["pretty_print", "variables", "symbol_table"]
-formatter = ["mech-syntax/formatter"]
+formatter = ["cli", "serde", "mech-syntax/formatter", "mech-syntax/mika", "mech-core/mika", "mech-syntax/variable_define", "mech-core/variable_define"]
 async = []
 trace = ["mech-program/trace"]
 linked_stdlib = ["mech-program/linked_stdlib"]
