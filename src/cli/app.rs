@@ -535,12 +535,13 @@ async fn async_main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   #[cfg(feature = "test")]
   if let Some(matches) = cli_matches.subcommand_matches("test") {
-    let mech_paths: Vec<String> = matches
-      .get_many::<String>("mech_test_file_paths")
-      .map_or(vec![".".to_string()], |files| files.map(|file| file.to_string()).collect());
-    let output_path = matches.get_one::<String>("output_path").cloned();
-    let verbose = matches.get_flag("verbose");
-    let exit_code = run_mech_tests(mech_paths, tree_flag, debug_flag, time_flag, trace_flag, output_path, verbose)?;
+    let exit_code = crate::cli::commands::test::run(
+      matches,
+      tree_flag,
+      debug_flag,
+      time_flag,
+      trace_flag,
+    )?;
     std::process::exit(exit_code);
   }
 
