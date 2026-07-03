@@ -222,6 +222,10 @@ fn copy_project_static_assets_inner(
       continue;
     }
 
+    if !is_allowed_static_asset(&canonical_path) {
+      continue;
+    }
+
     let canonical_relative = canonical_path.strip_prefix(project_dir).map_err(|error| {
       Error::new(
         ErrorKind::InvalidInput,
@@ -229,10 +233,6 @@ fn copy_project_static_assets_inner(
       )
     })?;
     validate_safe_relative_path(canonical_relative)?;
-
-    if !is_allowed_static_asset(&canonical_path) {
-      continue;
-    }
 
     let relative = logical_path.strip_prefix(project_dir).map_err(|error| {
       Error::new(
@@ -641,6 +641,28 @@ mod tests {
 
     assert!(error.contains("bundle-web static asset target is outside project root"));
     assert!(!out.join("public/settings.json").exists());
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn bundle_web_skips_non_static_symlinks_to_outside_project() {
+    use std::os::unix::fs as unix_fs;
+
+    let root = temp_root("non-static-symlinks-outside-project");
+    let project = root.join("project");
+    fs::create_dir_all(&project).unwrap();
+    fs::write(root.join("README"), "outside readme\n").unwrap();
+    fs::write(root.join(".env"), "SECRET=true\n").unwrap();
+    unix_fs::symlink("../README", project.join("README")).unwrap();
+    unix_fs::symlink("../.env", project.join(".env")).unwrap();
+    let loaded = write_demo_project(&project);
+    let out = project.join("out");
+
+    bundle_web_project(options(&project, &out, loaded)).unwrap();
+
+    assert!(!out.join("README").exists());
+    assert!(!out.join(".env").exists());
     fs::remove_dir_all(root).unwrap();
   }
 
