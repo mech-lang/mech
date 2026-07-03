@@ -1,6 +1,6 @@
 #[cfg(feature = "bundle_web")]
 pub mod bundle_web;
-#[cfg(feature = "serve")]
+#[cfg(any(feature = "serve", feature = "run"))]
 pub mod capabilities;
 #[cfg(any(feature = "serve", feature = "run"))]
 pub mod config;

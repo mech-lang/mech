@@ -43,7 +43,7 @@ base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       ]
 build = ["compiler", "mech-runtime", "mech-runtime/default"]
 repl = []
-run = ["mech-program/program", "cli", "cli_host"]
+run = ["mech-program/program", "cli", "cli_host", "project"]
 test = ["variable_define", "invariant_define", "symbol_table", "bool", "mech-runtime", "mech-runtime/default"]
 cli = []
 project = ["mech-runtime", "mech-runtime/default"]
