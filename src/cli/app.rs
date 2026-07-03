@@ -392,16 +392,7 @@ async fn async_main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   #[cfg(feature = "bundle_web")]
   if let Some(bundle_matches) = cli_matches.subcommand_matches("bundle-web") {
-    let badge = "[Mech Bundle]".truecolor(34, 204, 187);
-
-    let loaded = bundle_web::load_bundle_web_config(bundle_matches)?;
-    println!("{badge} Loading config… {}", loaded.path.display());
-
-    let options = bundle_web::effective_bundle_web_options(bundle_matches, loaded)?;
-    let result = crate::bundle_web_project(options)?;
-
-    println!("{badge} Bundle written: {}", result.output_dir.display());
-    println!("{badge} Sources bundled: {}", result.source_count);
+    crate::cli::commands::bundle_web::run(bundle_matches)?;
     return Ok(());
   }
 
