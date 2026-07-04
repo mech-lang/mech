@@ -61,6 +61,28 @@ jobs:
           cargo check -p mech-runtime -p mech-host-browser -p mech-host-cli
           cargo check -p mech-host-cli --no-default-features
 
+  run-only:
+    name: Run-only CLI
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Build run-only CLI
+        run: cargo build --bin mech --no-default-features --features run
+
+      - name: Build run-only CLI with pretty print
+        run: cargo build --bin mech --no-default-features --features "run pretty_print"
+
   dynamic-modules:
     name: Dynamic modules
     runs-on: ubuntu-latest
