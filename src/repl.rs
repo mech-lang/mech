@@ -101,7 +101,7 @@ impl MechRepl {
         #[cfg(feature = "pretty_print")]
         let out = prgrm.interpreter().pretty_print_symbols();
         #[cfg(not(feature = "pretty_print"))]
-        let out = format!("{:#?}", prgrm.state.borrow().symbols());
+        let out = format!("{:#?}", prgrm.interpreter().symbols());
         return Ok(out);
       }
       ReplCommand::Plan => {
@@ -111,7 +111,17 @@ impl MechRepl {
         let out = format!("{:#?}", prgrm.interpreter().plan());
         return Ok(out);
       }
-      ReplCommand::Whos(names) => {return Ok(whos(prgrm,names));}
+      ReplCommand::Whos(names) => {
+        #[cfg(feature = "whos")]
+        {
+          return Ok(whos(prgrm,names));
+        }
+        #[cfg(not(feature = "whos"))]
+        {
+          let _ = names;
+          return Ok("The :whos command requires the whos feature.".to_string());
+        }
+      }
       ReplCommand::Clear(name) => {
         // Drop the old program and replace it with a new one
         let id = self.active;

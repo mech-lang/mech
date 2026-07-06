@@ -472,13 +472,6 @@ pub fn cli_host_capability_selection(
   }
 }
 
-pub fn cli_host_capability_passthrough_values(
-  cli_matches: &clap::ArgMatches,
-  _run_matches: Option<&clap::ArgMatches>,
-) -> Vec<String> {
-  Vec::new()
-}
-
 #[cfg(test)]
 mod tests {
   use super::*;

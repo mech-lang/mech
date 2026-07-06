@@ -1,4 +1,6 @@
 use super::*;
+use colored::{ColoredString, Colorize};
+use std::path::PathBuf;
 #[cfg(feature = "build")]
 use crate::cli::commands::build::validate_build_bytecode_inputs;
 
@@ -400,4 +402,32 @@ mod run_collection_tests {
     assert_eq!(targets, vec![source]);
     std::fs::remove_dir_all(root).unwrap();
   }
+}
+
+#[test]
+fn root_command_parses_available_subcommands() {
+  #[cfg(feature = "build")]
+  super::build_cli()
+    .try_get_matches_from(["mech", "build", "demo.mec", "--out", "target/out"])
+    .unwrap();
+  #[cfg(feature = "formatter")]
+  super::build_cli()
+    .try_get_matches_from(["mech", "format", "demo.mec", "--html"])
+    .unwrap();
+  #[cfg(feature = "run")]
+  super::build_cli()
+    .try_get_matches_from(["mech", "run", "demo.mec"])
+    .unwrap();
+  #[cfg(feature = "serve")]
+  super::build_cli()
+    .try_get_matches_from(["mech", "serve", "demo.mec", "--port", "8082"])
+    .unwrap();
+  #[cfg(feature = "test")]
+  super::build_cli()
+    .try_get_matches_from(["mech", "test", "demo.mec", "--verbose"])
+    .unwrap();
+  #[cfg(feature = "bundle_web")]
+  super::build_cli()
+    .try_get_matches_from(["mech", "bundle-web", "--help"])
+    .unwrap_err();
 }

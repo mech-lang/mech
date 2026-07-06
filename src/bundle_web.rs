@@ -1,12 +1,13 @@
 use std::collections::BTreeSet;
 use std::fs;
 use std::io::{Error, ErrorKind};
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 use mech_core::*;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::parser;
 
+use crate::cli::paths::validate_safe_relative_path;
 use crate::{HostAuthorityInjection, LoadedMechConfig};
 
 #[derive(Clone, Debug)]
@@ -329,19 +330,6 @@ fn relative_source_path(source: &Path, base_dir: &Path, project_dir: &Path) -> M
 
   validate_safe_relative_path(relative)?;
   Ok(relative.to_path_buf())
-}
-
-fn validate_safe_relative_path(path: &Path) -> MResult<()> {
-  if path.is_absolute()
-    || path.components().any(|component| matches!(component, Component::ParentDir))
-  {
-    return Err(Error::new(
-      ErrorKind::InvalidInput,
-      format!("bundle-web rejected unsafe relative path: {}", path.display()),
-    )
-    .into());
-  }
-  Ok(())
 }
 
 fn write_bundle_file(output_dir: &Path, section: &str, relative: &Path, bytes: &[u8]) -> MResult<()> {

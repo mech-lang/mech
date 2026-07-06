@@ -1,10 +1,98 @@
-use clap::ArgMatches;
+use clap::{Arg, ArgAction, ArgMatches, Command};
 use colored::*;
 use mech_core::*;
 
-use crate::cli::app::Utf8ConversionError;
+use crate::cli::resources::{Utf8ConversionError, load_stylesheets};
 use crate::cli::{capabilities, config};
 use crate::{MechError, MechServer, read_or_download};
+
+pub(crate) fn command() -> Command {
+    Command::new("serve")
+        .about("Serve Mech program over an HTTP server.")
+        .arg(
+            Arg::new("mech_serve_file_paths")
+                .help("Source .mec files, .mecb bytecode files, project folders, or directories")
+                .required(false)
+                .action(ArgAction::Append),
+        )
+        .arg(
+            Arg::new("port")
+                .short('p')
+                .long("port")
+                .value_name("PORT")
+                .help("Sets the port for the server (8081)"),
+        )
+        .arg(
+            Arg::new("stylesheet")
+                .short('s')
+                .long("stylesheet")
+                .value_name("STYLESHEET")
+                .num_args(1..)
+                .action(ArgAction::Append)
+                .help("Sets the stylesheet for the HTML output"),
+        )
+        .arg(
+            Arg::new("shim")
+                .short('m')
+                .long("shim")
+                .value_name("SHIM")
+                .help("Sets the shim for the HTML output"),
+        )
+        .arg(
+            Arg::new("wasm")
+                .short('w')
+                .long("wasm")
+                .value_name("WASM")
+                .help("Sets the the path to the wasm package"),
+        )
+        .arg(
+            Arg::new("address")
+                .short('a')
+                .long("address")
+                .value_name("ADDRESS")
+                .help("Sets the address of the server (127.0.0.1)"),
+        )
+        .args(host_delegation_args())
+}
+
+#[cfg(feature = "host_delegation_signing")]
+fn host_delegation_args() -> Vec<Arg> {
+    vec![
+        Arg::new("host_delegation_key")
+            .long("host-delegation-key")
+            .value_name("PATH")
+            .num_args(1),
+        Arg::new("host_delegation_public_key")
+            .long("host-delegation-public-key")
+            .value_name("PATH")
+            .num_args(1),
+        Arg::new("host_delegation_key_id")
+            .long("host-delegation-key-id")
+            .value_name("ID")
+            .num_args(1),
+        Arg::new("host_delegation_issuer")
+            .long("host-delegation-issuer")
+            .value_name("ISSUER")
+            .num_args(1),
+        Arg::new("host_delegation_subject")
+            .long("host-delegation-subject")
+            .value_name("SUBJECT")
+            .num_args(1),
+        Arg::new("host_delegation_audience")
+            .long("host-delegation-audience")
+            .value_name("AUDIENCE")
+            .num_args(1),
+        Arg::new("host_delegation_expires_ms")
+            .long("host-delegation-expires-ms")
+            .value_name("MS")
+            .num_args(1),
+    ]
+}
+
+#[cfg(not(feature = "host_delegation_signing"))]
+fn host_delegation_args() -> Vec<Arg> {
+    Vec::new()
+}
 
 pub(crate) struct ServeResources<'a> {
     pub stylesheet_backup_url: &'a str,
@@ -16,7 +104,7 @@ pub(crate) struct ServeResources<'a> {
     pub mech_js: &'a [u8],
 }
 
-pub(crate) async fn run(matches: &ArgMatches, resources: ServeResources<'_>) -> MResult<()> {
+pub(crate) async fn run(matches: &ArgMatches, resources: ServeResources<'_>) -> MResult<i32> {
     let badge = "[Mech Server]".truecolor(34, 204, 187);
     let error_badge = "[Error]".truecolor(246, 98, 78);
 
@@ -78,8 +166,7 @@ pub(crate) async fn run(matches: &ArgMatches, resources: ServeResources<'_>) -> 
 
     print!("{badge} Loading stylesheet…");
     let stylesheet_str =
-        crate::cli::app::load_stylesheets(&stylesheet_paths, resources.stylesheet_backup_url)
-            .await?;
+        load_stylesheets(&stylesheet_paths, resources.stylesheet_backup_url).await?;
 
     print!("{badge} Loading HTML shim…");
     let shim = read_or_download(
@@ -131,14 +218,14 @@ pub(crate) async fn run(matches: &ArgMatches, resources: ServeResources<'_>) -> 
 
     if let Err(err) = server.load_workspace(&mech_paths) {
         println!("{error_badge} {err:#?}");
-        std::process::exit(1);
+        return Ok(1);
     }
 
     println!("{badge} Sources loaded.");
 
     server.serve().await?;
 
-    Ok(())
+    Ok(0)
 }
 
 #[cfg(feature = "host_delegation_signing")]
