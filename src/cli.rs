@@ -8,6 +8,17 @@
   feature = "repl"
 ))]
 pub mod app;
+
+#[cfg(any(
+  feature = "build",
+  feature = "formatter",
+  feature = "run",
+  feature = "serve",
+  feature = "bundle_web",
+  feature = "test",
+  feature = "repl"
+))]
+pub mod commands;
 #[cfg(feature = "bundle_web")]
 pub mod bundle_web;
 #[cfg(any(feature = "serve", feature = "run"))]
