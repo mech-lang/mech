@@ -3,9 +3,94 @@ use colored::*;
 use mech_core::*;
 
 use crate::cli::outcome::CliOutcome;
-use crate::cli::resources::{Utf8ConversionError, WebResourceDefaults, load_stylesheets};
+use crate::cli::resources::{
+    LoadedResource, LoadedStylesheets, ResourceEvent, ResourceFallback, ResourceSource,
+    Utf8ConversionError, WebResourceDefaults, load_resource, load_stylesheets,
+};
 use crate::cli::{capabilities, config, serve_options};
-use crate::{MechError, MechServer, read_or_download};
+use crate::{MechError, MechServer};
+
+fn render_capability_events(badge: &str, events: &[capabilities::FilesystemCapabilityEvent]) {
+    for event in events {
+        match event {
+            capabilities::FilesystemCapabilityEvent::DefaultGrant {
+                path, operations, ..
+            } => println!(
+                "{badge} Default filesystem grant: {} ({})",
+                path.display(),
+                operations.join(",")
+            ),
+            capabilities::FilesystemCapabilityEvent::CliGrant {
+                source_flag,
+                path,
+                operations,
+                ..
+            } => println!(
+                "{badge} {source_flag} filesystem grant: {} ({})",
+                path.display(),
+                operations.join(",")
+            ),
+            capabilities::FilesystemCapabilityEvent::ConfigGrant {
+                path, operations, ..
+            } => println!(
+                "{badge} Config filesystem grant: {} ({})",
+                path.display(),
+                operations.join(",")
+            ),
+            capabilities::FilesystemCapabilityEvent::NoGrants => {
+                println!("{badge} No filesystem grants configured.")
+            }
+        }
+    }
+}
+
+fn render_config_event(badge: &str, event: &config::ConfigLoadEvent) {
+    match event {
+        config::ConfigLoadEvent::DisabledByFlag => println!("{badge} Config loading disabled."),
+        config::ConfigLoadEvent::LoadedExplicit { path } => {
+            println!("{badge} Loading config… {}", path.display())
+        }
+        config::ConfigLoadEvent::LoadedDiscovered { path } => {
+            println!("{badge} Loading config… {}", path.display())
+        }
+        config::ConfigLoadEvent::NotFound => {}
+    }
+}
+
+fn render_resource_events(badge: &str, events: &[ResourceEvent]) {
+    for event in events {
+        match event {
+            ResourceEvent::LoadedLocal { path } => {
+                println!("{badge} Loaded stylesheet: {}", path.display())
+            }
+            ResourceEvent::MissingLocalUsedFallback { path, fallback } => match fallback {
+                ResourceFallback::EmbeddedDefault => println!(
+                    "{badge} Stylesheet not found: {}; using embedded default",
+                    path.display()
+                ),
+                ResourceFallback::RemoteUrl(url) => println!(
+                    "{badge} Stylesheet not found: {}; using fallback {url}",
+                    path.display()
+                ),
+            },
+            ResourceEvent::LoadedEmbeddedDefault => {
+                println!("{badge} Using embedded default stylesheet")
+            }
+            ResourceEvent::LoadedRemoteFallback { url } => {
+                println!("{badge} Downloaded fallback stylesheet: {url}")
+            }
+        }
+    }
+}
+
+fn render_loaded_resource(badge: &str, name: &str, resource: &LoadedResource) {
+    match &resource.source {
+        ResourceSource::LocalPath(path) => println!("{badge} Loaded {name}: {}", path.display()),
+        ResourceSource::RemoteUrl(url) => println!("{badge} Downloaded fallback {name}: {url}"),
+        ResourceSource::EmbeddedDefault => println!("{badge} Using embedded default {name}"),
+        ResourceSource::EmptyPathFallback => println!("{badge} Using default {name}"),
+    }
+}
 
 pub(crate) fn command() -> Command {
     Command::new("serve")
@@ -108,6 +193,8 @@ pub(crate) struct ServePlan {
     pub host_config_injection: Option<crate::HostAuthorityInjection>,
     pub config_shim_at_root: bool,
     pub authority: mech_runtime::HostFilesystemAuthority,
+    pub capability_events: Vec<capabilities::FilesystemCapabilityEvent>,
+    pub config_event: config::ConfigLoadEvent,
     pub resources: WebResourceDefaults,
 }
 
@@ -116,68 +203,68 @@ pub(crate) fn prepare(
     matches: &ArgMatches,
     resources: WebResourceDefaults,
 ) -> MResult<ServePlan> {
-        let badge = "[Mech Server]".truecolor(34, 204, 187);
-        let loaded_config = config::load_cli_config_with_inputs(matches, &args.paths)?;
-        let effective = serve_options::effective_serve_options(&args, loaded_config.as_ref())?;
+    let badge = "[Mech Server]".truecolor(34, 204, 187);
+    let loaded = config::load_cli_config_report_with_inputs(matches, &args.paths)?;
+    let loaded_config = loaded.config;
+    let effective = serve_options::effective_serve_options(&args, loaded_config.as_ref())?;
 
-        let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
-        let runtime_config = crate::apply_runtime_config_patch(
-            mech_runtime::RuntimeConfig::default(),
-            loaded_config
-                .as_ref()
-                .map(|loaded| &loaded.document.runtime)
-                .unwrap_or(&default_runtime_patch),
-        )?;
-
-        let host_config = loaded_config
+    let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
+    let runtime_config = crate::apply_runtime_config_patch(
+        mech_runtime::RuntimeConfig::default(),
+        loaded_config
             .as_ref()
-            .map(|loaded| {
-                crate::web_runtime_injection_config_from_document(&loaded.document, &runtime_config)
-            })
-            .transpose()?;
+            .map(|loaded| &loaded.document.runtime)
+            .unwrap_or(&default_runtime_patch),
+    )?;
 
-        let config_shim_at_root = loaded_config
-            .as_ref()
-            .and_then(|loaded| loaded.document.serve.as_ref())
-            .and_then(|serve| serve.shim.as_ref())
-            .is_some()
-            && matches.get_one::<String>("shim").is_none();
+    let host_config = loaded_config
+        .as_ref()
+        .map(|loaded| {
+            crate::web_runtime_injection_config_from_document(&loaded.document, &runtime_config)
+        })
+        .transpose()?;
 
-        #[cfg(feature = "host_delegation_signing")]
-        let host_config_injection = {
-            let full_address = format!("{}:{}", effective.address, effective.port);
-            serve_host_delegation_injection(
-                matches,
-                loaded_config.as_ref(),
-                &runtime_config,
-                &full_address,
-            )?
-        };
+    let config_shim_at_root = loaded_config
+        .as_ref()
+        .and_then(|loaded| loaded.document.serve.as_ref())
+        .and_then(|serve| serve.shim.as_ref())
+        .is_some()
+        && matches.get_one::<String>("shim").is_none();
 
-        #[cfg(not(feature = "host_delegation_signing"))]
-        let host_config_injection = None;
-
-        let authority = capabilities::build_mech_filesystem_authority(
+    #[cfg(feature = "host_delegation_signing")]
+    let host_config_injection = {
+        let full_address = format!("{}:{}", effective.address, effective.port);
+        serve_host_delegation_injection(
             matches,
             loaded_config.as_ref(),
-            &badge,
-        )?;
+            &runtime_config,
+            &full_address,
+        )?
+    };
 
-        Ok(ServePlan {
-            paths: effective.paths,
-            address: effective.address,
-            port: effective.port,
-            stylesheet_paths: effective.stylesheet_paths,
-            shim_path: effective.shim_path,
-            wasm_pkg: effective.wasm_pkg,
-            loaded_config,
-            runtime_config,
-            host_config,
-            host_config_injection,
-            config_shim_at_root,
-            authority,
-            resources,
-        })
+    #[cfg(not(feature = "host_delegation_signing"))]
+    let host_config_injection = None;
+
+    let authority_build =
+        capabilities::build_mech_filesystem_authority(matches, loaded_config.as_ref(), &badge)?;
+
+    Ok(ServePlan {
+        paths: effective.paths,
+        address: effective.address,
+        port: effective.port,
+        stylesheet_paths: effective.stylesheet_paths,
+        shim_path: effective.shim_path,
+        wasm_pkg: effective.wasm_pkg,
+        loaded_config,
+        runtime_config,
+        host_config,
+        host_config_injection,
+        config_shim_at_root,
+        authority: authority_build.authority,
+        capability_events: authority_build.events,
+        config_event: loaded.event,
+        resources,
+    })
 }
 
 pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
@@ -186,11 +273,16 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
     let resources = &options.resources;
 
     if let Some(loaded) = options.loaded_config.as_ref() {
+        render_config_event(&badge.to_string(), &options.config_event);
         println!(
             "{badge} Loaded host config entries: {}",
             loaded.document.hosts.len()
         );
+    } else {
+        render_config_event(&badge.to_string(), &options.config_event);
     }
+
+    render_capability_events(&badge.to_string(), &options.capability_events);
 
     let full_address = format!("{}:{}", options.address, options.port);
     let wasm_path = format!("{}/mech_wasm_bg.wasm.br", options.wasm_pkg);
@@ -199,18 +291,21 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
     println!("{badge} Loading resources…");
 
     print!("{badge} Loading stylesheet…");
-    let stylesheet_str =
-        load_stylesheets(&options.stylesheet_paths, &resources.stylesheet_backup_url).await?;
+    let LoadedStylesheets {
+        css: stylesheet_str,
+        events,
+    } = load_stylesheets(&options.stylesheet_paths, &resources.stylesheet_backup_url).await?;
+    render_resource_events(&badge.to_string(), &events);
 
     print!("{badge} Loading HTML shim…");
-    let shim = read_or_download(
+    let shim = load_resource(
         &options.shim_path,
         &resources.shim_backup_url,
         Some(resources.shim_html.as_bytes()),
     )
     .await?;
-
-    let shim_str = String::from_utf8(shim).map_err(|e| {
+    render_loaded_resource(&badge.to_string(), "HTML shim", &shim);
+    let shim_str = String::from_utf8(shim.bytes).map_err(|e| {
         MechError::new(
             Utf8ConversionError {
                 source_error: e.to_string(),
@@ -221,23 +316,25 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
     })?;
 
     print!("{badge} Loading WASM…");
-    let wasm = read_or_download(
+    let wasm = load_resource(
         &wasm_path,
         &resources.wasm_backup_url,
         Some(resources.mech_wasm),
     )
     .await?;
+    render_loaded_resource(&badge.to_string(), "WASM", &wasm);
 
     print!("{badge} Loading JS…");
-    let js = read_or_download(&js_path, &resources.js_backup_url, Some(resources.mech_js)).await?;
+    let js = load_resource(&js_path, &resources.js_backup_url, Some(resources.mech_js)).await?;
+    render_loaded_resource(&badge.to_string(), "JS", &js);
 
     let mut server = MechServer::new_with_runtime_config_and_host_config(
         "Mech Server".to_string(),
         full_address,
         stylesheet_str,
         shim_str,
-        wasm,
-        js,
+        wasm.bytes,
+        js.bytes,
         options.authority,
         options.runtime_config,
         options.host_config,

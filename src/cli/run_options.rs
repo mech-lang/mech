@@ -3,9 +3,7 @@ use colored::*;
 use mech_core::*;
 
 use crate::cli::outcome::RootFlags;
-use crate::cli::run::{
-    RunInputMode, classify_run_inputs, cli_host_capability_selection,
-};
+use crate::cli::run::{RunInputMode, classify_run_inputs, cli_host_capability_selection};
 use crate::cli::{capabilities, config, host_grants};
 use crate::{LoadedMechConfig, resolve_config_path};
 use std::path::{Path, PathBuf};
@@ -65,6 +63,7 @@ pub(crate) struct PreparedRunOptions {
     pub rounds_per_step: Option<usize>,
     pub no_default_capabilities: bool,
     pub loaded_config: Option<crate::LoadedMechConfig>,
+    pub config_event: config::ConfigLoadEvent,
     pub cli_capability_selection: host_grants::CliHostCapabilitySelection,
     pub filesystem_access: capabilities::FilesystemRuntimeAccess,
 }
@@ -77,7 +76,8 @@ pub(crate) fn prepare_run_options(
         RunInputMode::Paths(paths) => paths.clone(),
         RunInputMode::Empty | RunInputMode::InlineSource(_) => Vec::new(),
     };
-    let loaded_config = config::load_run_cli_config(config_matches, &config_inputs)?;
+    let loaded = config::load_cli_config_report_with_inputs(config_matches, &config_inputs)?;
+    let loaded_config = loaded.config;
     let badge = "[Mech Run]".truecolor(34, 204, 187);
     let filesystem_access = capabilities::build_filesystem_runtime_access(
         config_matches,
@@ -94,6 +94,7 @@ pub(crate) fn prepare_run_options(
         rounds_per_step: args.rounds_per_step,
         no_default_capabilities: args.no_default_capabilities,
         loaded_config,
+        config_event: loaded.event,
         cli_capability_selection: args.cli_capability_selection,
         filesystem_access,
     })
@@ -101,76 +102,76 @@ pub(crate) fn prepare_run_options(
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EffectiveRunOptions {
-  pub paths: Vec<String>,
+    pub paths: Vec<String>,
 }
 
-
 pub fn effective_run_options(
-  cli_paths: Vec<String>,
-  config: Option<&LoadedMechConfig>,
-  explicit_run_command: bool,
+    cli_paths: Vec<String>,
+    config: Option<&LoadedMechConfig>,
+    explicit_run_command: bool,
 ) -> MResult<Option<EffectiveRunOptions>> {
-  let config_path_to_string = |loaded: &LoadedMechConfig, path: &Path| {
-    resolve_config_path(&loaded.base_dir, path)
-      .to_string_lossy()
-      .to_string()
-  };
+    let config_path_to_string = |loaded: &LoadedMechConfig, path: &Path| {
+        resolve_config_path(&loaded.base_dir, path)
+            .to_string_lossy()
+            .to_string()
+    };
 
-  let config_paths = config
-    .and_then(|loaded| {
-      loaded.document.run.as_ref().map(|run| {
-        run.paths
-          .iter()
-          .map(|path| config_path_to_string(loaded, path))
-          .collect::<Vec<_>>()
-      })
-    })
-    .unwrap_or_default();
+    let config_paths = config
+        .and_then(|loaded| {
+            loaded.document.run.as_ref().map(|run| {
+                run.paths
+                    .iter()
+                    .map(|path| config_path_to_string(loaded, path))
+                    .collect::<Vec<_>>()
+            })
+        })
+        .unwrap_or_default();
 
-  let mut effective_cli_paths = cli_paths;
-  let had_cli_selector = !effective_cli_paths.is_empty();
+    let mut effective_cli_paths = cli_paths;
+    let had_cli_selector = !effective_cli_paths.is_empty();
 
-  if let Some(loaded) = config {
-    if let Some(project_dir) = loaded.discovered_project_dir.as_ref() {
-      if effective_cli_paths.len() == 1 {
-        let current_dir = std::env::current_dir()?;
-        let input = PathBuf::from(&effective_cli_paths[0]);
-        let input_path = if input.is_absolute() {
-          input
-        } else {
-          current_dir.join(input)
-        };
+    if let Some(loaded) = config {
+        if let Some(project_dir) = loaded.discovered_project_dir.as_ref() {
+            if effective_cli_paths.len() == 1 {
+                let current_dir = std::env::current_dir()?;
+                let input = PathBuf::from(&effective_cli_paths[0]);
+                let input_path = if input.is_absolute() {
+                    input
+                } else {
+                    current_dir.join(input)
+                };
 
-        if input_path.exists()
-          && input_path.is_dir()
-          && input_path.canonicalize()? == *project_dir
-        {
-          effective_cli_paths.clear();
+                if input_path.exists()
+                    && input_path.is_dir()
+                    && input_path.canonicalize()? == *project_dir
+                {
+                    effective_cli_paths.clear();
+                }
+            }
         }
-      }
-    }
-  }
-
-  let paths = if !effective_cli_paths.is_empty() {
-    effective_cli_paths
-  } else if explicit_run_command || had_cli_selector {
-    config_paths
-  } else {
-    Vec::new()
-  };
-
-  if paths.is_empty() {
-    if explicit_run_command {
-      return Err(MechError::new(
-        GenericError {
-          msg: "no run inputs supplied; pass path(s) or configure run.paths".to_string(),
-        },
-        None,
-      ).with_compiler_loc());
     }
 
-    return Ok(None);
-  }
+    let paths = if !effective_cli_paths.is_empty() {
+        effective_cli_paths
+    } else if explicit_run_command || had_cli_selector {
+        config_paths
+    } else {
+        Vec::new()
+    };
 
-  Ok(Some(EffectiveRunOptions { paths }))
+    if paths.is_empty() {
+        if explicit_run_command {
+            return Err(MechError::new(
+                GenericError {
+                    msg: "no run inputs supplied; pass path(s) or configure run.paths".to_string(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+
+        return Ok(None);
+    }
+
+    Ok(Some(EffectiveRunOptions { paths }))
 }

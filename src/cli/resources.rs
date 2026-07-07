@@ -1,3 +1,5 @@
+use std::path::{Path, PathBuf};
+
 use mech_core::*;
 
 use crate::{MechError, read_or_download};
@@ -64,7 +66,6 @@ impl MechErrorKind for Utf8ConversionError {
     fn name(&self) -> &str {
         "Utf8ConversionError"
     }
-
     fn message(&self) -> String {
         format!(
             "Failed to convert bytes into UTF-8 string: {}",
@@ -73,46 +74,136 @@ impl MechErrorKind for Utf8ConversionError {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum ResourceFallback {
+    EmbeddedDefault,
+    RemoteUrl(String),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum ResourceEvent {
+    LoadedLocal {
+        path: PathBuf,
+    },
+    MissingLocalUsedFallback {
+        path: PathBuf,
+        fallback: ResourceFallback,
+    },
+    LoadedEmbeddedDefault,
+    LoadedRemoteFallback {
+        url: String,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct LoadedStylesheets {
+    pub css: String,
+    pub events: Vec<ResourceEvent>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum ResourceSource {
+    LocalPath(PathBuf),
+    RemoteUrl(String),
+    EmbeddedDefault,
+    EmptyPathFallback,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct LoadedResource {
+    pub bytes: Vec<u8>,
+    pub source: ResourceSource,
+}
+
+fn utf8(bytes: Vec<u8>) -> Result<String, MechError> {
+    String::from_utf8(bytes).map_err(|e| {
+        MechError::new(
+            Utf8ConversionError {
+                source_error: e.to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })
+}
+
+pub(crate) async fn load_resource(
+    path: &str,
+    fallback_url: &str,
+    embedded: Option<&[u8]>,
+) -> MResult<LoadedResource> {
+    if !path.is_empty() {
+        let path_buf = PathBuf::from(path);
+        if Path::new(path).is_file() {
+            return Ok(LoadedResource {
+                bytes: std::fs::read(path)?,
+                source: ResourceSource::LocalPath(path_buf),
+            });
+        }
+        let bytes = read_or_download("", fallback_url, embedded).await?;
+        let source = if embedded.is_some() {
+            ResourceSource::EmbeddedDefault
+        } else {
+            ResourceSource::RemoteUrl(fallback_url.to_string())
+        };
+        return Ok(LoadedResource { bytes, source });
+    }
+
+    let bytes = read_or_download("", fallback_url, embedded).await?;
+    let source = if embedded.is_some() {
+        ResourceSource::EmptyPathFallback
+    } else {
+        ResourceSource::RemoteUrl(fallback_url.to_string())
+    };
+    Ok(LoadedResource { bytes, source })
+}
+
 pub(crate) async fn load_stylesheets(
     paths: &[String],
     fallback_url: &str,
-) -> Result<String, MechError> {
+) -> Result<LoadedStylesheets, MechError> {
+    let mut events = Vec::new();
     if paths.is_empty() {
-        let stylesheet = read_or_download("", fallback_url, Some(STYLESHEET.as_bytes())).await?;
-        return String::from_utf8(stylesheet).map_err(|e| {
-            MechError::new(
-                Utf8ConversionError {
-                    source_error: e.to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()
+        let loaded = load_resource("", fallback_url, Some(STYLESHEET.as_bytes())).await?;
+        events.push(match loaded.source {
+            ResourceSource::RemoteUrl(url) => ResourceEvent::LoadedRemoteFallback { url },
+            _ => ResourceEvent::LoadedEmbeddedDefault,
+        });
+        return Ok(LoadedStylesheets {
+            css: utf8(loaded.bytes)?,
+            events,
         });
     }
 
     let mut combined = String::new();
     for path in paths {
-        let stylesheet = match std::fs::read(path) {
-            Ok(content) => {
-                content
-            }
+        let path_buf = PathBuf::from(path);
+        let (stylesheet, event) = match std::fs::read(path) {
+            Ok(content) => (content, ResourceEvent::LoadedLocal { path: path_buf }),
             Err(_) => {
-                read_or_download("", fallback_url, Some(STYLESHEET.as_bytes())).await?
+                let loaded = load_resource("", fallback_url, Some(STYLESHEET.as_bytes())).await?;
+                let fallback = match loaded.source {
+                    ResourceSource::RemoteUrl(url) => ResourceFallback::RemoteUrl(url),
+                    _ => ResourceFallback::EmbeddedDefault,
+                };
+                (
+                    loaded.bytes,
+                    ResourceEvent::MissingLocalUsedFallback {
+                        path: path_buf,
+                        fallback,
+                    },
+                )
             }
         };
-        let stylesheet_str = String::from_utf8(stylesheet).map_err(|e| {
-            MechError::new(
-                Utf8ConversionError {
-                    source_error: e.to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })?;
+        let stylesheet_str = utf8(stylesheet)?;
         if !combined.is_empty() {
             combined.push('\n');
         }
         combined.push_str(&stylesheet_str);
+        events.push(event);
     }
-    Ok(combined)
+    Ok(LoadedStylesheets {
+        css: combined,
+        events,
+    })
 }

@@ -9,13 +9,17 @@ use mech_syntax::formatter::*;
 use mech_syntax::parser;
 
 use crate::cli::outcome::{CliOutcome, RootFlags};
-use crate::cli::resources::{Utf8ConversionError, WebResourceDefaults, load_stylesheets};
+use crate::cli::resources::{
+    LoadedResource, LoadedStylesheets, ResourceEvent, ResourceFallback, ResourceSource,
+    Utf8ConversionError, WebResourceDefaults, load_resource, load_stylesheets,
+};
 use crate::fs_paths::{
     absolute_path, extension_allowed, paths_equivalent, source_extension,
     unsupported_source_path_error,
 };
 use crate::source_discovery::{
-    DedupePolicy, DiscoveryOptions, MissingPathPolicy, collect_sources,
+    DedupePolicy, DiscoveryOptions, MissingPathPolicy, SkipReason, SourceDiscoveryEvent,
+    collect_sources_with_events,
 };
 use crate::{GenericError, MechError, save_to_file};
 
@@ -59,6 +63,66 @@ pub(crate) fn command() -> Command {
                 .help("Output as HTML")
                 .action(ArgAction::SetTrue),
         )
+}
+
+fn render_discovery_events(badge: &str, events: &[SourceDiscoveryEvent]) {
+    for event in events {
+        match event {
+            SourceDiscoveryEvent::SkippedBrokenSymlink { path } => {
+                println!("{badge} Skipped broken symlink: {}", path.display())
+            }
+            SourceDiscoveryEvent::SkippedSymlinkedDirectory { path } => {
+                println!("{badge} Skipped symlinked directory: {}", path.display())
+            }
+            SourceDiscoveryEvent::SkippedUnsupportedExtension { path } => {
+                println!("{badge} Skipped unsupported source: {}", path.display())
+            }
+            SourceDiscoveryEvent::SkippedDirectory { path, reason } => match reason {
+                SkipReason::SkippedByName => {
+                    println!("{badge} Skipped directory: {}", path.display())
+                }
+                SkipReason::AlreadyVisited => println!(
+                    "{badge} Skipped already visited directory: {}",
+                    path.display()
+                ),
+            },
+        }
+    }
+}
+
+fn render_resource_events(badge: &str, events: &[ResourceEvent]) {
+    for event in events {
+        match event {
+            ResourceEvent::LoadedLocal { path } => {
+                println!("{badge} Loaded stylesheet: {}", path.display())
+            }
+            ResourceEvent::MissingLocalUsedFallback { path, fallback } => match fallback {
+                ResourceFallback::EmbeddedDefault => println!(
+                    "{badge} Stylesheet not found: {}; using embedded default",
+                    path.display()
+                ),
+                ResourceFallback::RemoteUrl(url) => println!(
+                    "{badge} Stylesheet not found: {}; using fallback {url}",
+                    path.display()
+                ),
+            },
+            ResourceEvent::LoadedEmbeddedDefault => {
+                println!("{badge} Using embedded default stylesheet")
+            }
+            ResourceEvent::LoadedRemoteFallback { url } => {
+                println!("{badge} Downloaded fallback stylesheet: {url}")
+            }
+        }
+    }
+}
+
+fn render_loaded_resource(badge: &str, name: &str, resource: &LoadedResource) {
+    match &resource.source {
+        ResourceSource::LocalPath(path) => println!("{badge} Loaded {name}: {}", path.display()),
+        ResourceSource::RemoteUrl(url) => println!("{badge} Downloaded fallback {name}: {url}"),
+        ResourceSource::EmbeddedDefault => println!("{badge} Using embedded default {name}"),
+        ResourceSource::EmptyPathFallback => println!("{badge} Using default {name}"),
+    }
 }
 
 const FORMAT_EXTENSIONS: &[&str] = &["mec", "🤖", "html", "htm", "mdoc"];
@@ -262,7 +326,7 @@ fn collect_format_targets(
         .with_compiler_loc());
     }
 
-    let entries = collect_sources(
+    let discovery = collect_sources_with_events(
         &[path.to_path_buf()],
         path,
         DiscoveryOptions {
@@ -275,7 +339,9 @@ fn collect_format_targets(
             dedupe_policy: DedupePolicy::LogicalPath,
         },
     )?;
-    let mut out = entries
+    render_discovery_events("[Mech Formatter]", &discovery.events);
+    let mut out = discovery
+        .entries
         .into_iter()
         .filter(|entry| !skip_directory_format_source(&entry.logical_path, html, writes_in_place))
         .filter(|entry| {
@@ -483,18 +549,22 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
 
     // Load stylesheet
     print!("{} Loading stylesheet…", badge);
-    let stylesheet_str =
-        load_stylesheets(&stylesheet_paths, &options.resources.stylesheet_backup_url).await?;
+    let LoadedStylesheets {
+        css: stylesheet_str,
+        events,
+    } = load_stylesheets(&stylesheet_paths, &options.resources.stylesheet_backup_url).await?;
+    render_resource_events(&badge.to_string(), &events);
 
     // Load shim HTML
     print!("{} Loading HTML shim…", badge);
-    let shim = crate::read_or_download(
+    let shim = load_resource(
         &shim_path,
         &options.resources.shim_backup_url,
         Some(options.resources.shim_html.as_bytes()),
     )
     .await?;
-    let shim_str = String::from_utf8(shim).map_err(|e| {
+    render_loaded_resource(&badge.to_string(), "HTML shim", &shim);
+    let shim_str = String::from_utf8(shim.bytes).map_err(|e| {
         MechError::new(
             Utf8ConversionError {
                 source_error: e.to_string(),
@@ -536,14 +606,12 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
 
     // Only create directory if output_path is not a file
     if !is_output_file && output_path != PathBuf::from(".") {
-        match fs::create_dir_all(&output_path) {
-            Ok(_) => println!(
-                "{} Directory created: {}",
-                "[Created]".truecolor(153, 221, 85),
-                output_path.display()
-            ),
-            Err(err) => println!("Error creating directory: {:?}", err),
-        }
+        fs::create_dir_all(&output_path)?;
+        println!(
+            "{} Directory created: {}",
+            "[Created]".truecolor(153, 221, 85),
+            output_path.display()
+        );
     }
 
     // HTML mode

@@ -1,5 +1,3 @@
-use mech_core::*;
-
 pub(crate) enum CliOutcome {
     Success,
     Exit(i32),

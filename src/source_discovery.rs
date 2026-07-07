@@ -16,6 +16,26 @@ pub(crate) struct SourceEntry {
 }
 
 #[derive(Clone, Debug)]
+pub(crate) struct SourceDiscoveryResult {
+    pub entries: Vec<SourceEntry>,
+    pub events: Vec<SourceDiscoveryEvent>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum SourceDiscoveryEvent {
+    SkippedBrokenSymlink { path: PathBuf },
+    SkippedSymlinkedDirectory { path: PathBuf },
+    SkippedUnsupportedExtension { path: PathBuf },
+    SkippedDirectory { path: PathBuf, reason: SkipReason },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum SkipReason {
+    SkippedByName,
+    AlreadyVisited,
+}
+
+#[derive(Clone, Debug)]
 pub(crate) struct DiscoveryOptions {
     pub allowed_file_extensions: &'static [&'static str],
     pub recursive_file_extensions: &'static [&'static str],
@@ -39,14 +59,22 @@ pub(crate) enum DedupePolicy {
     None,
 }
 
-
 pub(crate) fn collect_sources(
     roots: &[PathBuf],
     base_dir: &Path,
     options: DiscoveryOptions,
 ) -> MResult<Vec<SourceEntry>> {
+    Ok(collect_sources_with_events(roots, base_dir, options)?.entries)
+}
+
+pub(crate) fn collect_sources_with_events(
+    roots: &[PathBuf],
+    base_dir: &Path,
+    options: DiscoveryOptions,
+) -> MResult<SourceDiscoveryResult> {
     let project_dir = base_dir;
     let mut entries = Vec::new();
+    let mut events = Vec::new();
     let mut seen = BTreeSet::new();
     let mut visited_dirs = BTreeSet::new();
     for root in roots {
@@ -57,12 +85,13 @@ pub(crate) fn collect_sources(
             project_dir,
             &options,
             &mut entries,
+            &mut events,
             &mut seen,
             &mut visited_dirs,
             true,
         )?;
     }
-    Ok(entries)
+    Ok(SourceDiscoveryResult { entries, events })
 }
 
 fn collect_one(
@@ -72,6 +101,7 @@ fn collect_one(
     project_dir: &Path,
     options: &DiscoveryOptions,
     entries: &mut Vec<SourceEntry>,
+    events: &mut Vec<SourceDiscoveryEvent>,
     seen: &mut BTreeSet<PathBuf>,
     visited_dirs: &mut BTreeSet<PathBuf>,
     explicit: bool,
@@ -97,12 +127,20 @@ fn collect_one(
                     MissingPathPolicy::SkipBrokenSymlink
                 ) =>
             {
+                if !explicit {
+                    events.push(SourceDiscoveryEvent::SkippedBrokenSymlink {
+                        path: read_path.to_path_buf(),
+                    });
+                }
                 return Ok(());
             }
             Err(error) => return Err(error),
         };
         if canonical.is_dir() {
             if !options.follow_dir_symlinks {
+                events.push(SourceDiscoveryEvent::SkippedSymlinkedDirectory {
+                    path: logical_path.to_path_buf(),
+                });
                 return Ok(());
             }
             return collect_dir(
@@ -112,6 +150,7 @@ fn collect_one(
                 project_dir,
                 options,
                 entries,
+                events,
                 seen,
                 visited_dirs,
             );
@@ -127,6 +166,7 @@ fn collect_one(
             project_dir,
             options,
             entries,
+            events,
             seen,
             explicit,
         );
@@ -139,6 +179,7 @@ fn collect_one(
             project_dir,
             options,
             entries,
+            events,
             seen,
             visited_dirs,
         );
@@ -152,6 +193,7 @@ fn collect_one(
         project_dir,
         options,
         entries,
+        events,
         seen,
         explicit,
     )
@@ -164,11 +206,16 @@ fn collect_dir(
     project_dir: &Path,
     options: &DiscoveryOptions,
     entries: &mut Vec<SourceEntry>,
+    events: &mut Vec<SourceDiscoveryEvent>,
     seen: &mut BTreeSet<PathBuf>,
     visited_dirs: &mut BTreeSet<PathBuf>,
 ) -> MResult<()> {
     let canonical_dir = canonicalize_for_read(read_dir)?;
     if !visited_dirs.insert(canonical_dir.clone()) {
+        events.push(SourceDiscoveryEvent::SkippedDirectory {
+            path: logical_dir.to_path_buf(),
+            reason: SkipReason::AlreadyVisited,
+        });
         return Ok(());
     }
     for entry in fs::read_dir(read_dir)? {
@@ -198,6 +245,7 @@ fn collect_dir(
                 project_dir,
                 options,
                 entries,
+                events,
                 seen,
                 visited_dirs,
                 false,
@@ -210,6 +258,7 @@ fn collect_dir(
                 project_dir,
                 options,
                 entries,
+                events,
                 seen,
                 visited_dirs,
                 false,
@@ -227,6 +276,7 @@ fn collect_file(
     project_dir: &Path,
     options: &DiscoveryOptions,
     entries: &mut Vec<SourceEntry>,
+    events: &mut Vec<SourceDiscoveryEvent>,
     seen: &mut BTreeSet<PathBuf>,
     explicit: bool,
 ) -> MResult<()> {
@@ -244,6 +294,9 @@ fn collect_file(
                 options.allowed_file_extensions,
             ));
         }
+        events.push(SourceDiscoveryEvent::SkippedUnsupportedExtension {
+            path: logical_path.to_path_buf(),
+        });
         return Ok(());
     }
     let relative_path = relative_to_base(logical_path, base_dir, project_dir)?;

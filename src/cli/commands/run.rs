@@ -3,17 +3,20 @@ use std::path::{Path, PathBuf};
 use clap::{Arg, ArgAction, Command};
 use colored::*;
 use mech_core::*;
-use mech_program::*;
 use mech_runtime::{FS_LIST, FS_READ, MECH_TOOL_SUBJECT};
 
 use crate::cli::capabilities;
+use crate::cli::config;
 use crate::cli::outcome::CliOutcome;
-use crate::cli::run::{RunInputMode, new_cli_runtime, run_cli_source_with_events, run_cli_source_code_with_events};
-use mech_runtime::{RuntimeEvent, RuntimeEventKind};
-use crate::cli::runtime_plan::RunExecutionPlan;
-use crate::source_discovery::{
-    DedupePolicy, DiscoveryOptions, MissingPathPolicy, collect_sources,
+use crate::cli::run::{
+    RunInputMode, new_cli_runtime, run_cli_source_code_with_events, run_cli_source_with_events,
 };
+use crate::cli::runtime_plan::{RunExecutionPlan, RunPlanEvent};
+use crate::source_discovery::{
+    DedupePolicy, DiscoveryOptions, MissingPathPolicy, SkipReason, SourceDiscoveryEvent,
+    collect_sources_with_events,
+};
+use mech_runtime::{RuntimeEvent, RuntimeEventKind};
 
 pub(crate) fn command() -> Command {
     Command::new("run")
@@ -77,7 +80,7 @@ fn collect_run_targets_with_capabilities(
         let mut kernel = kernel.clone();
         mech_runtime::check_fs_capability(&mut kernel, MECH_TOOL_SUBJECT, FS_LIST, path)?;
     }
-    let entries = collect_sources(
+    let discovery = collect_sources_with_events(
         &[path.to_path_buf()],
         path,
         DiscoveryOptions {
@@ -90,7 +93,9 @@ fn collect_run_targets_with_capabilities(
             dedupe_policy: DedupePolicy::LogicalPath,
         },
     )?;
-    let mut out = entries
+    render_discovery_events(&discovery.events);
+    let mut out = discovery
+        .entries
         .into_iter()
         .map(|entry| entry.logical_path)
         .collect::<Vec<_>>();
@@ -98,8 +103,94 @@ fn collect_run_targets_with_capabilities(
     Ok(out)
 }
 
+fn render_discovery_events(events: &[SourceDiscoveryEvent]) {
+    for event in events {
+        match event {
+            SourceDiscoveryEvent::SkippedBrokenSymlink { path } => {
+                println!("[Mech Run] Skipped broken symlink: {}", path.display())
+            }
+            SourceDiscoveryEvent::SkippedSymlinkedDirectory { path } => {
+                println!("[Mech Run] Skipped symlinked directory: {}", path.display())
+            }
+            SourceDiscoveryEvent::SkippedUnsupportedExtension { path } => {
+                println!("[Mech Run] Skipped unsupported source: {}", path.display())
+            }
+            SourceDiscoveryEvent::SkippedDirectory { path, reason } => match reason {
+                SkipReason::SkippedByName => {
+                    println!("[Mech Run] Skipped directory: {}", path.display())
+                }
+                SkipReason::AlreadyVisited => println!(
+                    "[Mech Run] Skipped already visited directory: {}",
+                    path.display()
+                ),
+            },
+        }
+    }
+}
+
 pub(crate) fn run(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     execute_plan(plan)
+}
+
+fn render_capability_events(events: &[capabilities::FilesystemCapabilityEvent]) {
+    for event in events {
+        match event {
+            capabilities::FilesystemCapabilityEvent::DefaultGrant {
+                path, operations, ..
+            } => println!(
+                "[Mech Run] Default filesystem grant: {} ({})",
+                path.display(),
+                operations.join(",")
+            ),
+            capabilities::FilesystemCapabilityEvent::CliGrant {
+                source_flag,
+                path,
+                operations,
+                ..
+            } => println!(
+                "[Mech Run] {source_flag} filesystem grant: {} ({})",
+                path.display(),
+                operations.join(",")
+            ),
+            capabilities::FilesystemCapabilityEvent::ConfigGrant {
+                path, operations, ..
+            } => println!(
+                "[Mech Run] Config filesystem grant: {} ({})",
+                path.display(),
+                operations.join(",")
+            ),
+            capabilities::FilesystemCapabilityEvent::NoGrants => {
+                println!("[Mech Run] No filesystem grants configured.")
+            }
+        }
+    }
+}
+
+fn render_config_event(event: &config::ConfigLoadEvent) {
+    match event {
+        config::ConfigLoadEvent::DisabledByFlag => println!("[Mech Run] Config loading disabled."),
+        config::ConfigLoadEvent::LoadedExplicit { path } => {
+            println!("[Mech Run] Loading config… {}", path.display())
+        }
+        config::ConfigLoadEvent::LoadedDiscovered { path } => {
+            println!("[Mech Run] Loading config… {}", path.display())
+        }
+        config::ConfigLoadEvent::NotFound => {}
+    }
+}
+
+fn render_plan_events(events: &[RunPlanEvent]) {
+    for event in events {
+        match event {
+            RunPlanEvent::AddedDefaultPathGrant {
+                path: _,
+                operations,
+            } => println!(
+                "[Mech Run] Added run path filesystem grant ({})",
+                operations.join(",")
+            ),
+        }
+    }
 }
 
 fn print_value(value: &Value) {
@@ -110,7 +201,6 @@ fn print_value(value: &Value) {
     println!("{:#?}", value);
 }
 
-
 fn print_run_runtime_events(events: &[RuntimeEvent]) {
     for event in events {
         if let RuntimeEventKind::ProgramProfiled { duration_ns, .. } = &event.kind {
@@ -120,6 +210,10 @@ fn print_run_runtime_events(events: &[RuntimeEvent]) {
 }
 
 fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
+    render_config_event(&plan.config_event);
+    render_capability_events(&plan.filesystem_access.events);
+    render_plan_events(&plan.events);
+    #[cfg(feature = "repl")]
     let repl_runtime_config = Some(plan.runtime_config.clone());
     let mut runtime = new_cli_runtime(
         plan.runtime_config,

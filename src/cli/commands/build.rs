@@ -107,14 +107,12 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
     let trace_flag = options.trace;
     let rounds_per_step = options.rounds_per_step;
     if output_path != PathBuf::from(".") {
-        match fs::create_dir_all(&output_path) {
-            Ok(_) => println!(
-                "{} Directory created: {}",
-                "[Created]".truecolor(153, 221, 85),
-                output_path.display()
-            ),
-            Err(err) => println!("Error creating directory: {:?}", err),
-        }
+        fs::create_dir_all(&output_path)?;
+        println!(
+            "{} Directory created: {}",
+            "[Created]".truecolor(153, 221, 85),
+            output_path.display()
+        );
     }
 
     let bytecode_count = validate_build_bytecode_inputs(&mech_paths)?;
