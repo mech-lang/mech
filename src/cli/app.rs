@@ -163,9 +163,11 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
         return crate::cli::commands::format::run(options).await;
     }
 
+    // Historical CLI behavior treats unmatched root arguments as run inputs. When the run feature
+    // is enabled, dispatch falls through to the run command before considering bare REPL startup.
     #[cfg(feature = "run")]
     {
-        let options = crate::cli::commands::run::RunOptions::from_matches(
+        let options = crate::cli::run_options::RunOptions::from_matches(
             flags,
             &cli_matches,
             cli_matches.subcommand_matches("run"),

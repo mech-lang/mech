@@ -1,14 +1,15 @@
 use std::path::{Path, PathBuf};
 
-use clap::{Arg, ArgAction, ArgMatches, Command};
+use clap::{Arg, ArgAction, Command};
 use colored::*;
 use mech_core::*;
 use mech_program::*;
 use mech_runtime::{FS_LIST, FS_READ, MECH_TOOL_SUBJECT};
 
 use crate::cli::capabilities;
-use crate::cli::outcome::{CliOutcome, RootFlags};
+use crate::cli::outcome::CliOutcome;
 use crate::cli::run::{RunInputMode, new_cli_runtime, run_cli_source, run_cli_source_code};
+use crate::cli::run_options::RunOptions;
 use crate::cli::runtime_plan::{RunExecutionPlan, build_run_execution_plan};
 use crate::source_discovery::{
     DedupePolicy, DiscoveryOptions, MissingPathPolicy, RelativePathPolicy, collect_sources,
@@ -49,56 +50,6 @@ pub(crate) fn add_cli_host_capability_args(command: Command) -> Command {
 const RUN_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb", "mdoc", "mpkg", "m", "csv", "js"];
 const RUN_DIRECTORY_EXTENSIONS: &[&str] = &["mec", "🤖", "mdoc", "mpkg"];
 const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
-
-#[derive(Clone)]
-pub(crate) struct RunOptions {
-    pub root_matches: ArgMatches,
-    pub run_matches: Option<ArgMatches>,
-    pub config_matches: ArgMatches,
-    pub inputs: Vec<String>,
-    pub explicit_run_command: bool,
-    pub debug: bool,
-    pub trace: bool,
-    pub time: bool,
-    pub repl: bool,
-    pub rounds_per_step: Option<usize>,
-    pub no_default_capabilities: bool,
-}
-
-impl RunOptions {
-    pub(crate) fn from_matches(
-        root: RootFlags,
-        root_matches: &ArgMatches,
-        run_matches: Option<&ArgMatches>,
-    ) -> MResult<Self> {
-        let inputs: Vec<String> = if let Some(run_matches) = run_matches {
-            run_matches
-                .get_many::<String>("mech_run_paths")
-                .map_or(vec![], |files| files.map(|file| file.to_string()).collect())
-        } else if let Some(m) = root_matches.get_many::<String>("mech_paths") {
-            m.map(|s| s.to_string()).collect()
-        } else {
-            vec![]
-        };
-        let config_matches = run_matches.unwrap_or(root_matches).clone();
-        Ok(Self {
-            root_matches: root_matches.clone(),
-            run_matches: run_matches.cloned(),
-            config_matches: config_matches.clone(),
-            inputs,
-            explicit_run_command: run_matches.is_some(),
-            debug: root.debug || run_matches.map(|m| m.get_flag("debug")).unwrap_or(false),
-            trace: root.trace || run_matches.map(|m| m.get_flag("trace")).unwrap_or(false),
-            time: root.time || run_matches.map(|m| m.get_flag("time")).unwrap_or(false),
-            repl: root.repl,
-            rounds_per_step: run_matches
-                .and_then(|m| m.get_one::<String>("rounds-per-step"))
-                .and_then(|s| s.parse::<usize>().ok())
-                .or(root.rounds_per_step),
-            no_default_capabilities: config_matches.get_flag("no_default_capabilities"),
-        })
-    }
-}
 
 pub(crate) fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
     let mut ids = mech_runtime::DefaultIdGenerator::new();

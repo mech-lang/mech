@@ -19,6 +19,8 @@ pub(crate) mod resources;
 #[cfg(feature = "run")]
 pub mod run;
 #[cfg(feature = "run")]
+pub mod run_options;
+#[cfg(feature = "run")]
 pub mod runtime_plan;
 
 #[cfg(all(test, any(feature = "serve", feature = "bundle_web", feature = "run")))]

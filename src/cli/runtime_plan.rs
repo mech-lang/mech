@@ -1,15 +1,11 @@
-use clap::ArgMatches;
-use colored::*;
 use mech_core::*;
 use mech_runtime::{
-    FS_LIST, FS_READ, HostInstanceConfig, MECH_TOOL_SUBJECT, RunResourceGrantConfig, RuntimeConfig,
+    FS_LIST, FS_READ, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig,
 };
 
-use crate::cli::commands::run::RunOptions;
-use crate::cli::run::{
-    RunInputMode, classify_run_inputs, cli_host_capability_selection, effective_run_runtime_config,
-};
-use crate::cli::{capabilities, config};
+use crate::cli::run_options::RunOptions;
+use crate::cli::run::{RunInputMode, effective_run_runtime_config};
+use crate::cli::config;
 use crate::generate_uuid;
 
 pub(crate) struct RunExecutionPlan {
@@ -27,12 +23,8 @@ pub(crate) struct RunExecutionPlan {
 
 pub(crate) fn build_run_execution_plan(options: RunOptions) -> MResult<RunExecutionPlan> {
     let uuid = generate_uuid();
-    let input_mode = classify_run_inputs(options.inputs.clone());
-    let config_inputs: Vec<String> = match &input_mode {
-        RunInputMode::Paths(paths) => paths.clone(),
-        RunInputMode::Empty | RunInputMode::InlineSource(_) => Vec::new(),
-    };
-    let loaded_config = config::load_run_cli_config(&options.config_matches, &config_inputs)?;
+    let input_mode = options.input_mode;
+    let loaded_config = options.loaded_config;
     let runtime_config = effective_run_runtime_config(
         loaded_config.as_ref(),
         format!("program-{}", uuid),
@@ -42,10 +34,10 @@ pub(crate) fn build_run_execution_plan(options: RunOptions) -> MResult<RunExecut
         options.rounds_per_step,
     )?;
 
-    let cli_capability_selection =
-        cli_host_capability_selection(&options.root_matches, options.run_matches.as_ref());
-    let cli_grants =
-        config::effective_cli_host_grants(loaded_config.as_ref(), cli_capability_selection)?;
+    let cli_grants = config::effective_cli_host_grants(
+        loaded_config.as_ref(),
+        options.cli_capability_selection,
+    )?;
     let configured_hosts = loaded_config
         .as_ref()
         .map(|loaded| loaded.document.hosts.clone())
@@ -56,12 +48,7 @@ pub(crate) fn build_run_execution_plan(options: RunOptions) -> MResult<RunExecut
         .map(|run| run.grants.clone())
         .unwrap_or_default();
 
-    let badge = "[Mech Run]".truecolor(34, 204, 187);
-    let mut filesystem_access = capabilities::build_filesystem_runtime_access(
-        &options.config_matches,
-        loaded_config.as_ref(),
-        &badge,
-    )?;
+    let mut filesystem_access = options.filesystem_access;
 
     let explicit_run_command = options.explicit_run_command;
     let run_paths = match &input_mode {

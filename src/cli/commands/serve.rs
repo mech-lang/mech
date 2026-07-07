@@ -96,7 +96,18 @@ fn host_delegation_args() -> Vec<Arg> {
 }
 
 pub(crate) struct ServeOptions {
-    pub matches: ArgMatches,
+    pub paths: Vec<String>,
+    pub address: String,
+    pub port: String,
+    pub stylesheet_paths: Vec<String>,
+    pub shim_path: String,
+    pub wasm_pkg: String,
+    pub loaded_config: Option<crate::LoadedMechConfig>,
+    pub runtime_config: mech_runtime::RuntimeConfig,
+    pub host_config: Option<mech_host_browser::BrowserRuntimeInjectionConfig>,
+    pub host_config_injection: Option<crate::HostAuthorityInjection>,
+    pub config_shim_at_root: bool,
+    pub authority: mech_runtime::HostFilesystemAuthority,
     pub resources: WebResourceDefaults,
 }
 
@@ -105,82 +116,96 @@ impl ServeOptions {
         matches: &ArgMatches,
         resources: WebResourceDefaults,
     ) -> MResult<Self> {
+        let badge = "[Mech Server]".truecolor(34, 204, 187);
+        let loaded_config = config::load_cli_config(matches)?;
+        let effective = config::effective_serve_options(matches, loaded_config.as_ref())?;
+
+        let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
+        let runtime_config = crate::apply_runtime_config_patch(
+            mech_runtime::RuntimeConfig::default(),
+            loaded_config
+                .as_ref()
+                .map(|loaded| &loaded.document.runtime)
+                .unwrap_or(&default_runtime_patch),
+        )?;
+
+        let host_config = loaded_config
+            .as_ref()
+            .map(|loaded| {
+                crate::web_runtime_injection_config_from_document(&loaded.document, &runtime_config)
+            })
+            .transpose()?;
+
+        let config_shim_at_root = loaded_config
+            .as_ref()
+            .and_then(|loaded| loaded.document.serve.as_ref())
+            .and_then(|serve| serve.shim.as_ref())
+            .is_some()
+            && matches.get_one::<String>("shim").is_none();
+
+        #[cfg(feature = "host_delegation_signing")]
+        let host_config_injection = {
+            let full_address = format!("{}:{}", effective.address, effective.port);
+            serve_host_delegation_injection(
+                matches,
+                loaded_config.as_ref(),
+                &runtime_config,
+                &full_address,
+            )?
+        };
+
+        #[cfg(not(feature = "host_delegation_signing"))]
+        let host_config_injection = None;
+
+        let authority = capabilities::build_mech_filesystem_authority(
+            matches,
+            loaded_config.as_ref(),
+            &badge,
+        )?;
+
         Ok(Self {
-            matches: matches.clone(),
+            paths: effective.paths,
+            address: effective.address,
+            port: effective.port,
+            stylesheet_paths: effective.stylesheet_paths,
+            shim_path: effective.shim_path,
+            wasm_pkg: effective.wasm_pkg,
+            loaded_config,
+            runtime_config,
+            host_config,
+            host_config_injection,
+            config_shim_at_root,
+            authority,
             resources,
         })
     }
 }
 
 pub(crate) async fn run(options: ServeOptions) -> MResult<CliOutcome> {
-    let matches = &options.matches;
-    let resources = &options.resources;
     let badge = "[Mech Server]".truecolor(34, 204, 187);
     let error_badge = "[Error]".truecolor(246, 98, 78);
+    let resources = &options.resources;
 
-    let loaded_config = config::load_cli_config(matches)?;
-    let effective = config::effective_serve_options(matches, loaded_config.as_ref())?;
-
-    let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
-    let runtime_config = crate::apply_runtime_config_patch(
-        mech_runtime::RuntimeConfig::default(),
-        loaded_config
-            .as_ref()
-            .map(|loaded| &loaded.document.runtime)
-            .unwrap_or(&default_runtime_patch),
-    )?;
-
-    let host_config = loaded_config
-        .as_ref()
-        .map(|loaded| {
-            crate::web_runtime_injection_config_from_document(&loaded.document, &runtime_config)
-        })
-        .transpose()?;
-
-    let config_shim_at_root = loaded_config
-        .as_ref()
-        .and_then(|loaded| loaded.document.serve.as_ref())
-        .and_then(|serve| serve.shim.as_ref())
-        .is_some()
-        && matches.get_one::<String>("shim").is_none();
-
-    if let Some(loaded) = loaded_config.as_ref() {
+    if let Some(loaded) = options.loaded_config.as_ref() {
         println!(
             "{badge} Loaded host config entries: {}",
             loaded.document.hosts.len()
         );
     }
 
-    let full_address = format!("{}:{}", effective.address, effective.port);
-
-    #[cfg(feature = "host_delegation_signing")]
-    let host_config_injection = serve_host_delegation_injection(
-        matches,
-        loaded_config.as_ref(),
-        &runtime_config,
-        &full_address,
-    )?;
-
-    #[cfg(not(feature = "host_delegation_signing"))]
-    let host_config_injection = None;
-
-    let mech_paths = effective.paths;
-    let stylesheet_paths = effective.stylesheet_paths;
-    let wasm_pkg = effective.wasm_pkg.as_str();
-    let shim_path = effective.shim_path.as_str();
-
-    let wasm_path = format!("{wasm_pkg}/mech_wasm_bg.wasm.br");
-    let js_path = format!("{wasm_pkg}/mech_wasm.js");
+    let full_address = format!("{}:{}", options.address, options.port);
+    let wasm_path = format!("{}/mech_wasm_bg.wasm.br", options.wasm_pkg);
+    let js_path = format!("{}/mech_wasm.js", options.wasm_pkg);
 
     println!("{badge} Loading resources…");
 
     print!("{badge} Loading stylesheet…");
     let stylesheet_str =
-        load_stylesheets(&stylesheet_paths, &resources.stylesheet_backup_url).await?;
+        load_stylesheets(&options.stylesheet_paths, &resources.stylesheet_backup_url).await?;
 
     print!("{badge} Loading HTML shim…");
     let shim = read_or_download(
-        shim_path,
+        &options.shim_path,
         &resources.shim_backup_url,
         Some(resources.shim_html.as_bytes()),
     )
@@ -207,9 +232,6 @@ pub(crate) async fn run(options: ServeOptions) -> MResult<CliOutcome> {
     print!("{badge} Loading JS…");
     let js = read_or_download(&js_path, &resources.js_backup_url, Some(resources.mech_js)).await?;
 
-    let authority =
-        capabilities::build_mech_filesystem_authority(matches, loaded_config.as_ref(), &badge)?;
-
     let mut server = MechServer::new_with_runtime_config_and_host_config(
         "Mech Server".to_string(),
         full_address,
@@ -217,16 +239,16 @@ pub(crate) async fn run(options: ServeOptions) -> MResult<CliOutcome> {
         shim_str,
         wasm,
         js,
-        authority,
-        runtime_config,
-        host_config,
-        host_config_injection,
-        config_shim_at_root,
+        options.authority,
+        options.runtime_config,
+        options.host_config,
+        options.host_config_injection,
+        options.config_shim_at_root,
     );
 
     server.init().await?;
 
-    if let Err(err) = server.load_workspace(&mech_paths) {
+    if let Err(err) = server.load_workspace(&options.paths) {
         println!("{error_badge} {err:#?}");
         return Ok(CliOutcome::exit(1));
     }

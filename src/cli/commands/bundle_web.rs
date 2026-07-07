@@ -13,26 +13,25 @@ pub(crate) fn add_config_args(command: Command) -> Command {
 }
 
 pub(crate) struct BundleWebCliOptions {
-    pub matches: ArgMatches,
+    pub options: crate::BundleWebOptions,
 }
 
 impl BundleWebCliOptions {
     pub(crate) fn from_matches(matches: &ArgMatches) -> MResult<Self> {
-        Ok(Self {
-            matches: matches.clone(),
-        })
+        let loaded = crate::cli::bundle_web::load_bundle_web_config(matches)?;
+        println!(
+            "{} Loading config… {}",
+            "[Mech Bundle]".truecolor(34, 204, 187),
+            loaded.path.display()
+        );
+        let options = crate::cli::bundle_web::effective_bundle_web_options(matches, loaded)?;
+        Ok(Self { options })
     }
 }
 
 pub(crate) fn run(options: BundleWebCliOptions) -> MResult<CliOutcome> {
-    let matches = &options.matches;
     let badge = "[Mech Bundle]".truecolor(34, 204, 187);
-
-    let loaded = crate::cli::bundle_web::load_bundle_web_config(matches)?;
-    println!("{badge} Loading config… {}", loaded.path.display());
-
-    let options = crate::cli::bundle_web::effective_bundle_web_options(matches, loaded)?;
-    let result = crate::bundle_web_project(options)?;
+    let result = crate::bundle_web_project(options.options)?;
 
     println!("{badge} Bundle written: {}", result.output_dir.display());
     println!("{badge} Sources bundled: {}", result.source_count);

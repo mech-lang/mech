@@ -20,7 +20,7 @@ maintenance = { status = "actively-developed" }
 [[bin]]
 name = "mech"
 path = "src/bin/mech.rs"
-required-features = ["cli"]
+required-features = ["cli_core"]
 
 [[bin]]
 name = "mechc"
