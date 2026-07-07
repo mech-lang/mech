@@ -7,7 +7,7 @@ use mech_core::*;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::parser;
 
-use crate::cli::paths::validate_safe_relative_path;
+use crate::fs_paths::validate_safe_relative_path;
 use crate::{HostAuthorityInjection, LoadedMechConfig};
 
 #[derive(Clone, Debug)]

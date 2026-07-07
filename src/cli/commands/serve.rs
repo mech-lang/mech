@@ -2,7 +2,8 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use colored::*;
 use mech_core::*;
 
-use crate::cli::resources::{Utf8ConversionError, load_stylesheets};
+use crate::cli::outcome::CliOutcome;
+use crate::cli::resources::{Utf8ConversionError, WebResourceDefaults, load_stylesheets};
 use crate::cli::{capabilities, config};
 use crate::{MechError, MechServer, read_or_download};
 
@@ -94,17 +95,26 @@ fn host_delegation_args() -> Vec<Arg> {
     Vec::new()
 }
 
-pub(crate) struct ServeResources<'a> {
-    pub stylesheet_backup_url: &'a str,
-    pub shim_backup_url: &'a str,
-    pub wasm_backup_url: &'a str,
-    pub js_backup_url: &'a str,
-    pub shim_html: &'a str,
-    pub mech_wasm: &'a [u8],
-    pub mech_js: &'a [u8],
+pub(crate) struct ServeOptions {
+    pub matches: ArgMatches,
+    pub resources: WebResourceDefaults,
 }
 
-pub(crate) async fn run(matches: &ArgMatches, resources: ServeResources<'_>) -> MResult<i32> {
+impl ServeOptions {
+    pub(crate) fn from_matches(
+        matches: &ArgMatches,
+        resources: WebResourceDefaults,
+    ) -> MResult<Self> {
+        Ok(Self {
+            matches: matches.clone(),
+            resources,
+        })
+    }
+}
+
+pub(crate) async fn run(options: ServeOptions) -> MResult<CliOutcome> {
+    let matches = &options.matches;
+    let resources = &options.resources;
     let badge = "[Mech Server]".truecolor(34, 204, 187);
     let error_badge = "[Error]".truecolor(246, 98, 78);
 
@@ -166,12 +176,12 @@ pub(crate) async fn run(matches: &ArgMatches, resources: ServeResources<'_>) -> 
 
     print!("{badge} Loading stylesheet…");
     let stylesheet_str =
-        load_stylesheets(&stylesheet_paths, resources.stylesheet_backup_url).await?;
+        load_stylesheets(&stylesheet_paths, &resources.stylesheet_backup_url).await?;
 
     print!("{badge} Loading HTML shim…");
     let shim = read_or_download(
         shim_path,
-        resources.shim_backup_url,
+        &resources.shim_backup_url,
         Some(resources.shim_html.as_bytes()),
     )
     .await?;
@@ -189,13 +199,13 @@ pub(crate) async fn run(matches: &ArgMatches, resources: ServeResources<'_>) -> 
     print!("{badge} Loading WASM…");
     let wasm = read_or_download(
         &wasm_path,
-        resources.wasm_backup_url,
+        &resources.wasm_backup_url,
         Some(resources.mech_wasm),
     )
     .await?;
 
     print!("{badge} Loading JS…");
-    let js = read_or_download(&js_path, resources.js_backup_url, Some(resources.mech_js)).await?;
+    let js = read_or_download(&js_path, &resources.js_backup_url, Some(resources.mech_js)).await?;
 
     let authority =
         capabilities::build_mech_filesystem_authority(matches, loaded_config.as_ref(), &badge)?;
@@ -218,14 +228,14 @@ pub(crate) async fn run(matches: &ArgMatches, resources: ServeResources<'_>) -> 
 
     if let Err(err) = server.load_workspace(&mech_paths) {
         println!("{error_badge} {err:#?}");
-        return Ok(1);
+        return Ok(CliOutcome::exit(1));
     }
 
     println!("{badge} Sources loaded.");
 
     server.serve().await?;
 
-    Ok(0)
+    Ok(CliOutcome::success())
 }
 
 #[cfg(feature = "host_delegation_signing")]

@@ -1,6 +1,6 @@
 [package]
 name = "mech"
-version = "0.3.5"
+version = "0.3.6"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Mech is a programming language for building reactive systems like robots, games, and animations."
 documentation = "https://docs.mech-lang.org"
@@ -38,28 +38,31 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
       "statements_default", "subscript_default", "state_machines",
-      "formatter", "serve", "bundle_web", "run", "test", "repl", "build", "whos", "async", "trace",
+      "cli", "whos", "async", "trace",
       "mech-core/default", "mech-program/default", "mech-syntax/default",
       ]
 base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "statements_default", "subscript_default", "state_machines",
-      "formatter", "serve", "bundle_web", "run", "test", "repl", "build","whos", "async", "trace",
+      "cli", "whos", "async", "trace",
       "mech-core/base", "mech-program/base", "mech-syntax/base",
       ]
-build = ["cli", "compiler", "mech-runtime", "mech-runtime/default"]
-repl = ["cli"]
-run = ["mech-program/program", "cli", "cli_host", "project"]
-test = ["cli", "variable_define", "invariant_define", "symbol_table", "bool", "mech-runtime", "mech-runtime/default"]
-cli = []
+cli_core = []
+cli = ["cli_core", "build", "formatter", "serve", "bundle_web", "run", "test", "repl"]
+formatter_core = ["serde", "mech-syntax/formatter", "mech-syntax/mika", "mech-core/mika", "mech-syntax/variable_define", "mech-core/variable_define"]
+build = ["cli_core", "compiler", "mech-runtime", "mech-runtime/default"]
+repl = ["cli_core"]
+run = ["cli_core", "mech-program/program", "cli_host", "project"]
+test = ["cli_core", "variable_define", "invariant_define", "symbol_table", "bool", "mech-runtime", "mech-runtime/default"]
 project = ["mech-runtime", "mech-runtime/default"]
 cli_host = ["mech-runtime", "mech-runtime/default", "mech-host-cli", "mech-host-cli/provider"]
 web_host = ["mech-runtime", "mech-runtime/default", "mech-host-browser", "mech-host-browser/serde", "mech-host-browser/provider"]
-bundle_web = ["cli", "project", "web_host", "formatter", "serde", "mech-runtime", "mech-runtime/default"]
-serve = ["cli", "project", "web_host", "formatter", "mech-runtime", "mech-runtime/default", "ignore"]
+bundle_web_core = ["project", "web_host", "formatter_core", "serde", "mech-runtime", "mech-runtime/default"]
+bundle_web = ["cli_core", "bundle_web_core"]
+serve = ["cli_core", "project", "web_host", "formatter_core", "mech-runtime", "mech-runtime/default", "ignore"]
 host_delegation = ["serde", "mech-runtime", "mech-runtime/host_delegation", "mech-host-browser", "mech-host-browser/delegation"]
 host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_signing", "mech-host-browser/delegation_signing"]
 whos = ["pretty_print", "variables", "symbol_table"]
-formatter = ["cli", "serde", "mech-syntax/formatter", "mech-syntax/mika", "mech-core/mika", "mech-syntax/variable_define", "mech-core/variable_define"]
+formatter = ["cli_core", "formatter_core"]
 async = []
 trace = ["mech-program/trace"]
 linked_stdlib = ["mech-program/linked_stdlib"]

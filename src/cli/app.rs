@@ -1,11 +1,12 @@
-use clap::{Arg, ArgAction, Command};
+use clap::{Arg, ArgAction, ArgMatches, Command};
 use mech_core::*;
 
 #[cfg(any(feature = "serve", feature = "run"))]
 use crate::cli::capabilities;
 #[cfg(any(feature = "serve", feature = "run"))]
 use crate::cli::config;
-use crate::cli::resources::{MECHJS, MECHWASM, SHIMHTML};
+use crate::cli::outcome::{CliOutcome, RootFlags};
+use crate::cli::resources::WebResourceDefaults;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const ROOT_LOGO: &str = "Mech";
@@ -101,132 +102,109 @@ pub(crate) fn build_cli() -> Command {
     cli_command
 }
 
+fn root_flags(cli_matches: &ArgMatches) -> RootFlags {
+    RootFlags {
+        debug: cli_matches.get_flag("debug"),
+        tree: cli_matches.get_flag("tree"),
+        trace: cli_matches.get_flag("trace"),
+        time: cli_matches.get_flag("time"),
+        repl: cli_matches.get_flag("repl"),
+        rounds_per_step: cli_matches
+            .get_one::<String>("rounds-per-step")
+            .and_then(|s| s.parse::<usize>().ok()),
+    }
+}
+
 async fn async_main() -> Result<(), MechError> {
     let cli_matches = build_cli().get_matches();
+    let outcome = dispatch(cli_matches).await?;
+    apply_outcome(outcome)
+}
 
-    let debug_flag = cli_matches.get_flag("debug");
-    let tree_flag = cli_matches.get_flag("tree");
-    let mut repl_flag = cli_matches.get_flag("repl");
-    let time_flag = cli_matches.get_flag("time");
-    let trace_flag = cli_matches.get_flag("trace");
-    let root_rounds_per_step = cli_matches
-        .get_one::<String>("rounds-per-step")
-        .and_then(|s| s.parse::<usize>().ok());
-
-    let shim_backup_url =
-        "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/shim.html"
-            .to_string();
-    let stylesheet_backup_url =
-        "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/style.css"
-            .to_string();
-    let wasm_backup_url = format!(
-        "https://github.com/mech-lang/mech/releases/download/v{}-beta/mech_wasm_bg.wasm.br",
-        VERSION
-    );
-    let js_backup_url = format!(
-        "https://github.com/mech-lang/mech/releases/download/v{}-beta/mech_wasm.js",
-        VERSION
-    );
+pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
+    let flags = root_flags(&cli_matches);
+    let resources = WebResourceDefaults::new(VERSION);
 
     #[cfg(feature = "bundle_web")]
     if let Some(bundle_matches) = cli_matches.subcommand_matches("bundle-web") {
-        crate::cli::commands::bundle_web::run(bundle_matches)?;
-        return Ok(());
+        let options =
+            crate::cli::commands::bundle_web::BundleWebCliOptions::from_matches(bundle_matches)?;
+        return crate::cli::commands::bundle_web::run(options);
     }
 
     #[cfg(feature = "serve")]
     if let Some(serve_matches) = cli_matches.subcommand_matches("serve") {
-        let exit_code = crate::cli::commands::serve::run(
-            serve_matches,
-            crate::cli::commands::serve::ServeResources {
-                stylesheet_backup_url: stylesheet_backup_url.as_str(),
-                shim_backup_url: shim_backup_url.as_str(),
-                wasm_backup_url: wasm_backup_url.as_str(),
-                js_backup_url: js_backup_url.as_str(),
-                shim_html: SHIMHTML,
-                mech_wasm: MECHWASM,
-                mech_js: MECHJS,
-            },
-        )
-        .await?;
-        if exit_code != 0 {
-            terminate_process(exit_code);
-        }
+        let options =
+            crate::cli::commands::serve::ServeOptions::from_matches(serve_matches, resources)?;
+        return crate::cli::commands::serve::run(options).await;
     }
 
     #[cfg(feature = "test")]
     if let Some(matches) = cli_matches.subcommand_matches("test") {
-        let exit_code =
-            crate::cli::commands::test::run(matches, tree_flag, debug_flag, time_flag, trace_flag)?;
-        terminate_process(exit_code);
+        let options = crate::cli::commands::test::TestOptions::from_matches(flags, matches)?;
+        return crate::cli::commands::test::run(options);
     }
 
     #[cfg(feature = "build")]
     if let Some(matches) = cli_matches.subcommand_matches("build") {
-        crate::cli::commands::build::run(
-            &cli_matches,
-            matches,
-            tree_flag,
-            time_flag,
-            trace_flag,
-            root_rounds_per_step,
-        )?;
-        return Ok(());
+        let options =
+            crate::cli::commands::build::BuildOptions::from_matches(flags, &cli_matches, matches)?;
+        return crate::cli::commands::build::run(options);
     }
 
     #[cfg(feature = "formatter")]
     if let Some(matches) = cli_matches.subcommand_matches("format") {
-        crate::cli::commands::format::run(
+        let options = crate::cli::commands::format::FormatOptions::from_matches(
+            flags,
             &cli_matches,
             matches,
-            stylesheet_backup_url.as_str(),
-            shim_backup_url.as_str(),
-            SHIMHTML,
-        )
-        .await?;
-        return Ok(());
+            resources,
+        )?;
+        return crate::cli::commands::format::run(options).await;
     }
 
     #[cfg(feature = "run")]
-    let mut repl_runtime_config = None;
-    #[cfg(all(feature = "run", feature = "repl"))]
-    let mut repl_seed_program = None;
-
-    #[cfg(feature = "run")]
     {
-        let run_outcome = crate::cli::commands::run::run(
+        let options = crate::cli::commands::run::RunOptions::from_matches(
+            flags,
             &cli_matches,
             cli_matches.subcommand_matches("run"),
-            crate::cli::commands::run::RunRootFlags {
-                debug: debug_flag,
-                trace: trace_flag,
-                time: time_flag,
-                repl: repl_flag,
-                root_rounds_per_step,
-            },
         )?;
-        if let Some(exit_code) = run_outcome.exit_code {
-            terminate_process(exit_code);
+        let outcome = crate::cli::commands::run::run(options)?;
+        #[cfg(feature = "repl")]
+        if matches!(outcome, CliOutcome::EnterRepl(_)) {
+            return Ok(outcome);
         }
-        repl_flag = run_outcome.repl_flag;
-        repl_runtime_config = run_outcome.repl_runtime_config;
-        #[cfg(all(feature = "run", feature = "repl"))]
-        {
-            repl_seed_program = run_outcome.repl_seed_program;
+        if !matches!(outcome, CliOutcome::Success) {
+            return Ok(outcome);
         }
     }
 
     #[cfg(feature = "repl")]
-    if repl_flag {
-        crate::cli::commands::repl::run(crate::cli::commands::repl::ReplStartup {
-            #[cfg(feature = "run")]
-            runtime_config: repl_runtime_config,
-            #[cfg(all(feature = "run", feature = "repl"))]
-            seed_program: repl_seed_program,
-        })?;
+    if flags.repl {
+        return Ok(CliOutcome::EnterRepl(
+            crate::cli::commands::repl::ReplStartup {
+                #[cfg(feature = "run")]
+                runtime_config: None,
+                #[cfg(all(feature = "run", feature = "repl"))]
+                seed_program: None,
+            },
+        ));
     }
 
-    Ok(())
+    Ok(CliOutcome::success())
+}
+
+fn apply_outcome(outcome: CliOutcome) -> Result<(), MechError> {
+    match outcome {
+        CliOutcome::Success => Ok(()),
+        CliOutcome::Exit(code) => terminate_process(code),
+        #[cfg(feature = "repl")]
+        CliOutcome::EnterRepl(startup) => {
+            let outcome = crate::cli::commands::repl::run(startup)?;
+            apply_outcome(outcome)
+        }
+    }
 }
 
 #[cfg(test)]

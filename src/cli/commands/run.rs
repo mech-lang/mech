@@ -4,18 +4,15 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use colored::*;
 use mech_core::*;
 use mech_program::*;
-use mech_runtime::{FS_LIST, FS_READ, MECH_TOOL_SUBJECT, RuntimeConfig};
+use mech_runtime::{FS_LIST, FS_READ, MECH_TOOL_SUBJECT};
 
 use crate::cli::capabilities;
-use crate::cli::config;
-use crate::cli::run::{
-    RunInputMode, classify_run_inputs, cli_host_capability_selection, effective_run_runtime_config,
-    new_cli_runtime, run_cli_source, run_cli_source_code,
+use crate::cli::outcome::{CliOutcome, RootFlags};
+use crate::cli::run::{RunInputMode, new_cli_runtime, run_cli_source, run_cli_source_code};
+use crate::cli::runtime_plan::{RunExecutionPlan, build_run_execution_plan};
+use crate::source_discovery::{
+    DedupePolicy, DiscoveryOptions, MissingPathPolicy, RelativePathPolicy, collect_sources,
 };
-use crate::cli::source_discovery::{
-    DedupePolicy, DiscoveryOptions, MissingPathPolicy, collect_sources,
-};
-use crate::generate_uuid;
 
 pub(crate) fn command() -> Command {
     Command::new("run")
@@ -53,20 +50,54 @@ const RUN_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb", "mdoc", "mpkg", "m", "c
 const RUN_DIRECTORY_EXTENSIONS: &[&str] = &["mec", "🤖", "mdoc", "mpkg"];
 const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
 
-pub(crate) struct RunRootFlags {
+#[derive(Clone)]
+pub(crate) struct RunOptions {
+    pub root_matches: ArgMatches,
+    pub run_matches: Option<ArgMatches>,
+    pub config_matches: ArgMatches,
+    pub inputs: Vec<String>,
+    pub explicit_run_command: bool,
     pub debug: bool,
     pub trace: bool,
     pub time: bool,
     pub repl: bool,
-    pub root_rounds_per_step: Option<usize>,
+    pub rounds_per_step: Option<usize>,
+    pub no_default_capabilities: bool,
 }
 
-pub(crate) struct RunCommandOutcome {
-    pub exit_code: Option<i32>,
-    pub repl_flag: bool,
-    pub repl_runtime_config: Option<RuntimeConfig>,
-    #[cfg(all(feature = "run", feature = "repl"))]
-    pub repl_seed_program: Option<MechProgram>,
+impl RunOptions {
+    pub(crate) fn from_matches(
+        root: RootFlags,
+        root_matches: &ArgMatches,
+        run_matches: Option<&ArgMatches>,
+    ) -> MResult<Self> {
+        let inputs: Vec<String> = if let Some(run_matches) = run_matches {
+            run_matches
+                .get_many::<String>("mech_run_paths")
+                .map_or(vec![], |files| files.map(|file| file.to_string()).collect())
+        } else if let Some(m) = root_matches.get_many::<String>("mech_paths") {
+            m.map(|s| s.to_string()).collect()
+        } else {
+            vec![]
+        };
+        let config_matches = run_matches.unwrap_or(root_matches).clone();
+        Ok(Self {
+            root_matches: root_matches.clone(),
+            run_matches: run_matches.cloned(),
+            config_matches: config_matches.clone(),
+            inputs,
+            explicit_run_command: run_matches.is_some(),
+            debug: root.debug || run_matches.map(|m| m.get_flag("debug")).unwrap_or(false),
+            trace: root.trace || run_matches.map(|m| m.get_flag("trace")).unwrap_or(false),
+            time: root.time || run_matches.map(|m| m.get_flag("time")).unwrap_or(false),
+            repl: root.repl,
+            rounds_per_step: run_matches
+                .and_then(|m| m.get_one::<String>("rounds-per-step"))
+                .and_then(|s| s.parse::<usize>().ok())
+                .or(root.rounds_per_step),
+            no_default_capabilities: config_matches.get_flag("no_default_capabilities"),
+        })
+    }
 }
 
 pub(crate) fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
@@ -106,6 +137,7 @@ fn collect_run_targets_with_capabilities(
             follow_dir_symlinks: false,
             missing_path_policy: MissingPathPolicy::SkipBrokenSymlink,
             dedupe_policy: DedupePolicy::LogicalPath,
+            relative_path_policy: RelativePathPolicy::ErrorOutsideBase,
         },
     )?;
     let mut out = entries
@@ -116,147 +148,52 @@ fn collect_run_targets_with_capabilities(
     Ok(out)
 }
 
-pub(crate) fn run(
-    root_matches: &ArgMatches,
-    run_matches: Option<&ArgMatches>,
-    root_flags: RunRootFlags,
-) -> MResult<RunCommandOutcome> {
-    let uuid = generate_uuid();
-    let explicit_run_command = run_matches.is_some();
-    let mut run_inputs: Vec<String> = if let Some(run_matches) = run_matches {
-        run_matches
-            .get_many::<String>("mech_run_paths")
-            .map_or(vec![], |files| files.map(|file| file.to_string()).collect())
-    } else if let Some(m) = root_matches.get_many::<String>("mech_paths") {
-        m.map(|s| s.to_string()).collect()
-    } else {
-        vec![]
-    };
-    let run_debug_flag =
-        root_flags.debug || run_matches.map(|m| m.get_flag("debug")).unwrap_or(false);
-    let run_trace_flag =
-        root_flags.trace || run_matches.map(|m| m.get_flag("trace")).unwrap_or(false);
-    let run_time_flag = root_flags.time || run_matches.map(|m| m.get_flag("time")).unwrap_or(false);
-    let run_rounds_per_step = run_matches
-        .and_then(|m| m.get_one::<String>("rounds-per-step"))
-        .and_then(|s| s.parse::<usize>().ok())
-        .or(root_flags.root_rounds_per_step);
+pub(crate) fn run(options: RunOptions) -> MResult<CliOutcome> {
+    let plan = build_run_execution_plan(options)?;
+    execute_plan(plan)
+}
 
-    let run_input_mode = classify_run_inputs(run_inputs);
-    let config_matches = run_matches.unwrap_or(root_matches);
-    let config_inputs: Vec<String> = match &run_input_mode {
-        RunInputMode::Paths(paths) => paths.clone(),
-        RunInputMode::Empty | RunInputMode::InlineSource(_) => Vec::new(),
-    };
-    let loaded_config = config::load_run_cli_config(config_matches, &config_inputs)?;
+fn print_value(value: &Value) {
+    println!("{}", value.kind());
+    #[cfg(feature = "pretty_print")]
+    println!("{}", value.pretty_print());
+    #[cfg(not(feature = "pretty_print"))]
+    println!("{:#?}", value);
+}
 
-    let runtime_config = effective_run_runtime_config(
-        loaded_config.as_ref(),
-        format!("program-{}", uuid),
-        run_debug_flag,
-        run_trace_flag,
-        run_time_flag,
-        run_rounds_per_step,
-    )?;
-    let repl_runtime_config = Some(runtime_config.clone());
-
-    let cli_capability_selection = cli_host_capability_selection(root_matches, run_matches);
-    let cli_grants =
-        config::effective_cli_host_grants(loaded_config.as_ref(), cli_capability_selection)?;
-
-    let configured_hosts = loaded_config
-        .as_ref()
-        .map(|loaded| loaded.document.hosts.as_slice())
-        .unwrap_or(&[]);
-
-    let configured_run_grants = loaded_config
-        .as_ref()
-        .and_then(|loaded| loaded.document.run.as_ref())
-        .map(|run| run.grants.as_slice())
-        .unwrap_or(&[]);
-
-    let badge = "[Mech Run]".truecolor(34, 204, 187);
-    let mut fs_access = capabilities::build_filesystem_runtime_access(
-        config_matches,
-        loaded_config.as_ref(),
-        &badge,
-    )?;
-
+fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
+    let repl_runtime_config = Some(plan.runtime_config.clone());
     let mut runtime = new_cli_runtime(
-        runtime_config,
-        &cli_grants,
-        configured_hosts,
-        configured_run_grants,
+        plan.runtime_config,
+        &plan.cli_grants,
+        &plan.configured_hosts,
+        &plan.configured_run_grants,
     )?;
-    capabilities::install_file_resolver(&mut runtime, &fs_access, &std::env::current_dir()?)?;
+    capabilities::install_file_resolver(
+        &mut runtime,
+        &plan.filesystem_access,
+        &std::env::current_dir()?,
+    )?;
 
-    if let RunInputMode::InlineSource(source) = &run_input_mode {
+    if let RunInputMode::InlineSource(source) = &plan.input_mode {
         match run_cli_source(&mut runtime, source.trim()) {
-            Ok(r) => {
-                println!("{}", r.kind());
-                #[cfg(feature = "pretty_print")]
-                println!("{}", r.pretty_print());
-                #[cfg(not(feature = "pretty_print"))]
-                println!("{:#?}", r);
-                return Ok(RunCommandOutcome {
-                    exit_code: Some(0),
-                    repl_flag: false,
-                    repl_runtime_config,
-                    #[cfg(all(feature = "run", feature = "repl"))]
-                    repl_seed_program: None,
-                });
+            Ok(value) => {
+                print_value(&value);
+                return Ok(CliOutcome::exit(0));
             }
             Err(err) => {
                 println!("{} {:#?}", "[Error]".truecolor(246, 98, 78), err);
-                return Ok(RunCommandOutcome {
-                    exit_code: Some(1),
-                    repl_flag: false,
-                    repl_runtime_config,
-                    #[cfg(all(feature = "run", feature = "repl"))]
-                    repl_seed_program: None,
-                });
+                return Ok(CliOutcome::exit(1));
             }
         }
     }
 
-    let run_paths = match run_input_mode {
-        RunInputMode::Paths(paths) => paths,
-        RunInputMode::Empty => Vec::new(),
-        RunInputMode::InlineSource(_) => unreachable!("inline source exits before path execution"),
-    };
-
-    let options =
-        config::effective_run_options(run_paths, loaded_config.as_ref(), explicit_run_command)?;
-
-    let missing_run_options = options.is_none();
-    let result: MResult<Value> = if let Some(options) = options {
-        if !config_matches.get_flag("no_default_capabilities") {
-            let mut ids = mech_runtime::DefaultIdGenerator::new();
-            for p in &options.paths {
-                let path = Path::new(p);
-                let grant_path = if path.is_dir() {
-                    path
-                } else {
-                    path.parent().unwrap_or_else(|| Path::new("."))
-                };
-                fs_access.authority.grant_path(
-                    &mut ids,
-                    grant_path,
-                    true,
-                    [
-                        FS_READ,
-                        FS_LIST,
-                        mech_runtime::FS_RESOLVE,
-                        mech_runtime::FS_IMPORT,
-                    ],
-                )?;
-            }
-        }
-        let fs_kernel = fs_access.authority.kernel().clone();
-        fs_access.kernel = fs_kernel.clone();
-        capabilities::install_file_resolver(&mut runtime, &fs_access, &std::env::current_dir()?)?;
+    let result: MResult<Value> = if plan.run_paths.is_empty() {
+        Ok(Value::Empty)
+    } else {
+        let fs_kernel = plan.filesystem_access.kernel.clone();
         let mut last = Value::Empty;
-        for p in &options.paths {
+        for p in &plan.run_paths {
             for target in collect_run_targets_with_capabilities(Path::new(p), &fs_kernel)? {
                 let src = mech_runtime::read_runtime_source_file_with_capabilities(
                     &target,
@@ -267,88 +204,44 @@ pub(crate) fn run(
             }
         }
         Ok(last)
-    } else {
-        Ok(Value::Empty)
     };
 
-    let repl_flag = root_flags.repl || missing_run_options;
+    let repl_flag = plan.repl_requested || plan.missing_run_options;
     match &result {
-        Ok(r) if repl_flag => {
+        Ok(value) if repl_flag => {
             #[cfg(all(feature = "run", feature = "repl"))]
             {
-                return Ok(RunCommandOutcome {
-                    exit_code: None,
-                    repl_flag,
-                    repl_runtime_config,
-                    repl_seed_program: Some(runtime.take_program()),
-                });
+                return Ok(CliOutcome::EnterRepl(
+                    crate::cli::commands::repl::ReplStartup {
+                        runtime_config: repl_runtime_config,
+                        seed_program: Some(runtime.take_program()),
+                    },
+                ));
             }
             #[cfg(not(feature = "repl"))]
             {
-                println!("{}", r.kind());
-                #[cfg(feature = "pretty_print")]
-                println!("{}", r.pretty_print());
-                #[cfg(not(feature = "pretty_print"))]
-                println!("{:#?}", r);
-                return Ok(RunCommandOutcome {
-                    exit_code: Some(0),
-                    repl_flag: false,
-                    repl_runtime_config,
-                    #[cfg(all(feature = "run", feature = "repl"))]
-                    repl_seed_program: None,
-                });
+                print_value(value);
+                return Ok(CliOutcome::exit(0));
             }
         }
-        Ok(r) => {
-            println!("{}", r.kind());
-            #[cfg(feature = "pretty_print")]
-            println!("{}", r.pretty_print());
-            #[cfg(not(feature = "pretty_print"))]
-            println!("{:#?}", r);
-            return Ok(RunCommandOutcome {
-                exit_code: Some(0),
-                repl_flag: false,
-                repl_runtime_config,
-                #[cfg(all(feature = "run", feature = "repl"))]
-                repl_seed_program: None,
-            });
+        Ok(value) => {
+            print_value(value);
+            Ok(CliOutcome::exit(0))
         }
         Err(err) => {
             crate::cli::diagnostics::print_mech_error(err);
-            return Ok(RunCommandOutcome {
-                exit_code: Some(1),
-                repl_flag: false,
-                repl_runtime_config,
-                #[cfg(all(feature = "run", feature = "repl"))]
-                repl_seed_program: None,
-            });
+            Ok(CliOutcome::exit(1))
         }
     }
-
-    #[allow(unreachable_code)]
-    Ok(RunCommandOutcome {
-        exit_code: None,
-        repl_flag,
-        repl_runtime_config,
-        #[cfg(all(feature = "run", feature = "repl"))]
-        repl_seed_program: None,
-    })
 }
 
 #[cfg(test)]
 mod command_outcome_tests {
-  use super::*;
+    use super::*;
 
-  #[test]
-  fn run_command_outcome_reports_exit_code_without_exiting_process() {
-    let outcome = RunCommandOutcome {
-      exit_code: Some(0),
-      repl_flag: false,
-      repl_runtime_config: None,
-      #[cfg(all(feature = "run", feature = "repl"))]
-      repl_seed_program: None,
-    };
-    assert_eq!(outcome.exit_code, Some(0));
-    assert!(!outcome.repl_flag);
-  }
+    #[test]
+    fn run_command_outcome_reports_exit_code_without_exiting_process() {
+        let outcome = CliOutcome::exit(0);
+        assert!(matches!(outcome, CliOutcome::Exit(0)));
+    }
 }

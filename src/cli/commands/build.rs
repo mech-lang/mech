@@ -2,6 +2,7 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+use crate::cli::outcome::{CliOutcome, RootFlags};
 use crate::generate_uuid;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use colored::*;
@@ -65,25 +66,46 @@ pub(crate) fn validate_build_bytecode_inputs(paths: &[String]) -> MResult<usize>
     Ok(bytecode_count)
 }
 
-pub(crate) fn run(
-    root_matches: &ArgMatches,
-    matches: &ArgMatches,
-    tree_flag: bool,
-    time_flag: bool,
-    trace_flag: bool,
-    root_rounds_per_step: Option<usize>,
-) -> MResult<()> {
-    let mech_paths: Vec<String> = matches
-        .get_many::<String>("mech_build_file_paths")
-        .map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let output_path = PathBuf::from(
-        matches
-            .get_one::<String>("output_path")
-            .cloned()
-            .unwrap_or(".".to_string()),
-    );
-    let debug_flag = root_matches.get_flag("debug") || matches.get_flag("debug");
-    let rounds_per_step = root_rounds_per_step.unwrap_or(10_000);
+pub(crate) struct BuildOptions {
+    pub paths: Vec<String>,
+    pub output_path: PathBuf,
+    pub debug: bool,
+    pub trace: bool,
+    pub time: bool,
+    pub rounds_per_step: usize,
+}
+
+impl BuildOptions {
+    pub(crate) fn from_matches(
+        root: RootFlags,
+        _root_matches: &ArgMatches,
+        matches: &ArgMatches,
+    ) -> MResult<Self> {
+        Ok(Self {
+            paths: matches
+                .get_many::<String>("mech_build_file_paths")
+                .map_or(vec![], |files| files.map(|file| file.to_string()).collect()),
+            output_path: PathBuf::from(
+                matches
+                    .get_one::<String>("output_path")
+                    .cloned()
+                    .unwrap_or(".".to_string()),
+            ),
+            debug: root.debug || matches.get_flag("debug"),
+            trace: root.trace,
+            time: root.time,
+            rounds_per_step: root.rounds_per_step.unwrap_or(10_000),
+        })
+    }
+}
+
+pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
+    let mech_paths = options.paths;
+    let output_path = options.output_path;
+    let debug_flag = options.debug;
+    let time_flag = options.time;
+    let trace_flag = options.trace;
+    let rounds_per_step = options.rounds_per_step;
     if output_path != PathBuf::from(".") {
         match fs::create_dir_all(&output_path) {
             Ok(_) => println!(
@@ -107,7 +129,6 @@ pub(crate) fn run(
             name: format!("program-{}", uuid),
             environment: MechProgramEnvironment::default(),
         });
-        let _ = tree_flag;
         program.configure(debug_flag, trace_flag, time_flag, rounds_per_step);
         for path in mech_paths {
             let source = mech_runtime::read_runtime_source_file(Path::new(&path))?;
@@ -133,5 +154,5 @@ pub(crate) fn run(
         "[Output]".truecolor(153, 221, 85),
         output_file.display()
     );
-    Ok(())
+    Ok(CliOutcome::success())
 }

@@ -1,4 +1,3 @@
-#![allow(warnings)]
 // Mech
 //=============================================================================
 
@@ -56,9 +55,12 @@ use std::collections::HashSet;
 
 #[cfg(feature = "repl")]
 mod repl;
-#[cfg(feature = "cli")]
+#[cfg(feature = "cli_core")]
 pub mod cli;
-#[cfg(feature = "bundle_web")]
+pub mod fs_paths;
+#[cfg(any(feature = "cli_core", feature = "bundle_web_core"))]
+pub mod source_discovery;
+#[cfg(feature = "bundle_web_core")]
 mod bundle_web;
 #[cfg(feature = "project")]
 mod project;
@@ -71,7 +73,7 @@ mod test;
 
 #[cfg(feature = "repl")]
 pub use self::repl::*;
-#[cfg(feature = "bundle_web")]
+#[cfg(feature = "bundle_web_core")]
 pub use self::bundle_web::*;
 #[cfg(feature = "project")]
 pub use self::project::*;

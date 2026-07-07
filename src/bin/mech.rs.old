@@ -307,7 +307,7 @@ async fn main() -> Result<(), MechError> {
     warp::serve(routes).run(socket_address).await;
 
     println!("{} Closing server.", "[Mech Server]".truecolor(34,204,187));
-    std::process::exit(0);
+    return Ok(());
 
     None
   // ------------------------------------------------
@@ -325,7 +325,7 @@ async fn main() -> Result<(), MechError> {
       Ok(blocks) => blocks,
       Err(mech_error) => {
         println!("{}",format_errors(&vec![mech_error]));
-        std::process::exit(1);
+        panic!("legacy old binary exit");
       }
     };
 
@@ -367,7 +367,7 @@ async fn main() -> Result<(), MechError> {
         (Ok(ClientMessage::Done)) => {
           if to_exit {
             io::stdout().flush().unwrap();
-            std::process::exit(exit_code);
+            return Ok(());
           }
         },
         (Ok(ClientMessage::Exit(this_code))) => {
@@ -376,14 +376,14 @@ async fn main() -> Result<(), MechError> {
         }
         Ok(ClientMessage::StepDone) => {
           //mech_client.send(RunLoopMessage::GetTable(*MECH_TEST));
-          //std::process::exit(0);
+          //return Ok(());
         },
         Ok(ClientMessage::Error(err)) => {
           println!("{} {} An Error Has Occurred: {:?}", formatted_name, "[Error]".truecolor(170,51,85), err);
         }
         (Err(x)) => {
           println!("{} {}", "[Error]".truecolor(170,51,85), x);
-          std::process::exit(1);
+          panic!("legacy old binary exit");
         }
         q => {
           //println!("*else: {:?}", q);
@@ -413,7 +413,7 @@ async fn main() -> Result<(), MechError> {
       Ok(code) => code,
       Err(mech_error) => {
         println!("{}",format_errors(&vec![mech_error]));
-        std::process::exit(1);
+        panic!("legacy old binary exit");
       }
     };
 
@@ -427,7 +427,7 @@ async fn main() -> Result<(), MechError> {
       Ok(blocks) => blocks,
       Err(mech_error) => {
         println!("{}",format_errors(&vec![mech_error]));
-        std::process::exit(1);
+        panic!("legacy old binary exit");
       }
     };
 
@@ -505,7 +505,7 @@ async fn main() -> Result<(), MechError> {
         (Ok(ClientMessage::Done)) => {
           if to_exit {
             io::stdout().flush().unwrap();
-            std::process::exit(exit_code);
+            return Ok(());
           }
         },
         (Ok(ClientMessage::Exit(this_code))) => {
@@ -526,12 +526,12 @@ async fn main() -> Result<(), MechError> {
           }
           //let output_id: u64 = hash_str("mech/output"); 
           //mech_client.send(RunLoopMessage::GetTable(output_id));
-          //std::process::exit(0);
+          //return Ok(());
         },
         (Err(x)) => {
           println!("{} {}", "[Error]".truecolor(170,51,85), x);
           io::stdout().flush().unwrap();
-          std::process::exit(1);
+          panic!("legacy old binary exit");
         }
         q => {
           //println!("else: {:?}", q);
@@ -549,7 +549,7 @@ async fn main() -> Result<(), MechError> {
       Ok(code) => code,
       Err(mech_error) => {
         println!("{}",format_errors(&vec![mech_error]));
-        std::process::exit(1);
+        panic!("legacy old binary exit");
       }
     };
 
@@ -567,16 +567,16 @@ async fn main() -> Result<(), MechError> {
     
         if let Err(e) = writer.write_all(&result) {
           panic!("{} Failed to write core(s)! {:?}", "[Error]".truecolor(170,51,85), e);
-          std::process::exit(1);
+          panic!("legacy old binary exit");
         }
         writer.flush().unwrap();
     
         println!("{} Wrote {}", "[Finished]".truecolor(153,221,85), output_name);
-        std::process::exit(0);
+        return Ok(());
       }
       Err(mech_error) => {
         println!("{}",format_errors(&vec![mech_error]));
-        std::process::exit(1);
+        panic!("legacy old binary exit");
       }
     }
     None
@@ -590,7 +590,7 @@ async fn main() -> Result<(), MechError> {
       Ok(code) => code,
       Err(mech_error) => {
         println!("{}",format_errors(&vec![mech_error]));
-        std::process::exit(1);
+        panic!("legacy old binary exit");
       }
     };
 
@@ -632,7 +632,7 @@ async fn main() -> Result<(), MechError> {
       } else {
         file.write_all(formatted_source[0].as_bytes())?;
       }
-      std::process::exit(0);
+      return Ok(());
     } else {
       for f in formatted_source {
         if html {
@@ -648,7 +648,7 @@ async fn main() -> Result<(), MechError> {
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("clean") {
     std::fs::remove_dir_all("machines");
-    std::process::exit(0);
+    return Ok(());
     None
   // ------------------------------------------------
   //  Run language server
@@ -658,7 +658,7 @@ async fn main() -> Result<(), MechError> {
     let port = matches.get_one::<String>("port").unwrap_or(&"4041".to_string()).to_string();
     println!("{} Starting language server at {}:{}", "[INFO]".truecolor(34,204,187), address, port);
     mech_syntax::langserver::run_langserver(&address, &port).await?;
-    std::process::exit(0);
+    return Ok(());
     None
   // ------------------------------------------------
   //  Not matched

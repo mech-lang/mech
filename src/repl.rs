@@ -2,7 +2,6 @@ use crate::*;
 use mech_core::*;
 use mech_program::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 use std::collections::HashMap;
-use std::process;
 use nom::{
   IResult,
   bytes::complete::tag,
@@ -20,6 +19,12 @@ use std::time::{Instant, Duration};
 
 static DOCS_DIR: Dir = include_dir!("docs");
 static EXAMPLES_DIR: Dir = include_dir!("examples/working");
+
+
+pub enum ReplExecution {
+  Output(String),
+  Quit,
+}
 
 pub struct MechRepl {
   pub docs: Dir<'static>,
@@ -58,6 +63,13 @@ impl MechRepl {
     }
   }
 
+  pub fn execute_repl_command_control(&mut self, repl_cmd: ReplCommand) -> MResult<ReplExecution> {
+    if matches!(repl_cmd, ReplCommand::Quit) {
+      return Ok(ReplExecution::Quit);
+    }
+    self.execute_repl_command(repl_cmd).map(ReplExecution::Output)
+  }
+
   pub fn execute_repl_command(&mut self, repl_cmd: ReplCommand) -> MResult<String> {
 
     let mut prgrm = self.programs.get_mut(&self.active).unwrap();
@@ -67,8 +79,7 @@ impl MechRepl {
         return Ok(help());
       }
       ReplCommand::Quit => {
-        // exit from the program
-        process::exit(0);
+        return Ok(String::new());
       }
       ReplCommand::Docs(name) => {
         if let Some(name) = name {

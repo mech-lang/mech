@@ -93,7 +93,7 @@ fn bouncing_balls(b:&mut Bencher){
         balls.get_column_unchecked(2),
         balls.get_column_unchecked(3))
       }
-      _ => std::process::exit(1),
+      _ => panic!("legacy old binary exit"),
     }
   };
 
@@ -103,7 +103,7 @@ fn bouncing_balls(b:&mut Bencher){
         let gravity = gravity_rc.borrow();
         gravity.get_column_unchecked(0)
       }
-      _ => std::process::exit(1),
+      _ => panic!("legacy old binary exit"),
     }
   };
 
@@ -113,7 +113,7 @@ fn bouncing_balls(b:&mut Bencher){
         let const1 = const1_rc.borrow();
         const1.get_column_unchecked(0)
       }
-      _ => std::process::exit(1),
+      _ => panic!("legacy old binary exit"),
     }
   };
 
@@ -123,7 +123,7 @@ fn bouncing_balls(b:&mut Bencher){
         let const1 = const1_rc.borrow();
         const1.get_column_unchecked(0)
       }
-      _ => std::process::exit(1),
+      _ => panic!("legacy old binary exit"),
     }
   };
 
@@ -133,7 +133,7 @@ fn bouncing_balls(b:&mut Bencher){
         let const1 = const1_rc.borrow();
         const1.get_column_unchecked(0)
       }
-      _ => std::process::exit(1),
+      _ => panic!("legacy old binary exit"),
     }
   };
   

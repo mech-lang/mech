@@ -1,4 +1,5 @@
 use std::io;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
@@ -8,18 +9,18 @@ use crossterm::{ExecutableCommand, cursor, style::Print};
 use indicatif::{ProgressBar, ProgressStyle};
 use mech_core::*;
 use mech_program::*;
-use mech_syntax::{parse_repl_command, ReplCommand};
 #[cfg(feature = "run")]
 use mech_runtime::RuntimeConfig;
+use mech_syntax::{ReplCommand, parse_repl_command};
 
-use crate::{MICROMIKA_WAVE, MechRepl, clc, generate_uuid, print_prompt};
+use crate::cli::outcome::CliOutcome;
+use crate::{MICROMIKA_WAVE, MechRepl, ReplExecution, clc, generate_uuid, print_prompt};
 
 pub(crate) const TEXT_LOGO: &str = r#"
   ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐  ┌─┐
   └───┐ ┌───┘ └──────┘ │ │ └┐ │ │ │  │ │
   ┌─┐ │ │ ┌─┐ ┌──────┐ │ │  └─┘ │ └─┐│ │
   │ │ │ │ │ │ │ ┌────┘ │ │  ┌─┐ │ ┌─┘│ │
-  │ │ └─┘ │ │ │ └────┐ │ └──┘ │ │ │  │ │
   │ │ └─┘ │ │ │ └────┐ │ └──┘ │ │ │  │ │
   └─┘     └─┘ └──────┘ └──────┘ └─┘  └─┘"#;
 
@@ -30,7 +31,7 @@ pub(crate) struct ReplStartup {
     pub seed_program: Option<MechProgram>,
 }
 
-pub(crate) fn run(startup: ReplStartup) -> MResult<()> {
+pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
     let text_logo = TEXT_LOGO.truecolor(246, 192, 78);
     let micromika = "╭◉╮".truecolor(246, 192, 78);
     let micromika_point = "╭◉─".truecolor(246, 192, 78);
@@ -58,7 +59,9 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<()> {
     println!("{} {}", micromika, intro_message);
 
     let caught_interrupts = Arc::new(Mutex::new(0));
+    let exit_requested = Arc::new(AtomicBool::new(false));
     let ci = caught_interrupts.clone();
+    let exit_requested_for_handler = exit_requested.clone();
     ctrlc::set_handler(move || {
         println!("{}", ctrlc_cmd);
         let mut caught_interrupts = ci.lock().unwrap();
@@ -74,7 +77,8 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<()> {
                 thread::sleep(Duration::from_millis(100));
                 final_state.tick();
             }
-            crate::cli::app::terminate_process(0);
+            exit_requested_for_handler.store(true, Ordering::SeqCst);
+            return;
         }
         println!(
             "\n{} {}Enter {} to terminate this REPL session.{}\n",
@@ -113,6 +117,9 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<()> {
     }));
 
     loop {
+        if exit_requested.load(Ordering::SeqCst) {
+            return Ok(CliOutcome::exit(0));
+        }
         {
             let mut ci = caught_interrupts.lock().unwrap();
             *ci = 0;
@@ -123,8 +130,9 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<()> {
 
         if input.chars().next() == Some(':') {
             match parse_repl_command(input.as_str()) {
-                Ok((_, repl_command)) => match repl.execute_repl_command(repl_command) {
-                    Ok(output) => println!("{}", output),
+                Ok((_, repl_command)) => match repl.execute_repl_command_control(repl_command) {
+                    Ok(ReplExecution::Output(output)) => println!("{}", output),
+                    Ok(ReplExecution::Quit) => return Ok(CliOutcome::exit(0)),
                     Err(err) => println!("!{:?}", err),
                 },
                 Err(x) => println!(
@@ -137,8 +145,9 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<()> {
             continue;
         } else {
             let cmd = ReplCommand::Code(vec![("repl".to_string(), MechSourceCode::String(input))]);
-            match repl.execute_repl_command(cmd) {
-                Ok(output) => println!("{}", output),
+            match repl.execute_repl_command_control(cmd) {
+                Ok(ReplExecution::Output(output)) => println!("{}", output),
+                Ok(ReplExecution::Quit) => return Ok(CliOutcome::exit(0)),
                 Err(err) => println!("(x)> {:#?}", err),
             }
         }

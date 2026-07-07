@@ -8,13 +8,14 @@ use mech_core::*;
 use mech_syntax::formatter::*;
 use mech_syntax::parser;
 
-use crate::cli::paths::{
+use crate::cli::outcome::{CliOutcome, RootFlags};
+use crate::cli::resources::{Utf8ConversionError, WebResourceDefaults, load_stylesheets};
+use crate::fs_paths::{
     absolute_path, extension_allowed, paths_equivalent, source_extension,
     unsupported_source_path_error,
 };
-use crate::cli::resources::{Utf8ConversionError, load_stylesheets};
-use crate::cli::source_discovery::{
-    DedupePolicy, DiscoveryOptions, MissingPathPolicy, collect_sources,
+use crate::source_discovery::{
+    DedupePolicy, DiscoveryOptions, MissingPathPolicy, RelativePathPolicy, collect_sources,
 };
 use crate::{GenericError, MechError, save_to_file};
 
@@ -272,6 +273,7 @@ fn collect_format_targets(
             follow_dir_symlinks: false,
             missing_path_policy: MissingPathPolicy::SkipBrokenSymlink,
             dedupe_policy: DedupePolicy::LogicalPath,
+            relative_path_policy: RelativePathPolicy::UseBasenameOutsideBase,
         },
     )?;
     let mut out = entries
@@ -409,31 +411,52 @@ fn reject_multi_target_file_output(
     Ok(())
 }
 
-pub(crate) async fn run(
-    _root_matches: &ArgMatches,
-    matches: &ArgMatches,
-    stylesheet_backup_url: &str,
-    shim_backup_url: &str,
-    embedded_shim: &'static str,
-) -> MResult<()> {
+pub(crate) struct FormatOptions {
+    pub html: bool,
+    pub stylesheet_paths: Vec<String>,
+    pub shim_path: String,
+    pub output_arg: Option<String>,
+    pub output_path: PathBuf,
+    pub mech_paths: Vec<String>,
+    pub resources: WebResourceDefaults,
+}
+
+impl FormatOptions {
+    pub(crate) fn from_matches(
+        _root: RootFlags,
+        _root_matches: &ArgMatches,
+        matches: &ArgMatches,
+        resources: WebResourceDefaults,
+    ) -> MResult<Self> {
+        let output_arg = matches.get_one::<String>("output_path").cloned();
+        Ok(Self {
+            html: matches.get_flag("html"),
+            stylesheet_paths: matches
+                .get_many::<String>("stylesheet")
+                .map_or(vec![], |paths| paths.map(|path| path.to_string()).collect()),
+            shim_path: matches
+                .get_one::<String>("shim")
+                .cloned()
+                .unwrap_or("".to_string()),
+            output_path: PathBuf::from(output_arg.clone().unwrap_or(".".to_string())),
+            output_arg,
+            mech_paths: matches
+                .get_many::<String>("mech_format_file_paths")
+                .map_or(vec![], |files| files.map(|file| file.to_string()).collect()),
+            resources,
+        })
+    }
+}
+
+pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
     let badge = "[Mech Formatter]".truecolor(34, 204, 187);
-    let html_flag = matches.get_flag("html");
-    let stylesheet_paths: Vec<String> = matches
-        .get_many::<String>("stylesheet")
-        .map_or(vec![], |paths| paths.map(|path| path.to_string()).collect());
-
-    let shim_path = matches
-        .get_one::<String>("shim")
-        .cloned()
-        .unwrap_or("".to_string());
-
-    let output_arg = matches.get_one::<String>("output_path").cloned();
-    let output_path = PathBuf::from(output_arg.clone().unwrap_or(".".to_string()));
+    let html_flag = options.html;
+    let stylesheet_paths = options.stylesheet_paths;
+    let shim_path = options.shim_path;
+    let output_arg = options.output_arg;
+    let output_path = options.output_path;
     let is_output_file = output_path.extension().is_some();
-
-    let mech_paths: Vec<String> = matches
-        .get_many::<String>("mech_format_file_paths")
-        .map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+    let mech_paths = options.mech_paths;
     let output_matches_input_dir =
         format_output_matches_input_dir(&mech_paths, &output_path, is_output_file)?;
     reject_ambiguous_matching_output_dir(output_matches_input_dir, mech_paths.len(), &output_path)?;
@@ -461,12 +484,17 @@ pub(crate) async fn run(
 
     // Load stylesheet
     print!("{} Loading stylesheet…", badge);
-    let stylesheet_str = load_stylesheets(&stylesheet_paths, stylesheet_backup_url).await?;
+    let stylesheet_str =
+        load_stylesheets(&stylesheet_paths, &options.resources.stylesheet_backup_url).await?;
 
     // Load shim HTML
     print!("{} Loading HTML shim…", badge);
-    let shim = crate::read_or_download(&shim_path, shim_backup_url, Some(embedded_shim.as_bytes()))
-        .await?;
+    let shim = crate::read_or_download(
+        &shim_path,
+        &options.resources.shim_backup_url,
+        Some(options.resources.shim_html.as_bytes()),
+    )
+    .await?;
     let shim_str = String::from_utf8(shim).map_err(|e| {
         MechError::new(
             Utf8ConversionError {
@@ -596,7 +624,7 @@ pub(crate) async fn run(
         }
     }
 
-    Ok(())
+    Ok(CliOutcome::success())
 }
 
 #[cfg(test)]

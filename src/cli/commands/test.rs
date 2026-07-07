@@ -1,6 +1,7 @@
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use mech_core::*;
 
+use crate::cli::outcome::{CliOutcome, RootFlags};
 use crate::run_mech_tests;
 
 pub(crate) fn command() -> Command {
@@ -29,29 +30,43 @@ pub(crate) fn command() -> Command {
         )
 }
 
-pub(crate) fn run(
-    matches: &ArgMatches,
-    tree_flag: bool,
-    debug_flag: bool,
-    time_flag: bool,
-    trace_flag: bool,
-) -> MResult<i32> {
-    let mech_paths: Vec<String> = matches
-        .get_many::<String>("mech_test_file_paths")
-        .map_or(vec![".".to_string()], |files| {
-            files.map(|file| file.to_string()).collect()
-        });
+pub(crate) struct TestOptions {
+    pub paths: Vec<String>,
+    pub output_path: Option<String>,
+    pub verbose: bool,
+    pub tree: bool,
+    pub debug: bool,
+    pub time: bool,
+    pub trace: bool,
+}
 
-    let output_path = matches.get_one::<String>("output_path").cloned();
-    let verbose = matches.get_flag("verbose");
+impl TestOptions {
+    pub(crate) fn from_matches(root: RootFlags, matches: &ArgMatches) -> MResult<Self> {
+        Ok(Self {
+            paths: matches
+                .get_many::<String>("mech_test_file_paths")
+                .map_or(vec![".".to_string()], |files| {
+                    files.map(|file| file.to_string()).collect()
+                }),
+            output_path: matches.get_one::<String>("output_path").cloned(),
+            verbose: matches.get_flag("verbose"),
+            tree: root.tree,
+            debug: root.debug,
+            time: root.time,
+            trace: root.trace,
+        })
+    }
+}
 
-    run_mech_tests(
-        mech_paths,
-        tree_flag,
-        debug_flag,
-        time_flag,
-        trace_flag,
-        output_path,
-        verbose,
-    )
+pub(crate) fn run(options: TestOptions) -> MResult<CliOutcome> {
+    let code = run_mech_tests(
+        options.paths,
+        options.tree,
+        options.debug,
+        options.time,
+        options.trace,
+        options.output_path,
+        options.verbose,
+    )?;
+    Ok(CliOutcome::exit(code))
 }
