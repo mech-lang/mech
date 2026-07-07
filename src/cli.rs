@@ -12,6 +12,10 @@ pub mod config;
 pub(crate) mod diagnostics;
 #[cfg(feature = "run")]
 pub mod host_factories;
+#[cfg(feature = "run")]
+pub mod host_grants;
+#[cfg(feature = "serve")]
+pub mod serve_options;
 #[cfg(feature = "cli_core")]
 pub(crate) mod outcome;
 #[cfg(feature = "cli_core")]

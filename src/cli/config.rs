@@ -1,9 +1,6 @@
-use std::path::{Path, PathBuf};
-
 use clap::{Arg, ArgAction, Command};
-use crate::*;
 use mech_core::*;
-use mech_runtime::parse_host_context_target;
+use crate::{LoadedMechConfig, load_optional_mech_config};
 
 pub fn add_config_args(command: Command) -> Command {
   command
@@ -25,446 +22,40 @@ pub fn add_config_args(command: Command) -> Command {
 }
 
 pub fn load_cli_config(matches: &clap::ArgMatches) -> MResult<Option<LoadedMechConfig>> {
-  let project_inputs: Vec<String> = matches
-    .get_many::<String>("mech_serve_file_paths")
-    .into_iter()
-    .flatten()
-    .cloned()
-    .collect();
-  load_cli_config_with_inputs(matches, &project_inputs, "Server")
+  load_cli_config_with_inputs(matches, &[])
 }
 
 pub fn load_cli_config_with_inputs(
   matches: &clap::ArgMatches,
   project_inputs: &[String],
-  label: &str,
 ) -> MResult<Option<LoadedMechConfig>> {
   let no_config = matches.get_flag("no_config");
   let explicit_config = matches.get_one::<String>("config").map(|path| path.as_str());
   let current_dir = std::env::current_dir()?;
-  let loaded = crate::load_optional_mech_config(
+  load_optional_mech_config(
     &current_dir,
     explicit_config,
     no_config,
     project_inputs,
-  )?;
-  if let Some(config) = loaded.as_ref() {
-    println!("[Mech {label}] Loading config… {}", config.path.display());
-  }
-  Ok(loaded)
+  )
 }
 
 pub fn load_run_cli_config(
   matches: &clap::ArgMatches,
   run_inputs: &[String],
 ) -> MResult<Option<LoadedMechConfig>> {
-  load_cli_config_with_inputs(matches, run_inputs, "Run")
+  load_cli_config_with_inputs(matches, run_inputs)
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct EffectiveCliHostGrants {
-  pub env_read_paths: Vec<String>,
-  pub stdout_write_paths: Vec<String>,
-  pub stderr_write_paths: Vec<String>,
-}
-
-impl EffectiveCliHostGrants {
-  pub fn empty() -> Self {
-    Self {
-      env_read_paths: Vec::new(),
-      stdout_write_paths: Vec::new(),
-      stderr_write_paths: Vec::new(),
-    }
-  }
-}
-
-impl Default for EffectiveCliHostGrants {
-  fn default() -> Self {
-    Self::empty()
-  }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct CliHostCapabilitySelection {
-  pub include_defaults: bool,
-  pub profiles: Vec<String>,
-}
-
-impl Default for CliHostCapabilitySelection {
-  fn default() -> Self {
-    Self {
-      include_defaults: true,
-      profiles: Vec::new(),
-    }
-  }
-}
-
-const CLI_PROFILE_ENV: &str = ":cli/env";
-const CLI_PROFILE_STDOUT: &str = ":cli/stdout";
-const CLI_PROFILE_STDERR: &str = ":cli/stderr";
-
-const DEFAULT_CLI_CAPABILITY_PROFILES: &[&str] = &[
-  CLI_PROFILE_ENV,
-  CLI_PROFILE_STDOUT,
-  CLI_PROFILE_STDERR,
-];
-
-pub fn effective_cli_host_grants(
-  config: Option<&LoadedMechConfig>,
-  selection: CliHostCapabilitySelection,
-) -> MResult<EffectiveCliHostGrants> {
-  let mut grants = EffectiveCliHostGrants::empty();
-  let has_explicit_cli_config_grants = match config {
-    Some(config) => has_explicit_cli_run_grants(config)?,
-    None => false,
-  };
-
-  if selection.include_defaults && !has_explicit_cli_config_grants {
-    for profile in DEFAULT_CLI_CAPABILITY_PROFILES {
-      grant_cli_profile(&mut grants, profile)?;
-    }
-  }
-
-  for profile in &selection.profiles {
-    grant_cli_profile(&mut grants, profile)?;
-  }
-
-  Ok(grants)
-}
-
-pub fn has_explicit_cli_run_grants(config: &LoadedMechConfig) -> MResult<bool> {
-  let Some(run) = config.document.run.as_ref() else {
-    return Ok(false);
-  };
-
-  if !run.grants_specified {
-    return Ok(false);
-  }
-
-  if run.grants.is_empty() {
-    return Ok(true);
-  }
-
-  let mut cli_instances = std::collections::BTreeSet::from(["cli".to_string()]);
-  for host in &config.document.hosts {
-    if host.provider == "cli" {
-      cli_instances.insert(host.name.clone());
-    }
-  }
-
-  for grant in &run.grants {
-    let (instance, context) = parse_host_context_target(&grant.target)?;
-    if cli_instances.contains(instance) && matches!(context, "env" | "stdout" | "stderr") {
-      return Ok(true);
-    }
-  }
-
-  Ok(false)
-}
-
-fn grant_cli_profile(
-  grants: &mut EffectiveCliHostGrants,
-  profile: &str,
-) -> MResult<()> {
-  match profile {
-    CLI_PROFILE_ENV => {
-      if !grants.env_read_paths.iter().any(|path| path == "*") {
-        grants.env_read_paths.clear();
-        grants.env_read_paths.push("*".to_string());
-      }
-      Ok(())
-    }
-    CLI_PROFILE_STDOUT => {
-      union_string(&mut grants.stdout_write_paths, "text");
-      union_string(&mut grants.stdout_write_paths, "line");
-      Ok(())
-    }
-    CLI_PROFILE_STDERR => {
-      union_string(&mut grants.stderr_write_paths, "text");
-      union_string(&mut grants.stderr_write_paths, "line");
-      Ok(())
-    }
-    other => Err(MechError::new(
-      GenericError {
-        msg: format!("unknown CLI capability profile `{other}`"),
-      },
-      None,
-    ).with_compiler_loc()),
-  }
-}
-
-fn union_string(paths: &mut Vec<String>, value: &str) {
-  if !paths.iter().any(|path| path == value) {
-    paths.push(value.to_string());
-  }
-}
-
-fn intersect_env_paths(current: &[String], configured: &[String]) -> Vec<String> {
-  if current.is_empty() || configured.is_empty() {
-    return Vec::new();
-  }
-  if current.iter().any(|path| path == "*") {
-    return configured.to_vec();
-  }
-  if configured.iter().any(|path| path == "*") {
-    return current.to_vec();
-  }
-  intersect_paths(current, configured)
-}
-
-fn intersect_paths(current: &[String], configured: &[String]) -> Vec<String> {
-  current
-    .iter()
-    .filter(|path| configured.iter().any(|configured_path| configured_path == *path))
-    .cloned()
-    .collect()
-}
-
-fn validated_cli_stream_paths(where_: &str, paths: &[String]) -> MResult<Vec<String>> {
-  let mut out = Vec::new();
-  for path in paths {
-    match path.as_str() {
-      "text" | "line" => out.push(path.clone()),
-      other => {
-        return Err(MechError::new(
-          GenericError {
-            msg: format!("{where_} cannot grant unsupported CLI stream path `{other}`"),
-          },
-          None,
-        ).with_compiler_loc());
-      }
-    }
-  }
-  Ok(out)
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct EffectiveRunOptions {
-  pub paths: Vec<String>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct EffectiveServeOptions {
-  pub address: String,
-  pub port: String,
-  pub paths: Vec<String>,
-  pub stylesheet_paths: Vec<String>,
-  pub shim_path: String,
-  pub wasm_pkg: String,
-}
-
-pub fn effective_run_options(
-  cli_paths: Vec<String>,
-  config: Option<&LoadedMechConfig>,
-  explicit_run_command: bool,
-) -> MResult<Option<EffectiveRunOptions>> {
-  let config_path_to_string = |loaded: &LoadedMechConfig, path: &Path| {
-    resolve_config_path(&loaded.base_dir, path)
-      .to_string_lossy()
-      .to_string()
-  };
-
-  let config_paths = config
-    .and_then(|loaded| {
-      loaded.document.run.as_ref().map(|run| {
-        run.paths
-          .iter()
-          .map(|path| config_path_to_string(loaded, path))
-          .collect::<Vec<_>>()
-      })
-    })
-    .unwrap_or_default();
-
-  let mut effective_cli_paths = cli_paths;
-  let had_cli_selector = !effective_cli_paths.is_empty();
-
-  if let Some(loaded) = config {
-    if let Some(project_dir) = loaded.discovered_project_dir.as_ref() {
-      if effective_cli_paths.len() == 1 {
-        let current_dir = std::env::current_dir()?;
-        let input = PathBuf::from(&effective_cli_paths[0]);
-        let input_path = if input.is_absolute() {
-          input
-        } else {
-          current_dir.join(input)
-        };
-
-        if input_path.exists()
-          && input_path.is_dir()
-          && input_path.canonicalize()? == *project_dir
-        {
-          effective_cli_paths.clear();
-        }
-      }
-    }
-  }
-
-  let paths = if !effective_cli_paths.is_empty() {
-    effective_cli_paths
-  } else if explicit_run_command || had_cli_selector {
-    config_paths
-  } else {
-    Vec::new()
-  };
-
-  if paths.is_empty() {
-    if explicit_run_command {
-      return Err(MechError::new(
-        GenericError {
-          msg: "no run inputs supplied; pass path(s) or configure run.paths".to_string(),
-        },
-        None,
-      ).with_compiler_loc());
-    }
-
-    return Ok(None);
-  }
-
-  Ok(Some(EffectiveRunOptions { paths }))
-}
-
-pub fn effective_serve_options(
-  serve_matches: &clap::ArgMatches,
-  config: Option<&LoadedMechConfig>,
-) -> MResult<EffectiveServeOptions> {
-  let serve_config = config.and_then(|loaded| loaded.document.serve.as_ref());
-  let config_path_to_string = |loaded: &LoadedMechConfig, path: &Path| {
-    resolve_config_path(&loaded.base_dir, path)
-      .to_string_lossy()
-      .to_string()
-  };
-
-  let address = serve_matches
-    .get_one::<String>("address")
-    .cloned()
-    .or_else(|| serve_config.and_then(|serve| serve.address.clone()))
-    .unwrap_or_else(|| "127.0.0.1".to_string());
-
-  let port = serve_matches
-    .get_one::<String>("port")
-    .cloned()
-    .or_else(|| serve_config.and_then(|serve| serve.port.map(|port| port.to_string())))
-    .unwrap_or_else(|| "8081".to_string());
-
-  let cli_shim = serve_matches.get_one::<String>("shim").cloned();
-  let config_shim = config.and_then(|loaded| {
-    loaded.document.serve.as_ref().and_then(|serve| {
-      serve
-        .shim
-        .as_ref()
-        .map(|path| config_path_to_string(loaded, path))
-    })
-  });
-  let shim_path = cli_shim
-    .clone()
-    .or_else(|| config_shim.clone())
-    .unwrap_or_default();
-  if cli_shim.is_none() {
-    if let Some(path) = config_shim.as_ref() {
-      require_config_file("serve.shim", Path::new(path))?;
-    }
-  }
-
-  let cli_wasm = serve_matches.get_one::<String>("wasm").cloned();
-  let config_wasm = config.and_then(|loaded| {
-    loaded.document.serve.as_ref().and_then(|serve| {
-      serve
-        .wasm
-        .as_ref()
-        .map(|path| config_path_to_string(loaded, path))
-    })
-  });
-  let wasm_pkg = cli_wasm
-    .clone()
-    .or_else(|| config_wasm.clone())
-    .unwrap_or_default();
-  if cli_wasm.is_none() {
-    if let Some(path) = config_wasm.as_ref() {
-      require_config_wasm_package("serve.wasm", Path::new(path))?;
-    }
-  }
-
-  let config_stylesheets: Vec<String> = config
-    .and_then(|loaded| {
-      loaded.document.serve.as_ref().map(|serve| {
-        serve
-          .stylesheets
-          .iter()
-          .map(|path| config_path_to_string(loaded, path))
-          .collect::<Vec<_>>()
-      })
-    })
-    .unwrap_or_default();
-  for path in &config_stylesheets {
-    require_config_file("serve.stylesheets", Path::new(path))?;
-  }
-  let cli_stylesheets = serve_matches
-    .get_many::<String>("stylesheet")
-    .into_iter()
-    .flatten()
-    .cloned();
-  let mut stylesheet_paths = config_stylesheets;
-  stylesheet_paths.extend(cli_stylesheets);
-
-  let mut cli_paths: Vec<String> = serve_matches
-    .get_many::<String>("mech_serve_file_paths")
-    .into_iter()
-    .flatten()
-    .cloned()
-    .collect();
-
-  if let Some(loaded) = config {
-    if let Some(project_dir) = loaded.discovered_project_dir.as_ref() {
-      if cli_paths.len() == 1 {
-        let current_dir = std::env::current_dir()?;
-        let input = PathBuf::from(&cli_paths[0]);
-        let input_path = if input.is_absolute() {
-          input
-        } else {
-          current_dir.join(input)
-        };
-
-        if input_path.exists()
-          && input_path.is_dir()
-          && input_path.canonicalize()? == *project_dir
-        {
-          cli_paths.clear();
-        }
-      }
-    }
-  }
-
-  let paths = if !cli_paths.is_empty() {
-    cli_paths
-  } else {
-    config
-      .and_then(|loaded| {
-        loaded.document.serve.as_ref().map(|serve| {
-          serve
-            .paths
-            .iter()
-            .map(|path| config_path_to_string(loaded, path))
-            .collect()
-        })
-      })
-      .filter(|paths: &Vec<String>| !paths.is_empty())
-      .unwrap_or_default()
-  };
-
-  Ok(EffectiveServeOptions {
-    address,
-    port,
-    paths,
-    stylesheet_paths,
-    shim_path,
-    wasm_pkg,
-  })
-}
 
 #[cfg(test)]
 mod config_tests {
   use super::*;
+  use crate::cli::host_grants::*;
+  use crate::cli::run_options::*;
+  use crate::cli::serve_options::{EffectiveServeOptions, ServeCliArgs};
   use mech_runtime::{ConfigProfileOptions, MechConfigDocument, DEFAULT_CONFIG_FILENAME};
+  use std::path::{Path, PathBuf};
   use std::time::{SystemTime, UNIX_EPOCH};
 
   struct CurrentDirGuard {
@@ -594,6 +185,14 @@ mod config_tests {
     create_serve_project_with_config_name(root, DEFAULT_CONFIG_FILENAME)
   }
 
+  fn effective_serve_options(
+    matches: &clap::ArgMatches,
+    config: Option<&LoadedMechConfig>,
+  ) -> MResult<EffectiveServeOptions> {
+    let args = ServeCliArgs::from_matches(matches);
+    crate::cli::serve_options::effective_serve_options(&args, config)
+  }
+
   fn error_text(result: MResult<EffectiveServeOptions>) -> String {
     format!("{:?}", result.unwrap_err())
   }
@@ -674,7 +273,7 @@ mod config_tests {
       let _guard = CurrentDirGuard::enter(&root);
       let matches = matches(&["mech", "serve", "project"]);
       let serve_matches = matches.subcommand_matches("serve").unwrap();
-      let loaded = load_cli_config(serve_matches).unwrap().unwrap();
+      let loaded = load_cli_config_with_inputs(serve_matches, &["project".to_string()]).unwrap().unwrap();
       let options = effective_serve_options(serve_matches, Some(&loaded)).unwrap();
       assert_eq!(
         options.paths,

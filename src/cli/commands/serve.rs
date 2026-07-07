@@ -4,7 +4,7 @@ use mech_core::*;
 
 use crate::cli::outcome::CliOutcome;
 use crate::cli::resources::{Utf8ConversionError, WebResourceDefaults, load_stylesheets};
-use crate::cli::{capabilities, config};
+use crate::cli::{capabilities, config, serve_options};
 use crate::{MechError, MechServer, read_or_download};
 
 pub(crate) fn command() -> Command {
@@ -95,7 +95,7 @@ fn host_delegation_args() -> Vec<Arg> {
     Vec::new()
 }
 
-pub(crate) struct ServeOptions {
+pub(crate) struct ServePlan {
     pub paths: Vec<String>,
     pub address: String,
     pub port: String,
@@ -111,14 +111,14 @@ pub(crate) struct ServeOptions {
     pub resources: WebResourceDefaults,
 }
 
-impl ServeOptions {
-    pub(crate) fn from_matches(
-        matches: &ArgMatches,
-        resources: WebResourceDefaults,
-    ) -> MResult<Self> {
+pub(crate) fn prepare(
+    args: serve_options::ServeCliArgs,
+    matches: &ArgMatches,
+    resources: WebResourceDefaults,
+) -> MResult<ServePlan> {
         let badge = "[Mech Server]".truecolor(34, 204, 187);
-        let loaded_config = config::load_cli_config(matches)?;
-        let effective = config::effective_serve_options(matches, loaded_config.as_ref())?;
+        let loaded_config = config::load_cli_config_with_inputs(matches, &args.paths)?;
+        let effective = serve_options::effective_serve_options(&args, loaded_config.as_ref())?;
 
         let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
         let runtime_config = crate::apply_runtime_config_patch(
@@ -163,7 +163,7 @@ impl ServeOptions {
             &badge,
         )?;
 
-        Ok(Self {
+        Ok(ServePlan {
             paths: effective.paths,
             address: effective.address,
             port: effective.port,
@@ -178,10 +178,9 @@ impl ServeOptions {
             authority,
             resources,
         })
-    }
 }
 
-pub(crate) async fn run(options: ServeOptions) -> MResult<CliOutcome> {
+pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
     let badge = "[Mech Server]".truecolor(34, 204, 187);
     let error_badge = "[Error]".truecolor(246, 98, 78);
     let resources = &options.resources;

@@ -94,11 +94,9 @@ pub(crate) async fn load_stylesheets(
     for path in paths {
         let stylesheet = match std::fs::read(path) {
             Ok(content) => {
-                println!("Using stylesheet: {}", path);
                 content
             }
             Err(_) => {
-                println!("\nStylesheet not found:\n  {}", path);
                 read_or_download("", fallback_url, Some(STYLESHEET.as_bytes())).await?
             }
         };

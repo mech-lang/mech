@@ -1,4 +1,4 @@
-use clap::{ArgMatches, Command};
+use clap::Command;
 use colored::*;
 use mech_core::*;
 
@@ -12,24 +12,24 @@ pub(crate) fn add_config_args(command: Command) -> Command {
     crate::cli::bundle_web::add_config_args(command)
 }
 
-pub(crate) struct BundleWebCliOptions {
+pub(crate) use crate::cli::bundle_web::BundleWebCliArgs;
+
+pub(crate) struct BundleWebPlan {
     pub options: crate::BundleWebOptions,
 }
 
-impl BundleWebCliOptions {
-    pub(crate) fn from_matches(matches: &ArgMatches) -> MResult<Self> {
-        let loaded = crate::cli::bundle_web::load_bundle_web_config(matches)?;
-        println!(
-            "{} Loading config… {}",
-            "[Mech Bundle]".truecolor(34, 204, 187),
-            loaded.path.display()
-        );
-        let options = crate::cli::bundle_web::effective_bundle_web_options(matches, loaded)?;
-        Ok(Self { options })
-    }
+pub(crate) fn prepare(args: BundleWebCliArgs) -> MResult<BundleWebPlan> {
+    let loaded = crate::cli::bundle_web::load_bundle_web_config_from_args(&args)?;
+    println!(
+        "{} Loading config… {}",
+        "[Mech Bundle]".truecolor(34, 204, 187),
+        loaded.path.display()
+    );
+    let options = crate::cli::bundle_web::effective_bundle_web_options_from_args(&args, loaded)?;
+    Ok(BundleWebPlan { options })
 }
 
-pub(crate) fn run(options: BundleWebCliOptions) -> MResult<CliOutcome> {
+pub(crate) fn run(options: BundleWebPlan) -> MResult<CliOutcome> {
     let badge = "[Mech Bundle]".truecolor(34, 204, 187);
     let result = crate::bundle_web_project(options.options)?;
 

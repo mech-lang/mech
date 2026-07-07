@@ -15,7 +15,7 @@ use crate::fs_paths::{
     unsupported_source_path_error,
 };
 use crate::source_discovery::{
-    DedupePolicy, DiscoveryOptions, MissingPathPolicy, RelativePathPolicy, collect_sources,
+    DedupePolicy, DiscoveryOptions, MissingPathPolicy, collect_sources,
 };
 use crate::{GenericError, MechError, save_to_file};
 
@@ -273,7 +273,6 @@ fn collect_format_targets(
             follow_dir_symlinks: false,
             missing_path_policy: MissingPathPolicy::SkipBrokenSymlink,
             dedupe_policy: DedupePolicy::LogicalPath,
-            relative_path_policy: RelativePathPolicy::UseBasenameOutsideBase,
         },
     )?;
     let mut out = entries

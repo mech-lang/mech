@@ -8,11 +8,11 @@ use mech_runtime::{FS_LIST, FS_READ, MECH_TOOL_SUBJECT};
 
 use crate::cli::capabilities;
 use crate::cli::outcome::CliOutcome;
-use crate::cli::run::{RunInputMode, new_cli_runtime, run_cli_source, run_cli_source_code};
-use crate::cli::run_options::RunOptions;
-use crate::cli::runtime_plan::{RunExecutionPlan, build_run_execution_plan};
+use crate::cli::run::{RunInputMode, new_cli_runtime, run_cli_source_with_events, run_cli_source_code_with_events};
+use mech_runtime::{RuntimeEvent, RuntimeEventKind};
+use crate::cli::runtime_plan::RunExecutionPlan;
 use crate::source_discovery::{
-    DedupePolicy, DiscoveryOptions, MissingPathPolicy, RelativePathPolicy, collect_sources,
+    DedupePolicy, DiscoveryOptions, MissingPathPolicy, collect_sources,
 };
 
 pub(crate) fn command() -> Command {
@@ -88,7 +88,6 @@ fn collect_run_targets_with_capabilities(
             follow_dir_symlinks: false,
             missing_path_policy: MissingPathPolicy::SkipBrokenSymlink,
             dedupe_policy: DedupePolicy::LogicalPath,
-            relative_path_policy: RelativePathPolicy::ErrorOutsideBase,
         },
     )?;
     let mut out = entries
@@ -99,8 +98,7 @@ fn collect_run_targets_with_capabilities(
     Ok(out)
 }
 
-pub(crate) fn run(options: RunOptions) -> MResult<CliOutcome> {
-    let plan = build_run_execution_plan(options)?;
+pub(crate) fn run(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     execute_plan(plan)
 }
 
@@ -110,6 +108,15 @@ fn print_value(value: &Value) {
     println!("{}", value.pretty_print());
     #[cfg(not(feature = "pretty_print"))]
     println!("{:#?}", value);
+}
+
+
+fn print_run_runtime_events(events: &[RuntimeEvent]) {
+    for event in events {
+        if let RuntimeEventKind::ProgramProfiled { duration_ns, .. } = &event.kind {
+            println!("Cycle Time: {:.3}ms", *duration_ns as f64 / 1_000_000.0);
+        }
+    }
 }
 
 fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
@@ -127,8 +134,9 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     )?;
 
     if let RunInputMode::InlineSource(source) = &plan.input_mode {
-        match run_cli_source(&mut runtime, source.trim()) {
-            Ok(value) => {
+        match run_cli_source_with_events(&mut runtime, source.trim()) {
+            Ok((value, events)) => {
+                print_run_runtime_events(&events);
                 print_value(&value);
                 return Ok(CliOutcome::exit(0));
             }
@@ -151,7 +159,9 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
                     Some(&fs_kernel),
                     Some(MECH_TOOL_SUBJECT),
                 )?;
-                last = run_cli_source_code(&mut runtime, &src)?;
+                let (value, events) = run_cli_source_code_with_events(&mut runtime, &src)?;
+                print_run_runtime_events(&events);
+                last = value;
             }
         }
         Ok(last)

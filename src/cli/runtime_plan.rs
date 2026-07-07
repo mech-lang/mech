@@ -3,9 +3,9 @@ use mech_runtime::{
     FS_LIST, FS_READ, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig,
 };
 
-use crate::cli::run_options::RunOptions;
+use crate::cli::run_options::PreparedRunOptions;
 use crate::cli::run::{RunInputMode, effective_run_runtime_config};
-use crate::cli::config;
+use crate::cli::host_grants;
 use crate::generate_uuid;
 
 pub(crate) struct RunExecutionPlan {
@@ -15,13 +15,13 @@ pub(crate) struct RunExecutionPlan {
     pub repl_requested: bool,
     pub missing_run_options: bool,
     pub loaded_config: Option<crate::LoadedMechConfig>,
-    pub cli_grants: crate::cli::config::EffectiveCliHostGrants,
+    pub cli_grants: crate::cli::host_grants::EffectiveCliHostGrants,
     pub configured_hosts: Vec<HostInstanceConfig>,
     pub configured_run_grants: Vec<RunResourceGrantConfig>,
     pub filesystem_access: crate::cli::capabilities::FilesystemRuntimeAccess,
 }
 
-pub(crate) fn build_run_execution_plan(options: RunOptions) -> MResult<RunExecutionPlan> {
+pub(crate) fn build_run_execution_plan(options: PreparedRunOptions) -> MResult<RunExecutionPlan> {
     let uuid = generate_uuid();
     let input_mode = options.input_mode;
     let loaded_config = options.loaded_config;
@@ -34,7 +34,7 @@ pub(crate) fn build_run_execution_plan(options: RunOptions) -> MResult<RunExecut
         options.rounds_per_step,
     )?;
 
-    let cli_grants = config::effective_cli_host_grants(
+    let cli_grants = host_grants::effective_cli_host_grants(
         loaded_config.as_ref(),
         options.cli_capability_selection,
     )?;
@@ -58,7 +58,7 @@ pub(crate) fn build_run_execution_plan(options: RunOptions) -> MResult<RunExecut
     let effective_options = if matches!(input_mode, RunInputMode::InlineSource(_)) {
         None
     } else {
-        config::effective_run_options(run_paths, loaded_config.as_ref(), explicit_run_command)?
+        crate::cli::run_options::effective_run_options(run_paths, loaded_config.as_ref(), explicit_run_command)?
     };
     let missing_run_options = effective_options.is_none();
     let run_paths = effective_options

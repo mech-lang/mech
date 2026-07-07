@@ -70,13 +70,16 @@ pub(crate) fn build_cli() -> Command {
                 .help("Print trace output for state-machine arms and function calls")
                 .action(ArgAction::SetTrue),
         )
-        .arg(
-            Arg::new("repl")
-                .short('r')
-                .long("repl")
-                .help("Start REPL")
-                .action(ArgAction::SetTrue),
-        );
+        ;
+
+    #[cfg(feature = "repl")]
+    let cli_command = cli_command.arg(
+        Arg::new("repl")
+            .short('r')
+            .long("repl")
+            .help("Start REPL")
+            .action(ArgAction::SetTrue),
+    );
 
     #[cfg(feature = "formatter")]
     let cli_command = cli_command.subcommand(crate::cli::commands::format::command());
@@ -108,7 +111,10 @@ fn root_flags(cli_matches: &ArgMatches) -> RootFlags {
         tree: cli_matches.get_flag("tree"),
         trace: cli_matches.get_flag("trace"),
         time: cli_matches.get_flag("time"),
+        #[cfg(feature = "repl")]
         repl: cli_matches.get_flag("repl"),
+        #[cfg(not(feature = "repl"))]
+        repl: false,
         rounds_per_step: cli_matches
             .get_one::<String>("rounds-per-step")
             .and_then(|s| s.parse::<usize>().ok()),
@@ -127,16 +133,16 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
 
     #[cfg(feature = "bundle_web")]
     if let Some(bundle_matches) = cli_matches.subcommand_matches("bundle-web") {
-        let options =
-            crate::cli::commands::bundle_web::BundleWebCliOptions::from_matches(bundle_matches)?;
-        return crate::cli::commands::bundle_web::run(options);
+        let args = crate::cli::commands::bundle_web::BundleWebCliArgs::from_matches(bundle_matches)?;
+        let plan = crate::cli::commands::bundle_web::prepare(args)?;
+        return crate::cli::commands::bundle_web::run(plan);
     }
 
     #[cfg(feature = "serve")]
     if let Some(serve_matches) = cli_matches.subcommand_matches("serve") {
-        let options =
-            crate::cli::commands::serve::ServeOptions::from_matches(serve_matches, resources)?;
-        return crate::cli::commands::serve::run(options).await;
+        let args = crate::cli::serve_options::ServeCliArgs::from_matches(serve_matches);
+        let plan = crate::cli::commands::serve::prepare(args, serve_matches, resources)?;
+        return crate::cli::commands::serve::run(plan).await;
     }
 
     #[cfg(feature = "test")]
@@ -167,12 +173,15 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
     // is enabled, dispatch falls through to the run command before considering bare REPL startup.
     #[cfg(feature = "run")]
     {
-        let options = crate::cli::run_options::RunOptions::from_matches(
+        let args = crate::cli::run_options::RunCliArgs::from_matches(
             flags,
             &cli_matches,
             cli_matches.subcommand_matches("run"),
         )?;
-        let outcome = crate::cli::commands::run::run(options)?;
+        let config_matches = cli_matches.subcommand_matches("run").unwrap_or(&cli_matches);
+        let options = crate::cli::run_options::prepare_run_options(args, config_matches)?;
+        let plan = crate::cli::runtime_plan::build_run_execution_plan(options)?;
+        let outcome = crate::cli::commands::run::run(plan)?;
         #[cfg(feature = "repl")]
         if matches!(outcome, CliOutcome::EnterRepl(_)) {
             return Ok(outcome);

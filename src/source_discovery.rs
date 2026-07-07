@@ -24,7 +24,6 @@ pub(crate) struct DiscoveryOptions {
     pub follow_dir_symlinks: bool,
     pub missing_path_policy: MissingPathPolicy,
     pub dedupe_policy: DedupePolicy,
-    pub relative_path_policy: RelativePathPolicy,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -40,11 +39,6 @@ pub(crate) enum DedupePolicy {
     None,
 }
 
-#[derive(Clone, Copy, Debug)]
-pub(crate) enum RelativePathPolicy {
-    ErrorOutsideBase,
-    UseBasenameOutsideBase,
-}
 
 pub(crate) fn collect_sources(
     roots: &[PathBuf],
@@ -84,7 +78,7 @@ fn collect_one(
 ) -> MResult<()> {
     let metadata = match fs::symlink_metadata(read_path) {
         Ok(metadata) => metadata,
-        Err(error)
+        Err(_error)
             if matches!(
                 options.missing_path_policy,
                 MissingPathPolicy::SkipBrokenSymlink
@@ -252,16 +246,7 @@ fn collect_file(
         }
         return Ok(());
     }
-    let relative_path = match relative_to_base(logical_path, base_dir, project_dir) {
-        Ok(relative_path) => relative_path,
-        Err(error) => match options.relative_path_policy {
-            RelativePathPolicy::ErrorOutsideBase => return Err(error),
-            RelativePathPolicy::UseBasenameOutsideBase => logical_path
-                .file_name()
-                .map(PathBuf::from)
-                .unwrap_or_default(),
-        },
-    };
+    let relative_path = relative_to_base(logical_path, base_dir, project_dir)?;
     let key = match options.dedupe_policy {
         DedupePolicy::LogicalPath => logical_path.to_path_buf(),
         DedupePolicy::CanonicalPath => canonical_path.to_path_buf(),

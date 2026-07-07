@@ -8,7 +8,7 @@ use std::collections::BTreeSet;
 use std::ffi::OsStr;
 use std::path::Path;
 
-use crate::cli::config;
+use crate::cli::host_grants;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RunInputMode {
@@ -284,7 +284,7 @@ fn comprehension_qualifier_contains_context_addressed_source(qualifier: &Compreh
 
 pub fn new_cli_runtime(
   config: RuntimeConfig,
-  cli_grants: &config::EffectiveCliHostGrants,
+  cli_grants: &host_grants::EffectiveCliHostGrants,
   configured_hosts: &[HostInstanceConfig],
   run_grants: &[RunResourceGrantConfig],
 ) -> MResult<MechRuntime> {
@@ -392,32 +392,33 @@ pub fn effective_run_runtime_config(
   Ok(config)
 }
 
-fn print_run_runtime_events(events: &[RuntimeEvent]) {
-  for event in events {
-    match &event.kind {
-      RuntimeEventKind::ProgramProfiled { duration_ns, .. } => {
-        println!("Cycle Time: {} ns", duration_ns);
-      }
-      _ => {}
-    }
-  }
+pub fn run_cli_source_with_events(
+  runtime: &mut MechRuntime,
+  source: &str,
+) -> MResult<(Value, Vec<RuntimeEvent>)> {
+  let mut context = runtime.runtime_context()?;
+  let result = runtime.run_string_with_context(&mut context, source)?;
+  Ok((result, context.events))
+}
+
+pub fn run_cli_source_code_with_events(
+  runtime: &mut MechRuntime,
+  source: &MechSourceCode,
+) -> MResult<(Value, Vec<RuntimeEvent>)> {
+  let mut context = runtime.runtime_context()?;
+  let result = runtime.run_source_with_context(&mut context, source)?;
+  Ok((result, context.events))
 }
 
 pub fn run_cli_source(runtime: &mut MechRuntime, source: &str) -> MResult<Value> {
-  let mut context = runtime.runtime_context()?;
-  let result = runtime.run_string_with_context(&mut context, source);
-  print_run_runtime_events(&context.events);
-  result
+  run_cli_source_with_events(runtime, source).map(|(value, _)| value)
 }
 
 pub fn run_cli_source_code(runtime: &mut MechRuntime, source: &MechSourceCode) -> MResult<Value> {
-  let mut context = runtime.runtime_context()?;
-  let result = runtime.run_source_with_context(&mut context, source);
-  print_run_runtime_events(&context.events);
-  result
+  run_cli_source_code_with_events(runtime, source).map(|(value, _)| value)
 }
 
-fn cli_grants_to_run_resource_grants(grants: &config::EffectiveCliHostGrants) -> Vec<RunResourceGrantConfig> {
+fn cli_grants_to_run_resource_grants(grants: &host_grants::EffectiveCliHostGrants) -> Vec<RunResourceGrantConfig> {
   let mut out = Vec::new();
   if !grants.env_read_paths.is_empty() {
     out.push(RunResourceGrantConfig { target: "cli/env".to_string(), operations: vec!["read".to_string()], paths: grants.env_read_paths.clone() });
@@ -461,12 +462,12 @@ fn cli_host_capability_values(cli_matches: &clap::ArgMatches) -> Vec<String> {
 pub fn cli_host_capability_selection(
   cli_matches: &clap::ArgMatches,
   _run_matches: Option<&clap::ArgMatches>,
-) -> config::CliHostCapabilitySelection {
+) -> host_grants::CliHostCapabilitySelection {
   let deny_defaults = cli_matches.get_flag("deny_default_capabilities");
 
   let profiles = cli_host_capability_values(cli_matches);
 
-  config::CliHostCapabilitySelection {
+  host_grants::CliHostCapabilitySelection {
     include_defaults: !deny_defaults,
     profiles,
   }
@@ -558,7 +559,7 @@ mod tests {
     let run_grants = document.run.as_ref().unwrap().grants.as_slice();
     let mut runtime = new_cli_runtime(
       RuntimeConfig::default(),
-      &config::EffectiveCliHostGrants::default(),
+      &host_grants::EffectiveCliHostGrants::default(),
       &document.hosts,
       run_grants,
     ).unwrap();
@@ -586,7 +587,7 @@ mod tests {
     let run_grants = document.run.as_ref().unwrap().grants.as_slice();
     let mut runtime = new_cli_runtime(
       RuntimeConfig::default(),
-      &config::EffectiveCliHostGrants::default(),
+      &host_grants::EffectiveCliHostGrants::default(),
       &document.hosts,
       run_grants,
     ).unwrap();
@@ -614,7 +615,7 @@ mod tests {
     let run_grants = document.run.as_ref().unwrap().grants.as_slice();
     let err = new_cli_runtime(
       RuntimeConfig::default(),
-      &config::EffectiveCliHostGrants::default(),
+      &host_grants::EffectiveCliHostGrants::default(),
       &document.hosts,
       run_grants,
     ).unwrap_err();
@@ -637,9 +638,9 @@ mod tests {
       document: document.clone(),
       discovered_project_dir: None,
     };
-    let cli_grants = config::effective_cli_host_grants(
+    let cli_grants = host_grants::effective_cli_host_grants(
       Some(&loaded),
-      config::CliHostCapabilitySelection::default(),
+      host_grants::CliHostCapabilitySelection::default(),
     ).unwrap();
     let run_grants = document.run.as_ref().unwrap().grants.as_slice();
     let mut runtime = new_cli_runtime(
@@ -668,9 +669,9 @@ mod tests {
       document: document.clone(),
       discovered_project_dir: None,
     };
-    let cli_grants = config::effective_cli_host_grants(
+    let cli_grants = host_grants::effective_cli_host_grants(
       Some(&loaded),
-      config::CliHostCapabilitySelection {
+      host_grants::CliHostCapabilitySelection {
         include_defaults: true,
         profiles: vec![":cli/stderr".to_string()],
       },

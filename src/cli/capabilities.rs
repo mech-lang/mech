@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 
 use clap::{Arg, ArgAction, Command};
 use colored::*;
-use crate::*;
 use mech_core::*;
+use crate::{LoadedMechConfig, resolve_config_path};
 use mech_runtime::{
   ConfigCapabilityKind, DefaultIdGenerator, FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE,
   FS_WATCH, HostFilesystemAuthority, MECH_TOOL_SUBJECT, SharedCapabilityKernel,
@@ -108,18 +108,12 @@ fn add_capability_grant(
 fn grant_mech_filesystem_path(
   authority: &mut HostFilesystemAuthority,
   id_generator: &mut DefaultIdGenerator,
-  badge: &ColoredString,
+  _badge: &ColoredString,
   path: &Path,
   recursive: bool,
   operations: &[&'static str],
 ) -> MResult<()> {
   authority.grant_path(id_generator, path, recursive, operations.iter().copied())?;
-  println!(
-    "{badge} Capability grant: {} {} {} recursive={recursive}",
-    MECH_TOOL_SUBJECT,
-    operations.join(","),
-    mech_runtime::fs_resource_key(path)?,
-  );
   Ok(())
 }
 
@@ -277,10 +271,6 @@ pub fn build_mech_filesystem_authority(
       key.recursive,
       &operations,
     )?;
-  }
-
-  if authority.source_capabilities().is_empty() {
-    println!("{badge} Capability grant: {} <none>", MECH_TOOL_SUBJECT);
   }
 
   Ok(authority)
