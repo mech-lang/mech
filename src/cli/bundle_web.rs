@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 use std::ffi::OsStr;
-use std::io::{Error, ErrorKind};
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
 use clap::{Arg, ArgAction, Command};
@@ -10,6 +10,79 @@ use crate::{
   discover_project_config, load_mech_config_path, require_config_file, resolve_config_path,
   resolve_project_dir_input, BundleWebOptions, LoadedMechConfig,
 };
+
+fn validation_error(msg: impl Into<String>) -> MechError {
+  MechError::new(GenericError { msg: msg.into() }, None).with_compiler_loc()
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct BundleWebCliArgs {
+  pub config_path: Option<String>,
+  pub no_config: bool,
+  pub project_path: String,
+  pub output_path: String,
+  pub shim_path: Option<String>,
+  pub stylesheet_paths: Vec<String>,
+  pub wasm_path: Option<String>,
+  #[cfg(feature = "host_delegation_signing")]
+  pub host_delegation: BundleWebHostDelegationArgs,
+}
+
+impl BundleWebCliArgs {
+  pub(crate) fn from_matches(matches: &clap::ArgMatches) -> MResult<Self> {
+    let project_path = matches
+      .get_one::<String>("project_path")
+      .cloned()
+      .ok_or_else(|| validation_error("bundle-web requires project_path"))?;
+    let output_path = matches
+      .get_one::<String>("out")
+      .cloned()
+      .ok_or_else(|| validation_error("bundle-web requires --out"))?;
+    Ok(Self {
+      config_path: matches.get_one::<String>("config").cloned(),
+      no_config: matches.get_flag("no_config"),
+      project_path,
+      output_path,
+      shim_path: matches.get_one::<String>("shim").cloned(),
+      stylesheet_paths: matches
+        .get_many::<String>("stylesheet")
+        .into_iter()
+        .flatten()
+        .cloned()
+        .collect(),
+      wasm_path: matches.get_one::<String>("wasm").cloned(),
+      #[cfg(feature = "host_delegation_signing")]
+      host_delegation: BundleWebHostDelegationArgs::from_matches(matches),
+    })
+  }
+}
+
+#[cfg(feature = "host_delegation_signing")]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(crate) struct BundleWebHostDelegationArgs {
+  pub private_key: Option<String>,
+  pub public_key: Option<String>,
+  pub key_id: Option<String>,
+  pub issuer: Option<String>,
+  pub subject: Option<String>,
+  pub audience: Option<String>,
+  pub expires_ms: Option<String>,
+}
+
+#[cfg(feature = "host_delegation_signing")]
+impl BundleWebHostDelegationArgs {
+  pub(crate) fn from_matches(matches: &clap::ArgMatches) -> Self {
+    Self {
+      private_key: matches.get_one::<String>("host_delegation_key").cloned(),
+      public_key: matches.get_one::<String>("host_delegation_public_key").cloned(),
+      key_id: matches.get_one::<String>("host_delegation_key_id").cloned(),
+      issuer: matches.get_one::<String>("host_delegation_issuer").cloned(),
+      subject: matches.get_one::<String>("host_delegation_subject").cloned(),
+      audience: matches.get_one::<String>("host_delegation_audience").cloned(),
+      expires_ms: matches.get_one::<String>("host_delegation_expires_ms").cloned(),
+    }
+  }
+}
 
 fn expand_serve_source_paths(base_dir: &Path, paths: &[PathBuf]) -> MResult<Vec<PathBuf>> {
   let mut visited_dirs = BTreeSet::new();
@@ -32,16 +105,10 @@ fn push_serve_source_file(logical_path: &Path, read_path: &Path, seen_files: &mu
 
 fn normalize_link_logical_path(path: &Path) -> MResult<PathBuf> {
   let parent = path.parent().ok_or_else(|| {
-    Error::new(
-      ErrorKind::InvalidInput,
-      format!("serve.paths symlink has no parent: {}", path.display()),
-    )
+    validation_error(format!("serve.paths symlink has no parent: {}", path.display()))
   })?;
   let file_name = path.file_name().ok_or_else(|| {
-    Error::new(
-      ErrorKind::InvalidInput,
-      format!("serve.paths symlink has no file name: {}", path.display()),
-    )
+    validation_error(format!("serve.paths symlink has no file name: {}", path.display()))
   })?;
   Ok(parent.canonicalize()?.join(file_name))
 }
@@ -55,10 +122,7 @@ fn collect_serve_source_path(
   let metadata = match std::fs::symlink_metadata(path) {
     Ok(metadata) => metadata,
     Err(error) if error.kind() == ErrorKind::NotFound => {
-      return Err(Error::new(
-        ErrorKind::InvalidInput,
-        format!("serve.paths entry does not exist: {}", path.display()),
-      ).into());
+      return Err(validation_error(format!("serve.paths entry does not exist: {}", path.display())).into());
     }
     Err(error) => return Err(error.into()),
   };
@@ -181,12 +245,33 @@ fn host_delegation_args() -> Vec<Arg> {
   Vec::new()
 }
 
+pub(crate) fn load_bundle_web_config_from_args(args: &BundleWebCliArgs) -> MResult<LoadedMechConfig> {
+  if args.no_config {
+    return Err(validation_error("bundle-web requires a config; remove --no-config or pass --config")
+    .into());
+  }
+
+  let current_dir = std::env::current_dir()?;
+  if let Some(path) = args.config_path.as_ref() {
+    let path = resolve_current_dir_path(&current_dir, Path::new(path));
+    return load_mech_config_path(path, None);
+  }
+
+  let project_dir = resolve_project_dir_input(&args.project_path, &current_dir)?.ok_or_else(|| {
+    let path = resolve_current_dir_path(&current_dir, Path::new(&args.project_path));
+    validation_error(format!("bundle-web project path must be an existing directory: {}", path.display()))
+  })?;
+
+  let discovery = discover_project_config(&project_dir)?.ok_or_else(|| {
+    validation_error(format!("bundle-web requires a project config in {}", project_dir.display()))
+  })?;
+
+  load_mech_config_path(discovery.config_path, Some(discovery.project_dir))
+}
+
 pub fn load_bundle_web_config(matches: &clap::ArgMatches) -> MResult<LoadedMechConfig> {
   if matches.get_flag("no_config") {
-    return Err(Error::new(
-      ErrorKind::InvalidInput,
-      "bundle-web requires a config; remove --no-config or pass --config",
-    )
+    return Err(validation_error("bundle-web requires a config; remove --no-config or pass --config")
     .into());
   }
 
@@ -198,23 +283,99 @@ pub fn load_bundle_web_config(matches: &clap::ArgMatches) -> MResult<LoadedMechC
 
   let project_path = matches
     .get_one::<String>("project_path")
-    .ok_or_else(|| Error::new(ErrorKind::InvalidInput, "bundle-web requires project_path"))?;
+    .ok_or_else(|| validation_error("bundle-web requires project_path"))?;
   let project_dir = resolve_project_dir_input(project_path, &current_dir)?.ok_or_else(|| {
     let path = resolve_current_dir_path(&current_dir, Path::new(project_path));
-    Error::new(
-      ErrorKind::InvalidInput,
-      format!("bundle-web project path must be an existing directory: {}", path.display()),
-    )
+    validation_error(format!("bundle-web project path must be an existing directory: {}", path.display()))
   })?;
 
   let discovery = discover_project_config(&project_dir)?.ok_or_else(|| {
-    Error::new(
-      ErrorKind::InvalidInput,
-      format!("bundle-web requires a project config in {}", project_dir.display()),
-    )
+    validation_error(format!("bundle-web requires a project config in {}", project_dir.display()))
   })?;
 
   load_mech_config_path(discovery.config_path, Some(discovery.project_dir))
+}
+
+pub(crate) fn effective_bundle_web_options_from_args(
+  args: &BundleWebCliArgs,
+  loaded: LoadedMechConfig,
+) -> MResult<BundleWebOptions> {
+  let current_dir = std::env::current_dir()?;
+  let project_dir = resolve_current_dir_path(&current_dir, Path::new(&args.project_path));
+  if !project_dir.is_dir() {
+    return Err(validation_error(format!("bundle-web project path must be an existing directory: {}", project_dir.display()))
+    .into());
+  }
+  let project_dir = project_dir.canonicalize()?;
+  let output_dir = resolve_current_dir_path(&current_dir, Path::new(&args.output_path));
+
+  let serve_config = loaded.document.serve.as_ref();
+  let source_paths = serve_config
+    .map(|serve| expand_serve_source_paths(&loaded.base_dir, &serve.paths))
+    .transpose()?
+    .unwrap_or_default();
+  if source_paths.is_empty() {
+    return Err(validation_error("bundle-web requires serve.paths in the project config")
+    .into());
+  }
+
+  let shim_path = args
+    .shim_path
+    .as_ref()
+    .map(|path| resolve_current_dir_path(&current_dir, Path::new(path)))
+    .or_else(|| {
+      serve_config
+        .and_then(|serve| serve.shim.as_ref())
+        .map(|path| resolve_config_path(&loaded.base_dir, path))
+    })
+    .ok_or_else(|| validation_error("bundle-web requires a shim via --shim or serve.shim"))?;
+  require_file("serve.shim", &shim_path)?;
+
+  let mut stylesheet_paths = serve_config
+    .map(|serve| {
+      serve
+        .stylesheets
+        .iter()
+        .map(|path| resolve_config_path(&loaded.base_dir, path))
+        .collect::<Vec<_>>()
+    })
+    .unwrap_or_default();
+  stylesheet_paths.extend(args.stylesheet_paths.iter().map(|path| resolve_current_dir_path(&current_dir, Path::new(path))));
+  for path in &stylesheet_paths {
+    require_config_file("serve.stylesheets", path)?;
+  }
+
+  let wasm_pkg = args
+    .wasm_path
+    .as_ref()
+    .map(|path| resolve_current_dir_path(&current_dir, Path::new(path)))
+    .or_else(|| {
+      serve_config
+        .and_then(|serve| serve.wasm.as_ref())
+        .map(|path| resolve_config_path(&loaded.base_dir, path))
+    })
+    .ok_or_else(|| validation_error("bundle-web requires a wasm package via --wasm or serve.wasm"))?;
+  require_bundle_wasm_package(&wasm_pkg)?;
+
+  #[cfg(feature = "host_delegation_signing")]
+  let host_config_injection = host_delegation_signing_options_from_args(
+    &args.host_delegation,
+    &loaded,
+    &format!("browser://bundle/{}", loaded.document.runtime.name.clone().unwrap_or_else(|| "mech".to_string())),
+  )?;
+  #[cfg(not(feature = "host_delegation_signing"))]
+  let host_config_injection = None;
+
+  Ok(BundleWebOptions {
+    project_dir,
+    output_dir,
+    source_paths,
+    shim_path,
+    stylesheet_paths,
+    wasm_pkg,
+    loaded_config: loaded,
+    host_config_injection,
+  })
 }
 
 pub fn effective_bundle_web_options(
@@ -224,20 +385,17 @@ pub fn effective_bundle_web_options(
   let current_dir = std::env::current_dir()?;
   let project_path = matches
     .get_one::<String>("project_path")
-    .ok_or_else(|| Error::new(ErrorKind::InvalidInput, "bundle-web requires project_path"))?;
+    .ok_or_else(|| validation_error("bundle-web requires project_path"))?;
   let project_dir = resolve_current_dir_path(&current_dir, Path::new(project_path));
   if !project_dir.is_dir() {
-    return Err(Error::new(
-      ErrorKind::InvalidInput,
-      format!("bundle-web project path must be an existing directory: {}", project_dir.display()),
-    )
+    return Err(validation_error(format!("bundle-web project path must be an existing directory: {}", project_dir.display()))
     .into());
   }
   let project_dir = project_dir.canonicalize()?;
 
   let out = matches
     .get_one::<String>("out")
-    .ok_or_else(|| Error::new(ErrorKind::InvalidInput, "bundle-web requires --out"))?;
+    .ok_or_else(|| validation_error("bundle-web requires --out"))?;
   let output_dir = resolve_current_dir_path(&current_dir, Path::new(out));
 
   let serve_config = loaded.document.serve.as_ref();
@@ -246,10 +404,7 @@ pub fn effective_bundle_web_options(
     .transpose()?
     .unwrap_or_default();
   if source_paths.is_empty() {
-    return Err(Error::new(
-      ErrorKind::InvalidInput,
-      "bundle-web requires serve.paths in the project config",
-    )
+    return Err(validation_error("bundle-web requires serve.paths in the project config")
     .into());
   }
 
@@ -262,10 +417,7 @@ pub fn effective_bundle_web_options(
         .map(|path| resolve_config_path(&loaded.base_dir, path))
     })
     .ok_or_else(|| {
-      Error::new(
-        ErrorKind::InvalidInput,
-        "bundle-web requires a shim via --shim or serve.shim",
-      )
+      validation_error("bundle-web requires a shim via --shim or serve.shim")
     })?;
   require_file("serve.shim", &shim_path)?;
 
@@ -298,10 +450,7 @@ pub fn effective_bundle_web_options(
         .map(|path| resolve_config_path(&loaded.base_dir, path))
     })
     .ok_or_else(|| {
-      Error::new(
-        ErrorKind::InvalidInput,
-        "bundle-web requires a wasm package via --wasm or serve.wasm",
-      )
+      validation_error("bundle-web requires a wasm package via --wasm or serve.wasm")
     })?;
   require_bundle_wasm_package(&wasm_pkg)?;
 
@@ -333,21 +482,35 @@ fn host_delegation_signing_options(
   loaded: &LoadedMechConfig,
   default_audience: &str,
 ) -> MResult<Option<crate::HostAuthorityInjection>> {
-  let Some(private_key) = matches.get_one::<String>("host_delegation_key") else {
+  host_delegation_signing_options_from_args(
+    &BundleWebHostDelegationArgs::from_matches(matches),
+    loaded,
+    default_audience,
+  )
+}
+
+#[cfg(feature = "host_delegation_signing")]
+fn host_delegation_signing_options_from_args(
+  args: &BundleWebHostDelegationArgs,
+  loaded: &LoadedMechConfig,
+  default_audience: &str,
+) -> MResult<Option<crate::HostAuthorityInjection>> {
+  let Some(private_key) = args.private_key.as_ref() else {
     return Ok(None);
   };
-  let public_key = matches
-    .get_one::<String>("host_delegation_public_key")
-    .ok_or_else(|| Error::new(ErrorKind::InvalidInput, "--host-delegation-public-key is required with --host-delegation-key"))?;
+  let public_key = args
+    .public_key
+    .as_ref()
+    .ok_or_else(|| validation_error("--host-delegation-public-key is required with --host-delegation-key"))?;
   let current_dir = std::env::current_dir()?;
   let options = crate::HostDelegationSigningOptions {
     private_key_path: resolve_current_dir_path(&current_dir, Path::new(private_key)),
     public_key_path: resolve_current_dir_path(&current_dir, Path::new(public_key)),
-    key_id: matches.get_one::<String>("host_delegation_key_id").cloned().unwrap_or_else(|| "dev".to_string()),
-    issuer: matches.get_one::<String>("host_delegation_issuer").cloned().unwrap_or_else(|| "host://mech-cli".to_string()),
-    subject: matches.get_one::<String>("host_delegation_subject").cloned().unwrap_or_else(|| "wasm://browser".to_string()),
-    audience: matches.get_one::<String>("host_delegation_audience").cloned().unwrap_or_else(|| default_audience.to_string()),
-    expires_ms: matches.get_one::<String>("host_delegation_expires_ms").map(|value| value.parse()).transpose().map_err(|_| Error::new(ErrorKind::InvalidInput, "--host-delegation-expires-ms must be an integer"))?,
+    key_id: args.key_id.clone().unwrap_or_else(|| "dev".to_string()),
+    issuer: args.issuer.clone().unwrap_or_else(|| "host://mech-cli".to_string()),
+    subject: args.subject.clone().unwrap_or_else(|| "wasm://browser".to_string()),
+    audience: args.audience.clone().unwrap_or_else(|| default_audience.to_string()),
+    expires_ms: args.expires_ms.as_ref().map(|value| value.parse()).transpose().map_err(|_| validation_error("--host-delegation-expires-ms must be an integer"))?,
   };
   let runtime_config = crate::apply_runtime_config_patch(
     mech_runtime::RuntimeConfig::default(),
@@ -376,30 +539,20 @@ fn require_file(field: &str, path: &Path) -> MResult<()> {
   if path.is_file() {
     Ok(())
   } else {
-    Err(Error::new(
-      ErrorKind::InvalidInput,
-      format!("configuration error: {field} must be an existing file: {}", path.display()),
-    )
-    .into())
+    Err(validation_error(format!("configuration error: {field} must be an existing file: {}", path.display())))
   }
 }
 
 fn require_bundle_wasm_package(path: &Path) -> MResult<()> {
   if !path.is_dir() {
-    return Err(Error::new(
-      ErrorKind::InvalidInput,
-      format!("configuration error: serve.wasm must be an existing directory: {}", path.display()),
-    )
+    return Err(validation_error(format!("configuration error: serve.wasm must be an existing directory: {}", path.display()))
     .into());
   }
 
   for file in ["mech_wasm.js", "mech_wasm_bg.wasm"] {
     let required = path.join(file);
     if !required.is_file() {
-      return Err(Error::new(
-        ErrorKind::InvalidInput,
-        format!("configuration error: serve.wasm is missing required file: {}", required.display()),
-      )
+      return Err(validation_error(format!("configuration error: serve.wasm is missing required file: {}", required.display()))
       .into());
     }
   }

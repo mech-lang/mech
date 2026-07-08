@@ -1,13 +1,17 @@
 use std::collections::BTreeSet;
 use std::fs;
-use std::io::{Error, ErrorKind};
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 use mech_core::*;
 use mech_syntax::formatter::Formatter;
 use mech_syntax::parser;
 
+use crate::fs_paths::validate_safe_relative_path;
 use crate::{HostAuthorityInjection, LoadedMechConfig};
+
+fn validation_error(msg: impl Into<String>) -> MechError {
+  MechError::new(GenericError { msg: msg.into() }, None).with_compiler_loc()
+}
 
 #[derive(Clone, Debug)]
 pub struct BundleWebOptions {
@@ -30,11 +34,7 @@ pub struct BundleWebResult {
 
 pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult> {
   if options.source_paths.is_empty() {
-    return Err(Error::new(
-      ErrorKind::InvalidInput,
-      "bundle-web requires serve.paths in the project config",
-    )
-    .into());
+    return Err(validation_error("bundle-web requires serve.paths in the project config"));
   }
 
   let project_dir = options.project_dir.canonicalize()?;
@@ -43,24 +43,16 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
   fs::create_dir_all(&options.output_dir)?;
   let output_dir = options.output_dir.canonicalize()?;
   if output_dir == project_dir {
-    return Err(Error::new(
-      ErrorKind::InvalidInput,
-      format!(
-        "bundle-web output directory must not be the project root: {}. Use a subdirectory such as dist/<name>.",
-        output_dir.display(),
-      ),
-    )
-    .into());
+    return Err(validation_error(format!(
+      "bundle-web output directory must not be the project root: {}. Use a subdirectory such as dist/<name>.",
+      output_dir.display(),
+    )));
   }
   if output_dir == base_dir {
-    return Err(Error::new(
-      ErrorKind::InvalidInput,
-      format!(
-        "bundle-web output directory must not be the config base directory: {}. Use a subdirectory such as dist/<name>.",
-        output_dir.display(),
-      ),
-    )
-    .into());
+    return Err(validation_error(format!(
+      "bundle-web output directory must not be the config base directory: {}. Use a subdirectory such as dist/<name>.",
+      output_dir.display(),
+    )));
   }
   let stylesheet_string = read_stylesheets(&options.stylesheet_paths)?;
   let shim_string = read_shim(&options.shim_path)?;
@@ -99,7 +91,7 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     write_bundle_file(&output_dir, "source", &relative, source_text.as_bytes())?;
 
     let encoded = compress_and_encode(&tree)
-      .map_err(|error| Error::new(ErrorKind::Other, error.to_string()))?;
+      .map_err(|error| std::io::Error::other(error.to_string()))?;
     write_bundle_file(&output_dir, "code", &relative, encoded.as_bytes())?;
 
     let html_relative = relative.with_extension("html");
@@ -164,13 +156,9 @@ fn validate_static_web_shim(shim: &str) -> MResult<()> {
     ("`/_mech/", "/_mech/", "./pkg/mech_wasm.js"),
   ] {
     if shim.contains(pattern) {
-      return Err(Error::new(
-        ErrorKind::InvalidInput,
-        format!(
-          "bundle-web shim contains server-root Mech URL `{url}`.\nUse a relative URL such as `{fix}` or `./pkg/mech_wasm.js`.",
-        ),
-      )
-      .into());
+      return Err(validation_error(format!(
+        "bundle-web shim contains server-root Mech URL `{url}`.\nUse a relative URL such as `{fix}` or `./pkg/mech_wasm.js`.",
+      )));
     }
   }
 
@@ -189,26 +177,35 @@ pub fn copy_project_static_assets(
     .filter_map(|path| path.canonicalize().ok())
     .collect::<Vec<_>>();
   let mut visited = BTreeSet::new();
-  copy_project_static_assets_inner(&project_dir, &project_dir, &output_dir, &excluded_dirs, &mut visited)
+  copy_project_static_assets_inner(
+    &project_dir,
+    &project_dir,
+    &project_dir,
+    &output_dir,
+    &excluded_dirs,
+    &mut visited,
+  )
 }
 
 fn copy_project_static_assets_inner(
   project_dir: &Path,
-  current_dir: &Path,
+  logical_dir: &Path,
+  read_dir: &Path,
   output_dir: &Path,
   excluded_dirs: &[PathBuf],
   visited: &mut BTreeSet<PathBuf>,
 ) -> MResult<()> {
-  let current_dir = current_dir.canonicalize()?;
-  if !visited.insert(current_dir.clone()) { return Ok(()); }
-  for entry in fs::read_dir(&current_dir)? {
+  let canonical_dir = read_dir.canonicalize()?;
+  if !visited.insert(canonical_dir.clone()) { return Ok(()); }
+  for entry in fs::read_dir(read_dir)? {
     let entry = entry?;
-    let logical_path = entry.path();
+    let logical_path = logical_dir.join(entry.file_name());
+    let read_path = entry.path();
     let file_type = entry.file_type()?;
-    let canonical_path = logical_path.canonicalize()?;
-    if file_type.is_symlink() && canonical_path.is_dir() {
+    if file_type.is_symlink() && read_path.canonicalize().map(|target| target.is_dir()).unwrap_or(false) {
       continue;
     }
+    let canonical_path = read_path.canonicalize()?;
 
     if should_skip_static_asset_path(&canonical_path, output_dir, excluded_dirs) {
       continue;
@@ -218,7 +215,7 @@ fn copy_project_static_assets_inner(
       if should_skip_static_asset_dir(&canonical_path) {
         continue;
       }
-      copy_project_static_assets_inner(project_dir, &canonical_path, output_dir, excluded_dirs, visited)?;
+      copy_project_static_assets_inner(project_dir, &logical_path, &canonical_path, output_dir, excluded_dirs, visited)?;
       continue;
     }
 
@@ -226,28 +223,24 @@ fn copy_project_static_assets_inner(
       continue;
     }
 
-    let canonical_relative = canonical_path.strip_prefix(project_dir).map_err(|error| {
-      Error::new(
-        ErrorKind::InvalidInput,
-        format!("bundle-web static asset target is outside project root: {error}"),
-      )
-    })?;
-    validate_safe_relative_path(canonical_relative)?;
+    if !canonical_path.starts_with(project_dir) {
+      return Err(validation_error(format!(
+        "bundle-web static asset target is outside project root: {}",
+        canonical_path.display()
+      )));
+    }
 
     let relative = logical_path.strip_prefix(project_dir).map_err(|error| {
-      Error::new(
-        ErrorKind::InvalidInput,
-        format!("bundle-web static asset path is outside project root: {error}"),
-      )
+      validation_error(format!("bundle-web static asset path is outside project root: {error}"))
     })?;
     validate_safe_relative_path(relative)?;
+
     let output_path = output_dir.join(relative);
     if let Some(parent) = output_path.parent() {
       fs::create_dir_all(parent)?;
     }
     fs::copy(&canonical_path, output_path)?;
   }
-
   Ok(())
 }
 
@@ -309,28 +302,11 @@ fn relative_source_path(source: &Path, base_dir: &Path, project_dir: &Path) -> M
   } else if let Ok(relative) = source.strip_prefix(project_dir) {
     relative
   } else {
-    return Err(Error::new(
-      ErrorKind::InvalidInput,
-      format!("bundle-web source is outside project/config root: {}", source.display()),
-    )
-    .into());
+    return Err(validation_error(format!("bundle-web source is outside project/config root: {}", source.display())));
   };
 
   validate_safe_relative_path(relative)?;
   Ok(relative.to_path_buf())
-}
-
-fn validate_safe_relative_path(path: &Path) -> MResult<()> {
-  if path.is_absolute()
-    || path.components().any(|component| matches!(component, Component::ParentDir))
-  {
-    return Err(Error::new(
-      ErrorKind::InvalidInput,
-      format!("bundle-web rejected unsafe relative path: {}", path.display()),
-    )
-    .into());
-  }
-  Ok(())
 }
 
 fn write_bundle_file(output_dir: &Path, section: &str, relative: &Path, bytes: &[u8]) -> MResult<()> {
@@ -974,4 +950,27 @@ mod tests {
     assert!(!out.join("html/shared/lib.html").exists());
     fs::remove_dir_all(root).unwrap();
   }
+
+  #[cfg(unix)]
+  #[test]
+  fn bundle_web_copies_static_symlink_using_logical_output_path() {
+    use std::os::unix::fs as unix_fs;
+
+    let root = temp_root("static-symlink-logical-path");
+    let loaded = write_demo_project(&root);
+    fs::create_dir_all(root.join("assets")).unwrap();
+    fs::write(root.join("assets/favicon.ico"), "icon").unwrap();
+    unix_fs::symlink("assets/favicon.ico", root.join("favicon.ico")).unwrap();
+    let out = root.join("out");
+
+    bundle_web_project(options(&root, &out, loaded)).unwrap();
+
+    assert!(out.join("favicon.ico").is_file());
+    let html = fs::read_to_string(out.join("index.html")).unwrap();
+    assert!(html.contains("./favicon.ico") || !html.contains("favicon.ico"));
+    fs::remove_dir_all(root).unwrap();
+  }
+
+
+
 }
